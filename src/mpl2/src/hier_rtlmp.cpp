@@ -1022,6 +1022,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
     }
   }
 
+  //
   // Merge small clusters
   std::vector<Cluster*> candidate_clusters;
   for (auto& cluster : parent->getChildren()) {
@@ -1170,7 +1171,6 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
 
     // Then we perform Type 3 merge:  merge all dust cluster
     const int dust_cluster_std_cell = 10;
-    int dust_cluster_id = -1;
     for (int i = 0; i < num_candidate_clusters; i++) {
       if (cluster_class[i] == -1) {  // the cluster has not been merged
         new_candidate_clusters.push_back(candidate_clusters[i]);
@@ -3456,7 +3456,6 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     // access macros to maintain the connections
     // *****************************************************************************************************************
     if (shaped_macros[soft_macro_id_map[toString(L)]].getWidth() > 0.0) {
-      const float l_lx = shaped_macros[soft_macro_id_map[toString(L)]].getX();
       const float l_ly = shaped_macros[soft_macro_id_map[toString(L)]].getY();
       const float l_width
           = shaped_macros[soft_macro_id_map[toString(L)]].getWidth();
@@ -3471,7 +3470,6 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                       nullptr);
     }
     if (shaped_macros[soft_macro_id_map[toString(R)]].getWidth() > 0.0) {
-      const float r_lx = shaped_macros[soft_macro_id_map[toString(R)]].getX();
       const float r_ly = shaped_macros[soft_macro_id_map[toString(R)]].getY();
       const float r_width
           = shaped_macros[soft_macro_id_map[toString(R)]].getWidth();
@@ -3488,7 +3486,6 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
     if (shaped_macros[soft_macro_id_map[toString(T)]].getWidth() > 0.0) {
       const float t_lx = shaped_macros[soft_macro_id_map[toString(T)]].getX();
-      const float t_ly = shaped_macros[soft_macro_id_map[toString(T)]].getY();
       const float t_width
           = shaped_macros[soft_macro_id_map[toString(T)]].getWidth();
       const float t_height
@@ -3504,7 +3501,6 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     }
     if (shaped_macros[soft_macro_id_map[toString(B)]].getWidth() > 0.0) {
       const float b_lx = shaped_macros[soft_macro_id_map[toString(B)]].getX();
-      const float b_ly = shaped_macros[soft_macro_id_map[toString(B)]].getY();
       const float b_width
           = shaped_macros[soft_macro_id_map[toString(B)]].getWidth();
       const float b_height
@@ -3779,7 +3775,6 @@ bool HierRTLMP::shapeChildrenCluster(
   // check the valid values
   const float outline_width = parent->getWidth();
   const float outline_height = parent->getHeight();
-  const float outline_area = outline_width * outline_height;
   float pin_access_area = 0.0;
   float std_cell_cluster_area = 0.0;
   float std_cell_mixed_cluster_area = 0.0;
