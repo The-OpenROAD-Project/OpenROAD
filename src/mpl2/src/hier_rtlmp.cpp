@@ -2466,8 +2466,6 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
     remaining_runs -= run_thread;
   }
   // clean all the SA to avoid memory leakage
-  for (auto& sa : sa_containers)
-    delete sa;
   sa_containers.clear();
   std::vector<std::pair<float, float>> tilings(macro_tilings.begin(),
                                                macro_tilings.end());
@@ -2693,8 +2691,6 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     remaining_runs -= run_thread;
   }
   // clean the sa_container to avoid memory leakage
-  for (auto& sa : sa_containers)
-    delete sa;
   sa_containers.clear();
   // sort the tilings based on area
   std::vector<std::pair<float, float>> tilings(macro_tilings.begin(),
@@ -3427,7 +3423,6 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
           target_util_list[i],
           target_dead_space_list[i]);
       sa_containers[i]->printResults();
-      delete sa_containers[i];
     }
     logger_->error(MPL,
                    2032,
@@ -3645,7 +3640,6 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
             target_util_list[i],
             target_dead_space_list[i]);
         sa_containers[i]->printResults();
-        delete sa_containers[i];
       }
       logger_->error(MPL,
                      2049,
@@ -3712,8 +3706,6 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   }
 
   // delete SA containers to avoid memory leakage
-  for (auto& sa : sa_containers)
-    delete sa;
   sa_containers.clear();
   // done this branch and update the cluster_id property back
   setInstProperty(parent);
@@ -4333,7 +4325,7 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
   if (best_sa == nullptr) {
     for (auto& sa : sa_containers) {
       sa->printResults();
-      delete sa;
+      // need
     }
     sa_containers.clear();
     std::string line
@@ -4358,8 +4350,6 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     hard_macro->updateDb(pitch_x_, pitch_y_);
   }
   // clean SA to avoid memory leakage
-  for (auto& sa : sa_containers)
-    delete sa;
   sa_containers.clear();
   setInstProperty(cluster);
 }
