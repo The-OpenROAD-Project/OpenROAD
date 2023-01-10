@@ -93,17 +93,8 @@ struct MarkerId
   frBlockObject* src2;
   bool operator<(const MarkerId& rhs) const
   {
-    if (box < rhs.box)
-      return true;
-    if (lNum < rhs.lNum)
-      return true;
-    if (con < rhs.con)
-      return true;
-    if (src1 < rhs.src1)
-      return true;
-    if (src2 < rhs.src2)
-      return true;
-    return false;
+    return std::tie(box, lNum, con, src1, src2)
+           < std::tie(rhs.box, rhs.lNum, rhs.con, rhs.src1, rhs.src2);
   }
 };
 }  // namespace fr
