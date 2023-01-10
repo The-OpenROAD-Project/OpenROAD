@@ -240,4 +240,10 @@ psm::PDNSim* Design::getPDNSim()
   return app->getPDNSim();
 }
 
+pdn::PdnGen* Design::getPdnGen()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getPdnGen();
+}
+
 }  // namespace ord

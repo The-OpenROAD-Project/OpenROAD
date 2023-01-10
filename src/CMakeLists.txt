@@ -399,6 +399,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     rmp_py
     stt_py
     psm_py
+    pdn_py
   )
 else()
   message(STATUS "Python3 disabled")

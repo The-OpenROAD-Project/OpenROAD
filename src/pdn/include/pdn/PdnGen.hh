@@ -38,7 +38,6 @@
 #include <array>
 #include <map>
 #include <memory>
-#include <regex>
 
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -56,8 +55,6 @@ using odb::dbNet;
 using odb::dbRegion;
 
 using utl::Logger;
-
-using std::regex;
 
 enum ExtensionMode
 {

@@ -113,6 +113,10 @@ namespace psm {
 class PDNSim;
 }
 
+namespace pdn {
+class PdnGen;
+}
+
 namespace ord {
 
 class Tech;
@@ -160,6 +164,7 @@ class Design
   rmp::Restructure* getRestructure();
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();
   psm::PDNSim* getPDNSim();
+  pdn::PdnGen* getPdnGen();
 
  private:
   Tech* tech_;
