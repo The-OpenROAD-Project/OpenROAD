@@ -43,12 +43,14 @@ HungarianMatching::HungarianMatching(Section& section,
                                      Netlist* netlist,
                                      Core* core,
                                      std::vector<Slot>& slots,
-                                     Logger* logger)
+                                     Logger* logger,
+                                     odb::dbDatabase* db)
     : netlist_(netlist),
       core_(core),
       pin_indices_(section.pin_indices),
       pin_groups_(section.pin_groups),
-      slots_(slots)
+      slots_(slots),
+      db_(db)
 {
   num_io_pins_ = section.pin_indices.size();
   num_pin_groups_ = netlist_->numIOGroups();
@@ -148,7 +150,19 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment,
           mirrored_pin.setLayer(slots_[slot_index].layer);
           mirrored_pin.setPlaced();
           assigment.push_back(mirrored_pin);
-          slot_index = getSlotIdxByPosition(mirrored_pos);
+          slot_index
+              = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
+          if (slot_index < 0) {
+            odb::dbTechLayer* layer
+                = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
+            logger_->error(utl::PPL,
+                           82,
+                           "Mirrored position ({}, {}) at layer {} is not a "
+                           "valid position for pin placement.",
+                           mirrored_pos.getX(),
+                           mirrored_pos.getY(),
+                           layer->getName());
+          }
           slots_[slot_index].used = true;
         }
         break;
@@ -266,11 +280,12 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
   assignment_.clear();
 }
 
-int HungarianMatching::getSlotIdxByPosition(const odb::Point& position) const
+int HungarianMatching::getSlotIdxByPosition(const odb::Point& position,
+                                            int layer) const
 {
   int slot_idx = -1;
   for (int i = 0; i < slots_.size(); i++) {
-    if (slots_[i].pos == position) {
+    if (slots_[i].pos == position && slots_[i].layer == layer) {
       slot_idx = i;
       break;
     }

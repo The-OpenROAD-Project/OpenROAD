@@ -65,7 +65,8 @@ class HungarianMatching
                     Netlist* netlist,
                     Core* core,
                     std::vector<Slot>& slots,
-                    Logger* logger);
+                    Logger* logger,
+                    odb::dbDatabase* db);
   virtual ~HungarianMatching() = default;
   void findAssignment();
   void findAssignmentForGroups();
@@ -94,10 +95,11 @@ class HungarianMatching
   Edge edge_;
   const int hungarian_fail = std::numeric_limits<int>::max();
   Logger* logger_;
+  odb::dbDatabase* db_;
 
   void createMatrix();
   void createMatrixForGroups();
-  int getSlotIdxByPosition(const odb::Point& position) const;
+  int getSlotIdxByPosition(const odb::Point& position, int layer) const;
 };
 
 }  // namespace ppl
