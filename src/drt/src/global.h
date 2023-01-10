@@ -32,7 +32,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
-#include <fmt/ostream.h>
+#include <spdlog/fmt/fmt.h>
 
 #include "db/obj/frMarker.h"
 #include "frBaseTypes.h"
@@ -182,33 +182,22 @@ std::ostream& operator<<(std::ostream& os, const frMarker& m);
 // namespace fr
 }  // namespace fr
 
-// formatters
+#if defined(FMT_VERSION) && FMT_VERSION >= 90000
+#include <fmt/ostream.h>
 template <> struct fmt::formatter<fr::frRect> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frPolygon> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frMPin> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frBTerm> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frInstTerm> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frBlock> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frViaDef> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::drConnFig> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frPathSeg> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frGuide> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frConnFig> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frNet> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::drNet> : fmt::ostream_formatter {};
-
 template <> struct fmt::formatter<fr::frMarker> : fmt::ostream_formatter {};
+#endif // FMT_VERSION >= 90000
 
 #endif

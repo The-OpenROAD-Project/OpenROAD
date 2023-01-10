@@ -34,7 +34,6 @@
 #include "frProfileTask.h"
 #include "io/io.h"
 #include "utl/exception.h"
-#include "utl/exception.h"
 
 using namespace std;
 using namespace fr;
