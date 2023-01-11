@@ -60,6 +60,7 @@ using namespace pdn;
 %include <std_vector.i>
 %include <std_array.i>
 %include <std_map.i>
+%include <std_set.i>
 
 // this maps unsigned long to the enum ExtensionMode
 %include typemaps.i
@@ -83,19 +84,8 @@ namespace std {
   %template(viagen_list)  std::vector<odb::dbTechViaGenerateRule *>;
   %template(techvia_list) std::vector<odb::dbTechVia *>;
   %template(layer_list)   std::vector<odb::dbTechLayer *>;
+  %template(net_set)      std::set<odb::dbNet*>;
 }
 
 %include "../../Exception-py.i"
 %include "pdn/PdnGen.hh"
-
-%inline %{
-
-namespace pdn {
-
-// difficult to pass a set. repair_pdn_via takes a vector and then
-// rebuilds the set in C++, so we just borrow that here.
-void repair_pdn_vias(const std::vector<odb::dbNet*>& nets);
- 
-}  // namespace
-
-%} //  %inline

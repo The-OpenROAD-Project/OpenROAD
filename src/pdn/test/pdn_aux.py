@@ -665,5 +665,5 @@ def repair_pdn_vias(design, *, net=None, all=False):
             if net.getSigType() == "POWER" or net.getSigType() == "GROUND":
                 nets.append(net)
                 
-    pdn.repair_pdn_vias(nets)
+    pdngen.repairVias(nets)
 
