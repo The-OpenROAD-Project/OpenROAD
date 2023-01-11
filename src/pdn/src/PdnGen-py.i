@@ -48,12 +48,12 @@ using namespace pdn;
 %include <std_array.i>
 %include <std_map.i>
 %include <std_set.i>
+%include <std_string.i>
 
 %include typemaps.i
 
 %import "odb.i"
 %clear int & x, int & y; // defined in dbtypes.i, must be cleared here.
-%include <std_string.i>
 
 // These are needed to coax swig into sending or returning Python 
 // lists, arrays, or sets (as appropriate) of opaque pointers. Note 
