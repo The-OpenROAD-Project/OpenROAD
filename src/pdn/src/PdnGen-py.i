@@ -66,7 +66,7 @@ using namespace pdn;
 %apply unsigned long { ExtensionMode };
 
 %import "odb.i"
-%import "dbtypes.i"
+%clear int & x, int & y; // defined in dbtypes.i, must be cleared here.
 %include <std_string.i>
 
 // These are needed to coax swig into sending or returning Python 
