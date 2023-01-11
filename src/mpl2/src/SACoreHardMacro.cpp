@@ -280,7 +280,6 @@ void SACoreHardMacro::printResults()
   logger_->report("SACoreHardMacro");
   logger_->report("number of macros : {}", macros_.size());
   for (auto macro : macros_) {
-    logger_->report("Debug");
     logger_->report("lx = {}, ly = {}, width = {}, height = {}",
                     macro.getX(),
                     macro.getY(),
