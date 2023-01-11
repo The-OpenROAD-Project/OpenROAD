@@ -37,6 +37,7 @@
 
 #include <memory>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 #include "odb/geom.h"
@@ -72,6 +73,7 @@ using utl::Logger;
 // A list of pins that will be placed together in the die boundary
 typedef std::set<odb::dbBTerm*> PinList;
 typedef std::vector<odb::dbBTerm*> PinGroup;
+typedef std::unordered_map<odb::dbBTerm*, odb::dbBTerm*> MirroredPins;
 
 enum class Edge
 {
@@ -110,6 +112,7 @@ class IOPlacer
                               int begin,
                               int end);
   void addTopLayerConstraint(PinList* pins, const odb::Rect& region);
+  void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
   void addPinGroup(PinGroup* group);
@@ -171,7 +174,8 @@ class IOPlacer
                                          std::vector<Section>& sections);
   int assignGroupToSection(const std::vector<int>& io_group,
                            std::vector<Section>& sections);
-  std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint);
+  std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint,
+                                                       int& mirrored_pins_cnt);
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
                                          Netlist* netlist);
   int computeIONetsHPWL(Netlist* netlist);
@@ -215,6 +219,7 @@ class IOPlacer
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   std::vector<PinGroup> pin_groups_;
+  MirroredPins mirrored_pins_;
 
   Logger* logger_;
   std::unique_ptr<Parameters> parms_;

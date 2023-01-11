@@ -64,7 +64,6 @@ class PDNSim
   ~PDNSim();
 
   void init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta);
-  void reset();
 
   void import_vsrc_cfg(std::string vsrc);
   void import_out_file(std::string out_file);

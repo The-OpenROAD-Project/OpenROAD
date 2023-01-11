@@ -105,6 +105,18 @@ namespace rmp {
 class Restructure;
 }
 
+namespace stt {
+class SteinerTreeBuilder;
+}
+
+namespace psm {
+class PDNSim;
+}
+
+namespace pdn {
+class PdnGen;
+}
+
 namespace ord {
 
 class Tech;
@@ -150,6 +162,9 @@ class Design
   par::PartitionMgr* getPartitionMgr();
   rcx::Ext* getOpenRCX();
   rmp::Restructure* getRestructure();
+  stt::SteinerTreeBuilder* getSteinerTreeBuilder();
+  psm::PDNSim* getPDNSim();
+  pdn::PdnGen* getPdnGen();
 
  private:
   Tech* tech_;

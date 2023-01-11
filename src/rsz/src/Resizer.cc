@@ -493,6 +493,28 @@ Resizer::bufferInput(const Pin *top_pin,
   Net *input_net = db_network_->net(term);
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
+
+  bool has_dont_touch = false;
+  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(input_net);
+  while (pin_iter->hasNext()) {
+    Pin *pin = pin_iter->next();
+    // Leave input port pin connected to input_net.
+    if (pin != top_pin && dontTouch(network_->instance(pin))) {
+      has_dont_touch = true;
+      logger_->warn(RSZ,
+                    85,
+                    "Input {} can't be buffered due to dont-touch fanout {}",
+                    network_->name(input_net),
+                    network_->name(pin));
+      break;
+    }
+  }
+  delete pin_iter;
+
+  if (has_dont_touch) {
+    return nullptr;
+  }
+
   string buffer_name = makeUniqueInstName("input");
   Instance *parent = db_network_->topInstance();
   Net *buffer_out = makeUniqueNet();
@@ -502,7 +524,7 @@ Resizer::bufferInput(const Pin *top_pin,
                                 parent, pin_loc);
   inserted_buffer_count_++;
 
-  NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(input_net);
+  pin_iter = network_->connectedPinIterator(input_net);
   while (pin_iter->hasNext()) {
     Pin *pin = pin_iter->next();
     // Leave input port pin connected to input_net.
@@ -1188,6 +1210,9 @@ bool
 Resizer::dontTouch(const Instance *inst)
 {
   dbInst *db_inst = db_network_->staToDb(inst);
+  if (!db_inst) {
+    return false;
+  }
   return db_inst->isDoNotTouch();
 }
 

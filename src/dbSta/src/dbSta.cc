@@ -428,6 +428,12 @@ dbStaReport::setLogger(Logger* logger)
 void
 dbStaReport::printLine(const char* buffer, size_t length)
 {
+  if (redirect_to_string_) {
+    redirectStringPrint(buffer, length);
+    redirectStringPrint("\n", 1);
+    return;
+  }
+
   logger_->report(buffer);
 }
 
@@ -435,6 +441,11 @@ dbStaReport::printLine(const char* buffer, size_t length)
 size_t
 dbStaReport::printString(const char* buffer, size_t length)
 {
+  if (redirect_to_string_) {
+    redirectStringPrint(buffer, length);
+    return length;
+  }
+
   // prepend saved buffer
   string buf = tcl_buffer_ + string(buffer);
   tcl_buffer_.clear();  // clear buffer

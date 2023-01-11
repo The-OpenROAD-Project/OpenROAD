@@ -171,6 +171,12 @@ add_top_layer_constraint(PinList *pin_list,
 }
 
 void
+add_mirrored_pins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
+{
+  getIOPlacer()->addMirroredPins(bterm1, bterm2);
+}
+
+void
 set_hor_length(int length)
 {
   getIOPlacer()->getParameters()->setHorizontalLength(length);

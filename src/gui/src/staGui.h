@@ -367,6 +367,9 @@ class TimingControlsDialog : public QDialog
   void setUnconstrained(bool uncontrained);
   bool getUnconstrained() const { return sta_->isIncludeUnconstrainedPaths(); }
 
+  void setOnePathPerEndpoint(bool value);
+  bool getOnePathPerEndpoint() const { return sta_->isOnePathPerEndpoint(); }
+
   void setExpandClock(bool expand);
   bool getExpandClock() const;
 
@@ -402,6 +405,7 @@ class TimingControlsDialog : public QDialog
   QComboBox* corner_box_;
 
   QCheckBox* unconstrained_;
+  QCheckBox* one_path_per_endpoint_;
   QCheckBox* expand_clk_;
 
   PinSetWidget* from_;

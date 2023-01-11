@@ -1990,7 +1990,7 @@ void FlexDRWorker::initGridGraph(const frDesign* design)
   map<frCoord, map<frLayerNum, frTrackPattern*>> xMap;
   map<frCoord, map<frLayerNum, frTrackPattern*>> yMap;
   initTrackCoords(xMap, yMap);
-  gridGraph_.setCost(workerDRCCost_, workerMarkerCost_);
+  gridGraph_.setCost(workerDRCCost_, workerMarkerCost_, workerFixedShapeCost_);
   gridGraph_.init(design,
                   getRouteBox(),
                   getExtBox(),
@@ -2552,7 +2552,8 @@ void FlexDRWorker::route_queue_markerCostDecay()
     auto currIt = it;
     auto& mi = *currIt;
     ++it;
-    if (gridGraph_.decayMarkerCostPlanar(mi.x(), mi.y(), mi.z(), MARKERDECAY)) {
+    if (gridGraph_.decayMarkerCostPlanar(
+            mi.x(), mi.y(), mi.z(), workerMarkerDecay_)) {
       planarHistoryMarkers_.erase(currIt);
     }
   }
@@ -2560,7 +2561,8 @@ void FlexDRWorker::route_queue_markerCostDecay()
     auto currIt = it;
     auto& mi = *currIt;
     ++it;
-    if (gridGraph_.decayMarkerCostVia(mi.x(), mi.y(), mi.z(), MARKERDECAY)) {
+    if (gridGraph_.decayMarkerCostVia(
+            mi.x(), mi.y(), mi.z(), workerMarkerDecay_)) {
       viaHistoryMarkers_.erase(currIt);
     }
   }

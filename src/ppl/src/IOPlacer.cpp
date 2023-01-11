@@ -603,7 +603,8 @@ void IOPlacer::createSections()
 }
 
 std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
-    Constraint& constraint)
+    Constraint& constraint,
+    int& mirrored_pins_cnt)
 {
   bool top_layer = constraint.interval.getEdge() == Edge::invalid;
   std::vector<Slot>& slots = top_layer ? top_layer_slots_ : slots_;
@@ -634,6 +635,9 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
 
   for (int idx : pin_indices) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(idx);
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      mirrored_pins_cnt++;
+    }
     assignPinToSection(io_pin, idx, constraint.sections);
   }
 
@@ -729,7 +733,19 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 
   int total_pins_assigned = assignGroupsToSections();
 
+  // Mirrored pins first
   int idx = 0;
+  for (IOPin& io_pin : net->getIOPins()) {
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      if (assignPinToSection(io_pin, idx, sections)) {
+        total_pins_assigned += 2;
+      }
+    }
+    idx++;
+  }
+
+  // Remaining pins
+  idx = 0;
   for (IOPin& io_pin : net->getIOPins()) {
     if (assignPinToSection(io_pin, idx, sections)) {
       total_pins_assigned++;
@@ -769,6 +785,15 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
         sections[i].used_slots++;
         pin_assigned = true;
         io_pin.assignToSection();
+
+        if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+          odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
+          int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
+          IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
+          // Mark mirrored pin as assigned to section to prevent assigning it to
+          // another section that is not aligned with his pair
+          mirrored_pin.assignToSection();
+        }
         break;
       }
     }
@@ -1038,6 +1063,11 @@ void IOPlacer::addTopLayerConstraint(PinList* pins, const odb::Rect& region)
   constraints_.push_back(constraint);
 }
 
+void IOPlacer::addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2)
+{
+  mirrored_pins_[bterm1] = bterm2;
+}
+
 void IOPlacer::addHorLayer(odb::dbTechLayer* layer)
 {
   hor_layers_.insert(layer->getRoutingLevel());
@@ -1175,12 +1205,20 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
   for (int idx = 0; idx < sections.size(); idx++) {
     if (sections[idx].pin_indices.size() > 0) {
       if (sections[idx].edge == Edge::invalid) {
-        HungarianMatching hg(
-            sections[idx], netlist_io_pins_.get(), top_layer_slots_, logger_);
+        HungarianMatching hg(sections[idx],
+                             netlist_io_pins_.get(),
+                             core_.get(),
+                             top_layer_slots_,
+                             logger_,
+                             db_);
         hg_vec.push_back(hg);
       } else {
-        HungarianMatching hg(
-            sections[idx], netlist_io_pins_.get(), slots_, logger_);
+        HungarianMatching hg(sections[idx],
+                             netlist_io_pins_.get(),
+                             core_.get(),
+                             slots_,
+                             logger_,
+                             db_);
         hg_vec.push_back(hg);
       }
     }
@@ -1198,8 +1236,14 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
     hg_vec[idx].findAssignment();
   }
 
+  if (!mirrored_pins_.empty()) {
+    for (int idx = 0; idx < hg_vec.size(); idx++) {
+      hg_vec[idx].getFinalAssignment(assignment_, mirrored_pins_, true);
+    }
+  }
+
   for (int idx = 0; idx < hg_vec.size(); idx++) {
-    hg_vec[idx].getFinalAssignment(assignment_);
+    hg_vec[idx].getFinalAssignment(assignment_, mirrored_pins_, false);
   }
 }
 
@@ -1231,11 +1275,14 @@ void IOPlacer::run(bool random_mode)
   } else {
     int constrained_pins_cnt = 0;
     for (Constraint& constraint : constraints_) {
+      int mirrored_pins_cnt = 0;
       std::vector<Section> sections_for_constraint
-          = assignConstrainedPinsToSections(constraint);
+          = assignConstrainedPinsToSections(constraint, mirrored_pins_cnt);
       for (Section& sec : sections_for_constraint) {
         constrained_pins_cnt += sec.pin_indices.size();
       }
+
+      constrained_pins_cnt += mirrored_pins_cnt;
 
       findPinAssignment(sections_for_constraint);
       updateSlots();

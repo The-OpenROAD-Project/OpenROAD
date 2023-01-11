@@ -217,7 +217,6 @@
 
 // Handle return by ref.
 %apply int &OUTPUT { int & overhang1, int & overhang2 };
-%apply int &OUTPUT { int & x, int & y };
 %apply int &OUTPUT { int & x_spacing, int & y_spacing };
 WRAP_OBJECT_RETURN_REF(odb::Rect, r)
 WRAP_OBJECT_RETURN_REF(odb::Rect, rect)

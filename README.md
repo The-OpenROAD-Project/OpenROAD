@@ -93,6 +93,7 @@ including:
 
 #### Open-Source PDKs
 
+-   `GF180` - 180nm
 -   `Skywater130` - 130nm
 -   `Nangate45` - 45nm
 -   `ASAP7` - Predictive FinFET 7nm
@@ -106,7 +107,6 @@ provided due to NDA restrictions. However, if you are able to access
 these platforms independently, you can create the necessary
 platform-specific files yourself.
 
--   `GF180` - 180nm
 -   `GF55` - 55nm
 -   `GF12` - 12nm
 -   `Intel22` - 22nm
@@ -139,14 +139,14 @@ transceivers, OpenPower-based Microwatt etc.
 
 For a limited number of configurations, the following script can be used
 to install dependencies.  The script `etc/DependencyInstaller.sh` supports
-Centos7 and Ubuntu 20.04. To correctly install the dependencies with the
+Centos7, Ubuntu 20.04, Ubuntu 22.04, RHEL 8, Debian 10 and Debian 11. To correctly install the dependencies with the
 script you need to run as root or prepend `sudo` to the commands below.
 
 ``` shell
 ./etc/DependencyInstaller.sh -help
 
-Usage: ./etc/DependencyInstaller.sh -run[time]      # installs dependencies to run a pre-compiled binary
-       ./etc/DependencyInstaller.sh -dev[elopment]  # installs dependencies to compile the openroad binary
+Usage: ./etc/DependencyInstaller.sh -prefix=DIR    # installs dependencies in an existing user specified directory
+       ./etc/DependencyInstaller.sh -local         # installs dependencies in "$HOME/.local"
 
 ```
 

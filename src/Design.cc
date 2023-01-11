@@ -228,4 +228,22 @@ rmp::Restructure* Design::getRestructure()
   return app->getRestructure();
 }
 
+stt::SteinerTreeBuilder* Design::getSteinerTreeBuilder()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getSteinerTreeBuilder();
+}
+
+psm::PDNSim* Design::getPDNSim()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getPDNSim();
+}
+
+pdn::PdnGen* Design::getPdnGen()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getPdnGen();
+}
+
 }  // namespace ord

@@ -35,7 +35,7 @@
 
 #include "par/PartitionMgr.h"
 
-#include "MLPart.h"
+#include "par/MLPart.h"
 #ifdef PARTITIONERS
 extern "C" {
 #include "main/ChacoWrapper.h"

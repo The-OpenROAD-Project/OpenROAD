@@ -324,6 +324,9 @@ class STAGuiInterface
     include_unconstrained_ = value;
   }
 
+  bool isOnePathPerEndpoint() const { return one_path_per_endpoint_; }
+  void setOnePathPerEndpoint(bool value) { one_path_per_endpoint_ = value; }
+
   bool isIncludeCapturePaths() const { return include_capture_path_; }
   void setIncludeCapturePaths(bool value) { include_capture_path_ = value; }
 
@@ -341,11 +344,14 @@ class STAGuiInterface
 
   std::vector<std::unique_ptr<ClockTree>> getClockTrees() const;
 
+  int getEndPointCount() const;
+
  private:
   sta::dbSta* sta_;
 
   sta::Corner* corner_;
   bool use_max_;
+  bool one_path_per_endpoint_;
   int max_path_count_;
 
   bool include_unconstrained_;

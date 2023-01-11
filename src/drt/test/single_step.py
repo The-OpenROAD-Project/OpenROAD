@@ -16,9 +16,9 @@ drt_aux.detailed_route(design,
                        verbose=0,
                        single_step_dr=True)
 
-drt_aux.step_dr(design, 7,  0, 3, 8, 0, 1, True)
-drt_aux.step_dr(design, 7, -2, 3, 8, 8, 1, True)
-drt_aux.step_dr(design, 7, -5, 3, 8, 8, 1, True)
+drt_aux.step_dr(design, 7,  0, 3, 8, 0, 8, 0.95, 1, True)
+drt_aux.step_dr(design, 7, -2, 3, 8, 8, 8, 0.95, 1, True)
+drt_aux.step_dr(design, 7, -5, 3, 8, 8, 8, 0.95, 1, True)
 drt_aux.step_end(design)
 
 def_file = helpers.make_result_file("single_step.def")

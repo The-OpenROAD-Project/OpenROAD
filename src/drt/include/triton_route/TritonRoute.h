@@ -116,6 +116,8 @@ class TritonRoute
               int mazeEndIter,
               unsigned int workerDRCCost,
               unsigned int workerMarkerCost,
+              unsigned int workerFixedShapeCost,
+              float workerMarkerDecay,
               int ripupMode,
               bool followGuide);
 
@@ -134,6 +136,8 @@ class TritonRoute
   void setDebugWorkerParams(int mazeEndIter,
                             int drcCost,
                             int markerCost,
+                            int fixedShapeCost,
+                            float markerDecay,
                             int ripupMode,
                             int followGuide);
   void setDistributed(bool on = true);

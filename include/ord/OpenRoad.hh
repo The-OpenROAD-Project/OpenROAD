@@ -56,7 +56,6 @@ namespace sta {
 class dbSta;
 class dbNetwork;
 class Resizer;
-class LibertyCell;
 }  // namespace sta
 
 namespace rsz {
@@ -212,11 +211,6 @@ class OpenRoad
                 bool includeFillers);
 
   void readVerilog(const char* filename);
-  // Write a flat verilog netlist for the database.
-  void writeVerilog(const char* filename,
-                    bool sort,
-                    bool include_pwr_gnd,
-                    std::vector<sta::LibertyCell*>* remove_cells);
   void linkDesign(const char* top_cell_name);
 
   // Used if a design is created programmatically rather than loaded

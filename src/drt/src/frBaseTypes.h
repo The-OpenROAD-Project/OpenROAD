@@ -305,6 +305,8 @@ struct frDebugSettings
         mazeEndIter(-1),
         drcCost(-1),
         markerCost(-1),
+        fixedShapeCost(-1),
+        markerDecay(-1),
         ripupMode(-1),
         followGuide(-1)
 
@@ -333,6 +335,8 @@ struct frDebugSettings
   int mazeEndIter;
   int drcCost;
   int markerCost;
+  int fixedShapeCost;
+  float markerDecay;
   int ripupMode;
   int followGuide;
 };

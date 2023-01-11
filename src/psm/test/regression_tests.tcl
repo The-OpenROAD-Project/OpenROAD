@@ -10,4 +10,5 @@ record_tests {
   gcd_all_vss
   gcd_vss_no_vsrc
   gcd_sky130_vdd
+  aes_asap7_vdd
 }

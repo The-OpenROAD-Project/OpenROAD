@@ -30,8 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ADS_EXTRCTREE_H
-#define ADS_EXTRCTREE_H
+#pragma once
 
 #include "ZObject.h"
 #include "db.h"
@@ -54,7 +53,6 @@ class extRCnode
 {
   friend class extRcTree;
 
-  // private:
  public:
   double _gndcap[ADS_MAX_CORNER];
   double _cap[ADS_MAX_CORNER];
@@ -239,5 +237,3 @@ class extRcTree
 };
 
 }  // namespace rcx
-
-#endif
