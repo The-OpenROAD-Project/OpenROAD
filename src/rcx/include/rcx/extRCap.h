@@ -1601,7 +1601,6 @@ class extMain
   Ath__array1D<int>* _btermTable;
   Ath__array1D<int>* _itermTable;
 
-  uint _menuId;
   uint _dbPowerId;
   uint _dbSignalId;
   uint _RsegId;
@@ -1805,7 +1804,7 @@ class extMain
     ISPEF_ORIGINAL_PLUS_HALO,
     ISPEF_NEW_PLUS_HALO,
   };
-  extMain(uint menuId);
+  extMain();
 
   void set_debug_nets(const char* nets)
   {

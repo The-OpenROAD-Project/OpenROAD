@@ -395,7 +395,7 @@ void extMain::setupMapping(uint itermCnt)
   _itermTable = new Ath__array1D<int>(itermCnt);
   _nodeTable = new Ath__array1D<int>(16000);
 }
-extMain::extMain(uint menuId)
+extMain::extMain()
     : _db(nullptr),
       _tech(nullptr),
       _block(nullptr),
@@ -476,7 +476,6 @@ extMain::extMain(uint menuId)
   _gndcFactor = 1.0;
   _gndcModify = false;
 
-  _menuId = menuId;
   _dbPowerId = 1;
   _dbSignalId = 2;
   _CCsegId = 3;
