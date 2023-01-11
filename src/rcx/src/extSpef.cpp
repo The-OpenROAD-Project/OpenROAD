@@ -1259,12 +1259,6 @@ uint extSpef::writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rSet)
   }
   return cnt;
 }
-void getjxy(odb::dbNet* net, uint jid, Logger* logger)
-{
-  int jx, jy;
-  net->getWire()->getCoord((int) jid, jx, jy);
-  logger->info(RCX, 174, "{}:{} {} {}", net->getId(), jid, jx, jy);
-}
 uint extSpef::writeNet(odb::dbNet* net, double resBound, uint debug)
 {
   _d_net = net;

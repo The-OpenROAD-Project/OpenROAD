@@ -1226,15 +1226,6 @@ void extMain::printNet(dbNet* net, uint netId)
   if (netId == net->getId())
     net->printNetName(stdout);
 }
-bool IsDebugNets(dbNet* srcNet, dbNet* tgtNet, uint debugNetId)
-{
-  if (srcNet != NULL && srcNet->getId() == debugNetId)
-    return true;
-  if (tgtNet != NULL && tgtNet->getId() == debugNetId)
-    return true;
-
-  return false;
-}
 void extMain::measureRC(CoupleOptions& options)
 {
   _totSegCnt++;
@@ -1392,11 +1383,6 @@ void extMain::measureRC(CoupleOptions& options)
     }
   }
   ccReportProgress();
-}
-void extCompute(CoupleOptions& options, void* computePtr)
-{
-  extMain* mmm = (extMain*) computePtr;
-  mmm->measureRC(options);
 }
 extern CoupleOptions coupleOptionsNull;
 
