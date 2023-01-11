@@ -34,17 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 %module pdngen
 %{
-
-// These includes are needed by the SWIG generated CXX files mostly 
-// for determining the size of Classes that they define. Since that are
-// not actually wrapped, the classes defined in these files will appear as
-// opaque pointers in Python.
-#include "../src/connect.h"
-#include "../src/domain.h"
-#include "../src/grid.h"
-#include "../src/power_cells.h"
-#include "../src/renderer.h"
-
 #include "pdn/PdnGen.hh"
 #include "odb/db.h"
 #include <array>
@@ -52,9 +41,7 @@
 #include <memory>
 #include <vector>
 
-using pdn::ExtensionMode;
 using namespace pdn;
- 
 %}
 
 %include <std_vector.i>
@@ -62,9 +49,7 @@ using namespace pdn;
 %include <std_map.i>
 %include <std_set.i>
 
-// this maps unsigned long to the enum ExtensionMode
 %include typemaps.i
-%apply unsigned long { ExtensionMode };
 
 %import "odb.i"
 %clear int & x, int & y; // defined in dbtypes.i, must be cleared here.
