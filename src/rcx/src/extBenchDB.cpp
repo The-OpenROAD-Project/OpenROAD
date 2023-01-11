@@ -630,7 +630,6 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
   uint WW2 = measure->_w2_nm;
   uint SS2 = measure->_s2_nm;
 
-  uint base;
   if (n > 1) {
     cnt++;
     measure->createNetSingleWire(_wireDirName, idCnt, WW, s_layout);
@@ -639,7 +638,6 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
     cnt++;
     if (!measure->_diag) {
       measure->createNetSingleWire(_wireDirName, idCnt, WW, SS1);
-      base = measure->_ll[measure->_dir] + WW / 2;
       idCnt++;
       cnt++;
       measure->createNetSingleWire(_wireDirName, idCnt, WW2, SS2);
@@ -665,7 +663,6 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
       idCnt++;
     }
   } else {
-    base = measure->_ll[measure->_dir] + WW / 2;
     cnt++;
     measure->createNetSingleWire(_wireDirName, 3, w_layout, s_layout);
     idCnt++;

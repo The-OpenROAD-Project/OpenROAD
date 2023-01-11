@@ -63,7 +63,7 @@ void extMain::initExtractedCorners(dbBlock* block)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
-    tmiExt = new extMain(0);
+    tmiExt = new extMain;
     tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   if (tmiExt->_processCornerTable)
@@ -76,7 +76,7 @@ int extMain::getExtCornerIndex(dbBlock* block, const char* cornerName)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
-    tmiExt = new extMain(0);
+    tmiExt = new extMain;
     tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   int idx = tmiExt->getDbCornerIndex(cornerName);
@@ -165,7 +165,7 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& buf_nets,
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
-    tmiExt = new extMain(0);
+    tmiExt = new extMain;
     tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   tmiExt->writeIncrementalSpef(buf_nets,
