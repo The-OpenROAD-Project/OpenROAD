@@ -1986,13 +1986,14 @@ void GlobalRouter::checkPinPlacement()
     } else {
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == port->getPosition()) {
-          if (verbose_)
-            logger_->warn(GRT,
-                          31,
-                          "At least 2 pins in position ({}, {}), layer {}.",
-                          pos.x(),
-                          pos.y(),
-                          tech_layer->getName());
+          logger_->warn(
+              GRT,
+              31,
+              "At least 2 pins in position ({}, {}), layer {}, port {}.",
+              pos.x(),
+              pos.y(),
+              tech_layer->getName(),
+              port->getName().c_str());
           invalid = true;
         }
       }
