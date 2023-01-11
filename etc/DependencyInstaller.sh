@@ -479,6 +479,10 @@ while [ "$#" -gt 0 ]; do
             echo "The use of this flag is deprecated and will be removed soon"
             ;;
         -local)
+            if [ $(id -u) == 0 ]; then
+                echo "Error: cannot run local if you are root or using sudo" >&2
+                exit 1
+            fi
             export PREFIX="${HOME}/.local"
             ;;
         -prefix=*)
