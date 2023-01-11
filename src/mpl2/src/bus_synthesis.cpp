@@ -55,6 +55,7 @@
 #include "utl/Logger.h"
 
 namespace mpl2 {
+using utl::MPL;
 
 using operations_research::MPConstraint;
 using operations_research::MPObjective;
@@ -263,20 +264,21 @@ void Graph::calNetEdgePaths(int src,
                             BundledNet& net,
                             utl::Logger* logger)
 {
-  logger->report("Enter CalNetEdgePaths");
+  debugPrint(logger, MPL, "bus_planning", 1, "Enter CalNetEdgePaths");
   // check if the parent vertices have been calculated
   if (parents_.find(src) == parents_.end()) {
     calShortPathParentVertices(src);  // calculate parent vertices
   }
-  logger->report("Finish CalShortPathParentVertices");
+  debugPrint(
+      logger, MPL, "bus_planning", 1, "Finish CalShortPathParentVertices");
   // initialize an empty path
   std::vector<int> path;
   std::vector<std::vector<int>> paths;  // paths in vertex id
   calShortPaths(paths, path, parents_[src],
                 target);  // pathes in vertex id
-  logger->report("Finish CalShortPaths");
+  debugPrint(logger, MPL, "bus_planning", 1, "Finish CalShortPaths");
   calEdgePaths(paths, net.edge_paths, net.hpwl);  // pathes in edges
-  logger->report("Finish CalEdgePaths");
+  debugPrint(logger, MPL, "bus_planning", 1, "Finish CalEdgePaths");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -343,23 +345,28 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     vertex.macro_id = -1;  // macro_id
   }
 
-  logger->report("Finish Creating vertex list");
+  debugPrint(logger, MPL, "bus_planning", 1, "Finish Creating vertex list");
 
-  logger->report("x_grid:  ");
+  debugPrint(logger, MPL, "bus_planning", 1, "x_grid:  ");
 
   for (auto& x : x_grid) {
-    logger->report(" {} ", x);
+    debugPrint(logger, MPL, "bus_planning", 1, " {} ", x);
   }
-  logger->report("\n");
-  logger->report("y_grid:  ");
+  debugPrint(logger, MPL, "bus_planning", 1, "\n");
+  debugPrint(logger, MPL, "bus_planning", 1, "y_grid:  ");
   for (auto& y : y_grid) {
-    logger->report(" {} ", y);
+    debugPrint(logger, MPL, "bus_planning", 1, " {} ", y);
   }
-  logger->report("\n");
+  debugPrint(logger, MPL, "bus_planning", 1, "\n");
 
   int macro_id = 0;
   for (const auto& soft_macro : soft_macros) {
-    logger->report("vertices in macro : {}", soft_macro.getName());
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "vertices in macro : {}",
+               soft_macro.getName());
     const float lx = std::round(soft_macro.getX());
     const float ly = std::round(soft_macro.getY());
     const float ux = std::round(soft_macro.getX() + soft_macro.getWidth());
@@ -377,14 +384,18 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     int x_end = -1;
     int y_end = -1;
     getVerticesInRect(x_grid, y_grid, rect, x_start, x_end, y_start, y_end);
-    logger->report("x_start :  {} x_end: {} y_start: {} y_end: {}",
-                   x_start,
-                   x_end,
-                   y_start,
-                   y_end);
-    logger->report("lx  :  {} ux: {}", cx, cy);
-    logger->report("ly  :  {} uy: {}", cx, cy);
-    logger->report("cx  :  {} cy: {}", cx, cy);
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "x_start :  {} x_end: {} y_start: {} y_end: {}",
+               x_start,
+               x_end,
+               y_start,
+               y_end);
+    debugPrint(logger, MPL, "bus_planning", 1, "lx  :  {} ux: {}", cx, cy);
+    debugPrint(logger, MPL, "bus_planning", 1, "ly  :  {} uy: {}", cx, cy);
+    debugPrint(logger, MPL, "bus_planning", 1, "cx  :  {} cy: {}", cx, cy);
 
     bool test_flag = false;
 
@@ -416,21 +427,34 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     // increase macro id
     macro_id++;
     if (soft_macro.getArea() <= 0.0) {
-      logger->report(
-          "macro_id : {}  {}", macro_id, soft_macro_vertex_id.size());
+      debugPrint(logger,
+                 MPL,
+                 "bus_planning",
+                 1,
+                 "macro_id : {}  {}",
+                 macro_id,
+                 soft_macro_vertex_id.size());
     }
   }
 
-  logger->report("soft_macro_vertex_id.size() : {} soft_macros.size(): {}",
-                 soft_macro_vertex_id.size(),
-                 soft_macros.size());
-  logger->report("Finish macro_id assignment");
+  debugPrint(logger,
+             MPL,
+             "bus_planning",
+             1,
+             "soft_macro_vertex_id.size() : {} soft_macros.size(): {}",
+             soft_macro_vertex_id.size(),
+             soft_macros.size());
+  debugPrint(logger, MPL, "bus_planning", 1, "Finish macro_id assignment");
   // print vertex id
   for (int i = 0; i < soft_macros.size(); i++) {
-    logger->report("macro_id : {} vertex_id: {} macro_id: {}",
-                   i,
-                   soft_macro_vertex_id[i],
-                   vertex_list[soft_macro_vertex_id[i]].vertex_id);
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "macro_id : {} vertex_id: {} macro_id: {}",
+               i,
+               soft_macro_vertex_id[i],
+               vertex_list[soft_macro_vertex_id[i]].vertex_id);
   }
 
   // add all the edges between grids (undirected)
@@ -541,7 +565,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     }
   }
 
-  logger->report("finish edge list");
+  debugPrint(logger, MPL, "bus_planning", 1, "finish edge list");
   // handle the vertices on left or right boundaries
   for (int y_idx = 0; y_idx < y_grid.size(); y_idx++) {
     for (int x_idx = 1; x_idx < x_grid.size() - 1; x_idx++) {
@@ -559,10 +583,35 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
         edge.length = x_grid[x_idx + 1] - x_grid[x_idx - 1];
         // calculate edge type (internal or not)
         // and weighted length
+
+        debugPrint(logger,
+                   MPL,
+                   "bus_planning",
+                   1,
+                   "src: {}, target: {}, vertex_list size: {}",
+                   src,
+                   target,
+                   vertex_list.size());
+
         const int& src_macro_id = vertex_list[src].macro_id;
         const int& target_macro_id = vertex_list[target].macro_id;
+        debugPrint(logger,
+                   MPL,
+                   "bus_planning",
+                   1,
+                   "src_macro_id: {} target_macro_id: {} num soft macros: {}",
+                   src_macro_id,
+                   target_macro_id,
+                   soft_macros.size());
         // this is an edge crossing boundaries
         edge.internal = false;
+        // exception handling.  Later we should find better way to handle this.
+        // [20221202]
+        if (src_macro_id == -1 && target_macro_id == -1) {
+          edge.length_w = edge.length;
+          continue;
+        }
+
         if (src_macro_id == -1) {
           edge.length_w
               = vertex_list[src].weight
@@ -591,6 +640,13 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       }
     }
   }
+
+  debugPrint(logger,
+             MPL,
+             "bus_planning",
+             1,
+             "finish boundary edges (left and right boundaries)");
+
   // handle the vertices on top or bottom boundaries
   for (int y_idx = 1; y_idx < y_grid.size() - 1; y_idx++) {
     for (int x_idx = 0; x_idx < x_grid.size(); x_idx++) {
@@ -608,10 +664,33 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
         edge.length = y_grid[y_idx + 1] - y_grid[y_idx - 1];
         // calculate edge type (internal or not)
         // and weighted length
+        debugPrint(logger,
+                   MPL,
+                   "bus_planning",
+                   1,
+                   "src: {} target: {} vertex_list size: {}",
+                   src,
+                   target,
+                   vertex_list.size());
         const int& src_macro_id = vertex_list[src].macro_id;
         const int& target_macro_id = vertex_list[target].macro_id;
+        debugPrint(logger,
+                   MPL,
+                   "bus_planning",
+                   1,
+                   "src_macro_id: {}, target_macro_id: {}, num soft macros: {}",
+                   src_macro_id,
+                   target_macro_id,
+                   soft_macros.size());
         // this is an edge crossing boundaries
         edge.internal = false;
+        // exception handling.  Later we should find better way to handle this.
+        // [20221202]
+        if (src_macro_id == -1 && target_macro_id == -1) {
+          edge.length_w = edge.length;
+          continue;
+        }
+
         if (src_macro_id == -1) {
           edge.length_w
               = vertex_list[src].weight
@@ -641,7 +720,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     }
   }
 
-  logger->report("finish boundary edges");
+  debugPrint(logger, MPL, "bus_planning", 1, "finish boundary edges");
 
   // handle all the IO cluster
   for (int i = 0; i < soft_macros.size(); i++) {
@@ -650,7 +729,8 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     }
     auto& vertex = vertex_list[soft_macro_vertex_id[i]];
     vertex.macro_id = i;  // update the macro id
-    logger->report("macro_id : {}", vertex.macro_id);
+    debugPrint(
+        logger, MPL, "bus_planning", 1, "macro_id : {}", vertex.macro_id);
     std::set<int> neighbors;
     // add horizontal edges
     if (vertex.pos.first == *(x_grid.begin())) {
@@ -664,7 +744,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       neighbors.insert(vertex.vertex_id + x_grid.size() - 1);
       neighbors.insert(vertex.vertex_id - 1);
     }
-    logger->report("step1");
+    debugPrint(logger, MPL, "bus_planning", 1, "step1");
     for (auto& neighbor : neighbors) {
       if (neighbor >= vertex_list.size()) {
         continue;
@@ -682,7 +762,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       edge.length_w = n_vertex.weight * edge.length;
       edge_list.push_back(edge);
     }
-    logger->report("step2");
+    debugPrint(logger, MPL, "bus_planning", 1, "step2");
     // add vertical edges
     neighbors.clear();
     if (vertex.pos.second == *(y_grid.begin())) {
@@ -696,7 +776,7 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       neighbors.insert(vertex.vertex_id - x_grid.size() + 1);
       neighbors.insert(vertex.vertex_id - x_grid.size() - 1);
     }
-    logger->report("step3");
+    debugPrint(logger, MPL, "bus_planning", 1, "step3");
     for (auto& neighbor : neighbors) {
       if (neighbor >= vertex_list.size()) {
         continue;
@@ -714,10 +794,10 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       edge.length_w = n_vertex.weight * edge.length;
       edge_list.push_back(edge);
     }
-    logger->report("step4");
+    debugPrint(logger, MPL, "bus_planning", 1, "step4");
   }
 
-  logger->report("finish io cluster related edges");
+  debugPrint(logger, MPL, "bus_planning", 1, "finish io cluster related edges");
 
   // update edge weight and pin access
   for (auto& edge : edge_list) {
@@ -738,16 +818,25 @@ void createGraph(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     edge_list.push_back(Edge(edge_list.size(), edge_list[i]));
   }
 
-  logger->report("\n****************************************");
-  logger->report("macro_id,  macro,  vertex_id, macro_id");
+  debugPrint(logger,
+             MPL,
+             "bus_planning",
+             1,
+             "\n****************************************");
+  debugPrint(
+      logger, MPL, "bus_planning", 1, "macro_id,  macro,  vertex_id, macro_id");
   for (int i = 0; i < soft_macros.size(); i++) {
-    logger->report("i:  {}  {}  {} {}",
-                   i,
-                   soft_macros[i].getName(),
-                   soft_macro_vertex_id[i],
-                   vertex_list[soft_macro_vertex_id[i]].macro_id);
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "i:  {}  {}  {} {}",
+               i,
+               soft_macros[i].getName(),
+               soft_macro_vertex_id[i],
+               vertex_list[soft_macro_vertex_id[i]].macro_id);
   }
-  logger->report("exiting create graph");
+  debugPrint(logger, MPL, "bus_planning", 1, "exiting create graph");
 }
 
 // Calculate the paths for global buses with ILP
@@ -772,9 +861,13 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     float weight = edge.length * (1 - congestion_weight)
                    + edge.length_w * congestion_weight;  // cal edge weight
     if (weight <= 0.0) {
-      logger->report("warning ! edge_length : {} edge.length_w: {}",
-                     edge.length,
-                     edge.length_w);
+      debugPrint(logger,
+                 MPL,
+                 "bus_planning",
+                 1,
+                 "warning weight < 0 - length: {} length_w: {}",
+                 edge.length,
+                 edge.length_w);
     }
     graph.addEdge(edge.terminals.first, edge.terminals.second, weight, &edge);
   }
@@ -786,15 +879,27 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   int net_id = 0;
   for (auto& net : nets) {
     // calculate candidate paths
-    logger->report("calculate the path for net: {} . {}",
-                   net.terminals.first,
-                   net.terminals.second);
-    logger->report("cluster :  {}   {}",
-                   soft_macros[net.terminals.first].getName(),
-                   soft_macros[net.terminals.second].getName());
-    logger->report("{}  {}",
-                   soft_macro_vertex_id[net.terminals.first],
-                   soft_macro_vertex_id[net.terminals.second]);
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "calculate the path for net: {} . {}",
+               net.terminals.first,
+               net.terminals.second);
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "cluster :  {}   {}",
+               soft_macros[net.terminals.first].getName(),
+               soft_macros[net.terminals.second].getName());
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "{}  {}",
+               soft_macro_vertex_id[net.terminals.first],
+               soft_macro_vertex_id[net.terminals.second]);
     graph.calNetEdgePaths(soft_macro_vertex_id[net.terminals.second],
                           soft_macro_vertex_id[net.terminals.first],
                           net,
@@ -803,30 +908,48 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     int path_id = 0;
     for (const auto& edge_path : net.edge_paths) {
       // here the edge paths only include edges crossing soft macros (IOs)
-      logger->report("path :  ");
+      debugPrint(logger, MPL, "bus_planning", 1, "path :  ");
       for (auto& edge_id : edge_path) {
-        logger->report("{} ", edge_id);
+        debugPrint(logger, MPL, "bus_planning", 1, "\t{} ", edge_id);
       }
-      logger->report("\n");
       path_net_path_map[num_paths] = path_id++;
       path_net_map[num_paths++] = net_id;
     }
-    logger->report("number candidate paths is {}", net.edge_paths.size());
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "number candidate paths is {}",
+               net.edge_paths.size());
     net_id++;
   }
 
-  logger->report("All the candidate paths");
-  logger->report("Total number of candidate paths : {}", num_paths);
+  debugPrint(logger, MPL, "bus_planning", 1, "\nAll the candidate paths");
+  debugPrint(logger,
+             MPL,
+             "bus_planning",
+             1,
+             "Total number of candidate paths : {}",
+             num_paths);
   for (auto& net : nets) {
-    logger->report("*****************************************");
-    logger->report(
-        "src :  {}  target {}", net.terminals.first, net.terminals.second);
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "---------------------------------------");
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "src :  {}  target {}",
+               net.terminals.first,
+               net.terminals.second);
     for (auto& edge_path : net.edge_paths) {
-      logger->report("path :  ");
+      debugPrint(logger, MPL, "bus_planning", 1, "path :  ");
       for (auto& edge_id : edge_path) {
-        logger->report(" {}  ", edge_id);
+        debugPrint(logger, MPL, "bus_planning", 1, " {}  ", edge_id);
       }
-      logger->report("\n");
+      debugPrint(logger, MPL, "bus_planning", 1, "\n");
     }
   }
 
@@ -849,7 +972,12 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   for (int i = 0; i < edge_list.size(); i++) {
     y[i] = solver->MakeIntVar(0.0, 1.0, "");
   }
-  logger->report("Number of variables = {}", solver->NumVariables());
+  debugPrint(logger,
+             MPL,
+             "bus_planning",
+             1,
+             "Number of variables = {}",
+             solver->NumVariables());
   const double infinity = solver->infinity();
 
   // add constraints
@@ -869,7 +997,12 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       net_c->SetCoefficient(x[x_id++], 1);
     }
   }
-  logger->report("Number of constraints = {}", solver->NumConstraints());
+  debugPrint(logger,
+             MPL,
+             "bus_planning",
+             1,
+             "Number of constraints = {}",
+             solver->NumConstraints());
 
   // Create the objective function
   MPObjective* const objective = solver->MutableObjective();
@@ -883,8 +1016,13 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
   if (result_status != MPSolver::OPTIMAL) {
     return false;  // The problem does not have an optimal solution;
   }
-  logger->report("Soluton : ");
-  logger->report("Optimal objective value = {}", objective->Value());
+  debugPrint(logger, MPL, "bus_planning", 1, "Soluton : ");
+  debugPrint(logger,
+             MPL,
+             "bus_planning",
+             1,
+             "Optimal objective value = {}",
+             objective->Value());
 
   // Generate the solution and check which edge get selected
   for (int i = 0; i < num_paths; i++) {
@@ -892,7 +1030,7 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       continue;
     }
 
-    logger->report("working on path {}", i);
+    debugPrint(logger, MPL, "bus_planning", 1, "working on path {}", i);
     auto target_cluster
         = soft_macros[nets[path_net_map[i]].terminals.second].getCluster();
     PinAccess src_pin = NONE;
@@ -901,48 +1039,82 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
     const float net_weight = nets[path_net_map[i]].weight;
     const int src_cluster_id = nets[path_net_map[i]].src_cluster_id;
     const int target_cluster_id = nets[path_net_map[i]].target_cluster_id;
-    logger->report("src_cluster_id : {} target_cluster_id: {} ",
-                   src_cluster_id,
-                   target_cluster_id);
-    logger->report("src_macro_id : {}  target_macro_id {}",
-                   nets[path_net_map[i]].terminals.first,
-                   nets[path_net_map[i]].terminals.second);
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "src_cluster_id : {} target_cluster_id: {} ",
+               src_cluster_id,
+               target_cluster_id);
+    debugPrint(logger,
+               MPL,
+               "bus_planning",
+               1,
+               "src_macro_id : {}  target_macro_id {}",
+               nets[path_net_map[i]].terminals.first,
+               nets[path_net_map[i]].terminals.second);
 
     for (auto& edge_id :
          nets[path_net_map[i]].edge_paths[path_net_path_map[i]]) {
       auto& edge = edge_list[edge_id];
-      logger->report("edge_terminals : {}  {}",
-                     edge.terminals.first,
-                     edge.terminals.second);
-      logger->report("edge_terminals_macro_id : {}  {} ",
-                     vertex_list[edge.terminals.first].macro_id,
-                     vertex_list[edge.terminals.second].macro_id);
+      debugPrint(logger,
+                 MPL,
+                 "bus_planning",
+                 1,
+                 "edge_terminals : {}  {}",
+                 edge.terminals.first,
+                 edge.terminals.second);
+      debugPrint(logger,
+                 MPL,
+                 "bus_planning",
+                 1,
+                 "edge_terminals_macro_id : {}  {} ",
+                 vertex_list[edge.terminals.first].macro_id,
+                 vertex_list[edge.terminals.second].macro_id);
       last_edge_id = edge_id;
       Cluster* start_cluster = nullptr;
       if (vertex_list[edge.terminals.first].macro_id != -1) {
         start_cluster = soft_macros[vertex_list[edge.terminals.first].macro_id]
                             .getCluster();
-        logger->report(
+        debugPrint(
+            logger,
+            MPL,
+            "bus_planning",
+            1,
             "start_name : {}",
             soft_macros[vertex_list[edge.terminals.first].macro_id].getName());
       }
       if (start_cluster != nullptr) {
-        logger->report("start_cluster_id : {}", start_cluster->getId());
+        debugPrint(logger,
+                   MPL,
+                   "bus_planning",
+                   1,
+                   "start_cluster_id : {}",
+                   start_cluster->getId());
       }
       Cluster* end_cluster = nullptr;
       if (vertex_list[edge.terminals.second].macro_id != -1) {
         end_cluster = soft_macros[vertex_list[edge.terminals.second].macro_id]
                           .getCluster();
-        logger->report(
+        debugPrint(
+            logger,
+            MPL,
+            "bus_planning",
+            1,
             "end_name : {}",
             soft_macros[vertex_list[edge.terminals.second].macro_id].getName());
       }
       if (end_cluster != nullptr) {
-        logger->report("end_cluster_id : {}", end_cluster->getId());
+        debugPrint(logger,
+                   MPL,
+                   "bus_planning",
+                   1,
+                   "end_cluster_id : {}",
+                   end_cluster->getId());
       }
 
       if (start_cluster == nullptr && end_cluster == nullptr) {
-        logger->report("(1) This should not happen");
+        logger->report("(1) error! This should not happen");
       } else if (start_cluster != nullptr && end_cluster != nullptr) {
         if (start_cluster->getId() == src_cluster_id) {
           start_cluster->setPinAccess(
@@ -1009,7 +1181,12 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                             .getCluster();
       }
       if (start_cluster != nullptr) {
-        logger->report("start_cluster_id : {}", start_cluster->getId());
+        debugPrint(logger,
+                   MPL,
+                   "bus_planning",
+                   1,
+                   "start_cluster_id : {}",
+                   start_cluster->getId());
       }
       Cluster* end_cluster = nullptr;
       if (vertex_list[edge.terminals.second].macro_id != -1) {
@@ -1017,7 +1194,12 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
                           .getCluster();
       }
       if (end_cluster != nullptr) {
-        logger->report("end_cluster_id : {}", end_cluster->getId());
+        debugPrint(logger,
+                   MPL,
+                   "bus_planning",
+                   1,
+                   "end_cluster_id : {}",
+                   end_cluster->getId());
       }
       if (start_cluster == target_cluster) {
         target_cluster->setPinAccess(
@@ -1029,7 +1211,7 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
         logger->report("(3) Error ! This should not happen");
       }
     }
-    logger->report("finish path {}", i);
+    debugPrint(logger, MPL, "bus_planning", 1, "finish path {}", i);
   }
 
   return true;

@@ -318,7 +318,7 @@ class Cluster
   // Here we do not differentiate the input and output connections
   std::map<int, float> connection_map_;  // cluster_id, number of connections
 
-  // store the virtual connection between childrens
+  // store the virtual connection between children
   // the virtual connection is used to tie the std cell part and the
   // corresponding macro part together
   std::vector<std::pair<int, int>> virtual_connections_;

@@ -590,7 +590,13 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
   int closely_cluster = -1;
   int num_closely_clusters = 0;
   for (auto& [cluster_id, num_nets] : connection_map_) {
-    logger_->report("cluster_id : {}  nets: {}", cluster_id, num_nets);
+    debugPrint(logger_,
+               MPL,
+               "clustering",
+               1,
+               "cluster_id: {}, nets: {}",
+               cluster_id,
+               num_nets);
     if (num_nets > net_threshold
         && std::find(
                candidate_clusters.begin(), candidate_clusters.end(), cluster_id)
@@ -781,11 +787,6 @@ bool HardMacro::operator<(const HardMacro& macro) const
 
 bool HardMacro::operator==(const HardMacro& macro) const
 {
-  std::cout << "width_ :  " << width_ << "  macro.width_ : " << macro.width_
-            << "  "
-            << "height_ :  " << height_ << "  macro.height_ : " << macro.height_
-            << "   " << ((width_ == macro.width_) && (height_ == macro.height_))
-            << std::endl;
   return (width_ == macro.width_) && (height_ == macro.height_);
 }
 
@@ -1279,17 +1280,6 @@ void SoftMacro::setShapes(
   }
   width_ = width_list_[0].first;
   height_ = height_list_[0].first;
-  std::cout << getName() << std::endl;
-  std::cout << "width_list : ";
-  for (auto& width : width_list_) {
-    std::cout << width.first << "  -  " << width.second << "   ";
-  }
-  std::cout << std::endl;
-  std::cout << "height_list : ";
-  for (auto& height : height_list_) {
-    std::cout << height.first << " -  " << height.second << "   ";
-  }
-  std::cout << std::endl;
 }
 
 float SoftMacro::getX() const
@@ -1439,9 +1429,9 @@ void SoftMacro::printShape()
     std::cout << " <" << width.first << " , " << width.second << " >  ";
   }
   std::cout << std::endl;
-  std::cout << "width_list : ";
-  for (auto& width : height_list_) {
-    std::cout << " <" << width.first << " , " << width.second << " >  ";
+  std::cout << "height_list : ";
+  for (auto& height : height_list_) {
+    std::cout << " <" << height.first << " , " << height.second << " >  ";
   }
   std::cout << std::endl;
 }
