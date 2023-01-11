@@ -51,10 +51,9 @@ extern "C" {
 extern int Rcx_Init(Tcl_Interp* interp);
 }
 
-Ext::Ext()
-  : odb::ZInterface(),
-    _ext(std::make_unique<extMain>())
-{}
+Ext::Ext() : odb::ZInterface(), _ext(std::make_unique<extMain>())
+{
+}
 
 void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
 {

@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include <memory>
-
 #include <tcl.h>
+
+#include <memory>
 
 #include "extRCap.h"
 #include "exttree.h"
