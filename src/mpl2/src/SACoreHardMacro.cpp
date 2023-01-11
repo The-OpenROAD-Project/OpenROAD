@@ -36,6 +36,7 @@
 #include "utl/Logger.h"
 
 namespace mpl2 {
+using utl::MPL;
 
 //////////////////////////////////////////////////////////////////
 // Class SACoreHardMacro
@@ -276,30 +277,68 @@ void SACoreHardMacro::initialize()
 
 void SACoreHardMacro::printResults()
 {
-  logger_->report(std::string(80, '*'));
-  logger_->report("SACoreHardMacro");
-  logger_->report("number of macros : {}", macros_.size());
+  debugPrint(logger_, MPL, "macro_placement", 1, "SACoreHardMacro");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "number of macros : {}",
+             macros_.size());
   for (auto macro : macros_) {
-    logger_->report("lx = {}, ly = {}, width = {}, height = {}",
-                    macro.getX(),
-                    macro.getY(),
-                    macro.getWidth(),
-                    macro.getHeight());
+    debugPrint(logger_,
+               MPL,
+               "macro_placement",
+               1,
+               "lx = {}, ly = {}, width = {}, height = {}",
+               macro.getX(),
+               macro.getY(),
+               macro.getWidth(),
+               macro.getHeight());
   }
-  logger_->report("width = {}, outline_width = {}", width_, outline_width_);
-  logger_->report("height = {}, outline_height = {}", height_, outline_height_);
-  logger_->report("outline_penalty  = {}, norm_outline_penalty = {}",
-                  outline_penalty_,
-                  norm_outline_penalty_);
-  logger_->report(
-      "wirelength  = {}, norm_wirelength = {}", wirelength_, norm_wirelength_);
-  logger_->report("guidance_penalty  = {}, norm_guidance_penalty = {}",
-                  guidance_penalty_,
-                  norm_guidance_penalty_);
-  logger_->report("fence_penalty  = {}, norm_fence_penalty = {}",
-                  fence_penalty_,
-                  norm_fence_penalty_);
-  logger_->report("final cost = {}", getNormCost());
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "width = {}, outline_width = {}",
+             width_,
+             outline_width_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "height = {}, outline_height = {}",
+             height_,
+             outline_height_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "outline_penalty  = {}, norm_outline_penalty = {}",
+             outline_penalty_,
+             norm_outline_penalty_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "wirelength  = {}, norm_wirelength = {}",
+             wirelength_,
+             norm_wirelength_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "guidance_penalty  = {}, norm_guidance_penalty = {}",
+             guidance_penalty_,
+             norm_guidance_penalty_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "fence_penalty  = {}, norm_fence_penalty = {}",
+             fence_penalty_,
+             norm_fence_penalty_);
+  debugPrint(
+      logger_, MPL, "macro_placement", 1, "final cost = {}", getNormCost());
 }
 
 }  // namespace mpl2

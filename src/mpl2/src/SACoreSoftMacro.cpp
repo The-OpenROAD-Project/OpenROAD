@@ -36,6 +36,7 @@
 #include "utl/Logger.h"
 
 namespace mpl2 {
+using utl::MPL;
 
 //////////////////////////////////////////////////////////////////
 // Class SACoreSoftMacro
@@ -752,51 +753,91 @@ void SACoreSoftMacro::shrink()
 
 void SACoreSoftMacro::printResults() const
 {
-  logger_->report(std::string(80, '*'));
-  logger_->report("SACoreSoftMacro");
-  logger_->report("number of macros : {}", macros_.size());
+  debugPrint(logger_, MPL, "macro_placement", 1, "SACoreSoftMacro");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "number of macros : {}",
+             macros_.size());
   for (auto macro : macros_)
-    logger_->report("lx = {}, ly = {}, width = {}, height = {}, name = {}",
-                    macro.getX(),
-                    macro.getY(),
-                    macro.getWidth(),
-                    macro.getHeight(),
-                    macro.getName());
-  logger_->report("width = {}, outline_width = {}", width_, outline_width_);
-  logger_->report("height = {}, outline_height = {}", height_, outline_height_);
-  logger_->report(
+    debugPrint(logger_,
+               MPL,
+               "macro_placement",
+               1,
+               "lx = {}, ly = {}, width = {}, height = {}, name = {}",
+               macro.getX(),
+               macro.getY(),
+               macro.getWidth(),
+               macro.getHeight(),
+               macro.getName());
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "width = {}, outline_width = {}",
+             width_,
+             outline_width_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "height = {}, outline_height = {}",
+             height_,
+             outline_height_);
+  debugPrint(
+      logger_,
+      MPL,
+      "macro_placement",
+      1,
       "outline_weight = {}, outline_penalty  = {}, norm_outline_penalty = {}",
       outline_weight_,
       outline_penalty_,
       norm_outline_penalty_);
-  logger_->report(
-      "wirelength_weight = {}, wirelength  = {}, norm_wirelength = {}",
-      wirelength_weight_,
-      wirelength_,
-      norm_wirelength_);
-  logger_->report(
-      "guidance_weight = {}, guidance_penalty  = {}, norm_guidance_penalty = "
-      "{}",
-      guidance_weight_,
-      guidance_penalty_,
-      norm_guidance_penalty_);
-  logger_->report(
-      "fence_weight = {}, fence_penalty  = {}, norm_fence_penalty = {}",
-      fence_weight_,
-      fence_penalty_,
-      norm_fence_penalty_);
-  logger_->report(
-      "macro_blockage_weight = {}, macro_blockage_penalty  = {}, "
-      "norm_macro_blockage_penalty = {}",
-      macro_blockage_weight_,
-      macro_blockage_penalty_,
-      norm_macro_blockage_penalty_);
-  logger_->report(
-      "notch_weight = {}, notch_penalty  = {}, norm_notch_penalty = {}",
-      notch_weight_,
-      notch_penalty_,
-      norm_notch_penalty_);
-  logger_->report("final cost = {}", getNormCost());
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "wirelength_weight = {}, wirelength  = {}, norm_wirelength = {}",
+             wirelength_weight_,
+             wirelength_,
+             norm_wirelength_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "guidance_weight = {}, guidance_penalty  = {}, "
+             "norm_guidance_penalty = {}",
+             guidance_weight_,
+             guidance_penalty_,
+             norm_guidance_penalty_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "fence_weight = {}, fence_penalty  = {}, norm_fence_penalty = {}",
+             fence_weight_,
+             fence_penalty_,
+             norm_fence_penalty_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "macro_blockage_weight = {}, macro_blockage_penalty  = {}, "
+             "norm_macro_blockage_penalty = {}",
+             macro_blockage_weight_,
+             macro_blockage_penalty_,
+             norm_macro_blockage_penalty_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "notch_weight = {}, notch_penalty  = {}, norm_notch_penalty = {}",
+             notch_weight_,
+             notch_penalty_,
+             norm_notch_penalty_);
+  debugPrint(
+      logger_, MPL, "macro_placement", 1, "final cost = {}", getNormCost());
 }
 
 // fill the dead space by adjust the size of MixedCluster
