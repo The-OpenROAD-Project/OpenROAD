@@ -51,17 +51,10 @@ extern "C" {
 extern int Rcx_Init(Tcl_Interp* interp);
 }
 
-Ext::Ext() : odb::ZInterface()
-{
-  _ext = new extMain(5);
-  _tree = NULL;
-  logger_ = nullptr;
-}
-
-Ext::~Ext()
-{
-  delete _ext;
-}
+Ext::Ext()
+  : odb::ZInterface(),
+    _ext(std::make_unique<extMain>(5))
+{}
 
 void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
 {
@@ -687,8 +680,8 @@ bool Ext::rc_tree(float max_cap,
 
   odb::dbBlock* block = _ext->getBlock();
 
-  if (_tree == NULL)
-    _tree = new extRcTree(block, logger_);
+  if (_tree == nullptr)
+    _tree = std::make_unique<extRcTree>(block, logger_);
 
   uint cnt;
   if (netId > 0)

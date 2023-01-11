@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <tcl.h>
 
 #include "extRCap.h"
@@ -53,7 +55,7 @@ class Ext
 {
  public:
   Ext();
-  ~Ext();
+  ~Ext() = default;
 
   void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger);
   void setLogger(Logger* logger);
@@ -307,10 +309,10 @@ class Ext
                  const std::string& branch_len);
 
  private:
-  odb::dbDatabase* _db;
-  extMain* _ext;
-  extRcTree* _tree;
-  Logger* logger_;
+  odb::dbDatabase* _db = nullptr;
+  std::unique_ptr<extMain> _ext;
+  std::unique_ptr<extRcTree> _tree;
+  Logger* logger_ = nullptr;
 };  // namespace rcx
 
 }  // namespace rcx

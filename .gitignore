@@ -10,6 +10,7 @@
 *.rej
 *.orig
 *.vscode
+*.swp
 TAGS
 *~
 \#*#

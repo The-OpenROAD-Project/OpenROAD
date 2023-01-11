@@ -816,19 +816,6 @@ double extMasterConductor::writeRaphaelBox(FILE* fp,
                                            double volt)
 {
   return writeRaphaelPoly(fp, wireNum, width, X, volt);
-
-  fprintf(fp, "BOX NAME=");
-  writeBoxName(fp, wireNum);
-
-  fprintf(fp,
-          " CX=%g; CY=%g; W=%g; H=%g; VOLT=%g\n",
-          X,
-          _loLeft[2],
-          width,
-          _hiLeft[2] - _loLeft[2],
-          volt);
-
-  return X + width;
 }
 void extMasterConductor::writeRaphaelPointXY(FILE* fp, double X, double Y)
 {
