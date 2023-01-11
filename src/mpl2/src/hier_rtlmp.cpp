@@ -212,16 +212,6 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 void HierRTLMP::hierRTLMacroPlacer()
 {
   //
-  // Determine the size thresholds of parent clusters based on leaf cluster
-  // thresholds and the coarsening factor
-  //
-  // unsigned coarsening_factor = std::pow(coarsening_ratio_, max_num_level_ -
-  // 1); max_num_macro_base_ = max_num_macro_base_ * coarsening_factor;
-  // min_num_macro_base_ = min_num_macro_base_ * coarsening_factor;
-  // max_num_inst_base_ = max_num_inst_base_ * coarsening_factor;
-  // min_num_inst_base_ = min_num_inst_base_ * coarsening_factor;
-
-  //
   // Get the database information
   //
   block_ = db_->getChip()->getBlock();
@@ -481,9 +471,9 @@ Metric* HierRTLMP::computeMetric(odb::dbModule* module)
 
   for (odb::dbInst* inst : module->getInsts()) {
     const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-    odb::dbMaster* master = inst->getMaster();
     if (liberty_cell == nullptr)
       continue;
+    odb::dbMaster* master = inst->getMaster();
     // check if the instance is a pad or a cover macro
     if (master->isPad() || master->isCover()) {
       continue;

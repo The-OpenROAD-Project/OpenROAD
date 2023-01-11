@@ -561,12 +561,10 @@ void SimulatedAnnealingCore<T>::fastSA()
 template <class T>
 void SimulatedAnnealingCore<T>::writeCostFile(std::string file_name) const
 {
-  std::ofstream file;
-  file.open(file_name);
+  std::ofstream file(file_name);
   for (auto i = 0; i < cost_list_.size(); i++) {
     file << T_list_[i] << "  " << cost_list_[i] << std::endl;
   }
-  file.close();
 }
 
 template class SimulatedAnnealingCore<SoftMacro>;
