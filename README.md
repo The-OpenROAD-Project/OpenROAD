@@ -146,7 +146,8 @@ script you need to run as root or prepend `sudo` to the commands below.
 ./etc/DependencyInstaller.sh -help
 
 Usage: ./etc/DependencyInstaller.sh -prefix=DIR    # installs dependencies in an existing user specified directory
-       ./etc/DependencyInstaller.sh -local         # installs dependencies in "$HOME/.local"
+       ./etc/DependencyInstaller.sh -local         # installs common dependencies in "$HOME/.local". Root access is still needed for other
+                                                   # dependencies. Flag cannot be used with sudo or with root access
 
 ```
 
