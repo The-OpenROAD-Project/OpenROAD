@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2023, Nefelus Inc
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
