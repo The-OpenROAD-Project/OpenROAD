@@ -54,7 +54,6 @@ class ext2dBox  // assume cross-section on the z-direction
            bool dir);
 
   void rotate();
-  bool matchCoords(int* ll, int* ur) const;
   void printGeoms3D(FILE* fp,
                     double h,
                     double t,

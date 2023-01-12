@@ -45,14 +45,6 @@ ext2dBox::ext2dBox(std::array<int, 2> ll,
     : _ll(ll), _ur(ur), _met(met), _id(id), _map(map), _dir(dir)
 {
 }
-bool ext2dBox::matchCoords(int* ll, int* ur) const
-{
-  if ((ur[0] < _ll[0]) || (ll[0] > _ur[0]) || (ur[1] < _ll[1])
-      || (ll[1] > _ur[1]))
-    return false;
-
-  return true;
-}
 
 void ext2dBox::rotate()
 {
