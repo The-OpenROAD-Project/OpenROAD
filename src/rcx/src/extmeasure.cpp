@@ -249,23 +249,19 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
 {
   ext2dBox* bb = _2dBoxPool->alloc();
 
+  std::array<int, 2> bb_ll;
+  std::array<int, 2> bb_ur;
   dbShape s;
   if ((net != NULL) && _extMain->getFirstShape(net, s)) {
-    bb->_ll[0] = s.xMin();
-    bb->_ll[1] = s.yMin();
-    bb->_ur[0] = s.xMax();
-    bb->_ur[1] = s.yMax();
+    bb_ll = {s.xMin(), s.yMin()};
+    bb_ur = {s.xMax(), s.yMax()};
   } else {
-    bb->_ll[0] = ll[0];
-    bb->_ll[1] = ll[1];
-    bb->_ur[0] = ur[0];
-    bb->_ur[1] = ur[1];
+    bb_ll = {ll[0], ll[1]};
+    bb_ur = {ur[0], ur[1]};
   }
 
-  bb->_met = m;
-  bb->_dir = d;
-  bb->_id = id;
-  bb->_map = 0;
+  assert(d == 0 || d == 1);
+  new (bb) ext2dBox(bb_ll, bb_ur, /*met=*/m, id, /*map=*/0, /*dir=*/d);
 
   if (cntx)  // context net
     _2dBoxTable[1][m].add(bb);
@@ -273,57 +269,6 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
     _2dBoxTable[0][m].add(bb);
 
   return bb;
-}
-void ext2dBox::rotate()
-{
-  int x = _ur[0];
-  _ur[0] = _ur[1];
-  _ur[1] = x;
-
-  x = _ll[0];
-  _ll[0] = _ll[1];
-  _ll[1] = x;
-  _dir = !_dir;
-}
-uint ext2dBox::length()
-{
-  return _ur[_dir] - _ll[_dir];
-}
-uint ext2dBox::width()
-{
-  return _ur[!_dir] - _ll[!_dir];
-}
-int ext2dBox::loX()
-{
-  return _ll[0];
-}
-int ext2dBox::loY()
-{
-  return _ll[1];
-}
-uint ext2dBox::id()
-{
-  return _id;
-}
-void ext2dBox::printGeoms3D(FILE* fp, double h, double t, int* orig)
-{
-  fprintf(fp,
-          "%3d %8d -- M%d D%d  %g %g  %g %g  L= %g W= %g  H= %g  TH= %g ORIG "
-          "%g %g\n",
-          _id,
-          _map,
-          _met,
-          _dir,
-          0.001 * _ll[0],
-          0.001 * _ll[1],
-          0.001 * _ur[0],
-          0.001 * _ur[1],
-          0.001 * length(),
-          0.001 * width(),
-          h,
-          t,
-          0.001 * (_ll[0] - orig[0]),
-          0.001 * (_ll[1] - orig[1]));
 }
 void extMeasure::clean2dBoxTable(int met, bool cntx)
 {
@@ -365,11 +310,11 @@ void extMeasure::getBox(int met,
   ext2dBox* bbLo = _2dBoxTable[cntx][met].get(0);
   ext2dBox* bbHi = _2dBoxTable[cntx][met].get(cnt - 1);
 
-  xlo = MIN(bbLo->loX(), bbHi->loX());
-  ylo = MIN(bbLo->loY(), bbHi->loY());
+  xlo = std::min(bbLo->loX(), bbHi->loX());
+  ylo = std::min(bbLo->loY(), bbHi->loY());
 
-  xhi = MAX(bbLo->_ur[0], bbHi->_ur[0]);
-  yhi = MAX(bbLo->_ur[1], bbHi->_ur[1]);
+  xhi = std::max(bbLo->ur0(), bbHi->ur0());
+  yhi = std::max(bbLo->ur1(), bbHi->ur1());
 }
 void extMeasure::writeRaphaelPointXY(FILE* fp, double X, double Y)
 {
@@ -394,16 +339,16 @@ void extMeasure::writeBoxRaphael3D(FILE* fp,
 
   double middle = 0.001 * (base_ur[0] + base_ll[0]) * 0.5;
   double x;
-  if (!bb->_dir) {
+  if (!bb->dir()) {
     x = len;
     len = width;
     width = x;
   }
-  x = 0.001 * bb->_ll[0] - middle;
+  x = 0.001 * bb->ll0() - middle;
 
-  double l = 0.001 * (bb->_ll[1] - base_ll[1]);
+  double l = 0.001 * (bb->ll1() - base_ll[1]);
 
-  fprintf(fp, "POLY3D NAME= M%d_RC_%d_w%d; ", bb->_met, bb->_map, bb->_id);
+  fprintf(fp, "POLY3D NAME= M%d_RC_%d_w%d; ", bb->met(), bb->map(), bb->id());
   fprintf(fp, " COORD= ");
   writeRaphaelPointXY(fp, x, y1);
   writeRaphaelPointXY(fp, x + width, y1);
@@ -434,7 +379,7 @@ uint extMeasure::writeRaphael3D(FILE* fp,
     len = width;
     width = tt;
     x = len * 0.5;
-    if (!bb->_dir)
+    if (!bb->dir())
       l = ((double) (bb->loX() - x1)) / 1000;
     else
       l = ((double) (bb->loY() - x1)) / 1000;
@@ -468,7 +413,7 @@ uint extMeasure::writeDiagRaphael3D(FILE* fp,
     ext2dBox* bb = _2dBoxTable[cntx][met].get(ii);
     width = ((double) bb->length()) / 1000;
     len = ((double) bb->width()) / 1000;
-    if (!bb->_dir)
+    if (!bb->dir())
       l = ((double) (bb->loX() - x1)) / 1000;
     else
       l = ((double) (bb->loY() - x1)) / 1000;

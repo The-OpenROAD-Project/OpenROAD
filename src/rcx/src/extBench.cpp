@@ -587,13 +587,14 @@ uint extRCModel::writePatternGeoms(extMeasure* m,
           0.001 * m->_ur[0],
           0.001 * m->_ur[1]);
 
+  const std::array<int, 2> orig = {m->_ll[0], m->_ll[1]};
   for (uint ii = 0; ii < boxArray->getCnt(); ii++) {
     ext2dBox* bb = boxArray->get(ii);
-    uint met = bb->_met;
+    uint met = bb->met();
 
     double h = _process->getConductor(met)->_height;
     double t = _process->getConductor(met)->_thickness;
-    bb->printGeoms3D(fp, h, t, m->_ll);
+    bb->printGeoms3D(fp, h, t, orig);
   }
   fclose(fp);
   return boxArray->getCnt();
@@ -621,7 +622,7 @@ bool extRCModel::makePatternNet3D(extMeasure* measure,
   double th = _process->getConductor(measure->_met)->_thickness;
 
   ext2dBox* bb1 = boxArray->get(0);
-  uint mainDir = bb1->_dir;
+  uint mainDir = bb1->dir();
   if (mainDir == 0) {
     int x = measure->_ll[0];
     measure->_ll[0] = measure->_ll[1];
@@ -643,7 +644,7 @@ bool extRCModel::makePatternNet3D(extMeasure* measure,
     if (mainDir == 0) {
       bb->rotate();
     }
-    uint met = bb->_met;
+    uint met = bb->met();
 
     double h = _process->getConductor(met)->_height;
     double t = _process->getConductor(met)->_thickness;
@@ -682,14 +683,6 @@ uint extMeasure::getRSeg(dbNet* net, uint shapeId)
     return rsegId;
   else
     return 0;
-}
-bool ext2dBox::matchCoords(int* ll, int* ur)
-{
-  if ((ur[0] < _ll[0]) || (ll[0] > _ur[0]) || (ur[1] < _ll[1])
-      || (ll[1] > _ur[1]))
-    return false;
-
-  return true;
 }
 
 uint extRCModel::runWiresSolver(uint netId, int shapeId)

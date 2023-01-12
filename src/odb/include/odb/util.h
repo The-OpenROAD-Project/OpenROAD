@@ -229,6 +229,9 @@ class AthArray
 };
 
 // A simple pool allocation function
+//
+// Note: T must be default-constructible, as `new` is used to construct T when
+// memory debugging is enabled.
 template <class T>
 class AthPool
 {
