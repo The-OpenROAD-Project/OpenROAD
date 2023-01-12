@@ -980,7 +980,6 @@ void TritonRoute::readParams(const string& fileName)
 {
   logger_->warn(utl::DRT, 252, "params file is deprecated. Use tcl arguments.");
 
-  int readParamCnt = 0;
   ifstream fin(fileName.c_str());
   string line;
   if (fin.is_open()) {
@@ -1014,51 +1013,37 @@ void TritonRoute::readParams(const string& fileName)
                         "write_guide instead.");
         } else if (field == "save_guide_updates") {
           SAVE_GUIDE_UPDATES = true;
-          ++readParamCnt;
         } else if (field == "outputMaze") {
           OUT_MAZE_FILE = value;
-          ++readParamCnt;
         } else if (field == "outputDRC") {
           DRC_RPT_FILE = value;
-          ++readParamCnt;
         } else if (field == "outputCMap") {
           CMAP_FILE = value;
-          ++readParamCnt;
         } else if (field == "threads") {
           logger_->warn(utl::DRT,
                         274,
                         "Deprecated threads param in params file."
                         " Use 'set_thread_count'.");
-          ++readParamCnt;
         } else if (field == "verbose")
           VERBOSE = atoi(value.c_str());
         else if (field == "dbProcessNode") {
           DBPROCESSNODE = value;
-          ++readParamCnt;
         } else if (field == "viaInPinBottomLayer") {
           VIAINPIN_BOTTOMLAYER_NAME = value;
-          ++readParamCnt;
         } else if (field == "viaInPinTopLayer") {
           VIAINPIN_TOPLAYER_NAME = value;
-          ++readParamCnt;
         } else if (field == "drouteEndIterNum") {
           END_ITERATION = atoi(value.c_str());
-          ++readParamCnt;
         } else if (field == "OR_SEED") {
           OR_SEED = atoi(value.c_str());
-          ++readParamCnt;
         } else if (field == "OR_K") {
           OR_K = atof(value.c_str());
-          ++readParamCnt;
         } else if (field == "bottomRoutingLayer") {
           BOTTOM_ROUTING_LAYER_NAME = value;
-          ++readParamCnt;
         } else if (field == "topRoutingLayer") {
           TOP_ROUTING_LAYER_NAME = value;
-          ++readParamCnt;
         } else if (field == "initRouteShapeCost") {
           ROUTESHAPECOST = atoi(value.c_str());
-          ++readParamCnt;
         } else if (field == "clean_patches")
           CLEAN_PATCHES = true;
       }

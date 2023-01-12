@@ -319,7 +319,6 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
   }
   Point pt, pt1, pt2, pt3, pt4;
   frSquaredDistance distSquare = 0;
-  int cnt = 0;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
       gridGraph_.getPoint(pt, i, j);
@@ -381,7 +380,6 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
             break;
           default:;
         }
-        cnt++;
       }
     }
   }
