@@ -1116,13 +1116,6 @@ void extMain::removeExt()
   }
   removeExt(rnets);
 }
-void v_printWireNeighbor(void* ip,
-                         uint met,
-                         void* v_swire,
-                         void* v_topNeighbor,
-                         void* v_botNeighbor)
-{
-}
 void extCompute(CoupleOptions& inputTable, void* extModel);
 void extCompute1(CoupleOptions& inputTable, void* extModel);
 
@@ -1881,9 +1874,11 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file)
     logger_->info(
         RCX, 435, "Reading extraction model file {} ...", rulesFileName);
 
-    if (!fopen(rulesFileName, "r"))
+    FILE* rules_file = fopen(rulesFileName, "r");
+    if (rules_file == nullptr)
       logger_->error(
           RCX, 468, "Can't open extraction model file {}", rulesFileName);
+    fclose(rules_file);
 
     if (!(m->readRules((char*) rulesFileName,
                        false,
