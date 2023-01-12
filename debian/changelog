@@ -1,0 +1,5 @@
+openroad (2.0) UNRELEASED; urgency=low
+
+  * Initial debian package release
+
+ -- Vegard Strand Lende <vegard@ascenium.com>  Wed, 04 Jan 2023 13:01:27 +0100
