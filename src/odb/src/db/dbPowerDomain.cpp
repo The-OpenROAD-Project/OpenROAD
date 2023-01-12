@@ -45,8 +45,9 @@
 #include "dbTable.hpp"
 #include "dbVector.h"
 // User Code Begin Includes
-#include "dbGroup.h"
 #include <cmath>
+
+#include "dbGroup.h"
 // User Code End Includes
 namespace odb {
 
