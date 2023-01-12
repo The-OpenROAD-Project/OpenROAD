@@ -42,6 +42,12 @@ proc read_upf { args } {
 
 }
 
+# Creates a power domain
+#
+# Arguments:
+#
+# - elements: list of module paths that belong to this domain OR '*' for top domain
+# - name: domain name
 sta::define_cmd_args "create_power_domain" { [-elements elements] name }
 proc create_power_domain { args } {
     sta::parse_key_args "create_power_domain" args \
@@ -63,7 +69,12 @@ proc create_power_domain { args } {
 
 }
 
-
+# Create a logic port to be used within defined domains
+#
+# Arguments:
+#
+# - direction: direction of the port (in | out | inout)
+# - port_name: port name
 sta::define_cmd_args "create_logic_port" { [-direction direction] port_name }
 proc create_logic_port { args } {
     sta::parse_key_args "create_logic_port" args \
@@ -81,6 +92,16 @@ proc create_logic_port { args } {
     upf::create_logic_port_cmd $port_name $direction
 }
 
+# Creates a power switch
+#
+# Arguments:
+#
+# - domain: power domain
+# - output_supply_port: The output supply port of the switch 
+# - input_supply_port: The input supply port of the switch
+# - control_port: A control port on the switch
+# - on_state {state_name input_supply_port {boolean_expression}} 
+# - name: power switch name
 sta::define_cmd_args "create_power_switch" { \
     [-domain domain] \
     [-output_supply_port output_supply_port] \
@@ -134,6 +155,19 @@ proc create_power_switch { args } {
 
 
 }
+
+# Creates/Updates an isolation strategy
+#
+# Arguments:
+#
+# - domain: power domain
+# - applies_to <inputs|outputs|both>: restricts the strategy to apply only to these 
+# - clamp_value <0 | 1>: The value the isolation can drive
+# - isolation_signal: The control signal for this strategy
+# - isolation_sense: The active level of isolation control signal
+# - location <parent|self|fanout> : domain in which isolation cells are placed
+# - update: flags that the strategy already exists, errors if it doesn't exist  
+# - name: isolation strategy name
 
 sta::define_cmd_args "set_isolation" { \
     [-domain domain] \
@@ -194,6 +228,13 @@ proc set_isolation { args } {
 
 
 
+# Specifies the cells to be used for an isolation strategy
+#
+# Arguments:
+#
+# - domain: power domain
+# - strategy: isolation strategy name
+# - lib_cells: list of lib cells that could be used  
 
 sta::define_cmd_args "use_interface_cell" { \
     [-domain domain] \
@@ -229,7 +270,13 @@ proc use_interface_cell { args } {
 }
 
 
-
+# Specifies the area that should be occupied by a given domain
+# example: set_domain_area PD_D1 -area {27 27 60 60}
+# 
+# Argument list: 
+#
+# - domain_name: power domain name
+# - area: a list of 4 coordinates (lower left x, lower left y, upper right x, upper right y)
 sta::define_cmd_args "set_domain_area" {domain_name -area {llx lly urx ury}}
 
 proc set_domain_area { args } {

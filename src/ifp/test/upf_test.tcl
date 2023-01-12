@@ -1,12 +1,12 @@
 source "helpers.tcl"
 
-read_liberty data/sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
-read_lef data/sky130hd/sky130_fd_sc_hd.tlef
-read_lef data/sky130hd/sky130_fd_sc_hd_merged.lef
-read_verilog data/dummy/1_synth.v
+read_liberty sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
+read_lef sky130hd/sky130hd.tlef
+read_lef sky130hd/sky130_fd_sc_hd_merged.lef
+read_verilog upf/mpd_top.v
 link_design mpd_top
 
-read_upf -file data/dummy/mpd_top.upf
+read_upf -file upf/mpd_top.upf
 
 
 set_domain_area PD_D1 -area {27 27 60 60}

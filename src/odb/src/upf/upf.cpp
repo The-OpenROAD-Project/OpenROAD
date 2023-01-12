@@ -231,7 +231,7 @@ bool use_interface_cell(utl::Logger* logger,
   odb::dbPowerDomain* pd = block->findPowerDomain(power_domain);
   if (pd == nullptr) {
     logger->warn(utl::ODB,
-                 11008,
+                 10010,
                  "Couldn't retrieve power domain '%s' while updating "
                  "isolation '%s'",
                  power_domain,
@@ -241,7 +241,7 @@ bool use_interface_cell(utl::Logger* logger,
 
   odb::dbIsolation* iso = block->findIsolation(strategy);
   if (iso == nullptr) {
-    logger->warn(utl::ODB, 11009, "Couldn't find isolation %s", strategy);
+    logger->warn(utl::ODB, 10011, "Couldn't find isolation %s", strategy);
     return false;
   }
 
@@ -262,7 +262,7 @@ bool set_domain_area(utl::Logger* logger,
   odb::dbPowerDomain* pd = block->findPowerDomain(domain);
   if (pd == nullptr) {
     logger->warn(utl::ODB,
-                 10080,
+                 10012,
                  "Couldn't retrieve power domain '%s' while updating its area ",
                  domain);
     return false;
@@ -276,7 +276,7 @@ bool set_domain_area(utl::Logger* logger,
 odb::dbPowerDomain* match_module_to_domain(
     std::map<std::string, odb::dbPowerDomain*>& module_to_domain,
     std::map<std::string, odb::dbPowerDomain*>& path_to_domain,
-    std::string& current_path)
+    const std::string& current_path)
 {
   std::string longest_prefix = "";
   int longest_prefix_length = 0;
@@ -331,7 +331,7 @@ bool check_isolation_match(sta::FuncExpr* func,
   bool enable_is_left = (func->left() && func->left()->hasPort(enable));
   bool enable_is_right = (func->right() && func->right()->hasPort(enable));
   if (!enable_is_left && !enable_is_right) {
-    logger->warn(utl::ODB, 921010, "isolation cell has no enable port");
+    logger->warn(utl::ODB, 10013, "isolation cell has no enable port");
     return false;
   }
 
@@ -350,7 +350,7 @@ bool check_isolation_match(sta::FuncExpr* func,
       invert_control = new_enable_sense;
       break;
     default:
-      logger->warn(utl::ODB, 921011, "unknown isolation cell function");
+      logger->warn(utl::ODB, 10014, "unknown isolation cell function");
       return false;
   }
 
@@ -376,7 +376,7 @@ bool associate_groups(
         path_to_domain[el] = domain;
       } else {
         logger->error(utl::ODB,
-                      921014,
+                      10015,
                       "multiple power domain definitions for the same path %s",
                       el.c_str());
       }
@@ -395,7 +395,7 @@ bool associate_groups(
     auto region = odb::dbRegion::create(block, domain->getName());
     if (!region) {
       logger->warn(
-          utl::ODB, 10011, "Creation of '%s' region failed", domain->getName());
+          utl::ODB, 10016, "Creation of '%s' region failed", domain->getName());
       return false;
     }
 
@@ -405,7 +405,7 @@ bool associate_groups(
       odb::dbBox::create(region, x1, y1, x2, y2);
     } else {
       logger->warn(utl::ODB,
-                   120011,
+                   10017,
                    "No area specified for '%s' power domain",
                    domain->getName());
     }
@@ -413,7 +413,7 @@ bool associate_groups(
     auto group = odb::dbGroup::create(region, domain->getName());
     if (!group) {
       logger->warn(utl::ODB,
-                   10012,
+                   10018,
                    "Creation of '%s' group failed, duplicate group exists.",
                    domain->getName());
       return false;
@@ -432,7 +432,7 @@ bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
   for (auto&& port : lps) {
     if (!odb::dbNet::create(block, port->getName())) {
       logger->warn(utl::ODB,
-                   10010,
+                   10019,
                    "Creation of '%s' dbNet from UPF Logic Port failed",
                    port->getName());
       success = false;
@@ -538,7 +538,7 @@ bool find_smallest_isolation(utl::Logger* logger,
   auto iso_cells = iso->getIsolationCells();
   if (iso_cells.size() < 1) {
     logger->warn(utl::ODB,
-                 13022,
+                 10020,
                  "Isolation %s defined, but no cells defined.",
                  iso->getName());
     return false;
@@ -562,7 +562,7 @@ bool find_smallest_isolation(utl::Logger* logger,
 
   if (smallest_iso_m == nullptr) {
     logger->warn(utl::ODB,
-                 130122,
+                 10021,
                  "Isolation %s cells defined, but can't find any in the lib.",
                  iso->getName());
     return false;
@@ -598,7 +598,7 @@ bool find_smallest_isolation(utl::Logger* logger,
 
   if (!output_term || !data_term || !enable_term) {
     logger->warn(utl::ODB,
-                 130152,
+                 10022,
                  "Isolation %s cells defined, but can't find one of output, "
                  "data or enable terms.",
                  iso->getName());
@@ -733,7 +733,7 @@ bool isolate_port(utl::Logger* logger,
   auto control_net = block->findNet(iso->getIsolationSignal().c_str());
   if (!control_net) {
     logger->warn(utl::ODB,
-                 15122,
+                 10023,
                  "Isolation %s has nonexisting control net %s",
                  iso->getName(),
                  iso->getIsolationSignal());
@@ -782,7 +782,7 @@ bool isolate_port(utl::Logger* logger,
       target_group = pd->getGroup();
     } else {
       logger->warn(utl::ODB,
-                   15022,
+                   10024,
                    "Isolation %s has location %s, but only self|parent|fanout"
                    "supported, defaulting to self.",
                    iso->getName(),
@@ -846,7 +846,7 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
 
   if (top_domain == nullptr) {
     // A TOP DOMAIN should always exist
-    logger->error(utl::ODB, 10022, "No TOP DOMAIN found, aborting");
+    logger->error(utl::ODB, 10025, "No TOP DOMAIN found, aborting");
     return false;
   }
 
@@ -883,7 +883,7 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     if (isos.size() > 1) {
       logger->warn(
           utl::ODB,
-          131122,
+          10026,
           "Multiple isolation strategies defined for the same power domain %s.",
           domain->getName());
     }
@@ -909,7 +909,7 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     }
 
     if ((invert_output || invert_control) && !inverter_found) {
-      logger->warn(utl::ODB, 130482, "can't find any inverters");
+      logger->warn(utl::ODB, 10027, "can't find any inverters");
       continue;
     }
 

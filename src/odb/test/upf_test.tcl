@@ -3,8 +3,7 @@ source "helpers.tcl"
 read_liberty data/sky130hd/sky130_fd_sc_hd__tt_025C_1v80.lib
 read_lef data/sky130hd/sky130_fd_sc_hd.tlef
 read_lef data/sky130hd/sky130_fd_sc_hd_merged.lef
-# read_verilog data/mpd_top/mpd_top.v
-read_verilog data/mpd_top/1_synth.v
+read_verilog data/mpd_top/mpd_top.v
 link_design mpd_top
 
 read_upf -file data/mpd_top/mpd_top.upf
