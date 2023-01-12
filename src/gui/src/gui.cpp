@@ -1172,10 +1172,10 @@ int startGui(int& argc,
   if (!restore_commands.empty()) {
     // Temporarily connect to script widget to get ending tcl state
     bool tcl_ok = true;
-    auto tcl_return_code_connect = QObject::connect(
-        main_window->getScriptWidget(),
-        &ScriptWidget::commandExecuted,
-        [&tcl_ok](bool is_ok) { tcl_ok = is_ok; });
+    auto tcl_return_code_connect
+        = QObject::connect(main_window->getScriptWidget(),
+                           &ScriptWidget::commandExecuted,
+                           [&tcl_ok](bool is_ok) { tcl_ok = is_ok; });
 
     main_window->getScriptWidget()->executeSilentCommand(
         QString::fromStdString(restore_commands));
