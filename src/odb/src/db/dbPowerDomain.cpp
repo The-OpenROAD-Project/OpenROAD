@@ -46,6 +46,7 @@
 #include "dbVector.h"
 // User Code Begin Includes
 #include "dbGroup.h"
+#include <cmath>
 // User Code End Includes
 namespace odb {
 
