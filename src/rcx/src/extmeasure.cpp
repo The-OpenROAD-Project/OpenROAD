@@ -260,7 +260,9 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
     bb_ur = {ur[0], ur[1]};
   }
 
-  assert(d == 0 || d == 1);
+  if (d != 0 && d != 1)
+    logger_->error(RCX, 498, "Direction value is out of range.");
+
   new (bb) ext2dBox(bb_ll, bb_ur, /*met=*/m, id, /*map=*/0, /*dir=*/d);
 
   if (cntx)  // context net
