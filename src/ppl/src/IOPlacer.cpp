@@ -624,8 +624,8 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
     total_slots_count += new_slots_count;
   }
 
-  std::vector<int> pin_indices
-      = findPinsForConstraint(constraint, netlist_io_pins_.get(), mirrored_only);
+  std::vector<int> pin_indices = findPinsForConstraint(
+      constraint, netlist_io_pins_.get(), mirrored_only);
 
   if (pin_indices.size() > total_slots_count) {
     logger_->error(PPL,
@@ -1107,8 +1107,11 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
     }
     int idx = netlist->getIoPinIdx(bterm);
     IOPin& io_pin = netlist->getIoPin(idx);
-    if ((mirrored_only && mirrored_pins_.find(io_pin.getBTerm()) == mirrored_pins_.end()) ||
-        (!mirrored_only && mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end())) {
+    if ((mirrored_only
+         && mirrored_pins_.find(io_pin.getBTerm()) == mirrored_pins_.end())
+        || (!mirrored_only
+            && mirrored_pins_.find(io_pin.getBTerm())
+                   != mirrored_pins_.end())) {
       continue;
     }
 
@@ -1293,8 +1296,8 @@ void IOPlacer::run(bool random_mode)
     for (bool mirrored_only : {true, false}) {
       std::vector<Section> sections_for_constraint;
       for (Constraint& constraint : constraints_) {
-        sections_for_constraint
-            = assignConstrainedPinsToSections(constraint, mirrored_pins_cnt, mirrored_only);
+        sections_for_constraint = assignConstrainedPinsToSections(
+            constraint, mirrored_pins_cnt, mirrored_only);
 
         findPinAssignment(sections_for_constraint);
         updateSlots();
