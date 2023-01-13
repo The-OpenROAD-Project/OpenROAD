@@ -184,7 +184,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 
 ## Building
 
-Instructions for building are available [here](../user/GettingStarted.md).
+Instructions for building are available [here](../user/BuildLocally.md).
 
 ## Example of Adding a Tool to OpenROAD
 
