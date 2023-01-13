@@ -141,7 +141,7 @@ class IOPin
   void assignToSection() { assigned_to_section_ = true; }
   bool isAssignedToSection() { return assigned_to_section_; }
   void setMirrored() { is_mirrored_ = true; }
-  bool isMirrored() { return is_mirrored_; }
+  bool isMirrored() const { return is_mirrored_; }
 
  private:
   odb::dbBTerm* bterm_;

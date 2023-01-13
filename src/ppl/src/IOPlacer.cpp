@@ -1113,6 +1113,16 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
       continue;
     }
 
+    if (io_pin.isMirrored()
+        && mirrored_pins_.find(io_pin.getBTerm()) == mirrored_pins_.end()) {
+      logger_->warn(PPL,
+                    84,
+                    "Pin {} is mirrored with another pin. The constraint for "
+                    "this pin will be dropped.",
+                    io_pin.getName());
+      continue;
+    }
+
     if (io_pin.isAssignedToSection() && io_pin.isMirrored()) {
       continue;
     }
