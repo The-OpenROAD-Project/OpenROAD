@@ -790,14 +790,12 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
         io_pin.assignToSection();
 
         if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
-          io_pin.setMirrored();
           odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
           int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
           IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
           // Mark mirrored pin as assigned to section to prevent assigning it to
           // another section that is not aligned with his pair
           mirrored_pin.assignToSection();
-          mirrored_pin.setMirrored();
         }
         break;
       }
@@ -1133,6 +1131,19 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
   return pin_indices;
 }
 
+void IOPlacer::initMirroredPins()
+{
+  for (IOPin& io_pin : netlist_io_pins_.get()->getIOPins()) {
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      io_pin.setMirrored();
+      odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
+      int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
+      IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
+      mirrored_pin.setMirrored();
+    }
+  }
+}
+
 void IOPlacer::initConstraints()
 {
   std::reverse(constraints_.begin(), constraints_.end());
@@ -1285,6 +1296,7 @@ void IOPlacer::run(bool random_mode)
   initIOLists();
   defineSlots();
 
+  initMirroredPins();
   initConstraints();
 
   if (random_mode) {
