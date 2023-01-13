@@ -98,7 +98,8 @@ class IOPin
         layer_(-1),
         is_placed_(false),
         in_group_(false),
-        assigned_to_section_(false)
+        assigned_to_section_(false),
+        is_mirrored_(false)
   {
   }
 
@@ -139,6 +140,8 @@ class IOPin
   void setInGroup() { in_group_ = true; }
   void assignToSection() { assigned_to_section_ = true; }
   bool isAssignedToSection() { return assigned_to_section_; }
+  void setMirrored() { is_mirrored_ = true; }
+  bool isMirrored() { return is_mirrored_; }
 
  private:
   odb::dbBTerm* bterm_;
@@ -152,6 +155,7 @@ class IOPin
   bool is_placed_;
   bool in_group_;
   bool assigned_to_section_;
+  bool is_mirrored_;
 };
 
 class Netlist
