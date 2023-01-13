@@ -95,7 +95,7 @@ Box<double> Clock::computeSinkRegionClustered(
   auto yMin = std::numeric_limits<float>::max();
   auto yMax = std::numeric_limits<float>::lowest();
 
-  for (const auto [sinkX, sinkY] : sinks) {
+  for (const auto& [sinkX, sinkY] : sinks) {
     xMin = std::min(xMin, sinkX);
     xMax = std::max(xMax, sinkX);
     yMin = std::min(yMin, sinkY);
