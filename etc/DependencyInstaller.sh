@@ -548,7 +548,7 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
-        _installOrTools "MacOsX" "13.0.1" $(uname -m)
+        _installOrTools "macOS" "13.0.1" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:
