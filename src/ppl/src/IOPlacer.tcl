@@ -128,6 +128,10 @@ proc set_io_pin_constraint { args } {
   set dbBlock [ord::get_db_block]
   set lef_units [$dbTech getLefUnits]
 
+  if {[info exists keys(-region)] && [info exists keys(-mirrored_pins)]} {
+    utl::error PPL 83 "Both -region and -mirrored_pins constraints not allowed."
+  }
+
   if [info exists keys(-region)] {
     set region $keys(-region)
     if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {
@@ -188,9 +192,7 @@ proc set_io_pin_constraint { args } {
     } else {
       utl::warn PPL 73 "Constraint with region $region has an invalid edge."
     }
-  }
-
-  if [info exists keys(-mirrored_pins)] {
+  } elseif [info exists keys(-mirrored_pins)] {
     set mirrored_pins $keys(-mirrored_pins)
     if { [expr [llength $mirrored_pins] % 2] != 0 } {
       utl::error PPL 81 "List of pins must have an even number of pins."
