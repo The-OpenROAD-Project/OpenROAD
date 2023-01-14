@@ -440,6 +440,9 @@ void TimingPathDetailModel::populateModel(TimingPath* path,
 
 TimingPathRenderer::TimingPathRenderer() : path_(nullptr), highlight_stage_()
 {
+  addDisplayControl(data_path_label_, true);
+  addDisplayControl(launch_clock_label_, true);
+  addDisplayControl(capture_clock_label_, true);
 }
 
 void TimingPathRenderer::highlight(TimingPath* path)
@@ -483,10 +486,18 @@ void TimingPathRenderer::drawNodesList(TimingNodeList* nodes,
                                        const gui::Descriptor* net_descriptor,
                                        const gui::Descriptor* inst_descriptor,
                                        const gui::Descriptor* bterm_descriptor,
-                                       const Painter::Color& clock_color)
+                                       const Painter::Color& clock_color,
+                                       bool draw_clock,
+                                       bool draw_signal)
 {
   for (auto node_itr = nodes->rbegin(); node_itr != nodes->rend(); node_itr++) {
-    auto& node = *node_itr;
+    const auto& node = *node_itr;
+    if (node->isClock() && !draw_clock) {
+      continue;
+    }
+    if (!node->isClock() && !draw_signal) {
+      continue;
+    }
 
     odb::dbInst* db_inst = node->getInstance();
     if (db_inst != nullptr) {
@@ -525,18 +536,23 @@ void TimingPathRenderer::drawObjects(gui::Painter& painter)
   auto* inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
   auto* bterm_descriptor = Gui::get()->getDescriptor<odb::dbBTerm*>();
 
+  const bool capture_path = checkDisplayControl(capture_clock_label_);
   drawNodesList(&path_->getCaptureNodes(),
                 painter,
                 net_descriptor,
                 inst_descriptor,
                 bterm_descriptor,
-                capture_clock_color_);
+                capture_clock_color_,
+                capture_path,
+                capture_path);
   drawNodesList(&path_->getPathNodes(),
                 painter,
                 net_descriptor,
                 inst_descriptor,
                 bterm_descriptor,
-                clock_color_);
+                clock_color_,
+                checkDisplayControl(launch_clock_label_),
+                checkDisplayControl(data_path_label_));
 
   highlightStage(painter, net_descriptor, inst_descriptor);
 }
