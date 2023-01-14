@@ -48,7 +48,7 @@ proc report_clock_skew_metric { args } {
     utl::error ORD 19 "both -setup and -hold specified."
   }
 
-  utl::metric_float $metric_name [worst_clock_skew $min_max]
+  utl::metric_float $metric_name [sta::time_sta_ui [worst_clock_skew $min_max]]
 }
 
 define_cmd_args "report_tns_metric" {[-setup]|[-hold]}
@@ -64,7 +64,7 @@ proc report_tns_metric { args } {
     utl::error ORD 18 "both -setup and -hold specified."
   }
 
-  utl::metric_float $metric_name [total_negative_slack_cmd $min_max]
+  utl::metric_float $metric_name [sta::time_sta_ui [total_negative_slack_cmd $min_max]]
 }
 
 define_cmd_args "report_worst_slack_metric" {[-setup]|[-hold]}
@@ -81,7 +81,7 @@ proc report_worst_slack_metric { args } {
     utl::error ORD 17 "both -steup and -hold specified."
   }
 
-  utl::metric_float $metric_name [worst_slack_cmd $min_max]
+  utl::metric_float $metric_name [sta::time_sta_ui [worst_slack_cmd $min_max]]
 }
 
 define_cmd_args "report_erc_metrics" {}
