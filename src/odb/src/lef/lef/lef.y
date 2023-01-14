@@ -63,7 +63,10 @@
 #include "lefrCallBacks.hpp"
 #include "lefrSettings.hpp"
 
-#include "lef_parser.hpp"
+#ifndef WIN32
+  // Only include this on non-Windows platforms
+  #include "lef_parser.hpp"
+#endif
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
