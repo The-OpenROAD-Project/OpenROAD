@@ -188,14 +188,11 @@ void FlexDRWorker::initNetObjs(
 {
   vector<frBlockObject*> result;
   design->getRegionQuery()->queryDRObj(getExtBox(), result);
-  int cnt1 = 0;
-  int cnt2 = 0;
   for (auto rptr : result) {
     if (rptr->typeId() == frcPathSeg) {
       auto cptr = static_cast<frPathSeg*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_pathSeg(cptr, nets, netRouteObjs, netExtObjs);
-        cnt1++;
       } else {
         cout << "Error: initNetObjs hasNet() empty" << endl;
       }
@@ -203,7 +200,6 @@ void FlexDRWorker::initNetObjs(
       auto cptr = static_cast<frVia*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_via(cptr, nets, netRouteObjs, netExtObjs);
-        cnt2++;
       } else {
         cout << "Error: initNetObjs hasNet() empty" << endl;
       }
@@ -211,7 +207,6 @@ void FlexDRWorker::initNetObjs(
       auto cptr = static_cast<frPatchWire*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_patchWire(cptr, nets, netRouteObjs, netExtObjs);
-        cnt1++;
       } else {
         cout << "Error: initNetObjs hasNet() empty" << endl;
       }

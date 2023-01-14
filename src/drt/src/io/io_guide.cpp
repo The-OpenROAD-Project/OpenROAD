@@ -272,13 +272,11 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
           DRT, 1008, "checkPinForGuideEnclosure invoked with non-term object.");
   }
   for (auto& pinRect : pinShapes) {
-    int i = 0;
     for (auto& guide : guides) {
       if (pinRect.getLayerNum() == guide.getLayerNum()
           && guide.getBBox().overlaps(pinRect.getBBox())) {
         return;
       }
-      i++;
     }
   }
   patchGuides(net, pin, guides);

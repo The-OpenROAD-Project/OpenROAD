@@ -183,7 +183,6 @@ void FlexGCWorker::Impl::initDesign(const frDesign* design, bool skipDR)
                  point_t(extBox.xMax(), extBox.yMax()));
   auto regionQuery = design->getRegionQuery();
   frRegionQuery::Objects<frBlockObject> queryResult;
-  int cnt = 0;
   // init all non-dr objs from design
   for (auto i = 0; i <= getTech()->getTopLayerNum(); i++) {
     queryResult.clear();
@@ -193,14 +192,12 @@ void FlexGCWorker::Impl::initDesign(const frDesign* design, bool skipDR)
         continue;
       }
       initObj(box, i, obj, true);
-      cnt++;
     }
   }
   // init all dr objs from design
   if (getDRWorker() || skipDR) {
     return;
   }
-  cnt = 0;
   for (auto i = getTech()->getBottomLayerNum();
        i <= getTech()->getTopLayerNum();
        i++) {
@@ -211,7 +208,6 @@ void FlexGCWorker::Impl::initDesign(const frDesign* design, bool skipDR)
         continue;
       }
       initObj(box, i, obj, false);
-      cnt++;
     }
   }
 }
