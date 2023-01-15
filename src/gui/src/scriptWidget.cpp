@@ -36,7 +36,6 @@
 #include <unistd.h>
 
 #include <QCoreApplication>
-#include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QThread>
 #include <QTimer>
@@ -44,6 +43,7 @@
 #include <mutex>
 
 #include "gui/gui.h"
+#include "pythonCmdInputWidget.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
 #include "tclCmdInputWidget.h"
@@ -53,7 +53,8 @@ namespace gui {
 ScriptWidget::ScriptWidget(QWidget* parent)
     : QDockWidget("Scripting", parent),
       output_(new QPlainTextEdit(this)),
-      input_(new TclCmdInputWidget(this)),
+      input_layout_(new QHBoxLayout),
+      input_(nullptr),
       pauser_(new QPushButton("Idle", this)),
       pause_timer_(std::make_unique<QTimer>()),
       paused_(false),
@@ -68,16 +69,41 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   pauser_->setEnabled(false);
   pauser_->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Expanding);
 
-  QHBoxLayout* inner_layout = new QHBoxLayout;
-  inner_layout->addWidget(pauser_);
-  inner_layout->addWidget(input_);
+  input_layout_->addWidget(pauser_);
 
   QVBoxLayout* layout = new QVBoxLayout;
   layout->addWidget(output_, /* stretch */ 1);
-  layout->addLayout(inner_layout);
+  layout->addLayout(input_layout_);
 
   QWidget* container = new QWidget(this);
   container->setLayout(layout);
+
+  connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
+  connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
+  connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
+
+  connect(this,
+          SIGNAL(addToOutput(const QString&, const QColor&)),
+          this,
+          SLOT(addTextToOutput(const QString&, const QColor&)),
+          Qt::QueuedConnection);
+
+  setWidget(container);
+}
+
+ScriptWidget::~ScriptWidget()
+{
+  if (logger_ != nullptr) {
+    // make sure to remove the Gui sink from logger
+    logger_->removeSink(sink_);
+  }
+}
+
+void ScriptWidget::setupInterpreterWidget()
+{
+  input_layout_->addWidget(input_);
+
+  input_->setWidgetFont(font());
 
   connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
 
@@ -106,25 +132,6 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           SIGNAL(commandFinishedExecuting(bool)),
           this,
           SIGNAL(commandExecuted(bool)));
-  connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
-  connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
-  connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
-
-  connect(this,
-          SIGNAL(addToOutput(const QString&, const QColor&)),
-          this,
-          SLOT(addTextToOutput(const QString&, const QColor&)),
-          Qt::QueuedConnection);
-
-  setWidget(container);
-}
-
-ScriptWidget::~ScriptWidget()
-{
-  if (logger_ != nullptr) {
-    // make sure to remove the Gui sink from logger
-    logger_->removeSink(sink_);
-  }
 }
 
 void ScriptWidget::setupTcl(Tcl_Interp* interp,
@@ -132,8 +139,22 @@ void ScriptWidget::setupTcl(Tcl_Interp* interp,
                             bool do_init_openroad,
                             const std::function<void(void)>& post_or_init)
 {
+  TclCmdInputWidget* widget = new TclCmdInputWidget(this);
+  input_ = widget;
   is_interactive_ = interactive;
-  input_->setTclInterp(interp, do_init_openroad, post_or_init);
+  widget->setTclInterp(interp, do_init_openroad, post_or_init);
+
+  setupInterpreterWidget();
+}
+
+void ScriptWidget::setupPython(const std::function<void(void)>& post_or_init)
+{
+  PythonCmdInputWidget* widget = new PythonCmdInputWidget(this);
+  input_ = widget;
+  widget->init();
+  post_or_init();
+
+  setupInterpreterWidget();
 }
 
 void ScriptWidget::executeCommand(const QString& command, bool echo)
@@ -232,7 +253,7 @@ void ScriptWidget::addTextToOutput(const QString& text, const QColor& color)
 void ScriptWidget::readSettings(QSettings* settings)
 {
   settings->beginGroup(objectName());
-  input_->readSettings(settings);
+  // input_->readSettings(settings);
   settings->endGroup();
 }
 
@@ -334,7 +355,9 @@ void ScriptWidget::bufferOutputs(bool state)
 
 void ScriptWidget::resizeEvent(QResizeEvent* event)
 {
-  input_->setMaxHeight(event->size().height() - output_->sizeHint().height());
+  if (input_ != nullptr) {
+    input_->setMaxHeight(event->size().height() - output_->sizeHint().height());
+  }
   QDockWidget::resizeEvent(event);
 }
 
@@ -342,7 +365,9 @@ void ScriptWidget::setWidgetFont(const QFont& font)
 {
   QDockWidget::setFont(font);
   output_->setFont(font);
-  input_->setWidgetFont(font);
+  if (input_ != nullptr) {
+    input_->setWidgetFont(font);
+  }
 }
 
 // This class is an spdlog sink that writes the messages into the output

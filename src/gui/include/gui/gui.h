@@ -61,6 +61,12 @@ class Painter;
 class Selected;
 class Options;
 
+enum class Interpreter
+{
+  Tcl,
+  Python
+};
+
 // A collection of selected objects
 using SelectionSet = std::set<Selected>;
 using HighlightSet = std::array<SelectionSet, 8>;  // Only 8 Discrete Highlight
@@ -684,7 +690,9 @@ class Gui
   void hideGui();
 
   // Called to show the gui and return to tcl command line
-  void showGui(const std::string& cmds = "", bool interactive = true);
+  void showGui(Interpreter interpreter,
+               const std::string& cmds = "",
+               bool interactive = true);
 
   // set the system logger
   void setLogger(utl::Logger* logger);
@@ -781,6 +789,7 @@ class Gui
 // The main entry point
 int startGui(int& argc,
              char* argv[],
+             Interpreter interpreter,
              Tcl_Interp* interp,
              const std::string& script = "",
              bool interactive = true);

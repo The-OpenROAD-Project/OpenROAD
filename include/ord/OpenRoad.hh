@@ -283,5 +283,6 @@ class OpenRoad
 };
 
 int tclAppInit(Tcl_Interp* interp);
+void pyAppInit();
 
 }  // namespace ord

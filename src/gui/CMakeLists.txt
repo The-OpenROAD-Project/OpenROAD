@@ -32,6 +32,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/mainWindow.cpp
     src/scriptWidget.cpp
     src/cmdInputWidget.cpp
+    src/pythonCmdInputWidget.cpp
     src/tclCmdInputWidget.cpp
     src/tclCmdHighlighter.cpp
     src/displayControls.cpp
@@ -71,6 +72,14 @@ if (Qt5_FOUND AND BUILD_GUI)
 messages(
   TARGET gui
 )
+
+if (Python3_FOUND AND BUILD_PYTHON)
+  target_include_directories(gui
+      PRIVATE
+        ${Python3_INCLUDE_DIRS}
+    )
+  target_compile_definitions(gui PRIVATE ENABLE_PYTHON3)
+endif()
 
 else()
   message(STATUS "GUI is not enabled")
