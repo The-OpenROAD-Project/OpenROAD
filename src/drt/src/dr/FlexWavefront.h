@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FLEX_WF_H
-#define _FLEX_WF_H
+#pragma once
 
 #include <bitset>
 #include <memory>
@@ -218,5 +217,3 @@ class FlexWavefront
   myPriorityQueue wavefrontPQ_;
 };
 }  // namespace fr
-
-#endif

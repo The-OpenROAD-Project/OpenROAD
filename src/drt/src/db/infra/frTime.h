@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_TIME_H_
-#define _FR_TIME_H_
+#pragma once
 
 #include <chrono>
 #include <ctime>
@@ -60,5 +59,3 @@ class frTime
 
 std::ostream& operator<<(std::ostream& os, const frTime& t);
 }  // namespace fr
-
-#endif

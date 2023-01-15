@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FLEX_GR_WF_H_
-#define _FLEX_GR_WF_H_
+#pragma once
 
 #include <bitset>
 #include <memory>
@@ -157,5 +156,3 @@ class FlexGRWavefront
   std::priority_queue<FlexGRWavefrontGrid> wavefrontPQ_;
 };
 }  // namespace fr
-
-#endif

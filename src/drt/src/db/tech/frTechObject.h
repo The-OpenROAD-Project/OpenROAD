@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_TECHOBJECT_H_
-#define _FR_TECHOBJECT_H_
+#pragma once
 
 #include <iostream>
 #include <map>
@@ -406,5 +405,3 @@ class frTechObject
   friend class FlexRP;
 };
 }  // namespace fr
-
-#endif

@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef MAKE_IOPLACER
-#define MAKE_IOPLACER
+#pragma once
 
 namespace ppl {
 class IOPlacer;
@@ -51,5 +50,3 @@ void initIoplacer(OpenRoad* openroad);
 void deleteIoplacer(ppl::IOPlacer* ioplacer);
 
 }  // namespace ord
-
-#endif

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_BOX_H_
-#define _FR_BOX_H_
+#pragma once
 
 #include "db/infra/frPoint.h"
 #include "odb/dbTransform.h"
@@ -73,5 +72,3 @@ class frBox3D : public Rect
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

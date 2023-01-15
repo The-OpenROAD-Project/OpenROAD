@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TA_PIN_H_
-#define _TA_PIN_H_
+#pragma once
 
 #include "db/taObj/taBlockObject.h"
 #include "db/taObj/taShape.h"
@@ -35,6 +34,7 @@
 
 namespace fr {
 class frGuide;
+
 class taPin : public taBlockObject
 {
  public:
@@ -96,6 +96,7 @@ class taPin : public taBlockObject
   frCost cost_;
   int numAssigned_;
 };
+
 struct taPinComp
 {
   bool operator()(const taPin* lhs, const taPin* rhs) const
@@ -104,4 +105,3 @@ struct taPinComp
   }
 };
 }  // namespace fr
-#endif

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_TERM_H_
-#define _FR_TERM_H_
+#pragma once
 
 #include <memory>
 
@@ -89,5 +88,3 @@ class frTerm : public frBlockObject
 };
 
 }  // namespace fr
-
-#endif

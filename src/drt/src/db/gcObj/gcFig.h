@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GC_FIG_H_
-#define _GC_FIG_H_
+#pragma once
 
 #include <memory>
 
@@ -100,5 +99,3 @@ class gcPinFig : public gcConnFig
 };
 
 }  // namespace fr
-
-#endif

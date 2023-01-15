@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_BLOCKOBJECT_H_
-#define _DR_BLOCKOBJECT_H_
+#pragma once
 
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
@@ -53,5 +52,3 @@ class drBlockObject : public frBlockObject
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

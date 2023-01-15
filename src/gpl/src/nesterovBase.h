@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NESTEROV_BASE__
-#define __NESTEROV_BASE__
+#pragma once
 
 #include <memory>
 #include <unordered_map>
@@ -980,5 +979,3 @@ class biNormalParameters
 };
 
 }  // namespace gpl
-
-#endif

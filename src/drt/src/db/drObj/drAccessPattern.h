@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_ACCESS_PATTERN_H
-#define _DR_ACCESS_PATTERN_H
+#pragma once
 
 #include "db/drObj/drBlockObject.h"
 #include "db/infra/frPoint.h"
@@ -202,5 +201,3 @@ class drAccessPattern : public drBlockObject
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

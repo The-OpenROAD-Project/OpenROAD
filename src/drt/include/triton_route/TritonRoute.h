@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TRITONROUTE_H_
-#define _TRITONROUTE_H_
+#pragma once
 
 #include <tcl.h>
 
@@ -211,4 +210,3 @@ class TritonRoute
   friend class fr::FlexDR;
 };
 }  // namespace triton_route
-#endif

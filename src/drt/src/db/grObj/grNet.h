@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GR_NET_H_
-#define _GR_NET_H_
+#pragma once
 
 #include <memory>
 
@@ -283,5 +282,3 @@ class grNet : public grBlockObject
   bool trivial;
 };
 }  // namespace fr
-
-#endif

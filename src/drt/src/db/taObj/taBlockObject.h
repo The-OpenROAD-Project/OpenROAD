@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TA_BLOCKOBJECT_H_
-#define _TA_BLOCKOBJECT_H_
+#pragma once
 
 #include "db/obj/frBlockObject.h"
 #include "frBaseTypes.h"
@@ -46,5 +45,3 @@ class taBlockObject : public frBlockObject
   taBlockObject(const taBlockObject& in) : frBlockObject(in) {}
 };
 }  // namespace fr
-
-#endif

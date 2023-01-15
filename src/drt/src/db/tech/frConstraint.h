@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_CONSTRAINT_H_
-#define _FR_CONSTRAINT_H_
+#pragma once
 
 #include <algorithm>
 #include <iterator>
@@ -2563,5 +2562,3 @@ class frNonDefaultRule
   bool isHardSpacing() const { return hardSpacing_; }
 };
 }  // namespace fr
-
-#endif

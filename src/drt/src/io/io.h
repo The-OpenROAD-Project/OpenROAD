@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_IO_H_
-#define _FR_IO_H_
+#pragma once
 
 #include <boost/icl/interval_set.hpp>
 #include <list>
@@ -280,5 +279,3 @@ class Writer
 };
 
 }  // namespace fr::io
-
-#endif
