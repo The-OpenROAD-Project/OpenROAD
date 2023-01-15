@@ -12,8 +12,8 @@ _installCommonDev() {
     swigVersionType="tag"
     swigVersion=4.1.0
     swigChecksum="794433378154eb61270a3ac127d9c5f3"
-    boostVersionBig=${boostVersion}
-    boostVersionSmall=${boostVersion%.*}
+    boostVersionBig=${boostVersion%.*}
+    boostVersionSmall=${boostVersion}
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
     lemonVersion=1.3.1

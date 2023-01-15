@@ -1,13 +1,5 @@
 name: Test Boost Version
 on:
-  push:
-    paths:
-      - 'etc/DependencyInstaller.sh'
-      - '.github/workflows/github-actions-test-installer.yml'
-  pull_request:
-    paths:
-      - 'etc/DependencyInstaller.sh'
-      - '.github/workflows/github-actions-test-installer.yml'
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
