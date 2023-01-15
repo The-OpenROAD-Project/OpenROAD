@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_POINT_H_
-#define _FR_POINT_H_
+#pragma once
 
 #include "frBaseTypes.h"
 #include "odb/geom.h"
@@ -70,5 +69,3 @@ class Point3D : public Point
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

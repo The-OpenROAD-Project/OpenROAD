@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FLEX_GR_GRID_GRAPH_H_
-#define _FLEX_GR_GRID_GRAPH_H_
+#pragma once
 
 #define GRGRIDGRAPHHISTCOSTSIZE 8
 #define GRSUPPLYSIZE 8
@@ -826,5 +825,3 @@ class FlexGRGridGraph
   friend class FlexGRWorker;
 };
 }  // namespace fr
-
-#endif

@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __REPLACE_HEADER__
-#define __REPLACE_HEADER__
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -209,5 +208,3 @@ class Replace
   odb::dbInst* gui_debug_inst_;
 };
 }  // namespace gpl
-
-#endif

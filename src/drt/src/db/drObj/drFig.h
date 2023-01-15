@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_FIG_H_
-#define _DR_FIG_H_
+#pragma once
 
 #include <memory>
 
@@ -122,5 +121,3 @@ class drPinFig : public drConnFig
 };
 
 }  // namespace fr
-
-#endif

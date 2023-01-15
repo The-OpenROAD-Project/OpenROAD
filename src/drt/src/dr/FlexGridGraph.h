@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FLEX_GRID_GRAPH_H
-#define _FLEX_GRID_GRAPH_H
+#pragma once
 
 #include <cstring>
 #include <iostream>
@@ -1248,5 +1247,3 @@ class FlexGridGraph
   friend class FlexDRWorker;
 };
 }  // namespace fr
-
-#endif

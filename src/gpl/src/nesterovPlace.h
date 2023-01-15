@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __REPLACE_NESTEROV_PLACE__
-#define __REPLACE_NESTEROV_PLACE__
+#pragma once
 
 #include <memory>
 #include <string>
@@ -205,5 +204,3 @@ class NesterovPlace
   void reset();
 };
 }  // namespace gpl
-
-#endif

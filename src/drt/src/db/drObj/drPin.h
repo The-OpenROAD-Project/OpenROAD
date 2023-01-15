@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_PIN_H
-#define _DR_PIN_H
+#pragma once
 
 #include "db/drObj/drAccessPattern.h"
 #include "db/drObj/drBlockObject.h"
@@ -97,5 +96,3 @@ class drPin : public drBlockObject
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

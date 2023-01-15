@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GR_ACCESS_PATTERN_H_
-#define _GR_ACCESS_PATTERN_H_
+#pragma once
 
 #include "db/grObj/grBlockObject.h"
 #include "db/infra/frPoint.h"
@@ -124,5 +123,3 @@ class grAccessPattern : public grBlockObject
   int vDIdx;
 };
 }  // namespace fr
-
-#endif

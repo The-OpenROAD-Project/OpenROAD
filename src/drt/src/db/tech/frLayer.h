@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_LAYER_H_
-#define _FR_LAYER_H_
+#pragma once
 
 #include <set>
 
@@ -823,5 +822,3 @@ class frLayer
   drEolSpacingConstraint drEolCon;
 };
 }  // namespace fr
-
-#endif

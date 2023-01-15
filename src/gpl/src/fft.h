@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __REPLACE_FFT__
-#define __REPLACE_FFT__
+#pragma once
 
 #include <vector>
 
@@ -115,5 +114,3 @@ void ddcsct3d(int, int, int, int isgn, float***, float*, int*, float*);
 void ddccst3d(int, int, int, int isgn, float***, float*, int*, float*);
 
 }  // namespace gpl
-
-#endif

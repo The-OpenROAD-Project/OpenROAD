@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_NET_H_
-#define _FR_NET_H_
+#pragma once
 
 #include "db/grObj/grShape.h"
 #include "db/grObj/grVia.h"
@@ -273,5 +272,3 @@ class frNet : public frBlockObject
   std::vector<frPinFig*> all_pinfigs_;
 };
 }  // namespace fr
-
-#endif

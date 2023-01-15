@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_BOUNDARY_H_
-#define _FR_BOUNDARY_H_
+#pragma once
 
 #include <memory>
 
@@ -80,5 +79,3 @@ class frBoundary : public frFig
   std::vector<Point> points_;
 };
 }  // namespace fr
-
-#endif

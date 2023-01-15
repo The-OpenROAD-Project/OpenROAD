@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GR_REF_H_
-#define _GR_REF_H_
+#pragma once
 
 #include "db/grObj/grFig.h"
 #include "odb/dbTypes.h"
@@ -49,5 +48,3 @@ class grRef : public grPinFig
   frBlockObjectEnum typeId() const override { return grcRef; }
 };
 }  // namespace fr
-
-#endif

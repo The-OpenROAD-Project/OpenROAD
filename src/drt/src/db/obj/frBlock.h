@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_BLOCK_H_
-#define _FR_BLOCK_H_
+#pragma once
 
 #include <algorithm>
 #include <type_traits>
@@ -428,5 +427,3 @@ class frBlock : public frBlockObject
 };
 
 }  // namespace fr
-
-#endif

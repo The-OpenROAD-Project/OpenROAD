@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TA_TRACK_H_
-#define _TA_TRACK_H_
+#pragma once
 
 #include <boost/icl/interval_map.hpp>
 
@@ -152,4 +151,3 @@ class taTrack : public taBlockObject
       costVia2_;  // all cost to others
 };
 }  // namespace fr
-#endif
