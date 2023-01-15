@@ -12,8 +12,8 @@ _installCommonDev() {
     swigVersionType="tag"
     swigVersion=4.1.0
     swigChecksum="794433378154eb61270a3ac127d9c5f3"
-    boostVersionBig=1.80
-    boostVersionSmall=${boostVersionBig}.0
+    boostVersionBig=${boostVersion}
+    boostVersionSmall=${boostVersion%.*}
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
     lemonVersion=1.3.1
@@ -462,6 +462,7 @@ _help() {
 
 Usage: $0 -prefix=DIR
        $0 -local
+       $0 -boostVersion=x.xx.x
 
 EOF
     exit "${1:-1}"
@@ -469,6 +470,7 @@ EOF
 
 #default prefix
 PREFIX=""
+boostVersion="1.80.0"
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
@@ -487,6 +489,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -prefix=*)
             export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
+            ;;
+        -boostVersion=*)
+            export boostVersion="$(echo $1 | sed -e 's/^[^=]*=//g')"
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -534,7 +539,7 @@ EOF
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         _installUbuntuPackages "${version}"
-        _installCommonDev
+        _installCommonDev 
         _installOrTools "ubuntu" "${version}" "amd64"
         _installUbuntuCleanUp
         ;;

@@ -1,0 +1,40 @@
+name: Test Boost Version
+on:
+  push:
+    paths:
+      - 'etc/DependencyInstaller.sh'
+      - '.github/workflows/github-actions-test-installer.yml'
+  pull_request:
+    paths:
+      - 'etc/DependencyInstaller.sh'
+      - '.github/workflows/github-actions-test-installer.yml'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      boostVersion:
+        description: 'Boost version'
+        required: true
+        default: '1.80.0' 
+        type: string
+
+jobs:     
+  testInstaller:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+          submodules: recursive
+      - name: Run installer
+        shell: bash
+        run: |
+          sudo ./etc/DependencyInstaller.sh -boostVersion=${{ inputs.boostVersion }}
+      - name: Build project
+        shell: bash
+        run: |
+          sudo ./etc/Build.sh
+      - name: Test build
+        shell: bash
+        run:
+          build/src/openroad -help
