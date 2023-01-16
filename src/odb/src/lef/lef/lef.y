@@ -2242,7 +2242,7 @@ layer_arraySpacing_arraycuts:       // 5.7
 layer_arraySpacing_arraycut:
   K_ARRAYCUTS int_number K_SPACING int_number
     {
-      if (lefCallbacks->LayerCbk)
+      if (lefCallbacks->LayerCbk) {
          lefData->lefrLayer.addArraySpacingArray((int)$2, $4);
          if (lefData->arrayCutsVal > (int)$2) {
             // Mulitiple ARRAYCUTS value needs to me in ascending order 
@@ -2253,6 +2253,7 @@ layer_arraySpacing_arraycut:
             }
          }
          lefData->arrayCutsVal = (int)$2;
+      }
     }
 
 sp_options:
