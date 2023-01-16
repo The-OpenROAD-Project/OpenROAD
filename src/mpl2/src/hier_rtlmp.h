@@ -64,7 +64,7 @@ namespace mpl2 {
 struct BundledNet;
 class Cluster;
 class HardMacro;
-class Metric;
+class Metrics;
 struct Rect;
 class SoftMacro;
 class Graphics;
@@ -162,9 +162,9 @@ class HierRTLMP
                            std::vector<std::vector<int>>& hyperedges,
                            bool backward_flag);
   // DFS-manner function to traverse the logical hierarchy
-  Metric* computeMetric(odb::dbModule* module);
-  // Calculate metric for cluster based its type
-  void setClusterMetric(Cluster* cluster);
+  Metrics* computeMetrics(odb::dbModule* module);
+  // Calculate metrics for cluster based its type
+  void setClusterMetrics(Cluster* cluster);
   // Map IOs to Pads (for designs with IO pads)
   void mapIOPads();
   // create bundled IOs as clusters (for designs with IO pins or Pads)
@@ -332,9 +332,9 @@ class HierRTLMP
 
   // statistics of the design
   // Here when we calculate macro area, we do not include halo_width
-  Metric* metric_ = nullptr;
-  // store the metric for each hierarchical logical module
-  std::map<const odb::dbModule*, Metric*> logical_module_map_;
+  Metrics* metrics_ = nullptr;
+  // store the metrics for each hierarchical logical module
+  std::map<const odb::dbModule*, Metrics*> logical_module_map_;
   // associate each Macro to the HardMacro object
   std::map<odb::dbInst*, HardMacro*> hard_macro_map_;
 
