@@ -758,6 +758,15 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 
   total_pins_assigned += assigned_pins_count;
 
+  if (total_pins_assigned > net->numIOPins()) {
+    logger_->error(
+        PPL,
+        13,
+        "Internal error, placed more pins than exist ({} out of {}).",
+        total_pins_assigned,
+        net->numIOPins());
+  }
+
   if (total_pins_assigned == net->numIOPins()) {
     logger_->info(PPL, 8, "Successfully assigned pins to sections.");
     return true;
