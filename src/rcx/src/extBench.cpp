@@ -273,8 +273,8 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
       if (underMet == 0 && opt->_res_patterns)
         break;
     }
-    opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
-    opt->_ur[1] = MAX(opt->_ur[1], measure._ur[1]);
+    opt->_ur[0] = std::max(opt->_ur[0], measure._ur[0]);
+    opt->_ur[1] = std::max(opt->_ur[1], measure._ur[1]);
   }
 
   logger_->info(
@@ -327,8 +327,8 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
     }
-    opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
-    opt->_ur[1] = MAX(opt->_ur[1], measure._ur[1]);
+    opt->_ur[0] = std::max(opt->_ur[0], measure._ur[0]);
+    opt->_ur[1] = std::max(opt->_ur[1], measure._ur[1]);
   }
   logger_->info(
       RCX, 57, "Finished {} bench measurements for pattern MET_UNDER_MET", cnt);
@@ -380,8 +380,8 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
       cnt += cnt1;
       measure._ur[measure._dir] += patternSep;
     }
-    opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
-    opt->_ur[1] = MAX(opt->_ur[1], measure._ur[1]);
+    opt->_ur[0] = std::max(opt->_ur[0], measure._ur[0]);
+    opt->_ur[1] = std::max(opt->_ur[1], measure._ur[1]);
   }
 
   logger_->info(RCX,
@@ -437,8 +437,8 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
 
         cnt += cnt1;
 
-        opt->_ur[0] = MAX(opt->_ur[0], measure._ur[0]);
-        opt->_ur[1] = MAX(opt->_ur[1], measure._ur[1]);
+        opt->_ur[0] = std::max(opt->_ur[0], measure._ur[0]);
+        opt->_ur[1] = std::max(opt->_ur[1], measure._ur[1]);
       }
     }
   }

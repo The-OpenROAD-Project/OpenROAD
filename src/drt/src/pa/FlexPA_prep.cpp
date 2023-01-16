@@ -257,9 +257,9 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
 
     Point e = fpt;
     if (fpt.x() != end.x())
-      e.x() = end.x();
+      e.setX(end.x());
     else if (fpt.y() != end.y())
-      e.y() = end.y();
+      e.setY(end.y());
     if (!(e == fpt)) {
       frPathSeg ps;
       ps.setPoints_safe(fpt, e);
@@ -795,7 +795,7 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
     default:
       logger_->error(DRT, 70, "Unexpected direction in getPlanarEP.");
   }
-  ep.set(x, y);
+  ep = {x, y};
   gtl::point_data<frCoord> pt(x, y);
   bool outside = true;
   for (auto& layerPoly : layerPolys) {

@@ -2001,8 +2001,8 @@ void FlexDRWorker::initMazeIdx_connFig(drConnFig* connFig)
   if (connFig->typeId() == drcPathSeg) {
     auto obj = static_cast<drPathSeg*>(connFig);
     auto [bp, ep] = obj->getPoints();
-    bp.set(max(bp.x(), getExtBox().xMin()), max(bp.y(), getExtBox().yMin()));
-    ep.set(min(ep.x(), getExtBox().xMax()), min(ep.y(), getExtBox().yMax()));
+    bp = {max(bp.x(), getExtBox().xMin()), max(bp.y(), getExtBox().yMin())};
+    ep = {min(ep.x(), getExtBox().xMax()), min(ep.y(), getExtBox().yMax())};
     auto lNum = obj->getLayerNum();
     if (gridGraph_.hasMazeIdx(bp, lNum) && gridGraph_.hasMazeIdx(ep, lNum)) {
       FlexMazeIdx bi, ei;

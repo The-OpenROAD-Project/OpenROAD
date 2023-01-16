@@ -107,7 +107,7 @@ class FlexGRGridGraph
 
   Point& getPoint(frMIdx x, frMIdx y, Point& in) const
   {
-    in.set(xCoords_[x], yCoords_[y]);
+    in = {xCoords_[x], yCoords_[y]};
     return in;
   }
 

@@ -305,7 +305,7 @@ void serialize(Archive& ar, odb::Point& p, const unsigned int version)
     fr::frCoord x = 0, y = 0;
     (ar) & x;
     (ar) & y;
-    p.set(x, y);
+    p = {x, y};
   } else {
     fr::frCoord x, y;
     x = p.x();

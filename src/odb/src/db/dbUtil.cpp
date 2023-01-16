@@ -1074,10 +1074,10 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
     width = (int) dx;
     int dw = dx / 2;
-    p0.x() = r.xMin() + dw;
-    p0.y() = r.yMin();
-    p1.x() = r.xMax() - dw;
-    p1.y() = r.yMax();
+    p0.setX(r.xMin() + dw);
+    p0.setY(r.yMin());
+    p1.setX(r.xMax() - dw);
+    p1.setY(r.yMax());
   } else {
     uint dy = r.dy();
 
@@ -1089,10 +1089,10 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
     width = (int) dy;
     int dw = dy / 2;
-    p0.y() = r.xMin();
-    p0.x() = r.yMin() + dw;
-    p1.y() = r.xMax();
-    p1.x() = r.yMax() - dw;
+    p0.setY(r.xMin());
+    p0.setX(r.yMin() + dw);
+    p1.setY(r.xMax());
+    p1.setX(r.yMax() - dw);
   }
 
   dbTechLayer* layer = _routingLayers[routingLayer];
@@ -1415,17 +1415,17 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   if (make_vertical) {
     width = dx;
     int dw = width / 2;
-    p0.x() = r.xMin() + dw;
-    p0.y() = r.yMin();
-    p1.x() = r.xMax() - dw;
-    p1.y() = r.yMax();
+    p0.setX(r.xMin() + dw);
+    p0.setY(r.yMin());
+    p1.setX(r.xMax() - dw);
+    p1.setY(r.yMax());
   } else {
     width = dy;
     int dw = width / 2;
-    p0.x() = r.xMin();
-    p0.y() = r.yMin() + dw;
-    p1.x() = r.xMax();
-    p1.y() = r.yMax() - dw;
+    p0.setX(r.xMin());
+    p0.setY(r.yMin() + dw);
+    p1.setX(r.xMax());
+    p1.setY(r.yMax() - dw);
   }
 
   dbNet* net = dbNet::create(_block, netName, skipExistsNet);

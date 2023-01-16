@@ -372,7 +372,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
   frCoord maxX, blockLeft, blockRight;
   Rect blockBox;
   Point boxCenter, tmpBxCenter;
-  boxCenter.set((box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2);
+  boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   bool hasViol = false;
   for (int i = idx1; i <= idx2; i++) {
     auto trackLoc = trackLocs[i];
@@ -769,11 +769,11 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
       auto [bp, ep] = obj->getPoints();
       if (isH) {
-        bp.set(bp.x(), trackLoc);
-        ep.set(ep.x(), trackLoc);
+        bp = {bp.x(), trackLoc};
+        ep = {ep.x(), trackLoc};
       } else {
-        bp.set(trackLoc, bp.y());
-        ep.set(trackLoc, ep.y());
+        bp = {trackLoc, bp.y()};
+        ep = {trackLoc, ep.y()};
       }
       Rect bbox(bp, ep);
       frUInt4 wireCost
@@ -783,9 +783,9 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc)
       auto obj = static_cast<taVia*>(uPinFig.get());
       auto bp = obj->getOrigin();
       if (isH) {
-        bp.set(bp.x(), trackLoc);
+        bp = {bp.x(), trackLoc};
       } else {
-        bp.set(trackLoc, bp.y());
+        bp = {trackLoc, bp.y()};
       }
       Rect bbox(bp, bp);
       frUInt4 viaCost = assignIroute_getDRCCost_helper(
@@ -1043,20 +1043,20 @@ void FlexTAWorker::assignIroute_updateIroute(
       auto obj = static_cast<taPathSeg*>(uPinFig.get());
       auto [bp, ep] = obj->getPoints();
       if (isH) {
-        bp.set(bp.x(), bestTrackLoc);
-        ep.set(ep.x(), bestTrackLoc);
+        bp = {bp.x(), bestTrackLoc};
+        ep = {ep.x(), bestTrackLoc};
       } else {
-        bp.set(bestTrackLoc, bp.y());
-        ep.set(bestTrackLoc, ep.y());
+        bp = {bestTrackLoc, bp.y()};
+        ep = {bestTrackLoc, ep.y()};
       }
       obj->setPoints(bp, ep);
     } else if (uPinFig->typeId() == tacVia) {
       auto obj = static_cast<taVia*>(uPinFig.get());
       auto bp = obj->getOrigin();
       if (isH) {
-        bp.set(bp.x(), bestTrackLoc);
+        bp = {bp.x(), bestTrackLoc};
       } else {
-        bp.set(bestTrackLoc, bp.y());
+        bp = {bestTrackLoc, bp.y()};
       }
       obj->setOrigin(bp);
     } else {

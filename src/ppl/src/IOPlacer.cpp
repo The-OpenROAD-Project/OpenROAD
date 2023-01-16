@@ -1464,8 +1464,8 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
                       || checkBlocked(
                           edge, pos.x() + width / 2 + offset, layer_level);
     }
-    pos.x() += horizontal ? 0 : offset;
-    pos.y() += horizontal ? offset : 0;
+    pos.addX(horizontal ? 0 : offset);
+    pos.addY(horizontal ? offset : 0);
   }
 
   odb::Point ll = odb::Point(pos.x() - width / 2, pos.y() - height / 2);
