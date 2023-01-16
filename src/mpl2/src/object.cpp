@@ -97,11 +97,11 @@ static bool comparePairFirst(const std::pair<float, float>& p1,
 }
 
 ///////////////////////////////////////////////////////////////////////
-// Metric Class
-Metric::Metric(unsigned int num_std_cell,
-               unsigned int num_macro,
-               float std_cell_area,
-               float macro_area)
+// Metrics Class
+Metrics::Metrics(unsigned int num_std_cell,
+                 unsigned int num_macro,
+                 float std_cell_area,
+                 float macro_area)
 {
   num_std_cell_ = num_std_cell;
   num_macro_ = num_macro;
@@ -109,76 +109,76 @@ Metric::Metric(unsigned int num_std_cell,
   macro_area_ = macro_area;
 }
 
-void Metric::addMetric(const Metric& metric)
+void Metrics::addMetrics(const Metrics& metrics)
 {
-  num_std_cell_ += metric.num_std_cell_;
-  num_macro_ += metric.num_macro_;
-  std_cell_area_ += metric.std_cell_area_;
-  macro_area_ += metric.macro_area_;
-  inflat_std_cell_area_ += metric.inflat_std_cell_area_;
-  inflat_macro_area_ += metric.inflat_macro_area_;
+  num_std_cell_ += metrics.num_std_cell_;
+  num_macro_ += metrics.num_macro_;
+  std_cell_area_ += metrics.std_cell_area_;
+  macro_area_ += metrics.macro_area_;
+  inflate_std_cell_area_ += metrics.inflate_std_cell_area_;
+  inflate_macro_area_ += metrics.inflate_macro_area_;
 }
 
-void Metric::inflatStdCellArea(float std_cell_util)
+void Metrics::inflateStdCellArea(float std_cell_util)
 {
   if ((std_cell_util > 0.0) && (std_cell_util < 1.0)) {
-    inflat_std_cell_area_ /= std_cell_util;
+    inflate_std_cell_area_ /= std_cell_util;
   }
 }
 
-const std::pair<unsigned int, unsigned int> Metric::getCountStats() const
+const std::pair<unsigned int, unsigned int> Metrics::getCountStats() const
 {
   return std::pair<unsigned int, unsigned int>(num_std_cell_, num_macro_);
 }
 
-const std::pair<float, float> Metric::getAreaStats() const
+const std::pair<float, float> Metrics::getAreaStats() const
 {
   return std::pair<float, float>(std_cell_area_, macro_area_);
 }
 
-const std::pair<float, float> Metric::getInflatAreaStats() const
+const std::pair<float, float> Metrics::getInflateAreaStats() const
 {
-  return std::pair<float, float>(inflat_std_cell_area_, inflat_macro_area_);
+  return std::pair<float, float>(inflate_std_cell_area_, inflate_macro_area_);
 }
 
-unsigned int Metric::getNumMacro() const
+unsigned int Metrics::getNumMacro() const
 {
   return num_macro_;
 }
 
-unsigned int Metric::getNumStdCell() const
+unsigned int Metrics::getNumStdCell() const
 {
   return num_std_cell_;
 }
 
-float Metric::getStdCellArea() const
+float Metrics::getStdCellArea() const
 {
   return std_cell_area_;
 }
 
-float Metric::getMacroArea() const
+float Metrics::getMacroArea() const
 {
   return macro_area_;
 }
 
-float Metric::getArea() const
+float Metrics::getArea() const
 {
   return std_cell_area_ + macro_area_;
 }
 
-float Metric::getInflatStdCellArea() const
+float Metrics::getInflateStdCellArea() const
 {
-  return inflat_std_cell_area_;
+  return inflate_std_cell_area_;
 }
 
-float Metric::getInflatMacroArea() const
+float Metrics::getInflateMacroArea() const
 {
-  return inflat_macro_area_;
+  return inflate_macro_area_;
 }
 
-float Metric::getInflatArea() const
+float Metrics::getInflateArea() const
 {
-  return inflat_std_cell_area_ + inflat_macro_area_;
+  return inflate_std_cell_area_ + inflate_macro_area_;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -336,15 +336,15 @@ bool Cluster::getIOClusterFlag() const
   return io_cluster_flag_;
 }
 
-// Metric Support and Statistics
-void Cluster::setMetric(const Metric& metric)
+// Metrics Support and Statistics
+void Cluster::setMetrics(const Metrics& metrics)
 {
-  metric_ = metric;
+  metrics_ = metrics;
 }
 
-const Metric Cluster::getMetric() const
+const Metrics Cluster::getMetrics() const
 {
-  return metric_;
+  return metrics_;
 }
 
 int Cluster::getNumStdCell() const
@@ -352,7 +352,7 @@ int Cluster::getNumStdCell() const
   if (type_ == HardMacroCluster) {
     return 0;
   }
-  return metric_.getNumStdCell();
+  return metrics_.getNumStdCell();
 }
 
 int Cluster::getNumMacro() const
@@ -360,7 +360,7 @@ int Cluster::getNumMacro() const
   if (type_ == StdCellCluster) {
     return 0;
   }
-  return metric_.getNumMacro();
+  return metrics_.getNumMacro();
 }
 
 float Cluster::getArea() const
@@ -374,7 +374,7 @@ float Cluster::getStdCellArea() const
     return 0.0;
   }
 
-  return metric_.getStdCellArea();
+  return metrics_.getStdCellArea();
 }
 
 float Cluster::getMacroArea() const
@@ -383,7 +383,7 @@ float Cluster::getMacroArea() const
     return 0.0;
   }
 
-  return metric_.getMacroArea();
+  return metrics_.getMacroArea();
 }
 
 // Physical location support
@@ -496,7 +496,7 @@ bool Cluster::mergeCluster(Cluster& cluster, bool& delete_flag)
   }
 
   parent_->removeChild(&cluster);
-  metric_.addMetric(cluster.metric_);
+  metrics_.addMetrics(cluster.metrics_);
   // modify name
   name_ += "||" + cluster.name_;
   // if current cluster is a leaf cluster
@@ -720,7 +720,7 @@ void Cluster::addVirtualConnection(int src, int target)
 }
 
 ///////////////////////////////////////////////////////////////////////
-// Metric HardMacro
+// HardMacro
 HardMacro::HardMacro(std::pair<float, float> loc, const std::string& name)
 {
   width_ = 0.0;
