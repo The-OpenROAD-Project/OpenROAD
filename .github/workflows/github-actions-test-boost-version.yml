@@ -10,7 +10,7 @@ on:
         type: string
 
 jobs:     
-  testInstaller:
+  testBoostVersion:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out repository code
