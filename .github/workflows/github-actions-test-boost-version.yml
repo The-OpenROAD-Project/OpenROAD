@@ -4,9 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       boostVersion:
-        description: 'Boost version'
+        description: 'Boost Version'
         required: true
         default: '1.80.0' 
+        type: string
+      boostChecksum:
+        description: 'Boost Checksum'
+        required: true
+        default: '077f074743ea7b0cb49c6ed43953ae95' 
         type: string
 
 jobs:     
@@ -21,7 +26,7 @@ jobs:
       - name: Run installer
         shell: bash
         run: |
-          sudo ./etc/DependencyInstaller.sh -boostVersion=${{ inputs.boostVersion }}
+          sudo ./etc/DependencyInstaller.sh -boostVersion=${{ inputs.boostVersion }} -boostChecksum=${{ inputs.boostChecksum }}
       - name: Build project
         shell: bash
         run: |

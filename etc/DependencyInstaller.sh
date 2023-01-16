@@ -14,7 +14,6 @@ _installCommonDev() {
     swigChecksum="794433378154eb61270a3ac127d9c5f3"
     boostVersionBig=${boostVersion%.*}
     boostVersionSmall=${boostVersion}
-    boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
     lemonVersion=1.3.1
     lemonChecksum="e89f887559113b68657eca67cf3329b5"
@@ -463,6 +462,7 @@ _help() {
 Usage: $0 -prefix=DIR
        $0 -local
        $0 -boostVersion=x.xx.x
+       $0 -boostChecksum=<md5sum-checksum>
 
 EOF
     exit "${1:-1}"
@@ -471,6 +471,7 @@ EOF
 #default prefix
 PREFIX=""
 boostVersion="1.80.0"
+boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
@@ -492,6 +493,9 @@ while [ "$#" -gt 0 ]; do
             ;;
         -boostVersion=*)
             export boostVersion="$(echo $1 | sed -e 's/^[^=]*=//g')"
+            ;;
+        -boostChecksum=*)
+            export boostChecksum="$(echo $1 | sed -e 's/^[^=]*=//g')"
             ;;
         *)
             echo "unknown option: ${1}" >&2
