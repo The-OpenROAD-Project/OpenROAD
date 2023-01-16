@@ -62,12 +62,17 @@ namespace utl {
 class Logger;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace grt {
 
 class MakeWireParasitics
 {
  public:
   MakeWireParasitics(utl::Logger* logger,
+                     rsz::Resizer* resizer,
                      sta::dbSta* sta,
                      odb::dbTech* tech,
                      GlobalRouter* grouter);
@@ -92,27 +97,28 @@ class MakeWireParasitics
                // Return values.
                float& res,
                float& cap);
-  float getCutLayerRes(unsigned below_layer_id);
+  float getCutLayerRes(odb::dbTechLayer* cut_layer, int num_cuts = 1) const;
   double dbuToMeters(int dbu);
 
   // Variables common to all nets.
   GlobalRouter* grouter_;
   odb::dbTech* tech_;
   utl::Logger* logger_;
+  rsz::Resizer* resizer_;
   sta::dbSta* sta_;
   sta::dbNetwork* network_;
   sta::Parasitics* parasitics_;
-  sta::Corner* corner_;
   sta::MinMax* min_max_;
-  sta::ParasiticAnalysisPt* analysis_point_;
 
   // Net variables
   sta::Net* sta_net_;
-  sta::Parasitic* parasitic_;
+  sta::Corner* net_corner_;
+  sta::ParasiticAnalysisPt* net_analysis_point_;
+  sta::Parasitic* net_parasitic_;
   // Counter for internal parasitic node IDs.
   int node_id_;
   // x/y/layer -> parasitic node
-  NodeRoutePtMap node_map_;
+  std::map<sta::Corner*, NodeRoutePtMap> node_map_;
 };
 
 }  // namespace grt

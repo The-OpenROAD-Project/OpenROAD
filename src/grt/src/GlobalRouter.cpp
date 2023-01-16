@@ -82,6 +82,7 @@ GlobalRouter::GlobalRouter()
       stt_builder_(nullptr),
       antenna_checker_(nullptr),
       opendp_(nullptr),
+      resizer_(nullptr),
       fastroute_(nullptr),
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
@@ -115,6 +116,7 @@ void GlobalRouter::init(utl::Logger* logger,
                         stt::SteinerTreeBuilder* stt_builder,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
+                        rsz::Resizer* resizer,
                         ant::AntennaChecker* antenna_checker,
                         dpl::Opendp* opendp)
 {
@@ -128,6 +130,7 @@ void GlobalRouter::init(utl::Logger* logger,
   opendp_ = opendp;
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
   sta_ = sta;
+  resizer_ = resizer;
 
   heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_, db_);
   heatmap_->registerHeatMap();
@@ -393,7 +396,10 @@ void GlobalRouter::estimateRC()
   // Remove any existing parasitics.
   sta_->deleteParasitics();
 
-  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
+  // Make separate parasitics for each corner, same for min/max.
+  sta_->setParasiticAnalysisPts(true, false);
+
+  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
   for (auto& net_route : routes_) {
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
@@ -406,7 +412,7 @@ void GlobalRouter::estimateRC()
 
 void GlobalRouter::estimateRC(odb::dbNet* db_net)
 {
-  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
+  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
   auto iter = routes_.find(db_net);
   if (iter == routes_.end()) {
     return;
@@ -420,7 +426,7 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
 
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
-  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
+  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
   return builder.routeLayerLengths(db_net);
 }
 
