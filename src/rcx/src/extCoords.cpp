@@ -139,10 +139,10 @@ uint extSpef::addNetShapesOnSearch(uint netId)
                       shapeId,
                       wtype);
     cnt++;
-    minx = MIN(r.xMin(), minx);
-    miny = MIN(r.yMin(), miny);
-    maxx = MAX(r.xMax(), maxx);
-    maxy = MAX(r.yMax(), maxy);
+    minx = std::min(r.xMin(), minx);
+    miny = std::min(r.yMin(), miny);
+    maxx = std::max(r.xMax(), maxx);
+    maxy = std::max(r.yMax(), maxy);
   }
   _search->setMaxArea(minx, miny, maxx, maxy);
   for (uint dir = 0; dir < _search->getRowCnt(); dir++) {

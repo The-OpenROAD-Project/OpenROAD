@@ -150,7 +150,7 @@ class FlexGridGraph
   // unsafe access
   Point& getPoint(Point& in, frMIdx x, frMIdx y) const
   {
-    in.set(xCoords_[x], yCoords_[y]);
+    in = {xCoords_[x], yCoords_[y]};
     return in;
   }
   // unsafe access

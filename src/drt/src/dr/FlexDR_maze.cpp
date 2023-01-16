@@ -322,10 +322,10 @@ void FlexDRWorker::modMinSpacingCostPlanar(const Rect& box,
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
     for (int j = mIdx1.y(); j <= mIdx2.y(); j++) {
       gridGraph_.getPoint(pt, i, j);
-      pt1.set(pt.x() + halfwidth2, pt.y() - halfwidth2);
-      pt2.set(pt.x() + halfwidth2, pt.y() + halfwidth2);
-      pt3.set(pt.x() - halfwidth2, pt.y() - halfwidth2);
-      pt4.set(pt.x() - halfwidth2, pt.y() + halfwidth2);
+      pt1 = {pt.x() + halfwidth2, pt.y() - halfwidth2};
+      pt2 = {pt.x() + halfwidth2, pt.y() + halfwidth2};
+      pt3 = {pt.x() - halfwidth2, pt.y() - halfwidth2};
+      pt4 = {pt.x() - halfwidth2, pt.y() + halfwidth2};
       distSquare = min(pt2boxDistSquare(pt1, box), pt2boxDistSquare(pt2, box));
       distSquare = min(pt2boxDistSquare(pt3, box), distSquare);
       distSquare = min(pt2boxDistSquare(pt4, box), distSquare);
@@ -1091,7 +1091,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
   dbTransform xform;
   frSquaredDistance reqDistSquare = 0;
   Point boxCenter, tmpBxCenter;
-  boxCenter.set((box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2);
+  boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   frSquaredDistance currDistSquare = 0;
   bool hasViol;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
@@ -1104,8 +1104,8 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
         xform.setOffset(pt);
         Rect tmpBx = obj->getBBox();
         xform.apply(tmpBx);
-        tmpBxCenter.set((tmpBx.xMin() + tmpBx.xMax()) / 2,
-                        (tmpBx.yMin() + tmpBx.yMax()) / 2);
+        tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
+                       (tmpBx.yMin() + tmpBx.yMax()) / 2};
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
@@ -1267,7 +1267,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
   dbTransform xform;
   frSquaredDistance reqDistSquare = 0;
   Point boxCenter, tmpBxCenter;
-  boxCenter.set((box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2);
+  boxCenter = {(box.xMin() + box.xMax()) / 2, (box.yMin() + box.yMax()) / 2};
   frSquaredDistance currDistSquare = 0;
   bool hasViol = false;
   for (int i = mIdx1.x(); i <= mIdx2.x(); i++) {
@@ -1278,8 +1278,8 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
         xform.setOffset(pt);
         Rect tmpBx = obj->getBBox();
         xform.apply(tmpBx);
-        tmpBxCenter.set((tmpBx.xMin() + tmpBx.xMax()) / 2,
-                        (tmpBx.yMin() + tmpBx.yMax()) / 2);
+        tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
+                       (tmpBx.yMin() + tmpBx.yMax()) / 2};
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
         c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
@@ -2007,7 +2007,7 @@ void FlexDRWorker::routeNet_setSrc(
   ccMazeIdx2.set(0, 0, 0);
   // first pin selection algorithm goes here
   // choose the center pin
-  centerPt.set(0, 0);
+  centerPt = {0, 0};
   int totAPCnt = 0;
   frCoord totX = 0;
   frCoord totY = 0;
@@ -2019,7 +2019,7 @@ void FlexDRWorker::routeNet_setSrc(
       Point bp = ap->getPoint();
       totX += bp.x();
       totY += bp.y();
-      centerPt.set(centerPt.x() + bp.x(), centerPt.y() + bp.y());
+      centerPt = {centerPt.x() + bp.x(), centerPt.y() + bp.y()};
       totZ += gridGraph_.getZHeight(mi.z());
       totAPCnt++;
       break;
@@ -2028,7 +2028,7 @@ void FlexDRWorker::routeNet_setSrc(
   totX /= totAPCnt;
   totY /= totAPCnt;
   totZ /= totAPCnt;
-  centerPt.set(centerPt.x() / totAPCnt, centerPt.y() / totAPCnt);
+  centerPt = {centerPt.x() / totAPCnt, centerPt.y() / totAPCnt};
 
   // select the farmost pin
   drPin* currPin = nullptr;
@@ -3235,15 +3235,15 @@ int FlexDRWorker::routeNet_postAstarAddPathMetal_isClean(
   frLayerNum layerNum = gridGraph_.getLayerNum(bpIdx.z());
   if (isPatchHorz) {
     if (isPatchLeft) {
-      patchEnd.set(origin.x() - patchLength, origin.y());
+      patchEnd = {origin.x() - patchLength, origin.y()};
     } else {
-      patchEnd.set(origin.x() + patchLength, origin.y());
+      patchEnd = {origin.x() + patchLength, origin.y()};
     }
   } else {
     if (isPatchLeft) {
-      patchEnd.set(origin.x(), origin.y() - patchLength);
+      patchEnd = {origin.x(), origin.y() - patchLength};
     } else {
-      patchEnd.set(origin.x(), origin.y() + patchLength);
+      patchEnd = {origin.x(), origin.y() + patchLength};
     }
   }
   // for wire, no need to bloat width
@@ -3321,19 +3321,19 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal_addPWire(
   Point patchLL, patchUR;
   if (isPatchHorz) {
     if (isPatchLeft) {
-      patchLL.set(0 - patchLength, 0 - patchWidth / 2);
-      patchUR.set(0, 0 + patchWidth / 2);
+      patchLL = {0 - patchLength, 0 - patchWidth / 2};
+      patchUR = {0, 0 + patchWidth / 2};
     } else {
-      patchLL.set(0, 0 - patchWidth / 2);
-      patchUR.set(0 + patchLength, 0 + patchWidth / 2);
+      patchLL = {0, 0 - patchWidth / 2};
+      patchUR = {0 + patchLength, 0 + patchWidth / 2};
     }
   } else {
     if (isPatchLeft) {
-      patchLL.set(0 - patchWidth / 2, 0 - patchLength);
-      patchUR.set(0 + patchWidth / 2, 0);
+      patchLL = {0 - patchWidth / 2, 0 - patchLength};
+      patchUR = {0 + patchWidth / 2, 0};
     } else {
-      patchLL.set(0 - patchWidth / 2, 0);
-      patchUR.set(0 + patchWidth / 2, 0 + patchLength);
+      patchLL = {0 - patchWidth / 2, 0};
+      patchUR = {0 + patchWidth / 2, 0 + patchLength};
     }
   }
 

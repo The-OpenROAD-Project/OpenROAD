@@ -219,10 +219,10 @@ void io::Parser::patchGuides(frNet* net,
   if (guidePt.x() != bestPinLocCoords.x()
       || guidePt.y() != bestPinLocCoords.y()) {
     Point pl, ph;
-    pl.set(std::min(bestPinLocCoords.x(), guidePt.x()),
-           std::min(bestPinLocCoords.y(), guidePt.y()));
-    ph.set(std::max(bestPinLocCoords.x(), guidePt.x()),
-           std::max(bestPinLocCoords.y(), guidePt.y()));
+    pl = {std::min(bestPinLocCoords.x(), guidePt.x()),
+          std::min(bestPinLocCoords.y(), guidePt.y())};
+    ph = {std::max(bestPinLocCoords.x(), guidePt.x()),
+          std::max(bestPinLocCoords.y(), guidePt.y())};
 
     guides.emplace_back(pl.x() - gCellX / 2,
                         pl.y() - gCellY / 2,
@@ -298,7 +298,7 @@ void io::Parser::genGuides_merge(
     Point idx = design_->getTopBlock()->getGCellIdx(pt);
     frCoord x1 = idx.x();
     frCoord y1 = idx.y();
-    pt.set(box.xMax() - 1, box.yMax() - 1);
+    pt = {box.xMax() - 1, box.yMax() - 1};
     idx = design_->getTopBlock()->getGCellIdx(pt);
     frCoord x2 = idx.x();
     frCoord y2 = idx.y();
@@ -547,7 +547,7 @@ void io::Parser::genGuides_gCell2TermMap(
         Point idx = design_->getTopBlock()->getGCellIdx(pt);
         frCoord x1 = idx.x();
         frCoord y1 = idx.y();
-        pt.set(box.ur().x() - 1, box.ur().y() - 1);
+        pt = {box.ur().x() - 1, box.ur().y() - 1};
         idx = design_->getTopBlock()->getGCellIdx(pt);
         frCoord x2 = idx.x();
         frCoord y2 = idx.y();

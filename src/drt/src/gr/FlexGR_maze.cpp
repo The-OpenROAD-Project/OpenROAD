@@ -558,7 +558,7 @@ void FlexGRWorker::routeNet_setSrc(
   ccMazeIdx1.set(xDim - 1, yDim - 1, zDim - 1);
   ccMazeIdx2.set(0, 0, 0);
 
-  centerPt.set(0, 0);
+  centerPt = {0, 0};
   int totPinCnt = unConnPinGCellNodes.size();
   for (auto pinGCellNode : unConnPinGCellNodes) {
     auto loc = pinGCellNode->getLoc();
@@ -566,9 +566,9 @@ void FlexGRWorker::routeNet_setSrc(
     FlexMazeIdx mi;
     gridGraph_.getMazeIdx(loc, lNum, mi);
 
-    centerPt.set(centerPt.x() + loc.x(), centerPt.y() + loc.y());
+    centerPt = {centerPt.x() + loc.x(), centerPt.y() + loc.y()};
   }
-  centerPt.set(centerPt.x() / totPinCnt, centerPt.y() / totPinCnt);
+  centerPt = {centerPt.x() / totPinCnt, centerPt.y() / totPinCnt};
 
   // currently use root gcell
   auto rootPinGCellNode = net->getPinGCellNodes()[0];

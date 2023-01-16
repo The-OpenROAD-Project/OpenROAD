@@ -800,8 +800,8 @@ uint extSpef::getMinCapNode(odb::dbNet* net, uint* minNode)
     cnt++;
     node->setSortIndex(cnt);
 
-    min = min == 0 ? node->getId() : MIN(min, node->getId());
-    max = MAX(max, node->getId());
+    min = min == 0 ? node->getId() : std::min(min, node->getId());
+    max = std::max(max, node->getId());
   }
   if (cnt == 0) {
     *minNode = 0;
@@ -1434,7 +1434,7 @@ uint extSpef::writeBlockPorts()
 }
 uint extSpef::getNetMapId(uint netId)
 {
-  _baseNameMap = MAX(_baseNameMap, netId);
+  _baseNameMap = std::max(_baseNameMap, netId);
 
   return netId;
 }

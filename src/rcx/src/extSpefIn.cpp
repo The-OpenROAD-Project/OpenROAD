@@ -2753,7 +2753,7 @@ uint extSpef::readMaxMapId(int* cornerCnt)
 
       if (_parser->isDigit(0, 1)) {
         uint id = _parser->getInt(0, 1);
-        maxId = MAX(maxId, id);
+        maxId = std::max(maxId, id);
       }
     }
   }

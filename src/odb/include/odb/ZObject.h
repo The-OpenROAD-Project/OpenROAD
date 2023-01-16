@@ -51,8 +51,6 @@ class ZPtr;
 class ZContext;
 class ZObject;
 
-#define Z_SUCCEEDED(r) (r == Z_OK)
-#define Z_FAILED(r) (r != Z_OK)
 #define Z_OK 0
 #define Z_ERROR_NO_INTERFACE 1
 #define Z_ERROR_OUT_OF_MEMORY 2
