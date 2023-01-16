@@ -36,6 +36,7 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
+#include <boost/icl/interval.hpp>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -54,7 +55,6 @@
 #include "MakeWireParasitics.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
-#include "boost/icl/interval.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
