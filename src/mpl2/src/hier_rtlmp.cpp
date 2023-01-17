@@ -2316,16 +2316,12 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
   for (int i = 1; i < num_runs_; i++) {
     vary_factor_list.push_back(1.0 - i * vary_step);
   }
-  int run_thread = num_threads_;
   int remaining_runs = num_runs_;
   int run_id = 0;
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
-    run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_height;
@@ -2382,16 +2378,12 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
     remaining_runs -= run_thread;
   }
   // vary the outline height while keeping outline width fixed
-  run_thread = num_threads_;
   remaining_runs = num_runs_;
   run_id = 0;
   while (remaining_runs > 0) {
     std::vector<SACoreSoftMacro*> sa_vector;
-    run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width;
       const float height = outline_height * vary_factor_list[run_id++];
@@ -2545,22 +2537,18 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
   // To generate different macro tilings, we vary the outline constraints
   // we first vary the outline width while keeping outline_height fixed
   // Then we vary the outline height while keeping outline_width fixed
-  // We vary the outline of cluster to generate differnt tilings
+  // We vary the outline of cluster to generate different tilings
   std::vector<float> vary_factor_list{1.0};
   float vary_step = 1.0 / num_runs_;  // change the outline by at most halfly
   for (int i = 1; i < num_runs_; i++) {
     vary_factor_list.push_back(1.0 - i * vary_step);
   }
-  int run_thread = num_threads_;
   int remaining_runs = num_runs_;
   int run_id = 0;
   while (remaining_runs > 0) {
     std::vector<SACoreHardMacro*> sa_vector;
-    run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width * vary_factor_list[run_id++];
       const float height = outline_height;
@@ -2612,16 +2600,12 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
     remaining_runs -= run_thread;
   }
   // change the outline height while keeping outline width fixed
-  run_thread = num_threads_;
   remaining_runs = num_runs_;
   run_id = 0;
   while (remaining_runs > 0) {
     std::vector<SACoreHardMacro*> sa_vector;
-    run_thread
-        = (remaining_runs > num_threads_) ? num_threads_ : remaining_runs;
-    if (graphics_) {
-      run_thread = 1;
-    }
+    const int run_thread
+        = graphics_ ? 1 : std::min(remaining_runs, num_threads_);
     for (int i = 0; i < run_thread; i++) {
       const float width = outline_width;
       const float height = outline_height * vary_factor_list[run_id++];
