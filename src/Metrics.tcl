@@ -48,7 +48,7 @@ proc report_clock_skew_metric { args } {
     utl::error ORD 19 "both -setup and -hold specified."
   }
 
-  utl::metric_float $metric_name [worst_clock_skew $min_max]
+  utl::metric_float $metric_name [expr abs([worst_clock_skew $min_max])]
 }
 
 define_cmd_args "report_tns_metric" {[-setup]|[-hold]}

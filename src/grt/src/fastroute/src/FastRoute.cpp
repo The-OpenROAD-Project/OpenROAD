@@ -529,7 +529,8 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       for (auto interval_it : intervals) {
-        reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
+        reduce += ceil(static_cast<float>(
+                           std::abs(interval_it.upper() - interval_it.lower()))
                        / track_space[layer - 1]);
       }
       edge_cap -= reduce;
@@ -547,7 +548,8 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       for (const auto& interval_it : intervals) {
-        reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
+        reduce += ceil(static_cast<float>(
+                           std::abs(interval_it.upper() - interval_it.lower()))
                        / track_space[layer - 1]);
       }
       edge_cap -= reduce;
