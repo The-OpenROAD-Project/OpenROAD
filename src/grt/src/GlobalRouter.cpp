@@ -280,11 +280,19 @@ void GlobalRouter::globalRoute(bool save_guides)
   if (fastroute_->has2Doverflow() && !allow_congestion_) {
     if (congestion_file_name_ != nullptr) {
       saveCongestion();
+      logger_->error(
+          GRT,
+          119,
+          "Routing congestion too high. Check the congestion heatmap "
+          "in the GUI and load {} in the DRC viewer.",
+          congestion_file_name_);
+    } else {
+      logger_->error(
+          GRT,
+          118,
+          "Routing congestion too high. Check the congestion heatmap "
+          "in the GUI.");
     }
-    logger_->error(GRT,
-                   118,
-                   "Routing congestion too high. Check the congestion heatmap "
-                   "in the GUI.");
   }
   if (fastroute_->totalOverflow() > 0 && verbose_) {
     logger_->warn(GRT, 115, "Global routing finished with overflow.");
