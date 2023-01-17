@@ -82,6 +82,12 @@ void open_metrics(const char* metrics_filename)
   logger->addMetricsSink(metrics_filename);
 }
 
+void close_metrics(const char* metrics_filename)
+{
+  Logger* logger = getLogger();
+  logger->removeMetricsSink(metrics_filename);
+}
+
 void metric(const char* metric, const char* value)
 {
   Logger* logger = getLogger();

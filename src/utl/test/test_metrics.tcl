@@ -18,3 +18,6 @@ utl::metric_float "float5" -INF
 
 utl::metric "string0" ""
 utl::metric "string1" "one"
+
+utl::close_metrics $metrics_file
+diff_files "metrics-tcl.jsonok" $metrics_file

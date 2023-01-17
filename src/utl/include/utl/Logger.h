@@ -38,6 +38,7 @@
 #include <array>
 #include <cstdlib>
 #include <iomanip>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <stack>
@@ -46,7 +47,6 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
-#include <limits>
 
 #include "Metrics.h"
 #include "spdlog/fmt/fmt.h"
@@ -84,7 +84,8 @@ namespace utl {
   X(STA)                \
   X(STT)                \
   X(TAP)                \
-  X(UKN)
+  X(UKN)                \
+  X(UTL)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
@@ -215,6 +216,7 @@ class Logger
   void addSink(spdlog::sink_ptr sink);
   void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char* metrics_filename);
+  void removeMetricsSink(const char* metrics_filename);
 
   void setMetricsStage(std::string_view format);
   void clearMetricsStage();
@@ -268,6 +270,7 @@ class Logger
     metrics_entries_.push_back({key, value});
   }
 
+  void flushMetrics();
   void finalizeMetrics();
 
   // Allows for lookup by a compatible key (ie string_view)

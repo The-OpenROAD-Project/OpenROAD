@@ -43,6 +43,7 @@ void warn(utl::ToolId tool, int id, const char* msg);
 void error(utl::ToolId tool, int id, const char* msg);
 void critical(utl::ToolId tool, int id, const char* msg);
 void open_metrics(const char* metrics_filename);
+void close_metrics(const char* metrics_filename);
 void metric(const char* metric, const char* value);
 void metric_integer(const char* metric, const int value);
 void metric_float(const char* metric, const double value);
