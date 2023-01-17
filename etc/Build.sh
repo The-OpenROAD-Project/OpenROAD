@@ -113,6 +113,16 @@ case "${compiler}" in
         export CC="$(command -v clang)"
         export CXX="$(command -v clang++)"
         ;;
+    clang-* )
+        if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
+            # the scl script has unbound variables
+            set +u
+            source /opt/rh/llvm-toolset-7.0/enable
+            set -u
+        fi
+        export CC="$(command -v ${compiler})"
+        export CXX="$(command -v ${compiler}++)"
+        ;;
     *)
         echo "Compiler $compiler is not supported" >&2
         _help 1
