@@ -5,8 +5,8 @@
 	"float0": 0,
 	"float1": 1000,
 	"float2": 1e+39,
-	"float4": "inf",
-	"float5": "-inf",
+	"float4": "Infinity",
+	"float5": "-Infinity",
 	"string0": "",
 	"string1": "one"
 }

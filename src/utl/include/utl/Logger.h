@@ -181,12 +181,12 @@ class Logger
     const std::string name = std::string(metric_name);
     if (std::isinf(value)) {
       if (value < 0) {
-        metric(name, "-inf");
+        metric(name, "-Infinity");
       } else {
-        metric(name, "inf");
+        metric(name, "Infinity");
       }
     } else if (std::isnan(value)) {
-      metric(name, "nan");
+      metric(name, "NaN");
     } else {
       std::ostringstream oss;
       oss << std::defaultfloat << std::setprecision(6) << value;
