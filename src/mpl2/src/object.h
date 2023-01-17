@@ -463,8 +463,6 @@ class SoftMacro
   // create a SoftMacro from a cluster
   SoftMacro(Cluster* cluster);
 
-  void printShape();
-
   // name
   const std::string getName() const;
   // Physical Information
