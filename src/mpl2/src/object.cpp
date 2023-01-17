@@ -972,12 +972,6 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
   ux = std::round(ux / pitch_x) * pitch_x;
   ly = std::round(ly / pitch_y) * pitch_y;
   uy = std::round(uy / pitch_y) * pitch_y;
-  std::cout << "Update macro " << getName() << std::endl;
-  std::cout << "lx :  " << lx << "  "
-            << "ly :  " << ly << "  "
-            << "ux :  " << ux << "  "
-            << "uy :  " << uy << "  "
-            << "orientation : " << orientation_.getString() << std::endl;
   if (orientation_.getString() == std::string("MX")) {
     inst_->setLocation(micronToDbu(lx, dbu_), micronToDbu(uy, dbu_));
   } else if (orientation_.getString() == std::string("MY")) {
@@ -1420,20 +1414,6 @@ void SoftMacro::setShapeF(float width, float height)
   width_ = width;
   height_ = height;
   area_ = width * height;
-}
-
-void SoftMacro::printShape()
-{
-  std::cout << "width_list : ";
-  for (auto& width : width_list_) {
-    std::cout << " <" << width.first << " , " << width.second << " >  ";
-  }
-  std::cout << std::endl;
-  std::cout << "height_list : ";
-  for (auto& height : height_list_) {
-    std::cout << " <" << height.first << " , " << height.second << " >  ";
-  }
-  std::cout << std::endl;
 }
 
 }  // namespace mpl2
