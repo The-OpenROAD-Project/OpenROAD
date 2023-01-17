@@ -45,7 +45,7 @@ void critical(utl::ToolId tool, int id, const char* msg);
 void open_metrics(const char* metrics_filename);
 void metric(const char* metric, const char* value);
 void metric_integer(const char* metric, const int value);
-void metric_float(const char* metric, const float value);
+void metric_float(const char* metric, const double value);
 void set_metrics_stage(const char* fmt);
 void clear_metrics_stage();
 void push_metrics_stage(const char* fmt);

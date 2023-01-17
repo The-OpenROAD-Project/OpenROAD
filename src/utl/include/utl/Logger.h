@@ -46,6 +46,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+#include <limits>
 
 #include "Metrics.h"
 #include "spdlog/fmt/fmt.h"
@@ -174,11 +175,22 @@ class Logger
   // Note: these methods do no escaping so avoid special characters.
   template <typename T,
             typename U = std::enable_if_t<std::is_arithmetic<T>::value>>
-  inline void metric(const std::string_view metric, T value)
+  inline void metric(const std::string_view metric_name, T value)
   {
-    std::ostringstream oss;
-    oss << std::defaultfloat << std::setprecision(6) << value;
-    log_metric(std::string(metric), oss.str());
+    const std::string name = std::string(metric_name);
+    if (std::isinf(value)) {
+      if (value < 0) {
+        metric(name, "-inf");
+      } else {
+        metric(name, "inf");
+      }
+    } else if (std::isnan(value)) {
+      metric(name, "nan");
+    } else {
+      std::ostringstream oss;
+      oss << std::defaultfloat << std::setprecision(6) << value;
+      log_metric(name, oss.str());
+    }
   }
 
   inline void metric(const std::string_view metric, const std::string& value)

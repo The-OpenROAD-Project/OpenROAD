@@ -94,7 +94,7 @@ void metric_integer(const char* metric, const int value)
   logger->metric(metric, value);
 }
 
-void metric_float(const char* metric, const float value)
+void metric_float(const char* metric, const double value)
 {
   Logger* logger = getLogger();
   logger->metric(metric, value);
