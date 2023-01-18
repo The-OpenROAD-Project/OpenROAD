@@ -77,6 +77,10 @@ namespace dpl {
 class Opendp;
 }
 
+namespace rsz {
+class Resizer;
+}
+
 namespace sta {
 class dbSta;
 class dbNetwork;
@@ -142,6 +146,7 @@ class GlobalRouter
             stt::SteinerTreeBuilder* stt_builder,
             odb::dbDatabase* db,
             sta::dbSta* sta,
+            rsz::Resizer* resizer,
             ant::AntennaChecker* antenna_checker,
             dpl::Opendp* opendp);
   void clear();
@@ -371,6 +376,7 @@ class GlobalRouter
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;
+  rsz::Resizer* resizer_;
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
