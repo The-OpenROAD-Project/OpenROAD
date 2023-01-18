@@ -38,6 +38,7 @@
 #include <array>
 #include <cstdlib>
 #include <iomanip>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <stack>
@@ -83,7 +84,8 @@ namespace utl {
   X(STA)                \
   X(STT)                \
   X(TAP)                \
-  X(UKN)
+  X(UKN)                \
+  X(UTL)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
@@ -174,11 +176,22 @@ class Logger
   // Note: these methods do no escaping so avoid special characters.
   template <typename T,
             typename U = std::enable_if_t<std::is_arithmetic<T>::value>>
-  inline void metric(const std::string_view metric, T value)
+  inline void metric(const std::string_view metric_name, T value)
   {
-    std::ostringstream oss;
-    oss << std::defaultfloat << std::setprecision(6) << value;
-    log_metric(std::string(metric), oss.str());
+    const std::string name = std::string(metric_name);
+    if (std::isinf(value)) {
+      if (value < 0) {
+        metric(name, "-Infinity");
+      } else {
+        metric(name, "Infinity");
+      }
+    } else if (std::isnan(value)) {
+      metric(name, "NaN");
+    } else {
+      std::ostringstream oss;
+      oss << std::defaultfloat << std::setprecision(6) << value;
+      log_metric(name, oss.str());
+    }
   }
 
   inline void metric(const std::string_view metric, const std::string& value)
@@ -203,6 +216,7 @@ class Logger
   void addSink(spdlog::sink_ptr sink);
   void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char* metrics_filename);
+  void removeMetricsSink(const char* metrics_filename);
 
   void setMetricsStage(std::string_view format);
   void clearMetricsStage();
@@ -256,6 +270,7 @@ class Logger
     metrics_entries_.push_back({key, value});
   }
 
+  void flushMetrics();
   void finalizeMetrics();
 
   // Allows for lookup by a compatible key (ie string_view)
