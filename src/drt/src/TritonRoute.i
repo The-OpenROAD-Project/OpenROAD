@@ -197,16 +197,16 @@ set_worker_debug_params(int maze_end_iter,
 }
 
 void
-run_worker_cmd(const char* dump_dir, const char* drc_rpt)
+run_worker_cmd(const char* dump_dir, const char* worker_dir, const char* drc_rpt)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->updateGlobals(fmt::format("{}/init_globals.bin", dump_dir).c_str());
   router->resetDb(fmt::format("{}/design.odb", dump_dir).c_str());
-  router->updateGlobals(fmt::format("{}/globals.bin", dump_dir).c_str());
-  router->updateDesign(fmt::format("{}/updates.bin", dump_dir).c_str());
-  router->updateGlobals(fmt::format("{}/worker_globals.bin", dump_dir).c_str());
+  router->updateGlobals(fmt::format("{}/{}/globals.bin", dump_dir, worker_dir).c_str());
+  router->updateDesign(fmt::format("{}/{}/updates.bin", dump_dir, worker_dir).c_str());
+  router->updateGlobals(fmt::format("{}/{}/worker_globals.bin", dump_dir, worker_dir).c_str());
   
-  router->debugSingleWorker(dump_dir, drc_rpt);
+  router->debugSingleWorker(fmt::format("{}/{}", dump_dir, worker_dir), drc_rpt);
 }
 
 void detailed_route_step_drt(int size,

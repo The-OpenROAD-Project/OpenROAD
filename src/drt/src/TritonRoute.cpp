@@ -264,7 +264,7 @@ void TritonRoute::debugSingleWorker(const std::string& dumpDir,
              "End number of markers {}. Updated={}",
              worker->getBestNumMarkers(),
              updated);
-  if (updated)
+  if (updated && !drcRpt.empty())
     reportDRC(
         drcRpt, design_->getTopBlock()->getMarkers(), worker->getDrcBox());
 }
