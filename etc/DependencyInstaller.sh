@@ -18,7 +18,7 @@ _installCommonDev() {
     eigenVersion=3.4
     lemonVersion=1.3.1
     lemonChecksum="e89f887559113b68657eca67cf3329b5"
-    spdlogVersion=1.8.1
+    spdlogVersion=1.10.0
 
     # temp dir to download and compile
     baseDir=/tmp/installers
