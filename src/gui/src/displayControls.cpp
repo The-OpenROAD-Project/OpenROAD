@@ -1818,7 +1818,8 @@ void DisplayControls::buildRestoreTclCommands(std::vector<std::string>& cmds,
       auto* selectable = parent->child(r, Selectable);
       if (selectable != nullptr) {
         bool select = selectable->checkState() == Qt::Checked;
-        cmds.push_back(fmt::format(FMT_RUNTIME(selectable_restore), name, select));
+        cmds.push_back(
+            fmt::format(FMT_RUNTIME(selectable_restore), name, select));
       }
     }
   }
