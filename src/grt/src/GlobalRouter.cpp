@@ -212,7 +212,6 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
 
 void GlobalRouter::saveCongestion()
 {
-  remove(congestion_file_name_);
   std::ofstream out(congestion_file_name_);
 
   std::vector<std::pair<GSegment, TileCongestion>> congestionGridsV,
@@ -836,7 +835,6 @@ void GlobalRouter::saveSttInputFile(Net* net)
 {
   std::string file_name = fastroute_->getSttInputFileName();
   const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
-  remove(file_name.c_str());
   std::ofstream out(file_name.c_str());
   out << "Net " << net->getName() << " " << net_alpha << "\n";
   for (Pin& pin : net->getPins()) {
@@ -3711,9 +3709,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
-  remove(file_name);
-  std::ofstream out;
-  out.open(file_name, std::ios::app);
+  std::ofstream out(file_name);
   out << "tool "
       << "net "
       << "total_wl "
