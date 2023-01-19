@@ -36,11 +36,13 @@
 sta::define_cmd_args "set_routing_alpha" { alpha \
                                           [-net net_name] \
                                           [-min_fanout fanout] \
-                                          [-min_hpwl hpwl]}
+                                          [-min_hpwl hpwl] \
+                                          [-clock_nets]}
 
 proc set_routing_alpha { args } {
   sta::parse_key_args "set_routing_alpha" args \
-                 keys {-net -min_fanout -min_hpwl}
+                 keys {-net -min_fanout -min_hpwl}\
+                 flags {-clock_nets}
 
   set alpha [lindex $args 0]
   if { ![string is double $alpha] || $alpha < 0.0 || $alpha > 1.0 } {
@@ -59,6 +61,11 @@ proc set_routing_alpha { args } {
   } elseif { [info exists keys(-min_hpwl)] } {
     set hpwl [ord::microns_to_dbu $keys(-min_hpwl)]
     stt::set_min_hpwl_alpha $hpwl $alpha
+  } elseif { [info exists flags(-clock_nets)] } {
+    set nets [stt::parse_clock_nets "set_routing_alpha"]
+    foreach net $nets {
+      stt::set_net_alpha $net $alpha
+    }
   } elseif { [llength $args] == 1 } {
     stt::set_routing_alpha_cmd $alpha
   } else {
@@ -77,6 +84,22 @@ proc parse_net_names {cmd names} {
 
   if {[llength $net_list] == 0} {
     utl::error STT 3 "Nets for $cmd command were not found"
+  }
+
+  return $net_list
+}
+
+proc parse_clock_nets {cmd} {
+  set dbBlock [ord::get_db_block]
+  set net_list {}
+  foreach net [$dbBlock getNets] {
+    if {[$net getSigType] == "CLOCK"} {
+      lappend net_list $net
+    }
+  }
+
+  if {[llength $net_list] == 0} {
+    utl::error STT 6 "Clock nets for $cmd command were not found"
   }
 
   return $net_list
