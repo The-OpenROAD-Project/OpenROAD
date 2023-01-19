@@ -88,12 +88,12 @@ namespace utl {
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
 
-#if FMT_VERSION >= 80000 // backward compatibility with fmt versions older than 8
-# define FMT_RUNTIME(format_string) fmt::runtime(format_string)
+// backward compatibility with fmt versions older than 8
+#if FMT_VERSION >= 80000
+#define FMT_RUNTIME(format_string) fmt::runtime(format_string)
 #else
-# define FMT_RUNTIME(format_string) format_string
+#define FMT_RUNTIME(format_string) format_string
 #endif
-
 
 enum ToolId
 {
