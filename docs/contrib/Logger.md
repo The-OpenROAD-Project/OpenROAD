@@ -33,6 +33,27 @@ critical, error, warning, information and debug. These are supported by
 automatic calls to the logger which will then prefix the appropriate
 severity type to the message.
 
+## C++20 Requirements
+
+In C++20 the logger messages are checked during compile time which introduces
+restrictions around rutime format strings. See [docs](https://fmt.dev/latest/api.html#compile-time-format-string-checks)
+
+OpenROAD uses SPDLog which usues fmt_lib under the hood below is an example of
+what is no longer allowed.
+
+In order to make use of runtime format strings we have introduced a 
+`FMT_RUNTIME` macro in Logger.h. You should use this any time that you are 
+passing a dynamic string as the format string 
+
+```c++
+logger_->info("{} {}", a, b); // OK
+
+void blah(std::string template& a) {
+  logger_->info(a, c); // Illegal
+  logger_->info(FMT_RUNTIME(a), c); // Ok
+}
+```
+
 ## Messaging Guidelines
 
 In addition to the proper use of message types, follow the guidelines
@@ -419,7 +440,7 @@ target_link_libraries(<library_target>
 ```
 
 | Tool             | message/namespace |
-|------------------|-------------------|
+| ---------------- | ----------------- |
 | antenna_checker  | ant               |
 | dbSta            | sta               |
 | FastRoute        | grt               |

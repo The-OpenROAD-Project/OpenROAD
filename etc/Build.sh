@@ -103,17 +103,7 @@ case "${compiler}" in
         export CC="$(command -v gcc)"
         export CXX="$(command -v g++)"
         ;;
-    "clang" )
-        if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
-            # the scl script has unbound variables
-            set +u
-            source /opt/rh/llvm-toolset-7.0/enable
-            set -u
-        fi
-        export CC="$(command -v clang)"
-        export CXX="$(command -v clang++)"
-        ;;
-    clang-* )
+    clang* )
         if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
             # the scl script has unbound variables
             set +u
