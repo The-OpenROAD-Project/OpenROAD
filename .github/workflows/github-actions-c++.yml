@@ -22,6 +22,19 @@ jobs:
       - name: Install dependencies
         run: |
           sudo ./etc/DependencyInstaller.sh
+      - name: Install Patched LEMON # Current LEMON does not compile with C++20 https://lemon.cs.elte.hu/trac/lemon/ticket/631#no1
+        run: |
+          sudo apt-get install mercurial
+          hg clone http://lemon.cs.elte.hu/hg/lemon
+          cd lemon
+          hg co ed2c21cb
+          hg import ../third-party/lemon/patches/allocator-patch.patch
+          mkdir build
+          cd build
+          cmake ..
+          make
+          sudo make install
+          cd ../..
       - name: Build OpenROAD
         run: |
           ./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_CXX_STANDARD=20'

@@ -373,9 +373,9 @@ class RandomNormalT : public RK {
         mutable double _cachedValue;
 
        public:
-        RandomNormalT<RK>(double mean, double stdDev, unsigned seed = UINT_MAX, Verbosity verb = Verbosity("silent")) : RK(seed, verb), _mu(mean), _sigma(stdDev), _cacheFull(false), _cachedValue(0.0) {}
+        RandomNormalT(double mean, double stdDev, unsigned seed = UINT_MAX, Verbosity verb = Verbosity("silent")) : RK(seed, verb), _mu(mean), _sigma(stdDev), _cacheFull(false), _cachedValue(0.0) {}
 
-        RandomNormalT<RK>(double mean, double stdDev, const char *locIdent, unsigned counterOverride = UINT_MAX, Verbosity verb = Verbosity("silent")) : RK(locIdent, counterOverride, verb), _mu(mean), _sigma(stdDev), _cacheFull(false), _cachedValue(0.0) {}
+        RandomNormalT(double mean, double stdDev, const char *locIdent, unsigned counterOverride = UINT_MAX, Verbosity verb = Verbosity("silent")) : RK(locIdent, counterOverride, verb), _mu(mean), _sigma(stdDev), _cacheFull(false), _cachedValue(0.0) {}
 
         operator double();
 };
@@ -402,9 +402,9 @@ class RandomNormCorrPairsT {
         const double _a1, _a2, _b1, _b2;  // intermed values useful to precalc
 
        public:
-        RandomNormCorrPairsT<RK>(double mean1, double stdDev1, double mean2, double stdDev2, double correlation, unsigned seed = UINT_MAX, Verbosity verb = Verbosity("silent")) : _norm(0, 1, seed, verb), _mu1(mean1), _mu2(mean2), _sigma1(stdDev1), _sigma2(stdDev2), _rho(correlation), _c(sqrt((1 - _rho) / (1 + _rho))), _a1(_sigma1 / sqrt(1 + _c * _c)), _a2(_sigma2 / sqrt(1 + _c * _c)), _b1(_sigma1 * _c / sqrt(1 + _c * _c)), _b2(_sigma2 * _c / sqrt(1 + _c * _c)) {}
+        RandomNormCorrPairsT(double mean1, double stdDev1, double mean2, double stdDev2, double correlation, unsigned seed = UINT_MAX, Verbosity verb = Verbosity("silent")) : _norm(0, 1, seed, verb), _mu1(mean1), _mu2(mean2), _sigma1(stdDev1), _sigma2(stdDev2), _rho(correlation), _c(sqrt((1 - _rho) / (1 + _rho))), _a1(_sigma1 / sqrt(1 + _c * _c)), _a2(_sigma2 / sqrt(1 + _c * _c)), _b1(_sigma1 * _c / sqrt(1 + _c * _c)), _b2(_sigma2 * _c / sqrt(1 + _c * _c)) {}
 
-        RandomNormCorrPairsT<RK>(double mean1, double stdDev1, double mean2, double stdDev2, double correlation, const char *locIdent, unsigned counterOverride = UINT_MAX, Verbosity verb = Verbosity("silent")) : _norm(0, 1, locIdent, counterOverride, verb), _mu1(mean1), _mu2(mean2), _sigma1(stdDev1), _sigma2(stdDev2), _rho(correlation), _c(sqrt((1 - _rho) / (1 + _rho))), _a1(_sigma1 / sqrt(1 + _c * _c)), _a2(_sigma2 / sqrt(1 + _c * _c)), _b1(_sigma1 * _c / sqrt(1 + _c * _c)), _b2(_sigma2 * _c / sqrt(1 + _c * _c)) {}
+        RandomNormCorrPairsT(double mean1, double stdDev1, double mean2, double stdDev2, double correlation, const char *locIdent, unsigned counterOverride = UINT_MAX, Verbosity verb = Verbosity("silent")) : _norm(0, 1, locIdent, counterOverride, verb), _mu1(mean1), _mu2(mean2), _sigma1(stdDev1), _sigma2(stdDev2), _rho(correlation), _c(sqrt((1 - _rho) / (1 + _rho))), _a1(_sigma1 / sqrt(1 + _c * _c)), _a2(_sigma2 / sqrt(1 + _c * _c)), _b1(_sigma1 * _c / sqrt(1 + _c * _c)), _b2(_sigma2 * _c / sqrt(1 + _c * _c)) {}
 
         std::pair<double, double> getPair();
 };
@@ -431,7 +431,7 @@ class RandomNormCorrTuplesT {
         bool _bad;  // will be set if _findBasis() fails
 
        public:
-        RandomNormCorrTuplesT<RK>(const std::vector<double> &means, const std::vector<double> &stdDevs,
+        RandomNormCorrTuplesT(const std::vector<double> &means, const std::vector<double> &stdDevs,
 
                                   // Note:  corrs[i][j] is the desired
                                   // correlation between X_i and

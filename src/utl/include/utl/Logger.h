@@ -106,7 +106,7 @@ class Logger
   template <typename... Args>
   inline void report(const std::string& message, const Args&... args)
   {
-    logger_->log(spdlog::level::level_enum::off, message, args...);
+    logger_->log(spdlog::level::level_enum::off, fmt::runtime(message), args...);
   }
 
   // Do NOT call this directly, use the debugPrint macro  instead (defined
@@ -119,7 +119,7 @@ class Logger
   {
     // Message counters do NOT apply to debug messages.
     logger_->log(spdlog::level::level_enum::debug,
-                 "[{} {}-{:04d}] " + message,
+                 fmt::runtime("[{} {}-{:04d}] " + message),
                  level_names[spdlog::level::level_enum::debug],
                  tool_names_[tool],
                  level,
@@ -226,7 +226,7 @@ class Logger
     auto count = counter++;
     if (count < max_message_print) {
       logger_->log(level,
-                   "[{} {}-{:04d}] " + message,
+                   fmt::runtime("[{} {}-{:04d}] " + message),
                    level_names[level],
                    tool_names_[tool],
                    id,
@@ -252,7 +252,7 @@ class Logger
     if (metrics_stages_.empty())
       key = metric;
     else
-      key = fmt::format(metrics_stages_.top(), metric);
+      key = fmt::format(fmt::runtime(metrics_stages_.top()), metric);
     metrics_entries_.push_back({key, value});
   }
 
