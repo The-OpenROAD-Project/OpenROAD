@@ -15,6 +15,12 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 16
+      - name: Install Ninja
+        run: |
+          sudo wget -qO /usr/local/bin/ninja.gz https://github.com/ninja-build/ninja/releases/latest/download/ninja-linux.zip
+          sudo gunzip /usr/local/bin/ninja.gz
+          sudo chmod a+x /usr/local/bin/ninja
+          sudo rm /usr/local/bin/ninja.gz
       - name: Check out repository code
         uses: actions/checkout@v3
         with:
@@ -37,4 +43,4 @@ jobs:
           cd ../..
       - name: Build OpenROAD
         run: |
-          ./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_CXX_STANDARD=20'
+          ./etc/Build.sh -compiler='clang-16' -cmake='-GNinja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'

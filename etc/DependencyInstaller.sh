@@ -112,7 +112,7 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
-        ${cmakePrefix}/bin/cmake -B build .
+        ${cmakePrefix}/bin/cmake -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
