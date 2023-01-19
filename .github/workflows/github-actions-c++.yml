@@ -27,7 +27,7 @@ jobs:
           sudo apt-get install mercurial
           hg clone http://lemon.cs.elte.hu/hg/lemon
           cd lemon
-          hg co ed2c21cb
+          hg co a278d16bd2d082aa3c52ff4a9b0e2224ddc0549a
           hg import ../third-party/lemon/patches/allocator-patch.patch
           mkdir build
           cd build
