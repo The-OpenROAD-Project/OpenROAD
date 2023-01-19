@@ -1,5 +1,6 @@
 record_tests {
   clock_route
+  clock_route_alpha
   clock_route_error1
   clock_route_error2
   congestion1
