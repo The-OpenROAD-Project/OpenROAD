@@ -88,6 +88,13 @@ namespace utl {
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
 
+#if FMT_VERSION >= 80000 // backward compatibility with fmt versions older than 8
+# define FMT_RUNTIME(format_string) fmt::runtime(format_string)
+#else
+# define FMT_RUNTIME(format_string) format_string
+#endif
+
+
 enum ToolId
 {
   FOREACH_TOOL(GENERATE_ENUM)
@@ -106,7 +113,7 @@ class Logger
   template <typename... Args>
   inline void report(const std::string& message, const Args&... args)
   {
-    logger_->log(spdlog::level::level_enum::off, fmt::runtime(message), args...);
+    logger_->log(spdlog::level::level_enum::off, FMT_RUNTIME(message), args...);
   }
 
   // Do NOT call this directly, use the debugPrint macro  instead (defined
@@ -119,7 +126,7 @@ class Logger
   {
     // Message counters do NOT apply to debug messages.
     logger_->log(spdlog::level::level_enum::debug,
-                 fmt::runtime("[{} {}-{:04d}] " + message),
+                 FMT_RUNTIME("[{} {}-{:04d}] " + message),
                  level_names[spdlog::level::level_enum::debug],
                  tool_names_[tool],
                  level,
@@ -226,7 +233,7 @@ class Logger
     auto count = counter++;
     if (count < max_message_print) {
       logger_->log(level,
-                   fmt::runtime("[{} {}-{:04d}] " + message),
+                   FMT_RUNTIME("[{} {}-{:04d}] " + message),
                    level_names[level],
                    tool_names_[tool],
                    id,
@@ -252,7 +259,7 @@ class Logger
     if (metrics_stages_.empty())
       key = metric;
     else
-      key = fmt::format(fmt::runtime(metrics_stages_.top()), metric);
+      key = fmt::format(FMT_RUNTIME(metrics_stages_.top()), metric);
     metrics_entries_.push_back({key, value});
   }
 
