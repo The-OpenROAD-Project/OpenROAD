@@ -140,5 +140,10 @@ else
     logName=/dev/null
 fi
 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+    export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
+fi
+
 cmake "${cmakeOptions[@]}" -B "${buildDir}" . 2>&1 | tee "${logName}"
 time cmake --build "${buildDir}" -j "${numThreads}" 2>&1 | tee -a "${logName}"
