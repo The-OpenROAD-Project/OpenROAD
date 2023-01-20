@@ -220,11 +220,6 @@ void HierRTLMP::hierRTLMacroPlacer()
         0002,
         "Design has no logical hierarchy. RTLMP uses logical hierarchy "
         "information to create clustering and placement of macros.");
-    //
-    // temporary exit to skip macro placement for flat designs
-    //
-    logger_->error(
-        MPL, 0003, "Macro Placement for flat designs disabled for now");
   }
 
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
@@ -941,7 +936,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
     // this logical module is a leaf logical module
     // we will use the MLPart to partition this large flat cluster
     // in the follow-up UpdateSubTree function
-    if (module->getChildren().size() == 0) {
+    if (module->getChildren().size() == 0 && parent != root_cluster_) {
       for (odb::dbInst* inst : module->getInsts()) {
         const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
         if (liberty_cell == nullptr)
@@ -2284,8 +2279,8 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
   // if the current cluster is the root cluster,
   // the shape is fixed, i.e., the fixed die.
   // Thus, we do not need to determine the shapes for it
-  // if (parent->getParent() == nullptr)
-  //  return;
+  if (parent->getParent() == nullptr)
+    return;
   // calculate macro tiling for parent cluster based on
   // the macro tilings of its children
   std::vector<SoftMacro> macros;
@@ -2719,16 +2714,10 @@ void HierRTLMP::createPinBlockage()
   if (io_pad_map_.size() > 0) {
     return;
   }
-  // Get the initial tilings
-  const std::vector<std::pair<float, float>> tilings
-      = root_cluster_->getMacroTilings();
-  // When the program enter stage, the tilings cannot be empty
-  const float ar = root_cluster_->getHeight() / root_cluster_->getWidth();
-  float max_height = std::sqrt(tilings[0].first * tilings[0].second * ar);
-  float max_width = max_height / ar;
-  // convert to the limit to the depth of pin access
-  max_width = ((floorplan_ux_ - floorplan_lx_) - max_width);
-  max_height = ((floorplan_uy_ - floorplan_ly_) - max_height);
+
+  float max_height = root_cluster_->getHeight() * pin_access_th_;
+  float max_width = root_cluster_->getWidth() * pin_access_th_;
+  //
   // the area of standard-cell clusters
   float std_cell_area = 0.0;
   for (auto& cluster : root_cluster_->getChildren()) {
