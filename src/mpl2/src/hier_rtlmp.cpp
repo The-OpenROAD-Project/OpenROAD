@@ -211,10 +211,22 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 // Top Level Interface function
 void HierRTLMP::hierRTLMacroPlacer()
 {
-  //
   // Get the database information
   //
   block_ = db_->getChip()->getBlock();
+  if (block_->getTopModule()->getChildren().size() == 0) {
+    logger_->info(
+        MPL,
+        0002,
+        "Design has no logical hierarchy. RTLMP uses logical hierarchy "
+        "information to create clustering and placement of macros.");
+    //
+    // temporary exit to skip macro placement for flat designs
+    //
+    logger_->error(
+        MPL, 0003, "Macro Placement for flat designs disabled for now");
+  }
+
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
   pitch_x_ = dbuToMicron(
       static_cast<float>(
@@ -447,7 +459,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   logger_->report("number of updated macros : {}", num_updated_macros_);
   logger_->report("number of macros in HardMacroCluster : {}",
                   num_hard_macros_cluster_);
-}
+}  // namespace mpl2
 
 ////////////////////////////////////////////////////////////////////////
 // Private functions
