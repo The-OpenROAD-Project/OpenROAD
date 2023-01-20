@@ -69,6 +69,8 @@ target_sources(utl
     src/LoggerCommon.cpp
     src/MakeLogger.cpp
     src/Metrics.cpp
+    src/CFileUtils.cpp
+    src/ScopedTemporaryFile.cpp
 )
   
 target_include_directories(utl
@@ -80,4 +82,23 @@ target_include_directories(utl
 target_link_libraries(utl
   PUBLIC
     spdlog::spdlog
+)
+
+############################################################
+# Unit testing
+############################################################
+enable_testing()
+
+add_executable(CFileUtilsTest
+  ${PROJECT_SOURCE_DIR}/src/utl/test/CFileUtilsTest.cpp
+)
+
+target_include_directories(CFileUtilsTest
+  PRIVATE
+  ${PROJECT_SOURCE_DIR}/src
+  ${OPENROAD_HOME}/include
+)
+
+target_link_libraries(CFileUtilsTest
+  utl
 )

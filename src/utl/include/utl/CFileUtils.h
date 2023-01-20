@@ -30,67 +30,30 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#define BOOST_TEST_MODULE ext2dBox
+#pragma once
 
-#ifdef HAS_BOOST_UNIT_TEST_LIBRARY
-// Shared library version
-#define BOOST_TEST_DYN_LINK
-#include <boost/test/unit_test.hpp>
-#else
-// Header only version
-#include <boost/test/included/unit_test.hpp>
-#endif
+#include <cstdio>
+#include <string>
 
-#include "rcx/ext2dBox.h"
+#include <boost/core/span.hpp>
+
 #include "utl/Logger.h"
-#include "utl/ScopedTemporaryFile.h"
-#include "utl/CFileUtils.h"
 
-namespace rcx {
+namespace utl {
 
-BOOST_AUTO_TEST_CASE(simple_instantiate_accessors)
-{
-  ext2dBox box({0, 1}, {2, 4}, 1, 0, 0, /*dir=*/false);
+// Reads all of the contents of "file" to a C++ string.
+//
+// This seeks to the beginning of "file" and then attempts to read it to EOF.
+//
+// Side effects: The "file", by side effect, is positioned at EOF when this
+// function returns successfully.
+//
+// Errors: If we cannot 
+std::string GetContents(FILE* file, Logger* logger);
 
-  BOOST_TEST(box.dir() == false);
-  BOOST_TEST(box.ll0() == 0);
-  BOOST_TEST(box.ll1() == 1);
-  BOOST_TEST(box.ur0() == 2);
-  BOOST_TEST(box.ur1() == 4);
+// Writes all the contents of "data" to the current position of "file".
+// "logger" is used to flag any errors in the writing process. Returns when all
+// of "data" has been written successfully.
+void WriteAll(FILE* file, boost::span<const uint8_t> data, Logger* logger);
 
-  BOOST_TEST(box.length() == 2);
-  BOOST_TEST(box.width() == 3);
-}
-
-BOOST_AUTO_TEST_CASE(simple_rotate)
-{
-  ext2dBox box(/*ll=*/{0, 1}, /*ur=*/{2, 4}, 1, 0, 0, /*dir=*/false);
-
-  box.rotate();
-
-  BOOST_TEST(box.dir() == true);
-  BOOST_TEST(box.ll0() == 1);
-  BOOST_TEST(box.ll1() == 0);
-  BOOST_TEST(box.ur0() == 4);
-  BOOST_TEST(box.ur1() == 2);
-
-  BOOST_TEST(box.length() == 2);
-  BOOST_TEST(box.width() == 3);
-}
-
-BOOST_AUTO_TEST_CASE(simple_print_geoms_3d)
-{
-  ext2dBox box(/*ll=*/{0, 1}, /*ur=*/{2, 4}, 1, 0, 0, /*dir=*/false);
-
-  utl::Logger logger;
-  utl::ScopedTemporaryFile stf(&logger);
-
-  const std::array<int, 2> orig = {0, 0};
-  box.printGeoms3D(stf.file(), .5, .25, orig);
-
-  std::string got = utl::GetContents(stf.file(), &logger);
-
-  BOOST_TEST(got == "  0        0 -- M1 D0  0 0.001  0.002 0.004  L= 0.002 W= 0.003  H= 0.5  TH= 0.25 ORIG 0 0.001\n");
-}
-
-}  // namespace rcx
+}  // namespace utl
