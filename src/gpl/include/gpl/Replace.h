@@ -73,13 +73,11 @@ class Replace
   Replace();
   ~Replace();
 
-  void init();
+  void init(odb::dbDatabase* odb,
+            rsz::Resizer* resizer,
+            grt::GlobalRouter* router,
+            utl::Logger* logger);
   void reset();
-
-  void setDb(odb::dbDatabase* odb);
-  void setResizer(rsz::Resizer* resizer);
-  void setGlobalRouter(grt::GlobalRouter* fr);
-  void setLogger(utl::Logger* log);
 
   void doIncrementalPlace();
   void doInitialPlace();
