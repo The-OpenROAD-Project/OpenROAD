@@ -627,17 +627,7 @@ const odb::Rect FollowPinShape::getMinimumRect() const
 bool FollowPinShape::cut(const ShapeTree& obstructions,
                          std::vector<Shape*>& replacements) const
 {
-  ShapeTree filtered_obstructions;
-
-  for (const auto& [box, shape] : obstructions) {
-    if (shape->shapeType() == GRID_OBS) {
-      // followpins can ignore grid level obstructions
-      continue;
-    }
-    filtered_obstructions.insert({box, shape});
-  }
-
-  return Shape::cut(filtered_obstructions, replacements);
+  return Shape::cut(obstructions, replacements);
 }
 
 }  // namespace pdn

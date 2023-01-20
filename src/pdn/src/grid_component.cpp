@@ -296,10 +296,19 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
       continue;
     }
     const auto& obs = obstructions.at(layer);
+    ShapeTree filtered_obstructions;
+    for (const auto& [box, shape] : obs) {
+      if (shape->shapeType() == Shape::GRID_OBS) {
+        // followpins can ignore grid level obstructions
+        continue;
+      }
+      filtered_obstructions.insert({box, shape});
+    }
+
     std::map<Shape*, std::vector<Shape*>> replacement_shapes;
     for (const auto& [box, shape] : shapes) {
       std::vector<Shape*> replacements;
-      if (!shape->cut(obs, replacements)) {
+      if (!shape->cut(filtered_obstructions, replacements)) {
         continue;
       }
 
