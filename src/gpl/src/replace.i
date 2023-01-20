@@ -27,10 +27,6 @@ replace_reset_cmd()
 {
   Replace* replace = getReplace();  
   replace->reset();
-  replace->setDb(getOpenRoad()->getDb());
-  replace->setLogger(getOpenRoad()->getLogger());
-  replace->setGlobalRouter(getOpenRoad()->getGlobalRouter());
-  replace->setResizer(getOpenRoad()->getResizer());
 }
 
 void 
