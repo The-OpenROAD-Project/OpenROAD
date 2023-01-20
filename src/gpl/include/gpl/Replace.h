@@ -82,7 +82,6 @@ class Replace
   void doIncrementalPlace();
   void doInitialPlace();
 
-  bool initNesterovPlace();
   int doNesterovPlace(int start_iter = 0);
 
   // Initial Place param settings
@@ -142,6 +141,8 @@ class Replace
                 odb::dbInst* inst = nullptr);
 
  private:
+  bool initNesterovPlace();
+
   odb::dbDatabase* db_;
   rsz::Resizer* rs_;
   grt::GlobalRouter* fr_;
