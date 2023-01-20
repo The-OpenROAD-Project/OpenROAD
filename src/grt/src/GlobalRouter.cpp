@@ -200,6 +200,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
 
+  computePinOffsetAdjustments();
+
   for (RegionAdjustment region_adjustment : region_adjustments_) {
     odb::dbTechLayer* layer = routing_layers_[region_adjustment.getLayer()];
     logger_->report("Adjusting region on layer {}", layer->getName());
@@ -1875,6 +1877,56 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
         || net->getNumPins() > 1) {
       for (GSegment& segment : pad_pins_connections_[db_net]) {
         route.push_back(segment);
+      }
+    }
+  }
+}
+
+void GlobalRouter::computePinOffsetAdjustments()
+{
+  for (auto net : block_->getNets()) {
+    if (pad_pins_connections_.find(net) != pad_pins_connections_.end()) {
+      for (GSegment& segment : pad_pins_connections_[net]) {
+        int tile_size = grid_->getTileSize();
+        int die_area_min_x = grid_->getXMin();
+        int die_area_min_y = grid_->getYMin();
+        int gcell_id_x
+            = floor((float) ((segment.init_x - die_area_min_x) / tile_size));
+        int gcell_id_y
+            = floor((float) ((segment.init_y - die_area_min_y) / tile_size));
+        if (segment.init_y == segment.final_y) {
+          for (int i = 0; i < gcells_offset_; i++) {
+            int curr_cap = fastroute_->getEdgeCapacity(gcell_id_x + i,
+                                                       gcell_id_y,
+                                                       gcell_id_x + i + 1,
+                                                       gcell_id_y,
+                                                       segment.init_layer);
+            curr_cap -= 1;
+            fastroute_->addAdjustment(gcell_id_x + i,
+                                      gcell_id_y,
+                                      gcell_id_x + i + 1,
+                                      gcell_id_y,
+                                      segment.init_layer,
+                                      curr_cap,
+                                      true);
+          }
+        } else if (segment.init_x == segment.final_x) {
+          for (int i = 0; i < gcells_offset_; i++) {
+            int curr_cap = fastroute_->getEdgeCapacity(gcell_id_x + i,
+                                                       gcell_id_y,
+                                                       gcell_id_x,
+                                                       gcell_id_y + i + 1,
+                                                       segment.init_layer);
+            curr_cap -= 1;
+            fastroute_->addAdjustment(gcell_id_x,
+                                      gcell_id_y + i,
+                                      gcell_id_x,
+                                      gcell_id_y + i + 1,
+                                      segment.init_layer,
+                                      curr_cap,
+                                      true);
+          }
+        }
       }
     }
   }

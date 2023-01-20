@@ -278,6 +278,7 @@ class GlobalRouter
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reduction_percentage);
+  void computePinOffsetAdjustments();
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer);
   int computeNetWirelength(odb::dbNet* db_net);
