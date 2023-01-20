@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_MARKER_H_
-#define _FR_MARKER_H_
+#pragma once
 
 #include <set>
 #include <tuple>
@@ -150,5 +149,3 @@ class frMarker : public frFig
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

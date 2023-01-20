@@ -3308,7 +3308,7 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 	
 	int fwidth;
 	if (indir == dbTechLayerDir::NONE)
-	  fwidth = MIN(x2 - x1, y2 - y1);
+	  fwidth = std::min(x2 - x1, y2 - y1);
 	else
 	  fwidth = (indir == dbTechLayerDir::VERTICAL) ? x2 - x1 : y2 - y1;
 

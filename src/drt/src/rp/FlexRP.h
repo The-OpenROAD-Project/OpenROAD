@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_FLEXRP_H_
-#define _FR_FLEXRP_H_
+#pragma once
 
 #include <boost/icl/interval_set.hpp>
 
@@ -174,5 +173,3 @@ class FlexRP
       std::pair<frCoord, frCoord>& range);
 };
 }  // namespace fr
-
-#endif

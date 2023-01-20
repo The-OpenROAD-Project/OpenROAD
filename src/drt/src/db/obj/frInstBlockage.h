@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_INSTBLOCKAGE_H_
-#define _FR_INSTBLOCKAGE_H_
+#pragma once
 
 #include <memory>
 
@@ -60,5 +59,3 @@ class frInstBlockage : public frBlockObject
   int index_in_owner_;
 };
 }  // namespace fr
-
-#endif

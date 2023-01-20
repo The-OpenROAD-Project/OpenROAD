@@ -431,22 +431,6 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
     }
   } else if (opt->_nondefault_lef_rules) {
     return 0;
-    wTable->resetCnt();
-    sTable->resetCnt();
-    dbSet<dbTechNonDefaultRule> nd_rules = opt->_tech->getNonDefaultRules();
-    dbSet<dbTechNonDefaultRule>::iterator nditr;
-    dbTechLayerRule* tst_rule;
-
-    for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr) {
-      tst_rule = (*nditr)->getLayerRule(layer);
-      if (tst_rule == NULL)
-        continue;
-
-      double w = tst_rule->getWidth();
-      double s = tst_rule->getSpacing();
-      wTable->add(w);
-      sTable->add(s);
-    }
   } else {
     if (measure->_diag)
       spaceTable->add(0.0);
@@ -646,7 +630,6 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
   uint WW2 = measure->_w2_nm;
   uint SS2 = measure->_s2_nm;
 
-  uint base;
   if (n > 1) {
     cnt++;
     measure->createNetSingleWire(_wireDirName, idCnt, WW, s_layout);
@@ -655,7 +638,6 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
     cnt++;
     if (!measure->_diag) {
       measure->createNetSingleWire(_wireDirName, idCnt, WW, SS1);
-      base = measure->_ll[measure->_dir] + WW / 2;
       idCnt++;
       cnt++;
       measure->createNetSingleWire(_wireDirName, idCnt, WW2, SS2);
@@ -681,39 +663,12 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
       idCnt++;
     }
   } else {
-    base = measure->_ll[measure->_dir] + WW / 2;
     cnt++;
     measure->createNetSingleWire(_wireDirName, 3, w_layout, s_layout);
     idCnt++;
   }
 
   if (measure->_diag) {
-    return cnt;
-
-    int met;
-    if (measure->_overMet > 0)
-      met = measure->_overMet;
-    else if (measure->_underMet > 0)
-      met = measure->_underMet;
-
-    double minWidth = measure->_minWidth;
-    double minSpace = measure->_minSpace;
-    double min_pitch = minWidth + minSpace;
-    measure->clean2dBoxTable(met, false);
-    int i;
-    uint begin = base - Ath__double2int(measure->_seff * 1000)
-                 + Ath__double2int(minWidth * 1000) / 2;
-    for (i = 0; i < n + 1; i++) {
-      measure->createDiagNetSingleWire(_wireDirName,
-                                       idCnt,
-                                       begin,
-                                       Ath__double2int(1000 * minWidth),
-                                       Ath__double2int(1000 * minSpace),
-                                       measure->_dir);
-      begin -= Ath__double2int(min_pitch * 1000);
-      idCnt++;
-    }
-    measure->_ur[measure->_dir] += grid_gap_cnt * (w_layout + s_layout);
     return cnt;
   }
   bool grid_context = true;

@@ -85,14 +85,6 @@ struct deftoken
 #define LAYER_SPEC 10005
 #define SHAPE_SPEC 10006
 
-#ifndef MIN
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#endif
-
-#ifndef MIN
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-#endif
-
 #define ROUND(x) ((x) >= 0 ? (int) ((x) + 0.5) : (int) ((x) -0.5))
 
 // defTOKEN *TokenFromRect();

@@ -233,8 +233,8 @@ void extMain::getViaCapacitance(dbShape svia, dbNet* net)
     int y2 = s.yMax();
     int dx = x2 - x1;
     int dy = y2 - y1;
-    int width = MIN(dx, dy);
-    int len = MAX(dx, dy);
+    int width = std::min(dx, dy);
+    int len = std::max(dx, dy);
 
     uint level = s.getTechLayer()->getRoutingLevel();
     if (Len[level] < len) {
@@ -352,10 +352,10 @@ void extMain::getShapeRC(dbNet* net,
   } else {
     computePathDir(prevPoint, pshape.point, &len);
     level = s.getTechLayer()->getRoutingLevel();
-    uint width = MIN(pshape.shape.xMax() - pshape.shape.xMin(),
-                     pshape.shape.yMax() - pshape.shape.yMin());
-    len = MAX(pshape.shape.xMax() - pshape.shape.xMin(),
-              pshape.shape.yMax() - pshape.shape.yMin());
+    uint width = std::min(pshape.shape.xMax() - pshape.shape.xMin(),
+                          pshape.shape.yMax() - pshape.shape.yMin());
+    len = std::max(pshape.shape.xMax() - pshape.shape.xMin(),
+                   pshape.shape.yMax() - pshape.shape.yMin());
     if (_adjust_colinear) {
       len -= width;
       if (len <= 0)
@@ -414,10 +414,10 @@ void extMain::getShapeRC(dbNet* net,
     int y2 = s.yMax();
 
     if (!_allNet) {
-      _ccMinX = MIN(x1, _ccMinX);
-      _ccMinY = MIN(y1, _ccMinY);
-      _ccMaxX = MAX(x2, _ccMaxX);
-      _ccMaxY = MAX(y2, _ccMaxY);
+      _ccMinX = std::min(x1, _ccMinX);
+      _ccMinY = std::min(y1, _ccMinY);
+      _ccMaxX = std::max(x2, _ccMaxX);
+      _ccMaxY = std::max(y2, _ccMaxY);
     }
   }
   prevPoint = pshape.point;
@@ -1116,13 +1116,6 @@ void extMain::removeExt()
   }
   removeExt(rnets);
 }
-void v_printWireNeighbor(void* ip,
-                         uint met,
-                         void* v_swire,
-                         void* v_topNeighbor,
-                         void* v_botNeighbor)
-{
-}
 void extCompute(CoupleOptions& inputTable, void* extModel);
 void extCompute1(CoupleOptions& inputTable, void* extModel);
 
@@ -1179,10 +1172,10 @@ uint extMain::readCmpStats(const char* name,
 
         int X = Ath__double2int(parser.getDouble(0) * nm);
         int Y = Ath__double2int(parser.getDouble(1) * nm);
-        x1 = MIN(x1, X);
-        y1 = MIN(y1, Y);
-        x2 = MAX(x2, X);
-        y2 = MAX(y2, Y);
+        x1 = std::min(x1, X);
+        y1 = std::min(y1, Y);
+        x2 = std::max(x2, X);
+        y2 = std::max(y2, Y);
       }
       break;
     }
@@ -1881,9 +1874,11 @@ bool extMain::setCorners(const char* rulesFileName, const char* cmp_file)
     logger_->info(
         RCX, 435, "Reading extraction model file {} ...", rulesFileName);
 
-    if (!fopen(rulesFileName, "r"))
+    FILE* rules_file = fopen(rulesFileName, "r");
+    if (rules_file == nullptr)
       logger_->error(
           RCX, 468, "Can't open extraction model file {}", rulesFileName);
+    fclose(rules_file);
 
     if (!(m->readRules((char*) rulesFileName,
                        false,

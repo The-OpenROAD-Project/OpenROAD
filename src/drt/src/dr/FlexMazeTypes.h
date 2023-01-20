@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FLEX_MAZE_TYPES_H_
-#define _FLEX_MAZE_TYPES_H_
+#pragma once
 
 #include "frBaseTypes.h"
 
@@ -98,5 +97,3 @@ class FlexMazeIdx
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

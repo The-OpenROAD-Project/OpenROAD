@@ -34,17 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 %module pdngen
 %{
-
-// These includes are needed by the SWIG generated CXX files mostly 
-// for determining the size of Classes that they define. Since that are
-// not actually wrapped, the classes defined in these files will appear as
-// opaque pointers in Python.
-#include "../src/connect.h"
-#include "../src/domain.h"
-#include "../src/grid.h"
-#include "../src/power_cells.h"
-#include "../src/renderer.h"
-
 #include "pdn/PdnGen.hh"
 #include "odb/db.h"
 #include <array>
@@ -52,22 +41,19 @@
 #include <memory>
 #include <vector>
 
-using pdn::ExtensionMode;
 using namespace pdn;
- 
 %}
 
 %include <std_vector.i>
 %include <std_array.i>
 %include <std_map.i>
+%include <std_set.i>
+%include <std_string.i>
 
-// this maps unsigned long to the enum ExtensionMode
 %include typemaps.i
-%apply unsigned long { ExtensionMode };
 
 %import "odb.i"
-%import "dbtypes.i"
-%include <std_string.i>
+%clear int & x, int & y; // defined in dbtypes.i, must be cleared here.
 
 // These are needed to coax swig into sending or returning Python 
 // lists, arrays, or sets (as appropriate) of opaque pointers. Note 
@@ -83,19 +69,8 @@ namespace std {
   %template(viagen_list)  std::vector<odb::dbTechViaGenerateRule *>;
   %template(techvia_list) std::vector<odb::dbTechVia *>;
   %template(layer_list)   std::vector<odb::dbTechLayer *>;
+  %template(net_set)      std::set<odb::dbNet*>;
 }
 
 %include "../../Exception-py.i"
 %include "pdn/PdnGen.hh"
-
-%inline %{
-
-namespace pdn {
-
-// difficult to pass a set. repair_pdn_via takes a vector and then
-// rebuilds the set in C++, so we just borrow that here.
-void repair_pdn_vias(const std::vector<odb::dbNet*>& nets);
- 
-}  // namespace
-
-%} //  %inline

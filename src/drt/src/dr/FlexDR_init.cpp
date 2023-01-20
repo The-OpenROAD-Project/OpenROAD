@@ -188,14 +188,11 @@ void FlexDRWorker::initNetObjs(
 {
   vector<frBlockObject*> result;
   design->getRegionQuery()->queryDRObj(getExtBox(), result);
-  int cnt1 = 0;
-  int cnt2 = 0;
   for (auto rptr : result) {
     if (rptr->typeId() == frcPathSeg) {
       auto cptr = static_cast<frPathSeg*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_pathSeg(cptr, nets, netRouteObjs, netExtObjs);
-        cnt1++;
       } else {
         cout << "Error: initNetObjs hasNet() empty" << endl;
       }
@@ -203,7 +200,6 @@ void FlexDRWorker::initNetObjs(
       auto cptr = static_cast<frVia*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_via(cptr, nets, netRouteObjs, netExtObjs);
-        cnt2++;
       } else {
         cout << "Error: initNetObjs hasNet() empty" << endl;
       }
@@ -211,7 +207,6 @@ void FlexDRWorker::initNetObjs(
       auto cptr = static_cast<frPatchWire*>(rptr);
       if (cptr->hasNet()) {
         initNetObjs_patchWire(cptr, nets, netRouteObjs, netExtObjs);
-        cnt1++;
       } else {
         cout << "Error: initNetObjs hasNet() empty" << endl;
       }
@@ -2006,8 +2001,8 @@ void FlexDRWorker::initMazeIdx_connFig(drConnFig* connFig)
   if (connFig->typeId() == drcPathSeg) {
     auto obj = static_cast<drPathSeg*>(connFig);
     auto [bp, ep] = obj->getPoints();
-    bp.set(max(bp.x(), getExtBox().xMin()), max(bp.y(), getExtBox().yMin()));
-    ep.set(min(ep.x(), getExtBox().xMax()), min(ep.y(), getExtBox().yMax()));
+    bp = {max(bp.x(), getExtBox().xMin()), max(bp.y(), getExtBox().yMin())};
+    ep = {min(ep.x(), getExtBox().xMax()), min(ep.y(), getExtBox().yMax())};
     auto lNum = obj->getLayerNum();
     if (gridGraph_.hasMazeIdx(bp, lNum) && gridGraph_.hasMazeIdx(ep, lNum)) {
       FlexMazeIdx bi, ei;

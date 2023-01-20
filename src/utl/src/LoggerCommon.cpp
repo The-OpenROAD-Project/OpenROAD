@@ -82,6 +82,12 @@ void open_metrics(const char* metrics_filename)
   logger->addMetricsSink(metrics_filename);
 }
 
+void close_metrics(const char* metrics_filename)
+{
+  Logger* logger = getLogger();
+  logger->removeMetricsSink(metrics_filename);
+}
+
 void metric(const char* metric, const char* value)
 {
   Logger* logger = getLogger();
@@ -94,7 +100,7 @@ void metric_integer(const char* metric, const int value)
   logger->metric(metric, value);
 }
 
-void metric_float(const char* metric, const float value)
+void metric_float(const char* metric, const double value)
 {
   Logger* logger = getLogger();
   logger->metric(metric, value);

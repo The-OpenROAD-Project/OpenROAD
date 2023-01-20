@@ -187,10 +187,11 @@ class GuiPainter : public Painter
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
   {
     if (roundX > 0 || roundY > 0)
-      painter_->drawRoundRect(
+      painter_->drawRoundedRect(
           QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()),
           roundX,
-          roundY);
+          roundY,
+          Qt::RelativeSize);
     else
       painter_->drawRect(QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()));
   }

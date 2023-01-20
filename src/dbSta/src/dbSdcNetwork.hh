@@ -33,8 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef DB_SDC_NETWORK_H
-#define DB_SDC_NETWORK_H
+#pragma once
 
 #include "sta/SdcNetwork.hh"
 
@@ -68,4 +67,3 @@ protected:
 };
 
 }  // namespace sta
-#endif

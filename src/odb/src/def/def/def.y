@@ -1992,10 +1992,11 @@ comp_type: placement_status pt orient
         }
         | '+' K_UNPLACED
         {
-          if (defData->callbacks->ComponentCbk)
+          if (defData->callbacks->ComponentCbk) {
             defData->Component.setPlacementStatus(
                                          DEFI_COMPONENT_UNPLACED);
             defData->Component.setPlacementLocation(-1, -1, -1);
+	  }
         }
         | '+' K_UNPLACED pt orient
         {

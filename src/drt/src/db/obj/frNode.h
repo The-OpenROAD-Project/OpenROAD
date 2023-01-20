@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_NODE_H_
-#define _FR_NODE_H_
+#pragma once
 
 #include <iostream>
 #include <memory>
@@ -163,5 +162,3 @@ class frNode : public frBlockObject
   friend class grNode;
 };
 }  // namespace fr
-
-#endif

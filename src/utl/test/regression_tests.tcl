@@ -2,6 +2,7 @@ record_tests {
     test_info
     test_error
     test_suppress_message
+    test_metrics
     #test_error_exception
 }
 

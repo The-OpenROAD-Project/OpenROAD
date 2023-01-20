@@ -122,30 +122,30 @@ enum ClusterType
   MixedCluster
 };
 
-// Metric class for logical modules and clusters
-class Metric
+// Metrics class for logical modules and clusters
+class Metrics
 {
  public:
-  Metric() = default;
-  Metric(unsigned int num_std_cell,
-         unsigned int num_macro,
-         float std_cell_area,
-         float macro_area);
+  Metrics() = default;
+  Metrics(unsigned int num_std_cell,
+          unsigned int num_macro,
+          float std_cell_area,
+          float macro_area);
 
-  void addMetric(const Metric& metric);
-  void inflatStdCellArea(float std_cell_util);
-  void inflatMacroArea(float inflat_macro_area);
+  void addMetrics(const Metrics& metrics);
+  void inflateStdCellArea(float std_cell_util);
+  void inflateMacroArea(float inflate_macro_area);
   const std::pair<unsigned int, unsigned int> getCountStats() const;
   const std::pair<float, float> getAreaStats() const;
-  const std::pair<float, float> getInflatAreaStats() const;
+  const std::pair<float, float> getInflateAreaStats() const;
   unsigned int getNumMacro() const;
   unsigned int getNumStdCell() const;
   float getStdCellArea() const;
   float getMacroArea() const;
   float getArea() const;
-  float getInflatStdCellArea() const;
-  float getInflatMacroArea() const;
-  float getInflatArea() const;
+  float getInflateStdCellArea() const;
+  float getInflateMacroArea() const;
+  float getInflateArea() const;
 
  private:
   // In the hierarchical autoclustering part,
@@ -158,13 +158,13 @@ class Metric
   // we need to know the sizes of clusters.
   // std_cell_area is the sum of areas of all std cells
   // macro_area is the sum of areas of all macros
-  // inflat_std_cell_area = std_cell_area / util
-  // inflat_macro_area considers the halo width when calculate
+  // inflate_std_cell_area = std_cell_area / util
+  // inflate_macro_area considers the halo width when calculate
   // each macro area
   float std_cell_area_ = 0.0;
   float macro_area_ = 0.0;
-  float inflat_std_cell_area_ = 0.0;
-  float inflat_macro_area_ = 0.0;
+  float inflate_std_cell_area_ = 0.0;
+  float inflate_macro_area_ = 0.0;
 };
 
 // In this hierarchical autoclustering part,
@@ -208,9 +208,9 @@ class Cluster
                         const float height);
   bool getIOClusterFlag() const;
 
-  // Metric Support
-  void setMetric(const Metric& metric);
-  const Metric getMetric() const;
+  // Metrics Support
+  void setMetrics(const Metrics& metrics);
+  const Metrics getMetrics() const;
   int getNumStdCell() const;
   int getNumMacro() const;
   float getArea() const;
@@ -298,8 +298,8 @@ class Cluster
   // The position be the center of IOs
   bool io_cluster_flag_ = false;
 
-  // Each cluster uses metric to store its statistics
-  Metric metric_;
+  // Each cluster uses metrics to store its statistics
+  Metrics metrics_;
 
   // Each cluster cooresponding to a SoftMacro in the placement engine
   // which will concludes the information about real pos, width, height, area
@@ -318,7 +318,7 @@ class Cluster
   // Here we do not differentiate the input and output connections
   std::map<int, float> connection_map_;  // cluster_id, number of connections
 
-  // store the virtual connection between childrens
+  // store the virtual connection between children
   // the virtual connection is used to tie the std cell part and the
   // corresponding macro part together
   std::vector<std::pair<int, int>> virtual_connections_;
@@ -463,8 +463,6 @@ class SoftMacro
   // create a SoftMacro from a cluster
   SoftMacro(Cluster* cluster);
 
-  void printShape();
-
   // name
   const std::string getName() const;
   // Physical Information
@@ -569,11 +567,11 @@ struct BundledNet
            && (terminals.second == net.terminals.second);
   }
 
-  std::pair<int, int>
-      terminals;  // id for terminals
-                  // here the id can be the id of hard macro or soft macro
-  float weight;   // Number of bundled connections (can be timing-related
-                  // weight)
+  // id for terminals, the id can be the id of hard macro or soft
+  // macro
+  std::pair<int, int> terminals;
+  // Number of bundled connections (can be timing-related weight)
+  float weight;
   // support for bus synthsis
   float hpwl;  // HPWL of the Net (in terms of path length)
   // shortest paths:  to minimize timing

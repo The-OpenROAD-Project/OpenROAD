@@ -1171,11 +1171,11 @@ int startGui(int& argc,
   }
   if (!restore_commands.empty()) {
     // Temporarily connect to script widget to get ending tcl state
-    int tcl_return_code = TCL_OK;
-    auto tcl_return_code_connect = QObject::connect(
-        main_window->getScriptWidget(),
-        &ScriptWidget::commandExecuted,
-        [&tcl_return_code](int code) { tcl_return_code = code; });
+    bool tcl_ok = true;
+    auto tcl_return_code_connect
+        = QObject::connect(main_window->getScriptWidget(),
+                           &ScriptWidget::commandExecuted,
+                           [&tcl_ok](bool is_ok) { tcl_ok = is_ok; });
 
     main_window->getScriptWidget()->executeSilentCommand(
         QString::fromStdString(restore_commands));
@@ -1183,7 +1183,7 @@ int startGui(int& argc,
     // disconnect tcl return lister
     QObject::disconnect(tcl_return_code_connect);
 
-    if (tcl_return_code != TCL_OK) {
+    if (!tcl_ok) {
       auto& cmds = gui->getRestoreStateCommands();
       if (cmds[cmds.size() - 1]
           == "exit") {  // exit, will be the last command if it is present

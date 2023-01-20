@@ -646,11 +646,13 @@ makeBufferedNet(RoutePt &from,
                                              loc_pin_map, level + 1,
                                              corner, resizer, logger,
                                              db_network);
-      if (bnet)
-        bnet = make_shared<BufferedNet>(BufferedNetType::junction,
-                                        to_pt, bnet, bnet1, resizer);
-      else
-        bnet = bnet1;
+      if (bnet1) {
+        if (bnet)
+          bnet = make_shared<BufferedNet>(BufferedNetType::junction,
+                                          to_pt, bnet, bnet1, resizer);
+        else
+          bnet = bnet1;
+      }
     }
   }
   if (bnet

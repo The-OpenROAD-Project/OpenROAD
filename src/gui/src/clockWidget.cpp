@@ -923,9 +923,9 @@ void ClockTreeView::wheelEvent(QWheelEvent* event)
   const auto anchor = transformationAnchor();
   setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
 
-  if (event->delta() > 0) {
+  if (event->angleDelta().y() > 0) {
     scale(factor, factor);
-  } else if (event->delta() < 0) {
+  } else if (event->angleDelta().y() < 0) {
     scale(1.0 / factor, 1.0 / factor);
   }
 

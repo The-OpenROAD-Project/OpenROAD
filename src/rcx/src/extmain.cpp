@@ -63,7 +63,7 @@ void extMain::initExtractedCorners(dbBlock* block)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
-    tmiExt = new extMain(0);
+    tmiExt = new extMain;
     tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   if (tmiExt->_processCornerTable)
@@ -76,7 +76,7 @@ int extMain::getExtCornerIndex(dbBlock* block, const char* cornerName)
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
-    tmiExt = new extMain(0);
+    tmiExt = new extMain;
     tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   int idx = tmiExt->getDbCornerIndex(cornerName);
@@ -165,7 +165,7 @@ void extMain::writeIncrementalSpef(std::vector<dbNet*>& buf_nets,
 {
   extMain* tmiExt = (extMain*) block->getExtmi();
   if (tmiExt == NULL) {
-    tmiExt = new extMain(0);
+    tmiExt = new extMain;
     tmiExt->init((dbDatabase*) block->getDataBase(), logger_);
   }
   tmiExt->writeIncrementalSpef(buf_nets,
@@ -395,7 +395,7 @@ void extMain::setupMapping(uint itermCnt)
   _itermTable = new Ath__array1D<int>(itermCnt);
   _nodeTable = new Ath__array1D<int>(16000);
 }
-extMain::extMain(uint menuId)
+extMain::extMain()
     : _db(nullptr),
       _tech(nullptr),
       _block(nullptr),
@@ -476,7 +476,6 @@ extMain::extMain(uint menuId)
   _gndcFactor = 1.0;
   _gndcModify = false;
 
-  _menuId = menuId;
   _dbPowerId = 1;
   _dbSignalId = 2;
   _CCsegId = 3;
@@ -1227,15 +1226,6 @@ void extMain::printNet(dbNet* net, uint netId)
   if (netId == net->getId())
     net->printNetName(stdout);
 }
-bool IsDebugNets(dbNet* srcNet, dbNet* tgtNet, uint debugNetId)
-{
-  if (srcNet != NULL && srcNet->getId() == debugNetId)
-    return true;
-  if (tgtNet != NULL && tgtNet->getId() == debugNetId)
-    return true;
-
-  return false;
-}
 void extMain::measureRC(CoupleOptions& options)
 {
   _totSegCnt++;
@@ -1393,11 +1383,6 @@ void extMain::measureRC(CoupleOptions& options)
     }
   }
   ccReportProgress();
-}
-void extCompute(CoupleOptions& options, void* computePtr)
-{
-  extMain* mmm = (extMain*) computePtr;
-  mmm->measureRC(options);
 }
 extern CoupleOptions coupleOptionsNull;
 

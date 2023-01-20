@@ -69,6 +69,8 @@ PdnGen::PdnGen() : db_(nullptr), logger_(nullptr)
 {
 }
 
+PdnGen::~PdnGen() = default;
+
 void PdnGen::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;

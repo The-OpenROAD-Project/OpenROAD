@@ -64,7 +64,7 @@ namespace mpl2 {
 struct BundledNet;
 class Cluster;
 class HardMacro;
-class Metric;
+class Metrics;
 struct Rect;
 class SoftMacro;
 class Graphics;
@@ -162,9 +162,9 @@ class HierRTLMP
                            std::vector<std::vector<int>>& hyperedges,
                            bool backward_flag);
   // DFS-manner function to traverse the logical hierarchy
-  Metric* computeMetric(odb::dbModule* module);
-  // Calculate metric for cluster based its type
-  void setClusterMetric(Cluster* cluster);
+  Metrics* computeMetrics(odb::dbModule* module);
+  // Calculate metrics for cluster based its type
+  void setClusterMetrics(Cluster* cluster);
   // Map IOs to Pads (for designs with IO pads)
   void mapIOPads();
   // create bundled IOs as clusters (for designs with IO pins or Pads)
@@ -267,8 +267,8 @@ class HierRTLMP
   float pin_access_net_width_ratio_
       = 0.1;  // define the ratio of number of connections
               // related to IOs to the range of these IO spans
-  float notch_v_th_ = 100.0;
-  float notch_h_th_ = 100.0;
+  float notch_v_th_ = 10.0;
+  float notch_h_th_ = 10.0;
 
   int snap_layer_ = 4;
   float pitch_x_ = 0.0;
@@ -283,12 +283,14 @@ class HierRTLMP
   float fence_weight_ = 10.0;
   float boundary_weight_ = 5.0;
   float notch_weight_ = 1.0;
-  float macro_blockage_weight_ = 5.0;
+  float macro_blockage_weight_ = 1.0;
 
   // gudiances, fences, constraints
   std::map<std::string, Rect> fences_;  // macro_name, fence
   std::map<std::string, Rect> guides_;  // macro_name, guide
-  std::vector<Rect> blockages_;         // blockages
+  std::vector<Rect> blockages_;  // placement blockages (for both standard cells
+                                 // and hard macros)
+  std::vector<Rect> macro_blockages_;  // the blockages for macros
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
@@ -304,12 +306,12 @@ class HierRTLMP
   const float virtual_weight_ = 2000.0;
 
   // probability of each action
-  float pos_swap_prob_ = 0.3;
-  float neg_swap_prob_ = 0.3;
-  float double_swap_prob_ = 0.2;
+  float pos_swap_prob_ = 0.2;
+  float neg_swap_prob_ = 0.2;
+  float double_swap_prob_ = 0.1;
   float exchange_swap_prob_ = 0.0;
-  float flip_prob_ = 0.2;
-  float resize_prob_ = 0.2;
+  float flip_prob_ = 0.5;
+  float resize_prob_ = 0.5;
 
   // design-related variables
   // core area (in float)
@@ -330,9 +332,9 @@ class HierRTLMP
 
   // statistics of the design
   // Here when we calculate macro area, we do not include halo_width
-  Metric* metric_ = nullptr;
-  // store the metric for each hierarchical logical module
-  std::map<const odb::dbModule*, Metric*> logical_module_map_;
+  Metrics* metrics_ = nullptr;
+  // store the metrics for each hierarchical logical module
+  std::map<const odb::dbModule*, Metrics*> logical_module_map_;
   // associate each Macro to the HardMacro object
   std::map<odb::dbInst*, HardMacro*> hard_macro_map_;
 
@@ -353,7 +355,6 @@ class HierRTLMP
 
   // Multilevel support
   int max_num_level_ = 2;
-  int max_hier_level_ = 0;
   int level_ = 0;
   float coarsening_ratio_ = 5.0;
 

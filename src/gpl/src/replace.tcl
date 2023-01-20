@@ -32,8 +32,8 @@
 ###############################################################################
 
 sta::define_cmd_args "global_placement" {\
-  [-skip_initial_place]\
-  [-skip_nesterov_place]\
+    [-skip_initial_place]\
+    [-skip_nesterov_place]\
     [-timing_driven]\
     [-routability_driven]\
     [-disable_timing_driven]\

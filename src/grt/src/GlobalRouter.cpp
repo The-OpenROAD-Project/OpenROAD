@@ -36,6 +36,7 @@
 #include "grt/GlobalRouter.h"
 
 #include <algorithm>
+#include <boost/icl/interval.hpp>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -54,7 +55,6 @@
 #include "MakeWireParasitics.h"
 #include "RepairAntennas.h"
 #include "RoutingTracks.h"
-#include "boost/icl/interval.hpp"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -82,6 +82,7 @@ GlobalRouter::GlobalRouter()
       stt_builder_(nullptr),
       antenna_checker_(nullptr),
       opendp_(nullptr),
+      resizer_(nullptr),
       fastroute_(nullptr),
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
@@ -115,6 +116,7 @@ void GlobalRouter::init(utl::Logger* logger,
                         stt::SteinerTreeBuilder* stt_builder,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
+                        rsz::Resizer* resizer,
                         ant::AntennaChecker* antenna_checker,
                         dpl::Opendp* opendp)
 {
@@ -128,6 +130,7 @@ void GlobalRouter::init(utl::Logger* logger,
   opendp_ = opendp;
   fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
   sta_ = sta;
+  resizer_ = resizer;
 
   heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_, db_);
   heatmap_->registerHeatMap();
@@ -207,9 +210,14 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   fastroute_->initAuxVar();
 }
 
+// If file name is specified, save congestion report file.
+// If there are no congestions, the empty file overwrites any
+// previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  remove(congestion_file_name_);
+  if (congestion_file_name_ == nullptr) {
+    return;
+  }
   std::ofstream out(congestion_file_name_);
 
   std::vector<std::pair<GSegment, TileCongestion>> congestionGridsV,
@@ -277,14 +285,25 @@ void GlobalRouter::globalRoute(bool save_guides)
   routes_ = findRouting(nets, min_layer, max_layer);
   updateDbCongestion();
 
-  if (fastroute_->has2Doverflow() && !allow_congestion_) {
-    if (congestion_file_name_ != nullptr) {
-      saveCongestion();
+  saveCongestion();
+
+  if (fastroute_->has2Doverflow()) {
+    if (!allow_congestion_) {
+      if (congestion_file_name_ != nullptr) {
+        logger_->error(
+            GRT,
+            119,
+            "Routing congestion too high. Check the congestion heatmap "
+            "in the GUI and load {} in the DRC viewer.",
+            congestion_file_name_);
+      } else {
+        logger_->error(
+            GRT,
+            118,
+            "Routing congestion too high. Check the congestion heatmap "
+            "in the GUI.");
+      }
     }
-    logger_->error(GRT,
-                   118,
-                   "Routing congestion too high. Check the congestion heatmap "
-                   "in the GUI.");
   }
   if (fastroute_->totalOverflow() > 0 && verbose_) {
     logger_->warn(GRT, 115, "Global routing finished with overflow.");
@@ -393,7 +412,10 @@ void GlobalRouter::estimateRC()
   // Remove any existing parasitics.
   sta_->deleteParasitics();
 
-  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
+  // Make separate parasitics for each corner, same for min/max.
+  sta_->setParasiticAnalysisPts(true, false);
+
+  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
   for (auto& net_route : routes_) {
     odb::dbNet* db_net = net_route.first;
     GRoute& route = net_route.second;
@@ -406,7 +428,7 @@ void GlobalRouter::estimateRC()
 
 void GlobalRouter::estimateRC(odb::dbNet* db_net)
 {
-  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
+  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
   auto iter = routes_.find(db_net);
   if (iter == routes_.end()) {
     return;
@@ -420,7 +442,7 @@ void GlobalRouter::estimateRC(odb::dbNet* db_net)
 
 std::vector<int> GlobalRouter::routeLayerLengths(odb::dbNet* db_net)
 {
-  MakeWireParasitics builder(logger_, sta_, db_->getTech(), this);
+  MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
   return builder.routeLayerLengths(db_net);
 }
 
@@ -822,7 +844,6 @@ void GlobalRouter::saveSttInputFile(Net* net)
 {
   std::string file_name = fastroute_->getSttInputFileName();
   const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
-  remove(file_name.c_str());
   std::ofstream out(file_name.c_str());
   out << "Net " << net->getName() << " " << net_alpha << "\n";
   for (Pin& pin : net->getPins()) {
@@ -1986,13 +2007,14 @@ void GlobalRouter::checkPinPlacement()
     } else {
       for (odb::Point& pos : layer_positions_map[layer]) {
         if (pos == port->getPosition()) {
-          if (verbose_)
-            logger_->warn(GRT,
-                          31,
-                          "At least 2 pins in position ({}, {}), layer {}.",
-                          pos.x(),
-                          pos.y(),
-                          tech_layer->getName());
+          logger_->warn(
+              GRT,
+              31,
+              "At least 2 pins in position ({}, {}), layer {}, port {}.",
+              pos.x(),
+              pos.y(),
+              tech_layer->getName(),
+              port->getName().c_str());
           invalid = true;
         }
       }
@@ -3696,9 +3718,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
-  remove(file_name);
-  std::ofstream out;
-  out.open(file_name, std::ios::app);
+  std::ofstream out(file_name);
   out << "tool "
       << "net "
       << "total_wl "

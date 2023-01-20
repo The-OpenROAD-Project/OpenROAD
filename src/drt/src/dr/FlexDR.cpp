@@ -177,24 +177,27 @@ int FlexDRWorker::main(frDesign* design)
     skipRouting_ = true;
   }
   if (debugSettings_->debugDumpDR
-      && routeBox_.intersects({debugSettings_->x, debugSettings_->y})
-      && debugSettings_->iter == getDRIter()) {
+      && (debugSettings_->x == -1
+          || routeBox_.intersects({debugSettings_->x, debugSettings_->y}))
+      && !skipRouting_ && debugSettings_->iter == getDRIter()) {
+    std::string workerPath = fmt::format("{}/workerx{}_y{}",
+                                         debugSettings_->dumpDir,
+                                         routeBox_.xMin(),
+                                         routeBox_.yMin());
+    mkdir(workerPath.c_str(), 0777);
     serializeUpdates(design_->getUpdates(),
-                     fmt::format("{}/updates.bin", debugSettings_->dumpDir));
-    design_->clearUpdates();
+                     fmt::format("{}/updates.bin", workerPath));
     std::string viaDataStr;
     serializeViaData(*via_data_, viaDataStr);
-    ofstream viaDataFile(
-        fmt::format("{}/viadata.bin", debugSettings_->dumpDir).c_str());
+    ofstream viaDataFile(fmt::format("{}/viadata.bin", workerPath).c_str());
     viaDataFile << viaDataStr;
     std::string workerStr;
     serializeWorker(this, workerStr);
-    ofstream workerFile(
-        fmt::format("{}/worker.bin", debugSettings_->dumpDir).c_str());
+    ofstream workerFile(fmt::format("{}/worker.bin", workerPath).c_str());
     workerFile << workerStr;
     workerFile.close();
     std::ofstream file(
-        fmt::format("{}/worker_globals.bin", debugSettings_->dumpDir).c_str());
+        fmt::format("{}/worker_globals.bin", workerPath).c_str());
     frOArchive ar(file);
     registerTypes(ar);
     serializeGlobals(ar);

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GR_PIN_H_
-#define _GR_PIN_H_
+#pragma once
 
 #include "db/grObj/grAccessPattern.h"
 #include "db/grObj/grBlockObject.h"
@@ -61,5 +60,3 @@ class grPin : public grBlockObject
   grNet* net;
 };
 }  // namespace fr
-
-#endif

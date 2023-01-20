@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __REPLACE_INIT_PLACE__
-#define __REPLACE_INIT_PLACE__
+#pragma once
 
 #include <Eigen/SparseCore>
 #include <memory>
@@ -120,4 +119,3 @@ class InitialPlace
 };
 
 }  // namespace gpl
-#endif

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TA_SHAPE_H_
-#define _TA_SHAPE_H_
+#pragma once
 
 #include "db/infra/frSegStyle.h"
 #include "db/taObj/taFig.h"
@@ -191,5 +190,3 @@ class taPathSeg : public taShape
   frBlockObject* owner_;
 };
 }  // namespace fr
-
-#endif

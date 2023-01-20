@@ -6,3 +6,6 @@ record_tests {
   45_gcd
   names
 }
+record_pass_fail_tests {
+  rcx_unit_test
+}

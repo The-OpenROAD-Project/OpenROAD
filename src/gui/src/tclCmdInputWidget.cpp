@@ -699,27 +699,26 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
 
   const std::string command = cmd.toStdString();
 
-  int return_code = Tcl_Eval(interp_, command.c_str());
+  const int return_code = Tcl_Eval(interp_, command.c_str());
+  const bool is_ok = return_code == TCL_OK;
 
   if (!silent) {
     // Show its output
-    processTclResult(return_code);
+    processTclResult(is_ok);
 
-    if (return_code == TCL_OK && echo) {
+    if (is_ok) {
       // record the successful command to tcl history command
       Tcl_RecordAndEval(interp_, command.c_str(), TCL_NO_EVAL);
+      addCommandToHistory(QString::fromStdString(command));
     }
-
-    addCommandToHistory(QString::fromStdString(command));
   }
 
-  emit commandFinishedExecuting(return_code == TCL_OK);
+  emit commandFinishedExecuting(is_ok);
 }
 
-void TclCmdInputWidget::processTclResult(int return_code)
+void TclCmdInputWidget::processTclResult(bool is_ok)
 {
-  emit addResultToOutput(Tcl_GetString(Tcl_GetObjResult(interp_)),
-                         return_code == TCL_OK);
+  emit addResultToOutput(Tcl_GetString(Tcl_GetObjResult(interp_)), is_ok);
 }
 
 }  // namespace gui
