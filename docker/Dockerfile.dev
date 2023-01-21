@@ -12,4 +12,5 @@ ARG INSTALLER_ARGS=""
 COPY DependencyInstaller.sh /tmp/.
 
 RUN if [[ ! -z "$INSTALLER_ARGS" ]]; then /tmp/DependencyInstaller.sh -base; fi;
-RUN /tmp/DependencyInstaller.sh $INSTALLER_ARGS && rm -f /tmp/DependencyInstaller.sh
+RUN if [[ ! -z "$INSTALLER_ARGS" ]]; then /tmp/DependencyInstaller.sh $INSTALLER_ARGS -common; else /tmp/DependencyInstaller.sh; fi
+RUN rm -f /tmp/DependencyInstaller.sh
