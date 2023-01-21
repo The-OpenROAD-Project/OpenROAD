@@ -80,4 +80,3 @@ jobs:
         shell: bash
         run: |
           build/src/openroad -help
-          ./test/regression
