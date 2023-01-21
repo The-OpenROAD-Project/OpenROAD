@@ -50,7 +50,8 @@ namespace utl {
 // Side effects: The "file", by side effect, is positioned at EOF when this
 // function returns successfully.
 //
-// Errors: If we cannot
+// Errors: If we cannot retrieve the contents of the file successfully
+// logger->error is used to throw.
 std::string GetContents(FILE* file, Logger* logger);
 
 // Writes all the contents of "data" to the current position of "file".

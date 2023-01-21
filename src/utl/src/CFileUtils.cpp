@@ -38,9 +38,7 @@ std::string GetContents(FILE* file, Logger* logger)
           "read no bytes from file at offset {}, but neither error nor EOF",
           result.size());
     }
-    for (size_t i = 0; i < read; ++i) {
-      result.push_back(buf.at(i));
-    }
+    result.append(buf.begin(), buf.begin() + read);
   }
 
   return result;
