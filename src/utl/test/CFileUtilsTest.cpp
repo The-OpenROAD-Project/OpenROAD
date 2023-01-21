@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(read_all_of_written_file_seek_required)
 
   std::string contents = GetContents(stf.file(), &logger);
   BOOST_TEST(contents.size() == kTestData.size());
-  for (size_t i = 0 ; i < contents.size(); ++i) {
+  for (size_t i = 0; i < contents.size(); ++i) {
     BOOST_TEST(static_cast<uint8_t>(contents.at(i)) == kTestData.at(i));
   }
 }
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE(read_all_of_file_exactly_1024B)
 
   std::string contents = GetContents(stf.file(), &logger);
   BOOST_TEST(contents.size() == test_data.size());
-  for (size_t i = 0 ; i < contents.size(); ++i) {
+  for (size_t i = 0; i < contents.size(); ++i) {
     BOOST_TEST(static_cast<uint8_t>(contents.at(i)) == test_data.at(i));
   }
 }
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(read_all_of_file_exactly_1025B)
 
   std::string contents = GetContents(stf.file(), &logger);
   BOOST_TEST(contents.size() == test_data.size());
-  for (size_t i = 0 ; i < contents.size(); ++i) {
+  for (size_t i = 0; i < contents.size(); ++i) {
     BOOST_TEST(static_cast<uint8_t>(contents.at(i)) == test_data.at(i));
   }
 }

@@ -32,8 +32,9 @@
 
 #pragma once
 
-#include <cstdio>
 #include <limits.h>
+
+#include <cstdio>
 
 #include "utl/Logger.h"
 
@@ -46,7 +47,8 @@ namespace utl {
 //
 // NOTE: C-style `FILE*` constructs are not recommended for use in new code,
 // prefer C++ iostreams for any new code.
-class ScopedTemporaryFile {
+class ScopedTemporaryFile
+{
  public:
   explicit ScopedTemporaryFile(Logger* logger);
 

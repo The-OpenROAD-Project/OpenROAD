@@ -2,7 +2,8 @@
 
 namespace utl {
 
-std::string GetContents(FILE* file, Logger* logger) {
+std::string GetContents(FILE* file, Logger* logger)
+{
   if (fseek(file, 0, SEEK_SET) != 0) {
     logger->error(UTL, 1, "seeking file to start {}", errno);
   }
@@ -21,12 +22,21 @@ std::string GetContents(FILE* file, Logger* logger) {
     if (read == 0) {
       if (ferror(file)) {
         std::string error = strerror(errno);
-        logger->error(UTL, 2, "error reading {} bytes from file at offset {}: {}", kBufSize, result.size(), error);
+        logger->error(UTL,
+                      2,
+                      "error reading {} bytes from file at offset {}: {}",
+                      kBufSize,
+                      result.size(),
+                      error);
       }
       if (feof(file)) {
         break;
       }
-      logger->error(UTL, 3, "read no bytes from file at offset {}, but neither error nor EOF", result.size());
+      logger->error(
+          UTL,
+          3,
+          "read no bytes from file at offset {}, but neither error nor EOF",
+          result.size());
     }
     for (size_t i = 0; i < read; ++i) {
       result.push_back(buf.at(i));
@@ -36,15 +46,21 @@ std::string GetContents(FILE* file, Logger* logger) {
   return result;
 }
 
-void WriteAll(FILE* file, boost::span<const uint8_t> data, Logger* logger) {
+void WriteAll(FILE* file, boost::span<const uint8_t> data, Logger* logger)
+{
   size_t total_written = 0;
   while (total_written < data.size()) {
-    size_t this_size = data.size()-total_written;
-    size_t written = fwrite(data.data()+total_written, 1, this_size, file);
+    size_t this_size = data.size() - total_written;
+    size_t written = fwrite(data.data() + total_written, 1, this_size, file);
     if (written == 0) {
       if (ferror(file)) {
         std::string error = strerror(errno);
-        logger->error(UTL, 4, "error writing {} bytes from file at offset {}: {}", this_size, total_written, error);
+        logger->error(UTL,
+                      4,
+                      "error writing {} bytes from file at offset {}: {}",
+                      this_size,
+                      total_written,
+                      error);
       }
     }
     total_written += written;

@@ -4,8 +4,9 @@
 
 namespace utl {
 
-ScopedTemporaryFile::ScopedTemporaryFile(Logger* logger) : logger_(logger) {
-  strncpy(path_, "/tmp/openroad_CFileUtilsTest_XXXXXX", sizeof(path_)-1);
+ScopedTemporaryFile::ScopedTemporaryFile(Logger* logger) : logger_(logger)
+{
+  strncpy(path_, "/tmp/openroad_CFileUtilsTest_XXXXXX", sizeof(path_) - 1);
   fd_ = mkstemp(path_);
   if (fd_ < 0) {
     logger_->error(UTL, 5, "could not create temp file");
@@ -19,7 +20,8 @@ ScopedTemporaryFile::ScopedTemporaryFile(Logger* logger) : logger_(logger) {
   }
 }
 
-ScopedTemporaryFile::~ScopedTemporaryFile() {
+ScopedTemporaryFile::~ScopedTemporaryFile()
+{
   if (fd_ >= 0) {
     if (unlink(path_) < 0) {
       logger_->error(UTL, 8, "could not unlink temp file at {}", path_);
