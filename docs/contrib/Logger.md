@@ -38,7 +38,7 @@ severity type to the message.
 In C++20 the logger messages are checked during compile time which introduces
 restrictions around rutime format strings. See [docs](https://fmt.dev/latest/api.html#compile-time-format-string-checks)
 
-OpenROAD uses SPDLog which usues fmt_lib under the hood below is an example of
+OpenROAD uses `spdlog` which uses `fmt_lib` under the hood. Below is an example of
 what is no longer allowed.
 
 In order to make use of runtime format strings we have introduced a 
