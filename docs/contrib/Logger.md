@@ -41,7 +41,7 @@ restrictions around rutime format strings. See [docs](https://fmt.dev/latest/api
 OpenROAD uses `spdlog` which uses `fmt_lib` under the hood. Below is an example of
 what is no longer allowed.
 
-In order to make use of runtime format strings we have introduced a 
+In order to make use of runtime format strings, we have introduced a 
 `FMT_RUNTIME` macro in Logger.h. You should use this macro any time you
 pass a dynamic string as the format string 
 
