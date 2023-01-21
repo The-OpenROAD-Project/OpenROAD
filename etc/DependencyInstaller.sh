@@ -456,8 +456,14 @@ _installDebianPackages() {
 _help() {
     cat <<EOF
 
-Usage: $0 -prefix=DIR
-       $0 -local
+Usage: $0                       Installs all of OpenROAD's dependencies no need to run -base or -common.
+                                                           Requires priviledged access. 
+       $0 -base                 Installs OpenROAD's dependencies using package managers 
+                                                           (-common must be executed in another command)
+       $0 -common               Installs OpenROAD's common dependencies (-base must be executed in another command)
+       $0 -prefix=DIR           Installs dependencies in an existing user specified directory      
+       $0 -local                Installs common dependencies in "$HOME/.local". Only used with -common. Root access 
+                                                           is still needed for other dependencies. Flag cannot be used with sudo or with root access
 
 EOF
     exit "${1:-1}"
@@ -465,6 +471,8 @@ EOF
 
 #default prefix
 PREFIX=""
+#default option
+option="all"
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
@@ -478,9 +486,15 @@ while [ "$#" -gt 0 ]; do
         -dev|-development)
             echo "The use of this flag is deprecated and will be removed soon"
             ;;
+        -base)
+            option="base"
+            ;;
+        -common)
+            option="common"
+            ;;
         -local)
-            if [ $(id -u) == 0 ]; then
-                echo "Error: cannot run local if you are root or using sudo" >&2
+            if [[ $(id -u) == 0 ]]; then
+                echo "Error: cannot install locally if you are root or using sudo" >&2
                 exit 1
             fi
             export PREFIX="${HOME}/.local"
@@ -519,10 +533,18 @@ case "${os}" in
     "CentOS Linux" )
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installCentosPackages
-        _installCommonDev
-        _installOrTools "centos" "7" "amd64"
-        _installCentosCleanUp
+        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ ! -z "${PREFIX}" ]]; then
+                echo "Error: cannot install base packages locally, you need priviledged access" >&2
+                exit 1
+            fi
+            _installCentosPackages
+            _installCentosCleanUp
+        fi
+        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+            _installCommonDev
+            _installOrTools "centos" "7" "amd64"
+        fi
         cat <<EOF
 To enable GCC-8 or Clang-7 you need to run:
     source /opt/rh/devtoolset-8/enable
@@ -533,18 +555,34 @@ EOF
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installUbuntuPackages "${version}"
-        _installCommonDev
-        _installOrTools "ubuntu" "${version}" "amd64"
-        _installUbuntuCleanUp
+        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ ! -z "${PREFIX}" ]]; then
+                echo "Error: cannot install base packages locally, you need priviledged access" >&2
+                exit 1
+            fi
+            _installUbuntuPackages "${version}"
+            _installUbuntuCleanUp
+        fi
+        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+            _installCommonDev
+            _installOrTools "ubuntu" "${version}" "amd64"
+        fi
         ;;
     "Red Hat Enterprise Linux")
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installRHELPackages
-        _installCommonDev
-        _installOrTools "centos" "8" "amd64"
-        _installRHELCleanUp
+        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ ! -z "${PREFIX}" ]]; then
+                echo "Error: cannot install base packages locally, you need priviledged access" >&2
+                exit 1
+            fi
+            _installRHELPackages
+            _installRHELCleanUp
+        fi
+        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+            _installCommonDev
+            _installOrTools "centos" "8" "amd64"
+        fi
         ;;
     "Darwin" )
         _installDarwin
@@ -561,10 +599,18 @@ EOF
     "openSUSE Leap" )
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installOpenSusePackages
-        _installCommonDev
-        _installOrTools "opensuse" "leap" "amd64"
-        _installOpenSuseCleanUp
+        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ ! -z "${PREFIX}" ]]; then
+                echo "Error: cannot install base packages locally, you need priviledged access" >&2
+                exit 1
+            fi
+            _installOpenSusePackages
+            _installOpenSuseCleanUp
+        fi
+        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+            _installCommonDev
+            _installOrTools "opensuse" "leap" "amd64"
+        fi
         cat <<EOF
 To enable GCC-11 you need to run:
         update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
@@ -575,10 +621,18 @@ EOF
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _installDebianPackages "${version}"
-        _installCommonDev
-        _installOrTools "debian" "${version}" "amd64"
-        _installDebianCleanUp
+        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
+            if [[ ! -z "${PREFIX}" ]]; then
+                echo "Error: cannot install base packages locally, you need priviledged access" >&2
+                exit 1
+            fi
+            _installDebianPackages "${version}"
+            _installDebianCleanUp
+        fi
+        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+            _installCommonDev
+            _installOrTools "debian" "${version}" "amd64"
+        fi
         ;;
     *)
         echo "unsupported system: ${os}" >&2

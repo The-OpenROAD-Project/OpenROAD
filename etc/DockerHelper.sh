@@ -97,7 +97,7 @@ _setup() {
             fromImage="${FROM_IMAGE_OVERRIDE:-$osBaseImage}"
             context="etc"
             if [[ "${isLocal}" == "yes" ]]; then
-                buildArgs="--build-arg INSTALLER_ARGS=-prefix=${LOCAL_PATH}"
+                buildArgs="--build-arg INSTALLER_ARGS=\"-prefix=${LOCAL_PATH} -common\""
             else
                 buildArgs=""
             fi
