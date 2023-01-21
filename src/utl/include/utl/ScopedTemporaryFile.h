@@ -39,12 +39,22 @@
 
 namespace utl {
 
+// Creates a temporary file that is unlinked/closed at the end of the object's
+// lifetime scope.
+//
+// This is particularly useful in testing.
+//
+// NOTE: C-style `FILE*` constructs are not recommended for use in new code,
+// prefer C++ iostreams for any new code.
 class ScopedTemporaryFile {
  public:
   explicit ScopedTemporaryFile(Logger* logger);
 
   ~ScopedTemporaryFile();
 
+  // See class-level note: c-style `FILE*` usage is deprecated for any new code
+  // introduced in OpenROAD. Prefer other temporary-file-creating constructs
+  // that are based on iostreams for novel code.
   FILE* file() const { return file_; }
 
  private:

@@ -32,10 +32,9 @@
 
 #pragma once
 
+#include <boost/core/span.hpp>
 #include <cstdio>
 #include <string>
-
-#include <boost/core/span.hpp>
 
 #include "utl/Logger.h"
 
@@ -43,15 +42,22 @@ namespace utl {
 
 // Reads all of the contents of "file" to a C++ string.
 //
+// NOTE: C-style `FILE*` constructs are not recommended for use in new code,
+// prefer C++ iostreams for any new code.
+//
 // This seeks to the beginning of "file" and then attempts to read it to EOF.
 //
 // Side effects: The "file", by side effect, is positioned at EOF when this
 // function returns successfully.
 //
-// Errors: If we cannot 
+// Errors: If we cannot
 std::string GetContents(FILE* file, Logger* logger);
 
 // Writes all the contents of "data" to the current position of "file".
+//
+// NOTE: C-style `FILE*` constructs are not recommended for use in new code,
+// prefer C++ iostreams for any new code.
+//
 // "logger" is used to flag any errors in the writing process. Returns when all
 // of "data" has been written successfully.
 void WriteAll(FILE* file, boost::span<const uint8_t> data, Logger* logger);

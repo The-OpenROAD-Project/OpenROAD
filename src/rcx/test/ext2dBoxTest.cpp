@@ -42,9 +42,9 @@
 #endif
 
 #include "rcx/ext2dBox.h"
+#include "utl/CFileUtils.h"
 #include "utl/Logger.h"
 #include "utl/ScopedTemporaryFile.h"
-#include "utl/CFileUtils.h"
 
 namespace rcx {
 
