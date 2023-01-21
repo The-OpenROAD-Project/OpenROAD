@@ -35,6 +35,8 @@
 
 include("openroad")
 
+find_package(Boost)
+
 swig_lib(NAME      utl
          NAMESPACE utl
          I_FILE    src/Logger.i
@@ -77,6 +79,7 @@ target_include_directories(utl
   PUBLIC
     include
     src
+    ${Boost_INCLUDE_DIRS}
 )
 
 target_link_libraries(utl
