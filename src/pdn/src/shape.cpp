@@ -639,6 +639,9 @@ bool FollowPinShape::cut(const ShapeTree& obstructions,
   return Shape::cut(
       obstructions, replacements, [](const ShapeValue& other) -> bool {
         // followpins can ignore grid level obstructions
+        // grid level obstructions represent the other grids defined
+        // followpins should only get cut from real obstructions and
+        // not estimated obstructions
         return other.second->shapeType() != GRID_OBS;
       });
 }
