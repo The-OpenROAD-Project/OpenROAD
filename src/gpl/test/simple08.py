@@ -1,13 +1,19 @@
 from openroad import Design, Tech
 import helpers
-import gpl_aux
+import gpl
 
 tech = Tech()
 tech.readLef("./sky130hd.lef")
 design = Design(tech)
 design.readDef("./simple08.def")
 
-gpl_aux.global_placement(design, density=0.75, bin_grid_count=64, overflow=0.2)
+options = gpl.ReplaceOptions()
+options.setTargetDensity(0.75)
+options.setBinGridCntX(64)
+options.setBinGridCntY(64)
+options.setTargetOverflow(0.2)
+
+design.getReplace().place(options)
 
 def_file = helpers.make_result_file("simple08.def")
 design.writeDef(def_file)

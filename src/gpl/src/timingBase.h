@@ -60,7 +60,7 @@ class TimingBase
   // check whether overflow reached the timingOverflow
   bool isTimingNetWeightOverflow(float overflow);
   void addTimingNetWeightOverflow(int overflow);
-  void setTimingNetWeightOverflows(std::vector<int>& overflows);
+  void setTimingNetWeightOverflows(const std::vector<int>& overflows);
   void deleteTimingNetWeightOverflow(int overflow);
   void clearTimingNetWeightOverflow();
   size_t getTimingNetWeightOverflowSize() const;

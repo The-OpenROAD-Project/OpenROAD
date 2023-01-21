@@ -1,13 +1,16 @@
 from openroad import Design, Tech
 import helpers
-import gpl_aux
+import gpl
 
 tech = Tech()
 tech.readLef("./nangate45.lef")
 design = Design(tech)
 design.readDef("./simple05.def")
 
-gpl_aux.global_placement(design, skip_initial_place=True)
+options = gpl.ReplaceOptions()
+options.skipInitialPlace()
+
+design.getReplace().place(options)
 
 def_file = helpers.make_result_file("simple05.def")
 design.writeDef(def_file)

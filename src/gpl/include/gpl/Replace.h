@@ -67,24 +67,74 @@ class InitialPlace;
 class NesterovPlace;
 class Debug;
 
-class Replace
+class ReplaceOptions
 {
  public:
-  Replace();
-  ~Replace();
+  bool getIncremental() const;
+  bool getDoNesterovPlace() const;
+  bool getForceCpu() const;
 
-  void init(odb::dbDatabase* odb,
-            rsz::Resizer* resizer,
-            grt::GlobalRouter* router,
-            utl::Logger* logger);
-  void reset();
+  int getInitialPlaceMaxIter() const;
+  int getInitialPlaceMinDiffLength() const;
+  int getInitialPlaceMaxSolverIter() const;
+  int getInitialPlaceMaxFanout() const;
+  float getInitialPlaceNetWeightScale() const;
 
-  void doIncrementalPlace();
-  void doInitialPlace();
+  int getNesterovPlaceMaxIter() const;
 
-  int doNesterovPlace(int start_iter = 0);
+  int getBinGridCntX() const;
+  int getBinGridCntY() const;
 
-  // Initial Place param settings
+  float getTargetDensity() const;
+  bool getUniformTargetDensityMode() const;
+  float getTargetOverflow() const;
+  float getInitDensityPenalityFactor() const;
+  float getInitWireLengthCoef() const;
+  float getMinPhiCoef() const;
+  float getMaxPhiCoef() const;
+
+  int getPadLeft() const;
+  int getPadRight() const;
+
+  float getRoutabilityCheckOverflow() const;
+  float getRoutabilityMaxDensity() const;
+
+  int getRoutabilityMaxBloatIter() const;
+  int getRoutabilityMaxInflationIter() const;
+
+  float getRoutabilityTargetRcMetric() const;
+  float getRoutabilityInflationRatioCoef() const;
+  float getRoutabilityMaxInflationRatio() const;
+
+  float getRoutabilityRcK1() const;
+  float getRoutabilityRcK2() const;
+  float getRoutabilityRcK3() const;
+  float getRoutabilityRcK4() const;
+
+  float getReferenceHpwl() const;
+  const std::vector<int>& getTimingNetWeightOverflows() const;
+  float getTimingNetWeightMax() const;
+
+  bool getRoutabilityDrivenMode() const;
+  bool getTimingDrivenMode() const;
+  bool getSkipIoMode() const;
+
+  bool getGuiDebug() const;
+  int getGuiDebugPauseIterations() const;
+  int getGuiDebugUpdateIterations() const;
+  int getGuiDebugDrawBins() const;
+  int getGuiDebugInitial() const;
+  odb::dbInst* getGuiDebugInst() const;
+
+  // setters
+
+  void setIncremental(bool value);
+  void setDoNesterovPlace(bool value);
+  void setForceCpu(bool value);
+  void skipInitialPlace() {
+    setInitialPlaceMaxIter(0);
+  }
+
   void setInitialPlaceMaxIter(int iter);
   void setInitialPlaceMinDiffLength(int length);
   void setInitialPlaceMaxSolverIter(int iter);
@@ -104,21 +154,9 @@ class Replace
   void setMinPhiCoef(float minPhiCoef);
   void setMaxPhiCoef(float maxPhiCoef);
 
-  float getUniformTargetDensity();
-
-  // HPWL: half-parameter wire length.
-  void setReferenceHpwl(float deltaHpwl);
-
-  // temp funcs; OpenDB should have these values.
   void setPadLeft(int padding);
   void setPadRight(int padding);
 
-  void setForceCPU(bool force_cpu);
-  void setTimingDrivenMode(bool mode);
-
-  void setSkipIoMode(bool mode);
-
-  void setRoutabilityDrivenMode(bool mode);
   void setRoutabilityCheckOverflow(float overflow);
   void setRoutabilityMaxDensity(float density);
 
@@ -131,8 +169,15 @@ class Replace
 
   void setRoutabilityRcCoefficients(float k1, float k2, float k3, float k4);
 
+  // HPWL: half-parameter wire length.
+  void setReferenceHpwl(float deltaHpwl);
+
   void addTimingNetWeightOverflow(int overflow);
   void setTimingNetWeightMax(float max);
+
+  void setRoutabilityDrivenMode(bool mode);
+  void setTimingDrivenMode(bool mode);
+  void setSkipIoMode(bool mode);
 
   void setDebug(int pause_iterations,
                 int update_iterations,
@@ -141,6 +186,87 @@ class Replace
                 odb::dbInst* inst = nullptr);
 
  private:
+  bool incremental_ = false;
+  bool do_nesterov_place_ = true;
+  bool force_cpu_ = false;
+
+  int initialPlaceMaxIter_ = 20;
+  int initialPlaceMinDiffLength_ = 1500;
+  int initialPlaceMaxSolverIter_ = 100;
+  int initialPlaceMaxFanout_ = 200;
+  float initialPlaceNetWeightScale_ = 800;
+
+  int nesterovPlaceMaxIter_ = 5000;
+  int binGridCntX_ = 0;
+  int binGridCntY_ = 0;
+
+  float overflow_ = 0.1;
+  float density_ = 0.7;
+  float initDensityPenalityFactor_ = 0.00008;
+  float initWireLengthCoef_ = 0.25;
+  float minPhiCoef_ = 0.95;
+  float maxPhiCoef_ = 1.05;
+  bool uniformTargetDensityMode_ = false;
+
+  int padLeft_ = 0;
+  int padRight_ = 0;
+
+  float routabilityCheckOverflow_ = 0.20;
+  float routabilityMaxDensity_ = 0.99;
+  float routabilityTargetRcMetric_ = 1.25;
+  float routabilityInflationRatioCoef_ = 2.5;
+  float routabilityMaxInflationRatio_ = 2.5;
+
+  // routability RC metric coefficients
+  float routabilityRcK1_ = 1.0;
+  float routabilityRcK2_ = 1.0;
+  float routabilityRcK3_ = 0.0;
+  float routabilityRcK4_ = 0.0;
+
+  int routabilityMaxBloatIter_ = 1;
+  int routabilityMaxInflationIter_ = 4;
+
+  float referenceHpwl_ = 446000000;
+
+  float timingNetWeightMax_ = 1.9;
+  std::vector<int> timingNetWeightOverflows_ = {79, 64, 49, 29, 21, 15};
+  bool hasDefaultTimingNetWeightOverflows_ = true;
+
+  bool gui_debug_ = false;
+  int gui_debug_pause_iterations_ = 10;
+  int gui_debug_update_iterations_ = 10;
+  int gui_debug_draw_bins_ = false;
+  int gui_debug_initial_ = false;
+  odb::dbInst* gui_debug_inst_ = nullptr;
+
+  bool timingDrivenMode_ = false;
+  bool routabilityDrivenMode_ = false;
+  bool skipIoMode_ = false;
+};
+
+class Replace
+{
+ public:
+  Replace();
+  ~Replace();
+
+  void init(odb::dbDatabase* odb,
+            rsz::Resizer* resizer,
+            grt::GlobalRouter* router,
+            utl::Logger* logger);
+  void reset();
+
+  void place(const ReplaceOptions& options = ReplaceOptions());
+
+  float getUniformTargetDensity(const ReplaceOptions& options
+                                = ReplaceOptions());
+
+ private:
+  void doIncrementalPlace();
+  void doInitialPlace();
+  int doNesterovPlace(int start_iter = 0);
+  void validate(const ReplaceOptions& options);
+
   bool initNesterovPlace();
 
   odb::dbDatabase* db_;
@@ -156,54 +282,6 @@ class Replace
   std::unique_ptr<InitialPlace> ip_;
   std::unique_ptr<NesterovPlace> np_;
 
-  int initialPlaceMaxIter_;
-  int initialPlaceMinDiffLength_;
-  int initialPlaceMaxSolverIter_;
-  int initialPlaceMaxFanout_;
-  float initialPlaceNetWeightScale_;
-  bool forceCPU_;
-
-  int nesterovPlaceMaxIter_;
-  int binGridCntX_;
-  int binGridCntY_;
-  float overflow_;
-  float density_;
-  float initDensityPenalityFactor_;
-  float initWireLengthCoef_;
-  float minPhiCoef_;
-  float maxPhiCoef_;
-  float referenceHpwl_;
-
-  float routabilityCheckOverflow_;
-  float routabilityMaxDensity_;
-  float routabilityTargetRcMetric_;
-  float routabilityInflationRatioCoef_;
-  float routabilityMaxInflationRatio_;
-
-  // routability RC metric coefficients
-  float routabilityRcK1_, routabilityRcK2_, routabilityRcK3_, routabilityRcK4_;
-
-  int routabilityMaxBloatIter_;
-  int routabilityMaxInflationIter_;
-
-  float timingNetWeightMax_;
-
-  bool timingDrivenMode_;
-  bool routabilityDrivenMode_;
-  bool uniformTargetDensityMode_;
-  bool skipIoMode_;
-
-  std::vector<int> timingNetWeightOverflows_;
-
-  // temp variable; OpenDB should have these values.
-  int padLeft_;
-  int padRight_;
-
-  bool gui_debug_;
-  int gui_debug_pause_iterations_;
-  int gui_debug_update_iterations_;
-  int gui_debug_draw_bins_;
-  int gui_debug_initial_;
-  odb::dbInst* gui_debug_inst_;
+  ReplaceOptions options_;
 };
 }  // namespace gpl

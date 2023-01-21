@@ -74,7 +74,6 @@ void NesterovPlaceVars::reset()
   initialPrevCoordiUpdateCoef = 100;
   referenceHpwl = 446000000;
   routabilityCheckOverflow = 0.20;
-  forceCPU = false;
   timingDrivenMode = true;
   routabilityDrivenMode = true;
   debug = false;

@@ -164,27 +164,18 @@ proc global_placement { args } {
     gpl::set_initial_place_max_fanout_cmd $initial_place_max_fanout
   }
   
-  # density settings    
-  set target_density 0.7
-  set uniform_mode 0
-
   if { [info exists keys(-density)] } {
     set target_density $keys(-density) 
-  }
-
-  if { $target_density == "uniform" } {
-    set uniform_mode 1
-  } else {
-    sta::check_positive_float "-density" $target_density
-    if {$target_density > 1.0} {
-      utl::error GPL 135 "Target density must be in \[0, 1\]."
+    if { $target_density == "uniform" } {
+      gpl::set_uniform_target_density_mode_cmd true
+    } else {
+      sta::check_positive_float "-density" $target_density
+      if {$target_density > 1.0} {
+        utl::error GPL 135 "Target density must be in \[0, 1\]."
+      }
+      gpl::set_density_cmd $target_density
     }
-    gpl::set_density_cmd $target_density
-  } 
-    
-  gpl::set_uniform_target_density_mode_cmd $uniform_mode 
-  
-  
+  }
 
   if { [info exists keys(-routability_max_density)] } {
     set routability_max_density $keys(-routability_max_density)
@@ -305,16 +296,11 @@ proc global_placement { args } {
 
   if { [ord::db_has_rows] } {
     sta::check_argc_eq0 "global_placement" $args
-  
-    if { [info exists flags(-incremental)] } {
-      gpl::replace_incremental_place_cmd
-    } else {
-      gpl::replace_initial_place_cmd
 
-      if { ![info exists flags(-skip_nesterov_place)] } {
-        gpl::replace_nesterov_place_cmd
-      }
-    }
+    gpl::replace_place_cmd \
+        [info exists flags(-incremental)] \
+        [info exists flags(-skip_nesterov_place)]
+
     gpl::replace_reset_cmd
   } else {
     utl::error GPL 130 "No rows defined in design. Use initialize_floorplan to add rows."
