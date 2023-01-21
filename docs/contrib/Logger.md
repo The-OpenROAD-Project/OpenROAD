@@ -42,8 +42,8 @@ OpenROAD uses `spdlog` which uses `fmt_lib` under the hood. Below is an example 
 what is no longer allowed.
 
 In order to make use of runtime format strings we have introduced a 
-`FMT_RUNTIME` macro in Logger.h. You should use this any time that you are 
-passing a dynamic string as the format string 
+`FMT_RUNTIME` macro in Logger.h. You should use this macro any time you
+pass a dynamic string as the format string 
 
 ```c++
 logger_->info("{} {}", a, b); // OK
