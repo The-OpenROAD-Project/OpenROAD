@@ -3259,9 +3259,10 @@ void FlexDRWorker::initMazeCost_connFig()
       cnt++;
     }
     gcWorker_->updateDRNet(net.get());
-    gcWorker_->updateGCWorker();
-    modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
-                     ModCostType::addRouteShape);
+  }
+  gcWorker_->updateGCWorker();
+  for (const auto& [fNet, drNets] : owner2nets_) {
+    modEolCosts_poly(gcWorker_->getNet(fNet), ModCostType::addRouteShape);
   }
   // cout <<"init " <<cnt <<" connfig costs" <<endl;
 }
