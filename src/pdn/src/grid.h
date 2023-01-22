@@ -181,8 +181,11 @@ class Grid
 
   static void makeInitialObstructions(odb::dbBlock* block,
                                       ShapeTreeMap& obs,
-                                      const std::set<odb::dbInst*>& skip_insts);
-  static void makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes);
+                                      const std::set<odb::dbInst*>& skip_insts,
+                                      utl::Logger* logger);
+  static void makeInitialShapes(odb::dbBlock* block,
+                                ShapeTreeMap& shapes,
+                                utl::Logger* logger);
 
   virtual bool isReplaceable() const { return false; }
 

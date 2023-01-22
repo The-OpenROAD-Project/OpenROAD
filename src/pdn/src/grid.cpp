@@ -883,8 +883,10 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
 
 void Grid::makeInitialObstructions(odb::dbBlock* block,
                                    ShapeTreeMap& obs,
-                                   const std::set<odb::dbInst*>& skip_insts)
+                                   const std::set<odb::dbInst*>& skip_insts,
+                                   utl::Logger* logger)
 {
+  debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - begin");
   // routing obs
   for (auto* ob : block->getObstructions()) {
     if (ob->isSlotObstruction() || ob->isFillObstruction()) {
@@ -924,18 +926,30 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
       continue;
     }
 
+    debugPrint(logger,
+               utl::PDN,
+               "Make",
+               3,
+               "Get instance {} obstructions",
+               inst->getName());
+
     for (const auto& [layer, shapes] :
          InstanceGrid::getInstanceObstructions(inst)) {
       obs[layer].insert(shapes.begin(), shapes.end());
     }
   }
+  debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - end");
 }
 
-void Grid::makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes)
+void Grid::makeInitialShapes(odb::dbBlock* block,
+                             ShapeTreeMap& shapes,
+                             utl::Logger* logger)
 {
+  debugPrint(logger, utl::PDN, "Make", 2, "Get initial shapes - start");
   for (auto* net : block->getNets()) {
     Shape::populateMapFromDb(net, shapes);
   }
+  debugPrint(logger, utl::PDN, "Make", 2, "Get initial shapes - end");
 }
 
 std::set<odb::dbTechLayer*> Grid::connectableLayers(
@@ -1413,7 +1427,7 @@ ExistingGrid::ExistingGrid(
 
 void ExistingGrid::populate()
 {
-  Grid::makeInitialShapes(domain_->getBlock(), shapes_);
+  Grid::makeInitialShapes(domain_->getBlock(), shapes_, getLogger());
 
   for (auto* inst : getBlock()->getInsts()) {
     if (inst->getPlacementStatus().isFixed()) {
