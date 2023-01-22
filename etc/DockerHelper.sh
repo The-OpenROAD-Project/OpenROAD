@@ -278,7 +278,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
   numThreads=$(sysctl -n hw.ncpu)
 else
   cat << EOF
-[WARNING FLW-0025] Unsupported OSTYPE: cannot determine number of host CPUs"
+WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
   Defaulting to 2 threads. Use --threads N to use N threads"
 EOF
   numThreads=2
