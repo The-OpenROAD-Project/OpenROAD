@@ -6,17 +6,29 @@ on:
       boostVersion:
         description: 'Boost Version'
         required: true
-        default: '1.80.0' 
+        default: '1.81.0' 
         type: string
       boostChecksum:
         description: 'Boost Checksum'
         required: true
         default: '077f074743ea7b0cb49c6ed43953ae95' 
         type: string
+  push:
+    paths:
+      - 'etc/DependencyInstaller.sh'
+      - '.github/workflows/github-actions-test-installer.yml'
+  pull_request:
+    paths:
+      - 'etc/DependencyInstaller.sh'
+      - '.github/workflows/github-actions-test-installer.yml'
 
 jobs:     
   testBoostVersion:
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-20.04", "ubuntu-22.04"]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -35,3 +47,4 @@ jobs:
         shell: bash
         run:
           build/src/openroad -help
+          sudo ./test/regression
