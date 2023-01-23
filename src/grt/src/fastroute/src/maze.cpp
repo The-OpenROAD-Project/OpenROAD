@@ -183,11 +183,15 @@ void FastRouteCore::fixOverlappingEdge(
           const int min_y = std::min(treeedge->route.gridsY[k],
                                      treeedge->route.gridsY[k + 1]);
           v_edges_[min_y][treeedge->route.gridsX[k]].usage -= edgeCost;
+          if (v_edges_[min_y][treeedge->route.gridsX[k]].usage < 0)
+            logger_->report("Underflow on v_edge on func fixOverlappingEdge.");
         }
       } else {
         const int min_x = std::min(treeedge->route.gridsX[k],
                                    treeedge->route.gridsX[k + 1]);
         h_edges_[treeedge->route.gridsY[k]][min_x].usage -= edgeCost;
+        if (h_edges_[treeedge->route.gridsY[k]][min_x].usage < 0)
+            logger_->report("Underflow on h_edge on func fixOverlappingEdge.");
       }
     }
     for (int k = 0; k < new_route_x.size() - 1;

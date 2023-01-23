@@ -311,9 +311,13 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
           v_edges_[ymin][gridsX[i]].usage -= edgeCost;
+          if (v_edges_[ymin][gridsX[i]].usage < 0)
+            logger_->report("Underflow on v_edge on func newRipupCheck.");
         } else {  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
           h_edges_[gridsY[i]][xmin].usage -= edgeCost;
+          if (h_edges_[gridsY[i]][xmin].usage < 0)
+            logger_->report("Underflow on h_edge on func newRipupCheck.");
         }
       }
       return true;
@@ -427,11 +431,15 @@ bool FastRouteCore::newRipup3DType3(const int netID, const int edgeID)
       if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
         const int ymin = std::min(gridsY[i], gridsY[i + 1]);
         v_edges_[ymin][gridsX[i]].usage -= net->getEdgeCost();
+        if (v_edges_[ymin][gridsX[i]].usage < 0)
+          logger_->report("Underflow on v_edge on func newRipup3DType3.");
         v_edges_3D_[gridsL[i]][ymin][gridsX[i]].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
         const int xmin = std::min(gridsX[i], gridsX[i + 1]);
         h_edges_[gridsY[i]][xmin].usage -= net->getEdgeCost();
+        if (h_edges_[gridsY[i]][xmin].usage < 0)
+          logger_->report("Underflow on h_edge on func newRipup3DType3.");
         h_edges_3D_[gridsL[i]][gridsY[i]][xmin].usage
             -= net->getLayerEdgeCost(gridsL[i]);
       } else {

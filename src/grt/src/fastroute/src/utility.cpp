@@ -1230,10 +1230,14 @@ void FastRouteCore::removeLoops()
                 if (gridsY[k] != gridsY[k + 1]) {
                   const int min_y = std::min(gridsY[k], gridsY[k + 1]);
                   v_edges_[min_y][gridsX[k]].usage -= edgeCost;
+                  if (v_edges_[min_y][gridsX[k]].usage < 0)
+                    logger_->report("Underflow on v_edge on func removeLoops.");
                 }
               } else {
                 const int min_x = std::min(gridsX[k], gridsX[k + 1]);
                 h_edges_[gridsY[k]][min_x].usage -= edgeCost;
+                if (h_edges_[gridsY[k]][min_x].usage < 0)
+                  logger_->report("Underflow on h_edge on func removeLoops.");
               }
             }
 
