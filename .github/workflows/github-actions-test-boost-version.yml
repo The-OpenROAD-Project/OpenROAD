@@ -24,7 +24,7 @@ on:
 
 jobs:  
   testBoostVersionInput:
-    if: ${{ github.event_name }} == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -50,7 +50,7 @@ jobs:
           build/src/openroad -help
           sudo ./test/regression
   testBoostVersionMatrix:
-    if: ${{ github.event_name }} == 'push' || ${{ github.event_name }} == 'pull_request'
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     strategy:
       fail-fast: false
       matrix:
