@@ -56,6 +56,8 @@ class frMarker : public frFig
         bbox_(in.bbox_),
         layerNum_(in.layerNum_),
         srcs_(in.srcs_),
+        victims_(in.victims_),
+        aggressors_(in.aggressors_),
         iter_(),
         vioHasDir_(in.vioHasDir_),
         vioIsH_(in.vioIsH_),
