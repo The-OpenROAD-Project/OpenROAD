@@ -16,11 +16,11 @@ on:
   push:
     paths:
       - 'etc/DependencyInstaller.sh'
-      - '.github/workflows/github-actions-test-installer.yml'
+      - '.github-actions-test-boost-version.yml'
   pull_request:
     paths:
       - 'etc/DependencyInstaller.sh'
-      - '.github/workflows/github-actions-test-installer.yml'
+      - '.github-actions-test-boost-version.yml'
 
 jobs:     
   testBoostVersion:
