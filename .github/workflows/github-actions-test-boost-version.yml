@@ -22,8 +22,9 @@ on:
       - 'etc/DependencyInstaller.sh'
       - '.github-actions-test-boost-version.yml'
 
-jobs:     
-  testBoostVersion:
+jobs:  
+  testBoostVersionInput:
+    if: ${{ github.event_name }} == 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
@@ -38,17 +39,40 @@ jobs:
       - name: Run installer
         shell: bash
         run: |
-          INPUT_VERSION=${{ inputs.boostVersion }}
-          INPUT_CHECKSUM=${{ inputs.boostChecksum }}
-          BOOST_VERSION=${INPUT_VERSION:-"1.81.0"}
-          BOOST_CHECKSUM=${INPUT_CHECKSUM:-"4bf02e84afb56dfdccd1e6aec9911f4b"}
-          sudo ./etc/DependencyInstaller.sh -boostVersion=${BOOST_VERSION} -boostChecksum=${BOOST_CHECKSUM}
+          sudo ./etc/DependencyInstaller.sh -boostVersion=${{ inputs.boostVersion }} -boostChecksum=${{ inputs.boostChecksum }}
       - name: Build project
         shell: bash
         run: |
           sudo ./etc/Build.sh
       - name: Test build
         shell: bash
-        run:
+        run: |
+          build/src/openroad -help
+          sudo ./test/regression
+  testBoostVersionMatrix:
+    if: ${{ github.event_name }} == 'push' || ${{ github.event_name }} == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-20.04", "ubuntu-22.04"]
+        boost: [{version: "1.79.0", checksum: "e9213a48f0b19b7e01597c79f9128dd3"}, {version: "1.80.0", checksum: "077f074743ea7b0cb49c6ed43953ae95"}, {version: "1.81.0", checksum: "4bf02e84afb56dfdccd1e6aec9911f4b"}]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+          submodules: recursive
+      - name: Run installer
+        shell: bash
+        run: |
+          sudo ./etc/DependencyInstaller.sh -boostVersion=${{ matrix.boost.version }} -boostChecksum=${{ matrix.boost.checksum }}
+      - name: Build project
+        shell: bash
+        run: |
+          sudo ./etc/Build.sh
+      - name: Test build
+        shell: bash
+        run: |
           build/src/openroad -help
           sudo ./test/regression
