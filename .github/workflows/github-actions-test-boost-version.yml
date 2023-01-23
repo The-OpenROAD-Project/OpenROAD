@@ -38,7 +38,11 @@ jobs:
       - name: Run installer
         shell: bash
         run: |
-          sudo ./etc/DependencyInstaller.sh -boostVersion=${{ inputs.boostVersion }} -boostChecksum=${{ inputs.boostChecksum }}
+          INPUT_VERSION=${{ inputs.boostVersion }}
+          INPUT_CHECKSUM=${{ inputs.boostChecksum }}
+          BOOST_VERSION=${INPUT_VERSION:-"1.81.0"}
+          BOOST_CHECKSUM=${INPUT_CHECKSUM:-"4bf02e84afb56dfdccd1e6aec9911f4b"}
+          sudo ./etc/DependencyInstaller.sh -boostVersion=${BOOST_VERSION} -boostChecksum=${BOOST_CHECKSUM}
       - name: Build project
         shell: bash
         run: |
