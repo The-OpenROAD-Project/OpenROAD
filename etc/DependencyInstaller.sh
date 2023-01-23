@@ -461,9 +461,8 @@ Usage: $0                       Installs all of OpenROAD's dependencies no need 
        $0 -base                 Installs OpenROAD's dependencies using package managers 
                                                            (-common must be executed in another command)
        $0 -common               Installs OpenROAD's common dependencies (-base must be executed in another command)
-       $0 -prefix=DIR           Installs dependencies in an existing user specified directory      
-       $0 -local                Installs common dependencies in "$HOME/.local". Only used with -common. Root access 
-                                                           is still needed for other dependencies. Flag cannot be used with sudo or with root access
+       $0 -prefix=DIR           Installs common dependencies in an existing user-specified directory. Only used with -common. This flag cannot be used with sudo or with root access.
+       $0 -local                Installs common dependencies in "$HOME/.local". Only used with -common. This flag cannot be used with sudo or with root access.
 
 EOF
     exit "${1:-1}"
