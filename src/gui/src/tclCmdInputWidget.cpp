@@ -108,10 +108,10 @@ void TclCmdInputWidget::setTclInterp(
     // OpenRoad is not initialized
     emit commandAboutToExecute();
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-    const int setup_tcl_result = ord::tclAppInit(interp_);
+    const bool setup_tcl_result = ord::tclAppInit(interp_) == TCL_OK;
     post_or_init();
     processTclResult(setup_tcl_result);
-    emit commandFinishedExecuting(setup_tcl_result == TCL_OK);
+    emit commandFinishedExecuting(setup_tcl_result);
   } else {
     post_or_init();
   }
@@ -710,6 +710,11 @@ void TclCmdInputWidget::executeCommand(const QString& cmd,
       // record the successful command to tcl history command
       Tcl_RecordAndEval(interp_, command.c_str(), TCL_NO_EVAL);
       addCommandToHistory(QString::fromStdString(command));
+    }
+  } else {
+    if (!is_ok) {
+      // Show output on error despite silent
+      processTclResult(is_ok);
     }
   }
 

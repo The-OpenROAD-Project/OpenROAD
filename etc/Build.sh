@@ -6,7 +6,17 @@ cd "$(dirname $(readlink -f $0))/../"
 
 # default values, can be overwritten by cmdline args
 buildDir="build"
-numThreads="$(nproc)"
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  numThreads=$(nproc --all)
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  numThreads=$(sysctl -n hw.ncpu)
+else
+  cat << EOF
+WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
+  Defaulting to 2 threads. Use --threads N to use N threads"
+EOF
+  numThreads=2
+fi
 cmakeOptions=("")
 cleanBefore=no
 keepLog=no
@@ -34,7 +44,8 @@ OPTIONS:
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
   -threads=NUM_THREADS                          Number of threads to use during
-                                                  compile. Default: \`nproc\`
+                                                  compile. Default: \`nproc\` on linux
+                                                  or \`sysctl -n hw.logicalcpu\` on macOS
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
@@ -127,6 +138,11 @@ if [[ "${keepLog}" == "yes"  ]]; then
     logName="${buildDir}/openroad-build-$(date +%s).log"
 else
     logName=/dev/null
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+    export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
 
 cmake "${cmakeOptions[@]}" -B "${buildDir}" . 2>&1 | tee "${logName}"

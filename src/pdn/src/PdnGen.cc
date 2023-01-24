@@ -94,6 +94,7 @@ void PdnGen::resetShapes()
 
 void PdnGen::buildGrids(bool trim)
 {
+  debugPrint(logger_, utl::PDN, "Make", 1, "Build - begin");
   auto* block = db_->getChip()->getBlock();
 
   resetShapes();
@@ -108,18 +109,12 @@ void PdnGen::buildGrids(bool trim)
   }
 
   ShapeTreeMap block_obs;
-  Grid::makeInitialObstructions(block, block_obs, insts_in_grids);
+  Grid::makeInitialObstructions(block, block_obs, insts_in_grids, logger_);
 
   ShapeTreeMap all_shapes;
 
   // get special shapes
-  std::set<odb::dbNet*> nets;
-  for (auto* domain : getDomains()) {
-    for (auto* net : domain->getNets()) {
-      nets.insert(net);
-    }
-  }
-  Grid::makeInitialShapes(block, all_shapes);
+  Grid::makeInitialShapes(block, all_shapes, logger_);
   for (const auto& [layer, layer_shapes] : all_shapes) {
     auto& layer_obs = block_obs[layer];
     for (const auto& [box, shape] : layer_shapes) {
@@ -128,6 +123,8 @@ void PdnGen::buildGrids(bool trim)
   }
 
   for (auto* grid : grids) {
+    debugPrint(
+        logger_, utl::PDN, "Make", 2, "Build start grid - {}", grid->getName());
     ShapeTreeMap obs_local = block_obs;
     for (auto* grid_other : grids) {
       if (grid != grid_other) {
@@ -142,6 +139,8 @@ void PdnGen::buildGrids(bool trim)
         all_shapes_layer.insert(shape);
       }
     }
+    debugPrint(
+        logger_, utl::PDN, "Make", 2, "Build end grid - {}", grid->getName());
   }
 
   if (trim) {
@@ -151,6 +150,7 @@ void PdnGen::buildGrids(bool trim)
   }
 
   updateRenderer();
+  debugPrint(logger_, utl::PDN, "Make", 1, "Build - end");
 }
 
 void PdnGen::cleanupVias()

@@ -1,4 +1,4 @@
-# 
+# repair_design tristate drviers (N^2 issue)
 source "helpers.tcl"
 source "hi_fanout.tcl"
 

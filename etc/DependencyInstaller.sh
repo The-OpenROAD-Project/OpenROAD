@@ -132,7 +132,7 @@ _installOrTools() {
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
     orToolsPath="/opt/or-tools"
-    if [[ "${os}" == "MacOsX" ]]; then
+    if [[ "${os}" == "macOS" ]]; then
         orToolsPath="$(brew --prefix or-tools)"
     fi
     mkdir -p ${orToolsPath}

@@ -212,9 +212,14 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   fastroute_->initAuxVar();
 }
 
+// If file name is specified, save congestion report file.
+// If there are no congestions, the empty file overwrites any
+// previous congestion report file.
 void GlobalRouter::saveCongestion()
 {
-  remove(congestion_file_name_);
+  if (congestion_file_name_ == nullptr) {
+    return;
+  }
   std::ofstream out(congestion_file_name_);
 
   std::vector<std::pair<GSegment, TileCongestion>> congestionGridsV,
@@ -282,21 +287,24 @@ void GlobalRouter::globalRoute(bool save_guides)
   routes_ = findRouting(nets, min_layer, max_layer);
   updateDbCongestion();
 
-  if (fastroute_->has2Doverflow() && !allow_congestion_) {
-    if (congestion_file_name_ != nullptr) {
-      saveCongestion();
-      logger_->error(
-          GRT,
-          119,
-          "Routing congestion too high. Check the congestion heatmap "
-          "in the GUI and load {} in the DRC viewer.",
-          congestion_file_name_);
-    } else {
-      logger_->error(
-          GRT,
-          118,
-          "Routing congestion too high. Check the congestion heatmap "
-          "in the GUI.");
+  saveCongestion();
+
+  if (fastroute_->has2Doverflow()) {
+    if (!allow_congestion_) {
+      if (congestion_file_name_ != nullptr) {
+        logger_->error(
+            GRT,
+            119,
+            "Routing congestion too high. Check the congestion heatmap "
+            "in the GUI and load {} in the DRC viewer.",
+            congestion_file_name_);
+      } else {
+        logger_->error(
+            GRT,
+            118,
+            "Routing congestion too high. Check the congestion heatmap "
+            "in the GUI.");
+      }
     }
   }
   if (fastroute_->totalOverflow() > 0 && verbose_) {
@@ -838,7 +846,6 @@ void GlobalRouter::saveSttInputFile(Net* net)
 {
   std::string file_name = fastroute_->getSttInputFileName();
   const float net_alpha = stt_builder_->getAlpha(net->getDbNet());
-  remove(file_name.c_str());
   std::ofstream out(file_name.c_str());
   out << "Net " << net->getName() << " " << net_alpha << "\n";
   for (Pin& pin : net->getPins()) {
@@ -3767,9 +3774,7 @@ void GlobalRouter::reportNetDetailedRouteWL(odb::dbWire* wire,
 
 void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
 {
-  remove(file_name);
-  std::ofstream out;
-  out.open(file_name, std::ios::app);
+  std::ofstream out(file_name);
   out << "tool "
       << "net "
       << "total_wl "

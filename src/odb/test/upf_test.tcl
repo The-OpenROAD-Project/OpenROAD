@@ -13,6 +13,7 @@ set db [ord::get_db]
 set chip [$db getChip]
 set block [$chip getBlock]
 
+
 puts "Power Domains List:"
 set pds [$block getPowerDomains]
 foreach pd $pds {
