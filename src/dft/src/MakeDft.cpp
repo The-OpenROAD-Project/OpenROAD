@@ -32,7 +32,7 @@
 
 #include "ord/OpenRoad.hh"
 
-#include "Dft.hh"
+#include "dft/Dft.hh"
 #include "dft/MakeDft.hh"
 
 namespace dft {

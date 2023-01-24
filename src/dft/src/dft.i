@@ -37,11 +37,11 @@
 #include "dft/Dft.hh"
 #include "ord/OpenRoad.hh"
 
-dft::dft *
-getDft()
-{
-  return ord::OpenRoad::openRoad()->getDft();
-}
+/*dft::dft **/
+/*getDft()*/
+/*{*/
+  /*return ord::OpenRoad::openRoad()->getDft();*/
+/*}*/
 
 %}
 
