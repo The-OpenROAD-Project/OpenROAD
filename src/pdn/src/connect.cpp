@@ -935,6 +935,9 @@ void Connect::writeFailedVias(std::ofstream& file) const
       case failedViaReason::OBSTRUCTED:
         reason_str = "Obstructed";
         break;
+      case failedViaReason::OVERLAPPING:
+        reason_str = "Overlapping";
+        break;
       case failedViaReason::BUILD:
         reason_str = "Build";
         break;

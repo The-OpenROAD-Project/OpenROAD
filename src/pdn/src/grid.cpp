@@ -726,6 +726,52 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
+  // Remove overlapping vias and keep largest
+  ViaTree overlapping_via_tree;
+  for (const auto& via : vias) {
+    overlapping_via_tree.insert({via->getBox(), via});
+  }
+  for (const auto& via : vias) {
+    if (via->isFailed()) {
+      continue;
+    }
+    if (overlapping_via_tree.qbegin(
+            bgi::intersects(via->getBox())
+            && bgi::satisfies([&via](const ViaValue& other) -> bool {
+                 const auto& other_via = other.second;
+                 if (via == other_via) {
+                   // ignore the same via
+                   return false;
+                 }
+
+                 if (other_via->isFailed()) {
+                  return false;
+                 }
+
+                 if (via->getLowerLayer() != other_via->getLowerLayer()) {
+                   return false;
+                 }
+
+                 if (via->getUpperLayer() != other_via->getUpperLayer()) {
+                   return false;
+                 }
+
+                 // Remove the smaller of the two vias
+                 return via->getArea().area() <= other_via->getArea().area();
+               }))
+        != overlapping_via_tree.qend()) {
+      remove_vias.insert(via);
+      via->markFailed(failedViaReason::OVERLAPPING);
+    }
+  }
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Via",
+             2,
+             "Removing {} vias due to overlaps.",
+             remove_vias.size());
+  remove_set_of_vias(remove_vias);
+
   // build via tree
   vias_.clear();
   for (auto& via : vias) {
