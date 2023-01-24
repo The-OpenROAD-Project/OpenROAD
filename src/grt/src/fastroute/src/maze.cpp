@@ -333,7 +333,7 @@ void FastRouteCore::routeLShape(
       first_y = startpoint.y;
       if (startpoint.x == endpoint.x) {
         first_y
-          = (startpoint.y < endpoint.y) ? startpoint.y + 1 : startpoint.y - 1;
+            = (startpoint.y < endpoint.y) ? startpoint.y + 1 : startpoint.y - 1;
       }
     }
     if (startpoint.y < endpoint.y) {
