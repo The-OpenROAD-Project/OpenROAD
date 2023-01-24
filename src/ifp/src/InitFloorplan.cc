@@ -42,6 +42,7 @@
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
+#include "odb/upf.h"
 #include "odb/util.h"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
@@ -94,6 +95,8 @@ using odb::dbTechLayerType;
 using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Rect;
+
+using upf::eval_upf;
 
 InitFloorplan::InitFloorplan(dbBlock* block,
                              Logger* logger,
@@ -192,6 +195,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
       }
       int cux = core.xMax();
       int cuy = core.yMax();
+      eval_upf(logger_, block_);
       makeRows(site, clx, cly, cux, cuy);
       updateVoltageDomain(site, clx, cly, cux, cuy);
     } else
@@ -227,7 +231,8 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
 
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
-    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN) {
+    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN
+        || group->getType() == dbGroupType::POWER_DOMAIN) {
       dbRegion* domain_region = group->getRegion();
       int domain_xMin = std::numeric_limits<int>::max();
       int domain_yMin = std::numeric_limits<int>::max();

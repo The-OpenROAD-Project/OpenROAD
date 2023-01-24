@@ -1,0 +1,131 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+Power Domains List:
+PowerDomain: PD_TOP, Elements: .
+PowerDomain: PD_D1, Elements: d1
+PowerDomain: PD_D2, Elements: d2
+PowerDomain: PD_D3, Elements: d3
+PowerDomain: PD_D4, Elements: d4
+Instance: _1_ - 
+Instance: _2_ - 
+Instance: _3_ - 
+ -> _0_ -> _4_
+Instance: _4_ - 
+Instance: d1/_0_ - 
+ -> d1_out3 -> _1_
+Instance: d1/_1_ - 
+ -> d1_out1 -> d2/_2_
+ -> d1_out1 -> d2/_0_
+Instance: d1/_2_ - 
+ -> d1_out2 -> d3/_2_
+ -> d1_out2 -> d3/_0_
+Instance: d2/_0_ - 
+ -> d2_out3 -> _1_
+Instance: d2/_1_ - 
+ -> d2_out1 -> d3/_1_
+ -> d2_out1 -> d3/_0_
+Instance: d2/_2_ - 
+ -> d2_out2 -> d4/_2_
+ -> d2_out2 -> d4/_0_
+Instance: d3/_0_ - 
+ -> d3_out3 -> _3_
+Instance: d3/_1_ - 
+ -> d3_out1 -> d4/_1_
+ -> d3_out1 -> d4/_0_
+Instance: d3/_2_ - 
+ -> d3_out2 -> _2_
+Instance: d4/_0_ - 
+ -> d4_out3 -> _2_
+Instance: d4/_1_ - 
+ -> d4_out1 -> _4_
+Instance: d4/_2_ - 
+ -> d4_out2 -> _3_
+[WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
+[INFO IFP-0001] Added 8 rows of 52 sites.
+Instance: _1_ - () : sky130_fd_sc_hd__xnor2_1 
+Instance: _2_ - () : sky130_fd_sc_hd__xnor2_1 
+Instance: _3_ - () : sky130_fd_sc_hd__xnor2_1 
+ -> _0_ -> _4_ 
+Instance: _4_ - () : sky130_fd_sc_hd__and2_1 
+Instance: d1/_0_ - (PD_D1) : sky130_fd_sc_hd__and2_1 
+ -> d1_out3 -> d1/_0__d1_out3_d1_out3_o_isolation 
+Instance: d1/_1_ - (PD_D1) : sky130_fd_sc_hd__buf_4 
+ -> d1_out1 -> d1/_1__d1_out1_d1_out1_o_isolation 
+Instance: d1/_2_ - (PD_D1) : sky130_fd_sc_hd__buf_4 
+ -> d1_out2 -> d1/_2__d1_out2_d1_out2_o_isolation 
+Instance: d2/_0_ - (PD_D2) : sky130_fd_sc_hd__and2_1 
+ -> d2_out3 -> d2/_0__d2_out3_d2_out3_o_isolation 
+Instance: d2/_1_ - (PD_D2) : sky130_fd_sc_hd__buf_4 
+ -> d2_out1 -> d2/_1__d2_out1_d2_out1_o_isolation 
+Instance: d2/_2_ - (PD_D2) : sky130_fd_sc_hd__buf_4 
+ -> d2_out2 -> d2/_2__d2_out2_d2_out2_o_isolation 
+Instance: d3/_0_ - (PD_D3) : sky130_fd_sc_hd__and2_1 
+ -> d3_out3 -> d3/_0__d3_out3_d3_out3_o_isolation 
+Instance: d3/_1_ - (PD_D3) : sky130_fd_sc_hd__buf_4 
+ -> d3_out1 -> d3/_1__d3_out1_d3_out1_o_isolation 
+Instance: d3/_2_ - (PD_D3) : sky130_fd_sc_hd__buf_4 
+ -> d3_out2 -> d3/_2__d3_out2_d3_out2_o_isolation 
+Instance: d4/_0_ - (PD_D4) : sky130_fd_sc_hd__and2_1 
+ -> d4_out3 -> d4/_0__d4_out3_d4_out3_o_isolation 
+Instance: d4/_1_ - (PD_D4) : sky130_fd_sc_hd__buf_4 
+ -> d4_out1 -> d4/_1__d4_out1_d4_out1_o_isolation 
+Instance: d4/_2_ - (PD_D4) : sky130_fd_sc_hd__buf_4 
+ -> d4_out2 -> d4/_2__d4_out2_d4_out2_o_isolation 
+Instance: d1/_2__d1_out2_d1_out2_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d1_out2_o -> d3/_0_ 
+ -> d1_out2_o -> d3/_2_ 
+Instance: d1/_1__d1_out1_d1_out1_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d1_out1_o -> d2/_0_ 
+ -> d1_out1_o -> d2/_2_ 
+Instance: d1/_0__d1_out3_d1_out3_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d1_out3_o -> _1_ 
+Instance: d2/_2__d2_out2_d2_out2_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d2_out2_o -> d4/_0_ 
+ -> d2_out2_o -> d4/_2_ 
+Instance: d2/_2__d2_out2_d2_out2_o_isolation_inv_control - () : sky130_fd_sc_hd__clkinv_1 
+ -> d2/_2__d2_out2_d2_out2_o_isolation_inv_control -> d2/_2__d2_out2_d2_out2_o_isolation 
+Instance: d2/_1__d2_out1_d2_out1_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d2_out1_o -> d3/_0_ 
+ -> d2_out1_o -> d3/_1_ 
+Instance: d2/_1__d2_out1_d2_out1_o_isolation_inv_control - () : sky130_fd_sc_hd__clkinv_1 
+ -> d2/_1__d2_out1_d2_out1_o_isolation_inv_control -> d2/_1__d2_out1_d2_out1_o_isolation 
+Instance: d2/_0__d2_out3_d2_out3_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d2_out3_o -> _1_ 
+Instance: d2/_0__d2_out3_d2_out3_o_isolation_inv_control - () : sky130_fd_sc_hd__clkinv_1 
+ -> d2/_0__d2_out3_d2_out3_o_isolation_inv_control -> d2/_0__d2_out3_d2_out3_o_isolation 
+Instance: d3/_2__d3_out2_d3_out2_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d3/_2__d3_out2_d3_out2_o_isolation_inv_out -> d3/_2__d3_out2_d3_out2_o_isolation_inv_out 
+Instance: d3/_2__d3_out2_d3_out2_o_isolation_inv_out - () : sky130_fd_sc_hd__clkinv_1 
+ -> d3_out2_o -> _2_ 
+Instance: d3/_1__d3_out1_d3_out1_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d3/_1__d3_out1_d3_out1_o_isolation_inv_out -> d3/_1__d3_out1_d3_out1_o_isolation_inv_out 
+Instance: d3/_1__d3_out1_d3_out1_o_isolation_inv_out - () : sky130_fd_sc_hd__clkinv_1 
+ -> d3_out1_o -> d4/_0_ 
+ -> d3_out1_o -> d4/_1_ 
+Instance: d3/_0__d3_out3_d3_out3_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d3/_0__d3_out3_d3_out3_o_isolation_inv_out -> d3/_0__d3_out3_d3_out3_o_isolation_inv_out 
+Instance: d3/_0__d3_out3_d3_out3_o_isolation_inv_out - () : sky130_fd_sc_hd__clkinv_1 
+ -> d3_out3_o -> _3_ 
+Instance: d4/_2__d4_out2_d4_out2_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d4/_2__d4_out2_d4_out2_o_isolation_inv_out -> d4/_2__d4_out2_d4_out2_o_isolation_inv_out 
+Instance: d4/_2__d4_out2_d4_out2_o_isolation_inv_out - () : sky130_fd_sc_hd__clkinv_1 
+ -> d4_out2_o -> _3_ 
+Instance: d4/_2__d4_out2_d4_out2_o_isolation_inv_control - () : sky130_fd_sc_hd__clkinv_1 
+ -> d4/_2__d4_out2_d4_out2_o_isolation_inv_control -> d4/_2__d4_out2_d4_out2_o_isolation 
+Instance: d4/_1__d4_out1_d4_out1_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d4/_1__d4_out1_d4_out1_o_isolation_inv_out -> d4/_1__d4_out1_d4_out1_o_isolation_inv_out 
+Instance: d4/_1__d4_out1_d4_out1_o_isolation_inv_out - () : sky130_fd_sc_hd__clkinv_1 
+ -> d4_out1_o -> _4_ 
+Instance: d4/_1__d4_out1_d4_out1_o_isolation_inv_control - () : sky130_fd_sc_hd__clkinv_1 
+ -> d4/_1__d4_out1_d4_out1_o_isolation_inv_control -> d4/_1__d4_out1_d4_out1_o_isolation 
+Instance: d4/_0__d4_out3_d4_out3_o_isolation - () : sky130_fd_sc_hd__lpflow_inputiso0n_1 
+ -> d4/_0__d4_out3_d4_out3_o_isolation_inv_out -> d4/_0__d4_out3_d4_out3_o_isolation_inv_out 
+Instance: d4/_0__d4_out3_d4_out3_o_isolation_inv_out - () : sky130_fd_sc_hd__clkinv_1 
+ -> d4_out3_o -> _2_ 
+Instance: d4/_0__d4_out3_d4_out3_o_isolation_inv_control - () : sky130_fd_sc_hd__clkinv_1 
+ -> d4/_0__d4_out3_d4_out3_o_isolation_inv_control -> d4/_0__d4_out3_d4_out3_o_isolation 
