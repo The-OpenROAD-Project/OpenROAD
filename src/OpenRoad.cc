@@ -61,6 +61,7 @@
 // mpl2 aborts with link error on darwin
 #include "mpl2/MakeMacroPlacer.h"
 #endif
+#include "dft/MakeDft.hh"
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -81,7 +82,6 @@
 #include "stt/MakeSteinerTreeBuilder.h"
 #include "tap/MakeTapcell.h"
 #include "triton_route/MakeTritonRoute.h"
-#include "dft/MakeDft.hh"
 #include "utl/Logger.h"
 #include "utl/MakeLogger.h"
 
