@@ -7,7 +7,7 @@ A simple DFT insertion consist of the following parts:
 
 * A scan_in pin where the test patterns are shifted in.
 * A scan_out pin where the test patterns are read from.
-* Scan cells that replace your flops with registers that allow us for testing.
+* Scan cells that replace flops with registers that allow for testing.
 * One or more scan chains (shift registers created from your scan cells).
 * A scan_enable pin to allow your design to enter and leave the test mode.
 
