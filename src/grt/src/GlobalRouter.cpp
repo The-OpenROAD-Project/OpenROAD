@@ -1900,6 +1900,9 @@ void GlobalRouter::computePinOffsetAdjustments()
                                                      gcell_id_x + i + 1,
                                                      gcell_id_y,
                                                      segment.init_layer);
+          if (curr_cap == 0) {
+            continue;
+          }
           curr_cap -= 1;
           fastroute_->addAdjustment(gcell_id_x + i,
                                     gcell_id_y,
@@ -1916,6 +1919,9 @@ void GlobalRouter::computePinOffsetAdjustments()
                                                      gcell_id_x,
                                                      gcell_id_y + i + 1,
                                                      segment.init_layer);
+          if (curr_cap == 0) {
+            continue;
+          }
           curr_cap -= 1;
           fastroute_->addAdjustment(gcell_id_x,
                                     gcell_id_y + i,
