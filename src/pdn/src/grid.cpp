@@ -745,7 +745,7 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
                  }
 
                  if (other_via->isFailed()) {
-                  return false;
+                   return false;
                  }
 
                  if (via->getLowerLayer() != other_via->getLowerLayer()) {
