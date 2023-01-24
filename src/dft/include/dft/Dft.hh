@@ -33,7 +33,8 @@
 
 namespace dft {
 
-class Dft {
+class Dft
+{
 };
 
-} // namespace dft
+}  // namespace dft
