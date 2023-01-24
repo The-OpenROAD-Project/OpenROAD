@@ -38,8 +38,8 @@ class OpenRoad;
 namespace dft {
 class Dft;
 
-Dft *makeDft();
-void initDft(ord::OpenRoad *openroad);
-void deleteDft(Dft *dft);
+Dft* makeDft();
+void initDft(ord::OpenRoad* openroad);
+void deleteDft(Dft* dft);
 
-} // namespace dft
+}  // namespace dft
