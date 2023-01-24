@@ -269,7 +269,7 @@ bool GlobalRouter::haveRoutes()
 void GlobalRouter::globalRoute(bool save_guides, bool start_incremental, bool end_incremental)
 {
   if(start_incremental && end_incremental) {
-    printf("Both option defined\n");
+    logger_->error(GRT, 251, "Both option defined.");
   }
   else if(start_incremental){
     grouter_cbk_ = new GRouteDbCbk(this);
@@ -304,6 +304,7 @@ void GlobalRouter::globalRoute(bool save_guides, bool start_incremental, bool en
     }
 
     updateDbCongestion();
+    saveCongestion();
 
   saveCongestion();
 
@@ -854,7 +855,6 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     int min_layer, max_layer;
     getNetLayerRange(net, min_layer, max_layer);
 
-    printf("Dirty net route: %s\n", net->getDbNet()->getConstName());
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
                                        is_clock,
                                        root_idx,
@@ -3970,7 +3970,6 @@ void GlobalRouter::updateDirtyRoutes()
         dirty_nets.push_back(db_net_map_[db_net]);
       }
     }
-    printf("NumDirtyNets: %ld\n", dirty_nets.size());
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route
