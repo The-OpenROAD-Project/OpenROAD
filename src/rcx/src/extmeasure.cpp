@@ -279,7 +279,6 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
 
   return bb;
 }
-
 void extMeasure::clean2dBoxTable(int met, bool cntx)
 {
   if (met <= 0)

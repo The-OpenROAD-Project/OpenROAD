@@ -120,7 +120,6 @@ void extMain::setupMapping(uint itermCnt)
   _itermTable = new Ath__array1D<int>(itermCnt);
   _nodeTable = new Ath__array1D<int>(16000);
 }
-
 extMain::extMain()
     : _db(nullptr),
       _tech(nullptr),
@@ -724,7 +723,6 @@ void extMain::printNet(dbNet* net, uint netId)
   if (netId == net->getId())
     net->printNetName(stdout);
 }
-
 void extMain::measureRC(CoupleOptions& options)
 {
   _totSegCnt++;
@@ -881,7 +879,6 @@ void extMain::measureRC(CoupleOptions& options)
   }
   ccReportProgress();
 }
-
 extern CoupleOptions coupleOptionsNull;
 
 void extCompute1(CoupleOptions& options, void* computePtr)

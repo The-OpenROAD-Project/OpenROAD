@@ -1116,7 +1116,6 @@ void extMain::removeExt()
   }
   removeExt(rnets);
 }
-
 void extCompute(CoupleOptions& inputTable, void* extModel);
 void extCompute1(CoupleOptions& inputTable, void* extModel);
 

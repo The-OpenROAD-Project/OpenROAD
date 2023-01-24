@@ -50,22 +50,18 @@ unsigned int ext2dBox::length() const
 {
   return _ur[_dir] - _ll[_dir];
 }
-
 unsigned int ext2dBox::width() const
 {
   return _ur[!_dir] - _ll[!_dir];
 }
-
 int ext2dBox::loX() const
 {
   return _ll[0];
 }
-
 int ext2dBox::loY() const
 {
   return _ll[1];
 }
-
 unsigned int ext2dBox::id() const
 {
   return _id;

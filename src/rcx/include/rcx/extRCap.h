@@ -1511,6 +1511,17 @@ class extMain
                    uint& via_cnt);
   std::string _tmpLenStats;
 
+<<<<<<< HEAD
+=======
+  enum INCR_SPEF_TYPE
+  {
+    ISPEF_NONE,
+    ISPEF_ORIGINAL,
+    ISPEF_NEW,
+    ISPEF_ORIGINAL_PLUS_HALO,
+    ISPEF_NEW_PLUS_HALO,
+  };
+>>>>>>> 581eec242 (Merge origin/master part 5)
   extMain();
 
   void set_debug_nets(const char* nets)

@@ -517,7 +517,6 @@ void extMasterConductor::reset(double height,
   _loLeft[2] = _hiLeft[2] - thickness;
   _loRight[2] = _loLeft[2];
 }
-
 void extMasterConductor::writeRaphaelPointXY(FILE* fp, double X, double Y)
 {
   fprintf(fp, "  %6.3f,%6.3f ; ", X, Y);
