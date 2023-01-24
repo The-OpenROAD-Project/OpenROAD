@@ -29,8 +29,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#ifndef DFT_DFT_H
-#define DFT_DFT_H
+#pragma once
 
 namespace dft {
 
@@ -38,5 +37,3 @@ class Dft {
 };
 
 } // namespace dft
-
-#endif
