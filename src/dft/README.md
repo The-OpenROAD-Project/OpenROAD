@@ -1,8 +1,7 @@
 # DFT: Design for Testing
 
-This tool is a implementation of Design For Testing for OpenROAD. Design for
-Testing is used to add new nets and combinational logic to allow IC designs to
-be tested for errors coming from physical imperfections in the tapeout.
+This tool is an implementation of Design For Testing. New nets and logic are added to allow IC designs to
+be tested for errors in manufacturing.   Physical imperfections can cause hard failures and variability can cause timing errors.
 
 A simple DFT insertion consist of the following parts:
 
