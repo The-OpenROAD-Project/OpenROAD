@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_DESIGN_H_
-#define _FR_DESIGN_H_
+#pragma once
 
 #include <memory>
 #include <string>
@@ -136,5 +135,3 @@ class frDesign
   int version_;
 };
 }  // namespace fr
-
-#endif

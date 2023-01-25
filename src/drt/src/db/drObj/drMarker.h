@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_MARKER_H_
-#define _DR_MARKER_H_
+#pragma once
 
 #include "db/drObj/drBlockObject.h"
 
@@ -93,4 +92,3 @@ class drMazeMarker : public drBlockObject
   friend class boost::serialization::access;
 };
 }  // namespace fr
-#endif

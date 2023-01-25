@@ -80,6 +80,7 @@ class PdnGen
 {
  public:
   PdnGen();
+  ~PdnGen();
 
   void init(dbDatabase* db, Logger* logger);
 

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_VIA_H_
-#define _DR_VIA_H_
+#pragma once
 
 #include <memory>
 
@@ -266,5 +265,3 @@ class drVia : public drRef
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

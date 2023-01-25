@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TA_FIG_H_
-#define _TA_FIG_H_
+#pragma once
 
 #include <memory>
 
@@ -104,5 +103,3 @@ class taPinFig : public taConnFig
 };
 
 }  // namespace fr
-
-#endif

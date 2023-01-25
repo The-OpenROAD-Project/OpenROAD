@@ -188,6 +188,10 @@ class TimingPathRenderer : public gui::Renderer
   void clearHighlightNodes() { highlight_stage_.clear(); }
 
   virtual void drawObjects(gui::Painter& /* painter */) override;
+  virtual const char* getDisplayControlGroupName() override
+  {
+    return "Timing Path";
+  }
 
   TimingPath* getPathToRender() { return path_; }
 
@@ -201,7 +205,9 @@ class TimingPathRenderer : public gui::Renderer
                      const gui::Descriptor* net_descriptor,
                      const gui::Descriptor* inst_descriptor,
                      const gui::Descriptor* bterm_descriptor,
-                     const Painter::Color& clock_color);
+                     const Painter::Color& clock_color,
+                     bool draw_clock,
+                     bool draw_signal);
 
   // Expanded path is owned by PathRenderer.
   TimingPath* path_;
@@ -220,6 +226,10 @@ class TimingPathRenderer : public gui::Renderer
   static const gui::Painter::Color signal_color_;
   static const gui::Painter::Color clock_color_;
   static const gui::Painter::Color capture_clock_color_;
+
+  static constexpr const char* data_path_label_ = "Data path";
+  static constexpr const char* launch_clock_label_ = "Launch clock";
+  static constexpr const char* capture_clock_label_ = "Capture clock";
 };
 
 class TimingConeRenderer : public gui::Renderer

@@ -159,6 +159,7 @@ class IOPlacer
   std::vector<Section> createSectionsPerConstraint(
       const Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
+  void initMirroredPins();
   void initConstraints();
   void sortConstraints();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
@@ -175,9 +176,11 @@ class IOPlacer
   int assignGroupToSection(const std::vector<int>& io_group,
                            std::vector<Section>& sections);
   std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint,
-                                                       int& mirrored_pins_cnt);
+                                                       int& assigned_pins_cnt,
+                                                       bool mirrored_only);
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
-                                         Netlist* netlist);
+                                         Netlist* netlist,
+                                         bool mirrored_only);
   int computeIONetsHPWL(Netlist* netlist);
   void findPinAssignment(std::vector<Section>& sections);
   void updateSlots();

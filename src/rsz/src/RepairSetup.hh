@@ -79,6 +79,9 @@ class RepairSetup : StaState
 public:
   RepairSetup(Resizer *resizer);
   void repairSetup(float setup_slack_margin,
+                   // Percent of violating ends to repair to
+                   // reduce tns (0.0-1.0).
+                   double repair_tns_end_percent,
                    int max_passes);
   // For testing.
   void repairSetup(Pin *drvr_pin);
@@ -136,7 +139,7 @@ private:
   const MinMax *min_;
   const MinMax *max_;
 
-  static constexpr int repair_setup_decreasing_slack_passes_allowed_ = 50;
+  static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;

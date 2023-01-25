@@ -704,9 +704,9 @@ uint dbRSeg::getLengthWidth(uint& w)
   dbWire* wire = getNet()->getWire();
   wire->getShape(getShapeId(), s);
 
-  w = MIN(s.getDX(), s.getDY());
+  w = std::min(s.getDX(), s.getDY());
 
-  return MAX(s.getDX(), s.getDY());
+  return std::max(s.getDX(), s.getDY());
 }
 
 dbNet* dbRSeg::getNet()

@@ -41,22 +41,11 @@
 
 namespace odb {
 
-#ifndef MIN
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif
-
 class dbIStream;
 class dbOStream;
 
 class Point
 {
-  int _x;
-  int _y;
-
  public:
   Point();
   Point(const Point& p);
@@ -69,59 +58,20 @@ class Point
   bool operator>=(const Point& p) const;
 
   int get(Orientation2D orient) const;
-  int getX() const;
-  int getY() const;
-  void setX(int x);
-  void setY(int y);
-  void set(int x, int y);
+  int getX() const { return x_; }
+  int getY() const { return y_; }
+  void setX(int x) { x_ = x; }
+  void setY(int y) { y_ = y; }
   void set(Orientation2D orient, int value);
+  void addX(int x) { x_ += x; }
+  void addY(int y) { y_ += y; }
 
   void rotate90();
   void rotate180();
   void rotate270();
 
-  int& x() { return _x; }
-  int& y() { return _y; }
-  const int& x() const { return _x; }
-  const int& y() const { return _y; }
-
-  // compute cross product of the vectors <p0,p1> and <p0,p2>
-  //
-  //      p2
-  //      +
-  //      ^
-  //      |
-  //      | crossProduct(p0,p1,p2) > 0
-  //      |
-  //      +------------>+
-  //     p0            p1
-  //
-  //      p1
-  //      +
-  //      ^
-  //      |
-  //      | crossProduct(p0,p1,p2) < 0
-  //      |
-  //      +------------>+
-  //     p0            p2
-  //
-  // Returns 0 if the vectors are colinear
-  // Returns > 0 if the vectors rotate counter clockwise
-  // Returns < 0 if the vectors rotate clockwise
-  static int64 crossProduct(Point p0, Point p1, Point p2);
-
-  // compute the rotation direction of the vectors <p0,p1> and <p0,p2>
-  // Returns 0 if the vectors are colinear
-  // Returns 1 if the vectors rotate counter clockwise
-  // Returns -1 if the vectors rotate clockwise
-  //
-  enum Rotation
-  {
-    COLINEAR = 0,
-    CW = -1,
-    CCW = 1
-  };
-  static int rotation(Point p0, Point p1, Point p2);
+  int x() const { return x_; }
+  int y() const { return y_; }
 
   // compute the square distance between two points
   static uint64 squaredDistance(Point p0, Point p1);
@@ -131,6 +81,10 @@ class Point
 
   friend dbIStream& operator>>(dbIStream& stream, Point& p);
   friend dbOStream& operator<<(dbOStream& stream, const Point& p);
+
+ private:
+  int x_;
+  int y_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Point& pIn);
@@ -190,9 +144,6 @@ where W is wire width and M is the manufacturing grid
 */
 class Oct
 {
-  Point center_high;  // the center of the higher octagon
-  Point center_low;   // the center of the lower octagon
-  int A;  // A=W/2 (the x distance from the center to the right or left edge)
  public:
   enum OCT_DIR  // The direction of the higher octagon relative to the lower
                 // octagon ( / is right while  \ is left)
@@ -215,93 +166,32 @@ class Oct
   Point getCenterLow() const;
   int getWidth() const;
 
-  uint dx() const
-  {
-    OCT_DIR D = getDir();
-    if (D == RIGHT)
-      return abs(center_high.getX() + A - center_low.getX() + A);
-    else if (D == LEFT)
-      return abs(center_low.getX() + A - center_high.getX() + A);
-    else
-      return 0;
-  };
-  uint dy() const
-  {
-    return abs(center_high.getY() + A - center_low.getY() + A);
-  };
-  int xMin() const
-  {
-    OCT_DIR D = getDir();
-    if (D == RIGHT)
-      return center_low.getX() - A;
-    else if (D == LEFT)
-      return center_high.getX() - A;
-    else
-      return 0;
-  };
-  int yMin() const { return center_low.getY() - A; };
-  int xMax() const
-  {
-    OCT_DIR D = getDir();
-    if (D == RIGHT)
-      return center_high.getX() + A;
-    else if (D == LEFT)
-      return center_low.getX() + A;
-    else
-      return 0;
-  };
-  int yMax() const { return center_high.getY() + A; };
-  std::vector<Point> getPoints() const
-  {
-    OCT_DIR dir = getDir();
-    int B = ceil((A * 2) / (sqrt(2))) - A;
-    std::vector<Point> points(9);
-    points[0] = points[8] = Point(center_low.getX() - B,
-                                  center_low.getY() - A);  // low oct (-B,-A)
-    points[1] = Point(center_low.getX() + B,
-                      center_low.getY() - A);  // low oct (B,-A)
-    points[4] = Point(center_high.getX() + B,
-                      center_high.getY() + A);  // high oct (B,A)
-    points[5] = Point(center_high.getX() - B,
-                      center_high.getY() + A);  // high oct (-B,A)
-    if (dir == RIGHT) {
-      points[2] = Point(center_high.getX() + A,
-                        center_high.getY() - B);  // high oct (A,-B)
-      points[3] = Point(center_high.getX() + A,
-                        center_high.getY() + B);  // high oct (A,B)
-      points[6] = Point(center_low.getX() - A,
-                        center_low.getY() + B);  // low oct  (-A,B)
-      points[7] = Point(center_low.getX() - A,
-                        center_low.getY() - B);  // low oct (-A,-B)
-    } else {
-      points[2] = Point(center_low.getX() + A,
-                        center_low.getY() - B);  // low oct (A,-B)
-      points[3] = Point(center_low.getX() + A,
-                        center_low.getY() + B);  // low oct (A,B)
-      points[6] = Point(center_high.getX() - A,
-                        center_high.getY() + B);  // high oct  (-A,B)
-      points[7] = Point(center_high.getX() - A,
-                        center_high.getY() - B);  // high oct (-A,-B)
-    }
-    return points;
-  };
+  uint dx() const;
+  uint dy() const;
+  int xMin() const;
+  int yMin() const;
+  int xMax() const;
+  int yMax() const;
+  std::vector<Point> getPoints() const;
+
   friend dbIStream& operator>>(dbIStream& stream, Oct& o);
   friend dbOStream& operator<<(dbOStream& stream, const Oct& o);
+
+ private:
+  Point center_high_;  // the center of the higher octagon
+  Point center_low_;   // the center of the lower octagon
+  int A_;  // A=W/2 (the x distance from the center to the right or left edge)
 };
 
 class Rect
 {
-  int _xlo;
-  int _ylo;
-  int _xhi;
-  int _yhi;
-
  public:
   Rect();
   Rect(const Rect& r) = default;
   Rect(const Point p1, const Point p2);
   Rect(int x1, int y1, int x2, int y2);
   ~Rect() = default;
+
   Rect& operator=(const Rect& r) = default;
   bool operator==(const Rect& r) const;
   bool operator!=(const Rect& r) const;
@@ -337,23 +227,15 @@ class Rect
   void set_ylo(int x1);
   void set_yhi(int x1);
 
-  int xMin() const { return _xlo; }
-  int yMin() const { return _ylo; }
-  int xMax() const { return _xhi; }
-  int yMax() const { return _yhi; }
-  uint dx() const { return (uint) (_xhi - _xlo); }
-  uint dy() const { return (uint) (_yhi - _ylo); }
-  int xCenter() const { return (_xlo + _xhi) / 2; }
-  int yCenter() const { return (_ylo + _yhi) / 2; }
-  std::vector<Point> getPoints() const
-  {
-    std::vector<Point> points(5);
-    points[0] = points[4] = ll();
-    points[1] = lr();
-    points[2] = ur();
-    points[3] = ul();
-    return points;
-  };
+  int xMin() const { return xlo_; }
+  int yMin() const { return ylo_; }
+  int xMax() const { return xhi_; }
+  int yMax() const { return yhi_; }
+  uint dx() const { return (uint) (xhi_ - xlo_); }
+  uint dy() const { return (uint) (yhi_ - ylo_); }
+  int xCenter() const { return (xlo_ + xhi_) / 2; }
+  int yCenter() const { return (ylo_ + yhi_) / 2; }
+  std::vector<Point> getPoints() const;
   Point ll() const;
   Point ul() const;
   Point ur() const;
@@ -421,148 +303,109 @@ class Rect
 
   friend dbIStream& operator>>(dbIStream& stream, Rect& r);
   friend dbOStream& operator<<(dbOStream& stream, const Rect& r);
+
+ private:
+  int xlo_;
+  int ylo_;
+  int xhi_;
+  int yhi_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Rect& box);
 
 inline Point::Point()
 {
-  _x = 0;
-  _y = 0;
+  x_ = 0;
+  y_ = 0;
 }
 
 inline Point::Point(const Point& p)
 {
-  _x = p._x;
-  _y = p._y;
+  x_ = p.x_;
+  y_ = p.y_;
 }
 
 inline Point::Point(int x, int y)
 {
-  _x = x;
-  _y = y;
+  x_ = x;
+  y_ = y;
 }
 
 inline Point& Point::operator=(const Point& p)
 {
-  _x = p._x;
-  _y = p._y;
+  x_ = p.x_;
+  y_ = p.y_;
   return *this;
 }
 
 inline bool Point::operator==(const Point& p) const
 {
-  return (_x == p._x) && (_y == p._y);
+  return (x_ == p.x_) && (y_ == p.y_);
 }
 
 inline bool Point::operator!=(const Point& p) const
 {
-  return (_x != p._x) || (_y != p._y);
+  return (x_ != p.x_) || (y_ != p.y_);
 }
 
 inline int Point::get(Orientation2D orient) const
 {
-  return orient == horizontal ? _x : _y;
-}
-
-inline int Point::getX() const
-{
-  return _x;
-}
-
-inline int Point::getY() const
-{
-  return _y;
-}
-
-inline void Point::setX(int x)
-{
-  _x = x;
-}
-
-inline void Point::setY(int y)
-{
-  _y = y;
-}
-
-inline void Point::set(int x, int y)
-{
-  _x = x;
-  _y = y;
+  return orient == horizontal ? x_ : y_;
 }
 
 inline void Point::set(Orientation2D orient, int value)
 {
   if (orient == horizontal) {
-    _x = value;
+    x_ = value;
   } else {
-    _y = value;
+    y_ = value;
   }
 }
 
 inline void Point::rotate90()
 {
-  int xp = -_y;
-  int yp = _x;
-  _x = xp;
-  _y = yp;
+  int xp = -y_;
+  int yp = x_;
+  x_ = xp;
+  y_ = yp;
 }
 
 inline void Point::rotate180()
 {
-  int xp = -_x;
-  int yp = -_y;
-  _x = xp;
-  _y = yp;
+  int xp = -x_;
+  int yp = -y_;
+  x_ = xp;
+  y_ = yp;
 }
 
 inline void Point::rotate270()
 {
-  int xp = _y;
-  int yp = -_x;
-  _x = xp;
-  _y = yp;
-}
-
-inline int64 Point::crossProduct(Point p0, Point p1, Point p2)
-{
-  // because the cross-product might overflow in an "int"
-  // 64-bit arithmetic is used here
-  int64 x0 = p0._x;
-  int64 x1 = p1._x;
-  int64 x2 = p2._x;
-  int64 y0 = p0._y;
-  int64 y1 = p1._y;
-  int64 y2 = p2._y;
-  return (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
-}
-
-inline int Point::rotation(Point p0, Point p1, Point p2)
-{
-  int64 cp = crossProduct(p0, p1, p2);
-  return (cp == 0 ? 0 : cp < 0 ? -1 : 1);
+  int xp = y_;
+  int yp = -x_;
+  x_ = xp;
+  y_ = yp;
 }
 
 inline uint64 Point::squaredDistance(Point p0, Point p1)
 {
-  int64 x0 = p0._x;
-  int64 x1 = p1._x;
+  int64 x0 = p0.x_;
+  int64 x1 = p1.x_;
   int64 dx = x1 - x0;
-  int64 y0 = p0._y;
-  int64 y1 = p1._y;
+  int64 y0 = p0.y_;
+  int64 y1 = p1.y_;
   int64 dy = y1 - y0;
   return (uint64) (dx * dx + dy * dy);
 }
 
 inline uint64 Point::manhattanDistance(Point p0, Point p1)
 {
-  int64 x0 = p0._x;
-  int64 x1 = p1._x;
+  int64 x0 = p0.x_;
+  int64 x1 = p1.x_;
   int64 dx = x1 - x0;
   if (dx < 0)
     dx = -dx;
-  int64 y0 = p0._y;
-  int64 y1 = p1._y;
+  int64 y0 = p0.y_;
+  int64 y1 = p1.y_;
   int64 dy = y1 - y0;
   if (dy < 0)
     dy = -dy;
@@ -571,13 +414,13 @@ inline uint64 Point::manhattanDistance(Point p0, Point p1)
 
 inline bool Point::operator<(const Point& rhs) const
 {
-  if (_x < rhs._x)
+  if (x_ < rhs.x_)
     return true;
 
-  if (_x > rhs._x)
+  if (x_ > rhs.x_)
     return false;
 
-  return _y < rhs._y;
+  return y_ < rhs.y_;
 }
 
 inline bool Point::operator>=(const Point& rhs) const
@@ -587,48 +430,48 @@ inline bool Point::operator>=(const Point& rhs) const
 
 inline bool Rect::operator<(const Rect& rhs) const
 {
-  if (_xlo < rhs._xlo)
+  if (xlo_ < rhs.xlo_)
     return true;
 
-  if (_xlo > rhs._xlo)
+  if (xlo_ > rhs.xlo_)
     return false;
 
-  if (_ylo < rhs._ylo)
+  if (ylo_ < rhs.ylo_)
     return true;
 
-  if (_ylo > rhs._ylo)
+  if (ylo_ > rhs.ylo_)
     return false;
 
-  if (_xhi < rhs._xhi)
+  if (xhi_ < rhs.xhi_)
     return true;
 
-  if (_xhi > rhs._xhi)
+  if (xhi_ > rhs.xhi_)
     return false;
 
-  return _yhi < rhs._yhi;
+  return yhi_ < rhs.yhi_;
 }
 
 inline Rect::Rect()
 {
-  _xlo = _ylo = _xhi = _yhi = 0;
+  xlo_ = ylo_ = xhi_ = yhi_ = 0;
 }
 
 inline Rect::Rect(int x1, int y1, int x2, int y2)
 {
   if (x1 < x2) {
-    _xlo = x1;
-    _xhi = x2;
+    xlo_ = x1;
+    xhi_ = x2;
   } else {
-    _xlo = x2;
-    _xhi = x1;
+    xlo_ = x2;
+    xhi_ = x1;
   }
 
   if (y1 < y2) {
-    _ylo = y1;
-    _yhi = y2;
+    ylo_ = y1;
+    yhi_ = y2;
   } else {
-    _ylo = y2;
-    _yhi = y1;
+    ylo_ = y2;
+    yhi_ = y1;
   }
 }
 
@@ -640,75 +483,75 @@ inline Rect::Rect(const Point p1, const Point p2)
   int y2 = p2.getY();
 
   if (x1 < x2) {
-    _xlo = x1;
-    _xhi = x2;
+    xlo_ = x1;
+    xhi_ = x2;
   } else {
-    _xlo = x2;
-    _xhi = x1;
+    xlo_ = x2;
+    xhi_ = x1;
   }
 
   if (y1 < y2) {
-    _ylo = y1;
-    _yhi = y2;
+    ylo_ = y1;
+    yhi_ = y2;
   } else {
-    _ylo = y2;
-    _yhi = y1;
+    ylo_ = y2;
+    yhi_ = y1;
   }
 }
 
 inline void Rect::set_xlo(int x1)
 {
-  _xlo = x1;
+  xlo_ = x1;
 }
 inline void Rect::set_xhi(int x2)
 {
-  _xhi = x2;
+  xhi_ = x2;
 }
 inline void Rect::set_ylo(int y1)
 {
-  _ylo = y1;
+  ylo_ = y1;
 }
 inline void Rect::set_yhi(int y2)
 {
-  _yhi = y2;
+  yhi_ = y2;
 }
 inline void Rect::reset(int x1, int y1, int x2, int y2)
 {
-  _xlo = x1;
-  _xhi = x2;
-  _ylo = y1;
-  _yhi = y2;
+  xlo_ = x1;
+  xhi_ = x2;
+  ylo_ = y1;
+  yhi_ = y2;
 }
 
 inline void Rect::init(int x1, int y1, int x2, int y2)
 {
   if (x1 < x2) {
-    _xlo = x1;
-    _xhi = x2;
+    xlo_ = x1;
+    xhi_ = x2;
   } else {
-    _xlo = x2;
-    _xhi = x1;
+    xlo_ = x2;
+    xhi_ = x1;
   }
 
   if (y1 < y2) {
-    _ylo = y1;
-    _yhi = y2;
+    ylo_ = y1;
+    yhi_ = y2;
   } else {
-    _ylo = y2;
-    _yhi = y1;
+    ylo_ = y2;
+    yhi_ = y1;
   }
 }
 
 inline bool Rect::operator==(const Rect& r) const
 {
-  return (_xlo == r._xlo) && (_ylo == r._ylo) && (_xhi == r._xhi)
-         && (_yhi == r._yhi);
+  return (xlo_ == r.xlo_) && (ylo_ == r.ylo_) && (xhi_ == r.xhi_)
+         && (yhi_ == r.yhi_);
 }
 
 inline bool Rect::operator!=(const Rect& r) const
 {
-  return (_xlo != r._xlo) || (_ylo != r._ylo) || (_xhi != r._xhi)
-         || (_yhi != r._yhi);
+  return (xlo_ != r.xlo_) || (ylo_ != r.ylo_) || (xhi_ != r.xhi_)
+         || (yhi_ != r.yhi_);
 }
 
 inline uint Rect::minDXDY() const
@@ -744,35 +587,35 @@ inline void Rect::moveTo(int x, int y)
 {
   uint DX = dx();
   uint DY = dy();
-  _xlo = x;
-  _ylo = y;
-  _xhi = x + DX;
-  _yhi = y + DY;
+  xlo_ = x;
+  ylo_ = y;
+  xhi_ = x + DX;
+  yhi_ = y + DY;
 }
 
 inline void Rect::moveDelta(int dx, int dy)
 {
-  _xlo += dx;
-  _ylo += dy;
-  _xhi += dx;
-  _yhi += dy;
+  xlo_ += dx;
+  ylo_ += dy;
+  xhi_ += dx;
+  yhi_ += dy;
 }
 
 inline Point Rect::ll() const
 {
-  return Point(_xlo, _ylo);
+  return Point(xlo_, ylo_);
 }
 inline Point Rect::ul() const
 {
-  return Point(_xlo, _yhi);
+  return Point(xlo_, yhi_);
 }
 inline Point Rect::ur() const
 {
-  return Point(_xhi, _yhi);
+  return Point(xhi_, yhi_);
 }
 inline Point Rect::lr() const
 {
-  return Point(_xhi, _ylo);
+  return Point(xhi_, ylo_);
 }
 inline void Rect::set(Orientation2D orient, Direction1D dir, int value)
 {
@@ -796,47 +639,47 @@ inline int Rect::get(Orientation2D orient, Direction1D dir) const
 }
 inline int Rect::low(Orientation2D orient) const
 {
-  return orient == horizontal ? _xlo : _ylo;
+  return orient == horizontal ? xlo_ : ylo_;
 }
 inline int Rect::high(Orientation2D orient) const
 {
-  return orient == horizontal ? _xhi : _yhi;
+  return orient == horizontal ? xhi_ : yhi_;
 }
 
 inline bool Rect::intersects(const Point& p) const
 {
-  return !((p.getX() < _xlo) || (p.getX() > _xhi) || (p.getY() < _ylo)
-           || (p.getY() > _yhi));
+  return (p.getX() >= xlo_) && (p.getX() <= xhi_) && (p.getY() >= ylo_)
+         && (p.getY() <= yhi_);
 }
 
 inline bool Rect::intersects(const Rect& r) const
 {
-  return !((r._xhi < _xlo) || (r._xlo > _xhi) || (r._yhi < _ylo)
-           || (r._ylo > _yhi));
+  return (r.xhi_ >= xlo_) && (r.xlo_ <= xhi_) && (r.yhi_ >= ylo_)
+         && (r.ylo_ <= yhi_);
 }
 
 inline bool Rect::overlaps(const Point& p) const
 {
-  return !((p.getX() <= _xlo) || (p.getX() >= _xhi) || (p.getY() <= _ylo)
-           || (p.getY() >= _yhi));
+  return (p.getX() > xlo_) && (p.getX() < xhi_) && (p.getY() > ylo_)
+         && (p.getY() < yhi_);
 }
 
 inline bool Rect::overlaps(const Rect& r) const
 {
-  return !((r._xhi <= _xlo) || (r._xlo >= _xhi) || (r._yhi <= _ylo)
-           || (r._ylo >= _yhi));
+  return (r.xhi_ > xlo_) && (r.xlo_ < xhi_) && (r.yhi_ > ylo_)
+         && (r.ylo_ < yhi_);
 }
 
 inline bool Rect::contains(const Rect& r) const
 {
-  return (_xlo <= r._xlo) && (_ylo <= r._ylo) && (_xhi >= r._xhi)
-         && (_yhi >= r._yhi);
+  return (xlo_ <= r.xlo_) && (ylo_ <= r.ylo_) && (xhi_ >= r.xhi_)
+         && (yhi_ >= r.yhi_);
 }
 
 inline bool Rect::inside(const Rect& r) const
 {
-  return (_xlo < r._xlo) && (_ylo < r._ylo) && (_xhi > r._xhi)
-         && (_yhi > r._yhi);
+  return (xlo_ < r.xlo_) && (ylo_ < r.ylo_) && (xhi_ > r.xhi_)
+         && (yhi_ > r.yhi_);
 }
 
 inline Point Rect::closestPtInside(Point pt) const
@@ -848,59 +691,59 @@ inline Point Rect::closestPtInside(Point pt) const
 // Compute the union of these two rectangles.
 inline void Rect::merge(const Rect& r, Rect& result)
 {
-  result._xlo = MIN(_xlo, r._xlo);
-  result._ylo = MIN(_ylo, r._ylo);
-  result._xhi = MAX(_xhi, r._xhi);
-  result._yhi = MAX(_yhi, r._yhi);
+  result.xlo_ = std::min(xlo_, r.xlo_);
+  result.ylo_ = std::min(ylo_, r.ylo_);
+  result.xhi_ = std::max(xhi_, r.xhi_);
+  result.yhi_ = std::max(yhi_, r.yhi_);
 }
 
 inline void Rect::merge(const Oct& o, Rect& result)
 {
-  result._xlo = MIN(_xlo, o.xMin());
-  result._ylo = MIN(_ylo, o.yMin());
-  result._xhi = MAX(_xhi, o.xMax());
-  result._yhi = MAX(_yhi, o.yMax());
+  result.xlo_ = std::min(xlo_, o.xMin());
+  result.ylo_ = std::min(ylo_, o.yMin());
+  result.xhi_ = std::max(xhi_, o.xMax());
+  result.yhi_ = std::max(yhi_, o.yMax());
 }
 
 // Compute the union of these two rectangles.
 inline void Rect::merge(const Rect& r)
 {
-  _xlo = MIN(_xlo, r._xlo);
-  _ylo = MIN(_ylo, r._ylo);
-  _xhi = MAX(_xhi, r._xhi);
-  _yhi = MAX(_yhi, r._yhi);
+  xlo_ = std::min(xlo_, r.xlo_);
+  ylo_ = std::min(ylo_, r.ylo_);
+  xhi_ = std::max(xhi_, r.xhi_);
+  yhi_ = std::max(yhi_, r.yhi_);
 }
 
 inline void Rect::merge(const Oct& o)
 {
-  _xlo = MIN(_xlo, o.xMin());
-  _ylo = MIN(_ylo, o.yMin());
-  _xhi = MAX(_xhi, o.xMax());
-  _yhi = MAX(_yhi, o.yMax());
+  xlo_ = std::min(xlo_, o.xMin());
+  ylo_ = std::min(ylo_, o.yMin());
+  xhi_ = std::max(xhi_, o.xMax());
+  yhi_ = std::max(yhi_, o.yMax());
 }
 
 // Bloat each side of the rectangle by the margin.
 inline void Rect::bloat(int margin, Rect& result) const
 {
-  result._xlo = _xlo - margin;
-  result._ylo = _ylo - margin;
-  result._xhi = _xhi + margin;
-  result._yhi = _yhi + margin;
+  result.xlo_ = xlo_ - margin;
+  result.ylo_ = ylo_ - margin;
+  result.xhi_ = xhi_ + margin;
+  result.yhi_ = yhi_ + margin;
 }
 
 // Compute the intersection of these two rectangles.
 inline void Rect::intersection(const Rect& r, Rect& result) const
 {
   if (!intersects(r)) {
-    result._xlo = 0;
-    result._ylo = 0;
-    result._xhi = 0;
-    result._yhi = 0;
+    result.xlo_ = 0;
+    result.ylo_ = 0;
+    result.xhi_ = 0;
+    result.yhi_ = 0;
   } else {
-    result._xlo = MAX(_xlo, r._xlo);
-    result._ylo = MAX(_ylo, r._ylo);
-    result._xhi = MIN(_xhi, r._xhi);
-    result._yhi = MIN(_yhi, r._yhi);
+    result.xlo_ = std::max(xlo_, r.xlo_);
+    result.ylo_ = std::max(ylo_, r.ylo_);
+    result.xhi_ = std::min(xhi_, r.xhi_);
+    result.yhi_ = std::min(yhi_, r.yhi_);
   }
 }
 
@@ -909,10 +752,10 @@ inline Rect Rect::intersect(const Rect& r) const
 {
   assert(intersects(r));
   Rect result;
-  result._xlo = MAX(_xlo, r._xlo);
-  result._ylo = MAX(_ylo, r._ylo);
-  result._xhi = MIN(_xhi, r._xhi);
-  result._yhi = MIN(_yhi, r._yhi);
+  result.xlo_ = std::max(xlo_, r.xlo_);
+  result.ylo_ = std::max(ylo_, r.ylo_);
+  result.xhi_ = std::min(xhi_, r.xhi_);
+  result.yhi_ = std::min(yhi_, r.yhi_);
   return result;
 }
 
@@ -932,33 +775,43 @@ inline uint64 Rect::margin() const
 
 inline void Rect::mergeInit()
 {
-  _xlo = INT_MAX;
-  _ylo = INT_MAX;
-  _xhi = INT_MIN;
-  _yhi = INT_MIN;
+  xlo_ = INT_MAX;
+  ylo_ = INT_MAX;
+  xhi_ = INT_MIN;
+  yhi_ = INT_MIN;
 }
 
 inline bool Rect::isInverted() const
 {
-  return _xlo > _xhi || _ylo > _yhi;
+  return xlo_ > xhi_ || ylo_ > yhi_;
 }
 
 inline void Rect::notice(const char*)
 {
-  ;  // notice(0, "%s%12d %12d - %12d %12d\n", prefix, _xlo, _ylo, dx, dy);
+  ;  // notice(0, "%s%12d %12d - %12d %12d\n", prefix, xlo_, ylo_, dx, dy);
 }
 inline void Rect::printf(FILE* fp, const char* prefix)
 {
-  fprintf(fp, "%s%12d %12d - %12d %12d\n", prefix, _xlo, _ylo, dx(), dy());
+  fprintf(fp, "%s%12d %12d - %12d %12d\n", prefix, xlo_, ylo_, dx(), dy());
 }
 inline void Rect::print(const char* prefix)
 {
-  fprintf(stdout, "%s%12d %12d - %12d %12d\n", prefix, _xlo, _ylo, dx(), dy());
+  fprintf(stdout, "%s%12d %12d - %12d %12d\n", prefix, xlo_, ylo_, dx(), dy());
+}
+
+inline std::vector<Point> Rect::getPoints() const
+{
+  std::vector<Point> points(5);
+  points[0] = points[4] = ll();
+  points[1] = lr();
+  points[2] = ur();
+  points[3] = ul();
+  return points;
 }
 
 inline Oct::Oct()
 {
-  A = 0;
+  A_ = 0;
 }
 
 inline Oct::Oct(const Point p1, const Point p2, int width)
@@ -975,11 +828,11 @@ inline Oct::Oct(int x1, int y1, int x2, int y2, int width)
 
 inline bool Oct::operator==(const Oct& r) const
 {
-  if (center_low != r.center_low)
+  if (center_low_ != r.center_low_)
     return false;
-  if (center_high != r.center_high)
+  if (center_high_ != r.center_high_)
     return false;
-  if (A != r.A)
+  if (A_ != r.A_)
     return false;
   return true;
 }
@@ -987,34 +840,118 @@ inline bool Oct::operator==(const Oct& r) const
 inline void Oct::init(const Point p1, const Point p2, int width)
 {
   if (p1.getY() > p2.getY()) {
-    center_high = p1;
-    center_low = p2;
+    center_high_ = p1;
+    center_low_ = p2;
   } else {
-    center_high = p2;
-    center_low = p1;
+    center_high_ = p2;
+    center_low_ = p1;
   }
-  A = width / 2;
+  A_ = width / 2;
 }
 
 inline Oct::OCT_DIR Oct::getDir() const
 {
-  if (center_low == center_high)
+  if (center_low_ == center_high_)
     return UNKNOWN;
-  if (center_high.getX() > center_low.getX())
+  if (center_high_.getX() > center_low_.getX())
     return RIGHT;
   return LEFT;
 }
 
 inline Point Oct::getCenterHigh() const
 {
-  return center_high;
+  return center_high_;
 }
 inline Point Oct::getCenterLow() const
 {
-  return center_low;
+  return center_low_;
 }
 inline int Oct::getWidth() const
 {
-  return A * 2;
+  return A_ * 2;
 }
+
+inline uint Oct::dx() const
+{
+  OCT_DIR D = getDir();
+  if (D == RIGHT)
+    return abs(center_high_.getX() + A_ - center_low_.getX() + A_);
+  else if (D == LEFT)
+    return abs(center_low_.getX() + A_ - center_high_.getX() + A_);
+  else
+    return 0;
+}
+
+inline uint Oct::dy() const
+{
+  return abs(center_high_.getY() + A_ - center_low_.getY() + A_);
+}
+
+inline int Oct::xMin() const
+{
+  OCT_DIR D = getDir();
+  if (D == RIGHT)
+    return center_low_.getX() - A_;
+  else if (D == LEFT)
+    return center_high_.getX() - A_;
+  else
+    return 0;
+}
+
+inline int Oct::yMin() const
+{
+  return center_low_.getY() - A_;
+}
+
+inline int Oct::xMax() const
+{
+  OCT_DIR D = getDir();
+  if (D == RIGHT)
+    return center_high_.getX() + A_;
+  else if (D == LEFT)
+    return center_low_.getX() + A_;
+  else
+    return 0;
+}
+
+inline int Oct::yMax() const
+{
+  return center_high_.getY() + A_;
+}
+
+inline std::vector<Point> Oct::getPoints() const
+{
+  OCT_DIR dir = getDir();
+  int B = ceil((A_ * 2) / (sqrt(2))) - A_;
+  std::vector<Point> points(9);
+  points[0] = points[8] = Point(center_low_.getX() - B,
+                                center_low_.getY() - A_);  // low oct (-B,-A)
+  points[1] = Point(center_low_.getX() + B,
+                    center_low_.getY() - A_);  // low oct (B,-A)
+  points[4] = Point(center_high_.getX() + B,
+                    center_high_.getY() + A_);  // high oct (B,A)
+  points[5] = Point(center_high_.getX() - B,
+                    center_high_.getY() + A_);  // high oct (-B,A)
+  if (dir == RIGHT) {
+    points[2] = Point(center_high_.getX() + A_,
+                      center_high_.getY() - B);  // high oct (A,-B)
+    points[3] = Point(center_high_.getX() + A_,
+                      center_high_.getY() + B);  // high oct (A,B)
+    points[6] = Point(center_low_.getX() - A_,
+                      center_low_.getY() + B);  // low oct  (-A,B)
+    points[7] = Point(center_low_.getX() - A_,
+                      center_low_.getY() - B);  // low oct (-A,-B)
+  } else {
+    points[2] = Point(center_low_.getX() + A_,
+                      center_low_.getY() - B);  // low oct (A,-B)
+    points[3] = Point(center_low_.getX() + A_,
+                      center_low_.getY() + B);  // low oct (A,B)
+    points[6] = Point(center_high_.getX() - A_,
+                      center_high_.getY() + B);  // high oct  (-A,B)
+    points[7] = Point(center_high_.getX() - A_,
+                      center_high_.getY() - B);  // high oct (-A,-B)
+  }
+  return points;
+}
+
 }  // namespace odb

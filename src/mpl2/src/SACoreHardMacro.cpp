@@ -36,6 +36,7 @@
 #include "utl/Logger.h"
 
 namespace mpl2 {
+using utl::MPL;
 
 //////////////////////////////////////////////////////////////////
 // Class SACoreHardMacro
@@ -92,8 +93,9 @@ SACoreHardMacro::SACoreHardMacro(
 float SACoreHardMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
+  const float outline_area = outline_width_ * outline_height_;
   if (norm_area_penalty_ > 0.0) {
-    cost += area_weight_ * (width_ * height_) / norm_area_penalty_;
+    cost += area_weight_ * (width_ * height_) / outline_area;
   }
   if (norm_outline_penalty_ > 0.0) {
     cost += outline_weight_ * outline_penalty_ / norm_outline_penalty_;
@@ -234,6 +236,22 @@ void SACoreHardMacro::initialize()
   norm_wirelength_ = calAverage(wirelength_list);
   norm_guidance_penalty_ = calAverage(guidance_penalty_list);
   norm_fence_penalty_ = calAverage(fence_penalty_list);
+
+  if (norm_area_penalty_ <= 1e-4)
+    norm_area_penalty_ = 1.0;
+
+  if (norm_outline_penalty_ <= 1e-4)
+    norm_outline_penalty_ = 1.0;
+
+  if (norm_wirelength_ <= 1e-4)
+    norm_wirelength_ = 1.0;
+
+  if (norm_guidance_penalty_ <= 1e-4)
+    norm_guidance_penalty_ = 1.0;
+
+  if (norm_fence_penalty_ <= 1e-4)
+    norm_fence_penalty_ = 1.0;
+
   // Calculate initial temperature
   std::vector<float> cost_list;
   for (int i = 0; i < outline_penalty_list.size(); i++) {
@@ -249,48 +267,78 @@ void SACoreHardMacro::initialize()
   for (int i = 1; i < cost_list.size(); i++) {
     delta_cost += std::abs(cost_list[i] - cost_list[i - 1]);
   }
-  init_temperature_
-      = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
+  if (cost_list.size() > 1 && delta_cost > 0.0) {
+    init_temperature_
+        = (-1.0) * (delta_cost / (cost_list.size() - 1)) / log(init_prob_);
+  } else {
+    init_temperature_ = 1.0;
+  }
 }
 
 void SACoreHardMacro::printResults()
 {
-  logger_->report("SACoreHardMacro");
-  logger_->report("outline_penalty_  = {}", outline_penalty_);
-  logger_->report("wirelength_  = {}", wirelength_);
-  for (auto& net : nets_) {
-    logger_->report("net  src = {} target = {} weight = {}",
-                    net.terminals.first,
-                    net.terminals.second,
-                    net.weight);
+  debugPrint(logger_, MPL, "macro_placement", 1, "SACoreHardMacro");
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "number of macros : {}",
+             macros_.size());
+  for (auto macro : macros_) {
+    debugPrint(logger_,
+               MPL,
+               "macro_placement",
+               1,
+               "lx = {}, ly = {}, width = {}, height = {}",
+               macro.getX(),
+               macro.getY(),
+               macro.getWidth(),
+               macro.getHeight());
   }
-
-  for (auto& macro : macros_) {
-    logger_->report(
-        "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
-        macro.getName(),
-        macro.getX(),
-        macro.getY(),
-        macro.getPinX(),
-        macro.getPinY(),
-        macro.getOrientation());
-  }
-  // FlipMacro();
-  calPenalty();
-  logger_->report("wirelength_  = {}", wirelength_);
-  for (auto& macro : macros_) {
-    logger_->report(
-        "name : {} lx = {} ly = {} pin_x = {} pin_y = {} orientation = {}",
-        macro.getName(),
-        macro.getX(),
-        macro.getY(),
-        macro.getPinX(),
-        macro.getPinY(),
-        macro.getOrientation());
-  }
-
-  logger_->report("guidance_penalty_  = {}", guidance_penalty_);
-  logger_->report("fence_penalty_  = {}", fence_penalty_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "width = {}, outline_width = {}",
+             width_,
+             outline_width_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "height = {}, outline_height = {}",
+             height_,
+             outline_height_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "outline_penalty  = {}, norm_outline_penalty = {}",
+             outline_penalty_,
+             norm_outline_penalty_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "wirelength  = {}, norm_wirelength = {}",
+             wirelength_,
+             norm_wirelength_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "guidance_penalty  = {}, norm_guidance_penalty = {}",
+             guidance_penalty_,
+             norm_guidance_penalty_);
+  debugPrint(logger_,
+             MPL,
+             "macro_placement",
+             1,
+             "fence_penalty  = {}, norm_fence_penalty = {}",
+             fence_penalty_,
+             norm_fence_penalty_);
+  debugPrint(
+      logger_, MPL, "macro_placement", 1, "final cost = {}", getNormCost());
 }
 
 }  // namespace mpl2

@@ -85,6 +85,18 @@ void Logger::addMetricsSink(const char* metrics_filename)
   metrics_sinks_.push_back(metrics_filename);
 }
 
+void Logger::removeMetricsSink(const char* metrics_filename)
+{
+  auto metrics_file = std::find(
+      metrics_sinks_.begin(), metrics_sinks_.end(), metrics_filename);
+  if (metrics_file == metrics_sinks_.end()) {
+    error(UTL, 2, "{} is not a metrics file", metrics_filename);
+  }
+  flushMetrics();
+
+  metrics_sinks_.erase(metrics_file);
+}
+
 ToolId Logger::findToolId(const char* tool_name)
 {
   int tool_id = 0;
@@ -165,18 +177,27 @@ std::string Logger::popMetricsStage()
   }
 }
 
+void Logger::flushMetrics()
+{
+  const std::string json = MetricsEntry::assembleJSON(metrics_entries_);
+
+  for (std::string sink_path : metrics_sinks_) {
+    std::ofstream sink_file(sink_path);
+    if (sink_file) {
+      sink_file << json;
+    } else {
+      warn(UTL, 1, "Unable to open {} to write metrics", sink_path);
+    }
+  }
+}
+
 void Logger::finalizeMetrics()
 {
   for (MetricsPolicy policy : metrics_policies_) {
     policy.applyPolicy(metrics_entries_);
   }
 
-  std::string json = MetricsEntry::assembleJSON(metrics_entries_);
-
-  for (std::string sink_path : metrics_sinks_) {
-    std::ofstream sink_file(sink_path);
-    sink_file << json;
-  }
+  flushMetrics();
 }
 
 void Logger::suppressMessage(ToolId tool, int id)

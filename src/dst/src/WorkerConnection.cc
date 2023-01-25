@@ -28,9 +28,10 @@
 
 #include "WorkerConnection.h"
 
+#include <boost/asio/post.hpp>
+#include <boost/bind/bind.hpp>
+
 #include "Worker.h"
-#include "boost/asio/post.hpp"
-#include "boost/bind/bind.hpp"
 #include "dst/Distributed.h"
 #include "dst/JobCallBack.h"
 #include "dst/JobMessage.h"

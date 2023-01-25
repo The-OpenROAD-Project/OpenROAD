@@ -84,34 +84,34 @@ class BufferedNet
 {
 public:
   // load
-  BufferedNet(BufferedNetType type,
-              Point location,
+  BufferedNet(const BufferedNetType type,
+              const Point location,
               Pin *load_pin,
               const Corner *corner,
               const Resizer *resizer);
   // wire
-  BufferedNet(BufferedNetType type,
-              Point location,
-              int layer,
-              BufferedNetPtr ref,
+  BufferedNet(const BufferedNetType type,
+              const Point location,
+              const int layer,
+              const BufferedNetPtr ref,
               const Corner *corner,
               const Resizer *resizer);
   // junc
-  BufferedNet(BufferedNetType type,
-              Point location,
-              BufferedNetPtr ref,
-              BufferedNetPtr ref2,
+  BufferedNet(const BufferedNetType type,
+              const Point& location,
+              const BufferedNetPtr ref,
+              const BufferedNetPtr ref2,
               const Resizer *resizer);
   // buffer
-  BufferedNet(BufferedNetType type,
-              Point location,
+  BufferedNet(const BufferedNetType type,
+              const Point& location,
               LibertyCell *buffer_cell,
-              BufferedNetPtr ref,
+              const BufferedNetPtr ref,
               const Corner *corner,
               const Resizer *resizer);
   string to_string(const Resizer *resizer) const;
   void reportTree(const Resizer *resizer) const;
-  void reportTree(int level,
+  void reportTree(const int level,
                   const Resizer *resizer) const;
   BufferedNetType type() const { return type_; }
   // junction steiner point location connecting ref/ref2
@@ -162,15 +162,15 @@ public:
 private:
   BufferedNetType type_;
   Point location_;
-  // load
+  // only used by load type
   Pin *load_pin_;
-  // buffer
+  // only used by buffer type
   LibertyCell *buffer_cell_;
-  // wire
+  // only used by wire type
   int layer_;
-  // load wire junc
+  // only used by buffer, wire, and junc types
   BufferedNetPtr ref_;
-  // junc
+  // only used by junc type
   BufferedNetPtr ref2_;
 
   // Capacitance looking downstream from here.

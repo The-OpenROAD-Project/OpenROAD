@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GLOBAL_H_
-#define _GLOBAL_H_
+#pragma once
 
 #include <iostream>
 #include <memory>
@@ -163,7 +162,6 @@ std::ostream& operator<<(std::ostream& os, const fr::frBlock& blockIn);
 std::ostream& operator<<(std::ostream& os, const fr::frInst& instIn);
 std::ostream& operator<<(std::ostream& os, const fr::frInstTerm& instTermIn);
 std::ostream& operator<<(std::ostream& os, const fr::frBTerm& termIn);
-// std::ostream& operator<<(std::ostream& os, const fr::frPin& pinIn);
 std::ostream& operator<<(std::ostream& os, const fr::frRect& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::frPolygon& pinFig);
 std::ostream& operator<<(std::ostream& os, const fr::drConnFig& fig);
@@ -175,6 +173,5 @@ std::ostream& operator<<(std::ostream& os, const frBlockObject& fig);
 std::ostream& operator<<(std::ostream& os, const frNet& fig);
 std::ostream& operator<<(std::ostream& os, const drNet& n);
 std::ostream& operator<<(std::ostream& os, const frMarker& m);
-// namespace fr
+
 }  // namespace fr
-#endif

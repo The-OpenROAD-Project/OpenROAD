@@ -88,8 +88,9 @@ class SimulatedAnnealingCore
   void setGuides(const std::map<int, Rect>& guides);
 
   bool isValid() const;
+  bool isValid(float outline_width, float outline_height) const;
+  void writeCostFile(std::string file_name) const;
   float getNormCost() const;
-
   float getWidth() const;
   float getHeight() const;
   float getOutlinePenalty() const;
@@ -213,6 +214,8 @@ class SimulatedAnnealingCore
   utl::Logger* logger_ = nullptr;
   Graphics* graphics_ = nullptr;
 
+  std::vector<float> cost_list_;  // store the cost in the list
+  std::vector<float> T_list_;     // store the temperature
   // we define accuracy to determine whether the floorplan is valid
   // because the error introduced by the type conversion
   static constexpr float acc_tolerance_ = 0.001;

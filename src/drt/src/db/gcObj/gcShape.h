@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GC_SHAPE_H_
-#define _GC_SHAPE_H_
+#pragma once
 
 #include <boost/polygon/polygon.hpp>
 
@@ -508,5 +507,3 @@ class gcPolygon : public gtl::polygon_90_with_holes_data<frCoord>,
 };
 
 }  // namespace fr
-
-#endif

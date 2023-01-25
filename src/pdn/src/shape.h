@@ -219,6 +219,11 @@ class Shape
     allow_non_preferred_change_ = true;
   }
 
+ protected:
+  bool cut(const ShapeTree& obstructions,
+           std::vector<Shape*>& replacements,
+           const std::function<bool(const ShapeValue&)>& obs_filter) const;
+
  private:
   odb::dbTechLayer* layer_;
   odb::dbNet* net_;

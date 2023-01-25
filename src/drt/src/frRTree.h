@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_RTREE_H_
-#define _FR_RTREE_H_
+#pragma once
 
 #include <boost/geometry/algorithms/covered_by.hpp>
 #include <boost/geometry/algorithms/equals.hpp>
@@ -57,5 +56,3 @@ template <typename T, typename Key = Rect>
 using RTree = bgi::rtree<std::pair<Key, T>, bgi::quadratic<16>>;
 
 }  // namespace fr
-
-#endif

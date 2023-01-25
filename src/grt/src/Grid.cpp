@@ -108,12 +108,12 @@ void Grid::getBlockedTiles(const odb::Rect& obstruction,
                                    // the center of the tile where it is inside
 
   // Get x and y indices of first blocked tile
-  first_tile.set((lower.x() - (getTileSize() / 2)) / getTileSize(),
-                 (lower.y() - (getTileSize() / 2)) / getTileSize());
+  first_tile = {(lower.x() - (getTileSize() / 2)) / getTileSize(),
+                (lower.y() - (getTileSize() / 2)) / getTileSize()};
 
   // Get x and y indices of last blocked tile
-  last_tile.set((upper.x() - (getTileSize() / 2)) / getTileSize(),
-                (upper.y() - (getTileSize() / 2)) / getTileSize());
+  last_tile = {(upper.x() - (getTileSize() / 2)) / getTileSize(),
+               (upper.y() - (getTileSize() / 2)) / getTileSize()};
 
   odb::Point ll_first_tile = odb::Point(lower.x() - (getTileSize() / 2),
                                         lower.y() - (getTileSize() / 2));

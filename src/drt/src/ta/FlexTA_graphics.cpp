@@ -73,7 +73,6 @@ void FlexTAGraphics::drawIrouteGuide(frNet* net,
       if (connFig->typeId() == frcPathSeg) {
         auto seg = static_cast<frPathSeg*>(connFig);
         if (seg->getLayerNum() == layerNum) {
-          auto bbox = seg->getBBox();
           painter.drawRect(seg->getBBox());
         }
       }

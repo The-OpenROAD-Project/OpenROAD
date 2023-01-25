@@ -726,6 +726,52 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
+  // Remove overlapping vias and keep largest
+  ViaTree overlapping_via_tree;
+  for (const auto& via : vias) {
+    overlapping_via_tree.insert({via->getBox(), via});
+  }
+  for (const auto& via : vias) {
+    if (via->isFailed()) {
+      continue;
+    }
+    if (overlapping_via_tree.qbegin(
+            bgi::intersects(via->getBox())
+            && bgi::satisfies([&via](const ViaValue& other) -> bool {
+                 const auto& other_via = other.second;
+                 if (via == other_via) {
+                   // ignore the same via
+                   return false;
+                 }
+
+                 if (other_via->isFailed()) {
+                   return false;
+                 }
+
+                 if (via->getLowerLayer() != other_via->getLowerLayer()) {
+                   return false;
+                 }
+
+                 if (via->getUpperLayer() != other_via->getUpperLayer()) {
+                   return false;
+                 }
+
+                 // Remove the smaller of the two vias
+                 return via->getArea().area() <= other_via->getArea().area();
+               }))
+        != overlapping_via_tree.qend()) {
+      remove_vias.insert(via);
+      via->markFailed(failedViaReason::OVERLAPPING);
+    }
+  }
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Via",
+             2,
+             "Removing {} vias due to overlaps.",
+             remove_vias.size());
+  remove_set_of_vias(remove_vias);
+
   // build via tree
   vias_.clear();
   for (auto& via : vias) {
@@ -883,8 +929,10 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
 
 void Grid::makeInitialObstructions(odb::dbBlock* block,
                                    ShapeTreeMap& obs,
-                                   const std::set<odb::dbInst*>& skip_insts)
+                                   const std::set<odb::dbInst*>& skip_insts,
+                                   utl::Logger* logger)
 {
+  debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - begin");
   // routing obs
   for (auto* ob : block->getObstructions()) {
     if (ob->isSlotObstruction() || ob->isFillObstruction()) {
@@ -924,18 +972,30 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
       continue;
     }
 
+    debugPrint(logger,
+               utl::PDN,
+               "Make",
+               3,
+               "Get instance {} obstructions",
+               inst->getName());
+
     for (const auto& [layer, shapes] :
          InstanceGrid::getInstanceObstructions(inst)) {
       obs[layer].insert(shapes.begin(), shapes.end());
     }
   }
+  debugPrint(logger, utl::PDN, "Make", 2, "Get initial obstructions - end");
 }
 
-void Grid::makeInitialShapes(odb::dbBlock* block, ShapeTreeMap& shapes)
+void Grid::makeInitialShapes(odb::dbBlock* block,
+                             ShapeTreeMap& shapes,
+                             utl::Logger* logger)
 {
+  debugPrint(logger, utl::PDN, "Make", 2, "Get initial shapes - start");
   for (auto* net : block->getNets()) {
     Shape::populateMapFromDb(net, shapes);
   }
+  debugPrint(logger, utl::PDN, "Make", 2, "Get initial shapes - end");
 }
 
 std::set<odb::dbTechLayer*> Grid::connectableLayers(
@@ -1413,7 +1473,7 @@ ExistingGrid::ExistingGrid(
 
 void ExistingGrid::populate()
 {
-  Grid::makeInitialShapes(domain_->getBlock(), shapes_);
+  Grid::makeInitialShapes(domain_->getBlock(), shapes_, getLogger());
 
   for (auto* inst : getBlock()->getInsts()) {
     if (inst->getPlacementStatus().isFixed()) {

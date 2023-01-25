@@ -71,6 +71,7 @@ void initGlobalRouter(OpenRoad* openroad)
                                     openroad->getSteinerTreeBuilder(),
                                     openroad->getDb(),
                                     openroad->getSta(),
+                                    openroad->getResizer(),
                                     openroad->getAntennaChecker(),
                                     openroad->getOpendp());
 }

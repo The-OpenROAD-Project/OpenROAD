@@ -132,7 +132,7 @@ _installOrTools() {
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
     orToolsPath="/opt/or-tools"
-    if [[ "${os}" == "MacOsX" ]]; then
+    if [[ "${os}" == "macOS" ]]; then
         orToolsPath="$(brew --prefix or-tools)"
     fi
     mkdir -p ${orToolsPath}
@@ -168,7 +168,9 @@ _installUbuntuPackages() {
         tcllib \
         wget \
         zlib1g-dev \
-        libomp-dev
+        libomp-dev \
+        devscripts \
+        debhelper
 
     apt-get install -y \
         binutils \
@@ -429,7 +431,9 @@ _installDebianPackages() {
         tcllib \
         wget \
         zlib1g-dev \
-        libomp-dev
+        libomp-dev \
+        devscripts \
+        debhelper
 
     apt-get install -y \
         binutils \
@@ -609,7 +613,7 @@ EOF
         ;;
     "Darwin" )
         _installDarwin
-        _installOrTools "MacOsX" "13.0.1" $(uname -m)
+        _installOrTools "macOS" "13.0.1" $(uname -m)
         cat <<EOF
 
 To install or run openroad, update your path with:

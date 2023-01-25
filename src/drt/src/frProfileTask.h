@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_PROFILE_TASK_H_
-#define _FR_PROFILE_TASK_H_
+#pragma once
 
 #ifdef HAS_VTUNE
 #include <ittnotify.h>
@@ -81,5 +80,3 @@ class ProfileTask
 #endif
 
 }  // namespace fr
-
-#endif

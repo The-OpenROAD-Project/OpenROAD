@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GR_VIA_H_
-#define _GR_VIA_H_
+#pragma once
 
 #include <memory>
 
@@ -166,5 +165,3 @@ class grVia : public grRef
   frListIter<std::unique_ptr<grVia>> iter;
 };
 }  // namespace fr
-
-#endif

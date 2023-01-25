@@ -43,6 +43,7 @@
 
 #include "ZObject.h"
 #include "db.h"
+#include "ext2dBox.h"
 #include "extprocess.h"
 #include "gseq.h"
 #include "odb.h"
@@ -63,27 +64,6 @@ using odb::Darr;
 using odb::uint;
 using utl::Logger;
 
-class ext2dBox  // assume cross-section on the z-direction
-{
-  int _ll[2];
-  int _ur[2];
-  uint _met;
-  uint _dir;
-  uint _id;
-  uint _map;
-
-  void rotate();
-  bool matchCoords(int* ll, int* ur);
-  void printGeoms3D(FILE* fp, double h, double t, int* orig);
-  uint length();
-  uint width();
-  int loX();
-  int loY();
-  uint id();
-
-  friend class extMeasure;
-  friend class extRCModel;
-};
 class extGeoVarTable
 {
   int _x;
@@ -1601,7 +1581,6 @@ class extMain
   Ath__array1D<int>* _btermTable;
   Ath__array1D<int>* _itermTable;
 
-  uint _menuId;
   uint _dbPowerId;
   uint _dbSignalId;
   uint _RsegId;
@@ -1805,7 +1784,7 @@ class extMain
     ISPEF_ORIGINAL_PLUS_HALO,
     ISPEF_NEW_PLUS_HALO,
   };
-  extMain(uint menuId);
+  extMain();
 
   void set_debug_nets(const char* nets)
   {

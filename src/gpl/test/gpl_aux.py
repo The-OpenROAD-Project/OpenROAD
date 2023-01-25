@@ -163,14 +163,7 @@ def global_placement(design, *,
             gpl.doInitialPlace()
             if not skip_nesterov_place:
                 gpl.doNesterovPlace()
-
         gpl.reset()
-        gpl.setDb(design.getTech().getDB())
-        gpl.setLogger(design.getLogger())
-        gpl.setGlobalRouter(design.getGlobalRouter())
-        # This will have to wait until rsz is Python wrapped
-        #rz = design.getResizer()
-        #gpl.setResizer(rz)
     else:
         utl.error(utl.GPL, 506, "No rows defined in design. Use initialize_floorplan to add rows.")
 

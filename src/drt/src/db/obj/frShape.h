@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_SHAPE_H_
-#define _FR_SHAPE_H_
+#pragma once
 
 #include "db/infra/frSegStyle.h"
 #include "db/obj/frFig.h"
@@ -654,5 +653,3 @@ class frPathSeg : public frShape
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif
