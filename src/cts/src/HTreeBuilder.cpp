@@ -347,6 +347,17 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
   logger_->report("    Sub-region size: {:.4f} X {:.4f}", width, height);
 
   const unsigned minLength = minLengthSinkRegion_ / 2;
+
+  // Implementation note: this must be non-zero for the algorithm to work, or
+  // we end up dividing by a zero minLength.
+  if (minLength == 0) {
+    logger_->error(
+        CTS,
+        542,
+        "Minimum length must be non-zero; min length sink region: {}",
+        minLengthSinkRegion_);
+  }
+
   unsigned segmentLength = std::round(width / (2.0 * minLength)) * minLength;
   if (isVertical(level)) {
     segmentLength = std::round(height / (2.0 * minLength)) * minLength;
