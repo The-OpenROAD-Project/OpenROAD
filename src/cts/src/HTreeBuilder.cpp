@@ -348,7 +348,8 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
 
   const unsigned minLength = minLengthSinkRegion_ / 2;
 
-  unsigned segmentLength = minLength == 0 ? 0 : std::round(width / (2.0 * minLength)) * minLength;
+  unsigned segmentLength
+      = minLength == 0 ? 0 : std::round(width / (2.0 * minLength)) * minLength;
   if (isVertical(level)) {
     segmentLength = std::round(height / (2.0 * minLength)) * minLength;
   }
