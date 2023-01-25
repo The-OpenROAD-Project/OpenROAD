@@ -49,6 +49,13 @@ jobs:
         run: |
           build/src/openroad -help
           sudo ./test/regression
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            src/**/test/results/diffs
+            src/**/test/results/*.log
   testBoostVersionMatrix:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     strategy:
@@ -76,3 +83,10 @@ jobs:
         run: |
           build/src/openroad -help
           sudo ./test/regression
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            src/**/test/results/diffs
+            src/**/test/results/*.log
