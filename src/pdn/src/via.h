@@ -91,6 +91,7 @@ class TechLayer;
 enum class failedViaReason
 {
   OBSTRUCTED,
+  OVERLAPPING,
   BUILD,
   RIPUP,
   RECHECK,
@@ -766,6 +767,7 @@ class Via
   Via* copy() const;
 
   void markFailed(failedViaReason reason);
+  bool isFailed() const { return failed_; }
 
  private:
   odb::dbNet* net_;
@@ -774,6 +776,8 @@ class Via
   ShapePtr upper_;
 
   Connect* connect_;
+
+  bool failed_;
 
   utl::Logger* getLogger() const;
 };

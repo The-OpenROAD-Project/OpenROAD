@@ -63,6 +63,7 @@ record_tests {
   macros_different_nets
   macros_grid_through
   macros_cells_dont_touch
+  macros_cells_overlapping_ports
 
   region_temp_sensor
   region_secondary_nets

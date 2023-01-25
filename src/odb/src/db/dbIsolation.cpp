@@ -286,6 +286,24 @@ void dbIsolation::setLocation(const std::string& location)
   _dbIsolation* obj = (_dbIsolation*) this;
   obj->_location = location;
 }
+
+void dbIsolation::addIsolationCell(std::string& master)
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+  obj->_isolation_cells.push_back(master);
+}
+
+std::vector<dbMaster*> dbIsolation::getIsolationCells()
+{
+  _dbIsolation* obj = (_dbIsolation*) this;
+  std::vector<dbMaster*> masters;
+
+  for (const auto& cell : obj->_isolation_cells) {
+    masters.push_back(obj->getDb()->findMaster(cell.c_str()));
+  }
+
+  return masters;
+}
 // User Code End dbIsolationPublicMethods
 }  // namespace odb
    // Generator Code End Cpp
