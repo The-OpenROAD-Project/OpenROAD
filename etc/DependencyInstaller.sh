@@ -626,7 +626,11 @@ EOF
     "openSUSE Leap" )
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        _checkIsLocal
+        if [[ "${option}" == "common" || "${option}" == "all" ]]; then
+            _checkIsLocal
+            _installOpenSusePackages
+            _installOpenSuseCleanUp
+        fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
             _installOrTools "opensuse" "leap" "amd64"
