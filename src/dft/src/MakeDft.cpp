@@ -30,23 +30,26 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ord/OpenRoad.hh"
+#include "dft/MakeDft.hh"
 
 #include "dft/Dft.hh"
-#include "dft/MakeDft.hh"
+#include "ord/OpenRoad.hh"
 
 namespace dft {
 
-dft::Dft* makeDft() {
+dft::Dft* makeDft()
+{
   return new dft::Dft();
 }
 
-void initDft(ord::OpenRoad* openroad) {
-  //TODO(#2784): implement initDft
+void initDft(ord::OpenRoad* openroad)
+{
+  // TODO(#2784): implement initDft
 }
 
-void deleteDft(dft::Dft* dft) {
+void deleteDft(dft::Dft* dft)
+{
   delete dft;
 }
 
-} // namespace dft
+}  // namespace dft
