@@ -55,9 +55,11 @@
 
 namespace utl {
 
+// Keep this sorted
 #define FOREACH_TOOL(X) \
   X(ANT)                \
   X(CTS)                \
+  X(DFT)                \
   X(DPL)                \
   X(DPO)                \
   X(DRT)                \
@@ -67,11 +69,11 @@ namespace utl {
   X(GPL)                \
   X(GRT)                \
   X(GUI)                \
-  X(PAD)                \
   X(IFP)                \
   X(MPL)                \
   X(ODB)                \
   X(ORD)                \
+  X(PAD)                \
   X(PAR)                \
   X(PDN)                \
   X(PDR)                \
@@ -85,8 +87,7 @@ namespace utl {
   X(STT)                \
   X(TAP)                \
   X(UKN)                \
-  X(UTL)                \
-  X(DFT)
+  X(UTL)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
