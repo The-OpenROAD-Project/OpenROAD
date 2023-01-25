@@ -453,16 +453,40 @@ _installDebianPackages() {
     fi
 }
 
+_checkIsLocal() {
+    if [[ "${isLocal}" == "true" ]]; then
+        echo "ERROR: cannot install base packages locally; you need privileged access." >&2
+        echo "Hint: -local is only used with -common to install common packages." >&2
+        exit 1
+    fi
+}
+
 _help() {
     cat <<EOF
 
-Usage: $0                       Installs all of OpenROAD's dependencies no need to run -base or -common.
-                                                           Requires priviledged access. 
-       $0 -base                 Installs OpenROAD's dependencies using package managers 
-                                                           (-common must be executed in another command)
-       $0 -common               Installs OpenROAD's common dependencies (-base must be executed in another command)
-       $0 -prefix=DIR           Installs common dependencies in an existing user-specified directory. Only used with -common. This flag cannot be used with sudo or with root access.
-       $0 -local                Installs common dependencies in "$HOME/.local". Only used with -common. This flag cannot be used with sudo or with root access.
+Usage: $0
+                                # Installs all of OpenROAD's dependencies no
+                                #     need to run -base or -common. Requires
+                                #     privileged access.
+                                #
+       $0 -base
+                                # Installs OpenROAD's dependencies using
+                                #     package managers (-common must be
+                                #     executed in another command).
+       $0 -common
+                                # Installs OpenROAD's common dependencies
+                                #     (-base must be executed in another
+                                #     command).
+       $0 -prefix=DIR
+                                # Installs common dependencies in an existing
+                                #     user-specified directory. Only used
+                                #     with -common. This flag cannot be used
+                                #     with sudo or with root access.
+       $0 -local
+                                # Installs common dependencies in
+                                #    "$HOME/.local". Only used with
+                                #    -common. This flag cannot be used with
+                                #    sudo or with root access.
 
 EOF
     exit "${1:-1}"
@@ -472,6 +496,8 @@ EOF
 PREFIX=""
 #default option
 option="all"
+#default isLocal
+isLocal="false"
 
 # default values, can be overwritten by cmdline args
 while [ "$#" -gt 0 ]; do
@@ -480,23 +506,30 @@ while [ "$#" -gt 0 ]; do
             _help 0
             ;;
         -run|-runtime)
-            echo "The use of this flag is deprecated and will be removed soon"
+            echo "The use of this flag is deprecated and will be removed soon."
             ;;
         -dev|-development)
-            echo "The use of this flag is deprecated and will be removed soon"
+            echo "The use of this flag is deprecated and will be removed soon."
             ;;
         -base)
+            if [[ "${option}" != "all" ]]; then
+                echo "WARNING: previous argument -${option} will be overwritten with -base." >&2
+            fi
             option="base"
             ;;
         -common)
+            if [[ "${option}" != "all" ]]; then
+                echo "WARNING: previous argument -${option} will be overwritten with -common." >&2
+            fi
             option="common"
             ;;
         -local)
-            if [[ $(id -u) == 0 ]]; then
-                echo "Error: cannot install locally if you are root or using sudo" >&2
+            if [[ $(id -u) == 0 ]]; then>&2
+                echo "ERROR: cannot install locally (i.e., use -local) if you are root or using sudo." >&2
                 exit 1
             fi
             export PREFIX="${HOME}/.local"
+            export isLocal="true"
             ;;
         -prefix=*)
             export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
@@ -533,10 +566,7 @@ case "${os}" in
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-            if [[ ! -z "${PREFIX}" ]]; then
-                echo "Error: cannot install base packages locally, you need priviledged access" >&2
-                exit 1
-            fi
+            _checkIsLocal
             _installCentosPackages
             _installCentosCleanUp
         fi
@@ -555,10 +585,7 @@ EOF
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-            if [[ ! -z "${PREFIX}" ]]; then
-                echo "Error: cannot install base packages locally, you need priviledged access" >&2
-                exit 1
-            fi
+            _checkIsLocal
             _installUbuntuPackages "${version}"
             _installUbuntuCleanUp
         fi
@@ -571,10 +598,7 @@ EOF
         spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-            if [[ ! -z "${PREFIX}" ]]; then
-                echo "Error: cannot install base packages locally, you need priviledged access" >&2
-                exit 1
-            fi
+            _checkIsLocal
             _installRHELPackages
             _installRHELCleanUp
         fi
@@ -598,14 +622,7 @@ EOF
     "openSUSE Leap" )
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
-        if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-            if [[ ! -z "${PREFIX}" ]]; then
-                echo "Error: cannot install base packages locally, you need priviledged access" >&2
-                exit 1
-            fi
-            _installOpenSusePackages
-            _installOpenSuseCleanUp
-        fi
+        _checkIsLocal
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
             _installOrTools "opensuse" "leap" "amd64"
@@ -621,10 +638,7 @@ EOF
         spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
         export spdlogFolder
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
-            if [[ ! -z "${PREFIX}" ]]; then
-                echo "Error: cannot install base packages locally, you need priviledged access" >&2
-                exit 1
-            fi
+            _checkIsLocal
             _installDebianPackages "${version}"
             _installDebianCleanUp
         fi

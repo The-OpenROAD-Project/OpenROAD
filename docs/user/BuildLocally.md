@@ -10,10 +10,6 @@ During initial setup or if you have a new machine, run this script:
 ``` shell
 # either run as root or use sudo
 ./etc/DependencyInstaller.sh
-
-Options:    ./etc/DependencyInstaller.sh -prefix=DIR    # installs dependencies in an existing user specified directory
-            ./etc/DependencyInstaller.sh -local         # installs common dependencies in "$HOME/.local". Root access is still needed for other
-                                                        # dependencies. Flag cannot be used with sudo or with root access
 ```
 
 ### KLayout
