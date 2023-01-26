@@ -84,6 +84,7 @@ jobs:
           build/src/openroad -help
           sudo ./test/regression
       - name: Archive production artifacts
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: test-results
