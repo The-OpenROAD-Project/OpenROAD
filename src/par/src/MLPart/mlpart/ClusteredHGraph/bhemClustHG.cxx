@@ -64,7 +64,6 @@ void BestHEMClusteredHGraph::populateTree() {
 
         printStatsHeader();
 
-        unsigned level = 1;
         unsigned numTimesStuck = 0;
 
         // these may be incremented if we get stuck..
@@ -124,7 +123,6 @@ void BestHEMClusteredHGraph::populateTree() {
 
                         abkfatal(snapshotTarget >= _params.sizeOfTop, "snap shot is incorrect");
                 }
-                level++;
         };
 
         if (!savedLastLevel) {

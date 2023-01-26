@@ -84,7 +84,6 @@ void HEMClusteredHGraph::populateTree() {
 
         if (_params.removeDup > 0) removeDuplicateEdges();
 
-        unsigned level = 1;
         unsigned numTimesStuck = 0;
         bool savedLastLevel;
         bool doAnotherLevel = true;
@@ -166,7 +165,6 @@ void HEMClusteredHGraph::populateTree() {
 
                         abkfatal(snapshotTarget >= _params.sizeOfTop, "snap shot is incorrect");
                 }
-                level++;
         };
 
         if (!savedLastLevel) {

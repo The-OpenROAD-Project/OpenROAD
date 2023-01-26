@@ -75,7 +75,6 @@ void GreedyHEMClusteredHGraph::populateTree() {
 
         if (_params.removeDup > 0) removeDuplicateEdges();
 
-        unsigned level = 1;
         unsigned numTimesStuck = 0;
         bool savedLastLevel;
         bool doAnotherLevel = true;
@@ -133,7 +132,6 @@ void GreedyHEMClusteredHGraph::populateTree() {
                         //	cout<<"Num Degree1: "<<numDeg1<<" Degree2:
                         //"<<numDeg2<<endl;
                 }
-                level++;
         };
 
         if (!savedLastLevel) {

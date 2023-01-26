@@ -414,8 +414,6 @@ void DetailedMgr::findSegments()
 
     findRegionIntervals(regPtr->getId(), intervals);
 
-    int split = 0;
-
     for (int r = 0; r < numSingleHeightRows_; r++) {
       int n = (int) intervals[r].size();
       if (n == 0) {
@@ -462,8 +460,6 @@ void DetailedMgr::findSegments()
           }
           // Case 2:
           else if (il > sl && ir >= sr) {
-            ++split;
-
             segPtr->setMaxX((int) std::floor(il));
 
             auto newPtr = new DetailedSeg();
@@ -480,8 +476,6 @@ void DetailedMgr::findSegments()
           }
           // Case 3:
           else if (ir < sr && il <= sl) {
-            ++split;
-
             segPtr->setMinX((int) std::ceil(ir));
 
             auto newPtr = new DetailedSeg();
@@ -498,9 +492,6 @@ void DetailedMgr::findSegments()
           }
           // Case 4:
           else if (il > sl && ir < sr) {
-            ++split;
-            ++split;
-
             segPtr->setMaxX((int) std::floor(il));
 
             auto newPtr = new DetailedSeg();
@@ -1208,7 +1199,6 @@ void DetailedMgr::collectMultiHeightCells()
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
 
-  int numMultiHeightCells_ = 0;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
@@ -1223,7 +1213,6 @@ void DetailedMgr::collectMultiHeightCells()
       multiHeightCells_.resize(nRowsSpanned + 1, std::vector<Node*>());
     }
     multiHeightCells_[nRowsSpanned].push_back(nd);
-    ++numMultiHeightCells_;
   }
   for (size_t i = 0; i < multiHeightCells_.size(); i++) {
     if (multiHeightCells_[i].size() == 0) {
@@ -1485,8 +1474,6 @@ int DetailedMgr::checkSiteAlignment()
   int err_n = 0;
 
   double singleRowHeight = getSingleRowHeight();
-  int nCellsInSegments = 0;
-  int nCellsNotInSegments = 0;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
@@ -1505,12 +1492,10 @@ int DetailedMgr::checkSiteAlignment()
     int rt = rb + spanned - 1;
 
     if (reverseCellToSegs_[nd->getId()].size() == 0) {
-      ++nCellsNotInSegments;
       continue;
     } else if (reverseCellToSegs_[nd->getId()].size() != spanned) {
       internalError("Reverse cell map incorrectly sized.");
     }
-    ++nCellsInSegments;
 
     if (rb < 0 || rt >= arch_->getRows().size()) {
       // Either off the top of the bottom of the chip, so this is not
