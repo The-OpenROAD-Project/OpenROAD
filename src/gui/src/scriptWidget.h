@@ -43,7 +43,7 @@ namespace odb {
 class dbDatabase;
 }  // namespace odb
 
-class Tcl_Interp;
+struct Tcl_Interp;
 
 namespace gui {
 class TclCmdInputWidget;

@@ -38,6 +38,7 @@
 #include <array>
 #include <cstdlib>
 #include <iomanip>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <stack>
@@ -54,9 +55,11 @@
 
 namespace utl {
 
+// Keep this sorted
 #define FOREACH_TOOL(X) \
   X(ANT)                \
   X(CTS)                \
+  X(DFT)                \
   X(DPL)                \
   X(DPO)                \
   X(DRT)                \
@@ -66,11 +69,11 @@ namespace utl {
   X(GPL)                \
   X(GRT)                \
   X(GUI)                \
-  X(PAD)                \
   X(IFP)                \
   X(MPL)                \
   X(ODB)                \
   X(ORD)                \
+  X(PAD)                \
   X(PAR)                \
   X(PDN)                \
   X(PDR)                \
@@ -83,10 +86,18 @@ namespace utl {
   X(STA)                \
   X(STT)                \
   X(TAP)                \
-  X(UKN)
+  X(UKN)                \
+  X(UTL)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
+
+// backward compatibility with fmt versions older than 8
+#if FMT_VERSION >= 80000
+#define FMT_RUNTIME(format_string) fmt::runtime(format_string)
+#else
+#define FMT_RUNTIME(format_string) format_string
+#endif
 
 enum ToolId
 {
@@ -106,7 +117,7 @@ class Logger
   template <typename... Args>
   inline void report(const std::string& message, const Args&... args)
   {
-    logger_->log(spdlog::level::level_enum::off, message, args...);
+    logger_->log(spdlog::level::level_enum::off, FMT_RUNTIME(message), args...);
   }
 
   // Do NOT call this directly, use the debugPrint macro  instead (defined
@@ -119,7 +130,7 @@ class Logger
   {
     // Message counters do NOT apply to debug messages.
     logger_->log(spdlog::level::level_enum::debug,
-                 "[{} {}-{:04d}] " + message,
+                 FMT_RUNTIME("[{} {}-{:04d}] " + message),
                  level_names[spdlog::level::level_enum::debug],
                  tool_names_[tool],
                  level,
@@ -174,11 +185,22 @@ class Logger
   // Note: these methods do no escaping so avoid special characters.
   template <typename T,
             typename U = std::enable_if_t<std::is_arithmetic<T>::value>>
-  inline void metric(const std::string_view metric, T value)
+  inline void metric(const std::string_view metric_name, T value)
   {
-    std::ostringstream oss;
-    oss << std::defaultfloat << std::setprecision(6) << value;
-    log_metric(std::string(metric), oss.str());
+    const std::string name = std::string(metric_name);
+    if (std::isinf(value)) {
+      if (value < 0) {
+        metric(name, "-Infinity");
+      } else {
+        metric(name, "Infinity");
+      }
+    } else if (std::isnan(value)) {
+      metric(name, "NaN");
+    } else {
+      std::ostringstream oss;
+      oss << std::defaultfloat << std::setprecision(6) << value;
+      log_metric(name, oss.str());
+    }
   }
 
   inline void metric(const std::string_view metric, const std::string& value)
@@ -203,6 +225,7 @@ class Logger
   void addSink(spdlog::sink_ptr sink);
   void removeSink(spdlog::sink_ptr sink);
   void addMetricsSink(const char* metrics_filename);
+  void removeMetricsSink(const char* metrics_filename);
 
   void setMetricsStage(std::string_view format);
   void clearMetricsStage();
@@ -226,7 +249,7 @@ class Logger
     auto count = counter++;
     if (count < max_message_print) {
       logger_->log(level,
-                   "[{} {}-{:04d}] " + message,
+                   FMT_RUNTIME("[{} {}-{:04d}] " + message),
                    level_names[level],
                    tool_names_[tool],
                    id,
@@ -252,10 +275,11 @@ class Logger
     if (metrics_stages_.empty())
       key = metric;
     else
-      key = fmt::format(metrics_stages_.top(), metric);
+      key = fmt::format(FMT_RUNTIME(metrics_stages_.top()), metric);
     metrics_entries_.push_back({key, value});
   }
 
+  void flushMetrics();
   void finalizeMetrics();
 
   // Allows for lookup by a compatible key (ie string_view)

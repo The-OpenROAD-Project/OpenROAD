@@ -2711,7 +2711,12 @@ Via::Via(Connect* connect,
          const odb::Rect& area,
          const ShapePtr& lower,
          const ShapePtr& upper)
-    : net_(net), area_(area), lower_(lower), upper_(upper), connect_(connect)
+    : net_(net),
+      area_(area),
+      lower_(lower),
+      upper_(upper),
+      connect_(connect),
+      failed_(false)
 {
 }
 
@@ -2915,6 +2920,7 @@ utl::Logger* Via::getLogger() const
 
 void Via::markFailed(failedViaReason reason)
 {
+  failed_ = true;
   connect_->addFailedVia(reason, area_, net_);
 }
 

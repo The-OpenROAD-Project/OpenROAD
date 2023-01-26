@@ -26,10 +26,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_LOOKUP_TBL_H_
-#define _FR_LOOKUP_TBL_H_
+#pragma once
 
-// #include <map>
 #include <iostream>
 
 #include "frBaseTypes.h"
@@ -280,5 +278,3 @@ class fr2DLookupTbl
 };
 
 }  // namespace fr
-
-#endif

@@ -389,14 +389,16 @@ proc repair_tie_fanout { args } {
 sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
-                                        [-max_buffer_percent buffer_percent]\
                                         [-allow_setup_violations]\
+                                        [-repair_tns tns_end_percent]\
+                                        [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
-            -libraries -max_utilization -max_buffer_percent -max_passes} \
+            -libraries -max_utilization -max_buffer_percent \
+            -repair_tns -max_passes} \
     flags {-setup -hold -allow_setup_violations}
   
   set setup [info exists flags(-setup)]
@@ -426,10 +428,17 @@ proc repair_timing { args } {
   set max_buffer_percent 20
   if { [info exists keys(-max_buffer_percent)] } {
     set max_buffer_percent $keys(-max_buffer_percent)
-    sta::check_positive_float "-max_buffer_percent" $max_buffer_percent
+    sta::check_percent "-max_buffer_percent" $max_buffer_percent
     set max_buffer_percent [expr $max_buffer_percent / 100.0]
   }
   
+  set repair_tns_end_percent 0.0
+  if { [info exists keys(-repair_tns)] } {
+    set repair_tns_end_percent $keys(-repair_tns)
+    sta::check_percent "-repair_tns" $repair_tns_end_percent
+    set repair_tns_end_percent [expr $repair_tns_end_percent / 100.0]
+  }
+
   set max_passes 10000
   if { [info exists keys(-max_passes)] } {
     set max_passes $keys(-max_passes)
@@ -437,7 +446,7 @@ proc repair_timing { args } {
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
   if { $setup } {
-    rsz::repair_setup $setup_margin $max_passes
+    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes
   }
   if { $hold } {
     rsz::repair_hold $setup_margin $hold_margin \

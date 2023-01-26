@@ -172,23 +172,23 @@ void dbTransform::invert(dbTransform& result) const
       break;
 
     case dbOrientType::MY:
-      offset.x() = -offset.x();
+      offset.setX(-offset.x());
       orient = dbOrientType::MY;
       break;
 
     case dbOrientType::MYR90:
-      offset.x() = -offset.x();
+      offset.setX(-offset.x());
       offset.rotate90();
       orient = dbOrientType::MYR90;
       break;
 
     case dbOrientType::MX:
-      offset.y() = -offset.y();
+      offset.setY(-offset.y());
       orient = dbOrientType::MX;
       break;
 
     case dbOrientType::MXR90:
-      offset.y() = -offset.y();
+      offset.setY(-offset.y());
       offset.rotate90();
       orient = dbOrientType::MXR90;
       break;
@@ -219,26 +219,26 @@ void dbTransform::apply(Point& p) const
       break;
 
     case dbOrientType::MY:
-      p.x() = -p.x();
+      p.setX(-p.x());
       break;
 
     case dbOrientType::MYR90:
-      p.x() = -p.x();
+      p.setX(-p.x());
       p.rotate90();
       break;
 
     case dbOrientType::MX:
-      p.y() = -p.y();
+      p.setY(-p.y());
       break;
 
     case dbOrientType::MXR90:
-      p.y() = -p.y();
+      p.setY(-p.y());
       p.rotate90();
       break;
   }
 
-  p.x() += _offset.x();
-  p.y() += _offset.y();
+  p.addX(_offset.x());
+  p.addY(_offset.y());
 }
 
 void dbTransform::apply(Rect& r) const

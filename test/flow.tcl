@@ -283,7 +283,8 @@ report_design_area
 utl::metric "DRT::worst_slack_min" [sta::worst_slack -min]
 utl::metric "DRT::worst_slack_max" [sta::worst_slack -max]
 utl::metric "DRT::tns_max" [sta::total_negative_slack -max]
-utl::metric "DRT::clock_skew" [sta::worst_clock_skew -setup]
+utl::metric "DRT::clock_skew" [expr abs([sta::worst_clock_skew -setup])]
+
 # slew/cap/fanout slack/limit
 utl::metric "DRT::max_slew_slack" [expr [sta::max_slew_check_slack_limit] * 100]
 utl::metric "DRT::max_fanout_slack" [expr [sta::max_fanout_check_slack_limit] * 100]

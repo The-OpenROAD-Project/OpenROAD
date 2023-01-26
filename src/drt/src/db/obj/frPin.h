@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_PIN_H_
-#define _FR_PIN_H_
+#pragma once
 
 #include <iostream>
 
@@ -117,5 +116,3 @@ class frPin : public frBlockObject
 };
 
 }  // namespace fr
-
-#endif

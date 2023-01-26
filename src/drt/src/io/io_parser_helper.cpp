@@ -661,7 +661,6 @@ void io::Parser::initRPin_rpin()
     }
     // term
     for (auto& term : net->getBTerms()) {
-      int pinIdx = 0;
       auto trueTerm = term;
       for (auto& pin : trueTerm->getPins()) {
         auto rpin = make_unique<frRPin>();
@@ -672,8 +671,6 @@ void io::Parser::initRPin_rpin()
         rpin->setAccessPoint(prefAp);
 
         net->addRPin(rpin);
-
-        pinIdx++;
       }
     }
   }
@@ -893,7 +890,6 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
                     == dbTechLayerDir::HORIZONTAL);
         frCoord gcLow = isH ? gcellBox.yMin() : gcellBox.xMax();
         frCoord gcHigh = isH ? gcellBox.yMax() : gcellBox.xMin();
-        int trackCnt = 0;
         for (auto& tp : design_->getTopBlock()->getTrackPatterns(layerNum)) {
           if ((tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL
                && tp->isHorizontal() == false)
@@ -914,7 +910,6 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
                  && trackNum * (int) tp->getTrackSpacing() + tp->getStartCoord()
                         < gcHigh;
                  trackNum++) {
-              trackCnt++;
             }
           }
         }

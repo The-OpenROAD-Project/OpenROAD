@@ -189,7 +189,7 @@ RepairHold::findHoldBuffer()
 
   std::sort(buffers.begin(),
             buffers.end(),
-            [this](const MetricBuffer& lhs, const MetricBuffer& rhs) {
+            [](const MetricBuffer& lhs, const MetricBuffer& rhs) {
               return lhs.metric < rhs.metric;
             });
 

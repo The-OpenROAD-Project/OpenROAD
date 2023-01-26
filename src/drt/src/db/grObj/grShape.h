@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GR_SHAPE_H_
-#define _GR_SHAPE_H_
+#pragma once
 
 #include "db/grObj/grFig.h"
 #include "db/infra/frSegStyle.h"
@@ -212,5 +211,3 @@ class grPathSeg : public grShape
   frListIter<std::unique_ptr<grShape>> iter;
 };
 }  // namespace fr
-
-#endif

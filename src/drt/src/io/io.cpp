@@ -732,9 +732,9 @@ void io::Parser::setNets(odb::dbBlock* block)
           } else {
             Point p;
             if (hasEndPoint) {
-              p.set(endX, endY);
+              p = {endX, endY};
             } else {
-              p.set(beginX, beginY);
+              p = {beginX, beginY};
             }
             auto viaDef = tech_->name2via[viaName];
             auto tmpP = make_unique<frVia>(viaDef);

@@ -1,0 +1,108 @@
+create_power_domain PD_TOP \
+  -elements {.}  \
+
+create_power_domain PD_D1 \
+  -elements {d1} \
+
+create_power_domain PD_D2 \
+  -elements {d2} \
+
+create_power_domain PD_D3 \
+  -elements {d3} \
+
+create_power_domain PD_D4 \
+  -elements {d4} \
+
+create_logic_port d1_iso_control
+create_logic_port d2_iso_control
+create_logic_port d3_iso_control
+create_logic_port d4_iso_control
+
+set_isolation iso_d_1 \
+  -domain PD_D1 \
+  -applies_to outputs \
+  -clamp_value 0
+
+set_isolation iso_d_2 \
+  -domain PD_D2 \
+  -applies_to outputs \
+  -clamp_value 0
+
+set_isolation iso_d_3 \
+  -domain PD_D3 \
+  -applies_to outputs \
+  -clamp_value 1
+
+set_isolation iso_d_4 \
+  -domain PD_D4 \
+  -applies_to outputs \
+  -clamp_value 1
+
+set_isolation iso_d_1 \
+  -domain PD_D1 \
+  -update \
+  -isolation_signal d1_iso_control \
+  -isolation_sense low
+
+set_isolation iso_d_2 \
+  -domain PD_D2 \
+  -update \
+  -isolation_signal d2_iso_control \
+  -isolation_sense high
+
+set_isolation iso_d_3 \
+  -domain PD_D3 \
+  -update \
+  -isolation_signal d3_iso_control \
+  -isolation_sense low
+
+set_isolation iso_d_4 \
+  -domain PD_D4 \
+  -update \
+  -isolation_signal d4_iso_control \
+  -isolation_sense high
+
+
+set_isolation iso_d_1 \
+  -domain PD_D1 \
+  -update \
+  -location parent
+
+set_isolation iso_d_2 \
+  -domain PD_D2 \
+  -update \
+  -location parent
+
+
+set_isolation iso_d_3 \
+  -domain PD_D3 \
+  -update \
+  -location parent
+
+set_isolation iso_d_4 \
+  -domain PD_D4 \
+  -update \
+  -location parent
+
+use_interface_cell \
+  -domain PD_D1 \
+  -strategy iso_d_1 \
+  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+
+
+use_interface_cell \
+  -domain PD_D2 \
+  -strategy iso_d_2 \
+  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+
+
+use_interface_cell \
+  -domain PD_D3 \
+  -strategy iso_d_3 \
+  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}
+
+
+use_interface_cell \
+  -domain PD_D4 \
+  -strategy iso_d_4 \
+  -lib_cells {sky130_fd_sc_hd__lpflow_inputiso0n_1}

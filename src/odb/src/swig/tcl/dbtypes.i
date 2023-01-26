@@ -45,14 +45,16 @@
     Tcl_SetObjResult(interp, list);
 }
 %typemap(out) std::vector< T > {
-    for (unsigned int i=0; i<$1.size(); i++) {
-        T* ptr = new T((($1_type &)$1)[i]);
+    std::vector<T>& v = *&($1);
+    for (size_t i = 0; i< v.size(); i++) {
+        T* ptr = new T(v[i]);
         Tcl_ListObjAppendElement(interp, $result,  SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
 }
 %typemap(out) std::vector< T* > {
-    for (unsigned int i = 0; i < $1.size(); i++) {
-        T* ptr = ((($1_type &)$1)[i]);
+    std::vector<T*>& v = *&($1);
+    for (size_t i = 0; i < v.size(); i++) {
+        T* ptr = v[i];
         Tcl_ListObjAppendElement(interp, $result,  SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
 }

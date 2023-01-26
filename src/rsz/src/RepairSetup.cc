@@ -108,58 +108,123 @@ RepairSetup::init()
 
 void
 RepairSetup::repairSetup(float setup_slack_margin,
+                         // Percent of violating ends to repair to
+                         // reduce tns (0.0-1.0).
+                         double repair_tns_end_percent,
                          int max_passes)
 {
   init();
+  constexpr int digits = 3;
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
 
-  Slack worst_slack;
-  Vertex *worst_vertex;
-  sta_->worstSlack(max_, worst_slack, worst_vertex);
-  debugPrint(logger_, RSZ, "repair_setup", 1, "worst_slack = {}",
-             delayAsString(worst_slack, sta_, 3));
-  Slack prev_worst_slack = -INF;
-  int pass = 1;
-  int decreasing_slack_passes = 0;
+  // Sort failing endpoints by slack.
+  VertexSet *endpoints = sta_->endpoints();
+  VertexSeq violating_ends;
+  for (Vertex *end : *endpoints) {
+    Slack end_slack = sta_->vertexSlack(end, max_);
+    if (end_slack < setup_slack_margin)
+      violating_ends.push_back(end);
+  }
+  sort(violating_ends, [=](Vertex *end1, Vertex *end2) {
+    return sta_->vertexSlack(end1, max_) < sta_->vertexSlack(end2, max_);
+  });
+  debugPrint(logger_, RSZ, "repair_setup", 1, "Violating endpoints {}/{} {}%",
+             violating_ends.size(),
+             endpoints->size(),
+             int(violating_ends.size() / double(endpoints->size()) * 100));
+
+  int end_index = 0;
+  int max_end_count = violating_ends.size() * repair_tns_end_percent;
+  // Always repair the worst endpoint, even if tns percent is zero.
+  max_end_count = max(max_end_count, 1);
   resizer_->incrementalParasiticsBegin();
-  while (fuzzyLess(worst_slack, setup_slack_margin)
-         && pass <= max_passes) {
-    PathRef worst_path = sta_->vertexWorstSlackPath(worst_vertex, max_);
-    bool changed = repairSetup(worst_path, worst_slack);
+  for (Vertex *end : violating_ends) {
     resizer_->updateParasitics();
     sta_->findRequireds();
+    Slack end_slack = sta_->vertexSlack(end, max_);
+    Slack worst_slack;
+    Vertex *worst_vertex;
     sta_->worstSlack(max_, worst_slack, worst_vertex);
-    bool decreasing_slack = fuzzyLessEqual(worst_slack, prev_worst_slack);
-    debugPrint(logger_, RSZ, "repair_setup", 1, "pass {} worst_slack = {} {}",
-               pass,
-               delayAsString(worst_slack, sta_, 3),
-               decreasing_slack ? "v" : "^");
-    if (decreasing_slack) {
-      // Allow slack to increase to get out of local minima.
-      // Do not update prev_worst_slack so it saves the high water mark.
-      decreasing_slack_passes++;
-      if (!changed
-          || decreasing_slack_passes > repair_setup_decreasing_slack_passes_allowed_) {
-        // Undo changes that reduced slack.
+    debugPrint(logger_, RSZ, "repair_setup", 1, "{} slack = {} worst_slack = {}",
+               end->name(network_),
+               delayAsString(end_slack, sta_, digits),
+               delayAsString(worst_slack, sta_, digits));
+    end_index++;
+    if (end_index > max_end_count)
+      break;
+    Slack prev_end_slack = end_slack;
+    Slack prev_worst_slack = worst_slack;
+    int pass = 1;
+    int decreasing_slack_passes = 0;
+    resizer_->journalBegin();
+    while (pass <= max_passes) {
+      if (end_slack > setup_slack_margin) {
+        debugPrint(logger_, RSZ, "repair_setup", 2,
+                   "Restoring best slack end slack {} worst slack {}",
+                   delayAsString(prev_end_slack, sta_, digits),
+                   delayAsString(prev_worst_slack, sta_, digits));
         resizer_->journalRestore(resize_count_, inserted_buffer_count_);
-        debugPrint(logger_, RSZ, "repair_setup", 1,
-                   "decreasing slack for {} passes. Restoring best slack {}",
-                   decreasing_slack_passes,
-                   delayAsString(prev_worst_slack, sta_, 3));
         break;
       }
+      PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
+      bool changed = repairSetup(end_path, end_slack);
+      if (!changed) {
+        debugPrint(logger_, RSZ, "repair_setup", 2,
+                   "No change after {} decreasing slack passes.",
+                   decreasing_slack_passes);
+        debugPrint(logger_, RSZ, "repair_setup", 2,
+                   "Restoring best slack end slack {} worst slack {}",
+                   delayAsString(prev_end_slack, sta_, digits),
+                   delayAsString(prev_worst_slack, sta_, digits));
+        resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+        break;
+      }
+      resizer_->updateParasitics();
+      sta_->findRequireds();
+      end_slack = sta_->vertexSlack(end, max_);
+      sta_->worstSlack(max_, worst_slack, worst_vertex);
+      bool better = (fuzzyGreater(worst_slack, prev_worst_slack)
+                     || (end_index != 1
+                         && fuzzyEqual(worst_slack, prev_worst_slack)
+                         && fuzzyGreater(end_slack, prev_end_slack)));
+      debugPrint(logger_, RSZ,
+                 "repair_setup", 2, "pass {} slack = {} worst_slack = {} {}",
+                 pass,
+                 delayAsString(end_slack, sta_, digits),
+                 delayAsString(worst_slack, sta_, digits),
+                 better ? "save" : "");
+      if (better) {
+        prev_end_slack = end_slack;
+        prev_worst_slack = worst_slack;
+        decreasing_slack_passes = 0;
+        // Progress, Save checkpoint so we can back up to here.
+        resizer_->journalBegin();
+      }
+      else {
+        // Allow slack to increase to get out of local minima.
+        // Do not update prev_end_slack so it saves the high water mark.
+        decreasing_slack_passes++;
+        if (decreasing_slack_passes > decreasing_slack_max_passes_) {
+          // Undo changes that reduced slack.
+          debugPrint(logger_, RSZ, "repair_setup", 2,
+                     "decreasing slack for {} passes.",
+                     decreasing_slack_passes);
+          debugPrint(logger_, RSZ, "repair_setup", 2,
+                     "Restoring best end slack {} worst slack {}",
+                     delayAsString(prev_end_slack, sta_, digits),
+                     delayAsString(prev_worst_slack, sta_, digits));
+          resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+          break;
+        }
+      }
+      if (resizer_->overMaxArea())
+        break;
+      if (end_index == 1)
+        end = worst_vertex;
+      pass++;
     }
-    else {
-      prev_worst_slack = worst_slack;
-      decreasing_slack_passes = 0;
-      // Progress, start journal so we can back up to here.
-      resizer_->journalBegin();
-    }
-    if (resizer_->overMaxArea())
-      break;
-    pass++;
   }
   // Leave the parasitics up to date.
   resizer_->updateParasitics();
@@ -169,6 +234,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+  Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin))
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
   if (resizer_->overMaxArea())
@@ -247,7 +313,7 @@ RepairSetup::repairSetup(PathRef &path,
       LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
       LibertyCell *drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
       int fanout = this->fanout(drvr_vertex);
-      debugPrint(logger_, RSZ, "repair_setup", 2, "{} {} fanout = {}",
+      debugPrint(logger_, RSZ, "repair_setup", 3, "{} {} fanout = {}",
                  network_->pathName(drvr_pin),
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
@@ -266,7 +332,7 @@ RepairSetup::repairSetup(PathRef &path,
           && !resizer_->dontTouch(net)) {
         int rebuffer_count = rebuffer(drvr_pin);
         if (rebuffer_count > 0) {
-          debugPrint(logger_, RSZ, "repair_setup", 2, "rebuffer {} inserted {}",
+          debugPrint(logger_, RSZ, "repair_setup", 3, "rebuffer {} inserted {}",
                      network_->pathName(drvr_pin),
                      rebuffer_count);
           inserted_buffer_count_ += rebuffer_count;
@@ -319,7 +385,7 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
     LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
                                      prev_drive, dcalc_ap);
     if (upsize) {
-      debugPrint(logger_, RSZ, "repair_setup", 2, "resize {} {} -> {}",
+      debugPrint(logger_, RSZ, "repair_setup", 3, "resize {} {} -> {}",
                  network_->pathName(drvr_pin),
                  drvr_port->libertyCell()->name(),
                  upsize->name());
@@ -392,7 +458,7 @@ RepairSetup::splitLoads(PathRef *drvr_path,
   Vertex *load_vertex = load_path->vertex(sta_);
   Pin *load_pin = load_vertex->pin();
   // Divide and conquer.
-  debugPrint(logger_, RSZ, "repair_setup", 2, "split loads {} -> {}",
+  debugPrint(logger_, RSZ, "repair_setup", 3, "split loads {} -> {}",
              network_->pathName(drvr_pin),
              network_->pathName(load_pin));
 
@@ -407,7 +473,7 @@ RepairSetup::splitLoads(PathRef *drvr_path,
     Vertex *fanout_vertex = edge->to(graph_);
     Slack fanout_slack = sta_->vertexSlack(fanout_vertex, rf, max_);
     Slack slack_margin = fanout_slack - drvr_slack;
-    debugPrint(logger_, RSZ, "repair_setup", 3, " fanin {} slack_margin = {}",
+    debugPrint(logger_, RSZ, "repair_setup", 4, " fanin {} slack_margin = {}",
                network_->pathName(fanout_vertex->pin()),
                delayAsString(slack_margin, sta_, 3));
     fanout_slacks.push_back(pair<Vertex*, Slack>(fanout_vertex, slack_margin));
@@ -461,6 +527,8 @@ RepairSetup::splitLoads(PathRef *drvr_path,
   }
   Pin *buffer_out_pin = network_->findPin(buffer, output);
   resizer_->resizeToTargetSlew(buffer_out_pin);
+  resizer_->parasiticsInvalid(net);
+  resizer_->parasiticsInvalid(out_net);
 }
 
 int

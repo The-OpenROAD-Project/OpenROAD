@@ -1,0 +1,12 @@
+{
+	"integer0": -1,
+	"integer1": 0,
+	"integer2": 1,
+	"float0": 0,
+	"float1": 1000,
+	"float2": 1e+39,
+	"float4": "Infinity",
+	"float5": "-Infinity",
+	"string0": "",
+	"string1": "one"
+}

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_REF_H_
-#define _DR_REF_H_
+#pragma once
 
 #include "db/drObj/drFig.h"
 #include "odb/dbTypes.h"
@@ -58,5 +57,3 @@ class drRef : public drPinFig
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

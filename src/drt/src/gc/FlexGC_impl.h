@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_FLEXGC_IMPL_H_
-#define _FR_FLEXGC_IMPL_H_
+#pragma once
 
 #include <memory>
 
@@ -503,5 +502,3 @@ class FlexGCWorker::Impl
   bool isWrongDir(gcSegment* edge);
 };
 }  // namespace fr
-
-#endif

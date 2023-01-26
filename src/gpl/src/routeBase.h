@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __REPLACE_ROUTE_BASE__
-#define __REPLACE_ROUTE_BASE__
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -282,5 +281,3 @@ class RouteBase
   void initGCells();
 };
 }  // namespace gpl
-
-#endif

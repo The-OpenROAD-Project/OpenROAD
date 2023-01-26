@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GC_NET_H_
-#define _GC_NET_H_
+#pragma once
 
 #include <memory>
 
@@ -236,5 +235,3 @@ class gcNet : public gcBlockObject
   void init();
 };
 }  // namespace fr
-
-#endif

@@ -35,10 +35,9 @@
 
 #pragma once
 
+#include <boost/generator_iterator.hpp>
+#include <boost/random.hpp>
 #include <tuple>
-
-#include "boost/generator_iterator.hpp"
-#include "boost/random.hpp"
 
 namespace utl {
 

@@ -86,7 +86,7 @@ class TclCmdInputWidget : public CmdInputWidget
 
  private:
   void init();
-  void processTclResult(int result_code);
+  void processTclResult(bool is_ok);
 
   static int tclExitHandler(ClientData instance_data,
                             Tcl_Interp* interp,

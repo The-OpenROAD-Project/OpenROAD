@@ -323,12 +323,13 @@ proc pin_access { args } {
 
 sta::define_cmd_args "detailed_route_run_worker" {
     [-dump_dir dir]
+    [-worker_dir dir]
     [-drc_rpt drc]
 }
 
 proc detailed_route_run_worker { args } {
   sta::parse_key_args "detailed_route_run_worker" args \
-      keys {-dump_dir -drc_rpt} \
+      keys {-dump_dir -worker_dir -drc_rpt} \
       flags {}
   sta::check_argc_eq0 "detailed_route_run_worker" $args
   if { [info exists keys(-dump_dir)] } {
@@ -337,12 +338,18 @@ proc detailed_route_run_worker { args } {
     utl::error DRT 517 "-dump_dir is required for detailed_route_run_worker command"
   }
 
+  if { [info exists keys(-worker_dir)] } {
+    set worker_dir $keys(-worker_dir)
+  } else {
+    utl::error DRT 520 "-worker_dir is required for detailed_route_run_worker command"
+  }
+
   if { [info exists keys(-drc_rpt)] } {
     set drc_rpt $keys(-drc_rpt)
   } else {
-    utl::error DRT 518 "-drc_rpt is required for detailed_route_run_worker command"
+    set drc_rpt ""
   }
-  drt::run_worker_cmd  $dump_dir $drc_rpt
+  drt::run_worker_cmd  $dump_dir $worker_dir $drc_rpt
 }
 
 sta::define_cmd_args "detailed_route_worker_debug" {

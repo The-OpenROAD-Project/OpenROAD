@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_FLEXDR_H_
-#define _FR_FLEXDR_H_
+#pragma once
 
 #include <triton_route/TritonRoute.h>
 
@@ -1069,5 +1068,3 @@ class FlexDRWorker
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

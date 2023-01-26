@@ -272,7 +272,17 @@ target="dev"
 compiler="gcc"
 useCommitSha="no"
 isLocal="no"
-numThreads="$(nproc)"
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  numThreads=$(nproc --all)
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  numThreads=$(sysctl -n hw.ncpu)
+else
+  cat << EOF
+WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
+  Defaulting to 2 threads. Use --threads N to use N threads"
+EOF
+  numThreads=2
+fi
 LOCAL_PATH="/home/openroad-deps"
 
 while [ "$#" -gt 0 ]; do

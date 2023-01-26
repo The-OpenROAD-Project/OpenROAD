@@ -17,5 +17,6 @@ record_tests {
   placement_blockage1
   placement_blockage2
   tiecells
+  upf_test
 }
 

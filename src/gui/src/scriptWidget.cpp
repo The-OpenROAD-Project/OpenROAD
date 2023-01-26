@@ -95,6 +95,10 @@ ScriptWidget::ScriptWidget(QWidget* parent)
           this,
           SLOT(addCommandToOutput(const QString&)));
   connect(input_,
+          SIGNAL(addResultToOutput(const QString&, bool)),
+          this,
+          SLOT(addResultToOutput(const QString&, bool)));
+  connect(input_,
           SIGNAL(commandFinishedExecuting(bool)),
           this,
           SLOT(resetPauser()));

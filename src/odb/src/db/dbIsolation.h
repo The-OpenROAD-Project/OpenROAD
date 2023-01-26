@@ -45,7 +45,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-class _dbMaster;
 class _dbPowerDomain;
 // User Code Begin Classes
 // User Code End Classes
@@ -66,7 +65,7 @@ class _dbIsolation : public _dbObject
   std::string _isolation_signal;
   std::string _isolation_sense;
   std::string _location;
-  dbVector<dbId<_dbMaster>> _isolation_cells;
+  dbVector<std::string> _isolation_cells;
   dbId<_dbPowerDomain> _power_domain;
 
   // User Code Begin Fields

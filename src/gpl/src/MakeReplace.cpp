@@ -59,12 +59,10 @@ void initReplace(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Gpl_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::gpl_tcl_inits);
-  // Replace should define an init function that takes these args.
-  // There is no reason for all these set functions to exist. -cherry
-  openroad->getReplace()->setDb(openroad->getDb());
-  openroad->getReplace()->setLogger(openroad->getLogger());
-  openroad->getReplace()->setGlobalRouter(openroad->getGlobalRouter());
-  openroad->getReplace()->setResizer(openroad->getResizer());
+  openroad->getReplace()->init(openroad->getDb(),
+                               openroad->getResizer(),
+                               openroad->getGlobalRouter(),
+                               openroad->getLogger());
 }
 
 void deleteReplace(gpl::Replace* replace)
