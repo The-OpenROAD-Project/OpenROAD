@@ -260,6 +260,7 @@ add_subdirectory(drt)
 add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
+add_subdirectory(dft)
 
 ################################################################
 
@@ -320,6 +321,7 @@ target_link_libraries(openroad
   par
   utl
   pdn
+  dft
   ${ABC_LIBRARY}
   ${TCL_LIBRARY}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -400,6 +402,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
     stt_py
     psm_py
     pdn_py
+    dft_py
   )
 else()
   message(STATUS "Python3 disabled")
