@@ -106,8 +106,6 @@ class CtsOptions
   int getSlewSteps() const { return slewSteps_; }
   void setClockTreeMaxDepth(unsigned depth) { clockTreeMaxDepth_ = depth; }
   unsigned getClockTreeMaxDepth() const { return clockTreeMaxDepth_; }
-  void setEnableFakeLutEntries(bool enable) { enableFakeLutEntries_ = enable; }
-  unsigned isFakeLutEntriesEnabled() const { return enableFakeLutEntries_; }
   void setForceBuffersOnLeafLevel(bool force)
   {
     forceBuffersOnLeafLevel_ = force;
@@ -208,7 +206,6 @@ class CtsOptions
   int slewSteps_ = 12;
   unsigned charWirelengthIterations_ = 4;
   unsigned clockTreeMaxDepth_ = 100;
-  bool enableFakeLutEntries_ = true;
   bool forceBuffersOnLeafLevel_ = true;
   double bufDistRatio_ = 0.1;
   long int clockRoots_ = 0;

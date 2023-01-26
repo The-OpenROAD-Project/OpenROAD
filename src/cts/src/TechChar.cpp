@@ -556,9 +556,7 @@ void TechChar::initCharacterization()
 
   // Required to make sure that the fake entry for minLengthSinkRegion
   // exists (see HTreeBuilder::run())
-  if (options_->isFakeLutEntriesEnabled()) {
-    maxWirelength = std::max(maxWirelength, 2 * options_->getWireSegmentUnit());
-  }
+  maxWirelength = std::max(maxWirelength, 2 * options_->getWireSegmentUnit());
 
   for (unsigned wirelengthInter = options_->getWireSegmentUnit();
        (wirelengthInter <= maxWirelength)
