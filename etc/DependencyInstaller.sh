@@ -532,10 +532,17 @@ while [ "$#" -gt 0 ]; do
                 echo "ERROR: cannot install locally (i.e., use -local) if you are root or using sudo." >&2
                 exit 1
             fi
+            if [[ ! -z ${PREFIX} ]]; then
+                echo "WARNING: previous argument -prefix will be overwritten with -local"
+            fi
             export PREFIX="${HOME}/.local"
             export isLocal="true"
             ;;
         -prefix=*)
+            if [[ ! -z ${PREFIX} ]]; then
+                echo "WARNING: previous argument -local will be overwritten with -prefix"
+                export isLocal="false"
+            fi
             export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
             ;;
         *)
