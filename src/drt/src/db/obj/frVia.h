@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_VIA_H_
-#define _FR_VIA_H_
+#pragma once
 
 #include <memory>
 
@@ -265,5 +264,3 @@ class frVia : public frRef
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

@@ -329,21 +329,21 @@ void FlexGRWorker::initBoundary_splitPathSeg_getBreakPts(const Point& bp,
     // V
     // break point at bottom
     if (bp.y() < extBox_.yMin()) {
-      breakPt1.set(bp.x(), extBox_.yMin());
+      breakPt1 = {bp.x(), extBox_.yMin()};
       hasBreakPt1 = true;
     }
     if (ep.y() > extBox_.yMax()) {
-      breakPt2.set(ep.x(), extBox_.yMax());
+      breakPt2 = {ep.x(), extBox_.yMax()};
       hasBreakPt2 = true;
     }
   } else if (bp.y() == ep.y()) {
     // H
     if (bp.x() < extBox_.xMin()) {
-      breakPt1.set(extBox_.xMin(), bp.y());
+      breakPt1 = {extBox_.xMin(), bp.y()};
       hasBreakPt1 = true;
     }
     if (ep.x() > extBox_.xMax()) {
-      breakPt2.set(extBox_.xMax(), ep.y());
+      breakPt2 = {extBox_.xMax(), ep.y()};
       hasBreakPt2 = true;
     }
   } else {
@@ -700,13 +700,13 @@ Point FlexGRWorker::getBoundaryPinGCellNodeLoc(const Point& boundaryPinLoc)
 {
   Point gcellNodeLoc;
   if (boundaryPinLoc.x() == extBox_.xMin()) {
-    gcellNodeLoc.set(routeBox_.xMin(), boundaryPinLoc.y());
+    gcellNodeLoc = {routeBox_.xMin(), boundaryPinLoc.y()};
   } else if (boundaryPinLoc.x() == extBox_.xMax()) {
-    gcellNodeLoc.set(routeBox_.xMax(), boundaryPinLoc.y());
+    gcellNodeLoc = {routeBox_.xMax(), boundaryPinLoc.y()};
   } else if (boundaryPinLoc.y() == extBox_.yMin()) {
-    gcellNodeLoc.set(boundaryPinLoc.x(), routeBox_.yMin());
+    gcellNodeLoc = {boundaryPinLoc.x(), routeBox_.yMin()};
   } else if (boundaryPinLoc.y() == extBox_.yMax()) {
-    gcellNodeLoc.set(boundaryPinLoc.x(), routeBox_.yMax());
+    gcellNodeLoc = {boundaryPinLoc.x(), routeBox_.yMax()};
   } else {
     cout << "Error: non-boundary pin loc in "
             "FlexGRWorker::getBoundaryPinGCellNodeLoc\n";

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _GR_FIG_H_
-#define _GR_FIG_H_
+#pragma once
 
 #include <memory>
 
@@ -108,5 +107,3 @@ class grPinFig : public grConnFig
  protected:
 };
 }  // namespace fr
-
-#endif

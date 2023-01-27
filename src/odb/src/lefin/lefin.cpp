@@ -922,7 +922,7 @@ void lefin::layer(lefiLayer* layer)
   int k;
 
   if (layer->numAntennaModel() > 0) {
-    for (j = 0; j < MIN(layer->numAntennaModel(), 2); j++) {
+    for (j = 0; j < std::min(layer->numAntennaModel(), 2); j++) {
       cur_ant_rule = (j == 1) ? l->createOxide2AntennaRule()
                               : l->createDefaultAntennaRule();
       cur_model = layer->antennaModel(j);

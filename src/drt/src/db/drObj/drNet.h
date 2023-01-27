@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_NET_H_
-#define _DR_NET_H_
+#pragma once
 
 #include <memory>
 #include <set>
@@ -291,5 +290,3 @@ class drNet : public drBlockObject
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

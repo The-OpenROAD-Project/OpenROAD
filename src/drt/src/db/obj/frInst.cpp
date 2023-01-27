@@ -59,8 +59,8 @@ dbTransform frInst::getUpdatedXform(bool noOrient) const
   Point origin(mbox.xMin(), mbox.yMin());
   dbTransform(xfm.getOrient(), Point(0, 0)).apply(origin);
   Point offset(xfm.getOffset());
-  offset.x() += origin.getX();
-  offset.y() += origin.getY();
+  offset.addX(origin.getX());
+  offset.addY(origin.getY());
   xfm.setOffset(offset);
   if (!noOrient) {
     Point s(mbox.xMax(), mbox.yMax());
@@ -76,30 +76,28 @@ dbTransform frInst::getUpdatedXform(bool noOrient) const
 void frInst::updateXform(dbTransform& xform, Point& size)
 {
   Point p = xform.getOffset();
-  int& x = p.x();
-  int& y = p.y();
   switch (xform.getOrient()) {
     case dbOrientType::R90:
-      x += size.getY();
+      p.addX(size.getY());
       break;
     case dbOrientType::R180:
-      x += size.getX();
-      y += size.getY();
+      p.addX(size.getX());
+      p.addY(size.getY());
       break;
     case dbOrientType::R270:
-      y += size.getX();
+      p.addY(size.getX());
       break;
     case dbOrientType::MY:
-      x += size.getX();
+      p.addX(size.getX());
       break;
     case dbOrientType::MXR90:
       break;
     case dbOrientType::MX:
-      y += size.getY();
+      p.addY(size.getY());
       break;
     case dbOrientType::MYR90:
-      x += size.getY();
-      y += size.getX();
+      p.addX(size.getY());
+      p.addY(size.getX());
       break;
     // case R0: == default
     default:

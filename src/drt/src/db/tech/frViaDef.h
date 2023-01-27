@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_VIADEF_H_
-#define _FR_VIADEF_H_
+#pragma once
 
 #include <iostream>
 #include <memory>
@@ -210,4 +209,3 @@ class frViaDef
   Rect cutShapeBox;
 };
 }  // namespace fr
-#endif

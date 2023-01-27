@@ -2782,8 +2782,8 @@ void dbNet::getNetStats(uint& wireCnt,
       uint level = pshape.shape.getTechLayer()->getRoutingLevel();
       if (levelTable)
         levelTable[level]++;
-      len += MAX(pshape.shape.xMax() - pshape.shape.xMin(),
-                 pshape.shape.yMax() - pshape.shape.yMin());
+      len += std::max(pshape.shape.xMax() - pshape.shape.xMin(),
+                      pshape.shape.yMax() - pshape.shape.yMin());
     }
   }
 }
@@ -3086,7 +3086,7 @@ void dbNet::clearGuides()
 std::pair<dbBTerm *,dbBTerm *>
 dbNet::createTerms4SingleNet(int x1, int y1, int x2, int y2, dbTechLayer *inly)
 {
-  int fwidth = MIN(x2 - x1, y2 - y1);
+  int fwidth = std::min(x2 - x1, y2 - y1);
   uint hwidth = fwidth/2;
 
   std::pair<dbBTerm *,dbBTerm *> retpr;

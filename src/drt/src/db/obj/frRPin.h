@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_RPIN_H_
-#define _FR_RPIN_H_
+#pragma once
 
 #include "db/infra/frBox.h"
 #include "db/obj/frBlockObject.h"
@@ -68,5 +67,3 @@ class frRPin : public frBlockObject
   frNet* net;
 };
 }  // namespace fr
-
-#endif

@@ -25,8 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_MASTER_H_
-#define _FR_MASTER_H_
+#pragma once
 
 #include <algorithm>
 
@@ -149,5 +148,3 @@ class frMaster : public frBlockObject
   friend class io::Parser;
 };
 }  // namespace fr
-
-#endif

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _TA_VIA_H_
-#define _TA_VIA_H_
+#pragma once
 
 #include <memory>
 
@@ -223,5 +222,3 @@ class taVia : public taRef
   frBlockObject* owner_;
 };
 }  // namespace fr
-
-#endif

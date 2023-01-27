@@ -62,4 +62,6 @@ target_include_directories(upf
 target_link_libraries(upf 
   PRIVATE
     utl
+    dbSta
+    OpenSTA
  )

@@ -25,8 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_BPIN_H_
-#define _FR_BPIN_H_
+#pragma once
 
 #include <iostream>
 
@@ -59,5 +58,3 @@ class frBPin : public frPin
   frBTerm* term_;
 };
 }  // namespace fr
-
-#endif

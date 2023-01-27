@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _DR_SHAPE_H_
-#define _DR_SHAPE_H_
+#pragma once
 
 #include "db/drObj/drFig.h"
 #include "db/infra/frSegStyle.h"
@@ -384,5 +383,3 @@ class drPatchWire : public drShape
   friend class boost::serialization::access;
 };
 }  // namespace fr
-
-#endif

@@ -82,6 +82,21 @@ struct TopLayerGrid
   int ury() { return region.yMax(); }
 };
 
+// Section: a region in the die boundary that contains a set
+// of slots. By default, each section has 200 slots
+struct Section
+{
+  odb::Point pos;
+  std::vector<int> pin_indices;
+  std::vector<std::vector<int>> pin_groups;
+  int cost;
+  int begin_slot;
+  int end_slot;
+  int used_slots;
+  int num_slots;
+  Edge edge;
+};
+
 struct Constraint
 {
   Constraint(PinList pins, Direction dir, Interval interv)
@@ -112,21 +127,6 @@ struct Slot
   bool used;
   odb::Point pos;
   int layer;
-  Edge edge;
-};
-
-// Section: a region in the die boundary that contains a set
-// of slots. By default, each section has 200 slots
-struct Section
-{
-  odb::Point pos;
-  std::vector<int> pin_indices;
-  std::vector<std::vector<int>> pin_groups;
-  int cost;
-  int begin_slot;
-  int end_slot;
-  int used_slots;
-  int num_slots;
   Edge edge;
 };
 

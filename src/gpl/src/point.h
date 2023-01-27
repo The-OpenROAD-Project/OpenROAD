@@ -31,8 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef __REPLACE_COORDI__
-#define __REPLACE_COORDI__
+#pragma once
 
 namespace gpl {
 
@@ -54,5 +53,3 @@ class IntPoint
   IntPoint(int x, int y);
 };
 }  // namespace gpl
-
-#endif

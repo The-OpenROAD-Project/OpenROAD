@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_BASE_TYPES_H_
-#define _FR_BASE_TYPES_H_
+#pragma once
 
 #include <boost/geometry/geometries/box.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
@@ -351,5 +350,3 @@ inline bool is_loading(const Archive& ar)
 }
 
 }  // namespace fr
-
-#endif

@@ -26,8 +26,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FR_ACCESS_H_
-#define _FR_ACCESS_H_
+#pragma once
 
 #include <iostream>
 
@@ -219,5 +218,3 @@ class frPinAccess : public frBlockObject
   std::vector<std::unique_ptr<frAccessPoint>> aps_;
 };
 }  // namespace fr
-
-#endif

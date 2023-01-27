@@ -1723,9 +1723,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
 
   std::ofstream report_file;
   if (!report_file_name_.empty()) {
-    remove(report_file_name_.c_str());
-    report_file.open(report_file_name_,
-                     std::ofstream::out | std::ofstream::app);
+    report_file.open(report_file_name_, std::ofstream::out);
   }
 
   bool grt_routes = global_router_->haveRoutes();

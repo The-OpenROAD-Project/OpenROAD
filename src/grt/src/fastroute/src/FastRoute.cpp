@@ -318,7 +318,6 @@ void FastRouteCore::initEdges()
       for (int k = 0; k < num_layers_; k++) {
         h_edges_3D_[k][i][j].cap = h_capacity_3D_[k];
         h_edges_3D_[k][i][j].usage = 0;
-        h_edges_3D_[k][i][j].red = 0;
       }
     }
   }
@@ -335,7 +334,6 @@ void FastRouteCore::initEdges()
       for (int k = 0; k < num_layers_; k++) {
         v_edges_3D_[k][i][j].cap = v_capacity_3D_[k];
         v_edges_3D_[k][i][j].usage = 0;
-        v_edges_3D_[k][i][j].red = 0;
       }
     }
   }
@@ -381,7 +379,6 @@ void FastRouteCore::addAdjustment(int x1,
     }
 
     h_edges_3D_[k][y1][x1].cap = reducedCap;
-    h_edges_3D_[k][y1][x1].red = reduce;
 
     if (!isReduce) {
       const int increase = reducedCap - cap;
@@ -410,7 +407,6 @@ void FastRouteCore::addAdjustment(int x1,
     }
 
     v_edges_3D_[k][y1][x1].cap = reducedCap;
-    v_edges_3D_[k][y1][x1].red = reduce;
 
     if (!isReduce) {
       int increase = reducedCap - cap;
@@ -533,7 +529,8 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       for (auto interval_it : intervals) {
-        reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
+        reduce += ceil(static_cast<float>(
+                           std::abs(interval_it.upper() - interval_it.lower()))
                        / track_space[layer - 1]);
       }
       edge_cap -= reduce;
@@ -551,7 +548,8 @@ void FastRouteCore::initBlockedIntervals(std::vector<int>& track_space)
     if (edge_cap > 0) {
       int reduce = 0;
       for (const auto& interval_it : intervals) {
-        reduce += ceil(std::abs(interval_it.upper() - interval_it.lower())
+        reduce += ceil(static_cast<float>(
+                           std::abs(interval_it.upper() - interval_it.lower()))
                        / track_space[layer - 1]);
       }
       edge_cap -= reduce;

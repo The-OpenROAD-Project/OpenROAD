@@ -104,21 +104,21 @@ Replace::Replace()
 
 Replace::~Replace()
 {
-  reset();
 }
 
-void Replace::init()
+void Replace::init(odb::dbDatabase* odb,
+                   rsz::Resizer* resizer,
+                   grt::GlobalRouter* router,
+                   utl::Logger* logger)
 {
+  db_ = odb;
+  rs_ = resizer;
+  fr_ = router;
+  log_ = logger;
 }
 
 void Replace::reset()
 {
-  // two pointers should not be freed.
-  db_ = nullptr;
-  fr_ = nullptr;
-  rs_ = nullptr;
-  log_ = nullptr;
-
   ip_.reset();
   np_.reset();
 
@@ -170,23 +170,6 @@ void Replace::reset()
   gui_debug_update_iterations_ = 10;
   gui_debug_draw_bins_ = false;
   gui_debug_initial_ = false;
-}
-
-void Replace::setDb(odb::dbDatabase* db)
-{
-  db_ = db;
-}
-void Replace::setGlobalRouter(grt::GlobalRouter* fr)
-{
-  fr_ = fr;
-}
-void Replace::setResizer(rsz::Resizer* rs)
-{
-  rs_ = rs;
-}
-void Replace::setLogger(utl::Logger* logger)
-{
-  log_ = logger;
 }
 
 void Replace::doIncrementalPlace()

@@ -1331,12 +1331,12 @@ int dbTechLayer::getSpacing(int w, int l)
     uint rmin, rmax;
     if (cur_rule->getRange(rmin, rmax)) {
       if ((width >= rmin) && (width <= rmax)) {
-        spacing = MIN(spacing, cur_rule->getSpacing());
+        spacing = std::min(spacing, cur_rule->getSpacing());
         found_spacing = true;
       }
       if (width > rmax) {
         found_over_spacing = true;
-        over_spacing = MIN(over_spacing, cur_rule->getSpacing());
+        over_spacing = std::min(over_spacing, cur_rule->getSpacing());
       }
     }
   }

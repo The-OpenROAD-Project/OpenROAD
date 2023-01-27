@@ -240,8 +240,8 @@ uint dbBlockSearch::makeInstSearchDb()
 
     dbBox* bb = inst->getBBox();
 
-    minWidth = MIN(minWidth, bb->getDX());
-    minHeight = MIN(minHeight, bb->getDY());
+    minWidth = std::min(minWidth, bb->getDX());
+    minHeight = std::min(minHeight, bb->getDY());
 
     Rect r = bb->getBox();
     maxRect.merge(r);
@@ -1231,10 +1231,10 @@ uint dbBlockSearch::getTracks(bool ignoreLayers)
   int x1, y1, x2, y2;
   _dcr->getBbox(&x1, &y1, &x2, &y2);
 
-  x1 = MAX(x1, die.xMin());
-  y1 = MAX(y1, die.yMin());
-  x2 = MIN(x2, die.xMax());
-  y2 = MIN(y2, die.yMax());
+  x1 = std::max(x1, die.xMin());
+  y1 = std::max(y1, die.yMin());
+  x2 = std::min(x2, die.xMax());
+  y2 = std::min(y2, die.yMax());
 
   int bb_ll[2] = {x1, y1};
   int bb_ur[2] = {x2, y2};
