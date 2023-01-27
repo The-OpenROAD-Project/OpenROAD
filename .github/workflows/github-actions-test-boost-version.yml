@@ -77,17 +77,17 @@ jobs:
       - name: Build project
         shell: bash
         run: |
-          sudo ./etc/Build.sh
+          sudo ./etc/Build.sh -threads=3
       - name: Test build
         shell: bash
         run: |
           build/src/openroad -help
           sudo ./test/regression
-      - name: Archive production artifacts
+      - name: Archive logs
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: test-results
+          name: test-results-${{ matrix.os }}-version-${{ matrix.boost.version }}
           path: |
             src/**/test/results/diffs
             src/**/test/results/*.log

@@ -12,8 +12,6 @@ _installCommonDev() {
     swigVersionType="tag"
     swigVersion=4.1.0
     swigChecksum="794433378154eb61270a3ac127d9c5f3"
-    boostVersionBig=${boostVersion%.*}
-    boostVersionSmall=${boostVersion}
     eigenVersion=3.4
     lemonVersion=1.3.1
     lemonChecksum="e89f887559113b68657eca67cf3329b5"
@@ -55,11 +53,12 @@ _installCommonDev() {
     fi
 
     # boost
+    boostVersionBig=${boostVersion%.*}
     boostPrefix=${PREFIX:-"/usr/local/include"}
     if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/boost/version.hpp) ]]; then
         cd "${baseDir}"
-        boostVersionUnderscore=${boostVersionSmall//./_}
-        wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
+        boostVersionUnderscore=${boostVersion//./_}
+        wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersion}/source/boost_${boostVersionUnderscore}.tar.gz
         md5sum -c <(echo "${boostChecksum}  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
