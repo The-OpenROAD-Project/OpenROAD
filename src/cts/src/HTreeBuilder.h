@@ -280,13 +280,15 @@ class HTreeBuilder : public TreeBuilder
       const std::vector<unsigned>& mapSinkToPoint,
       const std::vector<std::vector<unsigned>>& clusters);
 
-  unsigned getMinLengthSinkRegion() const {
+  unsigned getMinLengthSinkRegion() const
+  {
     return techChar_->getMinSegmentLength() * 2;
   }
 
   bool isSubRegionTooSmall(double width, double height) const
   {
-    return width < getMinLengthSinkRegion() || height < getMinLengthSinkRegion();
+    return width < getMinLengthSinkRegion()
+           || height < getMinLengthSinkRegion();
   }
 
   bool isNumberOfSinksTooSmall(unsigned numSinksPerSubRegion) const
