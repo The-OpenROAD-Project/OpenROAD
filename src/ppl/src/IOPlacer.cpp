@@ -176,8 +176,9 @@ void IOPlacer::randomPlacement()
         = getValidSlots(first_slot, last_slot, top_layer);
     std::vector<int> pin_indices;
     for (bool mirrored_pins : {true, false}) {
-        std::vector<int> indices = findPinsForConstraint(constraint, netlist_io_pins_.get(), mirrored_pins);
-        pin_indices.insert(pin_indices.end(), indices.begin(), indices.end());
+      std::vector<int> indices = findPinsForConstraint(
+          constraint, netlist_io_pins_.get(), mirrored_pins);
+      pin_indices.insert(pin_indices.end(), indices.begin(), indices.end());
     }
     randomPlacement(pin_indices, valid_slots, top_layer, false);
   }
@@ -250,10 +251,10 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
     for (int pin_idx : pin_indices) {
       IOPin& io_pin = io_pins[pin_idx];
       if ((assign_mirrored
-          && mirrored_pins_.find(io_pin.getBTerm()) == mirrored_pins_.end())
+           && mirrored_pins_.find(io_pin.getBTerm()) == mirrored_pins_.end())
           || (!assign_mirrored
-              && mirrored_pins_.find(io_pin.getBTerm())
-                    != mirrored_pins_.end()) || io_pin.isPlaced()) {
+              && mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end())
+          || io_pin.isPlaced()) {
         continue;
       }
 
@@ -271,7 +272,8 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
       sections_[0].pin_indices.push_back(pin_idx);
       io_idx++;
 
-      if (assign_mirrored && mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      if (assign_mirrored
+          && mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
         odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
         int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
         IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
@@ -281,18 +283,18 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
         mirrored_pin.setLayer(slots_[slot_idx].layer);
         mirrored_pin.setPlaced();
         assignment_.push_back(mirrored_pin);
-        slot_idx
-            = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer(), slots);
+        slot_idx = getSlotIdxByPosition(
+            mirrored_pos, mirrored_pin.getLayer(), slots);
         if (slot_idx < 0) {
           odb::dbTechLayer* layer
               = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
           logger_->error(utl::PPL,
-                          85,
-                          "Mirrored position ({}, {}) at layer {} is not a "
-                          "valid position for pin placement.",
-                          mirrored_pos.getX(),
-                          mirrored_pos.getY(),
-                          layer->getName());
+                         85,
+                         "Mirrored position ({}, {}) at layer {} is not a "
+                         "valid position for pin placement.",
+                         mirrored_pos.getX(),
+                         mirrored_pos.getY(),
+                         layer->getName());
         }
         slots[slot_idx].used = true;
         slots[slot_idx].blocked = true;
@@ -301,7 +303,9 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
   }
 }
 
-int IOPlacer::getSlotIdxByPosition(const odb::Point& position, int layer, std::vector<Slot>& slots)
+int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
+                                   int layer,
+                                   std::vector<Slot>& slots)
 {
   int slot_idx = -1;
   for (int i = 0; i < slots.size(); i++) {
