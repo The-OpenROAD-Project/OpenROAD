@@ -24,5 +24,7 @@ Net: _224_
 [INFO ANT-0002] Found 0 net violations.
 [INFO ANT-0001] Found 0 pin violations.
 [INFO DPL-0001] Placed 5890 filler instances.
-No differences found.
+Differences found at line 2574.
+)
+0 201600 21600 208800 met3
 No differences found.

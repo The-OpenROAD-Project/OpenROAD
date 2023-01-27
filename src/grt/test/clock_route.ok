@@ -31,11 +31,11 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 li1        Vertical            0             0          0.00%
-met1       Horizontal      27436          5388          80.36%
-met2       Vertical        21660          6475          70.11%
+met1       Horizontal      27436          5425          80.23%
+met2       Vertical        21660          6512          69.94%
 met3       Horizontal      12996          6140          52.75%
 met4       Vertical         8664          4625          46.62%
-met5       Horizontal       2888          1480          48.75%
+met5       Horizontal       2888          1517          47.47%
 ---------------------------------------------------------------
 
 [INFO GRT-0197] Via related to pin nodes: 129
@@ -48,14 +48,14 @@ met5       Horizontal       2888          1480          48.75%
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 li1                  0             0            0.00%             0 /  0 /  0
-met1              5388            67            1.24%             0 /  0 /  0
-met2              6475            57            0.88%             0 /  0 /  0
+met1              5425            67            1.24%             0 /  0 /  0
+met2              6512            57            0.88%             0 /  0 /  0
 met3              6140            21            0.34%             0 /  0 /  0
 met4              4625            12            0.26%             0 /  0 /  0
-met5              1480             0            0.00%             0 /  0 /  0
+met5              1517             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total            24108           157            0.65%             0 /  0 /  0
+Total            24219           157            0.65%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 1713 um
+[INFO GRT-0018] Total wirelength: 1735 um
 [INFO GRT-0014] Routed nets: 15
 No differences found.

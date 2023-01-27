@@ -963,160 +963,57 @@ void GlobalRouter::computeGridAdjustments(int min_routing_layer,
   }
 }
 
+/*
+ * Remove any routing capacity between the die boundary and the first and last
+ * routing tracks on each layer.
+ */
 void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
                                            int max_routing_layer)
 {
-  odb::Point upper_die_bounds = odb::Point(grid_->getXMax(), grid_->getYMax());
   for (auto const& [level, layer] : routing_layers_) {
-    int track_location;
-    int num_init_adjustments = 0;
-    int num_final_adjustments = 0;
-    int track_space;
-    int num_tracks = 0;
-
     if (level < min_routing_layer
         || (level > max_routing_layer && max_routing_layer > 0))
       continue;
 
+    const RoutingTracks routing_tracks = getRoutingTracksByIndex(level);
+    const int track_location = routing_tracks.getLocation();
+    const int track_space = routing_tracks.getUsePitch();
+    const int num_tracks = routing_tracks.getNumTracks();
+    const int final_track_location
+        = track_location + (track_space * (num_tracks - 1));
+
+    if (num_tracks == 0) {
+      continue;
+    }
+
     if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-      RoutingTracks routing_tracks = getRoutingTracksByIndex(level);
-      track_location = routing_tracks.getLocation();
-      track_space = routing_tracks.getUsePitch();
-      num_tracks = routing_tracks.getNumTracks();
+      /* bottom most obstruction */
+      const int yh = track_location - track_space;
+      if (yh > 0) {
+        odb::Rect init_track_obs(0, 0, grid_->getXMax(), yh);
+        applyObstructionAdjustment(init_track_obs, layer);
+      }
 
-      if (num_tracks > 0) {
-        int final_track_location
-            = track_location + (track_space * (num_tracks - 1));
-        int remaining_final_space = upper_die_bounds.y() - final_track_location;
-        int extra_space = upper_die_bounds.y()
-                          - (grid_->getTileSize() * grid_->getYGrids());
-        if (grid_->isPerfectRegularY()) {
-          num_final_adjustments
-              = std::ceil((float) remaining_final_space / grid_->getTileSize());
-        } else {
-          if (remaining_final_space != 0) {
-            int final_space = remaining_final_space - extra_space;
-            if (final_space <= 0)
-              num_final_adjustments = 1;
-            else
-              num_final_adjustments
-                  = std::ceil((float) final_space / grid_->getTileSize());
-          } else
-            num_final_adjustments = 0;
-        }
-
-        num_final_adjustments *= grid_->getXGrids();
-        num_init_adjustments
-            = std::ceil((float) track_location / grid_->getTileSize());
-        num_init_adjustments *= grid_->getXGrids();
-        fastroute_->setNumAdjustments(num_init_adjustments
-                                      + num_final_adjustments);
-
-        int y = 0;
-        while (track_location >= grid_->getTileSize()) {
-          for (int x = 1; x < grid_->getXGrids(); x++) {
-            fastroute_->addAdjustment(x - 1, y, x, y, level, 0, true);
-          }
-          y++;
-          track_location -= grid_->getTileSize();
-        }
-        if (track_location > 0) {
-          int remaining_tile = grid_->getTileSize() - track_location;
-          int new_capacity = std::floor((float) remaining_tile / track_space);
-          for (int x = 1; x < grid_->getXGrids(); x++) {
-            fastroute_->addAdjustment(
-                x - 1, y, x, y, level, new_capacity, true);
-          }
-        }
-
-        y = grid_->getYGrids() - 1;
-        while (remaining_final_space >= grid_->getTileSize() + extra_space) {
-          for (int x = 1; x < grid_->getXGrids(); x++) {
-            fastroute_->addAdjustment(x - 1, y, x, y, level, 0, true);
-          }
-          y--;
-          remaining_final_space -= (grid_->getTileSize() + extra_space);
-          extra_space = 0;
-        }
-        if (remaining_final_space > 0) {
-          int remaining_tile
-              = (grid_->getTileSize() + extra_space) - remaining_final_space;
-          int new_capacity = std::floor((float) remaining_tile / track_space);
-          for (int x = 1; x < grid_->getXGrids(); x++) {
-            fastroute_->addAdjustment(
-                x - 1, y, x, y, level, new_capacity, true);
-          }
-        }
+      /* top most obstruction */
+      const int yl = final_track_location + track_space;
+      if (yl < grid_->getYMax()) {
+        odb::Rect final_track_obs(0, yl, grid_->getXMax(), grid_->getYMax());
+        applyObstructionAdjustment(final_track_obs, layer);
       }
     } else {
-      RoutingTracks routing_tracks = getRoutingTracksByIndex(level);
-      track_location = routing_tracks.getLocation();
-      track_space = routing_tracks.getUsePitch();
-      num_tracks = routing_tracks.getNumTracks();
+      /* left most obstruction */
+      const int xh = track_location - track_space;
+      if (xh > 0) {
+        const odb::Rect init_track_obs(0, 0, xh, grid_->getYMax());
+        applyObstructionAdjustment(init_track_obs, layer);
+      }
 
-      if (num_tracks > 0) {
-        int final_track_location
-            = track_location + (track_space * (num_tracks - 1));
-        int remaining_final_space = upper_die_bounds.x() - final_track_location;
-        int extra_space = upper_die_bounds.x()
-                          - (grid_->getTileSize() * grid_->getXGrids());
-        if (grid_->isPerfectRegularX()) {
-          num_final_adjustments
-              = std::ceil((float) remaining_final_space / grid_->getTileSize());
-        } else {
-          if (remaining_final_space != 0) {
-            int final_space = remaining_final_space - extra_space;
-            if (final_space <= 0)
-              num_final_adjustments = 1;
-            else
-              num_final_adjustments
-                  = std::ceil((float) final_space / grid_->getTileSize());
-          } else
-            num_final_adjustments = 0;
-        }
-
-        num_final_adjustments *= grid_->getYGrids();
-        num_init_adjustments
-            = std::ceil((float) track_location / grid_->getTileSize());
-        num_init_adjustments *= grid_->getYGrids();
-        fastroute_->setNumAdjustments(num_init_adjustments
-                                      + num_final_adjustments);
-
-        int x = 0;
-        while (track_location >= grid_->getTileSize()) {
-          for (int y = 1; y < grid_->getYGrids(); y++) {
-            fastroute_->addAdjustment(x, y - 1, x, y, level, 0, true);
-          }
-          x++;
-          track_location -= grid_->getTileSize();
-        }
-        if (track_location > 0) {
-          int remaining_tile = grid_->getTileSize() - track_location;
-          int new_capacity = std::floor((float) remaining_tile / track_space);
-          for (int y = 1; y < grid_->getYGrids(); y++) {
-            fastroute_->addAdjustment(
-                x, y - 1, x, y, level, new_capacity, true);
-          }
-        }
-
-        x = grid_->getXGrids() - 1;
-        while (remaining_final_space >= grid_->getTileSize() + extra_space) {
-          for (int y = 1; y < grid_->getYGrids(); y++) {
-            fastroute_->addAdjustment(x, y - 1, x, y, level, 0, true);
-          }
-          x--;
-          remaining_final_space -= (grid_->getTileSize() + extra_space);
-          extra_space = 0;
-        }
-        if (remaining_final_space > 0) {
-          int remaining_tile
-              = (grid_->getTileSize() + extra_space) - remaining_final_space;
-          int new_capacity = std::floor((float) remaining_tile / track_space);
-          for (int y = 1; y < grid_->getYGrids(); y++) {
-            fastroute_->addAdjustment(
-                x, y - 1, x, y, level, new_capacity, true);
-          }
-        }
+      /* right most obstruction */
+      const int xl = final_track_location + track_space;
+      if (xl < grid_->getXMax()) {
+        const odb::Rect final_track_obs(
+            xl, 0, grid_->getXMax(), grid_->getYMax());
+        applyObstructionAdjustment(final_track_obs, layer);
       }
     }
   }
@@ -2346,9 +2243,6 @@ void GlobalRouter::createFakePin(Pin pin,
   pin_connection.final_x = std::max(x_tmp, pin_connection.final_x);
   pin_connection.final_y = std::max(y_tmp, pin_connection.final_y);
 
-  pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
-
-  auto nets_pins = net->getPins();
   int tile_size = grid_->getTileSize();
 
   if (pin_connection.init_y == pin_connection.final_y) {
@@ -2359,15 +2253,14 @@ void GlobalRouter::createFakePin(Pin pin,
     int final_id_x = floor(
         (float) ((pin_connection.final_x - die_area_min_x) / tile_size));
 
-    for (Pin& net_pin : nets_pins) {
+    for (Pin& net_pin : net->getPins()) {
       if (!(net_pin.getITerm() == pin.getITerm())) {
         auto net_pin_pos = net_pin.getOnGridPosition();
         int net_pin_id_x
             = floor((float) ((net_pin_pos.x() - die_area_min_x) / tile_size));
         if ((net_pin_id_x >= init_id_x) && (net_pin_id_x <= final_id_x)) {
           pin_position.setX(original_x);
-          pad_pins_connections_[net->getDbNet()].pop_back();
-          break;
+          return;
         }
       }
     }
@@ -2386,12 +2279,13 @@ void GlobalRouter::createFakePin(Pin pin,
             = floor((float) ((net_pin_pos.y() - die_area_min_y) / tile_size));
         if ((net_pin_id_y >= init_id_y) && (net_pin_id_y <= final_id_y)) {
           pin_position.setY(original_y);
-          pad_pins_connections_[net->getDbNet()].pop_back();
-          break;
+          return;
         }
       }
     }
   }
+
+  pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
 }
 
 odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
