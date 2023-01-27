@@ -2286,8 +2286,8 @@ void GlobalRouter::createFakePin(Pin pin,
                                  odb::dbTechLayer* layer,
                                  Net* net)
 {
-  int temp_x = pin_position.x();
-  int temp_y = pin_position.y();
+  int original_x = pin_position.x();
+  int original_y = pin_position.y();
   int conn_layer = layer->getRoutingLevel();
   GSegment pin_connection;
   pin_connection.init_layer = conn_layer;
@@ -2346,41 +2346,48 @@ void GlobalRouter::createFakePin(Pin pin,
   pin_connection.final_x = std::max(x_tmp, pin_connection.final_x);
   pin_connection.final_y = std::max(y_tmp, pin_connection.final_y);
 
-  int die_area_min_x = grid_->getXMin();
-  int die_area_min_y = grid_->getYMin();
+  pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
+
+  auto nets_pins = net->getPins();
   int tile_size = grid_->getTileSize();
 
   if (pin_connection.init_y == pin_connection.final_y) {
+    int die_area_min_x = grid_->getXMin();
+
     int init_id_x
         = floor((float) ((pin_connection.init_x - die_area_min_x) / tile_size));
     int final_id_x = floor(
         (float) ((pin_connection.final_x - die_area_min_x) / tile_size));
-    for (Pin& net_pin : net->getPins()) {
+
+    for (Pin& net_pin : nets_pins) {
       if (!(net_pin.getITerm() == pin.getITerm())) {
         auto net_pin_pos = net_pin.getOnGridPosition();
         int net_pin_id_x
             = floor((float) ((net_pin_pos.x() - die_area_min_x) / tile_size));
-        if ((net_pin_id_x < init_id_x) || (net_pin_id_x > final_id_x)) {
-          pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
-        } else {
-          pin_position.setX(temp_x);
+        if ((net_pin_id_x >= init_id_x) && (net_pin_id_x <= final_id_x)) {
+          pin_position.setX(original_x);
+          pad_pins_connections_[net->getDbNet()].pop_back();
+          break;
         }
       }
     }
   } else {
+    int die_area_min_y = grid_->getYMin();
+
     int init_id_y
         = floor((float) ((pin_connection.init_y - die_area_min_y) / tile_size));
     int final_id_y = floor(
         (float) ((pin_connection.final_y - die_area_min_y) / tile_size));
+
     for (Pin& net_pin : net->getPins()) {
       if (!(net_pin.getITerm() == pin.getITerm())) {
         auto net_pin_pos = net_pin.getOnGridPosition();
         int net_pin_id_y
             = floor((float) ((net_pin_pos.y() - die_area_min_y) / tile_size));
-        if ((net_pin_id_y < init_id_y) || (net_pin_id_y > final_id_y)) {
-          pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
-        } else {
-          pin_position.setY(temp_y);
+        if ((net_pin_id_y >= init_id_y) && (net_pin_id_y <= final_id_y)) {
+          pin_position.setY(original_y);
+          pad_pins_connections_[net->getDbNet()].pop_back();
+          break;
         }
       }
     }
