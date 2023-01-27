@@ -255,7 +255,17 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
     assignment_.push_back(io_pin);
     sections_[0].pin_indices.push_back(pin_idx);
     io_idx++;
+int IOPlacer::getSlotIdxByPosition(const odb::Point& position, int layer, std::vector<Slot>& slots)
+{
+  int slot_idx = -1;
+  for (int i = 0; i < slots.size(); i++) {
+    if (slots[i].pos == position && slots[i].layer == layer) {
+      slot_idx = i;
+      break;
+    }
   }
+
+  return slot_idx;
 }
 
 void IOPlacer::initIOLists()
