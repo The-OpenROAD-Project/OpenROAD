@@ -55,6 +55,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/clockWidget.cpp
     src/gui_utils.cpp
     src/colorGenerator.cpp
+    src/aggregateNetDescriptor.cpp
     resources/resource.qrc
   )
 

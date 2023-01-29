@@ -51,6 +51,7 @@
 #include <string>
 #include <vector>
 
+#include "aggregateNetDescriptor.h"
 #include "browserWidget.h"
 #include "clockWidget.h"
 #include "dbDescriptors.h"
@@ -467,6 +468,8 @@ void MainWindow::init(sta::dbSta* sta)
       new DbSiteDescriptor(db_));
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+
+  gui->registerDescriptor<AggregateNet>(new AggregateNetDescriptor(db_, sta));
 
   controls_->setDBInstDescriptor(inst_descriptor);
   hierarchy_widget_->setDBInstDescriptor(inst_descriptor);
