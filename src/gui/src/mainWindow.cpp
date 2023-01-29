@@ -405,6 +405,7 @@ MainWindow::~MainWindow()
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
+  gui->unregisterDescriptor<AggregateNet>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -469,7 +470,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
-  gui->registerDescriptor<AggregateNet>(new AggregateNetDescriptor(db_, sta));
+  gui->registerDescriptor<AggregateNet>(
+      new AggregateNetDescriptor(db_, sta, viewer_->getRouteGuides()));
 
   controls_->setDBInstDescriptor(inst_descriptor);
   hierarchy_widget_->setDBInstDescriptor(inst_descriptor);

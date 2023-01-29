@@ -72,7 +72,9 @@ class AggregateNet
 class AggregateNetDescriptor : public Descriptor
 {
  public:
-  AggregateNetDescriptor(odb::dbDatabase* db, sta::dbSta* sta);
+  AggregateNetDescriptor(odb::dbDatabase* db,
+                         sta::dbSta* sta,
+                         const std::set<odb::dbNet*>& guide_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -81,6 +83,7 @@ class AggregateNetDescriptor : public Descriptor
   void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
+  Actions getActions(std::any object) const;
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
@@ -89,6 +92,7 @@ class AggregateNetDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
   const Descriptor* net_descriptor_;
+  const std::set<odb::dbNet*>& guide_nets_;
 };
 
 }  // namespace gui

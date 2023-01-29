@@ -124,9 +124,13 @@ bool AggregateNet::isAggregate(odb::dbInst* inst)
 
 ///////
 
-AggregateNetDescriptor::AggregateNetDescriptor(odb::dbDatabase* db,
-                                               sta::dbSta* sta)
-    : db_(db), net_descriptor_(Gui::get()->getDescriptor<odb::dbNet*>())
+AggregateNetDescriptor::AggregateNetDescriptor(
+    odb::dbDatabase* db,
+    sta::dbSta* sta,
+    const std::set<odb::dbNet*>& guide_nets)
+    : db_(db),
+      net_descriptor_(Gui::get()->getDescriptor<odb::dbNet*>()),
+      guide_nets_(guide_nets)
 {
   AggregateNet::setSTA(sta);
 }
@@ -218,6 +222,36 @@ bool AggregateNetDescriptor::getAllObjects(SelectionSet& objects) const
   }
 
   return true;
+}
+
+Descriptor::Actions AggregateNetDescriptor::getActions(std::any object) const
+{
+  AggregateNet anet = *std::any_cast<AggregateNet>(&object);
+
+  auto* gui = Gui::get();
+  Descriptor::Actions actions;
+  bool has_guides = false;
+  for (auto* net : anet.getNets()) {
+    has_guides |= !net->getGuides().empty();
+  }
+  if (has_guides) {
+    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, anet]() {
+                                           bool guides_on = false;
+                                           for (auto* net : anet.getNets()) {
+                                             guides_on
+                                                 |= guide_nets_.count(net) != 0;
+                                           }
+                                           for (auto* net : anet.getNets()) {
+                                             if (!guides_on) {
+                                               gui->addRouteGuides(net);
+                                             } else {
+                                               gui->removeRouteGuides(net);
+                                             }
+                                           }
+                                           return makeSelected(anet);
+                                         }});
+  }
+  return actions;
 }
 
 }  // namespace gui
