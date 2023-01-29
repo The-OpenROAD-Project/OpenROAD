@@ -7,7 +7,7 @@ read_def generate_pattern.defok
 bench_read_spef generate_pattern.spef
 
 set rules_file [make_result_file patterns.rules]
-write_rules -file $rules_file -db
+write_rules -file $rules_file
 
 exec rm rulesGen.log
 

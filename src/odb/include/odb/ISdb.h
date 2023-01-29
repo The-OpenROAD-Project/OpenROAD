@@ -73,7 +73,6 @@ class ISdb : public ZObject
                              bool allNet,
                              uint contextDepth,
                              Ath__array1D<int>** contextArray,
-                             uint* contextLength,
                              Ath__array1D<SEQ*>*** dgContextArray,
                              uint* dgContextDepth,
                              uint* dgContextPlanes,

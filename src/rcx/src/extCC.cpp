@@ -96,7 +96,6 @@ void Ath__grid::gridContextOn(int orig, int len, int base, int width)
     }
   }
   context->add(end);
-  _gridtable->setContextLength(_level, clength);
 }
 
 void Ath__grid::contextsOn(int orig, int len, int base, int width)

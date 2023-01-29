@@ -78,7 +78,7 @@ AthPool<extDistRC>* extMetRCTable::getRCPool()
 {
   return _rcPoolPtr;
 }
-uint extMain::GenExtRules(const char* rulesFileName, int pattern)
+uint extMain::genExtRules(const char* rulesFileName, int pattern)
 {
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;

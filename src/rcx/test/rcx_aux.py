@@ -74,11 +74,8 @@ def write_rules(*,
                 filename="extRules",
                 dir="./",
                 name="TYP",
-                pattern=0,
-                read_from_db=False,
-                read_from_solver=False):
-    rcx.write_rules(filename, dir, name, pattern,
-                    read_from_db, read_from_solver)
+                pattern=0):
+    rcx.write_rules(filename, dir, name, pattern)
 
 
 def read_spef(*, filename):
