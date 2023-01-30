@@ -1853,8 +1853,14 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   // get drNet for patch
   gcNet* gc_net = pin->getNet();
   frNet* fr_net = gc_net->getFrNet();
+  if (fr_net == nullptr) {
+    logger_->error(DRT, 410, "frNet not found.", fr_net->getName());
+  }
   if (fr_net != nullptr) {
     const std::vector<drNet*>* dr_nets = drWorker_->getDRNets(fr_net);
+    if (dr_nets == nullptr) {
+      logger_->error(DRT, 411, "frNet {} does not have drNets.", fr_net->getName());
+    }
     if (dr_nets->size() == 1) {
       patch->addToNet((*dr_nets)[0]);
     } else {
