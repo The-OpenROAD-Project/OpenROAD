@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "aggregateNetDescriptor.h"
+#include "bufferTreeDescriptor.h"
 
 #include "colorGenerator.h"
 #include "db_sta/dbNetwork.hh"
@@ -44,9 +44,9 @@
 
 namespace gui {
 
-sta::dbSta* AggregateNet::sta_ = nullptr;
+sta::dbSta* BufferTree::sta_ = nullptr;
 
-AggregateNet::AggregateNet(odb::dbNet* net)
+BufferTree::BufferTree(odb::dbNet* net)
 {
   populate(net);
 
@@ -58,7 +58,7 @@ AggregateNet::AggregateNet(odb::dbNet* net)
   name_ = nets_[0]->getName();
 }
 
-void AggregateNet::populate(odb::dbNet* net)
+void BufferTree::populate(odb::dbNet* net)
 {
   if (net == nullptr) {
     return;
@@ -79,7 +79,7 @@ void AggregateNet::populate(odb::dbNet* net)
 
   for (auto* iterm : net->getITerms()) {
     auto* inst = iterm->getInst();
-    if (!AggregateNet::isAggregate(inst)) {
+    if (!BufferTree::isAggregate(inst)) {
       if (std::find(iterm_terms_.begin(), iterm_terms_.end(), iterm)
           == iterm_terms_.end()) {
         iterm_terms_.push_back(iterm);
@@ -99,14 +99,14 @@ void AggregateNet::populate(odb::dbNet* net)
   }
 }
 
-bool AggregateNet::isAggregate(odb::dbNet* net)
+bool BufferTree::isAggregate(odb::dbNet* net)
 {
   if (net == nullptr) {
     return false;
   }
 
   for (auto* iterm : net->getITerms()) {
-    if (AggregateNet::isAggregate(iterm->getInst())) {
+    if (BufferTree::isAggregate(iterm->getInst())) {
       return true;
     }
   }
@@ -114,7 +114,7 @@ bool AggregateNet::isAggregate(odb::dbNet* net)
   return false;
 }
 
-bool AggregateNet::isAggregate(odb::dbInst* inst)
+bool BufferTree::isAggregate(odb::dbInst* inst)
 {
   if (inst == nullptr) {
     return false;
@@ -141,7 +141,7 @@ bool AggregateNet::isAggregate(odb::dbInst* inst)
 
 ///////
 
-AggregateNetDescriptor::AggregateNetDescriptor(
+BufferTreeDescriptor::BufferTreeDescriptor(
     odb::dbDatabase* db,
     sta::dbSta* sta,
     const std::set<odb::dbNet*>& focus_nets,
@@ -151,23 +151,23 @@ AggregateNetDescriptor::AggregateNetDescriptor(
       focus_nets_(focus_nets),
       guide_nets_(guide_nets)
 {
-  AggregateNet::setSTA(sta);
+  BufferTree::setSTA(sta);
 }
 
-std::string AggregateNetDescriptor::getName(std::any object) const
+std::string BufferTreeDescriptor::getName(std::any object) const
 {
-  AggregateNet* anet = std::any_cast<AggregateNet>(&object);
+  BufferTree* anet = std::any_cast<BufferTree>(&object);
   return anet->getName();
 }
 
-std::string AggregateNetDescriptor::getTypeName() const
+std::string BufferTreeDescriptor::getTypeName() const
 {
-  return "Aggregate Net";
+  return "Buffer Tree";
 }
 
-bool AggregateNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool BufferTreeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
-  AggregateNet* anet = std::any_cast<AggregateNet>(&object);
+  BufferTree* anet = std::any_cast<BufferTree>(&object);
   bbox.mergeInit();
   for (auto* net : anet->getNets()) {
     odb::Rect box;
@@ -178,9 +178,9 @@ bool AggregateNetDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-void AggregateNetDescriptor::highlight(std::any object, Painter& painter) const
+void BufferTreeDescriptor::highlight(std::any object, Painter& painter) const
 {
-  AggregateNet* anet = std::any_cast<AggregateNet>(&object);
+  BufferTree* anet = std::any_cast<BufferTree>(&object);
 
   ColorGenerator generator;
   painter.saveState();
@@ -191,10 +191,10 @@ void AggregateNetDescriptor::highlight(std::any object, Painter& painter) const
   painter.restoreState();
 }
 
-Descriptor::Properties AggregateNetDescriptor::getProperties(
+Descriptor::Properties BufferTreeDescriptor::getProperties(
     std::any object) const
 {
-  AggregateNet* anet = std::any_cast<AggregateNet>(&object);
+  BufferTree* anet = std::any_cast<BufferTree>(&object);
   Properties props;
 
   auto gui = Gui::get();
@@ -223,22 +223,22 @@ Descriptor::Properties AggregateNetDescriptor::getProperties(
   return props;
 }
 
-Selected AggregateNetDescriptor::makeSelected(std::any object) const
+Selected BufferTreeDescriptor::makeSelected(std::any object) const
 {
-  if (auto* anet = std::any_cast<AggregateNet>(&object)) {
+  if (auto* anet = std::any_cast<BufferTree>(&object)) {
     return Selected(*anet, this);
   }
   return Selected();
 }
 
-bool AggregateNetDescriptor::lessThan(std::any l, std::any r) const
+bool BufferTreeDescriptor::lessThan(std::any l, std::any r) const
 {
-  AggregateNet* l_anet = std::any_cast<AggregateNet>(&l);
-  AggregateNet* r_anet = std::any_cast<AggregateNet>(&r);
+  BufferTree* l_anet = std::any_cast<BufferTree>(&l);
+  BufferTree* r_anet = std::any_cast<BufferTree>(&r);
   return l_anet->getName() < r_anet->getName();
 }
 
-bool AggregateNetDescriptor::getAllObjects(SelectionSet& objects) const
+bool BufferTreeDescriptor::getAllObjects(SelectionSet& objects) const
 {
   auto* chip = db_->getChip();
   if (chip == nullptr) {
@@ -250,17 +250,17 @@ bool AggregateNetDescriptor::getAllObjects(SelectionSet& objects) const
   }
 
   for (auto* net : block->getNets()) {
-    if (AggregateNet::isAggregate(net)) {
-      objects.insert(makeSelected(AggregateNet(net)));
+    if (BufferTree::isAggregate(net)) {
+      objects.insert(makeSelected(BufferTree(net)));
     }
   }
 
   return true;
 }
 
-Descriptor::Actions AggregateNetDescriptor::getActions(std::any object) const
+Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
 {
-  AggregateNet anet = *std::any_cast<AggregateNet>(&object);
+  BufferTree anet = *std::any_cast<BufferTree>(&object);
 
   auto* gui = Gui::get();
   Descriptor::Actions actions;

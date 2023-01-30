@@ -48,10 +48,10 @@ class dbSta;
 
 namespace gui {
 
-class AggregateNet
+class BufferTree
 {
  public:
-  AggregateNet(odb::dbNet* net);
+  BufferTree(odb::dbNet* net);
 
   static void setSTA(sta::dbSta* sta) { sta_ = sta; }
   static bool isAggregate(odb::dbNet* net);
@@ -75,13 +75,13 @@ class AggregateNet
   void populate(odb::dbNet* net);
 };
 
-class AggregateNetDescriptor : public Descriptor
+class BufferTreeDescriptor : public Descriptor
 {
  public:
-  AggregateNetDescriptor(odb::dbDatabase* db,
-                         sta::dbSta* sta,
-                         const std::set<odb::dbNet*>& focus_nets,
-                         const std::set<odb::dbNet*>& guide_nets);
+  BufferTreeDescriptor(odb::dbDatabase* db,
+                       sta::dbSta* sta,
+                       const std::set<odb::dbNet*>& focus_nets,
+                       const std::set<odb::dbNet*>& guide_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;

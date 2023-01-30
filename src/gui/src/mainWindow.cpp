@@ -51,8 +51,8 @@
 #include <string>
 #include <vector>
 
-#include "aggregateNetDescriptor.h"
 #include "browserWidget.h"
+#include "bufferTreeDescriptor.h"
 #include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
@@ -405,7 +405,7 @@ MainWindow::~MainWindow()
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
-  gui->unregisterDescriptor<AggregateNet>();
+  gui->unregisterDescriptor<BufferTree>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -470,8 +470,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
-  gui->registerDescriptor<AggregateNet>(
-      new AggregateNetDescriptor(db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
+  gui->registerDescriptor<BufferTree>(new BufferTreeDescriptor(
+      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
 
   controls_->setDBInstDescriptor(inst_descriptor);
   hierarchy_widget_->setDBInstDescriptor(inst_descriptor);
