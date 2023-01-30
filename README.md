@@ -176,7 +176,7 @@ Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show
 | `CMAKE_INSTALL_PREFIX` | Path to install binary    |
 | `GPU`                  | true, false               |
 
-> **Note:** There is a `openroad_build.log` file that is generated with every build in the main directory. In case of filing issues, it can be uploaded in the "Relevant log output" section of OpenROAD [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
+> **Note:** There is a `openroad_build.log` file that is generated with every build in the build directory. In case of filing issues, it can be uploaded in the "Relevant log output" section of OpenROAD [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 
 ### Build by hand
 

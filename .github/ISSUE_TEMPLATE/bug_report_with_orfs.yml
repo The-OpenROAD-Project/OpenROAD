@@ -79,7 +79,7 @@ body:
     attributes:
       label: Relevant log output
       description: |
-        You can upload `openroad_build.log` file found in the main directory by dragging and dropping it below.
+        You can upload `openroad_build.log` file found in the build directory by dragging and dropping it below.
         Feel free to add any relevant log snippets to this section. This will be automatically formatted into code, so no need for backticks.
       render: shell
     validations:

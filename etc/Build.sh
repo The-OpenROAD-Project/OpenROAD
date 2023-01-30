@@ -56,7 +56,7 @@ EOF
 
 __logging()
 {
-        local log_file="openroad_build.log"
+        local log_file="${buildDir}/openroad_build.log"
         echo "[INFO] Saving logs to ${log_file}"
         echo "[INFO] $__CMD"
         exec > >(tee -i "${log_file}")
