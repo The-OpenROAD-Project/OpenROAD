@@ -77,7 +77,9 @@ void AggregateNet::populate(odb::dbNet* net)
     }
 
     for (auto* next_iterm : inst->getITerms()) {
-      populate(next_iterm->getNet());
+      if (!next_iterm->getSigType().isSupply()) {
+        populate(next_iterm->getNet());
+      }
     }
   }
 }
