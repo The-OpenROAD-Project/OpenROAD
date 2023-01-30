@@ -10,8 +10,7 @@ else
     latestGitCommit="$(git ls-remote https://github.com/The-OpenROAD-Project/OpenROAD.git HEAD | awk '{print $1}')"
     currentGitCommit="$(git rev-parse HEAD)"
     if [[ ${currentGitCommit} != ${latestGitCommit} ]]; then
-        echo "Please pull the latest changes and try again, if problem persists file a github issue with the re-producible test case."
-        exit 1
+        echo "[WARNING] Your current OpenROAD version is outdated. It is recommened to pull the latest changes. If problem persists, file a github issue with the re-producible test case."
     else
         echo "Git commit: ${currentGitCommit}"
     fi
@@ -43,3 +42,5 @@ echo "os: ${os} ${version}"
 echo "$(cmake --version | sed 1q)"
 echo "$(gcc --version | sed 1q)"
 echo "$(clang --version | sed 1q)"
+echo "Libraries Info:"
+echo "$(cmake -B $(mktemp -d) | sed -n '/--/p')"
