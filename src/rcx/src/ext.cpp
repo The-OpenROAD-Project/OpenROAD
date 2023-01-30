@@ -72,148 +72,13 @@ void Ext::setLogger(Logger* logger)
     logger_ = logger;
 }
 
-bool Ext::load_model(const std::string& name,
-                     bool lef_rc,
-                     const std::string& file,
-                     int setMin,
-                     int setTyp,
-                     int setMax)
-{
-  if (lef_rc) {
-    if (!_ext->checkLayerResistance())
-      return TCL_ERROR;
-    _ext->addExtModel();  // fprintf(stdout, "Using LEF RC values to
-                          // extract!\n");
-    logger_->info(RCX, 9, "Using LEF RC values to extract!");
-  } else if (!file.empty()) {
-    _ext->readExtRules(name.c_str(), file.c_str(), setMin, setTyp, setMax);
-    int numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg;
-    _ext->getBlock()->getExtCount(
-        numOfNet, numOfRSeg, numOfCapNode, numOfCCSeg);
-
-    _ext->setupMapping(3 * numOfNet);
-  } else {
-    logger_->info(
-        RCX,
-        151,
-        "Have to specify options:"
-        "\n\t-lef_rc to read resistance and "
-        "capacitance values from LEF or \n\t-file to read high accuracy RC "
-        "models");
-  }
-
-  return 0;
-}
-
-bool Ext::read_process(const std::string& name, const std::string& file)
-{
-  _ext->readProcess(name.c_str(), file.c_str());
-
-  return TCL_OK;
-}
-
-bool Ext::rules_gen(const std::string& name,
-                    const std::string& dir,
-                    const std::string& file,
-                    bool write_to_solver,
-                    bool read_from_solver,
-                    bool run_solver,
-                    int pattern,
-                    bool keep_file)
-{
-  _ext->rulesGen(name.c_str(),
-                 dir.c_str(),
-                 file.c_str(),
-                 pattern,
-                 write_to_solver,
-                 read_from_solver,
-                 run_solver,
-                 keep_file);
-
-  return TCL_OK;
-}
-
-bool Ext::metal_rules_gen(const std::string& name,
-                          const std::string& dir,
-                          const std::string& file,
-                          bool write_to_solver,
-                          bool read_from_solver,
-                          bool run_solver,
-                          int pattern,
-                          bool keep_file,
-                          int metal)
-{
-  _ext->metRulesGen(name.c_str(),
-                    dir.c_str(),
-                    file.c_str(),
-                    pattern,
-                    write_to_solver,
-                    read_from_solver,
-                    run_solver,
-                    keep_file,
-                    metal);
-  return TCL_OK;
-}
-
-bool Ext::write_rules(const std::string& name,
+void Ext::write_rules(const std::string& name,
                       const std::string& dir,
                       const std::string& file,
-                      int pattern,
-                      bool read_from_db,
-                      bool read_from_solver)
+                      int pattern)
 {
   _ext->setBlockFromChip();
-  _ext->writeRules(name.c_str(),
-                   dir.c_str(),
-                   file.c_str(),
-                   pattern,
-                   read_from_db,
-                   read_from_solver);
-  return TCL_OK;
-}
-
-bool Ext::get_ext_metal_count(int& metal_count)
-{
-  extRCModel* m = _ext->getRCModel();
-  metal_count = m->getLayerCnt();
-  return TCL_OK;
-}
-
-bool Ext::bench_net(const std::string& dir,
-                    int net,
-                    bool write_to_solver,
-                    bool read_from_solver,
-                    bool run_solver,
-                    int max_track_count)
-{
-  extMainOptions opt;
-
-  opt._write_to_solver = write_to_solver;
-  opt._read_from_solver = read_from_solver;
-  opt._run_solver = run_solver;
-
-  int netId = net;
-  opt._topDir = dir.c_str();
-
-  if (netId == 0) {
-    logger_->info(RCX, 144, "Net (={}), should be a positive number", netId);
-    return TCL_OK;
-  }
-  logger_->info(
-      RCX, 145, "Benchmarking using 3d field solver net {}...", netId);
-  logger_->info(RCX, 146, "Finished 3D field solver benchmarking.");
-
-  return TCL_OK;
-}
-
-bool Ext::run_solver(const std::string& dir, int net, int shape)
-{
-  extMainOptions opt;
-  opt._topDir = dir.c_str();
-  uint netId = net;
-  int shapeId = shape;
-  _ext->runSolver(&opt, netId, shapeId);
-  return TCL_OK;
+  _ext->writeRules(name.c_str(), dir.c_str(), file.c_str(), pattern);
 }
 
 bool Ext::bench_wires(const BenchWiresOptions& bwo)
@@ -392,15 +257,6 @@ bool Ext::get_ext_db_corner(int& index, const std::string& name)
   return TCL_OK;
 }
 
-bool Ext::flatten(odb::dbBlock* block, bool spef)
-{
-  if (block == NULL) {
-    logger_->error(RCX, 486, "No block for flatten command");
-  }
-  _ext->addRCtoTop(block, spef);
-  return TCL_OK;
-}
-
 bool Ext::extract(ExtractOptions opts)
 {
   _ext->setBlockFromChip();
@@ -409,21 +265,11 @@ bool Ext::extract(ExtractOptions opts)
       RCX, 8, "extracting parasitics of {} ...", block->getConstName());
 
   odb::orderWires(block, false /* force */);
-  if (opts.lef_rc) {
-    if (!_ext->checkLayerResistance())
-      return TCL_ERROR;
-    _ext->addExtModel();
-    logger_->info(RCX, 375, "Using LEF RC values to extract!");
-  }
 
   _ext->set_debug_nets(opts.debug_net);
-  _ext->skip_via_wires(opts.skip_via_wires);
-  _ext->skip_via_wires(true);
   _ext->_lef_res = opts.lef_res;
 
-  if (_ext->makeBlockRCsegs(opts.cmp_file,
-                            opts.wire_density,
-                            opts.net,
+  if (_ext->makeBlockRCsegs(opts.net,
                             opts.cc_up,
                             opts.cc_model,
                             opts.max_res,
@@ -436,12 +282,6 @@ bool Ext::extract(ExtractOptions opts)
       == 0)
     return TCL_ERROR;
 
-  if (opts.write_total_caps) {
-    char netcapfile[500];
-    sprintf(netcapfile, "%s.totCap", _ext->getBlock()->getConstName());
-    _ext->reportTotalCap(netcapfile, true, false, 1.0, NULL, NULL);
-  }
-
   logger_->info(
       RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
   return 0;
@@ -450,16 +290,6 @@ bool Ext::extract(ExtractOptions opts)
 bool Ext::adjust_rc(float res_factor, float cc_factor, float gndc_factor)
 {
   _ext->adjustRC(res_factor, cc_factor, gndc_factor);
-  return 0;
-}
-
-bool Ext::init_incremental_spef(const std::string& origp,
-                                const std::string& newp,
-                                bool no_backslash,
-                                const std::string& exclude_cells)
-{
-  _ext->initIncrementalSpef(
-      origp.c_str(), newp.c_str(), exclude_cells.c_str(), no_backslash);
   return 0;
 }
 
@@ -488,44 +318,31 @@ bool Ext::write_spef(const SpefOptions& opts)
     _ext->writeSPEF(netId, opts.single_pi, opts.debug, opts.corner, name);
     return 0;
   }
-  bool useIds = opts.use_ids;
-  bool stop = opts.stop_after_map;
-  bool initOnly = opts.init;
-  if (!initOnly)
+  if (!opts.init)
     logger_->info(RCX, 16, "Writing SPEF ...");
-  initOnly = opts.parallel && opts.flatten;
   _ext->writeSPEF((char*) opts.file,
                   (char*) opts.nets,
-                  useIds,
                   opts.no_name_map,
                   (char*) opts.N,
                   opts.term_junction_xy,
-                  opts.exclude_cells,
                   opts.cap_units,
                   opts.res_units,
                   opts.gz,
-                  stop,
+                  opts.stop_after_map,
                   opts.w_clock,
                   opts.w_conn,
                   opts.w_cap,
                   opts.w_cc_cap,
                   opts.w_res,
                   opts.no_c_num,
-                  initOnly,
+                  false,
                   opts.single_pi,
                   opts.no_backslash,
                   opts.corner,
                   name,
-                  opts.flatten,
                   opts.parallel);
 
   logger_->info(RCX, 17, "Finished writing SPEF ...");
-  return 0;
-}
-
-bool Ext::independent_spef_corner()
-{
-  _ext->setUniqueExttreeCorner();
   return 0;
 }
 
@@ -535,7 +352,6 @@ bool Ext::read_spef(ReadSpefOpts& opt)
   logger_->info(RCX, 1, "Reading SPEF file: {}", opt.file);
 
   bool stampWire = opt.stamp_wire;
-  bool useIds = opt.use_ids;
   uint testParsing = opt.test_parsing;
 
   Ath__parser parser;
@@ -548,7 +364,6 @@ bool Ext::read_spef(ReadSpefOpts& opt)
   _ext->readSPEF(parser.get(0),
                  (char*) opt.net,
                  opt.force,
-                 useIds,
                  opt.r_conn,
                  (char*) opt.N,
                  opt.r_cap,
@@ -601,7 +416,6 @@ bool Ext::diff_spef(const DiffOptions& opt)
   _ext->readSPEF(parser.get(0),
                  (char*) opt.net,
                  false /*force*/,
-                 opt.use_ids,
                  opt.r_conn,
                  NULL /*N*/,
                  opt.r_cap,
@@ -660,104 +474,6 @@ bool Ext::calibrate(const std::string& spef_file,
                   corner,
                   spef_corner);
   return 0;
-}
-
-bool Ext::count(bool signal_wire_seg, bool power_wire_seg)
-{
-  _ext->extCount(signal_wire_seg, power_wire_seg);
-
-  return 0;
-}
-
-bool Ext::rc_tree(float max_cap,
-                  uint test,
-                  int net,
-                  const std::string& print_tag)
-{
-  int netId = net;
-  char* printTag = (char*) print_tag.c_str();
-
-  odb::dbBlock* block = _ext->getBlock();
-
-  if (_tree == nullptr)
-    _tree = std::make_unique<extRcTree>(block, logger_);
-
-  uint cnt;
-  if (netId > 0)
-    _tree->makeTree((uint) netId,
-                    max_cap,
-                    test,
-                    true,
-                    true,
-                    cnt,
-                    1.0 /*mcf*/,
-                    printTag,
-                    false /*for_buffering*/);
-  else
-    _tree->makeTree(max_cap, test);
-
-  return TCL_OK;
-}
-bool Ext::net_stats(std::list<int>& net_ids,
-                    const std::string& tcap,
-                    const std::string& ccap,
-                    const std::string& ratio_cap,
-                    const std::string& res,
-                    const std::string& len,
-                    const std::string& met_cnt,
-                    const std::string& wire_cnt,
-                    const std::string& via_cnt,
-                    const std::string& seg_cnt,
-                    const std::string& term_cnt,
-                    const std::string& bterm_cnt,
-                    const std::string& file,
-                    const std::string& bbox,
-                    const std::string& branch_len)
-{
-  Ath__parser parser;
-  extNetStats limits;
-  limits.reset();
-
-  limits.update_double(&parser, tcap.c_str(), limits._tcap);
-  limits.update_double(&parser, ccap.c_str(), limits._ccap);
-  limits.update_double(&parser, ratio_cap.c_str(), limits._cc2tcap);
-  limits.update_double(&parser, res.c_str(), limits._res);
-
-  limits.update_int(&parser, len.c_str(), limits._len, 1000);
-  limits.update_int(&parser, met_cnt.c_str(), limits._layerCnt);
-  limits.update_int(&parser, wire_cnt.c_str(), limits._wCnt);
-  limits.update_int(&parser, via_cnt.c_str(), limits._vCnt);
-  limits.update_int(&parser, term_cnt.c_str(), limits._termCnt);
-  limits.update_int(&parser, bterm_cnt.c_str(), limits._btermCnt);
-  limits.update_bbox(&parser, bbox.c_str());
-
-  FILE* fp = stdout;
-  const char* filename = file.c_str();
-  if (filename != NULL) {
-    fp = fopen(filename, "w");
-    if (fp == NULL) {
-      logger_->warn(RCX, 11, "Can't open file {}", filename);
-      return TCL_OK;
-    }
-  }
-  bool skipDb = false;
-  bool skipRC = false;
-  bool skipPower = true;
-
-  odb::dbBlock* block = _ext->getBlock();
-  if (block == NULL) {
-    logger_->warn(RCX, 28, "There is no extracted block");
-    skipRC = true;
-    return TCL_OK;
-  }
-  std::list<int> list_of_nets;
-  int n = _ext->printNetStats(
-      fp, block, &limits, skipRC, skipDb, skipPower, &list_of_nets);
-  logger_->info(RCX, 26, "{} nets found", n);
-
-  net_ids = list_of_nets;
-
-  return TCL_OK;
 }
 
 }  // namespace rcx

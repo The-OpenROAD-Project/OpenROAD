@@ -44,10 +44,6 @@ using utl::RCX;
 
 dbInst* extSpef::getDbInst(uint id)
 {
-  if (_useIds) {
-    uint instId = getNameMapId(id);
-    return dbInst::getInst(_block, instId);
-  }
   dbInst* inst;
   uint ii = 0;
   uint jj = 0;
@@ -589,9 +585,6 @@ uint extSpef::getCapNodeId(char* nodeWord, char* capWord, uint* netId)
     if (_nodeParser->get(0)[0] == '*') {  // mapped port
       uint id = _nodeParser->getInt(0, 1);
       btermId = getMappedBTermId(id);
-    } else if (_useIds && (_nodeParser->get(0)[0] == 'B')
-               && (_nodeParser->isDigit(0, 1))) {  // B1,B2,
-      btermId = getBTermId(_nodeParser->getInt(0, 1));
     } else {
       btermId = getBTermId(_nodeParser->get(0));
     }
@@ -771,10 +764,6 @@ dbNet* extSpef::getDbNet(uint* id, uint spefId)
   if (_testParsing || _statsOnly)
     return NULL;
 
-  if (_useIds) {
-    *id = getNameMapId(spefId);
-    return dbNet::getNet(_block, *id);
-  }
   char hierD = _block->getHierarchyDelimeter();
   char* netName = _spefName;
   char* nName;
@@ -1436,8 +1425,7 @@ uint extSpef::endNet(dbNet* net, uint resCnt)
   if (!_testParsing && !_statsOnly)
     net->setSpef(true);
 
-  if (!_keep_loaded_corner && !_statsOnly && !_testParsing
-      && (!_extracted || _independentExtCorners))
+  if (!_keep_loaded_corner && !_statsOnly && !_testParsing && !_extracted)
     net->getRSegs().reverse();
 
   return resCnt;
@@ -2007,8 +1995,7 @@ uint extSpef::readDNet(uint debug)
         }
       }
     }
-    if (!(_testParsing || _statsOnly) && _rRun == 1
-        && (!_extracted || _independentExtCorners))
+    if (!(_testParsing || _statsOnly) && _rRun == 1 && !_extracted)
       _d_corner_net->getCapNodes().reverse();
     if ((!_testParsing) && (!_statsOnly) && _rRun == 1) {
       _d_corner_net->reverseCCSegs();
@@ -2440,28 +2427,22 @@ uint extSpef::readBlock(uint debug,
     }
   }
 
-  if (_independentExtCorners && _db_ext_corner > 0) {
-    _keep_loaded_corner = false;
-    _cornerBlock = _block->createExtCornerBlock(_db_ext_corner);
-    _db_ext_corner = 0;
-  } else {
-    _cornerBlock = _block;
-  }
-  if (!_independentExtCorners && _db_calibbase_corner >= 0) {
+  _cornerBlock = _block;
+
+  if (_db_calibbase_corner >= 0) {
     _block->copyExtDb(_db_calibbase_corner,
                       _db_ext_corner,
                       _cornerCnt,
                       1.0 /*resFactor*/,
                       1.0 /*ccFactor*/,
                       1.0 /*gndcFactor*/);
-    setUseIdsFlag(_useIds, true /*diff*/, true /*calib*/);
+    setUseIdsFlag(true /*diff*/, true /*calib*/);
     setCalibLimit(101.0 /*upper_limit*/, 0.009 /*lower_limit*/);
     _keep_loaded_corner = true;
   }
 
   if (!_testParsing && !_statsOnly && _rRun == 1) {
-    if (!_independentExtCorners && !_diff
-        && (!extracted || !_keep_loaded_corner)) {
+    if (!_diff && (!extracted || !_keep_loaded_corner)) {
       if (extracted)
         resetExtIds(1);
       _block->setCornerCount(_cornerCnt);
@@ -2502,10 +2483,7 @@ uint extSpef::readBlock(uint debug,
       _nodeCoordParser->resetSeparator("[,=");
     }
 
-    if (_independentExtCorners)
-      resetExtIds(1);
-    else
-      setExtIds();
+    setExtIds();
 
     _unmatchedSpefNet = 0;
     _unmatchedSpefInst = 0;
@@ -2783,18 +2761,7 @@ bool extSpef::readNameMap(uint debug, bool skip)
     if (strcmp("*DEFINE", _parser->get(0)) == 0)
       continue;
 
-    if (_useIds) {
-      if (_parser->isDigit(0, 1)) {
-        uint id = _parser->getInt(0, 1);
-        uint mapId = _parser->getInt(1, 1);
-
-        if (_testParsing || _rRun != 1)
-          continue;
-        addNameMapId(id, mapId);
-      } else {
-        _parser->printWords(stdout);
-      }
-    } else if (_testParsing || _statsOnly) {
+    if (_testParsing || _statsOnly) {
       _parser->getInt(0, 1);
     } else if (_rRun == 1) {
       uint id = _parser->getInt(0, 1);
