@@ -144,9 +144,11 @@ bool AggregateNet::isAggregate(odb::dbInst* inst)
 AggregateNetDescriptor::AggregateNetDescriptor(
     odb::dbDatabase* db,
     sta::dbSta* sta,
+    const std::set<odb::dbNet*>& focus_nets,
     const std::set<odb::dbNet*>& guide_nets)
     : db_(db),
       net_descriptor_(Gui::get()->getDescriptor<odb::dbNet*>()),
+      focus_nets_(focus_nets),
       guide_nets_(guide_nets)
 {
   AggregateNet::setSTA(sta);
@@ -262,6 +264,25 @@ Descriptor::Actions AggregateNetDescriptor::getActions(std::any object) const
 
   auto* gui = Gui::get();
   Descriptor::Actions actions;
+  bool is_focus = true;
+  for (auto* net : anet.getNets()) {
+    is_focus &= focus_nets_.count(net) != 0;
+  }
+  if (!is_focus) {
+    actions.push_back(Descriptor::Action{"Focus", [this, gui, anet]() {
+                                           for (auto* net : anet.getNets()) {
+                                             gui->addFocusNet(net);
+                                           }
+                                           return makeSelected(anet);
+                                         }});
+  } else {
+    actions.push_back(Descriptor::Action{"De-focus", [this, gui, anet]() {
+                                           for (auto* net : anet.getNets()) {
+                                             gui->removeFocusNet(net);
+                                           }
+                                           return makeSelected(anet);
+                                         }});
+  }
   bool has_guides = false;
   for (auto* net : anet.getNets()) {
     has_guides |= !net->getGuides().empty();

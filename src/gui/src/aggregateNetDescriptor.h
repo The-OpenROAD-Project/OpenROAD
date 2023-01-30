@@ -80,6 +80,7 @@ class AggregateNetDescriptor : public Descriptor
  public:
   AggregateNetDescriptor(odb::dbDatabase* db,
                          sta::dbSta* sta,
+                         const std::set<odb::dbNet*>& focus_nets,
                          const std::set<odb::dbNet*>& guide_nets);
 
   std::string getName(std::any object) const override;
@@ -98,6 +99,7 @@ class AggregateNetDescriptor : public Descriptor
  private:
   odb::dbDatabase* db_;
   const Descriptor* net_descriptor_;
+  const std::set<odb::dbNet*>& focus_nets_;
   const std::set<odb::dbNet*>& guide_nets_;
 };
 

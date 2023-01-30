@@ -471,7 +471,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
   gui->registerDescriptor<AggregateNet>(
-      new AggregateNetDescriptor(db_, sta, viewer_->getRouteGuides()));
+      new AggregateNetDescriptor(db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
 
   controls_->setDBInstDescriptor(inst_descriptor);
   hierarchy_widget_->setDBInstDescriptor(inst_descriptor);
