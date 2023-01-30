@@ -58,10 +58,16 @@ class AggregateNet
   static bool isAggregate(odb::dbInst* inst);
 
   const std::string& getName() const { return name_; }
-  const std::vector<odb::dbNet*> getNets() const { return nets_; }
+  const std::vector<odb::dbNet*>& getNets() const { return nets_; }
+  const std::vector<odb::dbInst*>& getInsts() const { return insts_; }
+  const std::vector<odb::dbITerm*>& getITerms() const { return iterm_terms_; }
+  const std::vector<odb::dbBTerm*>& getBTerms() const { return bterm_terms_; }
 
  private:
   std::vector<odb::dbNet*> nets_;
+  std::vector<odb::dbInst*> insts_;
+  std::vector<odb::dbITerm*> iterm_terms_;
+  std::vector<odb::dbBTerm*> bterm_terms_;
   std::string name_;
 
   static sta::dbSta* sta_;

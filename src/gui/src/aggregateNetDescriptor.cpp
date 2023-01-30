@@ -70,10 +70,25 @@ void AggregateNet::populate(odb::dbNet* net)
 
   nets_.push_back(net);
 
+  for (auto* bterm : net->getBTerms()) {
+    if (std::find(bterm_terms_.begin(), bterm_terms_.end(), bterm)
+        == bterm_terms_.end()) {
+      bterm_terms_.push_back(bterm);
+    }
+  }
+
   for (auto* iterm : net->getITerms()) {
     auto* inst = iterm->getInst();
     if (!AggregateNet::isAggregate(inst)) {
+      if (std::find(iterm_terms_.begin(), iterm_terms_.end(), iterm)
+          == iterm_terms_.end()) {
+        iterm_terms_.push_back(iterm);
+      }
       continue;
+    }
+
+    if (std::find(insts_.begin(), insts_.end(), inst) == insts_.end()) {
+      insts_.push_back(inst);
     }
 
     for (auto* next_iterm : inst->getITerms()) {
@@ -187,6 +202,21 @@ Descriptor::Properties AggregateNetDescriptor::getProperties(
     nets.insert(gui->makeSelected(net));
   }
   props.push_back({"Nets", nets});
+
+  SelectionSet insts;
+  for (auto* inst : anet->getInsts()) {
+    insts.insert(gui->makeSelected(inst));
+  }
+  props.push_back({"Instances", insts});
+
+  SelectionSet terminals;
+  for (auto* iterm : anet->getITerms()) {
+    terminals.insert(gui->makeSelected(iterm));
+  }
+  for (auto* bterm : anet->getBTerms()) {
+    terminals.insert(gui->makeSelected(bterm));
+  }
+  props.push_back({"Terminals", terminals});
 
   return props;
 }
