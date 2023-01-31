@@ -200,6 +200,8 @@ void GlobalRouter::applyAdjustments(int min_routing_layer,
   computeUserGlobalAdjustments(min_routing_layer, max_routing_layer);
   computeUserLayerAdjustments(max_routing_layer);
 
+  computePinOffsetAdjustments();
+
   for (RegionAdjustment region_adjustment : region_adjustments_) {
     odb::dbTechLayer* layer = routing_layers_[region_adjustment.getLayer()];
     logger_->report("Adjusting region on layer {}", layer->getName());
@@ -663,8 +665,7 @@ void GlobalRouter::findPins(Net* net,
     // grid to avoid PAD obstructions
     if ((pin.isConnectedToPadOrMacro() || pin.isPort()) && !net->isLocal()
         && gcells_offset_ != 0) {
-      GSegment pin_connection = createFakePin(pin, pin_position, layer);
-      pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
+      createFakePin(pin, pin_position, layer, net);
     }
 
     int pinX
@@ -1013,6 +1014,62 @@ void GlobalRouter::computeTrackAdjustments(int min_routing_layer,
         const odb::Rect final_track_obs(
             xl, 0, grid_->getXMax(), grid_->getYMax());
         applyObstructionAdjustment(final_track_obs, layer);
+      }
+    }
+  }
+}
+
+void GlobalRouter::computePinOffsetAdjustments()
+{
+  for (auto const& map_obj : pad_pins_connections_) {
+    for (auto segment : map_obj.second) {
+      int tile_size = grid_->getTileSize();
+      int die_area_min_x = grid_->getXMin();
+      int die_area_min_y = grid_->getYMin();
+      int gcell_id_x
+          = floor((float) ((segment.init_x - die_area_min_x) / tile_size));
+      int gcell_id_y
+          = floor((float) ((segment.init_y - die_area_min_y) / tile_size));
+      if (!segment.isVia()) {
+        if (segment.init_y == segment.final_y) {
+          for (int i = 0; i < gcells_offset_; i++) {
+            int curr_cap = fastroute_->getEdgeCapacity(gcell_id_x + i,
+                                                       gcell_id_y,
+                                                       gcell_id_x + i + 1,
+                                                       gcell_id_y,
+                                                       segment.init_layer);
+            if (curr_cap == 0) {
+              continue;
+            }
+            curr_cap -= 1;
+            fastroute_->addAdjustment(gcell_id_x + i,
+                                      gcell_id_y,
+                                      gcell_id_x + i + 1,
+                                      gcell_id_y,
+                                      segment.init_layer,
+                                      curr_cap,
+                                      true);
+          }
+        } else if (segment.init_x == segment.final_x) {
+          for (int i = 0; i < gcells_offset_; i++) {
+            int curr_cap = fastroute_->getEdgeCapacity(gcell_id_x,
+                                                       gcell_id_y + i,
+                                                       gcell_id_x,
+                                                       gcell_id_y + i + 1,
+                                                       segment.init_layer);
+            if (curr_cap == 0) {
+              continue;
+            }
+            curr_cap -= 1;
+            fastroute_->addAdjustment(gcell_id_x,
+                                      gcell_id_y + i,
+                                      gcell_id_x,
+                                      gcell_id_y + i + 1,
+                                      segment.init_layer,
+                                      curr_cap,
+                                      true);
+          }
+        }
       }
     }
   }
@@ -2121,10 +2178,13 @@ bool GlobalRouter::pinOverlapsWithSingleTrack(const Pin& pin,
   return false;
 }
 
-GSegment GlobalRouter::createFakePin(Pin pin,
-                                     odb::Point& pin_position,
-                                     odb::dbTechLayer* layer)
+void GlobalRouter::createFakePin(Pin pin,
+                                 odb::Point& pin_position,
+                                 odb::dbTechLayer* layer,
+                                 Net* net)
 {
+  int original_x = pin_position.x();
+  int original_y = pin_position.y();
   int conn_layer = layer->getRoutingLevel();
   GSegment pin_connection;
   pin_connection.init_layer = conn_layer;
@@ -2183,7 +2243,49 @@ GSegment GlobalRouter::createFakePin(Pin pin,
   pin_connection.final_x = std::max(x_tmp, pin_connection.final_x);
   pin_connection.final_y = std::max(y_tmp, pin_connection.final_y);
 
-  return pin_connection;
+  int tile_size = grid_->getTileSize();
+
+  if (pin_connection.init_y == pin_connection.final_y) {
+    int die_area_min_x = grid_->getXMin();
+
+    int init_id_x
+        = floor((float) ((pin_connection.init_x - die_area_min_x) / tile_size));
+    int final_id_x = floor(
+        (float) ((pin_connection.final_x - die_area_min_x) / tile_size));
+
+    for (Pin& net_pin : net->getPins()) {
+      if (!(net_pin.getITerm() == pin.getITerm())) {
+        auto net_pin_pos = net_pin.getOnGridPosition();
+        int net_pin_id_x
+            = floor((float) ((net_pin_pos.x() - die_area_min_x) / tile_size));
+        if ((net_pin_id_x >= init_id_x) && (net_pin_id_x <= final_id_x)) {
+          pin_position.setX(original_x);
+          return;
+        }
+      }
+    }
+  } else {
+    int die_area_min_y = grid_->getYMin();
+
+    int init_id_y
+        = floor((float) ((pin_connection.init_y - die_area_min_y) / tile_size));
+    int final_id_y = floor(
+        (float) ((pin_connection.final_y - die_area_min_y) / tile_size));
+
+    for (Pin& net_pin : net->getPins()) {
+      if (!(net_pin.getITerm() == pin.getITerm())) {
+        auto net_pin_pos = net_pin.getOnGridPosition();
+        int net_pin_id_y
+            = floor((float) ((net_pin_pos.y() - die_area_min_y) / tile_size));
+        if ((net_pin_id_y >= init_id_y) && (net_pin_id_y <= final_id_y)) {
+          pin_position.setY(original_y);
+          return;
+        }
+      }
+    }
+  }
+
+  pad_pins_connections_[net->getDbNet()].push_back(pin_connection);
 }
 
 odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
@@ -2193,7 +2295,7 @@ odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
   if ((pin.isConnectedToPadOrMacro() || pin.isPort()) && !net->isLocal()
       && gcells_offset_ != 0) {
     odb::dbTechLayer* layer = routing_layers_[pin.getConnectionLayer()];
-    createFakePin(pin, fake_position, layer);
+    createFakePin(pin, fake_position, layer, net);
   }
 
   return fake_position;

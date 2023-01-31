@@ -36,8 +36,8 @@ metal1     Horizontal      33840         31235          7.70%
 metal2     Vertical        24816         24628          0.76%
 metal3     Horizontal      33840         33120          2.13%
 metal4     Vertical        15792         15698          0.60%
-metal5     Horizontal      15792         15456          2.13%
-metal6     Vertical        15792         15698          0.60%
+metal5     Horizontal      15792         15404          2.46%
+metal6     Vertical        15792         15642          0.95%
 metal7     Horizontal       4512          4416          2.13%
 metal8     Vertical         4512          4512          0.00%
 metal9     Horizontal       2256          2208          2.13%
@@ -57,15 +57,15 @@ metal1           31235          1675            5.36%             0 /  0 /  0
 metal2           24628          1607            6.53%             0 /  0 /  0
 metal3           33120            44            0.13%             0 /  0 /  0
 metal4           15698             0            0.00%             0 /  0 /  0
-metal5           15456             0            0.00%             0 /  0 /  0
-metal6           15698             0            0.00%             0 /  0 /  0
+metal5           15404             0            0.00%             0 /  0 /  0
+metal6           15642             0            0.00%             0 /  0 /  0
 metal7            4416             0            0.00%             0 /  0 /  0
 metal8            4512             0            0.00%             0 /  0 /  0
 metal9            2208             0            0.00%             0 /  0 /  0
 metal10           2256             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total           149227          3326            2.23%             0 /  0 /  0
+Total           149119          3326            2.23%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 10252 um
+[INFO GRT-0018] Total wirelength: 10592 um
 [INFO GRT-0014] Routed nets: 563
 No differences found.

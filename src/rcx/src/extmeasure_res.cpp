@@ -251,55 +251,7 @@ void extMain::calcRes0(double* deltaRes,
     deltaRes[jj] = R;
   }
 }
-extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
-{
-  Ath__array1D<extDistRC*>* table = _computeTable;
-  if (!compute)
-    table = _measureTable;
 
-  if (table->getCnt() == 0)
-    return NULL;
-
-  int target_dist_index = -1;
-  extDistRC* rc = NULL;
-  uint ii = 0;
-  for (; ii < table->getCnt(); ii++) {
-    rc = table->get(ii);
-    if (dist1 == rc->_coupling) {
-      target_dist_index = ii;
-      break;
-    }
-    if (dist1 < rc->_coupling) {
-      target_dist_index = ii;
-      break;
-    }
-  }
-  if (target_dist_index < 0) {
-    rc = table->get(0);  // assume first rec is 0,0
-    return rc;
-  }
-  extDistRC* last_rc = NULL;
-  for (uint ii = target_dist_index; ii < table->getCnt(); ii++) {
-    extDistRC* rc1 = table->get(ii);
-    if (rc->_coupling != rc1->_coupling) {
-      return last_rc;
-    }
-    if (dist2 == rc1->_sep) {
-      return rc1;
-    }
-    if (dist2 < rc1->_sep) {
-      if (last_rc != NULL)
-        return last_rc;
-      return rc1;
-    }
-    last_rc = rc1;
-  }
-  if (table->getCnt() > 0) {
-    rc = table->get(0);  // assume first rec is 0,0
-    return rc;
-  }
-  return NULL;
-}
 extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
 {
   int min_dist = 0;

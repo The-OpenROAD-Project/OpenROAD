@@ -314,55 +314,7 @@ void extMasterConductor::printDielBox3D(FILE* fp,
     writeRaphaelDielPoly3D(fp, X, width, length, diel);
   }
 }
-void extProcess::writeProcess(FILE* fp,
-                              char* gndName,
-                              float planeWidth,
-                              float planeThickness)
-{
-  fprintf(fp,
-          "WINDOW X1=%g; Y1=-1.0; X2=%g; Y2=%g; DIEL=1.0;\n",
-          -planeWidth * 0.5,
-          planeWidth * 0.5,
-          planeThickness);
 
-  for (uint jj = 1; jj < _dielTable->getCnt(); jj++) {
-    extDielectric* diel = _dielTable->get(jj);
-    diel->printDielectric(fp, planeWidth, planeThickness);
-  }
-  fprintf(fp,
-          "BOX NAME=%s CX=0; CY=-0.5; W=%g; H=1.0; VOLT=0.0;\n",
-          gndName,
-          planeWidth);
-
-  fprintf(fp, "OPTIONS SET_GRID=10000;\n");
-}
-void extProcess::writeProcess3D(FILE* fp,
-                                char* gndName,
-                                float blockWidth,
-                                float blockThickness,
-                                float blockLength)
-{
-  fprintf(fp,
-          "WINDOW3D V1=%g,0,0; V2=%g,%g,%g; DIEL=1.0;\n",
-          -blockWidth * 0.5,
-          blockWidth * 0.5,
-          blockThickness,
-          blockLength);
-
-  for (uint jj = 1; jj < _dielTable->getCnt(); jj++) {
-    extDielectric* diel = _dielTable->get(jj);
-    diel->printDielectric3D(fp, blockWidth, blockThickness, blockLength);
-  }
-  fprintf(
-      fp,
-      "BLOCK NAME=%s; V1=0,-1,%g; LENGTH=1.0; WIDTH=%g, HEIGHT=%g; VOLT=0.0;\n",
-      gndName,
-      blockLength * 0.5,
-      blockWidth,
-      blockLength);
-
-  fprintf(fp, "OPTIONS SET_GRID=1000000;\n");
-}
 void extProcess::writeParam(FILE* fp, const char* name, double val)
 {
   fprintf(fp, "param %s=%g;\n", name, val);
@@ -808,14 +760,6 @@ void extMasterConductor::reset(double height,
   _hiRight[2] = height + thickness;
   _loLeft[2] = _hiLeft[2] - thickness;
   _loRight[2] = _loLeft[2];
-}
-double extMasterConductor::writeRaphaelBox(FILE* fp,
-                                           uint wireNum,
-                                           double width,
-                                           double X,
-                                           double volt)
-{
-  return writeRaphaelPoly(fp, wireNum, width, X, volt);
 }
 void extMasterConductor::writeRaphaelPointXY(FILE* fp, double X, double Y)
 {
@@ -1368,25 +1312,7 @@ double extVariation::getP(double w)
     return 0;
   return interpolate(w, _p->_width, _p->_p);
 }
-void extProcess::writeProcess(const char* filename)
-{
-  FILE* fp = openFile(filename, "w");
-  Ath__parser parse;
 
-  for (uint kk = 1; kk < _varTable->getCnt(); kk++) {
-    _varTable->get(kk)->printVariation(fp, kk);
-  }
-
-  for (uint ii = 1; ii < _condTable->getCnt(); ii++) {
-    extConductor* cond = _condTable->get(ii);
-    cond->printConductor(fp, &parse);
-  }
-  for (uint jj = 1; jj < _dielTable->getCnt(); jj++) {
-    extDielectric* diel = _dielTable->get(jj);
-    diel->printDielectric(fp, &parse);
-  }
-  fclose(fp);
-}
 Ath__array1D<double>* extVarTable::readDoubleArray(Ath__parser* parser,
                                                    const char* keyword)
 {
@@ -1527,106 +1453,7 @@ void extVariation::printVariation(FILE* fp, uint n)
 
   fprintf(fp, "}\n");
 }
-extVarTable* extVariation::readVarTable(Ath__parser* parser,
-                                        const char* key1,
-                                        const char* key2,
-                                        const char* key3,
-                                        const char* endKey)
-{
-  extVarTable* V = new extVarTable(20);
-  if (V->readWidthSpacing2D(parser, key1, key2, key3, endKey) < 1) {
-    logger_->warn(RCX, 155, "Can't read VarTable section: <{}>", key3);
-    delete V;
-    return NULL;
-  }
 
-  return V;
-}
-int extVariation::readVariation(Ath__parser* parser)
-{
-  _hiWidthC
-      = readVarTable(parser, "Width", "Spacing", "hi_cWidth_eff", "Width");
-  _loWidthC = readVarTable(parser, "Width", "Deff", "lo_cWidth_delta", "Width");
-  _thicknessC
-      = readVarTable(parser, "Width", "Deff", "c_thickness_eff", "Width");
-
-  _hiWidthR
-      = readVarTable(parser, "Width", "Spacing", "hi_rWidth_eff", "Width");
-  _loWidthR = readVarTable(parser, "Width", "Deff", "lo_rWidth_delta", "Width");
-  _thicknessR
-      = readVarTable(parser, "Width", "Deff", "r_thickness_eff", "Width");
-  if (strcmp("}", parser->get(0)) == 0)
-    return 0;
-  _p = readVarTable(parser, "Width", "P", "}", "");
-
-  return 0;
-}
-uint extProcess::readProcess(const char* name, char* filename)
-{
-  uint debug = 0;
-  // create process object
-
-  // read process numbers
-  Ath__parser parser;
-  parser.addSeparator("\r");
-  parser.openFile(filename);
-
-  while (parser.parseNextLine() > 0) {
-    if (strcmp("PROCESS", parser.get(0)) == 0) {
-      while (parser.parseNextLine() > 0) {
-        if (strcmp("}", parser.get(0)) == 0)
-          break;
-      }
-    } else if (strcmp("THICKNESS_VARIATION", parser.get(0)) == 0) {
-      readDataRateTable(&parser, "THICKNESS_VARIATION");
-    } else if (strcmp("VAR_TABLE", parser.get(0)) == 0) {
-      parser.setDbg(debug);
-      parser.getInt(1);
-
-      extVariation* extVar = new extVariation();
-      extVar->setLogger(logger_);
-
-      while (parser.parseNextLine() > 0) {
-        if (strcmp("}", parser.get(0)) == 0)
-          break;
-        extVar->readVariation(&parser);
-
-        parser.setDbg(0);
-
-        if (strcmp("}", parser.get(0)) == 0)
-          break;
-      }
-      _varTable->add(extVar);
-    } else if (strcmp("CONDUCTOR", parser.get(0)) == 0) {
-      extConductor* cond = new extConductor(logger_);
-      strcpy(cond->_name, parser.get(1));
-
-      while (parser.parseNextLine() > 0) {
-        if (strcmp("}", parser.get(0)) == 0)
-          break;
-
-        cond->readConductor(&parser);
-      }
-      _condTable->add(cond);
-    } else if (strcmp("DIELECTRIC", parser.get(0)) == 0) {
-      extDielectric* diel = new extDielectric(logger_);
-      if (parser.getWordCnt() > 2)
-        strcpy(diel->_name, parser.get(1));
-
-      while (parser.parseNextLine() > 0) {
-        if (strcmp("}", parser.get(0)) == 0)
-          break;
-
-        diel->readDielectric(&parser);
-      }
-      _dielTable->add(diel);
-    } else if (strcmp("SETMAXMINFLAG", parser.get(0)) == 0) {
-      _maxMinFlag = true;
-    }
-  }
-  createMasterLayers();
-  return 0;
-}
 extProcess::extProcess(uint condCnt, uint dielCnt, Logger* logger)
 {
   logger_ = logger;

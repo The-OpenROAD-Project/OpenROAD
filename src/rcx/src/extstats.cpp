@@ -34,7 +34,6 @@
 #include "db.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
-#include "rcx/exttree.h"
 
 namespace rcx {
 

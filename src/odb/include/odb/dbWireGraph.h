@@ -196,6 +196,7 @@ class dbWireGraph
     edge_iterator begin() { return _out_edges.begin(); }
     edge_iterator end() { return _out_edges.end(); }
     dbObject* object() const { return _object; }
+    void setObject(dbObject* obj) { _object = obj; }
 
    private:
     static DListEntry<Node>* nodeEntry(Node* node)

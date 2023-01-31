@@ -296,14 +296,12 @@ sta::define_cmd_args "write_rules" {
     [-dir dir]
     [-name name]
     [-pattern pattern]
-    [-read_from_solver]
-    [-db]
 }
 
 proc write_rules { args } {
   sta::parse_key_args "write_rules" args keys \
       { -file -dir -name -pattern } \
-      flags { -read_from_solver -db }
+      flags { -db }
   
   set filename "extRules" 
   if { [info exists keys(-file)] } {
@@ -324,9 +322,10 @@ proc write_rules { args } {
   if { [info exists keys(-pattern)] } {
     set pattern $keys(-pattern)
   }
-  set solver [info exists flags(-read_from_solver)]
-  set db [info exists flags(-db)]
+  if { [info exists flags(-db)] } {
+    utl::warn RCX 149 "-db is deprecated."
+  }
 
- rcx::write_rules $filename $dir $name $pattern $db $solver
+ rcx::write_rules $filename $dir $name $pattern
 }
 

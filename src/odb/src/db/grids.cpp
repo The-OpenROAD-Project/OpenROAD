@@ -3055,7 +3055,6 @@ void Ath__gridTable::setExtControl(dbBlock* block,
                                    bool allNet,
                                    uint contextDepth,
                                    Ath__array1D<int>** contextArray,
-                                   uint* contextLength,
                                    Ath__array1D<SEQ*>*** dgContextArray,
                                    uint* dgContextDepth,
                                    uint* dgContextPlanes,
@@ -3082,7 +3081,6 @@ void Ath__gridTable::setExtControl(dbBlock* block,
   _targetTrackReversed = false;
   _ccContextDepth = contextDepth;
   _ccContextArray = contextArray;
-  _ccContextLength = contextLength;
   _allNet = allNet;
   _dgContextArray = dgContextArray;
   _dgContextDepth = dgContextDepth;
