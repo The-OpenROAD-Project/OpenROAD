@@ -1856,18 +1856,17 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   if (fr_net == nullptr) {
     logger_->error(DRT, 410, "frNet not found.");
   }
-  if (fr_net != nullptr) {
-    const std::vector<drNet*>* dr_nets = drWorker_->getDRNets(fr_net);
-    if (dr_nets == nullptr) {
-      logger_->error(
-          DRT, 411, "frNet {} does not have drNets.", fr_net->getName());
-    }
-    if (dr_nets->size() == 1) {
-      patch->addToNet((*dr_nets)[0]);
-    } else {
-      // detect what drNet has objetcs overlapping with the patch
-      checkMetalShape_patchOwner_helper(patch.get(), dr_nets);
-    }
+  
+  const std::vector<drNet*>* dr_nets = drWorker_->getDRNets(fr_net);
+  if (dr_nets == nullptr) {
+    logger_->error(
+        DRT, 411, "frNet {} does not have drNets.", fr_net->getName());
+  }
+  if (dr_nets->size() == 1) {
+    patch->addToNet((*dr_nets)[0]);
+  } else {
+    // detect what drNet has objects overlapping with the patch
+    checkMetalShape_patchOwner_helper(patch.get(), dr_nets);
   }
 
   Rect shiftedPatch = patchBx;
