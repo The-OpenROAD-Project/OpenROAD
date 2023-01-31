@@ -486,7 +486,8 @@ class FlexGCWorker::Impl
                                            odb::dbTechLayerAreaRule* db_rule,
                                            bool& check_rect_width);
   void checkMetalShape_addPatch(gcPin* pin, int min_area);
-  void checkMetalShape_patchOwner_helper(drPatchWire* patch, const std::vector<drNet*>* dr_nets);
+  void checkMetalShape_patchOwner_helper(drPatchWire* patch,
+                                         const std::vector<drNet*>* dr_nets);
 
   void checkMetalWidthViaTable();
   void checkMetalWidthViaTable_main(gcRect* rect);
