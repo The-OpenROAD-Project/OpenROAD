@@ -360,6 +360,11 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
   }
 }
 
+odb::Rect HeatMapDataSource::getBounds() const
+{
+  return getBlock()->getBBox()->getBox();
+}
+
 void HeatMapDataSource::setupMap()
 {
   if (getBlock() == nullptr) {
@@ -369,7 +374,7 @@ void HeatMapDataSource::setupMap()
   const int dx = getGridXSize() * getBlock()->getDbUnitsPerMicron();
   const int dy = getGridYSize() * getBlock()->getDbUnitsPerMicron();
 
-  odb::Rect bounds = getBlock()->getBBox()->getBox();
+  odb::Rect bounds = getBounds();
 
   const int x_grid = std::ceil(bounds.dx() / static_cast<double>(dx));
   const int y_grid = std::ceil(bounds.dy() / static_cast<double>(dy));
