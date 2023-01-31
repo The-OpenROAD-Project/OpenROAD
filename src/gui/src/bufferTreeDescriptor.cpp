@@ -50,6 +50,7 @@ BufferTree::BufferTree(odb::dbNet* net)
 {
   populate(net);
 
+  // Sort nets to ensure stable color order
   std::sort(
       nets_.begin(), nets_.end(), [](odb::dbNet* r, odb::dbNet* l) -> bool {
         return r->getName() < l->getName();
@@ -71,25 +72,17 @@ void BufferTree::populate(odb::dbNet* net)
   nets_.push_back(net);
 
   for (auto* bterm : net->getBTerms()) {
-    if (std::find(bterm_terms_.begin(), bterm_terms_.end(), bterm)
-        == bterm_terms_.end()) {
-      bterm_terms_.push_back(bterm);
-    }
+    bterm_terms_.insert(bterm);
   }
 
   for (auto* iterm : net->getITerms()) {
     auto* inst = iterm->getInst();
     if (!BufferTree::isAggregate(inst)) {
-      if (std::find(iterm_terms_.begin(), iterm_terms_.end(), iterm)
-          == iterm_terms_.end()) {
-        iterm_terms_.push_back(iterm);
-      }
+      iterm_terms_.insert(iterm);
       continue;
     }
 
-    if (std::find(insts_.begin(), insts_.end(), inst) == insts_.end()) {
-      insts_.push_back(inst);
-    }
+    insts_.insert(inst);
 
     for (auto* next_iterm : inst->getITerms()) {
       if (!next_iterm->getSigType().isSupply()) {
@@ -156,8 +149,8 @@ BufferTreeDescriptor::BufferTreeDescriptor(
 
 std::string BufferTreeDescriptor::getName(std::any object) const
 {
-  BufferTree* anet = std::any_cast<BufferTree>(&object);
-  return anet->getName();
+  BufferTree* bnet = std::any_cast<BufferTree>(&object);
+  return bnet->getName();
 }
 
 std::string BufferTreeDescriptor::getTypeName() const
@@ -167,9 +160,9 @@ std::string BufferTreeDescriptor::getTypeName() const
 
 bool BufferTreeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
-  BufferTree* anet = std::any_cast<BufferTree>(&object);
+  BufferTree* bnet = std::any_cast<BufferTree>(&object);
   bbox.mergeInit();
-  for (auto* net : anet->getNets()) {
+  for (auto* net : bnet->getNets()) {
     odb::Rect box;
     if (net_descriptor_->getBBox(net, box)) {
       bbox.merge(box);
@@ -180,11 +173,11 @@ bool BufferTreeDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 
 void BufferTreeDescriptor::highlight(std::any object, Painter& painter) const
 {
-  BufferTree* anet = std::any_cast<BufferTree>(&object);
+  BufferTree* bnet = std::any_cast<BufferTree>(&object);
 
   ColorGenerator generator;
   painter.saveState();
-  for (auto* net : anet->getNets()) {
+  for (auto* net : bnet->getNets()) {
     painter.setPenAndBrush(generator.getColor(), true);
     net_descriptor_->highlight(net, painter);
   }
@@ -194,28 +187,28 @@ void BufferTreeDescriptor::highlight(std::any object, Painter& painter) const
 Descriptor::Properties BufferTreeDescriptor::getProperties(
     std::any object) const
 {
-  BufferTree* anet = std::any_cast<BufferTree>(&object);
+  BufferTree* bnet = std::any_cast<BufferTree>(&object);
   Properties props;
 
   auto gui = Gui::get();
 
   SelectionSet nets;
-  for (auto* net : anet->getNets()) {
+  for (auto* net : bnet->getNets()) {
     nets.insert(gui->makeSelected(net));
   }
   props.push_back({"Nets", nets});
 
   SelectionSet insts;
-  for (auto* inst : anet->getInsts()) {
+  for (auto* inst : bnet->getInsts()) {
     insts.insert(gui->makeSelected(inst));
   }
   props.push_back({"Instances", insts});
 
   SelectionSet terminals;
-  for (auto* iterm : anet->getITerms()) {
+  for (auto* iterm : bnet->getITerms()) {
     terminals.insert(gui->makeSelected(iterm));
   }
-  for (auto* bterm : anet->getBTerms()) {
+  for (auto* bterm : bnet->getBTerms()) {
     terminals.insert(gui->makeSelected(bterm));
   }
   props.push_back({"Terminals", terminals});
@@ -225,17 +218,17 @@ Descriptor::Properties BufferTreeDescriptor::getProperties(
 
 Selected BufferTreeDescriptor::makeSelected(std::any object) const
 {
-  if (auto* anet = std::any_cast<BufferTree>(&object)) {
-    return Selected(*anet, this);
+  if (auto* bnet = std::any_cast<BufferTree>(&object)) {
+    return Selected(*bnet, this);
   }
   return Selected();
 }
 
 bool BufferTreeDescriptor::lessThan(std::any l, std::any r) const
 {
-  BufferTree* l_anet = std::any_cast<BufferTree>(&l);
-  BufferTree* r_anet = std::any_cast<BufferTree>(&r);
-  return l_anet->getName() < r_anet->getName();
+  BufferTree* l_bnet = std::any_cast<BufferTree>(&l);
+  BufferTree* r_bnet = std::any_cast<BufferTree>(&r);
+  return l_bnet->getName() < r_bnet->getName();
 }
 
 bool BufferTreeDescriptor::getAllObjects(SelectionSet& objects) const
@@ -260,48 +253,48 @@ bool BufferTreeDescriptor::getAllObjects(SelectionSet& objects) const
 
 Descriptor::Actions BufferTreeDescriptor::getActions(std::any object) const
 {
-  BufferTree anet = *std::any_cast<BufferTree>(&object);
+  BufferTree bnet = *std::any_cast<BufferTree>(&object);
 
   auto* gui = Gui::get();
   Descriptor::Actions actions;
   bool is_focus = true;
-  for (auto* net : anet.getNets()) {
+  for (auto* net : bnet.getNets()) {
     is_focus &= focus_nets_.count(net) != 0;
   }
   if (!is_focus) {
-    actions.push_back(Descriptor::Action{"Focus", [this, gui, anet]() {
-                                           for (auto* net : anet.getNets()) {
+    actions.push_back(Descriptor::Action{"Focus", [this, gui, bnet]() {
+                                           for (auto* net : bnet.getNets()) {
                                              gui->addFocusNet(net);
                                            }
-                                           return makeSelected(anet);
+                                           return makeSelected(bnet);
                                          }});
   } else {
-    actions.push_back(Descriptor::Action{"De-focus", [this, gui, anet]() {
-                                           for (auto* net : anet.getNets()) {
+    actions.push_back(Descriptor::Action{"De-focus", [this, gui, bnet]() {
+                                           for (auto* net : bnet.getNets()) {
                                              gui->removeFocusNet(net);
                                            }
-                                           return makeSelected(anet);
+                                           return makeSelected(bnet);
                                          }});
   }
   bool has_guides = false;
-  for (auto* net : anet.getNets()) {
+  for (auto* net : bnet.getNets()) {
     has_guides |= !net->getGuides().empty();
   }
   if (has_guides) {
-    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, anet]() {
+    actions.push_back(Descriptor::Action{"Route Guides", [this, gui, bnet]() {
                                            bool guides_on = false;
-                                           for (auto* net : anet.getNets()) {
+                                           for (auto* net : bnet.getNets()) {
                                              guides_on
                                                  |= guide_nets_.count(net) != 0;
                                            }
-                                           for (auto* net : anet.getNets()) {
+                                           for (auto* net : bnet.getNets()) {
                                              if (!guides_on) {
                                                gui->addRouteGuides(net);
                                              } else {
                                                gui->removeRouteGuides(net);
                                              }
                                            }
-                                           return makeSelected(anet);
+                                           return makeSelected(bnet);
                                          }});
   }
   return actions;

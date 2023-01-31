@@ -1334,7 +1334,7 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
   }
 
   if (BufferTree::isAggregate(net)) {
-    props.push_back({"Aggregate net", gui->makeSelected(BufferTree(net))});
+    props.push_back({"Buffer tree", gui->makeSelected(BufferTree(net))});
   }
 
   populateODBProperties(props, net);
