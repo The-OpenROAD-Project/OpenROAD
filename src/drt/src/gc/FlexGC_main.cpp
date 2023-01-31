@@ -1854,7 +1854,7 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   gcNet* gc_net = pin->getNet();
   frNet* fr_net = gc_net->getFrNet();
   if (fr_net == nullptr) {
-    logger_->error(DRT, 410, "frNet not found.", fr_net->getName());
+    logger_->error(DRT, 410, "frNet not found.");
   }
   if (fr_net != nullptr) {
     const std::vector<drNet*>* dr_nets = drWorker_->getDRNets(fr_net);
