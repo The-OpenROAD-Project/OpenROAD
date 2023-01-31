@@ -57,6 +57,7 @@ uint extMain::getBucketNum(int base, int max, uint step, int xy)
   uint n = delta / step;
   return n;
 }
+
 uint extMain::addNetOnTable(uint netId,
                             uint dir,
                             Rect* maxRect,
@@ -81,6 +82,7 @@ uint extMain::addNetOnTable(uint netId,
   }
   return cnt;
 }
+
 uint extMain::getNetBbox(dbNet* net, Rect& maxRect)
 {
   dbWire* wire = net->getWire();
@@ -102,6 +104,7 @@ uint extMain::getNetBbox(dbNet* net, Rect& maxRect)
   }
   return cnt;
 }
+
 uint extMain::getNetBbox(dbNet* net, Rect* maxRect[2])
 {
   dbWire* wire = net->getWire();
@@ -120,6 +123,7 @@ uint extMain::getNetBbox(dbNet* net, Rect* maxRect[2])
   }
   return cnt;
 }
+
 void extMain::getNetShapes(dbNet* net,
                            Rect** maxRectSdb,
                            Rect& maxRectGs,
@@ -149,6 +153,7 @@ void extMain::getNetShapes(dbNet* net,
     hasGsWires = true;
   }
 }
+
 void extMain::getNetSboxes(dbNet* net,
                            Rect** maxRectSdb,
                            Rect& maxRectGs,
@@ -195,6 +200,7 @@ bool extMain::matchDir(uint dir, Rect& r)
   else
     return true;
 }
+
 bool extMain::isIncludedInsearch(Rect& r, uint dir, int* bb_ll, int* bb_ur)
 {
   if (!matchDir(dir, r))
@@ -210,6 +216,7 @@ bool extMain::isIncludedInsearch(Rect& r, uint dir, int* bb_ll, int* bb_ur)
 
   return true;
 }
+
 bool extMain::isIncluded(Rect& r, uint dir, int* ll, int* ur)
 {
   uint dd = 0;  // vertical
@@ -227,6 +234,7 @@ bool extMain::isIncluded(Rect& r, uint dir, int* ll, int* ur)
 
   return true;
 }
+
 void extMain::GetDBcoords2(Rect& r)
 {
   int x1 = r.xMin();
@@ -242,6 +250,7 @@ void extMain::GetDBcoords2(Rect& r)
   r.set_xhi(x2);
   r.set_yhi(y2);
 }
+
 uint extMain::initSearchForNets(int* X1,
                                 int* Y1,
                                 uint* pitchTable,
@@ -364,6 +373,7 @@ uint extMain::sBoxCounter(dbNet* net, uint& maxWidth)
   }
   return cnt;
 }
+
 uint extMain::powerWireCounter(uint& maxWidth)
 {
   uint cnt = 0;
@@ -380,6 +390,7 @@ uint extMain::powerWireCounter(uint& maxWidth)
   }
   return cnt;
 }
+
 uint extMain::addMultipleRectsOnSearch(Rect& r,
                                        uint level,
                                        uint dir,
@@ -447,6 +458,7 @@ uint extMain::addNetSBoxes(dbNet* net,
   }
   return cnt;
 }
+
 uint extMain::addNetSBoxes2(dbNet* net,
                             uint dir,
                             int* bb_ll,
@@ -526,6 +538,7 @@ uint extMain::addNetSBoxes2(dbNet* net,
   }
   return cnt;
 }
+
 uint extMain::signalWireCounter(uint& maxWidth)
 {
   uint cnt = 0;
@@ -566,6 +579,7 @@ uint extMain::signalWireCounter(uint& maxWidth)
   }
   return cnt;
 }
+
 uint extMain::addPowerNets(uint dir,
                            int* bb_ll,
                            int* bb_ur,
@@ -801,6 +815,7 @@ uint extMain::addSignalNets(uint dir,
 
   return cnt;
 }
+
 void extMain::resetNetSpefFlag(Ath__array1D<uint>* tmpNetIdTable)
 {
   for (uint ii = 0; ii < tmpNetIdTable->getCnt(); ii++) {
@@ -884,6 +899,7 @@ uint extMain::getDir(Rect& r)
 {
   return getDir(r.xMin(), r.yMin(), r.xMax(), r.yMax());
 }
+
 uint extMain::getDir(int x1, int y1, int x2, int y2)
 {
   uint dx = x2 - x1;
@@ -894,6 +910,7 @@ uint extMain::getDir(int x1, int y1, int x2, int y2)
 
   return dd;
 }
+
 uint extMain::addShapeOnGS(dbNet* net,
                            uint sId,
                            Rect& r,
@@ -938,6 +955,7 @@ uint extMain::addShapeOnGS(dbNet* net,
   }
   return 0;
 }
+
 uint extMain::addNetShapesGs(dbNet* net,
                              bool gsRotated,
                              bool swap_coords,
@@ -980,6 +998,7 @@ uint extMain::addNetShapesGs(dbNet* net,
   }
   return cnt;
 }
+
 uint extMain::addNetSboxesGs(dbNet* net,
                              bool gsRotated,
                              bool swap_coords,
@@ -1017,12 +1036,14 @@ uint extMain::addNetSboxesGs(dbNet* net,
   }
   return cnt;
 }
+
 int extMain::getXY_gs(int base, int XY, uint minRes)
 {
   uint maxRow = (XY - base) / minRes;
   int v = base + maxRow * minRes;
   return v;
 }
+
 uint extMain::initPlanes(uint dir,
                          int* wLL,
                          int* wUR,
@@ -1092,16 +1113,19 @@ uint extMain::initPlanes(uint dir,
   }
   return layerCnt;
 }
+
 bool extMain::getRotatedFlag()
 {
   return _rotatedGs;
 }
+
 bool extMain::enableRotatedFlag()
 {
   _rotatedGs = true;
 
   return _rotatedGs;
 }
+
 uint extMain::fill_gs4(int dir,
                        int* ll,
                        int* ur,

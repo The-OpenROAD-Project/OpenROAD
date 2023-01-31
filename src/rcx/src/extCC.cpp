@@ -574,6 +574,7 @@ uint Ath__grid::couplingCaps(Ath__grid* resGrid,
 
   return cnt;
 }
+
 void Ath__gridTable::setDefaultWireType(uint v)
 {
   for (uint ii = 0; ii < _rowCnt; ii++) {
@@ -701,6 +702,7 @@ void Ath__grid::buildDgContext(int gridn, int base)
   for (jj = 0; jj < awcnt; jj++)
     allCtxwire[jj]->_ext = 0;
 }
+
 Ath__array1D<SEQ*>* Ath__gridTable::renewDgContext(uint gridn, uint trackn)
 {
   Ath__array1D<SEQ*>* dgContext = _dgContextArray[gridn][trackn];
@@ -772,6 +774,7 @@ uint Ath__gridTable::couplingCaps(Ath__gridTable* resGridTable,
   notice(0, "      %d interTrack shorts\n", _CCshorts);
   return cnt;
 }
+
 uint Ath__gridTable::couplingCaps(uint row,
                                   uint col,
                                   Ath__grid* resGrid,
@@ -780,6 +783,7 @@ uint Ath__gridTable::couplingCaps(uint row,
 {
   return 0;
 }
+
 int Ath__grid::couplingCaps(int hiXY,
                             uint couplingDist,
                             uint& wireCnt,
@@ -861,6 +865,7 @@ int Ath__grid::couplingCaps(int hiXY,
   limitArray[5] = hiXY;
   return hiXY;
 }
+
 int Ath__grid::dealloc(int hiXY)
 {
   for (uint ii = _lastFreeTrack; ii <= _searchHiTrack; ii++) {
@@ -885,6 +890,7 @@ int Ath__grid::dealloc(int hiXY)
   _lastFreeTrack = _searchHiTrack;
   return hiXY;
 }
+
 int Ath__gridTable::dealloc(uint dir, int hiXY)
 {
   for (uint jj = 1; jj < _colCnt; jj++) {
@@ -1019,6 +1025,7 @@ int Ath__gridTable::couplingCaps(int hiXY,
   }
   return minExtracted;
 }
+
 int Ath__grid::initCouplingCapLoops(uint couplingDist,
                                     rcx::CoupleAndCompute coupleAndCompute,
                                     void* compPtr,
@@ -1041,6 +1048,7 @@ int Ath__grid::initCouplingCapLoops(uint couplingDist,
 
   return _base + _pitch * _searchHiTrack;
 }
+
 void Ath__gridTable::initCouplingCapLoops(
     uint dir,
     uint couplingDist,

@@ -56,6 +56,7 @@ void extMain::print_RC(dbRSeg* rc)
   w->getShape(rc->getShapeId(), s);
   print_shape(s, rc->getSourceNode(), rc->getTargetNode());
 }
+
 uint extMain::print_shape(dbShape& shape, uint j1, uint j2)
 {
   uint dx = shape.xMax() - shape.xMin();
@@ -150,6 +151,7 @@ void extMain::copyToSumRCtable()
     }
   }
 }
+
 void extMain::set_adjust_colinear(bool v)
 {
   _adjust_colinear = v;
@@ -169,6 +171,7 @@ double extMain::getViaResistance(dbTechVia* tvia)
   }
   return res;
 }
+
 double extMain::getViaResistance_b(dbVia* tvia, dbNet* net)
 {
   double tot_res = 0;
@@ -444,6 +447,7 @@ void extMain::setResCapFromLef(dbRSeg* rc,
     rc->setCapacitance(xmult * cap, ii);
   }
 }
+
 void extMain::setResAndCap(dbRSeg* rc, double* restbl, double* captbl)
 {
   int pcdbIdx, sci, scdbIdx;
@@ -641,6 +645,7 @@ uint extMain::getCapNodeId(dbNet* net,
     return ncapId;
   }
 }
+
 uint extMain::resetMapNodes(dbNet* net)
 {
   dbWire* wire = net->getWire();
@@ -667,6 +672,7 @@ uint extMain::resetMapNodes(dbNet* net)
   }
   return cnt;
 }
+
 dbRSeg* extMain::addRSeg(dbNet* net,
                          std::vector<uint>& rsegJid,
                          uint& srcId,
@@ -753,6 +759,7 @@ dbRSeg* extMain::addRSeg(dbNet* net,
   prevPoint = pshape.point;
   return rc;
 }
+
 bool extMain::getFirstShape(dbNet* net, dbShape& s)
 {
   dbWirePath path;
@@ -1045,6 +1052,7 @@ void extMain::createShapeProperty(dbNet* net, int id, int id_val)
   pchar = strdup(buff);
   dbIntProperty::create(net, pchar, id);
 }
+
 int extMain::getShapeProperty(dbNet* net, int id)
 {
   char buff[64];
@@ -1056,6 +1064,7 @@ int extMain::getShapeProperty(dbNet* net, int id)
   int rcid = p->getValue();
   return rcid;
 }
+
 int extMain::getShapeProperty_rc(dbNet* net, int rc_id)
 {
   char buff[64];
@@ -1091,6 +1100,7 @@ void extMain::removeExt(std::vector<dbNet*>& nets)
   if (_spef)
     _spef->reinit();
 }
+
 void extMain::removeExt()
 {
   std::vector<dbNet*> rnets;
@@ -1106,6 +1116,7 @@ void extMain::removeExt()
   }
   removeExt(rnets);
 }
+
 void extCompute(CoupleOptions& inputTable, void* extModel);
 void extCompute1(CoupleOptions& inputTable, void* extModel);
 
@@ -1242,6 +1253,7 @@ int extMain::setMinTypMax(bool min,
 
   return 0;
 }
+
 extCorner::extCorner()
 {
   _name = NULL;
@@ -1252,6 +1264,7 @@ extCorner::extCorner()
   _ccFactor = 1.0;
   _gndFactor = 1.0;
 }
+
 void extMain::getExtractedCorners()
 {
   if (_prevControl == NULL)
@@ -1336,6 +1349,7 @@ void extMain::getExtractedCorners()
   }
   makeCornerMapFromExtControl();
 }
+
 void extMain::makeCornerMapFromExtControl()
 {
   if (_prevControl->_cornerIndexList.empty())
@@ -1363,6 +1377,7 @@ void extMain::makeCornerMapFromExtControl()
     t->_name = strdup(&cName[0]);
   }
 }
+
 char* extMain::addRCCorner(const char* name, int model, int userDefined)
 {
   _remote = 0;
@@ -1418,6 +1433,7 @@ char* extMain::addRCCorner(const char* name, int model, int userDefined)
     makeCornerNameMap();
   return t->_name;
 }
+
 char* extMain::addRCCornerScaled(const char* name,
                                  uint model,
                                  float resFactor,
@@ -1485,6 +1501,7 @@ char* extMain::addRCCornerScaled(const char* name,
   makeCornerNameMap();
   return t->_name;
 }
+
 void extMain::cleanCornerTables()
 {
   if (_scaledCornerTable != NULL) {
@@ -1594,6 +1611,7 @@ int extMain::getDbCornerIndex(const char* name)
   }
   return -1;
 }
+
 int extMain::getDbCornerModel(const char* name)
 {
   if (_scaledCornerTable != NULL) {
@@ -1614,6 +1632,7 @@ int extMain::getDbCornerModel(const char* name)
   }
   return -1;
 }
+
 void extMain::makeCornerNameMap()
 {
   // This function updates the dbExtControl object and
@@ -1698,6 +1717,7 @@ void extMain::makeCornerNameMap()
   delete[] map;
   updatePrevControl();
 }
+
 bool extMain::setCorners(const char* rulesFileName)
 {
   _modelMap.resetCnt(0);
@@ -2131,6 +2151,7 @@ double extMain::getTotalNetCap(uint netId, uint cornerNum)
   }
   return cap;
 }
+
 uint extMain::openSpefFile(char* filename, uint mode)
 {
   uint debug = 0;
@@ -2151,16 +2172,19 @@ uint extMain::openSpefFile(char* filename, uint mode)
   }
   return 0;
 }
+
 uint extMain::writeSPEF(bool stop)
 {
   if (stop)
     return _spef->stopWrite();
   return 0;
 }
+
 extSpef* extMain::getSpef()
 {
   return _spef;
 }
+
 uint extMain::write_spef_nets(bool flatten, bool parallel)
 {
   return _spef->write_spef_nets(flatten, parallel);
@@ -2200,6 +2224,7 @@ uint extMain::writeSPEF(uint netId,
 
   return 0;
 }
+
 int extSpef::getWriteCorner(int corner, const char* names)
 {
   int cCnt = _block->getCornerCount();
@@ -2504,6 +2529,7 @@ uint extMain::readSPEF(char* filename,
 
   return cnt;
 }
+
 uint extMain::readSPEFincr(char* filename)
 {
   // assume header/name_map/ports same as first file

@@ -136,6 +136,7 @@ int extMeasure::computeResDist(SEQ* s,
     seq_release(&tmpTable);
   return len;
 }
+
 uint extMeasure::computeRes(SEQ* s,
                             uint targetMet,
                             uint dir,
@@ -163,6 +164,7 @@ uint extMeasure::computeRes(SEQ* s,
   seq_release(&overlapSeq);
   return len;
 }
+
 int extMeasure::getMaxDist(int tgtMet, uint modelIndex)
 {
   uint modelCnt = _metRCTable.getCnt();
@@ -179,10 +181,12 @@ int extMeasure::getMaxDist(int tgtMet, uint modelIndex)
   int maxDist = distTable->getComputeRC_maxDist();
   return maxDist;
 }
+
 int extDistRCTable::getComputeRC_maxDist()
 {
   return _maxDist;
 }
+
 void extMeasure::calcRes(int rsegId1,
                          uint len,
                          int dist1,
@@ -213,6 +217,7 @@ void extMeasure::calcRes(int rsegId1,
     }
   }
 }
+
 void extMeasure::calcRes0(double* deltaRes,
                           uint tgtMet,
                           uint len,
@@ -230,6 +235,7 @@ void extMeasure::calcRes0(double* deltaRes,
     deltaRes[ii] = R;
   }
 }
+
 void extMain::calcRes0(double* deltaRes,
                        uint tgtMet,
                        uint width,
@@ -340,6 +346,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
   }
   return NULL;
 }
+
 extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2)
 {
   extDistRC* firstRC = _measureTable->get(0);
@@ -369,6 +376,7 @@ extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2)
 
   return rc;
 }
+
 extDistRCTable* extDistWidthRCTable::getRuleTable(uint mou, uint w)
 {
   int wIndex = getWidthIndex(w);

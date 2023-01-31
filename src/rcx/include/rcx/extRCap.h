@@ -484,16 +484,7 @@ class extRCModel
   uint benchWithVar_density(extMainOptions* opt, extMeasure* measure);
   uint benchWithVar_lists(extMainOptions* opt, extMeasure* measure);
 
-  uint readCapacitanceBench3D(bool readCapLog,
-                              extMeasure* m,
-                              bool skipPrintWires);
-  bool measureNetPattern(extMeasure* m,
-                         uint shapeId,
-                         Ath__array1D<ext2dBox*>* boxArray);
-  uint writePatternGeoms(extMeasure* m, Ath__array1D<ext2dBox*>* boxArray);
-  bool makePatternNet3D(extMeasure* measure, Ath__array1D<ext2dBox*>* boxArray);
   uint runWiresSolver(uint netId, int shapeId);
-  uint getNetCapMatrixValues3D(uint nodeCnt, uint shapeId, extMeasure* m);
 
   void setProcess(extProcess* p);
   void setDataRateTable(uint met);
@@ -506,14 +497,7 @@ class extRCModel
                     double& fr,
                     double& tot,
                     extMeasure* m);
-  uint getCapValues3D(uint lastNode,
-                      double& cc1,
-                      double& cc2,
-                      double& fr,
-                      double& tot,
-                      extMeasure* m);
   uint getCapMatrixValues(uint lastNode, extMeasure* m);
-  uint getCapMatrixValues3D(uint lastNode, extMeasure* m);
   uint readCapacitance(uint wireNum,
                        double& cc1,
                        double& cc2,
@@ -523,7 +507,6 @@ class extRCModel
                        extMeasure* m = NULL);
   uint readCapacitanceBench(bool readCapLog, extMeasure* m);
   uint readCapacitanceBenchDiag(bool readCapLog, extMeasure* m);
-  uint readCapacitanceBench3D(bool readCapLog, extMeasure* m);
   extDistRC* readCap(uint wireCnt, double w, double s, double r);
   uint readCap(uint wireCnt, double cc1, double cc2, double fr, double tot);
   FILE* openFile(const char* topDir,
@@ -534,12 +517,7 @@ class extRCModel
   void mkNet_prefix(extMeasure* m, const char* wiresNameSuffix);
   void mkFileNames(extMeasure* m, char* wiresNameSuffix);
   void writeWires2(FILE* fp, extMeasure* measure, uint wireCnt);
-  void writeRuleWires(FILE* fp, extMeasure* measure, uint wireCnt);
-  void writeWires2_3D(FILE* fp, extMeasure* measure, uint wireCnt);
-  void writeRuleWires_3D(FILE* fp, extMeasure* measure, uint wireCnt);
   int writeBenchWires(FILE* fp, extMeasure* measure);
-  void writeRaphaelCaps(FILE* fp, extMeasure* measure, uint wireCnt);
-  void writeRaphaelCaps3D(FILE* fp, extMeasure* measure, uint wireCnt);
   void setOptions(const char* topDir,
                   const char* pattern,
                   bool writeFiles,
@@ -550,8 +528,7 @@ class extRCModel
                   bool writeFiles,
                   bool readSolver,
                   bool runSolver,
-                  bool keepFile,
-                  uint metLevel = 0);
+                  bool keepFile);
   void runSolver(const char* solverOption);
   bool solverStep(extMeasure* m);
   void cleanFiles();
@@ -824,7 +801,6 @@ class extMeasure
                              int met);
 
   double getCCfringe(uint lastNode, uint n, uint start, uint end);
-  double getCCfringe3D(uint lastNode, uint n, uint start, uint end);
 
   void updateForBench(extMainOptions* opt, extMain* extMain);
   uint measureOverUnderCap();
@@ -862,9 +838,6 @@ class extMeasure
 
   void measureRC(CoupleOptions& options);
   int computeAndStoreRC(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, int srcCovered);
-  int computeAndStoreRC_720(odb::dbRSeg* rseg1,
-                            odb::dbRSeg* rseg2,
-                            int srcCovered);
 
   double ScaleResbyTrack(bool openEnded, double& dist_track);
   void OverSubRC(odb::dbRSeg* rseg1,
@@ -1022,18 +995,6 @@ class extMeasure
                         uint id,
                         bool cntx);
   void clean2dBoxTable(int met, bool cntx);
-  uint writeRaphael3D(FILE* fp,
-                      int met,
-                      bool cntx,
-                      double x1,
-                      double y1,
-                      double th);
-  uint writeDiagRaphael3D(FILE* fp,
-                          int met,
-                          bool cntx,
-                          double x1,
-                          double y1,
-                          double th);
   void writeRaphaelPointXY(FILE* fp, double X, double Y);
   void getBox(int met, bool cntx, int& xlo, int& ylo, int& xhi, int& yhi);
   uint getBoxLength(uint ii, int met, bool cntx);
@@ -1064,13 +1025,6 @@ class extMeasure
                         Ath__array1D<odb::SEQ*>* overlapSeq,
                         Ath__array1D<odb::SEQ*>* residueSeq);
 
-  void writeBoxRaphael3D(FILE* fp,
-                         ext2dBox* bb,
-                         int* base_ll,
-                         int* base_ur,
-                         double y1,
-                         double th,
-                         double volt);
   uint getRSeg(odb::dbNet* net, uint shapeId);
 
   void allocOUpool();
@@ -1113,9 +1067,7 @@ class extMeasure
   double _heff;
   double _seff;
 
-  bool _benchFlag;
   bool _varFlag;
-  bool _3dFlag;
   bool _over;
   bool _res;
   bool _overUnder;
@@ -1262,7 +1214,6 @@ class extMainOptions
   bool _multiple_widths;
 
   bool _varFlag;
-  bool _3dFlag;
   bool _over;
   bool _overUnder;
   int _diag;
