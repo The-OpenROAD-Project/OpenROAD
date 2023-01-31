@@ -1899,13 +1899,6 @@ void FlexGCWorker::Impl::checkMetalShape_patchOwner_helper(
         return;
       }
     }
-
-    for (auto&& conn_fig : dr_net->getBestRouteConnFigs()) {
-      if (patch_box.overlaps(conn_fig->getBBox())) {
-        patch->addToNet(dr_net);
-        return;
-      }
-    }
   }
 }
 
