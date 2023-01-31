@@ -40,6 +40,7 @@
 #include <regex>
 #include <sstream>
 
+#include "bufferTreeDescriptor.h"
 #include "db.h"
 #include "dbShape.h"
 #include "db_sta/dbNetwork.hh"
@@ -1330,6 +1331,10 @@ Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
   auto* ndr = net->getNonDefaultRule();
   if (ndr != nullptr) {
     props.push_back({"Non-default rule", gui->makeSelected(ndr)});
+  }
+
+  if (BufferTree::isAggregate(net)) {
+    props.push_back({"Buffer tree", gui->makeSelected(BufferTree(net))});
   }
 
   populateODBProperties(props, net);
