@@ -100,6 +100,7 @@ uint extMain::getMultiples(uint cnt, uint base)
 {
   return ((cnt / base) + 1) * base;
 }
+
 void extMain::setupMapping(uint itermCnt)
 {
   if (_btermTable)
@@ -119,6 +120,7 @@ void extMain::setupMapping(uint itermCnt)
   _itermTable = new Ath__array1D<int>(itermCnt);
   _nodeTable = new Ath__array1D<int>(16000);
 }
+
 extMain::extMain()
     : _db(nullptr),
       _tech(nullptr),
@@ -312,6 +314,7 @@ uint extMain::getExtLayerCnt(dbTech* tech)
   }
   return n;
 }
+
 uint extMain::addExtModel(dbTech* tech)
 {
   _lefRC = true;
@@ -360,6 +363,7 @@ uint extMain::addExtModel(dbTech* tech)
   }
   return layerCnt;
 }
+
 extRCModel* extMain::getRCmodel(uint n)
 {
   if (_modelTable->getCnt() <= 0)
@@ -367,6 +371,7 @@ extRCModel* extMain::getRCmodel(uint n)
 
   return _modelTable->get(n);
 }
+
 uint extMain::getResCapTable(bool lefRC)
 {
   calcMinMaxRC();
@@ -470,6 +475,7 @@ uint extMain::getResCapTable(bool lefRC)
   }
   return cnt;
 }
+
 bool extMain::checkLayerResistance()
 {
   dbSet<dbTechLayer> layers = _tech->getLayers();
@@ -502,6 +508,7 @@ bool extMain::checkLayerResistance()
   }
   return true;
 }
+
 double extMain::getLefResistance(uint level, uint width, uint len, uint model)
 {
   double res = _resistanceTable[model][level];
@@ -514,10 +521,12 @@ double extMain::getLefResistance(uint level, uint width, uint len, uint model)
 
   return r;
 }
+
 double extMain::getResistance(uint level, uint width, uint len, uint model)
 {
   return getLefResistance(level, width, len, model);
 }
+
 void extMain::setBlockFromChip()
 {
   if (_db->getChip() == nullptr) {
@@ -590,6 +599,7 @@ double extMain::getFringe(uint met,
     return 0.0;
   return rc->getFringe();
 }
+
 void extMain::updateTotalCap(dbRSeg* rseg,
                              double frCap,
                              double ccCap,
@@ -603,6 +613,7 @@ void extMain::updateTotalCap(dbRSeg* rseg,
 
   rseg->setCapacitance(tot, modelIndex);
 }
+
 void extMain::updateTotalRes(dbRSeg* rseg1,
                              dbRSeg* rseg2,
                              extMeasure* m,
@@ -704,6 +715,7 @@ void extMain::ccReportProgress()
                   _totBigCCcnt);
   }
 }
+
 int ttttsrcnet = 66;
 int tttttgtnet = 66;
 int ttttm = 0;
@@ -712,6 +724,7 @@ void extMain::printNet(dbNet* net, uint netId)
   if (netId == net->getId())
     net->printNetName(stdout);
 }
+
 void extMain::measureRC(CoupleOptions& options)
 {
   _totSegCnt++;
@@ -868,6 +881,7 @@ void extMain::measureRC(CoupleOptions& options)
   }
   ccReportProgress();
 }
+
 extern CoupleOptions coupleOptionsNull;
 
 void extCompute1(CoupleOptions& options, void* computePtr)

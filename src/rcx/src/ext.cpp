@@ -101,7 +101,6 @@ bool Ext::bench_wires(const BenchWiresOptions& bwo)
   opt._default_lef_rules = bwo.default_lef_rules;
   opt._nondefault_lef_rules = bwo.nondefault_lef_rules;
 
-  opt._3dFlag = bwo.ddd;
   opt._multiple_widths = bwo.multiple_widths;
 
   opt._write_to_solver = bwo.write_to_solver;
