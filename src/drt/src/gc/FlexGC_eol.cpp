@@ -497,6 +497,75 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox(
   gtl::yh(queryRect, queryBox.max_corner().y());
 }
 
+void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_getQueryBox_TN(
+    gcSegment* edge,
+    frConstraint* constraint,
+    box_t& queryBox,
+    gtl::rectangle_data<frCoord>& queryRect,
+    frCoord& eolNonPrlSpacing,
+    frCoord& endPrlSpacing,
+    frCoord& endPrl)
+{
+  endPrlSpacing = 0;
+  endPrl = 0;
+  eolNonPrlSpacing = 0;
+  frCoord eolWithin, eolSpace;
+  switch (constraint->typeId()) {
+    case frConstraintTypeEnum::frcSpacingEndOfLineConstraint: {
+      auto con = (frSpacingEndOfLineConstraint*) constraint;
+      eolWithin = con->getEolWithin();
+      eolSpace = con->getMinSpacing();
+    } break;
+    case frConstraintTypeEnum::frcLef58SpacingEndOfLineConstraint: {
+      auto con = (frLef58SpacingEndOfLineConstraint*) constraint;
+      auto withinCon = con->getWithinConstraint();
+      eolWithin = withinCon->getEolWithin();
+      eolSpace = con->getEolSpace();
+      if (con->hasWrongDirSpacing())
+        eolSpace = std::max(eolSpace, con->getWrongDirSpace());
+      eolNonPrlSpacing = eolSpace;
+      if (withinCon->hasEndPrlSpacing()) {
+        endPrlSpacing = withinCon->getEndPrlSpacing();
+        endPrl = withinCon->getEndPrl();
+        eolSpace = std::max(eolSpace, endPrlSpacing);
+      }
+      if (withinCon->hasEndToEndConstraint()) {
+        auto endToEndCon = withinCon->getEndToEndConstraint();
+        eolSpace = std::max(eolSpace, endToEndCon->getEndToEndSpace());
+      }
+    } break;
+    default:
+      logger_->error(DRT, 324, "Unsupported endofline spacing rule.");
+      break;
+  }
+
+  if (edge->getDir() == frDirEnum::E) {
+    bg::set<bg::min_corner, 0>(queryBox, edge->low().x() - eolWithin);
+    bg::set<bg::min_corner, 1>(queryBox, edge->low().y() - eolSpace);
+    bg::set<bg::max_corner, 0>(queryBox, edge->high().x() + eolWithin);
+    bg::set<bg::max_corner, 1>(queryBox, edge->high().y());
+  } else if (edge->getDir() == frDirEnum::W) {
+    bg::set<bg::min_corner, 0>(queryBox, edge->high().x() - eolWithin);
+    bg::set<bg::min_corner, 1>(queryBox, edge->high().y());
+    bg::set<bg::max_corner, 0>(queryBox, edge->low().x() + eolWithin);
+    bg::set<bg::max_corner, 1>(queryBox, edge->low().y() + eolSpace);
+  } else if (edge->getDir() == frDirEnum::N) {
+    bg::set<bg::min_corner, 0>(queryBox, edge->low().x());
+    bg::set<bg::min_corner, 1>(queryBox, edge->low().y() - eolWithin);
+    bg::set<bg::max_corner, 0>(queryBox, edge->high().x() + eolSpace);
+    bg::set<bg::max_corner, 1>(queryBox, edge->high().y() + eolWithin);
+  } else {  // S
+    bg::set<bg::min_corner, 0>(queryBox, edge->high().x() - eolSpace);
+    bg::set<bg::min_corner, 1>(queryBox, edge->high().y() - eolWithin);
+    bg::set<bg::max_corner, 0>(queryBox, edge->low().x());
+    bg::set<bg::max_corner, 1>(queryBox, edge->low().y() + eolWithin);
+  }
+  gtl::xl(queryRect, queryBox.min_corner().x());
+  gtl::yl(queryRect, queryBox.min_corner().y());
+  gtl::xh(queryRect, queryBox.max_corner().x());
+  gtl::yh(queryRect, queryBox.max_corner().y());
+}
+
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_helper(
     gcSegment* edge1,
     gcSegment* edge2,
@@ -592,12 +661,93 @@ bool FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_endToEndHelper(
   }
   return false;
 }
+void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol_check(
+    gcSegment* edge,
+    gcSegment* ptr,
+    const gtl::rectangle_data<frCoord>& queryRect,
+    frConstraint* constraint,
+    frCoord endPrlSpacing,
+    frCoord eolNonPrlSpacing,
+    frCoord endPrl,
+    bool hasRoute)
+{
+  auto layerNum = edge->getLayerNum();
+  gtl::polygon_90_set_data<frCoord> tmpPoly;
+  gtl::rectangle_data<frCoord> triggerRect;
+  if (ptr->getPin() == edge->getPin())
+    return;
+  if (edge->isFixed() && ptr->isFixed())
+    return;
+
+  // skip if non oppo-dir edge
+  if ((int) edge->getDir() + (int) ptr->getDir() != OPPOSITEDIR) {
+    return;
+  }
+  checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getParallelEdgeRect(
+      ptr, triggerRect);
+  // skip if no area
+  if (!gtl::intersects(queryRect, triggerRect, false)) {
+    return;
+  }
+  // skip if no route shapes
+  if (!hasRoute && !ptr->isFixed()) {
+    tmpPoly.clear();
+    // tmpPoly is the intersection of queryRect and minimum paralleledge rect
+    using namespace boost::polygon::operators;
+    tmpPoly += queryRect;
+    tmpPoly &= triggerRect;
+    auto& polys = ptr->getNet()->getPolygons(layerNum, false);
+    // tmpPoly should have route shapes in order to be considered route
+    tmpPoly &= polys;
+    if (!gtl::empty(tmpPoly)) {
+      hasRoute = true;
+    }
+  }
+  // skip if no route
+  if (!hasRoute) {
+    return;
+  }
+  // skip if in endprl region but not an endprl case and not in the
+  // non-endprl region.
+  bool checkPrl = false;
+  if (endPrlSpacing > 0) {
+    const frDirEnum dir = edge->getDir();
+    const gtl::orientation_2d orient
+        = (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
+                                                       : gtl::VERTICAL;
+    const gtl::orientation_2d opp_orient{orient.get_perpendicular()};
+    checkPrl
+        = std::abs(edge->low().get(opp_orient) - ptr->low().get(opp_orient))
+          > eolNonPrlSpacing;
+    if (checkPrl) {
+      const frCoord edge1_low = edge->low().get(orient);
+      const frCoord edge1_high = edge->high().get(orient);
+      const frCoord edge1_min = std::min(edge1_low, edge1_high);
+      const frCoord edge1_max = std::max(edge1_low, edge1_high);
+
+      const frCoord edge2_low = ptr->low().get(orient);
+      const frCoord edge2_high = ptr->high().get(orient);
+      const frCoord edge2_min = std::min(edge2_low, edge2_high);
+      const frCoord edge2_max = std::max(edge2_low, edge2_high);
+      const frCoord prl
+          = std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
+      if (prl < 0 || prl > endPrl) {
+        return;
+      }
+    }
+  }
+
+  // check endtoend
+  if (!checkPrl
+      && !checkMetalEndOfLine_eol_hasEol_endToEndHelper(edge, ptr, constraint))
+    return;
+  checkMetalEndOfLine_eol_hasEol_helper(edge, ptr, constraint);
+}
 void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
     gcSegment* edge,
     frConstraint* constraint,
     bool hasRoute)
 {
-  auto layerNum = edge->getLayerNum();
   box_t queryBox;
   gtl::rectangle_data<frCoord> queryRect;  // original size
   frCoord eolNonPrlSpacing;
@@ -610,95 +760,33 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol_hasEol(
                                              eolNonPrlSpacing,
                                              endPrlSpacing,
                                              endPrl);
-  gtl::rectangle_data<frCoord> triggerRect;
   vector<pair<segment_t, gcSegment*>> results;
   auto& workerRegionQuery = getWorkerRegionQuery();
   workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
-  gtl::polygon_90_set_data<frCoord> tmpPoly;
   for (auto& [boostSeg, ptr] : results) {
-    if (ptr->getPin() == edge->getPin())
-      continue;
-    if (edge->isFixed() && ptr->isFixed())
-      continue;
-
-    // skip if non oppo-dir edge
-    if ((int) edge->getDir() + (int) ptr->getDir() != OPPOSITEDIR) {
-      continue;
-    }
-    checkMetalEndOfLine_eol_hasParallelEdge_oneDir_getParallelEdgeRect(
-        ptr, triggerRect);
-    // skip if no area
-    if (!gtl::intersects(queryRect, triggerRect, false)) {
-      continue;
-    }
-    // skip if no route shapes
-    if (!hasRoute && !ptr->isFixed()) {
-      tmpPoly.clear();
-      // tmpPoly is the intersection of queryRect and minimum paralleledge rect
-      using namespace boost::polygon::operators;
-      tmpPoly += queryRect;
-      tmpPoly &= triggerRect;
-      auto& polys = ptr->getNet()->getPolygons(layerNum, false);
-      // tmpPoly should have route shapes in order to be considered route
-      tmpPoly &= polys;
-      if (!gtl::empty(tmpPoly)) {
-        hasRoute = true;
-      }
-    }
-    // skip if no route
-    if (!hasRoute) {
-      continue;
-    }
-    // skip if in endprl region but not an endprl case and not in the
-    // non-endprl region.
-    bool checkPrl = false;
-    if (endPrlSpacing > 0) {
-      const frDirEnum dir = edge->getDir();
-      const gtl::orientation_2d orient
-          = (dir == frDirEnum::W || dir == frDirEnum::E) ? gtl::HORIZONTAL
-                                                         : gtl::VERTICAL;
-      const gtl::orientation_2d opp_orient{orient.get_perpendicular()};
-      checkPrl
-          = std::abs(edge->low().get(opp_orient) - ptr->low().get(opp_orient))
-            > eolNonPrlSpacing;
-      if (checkPrl) {
-        const frCoord edge1_low = edge->low().get(orient);
-        const frCoord edge1_high = edge->high().get(orient);
-        const frCoord edge1_min = std::min(edge1_low, edge1_high);
-        const frCoord edge1_max = std::max(edge1_low, edge1_high);
-
-        const frCoord edge2_low = ptr->low().get(orient);
-        const frCoord edge2_high = ptr->high().get(orient);
-        const frCoord edge2_min = std::min(edge2_low, edge2_high);
-        const frCoord edge2_max = std::max(edge2_low, edge2_high);
-        const frCoord prl
-            = std::min(edge1_max, edge2_max) - std::max(edge1_min, edge2_min);
-        if (prl < 0 || prl > endPrl) {
-          continue;
-        }
-      }
-    }
-
-    // check endtoend
-    if (!checkPrl
-        && !checkMetalEndOfLine_eol_hasEol_endToEndHelper(
-            edge, ptr, constraint))
-      continue;
-    checkMetalEndOfLine_eol_hasEol_helper(edge, ptr, constraint);
+    checkMetalEndOfLine_eol_hasEol_check(edge,
+                                         ptr,
+                                         queryRect,
+                                         constraint,
+                                         endPrlSpacing,
+                                         eolNonPrlSpacing,
+                                         endPrl,
+                                         hasRoute);
   }
 }
 
-void FlexGCWorker::Impl::checkMetalEndOfLine_eol(gcSegment* edge,
-                                                 frConstraint* constraint)
+bool FlexGCWorker::Impl::qualifiesAsEol(gcSegment* edge,
+                                        frConstraint* constraint,
+                                        bool& hasRoute)
 {
   if (!checkMetalEndOfLine_eol_isEolEdge(edge, constraint)) {
-    return;
+    return false;
   }
   auto layerNum = edge->getLayerNum();
   // check left/right parallel edge
   // auto hasRoute = edge->isFixed() ? false : true;
   // check if current eol edge has route shapes
-  bool hasRoute = false;
+  hasRoute = false;
   if (!edge->isFixed()) {
     gtl::polygon_90_set_data<frCoord> tmpPoly;
     gtl::rectangle_data<frCoord> triggerRect;
@@ -717,14 +805,69 @@ void FlexGCWorker::Impl::checkMetalEndOfLine_eol(gcSegment* edge,
   auto triggered
       = checkMetalEndOfLine_eol_hasParallelEdge(edge, constraint, hasRoute);
   if (!triggered) {
-    return;
+    return false;
   }
   triggered = checkMetalEndOfLine_eol_hasMinMaxLength(edge, constraint);
   if (!triggered) {
+    return false;
+  }
+  return true;
+}
+
+void FlexGCWorker::Impl::checkMetalEndOfLine_eol_TN(gcSegment* edge,
+                                                    frConstraint* constraint)
+{
+  box_t queryBox;
+  gtl::rectangle_data<frCoord> queryRect;  // original size
+  frCoord eolNonPrlSpacing;
+  frCoord endPrlSpacing;
+  frCoord endPrl;
+  checkMetalEndOfLine_eol_hasEol_getQueryBox_TN(edge,
+                                                constraint,
+                                                queryBox,
+                                                queryRect,
+                                                eolNonPrlSpacing,
+                                                endPrlSpacing,
+                                                endPrl);
+  vector<pair<segment_t, gcSegment*>> results;
+  auto& workerRegionQuery = getWorkerRegionQuery();
+  workerRegionQuery.queryPolygonEdge(queryBox, edge->getLayerNum(), results);
+  for (auto& [boostSeg, ptr] : results) {
+    bool hasRoute = false;
+    if (qualifiesAsEol(ptr, constraint, hasRoute)) {
+      checkMetalEndOfLine_eol_hasEol_getQueryBox(ptr,
+                                                 constraint,
+                                                 queryBox,
+                                                 queryRect,
+                                                 eolNonPrlSpacing,
+                                                 endPrlSpacing,
+                                                 endPrl);
+      checkMetalEndOfLine_eol_hasEol_check(ptr,
+                                           edge,
+                                           queryRect,
+                                           constraint,
+                                           endPrlSpacing,
+                                           eolNonPrlSpacing,
+                                           endPrl,
+                                           hasRoute);
+    }
+  }
+}
+
+void FlexGCWorker::Impl::checkMetalEndOfLine_eol(gcSegment* edge,
+                                                 frConstraint* constraint)
+{
+  if (targetNet_) {
+    checkMetalEndOfLine_eol_TN(edge, constraint);
+  }
+  if (!checkMetalEndOfLine_eol_isEolEdge(edge, constraint)) {
     return;
   }
-  // check eol
-  checkMetalEndOfLine_eol_hasEol(edge, constraint, hasRoute);
+  bool hasRoute = false;
+  if (qualifiesAsEol(edge, constraint, hasRoute)) {
+    // check eol
+    checkMetalEndOfLine_eol_hasEol(edge, constraint, hasRoute);
+  }
 }
 
 void FlexGCWorker::Impl::getEolKeepOutQueryBox(
