@@ -226,6 +226,10 @@ const char* dbGroupType::getString() const
     case VOLTAGE_DOMAIN:
       value = "VOLTAGE_DOMAIN";
       break;
+
+    case POWER_DOMAIN:
+      value = "POWER_DOMAIN";
+      break;
   }
 
   return value;

@@ -180,7 +180,43 @@
           "type":"dbVector<dbId<_dbIsolation>>",
           "flags":["no-set","no-get"],
           "parent":"dbBlock"
-        }
+        },
+        {
+          "name":"_group",
+          "type":"dbId<_dbGroup>",
+          "flags":["no-set"],
+          "parent":"dbBlock"
+        },
+        {
+          "name":"_top",
+          "type":"bool",
+          "flags":[]
+        },
+        {
+          "name": "_parent",
+          "type": "dbId<_dbPowerDomain>",
+          "parent":"dbBlock"
+        },
+        {
+          "name": "_x1",
+          "type": "int",
+          "flags":["no-set","no-get"]
+        },
+        {
+          "name": "_x2",
+          "type": "int",
+          "flags":["no-set","no-get"]
+        },
+        {
+          "name": "_y1",
+          "type": "int",
+          "flags":["no-set","no-get"]
+        },
+        {
+          "name": "_y2",
+          "type": "int",
+          "flags":["no-set","no-get"]
+        } 
       ],
       "constructors":[],
       "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
@@ -309,7 +345,7 @@
         },
         {
           "name": "_isolation_cells", 
-          "type": "dbVector<dbId<_dbMaster>>",
+          "type": "dbVector<std::string>",
           "flags": ["no-get", "no-set"]
         },
         {

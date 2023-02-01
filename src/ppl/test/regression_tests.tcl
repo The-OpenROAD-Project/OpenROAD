@@ -17,6 +17,7 @@ record_tests {
   random6
   random7
   random8
+  random9
   blocked_region
   cells_not_placed
   exclude1

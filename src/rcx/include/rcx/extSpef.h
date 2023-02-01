@@ -139,8 +139,6 @@ class extSpef
 
   uint _baseNameMap;
   uint _firstCapNode;
-  bool _useIds;  // Net/inst/bterm names expected to be look like : N1, I1, B1
-                 // name is same as in save_def option
 
   bool _preserveCapValues;
   bool _symmetricCCcaps;
@@ -278,7 +276,6 @@ class extSpef
   bool _writeNameMap;
   bool _moreToRead;
   bool _termJxy;
-  bool _independentExtCorners;
   bool _incrPlusCcNets;
   odb::dbBTerm* _ccbterm1;
   odb::dbBTerm* _ccbterm2;
@@ -374,7 +371,6 @@ class extSpef
   bool setInSpef(char* filename, bool onlyOpen = false);
   bool isCapNodeExcluded(odb::dbCapNode* node);
   uint writeBlock(char* nodeCoord,
-                  const char* excludeCell,
                   const char* capUnit,
                   const char* resUnit,
                   bool stopAfterNameMap,
@@ -387,10 +383,8 @@ class extSpef
                   bool noCnum,
                   bool stopBeforeDnets,
                   bool noBackSlash,
-                  bool flatten,
                   bool parallel);
   uint writeBlock(char* nodeCoord,
-                  const char* excludeCell,
                   const char* capUnit,
                   const char* resUnit,
                   bool stopAfterNameMap,
@@ -403,7 +397,6 @@ class extSpef
                   bool noCnum,
                   bool stopBeforeDnets,
                   bool noBackSlash,
-                  bool flatten,
                   bool parallel);
 
   int getWriteCorner(int corner, const char* name);
@@ -465,7 +458,7 @@ class extSpef
   void setDesign(char* name);
   uint getCapNode(char* nodeWord, char* capWord);
   uint getMappedBTermId(uint id);
-  void setUseIdsFlag(bool useIds, bool diff = false, bool calib = false);
+  void setUseIdsFlag(bool diff = false, bool calib = false);
   void setCalibLimit(float upperLimit, float lowerLimit);
   uint diffGndCap(odb::dbNet* net, uint capCnt, uint capId);
   uint diffNetCcap(odb::dbNet* net);
@@ -575,17 +568,10 @@ class extSpef
 
   uint getAppPrintLimit() { return _cc_app_print_limit; };
   int* getAppCnt() { return _appcnt; };
-  uint writeHierInstNameMap();
-  uint writeHierNetNameMap();
-  static int getIntProperty(odb::dbBlock* block, const char* name);
   uint write_spef_nets(bool flatten, bool parallel);
   char* getDelimeter();
   void writeNameNode(odb::dbCapNode* node);
   uint writeCapName(odb::dbCapNode* capNode, uint capIndex);
-
-  void writeDnetHier(uint mapId, double* totCap);
-  bool writeHierNet(odb::dbNet* net, double resBound, uint debug);
-  void setHierBaseNameMap(uint instBase, uint netBase);
 
   void setBlock(odb::dbBlock* blk);
 

@@ -18,7 +18,7 @@ _installCommonDev() {
     eigenVersion=3.4
     lemonVersion=1.3.1
     lemonChecksum="e89f887559113b68657eca67cf3329b5"
-    spdlogVersion=1.8.1
+    spdlogVersion=1.10.0
 
     # temp dir to download and compile
     baseDir=/tmp/installers
@@ -112,7 +112,7 @@ _installCommonDev() {
         cd "${baseDir}"
         git clone -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
-        ${cmakePrefix}/bin/cmake -B build .
+        ${cmakePrefix}/bin/cmake -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
@@ -132,7 +132,7 @@ _installOrTools() {
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
     orToolsPath="/opt/or-tools"
-    if [[ "${os}" == "MacOsX" ]]; then
+    if [[ "${os}" == "macOS" ]]; then
         orToolsPath="$(brew --prefix or-tools)"
     fi
     mkdir -p ${orToolsPath}

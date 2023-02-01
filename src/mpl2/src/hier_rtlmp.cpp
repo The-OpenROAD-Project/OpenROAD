@@ -211,10 +211,17 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 // Top Level Interface function
 void HierRTLMP::hierRTLMacroPlacer()
 {
-  //
   // Get the database information
   //
   block_ = db_->getChip()->getBlock();
+  if (block_->getTopModule()->getChildren().size() == 0) {
+    logger_->info(
+        MPL,
+        0002,
+        "Design has no logical hierarchy. RTLMP uses logical hierarchy "
+        "information to create clustering and placement of macros.");
+  }
+
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
   pitch_x_ = dbuToMicron(
       static_cast<float>(
@@ -447,7 +454,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   logger_->report("number of updated macros : {}", num_updated_macros_);
   logger_->report("number of macros in HardMacroCluster : {}",
                   num_hard_macros_cluster_);
-}
+}  // namespace mpl2
 
 ////////////////////////////////////////////////////////////////////////
 // Private functions
@@ -929,7 +936,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
     // this logical module is a leaf logical module
     // we will use the MLPart to partition this large flat cluster
     // in the follow-up UpdateSubTree function
-    if (module->getChildren().size() == 0) {
+    if (module->getChildren().size() == 0 && parent != root_cluster_) {
       for (odb::dbInst* inst : module->getInsts()) {
         const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
         if (liberty_cell == nullptr)
@@ -2708,6 +2715,8 @@ void HierRTLMP::createPinBlockage()
     return;
   }
   // Get the initial tilings
+  // Currently, not using  pin_th  in calculating blockages
+  // TODO -- investigate  using pin_th
   const std::vector<std::pair<float, float>> tilings
       = root_cluster_->getMacroTilings();
   // When the program enter stage, the tilings cannot be empty
@@ -2717,6 +2726,7 @@ void HierRTLMP::createPinBlockage()
   // convert to the limit to the depth of pin access
   max_width = ((floorplan_ux_ - floorplan_lx_) - max_width);
   max_height = ((floorplan_uy_ - floorplan_ly_) - max_height);
+
   // the area of standard-cell clusters
   float std_cell_area = 0.0;
   for (auto& cluster : root_cluster_->getChildren()) {

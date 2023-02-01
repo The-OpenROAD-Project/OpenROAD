@@ -24,6 +24,6 @@ read_def EXT/patterns.def
 bench_read_spef $golden_spef
 
 # Convert the parasitics into 
-write_rules -file $extRules -db
+write_rules -file $extRules
 
 exit

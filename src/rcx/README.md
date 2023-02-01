@@ -146,7 +146,6 @@ parasitics into the database.
 ```
 write_rules
   [-file filename]                output file name
-  [-db]                           read parasitics from the database
 ```
 
 The `write_rules` command writes the Extraction Rules file (RC technology file)

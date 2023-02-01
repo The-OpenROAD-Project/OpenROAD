@@ -965,14 +965,16 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
                 = restrictedRouting || isRestrictedRouting(currLayerNum - 2);
           // get intersecting tracks if any
           if (restrictedRouting) {
-            bool found = findAPTracks(currLayerNum + 2,
-                                      getTech()->getTopLayerNum(),
-                                      pinRect,
-                                      xLocs,
-                                      yLocs);
+            bool found = findAPTracks(
+                currLayerNum + 2,
+                std::min(TOP_ROUTING_LAYER, getTech()->getTopLayerNum()),
+                pinRect,
+                xLocs,
+                yLocs);
             if (!found)
               found = findAPTracks(currLayerNum - 2,
-                                   getTech()->getBottomLayerNum(),
+                                   std::max(BOTTOM_ROUTING_LAYER,
+                                            getTech()->getBottomLayerNum()),
                                    pinRect,
                                    xLocs,
                                    yLocs);
