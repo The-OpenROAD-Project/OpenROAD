@@ -918,6 +918,8 @@ class NesterovBase
 
   void updateDbGCells();
 
+  const BinGrid& getBinGrid() const { return bg_; }
+
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
