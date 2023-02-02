@@ -166,13 +166,13 @@ _push() {
 
                 # test image with sha and latest tag for all os and compiler
                 for os in ${OS_LIST}; do
-                    ./etc/DockerHelper.sh test -target=builder \
+                    ./etc/DockerHelper.sh test -target=builder -sha \
                         2>&1 | tee build/test-${os}-gcc-latest.log &
                 done
                 wait
 
                 for os in ${OS_LIST}; do
-                    ./etc/DockerHelper.sh test -target=builder -compiler=clang \
+                    ./etc/DockerHelper.sh test -target=builder -sha -compiler=clang \
                         2>&1 | tee build/test-${os}-clang-latest.log &
                 done
                 wait
