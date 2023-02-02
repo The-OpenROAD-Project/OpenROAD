@@ -150,29 +150,33 @@ _push() {
             if [[ $REPLY =~ ^[Yy]$  ]]; then
                 mkdir -p build
 
-                OS_LIST="centos7 ubuntu20.04 ubuntu22.04 ubuntu22.10 opensuse debian10 debian11 rhel"
-
+                OS_LIST="centos7 ubuntu20.04 ubuntu22.04"
                 # create image with sha and latest tag for all os
                 for os in ${OS_LIST}; do
-                    ./etc/DockerHelper.sh create -target=dev -sha \
-                        2>&1 | tee build/create-${os}-${commitSha}.log
-                done
-                for os in ${OS_LIST}; do
                     ./etc/DockerHelper.sh create -target=dev \
-                        2>&1 | tee build/create-${os}-latest.log
+                        2>&1 | tee build/create-${os}-latest.log &
                 done
+                wait
+
+                for os in ${OS_LIST}; do
+                    ./etc/DockerHelper.sh create -target=dev -sha \
+                        2>&1 | tee build/create-${os}-${commitSha}.log &
+                done
+                wait
 
                 # test image with sha and latest tag for all os and compiler
                 for os in ${OS_LIST}; do
                     ./etc/DockerHelper.sh test -target=builder \
-                        2>&1 | tee build/test-${os}-gcc-latest.log
+                        2>&1 | tee build/test-${os}-gcc-latest.log &
                 done
+                wait
+
                 for os in ${OS_LIST}; do
                     ./etc/DockerHelper.sh test -target=builder -compiler=clang \
-                        2>&1 | tee build/test-${os}-clang-latest.log
+                        2>&1 | tee build/test-${os}-clang-latest.log &
                 done
+                wait
 
-                # print commands to update the images upstream
                 for os in ${OS_LIST}; do
                     echo [DRY-RUN] docker push openroad/${os}-dev:latest
                     echo [DRY-RUN] docker push openroad/${os}-dev:${commitSha}
