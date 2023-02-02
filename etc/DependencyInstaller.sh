@@ -56,27 +56,27 @@ _installCommonDev() {
     fi
 
     # boost
-    boostPrefix=${PREFIX:-"/usr/local/include"}
-    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/boost/version.hpp) ]]; then
+    boostPrefix=${PREFIX:-"/usr/local"}
+    if [[ -z $(grep "BOOST_LIB_VERSION \"${boostVersionBig//./_}\"" ${boostPrefix}/include/boost/version.hpp) ]]; then
         cd "${baseDir}"
         boostVersionUnderscore=${boostVersionSmall//./_}
         wget https://boostorg.jfrog.io/artifactory/main/release/${boostVersionSmall}/source/boost_${boostVersionUnderscore}.tar.gz
         md5sum -c <(echo "${boostChecksum}  boost_${boostVersionUnderscore}.tar.gz") || exit 1
         tar -xf boost_${boostVersionUnderscore}.tar.gz
         cd boost_${boostVersionUnderscore}
-        ./bootstrap.sh
+        ./bootstrap.sh --prefix="${boostPrefix}"
         ./b2 install --with-iostreams --with-test --with-serialization --with-system --with-thread -j $(nproc)
     else
         echo "Boost already installed."
     fi
 
     # eigen
-    eigenPrefix=${PREFIX:-"/usr/local/include"}
-    if [[ ! -d ${eigenPrefix}/eigen3/ ]]; then
+    eigenPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${eigenPrefix}/include/eigen3 ]]; then
         cd "${baseDir}"
         git clone -b ${eigenVersion} https://gitlab.com/libeigen/eigen.git
         cd eigen
-        ${cmakePrefix}/bin/cmake -B build .
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${eigenPrefix}" -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "Eigen already installed."
@@ -94,25 +94,26 @@ _installCommonDev() {
     fi
 
     # lemon
-    lemonPrefix=${PREFIX:-"/usr/local/include"}
-    if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/lemon/config.h) ]]; then
+    lemonPrefix=${PREFIX:-"/usr/local"}
+    if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h) ]]; then
         cd "${baseDir}"
         wget http://lemon.cs.elte.hu/pub/sources/lemon-${lemonVersion}.tar.gz
         md5sum -c <(echo "${lemonChecksum}  lemon-${lemonVersion}.tar.gz") || exit 1
         tar -xf lemon-${lemonVersion}.tar.gz
         cd lemon-${lemonVersion}
-        ${cmakePrefix}/bin/cmake -B build .
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${lemonPrefix}" -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "Lemon already installed."
     fi
 
     # spdlog
-    if [[ -z $(grep "PACKAGE_VERSION \"${spdlogVersion}\"" ${spdlogFolder}) ]]; then
+    spdlogPrefix=${PREFIX:-"/usr/local"}
+    if [[ ! -d ${spdlogPrefix}/include/spdlog ]]; then
         cd "${baseDir}"
         git clone -b "v${spdlogVersion}" https://github.com/gabime/spdlog.git
         cd spdlog
-        ${cmakePrefix}/bin/cmake -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
+        ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${spdlogPrefix}" -DSPDLOG_BUILD_EXAMPLE=OFF -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
         echo "spdlog already installed."
@@ -129,15 +130,20 @@ _installOrTools() {
     orToolsVersionBig=9.5
     orToolsVersionSmall=${orToolsVersionBig}.2237
 
+    baseDir=/tmp/installers
+    mkdir -p "${baseDir}"
+    if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
+    cd "${baseDir}"
+
     orToolsFile=or-tools_${arch}_${os}-${version}_cpp_v${orToolsVersionSmall}.tar.gz
     wget https://github.com/google/or-tools/releases/download/v${orToolsVersionBig}/${orToolsFile}
-    orToolsPath="/opt/or-tools"
-    if [[ "${os}" == "macOS" ]]; then
+    orToolsPath=${PREFIX:-"/opt/or-tools"}
+    if command -v brew &> /dev/null; then
         orToolsPath="$(brew --prefix or-tools)"
     fi
     mkdir -p ${orToolsPath}
     tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
-    rm -f ${orToolsFile}
+    rm -f ${baseDir}
 }
 
 _installUbuntuCleanUp() {
@@ -267,6 +273,7 @@ _installCentosCleanUp() {
 }
 
 _installCentosPackages() {
+    yum remove -y lcov ius-release epel-release
     yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
     yum install -y https://repo.ius.io/ius-release-el7.rpm
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
@@ -574,8 +581,6 @@ esac
 
 case "${os}" in
     "CentOS Linux" )
-        spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
-        export spdlogFolder
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installCentosPackages
@@ -593,8 +598,6 @@ EOF
         ;;
     "Ubuntu" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
-        export spdlogFolder
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installUbuntuPackages "${version}"
@@ -606,8 +609,6 @@ EOF
         fi
         ;;
     "Red Hat Enterprise Linux")
-        spdlogFolder="/usr/local/lib64/cmake/spdlog/spdlogConfigVersion.cmake"
-        export spdlogFolder
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installRHELPackages
@@ -631,8 +632,6 @@ You may wish to add these lines to your .bashrc file.
 EOF
         ;;
     "openSUSE Leap" )
-        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
-        export spdlogFolder
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installOpenSusePackages
@@ -650,8 +649,6 @@ EOF
         ;;
     "Debian GNU/Linux" )
         version=$(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g')
-        spdlogFolder="/usr/local/lib/cmake/spdlog/spdlogConfigVersion.cmake"
-        export spdlogFolder
         if [[ "${option}" == "base" || "${option}" == "all" ]]; then
             _checkIsLocal
             _installDebianPackages "${version}"
@@ -673,7 +670,7 @@ if [[ ! -z "${PREFIX}" ]]; then
 To use cmake, set cmake as an alias:
     alias cmake='${PREFIX}/bin/cmake'
     or  run
-    echo export PATH=${PREFIX}/bin:'${PATH}' >> ~/.bash_profile
+    echo export PATH=${PREFIX}/bin:\${PATH} >> ~/.bash_profile
     source ~/.bash_profile
 EOF
 fi
