@@ -1,3 +1,4 @@
+// Copied from OpenSTA/tcl/Exception.i
 // Copyright (c) 2021, Parallax Software, Inc.
 // 
 // This program is free software: you can redistribute it and/or modify

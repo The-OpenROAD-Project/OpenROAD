@@ -2,6 +2,7 @@
 # The next line is executed by /bin/sh, but not Tcl \
 exec tclsh $0 ${1+"$@"}
 
+# Copied from OpenSTA/test/save_ok
 # Copyright (c) 2021, Parallax Software, Inc.
 # 
 # This program is free software: you can redistribute it and/or modify
