@@ -143,7 +143,7 @@ _installOrTools() {
     fi
     mkdir -p ${orToolsPath}
     tar --strip 1 --dir ${orToolsPath} -xf ${orToolsFile}
-    rm -f ${baseDir}
+    rm -rf ${baseDir}
 }
 
 _installUbuntuCleanUp() {
