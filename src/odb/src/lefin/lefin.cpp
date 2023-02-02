@@ -1918,6 +1918,8 @@ void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
       P.setYTopEnclosure(dbdist(via->yTopOffset()));
     }
 
+    v->setViaParams(P);
+
     if (via->hasCutPattern())
       v->setPattern(via->cutPattern());
   }
