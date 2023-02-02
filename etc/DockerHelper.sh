@@ -19,7 +19,7 @@ usage: $0 [CMD] [OPTIONS]
 
   OPTIONS:
   -compiler=COMPILER_NAME       Choose between gcc (default) and clang. Valid
-                                  only if the target is 'builder'.                     
+                                  only if the target is 'builder'.
   -os=OS_NAME                   Choose beween centos7 (default), ubuntu20.04, ubuntu22.04, ubuntu22.10, rhel, opensuse, debian10 and debian11.
   -target=TARGET                Choose target fo the Docker image:
                                   'dev': os + packages to compile app
@@ -151,22 +151,28 @@ _push() {
                 mkdir -p build
 
                 OS_LIST="centos7 ubuntu20.04 ubuntu22.04 ubuntu22.10 opensuse debian10 debian11 rhel"
+
                 # create image with sha and latest tag for all os
                 for os in ${OS_LIST}; do
-                    ./etc/DockerHelper.sh create -target=dev \
-                        2>&1 | tee build/create-${os}-latest.log
                     ./etc/DockerHelper.sh create -target=dev -sha \
                         2>&1 | tee build/create-${os}-${commitSha}.log
                 done
-                
+                for os in ${OS_LIST}; do
+                    ./etc/DockerHelper.sh create -target=dev \
+                        2>&1 | tee build/create-${os}-latest.log
+                done
+
                 # test image with sha and latest tag for all os and compiler
                 for os in ${OS_LIST}; do
                     ./etc/DockerHelper.sh test -target=builder \
                         2>&1 | tee build/test-${os}-gcc-latest.log
+                done
+                for os in ${OS_LIST}; do
                     ./etc/DockerHelper.sh test -target=builder -compiler=clang \
                         2>&1 | tee build/test-${os}-clang-latest.log
                 done
-                
+
+                # print commands to update the images upstream
                 for os in ${OS_LIST}; do
                     echo [DRY-RUN] docker push openroad/${os}-dev:latest
                     echo [DRY-RUN] docker push openroad/${os}-dev:${commitSha}
