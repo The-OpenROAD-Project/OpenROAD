@@ -43,10 +43,7 @@ static void addObject(dbWireEncoder& encoder, dbObject* obj)
 
   if (type == dbITermObj) {
     encoder.addITerm((dbITerm*) obj);
-
-  }
-
-  else if (type == dbBTermObj) {
+  } else if (type == dbBTermObj) {
     encoder.addBTerm((dbBTerm*) obj);
   }
 }

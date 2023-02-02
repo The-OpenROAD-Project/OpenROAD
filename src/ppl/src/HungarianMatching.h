@@ -70,10 +70,10 @@ class HungarianMatching
   virtual ~HungarianMatching() = default;
   void findAssignment();
   void findAssignmentForGroups();
-  void getFinalAssignment(std::vector<IOPin>& assigment,
+  void getFinalAssignment(std::vector<IOPin>& assignment,
                           MirroredPins& mirrored_pins,
                           bool assign_mirrored) const;
-  void getAssignmentForGroups(std::vector<IOPin>& assigment);
+  void getAssignmentForGroups(std::vector<IOPin>& assignment);
 
  private:
   std::vector<std::vector<int>> hungarian_matrix_;

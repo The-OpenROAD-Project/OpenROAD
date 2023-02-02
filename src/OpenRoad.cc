@@ -61,6 +61,7 @@
 // mpl2 aborts with link error on darwin
 #include "mpl2/MakeMacroPlacer.h"
 #endif
+#include "dft/MakeDft.hh"
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -145,6 +146,7 @@ OpenRoad::OpenRoad()
       pdngen_(nullptr),
       distributer_(nullptr),
       stt_builder_(nullptr),
+      dft_(nullptr),
       threads_(1)
 {
   db_ = dbDatabase::create();
@@ -176,6 +178,7 @@ OpenRoad::~OpenRoad()
   deletePdnGen(pdngen_);
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
+  dft::deleteDft(dft_);
   delete logger_;
 }
 
@@ -230,6 +233,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   pdngen_ = makePdnGen();
   distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
+  dft_ = dft::makeDft();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -267,6 +271,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initPdnGen(this);
   initDistributed(this);
   initSteinerTreeBuilder(this);
+  dft::initDft(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

@@ -34,7 +34,6 @@
 #include "db.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
-#include "rcx/exttree.h"
 
 namespace rcx {
 
@@ -45,6 +44,7 @@ void extMain::resetMinMaxRC(uint ii, uint jj)
   _minResTable[ii][jj] = 0;
   _maxResTable[ii][jj] = 0;
 }
+
 void extMain::setMinRC(uint ii, uint jj, extDistRC* rc)
 {
   if (rc) {
@@ -55,6 +55,7 @@ void extMain::setMinRC(uint ii, uint jj, extDistRC* rc)
     _minResTable[ii][jj] = 0;
   }
 }
+
 void extMain::setMaxRC(uint ii, uint jj, extDistRC* rc)
 {
   if (rc) {
@@ -65,6 +66,7 @@ void extMain::setMaxRC(uint ii, uint jj, extDistRC* rc)
     _maxResTable[ii][jj] = 0;
   }
 }
+
 extDistRC* extRCModel::getMinRC(int met, int width)
 {
   if (met >= _layerCnt)
@@ -78,6 +80,7 @@ extDistRC* extRCModel::getMinRC(int met, int width)
 
   return getOverFringeRC(&m);
 }
+
 extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
 {
   if (met >= _layerCnt)
@@ -103,6 +106,7 @@ extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
   }
   return rc;
 }
+
 uint extMain::calcMinMaxRC()
 {
   uint cornerCnt = _modelTable->getCnt();
@@ -141,6 +145,7 @@ uint extMain::calcMinMaxRC()
   }
   return cnt;
 }
+
 uint extMain::getExtStats(odb::dbNet* net,
                           uint corner,
                           int& wlen,
