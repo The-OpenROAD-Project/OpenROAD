@@ -23,7 +23,9 @@ _installCommonDev() {
     # temp dir to download and compile
     baseDir=/tmp/installers
     mkdir -p "${baseDir}"
-    if [[ ! -z "${PREFIX}" ]]; then mkdir -p "${PREFIX}"; fi
+    if [[ ! -z "${PREFIX}" ]]; then
+        mkdir -p "${PREFIX}"
+    fi
 
     # CMake
     cmakePrefix=${PREFIX:-"/usr/local"}
@@ -277,7 +279,7 @@ _installCentosPackages() {
     yum install -y http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm
     yum install -y https://repo.ius.io/ius-release-el7.rpm
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    
+
     yum update -y
 
     yum groupinstall -y "Development Tools"
@@ -303,7 +305,7 @@ _installCentosPackages() {
         python36 \
         python36-devel \
         python36-pip
- 
+
     yum install -y \
         libgomp \
         python36-libs \
@@ -351,7 +353,7 @@ _installOpenSusePackages() {
         gzip \
         libomp11-devel \
         zlib-devel
-    
+
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
 }
@@ -362,8 +364,7 @@ _installHomebrewPackage() {
     url=https://raw.githubusercontent.com/Homebrew/homebrew-core/${commit}/Formula/${package}.rb
     curl -L ${url} > ${package}.rb
 
-    if brew list "${package}" &> /dev/null
-        then
+    if brew list "${package}" &> /dev/null; then
         # Homebrew is awful at letting you use the version you want if a newer
         # version is installed. The package must be completely removed to ensure
         # only the correct version is installed
@@ -380,13 +381,11 @@ _installHomebrewPackage() {
 }
 
 _installDarwin() {
-    if ! command -v brew &> /dev/null
-      then
+    if ! command -v brew &> /dev/null; then
       echo "Homebrew is not found. Please install homebrew before continuing."
       exit 1
       fi
-    if ! xcode-select -p &> /dev/null
-      then
+    if ! xcode-select -p &> /dev/null; then
       # xcode-select does not pause execution, so the user must handle it
       cat <<EOF
 Xcode command line tools not installed.
@@ -535,7 +534,7 @@ while [ "$#" -gt 0 ]; do
             option="common"
             ;;
         -local)
-            if [[ $(id -u) == 0 ]]; then>&2
+            if [[ $(id -u) == 0 ]]; then
                 echo "ERROR: cannot install locally (i.e., use -local) if you are root or using sudo." >&2
                 exit 1
             fi
