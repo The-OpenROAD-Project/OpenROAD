@@ -73,15 +73,17 @@ proc detailed_placement { args } {
 }
 
 sta::define_cmd_args "set_placement_padding" { -global|-masters masters|-instances insts\
+                                                 [-regexp]\
                                                  [-right site_count]\
-                                                 [-left site_count] \
+                                                 [-left site_count]\
                                                  [instances]\
                                                }
 
 proc set_placement_padding { args } {
   sta::parse_key_args "set_placement_padding" args \
-    keys {-masters -instances -right -left} flags {-global}
+    keys {-masters -instances -right -left} flags {-global -regexp}
 
+  set regexp [info exists flags(-regexp)]
   set left 0
   if { [info exists keys(-left)] } {
     set left $keys(-left)
@@ -97,7 +99,7 @@ proc set_placement_padding { args } {
   if { [info exists flags(-global)] } {
     dpl::set_padding_global $left $right
   } elseif { [info exists keys(-masters)] } {
-    set masters [dpl::get_masters_arg "-masters" $keys(-masters)]
+    set masters [dpl::get_masters_arg "-masters" $regexp $keys(-masters)]
     foreach master $masters {
       dpl::set_padding_master $master $left $right
     }
@@ -111,19 +113,20 @@ proc set_placement_padding { args } {
   }
 }
 
-sta::define_cmd_args "filler_placement" { [-prefix prefix] filler_masters }
+sta::define_cmd_args "filler_placement" { [-prefix prefix] [-regexp] filler_masters }
 
 proc filler_placement { args } {
   sta::parse_key_args "filler_placement" args \
-    keys {-prefix} flags {}
+    keys {-prefix} flags {-regexp}
   
   set prefix "FILLER_"
   if { [info exists keys(-prefix)] } {
     set prefix $keys(-prefix)
   }
+  set regexp [info exists flags(-regexp)]
   
   sta::check_argc_eq1 "filler_placement" $args
-  set filler_masters [dpl::get_masters_arg "filler_masters" [lindex $args 0]]
+  set filler_masters [dpl::get_masters_arg "filler_masters" $regexp [lindex $args 0]]
   dpl::filler_placement_cmd $filler_masters $prefix
 }
 
@@ -183,16 +186,21 @@ proc detailed_placement_debug { args } {
   dpl::set_debug_cmd $displacement $min_displacement $debug_instance
 }
 
-proc get_masters_arg { arg_name arg } {
+proc get_masters_arg { arg_name regexp arg } {
   set matched 0
   set masters {}
   # Expand master name regexps
   set db [ord::get_db]
   foreach name $arg {
+    if { $regexp } {
+      # Anchor the regexp pattern.
+      set name "^${name}$"
+    }
     foreach lib [$db getLibs] {
       foreach master [$lib getMasters] {
         set master_name [$master getConstName]
-        if { [regexp $name $master_name] } {
+        if { (!$regexp && [string match $name $master_name]) \
+               || ($regexp && [regexp $name $master_name]) } {
           lappend masters $master
           set matched 1
         }

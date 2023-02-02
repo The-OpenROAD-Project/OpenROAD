@@ -14,10 +14,11 @@ to legal locations after global placement.
 
 ```
 set_placement_padding -global|-instances insts|-masters masters
+                      [-regexp]
                       [-left pad_left] [-right pad_right]
 detailed_placement [-max_displacement disp|{disp_x disp_y}]
 check_placement [-verbose]
-filler_placement [-prefix prefix] filler_masters
+filler_placement [-prefix prefix] [-regexp] filler_masters
 remove_fillers
 optimize_mirroring
 ```
@@ -43,10 +44,10 @@ a weak attempt to reduce total wirelength (HPWL).
 
 The `filler_placement` command fills gaps between detail-placed instances
 to connect the power and ground rails in the rows. `filler_masters` is a
-list of master/macro names to use for filling the gaps. Wildcard matching
-is supported, so `FILL*` will match, e.g., `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2
-FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.  To specify a different naming prefix
-from `FILLER_` use `-prefix <new prefix>`.
+list of master/macro names to use for filling the gaps. Both simple matching and
+regexp matching (via the `-regexp` flag) is supported, so `FILL*` and `-regexp FILL.*`
+will match `FILLCELL_X1 FILLCELL_X16 FILLCELL_X2 FILLCELL_X32 FILLCELL_X4 FILLCELL_X8`.
+To specify a different naming prefix from `FILLER_` use `-prefix <new prefix>`.
 
 ## Example scripts
 
