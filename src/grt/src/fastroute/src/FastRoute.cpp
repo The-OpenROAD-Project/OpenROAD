@@ -275,15 +275,15 @@ FrNet* FastRouteCore::addNet(odb::dbNet* db_net,
 }
 
 bool FastRouteCore::changePinPositionNet(odb::dbNet* db_net,
-                                        std::vector<int>& new_pin_x,
-                                        std::vector<int>& new_pin_y,
-                                        std::vector<int>& new_pin_l)
+                                         std::vector<int>& new_pin_x,
+                                         std::vector<int>& new_pin_y,
+                                         std::vector<int>& new_pin_l)
 {
   int netID;
   bool exists;
   getNetId(db_net, netID, exists);
 
-  if(exists) {
+  if (exists) {
     FrNet* net = nets_[netID];
     return net->changePinPosition(new_pin_x, new_pin_y, new_pin_l);
   }
@@ -737,7 +737,7 @@ void FastRouteCore::updateDbCongestion()
 
 NetRouteMap FastRouteCore::run()
 {
-  //printf("NumEdges %d\n", sttrees_[12235].num_edges());
+  // printf("NumEdges %d\n", sttrees_[12235].num_edges());
   int tUsage;
   int cost_step;
   int maxOverflow = 0;
@@ -788,10 +788,10 @@ NetRouteMap FastRouteCore::run()
   spiralRouteAll();
   newrouteZAll(10);
   int past_cong = getOverflow2D(&maxOverflow);
-  
-  //verify2DEdgesUsage();
+
+  // verify2DEdgesUsage();
   convertToMazeroute();
-  //verifyEdgeUsage();
+  // verifyEdgeUsage();
   int enlarge_ = 10;
   int newTH = 10;
   int healingTrigger = 0;
@@ -1102,7 +1102,7 @@ NetRouteMap FastRouteCore::run()
 
     last_total_overflow = total_overflow_;
   }  // end overflow iterations
- 
+
   // Debug mode Tree 2D after overflow iterations
   if (debug_->isOn_ && debug_->tree2D_) {
     for (int netID = 0; netID < netCount(); netID++) {
@@ -1114,7 +1114,7 @@ NetRouteMap FastRouteCore::run()
   }
   has_2D_overflow_ = total_overflow_ > 0;
 
-  //printf("NumEdges %d\n", sttrees_[12235].num_edges());
+  // printf("NumEdges %d\n", sttrees_[12235].num_edges());
   if (minofl > 0) {
     debugPrint(logger_,
                GRT,
@@ -1125,7 +1125,7 @@ NetRouteMap FastRouteCore::run()
                minoflrnd);
     copyBR();
   }
-  //printf("NumEdges %d\n", sttrees_[12235].num_edges());
+  // printf("NumEdges %d\n", sttrees_[12235].num_edges());
   if (overflow_increases > max_overflow_increases) {
     if (verbose_)
       logger_->warn(
@@ -1134,7 +1134,7 @@ NetRouteMap FastRouteCore::run()
           "Congestion iterations cannot increase overflow, reached the "
           "maximum number of times the total overflow can be increased.");
   }
- 
+
   freeRR();
 
   removeLoops();
@@ -1143,7 +1143,7 @@ NetRouteMap FastRouteCore::run()
 
   layerAssignment();
 
-  //verifyEdgeUsage();
+  // verifyEdgeUsage();
 
   costheight_ = 3;
   via_cost_ = 1;
@@ -1157,7 +1157,7 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
- 
+
   if (goingLV && past_cong == 0) {
     mazeRouteMSMDOrder3D(enlarge_, 0, 20, layer_orientation_);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
@@ -1172,7 +1172,7 @@ NetRouteMap FastRouteCore::run()
     logger_->info(GRT, 111, "Final number of vias: {}", numVia);
     logger_->info(GRT, 112, "Final usage 3D: {}", (finallength + 3 * numVia));
   }
- 
+
   // Debug mode Tree 3D after layer assignament
   if (debug_->isOn_ && debug_->tree3D_) {
     for (int netID = 0; netID < netCount(); netID++) {
@@ -1182,7 +1182,7 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
-  //verifyEdgeUsage();
+  // verifyEdgeUsage();
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
   return routes;
@@ -1432,7 +1432,7 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
     painter.setPenWidth(700);
 
     const int deg = stree_.deg;
-    for (int i = 0; i < stree_.branchCount()/*2 * deg - 2*/; i++) {
+    for (int i = 0; i < stree_.branchCount() /*2 * deg - 2*/; i++) {
       const int x1 = tile_size_ * (stree_.branch[i].x + 0.5) + x_corner_;
       const int y1 = tile_size_ * (stree_.branch[i].y + 0.5) + y_corner_;
       const int n = stree_.branch[i].n;
@@ -1567,7 +1567,7 @@ void FrNet::reset(odb::dbNet* db_net,
   min_layer_ = min_layer;
   max_layer_ = max_layer;
   slack_ = slack;
-  edge_cost_per_layer_.reset(edge_cost_per_layer); 
+  edge_cost_per_layer_.reset(edge_cost_per_layer);
   pin_x_.clear();
   pin_y_.clear();
   pin_l_.clear();
@@ -1578,21 +1578,25 @@ bool FrNet::changePinPosition(std::vector<int>& new_pin_x,
                               std::vector<int>& new_pin_l)
 {
   bool dif_pos = false;
-  std::unordered_map<std::tuple<int,int,int>, int, boost::hash<std::tuple<int,int,int>>> bkpos;
+  std::unordered_map<std::tuple<int, int, int>,
+                     int,
+                     boost::hash<std::tuple<int, int, int>>>
+      bkpos;
 
-  for(int i = 0; i<getNumPins(); i++)
-    bkpos[std::make_tuple(pin_x_[i],pin_y_[i],pin_l_[i])]++;
+  for (int i = 0; i < getNumPins(); i++)
+    bkpos[std::make_tuple(pin_x_[i], pin_y_[i], pin_l_[i])]++;
 
-  for(int i = 0; i<new_pin_x.size(); i++){
-    std::tuple<int, int, int> pin_pos = std::make_tuple(new_pin_x[i], new_pin_y[i], new_pin_l[i]);
-    if(bkpos[pin_pos] == 0) {
+  for (int i = 0; i < new_pin_x.size(); i++) {
+    std::tuple<int, int, int> pin_pos
+        = std::make_tuple(new_pin_x[i], new_pin_y[i], new_pin_l[i]);
+    if (bkpos[pin_pos] == 0) {
       dif_pos = true;
       break;
     }
     bkpos[pin_pos]--;
   }
-  for(auto it : bkpos){
-    if(it.second > 0){
+  for (auto it : bkpos) {
+    if (it.second > 0) {
       dif_pos = true;
       break;
     }

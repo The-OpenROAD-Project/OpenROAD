@@ -1221,7 +1221,6 @@ void FastRouteCore::removeLoops()
       std::vector<short>& gridsX = treeedge->route.gridsX;
       std::vector<short>& gridsY = treeedge->route.gridsY;
 
-
       for (int i = 1; i <= treeedge->route.routelen; i++) {
         for (int j = 0; j < i; j++) {
           if (gridsX[i] == gridsX[j] && gridsY[i] == gridsY[j]) {
@@ -1257,16 +1256,18 @@ void FastRouteCore::removeLoops()
 void FastRouteCore::verifyEdgeUsage()
 {
   printf("%d %d\n", y_grid_, x_grid_);
-  multi_array<std::set<int>, 2> s_v_edges(boost::extents[y_grid_-1][x_grid_]);
-  multi_array<std::set<int>, 2> s_h_edges(boost::extents[y_grid_][x_grid_-1]);
+  multi_array<std::set<int>, 2> s_v_edges(boost::extents[y_grid_ - 1][x_grid_]);
+  multi_array<std::set<int>, 2> s_h_edges(boost::extents[y_grid_][x_grid_ - 1]);
 
-  multi_array<int, 2> v_edges(boost::extents[y_grid_-1][x_grid_]);
-  multi_array<int, 2> h_edges(boost::extents[y_grid_][x_grid_-1]);
+  multi_array<int, 2> v_edges(boost::extents[y_grid_ - 1][x_grid_]);
+  multi_array<int, 2> h_edges(boost::extents[y_grid_][x_grid_ - 1]);
 
-  multi_array<int, 3> v_edges_3D(boost::extents[num_layers_][y_grid_-1][x_grid_]);
-  multi_array<int, 3> h_edges_3D(boost::extents[num_layers_][y_grid_][x_grid_-1]);
-  
-  for(int netID = 0; netID < netCount(); netID++) {
+  multi_array<int, 3> v_edges_3D(
+      boost::extents[num_layers_][y_grid_ - 1][x_grid_]);
+  multi_array<int, 3> h_edges_3D(
+      boost::extents[num_layers_][y_grid_][x_grid_ - 1]);
+
+  for (int netID = 0; netID < netCount(); netID++) {
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
 
@@ -1279,67 +1280,69 @@ void FastRouteCore::verifyEdgeUsage()
       const std::vector<short>& gridsL = treeedge->route.gridsL;
       const int routeLen = treeedge->route.routelen;
 
-      //if(!nets_[netID]->isRouted()) printf("Dirty Net: netID:%d edgeID:%d routeLen:%d\n", netID, edgeID, routeLen);
-      //printf("Xs:%ld Ys:%ld Ls:%ld\n", gridsX.size(), gridsY.size(), gridsL.size());
+      // if(!nets_[netID]->isRouted()) printf("Dirty Net: netID:%d edgeID:%d
+      // routeLen:%d\n", netID, edgeID, routeLen); printf("Xs:%ld Ys:%ld
+      // Ls:%ld\n", gridsX.size(), gridsY.size(), gridsL.size());
 
       for (int i = 0; i < routeLen; i++) {
-        if(gridsL[i] != gridsL[i+1]){
-        //if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
+        if (gridsL[i] != gridsL[i + 1]) {
+          // if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
           continue;
-        }
-        else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
+        } else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
           s_v_edges[ymin][gridsX[i]].insert(netID);
-          v_edges[ymin][gridsX[i]]+=edgeCost;
-          v_edges_3D[gridsL[i]][ymin][gridsX[i]] += nets_[netID]->getLayerEdgeCost(gridsL[i]);
+          v_edges[ymin][gridsX[i]] += edgeCost;
+          v_edges_3D[gridsL[i]][ymin][gridsX[i]]
+              += nets_[netID]->getLayerEdgeCost(gridsL[i]);
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
           s_h_edges[gridsY[i]][xmin].insert(netID);
-          h_edges[gridsY[i]][xmin]+=edgeCost;
-          h_edges_3D[gridsL[i]][gridsY[i]][xmin] += nets_[netID]->getLayerEdgeCost(gridsL[i]);
+          h_edges[gridsY[i]][xmin] += edgeCost;
+          h_edges_3D[gridsL[i]][gridsY[i]][xmin]
+              += nets_[netID]->getLayerEdgeCost(gridsL[i]);
         }
-      } 
+      }
     }
   }
-/*
-  for(auto it:s_v_edges[76][31]){
-    printf("Net %s\n", nets_[it]->getName());
-  }
-  for(auto it:s_v_edges[77][31]){
-    printf("Net %s\n", nets_[it]->getName());
-  }
+  /*
+    for(auto it:s_v_edges[76][31]){
+      printf("Net %s\n", nets_[it]->getName());
+    }
+    for(auto it:s_v_edges[77][31]){
+      printf("Net %s\n", nets_[it]->getName());
+    }
 
-  for(auto it:s_v_edges[0][2]){
-    printf("NetV %s\n", nets_[it]->getName());
-  }
-*/
-  for(int k = 0; k < num_layers_; k++){ 
-  for (int y = 0; y < y_grid_ - 1; ++y) {
-    for (int x = 0; x < x_grid_; ++x) {
-      if (v_edges_3D[k][y][x] != v_edges_3D_[k][y][x].usage) {
-        printf("POS %d %d %d\n", k, y, x); 
-        logger_->error(GRT,
-                       1247,
-                       "v_edge mismatch {} vs {}",
-                       v_edges_3D[k][y][x],
-                       v_edges_3D_[k][y][x].usage);
+    for(auto it:s_v_edges[0][2]){
+      printf("NetV %s\n", nets_[it]->getName());
+    }
+  */
+  for (int k = 0; k < num_layers_; k++) {
+    for (int y = 0; y < y_grid_ - 1; ++y) {
+      for (int x = 0; x < x_grid_; ++x) {
+        if (v_edges_3D[k][y][x] != v_edges_3D_[k][y][x].usage) {
+          printf("POS %d %d %d\n", k, y, x);
+          logger_->error(GRT,
+                         1247,
+                         "v_edge mismatch {} vs {}",
+                         v_edges_3D[k][y][x],
+                         v_edges_3D_[k][y][x].usage);
+        }
       }
     }
   }
-  }
-  for(int k=0;k<num_layers_;k++){
-  for (int y = 0; y < y_grid_; ++y) {
-    for (int x = 0; x < x_grid_ - 1; ++x) {
-      if (h_edges_3D[k][y][x] != h_edges_3D_[k][y][x].usage) {
-        printf("POS %d %d\n", y, x);
-        logger_->error(GRT,
-                       1248,
-                       "h_edge mismatch {} vs {}",
-                       h_edges_3D[k][y][x],
-                       h_edges_3D_[k][y][x].usage);
+  for (int k = 0; k < num_layers_; k++) {
+    for (int y = 0; y < y_grid_; ++y) {
+      for (int x = 0; x < x_grid_ - 1; ++x) {
+        if (h_edges_3D[k][y][x] != h_edges_3D_[k][y][x].usage) {
+          printf("POS %d %d\n", y, x);
+          logger_->error(GRT,
+                         1248,
+                         "h_edge mismatch {} vs {}",
+                         h_edges_3D[k][y][x],
+                         h_edges_3D_[k][y][x].usage);
+        }
       }
     }
-  }
   }
 }
 
@@ -1374,17 +1377,17 @@ void FastRouteCore::verify2DEdgesUsage()
       if (treeedge->route.type == RouteType::LRoute) {
         if (treeedge->route.xFirst) {  // horizontal first
           for (int j = x1; j < x2; j++) {
-            h_edges[y1][j]+=edgeCost;
+            h_edges[y1][j] += edgeCost;
           }
           for (int j = ymin; j < ymax; j++) {
-            v_edges[j][x2]+=edgeCost;
+            v_edges[j][x2] += edgeCost;
           }
         } else {  // vertical first
           for (int j = ymin; j < ymax; j++) {
-            v_edges[j][x1]+=edgeCost;
+            v_edges[j][x1] += edgeCost;
           }
           for (int j = x1; j < x2; j++) {
-            h_edges[y2][j]+=edgeCost;
+            h_edges[y2][j] += edgeCost;
           }
         }
       } else if (treeedge->route.type == RouteType::ZRoute) {
@@ -1392,34 +1395,34 @@ void FastRouteCore::verify2DEdgesUsage()
         if (treeedge->route.HVH)  // HVH
         {
           for (int i = x1; i < Zpoint; i++) {
-            h_edges[y1][i]+=edgeCost;
+            h_edges[y1][i] += edgeCost;
           }
           for (int i = Zpoint; i < x2; i++) {
-            h_edges[y2][i]+=edgeCost;
+            h_edges[y2][i] += edgeCost;
           }
           for (int i = ymin; i < ymax; i++) {
-            v_edges[i][Zpoint]+=edgeCost;
+            v_edges[i][Zpoint] += edgeCost;
           }
         } else {  // VHV
           if (y1 <= y2) {
             for (int i = y1; i < Zpoint; i++) {
-              v_edges[i][x1]+=edgeCost;
+              v_edges[i][x1] += edgeCost;
             }
             for (int i = Zpoint; i < y2; i++) {
-              v_edges[i][x2]+=edgeCost;
+              v_edges[i][x2] += edgeCost;
             }
             for (int i = x1; i < x2; i++) {
-              h_edges[Zpoint][i]+=edgeCost;
+              h_edges[Zpoint][i] += edgeCost;
             }
           } else {
             for (int i = y2; i < Zpoint; i++) {
-              v_edges[i][x2]+=edgeCost;
+              v_edges[i][x2] += edgeCost;
             }
             for (int i = Zpoint; i < y1; i++) {
-              v_edges[i][x1]+=edgeCost;
+              v_edges[i][x1] += edgeCost;
             }
             for (int i = x1; i < x2; i++) {
-              h_edges[Zpoint][i]+=edgeCost;
+              h_edges[Zpoint][i] += edgeCost;
             }
           }
         }
@@ -1689,15 +1692,14 @@ void FastRouteCore::copyRS(void)
       sttrees_bk_[netID].edges[edgeID].len = sttrees_[netID].edges[edgeID].len;
       sttrees_bk_[netID].edges[edgeID].n1 = sttrees_[netID].edges[edgeID].n1;
       sttrees_bk_[netID].edges[edgeID].n2 = sttrees_[netID].edges[edgeID].n2;
-      
+
       sttrees_bk_[netID].edges[edgeID].route.routelen
-            = sttrees_[netID].edges[edgeID].route.routelen;
+          = sttrees_[netID].edges[edgeID].route.routelen;
       if (sttrees_[netID].edges[edgeID].len
           > 0)  // only route the non-degraded edges (len>0)
       {
-        
-        //sttrees_bk_[netID].edges[edgeID].route.routelen
-          //  = sttrees_[netID].edges[edgeID].route.routelen;
+        // sttrees_bk_[netID].edges[edgeID].route.routelen
+        //   = sttrees_[netID].edges[edgeID].route.routelen;
         sttrees_bk_[netID].edges[edgeID].route.gridsX.resize(
             sttrees_[netID].edges[edgeID].route.routelen + 1, 0);
         sttrees_bk_[netID].edges[edgeID].route.gridsY.resize(
@@ -1731,9 +1733,9 @@ void FastRouteCore::copyBR(void)
         }
       }
     }
-    //sttrees_.clear();
+    // sttrees_.clear();
 
-    //sttrees_.resize(netCount());
+    // sttrees_.resize(netCount());
 
     for (netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->isRouted())
@@ -1771,14 +1773,13 @@ void FastRouteCore::copyBR(void)
 
         sttrees_[netID].edges[edgeID].route.type = RouteType::MazeRoute;
         sttrees_[netID].edges[edgeID].route.routelen
-              = sttrees_bk_[netID].edges[edgeID].route.routelen;
+            = sttrees_bk_[netID].edges[edgeID].route.routelen;
         if (sttrees_bk_[netID].edges[edgeID].len
             > 0)  // only route the non-degraded edges (len>0)
         {
-          
-          //sttrees_[netID].edges[edgeID].route.type = RouteType::MazeRoute;
-          //sttrees_[netID].edges[edgeID].route.routelen
-            //  = sttrees_bk_[netID].edges[edgeID].route.routelen;
+          // sttrees_[netID].edges[edgeID].route.type = RouteType::MazeRoute;
+          // sttrees_[netID].edges[edgeID].route.routelen
+          //   = sttrees_bk_[netID].edges[edgeID].route.routelen;
           sttrees_[netID].edges[edgeID].route.gridsX.resize(
               sttrees_bk_[netID].edges[edgeID].route.routelen + 1, 0);
           sttrees_[netID].edges[edgeID].route.gridsY.resize(
@@ -1806,8 +1807,8 @@ void FastRouteCore::copyBR(void)
       }
     }
     for (netID = 0; netID < netCount(); netID++) {
-      //if (nets_[netID]->isRouted())
-        //continue;
+      // if (nets_[netID]->isRouted())
+      // continue;
 
       numEdges = sttrees_[netID].num_edges();
       int edgeCost = nets_[netID]->getEdgeCost();
@@ -1819,7 +1820,8 @@ void FastRouteCore::copyBR(void)
           const std::vector<short>& gridsY
               = sttrees_[netID].edges[edgeID].route.gridsY;
           for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
-            if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) continue;
+            if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1])
+              continue;
             if (gridsX[i] == gridsX[i + 1])  // a vertical edge
             {
               min_y = std::min(gridsY[i], gridsY[i + 1]);

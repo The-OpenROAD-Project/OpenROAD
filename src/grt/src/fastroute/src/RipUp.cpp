@@ -471,13 +471,15 @@ void FastRouteCore::releaseNetResources(const int netID)
           edge = &v_edges_[ymin][gridsX[i]];
           edge_3D = &v_edges_3D_[gridsL[i]][ymin][gridsX[i]];
           edge->usage -= edgeCost;
-          edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);//edgeCost;
+          edge_3D->usage
+              -= nets_[netID]->getLayerEdgeCost(gridsL[i]);  // edgeCost;
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
           edge = &h_edges_[gridsY[i]][xmin];
           edge_3D = &h_edges_3D_[gridsL[i]][gridsY[i]][xmin];
           edge->usage -= edgeCost;
-          edge_3D->usage -= nets_[netID]->getLayerEdgeCost(gridsL[i]);//edgeCost;
+          edge_3D->usage
+              -= nets_[netID]->getLayerEdgeCost(gridsL[i]);  // edgeCost;
         }
       }
     }

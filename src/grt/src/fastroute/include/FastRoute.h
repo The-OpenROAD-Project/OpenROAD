@@ -126,7 +126,7 @@ class FastRouteCore
   bool changePinPositionNet(odb::dbNet* db_net,
                             std::vector<int>& new_pin_x,
                             std::vector<int>& new_pin_y,
-                            std::vector<int>& new_pin_l); 
+                            std::vector<int>& new_pin_l);
 
   void initEdges();
   void setNumAdjustments(int nAdjustements);
@@ -231,7 +231,7 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void setCongestionNets(int &posX, int &posY, int dir);
+  void setCongestionNets(int& posX, int& posY, int dir);
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
@@ -573,7 +573,7 @@ class FastRouteCore
       vertical_blocked_intervals_;
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>
       horizontal_blocked_intervals_;
-  std::set<odb::dbNet*> congestion_nets_; 
+  std::set<odb::dbNet*> congestion_nets_;
 };
 
 }  // namespace grt

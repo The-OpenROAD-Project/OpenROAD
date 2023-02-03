@@ -266,7 +266,9 @@ bool GlobalRouter::haveRoutes()
   return !routes_.empty();
 }
 
-void GlobalRouter::globalRoute(bool save_guides, bool start_incremental, bool end_incremental)
+void GlobalRouter::globalRoute(bool save_guides,
+                               bool start_incremental,
+                               bool end_incremental)
 {
   if(start_incremental && end_incremental) {
     logger_->error(GRT, 251, "Both option defined.");
@@ -274,15 +276,13 @@ void GlobalRouter::globalRoute(bool save_guides, bool start_incremental, bool en
   else if(start_incremental){
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
-  }
-  else{
-    if(end_incremental) {
+  } else {
+    if (end_incremental) {
       updateDirtyRoutes();
       grouter_cbk_->removeOwner();
       delete grouter_cbk_;
-      grouter_cbk_ = nullptr; 
-    }
-    else {
+      grouter_cbk_ = nullptr;
+    } else {
       clear();
       block_ = db_->getChip()->getBlock();
 
@@ -291,8 +291,8 @@ void GlobalRouter::globalRoute(bool save_guides, bool start_incremental, bool en
       }
 
       int min_layer = min_layer_for_clock_ > 0
-                      ? std::min(min_routing_layer_, min_layer_for_clock_)
-                      : min_routing_layer_;
+                          ? std::min(min_routing_layer_, min_layer_for_clock_)
+                          : min_routing_layer_;
       int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
@@ -866,7 +866,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     for (RoutePt& pin_pos : pins_on_grid) {
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
     }
-     
+
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()
         && net->getDbNet() == fastroute_->getDebugNet()) {
@@ -3965,8 +3965,8 @@ void GlobalRouter::updateDirtyRoutes()
     std::vector<Net*> dirty_nets;
     dirty_nets.reserve(dirty_nets_.size());
     for (odb::dbNet* db_net : dirty_nets_) {
-      // check if the pins changes positions 
-      if( checkPinPositions(db_net)){
+      // check if the pins changes positions
+      if (checkPinPositions(db_net)) {
         dirty_nets.push_back(db_net_map_[db_net]);
       }
     }
@@ -3979,8 +3979,8 @@ void GlobalRouter::updateDirtyRoutes()
 
     bool reroutingOverflow = true;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      if (reroutingOverflow){
-        for(odb::dbNet* db_net: fastroute_->getCongestionNets()) {
+      if (reroutingOverflow) {
+        for (odb::dbNet* db_net : fastroute_->getCongestionNets()) {
           dirty_nets.push_back(db_net_map_[db_net]);
         }
         initFastRouteIncr(dirty_nets);
@@ -3988,7 +3988,7 @@ void GlobalRouter::updateDirtyRoutes()
             = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
         mergeResults(new_route);
       }
-      if(fastroute_->has2Doverflow()){
+      if (fastroute_->has2Doverflow()) {
         logger_->error(GRT,
                        232,
                        "Routing congestion too high. Check the congestion "
