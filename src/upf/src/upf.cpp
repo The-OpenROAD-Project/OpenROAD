@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2022-2023, The Regents of the University of California, Google LLC
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "odb/upf.h"
+#include "upf/upf.h"
 
 #include <limits.h>
 #include <tcl.h>

@@ -257,6 +257,7 @@ add_subdirectory(par)
 add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(drt)
+add_subdirectory(upf)
 add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
@@ -319,6 +320,7 @@ target_link_libraries(openroad
   psm
   ant
   par
+  upf
   utl
   pdn
   dft

@@ -28,8 +28,11 @@ foreach pd $pds {
     set isolations [$pd_inst getIsolations]  
     puts "PowerDomain: $pd"
 
+    puts "$pswitches"
+
     foreach switch $pswitches {
-        puts "PowerSwitch: [$switch getName], OutSupply: [$switch getOutSupplyPort], InSupply: [$switch getInSupplyPort], ControlPorts: {[$switch getControlPorts]}, On States {[$switch getOnStates]}"  
+        set control_ports [$switch getControlPorts]
+        puts "PowerSwitch: [$switch getName], OutSupply: [$switch getOutSupplyPort], InSupply: [$switch getInSupplyPort], ControlPorts: $control_ports, On States {[$switch getOnStates]}"  
     }
 
     foreach iso $isolations {
@@ -37,6 +40,9 @@ foreach pd $pds {
     }
 
 }
+
+set x [[lindex [[$block findPowerDomain "PD_AES_1"] getPowerSwitches] 0] getControlPorts]
+puts "$x"
 
 puts "Logic Ports List:"
 set lps [$block getLogicPorts]
