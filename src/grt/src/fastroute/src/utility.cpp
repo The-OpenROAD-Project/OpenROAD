@@ -1255,7 +1255,6 @@ void FastRouteCore::removeLoops()
 
 void FastRouteCore::verifyEdgeUsage()
 {
-  printf("%d %d\n", y_grid_, x_grid_);
   multi_array<std::set<int>, 2> s_v_edges(boost::extents[y_grid_ - 1][x_grid_]);
   multi_array<std::set<int>, 2> s_h_edges(boost::extents[y_grid_][x_grid_ - 1]);
 
@@ -1280,10 +1279,6 @@ void FastRouteCore::verifyEdgeUsage()
       const std::vector<short>& gridsL = treeedge->route.gridsL;
       const int routeLen = treeedge->route.routelen;
 
-      // if(!nets_[netID]->isRouted()) printf("Dirty Net: netID:%d edgeID:%d
-      // routeLen:%d\n", netID, edgeID, routeLen); printf("Xs:%ld Ys:%ld
-      // Ls:%ld\n", gridsX.size(), gridsY.size(), gridsL.size());
-
       for (int i = 0; i < routeLen; i++) {
         if (gridsL[i] != gridsL[i + 1]) {
           // if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
@@ -1304,23 +1299,11 @@ void FastRouteCore::verifyEdgeUsage()
       }
     }
   }
-  /*
-    for(auto it:s_v_edges[76][31]){
-      printf("Net %s\n", nets_[it]->getName());
-    }
-    for(auto it:s_v_edges[77][31]){
-      printf("Net %s\n", nets_[it]->getName());
-    }
 
-    for(auto it:s_v_edges[0][2]){
-      printf("NetV %s\n", nets_[it]->getName());
-    }
-  */
   for (int k = 0; k < num_layers_; k++) {
     for (int y = 0; y < y_grid_ - 1; ++y) {
       for (int x = 0; x < x_grid_; ++x) {
         if (v_edges_3D[k][y][x] != v_edges_3D_[k][y][x].usage) {
-          printf("POS %d %d %d\n", k, y, x);
           logger_->error(GRT,
                          1247,
                          "v_edge mismatch {} vs {}",
@@ -1334,7 +1317,6 @@ void FastRouteCore::verifyEdgeUsage()
     for (int y = 0; y < y_grid_; ++y) {
       for (int x = 0; x < x_grid_ - 1; ++x) {
         if (h_edges_3D[k][y][x] != h_edges_3D_[k][y][x].usage) {
-          printf("POS %d %d\n", y, x);
           logger_->error(GRT,
                          1248,
                          "h_edge mismatch {} vs {}",

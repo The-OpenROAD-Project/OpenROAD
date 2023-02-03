@@ -737,7 +737,6 @@ void FastRouteCore::updateDbCongestion()
 
 NetRouteMap FastRouteCore::run()
 {
-  // printf("NumEdges %d\n", sttrees_[12235].num_edges());
   int tUsage;
   int cost_step;
   int maxOverflow = 0;
@@ -1114,7 +1113,6 @@ NetRouteMap FastRouteCore::run()
   }
   has_2D_overflow_ = total_overflow_ > 0;
 
-  // printf("NumEdges %d\n", sttrees_[12235].num_edges());
   if (minofl > 0) {
     debugPrint(logger_,
                GRT,
@@ -1125,7 +1123,6 @@ NetRouteMap FastRouteCore::run()
                minoflrnd);
     copyBR();
   }
-  // printf("NumEdges %d\n", sttrees_[12235].num_edges());
   if (overflow_increases > max_overflow_increases) {
     if (verbose_)
       logger_->warn(
@@ -1431,7 +1428,6 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
     painter.setBrush(painter.white);
     painter.setPenWidth(700);
 
-    const int deg = stree_.deg;
     for (int i = 0; i < stree_.branchCount() /*2 * deg - 2*/; i++) {
       const int x1 = tile_size_ * (stree_.branch[i].x + 0.5) + x_corner_;
       const int y1 = tile_size_ * (stree_.branch[i].y + 0.5) + y_corner_;
