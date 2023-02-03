@@ -71,16 +71,6 @@ struct FlexDRViaData
   // via2viaMinLen[z][3], last via=up,   curr via=up
   std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>> via2viaMinLen;
 
-  // via2viaMinLen[z][0], prev via=down, curr via=down, min required x dist
-  // via2viaMinLen[z][1], prev via=down, curr via=down, min required y dist
-  // via2viaMinLen[z][2], prev via=down, curr via=up,   min required x dist
-  // via2viaMinLen[z][3], prev via=down, curr via=up,   min required y dist
-  // via2viaMinLen[z][4], prev via=up,   curr via=down, min required x dist
-  // via2viaMinLen[z][5], prev via=up,   curr via=down, min required y dist
-  // via2viaMinLen[z][6], prev via=up,   curr via=up,   min required x dist
-  // via2viaMinLen[z][7], prev via=up,   curr via=up,   min required y dist
-  std::vector<std::vector<frCoord>> via2viaMinLenNew;
-
   // via2turnMinLen[z][0], last via=down, min required x dist
   // via2turnMinLen[z][1], last via=down, min required y dist
   // via2turnMinLen[z][2], last via=up,   min required x dist
@@ -93,7 +83,6 @@ struct FlexDRViaData
   {
     (ar) & halfViaEncArea;
     (ar) & via2viaMinLen;
-    (ar) & via2viaMinLenNew;
     (ar) & via2turnMinLen;
   }
   friend class boost::serialization::access;
@@ -199,21 +188,6 @@ class FlexDR
   bool init_via2viaMinLen_minimumcut2(frLayerNum lNum,
                                       frViaDef* viaDef1,
                                       frViaDef* viaDef2);
-
-  void init_via2viaMinLenNew();
-  frCoord init_via2viaMinLenNew_minSpc(frLayerNum lNum,
-                                       frViaDef* viaDef1,
-                                       frViaDef* viaDef2,
-                                       bool isCurrDirY);
-  frCoord init_via2viaMinLenNew_minimumcut1(frLayerNum lNum,
-                                            frViaDef* viaDef1,
-                                            frViaDef* viaDef2,
-                                            bool isCurrDirY);
-  frCoord init_via2viaMinLenNew_cutSpc(frLayerNum lNum,
-                                       frViaDef* viaDef1,
-                                       frViaDef* viaDef2,
-                                       bool isCurrDirY);
-
   frCoord init_via2turnMinLen_minSpc(frLayerNum lNum,
                                      frViaDef* viaDef,
                                      bool isCurrDirY);
