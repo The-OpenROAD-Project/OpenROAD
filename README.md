@@ -145,9 +145,29 @@ script you need to run as root or prepend `sudo` to the commands below.
 ``` shell
 ./etc/DependencyInstaller.sh -help
 
-Usage: ./etc/DependencyInstaller.sh -prefix=DIR    # installs dependencies in an existing user specified directory
-       ./etc/DependencyInstaller.sh -local         # installs dependencies in "$HOME/.local"
-
+Usage: etc/DependencyInstaller.sh
+                                # Installs all of OpenROAD's dependencies no
+                                #     need to run -base or -common. Requires
+                                #     privileged access.
+                                #
+       etc/DependencyInstaller.sh -base
+                                # Installs OpenROAD's dependencies using
+                                #     package managers (-common must be
+                                #     executed in another command).
+       etc/DependencyInstaller.sh -common
+                                # Installs OpenROAD's common dependencies
+                                #     (-base must be executed in another
+                                #     command).
+       etc/DependencyInstaller.sh -prefix=DIR
+                                # Installs common dependencies in an existing
+                                #     user-specified directory. Only used
+                                #     with -common. This flag cannot be used
+                                #     with sudo or with root access.
+       etc/DependencyInstaller.sh -local
+                                # Installs common dependencies in
+                                #    "$HOME/.local". Only used with
+                                #    -common. This flag cannot be used with
+                                #    sudo or with root access.
 ```
 
 ## Build

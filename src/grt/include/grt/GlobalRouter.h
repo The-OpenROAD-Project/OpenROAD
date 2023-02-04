@@ -278,6 +278,7 @@ class GlobalRouter
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reduction_percentage);
+  void computePinOffsetAdjustments();
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer);
   int computeNetWirelength(odb::dbNet* db_net);
@@ -315,9 +316,10 @@ class GlobalRouter
                        const std::map<RoutePt, int>& segs_at_point);
   void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& track_position);
-  GSegment createFakePin(Pin pin,
-                         odb::Point& pin_position,
-                         odb::dbTechLayer* layer);
+  void createFakePin(Pin pin,
+                     odb::Point& pin_position,
+                     odb::dbTechLayer* layer,
+                     Net* net);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void initAdjustments();
   odb::Point getRectMiddle(const odb::Rect& rect);

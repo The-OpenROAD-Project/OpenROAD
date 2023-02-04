@@ -70,6 +70,7 @@ uint extMain::allocateOverUnderMaps(uint layerCnt)
   }
   return cnt;
 }
+
 uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb)
 {
   _geomSeq->setSlices(planeCnt);
@@ -110,6 +111,7 @@ uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb)
   }
   return planeCnt + 1;
 }
+
 uint extMain::initPlanes(uint dir,
                          uint layerCnt,
                          uint* pitchTable,
@@ -138,6 +140,7 @@ uint extMain::initPlanes(uint dir,
   }
   return layerCnt;
 }
+
 uint extMain::initPlanes(uint layerCnt, odb::Rect* bb)
 {
   if (_geomSeq)
@@ -151,6 +154,7 @@ uint extMain::initPlanes(uint layerCnt, odb::Rect* bb)
 
   return initPlanesNew(layerCnt, bb);
 }
+
 uint extMain::makeIntersectPlanes(uint layerCnt)
 {
   if (_geomSeq == NULL)
@@ -199,6 +203,7 @@ void extMain::deletePlanes(uint layerCnt)
   }
   delete[] _overUnderPlaneLayerMap;
 }
+
 uint extMain::addShapeOnGs(odb::dbShape* s, bool swap_coords)
 {
   int level = s->getTechLayer()->getRoutingLevel();
@@ -208,6 +213,7 @@ uint extMain::addShapeOnGs(odb::dbShape* s, bool swap_coords)
   else
     return _geomSeq->box(s->yMin(), s->xMin(), s->yMax(), s->xMax(), level);
 }
+
 uint extMain::addSBoxOnGs(odb::dbSBox* s, bool swap_coords)
 {
   int level = s->getTechLayer()->getRoutingLevel();
@@ -285,6 +291,7 @@ uint extMain::addPowerGs(int dir, int* ll, int* ur)
   }
   return cnt;
 }
+
 void extMain::getBboxPerLayer(odb::Rect* rectTable)
 {
   odb::dbSet<odb::dbNet> bnets = _block->getNets();
@@ -342,6 +349,7 @@ void extMain::getBboxPerLayer(odb::Rect* rectTable)
     }
   }
 }
+
 uint extMain::addSignalGs(int dir, int* ll, int* ur)
 {
   bool rotatedGs = getRotatedFlag();
@@ -411,6 +419,7 @@ uint extMain::addSignalGs(int dir, int* ll, int* ur)
   }
   return cnt;
 }
+
 uint extMain::addObsShapesOnPlanes(odb::dbInst* inst,
                                    bool rotatedFlag,
                                    bool swap_coords)
@@ -434,6 +443,7 @@ uint extMain::addObsShapesOnPlanes(odb::dbInst* inst,
   }
   return cnt;
 }
+
 uint extMain::addItermShapesOnPlanes(odb::dbInst* inst,
                                      bool rotatedFlag,
                                      bool swap_coords)
@@ -465,6 +475,7 @@ uint extMain::addItermShapesOnPlanes(odb::dbInst* inst,
   }
   return cnt;
 }
+
 uint extMain::addInstShapesOnPlanes(uint dir, int* ll, int* ur)
 {
   bool rotated = getRotatedFlag();

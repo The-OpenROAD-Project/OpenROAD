@@ -95,7 +95,7 @@ void frMarker::serialize(Archive& ar, const unsigned int version)
     }
     sz = aggressors_.size();
     (ar) & sz;
-    for (auto [obj, tup] : victims_) {
+    for (auto [obj, tup] : aggressors_) {
       serializeBlockObject(ar, obj);
       (ar) & tup;
     }

@@ -100,7 +100,7 @@ inline bool samePos(Point& a, Point& b)
   return (a.x() == b.x() && a.y() == b.y());
 }
 
-void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment,
+void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
                                            MirroredPins& mirrored_pins,
                                            bool assign_mirrored) const
 {
@@ -137,7 +137,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment,
         io_pin.setPos(slots_[slot_index].pos);
         io_pin.setLayer(slots_[slot_index].layer);
         io_pin.setPlaced();
-        assigment.push_back(io_pin);
+        assignment.push_back(io_pin);
         slots_[slot_index].used = true;
 
         if (assign_mirrored) {
@@ -149,7 +149,7 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assigment,
           mirrored_pin.setPos(mirrored_pos);
           mirrored_pin.setLayer(slots_[slot_index].layer);
           mirrored_pin.setPlaced();
-          assigment.push_back(mirrored_pin);
+          assignment.push_back(mirrored_pin);
           slot_index
               = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
           if (slot_index < 0) {
@@ -242,7 +242,7 @@ void HungarianMatching::createMatrixForGroups()
   }
 }
 
-void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
+void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment)
 {
   if (hungarian_matrix_.size() <= 0)
     return;
@@ -264,7 +264,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assigment)
         IOPin& io_pin = netlist_->getIoPin(pin_idx);
         io_pin.setPos(slots_[slot_index + pin_cnt].pos);
         io_pin.setLayer(slots_[slot_index + pin_cnt].layer);
-        assigment.push_back(io_pin);
+        assignment.push_back(io_pin);
         slots_[slot_index + pin_cnt].used = true;
         slots_[slot_index + pin_cnt].blocked = true;
         if ((slot_index + pin_cnt) <= end_slot_)

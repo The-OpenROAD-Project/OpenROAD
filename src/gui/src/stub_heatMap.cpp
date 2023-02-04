@@ -130,6 +130,11 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
 {
 }
 
+odb::Rect HeatMapDataSource::getBounds() const
+{
+  return {};
+}
+
 //////////
 
 RealValueHeatMapDataSource::RealValueHeatMapDataSource(

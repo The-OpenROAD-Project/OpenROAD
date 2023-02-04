@@ -48,7 +48,6 @@ target_sources(rcx
     extCC.cpp
     extCoords.cpp
     extFlow.cpp
-    extRCap.cpp
     extRCmodel.cpp
     extSpef.cpp
     extSpefIn.cpp
@@ -58,11 +57,8 @@ target_sources(rcx
     extplanes.cpp
     extstats.cpp
     extprocess.cpp
-    exttree.cpp
     ext2dBox.cpp
-    hierSpef.cpp
     netRC.cpp
-    powerConn.cpp
     MakeOpenRCX.cpp
     extmeasure_res.cpp
 )

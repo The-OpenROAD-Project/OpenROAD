@@ -53,11 +53,6 @@ class ext2dBox  // assume cross-section on the z-direction
            unsigned int map,
            bool dir);
 
-  void rotate();
-  void printGeoms3D(FILE* fp,
-                    double h,
-                    double t,
-                    const std::array<int, 2>& orig) const;
   unsigned int length() const;
   unsigned int width() const;
   int loX() const;
