@@ -503,7 +503,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
   iroute->setWlenHelper(wlen);
   if (pinCoord < std::numeric_limits<frCoord>::max()) {
-    iroute->setWlenHelper2(pinCoord);
+    iroute->setPinCoord(pinCoord);
   }
   addIroute(std::move(iroute), isExt);
 }
@@ -546,7 +546,7 @@ void FlexTAWorker::initCosts()
           auto [bp, ep] = obj->getPoints();
           bc = isH ? bp.x() : bp.y();
           ec = isH ? ep.x() : ep.y();
-          iroute->setCost(ec - bc + iroute->hasWlenHelper2() * pitch * 1000);
+          iroute->setCost(ec - bc + iroute->hasPinCoord() * pitch * 1000);
         }
       }
     }

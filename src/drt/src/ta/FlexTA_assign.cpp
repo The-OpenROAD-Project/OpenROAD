@@ -654,8 +654,8 @@ frUInt4 FlexTAWorker::assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc)
 frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
 {
   frUInt4 sol = 0;
-  if (iroute->hasWlenHelper2()) {
-    sol = abs(trackLoc - iroute->getWlenHelper2());
+  if (iroute->hasPinCoord()) {
+    sol = abs(trackLoc - iroute->getPinCoord());
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
       bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
       auto layerNum = iroute->getGuide()->getBeginLayerNum();
@@ -890,9 +890,9 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
   // while (1) {
   //  if pinCoord, then try from  pinCoord
   //  else try from wlen1 dir
-  if (iroute->hasWlenHelper2()) {
+  if (iroute->hasPinCoord()) {
     // cout <<"if" <<endl;
-    frCoord pinCoord = iroute->getWlenHelper2();
+    frCoord pinCoord = iroute->getPinCoord();
     if (iroute->getWlenHelper() > 0) {
       int startTrackIdx
           = int(std::lower_bound(
