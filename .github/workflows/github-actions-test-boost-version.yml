@@ -82,7 +82,7 @@ jobs:
         shell: bash
         run: |
           build/src/openroad -help
-          sudo ./test/regression
+          sudo ./test/regression -threads 3
       - name: Archive logs
         if: failure()
         uses: actions/upload-artifact@v3
