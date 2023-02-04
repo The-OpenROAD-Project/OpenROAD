@@ -36,7 +36,6 @@ body:
         ```
         Then copy and paste the ENTIRE output in the corresponding text fields below.
 
-        *If the command **does not succeed**, you are using an out-of-date version of OpenROAD, and it is recommended that you update.*
   - type: textarea
     id: or-environment
     attributes:
@@ -57,7 +56,7 @@ body:
     attributes:
       value: |
         ---
-        #### To reproduce the bug: 
+        #### To reproduce the bug:
         ##### Please run the following shell command in the OpenLane root folder:
         ```
         python3 ./scripts/or_issue.py\

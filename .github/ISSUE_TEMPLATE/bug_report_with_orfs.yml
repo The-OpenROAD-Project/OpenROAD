@@ -1,4 +1,4 @@
-name: OpenROAD Bug report with OpenROAD Flow Scripts 
+name: OpenROAD Bug report with OpenROAD Flow Scripts
 description: File a bug report if you are running from OpenROAD Flow Scripts
 
 body:
@@ -30,9 +30,8 @@ body:
         ```
         ./etc/Env.sh
         ```
-        Then copy and paste the ENTIRE output in the text field below.
+        Then upload the build/openroad-env.log file or copy and paste the ENTIRE output in the text field below.
 
-        *If the command **does not succeed**, you are using an out-of-date version of OpenROAD, and it is recommended that you update.*
   - type: textarea
     id: environment
     attributes:
@@ -45,7 +44,7 @@ body:
     attributes:
       value: |
         ---
-        #### To reproduce the bug: 
+        #### To reproduce the bug:
         ##### You have two options here:
 
         A. Use `make <SCRIPT_NAME>_issue` to create a tar file with all the files to reproduce the bug(s).
@@ -57,7 +56,7 @@ body:
         &nbsp;&nbsp;&nbsp;&nbsp;2. Set the ISSUE_TAG variable to rename the generated tar file
 
         &nbsp;&nbsp;&nbsp;&nbsp;3. Run `make {script}_issue` in the directory "OpenROAD-flow-scripts/flow" where script is wildcarded from the "OpenROAD-flow-scripts/scripts" directory e.g `make cts_issue`
-                                          
+
         &nbsp;&nbsp;&nbsp;&nbsp;4. Upload the generated tar file
 
         B. Upload relevant files
