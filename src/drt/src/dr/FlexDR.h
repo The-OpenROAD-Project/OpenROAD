@@ -171,13 +171,6 @@ class FlexDR
   void getBatchInfo(int& batchStepX, int& batchStepY);
 
   void init_halfViaEncArea();
-  frCoord init_via2turnMinLen_minSpc(frLayerNum lNum,
-                                     frViaDef* viaDef,
-                                     bool isCurrDirY);
-  frCoord init_via2turnMinLen_minStp(frLayerNum lNum,
-                                     frViaDef* viaDef,
-                                     bool isCurrDirY);
-  void init_via2turnMinLen();
 
   void removeGCell2BoundaryPin();
   std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
