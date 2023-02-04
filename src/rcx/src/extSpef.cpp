@@ -1607,7 +1607,6 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets)
 
 uint extSpef::writeInstMap()
 {
-  uint cnt = 0;
   char *nname, *nname1;
   uint instMapId = 0;
 
@@ -1645,8 +1644,6 @@ uint extSpef::writeInstMap()
     nname1 = tinkerSpefName(nname);
     nname1 = addEscChar(nname1, true);
     fprintf(_outFP, "*%d %s\n", instMapId, nname1);
-
-    cnt++;
   }
   return instMapId;
 }
