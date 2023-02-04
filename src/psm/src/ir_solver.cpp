@@ -1274,12 +1274,9 @@ bool IRSolver::checkConnectivity(bool connection_only)
       }
     }
   }
-  int uncon_err_cnt = 0;
-  int uncon_inst_cnt = 0;
   bool unconnected_node = false;
   for (Node* node : Gmat_->getAllNodes()) {
     if (!node->getConnected()) {
-      uncon_err_cnt++;
       const Point node_loc = node->getLoc();
       const float loc_x = node_loc.getX() / ((float) unit_micron);
       const float loc_y = node_loc.getY() / ((float) unit_micron);
@@ -1294,7 +1291,6 @@ bool IRSolver::checkConnectivity(bool connection_only)
                     node->getLayerNum());
       if (node->hasInstances()) {
         for (dbInst* inst : node->getInstances()) {
-          uncon_inst_cnt++;
           logger_->warn(utl::PSM,
                         39,
                         "Unconnected instance {} at location ({:4.3f}um, "

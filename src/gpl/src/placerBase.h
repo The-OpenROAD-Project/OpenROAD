@@ -51,6 +51,7 @@ class dbSigType;
 class dbBox;
 
 class Rect;
+class Point;
 
 }  // namespace odb
 
@@ -123,6 +124,7 @@ class Instance
 
   void addPin(Pin* pin);
   const std::vector<Pin*>& pins() const { return pins_; }
+  void snapOutward(const odb::Point& origin, int step_x, int step_y);
 
  private:
   odb::dbInst* inst_;

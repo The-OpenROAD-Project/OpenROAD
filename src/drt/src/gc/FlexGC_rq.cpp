@@ -206,7 +206,6 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
   vector<vector<rq_box_value_t<gcRect*>>> allMaxRectangles(numLayers);
   vector<vector<rq_box_value_t<gcRect>>> allSpcRectangles(numLayers);
 
-  int cntPolygonEdge = 0;
   int cntMaxRectangle = 0;
   for (auto& net : gcWorker_->getNets()) {
     for (auto& pins : net->getPins()) {
@@ -214,7 +213,6 @@ void FlexGCWorkerRegionQuery::Impl::init(int numLayers)
         for (auto& edges : pin->getPolygonEdges()) {
           for (auto& edge : edges) {
             addPolygonEdge(edge.get(), allPolygonEdges);
-            cntPolygonEdge++;
           }
         }
         for (auto& rect : pin->getMaxRectangles()) {

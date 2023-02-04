@@ -164,6 +164,8 @@ class HeatMapDataSource
   virtual double getGridYSize() const { return grid_y_size_; }
   virtual double getGridSizeMinimumValue() const { return 1.0; }
   virtual double getGridSizeMaximumValue() const { return 100.0; }
+  // The default implementation uses the block's bounds
+  virtual odb::Rect getBounds() const;
 
   // map controls
   void update() { destroyMap(); }

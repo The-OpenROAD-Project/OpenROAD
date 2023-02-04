@@ -88,6 +88,7 @@ void extSpef::initSearchForNets()
   _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, P, S, X1, Y1);
   _search->setBlock(_block);
 }
+
 uint extSpef::addNetShapesOnSearch(uint netId)
 {
   dbNet* net = dbNet::getNet(_block, netId);
@@ -166,6 +167,7 @@ void extSpef::initNodeCoordTables(uint memChunk)
   _idTable = new Ath__array1D<uint>(16);
   initSearchForNets();  // search DB
 }
+
 void extSpef::resetNodeCoordTables()
 {
   _capNodeTable->resetCnt();
@@ -177,6 +179,7 @@ void extSpef::resetNodeCoordTables()
   _y2CoordTable->resetCnt();
   _levelTable->resetCnt();
 }
+
 void extSpef::deleteNodeCoordTables()
 {
   if (_capNodeTable)
@@ -210,6 +213,7 @@ void extSpef::deleteNodeCoordTables()
     delete _idTable;
   _idTable = NULL;
 }
+
 bool extSpef::readNodeCoords(uint cpos)
 {
   //*CONN
@@ -243,6 +247,7 @@ bool extSpef::readNodeCoords(uint cpos)
   _levelTable->add(level);
   return true;
 }
+
 int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
 {
   uint ii;
@@ -282,6 +287,7 @@ void Ath__grid::dealloc()
     _trackTable[ii] = NULL;
   }
 }
+
 void Ath__gridTable::dealloc()
 {
   for (uint dir = 0; dir < _rowCnt; dir++) {

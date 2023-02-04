@@ -74,11 +74,13 @@ extMetRCTable* extRCModel::initCapTables(uint layerCnt, uint widthCnt)
   _modelTable[0]->allocateInitialTables(layerCnt, widthCnt, true, true, true);
   return _modelTable[0];
 }
+
 AthPool<extDistRC>* extMetRCTable::getRCPool()
 {
   return _rcPoolPtr;
 }
-uint extMain::GenExtRules(const char* rulesFileName, int pattern)
+
+uint extMain::genExtRules(const char* rulesFileName, int pattern)
 {
   uint widthCnt = 12;
   uint layerCnt = _tech->getRoutingLayerCount() + 1;
@@ -298,16 +300,8 @@ double extMain::getTotalCouplingCap(dbNet* net,
                                     uint corner)
 {
   double cap = 0.0;
-  dbSet<dbCapNode> capNodes = net->getCapNodes();
-  dbSet<dbCapNode>::iterator citr;
-
-  for (citr = capNodes.begin(); citr != capNodes.end(); ++citr) {
-    dbCapNode* n = *citr;
-    dbSet<dbCCSeg> ccSegs = n->getCCSegs();
-    dbSet<dbCCSeg>::iterator ccitr;
-
-    for (ccitr = ccSegs.begin(); ccitr != ccSegs.end(); ++ccitr) {
-      dbCCSeg* cc = *ccitr;
+  for (dbCapNode* n : net->getCapNodes()) {
+    for (dbCCSeg* cc : n->getCCSegs()) {
       dbNet* srcNet = cc->getSourceCapNode()->getNet();
       dbNet* tgtNet = cc->getTargetCapNode()->getNet();
       if ((strstr(srcNet->getConstName(), filterNet) == NULL)
@@ -341,6 +335,7 @@ uint extMain::benchVerilog(FILE* fp)
   fclose(fp);
   return 0;
 }
+
 uint extMain::benchVerilog_bterms(FILE* fp,
                                   dbIoType iotype,
                                   const char* prefix,
@@ -349,14 +344,9 @@ uint extMain::benchVerilog_bterms(FILE* fp,
 {
   int n = 0;
   dbSet<dbNet> nets = _block->getNets();
-  dbSet<dbNet>::iterator itr;
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    dbNet* net = *itr;
-
+  for (dbNet* net : nets) {
     dbSet<dbBTerm> bterms = net->getBTerms();
-    dbSet<dbBTerm>::iterator itr;
-    for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-      dbBTerm* bterm = *itr;
+    for (dbBTerm* bterm : bterms) {
       const char* btermName = bterm->getConstName();
 
       if (iotype != bterm->getIoType())
@@ -370,29 +360,22 @@ uint extMain::benchVerilog_bterms(FILE* fp,
   }
   return n;
 }
+
 uint extMain::benchVerilog_assign(FILE* fp)
 {
   int n = 0;
   dbSet<dbNet> nets = _block->getNets();
-  dbSet<dbNet>::iterator itr;
-  for (itr = nets.begin(); itr != nets.end(); ++itr) {
-    dbNet* net = *itr;
-
+  for (dbNet* net : nets) {
     const char* bterm1 = NULL;
     const char* bterm2 = NULL;
     dbSet<dbBTerm> bterms = net->getBTerms();
-    dbSet<dbBTerm>::iterator itr;
-    for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-      dbBTerm* bterm = *itr;
-
+    for (dbBTerm* bterm : bterms) {
       if (bterm->getIoType() == dbIoType::OUTPUT) {
         bterm1 = bterm->getConstName();
         break;
       }
     }
-    for (itr = bterms.begin(); itr != bterms.end(); ++itr) {
-      dbBTerm* bterm = *itr;
-
+    for (dbBTerm* bterm : bterms) {
       if (bterm->getIoType() == dbIoType::INPUT) {
         bterm2 = bterm->getConstName();
         break;
@@ -402,6 +385,7 @@ uint extMain::benchVerilog_assign(FILE* fp)
   }
   return n;
 }
+
 uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
 {
   Ath__array1D<double>* widthTable = new Ath__array1D<double>(4);
@@ -499,6 +483,7 @@ uint extRCModel::benchDB_WS(extMainOptions* opt, extMeasure* measure)
   }
   return cnt;
 }
+
 /**
  * writeBenchWires_DB_res routine generates the pattern
  * geometries to capture the effect of spacing wiring
@@ -587,6 +572,7 @@ int extRCModel::writeBenchWires_DB_res(extMeasure* measure)
 
   return cnt;
 }
+
 int extRCModel::writeBenchWires_DB(extMeasure* measure)
 {
   if (measure->_diag)
@@ -601,8 +587,8 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
   bboxLL[measure->_dir] = measure->_ur[measure->_dir];
   bboxLL[!measure->_dir] = measure->_ll[!measure->_dir];
 
-  int n
-      = measure->_wireCnt / 2;  // ASSUME odd number of wires, 2 will also work
+  // ASSUME odd number of wires, 2 will also work
+  int n = measure->_wireCnt / 2;
 
   if (measure->_s_nm == 0 && !measure->_diag)
     n = 1;
@@ -722,6 +708,7 @@ int extRCModel::writeBenchWires_DB(extMeasure* measure)
   measure->getBox(measure->_met, false, main_xlo, main_ylo, main_xhi, main_yhi);
   return 1;
 }
+
 uint extMeasure::getPatternExtend()
 {
   int extend_blockage = (this->_minWidth + this->_minSpace);
@@ -729,7 +716,7 @@ uint extMeasure::getPatternExtend()
   if (this->_overMet > 0) {
     dbTechLayer* layer
         = this->_create_net_util.getRoutingLayer()[this->_overMet];
-    uint ww = layer->getWidth();
+    const uint ww = layer->getWidth();
     uint sp = layer->getSpacing();
     if (sp == 0)
       sp = layer->getPitch() - ww;
@@ -739,7 +726,7 @@ uint extMeasure::getPatternExtend()
   if (this->_underMet > 0) {
     dbTechLayer* layer
         = this->_create_net_util.getRoutingLayer()[this->_underMet];
-    uint ww = layer->getWidth();
+    const uint ww = layer->getWidth();
     uint sp = layer->getSpacing();
     if (sp == 0)
       sp = layer->getPitch() - ww;
@@ -749,6 +736,7 @@ uint extMeasure::getPatternExtend()
   }
   return extend_blockage;
 }
+
 uint extMeasure::createContextObstruction(const char* dirName,
                                           int x,
                                           int y,
@@ -763,6 +751,7 @@ uint extMeasure::createContextObstruction(const char* dirName,
   dbObstruction::create(_block, layer, x, y, bboxUR[0], bboxUR[1]);
   return 1;
 }
+
 uint extMeasure::createContextGrid(char* dirName,
                                    int bboxLL[2],
                                    int bboxUR[2],
@@ -830,6 +819,7 @@ uint extMeasure::createContextGrid_dir(char* dirName,
   }
   return xcnt;
 }
+
 int extRCModel::writeBenchWires_DB_diag(extMeasure* measure)
 {
   bool lines_3 = true;
