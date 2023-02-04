@@ -361,7 +361,6 @@ void FlexGridGraph::init(const frDesign* design,
 {
   auto* via_data = getDRWorker()->getViaData();
   halfViaEncArea_ = &via_data->halfViaEncArea;
-  via2turnMinLen_ = &via_data->via2turnMinLen;
 
   // get tracks intersecting with the Maze bbox
   map<frLayerNum, dbTechLayerDir> zMap;
