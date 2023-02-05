@@ -61,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-20.04", "ubuntu-22.04", "ubuntu22.10"]
+        os: ["ubuntu-20.04", "ubuntu-22.04"]
         boost: [{version: "1.79.0", checksum: "e9213a48f0b19b7e01597c79f9128dd3"}, {version: "1.80.0", checksum: "077f074743ea7b0cb49c6ed43953ae95"}, {version: "1.81.0", checksum: "4bf02e84afb56dfdccd1e6aec9911f4b"}]
     runs-on: ${{ matrix.os }}
     steps:
