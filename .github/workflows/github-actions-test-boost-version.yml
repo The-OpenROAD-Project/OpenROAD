@@ -91,3 +91,46 @@ jobs:
           path: |
             src/**/test/results/diffs
             src/**/test/results/*.log
+  testBoostVersionMatrix-22.10:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        boost: [{version: "1.79.0", checksum: "e9213a48f0b19b7e01597c79f9128dd3"}, {version: "1.80.0", checksum: "077f074743ea7b0cb49c6ed43953ae95"}, {version: "1.81.0", checksum: "4bf02e84afb56dfdccd1e6aec9911f4b"}]
+    runs-on: ubuntu-latest
+    container:
+      image: "ubuntu:22.10"
+    steps:
+      - name: Setup
+        run: |
+          apt-get update
+          apt-get -y install git
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Checkout repository code with submodules
+        run: |
+          git config --global --add safe.directory '*'
+          git submodule update --init
+      - name: Run installer
+        shell: bash
+        run: |
+          ./etc/DependencyInstaller.sh -boostVersion=${{ matrix.boost.version }} -boostChecksum=${{ matrix.boost.checksum }}
+      - name: Build project
+        shell: bash
+        run: |
+          ./etc/Build.sh -threads=3
+      - name: Test build
+        shell: bash
+        run: |
+          build/src/openroad -help
+          ./test/regression -threads 3
+      - name: Archive logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-ubuntu22.10-version-${{ matrix.boost.version }}
+          path: |
+            src/**/test/results/diffs
+            src/**/test/results/*.log
