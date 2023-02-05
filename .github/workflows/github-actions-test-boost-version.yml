@@ -120,7 +120,7 @@ jobs:
       - name: Build project
         shell: bash
         run: |
-          ./etc/Build.sh -threads=3
+          ./etc/Build.sh -threads=3 -cmake="-DUNITY_DISABLE=ON" 
       - name: Test build
         shell: bash
         run: |
