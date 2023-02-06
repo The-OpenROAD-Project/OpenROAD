@@ -3112,7 +3112,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       Point bp, ep;
       gridGraph_.getPoint(bp, currIdx.x(), currIdx.y());
       gridGraph_.getPoint(ep, nextIdx.x(), nextIdx.y());
-      frCoord pathLength = abs(bp.x() - ep.x()) + abs(bp.y() - ep.y());
+      frCoord pathLength = Point::manhattanDistance(bp, ep);
       if (currArea < reqArea) {
         if (!prev_is_wire) {
           currArea /= 2;

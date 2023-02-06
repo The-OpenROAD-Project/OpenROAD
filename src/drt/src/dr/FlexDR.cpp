@@ -270,9 +270,9 @@ void FlexDR::initFromTA()
           unique_ptr<frShape> ps = make_unique<frPathSeg>(
               *(static_cast<frPathSeg*>(connFig.get())));
           auto [bp, ep] = static_cast<frPathSeg*>(ps.get())->getPoints();
-          if (ep.x() - bp.x() + ep.y() - bp.y() == 1) {
-            ;  // skip TA dummy segment
-          } else {
+
+          // skip TA dummy segment
+          if (Point::manhattanDistance(ep, bp) != 1) {
             net->addShape(std::move(ps));
           }
         } else {
@@ -304,8 +304,8 @@ void FlexDR::initGCell2BoundaryPin()
           auto [bp, ep] = ps->getPoints();
           frLayerNum layerNum = ps->getLayerNum();
           // skip TA dummy segment
-          if (ep.x() - bp.x() + ep.y() - bp.y() == 1
-              || ep.x() - bp.x() + ep.y() - bp.y() == 0) {
+          auto mdist = Point::manhattanDistance(ep, bp);
+          if (mdist == 1 || mdist == 0) {
             continue;
           }
           Point idx1 = design_->getTopBlock()->getGCellIdx(bp);
@@ -795,7 +795,7 @@ void FlexDR::end(bool done)
         auto obj = static_cast<frPathSeg*>(shape.get());
         auto [bp, ep] = obj->getPoints();
         auto lNum = obj->getLayerNum();
-        frCoord psLen = ep.x() - bp.x() + ep.y() - bp.y();
+        frCoord psLen = Point::manhattanDistance(ep, bp);
         wlen[lNum] += psLen;
       }
     }
