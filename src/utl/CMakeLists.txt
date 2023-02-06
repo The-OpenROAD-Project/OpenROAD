@@ -77,6 +77,14 @@ target_include_directories(utl
     src
 )
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0")
+  target_precompile_headers(utl
+    PUBLIC
+      include/utl/Logger.h
+  )
+endif()
+
+
 target_link_libraries(utl
   PUBLIC
     spdlog::spdlog

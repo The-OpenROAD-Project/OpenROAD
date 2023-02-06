@@ -138,6 +138,15 @@ target_include_directories(drt
     src
 )
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0") 
+  target_precompile_headers(drt
+    PRIVATE
+      src/serialization.h
+      src/io/io.h
+      src/dr/FlexDR.h
+  )
+endif()
+
 target_link_libraries(drt
   PUBLIC
     gui

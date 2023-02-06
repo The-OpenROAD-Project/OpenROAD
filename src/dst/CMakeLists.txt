@@ -58,6 +58,13 @@ target_include_directories(dst
     include
 )
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0") 
+  target_precompile_headers(dst
+    PUBLIC
+      include/dst/Distributed.h
+  )
+endif()
+
 target_link_libraries(dst
   PUBLIC
     utl

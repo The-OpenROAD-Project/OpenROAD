@@ -135,6 +135,13 @@ target_include_directories(db
         ${TCL_INCLUDE_PATH}
 )
 
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0") 
+  target_precompile_headers(db
+    PUBLIC
+      ${PROJECT_SOURCE_DIR}/include/odb/db.h
+  )
+endif()
+
 set_target_properties(db
   PROPERTIES
     # python requirement
