@@ -2534,7 +2534,11 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
   } else if (getRipupMode() == 1 || getRipupMode() == 2) {
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
-    vector<drNet*> ripupNets(nets_);
+    vector<drNet*> ripupNets;
+    ripupNets.reserve(nets_.size());
+    for (auto& net : nets_) {
+      ripupNets.push_back(net.get());
+    }
 
     // sort nets
     mazeIterInit_sortRerouteNets(0, ripupNets);
