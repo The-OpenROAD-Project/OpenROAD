@@ -616,37 +616,42 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   }
 }
 
-frUInt4 FlexTAWorker::assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc)
+// This adds a cost based on the connected iroutes. For a vertical iroute if
+// there are more connected iroutes to the right, we should force this iroute
+// towards the right of the gcell (and vice versa). The cost is scaled based on
+// the net number of iroutes in that direction.
+frUInt4 FlexTAWorker::assignIroute_getNextIrouteDirCost(taPin* iroute,
+                                                        frCoord trackLoc)
 {
   auto guide = iroute->getGuide();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   auto [begin, end] = guide->getPoints();
   Point idx = getDesign()->getTopBlock()->getGCellIdx(end);
   Rect endBox = getDesign()->getTopBlock()->getGCellBox(idx);
-  int wlen = 0;
-  auto wlen_helper = iroute->getWlenHelper();
-  if (wlen_helper <= 0) {
+  int nextIrouteDirCost = 0;
+  auto nextIrouteDir = iroute->getNextIrouteDir();
+  if (nextIrouteDir <= 0) {
     if (isH) {
-      wlen = abs(wlen_helper) * (trackLoc - endBox.yMin());
+      nextIrouteDirCost = abs(nextIrouteDir) * (trackLoc - endBox.yMin());
     } else {
-      wlen = abs(wlen_helper) * (trackLoc - endBox.xMin());
+      nextIrouteDirCost = abs(nextIrouteDir) * (trackLoc - endBox.xMin());
     }
   } else {
     if (isH) {
-      wlen = abs(wlen_helper) * (endBox.yMax() - trackLoc);
+      nextIrouteDirCost = abs(nextIrouteDir) * (endBox.yMax() - trackLoc);
     } else {
-      wlen = abs(wlen_helper) * (endBox.xMax() - trackLoc);
+      nextIrouteDirCost = abs(nextIrouteDir) * (endBox.xMax() - trackLoc);
     }
   }
-  if (wlen < 0) {
+  if (nextIrouteDirCost < 0) {
     double dbu = getDesign()->getTopBlock()->getDBUPerUU();
-    cout << "Error: getWlenCost has wlenCost < 0"
+    cout << "Error: nextIrouteDirCost < 0"
          << ", trackLoc@" << trackLoc / dbu << " box (" << endBox.xMin() / dbu
          << ", " << endBox.yMin() / dbu << ") (" << endBox.xMax() / dbu << ", "
          << endBox.yMax() / dbu << ")" << endl;
     return (frUInt4) 0;
   } else {
-    return (frUInt4) wlen;
+    return (frUInt4) nextIrouteDirCost;
   }
 }
 
@@ -867,7 +872,7 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
       = getTech()->getLayer(iroute->getGuide()->getBeginLayerNum())->getPitch();
   outDrcCost = assignIroute_getDRCCost(iroute, trackLoc);
   int drcCost = (isInitTA()) ? (0.05 * outDrcCost) : (TADRCCOST * outDrcCost);
-  int wlenCost = assignIroute_getWlenCost(iroute, trackLoc);
+  int nextIrouteDirCost = assignIroute_getNextIrouteDirCost(iroute, trackLoc);
   // int pinCost    = TAPINCOST * assignIroute_getPinCost(iroute, trackLoc);
   int tmpPinCost = assignIroute_getPinCost(iroute, trackLoc);
   int pinCost
@@ -875,7 +880,7 @@ frUInt4 FlexTAWorker::assignIroute_getCost(taPin* iroute,
   int tmpAlignCost = assignIroute_getAlignCost(iroute, trackLoc);
   int alignCost
       = (tmpAlignCost == 0) ? 0 : TAALIGNCOST * irouteLayerPitch + tmpAlignCost;
-  return max(drcCost + wlenCost + pinCost - alignCost, 0);
+  return max(drcCost + nextIrouteDirCost + pinCost - alignCost, 0);
 }
 
 void FlexTAWorker::assignIroute_bestTrack_helper(taPin* iroute,
@@ -913,13 +918,10 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
   int bestTrackIdx = -1;
   frUInt4 bestCost = std::numeric_limits<frUInt4>::max();
   frUInt4 drcCost = 0;
-  // while (1) {
-  //  if pinCoord, then try from  pinCoord
-  //  else try from wlen1 dir
   if (iroute->hasPinCoord()) {
     // cout <<"if" <<endl;
     frCoord pinCoord = iroute->getPinCoord();
-    if (iroute->getWlenHelper() > 0) {
+    if (iroute->getNextIrouteDir() > 0) {
       int startTrackIdx
           = int(std::lower_bound(
                     trackLocs_[lNum].begin(), trackLocs_[lNum].end(), pinCoord)
@@ -942,7 +944,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
           }
         }
       }
-    } else if (iroute->getWlenHelper() == 0) {
+    } else if (iroute->getNextIrouteDir() == 0) {
       int startTrackIdx
           = int(std::lower_bound(
                     trackLocs_[lNum].begin(), trackLocs_[lNum].end(), pinCoord)
@@ -1004,7 +1006,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
     }
   } else {
     // cout <<"else" <<endl;
-    if (iroute->getWlenHelper() > 0) {
+    if (iroute->getNextIrouteDir() > 0) {
       for (int i = idx2; i >= idx1; i--) {
         assignIroute_bestTrack_helper(
             iroute, lNum, i, bestCost, bestTrackLoc, bestTrackIdx, drcCost);
@@ -1012,7 +1014,7 @@ int FlexTAWorker::assignIroute_bestTrack(taPin* iroute,
           break;
         }
       }
-    } else if (iroute->getWlenHelper() == 0) {
+    } else if (iroute->getNextIrouteDir() == 0) {
       for (int i = (idx1 + idx2) / 2; i <= idx2; i++) {
         assignIroute_bestTrack_helper(
             iroute, lNum, i, bestCost, bestTrackLoc, bestTrackIdx, drcCost);

@@ -87,7 +87,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
                                          frCoord& minEnd,
                                          set<frCoord>& downViaCoordSet,
                                          set<frCoord>& upViaCoordSet,
-                                         int& wlen,
+                                         int& nextIrouteDir,
                                          frCoord& pinCoord)
 {
   auto [bp, ep] = guide->getPoints();
@@ -160,7 +160,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
             pinCoord = isH ? bp.y() : bp.x();
             maxBegin = isH ? bp.x() : bp.y();
             minEnd = isH ? bp.x() : bp.y();
-            wlen = 0;
+            nextIrouteDir = 0;
             if (hasDown) {
               downViaCoordSet.insert(maxBegin);
             }
@@ -189,7 +189,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
               pinCoord = isH ? bp.y() : bp.x();
               maxBegin = isH ? bp.x() : bp.y();
               minEnd = isH ? bp.x() : bp.y();
-              wlen = 0;
+              nextIrouteDir = 0;
               if (hasDown) {
                 downViaCoordSet.insert(maxBegin);
               }
@@ -215,7 +215,7 @@ void FlexTAWorker::initIroute_helper(frGuide* guide,
                                      frCoord& minEnd,
                                      set<frCoord>& downViaCoordSet,
                                      set<frCoord>& upViaCoordSet,
-                                     int& wlen,
+                                     int& nextIrouteDir,
                                      frCoord& pinCoord)
 {
   if (!initIroute_helper_pin(guide,
@@ -223,14 +223,14 @@ void FlexTAWorker::initIroute_helper(frGuide* guide,
                              minEnd,
                              downViaCoordSet,
                              upViaCoordSet,
-                             wlen,
+                             nextIrouteDir,
                              pinCoord)) {
     initIroute_helper_generic(guide,
                               maxBegin,
                               minEnd,
                               downViaCoordSet,
                               upViaCoordSet,
-                              wlen,
+                              nextIrouteDir,
                               pinCoord);
   }
 }
@@ -327,7 +327,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
                                              frCoord& maxEnd,
                                              set<frCoord>& downViaCoordSet,
                                              set<frCoord>& upViaCoordSet,
-                                             int& wlen,
+                                             int& nextIrouteDir,
                                              frCoord& pinCoord)
 {
   auto net = guide->getNet();
@@ -336,7 +336,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
   bool hasMaxEnd = false;
   minBegin = std::numeric_limits<frCoord>::max();
   maxEnd = std::numeric_limits<frCoord>::min();
-  wlen = 0;
+  nextIrouteDir = 0;
   // pinCoord       = std::numeric_limits<frCoord>::max();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   downViaCoordSet.clear();
@@ -400,10 +400,10 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
           }
         }
         if (cp == nbrEp) {
-          wlen -= 1;
+          nextIrouteDir -= 1;
         }
         if (cp == nbrBp) {
-          wlen += 1;
+          nextIrouteDir += 1;
         }
       }
     }
@@ -442,10 +442,15 @@ void FlexTAWorker::initIroute(frGuide* guide)
 
   frCoord maxBegin, minEnd;
   set<frCoord> downViaCoordSet, upViaCoordSet;
-  int wlen = 0;
+  int nextIrouteDir = 0;
   frCoord pinCoord = std::numeric_limits<frCoord>::max();
-  initIroute_helper(
-      guide, maxBegin, minEnd, downViaCoordSet, upViaCoordSet, wlen, pinCoord);
+  initIroute_helper(guide,
+                    maxBegin,
+                    minEnd,
+                    downViaCoordSet,
+                    upViaCoordSet,
+                    nextIrouteDir,
+                    pinCoord);
 
   frCoord trackLoc = 0;
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -513,7 +518,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
-  iroute->setWlenHelper(wlen);
+  iroute->setNextIrouteDir(nextIrouteDir);
   if (pinCoord < std::numeric_limits<frCoord>::max()) {
     iroute->setPinCoord(pinCoord);
   }
