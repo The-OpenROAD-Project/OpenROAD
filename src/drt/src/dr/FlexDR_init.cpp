@@ -2840,26 +2840,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     design->getRegionQuery()->query(getExtBox(), layerNum, result);
     // process blockage first, then unblock based on pin shape
     for (auto& [box, obj] : result) {
-      if (obj->typeId() == frcBlockage) {
-        if (isRoutingLayer) {
-          // assume only routing layer
-          modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, true, false, true);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, false, false, true);
-          modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
-          // block
-          modBlockedPlanar(box, zIdx, true);
-          modBlockedVia(box, zIdx, true);
-        } else {
-          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, false);
-        }
-      } else if (obj->typeId() == frcInstBlockage) {
+      if ((obj->typeId() == frcBlockage)
+          || (obj->typeId() == frcInstBlockage)) {
         if (isRoutingLayer) {
           // assume only routing layer
           modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
@@ -2951,14 +2933,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 
   // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
-    // to remove once verify error will not be triggered
-    if (owner2nets_.find(net) == owner2nets_.end()) {
-      // cout << "Error: frNet with term(s) does not exist in owner2nets\n";
-      // continue;
-    } else {
-      for (auto dNet : owner2nets_[net]) {
-        dNet->setFrNetTerms(objs);
-      }
+    for (auto dNet : owner2nets_[net]) {
+      dNet->setFrNetTerms(objs);
     }
     initMazeCost_terms(objs, true);
   }
