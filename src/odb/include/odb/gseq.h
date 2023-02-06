@@ -31,73 +31,18 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <vector>
-
 #include "array1.h"
 #include "odb.h"
 #include "util.h"
 
 namespace odb {
 
-typedef char gsPixel;
-
-#define PIXMAPGRID 64
-
-#if (PIXMAPGRID == 64)
-typedef uint64 pixint;
-typedef unsigned int pixints;
-#define PIXFILL 0xffffffffffffffffLL
-#define PIXMAX 0x8000000000000000LL
-#define PIXADJUST 2
-#elif (PIXMAPGRID == 32)
-typedef unsigned int pixint;
-typedef short unsigned int pixints;
-#define PIXFILL 0xffffffff
-#define PIXMAX 0x80000000
-#define PIXADJUST 4
-#endif
-
-/* Values for the member variable _init
- * INIT = created,
- * CONFIGURED = has reasonable values for width, height, slices, etc
- * ALLOCATED = memory has been allocated
- */
-const int INIT = 0;
-const int WIDTH = 1;
-const int SLICES = 2;
-const int SCALING = 4;
-const int ALLOCATED = 8;
-
-const int GS_ALL = (WIDTH | SLICES | SCALING | ALLOCATED);
-
-#define GS_FILE 1
-#define GS_STRING 2
-
-#define MAXPRECOLOR 15
-
-#define GS_WHITE 0
-#define GS_BLACK 1
-#define GS_NONE 3
-
-#define GS_ROW 1
-#define GS_COLUMN 0
-
-typedef struct
+struct SEQ
 {
   int _ll[2];
   int _ur[2];
   int type;
-} SEQ;
-
-typedef union
-{
-  pixint lword;
-  pixints word[2];
-  /*
-  unsigned short int sword[4];
-  unsigned char  cword[8];
-  */
-} pixmap;
+};
 
 class gs
 {
@@ -117,29 +62,12 @@ class gs
   // render a rectangle
   int box(int x0, int y0, int x1, int y1, int slice, bool checkOnly = false);
 
-  // colorize a slice
-  int colorize(int slice, int rgb);
-
   // allocate (re-allocate) memory
-  int alloc_mem(void);
-
-  // set the scaling parameters
-  int scaling(int _x0, int _y0, int _x1, int _y1);
-
-  int clear_layer(int layer);
+  int alloc_mem();
 
   // set the number of slices
-  int setSlices(int _nslices, bool skipMemAlloc = false);
+  int set_slices(int nslices, bool skipMemAlloc = false);
 
-  int get_max_slice();
-  int get_rowcount(int slice);
-  int get_colcount(int slice);
-  int get_cutoff(int slice);
-  pixmap* get_array(int slice, int x, int y);
-
-  char* get_color_value(int slice);
-
-  int get_bw_count(int row, int plane, int& black, int& white);
   int get_seqrow(int y, int plane, int start, int& end, int& bw);
   int get_seqcol(int x, int plane, int start, int& end, int& bw);
 
@@ -148,9 +76,7 @@ class gs
                uint order,
                uint plane,
                Ath__array1D<SEQ*>* array);
-  void dump_row(int row, int plane);
 
-  void show_seq(SEQ* s);
   void release(SEQ* s);
 
   int intersect_rows(int row1, int row2, int store);
@@ -159,24 +85,19 @@ class gs
 
   SEQ* salloc();
 
- protected:
-  int nslices;   // max number of slices
-  int maxslice;  // maximum used slice
-  int csize;     // size of the color table
-  char ppmheader[128];
+ private:
+  using gsPixel = char;
 
-  char pixbuff[4];
+  using pixint = uint64;
+  using pixints = unsigned int;
 
-  int _init;
-
-  struct rgb
+  union pixmap
   {
-    char out[5];
+    pixint lword;
+    pixints word[2];
   };
 
-  struct rgb* pixcol;
-
-  typedef struct
+  struct plconfig
   {
     int width;
     int height;
@@ -192,81 +113,63 @@ class gs
     pixmap* plalloc;
     pixmap* plane;
     pixmap* plptr;
-    // int offset;
-    // pixmap *bmask;
-  } plconfig;
-  // int  pwidth;
-  // int  pheight;
-
-  plconfig* plc;
-  plconfig** pldata;
-  pixmap** plptr;
-
-  int maxplane;
-
-  pixint start[PIXMAPGRID];
-  pixint middle[PIXMAPGRID];
-  pixint end[PIXMAPGRID];
-
-  int precolor[MAXPRECOLOR + 1];
-
-  AthPool<SEQ>* _seqPool;
-  bool _allocSEQ;
-
- public:
-  void check_mem();
-  void dump_mem(pixmap* pm, int size);
-
- protected:
-  inline int R_COLOR(unsigned int p) { return 0xff & ((p & 0xff0000) >> 16); }
-  inline int G_COLOR(unsigned int p) { return 0xff & ((p & 0x00ff00) >> 8); }
-  inline int B_COLOR(unsigned int p) { return 0xff & ((p & 0x0000ff)); }
-
-  // find the highest slice of each pixel
+  };
 
   // set the size parameters
   int setSize(int pl,
-              int _xres,
-              int _yres,
-              int _x0,
-              int _x1,
-              int _y0,
-              int _y1,
+              int xres,
+              int yres,
+              int x0,
+              int x1,
+              int y0,
+              int y1,
               bool skipAlloc = false);
 
-  void dump_bytes(char* s);
-
-  int free_mem(void);
-
-  // set up ppm headers
-  void init_headers(int w, int h);
-
-  // write all slices as a series of PBM files
-  int write_string(char** s, int encoding);
-
-  // write all slices as a series of PBM files
-  int write_ppm_file(FILE* fp,
-                     int encoding,
-                     int width,
-                     int height,
-                     int* ll,
-                     int* ur);
-
-  // write all slices as a series of PBM files
-  int write_ppm_string(char** s,
-                       int encoding,
-                       int width,
-                       int height,
-                       int* ll,
-                       int* ur);
-
-  // set up initial pixcolor stuff
-  void init_pixcol();
-  void init_pixbuff();
-
-  SEQ* newseq(int x0, int x1, int y0, int y1, int type);
+  int free_mem();
 
   int check_slice(int sl);
+
+  static constexpr long long PIXFILL = 0xffffffffffffffffLL;
+  static constexpr long long PIXMAX = 0x8000000000000000LL;
+  static constexpr int PIXADJUST = 2;
+  static constexpr int PIXMAPGRID = 64;
+
+  /* Values for the member variable _init
+   * INIT = created,
+   * CONFIGURED = has reasonable values for width, height, slices, etc
+   * ALLOCATED = memory has been allocated
+   */
+  static constexpr int INIT = 0;
+  static constexpr int WIDTH = 1;
+  static constexpr int SLICES = 2;
+  static constexpr int SCALING = 4;
+  static constexpr int ALLOCATED = 8;
+  static constexpr int GS_ALL = (WIDTH | SLICES | SCALING | ALLOCATED);
+
+  static constexpr int GS_WHITE = 0;
+  static constexpr int GS_BLACK = 1;
+  static constexpr int GS_NONE = 3;
+
+  static constexpr int GS_ROW = 1;
+  static constexpr int GS_COLUMN = 0;
+
+  int nslices_;   // max number of slices
+  int maxslice_;  // maximum used slice
+  int csize_;     // size of the color table
+
+  int init_;
+
+  plconfig* plc_;
+  plconfig** pldata_;
+
+  int maxplane_;
+
+  pixint start_[PIXMAPGRID];
+  pixint middle_[PIXMAPGRID];
+  pixint end_[PIXMAPGRID];
+
+  AthPool<SEQ>* seqPool_;
+  bool allocSEQ_;
 };
 
 }  // namespace odb
