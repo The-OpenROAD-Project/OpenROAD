@@ -1620,6 +1620,9 @@
 		case odb::dbGroupType::VOLTAGE_DOMAIN:
 			obj = Tcl_NewStringObj("VOLTAGE_DOMAIN", -1);
 			break;
+		case odb::dbGroupType::POWER_DOMAIN:
+			obj = Tcl_NewStringObj("POWER_DOMAIN", -1);
+			break;
 	}
 	Tcl_SetObjResult(interp, obj);
 }
@@ -1629,6 +1632,8 @@
 		$1 = odb::dbGroupType::PHYSICAL_CLUSTER;
 	} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
 		$1 = odb::dbGroupType::VOLTAGE_DOMAIN;
+	} else if (strcasecmp(str, "POWER_DOMAIN") == 0) {
+		$1 = odb::dbGroupType::POWER_DOMAIN;
 	}
 }
 %typemap(typecheck) odb::dbGroupType, dbGroupType {
@@ -1638,6 +1643,8 @@
 		if (strcasecmp(str, "PHYSICAL_CLUSTER") == 0) {
 			found = true;
 		} else if (strcasecmp(str, "VOLTAGE_DOMAIN") == 0) {
+			found = true;
+		} else if (strcasecmp(str, "POWER_DOMAIN") == 0) {
 			found = true;
 		}
 	}

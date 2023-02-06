@@ -122,7 +122,8 @@ class dbGroupType
   enum Value
   {
     PHYSICAL_CLUSTER,
-    VOLTAGE_DOMAIN
+    VOLTAGE_DOMAIN,
+    POWER_DOMAIN
   };
 
   ///

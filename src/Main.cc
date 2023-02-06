@@ -374,7 +374,7 @@ static int tclAppInit(int& argc,
           // need to delay loading of file until after GUI is completed
           // initialized
           gui::Gui::get()->addRestoreStateCommand(
-              fmt::format(restore_state_cmd, init.string()));
+              fmt::format(FMT_RUNTIME(restore_state_cmd), init.string()));
         }
       }
 #else
@@ -388,7 +388,7 @@ static int tclAppInit(int& argc,
           // need to delay loading of file until after GUI is completed
           // initialized
           gui::Gui::get()->addRestoreStateCommand(
-              fmt::format(restore_state_cmd, init_path));
+              fmt::format(FMT_RUNTIME(restore_state_cmd), init_path));
         }
       }
 #endif
@@ -409,9 +409,8 @@ static int tclAppInit(int& argc,
           } else {
             // need to delay loading of file until after GUI is completed
             // initialized
-            const char* restore_state_cmd = "source {{{}}}";
             gui::Gui::get()->addRestoreStateCommand(
-                fmt::format(restore_state_cmd, cmd_file));
+                fmt::format("source {{{}}}", cmd_file));
             if (exit_after_cmd_file) {
               gui::Gui::get()->addRestoreStateCommand("exit");
             }

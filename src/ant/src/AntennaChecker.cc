@@ -399,11 +399,9 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
     edge_vec.push_back({node->in_edge(), dbIoType::INPUT});
 
   dbWireGraph::Node::edge_iterator edge_it;
-  int out_edges_count = 0;
 
   for (edge_it = node->begin(); edge_it != node->end(); edge_it++) {
     if (nv.find((*edge_it)->source()) == nv.end()) {
-      out_edges_count++;
       edge_vec.push_back({*edge_it, dbIoType::OUTPUT});
     }
   }

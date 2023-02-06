@@ -1367,7 +1367,7 @@ void FastRouteCore::check2DEdgesUsage()
   // check horizontal edges
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
-      if (h_edges_[i][j].usage >= max_h_edge_usage) {
+      if (h_edges_[i][j].usage > max_h_edge_usage) {
         logger_->error(GRT,
                        228,
                        "Horizontal edge usage exceeds the maximum allowed. "
@@ -1383,7 +1383,7 @@ void FastRouteCore::check2DEdgesUsage()
   // check vertical edges
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
-      if (v_edges_[i][j].usage >= max_v_edge_usage) {
+      if (v_edges_[i][j].usage > max_v_edge_usage) {
         logger_->error(GRT,
                        229,
                        "Vertical edge usage exceeds the maximum allowed. "

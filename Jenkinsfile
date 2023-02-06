@@ -93,15 +93,15 @@ pipeline {
             }
           }
         }
-        stage('Docker ubuntu20 gcc9') {
+        stage('Docker ubuntu20.04 gcc9') {
           agent any;
           stages{
-            stage('Pull ubuntu20') {
+            stage('Pull ubuntu20.04') {
               steps {
                 retry(3) {
                   script {
                     try {
-                      sh 'docker pull openroad/ubuntu20-dev'
+                      sh 'docker pull openroad/ubuntu20.04-dev'
                     }
                     catch (err) {
                       echo err.getMessage();
@@ -111,22 +111,22 @@ pipeline {
                 }
               }
             }
-            stage('Build docker ubuntu20') {
+            stage('Build docker ubuntu20.04') {
               steps {
                 script {
                   parallel (
-                      'build gcc9':    { sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=gcc' },
-                      'build clang10': { sh './etc/DockerHelper.sh create -os=ubuntu20 -target=builder -compiler=clang' },
+                      'build gcc9':    { sh './etc/DockerHelper.sh create -os=ubuntu20.04 -target=builder -compiler=gcc' },
+                      'build clang10': { sh './etc/DockerHelper.sh create -os=ubuntu20.04 -target=builder -compiler=clang' },
                       )
                 }
               }
             }
-            stage('Test docker ubuntu20') {
+            stage('Test docker ubuntu20.04') {
               steps {
                 script {
                   parallel (
-                      'test gcc9':    { sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=gcc' },
-                      'test clang10': { sh './etc/DockerHelper.sh test -os=ubuntu20 -target=builder -compiler=clang' },
+                      'test gcc9':    { sh './etc/DockerHelper.sh test -os=ubuntu20.04 -target=builder -compiler=gcc' },
+                      'test clang10': { sh './etc/DockerHelper.sh test -os=ubuntu20.04 -target=builder -compiler=clang' },
                       )
                 }
               }

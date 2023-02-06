@@ -1,0 +1,40 @@
+name: Test C++20 Compile
+on:
+  # Triggers the workflow on push or pull request events
+  push:
+  pull_request:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install clang
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 16
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: Install dependencies
+        run: |
+          sudo ./etc/DependencyInstaller.sh
+      - name: Install Patched LEMON # Current LEMON does not compile with C++20 https://lemon.cs.elte.hu/trac/lemon/ticket/631#no1
+        run: |
+          sudo apt-get install mercurial
+          hg clone http://lemon.cs.elte.hu/hg/lemon
+          cd lemon
+          hg co a278d16bd2d082aa3c52ff4a9b0e2224ddc0549a
+          hg import ../third-party/lemon/patches/allocator-patch.patch
+          mkdir build
+          cd build
+          cmake ..
+          make
+          sudo make install
+          cd ../..
+      - name: Build OpenROAD
+        run: |
+          ./etc/Build.sh -compiler='clang-16' -cmake='-DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20'

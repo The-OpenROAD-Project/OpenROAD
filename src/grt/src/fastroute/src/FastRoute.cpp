@@ -776,7 +776,6 @@ NetRouteMap FastRouteCore::run()
 
   int enlarge_ = 10;
   int newTH = 10;
-  int healingTrigger = 0;
   bool stopDEC = false;
   int upType = 1;
 
@@ -1019,7 +1018,6 @@ NetRouteMap FastRouteCore::run()
 
     if (past_cong >= last_cong) {
       VIA = 0;
-      healingTrigger++;
     }
 
     if (past_cong < bmfl) {

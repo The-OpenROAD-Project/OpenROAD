@@ -39,6 +39,7 @@
 #include <unistd.h>
 
 #include <list>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -88,5 +89,21 @@ bool set_isolation(utl::Logger* logger,
                    const char* signal,
                    const char* sense,
                    const char* location);
+
+bool use_interface_cell(utl::Logger* logger,
+                        odb::dbBlock* block,
+                        const char* power_domain,
+                        const char* strategy,
+                        const char* cell);
+
+bool set_domain_area(utl::Logger* logger,
+                     odb::dbBlock* block,
+                     char* domain,
+                     float x1,
+                     float y1,
+                     float x2,
+                     float y2);
+
+bool eval_upf(utl::Logger* logger, odb::dbBlock* block);
 
 }  // namespace upf

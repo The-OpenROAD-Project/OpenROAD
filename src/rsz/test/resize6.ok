@@ -30,7 +30,7 @@ max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r3/Q                                    0.20    0.05    0.15 (MET)
+output1/Z                               0.20    0.16    0.04 (MET)
 
 max capacitance
 

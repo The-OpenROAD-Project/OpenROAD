@@ -550,7 +550,6 @@ class Ath__gridTable
   uint _ccFlag;
 
   uint _ccContextDepth;
-  uint* _ccContextLength;
 
   Ath__array1D<int>** _ccContextArray;
 
@@ -705,10 +704,6 @@ class Ath__gridTable
   void setCCFlag(uint ccflag) { _ccFlag = ccflag; };
   uint getCcFlag() { return _ccFlag; };
   uint contextDepth() { return _ccContextDepth; };
-  void setContextLength(uint level, uint contextLength)
-  {
-    _ccContextLength[level] = contextLength;
-  };
   Ath__array1D<int>** contextArray() { return _ccContextArray; };
   AthPool<odb::SEQ>* seqPool() { return _seqPool; };
   Ath__array1D<odb::SEQ*>*** dgContextArray() { return _dgContextArray; };
@@ -737,7 +732,6 @@ class Ath__gridTable
                      bool allNet,
                      uint contextDepth,
                      Ath__array1D<int>** contextArray,
-                     uint* contextLength,
                      Ath__array1D<odb::SEQ*>*** dgContextArray,
                      uint* dgContextDepth,
                      uint* dgContextPlanes,
