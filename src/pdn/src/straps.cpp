@@ -134,7 +134,7 @@ bool Straps::checkLayerOffsetSpecification(bool error) const
           utl::PDN,
           185,
           "Insufficient width ({} um) to add straps on layer {} in grid \"{}\" "
-          "with total strap width {} um and offset {} um.",
+          "with total strap width {:.1f} um and offset {:.1f} um.",
           layer.dbuToMicron(grid_width),
           layer_->getName(),
           getGrid()->getLongName(),
