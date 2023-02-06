@@ -73,7 +73,7 @@ uint extMain::allocateOverUnderMaps(uint layerCnt)
 
 uint extMain::initPlanesNew(uint planeCnt, odb::Rect* bb)
 {
-  _geomSeq->setSlices(planeCnt);
+  _geomSeq->set_slices(planeCnt);
 
   odb::Rect maxRect = _block->getDieArea();
 
@@ -123,7 +123,7 @@ uint extMain::initPlanes(uint dir,
     delete _geomSeq;
   _geomSeq = new odb::gs;
 
-  _geomSeq->setSlices(layerCnt);
+  _geomSeq->set_slices(layerCnt);
 
   for (uint ii = 1; ii < layerCnt; ii++) {
     if (dir > 0)  // horizontal
