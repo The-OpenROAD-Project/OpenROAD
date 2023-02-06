@@ -2846,26 +2846,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     design->getRegionQuery()->query(getExtBox(), layerNum, result);
     // process blockage first, then unblock based on pin shape
     for (auto& [box, obj] : result) {
-      if (obj->typeId() == frcBlockage) {
-        if (isRoutingLayer) {
-          // assume only routing layer
-          modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, true, false, true);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, false, false, true);
-          modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
-          // block
-          modBlockedPlanar(box, zIdx, true);
-          modBlockedVia(box, zIdx, true);
-        } else {
-          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, false);
-        }
-      } else if (obj->typeId() == frcInstBlockage) {
+      if ((obj->typeId() == frcBlockage)
+          || (obj->typeId() == frcInstBlockage)) {
         if (isRoutingLayer) {
           // assume only routing layer
           modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
