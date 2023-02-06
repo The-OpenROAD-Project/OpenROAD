@@ -2939,14 +2939,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 
   // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
-    // to remove once verify error will not be triggered
-    if (owner2nets_.find(net) == owner2nets_.end()) {
-      // cout << "Error: frNet with term(s) does not exist in owner2nets\n";
-      // continue;
-    } else {
-      for (auto dNet : owner2nets_[net]) {
-        dNet->setFrNetTerms(objs);
-      }
+    for (auto dNet : owner2nets_[net]) {
+      dNet->setFrNetTerms(objs);
     }
     initMazeCost_terms(objs, true);
   }
