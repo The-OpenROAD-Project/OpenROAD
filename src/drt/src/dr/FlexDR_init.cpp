@@ -1731,7 +1731,7 @@ void FlexDRWorker::initNets_boundaryArea()
                   auto obj2 = static_cast<drVia*>(connFig2);
                   pt2 = obj2->getOrigin();
                   if (pt2 == psEp) {
-                    currArea += viaBox2.minDXDY() * viaBox2.maxDXDY() / 2;
+                    currArea += viaBox2.area() / 2;
                     break;
                   }
                 } else if (connFig2->typeId() == drcPatchWire) {
@@ -1762,14 +1762,14 @@ void FlexDRWorker::initNets_boundaryArea()
                   auto obj2 = static_cast<drVia*>(connFig2);
                   pt2 = obj2->getOrigin();
                   if (pt2 == psBp) {
-                    currArea += viaBox2.minDXDY() * viaBox2.maxDXDY() / 2;
+                    currArea += viaBox2.area() / 2;
                     break;
                   }
                 } else if (connFig2->typeId() == drcPatchWire) {
                   auto obj2 = static_cast<drPatchWire*>(connFig2);
                   pt2 = obj2->getOrigin();
                   if (pt2 == psBp) {
-                    currArea += viaBox2.minDXDY() * viaBox2.maxDXDY();
+                    currArea += viaBox2.area();
                     break;
                   }
                 }
