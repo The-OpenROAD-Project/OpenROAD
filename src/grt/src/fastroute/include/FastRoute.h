@@ -123,11 +123,6 @@ class FastRouteCore
                 float slack,
                 std::vector<int>* edge_cost_per_layer);
 
-  bool changePinPositionNet(odb::dbNet* db_net,
-                            std::vector<int>& new_pin_x,
-                            std::vector<int>& new_pin_y,
-                            std::vector<int>& new_pin_l);
-
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,

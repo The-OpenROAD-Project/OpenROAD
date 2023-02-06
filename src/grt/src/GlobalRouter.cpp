@@ -546,15 +546,23 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
   perturbation_amount_ = perturbation;
 };
 
-void GlobalRouter::updateDirtyNets()
+void GlobalRouter::updateDirtyNets(std::vector<Net*> &dirty_nets)
 {
   initRoutingLayers();
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
+    // get last pin positions
+    std::vector<odb::Point> last_pos;
+    for (const Pin& pin : net->getPins()) 
+      last_pos.push_back(pin.getOnGridPosition());
     net->destroyPins();
+    // update pin positions
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
     findPins(net);
+    // compare new positions with last positions & add on vector
+    if (checkPinPositions(net, last_pos))
+      dirty_nets.push_back(db_net_map_[db_net]);
   }
 }
 
@@ -807,19 +815,21 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 }
 
-bool GlobalRouter::checkPinPositions(odb::dbNet* net)
+bool GlobalRouter::checkPinPositions(Net* net, std::vector<odb::Point>& last_pos)
 {
-  std::vector<RoutePt> pins_on_grid;
-  int root_idx;
-  findPins(db_net_map_[net], pins_on_grid, root_idx);
-  std::vector<int> new_x, new_y, new_l;
-
-  for (RoutePt& pin_pos : pins_on_grid) {
-    new_x.push_back(pin_pos.x());
-    new_y.push_back(pin_pos.y());
-    new_l.push_back(pin_pos.layer() - 1);
+  bool is_dif = false;
+  std::map<odb::Point, int> cnt_pos;
+  for (const Pin& pin : net->getPins())
+    cnt_pos[pin.getOnGridPosition()]++;
+  for (const odb::Point last : last_pos)
+    cnt_pos[last]--;
+  for (auto it : cnt_pos) {
+    if (it.second != 0) {
+      is_dif = true;
+      break;
+    }
   }
-  return fastroute_->changePinPositionNet(net, new_x, new_y, new_l);
+  return is_dif;
 }
 
 bool GlobalRouter::makeFastrouteNet(Net* net)
@@ -3961,15 +3971,9 @@ void GlobalRouter::updateDirtyRoutes()
         debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
     }
 
-    updateDirtyNets();
     std::vector<Net*> dirty_nets;
-    dirty_nets.reserve(dirty_nets_.size());
-    for (odb::dbNet* db_net : dirty_nets_) {
-      // check if the pins changes positions
-      if (checkPinPositions(db_net)) {
-        dirty_nets.push_back(db_net_map_[db_net]);
-      }
-    }
+    updateDirtyNets(dirty_nets);
+    
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route
