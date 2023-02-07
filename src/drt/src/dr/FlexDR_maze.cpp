@@ -3357,7 +3357,8 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                         * getTech()->getManufacturingGrid();
 
   // always patch to pref dir
-  if (getTech()->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
+  auto layer = getTech()->getLayer(layerNum);
+  if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
     isPatchHorz = true;
   } else {
     isPatchHorz = false;
@@ -3367,6 +3368,36 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
       bpIdx, isPatchHorz, bpPatchLeft, patchLength);
   auto costR = routeNet_postAstarAddPathMetal_isClean(
       epIdx, isPatchHorz, epPatchLeft, patchLength);
+  if (std::min(costL, costR) != 0 && !layer->isUnidirectional()
+      && layer->getMinStepConstraint() == nullptr
+      && layer->getLef58MinStepConstraints().empty()) {
+    // patch wrong direction
+    auto costLU = routeNet_postAstarAddPathMetal_isClean(
+        bpIdx, !isPatchHorz, true, patchLength);
+    auto costLD = routeNet_postAstarAddPathMetal_isClean(
+        bpIdx, !isPatchHorz, false, patchLength);
+    auto costRU = routeNet_postAstarAddPathMetal_isClean(
+        epIdx, !isPatchHorz, true, patchLength);
+    auto costRD = routeNet_postAstarAddPathMetal_isClean(
+        epIdx, !isPatchHorz, false, patchLength);
+    auto minCost = std::min(costLU, std::min(costLD, std::min(costRU, costRD)));
+    if (minCost < std::min(costL, costR)) {
+      if (minCost == costLU) {
+        routeNet_postAstarAddPatchMetal_addPWire(
+            net, bpIdx, !isPatchHorz, true, patchLength, patchWidth);
+      } else if (minCost == costLD) {
+        routeNet_postAstarAddPatchMetal_addPWire(
+            net, bpIdx, !isPatchHorz, false, patchLength, patchWidth);
+      } else if (minCost == costRU) {
+        routeNet_postAstarAddPatchMetal_addPWire(
+            net, epIdx, !isPatchHorz, true, patchLength, patchWidth);
+      } else if (minCost == costRD) {
+        routeNet_postAstarAddPatchMetal_addPWire(
+            net, epIdx, !isPatchHorz, false, patchLength, patchWidth);
+      }
+      return;
+    }
+  }
   if (costL <= costR) {
     routeNet_postAstarAddPatchMetal_addPWire(
         net, bpIdx, isPatchHorz, bpPatchLeft, patchLength, patchWidth);
