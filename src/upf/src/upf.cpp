@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2022-2023, The Regents of the University of California, Google LLC
-// All rights reserved.
+// Copyright (c) 2022-2023, The Regents of the University of California,
+// Google LLC All rights reserved.
 //
 // BSD 3-Clause License
 //
