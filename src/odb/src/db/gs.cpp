@@ -120,7 +120,7 @@ int gs::alloc_mem()
   }
 }
 
-int gs::set_slices(int nslices, bool /* unused: skipMemAlloc */)
+int gs::set_slices(int nslices)
 {
   free_mem();
   nslices_ = nslices;
@@ -131,14 +131,7 @@ int gs::set_slices(int nslices, bool /* unused: skipMemAlloc */)
   return 0;
 }
 
-int gs::setSize(int pl,
-                int xres,
-                int yres,
-                int x0,
-                int y0,
-                int x1,
-                int y1,
-                bool skipPixmap)
+void gs::setSize(int pl, int xres, int yres, int x0, int y0, int x1, int y1)
 {
   plc_ = pldata_[pl];
 
@@ -186,12 +179,6 @@ int gs::setSize(int pl,
   }
   plc_->pixwrem--;
 
-  if (skipPixmap) {
-    plc_->plalloc = nullptr;
-    plc_->plane = nullptr;
-    return 0;
-  }
-
   pixmap* pm = (pixmap*) calloc(plc_->height * plc_->pixstride + PIXADJUST,
                                 sizeof(pixmap));
   if (pm == nullptr) {
@@ -203,26 +190,19 @@ int gs::setSize(int pl,
 
   plc_->plalloc = pm;
   plc_->plane = pm;
-
-  return 0;
 }
 
-int gs::configureSlice(int _slicenum,
-                       int _xres,
-                       int _yres,
-                       int _x0,
-                       int _y0,
-                       int _x1,
-                       int _y1,
-                       bool skipAlloc)
+void gs::configureSlice(int _slicenum,
+                        int _xres,
+                        int _yres,
+                        int _x0,
+                        int _y0,
+                        int _x1,
+                        int _y1)
 {
-  if (init_ & ALLOCATED) {
-    if (_slicenum < nslices_) {
-      setSize(_slicenum, _xres, _yres, _x0, _y0, _x1, _y1, skipAlloc);
-    }
+  if ((init_ & ALLOCATED) && _slicenum < nslices_) {
+    setSize(_slicenum, _xres, _yres, _x0, _y0, _x1, _y1);
   }
-
-  return 0;
 }
 
 static int clip(const int p, const int min, const int max)
@@ -252,25 +232,20 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
   plc_ = pldata_[sl];
 
   // normalize bbox
-  long a;
   if (px0 > px1) {
-    a = px0;
-    px0 = px1;
-    px1 = a;
+    std::swap(px0, px1);
   }
   if (py0 > py1) {
-    a = py0;
-    py0 = py1;
-    py1 = a;
+    std::swap(py0, py1);
   }
 
-  if ((px0 < plc_->x0) && (px1 < plc_->x0))
+  if (px1 < plc_->x0)
     return -1;
-  if ((px0 > plc_->x1) && (px1 > plc_->x1))
+  if (px0 > plc_->x1)
     return -1;
-  if ((py0 < plc_->y0) && (py1 < plc_->y0))
+  if (py1 < plc_->y0)
     return -1;
-  if ((py0 > plc_->y1) && (py1 > plc_->y1))
+  if (py0 > plc_->y1)
     return -1;
 
   if (checkOnly)
@@ -289,30 +264,24 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
   cy1 = clip(cy1, 0, plc_->height);
   // now fill in planes object
 
-  pixmap* pm;
-  pixmap* pcb;
-
   // xbs = x block start - block the box starts in
-  int xbs = cx0 / PIXMAPGRID;
+  const int xbs = cx0 / PIXMAPGRID;
   // xbs = x block end - block the box ends in
-  int xbe = cx1 / PIXMAPGRID;
-
-  int xee = cx1 % PIXMAPGRID;
+  const int xbe = cx1 / PIXMAPGRID;
+  const int xee = cx1 % PIXMAPGRID;
 
   pixint smask = start_[cx0 % PIXMAPGRID];
-  pixint emask = end_[xee];
-
-  int mb;
+  const pixint emask = end_[xee];
 
   if (xbe == xbs) {
-    smask = smask & emask;
+    smask &= emask;
   }
 
-  pm = plc_->plane + plc_->pixstride * cy0 + xbs;
+  pixmap* pm = plc_->plane + plc_->pixstride * cy0 + xbs;
 
   for (int yb = cy0; yb <= cy1; yb++) {
     // start block
-    pcb = pm;
+    pixmap* pcb = pm;
 
     // for next time through loop - allow compiler time for out-of-order
     pm += plc_->pixstride;
@@ -321,7 +290,7 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
     pcb->lword = pcb->lword | smask;
 
     // do "middle" block
-    for (mb = xbs + 1; mb < xbe;) {
+    for (int mb = xbs + 1; mb < xbe;) {
       pcb++;
       // moved here to allow for out-of-order execution
       mb++;

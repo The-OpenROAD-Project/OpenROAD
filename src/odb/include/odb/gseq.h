@@ -50,14 +50,13 @@ class gs
   gs(AthPool<SEQ>* seqPool = NULL);
   ~gs();
 
-  int configureSlice(int slicenum,
-                     int xres,
-                     int yres,
-                     int x0,
-                     int y0,
-                     int x1,
-                     int y1,
-                     bool skipAlloc = false);
+  void configureSlice(int slicenum,
+                      int xres,
+                      int yres,
+                      int x0,
+                      int y0,
+                      int x1,
+                      int y1);
 
   // render a rectangle
   int box(int x0, int y0, int x1, int y1, int slice, bool checkOnly = false);
@@ -66,7 +65,7 @@ class gs
   int alloc_mem();
 
   // set the number of slices
-  int set_slices(int nslices, bool skipMemAlloc = false);
+  int set_slices(int nslices);
 
   int get_seqrow(int y, int plane, int start, int& end, int& bw);
   int get_seqcol(int x, int plane, int start, int& end, int& bw);
@@ -116,14 +115,7 @@ class gs
   };
 
   // set the size parameters
-  int setSize(int pl,
-              int xres,
-              int yres,
-              int x0,
-              int x1,
-              int y0,
-              int y1,
-              bool skipAlloc = false);
+  void setSize(int pl, int xres, int yres, int x0, int x1, int y0, int y1);
 
   int free_mem();
 
@@ -160,16 +152,16 @@ class gs
   int init_;
 
   plconfig* plc_;
-  plconfig** pldata_;
+  plconfig** pldata_;  // size == nslices_ when init_ == ALLOCATED
 
-  int maxplane_;
+  int maxplane_;  // == nslices - 1
 
   pixint start_[PIXMAPGRID];
   pixint middle_[PIXMAPGRID];
   pixint end_[PIXMAPGRID];
 
   AthPool<SEQ>* seqPool_;
-  bool allocSEQ_;
+  bool allocSEQ_;  // whether we own seqPool_
 };
 
 }  // namespace odb

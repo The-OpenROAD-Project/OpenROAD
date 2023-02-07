@@ -1599,13 +1599,11 @@ class extMain
   uint addNetShapesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
-                      int dir,
-                      odb::dbCreateNetUtil* createDbNet = NULL);
+                      int dir);
   uint addNetSboxesGs(odb::dbNet* net,
                       bool gsRotated,
                       bool swap_coords,
-                      int dir,
-                      odb::dbCreateNetUtil* createDbNet = NULL);
+                      int dir);
 
   uint getBucketNum(int base, int max, uint step, int xy);
   int getXY_gs(int base, int XY, uint minRes);
@@ -1614,20 +1612,13 @@ class extMain
                     extMeasure* m,
                     CoupleAndCompute coupleAndCompute);
   uint initPlanes(uint dir,
-                  uint layerCnt,
-                  uint* pitchTable,
-                  uint* widthTable,
-                  int* ll,
-                  int* ur);
-  uint initPlanes(uint dir,
                   int* wLL,
                   int* wUR,
                   uint layerCnt,
                   uint* pitchTable,
                   uint* widthTable,
                   uint* dirTable,
-                  int* bb_ll,
-                  bool skipMemAlloc = false);
+                  int* bb_ll);
 
   bool isIncluded(odb::Rect& r, uint dir, int* ll, int* ur);
   bool matchDir(uint dir, odb::Rect& r);
@@ -1661,10 +1652,7 @@ class extMain
                       bool includeDiag = false);
   void updateCCCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   double measureOverUnderCap(extMeasure* m, int x1, int y1, int x2, int y2);
-  uint initPlanes(uint layerCnt, odb::Rect* bb = NULL);
   uint allocateOverUnderMaps(uint layerCnt);
-  uint initPlanesOld(uint cnt);
-  uint initPlanesNew(uint cnt, odb::Rect* bb = NULL);
   uint makeIntersectPlanes(uint layerCnt);
   void deletePlanes(uint layerCnt);
   void getBboxPerLayer(odb::Rect* rectTable);
@@ -1931,9 +1919,7 @@ class extMain
                     odb::dbTechLayer* layer,
                     bool gsRotated,
                     bool swap_coords,
-                    int dir,
-                    bool specialWire = false,
-                    odb::dbCreateNetUtil* createDbNet = NULL);
+                    int dir);
 
   uint fill_gs4(int dir,
                 int* ll,
@@ -1943,8 +1929,7 @@ class extMain
                 uint layerCnt,
                 uint* dirTable,
                 uint* pitchTable,
-                uint* widthTable,
-                odb::dbCreateNetUtil* createDbNet);
+                uint* widthTable);
 
   uint addInsts(uint dir,
                 int* lo_gs,
