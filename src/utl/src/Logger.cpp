@@ -73,8 +73,6 @@ Logger::Logger(const char* log_filename, const char* metrics_filename)
   for (auto& counters : message_counters_) {
     counters.fill(0);
   }
-
-  spdlog::set_error_handler([](const std::string &msg) { spdlog::get("console")->error("*** LOGGER ERROR ***: {}", msg); });
 }
 
 Logger::~Logger()
