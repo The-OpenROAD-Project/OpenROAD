@@ -3120,15 +3120,6 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
   if (layer->getLayerNum() + 2 < TOP_ROUTING_LAYER
       && layer->getLayerNum() + 2 < getTech()->getLayers().size()) {
     auto aboveLayer = getTech()->getLayer(layer->getLayerNum() + 2);
-    if (aboveLayer->hasLef58SameMetalCutSpcTblConstraint())
-      checkLef58CutSpacingTbl(
-          rect, aboveLayer->getLef58SameMetalCutSpcTblConstraint());
-    if (aboveLayer->hasLef58SameNetCutSpcTblConstraint())
-      checkLef58CutSpacingTbl(rect,
-                              aboveLayer->getLef58SameNetCutSpcTblConstraint());
-    if (aboveLayer->hasLef58DiffNetCutSpcTblConstraint())
-      checkLef58CutSpacingTbl(rect,
-                              aboveLayer->getLef58DiffNetCutSpcTblConstraint());
     if (aboveLayer->hasLef58SameNetInterCutSpcTblConstraint())
       checkLef58CutSpacingTbl(
           rect, aboveLayer->getLef58SameNetInterCutSpcTblConstraint());
