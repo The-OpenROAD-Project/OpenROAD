@@ -145,7 +145,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(rcx_py
     PUBLIC
-      rcx
+      rcx_lib
   )
 
 endif()
