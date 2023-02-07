@@ -48,6 +48,8 @@
 
 namespace odb {
 
+// Note: this is an undefined symbol when we depend on the odb library alone,
+// so we populate it with a dummy implementation.
 int notice(int code, const char* msg, ...)
 {
   abort();
