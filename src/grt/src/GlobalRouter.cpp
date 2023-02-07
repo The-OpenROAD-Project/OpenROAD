@@ -2243,35 +2243,24 @@ void GlobalRouter::createFakePin(Pin pin,
   pin_connection.final_x = std::max(x_tmp, pin_connection.final_x);
   pin_connection.final_y = std::max(y_tmp, pin_connection.final_y);
 
-  int tile_size = grid_->getTileSize();
-  int die_area_min_x = grid_->getXMin();
-  int die_area_min_y = grid_->getYMin();
+  int pin_conn_init_x = pin_connection.init_x;
+  int pin_conn_init_y = pin_connection.init_y;
 
-  int init_id_x
-      = floor((float) ((pin_connection.init_x - die_area_min_x) / tile_size));
-  int final_id_x
-      = floor((float) ((pin_connection.final_x - die_area_min_x) / tile_size));
-
-  int init_id_y
-      = floor((float) ((pin_connection.init_y - die_area_min_y) / tile_size));
-  int final_id_y
-      = floor((float) ((pin_connection.final_y - die_area_min_y) / tile_size));
+  int pin_conn_final_x = pin_connection.final_x;
+  int pin_conn_final_y = pin_connection.final_y;
 
   for (Pin& net_pin : net->getPins()) {
     if (!(net_pin.getITerm() == pin.getITerm())) {
       auto net_pin_pos = net_pin.getOnGridPosition();
-      int net_pin_id_x
-          = floor((float) ((net_pin_pos.x() - die_area_min_x) / tile_size));
-      int net_pin_id_y
-            = floor((float) ((net_pin_pos.y() - die_area_min_y) / tile_size));
-
-      if (pin_connection.init_y == pin_connection.final_y) {      
-        if ((net_pin_id_x >= init_id_x) && (net_pin_id_x <= final_id_x)) {
+      if (pin_connection.init_y == pin_connection.final_y) {
+        if ((net_pin_pos.x() >= pin_conn_init_x)
+            && (net_pin_pos.x() <= pin_conn_final_x)) {
           pin_position.setX(original_x);
           return;
         }
       } else {
-        if ((net_pin_id_y >= init_id_y) && (net_pin_id_y <= final_id_y)) {
+        if ((net_pin_pos.y() >= pin_conn_init_y)
+            && (net_pin_pos.y() <= pin_conn_final_y)) {
           pin_position.setY(original_y);
           return;
         }
