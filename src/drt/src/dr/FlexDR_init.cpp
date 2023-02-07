@@ -625,6 +625,7 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_pin(
     map<pair<Point, frLayerNum>, set<int>>& nodeMap)
 {
   int currCnt = (int) netRouteObjs.size();
+  netPins.reserve(pin2epMap.size());
   for (auto& [obj, locS] : pin2epMap) {
     netPins.push_back(obj);
     for (auto& pr : locS) {
@@ -1654,18 +1655,10 @@ void FlexDRWorker::initNets_numPinsIn()
         pt = firstAP->getPoint();
       }
 
-      if (pt.x() < x1) {
-        x1 = pt.x();
-      }
-      if (pt.x() > x2) {
-        x2 = pt.x();
-      }
-      if (pt.y() < y1) {
-        y1 = pt.y();
-      }
-      if (pt.y() > y2) {
-        y2 = pt.y();
-      }
+      x1 = std::min(x1, pt.getX());
+      x2 = std::max(x2, pt.getX());
+      y1 = std::min(y1, pt.getY());
+      y2 = std::max(y2, pt.getY());
     }
     if (x1 <= x2 && y1 <= y2) {
       Rect box = Rect(Point(x1, y1), Point(x2, y2));
@@ -2542,6 +2535,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
+    ripupNets.reserve(nets_.size());
     for (auto& net : nets_) {
       ripupNets.push_back(net.get());
     }
@@ -2846,26 +2840,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     design->getRegionQuery()->query(getExtBox(), layerNum, result);
     // process blockage first, then unblock based on pin shape
     for (auto& [box, obj] : result) {
-      if (obj->typeId() == frcBlockage) {
-        if (isRoutingLayer) {
-          // assume only routing layer
-          modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, true, false, true);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, false, false, true);
-          modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
-          // block
-          modBlockedPlanar(box, zIdx, true);
-          modBlockedVia(box, zIdx, true);
-        } else {
-          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, false);
-        }
-      } else if (obj->typeId() == frcInstBlockage) {
+      if ((obj->typeId() == frcBlockage)
+          || (obj->typeId() == frcInstBlockage)) {
         if (isRoutingLayer) {
           // assume only routing layer
           modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
@@ -2957,14 +2933,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 
   // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
-    // to remove once verify error will not be triggered
-    if (owner2nets_.find(net) == owner2nets_.end()) {
-      // cout << "Error: frNet with term(s) does not exist in owner2nets\n";
-      // continue;
-    } else {
-      for (auto dNet : owner2nets_[net]) {
-        dNet->setFrNetTerms(objs);
-      }
+    for (auto dNet : owner2nets_[net]) {
+      dNet->setFrNetTerms(objs);
     }
     initMazeCost_terms(objs, true);
   }

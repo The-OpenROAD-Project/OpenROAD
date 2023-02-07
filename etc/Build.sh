@@ -54,6 +54,16 @@ EOF
     exit "${1:-1}"
 }
 
+__logging()
+{
+        local log_file="${buildDir}/openroad_build.log"
+        echo "[INFO] Saving logs to ${log_file}"
+        echo "[INFO] $__CMD"
+        exec > >(tee -i "${log_file}")
+        exec 2>&1
+}
+
+__CMD="$0 $@"
 while [ "$#" -gt 0 ]; do
     case "${1}" in
         -h|-help)
@@ -138,16 +148,12 @@ if [[ "${cleanBefore}" == "yes" ]]; then
 fi
 
 mkdir -p "${buildDir}"
-if [[ "${keepLog}" == "yes"  ]]; then
-    logName="${buildDir}/openroad-build-$(date +%s).log"
-else
-    logName=/dev/null
-fi
+__logging
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
     export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
 
-eval cmake "${cmakeOptions[@]}" -B "${buildDir}" . 2>&1 | tee "${logName}"
-eval time cmake --build "${buildDir}" -j "${numThreads}" 2>&1 | tee -a "${logName}"
+eval cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+eval time cmake --build "${buildDir}" -j "${numThreads}"
