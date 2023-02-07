@@ -87,6 +87,7 @@ namespace utl {
   X(STT)                \
   X(TAP)                \
   X(UKN)                \
+  X(UPF)                \
   X(UTL)
 
 #define GENERATE_ENUM(ENUM) ENUM,
