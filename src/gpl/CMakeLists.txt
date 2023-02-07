@@ -130,8 +130,8 @@ if (SYCL)
     if( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
       CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
 
-      target_compile_options("-fsycl")
-      target_link_options("-fsycl")
+      target_compile_options(gpl PRIVATE "-fsycl")
+      target_link_options(gpl PRIVATE "-fsycl")
 
     else()
     message(FATAL_ERROR "This compiler does not support SYCL. Refer to https://oneapi-src.github.io/oneMKL/selecting_a_compiler.html")
