@@ -389,7 +389,6 @@ void FlexGCWorker::Impl::initDRWorker()
   if (!getDRWorker()) {
     return;
   }
-  int cnt = 0;
   for (auto& uDRNet : getDRWorker()->getNets()) {
     // always first generate gcnet in case owner does not have any object
     auto it = owner2nets_.find(uDRNet->getFrNet());
@@ -400,18 +399,15 @@ void FlexGCWorker::Impl::initDRWorker()
     // auto net = uDRNet->getFrNet();
     for (auto& uConnFig : uDRNet->getExtConnFigs()) {
       gNet = initDRObj(uConnFig.get());
-      cnt++;
     }
     for (auto& uConnFig : uDRNet->getRouteConnFigs()) {
       gNet = initDRObj(uConnFig.get());
-      cnt++;
     }
     addNonTaperedPatches(gNet, uDRNet.get());
   }
 }
 void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
 {
-  int cnt = 0;
   auto block = design->getTopBlock();
   for (auto& net : block->getNets()) {
     // always first generate gcnet in case owner does not have any object
@@ -426,7 +422,6 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
         netExists = true;
       }
       gNet = initRouteObj(obj.get());
-      cnt++;
     }
     for (auto& obj : net->getVias()) {
       if (!drcBox_.intersects(obj->getBBox()))
@@ -436,7 +431,6 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
         netExists = true;
       }
       gNet = initRouteObj(obj.get());
-      cnt++;
     }
     for (auto& pwire : net->getPatchWires()) {
       if (!drcBox_.intersects(pwire->getBBox()))
@@ -446,7 +440,6 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
         netExists = true;
       }
       gNet = initRouteObj(pwire.get());
-      cnt++;
       Rect box = pwire->getBBox();
       int z = pwire->getLayerNum() / 2 - 1;
       for (auto& nt : gNet->getNonTaperedRects(z)) {

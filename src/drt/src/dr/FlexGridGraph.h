@@ -57,9 +57,6 @@ class FlexGridGraph
         ggMarkerCost_(0),
         ggFixedShapeCost_(0),
         halfViaEncArea_(nullptr),
-        via2viaMinLen_(nullptr),
-        via2viaMinLenNew_(nullptr),
-        via2turnMinLen_(nullptr),
         ndr_(nullptr),
         dstTaperBox(nullptr)
   {
@@ -876,30 +873,6 @@ class FlexGridGraph
     return (isLayer1 ? (*halfViaEncArea_)[z].first
                      : (*halfViaEncArea_)[z].second);
   }
-  bool allowVia2ViaZeroLen(frMIdx z, bool isPrevViaUp, bool isCurrViaUp) const
-  {
-    return ((*via2viaMinLen_)[z].second)[((unsigned) isPrevViaUp << 1)
-                                         + (unsigned) isCurrViaUp];
-  }
-  frCoord getVia2ViaMinLen(frMIdx z, bool isPrevViaUp, bool isCurrViaUp) const
-  {
-    return ((*via2viaMinLen_)[z]
-                .first)[((unsigned) isPrevViaUp << 1) + (unsigned) isCurrViaUp];
-  }
-  frCoord getVia2ViaMinLenNew(frMIdx z,
-                              bool isPrevViaUp,
-                              bool isCurrViaUp,
-                              bool isCurrDirY) const
-  {
-    return (*via2viaMinLenNew_)[z][((unsigned) isPrevViaUp << 2)
-                                   + ((unsigned) isCurrViaUp << 1)
-                                   + (unsigned) isCurrDirY];
-  }
-  frCoord getVia2TurnMinLen(frMIdx z, bool isPrevViaUp, bool isCurrDirY) const
-  {
-    return (*via2turnMinLen_)[z][((unsigned) isPrevViaUp << 1)
-                                 + (unsigned) isCurrDirY];
-  }
   int nTracksX() { return xCoords_.size(); }
   int nTracksY() { return yCoords_.size(); }
   void cleanup()
@@ -1016,14 +989,6 @@ class FlexGridGraph
   FlexWavefront wavefront_;
   const std::vector<std::pair<frCoord, frCoord>>*
       halfViaEncArea_;  // std::pair<layer1area, layer2area>
-  // via2viaMinLen[z][0], last via is down, curr via is down
-  // via2viaMinLen[z][1], last via is down, curr via is up
-  // via2viaMinLen[z][2], last via is up, curr via is down
-  // via2viaMinLen[z][3], last via is up, curr via is up
-  const std::vector<std::pair<std::vector<frCoord>, std::vector<bool>>>*
-      via2viaMinLen_;
-  const std::vector<std::vector<frCoord>>* via2viaMinLenNew_;
-  const std::vector<std::vector<frCoord>>* via2turnMinLen_;
   // ndr related
   frNonDefaultRule* ndr_;
   const frBox3D*
@@ -1040,9 +1005,6 @@ class FlexGridGraph
         ggDRCCost_(0),
         ggMarkerCost_(0),
         halfViaEncArea_(nullptr),
-        via2viaMinLen_(nullptr),
-        via2viaMinLenNew_(nullptr),
-        via2turnMinLen_(nullptr),
         ndr_(nullptr),
         dstTaperBox(nullptr)
   {
@@ -1239,9 +1201,6 @@ class FlexGridGraph
     (ar) & ggDRCCost_;
     (ar) & ggMarkerCost_;
     (ar) & halfViaEncArea_;
-    (ar) & via2viaMinLen_;
-    (ar) & via2viaMinLenNew_;
-    (ar) & via2turnMinLen_;
   }
   friend class boost::serialization::access;
   friend class FlexDRWorker;

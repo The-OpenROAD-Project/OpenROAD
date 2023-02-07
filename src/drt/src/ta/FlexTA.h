@@ -220,22 +220,22 @@ class FlexTAWorker
                          std::set<frCoord>& downViaCoordSet,
                          std::set<frCoord>& upViaCoordSet,
                          int& wlen,
-                         frCoord& wlen2);
+                         frCoord& pinCoord);
   void initIroute_helper_generic(frGuide* guide,
                                  frCoord& maxBegin,
                                  frCoord& minEnd,
                                  std::set<frCoord>& downViaCoordSet,
                                  std::set<frCoord>& upViaCoordSet,
                                  int& wlen,
-                                 frCoord& wlen2);
-  void initIroute_helper_generic_helper(frGuide* guide, frCoord& wlen2);
+                                 frCoord& pinCoord);
+  void initIroute_helper_generic_helper(frGuide* guide, frCoord& pinCoord);
   bool initIroute_helper_pin(frGuide* guide,
                              frCoord& maxBegin,
                              frCoord& minEnd,
                              std::set<frCoord>& downViaCoordSet,
                              std::set<frCoord>& upViaCoordSet,
                              int& wlen,
-                             frCoord& wlen2);
+                             frCoord& pinCoord);
   void initCosts();
   void sortIroutes();
 

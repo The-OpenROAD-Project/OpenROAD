@@ -655,7 +655,6 @@ void DetailedMis::solveMatch()
 
   lemon::ListDigraph::ArcMap<int> flow(g);
   mincost.flowMap(flow);
-  int nMoved = 0;
 
   for (lemon::ListDigraph::ArcMap<int>::ItemIt it(flow); it != lemon::INVALID;
        ++it) {
@@ -679,7 +678,6 @@ void DetailedMis::solveMatch()
       const int spanned_j = arch_->getCellHeightInRows(ndj);
 
       if (ndi != ndj) {
-        ++nMoved;
         if (spanned_i != spanned_j || ndi->getWidth() != ndj->getWidth()
             || ndi->getHeight() != ndj->getHeight()) {
           mgrPtr_->internalError("Unable to interpret flow during matching");

@@ -49,14 +49,17 @@ void FlexGridGraph::initGrids(
   zCoords_.clear();
   zHeights_.clear();
   layerRouteDirections_.clear();
+  xCoords_.reserve(xMap.size());
   for (auto& [k, v] : xMap) {
     xCoords_.push_back(k);
   }
+  yCoords_.reserve(yMap.size());
   for (auto& [k, v] : yMap) {
     yCoords_.push_back(k);
   }
   frCoord zHeight = 0;
   // vector<frCoord> via2viaMinLenTmp(4, 0);
+  zCoords_.reserve(zMap.size());
   for (auto& [k, v] : zMap) {
     zCoords_.push_back(k);
     zHeight += getTech()->getLayer(k)->getPitch() * VIACOST;
@@ -66,20 +69,23 @@ void FlexGridGraph::initGrids(
   // initialize all grids
   frMIdx xDim, yDim, zDim;
   getDim(xDim, yDim, zDim);
+  const int capacity = xDim * yDim * zDim;
+
   nodes_.clear();
-  nodes_.resize(xDim * yDim * zDim, Node());
+  nodes_.resize(capacity, Node());
   // new
   prevDirs_.clear();
   srcs_.clear();
   dsts_.clear();
-  prevDirs_.resize(xDim * yDim * zDim * 3, 0);
-  srcs_.resize(xDim * yDim * zDim, 0);
-  dsts_.resize(xDim * yDim * zDim, 0);
+
+  prevDirs_.resize(capacity * 3, 0);
+  srcs_.resize(capacity, 0);
+  dsts_.resize(capacity, 0);
   guides_.clear();
   if (followGuide) {
-    guides_.resize(xDim * yDim * zDim, 0);
+    guides_.resize(capacity, 0);
   } else {
-    guides_.resize(xDim * yDim * zDim, 1);
+    guides_.resize(capacity, 1);
   }
 }
 
@@ -361,9 +367,6 @@ void FlexGridGraph::init(const frDesign* design,
 {
   auto* via_data = getDRWorker()->getViaData();
   halfViaEncArea_ = &via_data->halfViaEncArea;
-  via2viaMinLen_ = &via_data->via2viaMinLen;
-  via2turnMinLen_ = &via_data->via2turnMinLen;
-  via2viaMinLenNew_ = &via_data->via2viaMinLenNew;
 
   // get tracks intersecting with the Maze bbox
   map<frLayerNum, dbTechLayerDir> zMap;

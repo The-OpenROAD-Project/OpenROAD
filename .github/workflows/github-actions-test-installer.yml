@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu20", "ubuntu22.04", "ubuntu22.10", "centos7", "rhel", "debian10", "debian11", "opensuse"]
+        os: ["ubuntu20.04", "ubuntu22.04", "ubuntu22.10", "centos7", "rhel", "debian10", "debian11", "opensuse"]
         args: ["", "-local"]
         compilers: ["gcc", "clang"]
         exclude:

@@ -15,7 +15,7 @@ jobs:
         with:
           xcode-version: latest-stable
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Install dependencies
