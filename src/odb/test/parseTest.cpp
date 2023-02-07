@@ -42,9 +42,9 @@
 #endif
 
 #include "odb/parse.h"
-#include "utl/ScopedTemporaryFile.h"
-#include "utl/Logger.h"
 #include "utl/CFileUtils.h"
+#include "utl/Logger.h"
+#include "utl/ScopedTemporaryFile.h"
 
 namespace odb {
 
@@ -62,7 +62,8 @@ BOOST_AUTO_TEST_CASE(parser_init_and_parse_line_with_integers)
   utl::Logger logger;
   utl::ScopedTemporaryFile scoped_temp_file(&logger);
   const std::string kContents = "1 2 3 4";
-  boost::span<const uint8_t> contents(reinterpret_cast<const uint8_t*>(kContents.data()), kContents.size());
+  boost::span<const uint8_t> contents(
+      reinterpret_cast<const uint8_t*>(kContents.data()), kContents.size());
   utl::WriteAll(scoped_temp_file.file(), contents, &logger);
   fseek(scoped_temp_file.file(), SEEK_SET, 0);
 
