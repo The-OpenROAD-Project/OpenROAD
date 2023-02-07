@@ -2254,13 +2254,15 @@ void GlobalRouter::createFakePin(Pin pin,
       auto net_pin_pos = net_pin.getOnGridPosition();
       if (pin_connection.init_y == pin_connection.final_y) {
         if ((net_pin_pos.x() >= pin_conn_init_x)
-            && (net_pin_pos.x() <= pin_conn_final_x)) {
+            && (net_pin_pos.x() <= pin_conn_final_x)
+            && (net_pin_pos.y() == pin_conn_init_y)) {
           pin_position.setX(original_x);
           return;
         }
       } else {
         if ((net_pin_pos.y() >= pin_conn_init_y)
-            && (net_pin_pos.y() <= pin_conn_final_y)) {
+            && (net_pin_pos.y() <= pin_conn_final_y)
+            && (net_pin_pos.x() == pin_conn_init_x)) {
           pin_position.setY(original_y);
           return;
         }
