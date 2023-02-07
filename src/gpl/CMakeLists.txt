@@ -114,6 +114,39 @@ else()
   message(STATUS "GPU is not enabled")
 endif()
 
+
+
+option (SYCL "Enable SYCL Acceleration" OFF)
+set(SYCL_Backend "intel" CACHE STRING "Use SYCL backend: 'intel' or 'hipsycl' ")
+
+if (SYCL)
+  message(STATUS "SYCL is enabled with backend '${SYCL_Backend}'.")
+  if(SYCL AND GPU)
+    message(FATAL_ERROR "Cannot enable both CUDA GPU and SYCL Acceleration at the same time.")
+  endif()
+
+  if(SYCL_Backend STREQUAL "intel")
+    
+    if( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
+      CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+
+      target_compile_options("-fsycl")
+      target_link_options("-fsycl")
+
+    else()
+    message(FATAL_ERROR "This compiler does not support SYCL. Refer to https://oneapi-src.github.io/oneMKL/selecting_a_compiler.html")
+    endif()
+  elseif(SYCL_Backend STREQUAL "hipsycl")
+    find_package(hipSYCL CONFIG REQUIRED)
+    add_sycl_to_target(TARGET gpl)
+  else()
+    message(FATAL_ERROR, "'${SYCL_BACKEND}' is not a valid SYCL backend.")
+  endif()
+
+  find_package(MKL CONFIG REQUIRED)
+endif()
+
+
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          gpl_py
            NAMESPACE     gpl
