@@ -20,6 +20,7 @@ add_library(lefin
     WidthTableParser.cpp
     MinCutParser.cpp
     MetalWidthViaMapParser.cpp
+    KeepOutZoneParser.cpp
 )
 
 target_include_directories(lefin

@@ -107,6 +107,7 @@ enum dbObjectType
   dbGuideObj,
   dbMetalWidthViaMapObj,
   dbTechLayerAreaRuleObj,
+  dbTechLayerKeepOutZoneRuleObj,
   dbModuleObj,
   dbModInstObj,
   dbGroupObj,

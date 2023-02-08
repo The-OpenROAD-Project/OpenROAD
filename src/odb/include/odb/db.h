@@ -143,6 +143,7 @@ class dbTechLayerMinCutRule;
 class dbGuide;
 class dbMetalWidthViaMap;
 class dbTechLayerAreaRule;
+class dbTechLayerKeepOutZoneRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -7038,6 +7039,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerAreaRule> getTechLayerAreaRules() const;
 
+  dbSet<dbTechLayerKeepOutZoneRule> getTechLayerKeepOutZoneRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -8998,6 +9001,81 @@ class dbTechLayerAreaRule : public dbObject
   static void destroy(dbTechLayerAreaRule* rule);
 
   // User Code End dbTechLayerAreaRule
+};
+
+class dbTechLayerKeepOutZoneRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerKeepOutZoneRuleEnums
+  // User Code End dbTechLayerKeepOutZoneRuleEnums
+
+  void setFirstCutClass(std::string first_cut_class);
+
+  std::string getFirstCutClass() const;
+
+  void setSecondCutClass(std::string second_cut_class);
+
+  std::string getSecondCutClass() const;
+
+  void setAlignedSpacing(int aligned_spacing);
+
+  int getAlignedSpacing() const;
+
+  void setSideExtension(int side_extension);
+
+  int getSideExtension() const;
+
+  void setForwardExtension(int forward_extension);
+
+  int getForwardExtension() const;
+
+  void setEndSideExtension(int end_side_extension);
+
+  int getEndSideExtension() const;
+
+  void setEndForwardExtension(int end_forward_extension);
+
+  int getEndForwardExtension() const;
+
+  void setSideSideExtension(int side_side_extension);
+
+  int getSideSideExtension() const;
+
+  void setSideForwardExtension(int side_forward_extension);
+
+  int getSideForwardExtension() const;
+
+  void setSpiralExtension(int spiral_extension);
+
+  int getSpiralExtension() const;
+
+  void setSameMask(bool same_mask);
+
+  bool isSameMask() const;
+
+  void setSameMetal(bool same_metal);
+
+  bool isSameMetal() const;
+
+  void setDiffMetal(bool diff_metal);
+
+  bool isDiffMetal() const;
+
+  void setExceptAlignedSide(bool except_aligned_side);
+
+  bool isExceptAlignedSide() const;
+
+  void setExceptAlignedEnd(bool except_aligned_end);
+
+  bool isExceptAlignedEnd() const;
+
+  // User Code Begin dbTechLayerKeepOutZoneRule
+
+  static dbTechLayerKeepOutZoneRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerKeepOutZoneRule* rule);
+
+  // User Code End dbTechLayerKeepOutZoneRule
 };
 
 class dbModule : public dbObject

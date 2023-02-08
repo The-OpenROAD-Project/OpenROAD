@@ -299,4 +299,21 @@ class MetalWidthViaMapParser
   dbMetalWidthViaMap* via_map;
 };
 
+class KeepOutZoneParser
+{
+ public:
+  KeepOutZoneParser(dbTechLayer* layer, lefin* lefin)
+      : layer_(layer), lefin_(lefin), rule_(nullptr)
+  {
+  }
+  void parse(const std::string&);
+
+ private:
+  bool parseSubRule(std::string);
+  void setInt(double val, void (odb::dbTechLayerKeepOutZoneRule::*func)(int));
+  dbTechLayer* layer_;
+  lefin* lefin_;
+  dbTechLayerKeepOutZoneRule* rule_;
+};
+
 }  // namespace odb
