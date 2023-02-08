@@ -926,19 +926,16 @@ uint extMain::addShapeOnGS(dbNet* net,
         return 0;
     }
   }
-  const bool checkFlag = false;
 
   uint level = layer->getRoutingLevel();
   int n = 0;
   if (!gsRotated) {
-    n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, checkFlag);
+    n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
   } else {
     if (!swap_coords)  // horizontal
-      n = _geomSeq->box(
-          r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, checkFlag);
+      n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
     else
-      n = _geomSeq->box(
-          r.yMin(), r.xMin(), r.yMax(), r.xMax(), level, checkFlag);
+      n = _geomSeq->box(r.yMin(), r.xMin(), r.yMax(), r.xMax(), level);
   }
   if (n == 0) {
     return 1;
