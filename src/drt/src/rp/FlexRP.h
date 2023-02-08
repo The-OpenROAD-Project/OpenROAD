@@ -57,15 +57,9 @@ class FlexRP
   // prep
   void prep();
 
-  // end
-  void end();
-
   // functions
   void prep_viaForbiddenThrough();
   void prep_minStepViasCheck();
-  bool hasMinStepViolation(frMinStepConstraint* minStepCons,
-                           int edge1,
-                           int edge2);
   bool hasMinStepViol(Rect& r1, Rect& r2, frLayerNum lNum);
   void prep_viaForbiddenThrough_helper(const frLayerNum& lNum,
                                        const int& tableLayerIdx,

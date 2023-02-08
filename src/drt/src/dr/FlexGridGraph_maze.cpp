@@ -51,12 +51,9 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
   // get cost
   nextEstCost = getEstCost(nextIdx, dstMazeIdx1, dstMazeIdx2, dir);
   nextPathCost = getNextPathCost(currGrid, dir);
-  auto lNum = getLayerNum(currGrid.z());
-  auto pathWidth = getTech()->getLayer(lNum)->getWidth();
   Point currPt;
   getPoint(currPt, gridX, gridY);
-  frCoord currDist
-      = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
+  frCoord currDist = Point::manhattanDistance(currPt, centerPt);
 
   // vlength calculation
   frCoord currVLengthX = 0;
@@ -100,32 +97,24 @@ void FlexGridGraph::expand(FlexWavefrontGrid& currGrid,
     nextTLength = std::numeric_limits<frCoord>::max();
   }
 
-  FlexWavefrontGrid nextWavefrontGrid(
-      gridX,
-      gridY,
-      gridZ,
-      currGrid.getLayerPathArea()
-          + getEdgeLength(currGrid.x(), currGrid.y(), currGrid.z(), dir)
-                * pathWidth,
-      nextVLengthX,
-      nextVLengthY,
-      nextIsPrevViaUp,
-      nextTLength,
-      currDist,
-      nextPathCost,
-      nextPathCost + nextEstCost,
-      currGrid.getBackTraceBuffer());
+  FlexWavefrontGrid nextWavefrontGrid(gridX,
+                                      gridY,
+                                      gridZ,
+                                      nextVLengthX,
+                                      nextVLengthY,
+                                      nextIsPrevViaUp,
+                                      nextTLength,
+                                      currDist,
+                                      nextPathCost,
+                                      nextPathCost + nextEstCost,
+                                      currGrid.getBackTraceBuffer());
   if (dir == frDirEnum::U || dir == frDirEnum::D) {
-    nextWavefrontGrid.resetLayerPathArea();
     nextWavefrontGrid.resetLength();
     if (dir == frDirEnum::U) {
       nextWavefrontGrid.setPrevViaUp(false);
     } else {
       nextWavefrontGrid.setPrevViaUp(true);
     }
-    nextWavefrontGrid.addLayerPathArea(
-        (dir == frDirEnum::U) ? getHalfViaEncArea(currGrid.z(), false)
-                              : getHalfViaEncArea(gridZ, true));
   }
   if (currGrid.getSrcTaperBox()
       && currGrid.getSrcTaperBox()->contains(
@@ -161,29 +150,10 @@ void FlexGridGraph::expandWavefront(FlexWavefrontGrid& currGrid,
                                     const FlexMazeIdx& dstMazeIdx2,
                                     const Point& centerPt)
 {
-  // N
-  if (isExpandable(currGrid, frDirEnum::N)) {
-    expand(currGrid, frDirEnum::N, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // E
-  if (isExpandable(currGrid, frDirEnum::E)) {
-    expand(currGrid, frDirEnum::E, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // S
-  if (isExpandable(currGrid, frDirEnum::S)) {
-    expand(currGrid, frDirEnum::S, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // W
-  if (isExpandable(currGrid, frDirEnum::W)) {
-    expand(currGrid, frDirEnum::W, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // U
-  if (isExpandable(currGrid, frDirEnum::U)) {
-    expand(currGrid, frDirEnum::U, dstMazeIdx1, dstMazeIdx2, centerPt);
-  }
-  // D
-  if (isExpandable(currGrid, frDirEnum::D)) {
-    expand(currGrid, frDirEnum::D, dstMazeIdx1, dstMazeIdx2, centerPt);
+  for (const auto dir : frDirEnumAll) {
+    if (isExpandable(currGrid, dir)) {
+      expand(currGrid, dir, dstMazeIdx1, dstMazeIdx2, centerPt);
+    }
   }
 }
 
@@ -846,18 +816,12 @@ bool FlexGridGraph::search(vector<FlexMazeIdx>& connComps,
       path.push_back(FlexMazeIdx(idx.x(), idx.y(), idx.z()));
       return true;
     }
-    // get min area min length
-    auto lNum = getLayerNum(idx.z());
-    auto minAreaConstraint = getTech()->getLayer(lNum)->getAreaConstraint();
-    frCoord fakeArea = minAreaConstraint ? minAreaConstraint->getMinArea() : 0;
     getPoint(currPt, idx.x(), idx.y());
-    frCoord currDist
-        = abs(currPt.x() - centerPt.x()) + abs(currPt.y() - centerPt.y());
+    frCoord currDist = Point::manhattanDistance(currPt, centerPt);
     FlexWavefrontGrid currGrid(
         idx.x(),
         idx.y(),
         idx.z(),
-        fakeArea,
         std::numeric_limits<frCoord>::max(),
         std::numeric_limits<frCoord>::max(),
         true,

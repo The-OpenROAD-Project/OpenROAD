@@ -35,6 +35,18 @@
 
 #include "ord/OpenRoad.hh"
 #include "rcx/ext.h"
+#include "sta/StaMain.hh"
+
+namespace sta {
+// Tcl files encoded into strings.
+extern const char* rcx_tcl_inits[];
+}  // namespace sta
+
+namespace rcx {
+extern "C" {
+extern int Rcx_Init(Tcl_Interp* interp);
+}
+}  // namespace rcx
 
 namespace ord {
 
@@ -51,7 +63,10 @@ void deleteOpenRCX(rcx::Ext* extractor)
 void initOpenRCX(OpenRoad* openroad)
 {
   openroad->getOpenRCX()->init(
-      openroad->tclInterp(), openroad->getDb(), openroad->getLogger());
+      openroad->getDb(), openroad->getLogger(), [openroad] {
+        rcx::Rcx_Init(openroad->tclInterp());
+        sta::evalTclInit(openroad->tclInterp(), sta::rcx_tcl_inits);
+      });
 }
 
 }  // namespace ord
