@@ -28,6 +28,7 @@
 
 #pragma once
 
+#include <boost/geometry/geometry.hpp>
 #include <boost/geometry/algorithms/covered_by.hpp>
 #include <boost/geometry/algorithms/equals.hpp>
 #include <boost/geometry/geometries/register/box.hpp>
