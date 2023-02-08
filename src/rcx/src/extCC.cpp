@@ -36,6 +36,7 @@
 
 #include "ZInterface.h"
 #include "dbLogger.h"
+#include "gseq.h"
 #include "wire.h"
 
 namespace rcx {
