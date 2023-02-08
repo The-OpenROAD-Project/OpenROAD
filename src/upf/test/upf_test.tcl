@@ -29,7 +29,7 @@ foreach pd $pds {
     puts "PowerDomain: $pd"
 
     foreach switch $pswitches {
-        puts "PowerSwitch: [$switch getName], OutSupply: [$switch getOutSupplyPort], InSupply: [$switch getInSupplyPort], ControlPorts: {[$switch getControlPorts]}, On States {[$switch getOnStates]}"  
+        puts "PowerSwitch: [$switch getName], OutSupply: [$switch getOutSupplyPort], InSupply: [$switch getInSupplyPort], ControlPorts: {[$switch getControlPorts]}, On States {[$switch getOnStates]}" 
     }
 
     foreach iso $isolations {
