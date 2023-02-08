@@ -59,7 +59,7 @@ class gs
                       int y1);
 
   // render a rectangle
-  int box(int x0, int y0, int x1, int y1, int slice, bool checkOnly = false);
+  int box(int x0, int y0, int x1, int y1, int slice);
 
   // allocate (re-allocate) memory
   int alloc_mem();

@@ -210,7 +210,7 @@ static int clip(const int p, const int min, const int max)
   return (p < min) ? min : (p >= max) ? (max - 1) : p;
 }
 
-int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
+int gs::box(int px0, int py0, int px1, int py1, int sl)
 {
   if ((sl < 0) || (sl > nslices_)) {
     fprintf(stderr,
@@ -247,9 +247,6 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
     return -1;
   if (py0 > plc_->y1)
     return -1;
-
-  if (checkOnly)
-    return 0;
 
   // convert to pixel space
   int cx0 = int((px0 - plc_->x0) / plc_->xres);
