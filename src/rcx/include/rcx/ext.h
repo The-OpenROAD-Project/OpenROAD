@@ -32,8 +32,7 @@
 
 #pragma once
 
-#include <tcl.h>
-
+#include <functional>
 #include <memory>
 
 #include "extRCap.h"
@@ -56,7 +55,10 @@ class Ext
   Ext();
   ~Ext() = default;
 
-  void init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger);
+  void init(
+      odb::dbDatabase* db,
+      Logger* logger,
+      std::function<void()> rcx_init = []() {});
   void setLogger(Logger* logger);
 
   void write_rules(const std::string& name,
