@@ -109,3 +109,6 @@ suppress_message PPL 60
 # suppress tap info messages
 suppress_message TAP 100
 suppress_message TAP 101
+
+# suppress threads count
+suppress_message ORD 30

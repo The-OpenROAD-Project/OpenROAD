@@ -63,3 +63,6 @@ utl.suppress_message(utl.PPL, 60)
 # suppress tap info messages
 utl.suppress_message(utl.TAP, 100)
 utl.suppress_message(utl.TAP, 101)
+
+# suppress threads count
+utl.suppress_message(utl.ORD, 30)
