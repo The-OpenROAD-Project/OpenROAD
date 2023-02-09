@@ -3100,6 +3100,10 @@ void FlexGCWorker::Impl::checkCutSpacing_main(gcRect* rect)
     checkLef58CutSpacing_main(rect, con, skipDiffNet);
   }
 
+  for (auto con : layer->getKeepOutZoneConstraints()) {
+    checKeepOutZone_main(rect, con);
+  }
+
   // LEF58_SPACINGTABLE
   if (layer->hasLef58SameMetalCutSpcTblConstraint())
     checkLef58CutSpacingTbl(rect,

@@ -76,6 +76,7 @@ using namespace odb;
 %ignore odb::Rect::get(Orientation2D orient, Direction1D dir) const;
 %ignore odb::Rect::set(Orientation2D orient, Direction1D dir, int value);
 %ignore odb::Point::set(Orientation2D orient, int value);
+%ignore odb::Rect::bloat(int margin, Orientation2D orient) const;
 
 %include "dbenums.i"
 %include "parserenums.i"

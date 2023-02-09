@@ -1481,6 +1481,53 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
     }
     tech_->addUConstraint(std::move(con));
   }
+  for (auto rule : layer->getTechLayerKeepOutZoneRules()) {
+    if (rule->isSameMask()) {
+      logger_->warn(
+          DRT,
+          324,
+          "LEF58_KEEPOUTZONE SAMEMASK is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isSameMetal()) {
+      logger_->warn(
+          DRT,
+          325,
+          "LEF58_KEEPOUTZONE SAMEMETAL is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->isDiffMetal()) {
+      logger_->warn(
+          DRT,
+          326,
+          "LEF58_KEEPOUTZONE DIFFMETAL is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->getSideExtension() > 0 || rule->getForwardExtension() > 0) {
+      logger_->warn(
+          DRT,
+          327,
+          "LEF58_KEEPOUTZONE EXTENSION is not supported. Skipping for layer {}",
+          layer->getName());
+      continue;
+    }
+    if (rule->getSpiralExtension() > 0) {
+      logger_->warn(DRT,
+                    328,
+                    "LEF58_KEEPOUTZONE non zero SPIRALEXTENSION is not "
+                    "supported. Skipping for layer {}",
+                    layer->getName());
+      continue;
+    }
+    unique_ptr<frConstraint> uCon
+        = make_unique<frLef58KeepOutZoneConstraint>(rule);
+    auto rptr = static_cast<frLef58KeepOutZoneConstraint*>(uCon.get());
+    tech_->addUConstraint(std::move(uCon));
+    tmpLayer->addKeepOutZoneConstraint(rptr);
+  }
 }
 
 void io::Parser::addDefaultMasterSliceLayer()
