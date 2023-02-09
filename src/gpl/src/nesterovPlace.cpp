@@ -31,6 +31,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+// Debug controls: npinit, updateGrad, np, updateNextIter
+
 #include "nesterovPlace.h"
 
 #include <iomanip>
@@ -170,7 +172,7 @@ void NesterovPlace::init()
 
   prevHpwl_ = nb_->getHpwl();
 
-  debugPrint(log_, GPL, "replace", 3, "npinit: InitialHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "npinit", 1, "InitialHPWL: {}", prevHpwl_);
 
   // FFT update
   nb_->updateDensityForceBin();
@@ -179,12 +181,8 @@ void NesterovPlace::init()
       = npVars_.initWireLengthCoef
         / (static_cast<float>(nb_->binSizeX() + nb_->binSizeY()) * 0.5);
 
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "npinit: BaseWireLengthCoef: {:g}",
-             baseWireLengthCoef_);
+  debugPrint(
+      log_, GPL, "npinit", 1, "BaseWireLengthCoef: {:g}", baseWireLengthCoef_);
 
   sumOverflow_ = static_cast<float>(nb_->overflowArea())
                  / static_cast<float>(nb_->nesterovInstsArea());
@@ -192,29 +190,16 @@ void NesterovPlace::init()
   sumOverflowUnscaled_ = static_cast<float>(nb_->overflowAreaUnscaled())
                          / static_cast<float>(nb_->nesterovInstsArea());
 
+  debugPrint(log_, GPL, "npinit", 1, "OverflowArea: {}", nb_->overflowArea());
   debugPrint(
-      log_, GPL, "replace", 3, "npinit: OverflowArea: {}", nb_->overflowArea());
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "npinit: NesterovInstArea: {}",
-             nb_->nesterovInstsArea());
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "npinit: InitSumOverflow: {:g}",
-             sumOverflowUnscaled_);
+      log_, GPL, "npinit", 1, "NesterovInstArea: {}", nb_->nesterovInstsArea());
+  debugPrint(
+      log_, GPL, "npinit", 1, "InitSumOverflow: {:g}", sumOverflowUnscaled_);
 
   updateWireLengthCoef(sumOverflow_);
 
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "npinit: WireLengthCoef: {:g}",
-             wireLengthCoefX_);
+  debugPrint(
+      log_, GPL, "npinit", 1, "npinit: WireLengthCoef: {:g}", wireLengthCoefX_);
 
   // WL update
   nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
@@ -243,24 +228,15 @@ void NesterovPlace::init()
     return;
   }
 
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "npinit: WireLengthGradSum {:g}",
-             wireLengthGradSum_);
   debugPrint(
-      log_, GPL, "replace", 3, "npinit: DensityGradSum {:g}", densityGradSum_);
+      log_, GPL, "npinit", 1, "WireLengthGradSum {:g}", wireLengthGradSum_);
+  debugPrint(log_, GPL, "npinit", 1, "DensityGradSum {:g}", densityGradSum_);
 
   densityPenalty_
       = (wireLengthGradSum_ / densityGradSum_) * npVars_.initDensityPenalty;
 
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "npinit: InitDensityPenalty {:g}",
-             densityPenalty_);
+  debugPrint(
+      log_, GPL, "npinit", 1, "InitDensityPenalty {:g}", densityPenalty_);
 
   sumOverflow_ = static_cast<float>(nb_->overflowArea())
                  / static_cast<float>(nb_->nesterovInstsArea());
@@ -268,27 +244,22 @@ void NesterovPlace::init()
   sumOverflowUnscaled_ = static_cast<float>(nb_->overflowAreaUnscaled())
                          / static_cast<float>(nb_->nesterovInstsArea());
 
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "npinit: PrevSumOverflow {:g}",
-             sumOverflowUnscaled_);
+  debugPrint(
+      log_, GPL, "npinit", 1, "PrevSumOverflow {:g}", sumOverflowUnscaled_);
 
   stepLength_ = getStepLength(
       prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
 
-  debugPrint(
-      log_, GPL, "replace", 3, "npinit: InitialStepLength {:g}", stepLength_);
+  debugPrint(log_, GPL, "npinit", 1, "InitialStepLength {:g}", stepLength_);
 
   if ((isnan(stepLength_) || isinf(stepLength_))
       && recursionCntInitSLPCoef_ < npVars_.maxRecursionInitSLPCoef) {
     npVars_.initialPrevCoordiUpdateCoef *= 10;
     debugPrint(log_,
                GPL,
-               "replace",
-               3,
-               "npinit: steplength = 0 detected. Rerunning Nesterov::init() "
+               "npinit",
+               1,
+               "steplength = 0 detected. Rerunning Nesterov::init() "
                "with initPrevSLPCoef {:g}",
                npVars_.initialPrevCoordiUpdateCoef);
     recursionCntInitSLPCoef_++;
@@ -383,12 +354,8 @@ void NesterovPlace::updateGradients(std::vector<FloatPoint>& sumGrads,
 
   float gradSum = 0;
 
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "updateGrad:  DensityPenalty: {:g}",
-             densityPenalty_);
+  debugPrint(
+      log_, GPL, "updateGrad", 1, "DensityPenalty: {:g}", densityPenalty_);
 
   for (size_t i = 0; i < nb_->gCells().size(); i++) {
     GCell* gCell = nb_->gCells().at(i);
@@ -434,17 +401,13 @@ void NesterovPlace::updateGradients(std::vector<FloatPoint>& sumGrads,
 
   debugPrint(log_,
              GPL,
-             "replace",
-             3,
-             "updateGrad:  WireLengthGradSum: {:g}",
+             "updateGrad",
+             1,
+             "WireLengthGradSum: {:g}",
              wireLengthGradSum_);
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "updateGrad:  DensityGradSum: {:g}",
-             densityGradSum_);
-  debugPrint(log_, GPL, "replace", 3, "updateGrad:  GradSum: {:g}", gradSum);
+  debugPrint(
+      log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
+  debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
 
   // sometimes wirelength gradient is zero when design is too small
   if (wireLengthGradSum_ == 0
@@ -452,14 +415,14 @@ void NesterovPlace::updateGradients(std::vector<FloatPoint>& sumGrads,
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
-    debugPrint(log_,
-               GPL,
-               "replace",
-               3,
-               "updateGrad:  sum(WL gradient) = 0 detected, trying again with "
-               "wlCoef: {:g} {:g}",
-               wireLengthCoefX_,
-               wireLengthCoefY_);
+    debugPrint(
+        log_,
+        GPL,
+        "updateGrad",
+        1,
+        "sum(WL gradient) = 0 detected, trying again with wlCoef: {:g} {:g}",
+        wireLengthCoefX_,
+        wireLengthCoefY_);
 
     // update WL forces
     nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
@@ -519,7 +482,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // Core Nesterov Loop
   int iter = start_iter;
   for (; iter < npVars_.maxNesterovIter; iter++) {
-    debugPrint(log_, GPL, "replace", 3, "np:  Iter: {}", iter + 1);
+    debugPrint(log_, GPL, "np", 1, "Iter: {}", iter + 1);
 
     float prevA = curA;
 
@@ -531,10 +494,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // coeff is (a_k - 1) / ( a_(k+1) ) in paper.
     float coeff = (prevA - 1.0) / curA;
 
-    debugPrint(log_, GPL, "replace", 3, "np:  PreviousA: {:g}", prevA);
-    debugPrint(log_, GPL, "replace", 3, "np:  CurrentA: {:g}", curA);
-    debugPrint(log_, GPL, "replace", 3, "np:  Coefficient: {:g}", coeff);
-    debugPrint(log_, GPL, "replace", 3, "np:  StepLength: {:g}", stepLength_);
+    debugPrint(log_, GPL, "np", 1, "PreviousA: {:g}", prevA);
+    debugPrint(log_, GPL, "np", 1, "CurrentA: {:g}", curA);
+    debugPrint(log_, GPL, "np", 1, "Coefficient: {:g}", coeff);
+    debugPrint(log_, GPL, "np", 1, "StepLength: {:g}", stepLength_);
 
     // Back-Tracking loop
     int numBackTrak = 0;
@@ -575,8 +538,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       float newStepLength = getStepLength(
           curSLPCoordi_, curSLPSumGrads_, nextSLPCoordi_, nextSLPSumGrads_);
 
-      debugPrint(
-          log_, GPL, "replace", 3, "np:  NewStepLength: {:g}", newStepLength);
+      debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
 
       if (isnan(newStepLength) || isinf(newStepLength)) {
         isDiverged_ = true;
@@ -596,8 +558,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       }
     }
 
-    debugPrint(
-        log_, GPL, "replace", 3, "np:  NumBackTrak: {}", numBackTrak + 1);
+    debugPrint(log_, GPL, "np", 1, "NumBackTrak: {}", numBackTrak + 1);
 
     // dynamic adjustment for
     // better convergence with
@@ -610,8 +571,8 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     if (npVars_.maxBackTrack == numBackTrak) {
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 3,
+                 "np",
+                 1,
                  "Backtracking limit reached so a small step will be taken");
     }
 
@@ -799,12 +760,7 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
 
   wireLengthCoefX_ *= baseWireLengthCoef_;
   wireLengthCoefY_ *= baseWireLengthCoef_;
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "updateWireLengthCoef:  NewWireLengthCoef: {:g}",
-             wireLengthCoefX_);
+  debugPrint(log_, GPL, "np", 1, "NewWireLengthCoef: {:g}", wireLengthCoefX_);
 }
 
 void NesterovPlace::updateInitialPrevSLPCoordi()
@@ -864,25 +820,19 @@ void NesterovPlace::updateNextIter()
 
   debugPrint(log_,
              GPL,
-             "replace",
-             3,
-             "updateNextIter:  Gradient: {:g}",
+             "updateNextIter",
+             1,
+             "Gradient: {:g}",
              getSecondNorm(curSLPSumGrads_));
+  debugPrint(log_, GPL, "updateNextIter", 1, "Phi: {:g}", nb_->sumPhi());
   debugPrint(
-      log_, GPL, "replace", 3, "updateNextIter:  Phi: {:g}", nb_->sumPhi());
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "updateNextIter:  Overflow: {:g}",
-             sumOverflowUnscaled_);
+      log_, GPL, "updateNextIter", 1, "Overflow: {:g}", sumOverflowUnscaled_);
 
   updateWireLengthCoef(sumOverflow_);
   int64_t hpwl = nb_->getHpwl();
 
-  debugPrint(
-      log_, GPL, "replace", 3, "updateNextIter:  PreviousHPWL: {}", prevHpwl_);
-  debugPrint(log_, GPL, "replace", 3, "updateNextIter:  NewHPWL: {}", hpwl);
+  debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
+  debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
 
   float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
                              / npVars_.referenceHpwl);
@@ -890,8 +840,7 @@ void NesterovPlace::updateNextIter()
   prevHpwl_ = hpwl;
   densityPenalty_ *= phiCoef;
 
-  debugPrint(
-      log_, GPL, "replace", 3, "updateNextIter:  PhiCoef: {:g}", phiCoef);
+  debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
 
   // for routability densityPenalty recovery
   if (rb_->numCall() == 0) {
@@ -910,28 +859,20 @@ float NesterovPlace::getStepLength(
 
   debugPrint(log_,
              GPL,
-             "replace",
-             3,
-             "getStepLength:  CoordinateDistance: {:g}",
+             "getStepLength",
+             1,
+             "CoordinateDistance: {:g}",
              coordiDistance);
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "getStepLength:  GradientDistance: {:g}",
-             gradDistance);
+  debugPrint(
+      log_, GPL, "getStepLength", 1, "GradientDistance: {:g}", gradDistance);
 
   return coordiDistance / gradDistance;
 }
 
 float NesterovPlace::getPhiCoef(float scaledDiffHpwl) const
 {
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "getPhiCoef:  InputScaleDiffHPWL: {:g}",
-             scaledDiffHpwl);
+  debugPrint(
+      log_, GPL, "getPhiCoef", 1, "InputScaleDiffHPWL: {:g}", scaledDiffHpwl);
 
   float retCoef = (scaledDiffHpwl < 0)
                       ? npVars_.maxPhiCoef

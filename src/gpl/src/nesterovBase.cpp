@@ -1256,36 +1256,15 @@ void NesterovBase::initFillerGCells()
   int fillerCnt = static_cast<int>(
       totalFillerArea_ / static_cast<int64_t>(fillerDx_ * fillerDy_));
 
-  debugPrint(log_, GPL, "replace", 3, "FillerInit: CoreArea {}", coreArea);
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "FillerInit: WhiteSpaceArea {}",
-             whiteSpaceArea_);
+  debugPrint(log_, GPL, "FillerInit", 1, "CoreArea {}", coreArea);
+  debugPrint(log_, GPL, "FillerInit", 1, "WhiteSpaceArea {}", whiteSpaceArea_);
+  debugPrint(log_, GPL, "FillerInit", 1, "MovableArea {}", movableArea_);
   debugPrint(
-      log_, GPL, "replace", 3, "FillerInit: MovableArea {}", movableArea_);
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "FillerInit: TotalFillerArea {}",
-             totalFillerArea_);
+      log_, GPL, "FillerInit", 1, "TotalFillerArea {}", totalFillerArea_);
+  debugPrint(log_, GPL, "FillerInit", 1, "NumFillerCells {}", fillerCnt);
+  debugPrint(log_, GPL, "FillerInit", 1, "FillerCellArea {}", fillerCellArea());
   debugPrint(
-      log_, GPL, "replace", 3, "FillerInit: NumFillerCells {}", fillerCnt);
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "FillerInit: FillerCellArea {}",
-             fillerCellArea());
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "FillerInit: FillerCellSize {} {}",
-             fillerDx_,
-             fillerDy_);
+      log_, GPL, "FillerInit", 1, "FillerCellSize {} {}", fillerDx_, fillerDy_);
 
   //
   // mt19937 supports huge range of random values.
@@ -1673,9 +1652,9 @@ void NesterovBase::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         if (gPin->gCell() && gPin->gCell()->isInstance()) {
           debugPrint(log_,
                      GPL,
-                     "replace",
-                     5,
-                     "wlUpdateWA:  MinX updated: {} {:g}",
+                     "wlUpdateWA",
+                     1,
+                     "MinX updated: {} {:g}",
                      gPin->gCell()->instance()->dbInst()->getConstName(),
                      gPin->minExpSumX());
         }
@@ -1689,9 +1668,9 @@ void NesterovBase::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         if (gPin->gCell() && gPin->gCell()->isInstance()) {
           debugPrint(log_,
                      GPL,
-                     "replace",
-                     5,
-                     "wlUpdateWA:  MaxX updated: {} {:g}",
+                     "wlUpdateWA",
+                     1,
+                     "MaxX updated: {} {:g}",
                      gPin->gCell()->instance()->dbInst()->getConstName(),
                      gPin->maxExpSumX());
         }
@@ -1705,9 +1684,9 @@ void NesterovBase::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         if (gPin->gCell() && gPin->gCell()->isInstance()) {
           debugPrint(log_,
                      GPL,
-                     "replace",
-                     5,
-                     "wlUpdateWA:  MinY updated: {} {:g}",
+                     "wlUpdateWA",
+                     1,
+                     "MinY updated: {} {:g}",
                      gPin->gCell()->instance()->dbInst()->getConstName(),
                      gPin->minExpSumY());
         }
@@ -1721,16 +1700,14 @@ void NesterovBase::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         if (gPin->gCell() && gPin->gCell()->isInstance()) {
           debugPrint(log_,
                      GPL,
-                     "replace",
-                     5,
-                     "wlUpdateWA:  MaxY updated: {} {:g}",
+                     "wlUpdateWA",
+                     1,
+                     "MaxY updated: {} {:g}",
                      gPin->gCell()->instance()->dbInst()->getConstName(),
                      gPin->maxExpSumY());
         }
       }
     }
-    // cout << gNet->lx() << " " << gNet->ly() << " "
-    //   << gNet->ux() << " " << gNet->uy() << endl;
   }
 }
 
@@ -1746,9 +1723,9 @@ FloatPoint NesterovBase::getWireLengthGradientWA(const GCell* gCell,
 
     debugPrint(log_,
                GPL,
-               "replace",
-               5,
-               "getGradientWA: wlPair: {:g} {:g}",
+               "getGradientWA",
+               1,
+               "wlPair: {:g} {:g}",
                tmpPair.x,
                tmpPair.y);
 
@@ -1763,9 +1740,9 @@ FloatPoint NesterovBase::getWireLengthGradientWA(const GCell* gCell,
   if (gCell->isInstance()) {
     debugPrint(log_,
                GPL,
-               "replace",
-               5,
-               "getGradientWA:  gradient: {:g} {:g}",
+               "getGradientWA",
+               1,
+               "gradient: {:g} {:g}",
                gradientPair.x,
                gradientPair.y);
   }
@@ -1834,9 +1811,9 @@ FloatPoint NesterovBase::getWireLengthGradientPinWA(const GPin* gPin,
 
   debugPrint(log_,
              GPL,
-             "replace",
-             5,
-             "getGradientWAPin:  gradient:  X[{:g} {:g}]  Y[{:g} {:g}]",
+             "getGradientWAPin",
+             1,
+             "gradient:  X[{:g} {:g}]  Y[{:g} {:g}]",
              gradientMinX,
              gradientMaxX,
              gradientMinY,
