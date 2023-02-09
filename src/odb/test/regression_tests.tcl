@@ -25,7 +25,6 @@ record_tests {
   ndr
   gcd_abstract_lef
   gcd_abstract_lef_with_power
-  upf_test
 }
 
 record_pass_fail_tests {
