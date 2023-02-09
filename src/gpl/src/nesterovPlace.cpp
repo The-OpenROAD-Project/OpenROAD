@@ -580,7 +580,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       break;
     }
 
-    updateNextIter();
+    updateNextIter(iter);
 
     // For JPEG Saving
     // debug
@@ -784,7 +784,7 @@ void NesterovPlace::updateInitialPrevSLPCoordi()
   }
 }
 
-void NesterovPlace::updateNextIter()
+void NesterovPlace::updateNextIter(const int iter)
 {
   // swap vector pointers
   std::swap(prevSLPCoordi_, curSLPCoordi_);
@@ -812,11 +812,20 @@ void NesterovPlace::updateNextIter()
 
   std::swap(curCoordi_, nextCoordi_);
 
-  sumOverflow_ = static_cast<float>(nb_->overflowArea())
-                 / static_cast<float>(nb_->nesterovInstsArea());
+  // In a macro dominated design like mock-array-big you may be placing
+  // very few std cells in a sea of fixed macros.  The overflow denominator
+  // may be quite small and prevent convergence.  This is mostly due
+  // to our limited ability to move instances off macros cleanly.  As that
+  // improves this should no longer be needed.
+  const float fractionOfMaxIters
+      = static_cast<float>(iter) / npVars_.maxNesterovIter;
+  const float overflowDenominator
+      = std::max(static_cast<float>(nb_->nesterovInstsArea()),
+                 fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
 
-  sumOverflowUnscaled_ = static_cast<float>(nb_->overflowAreaUnscaled())
-                         / static_cast<float>(nb_->nesterovInstsArea());
+  sumOverflow_ = nb_->overflowArea() / overflowDenominator;
+
+  sumOverflowUnscaled_ = nb_->overflowAreaUnscaled() / overflowDenominator;
 
   debugPrint(log_,
              GPL,
