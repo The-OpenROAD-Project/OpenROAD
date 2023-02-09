@@ -1,6 +1,6 @@
 %{
 #include "odb/db.h"
-#include "odb/upf.h"
+#include "upf/upf.h"
 #include "ord/OpenRoad.hh"
 
   namespace ord {

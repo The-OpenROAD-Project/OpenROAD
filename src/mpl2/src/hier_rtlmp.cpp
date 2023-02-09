@@ -2232,10 +2232,6 @@ void HierRTLMP::printPhysicalHierarchyTree(Cluster* parent, int level)
       parent->getMacroArea(),
       parent->getStdCellArea());
   logger_->report("{}\n", line);
-  int tot_num_macro_in_children = 0;
-  for (auto& cluster : parent->getChildren()) {
-    tot_num_macro_in_children += cluster->getNumMacro();
-  }
 
   for (auto& cluster : parent->getChildren()) {
     printPhysicalHierarchyTree(cluster, level + 1);

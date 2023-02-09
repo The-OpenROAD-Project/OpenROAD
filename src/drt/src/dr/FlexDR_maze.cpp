@@ -52,13 +52,6 @@ static frSquaredDistance pt2boxDistSquare(const Point& pt, const Rect& box)
   return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
 }
 
-static frSquaredDistance pt2ptDistSquare(const Point& pt1, const Point& pt2)
-{
-  frCoord dx = abs(pt1.x() - pt2.x());
-  frCoord dy = abs(pt1.y() - pt2.y());
-  return (frSquaredDistance) dx * dx + (frSquaredDistance) dy * dy;
-}
-
 // prlx = -dx, prly = -dy
 // dx > 0 : disjoint in x; dx = 0 : touching in x; dx < 0 : overlap in x
 static frSquaredDistance box2boxDistSquareNew(const Rect& box1,
@@ -1107,7 +1100,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
         tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
                        (tmpBx.yMin() + tmpBx.yMax()) / 2};
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
-        c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
+        c2cSquare = Point::squaredDistance(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
         hasViol = false;
         for (auto con : cutLayer->getCutSpacing()) {
@@ -1281,7 +1274,7 @@ void FlexDRWorker::modInterLayerCutSpacingCost(const Rect& box,
         tmpBxCenter = {(tmpBx.xMin() + tmpBx.xMax()) / 2,
                        (tmpBx.yMin() + tmpBx.yMax()) / 2};
         distSquare = box2boxDistSquareNew(box, tmpBx, dx, dy);
-        c2cSquare = pt2ptDistSquare(boxCenter, tmpBxCenter);
+        c2cSquare = Point::squaredDistance(boxCenter, tmpBxCenter);
         prl = max(-dx, -dy);
         hasViol = false;
         if (con != nullptr) {
@@ -3112,7 +3105,7 @@ void FlexDRWorker::routeNet_postAstarPatchMinAreaVio(
       Point bp, ep;
       gridGraph_.getPoint(bp, currIdx.x(), currIdx.y());
       gridGraph_.getPoint(ep, nextIdx.x(), nextIdx.y());
-      frCoord pathLength = abs(bp.x() - ep.x()) + abs(bp.y() - ep.y());
+      frCoord pathLength = Point::manhattanDistance(bp, ep);
       if (currArea < reqArea) {
         if (!prev_is_wire) {
           currArea /= 2;

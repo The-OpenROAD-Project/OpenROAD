@@ -109,11 +109,6 @@ Instance::Instance(odb::dbInst* inst,
                  inst->getMaster()->getName(),
                  row_limit);
   }
-
-  // TODO
-  // need additional adjustment
-  // if instance (macro) is fixed and
-  // its coordi is not multiple of rows' integer.
 }
 
 // for dummy instances
@@ -301,6 +296,24 @@ void Instance::lock()
 void Instance::unlock()
 {
   is_locked_ = false;
+}
+
+static int snapDown(int value, int origin, int step)
+{
+  return ((value - origin) / step) * step + origin;
+}
+
+static int snapUp(int value, int origin, int step)
+{
+  return ((value + step - 1 - origin) / step) * step + origin;
+}
+
+void Instance::snapOutward(const odb::Point& origin, int step_x, int step_y)
+{
+  lx_ = snapDown(lx_, origin.x(), step_x);
+  ly_ = snapDown(ly_, origin.y(), step_y);
+  ux_ = snapUp(ux_, origin.x(), step_x);
+  uy_ = snapUp(uy_, origin.y(), step_y);
 }
 
 ////////////////////////////////////////////////////////
@@ -835,6 +848,14 @@ void PlacerBase::init()
                     pbVars_.padRight * siteSizeX_,
                     siteSizeY_,
                     log_);
+
+    // Fixed instaces need to be snapped outwards to the nearest site
+    // boundary.  A partially overlapped site is unusable and this
+    // is the simplest way to ensure it is counted as fully used.
+    if (myInst.isFixed()) {
+      myInst.snapOutward(coreRect.ll(), siteSizeX_, siteSizeY_);
+    }
+
     instStor_.push_back(myInst);
 
     dbBox* bbox = inst->getBBox();

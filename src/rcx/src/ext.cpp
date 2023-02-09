@@ -34,36 +34,27 @@
 #include <errno.h>
 
 #include "odb/wOrder.h"
-#include "sta/StaMain.hh"
 #include "utl/Logger.h"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* rcx_tcl_inits[];
-}  // namespace sta
 
 namespace rcx {
 
 using utl::Logger;
 using utl::RCX;
 
-extern "C" {
-extern int Rcx_Init(Tcl_Interp* interp);
-}
-
 Ext::Ext() : odb::ZInterface(), _ext(std::make_unique<extMain>())
 {
 }
 
-void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
+void Ext::init(odb::dbDatabase* db,
+               Logger* logger,
+               std::function<void()> rcx_init)
 {
   _db = db;
   logger_ = logger;
   _ext->init(db, logger);
 
   // Define swig TCL commands.
-  Rcx_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::rcx_tcl_inits);
+  rcx_init();
 }
 
 void Ext::setLogger(Logger* logger)

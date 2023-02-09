@@ -41,7 +41,6 @@
 #include "box.h"
 #include "db.h"
 #include "geom.h"
-#include "gseq.h"
 #include "rcx.h"
 
 namespace odb {
@@ -54,6 +53,7 @@ enum Ath__overlapAdjust
 };
 
 class Ath__track;
+struct SEQ;
 
 class Ath__searchBox
 {

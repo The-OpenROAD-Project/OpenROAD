@@ -625,6 +625,7 @@ void FlexDRWorker::initNets_searchRepair_nodeMap_pin(
     map<pair<Point, frLayerNum>, set<int>>& nodeMap)
 {
   int currCnt = (int) netRouteObjs.size();
+  netPins.reserve(pin2epMap.size());
   for (auto& [obj, locS] : pin2epMap) {
     netPins.push_back(obj);
     for (auto& pr : locS) {
@@ -1654,18 +1655,10 @@ void FlexDRWorker::initNets_numPinsIn()
         pt = firstAP->getPoint();
       }
 
-      if (pt.x() < x1) {
-        x1 = pt.x();
-      }
-      if (pt.x() > x2) {
-        x2 = pt.x();
-      }
-      if (pt.y() < y1) {
-        y1 = pt.y();
-      }
-      if (pt.y() > y2) {
-        y2 = pt.y();
-      }
+      x1 = std::min(x1, pt.getX());
+      x2 = std::max(x2, pt.getX());
+      y1 = std::min(y1, pt.getY());
+      y2 = std::max(y2, pt.getY());
     }
     if (x1 <= x2 && y1 <= y2) {
       Rect box = Rect(Point(x1, y1), Point(x2, y2));
@@ -1718,8 +1711,8 @@ void FlexDRWorker::initNets_boundaryArea()
             if (bp == psBp && (!getRouteBox().intersects(psEp))) {
               // calc area
               segStyle = obj->getStyle();
-              currArea += (abs(psEp.x() - psBp.x()) + abs(psEp.y() - psBp.y()))
-                          * segStyle.getWidth();
+              currArea
+                  += Point::manhattanDistance(psEp, psBp) * segStyle.getWidth();
               results2.clear();
               queryBox2 = Rect(psEp, psEp);
               workerRegionQuery.query(queryBox2, lNum, results2);
@@ -1749,8 +1742,8 @@ void FlexDRWorker::initNets_boundaryArea()
             if ((!getRouteBox().intersects(psBp)) && bp == psEp) {
               // calc area
               segStyle = obj->getStyle();
-              currArea += (abs(psEp.x() - psBp.x()) + abs(psEp.y() - psBp.y()))
-                          * segStyle.getWidth();
+              currArea
+                  += Point::manhattanDistance(psEp, psBp) * segStyle.getWidth();
               results2.clear();
               queryBox2 = Rect(psEp, psEp);
               workerRegionQuery.query(queryBox2, lNum, results2);
@@ -2253,40 +2246,10 @@ void FlexDRWorker::initMazeCost_ap_helper(drNet* net, bool isAddPathCost)
         }
       }
 
-      if (ap->hasValidAccess(frDirEnum::W)) {
-        if (!isStdCellPin) {
+      if (!isStdCellPin) {
+        for (const auto dir : frDirEnumPlanar) {
           initMazeCost_ap_planarGrid_helper(
-              mi,
-              frDirEnum::W,
-              planarGridBloatNumWidth * defaultWidth,
-              isAddPathCost);
-        }
-      }
-      if (ap->hasValidAccess(frDirEnum::E)) {
-        if (!isStdCellPin) {
-          initMazeCost_ap_planarGrid_helper(
-              mi,
-              frDirEnum::E,
-              planarGridBloatNumWidth * defaultWidth,
-              isAddPathCost);
-        }
-      }
-      if (ap->hasValidAccess(frDirEnum::S)) {
-        if (!isStdCellPin) {
-          initMazeCost_ap_planarGrid_helper(
-              mi,
-              frDirEnum::S,
-              planarGridBloatNumWidth * defaultWidth,
-              isAddPathCost);
-        }
-      }
-      if (ap->hasValidAccess(frDirEnum::N)) {
-        if (!isStdCellPin) {
-          initMazeCost_ap_planarGrid_helper(
-              mi,
-              frDirEnum::N,
-              planarGridBloatNumWidth * defaultWidth,
-              isAddPathCost);
+              mi, dir, planarGridBloatNumWidth * defaultWidth, isAddPathCost);
         }
       }
     }
@@ -2300,40 +2263,12 @@ void FlexDRWorker::initMazeCost_ap()
     for (auto& pin : net->getPins()) {
       for (auto& ap : pin->getAccessPatterns()) {
         FlexMazeIdx mi = ap->getMazeIdx();
-        if (!ap->hasValidAccess(frDirEnum::E)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::E);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::E);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::W)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::W);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::W);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::N)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::N);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::N);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::S)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::S);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::S);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::U)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::U);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::U);
-        }
-
-        if (!ap->hasValidAccess(frDirEnum::D)) {
-          gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::D);
-        } else {
-          gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), frDirEnum::D);
+        for (const auto dir : frDirEnumAll) {
+          if (!ap->hasValidAccess(dir)) {
+            gridGraph_.setBlocked(mi.x(), mi.y(), mi.z(), dir);
+          } else {
+            gridGraph_.resetBlocked(mi.x(), mi.y(), mi.z(), dir);
+          }
         }
 
         if (ap->hasAccessViaDef(frDirEnum::U)) {
@@ -2600,6 +2535,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
     // ripup all nets and clear objs here
     // nets are ripped up during initNets()
     vector<drNet*> ripupNets;
+    ripupNets.reserve(nets_.size());
     for (auto& net : nets_) {
       ripupNets.push_back(net.get());
     }
@@ -2904,26 +2840,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
     design->getRegionQuery()->query(getExtBox(), layerNum, result);
     // process blockage first, then unblock based on pin shape
     for (auto& [box, obj] : result) {
-      if (obj->typeId() == frcBlockage) {
-        if (isRoutingLayer) {
-          // assume only routing layer
-          modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, true, false, true);
-          modMinSpacingCostVia(
-              box, zIdx, ModCostType::addFixedShape, false, false, true);
-          modEolSpacingRulesCost(box, zIdx, ModCostType::addFixedShape);
-          // block
-          modBlockedPlanar(box, zIdx, true);
-          modBlockedVia(box, zIdx, true);
-        } else {
-          modCutSpacingCost(box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, true);
-          modInterLayerCutSpacingCost(
-              box, zIdx, ModCostType::addFixedShape, false);
-        }
-      } else if (obj->typeId() == frcInstBlockage) {
+      if ((obj->typeId() == frcBlockage)
+          || (obj->typeId() == frcInstBlockage)) {
         if (isRoutingLayer) {
           // assume only routing layer
           modMinSpacingCostPlanar(box, zIdx, ModCostType::addFixedShape, true);
@@ -3015,14 +2933,8 @@ void FlexDRWorker::initMazeCost_fixedObj(const frDesign* design)
 
   // assign terms to each subnet
   for (auto& [net, objs] : frNet2Terms) {
-    // to remove once verify error will not be triggered
-    if (owner2nets_.find(net) == owner2nets_.end()) {
-      // cout << "Error: frNet with term(s) does not exist in owner2nets\n";
-      // continue;
-    } else {
-      for (auto dNet : owner2nets_[net]) {
-        dNet->setFrNetTerms(objs);
-      }
+    for (auto dNet : owner2nets_[net]) {
+      dNet->setFrNetTerms(objs);
     }
     initMazeCost_terms(objs, true);
   }

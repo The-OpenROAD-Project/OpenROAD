@@ -1084,12 +1084,10 @@ void IOPlacer::updatePinArea(IOPin& pin)
 
 int IOPlacer::computeIONetsHPWL(Netlist* netlist)
 {
-  int pin_index = 0;
   int hpwl = 0;
   int idx = 0;
   for (IOPin& io_pin : netlist->getIOPins()) {
     hpwl += netlist->computeIONetHPWL(idx, io_pin.getPosition());
-    pin_index++;
     idx++;
   }
 
