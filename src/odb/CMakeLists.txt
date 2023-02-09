@@ -69,3 +69,16 @@ if (DOXYGEN_FOUND)
 
   doxygen_add_docs(docs include)
 endif()
+
+############################################################
+# Unit testing
+############################################################
+enable_testing()
+
+add_executable(parseTest
+  ${PROJECT_SOURCE_DIR}/test/parseTest.cpp
+)
+
+target_link_libraries(parseTest
+  odb
+)
