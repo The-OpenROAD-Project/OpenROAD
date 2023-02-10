@@ -117,7 +117,7 @@ endif()
 
 
 option (SYCL "Enable SYCL Acceleration" OFF)
-set(SYCL_BACKEND "intel" CACHE STRING "Use SYCL backend: 'intel' or 'hipsycl' ")
+set(SYCL_BACKEND "intel" CACHE STRING "Use SYCL backend: 'intel', 'opensycl', 'hipsycl'")
 
 if (SYCL)
   message(STATUS "SYCL is enabled with backend '${SYCL_BACKEND}'.")
@@ -139,14 +139,23 @@ if (SYCL)
       if(NOT SYCL_COMPILER_ALLOWED OR NOT SYCL_COMPILER_SUPPORTS_FLAG)
       message(SEND_ERROR "This does not appear to be a SYCL-compatible Intel LLVM.\nRefer to https://oneapi-src.github.io/oneMKL/selecting_a_compiler.html")
       endif()
+
+      unset(SYCL_COMPILER_ALLOWED)
       unset(SYCL_COMPILER_SUPPORTS_FLAG CACHE)
       
-    target_compile_options(gpl PRIVATE "-fsycl")
-    target_link_options(gpl PRIVATE "-fsycl")
+      target_compile_options(gpl PRIVATE "-fsycl")
+      target_link_options(gpl PRIVATE "-fsycl")
+
+  # HipSYCL is being renamed to OpenSYCL.
   elseif(SYCL_Backend STREQUAL "hipsycl")
     find_package(hipSYCL CONFIG REQUIRED)
     add_sycl_to_target(TARGET gpl)
+
+  elseif(SYCL_Backend STREQUAL "opensycl")
+    find_package(openSYCL CONFIG REQUIRED)
+    add_sycl_to_target(TARGET gpl)
   else()
+  
     message(FATAL_ERROR, "'${SYCL_BACKEND}' is not a valid SYCL backend.")
   endif()
 
