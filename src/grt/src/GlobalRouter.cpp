@@ -657,6 +657,11 @@ void GlobalRouter::findPins(Net* net,
                             int& root_idx)
 {
   root_idx = 0;
+  int max_routing_layer = (net->getSignalType() == odb::dbSigType::CLOCK
+                           && max_layer_for_clock_ > 0)
+                              ? max_layer_for_clock_
+                              : max_routing_layer_;
+
   for (Pin& pin : net->getPins()) {
     odb::Point pin_position = pin.getOnGridPosition();
     int conn_layer = pin.getConnectionLayer();
@@ -664,9 +669,12 @@ void GlobalRouter::findPins(Net* net,
     // If pin is connected to PAD, create a "fake" location in routing
     // grid to avoid PAD obstructions
     if ((pin.isConnectedToPadOrMacro() || pin.isPort()) && !net->isLocal()
-        && gcells_offset_ != 0) {
+        && gcells_offset_ != 0 && conn_layer <= max_routing_layer) {
       createFakePin(pin, pin_position, layer, net);
     }
+
+    conn_layer
+        = (conn_layer > max_routing_layer) ? max_routing_layer : conn_layer;
 
     int pinX
         = (int) ((pin_position.x() - grid_->getXMin()) / grid_->getTileSize());
@@ -1658,6 +1666,10 @@ void GlobalRouter::saveGuides()
             int layer_idx = std::min(segment.init_layer, segment.final_layer);
             odb::dbTechLayer* layer = routing_layers_[layer_idx];
             odb::dbGuide::create(db_net, layer, box);
+            if (isCoveringPin(net, segment)) {
+              odb::dbTechLayer* layer = routing_layers_[segment.final_layer];
+              odb::dbGuide::create(db_net, layer, box);
+            }
           }
         } else if (segment.init_layer == segment.final_layer) {
           if (segment.init_layer < min_routing_layer_
@@ -2291,8 +2303,12 @@ odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
 {
   odb::Point fake_position = pin.getOnGridPosition();
   Net* net = db_net_map_[db_net];
+  int max_routing_layer = (net->getSignalType() == odb::dbSigType::CLOCK
+                           && max_layer_for_clock_ > 0)
+                              ? max_layer_for_clock_
+                              : max_routing_layer_;
   if ((pin.isConnectedToPadOrMacro() || pin.isPort()) && !net->isLocal()
-      && gcells_offset_ != 0) {
+      && gcells_offset_ != 0 && pin.getConnectionLayer() <= max_routing_layer) {
     odb::dbTechLayer* layer = routing_layers_[pin.getConnectionLayer()];
     createFakePin(pin, fake_position, layer, net);
   }
@@ -2862,10 +2878,6 @@ void GlobalRouter::makeBtermPins(Net* net,
                                  odb::dbNet* db_net,
                                  const odb::Rect& die_area)
 {
-  bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
-  int max_routing_layer = (is_clock && max_layer_for_clock_ > 0)
-                              ? max_layer_for_clock_
-                              : max_routing_layer_;
   for (odb::dbBTerm* bterm : db_net->getBTerms()) {
     int posX, posY;
     bterm->getFirstPinLocation(posX, posY);
@@ -2898,18 +2910,7 @@ void GlobalRouter::makeBtermPins(Net* net,
     }
 
     for (auto& layer_boxes : pin_boxes) {
-      if (layer_boxes.first->getRoutingLevel() <= max_routing_layer) {
-        pin_layers.push_back(layer_boxes.first);
-      }
-    }
-
-    if (pin_layers.empty()) {
-      logger_->error(
-          GRT,
-          42,
-          "Pin {} does not have geometries below the max routing layer ({}).",
-          pin_name,
-          getLayerName(max_routing_layer, db_));
+      pin_layers.push_back(layer_boxes.first);
     }
 
     Pin pin(bterm, pin_pos, pin_layers, pin_boxes, getRectMiddle(die_area));
