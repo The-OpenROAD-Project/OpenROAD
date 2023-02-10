@@ -264,7 +264,6 @@ bool Ext::extract(ExtractOptions opts)
                             opts.cc_model,
                             opts.max_res,
                             !opts.no_merge_via_res,
-                            !opts.no_gs,
                             opts.coupling_threshold,
                             opts.context_depth,
                             opts.ext_model_file,

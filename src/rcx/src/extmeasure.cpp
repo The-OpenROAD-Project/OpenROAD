@@ -931,14 +931,7 @@ uint extMeasure::computeOverUnder(int* ll,
                                   int* ur,
                                   Ath__array1D<SEQ*>* resTable)
 {
-  uint ouLen = 0;
-
-  if (_ouPixelTableIndexMap != NULL) {
-    uint ou_plane = _ouPixelTableIndexMap[_underMet][_overMet];
-    ouLen = _pixelTable->get_seq(ll, ur, _dir, ou_plane, resTable);
-  } else {
-    ouLen = computeOUwith2planes(ll, ur, resTable);
-  }
+  uint ouLen = computeOUwith2planes(ll, ur, resTable);
 
   if ((ouLen < 0) || (ouLen > _len)) {
     logger_->info(RCX,
@@ -2488,9 +2481,6 @@ void extMeasure::measureRC(CoupleOptions& options)
   _rsegTgtId = rsegId2;
 
   defineBox(options);
-
-  if (_extMain->_lefRC)
-    return;
 
   dbRSeg* rseg1 = NULL;
   dbNet* srcNet = NULL;

@@ -257,7 +257,6 @@ class extProcess
   extProcess(uint condCnt, uint dielCnt, Logger* logger);
   ~extProcess();
   FILE* openFile(const char* filename, const char* permissions);
-  void createMasterLayers();
   extConductor* getConductor(uint ii);
   extMasterConductor* getMasterConductor(uint ii);
   uint getConductorCnt() { return _condTable->getCnt(); };
