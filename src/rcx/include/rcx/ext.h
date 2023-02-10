@@ -120,7 +120,6 @@ class Ext
     float coupling_threshold = 0.1;
     int context_depth = 5;
     int cc_model = 10;
-    const bool no_gs = false;
     bool lef_res = false;
   };
 

@@ -734,37 +734,6 @@ double extProcess::adjustMasterDielectricsForHeight(uint met, double dth)
   return h;
 }
 
-void extProcess::createMasterLayers()
-{
-  double upperCondHeight = 0;
-  for (uint ii = 1; ii < _condTable->getCnt(); ii++) {
-    extConductor* cond = _condTable->get(ii);
-    extMasterConductor* m
-        = new extMasterConductor(ii, cond, upperCondHeight, logger_);
-    _masterConductorTable->add(m);
-    upperCondHeight = cond->_height + cond->_thickness;
-  }
-  double h = 0.0;
-  for (uint jj = 1; jj < _dielTable->getCnt(); jj++) {
-    extDielectric* diel = _dielTable->get(jj);
-    if ((diel->_conformal || diel->_trench) && diel->_met) {
-      extMasterConductor* mm = _masterConductorTable->get(diel->_met);
-      for (uint i = 0; i < 3; i++) {
-        if (!mm->_conformalId[i]) {
-          mm->_conformalId[i] = jj;
-          break;
-        }
-      }
-    }
-
-    extMasterConductor* m = new extMasterConductor(
-        jj, diel, 0, 0, 0, 0, h, diel->_thickness, logger_);
-    h += diel->_thickness;
-
-    _masterDielectricTable->add(m);
-  }
-}
-
 extConductor* extProcess::getConductor(uint ii)
 {
   return _condTable->get(ii);

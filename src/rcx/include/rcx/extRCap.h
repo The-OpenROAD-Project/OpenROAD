@@ -444,7 +444,6 @@ class extRCModel
   bool _commentFlag;
 
   uint* _singlePlaneLayerMap;
-  uint** _overUnderPlaneLayerMap;
 
   extMain* _extMain;
 
@@ -1146,7 +1145,6 @@ class extMeasure
   bool _gndcModify;
 
   odb::gs* _pixelTable;
-  uint** _ouPixelTableIndexMap;
 
   Ath__array1D<odb::SEQ*>* _diagTable;
   Ath__array1D<odb::SEQ*>* _tmpSrcTable;
@@ -1353,12 +1351,10 @@ class extMain
   uint _totSignalSegCnt;
   uint _totSegCnt;
 
-  bool _lefRC;
   bool _noModelRC;
   extRCModel* _currentModel;
 
   uint* _singlePlaneLayerMap;
-  uint** _overUnderPlaneLayerMap;
   bool _usingMetalPlanes;
 
   odb::gs* _geomSeq;
@@ -1630,7 +1626,7 @@ class extMain
   void resetSumRCtable();
   void addToSumRCtable();
   void copyToSumRCtable();
-  uint getResCapTable(bool lefRC);
+  uint getResCapTable();
   double getLoCoupling();
   void ccReportProgress();
   void measureRC(CoupleOptions& options);
@@ -1652,17 +1648,7 @@ class extMain
                       bool includeDiag = false);
   void updateCCCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   double measureOverUnderCap(extMeasure* m, int x1, int y1, int x2, int y2);
-  uint allocateOverUnderMaps(uint layerCnt);
-  uint makeIntersectPlanes(uint layerCnt);
-  void deletePlanes(uint layerCnt);
-  void getBboxPerLayer(odb::Rect* rectTable);
 
-  uint readCmpStats(const char* name,
-                    uint& tileSze,
-                    int& X1,
-                    int& Y1,
-                    int& X2,
-                    int& Y2);
   int setMinTypMax(bool minModel,
                    bool typModel,
                    bool maxModel,
@@ -1693,7 +1679,6 @@ class extMain
   void setupMapping(uint itermCnt);
   uint getMultiples(uint cnt, uint base);
   uint getExtLayerCnt(odb::dbTech* tech);
-  uint addExtModel(odb::dbTech* tech = NULL);
 
   void setBlockFromChip();
   void setBlock(odb::dbBlock* block);
@@ -1720,8 +1705,6 @@ class extMain
   void unlinkRSeg(std::vector<odb::dbNet*>& nets);
   void unlinkCapNode(std::vector<odb::dbNet*>& nets);
   void removeExt(std::vector<odb::dbNet*>& nets);
-  void removeExt();
-  void removeCC(std::vector<odb::dbNet*>& nets);
   void removeRSeg(std::vector<odb::dbNet*>& nets);
   void removeCapNode(std::vector<odb::dbNet*>& nets);
   void adjustRC(double resFactor, double ccFactor, double gndcFactor);
@@ -1733,7 +1716,6 @@ class extMain
                        uint ccFlag,
                        double resBound,
                        bool mergeViaRes,
-                       bool gs,
                        double ccThres,
                        int contextDepth,
                        const char* extRules,
@@ -1746,15 +1728,6 @@ class extMain
                    bool skipStartWarning);
   uint makeNetRCsegs_old(odb::dbNet* net, double resBound, uint debug = 0);
   uint makeNetRCsegs(odb::dbNet* net, bool skipStartWarning = false);
-  uint addPowerGs(int dir = -1, int* ll = NULL, int* ur = NULL);
-  uint addSignalGs(int dir = -1, int* ll = NULL, int* ur = NULL);
-  uint addItermShapesOnPlanes(odb::dbInst* inst,
-                              bool rotatedFlag,
-                              bool swap_coords);
-  uint addObsShapesOnPlanes(odb::dbInst* inst,
-                            bool rotatedFlag,
-                            bool swap_coords);
-  uint addInstShapesOnPlanes(uint dir = 0, int* ll = NULL, int* ur = NULL);
   double getViaResistance(odb::dbTechVia* tvia);
   double getViaResistance_b(odb::dbVia* via, odb::dbNet* net = NULL);
 
@@ -1901,8 +1874,6 @@ class extMain
   uint signalWireCounter(uint& maxWidth);
   bool getRotatedFlag();
   bool enableRotatedFlag();
-  uint addShapeOnGs(odb::dbShape* s, bool swap_coords);
-  uint addSBoxOnGs(odb::dbSBox* s, bool swap_coords);
 
   uint addMultipleRectsOnSearch(odb::Rect& r,
                                 uint level,
