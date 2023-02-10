@@ -123,8 +123,8 @@ case "${compiler}" in
         fi
         
         if [[ $(awk -F= '/^NAME/{print $2}' /etc/os-release | sed 's/"//g') == "Ubuntu" &&  $(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g') == 22.10 ]]; then 
-            export CC="$(command -v gcc-12)"
-            export CXX="$(command -v g++-12)"
+            export CC="$(command -v gcc-11)"
+            export CXX="$(command -v g++-11)"
         else
             export CC="$(command -v gcc)"
             export CXX="$(command -v g++)"

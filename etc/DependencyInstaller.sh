@@ -189,8 +189,8 @@ _installUbuntuPackages() {
             qt5-qmake \
             qtbase5-dev-tools \
             libpython3.11 \
-            gcc-12 \
-            g++-12
+            gcc-11 \
+            g++-11
     elif [[ $1 == 22.04 ]]; then
         apt-get install -y \
             qtbase5-dev \
