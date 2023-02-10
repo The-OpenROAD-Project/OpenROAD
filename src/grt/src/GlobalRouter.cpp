@@ -2913,6 +2913,14 @@ void GlobalRouter::makeBtermPins(Net* net,
       pin_layers.push_back(layer_boxes.first);
     }
 
+    if (pin_layers.empty()) {
+      logger_->error(
+          GRT,
+          42,
+          "Pin {} does not have geometries in a valid routing layer.",
+          pin_name);
+    }
+
     Pin pin(bterm, pin_pos, pin_layers, pin_boxes, getRectMiddle(die_area));
     net->addPin(pin);
   }
