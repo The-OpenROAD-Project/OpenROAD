@@ -121,8 +121,14 @@ case "${compiler}" in
             source /opt/rh/devtoolset-8/enable
             set -u
         fi
-        export CC="$(command -v gcc)"
-        export CXX="$(command -v g++)"
+        
+        if [[ $(awk -F= '/^NAME/{print $2}' /etc/os-release | sed 's/"//g') == "Ubuntu" &&  $(awk -F= '/^VERSION_ID/{print $2}' /etc/os-release | sed 's/"//g') == 22.10 ]]; then 
+            export CC="$(command -v gcc-12)"
+            export CXX="$(command -v g++-12)"
+        else
+            export CC="$(command -v gcc)"
+            export CXX="$(command -v g++)"
+        fi
         ;;
     clang* )
         if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
