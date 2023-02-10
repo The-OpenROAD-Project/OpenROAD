@@ -1,4 +1,5 @@
 record_tests {
+  bus_route
   clock_route
   clock_route_alpha
   clock_route_error1

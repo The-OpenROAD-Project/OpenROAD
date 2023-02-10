@@ -381,8 +381,8 @@ void FlexDR::init_halfViaEncArea()
       frVia via(viaDef);
       Rect layer1Box = via.getLayer1BBox();
       Rect layer2Box = via.getLayer2BBox();
-      auto layer1HalfArea = layer1Box.minDXDY() * layer1Box.maxDXDY() / 2;
-      auto layer2HalfArea = layer2Box.minDXDY() * layer2Box.maxDXDY() / 2;
+      auto layer1HalfArea = layer1Box.area() / 2;
+      auto layer2HalfArea = layer2Box.area() / 2;
       halfViaEncArea.push_back(make_pair(layer1HalfArea, layer2HalfArea));
     } else {
       halfViaEncArea.push_back(make_pair(0, 0));

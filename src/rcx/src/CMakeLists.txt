@@ -33,34 +33,46 @@
 
 include("openroad")
 
+add_library(rcx_lib
+  ext.cpp
+  extBench.cpp
+  extBenchDB.cpp
+  extCC.cpp
+  extCoords.cpp
+  extFlow.cpp
+  extRCmodel.cpp
+  extSpef.cpp
+  extSpefIn.cpp
+  extmain.cpp
+  extmeasure.cpp
+  extDebugPrint.cpp
+  extstats.cpp
+  extprocess.cpp
+  ext2dBox.cpp
+  netRC.cpp
+  extmeasure_res.cpp
+)
+
+target_include_directories(rcx_lib
+  PUBLIC
+    ../include
+)
+
+target_link_libraries(rcx_lib
+  PUBLIC
+    odb
+    utl
+)
+
 swig_lib(NAME      rcx
          NAMESPACE rcx
          I_FILE    ext.i
          SCRIPTS   OpenRCX.tcl
 )
 
-
 target_sources(rcx
   PRIVATE
-    ext.cpp
-    extBench.cpp
-    extBenchDB.cpp
-    extCC.cpp
-    extCoords.cpp
-    extFlow.cpp
-    extRCmodel.cpp
-    extSpef.cpp
-    extSpefIn.cpp
-    extmain.cpp
-    extmeasure.cpp
-    extDebugPrint.cpp
-    extplanes.cpp
-    extstats.cpp
-    extprocess.cpp
-    ext2dBox.cpp
-    netRC.cpp
     MakeOpenRCX.cpp
-    extmeasure_res.cpp
 )
 
 target_include_directories(rcx
@@ -70,7 +82,7 @@ target_include_directories(rcx
 
 target_link_libraries(rcx
   PUBLIC
-    odb
+    rcx_lib
     utl
   PRIVATE
     OpenSTA
@@ -97,7 +109,7 @@ target_include_directories(rcxUnitTest
 )
 
 target_link_libraries(rcxUnitTest
-  rcx
+  rcx_lib
 )
 
 # Use the shared library if found.  We need to pass this info to
@@ -132,7 +144,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(rcx_py
     PUBLIC
-      rcx
+      rcx_lib
   )
 
 endif()

@@ -2,7 +2,7 @@
 ##
 ## BSD 3-Clause License
 ##
-## Copyright (c) 2022, The Regents of the University of California
+## Copyright (c) 2022-2023, The Regents of the University of California, Google LLC
 ## All rights reserved.
 ##
 ## Redistribution and use in source and binary forms, with or without
@@ -35,15 +35,27 @@
 
 include("openroad")
 
+add_library(upf_lib
+  upf.cpp
+)
+
+target_include_directories(upf_lib
+  PUBLIC
+    ../include
+)
+
+target_link_libraries(upf_lib 
+  PRIVATE
+    utl
+    dbSta
+    OpenSTA
+    odb
+)
+
 swig_lib(NAME      upf
          NAMESPACE upf
          I_FILE    upf.i
          SCRIPTS   upf.tcl
-)
-
-target_sources(upf
-  PRIVATE
-    upf.cpp
 )
 
 messages(
@@ -61,7 +73,7 @@ target_include_directories(upf
 
 target_link_libraries(upf 
   PRIVATE
+    upf_lib
     utl
-    dbSta
-    OpenSTA
+    odb
  )
