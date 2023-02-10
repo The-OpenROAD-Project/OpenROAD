@@ -34,6 +34,7 @@
 ###############################################################################
 
 include("openroad")
+include(CheckCXXCompilerFlag)
 
 # For Multithread
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_FFT2D_PTHREADS=1 -DFFT_2D_MAX_THREADS=16 -O3 ${OpenMP_CXX_FLAGS}")
@@ -115,27 +116,33 @@ else()
 endif()
 
 
-
 option (SYCL "Enable SYCL Acceleration" OFF)
-set(SYCL_Backend "intel" CACHE STRING "Use SYCL backend: 'intel' or 'hipsycl' ")
+set(SYCL_BACKEND "intel" CACHE STRING "Use SYCL backend: 'intel' or 'hipsycl' ")
 
 if (SYCL)
-  message(STATUS "SYCL is enabled with backend '${SYCL_Backend}'.")
+  message(STATUS "SYCL is enabled with backend '${SYCL_BACKEND}'.")
   if(SYCL AND GPU)
     message(FATAL_ERROR "Cannot enable both CUDA GPU and SYCL Acceleration at the same time.")
   endif()
 
-  if(SYCL_Backend STREQUAL "intel")
-    
-    if( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
+  if(SYCL_BACKEND STREQUAL "intel")
+
+    set(SYCL_COMPILER_ALLOWE FALSE)
+  
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR
       CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
 
-      target_compile_options(gpl PRIVATE "-fsycl")
-      target_link_options(gpl PRIVATE "-fsycl")
-
-    else()
-    message(FATAL_ERROR "This compiler does not support SYCL. Refer to https://oneapi-src.github.io/oneMKL/selecting_a_compiler.html")
-    endif()
+        check_cxx_compiler_flag("-fsycl" SYCL_COMPILER_SUPPORTS_FLAG)
+        set(SYCL_COMPILER_ALLOWED TRUE)
+      endif()
+      
+      if(NOT SYCL_COMPILER_ALLOWED OR NOT SYCL_COMPILER_SUPPORTS_FLAG)
+      message(SEND_ERROR "This does not appear to be a SYCL-compatible Intel LLVM.\nRefer to https://oneapi-src.github.io/oneMKL/selecting_a_compiler.html")
+      endif()
+      unset(SYCL_COMPILER_SUPPORTS_FLAG CACHE)
+      
+    target_compile_options(gpl PRIVATE "-fsycl")
+    target_link_options(gpl PRIVATE "-fsycl")
   elseif(SYCL_Backend STREQUAL "hipsycl")
     find_package(hipSYCL CONFIG REQUIRED)
     add_sycl_to_target(TARGET gpl)
@@ -144,6 +151,8 @@ if (SYCL)
   endif()
 
   find_package(MKL CONFIG REQUIRED)
+else()
+  message(STATUS "SYCL is not enabled.")
 endif()
 
 
