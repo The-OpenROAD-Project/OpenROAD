@@ -1680,6 +1680,20 @@ void GlobalRouter::saveGuides()
   }
 }
 
+bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
+{
+  for (auto pin : net->getPins()) {
+    if (pin.getConnectionLayer() == segment.final_layer
+        && pin.getOnGridPosition()
+               == odb::Point(segment.final_x, segment.final_y)
+        && (pin.isPort() || pin.isConnectedToPadOrMacro())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
 {
   for (RoutingTracks routing_tracks : *routing_tracks_) {
