@@ -591,8 +591,7 @@ BinGrid::BinGrid()
       targetDensity_(0),
       overflowArea_(0),
       overflowAreaUnscaled_(0),
-      isSetBinCntX_(0),
-      isSetBinCntY_(0)
+      isSetBinCnt_(0)
 {
 }
 
@@ -607,7 +606,7 @@ BinGrid::~BinGrid()
   bins_.clear();
   binCntX_ = binCntY_ = 0;
   binSizeX_ = binSizeY_ = 0;
-  isSetBinCntX_ = isSetBinCntY_ = 0;
+  isSetBinCnt_ = 0;
   overflowArea_ = 0;
   overflowAreaUnscaled_ = 0;
 }
@@ -637,19 +636,8 @@ void BinGrid::setTargetDensity(float density)
 
 void BinGrid::setBinCnt(int binCntX, int binCntY)
 {
-  setBinCntX(binCntX);
-  setBinCntY(binCntY);
-}
-
-void BinGrid::setBinCntX(int binCntX)
-{
-  isSetBinCntX_ = 1;
+  isSetBinCnt_ = 1;
   binCntX_ = binCntX;
-}
-
-void BinGrid::setBinCntY(int binCntY)
-{
-  isSetBinCntY_ = 1;
   binCntY_ = binCntY;
 }
 
@@ -720,6 +708,16 @@ int64_t BinGrid::overflowAreaUnscaled() const
   return overflowAreaUnscaled_;
 }
 
+static unsigned int roundDownToPowerOfTwo(unsigned int x)
+{
+  x |= (x >> 1);
+  x |= (x >> 2);
+  x |= (x >> 4);
+  x |= (x >> 8);
+  x |= (x >> 16);
+  return x ^ (x >> 1);
+}
+
 void BinGrid::initBins()
 {
   int64_t totalBinArea
@@ -741,24 +739,31 @@ void BinGrid::initBins()
   log_->info(GPL, 26, "IdealBinCnt: {}", idealBinCnt);
   log_->info(GPL, 27, "TotalBinArea: {}", totalBinArea);
 
-  int foundBinCnt = 2;
-  // find binCnt: 2, 4, 8, 16, 32, 64, ...
-  // s.t. binCnt^2 <= idealBinCnt <= (binCnt*2)^2.
-  for (foundBinCnt = 2; foundBinCnt <= 1024; foundBinCnt *= 2) {
-    if (foundBinCnt * foundBinCnt <= idealBinCnt
-        && 4 * foundBinCnt * foundBinCnt > idealBinCnt) {
-      break;
+  if (!isSetBinCnt_) {
+    // Consider the apect ratio of the block when computing the number
+    // of bins so that the bins remain relatively square.
+    const int width = ux_ - lx_;
+    const int height = uy_ - ly_;
+    const int ratio = roundDownToPowerOfTwo(std::max(width, height)
+                                            / std::min(width, height));
+
+    int foundBinCnt = 2;
+    // find binCnt: 2, 4, 8, 16, 32, 64, ...
+    // s.t. #bins(binCnt) <= idealBinCnt <= #bins(binCnt*2).
+    for (foundBinCnt = 2; foundBinCnt <= 1024; foundBinCnt *= 2) {
+      if (foundBinCnt * (foundBinCnt * ratio) <= idealBinCnt
+          && 4 * foundBinCnt * (foundBinCnt * ratio) > idealBinCnt) {
+        break;
+      }
     }
-  }
 
-  // setBinCntX_;
-  if (!isSetBinCntX_) {
-    binCntX_ = foundBinCnt;
-  }
-
-  // setBinCntY_;
-  if (!isSetBinCntY_) {
-    binCntY_ = foundBinCnt;
+    if (width > height) {
+      binCntX_ = foundBinCnt * ratio;
+      binCntY_ = foundBinCnt;
+    } else {
+      binCntX_ = foundBinCnt;
+      binCntY_ = foundBinCnt * ratio;
+    }
   }
 
   log_->info(GPL, 28, "BinCnt: {} {}", binCntX_, binCntY_);
@@ -969,7 +974,7 @@ void NesterovBaseVars::reset()
   targetDensity = 1.0;
   binCntX = binCntY = 0;
   minWireLengthForceBar = -300;
-  isSetBinCntX = isSetBinCntY = 0;
+  isSetBinCnt = 0;
   useUniformTargetDensity = 0;
 }
 
@@ -1154,12 +1159,8 @@ void NesterovBase::init()
 
   // initialize bin grid structure
   // send param into binGrid structure
-  if (nbVars_.isSetBinCntX) {
-    bg_.setBinCntX(nbVars_.binCntX);
-  }
-
-  if (nbVars_.isSetBinCntY) {
-    bg_.setBinCntY(nbVars_.binCntY);
+  if (nbVars_.isSetBinCnt) {
+    bg_.setBinCnt(nbVars_.binCntX, nbVars_.binCntY);
   }
 
   bg_.setPlacerBase(pb_);
