@@ -136,6 +136,7 @@ class HierRTLMP
   void setDebug();
 
  private:
+  void setDefaultThresholds();
   void createDataFlow();
   void updateDataFlow();
   void dataFlowDFSIOPin(int parent,
