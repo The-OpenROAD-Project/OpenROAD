@@ -684,7 +684,7 @@ void Cluster::printBasicInformation(utl::Logger* logger) const
     line += "\n";
   }
 
-  logger->info(MPL, 2022, line);
+  logger->report(line);
 }
 
 // Macro Placement Support

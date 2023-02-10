@@ -230,7 +230,7 @@ void HierRTLMP::setDefaultThresholds()
       // If the number of macros is less than the threshold value, reset to
       // single level.
       max_num_level_ = 1;
-      logger_->info(MPL, 403, "Reset number of levels to 1");
+      logger_->report("Reset number of levels to 1");
     }
   }
 
@@ -295,9 +295,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   int core_ux = dbuToMicron(core_box.xMax(), dbu_);
   int core_uy = dbuToMicron(core_box.yMax(), dbu_);
 
-  logger_->info(
-      MPL,
-      2023,
+  logger_->report(
       "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({} {} {} {})",
       floorplan_lx_,
       floorplan_ly_,
@@ -320,23 +318,22 @@ void HierRTLMP::hierRTLMacroPlacer()
   float core_util
       = metrics_->getStdCellArea() / (core_area - metrics_->getMacroArea());
 
-  logger_->info(MPL,
-                402,
-                "Traversed logical hierarchy\n"
-                "\tNumber of std cell instances : {}\n"
-                "\tArea of std cell instances : {:.2f}\n"
-                "\tNumber of macros : {}\n"
-                "\tArea of macros : {:.2f}\n"
-                "\tTotal area : {:.2f}\n"
-                "\tDesign Utilization : {:.2f}\n"
-                "\tCore Utilization: {:.2f}\n",
-                metrics_->getNumStdCell(),
-                metrics_->getStdCellArea(),
-                metrics_->getNumMacro(),
-                metrics_->getMacroArea(),
-                metrics_->getStdCellArea() + metrics_->getMacroArea(),
-                util,
-                core_util);
+  logger_->report(
+      "Traversed logical hierarchy\n"
+      "\tNumber of std cell instances : {}\n"
+      "\tArea of std cell instances : {:.2f}\n"
+      "\tNumber of macros : {}\n"
+      "\tArea of macros : {:.2f}\n"
+      "\tTotal area : {:.2f}\n"
+      "\tDesign Utilization : {:.2f}\n"
+      "\tCore Utilization: {:.2f}\n",
+      metrics_->getNumStdCell(),
+      metrics_->getStdCellArea(),
+      metrics_->getNumMacro(),
+      metrics_->getMacroArea(),
+      metrics_->getStdCellArea() + metrics_->getMacroArea(),
+      util,
+      core_util);
 
   setDefaultThresholds();
 
@@ -762,7 +759,7 @@ void HierRTLMP::createBundledIOs()
     if (cluster_id == -1) {
       logger_->error(
           MPL,
-          2024,
+          1002,
           "Floorplan has not been initialized? Pin location error for {}.",
           term->getName());
     } else {
@@ -1751,7 +1748,7 @@ void HierRTLMP::printConnection()
       line += std::to_string(static_cast<int>(num_nets)) + "\n";
     }
   }
-  logger_->info(MPL, 2026, line);
+  logger_->report(line);
 }
 
 // Print All the clusters and their statics
@@ -1763,7 +1760,7 @@ void HierRTLMP::printClusters()
     line += cluster->getName() + "  ";
     line += std::to_string(cluster->getId()) + "\n";
   }
-  logger_->info(MPL, 2027, line);
+  logger_->report(line);
 }
 
 // This function has two purposes:
@@ -2497,7 +2494,7 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
         = "[CalClusterMacroTilings] There are no valid tilings for "
           "mixed cluster ";
     line += parent->getName();
-    logger_->error(MPL, 2031, line);
+    logger_->error(MPL, 1002, line);
   } else {
     std::string line
         = "[CalClusterMacroTilings] The macro tiling for mixed cluster "
@@ -2717,7 +2714,7 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
         = "[CalHardMacroClusterShape] This is no valid tilings for "
           "hard macro cluster ";
     line += cluster->getName();
-    logger_->error(MPL, 2030, line);
+    logger_->error(MPL, 1003, line);
   }
 }
 
@@ -3455,8 +3452,8 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       sa_containers[i]->printResults();
     }
     logger_->error(MPL,
-                   2032,
-                   "[MultiLevelMacroPlacement] Failed on cluster {}",
+                   1004,
+                   "[MultiLevelMacroPlacement] Failed on cluster: {}",
                    parent->getName());
   }
   best_sa->alignMacroClusters();
@@ -3672,7 +3669,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                         target_dead_space_list[i]);
         sa_containers[i]->printResults();
       }
-      logger_->error(MPL, 2049, "Failed on cluster {}", parent->getName());
+      logger_->error(MPL, 1005, "SA failed on cluster: {}", parent->getName());
     }
     best_sa->alignMacroClusters();
     best_sa->fillDeadSpace();
@@ -3827,8 +3824,8 @@ bool HierRTLMP::shapeChildrenCluster(
         std::string line
             = "[ShapeChildrenCluster] There is not enough space in cluster ";
         line += parent->getName() + " ";
-        line += "for child hard macro cluster " + cluster->getName();
-        logger_->error(MPL, 2029, line);
+        line += "for child hard macro cluster: " + cluster->getName();
+        logger_->error(MPL, 1006, line);
       }
       macro_cluster_area += shapes[0].first * shapes[0].second;
       cluster->setMacroTilings(shapes);
@@ -3845,8 +3842,8 @@ bool HierRTLMP::shapeChildrenCluster(
         std::string line
             = "[ShapeChildrenCluster] There is not enough space in cluster ";
         line += parent->getName() + " ";
-        line += "for child mixed cluster " + cluster->getName();
-        logger_->error(MPL, 2080, line);
+        line += "for child mixed cluster: " + cluster->getName();
+        logger_->error(MPL, 1007, line);
       }
       macro_mixed_cluster_area += shapes[0].first * shapes[0].second;
       cluster->setMacroTilings(shapes);
@@ -3991,7 +3988,7 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
                    nets,
                    congestion_weight_,
                    logger_)) {
-    logger_->error(MPL, 2029, "Fail !!! Cannot do bus planning !!!");
+    logger_->error(MPL, 1008, "Fail !!! Bus planning error !!!");
   }
 }
 
@@ -4182,9 +4179,9 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
     }
     sa_containers.clear();
     std::string line
-        = "Cannot find valid macro placement for hard macro cluster ";
+        = "Cannot find valid macro placement for hard macro cluster: ";
     line += cluster->getName();
-    logger_->error(MPL, 2033, line);
+    logger_->error(MPL, 1010, line);
   } else {
     std::vector<HardMacro> best_macros;
     best_sa->getMacros(best_macros);

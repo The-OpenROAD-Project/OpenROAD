@@ -75,7 +75,7 @@ proc rtl_macro_placer { args } {
 #
 # Check for valid design
     if {  [ord::get_db_block] == "NULL" } {
-      utl::error MPL 9998 "No block found for Macro Placement."
+      utl::error MPL 1001 "No block found for Macro Placement."
     }
 
 # Set the default parameters for the macro_placer
