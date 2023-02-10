@@ -141,7 +141,7 @@ if (SYCL)
       endif()
       unset(SYCL_COMPILER_SUPPORTS_FLAG CACHE)
       
-    target_compile_options(gpl PRIVATE "-fsycl" "-DFMT_USE_LONG_DOUBLE=0")
+    target_compile_options(gpl PRIVATE "-fsycl")
     target_link_options(gpl PRIVATE "-fsycl")
   elseif(SYCL_Backend STREQUAL "hipsycl")
     find_package(hipSYCL CONFIG REQUIRED)
