@@ -396,17 +396,8 @@ uint extMain::getResCapTable()
                    resTable[jj]);
       }
 
-      extDistRC* rc0 = rcModel->getOverFringeRC(&m, 0);
-
       if (!_lef_res) {
-        if (newResModel) {
-          _resistanceTable[jj][n] = resTable[jj];
-        } else {
-          if (rc0 != NULL) {
-            double r1 = rc->getRes();
-            _resistanceTable[jj][n] = r1;
-          }
-        }
+        _resistanceTable[jj][n] = resTable[jj];
       } else {
         debugPrint(logger_,
                    RCX,
