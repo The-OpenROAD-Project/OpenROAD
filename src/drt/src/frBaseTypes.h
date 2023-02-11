@@ -289,7 +289,7 @@ enum class frAccessPointEnum
 
 namespace bg = boost::geometry;
 
-typedef bg::model::d2::point_xy<frCoord, bg::cs::cartesian> point_t;
+typedef bg::model::d2::point_xy<int, bg::cs::cartesian> point_t;
 typedef bg::model::box<point_t> box_t;
 typedef bg::model::segment<point_t> segment_t;
 
