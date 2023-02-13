@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ZInterface.h"
 #include "array1.h"
 #include "box.h"
 #include "db.h"
@@ -279,7 +278,6 @@ class Ath__track
                     uint currentTrack,
                     uint ccTrackDist,
                     uint ccDomain,
-                    ZInterface* context,
                     Ath__array1D<uint>* ccTable,
                     uint met,
                     rcx::CoupleAndCompute coupleAndCompute,
@@ -291,7 +289,6 @@ class Ath__track
                    Ath__array1D<Ath__wire*>* nwTable,
                    Ath__grid* ccGrid,
                    Ath__array1D<Ath__wire*>* ccTable,
-                   ZInterface* context,
                    uint met,
                    rcx::CoupleAndCompute coupleAndCompute,
                    void* compPtr);
@@ -485,7 +482,6 @@ class Ath__grid
                    int* limitArray);
   uint couplingCaps(Ath__grid* resGrid,
                     uint couplingDist,
-                    ZInterface* context,
                     Ath__array1D<uint>* ccTable,
                     rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
@@ -671,15 +667,10 @@ class Ath__gridTable
   Ath__array1D<odb::SEQ*>* renewDgContext(uint gridn, uint trackn);
   uint couplingCaps(Ath__gridTable* resGridTable,
                     uint couplingDist,
-                    ZInterface* context,
                     Ath__array1D<uint>* ccTable,
                     rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
-  uint couplingCaps(uint row,
-                    uint col,
-                    Ath__grid* resGrid,
-                    uint couplingDist,
-                    ZInterface* context);
+  uint couplingCaps(uint row, uint col, Ath__grid* resGrid, uint couplingDist);
   void getBox(uint wid,
               int* x1,
               int* y1,

@@ -33,7 +33,6 @@
 #pragma once
 
 #include <array>
-#include <cstdio>
 
 namespace rcx {
 

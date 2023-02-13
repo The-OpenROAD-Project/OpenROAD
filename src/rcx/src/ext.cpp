@@ -29,9 +29,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "rcx/ext.h"
 
-#include <errno.h>
+#include "rcx/ext.h"
 
 #include "odb/wOrder.h"
 #include "utl/Logger.h"
@@ -41,7 +40,7 @@ namespace rcx {
 using utl::Logger;
 using utl::RCX;
 
-Ext::Ext() : odb::ZInterface(), _ext(std::make_unique<extMain>())
+Ext::Ext() : _ext(std::make_unique<extMain>())
 {
 }
 
@@ -266,8 +265,7 @@ bool Ext::extract(ExtractOptions opts)
                             !opts.no_merge_via_res,
                             opts.coupling_threshold,
                             opts.context_depth,
-                            opts.ext_model_file,
-                            this)
+                            opts.ext_model_file)
       == 0)
     return TCL_ERROR;
 

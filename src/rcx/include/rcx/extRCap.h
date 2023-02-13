@@ -32,21 +32,19 @@
 
 #pragma once
 
-#include <darr.h>
-#include <dbExtControl.h>
-#include <dbShape.h>
-#include <dbUtil.h>
-#include <gseq.h>
-#include <util.h>
-
 #include <map>
 
 #include "ZObject.h"
+#include "darr.h"
 #include "db.h"
+#include "dbExtControl.h"
+#include "dbShape.h"
+#include "dbUtil.h"
 #include "ext2dBox.h"
 #include "extprocess.h"
 #include "gseq.h"
 #include "odb.h"
+#include "util.h"
 #include "wire.h"
 
 namespace utl {
@@ -1479,8 +1477,7 @@ class extMain
                        bool mergeViaRes,
                        double ccThres,
                        int contextDepth,
-                       const char* extRules,
-                       odb::ZInterface* context);
+                       const char* extRules);
 
   uint getShortSrcJid(uint jid);
   void make1stRSeg(odb::dbNet* net,
