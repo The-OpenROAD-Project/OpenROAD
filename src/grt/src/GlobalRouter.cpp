@@ -828,7 +828,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
                                        max_layer - 1,
                                        net->getSlack(),
                                        edge_cost_per_layer);
-    int min_pin_layer = std::numeric_limits<int>::max();;
+    int min_pin_layer = std::numeric_limits<int>::max();
     for (RoutePt& pin_pos : pins_on_grid) {
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
       min_pin_layer = std::min(min_pin_layer, pin_pos.layer()) - 1;
