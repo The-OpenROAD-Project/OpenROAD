@@ -124,15 +124,19 @@ case "${compiler}" in
         export CC="$(command -v gcc)"
         export CXX="$(command -v g++)"
         ;;
-    clang* )
+    "clang" )
         if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
             # the scl script has unbound variables
             set +u
             source /opt/rh/llvm-toolset-7.0/enable
             set -u
         fi
-        export CC="$(command -v ${compiler})"
-        export CXX="$(command -v ${compiler}++)"
+        export CC="$(command -v clang)"
+        export CXX="$(command -v clang++)"
+        ;;
+    "clang-16" )
+        export CC="$(command -v clang-16)"
+        export CXX="$(command -v clang++-16)"
         ;;
     *)
         echo "Compiler $compiler is not supported" >&2
@@ -151,5 +155,5 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
 
-cmake "${cmakeOptions[@]}" -B "${buildDir}" .
-time cmake --build "${buildDir}" -j "${numThreads}"
+eval cmake "${cmakeOptions[@]}" -B "${buildDir}" .
+eval time cmake --build "${buildDir}" -j "${numThreads}"

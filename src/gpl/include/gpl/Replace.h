@@ -93,8 +93,7 @@ class Replace
 
   void setNesterovPlaceMaxIter(int iter);
 
-  void setBinGridCntX(int binGridCntX);
-  void setBinGridCntY(int binGridCntY);
+  void setBinGridCnt(int binGridCntX, int binGridCntY);
 
   void setTargetDensity(float density);
   void setUniformTargetDensityMode(bool mode);
