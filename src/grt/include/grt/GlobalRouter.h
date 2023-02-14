@@ -293,6 +293,7 @@ class GlobalRouter
   std::vector<odb::Point> findOnGridPositions(const Pin& pin,
                                               bool& has_access_points,
                                               odb::Point& pos_on_grid);
+  int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   float getNetSlack(Net* net);

@@ -652,15 +652,20 @@ void GlobalRouter::findPins(Net* net)
   }
 }
 
+int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
+{
+  return net->getSignalType() == odb::dbSigType::CLOCK
+                           && max_layer_for_clock_ > 0
+                              ? max_layer_for_clock_
+                              : max_routing_layer_;
+}
+
 void GlobalRouter::findPins(Net* net,
                             std::vector<RoutePt>& pins_on_grid,
                             int& root_idx)
 {
   root_idx = 0;
-  int max_routing_layer = (net->getSignalType() == odb::dbSigType::CLOCK
-                           && max_layer_for_clock_ > 0)
-                              ? max_layer_for_clock_
-                              : max_routing_layer_;
+  const int max_routing_layer = getNetMaxRoutingLayer(net);
 
   for (Pin& pin : net->getPins()) {
     odb::Point pin_position = pin.getOnGridPosition();
@@ -2310,10 +2315,7 @@ odb::Point GlobalRouter::findFakePinPosition(Pin& pin, odb::dbNet* db_net)
 {
   odb::Point fake_position = pin.getOnGridPosition();
   Net* net = db_net_map_[db_net];
-  int max_routing_layer = (net->getSignalType() == odb::dbSigType::CLOCK
-                           && max_layer_for_clock_ > 0)
-                              ? max_layer_for_clock_
-                              : max_routing_layer_;
+  const int max_routing_layer = getNetMaxRoutingLayer(net);
   if ((pin.isConnectedToPadOrMacro() || pin.isPort()) && !net->isLocal()
       && gcells_offset_ != 0 && pin.getConnectionLayer() <= max_routing_layer) {
     odb::dbTechLayer* layer = routing_layers_[pin.getConnectionLayer()];
