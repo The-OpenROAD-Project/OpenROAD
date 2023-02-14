@@ -75,21 +75,21 @@ class TPmultilevelPartitioner
       float ub_factor,          // ubfactor
       RefinerType refine_type,  // refinement type
       utl::Logger* logger)
-      : coarsener_(coarsener),
+      : v_cycle_flag_(v_cycle_flag),
+        coarsener_(coarsener),
         partitioner_(partitioner),
         two_way_refiner_(two_way_refiner),
         greedy_refiner_(greedy_refiner),
         ilp_refiner_(ilp_refiner),
+        logger_(logger),
         num_parts_(num_parts),
-        v_cycle_flag_(v_cycle_flag),
         num_initial_solutions_(num_initial_solutions),
         num_best_initial_solutions_(num_best_initial_solutions),
         num_ubfactor_delta_(num_ubfactor_delta),
         max_num_vcycle_(max_num_vcycle),
         seed_(seed),
         ub_factor_(ub_factor),
-        refine_type_(refine_type),
-        logger_(logger)
+        refine_type_(refine_type)
   {
   }
   TPmultilevelPartitioner(
@@ -106,19 +106,19 @@ class TPmultilevelPartitioner
       float ub_factor,          // ubfactor
       RefinerType refine_type,  // refinement type
       utl::Logger* logger)
-      : coarsener_(coarsener),
+      : v_cycle_flag_(v_cycle_flag),
+        coarsener_(coarsener),
         partitioner_(partitioner),
         k_way_refiner_(k_way_refiner),
+        logger_(logger),
         num_parts_(num_parts),
-        v_cycle_flag_(v_cycle_flag),
         num_initial_solutions_(num_initial_solutions),
         num_best_initial_solutions_(num_best_initial_solutions),
         num_ubfactor_delta_(num_ubfactor_delta),
         max_num_vcycle_(max_num_vcycle),
         seed_(seed),
         ub_factor_(ub_factor),
-        refine_type_(refine_type),
-        logger_(logger)
+        refine_type_(refine_type)
   {
   }
   TPmultilevelPartitioner(const TPmultilevelPartitioner&) = default;

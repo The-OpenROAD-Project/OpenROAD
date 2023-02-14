@@ -147,7 +147,6 @@ void TPpartitioner::TimingCutsEvaluator(const HGraph hgraph,
       ++total_critical_paths_cut;
     }
   }
-  float average_cuts_on_path = total_cuts / hgraph->num_timing_paths_;
   logger_->report("[INFO] Total critical paths cut {}",
                   total_critical_paths_cut);
   logger_->report("[INFO] Worst cut on a critical path {}", worst_cut);
@@ -299,8 +298,10 @@ void TPpartitioner::RandomPart(const HGraph hgraph,
     solution[v] = block_id;
     block_balance[solution[v]] = block_balance[solution[v]] + hgraph->vertex_weights_[v];
     if (block_balance[block_id]
-        >= DivideFactor(max_block_balance[block_id], 10.0))
-      block_id = (++block_id) % num_parts_;  // adjust the block_id
+        >= DivideFactor(max_block_balance[block_id], 10.0)) {
+      ++block_id;
+      block_id = block_id % num_parts_;  // adjust the block_id
+    }
   }
 }
 

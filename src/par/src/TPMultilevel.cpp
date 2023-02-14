@@ -280,7 +280,6 @@ void TPmultilevelPartitioner::GuidedVcycleTwoWay(
   float delta_cost = std::numeric_limits<float>::max();
   float cutsize_before_vcycle
       = partitioner_->GoldenEvaluator(hgraph, solution, false).first;
-  int last_run = 0;
   const int stagnation_count = 2;
   int stagnation = 0;
   /*while ((num_cycles < max_num_vcycle_ && delta_cost > 0.0)
@@ -325,7 +324,6 @@ std::vector<int> TPmultilevelPartitioner::MapClusters(
   int hier_ptr = hierarchy.size();
   std::vector<int> old_map = hierarchy.back()->vertex_c_attr_;
   std::vector<int> curr_map = old_map;
-  int max_id = *std::max_element(old_map.begin(), old_map.end());
   for (auto it = hierarchy.crbegin(); it != hierarchy.crend(); ++it) {
     --hier_ptr;
     if (hier_ptr == hierarchy.size() - 1) {
@@ -434,7 +432,7 @@ void TPmultilevelPartitioner::MultilevelPartTwoWay(
   }
   threads.clear();
   float best_cut = std::numeric_limits<float>::max();
-  int best_partition_id;
+  int best_partition_id = 0;
   for (int i = 0; i < GetBestInitSolns(); ++i) {
     const float refined_cut
         = two_way_refiner_
@@ -594,7 +592,6 @@ void TPmultilevelPartitioner::GuidedVcycleKWay(
   float delta_cost = std::numeric_limits<float>::max();
   float cutsize_before_vcycle
       = partitioner_->GoldenEvaluator(hgraph, solution, false).first;
-  int last_run = 0;
   const int stagnation_count = 2;
   int stagnation = 0;
   while (true) {
@@ -641,7 +638,7 @@ void TPmultilevelPartitioner::MultilevelPartKWay(
   coarsener_->SetVertexOrderChoice(RANDOM);
   auto community = coarsener_->PathBasedCommunity(hgraph);
   hgraph->community_attr_ = community;
-  hgraph->community_flag_ == true;
+  hgraph->community_flag_ = true;
   TP_coarse_graphs hierarchy = coarsener_->LazyFirstChoice(hgraph);
   // return exit(EXIT_SUCCESS);
   HGraph coarsest_hgraph = hierarchy.back();
@@ -714,7 +711,7 @@ void TPmultilevelPartitioner::MultilevelPartKWay(
   }
   threads.clear();
   float best_cut = std::numeric_limits<float>::max();
-  int best_partition_id;
+  int best_partition_id = 0;
   logger_->report("=============================");
   for (int i = 0; i < GetBestInitSolns(); ++i) {
     const float refined_cut

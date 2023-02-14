@@ -426,7 +426,6 @@ std::vector<std::pair<int, int>> KPMRefinement::KPMfindPairs(
 {
   // calculate the pairwise combination of the different partition blocks
   int total_pairs = static_cast<int>(num_parts_ * (num_parts_ - 1) / 2);
-  int max_pairs = std::min(static_cast<int>(floor(num_parts_ / 2)), 2);
   //
   if (prev_scores.empty() == true) {
     prev_scores.resize(total_pairs);
@@ -605,7 +604,6 @@ std::shared_ptr<vertex> KPMRefinement::KPMpickVertexToMove(
     }
     max_gain = -std::numeric_limits<float>::max();
     best_vertex = gain_buckets[min_part]->GetMax();
-    int bucket_idx = 0;
     int corking_passes = static_cast<int>(
         ceil(gain_buckets[min_part]->GetTotalElements()) * 0.5);
     for (int j = 1; j < corking_passes; ++j) {
@@ -721,7 +719,6 @@ void KPMRefinement::KPMupdateNeighbors(
     if (GetVisitStatus(v) == true) {
       continue;
     }
-    float delta_change = 0.0;
     int nbr_from_part = nbr_part == from_pid ? from_pid : to_pid;
     int nbr_to_part = nbr_from_part == from_pid ? to_pid : from_pid;
     // If the vertex is in the gain bucket then simply update the priority

@@ -4234,10 +4234,6 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent) {
   auto moveHor = [&](size_t macro_id, int x) {
     const int x_old = hard_macros[macro_id]->getXDBU();
     hard_macros[macro_id]->setXDBU(x);
-    const int lx = hard_macros[macro_id]->getXDBU();
-    const int ly = hard_macros[macro_id]->getYDBU();
-    const int ux = hard_macros[macro_id]->getUXDBU();
-    const int uy = hard_macros[macro_id]->getUYDBU();
     if (isValidMove(macro_id) == false) {
       hard_macros[macro_id]->setXDBU(x_old);
       return false;

@@ -273,9 +273,10 @@ void TritonPart::ReadNetlist()
   num_hyperedges_ = static_cast<int>(hyperedges_.size());
 
   // add timing feature
-  if (timing_aware_flag_ == true)
+  if (timing_aware_flag_ == true) {
     logger_->report("[STATUS] Extracting timing paths**** ");
     BuildTimingPaths();  // create timing paths
+  }
 
   nonscaled_hyperedge_weights_ = hyperedge_weights_;
 }
@@ -300,8 +301,6 @@ void TritonPart::BuildTimingPaths()
   // associated with the endpoint of the path, for example, path group for clk
   int group_count = top_n_;
   int endpoint_count = 1;  // The number of paths to report for each endpoint.
-  bool unique_pins
-      = true;  // Only the worst path through the set of pins is reported
   // Definition for findPathEnds function in Search.hh
   // PathEndSeq *findPathEnds(ExceptionFrom *from,
   //              ExceptionThruSeq *thrus,
@@ -373,7 +372,7 @@ void TritonPart::BuildTimingPaths()
     // slack = slack / sta_->search()->units()->timeUnit()->scale();
     timing_path.slack = slack;
     sta::PathExpanded expand(path, sta_);
-    sta::PathRef* end_ref = expand.path(expand.size() - 1);
+    expand.path(expand.size() - 1);
     for (size_t i = 0; i < expand.size(); i++) {
       // PathRef is reference to a path vertex
       sta::PathRef* ref = expand.path(i);
@@ -428,7 +427,6 @@ void TritonPart::GenerateTimingReport(std::vector<int>& partition, bool design)
   std::vector<int> critical_path_cuts;
   for (int i = 0; i < timing_paths_.size(); ++i) {
     auto timing_path = timing_paths_[i].path;
-    int prev_part = partition[timing_path.front()];
     std::vector<int> path_block;
     for (int j = 0; j < timing_path.size(); ++j) {
       int block_id = partition[timing_path[j]];
@@ -510,20 +508,10 @@ void TritonPart::BuildHypergraph()
     }
   }
 
-  float alpha = 1.0;
-  float wns_factor = 1.0;
-  float path_sharing_factor = 1.0;
   for (int i = 0; i < num_hyperedges_; ++i) {
     if (net_based_slacks[i].size() == 0) {
       continue;
     }
-    // First assign weight according to the worst slack
-    float worst_slack = *net_based_slacks[i].end();
-    // float total_wt = wns_factor * pow(1 - worst_slack, alpha);
-    // Next readjust weight according to path sharing
-    /*total_wt
-        += path_sharing_factor * (1 - worst_slack) *
-       net_based_slacks[i].size();*/
     float total_wt = total_net_based_slacks[i];
     auto hwt = hyperedge_weights_[i];
     hyperedge_weights_[i] = MultiplyFactor(hwt, total_wt);
@@ -652,7 +640,6 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
   logger_->report("[STATUS] Starting TritonPart Partitioner");
   logger_->report("========================================");
   logger_->report("[INFO] Partitioning parameters**** ");
-  auto start_timestamp_global = std::chrono::high_resolution_clock::now();
 
   // Parameters
   num_parts_ = num_parts_arg;
@@ -888,7 +875,6 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
   const float coarsening_ratio = 1.5;
   const int max_coarsen_iters = 20;
   const float adj_diff_ratio = 0.0001;
-  const int vertex_ordering_choice = RANDOM;
   TP_coarsening_ptr tritonpart_coarsener
       = std::make_shared<TPcoarsener>(e_wt_factors,
                                       v_wt_factors,
@@ -934,7 +920,6 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
                                          snaking_wt_factor,
                                          logger_);
   int wavefront = 50;
-  int he_thr = 50;
   TP_ilp_refiner_ptr tritonpart_ilp_refiner
       = std::make_shared<TPilpRefine>(num_parts_,
                                       greedy_refiner_iters,
@@ -1024,7 +1009,6 @@ std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
   const float coarsening_ratio = 1.5;
   const int max_coarsen_iters = 20;
   const float adj_diff_ratio = 0.0001;
-  const int vertex_ordering_choice = RANDOM;
   TP_coarsening_ptr tritonpart_coarsener
       = std::make_shared<TPcoarsener>(e_wt_factors,
                                       v_wt_factors,
@@ -1072,7 +1056,6 @@ std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
                                          snaking_wt_factor,
                                          logger_);
   int wavefront = 50;
-  int he_thr = 50;
   TP_ilp_refiner_ptr tritonpart_ilp_refiner
       = std::make_shared<TPilpRefine>(num_parts_,
                                       greedy_refiner_iters,
@@ -1188,7 +1171,6 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
   const float coarsening_ratio = 1.5;
   const int max_coarsen_iters = 20;
   const float adj_diff_ratio = 0.0001;
-  const int vertex_ordering_choice = RANDOM;
   TP_coarsening_ptr tritonpart_coarsener
       = std::make_shared<TPcoarsener>(e_wt_factors,
                                       v_wt_factors,
@@ -1299,7 +1281,6 @@ std::vector<int> TritonPart::TritonPart_design_PartKWay(
   const float coarsening_ratio = 1.5;
   const int max_coarsen_iters = 20;
   const float adj_diff_ratio = 0.0001;
-  const int vertex_ordering_choice = RANDOM;
   TP_coarsening_ptr tritonpart_coarsener
       = std::make_shared<TPcoarsener>(e_wt_factors,
                                       v_wt_factors,
@@ -1492,7 +1473,6 @@ std::vector<int> TritonPart::TritonPart2Way(
   const float coarsening_ratio = 1.5;
   const int max_coarsen_iters = 20;
   const float adj_diff_ratio = 0.0001;
-  const int vertex_ordering_choice = RANDOM;
   TP_coarsening_ptr tritonpart_coarsener
       = std::make_shared<TPcoarsener>(e_wt_factors,
                                       v_wt_factors,
@@ -1538,7 +1518,6 @@ std::vector<int> TritonPart::TritonPart2Way(
                                          snaking_wt_factor,
                                          logger_);
   int wavefront = 50;
-  int he_thr = 50;
   TP_ilp_refiner_ptr tritonpart_ilp_refiner
       = std::make_shared<TPilpRefine>(num_parts_,
                                       greedy_refiner_iters,

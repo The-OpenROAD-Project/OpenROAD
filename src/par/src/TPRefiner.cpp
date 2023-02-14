@@ -203,7 +203,6 @@ std::pair<int, int> TPrefiner::GetTimingCuts(const HGraph hgraph,
       ++total_critical_paths_cut;
     }
   }
-  float average_cuts_on_path = total_cuts / hgraph->num_timing_paths_;
   return std::make_pair(total_critical_paths_cut, worst_cut);
 }
 
@@ -638,7 +637,6 @@ void TPtwoWayFM::Refine(const HGraph hgraph,
   } else {
     SetMaxMoves(50);
   }
-  float gain_in_pass = -1;
   matrix<float> max_block_balance_tol = max_block_balance;
   std::vector<float> paths_cost(hgraph->num_timing_paths_, 0.0);
   GeneratePathsAsEdges(hgraph);
@@ -653,7 +651,7 @@ void TPtwoWayFM::Refine(const HGraph hgraph,
       max_block_balance_tol = max_block_balance;
     }
     InitPaths(hgraph, paths_cost, solution);
-    gain_in_pass = Pass(hgraph, max_block_balance, solution, paths_cost);
+    Pass(hgraph, max_block_balance, solution, paths_cost);
     if (hgraph->num_timing_paths_ > 0) {
       hgraph->hyperedge_weights_ = hgraph->nonscaled_hyperedge_weights_;
     }
@@ -821,7 +819,6 @@ std::shared_ptr<VertexGain> TPtwoWayFM::PickMoveTwoWay(
   std::shared_ptr<VertexGain> dummy_cell(new VertexGain);
   if (buckets[0]->GetStatus() == true && buckets[1]->GetStatus() == false) {
     auto ele = buckets[0]->GetMax();
-    float gain = ele->GetGain();
     bool legality_of_move
         = CheckLegality(hgraph, 0, ele, curr_block_balance, max_block_balance);
     if (legality_of_move == true) {
@@ -834,7 +831,6 @@ std::shared_ptr<VertexGain> TPtwoWayFM::PickMoveTwoWay(
   } else if (buckets[1]->GetStatus() == true
              && buckets[0]->GetStatus() == false) {
     auto ele = buckets[1]->GetMax();
-    float gain = ele->GetGain();
     bool legality_of_move
         = CheckLegality(hgraph, 1, ele, curr_block_balance, max_block_balance);
     if (legality_of_move == true) {
@@ -900,7 +896,6 @@ void TPtwoWayFM::UpdateNeighbors(const HGraph hgraph,
         neighboring_hyperedges.insert(he);
       }
     }
-    float delta_change = 0.0;
     int nbr_from_part = nbr_part == from_part ? from_part : to_part;
     int nbr_to_part = nbr_from_part == from_part ? to_part : from_part;
     // If the vertex is in the gain bucket then simply update the priority
@@ -1092,7 +1087,6 @@ float TPtwoWayFM::Pass(const HGraph hgraph,
   float cutsize = CutEvaluator(hgraph, solution).first;
   float min_cut = cutsize;
   float total_delta_gain = 0.0;
-  int move_limit = 2;
   int best_move = -1;
   std::vector<int> pre_fm = solution;
   for (int i = 0; i < hgraph->num_vertices_; ++i) {
@@ -1231,7 +1225,6 @@ void TPtwoWayFM::BalancePartition(const HGraph hgraph,
   InitBoundaryFlags(hgraph->num_vertices_);
   // Initialize the visit flags to false meaning no vertex has been visited
   InitVisitFlags(hgraph->num_vertices_);
-  auto partition_pair = std::make_pair(0, 1);
   std::vector<int> boundary_vertices(hgraph->num_vertices_);
   std::iota(boundary_vertices.begin(), boundary_vertices.end(), 0);
   InitGainBucketsTwoWay(
@@ -1339,12 +1332,11 @@ void TPkWayFM::Refine(const HGraph hgraph,
                       const matrix<float>& max_block_balance,
                       TP_partition& solution)
 {
-  float gain_in_pass;
   std::vector<float> paths_cost(hgraph->num_timing_paths_, 0.0);
   GeneratePathsAsEdges(hgraph);
   for (int i = 0; i < refiner_iters_; ++i) {
     InitPaths(hgraph, paths_cost, solution);
-    gain_in_pass = Pass(hgraph, max_block_balance, solution, paths_cost);
+    Pass(hgraph, max_block_balance, solution, paths_cost);
     if (hgraph->num_timing_paths_ > 0) {
       hgraph->hyperedge_weights_ = hgraph->nonscaled_hyperedge_weights_;
     }
@@ -1580,6 +1572,7 @@ std::shared_ptr<VertexGain> TPkWayFM::PickMoveKWay(
       }
     }
   }
+  logger_->error(utl::PAR, 76, "No best move found in PickMoveKWay");
 }
 
 // Remove vertex from a heap
@@ -1704,18 +1697,10 @@ float TPkWayFM::Pass(const HGraph hgraph,
   std::vector<int> pre_fm = solution;
   std::vector<int> move_trace;  // store the moved vertices in sequence
   std::vector<int> partition_trace;
-  float tot_gain = 0.0;
   std::vector<VertexGain> moves_trace;
   float cutsize = CutEvaluator(hgraph, solution).first;
   float min_cut = cutsize;
-  auto timing_cuts = GetTimingCuts(hgraph, solution);
-  int best_total_critical_paths_cut = timing_cuts.first;
-  int best_critical_cut = timing_cuts.second;
-  float critical_factor = 1.0;
-  float worst_factor = 2.0;
-  float cutsize_factor = 0.5;
   float total_delta_gain = 0.0;
-  int move_limit = 2;
   int best_move = -1;
   // Main loop of FM pass
   for (int i = 0; i < GetMaxMoves(); ++i) {
@@ -1826,9 +1811,8 @@ void TPgreedyRefine::Refine(const HGraph hgraph,
                             const matrix<float>& max_block_balance,
                             TP_partition& solution)
 {
-  float gain_in_pass = 0.0;
   for (int i = 0; i < refiner_iters_; ++i) {
-    gain_in_pass = Pass(hgraph, solution, max_block_balance);
+    Pass(hgraph, solution, max_block_balance);
   }
 }
 
@@ -1988,6 +1972,7 @@ float TPgreedyRefine::Pass(HGraph hgraph,
       return total_gain;
     }
   }
+  logger_->error(utl::PAR, 77, "No gain found in Pass");
 }
 
 // Ilp refiner implementation starts here

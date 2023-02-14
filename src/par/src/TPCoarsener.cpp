@@ -495,7 +495,6 @@ HGraph TPcoarsener::Contraction(HGraph hgraph,
 
 HGraph TPcoarsener::Aggregate(HGraph hgraph)
 {
-  auto start_timestamp = std::chrono::high_resolution_clock::now();
   std::vector<int> vertex_c_attr;
   std::vector<std::vector<float>> vertex_weights_c;
   std::vector<int> community_attr_c;

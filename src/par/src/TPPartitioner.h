@@ -83,14 +83,14 @@ class TPpartitioner
                 int seed,
                 TP_two_way_refining_ptr tritonpart_two_way_refiner,
                 utl::Logger* logger)
-      : num_parts_(num_parts),
+      : tritonpart_two_way_refiner_(tritonpart_two_way_refiner),
+        num_parts_(num_parts),
         e_wt_factors_(e_wt_factors),
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),
         early_stop_ratio_(early_stop_ratio),
         max_num_fm_pass_(max_num_fm_pass),
         seed_(seed),
-        tritonpart_two_way_refiner_(tritonpart_two_way_refiner),
         logger_(logger)
   {
   }
@@ -103,14 +103,14 @@ class TPpartitioner
                 int seed,
                 TP_k_way_refining_ptr tritonpart_k_way_refiner,
                 utl::Logger* logger)
-      : num_parts_(num_parts),
+      : tritonpart_k_way_refiner_(tritonpart_k_way_refiner),
+        num_parts_(num_parts),
         e_wt_factors_(e_wt_factors),
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),
         early_stop_ratio_(early_stop_ratio),
         max_num_fm_pass_(max_num_fm_pass),
         seed_(seed),
-        tritonpart_k_way_refiner_(tritonpart_k_way_refiner),
         logger_(logger)
   {
   }

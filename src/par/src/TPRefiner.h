@@ -73,7 +73,7 @@ class VertexGain
     status_ = true;
   }
   VertexGain(int arg_vertex, float arg_gain, int part)
-      : vertex_(arg_vertex), gain_(arg_gain), source_part_(part)
+      : vertex_(arg_vertex), source_part_(part), gain_(arg_gain)
   {
     potential_move_ = -1;
     status_ = true;
@@ -89,8 +89,8 @@ class VertexGain
              int part,
              std::map<int, float> arg_path_cost)
       : vertex_(arg_vertex),
-        gain_(arg_gain),
         source_part_(part),
+        gain_(arg_gain),
         path_cost_(arg_path_cost)
   {
     potential_move_ = -1;

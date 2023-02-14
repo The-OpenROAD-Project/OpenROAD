@@ -213,7 +213,7 @@ std::vector<float> operator*(const std::vector<float> a, float factor)
 
 int PartitionWithMinWt(std::vector<std::vector<float>>& area)
 {
-  int min_part;
+  int min_part = 0;
   std::vector<float> min_area(area[0].size(),
                               std::numeric_limits<float>::max());
   for (int i = 0; i < area.size(); ++i) {
@@ -227,7 +227,7 @@ int PartitionWithMinWt(std::vector<std::vector<float>>& area)
 
 int PartitionWithMaxWt(std::vector<std::vector<float>>& area)
 {
-  int max_part;
+  int max_part = 0;
   std::vector<float> max_area(area[0].size(),
                               -std::numeric_limits<float>::max());
   for (int i = 0; i < area.size(); ++i) {
