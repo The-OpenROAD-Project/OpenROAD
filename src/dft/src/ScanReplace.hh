@@ -31,11 +31,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include <unordered_map>
+#include <unordered_set>
+
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
-#include "db_sta/dbSta.hh"
-#include <unordered_set>
-#include <unordered_map>
 
 namespace dft {
 namespace replace {
@@ -49,13 +50,15 @@ namespace replace {
 // ScanCandidate.cpp's DifferencePerformanceCells) to select the most similar
 // one to the original cell
 //
-class ScanCandidate {
+class ScanCandidate
+{
  public:
-  ScanCandidate(sta::LibertyCell* scan_cell, std::unordered_map<std::string, std::string> port_mapping);
+  ScanCandidate(sta::LibertyCell* scan_cell,
+                std::unordered_map<std::string, std::string> port_mapping);
 
   // Returns the LibertyCell of the scan cell
   sta::LibertyCell* getScanCell() const;
-  
+
   // How to connect the old non scan cell's ports to the new scan cell
   const std::unordered_map<std::string, std::string>& getPortMapping() const;
 
@@ -69,7 +72,8 @@ class ScanCandidate {
 };
 
 // Performs scan replacement on a OpenROAD's database
-class ScanReplace {
+class ScanReplace
+{
  public:
   ScanReplace(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
@@ -81,8 +85,8 @@ class ScanReplace {
   // This method changes the design
   void scanReplace();
 
-  // Debug how we are going to replace non-scan lib cells into the available scan
-  // lib cells
+  // Debug how we are going to replace non-scan lib cells into the available
+  // scan lib cells
   void debugPrintScanEquivalents() const;
 
  private:
@@ -90,15 +94,15 @@ class ScanReplace {
   sta::dbSta* sta_;
   utl::Logger* logger_;
   sta::dbNetwork* db_network_;
-  
-  std::unordered_map<sta::LibertyCell*, std::unique_ptr<ScanCandidate>> non_scan_to_scan_lib_cells_;
+
+  std::unordered_map<sta::LibertyCell*, std::unique_ptr<ScanCandidate>>
+      non_scan_to_scan_lib_cells_;
   std::unordered_set<sta::LibertyCell*> available_scan_lib_cells_;
 
   // Performs the scan replacement on the given block iterating over the
   // internal blocks (if there is any)
   void scanReplace(odb::dbBlock* block);
-
 };
 
-} // namespace replace
-} // namespace dft
+}  // namespace replace
+}  // namespace dft

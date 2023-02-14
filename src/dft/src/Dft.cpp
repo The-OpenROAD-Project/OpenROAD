@@ -30,15 +30,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "ScanReplace.hh"
 #include "dft/Dft.hh"
+
+#include <iostream>
+
+#include "ScanReplace.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
-#include <iostream>
 
 namespace dft {
 
-void Dft::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger) {
+void Dft::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
+{
   db_ = db;
   logger_ = logger;
   sta_ = sta;
@@ -47,12 +50,14 @@ void Dft::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger) {
   reset();
 }
 
-void Dft::reset() {
+void Dft::reset()
+{
   scan_replace_.reset(nullptr);
   did_we_run_pre_dft_ = false;
 }
 
-void Dft::pre_dft() {
+void Dft::pre_dft()
+{
   scan_replace_ = std::make_unique<replace::ScanReplace>(db_, sta_, logger_);
   scan_replace_->collectScanCellAvailable();
 
@@ -60,7 +65,8 @@ void Dft::pre_dft() {
   did_we_run_pre_dft_ = true;
 }
 
-void Dft::insert_dft() {
+void Dft::insert_dft()
+{
   if (!did_we_run_pre_dft_) {
     pre_dft();
   }
@@ -69,4 +75,4 @@ void Dft::insert_dft() {
   scan_replace_->scanReplace();
 }
 
-} // namespace dft
+}  // namespace dft

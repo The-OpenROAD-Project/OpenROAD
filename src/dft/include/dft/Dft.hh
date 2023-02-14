@@ -31,16 +31,17 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include <unordered_map>
+#include <unordered_set>
+
+#include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
-#include "db_sta/dbSta.hh"
-#include <unordered_set>
-#include <unordered_map>
 
 namespace dft {
 namespace replace {
 class ScanReplace;
-} // namespace replace
+}  // namespace replace
 
 class Dft
 {
@@ -58,7 +59,7 @@ class Dft
 
   // Internal state
   std::unique_ptr<replace::ScanReplace> scan_replace_;
-  
+
   // If we need to run pre_dft to create the internal state
   bool did_we_run_pre_dft_;
 

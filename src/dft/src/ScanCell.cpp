@@ -32,22 +32,21 @@
 
 #include "ScanCell.hh"
 
-
 namespace dft {
 
-ScanCell::ScanCell(sta::LibertyCell* liberty_cell, uint64_t bits):
-  liberty_cell_(liberty_cell),
-  bits_(bits)
-{}
+ScanCell::ScanCell(sta::LibertyCell* liberty_cell, uint64_t bits)
+    : liberty_cell_(liberty_cell), bits_(bits)
+{
+}
 
-uint64_t ScanCell::getBits() const {
+uint64_t ScanCell::getBits() const
+{
   return bits_;
 }
 
+SingleCellScanCell::SingleCellScanCell(sta::LibertyCell* liberty_cell)
+    : ScanCell(liberty_cell, 1)
+{
+}
 
-SingleCellScanCell::SingleCellScanCell(sta::LibertyCell* liberty_cell):
-  ScanCell(liberty_cell, 1)
-{}
-
-
-} // namespace dft
+}  // namespace dft

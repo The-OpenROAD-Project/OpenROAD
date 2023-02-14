@@ -31,8 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "Utils.hh"
-#include "db_sta/dbNetwork.hh"
+
 #include <iostream>
+
+#include "db_sta/dbNetwork.hh"
 
 namespace dft {
 namespace utils {
@@ -40,14 +42,21 @@ namespace utils {
 namespace {
 constexpr char kTmpScanFlopName[] = "tmp_scan_flop";
 
-void PopulatePortNameToNet(odb::dbInst* instance, std::vector<std::tuple<std::string, odb::dbNet*>> &port_name_to_net) {
-  for (odb::dbITerm* iterm: instance->getITerms()) {
+void PopulatePortNameToNet(
+    odb::dbInst* instance,
+    std::vector<std::tuple<std::string, odb::dbNet*>>& port_name_to_net)
+{
+  for (odb::dbITerm* iterm : instance->getITerms()) {
     port_name_to_net.push_back({iterm->getMTerm()->getName(), iterm->getNet()});
   }
 }
 
-void ConnectPinsToNets(odb::dbInst* instance, const std::vector<std::tuple<std::string, odb::dbNet*>> &port_name_to_net, const std::unordered_map<std::string, std::string> &port_mapping) {
-  for (const auto& [port_name_old, net]: port_name_to_net) {
+void ConnectPinsToNets(
+    odb::dbInst* instance,
+    const std::vector<std::tuple<std::string, odb::dbNet*>>& port_name_to_net,
+    const std::unordered_map<std::string, std::string>& port_mapping)
+{
+  for (const auto& [port_name_old, net] : port_name_to_net) {
     if (net == nullptr) {
       continue;
     }
@@ -56,21 +65,27 @@ void ConnectPinsToNets(odb::dbInst* instance, const std::vector<std::tuple<std::
   }
 }
 
+}  // namespace
 
-} // namespace
-
-bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance) {
+bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance)
+{
   odb::dbMaster* master = instance->getMaster();
   sta::Cell* master_cell = db_network->dbToSta(master);
   sta::LibertyCell* liberty_cell = db_network->libertyCell(master_cell);
   return liberty_cell->hasSequentials();
 }
 
-odb::dbInst* CreateCell(odb::dbBlock* top_block, odb::dbMaster* new_master) {
+odb::dbInst* CreateCell(odb::dbBlock* top_block, odb::dbMaster* new_master)
+{
   return odb::dbInst::create(top_block, new_master, kTmpScanFlopName);
 }
 
-odb::dbInst* ReplaceCell(odb::dbBlock* top_block, odb::dbInst* old_instance, odb::dbMaster* new_master, const std::unordered_map<std::string, std::string> &port_mapping) {
+odb::dbInst* ReplaceCell(
+    odb::dbBlock* top_block,
+    odb::dbInst* old_instance,
+    odb::dbMaster* new_master,
+    const std::unordered_map<std::string, std::string>& port_mapping)
+{
   std::vector<std::tuple<std::string, odb::dbNet*>> port_name_to_net;
   PopulatePortNameToNet(old_instance, port_name_to_net);
 
@@ -89,9 +104,9 @@ odb::dbInst* ReplaceCell(odb::dbBlock* top_block, odb::dbInst* old_instance, odb
   return new_instance;
 }
 
-
-odb::dbNet* FindGroundNet(sta::dbNetwork* db_network, odb::dbBlock* block) {
-  for (odb::dbNet* net: block->getNets()) {
+odb::dbNet* FindGroundNet(sta::dbNetwork* db_network, odb::dbBlock* block)
+{
+  for (odb::dbNet* net : block->getNets()) {
     if (db_network->isGround(db_network->dbToSta(net))) {
       return net;
     }
@@ -99,7 +114,11 @@ odb::dbNet* FindGroundNet(sta::dbNetwork* db_network, odb::dbBlock* block) {
   return nullptr;
 }
 
-void TieScanPins(sta::dbNetwork* db_network, odb::dbInst* instance, sta::LibertyCell* scan_cell, odb::dbNet* ground_net) {
+void TieScanPins(sta::dbNetwork* db_network,
+                 odb::dbInst* instance,
+                 sta::LibertyCell* scan_cell,
+                 odb::dbNet* ground_net)
+{
   if (!ground_net) {
     return;
   }
@@ -108,5 +127,5 @@ void TieScanPins(sta::dbNetwork* db_network, odb::dbInst* instance, sta::Liberty
   instance->findITerm(test_cell->scanEnable()->name())->connect(ground_net);
 }
 
-} // namespace utils
-} // namespace dft
+}  // namespace utils
+}  // namespace dft

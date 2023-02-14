@@ -30,25 +30,25 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%module dft
+% module dft
 
-%{
+    % {
 
 #include "dft/Dft.hh"
 #include "ord/OpenRoad.hh"
 
-dft::Dft *
-getDft()
+        dft::Dft * getDft(){return ord::OpenRoad::openRoad()->getDft();
+}
+
+%
+}
+
+% inline %
 {
-  return ord::OpenRoad::openRoad()->getDft();
-}
+  void insert_dft()
+  {
+    getDft()->insert_dft();
+  }
 
-%}
-
-%inline %{
-
-void insert_dft() {
-  getDft()->insert_dft();
-}
-
-%} // inline
+  %
+}  // inline

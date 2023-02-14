@@ -31,10 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "odb/db.h"
-#include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 #include "sta/Liberty.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 namespace utils {
@@ -47,18 +47,25 @@ odb::dbInst* CreateCell(odb::dbBlock* top_block, odb::dbMaster* new_master);
 // cell will be preserved by using the given port mapping from
 // <old_port_name, new_port_name>. Returns the new instance and deletes the old
 // one. The name of the new instance is going to be the same as the old one.
-odb::dbInst* ReplaceCell(odb::dbBlock* top_block, odb::dbInst* old_instance, odb::dbMaster* new_master, const std::unordered_map<std::string, std::string> &port_mapping);
+odb::dbInst* ReplaceCell(
+    odb::dbBlock* top_block,
+    odb::dbInst* old_instance,
+    odb::dbMaster* new_master,
+    const std::unordered_map<std::string, std::string>& port_mapping);
 
 // Find the net that has the ground in the given block.
 odb::dbNet* FindGroundNet(sta::dbNetwork* db_network, odb::dbBlock* block);
 
 // Connects the scan pins of a cell to ground to make it functional equivalent
 // to a non-scan cell
-void TieScanPins(sta::dbNetwork* db_network, odb::dbInst* instance, sta::LibertyCell* scan_cell, odb::dbNet* ground_net);
+void TieScanPins(sta::dbNetwork* db_network,
+                 odb::dbInst* instance,
+                 sta::LibertyCell* scan_cell,
+                 odb::dbNet* ground_net);
 
 // Returns true if the given cell's instance is a sequiental cell, false
 // otherwise
 bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
 
-} // namespace utils
-} // namespace dft
+}  // namespace utils
+}  // namespace dft
