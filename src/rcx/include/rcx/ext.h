@@ -46,10 +46,6 @@ namespace rcx {
 using odb::uint;
 using utl::Logger;
 class Ext
-
-#ifndef SWIG  // causes swig warnings
-    : public odb::ZInterface
-#endif
 {
  public:
   Ext();

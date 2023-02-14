@@ -30,14 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <wire.h>
-
 #include <map>
 #include <vector>
 
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 

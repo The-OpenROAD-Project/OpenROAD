@@ -569,17 +569,8 @@ void dbFlatten::copyNetWires(dbNet* dst,
                              int level,
                              dbProperty* bterm_map)
 {
-  FILE* fp = NULL;
-  if (isDebug("FLATTEN", "R"))
-    fp = debugNetWires(NULL, dst, src, "Before CopyWires");
-
   copyWires(dst, src, level, bterm_map, _copy_parasitics);
   copySWires(dst, src);
-
-  if (fp != NULL) {
-    debugNetWires(fp, dst, NULL, "After CopyWires");
-    fclose(fp);
-  }
 }
 
 void dbFlatten::copyAttrs(dbInst* dst_, dbInst* src_)
