@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <wire.h>
-
 #include <limits>
 #include <map>
 #include <vector>
@@ -39,6 +37,7 @@
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 
@@ -1731,8 +1730,7 @@ uint extMain::makeBlockRCsegs(const char* netNames,
                               bool mergeViaRes,
                               double ccThres,
                               int contextDepth,
-                              const char* extRules,
-                              ZInterface* Interface)
+                              const char* extRules)
 {
   uint debugNetId = 0;
 

@@ -41,23 +41,13 @@
 
 namespace odb {
 
-int idle(int = 0);
-
 int notice(int code, const char* msg, ...) ADS_FORMAT_PRINTF(2, 3);
 int verbose(int code, const char* msg, ...) ADS_FORMAT_PRINTF(2, 3);
 
 int info(int code, const char* msg, ...) ADS_FORMAT_PRINTF(2, 3);
 
-void dumpWarn();
-int checkWarning(const char* msg);
-void resetWarningCount(const char* msg, int max, int cnt);
-
 int warning(int code, const char* msg, ...) ADS_FORMAT_PRINTF(2, 3);
 
 void error(int code, const char* msg, ...) ADS_FORMAT_PRINTF(2, 3);
-
-int debug(const char* mod, const char* tag, const char* msg, ...)
-    ADS_FORMAT_PRINTF(3, 4);
-int isDebug(const char* mod, const char* tag);
 
 }  // namespace odb
