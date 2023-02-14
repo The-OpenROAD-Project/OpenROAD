@@ -34,7 +34,6 @@
 
 #include <QObject>
 #include <boost/geometry.hpp>
-#include <boost/geometry/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
 #include "odb/db.h"

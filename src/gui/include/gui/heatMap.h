@@ -33,7 +33,7 @@
 #pragma once
 
 #include <array>
-#include <boost/geometry/geometry.hpp>
+#include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/index/rtree.hpp>
 #include <functional>
