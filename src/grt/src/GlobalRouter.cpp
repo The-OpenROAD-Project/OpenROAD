@@ -655,9 +655,9 @@ void GlobalRouter::findPins(Net* net)
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
 {
   return net->getSignalType() == odb::dbSigType::CLOCK
-                           && max_layer_for_clock_ > 0
-                              ? max_layer_for_clock_
-                              : max_routing_layer_;
+                 && max_layer_for_clock_ > 0
+             ? max_layer_for_clock_
+             : max_routing_layer_;
 }
 
 void GlobalRouter::findPins(Net* net,
