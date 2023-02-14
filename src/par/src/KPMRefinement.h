@@ -41,9 +41,12 @@
 #include "utl/Logger.h"
 
 namespace par {
+
 using KPMpartition = std::pair<float, std::vector<std::vector<float>>>;
+
 template <typename T>
 using matrix = std::vector<std::vector<T>>;
+
 class KPMRefinement
 {
  public:
@@ -405,5 +408,4 @@ class KPMRefinement
 using kpm_heap = KPMRefinement::pq;
 using vertex = KPMRefinement::vgain;
 using kpm_heaps = KPMRefinement::pqs;
-using KPMrefinementPtr = std::shared_ptr<KPMRefinement>;
 }  // namespace par
