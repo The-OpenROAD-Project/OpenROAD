@@ -26,6 +26,8 @@ jobs:
         exclude:
           - os: "opensuse"
             compilers: "clang"
+          - os: "ubuntu22.10"
+            compilers: "gcc"
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code

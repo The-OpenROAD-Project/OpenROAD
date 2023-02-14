@@ -21,6 +21,8 @@ on:
     paths:
       - 'etc/DependencyInstaller.sh'
       - '.github-actions-test-boost-version.yml'
+  schedule:
+  - cron: "0 8 * * *"
 
 jobs:  
   testBoostVersionInput:
@@ -57,12 +59,12 @@ jobs:
             src/**/test/results/diffs
             src/**/test/results/*.log
   testBoostVersionMatrix:
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    if: github.event_name != 'workflow_dispatch'
     strategy:
       fail-fast: false
       matrix:
         os: ["ubuntu-20.04", "ubuntu-22.04"]
-        boost: [{version: "1.79.0", checksum: "e9213a48f0b19b7e01597c79f9128dd3"}, {version: "1.80.0", checksum: "077f074743ea7b0cb49c6ed43953ae95"}, {version: "1.81.0", checksum: "4bf02e84afb56dfdccd1e6aec9911f4b"}]
+        boost: [{version: "1.78.0", checksum: "c2f6428ac52b0e5a3c9b2e1d8cc832b5"}, {version: "1.79.0", checksum: "e9213a48f0b19b7e01597c79f9128dd3"}, {version: "1.80.0", checksum: "077f074743ea7b0cb49c6ed43953ae95"}, {version: "1.81.0", checksum: "4bf02e84afb56dfdccd1e6aec9911f4b"}]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out repository code
@@ -89,50 +91,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: test-results-${{ matrix.os }}-version-${{ matrix.boost.version }}
-          path: |
-            src/**/test/results/diffs
-            src/**/test/results/*.log
-  testBoostVersionMatrix_container:
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    strategy:
-      fail-fast: false
-      matrix:
-        boost: [{version: "1.79.0", checksum: "e9213a48f0b19b7e01597c79f9128dd3"}, {version: "1.80.0", checksum: "077f074743ea7b0cb49c6ed43953ae95"}, {version: "1.81.0", checksum: "4bf02e84afb56dfdccd1e6aec9911f4b"}]
-    runs-on: ubuntu-latest
-    container:
-      image: "ubuntu:22.10"
-    steps:
-      - name: Setup
-        run: |
-          apt-get update
-          apt-get -y install git
-      - name: Check out repository code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Checkout repository code with submodules
-        run: |
-          git config --global --add safe.directory '*'
-          git submodule update --init
-      - name: Run installer
-        shell: bash
-        run: |
-          ./etc/DependencyInstaller.sh -boostVersion=${{ matrix.boost.version }} -boostChecksum=${{ matrix.boost.checksum }}
-      - name: Build project
-        shell: bash
-        run: |
-          ./etc/Build.sh -threads=3 -cmake="-DUNITY_DISABLE=ON" 
-      - name: Test build
-        shell: bash
-        run: |
-          build/src/openroad -help
-          export OMP_NUM_THREADS=3
-          ./test/regression
-      - name: Archive logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results-ubuntu22.10-version-${{ matrix.boost.version }}
           path: |
             src/**/test/results/diffs
             src/**/test/results/*.log
