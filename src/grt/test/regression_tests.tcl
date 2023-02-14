@@ -49,6 +49,7 @@ record_tests {
   report_wire_length5
   report_wire_length6
   silence
+  top_level_term
   tracks1
   tracks2
   tracks3
