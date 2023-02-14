@@ -57,7 +57,7 @@ target_include_directories(dft
 )
 
 target_link_libraries(dft
-  PRIVATE
+  PUBLIC
     odb
     dbSta
     OpenSTA
