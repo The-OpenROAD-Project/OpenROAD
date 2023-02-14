@@ -58,10 +58,10 @@ namespace par {
 // understand all kinds of constraints and timing information.
 // TritonPart can accept two types of input hypergraphs
 // Type 1:  Generate the hypergraph by traversing the netlist.
-//          Each vertex is modeled as a vertex.
+//          Each bterm & inst is modeled as a vertex.
 //          Each signal net is modeled as a hyperedge.
 // Type 2:  Take the input hypergraph as an argument in the same manner as
-// hMetis
+//          hMetis.
 template <typename T>
 using matrix = std::vector<std::vector<T>>;
 

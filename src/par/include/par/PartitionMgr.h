@@ -38,7 +38,6 @@
 #include <map>
 #include <memory>
 #include <random>
-#include <set>
 
 namespace ord {
 class dbVerilogNetwork;

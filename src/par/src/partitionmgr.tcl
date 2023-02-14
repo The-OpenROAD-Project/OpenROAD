@@ -43,59 +43,66 @@ sta::define_cmd_args "triton_part_hypergraph" { -hypergraph_file hypergraph_file
                                                 [-vertex_dimension vertex_dimension] \
                                                 [-hyperedge_dimension hyperedge_dimension] \
                                                 [-seed seed] \
-                                               }
- proc triton_part_hypergraph { args } {
-   sta::parse_key_args "triton_part_hypergraph" args keys {-hypergraph_file -fixed_file
-                      -num_parts -balance_constraint
-                      -vertex_dimension -hyperedge_dimension
-                      -seed } flags {  }
+                                              }
+proc triton_part_hypergraph { args } {
+  sta::parse_key_args "triton_part_hypergraph" args \
+      keys {-hypergraph_file
+            -fixed_file
+            -num_parts -balance_constraint
+            -vertex_dimension
+            -hyperedge_dimension
+            -seed } \
+      flags {}
  
-     if { ![info exists keys(-hypergraph_file)] } {
-         utl::error PAR 0924 "Missing mandatory argument -hypergraph_file."
-     }
-     set hypergraph_file $keys(-hypergraph_file)
-     set fixed_file ""
-     set num_parts 2
-     set balance_constraint 1.0
-     set seed 0
-     set vertex_dimension 1
-     set hyperedge_dimension 1
- 
-     if { [info exists keys(-fixed_file)] } {
-         set fixed_file $keys(-fixed_file)
-     }
+  if { ![info exists keys(-hypergraph_file)] } {
+    utl::error PAR 0924 "Missing mandatory argument -hypergraph_file."
+  }
+  set hypergraph_file $keys(-hypergraph_file)
+  set fixed_file ""
+  set num_parts 2
+  set balance_constraint 1.0
+  set seed 0
+  set vertex_dimension 1
+  set hyperedge_dimension 1
+  
+  if { [info exists keys(-fixed_file)] } {
+    set fixed_file $keys(-fixed_file)
+  }
 
-      if { [info exists keys(-num_parts)] } {
-         set num_parts $keys(-num_parts)
-     }
+  if { [info exists keys(-num_parts)] } {
+    set num_parts $keys(-num_parts)
+  }
 
-     if { [info exists keys(-balance_constraint)] } {
-         set balance_constraint $keys(-balance_constraint)
-     }
+  if { [info exists keys(-balance_constraint)] } {
+    set balance_constraint $keys(-balance_constraint)
+  }
 
-     if { [info exists keys(-vertex_dimension)] } {
-         set vertex_dimension $keys(-vertex_dimension)
-     }
+  if { [info exists keys(-vertex_dimension)] } {
+    set vertex_dimension $keys(-vertex_dimension)
+  }
 
-     if { [info exists keys(-hyperedge_dimension)] } {
-         set hyperedge_dimension $keys(-hyperedge_dimension)
-     }
+  if { [info exists keys(-hyperedge_dimension)] } {
+    set hyperedge_dimension $keys(-hyperedge_dimension)
+  }
 
-     if { [info exists keys(-seed)] } {
-         set seed $keys(-seed)
-     }
+  if { [info exists keys(-seed)] } {
+    set seed $keys(-seed)
+  }
 
-     par::triton_part_hypergraph $hypergraph_file $fixed_file $num_parts $balance_constraint \
-                                 $vertex_dimension $hyperedge_dimension  $seed
- }
+  par::triton_part_hypergraph $hypergraph_file $fixed_file $num_parts \
+      $balance_constraint $vertex_dimension $hyperedge_dimension $seed
+}
 
 sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-balance_constraint balance_constraint] \
                                             [-seed seed] \
                                           }
 proc triton_part_design { args } {
-  sta::parse_key_args "triton_part_design" args keys { -num_parts -balance_constraint
-                      -seed } flags {  }
+  sta::parse_key_args "triton_part_design" args \
+      keys {-num_parts
+            -balance_constraint
+            -seed } \
+      flags {}
   set num_parts 2
   set balance_constraint 1.0
   set seed 0
@@ -112,6 +119,5 @@ proc triton_part_design { args } {
       set seed $keys(-seed)
   }
 
-  par::triton_part_design $num_parts $balance_constraint \
-                          $seed
+  par::triton_part_design $num_parts $balance_constraint $seed
 }

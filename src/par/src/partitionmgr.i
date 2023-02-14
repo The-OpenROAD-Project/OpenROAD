@@ -35,8 +35,6 @@
 
 %{
 #include "par/PartitionMgr.h"
-#include "ord/OpenRoad.hh"
-#include <set>
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -47,11 +45,6 @@ using ord::getPartitionMgr;
 %}
 
 %include "../../Exception.i"
-
-%import <std_vector.i>
-namespace std {
-  %template(IntVector) vector<int>;
-}
 
 %inline %{
 
