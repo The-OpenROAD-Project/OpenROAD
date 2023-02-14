@@ -47,6 +47,7 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <memory>
 #include <queue>
 #include <random>
 #include <sstream>
