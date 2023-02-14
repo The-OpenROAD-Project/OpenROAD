@@ -327,6 +327,9 @@ std::vector<int> TPmultilevelPartitioner::MapClusters(
   int hier_ptr = hierarchy.size();
   std::vector<int> old_map = hierarchy.back()->vertex_c_attr_;
   std::vector<int> curr_map = old_map;
+#ifndef NDEBUG
+  const int max_id = *std::max_element(old_map.begin(), old_map.end());
+#endif
   for (auto it = hierarchy.crbegin(); it != hierarchy.crend(); ++it) {
     --hier_ptr;
     if (hier_ptr == hierarchy.size() - 1) {
@@ -560,9 +563,7 @@ void TPmultilevelPartitioner::VcycleKWay(std::vector<HGraph> hgraph_vec,
     ub_factors_tol[i] = ceil(ub_factor_ + tol);
   }
   int iter = 0;
-  int hier_ptr = hgraph_vec.size();
   for (auto it = hgraph_vec.crbegin(); it != hgraph_vec.crend(); ++it) {
-    --hier_ptr;
     HGraph coarse_hypergraph = *it;
     refined_solution.clear();
     refined_solution.resize(coarse_hypergraph->num_vertices_);
