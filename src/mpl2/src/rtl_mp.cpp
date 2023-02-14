@@ -50,9 +50,10 @@ MacroPlacer2::~MacroPlacer2() = default;
 void MacroPlacer2::init(sta::dbNetwork* network,
                         odb::dbDatabase* db,
                         sta::dbSta* sta,
-                        utl::Logger* logger)
+                        utl::Logger* logger,
+                        par::PartitionMgr* tritonpart)
 {
-  hier_rtlmp_ = std::make_unique<HierRTLMP>(network, db, sta, logger);
+  hier_rtlmp_ = std::make_unique<HierRTLMP>(network, db, sta, logger, tritonpart);
 }
 
 bool MacroPlacer2::place(const int max_num_macro,
