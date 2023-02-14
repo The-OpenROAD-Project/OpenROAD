@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019-2023, Nefelus Inc, Google LLC
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,45 +30,61 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "rcx/ext2dBox.h"
+#define BOOST_TEST_MODULE parse
 
-#include <utility>
+#ifdef HAS_BOOST_UNIT_TEST_LIBRARY
+// Shared library version
+#define BOOST_TEST_DYN_LINK
+#include <boost/test/unit_test.hpp>
+#else
+// Header only version
+#include <boost/test/included/unit_test.hpp>
+#endif
 
-namespace rcx {
+#include "odb/parse.h"
+#include "utl/CFileUtils.h"
+#include "utl/Logger.h"
+#include "utl/ScopedTemporaryFile.h"
 
-ext2dBox::ext2dBox(std::array<int, 2> ll,
-                   std::array<int, 2> ur,
-                   unsigned int met,
-                   unsigned int id,
-                   unsigned int map,
-                   bool dir)
-    : _ll(ll), _ur(ur), _met(met), _id(id), _map(map), _dir(dir)
+namespace odb {
+
+// Note: this is an undefined symbol when we depend on the odb library alone,
+// so we populate it with a dummy implementation.
+int notice(int code, const char* msg, ...)
 {
+  abort();
 }
 
-unsigned int ext2dBox::length() const
+BOOST_AUTO_TEST_CASE(parser_init_and_parse_line_with_integers)
 {
-  return _ur[_dir] - _ll[_dir];
+  Ath__parser parser;
+
+  BOOST_TEST(parser.getLineNum() == 0);
+
+  utl::Logger logger;
+  utl::ScopedTemporaryFile scoped_temp_file(&logger);
+  const std::string kContents = "1 2 3 4";
+  boost::span<const uint8_t> contents(
+      reinterpret_cast<const uint8_t*>(kContents.data()), kContents.size());
+  utl::WriteAll(scoped_temp_file.file(), contents, &logger);
+  fseek(scoped_temp_file.file(), SEEK_SET, 0);
+
+  parser.setInputFP(scoped_temp_file.file());
+  BOOST_TEST(parser.readLineAndBreak() == 4);
+
+  BOOST_TEST(parser.get(0) == "1");
+  BOOST_TEST(parser.get(1) == "2");
+  BOOST_TEST(parser.get(2) == "3");
+  BOOST_TEST(parser.get(3) == "4");
+
+  BOOST_TEST(parser.getInt(0) == 1);
+  BOOST_TEST(parser.getInt(1) == 2);
+  BOOST_TEST(parser.getInt(2) == 3);
+  BOOST_TEST(parser.getInt(3) == 4);
+
+  // If we don't reset this we get an error as it thinks it owns the `FILE*`
+  // and can fclose it.
+  parser.setInputFP(nullptr);
 }
 
-unsigned int ext2dBox::width() const
-{
-  return _ur[!_dir] - _ll[!_dir];
-}
-
-int ext2dBox::loX() const
-{
-  return _ll[0];
-}
-
-int ext2dBox::loY() const
-{
-  return _ll[1];
-}
-
-unsigned int ext2dBox::id() const
-{
-  return _id;
-}
-
-}  // namespace rcx
+}  // namespace odb

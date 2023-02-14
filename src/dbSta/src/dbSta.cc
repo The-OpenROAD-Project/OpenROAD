@@ -469,7 +469,7 @@ dbStaReport::printString(const char* buffer, size_t length)
   if (!buf.empty()) {
     // Trim trailing \r\n.
     buf.erase(buf.find_last_not_of("\r\n") + 1);
-    logger_->report(buf.c_str());
+    logger_->report("{}", buf.c_str());
   }
 
   // if gui enabled, keep tcl_buffer_ until a newline appears

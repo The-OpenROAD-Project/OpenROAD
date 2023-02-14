@@ -1,4 +1,5 @@
 record_tests {
+  bus_route
   clock_route
   clock_route_alpha
   clock_route_error1
@@ -25,6 +26,7 @@ record_tests {
   ndr_2w_3s
   no_tracks
   obs_out_of_die
+  overlapping_edges
   pd1
   pd2
   pd3

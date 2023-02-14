@@ -1127,8 +1127,7 @@ void FlexDRWorker::modAdjCutSpacingCost_fixedObj(const frDesign* design,
               hasViol = true;
             }
           } else if (con->isArea()) {
-            auto currArea = max(box.maxDXDY() * box.minDXDY(),
-                                tmpBx.maxDXDY() * tmpBx.minDXDY());
+            auto currArea = max(box.area(), tmpBx.area());
             if (currArea >= con->getCutArea()
                 && currDistSquare < reqDistSquare) {
               hasViol = true;
@@ -3211,7 +3210,7 @@ frCoord FlexDRWorker::getHalfViaEncArea(frMIdx z,
     box = via.getLayer1BBox();
   else
     box = via.getLayer2BBox();
-  return box.minDXDY() * box.maxDXDY() / 2;
+  return box.area() / 2;
 }
 // assumes patchWidth == defaultWidth
 // the cost checking part is sensitive to how cost is stored (1) planar + via;
