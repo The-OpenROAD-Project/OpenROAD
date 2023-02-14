@@ -1292,13 +1292,10 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   sortITerm itermCmp(block);
   std::sort(inst->_iterms.begin(), inst->_iterms.end(), itermCmp);
 
-  // Notification - payam 01/18/2006
+  // Notification
   for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
        ++cbitr)
     (*cbitr)->inDbInstSwapMasterAfter(this);
-
-  // notice(0, "dbSwap_END %s -> %s %s\n", old_master_->getConstName(),
-  // this->getMaster()->getConstName(), this->getConstName());
 
   return true;
 }

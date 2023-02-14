@@ -82,7 +82,6 @@ add_library(db
     dbUtil.cpp
     gs.cpp
     grids.cpp
-    dbLogger.cpp 
     tmg_conn.cpp
     tmg_conn_g.cpp
     tmg_conn_s.cpp

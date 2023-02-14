@@ -93,7 +93,8 @@ uint extMain::genExtRules(const char* rulesFileName, int pattern)
   extMetRCTable* rcModel = extRulesModel->initCapTables(layerCnt, widthCnt);
 
   AthPool<extDistRC>* rcPool = rcModel->getRCPool();
-  extMeasure m;
+  extMeasure m(logger_);
+
   m._diagModel = 1;
 
   char buff[2000];

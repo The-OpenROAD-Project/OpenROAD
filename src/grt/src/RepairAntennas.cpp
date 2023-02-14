@@ -180,7 +180,7 @@ odb::dbWire* RepairAntennas::makeNetWire(
     }
     wire_encoder.end();
 
-    odb::orderWires(db_net, false);
+    odb::orderWires(logger_, db_net);
     return wire;
   } else {
     logger_->error(

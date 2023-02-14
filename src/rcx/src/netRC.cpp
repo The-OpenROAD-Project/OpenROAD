@@ -1778,8 +1778,7 @@ uint extMain::makeBlockRCsegs(const char* netNames,
   initDgContextArray();
   _extRun++;
 
-  extMeasure m;
-  m.setLogger(logger_);
+  extMeasure m(logger_);
 
   _seqPool = m._seqPool;
   _useDbSdb = false;
@@ -2285,8 +2284,6 @@ uint extMain::readSPEF(char* filename,
       logger_->warn(
           RCX, 5, "Can't open SPEF file {} to write.", capNodeMapFile);
   }
-  if (log)
-    AthResourceLog("start readSpef", 0);
   std::vector<dbNet*> inets;
 
   if (_block != NULL)
@@ -2323,9 +2320,6 @@ uint extMain::readSPEF(char* filename,
 
   if (_spef->_capNodeFile)
     fclose(_spef->_capNodeFile);
-
-  if (log)
-    AthResourceLog("finish readSpef", 0);
 
   if (diff || cnt == 0) {
     delete _spef;

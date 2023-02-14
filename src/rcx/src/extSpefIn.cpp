@@ -1891,8 +1891,6 @@ uint extSpef::readDNet(uint debug)
   while (_parser->parseNextLine() > 0) {
     if (strcmp("*CONN", _parser->get(0)) == 0) {
       while (_parser->parseNextLine() > 0) {
-        //_parser->printWords(stdout);
-
         if (_readingNodeCoords == C_ON && !_diff) {
           cpos = 0;
           if (strcmp("*N", _parser->get(0)) == 0)
@@ -1930,8 +1928,6 @@ uint extSpef::readDNet(uint debug)
     }
     if (strcmp("*CAP", _parser->get(0)) == 0) {
       while (_parser->parseNextLine() > 0) {
-        //_parser->printWords(stdout);
-
         if (strcmp("*RES", _parser->get(0)) == 0) {
           break;
         }
@@ -2866,8 +2862,7 @@ bool extSpef::readHeaderInfo(uint debug, bool skipFlag)
         _cap_unit = 1.0 * _parser->getInt(1);
     } else if (_parser->isKeyword(0, "*L_UNIT")) {
       continue;
-    } else if (debug > 0)
-      _parser->printWords(stdout);
+    }
   }
   return false;
 }

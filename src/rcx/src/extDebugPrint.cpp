@@ -61,10 +61,8 @@ using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::dbWirePathShape;
 using odb::gs;
-using odb::notice;
 using odb::Rect;
 using odb::SEQ;
-using odb::warning;
 
 void extMeasure::printTraceNetInfo(const char* msg, uint netId, int rsegId)
 {

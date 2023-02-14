@@ -34,8 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dbLogger.h"
-
 namespace odb {
 
 FILE* ATH__openFile(const char* name, const char* type)

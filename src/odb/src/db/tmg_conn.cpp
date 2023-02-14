@@ -36,11 +36,13 @@
 #include <stdlib.h>
 
 #include "db.h"
-#include "dbLogger.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
+#include "utl/Logger.h"
 
 namespace odb {
+
+using utl::ODB;
 
 tmg_rcpt::tmg_rcpt()
     : _x(0),
@@ -105,11 +107,9 @@ static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
     *iterm = *iterms.begin();
     return;
   }
-  notice(0, "no terminals for net %d %s\n", net->getId(), net->getConstName());
-  return;
 }
 
-tmg_conn::tmg_conn()
+tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
 {
   _rcV.reserve(1024);
   _termNmax = 1024;
@@ -128,13 +128,11 @@ tmg_conn::tmg_conn()
   _first_for_clear = NULL;
   _preserveSWire = false;
   _swireNetCnt = 0;
-  _gVerbose = false;
 }
 
 int tmg_conn::ptDist(int fr, int to)
 {
-  int dist = abs(_ptV[fr]._x - _ptV[to]._x) + abs(_ptV[fr]._y - _ptV[to]._y);
-  return dist;
+  return abs(_ptV[fr]._x - _ptV[to]._x) + abs(_ptV[fr]._y - _ptV[to]._y);
 }
 
 tmg_rcpt* tmg_conn::allocPt()
@@ -148,7 +146,6 @@ void tmg_conn::addRc(dbShape& s, int ifr, int ito)
   tmg_rc x;
   x._ifr = ifr;
   x._ito = ito;
-  // x._shape = s;
   x._shape._rect.reset(s.xMin(), s.yMin(), s.xMax(), s.yMax());
   x._shape._layer = s.getTechLayer();
   x._shape._tech_via = s.getTechVia();
@@ -164,11 +161,9 @@ void tmg_conn::addRc(dbShape& s, int ifr, int ito)
     x._vert = 1;
     x._width = s.xMax() - s.xMin();
   } else if (s.xMax() - s.xMin() == s.yMax() - s.yMin()) {
-    // notice(0, "an isolated square patch of metal\n");
     x._vert = 0;
     x._width = s.xMax() - s.xMin();
   } else {
-    notice(0, "warning, nonsquare shape with same points\n");
     x._vert = 0;
     x._width = 0;
   }
@@ -204,7 +199,6 @@ tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
   dbTechLayer* layer = _ptV[ifr]._layer;
   if (!layer || layer != _ptV[ito]._layer
       || (_ptV[ifr]._x != _ptV[ito]._x && _ptV[ifr]._y != _ptV[ito]._y)) {
-    notice(0, "bad patch, net %d\n", _net->getId());
     return NULL;
   }
   tmg_rc x;
@@ -297,22 +291,8 @@ void tmg_conn::addShort(int i0, int i1)
     _ptV[i1]._jct = 1;
 }
 
-static void print_shape(tmg_rc_sh& s)
-{
-  if (s.getTechLayer())
-    notice(0, "%s", s.getTechLayer()->getName().c_str());
-  else if (s.getTechVia())
-    notice(0, "%s", s.getTechVia()->getName().c_str());
-  else if (s.getVia())
-    notice(0, "%s", s.getVia()->getName().c_str());
-  else
-    notice(0, " ");
-  notice(0, " (%d %d) (%d %d)", s.xMin(), s.yMin(), s.xMax(), s.yMax());
-}
-
 void tmg_conn::loadNet(dbNet* net)
 {
-  // notice(0, "tmg_conn::loadNet(%s)\n",net->getName().c_str());
   _net = net;
   _rcV.clear();
   _ptV.clear();
@@ -320,19 +300,11 @@ void tmg_conn::loadNet(dbNet* net)
   _shortN = 0;
   _first_for_clear = NULL;
 
-  dbSet<dbITerm> iterms = net->getITerms();
-  dbSet<dbITerm>::iterator iterm_itr;
-  dbITerm* iterm;
-  for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-    iterm = *iterm_itr;
+  for (dbITerm* iterm : net->getITerms()) {
     addITerm(iterm);
   }
 
-  dbSet<dbBTerm> bterms = net->getBTerms();
-  dbSet<dbBTerm>::iterator bterm_itr;
-  dbBTerm* bterm;
-  for (bterm_itr = bterms.begin(); bterm_itr != bterms.end(); ++bterm_itr) {
-    bterm = *bterm_itr;
+  for (dbBTerm* bterm : net->getBTerms()) {
     addBTerm(bterm);
   }
 }
@@ -345,31 +317,21 @@ void tmg_conn::loadSWire(dbNet* net)
     return;
 
   _hasSWire = true;
-  dbSet<dbSWire>::iterator its;
-  dbSWire* sw;
-  dbSet<dbSBox> sboxes;
-  dbSet<dbSBox>::iterator itb;
-  dbSBox* sbox;
   dbShape shape;
   int x1, y1, x2, y2;
   dbTechLayer* layer1 = NULL;
   dbTechLayer* layer2 = NULL;
-  dbTechVia* tech_via;
-  dbVia* via;
   tmg_rcpt* pt;
-  for (its = swires.begin(); its != swires.end(); ++its) {
-    sw = *its;
-    sboxes = sw->getWires();
-    for (itb = sboxes.begin(); itb != sboxes.end(); ++itb) {
-      sbox = *itb;
+  for (dbSWire* sw : swires) {
+    for (dbSBox* sbox : sw->getWires()) {
       Rect rect = sbox->getBox();
       if (sbox->isVia()) {
         x1 = (rect.xMin() + rect.xMax()) / 2;
         x2 = x1;
         y1 = (rect.yMin() + rect.yMax()) / 2;
         y2 = y1;
-        tech_via = sbox->getTechVia();
-        via = sbox->getBlockVia();
+        dbTechVia* tech_via = sbox->getTechVia();
+        dbVia* via = sbox->getBlockVia();
         if (tech_via) {
           layer1 = tech_via->getTopLayer();
           layer2 = tech_via->getBottomLayer();
@@ -419,20 +381,19 @@ void tmg_conn::loadWire(dbWire* wire)
   dbWirePathItr pitr;
   dbWirePath path;
   dbWirePathShape pathShape;
-  tmg_rcpt* pt;
   _ptV.clear();
   pitr.begin(wire);
   while (pitr.getNextPath(path)) {
     if (_ptV.empty() || path.layer != _ptV.back()._layer
         || path.point.getX() != _ptV.back()._x
         || path.point.getY() != _ptV.back()._y) {
-      pt = allocPt();
+      auto pt = allocPt();
       pt->_x = path.point.getX();
       pt->_y = path.point.getY();
       pt->_layer = path.layer;
     }
     while (pitr.getNextShape(pathShape)) {
-      pt = allocPt();
+      auto pt = allocPt();
       pt->_x = pathShape.point.getX();
       pt->_y = pathShape.point.getY();
       pt->_layer = pathShape.layer;
@@ -444,8 +405,7 @@ void tmg_conn::loadWire(dbWire* wire)
   loadSWire(wire->getNet());
 }
 
-void tmg_conn::splitBySj(bool verbose,
-                         int j,
+void tmg_conn::splitBySj(int j,
                          tmg_rc_sh* sj,
                          int rt,
                          int sjxMin,
@@ -480,26 +440,12 @@ void tmg_conn::splitBySj(bool verbose,
         if (sk->yMax() - sjyMax < _rcV[k]._width)
           continue;
         _vertSplitCnt++;
-        if (verbose || _gVerbose)
-          notice(0,
-                 "split ( %d %d %d %d %s %d )\n",
-                 nxmin,
-                 nymin,
-                 nxmax,
-                 nymax,
-                 tlayer->getConstName(),
-                 tlayer->getRoutingLevel());
+        ;
         if (_ptV[_rcV[k]._ifr]._y > _ptV[_rcV[k]._ito]._y) {
           _rcV[k]._shape.setYmin(_ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2);
-          if (verbose || _gVerbose)
-            notice(
-                0, "      ( %d %d %d %d )\n", nxmin, sk->yMin(), nxmax, nymax);
           nymax = _ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2;
         } else {
           _rcV[k]._shape.setYmax(_ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2);
-          if (verbose || _gVerbose)
-            notice(
-                0, "      ( %d %d %d %d )\n", nxmin, nymin, nxmax, sk->yMax());
           nymin = _ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2;
         }
         x = _ptV[_rcV[k]._ifr]._x;
@@ -510,28 +456,11 @@ void tmg_conn::splitBySj(bool verbose,
         if (sk->xMax() - sjxMax < _rcV[k]._width)
           continue;
         _horzSplitCnt++;
-        if (verbose || _gVerbose)
-          notice(0,
-                 "split ( %d %d %d %d %s %d )\n",
-                 nxmin,
-                 nymin,
-                 nxmax,
-                 nymax,
-                 tlayer->getConstName(),
-                 tlayer->getRoutingLevel());
         if (_ptV[_rcV[k]._ifr]._x > _ptV[_rcV[k]._ito]._x) {
           _rcV[k]._shape.setXmin(_ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2);
-          // removing, dec12,06 wfs
-          // _search->setXmin(_ptV[_rcV[j]._ifr]._x - _rcV[k]._width/2);
-          if (verbose || _gVerbose)
-            notice(
-                0, "      ( %d %d %d %d )\n", sk->xMin(), nymin, nxmax, nymax);
           nxmax = _ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2;
         } else {
           _rcV[k]._shape.setXmax(_ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2);
-          if (verbose || _gVerbose)
-            notice(
-                0, "      ( %d %d %d %d )\n", nxmin, nymin, sk->xMax(), nymax);
           nxmin = _ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2;
         }
         x = _ptV[_rcV[j]._ifr]._x;
@@ -561,18 +490,10 @@ void tmg_conn::splitBySj(bool verbose,
             nxmax,
             nymax);
       _search->addShape(rt, nxmin, nymin, nxmax, nymax, 0, _rcV.size() - 1);
-      if (verbose || _gVerbose)
-        notice(0, "      ( %d %d %d %d )\n", nxmin, nymin, nxmax, nymax);
-      //_search->resetSorted();
     }
 }
 
-void tmg_conn::set_gv(bool verbose)
-{
-  _gVerbose = verbose;
-}
-
-void tmg_conn::splitTtop(bool verbose)
+void tmg_conn::splitTtop()
 {
   // split top of T shapes (for GALET created def file)
   dbTechLayer *layb, *layt;
@@ -580,7 +501,6 @@ void tmg_conn::splitTtop(bool verbose)
   int via_x, via_y;
   dbSet<dbBox> boxes;
 
-  int beginSplitCnt = _vertSplitCnt + _horzSplitCnt;
   for (unsigned long j = 0; j < _rcV.size(); j++) {
     tmg_rc_sh* sj = &(_rcV[j]._shape);
     if (sj->isVia()) {
@@ -606,8 +526,7 @@ void tmg_conn::splitTtop(bool verbose)
       for (bitr = boxes.begin(); bitr != boxes.end(); ++bitr) {
         b = *bitr;
         if (b->getTechLayer() == layb) {
-          splitBySj(verbose,
-                    j,
+          splitBySj(j,
                     sj,
                     rt_b,
                     via_x + b->xMin(),
@@ -615,8 +534,7 @@ void tmg_conn::splitTtop(bool verbose)
                     via_x + b->xMax(),
                     via_y + b->yMax());
         } else if (b->getTechLayer() == layt) {
-          splitBySj(verbose,
-                    j,
+          splitBySj(j,
                     sj,
                     rt_t,
                     via_x + b->xMin(),
@@ -627,17 +545,9 @@ void tmg_conn::splitTtop(bool verbose)
       }
     } else {
       rt = sj->getTechLayer()->getRoutingLevel();
-      splitBySj(
-          verbose, j, sj, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
+      splitBySj(j, sj, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
     }
   }
-  int sCnt = _vertSplitCnt + _horzSplitCnt - beginSplitCnt;
-  if (verbose || (_gVerbose && sCnt != 0))
-    notice(0,
-           "Split %d T shapes of net %d %s\n\n",
-           sCnt,
-           _net->getId(),
-           _net->getConstName());
 }
 
 void tmg_conn::setSring()
@@ -649,7 +559,6 @@ void tmg_conn::setSring()
       tmg_rcpt* pto = &_ptV[_shortV[ii]._i1];
       tmg_rcpt* x;
       if (pfr == pto) {
-        notice(0, "WHAT?\n");
         continue;
       }
       if (pfr->_sring && !pto->_sring) {
@@ -734,9 +643,8 @@ void tmg_conn::detachTilePins()
               continue;
           }
           if (recti.contains(rectb))
-            error(0,
-                  "Internal Error: tmg_conn::detachTilePins: tilepin inside "
-                  "iterm. should not happen.\n");
+            logger_->error(
+                ODB, 388, "tmg_conn::detachTilePins: tilepin inside iterm.");
 
           if (!recti.overlaps(rectb))
             continue;
@@ -777,10 +685,8 @@ void tmg_conn::getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect)
   return;
 }
 
-void tmg_conn::findConnections(bool verbose)
+void tmg_conn::findConnections()
 {
-  // void tmg_conn_search::addShape(int lyr,int xlo,int ylo,int xhi,int yhi,int
-  // id)
   if (_ptV.empty())
     return;
   if (!_search)
@@ -808,7 +714,6 @@ void tmg_conn::findConnections(bool verbose)
 
   // put wires in search
   for (unsigned long j = 0; j < _rcV.size(); j++) {
-    // dbShape *s = &(_rcV[j]._shape);
     tmg_rc_sh* s = &(_rcV[j]._shape);
     if (s->isVia()) {
       via_x = _ptV[_rcV[j]._ifr]._x;
@@ -827,7 +732,6 @@ void tmg_conn::findConnections(bool verbose)
         layt = vv->getTopLayer();
         boxes = vv->getBoxes();
       }
-      // if (!layb || !layt) continue;
       rt_b = layb->getRoutingLevel();
       rt_t = layt->getRoutingLevel();
       dbSet<dbBox>::iterator bitr;
@@ -860,11 +764,8 @@ void tmg_conn::findConnections(bool verbose)
     }
   }
 
-  //_search->sort();
-  //_search->printShape(_net, 2, "shapeBfSplit.1");
   if (_rcV.size() < 10000)
-    splitTtop(verbose);
-  //_search->printShape(_net, 2, "shapeAfSplit.1");
+    splitTtop();
 
   // find self-intersections of wires
   for (int j = 0; j < (int) _rcV.size() - 1; j++) {
@@ -887,7 +788,6 @@ void tmg_conn::findConnections(bool verbose)
         layt = vv->getTopLayer();
         boxes = vv->getBoxes();
       }
-      // if (!layb || !layt) continue;
       rt_b = layb->getRoutingLevel();
       rt_t = layt->getRoutingLevel();
       dbSet<dbBox>::iterator bitr;
@@ -936,12 +836,7 @@ void tmg_conn::findConnections(bool verbose)
     }
   }
 
-  int wloop;
-  removeWireLoops(&wloop);
-  if (wloop) {
-    notice(0, "wire loop in net %d\n", _net->getId());
-    // printConnections();
-  }
+  removeWireLoops();
 
   // detach tilPins from iterms
   detachTilePins();
@@ -975,9 +870,6 @@ void tmg_conn::findConnections(bool verbose)
                 continue;  // skipping V01
               Rect rect = box->getBox();
               transform.apply(rect);
-              // notice(0, "iterm %s (%d %d) (%d
-              // %d)\n",box->getTechVia()->getName().c_str(),
-              //  rect.xMin(),rect.yMin(),rect.xMax(),rect.yMax());
               _search->searchStart(
                   rt_t, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), 2);
               klast = -1;
@@ -1023,9 +915,6 @@ void tmg_conn::findConnections(bool verbose)
               rt = box->getTechLayer()->getRoutingLevel();
               Rect rect = box->getBox();
               transform.apply(rect);
-              // notice(0, "iterm %s (%d %d) (%d
-              // %d)\n",box->getTechLayer()->getName().c_str(),
-              //  rect.xMin(),rect.yMin(),rect.xMax(),rect.yMax());
               _search->searchStart(
                   rt, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), 2);
               klast = -1;
@@ -1047,23 +936,12 @@ void tmg_conn::findConnections(bool verbose)
                 }
             }
           }
-#if 0
-        // this identifies some terminal loops 
-        if (_csN > 3) {
-          notice(0, "more than 3 wire shapes connecting to term %s/%s\n",
-              x->_iterm->getInst()->getName().c_str(),
-              x->_iterm->getMTerm()->getName().c_str());
-          notice(0, " in net %d %s\n",_net->getId(),_net->getName().c_str());
-        }
-#endif
       }  // mpins
     } else {
       // bterm
-      // box = x->_bterm->getPin();
       dbShape pin;
       if (x->_bterm->getFirstPin(pin)) {  // TWG: added bpins
         if (pin.isVia()) {
-          notice(0, "bterm via shape\n");
           // TODO
         } else {
           rt = pin.getTechLayer()->getRoutingLevel();
@@ -1307,7 +1185,6 @@ void tmg_conn::connectTerm(int j, bool soft)
         if (c2pinpt) {
           for (x = pc->_sring; x != pc; x = x->_sring) {
             if (!(x->_pinpt || x->_c2pinpt)) {
-              // notice(0,"add x %d\n",x-_ptV);
               x->_next_for_clear = _first_for_clear;
               _first_for_clear = x;
             }
@@ -1323,7 +1200,6 @@ void tmg_conn::connectTerm(int j, bool soft)
       tmg_rcpt* pto = _ptV + _shortV[ii]._i1;
       if (pfr->_c2pinpt) {
         if (!(pto->_pinpt || pto->_c2pinpt)) {
-          // notice(0,"add pto %d\n",pto-_ptV);
           pto->_next_for_clear = _first_for_clear;
           _first_for_clear = pto;
         }
@@ -1331,7 +1207,6 @@ void tmg_conn::connectTerm(int j, bool soft)
       }
       if (pto->_c2pinpt) {
         if (!(pfr->_pinpt || pfr->_c2pinpt)) {
-          // notice(0,"add pfr %d\n",pfr-_ptV);
           pfr->_next_for_clear = _first_for_clear;
           _first_for_clear = pfr;
         }
@@ -1359,27 +1234,6 @@ void tmg_conn::connectTerm(int j, bool soft)
       pfr->_c2pinpt = 1;
     }
   }
-#if 0
-  notice(0,"xterm %d",j);
-  if (x->_iterm) notice(0," I%d",x->_iterm->getInst()->getId());
-  notice(0,"\n");
-  int p[64], pN=0, m;
-  for (ii=0;ii<_csN;ii++) {
-    int k = (*_csV)[ii].k;
-    int bfr = _rcV[k]._ifr;
-    int bto = _rcV[k]._ito;
-    for (m=0;m<pN;m++) if (bfr==p[m]) break;
-    if (m==pN) p[pN++]= bfr;
-    for (m=0;m<pN;m++) if (bto==p[m]) break;
-    if (m==pN) p[pN++]= bto;
-  }
-  for (m=0;m<pN;m++) {
-    notice(0,"ptV[%d]",p[m]);
-    if (_ptV[p[m]]._pinpt) notice(0," pinpt");
-    if (_ptV[p[m]]._c2pinpt) notice(0," c2pinpt");
-    notice(0,"\n");
-  }
-#endif
 
   for (ii = 0; ii < _csN; ii++) {
     int k = (*_csV)[ii].k;
@@ -1411,10 +1265,13 @@ void tmg_conn::connectTerm(int j, bool soft)
         pt->_tindex = -1;
       }
       if (pt->_tindex >= 0) {
-        notice(0, "error, net %d, shorts to another term\n", _net->getId());
-        notice(0, "wire point (%d %d)\n", pt->_x, pt->_y);
-        notice(0, " %s\n\n", _net->getName().c_str());
-        error(0, "order_wires failed\n");
+        logger_->error(ODB,
+                       390,
+                       "order_wires failed: net {}, shorts to another term at "
+                       "wire point ({} {})",
+                       _net->getName(),
+                       pt->_x,
+                       pt->_y);
       }
       pt->_tindex = j;
       addPointToTerm(pt, x);
@@ -1437,10 +1294,13 @@ void tmg_conn::connectTerm(int j, bool soft)
         pt->_tindex = -1;
       }
       if (pt->_tindex >= 0) {
-        notice(0, "error, net %d, shorts to another term\n", _net->getId());
-        notice(0, "wire point (%d %d)\n", pt->_x, pt->_y);
-        notice(0, " %s\n\n", _net->getName().c_str());
-        error(0, "order_wires failed\n");
+        logger_->error(ODB,
+                       391,
+                       "order_wires failed: net {}, shorts to another term at "
+                       "wire point ({} {})",
+                       _net->getName(),
+                       pt->_x,
+                       pt->_y);
       }
       pt->_tindex = j;
       addPointToTerm(pt, x);
@@ -1469,19 +1329,18 @@ void tmg_conn::connectTerm(int j, bool soft)
         pt->_tindex = -1;
       }
       if (pt->_tindex >= 0) {
-        notice(0, "error, net %d, shorts to another term\n", _net->getId());
-        notice(0, "wire point (%d %d)\n", pt->_x, pt->_y);
-        notice(0, " %s\n\n", _net->getName().c_str());
-        error(0, "order_wires failed\n");
+        logger_->error(ODB,
+                       392,
+                       "order_wires failed: net {}, shorts to another term at "
+                       "wire point ({} {})",
+                       _net->getName(),
+                       pt->_x,
+                       pt->_y);
       }
       pt->_tindex = j;
       addPointToTerm(pt, x);
       pt->_t_alt = pother;
     }
-    //  else if (soft) {
-    //   if (!(_ptV[bfr]._c2pinpt || _ptV[bto]._c2pinpt))
-    //     connectTermSoft(j,(*_csV)[ii].rtlev,(*_csV)[ii].rect,(*_csV)[ii].k);
-    // }
   }
   for (pc = _first_for_clear; pc; pc = pc->_next_for_clear) {
     pc->_pinpt = 0;
@@ -1526,7 +1385,6 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
   tmg_rcpt* pt = &_ptV[choose_bfr ? bfr : bto];
   tmg_rcpt* pother = &_ptV[choose_bfr ? bto : bfr];
   if (pt->_tindex == j) {
-    // notice(0, "already connected\n");
     return;
   }
 
@@ -1563,83 +1421,13 @@ void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
   }
 
   if (pt->_tindex >= 0) {
-    // notice(0, "warning, net %d, shorts to another term\n",_net->getId());
-    // notice(0, "intersection region (%d %d) (%d %d)\n",xlo,ylo,xhi,yhi);
-    // notice(0, "wire point (%d %d)\n",pt->_x,pt->_y);
-    // notice(0, " %s\n\n",_net->getName().c_str());
     return;  // skip soft if conflicts with hard
   }
-  // notice(0, "net %d %s, term %s/%s\n",_net->getId(),_net->getName().c_str(),
-  //  x->_iterm->getInst()->getName().c_str(),
-  //  x->_iterm->getMTerm()->getName().c_str());
-  // notice(0, "intersection region (%d %d) (%d %d)\n",xlo,ylo,xhi,yhi);
-  // notice(0, "wire point (%d %d)\n",pt->_x,pt->_y);
-  // notice(0, "adding point %d to term %d\n",pt-_ptV,j);
   pt->_tindex = j;
   addPointToTerm(pt, x);
   pt->_fre = 0;
   if (has_alt)
     pt->_t_alt = pother;
-}
-
-void tmg_conn::printConnections()
-{
-  // called after findConnections
-  int j;
-  notice(0,
-         "printConnections net %d  %s\n",
-         _net->getId(),
-         _net->getName().c_str());
-
-  int k = 0;
-  for (j = 0; j < _ptV.size(); j++) {
-    if (_rcV[k]._ifr == j - 1 && _rcV[k]._ito == j) {
-      notice(0, "  ");
-      print_shape(_rcV[k]._shape);
-      notice(0, "\n");
-      k++;
-    } else
-      notice(0, "\n");
-    notice(0,
-           "ptV[%d] %s (%d %d)\n",
-           j,
-           _ptV[j]._layer->getName().c_str(),
-           _ptV[j]._x,
-           _ptV[j]._y);
-  }
-  notice(0, "\n");
-
-  int start = 1;
-  for (unsigned long j = 0; j < _rcV.size(); j++) {
-    if (start) {
-      start = 0;
-      notice(0, "path %d", _rcV[j]._ifr);
-    } else if (_ptV[_rcV[j]._ifr]._jct)
-      notice(0, " %d", _rcV[j]._ifr);
-    if (j == _rcV.size() - 1 || _rcV[j]._ito != _rcV[j + 1]._ifr) {
-      notice(0, " %d\n", _rcV[j]._ito);
-      start = 1;
-    }
-  }
-  for (j = 0; j < _shortN; j++) {
-    if (_shortV[j]._skip)
-      notice(0, "skip ");
-    // if (_shortV[j]._skip) continue;
-    notice(0, "short %d %d\n", _shortV[j]._i0, _shortV[j]._i1);
-  }
-}
-
-static void print_rcterm(tmg_rcterm* x)
-{
-  dbITerm* iterm = x->_iterm;
-  if (iterm)
-    notice(0,
-           " iterm %s/%s\n",
-           iterm->getInst()->getName().c_str(),
-           iterm->getMTerm()->getName().c_str());
-  dbBTerm* bterm = x->_bterm;
-  if (bterm)
-    notice(0, " bterm %s\n", x->_bterm->getName().c_str());
 }
 
 int tmg_conn::getStartNode()
@@ -1664,19 +1452,13 @@ int tmg_conn::getStartNode()
   return 0;
 }
 
-void tmg_conn::analyzeNet(dbNet* net,
-                          bool force,
-                          bool verbose,
-                          bool no_convert,
-                          int cutLength,
-                          int maxLength,
-                          bool no_patch)
+void tmg_conn::analyzeNet(dbNet* net)
 {
-  _max_length = 1000 * maxLength;
-  _cut_length = 1000 * cutLength;
-  if (!force && net->isWireOrdered()) {
+  _max_length = 0;
+  _cut_length = 0;
+  if (net->isWireOrdered()) {
     _net = net;
-    checkConnOrdered(verbose);
+    checkConnOrdered();
   } else {
     loadNet(net);
     if (net->getWire())
@@ -1687,10 +1469,8 @@ void tmg_conn::analyzeNet(dbNet* net,
       net->setWireOrdered(false);
       return;
     }
-    findConnections(verbose);
-    if (!no_convert && !no_patch)
-      adjustShapes();
-    bool noConvert = no_convert;
+    findConnections();
+    bool noConvert = false;
     if (_hasSWire) {
       if (_preserveSWire) {
         net->setDoNotTouch(true);
@@ -1700,42 +1480,10 @@ void tmg_conn::analyzeNet(dbNet* net,
         net->destroySWires();
     }
     relocateShorts();
-    treeReorder(verbose, noConvert);
+    treeReorder(noConvert);
   }
   net->setDisconnected(!_connected);
-  net->setWireOrdered(true);  // 090606
-  if (!_connected) {
-    if (verbose) {
-      notice(0,
-             "disconnected net %d  %s\n",
-             _net->getId(),
-             _net->getName().c_str());
-      printDisconnect();  // this is not complete
-    }
-  }
-}
-
-void tmg_conn::analyzeLoadedNet(bool verbose, bool no_convert)
-{
-  if (_ptV.empty()) {
-    // ignoring this net
-    _net->setDisconnected(false);
-    _net->setWireOrdered(false);
-    return;
-  }
-  findConnections(verbose);
-  if (!no_convert)
-    adjustShapes();
-  treeReorder(verbose, no_convert);
-  _net->setDisconnected(!_connected);
-  _net->setWireOrdered(
-      _connected);  // this will change,
-                    // we should wire-order the disconnected nets
-  if (!_connected && verbose) {
-    notice(
-        0, "disconnected net %d  %s\n", _net->getId(), _net->getName().c_str());
-    printDisconnect();  // this is not complete
-  }
+  net->setWireOrdered(true);
 }
 
 bool tmg_conn::checkConnected()
@@ -1827,7 +1575,7 @@ bool tmg_conn::checkConnected()
   return con;  // all terms connected, may be floating pieces of wire
 }
 
-void tmg_conn::treeReorder(bool verbose, bool no_convert)
+void tmg_conn::treeReorder(bool no_convert)
 {
   _connected = true;
   _need_short_wire_id = 0;
@@ -1848,27 +1596,8 @@ void tmg_conn::treeReorder(bool verbose, bool no_convert)
   for (j = 0; j < _termN; j++) {
     x = _termV + j;
     x->_first_pt = NULL;
-    if (verbose) {
-      notice(0, "j=%d pt=%ld ", j, x->_pt ? (x->_pt - &_ptV[0]) : 0);
-      print_rcterm(x);
-    }
     if (x->_pt == NULL) {
       _connected = false;
-      if (x->_iterm) {
-        if (verbose)
-          notice(0,
-                 "unconnected iterm I%d(%s)/%s in net %d\n",
-                 x->_iterm->getInst()->getId(),
-                 x->_iterm->getInst()->getMaster()->getConstName(),
-                 x->_iterm->getMTerm()->getConstName(),
-                 _net->getId());
-      } else {
-        if (verbose)
-          notice(0,
-                 "unconnected bterm %s in net %d\n",
-                 x->_bterm->getConstName(),
-                 _net->getId());
-      }
     }
   }
 
@@ -1894,13 +1623,8 @@ void tmg_conn::treeReorder(bool verbose, bool no_convert)
     tstackV[tstackN++] = x;
   dfsClear();
   if (!dfsStart(jstart)) {
-    warning(0, "cannot order %s\n", _net->getConstName());
+    logger_->warn(ODB, 395, "cannot order {}", _net->getConstName());
     return;
-  }
-  if (verbose) {
-    notice(0, "starting at %d\n", jstart);
-    if (x)
-      print_rcterm(x);
   }
   int last_term_index = 0;
   while (1) {
@@ -1918,16 +1642,6 @@ void tmg_conn::treeReorder(bool verbose, bool no_convert)
           // add potential short-from points to stack
           tstackV[tstackN++] = x;
         }
-      }
-      if (verbose) {
-        notice(0,
-               "%d-%d %s%s%s%s\n",
-               jfr,
-               jto,
-               is_short ? " short" : "",
-               is_loop ? " loop" : "",
-               x && x->_iterm ? " iterm" : "",
-               x && x->_bterm ? " bterm" : "");
       }
       if (!no_convert) {
         addToWire(jfr, jto, k, is_short, is_loop);
@@ -1957,11 +1671,6 @@ void tmg_conn::treeReorder(bool verbose, bool no_convert)
     if (pt) {
       tstack0--;
       _last_id = x->_first_pt->_dbwire_id;
-      if (verbose) {
-        notice(0, "net %d feedthru at ", _net->getId());
-        print_rcterm(x);
-        notice(0, "last_id = %d\n", _last_id);
-      }
     }
     if (!pt) {
       for (j = last_term_index; j < _termN; j++) {
@@ -1986,13 +1695,11 @@ void tmg_conn::treeReorder(bool verbose, bool no_convert)
     }
     jstart = pt - &_ptV[0];
     if (!dfsStart(jstart)) {
-      warning(0, "cannot order %s\n", _net->getConstName());
+      logger_->warn(ODB, 396, "cannot order {}", _net->getConstName());
       return;
     }
   }
 
-  if (0 && verbose)
-    printConnections();
   checkVisited();
   if (!no_convert) {
     _encoder.end();
@@ -2009,8 +1716,7 @@ int tmg_conn::getExtension(int ipt, tmg_rc* rc)
   else if (ipt == rc->_ito)
     pto = &_ptV[rc->_ifr];
   else {
-    notice(0, "error, addPoint(int,rc)\n");
-    exit(0);
+    logger_->error(ODB, 16, "problem in getExtension()");
   }
   if (p->_x < pto->_x) {
     ext = p->_x - rc->_shape.xMin();
@@ -2030,10 +1736,8 @@ int tmg_conn::addPoint(int ipt, tmg_rc* rc)
   tmg_rcpt* p = &_ptV[ipt];
   ext = getExtension(ipt, rc);
   if (ext == rc->_default_ext) {
-    // notice(0, "addPoint(%d, %d)\n",p->_x,p->_y);
     wire_id = _encoder.addPoint(p->_x, p->_y);
   } else {
-    // notice(0, "addPoint(%d, %d, %d)\n",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2119,10 +1823,8 @@ int tmg_conn::addPoint(int ifr, int ipt, tmg_rc* rc)
     }
   }
   if (ext == rc->_default_ext) {
-    // notice(0, "addPoint(%d, %d)\n",p->_x,p->_y);
     wire_id = _encoder.addPoint(p->_x, p->_y);
   } else {
-    // notice(0, "addPoint(%d, %d, %d)\n",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2136,7 +1838,6 @@ int tmg_conn::addPointIfExt(int ipt, tmg_rc* rc)
   tmg_rcpt* p = &_ptV[ipt];
   ext = getExtension(ipt, rc);
   if (ext != rc->_default_ext) {
-    // notice(0, "addPoint(%d, %d, %d)\n",p->_x,p->_y,ext);
     wire_id = _encoder.addPoint(p->_x, p->_y, ext);
   }
   return wire_id;
@@ -2144,7 +1845,6 @@ int tmg_conn::addPointIfExt(int ipt, tmg_rc* rc)
 
 void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
 {
-  int verbose = 0;
   tmg_rc* rc = (k >= 0) ? &_rcV[k] : nullptr;
   tmg_rcterm* x;
   int xfr, yfr, xto, yto;
@@ -2152,33 +1852,6 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   yfr = _ptV[fr]._y;
   xto = _ptV[to]._x;
   yto = _ptV[to]._y;
-  if (xfr != xto && yfr != yto && !is_short)
-    notice(0, "net %d: addToWire, trouble xy\n", _net->getId());
-  if (is_short && _last_id < 0)
-    notice(0, "net %d: addToWire, trouble, first is short\n", _net->getId());
-  if (verbose && is_short && (xfr != xto || yfr != yto)) {
-    notice(0, "net %d: trouble, short to off point\n", _net->getId());
-    notice(0, "  fr (%d %d)\n", xfr, yfr);
-    notice(0, "  to (%d %d)\n", xto, yto);
-  }
-
-  if (verbose) {
-    if (_ptV[fr]._dbwire_id != _last_id)
-      notice(0, "new path\n");
-    notice(0, " fr= %d   to= %d   k= %d", fr, to, k);
-    if (is_short)
-      notice(0, " short");
-    if (is_loop)
-      notice(0, " loop");
-    if (k >= 0)
-      notice(0,
-             " (%d %d) (%d %d)",
-             rc->_shape.xMin(),
-             rc->_shape.yMin(),
-             rc->_shape.xMax(),
-             rc->_shape.yMax());
-    notice(0, "\n");
-  }
 
   if (!_newWire)
     return;
@@ -2186,7 +1859,6 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   if (is_short) {
     // wfs 4-19-05
     if (xfr != xto || yfr != yto) {
-      // notice(0, "changing bad short to disconnect\n");
       _ptV[to]._dbwire_id = -1;
       _last_id = _ptV[fr]._dbwire_id;
       return;
@@ -2195,15 +1867,12 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
       ++_need_short_wire_id;
       return;
     }
-    if (verbose)
-      notice(0, "shorting to dbwire_id %d\n", _ptV[fr]._dbwire_id);
     _ptV[to]._dbwire_id = _ptV[fr]._dbwire_id;
     return;
   }
   if (k < 0)
-    error(0,
-          "Internal Error: tmg_conn::addToWire: value of k is negative: %d\n",
-          k);
+    logger_->error(
+        ODB, 393, "tmg_conn::addToWire: value of k is negative: {}", k);
 
   int ext;
   int fr_id = _ptV[fr]._dbwire_id;
@@ -2221,7 +1890,6 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
       else
         _encoder.newPathShort(_last_id, _ptV[fr]._layer, dbWireType::ROUTED);
     } else {
-      //   notice(0, "disconnected wire forest, net %d\n",_net->getId());
       if (_path_rule)
         _encoder.newPath(_ptV[fr]._layer, dbWireType::ROUTED, lyr_rule);
       else
@@ -2242,12 +1910,8 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
       else
         _encoder.addBTerm(x->_bterm);
     }
-    if (verbose)
-      notice(0, "new tree, starting at id=%d\n", fr_id);
   } else if (fr_id != _last_id) {
     _path_rule = rc->_shape._rule;
-    if (verbose)
-      notice(0, "branch from id=%d\n", fr_id);
     if (rc->_shape.isVia()) {
       if (_path_rule)
         _encoder.newPath(fr_id, lyr_rule);
@@ -2281,8 +1945,6 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     // make a branch, for taper
 
     _path_rule = rc->_shape._rule;
-    if (verbose)
-      notice(0, "branch from id=%d\n", fr_id);
     if (rc->_shape.isVia()) {
       if (_path_rule)
         _encoder.newPath(fr_id, lyr_rule);
@@ -2333,7 +1995,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
   else if (rc->_shape.getVia())
     to_id = _encoder.addVia(rc->_shape.getVia());
   else
-    notice(0, "error in addToWire\n");
+    logger_->error(ODB, 18, "error in addToWire");
 
   if (_ptV[to]._tindex >= 0 && _ptV[to]._tindex != _ptV[fr]._tindex
       && _ptV[to]._t_alt && _ptV[to]._t_alt->_tindex < 0
@@ -2349,8 +2011,6 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     x = _termV + _ptV[to]._tindex;
     if (x->_first_pt == NULL)
       x->_first_pt = &_ptV[to];
-    if (verbose)
-      notice(0, "term at id=%d\n", to_id);
     if (x->_iterm)
       _encoder.addITerm(x->_iterm);
     else
@@ -2359,8 +2019,6 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
 
   _ptV[to]._dbwire_id = to_id;
   _last_id = to_id;
-  if (verbose)
-    notice(0, "to   id=%d\n", to_id);
 
   _firstSegmentAfterVia = rc->_shape.isVia();
 }

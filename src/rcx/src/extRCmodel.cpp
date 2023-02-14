@@ -375,7 +375,7 @@ uint extMetRCTable::readRCstats(Ath__parser* parser)
 {
   uint cnt = 0;
 
-  extMeasure m;
+  extMeasure m(logger_);
 
   while (parser->parseNextLine() > 0) {
     cnt++;
@@ -2223,7 +2223,8 @@ uint extRCModel::addCapOver(uint met,
   return n;
 }
 
-extMeasure::extMeasure()
+extMeasure::extMeasure(utl::Logger* logger)
+    : _create_net_util(logger), logger_(logger)
 {
   _met = -1;
   _underMet = -1;
