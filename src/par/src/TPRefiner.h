@@ -169,7 +169,7 @@ class TPrefiner
   TPrefiner(TPrefiner&&) = default;
   TPrefiner& operator=(const TPrefiner&) = default;
   TPrefiner& operator=(TPrefiner&&) = default;
-  ~TPrefiner() = default;
+  virtual ~TPrefiner() = default;
   virtual void BalancePartition(const HGraph hgraph,
                                 const matrix<float>& max_block_balance,
                                 std::vector<int>& solution)
