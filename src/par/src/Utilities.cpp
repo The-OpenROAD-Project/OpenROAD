@@ -204,7 +204,6 @@ std::vector<float> operator*(const std::vector<float> a,
 
 std::vector<float> operator*(const std::vector<float> a, float factor)
 {
-  assert(a.size() == b.size());
   std::vector<float> result;
   result.reserve(a.size());
   for (auto value : a)
