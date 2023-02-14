@@ -1,0 +1,17 @@
+module chip_io (set_b,
+    port1,
+    output1,
+    clock);
+ input set_b;
+ input port1;
+ output output1;
+ input clock;
+
+
+ sky130_fd_sc_hd__sdfsbp_1 ff1 (.D(port1),
+    .Q(output1),
+    .SCD(VGND),
+    .SCE(VGND),
+    .SET_B(set_b),
+    .CLK(clock));
+endmodule

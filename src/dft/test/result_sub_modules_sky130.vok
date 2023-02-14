@@ -1,0 +1,25 @@
+module chip_io (set_b,
+    port1,
+    output1,
+    clock);
+ input set_b;
+ input port1;
+ output output1;
+ input clock;
+
+ wire \my_shift_register/set_b ;
+ wire \my_shift_register/net1 ;
+
+ sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff1_1  (.D(\my_shift_register/net1 ),
+    .Q(output1),
+    .SCD(VGND),
+    .SCE(VGND),
+    .SET_B(\my_shift_register/set_b ),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff1  (.D(port1),
+    .Q(\my_shift_register/net1 ),
+    .SCD(VGND),
+    .SCE(VGND),
+    .SET_B(\my_shift_register/set_b ),
+    .CLK(clock));
+endmodule
