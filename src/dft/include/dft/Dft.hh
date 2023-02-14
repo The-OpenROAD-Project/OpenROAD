@@ -31,10 +31,39 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include "odb/db.h"
+#include "utl/Logger.h"
+#include "db_sta/dbSta.hh"
+#include <unordered_set>
+#include <unordered_map>
+
 namespace dft {
+namespace replace {
+class ScanReplace;
+} // namespace replace
 
 class Dft
 {
+ public:
+  void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+
+  void pre_dft();
+  void insert_dft();
+
+ private:
+  // Global state
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+  utl::Logger* logger_;
+
+  // Internal state
+  std::unique_ptr<replace::ScanReplace> scan_replace_;
+  
+  // If we need to run pre_dft to create the internal state
+  bool did_we_run_pre_dft_;
+
+  // Resets the internal state
+  void reset();
 };
 
 }  // namespace dft

@@ -48,9 +48,7 @@ target_sources(dft
     src/MakeDft.cpp
     src/Dft.cpp
     src/ScanReplace.cpp
-    src/ScanCell.cpp
     src/Utils.cpp
-    src/stitch/Stitch.cc
 )
 
 target_include_directories(dft
@@ -87,5 +85,3 @@ if (Python3_FOUND AND BUILD_PYTHON)
     )
 
 endif()
-
-add_subdirectory(test/cpp)

@@ -34,8 +34,18 @@
 
 #include "dft/Dft.hh"
 #include "ord/OpenRoad.hh"
+#include "ScanReplace.hh"
+
+namespace sta {
+extern const char* dft_tcl_inits[];
+extern void evalTclInit(Tcl_Interp*, const char*[]);
+} // namespace sta
 
 namespace dft {
+
+extern "C" {
+extern int Dft_Init(Tcl_Interp* interp);
+}
 
 dft::Dft* makeDft()
 {
@@ -44,7 +54,10 @@ dft::Dft* makeDft()
 
 void initDft(ord::OpenRoad* openroad)
 {
-  // TODO(#2784): implement initDft
+  Tcl_Interp* interp = openroad->tclInterp();
+  Dft_Init(interp);
+  sta::evalTclInit(interp, sta::dft_tcl_inits);
+  openroad->getDft()->init(openroad->getDb(), openroad->getSta(), openroad->getLogger());
 }
 
 void deleteDft(dft::Dft* dft)
