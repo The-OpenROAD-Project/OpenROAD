@@ -321,7 +321,7 @@ void ScanReplace::collectScanCellAvailable()
     if (found == scan_candidates.end()) {
       logger_->warn(utl::DFT,
                     1,
-                    "Cell '{:s}' doesn't have an scan equivalent",
+                    "Lib cell '{:s}' doesn't have an scan equivalent",
                     non_scan_cell->name());
     }
   }
