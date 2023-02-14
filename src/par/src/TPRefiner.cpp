@@ -179,7 +179,6 @@ TP_partition_token TPrefiner::CutEvaluator(const HGraph hgraph,
 std::pair<int, int> TPrefiner::GetTimingCuts(const HGraph hgraph,
                                              std::vector<int>& solution)
 {
-  int total_cuts = 0;
   int total_critical_paths_cut = 0;
   int worst_cut = -std::numeric_limits<int>::max();
   for (int i = 0; i < hgraph->num_timing_paths_; ++i) {
@@ -194,7 +193,6 @@ std::pair<int, int> TPrefiner::GetTimingCuts(const HGraph hgraph,
       }
     }
     int cut_on_path = block_path.size() - 1;
-    total_cuts += cut_on_path;
     if (cut_on_path > worst_cut) {
       worst_cut = cut_on_path;
     }
@@ -952,7 +950,6 @@ void TPtwoWayFM::RollbackMoves(std::vector<VertexGain>& trace,
     const float gain = vertex_cell.GetGain();
     // Deduct gain from tot_delta_gain
     total_delta_gain -= gain;
-    assert(dest_part == solution[vertex_id]);
     // Flip the partition of the vertex to its previous part id
     solution[vertex] = dest_part;
     // Update the balance
@@ -1284,7 +1281,7 @@ void TPkWayFM::InitializeSingleGainBucket(
     const matrix<int>& net_degs)
 {
   buckets[to_pid]->SetActive();
-  assert(buckets[to_pid]->GetActive() == true);
+  assert(buckets[to_pid]->GetStatus());
   for (const int& v : boundary_vertices) {
     if (GetBoundaryStatus(v) == false) {
       MarkBoundary(v);
@@ -1368,7 +1365,6 @@ void TPkWayFM::RollbackMovesKWay(std::vector<VertexGain>& trace,
     const float gain = vertex_cell.GetGain();
     // Deduct gain from tot_delta_gain
     total_delta_gain -= gain;
-    assert(dest_part == solution[vertex_id]);
     // Flip the partition of the vertex to its previous part id
     solution[vertex] = dest_part;
     // Update the balance
