@@ -673,8 +673,7 @@ void GlobalRouter::findPins(Net* net,
       createFakePin(pin, pin_position, layer, net);
     }
 
-    conn_layer
-        = (conn_layer > max_routing_layer) ? max_routing_layer : conn_layer;
+    conn_layer = std::min(conn_layer, max_routing_layer);
 
     int pinX
         = (int) ((pin_position.x() - grid_->getXMin()) / grid_->getTileSize());
