@@ -96,6 +96,15 @@ struct Master
   bool is_multi_row = false;
 };
 
+enum class Edge
+{
+  top,
+  bottom,
+  left,
+  right,
+  invalid
+};
+
 struct Cell
 {
   Cell();
@@ -180,7 +189,9 @@ class Opendp
   void initBlock();
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
-  void detailedPlacement(int max_displacement_x, int max_displacement_y);
+  void detailedPlacement(int max_displacement_x,
+                         int max_displacement_y,
+                         int disallow_one_site_gaps = 0);
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster* inst, int left, int right);
@@ -285,6 +296,11 @@ class Opendp
   void visitCellPixels(Cell& cell,
                        bool padded,
                        const std::function<void(Pixel* pixel)>& visitor) const;
+  void visitCellBoundaryPixels(
+      Cell& cell,
+      bool padded,
+      const std::function<void(Pixel* pixel, Edge edge, int x, int y)>& visitor)
+      const;
   void setGridCell(Cell& cell, Pixel* pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
@@ -296,6 +312,7 @@ class Opendp
   static bool isPlaced(const Cell* cell);
   bool checkInRows(const Cell& cell) const;
   Cell* checkOverlap(Cell& cell) const;
+  Cell* checkOneSiteGaps(Cell& cell) const;
   bool overlap(const Cell* cell1, const Cell* cell2) const;
   bool isOverlapPadded(const Cell* cell1, const Cell* cell2) const;
   bool isCrWtBlClass(const Cell* cell) const;
@@ -392,6 +409,7 @@ class Opendp
   int have_multi_row_cells_;
   int max_displacement_x_;  // sites
   int max_displacement_y_;  // sites
+  bool disallow_one_site_gaps_;
   vector<dbInst*> placement_failures_;
 
   // 2D pixel grid

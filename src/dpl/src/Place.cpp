@@ -859,6 +859,40 @@ bool Opendp::checkPixels(const Cell* cell,
         }
       }
     }
+    if (disallow_one_site_gaps_) {
+      // here we need to check for abutting first, if there is an abut cell
+      // then we continue as there is nothing wrong with it
+      // if there is no abut cell, we will then check cells at 1+ distances
+      // we only need to loop on all 4 sides only
+      int x_begin = max(0, x - 1);
+      int y_begin = max(0, y - 1);
+      // inclusive search, so we don't add 1 to the end
+      int x_finish = min(x_end, row_site_count_ - 1);
+      int y_finish = min(y_end, row_count_ - 1);
+
+      // loop over left and right sides
+      for (int y1 = y_begin; y1 <= y_finish; y1++) {
+        Pixel* pixel = gridPixel(x_begin, y1);
+        bool is_abut = (pixel == nullptr || pixel->cell);
+        if (!is_abut) {
+          // here we need to check the pixel at distance 1
+          pixel = gridPixel(x_begin - 1, y1);
+          bool cell_at_1 = (pixel != nullptr && pixel->cell);
+          if (cell_at_1)
+            return false;
+        }
+
+        pixel = gridPixel(x_finish, y1);
+        is_abut = (pixel == nullptr || pixel->cell);
+        if (!is_abut) {
+          // here we need to check the pixel at distance 1
+          pixel = gridPixel(x_finish + 1, y1);
+          bool cell_at_1 = (pixel != nullptr && pixel->cell);
+          if (cell_at_1)
+            return false;
+        }
+      }
+    }
   }
   return true;
 }

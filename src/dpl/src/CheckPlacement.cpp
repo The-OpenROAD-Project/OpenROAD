@@ -55,6 +55,7 @@ void Opendp::checkPlacement(bool verbose)
   vector<Cell*> placed_failures;
   vector<Cell*> in_rows_failures;
   vector<Cell*> overlap_failures;
+  vector<Cell*> one_site_gap_failures;
   vector<Cell*> site_align_failures;
 
   initGrid();
@@ -72,6 +73,10 @@ void Opendp::checkPlacement(bool verbose)
     // Overlap check
     if (checkOverlap(cell))
       overlap_failures.push_back(&cell);
+    // One site gap check
+    if (disallow_one_site_gaps_ && checkOneSiteGaps(cell)) {
+      one_site_gap_failures.push_back(&cell);
+    }
   }
 
   reportFailures(placed_failures, 3, "Placed", verbose);
@@ -81,6 +86,7 @@ void Opendp::checkPlacement(bool verbose)
         reportOverlapFailure(cell);
       });
   reportFailures(site_align_failures, 6, "Site aligned", verbose);
+  reportFailures(one_site_gap_failures, 7, "One site gap", verbose);
 
   logger_->metric("design__violations",
                   placed_failures.size() + in_rows_failures.size()
@@ -201,6 +207,42 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
   }
   return ll1.getX() < ur2.getX() && ur1.getX() > ll2.getX()
          && ll1.getY() < ur2.getY() && ur1.getY() > ll2.getY();
+}
+
+Cell* Opendp::checkOneSiteGaps(Cell& cell) const
+{
+  Cell* gap_cell = nullptr;
+  visitCellBoundaryPixels(
+      cell, true, [&](Pixel* pixel, Edge edge, int x, int y) {
+        Cell* pixel_cell = pixel->cell;
+
+        int abut_x = 0;
+
+        switch (edge) {
+          case Edge::left:
+            abut_x = -1;
+            break;
+          case Edge::right:
+            abut_x = 1;
+            break;
+          default:
+            break;
+        }
+        if (0 != abut_x) {
+          // check the abutting pixel
+          Pixel* abut_pixel = gridPixel(x + abut_x, y);
+          bool abuttment_exists
+              = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell);
+          if (!abuttment_exists) {
+            // check the 1 site gap pixel
+            Pixel* gap_pixel = gridPixel(x + 2 * abut_x, y);
+            if (gap_pixel && gap_pixel->cell != pixel_cell) {
+              gap_cell = gap_pixel->cell;
+            }
+          }
+        }
+      });
+  return gap_cell;
 }
 
 bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const
