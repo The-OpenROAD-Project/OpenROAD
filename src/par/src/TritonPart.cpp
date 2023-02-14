@@ -984,8 +984,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
             end_timestamp_global - start_time_stamp_global)
             .count();
   total_global_time *= 1e-9;
-  logger_->report("Total runtime {} seconds", total_global_time);
-  logger_->report("Exiting TritonPart");
+  logger_->info(PAR, 6, "Total runtime {} seconds", total_global_time);
   return solution;
 }
 
@@ -1253,8 +1252,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
             end_timestamp_global - start_time_stamp_global)
             .count();
   total_global_time *= 1e-9;
-  logger_->report("Total runtime {} seconds", total_global_time);
-  logger_->report("Exiting TritonPart");
+  logger_->info(PAR, 4, "Total runtime {} seconds", total_global_time);
   return solution;
 }
 
@@ -1584,8 +1582,7 @@ std::vector<int> TritonPart::TritonPart2Way(
             end_timestamp_global - start_time_stamp_global)
             .count();
   total_global_time *= 1e-9;
-  logger_->report("Total runtime {} seconds", total_global_time);
-  logger_->report("Exiting TritonPart");
+  logger_->info(PAR, 5, "Total runtime {} seconds", total_global_time);
   return solution;
 }
 

@@ -200,7 +200,7 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
                           end_timestamp - start_timestamp)
                           .count()
                       * 1e-9;
-  logger_->report("[INFO] Initial partitioning time = {} seconds", time_taken);
+  logger_->info(PAR, 2, "Initial partitioning time = {} seconds", time_taken);
   return std::make_pair(solution_set, cutsize_vec);
 }
 
@@ -534,8 +534,7 @@ TPmultilevelPartitioner::InitialPartKWay(HGraph coarsest_hgraph,
                           end_timestamp - start_timestamp)
                           .count()
                       * 1e-9;
-  logger_->report("[INFO] Initial partitioning time = {} seconds", time_taken);
-  // exit(EXIT_SUCCESS);
+  logger_->info(PAR, 3, "Initial partitioning time = {} seconds", time_taken);
   return std::make_pair(solution_set, cutsize_vec);
 }
 

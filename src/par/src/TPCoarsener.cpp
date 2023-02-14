@@ -643,7 +643,7 @@ TP_coarse_graphs TPcoarsener::LazyFirstChoice(HGraph hgraph)
                           end_timestamp - start_timestamp)
                           .count()
                       * 1e-9;
-  logger_->report("[INFO] Hierarchical coarsening time {} seconds", time_taken);
+  logger_->info(PAR, 1, "Hierarchical coarsening time {} seconds", time_taken);
   return hierarchy;
 }
 }  // namespace par
