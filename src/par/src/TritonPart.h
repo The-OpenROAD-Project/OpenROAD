@@ -90,12 +90,13 @@ class TritonPart
                             unsigned int seed);
 
   // 2-way partition c++ interface for Hier-RTLMP
-  std::vector<int> TritonPart2Way(int num_vertices,
-                                  int num_hyperedges,
-                                  const std::vector<std::vector<int> >& hyperedges,
-                                  const std::vector<float>& vertex_weights,
-                                  float balance_constraints,
-                                  int seed = 0);
+  std::vector<int> TritonPart2Way(
+      int num_vertices,
+      int num_hyperedges,
+      const std::vector<std::vector<int>>& hyperedges,
+      const std::vector<float>& vertex_weights,
+      float balance_constraints,
+      int seed = 0);
 
   /*void tritonPartHypergraph(const char* hypergraph_file,
                             const char* fixed_file,

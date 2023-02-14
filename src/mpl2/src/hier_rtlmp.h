@@ -64,7 +64,6 @@ namespace par {
 class PartitionMgr;
 }
 
-
 namespace mpl2 {
 struct BundledNet;
 class Cluster;
@@ -233,9 +232,9 @@ class HierRTLMP
                        std::vector<BundledNet>& nets_old);
 
   // Align all the macros globally to reduce the waste of empty space
-  void alignHardMacroGlobal(Cluster* parent); // call this function after 
-                                             // multilevel macro placement
- 
+  void alignHardMacroGlobal(Cluster* parent);  // call this function after
+                                               // multilevel macro placement
+
   // force-directed placement to generate guides for macros
   void FDPlacement(std::vector<Rect>& blocks,
                    const std::vector<BundledNet>& nets,
@@ -243,14 +242,12 @@ class HierRTLMP
                    float outline_height,
                    std::string file_name);
 
-
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
   par::PartitionMgr* tritonpart_ = nullptr;
-
 
   // flag variables
   const bool fd_placement_flag_ = false;

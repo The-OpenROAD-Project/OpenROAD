@@ -60,20 +60,19 @@
 
 using utl::PAR;
 
-
 namespace par {
 
 using operations_research::MPConstraint;
 using operations_research::MPObjective;
 using operations_research::MPSolver;
 using operations_research::MPVariable;
-using operations_research::sat::CpModelBuilder;
 using operations_research::sat::BoolVar;
-using operations_research::sat::LinearExpr;
+using operations_research::sat::CpModelBuilder;
 using operations_research::sat::CpSolverResponse;
-using operations_research::sat::Solve;
 using operations_research::sat::CpSolverStatus;
+using operations_research::sat::LinearExpr;
 using operations_research::sat::SolutionBooleanValue;
+using operations_research::sat::Solve;
 
 TP_partition_token TPpartitioner::GoldenEvaluator(const HGraph hgraph,
                                                   std::vector<int>& solution,
@@ -222,7 +221,7 @@ void TPpartitioner::Partition(const HGraph hgraph,
     RandomPart(hgraph, max_block_balance, solution);
   } else if (partitioner == INIT_DIRECT_ILP) {
     OptimalPartCplexWarmStart(hgraph, max_block_balance, solution);
-    //OptimalPartCplex(hgraph, max_block_balance, solution);
+    // OptimalPartCplex(hgraph, max_block_balance, solution);
   } else if (partitioner == INIT_VILE) {
     InitPartVileTwoWay(hgraph, max_block_balance, solution);
   }
@@ -240,8 +239,7 @@ void TPpartitioner::RandomPart(const HGraph hgraph,
   std::fill(solution.begin(), solution.end(), -1);
   // the summation of vertex weights for vertices in current block
   matrix<float> block_balance(
-      num_parts_,
-      std::vector<float>(hgraph->vertex_dimensions_, 0.0f));
+      num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0f));
   // determine all the free vertices
   std::vector<int> unvisited;
 
@@ -296,7 +294,8 @@ void TPpartitioner::RandomPart(const HGraph hgraph,
   int block_id = 0;
   for (auto v : unvisited) {
     solution[v] = block_id;
-    block_balance[solution[v]] = block_balance[solution[v]] + hgraph->vertex_weights_[v];
+    block_balance[solution[v]]
+        = block_balance[solution[v]] + hgraph->vertex_weights_[v];
     if (block_balance[block_id]
         >= DivideFactor(max_block_balance[block_id], 10.0)) {
       ++block_id;
@@ -325,7 +324,6 @@ void TPpartitioner::InitPartVileKWay(const HGraph hgraph,
   std::fill(solution.begin(), solution.end(), 0);
 }
 
-
 // CP with warm start and hyperedge reduction
 // Optimal ILP-based partitioning using CP-SAT
 void TPpartitioner::OptimalPartCplexWarmStart(
@@ -333,13 +331,14 @@ void TPpartitioner::OptimalPartCplexWarmStart(
     const matrix<float>& max_block_balance,
     std::vector<int>& solution)
 {
-  logger_->report("Optimal ILP-based Partitioning (OR-Tools) with warm-start ...");
+  logger_->report(
+      "Optimal ILP-based Partitioning (OR-Tools) with warm-start ...");
   matrix<int> x(num_parts_, std::vector<int>(hgraph->num_vertices_, 0));
   matrix<int> y(num_parts_, std::vector<int>(hgraph->num_hyperedges_, 0));
   for (int i = 0; i < hgraph->num_vertices_; ++i) {
     x[solution[i]][i] = 1;  // set vertex i to partition solution[i]
   }
-  
+
   for (int i = 0; i < hgraph->num_hyperedges_; ++i) {
     const int firstValidEntry = hgraph->eptr_[i];
     const int firstInvalidEntry = hgraph->eptr_[i + 1];
@@ -349,7 +348,7 @@ void TPpartitioner::OptimalPartCplexWarmStart(
       unique_partitions.insert(p);
     }
     for (const int& j : unique_partitions) {
-      y[j][i] = 1; // set hyperedge i to partition solution[j]
+      y[j][i] = 1;  // set hyperedge i to partition solution[j]
     }
   }
 
@@ -394,8 +393,10 @@ void TPpartitioner::OptimalPartCplexWarmStart(
   // Variables
   // x[i][j] is an array of Boolean variables
   // x[i][j] is true if vertex i to partition j
-  std::vector<std::vector<BoolVar> > var_x(num_parts_, std::vector<BoolVar>(hgraph->num_vertices_));
-  std::vector<std::vector<BoolVar> > var_y(num_parts_, std::vector<BoolVar>(edge_mask.size()));
+  std::vector<std::vector<BoolVar>> var_x(
+      num_parts_, std::vector<BoolVar>(hgraph->num_vertices_));
+  std::vector<std::vector<BoolVar>> var_y(
+      num_parts_, std::vector<BoolVar>(edge_mask.size()));
   for (auto i = 0; i < num_parts_; i++) {
     // initialize var_x
     for (auto j = 0; j < hgraph->num_vertices_; j++)
@@ -414,7 +415,7 @@ void TPpartitioner::OptimalPartCplexWarmStart(
       LinearExpr balance_expr;
       for (int j = 0; j < hgraph->num_vertices_; j++) {
         balance_expr += hgraph->vertex_weights_[j][k] * var_x[i][j];
-      } // finish traversing vertices
+      }  // finish traversing vertices
       cp_model.AddLessOrEqual(balance_expr, max_block_balance[i][k]);
     }
   }
@@ -468,15 +469,16 @@ void TPpartitioner::OptimalPartCplexWarmStart(
     for (auto j = 0; j < hgraph->num_vertices_; j++)
       cp_model.AddHint(var_x[i][j], x[i][j]);
     // hint for var_y
-    for (auto j = 0; j < edge_mask.size(); ++j) 
+    for (auto j = 0; j < edge_mask.size(); ++j)
       cp_model.AddHint(var_y[i][j], y[i][edge_mask[j]]);
-  } 
-  
+  }
+
   // solve
   const CpSolverResponse response = Solve(cp_model.Build());
   // Print solution.
   if (response.status() == CpSolverStatus::INFEASIBLE) {
-    logger_->report("No feasible solution found with ILP --> Running K-way FM instead");
+    logger_->report(
+        "No feasible solution found with ILP --> Running K-way FM instead");
   } else {
     for (auto i = 0; i < hgraph->num_vertices_; i++) {
       for (auto j = 0; j < num_parts_; j++) {
@@ -494,12 +496,13 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
                                      const matrix<float>& max_block_balance,
                                      std::vector<int>& solution)
 {
-  logger_->report("Optimal ILP-based Partitioning (OR-Tools) with hyperedge reduction ...");
+  logger_->report(
+      "Optimal ILP-based Partitioning (OR-Tools) with hyperedge reduction ...");
   // reset variable
   solution.clear();
   solution.resize(hgraph->num_vertices_);
   std::fill(solution.begin(), solution.end(), -1);
-  
+
   // Identify the most important hyperedges
   // only consider the top 100 hyperedges based on weight
   // order hyperedges based on decreasing order
@@ -541,8 +544,10 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
   // Variables
   // x[i][j] is an array of Boolean variables
   // x[i][j] is true if vertex i to partition j
-  std::vector<std::vector<BoolVar> > var_x(num_parts_, std::vector<BoolVar>(hgraph->num_vertices_));
-  std::vector<std::vector<BoolVar> > var_y(num_parts_, std::vector<BoolVar>(edge_mask.size()));
+  std::vector<std::vector<BoolVar>> var_x(
+      num_parts_, std::vector<BoolVar>(hgraph->num_vertices_));
+  std::vector<std::vector<BoolVar>> var_y(
+      num_parts_, std::vector<BoolVar>(edge_mask.size()));
   for (auto i = 0; i < num_parts_; i++) {
     // initialize var_x
     for (auto j = 0; j < hgraph->num_vertices_; j++)
@@ -561,7 +566,7 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
       LinearExpr balance_expr;
       for (int j = 0; j < hgraph->num_vertices_; j++) {
         balance_expr += hgraph->vertex_weights_[j][k] * var_x[i][j];
-      } // finish traversing vertices
+      }  // finish traversing vertices
       cp_model.AddLessOrEqual(balance_expr, max_block_balance[i][k]);
     }
   }
@@ -612,7 +617,8 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
   const CpSolverResponse response = Solve(cp_model.Build());
   // Print solution.
   if (response.status() == CpSolverStatus::INFEASIBLE) {
-    logger_->report("No feasible solution found with ILP --> Running K-way FM instead");
+    logger_->report(
+        "No feasible solution found with ILP --> Running K-way FM instead");
   } else {
     for (auto i = 0; i < hgraph->num_vertices_; i++) {
       for (auto j = 0; j < num_parts_; j++) {
@@ -624,7 +630,6 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
   }
   // close the model
 }
-
 
 // Commented out by Zhiang (20230203, 5:01PM)
 // Now Zhiang is replacing it by CP in Google OR-Tools

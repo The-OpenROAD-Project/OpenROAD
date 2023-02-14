@@ -63,8 +63,7 @@ void initMacroPlacer2(OpenRoad* openroad)
                                     openroad->getDb(),
                                     openroad->getSta(),
                                     openroad->getLogger(),
-                                    openroad->getPartitionMgr()
-                                    );
+                                    openroad->getPartitionMgr());
 }
 
 void deleteMacroPlacer2(mpl2::MacroPlacer2* macro_placer)

@@ -77,8 +77,9 @@ void AnalyzeTimingOfPartition(std::vector<std::vector<int>>& paths,
 {
 }
 
-std::shared_ptr<TimingCuts> AnalyzeTimingOfPartition(std::vector<std::vector<int>>& paths,
-                              std::vector<int>& solution)
+std::shared_ptr<TimingCuts> AnalyzeTimingOfPartition(
+    std::vector<std::vector<int>>& paths,
+    std::vector<int>& solution)
 {
   int total_cuts = 0;
   int worst_cut = -std::numeric_limits<int>::max();

@@ -206,7 +206,7 @@ void TritonPart::ReadNetlist()
   hyperedge_dimensions_ = 1;
   placement_dimensions_ = 0;
   timing_aware_flag_ = true;
-  
+
   // assign vertex_id property of each instance and each IO port
   int vertex_id = 0;
   for (auto term : block_->getBTerms()) {
@@ -265,7 +265,8 @@ void TritonPart::ReadNetlist()
     // Ignore all the single-vertex hyperedge
     if (hyperedge.size() > 1 && hyperedge.size() <= global_net_threshold_) {
       hyperedges_.push_back(hyperedge);
-      hyperedge_weights_.push_back(std::vector<float>(hyperedge_dimensions_, 1.0));
+      hyperedge_weights_.push_back(
+          std::vector<float>(hyperedge_dimensions_, 1.0));
       odb::dbIntProperty::find(net, "hyperedge_id")->setValue(hyperedge_id++);
     }
   }  // finish hyperedge
@@ -673,7 +674,7 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
   logger_->report("[STATUS] Writing hypergraph**** ");
   logger_->report("========================================");
   WriteHypergraph();
-  //exit(EXIT_SUCCESS);
+  // exit(EXIT_SUCCESS);
   logger_->report("[INFO] Hypergraph Information**");
   logger_->report("[INFO] Vertices = {}", num_vertices_);
   logger_->report("[INFO] Hyperedges = {}", num_hyperedges_);
@@ -706,10 +707,14 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
   auto timing_cuts = AnalyzeTimingOfPartition(timing_paths, partition);
   logger_->report("===============================================");
   logger_->report("[STATUS] Displaying timing path cuts statistics");
-  logger_->report("[INFO] Total timing critical paths = {}", timing_cuts->GetTotalPaths());
-  logger_->report("[INFO] Total paths cut = {}", timing_cuts->GetTotalCriticalPathsCut());
-  logger_->report("[INFO] Worst cut on a path = {}", timing_cuts->GetWorstCut());
-  logger_->report("[INFO] Average cuts on critical paths = {}", timing_cuts->GetAvereageCriticalPathsCut());
+  logger_->report("[INFO] Total timing critical paths = {}",
+                  timing_cuts->GetTotalPaths());
+  logger_->report("[INFO] Total paths cut = {}",
+                  timing_cuts->GetTotalCriticalPathsCut());
+  logger_->report("[INFO] Worst cut on a path = {}",
+                  timing_cuts->GetWorstCut());
+  logger_->report("[INFO] Average cuts on critical paths = {}",
+                  timing_cuts->GetAvereageCriticalPathsCut());
   logger_->report("===============================================");
   logger_->report("Exiting TritonPart");
   exit(EXIT_SUCCESS);
@@ -717,8 +722,9 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
 
 HGraph TritonPart::preProcessHypergraph()
 {
-  logger_->report("Pre-processing hypergraph by temporarily removing hyperedges of size {}",
-                  he_size_threshold_);
+  logger_->report(
+      "Pre-processing hypergraph by temporarily removing hyperedges of size {}",
+      he_size_threshold_);
   std::vector<std::vector<int>> hyperedges_p;
   std::vector<std::vector<float>> hyperedge_weights_p;
   int num_hyperedges_p = 0;
@@ -814,8 +820,8 @@ void TritonPart::tritonPartHypergraph(const char* hypergraph_file_arg,
                                                hyperedge_dimension_arg,
                                                seed_arg);
   }
-  std::string solution_file = std::string(hypergraph_file_arg) 
-                              + std::string(".part.") 
+  std::string solution_file = std::string(hypergraph_file_arg)
+                              + std::string(".part.")
                               + std::to_string(num_parts_);
   WriteSolution(solution_file.c_str(), partition);
   exit(EXIT_SUCCESS);
@@ -1384,11 +1390,12 @@ std::vector<int> TritonPart::TritonPart2Way(
   seed_ = seed;
   vertex_dimensions_ = 1;
   hyperedge_dimensions_ = 1;
-  placement_dimensions_ = 0;  // no placememnt information is provided for this function
+  placement_dimensions_
+      = 0;  // no placememnt information is provided for this function
   num_vertices_ = num_vertices;
   num_hyperedges_ = num_hyperedges;
-  //hyperedges_ = hyperedges;
-  // local parameters
+  // hyperedges_ = hyperedges;
+  //  local parameters
   logger_->report("Partition Parameters**");
   logger_->report("Number of partitions = {}", num_parts_);
   logger_->report("UBfactor = {}", ub_factor_);
@@ -1421,14 +1428,15 @@ std::vector<int> TritonPart::TritonPart2Way(
   }
   vertex_weights_.clear();
   for (auto& weight : vertex_weights) {
-    std::vector<float> temp_weight { weight };
+    std::vector<float> temp_weight{weight};
     vertex_weights_.push_back(temp_weight);
   }
 
   // Convert the timing information (no timing information)
   std::vector<int> vind_p;  // each timing path is a sequences of vertices
   std::vector<int> vptr_p;
-  std::vector<int> pind_v;  // store all the timing paths connected to the vertex
+  std::vector<int>
+      pind_v;  // store all the timing paths connected to the vertex
   std::vector<int> pptr_v;
   std::vector<float> timing_attr;
   // create TPHypergraph
@@ -1455,14 +1463,15 @@ std::vector<int> TritonPart::TritonPart2Way(
   logger_->report("Hypergraph Information**");
   logger_->report("#Vertices = {}", num_vertices_);
   logger_->report("#Hyperedges = {}", num_hyperedges_);
-  
+
   // create coarsening class
   const std::vector<float> e_wt_factors(hyperedge_dimensions_, 1.0);
   const std::vector<float> v_wt_factors(vertex_dimensions_, 1.0);
   const std::vector<float> p_wt_factors(placement_dimensions_ + 100, 1.0);
   const float timing_factor = 1.0;
   const int path_traverse_step = 2;
-  const std::vector<float> tot_vertex_weights = hypergraph_->GetTotalVertexWeights();
+  const std::vector<float> tot_vertex_weights
+      = hypergraph_->GetTotalVertexWeights();
   const int alpha = 4;
   const std::vector<float> max_vertex_weights
       = DivideFactor(hypergraph_->GetTotalVertexWeights(), alpha * num_parts_);
@@ -1542,7 +1551,7 @@ std::vector<int> TritonPart::TritonPart2Way(
                                         tritonpart_twoway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  //RefinerType refine_type = 2_WAY_FM;
+  // RefinerType refine_type = 2_WAY_FM;
   RefinerType refine_type = KPM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
@@ -1565,7 +1574,8 @@ std::vector<int> TritonPart::TritonPart2Way(
                                                   refine_type,
                                                   logger_);
   bool vcycle = true;
-  matrix<float> vertex_balance = hypergraph_->GetVertexBalance(num_parts_, ub_factor_);
+  matrix<float> vertex_balance
+      = hypergraph_->GetVertexBalance(num_parts_, ub_factor_);
   std::vector<int> solution = tritonpart_mlevel_partitioner->PartitionTwoWay(
       hypergraph_, hypergraph_, vertex_balance, vcycle);
   auto end_timestamp_global = std::chrono::high_resolution_clock::now();

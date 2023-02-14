@@ -51,9 +51,9 @@ using TP_coarse_graphs = std::vector<HGraph>;
 
 enum order
 {
-  RANDOM, 
-  DEGREE, 
-  SIZE, 
+  RANDOM,
+  DEGREE,
+  SIZE,
   DEFAULT,
   SPECTRAL,
   TIMING
@@ -64,20 +64,20 @@ class TPcoarsener
  public:
   TPcoarsener() = default;
   TPcoarsener(const std::vector<float> e_wt_factors,
-             const std::vector<float> v_wt_factors,
-             const std::vector<float> p_wt_factors,
-             const float timing_factor,
-             const int path_traverse_step,
-             const std::vector<float> thr_cluster_weight,
-             const int thr_coarsen_hyperedge_size,
-             const int thr_match_hyperedge_size,
-             const int thr_coarsen_vertices,
-             const int thr_coarsen_hyperedges,
-             const float coarsen_ratio,
-             const int thr_coarsen_iters,
-             const float adj_diff_ratio,
-             const int seed,
-             utl::Logger* logger)
+              const std::vector<float> v_wt_factors,
+              const std::vector<float> p_wt_factors,
+              const float timing_factor,
+              const int path_traverse_step,
+              const std::vector<float> thr_cluster_weight,
+              const int thr_coarsen_hyperedge_size,
+              const int thr_match_hyperedge_size,
+              const int thr_coarsen_vertices,
+              const int thr_coarsen_hyperedges,
+              const float coarsen_ratio,
+              const int thr_coarsen_iters,
+              const float adj_diff_ratio,
+              const int seed,
+              utl::Logger* logger)
       : e_wt_factors_(e_wt_factors),
         v_wt_factors_(v_wt_factors),
         p_wt_factors_(p_wt_factors),
@@ -127,7 +127,7 @@ class TPcoarsener
   std::vector<float> e_wt_factors_;
   std::vector<float> v_wt_factors_;
   std::vector<float> p_wt_factors_;
-  float timing_factor_ ;
+  float timing_factor_;
   int path_traverse_step_;
   std::vector<float> thr_cluster_weight_;
   int thr_coarsen_hyperedge_size_;

@@ -260,7 +260,6 @@ void SACoreSoftMacro::restore()
   notch_penalty_ = pre_notch_penalty_;
 }
 
-
 void SACoreSoftMacro::initialize()
 {
   std::vector<float> outline_penalty_list;

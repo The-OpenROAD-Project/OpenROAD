@@ -47,11 +47,11 @@
 #include <ortools/base/logging.h>
 #include <ortools/linear_solver/linear_solver.h>
 #include <ortools/linear_solver/linear_solver.pb.h>
+
 #include "ortools/base/logging.h"
 #include "ortools/sat/cp_model.h"
 #include "ortools/sat/cp_model.pb.h"
 #include "ortools/sat/cp_model_solver.h"
-
 #include "utl/Logger.h"
 
 namespace par {
@@ -60,14 +60,13 @@ using operations_research::MPConstraint;
 using operations_research::MPObjective;
 using operations_research::MPSolver;
 using operations_research::MPVariable;
-using operations_research::sat::CpModelBuilder;
 using operations_research::sat::BoolVar;
-using operations_research::sat::LinearExpr;
+using operations_research::sat::CpModelBuilder;
 using operations_research::sat::CpSolverResponse;
-using operations_research::sat::Solve;
 using operations_research::sat::CpSolverStatus;
+using operations_research::sat::LinearExpr;
 using operations_research::sat::SolutionBooleanValue;
-
+using operations_research::sat::Solve;
 
 matrix<int> TPrefiner::GetNetDegrees(const HGraph hgraph,
                                      TP_partition& solution)
@@ -474,7 +473,7 @@ TP_gain_cell TPrefiner::CalculateGain(int v,
                               e_wt_factors_.begin(),
                               0.0);
   };
-  
+
   // traverse all the hyperedges connected to v
   const int first_valid_entry = hgraph->vptr_[v];
   const int first_invalid_entry = hgraph->vptr_[v + 1];
@@ -487,7 +486,7 @@ TP_gain_cell TPrefiner::CalculateGain(int v,
     if (he_size > thr_he_size_skip_) {
       continue;
     }
-    if (connectivity == 1 && net_degs[e][from_pid] > 1) {  
+    if (connectivity == 1 && net_degs[e][from_pid] > 1) {
       // move from_pid to to_pid will have negative score
       cut_score -= e_score;
     } else if (connectivity == 2 && net_degs[e][from_pid] == 1
@@ -509,8 +508,8 @@ TP_gain_cell TPrefiner::CalculateGain(int v,
     }
   }
   // Comment from Zhiang
-  // To do list (20230204) : cut_cost_factor and timing_cost_factor should be defined as parameters
-  // This should be defined as parameters
+  // To do list (20230204) : cut_cost_factor and timing_cost_factor should be
+  // defined as parameters This should be defined as parameters
   const float cut_cost_factor = 1.0;
   const float timing_cost_factor = 1.0;
   float score = cut_cost_factor * cut_score + timing_cost_factor * timing_score;
@@ -1652,7 +1651,6 @@ void TPkWayFM::AcceptKWayMove(std::shared_ptr<VertexGain> gain_cell,
   }*/
 }
 
-
 // Comment from Zhiang : No Magical Numbers !!!
 // To do list (20230204):
 // (1) define variables for these literal numbers
@@ -1669,14 +1667,15 @@ float TPkWayFM::Pass(const HGraph hgraph,
       std::max(static_cast<int>(0.01 * hgraph->num_vertices_), 15), 100);
   matrix<float> max_block_balance_tol = max_block_balance;
   // XXX Please rewrite this
-  SetTolerance(0.25); 
+  SetTolerance(0.25);
   for (int j = 0; j < num_parts_; ++j) {
     MultiplyFactor(max_block_balance_tol[j], 1.0 + GetTolerance());
   }
   matrix<int> net_degs = GetNetDegrees(hgraph, solution);
   TP_gain_buckets buckets;
   for (int i = 0; i < num_parts_; ++i) {
-    TP_gain_bucket bucket = std::make_shared<TPpriorityQueue>(hgraph->num_vertices_, hgraph);
+    TP_gain_bucket bucket
+        = std::make_shared<TPpriorityQueue>(hgraph->num_vertices_, hgraph);
     buckets.push_back(bucket);
   }
   // Initialize boundary flag
@@ -1685,14 +1684,16 @@ float TPkWayFM::Pass(const HGraph hgraph,
   InitVisitFlags(hgraph->num_vertices_);
   // XXX Please add the comments to explain the meaning of 0 and 1
   auto partition_pair = std::make_pair(0, 1);
-  std::vector<int> boundary_vertices = FindBoundaryVertices(hgraph, net_degs, partition_pair);
+  std::vector<int> boundary_vertices
+      = FindBoundaryVertices(hgraph, net_degs, partition_pair);
 
   // Initialize current gain in a multi-thread manner
   // set based on max heap (k set)
   // each block has its own max heap
-  
-  InitializeGainBucketsKWay(hgraph, solution, net_degs, boundary_vertices, paths_cost, buckets);
-  
+
+  InitializeGainBucketsKWay(
+      hgraph, solution, net_degs, boundary_vertices, paths_cost, buckets);
+
   VertexGain global_best_ver_gain(-1, -std::numeric_limits<float>::max());
   std::vector<int> pre_fm = solution;
   std::vector<int> move_trace;  // store the moved vertices in sequence
@@ -1746,12 +1747,12 @@ float TPkWayFM::Pass(const HGraph hgraph,
     for (auto& t : threads)
       t.join();  // wait for all threads to finish
     threads.clear();
-    
+
     if (cutsize < min_cut) {
-        min_cut = cutsize;
-        best_move = i;
-      } else if (i - best_move > limit) {
-        break;
+      min_cut = cutsize;
+      best_move = i;
+    } else if (i - best_move > limit) {
+      break;
     }
     /*timing_cuts = GetTimingCuts(hgraph, solution);
     if (hgraph->num_timing_paths_ > 0) {
@@ -2243,7 +2244,6 @@ void TPilpRefine::SolveIlpInstanceOR(std::shared_ptr<TPilpGraph> hgraph,
   }
 }
 
-
 // Updated by Zhiang: 20230206
 // We replace CPLEX with the CP-SAT in Google OR-Tools
 // We can add hint in CP-SAT to replace warm-start in CPLEX
@@ -2258,8 +2258,10 @@ void TPilpRefine::SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
   // Variables
   // x[i][j] is an array of Boolean variables
   // x[i][j] is true if vertex i to partition j
-  std::vector<std::vector<BoolVar> > var_x(num_parts_, std::vector<BoolVar>(hgraph->GetNumVertices()));
-  std::vector<std::vector<BoolVar> > var_y(num_parts_, std::vector<BoolVar>(hgraph->GetNumHyperedges()));
+  std::vector<std::vector<BoolVar>> var_x(
+      num_parts_, std::vector<BoolVar>(hgraph->GetNumVertices()));
+  std::vector<std::vector<BoolVar>> var_y(
+      num_parts_, std::vector<BoolVar>(hgraph->GetNumHyperedges()));
   for (auto i = 0; i < num_parts_; i++) {
     // initialize var_x
     for (auto j = 0; j < hgraph->GetNumVertices(); j++)
@@ -2286,7 +2288,7 @@ void TPilpRefine::SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
     if (hgraph->CheckFixedStatus(i) == true) {
       for (auto j = 0; j < num_parts_; j++) {
         cp_model.FixVariable(var_x[j][i], j == hgraph->GetFixedPart(i));
-      } // fixed vertices
+      }  // fixed vertices
     } else {
       std::vector<BoolVar> possible_partitions;
       for (auto j = 0; j < num_parts_; j++) {
@@ -2312,17 +2314,18 @@ void TPilpRefine::SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
   for (int i = 0; i < hgraph->GetNumHyperedges(); ++i) {
     auto ewt = hgraph->GetHyperedgeWeight(i);
     const float cost_value = std::inner_product(
-         ewt.begin(), ewt.end(), e_wt_factors_.begin(), 0.0);
+        ewt.begin(), ewt.end(), e_wt_factors_.begin(), 0.0);
     for (int j = 0; j < num_parts_; ++j) {
       obj_expr += var_y[j][i] * cost_value;
-    } 
+    }
   }
   cp_model.Maximize(obj_expr);
   // solve
   const CpSolverResponse response = Solve(cp_model.Build());
   // Print solution.
   if (response.status() == CpSolverStatus::INFEASIBLE) {
-    logger_->report("No feasible solution found with ILP --> Running K-way FM instead");
+    logger_->report(
+        "No feasible solution found with ILP --> Running K-way FM instead");
   } else {
     for (auto i = 0; i < hgraph->GetNumVertices(); i++) {
       for (auto j = 0; j < num_parts_; j++) {
@@ -2334,7 +2337,6 @@ void TPilpRefine::SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
   }
   // close the model
 }
-
 
 /*
 void TPilpRefine::SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
@@ -2440,7 +2442,7 @@ void TPilpRefine::SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
   } else {
     // for Ilp infeasibility debug
     //mycplex.exportModel("model.mps");
-    // DebugIlpInstance("model.mps"); 
+    // DebugIlpInstance("model.mps");
   }
   // closing the model
   mycplex.clear();

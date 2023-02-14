@@ -458,7 +458,7 @@ std::vector<std::pair<int, int>> KPMRefinement::KPMfindPairs(
     }
   }
 
-  return pairs; 
+  return pairs;
 }
 
 void KPMRefinement::KPMrefinement(const HGraph hgraph,

@@ -151,19 +151,20 @@ class TPHypergraph
     logger_ = logger;
   }
 
-  TPHypergraph(int vertex_dimensions,
-               int hyperedge_dimensions,
-               const std::vector<std::vector<int>>& hyperedges,
-               const std::vector<std::vector<float>>& vertex_weights,
-               const std::vector<std::vector<float>>& hyperedge_weights,
-               const std::vector<std::vector<float>>& nonscaled_hyperedge_weights,
-               const std::vector<int>& fixed_attr,
-               const std::vector<int>& community_attr,
-               int placement_dimensions,
-               const std::vector<std::vector<float>>& placement_attr,
-               const std::vector<std::vector<int>>& paths,
-               const std::vector<float>& timing_attr,
-               utl::Logger* logger);
+  TPHypergraph(
+      int vertex_dimensions,
+      int hyperedge_dimensions,
+      const std::vector<std::vector<int>>& hyperedges,
+      const std::vector<std::vector<float>>& vertex_weights,
+      const std::vector<std::vector<float>>& hyperedge_weights,
+      const std::vector<std::vector<float>>& nonscaled_hyperedge_weights,
+      const std::vector<int>& fixed_attr,
+      const std::vector<int>& community_attr,
+      int placement_dimensions,
+      const std::vector<std::vector<float>>& placement_attr,
+      const std::vector<std::vector<int>>& paths,
+      const std::vector<float>& timing_attr,
+      utl::Logger* logger);
 
   TPHypergraph(
       int num_vertices,

@@ -158,8 +158,9 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
             .first;
   solution_set.push_back(vile_solution);
   cutsize_vec.push_back(cutsize);
-  logger_->report(
-      "[INIT-PART] {} :: Vile part cutcost {}", solution_set.size() - 1, cutsize);
+  logger_->report("[INIT-PART] {} :: Vile part cutcost {}",
+                  solution_set.size() - 1,
+                  cutsize);
   if (cutsize < best_cutsize) {
     best_cutsize = cutsize;
     best_solution_id = solution_set.size() - 1;
@@ -167,10 +168,10 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
 
   // ILP initial partitioning
   std::vector<int> ilp_part = solution_set[best_solution_id];
-  //if (coarsest_hgraph->num_hyperedges_ > 1000) {
+  // if (coarsest_hgraph->num_hyperedges_ > 1000) {
   if (coarsest_hgraph->num_hyperedges_ > 0) {
     partitioner_->SetPartitionerChoice(INIT_DIRECT_ILP);
-    //partitioner_->SetPartitionerChoice(INIT_DIRECT_WARM_ILP);
+    // partitioner_->SetPartitionerChoice(INIT_DIRECT_WARM_ILP);
     partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
   } else {
     partitioner_->SetPartitionerChoice(INIT_DIRECT_ILP);
@@ -186,7 +187,9 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
       = partitioner_->GoldenEvaluator(coarsest_hgraph, ilp_part, false).first;
   solution_set.push_back(ilp_part);
   cutsize_vec.push_back(cutsize);
-  logger_->report("[INIT-PART] {} :: Ilp part cutcost {}", solution_set.size() - 1, cutsize);
+  logger_->report("[INIT-PART] {} :: Ilp part cutcost {}",
+                  solution_set.size() - 1,
+                  cutsize);
   if (cutsize < best_cutsize) {
     best_cutsize = cutsize;
     best_solution_id = solution_set.size() - 1;
@@ -257,7 +260,7 @@ void TPmultilevelPartitioner::VcycleTwoWay(std::vector<HGraph> hgraph_vec,
     }
     solution = refined_solution;  // update the initial solution
     if (print == true) {
-     logger_->report(
+      logger_->report(
           "[V-Refine] Level {} :: {}, {}, {}",
           ++iter,
           coarse_hypergraph->num_vertices_,
@@ -505,7 +508,7 @@ TPmultilevelPartitioner::InitialPartKWay(HGraph coarsest_hgraph,
   std::vector<int> ilp_part = solution_set[best_solution_id];
   if (coarsest_hgraph->num_hyperedges_ > 0) {
     partitioner_->SetPartitionerChoice(INIT_DIRECT_ILP);
-    //partitioner_->SetPartitionerChoice(INIT_DIRECT_WARM_ILP);
+    // partitioner_->SetPartitionerChoice(INIT_DIRECT_WARM_ILP);
     partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
   } else {
     partitioner_->SetPartitionerChoice(INIT_DIRECT_ILP);
@@ -516,7 +519,9 @@ TPmultilevelPartitioner::InitialPartKWay(HGraph coarsest_hgraph,
       = partitioner_->GoldenEvaluator(coarsest_hgraph, ilp_part, false).first;
   solution_set.push_back(ilp_part);
   cutsize_vec.push_back(cutsize);
-  logger_->report("[INIT-PART] {} :: Ilp part cutcost {}", solution_set.size() - 1, cutsize);
+  logger_->report("[INIT-PART] {} :: Ilp part cutcost {}",
+                  solution_set.size() - 1,
+                  cutsize);
   if (cutsize < best_cutsize) {
     best_cutsize = cutsize;
     best_solution_id = solution_set.size() - 1;

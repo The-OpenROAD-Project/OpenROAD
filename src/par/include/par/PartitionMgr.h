@@ -85,8 +85,8 @@ class PartitionMgr
             Logger* logger);
 
   // The TritonPart Interface
-  // The TritonPart is an open-source version of hMETIS, 
-  // The TritonPart is designed for VLSI CAD, thus it can 
+  // The TritonPart is an open-source version of hMETIS,
+  // The TritonPart is designed for VLSI CAD, thus it can
   // understand all kinds of constraints and timing information.
   void tritonPartHypergraph(const char* hypergraph_file,
                             const char* fixed_file,
@@ -103,13 +103,13 @@ class PartitionMgr
   // OpenROAD C++ interface
   // Used by HierRTLMP
   // 2-way partition c++ interface
-  std::vector<int> TritonPart2Way(int num_vertices,
-                                  int num_hyperedges,
-                                  const std::vector<std::vector<int> >& hyperedges,
-                                  const std::vector<float>& vertex_weights,
-                                  float balance_constraints,
-                                  int seed = 0);
-
+  std::vector<int> TritonPart2Way(
+      int num_vertices,
+      int num_hyperedges,
+      const std::vector<std::vector<int>>& hyperedges,
+      const std::vector<float>& vertex_weights,
+      float balance_constraints,
+      int seed = 0);
 };
 
 }  // namespace par

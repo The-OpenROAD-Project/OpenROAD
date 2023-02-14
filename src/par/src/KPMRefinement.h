@@ -143,7 +143,7 @@ class KPMRefinement
       status_ = true;
     }
     VertexGain(int arg_vertex, float arg_gain, int part)
-      : vertex_(arg_vertex), source_part_(part), gain_(arg_gain)
+        : vertex_(arg_vertex), source_part_(part), gain_(arg_gain)
     {
       potential_move_ = -1;
       status_ = true;

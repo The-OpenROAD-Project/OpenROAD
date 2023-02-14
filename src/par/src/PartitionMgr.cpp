@@ -34,7 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "par/PartitionMgr.h"
+
 #include <time.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -51,8 +53,7 @@ using utl::PAR;
 
 namespace par {
 
-PartitionMgr::PartitionMgr()
-    : logger_(nullptr)
+PartitionMgr::PartitionMgr() : logger_(nullptr)
 {
 }
 
@@ -84,9 +85,13 @@ void PartitionMgr::tritonPartHypergraph(const char* hypergraph_file,
   // Thus users can use this function to partition the input hypergraph
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
-  triton_part->tritonPartHypergraph(
-      hypergraph_file, fixed_file, num_parts, balance_constraint, 
-      vertex_dimensions, hyperedge_dimensions, seed);
+  triton_part->tritonPartHypergraph(hypergraph_file,
+                                    fixed_file,
+                                    num_parts,
+                                    balance_constraint,
+                                    vertex_dimensions,
+                                    hyperedge_dimensions,
+                                    seed);
 }
 
 void PartitionMgr::tritonPartDesign(unsigned int num_parts,
@@ -94,26 +99,26 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts,
                                     unsigned int seed)
 {
   auto triton_part
-    = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
+      = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
   triton_part->tritonPartDesign(num_parts, balance_constraint, seed);
 }
 
-std::vector<int> PartitionMgr::TritonPart2Way(int num_vertices,
-                                              int num_hyperedges,
-                                              const std::vector<std::vector<int> >& hyperedges,
-                                              const std::vector<float>& vertex_weights,
-                                              float balance_constraints,
-                                              int seed)
+std::vector<int> PartitionMgr::TritonPart2Way(
+    int num_vertices,
+    int num_hyperedges,
+    const std::vector<std::vector<int>>& hyperedges,
+    const std::vector<float>& vertex_weights,
+    float balance_constraints,
+    int seed)
 {
   auto triton_part
-    = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
-  return triton_part->TritonPart2Way(num_vertices, 
+      = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
+  return triton_part->TritonPart2Way(num_vertices,
                                      num_hyperedges,
                                      hyperedges,
                                      vertex_weights,
                                      balance_constraints,
-                                     seed);     
+                                     seed);
 }
-
 
 }  // namespace par
