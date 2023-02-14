@@ -46,6 +46,11 @@ swig_lib(NAME dft
 target_sources(dft
   PRIVATE
     src/MakeDft.cpp
+    src/Dft.cpp
+    src/ScanReplace.cpp
+    src/ScanCell.cpp
+    src/Utils.cpp
+    src/stitch/Stitch.cc
 )
 
 target_include_directories(dft
@@ -54,8 +59,10 @@ target_include_directories(dft
 )
 
 target_link_libraries(dft
-  PUBLIC
+  PRIVATE
     odb
+    dbSta
+    OpenSTA
 )
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          dft_py
@@ -80,3 +87,5 @@ if (Python3_FOUND AND BUILD_PYTHON)
     )
 
 endif()
+
+add_subdirectory(test/cpp)

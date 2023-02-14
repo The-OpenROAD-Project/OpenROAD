@@ -30,25 +30,24 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%module dft
+#include "ScanCell.hh"
 
-%{
 
-#include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
+namespace dft {
 
-dft::Dft *
-getDft()
-{
-  return ord::OpenRoad::openRoad()->getDft();
+ScanCell::ScanCell(sta::LibertyCell* liberty_cell, uint64_t bits):
+  liberty_cell_(liberty_cell),
+  bits_(bits)
+{}
+
+uint64_t ScanCell::getBits() const {
+  return bits_;
 }
 
-%}
 
-%inline %{
+SingleCellScanCell::SingleCellScanCell(sta::LibertyCell* liberty_cell):
+  ScanCell(liberty_cell, 1)
+{}
 
-void insert_dft() {
-  getDft()->insert_dft();
-}
 
-%} // inline
+} // namespace dft

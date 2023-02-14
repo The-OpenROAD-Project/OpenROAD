@@ -29,26 +29,36 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-%module dft
+#include "odb/db.h"
+#include "utl/Logger.h"
+#include "db_sta/dbSta.hh"
+#include "sta/Liberty.hh"
 
-%{
+namespace dft {
+namespace utils {
 
-#include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
+// Creates a new cell in the given block using the master. Returns an instance
+// of the new cell with a default temporal name
+odb::dbInst* CreateCell(odb::dbBlock* top_block, odb::dbMaster* new_master);
 
-dft::Dft *
-getDft()
-{
-  return ord::OpenRoad::openRoad()->getDft();
-}
+// Replace the old_instance cell with a new master. The connections of the old
+// cell will be preserved by using the given port mapping from
+// <old_port_name, new_port_name>. Returns the new instance and deletes the old
+// one. The name of the new instance is going to be the same as the old one.
+odb::dbInst* ReplaceCell(odb::dbBlock* top_block, odb::dbInst* old_instance, odb::dbMaster* new_master, const std::unordered_map<std::string, std::string> &port_mapping);
 
-%}
+// Find the net that has the ground in the given block.
+odb::dbNet* FindGroundNet(sta::dbNetwork* db_network, odb::dbBlock* block);
 
-%inline %{
+// Connects the scan pins of a cell to ground to make it functional equivalent
+// to a non-scan cell
+void TieScanPins(sta::dbNetwork* db_network, odb::dbInst* instance, sta::LibertyCell* scan_cell, odb::dbNet* ground_net);
 
-void insert_dft() {
-  getDft()->insert_dft();
-}
+// Returns true if the given cell's instance is a sequiental cell, false
+// otherwise
+bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
 
-%} // inline
+} // namespace utils
+} // namespace dft
