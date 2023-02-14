@@ -134,16 +134,14 @@ void SimulatedAnnealingCore<T>::setGuides(const std::map<int, Rect>& guides)
 template <class T>
 bool SimulatedAnnealingCore<T>::isValid() const
 {
-  return (width_ <= outline_width_ * (1.0 + acc_tolerance_))
-         && (height_ <= outline_height_ * (1.0 + acc_tolerance_));
+  return (width_ <= std::ceil(outline_width_)) && (height_ <= std::ceil(outline_height_));
 }
 
 template <class T>
 bool SimulatedAnnealingCore<T>::isValid(float outline_width,
                                         float outline_height) const
 {
-  return (width_ <= outline_width * (1.0 + acc_tolerance_))
-         && (height_ <= outline_height * (1.0 + acc_tolerance_));
+  return (width_ <= std::ceil(outline_width)) && (height_ <= std::ceil(outline_height));
 }
 
 template <class T>
