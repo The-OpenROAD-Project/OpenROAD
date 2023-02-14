@@ -69,12 +69,6 @@ namespace par {
 
 class PartitionMgr
 {
- private:
-  odb::dbDatabase* db_ = nullptr;
-  sta::dbNetwork* db_network_ = nullptr;
-  sta::dbSta* _sta = nullptr;
-  Logger* logger_;
-
  public:
   PartitionMgr();
   ~PartitionMgr();
@@ -84,9 +78,10 @@ class PartitionMgr
             Logger* logger);
 
   // The TritonPart Interface
-  // The TritonPart is an open-source version of hMETIS,
-  // The TritonPart is designed for VLSI CAD, thus it can
-  // understand all kinds of constraints and timing information.
+  // TritonPart is a state-of-the-art hypergraph and netlist partitioner that
+  // replaces previous engines such as hMETIS.
+  // The TritonPart is designed for VLSI CAD, thus it can understand
+  // all kinds of constraints and timing information.
   void tritonPartHypergraph(const char* hypergraph_file,
                             const char* fixed_file,
                             unsigned int num_parts,
@@ -109,6 +104,12 @@ class PartitionMgr
       const std::vector<float>& vertex_weights,
       float balance_constraints,
       int seed = 0);
+
+ private:
+  odb::dbDatabase* db_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
+  sta::dbSta* _sta = nullptr;
+  Logger* logger_;
 };
 
 }  // namespace par
