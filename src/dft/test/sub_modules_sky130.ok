@@ -139,22 +139,22 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file caravel_sky130/lef/
 [INFO ODB-0131]     Created 818 components and 11059 component-terminals.
 [INFO ODB-0133]     Created 767 nets and 1080 connections.
 [WARNING STA-0019] sub_modules_sky130.v line 24, instance name ff1 duplicated - renamed to ff1_1.
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrbn_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrbn_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrbp_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrbp_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrtn_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrtn_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrtn_4' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrtp_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrtp_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlrtp_4' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlxbn_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlxbn_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlxbp_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlxtn_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlxtn_2' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlxtn_4' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__dlxtp_1' doesn't have an scan equivalent
-[WARNING DFT-0001] Cell 'sky130_fd_sc_hd__lpflow_inputisolatch_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrbn_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrbn_2' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrbp_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrbp_2' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtn_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtn_2' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtn_4' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtp_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtp_2' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlrtp_4' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxbn_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxbn_2' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxbp_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxtn_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxtn_2' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxtn_4' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__dlxtp_1' doesn't have an scan equivalent
+[WARNING DFT-0001] Lib cell 'sky130_fd_sc_hd__lpflow_inputisolatch_1' doesn't have an scan equivalent
 No differences found.
