@@ -1114,7 +1114,7 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
       }
 
       if (start_cluster == nullptr && end_cluster == nullptr) {
-        logger->info(MPL, 0003, "bus planning - error condition nullptr");
+        logger->info(MPL, 13, "bus planning - error condition nullptr");
       } else if (start_cluster != nullptr && end_cluster != nullptr) {
         if (start_cluster->getId() == src_cluster_id) {
           start_cluster->setPinAccess(
@@ -1128,8 +1128,7 @@ bool calNetPaths(std::vector<SoftMacro>& soft_macros,     // placed soft macros
           pre_cluster = start_cluster;
         } else {
           if (start_cluster != pre_cluster && end_cluster != pre_cluster) {
-            logger->info(
-                MPL, 0004, "bus planning - error condition pre_cluster");
+            logger->info(MPL, 14, "bus planning - error condition pre_cluster");
           } else if (start_cluster == pre_cluster) {
             start_cluster->addBoundaryConnection(
                 src_pin, edge.pin_access, net_weight);

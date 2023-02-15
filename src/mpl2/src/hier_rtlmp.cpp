@@ -310,7 +310,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   //
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
-  // report the parameters
+  // report the default parameters
   logger_->report("area_weight_ = {}", area_weight_);
   logger_->report("outline_weight_ = {}", outline_weight_);
   logger_->report("wirelength_weight_ = {}", wirelength_weight_);
@@ -320,16 +320,6 @@ void HierRTLMP::hierRTLMacroPlacer()
   logger_->report("notch_weight_ = {}", notch_weight_);
   logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
   logger_->report("halo_width_ = {}", halo_width_);
-
-  // calculate the pitch_x_ and pitch_y automatically based on macro pins
-  // pitch_x_ = dbuToMicron(
-  //    static_cast<float>(
-  //        db_->getTech()->findRoutingLayer(snap_layer_)->getPitchX()),
-  //    dbu_);
-  // pitch_y_ = dbuToMicron(
-  //    static_cast<float>(
-  //        db_->getTech()->findRoutingLayer(snap_layer_)->getPitchY()),
-  //    dbu_);
 
   //
   // Get the floorplan information
@@ -347,7 +337,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   int core_uy = dbuToMicron(core_box.yMax(), dbu_);
 
   logger_->report(
-      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({} {} {} {})",
+      "Floorplan Outline: ({}, {}) ({}, {}),  Core Outline: ({}, {}) ({}, {})",
       floorplan_lx_,
       floorplan_ly_,
       floorplan_ux_,
@@ -814,7 +804,7 @@ void HierRTLMP::createBundledIOs()
     if (cluster_id == -1) {
       logger_->error(
           MPL,
-          1002,
+          2,
           "Floorplan has not been initialized? Pin location error for {}.",
           term->getName());
     } else {
@@ -2521,11 +2511,10 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
   // update parent
   parent->setMacroTilings(tilings);
   if (tilings.size() == 0) {
-    std::string line
-        = "[CalClusterMacroTilings] There are no valid tilings for "
-          "mixed cluster ";
-    line += parent->getName();
-    logger_->error(MPL, 1002, line);
+    logger_->error(MPL,
+                   3,
+                   "There are no valid tilings for mixed cluster: {}",
+                   parent->getName());
   } else {
     std::string line
         = "[CalClusterMacroTilings] The macro tiling for mixed cluster "
@@ -2745,7 +2734,10 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
         = "[CalHardMacroClusterShape] This is no valid tilings for "
           "hard macro cluster ";
     line += cluster->getName();
-    logger_->error(MPL, 1003, line);
+    logger_->error(MPL,
+                   4,
+                   "This no valid tilings for hard macro cluser: {}",
+                   cluster->getName());
   }
 }
 
@@ -3500,7 +3492,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       sa_containers[i]->printResults();
     }
     logger_->error(MPL,
-                   1004,
+                   5,
                    "[MultiLevelMacroPlacement] Failed on cluster: {}",
                    parent->getName());
   }
@@ -3717,7 +3709,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
                         target_dead_space_list[i]);
         sa_containers[i]->printResults();
       }
-      logger_->error(MPL, 1005, "SA failed on cluster: {}", parent->getName());
+      logger_->error(MPL, 6, "SA failed on cluster: {}", parent->getName());
     }
     best_sa->alignMacroClusters();
     best_sa->fillDeadSpace();
@@ -3874,11 +3866,12 @@ bool HierRTLMP::shapeChildrenCluster(
         }
       }
       if (shapes.size() == 0) {
-        std::string line
-            = "[ShapeChildrenCluster] There is not enough space in cluster ";
-        line += parent->getName() + " ";
-        line += "for child hard macro cluster: " + cluster->getName();
-        logger_->error(MPL, 1006, line);
+        logger_->error(
+            MPL,
+            7,
+            "Not enough space in cluster: {} for child hard macro cluster: {}",
+            parent->getName(),
+            cluster->getName());
       }
       macro_cluster_area += shapes[0].first * shapes[0].second;
       cluster->setMacroTilings(shapes);
@@ -3896,7 +3889,12 @@ bool HierRTLMP::shapeChildrenCluster(
             = "[ShapeChildrenCluster] There is not enough space in cluster ";
         line += parent->getName() + " ";
         line += "for child mixed cluster: " + cluster->getName();
-        logger_->error(MPL, 1007, line);
+        logger_->error(
+            MPL,
+            8,
+            "Not enough space in cluster: {} for child mixed cluster: {}",
+            parent->getName(),
+            cluster->getName());
       }
       macro_mixed_cluster_area += shapes[0].first * shapes[0].second;
       cluster->setMacroTilings(shapes);
@@ -4041,7 +4039,7 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
                    nets,
                    congestion_weight_,
                    logger_)) {
-    logger_->error(MPL, 1008, "Fail !!! Bus planning error !!!");
+    logger_->error(MPL, 9, "Fail !!! Bus planning error !!!");
   }
 }
 
@@ -4231,10 +4229,11 @@ void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
       // need
     }
     sa_containers.clear();
-    std::string line
-        = "Cannot find valid macro placement for hard macro cluster: ";
-    line += cluster->getName();
-    logger_->error(MPL, 1010, line);
+    logger_->error(
+        MPL,
+        10,
+        "Cannot find valid macro placement for hard macro cluster: {}",
+        cluster->getName());
   } else {
     std::vector<HardMacro> best_macros;
     best_sa->getMacros(best_macros);
