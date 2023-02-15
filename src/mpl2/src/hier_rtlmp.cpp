@@ -35,10 +35,9 @@
 #include "hier_rtlmp.h"
 
 #include <fstream>
+#include <iostream>
 #include <queue>
 #include <thread>
-
-#include <iostream>
 
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
@@ -1016,7 +1015,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
     // Check the child logical modules
     // (b.1) if the logical module has no child logical module
     // this logical module is a leaf logical module
-    // we will use the TritonPART to partition this large flat cluster
+    // we will use the TritonPart to partition this large flat cluster
     // in the follow-up UpdateSubTree function
     if (module->getChildren().size() == 0) {
       for (odb::dbInst* inst : module->getInsts()) {
@@ -1831,8 +1830,8 @@ void HierRTLMP::printClusters()
 
 // This function has two purposes:
 // 1) remove all the internal clusters between parent and leaf clusters in its
-// subtree 2) Call TritonPART to partition large flat clusters (a cluster with no
-// logical modules)
+// subtree 2) Call TritonPart to partition large flat clusters (a cluster with
+// no logical modules)
 void HierRTLMP::updateSubTree(Cluster* parent)
 {
   std::vector<Cluster*> children_clusters;
@@ -1871,7 +1870,7 @@ void HierRTLMP::updateSubTree(Cluster* parent)
   }
 }
 
-// Break large flat clusters with TritonPART 
+// Break large flat clusters with TritonPart
 // A flat cluster does not have a logical module
 void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 {
