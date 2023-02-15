@@ -64,7 +64,7 @@ class Dft
 
  private:
   // If we need to run pre_dft to create the internal state
-  bool did_we_run_pre_dft_;
+  bool need_to_run_pre_dft_;
 
   // Resets the internal state
   void reset();

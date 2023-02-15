@@ -52,8 +52,8 @@ void Dft::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 
 void Dft::reset()
 {
-  scan_replace_.reset(nullptr);
-  did_we_run_pre_dft_ = false;
+  scan_replace_.reset();
+  need_to_run_pre_dft_ = true;
 }
 
 void Dft::pre_dft()
@@ -62,12 +62,12 @@ void Dft::pre_dft()
   scan_replace_->collectScanCellAvailable();
 
   // This should always be at the end
-  did_we_run_pre_dft_ = true;
+  need_to_run_pre_dft_ = false;
 }
 
 void Dft::insert_dft()
 {
-  if (!did_we_run_pre_dft_) {
+  if (!need_to_run_pre_dft_) {
     pre_dft();
   }
 
