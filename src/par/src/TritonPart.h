@@ -81,7 +81,8 @@ class TritonPart
                         float balance_constraint,
                         unsigned int seed,
                         const std::string& solution_filename,
-                        const std::string& paths_filename);
+                        const std::string& paths_filename,
+                        const std::string& hypergraph_filename);
   // This is only used for replacing hMETIS
   void tritonPartHypergraph(const char* hypergraph_file,
                             const char* fixed_file,
@@ -200,7 +201,7 @@ class TritonPart
   // Read hypergraph from input files
   void BuildHypergraph();
   // Write the hypergraph to file
-  void WriteHypergraph();
+  void WriteHypergraph(const std::string& hypergraph_filename);
   // When we create the hypergraph, we ignore all the hyperedges with vertices
   // more than global_net_threshold_
   HGraph hypergraph_ = nullptr;  // the original hypergraph

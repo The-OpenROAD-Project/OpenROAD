@@ -543,7 +543,7 @@ void TritonPart::BuildHypergraph()
 }
 
 // Write the hypergraph to file
-void TritonPart::WriteHypergraph()
+void TritonPart::WriteHypergraph(const std::string& hypergraph_filename)
 {
   float max_vtx_wt = -std::numeric_limits<float>::max();
   float max_he_wt = max_vtx_wt;
@@ -584,8 +584,7 @@ void TritonPart::WriteHypergraph()
   }
 
   // hack to print hypergraph without timing-scaled weights on hypergraph edges
-  std::ofstream hypergraph_file;
-  hypergraph_file.open("design.hgr");
+  std::ofstream hypergraph_file(hypergraph_filename);
   if (wt_type == 0) {
     hypergraph_file << num_hyperedges_ << " " << num_vertices_ << std::endl;
   } else {
@@ -611,7 +610,6 @@ void TritonPart::WriteHypergraph()
       hypergraph_file << vertex_weights_[i].front() << std::endl;
     }
   }
-  hypergraph_file.close();
 }
 
 // Write timing paths to file for other applications
@@ -635,7 +633,8 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
                                   float balance_constraint_arg,
                                   unsigned int seed_arg,
                                   const std::string& solution_filename,
-                                  const std::string& paths_filename)
+                                  const std::string& paths_filename,
+                                  const std::string& hypergraph_filename)
 {
   logger_->report("========================================");
   logger_->report("[STATUS] Starting TritonPart Partitioner");
@@ -672,7 +671,9 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
   logger_->report("[STATUS] Building hypergraph**** ");
   logger_->report("[STATUS] Writing hypergraph**** ");
   logger_->report("========================================");
-  WriteHypergraph();
+  if (!hypergraph_filename.empty()) {
+    WriteHypergraph(hypergraph_filename);
+  }
 
   logger_->report("[INFO] Hypergraph Information**");
   logger_->report("[INFO] Vertices = {}", num_vertices_);
