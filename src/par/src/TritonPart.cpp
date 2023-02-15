@@ -614,11 +614,10 @@ void TritonPart::WriteHypergraph()
   hypergraph_file.close();
 }
 
-// Write timing paths to file to read later
-void TritonPart::WritePathsToFile()
+// Write timing paths to file for other applications
+void TritonPart::WritePathsToFile(const std::string& paths_filename)
 {
-  std::ofstream paths_file;
-  paths_file.open("paths.txt");
+  std::ofstream paths_file(paths_filename);
 
   for (int i = 0; i < timing_paths_.size(); ++i) {
     auto timing_path = timing_paths_[i].path;
@@ -627,7 +626,6 @@ void TritonPart::WritePathsToFile()
     }
     paths_file << std::endl;
   }
-  paths_file.close();
 }
 
 // Partition the design
@@ -636,7 +634,8 @@ void TritonPart::WritePathsToFile()
 void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
                                   float balance_constraint_arg,
                                   unsigned int seed_arg,
-                                  const std::string& solution_file)
+                                  const std::string& solution_filename,
+                                  const std::string& paths_filename)
 {
   logger_->report("========================================");
   logger_->report("[STATUS] Starting TritonPart Partitioner");
@@ -666,9 +665,8 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
     auto path = timing_paths_[i].path;
     endpoints.insert(path.back());
   }
-  bool path_write_flag = true;
-  if (path_write_flag == true) {
-    WritePathsToFile();
+  if (!paths_filename.empty()) {
+    WritePathsToFile(paths_filename);
   }
   BuildHypergraph();
   logger_->report("[STATUS] Building hypergraph**** ");
@@ -701,8 +699,8 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
                                            seed_);
   }
   // AnalyzeTimingCuts();
-  if (!solution_file.empty()) {
-    WriteSolution(solution_file.c_str(), partition);
+  if (!solution_filename.empty()) {
+    WriteSolution(solution_filename.c_str(), partition);
   }
   std::vector<std::vector<int>> timing_paths;
   for (auto& tpath : timing_paths_) {

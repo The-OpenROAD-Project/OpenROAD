@@ -93,7 +93,8 @@ class PartitionMgr
   void tritonPartDesign(unsigned int num_parts,
                         float balance_constraint,
                         unsigned int seed,
-                        const std::string& solution_file);
+                        const std::string& solution_file,
+                        const std::string& paths_file);
 
   // OpenROAD C++ interface
   // Used by HierRTLMP

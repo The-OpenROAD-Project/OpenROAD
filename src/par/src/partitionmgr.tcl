@@ -97,21 +97,28 @@ sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-balance_constraint balance_constraint] \
                                             [-seed seed] \
                                             [-solution_file file_name] \
+                                            [-paths_file file_name] \
                                           }
 proc triton_part_design { args } {
   sta::parse_key_args "triton_part_design" args \
       keys {-num_parts
             -balance_constraint
             -seed
-            -solution_file } \
+            -solution_file \
+            -paths_file } \
       flags {}
   set num_parts 2
   set balance_constraint 1.0
   set seed 0
+  set paths_file ""
   set solution_file ""
 
   if { [info exists keys(-solution_file)] } {
       set solution_file $keys(-solution_file)
+  }
+
+  if { [info exists keys(-paths_file)] } {
+      set paths_file $keys(-paths_file)
   }
 
   if { [info exists keys(-num_parts)] } {
@@ -126,5 +133,6 @@ proc triton_part_design { args } {
       set seed $keys(-seed)
   }
 
-  par::triton_part_design $num_parts $balance_constraint $seed $solution_file
+  par::triton_part_design $num_parts $balance_constraint $seed \
+      $solution_file $paths_file
 }
