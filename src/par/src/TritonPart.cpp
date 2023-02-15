@@ -635,7 +635,8 @@ void TritonPart::WritePathsToFile()
 // The second step is to get all the features such as timing paths
 void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
                                   float balance_constraint_arg,
-                                  unsigned int seed_arg)
+                                  unsigned int seed_arg,
+                                  const std::string& solution_file)
 {
   logger_->report("========================================");
   logger_->report("[STATUS] Starting TritonPart Partitioner");
@@ -674,14 +675,17 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
   logger_->report("[STATUS] Writing hypergraph**** ");
   logger_->report("========================================");
   WriteHypergraph();
-  // exit(EXIT_SUCCESS);
+
   logger_->report("[INFO] Hypergraph Information**");
   logger_->report("[INFO] Vertices = {}", num_vertices_);
   logger_->report("[INFO] Hyperedges = {}", num_hyperedges_);
   logger_->report("[INFO] Timing paths = {}", hypergraph_->GetNumTimingPaths());
   logger_->report("[INFO] Unique endpoints extracted = {}", endpoints.size());
-  logger_->report("[INFO] Worst negative slack = {}",
-                  *std::max_element(timing_attr_.begin(), timing_attr_.end()));
+  if (!timing_attr_.empty()) {
+    logger_->report(
+        "[INFO] Worst negative slack = {}",
+        *std::max_element(timing_attr_.begin(), timing_attr_.end()));
+  }
   std::vector<int> partition;
   if (num_parts_ == 2) {
     partition = TritonPart_design_PartTwoWay(num_parts_,
@@ -697,9 +701,9 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
                                            seed_);
   }
   // AnalyzeTimingCuts();
-  std::string solution_file
-      = "design" + std::string(".hgr.part.") + std::to_string(num_parts_);
-  WriteSolution(solution_file.c_str(), partition);
+  if (!solution_file.empty()) {
+    WriteSolution(solution_file.c_str(), partition);
+  }
   std::vector<std::vector<int>> timing_paths;
   for (auto& tpath : timing_paths_) {
     timing_paths.push_back(tpath.path);
@@ -717,7 +721,6 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
                   timing_cuts->GetAvereageCriticalPathsCut());
   logger_->report("===============================================");
   logger_->report("Exiting TritonPart");
-  exit(EXIT_SUCCESS);
 }
 
 HGraph TritonPart::preProcessHypergraph()
@@ -824,7 +827,6 @@ void TritonPart::tritonPartHypergraph(const char* hypergraph_file_arg,
                               + std::string(".part.")
                               + std::to_string(num_parts_);
   WriteSolution(solution_file.c_str(), partition);
-  exit(EXIT_SUCCESS);
 }
 
 std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(

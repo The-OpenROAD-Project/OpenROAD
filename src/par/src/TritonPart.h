@@ -79,7 +79,8 @@ class TritonPart
   // Top level interface
   void tritonPartDesign(unsigned int num_parts,
                         float balance_constraint,
-                        unsigned int seed);
+                        unsigned int seed,
+                        const std::string& solution_file);
   // This is only used for replacing hMETIS
   void tritonPartHypergraph(const char* hypergraph_file,
                             const char* fixed_file,

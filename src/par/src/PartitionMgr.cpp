@@ -96,11 +96,13 @@ void PartitionMgr::tritonPartHypergraph(const char* hypergraph_file,
 
 void PartitionMgr::tritonPartDesign(unsigned int num_parts,
                                     float balance_constraint,
-                                    unsigned int seed)
+                                    unsigned int seed,
+                                    const std::string& solution_file)
 {
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
-  triton_part->tritonPartDesign(num_parts, balance_constraint, seed);
+  triton_part->tritonPartDesign(
+      num_parts, balance_constraint, seed, solution_file);
 }
 
 std::vector<int> PartitionMgr::TritonPart2Way(

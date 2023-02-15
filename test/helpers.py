@@ -63,3 +63,12 @@ utl.suppress_message(utl.PPL, 60)
 # suppress tap info messages
 utl.suppress_message(utl.TAP, 100)
 utl.suppress_message(utl.TAP, 101)
+
+
+# suppress par messages with runtime
+utl.suppress_message(utl.PAR, 1)
+utl.suppress_message(utl.PAR, 2)
+utl.suppress_message(utl.PAR, 3)
+utl.suppress_message(utl.PAR, 4)
+utl.suppress_message(utl.PAR, 5)
+utl.suppress_message(utl.PAR, 6)
