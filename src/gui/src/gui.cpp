@@ -96,7 +96,7 @@ static void message_handler(QtMsgType type,
   }
   switch (type) {
     case QtDebugMsg:
-      logger->debug(utl::GUI, 1, print_msg);
+      logger->debug(utl::GUI, "qt", print_msg);
       break;
     case QtInfoMsg:
       logger->info(utl::GUI, 75, print_msg);

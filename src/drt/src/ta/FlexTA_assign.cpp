@@ -481,8 +481,7 @@ void FlexTAWorker::modCutSpacingCost(const Rect& box,
           hasViol = true;
         }
       } else if (con->isArea()) {
-        auto currArea = max(box.maxDXDY() * box.minDXDY(),
-                            tmpBx.maxDXDY() * tmpBx.minDXDY());
+        auto currArea = max(box.area(), tmpBx.area());
         if (currArea >= con->getCutArea()) {
           hasViol = true;
         }

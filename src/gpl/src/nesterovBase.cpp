@@ -591,8 +591,7 @@ BinGrid::BinGrid()
       targetDensity_(0),
       overflowArea_(0),
       overflowAreaUnscaled_(0),
-      isSetBinCntX_(0),
-      isSetBinCntY_(0)
+      isSetBinCnt_(0)
 {
 }
 
@@ -607,7 +606,7 @@ BinGrid::~BinGrid()
   bins_.clear();
   binCntX_ = binCntY_ = 0;
   binSizeX_ = binSizeY_ = 0;
-  isSetBinCntX_ = isSetBinCntY_ = 0;
+  isSetBinCnt_ = 0;
   overflowArea_ = 0;
   overflowAreaUnscaled_ = 0;
 }
@@ -637,19 +636,8 @@ void BinGrid::setTargetDensity(float density)
 
 void BinGrid::setBinCnt(int binCntX, int binCntY)
 {
-  setBinCntX(binCntX);
-  setBinCntY(binCntY);
-}
-
-void BinGrid::setBinCntX(int binCntX)
-{
-  isSetBinCntX_ = 1;
+  isSetBinCnt_ = 1;
   binCntX_ = binCntX;
-}
-
-void BinGrid::setBinCntY(int binCntY)
-{
-  isSetBinCntY_ = 1;
   binCntY_ = binCntY;
 }
 
@@ -720,6 +708,16 @@ int64_t BinGrid::overflowAreaUnscaled() const
   return overflowAreaUnscaled_;
 }
 
+static unsigned int roundDownToPowerOfTwo(unsigned int x)
+{
+  x |= (x >> 1);
+  x |= (x >> 2);
+  x |= (x >> 4);
+  x |= (x >> 8);
+  x |= (x >> 16);
+  return x ^ (x >> 1);
+}
+
 void BinGrid::initBins()
 {
   int64_t totalBinArea
@@ -741,24 +739,31 @@ void BinGrid::initBins()
   log_->info(GPL, 26, "IdealBinCnt: {}", idealBinCnt);
   log_->info(GPL, 27, "TotalBinArea: {}", totalBinArea);
 
-  int foundBinCnt = 2;
-  // find binCnt: 2, 4, 8, 16, 32, 64, ...
-  // s.t. binCnt^2 <= idealBinCnt <= (binCnt*2)^2.
-  for (foundBinCnt = 2; foundBinCnt <= 1024; foundBinCnt *= 2) {
-    if (foundBinCnt * foundBinCnt <= idealBinCnt
-        && 4 * foundBinCnt * foundBinCnt > idealBinCnt) {
-      break;
+  if (!isSetBinCnt_) {
+    // Consider the apect ratio of the block when computing the number
+    // of bins so that the bins remain relatively square.
+    const int width = ux_ - lx_;
+    const int height = uy_ - ly_;
+    const int ratio = roundDownToPowerOfTwo(std::max(width, height)
+                                            / std::min(width, height));
+
+    int foundBinCnt = 2;
+    // find binCnt: 2, 4, 8, 16, 32, 64, ...
+    // s.t. #bins(binCnt) <= idealBinCnt <= #bins(binCnt*2).
+    for (foundBinCnt = 2; foundBinCnt <= 1024; foundBinCnt *= 2) {
+      if (foundBinCnt * (foundBinCnt * ratio) <= idealBinCnt
+          && 4 * foundBinCnt * (foundBinCnt * ratio) > idealBinCnt) {
+        break;
+      }
     }
-  }
 
-  // setBinCntX_;
-  if (!isSetBinCntX_) {
-    binCntX_ = foundBinCnt;
-  }
-
-  // setBinCntY_;
-  if (!isSetBinCntY_) {
-    binCntY_ = foundBinCnt;
+    if (width > height) {
+      binCntX_ = foundBinCnt * ratio;
+      binCntY_ = foundBinCnt;
+    } else {
+      binCntX_ = foundBinCnt;
+      binCntY_ = foundBinCnt * ratio;
+    }
   }
 
   log_->info(GPL, 28, "BinCnt: {} {}", binCntX_, binCntY_);
@@ -969,7 +974,7 @@ void NesterovBaseVars::reset()
   targetDensity = 1.0;
   binCntX = binCntY = 0;
   minWireLengthForceBar = -300;
-  isSetBinCntX = isSetBinCntY = 0;
+  isSetBinCnt = 0;
   useUniformTargetDensity = 0;
 }
 
@@ -1154,12 +1159,8 @@ void NesterovBase::init()
 
   // initialize bin grid structure
   // send param into binGrid structure
-  if (nbVars_.isSetBinCntX) {
-    bg_.setBinCntX(nbVars_.binCntX);
-  }
-
-  if (nbVars_.isSetBinCntY) {
-    bg_.setBinCntY(nbVars_.binCntY);
+  if (nbVars_.isSetBinCnt) {
+    bg_.setBinCnt(nbVars_.binCntX, nbVars_.binCntY);
   }
 
   bg_.setPlacerBase(pb_);
@@ -1256,36 +1257,15 @@ void NesterovBase::initFillerGCells()
   int fillerCnt = static_cast<int>(
       totalFillerArea_ / static_cast<int64_t>(fillerDx_ * fillerDy_));
 
-  debugPrint(log_, GPL, "replace", 3, "FillerInit: CoreArea {}", coreArea);
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "FillerInit: WhiteSpaceArea {}",
-             whiteSpaceArea_);
+  debugPrint(log_, GPL, "FillerInit", 1, "CoreArea {}", coreArea);
+  debugPrint(log_, GPL, "FillerInit", 1, "WhiteSpaceArea {}", whiteSpaceArea_);
+  debugPrint(log_, GPL, "FillerInit", 1, "MovableArea {}", movableArea_);
   debugPrint(
-      log_, GPL, "replace", 3, "FillerInit: MovableArea {}", movableArea_);
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "FillerInit: TotalFillerArea {}",
-             totalFillerArea_);
+      log_, GPL, "FillerInit", 1, "TotalFillerArea {}", totalFillerArea_);
+  debugPrint(log_, GPL, "FillerInit", 1, "NumFillerCells {}", fillerCnt);
+  debugPrint(log_, GPL, "FillerInit", 1, "FillerCellArea {}", fillerCellArea());
   debugPrint(
-      log_, GPL, "replace", 3, "FillerInit: NumFillerCells {}", fillerCnt);
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "FillerInit: FillerCellArea {}",
-             fillerCellArea());
-  debugPrint(log_,
-             GPL,
-             "replace",
-             3,
-             "FillerInit: FillerCellSize {} {}",
-             fillerDx_,
-             fillerDy_);
+      log_, GPL, "FillerInit", 1, "FillerCellSize {} {}", fillerDx_, fillerDy_);
 
   //
   // mt19937 supports huge range of random values.
@@ -1673,9 +1653,9 @@ void NesterovBase::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         if (gPin->gCell() && gPin->gCell()->isInstance()) {
           debugPrint(log_,
                      GPL,
-                     "replace",
-                     5,
-                     "wlUpdateWA:  MinX updated: {} {:g}",
+                     "wlUpdateWA",
+                     1,
+                     "MinX updated: {} {:g}",
                      gPin->gCell()->instance()->dbInst()->getConstName(),
                      gPin->minExpSumX());
         }
@@ -1689,9 +1669,9 @@ void NesterovBase::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         if (gPin->gCell() && gPin->gCell()->isInstance()) {
           debugPrint(log_,
                      GPL,
-                     "replace",
-                     5,
-                     "wlUpdateWA:  MaxX updated: {} {:g}",
+                     "wlUpdateWA",
+                     1,
+                     "MaxX updated: {} {:g}",
                      gPin->gCell()->instance()->dbInst()->getConstName(),
                      gPin->maxExpSumX());
         }
@@ -1705,9 +1685,9 @@ void NesterovBase::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         if (gPin->gCell() && gPin->gCell()->isInstance()) {
           debugPrint(log_,
                      GPL,
-                     "replace",
-                     5,
-                     "wlUpdateWA:  MinY updated: {} {:g}",
+                     "wlUpdateWA",
+                     1,
+                     "MinY updated: {} {:g}",
                      gPin->gCell()->instance()->dbInst()->getConstName(),
                      gPin->minExpSumY());
         }
@@ -1721,16 +1701,14 @@ void NesterovBase::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
         if (gPin->gCell() && gPin->gCell()->isInstance()) {
           debugPrint(log_,
                      GPL,
-                     "replace",
-                     5,
-                     "wlUpdateWA:  MaxY updated: {} {:g}",
+                     "wlUpdateWA",
+                     1,
+                     "MaxY updated: {} {:g}",
                      gPin->gCell()->instance()->dbInst()->getConstName(),
                      gPin->maxExpSumY());
         }
       }
     }
-    // cout << gNet->lx() << " " << gNet->ly() << " "
-    //   << gNet->ux() << " " << gNet->uy() << endl;
   }
 }
 
@@ -1746,9 +1724,9 @@ FloatPoint NesterovBase::getWireLengthGradientWA(const GCell* gCell,
 
     debugPrint(log_,
                GPL,
-               "replace",
-               5,
-               "getGradientWA: wlPair: {:g} {:g}",
+               "getGradientWA",
+               1,
+               "wlPair: {:g} {:g}",
                tmpPair.x,
                tmpPair.y);
 
@@ -1763,9 +1741,9 @@ FloatPoint NesterovBase::getWireLengthGradientWA(const GCell* gCell,
   if (gCell->isInstance()) {
     debugPrint(log_,
                GPL,
-               "replace",
-               5,
-               "getGradientWA:  gradient: {:g} {:g}",
+               "getGradientWA",
+               1,
+               "gradient: {:g} {:g}",
                gradientPair.x,
                gradientPair.y);
   }
@@ -1834,9 +1812,9 @@ FloatPoint NesterovBase::getWireLengthGradientPinWA(const GPin* gPin,
 
   debugPrint(log_,
              GPL,
-             "replace",
-             5,
-             "getGradientWAPin:  gradient:  X[{:g} {:g}]  Y[{:g} {:g}]",
+             "getGradientWAPin",
+             1,
+             "gradient:  X[{:g} {:g}]  Y[{:g} {:g}]",
              gradientMinX,
              gradientMaxX,
              gradientMinY,

@@ -26,6 +26,7 @@ record_tests {
   ndr_2w_3s
   no_tracks
   obs_out_of_die
+  overlapping_edges
   pd1
   pd2
   pd3
@@ -48,7 +49,9 @@ record_tests {
   report_wire_length5
   report_wire_length6
   silence
+  top_level_term
   tracks1
   tracks2
   tracks3
+  upper_layer_net
 }

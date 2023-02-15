@@ -32,11 +32,9 @@
 
 #include "rcx/extSpef.h"
 
-#include <dbExtControl.h>
-#include <math.h>
-
 #include <algorithm>
 
+#include "dbExtControl.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
