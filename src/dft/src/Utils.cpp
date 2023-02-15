@@ -36,8 +36,7 @@
 
 #include "db_sta/dbNetwork.hh"
 
-namespace dft {
-namespace utils {
+namespace dft::utils {
 
 namespace {
 constexpr char kTmpScanFlopName[] = "tmp_scan_flop";
@@ -127,5 +126,4 @@ void TieScanPins(sta::dbNetwork* db_network,
   instance->findITerm(test_cell->scanEnable()->name())->connect(ground_net);
 }
 
-}  // namespace utils
-}  // namespace dft
+}  // namespace dft::utils

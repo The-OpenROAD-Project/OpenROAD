@@ -36,8 +36,7 @@
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
-namespace dft {
-namespace utils {
+namespace dft::utils {
 
 // Creates a new cell in the given block using the master. Returns an instance
 // of the new cell with a default temporal name
@@ -67,5 +66,4 @@ void TieScanPins(sta::dbNetwork* db_network,
 // otherwise
 bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
 
-}  // namespace utils
-}  // namespace dft
+}  // namespace dft::utils
