@@ -44,14 +44,13 @@ class ScanReplace;
 class Dft
 {
  public:
-
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
   // Pre-work for insert_dft. We collect the cells that need to be
   // scan replaced. This function doesn't mutate the design.
   //
   // TODO (and not implemented yet)
-  //  - scan architect 
+  //  - scan architect
   void pre_dft();
 
   // Inserts the scan chains into the design. For now this just replace the
@@ -76,7 +75,6 @@ class Dft
 
   // Internal state
   std::unique_ptr<ScanReplace> scan_replace_;
-
 };
 
 }  // namespace dft
