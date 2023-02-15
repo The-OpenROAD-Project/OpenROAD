@@ -52,6 +52,12 @@ class Dft
   void insert_dft();
 
  private:
+  // If we need to run pre_dft to create the internal state
+  bool did_we_run_pre_dft_;
+
+  // Resets the internal state
+  void reset();
+
   // Global state
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
@@ -60,11 +66,6 @@ class Dft
   // Internal state
   std::unique_ptr<replace::ScanReplace> scan_replace_;
 
-  // If we need to run pre_dft to create the internal state
-  bool did_we_run_pre_dft_;
-
-  // Resets the internal state
-  void reset();
 };
 
 }  // namespace dft
