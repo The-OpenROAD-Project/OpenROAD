@@ -39,9 +39,7 @@
 #include "utl/Logger.h"
 
 namespace dft {
-namespace replace {
 class ScanReplace;
-}  // namespace replace
 
 class Dft
 {
@@ -77,7 +75,7 @@ class Dft
   utl::Logger* logger_;
 
   // Internal state
-  std::unique_ptr<replace::ScanReplace> scan_replace_;
+  std::unique_ptr<ScanReplace> scan_replace_;
 
 };
 

@@ -42,7 +42,6 @@
 #include "sta/Sequential.hh"
 
 namespace dft {
-namespace replace {
 
 namespace {
 
@@ -422,5 +421,4 @@ void ScanReplace::debugPrintScanEquivalents() const
   }
 }
 
-}  // namespace replace
 }  // namespace dft

@@ -39,7 +39,6 @@
 #include "utl/Logger.h"
 
 namespace dft {
-namespace replace {
 
 // A scan cell that can be use to replace a non-scan cell
 // It contains the LibertyCell that we can use to instanciate a new cell and a
@@ -104,5 +103,4 @@ class ScanReplace
   void scanReplace(odb::dbBlock* block);
 };
 
-}  // namespace replace
 }  // namespace dft

@@ -58,7 +58,7 @@ void Dft::reset()
 
 void Dft::pre_dft()
 {
-  scan_replace_ = std::make_unique<replace::ScanReplace>(db_, sta_, logger_);
+  scan_replace_ = std::make_unique<ScanReplace>(db_, sta_, logger_);
   scan_replace_->collectScanCellAvailable();
 
   // This should always be at the end
