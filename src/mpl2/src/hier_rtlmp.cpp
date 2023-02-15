@@ -38,8 +38,6 @@
 #include <queue>
 #include <thread>
 
-// Partitioner note : currently we are still using MLPart to partition large
-// flat clusters Later this will be replaced by our TritonPart
 #include <iostream>
 
 #include "SACoreHardMacro.h"
@@ -215,6 +213,54 @@ void HierRTLMP::setReportDirectory(const char* report_directory)
 //
 void HierRTLMP::setDefaultThresholds()
 {
+  std::string snap_layer_name;
+  // calculate the pitch_x and pitch_y based on the pins of macros
+  for (auto& macro : hard_macro_map_) {
+    odb::dbMaster* master = macro.first->getMaster();
+    for (odb::dbMTerm* mterm : master->getMTerms()) {
+      if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
+        for (odb::dbMPin* mpin : mterm->getMPins()) {
+          for (odb::dbBox* box : mpin->getGeometry()) {
+            odb::dbTechLayer* layer = box->getTechLayer();
+            snap_layer_name = layer->getName();
+            pitch_x_
+                = dbuToMicron(static_cast<float>(layer->getPitchX()), dbu_);
+            pitch_y_
+                = dbuToMicron(static_cast<float>(layer->getPitchY()), dbu_);
+          }
+        }
+      }
+    }
+    break;  // we just need to calculate pitch_x and pitch_y once
+  }
+
+  // update weight
+  if (dynamic_congestion_weight_flag_ == true) {
+    std::vector<std::string> layers;
+    int tot_num_layer = 0;
+    for (odb::dbTechLayer* layer : db_->getTech()->getLayers()) {
+      if (layer->getType() == odb::dbTechLayerType::ROUTING) {
+        layers.push_back(layer->getName());
+        tot_num_layer++;
+      }
+    }
+    snap_layer_ = 0;
+    for (int i = 0; i < layers.size(); i++) {
+      if (layers[i] == snap_layer_name) {
+        snap_layer_ = i + 1;
+        break;
+      }
+    }
+    if (snap_layer_ <= 0) {
+      congestion_weight_ = 0.0;
+    } else {
+      congestion_weight_ = 1.0 * snap_layer_ / layers.size();
+    }
+    logger_->report("snap_layer : {}  congestion_weight : {}",
+                    snap_layer_,
+                    congestion_weight_);
+  }
+
   if (max_num_macro_base_ <= 0 || min_num_macro_base_ <= 0
       || max_num_inst_base_ <= 0 || min_num_inst_base_ <= 0) {
     min_num_inst_base_
@@ -341,84 +387,7 @@ void HierRTLMP::hierRTLMacroPlacer()
       util,
       core_util);
 
-  std::string snap_layer_name;
-  // calculate the pitch_x and pitch_y based on the pins of macros
-  for (auto& macro : hard_macro_map_) {
-    odb::dbMaster* master = macro.first->getMaster();
-    for (odb::dbMTerm* mterm : master->getMTerms()) {
-      if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
-        for (odb::dbMPin* mpin : mterm->getMPins()) {
-          for (odb::dbBox* box : mpin->getGeometry()) {
-            odb::dbTechLayer* layer = box->getTechLayer();
-            snap_layer_name = layer->getName();
-            pitch_x_
-                = dbuToMicron(static_cast<float>(layer->getPitchX()), dbu_);
-            pitch_y_
-                = dbuToMicron(static_cast<float>(layer->getPitchY()), dbu_);
-          }
-        }
-      }
-    }
-    break;  // we just need to calculate pitch_x and pitch_y once
-  }
-
-  // update weight
-  if (dynamic_congestion_weight_flag_ == true) {
-    std::vector<std::string> layers;
-    int tot_num_layer = 0;
-    for (odb::dbTechLayer* layer : db_->getTech()->getLayers()) {
-      if (layer->getType() == odb::dbTechLayerType::ROUTING) {
-        layers.push_back(layer->getName());
-        tot_num_layer++;
-      }
-    }
-    snap_layer_ = 0;
-    for (int i = 0; i < layers.size(); i++) {
-      if (layers[i] == snap_layer_name) {
-        snap_layer_ = i + 1;
-        break;
-      }
-    }
-    if (snap_layer_ <= 0) {
-      congestion_weight_ = 0.0;
-    } else {
-      congestion_weight_ = 1.0 * snap_layer_ / layers.size();
-    }
-    logger_->report("snap_layer : {}  congestion_weight : {}",
-                    snap_layer_,
-                    congestion_weight_);
-  }
-
-  //
-  // Set defaults for min/max number of instances and macros if not set by user.
-  //
-  if (max_num_macro_base_ <= 0 || min_num_macro_base_ <= 0
-      || max_num_inst_base_ <= 0 || min_num_inst_base_ <= 0) {
-    min_num_inst_base_
-        = std::floor(metrics_->getNumStdCell()
-                     / std::pow(coarsening_ratio_, max_num_level_));
-    if (min_num_inst_base_ <= 1000)
-      min_num_inst_base_ = 1000;  // lower bound
-    max_num_inst_base_ = min_num_inst_base_ * coarsening_ratio_ / 2.0;
-    min_num_macro_base_ = std::floor(
-        metrics_->getNumMacro() / std::pow(coarsening_ratio_, max_num_level_));
-    if (min_num_macro_base_ <= 0)
-      min_num_macro_base_ = 1;  // lowerbound
-    max_num_macro_base_ = min_num_macro_base_ * coarsening_ratio_ / 2.0;
-
-    if (metrics_->getNumMacro() <= 150) {
-      max_num_level_
-          = 1;  // if the number of macros is small we can do single level
-    }
-  }
-
-  unsigned coarsening_factor = std::pow(coarsening_ratio_, max_num_level_ - 1);
-  max_num_macro_base_ = max_num_macro_base_ * coarsening_factor;
-  min_num_macro_base_ = min_num_macro_base_ * coarsening_factor;
-  max_num_inst_base_ = max_num_inst_base_ * coarsening_factor;
-  min_num_inst_base_ = min_num_inst_base_ * coarsening_factor;
-
-  //setDefaultThresholds();
+  setDefaultThresholds();
 
   //
   // Initialize the physcial hierarchy tree
@@ -1047,7 +1016,7 @@ void HierRTLMP::breakCluster(Cluster* parent)
     // Check the child logical modules
     // (b.1) if the logical module has no child logical module
     // this logical module is a leaf logical module
-    // we will use the MLPart to partition this large flat cluster
+    // we will use the TritonPART to partition this large flat cluster
     // in the follow-up UpdateSubTree function
     if (module->getChildren().size() == 0) {
       for (odb::dbInst* inst : module->getInsts()) {
@@ -1862,9 +1831,8 @@ void HierRTLMP::printClusters()
 
 // This function has two purposes:
 // 1) remove all the internal clusters between parent and leaf clusters in its
-// subtree 2) Call MLPart to partition large flat clusters (a cluster with no
+// subtree 2) Call TritonPART to partition large flat clusters (a cluster with no
 // logical modules)
-//    Later MLPart will be replaced by TritonPart
 void HierRTLMP::updateSubTree(Cluster* parent)
 {
   std::vector<Cluster*> children_clusters;
@@ -1903,7 +1871,7 @@ void HierRTLMP::updateSubTree(Cluster* parent)
   }
 }
 
-// Break large flat clusters with MLPart
+// Break large flat clusters with TritonPART 
 // A flat cluster does not have a logical module
 void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
 {
