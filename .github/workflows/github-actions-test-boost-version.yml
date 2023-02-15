@@ -84,8 +84,7 @@ jobs:
         shell: bash
         run: |
           build/src/openroad -help
-          export OMP_NUM_THREADS=3
-          sudo ./test/regression
+          ./test/regression
       - name: Archive logs
         if: failure()
         uses: actions/upload-artifact@v3
