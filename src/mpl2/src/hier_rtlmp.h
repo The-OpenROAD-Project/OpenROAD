@@ -141,6 +141,7 @@ class HierRTLMP
   void setDebug();
 
  private:
+  void setDefaultThresholds();
   void createDataFlow();
   void updateDataFlow();
   void dataFlowDFSIOPin(int parent,
@@ -188,7 +189,7 @@ class HierRTLMP
   void printConnection();
   void printClusters();
   void updateSubTree(Cluster* parent);
-  // Break large flat clusters with MLPart
+  // Break large flat clusters with TritonPart
   // A flat cluster does not have a logical module
   void breakLargeFlatCluster(Cluster* cluster);
 

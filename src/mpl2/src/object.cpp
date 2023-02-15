@@ -581,7 +581,8 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
 // For example, if a small cluster A is closely connected to a
 // well-formed cluster B, (there are also other well-formed clusters
 // C, D), A is only connected to B and A has no connection with C, D
-// candidate_clusters are small clusters,
+//
+// candidate_clusters are small clusters that need to be merged,
 // any cluster not in candidate_clusters is a well-formed cluster
 //
 int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
@@ -593,7 +594,7 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
     debugPrint(logger_,
                MPL,
                "clustering",
-               1,
+               2,
                "cluster_id: {}, nets: {}",
                cluster_id,
                num_nets);
@@ -683,7 +684,7 @@ void Cluster::printBasicInformation(utl::Logger* logger) const
     line += "\n";
   }
 
-  logger->info(MPL, 2022, line);
+  logger->report(line);
 }
 
 // Macro Placement Support
