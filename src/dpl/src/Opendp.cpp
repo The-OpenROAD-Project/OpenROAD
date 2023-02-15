@@ -138,10 +138,11 @@ Opendp::~Opendp()
   deleteGrid();
 }
 
-void Opendp::init(dbDatabase* db, Logger* logger)
+void Opendp::init(dbDatabase* db, Logger* logger, std::function<std::unique_ptr<Graphics>(Opendp*, float, const odb::dbInst*)> make_graphics)
 {
   db_ = db;
   logger_ = logger;
+  _make_graphics = make_graphics;
 }
 
 void Opendp::initBlock()
@@ -178,7 +179,7 @@ void Opendp::setDebug(bool displacement,
 {
   if (Graphics::guiActive()) {
     graphics_
-        = std::make_unique<Graphics>(this, min_displacement, debug_instance);
+        = _make_graphics(this, min_displacement, debug_instance);
   }
 }
 

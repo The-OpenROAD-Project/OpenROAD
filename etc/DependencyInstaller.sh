@@ -176,7 +176,8 @@ _installUbuntuPackages() {
         zlib1g-dev \
         libomp-dev \
         devscripts \
-        debhelper
+        debhelper \
+        googletest
 
     apt-get install -y \
         binutils \
@@ -259,7 +260,8 @@ _installRHELPackages() {
         python3-pip \
         python3-devel \
         clang \
-        clang-devel
+        clang-devel \
+        gtest
 
     yum install -y \
         http://repo.okay.com.mx/centos/8/x86_64/release/bison-3.0.4-10.el8.x86_64.rpm \
@@ -296,7 +298,8 @@ _installCentosPackages() {
         tcllib \
         tcl-tclreadline-devel \
         zlib-devel \
-        wget
+        wget \
+        gtest
 
     yum install -y \
         python-devel \
@@ -350,7 +353,8 @@ _installOpenSusePackages() {
         git \
         gzip \
         libomp11-devel \
-        zlib-devel
+        zlib-devel \
+        googletest
 
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 50
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 50
@@ -393,7 +397,7 @@ Then, rerun this script.
 EOF
       exit 1
     fi
-    brew install bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
+    brew install googletest bison boost cmake eigen flex libomp pyqt5 python swig tcl-tk zlib
 
     # Some systems neeed this to correclty find OpenMP package during build
     brew link --force libomp
@@ -437,7 +441,8 @@ _installDebianPackages() {
         zlib1g-dev \
         libomp-dev \
         devscripts \
-        debhelper
+        debhelper \
+        googletest
 
     apt-get install -y \
         binutils \

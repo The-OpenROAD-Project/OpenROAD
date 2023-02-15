@@ -226,6 +226,7 @@ if (${SPDLOG_FMT_EXTERNAL})
 endif()
 
 find_package(Threads REQUIRED)
+find_package(GTest REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 ################################################################

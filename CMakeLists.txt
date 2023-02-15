@@ -33,7 +33,7 @@
 ##
 ###############################################################################
 
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 3.16)
 
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
 # Use standard target names
@@ -71,6 +71,8 @@ option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by de
 if (LINK_TIME_OPTIMIZATION)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
+
+enable_testing()
 
 # Allow to use external shared boost libraries
 option(USE_SYSTEM_BOOST "Use system shared Boost libraries" OFF)

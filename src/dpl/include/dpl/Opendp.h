@@ -176,7 +176,7 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  void init(dbDatabase* db, Logger* logger);
+  void init(dbDatabase* db, Logger* logger, std::function<std::unique_ptr<Graphics>(Opendp*, float, const odb::dbInst*)> make_graphics);
   void initBlock();
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
@@ -212,6 +212,7 @@ class Opendp
   int getRowSiteCount() const { return row_site_count_; }
 
  private:
+  friend class Dpl_IsPlaced_Test;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
@@ -414,6 +415,7 @@ class Opendp
   NetBoxMap net_box_map_;
 
   std::unique_ptr<Graphics> graphics_;
+  std::function<std::unique_ptr<Graphics>(Opendp*, float, const odb::dbInst*)> _make_graphics;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;

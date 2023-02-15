@@ -32,35 +32,33 @@
 
 namespace dpl {
 
-using odb::dbBlock;
-using odb::dbInst;
-using odb::Point;
-using odb::Rect;
-
 class Opendp;
 struct Cell;
 
+// Decorates the gui::Renderer with DPL specific routines.
 class Graphics : public gui::Renderer
 {
  public:
-  Graphics(Opendp* dp, float min_displacement, const dbInst* debug_instance);
+  Graphics(Opendp* dp, float min_displacement, const odb::dbInst* debug_instance);
 
-  void startPlacement(dbBlock* block);
-  void placeInstance(dbInst* instance);
-  void binSearch(const Cell* cell, int xl, int yl, int xh, int yh);
-  void endPlacement();
+  virtual void startPlacement(odb::dbBlock* block);
+  virtual void placeInstance(odb::dbInst* instance);
+  virtual void binSearch(const Cell* cell, int xl, int yl, int xh, int yh);
+  virtual void endPlacement();
 
   // From Renderer API
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
-  static bool guiActive();
+  static bool guiActive() {
+    return gui::Gui::enabled();
+  }
 
  private:
   Opendp* dp_;
-  const dbInst* debug_instance_;
-  dbBlock* block_;
+  const odb::dbInst* debug_instance_;
+  odb::dbBlock* block_;
   float min_displacement_;  // in row height
-  std::vector<Rect> searched_;
+  std::vector<odb::Rect> searched_;
 };
 
 }  // namespace dpl

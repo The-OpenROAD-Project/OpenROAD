@@ -141,11 +141,4 @@ void Graphics::drawObjects(gui::Painter& painter)
     painter.drawRect(rect);
   }
 }
-
-/* static */
-bool Graphics::guiActive()
-{
-  return gui::Gui::enabled();
-}
-
 }  // namespace dpl
