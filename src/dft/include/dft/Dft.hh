@@ -46,9 +46,22 @@ class ScanReplace;
 class Dft
 {
  public:
+
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
+  // Pre-work for insert_dft. We collect the cells that need to be
+  // scan replaced. This function doesn't mutate the design.
+  //
+  // TODO (and not implemented yet)
+  //  - scan architect 
   void pre_dft();
+
+  // Inserts the scan chains into the design. For now this just replace the
+  // cells in the design with scan equivalent. This functions mutates the
+  // design.
+  //
+  // TODO (and not implemented yet)
+  // - scan stitching
   void insert_dft();
 
  private:
