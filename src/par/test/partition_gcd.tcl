@@ -9,7 +9,13 @@ link_design gcd
 read_sdc gcd_nangate45.sdc
 
 set part_file [make_result_file partition_gcd.part]
+set graph_file [make_result_file partition_gcd.graph]
+set paths_file [make_result_file partition_gcd.paths]
 
-triton_part_design -solution_file $part_file
+triton_part_design -solution_file $part_file \
+    -hypergraph_file $graph_file \
+    -paths_file $paths_file
 
+diff_files partition_gcd.graphok $graph_file
+diff_files partition_gcd.pathsok $paths_file
 diff_files partition_gcd.partok $part_file
