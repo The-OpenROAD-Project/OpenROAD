@@ -23,5 +23,5 @@
 [INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
 [INFO GRT-0019] Found 0 clock nets.
-[ERROR GRT-0042] Pin clk does not have geometries below the max routing layer (metal10).
+[ERROR GRT-0042] Pin clk does not have geometries in a valid routing layer.
 GRT-0042

@@ -74,7 +74,7 @@ target_link_libraries(dpo
     odb
     OpenSTA
     utl
-    dpl
+    dpl_lib
 )
 
 messages(

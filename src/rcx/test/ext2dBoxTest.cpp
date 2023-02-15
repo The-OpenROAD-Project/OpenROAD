@@ -47,16 +47,12 @@ namespace rcx {
 
 BOOST_AUTO_TEST_CASE(simple_instantiate_accessors)
 {
-  ext2dBox box({0, 1}, {2, 4}, 1, 0, 0, /*dir=*/false);
+  ext2dBox box({0, 1}, {2, 4});
 
-  BOOST_TEST(box.dir() == false);
   BOOST_TEST(box.ll0() == 0);
   BOOST_TEST(box.ll1() == 1);
   BOOST_TEST(box.ur0() == 2);
   BOOST_TEST(box.ur1() == 4);
-
-  BOOST_TEST(box.length() == 2);
-  BOOST_TEST(box.width() == 3);
 }
 
 }  // namespace rcx

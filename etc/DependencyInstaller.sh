@@ -567,6 +567,10 @@ case "${platform}" in
         fi
         ;;
     "Darwin" )
+        if [[ $(id -u) == 0 ]]; then>&2
+            echo "ERROR: cannot install on macOS if you are root or using sudo  (not recommended for brew)." >&2
+            exit 1
+        fi
         os="Darwin"
         ;;
     *)

@@ -1648,7 +1648,7 @@ void FlexGR::initGR_genTopology_net(frNet* net)
       rootIdx = rootIdxCnt;
     }
     gcellNode2RPinNodes[gcellNode.get()] = localNodes;
-    tmpGCellNodes.push_back(move(gcellNode));
+    tmpGCellNodes.push_back(std::move(gcellNode));
     rootIdxCnt++;
   }
   net->setFirstNonRPinNode(gcellNodes[0]);

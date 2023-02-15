@@ -232,6 +232,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
 
   if (inserted_buffer_count_ > 0)
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+  logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
   Slack worst_slack = sta_->worstSlack(max_);

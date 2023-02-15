@@ -134,6 +134,9 @@ message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
+message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
 
 # configure a header file to pass some of the CMake settings
 configure_file(
