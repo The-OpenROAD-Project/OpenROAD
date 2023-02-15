@@ -262,7 +262,7 @@ const std::vector<odb::dbInst*> Cluster::getLeafMacros() const
   return leaf_macros_;
 }
 
-const std::vector<HardMacro*> Cluster::getHardMacros() const
+std::vector<HardMacro*> Cluster::getHardMacros() const
 {
   return hard_macros_;
 }
