@@ -60,17 +60,6 @@ bool IsScanCell(const sta::LibertyCell* libertyCell)
   return false;
 }
 
-// Buffers can't be replaced
-bool CanBeScanReplace(odb::dbMaster* master,
-                      const sta::LibertyCell* libertyCell)
-{
-  if (libertyCell->isBuffer() || libertyCell->isInverter()) {
-    return false;
-  }
-
-  return true;
-}
-
 // Checks the ports
 sta::LibertyPort* FindEquivalentPortInScanCell(
     const sta::LibertyPort* non_scan_cell_port,
@@ -296,7 +285,7 @@ void ScanReplace::collectScanCellAvailable()
 
       if (IsScanCell(liberty_cell)) {
         available_scan_lib_cells_.insert(liberty_cell);
-      } else if (CanBeScanReplace(master, liberty_cell)) {
+      } else {
         non_scan_cells.push_back(liberty_cell);
       }
     }
