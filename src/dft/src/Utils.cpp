@@ -83,7 +83,8 @@ odb::dbInst* ReplaceCell(
   std::vector<std::tuple<std::string, odb::dbNet*>> port_name_to_net;
   PopulatePortNameToNet(old_instance, port_name_to_net);
 
-  odb::dbInst* new_instance = odb::dbInst::create(top_block, new_master, kTmpScanFlopName);
+  odb::dbInst* new_instance
+      = odb::dbInst::create(top_block, new_master, kTmpScanFlopName);
   std::string old_cell_name = old_instance->getName();
 
   // Delete the old cell
