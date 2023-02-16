@@ -41,9 +41,8 @@
 namespace dft {
 
 // A scan cell that can be use to replace a non-scan cell
-// It contains the LibertyCell that we can use to instanciate a new cell and a
-// port map of how to connect the non-scan cell to the new one's equivalent
-// ports
+// It contains the LibertyCell that we can use to instantiate a new cell and a
+// port map to store the equivalence non-scan and scan ports.
 //
 // A scan candidate is decided by checking some performance data (see
 // ScanCandidate.cpp's DifferencePerformanceCells) to select the most similar
