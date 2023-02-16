@@ -352,8 +352,6 @@ void ScanReplace::scanReplace()
 // one) replacing the cells with scan equivalent
 void ScanReplace::scanReplace(odb::dbBlock* block)
 {
-  odb::dbNet* ground_net = utils::FindGroundNet(db_network_, block);
-
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->isDoNotTouch()) {
       // Do not scan replace dont_touch
@@ -399,11 +397,8 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
     sta::LibertyCell* scan_cell = scan_candidate->getScanCell();
     odb::dbMaster* master_scan_cell = db_network_->staToDb(scan_cell);
 
-    odb::dbInst* new_instance = utils::ReplaceCell(
+    utils::ReplaceCell(
         block, inst, master_scan_cell, scan_candidate->getPortMapping());
-    // Tie dangling scan pins to ground
-    utils::TieScanPins(
-        db_network_, new_instance, scan_candidate->getScanCell(), ground_net);
   }
 
   // Recursive iterate inside the block to look for inside hiers

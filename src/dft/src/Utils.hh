@@ -48,16 +48,6 @@ odb::dbInst* ReplaceCell(
     odb::dbMaster* new_master,
     const std::unordered_map<std::string, std::string>& port_mapping);
 
-// Find the net that has the ground in the given block.
-odb::dbNet* FindGroundNet(sta::dbNetwork* db_network, odb::dbBlock* block);
-
-// Connects the scan pins of a cell to ground to make it functional equivalent
-// to a non-scan cell
-void TieScanPins(sta::dbNetwork* db_network,
-                 odb::dbInst* instance,
-                 sta::LibertyCell* scan_cell,
-                 odb::dbNet* ground_net);
-
 // Returns true if the given instance cell's is a sequential cell, false
 // otherwise
 bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);

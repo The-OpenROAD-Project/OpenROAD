@@ -98,28 +98,4 @@ odb::dbInst* ReplaceCell(
 
   return new_instance;
 }
-
-odb::dbNet* FindGroundNet(sta::dbNetwork* db_network, odb::dbBlock* block)
-{
-  for (odb::dbNet* net : block->getNets()) {
-    if (db_network->isGround(db_network->dbToSta(net))) {
-      return net;
-    }
-  }
-  return nullptr;
-}
-
-void TieScanPins(sta::dbNetwork* db_network,
-                 odb::dbInst* instance,
-                 sta::LibertyCell* scan_cell,
-                 odb::dbNet* ground_net)
-{
-  if (!ground_net) {
-    return;
-  }
-  sta::TestCell* test_cell = scan_cell->testCell();
-  instance->findITerm(test_cell->scanIn()->name())->connect(ground_net);
-  instance->findITerm(test_cell->scanEnable()->name())->connect(ground_net);
-}
-
 }  // namespace dft::utils

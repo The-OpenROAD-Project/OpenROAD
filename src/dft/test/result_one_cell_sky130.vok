@@ -10,8 +10,6 @@ module chip_io (set_b,
 
  sky130_fd_sc_hd__sdfsbp_1 ff1 (.D(port1),
     .Q(output1),
-    .SCD(VGND),
-    .SCE(VGND),
     .SET_B(set_b),
     .CLK(clock));
 endmodule
