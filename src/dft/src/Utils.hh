@@ -38,10 +38,6 @@
 
 namespace dft::utils {
 
-// Creates a new cell in the given block using the master. Returns an instance
-// of the new cell with a default temporal name
-odb::dbInst* CreateCell(odb::dbBlock* top_block, odb::dbMaster* new_master);
-
 // Replace the old_instance cell with a new master. The connections of the old
 // cell will be preserved by using the given port mapping from
 // <old_port_name, new_port_name>. Returns the new instance and deletes the old
@@ -62,7 +58,7 @@ void TieScanPins(sta::dbNetwork* db_network,
                  sta::LibertyCell* scan_cell,
                  odb::dbNet* ground_net);
 
-// Returns true if the given cell's instance is a sequiental cell, false
+// Returns true if the given instance cell's is a sequential cell, false
 // otherwise
 bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
 

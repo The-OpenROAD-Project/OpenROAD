@@ -74,11 +74,6 @@ bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance)
   return liberty_cell->hasSequentials();
 }
 
-odb::dbInst* CreateCell(odb::dbBlock* top_block, odb::dbMaster* new_master)
-{
-  return odb::dbInst::create(top_block, new_master, kTmpScanFlopName);
-}
-
 odb::dbInst* ReplaceCell(
     odb::dbBlock* top_block,
     odb::dbInst* old_instance,
@@ -88,7 +83,7 @@ odb::dbInst* ReplaceCell(
   std::vector<std::tuple<std::string, odb::dbNet*>> port_name_to_net;
   PopulatePortNameToNet(old_instance, port_name_to_net);
 
-  odb::dbInst* new_instance = CreateCell(top_block, new_master);
+  odb::dbInst* new_instance = odb::dbInst::create(top_block, new_master, kTmpScanFlopName);
   std::string old_cell_name = old_instance->getName();
 
   // Delete the old cell
