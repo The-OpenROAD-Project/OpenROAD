@@ -160,6 +160,8 @@ _installUbuntuPackages() {
         bison \
         flex \
         clang \
+        g++ \
+        gcc \
         git \
         lcov \
         libpcre2-dev \
@@ -188,23 +190,17 @@ _installUbuntuPackages() {
             qtchooser \
             qt5-qmake \
             qtbase5-dev-tools \
-            libpython3.11 \
-            gcc-11 \
-            g++-11
+            libpython3.11
     elif [[ $1 == 22.04 ]]; then
         apt-get install -y \
             qtbase5-dev \
             qtchooser \
             qt5-qmake \
             qtbase5-dev-tools \
-            libpython3.8 \
-            gcc \
-            g++
+            libpython3.8
     else
         apt-get install -y qt5-default \
-            libpython3.8 \
-            gcc \
-            g++
+            libpython3.8
     fi
 
     # need the strip "hack" above to run on docker
