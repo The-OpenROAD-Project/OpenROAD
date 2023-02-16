@@ -225,7 +225,8 @@ std::unique_ptr<ScanCandidate> SelectBestScanCell(
 
 // Returns true if the instance is connected to don't touch nets, false
 // otherwise
-bool HaveDontTouchNets(odb::dbInst* inst) {
+bool HaveDontTouchNets(odb::dbInst* inst)
+{
   for (odb::dbITerm* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
     if (net && net->isDoNotTouch()) {
