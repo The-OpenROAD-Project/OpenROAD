@@ -223,6 +223,18 @@ std::unique_ptr<ScanCandidate> SelectBestScanCell(
   return std::move(scan_candidates.at(0));
 }
 
+// Returns true if the instance is connected to don't touch nets, false
+// otherwise
+bool HaveDontTouchNets(odb::dbInst* inst) {
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    odb::dbNet* net = iterm->getNet();
+    if (net && net->isDoNotTouch()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 ScanCandidate::ScanCandidate(
@@ -344,6 +356,11 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
   for (odb::dbInst* inst : block->getInsts()) {
     if (inst->isDoNotTouch()) {
       // Do not scan replace dont_touch
+      continue;
+    }
+
+    if (HaveDontTouchNets(inst)) {
+      // The cell is connected to don't touch nets
       continue;
     }
 
