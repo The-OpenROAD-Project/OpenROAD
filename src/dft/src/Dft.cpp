@@ -67,7 +67,7 @@ void Dft::pre_dft()
 
 void Dft::insert_dft()
 {
-  if (!need_to_run_pre_dft_) {
+  if (need_to_run_pre_dft_) {
     pre_dft();
   }
 
