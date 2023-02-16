@@ -42,6 +42,8 @@
 
 namespace par {
 
+// KPM = K-way Pair-wise FM (Fiduccia-Mattheyses algorithm)
+
 using KPMpartition = std::pair<float, std::vector<std::vector<float>>>;
 
 template <typename T>

@@ -151,3 +151,11 @@ suppress_message PPL 60
 # suppress tap info messages
 suppress_message TAP 100
 suppress_message TAP 101
+
+# suppress par messages with runtime
+suppress_message PAR 1
+suppress_message PAR 2
+suppress_message PAR 3
+suppress_message PAR 4
+suppress_message PAR 5
+suppress_message PAR 6

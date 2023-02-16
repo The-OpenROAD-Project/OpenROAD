@@ -79,7 +79,10 @@ class TritonPart
   // Top level interface
   void tritonPartDesign(unsigned int num_parts,
                         float balance_constraint,
-                        unsigned int seed);
+                        unsigned int seed,
+                        const std::string& solution_filename,
+                        const std::string& paths_filename,
+                        const std::string& hypergraph_filename);
   // This is only used for replacing hMETIS
   void tritonPartHypergraph(const char* hypergraph_file,
                             const char* fixed_file,
@@ -111,7 +114,7 @@ class TritonPart
   HGraph preProcessHypergraph();
   // Generate timing report
   void GenerateTimingReport(std::vector<int>& partition, bool design);
-  void WritePathsToFile();
+  void WritePathsToFile(const std::string& paths_filename);
   std::vector<int> TritonPart_design_PartTwoWay(unsigned int num_parts_,
                                                 float ub_factor_,
                                                 int vertex_dimensions_,
@@ -198,7 +201,7 @@ class TritonPart
   // Read hypergraph from input files
   void BuildHypergraph();
   // Write the hypergraph to file
-  void WriteHypergraph();
+  void WriteHypergraph(const std::string& hypergraph_filename);
   // When we create the hypergraph, we ignore all the hyperedges with vertices
   // more than global_net_threshold_
   HGraph hypergraph_ = nullptr;  // the original hypergraph
