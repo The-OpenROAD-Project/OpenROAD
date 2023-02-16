@@ -314,8 +314,7 @@ void TPcoarsener::VertexMatching(
         best_score = score;
       }
     }
-    assert(best_candidate > -1);
-    const int best_candidate_c_attr = vertex_c_attr[best_candidate];
+    const int best_candidate_c_attr = vertex_c_attr.at(best_candidate);
     if (best_candidate_c_attr > -1) {
       vertex_c_attr[v] = best_candidate_c_attr;
       if (hgraph->placement_flag_ == true) {

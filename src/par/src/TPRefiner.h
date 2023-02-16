@@ -65,6 +65,7 @@ class VertexGain
     vertex_ = -1;
     source_part_ = -1;
     potential_move_ = -1;
+    gain_ = -1;
   }
   VertexGain(int arg_vertex, float arg_gain)
       : vertex_(arg_vertex), gain_(arg_gain)
@@ -81,6 +82,7 @@ class VertexGain
   VertexGain(int arg_vertex, float arg_gain, std::map<int, float> arg_path_cost)
       : vertex_(arg_vertex), gain_(arg_gain), path_cost_(arg_path_cost)
   {
+    source_part_ = -1;
     potential_move_ = -1;
     status_ = true;
   }
@@ -162,6 +164,7 @@ class TPrefiner
         e_wt_factors_(e_wt_factors),
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),
+        tolerance_(0),
         logger_(logger)
   {
   }
@@ -606,7 +609,8 @@ class TPgreedyRefine : public TPrefiner
                   e_wt_factors,
                   path_wt_factor,
                   snaking_wt_factor,
-                  logger)
+                  logger),
+        max_moves_(0)
   {
   }
   TPgreedyRefine(const TPgreedyRefine&) = default;
@@ -693,7 +697,7 @@ class TPilpGraph
     eind_.clear();
     eptr_.clear();
     eptr_.push_back(static_cast<int>(eind_.size()));
-    for (auto hyperedge : hyperedges) {
+    for (const auto& hyperedge : hyperedges) {
       eind_.insert(eind_.end(), hyperedge.begin(), hyperedge.end());
       eptr_.push_back(static_cast<int>(eind_.size()));
     }
@@ -821,7 +825,6 @@ class TPilpRefine : public TPrefiner
                       matrix<int>& net_degs);
   int wavefront_;
   int he_thr_;
-  int seed_;
   std::vector<int> cluster_map_;
 };
 

@@ -216,13 +216,13 @@ void TPpartitioner::Partition(const HGraph hgraph,
                               const matrix<float>& max_block_balance,
                               std::vector<int>& solution)
 {
-  const int partitioner = GetPartitionerChoice();
-  if (partitioner == INIT_RANDOM) {
+  const PartitionType partitioner = GetPartitionerChoice();
+  if (partitioner == PartitionType::INIT_RANDOM) {
     RandomPart(hgraph, max_block_balance, solution);
-  } else if (partitioner == INIT_DIRECT_ILP) {
+  } else if (partitioner == PartitionType::INIT_DIRECT_ILP) {
     OptimalPartCplexWarmStart(hgraph, max_block_balance, solution);
     // OptimalPartCplex(hgraph, max_block_balance, solution);
-  } else if (partitioner == INIT_VILE) {
+  } else if (partitioner == PartitionType::INIT_VILE) {
     InitPartVileTwoWay(hgraph, max_block_balance, solution);
   }
 }
