@@ -331,6 +331,10 @@ void TPpartitioner::OptimalPartCplexWarmStart(
     const matrix<float>& max_block_balance,
     std::vector<int>& solution)
 {
+  // TODO: This code is disabled as CP-SAT is non-deterministic when
+  // threaded (see https://github.com/google/or-tools/discussions/3275).
+  // This may have some QOR degradation to be quantified.
+  return;
   logger_->report(
       "Optimal ILP-based Partitioning (OR-Tools) with warm-start ...");
   matrix<int> x(num_parts_, std::vector<int>(hgraph->num_vertices_, 0));
