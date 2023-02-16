@@ -274,13 +274,9 @@ bool Replace::initNesterovPlace()
     NesterovBaseVars nbVars;
     nbVars.targetDensity = density_;
 
-    if (binGridCntX_ != 0) {
-      nbVars.isSetBinCntX = 1;
+    if (binGridCntX_ != 0 && binGridCntY_ != 0) {
+      nbVars.isSetBinCnt = 1;
       nbVars.binCntX = binGridCntX_;
-    }
-
-    if (binGridCntY_ != 0) {
-      nbVars.isSetBinCntY = 1;
       nbVars.binCntY = binGridCntY_;
     }
 
@@ -380,13 +376,9 @@ void Replace::setNesterovPlaceMaxIter(int iter)
   }
 }
 
-void Replace::setBinGridCntX(int binGridCntX)
+void Replace::setBinGridCnt(int binGridCntX, int binGridCntY)
 {
   binGridCntX_ = binGridCntX;
-}
-
-void Replace::setBinGridCntY(int binGridCntY)
-{
   binGridCntY_ = binGridCntY;
 }
 

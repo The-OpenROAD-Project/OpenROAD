@@ -110,9 +110,6 @@ class ZInterface
   // Throws ZException
   int event(const char* name, const char* attr1, const char* val, ...);
 
-  // idle event
-  int idle(int level);
-
   // ade event
   int ade(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
 
@@ -130,10 +127,6 @@ class ZInterface
 
   // verbose/debugging message
   int verbose(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
-
-  // debug message
-  // void debug(const char *mod, const char *tag, const char * fmt, ... )
-  // ADS_FORMAT_PRINTF(4,5);
 
   // error, Throws a ZException
   void error(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);

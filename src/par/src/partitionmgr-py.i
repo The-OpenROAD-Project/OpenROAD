@@ -35,24 +35,16 @@
 
 %{
 #include "par/PartitionMgr.h"
-#include "ord/OpenRoad.hh"
-#include <set>
 %}
 
 %include "../../Exception-py.i"
 
-%import <std_string.i>
-
-// We must include, rather than import, std_vector.i, or we will get
-// "'SWIGPY_SLICE_ARG’ was not declared in this scope" Also, the order
-// of these import / include statements is crucial
 %include <std_vector.i>
-%import <std_set.i>
-
+%include <std_string.i>
 
 namespace std {
   %template(vector_int) std::vector<int>;
-  %template(set_int)    std::set<int>;
+  %template(vector_float) std::vector<float>;
 }
 
 %include "par/PartitionMgr.h"

@@ -58,6 +58,7 @@ target_link_libraries(ifp
     dbSta
     OpenSTA
     utl
+    upf_lib
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)
