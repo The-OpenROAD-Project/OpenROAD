@@ -31,9 +31,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include <unordered_map>
-#include <unordered_set>
-
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
