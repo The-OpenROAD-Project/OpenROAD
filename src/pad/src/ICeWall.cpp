@@ -263,12 +263,13 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
   const int cwidth
       = std::max(vertical_site->getHeight(), corner_site->getWidth());
 
-  const int x_sites = std::ceil(static_cast<double>(outer_io.dx() - 2 * cwidth)
-                                / vertical_site->getWidth());
+  const int x_sites = std::floor(static_cast<double>(outer_io.dx() - 2 * cwidth)
+                                 / vertical_site->getWidth());
   outer_io.set_xhi(outer_io.xMin() + 2 * cwidth
                    + x_sites * vertical_site->getWidth());
-  const int y_sites = std::ceil(static_cast<double>(outer_io.dy() - 2 * cheight)
-                                / horizontal_site->getWidth());
+  const int y_sites
+      = std::floor(static_cast<double>(outer_io.dy() - 2 * cheight)
+                   / horizontal_site->getWidth());
   outer_io.set_yhi(outer_io.yMin() + 2 * cheight
                    + y_sites * horizontal_site->getWidth());
 
