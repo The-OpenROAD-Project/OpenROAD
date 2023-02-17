@@ -49,10 +49,6 @@ namespace {
 // Scan Enable
 bool IsScanCell(const sta::LibertyCell* libertyCell)
 {
-  if (libertyCell->isBuffer() || libertyCell->isInverter()) {
-    return false;
-  }
-
   const sta::TestCell* test_cell = libertyCell->testCell();
   if (test_cell) {
     return test_cell->scanIn() != nullptr && test_cell->scanEnable() != nullptr;
