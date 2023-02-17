@@ -167,6 +167,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
   resizer_->incrementalParasiticsBegin();
   int max_length = resizer_->metersToDbu(max_wire_length);
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
+    if(i%100 == 0) printf("Iter: %d\n", i);
     Vertex *drvr = resizer_->level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->isTopLevelPort(drvr_pin)

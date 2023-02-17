@@ -981,6 +981,37 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   return false;
 }
 
+void Opendp::legalAllCells() {
+
+  importDb();
+  initGrid();
+  setFixedGridCells();
+
+  for (Cell& cell : cells_) { 
+    if (isFixed(&cell))
+      continue;
+    //printf("%s\n", cell.name());
+    Point init = initialLocation(&cell, false);
+    int grid_x = gridX(init.getX());
+    int grid_y = gridY(init.getY());
+    Pixel * pixel = gridPixel(grid_x, grid_y);
+    const Cell * block = pixel->cell;
+
+    if(block && isBlock(block)) {
+      printf("Moving %s out of macro %s\n", cell.name(), block->name());
+      Point legal_pt = legalPt(&cell, true);
+      int x = legal_pt.getX();
+      int y = legal_pt.getY();
+      printf("new_point: %d %d\n", x, y);
+      //setGridPaddedLoc(&cell, x, y);
+      dbInst* db_inst = cell.db_inst_;
+      db_inst->setLocation(core_.xMin() + x, core_.yMin() + y);
+      //if(!mapMove(&cell))
+        //logger_->error(DPL, 17779, "cannot place instance {}.", cell.name());
+    }
+  }
+}
+
 // Legalize pt origin for cell
 //  inside the core
 //  row site

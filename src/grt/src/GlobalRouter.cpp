@@ -3989,7 +3989,10 @@ void GlobalRouter::updateDirtyRoutes()
 
     std::vector<Net*> dirty_nets;
     updateDirtyNets(dirty_nets);
-    
+
+    if (dirty_nets.empty())
+      return;
+
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route

@@ -176,6 +176,7 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
+  void legalAllCells();
   void init(dbDatabase* db, Logger* logger);
   void initBlock();
   // legalize/report
