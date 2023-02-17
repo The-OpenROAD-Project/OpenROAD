@@ -70,6 +70,33 @@ odb::dbBlock* ICeWall::getBlock() const
   return chip->getBlock();
 }
 
+void ICeWall::assertMasterType(odb::dbMaster* master,
+                               odb::dbMasterType type) const
+{
+  if (master->getType() != type) {
+    logger_->error(utl::PAD,
+                   11,
+                   "{} is not of type {}, but is instead {}",
+                   master->getName(),
+                   odb::dbMasterType::getString(type),
+                   odb::dbMasterType::getString(master->getType()));
+  }
+}
+
+void ICeWall::assertMasterType(odb::dbMaster* inst,
+                               odb::dbMasterType type) const
+{
+  auto* master = inst->getMaster();
+  if (master->getType() != type) {
+    logger_->error(utl::PAD,
+                   12,
+                   "{} is not of type {}, but is instead {}",
+                   inst->getName(),
+                   odb::dbMasterType::getString(type),
+                   odb::dbMasterType::getString(master->getType()));
+  }
+}
+
 void ICeWall::makeBumpArray(odb::dbMaster* master,
                             const odb::Point& start,
                             int rows,
@@ -86,6 +113,8 @@ void ICeWall::makeBumpArray(odb::dbMaster* master,
   if (master == nullptr) {
     return;
   }
+
+  assertMasterType(master, odb::dbMasterType::COVER_BUMP);
 
   for (int xn = 0; xn < columns; xn++) {
     for (int yn = 0; yn < rows; yn++) {
@@ -105,6 +134,8 @@ void ICeWall::removeBump(odb::dbInst* inst)
     return;
   }
 
+  assertMasterType(inst, odb::dbMasterType::COVER_BUMP);
+
   odb::dbInst::destroy(inst);
 }
 
@@ -118,6 +149,8 @@ void ICeWall::removeBumpArray(odb::dbMaster* master)
   if (master == nullptr) {
     return;
   }
+
+  assertMasterType(master, odb::dbMasterType::COVER_BUMP);
 
   for (auto* inst : block->getInsts()) {
     if (inst->getMaster() == master) {
@@ -149,6 +182,8 @@ void ICeWall::assignBump(odb::dbInst* inst, odb::dbNet* net)
   if (net == nullptr) {
     return;
   }
+
+  assertMasterType(inst, odb::dbMasterType::COVER_BUMP);
 
   odb::dbTransform xform;
   inst->getTransform(xform);
@@ -681,6 +716,8 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
   if (bond == nullptr) {
     return;
   }
+
+  assertMasterType(bond, odb::dbMasterType::COVER);
 
   odb::dbMTerm* bond_pin = nullptr;
   odb::Rect bond_rect;

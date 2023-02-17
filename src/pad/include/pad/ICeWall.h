@@ -149,6 +149,9 @@ class ICeWall
       const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
       const;
 
+  void assertMasterType(odb::dbMaster* master, odb::dbMasterType type) const;
+  void assertMasterType(odb::dbInst* inst, odb::dbMasterType type) const;
+
   // Data members
   odb::dbDatabase* db_;
   utl::Logger* logger_;
