@@ -217,6 +217,15 @@ TPHypergraph::TPHypergraph(
   logger_ = logger;
 }
 
+float TPHypergraph::edge_score(const int e,
+                               const std::vector<float>& e_wt_factors) const
+{
+  return std::inner_product(hyperedge_weights_[e].begin(),
+                            hyperedge_weights_[e].end(),
+                            e_wt_factors.begin(),
+                            0.0);
+}
+
 std::vector<float> TPHypergraph::GetTotalVertexWeights() const
 {
   std::vector<float> total_weight(vertex_dimensions_, 0.0);
@@ -287,12 +296,7 @@ void TPHypergraph::WriteReducedHypergraph(
   file_output << num_hyperedges_ << "  " << num_vertices_ << " 11" << std::endl;
   // write hyperedge weight and hyperedge first
   for (int e = 0; e < num_hyperedges_; e++) {
-    file_output << std::inner_product(hyperedge_weights_[e].begin(),
-                                      hyperedge_weights_[e].end(),
-                                      hyperedge_w_factor.begin(),
-                                      0.0)
-
-                << "  ";
+    file_output << edge_score(e, hyperedge_w_factor) << "  ";
     for (auto idx = eptr_[e]; idx < eptr_[e + 1]; idx++)
       file_output << eind_[idx] + 1 << " ";
     file_output << std::endl;
@@ -368,11 +372,7 @@ std::vector<float> TPHypergraph::ComputeAlgebraicWights() const
   std::vector<float> e_weight;
   for (int e = 0; e < num_hyperedges_; e++) {
     const int e_size = eptr_[e + 1] - eptr_[e];
-    e_weight.push_back(std::inner_product(hyperedge_weights_[e].begin(),
-                                          hyperedge_weights_[e].end(),
-                                          weight_factor.begin(),
-                                          0.0)
-                       / e_size);
+    e_weight.push_back(edge_score(e, weight_factor) / e_size);
     for (auto idx = eptr_[e]; idx < eptr_[e + 1]; idx++) {
       const int v = eind_[idx];
       std::vector<float> v_embed_w = MultiplyFactor(v_embed[v], 1.0 / e_size);

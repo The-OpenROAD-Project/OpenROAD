@@ -52,10 +52,7 @@ KPMpartition KPMRefinement::KPMevaluator(const HGraph hgraph,
   for (int e = 0; e < hgraph->num_hyperedges_; e++) {
     for (int idx = hgraph->eptr_[e] + 1; idx < hgraph->eptr_[e + 1]; idx++) {
       if (solution[hgraph->eind_[idx]] != solution[hgraph->eind_[idx - 1]]) {
-        cost += std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                                   hgraph->hyperedge_weights_[e].end(),
-                                   e_wt_factors_.begin(),
-                                   0.0);
+        cost += hgraph->edge_score(e, e_wt_factors_);
         break;  // this net has been cut
       }
     }  // finish hyperedge e
@@ -92,7 +89,7 @@ KPMpartition KPMRefinement::KPMevaluator(const HGraph hgraph,
   return KPMpartition(cost, block_balance);
 }
 
-inline void kpm_heap::HeapifyUp(int index)
+void kpm_heap::HeapifyUp(int index)
 {
   while (index > 0
          && vertices_[Parent(index)]->GetGain() < vertices_[index]->GetGain()) {
@@ -186,9 +183,8 @@ void kpm_heap::RemoveAt(int index)
 }
 
 // Get block balance
-inline matrix<float> KPMRefinement::KPMgetBlockBalance(
-    const HGraph hgraph,
-    std::vector<int>& solution)
+matrix<float> KPMRefinement::KPMgetBlockBalance(const HGraph hgraph,
+                                                std::vector<int>& solution)
 {
   matrix<float> block_balance(
       num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0));
@@ -290,20 +286,13 @@ std::shared_ptr<vertex> KPMRefinement::KPMcalculateGain(
         connectivity++;
     return connectivity;
   };
-  // function : calculate the score for the hyperedge
-  auto GetHyperedgeScore = [&](int e) {
-    return std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                              hgraph->hyperedge_weights_[e].end(),
-                              e_wt_factors_.begin(),
-                              0.0);
-  };
   // traverse all the hyperedges connected to v
   const int first_valid_entry = hgraph->vptr_[v];
   const int first_invalid_entry = hgraph->vptr_[v + 1];
   for (auto e_idx = first_valid_entry; e_idx < first_invalid_entry; e_idx++) {
     const int e = hgraph->vind_[e_idx];  // hyperedge id
     const int connectivity = GetConnectivity(e);
-    const float e_score = GetHyperedgeScore(e);
+    const float e_score = hgraph->edge_score(e, e_wt_factors_);
     if (connectivity == 1
         && net_degs[e][from_pid]
                > 1) {  // move from_pid to to_pid will have negative socre
@@ -348,10 +337,7 @@ float KPMRefinement::KPMcalculateSpan(const HGraph hgraph,
       }
     }
     if (flag_partition_from == true && flag_partition_to == true) {
-      span += std::inner_product(hgraph->hyperedge_weights_[i].begin(),
-                                 hgraph->hyperedge_weights_[i].end(),
-                                 e_wt_factors_.begin(),
-                                 0.0);
+      span += hgraph->edge_score(i, e_wt_factors_);
     }
   }
   return span;
@@ -387,7 +373,7 @@ std::vector<int> KPMRefinement::KPMfindBoundaryVertices(
 }
 
 // Check if a vertex is on the boundary of a bipartition
-inline bool KPMRefinement::KPMcheckBoundaryVertex(
+bool KPMRefinement::KPMcheckBoundaryVertex(
     const HGraph hgraph,
     const int& v,
     const std::pair<int, int> partition_pair,
@@ -405,8 +391,8 @@ inline bool KPMRefinement::KPMcheckBoundaryVertex(
 }
 
 // Check connectivity of a hyperedge
-inline int KPMRefinement::KPMgetConnectivity(const int& he,
-                                             const matrix<int>& net_degs) const
+int KPMRefinement::KPMgetConnectivity(const int& he,
+                                      const matrix<int>& net_degs) const
 {
   int connectivity = 0;
   for (int i = 0; i < num_parts_; ++i) {

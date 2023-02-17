@@ -156,10 +156,7 @@ TP_partition_token TPrefiner::CutEvaluator(const HGraph hgraph,
   for (int e = 0; e < hgraph->num_hyperedges_; ++e) {
     for (int idx = hgraph->eptr_[e] + 1; idx < hgraph->eptr_[e + 1]; ++idx) {
       if (solution[hgraph->eind_[idx]] != solution[hgraph->eind_[idx - 1]]) {
-        edge_cost += std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                                        hgraph->hyperedge_weights_[e].end(),
-                                        e_wt_factors_.begin(),
-                                        0.0);
+        edge_cost += hgraph->edge_score(e, e_wt_factors_);
         break;  // this net has been cut
       }
     }  // finish hyperedge e
@@ -358,18 +355,18 @@ void TPrefiner::GeneratePathsAsEdges(const HGraph hgraph)
   }
 }
 
-inline void TPrefiner::InitPathCuts(const HGraph hgraph,
-                                    std::vector<int>& path_cuts,
-                                    std::vector<int>& solution)
+void TPrefiner::InitPathCuts(const HGraph hgraph,
+                             std::vector<int>& path_cuts,
+                             std::vector<int>& solution)
 {
   for (int i = 0; i < hgraph->timing_attr_.size(); ++i) {
     path_cuts[i] = GetPathCuts(i, hgraph, solution);
   }
 }
 
-inline void TPrefiner::InitPaths(const HGraph hgraph,
-                                 std::vector<float>& path_cost,
-                                 std::vector<int>& solution)
+void TPrefiner::InitPaths(const HGraph hgraph,
+                          std::vector<float>& path_cost,
+                          std::vector<int>& solution)
 {
   // rescale hyperedge weights to original weights so that these get
   // recalculated according to cuts on path graphs
@@ -464,13 +461,6 @@ TP_gain_cell TPrefiner::CalculateGain(int v,
         connectivity++;
     return connectivity;
   };
-  // function : calculate the score for the hyperedge
-  auto GetHyperedgeScore = [&](int e) {
-    return std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                              hgraph->hyperedge_weights_[e].end(),
-                              e_wt_factors_.begin(),
-                              0.0);
-  };
 
   // traverse all the hyperedges connected to v
   const int first_valid_entry = hgraph->vptr_[v];
@@ -478,7 +468,7 @@ TP_gain_cell TPrefiner::CalculateGain(int v,
   for (auto e_idx = first_valid_entry; e_idx < first_invalid_entry; e_idx++) {
     const int e = hgraph->vind_[e_idx];  // hyperedge id
     const int connectivity = GetConnectivity(e);
-    const float e_score = GetHyperedgeScore(e);
+    const float e_score = hgraph->edge_score(e, e_wt_factors_);
     const int he_size = hgraph->eptr_[e + 1] - hgraph->eptr_[e];
 
     if (he_size > thr_he_size_skip_) {
@@ -532,7 +522,7 @@ bool TPrefiner::CheckLegality(const HGraph hgraph,
   return false;
 }
 
-inline void TPpriorityQueue::HeapifyUp(int index)
+void TPpriorityQueue::HeapifyUp(int index)
 {
   while (index > 0
          && vertices_[Parent(index)]->GetGain() < vertices_[index]->GetGain()) {
@@ -783,7 +773,7 @@ std::shared_ptr<VertexGain> TPtwoWayFM::FindMovableVertex(
   return dummy_cell;
 }
 
-inline std::shared_ptr<VertexGain> TPtwoWayFM::SolveCorkingEffect(
+std::shared_ptr<VertexGain> TPtwoWayFM::SolveCorkingEffect(
     const int corking_part,
     const HGraph hgraph,
     TP_gain_buckets& buckets,
@@ -1820,11 +1810,7 @@ float TPgreedyRefine::CalculateGain(HGraph hgraph,
                                     std::vector<int>& straddle,
                                     matrix<int>& net_degs)
 {
-  float gain
-      = std::inner_product(hgraph->hyperedge_weights_[straddle_he].begin(),
-                           hgraph->hyperedge_weights_[straddle_he].end(),
-                           e_wt_factors_.begin(),
-                           0.0);
+  float gain = hgraph->edge_score(straddle_he, e_wt_factors_);
   for (auto& v : straddle) {
     const int first_valid_entry = hgraph->vptr_[v];
     const int first_invalid_entry = hgraph->vptr_[v + 1];
@@ -1838,20 +1824,14 @@ float TPgreedyRefine::CalculateGain(HGraph hgraph,
       // then this is a gain
       if (pre_net_deg[from] > 0 && pre_net_deg[to] > 0) {
         if (post_net_deg[from] == 0 && post_net_deg[to] > 0) {
-          gain += std::inner_product(hgraph->hyperedge_weights_[he].begin(),
-                                     hgraph->hyperedge_weights_[he].end(),
-                                     e_wt_factors_.begin(),
-                                     0.0);
+          gain += hgraph->edge_score(he, e_wt_factors_);
         }
       }
       // If the hyperedge was not straddling the cut but post movement it
       // straddles the cut then this is a negative gain
       if (pre_net_deg[from] > 0 && pre_net_deg[to] == 0) {
         if (post_net_deg[from] > 0 && post_net_deg[to] > 0) {
-          gain -= std::inner_product(hgraph->hyperedge_weights_[he].begin(),
-                                     hgraph->hyperedge_weights_[he].end(),
-                                     e_wt_factors_.begin(),
-                                     0.0);
+          gain -= hgraph->edge_score(he, e_wt_factors_);
         }
       }
     }
@@ -1987,13 +1967,6 @@ float TPilpRefine::CalculateGain(int vertex,
         connectivity++;
     return connectivity;
   };
-  // function : calculate the score for the hyperedge
-  auto GetHyperedgeScore = [&](int e) {
-    return std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                              hgraph->hyperedge_weights_[e].end(),
-                              e_wt_factors_.begin(),
-                              0.0);
-  };
   // traverse all the hyperedges connected to v
   const int first_valid_entry = hgraph->vptr_[vertex];
   const int first_invalid_entry = hgraph->vptr_[vertex + 1];
@@ -2002,7 +1975,7 @@ float TPilpRefine::CalculateGain(int vertex,
   for (auto e_idx = first_valid_entry; e_idx < first_invalid_entry; ++e_idx) {
     const int e = hgraph->vind_[e_idx];  // hyperedge id
     const int connectivity = GetConnectivity(e);
-    const float e_score = GetHyperedgeScore(e);
+    const float e_score = hgraph->edge_score(e, e_wt_factors_);
     const int he_size = hgraph->eptr_[e + 1] - hgraph->eptr_[e];
     if (he_size > thr_he_size_skip_) {
       continue;
@@ -2446,8 +2419,8 @@ void TPilpRefine::SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
 }
 */
 
-inline void TPilpRefine::Remap(std::vector<int>& partition,
-                               std::vector<int>& refined_partition)
+void TPilpRefine::Remap(std::vector<int>& partition,
+                        std::vector<int>& refined_partition)
 {
   for (int i = 0; i < cluster_map_.size(); ++i) {
     partition[i] = refined_partition[cluster_map_[i]];

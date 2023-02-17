@@ -52,7 +52,6 @@ using matrix = std::vector<std::vector<T>>;
 class KPMRefinement
 {
  public:
-  KPMRefinement() = default;
   KPMRefinement(int num_parts,
                 const std::vector<float>& e_wt_factors,
                 float path_wt_factor,
@@ -71,11 +70,6 @@ class KPMRefinement
     seed_ = seed;
     logger_ = logger;
   }
-  KPMRefinement(const KPMRefinement&) = default;
-  KPMRefinement& operator=(const KPMRefinement&) = default;
-  KPMRefinement(KPMRefinement&&) = default;
-  KPMRefinement& operator=(KPMRefinement&&) = default;
-  ~KPMRefinement() = default;
 
   // Golden Evaluator
   KPMpartition KPMevaluator(const HGraph hgraph,
@@ -175,10 +169,7 @@ class KPMRefinement
       potential_move_ = -1;
       status_ = true;
     }
-    VertexGain(const VertexGain&) = default;
-    VertexGain& operator=(const VertexGain&) = default;
-    VertexGain(VertexGain&&) = default;
-    VertexGain& operator=(VertexGain&&) = default;
+
     bool operator<(const VertexGain& vertex_gain) const
     {
       if (gain_ > vertex_gain.gain_) {
@@ -225,7 +216,6 @@ class KPMRefinement
   class PriorityQ
   {
    public:
-    PriorityQ() = default;
     PriorityQ(int total_elements, HGraph hypergraph)
     {
       vertices_map_.resize(total_elements);
@@ -239,12 +229,7 @@ class KPMRefinement
         : vertices_(vertices), vertices_map_(vertices_map)
     {
     }
-    PriorityQ(const PriorityQ&) = default;
-    PriorityQ& operator=(const PriorityQ&) = default;
-    PriorityQ(PriorityQ&&) = default;
-    PriorityQ& operator=(PriorityQ&&) = default;
-    ~PriorityQ() = default;
-    inline void HeapifyUp(int index);
+    void HeapifyUp(int index);
     void HeapifyDown(int index);
     void InsertIntoPQ(std::shared_ptr<VertexGain> element);
     std::shared_ptr<VertexGain> ExtractMax();
@@ -302,8 +287,8 @@ class KPMRefinement
   // utility functions.
   // Get block balance
  private:
-  inline matrix<float> KPMgetBlockBalance(const HGraph hgraph,
-                                          std::vector<int>& solution);
+  matrix<float> KPMgetBlockBalance(const HGraph hgraph,
+                                   std::vector<int>& solution);
   // update the net degree for existing solution
   // for each hyperedge, calculate the number of vertices in each part
   matrix<int> KPMgetNetDegrees(const HGraph hgraph, std::vector<int>& solution);
@@ -387,13 +372,12 @@ class KPMRefinement
                           const matrix<int>& net_degs,
                           pqs& gain_buckets);
   // Function to chceck connectivity of a hyperedge
-  inline int KPMgetConnectivity(const int& he,
-                                const matrix<int>& net_degs) const;
+  int KPMgetConnectivity(const int& he, const matrix<int>& net_degs) const;
   // Function to check if a vertex is lying on the boundary
-  inline bool KPMcheckBoundaryVertex(const HGraph hgraph,
-                                     const int& v,
-                                     const std::pair<int, int> partition_pair,
-                                     const matrix<int>& net_degs) const;
+  bool KPMcheckBoundaryVertex(const HGraph hgraph,
+                              const int& v,
+                              const std::pair<int, int> partition_pair,
+                              const matrix<int>& net_degs) const;
   int num_parts_ = 2;
   std::vector<float> e_wt_factors_;  // the cost weight for hyperedge weights
   float path_wt_factor_ = 0.0;       // the cost for cut of timing paths

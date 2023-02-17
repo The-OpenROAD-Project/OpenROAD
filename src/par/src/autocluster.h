@@ -56,7 +56,7 @@ namespace par {
 // The four edges (left, right, bottom, top) are divided into
 // thirds (lower, middle, upper).  The cross-product produces
 // twelve io regions.  IOs (bterms) are mapped to these regions.
-enum IORegion
+enum class IORegion
 {
   LeftLower,
   LeftMiddle,
