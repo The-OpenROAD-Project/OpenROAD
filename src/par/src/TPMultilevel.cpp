@@ -35,11 +35,6 @@
 
 #include "TPMultilevel.h"
 
-#include <unistd.h>
-
-#include <cstdlib>
-#include <string>
-
 #include "TPHypergraph.h"
 #include "TPPartitioner.h"
 #include "utl/Logger.h"

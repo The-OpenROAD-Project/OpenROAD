@@ -951,12 +951,12 @@ std::vector<int> TritonPart::HypergraphPartTwoWay(
                                         tritonpart_twoway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  RefinerType refine_type = KPM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KPM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_twoway_refiner,
@@ -1085,12 +1085,12 @@ std::vector<int> TritonPart::DesignPartTwoWay(unsigned int num_parts_,
                                         tritonpart_twoway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  RefinerType refine_type = KPM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KPM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_twoway_refiner,
@@ -1219,12 +1219,12 @@ std::vector<int> TritonPart::HypergraphPartKWay(const char* hypergraph_file_arg,
                                         tritonpart_kway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  RefinerType refine_type = KFM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KFM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_kway_refiner,
@@ -1334,12 +1334,12 @@ std::vector<int> TritonPart::DesignPartKWay(unsigned int num_parts_,
                                         tritonpart_kway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  RefinerType refine_type = KFM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KFM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_kway_refiner,
@@ -1548,12 +1548,12 @@ std::vector<int> TritonPart::Partition2Way(
                                         logger_);
   bool v_cycle_flag = true;
   // RefinerType refine_type = 2_WAY_FM;
-  RefinerType refine_type = KPM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KPM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_twoway_refiner,
