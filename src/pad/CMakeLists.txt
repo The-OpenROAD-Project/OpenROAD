@@ -56,8 +56,6 @@ target_sources(pad
 target_include_directories(pad
   PUBLIC
     include
-  PRIVATE
-    src
 )
 
 target_link_libraries(pad
