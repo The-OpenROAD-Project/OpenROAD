@@ -148,7 +148,7 @@ class TritonPart
   // Write the hypergraph to file
   void WriteHypergraph(const std::string& hypergraph_filename);
 
-  void BuildTimingPaths();         // Find all the critical timing paths
+  void BuildTimingPaths();  // Find all the critical timing paths
 
   ord::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
