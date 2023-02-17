@@ -34,29 +34,17 @@ using namespace fr;
 
 struct FlexTAWorkerRegionQuery::Impl
 {
-  FlexTAWorker* taWorker;
   std::vector<RTree<taPinFig*>> shapes_;  // resource map
   // fixed objs, owner:: nullptr or net, con = short
   std::vector<RTree<std::pair<frBlockObject*, frConstraint*>>> costs_;
 };
 
-FlexTAWorkerRegionQuery::FlexTAWorkerRegionQuery(FlexTAWorker* in)
+FlexTAWorkerRegionQuery::FlexTAWorkerRegionQuery()
     : impl_(make_unique<Impl>())
 {
-  impl_->taWorker = in;
 }
 
 FlexTAWorkerRegionQuery::~FlexTAWorkerRegionQuery() = default;
-
-FlexTAWorker* FlexTAWorkerRegionQuery::getTAWorker() const
-{
-  return impl_->taWorker;
-}
-
-frDesign* FlexTAWorkerRegionQuery::getDesign() const
-{
-  return impl_->taWorker->getDesign();
-}
 
 void FlexTAWorkerRegionQuery::add(taPinFig* fig)
 {
@@ -109,9 +97,8 @@ void FlexTAWorkerRegionQuery::query(
             [](const auto& box_fig) { return box_fig.second->getPin(); });
 }
 
-void FlexTAWorkerRegionQuery::init()
+void FlexTAWorkerRegionQuery::init(int numLayers)
 {
-  int numLayers = getDesign()->getTech()->getLayers().size();
   impl_->shapes_.clear();
   impl_->shapes_.resize(numLayers);
   impl_->costs_.clear();

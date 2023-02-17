@@ -834,7 +834,7 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
 
 void FlexTAWorker::init()
 {
-  rq_.init();
+  rq_.init(getDesign()->getTech()->getLayers().size());
   initTracks();
   initFixedObjs();
   initIroutes();

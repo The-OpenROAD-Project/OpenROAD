@@ -67,10 +67,8 @@ class FlexTAWorker;
 class FlexTAWorkerRegionQuery
 {
  public:
-  FlexTAWorkerRegionQuery(FlexTAWorker* in);
+  FlexTAWorkerRegionQuery();
   ~FlexTAWorkerRegionQuery();
-  frDesign* getDesign() const;
-  FlexTAWorker* getTAWorker() const;
 
   void add(taPinFig* fig);
   void remove(taPinFig* fig);
@@ -92,7 +90,7 @@ class FlexTAWorkerRegionQuery
       std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
           result) const;
 
-  void init();
+  void init(int numLayers);
 
  private:
   struct Impl;
@@ -108,7 +106,6 @@ class FlexTAWorker
         logger_(logger),
         dir_(dbTechLayerDir::NONE),
         taIter_(0),
-        rq_(this),
         numAssigned_(0),
         totCost_(0),
         maxRetry_(1),
