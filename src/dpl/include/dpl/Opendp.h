@@ -366,7 +366,7 @@ class Opendp
                        const char* prefix,
                        dbMasterSeq* filler_masters);
   bool isFiller(odb::dbInst* db_inst);
-
+  bool isOneSiteCell(odb::dbInst* db_inst) const;
   const char* gridInstName(int row, int col);
 
   // Optimizing mirroring
@@ -413,6 +413,7 @@ class Opendp
   GapFillers gap_fillers_;
   int filler_count_;
   bool have_fillers_;
+  bool have_one_site_cells_;
 
   // Results saved for optional reporting.
   int64_t hpwl_before_;

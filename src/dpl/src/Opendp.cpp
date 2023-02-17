@@ -126,6 +126,7 @@ Opendp::Opendp()
       grid_(nullptr),
       filler_count_(0),
       have_fillers_(false),
+      have_one_site_cells_(false),
       hpwl_before_(0),
       displacement_avg_(0),
       displacement_sum_(0),
@@ -201,8 +202,13 @@ void Opendp::detailedPlacement(int max_displacement_x,
     max_displacement_y_ = max_displacement_y;
   }
   disallow_one_site_gaps_ = disallow_one_site_gaps;
+  if (!have_one_site_cells_) {
+    disallow_one_site_gaps_ = false;
+    // logger_->info(
+    //     DPL,
+    //     38,
+    //     "Disallowing one site gaps after detecting 1-site SPACER cells.");
   }
-
   hpwl_before_ = hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.

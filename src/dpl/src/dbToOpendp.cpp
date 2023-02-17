@@ -68,6 +68,7 @@ void Opendp::importDb()
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
   have_fillers_ = false;
+  have_one_site_cells_ = false;
 
   importClear();
   examineRows();
@@ -150,6 +151,10 @@ void Opendp::makeCells()
     }
     if (isFiller(db_inst))
       have_fillers_ = true;
+    // we only need to set it to true once, so the !have_one_site_cells_ is
+    // used to make sure we don't call isOneSiteCell() more than we need to.
+    if (!have_one_site_cells_ && isOneSiteCell(db_inst))
+      have_one_site_cells_ = true;
   }
 }
 
