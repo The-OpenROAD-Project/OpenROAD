@@ -126,12 +126,8 @@ const float TPcoarsener::GetClusterScore(const int he,
                                          std::vector<float>& algebraic_weights)
 {
   const int he_size = hgraph->eptr_[he + 1] - hgraph->eptr_[he];
-  const float he_score
-      = std::inner_product(hgraph->hyperedge_weights_[he].begin(),
-                           hgraph->hyperedge_weights_[he].end(),
-                           e_wt_factors_.begin(),
-                           0.0)
-        / (he_size - 1) * algebraic_weights[he];
+  const float he_score = hgraph->edge_score(he, e_wt_factors_) / (he_size - 1)
+                         * algebraic_weights[he];
   return he_score;
 }
 

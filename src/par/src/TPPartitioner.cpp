@@ -84,10 +84,7 @@ TP_partition_token TPpartitioner::GoldenEvaluator(const HGraph hgraph,
   for (int e = 0; e < hgraph->num_hyperedges_; ++e) {
     for (int idx = hgraph->eptr_[e] + 1; idx < hgraph->eptr_[e + 1]; ++idx) {
       if (solution[hgraph->eind_[idx]] != solution[hgraph->eind_[idx - 1]]) {
-        cost += std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                                   hgraph->hyperedge_weights_[e].end(),
-                                   e_wt_factors_.begin(),
-                                   0.0);
+        cost += hgraph->edge_score(e, e_wt_factors_);
         break;  // this net has been cut
       }
     }  // finish hyperedge e
@@ -374,11 +371,7 @@ void TPpartitioner::OptimalPartCplexWarmStart(
   // use set data structure to sort unvisited vertices
   std::set<std::pair<int, float>, comp> unvisited_hyperedges;
   for (auto e = 0; e < hgraph->num_hyperedges_; ++e) {
-    const float score
-        = std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                             hgraph->hyperedge_weights_[e].end(),
-                             e_wt_factors_.begin(),
-                             0.0);
+    const float score = hgraph->edge_score(e, e_wt_factors_);
     unvisited_hyperedges.insert(std::pair<int, float>(e, score));
   }
 
@@ -456,11 +449,7 @@ void TPpartitioner::OptimalPartCplexWarmStart(
   // Objective (Maximize objective function -> Minimize cutsize)
   LinearExpr obj_expr;
   for (int i = 0; i < edge_mask.size(); ++i) {
-    const float cost_value
-        = std::inner_product(hgraph->hyperedge_weights_[edge_mask[i]].begin(),
-                             hgraph->hyperedge_weights_[edge_mask[i]].end(),
-                             e_wt_factors_.begin(),
-                             0.0);
+    const float cost_value = hgraph->edge_score(edge_mask[i], e_wt_factors_);
     for (int j = 0; j < num_parts_; ++j) {
       obj_expr += var_y[j][i] * cost_value;
     }
@@ -525,11 +514,7 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
   // use set data structure to sort unvisited vertices
   std::set<std::pair<int, float>, comp> unvisited_hyperedges;
   for (auto e = 0; e < hgraph->num_hyperedges_; ++e) {
-    const float score
-        = std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                             hgraph->hyperedge_weights_[e].end(),
-                             e_wt_factors_.begin(),
-                             0.0);
+    const float score = hgraph->edge_score(e, e_wt_factors_);
     unvisited_hyperedges.insert(std::pair<int, float>(e, score));
   }
 
@@ -607,11 +592,7 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
   // Objective (Maximize objective function -> Minimize cutsize)
   LinearExpr obj_expr;
   for (int i = 0; i < edge_mask.size(); ++i) {
-    const float cost_value
-        = std::inner_product(hgraph->hyperedge_weights_[edge_mask[i]].begin(),
-                             hgraph->hyperedge_weights_[edge_mask[i]].end(),
-                             e_wt_factors_.begin(),
-                             0.0);
+    const float cost_value = hgraph->edge_score(edge_mask[i], e_wt_factors_);
     for (int j = 0; j < num_parts_; ++j) {
       obj_expr += var_y[j][i] * cost_value;
     }
@@ -724,11 +705,7 @@ void TPpartitioner::OptimalPartCplexWarmStart(
   // Maximize cutsize objective
   IloExpr obj_expr(myenv);  // empty expression
   for (int i = 0; i < hgraph->num_hyperedges_; ++i) {
-    const float cost_value
-        = std::inner_product(hgraph->hyperedge_weights_[i].begin(),
-                             hgraph->hyperedge_weights_[i].end(),
-                             e_wt_factors_.begin(),
-                             0.0);
+    const float cost_value = hgraph->edge_score(i, e_wt_factors_);
     for (int j = 0; j < num_parts_; ++j) {
       obj_expr += cost_value * _y[j][i];
     }
@@ -808,11 +785,7 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
   // use set data structure to sort unvisited vertices
   std::set<std::pair<int, float>, comp> unvisited_hyperedges;
   for (auto e = 0; e < hgraph->num_hyperedges_; ++e) {
-    const float score
-        = std::inner_product(hgraph->hyperedge_weights_[e].begin(),
-                             hgraph->hyperedge_weights_[e].end(),
-                             e_wt_factors_.begin(),
-                             0.0);
+    const float score = hgraph->edge_score(e, e_wt_factors_);
     unvisited_hyperedges.insert(std::pair<int, float>(e, score));
   }
 
@@ -874,11 +847,7 @@ void TPpartitioner::OptimalPartCplex(const HGraph hgraph,
   // Maximize cutsize objective
   IloExpr obj_expr(myenv);  // empty expression
   for (int i = 0; i < edge_mask.size(); ++i) {
-    const float cost_value
-        = std::inner_product(hgraph->hyperedge_weights_[edge_mask[i]].begin(),
-                             hgraph->hyperedge_weights_[edge_mask[i]].end(),
-                             e_wt_factors_.begin(),
-                             0.0);
+    const float cost_value = hgraph->edge_score(edge_mask[i], e_wt_factors_);
     for (int j = 0; j < num_parts_; ++j) {
       obj_expr += cost_value * y[j][i];
     }

@@ -240,6 +240,8 @@ class TPHypergraph
                                                    float ubfactor);
   std::vector<float> ComputeAlgebraicWights() const;
 
+  float edge_score(const int e, const std::vector<float>& e_wt_factors) const;
+
  private:
   // basic hypergraph
   int num_vertices_ = 0;
@@ -307,7 +309,6 @@ class TPHypergraph
                                      // MultiLevelHierarchy
   friend class KPMRefinement;        // define friend class for KPMFM
   friend class IlpRefiner;  // define friend class for ILP based refinement
-  friend class Obfuscator;  // define friend class for netlist obfuscator
 };
 
 // We should use shared_ptr because we enable multi-thread feature during
