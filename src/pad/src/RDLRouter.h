@@ -77,7 +77,7 @@ class RDLGui : public gui::Renderer
  private:
   RDLRouter* router_;
 
-  static constexpr const char* draw_vertex_ = "Vertecies";
+  static constexpr const char* draw_vertex_ = "Vertices";
   static constexpr const char* draw_edge_ = "Edges";
   static constexpr const char* draw_obs_ = "Obstructions";
 };
