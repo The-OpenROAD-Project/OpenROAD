@@ -211,6 +211,13 @@ getPdnGen()
   return openroad->getPdnGen();
 }
 
+pad::ICeWall*
+getICeWall()
+{
+  OpenRoad *openroad = getOpenRoad();
+  return openroad->getICeWall();
+}
+
 stt::SteinerTreeBuilder*
 getSteinerTreeBuilder()
 {
