@@ -1,4 +1,4 @@
-module chip_io (set_b,
+module one_cell (set_b,
     port1,
     output1,
     clock);
