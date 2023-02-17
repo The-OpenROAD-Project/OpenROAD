@@ -191,8 +191,8 @@ void Opendp::visitCellPixels(
 void Opendp::visitCellBoundaryPixels(
     Cell& cell,
     bool padded,
-    const std::function<void(Pixel* pixel, Edge edge, int x, int y)>& visitor)
-    const
+    const std::function<
+        void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor) const
 {
   dbInst* inst = cell.db_inst_;
   dbMaster* master = inst->getMaster();
@@ -214,18 +214,18 @@ void Opendp::visitCellBoundaryPixels(
       for (int x = x_start; x < x_end; x++) {
         Pixel* pixel = gridPixel(x, y_start);
         if (pixel)
-          visitor(pixel, Edge::top, x, y_start);
+          visitor(pixel, odb::Direction2D::North, x, y_start);
         pixel = gridPixel(x, y_end - 1);
         if (pixel)
-          visitor(pixel, Edge::bottom, x, y_end - 1);
+          visitor(pixel, odb::Direction2D::South, x, y_end - 1);
       }
       for (int y = y_start; y < y_end; y++) {
         Pixel* pixel = gridPixel(x_start, y);
         if (pixel)
-          visitor(pixel, Edge::left, x_start, y);
+          visitor(pixel, odb::Direction2D::West, x_start, y);
         pixel = gridPixel(x_end - 1, y);
         if (pixel)
-          visitor(pixel, Edge::right, x_end - 1, y);
+          visitor(pixel, odb::Direction2D::East, x_end - 1, y);
       }
     }
   }
@@ -238,18 +238,18 @@ void Opendp::visitCellBoundaryPixels(
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(x, y_start);
       if (pixel)
-        visitor(pixel, Edge::top, x, y_start);
+        visitor(pixel, odb::Direction2D::North, x, y_start);
       pixel = gridPixel(x, y_end - 1);
       if (pixel)
-        visitor(pixel, Edge::bottom, x, y_end - 1);
+        visitor(pixel, odb::Direction2D::South, x, y_end - 1);
     }
     for (int y = y_start; y < y_end; y++) {
       Pixel* pixel = gridPixel(x_start, y);
       if (pixel)
-        visitor(pixel, Edge::left, x_start, y);
+        visitor(pixel, odb::Direction2D::West, x_start, y);
       pixel = gridPixel(x_end - 1, y);
       if (pixel)
-        visitor(pixel, Edge::right, x_end - 1, y);
+        visitor(pixel, odb::Direction2D::East, x_end - 1, y);
     }
   }
 }

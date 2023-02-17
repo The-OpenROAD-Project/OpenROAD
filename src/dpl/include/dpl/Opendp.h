@@ -96,15 +96,6 @@ struct Master
   bool is_multi_row = false;
 };
 
-enum class Edge
-{
-  top,
-  bottom,
-  left,
-  right,
-  invalid
-};
-
 struct Cell
 {
   Cell();
@@ -299,7 +290,8 @@ class Opendp
   void visitCellBoundaryPixels(
       Cell& cell,
       bool padded,
-      const std::function<void(Pixel* pixel, Edge edge, int x, int y)>& visitor)
+      const std::function<
+          void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor)
       const;
   void setGridCell(Cell& cell, Pixel* pixel);
   void groupAssignCellRegions();

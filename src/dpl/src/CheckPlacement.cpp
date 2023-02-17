@@ -45,6 +45,7 @@ using std::min;
 using std::vector;
 
 using odb::dbPlacementStatus;
+using odb::Direction2D;
 
 using utl::DPL;
 
@@ -213,19 +214,17 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
   visitCellBoundaryPixels(
-      cell, true, [&](Pixel* pixel, Edge edge, int x, int y) {
+      cell, true, [&](Pixel* pixel, Direction2D edge, int x, int y) {
         Cell* pixel_cell = pixel->cell;
 
         int abut_x = 0;
 
         switch (edge) {
-          case Edge::left:
+          case Direction2D::West:
             abut_x = -1;
             break;
-          case Edge::right:
+          case Direction2D::East:
             abut_x = 1;
-            break;
-          default:
             break;
         }
         if (0 != abut_x) {
