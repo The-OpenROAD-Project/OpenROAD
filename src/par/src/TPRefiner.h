@@ -47,7 +47,7 @@ using matrix = std::vector<std::vector<T>>;
 using TP_partition = std::vector<int>;
 using TP_partition_token = std::pair<float, matrix<float>>;
 
-enum RefinerChoice
+enum class RefinerChoice
 {
   TWO_WAY_FM,
   GREEDY,
@@ -151,7 +151,7 @@ class TPrefiner
   TPrefiner() = default;
   TPrefiner(const int num_parts,
             const int refiner_iters,
-            const int refiner_choice,
+            const RefinerChoice refiner_choice,
             const int seed,
             const std::vector<float> e_wt_factors,
             const float path_wt_factor,
@@ -266,7 +266,7 @@ class TPrefiner
   float GetTolerance() const { return tolerance_; }
   int GetNumParts() const { return num_parts_; }
   int GetRefinerIters() const { return refiner_iters_; }
-  int GetRefinerChoice() const { return refiner_choice_; }
+  RefinerChoice GetRefinerChoice() const { return refiner_choice_; }
   std::vector<float> GetEdgeWtFactors() const { return e_wt_factors_; }
   float GetPathWtFactor() const { return path_wt_factor_; }
   float GetSnakingWtFactor() const { return snaking_wt_factor_; }
@@ -294,7 +294,7 @@ class TPrefiner
  protected:
   int num_parts_;
   int refiner_iters_;
-  int refiner_choice_;
+  RefinerChoice refiner_choice_;
   int seed_;
   int thr_he_size_skip_;
   std::vector<float> e_wt_factors_;
@@ -391,7 +391,7 @@ class TPtwoWayFM : public TPrefiner
   TPtwoWayFM(const int num_parts,
              const int refiner_iters,
              const int max_moves,
-             const int refiner_choice,
+             const RefinerChoice refiner_choice,
              const int seed,
              const std::vector<float> e_wt_factors,
              const float path_wt_factor,
@@ -490,7 +490,7 @@ class TPkWayFM : public TPrefiner
   TPkWayFM(const int num_parts,
            const int refiner_iters,
            const int max_moves,
-           const int refiner_choice,
+           const RefinerChoice refiner_choice,
            const int seed,
            const std::vector<float> e_wt_factors,
            const float path_wt_factor,
@@ -596,7 +596,7 @@ class TPgreedyRefine : public TPrefiner
   TPgreedyRefine(const int num_parts,
                  const int refiner_iters,
                  const int max_moves,
-                 const int refiner_choice,
+                 const RefinerChoice refiner_choice,
                  const int seed,
                  const std::vector<float> e_wt_factors,
                  const float path_wt_factor,
@@ -758,7 +758,7 @@ class TPilpRefine : public TPrefiner
   TPilpRefine(const int num_parts,
               const int refiner_iters,
               const int max_moves,
-              const int refiner_choice,
+              const RefinerChoice refiner_choice,
               const int seed,
               const std::vector<float> e_wt_factors,
               const float path_wt_factor,
@@ -870,7 +870,7 @@ class TPkpm : public TPrefiner, public TPtwoWayFM
   TPkpm(const int num_parts,
         const int refiner_iters,
         const int max_moves,
-        const int refiner_choice,
+        const RefinerChoice refiner_choice,
         const int seed,
         const std::vector<float> e_wt_factors,
         const float path_wt_factor,

@@ -902,7 +902,7 @@ std::vector<int> TritonPart::HypergraphPartTwoWay(
   float snaking_wt_factor = 1.0;
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = TWO_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::TWO_WAY_FM;
   TP_two_way_refining_ptr tritonpart_twoway_refiner
       = std::make_shared<TPtwoWayFM>(num_parts_,
                                      refiner_iters,
@@ -915,7 +915,7 @@ std::vector<int> TritonPart::HypergraphPartTwoWay(
                                      logger_);
   const int greedy_refiner_iters = 2;
   const int greedy_max_moves = 10;
-  refiner_choice = GREEDY;
+  refiner_choice = RefinerChoice::GREEDY;
   TP_greedy_refiner_ptr tritonpart_greedy_refiner
       = std::make_shared<TPgreedyRefine>(num_parts_,
                                          greedy_refiner_iters,
@@ -1036,7 +1036,7 @@ std::vector<int> TritonPart::DesignPartTwoWay(unsigned int num_parts_,
   float snaking_wt_factor = 1.0;
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = TWO_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::TWO_WAY_FM;
   TP_two_way_refining_ptr tritonpart_twoway_refiner
       = std::make_shared<TPtwoWayFM>(num_parts_,
                                      refiner_iters,
@@ -1049,7 +1049,7 @@ std::vector<int> TritonPart::DesignPartTwoWay(unsigned int num_parts_,
                                      logger_);
   const int greedy_refiner_iters = 2;
   const int greedy_max_moves = 10;
-  refiner_choice = GREEDY;
+  refiner_choice = RefinerChoice::GREEDY;
   TP_greedy_refiner_ptr tritonpart_greedy_refiner
       = std::make_shared<TPgreedyRefine>(num_parts_,
                                          greedy_refiner_iters,
@@ -1195,7 +1195,7 @@ std::vector<int> TritonPart::HypergraphPartKWay(const char* hypergraph_file_arg,
   float snaking_wt_factor = 1.0;
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = FLAT_K_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::FLAT_K_WAY_FM;
   TP_k_way_refining_ptr tritonpart_kway_refiner
       = std::make_shared<TPkWayFM>(num_parts_,
                                    refiner_iters,
@@ -1310,7 +1310,7 @@ std::vector<int> TritonPart::DesignPartKWay(unsigned int num_parts_,
   // refiner pass
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = FLAT_K_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::FLAT_K_WAY_FM;
   TP_k_way_refining_ptr tritonpart_kway_refiner
       = std::make_shared<TPkWayFM>(num_parts_,
                                    refiner_iters,
@@ -1498,7 +1498,7 @@ std::vector<int> TritonPart::Partition2Way(
   float snaking_wt_factor = 1.0;
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = TWO_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::TWO_WAY_FM;
   TP_two_way_refining_ptr tritonpart_twoway_refiner
       = std::make_shared<TPtwoWayFM>(num_parts_,
                                      refiner_iters,
@@ -1511,7 +1511,7 @@ std::vector<int> TritonPart::Partition2Way(
                                      logger_);
   const int greedy_refiner_iters = 2;
   const int greedy_max_moves = 10;
-  refiner_choice = GREEDY;
+  refiner_choice = RefinerChoice::GREEDY;
   TP_greedy_refiner_ptr tritonpart_greedy_refiner
       = std::make_shared<TPgreedyRefine>(num_parts_,
                                          greedy_refiner_iters,
