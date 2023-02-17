@@ -185,6 +185,7 @@ void ICeWall::makeFakeSite(const std::string& name, int width, int height)
   auto* site = odb::dbSite::create(lib, name.c_str());
   site->setWidth(width);
   site->setHeight(height);
+  site->setClass(odb::dbSiteClass::PAD);
 }
 
 void ICeWall::makeIORow(odb::dbSite* horizontal_site,
