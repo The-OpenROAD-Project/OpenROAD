@@ -745,7 +745,7 @@ HGraph TritonPart::preProcessHypergraph()
   std::vector<int> eind_p;
   std::vector<int> eptr_p;  // hyperedges
   eptr_p.push_back(static_cast<int>(eind_p.size()));
-  for (auto hyperedge : hyperedges_p) {
+  for (const auto& hyperedge : hyperedges_p) {
     eind_p.insert(eind_p.end(), hyperedge.begin(), hyperedge.end());
     eptr_p.push_back(static_cast<int>(eind_p.size()));
   }

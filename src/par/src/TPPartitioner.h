@@ -58,7 +58,7 @@
 namespace par {
 
 // Define the partitioning algorithm
-enum PartitionType
+enum class PartitionType
 {
   INIT_RANDOM,
   INIT_VILE,
@@ -129,11 +129,14 @@ class TPpartitioner
                  std::vector<int>& solutione);
   inline void SetPartitionerSeed(int seed) { seed_ = seed; }
   inline int GetPartitionerSeed() const { return seed_; }
-  inline void SetPartitionerChoice(const int choice)
+  inline void SetPartitionerChoice(const PartitionType choice)
   {
     partitioner_choice_ = choice;
   }
-  inline int GetPartitionerChoice() const { return partitioner_choice_; }
+  inline PartitionType GetPartitionerChoice() const
+  {
+    return partitioner_choice_;
+  }
   float CalculatePathCost(int path_id,
                           const HGraph hgraph,
                           const std::vector<int>& solution,
@@ -168,7 +171,7 @@ class TPpartitioner
   float max_num_moves_;
   int max_num_fm_pass_;
   int seed_;
-  int partitioner_choice_;
+  PartitionType partitioner_choice_ = PartitionType::INIT_RANDOM;
   utl::Logger* logger_ = nullptr;
 };
 

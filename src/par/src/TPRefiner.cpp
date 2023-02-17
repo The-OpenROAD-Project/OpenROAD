@@ -1474,7 +1474,7 @@ std::shared_ptr<VertexGain> TPkWayFM::PickMoveKWay(
   }
 
   // "corking effect", i.e., no candidate
-  int total_elements = buckets[best_to_pid]->GetTotalElements();
+  int total_elements = buckets.at(best_to_pid)->GetTotalElements();
   if (total_elements == 0) {
     return dummy_cell;
   }

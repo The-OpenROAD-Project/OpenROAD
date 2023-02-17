@@ -140,6 +140,7 @@ class KPMRefinement
       vertex_ = -1;
       source_part_ = -1;
       potential_move_ = -1;
+      gain_ = -1;
     }
     VertexGain(int arg_vertex, float arg_gain)
         : vertex_(arg_vertex), gain_(arg_gain)
@@ -158,6 +159,7 @@ class KPMRefinement
                std::map<int, float> arg_path_cost)
         : vertex_(arg_vertex), gain_(arg_gain), path_cost_(arg_path_cost)
     {
+      source_part_ = -1;
       potential_move_ = -1;
       status_ = true;
     }
