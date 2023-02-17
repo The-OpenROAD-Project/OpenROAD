@@ -638,6 +638,17 @@ void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
       width = new_rect.dy();
       start = new_rect.yMin();
     }
+    if (width % site_width != 0) {
+      logger_->error(utl::PAD,
+                     26,
+                     "Filling {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um) "
+                     "will result in a gap.",
+                     row->getName(),
+                     new_rect.xMin() / dbus,
+                     new_rect.yMin() / dbus,
+                     new_rect.xMax() / dbus,
+                     new_rect.yMax() / dbus);
+    }
     int sites = width / site_width;
     const int start_site_index = snapToRowSite(row, start);
 
