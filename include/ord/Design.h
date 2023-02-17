@@ -117,6 +117,10 @@ namespace pdn {
 class PdnGen;
 }
 
+namespace pad {
+class ICeWall;
+}
+
 namespace ord {
 
 class Tech;
@@ -165,6 +169,7 @@ class Design
   stt::SteinerTreeBuilder* getSteinerTreeBuilder();
   psm::PDNSim* getPDNSim();
   pdn::PdnGen* getPdnGen();
+  pad::ICeWall* getICeWall();
 
  private:
   Tech* tech_;
