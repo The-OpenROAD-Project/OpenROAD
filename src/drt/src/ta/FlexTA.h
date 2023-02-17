@@ -34,6 +34,7 @@
 #include "db/obj/frVia.h"
 #include "db/taObj/taPin.h"
 #include "frDesign.h"
+#include "frRTree.h"
 
 namespace fr {
 class FlexTAGraphics;
@@ -67,7 +68,7 @@ class FlexTAWorker;
 class FlexTAWorkerRegionQuery
 {
  public:
-  FlexTAWorkerRegionQuery();
+  FlexTAWorkerRegionQuery(){};
   ~FlexTAWorkerRegionQuery();
 
   void add(taPinFig* fig);
@@ -93,8 +94,9 @@ class FlexTAWorkerRegionQuery
   void init(int numLayers);
 
  private:
-  struct Impl;
-  std::unique_ptr<Impl> impl_;
+  std::vector<RTree<taPinFig*>> shapes_;  // resource map
+  // fixed objs, owner:: nullptr or net, con = short
+  std::vector<RTree<std::pair<frBlockObject*, frConstraint*>>> costs_;
 };
 
 class FlexTAWorker
