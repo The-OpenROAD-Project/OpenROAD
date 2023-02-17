@@ -185,24 +185,32 @@ void ICeWall::assignBump(odb::dbInst* inst, odb::dbNet* net)
   odb::dbTransform xform;
   inst->getTransform(xform);
 
-  // Connect to all iterms since this is a bump
-  for (auto* pin : inst->getITerms()) {
-    if (pin->getNet() != net) {
-      pin->connect(net);
+  odb::dbTechLayer* top_layer = nullptr;
+  odb::Rect top_shape;
+  for (auto* iterm : inst->getITerms()) {
+    if (iterm->getNet() != net) {
+      iterm->connect(net);
     }
 
-    for (auto* mpin : pin->getMTerm()->getMPins()) {
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
         auto* layer = geom->getTechLayer();
         if (layer == nullptr) {
           continue;
         }
 
-        odb::Rect shape = geom->getBox();
-        xform.apply(shape);
-        makeBTerm(net, layer, shape);
+        if (top_layer == nullptr
+            || top_layer->getRoutingLevel() < layer->getRoutingLevel()) {
+          top_layer = layer;
+          top_shape = geom->getBox();
+        }
       }
     }
+  }
+
+  if (top_layer != nullptr) {
+    xform.apply(top_shape);
+    makeBTerm(net, top_layer, top_shape);
   }
 }
 
@@ -739,7 +747,6 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
 
   assertMasterType(bond, odb::dbMasterType::COVER);
 
-  odb::dbMTerm* bond_pin = nullptr;
   odb::Rect bond_rect;
   odb::dbTechLayer* bond_layer = nullptr;
   for (auto* mterm : bond->getMTerms()) {
@@ -752,9 +759,12 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
         if (pin_layer->getRoutingLevel() == 0) {
           continue;
         }
-        bond_layer = pin_layer;
-        bond_pin = mterm;
-        bond_rect = geom->getBox();
+
+        if (bond_layer == nullptr
+            || bond_layer->getRoutingLevel() < pin_layer->getRoutingLevel()) {
+          bond_layer = pin_layer;
+          bond_rect = geom->getBox();
+        }
       }
     }
   }
@@ -786,26 +796,25 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
     bond_inst->setOrigin(pad_loc.x(), pad_loc.y());
     bond_inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 
-    // connect bond and pad
     odb::dbTransform xform;
     bond_inst->getTransform(xform);
-    odb::Rect pin_shape = bond_rect;
-    xform.apply(pin_shape);
-    for (auto* iterm : inst->getITerms()) {
-      auto* net = iterm->getNet();
+    odb::Rect bpin_shape = bond_rect;
+    xform.apply(bpin_shape);
+
+    // connect bond and pad
+    for (const auto& [iterm0, iterm1] : getTouchingIterms(inst, bond_inst)) {
+      odb::dbITerm* inst_term = iterm0;
+      odb::dbITerm* pad_term = iterm1;
+      if (inst_term->getInst() != inst) {
+        std::swap(inst_term, pad_term);
+      }
+
+      auto* net = inst_term->getNet();
       if (net == nullptr) {
         continue;
       }
-      auto* mterm = iterm->getMTerm();
-      for (auto* mpin : mterm->getMPins()) {
-        for (auto* geom : mpin->getGeometry()) {
-          auto* pin_layer = geom->getTechLayer();
-          if (pin_layer == bond_layer) {
-            bond_inst->getITerm(bond_pin)->connect(net);
-            makeBTerm(net, pin_layer, pin_shape);
-          }
-        }
-      }
+      pad_term->connect(net);
+      makeBTerm(net, bond_layer, bpin_shape);
     }
   }
 }
