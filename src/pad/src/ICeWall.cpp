@@ -38,6 +38,7 @@
 #include <boost/polygon/polygon.hpp>
 
 #include "RDLRouter.h"
+#include "Utilities.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "odb/geom.h"
@@ -800,7 +801,7 @@ void ICeWall::connectByAbutment()
   }
 
   for (auto* net : special_nets) {
-    makeSpecial(net);
+    Utilities::makeSpecial(net);
   }
 }
 
@@ -875,17 +876,6 @@ std::set<odb::dbNet*> ICeWall::connectByAbutment(
   } while (changed);
 
   return special_nets;
-}
-
-void ICeWall::makeSpecial(odb::dbNet* net)
-{
-  net->setSpecial();
-  for (auto* iterm : net->getITerms()) {
-    iterm->setSpecial();
-  }
-  for (auto* bterm : net->getBTerms()) {
-    bterm->setSpecial();
-  }
 }
 
 std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> ICeWall::getTouchingIterms(

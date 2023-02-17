@@ -124,8 +124,6 @@ class ICeWall
 
   void connectByAbutment();
 
-  static void makeSpecial(odb::dbNet* net);
-
  private:
   odb::dbBlock* getBlock() const;
   int snapToRowSite(odb::dbRow* row, int location) const;

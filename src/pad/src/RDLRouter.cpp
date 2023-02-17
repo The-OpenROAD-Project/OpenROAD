@@ -44,6 +44,7 @@
 #include <list>
 #include <set>
 
+#include "Utilities.h"
 #include "odb/db.h"
 #include "odb/dbTransform.h"
 #include "pad/ICeWall.h"
@@ -884,7 +885,7 @@ void RDLRouter::writeToDb(odb::dbNet* net,
                           const RouteTarget& source,
                           const RouteTarget& target)
 {
-  ICeWall::makeSpecial(net);
+  Utilities::makeSpecial(net);
 
   auto* swire = odb::dbSWire::create(net, odb::dbWireType::ROUTED);
   const auto simplified_route = simplifyRoute(route);
