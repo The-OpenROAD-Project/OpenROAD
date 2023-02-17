@@ -127,12 +127,6 @@ class ICeWall
   static void makeSpecial(odb::dbNet* net);
 
  private:
-  odb::dbDatabase* db_;
-  utl::Logger* logger_;
-
-  std::unique_ptr<RDLRouter> router_;
-  std::unique_ptr<RDLGui> router_gui_;
-
   odb::dbBlock* getBlock() const;
   int snapToRowSite(odb::dbRow* row, int location) const;
 
@@ -156,6 +150,13 @@ class ICeWall
   std::set<odb::dbNet*> connectByAbutment(
       const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
       const;
+
+  // Data members
+  odb::dbDatabase* db_;
+  utl::Logger* logger_;
+
+  std::unique_ptr<RDLRouter> router_;
+  std::unique_ptr<RDLGui> router_gui_;
 };
 
 }  // namespace pad

@@ -142,24 +142,6 @@ class RDLRouter
   const ObsTree& getObstructions() const { return obstructions_; }
 
  private:
-  utl::Logger* logger_;
-  odb::dbBlock* block_;
-  odb::dbTechLayer* layer_;
-  odb::dbTechVia* accessvia_;
-
-  int width_;
-  int spacing_;
-  bool allow45_;
-
-  GridGraph graph_;
-  GridWeightMap graph_weight_;
-  ObsTree obstructions_;
-
-  // Lookup tables
-  std::map<odb::Point, grid_vertex> point_vertex_map_;
-  std::map<grid_vertex, odb::Point> vertex_point_map_;
-  std::map<odb::dbITerm*, std::vector<Edge>> iterm_edges_;
-
   void makeGraph();
   void addGraphVertex(const odb::Point& point);
   bool addGraphEdge(const odb::Point& point0,
@@ -194,6 +176,25 @@ class RDLRouter
 
   int getBloatFactor() const;
 
+  utl::Logger* logger_;
+  odb::dbBlock* block_;
+  odb::dbTechLayer* layer_;
+  odb::dbTechVia* accessvia_;
+
+  int width_;
+  int spacing_;
+  bool allow45_;
+
+  GridGraph graph_;
+  GridWeightMap graph_weight_;
+  ObsTree obstructions_;
+
+  // Lookup tables
+  std::map<odb::Point, grid_vertex> point_vertex_map_;
+  std::map<grid_vertex, odb::Point> vertex_point_map_;
+  std::map<odb::dbITerm*, std::vector<Edge>> iterm_edges_;
+
+  // Routing grid
   std::vector<int> x_grid_;
   std::vector<int> y_grid_;
 };
