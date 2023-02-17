@@ -185,7 +185,7 @@ void Opendp::setDebug(bool displacement,
 
 void Opendp::detailedPlacement(int max_displacement_x,
                                int max_displacement_y,
-                               int disallow_one_site_gaps)
+                               bool disallow_one_site_gaps)
 {
   importDb();
 
@@ -200,11 +200,7 @@ void Opendp::detailedPlacement(int max_displacement_x,
     max_displacement_x_ = max_displacement_x;
     max_displacement_y_ = max_displacement_y;
   }
-  if (disallow_one_site_gaps == 0) {
-    // default
-    disallow_one_site_gaps_ = false;
-  } else {
-    disallow_one_site_gaps_ = disallow_one_site_gaps;
+  disallow_one_site_gaps_ = disallow_one_site_gaps;
   }
 
   hpwl_before_ = hpwl();

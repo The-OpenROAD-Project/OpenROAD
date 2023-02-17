@@ -38,11 +38,7 @@ proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
     keys {-max_displacement} flags {-disallow_one_site_gaps}
 
-  set disallow_one_site_gaps 0
-  if { [info exists flags(-disallow_one_site_gaps)] } {
-    set disallow_one_site_gaps 1
-  }
-
+set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
     if { [llength $max_displacement] == 1 } {
