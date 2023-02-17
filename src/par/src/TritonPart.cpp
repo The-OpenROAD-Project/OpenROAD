@@ -629,12 +629,12 @@ void TritonPart::WritePathsToFile(const std::string& paths_filename)
 // Partition the design
 // The first step is to convert the netlist into a hypergraph
 // The second step is to get all the features such as timing paths
-void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
-                                  float balance_constraint_arg,
-                                  unsigned int seed_arg,
-                                  const std::string& solution_filename,
-                                  const std::string& paths_filename,
-                                  const std::string& hypergraph_filename)
+void TritonPart::PartitionDesign(unsigned int num_parts_arg,
+                                 float balance_constraint_arg,
+                                 unsigned int seed_arg,
+                                 const std::string& solution_filename,
+                                 const std::string& paths_filename,
+                                 const std::string& hypergraph_filename)
 {
   logger_->report("========================================");
   logger_->report("[STATUS] Starting TritonPart Partitioner");
@@ -687,17 +687,17 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
   }
   std::vector<int> partition;
   if (num_parts_ == 2) {
-    partition = TritonPart_design_PartTwoWay(num_parts_,
-                                             ub_factor_,
-                                             vertex_dimensions_,
-                                             hyperedge_dimensions_,
-                                             seed_);
+    partition = DesignPartTwoWay(num_parts_,
+                                 ub_factor_,
+                                 vertex_dimensions_,
+                                 hyperedge_dimensions_,
+                                 seed_);
   } else {
-    partition = TritonPart_design_PartKWay(num_parts_,
-                                           ub_factor_,
-                                           vertex_dimensions_,
-                                           hyperedge_dimensions_,
-                                           seed_);
+    partition = DesignPartKWay(num_parts_,
+                               ub_factor_,
+                               vertex_dimensions_,
+                               hyperedge_dimensions_,
+                               seed_);
   }
   // AnalyzeTimingCuts();
   if (!solution_filename.empty()) {
@@ -722,7 +722,7 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
   logger_->report("Exiting TritonPart");
 }
 
-HGraph TritonPart::preProcessHypergraph()
+HGraph TritonPart::PreProcessHypergraph()
 {
   logger_->report(
       "Pre-processing hypergraph by temporarily removing hyperedges of size {}",
@@ -796,31 +796,31 @@ HGraph TritonPart::preProcessHypergraph()
   return hypergraph_p;
 }
 
-void TritonPart::tritonPartHypergraph(const char* hypergraph_file_arg,
-                                      const char* fixed_file_arg,
-                                      unsigned int num_parts_arg,
-                                      float balance_constraint_arg,
-                                      int vertex_dimension_arg,
-                                      int hyperedge_dimension_arg,
-                                      unsigned int seed_arg)
+void TritonPart::PartitionHypergraph(const char* hypergraph_file_arg,
+                                     const char* fixed_file_arg,
+                                     unsigned int num_parts_arg,
+                                     float balance_constraint_arg,
+                                     int vertex_dimension_arg,
+                                     int hyperedge_dimension_arg,
+                                     unsigned int seed_arg)
 {
   std::vector<int> partition;
   if (num_parts_arg == 2) {
-    partition = TritonPart_hypergraph_PartTwoWay(hypergraph_file_arg,
-                                                 fixed_file_arg,
-                                                 num_parts_arg,
-                                                 balance_constraint_arg,
-                                                 vertex_dimension_arg,
-                                                 hyperedge_dimension_arg,
-                                                 seed_arg);
+    partition = HypergraphPartTwoWay(hypergraph_file_arg,
+                                     fixed_file_arg,
+                                     num_parts_arg,
+                                     balance_constraint_arg,
+                                     vertex_dimension_arg,
+                                     hyperedge_dimension_arg,
+                                     seed_arg);
   } else {
-    partition = TritonPart_hypergraph_PartKWay(hypergraph_file_arg,
-                                               fixed_file_arg,
-                                               num_parts_arg,
-                                               balance_constraint_arg,
-                                               vertex_dimension_arg,
-                                               hyperedge_dimension_arg,
-                                               seed_arg);
+    partition = HypergraphPartKWay(hypergraph_file_arg,
+                                   fixed_file_arg,
+                                   num_parts_arg,
+                                   balance_constraint_arg,
+                                   vertex_dimension_arg,
+                                   hyperedge_dimension_arg,
+                                   seed_arg);
   }
   std::string solution_file = std::string(hypergraph_file_arg)
                               + std::string(".part.")
@@ -828,7 +828,7 @@ void TritonPart::tritonPartHypergraph(const char* hypergraph_file_arg,
   WriteSolution(solution_file.c_str(), partition);
 }
 
-std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
+std::vector<int> TritonPart::HypergraphPartTwoWay(
     const char* hypergraph_file_arg,
     const char* fixed_file_arg,
     unsigned int num_parts_arg,
@@ -860,7 +860,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
   logger_->report("#Vertices = {}", num_vertices_);
   logger_->report("#Hyperedges = {}", num_hyperedges_);
   // process hypergraph
-  HGraph hypergraph_processed = preProcessHypergraph();
+  HGraph hypergraph_processed = PreProcessHypergraph();
   logger_->report("Post processing hypergraph information**");
   logger_->report("#Vertices = {}", hypergraph_processed->GetNumVertices());
   logger_->report("#Hyperedges = {}", hypergraph_processed->GetNumHyperedges());
@@ -989,12 +989,11 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
   return solution;
 }
 
-std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
-    unsigned int num_parts_,
-    float ub_factor_,
-    int vertex_dimensions_,
-    int hyperedge_dimensions_,
-    unsigned int seed_)
+std::vector<int> TritonPart::DesignPartTwoWay(unsigned int num_parts_,
+                                              float ub_factor_,
+                                              int vertex_dimensions_,
+                                              int hyperedge_dimensions_,
+                                              unsigned int seed_)
 {
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
   // create coarsening class
@@ -1123,14 +1122,13 @@ std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
   return solution;
 }
 
-std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
-    const char* hypergraph_file_arg,
-    const char* fixed_file_arg,
-    unsigned int num_parts_arg,
-    float balance_constraint_arg,
-    int vertex_dimension_arg,
-    int hyperedge_dimension_arg,
-    unsigned int seed_arg)
+std::vector<int> TritonPart::HypergraphPartKWay(const char* hypergraph_file_arg,
+                                                const char* fixed_file_arg,
+                                                unsigned int num_parts_arg,
+                                                float balance_constraint_arg,
+                                                int vertex_dimension_arg,
+                                                int hyperedge_dimension_arg,
+                                                unsigned int seed_arg)
 {
   logger_->report("Starting TritonPart Partitioner");
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
@@ -1155,7 +1153,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
   logger_->report("#Vertices = {}", num_vertices_);
   logger_->report("#Hyperedges = {}", num_hyperedges_);
   // process hypergraph
-  HGraph hypergraph_processed = preProcessHypergraph();
+  HGraph hypergraph_processed = PreProcessHypergraph();
   logger_->report("Post processing hypergraph information**");
   logger_->report("#Vertices = {}", hypergraph_processed->GetNumVertices());
   logger_->report("#Hyperedges = {}", hypergraph_processed->GetNumHyperedges());
@@ -1257,12 +1255,11 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
   return solution;
 }
 
-std::vector<int> TritonPart::TritonPart_design_PartKWay(
-    unsigned int num_parts_,
-    float ub_factor_,
-    int vertex_dimensions_,
-    int hyperedge_dimensions_,
-    unsigned int seed_)
+std::vector<int> TritonPart::DesignPartKWay(unsigned int num_parts_,
+                                            float ub_factor_,
+                                            int vertex_dimensions_,
+                                            int hyperedge_dimensions_,
+                                            unsigned int seed_)
 {
   logger_->report("TritonPart_design_PartKWay starts !!!");
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
@@ -1373,7 +1370,7 @@ std::vector<int> TritonPart::TritonPart_design_PartKWay(
 }
 
 // 2way TritonPart interface for Hier-RTLMP
-std::vector<int> TritonPart::TritonPart2Way(
+std::vector<int> TritonPart::Partition2Way(
     int num_vertices,
     int num_hyperedges,
     const std::vector<std::vector<int>>& hyperedges,

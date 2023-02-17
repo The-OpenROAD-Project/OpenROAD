@@ -53,14 +53,6 @@ using utl::PAR;
 
 namespace par {
 
-PartitionMgr::PartitionMgr() : logger_(nullptr)
-{
-}
-
-PartitionMgr::~PartitionMgr()
-{
-}
-
 void PartitionMgr::init(odb::dbDatabase* db,
                         sta::dbNetwork* db_network,
                         sta::dbSta* sta,
@@ -68,7 +60,7 @@ void PartitionMgr::init(odb::dbDatabase* db,
 {
   db_ = db;
   db_network_ = db_network;
-  _sta = sta;
+  sta_ = sta;
   logger_ = logger;
 }
 
@@ -84,14 +76,14 @@ void PartitionMgr::tritonPartHypergraph(const char* hypergraph_file,
   // In this mode, TritonPart works as hMETIS.
   // Thus users can use this function to partition the input hypergraph
   auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
-  triton_part->tritonPartHypergraph(hypergraph_file,
-                                    fixed_file,
-                                    num_parts,
-                                    balance_constraint,
-                                    vertex_dimensions,
-                                    hyperedge_dimensions,
-                                    seed);
+      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  triton_part->PartitionHypergraph(hypergraph_file,
+                                   fixed_file,
+                                   num_parts,
+                                   balance_constraint,
+                                   vertex_dimensions,
+                                   hyperedge_dimensions,
+                                   seed);
 }
 
 void PartitionMgr::tritonPartDesign(unsigned int num_parts,
@@ -102,13 +94,13 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts,
                                     const std::string& hypergraph_filename)
 {
   auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
-  triton_part->tritonPartDesign(num_parts,
-                                balance_constraint,
-                                seed,
-                                solution_filename,
-                                paths_filename,
-                                hypergraph_filename);
+      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  triton_part->PartitionDesign(num_parts,
+                               balance_constraint,
+                               seed,
+                               solution_filename,
+                               paths_filename,
+                               hypergraph_filename);
 }
 
 std::vector<int> PartitionMgr::TritonPart2Way(
@@ -120,13 +112,13 @@ std::vector<int> PartitionMgr::TritonPart2Way(
     int seed)
 {
   auto triton_part
-      = std::make_unique<TritonPart>(db_network_, db_, _sta, logger_);
-  return triton_part->TritonPart2Way(num_vertices,
-                                     num_hyperedges,
-                                     hyperedges,
-                                     vertex_weights,
-                                     balance_constraints,
-                                     seed);
+      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  return triton_part->Partition2Way(num_vertices,
+                                    num_hyperedges,
+                                    hyperedges,
+                                    vertex_weights,
+                                    balance_constraints,
+                                    seed);
 }
 
 }  // namespace par
