@@ -152,9 +152,6 @@ class TPpartitioner
   void RandomPart(const HGraph graph,
                   const matrix<float>& max_block_balance,
                   std::vector<int>& solution);
-  //void OptimalPartCplex(const HGraph graph,
-  //                      const matrix<float>& max_block_balance,
-  //                      std::vector<int>& solution);
   void OptimalPartCplexWarmStart(const HGraph graph,
                                  const matrix<float>& max_block_balance,
                                  std::vector<int>& solution);
