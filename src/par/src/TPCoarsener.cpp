@@ -53,11 +53,11 @@ namespace par {
 
 void TPcoarsener::OrderVertices(const HGraph hgraph, std::vector<int>& vertices)
 {
-  int order_choice = GetVertexOrderChoice();
-  if (order_choice == RANDOM) {
+  Order order_choice = GetVertexOrderChoice();
+  if (order_choice == Order::RANDOM) {
     shuffle(
         vertices.begin(), vertices.end(), std::default_random_engine(seed_));
-  } else if (order_choice == DEGREE) {
+  } else if (order_choice == Order::DEGREE) {
     std::vector<int> degrees(hgraph->num_vertices_, 0);
     for (int i = 0; i < vertices.size(); ++i) {
       const int vertex = vertices[i];
@@ -80,7 +80,7 @@ void TPcoarsener::OrderVertices(const HGraph hgraph, std::vector<int>& vertices)
         = [&](int& x, int& y) -> bool { return degrees[x] < degrees[y]; };
     std::sort(vertices.begin(), vertices.end(), lambda_sort_criteria);
 
-  } else if (order_choice == SIZE) {
+  } else if (order_choice == Order::SIZE) {
     std::vector<float> average_sizes(hgraph->num_vertices_, 0.0);
     for (int i = 0; i < vertices.size(); ++i) {
       const int vertex = vertices[i];
@@ -92,11 +92,11 @@ void TPcoarsener::OrderVertices(const HGraph hgraph, std::vector<int>& vertices)
       return average_sizes[x] < average_sizes[y];
     };
     std::sort(vertices.begin(), vertices.end(), lambda_sort_criteria);
-  } else if (order_choice == DEFAULT) {
+  } else if (order_choice == Order::DEFAULT) {
     // no shuffling just stick with default ordering of vertices
-  } else if (order_choice == SPECTRAL) {
+  } else if (order_choice == Order::SPECTRAL) {
     // need code here for spectral based ordering
-  } else if (order_choice == TIMING) {
+  } else if (order_choice == Order::TIMING) {
     // need code here for timing paths based vertex ordering
     /*std::set<int> path_vertices;
     std::vector<int> visited(hgraph->num_vertices_, 0);

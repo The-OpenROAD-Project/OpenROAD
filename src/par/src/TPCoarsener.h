@@ -49,7 +49,7 @@ using TP_matrix = std::vector<std::vector<T>>;
 
 using TP_coarse_graphs = std::vector<HGraph>;
 
-enum order
+enum class Order
 {
   RANDOM,
   DEGREE,
@@ -100,8 +100,11 @@ class TPcoarsener
   TPcoarsener& operator=(const TPcoarsener&) = default;
   TPcoarsener& operator=(TPcoarsener&&) = default;
   ~TPcoarsener() = default;
-  void SetVertexOrderChoice(const int choice) { vertex_order_choice_ = choice; }
-  int GetVertexOrderChoice() const { return vertex_order_choice_; }
+  void SetVertexOrderChoice(const Order choice)
+  {
+    vertex_order_choice_ = choice;
+  }
+  Order GetVertexOrderChoice() const { return vertex_order_choice_; }
   std::vector<int> PathBasedCommunity(HGraph hgraph);
   TP_coarse_graphs LazyFirstChoice(HGraph hgraph);
 
@@ -138,7 +141,7 @@ class TPcoarsener
   int thr_coarsen_iters_;
   float adj_diff_ratio_;
   int seed_;
-  int vertex_order_choice_;
+  Order vertex_order_choice_;
   utl::Logger* logger_ = nullptr;
   friend class MultiLevelHierarchy;
 };

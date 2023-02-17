@@ -348,7 +348,7 @@ void TPmultilevelPartitioner::MultilevelPartTwoWay(
     TP_partition& solution,
     bool VCycle)
 {
-  coarsener_->SetVertexOrderChoice(RANDOM);
+  coarsener_->SetVertexOrderChoice(Order::RANDOM);
   TP_coarse_graphs hierarchy = coarsener_->LazyFirstChoice(hgraph);
   HGraph coarsest_hgraph = hierarchy.back();
   hierarchy.pop_back();
@@ -635,7 +635,7 @@ void TPmultilevelPartitioner::MultilevelPartKWay(
     TP_partition& solution,
     bool VCycle)
 {
-  coarsener_->SetVertexOrderChoice(RANDOM);
+  coarsener_->SetVertexOrderChoice(Order::RANDOM);
   auto community = coarsener_->PathBasedCommunity(hgraph);
   hgraph->community_attr_ = community;
   hgraph->community_flag_ = true;
