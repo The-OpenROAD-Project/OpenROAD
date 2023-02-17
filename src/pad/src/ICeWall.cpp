@@ -73,18 +73,20 @@ odb::dbBlock* ICeWall::getBlock() const
 void ICeWall::assertMasterType(odb::dbMaster* master,
                                odb::dbMasterType type) const
 {
+  if (master == nullptr) {
+    logger_->error(utl::PAD, 23, "Master must be specified.");
+  }
   if (master->getType() != type) {
     logger_->error(utl::PAD,
                    11,
                    "{} is not of type {}, but is instead {}",
                    master->getName(),
-                   odb::dbMasterType::getString(type),
-                   odb::dbMasterType::getString(master->getType()));
+                   type.getString(),
+                   master->getType().getString());
   }
 }
 
-void ICeWall::assertMasterType(odb::dbMaster* inst,
-                               odb::dbMasterType type) const
+void ICeWall::assertMasterType(odb::dbInst* inst, odb::dbMasterType type) const
 {
   auto* master = inst->getMaster();
   if (master->getType() != type) {
@@ -92,8 +94,8 @@ void ICeWall::assertMasterType(odb::dbMaster* inst,
                    12,
                    "{} is not of type {}, but is instead {}",
                    inst->getName(),
-                   odb::dbMasterType::getString(type),
-                   odb::dbMasterType::getString(master->getType()));
+                   type.getString(),
+                   master->getType().getString());
   }
 }
 
@@ -107,10 +109,6 @@ void ICeWall::makeBumpArray(odb::dbMaster* master,
 {
   auto* block = getBlock();
   if (block == nullptr) {
-    return;
-  }
-
-  if (master == nullptr) {
     return;
   }
 
@@ -146,10 +144,6 @@ void ICeWall::removeBumpArray(odb::dbMaster* master)
     return;
   }
 
-  if (master == nullptr) {
-    return;
-  }
-
   assertMasterType(master, odb::dbMasterType::COVER_BUMP);
 
   for (auto* inst : block->getInsts()) {
@@ -177,10 +171,13 @@ void ICeWall::makeBTerm(odb::dbNet* net,
 void ICeWall::assignBump(odb::dbInst* inst, odb::dbNet* net)
 {
   if (inst == nullptr) {
-    return;
+    logger_->error(
+        utl::PAD, 24, "Instance must be specified to assign it to a bump.");
   }
+
   if (net == nullptr) {
-    return;
+    logger_->error(
+        utl::PAD, 25, "Net must be specified to assign it to a bump.");
   }
 
   assertMasterType(inst, odb::dbMasterType::COVER_BUMP);
@@ -239,12 +236,13 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
   }
 
   if (horizontal_site == nullptr) {
-    horizontal_site = vertical_site;
+    logger_->error(utl::PAD, 14, "Horizontal site must be speficied.");
   }
-
-  if (horizontal_site == nullptr || vertical_site == nullptr
-      || corner_site == nullptr) {
-    return;
+  if (vertical_site == nullptr) {
+    logger_->error(utl::PAD, 15, "Vertical site must be speficied.");
+  }
+  if (corner_site == nullptr) {
+    logger_->error(utl::PAD, 16, "Corner site must be speficied.");
   }
 
   std::string name_format;
@@ -379,7 +377,7 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
   }
 
   if (master == nullptr) {
-    return;
+    logger_->error(utl::PAD, 28, "Corner master must be specified.");
   }
 
   for (const char* row_name : {"IO_CORNER_NORTH_WEST",
@@ -393,11 +391,17 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
       row = findRow(row_name);
     }
     if (row == nullptr) {
-      continue;
+      logger_->warn(utl::PAD,
+                    13,
+                    "Unable to find {} row to place a corner cell in",
+                    row_name);
     }
 
     const std::string corner_name = fmt::format("{}_INST", row->getName());
-    auto* inst = odb::dbInst::create(block, master, corner_name.c_str());
+    odb::dbInst* inst = block->findInst(corner_name.c_str());
+    if (inst == nullptr) {
+      inst = odb::dbInst::create(block, master, corner_name.c_str());
+    }
 
     const odb::Rect row_bbox = row->getBBox();
 
@@ -421,13 +425,14 @@ void ICeWall::placePad(odb::dbMaster* master,
   odb::dbInst* inst = block->findInst(name.c_str());
   if (inst == nullptr) {
     if (master == nullptr) {
-      return;
+      logger_->error(
+          utl::PAD, 18, "Unable to create instance {} without master", name);
     }
     inst = odb::dbInst::create(block, master, name.c_str());
   }
 
   if (row == nullptr) {
-    return;
+    logger_->error(utl::PAD, 19, "Row must be specified to place a pad");
   }
 
   odb::dbTransform orient(odb::dbOrientType::R0);
@@ -541,8 +546,9 @@ void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
   }
 
   if (row == nullptr) {
-    return;
+    logger_->error(utl::PAD, 20, "Row must be specified to place IO filler");
   }
+
   const double dbus = block->getDbUnitsPerMicron();
 
   std::vector<odb::dbMaster*> fillers = masters;
@@ -690,8 +696,9 @@ void ICeWall::removeFiller(odb::dbRow* row)
   }
 
   if (row == nullptr) {
-    return;
+    logger_->error(utl::PAD, 21, "Row must be specified to remove IO filler");
   }
+
   const std::string prefix = fmt::format("IO_FILL_{}_", row->getName());
 
   for (auto* inst : block->getInsts()) {
@@ -714,7 +721,8 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
   }
 
   if (bond == nullptr) {
-    return;
+    logger_->error(
+        utl::PAD, 27, "Bond master must be specified to place bond pads");
   }
 
   assertMasterType(bond, odb::dbMasterType::COVER);
@@ -1062,7 +1070,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                        bool allow45)
 {
   if (layer == nullptr) {
-    return;
+    logger_->error(utl::PAD, 22, "Layer must be specified to perform routing.");
   }
 
   router_ = std::make_unique<RDLRouter>(
