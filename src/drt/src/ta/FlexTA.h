@@ -64,7 +64,6 @@ class FlexTA
   int initTA_helper(int iter, int size, int offset, bool isH, int& numPanels);
 };
 
-class FlexTAWorker;
 class FlexTAWorkerRegionQuery
 {
  public:
@@ -176,6 +175,7 @@ class FlexTAWorker
   int getNumAssigned() const { return numAssigned_; }
   // others
   int main_mt();
+  void end();
 
  private:
   frDesign* design_;
@@ -305,11 +305,7 @@ class FlexTAWorker
                                  std::set<taPin*, frBlockObjectComp>* pinS);
   void assignIroute_updateOthers(std::set<taPin*, frBlockObjectComp>& pinS);
 
-  // end
-  void end();
   void saveToGuides();
-
-  friend class FlexTA;
 };
 
 }  // namespace fr
