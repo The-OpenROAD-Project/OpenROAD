@@ -37,13 +37,10 @@
 // vertex, hyperedge and timing paths. We also explain our basic
 // conventions.
 // Rule1 : num_vertices, num_hyperedges, vertex_dimensions,
-// hyperedge_dimensions,
-//         placement_dimension, cluster_id (c), vertex_id (v), hyperedge_id (e)
+//         hyperedge_dimensions, placement_dimension,
+//         cluster_id (c), vertex_id (v), hyperedge_id (e)
 //         are all in int type.
-// Rule2 : We assume T (int, float) is the type for vertex weight, U (int,
-// float)
-//         is the type for hyperedge weight.
-// Rule3 : Each hyperedge can include a vertex at most once.
+// Rule2 : Each hyperedge can include a vertex at most once.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include <functional>
@@ -65,15 +62,11 @@ struct TimingPath
                           // clock period)
 };
 
-// T is the type for vertex properties (float or int)
-// U is the type for hyperedge properties (float or int)
 // Here we use TPHypergraph class because the Hypegraph class
 // has been used by other programs.
 class TPHypergraph
 {
  public:
-  explicit TPHypergraph() {}  // Use the default value for each parameter
-
   // Multiple constructors
   // Basic form
   TPHypergraph(int vertex_dimensions,
