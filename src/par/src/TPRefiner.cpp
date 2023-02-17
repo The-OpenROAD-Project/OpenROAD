@@ -358,18 +358,18 @@ void TPrefiner::GeneratePathsAsEdges(const HGraph hgraph)
   }
 }
 
-inline void TPrefiner::InitPathCuts(const HGraph hgraph,
-                                    std::vector<int>& path_cuts,
-                                    std::vector<int>& solution)
+void TPrefiner::InitPathCuts(const HGraph hgraph,
+                             std::vector<int>& path_cuts,
+                             std::vector<int>& solution)
 {
   for (int i = 0; i < hgraph->timing_attr_.size(); ++i) {
     path_cuts[i] = GetPathCuts(i, hgraph, solution);
   }
 }
 
-inline void TPrefiner::InitPaths(const HGraph hgraph,
-                                 std::vector<float>& path_cost,
-                                 std::vector<int>& solution)
+void TPrefiner::InitPaths(const HGraph hgraph,
+                          std::vector<float>& path_cost,
+                          std::vector<int>& solution)
 {
   // rescale hyperedge weights to original weights so that these get
   // recalculated according to cuts on path graphs
@@ -532,7 +532,7 @@ bool TPrefiner::CheckLegality(const HGraph hgraph,
   return false;
 }
 
-inline void TPpriorityQueue::HeapifyUp(int index)
+void TPpriorityQueue::HeapifyUp(int index)
 {
   while (index > 0
          && vertices_[Parent(index)]->GetGain() < vertices_[index]->GetGain()) {
@@ -783,7 +783,7 @@ std::shared_ptr<VertexGain> TPtwoWayFM::FindMovableVertex(
   return dummy_cell;
 }
 
-inline std::shared_ptr<VertexGain> TPtwoWayFM::SolveCorkingEffect(
+std::shared_ptr<VertexGain> TPtwoWayFM::SolveCorkingEffect(
     const int corking_part,
     const HGraph hgraph,
     TP_gain_buckets& buckets,
@@ -2446,8 +2446,8 @@ void TPilpRefine::SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
 }
 */
 
-inline void TPilpRefine::Remap(std::vector<int>& partition,
-                               std::vector<int>& refined_partition)
+void TPilpRefine::Remap(std::vector<int>& partition,
+                        std::vector<int>& refined_partition)
 {
   for (int i = 0; i < cluster_map_.size(); ++i) {
     partition[i] = refined_partition[cluster_map_[i]];

@@ -121,16 +121,13 @@ class TPpartitioner
   void Partition(const HGraph hgraph,
                  const matrix<float>& max_block_balance,
                  std::vector<int>& solutione);
-  inline void SetPartitionerSeed(int seed) { seed_ = seed; }
-  inline int GetPartitionerSeed() const { return seed_; }
-  inline void SetPartitionerChoice(const PartitionType choice)
+  void SetPartitionerSeed(int seed) { seed_ = seed; }
+  int GetPartitionerSeed() const { return seed_; }
+  void SetPartitionerChoice(const PartitionType choice)
   {
     partitioner_choice_ = choice;
   }
-  inline PartitionType GetPartitionerChoice() const
-  {
-    return partitioner_choice_;
-  }
+  PartitionType GetPartitionerChoice() const { return partitioner_choice_; }
   float CalculatePathCost(int path_id,
                           const HGraph hgraph,
                           const std::vector<int>& solution,

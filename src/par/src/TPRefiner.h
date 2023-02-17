@@ -272,18 +272,18 @@ class TPrefiner
                             std::vector<float>& path_cost);
   std::pair<int, int> GetTimingCuts(const HGraph hgraph,
                                     std::vector<int>& solution);
-  inline void InitPathCuts(const HGraph hgraph,
-                           std::vector<int>& path_cuts,
-                           std::vector<int>& solution);
+  void InitPathCuts(const HGraph hgraph,
+                    std::vector<int>& path_cuts,
+                    std::vector<int>& solution);
   void SetPathCuts(const int val)
   {
     path_cuts_.resize(val);
     std::fill(path_cuts_.begin(), path_cuts_.end(), 0);
   }
   int GetPathCuts(int pathid, const HGraph hgraph, std::vector<int>& solution);
-  inline void InitPaths(const HGraph hgraph,
-                        std::vector<float>& path_cost,
-                        std::vector<int>& solution);
+  void InitPaths(const HGraph hgraph,
+                 std::vector<float>& path_cost,
+                 std::vector<int>& solution);
   utl::Logger* GetLogger() const { return logger_; }
 
  protected:
@@ -320,7 +320,7 @@ class TPpriorityQueue
       : vertices_(vertices), vertices_map_(vertices_map)
   {
   }
-  inline void HeapifyUp(int index);
+  void HeapifyUp(int index);
   void HeapifyDown(int index);
   void InsertIntoPQ(std::shared_ptr<VertexGain> element);
   std::shared_ptr<VertexGain> ExtractMax();
@@ -667,29 +667,26 @@ class TPilpGraph
       eptr_.push_back(static_cast<int>(eind_.size()));
     }
   }
-  inline const int GetVertexDimensions() const { return vertex_dimensions_; }
-  inline const int GetHyperedgeDimensions() const
-  {
-    return hyperedge_dimensions_;
-  }
-  inline const int GetNumVertices() const { return num_vertices_; }
-  inline const int GetNumHyperedges() const { return num_hyperedges_; }
-  inline std::pair<int, int> GetEdgeIndices(const int he) const
+  const int GetVertexDimensions() const { return vertex_dimensions_; }
+  const int GetHyperedgeDimensions() const { return hyperedge_dimensions_; }
+  const int GetNumVertices() const { return num_vertices_; }
+  const int GetNumHyperedges() const { return num_hyperedges_; }
+  std::pair<int, int> GetEdgeIndices(const int he) const
   {
     return std::make_pair(eptr_[he], eptr_[he + 1]);
   }
-  inline std::vector<float> const& GetVertexWeight(const int& v) const
+  std::vector<float> const& GetVertexWeight(const int& v) const
   {
     return vertex_weights_[v];
   }
-  inline std::vector<float> const& GetHyperedgeWeight(const int& e) const
+  std::vector<float> const& GetHyperedgeWeight(const int& e) const
   {
     return hyperedge_weights_[e];
   }
-  inline bool CheckFixedStatus(const int v) const { return fixed_[v] > -1; }
-  inline int GetFixedPart(const int v) const { return fixed_[v]; }
-  inline bool CheckFixedFlag() const { return fixed_flag_; }
-  inline std::vector<float> GetTotalVertexWeights()
+  bool CheckFixedStatus(const int v) const { return fixed_[v] > -1; }
+  int GetFixedPart(const int v) const { return fixed_[v]; }
+  bool CheckFixedFlag() const { return fixed_flag_; }
+  std::vector<float> GetTotalVertexWeights()
   {
     std::vector<float> total_wt(GetVertexDimensions(), 0.0);
     for (auto vWt : vertex_weights_) {
@@ -764,8 +761,7 @@ class TPilpRefine : public TPrefiner
   int GetWavefront() const { return wavefront_; }
 
  private:
-  inline void Remap(std::vector<int>& partition,
-                    std::vector<int>& refined_partition);
+  void Remap(std::vector<int>& partition, std::vector<int>& refined_partition);
   std::shared_ptr<TPilpGraph> ContractHypergraph(HGraph hgraph,
                                                  TP_partition& solution,
                                                  int wavefront);

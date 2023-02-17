@@ -121,10 +121,9 @@ void TPcoarsener::OrderVertices(const HGraph hgraph, std::vector<int>& vertices)
   }
 }
 
-inline const float TPcoarsener::GetClusterScore(
-    const int he,
-    HGraph hgraph,
-    std::vector<float>& algebraic_weights)
+const float TPcoarsener::GetClusterScore(const int he,
+                                         HGraph hgraph,
+                                         std::vector<float>& algebraic_weights)
 {
   const int he_size = hgraph->eptr_[he + 1] - hgraph->eptr_[he];
   const float he_score
@@ -136,8 +135,7 @@ inline const float TPcoarsener::GetClusterScore(
   return he_score;
 }
 
-inline const std::vector<float> TPcoarsener::AverageClusterWt(
-    const HGraph hgraph)
+const std::vector<float> TPcoarsener::AverageClusterWt(const HGraph hgraph)
 {
   std::vector<float> total_wt(hgraph->vertex_dimensions_, 0.0);
   for (int i = 0; i < hgraph->num_vertices_; ++i) {

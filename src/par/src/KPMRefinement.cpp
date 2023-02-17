@@ -92,7 +92,7 @@ KPMpartition KPMRefinement::KPMevaluator(const HGraph hgraph,
   return KPMpartition(cost, block_balance);
 }
 
-inline void kpm_heap::HeapifyUp(int index)
+void kpm_heap::HeapifyUp(int index)
 {
   while (index > 0
          && vertices_[Parent(index)]->GetGain() < vertices_[index]->GetGain()) {
@@ -186,9 +186,8 @@ void kpm_heap::RemoveAt(int index)
 }
 
 // Get block balance
-inline matrix<float> KPMRefinement::KPMgetBlockBalance(
-    const HGraph hgraph,
-    std::vector<int>& solution)
+matrix<float> KPMRefinement::KPMgetBlockBalance(const HGraph hgraph,
+                                                std::vector<int>& solution)
 {
   matrix<float> block_balance(
       num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0));
@@ -387,7 +386,7 @@ std::vector<int> KPMRefinement::KPMfindBoundaryVertices(
 }
 
 // Check if a vertex is on the boundary of a bipartition
-inline bool KPMRefinement::KPMcheckBoundaryVertex(
+bool KPMRefinement::KPMcheckBoundaryVertex(
     const HGraph hgraph,
     const int& v,
     const std::pair<int, int> partition_pair,
@@ -405,8 +404,8 @@ inline bool KPMRefinement::KPMcheckBoundaryVertex(
 }
 
 // Check connectivity of a hyperedge
-inline int KPMRefinement::KPMgetConnectivity(const int& he,
-                                             const matrix<int>& net_degs) const
+int KPMRefinement::KPMgetConnectivity(const int& he,
+                                      const matrix<int>& net_degs) const
 {
   int connectivity = 0;
   for (int i = 0; i < num_parts_; ++i) {

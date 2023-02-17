@@ -33,13 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
-//
+
 // This file contains the classes for Coarsening Phase
 // Coarsening Phase is to generate a sequence of coarser hypergraph
 // We define Coarsening as an operator class.
 // It will accept a HGraph (std::shared_ptr<TPHypergraph>) as input
 // and return a sequence of coarser hypergraphs
-//
+
 #include "TPHypergraph.h"
 #include "utl/Logger.h"
 
@@ -103,11 +103,11 @@ class TPcoarsener
   TP_coarse_graphs LazyFirstChoice(HGraph hgraph);
 
  private:
-  inline const std::vector<float> AverageClusterWt(const HGraph hgraph);
+  const std::vector<float> AverageClusterWt(const HGraph hgraph);
   void OrderVertices(const HGraph hgraph, std::vector<int>& vertices);
-  inline const float GetClusterScore(const int he,
-                                     HGraph hgraph,
-                                     std::vector<float>& algebraic_weights);
+  const float GetClusterScore(const int he,
+                              HGraph hgraph,
+                              std::vector<float>& algebraic_weights);
   HGraph Contraction(HGraph hgraph,
                      std::vector<int>& vertex_c_atrr,
                      std::vector<int>& community_attr_c,
