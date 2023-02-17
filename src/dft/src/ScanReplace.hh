@@ -60,9 +60,9 @@ class ScanCandidate
   // How to connect the old non scan cell's ports to the new scan cell
   const std::unordered_map<std::string, std::string>& getPortMapping() const;
 
-  // Prints to std::cout the port mapping to debug how we want to connect the
+  // Prints to DEBUG the port mapping to debug how we want to connect the
   // old's cell ports to the new one
-  void debugPrintPortMapping() const;
+  void debugPrintPortMapping(utl::Logger* logger) const;
 
  private:
   sta::LibertyCell* scan_cell_;

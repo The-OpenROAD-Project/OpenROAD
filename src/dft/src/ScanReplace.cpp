@@ -256,11 +256,22 @@ ScanCandidate::getPortMapping() const
   return port_mapping_;
 }
 
-void ScanCandidate::debugPrintPortMapping() const
+void ScanCandidate::debugPrintPortMapping(utl::Logger* logger) const
 {
-  std::cout << "Port mapping for cell: " << scan_cell_->name() << std::endl;
+  debugPrint(logger,
+             utl::DFT,
+             "print_port_mapping_scan_candidate",
+             2,
+             "Port mapping for cell: {:s}",
+             scan_cell_->name());
   for (const auto& [from_port, to_port] : port_mapping_) {
-    std::cout << "    " << from_port << " -> " << to_port << std::endl;
+    debugPrint(logger,
+               utl::DFT,
+               "print_port_mapping_scan_candidate",
+               2,
+               "    {:s} -> {:s}",
+               from_port,
+               to_port);
   }
 }
 
@@ -331,9 +342,14 @@ void ScanReplace::collectScanCellAvailable()
   // best equivalent scan cell
   for (auto& candidates : scan_candidates) {
     sta::LibertyCell* non_scan_cell = candidates.first;
+    std::unique_ptr<ScanCandidate> scan_candidate
+        = SelectBestScanCell(non_scan_cell, candidates.second);
+    scan_candidate->debugPrintPortMapping(logger_);
     non_scan_to_scan_lib_cells_.insert(
-        {non_scan_cell, SelectBestScanCell(non_scan_cell, candidates.second)});
+        {non_scan_cell, std::move(scan_candidate)});
   }
+
+  debugPrintScanEquivalents();
 }
 
 ScanReplace::ScanReplace(odb::dbDatabase* db,
@@ -418,8 +434,13 @@ void ScanReplace::debugPrintScanEquivalents() const
 {
   for (const auto& [liberty_cell, scan_candidate] :
        non_scan_to_scan_lib_cells_) {
-    std::cout << liberty_cell->name() << " -> "
-              << scan_candidate->getScanCell()->name() << std::endl;
+    debugPrint(logger_,
+               utl::DFT,
+               "print_scan_equivalent",
+               2,
+               "{:s} -> {:s}",
+               liberty_cell->name(),
+               scan_candidate->getScanCell()->name());
   }
 }
 
