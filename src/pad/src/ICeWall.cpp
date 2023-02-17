@@ -35,7 +35,7 @@
 
 #include "pad/ICeWall.h"
 
-#include <boost/polygon/polygon.hpp>
+#include <boost/icl/interval_set.hpp>
 
 #include "RDLRouter.h"
 #include "Utilities.h"
@@ -574,26 +574,16 @@ void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
 
   const odb::Rect rowbbox = row->getBBox();
 
-  using namespace boost::polygon::operators;
-  using Rectangle = boost::polygon::rectangle_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
-  using Pt = Polygon90::point_type;
-
-  std::vector<Polygon90> placed_io;
+  using Interval = boost::icl::interval_set<int>;
+  Interval placed_io;
   for (auto* inst : getPadInstsInRow(row)) {
     const odb::Rect bbox = inst->getBBox()->getBox();
-    std::array<Pt, 4> pts;
     if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
-      pts = {Pt(bbox.xMin(), rowbbox.yMin()),
-             Pt(bbox.xMax(), rowbbox.yMin()),
-             Pt(bbox.xMax(), rowbbox.yMax()),
-             Pt(bbox.xMin(), rowbbox.yMax())};
+      placed_io.insert(
+          Interval::interval_type::closed(bbox.xMin(), bbox.xMax()));
     } else {
-      pts = {Pt(rowbbox.xMin(), bbox.yMin()),
-             Pt(rowbbox.xMax(), bbox.yMin()),
-             Pt(rowbbox.xMax(), bbox.yMax()),
-             Pt(rowbbox.xMin(), bbox.yMax())};
+      placed_io.insert(
+          Interval::interval_type::closed(bbox.yMin(), bbox.yMax()));
     }
 
     debugPrint(
@@ -604,58 +594,36 @@ void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
         "Instance in {} -> {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um)",
         row->getName(),
         inst->getName(),
-        pts[0].x() / dbus,
-        pts[0].y() / dbus,
-        pts[2].x() / dbus,
-        pts[2].x() / dbus);
-
-    Polygon90 poly;
-    poly.set(pts.begin(), pts.end());
-    placed_io.push_back(poly);
+        bbox.ll().x() / dbus,
+        bbox.ll().y() / dbus,
+        bbox.ur().x() / dbus,
+        bbox.ur().y() / dbus);
   }
 
-  std::array<Pt, 4> pts = {Pt(rowbbox.xMin(), rowbbox.yMin()),
-                           Pt(rowbbox.xMax(), rowbbox.yMin()),
-                           Pt(rowbbox.xMax(), rowbbox.yMax()),
-                           Pt(rowbbox.xMin(), rowbbox.yMax())};
-
-  Polygon90 poly;
-  poly.set(pts.begin(), pts.end());
-  std::array<Polygon90, 1> arr{poly};
-
-  Polygon90Set new_shape(boost::polygon::HORIZONTAL, arr.begin(), arr.end());
-
-  for (const auto& io : placed_io) {
-    new_shape -= io;
+  Interval row_interval;
+  if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
+    row_interval.insert(
+        Interval::interval_type::closed(rowbbox.xMin(), rowbbox.xMax()));
+  } else {
+    row_interval.insert(
+        Interval::interval_type::closed(rowbbox.yMin(), rowbbox.yMax()));
   }
 
-  std::vector<Rectangle> rects;
-  new_shape.get_rectangles(rects);
+  row_interval -= placed_io;
 
   const int site_width = row->getSite()->getWidth();
   int fill_group = 0;
-  for (auto& r : rects) {
-    const odb::Rect new_rect(xl(r), yl(r), xh(r), yh(r));
-
-    int width;
-    int start;
-    if (row->getDirection() == odb::dbRowDir::HORIZONTAL) {
-      width = new_rect.dx();
-      start = new_rect.xMin();
-    } else {
-      width = new_rect.dy();
-      start = new_rect.yMin();
-    }
+  for (Interval::iterator it = row_interval.begin(); it != row_interval.end();
+       it++) {
+    const int width = it->upper() - it->lower();
+    const int start = it->lower();
     if (width % site_width != 0) {
       logger_->error(utl::PAD,
                      26,
-                     "Filling {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um) "
-                     "will result in a gap.",
+                     "Filling {} ({:.3f}um -> {:.3f}um) will result in a gap.",
                      row->getName(),
-                     new_rect.xMin() / dbus,
-                     new_rect.yMin() / dbus,
-                     new_rect.xMax() / dbus,
-                     new_rect.yMax() / dbus);
+                     it->lower() / dbus,
+                     it->upper() / dbus);
     }
     int sites = width / site_width;
     const int start_site_index = snapToRowSite(row, start);
@@ -664,12 +632,10 @@ void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
                utl::PAD,
                "Fill",
                1,
-               "Filling {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um)",
+               "Filling {} : {:.3f}um -> {:.3f}um",
                row->getName(),
-               new_rect.xMin() / dbus,
-               new_rect.yMin() / dbus,
-               new_rect.xMax() / dbus,
-               new_rect.yMax() / dbus);
+               it->lower() / dbus,
+               it->upper() / dbus);
     debugPrint(logger_,
                utl::PAD,
                "Fill",
