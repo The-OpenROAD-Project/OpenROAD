@@ -33,6 +33,7 @@
 #include "ScanReplace.hh"
 
 #include <iostream>
+#include <limits>
 
 #include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
@@ -144,58 +145,20 @@ bool IsScanEquivalent(
   return true;
 }
 
-// We calculate the difference in performance of the ports given
-double DifferencePerformancePorts(const sta::LibertyPort* port1,
-                                  const sta::LibertyPort* port2)
-{
-  double diff = 0;
-
-  diff += std::abs(port1->capacitance() - port2->capacitance());
-  diff += std::abs(port1->driveResistance() - port2->driveResistance());
-
-  bool exist_fanout_load1 = false, exist_fanout_load2 = false;
-  float fanout_load1 = 0, fanout_load2 = 0;
-
-  port1->fanoutLoad(fanout_load1, exist_fanout_load1);
-  port2->fanoutLoad(fanout_load2, exist_fanout_load2);
-
-  if (exist_fanout_load1 && exist_fanout_load2) {
-    diff += std::abs(fanout_load1 - fanout_load2);
-  }
-
-  return diff;
-}
-
-// We calculate the difference in performance between the cells iterating
-// through the ports
+// We calculate the difference between drive resistance of the Q pins to find
+// the most similar scan cell to the non-scan one
 double DifferencePerformanceCells(const sta::LibertyCell* non_scan_cell,
                                   const sta::LibertyCell* scan_cell)
 {
-  double diff = 0;
+  sta::LibertyPort* non_scan_q = non_scan_cell->findLibertyPort("Q");
+  sta::LibertyPort* scan_q = scan_cell->findLibertyPort("Q");
 
-  // Area
-  diff += std::abs(non_scan_cell->area() - scan_cell->area());
-
-  // leakage
-  if (non_scan_cell->leakagePowerExists() && scan_cell->leakagePowerExists()) {
-    bool exists;
-    float leak1 = 0, leak2 = 0;
-    non_scan_cell->leakagePower(leak1, exists);
-    scan_cell->leakagePower(leak2, exists);
-    diff += std::abs(leak1 - leak2);
+  if (!non_scan_q || !scan_q) {
+    // Use double's max so this is moved to the end of the vector when sorting
+    return std::numeric_limits<double>::max();
   }
 
-  // Now let's check each of the ports
-  sta::LibertyCellPortIterator non_scan_cell_ports_iter(non_scan_cell);
-  while (non_scan_cell_ports_iter.hasNext()) {
-    sta::LibertyPort* non_scan_cell_port = non_scan_cell_ports_iter.next();
-    sta::LibertyPort* scan_equiv
-        = FindEquivalentPortInScanCell(non_scan_cell_port, scan_cell);
-
-    diff += DifferencePerformancePorts(non_scan_cell_port, scan_equiv);
-  }
-
-  return diff;
+  return std::abs(non_scan_q->driveResistance() - scan_q->driveResistance());
 }
 
 // We select the scan_cell that is most similar to the non_scan_cell in
