@@ -137,8 +137,8 @@ class TPcoarsener
   int seed_;
   Order vertex_order_choice_;
   utl::Logger* logger_ = nullptr;
-  friend class MultiLevelHierarchy;
 };
+
 // nickname for shared pointer of Coarsening
 using TP_coarsening_ptr = std::shared_ptr<TPcoarsener>;
 }  // namespace par
