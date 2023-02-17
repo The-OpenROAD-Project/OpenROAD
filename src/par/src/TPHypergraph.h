@@ -306,9 +306,6 @@ class TPHypergraph
     return *this;
   }
 
-  // destructor
-  ~TPHypergraph() = default;
-
   int GetNumVertices() const { return num_vertices_; }
   int GetNumHyperedges() const { return num_hyperedges_; }
   int GetNumTimingPaths() const { return num_timing_paths_; }

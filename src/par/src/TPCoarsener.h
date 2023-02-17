@@ -62,7 +62,6 @@ enum class Order
 class TPcoarsener
 {
  public:
-  TPcoarsener() = default;
   TPcoarsener(const std::vector<float> e_wt_factors,
               const std::vector<float> v_wt_factors,
               const std::vector<float> p_wt_factors,
@@ -95,11 +94,6 @@ class TPcoarsener
         logger_(logger)
   {
   }
-  TPcoarsener(const TPcoarsener&) = default;
-  TPcoarsener(TPcoarsener&&) = default;
-  TPcoarsener& operator=(const TPcoarsener&) = default;
-  TPcoarsener& operator=(TPcoarsener&&) = default;
-  ~TPcoarsener() = default;
   void SetVertexOrderChoice(const Order choice)
   {
     vertex_order_choice_ = choice;

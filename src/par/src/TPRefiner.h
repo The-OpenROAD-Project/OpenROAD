@@ -98,10 +98,6 @@ class VertexGain
     potential_move_ = -1;
     status_ = true;
   }
-  VertexGain(const VertexGain&) = default;
-  VertexGain& operator=(const VertexGain&) = default;
-  VertexGain(VertexGain&&) = default;
-  VertexGain& operator=(VertexGain&&) = default;
   bool operator<(const VertexGain& vertex_gain) const
   {
     if (gain_ > vertex_gain.gain_) {
@@ -148,7 +144,6 @@ using TP_gain_cell = std::shared_ptr<VertexGain>;
 class TPrefiner
 {
  public:
-  TPrefiner() = default;
   TPrefiner(const int num_parts,
             const int refiner_iters,
             const RefinerChoice refiner_choice,
@@ -168,10 +163,10 @@ class TPrefiner
         logger_(logger)
   {
   }
-  TPrefiner(const TPrefiner&) = default;
-  TPrefiner(TPrefiner&&) = default;
-  TPrefiner& operator=(const TPrefiner&) = default;
-  TPrefiner& operator=(TPrefiner&&) = default;
+  TPrefiner(const TPrefiner&) = delete;
+  TPrefiner(TPrefiner&&) = delete;
+  TPrefiner& operator=(const TPrefiner&) = delete;
+  TPrefiner& operator=(TPrefiner&&) = delete;
   virtual ~TPrefiner() = default;
   virtual void BalancePartition(const HGraph hgraph,
                                 const matrix<float>& max_block_balance,
@@ -312,7 +307,6 @@ class TPrefiner
 class TPpriorityQueue
 {
  public:
-  TPpriorityQueue() = default;
   TPpriorityQueue(int total_elements, HGraph hypergraph)
   {
     vertices_map_.resize(total_elements);
@@ -326,11 +320,6 @@ class TPpriorityQueue
       : vertices_(vertices), vertices_map_(vertices_map)
   {
   }
-  TPpriorityQueue(const TPpriorityQueue&) = default;
-  TPpriorityQueue& operator=(const TPpriorityQueue&) = default;
-  TPpriorityQueue(TPpriorityQueue&&) = default;
-  TPpriorityQueue& operator=(TPpriorityQueue&&) = default;
-  ~TPpriorityQueue() = default;
   inline void HeapifyUp(int index);
   void HeapifyDown(int index);
   void InsertIntoPQ(std::shared_ptr<VertexGain> element);
@@ -387,7 +376,6 @@ using TP_gain_bucket = std::shared_ptr<TPpriorityQueue>;
 class TPtwoWayFM : public TPrefiner
 {
  public:
-  TPtwoWayFM() = default;
   TPtwoWayFM(const int num_parts,
              const int refiner_iters,
              const int max_moves,
@@ -408,11 +396,6 @@ class TPtwoWayFM : public TPrefiner
   {
     max_moves_ = max_moves;
   }
-  TPtwoWayFM(const TPtwoWayFM&) = default;
-  TPtwoWayFM(TPtwoWayFM&&) = default;
-  TPtwoWayFM& operator=(const TPtwoWayFM&) = default;
-  TPtwoWayFM& operator=(TPtwoWayFM&&) = default;
-  ~TPtwoWayFM() = default;
   void SetMaxPasses(const int passes) { refiner_iters_ = passes; }
   void BalancePartition(const HGraph hgraph,
                         const matrix<float>& max_block_balance,
@@ -486,7 +469,6 @@ using TP_two_way_refining_ptr = std::shared_ptr<TPtwoWayFM>;
 class TPkWayFM : public TPrefiner
 {
  public:
-  TPkWayFM() = default;
   TPkWayFM(const int num_parts,
            const int refiner_iters,
            const int max_moves,
@@ -507,11 +489,6 @@ class TPkWayFM : public TPrefiner
   {
     max_moves_ = max_moves;
   }
-  TPkWayFM(const TPkWayFM&) = default;
-  TPkWayFM(TPkWayFM&&) = default;
-  TPkWayFM& operator=(const TPkWayFM&) = default;
-  TPkWayFM& operator=(TPkWayFM&&) = default;
-  ~TPkWayFM() = default;
   void Refine(const HGraph hgraph,
               const matrix<float>& max_block_balance,
               TP_partition& solution) override;
@@ -592,7 +569,6 @@ using TP_k_way_refining_ptr = std::shared_ptr<TPkWayFM>;
 class TPgreedyRefine : public TPrefiner
 {
  public:
-  TPgreedyRefine() = default;
   TPgreedyRefine(const int num_parts,
                  const int refiner_iters,
                  const int max_moves,
@@ -613,11 +589,6 @@ class TPgreedyRefine : public TPrefiner
         max_moves_(0)
   {
   }
-  TPgreedyRefine(const TPgreedyRefine&) = default;
-  TPgreedyRefine(TPgreedyRefine&&) = default;
-  TPgreedyRefine& operator=(const TPgreedyRefine&) = default;
-  TPgreedyRefine& operator=(TPgreedyRefine&&) = default;
-  ~TPgreedyRefine() = default;
   void SetMaxMoves(const int moves) { max_moves_ = moves; }
   int GetMaxMoves() const { return max_moves_; }
   void Refine(const HGraph hgraph,
@@ -671,12 +642,6 @@ using TP_greedy_refiner_ptr = std::shared_ptr<TPgreedyRefine>;
 class TPilpGraph
 {
  public:
-  TPilpGraph() = default;
-  TPilpGraph(const TPilpGraph&) = default;
-  TPilpGraph(TPilpGraph&&) = default;
-  TPilpGraph& operator=(const TPilpGraph&) = default;
-  TPilpGraph& operator=(TPilpGraph&&) = default;
-  ~TPilpGraph() = default;
   TPilpGraph(const int vertex_dimensions,
              const int hyperedge_dimensions,
              const bool fixed_flag,
@@ -749,12 +714,6 @@ class TPilpGraph
 class TPilpRefine : public TPrefiner
 {
  public:
-  TPilpRefine() = default;
-  TPilpRefine(const TPilpRefine&) = default;
-  TPilpRefine(TPilpRefine&&) = default;
-  TPilpRefine& operator=(const TPilpRefine&) = default;
-  TPilpRefine& operator=(TPilpRefine&&) = default;
-  ~TPilpRefine() = default;
   TPilpRefine(const int num_parts,
               const int refiner_iters,
               const int max_moves,
@@ -835,16 +794,10 @@ using TP_ilp_refiner_ptr = std::shared_ptr<TPilpRefine>;
 class TPpartitionPair
 {
  public:
-  TPpartitionPair() = default;
   TPpartitionPair(const i, const int x, const int y, const float xcon)
       : pair_id_(i), pair_x_(x), pair_y_(y), connectivity_(xcon)
   {
   }
-  TPpartitionPair(const TPpartitionPair&) = default;
-  TPpartitionPair(TPpartitionPair&&) = default;
-  TPpartitionPair& operator=(const TPpartitionPair&) = default;
-  TPpartitionPair& operator=(TPpartitionPair&&) = default;
-  ~TPpartitionPair() = default;\
   void SetId(const int i) { pair_id_ = i; }
   int GetId() const { return pair_id_; }
   void SetPairX(const int x) { pair_x_ = x; }
@@ -866,7 +819,6 @@ using TP_partition_pair_ptr = std::shared_ptr<TPpartitionPair>;
 class TPkpm : public TPrefiner, public TPtwoWayFM
 {
  public:
-  TPkpm() = default;
   TPkpm(const int num_parts,
         const int refiner_iters,
         const int max_moves,
@@ -887,11 +839,6 @@ class TPkpm : public TPrefiner, public TPtwoWayFM
   {
     max_moves_ = max_moves;
   }
-  TPkpm(const TPkpm&) = default;
-  TPkpm(TPkpm&&) = default;
-  TPkpm& operator=(const TPkpm&) = default;
-  TPkpm& operator=(TPkpm&&) = default;
-  ~TPkpm() = default;
   void Refine(const HGraph hgraph,
               const matrix<float>& max_vertex_balance,
               TP_partition& solution) override;

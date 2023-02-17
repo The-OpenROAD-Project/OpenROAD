@@ -73,7 +73,6 @@ using matrix = std::vector<std::vector<T>>;
 class TPpartitioner
 {
  public:
-  TPpartitioner() = default;
   TPpartitioner(int num_parts,
                 const std::vector<float>& e_wt_factors,
                 float path_wt_factor,
@@ -115,11 +114,6 @@ class TPpartitioner
   {
   }
 
-  TPpartitioner(const TPpartitioner&) = default;
-  TPpartitioner(TPpartitioner&&) = default;
-  TPpartitioner& operator=(const TPpartitioner&) = default;
-  TPpartitioner& operator=(TPpartitioner&&) = default;
-  ~TPpartitioner() = default;
   TP_partition_token GoldenEvaluator(const HGraph hgraph,
                                      std::vector<int>& solution,
                                      bool print_flag = true);
