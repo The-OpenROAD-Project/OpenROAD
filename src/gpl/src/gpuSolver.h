@@ -58,7 +58,6 @@ class Logger;
 
 namespace gpl {
 
-using namespace std;
 typedef Eigen::SparseMatrix<float, Eigen::RowMajor> SMatrix;
 class GpuSolver
 {

@@ -40,7 +40,6 @@
 #include "dbBlockCallBackObj.h"
 #include "spdlog/fmt/fmt.h"
 using namespace odb;
-using namespace std;
 class CallBack : public dbBlockCallBackObj
 {
  private:
@@ -48,7 +47,7 @@ class CallBack : public dbBlockCallBackObj
   bool _pause = false;
 
  public:
-  vector<string> events;
+  std::vector<std::string> events;
   // dbInst Start
   void inDbInstCreate(dbInst* inst) override
   {
@@ -203,7 +202,7 @@ class CallBack : public dbBlockCallBackObj
             box->yMin(),
             box->xMax(),
             box->yMax());
-    events.push_back(string(buffer));
+    events.push_back(std::string(buffer));
   }
   // dbBlockage End
 
@@ -220,7 +219,7 @@ class CallBack : public dbBlockCallBackObj
             box->yMin(),
             box->xMax(),
             box->yMax());
-    events.push_back(string(buffer));
+    events.push_back(std::string(buffer));
   }
   void inDbObstructionDestroy(dbObstruction*) override
   {

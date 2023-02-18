@@ -41,7 +41,6 @@
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
 
-using namespace std;
 using namespace fr;
 
 io::Parser::Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
@@ -66,9 +65,9 @@ io::Parser::Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn)
 
 void io::Parser::setDieArea(odb::dbBlock* block)
 {
-  vector<frBoundary> bounds;
+  std::vector<frBoundary> bounds;
   frBoundary bound;
-  vector<Point> points;
+  std::vector<Point> points;
   odb::Rect box = block->getDieArea();
   points.push_back(Point(box.xMin(), box.yMin()));
   points.push_back(Point(box.xMax(), box.yMax()));
@@ -91,8 +90,8 @@ void io::Parser::setTracks(odb::dbBlock* block)
     int xPatternSize = track->getNumGridPatternsX();
     int yPatternSize = track->getNumGridPatternsY();
     for (int i = 0; i < xPatternSize; i++) {
-      unique_ptr<frTrackPattern> tmpTrackPattern
-          = make_unique<frTrackPattern>();
+      std::unique_ptr<frTrackPattern> tmpTrackPattern
+          = std::make_unique<frTrackPattern>();
       tmpTrackPattern->setLayerNum(
           tech_->name2layer.at(track->getTechLayer()->getName())
               ->getLayerNum());
@@ -106,8 +105,8 @@ void io::Parser::setTracks(odb::dbBlock* block)
           .push_back(std::move(tmpTrackPattern));
     }
     for (int i = 0; i < yPatternSize; i++) {
-      unique_ptr<frTrackPattern> tmpTrackPattern
-          = make_unique<frTrackPattern>();
+      std::unique_ptr<frTrackPattern> tmpTrackPattern
+          = std::make_unique<frTrackPattern>();
       tmpTrackPattern->setLayerNum(
           tech_->name2layer.at(track->getTechLayer()->getName())
               ->getLayerNum());
@@ -134,7 +133,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
         != tmpBlock_->name2inst_.end())
       logger_->error(DRT, 96, "Same cell name: {}.", inst->getName());
     frMaster* master = design_->name2master_.at(inst->getMaster()->getName());
-    auto uInst = make_unique<frInst>(inst->getName(), master);
+    auto uInst = std::make_unique<frInst>(inst->getName(), master);
     auto tmpInst = uInst.get();
     tmpInst->setId(numInsts_);
     numInsts_++;
@@ -147,7 +146,8 @@ void io::Parser::setInsts(odb::dbBlock* block)
     tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
     for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
       auto term = uTerm.get();
-      unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
+      std::unique_ptr<frInstTerm> instTerm
+          = std::make_unique<frInstTerm>(tmpInst, term);
       instTerm->setId(numTerms_++);
       instTerm->setIndexInOwner(numInstTerms++);
       int pinCnt = term->getPins().size();
@@ -156,8 +156,8 @@ void io::Parser::setInsts(odb::dbBlock* block)
     }
     for (auto& uBlk : tmpInst->getMaster()->getBlockages()) {
       auto blk = uBlk.get();
-      unique_ptr<frInstBlockage> instBlk
-          = make_unique<frInstBlockage>(tmpInst, blk);
+      std::unique_ptr<frInstBlockage> instBlk
+          = std::make_unique<frInstBlockage>(tmpInst, blk);
       instBlk->setId(numBlockages_);
       numBlockages_++;
       tmpInst->addInstBlockage(std::move(instBlk));
@@ -169,29 +169,29 @@ void io::Parser::setInsts(odb::dbBlock* block)
 void io::Parser::setObstructions(odb::dbBlock* block)
 {
   for (auto blockage : block->getObstructions()) {
-    string layerName = blockage->getBBox()->getTechLayer()->getName();
+    std::string layerName = blockage->getBBox()->getTechLayer()->getName();
     if (tech_->name2layer.find(layerName) == tech_->name2layer.end()) {
       logger_->warn(
           DRT, 282, "Skipping blockage. Cannot find layer {}.", layerName);
       continue;
     }
     frLayerNum layerNum = tech_->name2layer[layerName]->getLayerNum();
-    auto blkIn = make_unique<frBlockage>();
+    auto blkIn = std::make_unique<frBlockage>();
     blkIn->setId(numBlockages_);
     numBlockages_++;
-    auto pinIn = make_unique<frBPin>();
+    auto pinIn = std::make_unique<frBPin>();
     pinIn->setId(0);
     frCoord xl = blockage->getBBox()->xMin();
     frCoord yl = blockage->getBBox()->yMin();
     frCoord xh = blockage->getBBox()->xMax();
     frCoord yh = blockage->getBBox()->yMax();
     // pinFig
-    unique_ptr<frRect> pinFig = make_unique<frRect>();
+    std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
     pinFig->setBBox(Rect(xl, yl, xh, yh));
     pinFig->addToPin(pinIn.get());
     pinFig->setLayerNum(layerNum);
     // pinFig completed
-    unique_ptr<frPinFig> uptr(std::move(pinFig));
+    std::unique_ptr<frPinFig> uptr(std::move(pinFig));
     pinIn->addPinFig(std::move(uptr));
 
     blkIn->setPin(std::move(pinIn));
@@ -257,11 +257,11 @@ void io::Parser::setVias(odb::dbBlock* block)
 
       frCoord currX = 0;
       frCoord currY = 0;
-      vector<unique_ptr<frShape>> cutFigs;
+      std::vector<std::unique_ptr<frShape>> cutFigs;
       for (int i = 0; i < params.getNumCutRows(); i++) {
         currX = 0;
         for (int j = 0; j < params.getNumCutCols(); j++) {
-          auto rect = make_unique<frRect>();
+          auto rect = std::make_unique<frRect>();
           Rect tmpBox(currX, currY, currX + xSize, currY + ySize);
           rect->setBBox(tmpBox);
           rect->setLayerNum(cutLayerNum);
@@ -277,9 +277,9 @@ void io::Parser::setVias(odb::dbBlock* block)
         auto rect = static_cast<frRect*>(uShape.get());
         rect->move(cutXform);
       }
-      unique_ptr<frShape> uBotFig = make_unique<frRect>();
+      std::unique_ptr<frShape> uBotFig = std::make_unique<frRect>();
       auto botFig = static_cast<frRect*>(uBotFig.get());
-      unique_ptr<frShape> uTopFig = make_unique<frRect>();
+      std::unique_ptr<frShape> uTopFig = std::make_unique<frRect>();
       auto topFig = static_cast<frRect*>(uTopFig.get());
 
       Rect botBox(0 - xBotEnc, 0 - yBotEnc, currX + xBotEnc, currY + yBotEnc);
@@ -297,7 +297,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       botFig->setLayerNum(botLayerNum);
       topFig->setLayerNum(topLayerNum);
 
-      auto viaDef = make_unique<frViaDef>(via->getName());
+      auto viaDef = std::make_unique<frViaDef>(via->getName());
       viaDef->addLayer1Fig(std::move(uBotFig));
       viaDef->addLayer2Fig(std::move(uTopFig));
       for (auto& uShape : cutFigs) {
@@ -305,7 +305,7 @@ void io::Parser::setVias(odb::dbBlock* block)
       }
       tech_->addVia(std::move(viaDef));
     } else {
-      map<frLayerNum, set<odb::dbBox*>> lNum2Int;
+      std::map<frLayerNum, std::set<odb::dbBox*>> lNum2Int;
       for (auto box : via->getBoxes()) {
         if (tech_->name2layer.find(box->getTechLayer()->getName())
             == tech_->name2layer.end()) {
@@ -320,11 +320,11 @@ void io::Parser::setVias(odb::dbBlock* block)
       if (lNum2Int.begin()->first + 2 != (--lNum2Int.end())->first)
         logger_->error(
             DRT, 101, "Non-consecutive layers for via: {}.", via->getName());
-      auto viaDef = make_unique<frViaDef>(via->getName());
+      auto viaDef = std::make_unique<frViaDef>(via->getName());
       int cnt = 0;
       for (auto& [layerNum, boxes] : lNum2Int) {
         for (auto box : boxes) {
-          unique_ptr<frRect> pinFig = make_unique<frRect>();
+          std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
           pinFig->setBBox(
               Rect(box->xMin(), box->yMin(), box->xMax(), box->yMax()));
           pinFig->setLayerNum(layerNum);
@@ -360,14 +360,14 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
     return;
   }
   frNonDefaultRule* fnd;
-  unique_ptr<frNonDefaultRule> ptnd;
+  std::unique_ptr<frNonDefaultRule> ptnd;
   int z;
-  ptnd = make_unique<frNonDefaultRule>();
+  ptnd = std::make_unique<frNonDefaultRule>();
   fnd = ptnd.get();
   design_->tech_->addNDR(std::move(ptnd));
   fnd->setName(ndr->getName().data());
   fnd->setHardSpacing(ndr->getHardSpacing());
-  vector<odb::dbTechLayerRule*> lr;
+  std::vector<odb::dbTechLayerRule*> lr;
   ndr->getLayerRules(lr);
   for (auto& l : lr) {
     z = design_->tech_->getLayer(l->getLayer()->getName())->getLayerNum() / 2
@@ -376,13 +376,13 @@ void io::Parser::createNDR(odb::dbTechNonDefaultRule* ndr)
     fnd->setSpacing(l->getSpacing(), z);
     fnd->setWireExtension(l->getWireExtension(), z);
   }
-  vector<odb::dbTechVia*> vias;
+  std::vector<odb::dbTechVia*> vias;
   ndr->getUseVias(vias);
   for (auto via : vias) {
     fnd->addVia(design_->getTech()->getVia(via->getName()),
                 via->getBottomLayer()->getNumber() / 2);
   }
-  vector<odb::dbTechViaGenerateRule*> viaRules;
+  std::vector<odb::dbTechViaGenerateRule*> viaRules;
   ndr->getUseViaRules(viaRules);
   z = std::numeric_limits<int>().max();
   for (auto via : viaRules) {
@@ -407,9 +407,9 @@ void io::Parser::setNDRs(odb::dbDatabase* db)
   for (auto& layer : design_->getTech()->getLayers()) {
     if (layer->getType() != dbTechLayerType::ROUTING)
       continue;
-    MTSAFEDIST = max(MTSAFEDIST,
-                     design_->getTech()->getMaxNondefaultSpacing(
-                         layer->getLayerNum() / 2 - 1));
+    MTSAFEDIST = std::max(MTSAFEDIST,
+                          design_->getTech()->getMaxNondefaultSpacing(
+                              layer->getLayerNum() / 2 - 1));
   }
 }
 void io::Parser::getSBoxCoords(odb::dbSBox* box,
@@ -508,7 +508,7 @@ void io::Parser::setNets(odb::dbBlock* block)
                      net->getName(),
                      net->getSigType().getString());
     }
-    unique_ptr<frNet> uNetIn = make_unique<frNet>(net->getName());
+    std::unique_ptr<frNet> uNetIn = std::make_unique<frNet>(net->getName());
     auto netIn = uNetIn.get();
     if (net->getNonDefaultRule())
       uNetIn->updateNondefaultRule(design_->getTech()->getNondefaultRule(
@@ -537,7 +537,7 @@ void io::Parser::setNets(odb::dbBlock* block)
       netIn->addBTerm(frbterm);
       if (!is_special) {
         // graph enablement
-        auto termNode = make_unique<frNode>();
+        auto termNode = std::make_unique<frNode>();
         termNode->setPin(frbterm);
         termNode->setType(frNodeTypeEnum::frcPin);
         netIn->addNode(termNode);
@@ -576,16 +576,16 @@ void io::Parser::setNets(odb::dbBlock* block)
       netIn->addInstTerm(instTerm);
       if (!is_special) {
         // graph enablement
-        auto instTermNode = make_unique<frNode>();
+        auto instTermNode = std::make_unique<frNode>();
         instTermNode->setPin(instTerm);
         instTermNode->setType(frNodeTypeEnum::frcPin);
         netIn->addNode(instTermNode);
       }
     }
     // initialize
-    string layerName = "";
-    string viaName = "";
-    string shape = "";
+    std::string layerName = "";
+    std::string viaName = "";
+    std::string shape = "";
     bool hasBeginPoint = false;
     bool hasEndPoint = false;
     frCoord beginX = -1;
@@ -655,10 +655,10 @@ void io::Parser::setNets(odb::dbBlock* block)
               }
               break;
             case odb::dbWireDecoder::VIA:
-              viaName = string(decoder.getVia()->getName());
+              viaName = std::string(decoder.getVia()->getName());
               break;
             case odb::dbWireDecoder::TECH_VIA:
-              viaName = string(decoder.getTechVia()->getName());
+              viaName = std::string(decoder.getTechVia()->getName());
               break;
             case odb::dbWireDecoder::RECT:
               decoder.getRect(left, bottom, right, top);
@@ -681,10 +681,10 @@ void io::Parser::setNets(odb::dbBlock* block)
           continue;
         }
         if (hasEndPoint) {
-          auto tmpP = make_unique<frPathSeg>();
+          auto tmpP = std::make_unique<frPathSeg>();
           if (beginX > endX || beginY > endY) {
             tmpP->setPoints(Point(endX, endY), Point(beginX, beginY));
-            swap(beginExt, endExt);
+            std::swap(beginExt, endExt);
           } else {
             tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
           }
@@ -737,7 +737,7 @@ void io::Parser::setNets(odb::dbBlock* block)
               p = {beginX, beginY};
             }
             auto viaDef = tech_->name2via[viaName];
-            auto tmpP = make_unique<frVia>(viaDef);
+            auto tmpP = std::make_unique<frVia>(viaDef);
             tmpP->setOrigin(p);
             tmpP->addToNet(netIn);
             netIn->addVia(std::move(tmpP));
@@ -753,7 +753,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             getSBoxCoords(box, beginX, beginY, endX, endY, width);
             auto layerNum = tech_->name2layer[box->getTechLayer()->getName()]
                                 ->getLayerNum();
-            auto tmpP = make_unique<frPathSeg>();
+            auto tmpP = std::make_unique<frPathSeg>();
             tmpP->setPoints(Point(beginX, beginY), Point(endX, endY));
             tmpP->addToNet(netIn);
             tmpP->setLayerNum(layerNum);
@@ -797,7 +797,7 @@ void io::Parser::setNets(odb::dbBlock* block)
               box->getViaXY(x, y);
               Point p(x, y);
               auto viaDef = tech_->name2via[viaName];
-              auto tmpP = make_unique<frVia>(viaDef);
+              auto tmpP = std::make_unique<frVia>(viaDef);
               tmpP->setOrigin(p);
               tmpP->addToNet(netIn);
               netIn->addVia(std::move(tmpP));
@@ -886,13 +886,13 @@ void io::Parser::setBTerms(odb::dbBlock* block)
                          term->getName());
         break;
     }
-    auto uTermIn = make_unique<frBTerm>(term->getName());
+    auto uTermIn = std::make_unique<frBTerm>(term->getName());
     auto termIn = uTermIn.get();
     termIn->setId(numTerms_);
     numTerms_++;
     termIn->setType(term->getSigType());
     termIn->setDirection(term->getIoType());
-    auto pinIn = make_unique<frBPin>();
+    auto pinIn = std::make_unique<frBPin>();
     pinIn->setId(0);
     for (auto pin : term->getBPins()) {
       for (auto box : pin->getBoxes()) {
@@ -908,19 +908,19 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         frCoord yl = box->yMin();
         frCoord xh = box->xMax();
         frCoord yh = box->yMax();
-        unique_ptr<frRect> pinFig = make_unique<frRect>();
+        std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
         pinFig->setBBox(Rect(xl, yl, xh, yh));
         pinFig->addToPin(pinIn.get());
         pinFig->setLayerNum(layerNum);
-        unique_ptr<frPinFig> uptr(std::move(pinFig));
+        std::unique_ptr<frPinFig> uptr(std::move(pinFig));
         pinIn->addPinFig(std::move(uptr));
       }
     }
-    auto pa = make_unique<frPinAccess>();
+    auto pa = std::make_unique<frPinAccess>();
     if (!term->getSigType().isSupply() && term->getBPins().size() == 1) {
       auto db_pin = (odb::dbBPin*) *term->getBPins().begin();
       for (auto& db_ap : db_pin->getAccessPoints()) {
-        auto ap = make_unique<frAccessPoint>();
+        auto ap = std::make_unique<frAccessPoint>();
         updatefrAccessPoint(db_ap, ap.get(), tech_);
         pa->addAccessPoint(std::move(ap));
       }
@@ -953,9 +953,10 @@ void io::Parser::setAccessPoints(odb::dbDatabase* db)
         auto& pin = pins[i++];
         auto db_pas = db_pin->getPinAccess();
         for (const auto& db_aps : db_pas) {
-          std::unique_ptr<frPinAccess> pa = make_unique<frPinAccess>();
+          std::unique_ptr<frPinAccess> pa = std::make_unique<frPinAccess>();
           for (auto db_ap : db_aps) {
-            std::unique_ptr<frAccessPoint> ap = make_unique<frAccessPoint>();
+            std::unique_ptr<frAccessPoint> ap
+                = std::make_unique<frAccessPoint>();
             updatefrAccessPoint(db_ap, ap.get(), tech_);
             ap_map[db_ap] = ap.get();
             pa->addAccessPoint(std::move(ap));
@@ -1005,7 +1006,7 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   odb::dbBlock* block = db->getChip()->getBlock();
   if (block == nullptr)
     logger_->error(DRT, 117, "Load design first.");
-  tmpBlock_ = make_unique<frBlock>(string(block->getName()));
+  tmpBlock_ = std::make_unique<frBlock>(std::string(block->getName()));
   tmpBlock_->trackPatterns_.clear();
   tmpBlock_->trackPatterns_.resize(tech_->layers.size());
   setDieArea(block);
@@ -1024,12 +1025,12 @@ void io::Parser::readDesign(odb::dbDatabase* db)
 void io::Parser::addFakeNets()
 {
   // add VSS fake net
-  auto vssFakeNet = make_unique<frNet>(string("frFakeVSS"));
+  auto vssFakeNet = std::make_unique<frNet>(std::string("frFakeVSS"));
   vssFakeNet->setType(dbSigType::GROUND);
   vssFakeNet->setIsFake(true);
   design_->getTopBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
-  auto vddFakeNet = make_unique<frNet>(string("frFakeVDD"));
+  auto vddFakeNet = std::make_unique<frNet>(std::string("frFakeVDD"));
   vddFakeNet->setType(dbSigType::POWER);
   vddFakeNet->setIsFake(true);
   design_->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
@@ -1051,8 +1052,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
 
     fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> cornerSpacingTbl(
         widthName, widths, spacings);
-    unique_ptr<frConstraint> uCon
-        = make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58CornerSpacingConstraint>(cornerSpacingTbl);
     auto rptr = static_cast<frLef58CornerSpacingConstraint*>(uCon.get());
     switch (rule->getType()) {
       case odb::dbTechLayerCornerSpacingRule::CornerType::CONVEXCORNER:
@@ -1092,20 +1093,20 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->addLef58CornerSpacingConstraint(rptr);
   }
   for (auto rule : layer->getTechLayerSpacingTablePrlRules()) {
-    string rowName("WIDTH");
-    string colName("PARALLELRUNLENGTH");
+    std::string rowName("WIDTH");
+    std::string colName("PARALLELRUNLENGTH");
     frCollection<frCoord> rowVals, colVals;
     frCollection<frCollection<frCoord>> tblVals;
-    map<frCoord, pair<frCoord, frCoord>> ewVals;
-    map<frUInt4, pair<frCoord, frCoord>> _ewVals;
+    std::map<frCoord, std::pair<frCoord, frCoord>> ewVals;
+    std::map<frUInt4, std::pair<frCoord, frCoord>> _ewVals;
     rule->getTable(rowVals, colVals, tblVals, _ewVals);
     for (auto& [key, value] : _ewVals)
       ewVals[key] = value;
-    shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>> prlTbl
-        = make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
+    std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>> prlTbl
+        = std::make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
             rowName, rowVals, colName, colVals, tblVals);
-    unique_ptr<frLef58SpacingTableConstraint> spacingTableConstraint
-        = make_unique<frLef58SpacingTableConstraint>(prlTbl, ewVals);
+    std::unique_ptr<frLef58SpacingTableConstraint> spacingTableConstraint
+        = std::make_unique<frLef58SpacingTableConstraint>(prlTbl, ewVals);
     spacingTableConstraint->setWrongDirection(rule->isWrongDirection());
     spacingTableConstraint->setSameMask(rule->isSameMask());
     if (rule->isExceeptEol()) {
@@ -1139,14 +1140,14 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
                     layer->getName());
       continue;
     }
-    auto con = make_unique<frLef58SpacingEndOfLineConstraint>();
+    auto con = std::make_unique<frLef58SpacingEndOfLineConstraint>();
     con->setEol(
         rule->getEolSpace(), rule->getEolWidth(), rule->isExactWidthValid());
     if (rule->isWrongDirSpacingValid()) {
       con->setWrongDirSpace(rule->getWrongDirSpace());
     }
 
-    auto within = make_shared<frLef58SpacingEndOfLineWithinConstraint>();
+    auto within = std::make_shared<frLef58SpacingEndOfLineWithinConstraint>();
     con->setWithinConstraint(within);
     if (rule->isOppositeWidthValid()) {
       within->setOppositeWidth(rule->getOppositeWidth());
@@ -1163,7 +1164,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     }
     if (rule->isEndToEndValid()) {
       auto endToEnd
-          = make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
+          = std::make_shared<frLef58SpacingEndOfLineWithinEndToEndConstraint>();
       within->setEndToEndConstraint(endToEnd);
       endToEnd->setEndToEndSpace(rule->getEndToEndSpace());
       endToEnd->setCutSpace(rule->getOneCutSpace(), rule->getTwoCutSpace());
@@ -1180,8 +1181,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       }
     }
     if (rule->isParallelEdgeValid()) {
-      auto parallelEdge
-          = make_shared<frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
+      auto parallelEdge = std::make_shared<
+          frLef58SpacingEndOfLineWithinParallelEdgeConstraint>();
       within->setParallelEdgeConstraint(parallelEdge);
       if (rule->isSubtractEolWidthValid()) {
         parallelEdge->setSubtractEolWidth(rule->isSubtractEolWidthValid());
@@ -1207,8 +1208,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       }
     }
     if (rule->isMinLengthValid() || rule->isMaxLengthValid()) {
-      auto len
-          = make_shared<frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
+      auto len = std::make_shared<
+          frLef58SpacingEndOfLineWithinMaxMinLengthConstraint>();
       within->setMaxMinLengthConstraint(len);
       if (rule->isMinLengthValid())
         len->setLength(false, rule->getMinLength(), rule->isTwoEdgesValid());
@@ -1216,8 +1217,9 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
         len->setLength(true, rule->getMaxLength(), rule->isTwoEdgesValid());
     }
     if (rule->isEncloseCutValid()) {
-      auto enc = make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
-          rule->getEncloseDist(), rule->getCutToMetalSpace());
+      auto enc
+          = std::make_shared<frLef58SpacingEndOfLineWithinEncloseCutConstraint>(
+              rule->getEncloseDist(), rule->getCutToMetalSpace());
       within->setEncloseCutConstraint(enc);
       enc->setAbove(rule->isAboveValid());
       enc->setBelow(rule->isBelowValid());
@@ -1229,21 +1231,21 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
   if (tech_->hasUnidirectionalLayer(layer))
     tmpLayer->setUnidirectional(true);
   if (layer->isRectOnly()) {
-    auto rectOnlyConstraint = make_unique<frLef58RectOnlyConstraint>(
+    auto rectOnlyConstraint = std::make_unique<frLef58RectOnlyConstraint>(
         layer->isRectOnlyExceptNonCorePins());
     tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
     tech_->addUConstraint(std::move(rectOnlyConstraint));
   }
   if (layer->isRightWayOnGridOnly() || layer->getNumMasks() > 1) {
     auto rightWayOnGridOnlyConstraint
-        = make_unique<frLef58RightWayOnGridOnlyConstraint>(
+        = std::make_unique<frLef58RightWayOnGridOnlyConstraint>(
             layer->isRightWayOnGridOnlyCheckMask());
     tmpLayer->setLef58RightWayOnGridOnlyConstraint(
         rightWayOnGridOnlyConstraint.get());
     tech_->addUConstraint(std::move(rightWayOnGridOnlyConstraint));
   }
   for (auto rule : layer->getTechLayerMinStepRules()) {
-    auto con = make_unique<frLef58MinStepConstraint>();
+    auto con = std::make_unique<frLef58MinStepConstraint>();
     con->setMinStepLength(rule->getMinStepLength());
     con->setMaxEdges(rule->isMaxEdgesValid() ? rule->getMaxEdges() : -1);
     con->setMinAdjacentLength(
@@ -1261,7 +1263,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
       widthTbl.push_back(width);
       extTbl.push_back(ext);
     }
-    auto con = make_unique<frLef58EolExtensionConstraint>(
+    auto con = std::make_unique<frLef58EolExtensionConstraint>(
         fr1DLookupTbl<frCoord, frCoord>("WIDTH", widthTbl, extTbl, false));
     con->setMinSpacing(rule->getSpacing());
     con->setParallelOnly(rule->isParallelOnly());
@@ -1269,7 +1271,7 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tech_->addUConstraint(std::move(con));
   }
   for (auto rule : layer->getTechLayerAreaRules()) {
-    auto con = make_unique<frLef58AreaConstraint>(rule);
+    auto con = std::make_unique<frLef58AreaConstraint>(rule);
     tmpLayer->addLef58AreaConstraint(con.get());
     tech_->addUConstraint(std::move(con));
   }
@@ -1279,8 +1281,8 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                                        frLayer* tmpLayer)
 {
   for (auto rule : layer->getTechLayerCutClassRules()) {
-    auto cutClass = make_unique<frLef58CutClass>();
-    string name = rule->getName();
+    auto cutClass = std::make_unique<frLef58CutClass>();
+    std::string name = rule->getName();
     cutClass->setName(name);
     cutClass->setViaWidth(rule->getWidth());
     if (rule->isLengthValid()) {
@@ -1298,7 +1300,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
   for (auto rule : layer->getTechLayerCutSpacingRules()) {
     switch (rule->getType()) {
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::ADJACENTCUTS: {
-        auto con = make_unique<frLef58CutSpacingConstraint>();
+        auto con = std::make_unique<frLef58CutSpacingConstraint>();
         con->setCutSpacing(rule->getCutSpacing());
         con->setCenterToCenter(rule->isCenterToCenter());
         con->setSameNet(rule->isSameNet());
@@ -1334,7 +1336,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
       case odb::dbTechLayerCutSpacingRule::CutSpacingType::LAYER: {
         if (rule->getSecondLayer() == nullptr)
           continue;
-        auto con = make_unique<frLef58CutSpacingConstraint>();
+        auto con = std::make_unique<frLef58CutSpacingConstraint>();
         con->setCutSpacing(rule->getCutSpacing());
         con->setCenterToCenter(rule->isCenterToCenter());
         con->setSameNet(rule->isSameNet());
@@ -1448,7 +1450,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
                     "SAMEMASK unsupported for cut LEF58_SPACINGTABLE rule");
       continue;
     }
-    auto con = make_unique<frLef58CutSpacingTableConstraint>(rule);
+    auto con = std::make_unique<frLef58CutSpacingTableConstraint>(rule);
     frCollection<frCollection<std::pair<frCoord, frCoord>>> table;
     std::map<frString, frUInt4> rowMap, colMap;
     rule->getSpacingTable(table, rowMap, colMap);
@@ -1485,7 +1487,7 @@ void io::Parser::setCutLayerProperties(odb::dbTechLayer* layer,
 
 void io::Parser::addDefaultMasterSliceLayer()
 {
-  unique_ptr<frLayer> uMSLayer = make_unique<frLayer>();
+  std::unique_ptr<frLayer> uMSLayer = std::make_unique<frLayer>();
   auto tmpMSLayer = uMSLayer.get();
   if (masterSliceLayer_ == nullptr) {
     tmpMSLayer->setFakeMasterslice(true);
@@ -1498,7 +1500,7 @@ void io::Parser::addDefaultMasterSliceLayer()
 
 void io::Parser::addDefaultCutLayer()
 {
-  unique_ptr<frLayer> uCutLayer = make_unique<frLayer>();
+  std::unique_ptr<frLayer> uCutLayer = std::make_unique<frLayer>();
   auto tmpCutLayer = uCutLayer.get();
   tmpCutLayer->setFakeCut(true);
   tmpCutLayer->setLayerNum(readLayerCnt_++);
@@ -1513,7 +1515,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     addDefaultMasterSliceLayer();
     addDefaultCutLayer();
   }
-  unique_ptr<frLayer> uLayer = make_unique<frLayer>();
+  std::unique_ptr<frLayer> uLayer = std::make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt_++);
@@ -1529,27 +1531,27 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   tmpLayer->setMinWidth(std::min(layer->getMinWidth(), layer->getWidth()));
   // add minWidth constraint
   auto minWidthConstraint
-      = make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());
+      = std::make_unique<frMinWidthConstraint>(tmpLayer->getMinWidth());
   tmpLayer->setMinWidthConstraint(minWidthConstraint.get());
   tech_->addUConstraint(std::move(minWidthConstraint));
 
   // Add off grid rule for every layer
-  auto recheckConstraint = make_unique<frRecheckConstraint>();
+  auto recheckConstraint = std::make_unique<frRecheckConstraint>();
   tmpLayer->setRecheckConstraint(recheckConstraint.get());
   tech_->addUConstraint(std::move(recheckConstraint));
 
   // Add short rule for every layer
-  auto shortConstraint = make_unique<frShortConstraint>();
+  auto shortConstraint = std::make_unique<frShortConstraint>();
   tmpLayer->setShortConstraint(shortConstraint.get());
   tech_->addUConstraint(std::move(shortConstraint));
 
   // Add off grid rule for every layer
-  auto offGridConstraint = make_unique<frOffGridConstraint>();
+  auto offGridConstraint = std::make_unique<frOffGridConstraint>();
   tmpLayer->setOffGridConstraint(offGridConstraint.get());
   tech_->addUConstraint(std::move(offGridConstraint));
 
   // Add nsmetal rule for every layer
-  auto nsmetalConstraint = make_unique<frNonSufficientMetalConstraint>();
+  auto nsmetalConstraint = std::make_unique<frNonSufficientMetalConstraint>();
   tmpLayer->setNonSufficientMetalConstraint(nsmetalConstraint.get());
 
   tech_->addUConstraint(std::move(nsmetalConstraint));
@@ -1558,14 +1560,16 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
   if (layer->hasArea()) {
     frCoord minArea = frCoord(
         round(layer->getArea() * tech_->getDBUPerUU() * tech_->getDBUPerUU()));
-    unique_ptr<frConstraint> uCon = make_unique<frAreaConstraint>(minArea);
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frAreaConstraint>(minArea);
     auto rptr = static_cast<frAreaConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->setAreaConstraint(rptr);
   }
 
   if (layer->hasMinStep()) {
-    unique_ptr<frConstraint> uCon = make_unique<frMinStepConstraint>();
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frMinStepConstraint>();
     auto rptr = static_cast<frMinStepConstraint*>(uCon.get());
     rptr->setInsideCorner(layer->getMinStepType()
                           == odb::dbTechLayerMinStepType::INSIDE_CORNER);
@@ -1616,7 +1620,7 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     rule->getEnclosure(_minEnclosedArea);
     frCoord minEnclosedArea = _minEnclosedArea;
     auto minEnclosedAreaConstraint
-        = make_unique<frMinEnclosedAreaConstraint>(minEnclosedArea);
+        = std::make_unique<frMinEnclosedAreaConstraint>(minEnclosedArea);
     tmpLayer->addMinEnclosedAreaConstraint(minEnclosedAreaConstraint.get());
     tech_->addUConstraint(std::move(minEnclosedAreaConstraint));
   }
@@ -1644,8 +1648,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     } else if (rule->hasSpacingEndOfNotchWidth()) {
       logger_->warn(DRT, 143, "SpacingEndOfNotchWidth unsupported.");
     } else if (hasSpacingEndOfLine) {
-      unique_ptr<frConstraint> uCon
-          = make_unique<frSpacingEndOfLineConstraint>();
+      std::unique_ptr<frConstraint> uCon
+          = std::make_unique<frSpacingEndOfLineConstraint>();
       auto rptr = static_cast<frSpacingEndOfLineConstraint*>(uCon.get());
       rptr->setMinSpacing(minSpacing);
       rptr->setEolWidth(eolWidth);
@@ -1659,8 +1663,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       tmpLayer->addEolSpacing(rptr);
     } else if (rule->getCutSameNet()) {
       bool pgOnly = rule->getSameNetPgOnly();
-      unique_ptr<frConstraint> uCon
-          = make_unique<frSpacingSamenetConstraint>(minSpacing, pgOnly);
+      std::unique_ptr<frConstraint> uCon
+          = std::make_unique<frSpacingSamenetConstraint>(minSpacing, pgOnly);
       auto rptr = uCon.get();
       tech_->addUConstraint(std::move(uCon));
       if (tmpLayer->hasSpacingSamenet()) {
@@ -1675,8 +1679,9 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       frCollection<frCoord> rowVals(1, 0), colVals(1, 0);
       frCollection<frCollection<frCoord>> tblVals(1, {minSpacing});
       frString rowName("WIDTH"), colName("PARALLELRUNLENGTH");
-      unique_ptr<frConstraint> uCon = make_unique<frSpacingTablePrlConstraint>(
-          fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
+      std::unique_ptr<frConstraint> uCon
+          = std::make_unique<frSpacingTablePrlConstraint>(
+              fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
       auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
       tech_->addUConstraint(std::move(uCon));
       if (tmpLayer->getMinSpacing())
@@ -1698,8 +1703,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     }
     fr1DLookupTbl<frCoord, std::pair<frCoord, frCoord>> tbl(
         "WIDTH", widthTbl, valTbl);
-    unique_ptr<frConstraint> uCon
-        = make_unique<frSpacingTableInfluenceConstraint>(tbl);
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frSpacingTableInfluenceConstraint>(tbl);
     auto rptr = static_cast<frSpacingTableInfluenceConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->setSpacingTableInfluence(rptr);
@@ -1719,18 +1724,19 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
         tblVals[i].push_back(_tblVals[i][j]);
 
     std::unique_ptr<frSpacingTableConstraint> spacingTableConstraint;
-    shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>> prlTbl;
+    std::shared_ptr<fr2DLookupTbl<frCoord, frCoord, frCoord>> prlTbl;
     frString rowName("WIDTH"), colName("PARALLELRUNLENGTH");
 
     // old
-    prlTbl = make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
+    prlTbl = std::make_shared<fr2DLookupTbl<frCoord, frCoord, frCoord>>(
         rowName, rowVals, colName, colVals, tblVals);
-    spacingTableConstraint = make_unique<frSpacingTableConstraint>(prlTbl);
+    spacingTableConstraint = std::make_unique<frSpacingTableConstraint>(prlTbl);
     tmpLayer->addConstraint(spacingTableConstraint.get());
     tech_->addUConstraint(std::move(spacingTableConstraint));
     // new
-    unique_ptr<frConstraint> uCon = make_unique<frSpacingTablePrlConstraint>(
-        fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frSpacingTablePrlConstraint>(
+            fr2DLookupTbl(rowName, rowVals, colName, colVals, tblVals));
     auto rptr = static_cast<frSpacingTablePrlConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
     if (tmpLayer->getMinSpacing())
@@ -1757,8 +1763,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
       rowVals.push_back(frSpacingTableTwRowType(width, prl));
     }
 
-    unique_ptr<frConstraint> uCon
-        = make_unique<frSpacingTableTwConstraint>(rowVals, tblVals);
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frSpacingTableTwConstraint>(rowVals, tblVals);
     auto rptr = static_cast<frSpacingTableTwConstraint*>(uCon.get());
     rptr->setLayer(tmpLayer);
     tech_->addUConstraint(std::move(uCon));
@@ -1772,7 +1778,8 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     frUInt4 numCuts, width, within, length, distance;
     if (!rule->getMinimumCuts(numCuts, width))
       continue;
-    unique_ptr<frConstraint> uCon = make_unique<frMinimumcutConstraint>();
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frMinimumcutConstraint>();
     auto rptr = static_cast<frMinimumcutConstraint*>(uCon.get());
     rptr->setNumCuts(numCuts);
     rptr->setWidth(width);
@@ -1812,15 +1819,16 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
                     layer->getName());
       continue;
     }
-    unique_ptr<frConstraint> uCon
-        = make_unique<frLef58MinimumcutConstraint>(rule);
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58MinimumcutConstraint>(rule);
     auto rptr = static_cast<frLef58MinimumcutConstraint*>(uCon.get());
     tech_->addUConstraint(std::move(uCon));
     tmpLayer->addLef58MinimumcutConstraint(rptr);
   }
 
   for (auto rule : layer->getTechLayerEolKeepOutRules()) {
-    unique_ptr<frConstraint> uCon = make_unique<frLef58EolKeepOutConstraint>();
+    std::unique_ptr<frConstraint> uCon
+        = std::make_unique<frLef58EolKeepOutConstraint>();
     auto rptr = static_cast<frLef58EolKeepOutConstraint*>(uCon.get());
     rptr->setEolWidth(rule->getEolWidth());
     rptr->setBackwardExt(rule->getBackwardExt());
@@ -1842,13 +1850,13 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
   if (readLayerCnt_ == 0)
     addDefaultMasterSliceLayer();
 
-  unique_ptr<frLayer> uLayer = make_unique<frLayer>();
+  std::unique_ptr<frLayer> uLayer = std::make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
   tmpLayer->setLayerNum(readLayerCnt_++);
   tech_->addLayer(std::move(uLayer));
 
-  auto shortConstraint = make_unique<frShortConstraint>();
+  auto shortConstraint = std::make_unique<frShortConstraint>();
   tmpLayer->addConstraint(shortConstraint.get());
   tmpLayer->setShortConstraint(shortConstraint.get());
   tech_->addUConstraint(std::move(shortConstraint));
@@ -1864,9 +1872,9 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
     bool exceptSamePGNet = rule->getSameNetPgOnly();
     bool parallelOverlap = rule->getCutParallelOverlap();
     odb::dbTechLayer* outly;
-    frString secondLayerName = string("");
+    frString secondLayerName = std::string("");
     if (rule->getCutLayer4Spacing(outly))
-      secondLayerName = string(outly->getName());
+      secondLayerName = std::string(outly->getName());
     frUInt4 _adjacentCuts;
     frUInt4 within;
     frUInt4 spacing;
@@ -1891,16 +1899,17 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
                     "layer {}, please check your rule definition.",
                     layer->getName());
     }
-    cutSpacingConstraint = make_unique<frCutSpacingConstraint>(cutSpacing,
-                                                               centerToCenter,
-                                                               sameNet,
-                                                               secondLayerName,
-                                                               stack,
-                                                               adjacentCuts,
-                                                               cutWithin,
-                                                               exceptSamePGNet,
-                                                               parallelOverlap,
-                                                               cutArea);
+    cutSpacingConstraint
+        = std::make_unique<frCutSpacingConstraint>(cutSpacing,
+                                                   centerToCenter,
+                                                   sameNet,
+                                                   secondLayerName,
+                                                   stack,
+                                                   adjacentCuts,
+                                                   cutWithin,
+                                                   exceptSamePGNet,
+                                                   parallelOverlap,
+                                                   cutArea);
     tmpLayer->addCutSpacingConstraint(cutSpacingConstraint.get());
     tech_->addUConstraint(std::move(cutSpacingConstraint));
   }
@@ -1958,15 +1967,15 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       for (auto& tree : pin_shapes) {
         tree.clear();
       }
-      auto tmpMaster = make_unique<frMaster>(master->getName());
+      auto tmpMaster = std::make_unique<frMaster>(master->getName());
       frCoord originX;
       frCoord originY;
       master->getOrigin(originX, originY);
       frCoord sizeX = master->getWidth();
       frCoord sizeY = master->getHeight();
-      vector<frBoundary> bounds;
+      std::vector<frBoundary> bounds;
       frBoundary bound;
-      vector<Point> points;
+      std::vector<Point> points;
       points.push_back(Point(originX, originY));
       points.push_back(Point(sizeX, originY));
       points.push_back(Point(sizeX, sizeY));
@@ -1977,7 +1986,8 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       tmpMaster->setMasterType(master->getType());
 
       for (auto _term : master->getMTerms()) {
-        unique_ptr<frMTerm> uTerm = make_unique<frMTerm>(_term->getName());
+        std::unique_ptr<frMTerm> uTerm
+            = std::make_unique<frMTerm>(_term->getName());
         auto term = uTerm.get();
         term->setId(numTerms_);
         numTerms_++;
@@ -1989,7 +1999,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
         bool warned = false;
         int i = 0;
         for (auto mpin : _term->getMPins()) {
-          auto pinIn = make_unique<frMPin>();
+          auto pinIn = std::make_unique<frMPin>();
           pinIn->setId(i++);
           for (auto box : mpin->getGeometry()) {
             frLayerNum layerNum = -1;
@@ -2005,7 +2015,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
               }
               continue;
             }
-            string layer_name = layer->getName();
+            std::string layer_name = layer->getName();
             if (tech_->name2layer.find(layer_name) == tech_->name2layer.end()) {
               auto type = box->getTechLayer()->getType();
               if (type == odb::dbTechLayerType::ROUTING
@@ -2024,14 +2034,14 @@ void io::Parser::setMacros(odb::dbDatabase* db)
             frCoord yl = box->yMin();
             frCoord xh = box->xMax();
             frCoord yh = box->yMax();
-            unique_ptr<frRect> pinFig = make_unique<frRect>();
+            std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
             pinFig->setBBox(Rect(xl, yl, xh, yh));
             pinFig->addToPin(pinIn.get());
             pinFig->setLayerNum(layerNum);
-            unique_ptr<frPinFig> uptr(std::move(pinFig));
+            std::unique_ptr<frPinFig> uptr(std::move(pinFig));
             pinIn->addPinFig(std::move(uptr));
             pin_shapes[layerNum].insert(
-                make_pair(Rect{xl, yl, xh, yh}, pinIn.get()));
+                std::make_pair(Rect{xl, yl, xh, yh}, pinIn.get()));
           }
           term->addPin(std::move(pinIn));
         }
@@ -2040,7 +2050,7 @@ void io::Parser::setMacros(odb::dbDatabase* db)
       for (auto obs : master->getObstructions()) {
         frLayerNum layerNum = -1;
         auto layer = obs->getTechLayer();
-        string layer_name = layer->getName();
+        std::string layer_name = layer->getName();
         auto layer_type = layer->getType();
         if (tech_->name2layer.find(layer_name) == tech_->name2layer.end()) {
           if (layer_type == odb::dbTechLayerType::ROUTING
@@ -2081,28 +2091,28 @@ void io::Parser::setMacros(odb::dbDatabase* db)
               }
             }
             if (pin) {
-              unique_ptr<frRect> pinFig = make_unique<frRect>();
+              std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
               pinFig->setBBox(Rect(xl, yl, xh, yh));
               pinFig->addToPin(pin);
               pinFig->setLayerNum(layerNum);
-              unique_ptr<frPinFig> uptr(std::move(pinFig));
+              std::unique_ptr<frPinFig> uptr(std::move(pinFig));
               pin->addPinFig(std::move(uptr));
               continue;
             }
           }
         }
-        auto blkIn = make_unique<frBlockage>();
+        auto blkIn = std::make_unique<frBlockage>();
         blkIn->setId(numBlockages_);
         blkIn->setDesignRuleWidth(obs->getDesignRuleWidth());
         numBlockages_++;
-        auto pinIn = make_unique<frBPin>();
+        auto pinIn = std::make_unique<frBPin>();
         pinIn->setId(0);
         // pinFig
-        unique_ptr<frRect> pinFig = make_unique<frRect>();
+        std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
         pinFig->setBBox(Rect(xl, yl, xh, yh));
         pinFig->addToPin(pinIn.get());
         pinFig->setLayerNum(layerNum);
-        unique_ptr<frPinFig> uptr(std::move(pinFig));
+        std::unique_ptr<frPinFig> uptr(std::move(pinFig));
         pinIn->addPinFig(std::move(uptr));
         blkIn->setPin(std::move(pinIn));
         tmpMaster->addBlockage(std::move(blkIn));
@@ -2122,10 +2132,10 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
     int count = rule->getViaLayerRuleCount();
     if (count != 3)
       logger_->error(DRT, 128, "Unsupported viarule {}.", rule->getName());
-    map<frLayerNum, int> lNum2Int;
+    std::map<frLayerNum, int> lNum2Int;
     for (int i = 0; i < count; i++) {
       auto layerRule = rule->getViaLayerRule(i);
-      string layerName = layerRule->getLayer()->getName();
+      std::string layerName = layerRule->getLayer()->getName();
       if (tech_->name2layer.find(layerName) == tech_->name2layer.end())
         logger_->error(DRT,
                        129,
@@ -2143,7 +2153,7 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
       logger_->error(
           DRT, 130, "Non-consecutive layers for viarule {}.", rule->getName());
     }
-    auto viaRuleGen = make_unique<frViaRuleGenerate>(rule->getName());
+    auto viaRuleGen = std::make_unique<frViaRuleGenerate>(rule->getName());
     if (rule->isDefault()) {
       viaRuleGen->setDefault(1);
     }
@@ -2233,10 +2243,10 @@ void io::Parser::setTechViaRules(odb::dbTech* db_tech)
 void io::Parser::setTechVias(odb::dbTech* db_tech)
 {
   for (auto via : db_tech->getVias()) {
-    map<frLayerNum, int> lNum2Int;
+    std::map<frLayerNum, int> lNum2Int;
     bool has_unknown_layer = false;
     for (auto box : via->getBoxes()) {
-      string layerName = box->getTechLayer()->getName();
+      std::string layerName = box->getTechLayer()->getName();
       if (tech_->name2layer.find(layerName) == tech_->name2layer.end()) {
         logger_->warn(DRT,
                       124,
@@ -2263,12 +2273,12 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
       logger_->error(
           DRT, 126, "Non-consecutive layers for via {}.", via->getName());
     }
-    auto viaDef = make_unique<frViaDef>(via->getName());
+    auto viaDef = std::make_unique<frViaDef>(via->getName());
     if (via->isDefault())
       viaDef->setDefault(true);
     for (auto box : via->getBoxes()) {
       frLayerNum layerNum;
-      string layer = box->getTechLayer()->getName();
+      std::string layer = box->getTechLayer()->getName();
       if (tech_->name2layer.find(layer) == tech_->name2layer.end())
         logger_->error(
             DRT, 127, "Unknown layer {} for via {}.", layer, via->getName());
@@ -2278,7 +2288,7 @@ void io::Parser::setTechVias(odb::dbTech* db_tech)
       frCoord yl = box->yMin();
       frCoord xh = box->xMax();
       frCoord yh = box->yMax();
-      unique_ptr<frRect> pinFig = make_unique<frRect>();
+      std::unique_ptr<frRect> pinFig = std::make_unique<frRect>();
       pinFig->setBBox(Rect(xl, yl, xh, yh));
       pinFig->setLayerNum(layerNum);
       if (lNum2Int[layerNum] == 1) {
@@ -2359,7 +2369,7 @@ void io::Parser::readDb()
     logger_->report("Design:                   {}",
                     design_->getTopBlock()->getName());
     // TODO Rect can't be logged directly
-    stringstream dieBoxSStream;
+    std::stringstream dieBoxSStream;
     dieBoxSStream << dieBox;
     logger_->report("Die area:                 {}", dieBoxSStream.str());
     logger_->report("Number of track patterns: {}",
@@ -2441,15 +2451,15 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
   auto netName = net->getName();
   if (isTA) {
     for (auto& uGuide : net->getGuides()) {
-      // cout <<"find guide" <<endl;
+      // std::cout <<"find guide" <<std::endl;
       for (auto& uConnFig : uGuide->getRoutes()) {
         auto connFig = uConnFig.get();
         if (connFig->typeId() == frcPathSeg) {
           connFigs_[netName].push_back(
-              make_shared<frPathSeg>(*static_cast<frPathSeg*>(connFig)));
+              std::make_shared<frPathSeg>(*static_cast<frPathSeg*>(connFig)));
         } else if (connFig->typeId() == frcVia) {
           connFigs_[netName].push_back(
-              make_shared<frVia>(*static_cast<frVia*>(connFig)));
+              std::make_shared<frVia>(*static_cast<frVia*>(connFig)));
         } else {
           logger_->warn(
               DRT,
@@ -2462,15 +2472,15 @@ void io::Writer::fillConnFigs_net(frNet* net, bool isTA)
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
         auto pathSeg = *static_cast<frPathSeg*>(shape.get());
-        connFigs_[netName].push_back(make_shared<frPathSeg>(pathSeg));
+        connFigs_[netName].push_back(std::make_shared<frPathSeg>(pathSeg));
       }
     }
     for (auto& via : net->getVias()) {
-      connFigs_[netName].push_back(make_shared<frVia>(*via));
+      connFigs_[netName].push_back(std::make_shared<frVia>(*via));
     }
     for (auto& shape : net->getPatchWires()) {
       auto pwire = static_cast<frPatchWire*>(shape.get());
-      connFigs_[netName].push_back(make_shared<frPatchWire>(*pwire));
+      connFigs_[netName].push_back(std::make_shared<frPatchWire>(*pwire));
     }
   }
 }
@@ -2481,7 +2491,9 @@ void io::Writer::splitVia_helper(
     frCoord trackLoc,
     frCoord x,
     frCoord y,
-    vector<vector<map<frCoord, vector<shared_ptr<frPathSeg>>>>>& mergedPathSegs)
+    std::vector<std::vector<
+        std::map<frCoord, std::vector<std::shared_ptr<frPathSeg>>>>>&
+        mergedPathSegs)
 {
   if (layerNum >= 0 && layerNum < (int) (getTech()->getLayers().size())
       && mergedPathSegs.at(layerNum).at(isH).find(trackLoc)
@@ -2494,7 +2506,8 @@ void io::Writer::splitVia_helper(
         frSegStyle style2 = pathSeg->getStyle();
         frSegStyle style_default
             = getTech()->getLayer(layerNum)->getDefaultSegStyle();
-        shared_ptr<frPathSeg> newPathSeg = make_shared<frPathSeg>(*pathSeg);
+        std::shared_ptr<frPathSeg> newPathSeg
+            = std::make_shared<frPathSeg>(*pathSeg);
         pathSeg->setPoints(begin, Point(x, y));
         style1.setEndStyle(style_default.getEndStyle(),
                            style_default.getEndExt());
@@ -2512,19 +2525,22 @@ void io::Writer::splitVia_helper(
 }
 
 // merge pathseg, delete redundant via
-void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
+void io::Writer::mergeSplitConnFigs(
+    std::list<std::shared_ptr<frConnFig>>& connFigs)
 {
   // if (VERBOSE > 0) {
-  //   cout <<endl << "merge and split." <<endl;
+  //   std::cout <<std::endl << "merge and split." <<std::endl;
   // }
   //  initialzie pathseg and via map
-  map<tuple<frLayerNum, bool, frCoord>,
-      map<frCoord, vector<tuple<shared_ptr<frPathSeg>, bool>>>>
+  std::map<std::tuple<frLayerNum, bool, frCoord>,
+           std::map<frCoord,
+                    std::vector<std::tuple<std::shared_ptr<frPathSeg>, bool>>>>
       pathSegMergeMap;
-  map<tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia>> viaMergeMap;
+  std::map<std::tuple<frCoord, frCoord, frLayerNum>, std::shared_ptr<frVia>>
+      viaMergeMap;
   for (auto& connFig : connFigs) {
     if (connFig->typeId() == frcPathSeg) {
-      auto pathSeg = dynamic_pointer_cast<frPathSeg>(connFig);
+      auto pathSeg = std::dynamic_pointer_cast<frPathSeg>(connFig);
       auto [begin, end] = pathSeg->getPoints();
       frLayerNum layerNum = pathSeg->getLayerNum();
       if (begin == end) {
@@ -2536,47 +2552,51 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
         frCoord trackLoc = isH ? begin.y() : begin.x();
         frCoord beginCoord = isH ? begin.x() : begin.y();
         frCoord endCoord = isH ? end.x() : end.y();
-        pathSegMergeMap[make_tuple(layerNum, isH, trackLoc)][beginCoord]
-            .push_back(make_tuple(pathSeg, true));
-        pathSegMergeMap[make_tuple(layerNum, isH, trackLoc)][endCoord]
-            .push_back(make_tuple(pathSeg, false));
+        pathSegMergeMap[std::make_tuple(layerNum, isH, trackLoc)][beginCoord]
+            .push_back(std::make_tuple(pathSeg, true));
+        pathSegMergeMap[std::make_tuple(layerNum, isH, trackLoc)][endCoord]
+            .push_back(std::make_tuple(pathSeg, false));
       }
     } else if (connFig->typeId() == frcVia) {
-      auto via = dynamic_pointer_cast<frVia>(connFig);
+      auto via = std::dynamic_pointer_cast<frVia>(connFig);
       auto cutLayerNum = via->getViaDef()->getCutLayerNum();
       Point viaPoint = via->getOrigin();
-      viaMergeMap[make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)] = via;
-      // cout <<"found via" <<endl;
+      viaMergeMap[std::make_tuple(viaPoint.x(), viaPoint.y(), cutLayerNum)]
+          = via;
+      // std::cout <<"found via" <<std::endl;
     }
   }
 
   // merge pathSeg
-  map<frCoord, vector<shared_ptr<frPathSeg>>> tmp1;
-  vector<map<frCoord, vector<shared_ptr<frPathSeg>>>> tmp2(2, tmp1);
-  vector<vector<map<frCoord, vector<shared_ptr<frPathSeg>>>>> mergedPathSegs(
-      getTech()->getLayers().size(), tmp2);
+  std::map<frCoord, std::vector<std::shared_ptr<frPathSeg>>> tmp1;
+  std::vector<std::map<frCoord, std::vector<std::shared_ptr<frPathSeg>>>> tmp2(
+      2, tmp1);
+  std::vector<
+      std::vector<std::map<frCoord, std::vector<std::shared_ptr<frPathSeg>>>>>
+      mergedPathSegs(getTech()->getLayers().size(), tmp2);
 
   for (auto& it1 : pathSegMergeMap) {
-    auto layerNum = get<0>(it1.first);
-    int isH = get<1>(it1.first);
-    auto trackLoc = get<2>(it1.first);
+    auto layerNum = std::get<0>(it1.first);
+    int isH = std::get<1>(it1.first);
+    auto trackLoc = std::get<2>(it1.first);
     bool hasSeg = false;
     int cnt = 0;
-    shared_ptr<frPathSeg> newPathSeg;
+    std::shared_ptr<frPathSeg> newPathSeg;
     frSegStyle style;
     for (auto& it2 : it1.second) {
-      // cout <<"coord " <<coord <<endl;
+      // std::cout <<"coord " <<coord <<std::endl;
       for (auto& pathSegTuple : it2.second) {
-        cnt += get<1>(pathSegTuple) ? 1 : -1;
+        cnt += std::get<1>(pathSegTuple) ? 1 : -1;
       }
       // newPathSeg begin
       if (!hasSeg && cnt > 0) {
         style.setBeginStyle(frcTruncateEndStyle, 0);
         style.setEndStyle(frcTruncateEndStyle, 0);
-        newPathSeg = make_shared<frPathSeg>(*(get<0>(*(it2.second.begin()))));
+        newPathSeg = std::make_shared<frPathSeg>(
+            *(std::get<0>(*(it2.second.begin()))));
         for (auto& pathSegTuple : it2.second) {
-          auto pathSeg = get<0>(pathSegTuple);
-          auto isBegin = get<1>(pathSegTuple);
+          auto pathSeg = std::get<0>(pathSegTuple);
+          auto isBegin = std::get<1>(pathSegTuple);
           if (isBegin) {
             frSegStyle tmpStyle = pathSeg->getStyle();
             if (tmpStyle.getBeginExt() > style.getBeginExt()) {
@@ -2591,8 +2611,8 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
       } else if (hasSeg && cnt == 0) {
         auto [begin, end] = newPathSeg->getPoints();
         for (auto& pathSegTuple : it2.second) {
-          auto pathSeg = get<0>(pathSegTuple);
-          auto isBegin = get<1>(pathSegTuple);
+          auto pathSeg = std::get<0>(pathSegTuple);
+          auto isBegin = std::get<1>(pathSegTuple);
           if (!isBegin) {
             Point tmp;
             std::tie(tmp, end) = pathSeg->getPoints();
@@ -2611,13 +2631,14 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
   }
 
   // split pathseg from via
-  // mergedPathSegs[layerNum][isHorizontal] is a map<frCoord,
-  // vector<shared_ptr<frPathSeg> > >
-  // map < tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia> > viaMergeMap;
+  // mergedPathSegs[layerNum][isHorizontal] is a std::map<frCoord,
+  // std::vector<std::shared_ptr<frPathSeg> > >
+  // map < std::tuple<frCoord, frCoord, frLayerNum>, std::shared_ptr<frVia> >
+  // viaMergeMap;
   for (auto& it1 : viaMergeMap) {
-    auto x = get<0>(it1.first);
-    auto y = get<1>(it1.first);
-    auto cutLayerNum = get<2>(it1.first);
+    auto x = std::get<0>(it1.first);
+    auto y = std::get<1>(it1.first);
+    auto cutLayerNum = std::get<2>(it1.first);
     frCoord trackLoc;
 
     auto layerNum = cutLayerNum - 1;
@@ -2656,12 +2677,12 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
             auto [seg2Begin, seg2End] = seg2->getPoints();
             bool pushNewSeg1 = false;
             bool pushNewSeg2 = false;
-            shared_ptr<frPathSeg> newSeg1;
-            shared_ptr<frPathSeg> newSeg2;
+            std::shared_ptr<frPathSeg> newSeg1;
+            std::shared_ptr<frPathSeg> newSeg2;
             // check whether seg1 needs to be split, break seg1
             if (seg2Begin.y() > seg1Begin.y() && seg2Begin.y() < seg1End.y()) {
               pushNewSeg1 = true;
-              newSeg1 = make_shared<frPathSeg>(*seg1);
+              newSeg1 = std::make_shared<frPathSeg>(*seg1);
               // modify seg1
               seg1->setPoints(seg1Begin, Point(seg1End.x(), seg2End.y()));
               // modify newSeg1
@@ -2682,7 +2703,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
             // check whether seg2 needs to be split, break seg2
             if (seg1Begin.x() > seg2Begin.x() && seg1Begin.x() < seg2End.x()) {
               pushNewSeg2 = true;
-              newSeg2 = make_shared<frPathSeg>(*seg1);
+              newSeg2 = std::make_shared<frPathSeg>(*seg1);
               // modify seg2
               seg2->setPoints(seg2Begin, Point(seg1End.x(), seg2End.y()));
               // modify newSeg2
@@ -2710,7 +2731,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
               skip = true;
               break;
             }
-            // cout <<"found" <<endl;
+            // std::cout <<"found" <<std::endl;
           }
           if (skip)
             break;
@@ -2732,7 +2753,8 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
   }
 
   // write back via
-  // map < tuple<frCoord, frCoord, frLayerNum>, shared_ptr<frVia> > viaMergeMap;
+  // map < std::tuple<frCoord, frCoord, frLayerNum>, std::shared_ptr<frVia> >
+  // viaMergeMap;
   for (auto& it : viaMergeMap) {
     connFigs.push_back(it.second);
   }

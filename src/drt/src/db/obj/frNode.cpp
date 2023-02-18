@@ -31,7 +31,6 @@
 #include "db/grObj/grNet.h"
 #include "db/grObj/grNode.h"
 
-using namespace std;
 using namespace fr;
 
 frNode::frNode(grNode& in)

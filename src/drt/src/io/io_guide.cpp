@@ -30,15 +30,14 @@
 
 #include "io/io.h"
 
-using namespace std;
 using namespace fr;
 /* note: M1 guide special treatment. search "no M1 cross-gcell routing allowed"
  */
 
 void getGuide(int x,
               int y,
-              vector<int>& outGuides,
-              vector<frRect>& guides,
+              std::vector<int>& outGuides,
+              std::vector<frRect>& guides,
               frDesign* design)
 {
   ;
@@ -80,8 +79,8 @@ void io::Parser::patchGuides(frNet* net,
 {
   // get the gCells of the pin, and is shapes (rects)
   Rect pinBBox;
-  vector<frRect> pinShapes;
-  string name = "";
+  std::vector<frRect> pinShapes;
+  std::string name = "";
   switch (pin->typeId()) {
     case frcBTerm: {
       frBTerm* term = static_cast<frBTerm*>(pin);
@@ -118,7 +117,7 @@ void io::Parser::patchGuides(frNet* net,
   // finds the gCell with higher pinShape overlapping area (approximate)
   frArea bestArea = 0, area = 0;
   Point3D bestPinLocIdx;
-  vector<int> candidateGuides;  // indexes of guides in rects
+  std::vector<int> candidateGuides;  // indexes of guides in rects
   for (int x = llGcell.x(); x <= urGcell.x(); x++) {
     for (int y = llGcell.y(); y <= urGcell.y(); y++) {
       Rect intersection;
@@ -257,7 +256,7 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
                                            frNet* net,
                                            std::vector<frRect>& guides)
 {
-  vector<frRect> pinShapes;
+  std::vector<frRect> pinShapes;
   switch (pin->typeId()) {
     case frcBTerm: {
       static_cast<frTerm*>(pin)->getShapes(pinShapes);
@@ -283,8 +282,8 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
 }
 
 void io::Parser::genGuides_merge(
-    vector<frRect>& rects,
-    vector<map<frCoord, boost::icl::interval_set<frCoord>>>& intvs)
+    std::vector<frRect>& rects,
+    std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs)
 {
   for (auto& rect : rects) {
     if (rect.getLayerNum() > TOP_ROUTING_LAYER)
@@ -316,7 +315,7 @@ void io::Parser::genGuides_merge(
     }
   }
   // trackIdx, beginIdx, endIdx, layerNum
-  vector<tuple<frCoord, frCoord, frCoord, frLayerNum>> touchGuides;
+  std::vector<std::tuple<frCoord, frCoord, frCoord, frLayerNum>> touchGuides;
   // append touching edges
   for (int lNum = 0; lNum < (int) intvs.size(); lNum++) {
     auto& m = intvs[lNum];
@@ -356,13 +355,13 @@ void io::Parser::genGuides_merge(
           }
           if (!haveLU) {
             // add touching guide;
-            // cout <<"found touching guide" <<endl;
+            // std::cout <<"found touching guide" <<std::endl;
             if (lNum + 2 < (int) intvs.size()) {
               touchGuides.push_back(
-                  make_tuple(beginIdx, prevTrackIdx, trackIdx, lNum + 2));
+                  std::make_tuple(beginIdx, prevTrackIdx, trackIdx, lNum + 2));
             } else if (lNum - 2 >= 0) {
               touchGuides.push_back(
-                  make_tuple(beginIdx, prevTrackIdx, trackIdx, lNum - 2));
+                  std::make_tuple(beginIdx, prevTrackIdx, trackIdx, lNum - 2));
             } else {
               logger_->error(
                   DRT, 228, "genGuides_merge cannot find touching layer.");
@@ -381,17 +380,20 @@ void io::Parser::genGuides_merge(
 }
 
 void io::Parser::genGuides_split(
-    vector<frRect>& rects,
-    vector<map<frCoord, boost::icl::interval_set<frCoord>>>& intvs,
-    map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
-        gCell2PinMap,
-    map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>&
-        pin2GCellMap,
+    std::vector<frRect>& rects,
+    std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs,
+    std::map<std::pair<Point, frLayerNum>,
+             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
+    std::map<frBlockObject*,
+             std::set<std::pair<Point, frLayerNum>>,
+             frBlockObjectComp>& pin2GCellMap,
     bool retry)
 {
   rects.clear();
   // layerNum->trackIdx->beginIdx->set of obj
-  vector<map<frCoord, map<frCoord, set<frBlockObject*, frBlockObjectComp>>>>
+  std::vector<
+      std::map<frCoord,
+               std::map<frCoord, std::set<frBlockObject*, frBlockObjectComp>>>>
       pin_helper(design_->getTech()->getLayers().size());
   for (auto& [pr, objS] : gCell2PinMap) {
     auto& point = pr.first;
@@ -409,7 +411,7 @@ void io::Parser::genGuides_split(
     for (auto& [trackIdx, curr_intvs] : intvs[layerNum]) {
       // split by lower/upper seg
       for (auto it = curr_intvs.begin(); it != curr_intvs.end(); it++) {
-        set<frCoord> lineIdx;
+        std::set<frCoord> lineIdx;
         auto beginIdx = it->lower();
         auto endIdx = it->upper();
         // hardcode layerNum <= VIA_ACCESS_LAYERNUM not used for GR
@@ -425,13 +427,13 @@ void io::Parser::genGuides_split(
               for (auto obj : it2->second) {
                 if (dir == dbTechLayerDir::HORIZONTAL) {
                   pin2GCellMap[obj].insert(
-                      make_pair(Point(it2->first, trackIdx), layerNum));
+                      std::make_pair(Point(it2->first, trackIdx), layerNum));
                 } else {
                   pin2GCellMap[obj].insert(
-                      make_pair(Point(trackIdx, it2->first), layerNum));
+                      std::make_pair(Point(trackIdx, it2->first), layerNum));
                 }
               }
-              // cout <<"pin split" <<endl;
+              // std::cout <<"pin split" <<std::endl;
             }
           }
           for (int x = beginIdx; x <= endIdx; x++) {
@@ -454,7 +456,7 @@ void io::Parser::genGuides_split(
               if (boost::icl::contains(it2->second, trackIdx)) {
                 lineIdx.insert(
                     it2->first);  // it2->first is intersection frCoord
-                // cout <<"found split point" <<endl;
+                // std::cout <<"found split point" <<std::endl;
               }
             }
           }
@@ -465,7 +467,7 @@ void io::Parser::genGuides_split(
                  it2++) {
               if (boost::icl::contains(it2->second, trackIdx)) {
                 lineIdx.insert(it2->first);
-                // cout <<"found split point" <<endl;
+                // std::cout <<"found split point" <<std::endl;
               }
             }
           }
@@ -481,13 +483,13 @@ void io::Parser::genGuides_split(
               for (auto obj : it2->second) {
                 if (dir == dbTechLayerDir::HORIZONTAL) {
                   pin2GCellMap[obj].insert(
-                      make_pair(Point(it2->first, trackIdx), layerNum));
+                      std::make_pair(Point(it2->first, trackIdx), layerNum));
                 } else {
                   pin2GCellMap[obj].insert(
-                      make_pair(Point(trackIdx, it2->first), layerNum));
+                      std::make_pair(Point(trackIdx, it2->first), layerNum));
                 }
               }
-              // cout <<"pin split" <<endl;
+              // std::cout <<"pin split" <<std::endl;
             }
           }
           // add rect
@@ -530,8 +532,8 @@ void io::Parser::genGuides_split(
 
 template <typename T>
 void io::Parser::genGuides_gCell2TermMap(
-    map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
-        gCell2PinMap,
+    std::map<std::pair<Point, frLayerNum>,
+             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
     T* term,
     frBlockObject* origTerm)
 {
@@ -602,7 +604,7 @@ void io::Parser::genGuides_gCell2TermMap(
                               name);
               }
             } else {
-              gCell2PinMap[make_pair(Point(x, y), lNum)].insert(origTerm);
+              gCell2PinMap[std::make_pair(Point(x, y), lNum)].insert(origTerm);
             }
           }
         }
@@ -615,13 +617,13 @@ void io::Parser::genGuides_gCell2TermMap(
 
 void io::Parser::genGuides_gCell2PinMap(
     frNet* net,
-    map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
-        gCell2PinMap)
+    std::map<std::pair<Point, frLayerNum>,
+             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap)
 {
   for (auto& instTerm : net->getInstTerms()) {
     dbTransform xform = instTerm->getInst()->getUpdatedXform();
     auto origTerm = instTerm->getTerm();
-    auto uTerm = make_unique<frMTerm>(*origTerm, xform);
+    auto uTerm = std::make_unique<frMTerm>(*origTerm, xform);
     auto term = uTerm.get();
     if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
       if (!genGuides_gCell2APInstTermMap(gCell2PinMap, instTerm)) {
@@ -643,8 +645,8 @@ void io::Parser::genGuides_gCell2PinMap(
 }
 
 bool io::Parser::genGuides_gCell2APInstTermMap(
-    map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
-        gCell2PinMap,
+    std::map<std::pair<Point, frLayerNum>,
+             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
     frInstTerm* instTerm)
 {
   bool isSuccess = false;
@@ -655,7 +657,7 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
 
   // ap
   frMTerm* trueTerm = instTerm->getTerm();
-  string name;
+  std::string name;
   frInst* inst = instTerm->getInst();
   dbTransform shiftXform = inst->getTransform();
   shiftXform.setOrient(dbOrientType(dbOrientType::R0));
@@ -688,7 +690,7 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
       shiftXform.apply(bp);
 
       Point idx = design_->getTopBlock()->getGCellIdx(bp);
-      gCell2PinMap[make_pair(idx, bNum)].insert(
+      gCell2PinMap[std::make_pair(idx, bNum)].insert(
           static_cast<frBlockObject*>(instTerm));
       succesPinCnt++;
       if (succesPinCnt == int(trueTerm->getPins().size())) {
@@ -701,8 +703,8 @@ bool io::Parser::genGuides_gCell2APInstTermMap(
 }
 
 bool io::Parser::genGuides_gCell2APTermMap(
-    map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>&
-        gCell2PinMap,
+    std::map<std::pair<Point, frLayerNum>,
+             std::set<frBlockObject*, frBlockObjectComp>>& gCell2PinMap,
     frBTerm* term)
 {
   bool isSuccess = false;
@@ -747,9 +749,9 @@ void io::Parser::genGuides_initPin2GCellMap(
   }
 }
 
-void io::Parser::genGuides_addCoverGuide(frNet* net, vector<frRect>& rects)
+void io::Parser::genGuides_addCoverGuide(frNet* net, std::vector<frRect>& rects)
 {
-  vector<frBlockObject*> terms;
+  std::vector<frBlockObject*> terms;
   for (auto& instTerm : net->getInstTerms()) {
     terms.push_back(instTerm);
   }
@@ -789,7 +791,7 @@ void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term,
                                                 T* trueTerm,
                                                 frInst* inst,
                                                 dbTransform& shiftXform,
-                                                vector<frRect>& rects)
+                                                std::vector<frRect>& rects)
 {
   int pinIdx = 0;
   int pinAccessIdx = (inst) ? inst->getPinAccessIdx() : -1;
@@ -825,7 +827,7 @@ void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term,
       Rect coverBox(llBox.xMin(), llBox.yMin(), urBox.xMax(), urBox.yMax());
       frLayerNum beginLayerNum = bNum;
       frLayerNum endLayerNum
-          = min(bNum + 4, design_->getTech()->getTopLayerNum());
+          = std::min(bNum + 4, design_->getTech()->getTopLayerNum());
 
       for (auto lNum = beginLayerNum; lNum <= endLayerNum; lNum += 2) {
         for (int xIdx = -1; xIdx <= 1; xIdx++) {
@@ -842,7 +844,7 @@ void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term,
   }
 }
 
-void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
+void io::Parser::genGuides(frNet* net, std::vector<frRect>& rects)
 {
   net->clearGuides();
 
@@ -850,16 +852,19 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
   int size = (int) tech_->getLayers().size();
   if (TOP_ROUTING_LAYER < std::numeric_limits<int>().max()
       && TOP_ROUTING_LAYER >= 0)
-    size = min(size, TOP_ROUTING_LAYER + 1);
-  vector<map<frCoord, boost::icl::interval_set<frCoord>>> intvs(size);
+    size = std::min(size, TOP_ROUTING_LAYER + 1);
+  std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>> intvs(size);
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);
   }
   genGuides_merge(rects, intvs);  // merge and add touching guide
 
-  map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>
+  std::map<std::pair<Point, frLayerNum>,
+           std::set<frBlockObject*, frBlockObjectComp>>
       gCell2PinMap;
-  map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>
+  std::map<frBlockObject*,
+           std::set<std::pair<Point, frLayerNum>>,
+           frBlockObjectComp>
       pin2GCellMap;
   genGuides_gCell2PinMap(net, gCell2PinMap);
   genGuides_initPin2GCellMap(net, pin2GCellMap);
@@ -906,17 +911,17 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
     }
 
     // steiner (i.e., gcell end and pin gcell idx) to guide idx (pin idx)
-    map<pair<Point, frLayerNum>, set<int>> nodeMap;
+    std::map<std::pair<Point, frLayerNum>, std::set<int>> nodeMap;
     int gCnt = 0;
     int nCnt = 0;
     genGuides_buildNodeMap(nodeMap, gCnt, nCnt, rects, pin2GCellMap);
-    // cout <<"build node map done" <<endl <<flush;
+    // std::cout <<"build node map done" <<std::endl <<std::flush;
 
-    vector<bool> adjVisited;
-    vector<int> adjPrevIdx;
+    std::vector<bool> adjVisited;
+    std::vector<int> adjPrevIdx;
     if (genGuides_astar(
             net, adjVisited, adjPrevIdx, nodeMap, gCnt, nCnt, false, retry)) {
-      // cout <<"astar done" <<endl <<flush;
+      // std::cout <<"astar done" <<std::endl <<std::flush;
       genGuides_final(
           net, rects, adjVisited, adjPrevIdx, gCnt, nCnt, pin2GCellMap);
       break;
@@ -949,21 +954,23 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
 
 void io::Parser::genGuides_final(
     frNet* net,
-    vector<frRect>& rects,
-    vector<bool>& adjVisited,
-    vector<int>& adjPrevIdx,
+    std::vector<frRect>& rects,
+    std::vector<bool>& adjVisited,
+    std::vector<int>& adjPrevIdx,
     int gCnt,
     int nCnt,
-    map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>&
-        pin2GCellMap)
+    std::map<frBlockObject*,
+             std::set<std::pair<Point, frLayerNum>>,
+             frBlockObjectComp>& pin2GCellMap)
 {
-  vector<frBlockObject*> pin2ptr;
+  std::vector<frBlockObject*> pin2ptr;
   for (auto& [obj, idxS] : pin2GCellMap) {
     pin2ptr.push_back(obj);
   }
   // find pin in which guide
-  vector<vector<pair<Point, frLayerNum>>> pinIdx2GCellUpdated(nCnt - gCnt);
-  vector<vector<int>> guideIdx2Pins(gCnt);
+  std::vector<std::vector<std::pair<Point, frLayerNum>>> pinIdx2GCellUpdated(
+      nCnt - gCnt);
+  std::vector<std::vector<int>> guideIdx2Pins(gCnt);
   for (int i = 0; i < (int) adjPrevIdx.size(); i++) {
     if (!adjVisited[i]) {
       continue;
@@ -975,13 +982,13 @@ void io::Parser::genGuides_final(
       Rect box = rect.getBBox();
       auto lNum = rect.getLayerNum();
       auto obj = pin2ptr[pinIdx];
-      // cout <<" pin1 id " <<adjPrevIdx[i] <<" prev " <<i <<endl;
-      if (pin2GCellMap[obj].find(make_pair(box.ll(), lNum))
+      // std::cout <<" pin1 id " <<adjPrevIdx[i] <<" prev " <<i <<std::endl;
+      if (pin2GCellMap[obj].find(std::make_pair(box.ll(), lNum))
           != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ll(), lNum));
-      } else if (pin2GCellMap[obj].find(make_pair(box.ur(), lNum))
+        pinIdx2GCellUpdated[pinIdx].push_back(std::make_pair(box.ll(), lNum));
+      } else if (pin2GCellMap[obj].find(std::make_pair(box.ur(), lNum))
                  != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ur(), lNum));
+        pinIdx2GCellUpdated[pinIdx].push_back(std::make_pair(box.ur(), lNum));
       } else {
         logger_->warn(
             DRT, 220, "genGuides_final net {} error 1.", net->getName());
@@ -994,13 +1001,13 @@ void io::Parser::genGuides_final(
       Rect box = rect.getBBox();
       auto lNum = rect.getLayerNum();
       auto obj = pin2ptr[pinIdx];
-      // cout <<" pin2 id " <<i <<" prev " <<adjPrevIdx[i] <<endl;
-      if (pin2GCellMap[obj].find(make_pair(box.ll(), lNum))
+      // std::cout <<" pin2 id " <<i <<" prev " <<adjPrevIdx[i] <<std::endl;
+      if (pin2GCellMap[obj].find(std::make_pair(box.ll(), lNum))
           != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ll(), lNum));
-      } else if (pin2GCellMap[obj].find(make_pair(box.ur(), lNum))
+        pinIdx2GCellUpdated[pinIdx].push_back(std::make_pair(box.ll(), lNum));
+      } else if (pin2GCellMap[obj].find(std::make_pair(box.ur(), lNum))
                  != pin2GCellMap[obj].end()) {
-        pinIdx2GCellUpdated[pinIdx].push_back(make_pair(box.ur(), lNum));
+        pinIdx2GCellUpdated[pinIdx].push_back(std::make_pair(box.ur(), lNum));
       } else {
         logger_->warn(
             DRT, 221, "genGuides_final net {} error 2.", net->getName());
@@ -1017,14 +1024,14 @@ void io::Parser::genGuides_final(
     }
   }
 
-  map<pair<Point, frLayerNum>, set<int>> updatedNodeMap;
+  std::map<std::pair<Point, frLayerNum>, std::set<int>> updatedNodeMap;
   // pinIdx2GCellUpdated tells pin residency in gcell
   for (int i = 0; i < nCnt - gCnt; i++) {
     auto obj = pin2ptr[i];
     for (auto& [pt, lNum] : pinIdx2GCellUpdated[i]) {
       Point absPt = design_->getTopBlock()->getGCellCenter(pt);
-      tmpGRPins_.push_back(make_pair(obj, absPt));
-      updatedNodeMap[make_pair(pt, lNum)].insert(i + gCnt);
+      tmpGRPins_.push_back(std::make_pair(obj, absPt));
+      updatedNodeMap[std::make_pair(pt, lNum)].insert(i + gCnt);
     }
   }
   for (int i = 0; i < gCnt; i++) {
@@ -1033,13 +1040,17 @@ void io::Parser::genGuides_final(
     }
     auto& rect = rects[i];
     Rect box = rect.getBBox();
-    updatedNodeMap[make_pair(Point(box.xMin(), box.yMin()), rect.getLayerNum())]
+    updatedNodeMap[std::make_pair(Point(box.xMin(), box.yMin()),
+                                  rect.getLayerNum())]
         .insert(i);
-    updatedNodeMap[make_pair(Point(box.xMax(), box.yMax()), rect.getLayerNum())]
+    updatedNodeMap[std::make_pair(Point(box.xMax(), box.yMax()),
+                                  rect.getLayerNum())]
         .insert(i);
-    // cout <<"add guide " <<i <<" to " <<Point(box.xMin(),  box.yMin()) <<"
-    // " <<rect.getLayerNum() <<endl; cout <<"add guide " <<i <<" to "
-    // <<Point(box.xMax(), box.yMax())    <<" " <<rect.getLayerNum() <<endl;
+    // std::cout <<"add guide " <<i <<" to " <<Point(box.xMin(),  box.yMin())
+    // <<" " <<rect.getLayerNum() <<std::endl; std::cout <<"add guide " <<i <<"
+    // to "
+    // <<Point(box.xMax(), box.yMax())    <<" " <<rect.getLayerNum()
+    // <<std::endl;
   }
   for (auto& [pr, idxS] : updatedNodeMap) {
     auto& [pt, lNum] = pr;
@@ -1047,8 +1058,9 @@ void io::Parser::genGuides_final(
       auto idx = *(idxS.begin());
       if (idx < gCnt) {
         // no upper/lower guide
-        if (updatedNodeMap.find(make_pair(pt, lNum + 2)) == updatedNodeMap.end()
-            && updatedNodeMap.find(make_pair(pt, lNum - 2))
+        if (updatedNodeMap.find(std::make_pair(pt, lNum + 2))
+                == updatedNodeMap.end()
+            && updatedNodeMap.find(std::make_pair(pt, lNum - 2))
                    == updatedNodeMap.end()) {
           auto& rect = rects[idx];
           Rect box = rect.getBBox();
@@ -1077,7 +1089,7 @@ void io::Parser::genGuides_final(
     }
     auto& rect = rects[i];
     Rect box = rect.getBBox();
-    auto guide = make_unique<frGuide>();
+    auto guide = std::make_unique<frGuide>();
     Point begin = design_->getTopBlock()->getGCellCenter(box.ll());
     Point end = design_->getTopBlock()->getGCellCenter(box.ur());
     guide->setPoints(begin, end);
@@ -1085,24 +1097,25 @@ void io::Parser::genGuides_final(
     guide->setEndLayerNum(rect.getLayerNum());
     guide->addToNet(net);
     net->addGuide(std::move(guide));
-    // cout <<"add guide " <<begin <<" " <<end <<" " <<rect.getLayerNum()
-    // <<endl;
+    // std::cout <<"add guide " <<begin <<" " <<end <<" " <<rect.getLayerNum()
+    // <<std::endl;
   }
 }
 
 void io::Parser::genGuides_buildNodeMap(
-    map<pair<Point, frLayerNum>, set<int>>& nodeMap,
+    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
     int& gCnt,
     int& nCnt,
-    vector<frRect>& rects,
-    map<frBlockObject*, set<pair<Point, frLayerNum>>, frBlockObjectComp>&
-        pin2GCellMap)
+    std::vector<frRect>& rects,
+    std::map<frBlockObject*,
+             std::set<std::pair<Point, frLayerNum>>,
+             frBlockObjectComp>& pin2GCellMap)
 {
   for (int i = 0; i < (int) rects.size(); i++) {
     auto& rect = rects[i];
     Rect box = rect.getBBox();
-    nodeMap[make_pair(box.ll(), rect.getLayerNum())].insert(i);
-    nodeMap[make_pair(box.ur(), rect.getLayerNum())].insert(i);
+    nodeMap[std::make_pair(box.ll(), rect.getLayerNum())].insert(i);
+    nodeMap[std::make_pair(box.ur(), rect.getLayerNum())].insert(i);
   }
   gCnt = rects.size();  // total guide cnt
   int nodeIdx = rects.size();
@@ -1117,9 +1130,9 @@ void io::Parser::genGuides_buildNodeMap(
 
 bool io::Parser::genGuides_astar(
     frNet* net,
-    vector<bool>& adjVisited,
-    vector<int>& adjPrevIdx,
-    map<pair<Point, frLayerNum>, set<int>>& nodeMap,
+    std::vector<bool>& adjVisited,
+    std::vector<int>& adjPrevIdx,
+    std::map<std::pair<Point, frLayerNum>, std::set<int>>& nodeMap,
     int& gCnt,
     int& nCnt,
     bool forceFeedThrough,
@@ -1128,8 +1141,8 @@ bool io::Parser::genGuides_astar(
   // a star search
 
   // node index, node visited
-  vector<vector<int>> adjVec(nCnt, vector<int>());
-  vector<bool> onPathIdx(nCnt, false);
+  std::vector<std::vector<int>> adjVec(nCnt, std::vector<int>());
+  std::vector<bool> onPathIdx(nCnt, false);
   adjVisited.clear();
   adjPrevIdx.clear();
   adjVisited.resize(nCnt, false);
@@ -1154,11 +1167,10 @@ bool io::Parser::genGuides_astar(
             adjVec[idx1].push_back(idx2);
             adjVec[idx2].push_back(idx1);
           }
-          // cout <<"add edge1 " <<idx1 <<" " <<idx2 <<endl;
           // one pin, one gcell
         } else {
-          auto gIdx = min(idx1, idx2);
-          auto pIdx = max(idx1, idx2);
+          auto gIdx = std::min(idx1, idx2);
+          auto pIdx = std::max(idx1, idx2);
           // only out edge
           if (ALLOW_PIN_AS_FEEDTHROUGH || forceFeedThrough) {
             adjVec[pIdx].push_back(gIdx);
@@ -1166,24 +1178,24 @@ bool io::Parser::genGuides_astar(
           } else {
             if (pIdx == gCnt) {
               adjVec[pIdx].push_back(gIdx);
-              // cout <<"add edge2 " <<pIdx <<" " <<gIdx <<endl;
+              // std::cout <<"add edge2 " <<pIdx <<" " <<gIdx <<std::endl;
               // only in edge
             } else {
               adjVec[gIdx].push_back(pIdx);
-              // cout <<"add edge3 " <<gIdx <<" " <<pIdx <<endl;
+              // std::cout <<"add edge3 " <<gIdx <<" " <<pIdx <<std::endl;
             }
           }
         }
       }
       // add intersecting guide2guide edge excludes pin
       if (idx1 < gCnt
-          && nodeMap.find(make_pair(pt, lNum + 2)) != nodeMap.end()) {
-        for (auto nbrIdx : nodeMap[make_pair(pt, lNum + 2)]) {
+          && nodeMap.find(std::make_pair(pt, lNum + 2)) != nodeMap.end()) {
+        for (auto nbrIdx : nodeMap[std::make_pair(pt, lNum + 2)]) {
           if (nbrIdx < gCnt) {
             adjVec[idx1].push_back(nbrIdx);
             adjVec[nbrIdx].push_back(idx1);
-            // cout <<"add edge4 " <<idx1 <<" " <<nbrIdx <<endl;
-            // cout <<"add edge5 " <<nbrIdx <<" " <<idx1 <<endl;
+            // std::cout <<"add edge4 " <<idx1 <<" " <<nbrIdx <<std::endl;
+            // std::cout <<"add edge5 " <<nbrIdx <<" " <<idx1 <<std::endl;
           }
         }
       }
@@ -1205,8 +1217,8 @@ bool io::Parser::genGuides_astar(
     }
   };
   for (int findNode = gCnt; findNode < nCnt - 1; findNode++) {
-    // cout <<"finished " <<findNode <<" nodes" <<endl;
-    priority_queue<wf> pq;
+    // std::cout <<"finished " <<findNode <<" nodes" <<std::endl;
+    std::priority_queue<wf> pq;
     if (findNode == gCnt) {
       // push only first pin into pq
       pq.push({gCnt, -1, 0});

@@ -50,11 +50,12 @@ class FlexDRConnectivityChecker
   void check(int iter = -1);
 
  private:
-  using NetRouteObjs = vector<frConnFig*>;
+  using NetRouteObjs = std::vector<frConnFig*>;
   // layer -> track -> indices of NetRouteObjs
-  using PathSegsByLayerAndTrack = vector<map<frCoord, vector<int>>>;
+  using PathSegsByLayerAndTrack
+      = std::vector<std::map<frCoord, std::vector<int>>>;
   // The track id matches the map iteration order above
-  using PathSegsByLayerAndTrackId = vector<vector<vector<int>>>;
+  using PathSegsByLayerAndTrackId = std::vector<std::vector<std::vector<int>>>;
   struct Span
   {
     frCoord lo;
@@ -64,7 +65,7 @@ class FlexDRConnectivityChecker
       return std::tie(lo, hi) < std::tie(rhs.lo, rhs.hi);
     }
   };
-  using SpansByLayerAndTrackId = vector<vector<vector<Span>>>;
+  using SpansByLayerAndTrackId = std::vector<std::vector<std::vector<Span>>>;
 
   void initRouteObjs(const frNet* net, NetRouteObjs& netRouteObjs);
   void buildPin2epMap(const frNet* net,
@@ -138,11 +139,11 @@ class FlexDRConnectivityChecker
                               const bool isHorz);
   void splitPathSegs(NetRouteObjs& netRouteObjs,
                      std::vector<std::pair<Span, int>>& segSpans);
-  void splitPathSegs_commit(vector<int>& splitPoints,
+  void splitPathSegs_commit(std::vector<int>& splitPoints,
                             frPathSeg* highestPs,
                             int first,
                             int& i,
-                            vector<pair<Span, int>>& segSpans,
+                            std::vector<std::pair<Span, int>>& segSpans,
                             NetRouteObjs& netRouteObjs);
   void merge_perform_helper(NetRouteObjs& netRouteObjs,
                             const std::vector<std::pair<Span, int>>& segSpans,

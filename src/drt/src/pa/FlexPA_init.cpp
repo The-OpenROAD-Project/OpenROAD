@@ -34,10 +34,9 @@
 #include "db/infra/frTime.h"
 #include "gc/FlexGC.h"
 
-using namespace std;
 using namespace fr;
 
-void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*>& prefTrackPatterns)
+void FlexPA::getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns)
 {
   for (auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
     auto isVerticalTrack
@@ -56,7 +55,7 @@ void FlexPA::getPrefTrackPatterns(vector<frTrackPattern*>& prefTrackPatterns)
 }
 
 void FlexPA::initUniqueInstance_master2PinLayerRange(
-    map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
+    std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
         master2PinLayerRange)
 {
   std::set<frString> masters;
@@ -103,9 +102,9 @@ void FlexPA::initUniqueInstance_master2PinLayerRange(
       continue;
     }
     maxLayerNum = std::min(maxLayerNum + 2, numLayers);
-    master2PinLayerRange[master] = make_tuple(minLayerNum, maxLayerNum);
+    master2PinLayerRange[master] = std::make_tuple(minLayerNum, maxLayerNum);
   }
-  // cout <<"  master pin layer range done" <<endl;
+  // std::cout <<"  master pin layer range done" <<std::endl;
 }
 
 bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
@@ -125,12 +124,12 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
 // must init all unique, including filler, macro, etc. to ensure frInst
 // pinAccessIdx is active
 void FlexPA::initUniqueInstance_main(
-    const map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
+    const std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
         master2PinLayerRange,
-    const vector<frTrackPattern*>& prefTrackPatterns)
+    const std::vector<frTrackPattern*>& prefTrackPatterns)
 {
-  vector<frInst*> ndrInsts;
-  vector<frCoord> offset;
+  std::vector<frInst*> ndrInsts;
+  std::vector<frCoord> offset;
   int cnt = 0;
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_)
@@ -197,7 +196,7 @@ void FlexPA::initUniqueInstance_main(
   }
 
   // if (VERBOSE > 0) {
-  //   cout <<"#unique instances = " <<cnt <<endl;
+  //   std::cout <<"#unique instances = " <<cnt <<std::endl;
   // }
 }
 
@@ -215,10 +214,10 @@ bool FlexPA::isNDRInst(frInst& inst)
 
 void FlexPA::initUniqueInstance()
 {
-  vector<frTrackPattern*> prefTrackPatterns;
+  std::vector<frTrackPattern*> prefTrackPatterns;
   getPrefTrackPatterns(prefTrackPatterns);
 
-  map<frMaster*, tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
+  std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>
       master2PinLayerRange;
   initUniqueInstance_master2PinLayerRange(master2PinLayerRange);
 
@@ -271,7 +270,7 @@ void FlexPA::initPinAccess()
           }
         }
         checkFigsOnGrid(pin.get());
-        auto pa = make_unique<frPinAccess>();
+        auto pa = std::make_unique<frPinAccess>();
         pin->addPinAccess(std::move(pa));
       }
     }
@@ -285,7 +284,7 @@ void FlexPA::initPinAccess()
   if (target_insts_.empty())
     for (auto& term : getDesign()->getTopBlock()->getTerms()) {
       for (auto& pin : term->getPins()) {
-        auto pa = make_unique<frPinAccess>();
+        auto pa = std::make_unique<frPinAccess>();
         pin->addPinAccess(std::move(pa));
       }
     }
@@ -400,7 +399,7 @@ void FlexPA::initTrackCoords()
   }
 
   // half coords
-  vector<vector<frCoord>> halfTrackCoords(numLayers);
+  std::vector<std::vector<frCoord>> halfTrackCoords(numLayers);
   for (int i = 0; i < numLayers; i++) {
     frCoord prevFullCoord = std::numeric_limits<frCoord>::max();
     for (auto& [currFullCoord, cost] : trackCoords_[i]) {

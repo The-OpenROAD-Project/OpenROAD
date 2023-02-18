@@ -32,7 +32,6 @@
 #include "db/taObj/taPin.h"
 #include "frDesign.h"
 
-using namespace std;
 using namespace fr;
 
 // for pathseg, return overlapped length * #overlaps per interval
@@ -61,7 +60,7 @@ frUInt4 taTrack::getCost(frCoord x1, frCoord x2, int type, taPinFig* fig) const
     auto& intv = it->first;
     auto& objS = it->second;
     frUInt4 tmpCost = 0;
-    frUInt4 len = max(intv.upper() - intv.lower(), 1);
+    frUInt4 len = std::max(intv.upper() - intv.lower(), 1);
     for (auto& obj : objS) {
       if (obj == nullptr) {
         tmpCost++;
@@ -78,7 +77,7 @@ frUInt4 taTrack::getCost(frCoord x1, frCoord x2, int type, taPinFig* fig) const
           tmpCost++;
         }
       } else {
-        cout << "Warning: taTrack::getCost unsupported type" << endl;
+        std::cout << "Warning: taTrack::getCost unsupported type" << std::endl;
       }
     }
     cost += tmpCost * len;

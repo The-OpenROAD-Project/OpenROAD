@@ -48,7 +48,6 @@ namespace gpl {
 
 using utl::GPL;
 
-using namespace std;
 using namespace odb;
 
 static int fastModulo(const int input, const int ceil);
@@ -782,9 +781,9 @@ void BinGrid::initBins()
     int sizeX = (x + binSizeX_ > ux_) ? ux_ - x : binSizeX_;
     int sizeY = (y + binSizeY_ > uy_) ? uy_ - y : binSizeY_;
 
-    // cout << "idxX: " << idxX << " idxY: " << idxY
+    // std::cout << "idxX: " << idxX << " idxY: " << idxY
     //   << " x:" << x << " y:" << y
-    //   << " " << x+sizeX << " " << y+sizeY << endl;
+    //   << " " << x+sizeX << " " << y+sizeY << std::endl;
     bin = Bin(idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
 
     // move x, y coordinates.
@@ -1185,8 +1184,8 @@ void NesterovBase::init()
 void NesterovBase::initFillerGCells()
 {
   // extract average dx/dy in range (10%, 90%)
-  vector<int> dxStor;
-  vector<int> dyStor;
+  std::vector<int> dxStor;
+  std::vector<int> dyStor;
 
   dxStor.reserve(pb_->placeInsts().size());
   dyStor.reserve(pb_->placeInsts().size());
@@ -1271,7 +1270,7 @@ void NesterovBase::initFillerGCells()
   // mt19937 supports huge range of random values.
   // rand()'s RAND_MAX is only 32767.
   //
-  mt19937 randVal(0);
+  std::mt19937 randVal(0);
   for (int i = 0; i < fillerCnt; i++) {
     // instability problem between g++ and clang++!
     auto randX = randVal();
@@ -1919,10 +1918,10 @@ static int fastModulo(const int input, const int ceil)
 
 static float getOverlapDensityArea(const Bin* bin, const GCell* cell)
 {
-  int rectLx = max(bin->lx(), cell->dLx()),
-      rectLy = max(bin->ly(), cell->dLy()),
-      rectUx = min(bin->ux(), cell->dUx()),
-      rectUy = min(bin->uy(), cell->dUy());
+  int rectLx = std::max(bin->lx(), cell->dLx()),
+      rectLy = std::max(bin->ly(), cell->dLy()),
+      rectUx = std::min(bin->ux(), cell->dUx()),
+      rectUy = std::min(bin->uy(), cell->dUy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
@@ -1936,8 +1935,8 @@ static int64_t getOverlapArea(const Bin* bin,
                               const Instance* inst,
                               int dbu_per_micron)
 {
-  int rectLx = max(bin->lx(), inst->lx()), rectLy = max(bin->ly(), inst->ly()),
-      rectUx = min(bin->ux(), inst->ux()), rectUy = min(bin->uy(), inst->uy());
+  int rectLx = std::max(bin->lx(), inst->lx()), rectLy = std::max(bin->ly(), inst->ly()),
+      rectUx = std::min(bin->ux(), inst->ux()), rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
@@ -1970,7 +1969,7 @@ static int64_t getOverlapArea(const Bin* bin,
     // we are using an upper limit of 1.15*(overlap) between the macro
     // and the bin.
     if (scaled >= original) {
-      return min<float>(scaled, original * 1.15);
+      return std::min<float>(scaled, original * 1.15);
     }
     // If the scaled value is smaller than the actual overlap
     // then use the original overlap value instead.
@@ -1987,8 +1986,8 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst)
 {
-  int rectLx = max(bin->lx(), inst->lx()), rectLy = max(bin->ly(), inst->ly()),
-      rectUx = min(bin->ux(), inst->ux()), rectUy = min(bin->uy(), inst->uy());
+  int rectLx = std::max(bin->lx(), inst->lx()), rectLy = std::max(bin->ly(), inst->ly()),
+      rectUx = std::min(bin->ux(), inst->ux()), rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;

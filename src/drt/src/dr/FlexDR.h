@@ -388,7 +388,10 @@ class FlexDRWorker
   void setBestMarkers() { bestMarkers_ = markers_; }
   void clearMarkers() { markers_.clear(); }
   void setInitNumMarkers(int in) { initNumMarkers_ = in; }
-  void setGCWorker(unique_ptr<FlexGCWorker> in) { gcWorker_ = std::move(in); }
+  void setGCWorker(std::unique_ptr<FlexGCWorker> in)
+  {
+    gcWorker_ = std::move(in);
+  }
 
   void setGraphics(FlexDRGraphics* in)
   {
@@ -467,7 +470,10 @@ class FlexDRWorker
 
   void setSharedVolume(const std::string& vol) { dist_dir_ = vol; }
 
-  const vector<Point3D> getSpecialAccessAPs() const { return specialAccessAPs; }
+  const std::vector<Point3D> getSpecialAccessAPs() const
+  {
+    return specialAccessAPs;
+  }
   frCoord getHalfViaEncArea(frMIdx z, bool isLayer1, frNonDefaultRule* ndr);
   bool isSkipRouting() const { return skipRouting_; }
 
@@ -527,10 +533,10 @@ class FlexDRWorker
   FlexDRWorkerRegionQuery rq_;
 
   // persistent gc worker
-  unique_ptr<FlexGCWorker> gcWorker_;
+  std::unique_ptr<FlexGCWorker> gcWorker_;
 
   // on-the-fly access points that require adding access edges in the grid graph
-  vector<Point3D> specialAccessAPs;
+  std::vector<Point3D> specialAccessAPs;
 
   // distributed
   dst::Distributed* dist_;
@@ -578,10 +584,11 @@ class FlexDRWorker
                              std::map<frNet*,
                                       std::vector<std::unique_ptr<drConnFig>>,
                                       frBlockObjectComp>& netExtObjs);
-  void initNets_segmentTerms(Point bp,
-                             frLayerNum lNum,
-                             frNet* net,
-                             set<frBlockObject*, frBlockObjectComp>& terms);
+  void initNets_segmentTerms(
+      Point bp,
+      frLayerNum lNum,
+      frNet* net,
+      std::set<frBlockObject*, frBlockObjectComp>& terms);
   void initNets_initDR(
       const frDesign* design,
       std::set<frNet*, frBlockObjectComp>& nets,
@@ -673,7 +680,7 @@ class FlexDRWorker
                                frBlockObject* term,
                                frInst* inst,
                                drNet* dNet,
-                               const string& name,
+                               const std::string& name,
                                const dbTransform& shiftXform);
   void initNet_termGenAp_new(const frDesign* design, drPin* dPin);
   bool isRestrictedRouting(frLayerNum lNum);
@@ -869,7 +876,7 @@ class FlexDRWorker
                      std::set<FlexMazeIdx>& apMazeIdx,
                      std::set<FlexMazeIdx>& realPinAPMazeIdx,
                      std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox,
-                     list<pair<drPin*, frBox3D>>& pinTaperBoxes);
+                     std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes);
   void routeNet_prepAreaMap(drNet* net,
                             std::map<FlexMazeIdx, frCoord>& areaMap);
   void routeNet_setSrc(
@@ -886,7 +893,7 @@ class FlexDRWorker
       FlexMazeIdx& ccMazeIdx2,
       std::map<FlexMazeIdx, std::set<drPin*, frBlockObjectComp>>&
           mazeIdx2unConnPins,
-      list<pair<drPin*, frBox3D>>& pinTaperBoxes);
+      std::list<std::pair<drPin*, frBox3D>>& pinTaperBoxes);
   void routeNet_postAstarUpdate(
       std::vector<FlexMazeIdx>& path,
       std::vector<FlexMazeIdx>& connComps,
@@ -899,7 +906,7 @@ class FlexDRWorker
       std::vector<FlexMazeIdx>& points,
       const std::set<FlexMazeIdx>& realPinApMazeIdx,
       std::map<FlexMazeIdx, frBox3D*>& mazeIdx2Taperbox,
-      const set<FlexMazeIdx>& apMazeIdx);
+      const std::set<FlexMazeIdx>& apMazeIdx);
   bool addApPathSegs(const FlexMazeIdx& apIdx, drNet* net);
   void setNDRStyle(drNet* net,
                    frSegStyle& currStyle,
@@ -920,7 +927,7 @@ class FlexDRWorker
                         frMIdx y,
                         frMIdx startZ,
                         frMIdx endZ,
-                        map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
+                        std::map<FlexMazeIdx, frBox3D*>& mazeIdx2TaperBox);
   bool splitPathSeg(frMIdx& midX,
                     frMIdx& midY,
                     bool& taperFirstPiece,
@@ -937,23 +944,23 @@ class FlexDRWorker
                       frMIdx endX,
                       frMIdx endY,
                       frMIdx z,
-                      const set<FlexMazeIdx>& realApMazeIdx,
+                      const std::set<FlexMazeIdx>& realApMazeIdx,
                       drNet* net,
                       bool vertical,
                       bool taper,
                       int i,
-                      vector<FlexMazeIdx>& points,
-                      const set<FlexMazeIdx>& apMazeIdx);
+                      std::vector<FlexMazeIdx>& points,
+                      const std::set<FlexMazeIdx>& apMazeIdx);
   bool isInWorkerBorder(frCoord x, frCoord y) const;
   void checkPathSegStyle(drPathSeg* ps,
                          bool isBegin,
                          frSegStyle& style,
-                         const set<FlexMazeIdx>& apMazeIdx,
+                         const std::set<FlexMazeIdx>& apMazeIdx,
                          const FlexMazeIdx& idx);
   void checkViaConnectivityToAP(drVia* ps,
                                 bool isBottom,
                                 frNet* net,
-                                const set<FlexMazeIdx>& apMazeIdx,
+                                const std::set<FlexMazeIdx>& apMazeIdx,
                                 const FlexMazeIdx& idx);
   bool hasAccessPoint(const Point& pt, frLayerNum lNum, frNet* net);
   void routeNet_postAstarPatchMinAreaVio(
@@ -978,7 +985,7 @@ class FlexDRWorker
                                                 frCoord patchLength,
                                                 frCoord patchWidth);
   void routeNet_postRouteAddPathCost(drNet* net);
-  void routeNet_AddCutSpcCost(vector<FlexMazeIdx>& path);
+  void routeNet_AddCutSpcCost(std::vector<FlexMazeIdx>& path);
   void routeNet_postRouteAddPatchMetalCost(drNet* net);
 
   // end

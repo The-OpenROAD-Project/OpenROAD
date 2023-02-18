@@ -28,7 +28,6 @@
 
 #include "distributed/drUpdate.h"
 #include "ta/FlexTA.h"
-using namespace std;
 using namespace fr;
 
 void FlexTAWorker::saveToGuides()
@@ -36,8 +35,8 @@ void FlexTAWorker::saveToGuides()
   for (auto& iroute : iroutes_) {
     for (auto& uPinFig : iroute->getFigs()) {
       if (uPinFig->typeId() == tacPathSeg) {
-        unique_ptr<frPathSeg> pathSeg
-            = make_unique<frPathSeg>(*static_cast<taPathSeg*>(uPinFig.get()));
+        std::unique_ptr<frPathSeg> pathSeg
+            = std::make_unique<frPathSeg>(*static_cast<taPathSeg*>(uPinFig.get()));
         drUpdate update(drUpdate::ADD_GUIDE);
         update.setPathSeg(*pathSeg.get());
         update.setIndexInOwner(iroute->getGuide()->getIndexInOwner());
@@ -46,7 +45,7 @@ void FlexTAWorker::saveToGuides()
 
         pathSeg->addToNet(iroute->getGuide()->getNet());
         auto guide = iroute->getGuide();
-        vector<unique_ptr<frConnFig>> tmp;
+        std::vector<std::unique_ptr<frConnFig>> tmp;
         tmp.push_back(std::move(pathSeg));
         guide->setRoutes(tmp);
       }

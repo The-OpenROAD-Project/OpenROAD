@@ -143,8 +143,6 @@ float FFT::getElectroPhi(int x, int y) const
   return electroPhi_[x][y];
 }
 
-using namespace std;
-
 void FFT::doFFT()
 {
   ddct2d(binCntX_,

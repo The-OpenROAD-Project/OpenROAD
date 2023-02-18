@@ -28,7 +28,6 @@
 
 #include "ta/FlexTA.h"
 
-using namespace std;
 using namespace fr;
 
 void FlexTAWorker::initTracks()
@@ -36,7 +35,7 @@ void FlexTAWorker::initTracks()
   trackLocs_.clear();
   const int numLayers = getDesign()->getTech()->getLayers().size();
   trackLocs_.resize(numLayers);
-  vector<set<frCoord>> trackCoordSets(numLayers);
+  std::vector<std::set<frCoord>> trackCoordSets(numLayers);
   // uPtr for tp
   for (int lNum = 0; lNum < (int) numLayers; lNum++) {
     auto layer = getDesign()->getTech()->getLayer(lNum);
@@ -85,8 +84,8 @@ void FlexTAWorker::initTracks()
 bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
                                          frCoord& maxBegin,
                                          frCoord& minEnd,
-                                         set<frCoord>& downViaCoordSet,
-                                         set<frCoord>& upViaCoordSet,
+                                         std::set<frCoord>& downViaCoordSet,
+                                         std::set<frCoord>& upViaCoordSet,
                                          int& wlen,
                                          frCoord& pinCoord)
 {
@@ -101,7 +100,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
   bool hasDown = false;
   bool hasUp = false;
 
-  vector<frGuide*> nbrGuides;
+  std::vector<frGuide*> nbrGuides;
   auto rq = getRegionQuery();
   Rect box;
   box = Rect(bp, bp);
@@ -126,7 +125,7 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
     }
   }
 
-  vector<frBlockObject*> result;
+  std::vector<frBlockObject*> result;
   box = Rect(bp, bp);
   rq->queryGRPin(box, result);
 
@@ -213,8 +212,8 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
 void FlexTAWorker::initIroute_helper(frGuide* guide,
                                      frCoord& maxBegin,
                                      frCoord& minEnd,
-                                     set<frCoord>& downViaCoordSet,
-                                     set<frCoord>& upViaCoordSet,
+                                     std::set<frCoord>& downViaCoordSet,
+                                     std::set<frCoord>& upViaCoordSet,
                                      int& wlen,
                                      frCoord& pinCoord)
 {
@@ -243,7 +242,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
 
   auto rq = getRegionQuery();
-  vector<frBlockObject*> result;
+  std::vector<frBlockObject*> result;
 
   Rect box;
   box = Rect(bp, bp);
@@ -313,8 +312,8 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
 void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
                                              frCoord& minBegin,
                                              frCoord& maxEnd,
-                                             set<frCoord>& downViaCoordSet,
-                                             set<frCoord>& upViaCoordSet,
+                                             std::set<frCoord>& downViaCoordSet,
+                                             std::set<frCoord>& upViaCoordSet,
                                              int& wlen,
                                              frCoord& pinCoord)
 {
@@ -333,7 +332,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
   auto [bp, ep] = guide->getPoints();
   Point cp;
   // layerNum in FlexTAWorker
-  vector<frGuide*> nbrGuides;
+  std::vector<frGuide*> nbrGuides;
   auto rq = getRegionQuery();
   Rect box;
   for (int i = 0; i < 2; i++) {
@@ -372,10 +371,10 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
               auto psLNum = obj->getLayerNum();
               if (i == 0) {
                 minBegin
-                    = min(minBegin, (isH ? nbrSegBegin.x() : nbrSegBegin.y()));
+                    = std::min(minBegin, (isH ? nbrSegBegin.x() : nbrSegBegin.y()));
                 hasMinBegin = true;
               } else {
-                maxEnd = max(maxEnd, (isH ? nbrSegBegin.x() : nbrSegBegin.y()));
+                maxEnd = std::max(maxEnd, (isH ? nbrSegBegin.x() : nbrSegBegin.y()));
                 hasMaxEnd = true;
               }
               if (psLNum == layerNum - 2) {
@@ -404,7 +403,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
     maxEnd = (isH ? ep.x() : ep.y());
   }
   if (minBegin > maxEnd) {
-    swap(minBegin, maxEnd);
+    std::swap(minBegin, maxEnd);
   }
   if (minBegin == maxEnd) {
     maxEnd += 1;
@@ -416,7 +415,7 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
 
 void FlexTAWorker::initIroute(frGuide* guide)
 {
-  auto iroute = make_unique<taPin>();
+  auto iroute = std::make_unique<taPin>();
   iroute->setGuide(guide);
   Rect guideBox = guide->getBBox();
   auto layerNum = guide->getBeginLayerNum();
@@ -429,7 +428,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
   }
 
   frCoord maxBegin, minEnd;
-  set<frCoord> downViaCoordSet, upViaCoordSet;
+  std::set<frCoord> downViaCoordSet, upViaCoordSet;
   int wlen = 0;
   frCoord pinCoord = std::numeric_limits<frCoord>::max();
   initIroute_helper(
@@ -450,7 +449,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     trackLoc = 0;
   }
 
-  unique_ptr<taPinFig> ps = make_unique<taPathSeg>();
+  std::unique_ptr<taPinFig> ps = std::make_unique<taPathSeg>();
   ps->setNet(guide->getNet());
   auto rptr = static_cast<taPathSeg*>(ps.get());
   if (isH) {
@@ -464,7 +463,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     auto style
         = getDesign()->getTech()->getLayer(layerNum)->getDefaultSegStyle();
     style.setWidth(
-        max((int) style.getWidth(), ndr->getWidth(layerNum / 2 - 1)));
+        std::max((int) style.getWidth(), ndr->getWidth(layerNum / 2 - 1)));
     rptr->setStyle(style);
   } else
     rptr->setStyle(
@@ -481,7 +480,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     else
       viaDef
           = getDesign()->getTech()->getLayer(layerNum + 1)->getDefaultViaDef();
-    unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
+    std::unique_ptr<taPinFig> via = std::make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
     rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
@@ -495,7 +494,7 @@ void FlexTAWorker::initIroute(frGuide* guide)
     else
       viaDef
           = getDesign()->getTech()->getLayer(layerNum - 1)->getDefaultViaDef();
-    unique_ptr<taPinFig> via = make_unique<taVia>(viaDef);
+    std::unique_ptr<taPinFig> via = std::make_unique<taVia>(viaDef);
     via->setNet(guide->getNet());
     auto rViaPtr = static_cast<taVia*>(via.get());
     rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
@@ -581,7 +580,7 @@ void FlexTAWorker::initCosts()
         }
       }
       if (trackLoc == std::numeric_limits<frCoord>::max()) {
-        cout << "Error: FlexTAWorker::initCosts does not find trackLoc" << endl;
+        std::cout << "Error: FlexTAWorker::initCosts does not find trackLoc" << std::endl;
         exit(1);
       }
       assignIroute_getCost(iroute.get(), trackLoc, drcCost);
@@ -694,7 +693,7 @@ void FlexTAWorker::initFixedObjs()
               && getTech()->getLayer(layerNum - 2)->getType()
                      == dbTechLayerType::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum - 1);
-            auto via = make_unique<frVia>(cutLayer->getDefaultViaDef());
+            auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
             Rect viaBox = via->getLayer2BBox();
             frCoord viaWidth = viaBox.minDXDY();
             // only add for fat via
@@ -709,7 +708,7 @@ void FlexTAWorker::initFixedObjs()
               && getTech()->getLayer(layerNum + 2)->getType()
                      == dbTechLayerType::ROUTING) {
             auto cutLayer = getTech()->getLayer(layerNum + 1);
-            auto via = make_unique<frVia>(cutLayer->getDefaultViaDef());
+            auto via = std::make_unique<frVia>(cutLayer->getDefaultViaDef());
             Rect viaBox = via->getLayer1BBox();
             frCoord viaWidth = viaBox.minDXDY();
             // only add for fat via
@@ -763,7 +762,7 @@ void FlexTAWorker::initFixedObjs()
           }
         }
       } else {
-        cout << "Warning: unsupported type in initFixedObjs" << endl;
+        std::cout << "Warning: unsupported type in initFixedObjs" << std::endl;
       }
     }
   }
@@ -776,7 +775,7 @@ frCoord FlexTAWorker::initFixedObjs_calcOBSBloatDistVia(frViaDef* viaDef,
 {
   auto layer = getTech()->getLayer(lNum);
   Rect viaBox;
-  auto via = make_unique<frVia>(viaDef);
+  auto via = std::make_unique<frVia>(viaDef);
   if (viaDef->getLayer1Num() == lNum) {
     viaBox = via->getLayer1BBox();
   } else {

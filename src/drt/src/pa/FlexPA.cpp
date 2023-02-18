@@ -37,7 +37,6 @@
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
 
-using namespace std;
 using namespace fr;
 
 FlexPA::FlexPA(frDesign* in, Logger* logger)

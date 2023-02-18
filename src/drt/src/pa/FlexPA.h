@@ -87,7 +87,7 @@ class FlexPA
 
   std::vector<frInst*> uniqueInstances_;
   std::map<frInst*, frInst*, frBlockObjectComp> inst2unique_;
-  std::map<frInst*, set<frInst*, frBlockObjectComp>*> inst2Class_;
+  std::map<frInst*, std::set<frInst*, frBlockObjectComp>*> inst2Class_;
   std::map<frInst*, int, frBlockObjectComp>
       unique2paidx_;  // unique instance to pinaccess index
   std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
@@ -98,9 +98,11 @@ class FlexPA
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
   std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
       layerNum2ViaDefs_;
-  map<frMaster*,
-      map<dbOrientType, map<vector<frCoord>, set<frInst*, frBlockObjectComp>>>,
-      frBlockObjectComp>
+  std::map<frMaster*,
+           std::map<dbOrientType,
+                    std::map<std::vector<frCoord>,
+                             std::set<frInst*, frBlockObjectComp>>>,
+           frBlockObjectComp>
       masterOT2Insts;  // master orient track-offset to instances
   frCollection<odb::dbInst*> target_insts_;
 
@@ -134,7 +136,7 @@ class FlexPA
       const Point& pt,
       const frLayerNum layerNum,
       const gtl::polygon_90_set_data<frCoord>& polyset,
-      vector<pair<int, frViaDef*>>& viaDefs);
+      std::vector<std::pair<int, frViaDef*>>& viaDefs);
   template <typename T>
   int prepPoint_pin(T* pin, frInstTerm* instTerm = nullptr);
   template <typename T>

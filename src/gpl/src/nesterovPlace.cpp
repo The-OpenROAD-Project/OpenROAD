@@ -39,24 +39,22 @@
 #include <iostream>
 #include <sstream>
 
+#include "graphics.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "timingBase.h"
 #include "utl/Logger.h"
-using namespace std;
-
-#include "graphics.h"
 
 namespace gpl {
 
 using utl::GPL;
 
-static float getDistance(const vector<FloatPoint>& a,
-                         const vector<FloatPoint>& b);
+static float getDistance(const std::vector<FloatPoint>& a,
+                         const std::vector<FloatPoint>& b);
 
-static float getSecondNorm(const vector<FloatPoint>& a);
+static float getSecondNorm(const std::vector<FloatPoint>& a);
 
 NesterovPlaceVars::NesterovPlaceVars()
 {
@@ -126,7 +124,7 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   tb_ = tb;
   log_ = log;
   if (npVars.debug && Graphics::guiActive()) {
-    graphics_ = make_unique<Graphics>(
+    graphics_ = std::make_unique<Graphics>(
         log_, this, pb, nb, npVars_.debug_draw_bins, npVars.debug_inst);
   }
   init();
@@ -469,9 +467,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   bool isSnapshotSaved = false;
 
   // snapshot info
-  vector<FloatPoint> snapshotCoordi;
-  vector<FloatPoint> snapshotSLPCoordi;
-  vector<FloatPoint> snapshotSLPSumGrads;
+  std::vector<FloatPoint> snapshotCoordi;
+  std::vector<FloatPoint> snapshotSLPCoordi;
+  std::vector<FloatPoint> snapshotSLPSumGrads;
   float snapshotA = 0;
   float snapshotDensityPenalty = 0;
   float snapshotStepLength = 0;
@@ -917,8 +915,8 @@ void NesterovPlace::cutFillerCoordinates()
   nextCoordi_.resize(nb_->fillerCnt());
 }
 
-static float getDistance(const vector<FloatPoint>& a,
-                         const vector<FloatPoint>& b)
+static float getDistance(const std::vector<FloatPoint>& a,
+                         const std::vector<FloatPoint>& b)
 {
   float sumDistance = 0.0f;
   for (size_t i = 0; i < a.size(); i++) {
@@ -929,7 +927,7 @@ static float getDistance(const vector<FloatPoint>& a,
   return sqrt(sumDistance / (2.0 * a.size()));
 }
 
-static float getSecondNorm(const vector<FloatPoint>& a)
+static float getSecondNorm(const std::vector<FloatPoint>& a)
 {
   float norm = 0;
   for (auto& coordi : a) {

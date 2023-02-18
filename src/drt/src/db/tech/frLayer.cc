@@ -145,7 +145,7 @@ frCoord frLayer::getMinSpacingValue(frCoord width1,
       return static_cast<frSpacingTablePrlConstraint*>(con)->findMin();
     } else {
       return static_cast<frSpacingTablePrlConstraint*>(con)->find(
-          max(width1, width2), prl);
+          std::max(width1, width2), prl);
     }
   }
 

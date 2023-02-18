@@ -39,7 +39,6 @@
 #include "gc/FlexGC.h"
 #include "utl/exception.h"
 
-using namespace std;
 using namespace fr;
 
 using utl::ThreadException;
@@ -48,7 +47,7 @@ int gcCallCnt = 0;
 
 template <typename T>
 void FlexPA::prepPoint_pin_mergePinShapes(
-    vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
+    std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
     T* pin,
     frInstTerm* instTerm,
     bool isShrink)
@@ -63,7 +62,7 @@ void FlexPA::prepPoint_pin_mergePinShapes(
     xform = inst->getUpdatedXform();
   }
 
-  vector<frCoord> layerWidths;
+  std::vector<frCoord> layerWidths;
   if (isShrink) {
     layerWidths.resize(getDesign()->getTech()->getLayers().size(), 0);
     for (int i = 0; i < int(layerWidths.size()); i++) {
@@ -99,7 +98,7 @@ void FlexPA::prepPoint_pin_mergePinShapes(
     } else if (shape->typeId() == frcPolygon) {
       auto obj = static_cast<frPolygon*>(shape.get());
       auto layerNum = obj->getLayerNum();
-      vector<gtl::point_data<frCoord>> points;
+      std::vector<gtl::point_data<frCoord>> points;
       // must be copied pts
       for (Point pt : obj->getPoints()) {
         xform.apply(pt);
@@ -117,8 +116,8 @@ void FlexPA::prepPoint_pin_mergePinShapes(
 }
 
 void FlexPA::prepPoint_pin_genPoints_rect_genGrid(
-    map<frCoord, frAccessPointEnum>& coords,
-    const map<frCoord, frAccessPointEnum>& trackCoords,
+    std::map<frCoord, frAccessPointEnum>& coords,
+    const std::map<frCoord, frAccessPointEnum>& trackCoords,
     frCoord low,
     frCoord high,
     bool useNearbyGrid)
@@ -138,7 +137,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genGrid(
 
 // will not generate center for wider edge
 void FlexPA::prepPoint_pin_genPoints_rect_genCenter(
-    map<frCoord, frAccessPointEnum>& coords,
+    std::map<frCoord, frAccessPointEnum>& coords,
     frLayerNum layerNum,
     frCoord low,
     frCoord high)
@@ -162,15 +161,15 @@ void FlexPA::prepPoint_pin_genPoints_rect_genCenter(
   frCoord coord = (low + high) / 2 / manuGrid * manuGrid;
   auto it = coords.find(coord);
   if (it == coords.end()) {
-    coords.insert(make_pair(coord, frAccessPointEnum::Center));
+    coords.insert(std::make_pair(coord, frAccessPointEnum::Center));
   } else {
     coords[coord] = std::min(coords[coord], frAccessPointEnum::Center);
   }
 }
 
 void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
-    vector<unique_ptr<frAccessPoint>>& aps,
-    set<pair<Point, frLayerNum>>& apset,
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::set<std::pair<Point, frLayerNum>>& apset,
     const gtl::rectangle_data<frCoord>& maxrect,
     frCoord x,
     frCoord y,
@@ -186,10 +185,10 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
     return;
   }
   Point fpt(x, y);
-  if (apset.find(make_pair(fpt, layerNum)) != apset.end()) {
+  if (apset.find(std::make_pair(fpt, layerNum)) != apset.end()) {
     return;
   }
-  auto ap = make_unique<frAccessPoint>(fpt, layerNum);
+  auto ap = std::make_unique<frAccessPoint>(fpt, layerNum);
   if (allowPlanar) {
     auto lowerLayer = getDesign()->getTech()->getLayer(layerNum);
     ap->setAccess(frDirEnum::W, true);
@@ -231,7 +230,8 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
   ap->setAccess(frDirEnum::D, false);
   if (allowVia) {
     ap->setAccess(frDirEnum::U, true);
-    // cout <<"@@@set U valid, check " <<ap->hasAccess(frDirEnum::U) <<endl;
+    // std::cout <<"@@@set U valid, check " <<ap->hasAccess(frDirEnum::U)
+    // <<std::endl;
   } else {
     ap->setAccess(frDirEnum::U, false);
   }
@@ -280,19 +280,19 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap_helper(
     }
   }
   aps.push_back(std::move(ap));
-  apset.insert(make_pair(fpt, layerNum));
+  apset.insert(std::make_pair(fpt, layerNum));
 }
 
 void FlexPA::prepPoint_pin_genPoints_rect_ap(
-    vector<unique_ptr<frAccessPoint>>& aps,
-    set<pair<Point, frLayerNum>>& apset,
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::set<std::pair<Point, frLayerNum>>& apset,
     const gtl::rectangle_data<frCoord>& rect,
     frLayerNum layerNum,
     bool allowPlanar,
     bool allowVia,
     bool isLayer1Horz,
-    const map<frCoord, frAccessPointEnum>& xCoords,
-    const map<frCoord, frAccessPointEnum>& yCoords,
+    const std::map<frCoord, frAccessPointEnum>& xCoords,
+    const std::map<frCoord, frAccessPointEnum>& yCoords,
     frAccessPointEnum lowerType,
     frAccessPointEnum upperType)
 {
@@ -319,7 +319,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_ap(
 }
 
 void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
-    map<frCoord, frAccessPointEnum>& coords,
+    std::map<frCoord, frAccessPointEnum>& coords,
     const gtl::rectangle_data<frCoord>& rect,
     frLayerNum layerNum,
     bool isCurrLayerHorz)
@@ -331,7 +331,7 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
     return;
   }
   // hardcode first two single vias
-  vector<frViaDef*> viaDefs;
+  std::vector<frViaDef*> viaDefs;
   int cnt = 0;
   for (auto& [tup, via] : layerNum2ViaDefs_[layerNum + 1][1]) {
     viaDefs.push_back(via);
@@ -346,24 +346,24 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
     auto viaWidth = box.xMax() - box.xMin();
     auto viaHeight = box.yMax() - box.yMin();
     if (viaWidth > rectWidth || viaHeight > rectHeight) {
-      // cout <<"@@@" <<viaDef->getName() <<" rect " <<rectWidth <<" "
-      // <<rectHeight <<" via " <<viaWidth <<" " <<viaHeight <<endl;
+      // std::cout <<"@@@" <<viaDef->getName() <<" rect " <<rectWidth <<" "
+      // <<rectHeight <<" via " <<viaWidth <<" " <<viaHeight <<std::endl;
       continue;
     }
     if (isCurrLayerHorz) {
       auto coord = gtl::yh(rect) - (box.yMax() - 0);
       auto it = coords.find(coord);
       if (it == coords.end()) {
-        // cout << coord / 2000.0 <<endl;
-        coords.insert(make_pair(coord, frAccessPointEnum::EncOpt));
+        // std::cout << coord / 2000.0 <<std::endl;
+        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
         coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
       coord = gtl::yl(rect) + (0 - box.yMin());
       it = coords.find(coord);
       if (it == coords.end()) {
-        // cout << coord / 2000.0 <<endl;
-        coords.insert(make_pair(coord, frAccessPointEnum::EncOpt));
+        // std::cout << coord / 2000.0 <<std::endl;
+        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
         coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
@@ -371,16 +371,16 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
       auto coord = gtl::xh(rect) - (box.xMax() - 0);
       auto it = coords.find(coord);
       if (it == coords.end()) {
-        // cout << coord / 2000.0 <<endl;
-        coords.insert(make_pair(coord, frAccessPointEnum::EncOpt));
+        // std::cout << coord / 2000.0 <<std::endl;
+        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
         coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
       coord = gtl::xl(rect) + (0 - box.xMin());
       it = coords.find(coord);
       if (it == coords.end()) {
-        // cout << coord / 2000.0 <<endl;
-        coords.insert(make_pair(coord, frAccessPointEnum::EncOpt));
+        // std::cout << coord / 2000.0 <<std::endl;
+        coords.insert(std::make_pair(coord, frAccessPointEnum::EncOpt));
       } else {
         coords[coord] = std::min(coords[coord], frAccessPointEnum::EncOpt);
       }
@@ -426,8 +426,8 @@ bool FlexPA::enclosesOnTrackPlanarAccess(
   return true;
 }
 void FlexPA::prepPoint_pin_genPoints_rect(
-    vector<unique_ptr<frAccessPoint>>& aps,
-    set<pair<Point, frLayerNum>>& apset,
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::set<std::pair<Point, frLayerNum>>& apset,
     const gtl::rectangle_data<frCoord>& rect,
     frLayerNum layerNum,
     bool allowPlanar,
@@ -459,8 +459,8 @@ void FlexPA::prepPoint_pin_genPoints_rect(
   bool isLayer1Horz = (getDesign()->getTech()->getLayer(layerNum)->getDir()
                        == dbTechLayerDir::HORIZONTAL);
 
-  map<frCoord, frAccessPointEnum> xCoords;
-  map<frCoord, frAccessPointEnum> yCoords;
+  std::map<frCoord, frAccessPointEnum> xCoords;
+  std::map<frCoord, frAccessPointEnum> yCoords;
   int hwidth = getDesign()->getTech()->getLayer(layerNum)->getWidth() / 2;
   bool useCenterLine = false;
   if (isMacroCellPin) {
@@ -656,8 +656,8 @@ void FlexPA::prepPoint_pin_genPoints_rect(
 }
 
 void FlexPA::prepPoint_pin_genPoints_layerShapes(
-    vector<unique_ptr<frAccessPoint>>& aps,
-    set<pair<Point, frLayerNum>>& apset,
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::set<std::pair<Point, frLayerNum>>& apset,
     frInstTerm* instTerm,
     const gtl::polygon_90_set_data<frCoord>& layerShapes,
     frLayerNum layerNum,
@@ -702,7 +702,7 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
       && upperType != frAccessPointEnum::OnGrid) {
     return;
   }
-  vector<gtl::rectangle_data<frCoord>> maxrects;
+  std::vector<gtl::rectangle_data<frCoord>> maxrects;
   gtl::get_max_rectangles(maxrects, layerShapes);
   for (auto& bboxRect : maxrects) {
     prepPoint_pin_genPoints_rect(aps,
@@ -724,11 +724,11 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
 // lower center  2, upper center  2 = 4
 template <typename T>
 void FlexPA::prepPoint_pin_genPoints(
-    vector<unique_ptr<frAccessPoint>>& aps,
-    set<pair<Point, frLayerNum>>& apset,
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::set<std::pair<Point, frLayerNum>>& apset,
     T* pin,
     frInstTerm* instTerm,
-    const vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
+    const std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
     frAccessPointEnum lowerType,
     frAccessPointEnum upperType)
 {
@@ -739,7 +739,7 @@ void FlexPA::prepPoint_pin_genPoints(
     if (!it->empty()
         && getDesign()->getTech()->getLayer(layerNum)->getType()
                == dbTechLayerType::ROUTING) {
-      // cout <<"via layernum = " <<layerNum <<endl;
+      // std::cout <<"via layernum = " <<layerNum <<std::endl;
       prepPoint_pin_genPoints_layerShapes(
           aps, apset, instTerm, *it, layerNum, allowVia, lowerType, upperType);
     }
@@ -749,7 +749,7 @@ void FlexPA::prepPoint_pin_genPoints(
 
 bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
     Point& ep,
-    const vector<gtl::polygon_90_data<frCoord>>& layerPolys,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
     const Point& bp,
     frLayerNum layerNum,
     frDirEnum dir,
@@ -811,7 +811,7 @@ bool FlexPA::prepPoint_pin_checkPoint_planar_ep(
 template <typename T>
 void FlexPA::prepPoint_pin_checkPoint_planar(
     frAccessPoint* ap,
-    const vector<gtl::polygon_90_data<frCoord>>& layerPolys,
+    const std::vector<gtl::polygon_90_data<frCoord>>& layerPolys,
     frDirEnum dir,
     T* pin,
     frInstTerm* instTerm)
@@ -833,7 +833,7 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   }
   // TODO: EDIT HERE Wrongdirection segments
   auto layer = getDesign()->getTech()->getLayer(ap->getLayerNum());
-  auto ps = make_unique<frPathSeg>();
+  auto ps = std::make_unique<frPathSeg>();
   auto style = layer->getDefaultSegStyle();
   if (dir == frDirEnum::W || dir == frDirEnum::S) {
     ps->setPoints(ep, bp);
@@ -903,7 +903,7 @@ void FlexPA::getViasFromMetalWidthMap(
     const Point& pt,
     const frLayerNum layerNum,
     const gtl::polygon_90_set_data<frCoord>& polyset,
-    vector<pair<int, frViaDef*>>& viaDefs)
+    std::vector<std::pair<int, frViaDef*>>& viaDefs)
 {
   const auto tech = getTech();
   if (layerNum == tech->getTopLayerNum()) {
@@ -940,7 +940,7 @@ void FlexPA::getViasFromMetalWidthMap(
     }
 
     if (bottom_width < 0) {  // compute bottom_width once
-      vector<gtl::rectangle_data<frCoord>> maxrects;
+      std::vector<gtl::rectangle_data<frCoord>> maxrects;
       gtl::get_max_rectangles(maxrects, polyset);
       for (auto& rect : maxrects) {
         if (contains(rect, gtl::point_data<frCoord>(pt.x(), pt.y()))) {
@@ -971,7 +971,8 @@ void FlexPA::prepPoint_pin_checkPoint_via(
   auto layerNum = ap->getLayerNum();
   // skip planar only access
   if (!ap->hasAccess(dir)) {
-    // cout <<"no via access, check " <<ap->hasAccess(frDirEnum::U) <<endl;
+    // std::cout <<"no via access, check " <<ap->hasAccess(frDirEnum::U)
+    // <<std::endl;
     return;
   }
 
@@ -989,14 +990,14 @@ void FlexPA::prepPoint_pin_checkPoint_via(
 
   int maxNumViaTrial = 2;
   // use std:pair to ensure deterministic behavior
-  vector<pair<int, frViaDef*>> viaDefs;
+  std::vector<std::pair<int, frViaDef*>> viaDefs;
   getViasFromMetalWidthMap(bp, layerNum, polyset, viaDefs);
 
   if (viaDefs.empty()) {  // no via map entry
     // hardcode first two single vias
     int cnt = 0;
     for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
-      viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
+      viaDefs.push_back(std::make_pair(viaDefs.size(), viaDef));
       cnt++;
       if (cnt >= maxNumViaTrial) {
         break;
@@ -1016,9 +1017,9 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     }
   }
 
-  set<tuple<frCoord, int, frViaDef*>> validViaDefs;
+  std::set<std::tuple<frCoord, int, frViaDef*>> validViaDefs;
   for (auto& [idx, viaDef] : viaDefs) {
-    auto via = make_unique<frVia>(viaDef);
+    auto via = std::make_unique<frVia>(viaDef);
     via->setOrigin(bp);
     Rect box = via->getLayer1BBox();
     if (instTerm) {
@@ -1037,11 +1038,11 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     intersection += viarect;
     intersection &= polyset;
     // via ranking criteria: max extension distance beyond pin shape
-    vector<gtl::rectangle_data<frCoord>> intRects;
+    std::vector<gtl::rectangle_data<frCoord>> intRects;
     intersection.get_rectangles(intRects, gtl::orientation_2d_enum::HORIZONTAL);
     for (auto& r : intRects) {
-      maxExt = max(maxExt, box.xMax() - gtl::xh(r));
-      maxExt = max(maxExt, gtl::xl(r) - box.xMin());
+      maxExt = std::max(maxExt, box.xMax() - gtl::xh(r));
+      maxExt = std::max(maxExt, gtl::xl(r) - box.xMin());
     }
     if (!isLRBound) {
       if (intRects.size() > 1) {
@@ -1050,14 +1051,14 @@ void FlexPA::prepPoint_pin_checkPoint_via(
                                     gtl::orientation_2d_enum::VERTICAL);
       }
       for (auto& r : intRects) {
-        maxExt = max(maxExt, box.yMax() - gtl::yh(r));
-        maxExt = max(maxExt, gtl::yl(r) - box.yMin());
+        maxExt = std::max(maxExt, box.yMax() - gtl::yh(r));
+        maxExt = std::max(maxExt, gtl::yl(r) - box.yMin());
       }
     }
     if (viainpin && maxExt)
       continue;
     if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
-      validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
+      validViaDefs.insert(std::make_tuple(maxExt, idx, viaDef));
     }
   }
   if (validViaDefs.empty()) {
@@ -1133,7 +1134,7 @@ template <typename T>
 void FlexPA::prepPoint_pin_checkPoint(
     frAccessPoint* ap,
     const gtl::polygon_90_set_data<frCoord>& polyset,
-    const vector<gtl::polygon_90_data<frCoord>>& polys,
+    const std::vector<gtl::polygon_90_data<frCoord>>& polys,
     T* pin,
     frInstTerm* instTerm)
 {
@@ -1146,12 +1147,12 @@ void FlexPA::prepPoint_pin_checkPoint(
 
 template <typename T>
 void FlexPA::prepPoint_pin_checkPoints(
-    vector<unique_ptr<frAccessPoint>>& aps,
-    const vector<gtl::polygon_90_set_data<frCoord>>& layerPolysets,
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    const std::vector<gtl::polygon_90_set_data<frCoord>>& layerPolysets,
     T* pin,
     frInstTerm* instTerm)
 {
-  vector<vector<gtl::polygon_90_data<frCoord>>> layerPolys(
+  std::vector<std::vector<gtl::polygon_90_data<frCoord>>> layerPolys(
       layerPolysets.size());
   for (int i = 0; i < (int) layerPolysets.size(); i++) {
     layerPolysets[i].get_polygons(layerPolys[i]);
@@ -1166,7 +1167,7 @@ void FlexPA::prepPoint_pin_checkPoints(
 
 template <typename T>
 void FlexPA::prepPoint_pin_updateStat(
-    const vector<unique_ptr<frAccessPoint>>& tmpAps,
+    const std::vector<std::unique_ptr<frAccessPoint>>& tmpAps,
     T* pin,
     frInstTerm* instTerm)
 {
@@ -1211,9 +1212,9 @@ void FlexPA::prepPoint_pin_updateStat(
 
 template <typename T>
 bool FlexPA::prepPoint_pin_helper(
-    vector<unique_ptr<frAccessPoint>>& aps,
-    set<pair<Point, frLayerNum>>& apset,
-    vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
+    std::vector<std::unique_ptr<frAccessPoint>>& aps,
+    std::set<std::pair<Point, frLayerNum>>& apset,
+    std::vector<gtl::polygon_90_set_data<frCoord>>& pinShapes,
     T* pin,
     frInstTerm* instTerm,
     frAccessPointEnum lowerType,
@@ -1234,7 +1235,7 @@ bool FlexPA::prepPoint_pin_helper(
                      || masterType == dbMasterType::RING;
   }
   bool isIOPin = (instTerm == nullptr);
-  vector<unique_ptr<frAccessPoint>> tmpAps;
+  std::vector<std::unique_ptr<frAccessPoint>> tmpAps;
   prepPoint_pin_genPoints(
       tmpAps, apset, pin, instTerm, pinShapes, lowerType, upperType);
   prepPoint_pin_checkPoints(tmpAps, pinShapes, pin, instTerm);
@@ -1319,8 +1320,8 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* instTerm)
 {
   // aps are after xform
   // before checkPoints, ap->hasAccess(dir) indicates whether to check drc
-  vector<unique_ptr<frAccessPoint>> aps;
-  set<pair<Point, frLayerNum>> apset;
+  std::vector<std::unique_ptr<frAccessPoint>> aps;
+  std::set<std::pair<Point, frLayerNum>> apset;
   bool isStdCellPin = false;
   bool isMacroCellPin = false;
   if (instTerm) {
@@ -1337,14 +1338,14 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* instTerm)
   }
 
   if (graphics_) {
-    set<frInst*, frBlockObjectComp>* instClass = nullptr;
+    std::set<frInst*, frBlockObjectComp>* instClass = nullptr;
     if (instTerm) {
       instClass = inst2Class_[instTerm->getInst()];
     }
     graphics_->startPin(pin, instTerm, instClass);
   }
 
-  vector<gtl::polygon_90_set_data<frCoord>> pinShapes;
+  std::vector<gtl::polygon_90_set_data<frCoord>> pinShapes;
   prepPoint_pin_mergePinShapes(pinShapes, pin, instTerm);
 
   for (auto upper : {frAccessPointEnum::OnGrid,
@@ -1454,7 +1455,7 @@ void FlexPA::prepPoint()
   }
   exception.rethrow();
 
-  // cout << "PA for IO terms\n" << flush;
+  // std::cout << "PA for IO terms\n" << std::flush;
 
   // PA for IO terms
   if (target_insts_.empty()) {
@@ -1582,10 +1583,11 @@ void FlexPA::prepPattern()
   int prevXEndCoord = INT_MIN;
   for (auto inst : insts) {
     Point origin = inst->getOrigin();
-    // cout << inst->getName() << " (" << origin.x() << ", " << origin.y() << ")
+    // std::cout << inst->getName() << " (" << origin.x() << ", " << origin.y()
+    // << ")
     // -- ";
     if (origin.y() != prevYCoord || origin.x() > prevXEndCoord) {
-      // cout << "\n";
+      // std::cout << "\n";
       if (!rowInsts.empty()) {
         instRows.push_back(rowInsts);
         rowInsts.clear();
@@ -1751,7 +1753,7 @@ void FlexPA::genInstRowPattern_perform(std::vector<FlexDPNode>& nodes,
       }
     }
     if (!isSet) {
-      cout << "@@@ dead end inst\n";
+      std::cout << "@@@ dead end inst\n";
     }
   }
 }
@@ -1815,9 +1817,9 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
   }
 
   // for (int i = 0; i < (int)instAccessPatternIdx.size(); i++) {
-  //   cout << instAccessPatternIdx[i] << " ";
+  //   std::cout << instAccessPatternIdx[i] << " ";
   // }
-  // cout << "\n";
+  // std::cout << "\n";
 
   if (isDebugMode) {
     genInstRowPattern_print(nodes, insts);
@@ -1862,11 +1864,11 @@ void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
           if (accessPoint) {
             Point pt(accessPoint->getPoint());
             if (instTerm->hasNet()) {
-              cout << " gcclean2via " << inst->getName() << " "
-                   << instTerm->getTerm()->getName() << " "
-                   << accessPoint->getViaDef()->getName() << " " << pt.x()
-                   << " " << pt.y() << " " << inst->getOrient().getString()
-                   << "\n";
+              std::cout << " gcclean2via " << inst->getName() << " "
+                        << instTerm->getTerm()->getName() << " "
+                        << accessPoint->getViaDef()->getName() << " " << pt.x()
+                        << " " << pt.y() << " " << inst->getOrient().getString()
+                        << "\n";
               instTermValidViaApCnt_++;
             }
           }
@@ -1879,7 +1881,7 @@ void FlexPA::genInstRowPattern_print(std::vector<FlexDPNode>& nodes,
     instCnt--;
   }
 
-  cout << flush;
+  std::cout << std::flush;
 
   if (instCnt != -1) {
     logger_->error(DRT, 276, "Valid access pattern combination not found.");
@@ -1949,10 +1951,10 @@ void FlexPA::addAccessPatternObj(
     // to avoid unused variable warning in GCC
     for (int i = 0; i < (int) (instTerm->getTerm()->getPins().size()); i++) {
       auto& accessPoint = accessPoints[accessPointIdx];
-      // cout <<"@@@test: isPrev = " <<isPrev <<", apoint "
+      // std::cout <<"@@@test: isPrev = " <<isPrev <<", apoint "
       //      <<accessPoint <<", leftAPoint "
       //      <<accessPattern->getBoundaryAP(true) <<", rightAPoint "
-      //      <<accessPattern->getBoundaryAP(false) <<endl <<flush;
+      //      <<accessPattern->getBoundaryAP(false) <<std::endl <<std::flush;
       if (!accessPoint
           || (isPrev && accessPoint != accessPattern->getBoundaryAP(false))) {
         accessPointIdx++;
@@ -2245,10 +2247,11 @@ void FlexPA::genPatterns_reset(
 }
 
 // objs must hold at least 1 obj
-bool FlexPA::genPatterns_gc(std::set<frBlockObject*> targetObjs,
-                            vector<pair<frConnFig*, frBlockObject*>>& objs,
-                            const PatternType patternType,
-                            std::set<frBlockObject*>* owners)
+bool FlexPA::genPatterns_gc(
+    std::set<frBlockObject*> targetObjs,
+    std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
+    const PatternType patternType,
+    std::set<frBlockObject*>* owners)
 {
   gcCallCnt++;
   if (objs.empty()) {
@@ -2282,7 +2285,7 @@ bool FlexPA::genPatterns_gc(std::set<frBlockObject*> targetObjs,
   gcWorker.setTargetObjs(targetObjs);
   if (targetObjs.empty())
     gcWorker.setIgnoreDB();
-  // cout <<flush;
+  // std::cout <<std::flush;
   gcWorker.initPA0(getDesign());
   for (auto& [connFig, owner] : objs) {
     gcWorker.addPAObj(connFig, owner);
@@ -2380,36 +2383,38 @@ int FlexPA::getEdgeCost(
     auto& currUniqueInst = uniqueInstances_[currUniqueInstIdx];
     dbTransform xform = currUniqueInst->getUpdatedXform(true);
     // check DRC
-    vector<pair<frConnFig*, frBlockObject*>> objs;
+    std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
     auto& [pin1, instTerm1] = pins[prevIdx1];
     auto targetObj = instTerm1->getInst();
     int paIdx = unique2paidx_[targetObj];
     auto pa1 = pin1->getPinAccess(paIdx);
-    unique_ptr<frVia> via1;
+    std::unique_ptr<frVia> via1;
     if (pa1->getAccessPoint(prevIdx2)->hasAccess(frDirEnum::U)) {
-      via1 = make_unique<frVia>(pa1->getAccessPoint(prevIdx2)->getViaDef());
+      via1
+          = std::make_unique<frVia>(pa1->getAccessPoint(prevIdx2)->getViaDef());
       Point pt1(pa1->getAccessPoint(prevIdx2)->getPoint());
       xform.apply(pt1);
       via1->setOrigin(pt1);
       if (instTerm1->hasNet()) {
-        objs.push_back(make_pair(via1.get(), instTerm1->getNet()));
+        objs.push_back(std::make_pair(via1.get(), instTerm1->getNet()));
       } else {
-        objs.push_back(make_pair(via1.get(), instTerm1));
+        objs.push_back(std::make_pair(via1.get(), instTerm1));
       }
     }
 
     auto& [pin2, instTerm2] = pins[currIdx1];
     auto pa2 = pin2->getPinAccess(paIdx);
-    unique_ptr<frVia> via2;
+    std::unique_ptr<frVia> via2;
     if (pa2->getAccessPoint(currIdx2)->hasAccess(frDirEnum::U)) {
-      via2 = make_unique<frVia>(pa2->getAccessPoint(currIdx2)->getViaDef());
+      via2
+          = std::make_unique<frVia>(pa2->getAccessPoint(currIdx2)->getViaDef());
       Point pt2(pa2->getAccessPoint(currIdx2)->getPoint());
       xform.apply(pt2);
       via2->setOrigin(pt2);
       if (instTerm2->hasNet()) {
-        objs.push_back(make_pair(via2.get(), instTerm2->getNet()));
+        objs.push_back(std::make_pair(via2.get(), instTerm2->getNet()));
       } else {
-        objs.push_back(make_pair(via2.get(), instTerm2));
+        objs.push_back(std::make_pair(via2.get(), instTerm2));
       }
     }
 
@@ -2427,17 +2432,17 @@ int FlexPA::getEdgeCost(
         if (prevPrevIdx1 != -1) {
           auto& [pin3, instTerm3] = pins[prevPrevIdx1];
           auto pa3 = pin3->getPinAccess(paIdx);
-          unique_ptr<frVia> via3;
+          std::unique_ptr<frVia> via3;
           if (pa3->getAccessPoint(prevPrevIdx2)->hasAccess(frDirEnum::U)) {
-            via3 = make_unique<frVia>(
+            via3 = std::make_unique<frVia>(
                 pa3->getAccessPoint(prevPrevIdx2)->getViaDef());
             Point pt3(pa3->getAccessPoint(prevPrevIdx2)->getPoint());
             xform.apply(pt3);
             via3->setOrigin(pt3);
             if (instTerm3->hasNet()) {
-              objs.push_back(make_pair(via3.get(), instTerm3->getNet()));
+              objs.push_back(std::make_pair(via3.get(), instTerm3->getNet()));
             } else {
-              objs.push_back(make_pair(via3.get(), instTerm3));
+              objs.push_back(std::make_pair(via3.get(), instTerm3));
             }
           }
 
@@ -2455,9 +2460,9 @@ int FlexPA::getEdgeCost(
             && usedAccessPoints.find(std::make_pair(currIdx1, currIdx2))
                    != usedAccessPoints.end())) {
       edgeCost = 100;
-    } else if (violAccessPoints.find(make_pair(prevIdx1, prevIdx2))
+    } else if (violAccessPoints.find(std::make_pair(prevIdx1, prevIdx2))
                    != violAccessPoints.end()
-               || violAccessPoints.find(make_pair(currIdx1, currIdx2))
+               || violAccessPoints.find(std::make_pair(currIdx1, currIdx2))
                       != violAccessPoints.end()) {
       edgeCost = 1000;
     } else {
@@ -2512,8 +2517,8 @@ bool FlexPA::genPatterns_commit(
     auto pinAccessPattern = std::make_unique<FlexPinAccessPattern>();
     std::map<frMPin*, frAccessPoint*> pin2AP;
     // check DRC for the whole pattern
-    vector<pair<frConnFig*, frBlockObject*>> objs;
-    vector<unique_ptr<frVia>> tempVias;
+    std::vector<std::pair<frConnFig*, frBlockObject*>> objs;
+    std::vector<std::unique_ptr<frVia>> tempVias;
     frInst* targetObj = nullptr;
     for (int idx1 = 0; idx1 < (int) pins.size(); idx1++) {
       auto idx2 = accessPattern[idx1];
@@ -2526,9 +2531,9 @@ bool FlexPA::genPatterns_commit(
       pin2AP[pin] = accessPoint;
 
       // add objs
-      unique_ptr<frVia> via;
+      std::unique_ptr<frVia> via;
       if (accessPoint->hasAccess(frDirEnum::U)) {
-        via = make_unique<frVia>(accessPoint->getViaDef());
+        via = std::make_unique<frVia>(accessPoint->getViaDef());
         auto rvia = via.get();
         tempVias.push_back(std::move(via));
 
@@ -2537,9 +2542,9 @@ bool FlexPA::genPatterns_commit(
         xform.apply(pt);
         rvia->setOrigin(pt);
         if (instTerm->hasNet()) {
-          objs.push_back(make_pair(rvia, instTerm->getNet()));
+          objs.push_back(std::make_pair(rvia, instTerm->getNet()));
         } else {
-          objs.push_back(make_pair(rvia, instTerm));
+          objs.push_back(std::make_pair(rvia, instTerm));
         }
       }
     }
@@ -2578,29 +2583,30 @@ bool FlexPA::genPatterns_commit(
         logger_->error(DRT, 91, "Pin does not have valid ap.");
     }
     // if (leftAP == nullptr) {
-    //   cout <<"@@@Warning leftAP == nullptr " <<instTerm->getInst()->getName()
-    //   <<endl;
+    //   std::cout <<"@@@Warning leftAP == nullptr "
+    //   <<instTerm->getInst()->getName()
+    //   <<std::endl;
     // }
     // if (rightAP == nullptr) {
-    //   cout <<"@@@Warning rightAP == nullptr "
-    //   <<instTerm->getInst()->getName() <<endl;
+    //   std::cout <<"@@@Warning rightAP == nullptr "
+    //   <<instTerm->getInst()->getName() <<std::endl;
     // }
     pinAccessPattern->setBoundaryAP(true, leftAP);
     pinAccessPattern->setBoundaryAP(false, rightAP);
 
-    set<frBlockObject*> owners;
+    std::set<frBlockObject*> owners;
     if (targetObj != nullptr
         && genPatterns_gc({targetObj}, objs, Commit, &owners)) {
       pinAccessPattern->updateCost();
-      // cout <<"commit ap:";
+      // std::cout <<"commit ap:";
       // for (auto &ap: pinAccessPattern->getPattern()) {
-      //   cout <<" " <<ap;
+      //   std::cout <<" " <<ap;
       // }
-      // cout <<endl <<"l/r = "
+      // std::cout <<std::endl <<"l/r = "
       //      <<pinAccessPattern->getBoundaryAP(true) <<"/"
       //      <<pinAccessPattern->getBoundaryAP(false) <<", "
       //      <<currUniqueInstIdx <<", "
-      //      <<uniqueInstances[currUniqueInstIdx]->getName() <<endl;
+      //      <<uniqueInstances[currUniqueInstIdx]->getName() <<std::endl;
       uniqueInstPatterns_[currUniqueInstIdx].push_back(
           std::move(pinAccessPattern));
       // genPatterns_print(nodes, pins, maxAccessPointSize);
@@ -2611,11 +2617,11 @@ bool FlexPA::genPatterns_commit(
         auto& [pin, instTerm] = pins[idx1];
         if (instTerm->hasNet()) {
           if (owners.find(instTerm->getNet()) != owners.end()) {
-            violAccessPoints.insert(make_pair(idx1, idx2));  // idx ;
+            violAccessPoints.insert(std::make_pair(idx1, idx2));  // idx ;
           }
         } else {
           if (owners.find(instTerm) != owners.end()) {
-            violAccessPoints.insert(make_pair(idx1, idx2));  // idx ;
+            violAccessPoints.insert(std::make_pair(idx1, idx2));  // idx ;
           }
         }
       }
@@ -2646,7 +2652,7 @@ void FlexPA::genPatterns_print_debug(
     xform.setOrient(dbOrientType::R0);
   }
 
-  cout << "failed pattern:";
+  std::cout << "failed pattern:";
 
   double dbu = getDesign()->getTopBlock()->getDBUPerUU();
   while (currNode->getPrevNodeIdx() != -1) {
@@ -2654,21 +2660,21 @@ void FlexPA::genPatterns_print_debug(
     if (pinCnt != (int) pins.size()) {
       auto& [pin, instTerm] = pins[pinCnt];
       auto inst = instTerm->getInst();
-      cout << " " << instTerm->getTerm()->getName();
+      std::cout << " " << instTerm->getTerm()->getName();
       int paIdx = unique2paidx_[inst];
       auto pa = pin->getPinAccess(paIdx);
       int currIdx1, currIdx2;
       getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPointSize);
       Point pt(pa->getAccessPoint(currIdx2)->getPoint());
       xform.apply(pt);
-      cout << " (" << pt.x() / dbu << ", " << pt.y() / dbu << ")";
+      std::cout << " (" << pt.x() / dbu << ", " << pt.y() / dbu << ")";
     }
 
     currNodeIdx = currNode->getPrevNodeIdx();
     currNode = &(nodes[currNode->getPrevNodeIdx()]);
     pinCnt--;
   }
-  cout << endl;
+  std::cout << std::endl;
   if (pinCnt != -1) {
     logger_->error(DRT, 277, "Valid access pattern not found.");
   }
@@ -2683,7 +2689,7 @@ void FlexPA::genPatterns_print(
   auto currNode = &(nodes[currNodeIdx]);
   int pinCnt = pins.size();
 
-  cout << "new pattern\n";
+  std::cout << "new pattern\n";
 
   while (currNode->getPrevNodeIdx() != -1) {
     // non-virtual node
@@ -2694,13 +2700,13 @@ void FlexPA::genPatterns_print(
       auto pa = pin->getPinAccess(paIdx);
       int currIdx1, currIdx2;
       getNestedIdx(currNodeIdx, currIdx1, currIdx2, maxAccessPointSize);
-      unique_ptr<frVia> via
-          = make_unique<frVia>(pa->getAccessPoint(currIdx2)->getViaDef());
+      std::unique_ptr<frVia> via
+          = std::make_unique<frVia>(pa->getAccessPoint(currIdx2)->getViaDef());
       Point pt(pa->getAccessPoint(currIdx2)->getPoint());
-      cout << " gccleanvia " << inst->getMaster()->getName() << " "
-           << instTerm->getTerm()->getName() << " "
-           << via->getViaDef()->getName() << " " << pt.x() << " " << pt.y()
-           << " " << inst->getOrient().getString() << "\n";
+      std::cout << " gccleanvia " << inst->getMaster()->getName() << " "
+                << instTerm->getTerm()->getName() << " "
+                << via->getViaDef()->getName() << " " << pt.x() << " " << pt.y()
+                << " " << inst->getOrient().getString() << "\n";
     }
 
     currNodeIdx = currNode->getPrevNodeIdx();

@@ -15,12 +15,11 @@
 #include <iostream>
 #include <vector>
 
-using namespace std;
-
 class HungarianAlgorithm
 {
  public:
-  int solve(vector<vector<int>>& dist_matrix, vector<int>& assignment);
+  int solve(std::vector<std::vector<int>>& dist_matrix,
+            std::vector<int>& assignment);
 
  private:
   void assignmentoptimal(int* assignment,

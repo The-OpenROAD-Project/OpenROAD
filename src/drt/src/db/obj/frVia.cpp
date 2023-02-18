@@ -32,7 +32,6 @@
 #include "distributed/frArchive.h"
 #include "serialization.h"
 
-using namespace std;
 using namespace fr;
 
 frVia::frVia(const drVia& in) : owner_(nullptr), index_in_owner_(0)

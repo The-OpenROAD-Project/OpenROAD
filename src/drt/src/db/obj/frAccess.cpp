@@ -30,7 +30,6 @@
 
 #include "db/tech/frViaDef.h"
 
-using namespace std;
 using namespace fr;
 
 void frAccessPoint::addViaDef(frViaDef* in)

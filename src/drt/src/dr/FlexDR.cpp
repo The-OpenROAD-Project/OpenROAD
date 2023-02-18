@@ -55,7 +55,6 @@
 #include "serialization.h"
 #include "utl/exception.h"
 
-using namespace std;
 using namespace fr;
 
 using utl::ThreadException;
@@ -189,11 +188,12 @@ int FlexDRWorker::main(frDesign* design)
                      fmt::format("{}/updates.bin", workerPath));
     std::string viaDataStr;
     serializeViaData(*via_data_, viaDataStr);
-    ofstream viaDataFile(fmt::format("{}/viadata.bin", workerPath).c_str());
+    std::ofstream viaDataFile(
+        fmt::format("{}/viadata.bin", workerPath).c_str());
     viaDataFile << viaDataStr;
     std::string workerStr;
     serializeWorker(this, workerStr);
-    ofstream workerFile(fmt::format("{}/worker.bin", workerPath).c_str());
+    std::ofstream workerFile(fmt::format("{}/worker.bin", workerPath).c_str());
     workerFile << workerStr;
     workerFile.close();
     std::ofstream file(
@@ -220,10 +220,10 @@ int FlexDRWorker::main(frDesign* design)
   duration<double> time_span2 = duration_cast<duration<double>>(t3 - t2);
 
   if (VERBOSE > 1) {
-    stringstream ss;
+    std::stringstream ss;
     ss << "time (INIT/ROUTE/POST) " << time_span0.count() << " "
-       << time_span1.count() << " " << time_span2.count() << " " << endl;
-    cout << ss.str() << flush;
+       << time_span1.count() << " " << time_span2.count() << " " << std::endl;
+    std::cout << ss.str() << std::flush;
   }
 
   debugPrint(logger_,
@@ -267,7 +267,7 @@ void FlexDR::initFromTA()
     for (auto& guide : net->getGuides()) {
       for (auto& connFig : guide->getRoutes()) {
         if (connFig->typeId() == frcPathSeg) {
-          unique_ptr<frShape> ps = make_unique<frPathSeg>(
+          std::unique_ptr<frShape> ps = std::make_unique<frPathSeg>(
               *(static_cast<frPathSeg*>(connFig.get())));
           auto [bp, ep] = static_cast<frPathSeg*>(ps.get())->getPoints();
 
@@ -276,7 +276,7 @@ void FlexDR::initFromTA()
             net->addShape(std::move(ps));
           }
         } else {
-          cout << "Error: initFromTA unsupported shape" << endl;
+          std::cout << "Error: initFromTA unsupported shape" << std::endl;
         }
       }
     }
@@ -289,12 +289,14 @@ void FlexDR::initGCell2BoundaryPin()
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
-  auto tmpVec
-      = vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>(
-          (int) ygp.getCount());
-  gcell2BoundaryPin_ = vector<
-      vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>>(
-      (int) xgp.getCount(), tmpVec);
+  auto tmpVec = std::vector<std::map<frNet*,
+                                     std::set<std::pair<Point, frLayerNum>>,
+                                     frBlockObjectComp>>((int) ygp.getCount());
+  gcell2BoundaryPin_
+      = std::vector<std::vector<std::map<frNet*,
+                                         std::set<std::pair<Point, frLayerNum>>,
+                                         frBlockObjectComp>>>(
+          (int) xgp.getCount(), tmpVec);
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     auto netPtr = net.get();
     for (auto& guide : net->getGuides()) {
@@ -327,12 +329,12 @@ void FlexDR::initGCell2BoundaryPin()
               if (hasLeftBound) {
                 Point boundaryPt(leftBound, bp.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
-                    make_pair(boundaryPt, layerNum));
+                    std::make_pair(boundaryPt, layerNum));
               }
               if (hasRightBound) {
                 Point boundaryPt(rightBound, ep.y());
                 gcell2BoundaryPin_[x][y][netPtr].insert(
-                    make_pair(boundaryPt, layerNum));
+                    std::make_pair(boundaryPt, layerNum));
               }
             }
           } else if (bp.x() == ep.x()) {
@@ -349,16 +351,17 @@ void FlexDR::initGCell2BoundaryPin()
               if (hasBottomBound) {
                 Point boundaryPt(bp.x(), bottomBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
-                    make_pair(boundaryPt, layerNum));
+                    std::make_pair(boundaryPt, layerNum));
               }
               if (hasTopBound) {
                 Point boundaryPt(ep.x(), topBound);
                 gcell2BoundaryPin_[x][y][netPtr].insert(
-                    make_pair(boundaryPt, layerNum));
+                    std::make_pair(boundaryPt, layerNum));
               }
             }
           } else {
-            cout << "Error: non-orthogonal pathseg in initGCell2BoundryPin\n";
+            std::cout
+                << "Error: non-orthogonal pathseg in initGCell2BoundryPin\n";
           }
         }
       }
@@ -383,9 +386,9 @@ void FlexDR::init_halfViaEncArea()
       Rect layer2Box = via.getLayer2BBox();
       auto layer1HalfArea = layer1Box.area() / 2;
       auto layer2HalfArea = layer2Box.area() / 2;
-      halfViaEncArea.push_back(make_pair(layer1HalfArea, layer2HalfArea));
+      halfViaEncArea.push_back(std::make_pair(layer1HalfArea, layer2HalfArea));
     } else {
-      halfViaEncArea.push_back(make_pair(0, 0));
+      halfViaEncArea.push_back(std::make_pair(0, 0));
     }
   }
 }
@@ -419,13 +422,14 @@ void FlexDR::removeGCell2BoundaryPin()
   gcell2BoundaryPin_.shrink_to_fit();
 }
 
-map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>
+std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
 FlexDR::initDR_mergeBoundaryPin(int startX,
                                 int startY,
                                 int size,
                                 const Rect& routeBox)
 {
-  map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp> bp;
+  std::map<frNet*, std::set<std::pair<Point, frLayerNum>>, frBlockObjectComp>
+      bp;
   auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
@@ -436,7 +440,7 @@ FlexDR::initDR_mergeBoundaryPin(int startX,
         for (auto& [pt, lNum] : s) {
           if (pt.x() == routeBox.xMin() || pt.x() == routeBox.xMax()
               || pt.y() == routeBox.yMin() || pt.y() == routeBox.yMax()) {
-            bp[net].insert(make_pair(pt, lNum));
+            bp[net].insert(std::make_pair(pt, lNum));
           }
         }
       }
@@ -478,7 +482,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   }
   frTime t;
   if (VERBOSE > 0) {
-    string suffix;
+    std::string suffix;
     if (iter == 1 || (iter > 20 && iter % 10 == 1)) {
       suffix = "st";
     } else if (iter == 2 || (iter > 20 && iter % 10 == 2)) {
@@ -502,21 +506,22 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   int prev_perc = 0;
   bool isExceed = false;
 
-  vector<unique_ptr<FlexDRWorker>> uworkers;
+  std::vector<std::unique_ptr<FlexDRWorker>> uworkers;
   int batchStepX, batchStepY;
 
   getBatchInfo(batchStepX, batchStepY);
 
-  vector<vector<vector<unique_ptr<FlexDRWorker>>>> workers(batchStepX
-                                                           * batchStepY);
+  std::vector<std::vector<std::vector<std::unique_ptr<FlexDRWorker>>>> workers(
+      batchStepX * batchStepY);
 
   int xIdx = 0, yIdx = 0;
   for (int i = offset; i < (int) xgp.getCount(); i += size) {
     for (int j = offset; j < (int) ygp.getCount(); j += size) {
-      auto worker = make_unique<FlexDRWorker>(&via_data_, design_, logger_);
+      auto worker
+          = std::make_unique<FlexDRWorker>(&via_data_, design_, logger_);
       Rect routeBox1 = getDesign()->getTopBlock()->getGCellBox(Point(i, j));
-      const int max_i = min((int) xgp.getCount() - 1, i + size - 1);
-      const int max_j = min((int) ygp.getCount(), j + size - 1);
+      const int max_i = std::min((int) xgp.getCount() - 1, i + size - 1);
+      const int max_j = std::min((int) ygp.getCount(), j + size - 1);
       Rect routeBox2
           = getDesign()->getTopBlock()->getGCellBox(Point(max_i, max_j));
       Rect routeBox(routeBox1.xMin(),
@@ -538,7 +543,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
         worker->setDistributed(dist_, dist_ip_, dist_port_, dist_dir_);
       if (!iter) {
         // if (routeBox.xMin() == 441000 && routeBox.yMin() == 816100) {
-        //   cout << "@@@ debug: " << i << " " << j << endl;
+        //   std::cout << "@@@ debug: " << i << " " << j << std::endl;
         // }
         // set boundary pin
         auto bp = initDR_mergeBoundaryPin(i, j, size, routeBox);
@@ -557,7 +562,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       if (workers[batchIdx].empty()
           || (!dist_on_
               && (int) workers[batchIdx].back().size() >= BATCHSIZE)) {
-        workers[batchIdx].push_back(vector<unique_ptr<FlexDRWorker>>());
+        workers[batchIdx].push_back(
+            std::vector<std::unique_ptr<FlexDRWorker>>());
       }
       workers[batchIdx].back().push_back(std::move(worker));
 
@@ -746,7 +752,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
       }
     }
     t.print(logger_);
-    cout << flush;
+    std::cout << std::flush;
   }
   end();
   if (logger_->debugCheck(DRT, "autotuner", 1)
@@ -758,7 +764,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
 
 void FlexDR::end(bool done)
 {
-  if (done && DRC_RPT_FILE != string("")) {
+  if (done && DRC_RPT_FILE != std::string("")) {
     router_->reportDRC(DRC_RPT_FILE, design_->getTopBlock()->getMarkers());
   }
   if (done && VERBOSE > 0) {
@@ -766,9 +772,9 @@ void FlexDR::end(bool done)
   }
 
   using ULL = unsigned long long;
-  vector<ULL> wlen(getTech()->getLayers().size(), 0);
-  vector<ULL> sCut(getTech()->getLayers().size(), 0);
-  vector<ULL> mCut(getTech()->getLayers().size(), 0);
+  std::vector<ULL> wlen(getTech()->getLayers().size(), 0);
+  std::vector<ULL> sCut(getTech()->getLayers().size(), 0);
+  std::vector<ULL> mCut(getTech()->getLayers().size(), 0);
   for (auto& net : getDesign()->getTopBlock()->getNets()) {
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
@@ -836,73 +842,80 @@ void FlexDR::end(bool done)
          i <= getTech()->getTopLayerNum();
          i++) {
       if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
-        nameLen
-            = max(nameLen, (int) getTech()->getLayer(i - 1)->getName().size());
+        nameLen = std::max(nameLen,
+                           (int) getTech()->getLayer(i - 1)->getName().size());
       }
     }
-    int maxL = 1 + nameLen + 4 + (int) to_string(totSCut).length();
+    int maxL = 1 + nameLen + 4 + (int) std::to_string(totSCut).length();
     if (totMCut) {
-      maxL += 9 + 4 + (int) to_string(totMCut).length() + 9 + 4
-              + (int) to_string(totSCut + totMCut).length();
+      maxL += 9 + 4 + (int) std::to_string(totMCut).length() + 9 + 4
+              + (int) std::to_string(totSCut + totMCut).length();
     }
     std::ostringstream msg;
     if (totMCut) {
-      msg << " " << setw(nameLen + 4 + (int) to_string(totSCut).length() + 9)
+      msg << " "
+          << std::setw(nameLen + 4 + (int) std::to_string(totSCut).length() + 9)
           << "single-cut";
-      msg << setw(4 + (int) to_string(totMCut).length() + 9) << "multi-cut"
-          << setw(4 + (int) to_string(totSCut + totMCut).length()) << "total";
+      msg << std::setw(4 + (int) std::to_string(totMCut).length() + 9)
+          << "multi-cut"
+          << std::setw(4 + (int) std::to_string(totSCut + totMCut).length())
+          << "total";
     }
-    msg << endl;
+    msg << std::endl;
     for (int i = 0; i < maxL; i++) {
       msg << "-";
     }
-    msg << endl;
+    msg << std::endl;
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
          i++) {
       if (getTech()->getLayer(i)->getType() == dbTechLayerType::CUT) {
-        msg << " " << setw(nameLen) << getTech()->getLayer(i - 1)->getName()
-            << "    " << setw((int) to_string(totSCut).length()) << sCut[i];
+        msg << " " << std::setw(nameLen)
+            << getTech()->getLayer(i - 1)->getName() << "    "
+            << std::setw((int) std::to_string(totSCut).length()) << sCut[i];
         if (totMCut) {
-          msg << " (" << setw(5)
+          msg << " (" << std::setw(5)
               << (double) ((sCut[i] + mCut[i])
                                ? sCut[i] * 100.0 / (sCut[i] + mCut[i])
                                : 0.0)
               << "%)";
-          msg << "    " << setw((int) to_string(totMCut).length()) << mCut[i]
-              << " (" << setw(5)
+          msg << "    " << std::setw((int) std::to_string(totMCut).length())
+              << mCut[i] << " (" << std::setw(5)
               << (double) ((sCut[i] + mCut[i])
                                ? mCut[i] * 100.0 / (sCut[i] + mCut[i])
                                : 0.0)
               << "%)"
-              << "    " << setw((int) to_string(totSCut + totMCut).length())
+              << "    "
+              << std::setw((int) std::to_string(totSCut + totMCut).length())
               << sCut[i] + mCut[i];
         }
-        msg << endl;
+        msg << std::endl;
       }
     }
     for (int i = 0; i < maxL; i++) {
       msg << "-";
     }
-    msg << endl;
-    msg << " " << setw(nameLen) << ""
-        << "    " << setw((int) to_string(totSCut).length()) << totSCut;
+    msg << std::endl;
+    msg << " " << std::setw(nameLen) << ""
+        << "    " << std::setw((int) std::to_string(totSCut).length())
+        << totSCut;
     if (totMCut) {
-      msg << " (" << setw(5)
+      msg << " (" << std::setw(5)
           << (double) ((totSCut + totMCut)
                            ? totSCut * 100.0 / (totSCut + totMCut)
                            : 0.0)
           << "%)";
-      msg << "    " << setw((int) to_string(totMCut).length()) << totMCut
-          << " (" << setw(5)
+      msg << "    " << std::setw((int) std::to_string(totMCut).length())
+          << totMCut << " (" << std::setw(5)
           << (double) ((totSCut + totMCut)
                            ? totMCut * 100.0 / (totSCut + totMCut)
                            : 0.0)
           << "%)"
-          << "    " << setw((int) to_string(totSCut + totMCut).length())
+          << "    "
+          << std::setw((int) std::to_string(totSCut + totMCut).length())
           << totSCut + totMCut;
     }
-    msg << endl << endl;
+    msg << std::endl << std::endl;
     logger_->report("{}", msg.str());
   }
 }
@@ -986,7 +999,7 @@ void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet, Rect rect)
 {
   using namespace boost::polygon::operators;
   gtl::polygon_90_data<frCoord> poly;
-  vector<gtl::point_data<frCoord>> points;
+  std::vector<gtl::point_data<frCoord>> points;
   for (const auto& point : rect.getPoints()) {
     points.push_back({point.x(), point.y()});
   }
@@ -1001,7 +1014,7 @@ void FlexDR::reportGuideCoverage()
   const auto numLayers = getTech()->getLayers().size();
   std::vector<unsigned long long> totalAreaByLayerNum(numLayers, 0);
   std::vector<unsigned long long> totalCoveredAreaByLayerNum(numLayers, 0);
-  map<frNet*, std::vector<float>> netsCoverage;
+  std::map<frNet*, std::vector<float>> netsCoverage;
   const auto& nets = getDesign()->getTopBlock()->getNets();
   omp_set_num_threads(MAX_THREADS);
 #pragma omp parallel for schedule(dynamic)
@@ -1062,7 +1075,7 @@ void FlexDR::reportGuideCoverage()
     }
   }
 
-  ofstream file(GUIDE_REPORT_FILE);
+  std::ofstream file(GUIDE_REPORT_FILE);
   file << "Net,";
   for (const auto& layer : getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
@@ -1120,8 +1133,8 @@ int FlexDR::main()
       if (increaseClipsize_) {
         clipSizeInc_ += 2;
       } else
-        clipSizeInc_ = max((float) 0, clipSizeInc_ - 0.2f);
-      clipSize += min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
+        clipSizeInc_ = std::max((float) 0, clipSizeInc_ - 0.2f);
+      clipSize += std::min(MAX_CLIPSIZE_INCREASE, (int) round(clipSizeInc_));
     }
     args.size = clipSize;
 
@@ -1145,7 +1158,7 @@ int FlexDR::main()
     reportGuideCoverage();
   if (VERBOSE > 0) {
     t.print(logger_);
-    cout << endl;
+    std::cout << std::endl;
   }
   return 0;
 }

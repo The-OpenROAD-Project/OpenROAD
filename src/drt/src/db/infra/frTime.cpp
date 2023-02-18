@@ -31,7 +31,6 @@
 #include <boost/io/ios_state.hpp>
 #include <iomanip>
 
-using namespace std;
 using namespace fr;
 
 void frTime::print(Logger* logger)

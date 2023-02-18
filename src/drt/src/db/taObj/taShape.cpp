@@ -30,7 +30,6 @@
 
 #include "db/obj/frShape.h"
 
-using namespace std;
 using namespace fr;
 
 taPathSeg::taPathSeg(const frPathSeg& in)

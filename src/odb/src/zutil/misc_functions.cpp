@@ -51,8 +51,6 @@
 
 #include "dbLogger.h"
 
-using namespace std;
-
 int Ath__double2int(double v)
 {
   int iv = (int) v;

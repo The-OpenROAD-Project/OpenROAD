@@ -1,6 +1,5 @@
-/* Authors: Lutong Wang and Bangqi Xu */
 /*
- * Copyright (c) 2019, The Regents of the University of California
+ * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,35 +25,48 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <iostream>
-#include <sstream>
+#pragma once
 
-#include "FlexRP.h"
-#include "db/infra/frTime.h"
-#include "frProfileTask.h"
-#include "gc/FlexGC.h"
+#include "gui/gui.h"
+#include "odb/db.h"
 
-using namespace fr;
+namespace dpl {
 
-void FlexRP::init()
+class Opendp;
+struct Cell;
+
+// Decorates the gui::Renderer with DPL specific routines.
+class Graphics : public gui::Renderer
 {
-  ProfileTask profile("RP:init");
+ public:
+  Graphics(Opendp* dp,
+           float min_displacement,
+           const odb::dbInst* debug_instance);
 
-  const auto bottomLayerNum = getDesign()->getTech()->getBottomLayerNum();
-  const auto topLayerNum = getDesign()->getTech()->getTopLayerNum();
+  virtual void startPlacement(odb::dbBlock* block);
+  virtual void placeInstance(odb::dbInst* instance);
+  virtual void binSearch(const Cell* cell, int xl, int yl, int xh, int yh);
+  virtual void endPlacement();
 
-  for (auto lNum = bottomLayerNum; lNum <= topLayerNum; lNum++) {
-    if (tech_->getLayer(lNum)->getType() != dbTechLayerType::ROUTING) {
-      continue;
-    }
-    tech_->via2ViaForbiddenLen.push_back({});
-    tech_->viaForbiddenTurnLen.push_back({});
-    tech_->viaForbiddenPlanarLen.push_back({});
-    tech_->line2LineForbiddenLen.push_back({});
-    tech_->viaForbiddenThrough.push_back({});
-    for (auto& ndr : tech_->nonDefaultRules) {
-      ndr->via2ViaForbiddenLen.push_back({});
-      ndr->viaForbiddenTurnLen.push_back({});
-    }
+  // From Renderer API
+  void drawObjects(gui::Painter& painter) override;
+
+  static bool guiActive() { return gui::Gui::enabled(); }
+
+  static std::unique_ptr<Graphics> makeDplGraphics(
+      Opendp* opendp,
+      float min_displacement,
+      const odb::dbInst* debug_instance)
+  {
+    return std::make_unique<Graphics>(opendp, min_displacement, debug_instance);
   }
-}
+
+ private:
+  Opendp* dp_;
+  const odb::dbInst* debug_instance_;
+  odb::dbBlock* block_;
+  float min_displacement_;  // in row height
+  std::vector<odb::Rect> searched_;
+};
+
+}  // namespace dpl

@@ -30,7 +30,6 @@
 
 #include "gc/FlexGC_impl.h"
 
-using namespace std;
 using namespace fr;
 
 FlexGCWorker::FlexGCWorker(frTechObject* techIn,

@@ -31,7 +31,6 @@
 #include "db/drObj/drNet.h"
 #include "db/obj/frShape.h"
 
-using namespace std;
 using namespace fr;
 
 drPathSeg::drPathSeg(const frPathSeg& in)
