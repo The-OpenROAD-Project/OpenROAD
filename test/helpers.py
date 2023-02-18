@@ -64,5 +64,13 @@ utl.suppress_message(utl.PPL, 60)
 utl.suppress_message(utl.TAP, 100)
 utl.suppress_message(utl.TAP, 101)
 
-# suppress threads count
+# suppress ord threads count
 utl.suppress_message(utl.ORD, 30)
+
+# suppress par messages with runtime
+utl.suppress_message(utl.PAR, 1)
+utl.suppress_message(utl.PAR, 2)
+utl.suppress_message(utl.PAR, 3)
+utl.suppress_message(utl.PAR, 4)
+utl.suppress_message(utl.PAR, 5)
+utl.suppress_message(utl.PAR, 6)

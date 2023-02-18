@@ -72,6 +72,7 @@ target_sources(dbSta
 target_include_directories(dbSta
   PUBLIC
     ../include
+    ${PROJECT_SOURCE_DIR}/include
 
   PRIVATE
     # Unfortunate side-effect of swig include StaTcl.i

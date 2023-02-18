@@ -362,7 +362,7 @@ void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
 
 odb::Rect HeatMapDataSource::getBounds() const
 {
-  return getBlock()->getBBox()->getBox();
+  return getBlock()->getDieArea();
 }
 
 void HeatMapDataSource::setupMap()

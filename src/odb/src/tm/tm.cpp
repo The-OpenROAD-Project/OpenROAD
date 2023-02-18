@@ -251,13 +251,6 @@ int ZInterface::event(const char* name, const char* attr1, int type, ...)
   return x;
 }
 
-int ZInterface::idle(int level = 0)
-{
-  char idle_id[128];
-  snprintf(idle_id, 128, "%s:%d", getModuleName(), level);
-  return event("idle", idle_id, "", 0);
-}
-
 /* ********************************************************************
    ********************************************************************
                                   IMPORTANT!!!
@@ -292,9 +285,6 @@ int ZInterface::ade(int code, const char* msg, ...)
 
 int ZInterface::warning(int code, const char* msg, ...)
 {
-  if (checkWarning(msg) == 1)
-    return TCL_OK;
-
   char buffer[8192];
   va_list args;
   va_start(args, msg);
@@ -307,9 +297,6 @@ int ZInterface::warning(int code, const char* msg, ...)
 
 int ZInterface::info(int code, const char* msg, ...)
 {
-  if (checkWarning(msg) == 1)
-    return TCL_OK;
-
   char buffer[8192];
   va_list args;
   va_start(args, msg);
@@ -354,7 +341,6 @@ void ZInterface::error(int /* unused: code */, const char* msg, ...)
   // char error_id[128];
   // snprintf(error_id, 128, "%s:%d", getModuleName(), code );
   // event( "error", error_id, buffer, 0 );
-  // debug("ERROR","A","error contents: %s\n",buffer);
   throw(ZException("%s", buffer));
 }
 

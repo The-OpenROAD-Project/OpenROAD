@@ -32,21 +32,19 @@
 
 #pragma once
 
-#include <darr.h>
-#include <dbExtControl.h>
-#include <dbShape.h>
-#include <dbUtil.h>
-#include <gseq.h>
-#include <util.h>
-
 #include <map>
 
 #include "ZObject.h"
+#include "darr.h"
 #include "db.h"
+#include "dbExtControl.h"
+#include "dbShape.h"
+#include "dbUtil.h"
 #include "ext2dBox.h"
 #include "extprocess.h"
 #include "gseq.h"
 #include "odb.h"
+#include "util.h"
 #include "wire.h"
 
 namespace utl {
@@ -68,16 +66,6 @@ class extSpef;
 
 class extDistRC
 {
- private:
-  int _sep;
-  double _coupling;
-  double _fringe;
-  double _diag;
-  double _res;
-
- protected:
-  Logger* logger_;
-
  public:
   void setLogger(Logger* logger) { logger_ = logger; }
   void printDebug(const char*,
@@ -117,28 +105,22 @@ class extDistRC
   void interpolate(uint d, extDistRC* rc1, extDistRC* rc2);
   double interpolate_res(uint d, extDistRC* rc2);
 
+ private:
+  int _sep;
+  double _coupling;
+  double _fringe;
+  double _diag;
+  double _res;
+  Logger* logger_;
+
   friend class extDistRCTable;
   friend class extDistWidthRCTable;
   friend class extMeasure;
   friend class extMain;
 };
+
 class extDistRCTable
 {
- private:
-  Ath__array1D<extDistRC*>* _measureTable;
-  Ath__array1D<extDistRC*>* _computeTable;
-  Ath__array1D<extDistRC*>* _measureTableR[16];
-  Ath__array1D<extDistRC*>* _computeTableR[16];  // OPTIMIZE
-  int _maxDist;
-  uint _distCnt;
-  uint _unit;
-
-  void makeCapTableOver();
-  void makeCapTableUnder();
-
- protected:
-  Logger* logger_;
-
  public:
   extDistRCTable(uint distCnt);
   ~extDistRCTable();
@@ -195,39 +177,23 @@ class extDistRCTable
                       extDistRC* rc2,
                       uint distUnit,
                       AthPool<extDistRC>* rcPool);
+
+ private:
+  void makeCapTableOver();
+  void makeCapTableUnder();
+
+  Ath__array1D<extDistRC*>* _measureTable;
+  Ath__array1D<extDistRC*>* _computeTable;
+  Ath__array1D<extDistRC*>* _measureTableR[16];
+  Ath__array1D<extDistRC*>* _computeTableR[16];  // OPTIMIZE
+  int _maxDist;
+  uint _distCnt;
+  uint _unit;
+  Logger* logger_;
 };
 
 class extDistWidthRCTable
 {
- public:
-  bool _ouReadReverse;
-  bool _over;
-  uint _layerCnt;
-  uint _met;
-
-  Ath__array1D<int>* _widthTable;
-  Ath__array1D<uint>* _widthMapTable;
-  Ath__array1D<int>* _diagWidthTable[32];
-  Ath__array1D<int>* _diagDistTable[32];
-  Ath__array1D<uint>* _diagWidthMapTable[32];
-  Ath__array1D<uint>* _diagDistMapTable[32];
-
-  uint _modulo;
-  int _firstWidth = 0;
-  int _lastWidth = -1;
-  Ath__array1D<int>* _firstDiagWidth;
-  Ath__array1D<int>* _lastDiagWidth;
-  Ath__array1D<int>* _firstDiagDist;
-  Ath__array1D<int>* _lastDiagDist;
-  bool _widthTableAllocFlag;  // if false widthtable is pointer
-
-  extDistRCTable*** _rcDistTable;  // per over/under metal, per width
-  extDistRCTable***** _rcDiagDistTable;
-  uint _metCnt;  // if _over==false _metCnt???
-
-  AthPool<extDistRC>* _rcPoolPtr;
-  extDistRC* _rc31;
-
  public:
   extDistWidthRCTable(bool dummy, uint met, uint layerCnt, uint width);
   extDistWidthRCTable(bool over,
@@ -319,22 +285,39 @@ class extDistWidthRCTable
   extDistRC* getLastWidthFringeRC(uint mou);
   extDistRC* getRC_99(uint mou, uint w, uint dw, uint ds);
   extDistRCTable* getRuleTable(uint mou, uint w);
-};
-class extMetRCTable
-{
+
  public:
+  bool _ouReadReverse;
+  bool _over;
   uint _layerCnt;
-  char _name[128];
-  extDistWidthRCTable** _resOver;
-  extDistWidthRCTable** _capOver;
-  extDistWidthRCTable** _capUnder;
-  extDistWidthRCTable** _capOverUnder;
-  extDistWidthRCTable** _capDiagUnder;
+  uint _met;
+
+  Ath__array1D<int>* _widthTable;
+  Ath__array1D<uint>* _widthMapTable;
+  Ath__array1D<int>* _diagWidthTable[32];
+  Ath__array1D<int>* _diagDistTable[32];
+  Ath__array1D<uint>* _diagWidthMapTable[32];
+  Ath__array1D<uint>* _diagDistMapTable[32];
+
+  uint _modulo;
+  int _firstWidth = 0;
+  int _lastWidth = -1;
+  Ath__array1D<int>* _firstDiagWidth;
+  Ath__array1D<int>* _lastDiagWidth;
+  Ath__array1D<int>* _firstDiagDist;
+  Ath__array1D<int>* _lastDiagDist;
+  bool _widthTableAllocFlag;  // if false widthtable is pointer
+
+  extDistRCTable*** _rcDistTable;  // per over/under metal, per width
+  extDistRCTable***** _rcDiagDistTable;
+  uint _metCnt;  // if _over==false _metCnt???
 
   AthPool<extDistRC>* _rcPoolPtr;
-  double _rate;
-  Logger* logger_;
+  extDistRC* _rc31;
+};
 
+class extMetRCTable
+{
  public:
   extMetRCTable(uint layerCnt, AthPool<extDistRC>* rcPool, Logger* logger_);
   ~extMetRCTable();
@@ -376,22 +359,36 @@ class extMetRCTable
   extDistRC* getOverFringeRC(extMeasure* m, int index_dist = -1);
   extDistRC* getOverFringeRC_last(int met, int width);
   AthPool<extDistRC>* getRCPool();
+
+ public:
+  uint _layerCnt;
+  char _name[128];
+  extDistWidthRCTable** _resOver;
+  extDistWidthRCTable** _capOver;
+  extDistWidthRCTable** _capUnder;
+  extDistWidthRCTable** _capOverUnder;
+  extDistWidthRCTable** _capDiagUnder;
+
+  AthPool<extDistRC>* _rcPoolPtr;
+  double _rate;
+  Logger* logger_;
 };
+
 class extRCTable
 {
- private:
-  bool _over;
-  uint _maxCnt1;
-  Ath__array1D<extDistRC*>*** _inTable;  // per metal per width
-  Ath__array1D<extDistRC*>*** _table;
-
-  void makeCapTableOver();
-  void makeCapTableUnder();
-
  public:
   extRCTable(bool over, uint layerCnt);
   uint addCapOver(uint met, uint metUnder, extDistRC* rc);
   extDistRC* getCapOver(uint met, uint metUnder);
+
+ private:
+  void makeCapTableOver();
+  void makeCapTableUnder();
+
+  bool _over;
+  uint _maxCnt1;
+  Ath__array1D<extDistRC*>*** _inTable;  // per metal per width
+  Ath__array1D<extDistRC*>*** _table;
 };
 
 class extMain;
@@ -400,57 +397,6 @@ class extMainOptions;
 
 class extRCModel
 {
- private:
-  bool _ouReadReverse;
-  uint _layerCnt;
-  char _name[128];
-
-  int _noVariationIndex;
-  uint _modelCnt;
-  Ath__array1D<double>* _dataRateTable;
-  Ath__array1D<int>* _dataRateTableMap;
-  extMetRCTable** _modelTable;
-  uint _tmpDataRate;
-  bool _diag;
-  bool _verticalDiag;
-  bool _maxMinFlag;
-  uint _diagModel;
-  bool _keepFile;
-  uint _metLevel;
-
-  extRCTable* _resOver;
-  extRCTable* _capOver;
-  extRCTable* _capDiagUnder;
-  extRCTable* _capUnder;
-  AthPool<extDistRC>* _rcPoolPtr;
-  extProcess* _process;
-  char* _ruleFileName;
-  char* _wireFileName;
-  char* _wireDirName;
-  char* _topDir;
-  char* _patternName;
-  Ath__parser* _parser;
-  char* _solverFileName;
-
-  FILE* _capLogFP;
-  FILE* _logFP;
-
-  bool _writeFiles;
-  bool _readSolver;
-  bool _runSolver;
-
-  bool _readCapLog;
-  char _commentLine[10000];
-  bool _commentFlag;
-
-  uint* _singlePlaneLayerMap;
-  uint** _overUnderPlaneLayerMap;
-
-  extMain* _extMain;
-
- protected:
-  Logger* logger_;
-
  public:
   extMetRCTable* getMetRCTable(uint ii) { return _modelTable[ii]; };
 
@@ -659,10 +605,64 @@ class extRCModel
 
   extDistRC* getMinRC(int met, int width);
   extDistRC* getMaxRC(int met, int width, int dist);
+
+ private:
+  bool _ouReadReverse;
+  uint _layerCnt;
+  char _name[128];
+
+  int _noVariationIndex;
+  uint _modelCnt;
+  Ath__array1D<double>* _dataRateTable;
+  Ath__array1D<int>* _dataRateTableMap;
+  extMetRCTable** _modelTable;
+  uint _tmpDataRate;
+  bool _diag;
+  bool _verticalDiag;
+  bool _maxMinFlag;
+  uint _diagModel;
+  bool _keepFile;
+  uint _metLevel;
+
+  extRCTable* _resOver;
+  extRCTable* _capOver;
+  extRCTable* _capDiagUnder;
+  extRCTable* _capUnder;
+  AthPool<extDistRC>* _rcPoolPtr;
+  extProcess* _process;
+  char* _ruleFileName;
+  char* _wireFileName;
+  char* _wireDirName;
+  char* _topDir;
+  char* _patternName;
+  Ath__parser* _parser;
+  char* _solverFileName;
+
+  FILE* _capLogFP;
+  FILE* _logFP;
+
+  bool _writeFiles;
+  bool _readSolver;
+  bool _runSolver;
+
+  bool _readCapLog;
+  char _commentLine[10000];
+  bool _commentFlag;
+
+  uint* _singlePlaneLayerMap;
+
+  extMain* _extMain;
+
+  Logger* logger_;
 };
 
 class extLenOU  // assume cross-section on the z-direction
 {
+ public:
+  void reset();
+  void addOverOrUnderLen(int met, bool over, uint len);
+  void addOULen(int underMet, int overMet, uint len);
+
  public:
   int _met;
   int _underMet;
@@ -671,19 +671,14 @@ class extLenOU  // assume cross-section on the z-direction
   bool _over;
   bool _overUnder;
   bool _under;
-
-  void reset();
-  void addOverOrUnderLen(int met, bool over, uint len);
-  void addOULen(int underMet, int overMet, uint len);
 };
+
 class extMeasure
 {
  public:
-  bool _skip_delims;
   extMeasure();
   ~extMeasure();
 
-  bool _no_debug;
   void rcNetInfo();
   bool rcSegInfo();
   bool ouCovered_debug(int covered);
@@ -987,17 +982,10 @@ class extMeasure
   void printStats(FILE* fp);
   void printMets(FILE* fp);
 
-  ext2dBox* addNew2dBox(odb::dbNet* net,
-                        int* ll,
-                        int* ur,
-                        uint m,
-                        uint d,
-                        uint id,
-                        bool cntx);
+  ext2dBox* addNew2dBox(odb::dbNet* net, int* ll, int* ur, uint m, bool cntx);
   void clean2dBoxTable(int met, bool cntx);
   void writeRaphaelPointXY(FILE* fp, double X, double Y);
   void getBox(int met, bool cntx, int& xlo, int& ylo, int& xhi, int& yhi);
-  uint getBoxLength(uint ii, int met, bool cntx);
 
   int getDgPlaneAndTrackIndex(uint tgt_met,
                               int trackDist,
@@ -1029,6 +1017,9 @@ class extMeasure
 
   void allocOUpool();
   int get_nm(double n) { return 1000 * (n / _dbunit); };
+
+  bool _skip_delims;
+  bool _no_debug;
 
   int _met;
   int _underMet;
@@ -1146,7 +1137,6 @@ class extMeasure
   bool _gndcModify;
 
   odb::gs* _pixelTable;
-  uint** _ouPixelTableIndexMap;
 
   Ath__array1D<odb::SEQ*>* _diagTable;
   Ath__array1D<odb::SEQ*>* _tmpSrcTable;
@@ -1178,7 +1168,7 @@ class extMeasure
   odb::dbCreateNetUtil _create_net_util;
   int _dbunit;
 
- protected:
+ private:
   Logger* logger_;
 };
 
@@ -1244,6 +1234,8 @@ class extMainOptions
 class extCorner
 {
  public:
+  extCorner();
+
   char* _name;
   int _model;
   int _dbIndex;
@@ -1252,247 +1244,11 @@ class extCorner
   float _ccFactor;
   float _gndFactor;
   extCorner* _extCornerPtr;
-
-  extCorner();
 };
 
 class extMain
 {
- protected:
-  Logger* logger_;
-
- private:
-  bool _batchScaleExt;
-  Ath__array1D<extCorner*>* _processCornerTable;
-  Ath__array1D<extCorner*>* _scaledCornerTable;
-
-  Ath__array1D<extRCModel*>* _modelTable;
-  Ath__array1D<uint> _modelMap;  // TO_TEST
-  Ath__array1D<extMetRCTable*> _metRCTable;
-  double _resistanceTable[20][20];
-  double _capacitanceTable[20][20];  // 20 layers by 20 rc models
-  double _minWidthTable[20];
-  uint _minDistTable[20];
-  double _tmpCapTable[20];
-  double _tmpSumCapTable[20];
-  double _tmpResTable[20];
-  double _tmpSumResTable[20];
-  int _sumUpdated;
-  int _minModelIndex;  // TO_TEST
-  int _typModelIndex;  //
-  int _maxModelIndex;  //
-
-  odb::dbDatabase* _db;
-  odb::dbTech* _tech;
-  odb::dbBlock* _block;
-  uint _blockId;
-  extSpef* _spef;
-  bool _writeNameMap;
-  bool _fullIncrSpef;
-  bool _noFullIncrSpef;
-  char* _origSpefFilePrefix;
-  char* _newSpefFilePrefix;
-  uint _bufSpefCnt;
-  bool _incrNoBackSlash;
-  uint _cornerCnt;
-  uint _extDbCnt;
-
-  int _remote;
-  bool _extracted;
-  bool _allNet;
-
-  bool _getBandWire;
-  bool _printBandInfo;
-  uint _ccUp;
-  uint _couplingFlag;
-  bool _rotatedGs;
-  uint _ccContextDepth;
-  int _ccMinX;
-  int _ccMinY;
-  int _ccMaxX;
-  int _ccMaxY;
-  double _mergeResBound;
-  bool _mergeViaRes;
-  bool _mergeParallelCC;
-  bool _reportNetNoWire;
-  int _netNoWireCnt;
-
-  double _resFactor;
-  bool _resModify;
-  double _ccFactor;
-  bool _ccModify;
-  double _gndcFactor;
-  bool _gndcModify;
-
-  float _netGndcCalibFactor;
-  bool _netGndcCalibration;
-
-  bool _useDbSdb;
-
-  Ath__array1D<int>* _nodeTable;
-  Ath__array1D<int>* _btermTable;
-  Ath__array1D<int>* _itermTable;
-
-  uint _dbPowerId;
-  uint _dbSignalId;
-  uint _RsegId;
-  uint _CCsegId;
-
-  uint _CCnoPowerSource;
-  uint _CCnoPowerTarget;
-  int _x1;
-  int _y1;
-  int _x2;
-  int _y2;
-
-  double _coupleThreshold;
-
-  uint _totCCcnt;
-  uint _totSmallCCcnt;
-  uint _totBigCCcnt;
-  uint _totSignalSegCnt;
-  uint _totSegCnt;
-
-  bool _lefRC;
-  bool _noModelRC;
-  extRCModel* _currentModel;
-
-  uint* _singlePlaneLayerMap;
-  uint** _overUnderPlaneLayerMap;
-  bool _usingMetalPlanes;
-
-  odb::gs* _geomSeq;
-
-  AthPool<odb::SEQ>* _seqPool;
-
-  Ath__array1D<odb::SEQ*>*** _dgContextArray;
-  uint _dgContextDepth;
-  uint _dgContextPlanes;
-  uint _dgContextTracks;
-  uint _dgContextBaseLvl;
-  int _dgContextLowLvl;
-  int _dgContextHiLvl;
-  uint* _dgContextBaseTrack;
-  int* _dgContextLowTrack;
-  int* _dgContextHiTrack;
-  int** _dgContextTrackBase;
-
-  Ath__array1D<int>** _ccContextArray;
-  Ath__array1D<int>** _ccMergedContextArray;
-
-  uint _extRun;
-  odb::dbExtControl* _prevControl;
-
-  bool _foreign;
-  bool _rsegCoord;
-  bool _diagFlow;
-
-  std::vector<uint> _rsegJid;
-  std::vector<uint> _shortSrcJid;
-  std::vector<uint> _shortTgtJid;
-
-  std::vector<odb::dbBTerm*> _connectedBTerm;
-  std::vector<odb::dbITerm*> _connectedITerm;
-
-  Ath__gridTable* _search;
-
-  int _noVariationIndex;
-
-  bool _ignoreWarning_1st;
-  bool _keepExtModel;
-
-  FILE* _searchFP;
-  friend class extMeasure;
-
-  FILE* _blkInfoVDD;
-  FILE* _viaInfoVDD;
-  FILE* _blkInfoGND;
-  FILE* _viaInfoGND;
-
-  FILE* _stdCirVDD;
-  FILE* _globCirVDD;
-  FILE* _globGeomVDD;
-  FILE* _stdCirGND;
-  FILE* _globCirGND;
-
-  FILE* _stdCirHeadVDD;
-  FILE* _globCirHeadVDD;
-  FILE* _globGeomGND;
-  FILE* _stdCirHeadGND;
-  FILE* _globCirHeadGND;
-  FILE* _blkInfo;
-  FILE* _viaInfo;
-  FILE* _globCir;
-  FILE* _globGeom;
-  FILE* _stdCir;
-  FILE* _globCirHead;
-  FILE* _stdCirHead;
-  FILE* _viaStackGlobCir;
-  FILE* _viaStackGlobVDD;
-  FILE* _viaStackGlobGND;
-
-  Ath__array1D<int>* _junct2viaMap;
-  bool _dbgPowerFlow;
-  odb::dbCreateNetUtil* _netUtil;
-
-  std::vector<odb::dbBox*> _viaUp_VDDtable;
-  std::vector<odb::dbBox*> _viaUp_GNDtable;
-  std::vector<odb::dbBox*> _viaM1_GNDtable;
-  std::vector<odb::dbBox*> _viaM1_VDDtable;
-  std::vector<odb::dbBox*>* _viaM1Table;
-  std::vector<odb::dbBox*>* _viaUpTable;
-  bool _adjust_colinear;
-
-  uint _stackedViaResCnt;
-  uint _totViaResCnt;
-  Ath__array1D<int>* _via2JunctionMap;
-  std::map<odb::dbBox*, odb::dbNet*> _via_map;
-  std::map<uint, odb::dbNet*> _via_id_map;
-  std::map<uint, float> _capNode_map;
-  std::vector<odb::dbInst*> _powerMacroTable;
-  std::vector<odb::dbBox*> _viaUpperTable[2];
-  Ath__array1D<char*>** _supplyViaMap[2];
-  Ath__array1D<odb::dbBox*>** _supplyViaTable[2];
-  char* _power_source_file;
-  std::vector<char*> _powerSourceTable[2];
-  FILE* _coordsFP;
-  FILE* _coordsGND;
-  FILE* _coordsVDD;
-  std::vector<uint> _vddItermIdTable;
-  std::vector<uint> _gndItermIdTable;
-  FILE* _subCktNodeFP[2][2];
-  uint _subCktNodeCnt[2][2];
-  bool _nodeCoords;
-  int _prevX;
-  int _prevY;
-  char _node_blk_dir[1024];
-  char _node_blk_prefix[1024];
-  char _node_inst_prefix[1024];
-  Ath__array1D<odb::dbITerm*>* _junct2iterm;
-  std::map<uint, odb::dbSBox*> _sbox_id_map;
-
-  uint _powerWireCnt;
-  uint _mergedPowerWireCnt;
-  uint _overlapPowerWireCnt;
-  uint _viaOverlapPowerCnt;
-  uint _multiViaCnt;
-
-  std::vector<odb::Rect*> _multiViaTable[20];
-  std::vector<odb::dbBox*> _multiViaBoxTable[20];
-
-  uint _debug_net_id;
-  float _previous_percent_extracted;
-
-  double _minCapTable[64][64];
-  double _maxCapTable[64][64];
-  double _minResTable[64][64];
-  double _maxResTable[64][64];
-  uint _rcLayerCnt;
-  uint _rcCornerCnt;
-
  public:
-  bool _lef_res;
-
   void init(odb::dbDatabase* db, Logger* logger);
   double getTotalCouplingCap(odb::dbNet* net,
                              const char* filterNet,
@@ -1509,7 +1265,6 @@ class extMain
                    double& max_res,
                    double& via_res,
                    uint& via_cnt);
-  std::string _tmpLenStats;
 
   extMain();
 
@@ -1630,7 +1385,7 @@ class extMain
   void resetSumRCtable();
   void addToSumRCtable();
   void copyToSumRCtable();
-  uint getResCapTable(bool lefRC);
+  uint getResCapTable();
   double getLoCoupling();
   void ccReportProgress();
   void measureRC(CoupleOptions& options);
@@ -1652,17 +1407,7 @@ class extMain
                       bool includeDiag = false);
   void updateCCCap(odb::dbRSeg* rseg1, odb::dbRSeg* rseg2, double ccCap);
   double measureOverUnderCap(extMeasure* m, int x1, int y1, int x2, int y2);
-  uint allocateOverUnderMaps(uint layerCnt);
-  uint makeIntersectPlanes(uint layerCnt);
-  void deletePlanes(uint layerCnt);
-  void getBboxPerLayer(odb::Rect* rectTable);
 
-  uint readCmpStats(const char* name,
-                    uint& tileSze,
-                    int& X1,
-                    int& Y1,
-                    int& X2,
-                    int& Y2);
   int setMinTypMax(bool minModel,
                    bool typModel,
                    bool maxModel,
@@ -1693,7 +1438,6 @@ class extMain
   void setupMapping(uint itermCnt);
   uint getMultiples(uint cnt, uint base);
   uint getExtLayerCnt(odb::dbTech* tech);
-  uint addExtModel(odb::dbTech* tech = NULL);
 
   void setBlockFromChip();
   void setBlock(odb::dbBlock* block);
@@ -1720,8 +1464,6 @@ class extMain
   void unlinkRSeg(std::vector<odb::dbNet*>& nets);
   void unlinkCapNode(std::vector<odb::dbNet*>& nets);
   void removeExt(std::vector<odb::dbNet*>& nets);
-  void removeExt();
-  void removeCC(std::vector<odb::dbNet*>& nets);
   void removeRSeg(std::vector<odb::dbNet*>& nets);
   void removeCapNode(std::vector<odb::dbNet*>& nets);
   void adjustRC(double resFactor, double ccFactor, double gndcFactor);
@@ -1733,11 +1475,9 @@ class extMain
                        uint ccFlag,
                        double resBound,
                        bool mergeViaRes,
-                       bool gs,
                        double ccThres,
                        int contextDepth,
-                       const char* extRules,
-                       odb::ZInterface* context);
+                       const char* extRules);
 
   uint getShortSrcJid(uint jid);
   void make1stRSeg(odb::dbNet* net,
@@ -1746,15 +1486,6 @@ class extMain
                    bool skipStartWarning);
   uint makeNetRCsegs_old(odb::dbNet* net, double resBound, uint debug = 0);
   uint makeNetRCsegs(odb::dbNet* net, bool skipStartWarning = false);
-  uint addPowerGs(int dir = -1, int* ll = NULL, int* ur = NULL);
-  uint addSignalGs(int dir = -1, int* ll = NULL, int* ur = NULL);
-  uint addItermShapesOnPlanes(odb::dbInst* inst,
-                              bool rotatedFlag,
-                              bool swap_coords);
-  uint addObsShapesOnPlanes(odb::dbInst* inst,
-                            bool rotatedFlag,
-                            bool swap_coords);
-  uint addInstShapesOnPlanes(uint dir = 0, int* ll = NULL, int* ur = NULL);
   double getViaResistance(odb::dbTechVia* tvia);
   double getViaResistance_b(odb::dbVia* via, odb::dbNet* net = NULL);
 
@@ -1901,8 +1632,6 @@ class extMain
   uint signalWireCounter(uint& maxWidth);
   bool getRotatedFlag();
   bool enableRotatedFlag();
-  uint addShapeOnGs(odb::dbShape* s, bool swap_coords);
-  uint addSBoxOnGs(odb::dbSBox* s, bool swap_coords);
 
   uint addMultipleRectsOnSearch(odb::Rect& r,
                                 uint level,
@@ -2209,7 +1938,6 @@ class extMain
                                  odb::dbNet* net,
                                  int* xy,
                                  int* xy2);
-  int _last_node_xy[2];
   odb::dbCapNode* getPowerCapNode(odb::dbNet* net, int xy, uint level);
   odb::dbCapNode* makePowerRes(odb::dbCapNode* srcCap,
                                uint dir,
@@ -2223,7 +1951,6 @@ class extMain
                         int x,
                         int y,
                         int level);
-  bool _wireInfra;
   void writeResNodeRC(char* nodeName, odb::dbCapNode* capNode, uint level);
   void writeResNodeRC(FILE* fp, odb::dbCapNode* capNode, uint level);
   double writeResRC(FILE* fp,
@@ -2246,7 +1973,6 @@ class extMain
   char* getViaResNode(odb::dbBox* v, const char* propName);
   void writeMacroItermConns(odb::dbNet* net);
   void setupDirNaming();
-  odb::Rect _extMaxRect;
   bool filterPowerGeoms(odb::dbSBox* s, uint targetDir, uint& maxWidth);
 
   uint iterm2Vias_cells(odb::dbInst* inst, odb::dbITerm* connectedPowerIterm);
@@ -2276,6 +2002,242 @@ class extMain
 
   void setMinRC(uint ii, uint jj, extDistRC* rc);
   void setMaxRC(uint ii, uint jj, extDistRC* rc);
+
+ private:
+  Logger* logger_;
+
+  bool _batchScaleExt;
+  Ath__array1D<extCorner*>* _processCornerTable;
+  Ath__array1D<extCorner*>* _scaledCornerTable;
+
+  Ath__array1D<extRCModel*>* _modelTable;
+  Ath__array1D<uint> _modelMap;  // TO_TEST
+  Ath__array1D<extMetRCTable*> _metRCTable;
+  double _resistanceTable[20][20];
+  double _capacitanceTable[20][20];  // 20 layers by 20 rc models
+  double _minWidthTable[20];
+  uint _minDistTable[20];
+  double _tmpCapTable[20];
+  double _tmpSumCapTable[20];
+  double _tmpResTable[20];
+  double _tmpSumResTable[20];
+  int _sumUpdated;
+  int _minModelIndex;  // TO_TEST
+  int _typModelIndex;  //
+  int _maxModelIndex;  //
+
+  odb::dbDatabase* _db;
+  odb::dbTech* _tech;
+  odb::dbBlock* _block;
+  uint _blockId;
+  extSpef* _spef;
+  bool _writeNameMap;
+  bool _fullIncrSpef;
+  bool _noFullIncrSpef;
+  char* _origSpefFilePrefix;
+  char* _newSpefFilePrefix;
+  uint _bufSpefCnt;
+  bool _incrNoBackSlash;
+  uint _cornerCnt;
+  uint _extDbCnt;
+
+  int _remote;
+  bool _extracted;
+  bool _allNet;
+
+  bool _getBandWire;
+  bool _printBandInfo;
+  uint _ccUp;
+  uint _couplingFlag;
+  bool _rotatedGs;
+  uint _ccContextDepth;
+  int _ccMinX;
+  int _ccMinY;
+  int _ccMaxX;
+  int _ccMaxY;
+  double _mergeResBound;
+  bool _mergeViaRes;
+  bool _mergeParallelCC;
+  bool _reportNetNoWire;
+  int _netNoWireCnt;
+
+  double _resFactor;
+  bool _resModify;
+  double _ccFactor;
+  bool _ccModify;
+  double _gndcFactor;
+  bool _gndcModify;
+
+  float _netGndcCalibFactor;
+  bool _netGndcCalibration;
+
+  bool _useDbSdb;
+
+  Ath__array1D<int>* _nodeTable;
+  Ath__array1D<int>* _btermTable;
+  Ath__array1D<int>* _itermTable;
+
+  uint _dbPowerId;
+  uint _dbSignalId;
+  uint _RsegId;
+  uint _CCsegId;
+
+  uint _CCnoPowerSource;
+  uint _CCnoPowerTarget;
+  int _x1;
+  int _y1;
+  int _x2;
+  int _y2;
+
+  double _coupleThreshold;
+
+  uint _totCCcnt;
+  uint _totSmallCCcnt;
+  uint _totBigCCcnt;
+  uint _totSignalSegCnt;
+  uint _totSegCnt;
+
+  bool _noModelRC;
+  extRCModel* _currentModel;
+
+  uint* _singlePlaneLayerMap;
+  bool _usingMetalPlanes;
+
+  odb::gs* _geomSeq;
+
+  AthPool<odb::SEQ>* _seqPool;
+
+  Ath__array1D<odb::SEQ*>*** _dgContextArray;
+  uint _dgContextDepth;
+  uint _dgContextPlanes;
+  uint _dgContextTracks;
+  uint _dgContextBaseLvl;
+  int _dgContextLowLvl;
+  int _dgContextHiLvl;
+  uint* _dgContextBaseTrack;
+  int* _dgContextLowTrack;
+  int* _dgContextHiTrack;
+  int** _dgContextTrackBase;
+
+  Ath__array1D<int>** _ccContextArray;
+  Ath__array1D<int>** _ccMergedContextArray;
+
+  uint _extRun;
+  odb::dbExtControl* _prevControl;
+
+  bool _foreign;
+  bool _rsegCoord;
+  bool _diagFlow;
+
+  std::vector<uint> _rsegJid;
+  std::vector<uint> _shortSrcJid;
+  std::vector<uint> _shortTgtJid;
+
+  std::vector<odb::dbBTerm*> _connectedBTerm;
+  std::vector<odb::dbITerm*> _connectedITerm;
+
+  Ath__gridTable* _search;
+
+  int _noVariationIndex;
+
+  bool _ignoreWarning_1st;
+  bool _keepExtModel;
+
+  FILE* _searchFP;
+  friend class extMeasure;
+
+  FILE* _blkInfoVDD;
+  FILE* _viaInfoVDD;
+  FILE* _blkInfoGND;
+  FILE* _viaInfoGND;
+
+  FILE* _stdCirVDD;
+  FILE* _globCirVDD;
+  FILE* _globGeomVDD;
+  FILE* _stdCirGND;
+  FILE* _globCirGND;
+
+  FILE* _stdCirHeadVDD;
+  FILE* _globCirHeadVDD;
+  FILE* _globGeomGND;
+  FILE* _stdCirHeadGND;
+  FILE* _globCirHeadGND;
+  FILE* _blkInfo;
+  FILE* _viaInfo;
+  FILE* _globCir;
+  FILE* _globGeom;
+  FILE* _stdCir;
+  FILE* _globCirHead;
+  FILE* _stdCirHead;
+  FILE* _viaStackGlobCir;
+  FILE* _viaStackGlobVDD;
+  FILE* _viaStackGlobGND;
+
+  Ath__array1D<int>* _junct2viaMap;
+  bool _dbgPowerFlow;
+  odb::dbCreateNetUtil* _netUtil;
+
+  std::vector<odb::dbBox*> _viaUp_VDDtable;
+  std::vector<odb::dbBox*> _viaUp_GNDtable;
+  std::vector<odb::dbBox*> _viaM1_GNDtable;
+  std::vector<odb::dbBox*> _viaM1_VDDtable;
+  std::vector<odb::dbBox*>* _viaM1Table;
+  std::vector<odb::dbBox*>* _viaUpTable;
+  bool _adjust_colinear;
+
+  uint _stackedViaResCnt;
+  uint _totViaResCnt;
+  Ath__array1D<int>* _via2JunctionMap;
+  std::map<odb::dbBox*, odb::dbNet*> _via_map;
+  std::map<uint, odb::dbNet*> _via_id_map;
+  std::map<uint, float> _capNode_map;
+  std::vector<odb::dbInst*> _powerMacroTable;
+  std::vector<odb::dbBox*> _viaUpperTable[2];
+  Ath__array1D<char*>** _supplyViaMap[2];
+  Ath__array1D<odb::dbBox*>** _supplyViaTable[2];
+  char* _power_source_file;
+  std::vector<char*> _powerSourceTable[2];
+  FILE* _coordsFP;
+  FILE* _coordsGND;
+  FILE* _coordsVDD;
+  std::vector<uint> _vddItermIdTable;
+  std::vector<uint> _gndItermIdTable;
+  FILE* _subCktNodeFP[2][2];
+  uint _subCktNodeCnt[2][2];
+  bool _nodeCoords;
+  int _prevX;
+  int _prevY;
+  char _node_blk_dir[1024];
+  char _node_blk_prefix[1024];
+  char _node_inst_prefix[1024];
+  Ath__array1D<odb::dbITerm*>* _junct2iterm;
+  std::map<uint, odb::dbSBox*> _sbox_id_map;
+
+  uint _powerWireCnt;
+  uint _mergedPowerWireCnt;
+  uint _overlapPowerWireCnt;
+  uint _viaOverlapPowerCnt;
+  uint _multiViaCnt;
+
+  std::vector<odb::Rect*> _multiViaTable[20];
+  std::vector<odb::dbBox*> _multiViaBoxTable[20];
+
+  uint _debug_net_id;
+  float _previous_percent_extracted;
+
+  double _minCapTable[64][64];
+  double _maxCapTable[64][64];
+  double _minResTable[64][64];
+  double _maxResTable[64][64];
+  uint _rcLayerCnt;
+  uint _rcCornerCnt;
+
+ public:
+  bool _lef_res;
+  std::string _tmpLenStats;
+  int _last_node_xy[2];
+  bool _wireInfra;
+  odb::Rect _extMaxRect;
 };
 
 }  // namespace rcx
