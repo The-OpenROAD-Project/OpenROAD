@@ -370,11 +370,12 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
               auto [nbrSegBegin, ignored] = obj->getPoints();
               auto psLNum = obj->getLayerNum();
               if (i == 0) {
-                minBegin
-                    = std::min(minBegin, (isH ? nbrSegBegin.x() : nbrSegBegin.y()));
+                minBegin = std::min(minBegin,
+                                    (isH ? nbrSegBegin.x() : nbrSegBegin.y()));
                 hasMinBegin = true;
               } else {
-                maxEnd = std::max(maxEnd, (isH ? nbrSegBegin.x() : nbrSegBegin.y()));
+                maxEnd = std::max(maxEnd,
+                                  (isH ? nbrSegBegin.x() : nbrSegBegin.y()));
                 hasMaxEnd = true;
               }
               if (psLNum == layerNum - 2) {
@@ -580,7 +581,8 @@ void FlexTAWorker::initCosts()
         }
       }
       if (trackLoc == std::numeric_limits<frCoord>::max()) {
-        std::cout << "Error: FlexTAWorker::initCosts does not find trackLoc" << std::endl;
+        std::cout << "Error: FlexTAWorker::initCosts does not find trackLoc"
+                  << std::endl;
         exit(1);
       }
       assignIroute_getCost(iroute.get(), trackLoc, drcCost);

@@ -965,8 +965,8 @@ BOOST_DATA_TEST_CASE(eol_min_max,
     if (max && legal)
       y += 10;  // right(510) > std::max(500) --> minMax violated --> legal
     else if (!max && !legal)
-      y += 100;      // right(600) & left(500) >= std::min(500) --> minMax is met
-                     // --> illegal
+      y += 100;  // right(600) & left(500) >= std::min(500) --> minMax is met
+                 // --> illegal
   } else if (legal)  // both sides need to violate minMax to have no
                      // eolSpacing violations
   {

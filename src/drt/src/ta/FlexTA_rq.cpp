@@ -122,7 +122,8 @@ void FlexTAWorkerRegionQuery::addCost(const Rect& box,
                                       frBlockObject* obj,
                                       frConstraint* con)
 {
-  impl_->costs_.at(layerNum).insert(std::make_pair(box, std::make_pair(obj, con)));
+  impl_->costs_.at(layerNum).insert(
+      std::make_pair(box, std::make_pair(obj, con)));
 }
 
 void FlexTAWorkerRegionQuery::removeCost(const Rect& box,
@@ -130,13 +131,15 @@ void FlexTAWorkerRegionQuery::removeCost(const Rect& box,
                                          frBlockObject* obj,
                                          frConstraint* con)
 {
-  impl_->costs_.at(layerNum).remove(std::make_pair(box, std::make_pair(obj, con)));
+  impl_->costs_.at(layerNum).remove(
+      std::make_pair(box, std::make_pair(obj, con)));
 }
 
 void FlexTAWorkerRegionQuery::queryCost(
     const Rect& box,
     const frLayerNum layerNum,
-    std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>& result) const
+    std::vector<rq_box_value_t<std::pair<frBlockObject*, frConstraint*>>>&
+        result) const
 {
   impl_->costs_.at(layerNum).query(bgi::intersects(box), back_inserter(result));
 }

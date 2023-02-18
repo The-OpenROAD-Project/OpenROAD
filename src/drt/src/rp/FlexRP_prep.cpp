@@ -1420,14 +1420,14 @@ void FlexRP::prep_via2viaForbiddenLen_widthViaMap(
   frCoord minReqDist;
   if (isCurrDirX) {
     minReqDist = std::max({cutBox2.xMax() - viaBox1.xMin(),
-                      viaBox1.xMax() - cutBox2.xMin(),
-                      cutBox1.xMax() - viaBox2.xMin(),
-                      viaBox2.xMax() - cutBox1.xMin()});
+                           viaBox1.xMax() - cutBox2.xMin(),
+                           cutBox1.xMax() - viaBox2.xMin(),
+                           viaBox2.xMax() - cutBox1.xMin()});
   } else {
     minReqDist = std::max({cutBox2.yMax() - viaBox1.yMin(),
-                      viaBox1.yMax() - cutBox2.yMin(),
-                      cutBox1.yMax() - viaBox2.yMin(),
-                      viaBox2.yMax() - cutBox1.yMin()});
+                           viaBox1.yMax() - cutBox2.yMin(),
+                           cutBox1.yMax() - viaBox2.yMin(),
+                           viaBox2.yMax() - cutBox1.yMin()});
   }
   forbiddenRanges.push_back(std::make_pair(0, minReqDist));
 

@@ -36,7 +36,8 @@
 
 using namespace fr;
 
-void FlexPA::getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns)
+void FlexPA::getPrefTrackPatterns(
+    std::vector<frTrackPattern*>& prefTrackPatterns)
 {
   for (auto& trackPattern : design_->getTopBlock()->getTrackPatterns()) {
     auto isVerticalTrack
@@ -124,8 +125,9 @@ bool FlexPA::hasTrackPattern(frTrackPattern* tp, const Rect& box)
 // must init all unique, including filler, macro, etc. to ensure frInst
 // pinAccessIdx is active
 void FlexPA::initUniqueInstance_main(
-    const std::map<frMaster*, std::tuple<frLayerNum, frLayerNum>, frBlockObjectComp>&
-        master2PinLayerRange,
+    const std::map<frMaster*,
+                   std::tuple<frLayerNum, frLayerNum>,
+                   frBlockObjectComp>& master2PinLayerRange,
     const std::vector<frTrackPattern*>& prefTrackPatterns)
 {
   std::vector<frInst*> ndrInsts;

@@ -1935,8 +1935,10 @@ static int64_t getOverlapArea(const Bin* bin,
                               const Instance* inst,
                               int dbu_per_micron)
 {
-  int rectLx = std::max(bin->lx(), inst->lx()), rectLy = std::max(bin->ly(), inst->ly()),
-      rectUx = std::min(bin->ux(), inst->ux()), rectUy = std::min(bin->uy(), inst->uy());
+  int rectLx = std::max(bin->lx(), inst->lx()),
+      rectLy = std::max(bin->ly(), inst->ly()),
+      rectUx = std::min(bin->ux(), inst->ux()),
+      rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;
@@ -1986,8 +1988,10 @@ static int64_t getOverlapArea(const Bin* bin,
 
 static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst)
 {
-  int rectLx = std::max(bin->lx(), inst->lx()), rectLy = std::max(bin->ly(), inst->ly()),
-      rectUx = std::min(bin->ux(), inst->ux()), rectUy = std::min(bin->uy(), inst->uy());
+  int rectLx = std::max(bin->lx(), inst->lx()),
+      rectLy = std::max(bin->ly(), inst->ly()),
+      rectUx = std::min(bin->ux(), inst->ux()),
+      rectUy = std::min(bin->uy(), inst->uy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;

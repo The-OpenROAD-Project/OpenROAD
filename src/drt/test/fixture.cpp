@@ -186,7 +186,8 @@ frInst* Fixture::makeInst(const char* name,
   tmpInst->setOrient(dbOrientType::R0);
   for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
     auto term = uTerm.get();
-    std::unique_ptr<frInstTerm> instTerm = std::make_unique<frInstTerm>(tmpInst, term);
+    std::unique_ptr<frInstTerm> instTerm
+        = std::make_unique<frInstTerm>(tmpInst, term);
     instTerm->setId(numTerms++);
     int pinCnt = term->getPins().size();
     instTerm->setAPSize(pinCnt);
