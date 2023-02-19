@@ -156,7 +156,6 @@ class TPpartitioner
   float path_wt_factor_;
   float snaking_wt_factor_;
   float early_stop_ratio_;
-  float max_num_moves_;
   int max_num_fm_pass_;
   int seed_;
   PartitionType partitioner_choice_ = PartitionType::INIT_RANDOM;

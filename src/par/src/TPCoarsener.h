@@ -91,6 +91,7 @@ class TPcoarsener
         thr_coarsen_iters_(thr_coarsen_iters),
         adj_diff_ratio_(adj_diff_ratio),
         seed_(seed),
+        vertex_order_choice_(Order::DEFAULT),
         logger_(logger)
   {
   }

@@ -455,7 +455,7 @@ void TritonPart::BuildHypergraph()
   std::vector<int> eind;
   std::vector<int> eptr;  // hyperedges
   eptr.push_back(static_cast<int>(eind.size()));
-  for (auto hyperedge : hyperedges_) {
+  for (const auto& hyperedge : hyperedges_) {
     eind.insert(eind.end(), hyperedge.begin(), hyperedge.end());
     eptr.push_back(static_cast<int>(eind.size()));
   }
@@ -1403,7 +1403,7 @@ std::vector<int> TritonPart::Partition2Way(
   std::vector<int> eind;
   std::vector<int> eptr;  // hyperedges
   eptr.push_back(static_cast<int>(eind.size()));
-  for (auto hyperedge : hyperedges) {
+  for (const auto& hyperedge : hyperedges) {
     eind.insert(eind.end(), hyperedge.begin(), hyperedge.end());
     eptr.push_back(static_cast<int>(eind.size()));
     std::vector<float> temp_weight{1.0};
