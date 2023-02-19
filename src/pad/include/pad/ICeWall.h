@@ -43,6 +43,7 @@
 
 #include "odb/dbTypes.h"
 #include "odb/geom.h"
+#include "odb/isotropy.h"
 
 namespace odb {
 class dbDatabase;
@@ -152,12 +153,26 @@ class ICeWall
   void assertMasterType(odb::dbMaster* master, odb::dbMasterType type) const;
   void assertMasterType(odb::dbInst* inst, odb::dbMasterType type) const;
 
+  std::string getRowName(const std::string& prefix, int row_index) const;
+  odb::Direction2D::Value getRowEdge(odb::dbRow* row) const;
+
   // Data members
   odb::dbDatabase* db_;
   utl::Logger* logger_;
 
   std::unique_ptr<RDLRouter> router_;
   std::unique_ptr<RDLGui> router_gui_;
+
+  constexpr static const char* fake_library_name_ = "FAKE_IO";
+  constexpr static const char* row_north_ = "IO_NORTH";
+  constexpr static const char* row_south_ = "IO_SOUTH";
+  constexpr static const char* row_east_ = "IO_EAST";
+  constexpr static const char* row_west_ = "IO_WEST";
+  constexpr static const char* corner_nw_ = "IO_CORNER_NORTH_WEST";
+  constexpr static const char* corner_ne_ = "IO_CORNER_NORTH_EAST";
+  constexpr static const char* corner_sw_ = "IO_CORNER_SOUTH_WEST";
+  constexpr static const char* corner_se_ = "IO_CORNER_SOUTH_EAST";
+  constexpr static const char* fill_prefix_ = "IO_FILL_";
 };
 
 }  // namespace pad
