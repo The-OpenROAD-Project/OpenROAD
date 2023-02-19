@@ -70,6 +70,7 @@ class VertexGain
   VertexGain(int arg_vertex, float arg_gain)
       : vertex_(arg_vertex), gain_(arg_gain)
   {
+    source_part_ = -1;
     potential_move_ = -1;
     status_ = true;
   }
@@ -156,6 +157,7 @@ class TPrefiner
         refiner_iters_(refiner_iters),
         refiner_choice_(refiner_choice),
         seed_(seed),
+        thr_he_size_skip_(0),
         e_wt_factors_(e_wt_factors),
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),
@@ -731,6 +733,7 @@ class TPilpRefine : public TPrefiner
                   logger)
   {
     wavefront_ = wavefront;
+    he_thr_ = 0;
   }
   void SolveIlpInstanceOR(std::shared_ptr<TPilpGraph> hgraph,
                           TP_partition& refined_partition,

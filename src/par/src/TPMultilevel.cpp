@@ -162,7 +162,7 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
   }
 
   // ILP initial partitioning
-  std::vector<int> ilp_part = solution_set[best_solution_id];
+  std::vector<int> ilp_part = solution_set.at(best_solution_id);
   // if (coarsest_hgraph->num_hyperedges_ > 1000) {
   if (coarsest_hgraph->num_hyperedges_ > 0) {
     partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
