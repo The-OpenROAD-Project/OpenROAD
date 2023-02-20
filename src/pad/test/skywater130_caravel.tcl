@@ -51,7 +51,6 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 337.0 {connect_4}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 357.0 {connect_5}
 place_pad -master sky130_ef_io__vssa_hvc_pad -row IO_SOUTH -location 439.0 {mgmt_vssa_hvclamp_pad}
-#[[[ord::get_db_block] findInst {mgmt_vssa_hvclamp_pad}] findITerm VSSA] connect [[ord::get_db_block] findNet {VSSA}]
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 526.0 {connect_6}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 546.0 {connect_7}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 566.0 {connect_8}
@@ -59,7 +58,6 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 606.0 {connect_10}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 626.0 {connect_11}
 place_pad -master sky130_fd_io__top_xres4v2 -row IO_SOUTH -location 708.0 {resetb_pad}
-#[[[ord::get_db_block] findInst {resetb_pad}] findITerm PAD] connect [[ord::get_db_block] findNet {resetb}]
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 795.0 {connect_12}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 815.0 {connect_13}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 835.0 {connect_14}
@@ -67,7 +65,6 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 875.0 {connect_16}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 895.0 {connect_17}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_SOUTH -location 982.0 {clock_pad}
-#[[[ord::get_db_block] findInst {clock_pad}] findITerm PAD] connect [[ord::get_db_block] findNet {clock}]
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1069.0 {connect_18}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1089.0 {connect_19}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1109.0 {connect_20}
@@ -75,7 +72,6 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1149.0 {connect_22}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1169.0 {connect_23}
 place_pad -master sky130_ef_io__vssd_lvc_pad -row IO_SOUTH -location 1251.0 {mgmt_vssd_lvclmap_pad}
-#[[[ord::get_db_block] findInst {mgmt_vssd_lvclmap_pad}] findITerm VSSD] connect [[ord::get_db_block] findNet {VSSD}]
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1338.0 {connect_24}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1358.0 {connect_25}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1378.0 {connect_26}
@@ -83,7 +79,6 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1418.0 {connect_28}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1438.0 {connect_29}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_SOUTH -location 1525.0 {flash_csb_pad}
-#[[[ord::get_db_block] findInst {flash_csb_pad}] findITerm PAD] connect [[ord::get_db_block] findNet {flash_csb}]
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1612.0 {connect_30}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1632.0 {connect_31}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1652.0 {connect_32}
@@ -91,7 +86,6 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1692.0 {connect_34}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1712.0 {connect_35}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_SOUTH -location 1799.0 {flash_clk_pad}
-#[[[ord::get_db_block] findInst {flash_clk_pad}] findITerm PAD] connect [[ord::get_db_block] findNet {flash_clk}]
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1886.0 {connect_36}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1906.0 {connect_37}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1926.0 {connect_38}
@@ -99,7 +93,6 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1966.0 {connect_40}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 1986.0 {connect_41}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_SOUTH -location 2073.0 {flash_io0_pad}
-#[[[ord::get_db_block] findInst {flash_io0_pad}] findITerm PAD] connect [[ord::get_db_block] findNet {flash_io0}]
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2160.0 {connect_42}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2180.0 {connect_43}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2200.0 {connect_44}
@@ -107,9 +100,7 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2240.0 {connect_46}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2260.0 {connect_47}
 place_pad -master sky130_ef_io__vdda_hvc_pad -row IO_SOUTH -location 3159.0 {mgmt_vdda_hvclamp_pad}
-#[[[ord::get_db_block] findInst {mgmt_vdda_hvclamp_pad}] findITerm VDDA] connect [[ord::get_db_block] findNet {VDDA_0}]
 place_pad -master sky130_ef_io__vssio_hvc_pad -row IO_SOUTH -location 2890.0 {mgmt_vssio_hvclamp_pad\[1\]}
-#[[[ord::get_db_block] findInst {mgmt_vssio_hvclamp_pad\[1\]}] findITerm VSSIO] connect [[ord::get_db_block] findNet {vssio}]
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2434.0 {connect_48}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2454.0 {connect_49}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2474.0 {connect_50}
@@ -135,119 +126,65 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 3326.0 {connect_70}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 3346.0 {connect_71}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_SOUTH -location 2347.0 {flash_io1_pad}
-#[[[ord::get_db_block] findInst {flash_io1_pad}] findITerm PAD] connect [[ord::get_db_block] findNet {flash_io1}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_SOUTH -location 2621.0 {gpio_pad}
-#[[[ord::get_db_block] findInst {gpio_pad}] findITerm PAD] connect [[ord::get_db_block] findNet {gpio}]
 place_pad -master sky130_ef_io__disconnect_vdda_slice_5um -row IO_EAST -location 350.0 {brk_vdda_0}
 place_pad -master sky130_ef_io__disconnect_vccd_slice_5um -row IO_EAST -location 355.0 {brk_vccd_0}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 580.0 {mprj_pads.area1_io_pad\[0\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[0\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[0]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 806.0 {mprj_pads.area1_io_pad\[1\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[1\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[1]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 1031.0 {mprj_pads.area1_io_pad\[2\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[2\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[2]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 1257.0 {mprj_pads.area1_io_pad\[3\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[3\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[3]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 1482.0 {mprj_pads.area1_io_pad\[4\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[4\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[4]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 1707.0 {mprj_pads.area1_io_pad\[5\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[5\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[5]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 1933.0 {mprj_pads.area1_io_pad\[6\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[6\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[6]}]
 place_pad -master sky130_ef_io__vssa_hvc_pad -row IO_EAST -location 2153.0 {user1_vssa_hvclamp_pad\[1\]}
-#[[[ord::get_db_block] findInst {user1_vssa_hvclamp_pad\[1\]}] findITerm VSSA] connect [[ord::get_db_block] findNet {VSSA}]
 place_pad -master sky130_ef_io__vssd_lvc_pad -row IO_EAST -location 2374.0 {user1_vssd_lvclmap_pad}
-#[[[ord::get_db_block] findInst {user1_vssd_lvclmap_pad}] findITerm VSSD] connect [[ord::get_db_block] findNet {VSSD}]
 place_pad -master sky130_ef_io__vdda_hvc_pad -row IO_EAST -location 2594.0 {user1_vdda_hvclamp_pad\[1\]}
-#[[[ord::get_db_block] findInst {user1_vdda_hvclamp_pad\[1\]}] findITerm VDDA] connect [[ord::get_db_block] findNet {vdda1}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 2819.0 {mprj_pads.area1_io_pad\[7\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[7\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[7]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 3045.0 {mprj_pads.area1_io_pad\[8\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[8\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[8]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 3270.0 {mprj_pads.area1_io_pad\[9\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[9\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[9]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 3496.0 {mprj_pads.area1_io_pad\[10\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[10\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[10]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 3721.0 {mprj_pads.area1_io_pad\[11\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[11\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[11]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 3946.0 {mprj_pads.area1_io_pad\[12\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[12\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[12]}]
 place_pad -master sky130_ef_io__vdda_hvc_pad -row IO_EAST -location 4167.0 {user1_vdda_hvclamp_pad\[0\]}
-#[[[ord::get_db_block] findInst {user1_vdda_hvclamp_pad\[0\]}] findITerm VDDA] connect [[ord::get_db_block] findNet {vdda1}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 4392.0 {mprj_pads.area1_io_pad\[13\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[13\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[13]}]
 place_pad -master sky130_ef_io__vccd_lvc_pad -row IO_EAST -location 4613.0 {user1_vccd_lvclamp_pad}
-#[[[ord::get_db_block] findInst {user1_vccd_lvclamp_pad}] findITerm VCCD] connect [[ord::get_db_block] findNet {vccd1}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_EAST -location 4838.0 {mprj_pads.area1_io_pad\[14\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[14\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[14]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 3130.0 {mprj_pads.area1_io_pad\[15\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[15\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[15]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 2621.0 {mprj_pads.area1_io_pad\[16\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[16\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[16]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 2364.0 {mprj_pads.area1_io_pad\[17\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area1_io_pad\[17\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[17]}]
 place_pad -master sky130_ef_io__vssa_hvc_pad -row IO_NORTH -location 2878.0 {user1_vssa_hvclamp_pad\[0\]}
-#[[[ord::get_db_block] findInst {user1_vssa_hvclamp_pad\[0\]}] findITerm VSSA] connect [[ord::get_db_block] findNet {VSSA}]
 place_pad -master sky130_ef_io__disconnect_vccd_slice_5um -row IO_NORTH -location 2181.0 {brk_vccd_1}
 place_pad -master sky130_ef_io__disconnect_vdda_slice_5um -row IO_NORTH -location 2176.0 {brk_vdda_1}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 1919.0 {mprj_pads.area2_io_pad\[0\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[0\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[18]}]
 place_pad -master sky130_ef_io__vssio_hvc_pad -row IO_NORTH -location 1667.0 {mgmt_vssio_hvclamp_pad\[0\]}
-#[[[ord::get_db_block] findInst {mgmt_vssio_hvclamp_pad\[0\]}] findITerm VSSIO] connect [[ord::get_db_block] findNet {vssio}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 1410.0 {mprj_pads.area2_io_pad\[1\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[1\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[19]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 1152.0 {mprj_pads.area2_io_pad\[2\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[2\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[20]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 895.0 {mprj_pads.area2_io_pad\[3\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[3\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[21]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 638.0 {mprj_pads.area2_io_pad\[4\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[4\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[22]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 381.0 {mprj_pads.area2_io_pad\[5\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[5\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[23]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 4771.0 {mprj_pads.area2_io_pad\[6\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[6\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[24]}]
 place_pad -master sky130_ef_io__vccd_lvc_pad -row IO_WEST -location 4560.0 {user2_vccd_lvclamp_pad}
-#[[[ord::get_db_block] findInst {user2_vccd_lvclamp_pad}] findITerm VCCD] connect [[ord::get_db_block] findNet {VCCD_2}]
 place_pad -master sky130_ef_io__vddio_hvc_pad -row IO_WEST -location 4349.0 {mgmt_vddio_hvclamp_pad\[1\]}
-#[[[ord::get_db_block] findInst {mgmt_vddio_hvclamp_pad\[1\]}] findITerm VDDIO] connect [[ord::get_db_block] findNet {vddio}]
 place_pad -master sky130_ef_io__vssa_hvc_pad -row IO_WEST -location 4138.0 {user2_vssa_hvclamp_pad}
-#[[[ord::get_db_block] findInst {user2_vssa_hvclamp_pad}] findITerm VSSA] connect [[ord::get_db_block] findNet {VSSA}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 3922.0 {mprj_pads.area2_io_pad\[7\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[7\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[25]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 3706.0 {mprj_pads.area2_io_pad\[8\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[8\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[26]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 3490.0 {mprj_pads.area2_io_pad\[9\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[9\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[27]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 3274.0 {mprj_pads.area2_io_pad\[10\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[10\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[28]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 3058.0 {mprj_pads.area2_io_pad\[11\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[11\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[29]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 2842.0 {mprj_pads.area2_io_pad\[12\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[12\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[30]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 2626.0 {mprj_pads.area2_io_pad\[13\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[13\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[31]}]
 place_pad -master sky130_ef_io__vdda_hvc_pad -row IO_WEST -location 2415.0 {user2_vdda_hvclamp_pad}
-#[[[ord::get_db_block] findInst {user2_vdda_hvclamp_pad}] findITerm VDDA] connect [[ord::get_db_block] findNet {VDDA_2}]
 place_pad -master sky130_ef_io__vssd_lvc_pad -row IO_WEST -location 2204.0 {user2_vssd_lvclmap_pad}
-#[[[ord::get_db_block] findInst {user2_vssd_lvclmap_pad}] findITerm VSSD] connect [[ord::get_db_block] findNet {VSSD}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 1988.0 {mprj_pads.area2_io_pad\[14\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[14\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[32]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 1772.0 {mprj_pads.area2_io_pad\[15\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[15\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[33]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 1556.0 {mprj_pads.area2_io_pad\[16\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[16\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[34]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 1340.0 {mprj_pads.area2_io_pad\[17\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[17\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[35]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 1124.0 {mprj_pads.area2_io_pad\[18\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[18\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[36]}]
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_WEST -location 908.0 {mprj_pads.area2_io_pad\[19\]}
-#[[[ord::get_db_block] findInst {mprj_pads.area2_io_pad\[19\]}] findITerm PAD] connect [[ord::get_db_block] findNet {mprj_io[37]}]
 place_pad -master sky130_ef_io__disconnect_vccd_slice_5um -row IO_WEST -location 767.0 {brk_vccd_2}
 place_pad -master sky130_ef_io__disconnect_vdda_slice_5um -row IO_WEST -location 762.0 {brk_vdda_2}
 place_pad -master sky130_ef_io__vddio_hvc_pad -row IO_WEST -location 551.0 {mgmt_vddio_hvclamp_pad\[0\]}
-#[[[ord::get_db_block] findInst {mgmt_vddio_hvclamp_pad\[0\]}] findITerm VDDIO] connect [[ord::get_db_block] findNet {vddio}]
 place_pad -master sky130_ef_io__vccd_lvc_pad -row IO_WEST -location 340.0 {mgmt_vccd_lvclamp_pad}
-##[[[ord::get_db_block] findInst {mgmt_vccd_lvclamp_pad}] findITerm VCCD] connect [[ord::get_db_block] findNet {VCCD_0}]
 
 place_corners sky130_ef_io__corner_pad
 

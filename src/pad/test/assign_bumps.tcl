@@ -15,374 +15,374 @@ make_io_sites -horizontal_site IOSITE -vertical_site IOSITE -corner_site IOSITE 
 
 ######## Place Pads ########
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 205.0 u_ddr_dm_1_o
-[[[ord::get_db_block] findInst u_ddr_dm_1_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dm_1_o]
+pad::connect_iterm u_ddr_dm_1_o PAD p_ddr_dm_1_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 335.0 u_ddr_dqs_n_1_io
-[[[ord::get_db_block] findInst u_ddr_dqs_n_1_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dqs_n_1_io]
+pad::connect_iterm u_ddr_dqs_n_1_io PAD p_ddr_dqs_n_1_io
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 365.0 u_vzz_0
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 495.0 u_v18_0
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 525.0 u_ddr_dqs_p_1_io
-[[[ord::get_db_block] findInst u_ddr_dqs_p_1_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dqs_p_1_io]
+pad::connect_iterm u_ddr_dqs_p_1_io PAD p_ddr_dqs_p_1_io
 place_pad -master PADCELL_VDD_V -row IO_SOUTH -location 555.0 u_vdd_0
 place_pad -master PADCELL_VSS_V -row IO_SOUTH -location 625.0 u_vss_0
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 655.0 u_ddr_ba_2_o
-[[[ord::get_db_block] findInst u_ddr_ba_2_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_ba_2_o]
+pad::connect_iterm u_ddr_ba_2_o PAD p_ddr_ba_2_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 690.0 u_ddr_ba_1_o
-[[[ord::get_db_block] findInst u_ddr_ba_1_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_ba_1_o]
+pad::connect_iterm u_ddr_ba_1_o PAD p_ddr_ba_1_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 720.0 u_ddr_ba_0_o
-[[[ord::get_db_block] findInst u_ddr_ba_0_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_ba_0_o]
+pad::connect_iterm u_ddr_ba_0_o PAD p_ddr_ba_0_o
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 785.0 u_vzz_1
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 815.0 u_v18_1
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 845.0 u_ddr_addr_15_o
-[[[ord::get_db_block] findInst u_ddr_addr_15_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_15_o]
+pad::connect_iterm u_ddr_addr_15_o PAD p_ddr_addr_15_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 875.0 u_ddr_addr_14_o
-[[[ord::get_db_block] findInst u_ddr_addr_14_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_14_o]
+pad::connect_iterm u_ddr_addr_14_o PAD p_ddr_addr_14_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 910.0 u_ddr_addr_13_o
-[[[ord::get_db_block] findInst u_ddr_addr_13_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_13_o]
+pad::connect_iterm u_ddr_addr_13_o PAD p_ddr_addr_13_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 945.0 u_ddr_addr_12_o
-[[[ord::get_db_block] findInst u_ddr_addr_12_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_12_o]
+pad::connect_iterm u_ddr_addr_12_o PAD p_ddr_addr_12_o
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 975.0 u_vzz_2
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 1005.0 u_v18_2
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1035.0 u_ddr_addr_11_o
-[[[ord::get_db_block] findInst u_ddr_addr_11_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_11_o]
+pad::connect_iterm u_ddr_addr_11_o PAD p_ddr_addr_11_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1065.0 u_ddr_addr_10_o
-[[[ord::get_db_block] findInst u_ddr_addr_10_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_10_o]
+pad::connect_iterm u_ddr_addr_10_o PAD p_ddr_addr_10_o
 place_pad -master PADCELL_VDD_V -row IO_SOUTH -location 1105.0 u_vdd_1
 place_pad -master PADCELL_VSS_V -row IO_SOUTH -location 1135.0 u_vss_1
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1170.0 u_ddr_addr_9_o
-[[[ord::get_db_block] findInst u_ddr_addr_9_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_9_o]
+pad::connect_iterm u_ddr_addr_9_o PAD p_ddr_addr_9_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1200.0 u_ddr_addr_8_o
-[[[ord::get_db_block] findInst u_ddr_addr_8_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_8_o]
+pad::connect_iterm u_ddr_addr_8_o PAD p_ddr_addr_8_o
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 1230.0 u_vzz_3
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 1265.0 u_v18_3
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1295.0 u_ddr_addr_7_o
-[[[ord::get_db_block] findInst u_ddr_addr_7_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_7_o]
+pad::connect_iterm u_ddr_addr_7_o PAD p_ddr_addr_7_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1325.0 u_ddr_addr_6_o
-[[[ord::get_db_block] findInst u_ddr_addr_6_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_6_o]
+pad::connect_iterm u_ddr_addr_6_o PAD p_ddr_addr_6_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1360.0 u_ddr_addr_5_o
-[[[ord::get_db_block] findInst u_ddr_addr_5_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_5_o]
+pad::connect_iterm u_ddr_addr_5_o PAD p_ddr_addr_5_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1390.0 u_ddr_addr_4_o
-[[[ord::get_db_block] findInst u_ddr_addr_4_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_4_o]
+pad::connect_iterm u_ddr_addr_4_o PAD p_ddr_addr_4_o
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 1425.0 u_vzz_4
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 1455.0 u_v18_4
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1485.0 u_ddr_addr_3_o
-[[[ord::get_db_block] findInst u_ddr_addr_3_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_3_o]
+pad::connect_iterm u_ddr_addr_3_o PAD p_ddr_addr_3_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1515.0 u_ddr_addr_2_o
-[[[ord::get_db_block] findInst u_ddr_addr_2_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_2_o]
+pad::connect_iterm u_ddr_addr_2_o PAD p_ddr_addr_2_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1550.0 u_ddr_addr_1_o
-[[[ord::get_db_block] findInst u_ddr_addr_1_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_1_o]
+pad::connect_iterm u_ddr_addr_1_o PAD p_ddr_addr_1_o
 place_pad -master PADCELL_VDD_V -row IO_SOUTH -location 1585.0 u_vdd_2
 place_pad -master PADCELL_VSS_V -row IO_SOUTH -location 1615.0 u_vss_2
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1645.0 u_ddr_addr_0_o
-[[[ord::get_db_block] findInst u_ddr_addr_0_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_addr_0_o]
+pad::connect_iterm u_ddr_addr_0_o PAD p_ddr_addr_0_o
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 1675.0 u_vzz_5
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 1705.0 u_v18_5
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1745.0 u_ddr_odt_o
-[[[ord::get_db_block] findInst u_ddr_odt_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_odt_o]
+pad::connect_iterm u_ddr_odt_o PAD p_ddr_odt_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1775.0 u_ddr_reset_n_o
-[[[ord::get_db_block] findInst u_ddr_reset_n_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_reset_n_o]
+pad::connect_iterm u_ddr_reset_n_o PAD p_ddr_reset_n_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1810.0 u_ddr_we_n_o
-[[[ord::get_db_block] findInst u_ddr_we_n_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_we_n_o]
+pad::connect_iterm u_ddr_we_n_o PAD p_ddr_we_n_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1840.0 u_ddr_cas_n_o
-[[[ord::get_db_block] findInst u_ddr_cas_n_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_cas_n_o]
+pad::connect_iterm u_ddr_cas_n_o PAD p_ddr_cas_n_o
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 1870.0 u_vzz_6
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 1905.0 u_v18_6
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1935.0 u_ddr_ras_n_o
-[[[ord::get_db_block] findInst u_ddr_ras_n_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_ras_n_o]
+pad::connect_iterm u_ddr_ras_n_o PAD p_ddr_ras_n_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 1965.0 u_ddr_cs_n_o
-[[[ord::get_db_block] findInst u_ddr_cs_n_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_cs_n_o]
+pad::connect_iterm u_ddr_cs_n_o PAD p_ddr_cs_n_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 2000.0 u_ddr_cke_o
-[[[ord::get_db_block] findInst u_ddr_cke_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_cke_o]
+pad::connect_iterm u_ddr_cke_o PAD p_ddr_cke_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 2030.0 u_ddr_ck_n_o
-[[[ord::get_db_block] findInst u_ddr_ck_n_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_ck_n_o]
+pad::connect_iterm u_ddr_ck_n_o PAD p_ddr_ck_n_o
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 2065.0 u_vzz_7
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 2095.0 u_v18_7
 place_pad -master PADCELL_VDD_V -row IO_SOUTH -location 2125.0 u_vdd_3
 place_pad -master PADCELL_VSS_V -row IO_SOUTH -location 2155.0 u_vss_3
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 2255.0 u_ddr_ck_p_o
-[[[ord::get_db_block] findInst u_ddr_ck_p_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_ck_p_o]
+pad::connect_iterm u_ddr_ck_p_o PAD p_ddr_ck_p_o
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 2285.0 u_ddr_dqs_n_2_io
-[[[ord::get_db_block] findInst u_ddr_dqs_n_2_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dqs_n_2_io]
+pad::connect_iterm u_ddr_dqs_n_2_io PAD p_ddr_dqs_n_2_io
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 2320.0 u_ddr_dqs_p_2_io
-[[[ord::get_db_block] findInst u_ddr_dqs_p_2_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dqs_p_2_io]
+pad::connect_iterm u_ddr_dqs_p_2_io PAD p_ddr_dqs_p_2_io
 place_pad -master PADCELL_SIG_V -row IO_SOUTH -location 2415.0 u_ddr_dm_2_o
-[[[ord::get_db_block] findInst u_ddr_dm_2_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dm_2_o]
+pad::connect_iterm u_ddr_dm_2_o PAD p_ddr_dm_2_o
 place_pad -master PADCELL_VSSIO_V -row IO_SOUTH -location 2445.0 u_vzz_8
 place_pad -master PADCELL_VDDIO_V -row IO_SOUTH -location 2605.0 u_v18_8
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 205.0 u_ddr_dq_23_io
-[[[ord::get_db_block] findInst u_ddr_dq_23_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_23_io]
+pad::connect_iterm u_ddr_dq_23_io PAD p_ddr_dq_23_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 335.0 u_ddr_dq_22_io
-[[[ord::get_db_block] findInst u_ddr_dq_22_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_22_io]
+pad::connect_iterm u_ddr_dq_22_io PAD p_ddr_dq_22_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 370.0 u_ddr_dq_21_io
-[[[ord::get_db_block] findInst u_ddr_dq_21_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_21_io]
+pad::connect_iterm u_ddr_dq_21_io PAD p_ddr_dq_21_io
 place_pad -master PADCELL_VDD_V -row IO_EAST -location 495.0 u_vdd_4
 place_pad -master PADCELL_VSS_V -row IO_EAST -location 525.0 u_vss_4
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 555.0 u_ddr_dq_20_io
-[[[ord::get_db_block] findInst u_ddr_dq_20_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_20_io]
+pad::connect_iterm u_ddr_dq_20_io PAD p_ddr_dq_20_io
 place_pad -master PADCELL_VSSIO_H -row IO_EAST -location 625.0 u_vzz_9
 place_pad -master PADCELL_VDDIO_H -row IO_EAST -location 655.0 u_v18_9
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 685.0 u_ddr_dq_19_io
-[[[ord::get_db_block] findInst u_ddr_dq_19_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_19_io]
+pad::connect_iterm u_ddr_dq_19_io PAD p_ddr_dq_19_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 715.0 u_ddr_dq_18_io
-[[[ord::get_db_block] findInst u_ddr_dq_18_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_18_io]
+pad::connect_iterm u_ddr_dq_18_io PAD p_ddr_dq_18_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 785.0 u_ddr_dq_17_io
-[[[ord::get_db_block] findInst u_ddr_dq_17_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_17_io]
+pad::connect_iterm u_ddr_dq_17_io PAD p_ddr_dq_17_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 815.0 u_ddr_dq_16_io
-[[[ord::get_db_block] findInst u_ddr_dq_16_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_16_io]
+pad::connect_iterm u_ddr_dq_16_io PAD p_ddr_dq_16_io
 place_pad -master PADCELL_VSSIO_H -row IO_EAST -location 845.0 u_vzz_10
 place_pad -master PADCELL_VDDIO_H -row IO_EAST -location 875.0 u_v18_10
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 905.0 u_ddr_dq_31_io
-[[[ord::get_db_block] findInst u_ddr_dq_31_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_31_io]
+pad::connect_iterm u_ddr_dq_31_io PAD p_ddr_dq_31_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 945.0 u_ddr_dq_30_io
-[[[ord::get_db_block] findInst u_ddr_dq_30_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_30_io]
+pad::connect_iterm u_ddr_dq_30_io PAD p_ddr_dq_30_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 980.0 u_ddr_dq_29_io
-[[[ord::get_db_block] findInst u_ddr_dq_29_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_29_io]
+pad::connect_iterm u_ddr_dq_29_io PAD p_ddr_dq_29_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1010.0 u_ddr_dq_28_io
-[[[ord::get_db_block] findInst u_ddr_dq_28_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_28_io]
+pad::connect_iterm u_ddr_dq_28_io PAD p_ddr_dq_28_io
 place_pad -master PADCELL_VSSIO_H -row IO_EAST -location 1040.0 u_vzz_11
 place_pad -master PADCELL_VDDIO_H -row IO_EAST -location 1070.0 u_v18_11
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1105.0 u_ddr_dq_27_io
-[[[ord::get_db_block] findInst u_ddr_dq_27_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_27_io]
+pad::connect_iterm u_ddr_dq_27_io PAD p_ddr_dq_27_io
 place_pad -master PADCELL_VDD_V -row IO_EAST -location 1135.0 u_vdd_5
 place_pad -master PADCELL_VSS_V -row IO_EAST -location 1165.0 u_vss_5
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1195.0 u_ddr_dq_26_io
-[[[ord::get_db_block] findInst u_ddr_dq_26_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_26_io]
+pad::connect_iterm u_ddr_dq_26_io PAD p_ddr_dq_26_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1230.0 u_ddr_dq_25_io
-[[[ord::get_db_block] findInst u_ddr_dq_25_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_25_io]
+pad::connect_iterm u_ddr_dq_25_io PAD p_ddr_dq_25_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1265.0 u_ddr_dq_24_io
-[[[ord::get_db_block] findInst u_ddr_dq_24_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_24_io]
+pad::connect_iterm u_ddr_dq_24_io PAD p_ddr_dq_24_io
 place_pad -master PADCELL_VSSIO_H -row IO_EAST -location 1295.0 u_vzz_12
 place_pad -master PADCELL_VDDIO_H -row IO_EAST -location 1325.0 u_v18_12
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1355.0 u_ddr_dqs_n_3_io
-[[[ord::get_db_block] findInst u_ddr_dqs_n_3_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dqs_n_3_io]
+pad::connect_iterm u_ddr_dqs_n_3_io PAD p_ddr_dqs_n_3_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1385.0 u_ddr_dqs_p_3_io
-[[[ord::get_db_block] findInst u_ddr_dqs_p_3_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dqs_p_3_io]
+pad::connect_iterm u_ddr_dqs_p_3_io PAD p_ddr_dqs_p_3_io
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1425.0 u_ddr_dm_3_o
-[[[ord::get_db_block] findInst u_ddr_dm_3_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dm_3_o]
+pad::connect_iterm u_ddr_dm_3_o PAD p_ddr_dm_3_o
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1455.0 u_bsg_tag_clk_i
-[[[ord::get_db_block] findInst u_bsg_tag_clk_i] findITerm PAD] connect [[ord::get_db_block] findNet p_bsg_tag_clk_i]
+pad::connect_iterm u_bsg_tag_clk_i PAD p_bsg_tag_clk_i
 place_pad -master PADCELL_VSSIO_H -row IO_EAST -location 1485.0 u_vzz_13
 place_pad -master PADCELL_VDDIO_H -row IO_EAST -location 1515.0 u_v18_13
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1545.0 u_bsg_tag_data_i
-[[[ord::get_db_block] findInst u_bsg_tag_data_i] findITerm PAD] connect [[ord::get_db_block] findNet p_bsg_tag_data_i]
+pad::connect_iterm u_bsg_tag_data_i PAD p_bsg_tag_data_i
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1585.0 u_bsg_tag_en_i
-[[[ord::get_db_block] findInst u_bsg_tag_en_i] findITerm PAD] connect [[ord::get_db_block] findNet p_bsg_tag_en_i]
+pad::connect_iterm u_bsg_tag_en_i PAD p_bsg_tag_en_i
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1620.0 u_ci_8_i
-[[[ord::get_db_block] findInst u_ci_8_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_8_i]
+pad::connect_iterm u_ci_8_i PAD p_ci_8_i
 place_pad -master PADCELL_VDD_V -row IO_EAST -location 1650.0 u_vdd_6
 place_pad -master PADCELL_VSS_V -row IO_EAST -location 1680.0 u_vss_6
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1710.0 u_ci_7_i
-[[[ord::get_db_block] findInst u_ci_7_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_7_i]
+pad::connect_iterm u_ci_7_i PAD p_ci_7_i
 place_pad -master PADCELL_VSSIO_H -row IO_EAST -location 1745.0 u_vzz_14
 place_pad -master PADCELL_VDDIO_H -row IO_EAST -location 1775.0 u_v18_14
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1805.0 u_ci_6_i
-[[[ord::get_db_block] findInst u_ci_6_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_6_i]
+pad::connect_iterm u_ci_6_i PAD p_ci_6_i
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1835.0 u_ci_5_i
-[[[ord::get_db_block] findInst u_ci_5_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_5_i]
+pad::connect_iterm u_ci_5_i PAD p_ci_5_i
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1870.0 u_ci_v_i
-[[[ord::get_db_block] findInst u_ci_v_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_v_i]
+pad::connect_iterm u_ci_v_i PAD p_ci_v_i
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1905.0 u_ci_tkn_o
-[[[ord::get_db_block] findInst u_ci_tkn_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_tkn_o]
+pad::connect_iterm u_ci_tkn_o PAD p_ci_tkn_o
 place_pad -master PADCELL_VSSIO_H -row IO_EAST -location 1935.0 u_vzz_15
 place_pad -master PADCELL_VDDIO_H -row IO_EAST -location 1965.0 u_v18_15
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 1995.0 u_ci_clk_i
-[[[ord::get_db_block] findInst u_ci_clk_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_clk_i]
+pad::connect_iterm u_ci_clk_i PAD p_ci_clk_i
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 2025.0 u_ci_4_i
-[[[ord::get_db_block] findInst u_ci_4_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_4_i]
+pad::connect_iterm u_ci_4_i PAD p_ci_4_i
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 2065.0 u_ci_3_i
-[[[ord::get_db_block] findInst u_ci_3_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_3_i]
+pad::connect_iterm u_ci_3_i PAD p_ci_3_i
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 2095.0 u_ci_2_i
-[[[ord::get_db_block] findInst u_ci_2_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_2_i]
+pad::connect_iterm u_ci_2_i PAD p_ci_2_i
 place_pad -master PADCELL_VSSIO_H -row IO_EAST -location 2125.0 u_vzz_16
 place_pad -master PADCELL_VDDIO_H -row IO_EAST -location 2155.0 u_v18_16
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 2255.0 u_ci_1_i
-[[[ord::get_db_block] findInst u_ci_1_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_1_i]
+pad::connect_iterm u_ci_1_i PAD p_ci_1_i
 place_pad -master PADCELL_VDD_V -row IO_EAST -location 2285.0 u_vdd_7
 place_pad -master PADCELL_VSS_V -row IO_EAST -location 2315.0 u_vss_7
 place_pad -master PADCELL_SIG_H -row IO_EAST -location 2415.0 u_ci_0_i
-[[[ord::get_db_block] findInst u_ci_0_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci_0_i]
+pad::connect_iterm u_ci_0_i PAD p_ci_0_i
 place_pad -master PADCELL_SIG_V -row IO_EAST -location 2450.0 u_ci2_8_o
-[[[ord::get_db_block] findInst u_ci2_8_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_8_o]
+pad::connect_iterm u_ci2_8_o PAD p_ci2_8_o
 place_pad -master PADCELL_SIG_V -row IO_EAST -location 2605.0 u_ci2_7_o
-[[[ord::get_db_block] findInst u_ci2_7_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_7_o]
+pad::connect_iterm u_ci2_7_o PAD p_ci2_7_o
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 2795.0 u_vzz_17
 place_pad -master PADCELL_VDDIO_V -row IO_NORTH -location 2665.0 u_v18_17
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2635.0 u_ci2_6_o
-[[[ord::get_db_block] findInst u_ci2_6_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_6_o]
+pad::connect_iterm u_ci2_6_o PAD p_ci2_6_o
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2505.0 u_ci2_5_o
-[[[ord::get_db_block] findInst u_ci2_5_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_5_o]
+pad::connect_iterm u_ci2_5_o PAD p_ci2_5_o
 place_pad -master PADCELL_VDD_H -row IO_NORTH -location 2475.0 u_vdd_8
 place_pad -master PADCELL_VSS_H -row IO_NORTH -location 2445.0 u_vss_8
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2375.0 u_ci2_v_o
-[[[ord::get_db_block] findInst u_ci2_v_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_v_o]
+pad::connect_iterm u_ci2_v_o PAD p_ci2_v_o
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2345.0 u_ci2_tkn_i
-[[[ord::get_db_block] findInst u_ci2_tkn_i] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_tkn_i]
+pad::connect_iterm u_ci2_tkn_i PAD p_ci2_tkn_i
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 2315.0 u_vzz_18
 place_pad -master PADCELL_VDDIO_V -row IO_NORTH -location 2285.0 u_v18_18
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2220.0 u_ci2_clk_o
-[[[ord::get_db_block] findInst u_ci2_clk_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_clk_o]
+pad::connect_iterm u_ci2_clk_o PAD p_ci2_clk_o
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2190.0 u_ci2_4_o
-[[[ord::get_db_block] findInst u_ci2_4_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_4_o]
+pad::connect_iterm u_ci2_4_o PAD p_ci2_4_o
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2135.0 u_ci2_3_o
-[[[ord::get_db_block] findInst u_ci2_3_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_3_o]
+pad::connect_iterm u_ci2_3_o PAD p_ci2_3_o
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2110.0 u_ci2_2_o
-[[[ord::get_db_block] findInst u_ci2_2_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_2_o]
+pad::connect_iterm u_ci2_2_o PAD p_ci2_2_o
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 2085.0 u_vzz_19
 place_pad -master PADCELL_VDDIO_V -row IO_NORTH -location 2060.0 u_v18_19
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2030.0 u_ci2_1_o
-[[[ord::get_db_block] findInst u_ci2_1_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_1_o]
+pad::connect_iterm u_ci2_1_o PAD p_ci2_1_o
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 2000.0 u_ci2_0_o
-[[[ord::get_db_block] findInst u_ci2_0_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ci2_0_o]
+pad::connect_iterm u_ci2_0_o PAD p_ci2_0_o
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1965.0 u_core_async_reset_i
-[[[ord::get_db_block] findInst u_core_async_reset_i] findITerm PAD] connect [[ord::get_db_block] findNet p_core_async_reset_i]
+pad::connect_iterm u_core_async_reset_i PAD p_core_async_reset_i
 place_pad -master PADCELL_VDD_H -row IO_NORTH -location 1935.0 u_vdd_9
 place_pad -master PADCELL_VSS_H -row IO_NORTH -location 1900.0 u_vss_9
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1870.0 u_sel_2_i
-[[[ord::get_db_block] findInst u_sel_2_i] findITerm PAD] connect [[ord::get_db_block] findNet p_sel_2_i]
+pad::connect_iterm u_sel_2_i PAD p_sel_2_i
 place_pad -master PADCELL_VDDIO_V -row IO_NORTH -location 1835.0 u_v18_20
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 1805.0 u_vzz_20
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1775.0 u_sel_1_i
-[[[ord::get_db_block] findInst u_sel_1_i] findITerm PAD] connect [[ord::get_db_block] findNet p_sel_1_i]
+pad::connect_iterm u_sel_1_i PAD p_sel_1_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1740.0 u_sel_0_i
-[[[ord::get_db_block] findInst u_sel_0_i] findITerm PAD] connect [[ord::get_db_block] findNet p_sel_0_i]
+pad::connect_iterm u_sel_0_i PAD p_sel_0_i
 place_pad -master PADCELL_FBRK_V -row IO_NORTH -location 1735.0 u_brk0
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1705.0 u_misc_o
-[[[ord::get_db_block] findInst u_misc_o] findITerm PAD] connect [[ord::get_db_block] findNet p_misc_o]
+pad::connect_iterm u_misc_o PAD p_misc_o
 place_pad -master PADCELL_VSS_V -row IO_NORTH -location 1680.0 u_vss_pll
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1655.0 u_clk_async_reset_i
-[[[ord::get_db_block] findInst u_clk_async_reset_i] findITerm PAD] connect [[ord::get_db_block] findNet p_clk_async_reset_i]
+pad::connect_iterm u_clk_async_reset_i PAD p_clk_async_reset_i
 place_pad -master PADCELL_VDD_V -row IO_NORTH -location 1630.0 u_vdd_pll
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1580.0 u_clk_o
-[[[ord::get_db_block] findInst u_clk_o] findITerm PAD] connect [[ord::get_db_block] findNet p_clk_o]
+pad::connect_iterm u_clk_o PAD p_clk_o
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 1550.0 u_vzz_21
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1520.0 u_clk_C_i
-[[[ord::get_db_block] findInst u_clk_C_i] findITerm PAD] connect [[ord::get_db_block] findNet p_clk_C_i]
+pad::connect_iterm u_clk_C_i PAD p_clk_C_i
 place_pad -master PADCELL_VDDIO_V -row IO_NORTH -location 1490.0 u_v18_21
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1455.0 u_clk_B_i
-[[[ord::get_db_block] findInst u_clk_B_i] findITerm PAD] connect [[ord::get_db_block] findNet p_clk_B_i]
+pad::connect_iterm u_clk_B_i PAD p_clk_B_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1415.0 u_clk_A_i
-[[[ord::get_db_block] findInst u_clk_A_i] findITerm PAD] connect [[ord::get_db_block] findNet p_clk_A_i]
+pad::connect_iterm u_clk_A_i PAD p_clk_A_i
 place_pad -master PADCELL_VDD_H -row IO_NORTH -location 1385.0 u_vdd_10
 place_pad -master PADCELL_VSS_H -row IO_NORTH -location 1355.0 u_vss_10
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 1325.0 u_vzz_22
 place_pad -master PADCELL_VDDIO_V -row IO_NORTH -location 1295.0 u_v18_22
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1260.0 u_co_8_i
-[[[ord::get_db_block] findInst u_co_8_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_8_i]
+pad::connect_iterm u_co_8_i PAD p_co_8_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1230.0 u_co_7_i
-[[[ord::get_db_block] findInst u_co_7_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_7_i]
+pad::connect_iterm u_co_7_i PAD p_co_7_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1195.0 u_co_6_i
-[[[ord::get_db_block] findInst u_co_6_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_6_i]
+pad::connect_iterm u_co_6_i PAD p_co_6_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1165.0 u_co_5_i
-[[[ord::get_db_block] findInst u_co_5_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_5_i]
+pad::connect_iterm u_co_5_i PAD p_co_5_i
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 1135.0 u_vzz_23
 place_pad -master PADCELL_VDDIO_V -row IO_NORTH -location 1100.0 u_v18_23
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1070.0 u_co_v_i
-[[[ord::get_db_block] findInst u_co_v_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_v_i]
+pad::connect_iterm u_co_v_i PAD p_co_v_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1040.0 u_co_tkn_o
-[[[ord::get_db_block] findInst u_co_tkn_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co_tkn_o]
+pad::connect_iterm u_co_tkn_o PAD p_co_tkn_o
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 1005.0 u_co_clk_i
-[[[ord::get_db_block] findInst u_co_clk_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_clk_i]
+pad::connect_iterm u_co_clk_i PAD p_co_clk_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 975.0 u_co_4_i
-[[[ord::get_db_block] findInst u_co_4_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_4_i]
+pad::connect_iterm u_co_4_i PAD p_co_4_i
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 935.0 u_vzz_24
 place_pad -master PADCELL_VDDIO_V -row IO_NORTH -location 905.0 u_v18_24
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 875.0 u_co_3_i
-[[[ord::get_db_block] findInst u_co_3_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_3_i]
+pad::connect_iterm u_co_3_i PAD p_co_3_i
 place_pad -master PADCELL_VDD_H -row IO_NORTH -location 845.0 u_vdd_11
 place_pad -master PADCELL_VSS_H -row IO_NORTH -location 750.0 u_vss_11
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 720.0 u_co_2_i
-[[[ord::get_db_block] findInst u_co_2_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_2_i]
+pad::connect_iterm u_co_2_i PAD p_co_2_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 685.0 u_co_1_i
-[[[ord::get_db_block] findInst u_co_1_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_1_i]
+pad::connect_iterm u_co_1_i PAD p_co_1_i
 place_pad -master PADCELL_SIG_V -row IO_NORTH -location 585.0 u_co_0_i
-[[[ord::get_db_block] findInst u_co_0_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co_0_i]
+pad::connect_iterm u_co_0_i PAD p_co_0_i
 place_pad -master PADCELL_VSSIO_V -row IO_NORTH -location 555.0 u_vzz_25
 place_pad -master PADCELL_VDDIO_H -row IO_NORTH -location 395.0 u_v18_25
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2795.0 u_co2_8_o
-[[[ord::get_db_block] findInst u_co2_8_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_8_o]
+pad::connect_iterm u_co2_8_o PAD p_co2_8_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2670.0 u_co2_7_o
-[[[ord::get_db_block] findInst u_co2_7_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_7_o]
+pad::connect_iterm u_co2_7_o PAD p_co2_7_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2635.0 u_co2_6_o
-[[[ord::get_db_block] findInst u_co2_6_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_6_o]
+pad::connect_iterm u_co2_6_o PAD p_co2_6_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2505.0 u_co2_5_o
-[[[ord::get_db_block] findInst u_co2_5_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_5_o]
+pad::connect_iterm u_co2_5_o PAD p_co2_5_o
 place_pad -master PADCELL_VDD_H -row IO_WEST -location 2475.0 u_vdd_12
 place_pad -master PADCELL_VSS_H -row IO_WEST -location 2445.0 u_vss_12
 place_pad -master PADCELL_VSSIO_H -row IO_WEST -location 2385.0 u_vzz_26
 place_pad -master PADCELL_VDDIO_H -row IO_WEST -location 2355.0 u_v18_26
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2325.0 u_co2_v_o
-[[[ord::get_db_block] findInst u_co2_v_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_v_o]
+pad::connect_iterm u_co2_v_o PAD p_co2_v_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2295.0 u_co2_tkn_i
-[[[ord::get_db_block] findInst u_co2_tkn_i] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_tkn_i]
+pad::connect_iterm u_co2_tkn_i PAD p_co2_tkn_i
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2215.0 u_co2_clk_o
-[[[ord::get_db_block] findInst u_co2_clk_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_clk_o]
+pad::connect_iterm u_co2_clk_o PAD p_co2_clk_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2185.0 u_co2_4_o
-[[[ord::get_db_block] findInst u_co2_4_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_4_o]
+pad::connect_iterm u_co2_4_o PAD p_co2_4_o
 place_pad -master PADCELL_VSSIO_H -row IO_WEST -location 2155.0 u_vzz_27
 place_pad -master PADCELL_VDDIO_H -row IO_WEST -location 2125.0 u_v18_27
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2095.0 u_co2_3_o
-[[[ord::get_db_block] findInst u_co2_3_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_3_o]
+pad::connect_iterm u_co2_3_o PAD p_co2_3_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2060.0 u_co2_2_o
-[[[ord::get_db_block] findInst u_co2_2_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_2_o]
+pad::connect_iterm u_co2_2_o PAD p_co2_2_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 2025.0 u_co2_1_o
-[[[ord::get_db_block] findInst u_co2_1_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_1_o]
+pad::connect_iterm u_co2_1_o PAD p_co2_1_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1995.0 u_co2_0_o
-[[[ord::get_db_block] findInst u_co2_0_o] findITerm PAD] connect [[ord::get_db_block] findNet p_co2_0_o]
+pad::connect_iterm u_co2_0_o PAD p_co2_0_o
 place_pad -master PADCELL_VSSIO_H -row IO_WEST -location 1965.0 u_vzz_28
 place_pad -master PADCELL_VDDIO_H -row IO_WEST -location 1935.0 u_v18_28
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1900.0 u_bsg_tag_clk_o
-[[[ord::get_db_block] findInst u_bsg_tag_clk_o] findITerm PAD] connect [[ord::get_db_block] findNet p_bsg_tag_clk_o]
+pad::connect_iterm u_bsg_tag_clk_o PAD p_bsg_tag_clk_o
 place_pad -master PADCELL_VDD_H -row IO_WEST -location 1870.0 u_vdd_13
 place_pad -master PADCELL_VSS_H -row IO_WEST -location 1840.0 u_vss_13
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1810.0 u_bsg_tag_data_o
-[[[ord::get_db_block] findInst u_bsg_tag_data_o] findITerm PAD] connect [[ord::get_db_block] findNet p_bsg_tag_data_o]
+pad::connect_iterm u_bsg_tag_data_o PAD p_bsg_tag_data_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1775.0 u_ddr_dq_7_io
-[[[ord::get_db_block] findInst u_ddr_dq_7_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_7_io]
+pad::connect_iterm u_ddr_dq_7_io PAD p_ddr_dq_7_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1735.0 u_ddr_dq_6_io
-[[[ord::get_db_block] findInst u_ddr_dq_6_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_6_io]
+pad::connect_iterm u_ddr_dq_6_io PAD p_ddr_dq_6_io
 place_pad -master PADCELL_VSSIO_H -row IO_WEST -location 1705.0 u_vzz_29
 place_pad -master PADCELL_VDDIO_H -row IO_WEST -location 1675.0 u_v18_29
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1645.0 u_ddr_dq_5_io
-[[[ord::get_db_block] findInst u_ddr_dq_5_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_5_io]
+pad::connect_iterm u_ddr_dq_5_io PAD p_ddr_dq_5_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1615.0 u_ddr_dq_4_io
-[[[ord::get_db_block] findInst u_ddr_dq_4_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_4_io]
+pad::connect_iterm u_ddr_dq_4_io PAD p_ddr_dq_4_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1575.0 u_ddr_dq_3_io
-[[[ord::get_db_block] findInst u_ddr_dq_3_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_3_io]
+pad::connect_iterm u_ddr_dq_3_io PAD p_ddr_dq_3_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1545.0 u_ddr_dq_2_io
-[[[ord::get_db_block] findInst u_ddr_dq_2_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_2_io]
+pad::connect_iterm u_ddr_dq_2_io PAD p_ddr_dq_2_io
 place_pad -master PADCELL_VSSIO_H -row IO_WEST -location 1515.0 u_vzz_30
 place_pad -master PADCELL_VDDIO_H -row IO_WEST -location 1485.0 u_v18_30
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1455.0 u_ddr_dq_1_io
-[[[ord::get_db_block] findInst u_ddr_dq_1_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_1_io]
+pad::connect_iterm u_ddr_dq_1_io PAD p_ddr_dq_1_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1420.0 u_ddr_dq_0_io
-[[[ord::get_db_block] findInst u_ddr_dq_0_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_0_io]
+pad::connect_iterm u_ddr_dq_0_io PAD p_ddr_dq_0_io
 place_pad -master PADCELL_VDD_H -row IO_WEST -location 1390.0 u_vdd_14
 place_pad -master PADCELL_VSS_H -row IO_WEST -location 1360.0 u_vss_14
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1325.0 u_ddr_dm_0_o
-[[[ord::get_db_block] findInst u_ddr_dm_0_o] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dm_0_o]
+pad::connect_iterm u_ddr_dm_0_o PAD p_ddr_dm_0_o
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1295.0 u_ddr_dqs_n_0_io
-[[[ord::get_db_block] findInst u_ddr_dqs_n_0_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dqs_n_0_io]
+pad::connect_iterm u_ddr_dqs_n_0_io PAD p_ddr_dqs_n_0_io
 place_pad -master PADCELL_VSSIO_H -row IO_WEST -location 1260.0 u_vzz_31
 place_pad -master PADCELL_VDDIO_H -row IO_WEST -location 1230.0 u_v18_31
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1200.0 u_ddr_dqs_p_0_io
-[[[ord::get_db_block] findInst u_ddr_dqs_p_0_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dqs_p_0_io]
+pad::connect_iterm u_ddr_dqs_p_0_io PAD p_ddr_dqs_p_0_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1170.0 u_ddr_dq_15_io
-[[[ord::get_db_block] findInst u_ddr_dq_15_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_15_io]
+pad::connect_iterm u_ddr_dq_15_io PAD p_ddr_dq_15_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1135.0 u_ddr_dq_14_io
-[[[ord::get_db_block] findInst u_ddr_dq_14_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_14_io]
+pad::connect_iterm u_ddr_dq_14_io PAD p_ddr_dq_14_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1095.0 u_ddr_dq_13_io
-[[[ord::get_db_block] findInst u_ddr_dq_13_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_13_io]
+pad::connect_iterm u_ddr_dq_13_io PAD p_ddr_dq_13_io
 place_pad -master PADCELL_VSSIO_H -row IO_WEST -location 1065.0 u_vzz_32
 place_pad -master PADCELL_VDDIO_H -row IO_WEST -location 1035.0 u_v18_32
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 1005.0 u_ddr_dq_12_io
-[[[ord::get_db_block] findInst u_ddr_dq_12_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_12_io]
+pad::connect_iterm u_ddr_dq_12_io PAD p_ddr_dq_12_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 975.0 u_ddr_dq_11_io
-[[[ord::get_db_block] findInst u_ddr_dq_11_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_11_io]
+pad::connect_iterm u_ddr_dq_11_io PAD p_ddr_dq_11_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 935.0 u_ddr_dq_10_io
-[[[ord::get_db_block] findInst u_ddr_dq_10_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_10_io]
+pad::connect_iterm u_ddr_dq_10_io PAD p_ddr_dq_10_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 905.0 u_ddr_dq_9_io
-[[[ord::get_db_block] findInst u_ddr_dq_9_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_9_io]
+pad::connect_iterm u_ddr_dq_9_io PAD p_ddr_dq_9_io
 place_pad -master PADCELL_SIG_H -row IO_WEST -location 875.0 u_ddr_dq_8_io
-[[[ord::get_db_block] findInst u_ddr_dq_8_io] findITerm PAD] connect [[ord::get_db_block] findNet p_ddr_dq_8_io]
+pad::connect_iterm u_ddr_dq_8_io PAD p_ddr_dq_8_io
 place_pad -master PADCELL_VDD_H -row IO_WEST -location 845.0 u_vdd_15
 place_pad -master PADCELL_VSS_H -row IO_WEST -location 745.0 u_vss_15
 place_pad -master PADCELL_VSSIO_V -row IO_WEST -location 715.0 u_vzz_33

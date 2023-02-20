@@ -386,6 +386,10 @@ namespace eval pad {
     }
   }
 
+  proc connect_iterm { inst term net } {
+    [[[ord::get_db_block] findInst $inst] findITerm $term] connect [[ord::get_db_block] findNet $net]
+  }
+
   proc convert_tcl {} {
     set cmds []
     set cmds_assign []
@@ -431,7 +435,7 @@ namespace eval pad {
       if {$iterm != "NULL"} {
         set net [$iterm getNet]
         if {$net != "NULL"} {
-          lappend cmds "\[\[\[ord::get_db_block\] findInst {$inst_name}\] findITerm [[$iterm getMTerm] getName]\] connect \[\[ord::get_db_block\] findNet {[$net getName]}\]"
+          lappend cmds "pad::connect_iterm {$inst_name} [[$iterm getMTerm] getName] [$net getName]"
 
           if {[dict exists $param bump]} {
             set bump [dict get $param bump]
