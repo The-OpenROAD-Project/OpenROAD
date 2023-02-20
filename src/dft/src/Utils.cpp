@@ -39,8 +39,6 @@
 namespace dft::utils {
 
 namespace {
-constexpr char kTmpScanFlopName[] = "tmp_scan_flop";
-
 void PopulatePortNameToNet(
     odb::dbInst* instance,
     std::vector<std::tuple<std::string, odb::dbNet*>>& port_name_to_net)
@@ -84,7 +82,7 @@ odb::dbInst* ReplaceCell(
   PopulatePortNameToNet(old_instance, port_name_to_net);
 
   odb::dbInst* new_instance
-      = odb::dbInst::create(top_block, new_master, kTmpScanFlopName);
+      = odb::dbInst::create(top_block, new_master, /*name=*/"tmp_scan_flop");
   std::string old_cell_name = old_instance->getName();
 
   // Delete the old cell
