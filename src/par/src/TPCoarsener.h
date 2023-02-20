@@ -33,13 +33,13 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
-//
+
 // This file contains the classes for Coarsening Phase
 // Coarsening Phase is to generate a sequence of coarser hypergraph
 // We define Coarsening as an operator class.
 // It will accept a HGraph (std::shared_ptr<TPHypergraph>) as input
 // and return a sequence of coarser hypergraphs
-//
+
 #include "TPHypergraph.h"
 #include "utl/Logger.h"
 
@@ -49,7 +49,7 @@ using TP_matrix = std::vector<std::vector<T>>;
 
 using TP_coarse_graphs = std::vector<HGraph>;
 
-enum order
+enum class Order
 {
   RANDOM,
   DEGREE,
@@ -62,7 +62,6 @@ enum order
 class TPcoarsener
 {
  public:
-  TPcoarsener() = default;
   TPcoarsener(const std::vector<float> e_wt_factors,
               const std::vector<float> v_wt_factors,
               const std::vector<float> p_wt_factors,
@@ -92,25 +91,24 @@ class TPcoarsener
         thr_coarsen_iters_(thr_coarsen_iters),
         adj_diff_ratio_(adj_diff_ratio),
         seed_(seed),
+        vertex_order_choice_(Order::DEFAULT),
         logger_(logger)
   {
   }
-  TPcoarsener(const TPcoarsener&) = default;
-  TPcoarsener(TPcoarsener&&) = default;
-  TPcoarsener& operator=(const TPcoarsener&) = default;
-  TPcoarsener& operator=(TPcoarsener&&) = default;
-  ~TPcoarsener() = default;
-  void SetVertexOrderChoice(const int choice) { vertex_order_choice_ = choice; }
-  int GetVertexOrderChoice() const { return vertex_order_choice_; }
+  void SetVertexOrderChoice(const Order choice)
+  {
+    vertex_order_choice_ = choice;
+  }
+  Order GetVertexOrderChoice() const { return vertex_order_choice_; }
   std::vector<int> PathBasedCommunity(HGraph hgraph);
   TP_coarse_graphs LazyFirstChoice(HGraph hgraph);
 
  private:
-  inline const std::vector<float> AverageClusterWt(const HGraph hgraph);
+  const std::vector<float> AverageClusterWt(const HGraph hgraph);
   void OrderVertices(const HGraph hgraph, std::vector<int>& vertices);
-  inline const float GetClusterScore(const int he,
-                                     HGraph hgraph,
-                                     std::vector<float>& algebraic_weights);
+  const float GetClusterScore(const int he,
+                              HGraph hgraph,
+                              std::vector<float>& algebraic_weights);
   HGraph Contraction(HGraph hgraph,
                      std::vector<int>& vertex_c_atrr,
                      std::vector<int>& community_attr_c,
@@ -138,10 +136,10 @@ class TPcoarsener
   int thr_coarsen_iters_;
   float adj_diff_ratio_;
   int seed_;
-  int vertex_order_choice_;
+  Order vertex_order_choice_;
   utl::Logger* logger_ = nullptr;
-  friend class MultiLevelHierarchy;
 };
+
 // nickname for shared pointer of Coarsening
 using TP_coarsening_ptr = std::shared_ptr<TPcoarsener>;
 }  // namespace par
