@@ -203,11 +203,12 @@ void Opendp::detailedPlacement(int max_displacement_x,
   }
   disallow_one_site_gaps_ = disallow_one_site_gaps;
   if (!have_one_site_cells_) {
-    disallow_one_site_gaps_ = false;
+    disallow_one_site_gaps_ = true;
     // logger_->info(
     //     DPL,
     //     38,
-    //     "Disallowing one site gaps after detecting 1-site SPACER cells.");
+    //     "Disallowing one site gaps as no 1-site SPACER cells were
+    //     detected.");
   }
   hpwl_before_ = hpwl();
   detailedPlacement();
