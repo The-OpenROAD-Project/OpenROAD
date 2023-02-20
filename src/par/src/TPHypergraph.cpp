@@ -104,7 +104,7 @@ TPHypergraph::TPHypergraph(
   vind_p_.clear();
   vptr_p_.clear();
   vptr_p_.push_back(static_cast<int>(vind_p_.size()));
-  for (auto path : paths) {
+  for (const auto& path : paths) {
     vind_p_.insert(vind_p_.end(), path.begin(), path.end());
     vptr_p_.push_back(static_cast<int>(vind_p_.size()));
   }
@@ -156,7 +156,7 @@ TPHypergraph::TPHypergraph(
   eind_.clear();
   eptr_.clear();
   eptr_.push_back(static_cast<int>(eind_.size()));
-  for (auto hyperedge : hyperedges) {
+  for (const auto& hyperedge : hyperedges) {
     eind_.insert(eind_.end(), hyperedge.begin(), hyperedge.end());
     eptr_.push_back(static_cast<int>(eind_.size()));
   }
@@ -302,7 +302,7 @@ void TPHypergraph::WriteReducedHypergraph(
     file_output << std::endl;
   }
   // write vertex weight
-  for (auto v_weight : vertex_weights_) {
+  for (const auto& v_weight : vertex_weights_) {
     file_output << std::inner_product(
         v_weight.begin(), v_weight.end(), vertex_w_factor.begin(), 0.0)
                 << std::endl;
