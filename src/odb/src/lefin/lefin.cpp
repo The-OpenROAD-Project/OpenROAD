@@ -712,6 +712,14 @@ void lefin::layer(lefiLayer* layer)
                     layer->propName(iii),
                     layer->name(),
                     layer->propValue(iii));
+    if (!supported) {
+      _logger->info(utl::ODB,
+                    388,
+                    "unsupported {} property for layer {} :\"{}\"",
+                    layer->propName(iii),
+                    layer->name(),
+                    layer->propValue(iii));
+    }
   }
   // update wrong way width
   for (auto rule : l->getTechLayerWidthTableRules()) {
