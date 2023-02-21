@@ -107,7 +107,13 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
 
 void Opendp::examineRows()
 {
-  auto rows = block_->getRows();
+  std::vector<dbRow*> rows;
+  for (auto* row : block_->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    rows.push_back(row);
+  }
   if (!rows.empty()) {
     for (dbRow* db_row : rows) {
       dbSite* site = db_row->getSite();

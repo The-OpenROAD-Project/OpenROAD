@@ -461,9 +461,17 @@ bool
 db_has_rows()
 {
   dbDatabase *db = OpenRoad::openRoad()->getDb();
-  return db->getChip()
-    && db->getChip()->getBlock()
-    && db->getChip()->getBlock()->getRows().size() > 0;
+  if (!db->getChip() || !db->getChip()->getBlock()) {
+    return false;
+  }
+
+  for (odb::dbRow* row : db->getChip()->getBlock()->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 bool

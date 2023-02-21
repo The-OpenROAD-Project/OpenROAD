@@ -172,9 +172,13 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
     if (site) {
       // Destroy any existing rows.
       auto rows = block_->getRows();
-      for (dbSet<dbRow>::iterator row_itr = rows.begin(); row_itr != rows.end();
-           row_itr = dbRow::destroy(row_itr))
-        ;
+      for (dbSet<dbRow>::iterator row_itr = rows.begin();
+           row_itr != rows.end();) {
+        if (site != row_itr->getSite()) {
+          row_itr++;
+        }
+        row_itr = dbRow::destroy(row_itr);
+      }
 
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
@@ -250,10 +254,17 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
 
       string domain_name = group->getName();
 
-      dbSet<dbRow> rows = block_->getRows();
+      std::vector<dbRow*> rows;
+      for (dbRow* row : block_->getRows()) {
+        if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+          continue;
+        }
+        rows.push_back(row);
+      }
+
       int total_row_count = rows.size();
 
-      dbSet<dbRow>::iterator row_itr = rows.begin();
+      std::vector<dbRow*>::iterator row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
         dbRow* row = *row_itr;
@@ -269,7 +280,8 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
         } else {
           string row_name = row->getName();
           dbOrientType orient = row->getOrient();
-          row_itr = dbRow::destroy(row_itr);
+          dbRow::destroy(row);
+          row_itr++;
 
           // lcr stands for left core row
           int lcr_xMax = domain_xMin - power_domain_y_space * site_dy;

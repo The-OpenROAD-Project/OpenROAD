@@ -295,6 +295,9 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
   auto rows = block_->getRows();
   for (odb::dbRow* db_row : rows) {
     odb::dbSite* site = db_row->getSite();
+    if (site->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     int width = site->getWidth();
     if (site_width == -1) {
       site_width = width;
