@@ -693,6 +693,14 @@ void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
         sites -= fill_width;
       }
     }
+
+    if (sites > 0) {
+      logger_->error(utl::PAD,
+                     30,
+                     "Unable to fill gap completely {:.3f}um -> {:.3f}um",
+                     it->lower() / dbus,
+                     it->upper() / dbus);
+    }
     fill_group++;
   }
 }
