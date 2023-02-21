@@ -123,7 +123,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calBoundaryPenalty();
   void calNotchPenalty();
   void calMacroBlockagePenalty();
-
   std::vector<Rect> blockages_;
 
   // notch threshold
