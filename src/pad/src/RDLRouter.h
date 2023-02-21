@@ -199,6 +199,7 @@ class RDLRouter
   // Routing grid
   std::vector<int> x_grid_;
   std::vector<int> y_grid_;
+  std::map<odb::dbNet*, std::vector<TargetPair>> routing_terminals_;
 };
 
 }  // namespace pad

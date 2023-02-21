@@ -220,8 +220,6 @@ MACRO PADCELL_SIG_H
         RECT 28.936 104.900 29.096 105.000 ;
       LAYER metal8 ; 
         RECT 28.936 104.900 29.096 105.000 ;
-      LAYER metal9 ; 
-        RECT 28.936 104.900 29.096 105.000 ;
     END
   END Y
   PIN PU

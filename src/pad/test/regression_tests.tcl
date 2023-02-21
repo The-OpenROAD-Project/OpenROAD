@@ -14,6 +14,7 @@ record_tests {
   rdl_route
   rdl_route_45
   rdl_route_via
+  rdl_route_bump_via
 
   skywater130_overlapping_filler
 

@@ -143,13 +143,15 @@ RDLRouter::RDLRouter(utl::Logger* logger,
 
 void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
 {
+  for (auto* net : nets) {
+    routing_terminals_[net] = generateRoutingPairs(net);
+  }
+
   // Build obstructions
   populateObstructions(nets);
 
   // build graph
   makeGraph();
-
-  std::map<odb::dbNet*, std::vector<TargetPair>> net_terms;
 
   std::set<odb::dbNet*> failed;
   struct NetRoute
@@ -158,25 +160,22 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
     RouteTarget source;
     RouteTarget target;
   };
-  std::map<odb::dbNet*, std::vector<NetRoute>> routes;
-  for (auto* net : nets) {
-    net_terms[net] = generateRoutingPairs(net);
-  }
 
+  std::map<odb::dbNet*, std::vector<NetRoute>> routes;
   struct RouteSet
   {
     TargetPair points;
     odb::dbNet* net;
   };
   std::vector<RouteSet> ordered_nets;
-  for (const auto& [net, points] : net_terms) {
+  for (const auto& [net, points] : routing_terminals_) {
     for (const auto& pointset : points) {
       ordered_nets.push_back({pointset, net});
     }
   }
   std::sort(ordered_nets.begin(),
             ordered_nets.end(),
-            [&net_terms](const RouteSet& r, const RouteSet& l) -> bool {
+            [](const RouteSet& r, const RouteSet& l) -> bool {
               return distance(r.points.target0.point, r.points.target1.point)
                      < distance(l.points.target0.point, l.points.target1.point);
             });
@@ -1056,6 +1055,18 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
 
     obstructions_.insert({rect_to_poly(box->getBox()), nullptr});
   }
+
+  // Add via obstructions when using access vias
+  for (const auto& [net, routing_pairs] : routing_terminals_) {
+    for (const auto& [source, target] : routing_pairs) {
+      if (source.layer != layer_) {
+        obstructions_.insert({rect_to_poly(source.shape), net});
+      }
+      if (target.layer != layer_) {
+        obstructions_.insert({rect_to_poly(target.shape), net});
+      }
+    }
+  }
 }
 
 int64_t RDLRouter::distance(const odb::Point& p0, const odb::Point& p1)
@@ -1077,7 +1088,7 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
         return via->getTopLayer();
       }
     }
-    return layer_;
+    return nullptr;
   };
   odb::dbTechLayer* bump_pin_layer = get_other_layer(bump_accessvia_);
   odb::dbTechLayer* pad_pin_layer = get_other_layer(pad_accessvia_);
@@ -1089,10 +1100,13 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
 
     const bool is_bump = iterm->getMTerm()->getMaster()->getType().isCover();
     odb::dbTechLayer* other_layer;
+    odb::dbTechVia* via;
     if (is_bump) {
       other_layer = bump_pin_layer;
+      via = bump_accessvia_;
     } else {
       other_layer = pad_pin_layer;
+      via = pad_accessvia_;
     }
 
     odb::dbTransform xform;
@@ -1107,6 +1121,16 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
         }
 
         odb::Rect box = geom->getBox();
+        if (found_layer == other_layer) {
+          for (const auto& viabox : via->getBoxes()) {
+            if (viabox->getTechLayer() == other_layer) {
+              odb::Rect via_encl = viabox->getBox();
+              via_encl.moveDelta(box.xCenter(), box.yCenter());
+              box = via_encl;
+              break;
+            }
+          }
+        }
         xform.apply(box);
 
         terms[box] = {iterm, found_layer};
