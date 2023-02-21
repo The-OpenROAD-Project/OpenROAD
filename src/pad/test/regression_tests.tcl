@@ -15,6 +15,8 @@ record_tests {
   rdl_route_45
   rdl_route_via
 
+  skywater130_overlapping_filler
+
   skywater130_caravel
   skywater130_coyote_tc
 }

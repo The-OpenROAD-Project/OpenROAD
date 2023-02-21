@@ -107,7 +107,9 @@ class ICeWall
                 int location,
                 bool mirror);
   void placeCorner(odb::dbMaster* master, int ring_index);
-  void placeFiller(const std::vector<odb::dbMaster*>& masters, odb::dbRow* row);
+  void placeFiller(const std::vector<odb::dbMaster*>& masters,
+                   odb::dbRow* row,
+                   const std::vector<odb::dbMaster*>& overlap_permitted = {});
   void removeFiller(odb::dbRow* row);
 
   void placeBondPads(odb::dbMaster* bond,
@@ -136,7 +138,8 @@ class ICeWall
   void placeInstance(odb::dbRow* row,
                      int index,
                      odb::dbInst* inst,
-                     odb::dbOrientType base_orient) const;
+                     odb::dbOrientType base_orient,
+                     bool allow_overlap = false) const;
 
   std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> getTouchingIterms(
       odb::dbInst* inst0,

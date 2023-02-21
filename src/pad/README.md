@@ -119,6 +119,7 @@ place_corners sky130_fd_io__corner_bus_overlay
 To place the IO filler cells
 ```
 place_io_fill -row row_name \
+              [-permit_overlaps masters]
               masters
 ```
 
@@ -127,6 +128,7 @@ place_io_fill -row row_name \
 | Switch Name | Description |
 | ----- | ----- |
 | `-row` | Name of the row to place the pad into, examples include: IO_NORTH, IO_SOUTH, IO_WEST, IO_EAST, IO_NORTH_0, IO_NORTH_1 |
+| `-permit_overlaps` | Names of the masters for the IO filler cells that allow for overlapping. |
 | `masters` | Names of the masters for the IO filler cells. |
 
 #### Examples

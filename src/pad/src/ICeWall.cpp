@@ -504,7 +504,8 @@ odb::Direction2D::Value ICeWall::getRowEdge(odb::dbRow* row) const
 void ICeWall::placeInstance(odb::dbRow* row,
                             int index,
                             odb::dbInst* inst,
-                            odb::dbOrientType base_orient) const
+                            odb::dbOrientType base_orient,
+                            bool allow_overlap) const
 {
   const int origin_offset = index * row->getSpacing();
 
@@ -546,7 +547,7 @@ void ICeWall::placeInstance(odb::dbRow* row,
       continue;
     }
     const odb::Rect check_rect = check_inst->getBBox()->getBox();
-    if (inst_rect.overlaps(check_rect)) {
+    if (!allow_overlap && inst_rect.overlaps(check_rect)) {
       const double dbus = block->getDbUnitsPerMicron();
       logger_->error(utl::PAD,
                      1,
@@ -566,8 +567,10 @@ void ICeWall::placeInstance(odb::dbRow* row,
   inst->setPlacementStatus(odb::dbPlacementStatus::FIRM);
 }
 
-void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
-                          odb::dbRow* row)
+void ICeWall::placeFiller(
+    const std::vector<odb::dbMaster*>& masters,
+    odb::dbRow* row,
+    const std::vector<odb::dbMaster*>& overlapping_masters)
 {
   auto* block = getBlock();
   if (block == nullptr) {
@@ -666,16 +669,21 @@ void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
 
     int site_offset = 0;
     for (auto* filler : fillers) {
+      const bool allow_overlap
+          = std::find(
+                overlapping_masters.begin(), overlapping_masters.end(), filler)
+            != overlapping_masters.end();
       const int fill_width = filler->getWidth() / site_width;
-      while (fill_width <= sites) {
+      while (fill_width <= sites || allow_overlap) {
         debugPrint(logger_,
                    utl::PAD,
                    "Fill",
                    2,
-                   "    fill cell {} width {} remaining sites {}",
+                   "    fill cell {} width {} remaining sites {} / overlap {}",
                    filler->getName(),
                    fill_width,
-                   sites);
+                   sites,
+                   allow_overlap);
 
         const std::string name = fmt::format("{}{}_{}_{}",
                                              fill_prefix_,
@@ -687,10 +695,15 @@ void ICeWall::placeFiller(const std::vector<odb::dbMaster*>& masters,
         placeInstance(row,
                       start_site_index + site_offset,
                       fill_inst,
-                      odb::dbOrientType::R0);
+                      odb::dbOrientType::R0,
+                      allow_overlap);
 
         site_offset += fill_width;
         sites -= fill_width;
+
+        if (sites <= 0) {
+          break;
+        }
       }
     }
 

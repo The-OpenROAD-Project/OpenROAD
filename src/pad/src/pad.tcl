@@ -209,11 +209,12 @@ proc place_pad {args} {
 }
 
 sta::define_cmd_args "place_io_fill" {-row row_name \
+                                      [-permit_overlaps masters] \
                                       masters}
 
 proc place_io_fill {args} {
   sta::parse_key_args "place_io_fill" args \
-    keys {-row} \
+    keys {-row -permit_overlaps} \
     flags {}
 
   set masters []
@@ -221,9 +222,17 @@ proc place_io_fill {args} {
     lappend masters [pad::find_master $m]
   }
 
+  set overlap_masters []
+  if { [info exists keys(-permit_overlaps)] } {
+    foreach m $keys(-permit_overlaps) {
+      lappend overlap_masters [pad::find_master $m]
+    }
+  }
+
   pad::assert_required place_io_fill -row
   pad::place_filler $masters \
                     [pad::get_row $keys(-row)] \
+                    $overlap_masters
 }
 
 sta::define_cmd_args "connect_by_abutment" {}

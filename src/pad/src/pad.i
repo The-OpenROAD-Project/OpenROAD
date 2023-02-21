@@ -107,9 +107,9 @@ void place_corner(odb::dbMaster* master, int ring_index)
   ord::getICeWall()->placeCorner(master, ring_index);
 }
 
-void place_filler(const std::vector<odb::dbMaster*>& masters, odb::dbRow* row)
+void place_filler(const std::vector<odb::dbMaster*>& masters, odb::dbRow* row, const std::vector<odb::dbMaster*>& overlapping_permitted)
 {
-  ord::getICeWall()->placeFiller(masters, row);
+  ord::getICeWall()->placeFiller(masters, row, overlapping_permitted);
 }
 
 void remove_filler(odb::dbRow* row)
