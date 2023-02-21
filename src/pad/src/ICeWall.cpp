@@ -1094,7 +1094,8 @@ std::vector<odb::dbInst*> ICeWall::getPadInsts() const
 }
 
 void ICeWall::routeRDL(odb::dbTechLayer* layer,
-                       odb::dbTechVia* via,
+                       odb::dbTechVia* bump_via,
+                       odb::dbTechVia* pad_via,
                        const std::vector<odb::dbNet*>& nets,
                        int width,
                        int spacing,
@@ -1105,7 +1106,7 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
   }
 
   router_ = std::make_unique<RDLRouter>(
-      logger_, getBlock(), layer, via, width, spacing, allow45);
+      logger_, getBlock(), layer, bump_via, pad_via, width, spacing, allow45);
   if (router_gui_ != nullptr) {
     router_gui_->setRouter(router_.get());
   }

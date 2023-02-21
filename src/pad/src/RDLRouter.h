@@ -106,7 +106,8 @@ class RDLRouter
   RDLRouter(utl::Logger* logger,
             odb::dbBlock* block,
             odb::dbTechLayer* layer,
-            odb::dbTechVia* via,
+            odb::dbTechVia* bump_via,
+            odb::dbTechVia* pad_via,
             int width,
             int spacing,
             bool allow45);
@@ -179,7 +180,8 @@ class RDLRouter
   utl::Logger* logger_;
   odb::dbBlock* block_;
   odb::dbTechLayer* layer_;
-  odb::dbTechVia* accessvia_;
+  odb::dbTechVia* bump_accessvia_;
+  odb::dbTechVia* pad_accessvia_;
 
   int width_;
   int spacing_;

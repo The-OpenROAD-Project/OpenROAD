@@ -306,7 +306,8 @@ proc make_fake_io_site {args} {
 #####
 
 sta::define_cmd_args "rdl_route" {-layer layer \
-                                  [-via access_via] \
+                                  [-bump_via access_via] \
+                                  [-pad_via access_via] \
                                   [-width width] \
                                   [-spacing spacing] \
                                   [-allow45] \
@@ -314,9 +315,9 @@ sta::define_cmd_args "rdl_route" {-layer layer \
 
 proc rdl_route {args} {
   sta::parse_key_args "rdl_route" args \
-    keys {-layer -width -spacing -via} \
+    keys {-layer -width -spacing -bump_via -pad_via} \
     flags {-allow45}
-  
+
   set nets []
   foreach net [get_nets {*}$args] {
     lappend nets [sta::sta_to_db_net $net]
@@ -327,11 +328,18 @@ proc rdl_route {args} {
   if {$layer == "NULL"} {
     utl::error PAD 105 "Unable to find layer: $keys(-layer)"
   }
-  set via "NULL"
-  if {[info exists keys(-via)]} {
-    set via [[ord::get_db_tech] findVia $keys(-via)]
-    if {$via == "NULL"} {
-      utl::error PAD 107 "Unable to find techvia: $keys(-via)"
+  set bump_via "NULL"
+  if {[info exists keys(-bump_via)]} {
+    set bump_via [[ord::get_db_tech] findVia $keys(-bump_via)]
+    if {$bump_via == "NULL"} {
+      utl::error PAD 107 "Unable to find techvia: $keys(-bump_via)"
+    }
+  }
+  set pad_via "NULL"
+  if {[info exists keys(-pad_via)]} {
+    set pad_via [[ord::get_db_tech] findVia $keys(-pad_via)]
+    if {$pad_via == "NULL"} {
+      utl::error PAD 108 "Unable to find techvia: $keys(-pad_via)"
     }
   }
 
@@ -344,7 +352,7 @@ proc rdl_route {args} {
     set spacing [ord::microns_to_dbu $keys(-spacing)]
   }
 
-  pad::route_rdl $layer $via $nets $width $spacing [info exists flags(-allow45)]
+  pad::route_rdl $layer $bump_via $pad_via $nets $width $spacing [info exists flags(-allow45)]
 }
 
 namespace eval pad {

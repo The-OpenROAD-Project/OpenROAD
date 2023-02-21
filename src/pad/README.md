@@ -259,7 +259,8 @@ assign_io_bump -net p_ddr_addr_6_o BUMP_7_0
 To route the RDL for the bump arrays
 ```
 route_rdl -layer layer \
-          [-via via] \
+          [-bump_via via] \
+          [-pad_via via] \
           [-width width] \
           [-spacing spacing] \
           [-allow45] \
@@ -271,7 +272,8 @@ route_rdl -layer layer \
 | Switch Name | Description |
 | ----- | ----- |
 | `-layer` | Layer to route on |
-| `-via` | Via to use to access terminals on routed net |
+| `-bump_via` | Via to use to to connect the bump to the routing layer |
+| `-pad_via` | Via to use to to connect the pad cell to the routing layer |
 | `-width` | Width of the routing (defaults to minimum width) |
 | `-spacing` | Spacing of the routing (defaults to minimum spacing) |
 | `-allow45` | Specifies that 45 degree routing is permitted |

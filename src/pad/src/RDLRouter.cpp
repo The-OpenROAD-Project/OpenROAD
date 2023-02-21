@@ -97,14 +97,16 @@ class RDLRouterGoalVisitor : public boost::default_astar_visitor
 RDLRouter::RDLRouter(utl::Logger* logger,
                      odb::dbBlock* block,
                      odb::dbTechLayer* layer,
-                     odb::dbTechVia* via,
+                     odb::dbTechVia* bump_via,
+                     odb::dbTechVia* pad_via,
                      int width,
                      int spacing,
                      bool allow45)
     : logger_(logger),
       block_(block),
       layer_(layer),
-      accessvia_(via),
+      bump_accessvia_(bump_via),
+      pad_accessvia_(pad_via),
       width_(width),
       spacing_(spacing),
       allow45_(allow45)
@@ -936,15 +938,23 @@ void RDLRouter::writeToDb(odb::dbNet* net,
   }
 
   if (source.layer != layer_) {
+    odb::dbTechVia* via = pad_accessvia_;
+    if (source.terminal->getMTerm()->getMaster()->getType().isCover()) {
+      via = bump_accessvia_;
+    }
     odb::dbSBox::create(swire,
-                        accessvia_,
+                        via,
                         source.point.x(),
                         source.point.y(),
                         odb::dbWireShapeType::IOWIRE);
   }
   if (target.layer != layer_) {
+    odb::dbTechVia* via = pad_accessvia_;
+    if (target.terminal->getMTerm()->getMaster()->getType().isCover()) {
+      via = bump_accessvia_;
+    }
     odb::dbSBox::create(swire,
-                        accessvia_,
+                        via,
                         target.point.x(),
                         target.point.y(),
                         odb::dbWireShapeType::IOWIRE);
@@ -1059,17 +1069,30 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
     odb::dbNet* net) const
 {
   std::map<odb::Rect, std::pair<odb::dbITerm*, odb::dbTechLayer*>> terms;
-  odb::dbTechLayer* other_layer = layer_;
-  if (accessvia_ != nullptr) {
-    if (accessvia_->getBottomLayer() != layer_) {
-      other_layer = accessvia_->getBottomLayer();
-    } else if (accessvia_->getTopLayer() != layer_) {
-      other_layer = accessvia_->getTopLayer();
+  auto get_other_layer = [this](odb::dbTechVia* via) -> odb::dbTechLayer* {
+    if (via != nullptr) {
+      if (via->getBottomLayer() != layer_) {
+        return via->getBottomLayer();
+      } else if (via->getTopLayer() != layer_) {
+        return via->getTopLayer();
+      }
     }
-  }
+    return layer_;
+  };
+  odb::dbTechLayer* bump_pin_layer = get_other_layer(bump_accessvia_);
+  odb::dbTechLayer* pad_pin_layer = get_other_layer(pad_accessvia_);
+
   for (auto* iterm : net->getITerms()) {
     if (!iterm->getInst()->isPlaced()) {
       continue;
+    }
+
+    const bool is_bump = iterm->getMTerm()->getMaster()->getType().isCover();
+    odb::dbTechLayer* other_layer;
+    if (is_bump) {
+      other_layer = bump_pin_layer;
+    } else {
+      other_layer = pad_pin_layer;
     }
 
     odb::dbTransform xform;

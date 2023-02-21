@@ -118,7 +118,8 @@ class ICeWall
                      const odb::Point& offset = {0, 0},
                      const std::string& prefix = "IO_BOND_");
   void routeRDL(odb::dbTechLayer* layer,
-                odb::dbTechVia* via,
+                odb::dbTechVia* bump_via,
+                odb::dbTechVia* pad_via,
                 const std::vector<odb::dbNet*>& nets,
                 int width = 0,
                 int spacing = 0,
