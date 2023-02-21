@@ -296,15 +296,15 @@ proc make_fake_io_site {args} {
 
 #####
 
-sta::define_cmd_args "route_rdl" {-layer layer \
+sta::define_cmd_args "rdl_route" {-layer layer \
                                   [-via access_via] \
                                   [-width width] \
                                   [-spacing spacing] \
                                   [-allow45] \
                                   nets}
 
-proc route_rdl {args} {
-  sta::parse_key_args "route_rdl" args \
+proc rdl_route {args} {
+  sta::parse_key_args "rdl_route" args \
     keys {-layer -width -spacing -via} \
     flags {-allow45}
   
@@ -313,7 +313,7 @@ proc route_rdl {args} {
     lappend nets [sta::sta_to_db_net $net]
   }
 
-  pad::assert_required route_rdl -layer
+  pad::assert_required rdl_route -layer
   set layer [[ord::get_db_tech] findLayer $keys(-layer)]
   if {$layer == "NULL"} {
     utl::error PAD 105 "Unable to find layer: $keys(-layer)"
