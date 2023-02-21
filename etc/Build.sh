@@ -17,7 +17,7 @@ WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
 EOF
   numThreads=2
 fi
-cmakeOptions=("")
+cmakeOptions=""
 cleanBefore=no
 keepLog=no
 compiler=gcc
@@ -70,21 +70,21 @@ while [ "$#" -gt 0 ]; do
             _help 0
             ;;
         -no-gui)
-            cmakeOptions+=( -DBUILD_GUI=OFF )
+            cmakeOptions+=" -DBUILD_GUI=OFF"
             ;;
         -compiler=*)
             compiler="${1#*=}"
             ;;
         -no-warnings )
-            cmakeOptions+=( -DALLOW_WARNINGS=OFF )
+            cmakeOptions+=" -DALLOW_WARNINGS=OFF"
             ;;
         -coverage )
-            cmakeOptions+=( -DCMAKE_BUILD_TYPE=Debug )
-            cmakeOptions+=( -DCMAKE_CXX_FLAGS="-fprofile-arcs -ftest-coverage" )
-            cmakeOptions+=( -DCMAKE_EXE_LINKER_FLAGS=-lgcov )
+            cmakeOptions+=" -DCMAKE_BUILD_TYPE=Debug"
+            cmakeOptions+=" -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage'"
+            cmakeOptions+=" -DCMAKE_EXE_LINKER_FLAGS=-lgcov"
             ;;
         -cmake=*)
-            cmakeOptions+=( "${1#*=}" )
+            cmakeOptions+=" ${1#*=}"
             ;;
         -clean )
             cleanBefore=yes
@@ -103,7 +103,7 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=( -DGPU=ON )
+            cmakeOptions+=" -DGPU=ON"
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -124,20 +124,29 @@ case "${compiler}" in
         export CC="$(command -v gcc)"
         export CXX="$(command -v g++)"
         ;;
-    clang* )
+    "clang" )
         if [[ -f "/opt/rh/llvm-toolset-7.0/enable" ]]; then
             # the scl script has unbound variables
             set +u
             source /opt/rh/llvm-toolset-7.0/enable
             set -u
         fi
-        export CC="$(command -v ${compiler})"
-        export CXX="$(command -v ${compiler}++)"
+        export CC="$(command -v clang)"
+        export CXX="$(command -v clang++)"
+        ;;
+    "clang-16" )
+        export CC="$(command -v clang-16)"
+        export CXX="$(command -v clang++-16)"
         ;;
     *)
-        echo "Compiler $compiler is not supported" >&2
-        _help 1
+        export CC=""
+        export CXX=""
 esac
+
+if [[ -z "${CC}" || -z "${CXX}" ]]; then
+        echo "Compiler $compiler not installed or it is not supported." >&2
+        _help 1
+fi
 
 if [[ "${cleanBefore}" == "yes" ]]; then
     rm -rf "${buildDir}"
@@ -151,5 +160,5 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
 
-cmake "${cmakeOptions[@]}" -B "${buildDir}" .
-time cmake --build "${buildDir}" -j "${numThreads}"
+eval cmake "${cmakeOptions}" -B "${buildDir}" .
+eval time cmake --build "${buildDir}" -j "${numThreads}"

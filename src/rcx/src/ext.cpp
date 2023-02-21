@@ -29,41 +29,31 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #include "rcx/ext.h"
 
-#include <errno.h>
-
 #include "odb/wOrder.h"
-#include "sta/StaMain.hh"
 #include "utl/Logger.h"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* rcx_tcl_inits[];
-}  // namespace sta
 
 namespace rcx {
 
 using utl::Logger;
 using utl::RCX;
 
-extern "C" {
-extern int Rcx_Init(Tcl_Interp* interp);
-}
-
-Ext::Ext() : odb::ZInterface(), _ext(std::make_unique<extMain>())
+Ext::Ext() : _ext(std::make_unique<extMain>())
 {
 }
 
-void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
+void Ext::init(odb::dbDatabase* db,
+               Logger* logger,
+               std::function<void()> rcx_init)
 {
   _db = db;
   logger_ = logger;
   _ext->init(db, logger);
 
   // Define swig TCL commands.
-  Rcx_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::rcx_tcl_inits);
+  rcx_init();
 }
 
 void Ext::setLogger(Logger* logger)
@@ -273,11 +263,9 @@ bool Ext::extract(ExtractOptions opts)
                             opts.cc_model,
                             opts.max_res,
                             !opts.no_merge_via_res,
-                            !opts.no_gs,
                             opts.coupling_threshold,
                             opts.context_depth,
-                            opts.ext_model_file,
-                            this)
+                            opts.ext_model_file)
       == 0)
     return TCL_ERROR;
 
