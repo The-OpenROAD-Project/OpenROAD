@@ -87,7 +87,8 @@ class RDLRouter
  public:
   struct RouteTarget
   {
-    odb::Point point;
+    // center point of the target shape
+    odb::Point center;
     odb::Rect shape;
     odb::dbITerm* terminal;
     odb::dbTechLayer* layer;

@@ -176,8 +176,9 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   std::sort(ordered_nets.begin(),
             ordered_nets.end(),
             [](const RouteSet& r, const RouteSet& l) -> bool {
-              return distance(r.points.target0.point, r.points.target1.point)
-                     < distance(l.points.target0.point, l.points.target1.point);
+              return distance(r.points.target0.center, r.points.target1.center)
+                     < distance(l.points.target0.center,
+                                l.points.target1.center);
             });
 
   logger_->info(utl::PAD, 5, "Routing {} nets", nets.size());
@@ -196,17 +197,17 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
                2,
                "Routing {} ({:.3f}um, {:.3f}um) -> ({:.3f}um, {:.3f}um)",
                net->getName(),
-               points.target0.point.x() / dbus,
-               points.target0.point.y() / dbus,
-               points.target1.point.x() / dbus,
-               points.target1.point.y() / dbus);
+               points.target0.center.x() / dbus,
+               points.target0.center.y() / dbus,
+               points.target1.center.x() / dbus,
+               points.target1.center.y() / dbus);
 
     const auto added_edges0
         = insertTerminalVertex(points.target0, points.target1);
     const auto added_edges1
         = insertTerminalVertex(points.target1, points.target0);
 
-    auto route = run(points.target0.point, points.target1.point);
+    auto route = run(points.target0.center, points.target1.center);
     if (!route.empty()) {
       debugPrint(
           logger_, utl::PAD, "Router", 2, "Route segments {}", route.size());
@@ -274,8 +275,8 @@ std::vector<RDLRouter::Edge> RDLRouter::insertTerminalVertex(
     return {-1, -1};
   };
 
-  const GridSnap x_snap = snap(target.point.x(), x_grid_);
-  const GridSnap y_snap = snap(target.point.y(), y_grid_);
+  const GridSnap x_snap = snap(target.center.x(), x_grid_);
+  const GridSnap y_snap = snap(target.center.y(), y_grid_);
 
   const odb::Point snapped(x_snap.pos, y_snap.pos);
 
@@ -284,8 +285,8 @@ std::vector<RDLRouter::Edge> RDLRouter::insertTerminalVertex(
              "Router_snap",
              1,
              "Snap ({}, {}) -> ({}, {})",
-             target.point.x(),
-             target.point.y(),
+             target.center.x(),
+             target.center.y(),
              snapped.x(),
              snapped.y());
 
@@ -293,8 +294,8 @@ std::vector<RDLRouter::Edge> RDLRouter::insertTerminalVertex(
     logger_->error(utl::PAD,
                    8,
                    "Unable to snap ({:.3f}um, {:.3f}um) to routing grid.",
-                   target.point.x() / dbus,
-                   target.point.y() / dbus);
+                   target.center.x() / dbus,
+                   target.center.y() / dbus);
   }
 
   addGraphVertex(snapped);
@@ -302,7 +303,7 @@ std::vector<RDLRouter::Edge> RDLRouter::insertTerminalVertex(
   odb::Rect iterm_box;
   target.shape.bloat(getBloatFactor(), iterm_box);
 
-  const float route_dist = distance(target.point, source.point);
+  const float route_dist = distance(target.center, source.center);
 
   auto add_snap_edge
       = [this, &source, &route_dist, &snapped](const std::vector<int>& grid,
@@ -358,8 +359,8 @@ std::vector<RDLRouter::Edge> RDLRouter::insertTerminalVertex(
       return false;
     }
 
-    const float weight_scale = std::min(distance(edge_snap, source.point),
-                                        distance(snapped, source.point))
+    const float weight_scale = std::min(distance(edge_snap, source.center),
+                                        distance(snapped, source.center))
                                / route_dist;
 
     debugPrint(logger_,
@@ -419,18 +420,18 @@ std::vector<RDLRouter::Edge> RDLRouter::insertTerminalVertex(
         utl::PAD,
         9,
         "No edges added to routing grid to access ({:.3f}um, {:.3f}um).",
-        target.point.x() / dbus,
-        target.point.y() / dbus);
+        target.center.x() / dbus,
+        target.center.y() / dbus);
   }
 
-  const odb::Point& target_pt = target.point;
+  const odb::Point& target_pt = target.center;
   const auto& snap_v = point_vertex_map_[snapped];
 
   std::vector<Edge> added_edges;
 
   auto get_weight = [&source, &route_dist](const odb::Point& p0,
                                            const odb::Point& p1) -> float {
-    return std::min(distance(p0, source.point), distance(p1, source.point))
+    return std::min(distance(p0, source.center), distance(p1, source.center))
            / route_dist;
   };
 
@@ -943,8 +944,8 @@ void RDLRouter::writeToDb(odb::dbNet* net,
     }
     odb::dbSBox::create(swire,
                         via,
-                        source.point.x(),
-                        source.point.y(),
+                        source.center.x(),
+                        source.center.y(),
                         odb::dbWireShapeType::IOWIRE);
   }
   if (target.layer != layer_) {
@@ -954,8 +955,8 @@ void RDLRouter::writeToDb(odb::dbNet* net,
     }
     odb::dbSBox::create(swire,
                         via,
-                        target.point.x(),
-                        target.point.y(),
+                        target.center.x(),
+                        target.center.y(),
                         odb::dbWireShapeType::IOWIRE);
   }
 }
