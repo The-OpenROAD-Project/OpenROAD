@@ -759,6 +759,7 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
 
   odb::Rect bond_rect;
   odb::dbTechLayer* bond_layer = nullptr;
+  std::map<odb::dbTechLayer*, int> shape_count;
   for (auto* mterm : bond->getMTerms()) {
     for (auto* mpin : mterm->getMPins()) {
       for (auto* geom : mpin->getGeometry()) {
@@ -774,9 +775,17 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
             || bond_layer->getRoutingLevel() < pin_layer->getRoutingLevel()) {
           bond_layer = pin_layer;
           bond_rect = geom->getBox();
+          shape_count[bond_layer]++;
         }
       }
     }
+  }
+  if (shape_count[bond_layer] > 1) {
+    logger_->warn(utl::PAD,
+                  31,
+                  "{} contains more than 1 pin shape on {}",
+                  bond->getName(),
+                  bond_layer->getName());
   }
 
   const odb::dbTransform pad_xform(rotation);
