@@ -71,6 +71,7 @@ void Opendp::importDb()
   have_one_site_cells_ = false;
 
   importClear();
+  checkOneSiteDbMaster();
   examineRows();
   makeMacros();
   makeCells();
@@ -85,6 +86,23 @@ void Opendp::importClear()
   db_inst_map_.clear();
   deleteGrid();
   have_multi_row_cells_ = false;
+}
+
+void Opendp::checkOneSiteDbMaster()
+{
+  vector<dbMaster*> masters;
+  auto db_libs = db_->getLibs();
+  for (auto db_lib : db_libs) {
+    if (have_one_site_cells_)
+      break;
+    auto masters = db_lib->getMasters();
+    for (auto db_master : masters) {
+      if (isOneSiteCell(db_master)) {
+        have_one_site_cells_ = true;
+        break;
+      }
+    }
+  }
 }
 
 void Opendp::makeMacros()
@@ -151,10 +169,6 @@ void Opendp::makeCells()
     }
     if (isFiller(db_inst))
       have_fillers_ = true;
-    // we only need to set it to true once, so the !have_one_site_cells_ is
-    // used to make sure we don't call isOneSiteCell() more than we need to.
-    if (!have_one_site_cells_ && isOneSiteCell(db_inst))
-      have_one_site_cells_ = true;
   }
 }
 

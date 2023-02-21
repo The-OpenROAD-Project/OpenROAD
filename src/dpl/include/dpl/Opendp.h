@@ -328,7 +328,7 @@ class Opendp
                 int* y) const;
   int rectDist(const Cell* cell, const Rect* rect) const;
   bool havePadding() const;
-
+  void checkOneSiteDbMaster();
   void deleteGrid();
   Pixel* gridPixel(int x, int y) const;
   // Cell initial location wrt core origin.
@@ -366,7 +366,7 @@ class Opendp
                        const char* prefix,
                        dbMasterSeq* filler_masters);
   bool isFiller(odb::dbInst* db_inst);
-  bool isOneSiteCell(odb::dbInst* db_inst) const;
+  bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(int row, int col);
 
   // Optimizing mirroring

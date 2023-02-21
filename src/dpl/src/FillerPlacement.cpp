@@ -195,9 +195,8 @@ bool Opendp::isFiller(odb::dbInst* db_inst)
 }
 
 // Return true if cell is a single site Core Spacer.
-bool Opendp::isOneSiteCell(odb::dbInst* db_inst) const
+bool Opendp::isOneSiteCell(odb::dbMaster* db_master) const
 {
-  dbMaster* db_master = db_inst->getMaster();
   return db_master->getType() == odb::dbMasterType::CORE_SPACER
          && db_master->getWidth() == site_width_;
 }
