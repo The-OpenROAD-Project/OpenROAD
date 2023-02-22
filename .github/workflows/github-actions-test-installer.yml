@@ -77,7 +77,7 @@ jobs:
       - name: Build project
         shell: bash
         run: |
-          ./etc/Build.sh  -cmake='-DCMAKE_BUILD_TYPE="Release"'
+          ./etc/Build.sh -compiler=clang
       - name: Test build
         shell: bash
         run: |
