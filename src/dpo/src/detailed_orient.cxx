@@ -151,7 +151,7 @@ int DetailedOrient::orientCells(int& changed)
   int errors = 0;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* ndi = network_->getNode(i);
-    if (!(ndi->isTerminal() || ndi->isTerminalNI() || ndi->isFixed())) {
+    if (!(ndi->isTerminal() || ndi->isFixed())) {
       // Figure out the lowest row for the cell.  Not that single
       // height cells are only in one row.
       int bottom = arch_->getNumRows();

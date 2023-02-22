@@ -63,10 +63,8 @@ class Node
     UNKNOWN,
     CELL,
     TERMINAL,
-    TERMINAL_NI,
     MACROCELL,
-    FILLER,
-    SHAPE
+    FILLER
   };
 
   enum Fixity
@@ -115,9 +113,7 @@ class Node
   bool adjustCurrOrient(unsigned newOrient);
 
   bool isTerminal() const { return (type_ == TERMINAL); }
-  bool isTerminalNI() const { return (type_ == TERMINAL_NI); }
   bool isFiller() const { return (type_ == FILLER); }
-  bool isShape() const { return (type_ == SHAPE); }
   bool isFixed() const { return (fixed_ != NOT_FIXED); }
 
   int getLeftEdgeType() const { return etl_; }
@@ -304,11 +300,6 @@ class Network
 
   // For creating and adding cells.
   Node* createAndAddNode();  // Network cells.
-  Node* createAndAddShapeNode(
-      int left,
-      int bottom,
-      int width,
-      int height);  // Extras for non-rectangular shapes.
   Node* createAndAddFillerNode(int left,
                                int bottom,
                                int width,

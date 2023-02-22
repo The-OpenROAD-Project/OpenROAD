@@ -167,11 +167,6 @@ void DetailedABU::init()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminalNI()) {
-      // These don't count.  We can place on top of them.
-      continue;
-    }
-
     if (!nd->isFixed()) {
       // Not fixed.
       continue;
@@ -251,7 +246,7 @@ void DetailedABU::computeUtils()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 
@@ -611,7 +606,7 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub)
   // contribution to the bin utilization.  Assumes the node is located at (x,y)
   // rather than the position stored in the node...
 
-  if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+  if (nd->isTerminal() || nd->isFixed()) {
     mgrPtr_->internalError("Problem updating bins for utilization objective");
   }
 
