@@ -176,8 +176,9 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
            row_itr != rows.end();) {
         if (site != row_itr->getSite()) {
           row_itr++;
+        } else {
+          row_itr = dbRow::destroy(row_itr);
         }
-        row_itr = dbRow::destroy(row_itr);
       }
 
       uint site_dx = site->getWidth();
