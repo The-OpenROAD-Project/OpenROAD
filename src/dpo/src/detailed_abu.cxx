@@ -170,7 +170,6 @@ void DetailedABU::init()
     Node* nd = network_->getNode(i);
 
     if (!nd->isFixed()) {
-      // Not fixed.
       continue;
     }
 
@@ -199,10 +198,8 @@ void DetailedABU::init()
         double hy = std::min(abuBins_[binId].hy, ymax);
 
         if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
-          double common_area = (hx - lx) * (hy - ly);
-          if (nd->getFixed() != Node::NOT_FIXED) {
-            abuBins_[binId].f_util += common_area;
-          }
+          const double common_area = (hx - lx) * (hy - ly);
+          abuBins_[binId].f_util += common_area;
         }
       }
     }
