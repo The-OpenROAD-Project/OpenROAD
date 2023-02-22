@@ -1161,8 +1161,14 @@ bool IRSolver::createGmat(bool connection_only)
         node_density_um_);
   } else {  // Node density as a factor of row height either set by user or by
             // default
-    dbSet<dbRow> rows = block->getRows();
-    const int siteHeight = (*rows.begin())->getSite()->getHeight();
+    dbRow* row = nullptr;
+    for (auto* db_row : block->getRows()) {
+      if (db_row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+        row = db_row;
+        break;
+      }
+    }
+    const int siteHeight = row->getSite()->getHeight();
     if (node_density_factor_user_ > 0) {
       node_density_factor_ = node_density_factor_user_;
     }

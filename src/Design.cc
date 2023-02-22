@@ -246,4 +246,10 @@ pdn::PdnGen* Design::getPdnGen()
   return app->getPdnGen();
 }
 
+pad::ICeWall* Design::getICeWall()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getICeWall();
+}
+
 }  // namespace ord
