@@ -360,7 +360,8 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
     sta::Cell* master_cell = db_network_->dbToSta(master);
     sta::LibertyCell* from_liberty_cell = db_network_->libertyCell(master_cell);
 
-    if (available_scan_lib_cells_.find(from_liberty_cell) != available_scan_lib_cells_.end()) {
+    if (available_scan_lib_cells_.find(from_liberty_cell)
+        != available_scan_lib_cells_.end()) {
       logger_->info(
           utl::DFT,
           3,
