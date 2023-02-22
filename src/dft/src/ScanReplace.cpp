@@ -329,7 +329,13 @@ void ScanReplace::scanReplace()
 // one) replacing the cells with scan equivalent
 void ScanReplace::scanReplace(odb::dbBlock* block)
 {
+  std::unordered_set<odb::dbInst*> already_replaced;
   for (odb::dbInst* inst : block->getInsts()) {
+    // The instances already scan replaced are skipped
+    if (already_replaced.find(inst) != already_replaced.end()) {
+      continue;
+    }
+
     if (inst->isDoNotTouch()) {
       // Do not scan replace dont_touch
       continue;
@@ -354,8 +360,7 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
     sta::Cell* master_cell = db_network_->dbToSta(master);
     sta::LibertyCell* from_liberty_cell = db_network_->libertyCell(master_cell);
 
-    auto found_scan_cell = available_scan_lib_cells_.find(from_liberty_cell);
-    if (found_scan_cell != available_scan_lib_cells_.end()) {
+    if (available_scan_lib_cells_.find(from_liberty_cell) != available_scan_lib_cells_.end()) {
       logger_->info(
           utl::DFT,
           3,
@@ -379,8 +384,10 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
     sta::LibertyCell* scan_cell = scan_candidate->getScanCell();
     odb::dbMaster* master_scan_cell = db_network_->staToDb(scan_cell);
 
-    utils::ReplaceCell(
+    odb::dbInst* new_cell = utils::ReplaceCell(
         block, inst, master_scan_cell, scan_candidate->getPortMapping());
+
+    already_replaced.insert(new_cell);
   }
 
   // Recursive iterate inside the block to look for inside hiers
