@@ -65,8 +65,6 @@ namespace dpo {
 // Detailed::improve:
 ////////////////////////////////////////////////////////////////////////////////
 bool Detailed::improve(DetailedMgr& mgr)
-// bool Detailed::improve( Architecture* arch, Network* network, RoutingParams*
-// rt )
 {
   mgr_ = &mgr;
 

@@ -46,6 +46,8 @@
 // are more heavily weighted.  This metric is for information purposes:
 // it is not part of the cost function, but can be called to print out the
 // ABU metric (and the resulting ABU penalty from the contest).
+// ABU = Average Bin Utilization (of the top x% densest bins).
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -169,13 +171,6 @@ void DetailedABU::init()
 
     if (!nd->isFixed()) {
       // Not fixed.
-      continue;
-    }
-
-    if (nd->isFixed() && nd->isDefinedByShapes()) {
-      // We can skip these.  We will get the shapes that
-      // define the used area from other dummy nodes we
-      // have added to the network.
       continue;
     }
 
