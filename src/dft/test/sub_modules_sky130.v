@@ -21,7 +21,7 @@ module shift_register_2b(from, to, clock);
     .SET_B(set_b)
   );
 
-  sky130_fd_sc_hd__dfstp_1 ff1(
+  sky130_fd_sc_hd__dfstp_1 ff2(
     .Q(to),
     .D(net1),
     .CLK(clock),
