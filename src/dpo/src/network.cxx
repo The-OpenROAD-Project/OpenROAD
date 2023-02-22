@@ -247,27 +247,6 @@ Node* Network::createAndAddFillerNode(int left,
 }
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-Node* Network::createAndAddShapeNode(int left,
-                                     int bottom,
-                                     int width,
-                                     int height)
-{
-  // Add shape cells to list of network cells.  We have
-  // the parent node from which we can derive a name.
-  Node* ndi = new Node();
-  const int id = (int) nodes_.size();
-  ndi->setFixed(Node::FIXED_XY);
-  ndi->setType(Node::SHAPE);
-  ndi->setId(id);
-  ndi->setHeight(height);
-  ndi->setWidth(width);
-  ndi->setBottom(bottom);
-  ndi->setLeft(left);
-  nodes_.push_back(ndi);
-  return getNode(id);
-}
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
 Pin* Network::createAndAddPin()
 {
   Pin* ptr = new Pin();
