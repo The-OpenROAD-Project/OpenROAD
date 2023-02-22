@@ -1202,8 +1202,7 @@ void DetailedMgr::collectMultiHeightCells()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isFixed()
-        || arch_->isSingleHeightCell(nd)) {
+    if (nd->isTerminal() || nd->isFixed() || arch_->isSingleHeightCell(nd)) {
       continue;
     }
 
