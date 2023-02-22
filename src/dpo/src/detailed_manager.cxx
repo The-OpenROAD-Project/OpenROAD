@@ -1077,7 +1077,7 @@ double DetailedMgr::measureMaximumDisplacement(double& maxX,
   double maxL1 = 0.;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 
@@ -1161,7 +1161,7 @@ void DetailedMgr::collectSingleHeightCells()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
     if (arch_->isMultiHeightCell(nd)) {
@@ -1202,7 +1202,7 @@ void DetailedMgr::collectMultiHeightCells()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()
+    if (nd->isTerminal() || nd->isFixed()
         || arch_->isSingleHeightCell(nd)) {
       continue;
     }
@@ -1233,11 +1233,6 @@ void DetailedMgr::collectFixedCells()
   // Fixed cells are used only to create blockages which, in turn, are used to
   // create obstacles.  Obstacles are then used to create the segments into
   // which cells can be placed.
-  //
-  // AAK: 01-dec-2021.  I noticed an error with respect to bookshelf format
-  // and the handling of TERMINAL_NI cells.  One can place movable cells on
-  // top of these sorts of terminals.  Therefore, they should NOT be considered
-  // as fixed, at least with respect to creating blockages.
 
   fixedCells_.erase(fixedCells_.begin(), fixedCells_.end());
 
@@ -1247,11 +1242,6 @@ void DetailedMgr::collectFixedCells()
 
     if (!nd->isFixed()) {
       // Not fixed, so skip.
-      continue;
-    }
-
-    if (nd->isTerminalNI()) {
-      // Skip these since we can place over them.
       continue;
     }
 
@@ -1477,7 +1467,7 @@ int DetailedMgr::checkSiteAlignment()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 
@@ -1532,7 +1522,7 @@ int DetailedMgr::checkRowAlignment()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 

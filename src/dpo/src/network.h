@@ -63,7 +63,6 @@ class Node
     UNKNOWN,
     CELL,
     TERMINAL,
-    TERMINAL_NI,
     MACROCELL,
     FILLER,
     SHAPE
@@ -115,7 +114,6 @@ class Node
   bool adjustCurrOrient(unsigned newOrient);
 
   bool isTerminal() const { return (type_ == TERMINAL); }
-  bool isTerminalNI() const { return (type_ == TERMINAL_NI); }
   bool isFiller() const { return (type_ == FILLER); }
   bool isShape() const { return (type_ == SHAPE); }
   bool isFixed() const { return (fixed_ != NOT_FIXED); }
