@@ -129,10 +129,7 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
     return;
   }
 
-  // Removed some checks here.  Just check after.
-
-  // The first argument is always the command.  XXX: Not implemented, but
-  // include some samples...
+  // The first argument is always the command.
 
   auto logger = mgr_->getLogger();
 
@@ -155,7 +152,6 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   }
   logger->info(DPO, 303, "Running algorithm for {:s}.", command);
 
-  // Comment out some algos I haven't confirmed as working.
   if (strcmp(args[0].c_str(), "mis") == 0) {
     DetailedMis mis(arch_, network_, rt_);
     mis.run(mgr_, args);
@@ -165,9 +161,6 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   } else if (strcmp(args[0].c_str(), "vs") == 0) {
     DetailedVerticalSwap vs(arch_, network_, rt_);
     vs.run(mgr_, args);
-    //} else if (strcmp(args[0].c_str(), "interleave") == 0) {
-    //  DetailedInterleave interleave(arch_, network_, rt_);
-    //  interleave.run(mgr_, args);
   } else if (strcmp(args[0].c_str(), "ro") == 0) {
     DetailedReorderer ro(arch_, network_);
     ro.run(mgr_, args);
