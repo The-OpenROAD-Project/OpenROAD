@@ -45,12 +45,11 @@
 #include "routeBase.h"
 #include "timingBase.h"
 #include "utl/Logger.h"
-using namespace std;
-
 #include "graphics.h"
 
-namespace gpl {
 
+namespace gpl {
+using namespace std;
 using utl::GPL;
 
 static float getDistance(const vector<FloatPoint>& a,
