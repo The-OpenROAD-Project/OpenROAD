@@ -39,16 +39,16 @@
 #include <iostream>
 #include <sstream>
 
+#include "graphics.h"
 #include "nesterovBase.h"
 #include "odb/db.h"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "timingBase.h"
 #include "utl/Logger.h"
-#include "graphics.h"
-
 
 namespace gpl {
+
 using namespace std;
 using utl::GPL;
 
