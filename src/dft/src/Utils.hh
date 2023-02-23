@@ -33,45 +33,23 @@
 
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
+#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
-namespace dft {
-class ScanReplace;
+namespace dft::utils {
 
-class Dft
-{
- public:
-  void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+// Replace the old_instance cell with a new master. The connections of the old
+// cell will be preserved by using the given port mapping from
+// <old_port_name, new_port_name>. Returns the new instance and deletes the old
+// one. The name of the new instance is going to be the same as the old one.
+odb::dbInst* ReplaceCell(
+    odb::dbBlock* top_block,
+    odb::dbInst* old_instance,
+    odb::dbMaster* new_master,
+    const std::unordered_map<std::string, std::string>& port_mapping);
 
-  // Pre-work for insert_dft. We collect the cells that need to be
-  // scan replaced. This function doesn't mutate the design.
-  //
-  // TODO (and not implemented yet)
-  //  - scan architect
-  void pre_dft();
+// Returns true if the given instance cell's is a sequential cell, false
+// otherwise
+bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
 
-  // Inserts the scan chains into the design. For now this just replace the
-  // cells in the design with scan equivalent. This functions mutates the
-  // design.
-  //
-  // TODO (and not implemented yet)
-  // - scan stitching
-  void insert_dft();
-
- private:
-  // If we need to run pre_dft to create the internal state
-  bool need_to_run_pre_dft_;
-
-  // Resets the internal state
-  void reset();
-
-  // Global state
-  odb::dbDatabase* db_;
-  sta::dbSta* sta_;
-  utl::Logger* logger_;
-
-  // Internal state
-  std::unique_ptr<ScanReplace> scan_replace_;
-};
-
-}  // namespace dft
+}  // namespace dft::utils

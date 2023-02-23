@@ -29,49 +29,50 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#pragma once
 
-#include "db_sta/dbSta.hh"
+#include "dft/Dft.hh"
+
+#include <iostream>
+
+#include "ScanReplace.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace dft {
-class ScanReplace;
 
-class Dft
+void Dft::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
- public:
-  void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
+  db_ = db;
+  logger_ = logger;
+  sta_ = sta;
 
-  // Pre-work for insert_dft. We collect the cells that need to be
-  // scan replaced. This function doesn't mutate the design.
-  //
-  // TODO (and not implemented yet)
-  //  - scan architect
-  void pre_dft();
+  // Just to be sure if we are called twice
+  reset();
+}
 
-  // Inserts the scan chains into the design. For now this just replace the
-  // cells in the design with scan equivalent. This functions mutates the
-  // design.
-  //
-  // TODO (and not implemented yet)
-  // - scan stitching
-  void insert_dft();
+void Dft::reset()
+{
+  scan_replace_.reset();
+  need_to_run_pre_dft_ = true;
+}
 
- private:
-  // If we need to run pre_dft to create the internal state
-  bool need_to_run_pre_dft_;
+void Dft::pre_dft()
+{
+  scan_replace_ = std::make_unique<ScanReplace>(db_, sta_, logger_);
+  scan_replace_->collectScanCellAvailable();
 
-  // Resets the internal state
-  void reset();
+  // This should always be at the end
+  need_to_run_pre_dft_ = false;
+}
 
-  // Global state
-  odb::dbDatabase* db_;
-  sta::dbSta* sta_;
-  utl::Logger* logger_;
+void Dft::insert_dft()
+{
+  if (need_to_run_pre_dft_) {
+    pre_dft();
+  }
 
-  // Internal state
-  std::unique_ptr<ScanReplace> scan_replace_;
-};
+  // Perform scan replacement
+  scan_replace_->scanReplace();
+}
 
 }  // namespace dft
