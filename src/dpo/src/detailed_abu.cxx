@@ -472,14 +472,14 @@ double DetailedABU::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::delta(int n,
-                          std::vector<Node*>& nodes,
-                          std::vector<int>& curLeft,
-                          std::vector<int>& curBottom,
-                          std::vector<unsigned>& curOri,
-                          std::vector<int>& newLeft,
-                          std::vector<int>& newBottom,
-                          std::vector<unsigned>& newOri)
+double DetailedABU::delta(const int n,
+                          const std::vector<Node*>& nodes,
+                          const std::vector<int>& curLeft,
+                          const std::vector<int>& curBottom,
+                          const std::vector<unsigned>& curOri,
+                          const std::vector<int>& newLeft,
+                          const std::vector<int>& newBottom,
+                          const std::vector<unsigned>& newOri)
 {
   // Need change in fof metric.  Not many bins involved, so should be
   // fast to compute old and new.
