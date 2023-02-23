@@ -57,8 +57,7 @@ Node::Node()
       powerBot_(Architecture::Row::Power_UNK),
       regionId_(0),
       currentOrient_(Orientation_N),
-      availOrient_(Orientation_N),
-      isDefinedByShapes_(false)
+      availOrient_(Orientation_N)
 {
 }
 

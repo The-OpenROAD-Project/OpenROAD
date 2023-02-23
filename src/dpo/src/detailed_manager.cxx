@@ -1244,13 +1244,6 @@ void DetailedMgr::collectFixedCells()
       continue;
     }
 
-    // If a cell is fixed, but defined by shapes,
-    // then skip it.  We _will_ encounter the
-    // shapes at some point.
-    if (nd->isDefinedByShapes()) {
-      continue;
-    }
-
     fixedCells_.push_back(nd);
   }
 

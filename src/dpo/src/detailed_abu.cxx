@@ -46,6 +46,7 @@
 // are more heavily weighted.  This metric is for information purposes:
 // it is not part of the cost function, but can be called to print out the
 // ABU metric (and the resulting ABU penalty from the contest).
+// ABU = Average Bin Utilization (of the top x% densest bins).
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -168,14 +169,6 @@ void DetailedABU::init()
     Node* nd = network_->getNode(i);
 
     if (!nd->isFixed()) {
-      // Not fixed.
-      continue;
-    }
-
-    if (nd->isFixed() && nd->isDefinedByShapes()) {
-      // We can skip these.  We will get the shapes that
-      // define the used area from other dummy nodes we
-      // have added to the network.
       continue;
     }
 
@@ -204,10 +197,8 @@ void DetailedABU::init()
         double hy = std::min(abuBins_[binId].hy, ymax);
 
         if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
-          double common_area = (hx - lx) * (hy - ly);
-          if (nd->getFixed() != Node::NOT_FIXED) {
-            abuBins_[binId].f_util += common_area;
-          }
+          const double common_area = (hx - lx) * (hy - ly);
+          abuBins_[binId].f_util += common_area;
         }
       }
     }

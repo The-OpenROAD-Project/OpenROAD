@@ -126,8 +126,6 @@ class Node
   int getNumPins() const { return (int) pins_.size(); }
   const std::vector<Pin*>& getPins() const { return pins_; }
 
-  bool isDefinedByShapes() const { return isDefinedByShapes_; }
-
  private:
   // Id.
   int id_;
@@ -157,10 +155,6 @@ class Node
   unsigned availOrient_;
   // Pins.
   std::vector<Pin*> pins_;
-  // Shapes.  Legacy from bookshelf in which
-  // some fixed macros are not rectangles
-  // and are defined by sub-rectanges (shapes).
-  bool isDefinedByShapes_;
 
   friend class Network;
 };
