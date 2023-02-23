@@ -394,10 +394,10 @@ void ICeWall::placeCorner(odb::dbMaster* master, int ring_index)
        {corner_nw_, corner_ne_, corner_sw_, corner_se_}) {
     odb::dbRow* row = findRow(getRowName(row_name, ring_index));
     if (row == nullptr) {
-      logger_->warn(utl::PAD,
-                    13,
-                    "Unable to find {} row to place a corner cell in",
-                    row_name);
+      logger_->error(utl::PAD,
+                     13,
+                     "Unable to find {} row to place a corner cell in",
+                     row_name);
     }
 
     const std::string corner_name = fmt::format("{}_INST", row->getName());
@@ -779,6 +779,12 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
         }
       }
     }
+  }
+  if (bond_layer == nullptr) {
+    logger_->error(utl::PAD,
+                   32,
+                   "Unable to determine the top layer of {}",
+                   bond->getName());
   }
   if (shape_count[bond_layer] > 1) {
     logger_->warn(utl::PAD,
