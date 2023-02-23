@@ -518,6 +518,9 @@ void MacroPlacer::cutRoundUp(const Layout& layout,
       break;
     }
   }
+  if (site == nullptr) {
+    logger_->error(utl::MPL, 97, "Unable to find a site");
+  }
   const double dbu = db_->getTech()->getDbUnitsPerMicron();
   if (horizontal) {
     double siteSizeX = site->getWidth() / dbu;

@@ -1168,6 +1168,9 @@ bool IRSolver::createGmat(bool connection_only)
         break;
       }
     }
+    if (row == nullptr) {
+      logger_->error(utl::PSM, 82, "Unable to find a row");
+    }
     const int siteHeight = row->getSite()->getHeight();
     if (node_density_factor_user_ > 0) {
       node_density_factor_ = node_density_factor_user_;

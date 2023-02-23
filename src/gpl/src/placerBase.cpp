@@ -824,6 +824,9 @@ void PlacerBase::init()
       break;
     }
   }
+  if (site == nullptr) {
+    log_->error(GPL, 305, "Unable to find a site");
+  }
   odb::Rect coreRect = block->getCoreArea();
   odb::Rect dieRect = block->getDieArea();
 
