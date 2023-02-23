@@ -879,7 +879,8 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider)
+void DetailedMgr::assignCellsToSegments(
+    const std::vector<Node*>& nodesToConsider)
 {
   // For the provided list of cells which are assumed movable, assign those
   // cells to segments.
