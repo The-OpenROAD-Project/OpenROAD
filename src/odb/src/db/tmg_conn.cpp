@@ -644,7 +644,7 @@ void tmg_conn::detachTilePins()
           }
           if (recti.contains(rectb))
             logger_->error(
-                ODB, 388, "tmg_conn::detachTilePins: tilepin inside iterm.");
+                ODB, 420, "tmg_conn::detachTilePins: tilepin inside iterm.");
 
           if (!recti.overlaps(rectb))
             continue;
