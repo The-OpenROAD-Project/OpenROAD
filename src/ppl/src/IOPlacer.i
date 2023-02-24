@@ -213,9 +213,9 @@ add_ver_layer(odb::dbTechLayer* layer)
 }
 
 void
-add_pin_group(PinGroup *pin_group)
+add_pin_group(PinGroup *pin_group, bool order)
 {
-  getIOPlacer()->addPinGroup(pin_group);
+  getIOPlacer()->addPinGroup(pin_group, order);
 }
 
 void
