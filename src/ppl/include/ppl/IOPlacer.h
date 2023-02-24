@@ -115,7 +115,7 @@ class IOPlacer
   void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  void addPinGroup(PinGroup* group);
+  void addPinGroup(PinGroup* group, bool order);
   void addTopLayerPinPattern(odb::dbTechLayer* layer,
                              int x_step,
                              int y_step,
@@ -177,7 +177,8 @@ class IOPlacer
   void assignConstrainedGroupsToSections(Constraint& constraint,
                                          std::vector<Section>& sections);
   int assignGroupToSection(const std::vector<int>& io_group,
-                           std::vector<Section>& sections);
+                           std::vector<Section>& sections,
+                           bool order);
   std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint,
                                                        int& assigned_pins_cnt,
                                                        bool mirrored_only);
@@ -224,7 +225,7 @@ class IOPlacer
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  std::vector<PinGroup> pin_groups_;
+  std::vector<std::pair<PinGroup, bool>> pin_groups_;
   MirroredPins mirrored_pins_;
 
   Logger* logger_;

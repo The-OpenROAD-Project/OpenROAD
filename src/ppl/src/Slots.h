@@ -88,7 +88,7 @@ struct Section
 {
   odb::Point pos;
   std::vector<int> pin_indices;
-  std::vector<std::vector<int>> pin_groups;
+  std::vector<std::pair<std::vector<int>, bool>> pin_groups;
   int cost;
   int begin_slot;
   int end_slot;
