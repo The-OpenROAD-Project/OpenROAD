@@ -178,6 +178,9 @@ const std::vector<odb::dbRow*> VoltageDomain::getRegionRows() const
   const odb::Rect region = getRegionBoundary(region_);
 
   for (auto* row : block_->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     odb::Rect row_bbox = row->getBBox();
 
     if (row_bbox.overlaps(region)) {
@@ -207,6 +210,9 @@ const std::vector<odb::dbRow*> VoltageDomain::getDomainRows() const
   }
 
   for (auto* row : block_->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     if (claimed_rows.find(row) == claimed_rows.end()) {
       rows.push_back(row);
     }

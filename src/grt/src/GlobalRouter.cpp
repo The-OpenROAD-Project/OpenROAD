@@ -2543,7 +2543,7 @@ void GlobalRouter::averageTrackPattern(odb::dbTrackGrid* grid,
   }
   const int span = coordinates.back() - coordinates.front();
   track_init = coordinates.front();
-  track_step = span / coordinates.size();
+  track_step = std::ceil((float) span / coordinates.size());
   num_tracks = coordinates.size();
 }
 

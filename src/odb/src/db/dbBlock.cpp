@@ -2091,8 +2091,14 @@ Rect dbBlock::getDieArea()
 
 Rect dbBlock::getCoreArea()
 {
-  auto rows = getRows();
-  if (rows.size() > 0) {
+  // filter rows to remove those with site class PAD
+  std::vector<odb::dbRow*> rows;
+  for (dbRow* row : getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      rows.push_back(row);
+    }
+  }
+  if (!rows.empty()) {
     Rect rect;
     rect.mergeInit();
 

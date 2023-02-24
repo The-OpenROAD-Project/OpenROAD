@@ -46,6 +46,7 @@
 // are more heavily weighted.  This metric is for information purposes:
 // it is not part of the cost function, but can be called to print out the
 // ABU metric (and the resulting ABU penalty from the contest).
+// ABU = Average Bin Utilization (of the top x% densest bins).
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -167,20 +168,7 @@ void DetailedABU::init()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminalNI()) {
-      // These don't count.  We can place on top of them.
-      continue;
-    }
-
     if (!nd->isFixed()) {
-      // Not fixed.
-      continue;
-    }
-
-    if (nd->isFixed() && nd->isDefinedByShapes()) {
-      // We can skip these.  We will get the shapes that
-      // define the used area from other dummy nodes we
-      // have added to the network.
       continue;
     }
 
@@ -209,10 +197,8 @@ void DetailedABU::init()
         double hy = std::min(abuBins_[binId].hy, ymax);
 
         if ((hx - lx) > 1.0e-5 && (hy - ly) > 1.0e-5) {
-          double common_area = (hx - lx) * (hy - ly);
-          if (nd->getFixed() != Node::NOT_FIXED) {
-            abuBins_[binId].f_util += common_area;
-          }
+          const double common_area = (hx - lx) * (hy - ly);
+          abuBins_[binId].f_util += common_area;
         }
       }
     }
@@ -251,7 +237,7 @@ void DetailedABU::computeUtils()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 
@@ -486,14 +472,14 @@ double DetailedABU::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedABU::delta(int n,
-                          std::vector<Node*>& nodes,
-                          std::vector<int>& curLeft,
-                          std::vector<int>& curBottom,
-                          std::vector<unsigned>& curOri,
-                          std::vector<int>& newLeft,
-                          std::vector<int>& newBottom,
-                          std::vector<unsigned>& newOri)
+double DetailedABU::delta(const int n,
+                          const std::vector<Node*>& nodes,
+                          const std::vector<int>& curLeft,
+                          const std::vector<int>& curBottom,
+                          const std::vector<unsigned>& curOri,
+                          const std::vector<int>& newLeft,
+                          const std::vector<int>& newBottom,
+                          const std::vector<unsigned>& newOri)
 {
   // Need change in fof metric.  Not many bins involved, so should be
   // fast to compute old and new.
@@ -611,7 +597,7 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub)
   // contribution to the bin utilization.  Assumes the node is located at (x,y)
   // rather than the position stored in the node...
 
-  if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+  if (nd->isTerminal() || nd->isFixed()) {
     mgrPtr_->internalError("Problem updating bins for utilization objective");
   }
 
