@@ -867,7 +867,7 @@ bool TritonCTS::masterExists(const std::string& master) const
 void TritonCTS::findClockRoots(sta::Clock* clk,
                                std::set<odb::dbNet*>& clockNets)
 {
-  for (sta::Pin* pin : clk->leafPins()) {
+  for (const sta::Pin* pin : clk->leafPins()) {
     odb::dbITerm* instTerm;
     odb::dbBTerm* port;
     network_->staToDb(pin, instTerm, port);

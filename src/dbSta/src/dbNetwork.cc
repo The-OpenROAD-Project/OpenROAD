@@ -823,7 +823,7 @@ dbNetwork::termIterator(const Net* net) const
 void
 dbNetwork::visitConnectedPins(const Net* net,
                               PinVisitor& visitor,
-                              ConstNetSet& visited_nets) const
+                              NetSet& visited_nets) const
 {
   dbNet* db_net = staToDb(net);
   for (dbITerm* iterm : db_net->getITerms()) {
