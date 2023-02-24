@@ -37,6 +37,7 @@
 #include <string.h>
 
 #include "misc_global.h"
+#include "odb/odb.h"
 
 namespace odb {
 
