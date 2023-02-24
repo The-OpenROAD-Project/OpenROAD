@@ -233,7 +233,7 @@ public:
                    double repair_tns_end_percent,
                    int max_passes);
   // For testing.
-  void repairSetup(Pin *drvr_pin);
+  void repairSetup(const Pin *drvr_pin);
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);
@@ -246,7 +246,7 @@ public:
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
                   int max_passes);
-  void repairHold(Pin *end_pin,
+  void repairHold(const Pin *end_pin,
                   double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
@@ -329,8 +329,8 @@ public:
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
-  PinSet findFaninFanouts(PinSet *end_pins);
-  PinSet findFanins(PinSet *end_pins);
+  PinSet findFaninFanouts(PinSet& end_pins);
+  PinSet findFanins(PinSet& end_pins);
 
   ////////////////////////////////////////////////////////////////
   void highlightSteiner(const Pin *drvr);
@@ -346,7 +346,7 @@ protected:
   void ensureLevelDrvrVertices();
   Instance *bufferInput(const Pin *top_pin,
                         LibertyCell *buffer_cell);
-  void bufferOutput(Pin *top_pin,
+  void bufferOutput(const Pin *top_pin,
                     LibertyCell *buffer_cell);
   bool hasTristateOrDontTouchDriver(const Net *net);
   bool isTristateDriver(const Pin *pin);
@@ -454,7 +454,7 @@ protected:
                  PinSeq &loads);
   bool isFuncOneZero(const Pin *drvr_pin);
   bool hasPins(Net *net);
-  Point tieLocation(Pin *load,
+  Point tieLocation(const Pin *load,
                     int separation);
   bool hasFanout(Vertex *drvr);
   InstanceSeq findClkInverters();

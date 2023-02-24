@@ -122,8 +122,8 @@ using rsz::ParasiticsSrc;
   NetSeq *nets = $1;
   NetSeq::Iterator net_iter(nets);
   while (net_iter.hasNext()) {
-    Net *net = net_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(net, SWIGTYPE_p_Net, false);
+    const Net *net = net_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Net*>(net), SWIGTYPE_p_Net, false);
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   delete nets;
@@ -135,8 +135,8 @@ using rsz::ParasiticsSrc;
   NetSeq *nets = $1;
   NetSeq::Iterator net_iter(nets);
   while (net_iter.hasNext()) {
-    Net *net = net_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(net, SWIGTYPE_p_Net, false);
+    const Net *net = net_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Net*>(net), SWIGTYPE_p_Net, false);
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   Tcl_SetObjResult(interp, list);
@@ -147,16 +147,12 @@ using rsz::ParasiticsSrc;
   Tcl_SetObjResult(interp, obj);
 }
 
-%typemap(in) PinSet* {
-  $1 = tclListSetPin($input, interp);
-}
-
 %typemap(out) PinSet {
   Tcl_Obj *list = Tcl_NewListObj(0, nullptr);
   PinSet::Iterator pin_iter($1);
   while (pin_iter.hasNext()) {
-    Pin *pin = pin_iter.next();
-    Tcl_Obj *obj = SWIG_NewInstanceObj(pin, SWIGTYPE_p_Pin, false);
+    const Pin *pin = pin_iter.next();
+    Tcl_Obj *obj = SWIG_NewInstanceObj(const_cast<Pin*>(pin), SWIGTYPE_p_Pin, false);
     Tcl_ListObjAppendElement(interp, list, obj);
   }
   Tcl_SetObjResult(interp, list);
@@ -626,7 +622,7 @@ highlight_steiner_tree(const Pin *drvr_pin)
 }
 
 PinSet
-find_fanin_fanouts(PinSet *pins)
+find_fanin_fanouts(PinSet& pins)
 {
   Resizer *resizer = getResizer();
   return resizer->findFaninFanouts(pins);

@@ -197,7 +197,7 @@ RepairSetup::hasTopLevelOutputPort(Net *net)
 {
   NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
+    const Pin *pin = pin_iter->next();
     if (network_->isTopLevelPort(pin)
         && network_->direction(pin)->isOutput()) {
       delete pin_iter;
@@ -270,7 +270,7 @@ RepairSetup::rebufferBottomUp(BufferedNetPtr bnet,
     return Z;
   }
   case BufferedNetType::load: {
-    Pin *load_pin = bnet->loadPin();
+    const Pin *load_pin = bnet->loadPin();
     Vertex *vertex = graph_->pinLoadVertex(load_pin);
     PathRef req_path = sta_->vertexWorstSlackPath(vertex, max_);
     const DcalcAnalysisPt *dcalc_ap = req_path.isNull()
@@ -460,7 +460,7 @@ RepairSetup::rebufferTopDown(BufferedNetPtr choice,
       + rebufferTopDown(choice->ref2(), net, level + 1);
   }
   case BufferedNetType::load: {
-    Pin *load_pin = choice->loadPin();
+    const Pin *load_pin = choice->loadPin();
     Net *load_net = network_->net(load_pin);
     if (load_net != net) {
       Instance *load_inst = db_network_->instance(load_pin);
@@ -469,7 +469,7 @@ RepairSetup::rebufferTopDown(BufferedNetPtr choice,
                "", level,
                sdc_network_->pathName(load_pin),
                sdc_network_->pathName(net));
-      sta_->disconnectPin(load_pin);
+      sta_->disconnectPin(const_cast<Pin*>(load_pin));
       sta_->connectPin(load_inst, load_port, net);
       resizer_->parasiticsInvalid(load_net);
     }
