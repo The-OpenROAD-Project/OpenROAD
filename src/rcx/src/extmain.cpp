@@ -329,7 +329,7 @@ uint extMain::getResCapTable()
   dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
-  extMeasure m;
+  extMeasure m(logger_);
   m._underMet = 0;
   m._overMet = 0;
 
@@ -522,7 +522,7 @@ double extMain::getFringe(uint met,
 
   // just in case
 
-  extMeasure m;
+  extMeasure m(logger_);
 
   m._met = met;
   m._width = width;
@@ -671,7 +671,7 @@ void extMain::measureRC(CoupleOptions& options)
   if ((rsegId1 < 0) && (rsegId2 < 0))  // power nets
     return;
 
-  extMeasure m;
+  extMeasure m(logger_);
   m.defineBox(options);
   m._ccContextArray = _ccContextArray;
   m._ccMergedContextArray = _ccMergedContextArray;

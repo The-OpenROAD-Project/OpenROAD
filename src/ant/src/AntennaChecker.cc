@@ -1737,7 +1737,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
     global_router_->makeNetWires();
   else
     // detailed routes
-    odb::orderWires(block_, false);
+    odb::orderWires(logger_, block_);
 
   int net_violation_count = 0;
   int pin_violation_count = 0;

@@ -36,7 +36,6 @@
 #include <stdlib.h>
 
 #include "db.h"
-#include "dbLogger.h"
 #include "dbMap.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
@@ -50,89 +49,30 @@ namespace odb {
 
 static tmg_conn* _conn = NULL;
 
-void orderWires(dbBlock* block,
-                bool force,
-                bool verbose,
-                int cutLength,
-                int maxLength)
+void orderWires(utl::Logger* logger, dbBlock* block)
 {
-  bool no_patch = true;
-  if (_conn == NULL)
-    _conn = new tmg_conn();
-  _conn->resetSplitCnt();
-  bool no_convert = false;
-  dbSet<dbNet> nets = block->getNets();
-  dbSet<dbNet>::iterator net_itr;
-  dbNet* net;
-  for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
-    net = *net_itr;
-    if (net->getSigType() == dbSigType::POWER
-        || net->getSigType() == dbSigType::GROUND)
-      continue;
-    if (!force && net->isWireOrdered())
-      continue;
-    _conn->analyzeNet(
-        net, force, verbose, no_convert, cutLength, maxLength, no_patch);
+  if (_conn == NULL) {
+    _conn = new tmg_conn(logger);
   }
-  if (_conn->_swireNetCnt && verbose)
-    notice(0, "Set dont_touch on %d swire nets.\n", _conn->_swireNetCnt);
-  int splitcnt = _conn->getSplitCnt();
-  if (splitcnt != 0 && verbose)
-    notice(0, "Split top of %d T shapes.\n", splitcnt);
+  _conn->resetSplitCnt();
+  for (auto net : block->getNets()) {
+    if (net->getSigType().isSupply() || net->isWireOrdered()) {
+      continue;
+    }
+    _conn->analyzeNet(net);
+  }
 }
 
-void orderWires(dbBlock* block,
-                const char* net_name_or_id,
-                bool force,
-                bool verbose,
-                int cutLength,
-                int maxLength)
+void orderWires(utl::Logger* logger, dbNet* net)
 {
-  bool no_patch = true;
-  if (_conn == NULL)
-    _conn = new tmg_conn();
-  _conn->set_gv(verbose);
-  if (!net_name_or_id || !net_name_or_id[0]) {
-    orderWires(block, force, cutLength, maxLength, verbose);
-    return;
+  if (_conn == NULL) {
+    _conn = new tmg_conn(logger);
   }
-  bool no_convert = false;
-  // dbNet *net = tmg_findNet(block,net_name_or_id);
-  dbNet* net = block->findNet(net_name_or_id);
-  if (net == NULL) {
-    notice(0, "net not found\n");
-    return;
-  }
-  if ((net->getSigType() == dbSigType::POWER
-       || net->getSigType() == dbSigType::GROUND)
-      && verbose) {
-    notice(0, "skipping power net\n");
+  if (net->getSigType().isSupply()) {
     return;
   }
   _conn->resetSplitCnt();
-  _conn->analyzeNet(
-      net, force, verbose, no_convert, cutLength, maxLength, no_patch);
-  int splitcnt = _conn->getSplitCnt();
-  if (splitcnt != 0 && verbose)
-    notice(0, "Split top of %d T shapes.\n", splitcnt);
-}
-
-void orderWires(dbNet* net, bool force, bool verbose)
-{
-  if (_conn == NULL)
-    _conn = new tmg_conn();
-  bool no_convert = false;
-  if (net->getSigType() == dbSigType::POWER
-      || net->getSigType() == dbSigType::GROUND) {
-    if (verbose)
-      notice(0, "skipping power net\n");
-    return;
-  }
-  _conn->resetSplitCnt();
-  _conn->analyzeNet(net, force, verbose, false, no_convert);
-  int splitcnt = _conn->getSplitCnt();
-  if (splitcnt != 0 && verbose)
-    notice(0, "Split top of %d T shapes.\n", splitcnt);
+  _conn->analyzeNet(net);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -193,7 +133,6 @@ tmg_wire_link* tmg_wire_link_pool::get()
     curblk++;
     if (curblk == blkN) {
       if (blkN == 4096) {
-        notice(0, "overflow in tmg_wire_link_pool!\n");
         return NULL;
       }
       V[blkN++] = (tmg_wire_link*) malloc(blkSize * sizeof(tmg_wire_link));
