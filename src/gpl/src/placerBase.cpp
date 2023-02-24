@@ -817,7 +817,16 @@ void PlacerBase::init()
   dbBlock* block = db_->getChip()->getBlock();
 
   // die-core area update
-  dbSet<dbRow> rows = block->getRows();
+  odb::dbSite* site = nullptr;
+  for (auto* row : block->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      site = row->getSite();
+      break;
+    }
+  }
+  if (site == nullptr) {
+    log_->error(GPL, 305, "Unable to find a site");
+  }
   odb::Rect coreRect = block->getCoreArea();
   odb::Rect dieRect = block->getDieArea();
 
@@ -827,9 +836,8 @@ void PlacerBase::init()
   die_ = Die(dieRect, coreRect);
 
   // siteSize update
-  dbRow* firstRow = *(rows.begin());
-  siteSizeX_ = firstRow->getSite()->getWidth();
-  siteSizeY_ = firstRow->getSite()->getHeight();
+  siteSizeX_ = site->getWidth();
+  siteSizeY_ = site->getHeight();
 
   log_->info(GPL, 3, "SiteSize: {} {}", siteSizeX_, siteSizeY_);
   log_->info(GPL, 4, "CoreAreaLxLy: {} {}", die_.coreLx(), die_.coreLy());

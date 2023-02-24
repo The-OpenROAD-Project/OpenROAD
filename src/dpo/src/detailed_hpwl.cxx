@@ -116,14 +116,14 @@ double DetailedHPWL::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedHPWL::delta(int n,
-                           std::vector<Node*>& nodes,
-                           std::vector<int>& curLeft,
-                           std::vector<int>& curBottom,
-                           std::vector<unsigned>& curOri,
-                           std::vector<int>& newLeft,
-                           std::vector<int>& newBottom,
-                           std::vector<unsigned>& newOri)
+double DetailedHPWL::delta(const int n,
+                           const std::vector<Node*>& nodes,
+                           const std::vector<int>& curLeft,
+                           const std::vector<int>& curBottom,
+                           const std::vector<unsigned>& curOri,
+                           const std::vector<int>& newLeft,
+                           const std::vector<int>& newBottom,
+                           const std::vector<unsigned>& newOri)
 {
   // Given a list of nodes with their old positions and new positions, compute
   // the change in WL. Note that we need to know the orientation information and
@@ -288,7 +288,7 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
 void DetailedHPWL::getCandidates(std::vector<Node*>& candidates)
 {
   candidates.erase(candidates.begin(), candidates.end());
-  candidates = mgrPtr_->singleHeightCells_;
+  candidates = mgrPtr_->getSingleHeightCells();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

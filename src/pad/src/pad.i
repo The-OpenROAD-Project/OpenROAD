@@ -39,9 +39,113 @@
 //
 ////////////////////////////////////////////////////////////////
 
+%{
+#include "pad/ICeWall.h"
+#include "utl/Logger.h"
+#include "odb/db.h"
+#include "odb/geom.h"
+
+namespace ord {
+// Defined in OpenRoad.i
+pad::ICeWall* getICeWall();
+utl::Logger* getLogger();
+} // namespace ord
+%}
+
+%import <std_vector.i>
+%import "dbtypes.i"
+%import "dbenums.i"
 %include "../../Exception.i"
+
 
 %inline %{
 
+namespace pad {
+
+void make_bump_array(odb::dbMaster* master, int x, int y, int rows, int columns, int xpitch, int ypitch, const char* prefix = "BUMP_")
+{
+  ord::getICeWall()->makeBumpArray(master, odb::Point(x, y), rows, columns, xpitch, ypitch, prefix);
+}
+
+void remove_bump_array(odb::dbMaster* master)
+{
+  ord::getICeWall()->removeBumpArray(master);
+}
+
+void remove_bump(odb::dbInst* inst)
+{
+  ord::getICeWall()->removeBump(inst);
+}
+
+void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net)
+{
+  ord::getICeWall()->assignBump(inst, net);
+}
+
+void make_fake_site(const char* name, int width, int height)
+{
+  ord::getICeWall()->makeFakeSite(name, width, height);
+}
+
+void make_io_row(odb::dbSite* hsite, odb::dbSite* vsite, odb::dbSite* csite, int west_offset, int north_offset, int east_offset, int south_offset, odb::dbOrientType rotation, int ring_index)
+{
+  ord::getICeWall()->makeIORow(hsite, vsite, csite, west_offset, north_offset, east_offset, south_offset, rotation, ring_index);
+}
+
+void remove_io_rows()
+{
+  ord::getICeWall()->removeIORows();
+}
+
+void place_pad(odb::dbMaster* master, const char* name, odb::dbRow* row, int location, bool mirror)
+{
+  ord::getICeWall()->placePad(master, name, row, location, mirror);
+}
+
+void place_corner(odb::dbMaster* master, int ring_index)
+{
+  ord::getICeWall()->placeCorner(master, ring_index);
+}
+
+void place_filler(const std::vector<odb::dbMaster*>& masters, odb::dbRow* row, const std::vector<odb::dbMaster*>& overlapping_permitted)
+{
+  ord::getICeWall()->placeFiller(masters, row, overlapping_permitted);
+}
+
+void remove_filler(odb::dbRow* row)
+{
+  ord::getICeWall()->removeFiller(row);
+}
+
+void place_bondpads(odb::dbMaster* master, const std::vector<odb::dbInst*>& pads, odb::dbOrientType rotation, int x_offset, int y_offset, const char* prefix = "IO_BOND_")
+{
+  ord::getICeWall()->placeBondPads(master, pads, rotation, {x_offset, y_offset}, prefix);
+}
+
+void connect_by_abutment()
+{
+  ord::getICeWall()->connectByAbutment();
+}
+
+void route_rdl(odb::dbTechLayer* layer, odb::dbTechVia* bump_via, odb::dbTechVia* pad_via, const std::vector<odb::dbNet*>& nets, int width = 0, int spacing = 0, bool allow45 = false)
+{
+  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45);
+}
+
+void route_rdl_gui(bool enable)
+{
+  ord::getICeWall()->routeRDLDebugGUI(enable);
+}
+
+odb::dbRow* get_row(const char* name)
+{
+  odb::dbRow* row = ord::getICeWall()->findRow(name);
+  if (row == nullptr) {
+    ord::getLogger()->error(utl::PAD, 106, "Unable to find row: {}", name);
+  }
+  return row;
+}
+
+}
 
 %} // inline

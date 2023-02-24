@@ -84,6 +84,9 @@ void Opendp::initGrid()
 
   // Fragmented row support; mark valid sites.
   for (auto db_row : block_->getRows()) {
+    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     int orig_x, orig_y;
     db_row->getOrigin(orig_x, orig_y);
 
