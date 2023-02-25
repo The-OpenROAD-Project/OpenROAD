@@ -44,7 +44,6 @@
 #include <iostream>
 
 #include "TritonPart.h"
-#include "autocluster.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
