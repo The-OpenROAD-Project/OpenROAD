@@ -47,15 +47,11 @@ class Logger;
 }
 
 namespace fr::io {
-using viaRawPriorityTuple = std::tuple<bool,          // not default via
-                                       frCoord,       // lowerWidth
-                                       frCoord,       // upperWidth
-                                       bool,          // not align upper
-                                       frCoord,       // cutArea
-                                       frCoord,       // upperArea
-                                       frCoord,       // lowerArea
-                                       bool,          // not align lower
-                                       std::string>;  // via name
+// not default via, upperWidth, lowerWidth, not align upper, upperArea,
+// lowerArea, not align lower, via name
+typedef std::
+    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>
+        viaRawPriorityTuple;
 
 class Parser
 {
@@ -121,6 +117,7 @@ class Parser
                                     frCoord& GCELLOFFSETX,
                                     frCoord& GCELLOFFSETY);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
+  void initDefaultVias_GF14(const std::string& in);
   void initCutLayerWidth();
   void initConstraintLayerIdx();
 
