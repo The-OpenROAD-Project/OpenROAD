@@ -1171,7 +1171,7 @@ Resizer::metersToDbu(double dist) const
 {
   if (dist < 0) {
     logger_->error(
-        RSZ, 84, "metersToDbu({}) cannot convert negative distances", dist);
+        RSZ, 86, "metersToDbu({}) cannot convert negative distances", dist);
   }
   // sta::INF is passed to this function in some cases. Protect against
   // overflow conditions.
