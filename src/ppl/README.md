@@ -92,6 +92,10 @@ The number of pins in this list must be even. For example, in
 the pins `pin1` and `pin2` will be placed symmetrically to each other.
 Same for `pin3` and `pin4`, and for `pin5` and `pin6`.
 
+The `-group` flag places together on the die boundary the pin list defined
+in `-pin_names`, similar to the `pin_group` option on `place_pins` command.
+The `-order` flag places the pins ordered in ascending x/y position.
+
 Note that if you call `define_pin_shape_pattern` before
 `set_io_pin_constraint`, the `edge` values are (up, top,
 bottom, left, right). Where `up` relates to the layer created by
@@ -107,6 +111,9 @@ defined with `define_pin_shape_pattern` use:
 set_io_pin_constraint -direction <direction>
                       -pin_names <names>
                       -region <edge:interval>
+                      -mirrored_pins <names>
+                      -group
+                      -order
 ```
 
 #### Define Pin Shape Pattern
