@@ -33,15 +33,15 @@
 Layer     Direction    Resources     Resources    Reduction (%)
 ---------------------------------------------------------------
 metal1     Horizontal          0             0          0.00%
-metal2     Vertical         2156          2015          6.54%
-metal3     Horizontal       2940          2756          6.26%
-metal4     Vertical         1372          1287          6.20%
-metal5     Horizontal       1372          1287          6.20%
-metal6     Vertical         1372          1287          6.20%
-metal7     Horizontal        392           364          7.14%
-metal8     Vertical          392           364          7.14%
-metal9     Horizontal        196           169          13.78%
-metal10    Vertical          196           169          13.78%
+metal2     Vertical         2156          2037          5.52%
+metal3     Horizontal       2940          2778          5.51%
+metal4     Vertical         1372          1300          5.25%
+metal5     Horizontal       1372          1300          5.25%
+metal6     Vertical         1372          1300          5.25%
+metal7     Horizontal        392           377          3.83%
+metal8     Vertical          392           377          3.83%
+metal9     Horizontal        196           182          7.14%
+metal10    Vertical          196           182          7.14%
 ---------------------------------------------------------------
 
 [INFO GRT-0197] Via related to pin nodes: 34
@@ -54,24 +54,24 @@ metal10    Vertical          196           169          13.78%
 Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
 ---------------------------------------------------------------------------------------
 metal1               0             0            0.00%             0 /  0 /  0
-metal2            2015            19            0.94%             0 /  0 /  0
-metal3            2756            25            0.91%             0 /  0 /  0
-metal4            1287             0            0.00%             0 /  0 /  0
-metal5            1287             0            0.00%             0 /  0 /  0
-metal6            1287             0            0.00%             0 /  0 /  0
-metal7             364             0            0.00%             0 /  0 /  0
-metal8             364             0            0.00%             0 /  0 /  0
-metal9             169             0            0.00%             0 /  0 /  0
-metal10            169             0            0.00%             0 /  0 /  0
+metal2            2037            19            0.93%             0 /  0 /  0
+metal3            2778            25            0.90%             0 /  0 /  0
+metal4            1300             0            0.00%             0 /  0 /  0
+metal5            1300             0            0.00%             0 /  0 /  0
+metal6            1300             0            0.00%             0 /  0 /  0
+metal7             377             0            0.00%             0 /  0 /  0
+metal8             377             0            0.00%             0 /  0 /  0
+metal9             182             0            0.00%             0 /  0 /  0
+metal10            182             0            0.00%             0 /  0 /  0
 ---------------------------------------------------------------------------------------
-Total             9698            44            0.45%             0 /  0 /  0
+Total             9833            44            0.45%             0 /  0 /  0
 
-[INFO GRT-0018] Total wirelength: 161 um
+[INFO GRT-0018] Total wirelength: 189 um
 [INFO GRT-0014] Routed nets: 10
 Net clk
  Pin capacitance: 3.004-3.402
- Wire capacitance: 0.810
- Total capacitance: 3.813-4.211
+ Wire capacitance: 1.033
+ Total capacitance: 4.037-4.435
  Number of drivers: 1
  Number of loads: 1
  Number of pins: 2

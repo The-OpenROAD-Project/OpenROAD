@@ -36,8 +36,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dbLogger.h"
 #include "misc_global.h"
+#include "odb/odb.h"
 
 namespace odb {
 
@@ -193,9 +193,6 @@ void Ath__parser::printWord(int ii, FILE* fp, char* sep)
 void Ath__parser::printWords(FILE* fp)
 {
   if (fp == NULL) {  // use motice
-    for (int ii = 0; ii < _currentWordCnt; ii++)
-      odb::notice(0, "%s ", _wordArray[ii]);
-    odb::notice(0, "\n");
     return;
   }
   for (int ii = 0; ii < _currentWordCnt; ii++)
@@ -588,8 +585,6 @@ int Ath__parser::parseNextLine(char continuationChar)
     while (readMultipleLineAndBreak(continuationChar) == 0)
       ;
   }
-  if (_dbg == 1)
-    printWords(stdout);
 
   return _currentWordCnt;
 }

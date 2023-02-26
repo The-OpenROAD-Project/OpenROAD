@@ -11,7 +11,6 @@ source Nangate45/Nangate45.rc
 set_wire_rc -layer metal3
 estimate_parasitics -placement
 
-report_checks -fields input -digits 3
-
+report_worst_slack -max
 repair_timing -setup
-report_checks -fields input -digits 3
+report_worst_slack -max

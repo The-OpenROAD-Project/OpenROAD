@@ -61,6 +61,7 @@
 // mpl2 aborts with link error on darwin
 #include "mpl2/MakeMacroPlacer.h"
 #endif
+#include "dft/MakeDft.hh"
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -68,7 +69,7 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
-#include "pad/MakePad.h"
+#include "pad/MakeICeWall.h"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
 #include "ppl/MakeIoplacer.h"
@@ -143,8 +144,10 @@ OpenRoad::OpenRoad()
       pdnsim_(nullptr),
       partitionMgr_(nullptr),
       pdngen_(nullptr),
+      icewall_(nullptr),
       distributer_(nullptr),
       stt_builder_(nullptr),
+      dft_(nullptr),
       threads_(1)
 {
   db_ = dbDatabase::create();
@@ -174,8 +177,10 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
   deletePdnGen(pdngen_);
+  deleteICeWall(icewall_);
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
+  dft::deleteDft(dft_);
   delete logger_;
 }
 
@@ -228,8 +233,10 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
   pdngen_ = makePdnGen();
+  icewall_ = makeICeWall();
   distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
+  dft_ = dft::makeDft();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -258,7 +265,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initMacroPlacer2(this);
 #endif
   initOpenRCX(this);
-  initPad(this);
+  initICeWall(this);
   initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);
@@ -267,6 +274,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initPdnGen(this);
   initDistributed(this);
   initSteinerTreeBuilder(this);
+  dft::initDft(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

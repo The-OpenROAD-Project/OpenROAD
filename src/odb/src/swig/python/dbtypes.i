@@ -40,16 +40,18 @@
 
 %typemap(out) std::vector< T > {
     PyObject *list = PyList_New($1.size());
+    std::vector<T>& v = *&($1);
     for (unsigned int i=0; i<$1.size(); i++) {
-        T* ptr = new T((($1_type &)$1)[i]);
+        T* ptr = new T(v[i]);
         PyList_SetItem(list, i, SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
     $result = list;
 }
 %typemap(out) std::vector< T* > {
     PyObject *list = PyList_New($1.size());
+    std::vector<T*>& v = *&($1);
     for (unsigned int i = 0; i < $1.size(); i++) {
-        T* ptr = ((($1_type &)$1)[i]);
+        T* ptr = v[i];
         PyList_SetItem(list, i, SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
     $result = list;

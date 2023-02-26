@@ -66,7 +66,7 @@ target_link_libraries(grt
     utl
     FastRoute4.1
     ant
-    dpl
+    dpl_lib
     dbSta
     gui
     stt
@@ -94,7 +94,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       utl
       FastRoute4.1
       ant
-      dpl
+      dpl_lib
       dbSta
       gui
       stt

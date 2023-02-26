@@ -171,6 +171,9 @@ void FastRouteCore::fixOverlappingEdge(
     std::vector<short> new_route_x, new_route_y;
     const TreeNode& startpoint = treenodes[treeedge->n1];
     const TreeNode& endpoint = treenodes[treeedge->n2];
+    if (startpoint.x == endpoint.x || startpoint.y == endpoint.y) {
+      return;
+    }
     routeLShape(
         startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
 
@@ -296,6 +299,9 @@ void FastRouteCore::routeLShape(
       // point (startpoint.x, endpoint.y) not added yet, so it
       // need to be included in the for below
       first_x = startpoint.x;
+      if (startpoint.y == endpoint.y) {
+        first_x++;
+      }
     }
     for (short x = first_x; x <= endpoint.x; x++) {
       new_route_x.push_back(x);
@@ -328,6 +334,10 @@ void FastRouteCore::routeLShape(
       // point (endpoint.x, startpoint.y) not added yet, so it
       // need to be included in the for below
       first_y = startpoint.y;
+      if (startpoint.x == endpoint.x) {
+        first_y
+            = (startpoint.y < endpoint.y) ? startpoint.y + 1 : startpoint.y - 1;
+      }
     }
     if (startpoint.y < endpoint.y) {
       for (short y = first_y; y <= endpoint.y; y++) {

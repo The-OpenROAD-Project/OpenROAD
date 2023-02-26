@@ -166,8 +166,8 @@ void DetailedVerticalSwap::verticalSwap()
   mgr_->resortSegments();
 
   // Get candidate cells.
-  std::vector<Node*> candidates = mgr_->singleHeightCells_;
-  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->rng_);
+  std::vector<Node*> candidates = mgr_->getSingleHeightCells();
+  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->getRng());
 
   // Wirelength objective.
   DetailedHPWL hpwlObj(network_);
@@ -182,14 +182,14 @@ void DetailedVerticalSwap::verticalSwap()
       continue;
     }
 
-    const double delta = hpwlObj.delta(mgr_->nMoved_,
-                                       mgr_->movedNodes_,
-                                       mgr_->curLeft_,
-                                       mgr_->curBottom_,
-                                       mgr_->curOri_,
-                                       mgr_->newLeft_,
-                                       mgr_->newBottom_,
-                                       mgr_->newOri_);
+    const double delta = hpwlObj.delta(mgr_->getNMoved(),
+                                       mgr_->getMovedNodes(),
+                                       mgr_->getCurLeft(),
+                                       mgr_->getCurBottom(),
+                                       mgr_->getCurOri(),
+                                       mgr_->getNewLeft(),
+                                       mgr_->getNewBottom(),
+                                       mgr_->getNewOri());
 
     const double nextHpwl = currHpwl - delta;  // -delta is +ve is less.
 
@@ -449,13 +449,13 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   }
 
   // Only single height cell.
-  if (mgr_->reverseCellToSegs_[ndi->getId()].size() != 1) {
+  if (mgr_->getNumReverseCellToSegs(ndi->getId()) != 1) {
     return false;
   }
 
   // Segment and row for bottom of cell.
-  const int si = mgr_->reverseCellToSegs_[ndi->getId()][0]->getSegId();
-  const int ri = mgr_->reverseCellToSegs_[ndi->getId()][0]->getRowId();
+  const int si = mgr_->getReverseCellToSegs(ndi->getId())[0]->getSegId();
+  const int ri = mgr_->getReverseCellToSegs(ndi->getId())[0]->getRowId();
 
   // Center of optimal rectangle.
   const int xj = (int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
@@ -470,19 +470,19 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   if (yj > yi) {
     const int rmin = std::min(arch_->getNumRows() - 1, ri + 1);
     const int rmax = std::min(arch_->getNumRows() - 1, ri + 2);
-    rj = rmin + ((*(mgr_->rng_))() % (rmax - rmin + 1));
+    rj = rmin + mgr_->getRandom(rmax - rmin + 1);
   } else {
     const int rmax = std::max(0, ri - 1);
     const int rmin = std::max(0, ri - 2);
-    rj = rmin + ((*(mgr_->rng_))() % (rmax - rmin + 1));
+    rj = rmin + mgr_->getRandom(rmax - rmin + 1);
   }
   if (rj == -1) {
     return false;
   }
   yj = arch_->getRow(rj)->getBottom();  // Row alignment.
   int sj = -1;
-  for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
-    const DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
+  for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+    const DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
     if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
       sj = segPtr->getSegId();
       break;
@@ -491,7 +491,7 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
+  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 
@@ -532,7 +532,7 @@ bool DetailedVerticalSwap::generate(DetailedMgr* mgr,
   network_ = mgr->getNetwork();
   rt_ = mgr->getRoutingParams();
 
-  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
+  Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
   return generate(ndi);
 }

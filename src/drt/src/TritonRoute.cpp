@@ -844,7 +844,7 @@ int TritonRoute::main()
     FlexPA pa(getDesign(), logger_);
     pa.setDebug(debug_.get(), db_);
     pa.main();
-    if (distributed_ || debug_->debugDumpDR) {
+    if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
       if (distributed_)

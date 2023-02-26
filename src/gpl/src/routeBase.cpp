@@ -522,30 +522,30 @@ void RouteBase::updateRoute()
     if (tile->inflationRatio() > 1.0) {
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 5,
-                 "updateInflationRatio: xy: {} {}",
+                 "updateInflationRatio",
+                 1,
+                 "xy: {} {}",
                  tile->x(),
                  tile->y());
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 5,
-                 "updateInflationRatio: minxy: {} {}",
+                 "updateInflationRatio",
+                 1,
+                 "minxy: {} {}",
                  tile->lx(),
                  tile->ly());
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 5,
-                 "updateInflationRatio: maxxy: {} {}",
+                 "updateInflationRatio",
+                 1,
+                 "maxxy: {} {}",
                  tile->ux(),
                  tile->uy());
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 5,
-                 "updateInflationRatio: calcInflationRatio: {}",
+                 "updateInflationRatio",
+                 1,
+                 "calcInflationRatio: {}",
                  tile->inflationRatio());
     }
   }

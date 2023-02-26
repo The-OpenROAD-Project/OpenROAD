@@ -450,11 +450,12 @@ repair_net_cmd(Net *net,
 
 void
 repair_setup(double setup_margin,
+             double repair_tns_end_percent,
              int max_passes)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup(setup_margin, max_passes);
+  resizer->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
 }
 
 void

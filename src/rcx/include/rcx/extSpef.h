@@ -56,8 +56,6 @@ using utl::Logger;
 
 class extRcTripplet
 {
-  friend class extMain;
-
  private:
   uint _srcId;
   uint _dstId;
@@ -66,11 +64,303 @@ class extRcTripplet
   char _valueWord[64];
   bool _coupleFlag;
 
+  friend class extMain;
   friend class extSpef;
 };
 
 class extSpef
 {
+ public:
+  extSpef(odb::dbTech* tech,
+          odb::dbBlock* blk,
+          Logger* logger,
+          extMain* extmain,
+          uint btermCnt = 0,
+          uint itermCnt = 0);
+  ~extSpef();
+
+  void setLogger(Logger* logger);
+  bool matchNetGndCap(odb::dbNet* net,
+                      uint dbCorner,
+                      double dbCap,
+                      double refCap);
+  bool calibrateNetGndCap(odb::dbNet* net,
+                          uint dbCorner,
+                          double dbCap,
+                          double refCap);
+  bool computeFactor(double db, double ref, float& factor);
+
+  void initNodeCoordTables(uint memChunk);
+  void resetNodeCoordTables();
+  void deleteNodeCoordTables();
+  bool readNodeCoords(uint cpos);
+  void checkCCterm();
+  int findNodeIndexFromNodeCoords(uint targetCapNodeId);
+  void initSearchForNets();
+  uint addNetShapesOnSearch(uint netId);
+  void searchDealloc();
+  void getAnchorCoords(odb::dbNet* net,
+                       uint shapeId,
+                       int* x1,
+                       int* y1,
+                       int* x2,
+                       int* y2,
+                       odb::dbTechLayer** layer);
+  uint writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet);
+
+  void setupMappingForWrite(uint btermCnt = 0, uint itermCnt = 0);
+  void setupMapping(uint itermCnt = 0);
+  void preserveFlag(bool v);
+  void setCornerCnt(uint n);
+
+  void incr_wRun() { _wRun++; };
+  void incr_rRun() { _rRun++; };
+  void writeCNodeNumber();
+  odb::dbBlock* getBlock() { return _block; }
+  uint writeNet(odb::dbNet* net, double resBound, uint debug);
+  uint stopWrite();
+  uint readBlock(uint debug,
+                 std::vector<odb::dbNet*> tnets,
+                 bool force,
+                 bool rConn,
+                 char* nodeCoord,
+                 bool rCap,
+                 bool rOnlyCCcap,
+                 bool rRes,
+                 float cc_thres,
+                 float length_unit,
+                 bool extracted,
+                 bool keepLoadedCorner,
+                 bool stampWire,
+                 uint testParsing,
+                 int app_print_limit,
+                 bool m_map,
+                 int corner,
+                 double low,
+                 double up,
+                 char* excludeNetSubWord,
+                 char* netSubWord,
+                 char* capStatsFile,
+                 const char* dbCornerName,
+                 const char* calibrateBaseCorner,
+                 int spefCorner,
+                 int fixLoop,
+                 bool& resegCoord);
+  uint readBlockIncr(uint debug);
+
+  bool setOutSpef(char* filename);
+  bool closeOutFile();
+  void setGzipFlag(bool gzFlag);
+  bool setInSpef(char* filename, bool onlyOpen = false);
+  bool isCapNodeExcluded(odb::dbCapNode* node);
+  uint writeBlock(char* nodeCoord,
+                  const char* capUnit,
+                  const char* resUnit,
+                  bool stopAfterNameMap,
+                  std::vector<odb::dbNet*>* tnets,
+                  bool wClock,
+                  bool wConn,
+                  bool wCap,
+                  bool wOnlyCCcap,
+                  bool wRes,
+                  bool noCnum,
+                  bool stopBeforeDnets,
+                  bool noBackSlash,
+                  bool parallel);
+  uint writeBlock(char* nodeCoord,
+                  const char* capUnit,
+                  const char* resUnit,
+                  bool stopAfterNameMap,
+                  std::vector<odb::dbNet*> tnets,
+                  bool wClock,
+                  bool wConn,
+                  bool wCap,
+                  bool wOnlyCCcap,
+                  bool wRes,
+                  bool noCnum,
+                  bool stopBeforeDnets,
+                  bool noBackSlash,
+                  bool parallel);
+
+  int getWriteCorner(int corner, const char* name);
+  bool writeITerm(uint node);
+  bool writeBTerm(uint node);
+  bool writeNode(uint netId, uint node);
+  uint writePort(uint node);
+  void writeDnet(uint netId, double* totCap);
+  void writeKeyword(const char* keyword);
+  uint writePorts();
+  uint writeITerms();
+  uint getInstMapId(uint id);
+  void writeITermNode(uint node);
+
+  bool isBTermMarked(uint node);
+  void markBTerm(uint node);
+  void unMarkBTerm(uint node);
+  uint getBTermMapping(uint b);
+
+  uint getNetMapId(uint netId);
+  char* tinkerSpefName(char* iname);
+  char* addEscChar(const char* iname, bool esc_bus_brkts);
+
+  bool isITermMarked(uint node);
+  void markITerm(uint node);
+  void unMarkITerm(uint node);
+  uint getITermMapping(uint b);
+  void resetTermTables();
+  void resetCapTables(uint maxNode);
+  void initCapTable(Ath__array1D<double*>* table);
+  void deleteTableCap(Ath__array1D<double*>* table);
+  void reinitCapTable(Ath__array1D<double*>* table, uint n);
+  void addCap(double* cap, double* totCap, uint n);
+  void addHalfCap(double* totCap, double* cap, uint n = 0);
+  void getCaps(odb::dbNet* net, double* totCap);
+  void resetCap(double* cap);
+  void resetCap(double* cap, uint cnt);
+  void writeRCvalue(double* totCap, double units);
+  uint writeCapPort(uint index);
+  uint writeCapITerm(uint index);
+  uint writeCapITerms();
+  uint writeCapPorts();
+  void writeNodeCaps(uint netId, uint minNode, uint maxNode);
+  uint writeBlockPorts();
+  uint writeNetMap(odb::dbSet<odb::dbNet>& nets);
+  uint writeInstMap();
+
+  uint readDNet(uint debug);
+  uint getSpefNode(char* nodeWord, uint* instNetId, int* nodeType);
+  uint getITermId(uint instId, char* name);
+  uint getBTermId(char* name);
+  uint getBTermId(uint id);
+
+  bool readHeaderInfo(uint debug, bool skip = false);
+  bool writeHeaderInfo(uint debug);
+  bool readPorts(uint debug);
+  bool readNameMap(uint debug, bool skip = false);
+
+  void setDesign(char* name);
+  uint getCapNode(char* nodeWord, char* capWord);
+  uint getMappedBTermId(uint id);
+  void setUseIdsFlag(bool diff = false, bool calib = false);
+  void setCalibLimit(float upperLimit, float lowerLimit);
+  uint diffGndCap(odb::dbNet* net, uint capCnt, uint capId);
+  uint diffNetCcap(odb::dbNet* net);
+  double printDiff(odb::dbNet* net,
+                   double dbCap,
+                   double refCap,
+                   const char* ctype,
+                   int ii,
+                   int id = -1);
+  uint diffCCap(odb::dbNet* srcNet,
+                uint srcId,
+                odb::dbNet* tgtNet,
+                uint dstId,
+                uint capCnt);
+  double printDiffCC(odb::dbNet* net1,
+                     odb::dbNet* net2,
+                     uint node1,
+                     uint node2,
+                     double dbCap,
+                     double refCap,
+                     const char* ctype,
+                     int ii);
+  uint diffNetCap(odb::dbNet* net);
+  uint diffNetGndCap(odb::dbNet* net);
+  uint diffNetRes(odb::dbNet* net);
+  uint matchNetRes(odb::dbNet* net);
+  void resetExtIds(uint rit);
+  uint endNet(odb::dbNet* net, uint resCnt);
+  uint sortRSegs();
+  bool getFirstShape(odb::dbNet* net, odb::dbShape& s);
+  uint getNetLW(odb::dbNet* net, uint& w);
+  bool mkCapStats(odb::dbNet* net);
+  void collectDbCCap(odb::dbNet* net);
+  void matchCcValue(odb::dbNet* net);
+  uint matchNetCcap(odb::dbNet* net);
+  uint collectRefCCap(odb::dbNet* srcNet, odb::dbNet* tgtNet, uint capCnt);
+
+  uint getNodeCap(odb::dbSet<odb::dbRSeg>& rcSet,
+                  uint capNodeId,
+                  double* totCap);
+  uint getMultiples(uint cnt, uint base);
+  uint readMaxMapId(int* cornerCnt = NULL);
+  void addNameMapId(uint ii, uint id);
+  uint getNameMapId(uint ii);
+  void setCap(double* cap, uint n, double* totCap, uint startIndex);
+  void incrementCounter(double* cap, uint n);
+  uint setRCCaps(odb::dbNet* net);
+
+  uint getMinCapNode(odb::dbNet* net, uint* minNode);
+  uint computeCaps(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap);
+  uint getMappedCapNode(uint nodeId);
+  uint writePorts(odb::dbNet* net);
+  uint writeITerms(odb::dbNet* net);
+  uint writeCapPorts(odb::dbNet* net);
+  uint writeCapITerms(odb::dbNet* net);
+  uint writeNodeCaps(odb::dbNet* net, uint netId = 0);
+  uint writeCapPort(uint node, uint capIndex);
+  uint writeCapITerm(uint node, uint capIndex);
+  void writeNodeCap(uint netId, uint capIndex, uint ii);
+  uint writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rcSet);
+  bool writeCapNode(uint capNodeId, uint netId);
+  bool writeCapNode(odb::dbCapNode* capNode, uint netId);
+  uint getCapNodeId(char* nodeWord, char* capWord, uint* netId);
+  uint getCapNodeId(char* nodeWord);
+  uint getCapIdFromCapTable(char* nodeWord);
+  void addNewCapIdOnCapTable(char* nodeWord, uint capId);
+  uint getItermCapNode(uint termId);
+  uint getBtermCapNode(uint termId);
+  uint writeSrcCouplingCapsNoSort(odb::dbNet* net);
+  uint writeTgtCouplingCapsNoSort(odb::dbNet* net);
+  uint writeSrcCouplingCaps(odb::dbNet* net, uint netId = 0);
+  uint writeTgtCouplingCaps(odb::dbNet* net, uint netId = 0);
+  uint writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId);
+  uint writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
+  uint writeCouplingCapsNoSort(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
+  bool newCouplingCap(char* nodeWord1, char* nodeword2, char* capWord);
+  uint getCouplingCapId(uint ccNode1, uint ccNode2);
+  void addCouplingCapId(uint ccId);
+  void setSpefFlag(bool v);
+  void setExtIds(odb::dbNet* net);
+  void setExtIds();
+  void resetNameTable(uint n);
+  void createName(uint n, char* name);
+  char* makeName(char* name);
+  odb::dbNet* getDbNet(uint* id, uint spefId = 0);
+  odb::dbInst* getDbInst(uint id);
+  odb::dbCapNode* createCapNode(uint nodeId, char* capWord = NULL);
+  void addCouplingCaps(odb::dbNet* net, double* totCap);
+  void addCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, double* totCap);
+  uint writeCapPortsAndIterms(odb::dbSet<odb::dbCapNode>& capSet, bool bterms);
+  void writeSingleRC(double val, bool delimeter);
+  uint writeInternalCaps(odb::dbNet* net, odb::dbSet<odb::dbCapNode>& capSet);
+  void printCapNode(uint capNodeId);
+  void printAppearance(int app, int appc);
+  void printAppearance(int* appcnt, int tapp);
+
+  void reinit();
+  void addNetNodeHash(odb::dbNet* net);
+  void buildNodeHashTable();
+
+  bool isNetExcluded();
+
+  uint computeCapsAdd2Target(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap);
+  void copyCap(double* totCap, double* cap, uint n = 0);
+  void adjustCap(double* totCap, double* cap, uint n = 0);
+  void set_single_pi(bool v);
+
+  uint getAppPrintLimit() { return _cc_app_print_limit; };
+  int* getAppCnt() { return _appcnt; };
+  uint write_spef_nets(bool flatten, bool parallel);
+  char* getDelimeter();
+  void writeNameNode(odb::dbCapNode* node);
+  uint writeCapName(odb::dbCapNode* capNode, uint capIndex);
+
+  void setBlock(odb::dbBlock* blk);
+
+  const char* comp_bounds(double val, double min, double max, double& percent);
+  double percentDiff(double dbCap, double refCap);
+
  private:
   enum COORD_TYPE
   {
@@ -139,8 +429,6 @@ class extSpef
 
   uint _baseNameMap;
   uint _firstCapNode;
-  bool _useIds;  // Net/inst/bterm names expected to be look like : N1, I1, B1
-                 // name is same as in save_def option
 
   bool _preserveCapValues;
   bool _symmetricCCcaps;
@@ -264,7 +552,6 @@ class extSpef
   uint _childBlockInstBaseMap;
   uint _childBlockNetBaseMap;
 
- protected:
   Logger* logger_;
 
  public:
@@ -278,7 +565,6 @@ class extSpef
   bool _writeNameMap;
   bool _moreToRead;
   bool _termJxy;
-  bool _independentExtCorners;
   bool _incrPlusCcNets;
   odb::dbBTerm* _ccbterm1;
   odb::dbBTerm* _ccbterm2;
@@ -289,308 +575,6 @@ class extSpef
   char* _msgBuf2;
 
   extMain* _ext;
-
- public:
-  extSpef(odb::dbTech* tech,
-          odb::dbBlock* blk,
-          Logger* logger,
-          extMain* extmain,
-          uint btermCnt = 0,
-          uint itermCnt = 0);
-  ~extSpef();
-
-  void setLogger(Logger* logger);
-  bool matchNetGndCap(odb::dbNet* net,
-                      uint dbCorner,
-                      double dbCap,
-                      double refCap);
-  bool calibrateNetGndCap(odb::dbNet* net,
-                          uint dbCorner,
-                          double dbCap,
-                          double refCap);
-  bool computeFactor(double db, double ref, float& factor);
-
-  void initNodeCoordTables(uint memChunk);
-  void resetNodeCoordTables();
-  void deleteNodeCoordTables();
-  bool readNodeCoords(uint cpos);
-  void checkCCterm();
-  int findNodeIndexFromNodeCoords(uint targetCapNodeId);
-  void initSearchForNets();
-  uint addNetShapesOnSearch(uint netId);
-  void searchDealloc();
-  void getAnchorCoords(odb::dbNet* net,
-                       uint shapeId,
-                       int* x1,
-                       int* y1,
-                       int* x2,
-                       int* y2,
-                       odb::dbTechLayer** layer);
-  uint writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet);
-
-  void setupMappingForWrite(uint btermCnt = 0, uint itermCnt = 0);
-  void setupMapping(uint itermCnt = 0);
-  void preserveFlag(bool v);
-  void setCornerCnt(uint n);
-
-  void incr_wRun() { _wRun++; };
-  void incr_rRun() { _rRun++; };
-  void writeCNodeNumber();
-  odb::dbBlock* getBlock() { return _block; }
-  uint writeNet(odb::dbNet* net, double resBound, uint debug);
-  uint stopWrite();
-  uint readBlock(uint debug,
-                 std::vector<odb::dbNet*> tnets,
-                 bool force,
-                 bool rConn,
-                 char* nodeCoord,
-                 bool rCap,
-                 bool rOnlyCCcap,
-                 bool rRes,
-                 float cc_thres,
-                 float length_unit,
-                 bool extracted,
-                 bool keepLoadedCorner,
-                 bool stampWire,
-                 uint testParsing,
-                 int app_print_limit,
-                 bool m_map,
-                 int corner,
-                 double low,
-                 double up,
-                 char* excludeNetSubWord,
-                 char* netSubWord,
-                 char* capStatsFile,
-                 const char* dbCornerName,
-                 const char* calibrateBaseCorner,
-                 int spefCorner,
-                 int fixLoop,
-                 bool& resegCoord);
-  uint readBlockIncr(uint debug);
-
-  bool setOutSpef(char* filename);
-  bool closeOutFile();
-  void setGzipFlag(bool gzFlag);
-  bool setInSpef(char* filename, bool onlyOpen = false);
-  bool isCapNodeExcluded(odb::dbCapNode* node);
-  uint writeBlock(char* nodeCoord,
-                  const char* excludeCell,
-                  const char* capUnit,
-                  const char* resUnit,
-                  bool stopAfterNameMap,
-                  std::vector<odb::dbNet*>* tnets,
-                  bool wClock,
-                  bool wConn,
-                  bool wCap,
-                  bool wOnlyCCcap,
-                  bool wRes,
-                  bool noCnum,
-                  bool stopBeforeDnets,
-                  bool noBackSlash,
-                  bool flatten,
-                  bool parallel);
-  uint writeBlock(char* nodeCoord,
-                  const char* excludeCell,
-                  const char* capUnit,
-                  const char* resUnit,
-                  bool stopAfterNameMap,
-                  std::vector<odb::dbNet*> tnets,
-                  bool wClock,
-                  bool wConn,
-                  bool wCap,
-                  bool wOnlyCCcap,
-                  bool wRes,
-                  bool noCnum,
-                  bool stopBeforeDnets,
-                  bool noBackSlash,
-                  bool flatten,
-                  bool parallel);
-
-  int getWriteCorner(int corner, const char* name);
-  bool writeITerm(uint node);
-  bool writeBTerm(uint node);
-  bool writeNode(uint netId, uint node);
-  uint writePort(uint node);
-  void writeDnet(uint netId, double* totCap);
-  void writeKeyword(const char* keyword);
-  uint writePorts();
-  uint writeITerms();
-  uint getInstMapId(uint id);
-  void writeITermNode(uint node);
-
-  bool isBTermMarked(uint node);
-  void markBTerm(uint node);
-  void unMarkBTerm(uint node);
-  uint getBTermMapping(uint b);
-
-  uint getNetMapId(uint netId);
-  char* tinkerSpefName(char* iname);
-  char* addEscChar(const char* iname, bool esc_bus_brkts);
-
-  bool isITermMarked(uint node);
-  void markITerm(uint node);
-  void unMarkITerm(uint node);
-  uint getITermMapping(uint b);
-  void resetTermTables();
-  void resetCapTables(uint maxNode);
-  void initCapTable(Ath__array1D<double*>* table);
-  void deleteTableCap(Ath__array1D<double*>* table);
-  void reinitCapTable(Ath__array1D<double*>* table, uint n);
-  void addCap(double* cap, double* totCap, uint n);
-  void addHalfCap(double* totCap, double* cap, uint n = 0);
-  void getCaps(odb::dbNet* net, double* totCap);
-  void resetCap(double* cap);
-  void resetCap(double* cap, uint cnt);
-  void writeRCvalue(double* totCap, double units);
-  uint writeCapPort(uint index);
-  uint writeCapITerm(uint index);
-  uint writeCapITerms();
-  uint writeCapPorts();
-  void writeNodeCaps(uint netId, uint minNode, uint maxNode);
-  uint writeBlockPorts();
-  uint writeNetMap(odb::dbSet<odb::dbNet>& nets);
-  uint writeInstMap();
-
-  uint readDNet(uint debug);
-  uint getSpefNode(char* nodeWord, uint* instNetId, int* nodeType);
-  uint getITermId(uint instId, char* name);
-  uint getBTermId(char* name);
-  uint getBTermId(uint id);
-
-  bool readHeaderInfo(uint debug, bool skip = false);
-  bool writeHeaderInfo(uint debug);
-  bool readPorts(uint debug);
-  bool readNameMap(uint debug, bool skip = false);
-
-  void setDesign(char* name);
-  uint getCapNode(char* nodeWord, char* capWord);
-  uint getMappedBTermId(uint id);
-  void setUseIdsFlag(bool useIds, bool diff = false, bool calib = false);
-  void setCalibLimit(float upperLimit, float lowerLimit);
-  uint diffGndCap(odb::dbNet* net, uint capCnt, uint capId);
-  uint diffNetCcap(odb::dbNet* net);
-  double printDiff(odb::dbNet* net,
-                   double dbCap,
-                   double refCap,
-                   const char* ctype,
-                   int ii,
-                   int id = -1);
-  uint diffCCap(odb::dbNet* srcNet,
-                uint srcId,
-                odb::dbNet* tgtNet,
-                uint dstId,
-                uint capCnt);
-  double printDiffCC(odb::dbNet* net1,
-                     odb::dbNet* net2,
-                     uint node1,
-                     uint node2,
-                     double dbCap,
-                     double refCap,
-                     const char* ctype,
-                     int ii);
-  uint diffNetCap(odb::dbNet* net);
-  uint diffNetGndCap(odb::dbNet* net);
-  uint diffNetRes(odb::dbNet* net);
-  uint matchNetRes(odb::dbNet* net);
-  void resetExtIds(uint rit);
-  uint endNet(odb::dbNet* net, uint resCnt);
-  uint sortRSegs();
-  bool getFirstShape(odb::dbNet* net, odb::dbShape& s);
-  uint getNetLW(odb::dbNet* net, uint& w);
-  bool mkCapStats(odb::dbNet* net);
-  void collectDbCCap(odb::dbNet* net);
-  void matchCcValue(odb::dbNet* net);
-  uint matchNetCcap(odb::dbNet* net);
-  uint collectRefCCap(odb::dbNet* srcNet, odb::dbNet* tgtNet, uint capCnt);
-
-  uint getNodeCap(odb::dbSet<odb::dbRSeg>& rcSet,
-                  uint capNodeId,
-                  double* totCap);
-  uint getMultiples(uint cnt, uint base);
-  uint readMaxMapId(int* cornerCnt = NULL);
-  void addNameMapId(uint ii, uint id);
-  uint getNameMapId(uint ii);
-  void setCap(double* cap, uint n, double* totCap, uint startIndex);
-  void incrementCounter(double* cap, uint n);
-  uint setRCCaps(odb::dbNet* net);
-
-  uint getMinCapNode(odb::dbNet* net, uint* minNode);
-  uint computeCaps(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap);
-  uint getMappedCapNode(uint nodeId);
-  uint writePorts(odb::dbNet* net);
-  uint writeITerms(odb::dbNet* net);
-  uint writeCapPorts(odb::dbNet* net);
-  uint writeCapITerms(odb::dbNet* net);
-  uint writeNodeCaps(odb::dbNet* net, uint netId = 0);
-  uint writeCapPort(uint node, uint capIndex);
-  uint writeCapITerm(uint node, uint capIndex);
-  void writeNodeCap(uint netId, uint capIndex, uint ii);
-  uint writeRes(uint netId, odb::dbSet<odb::dbRSeg>& rcSet);
-  bool writeCapNode(uint capNodeId, uint netId);
-  bool writeCapNode(odb::dbCapNode* capNode, uint netId);
-  uint getCapNodeId(char* nodeWord, char* capWord, uint* netId);
-  uint getCapNodeId(char* nodeWord);
-  uint getCapIdFromCapTable(char* nodeWord);
-  void addNewCapIdOnCapTable(char* nodeWord, uint capId);
-  uint getItermCapNode(uint termId);
-  uint getBtermCapNode(uint termId);
-  uint writeSrcCouplingCapsNoSort(odb::dbNet* net);
-  uint writeTgtCouplingCapsNoSort(odb::dbNet* net);
-  uint writeSrcCouplingCaps(odb::dbNet* net, uint netId = 0);
-  uint writeTgtCouplingCaps(odb::dbNet* net, uint netId = 0);
-  uint writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId);
-  uint writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
-  uint writeCouplingCapsNoSort(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
-  bool newCouplingCap(char* nodeWord1, char* nodeword2, char* capWord);
-  uint getCouplingCapId(uint ccNode1, uint ccNode2);
-  void addCouplingCapId(uint ccId);
-  void setSpefFlag(bool v);
-  void setExtIds(odb::dbNet* net);
-  void setExtIds();
-  void resetNameTable(uint n);
-  void createName(uint n, char* name);
-  char* makeName(char* name);
-  odb::dbNet* getDbNet(uint* id, uint spefId = 0);
-  odb::dbInst* getDbInst(uint id);
-  odb::dbCapNode* createCapNode(uint nodeId, char* capWord = NULL);
-  void addCouplingCaps(odb::dbNet* net, double* totCap);
-  void addCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, double* totCap);
-  uint writeCapPortsAndIterms(odb::dbSet<odb::dbCapNode>& capSet, bool bterms);
-  void writeSingleRC(double val, bool delimeter);
-  uint writeInternalCaps(odb::dbNet* net, odb::dbSet<odb::dbCapNode>& capSet);
-  void printCapNode(uint capNodeId);
-  void printAppearance(int app, int appc);
-  void printAppearance(int* appcnt, int tapp);
-
-  void reinit();
-  void addNetNodeHash(odb::dbNet* net);
-  void buildNodeHashTable();
-
-  bool isNetExcluded();
-
-  uint computeCapsAdd2Target(odb::dbSet<odb::dbRSeg>& rcSet, double* totCap);
-  void copyCap(double* totCap, double* cap, uint n = 0);
-  void adjustCap(double* totCap, double* cap, uint n = 0);
-  void set_single_pi(bool v);
-
-  uint getAppPrintLimit() { return _cc_app_print_limit; };
-  int* getAppCnt() { return _appcnt; };
-  uint writeHierInstNameMap();
-  uint writeHierNetNameMap();
-  static int getIntProperty(odb::dbBlock* block, const char* name);
-  uint write_spef_nets(bool flatten, bool parallel);
-  char* getDelimeter();
-  void writeNameNode(odb::dbCapNode* node);
-  uint writeCapName(odb::dbCapNode* capNode, uint capIndex);
-
-  void writeDnetHier(uint mapId, double* totCap);
-  bool writeHierNet(odb::dbNet* net, double resBound, uint debug);
-  void setHierBaseNameMap(uint instBase, uint netBase);
-
-  void setBlock(odb::dbBlock* blk);
-
-  const char* comp_bounds(double val, double min, double max, double& percent);
-  double percentDiff(double dbCap, double refCap);
 };
 
 }  // namespace rcx

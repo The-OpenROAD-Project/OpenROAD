@@ -130,6 +130,10 @@ namespace pdn {
 class PdnGen;
 }
 
+namespace pad {
+class ICeWall;
+}
+
 namespace utl {
 class Logger;
 }
@@ -139,6 +143,10 @@ class Distributed;
 }
 namespace stt {
 class SteinerTreeBuilder;
+}
+
+namespace dft {
+class Dft;
 }
 
 namespace ord {
@@ -182,8 +190,10 @@ class OpenRoad
   ant::AntennaChecker* getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer* getIOPlacer() { return ioPlacer_; }
   pdn::PdnGen* getPdnGen() { return pdngen_; }
+  pad::ICeWall* getICeWall() { return icewall_; }
   dst::Distributed* getDistributed() { return distributer_; }
   stt::SteinerTreeBuilder* getSteinerTreeBuilder() { return stt_builder_; }
+  dft::Dft* getDft() { return dft_; }
 
   // Return the bounding box of the db rows.
   odb::Rect getCore();
@@ -274,8 +284,10 @@ class OpenRoad
   psm::PDNSim* pdnsim_;
   par::PartitionMgr* partitionMgr_;
   pdn::PdnGen* pdngen_;
+  pad::ICeWall* icewall_;
   dst::Distributed* distributer_;
   stt::SteinerTreeBuilder* stt_builder_;
+  dft::Dft* dft_;
 
   std::set<Observer*> observers_;
 

@@ -32,6 +32,7 @@
 
 #include "dbUtil.h"
 
+#include "array1.h"
 #include "db.h"
 #include "dbShape.h"
 #include "dbTechLayerRule.h"
@@ -40,7 +41,9 @@
 
 namespace odb {
 
-dbCreateNetUtil::dbCreateNetUtil()
+using utl::ODB;
+
+dbCreateNetUtil::dbCreateNetUtil(utl::Logger* logger)
     : _tech(nullptr),
       _block(nullptr),
       _ruleNameHint(0),
@@ -49,6 +52,7 @@ dbCreateNetUtil::dbCreateNetUtil()
       _mapArray(nullptr),
       _mapCnt(0),
       _ecoCnt(0),
+      logger_(logger),
       _skipPowerNets(true),
       _useLocation(false),
       _verbose(false)
@@ -85,7 +89,10 @@ void dbCreateNetUtil::checkAndSet(uint id)
 
     _mapArray = (dbNet**) realloc(_mapArray, n * sizeof(dbNet*));
     if (_mapArray == NULL) {
-      error(0, "Cannot allocate %lu MBytes for mapArray\n", n * sizeof(dbNet*));
+      logger_->error(ODB,
+                     389,
+                     "Cannot allocate {} MBytes for mapArray",
+                     n * sizeof(dbNet*));
     } else {
       for (uint ii = _mapCnt; ii < n; ii++)
         _mapArray[ii] = NULL;
@@ -121,8 +128,10 @@ dbBlock* dbCreateNetUtil::createBlock(dbBlock* blk,
   sprintf(blk_name, "%s__%d", "eco", blk->getId());
   _block = blk->findChild(blk_name);
   if (_block != NULL) {
-    warning(0,
-            "there is already an ECO block present!, will continue updating\n");
+    logger_->warn(
+        ODB,
+        417,
+        "There is already an ECO block present! Will continue updating");
     return _block;
   }
   _block = dbBlock::create(blk, blk_name, '/');
@@ -199,17 +208,6 @@ dbInst* dbCreateNetUtil::updateInst(dbInst* inst0,
                                     bool createInstance,
                                     bool destroyInstance)
 {
-  /*
-          if (strcmp(inst0->getConstName(), "MILOS_SETUP_26415_2")==0) {
-                  int x1,y1;
-                  inst0->getOrigin(x1,y1);
-                  std::string orient1 = inst0->getOrient().getString();
-
-              notice(0, "----> updateInst: %s Orientation %s Location %d %d\n",
-                  inst0->getConstName(), orient1.c_str(), x1, y1);
-      }
-  */
-
   dbInst* ecoInst = _block->findInst(inst0->getConstName());
   if (ecoInst == NULL)
     return createInst(inst0, createInstance, destroyInstance);
@@ -552,8 +550,6 @@ uint dbCreateNetUtil::printModifiedInsts(dbBlock* ecoBlock,
   dbSet<dbInst>::iterator iitr;
   for (iitr = insts.begin(); iitr != insts.end(); ++iitr) {
     dbInst* inst = *iitr;
-    // if (strcmp(inst->getConstName(), "B_19")==0)
-    //	notice(0, "printECO inst: %s\n", inst->getConstName());
     if (inst->getEcoModify())
       cnt += printEcoInst(inst, srcBlock, fp);
   }
@@ -735,61 +731,33 @@ void dbCreateNetUtil::writeEco(dbBlock* ecoBlock,
   FILE* fp = fopen(buff_name, "w");
 
   if (fp == NULL) {
-    warning(0, "Cannot open file %s for writting\n", fileName);
+    logger_->warn(ODB, 398, "Cannot open file {} for writting", fileName);
     return;
   }
-  /*
-     uint n= printDeletedInsts(ecoBlock, srcBlock, fp);
-     if (n>0)
-         notice(0, "%d Deleted Instances\n", n);
-
-     n= printNewInsts(ecoBlock, srcBlock, fp);
-     if (n>0)
-         notice(0, "%d New Instances\n", n);
-
- */
   fprintf(fp, "#Modified Instances\n");
-  uint n = printModifiedInsts(ecoBlock, srcBlock, fp);
-  if (n > 0)
-    notice(0, "%d Modified Instances\n", n);
+  printModifiedInsts(ecoBlock, srcBlock, fp);
 
   fprintf(fp, "#Disconnected ITerms from Existing Nets\n");
-  n = printModifiedNets(ecoBlock, false, srcBlock, fp);
-  if (n > 0)
-    notice(0, "%d Disconnected ITerms from Existing Nets\n", n);
+  printModifiedNets(ecoBlock, false, srcBlock, fp);
 
   fprintf(fp, "#New Instances\n");
-  n = printNewInsts(ecoBlock, srcBlock, fp);
-  if (n > 0)
-    notice(0, "%d New Instances\n", n);
+  printNewInsts(ecoBlock, srcBlock, fp);
 
   fprintf(fp, "#Connected ITerms from Existing Nets\n");
-  n = printModifiedNets(ecoBlock, true, srcBlock, fp);
-  if (n > 0)
-    notice(0, "%d Connected ITerms from Existing Nets\n", n);
+  printModifiedNets(ecoBlock, true, srcBlock, fp);
 
   fprintf(fp, "# Disconnected ITerms from Deleted Nets\n");
-  uint deletedNetTermCnt = printDeletedNets(ecoBlock, srcBlock, fp, -1);
+  printDeletedNets(ecoBlock, srcBlock, fp, -1);
   fprintf(fp, "# Deleted Nets\n");
-  n = printDeletedNets(ecoBlock, srcBlock, fp, 0);
-  if (n > 0)
-    notice(0, "%d Deleted Nets\n", n);
-  if (deletedNetTermCnt > 0)
-    notice(0, "%d Disconnected ITerms\n", deletedNetTermCnt);
+  printDeletedNets(ecoBlock, srcBlock, fp, 0);
 
   fprintf(fp, "#New Nets\n");
-  n = printNewNets(ecoBlock, srcBlock, fp, -1);
+  printNewNets(ecoBlock, srcBlock, fp, -1);
   fprintf(fp, "# Connected ITerms from New Nets\n");
-  uint newNetTermCnt = printNewNets(ecoBlock, srcBlock, fp, 0);
-  if (n > 0)
-    notice(0, "%d New Nets\n", n);
-  if (newNetTermCnt > 0)
-    notice(0, "%d Connected ITerms\n", newNetTermCnt);
+  printNewNets(ecoBlock, srcBlock, fp, 0);
 
   fprintf(fp, "#Deleted Instances\n");
-  n = printDeletedInsts(ecoBlock, srcBlock, fp);
-  if (n > 0)
-    notice(0, "%d Deleted Instances\n", n);
+  printDeletedInsts(ecoBlock, srcBlock, fp);
 
   fclose(fp);
 }
@@ -805,7 +773,7 @@ void dbCreateNetUtil::writeDetailedEco(dbBlock* ecoBlock,
   FILE* fp = fopen(buff_name, "w");
 
   if (fp == NULL) {
-    warning(0, "Cannot open file %s for writting\n", fileName);
+    logger_->warn(ODB, 399, "Cannot open file {} for writting", fileName);
     return;
   }
 
@@ -1050,11 +1018,12 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   if ((netName == NULL) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
     if (netName == NULL)
-      warning(0, "Cannot create wire, because net name is NULL\n");
+      logger_->warn(ODB, 400, "Cannot create wire, because net name is NULL\n");
     else
-      warning(0,
-              "Cannot create wire, because routing layer (%d) is invalid\n",
-              routingLayer);
+      logger_->warn(ODB,
+                    401,
+                    "Cannot create wire, because routing layer ({}) is invalid",
+                    routingLayer);
 
     return NULL;
   }
@@ -1100,13 +1069,14 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   if (width < (int) minWidth) {
     std::string ln = layer->getName();
-    warning(0,
-            "Cannot create net %s, because wire width (%d) is lessthan "
-            "minWidth (%d) on layer %s\n",
-            netName,
-            width,
-            minWidth,
-            ln.c_str());
+    logger_->warn(ODB,
+                  402,
+                  "Cannot create net %s, because wire width ({}) is less than "
+                  "minWidth ({}) on layer {}",
+                  netName,
+                  width,
+                  minWidth,
+                  ln.c_str());
     return NULL;
   }
 
@@ -1125,9 +1095,10 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
     if ((blutrms.first == NULL) || (blutrms.second == NULL)) {
       dbNet::destroy(net);
-      warning(0,
-              "Cannot create net %s, because failed to create bterms\n",
-              netName);
+      logger_->warn(ODB,
+                    403,
+                    "Cannot create net {}, because failed to create bterms",
+                    netName);
       return NULL;
     }
   }
@@ -1356,11 +1327,12 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   if ((netName == NULL) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
     if (netName == NULL)
-      warning(0, "Cannot create wire, because net name is NULL\n");
+      logger_->warn(ODB, 404, "Cannot create wire, because net name is NULL");
     else
-      warning(0,
-              "Cannot create wire, because routing layer (%d) is invalid\n",
-              routingLayer);
+      logger_->warn(ODB,
+                    405,
+                    "Cannot create wire, because routing layer ({}) is invalid",
+                    routingLayer);
 
     return NULL;
   }
@@ -1431,7 +1403,7 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   dbNet* net = dbNet::create(_block, netName, skipExistsNet);
 
   if (net == NULL) {
-    warning(0, "Cannot create net %s, duplicate net\n", netName);
+    logger_->warn(ODB, 406, "Cannot create net {}, duplicate net", netName);
     return NULL;
   }
 
@@ -1445,9 +1417,10 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
     if ((blutrms.first == NULL) || (blutrms.second == NULL)) {
       dbNet::destroy(net);
-      warning(0,
-              "Cannot create net %s, because failed to create bterms\n",
-              netName);
+      logger_->warn(ODB,
+                    407,
+                    "Cannot create net {}, because failed to create bterms",
+                    netName);
       return NULL;
     }
   }
@@ -1550,14 +1523,14 @@ dbNet* dbCreateNetUtil::createNetSingleVia(const char* netName,
                                            int lay2)
 {
   if (netName == NULL) {
-    warning(0, "Cannot create wire, because net name is NULL\n");
+    logger_->warn(ODB, 408, "Cannot create wire, because net name is NULL");
     return NULL;
   }
 
   dbNet* net = dbNet::create(_block, netName);
 
   if (net == NULL) {
-    warning(0, "Cannot create net %s, duplicate net\n", netName);
+    logger_->warn(ODB, 409, "Cannot create net {}, duplicate net", netName);
     return NULL;
   }
 
@@ -1579,14 +1552,18 @@ dbBox* dbCreateNetUtil::createTechVia(int x1,
                                       int lay2)
 {
   if ((lay1 < 1) || (lay1 > _tech->getRoutingLayerCount())) {
-    warning(
-        0, "Cannot create wire, because routing layer (%d) is invalid\n", lay1);
+    logger_->warn(ODB,
+                  410,
+                  "Cannot create wire, because routing layer ({}) is invalid",
+                  lay1);
     return NULL;
   }
 
   if ((lay2 < 1) || (lay2 > _tech->getRoutingLayerCount())) {
-    warning(
-        0, "Cannot create wire, because routing layer (%d) is invalid\n", lay2);
+    logger_->warn(ODB,
+                  411,
+                  "Cannot create wire, because routing layer ({}) is invalid",
+                  lay2);
     return NULL;
   }
 
@@ -1609,14 +1586,18 @@ bool dbCreateNetUtil::createSingleVia(dbNet* net,
                                       int lay2)
 {
   if ((lay1 < 1) || (lay1 > _tech->getRoutingLayerCount())) {
-    warning(
-        0, "Cannot create wire, because routing layer (%d) is invalid\n", lay1);
+    logger_->warn(ODB,
+                  412,
+                  "Cannot create wire, because routing layer ({}) is invalid",
+                  lay1);
     return false;
   }
 
   if ((lay2 < 1) || (lay2 > _tech->getRoutingLayerCount())) {
-    warning(
-        0, "Cannot create wire, because routing layer (%d) is invalid\n", lay2);
+    logger_->warn(ODB,
+                  413,
+                  "Cannot create wire, because routing layer ({}) is invalid",
+                  lay2);
     return false;
   }
 

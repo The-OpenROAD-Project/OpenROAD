@@ -47,6 +47,7 @@ class dbDiff;
 class _dbDatabase;
 class _dbPowerSwitch;
 class _dbIsolation;
+class _dbGroup;
 // User Code Begin Classes
 // User Code End Classes
 
@@ -64,6 +65,13 @@ class _dbPowerDomain : public _dbObject
   dbVector<std::string> _elements;
   dbVector<dbId<_dbPowerSwitch>> _power_switch;
   dbVector<dbId<_dbIsolation>> _isolation;
+  dbId<_dbGroup> _group;
+  bool _top;
+  dbId<_dbPowerDomain> _parent;
+  int _x1;
+  int _x2;
+  int _y1;
+  int _y2;
 
   // User Code Begin Fields
   // User Code End Fields

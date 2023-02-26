@@ -1080,6 +1080,9 @@ vector<vector<odb::dbRow*>> Tapcell::organizeRows()
   std::map<int, vector<odb::dbRow*>> rows_dict;
   // Gather rows according to yMin values
   for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     odb::Rect rowBB = row->getBBox();
     rows_dict[rowBB.yMin()].push_back(row);
   }

@@ -3045,9 +3045,6 @@ uint dbNet::setLevelAtFanout(uint level,
       continue;
 
     dbInst* inst = iterm->getInst();
-    // if (strcmp("INV_26", inst->getConstName())==0)
-    //	notice(0, "inst %d %s\n", inst->getId(), inst->getConstName());
-
     if (inst->getMaster()->isSequential())
       continue;
     if (inst->getLevel() != 0)

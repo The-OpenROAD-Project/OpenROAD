@@ -414,8 +414,6 @@ void DetailedMgr::findSegments()
 
     findRegionIntervals(regPtr->getId(), intervals);
 
-    int split = 0;
-
     for (int r = 0; r < numSingleHeightRows_; r++) {
       int n = (int) intervals[r].size();
       if (n == 0) {
@@ -462,8 +460,6 @@ void DetailedMgr::findSegments()
           }
           // Case 2:
           else if (il > sl && ir >= sr) {
-            ++split;
-
             segPtr->setMaxX((int) std::floor(il));
 
             auto newPtr = new DetailedSeg();
@@ -480,8 +476,6 @@ void DetailedMgr::findSegments()
           }
           // Case 3:
           else if (ir < sr && il <= sl) {
-            ++split;
-
             segPtr->setMinX((int) std::ceil(ir));
 
             auto newPtr = new DetailedSeg();
@@ -498,9 +492,6 @@ void DetailedMgr::findSegments()
           }
           // Case 4:
           else if (il > sl && ir < sr) {
-            ++split;
-            ++split;
-
             segPtr->setMaxX((int) std::floor(il));
 
             auto newPtr = new DetailedSeg();
@@ -888,7 +879,8 @@ bool DetailedMgr::findClosestSpanOfSegments(Node* nd,
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-void DetailedMgr::assignCellsToSegments(std::vector<Node*>& nodesToConsider)
+void DetailedMgr::assignCellsToSegments(
+    const std::vector<Node*>& nodesToConsider)
 {
   // For the provided list of cells which are assumed movable, assign those
   // cells to segments.
@@ -1086,7 +1078,7 @@ double DetailedMgr::measureMaximumDisplacement(double& maxX,
   double maxL1 = 0.;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 
@@ -1170,7 +1162,7 @@ void DetailedMgr::collectSingleHeightCells()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
     if (arch_->isMultiHeightCell(nd)) {
@@ -1208,12 +1200,10 @@ void DetailedMgr::collectMultiHeightCells()
   singleRowHeight_ = arch_->getRow(0)->getHeight();
   numSingleHeightRows_ = arch_->getNumRows();
 
-  int numMultiHeightCells_ = 0;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()
-        || arch_->isSingleHeightCell(nd)) {
+    if (nd->isTerminal() || nd->isFixed() || arch_->isSingleHeightCell(nd)) {
       continue;
     }
 
@@ -1223,7 +1213,6 @@ void DetailedMgr::collectMultiHeightCells()
       multiHeightCells_.resize(nRowsSpanned + 1, std::vector<Node*>());
     }
     multiHeightCells_[nRowsSpanned].push_back(nd);
-    ++numMultiHeightCells_;
   }
   for (size_t i = 0; i < multiHeightCells_.size(); i++) {
     if (multiHeightCells_[i].size() == 0) {
@@ -1244,11 +1233,6 @@ void DetailedMgr::collectFixedCells()
   // Fixed cells are used only to create blockages which, in turn, are used to
   // create obstacles.  Obstacles are then used to create the segments into
   // which cells can be placed.
-  //
-  // AAK: 01-dec-2021.  I noticed an error with respect to bookshelf format
-  // and the handling of TERMINAL_NI cells.  One can place movable cells on
-  // top of these sorts of terminals.  Therefore, they should NOT be considered
-  // as fixed, at least with respect to creating blockages.
 
   fixedCells_.erase(fixedCells_.begin(), fixedCells_.end());
 
@@ -1258,18 +1242,6 @@ void DetailedMgr::collectFixedCells()
 
     if (!nd->isFixed()) {
       // Not fixed, so skip.
-      continue;
-    }
-
-    if (nd->isTerminalNI()) {
-      // Skip these since we can place over them.
-      continue;
-    }
-
-    // If a cell is fixed, but defined by shapes,
-    // then skip it.  We _will_ encounter the
-    // shapes at some point.
-    if (nd->isDefinedByShapes()) {
       continue;
     }
 
@@ -1485,12 +1457,10 @@ int DetailedMgr::checkSiteAlignment()
   int err_n = 0;
 
   double singleRowHeight = getSingleRowHeight();
-  int nCellsInSegments = 0;
-  int nCellsNotInSegments = 0;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 
@@ -1505,12 +1475,10 @@ int DetailedMgr::checkSiteAlignment()
     int rt = rb + spanned - 1;
 
     if (reverseCellToSegs_[nd->getId()].size() == 0) {
-      ++nCellsNotInSegments;
       continue;
     } else if (reverseCellToSegs_[nd->getId()].size() != spanned) {
       internalError("Reverse cell map incorrectly sized.");
     }
-    ++nCellsInSegments;
 
     if (rb < 0 || rt >= arch_->getRows().size()) {
       // Either off the top of the bottom of the chip, so this is not
@@ -1547,7 +1515,7 @@ int DetailedMgr::checkRowAlignment()
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* nd = network_->getNode(i);
 
-    if (nd->isTerminal() || nd->isTerminalNI() || nd->isFixed()) {
+    if (nd->isTerminal() || nd->isFixed()) {
       continue;
     }
 

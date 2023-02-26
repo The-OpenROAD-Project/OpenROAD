@@ -1,7 +1,5 @@
 add_library(tm
-    tm.cpp
     ZFactory.cpp
-    ZNamespace.cpp
 )
 
 target_include_directories(tm

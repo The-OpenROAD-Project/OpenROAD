@@ -52,10 +52,7 @@ class dbBlock;
 class dbBox;
 using uint = unsigned int;
 
-unsigned int AthHashFunction(char* key, unsigned int len, unsigned int prime);
 int Ath__double2int(double v);
-
-int AthResourceLog(const char* title, int smallScale = 0);
 
 // Simple list
 template <class T>

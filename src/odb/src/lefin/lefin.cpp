@@ -712,6 +712,14 @@ void lefin::layer(lefiLayer* layer)
                     layer->propName(iii),
                     layer->name(),
                     layer->propValue(iii));
+    if (!supported) {
+      _logger->info(utl::ODB,
+                    388,
+                    "unsupported {} property for layer {} :\"{}\"",
+                    layer->propName(iii),
+                    layer->name(),
+                    layer->propValue(iii));
+    }
   }
   // update wrong way width
   for (auto rule : l->getTechLayerWidthTableRules()) {
@@ -1917,6 +1925,8 @@ void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
       P.setXTopEnclosure(dbdist(via->xTopOffset()));
       P.setYTopEnclosure(dbdist(via->yTopOffset()));
     }
+
+    v->setViaParams(P);
 
     if (via->hasCutPattern())
       v->setPattern(via->cutPattern());

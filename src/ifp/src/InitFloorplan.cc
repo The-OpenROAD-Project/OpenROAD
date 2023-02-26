@@ -48,6 +48,7 @@
 #include "sta/PortDirection.hh"
 #include "sta/StringUtil.hh"
 #include "sta/Vector.hh"
+#include "upf/upf.h"
 #include "utl/Logger.h"
 #include "utl/validation.h"
 
@@ -94,6 +95,8 @@ using odb::dbTechLayerType;
 using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Rect;
+
+using upf::eval_upf;
 
 InitFloorplan::InitFloorplan(dbBlock* block,
                              Logger* logger,
@@ -169,9 +172,14 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
     if (site) {
       // Destroy any existing rows.
       auto rows = block_->getRows();
-      for (dbSet<dbRow>::iterator row_itr = rows.begin(); row_itr != rows.end();
-           row_itr = dbRow::destroy(row_itr))
-        ;
+      for (dbSet<dbRow>::iterator row_itr = rows.begin();
+           row_itr != rows.end();) {
+        if (site != row_itr->getSite()) {
+          row_itr++;
+        } else {
+          row_itr = dbRow::destroy(row_itr);
+        }
+      }
 
       uint site_dx = site->getWidth();
       uint site_dy = site->getHeight();
@@ -192,6 +200,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
       }
       int cux = core.xMax();
       int cuy = core.yMax();
+      eval_upf(logger_, block_);
       makeRows(site, clx, cly, cux, cuy);
       updateVoltageDomain(site, clx, cly, cux, cuy);
     } else
@@ -227,7 +236,8 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
 
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
-    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN) {
+    if (group->getType() == dbGroupType::VOLTAGE_DOMAIN
+        || group->getType() == dbGroupType::POWER_DOMAIN) {
       dbRegion* domain_region = group->getRegion();
       int domain_xMin = std::numeric_limits<int>::max();
       int domain_yMin = std::numeric_limits<int>::max();
@@ -245,10 +255,17 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
 
       string domain_name = group->getName();
 
-      dbSet<dbRow> rows = block_->getRows();
+      std::vector<dbRow*> rows;
+      for (dbRow* row : block_->getRows()) {
+        if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+          continue;
+        }
+        rows.push_back(row);
+      }
+
       int total_row_count = rows.size();
 
-      dbSet<dbRow>::iterator row_itr = rows.begin();
+      std::vector<dbRow*>::iterator row_itr = rows.begin();
       for (int row_processed = 0; row_processed < total_row_count;
            row_processed++) {
         dbRow* row = *row_itr;
@@ -264,7 +281,8 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
         } else {
           string row_name = row->getName();
           dbOrientType orient = row->getOrient();
-          row_itr = dbRow::destroy(row_itr);
+          dbRow::destroy(row);
+          row_itr++;
 
           // lcr stands for left core row
           int lcr_xMax = domain_xMin - power_domain_y_space * site_dy;

@@ -35,12 +35,13 @@
 
 include("openroad")
 
-option(LOAD_PARTITIONERS "Load GPMetis and Chaco" OFF)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -m64 -Wall -fPIC")
+set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem ")
+set(LINKER_OPTIONS                  "-Wl,--export-dynamic")
 
-if (LOAD_PARTITIONERS)
-    set(PATH_PARTITIONERS ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Path to Partitioners Folder")
-    message(STATUS "Using partitioners")
-endif (LOAD_PARTITIONERS)
+find_package(Threads REQUIRED)
+find_package(ortools REQUIRED)
 
 swig_lib(NAME      par
          NAMESPACE par
@@ -50,60 +51,21 @@ swig_lib(NAME      par
 
 target_sources(par
   PRIVATE
-    src/Hypergraph.cpp
     src/MakePartitionMgr.cpp
     src/PartitionMgr.cpp
-    src/HypergraphDecomposition.cpp
-    src/PartitionNetwork.cpp
-    src/PartOptions.cpp
+    src/TritonPart.cpp
+    src/TPHypergraph.cpp
+    src/Utilities.cpp
+    src/TPCoarsener.cpp
+    src/TPMultilevel.cpp
+    src/TPRefiner.cpp
+    src/TPPartitioner.cpp
+    src/KPMRefinement.cpp
 )
 
 messages(
   TARGET par
 )
-
-add_subdirectory(src/MLPart)
-
-target_link_libraries(par
-    PRIVATE
-      MLPart
-)
-
-if (LOAD_PARTITIONERS)
-  target_compile_definitions(par
-    PRIVATE
-      PARTITIONERS
-  )
-  target_include_directories(par
-    PRIVATE
-      ${PATH_PARTITIONERS}/Partitioners/Chaco/code
-      ${PATH_PARTITIONERS}/Partitioners/Metis/include
-  )
-
-  find_library(CHACO NAMES Chaco
-          PATHS ${PATH_PARTITIONERS}/Partitioners
-          PATH_SUFFIXES build/Chaco/code)
-
-  if (NOT CHACO)
-          add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Chaco/code Chaco/code)
-          set(CHACO Chaco)
-  endif()
-
-  find_library(METIS NAMES metis
-          PATHS ${PATH_PARTITIONERS}/Partitioners
-          PATH_SUFFIXES build/Metis build/Metis/libmetis)
-
-  if (NOT METIS)
-          add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Metis Metis)
-          set(METIS metis)
-  endif()
-
-  target_link_libraries(par
-    PUBLIC
-      ${CHACO}
-      ${METIS}
-  )
-endif (LOAD_PARTITIONERS)
 
 target_include_directories(par
   PUBLIC
@@ -116,9 +78,10 @@ target_link_libraries(par
     OpenSTA
     utl
     dbSta
+  PRIVATE
+    ortools::ortools
+    dl
 )
-
-unset(LOAD_PARTITIONERS)
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          par_py

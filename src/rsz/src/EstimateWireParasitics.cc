@@ -272,6 +272,12 @@ Resizer::updateParasitics()
   }
 }
 
+bool
+Resizer::parasiticsValid() const
+{
+  return parasitics_invalid_.empty();
+}
+
 void
 Resizer::ensureWireParasitic(const Pin *drvr_pin)
 {

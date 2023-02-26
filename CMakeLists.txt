@@ -89,7 +89,7 @@ set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 # Default c++ standard used unless otherwise specified in target_compile_features.
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "the C++ standard to use for this project")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Disable compiler specific extensions like gnu++11.
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -134,6 +134,9 @@ message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
+message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
 
 # configure a header file to pass some of the CMake settings
 configure_file(

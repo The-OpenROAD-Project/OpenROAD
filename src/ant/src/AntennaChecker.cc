@@ -399,11 +399,9 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
     edge_vec.push_back({node->in_edge(), dbIoType::INPUT});
 
   dbWireGraph::Node::edge_iterator edge_it;
-  int out_edges_count = 0;
 
   for (edge_it = node->begin(); edge_it != node->end(); edge_it++) {
     if (nv.find((*edge_it)->source()) == nv.end()) {
-      out_edges_count++;
       edge_vec.push_back({*edge_it, dbIoType::OUTPUT});
     }
   }
@@ -1739,7 +1737,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
     global_router_->makeNetWires();
   else
     // detailed routes
-    odb::orderWires(block_, false);
+    odb::orderWires(logger_, block_);
 
   int net_violation_count = 0;
   int pin_violation_count = 0;
