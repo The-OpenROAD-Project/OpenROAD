@@ -34,22 +34,16 @@
 
 #include "odb.h"
 
+namespace utl {
+class Logger;
+}
+
 namespace odb {
 
 class dbBlock;
 class dbNet;
 
-void orderWires(dbBlock* b,
-                bool force,
-                bool verbose = false,
-                int cutLength = 0,
-                int maxLength = 0);
-void orderWires(dbBlock* b,
-                const char* net_name_or_id,
-                bool force,
-                bool verbose = false,
-                int cutLength = 0,
-                int maxLength = 0);
-void orderWires(dbNet* net, bool force, bool verbose = false);
+void orderWires(utl::Logger* logger, dbBlock* b);
+void orderWires(utl::Logger* logger, dbNet* net);
 
 }  // namespace odb

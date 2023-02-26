@@ -775,16 +775,10 @@ void dbFlatten::fixWire(dbVector<unsigned char>& opcodes,
 
       case WOP_ITERM: {
         dbITerm* src_iterm = dbITerm::getITerm(src, data[i]);
-        /*notice(0, "WOP_ITERM: src_iterm= %d I%d/%s %s\n",
-                src_iterm->getId(), src_iterm->getInst()->getId(),
-                src_iterm->getMTerm()->getConstName(),
-           src_iterm->getInst()->getConstName());
-        */
 
         // Check for hierarchical iterm, if iterm's block will be flattened then
         // discard this iterm
         if (src_iterm->getBTerm()) {
-          // notice(0, "------------------------------> WOP_ITERM:\n");
           if (level > 1) {
             opcodes[i] = WOP_NOP;
             data[i] = 0;
@@ -1338,7 +1332,6 @@ uint dbFlatten::setCorrectRsegIds(dbNet* dst)
     if (rsegId > 0)
       continue;
     rCnt++;
-    // notice(0, "old %d new %d\n", rsegId, rseg->getId());
     wire->setProperty(sid, rseg->getId());
   }
   return rCnt;

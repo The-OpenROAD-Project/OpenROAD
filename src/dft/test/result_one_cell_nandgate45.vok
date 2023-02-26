@@ -1,0 +1,13 @@
+module one_cell (clock,
+    output1,
+    port1,
+    set_b);
+ input clock;
+ output output1;
+ input port1;
+ input set_b;
+
+
+ DFF_X1 ff1 (.D(port1),
+    .Q(output1));
+endmodule

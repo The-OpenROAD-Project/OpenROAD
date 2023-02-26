@@ -672,22 +672,14 @@ void definNet::end()
 
   if (_wire) {
     if (_assembly_mode && !_found_new_routing) {
-      //          notice(0,"CANCEL wiring for net %s ID: %d\n",
-      //          _cur_net->getName().c_str(), _cur_net->getId());
       _wire_encoder.clear();
     } else {
-      //          notice(0,"Committing wiring for net %s ID: %d\n",
-      //          _cur_net->getName().c_str(), _cur_net->getId());
       _wire_encoder.end();
 
       if (_replace_wires)
         _cur_net->setWireAltered(true);
     }
-  } else {
-    //    notice(0,"NO WIRE for net %s ID: %d\n", _cur_net->getName().c_str(),
-    //    _cur_net->getId());
   }
-
   _cur_net = NULL;
 }
 
