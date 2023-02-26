@@ -201,7 +201,7 @@ def place_pins(design, *,
                 else:
                     utl.warn(utl.PPL, 343, f"Pin {pin_name} not found in group {group_idx}.")
 
-            design.getIOPlacer().addPinGroup(pin_list)
+            design.getIOPlacer().addPinGroup(pin_list, False)
             group_idx += 1
 
     design.getIOPlacer().run(random)
