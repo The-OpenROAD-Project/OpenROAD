@@ -47,4 +47,5 @@ triton_part_design –num_parts 2 –balance_constraint 2 –seed 0
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.
+
