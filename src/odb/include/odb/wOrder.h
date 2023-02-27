@@ -32,8 +32,6 @@
 
 #pragma once
 
-#include "odb.h"
-
 namespace utl {
 class Logger;
 }
