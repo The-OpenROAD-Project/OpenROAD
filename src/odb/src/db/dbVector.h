@@ -72,7 +72,6 @@ class dbVector : public std::vector<T>
   void out(dbDiff& diff, char side, const char* field) const;
 };
 
-#ifndef WIN32
 template <class T>
 class dbVector<T*> : public std::vector<T*>
 {
@@ -125,7 +124,6 @@ class dbVector<T*> : public std::vector<T*>
                    const dbVector<T*>& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
 };
-#endif
 
 template <class T>
 inline dbOStream& operator<<(dbOStream& stream, const dbVector<T>& v)
@@ -207,7 +205,6 @@ inline void dbVector<T>::out(dbDiff& diff, char side, const char* field) const
   }
 }
 
-#ifndef WIN32
 template <class T>
 inline void dbVector<T*>::differences(dbDiff& diff,
                                       const char* field,
@@ -246,7 +243,5 @@ inline void dbVector<T*>::out(dbDiff& diff, char side, const char* field) const
     (*i1)->out(diff, side, NULL);
   }
 }
-
-#endif
 
 }  // namespace odb
