@@ -78,7 +78,6 @@ add_library(db
     dbNameCache.cpp 
     dbProperty.cpp 
     dbPropertyItr.cpp 
-    dbFlatten.cpp 
     dbUtil.cpp
     gs.cpp
     grids.cpp
