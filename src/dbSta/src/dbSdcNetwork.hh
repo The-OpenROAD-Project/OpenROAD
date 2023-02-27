@@ -44,23 +44,20 @@ class dbSdcNetwork : public SdcNetwork
 public:
   dbSdcNetwork(Network* network);
   virtual Instance* findInstance(const char* path_name) const;
-  virtual void findInstancesMatching(const Instance* contex,
-                                     const PatternMatch* pattern,
-                                     InstanceSeq* insts) const;
-  virtual void findNetsMatching(const Instance*,
-                                const PatternMatch* pattern,
-                                NetSeq* nets) const;
-  virtual void findPinsMatching(const Instance* instance,
-                                const PatternMatch* pattern,
-                                PinSeq* pins) const;
+  virtual InstanceSeq findInstancesMatching(const Instance* contex,
+                                     const PatternMatch* pattern) const;
+  virtual NetSeq findNetsMatching(const Instance*,
+                                const PatternMatch* pattern) const;
+  virtual PinSeq findPinsMatching(const Instance* instance,
+                                  const PatternMatch* pattern) const;
 
 protected:
   void findInstancesMatching1(const PatternMatch* pattern,
-                              InstanceSeq* insts) const;
-  void findNetsMatching1(const PatternMatch* pattern, NetSeq* nets) const;
+                              InstanceSeq& insts) const;
+  void findNetsMatching1(const PatternMatch* pattern, NetSeq& nets) const;
   void findMatchingPins(const Instance* instance,
                         const PatternMatch* port_pattern,
-                        PinSeq* pins) const;
+                        PinSeq& pins) const;
   Pin* findPin(const char* path_name) const;
 
   using SdcNetwork::findPin;
