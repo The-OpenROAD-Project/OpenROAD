@@ -218,7 +218,7 @@ proc set_io_pin_constraint { args } {
       if { $db_bterm != "NULL" } {
         lappend pin_list $db_bterm
       } else {
-        utl::warn PPL 47 "Pin $pin_name not found in the group."
+        utl::warn PPL 47 "Group pin $pin_name not found in the design."
       }
     }
     ppl::add_pin_group $pin_list [info exists flags(-order)]
