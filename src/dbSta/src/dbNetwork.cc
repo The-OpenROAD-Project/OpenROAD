@@ -567,21 +567,20 @@ dbNetwork::findNet(const Instance* instance, const char* net_name) const
 void
 dbNetwork::findInstNetsMatching(const Instance* instance,
                                 const PatternMatch* pattern,
-                                // Return value.
-                                NetSeq* nets) const
+                                NetSeq& nets) const
 {
   if (instance == top_instance_) {
     if (pattern->hasWildcards()) {
       for (dbNet* dnet : block_->getNets()) {
         const char* net_name = dnet->getConstName();
         if (pattern->match(net_name))
-          nets->push_back(dbToSta(dnet));
+          nets.push_back(dbToSta(dnet));
       }
     }
     else {
       dbNet* dnet = block_->findNet(pattern->pattern());
       if (dnet)
-        nets->push_back(dbToSta(dnet));
+        nets.push_back(dbToSta(dnet));
     }
   }
 }
@@ -836,7 +835,7 @@ dbNetwork::visitConnectedPins(const Net* net,
   }
 }
 
-Net*
+const Net*
 dbNetwork::highestConnectedNet(Net* net) const
 {
   return net;
@@ -1232,7 +1231,7 @@ dbNetwork::disconnectPin(Pin* pin)
 }
 
 void
-dbNetwork::disconnectPinBefore(Pin* pin)
+dbNetwork::disconnectPinBefore(const Pin* pin)
 {
   Net* net = this->net(pin);
   // Incrementally update drivers.
@@ -1274,7 +1273,7 @@ dbNetwork::deleteNet(Net* net)
 }
 
 void
-dbNetwork::deleteNetBefore(Net* net)
+dbNetwork::deleteNetBefore(const Net* net)
 {
   PinSet* drvrs = net_drvr_pin_map_.findKey(net);
   delete drvrs;
