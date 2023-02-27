@@ -1,0 +1,17 @@
+name: clang-tidy-review
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: ClangTidy Gen
+        uses: QuantamHD/clang-tidy-review@v0.10.2
+        with:
+          build_dir: './build'
+          cmake_command: cmake . -B build '-DCMAKE_EXPORT_COMPILE_COMMANDS=on'
