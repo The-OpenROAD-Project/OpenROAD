@@ -93,7 +93,7 @@ the pins `pin1` and `pin2` will be placed symmetrically to each other.
 Same for `pin3` and `pin4`, and for `pin5` and `pin6`.
 
 The `-group` flag places together on the die boundary the pin list defined
-in `-pin_names`, similar to the `pin_group` option on `place_pins` command.
+in `-pin_names`, similar to the `-group_pins` option on `place_pins` command.
 The `-order` flag places the pins ordered in ascending x/y position.
 
 Note that if you call `define_pin_shape_pattern` before
