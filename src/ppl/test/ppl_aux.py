@@ -303,7 +303,12 @@ def set_io_pin_constraint(design, *,
     dbTech = design.getTech().getDB().getTech()
     dbBlock = design.getBlock()
     lef_units = dbTech.getLefUnits()
-    edge, interval = region.split(":")
+    edge = None
+    interval = None
+    if region != None:
+        edge, interval = region.split(":")
+    else:
+        region = ""
 
     if edge in ["top", "bottom", "left", "right"]:
         edge_ = parse_edge(design, edge)
