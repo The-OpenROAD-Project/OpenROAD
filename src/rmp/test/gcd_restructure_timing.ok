@@ -1,0 +1,105 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 571 components and 2554 component-terminals.
+[INFO ODB-0132]     Created 5 special nets and 1142 connections.
+[INFO ODB-0133]     Created 528 nets and 1412 connections.
+[WARNING STA-0354] set_input_delay relative to a clock defined on the same port/pin not allowed.
+worst slack 1.29
+Design area 670 u^2 10% utilization.
+[INFO ORD-0030] Using 3 thread(s).
+Number of paths for restructure are 69
+Found path of depth 5
+Found path of depth 6
+Found path of depth 8
+Found path of depth 15
+Found path of depth 0
+Found path of depth 18
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 18
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 18
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 15
+Found path of depth 0
+Found path of depth 16
+Found path of depth 16
+Found path of depth 16
+Found path of depth 16
+Found path of depth 16
+Found path of depth 16
+Found path of depth 16
+Found path of depth 16
+Found path of depth 15
+Found path of depth 16
+Found path of depth 15
+Found path of depth 15
+Found path of depth 15
+Found path of depth 15
+Found path of depth 15
+Found path of depth 16
+Found path of depth 2
+Found path of depth 5
+Found path of depth 13
+Found path of depth 14
+Found path of depth 13
+Found path of depth 15
+Found path of depth 14
+Found path of depth 15
+Found path of depth 6
+Found path of depth 8
+Found path of depth 10
+Found path of depth 10
+Found path of depth 11
+Found path of depth 11
+Found path of depth 13
+Found path of depth 10
+Found path of depth 12
+Found path of depth 6
+Found 3 end points for restructure
+Found 517 pins in extracted logic.
+Found 178 instances for restructuring.
+[INFO RMP-0002] Blif writer successfully dumped file with 178 instances.
+Cmd warning: redefining '%graft'
+Cmd warning: redefining '%graft'
+Cmd warning: redefining '%graft'
+Cmd warning: redefining '%graft'
+Reading ABC log ./results/abc_rcon.log0.
+Optimized to 178 instances in iteration 0 with max path depth decrease of 0, delay of 429.69.
+Reading ABC log ./results/abc_rcon.log1.
+Optimized to 189 instances in iteration 1 with max path depth decrease of 0, delay of 589.86.
+Reading ABC log ./results/abc_rcon.log2.
+Optimized to 182 instances in iteration 2 with max path depth decrease of 0, delay of 528.28.
+Reading ABC log ./results/abc_rcon.log3.
+Optimized to 179 instances in iteration 3 with max path depth decrease of 0, delay of 444.33.
+[INFO RMP-0005] Blif parsed successfully, will destroy 178 existing instances.
+[INFO RMP-0006] Found 41 inputs, 587 outputs, 0 clocks, 178 combinational gates, 0 registers after parsing the blif file.
+[INFO RMP-0007] Inserting 178 new instances.
+worst slack 1.18
+Design area 628 u^2 10% utilization.

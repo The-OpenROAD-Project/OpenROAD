@@ -63,6 +63,8 @@
 #include "sta/Search.hh"
 #include "sta/Sta.hh"
 #include "utl/Logger.h"
+#include <unistd.h> 
+#include <fcntl.h>
 
 using utl::RMP;
 using namespace abc;
@@ -193,7 +195,7 @@ void Restructure::runABC()
 
   debugPrint(
       logger_, RMP, "remap", 1, "Running ABC with {} modes.", modes.size());
-
+  
   for (size_t curr_mode_idx = 0; curr_mode_idx < modes.size();
        curr_mode_idx++) {
     output_blif_file_name_
@@ -213,14 +215,26 @@ void Restructure::runABC()
                1,
                "Writing ABC script file {}.",
                abc_script_file);
-
+    
     if (writeAbcScript(abc_script_file)) {
       // call linked abc
       Abc_Start();
       Abc_Frame_t* abc_frame = Abc_FrameGetGlobalFrame();
       const std::string command = "source " + abc_script_file;
+      
+      fflush(stdout);
+      int stdout_fd = dup(STDOUT_FILENO);
+      const std::string abc_log_name = logfile_ + std::to_string(curr_mode_idx);
+      std::ofstream { abc_log_name.c_str() };
+      int redir_fd = open(abc_log_name.c_str(), O_WRONLY);
+      dup2(redir_fd, STDOUT_FILENO);
+      close(redir_fd);
       child_proc[curr_mode_idx]
           = Cmd_CommandExecute(abc_frame, command.c_str());
+      fflush(stdout);
+      dup2(stdout_fd, STDOUT_FILENO);
+      close(stdout_fd);
+
       if (child_proc[curr_mode_idx]) {
         logger_->error(RMP, 26, "Error executing ABC command {}.", command);
         return;
@@ -228,9 +242,10 @@ void Restructure::runABC()
       Abc_Stop();
       // exit linked abc
       files_to_remove.emplace_back(abc_script_file);
+      files_to_remove.emplace_back(abc_log_name);
     }
   }  // end modes
-
+  
   // Inspect ABC results to choose blif with least instance count
   for (int curr_mode_idx = 0; curr_mode_idx < modes.size(); curr_mode_idx++) {
     // Skip failed ABC runs
@@ -267,7 +282,7 @@ void Restructure::runABC()
         } else {
           // Using only DELAY_4 for delay based gain since other modes not
           // showing good gains
-          if (modes[curr_mode_idx] == Mode::DELAY_4) {
+          if (delay < best_delay_gain) {
             best_delay_gain = delay;
             best_blif = output_blif_file_name_;
           }
@@ -323,7 +338,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       if (expanded.size() / 2 > max_depth) {
         ends.insert(end_point->pin());
         // Use only one end point to limit blob size for timing
-        break;
+        // break;
       }
     } else {
       ends.insert(end_point->pin());
@@ -500,6 +515,7 @@ bool Restructure::writeAbcScript(std::string file_name)
   writeOptCommands(script);
 
   script << "write_blif " << output_blif_file_name_ << std::endl;
+  script << "print_stats" << std::endl;
 
   if (logger_->debugCheck(RMP, "remap", 1))
     script << "write_verilog " << output_blif_file_name_ + std::string(".v")

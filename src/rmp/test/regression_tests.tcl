@@ -1,5 +1,6 @@
 record_tests {
   gcd_restructure
+  gcd_restructure_timing
   const_cell_removal
   blif_writer
   blif_writer_input_output
