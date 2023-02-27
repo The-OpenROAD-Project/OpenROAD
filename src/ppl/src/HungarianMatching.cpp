@@ -183,8 +183,7 @@ void HungarianMatching::findAssignmentForGroups()
 void HungarianMatching::createMatrixForGroups()
 {
   for (const auto& [pins, order] : pin_groups_) {
-    group_size_
-        = std::max(static_cast<int>(pins.size()), group_size_);
+    group_size_ = std::max(static_cast<int>(pins.size()), group_size_);
   }
 
   if (group_size_ > 0) {

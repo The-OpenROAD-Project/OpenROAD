@@ -1940,8 +1940,7 @@ void IOPlacer::initNetlist()
 
   int group_idx = 0;
   for (auto [pins, order] : pin_groups_) {
-    int group_created
-        = netlist_->createIOGroup(pins, order);
+    int group_created = netlist_->createIOGroup(pins, order);
     if (group_created == pins.size()) {
       group_idx++;
     }
