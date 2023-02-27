@@ -370,7 +370,16 @@ def set_io_pin_constraint(design, *,
 
     elif group:
         if pin_names != None:
-            pin_list = parse_pin_names(design, pin_names)
+            utl.info(utl.PPL, 44, f"Pin group: [{pin_names}]")
+            names = pin_names.split()
+            pin_list = []
+            for pin_name in names:
+                db_bterm = dbBlock.findBTerm(pin_name)
+                if db_bterm != None:
+                    pin_list.append(db_bterm)
+                else:
+                    utl.warn(utl.PPL, 500, f"Group pin {pin_name} not found in the design.")
+
             design.getIOPlacer().addPinGroup(pin_list, order)
 
     else:
