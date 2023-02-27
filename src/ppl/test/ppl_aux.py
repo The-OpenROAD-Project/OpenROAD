@@ -283,7 +283,9 @@ def clear_io_pin_constraints(design):
 def set_io_pin_constraint(design, *,
                           direction=None,
                           pin_names=None,  # single string list of pins
-                          region=None):
+                          region=None,
+                          group=False,
+                          order=False):
     """Set the region constraints for pins according to the pin direction or the pin name
 
     keyword arguments:
@@ -294,6 +296,9 @@ def set_io_pin_constraint(design, *,
     region    -- region constraint, e.g. "top:*" or "left:1.2-3.4"
                  "up" takes an area spec, ie "up:10 10 300 300" or specify
                  entire area with "up:*"
+    group     -- places together on the die boundary the pin list defined
+                 in pin_names
+    order     -- places the pin group ordered in ascending x/y position
     """
     dbTech = design.getTech().getDB().getTech()
     dbBlock = design.getBlock()
@@ -357,6 +362,11 @@ def set_io_pin_constraint(design, *,
             # utl.info(utl.PPL, 399, "Restrict pins to ... on layer ...")
             rect = odb.Rect(llx, lly, urx, ury)
             design.getIOPlacer().addTopLayerConstraint(pin_list, rect)
+
+    elif group:
+        if pin_names != None:
+            pin_list = parse_pin_names(design, pin_names)
+            design.getIOPlacer().addPinGroup(pin_list, order)
 
     else:
         utl.warn(utl.PPL, 373, f"Constraint with region {region} has an invalid edge.")
