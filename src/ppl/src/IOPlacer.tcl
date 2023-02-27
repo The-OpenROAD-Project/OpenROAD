@@ -210,7 +210,10 @@ proc set_io_pin_constraint { args } {
   } elseif [info exists flags(-group)] {
     if [info exists keys(-pin_names)] {
         set group $keys(-pin_names)
+    } else {
+      utl::error PPL 58 "The -pin_names argument is required when using -group flag."
     }
+
     utl::info PPL 44 "Pin group: \[$group\]"
     set pin_list {}
     foreach pin_name $group {
