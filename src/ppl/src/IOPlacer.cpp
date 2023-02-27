@@ -158,7 +158,7 @@ void IOPlacer::randomPlacement()
 
     bool top_layer = constraint.interval.getEdge() == Edge::invalid;
     for (auto& io_group : netlist_io_pins_->getIOGroups()) {
-      const PinList& pin_list = constraint.pin_list;
+      const PinSet& pin_list = constraint.pin_list;
       IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.first[0]);
       if (io_pin.isPlaced()) {
         continue;
@@ -333,8 +333,8 @@ void IOPlacer::initIOLists()
     idx++;
   }
 
-  for (auto pin_group : pin_groups_) {
-    netlist_io_pins_->createIOGroup(pin_group.first, pin_group.second);
+  for (auto [pins, order] : pin_groups_) {
+    netlist_io_pins_->createIOGroup(pins, order);
   }
 }
 
@@ -711,7 +711,7 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
                                                  std::vector<Section>& sections)
 {
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
-    const PinList& pin_list = constraint.pin_list;
+    const PinSet& pin_list = constraint.pin_list;
     IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.first[0]);
 
     if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
@@ -768,7 +768,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
           io_pin.assignToSection();
         }
         total_pins_assigned += group_size;
-        sections[i].pin_groups.push_back(std::make_pair(group, order));
+        sections[i].pin_groups.push_back({group, order});
         group_assigned = true;
         break;
       } else {
@@ -1113,7 +1113,7 @@ void IOPlacer::excludeInterval(Interval interval)
   excluded_intervals_.push_back(interval);
 }
 
-void IOPlacer::addNamesConstraint(PinList* pins, Edge edge, int begin, int end)
+void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
 {
   Interval interval(edge, begin, end);
   constraints_.push_back(Constraint(*pins, Direction::invalid, interval));
@@ -1125,11 +1125,11 @@ void IOPlacer::addDirectionConstraint(Direction direction,
                                       int end)
 {
   Interval interval(edge, begin, end);
-  Constraint constraint(PinList(), direction, interval);
+  Constraint constraint(PinSet(), direction, interval);
   constraints_.push_back(constraint);
 }
 
-void IOPlacer::addTopLayerConstraint(PinList* pins, const odb::Rect& region)
+void IOPlacer::addTopLayerConstraint(PinSet* pins, const odb::Rect& region)
 {
   Constraint constraint(*pins, Direction::invalid, region);
   constraints_.push_back(constraint);
@@ -1167,7 +1167,7 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
                                                  bool mirrored_only)
 {
   std::vector<int> pin_indices;
-  const PinList& pin_list = constraint.pin_list;
+  const PinSet& pin_list = constraint.pin_list;
   for (odb::dbBTerm* bterm : pin_list) {
     if (bterm->getFirstPinPlacementStatus().isFixed()) {
       continue;
@@ -1302,9 +1302,9 @@ Direction IOPlacer::getDirection(const std::string& direction)
   return Direction::invalid;
 }
 
-void IOPlacer::addPinGroup(PinGroup* group, bool order)
+void IOPlacer::addPinGroup(PinList* group, bool order)
 {
-  pin_groups_.push_back(std::make_pair(*group, order));
+  pin_groups_.push_back({*group, order});
 }
 
 void IOPlacer::findPinAssignment(std::vector<Section>& sections)
@@ -1939,10 +1939,10 @@ void IOPlacer::initNetlist()
   }
 
   int group_idx = 0;
-  for (auto pin_group : pin_groups_) {
+  for (auto [pins, order] : pin_groups_) {
     int group_created
-        = netlist_->createIOGroup(pin_group.first, pin_group.second);
-    if (group_created == pin_group.first.size()) {
+        = netlist_->createIOGroup(pins, order);
+    if (group_created == pins.size()) {
       group_idx++;
     }
   }

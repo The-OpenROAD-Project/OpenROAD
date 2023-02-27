@@ -71,9 +71,21 @@ using odb::Rect;
 using utl::Logger;
 
 // A list of pins that will be placed together in the die boundary
-typedef std::set<odb::dbBTerm*> PinList;
-typedef std::vector<odb::dbBTerm*> PinGroup;
+typedef std::set<odb::dbBTerm*> PinSet;
+typedef std::vector<odb::dbBTerm*> PinList;
 typedef std::unordered_map<odb::dbBTerm*, odb::dbBTerm*> MirroredPins;
+
+struct PinGroup
+{
+  PinList pins;
+  bool order;
+};
+
+struct PinGroupByIndex
+{
+  std::vector<int> pin_indices;
+  bool order;
+};
 
 enum class Edge
 {
@@ -106,16 +118,16 @@ class IOPlacer
   Parameters* getParameters() { return parms_.get(); }
   int computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
-  void addNamesConstraint(PinList* pins, Edge edge, int begin, int end);
+  void addNamesConstraint(PinSet* pins, Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction,
                               Edge edge,
                               int begin,
                               int end);
-  void addTopLayerConstraint(PinList* pins, const odb::Rect& region);
+  void addTopLayerConstraint(PinSet* pins, const odb::Rect& region);
   void addMirroredPins(odb::dbBTerm* bterm1, odb::dbBTerm* bterm2);
   void addHorLayer(odb::dbTechLayer* layer);
   void addVerLayer(odb::dbTechLayer* layer);
-  void addPinGroup(PinGroup* group, bool order);
+  void addPinGroup(PinList* group, bool order);
   void addTopLayerPinPattern(odb::dbTechLayer* layer,
                              int x_step,
                              int y_step,
@@ -225,7 +237,7 @@ class IOPlacer
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
-  std::vector<std::pair<PinGroup, bool>> pin_groups_;
+  std::vector<PinGroup> pin_groups_;
   MirroredPins mirrored_pins_;
 
   Logger* logger_;
