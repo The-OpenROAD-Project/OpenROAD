@@ -136,6 +136,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
              int(violating_ends.size() / double(endpoints->size()) * 100));
 
   int end_index = 0;
+  repair_tns_end_percent = 1; // test code to see what happens  (@openroadie)
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
