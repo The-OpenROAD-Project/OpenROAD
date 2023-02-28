@@ -73,7 +73,7 @@ class dbNetworkObserver
   virtual ~dbNetworkObserver();
 
   virtual void postReadLiberty() = 0;
-  virtual void postReadDb(){};
+  virtual void postReadDb(){}
 
  private:
   dbNetwork* owner_ = nullptr;
@@ -89,7 +89,7 @@ class dbNetwork : public ConcreteNetwork
   virtual ~dbNetwork();
   void init(dbDatabase* db, Logger* logger);
   void setBlock(dbBlock* block);
-  virtual void clear();
+  void clear() override;
 
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
@@ -103,12 +103,12 @@ class dbNetwork : public ConcreteNetwork
   void makeLibrary(dbLib* lib);
   void makeCell(Library* library, dbMaster* master);
 
-  virtual void location(const Pin* pin,
-                        // Return values.
-                        double& x,
-                        double& y,
-                        bool& exists) const;
-  virtual Point location(const Pin* pin) const;
+  void location(const Pin* pin,
+                // Return values.
+                double& x,
+                double& y,
+                bool& exists) const override;
+  Point location(const Pin* pin) const;
   bool isPlaced(const Pin* pin) const;
 
   LibertyCell* libertyCell(dbInst* inst);
@@ -154,80 +154,80 @@ class dbNetwork : public ConcreteNetwork
   //
   ////////////////////////////////////////////////////////////////
 
-  virtual bool linkNetwork(const char* top_cell_name,
-                           bool make_black_boxes,
-                           Report* report);
-  virtual bool isLinked() const;
+  bool linkNetwork(const char* top_cell_name,
+                   bool make_black_boxes,
+                   Report* report) override;
+  bool isLinked() const override;
 
   ////////////////////////////////////////////////////////////////
   // Instance functions
   // Top level instance of the design (defined after link).
-  virtual Instance* topInstance() const;
+  Instance* topInstance() const override;
   // Name local to containing cell/instance.
-  virtual const char* name(const Instance* instance) const;
-  virtual Cell* cell(const Instance* instance) const;
-  virtual Instance* parent(const Instance* instance) const;
-  virtual bool isLeaf(const Instance* instance) const;
-  virtual Instance* findInstance(const char* path_name) const;
-  virtual Instance* findChild(const Instance* parent, const char* name) const;
-  virtual InstanceChildIterator* childIterator(const Instance* instance) const;
-  virtual InstancePinIterator* pinIterator(const Instance* instance) const;
-  virtual InstanceNetIterator* netIterator(const Instance* instance) const;
+  const char* name(const Instance* instance) const override;
+  Cell* cell(const Instance* instance) const override;
+  Instance* parent(const Instance* instance) const override;
+  bool isLeaf(const Instance* instance) const override;
+  Instance* findInstance(const char* path_name) const override;
+  Instance* findChild(const Instance* parent, const char* name) const override;
+  InstanceChildIterator* childIterator(const Instance* instance) const override;
+  InstancePinIterator* pinIterator(const Instance* instance) const override;
+  InstanceNetIterator* netIterator(const Instance* instance) const override;
   
   ////////////////////////////////////////////////////////////////
   // Pin functions
-  virtual Pin* findPin(const Instance* instance, const char* port_name) const;
-  virtual Pin* findPin(const Instance* instance, const Port* port) const;
-  virtual Port* port(const Pin* pin) const;
-  virtual Instance* instance(const Pin* pin) const;
-  virtual Net* net(const Pin* pin) const;
-  virtual Term* term(const Pin* pin) const;
-  virtual PortDirection* direction(const Pin* pin) const;
-  virtual VertexId vertexId(const Pin* pin) const;
-  virtual void setVertexId(Pin* pin, VertexId id);
+  Pin* findPin(const Instance* instance, const char* port_name) const override;
+  Pin* findPin(const Instance* instance, const Port* port) const override;
+  Port* port(const Pin* pin) const override;
+  Instance* instance(const Pin* pin) const override;
+  Net* net(const Pin* pin) const override;
+  Term* term(const Pin* pin) const override;
+  PortDirection* direction(const Pin* pin) const override;
+  VertexId vertexId(const Pin* pin) const override;
+  void setVertexId(Pin* pin, VertexId id) override;
 
   ////////////////////////////////////////////////////////////////
   // Terminal functions
-  virtual Net* net(const Term* term) const;
-  virtual Pin* pin(const Term* term) const;
+  Net* net(const Term* term) const override;
+  Pin* pin(const Term* term) const override;
 
   ////////////////////////////////////////////////////////////////
   // Net functions
-  virtual Net* findNet(const Instance* instance, const char* net_name) const;
-  virtual void findInstNetsMatching(const Instance* instance,
-                                    const PatternMatch* pattern,
-                                    // Return value.
-                                    NetSeq* nets) const;
-  virtual const char* name(const Net* net) const;
-  virtual Instance* instance(const Net* net) const;
-  virtual bool isPower(const Net* net) const;
-  virtual bool isGround(const Net* net) const;
-  virtual NetPinIterator* pinIterator(const Net* net) const;
-  virtual NetTermIterator* termIterator(const Net* net) const;
-  virtual Net* highestConnectedNet(Net* net) const;
+  Net* findNet(const Instance* instance, const char* net_name) const override;
+  void findInstNetsMatching(const Instance* instance,
+                            const PatternMatch* pattern,
+                            // Return value.
+                            NetSeq* nets) const override;
+  const char* name(const Net* net) const override;
+  Instance* instance(const Net* net) const override;
+  bool isPower(const Net* net) const override;
+  bool isGround(const Net* net) const override;
+  NetPinIterator* pinIterator(const Net* net) const override;
+  NetTermIterator* termIterator(const Net* net) const override;
+  Net* highestConnectedNet(Net* net) const override;
   bool isSpecial(Net* net);
 
   ////////////////////////////////////////////////////////////////
   // Edit functions
-  virtual Instance* makeInstance(LibertyCell* cell,
-                                 const char* name,
-                                 Instance* parent);
-  virtual void makePins(Instance* inst);
-  virtual void replaceCell(Instance* inst, Cell* cell);
+  Instance* makeInstance(LibertyCell* cell,
+                         const char* name,
+                         Instance* parent) override;
+  void makePins(Instance* inst) override;
+  void replaceCell(Instance* inst, Cell* cell) override;
   // Deleting instance also deletes instance pins.
-  virtual void deleteInstance(Instance* inst);
+  void deleteInstance(Instance* inst) override;
   // Connect the port on an instance to a net.
-  virtual Pin* connect(Instance* inst, Port* port, Net* net);
-  virtual Pin* connect(Instance* inst, LibertyPort* port, Net* net);
+  Pin* connect(Instance* inst, Port* port, Net* net) override;
+  Pin* connect(Instance* inst, LibertyPort* port, Net* net) override;
   void connectPinAfter(Pin* pin);
-  virtual void disconnectPin(Pin* pin);
+  void disconnectPin(Pin* pin) override;
   void disconnectPinBefore(Pin* pin);
-  virtual void deletePin(Pin* pin);
-  virtual Net* makeNet(const char* name, Instance* parent);
-  virtual void deleteNet(Net* net);
+  void deletePin(Pin* pin) override;
+  Net* makeNet(const char* name, Instance* parent) override;
+  void deleteNet(Net* net) override;
   void deleteNetBefore(Net* net);
-  virtual void mergeInto(Net* net, Net* into_net);
-  virtual Net* mergedInto(Net* net);
+  void mergeInto(Net* net, Net* into_net) override;
+  Net* mergedInto(Net* net) override;
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
 
@@ -251,9 +251,9 @@ class dbNetwork : public ConcreteNetwork
   void readDbNetlistAfter();
   void makeTopCell();
   void findConstantNets();
-  virtual void visitConnectedPins(const Net* net,
-                                  PinVisitor& visitor,
-                                  NetSet& visited_nets) const;
+  void visitConnectedPins(const Net* net,
+                          PinVisitor& visitor,
+                          NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name);
 
   dbDatabase* db_;
