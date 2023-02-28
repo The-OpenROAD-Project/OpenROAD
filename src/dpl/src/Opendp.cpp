@@ -208,9 +208,8 @@ void Opendp::detailedPlacement(int max_displacement_x,
     if (!disallow_one_site_gaps_) {
       logger_->warn(DPL,
                     38,
-                    "No 1-site fill cells detected. to remove 1-site gaps, use "
-                    "-disallow_one_site_gaps flag");
-    }
+                    "No 1-site fill cells detected.  To remove 1-site gaps use "
+                    "the -disallow_one_site_gaps flag");    }
   }
   hpwl_before_ = hpwl();
   detailedPlacement();

@@ -46,7 +46,7 @@
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
-//#define ODP_DEBUG
+// #define ODP_DEBUG
 
 namespace dpl {
 
@@ -869,7 +869,7 @@ bool Opendp::checkPixels(const Cell* cell,
       // inclusive search, so we don't add 1 to the end
       int x_finish = min(x_end, row_site_count_ - 1);
       int y_finish = min(y_end, row_count_ - 1);
-      auto isAbut = [this](int x, int y) {
+      auto isAbutted = [this](int x, int y) {
         Pixel* pixel = gridPixel(x, y);
         return (pixel == nullptr || pixel->cell);
       };
@@ -878,19 +878,20 @@ bool Opendp::checkPixels(const Cell* cell,
         return (pixel != nullptr && pixel->cell);
       };
       // upper left corner
-      if (!isAbut(x_begin, y_begin) && cellAtSite(x_begin - 1, y_begin)) {
+      if (!isAbutted(x_begin, y_begin) && cellAtSite(x_begin - 1, y_begin)) {
         return false;
       }
       // lower left corner
-      if (!isAbut(x_begin, y_finish) && cellAtSite(x_begin - 1, y_finish)) {
+      if (!isAbutted(x_begin, y_finish) && cellAtSite(x_begin - 1, y_finish)) {
         return false;
       }
       // upper right corner
-      if (!isAbut(x_finish, y_begin) && cellAtSite(x_finish + 1, y_begin)) {
+      if (!isAbutted(x_finish, y_begin) && cellAtSite(x_finish + 1, y_begin)) {
         return false;
       }
       // lower right corner
-      if (!isAbut(x_finish, y_finish) && cellAtSite(x_finish + 1, y_finish)) {
+      if (!isAbutted(x_finish, y_finish)
+          && cellAtSite(x_finish + 1, y_finish)) {
         return false;
       }
     }
