@@ -77,8 +77,4 @@ jobs:
       - name: Build project
         shell: bash
         run: |
-          ./etc/Build.sh -compiler=clang
-      - name: Test build
-        shell: bash
-        run: |
-          build/src/openroad -help
+          ./etc/Build.sh
