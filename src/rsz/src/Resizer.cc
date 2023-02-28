@@ -1922,8 +1922,7 @@ Resizer::findMaxWireLength1()
       continue;
     }
 
-    // buffer_cells_ is asserted to be non-empty else where in resizer.
-    // so we should always have at least one buffer_cell.
+    // buffer_cells_ is required to be non-empty.
     for (LibertyCell* buffer_cell : buffer_cells_) {
       double buffer_length = findMaxWireLength(buffer_cell, corner);
       max_length = min(max_length.value_or(INF), buffer_length);
