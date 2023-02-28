@@ -60,8 +60,9 @@ Distributed::Distributed(utl::Logger* logger) : logger_(logger)
 
 Distributed::~Distributed()
 {
-  for (auto cb : callbacks_)
+  for (auto cb : callbacks_) {
     delete cb;
+  }
   callbacks_.clear();
 }
 
@@ -84,8 +85,9 @@ void Distributed::runWorker(const char* ip,
     if (interactive) {
       boost::thread t(boost::bind(&Worker::run, worker));
       t.detach();
-    } else
+    } else {
       worker->run();
+    }
   } catch (std::exception& e) {
     logger_->error(utl::DST, 1, "Worker server error: {}", e.what());
   }
@@ -98,9 +100,11 @@ void Distributed::runLoadBalancer(const char* ip,
   try {
     asio::io_service io_service;
     LoadBalancer balancer(this, io_service, logger_, ip, workers_domain, port);
-    if (std::strcmp(workers_domain, "") == 0)
-      for (auto worker : end_points_)
+    if (std::strcmp(workers_domain, "") == 0) {
+      for (const auto& worker : end_points_) {
         balancer.addWorker(worker.ip, worker.port);
+      }
+    }
     io_service.run();
   } catch (std::exception& e) {
     logger_->error(utl::DST, 9, "LoadBalancer error: {}", e.what());
@@ -109,7 +113,7 @@ void Distributed::runLoadBalancer(const char* ip,
 
 void Distributed::addWorkerAddress(const char* address, unsigned short port)
 {
-  end_points_.push_back(EndPoint(address, port));
+  end_points_.emplace_back(address, port);
 }
 // TODO: exponential backoff
 bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)
@@ -122,8 +126,8 @@ bool sendMsg(dst::socket& sock, const std::string& msg, std::string& errorMsg)
     if (!error) {
       errorMsg.clear();
       return true;
-    } else
-      errorMsg = error.message();
+    }
+    errorMsg = error.message();
   }
   return false;
 }
@@ -137,18 +141,17 @@ bool readMsg(dst::socket& sock, std::string& dataStr)
   if (error && error != asio::error::eof) {
     dataStr = error.message();
     return false;
-  } else {
-    auto bufs = receive_buffer.data();
-    auto offset = asio::buffers_begin(bufs) + receive_buffer.size();
-    std::string result = "";
-    if (offset <= asio::buffers_end(bufs))
-      result = std::string(asio::buffers_begin(bufs), offset);
-
-    dataStr = result;
-    if (dataStr == "")
-      return false;
-    return true;
   }
+
+  auto bufs = receive_buffer.data();
+  auto offset = asio::buffers_begin(bufs) + receive_buffer.size();
+  std::string result;
+  if (offset <= asio::buffers_end(bufs)) {
+    result = std::string(asio::buffers_begin(bufs), offset);
+  }
+
+  dataStr = result;
+  return !dataStr.empty();
 }
 
 bool Distributed::sendJob(JobMessage& msg,
@@ -177,19 +180,24 @@ bool Distributed::sendJob(JobMessage& msg,
       continue;
     }
     bool ok = sendMsg(sock, msgStr, resultStr);
-    if (!ok)
+    if (!ok) {
       continue;
+    }
     ok = readMsg(sock, resultStr);
-    if (!ok)
+    if (!ok) {
       continue;
-    if (!JobMessage::serializeMsg(JobMessage::READ, result, resultStr))
+    }
+    if (!JobMessage::serializeMsg(JobMessage::READ, result, resultStr)) {
       continue;
-    if (sock.is_open())
+    }
+    if (sock.is_open()) {
       sock.close();
+    }
     return true;
   }
-  if (resultStr == "")
+  if (resultStr.empty()) {
     resultStr = "MAX_TRIES reached";
+  }
   logger_->warn(
       utl::DST, 114, "Sending job failed with message \"{}\"", resultStr);
   return false;
@@ -234,11 +242,13 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
     boost::asio::ip::tcp::no_delay option(true);
     sock.set_option(option);
     bool ok = sendMsg(sock, msgStr, resultStr);
-    if (!ok)
+    if (!ok) {
       continue;
+    }
     ok = readMsg(sock, resultStr);
-    if (!ok)
+    if (!ok) {
       continue;
+    }
     std::string split;
     while (getNextMsg(resultStr, JobMessage::EOP, split)) {
       JobMessage tmp;
@@ -249,12 +259,14 @@ bool Distributed::sendJobMultiResult(JobMessage& msg,
       }
     }
     result.setJobType(JobMessage::SUCCESS);
-    if (sock.is_open())
+    if (sock.is_open()) {
       sock.close();
+    }
     return true;
   }
-  if (resultStr == "")
+  if (resultStr.empty()) {
     resultStr = "MAX_TRIES reached";
+  }
   logger_->warn(
       utl::DST, 14, "Sending job failed with message \"{}\"", resultStr);
   return false;
@@ -270,8 +282,9 @@ bool Distributed::sendResult(JobMessage& msg, dst::socket& sock)
   int tries = 0;
   std::string error;
   while (tries++ < MAX_TRIES) {
-    if (sendMsg(sock, msgStr, error))
+    if (sendMsg(sock, msgStr, error)) {
       return true;
+    }
   }
   logger_->warn(
       utl::DST, 22, "Sending result failed with message \"{}\"", error);
