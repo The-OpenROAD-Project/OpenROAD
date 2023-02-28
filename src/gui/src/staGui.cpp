@@ -1001,7 +1001,7 @@ void PinSetWidget::findPin()
     network->findPinsHierMatching(top_inst, &matcher, &found_pins);
 
     for (auto* pin : found_pins) {
-      addPin(pin);
+      addPin(const_cast<sta::Pin*>(pin));
     }
 
     // search ports
