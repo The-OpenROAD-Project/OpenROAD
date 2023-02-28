@@ -56,7 +56,8 @@ void Netlist::addIONet(const IOPin& io_pin,
   net_pointer_.push_back(inst_pins_.size());
 }
 
-int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list)
+int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
+                           bool order)
 {
   int pin_cnt = 0;
   std::vector<int> pin_indices;
@@ -70,13 +71,13 @@ int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list)
     pin_cnt++;
   }
 
-  io_groups_.push_back(pin_indices);
+  io_groups_.push_back(std::make_pair(pin_indices, order));
   return pin_indices.size();
 }
 
-void Netlist::addIOGroup(const std::vector<int>& pin_group)
+void Netlist::addIOGroup(const std::vector<int>& pin_group, bool order)
 {
-  io_groups_.push_back(pin_group);
+  io_groups_.push_back(std::make_pair(pin_group, order));
 }
 
 void Netlist::getSinksOfIO(int idx, std::vector<InstancePin>& sinks)
