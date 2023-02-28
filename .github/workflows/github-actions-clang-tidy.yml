@@ -15,3 +15,4 @@ jobs:
         with:
           build_dir: './build'
           cmake_command: cmake . -B build '-DCMAKE_EXPORT_COMPILE_COMMANDS=on'
+          config_file: '.clang-tidy'
