@@ -14,5 +14,5 @@ jobs:
         uses: QuantamHD/clang-tidy-review@v0.10.2
         with:
           build_dir: './build'
-          cmake_command: cmake . -B build '-DCMAKE_EXPORT_COMPILE_COMMANDS=on'
+          cmake_command: cmake . -B build
           config_file: '.clang-tidy'
