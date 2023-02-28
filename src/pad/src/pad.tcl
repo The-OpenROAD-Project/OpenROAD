@@ -91,7 +91,7 @@ proc remove_io_bump {args} {
   
   sta::check_argc_eq1 "remove_io_bump" $args
 
-  pad::remove_bump [pad::find_instance $args]
+  pad::remove_bump [pad::find_instance [lindex $args 0]]
 }
 
 sta::define_cmd_args "assign_io_bump" {-net net \
@@ -105,7 +105,7 @@ proc assign_io_bump {args} {
   sta::check_argc_eq1 "assign_io_bump" $args
 
   pad::assert_required assign_io_bump -net
-  pad::assign_net_to_bump [pad::find_instance $args] [pad::find_net $keys(-net)]
+  pad::assign_net_to_bump [pad::find_instance [lindex $args 0]] [pad::find_net $keys(-net)]
 }
 
 #####
@@ -170,7 +170,7 @@ proc place_corners {args} {
 
   sta::check_argc_eq1 "place_corners" $args
 
-  set master [pad::find_master $args]
+  set master [pad::find_master [lindex $args 0]]
   set index -1
   if {[info exists keys(-ring_index)]} {
     set index $keys(-ring_index)
@@ -196,7 +196,7 @@ proc place_pad {args} {
   if {[info exists keys(-master)]} {
     set master [pad::find_master $keys(-master)]
   }
-  set name $args
+  set name [lindex $args 0]
   pad::assert_required place_pad -location
   set offset [ord::microns_to_dbu $keys(-location)]
 
