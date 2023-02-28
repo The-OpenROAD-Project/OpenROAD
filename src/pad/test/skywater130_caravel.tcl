@@ -100,7 +100,7 @@ place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2240.0 {connect_46}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2260.0 {connect_47}
 place_pad -master sky130_ef_io__vdda_hvc_pad -row IO_SOUTH -location 3159.0 {mgmt_vdda_hvclamp_pad}
-place_pad -master sky130_ef_io__vssio_hvc_pad -row IO_SOUTH -location 2890.0 {mgmt_vssio_hvclamp_pad\[1\]}
+place_pad -master sky130_ef_io__vssio_hvc_pad -row IO_SOUTH -location 2890.0 {mgmt_vssio_hvclamp_pad\[0\]}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2434.0 {connect_48}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2454.0 {connect_49}
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 2474.0 {connect_50}
@@ -156,7 +156,7 @@ place_pad -master sky130_ef_io__vssa_hvc_pad -row IO_NORTH -location 2878.0 {use
 place_pad -master sky130_ef_io__disconnect_vccd_slice_5um -row IO_NORTH -location 2181.0 {brk_vccd_1}
 place_pad -master sky130_ef_io__disconnect_vdda_slice_5um -row IO_NORTH -location 2176.0 {brk_vdda_1}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 1919.0 {mprj_pads.area2_io_pad\[0\]}
-place_pad -master sky130_ef_io__vssio_hvc_pad -row IO_NORTH -location 1667.0 {mgmt_vssio_hvclamp_pad\[0\]}
+place_pad -master sky130_ef_io__vssio_hvc_pad -row IO_NORTH -location 1667.0 {mgmt_vssio_hvclamp_pad\[1\]}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 1410.0 {mprj_pads.area2_io_pad\[1\]}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 1152.0 {mprj_pads.area2_io_pad\[2\]}
 place_pad -master sky130_ef_io__gpiov2_pad_wrapped -row IO_NORTH -location 895.0 {mprj_pads.area2_io_pad\[3\]}

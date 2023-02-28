@@ -333,7 +333,7 @@ void IOPlacer::initIOLists()
     idx++;
   }
 
-  for (auto [pins, order] : pin_groups_) {
+  for (const auto& [pins, order] : pin_groups_) {
     netlist_io_pins_->createIOGroup(pins, order);
   }
 }
@@ -1939,7 +1939,7 @@ void IOPlacer::initNetlist()
   }
 
   int group_idx = 0;
-  for (auto [pins, order] : pin_groups_) {
+  for (const auto& [pins, order] : pin_groups_) {
     int group_created = netlist_->createIOGroup(pins, order);
     if (group_created == pins.size()) {
       group_idx++;
