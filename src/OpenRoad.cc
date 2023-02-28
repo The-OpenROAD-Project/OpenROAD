@@ -157,6 +157,7 @@ OpenRoad::~OpenRoad()
 {
   deleteDbVerilogNetwork(verilog_network_);
   deleteDbSta(sta_);
+  sta::deleteAllMemory();
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);

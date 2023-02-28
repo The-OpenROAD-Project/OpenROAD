@@ -82,7 +82,7 @@ class HungarianMatching
   Netlist* netlist_;
   Core* core_;
   const std::vector<int>& pin_indices_;
-  const std::vector<std::vector<int>>& pin_groups_;
+  const std::vector<PinGroupByIndex>& pin_groups_;
   std::vector<Slot>& slots_;
   int begin_slot_;
   int end_slot_;

@@ -35,8 +35,9 @@
 
 #include "upf/upf.h"
 
-#include <limits.h>
 #include <tcl.h>
+
+#include <climits>
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -278,7 +279,7 @@ odb::dbPowerDomain* match_module_to_domain(
     std::map<std::string, odb::dbPowerDomain*>& path_to_domain,
     const std::string& current_path)
 {
-  std::string longest_prefix = "";
+  std::string longest_prefix;
   int longest_prefix_length = 0;
 
   for (auto const& path : path_to_domain) {
@@ -443,7 +444,6 @@ bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
 }
 
 bool add_insts_to_group(
-    utl::Logger* logger,
     odb::dbBlock* block,
     odb::dbPowerDomain* top_domain,
     std::map<std::string, odb::dbPowerDomain*>& path_to_domain)
@@ -463,8 +463,9 @@ bool add_insts_to_group(
     bool found = false;
     std::string path = ".";
     auto mod = inst->getModule();
-    if (!mod)
+    if (!mod) {
       continue;
+    }
     if (mod == block->getTopModule()) {
       found = (module_to_domain.find(".") != module_to_domain.end());
     } else {
@@ -485,8 +486,7 @@ bool add_insts_to_group(
   return true;
 }
 
-bool find_smallest_inverter(utl::Logger* logger,
-                            odb::dbBlock* block,
+bool find_smallest_inverter(odb::dbBlock* block,
                             odb::dbMaster*& inverter_m,
                             odb::dbMTerm*& input_m,
                             odb::dbMTerm*& output_m)
@@ -522,7 +522,6 @@ bool find_smallest_inverter(utl::Logger* logger,
 }
 
 bool find_smallest_isolation(utl::Logger* logger,
-                             odb::dbBlock* block,
                              odb::dbIsolation* iso,
                              odb::dbMaster*& smallest_iso_m,
                              odb::dbMTerm*& enable_term,
@@ -536,7 +535,7 @@ bool find_smallest_isolation(utl::Logger* logger,
   bool isolation_sense = (iso->getIsolationSense() == "high");
   bool isolation_clamp_val = (iso->getClampValue() == "1");
   auto iso_cells = iso->getIsolationCells();
-  if (iso_cells.size() < 1) {
+  if (iso_cells.empty()) {
     logger->warn(utl::UPF,
                  10020,
                  "Isolation %s defined, but no cells defined.",
@@ -617,8 +616,7 @@ bool find_smallest_isolation(utl::Logger* logger,
                                invert_output);
 }
 
-bool insert_isolation_cell(utl::Logger* logger,
-                           odb::dbBlock* block,
+bool insert_isolation_cell(odb::dbBlock* block,
                            odb::dbInst* inst,
                            odb::dbNet* input_net,
                            odb::dbNet* control_net,
@@ -713,8 +711,9 @@ bool isolate_port(utl::Logger* logger,
 
   auto connectedIterms = net->getITerms();
 
-  if (connectedIterms.size() < 2)
+  if (connectedIterms.size() < 2) {
     return true;
+  }
 
   // Find ITERMS that belong to instances outside of this power domain
   std::vector<odb::dbITerm*> external_iterms;
@@ -727,8 +726,9 @@ bool isolate_port(utl::Logger* logger,
     }
   }
 
-  if (external_iterms.size() < 1)
+  if (external_iterms.empty()) {
     return true;
+  }
 
   auto control_net = block->findNet(iso->getIsolationSignal().c_str());
   if (!control_net) {
@@ -748,8 +748,7 @@ bool isolate_port(utl::Logger* logger,
           = net->getName() + "_" + external_iterm->getMTerm()->getName() + "_o";
       auto net_out = odb::dbNet::create(block, net_out_name.c_str());
 
-      insert_isolation_cell(logger,
-                            block,
+      insert_isolation_cell(block,
                             inst,
                             net,
                             control_net,
@@ -793,8 +792,7 @@ bool isolate_port(utl::Logger* logger,
     std::string net_out_name = net->getName() + "_o";
     auto net_out = odb::dbNet::create(block, net_out_name.c_str());
 
-    insert_isolation_cell(logger,
-                          block,
+    insert_isolation_cell(block,
                           inst,
                           net,
                           control_net,
@@ -840,7 +838,7 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
   // 1. Create a dbGroup associated to it
   // 2. Create a dbRegion associated to it
   // 3. map defined path to the power domain
-  if (associate_groups(logger, block, path_to_domain, top_domain) == false) {
+  if (!associate_groups(logger, block, path_to_domain, top_domain)) {
     return false;
   }
 
@@ -851,13 +849,13 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
   }
 
   // Associate each instance with its power domain group
-  add_insts_to_group(logger, block, top_domain, path_to_domain);
+  add_insts_to_group(block, top_domain, path_to_domain);
 
   // find the smallest possible inverter in advance
   odb::dbMaster* inverter_m = nullptr;
   odb::dbMTerm *input_m = nullptr, *output_m = nullptr;
   bool inverter_found
-      = find_smallest_inverter(logger, block, inverter_m, input_m, output_m);
+      = find_smallest_inverter(block, inverter_m, input_m, output_m);
 
   // PowerDomains have a hierarchy and when the isolation's
   // location is parent, it should be placed in the parent's power domain
@@ -869,16 +867,18 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
   // cell into either first or second domain?? (Not sure exactly)
 
   for (auto&& domain : pds) {
-    if (domain == top_domain)
+    if (domain == top_domain) {
       continue;
+    }
 
     // For now we're only using the first isolation
     // TODO: determine what needs to be done in case of multiple strategies
     // for same domain
     auto isos = domain->getIsolations();
 
-    if (isos.size() < 1)
+    if (isos.empty()) {
       continue;
+    }
 
     if (isos.size() > 1) {
       logger->warn(
@@ -897,7 +897,6 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     bool invert_output, invert_control;
 
     if (!find_smallest_isolation(logger,
-                                 block,
                                  iso,
                                  smallest_iso_m,
                                  enable_term,
@@ -925,8 +924,9 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     for (auto&& inst : insts) {
       auto iterms = inst->getITerms();
       for (auto&& iterm : iterms) {
-        if (iterm->getIoType() != odb::dbIoType::OUTPUT)
+        if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
           continue;
+        }
 
         isolate_port(logger,
                      block,

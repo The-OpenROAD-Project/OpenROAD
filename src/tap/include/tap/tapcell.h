@@ -89,7 +89,6 @@ class Tapcell
 {
  public:
   Tapcell();
-  ~Tapcell();
   void init(odb::dbDatabase* db, utl::Logger* logger);
   void setTapPrefix(const std::string& tap_prefix);
   void setEndcapPrefix(const std::string& endcap_prefix);
@@ -102,9 +101,9 @@ class Tapcell
  private:
   struct FilledSites
   {
-    int yMin;
-    int xMin;
-    int xMax;
+    int yMin = 0;
+    int xMin = 0;
+    int xMax = 0;
   };
   // Cells placed at corners of macros & corners of core area
   struct CornercapMasters
@@ -112,28 +111,28 @@ class Tapcell
     std::string nwin_master;
     std::string nwout_master;
   };
-  typedef std::map<int, std::vector<std::vector<int>>> RowFills;
+  using RowFills = std::map<int, std::vector<std::vector<int>>>;
 
   std::vector<odb::dbBox*> findBlockages();
   const std::pair<int, int> getMinMaxX(
       const std::vector<std::vector<odb::dbRow*>>& rows);
   RowFills findRowFills();
   odb::dbMaster* pickCornerMaster(LocationType top_bottom,
-                                  odb::dbOrientType ori,
+                                  const odb::dbOrientType& ori,
                                   odb::dbMaster* cnrcap_nwin_master,
                                   odb::dbMaster* cnrcap_nwout_master,
                                   odb::dbMaster* endcap_master);
-  bool checkSymmetry(odb::dbMaster* master, odb::dbOrientType ori);
-  LocationType getLocationType(const int x,
+  bool checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori);
+  LocationType getLocationType(int x,
                                const std::vector<odb::dbRow*>& rows_above,
                                const std::vector<odb::dbRow*>& rows_below);
   void makeInstance(odb::dbBlock* block,
                     odb::dbMaster* master,
-                    odb::dbOrientType orientation,
+                    const odb::dbOrientType& orientation,
                     int x,
                     int y,
                     const std::string& prefix);
-  bool isXInRow(const int x, const std::vector<odb::dbRow*>& subrow);
+  bool isXInRow(int x, const std::vector<odb::dbRow*>& subrow);
   bool checkIfFilled(int x,
                      int width,
                      odb::dbOrientType& orient,
@@ -174,9 +173,9 @@ class Tapcell
 
   int defaultDistance() const;
 
-  odb::dbDatabase* db_;
-  utl::Logger* logger_;
-  int phy_idx_;
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  int phy_idx_ = 0;
   std::vector<FilledSites> filled_sites_;
   std::string tap_prefix_;
   std::string endcap_prefix_;

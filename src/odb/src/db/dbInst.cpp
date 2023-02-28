@@ -362,9 +362,7 @@ void _dbInst::differences(dbDiff& diff,
     for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr)
       rhs_vec.push_back(*itr);
 
-#ifndef WIN32  // This line cause a compiler error in visual stdio 6.0
     set_symmetric_diff(diff, "_iterms", lhs_vec, rhs_vec);
-#endif
   }
 
   DIFF_END
