@@ -362,9 +362,7 @@ void _dbInst::differences(dbDiff& diff,
     for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr)
       rhs_vec.push_back(*itr);
 
-#ifndef WIN32  // This line cause a compiler error in visual stdio 6.0
     set_symmetric_diff(diff, "_iterms", lhs_vec, rhs_vec);
-#endif
   }
 
   DIFF_END
@@ -1292,13 +1290,10 @@ bool dbInst::swapMaster(dbMaster* new_master_)
   sortITerm itermCmp(block);
   std::sort(inst->_iterms.begin(), inst->_iterms.end(), itermCmp);
 
-  // Notification - payam 01/18/2006
+  // Notification
   for (cbitr = block->_callbacks.begin(); cbitr != block->_callbacks.end();
        ++cbitr)
     (*cbitr)->inDbInstSwapMasterAfter(this);
-
-  // notice(0, "dbSwap_END %s -> %s %s\n", old_master_->getConstName(),
-  // this->getMaster()->getConstName(), this->getConstName());
 
   return true;
 }

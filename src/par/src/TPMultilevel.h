@@ -43,7 +43,7 @@
 
 namespace par {
 
-enum RefinerType
+enum class RefinerType
 {
   KFM_REFINEMENT,  // direct k-way FM refinement
   KPM_REFINEMENT,  // pair-wise k-way FM refinement
@@ -58,7 +58,6 @@ using matrix = std::vector<std::vector<T>>;
 class TPmultilevelPartitioner
 {
  public:
-  TPmultilevelPartitioner() = default;
   TPmultilevelPartitioner(
       TP_coarsening_ptr coarsener,
       TP_partitioning_ptr partitioner,
@@ -121,11 +120,7 @@ class TPmultilevelPartitioner
         refine_type_(refine_type)
   {
   }
-  TPmultilevelPartitioner(const TPmultilevelPartitioner&) = default;
-  TPmultilevelPartitioner(TPmultilevelPartitioner&&) = default;
-  TPmultilevelPartitioner& operator=(const TPmultilevelPartitioner&) = default;
-  TPmultilevelPartitioner& operator=(TPmultilevelPartitioner&&) = default;
-  ~TPmultilevelPartitioner() = default;
+
   int GetBestInitSolns() const { return num_best_initial_solutions_; }
   TP_partition PartitionTwoWay(HGraph hgraph,
                                HGraph hgraph_processed,
@@ -137,22 +132,6 @@ class TPmultilevelPartitioner
                              bool VCycle);
 
  private:
-  bool v_cycle_flag_;
-  TP_coarsening_ptr coarsener_ = nullptr;
-  TP_partitioning_ptr partitioner_ = nullptr;
-  TP_two_way_refining_ptr two_way_refiner_ = nullptr;
-  TP_k_way_refining_ptr k_way_refiner_ = nullptr;
-  TP_greedy_refiner_ptr greedy_refiner_ = nullptr;
-  TP_ilp_refiner_ptr ilp_refiner_ = nullptr;
-  utl::Logger* logger_ = nullptr;
-  int num_parts_;
-  int num_initial_solutions_;
-  int num_best_initial_solutions_;
-  int num_ubfactor_delta_;
-  int max_num_vcycle_;
-  int seed_;
-  float ub_factor_;
-  RefinerType refine_type_;
   std::vector<int> MapClusters(TP_coarse_graphs hierarchy);
   void ParallelPart(HGraph coarsest_hgraph,
                     matrix<float>& max_vertex_balance,
@@ -198,8 +177,23 @@ class TPmultilevelPartitioner
                         HGraph hgraph,
                         matrix<float>& max_vertex_balance,
                         TP_k_way_refining_ptr refiner);
-};
 
-using TP_mlevel_partitioning_ptr = std::shared_ptr<TPmultilevelPartitioner>;
+  bool v_cycle_flag_;
+  TP_coarsening_ptr coarsener_ = nullptr;
+  TP_partitioning_ptr partitioner_ = nullptr;
+  TP_two_way_refining_ptr two_way_refiner_ = nullptr;
+  TP_k_way_refining_ptr k_way_refiner_ = nullptr;
+  TP_greedy_refiner_ptr greedy_refiner_ = nullptr;
+  TP_ilp_refiner_ptr ilp_refiner_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  int num_parts_;
+  int num_initial_solutions_;
+  int num_best_initial_solutions_;
+  int num_ubfactor_delta_;
+  int max_num_vcycle_;
+  int seed_;
+  float ub_factor_;
+  RefinerType refine_type_;
+};
 
 }  // namespace par

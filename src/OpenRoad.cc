@@ -69,7 +69,7 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
-#include "pad/MakePad.h"
+#include "pad/MakeICeWall.h"
 #include "par/MakePartitionMgr.h"
 #include "pdn/MakePdnGen.hh"
 #include "ppl/MakeIoplacer.h"
@@ -144,6 +144,7 @@ OpenRoad::OpenRoad()
       pdnsim_(nullptr),
       partitionMgr_(nullptr),
       pdngen_(nullptr),
+      icewall_(nullptr),
       distributer_(nullptr),
       stt_builder_(nullptr),
       dft_(nullptr),
@@ -156,6 +157,7 @@ OpenRoad::~OpenRoad()
 {
   deleteDbVerilogNetwork(verilog_network_);
   deleteDbSta(sta_);
+  sta::deleteAllMemory();
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
@@ -176,6 +178,7 @@ OpenRoad::~OpenRoad()
   odb::dbDatabase::destroy(db_);
   deletePartitionMgr(partitionMgr_);
   deletePdnGen(pdngen_);
+  deleteICeWall(icewall_);
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
@@ -231,6 +234,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   antenna_checker_ = makeAntennaChecker();
   partitionMgr_ = makePartitionMgr();
   pdngen_ = makePdnGen();
+  icewall_ = makeICeWall();
   distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
@@ -262,7 +266,7 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initMacroPlacer2(this);
 #endif
   initOpenRCX(this);
-  initPad(this);
+  initICeWall(this);
   initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);

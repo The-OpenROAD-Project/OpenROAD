@@ -86,11 +86,15 @@
 [INIT-PART] 48 :: Random part cutcost 282.63312
 [INIT-PART] 49 :: Random part cutcost 283.994
 [INIT-PART] 50 :: Vile part cutcost 250.12708
-[INIT-PART] 51 :: Ilp part cutcost 248.99448
+Optimal ILP-based Partitioning (OR-Tools) with warm-start ...
+Before Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
+min_diff_score : 2.6639671e-05
+After Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
+[INIT-PART] 51 :: Ilp part cutcost 154.65254
 ====================================================
 [STATUS] Running V-cycle refinement on 10 partitions
 ====================================================
-[INFO] 51 cutcost 194.63243 
+[INFO] 51 cutcost 154.65254 
 [INFO] 50 cutcost 194.97308 
 [INFO] 25 cutcost 189.51291 
 [INFO] 26 cutcost 211.75716 
@@ -104,56 +108,41 @@
 [STATUS] Running FC multilevel coarsening 
 =========================================
 [COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 368, 552 , 944 
-[COARSEN] Level 2 :: 207, 303, 552 , 769 
-[COARSEN] Level 3 :: 137, 254, 552 , 680 
+[COARSEN] Level 1 :: 312, 370, 552 , 947 
+[COARSEN] Level 2 :: 207, 301, 552 , 764 
+[COARSEN] Level 3 :: 137, 251, 552 , 670 
 ===================================
 [STATUS] Running V-cycle refinement
 ===================================
-[V-Refine] Level 1 :: 137, 254, 189.51291
-[V-Refine] Level 2 :: 207, 303, 189.51291
-[V-Refine] Level 3 :: 312, 368, 189.12935
-[V-Refine] Level 4 :: 469, 451, 189.12935
-[INFO] V-cycle refinement 1 delta cost 0.38356018
+[V-Refine] Level 1 :: 137, 251, 154.65254
+[V-Refine] Level 2 :: 207, 301, 154.65254
+[V-Refine] Level 3 :: 312, 370, 154.65254
+[V-Refine] Level 4 :: 469, 451, 154.65254
+[INFO] V-cycle refinement 1 delta cost 0.0
 =========================================
 [STATUS] Running FC multilevel coarsening 
 =========================================
 [COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 368, 552 , 944 
-[COARSEN] Level 2 :: 207, 303, 552 , 769 
-[COARSEN] Level 3 :: 137, 253, 552 , 679 
+[COARSEN] Level 1 :: 312, 370, 552 , 947 
+[COARSEN] Level 2 :: 207, 301, 552 , 764 
+[COARSEN] Level 3 :: 137, 251, 552 , 670 
 ===================================
 [STATUS] Running V-cycle refinement
 ===================================
-[V-Refine] Level 1 :: 137, 253, 189.12935
-[V-Refine] Level 2 :: 207, 303, 189.12935
-[V-Refine] Level 3 :: 312, 368, 189.12935
-[V-Refine] Level 4 :: 469, 451, 189.12935
+[V-Refine] Level 1 :: 137, 251, 154.65254
+[V-Refine] Level 2 :: 207, 301, 154.65254
+[V-Refine] Level 3 :: 312, 370, 154.65254
+[V-Refine] Level 4 :: 469, 451, 154.65254
 [INFO] V-cycle refinement 2 delta cost 0.0
-=========================================
-[STATUS] Running FC multilevel coarsening 
-=========================================
-[COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 368, 552 , 944 
-[COARSEN] Level 2 :: 207, 303, 552 , 769 
-[COARSEN] Level 3 :: 137, 253, 552 , 679 
-===================================
-[STATUS] Running V-cycle refinement
-===================================
-[V-Refine] Level 1 :: 137, 253, 189.12935
-[V-Refine] Level 2 :: 207, 303, 189.12935
-[V-Refine] Level 3 :: 312, 368, 189.12935
-[V-Refine] Level 4 :: 469, 451, 189.12935
-[INFO] V-cycle refinement 3 delta cost 0.0
-[Cutcost of partition : 189.12935]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36401 )    
+[Cutcost of partition : 154.65254]
+[Vertex balance of block_0 : 0.59249  ( 327.17993 )    
+[Vertex balance of block_1 : 0.40751  ( 225.03609 )    
 ===============================================
 [STATUS] Displaying timing path cuts statistics
 [INFO] Total timing critical paths = 52
-[INFO] Total paths cut = 31
-[INFO] Worst cut on a path = 3
-[INFO] Average cuts on critical paths = 0.9423077
+[INFO] Total paths cut = 26
+[INFO] Worst cut on a path = 1
+[INFO] Average cuts on critical paths = 0.5
 ===============================================
 Exiting TritonPart
 No differences found.

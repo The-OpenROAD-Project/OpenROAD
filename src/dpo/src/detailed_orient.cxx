@@ -151,13 +151,12 @@ int DetailedOrient::orientCells(int& changed)
   int errors = 0;
   for (int i = 0; i < network_->getNumNodes(); i++) {
     Node* ndi = network_->getNode(i);
-    if (!(ndi->isTerminal() || ndi->isTerminalNI() || ndi->isFixed())) {
+    if (!(ndi->isTerminal() || ndi->isFixed())) {
       // Figure out the lowest row for the cell.  Not that single
       // height cells are only in one row.
       int bottom = arch_->getNumRows();
-      for (int s = 0; s < mgrPtr_->reverseCellToSegs_[ndi->getId()].size();
-           s++) {
-        DetailedSeg* segPtr = mgrPtr_->reverseCellToSegs_[ndi->getId()][s];
+      for (int s = 0; s < mgrPtr_->getNumReverseCellToSegs(ndi->getId()); s++) {
+        DetailedSeg* segPtr = mgrPtr_->getReverseCellToSegs(ndi->getId())[s];
         bottom = std::min(bottom, segPtr->getRowId());
       }
       if (bottom < arch_->getNumRows()) {
@@ -315,8 +314,8 @@ int DetailedOrient::flipCells()
   double lx, rx;
 
   int nflips = 0;
-  for (int s = 0; s < mgrPtr_->segments_.size(); s++) {
-    DetailedSeg* segment = mgrPtr_->segments_[s];
+  for (int s = 0; s < mgrPtr_->getNumSegments(); s++) {
+    DetailedSeg* segment = mgrPtr_->getSegment(s);
 
     int row = segment->getRowId();
 
@@ -324,7 +323,8 @@ int DetailedOrient::flipCells()
       continue;
     }
 
-    std::vector<Node*>& nodes = mgrPtr_->cellsInSeg_[segment->getSegId()];
+    const std::vector<Node*>& nodes
+        = mgrPtr_->getCellsInSeg(segment->getSegId());
     for (int i = 0; i < nodes.size(); i++) {
       Node* ndi = nodes[i];
       // Only consider single height cells.

@@ -63,10 +63,8 @@ class Node
     UNKNOWN,
     CELL,
     TERMINAL,
-    TERMINAL_NI,
     MACROCELL,
-    FILLER,
-    SHAPE
+    FILLER
   };
 
   enum Fixity
@@ -115,9 +113,7 @@ class Node
   bool adjustCurrOrient(unsigned newOrient);
 
   bool isTerminal() const { return (type_ == TERMINAL); }
-  bool isTerminalNI() const { return (type_ == TERMINAL_NI); }
   bool isFiller() const { return (type_ == FILLER); }
-  bool isShape() const { return (type_ == SHAPE); }
   bool isFixed() const { return (fixed_ != NOT_FIXED); }
 
   int getLeftEdgeType() const { return etl_; }
@@ -129,8 +125,6 @@ class Node
 
   int getNumPins() const { return (int) pins_.size(); }
   const std::vector<Pin*>& getPins() const { return pins_; }
-
-  bool isDefinedByShapes() const { return isDefinedByShapes_; }
 
  private:
   // Id.
@@ -161,10 +155,6 @@ class Node
   unsigned availOrient_;
   // Pins.
   std::vector<Pin*> pins_;
-  // Shapes.  Legacy from bookshelf in which
-  // some fixed macros are not rectangles
-  // and are defined by sub-rectanges (shapes).
-  bool isDefinedByShapes_;
 
   friend class Network;
 };
@@ -304,11 +294,6 @@ class Network
 
   // For creating and adding cells.
   Node* createAndAddNode();  // Network cells.
-  Node* createAndAddShapeNode(
-      int left,
-      int bottom,
-      int width,
-      int height);  // Extras for non-rectangular shapes.
   Node* createAndAddFillerNode(int left,
                                int bottom,
                                int width,

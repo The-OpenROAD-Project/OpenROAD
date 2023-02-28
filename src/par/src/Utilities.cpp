@@ -60,7 +60,7 @@
 namespace par {
 
 // Write solution
-void WriteSolution(const char* solution_file, std::vector<int>& solution)
+void WriteSolution(const char* solution_file, const std::vector<int>& solution)
 {
   std::ofstream solution_file_output;
   solution_file_output.open(solution_file);
@@ -69,14 +69,9 @@ void WriteSolution(const char* solution_file, std::vector<int>& solution)
   solution_file_output.close();
 }
 
-void AnalyzeTimingOfPartition(std::vector<std::vector<int>>& paths,
-                              const char* solution_file)
-{
-}
-
 std::shared_ptr<TimingCuts> AnalyzeTimingOfPartition(
-    std::vector<std::vector<int>>& paths,
-    std::vector<int>& solution)
+    const std::vector<std::vector<int>>& paths,
+    const std::vector<int>& solution)
 {
   int total_cuts = 0;
   int worst_cut = -std::numeric_limits<int>::max();
@@ -106,9 +101,9 @@ std::shared_ptr<TimingCuts> AnalyzeTimingOfPartition(
       paths.size());
 }
 
-std::string GetVectorString(std::vector<float> vec)
+std::string GetVectorString(const std::vector<float>& vec)
 {
-  std::string line = "";
+  std::string line;
   for (auto value : vec)
     line += std::to_string(static_cast<int>(value)) + " ";
   return line;
@@ -122,43 +117,45 @@ void Accumulate(std::vector<float>& a, const std::vector<float>& b)
 }
 
 // weighted sum
-std::vector<float> WeightedSum(const std::vector<float> a,
-                               float a_factor,
-                               const std::vector<float> b,
-                               float b_factor)
+std::vector<float> WeightedSum(const std::vector<float>& a,
+                               const float a_factor,
+                               const std::vector<float>& b,
+                               const float b_factor)
 {
   assert(a.size() == b.size());
   std::vector<float> result;
   result.reserve(a.size());
   auto a_iter = a.begin();
   auto b_iter = b.begin();
-  while (a_iter != a.end())
+  while (a_iter != a.end()) {
     result.push_back(((*a_iter++) * a_factor + (*b_iter++) * b_factor)
                      / (a_factor + b_factor));
+  }
   return result;
 }
 
 // divide the vector
-std::vector<float> DivideFactor(const std::vector<float> a, float factor)
+std::vector<float> DivideFactor(const std::vector<float>& a, const float factor)
 {
   std::vector<float> result = a;
   for (auto& value : result)
-    value = value / factor;
+    value /= factor;
   return result;
 }
 
 // multiply the vector
-std::vector<float> MultiplyFactor(const std::vector<float> a, float factor)
+std::vector<float> MultiplyFactor(const std::vector<float>& a,
+                                  const float factor)
 {
   std::vector<float> result = a;
   for (auto& value : result)
-    value = value * factor;
+    value *= factor;
   return result;
 }
 
 // operation for two vectors +, -, *,  ==, <
-std::vector<float> operator+(const std::vector<float> a,
-                             const std::vector<float> b)
+std::vector<float> operator+(const std::vector<float>& a,
+                             const std::vector<float>& b)
 {
   assert(a.size() == b.size());
   std::vector<float> result;
@@ -171,8 +168,8 @@ std::vector<float> operator+(const std::vector<float> a,
   return result;
 }
 
-std::vector<float> operator-(const std::vector<float> a,
-                             const std::vector<float> b)
+std::vector<float> operator-(const std::vector<float>& a,
+                             const std::vector<float>& b)
 {
   assert(a.size() == b.size());
   std::vector<float> result;
@@ -185,8 +182,8 @@ std::vector<float> operator-(const std::vector<float> a,
   return result;
 }
 
-std::vector<float> operator*(const std::vector<float> a,
-                             const std::vector<float> b)
+std::vector<float> operator*(const std::vector<float>& a,
+                             const std::vector<float>& b)
 {
   assert(a.size() == b.size());
   std::vector<float> result;
@@ -199,7 +196,7 @@ std::vector<float> operator*(const std::vector<float> a,
   return result;
 }
 
-std::vector<float> operator*(const std::vector<float> a, float factor)
+std::vector<float> operator*(const std::vector<float>& a, const float factor)
 {
   std::vector<float> result;
   result.reserve(a.size());
@@ -208,7 +205,7 @@ std::vector<float> operator*(const std::vector<float> a, float factor)
   return result;
 }
 
-int PartitionWithMinWt(std::vector<std::vector<float>>& area)
+int PartitionWithMinWt(const std::vector<std::vector<float>>& area)
 {
   int min_part = 0;
   std::vector<float> min_area(area[0].size(),
@@ -222,7 +219,7 @@ int PartitionWithMinWt(std::vector<std::vector<float>>& area)
   return min_part;
 }
 
-int PartitionWithMaxWt(std::vector<std::vector<float>>& area)
+int PartitionWithMaxWt(const std::vector<std::vector<float>>& area)
 {
   int max_part = 0;
   std::vector<float> max_area(area[0].size(),
@@ -236,7 +233,7 @@ int PartitionWithMaxWt(std::vector<std::vector<float>>& area)
   return max_part;
 }
 
-bool operator<(const std::vector<float> a, const std::vector<float> b)
+bool operator<(const std::vector<float>& a, const std::vector<float>& b)
 {
   assert(a.size() == b.size());
   auto a_iter = a.begin();
@@ -248,13 +245,13 @@ bool operator<(const std::vector<float> a, const std::vector<float> b)
   return true;
 }
 
-bool operator==(const std::vector<float> a, const std::vector<float> b)
+bool operator==(const std::vector<float>& a, const std::vector<float>& b)
 {
-  return a.size() == a.size() && std::equal(a.begin(), a.end(), a.begin());
+  return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
 }
 
 // Basic functions for a vector
-std::vector<float> abs(const std::vector<float> a)
+std::vector<float> abs(const std::vector<float>& a)
 {
   std::vector<float> result;
   result.reserve(a.size());
@@ -265,14 +262,14 @@ std::vector<float> abs(const std::vector<float> a)
   return result;
 }
 
-float norm2(const std::vector<float> a)
+float norm2(const std::vector<float>& a)
 {
   float result{0};
   result = std::inner_product(a.begin(), a.end(), a.begin(), result);
   return std::sqrt(result);
 }
 
-float norm2(std::vector<float> a, std::vector<float> factor)
+float norm2(const std::vector<float>& a, const std::vector<float>& factor)
 {
   float result{0};
   assert(a.size() <= factor.size());

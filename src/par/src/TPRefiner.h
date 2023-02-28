@@ -47,7 +47,7 @@ using matrix = std::vector<std::vector<T>>;
 using TP_partition = std::vector<int>;
 using TP_partition_token = std::pair<float, matrix<float>>;
 
-enum RefinerChoice
+enum class RefinerChoice
 {
   TWO_WAY_FM,
   GREEDY,
@@ -65,10 +65,12 @@ class VertexGain
     vertex_ = -1;
     source_part_ = -1;
     potential_move_ = -1;
+    gain_ = -1;
   }
   VertexGain(int arg_vertex, float arg_gain)
       : vertex_(arg_vertex), gain_(arg_gain)
   {
+    source_part_ = -1;
     potential_move_ = -1;
     status_ = true;
   }
@@ -81,6 +83,7 @@ class VertexGain
   VertexGain(int arg_vertex, float arg_gain, std::map<int, float> arg_path_cost)
       : vertex_(arg_vertex), gain_(arg_gain), path_cost_(arg_path_cost)
   {
+    source_part_ = -1;
     potential_move_ = -1;
     status_ = true;
   }
@@ -96,10 +99,6 @@ class VertexGain
     potential_move_ = -1;
     status_ = true;
   }
-  VertexGain(const VertexGain&) = default;
-  VertexGain& operator=(const VertexGain&) = default;
-  VertexGain(VertexGain&&) = default;
-  VertexGain& operator=(VertexGain&&) = default;
   bool operator<(const VertexGain& vertex_gain) const
   {
     if (gain_ > vertex_gain.gain_) {
@@ -146,10 +145,9 @@ using TP_gain_cell = std::shared_ptr<VertexGain>;
 class TPrefiner
 {
  public:
-  TPrefiner() = default;
   TPrefiner(const int num_parts,
             const int refiner_iters,
-            const int refiner_choice,
+            const RefinerChoice refiner_choice,
             const int seed,
             const std::vector<float> e_wt_factors,
             const float path_wt_factor,
@@ -159,16 +157,18 @@ class TPrefiner
         refiner_iters_(refiner_iters),
         refiner_choice_(refiner_choice),
         seed_(seed),
+        thr_he_size_skip_(0),
         e_wt_factors_(e_wt_factors),
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),
+        tolerance_(0),
         logger_(logger)
   {
   }
-  TPrefiner(const TPrefiner&) = default;
-  TPrefiner(TPrefiner&&) = default;
-  TPrefiner& operator=(const TPrefiner&) = default;
-  TPrefiner& operator=(TPrefiner&&) = default;
+  TPrefiner(const TPrefiner&) = delete;
+  TPrefiner(TPrefiner&&) = delete;
+  TPrefiner& operator=(const TPrefiner&) = delete;
+  TPrefiner& operator=(TPrefiner&&) = delete;
   virtual ~TPrefiner() = default;
   virtual void BalancePartition(const HGraph hgraph,
                                 const matrix<float>& max_block_balance,
@@ -263,7 +263,7 @@ class TPrefiner
   float GetTolerance() const { return tolerance_; }
   int GetNumParts() const { return num_parts_; }
   int GetRefinerIters() const { return refiner_iters_; }
-  int GetRefinerChoice() const { return refiner_choice_; }
+  RefinerChoice GetRefinerChoice() const { return refiner_choice_; }
   std::vector<float> GetEdgeWtFactors() const { return e_wt_factors_; }
   float GetPathWtFactor() const { return path_wt_factor_; }
   float GetSnakingWtFactor() const { return snaking_wt_factor_; }
@@ -274,24 +274,24 @@ class TPrefiner
                             std::vector<float>& path_cost);
   std::pair<int, int> GetTimingCuts(const HGraph hgraph,
                                     std::vector<int>& solution);
-  inline void InitPathCuts(const HGraph hgraph,
-                           std::vector<int>& path_cuts,
-                           std::vector<int>& solution);
+  void InitPathCuts(const HGraph hgraph,
+                    std::vector<int>& path_cuts,
+                    std::vector<int>& solution);
   void SetPathCuts(const int val)
   {
     path_cuts_.resize(val);
     std::fill(path_cuts_.begin(), path_cuts_.end(), 0);
   }
   int GetPathCuts(int pathid, const HGraph hgraph, std::vector<int>& solution);
-  inline void InitPaths(const HGraph hgraph,
-                        std::vector<float>& path_cost,
-                        std::vector<int>& solution);
+  void InitPaths(const HGraph hgraph,
+                 std::vector<float>& path_cost,
+                 std::vector<int>& solution);
   utl::Logger* GetLogger() const { return logger_; }
 
  protected:
   int num_parts_;
   int refiner_iters_;
-  int refiner_choice_;
+  RefinerChoice refiner_choice_;
   int seed_;
   int thr_he_size_skip_;
   std::vector<float> e_wt_factors_;
@@ -309,7 +309,6 @@ class TPrefiner
 class TPpriorityQueue
 {
  public:
-  TPpriorityQueue() = default;
   TPpriorityQueue(int total_elements, HGraph hypergraph)
   {
     vertices_map_.resize(total_elements);
@@ -323,12 +322,7 @@ class TPpriorityQueue
       : vertices_(vertices), vertices_map_(vertices_map)
   {
   }
-  TPpriorityQueue(const TPpriorityQueue&) = default;
-  TPpriorityQueue& operator=(const TPpriorityQueue&) = default;
-  TPpriorityQueue(TPpriorityQueue&&) = default;
-  TPpriorityQueue& operator=(TPpriorityQueue&&) = default;
-  ~TPpriorityQueue() = default;
-  inline void HeapifyUp(int index);
+  void HeapifyUp(int index);
   void HeapifyDown(int index);
   void InsertIntoPQ(std::shared_ptr<VertexGain> element);
   std::shared_ptr<VertexGain> ExtractMax();
@@ -384,11 +378,10 @@ using TP_gain_bucket = std::shared_ptr<TPpriorityQueue>;
 class TPtwoWayFM : public TPrefiner
 {
  public:
-  TPtwoWayFM() = default;
   TPtwoWayFM(const int num_parts,
              const int refiner_iters,
              const int max_moves,
-             const int refiner_choice,
+             const RefinerChoice refiner_choice,
              const int seed,
              const std::vector<float> e_wt_factors,
              const float path_wt_factor,
@@ -405,11 +398,6 @@ class TPtwoWayFM : public TPrefiner
   {
     max_moves_ = max_moves;
   }
-  TPtwoWayFM(const TPtwoWayFM&) = default;
-  TPtwoWayFM(TPtwoWayFM&&) = default;
-  TPtwoWayFM& operator=(const TPtwoWayFM&) = default;
-  TPtwoWayFM& operator=(TPtwoWayFM&&) = default;
-  ~TPtwoWayFM() = default;
   void SetMaxPasses(const int passes) { refiner_iters_ = passes; }
   void BalancePartition(const HGraph hgraph,
                         const matrix<float>& max_block_balance,
@@ -483,11 +471,10 @@ using TP_two_way_refining_ptr = std::shared_ptr<TPtwoWayFM>;
 class TPkWayFM : public TPrefiner
 {
  public:
-  TPkWayFM() = default;
   TPkWayFM(const int num_parts,
            const int refiner_iters,
            const int max_moves,
-           const int refiner_choice,
+           const RefinerChoice refiner_choice,
            const int seed,
            const std::vector<float> e_wt_factors,
            const float path_wt_factor,
@@ -504,11 +491,6 @@ class TPkWayFM : public TPrefiner
   {
     max_moves_ = max_moves;
   }
-  TPkWayFM(const TPkWayFM&) = default;
-  TPkWayFM(TPkWayFM&&) = default;
-  TPkWayFM& operator=(const TPkWayFM&) = default;
-  TPkWayFM& operator=(TPkWayFM&&) = default;
-  ~TPkWayFM() = default;
   void Refine(const HGraph hgraph,
               const matrix<float>& max_block_balance,
               TP_partition& solution) override;
@@ -589,11 +571,10 @@ using TP_k_way_refining_ptr = std::shared_ptr<TPkWayFM>;
 class TPgreedyRefine : public TPrefiner
 {
  public:
-  TPgreedyRefine() = default;
   TPgreedyRefine(const int num_parts,
                  const int refiner_iters,
                  const int max_moves,
-                 const int refiner_choice,
+                 const RefinerChoice refiner_choice,
                  const int seed,
                  const std::vector<float> e_wt_factors,
                  const float path_wt_factor,
@@ -606,14 +587,10 @@ class TPgreedyRefine : public TPrefiner
                   e_wt_factors,
                   path_wt_factor,
                   snaking_wt_factor,
-                  logger)
+                  logger),
+        max_moves_(0)
   {
   }
-  TPgreedyRefine(const TPgreedyRefine&) = default;
-  TPgreedyRefine(TPgreedyRefine&&) = default;
-  TPgreedyRefine& operator=(const TPgreedyRefine&) = default;
-  TPgreedyRefine& operator=(TPgreedyRefine&&) = default;
-  ~TPgreedyRefine() = default;
   void SetMaxMoves(const int moves) { max_moves_ = moves; }
   int GetMaxMoves() const { return max_moves_; }
   void Refine(const HGraph hgraph,
@@ -667,12 +644,6 @@ using TP_greedy_refiner_ptr = std::shared_ptr<TPgreedyRefine>;
 class TPilpGraph
 {
  public:
-  TPilpGraph() = default;
-  TPilpGraph(const TPilpGraph&) = default;
-  TPilpGraph(TPilpGraph&&) = default;
-  TPilpGraph& operator=(const TPilpGraph&) = default;
-  TPilpGraph& operator=(TPilpGraph&&) = default;
-  ~TPilpGraph() = default;
   TPilpGraph(const int vertex_dimensions,
              const int hyperedge_dimensions,
              const bool fixed_flag,
@@ -693,34 +664,31 @@ class TPilpGraph
     eind_.clear();
     eptr_.clear();
     eptr_.push_back(static_cast<int>(eind_.size()));
-    for (auto hyperedge : hyperedges) {
+    for (const auto& hyperedge : hyperedges) {
       eind_.insert(eind_.end(), hyperedge.begin(), hyperedge.end());
       eptr_.push_back(static_cast<int>(eind_.size()));
     }
   }
-  inline const int GetVertexDimensions() const { return vertex_dimensions_; }
-  inline const int GetHyperedgeDimensions() const
-  {
-    return hyperedge_dimensions_;
-  }
-  inline const int GetNumVertices() const { return num_vertices_; }
-  inline const int GetNumHyperedges() const { return num_hyperedges_; }
-  inline std::pair<int, int> GetEdgeIndices(const int he) const
+  const int GetVertexDimensions() const { return vertex_dimensions_; }
+  const int GetHyperedgeDimensions() const { return hyperedge_dimensions_; }
+  const int GetNumVertices() const { return num_vertices_; }
+  const int GetNumHyperedges() const { return num_hyperedges_; }
+  std::pair<int, int> GetEdgeIndices(const int he) const
   {
     return std::make_pair(eptr_[he], eptr_[he + 1]);
   }
-  inline std::vector<float> const& GetVertexWeight(const int& v) const
+  std::vector<float> const& GetVertexWeight(const int& v) const
   {
     return vertex_weights_[v];
   }
-  inline std::vector<float> const& GetHyperedgeWeight(const int& e) const
+  std::vector<float> const& GetHyperedgeWeight(const int& e) const
   {
     return hyperedge_weights_[e];
   }
-  inline bool CheckFixedStatus(const int v) const { return fixed_[v] > -1; }
-  inline int GetFixedPart(const int v) const { return fixed_[v]; }
-  inline bool CheckFixedFlag() const { return fixed_flag_; }
-  inline std::vector<float> GetTotalVertexWeights()
+  bool CheckFixedStatus(const int v) const { return fixed_[v] > -1; }
+  int GetFixedPart(const int v) const { return fixed_[v]; }
+  bool CheckFixedFlag() const { return fixed_flag_; }
+  std::vector<float> GetTotalVertexWeights()
   {
     std::vector<float> total_wt(GetVertexDimensions(), 0.0);
     for (auto vWt : vertex_weights_) {
@@ -745,16 +713,10 @@ class TPilpGraph
 class TPilpRefine : public TPrefiner
 {
  public:
-  TPilpRefine() = default;
-  TPilpRefine(const TPilpRefine&) = default;
-  TPilpRefine(TPilpRefine&&) = default;
-  TPilpRefine& operator=(const TPilpRefine&) = default;
-  TPilpRefine& operator=(TPilpRefine&&) = default;
-  ~TPilpRefine() = default;
   TPilpRefine(const int num_parts,
               const int refiner_iters,
               const int max_moves,
-              const int refiner_choice,
+              const RefinerChoice refiner_choice,
               const int seed,
               const std::vector<float> e_wt_factors,
               const float path_wt_factor,
@@ -771,6 +733,7 @@ class TPilpRefine : public TPrefiner
                   logger)
   {
     wavefront_ = wavefront;
+    he_thr_ = 0;
   }
   void SolveIlpInstanceOR(std::shared_ptr<TPilpGraph> hgraph,
                           TP_partition& refined_partition,
@@ -801,8 +764,7 @@ class TPilpRefine : public TPrefiner
   int GetWavefront() const { return wavefront_; }
 
  private:
-  inline void Remap(std::vector<int>& partition,
-                    std::vector<int>& refined_partition);
+  void Remap(std::vector<int>& partition, std::vector<int>& refined_partition);
   std::shared_ptr<TPilpGraph> ContractHypergraph(HGraph hgraph,
                                                  TP_partition& solution,
                                                  int wavefront);
@@ -821,7 +783,6 @@ class TPilpRefine : public TPrefiner
                       matrix<int>& net_degs);
   int wavefront_;
   int he_thr_;
-  int seed_;
   std::vector<int> cluster_map_;
 };
 
@@ -832,16 +793,10 @@ using TP_ilp_refiner_ptr = std::shared_ptr<TPilpRefine>;
 class TPpartitionPair
 {
  public:
-  TPpartitionPair() = default;
   TPpartitionPair(const i, const int x, const int y, const float xcon)
       : pair_id_(i), pair_x_(x), pair_y_(y), connectivity_(xcon)
   {
   }
-  TPpartitionPair(const TPpartitionPair&) = default;
-  TPpartitionPair(TPpartitionPair&&) = default;
-  TPpartitionPair& operator=(const TPpartitionPair&) = default;
-  TPpartitionPair& operator=(TPpartitionPair&&) = default;
-  ~TPpartitionPair() = default;\
   void SetId(const int i) { pair_id_ = i; }
   int GetId() const { return pair_id_; }
   void SetPairX(const int x) { pair_x_ = x; }
@@ -863,11 +818,10 @@ using TP_partition_pair_ptr = std::shared_ptr<TPpartitionPair>;
 class TPkpm : public TPrefiner, public TPtwoWayFM
 {
  public:
-  TPkpm() = default;
   TPkpm(const int num_parts,
         const int refiner_iters,
         const int max_moves,
-        const int refiner_choice,
+        const RefinerChoice refiner_choice,
         const int seed,
         const std::vector<float> e_wt_factors,
         const float path_wt_factor,
@@ -884,11 +838,6 @@ class TPkpm : public TPrefiner, public TPtwoWayFM
   {
     max_moves_ = max_moves;
   }
-  TPkpm(const TPkpm&) = default;
-  TPkpm(TPkpm&&) = default;
-  TPkpm& operator=(const TPkpm&) = default;
-  TPkpm& operator=(TPkpm&&) = default;
-  ~TPkpm() = default;
   void Refine(const HGraph hgraph,
               const matrix<float>& max_vertex_balance,
               TP_partition& solution) override;

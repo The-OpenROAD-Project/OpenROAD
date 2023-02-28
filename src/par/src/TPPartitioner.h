@@ -58,7 +58,7 @@
 namespace par {
 
 // Define the partitioning algorithm
-enum PartitionType
+enum class PartitionType
 {
   INIT_RANDOM,
   INIT_VILE,
@@ -73,7 +73,6 @@ using matrix = std::vector<std::vector<T>>;
 class TPpartitioner
 {
  public:
-  TPpartitioner() = default;
   TPpartitioner(int num_parts,
                 const std::vector<float>& e_wt_factors,
                 float path_wt_factor,
@@ -115,11 +114,6 @@ class TPpartitioner
   {
   }
 
-  TPpartitioner(const TPpartitioner&) = default;
-  TPpartitioner(TPpartitioner&&) = default;
-  TPpartitioner& operator=(const TPpartitioner&) = default;
-  TPpartitioner& operator=(TPpartitioner&&) = default;
-  ~TPpartitioner() = default;
   TP_partition_token GoldenEvaluator(const HGraph hgraph,
                                      std::vector<int>& solution,
                                      bool print_flag = true);
@@ -127,13 +121,13 @@ class TPpartitioner
   void Partition(const HGraph hgraph,
                  const matrix<float>& max_block_balance,
                  std::vector<int>& solutione);
-  inline void SetPartitionerSeed(int seed) { seed_ = seed; }
-  inline int GetPartitionerSeed() const { return seed_; }
-  inline void SetPartitionerChoice(const int choice)
+  void SetPartitionerSeed(int seed) { seed_ = seed; }
+  int GetPartitionerSeed() const { return seed_; }
+  void SetPartitionerChoice(const PartitionType choice)
   {
     partitioner_choice_ = choice;
   }
-  inline int GetPartitionerChoice() const { return partitioner_choice_; }
+  PartitionType GetPartitionerChoice() const { return partitioner_choice_; }
   float CalculatePathCost(int path_id,
                           const HGraph hgraph,
                           const std::vector<int>& solution,
@@ -152,9 +146,6 @@ class TPpartitioner
   void RandomPart(const HGraph graph,
                   const matrix<float>& max_block_balance,
                   std::vector<int>& solution);
-  void OptimalPartCplex(const HGraph graph,
-                        const matrix<float>& max_block_balance,
-                        std::vector<int>& solution);
   void OptimalPartCplexWarmStart(const HGraph graph,
                                  const matrix<float>& max_block_balance,
                                  std::vector<int>& solution);
@@ -165,10 +156,9 @@ class TPpartitioner
   float path_wt_factor_;
   float snaking_wt_factor_;
   float early_stop_ratio_;
-  float max_num_moves_;
   int max_num_fm_pass_;
   int seed_;
-  int partitioner_choice_;
+  PartitionType partitioner_choice_ = PartitionType::INIT_RANDOM;
   utl::Logger* logger_ = nullptr;
 };
 

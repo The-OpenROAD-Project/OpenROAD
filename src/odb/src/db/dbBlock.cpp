@@ -2091,8 +2091,14 @@ Rect dbBlock::getDieArea()
 
 Rect dbBlock::getCoreArea()
 {
-  auto rows = getRows();
-  if (rows.size() > 0) {
+  // filter rows to remove those with site class PAD
+  std::vector<odb::dbRow*> rows;
+  for (dbRow* row : getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      rows.push_back(row);
+    }
+  }
+  if (!rows.empty()) {
     Rect rect;
     rect.mergeInit();
 
@@ -3754,8 +3760,6 @@ int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
   if (startingInsts.size() <= 0)
     return 0;
 
-  // notice(0, ">>> markBackwardsUser2:%d startingInsts    %d resultTable\n",
-  // startingInsts.size(), resultTable.size());
   std::vector<dbInst*>::iterator itr;
   for (itr = startingInsts.begin(); itr != startingInsts.end(); ++itr) {
     dbInst* inst = *itr;
@@ -3812,20 +3816,10 @@ int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
             instsToMark.push_back(faninInst);
         }
       } else if (faninInst->getUserFlag2()) {
-        // notice(0, "<<< -1: markBackwardsUser2:     %d startingInsts    %d
-        // resultTable   %d instsToMark\n", 	startingInsts.size(),
-        // resultTable.size(), instsToMark.size());
         return -1;
       }
-
-      // if (! faninInst->getMaster()->isSequential() && !
-      // faninInst->getUserFlag2()) 	instsToMark.push_back(faninInst);
     }
   }
-  // notice(0, "<<< -1: markBackwardsUser2:     %d startingInsts    %d
-  // resultTable   %d instsToMark\n", 	startingInsts.size(),
-  // resultTable.size(),
-  // instsToMark.size());
   return instsToMark.size();
 }
 

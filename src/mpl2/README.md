@@ -18,4 +18,4 @@ A. B. Kahng, R. Varadarajan and Z. Wang,
 
 ## License
 
-BSD 3-Clause License.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.

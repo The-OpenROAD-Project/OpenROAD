@@ -62,7 +62,6 @@ namespace par {
 class TimingCuts
 {
  public:
-  TimingCuts() = default;
   TimingCuts(const int total_critical_paths_cut,
              const float average_critical_paths_cut,
              int worst_cut,
@@ -73,10 +72,7 @@ class TimingCuts
         total_paths_(total_paths)
   {
   }
-  TimingCuts(const TimingCuts&) = default;
-  TimingCuts(TimingCuts&&) = default;
-  TimingCuts& operator=(const TimingCuts&) = default;
-  TimingCuts& operator=(TimingCuts&&) = default;
+
   int GetTotalCriticalPathsCut() const { return total_critical_paths_cut_; }
   float GetAvereageCriticalPathsCut() const
   {
@@ -93,56 +89,56 @@ class TimingCuts
 };
 
 // Function for write solution
-void WriteSolution(const char* solution_file, std::vector<int>& solution);
+void WriteSolution(const char* solution_file, const std::vector<int>& solution);
 
 // Analyze a timing paths file and a partition to find timing related metrics
-void AnalyzeTimingOfPartition(std::vector<std::vector<int>>& paths,
-                              const char* solution_file = "");
 std::shared_ptr<TimingCuts> AnalyzeTimingOfPartition(
-    std::vector<std::vector<int>>& paths,
-    std::vector<int>& solution);
+    const std::vector<std::vector<int>>& paths,
+    const std::vector<int>& solution);
 
-std::string GetVectorString(std::vector<float> vec);
+std::string GetVectorString(const std::vector<float>& vec);
 
 // Add right vector to left vector
 void Accumulate(std::vector<float>& a, const std::vector<float>& b);
 
 // weighted sum
-std::vector<float> WeightedSum(const std::vector<float> a,
-                               float a_factor,
-                               const std::vector<float> b,
-                               float b_factor);
+std::vector<float> WeightedSum(const std::vector<float>& a,
+                               const float a_factor,
+                               const std::vector<float>& b,
+                               const float b_factor);
 
 // divide the vector
-std::vector<float> DivideFactor(const std::vector<float> a, float factor);
+std::vector<float> DivideFactor(const std::vector<float>& a,
+                                const float factor);
 
 // multiplty the vector
-std::vector<float> MultiplyFactor(const std::vector<float> a, float factor);
+std::vector<float> MultiplyFactor(const std::vector<float>& a,
+                                  const float factor);
 
 // operation for two vectors +, -, *,  ==, <
-std::vector<float> operator+(const std::vector<float> a,
-                             const std::vector<float> b);
+std::vector<float> operator+(const std::vector<float>& a,
+                             const std::vector<float>& b);
 
-std::vector<float> operator*(const std::vector<float> a, float factor);
+std::vector<float> operator*(const std::vector<float>& a, float factor);
 
-std::vector<float> operator-(const std::vector<float> a,
-                             const std::vector<float> b);
+std::vector<float> operator-(const std::vector<float>& a,
+                             const std::vector<float>& b);
 
-std::vector<float> operator*(const std::vector<float> a,
-                             const std::vector<float> b);
+std::vector<float> operator*(const std::vector<float>& a,
+                             const std::vector<float>& b);
 
-int PartitionWithMinWt(std::vector<std::vector<float>>& area);
+int PartitionWithMinWt(const std::vector<std::vector<float>>& area);
 
-int PartitionWithMaxWt(std::vector<std::vector<float>>& area);
+int PartitionWithMaxWt(const std::vector<std::vector<float>>& area);
 
-bool operator<(const std::vector<float> a, const std::vector<float> b);
+bool operator<(const std::vector<float>& a, const std::vector<float>& b);
 
-bool operator==(const std::vector<float> a, const std::vector<float> b);
+bool operator==(const std::vector<float>& a, const std::vector<float>& b);
 
 // Basic functions for a vector
-std::vector<float> abs(const std::vector<float> a);
+std::vector<float> abs(const std::vector<float>& a);
 
-float norm2(const std::vector<float> a);
+float norm2(const std::vector<float>& a);
 
-float norm2(std::vector<float> a, std::vector<float> factor);
+float norm2(const std::vector<float>& a, const std::vector<float>& factor);
 }  // namespace par

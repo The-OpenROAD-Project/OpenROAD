@@ -117,20 +117,20 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   std::vector<Node*> cells;  // All movable cells.
   // Snap.
-  if (mgr.singleHeightCells_.size() != 0) {
-    mgr.assignCellsToSegments(mgr.singleHeightCells_);
+  if (mgr.getSingleHeightCells().size() != 0) {
+    mgr.assignCellsToSegments(mgr.getSingleHeightCells());
 
     cells.insert(cells.end(),
-                 mgr.singleHeightCells_.begin(),
-                 mgr.singleHeightCells_.end());
+                 mgr.getSingleHeightCells().begin(),
+                 mgr.getSingleHeightCells().end());
   }
-  for (size_t i = 2; i < mgr.multiHeightCells_.size(); i++) {
-    if (mgr.multiHeightCells_[i].size() != 0) {
-      mgr.assignCellsToSegments(mgr.multiHeightCells_[i]);
+  for (size_t i = 2; i < mgr.getNumMultiHeights(); i++) {
+    if (mgr.getMultiHeightCells(i).size() != 0) {
+      mgr.assignCellsToSegments(mgr.getMultiHeightCells(i));
 
       cells.insert(cells.end(),
-                   mgr.multiHeightCells_[i].begin(),
-                   mgr.multiHeightCells_[i].end());
+                   mgr.getMultiHeightCells(i).begin(),
+                   mgr.getMultiHeightCells(i).end());
     }
   }
 
@@ -150,11 +150,11 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   const size_t size = network_->getNumNodes();
   incoming_.resize(size);
   outgoing_.resize(size);
-  for (size_t i = 0; i < mgr.segments_.size(); i++) {
-    const int segId = mgr.segments_[i]->getSegId();
-    for (size_t j = 1; j < mgr.cellsInSeg_[segId].size(); j++) {
-      const Node* prev = mgr.cellsInSeg_[segId][j - 1];
-      const Node* curr = mgr.cellsInSeg_[segId][j];
+  for (size_t i = 0; i < mgr.getNumSegments(); i++) {
+    const int segId = mgr.getSegment(i)->getSegId();
+    for (size_t j = 1; j < mgr.getNumCellsInSeg(segId); j++) {
+      const Node* prev = mgr.getCellsInSeg(segId)[j - 1];
+      const Node* curr = mgr.getCellsInSeg(segId)[j];
 
       incoming_[curr->getId()].push_back(prev->getId());
       outgoing_[prev->getId()].push_back(curr->getId());
@@ -246,7 +246,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
   // right of every segment.
   dummiesLeft_.resize(nsegs);
   for (int i = 0; i < nsegs; i++) {
-    const DetailedSeg* segPtr = mgr_->segments_[i];
+    const DetailedSeg* segPtr = mgr_->getSegment(i);
 
     const int rowId = segPtr->getRowId();
 
@@ -263,7 +263,7 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
 
   dummiesRight_.resize(nsegs);
   for (int i = 0; i < nsegs; i++) {
-    const DetailedSeg* segPtr = mgr_->segments_[i];
+    const DetailedSeg* segPtr = mgr_->getSegment(i);
 
     const int rowId = segPtr->getRowId();
 
@@ -280,12 +280,12 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
 
   // Jam all the left dummies nodes into segments.
   for (int i = 0; i < nsegs; i++) {
-    mgr_->cellsInSeg_[i].insert(mgr_->cellsInSeg_[i].begin(), dummiesLeft_[i]);
+    mgr_->addToFrontCellsInSeg(i, dummiesLeft_[i]);
   }
 
   // Jam all the right dummies nodes into segments.
   for (int i = 0; i < nsegs; i++) {
-    mgr_->cellsInSeg_[i].push_back(dummiesRight_[i]);
+    mgr_->addToBackCellsInSeg(i, dummiesRight_[i]);
   }
 
   // Need to create the "graph" prior to clumping.
@@ -298,11 +298,11 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
     incoming_[i].clear();
     outgoing_[i].clear();
   }
-  for (size_t i = 0; i < mgr_->segments_.size(); i++) {
-    const int segId = mgr_->segments_[i]->getSegId();
-    for (size_t j = 1; j < mgr_->cellsInSeg_[segId].size(); j++) {
-      const Node* prev = mgr_->cellsInSeg_[segId][j - 1];
-      const Node* curr = mgr_->cellsInSeg_[segId][j];
+  for (size_t i = 0; i < mgr_->getNumSegments(); i++) {
+    const int segId = mgr_->getSegment(i)->getSegId();
+    for (size_t j = 1; j < mgr_->getNumCellsInSeg(segId); j++) {
+      const Node* prev = mgr_->getCellsInSeg(segId)[j - 1];
+      const Node* curr = mgr_->getCellsInSeg(segId)[j];
 
       incoming_[curr->getId()].push_back(prev->getId());
       outgoing_[prev->getId()].push_back(curr->getId());
@@ -319,17 +319,17 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
   // Remove all the dummies from the segments.
   for (int i = 0; i < nsegs; i++) {
     // Should _at least_ be the left and right dummies.
-    if (mgr_->cellsInSeg_[i].size() < 2
-        || mgr_->cellsInSeg_[i].front() != dummiesLeft_[i]
-        || mgr_->cellsInSeg_[i].back() != dummiesRight_[i]) {
+    if (mgr_->getNumCellsInSeg(i) < 2
+        || mgr_->getCellsInSeg(i).front() != dummiesLeft_[i]
+        || mgr_->getCellsInSeg(i).back() != dummiesRight_[i]) {
       isError = true;
     }
 
-    if (mgr_->cellsInSeg_[i].back() == dummiesRight_[i]) {
-      mgr_->cellsInSeg_[i].pop_back();
+    if (mgr_->getCellsInSeg(i).back() == dummiesRight_[i]) {
+      mgr_->popBackCellsInSeg(i);
     }
-    if (mgr_->cellsInSeg_[i].front() == dummiesLeft_[i]) {
-      mgr_->cellsInSeg_[i].erase(mgr_->cellsInSeg_[i].begin());
+    if (mgr_->getCellsInSeg(i).front() == dummiesLeft_[i]) {
+      mgr_->popFrontCellsInSeg(i);
     }
   }
 
@@ -400,8 +400,8 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
 
     // Always ensure the left edge is within the segments
     // in which the cell is assigned.
-    for (size_t j = 0; j < mgr_->reverseCellToSegs_[ndi->getId()].size(); j++) {
-      DetailedSeg* segPtr = mgr_->reverseCellToSegs_[ndi->getId()][j];
+    for (size_t j = 0; j < mgr_->getNumReverseCellToSegs(ndi->getId()); j++) {
+      DetailedSeg* segPtr = mgr_->getReverseCellToSegs(ndi->getId())[j];
       int xmin = segPtr->getMinX();
       int xmax = segPtr->getMaxX();
       // Left edge always within segment.
@@ -442,10 +442,10 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
   for (size_t i = 0; i < order.size(); i++) {
     Node* ndi = order[i];
 
-    int rowId = mgr_->reverseCellToSegs_[ndi->getId()][0]->getRowId();
-    for (size_t r = 1; r < mgr_->reverseCellToSegs_[ndi->getId()].size(); r++) {
+    int rowId = mgr_->getReverseCellToSegs(ndi->getId())[0]->getRowId();
+    for (size_t r = 1; r < mgr_->getNumReverseCellToSegs(ndi->getId()); r++) {
       rowId = std::min(rowId,
-                       mgr_->reverseCellToSegs_[ndi->getId()][r]->getRowId());
+                       mgr_->getReverseCellToSegs(ndi->getId())[r]->getRowId());
     }
 
     const Clump* r = ptr_[ndi->getId()];

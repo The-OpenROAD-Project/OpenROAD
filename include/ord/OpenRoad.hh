@@ -130,6 +130,10 @@ namespace pdn {
 class PdnGen;
 }
 
+namespace pad {
+class ICeWall;
+}
+
 namespace utl {
 class Logger;
 }
@@ -186,6 +190,7 @@ class OpenRoad
   ant::AntennaChecker* getAntennaChecker() { return antenna_checker_; }
   ppl::IOPlacer* getIOPlacer() { return ioPlacer_; }
   pdn::PdnGen* getPdnGen() { return pdngen_; }
+  pad::ICeWall* getICeWall() { return icewall_; }
   dst::Distributed* getDistributed() { return distributer_; }
   stt::SteinerTreeBuilder* getSteinerTreeBuilder() { return stt_builder_; }
   dft::Dft* getDft() { return dft_; }
@@ -279,6 +284,7 @@ class OpenRoad
   psm::PDNSim* pdnsim_;
   par::PartitionMgr* partitionMgr_;
   pdn::PdnGen* pdngen_;
+  pad::ICeWall* icewall_;
   dst::Distributed* distributer_;
   stt::SteinerTreeBuilder* stt_builder_;
   dft::Dft* dft_;

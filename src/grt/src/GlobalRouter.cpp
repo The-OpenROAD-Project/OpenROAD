@@ -87,7 +87,6 @@ GlobalRouter::GlobalRouter()
       grid_origin_(0, 0),
       groute_renderer_(nullptr),
       grid_(new Grid),
-      routing_tracks_(new std::vector<RoutingTracks>),
       adjustment_(0.0),
       min_routing_layer_(1),
       max_routing_layer_(-1),
@@ -143,7 +142,7 @@ void GlobalRouter::clear()
     delete net;
   }
   db_net_map_.clear();
-  routing_tracks_->clear();
+  routing_tracks_.clear();
   routing_layers_.clear();
   grid_->clear();
   fastroute_->clear();
@@ -153,7 +152,6 @@ void GlobalRouter::clear()
 
 GlobalRouter::~GlobalRouter()
 {
-  delete routing_tracks_;
   delete fastroute_;
   delete grid_;
   for (auto [ignored, net] : db_net_map_) {
@@ -1720,7 +1718,7 @@ bool GlobalRouter::isCoveringPin(Net* net, GSegment& segment)
 
 RoutingTracks GlobalRouter::getRoutingTracksByIndex(int layer)
 {
-  for (RoutingTracks routing_tracks : *routing_tracks_) {
+  for (RoutingTracks routing_tracks : routing_tracks_) {
     if (routing_tracks.getLayerIndex() == layer) {
       return routing_tracks;
     }
@@ -2545,7 +2543,7 @@ void GlobalRouter::averageTrackPattern(odb::dbTrackGrid* grid,
   }
   const int span = coordinates.back() - coordinates.front();
   track_init = coordinates.front();
-  track_step = span / coordinates.size();
+  track_step = std::ceil((float) span / coordinates.size());
   num_tracks = coordinates.size();
 }
 
@@ -2602,7 +2600,7 @@ void GlobalRouter::initRoutingTracks(int max_routing_layer)
                                                l2vPitches[level].second,
                                                track_init,
                                                num_tracks);
-    routing_tracks_->push_back(layer_tracks);
+    routing_tracks_.push_back(layer_tracks);
     if (verbose_)
       logger_->info(
           GRT,

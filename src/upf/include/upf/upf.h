@@ -35,9 +35,9 @@
 
 #pragma once
 
-#include <stdio.h>
 #include <unistd.h>
 
+#include <cstdio>
 #include <list>
 #include <map>
 #include <string>
