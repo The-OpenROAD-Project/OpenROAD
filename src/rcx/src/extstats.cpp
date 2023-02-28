@@ -72,7 +72,7 @@ extDistRC* extRCModel::getMinRC(int met, int width)
   if (met >= _layerCnt)
     return NULL;
 
-  extMeasure m;
+  extMeasure m(logger_);
   m._met = met;
   m._underMet = 0;
   m._overMet = 0;
@@ -86,7 +86,7 @@ extDistRC* extRCModel::getMaxRC(int met, int width, int dist)
   if (met >= _layerCnt)
     return NULL;
 
-  extMeasure m;
+  extMeasure m(logger_);
   m._met = met;
   m._width = width;
   m._dist = dist;

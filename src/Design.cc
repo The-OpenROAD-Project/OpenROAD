@@ -35,6 +35,8 @@
 
 #include "ord/Design.h"
 
+#include <tcl.h>
+
 #include "ant/AntennaChecker.hh"
 #include "grt/GlobalRouter.h"
 #include "ifp/InitFloorplan.hh"

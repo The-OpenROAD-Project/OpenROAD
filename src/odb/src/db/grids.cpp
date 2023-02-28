@@ -32,7 +32,6 @@
 
 #include <stdio.h>
 
-#include "dbLogger.h"
 #include "wire.h"
 
 namespace odb {
@@ -1209,126 +1208,7 @@ void Ath__track::adjustOverlapMakerEnd(uint markerCnt)
     ii = jj - 1;
   }
 }
-void Ath__track::adjustMetalFill()
-{
-  uint wsrcId;
-  int wstart, wend;
-  Ath__wire* wire = getNextWire(NULL);
-  Ath__wire* gwire = NULL;
-  Ath__wire* nwire = NULL;
-  Ath__wire* nnwire = NULL;
-  Ath__wire* pnwire = NULL;
-  Ath__wire* prevwire = NULL;
-  for (; wire; prevwire = wire, wire = nwire) {
-    nwire = getNextWire(wire);
-    if (!nwire || wire->_xy + wire->_len <= nwire->_xy)
-      continue;
-    if (wire->_base != nwire->_base || wire->_width != nwire->_width) {
-      _grid->getGridTable()->incrNotAlignedOverlap(wire, nwire);
-      continue;
-    }
-    if (wire->isPower() == nwire->isPower()) {
-      if (!wire->isPower()) {
-        _grid->getGridTable()->incrSignalOverlap();
-      } else {
-        _grid->getGridTable()->incrPowerOverlap();
-        if (wire->_xy >= nwire->_xy)
-          continue;  // bp
-        wire->_len = nwire->_xy - wire->_xy;
-      }
-      continue;
-    }
-    if (!wire->isPower())
-    // signal wire extends into power wire
-    {
-      _grid->getGridTable()->incrSignalToPowerOverlap();
-      if (wire->_xy + wire->_len >= nwire->_xy + nwire->_len) {
-        if (wire->_next == nwire)
-          wire->_next = nwire->_next;
-        else {
-          assert(wire->_next == NULL);
-          assert(_marker[_searchMarkerIndex] == nwire);
-          _marker[_searchMarkerIndex] = nwire->_next;
-        }
-        _grid->getWirePoolPtr()->free(nwire);
-        nwire = getNextWire(wire);
-      } else
-        nwire->_xy = wire->_xy + wire->_len;
-      continue;
-    }
-    // power wire extends into signal wire
-    _grid->getGridTable()->incrPowerToSignallOverlap();
-    if (wire->_xy + wire->_len
-        <= nwire->_xy
-               + nwire->_len) {     // power wire does not end after signal wire
-      if (wire->_xy >= nwire->_xy)  // can be > by prvious adjustment
-      {
-        if (_marker[_searchMarkerIndex] == wire)
-          _marker[_searchMarkerIndex] = nwire;
-        else {
-          assert(prevwire->_next == wire);
-          prevwire->_next = nwire;
-        }
-        _grid->getWirePoolPtr()->free(wire);
-        wire = prevwire;
-      } else {
-        wire->_len = nwire->_xy - wire->_xy;
-      }
-      continue;
-    } else {  // power wire ends after signal wire
-      wstart = nwire->_xy + nwire->_len;
-      wend = wire->_xy + wire->_len;
-      wsrcId = wire->_srcId;
-      if (wire->_xy >= nwire->_xy)  // can be > by prvious adjustment
-      {
-        if (_marker[_searchMarkerIndex] == wire)
-          _marker[_searchMarkerIndex] = nwire;
-        else
-          prevwire->_next = nwire;
-        _grid->getWirePoolPtr()->free(wire);
-        wire = prevwire;
-      } else {
-        wire->_len = nwire->_xy - wire->_xy;
-      }
-      if (wsrcId != 0)
-        continue;
-      pnwire = nwire;
-      for (nnwire = getNextWire(nwire); nnwire;
-           pnwire = nnwire, nnwire = getNextWire(nnwire)) {
-        if (wend <= nnwire->_xy) {
-          gwire
-              = wire->makeWire(_grid->getWirePoolPtr(), wstart, wend - wstart);
-          _grid->placeWire(gwire);
-          wire = gwire;
-          nwire = nnwire;
-          break;
-        }
-        if (nwire->_base != nnwire->_base || nwire->_width != nnwire->_width) {
-          _grid->getGridTable()->incrNotAlignedOverlap(nwire, nnwire);
-          // notice(0,"Overlapped but not aligned wires!\n");
-        }
-        if (nnwire->isPower()) {
-          // notice (0, "Overlapped power wire\n");
-          _grid->getGridTable()->incrPowerOverlap();
-        }
-        gwire = NULL;
-        if (wstart < nnwire->_xy) {
-          gwire = wire->makeWire(
-              _grid->getWirePoolPtr(), wstart, nnwire->_xy - wstart);
-          _grid->placeWire(gwire);
-        }
-        wstart = nnwire->_xy + nnwire->_len;
-        if (wend <= wstart) {
-          wire = gwire ? gwire : pnwire;
-          nwire = nnwire;
-          break;
-        }
-      }
-      if (nnwire == NULL)
-        break;
-    }  // end of power wire extends into signal wire
-  }
-}
+
 bool Ath__track::isAscendingOrdered(uint markerCnt, uint* wCnt)
 {
   uint cnt = 0;
@@ -2186,21 +2066,7 @@ void Ath__grid::adjustOverlapMakerEnd()
         tstr->adjustOverlapMakerEnd(_markerCnt);
   }
 }
-void Ath__grid::adjustMetalFill()
-{
-  Ath__track *track, *tstr;
-  _searchLowMarker = 0;
-  _searchHiMarker = _markerCnt - 1;
-  for (int ii = _trackCnt - 1; ii >= 0; ii--) {
-    track = _trackTable[ii];
-    if (track == NULL)
-      continue;
-    tstr = NULL;
-    bool tohi = false;
-    while ((tstr = track->getNextSubTrack(tstr, tohi)) != nullptr)
-      tstr->adjustMetalFill();
-  }
-}
+
 bool Ath__grid::isOrdered(bool /* unused: ascending */, uint* cnt)
 {
   bool ordered = true;
@@ -2944,39 +2810,7 @@ void Ath__gridTable::adjustOverlapMakerEnd()
     }
   }
 }
-void Ath__gridTable::adjustMetalFill()
-{
-  _signalPowerNotAlignedOverlap = 0;
-  _powerNotAlignedOverlap = 0;
-  _signalNotAlignedOverlap = 0;
-  _signalOverlap = 0;
-  _powerOverlap = 0;
-  _signalPowerOverlap = 0;
-  _powerSignalOverlap = 0;
-  for (uint ii = 0; ii < _rowCnt; ii++) {
-    for (uint jj = 0; jj < _colCnt; jj++) {
-      if (_gridTable[ii][jj])
-        _gridTable[ii][jj]->adjustMetalFill();
-    }
-  }
-  if (_signalPowerNotAlignedOverlap)
-    notice(0,
-           "%d not aligned power-signal overlaps\n",
-           _signalPowerNotAlignedOverlap);
-  if (_powerNotAlignedOverlap)
-    notice(0, "%d not aligned power overlaps\n", _powerNotAlignedOverlap);
-  if (_signalNotAlignedOverlap)
-    notice(0, "%d not aligned signal overlaps\n", _signalNotAlignedOverlap);
-  if (_powerSignalOverlap)
-    notice(0, "%d power-signal overlaps\n", _powerSignalOverlap);
-  if (_signalPowerOverlap)
-    notice(0, "%d signal-power overlaps\n", _signalPowerOverlap);
-  if (_powerOverlap)
-    notice(0, "%d power overlaps\n", _powerOverlap);
-  if (_signalOverlap)
-    notice(0, "%d signal overlaps\n", _signalOverlap);
-  setExtrusionMarker(0, 1);
-}
+
 void Ath__gridTable::incrNotAlignedOverlap(Ath__wire* w1, Ath__wire* w2)
 {
   if (w1->isPower() != w2->isPower())

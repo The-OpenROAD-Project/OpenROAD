@@ -116,11 +116,14 @@ proc define_pin_shape_pattern { args } {
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
                                               [-pin_names names] \
                                               [-region region] \
-                                              [-mirrored_pins pins]}
+                                              [-mirrored_pins pins] \
+                                              [-group]
+                                              [-order]}
 
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
-  keys {-direction -pin_names -region -mirrored_pins}
+  keys {-direction -pin_names -region -mirrored_pins} \
+  flags {-group -order}
 
   sta::check_argc_eq0 "set_io_pin_constraint" $args
 
@@ -204,6 +207,25 @@ proc set_io_pin_constraint { args } {
       set bterm2 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin2]
       ppl::add_mirrored_pins $bterm1 $bterm2
     }
+  } elseif [info exists flags(-group)] {
+    if [info exists keys(-pin_names)] {
+        set group $keys(-pin_names)
+    } else {
+      utl::error PPL 58 "The -pin_names argument is required when using -group flag."
+    }
+
+    utl::info PPL 44 "Pin group: \[$group\]"
+    set pin_list {}
+    foreach pin_name $group {
+      set db_bterm [$dbBlock findBTerm $pin_name]
+      if { $db_bterm != "NULL" } {
+        lappend pin_list $db_bterm
+      } else {
+        utl::warn PPL 47 "Group pin $pin_name not found in the design."
+      }
+    }
+    ppl::add_pin_group $pin_list [info exists flags(-order)]
+    incr group_idx
   }
 }
 
@@ -515,7 +537,7 @@ proc place_pins { args } {
           utl::warn PPL 43 "Pin $pin_name not found in group $group_idx."
         }
       }
-      ppl::add_pin_group $pin_list
+      ppl::add_pin_group $pin_list 0
       incr group_idx
     }
   }

@@ -154,7 +154,6 @@ class tmg_conn
   dbNet* _net;
   bool _hasSWire;
   bool _preserveSWire;
-  bool _gVerbose;
   int _swireNetCnt;
   bool _connected;
   bool _isTree;
@@ -180,49 +179,39 @@ class tmg_conn
   int _firstSegmentAfterVia;
   int _vertSplitCnt;
   int _horzSplitCnt;
+  utl::Logger* logger_;
 
  public:
-  tmg_conn();
-  void analyzeNet(dbNet* net,
-                  bool force,
-                  bool verbose,
-                  bool no_convert,
-                  int cutLength = 0,
-                  int maxLength = 0,
-                  bool no_patch = true);
+  tmg_conn(utl::Logger* logger);
+  void analyzeNet(dbNet* net);
   void loadNet(dbNet* net);
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
-  void analyzeLoadedNet(bool verbose, bool no_convert);
   bool isConnected() { return _connected; }
   bool isTree() { return _isTree; }
   int ptDist(int fr, int to);
 
-  void printConnections();
-  void checkConnOrdered(bool verbose);
-  void checkConnected(bool verbose);
+  void checkConnOrdered();
   void resetSplitCnt()
   {
     _vertSplitCnt = 0;
     _horzSplitCnt = 0;
   }
   int getSplitCnt() { return (_vertSplitCnt + _horzSplitCnt); }
-  void set_gv(bool verbose);
 
  private:
-  void splitTtop(bool verbose);
-  void splitBySj(bool verbose,
-                 int j,
+  void splitTtop();
+  void splitBySj(int j,
                  tmg_rc_sh* sj,
                  int rt,
                  int sjxMin,
                  int sjyMin,
                  int sjxMax,
                  int sjyMax);
-  void findConnections(bool verbose);
-  void removeShortLoops(int* loop_remaining);
-  void removeWireLoops(int* loop_remaining);
-  void treeReorder(bool verbose, bool no_convert);
+  void findConnections();
+  void removeShortLoops();
+  void removeWireLoops();
+  void treeReorder(bool no_convert);
   bool checkConnected();
   void checkVisited();
   void printDisconnect();

@@ -92,6 +92,7 @@ void
 deleteDbSta(sta::dbSta* sta)
 {
   delete sta;
+  sta::Sta::setSta(nullptr);
 }
 
 }  // namespace ord
