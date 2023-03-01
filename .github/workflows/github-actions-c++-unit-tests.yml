@@ -20,7 +20,7 @@ jobs:
         uses: seanmiddleditch/gha-setup-ninja@master
       - name: Build OpenROAD
         run: |
-          cmake -B build .
+          cmake -GNinja -B build .
           cd build
           CLICOLOR_FORCE=1 ninja build_and_test
 
