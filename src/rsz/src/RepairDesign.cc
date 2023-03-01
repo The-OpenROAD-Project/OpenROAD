@@ -115,6 +115,9 @@ RepairDesign::repairDesign(double max_wire_length,
                            double cap_margin)
 {
   init();
+  //logger_->setDebugLevel(RSZ, "repair_net", 10);
+  //logger_->info(RSZ, 999, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX Repair Design called ");
+  
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
   repairDesign(max_wire_length, slew_margin, cap_margin,

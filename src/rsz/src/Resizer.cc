@@ -1,4 +1,5 @@
 /////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 //
 // Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
@@ -300,6 +301,7 @@ void
 Resizer::removeBuffers()
 {
   initBlock();
+  //logger_->info(RSZ, 9991, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX removeBuffer called ");  
   // Disable incremental timing.
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
@@ -450,6 +452,8 @@ Resizer::bufferInputs()
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
 
+  //logger_->info(RSZ, 9992, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX input buffer called ");    
+  
   incrementalParasiticsBegin();
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {
@@ -550,7 +554,8 @@ Resizer::bufferOutputs()
   findBuffers();
   inserted_buffer_count_ = 0;
   buffer_moved_into_core_ = false;
-
+  //logger_->info(RSZ, 9993, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX buffer outputs called ");
+  
   incrementalParasiticsBegin();
   InstancePinIterator *port_iter = network_->pinIterator(network_->topInstance());
   while (port_iter->hasNext()) {

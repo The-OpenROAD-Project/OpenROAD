@@ -118,10 +118,15 @@ RepairSetup::repairSetup(float setup_slack_margin,
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
+  //logger_->info(RSZ, 9994, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX Repair Setup called {} ", repair_tns_end_percent);
+  //logger_->setDebugLevel(RSZ, "repair_setup", 2);
 
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
   VertexSeq violating_ends;
+  // Should check here whether we can figure out the clock domain for each
+  // vertex. This may be the place where we can do some round robin fun to
+  // individually control each clock domain instead of just fixating on fixing one.
   for (Vertex *end : *endpoints) {
     Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack < setup_slack_margin)
@@ -138,6 +143,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
   int end_index = 0;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
+  // So we will always fix at least 1 endpoint ... the repair_tns_end_percent
+  // thingy is what controls the number of fixes
   max_end_count = max(max_end_count, 1);
   resizer_->incrementalParasiticsBegin();
   for (Vertex *end : violating_ends) {
@@ -152,6 +159,9 @@ RepairSetup::repairSetup(float setup_slack_margin,
                delayAsString(end_slack, sta_, digits),
                delayAsString(worst_slack, sta_, digits));
     end_index++;
+    // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    debugPrint(logger_, RSZ, "repair_setup", 1, "Doing {} /{}", end_index, max_end_count);
+    // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    
     if (end_index > max_end_count)
       break;
     Slack prev_end_slack = end_slack;
@@ -264,7 +274,20 @@ RepairSetup::repairSetup(Pin *end_pin)
   if (resize_count_ > 0)
     logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
 }
-
+/* This is the main routine for repairing setup violations. We have
+ - upsize driver (step 1)
+ - rebuffer (step 2)
+ - split loads
+ And they are always done in the same order. Not clear whether
+ this order is the best way at all times. Also need to worry about
+ actually using global routes... \
+ Things that can be added:
+ - Intelligent rebuffering .... so if we added 2 buffers then maybe add
+   two inverters instead.
+ - pin swap
+ - Logic cloning
+ - VT swap: why would we not use low threshold cells everywhere
+ */
 bool
 RepairSetup::repairSetup(PathRef &path,
                          Slack path_slack)
