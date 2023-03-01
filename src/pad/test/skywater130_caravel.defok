@@ -3257,20 +3257,20 @@ PINS 722 ;
     - porb_h + NET porb_h + DIRECTION INPUT + USE SIGNAL ;
     - resetb + NET resetb + DIRECTION INPUT + USE SIGNAL ;
     - resetb_core_h + NET resetb_core_h + DIRECTION OUTPUT + USE SIGNAL ;
-    - vccd + NET vccd + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vccd1 + NET vccd1 + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vccd2 + NET vccd2 + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vdda + NET vdda + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vdda1 + NET vdda1 + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vdda2 + NET vdda2 + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vddio + NET vddio + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vssa + NET vssa + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vssa1 + NET vssa1 + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vssa2 + NET vssa2 + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vssd + NET vssd + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vssd1 + NET vssd1 + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vssd2 + NET vssd2 + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
-    - vssio + NET vssio + SPECIAL + DIRECTION INOUT + USE SIGNAL ;
+    - vccd + NET vccd + SPECIAL + DIRECTION INOUT + USE POWER ;
+    - vccd1 + NET vccd1 + SPECIAL + DIRECTION INOUT + USE POWER ;
+    - vccd2 + NET vccd2 + SPECIAL + DIRECTION INOUT + USE POWER ;
+    - vdda + NET vdda + SPECIAL + DIRECTION INOUT + USE POWER ;
+    - vdda1 + NET vdda1 + SPECIAL + DIRECTION INOUT + USE POWER ;
+    - vdda2 + NET vdda2 + SPECIAL + DIRECTION INOUT + USE POWER ;
+    - vddio + NET vddio + SPECIAL + DIRECTION INOUT + USE POWER ;
+    - vssa + NET vssa + SPECIAL + DIRECTION INOUT + USE GROUND ;
+    - vssa1 + NET vssa1 + SPECIAL + DIRECTION INOUT + USE GROUND ;
+    - vssa2 + NET vssa2 + SPECIAL + DIRECTION INOUT + USE GROUND ;
+    - vssd + NET vssd + SPECIAL + DIRECTION INOUT + USE GROUND ;
+    - vssd1 + NET vssd1 + SPECIAL + DIRECTION INOUT + USE GROUND ;
+    - vssd2 + NET vssd2 + SPECIAL + DIRECTION INOUT + USE GROUND ;
+    - vssio + NET vssio + SPECIAL + DIRECTION INOUT + USE GROUND ;
 END PINS
 SPECIALNETS 18 ;
     - mprj_pads.analog_a ( connect_0 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_56 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_55 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_50 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_40 AMUXBUS_A ) ( connect_1 AMUXBUS_A ) ( IO_FILL_IO_SOUTH_0_20 AMUXBUS_A )
@@ -3572,7 +3572,7 @@ SPECIALNETS 18 ;
       ( mprj_pads.area1_io_pad\[7\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[6\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[5\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[4\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[3\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[2\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[1\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[17\] VDDIO_Q )
       ( mprj_pads.area1_io_pad\[16\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[15\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[14\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[13\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[12\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[11\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[10\] VDDIO_Q ) ( mprj_pads.area1_io_pad\[0\] VDDIO_Q )
       ( mgmt_vssio_hvclamp_pad\[1\] VDDIO_Q ) ( mgmt_vssio_hvclamp_pad\[0\] VDDIO_Q ) ( mgmt_vssd_lvclmap_pad VDDIO_Q ) ( mgmt_vssa_hvclamp_pad VDDIO_Q ) ( mgmt_vddio_hvclamp_pad\[1\] VDDIO_Q ) ( mgmt_vddio_hvclamp_pad\[0\] VDDIO_Q ) ( mgmt_vdda_hvclamp_pad VDDIO_Q ) ( mgmt_vccd_lvclamp_pad VDDIO_Q )
-      ( mgmt_corner\[1\] VDDIO_Q ) ( mgmt_corner\[0\] VDDIO_Q ) ( gpio_pad VDDIO_Q ) ( flash_io1_pad VDDIO_Q ) ( flash_io0_pad VDDIO_Q ) ( flash_csb_pad VDDIO_Q ) ( flash_clk_pad VDDIO_Q ) ( clock_pad VDDIO_Q ) + USE SIGNAL ;
+      ( mgmt_corner\[1\] VDDIO_Q ) ( mgmt_corner\[0\] VDDIO_Q ) ( gpio_pad VDDIO_Q ) ( flash_io1_pad VDDIO_Q ) ( flash_io0_pad VDDIO_Q ) ( flash_csb_pad VDDIO_Q ) ( flash_clk_pad VDDIO_Q ) ( clock_pad VDDIO_Q ) + USE POWER ;
     - mprj_pads.vssio_q ( connect_0 VSSIO_Q ) ( IO_FILL_IO_SOUTH_0_56 VSSIO_Q ) ( IO_FILL_IO_SOUTH_0_55 VSSIO_Q ) ( IO_FILL_IO_SOUTH_0_50 VSSIO_Q ) ( IO_FILL_IO_SOUTH_0_40 VSSIO_Q ) ( connect_1 VSSIO_Q ) ( IO_FILL_IO_SOUTH_0_20 VSSIO_Q )
       ( IO_FILL_IO_SOUTH_0_0 VSSIO_Q ) ( IO_CORNER_SOUTH_WEST_INST VSSIO_Q ) ( connect_2 VSSIO_Q ) ( IO_FILL_IO_WEST_0_0 VSSIO_Q ) ( IO_FILL_IO_WEST_0_20 VSSIO_Q ) ( connect_3 VSSIO_Q ) ( IO_FILL_IO_WEST_0_40 VSSIO_Q ) ( connect_4 VSSIO_Q )
       ( IO_FILL_IO_EAST_1_80 VSSIO_Q ) ( IO_FILL_IO_EAST_1_60 VSSIO_Q ) ( IO_FILL_IO_EAST_1_40 VSSIO_Q ) ( IO_FILL_IO_EAST_1_20 VSSIO_Q ) ( IO_FILL_IO_EAST_1_0 VSSIO_Q ) ( brk_vccd_0 VSSIO_Q ) ( IO_FILL_IO_WEST_0_60 VSSIO_Q ) ( connect_5 VSSIO_Q )
@@ -3672,7 +3672,7 @@ SPECIALNETS 18 ;
       ( mprj_pads.area1_io_pad\[7\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[6\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[5\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[4\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[3\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[2\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[1\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[17\] VSSIO_Q )
       ( mprj_pads.area1_io_pad\[16\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[15\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[14\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[13\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[12\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[11\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[10\] VSSIO_Q ) ( mprj_pads.area1_io_pad\[0\] VSSIO_Q )
       ( mgmt_vssio_hvclamp_pad\[1\] VSSIO_Q ) ( mgmt_vssio_hvclamp_pad\[0\] VSSIO_Q ) ( mgmt_vssd_lvclmap_pad VSSIO_Q ) ( mgmt_vssa_hvclamp_pad VSSIO_Q ) ( mgmt_vddio_hvclamp_pad\[1\] VSSIO_Q ) ( mgmt_vddio_hvclamp_pad\[0\] VSSIO_Q ) ( mgmt_vdda_hvclamp_pad VSSIO_Q ) ( mgmt_vccd_lvclamp_pad VSSIO_Q )
-      ( mgmt_corner\[1\] VSSIO_Q ) ( mgmt_corner\[0\] VSSIO_Q ) ( gpio_pad VSSIO_Q ) ( flash_io1_pad VSSIO_Q ) ( flash_io0_pad VSSIO_Q ) ( flash_csb_pad VSSIO_Q ) ( flash_clk_pad VSSIO_Q ) ( clock_pad VSSIO_Q ) + USE SIGNAL ;
+      ( mgmt_corner\[1\] VSSIO_Q ) ( mgmt_corner\[0\] VSSIO_Q ) ( gpio_pad VSSIO_Q ) ( flash_io1_pad VSSIO_Q ) ( flash_io0_pad VSSIO_Q ) ( flash_csb_pad VSSIO_Q ) ( flash_clk_pad VSSIO_Q ) ( clock_pad VSSIO_Q ) + USE GROUND ;
     - vccd ( PIN vccd ) ( connect_0 VCCD ) ( connect_0 VCCHIB ) ( IO_FILL_IO_SOUTH_0_56 VCCD ) ( IO_FILL_IO_SOUTH_0_56 VCCHIB ) ( IO_FILL_IO_SOUTH_0_55 VCCD ) ( IO_FILL_IO_SOUTH_0_55 VCCHIB )
       ( IO_FILL_IO_SOUTH_0_50 VCCD ) ( IO_FILL_IO_SOUTH_0_50 VCCHIB ) ( IO_FILL_IO_SOUTH_0_40 VCCD ) ( IO_FILL_IO_SOUTH_0_40 VCCHIB ) ( connect_1 VCCD ) ( connect_1 VCCHIB ) ( IO_FILL_IO_SOUTH_0_20 VCCD ) ( IO_FILL_IO_SOUTH_0_20 VCCHIB )
       ( IO_FILL_IO_SOUTH_0_0 VCCD ) ( IO_FILL_IO_SOUTH_0_0 VCCHIB ) ( IO_CORNER_SOUTH_WEST_INST VCCD ) ( IO_CORNER_SOUTH_WEST_INST VCCHIB ) ( connect_2 VCCD ) ( connect_2 VCCHIB ) ( IO_FILL_IO_WEST_0_0 VCCD ) ( IO_FILL_IO_WEST_0_0 VCCHIB )
@@ -3808,7 +3808,7 @@ SPECIALNETS 18 ;
       ( mgmt_vccd_lvclamp_pad DRN_LVC2 ) ( mgmt_vccd_lvclamp_pad DRN_LVC1 ) ( mgmt_corner\[1\] VCCHIB ) ( mgmt_corner\[1\] VCCD ) ( mgmt_corner\[0\] VCCHIB ) ( mgmt_corner\[0\] VCCD ) ( gpio_pad VCCHIB ) ( gpio_pad VCCD )
       ( gpio_pad ENABLE_VDDIO ) ( flash_io1_pad VCCHIB ) ( flash_io1_pad VCCD ) ( flash_io1_pad ENABLE_VDDIO ) ( flash_io0_pad VCCHIB ) ( flash_io0_pad VCCD ) ( flash_io0_pad ENABLE_VDDIO ) ( flash_csb_pad VCCHIB )
       ( flash_csb_pad VCCD ) ( flash_csb_pad ENABLE_VDDIO ) ( flash_csb_pad DM[2] ) ( flash_csb_pad DM[1] ) ( flash_clk_pad VCCHIB ) ( flash_clk_pad VCCD ) ( flash_clk_pad ENABLE_VDDIO ) ( flash_clk_pad DM[2] )
-      ( flash_clk_pad DM[1] ) ( clock_pad VCCHIB ) ( clock_pad VCCD ) ( clock_pad OE_N ) ( clock_pad ENABLE_VDDIO ) ( clock_pad DM[0] ) + USE SIGNAL ;
+      ( flash_clk_pad DM[1] ) ( clock_pad VCCHIB ) ( clock_pad VCCD ) ( clock_pad OE_N ) ( clock_pad ENABLE_VDDIO ) ( clock_pad DM[0] ) + USE POWER ;
     - vccd1 ( PIN vccd1 ) ( IO_FILL_IO_NORTH_8_0 VCCD ) ( IO_FILL_IO_NORTH_8_20 VCCD ) ( IO_FILL_IO_EAST_1_0 VCCD ) ( IO_FILL_IO_NORTH_8_40 VCCD ) ( IO_FILL_IO_EAST_1_20 VCCD ) ( IO_FILL_IO_NORTH_8_60 VCCD )
       ( IO_FILL_IO_EAST_1_40 VCCD ) ( IO_FILL_IO_NORTH_8_80 VCCD ) ( IO_FILL_IO_EAST_1_60 VCCD ) ( IO_FILL_IO_NORTH_8_100 VCCD ) ( IO_FILL_IO_EAST_1_80 VCCD ) ( IO_FILL_IO_NORTH_8_120 VCCD ) ( IO_FILL_IO_EAST_1_100 VCCD ) ( IO_FILL_IO_NORTH_8_140 VCCD )
       ( IO_FILL_IO_EAST_1_120 VCCD ) ( IO_FILL_IO_NORTH_8_160 VCCD ) ( IO_FILL_IO_EAST_1_140 VCCD ) ( IO_FILL_IO_NORTH_8_170 VCCD ) ( IO_FILL_IO_EAST_1_160 VCCD ) ( IO_FILL_IO_NORTH_8_175 VCCD ) ( IO_FILL_IO_EAST_21_60 VCCD ) ( IO_FILL_IO_EAST_21_40 VCCD )
@@ -3842,7 +3842,7 @@ SPECIALNETS 18 ;
       ( user1_vssd_lvclmap_pad DRN_LVC1 ) ( user1_vssa_hvclamp_pad\[1\] VCCD ) ( user1_vssa_hvclamp_pad\[0\] VCCD ) ( user1_vdda_hvclamp_pad\[1\] VCCD ) ( user1_vdda_hvclamp_pad\[0\] VCCD ) ( user1_vccd_lvclamp_pad VCCD ) ( user1_vccd_lvclamp_pad DRN_LVC2 ) ( user1_vccd_lvclamp_pad DRN_LVC1 )
       ( user1_corner VCCD ) ( mprj_pads.area1_io_pad\[9\] VCCD ) ( mprj_pads.area1_io_pad\[8\] VCCD ) ( mprj_pads.area1_io_pad\[7\] VCCD ) ( mprj_pads.area1_io_pad\[6\] VCCD ) ( mprj_pads.area1_io_pad\[5\] VCCD ) ( mprj_pads.area1_io_pad\[4\] VCCD ) ( mprj_pads.area1_io_pad\[3\] VCCD )
       ( mprj_pads.area1_io_pad\[2\] VCCD ) ( mprj_pads.area1_io_pad\[1\] VCCD ) ( mprj_pads.area1_io_pad\[17\] VCCD ) ( mprj_pads.area1_io_pad\[16\] VCCD ) ( mprj_pads.area1_io_pad\[15\] VCCD ) ( mprj_pads.area1_io_pad\[14\] VCCD ) ( mprj_pads.area1_io_pad\[13\] VCCD ) ( mprj_pads.area1_io_pad\[12\] VCCD )
-      ( mprj_pads.area1_io_pad\[11\] VCCD ) ( mprj_pads.area1_io_pad\[10\] VCCD ) ( mprj_pads.area1_io_pad\[0\] VCCD ) + USE SIGNAL ;
+      ( mprj_pads.area1_io_pad\[11\] VCCD ) ( mprj_pads.area1_io_pad\[10\] VCCD ) ( mprj_pads.area1_io_pad\[0\] VCCD ) + USE POWER ;
     - vccd2 ( PIN vccd2 ) ( IO_FILL_IO_WEST_3_0 VCCD ) ( IO_FILL_IO_WEST_3_20 VCCD ) ( IO_FILL_IO_WEST_3_40 VCCD ) ( IO_FILL_IO_WEST_3_60 VCCD ) ( IO_FILL_IO_WEST_3_80 VCCD ) ( IO_FILL_IO_WEST_3_100 VCCD )
       ( IO_FILL_IO_WEST_3_120 VCCD ) ( IO_FILL_IO_NORTH_0_140 VCCD ) ( IO_FILL_IO_NORTH_0_120 VCCD ) ( IO_FILL_IO_NORTH_0_100 VCCD ) ( IO_FILL_IO_NORTH_0_80 VCCD ) ( IO_FILL_IO_NORTH_0_60 VCCD ) ( IO_FILL_IO_NORTH_0_40 VCCD ) ( brk_vdda_1 VCCD )
       ( IO_FILL_IO_NORTH_0_20 VCCD ) ( IO_FILL_IO_NORTH_0_0 VCCD ) ( IO_CORNER_NORTH_WEST_INST VCCD ) ( IO_FILL_IO_WEST_22_132 VCCD ) ( IO_FILL_IO_WEST_22_131 VCCD ) ( IO_FILL_IO_WEST_22_130 VCCD ) ( IO_FILL_IO_WEST_22_120 VCCD ) ( IO_FILL_IO_WEST_22_100 VCCD )
@@ -3881,7 +3881,7 @@ SPECIALNETS 18 ;
       ( user2_vssd_lvclmap_pad VCCD ) ( user2_vssd_lvclmap_pad DRN_LVC2 ) ( user2_vssd_lvclmap_pad DRN_LVC1 ) ( user2_vssa_hvclamp_pad VCCD ) ( user2_vdda_hvclamp_pad VCCD ) ( user2_vccd_lvclamp_pad VCCD ) ( user2_vccd_lvclamp_pad DRN_LVC2 ) ( user2_vccd_lvclamp_pad DRN_LVC1 )
       ( user2_corner VCCD ) ( mprj_pads.area2_io_pad\[9\] VCCD ) ( mprj_pads.area2_io_pad\[8\] VCCD ) ( mprj_pads.area2_io_pad\[7\] VCCD ) ( mprj_pads.area2_io_pad\[6\] VCCD ) ( mprj_pads.area2_io_pad\[5\] VCCD ) ( mprj_pads.area2_io_pad\[4\] VCCD ) ( mprj_pads.area2_io_pad\[3\] VCCD )
       ( mprj_pads.area2_io_pad\[2\] VCCD ) ( mprj_pads.area2_io_pad\[1\] VCCD ) ( mprj_pads.area2_io_pad\[19\] VCCD ) ( mprj_pads.area2_io_pad\[18\] VCCD ) ( mprj_pads.area2_io_pad\[17\] VCCD ) ( mprj_pads.area2_io_pad\[16\] VCCD ) ( mprj_pads.area2_io_pad\[15\] VCCD ) ( mprj_pads.area2_io_pad\[14\] VCCD )
-      ( mprj_pads.area2_io_pad\[13\] VCCD ) ( mprj_pads.area2_io_pad\[12\] VCCD ) ( mprj_pads.area2_io_pad\[11\] VCCD ) ( mprj_pads.area2_io_pad\[10\] VCCD ) ( mprj_pads.area2_io_pad\[0\] VCCD ) ( mgmt_vssio_hvclamp_pad\[1\] VCCD ) ( mgmt_vddio_hvclamp_pad\[1\] VCCD ) + USE SIGNAL ;
+      ( mprj_pads.area2_io_pad\[13\] VCCD ) ( mprj_pads.area2_io_pad\[12\] VCCD ) ( mprj_pads.area2_io_pad\[11\] VCCD ) ( mprj_pads.area2_io_pad\[10\] VCCD ) ( mprj_pads.area2_io_pad\[0\] VCCD ) ( mgmt_vssio_hvclamp_pad\[1\] VCCD ) ( mgmt_vddio_hvclamp_pad\[1\] VCCD ) + USE POWER ;
     - vdda ( PIN vdda ) ( connect_0 VDDA ) ( IO_FILL_IO_SOUTH_0_56 VDDA ) ( IO_FILL_IO_SOUTH_0_55 VDDA ) ( IO_FILL_IO_SOUTH_0_50 VDDA ) ( IO_FILL_IO_SOUTH_0_40 VDDA ) ( connect_1 VDDA )
       ( IO_FILL_IO_SOUTH_0_20 VDDA ) ( IO_FILL_IO_SOUTH_0_0 VDDA ) ( IO_CORNER_SOUTH_WEST_INST VDDA ) ( connect_2 VDDA ) ( IO_FILL_IO_WEST_0_0 VDDA ) ( IO_FILL_IO_WEST_0_20 VDDA ) ( connect_3 VDDA ) ( IO_FILL_IO_WEST_0_40 VDDA )
       ( connect_4 VDDA ) ( IO_FILL_IO_WEST_0_60 VDDA ) ( connect_5 VDDA ) ( IO_FILL_IO_WEST_0_80 VDDA ) ( IO_FILL_IO_SOUTH_1_0 VDDA ) ( IO_FILL_IO_EAST_0_145 VDDA ) ( IO_FILL_IO_EAST_0_140 VDDA ) ( IO_FILL_IO_EAST_0_120 VDDA )
@@ -3910,7 +3910,7 @@ SPECIALNETS 18 ;
       ( IO_FILL_IO_SOUTH_1_61 VDDA ) ( IO_FILL_IO_SOUTH_22_0 VDDA ) ( IO_FILL_IO_SOUTH_21_61 VDDA ) ( IO_FILL_IO_SOUTH_18_0 VDDA ) ( IO_FILL_IO_SOUTH_17_66 VDDA ) ( IO_FILL_IO_SOUTH_16_0 VDDA ) ( IO_FILL_IO_SOUTH_15_66 VDDA ) ( IO_FILL_IO_SOUTH_14_0 VDDA )
       ( IO_FILL_IO_SOUTH_13_66 VDDA ) ( IO_FILL_IO_SOUTH_10_0 VDDA ) ( IO_FILL_IO_SOUTH_9_66 VDDA ) ( IO_FILL_IO_SOUTH_12_0 VDDA ) ( IO_FILL_IO_SOUTH_11_66 VDDA ) ( IO_FILL_IO_SOUTH_6_0 VDDA ) ( IO_FILL_IO_SOUTH_5_66 VDDA ) ( resetb_pad VDDA )
       ( mgmt_vssio_hvclamp_pad\[0\] VDDA ) ( mgmt_vssd_lvclmap_pad VDDA ) ( mgmt_vssa_hvclamp_pad VDDA ) ( mgmt_vssa_hvclamp_pad DRN_HVC ) ( mgmt_vddio_hvclamp_pad\[0\] VDDA ) ( mgmt_vdda_hvclamp_pad VDDA ) ( mgmt_vdda_hvclamp_pad DRN_HVC ) ( mgmt_vccd_lvclamp_pad VDDA )
-      ( mgmt_corner\[1\] VDDA ) ( mgmt_corner\[0\] VDDA ) ( gpio_pad VDDA ) ( flash_io1_pad VDDA ) ( flash_io0_pad VDDA ) ( flash_csb_pad VDDA ) ( flash_clk_pad VDDA ) ( clock_pad VDDA ) + USE SIGNAL ;
+      ( mgmt_corner\[1\] VDDA ) ( mgmt_corner\[0\] VDDA ) ( gpio_pad VDDA ) ( flash_io1_pad VDDA ) ( flash_io0_pad VDDA ) ( flash_csb_pad VDDA ) ( flash_clk_pad VDDA ) ( clock_pad VDDA ) + USE POWER ;
     - vdda1 ( PIN vdda1 ) ( brk_vccd_1 VDDA ) ( IO_FILL_IO_NORTH_8_0 VDDA ) ( brk_vccd_0 VDDA ) ( IO_FILL_IO_NORTH_8_20 VDDA ) ( IO_FILL_IO_EAST_1_0 VDDA ) ( IO_FILL_IO_NORTH_8_40 VDDA )
       ( IO_FILL_IO_EAST_1_20 VDDA ) ( IO_FILL_IO_NORTH_8_60 VDDA ) ( IO_FILL_IO_EAST_1_40 VDDA ) ( IO_FILL_IO_NORTH_8_80 VDDA ) ( IO_FILL_IO_EAST_1_60 VDDA ) ( IO_FILL_IO_NORTH_8_100 VDDA ) ( IO_FILL_IO_EAST_1_80 VDDA ) ( IO_FILL_IO_NORTH_8_120 VDDA )
       ( IO_FILL_IO_EAST_1_100 VDDA ) ( IO_FILL_IO_NORTH_8_140 VDDA ) ( IO_FILL_IO_EAST_1_120 VDDA ) ( IO_FILL_IO_NORTH_8_160 VDDA ) ( IO_FILL_IO_EAST_1_140 VDDA ) ( IO_FILL_IO_NORTH_8_170 VDDA ) ( IO_FILL_IO_EAST_1_160 VDDA ) ( IO_FILL_IO_NORTH_8_175 VDDA )
@@ -3944,7 +3944,7 @@ SPECIALNETS 18 ;
       ( user1_vssd_lvclmap_pad VDDA ) ( user1_vssa_hvclamp_pad\[1\] VDDA ) ( user1_vssa_hvclamp_pad\[1\] DRN_HVC ) ( user1_vssa_hvclamp_pad\[0\] VDDA ) ( user1_vssa_hvclamp_pad\[0\] DRN_HVC ) ( user1_vdda_hvclamp_pad\[1\] VDDA ) ( user1_vdda_hvclamp_pad\[1\] DRN_HVC ) ( user1_vdda_hvclamp_pad\[0\] VDDA )
       ( user1_vdda_hvclamp_pad\[0\] DRN_HVC ) ( user1_vccd_lvclamp_pad VDDA ) ( user1_corner VDDA ) ( mprj_pads.area1_io_pad\[9\] VDDA ) ( mprj_pads.area1_io_pad\[8\] VDDA ) ( mprj_pads.area1_io_pad\[7\] VDDA ) ( mprj_pads.area1_io_pad\[6\] VDDA ) ( mprj_pads.area1_io_pad\[5\] VDDA )
       ( mprj_pads.area1_io_pad\[4\] VDDA ) ( mprj_pads.area1_io_pad\[3\] VDDA ) ( mprj_pads.area1_io_pad\[2\] VDDA ) ( mprj_pads.area1_io_pad\[1\] VDDA ) ( mprj_pads.area1_io_pad\[17\] VDDA ) ( mprj_pads.area1_io_pad\[16\] VDDA ) ( mprj_pads.area1_io_pad\[15\] VDDA ) ( mprj_pads.area1_io_pad\[14\] VDDA )
-      ( mprj_pads.area1_io_pad\[13\] VDDA ) ( mprj_pads.area1_io_pad\[12\] VDDA ) ( mprj_pads.area1_io_pad\[11\] VDDA ) ( mprj_pads.area1_io_pad\[10\] VDDA ) ( mprj_pads.area1_io_pad\[0\] VDDA ) + USE SIGNAL ;
+      ( mprj_pads.area1_io_pad\[13\] VDDA ) ( mprj_pads.area1_io_pad\[12\] VDDA ) ( mprj_pads.area1_io_pad\[11\] VDDA ) ( mprj_pads.area1_io_pad\[10\] VDDA ) ( mprj_pads.area1_io_pad\[0\] VDDA ) + USE POWER ;
     - vdda2 ( PIN vdda2 ) ( brk_vccd_2 VDDA ) ( IO_FILL_IO_WEST_3_0 VDDA ) ( IO_FILL_IO_WEST_3_20 VDDA ) ( IO_FILL_IO_WEST_3_40 VDDA ) ( IO_FILL_IO_WEST_3_60 VDDA ) ( IO_FILL_IO_WEST_3_80 VDDA )
       ( IO_FILL_IO_WEST_3_100 VDDA ) ( IO_FILL_IO_WEST_3_120 VDDA ) ( IO_FILL_IO_NORTH_0_140 VDDA ) ( IO_FILL_IO_NORTH_0_120 VDDA ) ( IO_FILL_IO_NORTH_0_100 VDDA ) ( IO_FILL_IO_NORTH_0_80 VDDA ) ( IO_FILL_IO_NORTH_0_60 VDDA ) ( IO_FILL_IO_NORTH_0_40 VDDA )
       ( IO_FILL_IO_NORTH_0_20 VDDA ) ( IO_FILL_IO_NORTH_0_0 VDDA ) ( IO_CORNER_NORTH_WEST_INST VDDA ) ( IO_FILL_IO_WEST_22_132 VDDA ) ( IO_FILL_IO_WEST_22_131 VDDA ) ( IO_FILL_IO_WEST_22_130 VDDA ) ( IO_FILL_IO_WEST_22_120 VDDA ) ( IO_FILL_IO_WEST_22_100 VDDA )
@@ -3983,7 +3983,7 @@ SPECIALNETS 18 ;
       ( user2_vssd_lvclmap_pad VDDA ) ( user2_vssa_hvclamp_pad VDDA ) ( user2_vssa_hvclamp_pad DRN_HVC ) ( user2_vdda_hvclamp_pad VDDA ) ( user2_vdda_hvclamp_pad DRN_HVC ) ( user2_vccd_lvclamp_pad VDDA ) ( user2_corner VDDA ) ( mprj_pads.area2_io_pad\[9\] VDDA )
       ( mprj_pads.area2_io_pad\[8\] VDDA ) ( mprj_pads.area2_io_pad\[7\] VDDA ) ( mprj_pads.area2_io_pad\[6\] VDDA ) ( mprj_pads.area2_io_pad\[5\] VDDA ) ( mprj_pads.area2_io_pad\[4\] VDDA ) ( mprj_pads.area2_io_pad\[3\] VDDA ) ( mprj_pads.area2_io_pad\[2\] VDDA ) ( mprj_pads.area2_io_pad\[1\] VDDA )
       ( mprj_pads.area2_io_pad\[19\] VDDA ) ( mprj_pads.area2_io_pad\[18\] VDDA ) ( mprj_pads.area2_io_pad\[17\] VDDA ) ( mprj_pads.area2_io_pad\[16\] VDDA ) ( mprj_pads.area2_io_pad\[15\] VDDA ) ( mprj_pads.area2_io_pad\[14\] VDDA ) ( mprj_pads.area2_io_pad\[13\] VDDA ) ( mprj_pads.area2_io_pad\[12\] VDDA )
-      ( mprj_pads.area2_io_pad\[11\] VDDA ) ( mprj_pads.area2_io_pad\[10\] VDDA ) ( mprj_pads.area2_io_pad\[0\] VDDA ) ( mgmt_vssio_hvclamp_pad\[1\] VDDA ) ( mgmt_vddio_hvclamp_pad\[1\] VDDA ) + USE SIGNAL ;
+      ( mprj_pads.area2_io_pad\[11\] VDDA ) ( mprj_pads.area2_io_pad\[10\] VDDA ) ( mprj_pads.area2_io_pad\[0\] VDDA ) ( mgmt_vssio_hvclamp_pad\[1\] VDDA ) ( mgmt_vddio_hvclamp_pad\[1\] VDDA ) + USE POWER ;
     - vddio ( PIN vddio ) ( connect_0 VDDIO ) ( connect_0 VSWITCH ) ( IO_FILL_IO_SOUTH_0_56 VDDIO ) ( IO_FILL_IO_SOUTH_0_56 VSWITCH ) ( IO_FILL_IO_SOUTH_0_55 VDDIO ) ( IO_FILL_IO_SOUTH_0_55 VSWITCH )
       ( IO_FILL_IO_SOUTH_0_50 VDDIO ) ( IO_FILL_IO_SOUTH_0_50 VSWITCH ) ( IO_FILL_IO_SOUTH_0_40 VDDIO ) ( IO_FILL_IO_SOUTH_0_40 VSWITCH ) ( connect_1 VDDIO ) ( connect_1 VSWITCH ) ( IO_FILL_IO_SOUTH_0_20 VDDIO ) ( IO_FILL_IO_SOUTH_0_20 VSWITCH )
       ( IO_FILL_IO_SOUTH_0_0 VDDIO ) ( IO_FILL_IO_SOUTH_0_0 VSWITCH ) ( IO_CORNER_SOUTH_WEST_INST VDDIO ) ( IO_CORNER_SOUTH_WEST_INST VSWITCH ) ( connect_2 VDDIO ) ( connect_2 VSWITCH ) ( IO_FILL_IO_WEST_0_0 VDDIO ) ( IO_FILL_IO_WEST_0_0 VSWITCH )
@@ -4185,7 +4185,7 @@ SPECIALNETS 18 ;
       ( mgmt_vdda_hvclamp_pad VSWITCH ) ( mgmt_vdda_hvclamp_pad VDDIO ) ( mgmt_vccd_lvclamp_pad VSWITCH ) ( mgmt_vccd_lvclamp_pad VDDIO ) ( mgmt_corner\[1\] VSWITCH ) ( mgmt_corner\[1\] VDDIO ) ( mgmt_corner\[0\] VSWITCH ) ( mgmt_corner\[0\] VDDIO )
       ( gpio_pad VSWITCH ) ( gpio_pad VDDIO ) ( gpio_pad HLD_H_N ) ( flash_io1_pad VSWITCH ) ( flash_io1_pad VDDIO ) ( flash_io1_pad HLD_H_N ) ( flash_io0_pad VSWITCH ) ( flash_io0_pad VDDIO )
       ( flash_io0_pad HLD_H_N ) ( flash_csb_pad VSWITCH ) ( flash_csb_pad VDDIO ) ( flash_csb_pad HLD_H_N ) ( flash_clk_pad VSWITCH ) ( flash_clk_pad VDDIO ) ( flash_clk_pad HLD_H_N ) ( clock_pad VSWITCH )
-      ( clock_pad VDDIO ) ( clock_pad HLD_H_N ) + USE SIGNAL ;
+      ( clock_pad VDDIO ) ( clock_pad HLD_H_N ) + USE POWER ;
     - vssa ( PIN vssa ) ( connect_0 VSSA ) ( IO_FILL_IO_SOUTH_0_56 VSSA ) ( IO_FILL_IO_SOUTH_0_55 VSSA ) ( IO_FILL_IO_SOUTH_0_50 VSSA ) ( IO_FILL_IO_SOUTH_0_40 VSSA ) ( connect_1 VSSA )
       ( IO_FILL_IO_SOUTH_0_20 VSSA ) ( IO_FILL_IO_SOUTH_0_0 VSSA ) ( IO_CORNER_SOUTH_WEST_INST VSSA ) ( connect_2 VSSA ) ( IO_FILL_IO_WEST_0_0 VSSA ) ( IO_FILL_IO_WEST_0_20 VSSA ) ( connect_3 VSSA ) ( IO_FILL_IO_WEST_0_40 VSSA )
       ( connect_4 VSSA ) ( IO_FILL_IO_WEST_0_60 VSSA ) ( connect_5 VSSA ) ( IO_FILL_IO_WEST_0_80 VSSA ) ( IO_FILL_IO_SOUTH_1_0 VSSA ) ( IO_FILL_IO_EAST_0_145 VSSA ) ( IO_FILL_IO_EAST_0_140 VSSA ) ( IO_FILL_IO_EAST_0_120 VSSA )
@@ -4215,7 +4215,7 @@ SPECIALNETS 18 ;
       ( IO_FILL_IO_SOUTH_13_66 VSSA ) ( IO_FILL_IO_SOUTH_10_0 VSSA ) ( IO_FILL_IO_SOUTH_9_66 VSSA ) ( IO_FILL_IO_SOUTH_12_0 VSSA ) ( IO_FILL_IO_SOUTH_11_66 VSSA ) ( IO_FILL_IO_SOUTH_6_0 VSSA ) ( IO_FILL_IO_SOUTH_5_66 VSSA ) ( resetb_pad VSSA )
       ( mgmt_vssio_hvclamp_pad\[0\] VSSA ) ( mgmt_vssd_lvclmap_pad VSSA ) ( mgmt_vssd_lvclmap_pad BDY2_B2B ) ( mgmt_vssa_hvclamp_pad VSSA ) ( mgmt_vssa_hvclamp_pad SRC_BDY_HVC ) ( mgmt_vddio_hvclamp_pad\[0\] VSSA ) ( mgmt_vdda_hvclamp_pad VSSA ) ( mgmt_vdda_hvclamp_pad SRC_BDY_HVC )
       ( mgmt_vccd_lvclamp_pad VSSA ) ( mgmt_vccd_lvclamp_pad BDY2_B2B ) ( mgmt_corner\[1\] VSSA ) ( mgmt_corner\[0\] VSSA ) ( gpio_pad VSSA ) ( gpio_pad ENABLE_VSWITCH_H ) ( flash_io1_pad VSSA ) ( flash_io1_pad ENABLE_VSWITCH_H )
-      ( flash_io0_pad VSSA ) ( flash_io0_pad ENABLE_VSWITCH_H ) ( flash_csb_pad VSSA ) ( flash_csb_pad ENABLE_VSWITCH_H ) ( flash_clk_pad VSSA ) ( flash_clk_pad ENABLE_VSWITCH_H ) ( clock_pad VSSA ) ( clock_pad ENABLE_VSWITCH_H ) + USE SIGNAL ;
+      ( flash_io0_pad VSSA ) ( flash_io0_pad ENABLE_VSWITCH_H ) ( flash_csb_pad VSSA ) ( flash_csb_pad ENABLE_VSWITCH_H ) ( flash_clk_pad VSSA ) ( flash_clk_pad ENABLE_VSWITCH_H ) ( clock_pad VSSA ) ( clock_pad ENABLE_VSWITCH_H ) + USE GROUND ;
     - vssa1 ( PIN vssa1 ) ( brk_vccd_1 VSSA ) ( IO_FILL_IO_NORTH_8_0 VSSA ) ( brk_vccd_0 VSSA ) ( IO_FILL_IO_NORTH_8_20 VSSA ) ( IO_FILL_IO_EAST_1_0 VSSA ) ( IO_FILL_IO_NORTH_8_40 VSSA )
       ( IO_FILL_IO_EAST_1_20 VSSA ) ( IO_FILL_IO_NORTH_8_60 VSSA ) ( IO_FILL_IO_EAST_1_40 VSSA ) ( IO_FILL_IO_NORTH_8_80 VSSA ) ( IO_FILL_IO_EAST_1_60 VSSA ) ( IO_FILL_IO_NORTH_8_100 VSSA ) ( IO_FILL_IO_EAST_1_80 VSSA ) ( IO_FILL_IO_NORTH_8_120 VSSA )
       ( IO_FILL_IO_EAST_1_100 VSSA ) ( IO_FILL_IO_NORTH_8_140 VSSA ) ( IO_FILL_IO_EAST_1_120 VSSA ) ( IO_FILL_IO_NORTH_8_160 VSSA ) ( IO_FILL_IO_EAST_1_140 VSSA ) ( IO_FILL_IO_NORTH_8_170 VSSA ) ( IO_FILL_IO_EAST_1_160 VSSA ) ( IO_FILL_IO_NORTH_8_175 VSSA )
@@ -4249,7 +4249,7 @@ SPECIALNETS 18 ;
       ( user1_vssd_lvclmap_pad VSSA ) ( user1_vssa_hvclamp_pad\[1\] VSSA ) ( user1_vssa_hvclamp_pad\[1\] SRC_BDY_HVC ) ( user1_vssa_hvclamp_pad\[0\] VSSA ) ( user1_vssa_hvclamp_pad\[0\] SRC_BDY_HVC ) ( user1_vdda_hvclamp_pad\[1\] VSSA ) ( user1_vdda_hvclamp_pad\[1\] SRC_BDY_HVC ) ( user1_vdda_hvclamp_pad\[0\] VSSA )
       ( user1_vdda_hvclamp_pad\[0\] SRC_BDY_HVC ) ( user1_vccd_lvclamp_pad VSSA ) ( user1_corner VSSA ) ( mprj_pads.area1_io_pad\[9\] VSSA ) ( mprj_pads.area1_io_pad\[8\] VSSA ) ( mprj_pads.area1_io_pad\[7\] VSSA ) ( mprj_pads.area1_io_pad\[6\] VSSA ) ( mprj_pads.area1_io_pad\[5\] VSSA )
       ( mprj_pads.area1_io_pad\[4\] VSSA ) ( mprj_pads.area1_io_pad\[3\] VSSA ) ( mprj_pads.area1_io_pad\[2\] VSSA ) ( mprj_pads.area1_io_pad\[1\] VSSA ) ( mprj_pads.area1_io_pad\[17\] VSSA ) ( mprj_pads.area1_io_pad\[16\] VSSA ) ( mprj_pads.area1_io_pad\[15\] VSSA ) ( mprj_pads.area1_io_pad\[14\] VSSA )
-      ( mprj_pads.area1_io_pad\[13\] VSSA ) ( mprj_pads.area1_io_pad\[12\] VSSA ) ( mprj_pads.area1_io_pad\[11\] VSSA ) ( mprj_pads.area1_io_pad\[10\] VSSA ) ( mprj_pads.area1_io_pad\[0\] VSSA ) + USE SIGNAL ;
+      ( mprj_pads.area1_io_pad\[13\] VSSA ) ( mprj_pads.area1_io_pad\[12\] VSSA ) ( mprj_pads.area1_io_pad\[11\] VSSA ) ( mprj_pads.area1_io_pad\[10\] VSSA ) ( mprj_pads.area1_io_pad\[0\] VSSA ) + USE GROUND ;
     - vssa2 ( PIN vssa2 ) ( brk_vccd_2 VSSA ) ( IO_FILL_IO_WEST_3_0 VSSA ) ( IO_FILL_IO_WEST_3_20 VSSA ) ( IO_FILL_IO_WEST_3_40 VSSA ) ( IO_FILL_IO_WEST_3_60 VSSA ) ( IO_FILL_IO_WEST_3_80 VSSA )
       ( IO_FILL_IO_WEST_3_100 VSSA ) ( IO_FILL_IO_WEST_3_120 VSSA ) ( IO_FILL_IO_NORTH_0_140 VSSA ) ( IO_FILL_IO_NORTH_0_120 VSSA ) ( IO_FILL_IO_NORTH_0_100 VSSA ) ( IO_FILL_IO_NORTH_0_80 VSSA ) ( IO_FILL_IO_NORTH_0_60 VSSA ) ( IO_FILL_IO_NORTH_0_40 VSSA )
       ( IO_FILL_IO_NORTH_0_20 VSSA ) ( IO_FILL_IO_NORTH_0_0 VSSA ) ( IO_CORNER_NORTH_WEST_INST VSSA ) ( IO_FILL_IO_WEST_22_132 VSSA ) ( IO_FILL_IO_WEST_22_131 VSSA ) ( IO_FILL_IO_WEST_22_130 VSSA ) ( IO_FILL_IO_WEST_22_120 VSSA ) ( IO_FILL_IO_WEST_22_100 VSSA )
@@ -4288,7 +4288,7 @@ SPECIALNETS 18 ;
       ( user2_vssd_lvclmap_pad VSSA ) ( user2_vssa_hvclamp_pad VSSA ) ( user2_vssa_hvclamp_pad SRC_BDY_HVC ) ( user2_vdda_hvclamp_pad VSSA ) ( user2_vdda_hvclamp_pad SRC_BDY_HVC ) ( user2_vccd_lvclamp_pad VSSA ) ( user2_corner VSSA ) ( mprj_pads.area2_io_pad\[9\] VSSA )
       ( mprj_pads.area2_io_pad\[8\] VSSA ) ( mprj_pads.area2_io_pad\[7\] VSSA ) ( mprj_pads.area2_io_pad\[6\] VSSA ) ( mprj_pads.area2_io_pad\[5\] VSSA ) ( mprj_pads.area2_io_pad\[4\] VSSA ) ( mprj_pads.area2_io_pad\[3\] VSSA ) ( mprj_pads.area2_io_pad\[2\] VSSA ) ( mprj_pads.area2_io_pad\[1\] VSSA )
       ( mprj_pads.area2_io_pad\[19\] VSSA ) ( mprj_pads.area2_io_pad\[18\] VSSA ) ( mprj_pads.area2_io_pad\[17\] VSSA ) ( mprj_pads.area2_io_pad\[16\] VSSA ) ( mprj_pads.area2_io_pad\[15\] VSSA ) ( mprj_pads.area2_io_pad\[14\] VSSA ) ( mprj_pads.area2_io_pad\[13\] VSSA ) ( mprj_pads.area2_io_pad\[12\] VSSA )
-      ( mprj_pads.area2_io_pad\[11\] VSSA ) ( mprj_pads.area2_io_pad\[10\] VSSA ) ( mprj_pads.area2_io_pad\[0\] VSSA ) ( mgmt_vssio_hvclamp_pad\[1\] VSSA ) ( mgmt_vddio_hvclamp_pad\[1\] VSSA ) + USE SIGNAL ;
+      ( mprj_pads.area2_io_pad\[11\] VSSA ) ( mprj_pads.area2_io_pad\[10\] VSSA ) ( mprj_pads.area2_io_pad\[0\] VSSA ) ( mgmt_vssio_hvclamp_pad\[1\] VSSA ) ( mgmt_vddio_hvclamp_pad\[1\] VSSA ) + USE GROUND ;
     - vssd ( PIN vssd ) ( connect_0 VSSD ) ( IO_FILL_IO_SOUTH_0_56 VSSD ) ( IO_FILL_IO_SOUTH_0_55 VSSD ) ( IO_FILL_IO_SOUTH_0_50 VSSD ) ( IO_FILL_IO_SOUTH_0_40 VSSD ) ( connect_1 VSSD )
       ( IO_FILL_IO_SOUTH_0_20 VSSD ) ( IO_FILL_IO_SOUTH_0_0 VSSD ) ( IO_CORNER_SOUTH_WEST_INST VSSD ) ( connect_2 VSSD ) ( IO_FILL_IO_WEST_0_0 VSSD ) ( IO_FILL_IO_WEST_0_20 VSSD ) ( connect_3 VSSD ) ( IO_FILL_IO_WEST_0_40 VSSD )
       ( connect_4 VSSD ) ( IO_FILL_IO_WEST_0_60 VSSD ) ( connect_5 VSSD ) ( brk_vdda_0 VSSD ) ( IO_FILL_IO_WEST_0_80 VSSD ) ( IO_FILL_IO_SOUTH_1_0 VSSD ) ( IO_FILL_IO_EAST_0_145 VSSD ) ( IO_FILL_IO_EAST_0_140 VSSD )
@@ -4324,7 +4324,7 @@ SPECIALNETS 18 ;
       ( flash_csb_pad VTRIP_SEL ) ( flash_csb_pad VSSD ) ( flash_csb_pad SLOW ) ( flash_csb_pad IB_MODE_SEL ) ( flash_csb_pad HLD_OVR ) ( flash_csb_pad DM[0] ) ( flash_csb_pad ANALOG_SEL ) ( flash_csb_pad ANALOG_POL )
       ( flash_csb_pad ANALOG_EN ) ( flash_clk_pad VTRIP_SEL ) ( flash_clk_pad VSSD ) ( flash_clk_pad SLOW ) ( flash_clk_pad IB_MODE_SEL ) ( flash_clk_pad HLD_OVR ) ( flash_clk_pad DM[0] ) ( flash_clk_pad ANALOG_SEL )
       ( flash_clk_pad ANALOG_POL ) ( flash_clk_pad ANALOG_EN ) ( clock_pad VTRIP_SEL ) ( clock_pad VSSD ) ( clock_pad SLOW ) ( clock_pad OUT ) ( clock_pad IB_MODE_SEL ) ( clock_pad HLD_OVR )
-      ( clock_pad DM[2] ) ( clock_pad DM[1] ) ( clock_pad ANALOG_SEL ) ( clock_pad ANALOG_POL ) ( clock_pad ANALOG_EN ) + USE SIGNAL ;
+      ( clock_pad DM[2] ) ( clock_pad DM[1] ) ( clock_pad ANALOG_SEL ) ( clock_pad ANALOG_POL ) ( clock_pad ANALOG_EN ) + USE GROUND ;
     - vssd1 ( PIN vssd1 ) ( IO_FILL_IO_NORTH_8_0 VSSD ) ( IO_FILL_IO_NORTH_8_20 VSSD ) ( IO_FILL_IO_EAST_1_0 VSSD ) ( IO_FILL_IO_NORTH_8_40 VSSD ) ( IO_FILL_IO_EAST_1_20 VSSD ) ( IO_FILL_IO_NORTH_8_60 VSSD )
       ( IO_FILL_IO_EAST_1_40 VSSD ) ( IO_FILL_IO_NORTH_8_80 VSSD ) ( IO_FILL_IO_EAST_1_60 VSSD ) ( IO_FILL_IO_NORTH_8_100 VSSD ) ( IO_FILL_IO_EAST_1_80 VSSD ) ( IO_FILL_IO_NORTH_8_120 VSSD ) ( IO_FILL_IO_EAST_1_100 VSSD ) ( IO_FILL_IO_NORTH_8_140 VSSD )
       ( IO_FILL_IO_EAST_1_120 VSSD ) ( IO_FILL_IO_NORTH_8_160 VSSD ) ( IO_FILL_IO_EAST_1_140 VSSD ) ( IO_FILL_IO_NORTH_8_170 VSSD ) ( IO_FILL_IO_EAST_1_160 VSSD ) ( IO_FILL_IO_NORTH_8_175 VSSD ) ( IO_FILL_IO_EAST_21_60 VSSD ) ( IO_FILL_IO_EAST_21_40 VSSD )
@@ -4358,7 +4358,7 @@ SPECIALNETS 18 ;
       ( user1_vssa_hvclamp_pad\[1\] VSSD ) ( user1_vssa_hvclamp_pad\[0\] VSSD ) ( user1_vdda_hvclamp_pad\[1\] VSSD ) ( user1_vdda_hvclamp_pad\[0\] VSSD ) ( user1_vccd_lvclamp_pad VSSD ) ( user1_vccd_lvclamp_pad SRC_BDY_LVC1 ) ( user1_corner VSSD ) ( mprj_pads.area1_io_pad\[9\] VSSD )
       ( mprj_pads.area1_io_pad\[8\] VSSD ) ( mprj_pads.area1_io_pad\[7\] VSSD ) ( mprj_pads.area1_io_pad\[6\] VSSD ) ( mprj_pads.area1_io_pad\[5\] VSSD ) ( mprj_pads.area1_io_pad\[4\] VSSD ) ( mprj_pads.area1_io_pad\[3\] VSSD ) ( mprj_pads.area1_io_pad\[2\] VSSD ) ( mprj_pads.area1_io_pad\[1\] VSSD )
       ( mprj_pads.area1_io_pad\[17\] VSSD ) ( mprj_pads.area1_io_pad\[16\] VSSD ) ( mprj_pads.area1_io_pad\[15\] VSSD ) ( mprj_pads.area1_io_pad\[14\] VSSD ) ( mprj_pads.area1_io_pad\[13\] VSSD ) ( mprj_pads.area1_io_pad\[12\] VSSD ) ( mprj_pads.area1_io_pad\[11\] VSSD ) ( mprj_pads.area1_io_pad\[10\] VSSD )
-      ( mprj_pads.area1_io_pad\[0\] VSSD ) + USE SIGNAL ;
+      ( mprj_pads.area1_io_pad\[0\] VSSD ) + USE GROUND ;
     - vssd2 ( PIN vssd2 ) ( IO_FILL_IO_WEST_3_0 VSSD ) ( IO_FILL_IO_WEST_3_20 VSSD ) ( IO_FILL_IO_WEST_3_40 VSSD ) ( IO_FILL_IO_WEST_3_60 VSSD ) ( IO_FILL_IO_WEST_3_80 VSSD ) ( IO_FILL_IO_WEST_3_100 VSSD )
       ( IO_FILL_IO_WEST_3_120 VSSD ) ( IO_FILL_IO_NORTH_0_140 VSSD ) ( IO_FILL_IO_NORTH_0_120 VSSD ) ( IO_FILL_IO_NORTH_0_100 VSSD ) ( IO_FILL_IO_NORTH_0_80 VSSD ) ( IO_FILL_IO_NORTH_0_60 VSSD ) ( IO_FILL_IO_NORTH_0_40 VSSD ) ( brk_vdda_1 VSSD )
       ( IO_FILL_IO_NORTH_0_20 VSSD ) ( IO_FILL_IO_NORTH_0_0 VSSD ) ( IO_CORNER_NORTH_WEST_INST VSSD ) ( IO_FILL_IO_WEST_22_132 VSSD ) ( IO_FILL_IO_WEST_22_131 VSSD ) ( IO_FILL_IO_WEST_22_130 VSSD ) ( IO_FILL_IO_WEST_22_120 VSSD ) ( IO_FILL_IO_WEST_22_100 VSSD )
@@ -4397,7 +4397,7 @@ SPECIALNETS 18 ;
       ( user2_vssd_lvclmap_pad VSSD ) ( user2_vssd_lvclmap_pad SRC_BDY_LVC1 ) ( user2_vssa_hvclamp_pad VSSD ) ( user2_vdda_hvclamp_pad VSSD ) ( user2_vccd_lvclamp_pad VSSD ) ( user2_vccd_lvclamp_pad SRC_BDY_LVC1 ) ( user2_corner VSSD ) ( mprj_pads.area2_io_pad\[9\] VSSD )
       ( mprj_pads.area2_io_pad\[8\] VSSD ) ( mprj_pads.area2_io_pad\[7\] VSSD ) ( mprj_pads.area2_io_pad\[6\] VSSD ) ( mprj_pads.area2_io_pad\[5\] VSSD ) ( mprj_pads.area2_io_pad\[4\] VSSD ) ( mprj_pads.area2_io_pad\[3\] VSSD ) ( mprj_pads.area2_io_pad\[2\] VSSD ) ( mprj_pads.area2_io_pad\[1\] VSSD )
       ( mprj_pads.area2_io_pad\[19\] VSSD ) ( mprj_pads.area2_io_pad\[18\] VSSD ) ( mprj_pads.area2_io_pad\[17\] VSSD ) ( mprj_pads.area2_io_pad\[16\] VSSD ) ( mprj_pads.area2_io_pad\[15\] VSSD ) ( mprj_pads.area2_io_pad\[14\] VSSD ) ( mprj_pads.area2_io_pad\[13\] VSSD ) ( mprj_pads.area2_io_pad\[12\] VSSD )
-      ( mprj_pads.area2_io_pad\[11\] VSSD ) ( mprj_pads.area2_io_pad\[10\] VSSD ) ( mprj_pads.area2_io_pad\[0\] VSSD ) ( mgmt_vssio_hvclamp_pad\[1\] VSSD ) ( mgmt_vddio_hvclamp_pad\[1\] VSSD ) + USE SIGNAL ;
+      ( mprj_pads.area2_io_pad\[11\] VSSD ) ( mprj_pads.area2_io_pad\[10\] VSSD ) ( mprj_pads.area2_io_pad\[0\] VSSD ) ( mgmt_vssio_hvclamp_pad\[1\] VSSD ) ( mgmt_vddio_hvclamp_pad\[1\] VSSD ) + USE GROUND ;
     - vssio ( PIN vssio ) ( connect_0 VSSIO ) ( IO_FILL_IO_SOUTH_0_56 VSSIO ) ( IO_FILL_IO_SOUTH_0_55 VSSIO ) ( IO_FILL_IO_SOUTH_0_50 VSSIO ) ( IO_FILL_IO_SOUTH_0_40 VSSIO ) ( connect_1 VSSIO )
       ( IO_FILL_IO_SOUTH_0_20 VSSIO ) ( IO_FILL_IO_SOUTH_0_0 VSSIO ) ( IO_CORNER_SOUTH_WEST_INST VSSIO ) ( connect_2 VSSIO ) ( IO_FILL_IO_WEST_0_0 VSSIO ) ( IO_FILL_IO_WEST_0_20 VSSIO ) ( connect_3 VSSIO ) ( IO_FILL_IO_WEST_0_40 VSSIO )
       ( connect_4 VSSIO ) ( IO_FILL_IO_EAST_1_80 VSSIO ) ( IO_FILL_IO_EAST_1_60 VSSIO ) ( IO_FILL_IO_EAST_1_40 VSSIO ) ( IO_FILL_IO_EAST_1_20 VSSIO ) ( IO_FILL_IO_EAST_1_0 VSSIO ) ( brk_vccd_0 VSSIO ) ( IO_FILL_IO_WEST_0_60 VSSIO )
@@ -4504,7 +4504,7 @@ SPECIALNETS 18 ;
       ( mprj_pads.area1_io_pad\[12\] VSSIO ) ( mprj_pads.area1_io_pad\[12\] ENABLE_VSWITCH_H ) ( mprj_pads.area1_io_pad\[11\] VSSIO ) ( mprj_pads.area1_io_pad\[11\] ENABLE_VSWITCH_H ) ( mprj_pads.area1_io_pad\[10\] VSSIO ) ( mprj_pads.area1_io_pad\[10\] ENABLE_VSWITCH_H ) ( mprj_pads.area1_io_pad\[0\] VSSIO ) ( mprj_pads.area1_io_pad\[0\] ENABLE_VSWITCH_H )
       ( mgmt_vssio_hvclamp_pad\[1\] VSSIO ) ( mgmt_vssio_hvclamp_pad\[1\] SRC_BDY_HVC ) ( mgmt_vssio_hvclamp_pad\[0\] VSSIO ) ( mgmt_vssio_hvclamp_pad\[0\] SRC_BDY_HVC ) ( mgmt_vssd_lvclmap_pad VSSIO ) ( mgmt_vssd_lvclmap_pad SRC_BDY_LVC1 ) ( mgmt_vssa_hvclamp_pad VSSIO ) ( mgmt_vddio_hvclamp_pad\[1\] VSSIO )
       ( mgmt_vddio_hvclamp_pad\[1\] SRC_BDY_HVC ) ( mgmt_vddio_hvclamp_pad\[0\] VSSIO ) ( mgmt_vddio_hvclamp_pad\[0\] SRC_BDY_HVC ) ( mgmt_vdda_hvclamp_pad VSSIO ) ( mgmt_vccd_lvclamp_pad VSSIO ) ( mgmt_vccd_lvclamp_pad SRC_BDY_LVC1 ) ( mgmt_corner\[1\] VSSIO ) ( mgmt_corner\[0\] VSSIO )
-      ( gpio_pad VSSIO ) ( flash_io1_pad VSSIO ) ( flash_io0_pad VSSIO ) ( flash_csb_pad VSSIO ) ( flash_clk_pad VSSIO ) ( clock_pad VSSIO ) + USE SIGNAL ;
+      ( gpio_pad VSSIO ) ( flash_io1_pad VSSIO ) ( flash_io0_pad VSSIO ) ( flash_csb_pad VSSIO ) ( flash_clk_pad VSSIO ) ( clock_pad VSSIO ) + USE GROUND ;
 END SPECIALNETS
 NETS 760 ;
     - clock ( PIN clock ) ( clock_pad PAD ) + USE SIGNAL ;
