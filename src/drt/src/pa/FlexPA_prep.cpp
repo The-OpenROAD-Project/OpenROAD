@@ -1514,7 +1514,9 @@ void FlexPA::prepPattern()
       if (masterType != dbMasterType::CORE
           && masterType != dbMasterType::CORE_TIEHIGH
           && masterType != dbMasterType::CORE_TIELOW
-          && masterType != dbMasterType::CORE_ANTENNACELL) {
+          && masterType != dbMasterType::CORE_ANTENNACELL
+          && !masterType.isBlock() && !masterType.isPad()
+          && masterType != dbMasterType::RING) {
         continue;
       }
 
@@ -1781,6 +1783,7 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
       auto accessPattern = uniqueInstPatterns_[uniqueInstIdx][currIdx2].get();
       auto& accessPoints = accessPattern->getPattern();
 
+      std::cout << "Updating APs for inst " << inst->getName() << "\n";
       // update instTerm ap
       for (auto& instTerm : inst->getInstTerms()) {
         if (isSkipInstTerm(instTerm.get())) {
@@ -1996,7 +1999,9 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
     if (masterType != dbMasterType::CORE
         && masterType != dbMasterType::CORE_TIEHIGH
         && masterType != dbMasterType::CORE_TIELOW
-        && masterType != dbMasterType::CORE_ANTENNACELL) {
+        && masterType != dbMasterType::CORE_ANTENNACELL
+        && !masterType.isBlock() && !masterType.isPad()
+        && masterType != dbMasterType::RING) {
       continue;
     }
     bool isSkip = true;
