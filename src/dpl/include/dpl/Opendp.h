@@ -47,8 +47,8 @@
 #include <utility>  // pair
 #include <vector>
 
-#include "odb/db.h"
 #include "dpl/DplObserver.h"
+#include "odb/db.h"
 
 namespace utl {
 class Logger;

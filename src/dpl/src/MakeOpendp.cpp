@@ -76,7 +76,8 @@ void initOpendp(OpenRoad* openroad)
   Dpl_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dpl_tcl_inits);
-  openroad->getOpendp()->init(openroad->getDb(), openroad->getLogger(), &makeDplGraphics);
+  openroad->getOpendp()->init(
+      openroad->getDb(), openroad->getLogger(), &makeDplGraphics);
 }
 
 }  // namespace ord
