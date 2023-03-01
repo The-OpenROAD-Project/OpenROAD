@@ -72,8 +72,6 @@ if (LINK_TIME_OPTIMIZATION)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-enable_testing()
-
 # Allow to use external shared boost libraries
 option(USE_SYSTEM_BOOST "Use system shared Boost libraries" OFF)
 
@@ -152,14 +150,19 @@ configure_file(
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # GTEST
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  # Specify the commit you depend on and update it regularly.
-  URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(googletest)
+find_package(GTest)
+if(NOT GTest_FOUND) 
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    # Specify the commit you depend on and update it regularly.
+    URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+  )
+  FetchContent_MakeAvailable(googletest)
+endif()
+enable_testing()
+add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
 include(GoogleTest)
 # GTEST
 

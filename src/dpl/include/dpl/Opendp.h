@@ -48,6 +48,7 @@
 #include <vector>
 
 #include "odb/db.h"
+#include "dpl/DplObserver.h"
 
 namespace utl {
 class Logger;
@@ -176,7 +177,7 @@ class Opendp
   Opendp(const Opendp&&) = delete;
   Opendp& operator=(const Opendp&&) = delete;
 
-  void init(dbDatabase* db, Logger* logger, std::function<std::unique_ptr<Graphics>(Opendp*, float, const odb::dbInst*)> make_graphics);
+  void init(dbDatabase* db, Logger* logger);
   void initBlock();
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
@@ -185,9 +186,7 @@ class Opendp
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster* inst, int left, int right);
   void setPadding(dbInst* inst, int left, int right);
-  void setDebug(bool displacement,
-                float min_displacement,
-                const dbInst* debug_instance);
+  void setDebug(std::unique_ptr<DplObserver> observer);
 
   // Global padding.
   int padGlobalLeft() const { return pad_left_; }
@@ -212,7 +211,7 @@ class Opendp
   int getRowSiteCount() const { return row_site_count_; }
 
  private:
-  friend class Dpl_IsPlaced_Test;
+  friend class OpendpTest_IsPlaced_Test;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
@@ -414,8 +413,7 @@ class Opendp
   // Optimiize mirroring.
   NetBoxMap net_box_map_;
 
-  std::unique_ptr<Graphics> graphics_;
-  std::function<std::unique_ptr<Graphics>(Opendp*, float, const odb::dbInst*)> _make_graphics;
+  std::unique_ptr<DplObserver> debug_observer_;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;

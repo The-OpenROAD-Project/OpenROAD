@@ -44,7 +44,6 @@
 #include <limits>
 #include <map>
 
-#include "Graphics.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -138,11 +137,10 @@ Opendp::~Opendp()
   deleteGrid();
 }
 
-void Opendp::init(dbDatabase* db, Logger* logger, std::function<std::unique_ptr<Graphics>(Opendp*, float, const odb::dbInst*)> make_graphics)
+void Opendp::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;
   logger_ = logger;
-  _make_graphics = make_graphics;
 }
 
 void Opendp::initBlock()
@@ -173,14 +171,9 @@ bool Opendp::havePadding() const
          || !inst_padding_map_.empty();
 }
 
-void Opendp::setDebug(bool displacement,
-                      float min_displacement,
-                      const dbInst* debug_instance)
+void Opendp::setDebug(std::unique_ptr<DplObserver> observer)
 {
-  if (Graphics::guiActive()) {
-    graphics_
-        = _make_graphics(this, min_displacement, debug_instance);
-  }
+  debug_observer_ = std::move(observer);
 }
 
 void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)

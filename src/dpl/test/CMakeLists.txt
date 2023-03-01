@@ -18,3 +18,5 @@ gtest_discover_tests(dpl_test
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+add_dependencies(build_and_test dpl_test)
+
