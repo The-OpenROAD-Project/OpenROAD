@@ -73,11 +73,13 @@ target_sources(dpl
   PRIVATE
     src/MakeOpendp.cpp
     src/Graphics.cpp
+    src/DplObserver.h
 )
 
 target_include_directories(dpl
   PUBLIC
     include
+    src
 )
 
 target_link_libraries(dpl

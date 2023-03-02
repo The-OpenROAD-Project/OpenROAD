@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "dpl/Graphics.h"
+#include "Graphics.h"
 
 #include "dpl/Opendp.h"
 

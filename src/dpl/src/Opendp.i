@@ -35,10 +35,12 @@
 %{
 
 #include "ord/OpenRoad.hh"
-#include "dpl/DplObserver.h"
-#include "dpl/Graphics.h"
+#include "Graphics.h"
+#include "DplObserver.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
+
+
 
 namespace dpl {
 

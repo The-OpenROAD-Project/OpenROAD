@@ -27,7 +27,7 @@
 
 #pragma once
 
-#include "dpl/DplObserver.h"
+#include "DplObserver.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 

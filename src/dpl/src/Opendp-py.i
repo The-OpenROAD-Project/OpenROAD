@@ -37,7 +37,6 @@
 
 #include "ord/OpenRoad.hh"
 #include "dpl/Opendp.h"
-#include "dpl/DplObserver.h"
 #include "utl/Logger.h"
 
 using std::vector;

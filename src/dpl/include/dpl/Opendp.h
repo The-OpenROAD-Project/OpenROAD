@@ -47,7 +47,6 @@
 #include <utility>  // pair
 #include <vector>
 
-#include "dpl/DplObserver.h"
 #include "odb/db.h"
 
 namespace utl {
@@ -82,7 +81,7 @@ using odb::Rect;
 
 struct Pixel;
 struct Group;
-class Graphics;
+class DplObserver;
 
 using Grid = Pixel**;
 using dbMasterSeq = vector<dbMaster*>;

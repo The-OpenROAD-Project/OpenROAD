@@ -43,7 +43,7 @@
 #include <limits>
 #include <memory>
 
-#include "dpl/DplObserver.h"
+#include "DplObserver.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 

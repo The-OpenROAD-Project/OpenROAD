@@ -44,6 +44,7 @@
 #include <limits>
 #include <map>
 
+#include "DplObserver.h"
 #include "utl/Logger.h"
 
 namespace dpl {
