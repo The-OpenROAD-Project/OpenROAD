@@ -45,9 +45,7 @@ class DplObserver
   virtual void placeInstance(odb::dbInst* instance){};
   virtual void binSearch(const Cell* cell, int xl, int yl, int xh, int yh){};
   virtual void endPlacement(){};
-  virtual ~DplObserver();
-
- protected:
+  virtual ~DplObserver() = default;
   DplObserver() = default;
 };
 

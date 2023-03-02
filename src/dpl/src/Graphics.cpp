@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Graphics.h"
+#include "dpl/Graphics.h"
 
 #include "dpl/Opendp.h"
 
@@ -140,5 +140,11 @@ void Graphics::drawObjects(gui::Painter& painter)
   for (auto& rect : searched_) {
     painter.drawRect(rect);
   }
+}
+
+/* static */
+bool Graphics::guiActive()
+{
+  return gui::Gui::enabled();
 }
 }  // namespace dpl

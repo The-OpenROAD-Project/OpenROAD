@@ -35,6 +35,8 @@
 %{
 
 #include "ord/OpenRoad.hh"
+#include "dpl/DplObserver.h"
+#include "dpl/Graphics.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 

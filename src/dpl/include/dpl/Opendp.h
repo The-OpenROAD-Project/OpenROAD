@@ -186,7 +186,7 @@ class Opendp
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster* inst, int left, int right);
   void setPadding(dbInst* inst, int left, int right);
-  void setDebug(std::unique_ptr<DplObserver> observer);
+  void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
 
   // Global padding.
   int padGlobalLeft() const { return pad_left_; }

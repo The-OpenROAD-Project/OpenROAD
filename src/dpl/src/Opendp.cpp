@@ -171,7 +171,7 @@ bool Opendp::havePadding() const
          || !inst_padding_map_.empty();
 }
 
-void Opendp::setDebug(std::unique_ptr<DplObserver> observer)
+void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 {
   debug_observer_ = std::move(observer);
 }

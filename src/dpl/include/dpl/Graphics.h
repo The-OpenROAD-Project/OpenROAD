@@ -45,6 +45,7 @@ class Graphics : public gui::Renderer, public DplObserver
 {
  public:
   Graphics(Opendp* dp, float min_displacement, const dbInst* debug_instance);
+  virtual ~Graphics() = default;
   void startPlacement(dbBlock* block);
   void placeInstance(dbInst* instance);
   void binSearch(const Cell* cell, int xl, int yl, int xh, int yh);

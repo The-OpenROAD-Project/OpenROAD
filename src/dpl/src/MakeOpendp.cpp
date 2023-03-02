@@ -61,14 +61,6 @@ void deleteOpendp(dpl::Opendp* opendp)
   delete opendp;
 }
 
-static std::unique_ptr<dpl::Graphics> makeDplGraphics(
-    dpl::Opendp* opendp,
-    float min_displacement,
-    const odb::dbInst* debug_instance)
-{
-  return std::make_unique<Graphics>(this, min_displacement, debug_instance);
-}
-
 void initOpendp(OpenRoad* openroad)
 {
   Tcl_Interp* tcl_interp = openroad->tclInterp();
@@ -77,7 +69,7 @@ void initOpendp(OpenRoad* openroad)
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dpl_tcl_inits);
   openroad->getOpendp()->init(
-      openroad->getDb(), openroad->getLogger(), &makeDplGraphics);
+      openroad->getDb(), openroad->getLogger());
 }
 
 }  // namespace ord

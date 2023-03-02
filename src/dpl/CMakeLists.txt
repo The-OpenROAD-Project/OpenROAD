@@ -114,6 +114,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(dpl_py
     PUBLIC
       dpl_lib
+      gui
       odb
   )
 
