@@ -27,10 +27,6 @@
 
 #pragma once
 
-#include <functional>
-#include <memory>
-#include <vector>
-
 #include "odb/db.h"
 
 namespace dpl {

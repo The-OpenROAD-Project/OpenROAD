@@ -18,9 +18,11 @@ jobs:
           submodules: 'recursive'
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+      - name: ccache
+        uses: hendrikmuhs/ccache-action@v1.1
       - name: Build OpenROAD
         run: |
-          cmake -GNinja -B build .
+          cmake -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -GNinja -B build .
           cd build
           CLICOLOR_FORCE=1 ninja build_and_test
 
