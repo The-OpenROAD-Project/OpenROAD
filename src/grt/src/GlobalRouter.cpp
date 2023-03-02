@@ -3172,28 +3172,62 @@ bool GlobalRouter::layerIsBlocked(
   return blocked_above && blocked_below;
 }
 
+bool GlobalRouter::layerIsBlocked(
+    int layer,
+    const std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
+    std::vector<odb::Rect>& extended_obs)
+{
+  // if layer is max or min, then all obs the nearest layer are added
+  if (layer == max_routing_layer_)
+    extended_obs = macro_obs_per_layer.at(layer - 1);
+  if (layer == min_routing_layer_)
+    extended_obs = macro_obs_per_layer.at(layer + 1);
+
+  std::vector<odb::Rect> upper_obs;
+  std::vector<odb::Rect> lower_obs;
+
+  // Get Rect vector to layer + 1 and layer - 1
+  if (macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end())
+    upper_obs = macro_obs_per_layer.at(layer + 1); 
+  if (macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end())
+    lower_obs = macro_obs_per_layer.at(layer - 1);
+
+  // sort vector by min Rect's xlo
+  sort(upper_obs.begin(), upper_obs.end());
+  sort(lower_obs.begin(), lower_obs.end());
+
+  // Compare both vectors
+  for (const odb::Rect& cur_obs : upper_obs){
+    // find the position to compare in the other vector (pos)
+    int pos = 0;
+    while (pos < lower_obs.size() && lower_obs[pos].xMin() < cur_obs.xMax()){
+      // check if they have comun region (overlap)
+      if (cur_obs.intersects(lower_obs[pos])){
+        // Get intersection region
+        odb::Rect inter_obs =  cur_obs.intersect(lower_obs[pos]);
+        // add region in extend vector
+        extended_obs.push_back(inter_obs);
+      }
+      pos++;
+    }
+  }
+
+  return extended_obs.size() > 0;
+}
+
+// Add obstructions if they appear on upper and lower layer
 void GlobalRouter::extendObstructions(
-    std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
+    std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
     int bottom_layer,
     int top_layer)
 {
-  odb::dbTech* tech = db_->getTech();
   for (int layer = bottom_layer; layer <= top_layer; layer++) {
-    odb::Rect& obs = macro_obs_per_layer[layer];
-    odb::Rect extended_obs = obs;
-    odb::dbTechLayerDir direction
-        = tech->findRoutingLayer(layer)->getDirection();
-    if (layerIsBlocked(layer, direction, macro_obs_per_layer, extended_obs)) {
-      if (direction == odb::dbTechLayerDir::VERTICAL) {
-        // extend west and east edges
-        obs.set_xlo(std::min(obs.xMin(), extended_obs.xMin()));
-        obs.set_xhi(std::max(obs.xMax(), extended_obs.xMax()));
-      } else {
-        // extend south and north edges
-        obs.set_ylo(std::min(obs.yMin(), extended_obs.yMin()));
-        obs.set_yhi(std::max(obs.yMax(), extended_obs.yMax()));
-      }
-    }
+    std::vector<odb::Rect>& obs = macro_obs_per_layer[layer];
+    std::vector<odb::Rect> extended_obs;
+    // check if layer+1 and layer-1 have obstructions
+    // if they have then add to layer Rect vector
+    if (layerIsBlocked(layer, macro_obs_per_layer, extended_obs))
+      obs.insert(obs.end(), extended_obs.begin(), extended_obs.end());
   }
 }
 
@@ -3222,7 +3256,7 @@ int GlobalRouter::findInstancesObstructions(
     }
 
     if (isMacro) {
-      std::unordered_map<int, odb::Rect> macro_obs_per_layer;
+      std::unordered_map<int, std::vector<odb::Rect>> macro_obs_per_layer;
       int bottom_layer = std::numeric_limits<int>::max();
       int top_layer = std::numeric_limits<int>::min();
 
@@ -3232,11 +3266,7 @@ int GlobalRouter::findInstancesObstructions(
           odb::Rect rect = box->getBox();
           transform.apply(rect);
 
-          if (macro_obs_per_layer.find(layer) == macro_obs_per_layer.end()) {
-            macro_obs_per_layer[layer] = rect;
-          } else {
-            macro_obs_per_layer[layer].merge(rect);
-          }
+          macro_obs_per_layer[layer].push_back(rect); 
           obstructions_cnt++;
 
           bottom_layer = std::min(bottom_layer, layer);
@@ -3246,14 +3276,17 @@ int GlobalRouter::findInstancesObstructions(
 
       extendObstructions(macro_obs_per_layer, bottom_layer, top_layer);
 
+      // iterate all Rects and add to reduction on fastroute
       for (auto& [layer, obs] : macro_obs_per_layer) {
         int layer_extension = layer_extensions[layer];
         layer_extension += macro_extension_ * grid_->getTileSize();
-        obs.set_xlo(obs.xMin() - layer_extension);
-        obs.set_ylo(obs.yMin() - layer_extension);
-        obs.set_xhi(obs.xMax() + layer_extension);
-        obs.set_yhi(obs.yMax() + layer_extension);
-        applyObstructionAdjustment(obs, tech->findRoutingLayer(layer));
+        for (odb::Rect& cur_obs : obs) {
+          cur_obs.set_xlo(cur_obs.xMin() - layer_extension);
+          cur_obs.set_ylo(cur_obs.yMin() - layer_extension);
+          cur_obs.set_xhi(cur_obs.xMax() + layer_extension);
+          cur_obs.set_yhi(cur_obs.yMax() + layer_extension);
+          applyObstructionAdjustment(cur_obs, tech->findRoutingLayer(layer));
+        }
       }
     } else {
       for (odb::dbBox* box : master->getObstructions()) {
