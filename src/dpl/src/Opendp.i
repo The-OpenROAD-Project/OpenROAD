@@ -169,7 +169,7 @@ set_debug_cmd(float min_displacement,
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
   if (dpl::Graphics::guiActive()) {
-    auto graphics = std::make_unique<dpl::Graphics>(opendp, min_displacement, debug_instance);
+    std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(opendp, min_displacement, debug_instance);
     opendp->setDebug(graphics);
   }
 }
