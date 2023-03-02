@@ -151,7 +151,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # GTEST
 find_package(GTest)
-if(NOT GTest_FOUND) 
+if(NOT GTest_FOUND)
   include(FetchContent)
   FetchContent_Declare(
     googletest
