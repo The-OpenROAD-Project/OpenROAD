@@ -180,7 +180,7 @@ proc detailed_placement_debug { args } {
       set debug_instance "NULL"
   }
 
-  dpl::set_debug_cmd $displacement $min_displacement $debug_instance
+  dpl::set_debug_cmd $min_displacement $debug_instance
 }
 
 proc get_masters_arg { arg_name arg } {
