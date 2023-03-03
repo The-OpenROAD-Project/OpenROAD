@@ -1783,7 +1783,6 @@ void FlexPA::genInstRowPattern_commit(std::vector<FlexDPNode>& nodes,
       auto accessPattern = uniqueInstPatterns_[uniqueInstIdx][currIdx2].get();
       auto& accessPoints = accessPattern->getPattern();
 
-      std::cout << "Updating APs for inst " << inst->getName() << "\n";
       // update instTerm ap
       for (auto& instTerm : inst->getInstTerms()) {
         if (isSkipInstTerm(instTerm.get())) {
