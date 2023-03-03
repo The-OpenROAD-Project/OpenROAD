@@ -481,8 +481,6 @@ void InitFloorplan::makeTracks()
     if (layer->getType() == dbTechLayerType::ROUTING
         && layer->getRoutingLevel() != 0) {
       if (layer->getTechLayerPitchRules().empty()) {
-        std::cout << "\n\naqui esta entrado com a layer: " + layer->getName()
-                         + " \n\n";
         makeTracks(layer,
                    layer->getOffsetX(),
                    layer->getPitchX(),
@@ -490,7 +488,6 @@ void InitFloorplan::makeTracks()
                    layer->getPitchY());
       } else {
         auto pitch_rule = layer->getTechLayerPitchRules().begin();
-        std::cout << "\n\naqui esta entradno\n\n";
         makeTracksNonUniform(layer,
                              layer->getOffsetX(),
                              pitch_rule->getPitchX(),
