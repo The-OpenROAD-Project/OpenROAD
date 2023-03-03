@@ -45,9 +45,9 @@ public:
   dbSdcNetwork(Network* network);
   virtual Instance* findInstance(const char* path_name) const;
   virtual InstanceSeq findInstancesMatching(const Instance* contex,
-                                     const PatternMatch* pattern) const;
+                                            const PatternMatch* pattern) const;
   virtual NetSeq findNetsMatching(const Instance*,
-                                const PatternMatch* pattern) const;
+                                  const PatternMatch* pattern) const;
   virtual PinSeq findPinsMatching(const Instance* instance,
                                   const PatternMatch* pattern) const;
 

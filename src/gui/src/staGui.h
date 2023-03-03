@@ -383,11 +383,17 @@ class TimingControlsDialog : public QDialog
   void setExpandClock(bool expand);
   bool getExpandClock() const;
 
-  void setFromPin(const std::set<const sta::Pin*>& pins) { from_->setPins(pins); }
+  void setFromPin(const std::set<const sta::Pin*>& pins)
+  {
+    from_->setPins(pins);
+  }
   void setThruPin(const std::vector<std::set<const sta::Pin*>>& pins);
   void setToPin(const std::set<const sta::Pin*>& pins) { to_->setPins(pins); }
 
-  const std::set<const sta::Pin*> getFromPins() const { return from_->getPins(); }
+  const std::set<const sta::Pin*> getFromPins() const
+  {
+    return from_->getPins();
+  }
   const std::vector<std::set<const sta::Pin*>> getThruPins() const;
   const std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
 

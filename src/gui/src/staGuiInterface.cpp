@@ -219,7 +219,9 @@ void TimingPath::populateNodeList(sta::Path* path,
         if (network->isTopLevelPort(pin)) {
           // Output port counts as a fanout.
           sta::Port* port = network->port(pin);
-          fanout += sdc->portExtFanout(port, dcalc_ap->corner(), sta::MinMax::max()) + 1;
+          fanout += sdc->portExtFanout(
+                        port, dcalc_ap->corner(), sta::MinMax::max())
+                    + 1;
         } else {
           fanout++;
         }
@@ -658,7 +660,8 @@ std::vector<std::pair<const sta::Pin*, const sta::Pin*>> ClockTree::findPathTo(
   return path;
 }
 
-std::map<const sta::Pin*, std::set<const sta::Pin*>> ClockTree::getPinMapping() const
+std::map<const sta::Pin*, std::set<const sta::Pin*>> ClockTree::getPinMapping()
+    const
 {
   std::map<const sta::Pin*, std::set<const sta::Pin*>> pins;
 
@@ -771,8 +774,8 @@ TimingPathList STAGuiInterface::getTimingPaths(
 
   sta::Search* search = sta_->search();
 
-  sta::PathEndSeq path_ends =
-      search->findPathEnds(  // from, thrus, to, unconstrained
+  sta::PathEndSeq path_ends
+      = search->findPathEnds(  // from, thrus, to, unconstrained
           e_from,
           e_thrus,
           e_to,
@@ -858,12 +861,12 @@ ConeDepthMapPinSet STAGuiInterface::getFaninCone(const sta::Pin* pin) const
   pins_to.push_back(pin);
 
   auto pins = sta_->findFaninPins(&pins_to,
-                                   true,   // flat
-                                   false,  // startpoints_only
-                                   0,
-                                   0,
-                                   true,   // thru_disabled
-                                   true);  // thru_constants
+                                  true,   // flat
+                                  false,  // startpoints_only
+                                  0,
+                                  0,
+                                  true,   // thru_disabled
+                                  true);  // thru_constants
 
   ConeDepthMapPinSet depth_map;
   for (auto& [level, pin_list] : getCone(pin, pins, true)) {
@@ -879,12 +882,12 @@ ConeDepthMapPinSet STAGuiInterface::getFanoutCone(const sta::Pin* pin) const
   pins_from.push_back(pin);
 
   sta::PinSet pins = sta_->findFanoutPins(&pins_from,
-                                    true,   // flat
-                                    false,  // startpoints_only
-                                    0,
-                                    0,
-                                    true,   // thru_disabled
-                                    true);  // thru_constants
+                                          true,   // flat
+                                          false,  // startpoints_only
+                                          0,
+                                          0,
+                                          true,   // thru_disabled
+                                          true);  // thru_constants
   return getCone(pin, pins, false);
 }
 

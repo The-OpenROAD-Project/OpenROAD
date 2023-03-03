@@ -257,7 +257,8 @@ class ClockTree
   const PinDelays& getChildSinkDelays() const { return child_sinks_; }
   const PinDelays& getLeavesDelays() const { return leaves_; }
 
-  std::pair<const sta::Pin*, sta::Delay> getPairedSink(const sta::Pin* paired_pin) const;
+  std::pair<const sta::Pin*, sta::Delay> getPairedSink(
+      const sta::Pin* paired_pin) const;
 
   int getTotalFanout() const;
   int getTotalLeaves() const;
@@ -271,7 +272,8 @@ class ClockTree
 
   void addPath(sta::PathExpanded& path, const sta::StaState* sta);
 
-  std::vector<std::pair<const sta::Pin*, const sta::Pin*>> findPathTo(const sta::Pin* pin) const;
+  std::vector<std::pair<const sta::Pin*, const sta::Pin*>> findPathTo(
+      const sta::Pin* pin) const;
   ClockTree* findTree(odb::dbNet* net, bool include_children = true);
   ClockTree* findTree(sta::Net* net, bool include_children = true);
 
