@@ -418,7 +418,6 @@ void TritonPart::BuildTimingPaths()
     timing_paths_.push_back(timing_path);
     timing_attr_.push_back(slack);
   }
-
 }
 
 void TritonPart::GenerateTimingReport(std::vector<int>& partition, bool design)

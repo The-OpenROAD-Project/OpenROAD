@@ -1004,7 +1004,8 @@ void PinSetWidget::findPin()
     }
 
     // search ports
-    sta::PortSeq found_ports = network->findPortsMatching(network->cell(top_inst), &matcher);
+    sta::PortSeq found_ports
+        = network->findPortsMatching(network->cell(top_inst), &matcher);
 
     for (auto* port : found_ports) {
       if (network->isBus(port) || network->isBundle(port)) {
@@ -1033,7 +1034,8 @@ void PinSetWidget::showMenu(const QPoint& point)
     return;
   }
 
-  const sta::Pin* pin = (const sta::Pin*) pin_item->data(Qt::UserRole).value<void*>();
+  const sta::Pin* pin
+      = (const sta::Pin*) pin_item->data(Qt::UserRole).value<void*>();
 
   // Create menu and insert some actions
   QMenu pin_menu;
@@ -1278,7 +1280,8 @@ void TimingControlsDialog::addRemoveThru(PinSetWidget* row)
   }
 }
 
-const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins() const
+const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
+    const
 {
   std::vector<std::set<const sta::Pin*>> pins;
   for (auto* row : thru_) {
