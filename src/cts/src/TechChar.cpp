@@ -859,7 +859,8 @@ TechChar::ResultData TechChar::computeTopologyResults(
     // buffer.
     for (odb::dbInst* bufferInst : solution.instVector) {
       sta::Instance* bufferInstSta = db_network_->dbToSta(bufferInst);
-      sta::PowerResult instResults = openStaChar_->power(bufferInstSta, charCorner_);
+      sta::PowerResult instResults 
+          = openStaChar_->power(bufferInstSta, charCorner_);
       totalPower = totalPower + instResults.total();
     }
   }
