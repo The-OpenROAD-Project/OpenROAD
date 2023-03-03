@@ -1234,6 +1234,8 @@ void io::Parser::setRoutingLayerProperties(odb::dbTechLayer* layer,
     tmpLayer->setLef58RectOnlyConstraint(rectOnlyConstraint.get());
     tech_->addUConstraint(std::move(rectOnlyConstraint));
   }
+  // We don't handle coloring so tracks on any multiple patterned
+  // layer are forced to be on grid.
   if (layer->isRightWayOnGridOnly() || layer->getNumMasks() > 1) {
     auto rightWayOnGridOnlyConstraint
         = make_unique<frLef58RightWayOnGridOnlyConstraint>(

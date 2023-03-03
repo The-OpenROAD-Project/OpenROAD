@@ -162,8 +162,8 @@ void DetailedGlobalSwap::globalSwap()
   mgr_->resortSegments();
 
   // Get candidate cells.
-  std::vector<Node*> candidates = mgr_->singleHeightCells_;
-  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->rng_);
+  std::vector<Node*> candidates = mgr_->getSingleHeightCells();
+  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->getRng());
 
   // Wirelength objective.
   DetailedHPWL hpwlObj(network_);
@@ -179,14 +179,14 @@ void DetailedGlobalSwap::globalSwap()
       continue;
     }
 
-    double delta = hpwlObj.delta(mgr_->nMoved_,
-                                 mgr_->movedNodes_,
-                                 mgr_->curLeft_,
-                                 mgr_->curBottom_,
-                                 mgr_->curOri_,
-                                 mgr_->newLeft_,
-                                 mgr_->newBottom_,
-                                 mgr_->newOri_);
+    double delta = hpwlObj.delta(mgr_->getNMoved(),
+                                 mgr_->getMovedNodes(),
+                                 mgr_->getCurLeft(),
+                                 mgr_->getCurBottom(),
+                                 mgr_->getCurOri(),
+                                 mgr_->getNewLeft(),
+                                 mgr_->getNewBottom(),
+                                 mgr_->getNewOri());
 
     nextHpwl = currHpwl - delta;  // -delta is +ve is less.
 
@@ -477,10 +477,10 @@ bool DetailedGlobalSwap::generate(Node* ndi)
     bbox.set_ymax(std::min(bbox.ymax(), lbox.ymax()));
   }
 
-  if (mgr_->reverseCellToSegs_[ndi->getId()].size() != 1) {
+  if (mgr_->getNumReverseCellToSegs(ndi->getId()) != 1) {
     return false;
   }
-  int si = mgr_->reverseCellToSegs_[ndi->getId()][0]->getSegId();
+  int si = mgr_->getReverseCellToSegs(ndi->getId())[0]->getSegId();
 
   // Position target so center of cell at center of box.
   int xj = (int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
@@ -492,8 +492,8 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   int rj = arch_->find_closest_row(yj);
   yj = arch_->getRow(rj)->getBottom();  // Row alignment.
   int sj = -1;
-  for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
-    DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
+  for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+    DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
     if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
       sj = segPtr->getSegId();
       break;
@@ -502,7 +502,7 @@ bool DetailedGlobalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
+  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 
@@ -543,7 +543,7 @@ bool DetailedGlobalSwap::generate(DetailedMgr* mgr,
   network_ = mgr->getNetwork();
   rt_ = mgr->getRoutingParams();
 
-  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
+  Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
   return generate(ndi);
 }

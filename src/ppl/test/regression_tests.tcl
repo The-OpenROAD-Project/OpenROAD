@@ -42,6 +42,8 @@ record_tests {
   group_pins5
   group_pins6
   group_pins7
+  group_pins8
+  group_pins9
   group_pins_warn1
   top_layer1
   top_layer2
@@ -61,6 +63,7 @@ record_tests {
   place_pin4
   place_pin5
   place_pin6
+  place_pin7
   place_pin_error1
   place_pin_error2
   place_pin_error3

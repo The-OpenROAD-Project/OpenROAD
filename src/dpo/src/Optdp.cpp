@@ -270,11 +270,17 @@ void Optdp::initPadding()
 
   // Create and edge type for each amount of padding.  This
   // can be done by querying OpenDP.
-  dbSet<dbRow> rows = db_->getChip()->getBlock()->getRows();
-  if (rows.empty()) {
+  odb::dbSite* site = nullptr;
+  for (auto* row : db_->getChip()->getBlock()->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      site = row->getSite();
+      break;
+    }
+  }
+  if (site == nullptr) {
     return;
   }
-  int siteWidth = (*rows.begin())->getSite()->getWidth();
+  int siteWidth = site->getWidth();
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
 
   dbSet<dbInst> insts = db_->getChip()->getBlock()->getInsts();
@@ -691,11 +697,12 @@ void Optdp::createArchitecture()
 {
   dbBlock* block = db_->getChip()->getBlock();
 
-  dbSet<dbRow> rows = block->getRows();
-
   odb::Rect dieRect = block->getDieArea();
 
-  for (dbRow* row : rows) {
+  for (dbRow* row : block->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     if (row->getDirection() != odb::dbRowDir::HORIZONTAL) {
       // error.
       continue;

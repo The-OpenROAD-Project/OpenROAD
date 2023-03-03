@@ -29,8 +29,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <dbRtTree.h>
 
+#include "dbRtTree.h"
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"

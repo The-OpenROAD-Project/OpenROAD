@@ -52,7 +52,6 @@ class extProcess;
 class extConductor
 {
   extConductor(Logger* logger);
-  bool readConductor(Ath__parser* parser);
   void print(FILE* fp,
              const char* sep,
              const char* key,
@@ -83,19 +82,16 @@ class extConductor
   double _max_ct_del;
   double _min_ca;
   double _max_ca;
+  Logger* logger_;
 
   friend class extRCModel;
   friend class extProcess;
   friend class extMasterConductor;
-
- protected:
-  Logger* logger_;
 };
 
 class extDielectric
 {
   extDielectric(Logger* logger);
-  bool readDielectric(Ath__parser* parser);
   void printInt(FILE* fp,
                 const char* sep,
                 const char* key,
@@ -122,28 +118,14 @@ class extDielectric
   int _met;
   int _nextMet;
 
+  Logger* logger_;
+
   friend class extProcess;
   friend class extMasterConductor;
-
- protected:
-  Logger* logger_;
 };
+
 class extMasterConductor
 {
-  extMasterConductor(uint condId,
-                     extConductor* cond,
-                     double prevHeight,
-                     Logger* logger);
-  extMasterConductor(uint dielId,
-                     extDielectric* diel,
-                     double xlo,
-                     double dx1,
-                     double xhi,
-                     double dx2,
-                     double h,
-                     double th,
-                     Logger* logger);
-
  public:
   void reset(double height,
              double top_width,
@@ -171,12 +153,23 @@ class extMasterConductor
                             extDielectric* diel);
   void writeBoxName(FILE* fp, uint wireNum);
 
-  uint _conformalId[3];
-
- protected:
-  Logger* logger_;
-
  private:
+  extMasterConductor(uint condId,
+                     extConductor* cond,
+                     double prevHeight,
+                     Logger* logger);
+  extMasterConductor(uint dielId,
+                     extDielectric* diel,
+                     double xlo,
+                     double dx1,
+                     double xhi,
+                     double dx2,
+                     double h,
+                     double th,
+                     Logger* logger);
+
+  uint _conformalId[3];
+  Logger* logger_;
   uint _condId;
   double _loLeft[3];
   double _loRight[3];
@@ -187,17 +180,13 @@ class extMasterConductor
 
   friend class extProcess;
 };
+
 class extVarTable
 {
  public:
   extVarTable(uint rowCnt);
   ~extVarTable();
 
-  int readWidthSpacing2D(Ath__parser* parser,
-                         const char* keyword1,
-                         const char* keyword2,
-                         const char* keyword3,
-                         const char* key);
   Ath__array1D<double>* readDoubleArray(Ath__parser* parser,
                                         const char* keyword);
   void printOneLine(FILE* fp,
@@ -217,6 +206,7 @@ class extVarTable
 
   friend class extVariation;
 };
+
 class extVariation
 {
  public:
@@ -237,6 +227,7 @@ class extVariation
                      Ath__array1D<double>* Y);
   void setLogger(Logger* logger) { logger_ = logger; }
 
+ private:
   extVarTable* _hiWidthC;
   extVarTable* _loWidthC;
   extVarTable* _thicknessC;
@@ -245,14 +236,11 @@ class extVariation
   extVarTable* _thicknessR;
   extVarTable* _p;
 
- protected:
   Logger* logger_;
 };
+
 class extProcess
 {
- protected:
-  Logger* logger_;
-
  public:
   extProcess(uint condCnt, uint dielCnt, Logger* logger);
   ~extProcess();
@@ -301,13 +289,14 @@ class extProcess
   Ath__array1D<double>* getSpaceTable(uint met);
   Ath__array1D<double>* getDiagSpaceTable(uint met);
   Ath__array1D<double>* getDataRateTable(uint met);
-  void readDataRateTable(Ath__parser* parser, const char* keyword);
   double adjustMasterLayersForHeight(uint met, double thickness);
   double adjustMasterDielectricsForHeight(uint met, double dth);
   bool getMaxMinFlag();
   bool getThickVarFlag();
 
  private:
+  Logger* logger_;
+
   uint _condctorCnt;
   uint _dielectricCnt;
   bool _maxMinFlag;

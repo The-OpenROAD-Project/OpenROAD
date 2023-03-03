@@ -237,7 +237,7 @@ void DetailedMis::place()
   // if it has been involved is >= a certain number of problems, it has "had
   // some chance" to be moved, so skip it.
   Utility::random_shuffle(
-      candidates_.begin(), candidates_.end(), mgrPtr_->rng_);
+      candidates_.begin(), candidates_.end(), mgrPtr_->getRng());
   for (size_t i = 0; i < candidates_.size(); i++) {
     // Pick a candidate as a seed.
     Node* ndi = candidates_[i];
@@ -272,12 +272,12 @@ void DetailedMis::collectMovableCells()
 {
   candidates_.erase(candidates_.begin(), candidates_.end());
   candidates_.insert(candidates_.end(),
-                     mgrPtr_->singleHeightCells_.begin(),
-                     mgrPtr_->singleHeightCells_.end());
-  for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
+                     mgrPtr_->getSingleHeightCells().begin(),
+                     mgrPtr_->getSingleHeightCells().end());
+  for (size_t i = 2; i < mgrPtr_->getNumMultiHeights(); i++) {
     candidates_.insert(candidates_.end(),
-                       mgrPtr_->multiHeightCells_[i].begin(),
-                       mgrPtr_->multiHeightCells_[i].end());
+                       mgrPtr_->getMultiHeightCells(i).begin(),
+                       mgrPtr_->getMultiHeightCells(i).end());
   }
 }
 
@@ -550,7 +550,7 @@ void DetailedMis::solveMatch()
     Node* ndi = nodes[i];
 
     pos[i] = std::make_pair(ndi->getLeft(), ndi->getBottom());
-    seg[i] = mgrPtr_->reverseCellToSegs_[ndi->getId()];  // copy!
+    seg[i] = mgrPtr_->getReverseCellToSegs(ndi->getId());  // copy!
   }
 
   lemon::ListDigraph g;

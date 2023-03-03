@@ -48,7 +48,6 @@ add_library(rcx_lib
   extDebugPrint.cpp
   extstats.cpp
   extprocess.cpp
-  ext2dBox.cpp
   netRC.cpp
   extmeasure_res.cpp
 )

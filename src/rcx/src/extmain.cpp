@@ -329,7 +329,7 @@ uint extMain::getResCapTable()
   dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
-  extMeasure m;
+  extMeasure m(logger_);
   m._underMet = 0;
   m._overMet = 0;
 
@@ -396,17 +396,8 @@ uint extMain::getResCapTable()
                    resTable[jj]);
       }
 
-      extDistRC* rc0 = rcModel->getOverFringeRC(&m, 0);
-
       if (!_lef_res) {
-        if (newResModel) {
-          _resistanceTable[jj][n] = resTable[jj];
-        } else {
-          if (rc0 != NULL) {
-            double r1 = rc->getRes();
-            _resistanceTable[jj][n] = r1;
-          }
-        }
+        _resistanceTable[jj][n] = resTable[jj];
       } else {
         debugPrint(logger_,
                    RCX,
@@ -531,7 +522,7 @@ double extMain::getFringe(uint met,
 
   // just in case
 
-  extMeasure m;
+  extMeasure m(logger_);
 
   m._met = met;
   m._width = width;
@@ -680,7 +671,7 @@ void extMain::measureRC(CoupleOptions& options)
   if ((rsegId1 < 0) && (rsegId2 < 0))  // power nets
     return;
 
-  extMeasure m;
+  extMeasure m(logger_);
   m.defineBox(options);
   m._ccContextArray = _ccContextArray;
   m._ccMergedContextArray = _ccMergedContextArray;

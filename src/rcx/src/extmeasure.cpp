@@ -29,8 +29,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <dbRtTree.h>
 
+#include "dbRtTree.h"
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -56,26 +56,6 @@ bool extMeasure::getFirstShape(dbNet* net, dbShape& s)
     break;
   }
   return status;
-}
-
-bool extMeasure::parse_setLayer(Ath__parser* parser1,
-                                uint& layerNum,
-                                bool print)
-{
-  if (parser1->isKeyword(0, "(setLayer")) {
-    if (print)
-      parser1->printWords(stdout);
-
-    layerNum = parser1->getInt(1);
-    return true;
-  } else if (parser1->isKeyword(0, "setLayer")) {
-    if (print)
-      parser1->printWords(stdout);
-
-    layerNum = parser1->getInt(1);
-    return true;
-  }
-  return false;
 }
 
 dbRSeg* extMeasure::getRseg(const char* netname,
@@ -178,7 +158,7 @@ uint extMeasure::createNetSingleWire(char* dirName,
   }
 
   uint netId = net->getId();
-  addNew2dBox(net, ll, ur, _met, _dir, netId, false);
+  addNew2dBox(net, ll, ur, _met, false);
 
   _extMain->makeNetRCsegs(net);
 
@@ -239,7 +219,7 @@ uint extMeasure::createDiagNetSingleWire(char* dirName,
   assert(_create_net_util.getBlock() == _block);
   dbNet* net = _create_net_util.createNetSingleWire(
       netName, ll[0], ll[1], ur[0], ur[1], met);
-  addNew2dBox(net, ll, ur, met, _dir, net->getId(), false);
+  addNew2dBox(net, ll, ur, met, false);
 
   _extMain->makeNetRCsegs(net);
 
@@ -250,8 +230,6 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
                                   int* ll,
                                   int* ur,
                                   uint m,
-                                  uint d,
-                                  uint id,
                                   bool cntx)
 {
   ext2dBox* bb = _2dBoxPool->alloc();
@@ -267,10 +245,7 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
     bb_ur = {ur[0], ur[1]};
   }
 
-  if (d != 0 && d != 1)
-    logger_->error(RCX, 498, "Direction value is out of range.");
-
-  new (bb) ext2dBox(bb_ll, bb_ur, /*met=*/m, id, /*map=*/0, /*dir=*/d);
+  new (bb) ext2dBox(bb_ll, bb_ur);
 
   if (cntx)  // context net
     _2dBoxTable[1][m].add(bb);
@@ -289,20 +264,6 @@ void extMeasure::clean2dBoxTable(int met, bool cntx)
     _2dBoxPool->free(bb);
   }
   _2dBoxTable[cntx][met].resetCnt();
-}
-
-uint extMeasure::getBoxLength(uint ii, int met, bool cntx)
-{
-  if (met <= 0)
-    return 0;
-
-  int cnt = _2dBoxTable[cntx][met].getCnt();
-  if (cnt <= 0)
-    return 0;
-
-  ext2dBox* bb = _2dBoxTable[cntx][met].get(ii);
-
-  return bb->width();
 }
 
 void extMeasure::getBox(int met,
@@ -391,7 +352,7 @@ uint extMeasure::createContextNets(char* dirName,
                                                  met,
                                                  mlayer->getDirection(),
                                                  false);
-    addNew2dBox(net, ll, ur, met, not_dir, net->getId(), true);
+    addNew2dBox(net, ll, ur, met, true);
   }
   return cnt - 1;
 }

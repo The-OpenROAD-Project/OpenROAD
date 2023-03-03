@@ -50,6 +50,8 @@
 
 #include "odb/db.h"
 
+struct Tcl_Interp;
+
 namespace utl {
 class Logger;
 }  // namespace utl

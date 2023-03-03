@@ -405,7 +405,7 @@ double DetailedRandom::go()
   int maxAttempts
       = (int) std::ceil(movesPerCandidate_ * (double) candidates_.size());
   Utility::random_shuffle(
-      candidates_.begin(), candidates_.end(), mgrPtr_->rng_);
+      candidates_.begin(), candidates_.end(), mgrPtr_->getRng());
 
   deltaCost_.resize(objectives_.size());
   initCost_.resize(objectives_.size());
@@ -445,7 +445,7 @@ double DetailedRandom::go()
   std::fill(gen_count.begin(), gen_count.end(), 0);
   for (int attempt = 0; attempt < maxAttempts; attempt++) {
     // Pick a generator at random.
-    int g = (int) ((*(mgrPtr_->rng_))() % (generators_.size()));
+    int g = (int) mgrPtr_->getRandom(generators_.size());
     ++gen_count[g];
     // Generate a move list.
     if (generators_[g]->generate(mgrPtr_, candidates_) == false) {
@@ -460,14 +460,14 @@ double DetailedRandom::go()
     // better than zero implies improvement.
     for (size_t i = 0; i < objectives_.size(); i++) {
       // XXX: NEED TO WEIGHT EACH OBJECTIVE!
-      double change = objectives_[i]->delta(mgrPtr_->nMoved_,
-                                            mgrPtr_->movedNodes_,
-                                            mgrPtr_->curLeft_,
-                                            mgrPtr_->curBottom_,
-                                            mgrPtr_->curOri_,
-                                            mgrPtr_->newLeft_,
-                                            mgrPtr_->newBottom_,
-                                            mgrPtr_->newOri_);
+      double change = objectives_[i]->delta(mgrPtr_->getNMoved(),
+                                            mgrPtr_->getMovedNodes(),
+                                            mgrPtr_->getCurLeft(),
+                                            mgrPtr_->getCurBottom(),
+                                            mgrPtr_->getCurOri(),
+                                            mgrPtr_->getNewLeft(),
+                                            mgrPtr_->getNewBottom(),
+                                            mgrPtr_->getNewOri());
 
       deltaCost_[i] = change;
       nextCost_[i] = currCost_[i] - deltaCost_[i];  // -delta is +ve is less.
@@ -547,12 +547,12 @@ void DetailedRandom::collectCandidates()
 {
   candidates_.erase(candidates_.begin(), candidates_.end());
   candidates_.insert(candidates_.end(),
-                     mgrPtr_->singleHeightCells_.begin(),
-                     mgrPtr_->singleHeightCells_.end());
-  for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
+                     mgrPtr_->getSingleHeightCells().begin(),
+                     mgrPtr_->getSingleHeightCells().end());
+  for (size_t i = 2; i < mgrPtr_->getNumMultiHeights(); i++) {
     candidates_.insert(candidates_.end(),
-                       mgrPtr_->multiHeightCells_[i].begin(),
-                       mgrPtr_->multiHeightCells_[i].end());
+                       mgrPtr_->getMultiHeightCells(i).begin(),
+                       mgrPtr_->getMultiHeightCells(i).end());
   }
 }
 
@@ -590,14 +590,14 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
   xwid = (arch_->getMaxX() - arch_->getMinX()) / (double) xdim;
   ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
 
-  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
+  Node* ndi = candidates[mgr_->getRandom(candidates.size())];
   const int spanned_i = arch_->getCellHeightInRows(ndi);
   if (spanned_i != 1) {
     return false;
   }
   // Segments for the source.
   const std::vector<DetailedSeg*>& segs_i
-      = mgr_->reverseCellToSegs_[ndi->getId()];
+      = mgr_->getReverseCellToSegs(ndi->getId());
   if (segs_i.size() != 1) {
     mgr_->getLogger()->error(
         DPO, 385, "Only working with single height cells currently.");
@@ -622,8 +622,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     const int grid_yi = std::min(
         ydim - 1, std::max(0, (int) ((yi - arch_->getMinY()) / ywid)));
 
-    const int rel_x = (*(mgr_->rng_))() % (2 * rlx + 1);
-    const int rel_y = (*(mgr_->rng_))() % (2 * rly + 1);
+    const int rel_x = mgr_->getRandom(2 * rlx + 1);
+    const int rel_y = mgr_->getRandom(2 * rly + 1);
 
     const int grid_xj
         = std::min(xdim - 1, std::max(0, (grid_xi - rlx + rel_x)));
@@ -639,8 +639,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     rj = std::min(mgr_->getNumSingleHeightRows() - 1, std::max(0, rj));
     yj = arch_->getRow(rj)->getBottom();
     int sj = -1;
-    for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
-      const DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
+    for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+      const DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
       if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
         sj = segPtr->getSegId();
         break;
@@ -648,7 +648,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     }
 
     // Need to determine validity of things.
-    if (sj == -1 || ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
+    if (sj == -1 || ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
       // The target segment cannot support the candidate cell.
       continue;
     }
@@ -727,11 +727,11 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   xwid = (arch_->getMaxX() - arch_->getMinX()) / (double) xdim;
   ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
 
-  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
+  Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
   // Segments for the source.
   const std::vector<DetailedSeg*>& segs_i
-      = mgr_->reverseCellToSegs_[ndi->getId()];
+      = mgr_->getReverseCellToSegs(ndi->getId());
 
   // For the window size.  This should be parameterized.
   const int rly = 5;
@@ -761,8 +761,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       const int grid_yi = std::min(
           ydim - 1, std::max(0, (int) ((orig_yc - arch_->getMinY()) / ywid)));
 
-      const int rel_x = (*(mgr_->rng_))() % (2 * rlx + 1);
-      const int rel_y = (*(mgr_->rng_))() % (2 * rly + 1);
+      const int rel_x = mgr_->getRandom(2 * rlx + 1);
+      const int rel_y = mgr_->getRandom(2 * rly + 1);
 
       const int grid_xj
           = std::min(xdim - 1, std::max(0, (grid_xi - rlx + rel_x)));
@@ -803,8 +803,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       const int w = grid_xj - grid_xi;
       const int h = grid_yj - grid_yi;
 
-      const int rel_x = (*(mgr_->rng_))() % (w + 1);
-      const int rel_y = (*(mgr_->rng_))() % (h + 1);
+      const int rel_x = mgr_->getRandom(w + 1);
+      const int rel_y = mgr_->getRandom(h + 1);
 
       grid_xj = std::min(xdim - 1, std::max(0, (grid_xi + rel_x)));
       grid_yj = std::min(ydim - 1, std::max(0, (grid_yi + rel_y)));
@@ -818,8 +818,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     rj = std::min(mgr_->getNumSingleHeightRows() - 1, std::max(0, rj));
     yj = arch_->getRow(rj)->getBottom();
     int sj = -1;
-    for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
-      DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
+    for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+      DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
       if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
         sj = segPtr->getSegId();
         break;
@@ -827,7 +827,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     }
 
     // Need to determine validity of things.
-    if (sj == -1 || ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
+    if (sj == -1 || ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
       // The target segment cannot support the candidate cell.
       continue;
     }
