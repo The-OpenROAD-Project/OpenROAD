@@ -197,14 +197,14 @@ class dbNetwork : public ConcreteNetwork
   void findInstNetsMatching(const Instance* instance,
                             const PatternMatch* pattern,
                             // Return value.
-                            NetSeq* nets) const override;
+                            NetSeq& nets) const override;
   const char* name(const Net* net) const override;
   Instance* instance(const Net* net) const override;
   bool isPower(const Net* net) const override;
   bool isGround(const Net* net) const override;
   NetPinIterator* pinIterator(const Net* net) const override;
   NetTermIterator* termIterator(const Net* net) const override;
-  Net* highestConnectedNet(Net* net) const override;
+  const Net* highestConnectedNet(Net *net) const override;
   bool isSpecial(Net* net);
 
   ////////////////////////////////////////////////////////////////
@@ -221,11 +221,11 @@ class dbNetwork : public ConcreteNetwork
   Pin* connect(Instance* inst, LibertyPort* port, Net* net) override;
   void connectPinAfter(Pin* pin);
   void disconnectPin(Pin* pin) override;
-  void disconnectPinBefore(Pin* pin);
+  void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(const char* name, Instance* parent) override;
   void deleteNet(Net* net) override;
-  void deleteNetBefore(Net* net);
+  void deleteNetBefore(const Net* net);
   void mergeInto(Net* net, Net* into_net) override;
   Net* mergedInto(Net* net) override;
   double dbuToMeters(int dist) const;
@@ -253,7 +253,7 @@ class dbNetwork : public ConcreteNetwork
   void findConstantNets();
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
-                          ConstNetSet& visited_nets) const override;
+                          NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name);
 
   dbDatabase* db_;
