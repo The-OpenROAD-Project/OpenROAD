@@ -671,6 +671,9 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_MINIMUMCUT")) {
         MinCutParser parser(l, this);
         parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_PITCH")) {
+        lefTechLayerPitchRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
         lefTechLayerAreaRuleParser parser(this);
         parser.parse(layer->propValue(iii), l, _incomplete_props);
