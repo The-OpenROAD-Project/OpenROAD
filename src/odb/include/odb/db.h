@@ -141,6 +141,7 @@ class dbTechLayerMinCutRule;
 class dbGuide;
 class dbMetalWidthViaMap;
 class dbTechLayerAreaRule;
+class dbTechLayerPitchRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -7038,6 +7039,8 @@ class dbTechLayer : public dbObject
 
   dbSet<dbTechLayerAreaRule> getTechLayerAreaRules() const;
 
+  dbSet<dbTechLayerPitchRule> getTechLayerPitchRules() const;
+
   void setRectOnly(bool rect_only);
 
   bool isRectOnly() const;
@@ -8998,6 +9001,38 @@ class dbTechLayerAreaRule : public dbObject
   static void destroy(dbTechLayerAreaRule* rule);
 
   // User Code End dbTechLayerAreaRule
+};
+
+class dbTechLayerPitchRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerPitchRuleEnums
+  // User Code End dbTechLayerPitchRuleEnums
+  void setFirstLastPitch(int first_last_pitch);
+
+  int getFirstLastPitch() const;
+
+  void setPitchX(int pitch_x);
+
+  int getPitchX() const;
+
+  void setPitchY(int pitch_y);
+
+  int getPitchY() const;
+
+  void setHasPitchXy(bool has_pitch_xy);
+
+  bool isHasPitchXy() const;
+
+  // User Code Begin dbTechLayerPitchRule
+  static dbTechLayerPitchRule* create(dbTechLayer* _layer);
+
+  void setPitch(int pitch_x);
+
+  int getPitch() const;
+
+  static void destroy(dbTechLayerPitchRule* rule);
+  // User Code End dbTechLayerPitchRule
 };
 
 class dbModule : public dbObject

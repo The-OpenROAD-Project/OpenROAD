@@ -1,0 +1,27 @@
+{
+  "name": "dbTechLayerPitchRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "int",
+      "name": "first_last_pitch_"
+    },
+    {
+      "type": "int",
+      "name": "pitch_x_"
+    },
+    {
+      "type": "int",
+      "name": "pitch_y_"
+    },
+    {
+      "type": "bool",
+      "name": "has_pitch_xy_"
+    }
+  ],
+  "constructors": [],
+  "enums": [],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}
