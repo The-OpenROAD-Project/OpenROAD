@@ -3957,12 +3957,20 @@ class dbTrackGrid : public dbObject
   ///
   /// Add a Non Uniform "X" grid pattern.
   ///
-  void addNonUniformGridX(int origin_x, int line_count, int step, int first_last_offset, int n_rows);
+  void addNonUniformGridX(int origin_x,
+                          int line_count,
+                          int step,
+                          int first_last_offset,
+                          int n_rows);
 
   ///
   /// Add a Non Uniform "Y" grid pattern.
   ///
-  void addNonUniformGridY(int origin_x, int line_count, int step, int first_last_offset, int n_rows);
+  void addNonUniformGridY(int origin_x,
+                          int line_count,
+                          int step,
+                          int first_last_offset,
+                          int n_rows);
 
   ///
   /// Get the number of "X" grid patterns.

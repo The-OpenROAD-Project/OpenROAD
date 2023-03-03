@@ -91,12 +91,12 @@ class InitFloorplan
                   int y_offset,
                   int y_pitch);
 
-void makeTracksNonUniform(odb::dbTechLayer* layer,
-                               int x_offset,
-                               int x_pitch,
-                               int y_offset,
-                               int y_pitch,
-                               int first_last_pitch);
+  void makeTracksNonUniform(odb::dbTechLayer* layer,
+                            int x_offset,
+                            int x_pitch,
+                            int y_offset,
+                            int y_pitch,
+                            int first_last_pitch);
 
  protected:
   double designArea();

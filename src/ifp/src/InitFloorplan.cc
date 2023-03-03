@@ -480,22 +480,23 @@ void InitFloorplan::makeTracks()
   for (auto layer : block_->getDataBase()->getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
         && layer->getRoutingLevel() != 0) {
-      if(layer->getTechLayerPitchRules().empty()){
-        std::cout<<"\n\naqui esta entrado com a layer: "+ layer->getName() +" \n\n";
+      if (layer->getTechLayerPitchRules().empty()) {
+        std::cout << "\n\naqui esta entrado com a layer: " + layer->getName()
+                         + " \n\n";
         makeTracks(layer,
-                  layer->getOffsetX(),
-                  layer->getPitchX(),
-                  layer->getOffsetY(),
-                  layer->getPitchY());
+                   layer->getOffsetX(),
+                   layer->getPitchX(),
+                   layer->getOffsetY(),
+                   layer->getPitchY());
       } else {
         auto pitch_rule = layer->getTechLayerPitchRules().begin();
-        std::cout<<"\n\naqui esta entradno\n\n";
+        std::cout << "\n\naqui esta entradno\n\n";
         makeTracksNonUniform(layer,
-                 layer->getOffsetX(),
-                 pitch_rule->getPitchX(),
-                 layer->getOffsetY(),
-                 pitch_rule->getPitchY(),
-                 pitch_rule->getFirstLastPitch());
+                             layer->getOffsetX(),
+                             pitch_rule->getPitchX(),
+                             layer->getOffsetY(),
+                             pitch_rule->getPitchY(),
+                             pitch_rule->getFirstLastPitch());
       }
     }
   }
@@ -582,17 +583,14 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
 }
 
 void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
-                               int x_offset,
-                               int x_pitch,
-                               int y_offset,
-                               int y_pitch,
-                               int first_last_pitch)
+                                         int x_offset,
+                                         int x_pitch,
+                                         int y_offset,
+                                         int y_pitch,
+                                         int first_last_pitch)
 {
   if (layer->getDirection() != dbTechLayerDir::HORIZONTAL) {
-    logger_->error(
-        IFP,
-        40,
-        "Non horizontal layer uses property LEF58_PITCH.");
+    logger_->error(IFP, 40, "Non horizontal layer uses property LEF58_PITCH.");
   }
   auto rows = block_->getRows();
   int cell_row_height = rows.begin()->getSite()->getHeight();
@@ -656,7 +654,8 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
   auto y_track_count = int((cell_row_height - 2 * first_last_pitch) / y_pitch);
   int origin_y = die_area.yMin() + first_last_pitch;
 
-  grid->addNonUniformGridY(origin_y, y_track_count, y_pitch, first_last_pitch, rows.size());
+  grid->addNonUniformGridY(
+      origin_y, y_track_count, y_pitch, first_last_pitch, rows.size());
 }
 
 }  // namespace ifp

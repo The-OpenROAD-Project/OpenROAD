@@ -211,14 +211,13 @@ class lefTechLayerPitchRuleParser
 {
  public:
   lefTechLayerPitchRuleParser(lefin*);
-  void parse(std::string,
-             odb::dbTechLayer*);
+  void parse(std::string, odb::dbTechLayer*);
 
  private:
   lefin* lefin_;
   void setFirstLastPitch(double val,
-              odb::dbTechLayerPitchRule* rule,
-              void (odb::dbTechLayerPitchRule::*func)(int));
+                         odb::dbTechLayerPitchRule* rule,
+                         void (odb::dbTechLayerPitchRule::*func)(int));
   void setPitch(double val,
                 odb::dbTechLayerPitchRule* rule,
                 void (odb::dbTechLayerPitchRule::*func)(int));
