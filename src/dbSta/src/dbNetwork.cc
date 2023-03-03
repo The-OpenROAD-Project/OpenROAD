@@ -835,7 +835,7 @@ dbNetwork::visitConnectedPins(const Net* net,
   }
 }
 
-const Net*
+const Net* 
 dbNetwork::highestConnectedNet(Net* net) const
 {
   return net;
