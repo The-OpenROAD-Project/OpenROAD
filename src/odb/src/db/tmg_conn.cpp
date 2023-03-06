@@ -1670,7 +1670,7 @@ void tmg_conn::treeReorder(bool no_convert)
     }
     if (pt) {
       tstack0--;
-      _last_id = x->_first_pt->_dbwire_id;
+      _last_id = x->_first_pt ? x->_first_pt->_dbwire_id : -1;
     }
     if (!pt) {
       for (j = last_term_index; j < _termN; j++) {
