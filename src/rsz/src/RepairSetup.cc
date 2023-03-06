@@ -53,6 +53,7 @@
 #include "sta/PathRef.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/PortDirection.hh"
 
 namespace rsz {
 
@@ -118,8 +119,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
-  //logger_->info(RSZ, 9994, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX Repair Setup called {} ", repair_tns_end_percent);
-  //logger_->setDebugLevel(RSZ, "repair_setup", 2);
+  logger_->setDebugLevel(RSZ, "repair_setup", 2);
 
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
@@ -141,6 +141,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
              int(violating_ends.size() / double(endpoints->size()) * 100));
 
   int end_index = 0;
+  repair_tns_end_percent = 0.01;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
   // So we will always fix at least 1 endpoint ... the repair_tns_end_percent
@@ -159,9 +160,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
                delayAsString(end_slack, sta_, digits),
                delayAsString(worst_slack, sta_, digits));
     end_index++;
-    // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     debugPrint(logger_, RSZ, "repair_setup", 1, "Doing {} /{}", end_index, max_end_count);
-    // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX    
     if (end_index > max_end_count)
       break;
     Slack prev_end_slack = end_slack;
@@ -342,7 +341,9 @@ RepairSetup::repairSetup(PathRef &path,
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
 
-      if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
+      if (swapPins(drvr_path, drvr_index, &expanded) ||
+          swapVtCell(drvr_path, drvr_index, &expanded) ||
+          upsizeDrvr(drvr_path, drvr_index, &expanded)) {
         changed = true;
         break;
       }
@@ -376,6 +377,86 @@ RepairSetup::repairSetup(PathRef &path,
     }
   }
   return changed;
+}
+
+bool RepairSetup::swapVtCell(PathRef *drvr_path,
+                            int drvr_index,
+                            PathExpanded *expanded)
+{
+  Pin *drvr_pin = drvr_path->pin(this);
+  Instance *drvr = network_->instance(drvr_pin);
+  const DcalcAnalysisPt *dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+  float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  int in_index = drvr_index - 1;
+  PathRef *in_path = expanded->path(in_index);
+  Pin *in_pin = in_path->pin(sta_);
+  LibertyPort *in_port = network_->libertyPort(in_pin);
+  if (!resizer_->dontTouch(drvr)) {
+    float prev_drive;
+    if (drvr_index >= 2) {
+      int prev_drvr_index = drvr_index - 2;
+      PathRef *prev_drvr_path = expanded->path(prev_drvr_index);
+      Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
+      prev_drive = 0.0;
+      LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
+      if (prev_drvr_port) {
+        prev_drive = prev_drvr_port->driveResistance();
+      }
+    }
+    else
+      prev_drive = 0.0;
+    LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
+    LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
+                                     prev_drive, dcalc_ap);
+    if (upsize) {
+      debugPrint(logger_, RSZ, "repair_setup", 3, "resize {} {} -> {}",
+                 network_->pathName(drvr_pin),
+                 drvr_port->libertyCell()->name(),
+                 upsize->name());
+      if (!resizer_->dontTouch(drvr)
+          && resizer_->replaceCell(drvr, upsize, true)) {
+        resize_count_++;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool RepairSetup::swapPins(PathRef *drvr_path,
+                           int drvr_index,
+                           PathExpanded *expanded)
+{
+  Pin *drvr_pin = drvr_path->pin(this);
+  Instance *drvr = network_->instance(drvr_pin);
+  const DcalcAnalysisPt *dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+  // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
+  float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+  int in_index = drvr_index - 1;
+  PathRef *in_path = expanded->path(in_index);
+  Pin *in_pin = in_path->pin(sta_);
+
+  if (!resizer_->dontTouch(drvr)) {
+    // We get the driver port and the cell for that port.
+    LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+    LibertyPort* input_port = network_->libertyPort(in_pin);
+    LibertyCell* cell = drvr_port->libertyCell();
+    LibertyPort *swap_port = input_port;
+
+    if (strstr(cell->name(), "AND") || strstr(cell->name(), "OR")) {
+      resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
+                                     dcalc_ap, &swap_port);
+
+      if (!swap_port->equiv(swap_port, input_port)) {
+        // FIXME: Change to debug log.
+        printf("Swap %s %s %s\n", cell->name(), input_port->name(),
+               swap_port->name());
+        resizer_->swapPins(drvr, input_port, swap_port, true);
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 bool

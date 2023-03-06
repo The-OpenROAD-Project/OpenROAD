@@ -93,6 +93,12 @@ private:
   void init();
   bool repairSetup(PathRef &path,
                    Slack path_slack);
+  bool swapPins(PathRef *drvr_path,
+                int drvr_index,
+                PathExpanded *expanded);
+  bool swapVtCell(PathRef *drvr_path,
+                  int drvr_index,
+                  PathExpanded *expanded);
   bool upsizeDrvr(PathRef *drvr_path,
                   int drvr_index,
                   PathExpanded *expanded);
