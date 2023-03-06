@@ -43,13 +43,13 @@ class dbSdcNetwork : public SdcNetwork
 {
 public:
   dbSdcNetwork(Network* network);
-  virtual Instance* findInstance(const char* path_name) const;
-  virtual InstanceSeq findInstancesMatching(const Instance* contex,
-                                            const PatternMatch* pattern) const;
+  Instance* findInstance(const char* path_name) const override;
+  InstanceSeq findInstancesMatching(const Instance* contex,
+                                            const PatternMatch* pattern) const override;
   virtual NetSeq findNetsMatching(const Instance*,
-                                  const PatternMatch* pattern) const;
+                                  const PatternMatch* pattern) const override;
   virtual PinSeq findPinsMatching(const Instance* instance,
-                                  const PatternMatch* pattern) const;
+                                  const PatternMatch* pattern) const override;
 
 protected:
   void findInstancesMatching1(const PatternMatch* pattern,
@@ -58,8 +58,7 @@ protected:
   void findMatchingPins(const Instance* instance,
                         const PatternMatch* port_pattern,
                         PinSeq& pins) const;
-  Pin* findPin(const char* path_name) const;
-
+  Pin* findPin(const char* path_name) const override;
   using SdcNetwork::findPin;
 };
 
