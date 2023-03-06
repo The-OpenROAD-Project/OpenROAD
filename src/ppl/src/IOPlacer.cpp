@@ -1073,10 +1073,20 @@ void IOPlacer::updatePinArea(IOPin& pin)
       pin_width
           = mfg_grid * std::ceil(static_cast<float>(pin_width) / mfg_grid);
     }
+    if (pin_width % 2 != 0) {
+      // ensure pin_width is a even multiple of mfg_grid since its divided by 2
+      // later
+      pin_width += mfg_grid;
+    }
 
     if (pin_height % mfg_grid != 0) {
       pin_height
           = mfg_grid * std::ceil(static_cast<float>(pin_height) / mfg_grid);
+    }
+    if (pin_height % 2 != 0) {
+      // ensure pin_height is a even multiple of mfg_grid since its divided by 2
+      // later
+      pin_height += mfg_grid;
     }
 
     pin.setLowerBound(pin.getX() - pin_width / 2, pin.getY() - pin_height / 2);
@@ -1456,9 +1466,17 @@ void IOPlacer::placePin(odb::dbBTerm* bterm,
   if (width % mfg_grid != 0) {
     width = mfg_grid * std::ceil(static_cast<float>(width) / mfg_grid);
   }
+  if (width % 2 != 0) {
+    // ensure width is a even multiple of mfg_grid since its divided by 2 later
+    width += mfg_grid;
+  }
 
   if (height % mfg_grid != 0) {
     height = mfg_grid * std::ceil(static_cast<float>(height) / mfg_grid);
+  }
+  if (height % 2 != 0) {
+    // ensure height is a even multiple of mfg_grid since its divided by 2 later
+    height += mfg_grid;
   }
 
   odb::Point pos = odb::Point(x, y);
