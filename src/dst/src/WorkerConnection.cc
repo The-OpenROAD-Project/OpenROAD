@@ -96,6 +96,12 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
         }
         break;
       }
+      case JobMessage::RESTRUCTURE: {
+        for (auto& cb : dist_->getCallBacks()) {
+          cb->onRestructureJobReceived(msg_, sock_);
+        }
+        break;
+      }
       default:
         logger_->warn(utl::DST,
                       5,

@@ -36,6 +36,8 @@
 include("openroad")
 
 project(rmp)
+find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(OpenMP REQUIRED)
 
 swig_lib(NAME      rmp
          NAMESPACE rmp
@@ -49,6 +51,7 @@ target_sources(rmp
     blif.cpp
     Restructure.cpp
     MakeRestructure.cpp
+    RestructureCallBack.cpp
 )
 
 messages(
@@ -68,9 +71,12 @@ target_link_libraries(rmp
     odb
     dbSta
     OpenSTA
+    dst
     rsz
     utl
     ${ABC_LIBRARY}
+    ${Boost_LIBRARIES}
+    OpenMP::OpenMP_CXX
  )
 
 if (Python3_FOUND AND BUILD_PYTHON)

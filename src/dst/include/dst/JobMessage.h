@@ -60,6 +60,7 @@ class JobMessage
   {
     ROUTING,
     UPDATE_DESIGN,
+    RESTRUCTURE,
     BALANCER,
     SUCCESS,
     ERROR,

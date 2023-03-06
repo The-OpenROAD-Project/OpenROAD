@@ -14,7 +14,7 @@ report_design_area
 set tiehi "LOGIC1_X1/Z"
 set tielo "LOGIC0_X1/Z"
 
-ord::set_thread_count "3"
+ord::set_thread_count "1"
 restructure -liberty_file Nangate45/Nangate45_typ.lib -target timing -abc_logfile ./results/abc_rcon.log  -tielo_port $tielo -tiehi_port $tiehi -work_dir ./results
 report_worst_slack
 report_design_area

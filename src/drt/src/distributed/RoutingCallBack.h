@@ -143,6 +143,11 @@ class RoutingCallBack : public dst::JobCallBack
     sock.close();
   }
 
+  void onRestructureJobReceived(dst::JobMessage& msg,
+                                dst::socket& sock) override
+  {
+  }
+
  private:
   void sendResult(std::vector<std::pair<int, std::string>> results,
                   dst::socket& sock,

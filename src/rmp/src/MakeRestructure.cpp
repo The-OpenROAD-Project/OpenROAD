@@ -64,6 +64,7 @@ void initRestructure(OpenRoad* openroad)
   openroad->getRestructure()->init(openroad->getLogger(),
                                    openroad->getSta(),
                                    openroad->getDb(),
+                                   openroad->getDistributed(),
                                    openroad->getResizer());
 }
 

@@ -25,17 +25,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#pragma once
-#include <dst/Distributed.h>
 
+#pragma once
+
+#include "dst/JobCallBack.h"
+#include "dst/JobMessage.h"
 namespace dst {
-class JobMessage;
-class JobCallBack
+class Distributed;
+}
+namespace utl {
+class Logger;
+}
+namespace rmp {
+class Restructure;
+class RestructureCallBack : public dst::JobCallBack
 {
  public:
-  virtual void onRoutingJobReceived(JobMessage& msg, socket& sock) = 0;
-  virtual void onFrDesignUpdated(JobMessage& msg, socket& sock) = 0;
-  virtual void onRestructureJobReceived(JobMessage& msg, socket& sock) = 0;
-  virtual ~JobCallBack() {}
+  RestructureCallBack(rmp::Restructure* rest,
+                      dst::Distributed* dist,
+                      utl::Logger* logger)
+      : rest_(rest), dist_(dist), logger_(logger)
+  {
+  }
+  void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override {}
+  void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override {}
+  void onRestructureJobReceived(dst::JobMessage& msg,
+                                dst::socket& sock) override;
+
+ private:
+  rmp::Restructure* rest_;
+  dst::Distributed* dist_;
+  utl::Logger* logger_;
 };
-}  // namespace dst
+
+}  // namespace rmp

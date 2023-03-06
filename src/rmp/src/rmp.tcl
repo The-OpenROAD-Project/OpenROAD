@@ -54,13 +54,15 @@ sta::define_cmd_args "restructure" { \
                                       [-liberty_file liberty_file]\
                                       [-tielo_port tielow_port]\
                                       [-tiehi_port tiehigh_port]\
-                                      [-work_dir workdir_name]
+                                      [-work_dir workdir_name]\
+                                      [-remote_host host]\
+                                      [-remote_port port]\
                                     }
 
 proc restructure { args } {
   sta::parse_key_args "restructure" args \
     keys {-slack_threshold -depth_threshold -target -liberty_file -abc_logfile\
-          -tielo_port -tiehi_port -work_dir} flags {}
+          -tielo_port -tiehi_port -work_dir -remote_host -remote_port} flags {}
 
   set slack_threshold_value 0
   set depth_threshold_value 16
@@ -68,6 +70,11 @@ proc restructure { args } {
   set workdir_name "."
   set abc_logfile ""
 
+  if { [info exists keys(-remote_host)] } {
+    set remote_host $keys(-remote_host)
+    set remote_port $keys(-remote_port)
+    rmp::set_distributed $remote_host $remote_port
+  }
   if { [info exists keys(-slack_threshold)] } {
     set slack_threshold_value $keys(-slack_threshold)
   } 

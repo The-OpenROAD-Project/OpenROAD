@@ -21,7 +21,7 @@ design.evalTclString("report_design_area")
 tiehi = "LOGIC1_X1/Z"
 tielo = "LOGIC0_X1/Z"
 
-set_thread_count(3)
+set_thread_count(1)
 
 rmp_aux.restructure(design, liberty_file_name="Nangate45/Nangate45_typ.lib", target="area",
                     abc_logfile="results/abc_rcon.log", tielo_port=tielo, tiehi_port=tiehi,

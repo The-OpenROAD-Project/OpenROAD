@@ -81,6 +81,11 @@ restructure_cmd(char* liberty_file_name, char* target, float slack_threshold,
                         workdir_name, abc_logfile);
 }
 
+void set_distributed(const char* host, unsigned short port)
+{
+  getRestructure()->setDistributed(host, port);  
+}
+
 // Locally Exposed for testing only..
 Blif* create_blif(const char* hicell, const char* hiport, const char* locell, const char* loport){
   return new rmp::Blif(getOpenRoad()->getLogger(), getOpenRoad()->getSta(), locell, loport, hicell, hiport);

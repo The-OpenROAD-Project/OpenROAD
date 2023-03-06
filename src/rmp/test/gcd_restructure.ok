@@ -11,7 +11,7 @@
 [WARNING STA-0354] set_input_delay relative to a clock defined on the same port/pin not allowed.
 worst slack 1.29
 Design area 670 u^2 10% utilization.
-[INFO ORD-0030] Using 3 thread(s).
+[INFO ORD-0030] Using 1 thread(s).
 Removed 0 instances with constant outputs.
 Number of paths for restructure are 69
 Found 69 end points for restructure
@@ -19,12 +19,12 @@ Found 1290 pins in extracted logic.
 Found 422 instances for restructuring.
 [INFO RMP-0002] Blif writer successfully dumped file with 422 instances.
 Cmd warning: redefining '%graft'
-Cmd warning: redefining '%graft'
-Cmd warning: redefining '%graft'
 Reading ABC log results/abc_rcon.log0.
-Optimized to 256 instances in iteration 0 with max path depth decrease of 0, delay of 16.0.
+Optimized to 256 instances in iteration 0 with max path depth decrease of 2, delay of 16.0.
+Cmd warning: redefining '%graft'
 Reading ABC log results/abc_rcon.log1.
-Optimized to 250 instances in iteration 1 with max path depth decrease of 0, delay of 16.0.
+Optimized to 250 instances in iteration 1 with max path depth decrease of 2, delay of 16.0.
+Cmd warning: redefining '%graft'
 Reading ABC log results/abc_rcon.log2.
 Optimized to 257 instances in iteration 2 with max path depth decrease of 0, delay of 18.0.
 [INFO RMP-0005] Blif parsed successfully, will destroy 422 existing instances.
