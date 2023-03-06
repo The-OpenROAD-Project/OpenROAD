@@ -651,8 +651,11 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
   auto y_track_count = int((cell_row_height - 2 * first_last_pitch) / y_pitch);
   int origin_y = die_area.yMin() + first_last_pitch;
 
-  grid->addNonUniformGridY(
-      origin_y, y_track_count, y_pitch, first_last_pitch, rows.size());
+  for (int i = 0; i < rows.size(); i++) {
+    grid->addGridPatternX(origin_y, y_track_count, y_pitch);
+    origin_y
+        += (2 * first_last_pitch) + (y_track_count * y_pitch) + first_last_pitch;
+  }
 }
 
 }  // namespace ifp
