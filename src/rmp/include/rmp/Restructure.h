@@ -45,7 +45,7 @@ namespace abc {
 }  // namespace abc
 
 namespace dst {
-  class Distributed;
+class Distributed;
 }
 namespace utl {
 class Logger;
@@ -98,13 +98,18 @@ class Restructure
 
   void setMode(const char* mode_name);
   void setTieLoPort(sta::LibertyPort* loport);
-  void setTieLoPort(const std::string& cell, const std::string&  port);
+  void setTieLoPort(const std::string& cell, const std::string& port);
   void setTieHiPort(sta::LibertyPort* hiport);
-  void setTieHiPort(const std::string& cell, const std::string&  port);
-  void runABCJob(const Mode mode, int& num_instances, int& level_gain, float& delay, std::string& blif_path);
+  void setTieHiPort(const std::string& cell, const std::string& port);
+  void runABCJob(const Mode mode,
+                 int& num_instances,
+                 int& level_gain,
+                 float& delay,
+                 std::string& blif_path);
   void addLibFile(const std::string& lib_file);
   void setDistributed(const std::string& host, unsigned short port);
   void setWorkDirName(const std::string& dir) { work_dir_name_ = dir; }
+
  private:
   void deleteComponents();
   void getBlob(unsigned max_depth);
