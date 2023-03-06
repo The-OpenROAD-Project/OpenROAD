@@ -101,7 +101,8 @@ MainWindow::MainWindow(QWidget* parent)
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
-      find_dialog_(new FindObjectDialog(this))
+      find_dialog_(new FindObjectDialog(this)),
+      goto_dialog_(new GotoObjectDialog(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -513,11 +514,16 @@ void MainWindow::createActions()
 
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
+
+  goto_position_= new QAction("Goto position", this);
+  goto_position_->setShortcut(QString("Shift+G"));
+  
   zoom_in_ = new QAction("Zoom in", this);
   zoom_in_->setShortcut(QString("Z"));
 
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
+
 
   inspect_ = new QAction("Inspect", this);
   inspect_->setShortcut(QString("q"));
@@ -553,6 +559,7 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
+  connect(goto_position_, SIGNAL(triggered()), this, SLOT(showGotoDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
   connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
   connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
@@ -603,6 +610,7 @@ void MainWindow::createMenus()
   view_menu_ = menuBar()->addMenu("&View");
   view_menu_->addAction(fit_);
   view_menu_->addAction(find_);
+  view_menu_->addAction(goto_position_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
 
@@ -1122,6 +1130,13 @@ void MainWindow::showFindDialog()
   if (getBlock() == nullptr)
     return;
   find_dialog_->exec();
+}
+
+void MainWindow::showGotoDialog()
+{
+  if (getBlock() == nullptr)
+    return;
+  goto_dialog_->exec();
 }
 
 void MainWindow::showHelp()
