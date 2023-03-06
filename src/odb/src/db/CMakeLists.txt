@@ -105,6 +105,7 @@ add_library(db
     dbTechLayerWidthTableRule.cpp
     dbTechLayerMinCutRule.cpp
     dbGuide.cpp
+    dbNetTrack.cpp
     dbMetalWidthViaMap.cpp
     dbTechLayerAreaRule.cpp
     dbModule.cpp
@@ -124,6 +125,7 @@ add_library(db
     dbRegionGroupItr.cpp
     dbGroupInstItr.cpp
     dbGuideItr.cpp
+    dbNetTrackItr.cpp
     # Generator Code End cpp
 )
 
