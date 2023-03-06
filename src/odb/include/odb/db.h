@@ -9038,10 +9038,6 @@ class dbTechLayerPitchRule : public dbObject
 
   int getPitchY() const;
 
-  void setHasPitchXy(bool has_pitch_xy);
-
-  bool isHasPitchXy() const;
-
   // User Code Begin dbTechLayerPitchRule
   static dbTechLayerPitchRule* create(dbTechLayer* _layer);
 

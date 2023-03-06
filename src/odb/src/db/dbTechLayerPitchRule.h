@@ -60,7 +60,6 @@ class _dbTechLayerPitchRule : public _dbObject
   int first_last_pitch_;
   int pitch_x_;
   int pitch_y_;
-  bool has_pitch_xy_;
 
   // User Code Begin Fields
   // User Code End Fields

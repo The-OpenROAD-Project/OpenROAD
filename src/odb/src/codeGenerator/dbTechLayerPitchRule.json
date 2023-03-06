@@ -13,10 +13,6 @@
     {
       "type": "int",
       "name": "pitch_y_"
-    },
-    {
-      "type": "bool",
-      "name": "has_pitch_xy_"
     }
   ],
   "constructors": [],

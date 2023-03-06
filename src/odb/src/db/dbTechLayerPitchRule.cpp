@@ -56,9 +56,6 @@ bool _dbTechLayerPitchRule::operator==(const _dbTechLayerPitchRule& rhs) const
   if (pitch_y_ != rhs.pitch_y_)
     return false;
 
-  if (has_pitch_xy_ != rhs.has_pitch_xy_)
-    return false;
-
   // User Code Begin ==
   // User Code End ==
   return true;
@@ -78,7 +75,6 @@ void _dbTechLayerPitchRule::differences(dbDiff& diff,
   DIFF_FIELD(first_last_pitch_);
   DIFF_FIELD(pitch_x_);
   DIFF_FIELD(pitch_y_);
-  DIFF_FIELD(has_pitch_xy_);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
@@ -91,7 +87,6 @@ void _dbTechLayerPitchRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(first_last_pitch_);
   DIFF_OUT_FIELD(pitch_x_);
   DIFF_OUT_FIELD(pitch_y_);
-  DIFF_OUT_FIELD(has_pitch_xy_);
 
   // User Code Begin Out
   // User Code End Out
@@ -108,7 +103,6 @@ _dbTechLayerPitchRule::_dbTechLayerPitchRule(_dbDatabase* db,
   first_last_pitch_ = r.first_last_pitch_;
   pitch_x_ = r.pitch_x_;
   pitch_y_ = r.pitch_y_;
-  has_pitch_xy_ = r.has_pitch_xy_;
   // User Code Begin CopyConstructor
   // User Code End CopyConstructor
 }
@@ -118,7 +112,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerPitchRule& obj)
   stream >> obj.first_last_pitch_;
   stream >> obj.pitch_x_;
   stream >> obj.pitch_y_;
-  stream >> obj.has_pitch_xy_;
   // User Code Begin >>
   // User Code End >>
   return stream;
@@ -128,7 +121,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerPitchRule& obj)
   stream << obj.first_last_pitch_;
   stream << obj.pitch_x_;
   stream << obj.pitch_y_;
-  stream << obj.has_pitch_xy_;
   // User Code Begin <<
   // User Code End <<
   return stream;
@@ -186,19 +178,6 @@ int dbTechLayerPitchRule::getPitchY() const
 {
   _dbTechLayerPitchRule* obj = (_dbTechLayerPitchRule*) this;
   return obj->pitch_y_;
-}
-
-void dbTechLayerPitchRule::setHasPitchXy(bool has_pitch_xy)
-{
-  _dbTechLayerPitchRule* obj = (_dbTechLayerPitchRule*) this;
-
-  obj->has_pitch_xy_ = has_pitch_xy;
-}
-
-bool dbTechLayerPitchRule::isHasPitchXy() const
-{
-  _dbTechLayerPitchRule* obj = (_dbTechLayerPitchRule*) this;
-  return obj->has_pitch_xy_;
 }
 
 // User Code Begin dbTechLayerPitchRulePublicMethods
