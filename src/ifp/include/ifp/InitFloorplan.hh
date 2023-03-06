@@ -35,8 +35,9 @@
 
 #pragma once
 
+#include <set>
 #include <string>
-
+#include <vector>
 namespace utl {
 class Logger;
 }
@@ -97,7 +98,8 @@ class InitFloorplan
                 int core_lx,
                 int core_ly,
                 int core_ux,
-                int core_uy);
+                int core_uy,
+                int factor);
   odb::dbSite* findSite(const char* site_name);
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
@@ -107,6 +109,7 @@ class InitFloorplan
                            int core_ly,
                            int core_ux,
                            int core_uy);
+  std::set<dbSite*> getSites() const;
 
   dbBlock* block_;
   Logger* logger_;
