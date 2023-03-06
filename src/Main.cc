@@ -79,6 +79,13 @@ using sta::stringEq;
 using std::string;
 
 #ifdef ENABLE_PYTHON3
+// par causes abseil link error at startup on apple silicon
+#ifdef ENABLE_PAR
+#define TOOL_PAR X(par)
+#else
+#define TOOL_PAR
+#endif
+
 #define FOREACH_TOOL_WITHOUT_OPENROAD(X) \
   X(ifp)                                 \
   X(utl)                                 \
@@ -93,7 +100,7 @@ using std::string;
   X(drt)                                 \
   X(dpo)                                 \
   X(fin)                                 \
-  X(par)                                 \
+  TOOL_PAR                               \
   X(rcx)                                 \
   X(rmp)                                 \
   X(stt)                                 \

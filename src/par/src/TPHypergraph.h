@@ -37,13 +37,10 @@
 // vertex, hyperedge and timing paths. We also explain our basic
 // conventions.
 // Rule1 : num_vertices, num_hyperedges, vertex_dimensions,
-// hyperedge_dimensions,
-//         placement_dimension, cluster_id (c), vertex_id (v), hyperedge_id (e)
+//         hyperedge_dimensions, placement_dimension,
+//         cluster_id (c), vertex_id (v), hyperedge_id (e)
 //         are all in int type.
-// Rule2 : We assume T (int, float) is the type for vertex weight, U (int,
-// float)
-//         is the type for hyperedge weight.
-// Rule3 : Each hyperedge can include a vertex at most once.
+// Rule2 : Each hyperedge can include a vertex at most once.
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include <functional>
@@ -65,15 +62,11 @@ struct TimingPath
                           // clock period)
 };
 
-// T is the type for vertex properties (float or int)
-// U is the type for hyperedge properties (float or int)
 // Here we use TPHypergraph class because the Hypegraph class
 // has been used by other programs.
 class TPHypergraph
 {
  public:
-  explicit TPHypergraph() {}  // Use the default value for each parameter
-
   // Multiple constructors
   // Basic form
   TPHypergraph(int vertex_dimensions,
@@ -231,84 +224,6 @@ class TPHypergraph
     logger_ = logger;
   }
 
-  // copy constructor
-  TPHypergraph(const TPHypergraph& hgraph)
-  {
-    num_vertices_ = hgraph.num_vertices_;
-    num_hyperedges_ = hgraph.num_hyperedges_;
-    vertex_dimensions_ = hgraph.vertex_dimensions_;
-    hyperedge_dimensions_ = hgraph.hyperedge_dimensions_;
-    eind_ = hgraph.eind_;
-    eptr_ = hgraph.eptr_;
-    vind_ = hgraph.vind_;
-    vptr_ = hgraph.vptr_;
-    vertex_weights_ = hgraph.vertex_weights_;
-    hyperedge_weights_ = hgraph.hyperedge_weights_;
-    nonscaled_hyperedge_weights_ = hgraph.nonscaled_hyperedge_weights_;
-    // vertex_c_attr
-    vertex_c_attr_ = hgraph.vertex_c_attr_;
-    // fixed vertices
-    fixed_vertex_flag_ = hgraph.fixed_vertex_flag_;
-    fixed_attr_ = hgraph.fixed_attr_;
-    // community structure
-    community_flag_ = hgraph.community_flag_;
-    community_attr_ = hgraph.community_attr_;
-    // placement information
-    placement_flag_ = hgraph.placement_flag_;
-    placement_dimensions_ = hgraph.placement_dimensions_;
-    placement_attr_ = hgraph.placement_attr_;
-    // timing flag
-    num_timing_paths_ = hgraph.num_timing_paths_;
-    vind_p_ = hgraph.vind_p_;
-    vptr_p_ = hgraph.vptr_p_;
-    pind_v_ = hgraph.pind_v_;
-    pptr_v_ = hgraph.pptr_v_;
-    timing_attr_ = hgraph.timing_attr_;
-    // logger
-    logger_ = hgraph.logger_;
-  }
-
-  // assignment operator
-  TPHypergraph& operator=(const TPHypergraph& hgraph)
-  {
-    num_vertices_ = hgraph.num_vertices_;
-    num_hyperedges_ = hgraph.num_hyperedges_;
-    vertex_dimensions_ = hgraph.vertex_dimensions_;
-    hyperedge_dimensions_ = hgraph.hyperedge_dimensions_;
-    eind_ = hgraph.eind_;
-    eptr_ = hgraph.eptr_;
-    vind_ = hgraph.vind_;
-    vptr_ = hgraph.vptr_;
-    vertex_weights_ = hgraph.vertex_weights_;
-    hyperedge_weights_ = hgraph.hyperedge_weights_;
-    nonscaled_hyperedge_weights_ = hgraph.nonscaled_hyperedge_weights_;
-    // vertex_c_attr
-    vertex_c_attr_ = hgraph.vertex_c_attr_;
-    // fixed vertices
-    fixed_vertex_flag_ = hgraph.fixed_vertex_flag_;
-    fixed_attr_ = hgraph.fixed_attr_;
-    // community structure
-    community_flag_ = hgraph.community_flag_;
-    community_attr_ = hgraph.community_attr_;
-    // placement information
-    placement_flag_ = hgraph.placement_flag_;
-    placement_dimensions_ = hgraph.placement_dimensions_;
-    placement_attr_ = hgraph.placement_attr_;
-    // timing flag
-    num_timing_paths_ = hgraph.num_timing_paths_;
-    vind_p_ = hgraph.vind_p_;
-    vptr_p_ = hgraph.vptr_p_;
-    pind_v_ = hgraph.pind_v_;
-    pptr_v_ = hgraph.pptr_v_;
-    timing_attr_ = hgraph.timing_attr_;
-    // logger
-    logger_ = hgraph.logger_;
-    return *this;
-  }
-
-  // destructor
-  ~TPHypergraph() = default;
-
   int GetNumVertices() const { return num_vertices_; }
   int GetNumHyperedges() const { return num_hyperedges_; }
   int GetNumTimingPaths() const { return num_timing_paths_; }
@@ -324,6 +239,8 @@ class TPHypergraph
   std::vector<std::vector<float>> GetVertexBalance(int num_parts,
                                                    float ubfactor);
   std::vector<float> ComputeAlgebraicWights() const;
+
+  float edge_score(const int e, const std::vector<float>& e_wt_factors) const;
 
  private:
   // basic hypergraph
@@ -392,7 +309,6 @@ class TPHypergraph
                                      // MultiLevelHierarchy
   friend class KPMRefinement;        // define friend class for KPMFM
   friend class IlpRefiner;  // define friend class for ILP based refinement
-  friend class Obfuscator;  // define friend class for netlist obfuscator
 };
 
 // We should use shared_ptr because we enable multi-thread feature during

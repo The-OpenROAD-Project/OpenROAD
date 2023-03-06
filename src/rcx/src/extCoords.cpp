@@ -32,11 +32,14 @@
 
 #include "parse.h"
 #include "rcx/extSpef.h"
+#include "utl/Logger.h"
 #include "wire.h"
 
 namespace rcx {
 
 using namespace odb;
+
+using utl::RCX;
 
 void extSpef::initSearchForNets()
 {
@@ -65,11 +68,12 @@ void extSpef::initSearchForNets()
     S[n] = layer->getSpacing();
     P[n] = layer->getPitch();
     if (P[n] <= 0)
-      error(0,
-            "Layer %s, routing level %d, has pitch %d !!\n",
-            layer->getConstName(),
-            n,
-            P[n]);
+      logger_->error(RCX,
+                     179,
+                     "Layer {}, routing level {}, has pitch {}",
+                     layer->getConstName(),
+                     n,
+                     P[n]);
     tg = _block->findTrackGrid(layer);
     if (tg) {
       tg->getGridX(trackXY);

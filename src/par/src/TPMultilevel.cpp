@@ -35,11 +35,6 @@
 
 #include "TPMultilevel.h"
 
-#include <unistd.h>
-
-#include <cstdlib>
-#include <string>
-
 #include "TPHypergraph.h"
 #include "TPPartitioner.h"
 #include "utl/Logger.h"
@@ -93,7 +88,7 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
   std::vector<float> cutsize_vec;
   int best_solution_id = -1;
   float best_cutsize = std::numeric_limits<float>::max();
-  partitioner_->SetPartitionerChoice(INIT_RANDOM);
+  partitioner_->SetPartitionerChoice(PartitionType::INIT_RANDOM);
   const auto start_timestamp = std::chrono::high_resolution_clock::now();
   /*std::vector<std::thread> threads;
   std::vector<HGraph> hgraph_threads;
@@ -145,7 +140,7 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
     }
   }
   // VILE initial partitioning
-  partitioner_->SetPartitionerChoice(INIT_VILE);
+  partitioner_->SetPartitionerChoice(PartitionType::INIT_VILE);
   std::vector<int> vile_solution(coarsest_hgraph->num_vertices_);
   partitioner_->Partition(coarsest_hgraph, max_vertex_balance, vile_solution);
   // Run greedy and ilp refinement only if no timing paths are present
@@ -167,14 +162,14 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
   }
 
   // ILP initial partitioning
-  std::vector<int> ilp_part = solution_set[best_solution_id];
+  std::vector<int> ilp_part = solution_set.at(best_solution_id);
   // if (coarsest_hgraph->num_hyperedges_ > 1000) {
   if (coarsest_hgraph->num_hyperedges_ > 0) {
-    partitioner_->SetPartitionerChoice(INIT_DIRECT_ILP);
+    partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
     // partitioner_->SetPartitionerChoice(INIT_DIRECT_WARM_ILP);
     partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
   } else {
-    partitioner_->SetPartitionerChoice(INIT_DIRECT_ILP);
+    partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
     partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
   }
   // timing driven refinement
@@ -353,7 +348,7 @@ void TPmultilevelPartitioner::MultilevelPartTwoWay(
     TP_partition& solution,
     bool VCycle)
 {
-  coarsener_->SetVertexOrderChoice(RANDOM);
+  coarsener_->SetVertexOrderChoice(Order::RANDOM);
   TP_coarse_graphs hierarchy = coarsener_->LazyFirstChoice(hgraph);
   HGraph coarsest_hgraph = hierarchy.back();
   hierarchy.pop_back();
@@ -489,7 +484,7 @@ TPmultilevelPartitioner::InitialPartKWay(HGraph coarsest_hgraph,
   std::vector<int> cutsize_vec;
   int best_solution_id = -1;
   float best_cutsize = std::numeric_limits<float>::max();
-  partitioner_->SetPartitionerChoice(INIT_RANDOM);
+  partitioner_->SetPartitionerChoice(PartitionType::INIT_RANDOM);
   const auto start_timestamp = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < num_initial_solutions_; ++i) {
     const int seed = std::numeric_limits<int>::max() * dist(gen);
@@ -508,13 +503,13 @@ TPmultilevelPartitioner::InitialPartKWay(HGraph coarsest_hgraph,
     }
   }
   // ILP initial partitioning
-  std::vector<int> ilp_part = solution_set[best_solution_id];
+  std::vector<int> ilp_part = solution_set.at(best_solution_id);
   if (coarsest_hgraph->num_hyperedges_ > 0) {
-    partitioner_->SetPartitionerChoice(INIT_DIRECT_ILP);
+    partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
     // partitioner_->SetPartitionerChoice(INIT_DIRECT_WARM_ILP);
     partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
   } else {
-    partitioner_->SetPartitionerChoice(INIT_DIRECT_ILP);
+    partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
     partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
   }
   k_way_refiner_->Refine(coarsest_hgraph, max_vertex_balance, ilp_part);
@@ -640,7 +635,7 @@ void TPmultilevelPartitioner::MultilevelPartKWay(
     TP_partition& solution,
     bool VCycle)
 {
-  coarsener_->SetVertexOrderChoice(RANDOM);
+  coarsener_->SetVertexOrderChoice(Order::RANDOM);
   auto community = coarsener_->PathBasedCommunity(hgraph);
   hgraph->community_attr_ = community;
   hgraph->community_flag_ = true;

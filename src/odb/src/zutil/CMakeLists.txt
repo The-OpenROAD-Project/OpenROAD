@@ -9,7 +9,8 @@ add_library(zutil
 )
 
 target_link_libraries(zutil
-    PUBLIC
+  PUBLIC
+        db
         utl
 )
 

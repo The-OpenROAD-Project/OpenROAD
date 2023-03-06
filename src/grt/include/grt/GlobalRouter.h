@@ -394,7 +394,7 @@ class GlobalRouter
   std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
-  std::vector<RoutingTracks>* routing_tracks_;
+  std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
   float adjustment_;

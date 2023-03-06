@@ -53,7 +53,8 @@
 namespace par {
 
 // The TritonPart Interface
-// The TritonPart is an open-source version of hMETIS,
+// TritonPart is a state-of-the-art hypergraph and netlist partitioner that
+// replaces previous engines such as hMETIS.
 // The TritonPart is designed for VLSI CAD, thus it can
 // understand all kinds of constraints and timing information.
 // TritonPart can accept two types of input hypergraphs
@@ -77,20 +78,23 @@ class TritonPart
   }
 
   // Top level interface
-  void tritonPartDesign(unsigned int num_parts,
-                        float balance_constraint,
-                        unsigned int seed);
+  void PartitionDesign(unsigned int num_parts,
+                       float balance_constraint,
+                       unsigned int seed,
+                       const std::string& solution_filename,
+                       const std::string& paths_filename,
+                       const std::string& hypergraph_filename);
   // This is only used for replacing hMETIS
-  void tritonPartHypergraph(const char* hypergraph_file,
-                            const char* fixed_file,
-                            unsigned int num_parts,
-                            float balance_constraint,
-                            int vertex_dimension,
-                            int hyperedge_dimension,
-                            unsigned int seed);
+  void PartitionHypergraph(const char* hypergraph_file,
+                           const char* fixed_file,
+                           unsigned int num_parts,
+                           float balance_constraint,
+                           int vertex_dimension,
+                           int hyperedge_dimension,
+                           unsigned int seed);
 
   // 2-way partition c++ interface for Hier-RTLMP
-  std::vector<int> TritonPart2Way(
+  std::vector<int> Partition2Way(
       int num_vertices,
       int num_hyperedges,
       const std::vector<std::vector<int>>& hyperedges,
@@ -98,58 +102,61 @@ class TritonPart
       float balance_constraints,
       int seed = 0);
 
-  /*void tritonPartHypergraph(const char* hypergraph_file,
-                            const char* fixed_file,
-                            unsigned int num_parts,
-                            float balance_constraint,
-                            int vertex_dimension,
-                            int hyperedge_dimension,
-                            unsigned int seed);*/
-
  private:
   // Pre process the hypergraph by skipping large hyperedges
-  HGraph preProcessHypergraph();
+  HGraph PreProcessHypergraph();
   // Generate timing report
   void GenerateTimingReport(std::vector<int>& partition, bool design);
-  void WritePathsToFile();
-  std::vector<int> TritonPart_design_PartTwoWay(unsigned int num_parts_,
-                                                float ub_factor_,
-                                                int vertex_dimensions_,
-                                                int hyperedge_dimensions_,
-                                                unsigned int seed_);
-  std::vector<int> TritonPart_design_PartKWay(unsigned int num_parts_,
-                                              float ub_factor_,
-                                              int vertex_dimensions_,
-                                              int hyperedge_dimensions_,
-                                              unsigned int seed_);
-  std::vector<int> TritonPart_hypergraph_PartTwoWay(const char* hypergraph_file,
-                                                    const char* fixed_file,
-                                                    unsigned int num_parts,
-                                                    float balance_constraint,
-                                                    int vertex_dimension,
-                                                    int hyperedge_dimension,
-                                                    unsigned int seed);
-  std::vector<int> TritonPart_hypergraph_PartKWay(const char* hypergraph_file,
-                                                  const char* fixed_file,
-                                                  unsigned int num_parts,
-                                                  float balance_constraint,
-                                                  int vertex_dimension,
-                                                  int hyperedge_dimension,
-                                                  unsigned int seed);
-  void TritonPart_PartRecursive(const char* hypergraph_file,
-                                const char* fixed_file,
-                                unsigned int num_parts,
-                                float balance_constraint,
-                                int vertex_dimension,
-                                int hyperedge_dimension,
-                                unsigned int seed);
+  void WritePathsToFile(const std::string& paths_filename);
+  std::vector<int> DesignPartTwoWay(unsigned int num_parts_,
+                                    float ub_factor_,
+                                    int vertex_dimensions_,
+                                    int hyperedge_dimensions_,
+                                    unsigned int seed_);
+  std::vector<int> DesignPartKWay(unsigned int num_parts_,
+                                  float ub_factor_,
+                                  int vertex_dimensions_,
+                                  int hyperedge_dimensions_,
+                                  unsigned int seed_);
+  std::vector<int> HypergraphPartTwoWay(const char* hypergraph_file,
+                                        const char* fixed_file,
+                                        unsigned int num_parts,
+                                        float balance_constraint,
+                                        int vertex_dimension,
+                                        int hyperedge_dimension,
+                                        unsigned int seed);
+  std::vector<int> HypergraphPartKWay(const char* hypergraph_file,
+                                      const char* fixed_file,
+                                      unsigned int num_parts,
+                                      float balance_constraint,
+                                      int vertex_dimension,
+                                      int hyperedge_dimension,
+                                      unsigned int seed);
+  void PartRecursive(const char* hypergraph_file,
+                     const char* fixed_file,
+                     unsigned int num_parts,
+                     float balance_constraint,
+                     int vertex_dimension,
+                     int hyperedge_dimension,
+                     unsigned int seed);
+  // Utility functions for reading hypergraph
+  void ReadNetlistWithTypes();
+  void ReadNetlist();  // read hypergraph from netlist
+  void ReadHypergraph(std::string hypergraph, std::string fixed_file);
+  // Read hypergraph from input files
+  void BuildHypergraph();
+  // Write the hypergraph to file
+  void WriteHypergraph(const std::string& hypergraph_filename);
+
+  void BuildTimingPaths();  // Find all the critical timing paths
+
   ord::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   sta::dbSta* sta_ = nullptr;
 
   // Other parameters
-  int global_net_threshold_ = 100000;  //
+  int global_net_threshold_ = 100000;
 
   // Hypergraph information
   // basic information
@@ -191,14 +198,6 @@ class TritonPart
   // random seed
   int seed_ = 0;
 
-  // Utility functions for reading hypergraph
-  void ReadNetlistWithTypes();
-  void ReadNetlist();  // read hypergraph from netlist
-  void ReadHypergraph(std::string hypergraph, std::string fixed_file);
-  // Read hypergraph from input files
-  void BuildHypergraph();
-  // Write the hypergraph to file
-  void WriteHypergraph();
   // When we create the hypergraph, we ignore all the hyperedges with vertices
   // more than global_net_threshold_
   HGraph hypergraph_ = nullptr;  // the original hypergraph
@@ -209,7 +208,6 @@ class TritonPart
   // Timing related functions and variables
   bool timing_aware_flag_ = true;  // Enable timing aware
   int top_n_ = 1000;               // top_n timing paths
-  void BuildTimingPaths();         // Find all the critical timing paths
 
   // logger
   utl::Logger* logger_ = nullptr;

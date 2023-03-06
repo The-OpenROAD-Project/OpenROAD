@@ -455,7 +455,7 @@ void TritonPart::BuildHypergraph()
   std::vector<int> eind;
   std::vector<int> eptr;  // hyperedges
   eptr.push_back(static_cast<int>(eind.size()));
-  for (auto hyperedge : hyperedges_) {
+  for (const auto& hyperedge : hyperedges_) {
     eind.insert(eind.end(), hyperedge.begin(), hyperedge.end());
     eptr.push_back(static_cast<int>(eind.size()));
   }
@@ -543,7 +543,7 @@ void TritonPart::BuildHypergraph()
 }
 
 // Write the hypergraph to file
-void TritonPart::WriteHypergraph()
+void TritonPart::WriteHypergraph(const std::string& hypergraph_filename)
 {
   float max_vtx_wt = -std::numeric_limits<float>::max();
   float max_he_wt = max_vtx_wt;
@@ -584,8 +584,7 @@ void TritonPart::WriteHypergraph()
   }
 
   // hack to print hypergraph without timing-scaled weights on hypergraph edges
-  std::ofstream hypergraph_file;
-  hypergraph_file.open("design.hgr");
+  std::ofstream hypergraph_file(hypergraph_filename);
   if (wt_type == 0) {
     hypergraph_file << num_hyperedges_ << " " << num_vertices_ << std::endl;
   } else {
@@ -611,14 +610,12 @@ void TritonPart::WriteHypergraph()
       hypergraph_file << vertex_weights_[i].front() << std::endl;
     }
   }
-  hypergraph_file.close();
 }
 
-// Write timing paths to file to read later
-void TritonPart::WritePathsToFile()
+// Write timing paths to file for other applications
+void TritonPart::WritePathsToFile(const std::string& paths_filename)
 {
-  std::ofstream paths_file;
-  paths_file.open("paths.txt");
+  std::ofstream paths_file(paths_filename);
 
   for (int i = 0; i < timing_paths_.size(); ++i) {
     auto timing_path = timing_paths_[i].path;
@@ -627,15 +624,17 @@ void TritonPart::WritePathsToFile()
     }
     paths_file << std::endl;
   }
-  paths_file.close();
 }
 
 // Partition the design
 // The first step is to convert the netlist into a hypergraph
 // The second step is to get all the features such as timing paths
-void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
-                                  float balance_constraint_arg,
-                                  unsigned int seed_arg)
+void TritonPart::PartitionDesign(unsigned int num_parts_arg,
+                                 float balance_constraint_arg,
+                                 unsigned int seed_arg,
+                                 const std::string& solution_filename,
+                                 const std::string& paths_filename,
+                                 const std::string& hypergraph_filename)
 {
   logger_->report("========================================");
   logger_->report("[STATUS] Starting TritonPart Partitioner");
@@ -665,41 +664,45 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
     auto path = timing_paths_[i].path;
     endpoints.insert(path.back());
   }
-  bool path_write_flag = true;
-  if (path_write_flag == true) {
-    WritePathsToFile();
+  if (!paths_filename.empty()) {
+    WritePathsToFile(paths_filename);
   }
   BuildHypergraph();
   logger_->report("[STATUS] Building hypergraph**** ");
   logger_->report("[STATUS] Writing hypergraph**** ");
   logger_->report("========================================");
-  WriteHypergraph();
-  // exit(EXIT_SUCCESS);
+  if (!hypergraph_filename.empty()) {
+    WriteHypergraph(hypergraph_filename);
+  }
+
   logger_->report("[INFO] Hypergraph Information**");
   logger_->report("[INFO] Vertices = {}", num_vertices_);
   logger_->report("[INFO] Hyperedges = {}", num_hyperedges_);
   logger_->report("[INFO] Timing paths = {}", hypergraph_->GetNumTimingPaths());
   logger_->report("[INFO] Unique endpoints extracted = {}", endpoints.size());
-  logger_->report("[INFO] Worst negative slack = {}",
-                  *std::max_element(timing_attr_.begin(), timing_attr_.end()));
+  if (!timing_attr_.empty()) {
+    logger_->report(
+        "[INFO] Worst negative slack = {}",
+        *std::max_element(timing_attr_.begin(), timing_attr_.end()));
+  }
   std::vector<int> partition;
   if (num_parts_ == 2) {
-    partition = TritonPart_design_PartTwoWay(num_parts_,
-                                             ub_factor_,
-                                             vertex_dimensions_,
-                                             hyperedge_dimensions_,
-                                             seed_);
+    partition = DesignPartTwoWay(num_parts_,
+                                 ub_factor_,
+                                 vertex_dimensions_,
+                                 hyperedge_dimensions_,
+                                 seed_);
   } else {
-    partition = TritonPart_design_PartKWay(num_parts_,
-                                           ub_factor_,
-                                           vertex_dimensions_,
-                                           hyperedge_dimensions_,
-                                           seed_);
+    partition = DesignPartKWay(num_parts_,
+                               ub_factor_,
+                               vertex_dimensions_,
+                               hyperedge_dimensions_,
+                               seed_);
   }
   // AnalyzeTimingCuts();
-  std::string solution_file
-      = "design" + std::string(".hgr.part.") + std::to_string(num_parts_);
-  WriteSolution(solution_file.c_str(), partition);
+  if (!solution_filename.empty()) {
+    WriteSolution(solution_filename.c_str(), partition);
+  }
   std::vector<std::vector<int>> timing_paths;
   for (auto& tpath : timing_paths_) {
     timing_paths.push_back(tpath.path);
@@ -717,10 +720,9 @@ void TritonPart::tritonPartDesign(unsigned int num_parts_arg,
                   timing_cuts->GetAvereageCriticalPathsCut());
   logger_->report("===============================================");
   logger_->report("Exiting TritonPart");
-  exit(EXIT_SUCCESS);
 }
 
-HGraph TritonPart::preProcessHypergraph()
+HGraph TritonPart::PreProcessHypergraph()
 {
   logger_->report(
       "Pre-processing hypergraph by temporarily removing hyperedges of size {}",
@@ -743,7 +745,7 @@ HGraph TritonPart::preProcessHypergraph()
   std::vector<int> eind_p;
   std::vector<int> eptr_p;  // hyperedges
   eptr_p.push_back(static_cast<int>(eind_p.size()));
-  for (auto hyperedge : hyperedges_p) {
+  for (const auto& hyperedge : hyperedges_p) {
     eind_p.insert(eind_p.end(), hyperedge.begin(), hyperedge.end());
     eptr_p.push_back(static_cast<int>(eind_p.size()));
   }
@@ -794,40 +796,39 @@ HGraph TritonPart::preProcessHypergraph()
   return hypergraph_p;
 }
 
-void TritonPart::tritonPartHypergraph(const char* hypergraph_file_arg,
-                                      const char* fixed_file_arg,
-                                      unsigned int num_parts_arg,
-                                      float balance_constraint_arg,
-                                      int vertex_dimension_arg,
-                                      int hyperedge_dimension_arg,
-                                      unsigned int seed_arg)
+void TritonPart::PartitionHypergraph(const char* hypergraph_file_arg,
+                                     const char* fixed_file_arg,
+                                     unsigned int num_parts_arg,
+                                     float balance_constraint_arg,
+                                     int vertex_dimension_arg,
+                                     int hyperedge_dimension_arg,
+                                     unsigned int seed_arg)
 {
   std::vector<int> partition;
   if (num_parts_arg == 2) {
-    partition = TritonPart_hypergraph_PartTwoWay(hypergraph_file_arg,
-                                                 fixed_file_arg,
-                                                 num_parts_arg,
-                                                 balance_constraint_arg,
-                                                 vertex_dimension_arg,
-                                                 hyperedge_dimension_arg,
-                                                 seed_arg);
+    partition = HypergraphPartTwoWay(hypergraph_file_arg,
+                                     fixed_file_arg,
+                                     num_parts_arg,
+                                     balance_constraint_arg,
+                                     vertex_dimension_arg,
+                                     hyperedge_dimension_arg,
+                                     seed_arg);
   } else {
-    partition = TritonPart_hypergraph_PartKWay(hypergraph_file_arg,
-                                               fixed_file_arg,
-                                               num_parts_arg,
-                                               balance_constraint_arg,
-                                               vertex_dimension_arg,
-                                               hyperedge_dimension_arg,
-                                               seed_arg);
+    partition = HypergraphPartKWay(hypergraph_file_arg,
+                                   fixed_file_arg,
+                                   num_parts_arg,
+                                   balance_constraint_arg,
+                                   vertex_dimension_arg,
+                                   hyperedge_dimension_arg,
+                                   seed_arg);
   }
   std::string solution_file = std::string(hypergraph_file_arg)
                               + std::string(".part.")
                               + std::to_string(num_parts_);
   WriteSolution(solution_file.c_str(), partition);
-  exit(EXIT_SUCCESS);
 }
 
-std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
+std::vector<int> TritonPart::HypergraphPartTwoWay(
     const char* hypergraph_file_arg,
     const char* fixed_file_arg,
     unsigned int num_parts_arg,
@@ -859,7 +860,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
   logger_->report("#Vertices = {}", num_vertices_);
   logger_->report("#Hyperedges = {}", num_hyperedges_);
   // process hypergraph
-  HGraph hypergraph_processed = preProcessHypergraph();
+  HGraph hypergraph_processed = PreProcessHypergraph();
   logger_->report("Post processing hypergraph information**");
   logger_->report("#Vertices = {}", hypergraph_processed->GetNumVertices());
   logger_->report("#Hyperedges = {}", hypergraph_processed->GetNumHyperedges());
@@ -901,7 +902,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
   float snaking_wt_factor = 1.0;
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = TWO_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::TWO_WAY_FM;
   TP_two_way_refining_ptr tritonpart_twoway_refiner
       = std::make_shared<TPtwoWayFM>(num_parts_,
                                      refiner_iters,
@@ -914,7 +915,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
                                      logger_);
   const int greedy_refiner_iters = 2;
   const int greedy_max_moves = 10;
-  refiner_choice = GREEDY;
+  refiner_choice = RefinerChoice::GREEDY;
   TP_greedy_refiner_ptr tritonpart_greedy_refiner
       = std::make_shared<TPgreedyRefine>(num_parts_,
                                          greedy_refiner_iters,
@@ -950,12 +951,12 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
                                         tritonpart_twoway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  RefinerType refine_type = KPM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KPM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_twoway_refiner,
@@ -988,12 +989,11 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartTwoWay(
   return solution;
 }
 
-std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
-    unsigned int num_parts_,
-    float ub_factor_,
-    int vertex_dimensions_,
-    int hyperedge_dimensions_,
-    unsigned int seed_)
+std::vector<int> TritonPart::DesignPartTwoWay(unsigned int num_parts_,
+                                              float ub_factor_,
+                                              int vertex_dimensions_,
+                                              int hyperedge_dimensions_,
+                                              unsigned int seed_)
 {
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
   // create coarsening class
@@ -1036,7 +1036,7 @@ std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
   float snaking_wt_factor = 1.0;
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = TWO_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::TWO_WAY_FM;
   TP_two_way_refining_ptr tritonpart_twoway_refiner
       = std::make_shared<TPtwoWayFM>(num_parts_,
                                      refiner_iters,
@@ -1049,7 +1049,7 @@ std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
                                      logger_);
   const int greedy_refiner_iters = 2;
   const int greedy_max_moves = 10;
-  refiner_choice = GREEDY;
+  refiner_choice = RefinerChoice::GREEDY;
   TP_greedy_refiner_ptr tritonpart_greedy_refiner
       = std::make_shared<TPgreedyRefine>(num_parts_,
                                          greedy_refiner_iters,
@@ -1085,12 +1085,12 @@ std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
                                         tritonpart_twoway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  RefinerType refine_type = KPM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KPM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_twoway_refiner,
@@ -1122,14 +1122,13 @@ std::vector<int> TritonPart::TritonPart_design_PartTwoWay(
   return solution;
 }
 
-std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
-    const char* hypergraph_file_arg,
-    const char* fixed_file_arg,
-    unsigned int num_parts_arg,
-    float balance_constraint_arg,
-    int vertex_dimension_arg,
-    int hyperedge_dimension_arg,
-    unsigned int seed_arg)
+std::vector<int> TritonPart::HypergraphPartKWay(const char* hypergraph_file_arg,
+                                                const char* fixed_file_arg,
+                                                unsigned int num_parts_arg,
+                                                float balance_constraint_arg,
+                                                int vertex_dimension_arg,
+                                                int hyperedge_dimension_arg,
+                                                unsigned int seed_arg)
 {
   logger_->report("Starting TritonPart Partitioner");
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
@@ -1154,7 +1153,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
   logger_->report("#Vertices = {}", num_vertices_);
   logger_->report("#Hyperedges = {}", num_hyperedges_);
   // process hypergraph
-  HGraph hypergraph_processed = preProcessHypergraph();
+  HGraph hypergraph_processed = PreProcessHypergraph();
   logger_->report("Post processing hypergraph information**");
   logger_->report("#Vertices = {}", hypergraph_processed->GetNumVertices());
   logger_->report("#Hyperedges = {}", hypergraph_processed->GetNumHyperedges());
@@ -1196,7 +1195,7 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
   float snaking_wt_factor = 1.0;
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = FLAT_K_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::FLAT_K_WAY_FM;
   TP_k_way_refining_ptr tritonpart_kway_refiner
       = std::make_shared<TPkWayFM>(num_parts_,
                                    refiner_iters,
@@ -1220,12 +1219,12 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
                                         tritonpart_kway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  RefinerType refine_type = KFM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KFM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_kway_refiner,
@@ -1256,12 +1255,11 @@ std::vector<int> TritonPart::TritonPart_hypergraph_PartKWay(
   return solution;
 }
 
-std::vector<int> TritonPart::TritonPart_design_PartKWay(
-    unsigned int num_parts_,
-    float ub_factor_,
-    int vertex_dimensions_,
-    int hyperedge_dimensions_,
-    unsigned int seed_)
+std::vector<int> TritonPart::DesignPartKWay(unsigned int num_parts_,
+                                            float ub_factor_,
+                                            int vertex_dimensions_,
+                                            int hyperedge_dimensions_,
+                                            unsigned int seed_)
 {
   logger_->report("TritonPart_design_PartKWay starts !!!");
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
@@ -1312,7 +1310,7 @@ std::vector<int> TritonPart::TritonPart_design_PartKWay(
   // refiner pass
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = FLAT_K_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::FLAT_K_WAY_FM;
   TP_k_way_refining_ptr tritonpart_kway_refiner
       = std::make_shared<TPkWayFM>(num_parts_,
                                    refiner_iters,
@@ -1336,12 +1334,12 @@ std::vector<int> TritonPart::TritonPart_design_PartKWay(
                                         tritonpart_kway_refiner,
                                         logger_);
   bool v_cycle_flag = true;
-  RefinerType refine_type = KFM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KFM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_kway_refiner,
@@ -1372,7 +1370,7 @@ std::vector<int> TritonPart::TritonPart_design_PartKWay(
 }
 
 // 2way TritonPart interface for Hier-RTLMP
-std::vector<int> TritonPart::TritonPart2Way(
+std::vector<int> TritonPart::Partition2Way(
     int num_vertices,
     int num_hyperedges,
     const std::vector<std::vector<int>>& hyperedges,
@@ -1405,7 +1403,7 @@ std::vector<int> TritonPart::TritonPart2Way(
   std::vector<int> eind;
   std::vector<int> eptr;  // hyperedges
   eptr.push_back(static_cast<int>(eind.size()));
-  for (auto hyperedge : hyperedges) {
+  for (const auto& hyperedge : hyperedges) {
     eind.insert(eind.end(), hyperedge.begin(), hyperedge.end());
     eptr.push_back(static_cast<int>(eind.size()));
     std::vector<float> temp_weight{1.0};
@@ -1500,7 +1498,7 @@ std::vector<int> TritonPart::TritonPart2Way(
   float snaking_wt_factor = 1.0;
   const int refiner_iters = 2;
   const int max_moves = 50;
-  int refiner_choice = TWO_WAY_FM;
+  RefinerChoice refiner_choice = RefinerChoice::TWO_WAY_FM;
   TP_two_way_refining_ptr tritonpart_twoway_refiner
       = std::make_shared<TPtwoWayFM>(num_parts_,
                                      refiner_iters,
@@ -1513,7 +1511,7 @@ std::vector<int> TritonPart::TritonPart2Way(
                                      logger_);
   const int greedy_refiner_iters = 2;
   const int greedy_max_moves = 10;
-  refiner_choice = GREEDY;
+  refiner_choice = RefinerChoice::GREEDY;
   TP_greedy_refiner_ptr tritonpart_greedy_refiner
       = std::make_shared<TPgreedyRefine>(num_parts_,
                                          greedy_refiner_iters,
@@ -1550,12 +1548,12 @@ std::vector<int> TritonPart::TritonPart2Way(
                                         logger_);
   bool v_cycle_flag = true;
   // RefinerType refine_type = 2_WAY_FM;
-  RefinerType refine_type = KPM_REFINEMENT;
+  RefinerType refine_type = RefinerType::KPM_REFINEMENT;
   int num_initial_solutions = 50;       // number of initial random solutions
   int num_best_initial_solutions = 10;  // number of best initial solutions
   int num_ubfactor_delta = 5;  // allowing marginal imbalance to improve QoR
   int max_num_vcycle = 5;      // maximum number of vcycles
-  TP_mlevel_partitioning_ptr tritonpart_mlevel_partitioner
+  auto tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   tritonpart_twoway_refiner,

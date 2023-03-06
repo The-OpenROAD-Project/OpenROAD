@@ -70,8 +70,6 @@ namespace par {
 class PartitionMgr
 {
  public:
-  PartitionMgr();
-  ~PartitionMgr();
   void init(odb::dbDatabase* db,
             sta::dbNetwork* db_network,
             sta::dbSta* sta,
@@ -92,11 +90,12 @@ class PartitionMgr
   // partition netlist
   void tritonPartDesign(unsigned int num_parts,
                         float balance_constraint,
-                        unsigned int seed);
+                        unsigned int seed,
+                        const std::string& solution_filename,
+                        const std::string& paths_filename,
+                        const std::string& hypergraph_filename);
 
-  // OpenROAD C++ interface
-  // Used by HierRTLMP
-  // 2-way partition c++ interface
+  // 2-way partition used by HierRTLMP
   std::vector<int> TritonPart2Way(
       int num_vertices,
       int num_hyperedges,
@@ -108,8 +107,8 @@ class PartitionMgr
  private:
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
-  sta::dbSta* _sta = nullptr;
-  Logger* logger_;
+  sta::dbSta* sta_ = nullptr;
+  Logger* logger_ = nullptr;
 };
 
 }  // namespace par

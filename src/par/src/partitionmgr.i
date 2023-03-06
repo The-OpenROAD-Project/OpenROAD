@@ -59,10 +59,19 @@ void triton_part_hypergraph(const char* hypergraph_file, const char* fixed_file,
                                            seed);
 }
 
-void triton_part_design(unsigned int num_parts, float balance_constraint,
-                            unsigned int seed)
+void triton_part_design(unsigned int num_parts,
+                        float balance_constraint,
+                        unsigned int seed,
+                        const char* solution_filename,
+                        const char* paths_filename,
+                        const char* hypergraph_filename)
 {
-  getPartitionMgr()->tritonPartDesign(num_parts, balance_constraint, seed);
+  getPartitionMgr()->tritonPartDesign(num_parts,
+                                      balance_constraint,
+                                      seed,
+                                      solution_filename,
+                                      paths_filename,
+                                      hypergraph_filename);
 }
 
 

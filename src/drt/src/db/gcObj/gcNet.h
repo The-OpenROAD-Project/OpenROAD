@@ -214,6 +214,19 @@ class gcNet : public gcBlockObject
     }
     return false;
   }
+  gcCorner* getPolyCornerAt(frCoord x, frCoord y, frLayerNum ln) const
+  {
+    for (auto& pin : pins_[ln]) {
+      for (auto& corners : pin->getPolygonCorners()) {
+        for (auto& corner : corners) {
+          if (corner->x() == x && corner->y() == y) {
+            return corner.get();
+          }
+        }
+      }
+    }
+    return nullptr;
+  }
 
  private:
   std::vector<gtl::polygon_90_set_data<frCoord>>

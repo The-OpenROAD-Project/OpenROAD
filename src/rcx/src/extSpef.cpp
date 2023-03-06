@@ -1625,10 +1625,6 @@ uint extSpef::writeInstMap()
                     "Skip instance {} for cell {} is excluded",
                     inst->getConstName(),
                     inst->getMaster()->getConstName());
-      odb::verbose(0,
-                   "Skip instance %s for cell %s is excluded\n",
-                   inst->getConstName(),
-                   inst->getMaster()->getConstName());
       continue;
     }
     if (_partial && !inst->getUserFlag1())

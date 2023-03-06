@@ -58,26 +58,6 @@ bool extMeasure::getFirstShape(dbNet* net, dbShape& s)
   return status;
 }
 
-bool extMeasure::parse_setLayer(Ath__parser* parser1,
-                                uint& layerNum,
-                                bool print)
-{
-  if (parser1->isKeyword(0, "(setLayer")) {
-    if (print)
-      parser1->printWords(stdout);
-
-    layerNum = parser1->getInt(1);
-    return true;
-  } else if (parser1->isKeyword(0, "setLayer")) {
-    if (print)
-      parser1->printWords(stdout);
-
-    layerNum = parser1->getInt(1);
-    return true;
-  }
-  return false;
-}
-
 dbRSeg* extMeasure::getRseg(const char* netname,
                             const char* capMsg,
                             const char* tableEntryName)
