@@ -3139,12 +3139,12 @@ bool GlobalRouter::layerIsBlocked(
   sort(lower_obs.begin(), lower_obs.end());
 
   // Compare both vectors
-  for (const odb::Rect& cur_obs : upper_obs){
+  for (const odb::Rect& cur_obs : upper_obs) {
     // find the position to compare in the other vector (pos)
     int pos = 0;
-    while (pos < lower_obs.size() && lower_obs[pos].xMin() < cur_obs.xMax()){
+    while (pos < lower_obs.size() && lower_obs[pos].xMin() < cur_obs.xMax()) {
       // check if they have comun region (overlap)
-      if (cur_obs.intersects(lower_obs[pos])){
+      if (cur_obs.intersects(lower_obs[pos])) {
         // Get intersection region
         odb::Rect inter_obs =  cur_obs.intersect(lower_obs[pos]);
         // add region in extend vector
