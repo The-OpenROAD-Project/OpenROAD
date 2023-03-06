@@ -8907,7 +8907,7 @@ class dbNetTrack : public dbObject
   Rect getBox() const;
 
   // User Code Begin dbNetTrack
-  
+
   dbNet* getNet() const;
 
   dbTechLayer* getLayer() const;
