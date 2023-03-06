@@ -3130,7 +3130,7 @@ bool GlobalRouter::layerIsBlocked(
 
   // Get Rect vector to layer + 1 and layer - 1
   if (macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end())
-    upper_obs = macro_obs_per_layer.at(layer + 1); 
+    upper_obs = macro_obs_per_layer.at(layer + 1);
   if (macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end())
     lower_obs = macro_obs_per_layer.at(layer - 1);
 
@@ -3146,7 +3146,7 @@ bool GlobalRouter::layerIsBlocked(
       // check if they have comun region (intersection)
       if (cur_obs.intersects(lower_obs[pos])) {
         // Get intersection rect
-        odb::Rect inter_obs =  cur_obs.intersect(lower_obs[pos]);
+        odb::Rect inter_obs = cur_obs.intersect(lower_obs[pos]);
         // add rect in extended vector
         extended_obs.push_back(inter_obs);
       }
@@ -3208,7 +3208,7 @@ int GlobalRouter::findInstancesObstructions(
           odb::Rect rect = box->getBox();
           transform.apply(rect);
 
-          macro_obs_per_layer[layer].push_back(rect); 
+          macro_obs_per_layer[layer].push_back(rect);
           obstructions_cnt++;
 
           bottom_layer = std::min(bottom_layer, layer);
