@@ -38,6 +38,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <set>
 
 #include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
@@ -166,11 +167,41 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
                 snapToMfgGrid(die.xMax()),
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
+  auto sites = getSites();
+  bool site_found_in_instances = false;
+  for (auto site : sites) {
+    if (site_name == site->getName()) {
+      site_found_in_instances = true;
+      break;
+    }
+  }
+  if (!site_found_in_instances) {
+    dbSite* site_found = findSite(site_name.c_str());
+    if (site_found != nullptr) {
+      sites.insert(site_found);
+    }
+  }
+  // if the sites set is empty, then there are no sites in the design
+  // and user didn't specify a site that we could find
+  if (sites.empty()) {
+    logger_->error(IFP, 33, "No sites found.");
+    return;
+  }
+  // get min site height using std::min_element
+  int min_site_height
+      = (*std::min_element(sites.begin(),
+                           sites.end(),
+                           [](dbSite* a, dbSite* b) {
+                             return a->getHeight() < b->getHeight();
+                           }))
+            ->getHeight();
 
-  if (!site_name.empty() && core.xMin() >= 0 && core.yMin() >= 0) {
-    dbSite* site = findSite(site_name.c_str());
-    if (site) {
+  eval_upf(logger_, block_);
+  for (auto site : sites) {
+    if (core.xMin() >= 0 && core.yMin() >= 0) {
       // Destroy any existing rows.
+      int x_height_site = site->getHeight() / min_site_height;
+
       auto rows = block_->getRows();
       for (dbSet<dbRow>::iterator row_itr = rows.begin();
            row_itr != rows.end();) {
@@ -200,11 +231,9 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
       }
       int cux = core.xMax();
       int cuy = core.yMax();
-      eval_upf(logger_, block_);
-      makeRows(site, clx, cly, cux, cuy);
+      makeRows(site, clx, cly, cux, cuy, x_height_site);
       updateVoltageDomain(site, clx, cly, cux, cuy);
-    } else
-      logger_->warn(IFP, 9, "SITE {} not found.", site_name);
+    }
   }
 
   std::vector<dbBox*> blockage_bboxes;
@@ -360,11 +389,53 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
   }
 }
 
+std::set<dbSite*> InitFloorplan::getSites() const
+{
+  std::set<dbSite*> sites;
+
+  // loop over all instantiated cells in the block
+  for (dbInst* inst : block_->getInsts()) {
+    dbMaster* master = inst->getMaster();
+    // get the site of the master
+    auto site = master->getSite();
+    if (site == nullptr) {
+      continue;
+    }
+    sites.insert(site);
+  }
+
+  std::vector<dbSite*> site_vec{sites.begin(), sites.end()};
+  sort(site_vec.begin(), site_vec.end(), [](dbSite* a, dbSite* b) {
+    return a->getHeight() < b->getHeight();
+  });
+
+  // smallest site height
+  double min_site_height = site_vec[0]->getHeight();
+  double factor = 1.0;
+  for (auto site : site_vec) {
+    double site_height = site->getHeight();
+    factor = site_height / min_site_height;
+    // check if the site height is a multiple of the smallest site height
+    if (std::ceil(factor) != std::floor(factor)) {
+      logger_->error(
+          IFP,
+          228,  // TODO: add error code
+          "site height {} is not a multiple of the smallest site height {}",
+          site_height,
+          min_site_height);
+      // erase from the set if the site height is not a multiple of the smallest
+      sites.erase(site);
+    }
+  }
+  return sites;
+}
+
 void InitFloorplan::makeRows(dbSite* site,
                              int core_lx,
                              int core_ly,
                              int core_ux,
-                             int core_uy)
+                             int core_uy,
+                             int factor)
 {
   int core_dx = abs(core_ux - core_lx);
   int core_dy = abs(core_uy - core_ly);
@@ -375,8 +446,9 @@ void InitFloorplan::makeRows(dbSite* site,
 
   int y = core_ly;
   for (int row = 0; row < rows_y; row++) {
-    dbOrientType orient = (row % 2 == 0) ? dbOrientType::R0   // N
-                                         : dbOrientType::MX;  // FS
+    dbOrientType orient = (factor == 2 or row % 2 == 0)
+                              ? dbOrientType::R0   // N
+                              : dbOrientType::MX;  // FS
     string row_name = stdstrPrint("ROW_%d", row);
     dbRow::create(block_,
                   row_name.c_str(),
