@@ -215,16 +215,11 @@ class lefTechLayerPitchRuleParser
 
  private:
   lefin* lefin_;
-  void setFirstLastPitch(double val,
-                         odb::dbTechLayerPitchRule* rule,
-                         void (odb::dbTechLayerPitchRule::*func)(int));
-  void setPitch(double val,
+  void setInt(double val,
                 odb::dbTechLayerPitchRule* rule,
                 void (odb::dbTechLayerPitchRule::*func)(int));
   void setPitchXY(boost::fusion::vector<double, double>& params,
-                  odb::dbTechLayerPitchRule* rule,
-                  void (odb::dbTechLayerPitchRule::*func1)(int),
-                  void (odb::dbTechLayerPitchRule::*func2)(int));
+                  odb::dbTechLayerPitchRule* rule);
 };
 
 class ArraySpacingParser
