@@ -3134,20 +3134,20 @@ bool GlobalRouter::layerIsBlocked(
   if (macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end())
     lower_obs = macro_obs_per_layer.at(layer - 1);
 
-  // sort vector by min Rect's xlo
+  // sort vector by min Rect's xlo (increasing order)
   sort(upper_obs.begin(), upper_obs.end());
   sort(lower_obs.begin(), lower_obs.end());
 
-  // Compare both vectors
+  // Compare both vectors, find intersection between their rects
   for (const odb::Rect& cur_obs : upper_obs) {
-    // find the position to compare in the other vector (pos)
+    // start on first element to lower vector
     int pos = 0;
     while (pos < lower_obs.size() && lower_obs[pos].xMin() < cur_obs.xMax()) {
-      // check if they have comun region (overlap)
+      // check if they have comun region (intersection)
       if (cur_obs.intersects(lower_obs[pos])) {
-        // Get intersection region
+        // Get intersection rect
         odb::Rect inter_obs =  cur_obs.intersect(lower_obs[pos]);
-        // add region in extend vector
+        // add rect in extended vector
         extended_obs.push_back(inter_obs);
       }
       pos++;
@@ -3218,7 +3218,7 @@ int GlobalRouter::findInstancesObstructions(
 
       extendObstructions(macro_obs_per_layer, bottom_layer, top_layer);
 
-      // iterate all Rects and add to reduction on fastroute
+      // iterate all Rects for each layer and apply adjustment in FastRoute
       for (auto& [layer, obs] : macro_obs_per_layer) {
         int layer_extension = layer_extensions[layer];
         layer_extension += macro_extension_ * grid_->getTileSize();
