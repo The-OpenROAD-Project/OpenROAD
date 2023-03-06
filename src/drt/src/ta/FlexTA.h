@@ -229,6 +229,9 @@ class FlexTAWorker
                                  int& wlen,
                                  frCoord& pinCoord);
   void initIroute_helper_generic_helper(frGuide* guide, frCoord& pinCoord);
+  void initIroute_helper_generic_fix_endpoints(frGuide* guide,
+                                               frCoord& minBegin,
+                                               frCoord& maxEnd);
   bool initIroute_helper_pin(frGuide* guide,
                              frCoord& maxBegin,
                              frCoord& minEnd,

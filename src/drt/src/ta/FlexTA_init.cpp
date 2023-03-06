@@ -310,6 +310,87 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
   }
 }
 
+void FlexTAWorker::initIroute_helper_generic_fix_endpoints(frGuide* guide,
+                                                           frCoord& minBegin,
+                                                           frCoord& maxEnd)
+{
+  auto [bp, ep] = guide->getPoints();
+  auto net = guide->getNet();
+  bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
+
+  auto rq = getRegionQuery();
+  vector<frBlockObject*> result;
+
+  Rect box;
+  box = Rect(bp, bp);
+  rq->queryGRPin(box, result);
+  if (!(ep == bp)) {
+    box = Rect(ep, ep);
+    rq->queryGRPin(box, result);
+  }
+
+  frCoord newMinBegin = std::numeric_limits<int>::max();
+  frCoord newMaxEnd = std::numeric_limits<int>::min();
+  for (auto& term : result) {
+    switch (term->typeId()) {
+      case frcInstTerm: {
+        auto iterm = static_cast<frInstTerm*>(term);
+        if (iterm->getNet() != net) {
+          continue;
+        }
+        frInst* inst = iterm->getInst();
+        dbTransform shiftXform = inst->getTransform();
+        shiftXform.setOrient(dbOrientType(dbOrientType::R0));
+        frMTerm* mterm = iterm->getTerm();
+        int pinIdx = 0;
+        for (auto& pin : mterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            pinIdx++;
+            continue;
+          }
+          frAccessPoint* ap
+              = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
+          if (ap == nullptr) {
+            pinIdx++;
+            continue;
+          }
+          Point bp = ap->getPoint();
+          shiftXform.apply(bp);
+          if (getRouteBox().intersects(bp)) {
+            newMinBegin = std::min((isH ? bp.x() : bp.y()), newMinBegin);
+            newMaxEnd = std::max((isH ? bp.x() : bp.y()), newMaxEnd);
+          }
+          pinIdx++;
+        }
+        break;
+      }
+      case frcBTerm: {
+        auto bterm = static_cast<frBTerm*>(term);
+        if (bterm->getNet() != net) {
+          continue;
+        }
+        for (auto& pin : bterm->getPins()) {
+          if (!pin->hasPinAccess()) {
+            continue;
+          }
+          for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
+            Point bp = ap->getPoint();
+            if (getRouteBox().intersects(bp)) {
+              newMinBegin = std::min((isH ? bp.x() : bp.y()), newMinBegin);
+              newMaxEnd = std::max((isH ? bp.x() : bp.y()), newMaxEnd);
+            }
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  minBegin = newMinBegin;
+  maxEnd = newMaxEnd;
+}
+
 void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
                                              frCoord& minBegin,
                                              frCoord& maxEnd,
@@ -408,6 +489,8 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
   }
   if (minBegin == maxEnd) {
     maxEnd += 1;
+  } else {
+    initIroute_helper_generic_fix_endpoints(guide, minBegin, maxEnd);
   }
 
   // pinCoord purely depends on ap regardless of track
