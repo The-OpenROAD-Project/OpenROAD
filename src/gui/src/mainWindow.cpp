@@ -515,15 +515,14 @@ void MainWindow::createActions()
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
 
-  goto_position_= new QAction("Goto position", this);
+  goto_position_ = new QAction("Goto position", this);
   goto_position_->setShortcut(QString("Shift+G"));
-  
+
   zoom_in_ = new QAction("Zoom in", this);
   zoom_in_->setShortcut(QString("Z"));
 
   zoom_out_ = new QAction("Zoom out", this);
   zoom_out_->setShortcut(QString("Shift+Z"));
-
 
   inspect_ = new QAction("Inspect", this);
   inspect_->setShortcut(QString("q"));
