@@ -3116,64 +3116,6 @@ int GlobalRouter::findObstructions(odb::Rect& die_area)
 
 bool GlobalRouter::layerIsBlocked(
     int layer,
-    odb::dbTechLayerDir& direction,
-    const std::unordered_map<int, odb::Rect>& macro_obs_per_layer,
-    odb::Rect& extended_obs)
-{
-  bool blocked_above = layer == (max_routing_layer_);
-  bool blocked_below = layer == (min_routing_layer_);
-
-  if (macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
-    const odb::Rect& layer_obs = macro_obs_per_layer.at(layer);
-    const odb::Rect& upper_obs = macro_obs_per_layer.at(layer + 1);
-    if (direction == odb::dbTechLayerDir::VERTICAL) {
-      blocked_above = blocked_above ||  // upper layer out of range
-                      upper_obs.xMin() < layer_obs.xMin()
-                      ||                                    // west edge blocked
-                      layer_obs.xMax() < upper_obs.xMax();  // east edge blocked
-    } else {
-      blocked_above
-          = blocked_above ||                        // upper layer out of range
-            upper_obs.yMin() < layer_obs.yMin() ||  // south edge blocked
-            layer_obs.yMax() < upper_obs.yMax();    // north edge blocked
-    }
-
-    if (blocked_above) {
-      extended_obs.set_xlo(std::min(extended_obs.xMin(), upper_obs.xMin()));
-      extended_obs.set_ylo(std::min(extended_obs.yMin(), upper_obs.yMin()));
-      extended_obs.set_xhi(std::max(extended_obs.xMax(), upper_obs.xMax()));
-      extended_obs.set_yhi(std::max(extended_obs.yMax(), upper_obs.yMax()));
-    }
-  }
-
-  if (macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
-    const odb::Rect& layer_obs = macro_obs_per_layer.at(layer);
-    const odb::Rect& lower_obs = macro_obs_per_layer.at(layer - 1);
-    if (direction == odb::dbTechLayerDir::VERTICAL) {
-      blocked_below = blocked_below ||  // lower layer out of range
-                      lower_obs.xMin() < layer_obs.xMin()
-                      ||                                    // west edge blocked
-                      layer_obs.xMax() < lower_obs.xMax();  // east edge blocked
-    } else {
-      blocked_below
-          = blocked_below ||                        // lower layer out of range
-            lower_obs.yMin() < layer_obs.yMin() ||  // south edge blocked
-            layer_obs.yMax() < lower_obs.yMax();    // north edge blocked
-    }
-
-    if (blocked_below) {
-      extended_obs.set_xlo(std::min(extended_obs.xMin(), lower_obs.xMin()));
-      extended_obs.set_ylo(std::min(extended_obs.yMin(), lower_obs.yMin()));
-      extended_obs.set_xhi(std::max(extended_obs.xMax(), lower_obs.xMax()));
-      extended_obs.set_yhi(std::max(extended_obs.yMax(), lower_obs.yMax()));
-    }
-  }
-
-  return blocked_above && blocked_below;
-}
-
-bool GlobalRouter::layerIsBlocked(
-    int layer,
     const std::unordered_map<int, std::vector<odb::Rect>>& macro_obs_per_layer,
     std::vector<odb::Rect>& extended_obs)
 {
