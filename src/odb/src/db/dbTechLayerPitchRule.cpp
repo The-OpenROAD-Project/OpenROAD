@@ -188,7 +188,6 @@ dbTechLayerPitchRule* dbTechLayerPitchRule::create(dbTechLayer* _layer)
   newrule->first_last_pitch_ = 0;
   newrule->pitch_x_ = 0;
   newrule->pitch_y_ = 0;
-  newrule->has_pitch_xy_ = false;
   return ((dbTechLayerPitchRule*) newrule);
 }
 
