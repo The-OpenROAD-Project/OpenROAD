@@ -59,7 +59,7 @@ void lefTechLayerPitchRuleParser::parse(std::string s, odb::dbTechLayer* layer)
                &odb::dbTechLayerPitchRule::setPitch)]);
 
   qi::rule<std::string::iterator, space_type> FIRST_LAST_PTICH
-      = (PITCH >> (lit("FIRSTLASTPITCH") >> double_[boost::bind(
+      = (PITCH >> -(lit("FIRSTLASTPITCH") >> double_[boost::bind(
                        &odb::lefTechLayerPitchRuleParser::setInt,
                        this,
                        _1,

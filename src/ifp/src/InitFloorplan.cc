@@ -488,12 +488,21 @@ void InitFloorplan::makeTracks()
                    layer->getPitchY());
       } else {
         auto pitch_rule = layer->getTechLayerPitchRules().begin();
-        makeTracksNonUniform(layer,
-                             layer->getOffsetX(),
-                             pitch_rule->getPitchX(),
-                             layer->getOffsetY(),
-                             pitch_rule->getPitchY(),
-                             pitch_rule->getFirstLastPitch());
+        int first_last = pitch_rule->getFirstLastPitch();
+        if(first_last > 0) {
+          makeTracksNonUniform(layer,
+                              layer->getOffsetX(),
+                              pitch_rule->getPitchX(),
+                              layer->getOffsetY(),
+                              pitch_rule->getPitchY(),
+                              pitch_rule->getFirstLastPitch());
+        } else {
+          makeTracks(layer,
+                   layer->getOffsetX(),
+                   pitch_rule->getPitchX(),
+                   layer->getOffsetY(),
+                   pitch_rule->getPitchY());
+        }
       }
     }
   }
@@ -648,14 +657,20 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
 
   grid->addGridPatternX(origin_x, x_track_count, x_pitch);
 
-  auto y_track_count = int((cell_row_height - 2 * first_last_pitch) / y_pitch);
+  auto y_track_count = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
   int origin_y = die_area.yMin() + first_last_pitch;
-
-  for (int i = 0; i < rows.size(); i++) {
+  auto num_reps = int((die_area.dy() - first_last_pitch) / (cell_row_height - first_last_pitch)) + 1;
+  int last_y = die_area.yMin() + ((num_reps) * cell_row_height);
+  if (last_y + layer_min_width / 2 > die_area.yMax()) {
+    num_reps--;
+  }
+  for (int i = 0; i < num_reps; i++) {
     grid->addGridPatternY(origin_y, y_track_count, y_pitch);
     origin_y
-        += (2 * first_last_pitch) + (y_track_count * y_pitch);
+        += (2 * first_last_pitch) + ((y_track_count - 1) * y_pitch);
   }
+  origin_y = (2 * first_last_pitch) + ((y_track_count - 1) * y_pitch);
+  grid->addGridPatternY(origin_y, num_reps, cell_row_height);
 }
 
 }  // namespace ifp

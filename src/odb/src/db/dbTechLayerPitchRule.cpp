@@ -185,7 +185,7 @@ dbTechLayerPitchRule* dbTechLayerPitchRule::create(dbTechLayer* _layer)
 {
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
   _dbTechLayerPitchRule* newrule = layer->pitch_rules_tbl_->create();
-  newrule->first_last_pitch_ = 0;
+  newrule->first_last_pitch_ = -1;
   newrule->pitch_x_ = 0;
   newrule->pitch_y_ = 0;
   return ((dbTechLayerPitchRule*) newrule);
