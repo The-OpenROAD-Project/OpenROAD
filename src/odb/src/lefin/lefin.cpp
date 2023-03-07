@@ -738,11 +738,12 @@ void lefin::layer(lefiLayer* layer)
     l->setMinWidth(dbdist(layer->minwidth()));
   else if (type == dbTechLayerType::ROUTING)
     l->setMinWidth(l->getWidth());
-
-  if (layer->hasPitch())
-    l->setPitch(dbdist(layer->pitch()));
-  else if (layer->hasXYPitch())
-    l->setPitchXY(dbdist(layer->pitchX()), dbdist(layer->pitchY()));
+  if (!l->hasFirstLastPitch()) {
+    if (layer->hasPitch())
+      l->setPitch(dbdist(layer->pitch()));
+    else if (layer->hasXYPitch())
+      l->setPitchXY(dbdist(layer->pitchX()), dbdist(layer->pitchY()));
+  }
 
   if (layer->hasOffset())
     l->setOffset(dbdist(layer->offset()));

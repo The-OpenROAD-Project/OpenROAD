@@ -43,28 +43,27 @@ lefTechLayerPitchRuleParser::lefTechLayerPitchRuleParser(lefin* l)
 
 void lefTechLayerPitchRuleParser::parse(std::string s, odb::dbTechLayer* layer)
 {
-  odb::dbTechLayerPitchRule* rule = odb::dbTechLayerPitchRule::create(layer);
-
+  layer->setHasFirstLastPitch();
   qi::rule<std::string::iterator, space_type> PITCH
       = ((lit("PITCH") >> double_
           >> double_)[boost::bind(&odb::lefTechLayerPitchRuleParser::setPitchXY,
                                   this,
                                   _1,
-                                  rule)]
+                                  layer)]
          | lit("PITCH") >> double_[boost::bind(
                &odb::lefTechLayerPitchRuleParser::setInt,
                this,
                _1,
-               rule,
-               &odb::dbTechLayerPitchRule::setPitch)]);
+               layer,
+               &odb::dbTechLayer::setPitch)]);
 
   qi::rule<std::string::iterator, space_type> FIRST_LAST_PTICH
       = (PITCH >> -(lit("FIRSTLASTPITCH") >> double_[boost::bind(
                        &odb::lefTechLayerPitchRuleParser::setInt,
                        this,
                        _1,
-                       rule,
-                       &odb::dbTechLayerPitchRule::setFirstLastPitch)])
+                       layer,
+                       &odb::dbTechLayer::setFirstLastPitch)])
          >> lit(";"));
   auto first = s.begin();
   auto last = s.end();
@@ -73,24 +72,23 @@ void lefTechLayerPitchRuleParser::parse(std::string s, odb::dbTechLayer* layer)
   if (!valid) {
     lefin_->warning(281,
                     "parse mismatch in layer propery LEF58_Pitch for layer");
-    odb::dbTechLayerPitchRule::destroy(rule);
+    layer->unsetHasFirstLastPitch();
   }
 }
 
 void lefTechLayerPitchRuleParser::setInt(
     double val,
-    odb::dbTechLayerPitchRule* rule,
-    void (odb::dbTechLayerPitchRule::*func)(int))
+    odb::dbTechLayer* layer,
+    void (odb::dbTechLayer::*func)(int))
 {
-  (rule->*func)(lefin_->dbdist(val));
+  (layer->*func)(lefin_->dbdist(val));
 }
 
 void lefTechLayerPitchRuleParser::setPitchXY(
                   boost::fusion::vector<double, double>& params,
-                  odb::dbTechLayerPitchRule* rule)
+                  odb::dbTechLayer* layer)
 {
-  rule->setPitchX(lefin_->dbdist(at_c<0>(params)));
-  rule->setPitchY(lefin_->dbdist(at_c<1>(params)));
+  layer->setPitchXY(lefin_->dbdist(at_c<0>(params)), lefin_->dbdist(at_c<1>(params)));
 }
 
 }  // namespace odb

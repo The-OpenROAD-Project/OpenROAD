@@ -480,29 +480,23 @@ void InitFloorplan::makeTracks()
   for (auto layer : block_->getDataBase()->getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
         && layer->getRoutingLevel() != 0) {
-      if (layer->getTechLayerPitchRules().empty()) {
+      if (layer->getFirstLastPitch() > 0) {
+        std::cout<<"\nEntrou aqui 1 coma layer: " + layer->getName() + "\n";
+        std::cout<<"PITCH x: "<< layer->getPitchX()<<"\nPITCH Y: "<<layer->getPitchY()<<"\n";
+        makeTracksNonUniform(layer,
+                   layer->getOffsetX(),
+                   layer->getPitchX(),
+                   layer->getOffsetY(),
+                   layer->getPitchY(),
+                   layer->getFirstLastPitch());
+      } else {
+        std::cout<<"\nEntrou aqui 2 coma layer: " + layer->getName() + "\n";
+        std::cout<<"PITCH x: "<< layer->getPitchX()<<"\nPITCH Y: "<<layer->getPitchY()<<"\n";
         makeTracks(layer,
                    layer->getOffsetX(),
                    layer->getPitchX(),
                    layer->getOffsetY(),
                    layer->getPitchY());
-      } else {
-        auto pitch_rule = layer->getTechLayerPitchRules().begin();
-        int first_last = pitch_rule->getFirstLastPitch();
-        if(first_last > 0) {
-          makeTracksNonUniform(layer,
-                              layer->getOffsetX(),
-                              pitch_rule->getPitchX(),
-                              layer->getOffsetY(),
-                              pitch_rule->getPitchY(),
-                              pitch_rule->getFirstLastPitch());
-        } else {
-          makeTracks(layer,
-                   layer->getOffsetX(),
-                   pitch_rule->getPitchX(),
-                   layer->getOffsetY(),
-                   pitch_rule->getPitchY());
-        }
       }
     }
   }

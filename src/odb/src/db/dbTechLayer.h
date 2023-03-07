@@ -65,7 +65,6 @@ class _dbTechLayerEolKeepOutRule;
 class _dbTechLayerWidthTableRule;
 class _dbTechLayerMinCutRule;
 class _dbTechLayerAreaRule;
-class _dbTechLayerPitchRule;
 // User Code Begin Classes
 class _dbTechLayerSpacingRule;
 class _dbTechMinCutRule;
@@ -86,6 +85,7 @@ struct dbTechLayerFlags
   uint has_protrusion_ : 1;
   uint has_alias_ : 1;
   uint has_xy_pitch_ : 1;
+  uint has_first_last_pitch_ : 1;
   uint has_xy_offset_ : 1;
   bool rect_only_ : 1;
   bool right_way_on_grid_only_ : 1;
@@ -136,13 +136,11 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerMinCutRule>* min_cuts_rules_tbl_;
 
   dbTable<_dbTechLayerAreaRule>* area_rules_tbl_;
-
-  dbTable<_dbTechLayerPitchRule>* pitch_rules_tbl_;
-
   // User Code Begin Fields
 
   uint _pitch_x;
   uint _pitch_y;
+  uint _first_last_pitch;
   uint _offset_x;
   uint _offset_y;
   uint _width;

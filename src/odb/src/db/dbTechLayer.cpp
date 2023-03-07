@@ -51,7 +51,6 @@
 #include "dbTechLayerEolKeepOutRule.h"
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerMinStepRule.h"
-#include "dbTechLayerPitchRule.h"
 #include "dbTechLayerSpacingEolRule.h"
 #include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechLayerWidthTableRule.h"
@@ -160,9 +159,6 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
 
   if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
-    return false;
-
-  if (*pitch_rules_tbl_ != *rhs.pitch_rules_tbl_)
     return false;
 
   // User Code Begin ==
@@ -341,7 +337,6 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(width_table_rules_tbl_);
   DIFF_TABLE(min_cuts_rules_tbl_);
   DIFF_TABLE(area_rules_tbl_);
-  DIFF_TABLE(pitch_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.direction_);
@@ -419,7 +414,6 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(width_table_rules_tbl_);
   DIFF_OUT_TABLE(min_cuts_rules_tbl_);
   DIFF_OUT_TABLE(area_rules_tbl_);
-  DIFF_OUT_TABLE(pitch_rules_tbl_);
 
   // User Code Begin Out
   DIFF_OUT_FIELD(flags_.type_);
@@ -546,11 +540,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerAreaRuleObj);
-  pitch_rules_tbl_ = new dbTable<_dbTechLayerPitchRule>(
-      db,
-      this,
-      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
-      dbTechLayerPitchRuleObj);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -558,6 +547,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   flags_.num_masks_ = 1;
   _pitch_x = 0;
   _pitch_y = 0;
+  _first_last_pitch = -1;
   _offset_x = 0;
   _offset_y = 0;
   _width = 0;
@@ -666,8 +656,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
   area_rules_tbl_
       = new dbTable<_dbTechLayerAreaRule>(db, this, *r.area_rules_tbl_);
-  pitch_rules_tbl_
-      = new dbTable<_dbTechLayerPitchRule>(db, this, *r.pitch_rules_tbl_);
   // User Code Begin CopyConstructor
   flags_ = r.flags_;
   _pitch_x = r._pitch_x;
@@ -746,7 +734,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
-  stream >> *obj.pitch_rules_tbl_;
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -819,7 +806,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
-  stream << *obj.pitch_rules_tbl_;
   // User Code Begin <<
   stream << obj._pitch_x;
   stream << obj._pitch_y;
@@ -898,8 +884,6 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return min_cuts_rules_tbl_;
     case dbTechLayerAreaRuleObj:
       return area_rules_tbl_;
-    case dbTechLayerPitchRuleObj:
-      return pitch_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
@@ -935,7 +919,6 @@ _dbTechLayer::~_dbTechLayer()
   delete width_table_rules_tbl_;
   delete min_cuts_rules_tbl_;
   delete area_rules_tbl_;
-  delete pitch_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
     free((void*) _name);
@@ -1111,12 +1094,6 @@ dbSet<dbTechLayerAreaRule> dbTechLayer::getTechLayerAreaRules() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerAreaRule>(obj, obj->area_rules_tbl_);
-}
-
-dbSet<dbTechLayerPitchRule> dbTechLayer::getTechLayerPitchRules() const
-{
-  _dbTechLayer* obj = (_dbTechLayer*) this;
-  return dbSet<dbTechLayerPitchRule>(obj, obj->pitch_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)
@@ -2004,6 +1981,12 @@ int dbTechLayer::getPitchY()
   return layer->_pitch_y;
 }
 
+int dbTechLayer::getFirstLastPitch()
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return layer->_first_last_pitch;
+}
+
 void dbTechLayer::setPitch(int pitch)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
@@ -2020,10 +2003,34 @@ void dbTechLayer::setPitchXY(int pitch_x, int pitch_y)
   layer->flags_.has_xy_pitch_ = true;
 }
 
+void dbTechLayer::setFirstLastPitch(int first_last_pitch)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->_first_last_pitch = first_last_pitch;
+}
+
+void dbTechLayer::setHasFirstLastPitch()
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->flags_.has_first_last_pitch_ = true;
+}
+
+void dbTechLayer::unsetHasFirstLastPitch()
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->flags_.has_first_last_pitch_ = true;
+}
+
 bool dbTechLayer::hasXYPitch()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->flags_.has_xy_pitch_;
+}
+
+bool dbTechLayer::hasFirstLastPitch()
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return layer->flags_.has_first_last_pitch_;
 }
 
 int dbTechLayer::getOffset()

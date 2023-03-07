@@ -54,10 +54,6 @@
     {
       "src":"dbTechLayerAreaRule.json"
     },
-
-    {
-      "src":"dbTechLayerPitchRule.json"
-    },
     {
       "name":"dbModule",
       "type":"dbObject",
@@ -519,12 +515,6 @@
       "second":"dbTechLayerAreaRule",
       "type":"1_n",
       "tbl_name":"area_rules_tbl_"
-    },
-    {
-      "first":"dbTechLayer",
-      "second":"dbTechLayerPitchRule",
-      "type":"1_n",
-      "tbl_name":"pitch_rules_tbl_"
     }
   ]
 }
