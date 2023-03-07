@@ -42,6 +42,7 @@
 #include "rsz/Resizer.hh"
 #include "sta/Delay.hh"
 #include "sta/Liberty.hh"
+#include "db_sta/dbNetwork.hh"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -92,6 +93,29 @@ using sta::stringEq;
 using rsz::Resizer;
 using rsz::ParasiticsSrc;
 
+template <class SET_TYPE, class OBJECT_TYPE>
+SET_TYPE *
+tclListNetworkSet(Tcl_Obj *const source,
+                  swig_type_info *swig_type,
+                  Tcl_Interp *interp,
+                  const Network *network)
+{
+  int argc;
+  Tcl_Obj **argv;
+  if (Tcl_ListObjGetElements(interp, source, &argc, &argv) == TCL_OK
+      && argc > 0) {
+    SET_TYPE *set = new SET_TYPE(network);
+    for (int i = 0; i < argc; i++) {
+      void *obj;
+      // Ignore returned TCL_ERROR because can't get swig_type_info.
+      SWIG_ConvertPtr(argv[i], &obj, swig_type, false);
+      set->insert(reinterpret_cast<OBJECT_TYPE*>(obj));
+    }
+    return set;
+  }
+  else
+    return nullptr;
+}
 %}
 
 ////////////////////////////////////////////////////////////////
@@ -145,6 +169,12 @@ using rsz::ParasiticsSrc;
 %typemap(out) LibertyPort* {
   Tcl_Obj *obj = SWIG_NewInstanceObj($1, $1_descriptor, false);
   Tcl_SetObjResult(interp, obj);
+}
+
+%typemap(in) PinSet* {
+  Resizer *resizer = getResizer();
+  dbNetwork *network = resizer->getDbNetwork();
+  $1 = tclListNetworkSet<PinSet, Pin>($input, SWIGTYPE_p_Pin, interp, network);
 }
 
 %typemap(out) PinSet {
@@ -622,10 +652,10 @@ highlight_steiner_tree(const Pin *drvr_pin)
 }
 
 PinSet
-find_fanin_fanouts(PinSet& pins)
+find_fanin_fanouts(PinSet* pins)
 {
   Resizer *resizer = getResizer();
-  return resizer->findFaninFanouts(pins);
+  return resizer->findFaninFanouts(*pins);
 }
 
 void

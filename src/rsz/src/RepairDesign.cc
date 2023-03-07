@@ -1128,7 +1128,7 @@ RepairDesign::findLoads(const Pin *drvr_pin)
   PinSeq loads;
   Pin *drvr_pin1 = const_cast<Pin*>(drvr_pin);
   PinSeq drvrs;
-  PinSet visited_drvrs;
+  PinSet visited_drvrs(db_network_);
   sta::FindNetDrvrLoads visitor(drvr_pin1, visited_drvrs, loads, drvrs, network_);
   network_->visitConnectedPins(drvr_pin1, visitor);
   return loads;
@@ -1264,7 +1264,7 @@ RepairDesign::makeRepeater(const char *reason,
     in_net_db->setSigType(out_net_db->getSigType());
 
     // Move non-repeater load pins to in_net.
-    PinSet load_pins1;
+    PinSet load_pins1(db_network_);
     for (const Pin *pin : load_pins)
       load_pins1.insert(pin);
 

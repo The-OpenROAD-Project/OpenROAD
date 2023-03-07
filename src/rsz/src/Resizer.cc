@@ -1026,7 +1026,7 @@ Resizer::findFaninFanouts(PinSet &end_pins)
     Vertex *end = graph_->pinLoadVertex(pin);
     ends.insert(end);
   }
-  PinSet fanin_fanout_pins;
+  PinSet fanin_fanout_pins(db_network_);
   VertexSet fanin_fanouts = findFaninFanouts(ends);
   for (Vertex *vertex : fanin_fanouts)
     fanin_fanout_pins.insert(vertex->pin());
@@ -1062,7 +1062,7 @@ Resizer::findFanins(PinSet &end_pins)
   for (Vertex *vertex : ends)
     iter.enqueueAdjacentVertices(vertex);
 
-  PinSet fanins;
+  PinSet fanins(db_network_);
   while (iter.hasNext()) {
     Vertex *vertex = iter.next();
     if (isRegOutput(vertex)
@@ -1723,7 +1723,7 @@ Resizer::findFloatingNets()
     Net *net = net_iter->next();
     PinSeq loads;
     PinSeq drvrs;
-    PinSet visited_drvrs;
+    PinSet visited_drvrs(db_network_);
     FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
     network_->visitConnectedPins(net, visitor);
     if (drvrs.size() == 0 && loads.size() > 0)
