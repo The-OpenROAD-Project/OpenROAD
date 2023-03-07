@@ -37,7 +37,7 @@
 
 #include <set>
 #include <string>
-#include <vector>
+
 namespace utl {
 class Logger;
 }

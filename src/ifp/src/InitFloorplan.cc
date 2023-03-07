@@ -168,27 +168,24 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
   auto sites = getSites();
-  bool site_found_in_instances = false;
-  for (auto site : sites) {
-    if (site_name == site->getName()) {
-      site_found_in_instances = true;
-      break;
-    }
-  }
-  if (!site_found_in_instances) {
+  bool site_found_in_instances
+      = std::any_of(sites.begin(), sites.end(), [&](const auto& site) {
+          return site_name == site->getName();
+        });
+
+  if (!site_found_in_instances && !site_name.empty()) {
     dbSite* site_found = findSite(site_name.c_str());
     if (site_found != nullptr) {
       sites.insert(site_found);
+    } else {
+      logger_->warn(IFP, 41, "Site {} not found in Database.", site_name);
     }
   }
-  // if the sites set is empty, then there are no sites in the design
-  // and user didn't specify a site that we could find
   if (sites.empty()) {
-    logger_->error(IFP, 33, "No sites found.");
-    return;
+    logger_->error(IFP, 42, "No sites found.");
   }
   // get min site height using std::min_element
-  int min_site_height
+  const int min_site_height
       = (*std::min_element(sites.begin(),
                            sites.end(),
                            [](dbSite* a, dbSite* b) {
@@ -196,12 +193,11 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
                            }))
             ->getHeight();
 
-  eval_upf(logger_, block_);
-  for (auto site : sites) {
-    if (core.xMin() >= 0 && core.yMin() >= 0) {
+  if (core.xMin() >= 0 && core.yMin() >= 0) {
+    eval_upf(logger_, block_);
+    for (auto site : sites) {
       // Destroy any existing rows.
       int x_height_site = site->getHeight() / min_site_height;
-
       auto rows = block_->getRows();
       for (dbSet<dbRow>::iterator row_itr = rows.begin();
            row_itr != rows.end();) {
@@ -396,35 +392,39 @@ std::set<dbSite*> InitFloorplan::getSites() const
   // loop over all instantiated cells in the block
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
-    // get the site of the master
     auto site = master->getSite();
     if (site == nullptr) {
+      logger_->warn(IFP,
+                    43,
+                    "No site found for instance {} in block {}.",
+                    inst->getName(),
+                    block_->getName());
       continue;
     }
     sites.insert(site);
   }
+  if (sites.empty()) {
+    return sites;
+  }
 
-  std::vector<dbSite*> site_vec{sites.begin(), sites.end()};
-  sort(site_vec.begin(), site_vec.end(), [](dbSite* a, dbSite* b) {
-    return a->getHeight() < b->getHeight();
-  });
+  const int min_site_height
+      = (*std::min_element(sites.begin(),
+                           sites.end(),
+                           [](dbSite* a, dbSite* b) {
+                             return a->getHeight() < b->getHeight();
+                           }))
+            ->getHeight();
 
-  // smallest site height
-  double min_site_height = site_vec[0]->getHeight();
-  double factor = 1.0;
-  for (auto site : site_vec) {
-    double site_height = site->getHeight();
-    factor = site_height / min_site_height;
+  for (auto site : sites) {
     // check if the site height is a multiple of the smallest site height
-    if (std::ceil(factor) != std::floor(factor)) {
-      logger_->error(
-          IFP,
-          228,  // TODO: add error code
-          "site height {} is not a multiple of the smallest site height {}",
-          site_height,
-          min_site_height);
-      // erase from the set if the site height is not a multiple of the smallest
-      sites.erase(site);
+    if (site->getHeight() % min_site_height != 0) {
+      logger_->error(IFP,
+                     40,
+                     "Invalid height for site {} detected. The height value of "
+                     "{} is not a multiple of the smallest site height {}.",
+                     site->getName(),
+                     site->getHeight(),
+                     min_site_height);
     }
   }
   return sites;
@@ -446,7 +446,7 @@ void InitFloorplan::makeRows(dbSite* site,
 
   int y = core_ly;
   for (int row = 0; row < rows_y; row++) {
-    dbOrientType orient = (factor == 2 or row % 2 == 0)
+    dbOrientType orient = (factor % 2 == 0 or row % 2 == 0)
                               ? dbOrientType::R0   // N
                               : dbOrientType::MX;  // FS
     string row_name = stdstrPrint("ROW_%d", row);
