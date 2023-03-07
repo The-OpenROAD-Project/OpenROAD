@@ -2831,13 +2831,13 @@ void Via::writeToDb(odb::dbSWire* wire,
       = check_shapes(lower_, shapes.bottom);
   std::set<odb::dbSBox*> ripup_vias_top = check_shapes(upper_, shapes.top);
 
-  std::set<odb::dbSBox*> ripup_vias;
-  ripup_vias.insert(ripup_vias_bottom.begin(), ripup_vias_bottom.end());
-  ripup_vias.insert(ripup_vias_top.begin(), ripup_vias_top.end());
+  std::set<odb::dbSBox*> ripup_shapes;
+  ripup_shapes.insert(ripup_vias_bottom.begin(), ripup_vias_bottom.end());
+  ripup_shapes.insert(ripup_vias_top.begin(), ripup_vias_top.end());
 
   std::set<odb::dbSBox*> ripup_vias_middle;
   for (const auto& [middle_rect, box] : shapes.middle) {
-    for (auto* ripup_via : ripup_vias) {
+    for (auto* ripup_via : ripup_shapes) {
       const odb::Rect ripup_area = ripup_via->getBox();
       if (ripup_area.overlaps(middle_rect)) {
         ripup_vias_middle.insert(box);
@@ -2845,23 +2845,23 @@ void Via::writeToDb(odb::dbSWire* wire,
       }
     }
   }
-  ripup_vias.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
+  ripup_shapes.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
 
-  if (!ripup_vias.empty()) {
+  if (!ripup_shapes.empty()) {
     const TechLayer tech_layer(lower_->getLayer());
     int x = 0;
     int y = 0;
     int ripup_count = 0;
-    for (auto* via : ripup_vias) {
+    for (auto* shape : ripup_shapes) {
       int via_x, via_y;
-      if (via->getBlockVia() != nullptr || via->getTechVia() != nullptr) {
-        via->getViaXY(via_x, via_y);
+      if (shape->getBlockVia() != nullptr || shape->getTechVia() != nullptr) {
+        shape->getViaXY(via_x, via_y);
         x += via_x;
         y += via_y;
         ripup_count++;
       }
 
-      odb::dbSBox::destroy(via);
+      odb::dbSBox::destroy(shape);
     }
 
     getLogger()->warn(
