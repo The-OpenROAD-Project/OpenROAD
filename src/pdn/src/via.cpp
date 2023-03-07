@@ -2827,13 +2827,14 @@ void Via::writeToDb(odb::dbSWire* wire,
     return ripup;
   };
 
-  std::set<odb::dbSBox*> ripup_vias_bottom
+  const std::set<odb::dbSBox*> ripup_shapes_bottom
       = check_shapes(lower_, shapes.bottom);
-  std::set<odb::dbSBox*> ripup_vias_top = check_shapes(upper_, shapes.top);
+  const std::set<odb::dbSBox*> ripup_shapes_top
+      = check_shapes(upper_, shapes.top);
 
   std::set<odb::dbSBox*> ripup_shapes;
-  ripup_shapes.insert(ripup_vias_bottom.begin(), ripup_vias_bottom.end());
-  ripup_shapes.insert(ripup_vias_top.begin(), ripup_vias_top.end());
+  ripup_shapes.insert(ripup_shapes_bottom.begin(), ripup_shapes_bottom.end());
+  ripup_shapes.insert(ripup_shapes_top.begin(), ripup_shapes_top.end());
 
   std::set<odb::dbSBox*> ripup_vias_middle;
   for (const auto& [middle_rect, box] : shapes.middle) {
@@ -2864,6 +2865,10 @@ void Via::writeToDb(odb::dbSWire* wire,
       odb::dbSBox::destroy(shape);
     }
 
+    if (ripup_count == 0) {
+      // this really should not happen but makes clang-tidy happier
+      ripup_count = 1;
+    }
     getLogger()->warn(
         utl::PDN,
         195,
