@@ -1242,6 +1242,11 @@ void FlexRP::prep_via2viaForbiddenLen_minStepGF12(
   forbiddenRanges.push_back(make_pair(0, maxForbiddenLen));
 }
 
+// If a via pad triggers MINIMUMCUT rules, we need to make sure any other via
+// is sufficiently spaced so it isn't included in the rule. Rules of the form
+// "LENGTH length WITHIN distance" need to separate the cut shape from the via
+// pad by the specified distance, otherwise the cut shape just needs to not
+// intersect the via pad.
 void FlexRP::prep_via2viaForbiddenLen_minimumCut(
     const frLayerNum& lNum,
     frViaDef* viaDef1,
