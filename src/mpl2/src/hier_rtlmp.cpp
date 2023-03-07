@@ -281,7 +281,8 @@ void HierRTLMP::setDefaultThresholds()
     }
   }
 
-  // for num_level = 1, we recommand to increase the macro_blockage_weight to half of the outline_weight
+  // for num_level = 1, we recommand to increase the macro_blockage_weight to
+  // half of the outline_weight
   if (max_num_level_ == 1) {
     macro_blockage_weight_ = outline_weight_ / 2.0;
     logger_->report("Reset macro_blockage_weight : {}", macro_blockage_weight_);
@@ -383,7 +384,6 @@ void HierRTLMP::hierRTLMacroPlacer()
   logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
   logger_->report("halo_width_ = {}", halo_width_);
   logger_->report("bus_planning_flag_ = {}", bus_planning_flag_);
-
 
   //
   // Initialize the physcial hierarchy tree
@@ -2946,7 +2946,6 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
     return;
   }
 
-
   // set the instance property
   for (auto& cluster : parent->getChildren()) {
     setInstProperty(cluster);
@@ -3798,7 +3797,6 @@ void HierRTLMP::mergeNets(std::vector<BundledNet>& nets)
   nets = merged_nets;
 }
 
-
 // Multilevel macro placement without bus planning
 void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
 {
@@ -3814,7 +3812,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     hardMacroClusterMacroPlacement(parent);
     return;
   }
-  
+
   // set the instance property
   for (auto& cluster : parent->getChildren()) {
     setInstProperty(cluster);
@@ -3884,7 +3882,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
           Rect(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly));
     }
   }
-  
+
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
   // the fences and guides for hard macros in each cluster
@@ -3944,13 +3942,21 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
         if (cluster->getId() != frontwave->getId()) {
           // model this as a fixed softmacro
           soft_macro_id_map[cluster->getName()] = macros.size();
-          macros.push_back(SoftMacro(
-            std::pair<float, float>(cluster->getX() + cluster->getWidth() / 2.0 - lx, 
-                                    cluster->getY() + cluster->getHeight() / 2.0 - ly),
-            cluster->getName(), 0.0, 0.0, nullptr));
-          logger_->report("fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
-                           cluster->getName(), cluster->getX(), cluster->getY(),
-                           cluster->getWidth(), cluster->getHeight());               
+          macros.push_back(
+              SoftMacro(std::pair<float, float>(
+                            cluster->getX() + cluster->getWidth() / 2.0 - lx,
+                            cluster->getY() + cluster->getHeight() / 2.0 - ly),
+                        cluster->getName(),
+                        0.0,
+                        0.0,
+                        nullptr));
+          logger_->report(
+              "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
+              cluster->getName(),
+              cluster->getX(),
+              cluster->getY(),
+              cluster->getWidth(),
+              cluster->getHeight());
         }
       }
       if (frontwave->getParent()->getParent() != nullptr) {
@@ -3964,7 +3970,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   logger_->report("[MultiLevelMacroPlacement] Finish calculating connection");
   updateDataFlow();
   logger_->report("[MultiLevelMacroPlacement] Finish updating dataflow");
-  
+
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
@@ -4108,7 +4114,7 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
           parent->getName(),
           run_id,
           target_util,
-          target_dead_space); 
+          target_dead_space);
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
@@ -4206,11 +4212,11 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     }
     file.close();
     logger_->report(
-      "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster {}",
-      parent->getName());
+        "[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster {}",
+        parent->getName());
     best_sa->printResults();
-    // write the cost function. This can be used to tune the temperature schedule
-    // and cost weight
+    // write the cost function. This can be used to tune the temperature
+    // schedule and cost weight
     best_sa->writeCostFile(file_name + ".cost.txt");
     // write the floorplan information
     file.open(file_name + ".fp.txt");
@@ -4225,9 +4231,9 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
     // annealing results
     for (auto& cluster : parent->getChildren()) {
       *(cluster->getSoftMacro())
-        = shaped_macros[soft_macro_id_map[cluster->getName()]];
+          = shaped_macros[soft_macro_id_map[cluster->getName()]];
     }
- 
+
     // update the location of children cluster to their real location
     for (auto& cluster : parent->getChildren()) {
       cluster->setX(cluster->getX() + lx);
@@ -4250,7 +4256,6 @@ void HierRTLMP::multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent)
   setInstProperty(parent);
 }
 
-
 // This only applied to mixed cluster only with leaf standard-cell cluster
 // leaf hard macro cluster
 void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
@@ -4265,8 +4270,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   // If the parent is the not the mixed cluster
   if (parent->getClusterType() != MixedCluster) {
     return;
-  }   
-  // If the parent has children of mixed cluster 
+  }
+  // If the parent has children of mixed cluster
   for (auto& cluster : parent->getChildren()) {
     if (cluster->getClusterType() == MixedCluster) {
       return;
@@ -4337,7 +4342,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
           Rect(b_lx - lx, b_ly - ly, b_ux - lx, b_uy - ly));
     }
   }
-  
+
   // Each cluster is modeled as Soft Macro
   // The fences or guides for each cluster is created by merging
   // the fences and guides for hard macros in each cluster
@@ -4397,13 +4402,21 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
         if (cluster->getId() != frontwave->getId()) {
           // model this as a fixed softmacro
           soft_macro_id_map[cluster->getName()] = macros.size();
-          macros.push_back(SoftMacro(
-            std::pair<float, float>(cluster->getX() + cluster->getWidth() / 2.0 - lx, 
-                                    cluster->getY() + cluster->getHeight() / 2.0 - ly),
-            cluster->getName(), 0.0, 0.0, nullptr));
-          logger_->report("fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
-                           cluster->getName(), cluster->getX(), cluster->getY(),
-                           cluster->getWidth(), cluster->getHeight());               
+          macros.push_back(
+              SoftMacro(std::pair<float, float>(
+                            cluster->getX() + cluster->getWidth() / 2.0 - lx,
+                            cluster->getY() + cluster->getHeight() / 2.0 - ly),
+                        cluster->getName(),
+                        0.0,
+                        0.0,
+                        nullptr));
+          logger_->report(
+              "fixed cluster : {}, lx = {}, ly = {}, width = {}, height = {}",
+              cluster->getName(),
+              cluster->getX(),
+              cluster->getY(),
+              cluster->getWidth(),
+              cluster->getHeight());
         }
       }
       if (frontwave->getParent()->getParent() != nullptr) {
@@ -4417,7 +4430,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   logger_->report("[MultiLevelMacroPlacement] Finish calculating connection");
   updateDataFlow();
   logger_->report("[MultiLevelMacroPlacement] Finish updating dataflow");
-  
+
   // add the virtual connections (the weight related to IOs and macros belong to
   // the same cluster)
   for (const auto& [cluster1, cluster2] : parent->getVirtualConnections()) {
@@ -4483,8 +4496,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   // target_dead_space is used to determine the utilization for
   // StandardCellCluster We vary the target utilization to generate different
   // tilings
-  std::vector<float> target_utils{ 1e6 };
-  std::vector<float> target_dead_spaces{ 0.99999 };  
+  std::vector<float> target_utils{1e6};
+  std::vector<float> target_dead_spaces{0.99999};
   // Since target_util and target_dead_space are independent variables
   // the combination should be (target_util, target_dead_space_list)
   // target util has higher priority than target_dead_space
@@ -4499,8 +4512,8 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   // The number of perturbations in each step should be larger than the
   // number of macros
   const int num_perturb_per_step = (macros.size() > num_perturb_per_step_)
-                                    ? macros.size()
-                                    : num_perturb_per_step_;
+                                       ? macros.size()
+                                       : num_perturb_per_step_;
   int run_thread = num_threads_;
   int remaining_runs = target_util_list.size();
   int run_id = 0;
@@ -4549,7 +4562,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
           parent->getName(),
           run_id,
           target_util,
-          target_dead_space); 
+          target_dead_space);
       // Note that all the probabilities are normalized to the summation of 1.0.
       // Note that the weight are not necessaries summarized to 1.0, i.e., not
       // normalized.
@@ -4671,7 +4684,7 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
     *(cluster->getSoftMacro())
         = shaped_macros[soft_macro_id_map[cluster->getName()]];
   }
- 
+
   // update the location of children cluster to their real location
   for (auto& cluster : parent->getChildren()) {
     cluster->setX(cluster->getX() + lx);
@@ -4681,9 +4694,6 @@ void HierRTLMP::enhancedMacroPlacement(Cluster* parent)
   // delete SA containers to avoid memory leakage
   sa_containers.clear();
 }
-
-
-
 
 // Determine the shape of each cluster based on target utilization
 // and target dead space.  In constrast to all previous works, we
@@ -5675,18 +5685,6 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
                 repulsive_factor,
                 max_size / (1 + std::floor(j / 100)));
   }
-
-  /*
-  std::string net_file = file_name + ".net.txt";
-  std::string block_file = file_name + ".block.txt";
-  std::ofstream file;
-  file.open(block_file);
-  for (auto& rect : blocks)
-    file << rect.lx << " " << rect.ly << "  " << rect.ux << "  " << rect.uy <<
-  std::endl; file.close(); file.open(net_file); for (auto& net : nets) file <<
-  net.terminals.first << "  " << net.terminals.second << "  " << net.weight <<
-  std::endl; file.close();
-  */
 }
 
 void HierRTLMP::setDebug()
