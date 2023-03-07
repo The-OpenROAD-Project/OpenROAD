@@ -90,44 +90,20 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
   float best_cutsize = std::numeric_limits<float>::max();
   partitioner_->SetPartitionerChoice(PartitionType::INIT_RANDOM);
   const auto start_timestamp = std::chrono::high_resolution_clock::now();
-  /*std::vector<std::thread> threads;
-  std::vector<HGraph> hgraph_threads;
-  for (int i = 0; i < num_initial_solutions_; ++i) {
-    solution_set.push_back(solution);
-    auto hg_thread = coarsest_hgraph;
-    hgraph_threads.push_back(hg_thread);
-    cutsize_vec.push_back(0.0);
-  }
-  for (int i = 0; i < num_initial_solutions_; ++i) {
-    const int seed = std::numeric_limits<int>::max() * dist(gen);
-    threads.push_back(std::thread(&par::TPmultilevelPartitioner::ParallelPart,
-                                  this,
-                                  std::ref(hgraph_threads[i]),
-                                  std::ref(max_vertex_balance),
-                                  std::ref(cutsize_vec[i]),
-                                  std::ref(solution_set[i]),
-                                  seed
-                                  ));
-  }
-  for (auto& th : threads) {
-    th.join();
-  }
-  threads.clear();
-  for (int i = 0; i < num_initial_solutions_; ++i) {
-    if (cutsize_vec[i] < best_cutsize) {
-      best_cutsize = cutsize_vec[i];
-      best_solution_id = i;
-    }
-  }*/
 
   for (int i = 0; i < num_initial_solutions_; ++i) {
     const int seed = std::numeric_limits<int>::max() * dist(gen);
     partitioner_->SetPartitionerSeed(seed);
     partitioner_->Partition(coarsest_hgraph, max_vertex_balance, solution);
+    logger_->report("seed_ {}", seed);
+    logger_->report("random cutsize = {}", partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);        
     two_way_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
+    logger_->report("two way refiner cutsize = {}", partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);            
     if (coarsest_hgraph->num_timing_paths_ == 0) {
       ilp_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
+      logger_->report("ilp refiner cutsize = {}", partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);            
       greedy_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
+      logger_->report("greedy refiner cutsize = {}", partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);            
     }
     const float cutsize
         = partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first;

@@ -59,6 +59,7 @@ sta::define_cmd_args "rtl_macro_placer" { -max_num_macro  max_num_macro \
                                           -target_dead_space target_dead_space \
                                           -min_ar  min_ar \
                                           -snap_layer snap_layer \
+                                          -bus_planning_flag bus_planning_flag \
                                           -report_directory report_directory \
                                         }
 proc rtl_macro_placer { args } {
@@ -70,7 +71,9 @@ proc rtl_macro_placer { args } {
         -area_weight  -outline_weight -wirelength_weight -guidance_weight -fence_weight \
         -boundary_weight -notch_weight -macro_blockage_weight  \
         -pin_access_th -target_util \
-        -target_dead_space -min_ar -snap_layer -report_directory \
+        -target_dead_space -min_ar -snap_layer \
+        -bus_planning_flag \
+        -report_directory \
     } flag {  }
 #
 # Check for valid design
@@ -101,7 +104,7 @@ proc rtl_macro_placer { args } {
     set wirelength_weight 100.0
     set guidance_weight 10.0
     set fence_weight   10.0
-    set boundary_weight 20.0
+    set boundary_weight 15.0
     set notch_weight    10.0
     set macro_blockage_weight 10.0
     set pin_access_th   0.00
@@ -109,6 +112,7 @@ proc rtl_macro_placer { args } {
     set target_dead_space 0.05
     set min_ar  0.33
     set snap_layer -1
+    set bus_planning_flag false
     set report_directory "hier_rtlmp"
       
     if { [info exists keys(-max_num_macro)] } {
@@ -197,10 +201,12 @@ proc rtl_macro_placer { args } {
     if { [info exists keys(-snap_layer)] } {
       set snap_layer $keys(-snap_layer)
     }
+    if { [info exists keys(-bus_planning_flag)] } {
+      set bus_planning_flag $keys(-bus_planning_flag)
+    }
     if { [info exists keys(-report_directory)] } {
         set report_directory $keys(-report_directory)
     }
-
         
     file mkdir $report_directory
 
@@ -224,6 +230,7 @@ proc rtl_macro_placer { args } {
                                       $target_dead_space \
                                       $min_ar \
                                       $snap_layer \
+                                      $bus_planning_flag \
                                       $report_directory \
                                       ]} {
 

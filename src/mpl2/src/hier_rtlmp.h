@@ -139,6 +139,9 @@ class HierRTLMP
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
   void setDebug();
+  void setBusPlanningFlag(bool bus_planning_flag) {
+    bus_planning_flag_ = bus_planning_flag;
+  }
 
  private:
   void setDefaultThresholds();
@@ -219,6 +222,11 @@ class HierRTLMP
   // (Preorder DFS)
   void multiLevelMacroPlacement(Cluster* parent);
   // place macros within the HardMacroCluster
+  void multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent);
+  // For some testcase with very high density, it may be very difficuit to generate
+  // a tiling for clusters.  In this case, we may want to try to set the area of all
+  // standard-cell clusters to 0.0
+  void enhancedMacroPlacement(Cluster* parent);
   void hardMacroClusterMacroPlacement(Cluster* parent);
   // Merge nets to reduce runtime
   void mergeNets(std::vector<BundledNet>& nets);
@@ -255,6 +263,11 @@ class HierRTLMP
   const bool dynamic_congestion_weight_flag_ = false;
   const bool dynamic_weight_flag_ = false;
   const bool update_boundary_weight_ = false;
+  // Our experiments show that for most testcases, turn off bus planning 
+  // can generate better results.
+  // We recommand that you turn off this flag for technology nodes with very limited routing layers
+  // such as SkyWater130.  But for NanGate45, GF12, ASASP7, you should turn off this option.
+  bool bus_planning_flag_ = false;  
 
   // technology-related variables
   float dbu_ = 0.0;
@@ -345,7 +358,7 @@ class HierRTLMP
   float floorplan_uy_ = 0.0;
 
   // dataflow parameters and store the dataflow
-  const int max_num_ff_dist_ = 3;  // maximum number of FF distances between
+  const int max_num_ff_dist_ = 5;  // maximum number of FF distances between
   const float dataflow_factor_ = 2.0;
   const float dataflow_weight_ = 1;
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
