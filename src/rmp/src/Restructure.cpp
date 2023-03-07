@@ -41,6 +41,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <tcl.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -113,7 +114,8 @@ void Restructure::run(char* liberty_file_name,
                       float slack_threshold,
                       unsigned max_depth,
                       char* workdir_name,
-                      char* abc_logfile)
+                      char* abc_logfile,
+                      const char* post_rmp_script)
 {
   reset();
   block_ = db_->getChip()->getBlock();
@@ -121,6 +123,7 @@ void Restructure::run(char* liberty_file_name,
     return;
 
   logfile_ = abc_logfile;
+  post_rmp_script_ = post_rmp_script;
   sta::Slack worst_slack = slack_threshold;
 
   lib_file_names_.emplace_back(liberty_file_name);
@@ -682,6 +685,9 @@ void Restructure::runABCJob(const Mode mode,
   for (const auto& file_to_remove : files_to_remove) {
     std::remove(file_to_remove.c_str());
   }
+  if (!post_rmp_script_.empty())
+    Tcl_EvalFile(ord::OpenRoad::openRoad()->tclInterp(),
+                 post_rmp_script_.c_str());
 }
 bool Restructure::readAbcLog(std::string abc_file_name,
                              int& level_gain,

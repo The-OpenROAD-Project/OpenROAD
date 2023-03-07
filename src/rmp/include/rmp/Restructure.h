@@ -94,7 +94,8 @@ class Restructure
            float slack_threshold,
            unsigned max_depth,
            char* workdir_name,
-           char* abc_logfile);
+           char* abc_logfile,
+           const char* post_rmp_script);
 
   void setMode(const char* mode_name);
   void setTieLoPort(sta::LibertyPort* loport);
@@ -131,6 +132,7 @@ class Restructure
   std::string hicell_;
   std::string hiport_;
   std::string work_dir_name_;
+  std::string post_rmp_script_;
 
   // db vars
   sta::dbSta* open_sta_;

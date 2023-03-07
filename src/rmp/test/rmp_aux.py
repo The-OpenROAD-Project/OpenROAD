@@ -55,7 +55,8 @@ def restructure(design, *,
             slack_threshold,
             depth_threshold,
             workdir_name,
-            abc_logfile)
+            abc_logfile,
+            "")
 
 
 def create_blif(design, *, hicell="", hiport="", locell="", loport=""):
