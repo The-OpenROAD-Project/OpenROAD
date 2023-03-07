@@ -57,13 +57,13 @@ sta::define_cmd_args "restructure" { \
                                       [-work_dir workdir_name]\
                                       [-remote_host host]\
                                       [-remote_port port]\
-                                      [-post_rmp_script script]
+                                      [-post_abc_script script]
                                     }
 
 proc restructure { args } {
   sta::parse_key_args "restructure" args \
     keys {-slack_threshold -depth_threshold -target -liberty_file -abc_logfile\
-          -tielo_port -tiehi_port -work_dir -remote_host -remote_port -post_rmp_script} flags {}
+          -tielo_port -tiehi_port -work_dir -remote_host -remote_port -post_abc_script} flags {}
 
   set slack_threshold_value 0
   set depth_threshold_value 16
@@ -134,11 +134,11 @@ proc restructure { args } {
     set workdir_name $keys(-work_dir)
   }
   
-  if { [info exists keys(-post_rmp_script)] } {
-    set post_rmp_script $keys(-post_rmp_script)
+  if { [info exists keys(-post_abc_script)] } {
+    set post_abc_script $keys(-post_abc_script)
   } else {
-    set post_rmp_script ""
+    set post_abc_script ""
   }
 
-  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value $workdir_name $abc_logfile $post_rmp_script
+  rmp::restructure_cmd $liberty_file_name $target $slack_threshold_value $depth_threshold_value $workdir_name $abc_logfile $post_abc_script
 }

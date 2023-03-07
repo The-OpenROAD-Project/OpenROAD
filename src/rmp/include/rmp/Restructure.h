@@ -95,7 +95,7 @@ class Restructure
            unsigned max_depth,
            char* workdir_name,
            char* abc_logfile,
-           const char* post_rmp_script);
+           const char* post_abc_script);
 
   void setMode(const char* mode_name);
   void setTieLoPort(sta::LibertyPort* loport);
@@ -132,7 +132,7 @@ class Restructure
   std::string hicell_;
   std::string hiport_;
   std::string work_dir_name_;
-  std::string post_rmp_script_;
+  std::string post_abc_script_;
 
   // db vars
   sta::dbSta* open_sta_;

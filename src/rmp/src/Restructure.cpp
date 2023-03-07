@@ -115,7 +115,7 @@ void Restructure::run(char* liberty_file_name,
                       unsigned max_depth,
                       char* workdir_name,
                       char* abc_logfile,
-                      const char* post_rmp_script)
+                      const char* post_abc_script)
 {
   reset();
   block_ = db_->getChip()->getBlock();
@@ -123,7 +123,7 @@ void Restructure::run(char* liberty_file_name,
     return;
 
   logfile_ = abc_logfile;
-  post_rmp_script_ = post_rmp_script;
+  post_abc_script_ = post_abc_script;
   sta::Slack worst_slack = slack_threshold;
 
   lib_file_names_.emplace_back(liberty_file_name);
@@ -685,9 +685,9 @@ void Restructure::runABCJob(const Mode mode,
   for (const auto& file_to_remove : files_to_remove) {
     std::remove(file_to_remove.c_str());
   }
-  if (!post_rmp_script_.empty())
+  if (!post_abc_script_.empty())
     Tcl_EvalFile(ord::OpenRoad::openRoad()->tclInterp(),
-                 post_rmp_script_.c_str());
+                 post_abc_script_.c_str());
 }
 bool Restructure::readAbcLog(std::string abc_file_name,
                              int& level_gain,
