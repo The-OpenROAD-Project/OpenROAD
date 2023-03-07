@@ -2851,11 +2851,15 @@ void Via::writeToDb(odb::dbSWire* wire,
     const TechLayer tech_layer(lower_->getLayer());
     int x = 0;
     int y = 0;
+    int ripup_count = 0;
     for (auto* via : ripup_vias) {
       int via_x, via_y;
-      via->getViaXY(via_x, via_y);
-      x += via_x;
-      y += via_y;
+      if (via->getBlockVia() != nullptr || via->getTechVia() != nullptr) {
+        via->getViaXY(via_x, via_y);
+        x += via_x;
+        y += via_y;
+        ripup_count++;
+      }
 
       odb::dbSBox::destroy(via);
     }
@@ -2864,11 +2868,11 @@ void Via::writeToDb(odb::dbSWire* wire,
         utl::PDN,
         195,
         "Removing {} via(s) between {} and {} at ({:.4f} um, {:.4f} um) for {}",
-        ripup_vias.size(),
+        ripup_count,
         lower_->getLayer()->getName(),
         upper_->getLayer()->getName(),
-        tech_layer.dbuToMicron(x / ripup_vias.size()),
-        tech_layer.dbuToMicron(y / ripup_vias.size()),
+        tech_layer.dbuToMicron(x / ripup_count),
+        tech_layer.dbuToMicron(y / ripup_count),
         lower_->getNet()->getName());
     markFailed(failedViaReason::RIPUP);
   }
