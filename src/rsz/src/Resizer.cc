@@ -207,6 +207,8 @@ Resizer::init(OpenRoad *openroad,
   global_router_ = global_router;
   incr_groute_ = nullptr;
   db_network_ = sta->getDbNetwork();
+  resized_multi_output_insts_ = InstanceSet(db_network_);
+  inserted_buffer_set_ = InstanceSet(db_network_);
   copyState(sta);
   // Define swig TCL commands.
   Rsz_Init(interp);
