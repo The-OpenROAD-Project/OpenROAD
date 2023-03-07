@@ -165,6 +165,7 @@ class dbNetwork : public ConcreteNetwork
   Instance* topInstance() const override;
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
+  ObjectId id(const Instance *instance) const override;
   Cell* cell(const Instance* instance) const override;
   Instance* parent(const Instance* instance) const override;
   bool isLeaf(const Instance* instance) const override;
@@ -176,6 +177,7 @@ class dbNetwork : public ConcreteNetwork
   
   ////////////////////////////////////////////////////////////////
   // Pin functions
+  ObjectId id(const Pin *pin) const override;
   Pin* findPin(const Instance* instance, const char* port_name) const override;
   Pin* findPin(const Instance* instance, const Port* port) const override;
   Port* port(const Pin* pin) const override;
@@ -190,9 +192,11 @@ class dbNetwork : public ConcreteNetwork
   // Terminal functions
   Net* net(const Term* term) const override;
   Pin* pin(const Term* term) const override;
+  ObjectId id(const Term *term) const override;
 
   ////////////////////////////////////////////////////////////////
   // Net functions
+  ObjectId id(const Net *net) const override;
   Net* findNet(const Instance* instance, const char* net_name) const override;
   void findInstNetsMatching(const Instance* instance,
                             const PatternMatch* pattern,
@@ -246,7 +250,7 @@ class dbNetwork : public ConcreteNetwork
   using Network::netIterator;
   using NetworkReader::makeCell;
   using NetworkReader::makeLibrary;
-
+ 
  protected:
   void readDbNetlistAfter();
   void makeTopCell();

@@ -424,6 +424,14 @@ dbNetwork::metersToDbu(double dist) const
 
 ////////////////////////////////////////////////////////////////
 
+ObjectId dbNetwork::id(const Instance* instance) const
+{
+  if (instance == top_instance_) {
+    return 0;
+  }
+  return staToDb(instance)->getId();
+}
+
 const char*
 dbNetwork::name(const Instance* instance) const
 {
@@ -604,6 +612,18 @@ dbNetwork::netIterator(const Instance* instance) const
 
 ////////////////////////////////////////////////////////////////
 
+ObjectId dbNetwork::id(const Pin* pin) const
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  staToDb(pin, iterm, bterm);
+
+  if (iterm) {
+    return iterm->getId() + iterm->getBlock()->getBTerms().size();
+  }
+  return bterm->getId();
+}
+
 Instance*
 dbNetwork::instance(const Pin* pin) const
 {
@@ -777,6 +797,11 @@ dbNetwork::isPlaced(const Pin* pin) const
 
 ////////////////////////////////////////////////////////////////
 
+ObjectId dbNetwork::id(const Net* net) const
+{
+  return staToDb(net)->getId();
+}
+
 const char*
 dbNetwork::name(const Net* net) const
 {
@@ -839,6 +864,11 @@ const Net* dbNetwork::highestConnectedNet(Net* net) const
 }
 
 ////////////////////////////////////////////////////////////////
+
+ObjectId dbNetwork::id(const Term* term) const
+{
+  return staToDb(term)->getId();
+}
 
 Pin*
 dbNetwork::pin(const Term* term) const
