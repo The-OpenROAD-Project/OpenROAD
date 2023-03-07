@@ -481,17 +481,13 @@ void InitFloorplan::makeTracks()
     if (layer->getType() == dbTechLayerType::ROUTING
         && layer->getRoutingLevel() != 0) {
       if (layer->getFirstLastPitch() > 0) {
-        std::cout<<"\nEntrou aqui 1 coma layer: " + layer->getName() + "\n";
-        std::cout<<"PITCH x: "<< layer->getPitchX()<<"\nPITCH Y: "<<layer->getPitchY()<<"\n";
         makeTracksNonUniform(layer,
-                   layer->getOffsetX(),
-                   layer->getPitchX(),
-                   layer->getOffsetY(),
-                   layer->getPitchY(),
-                   layer->getFirstLastPitch());
+                             layer->getOffsetX(),
+                             layer->getPitchX(),
+                             layer->getOffsetY(),
+                             layer->getPitchY(),
+                             layer->getFirstLastPitch());
       } else {
-        std::cout<<"\nEntrou aqui 2 coma layer: " + layer->getName() + "\n";
-        std::cout<<"PITCH x: "<< layer->getPitchX()<<"\nPITCH Y: "<<layer->getPitchY()<<"\n";
         makeTracks(layer,
                    layer->getOffsetX(),
                    layer->getPitchX(),
@@ -632,13 +628,14 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
     grid = dbTrackGrid::create(block_, layer);
   }
 
-  auto y_track_count = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
+  auto y_track_count
+      = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
   int origin_y = die_area.yMin() + first_last_pitch;
   for (int i = 0; i < y_track_count; i++) {
     makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
     origin_y += y_pitch;
   }
-  origin_y +=  first_last_pitch - y_pitch;
+  origin_y += first_last_pitch - y_pitch;
   makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
 }
 
