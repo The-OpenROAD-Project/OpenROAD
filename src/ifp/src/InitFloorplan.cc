@@ -638,39 +638,14 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
     grid = dbTrackGrid::create(block_, layer);
   }
 
-  int layer_min_width = layer->getMinWidth();
-
-  auto x_track_count = int((die_area.dx() - x_offset) / x_pitch) + 1;
-  int origin_x = die_area.xMin() + x_offset;
-  // Check if the track origin is not usable during routing
-
-  if (origin_x - layer_min_width / 2 < die_area.xMin()) {
-    origin_x += x_pitch;
-    x_track_count--;
-  }
-
-  // Check if the last track is not usable during routing
-  int last_x = origin_x + (x_track_count - 1) * x_pitch;
-  if (last_x + layer_min_width / 2 > die_area.xMax()) {
-    x_track_count--;
-  }
-
-  grid->addGridPatternX(origin_x, x_track_count, x_pitch);
-
   auto y_track_count = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
   int origin_y = die_area.yMin() + first_last_pitch;
-  auto num_reps = int((die_area.dy() - first_last_pitch) / (cell_row_height - first_last_pitch)) + 1;
-  int last_y = die_area.yMin() + ((num_reps) * cell_row_height);
-  if (last_y + layer_min_width / 2 > die_area.yMax()) {
-    num_reps--;
+  for (int i = 0; i < y_track_count; i++) {
+    makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
+    origin_y += y_pitch;
   }
-  for (int i = 0; i < num_reps; i++) {
-    grid->addGridPatternY(origin_y, y_track_count, y_pitch);
-    origin_y
-        += (2 * first_last_pitch) + ((y_track_count - 1) * y_pitch);
-  }
-  origin_y = (2 * first_last_pitch) + ((y_track_count - 1) * y_pitch);
-  grid->addGridPatternY(origin_y, num_reps, cell_row_height);
+  origin_y +=  first_last_pitch - y_pitch;
+  makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
 }
 
 }  // namespace ifp
