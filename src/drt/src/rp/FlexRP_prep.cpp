@@ -1191,57 +1191,6 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc_helper(
   range = make_pair(forbiddenLowerBound, forbiddenUpperBound);
 }
 
-// only partial support of GF14
-void FlexRP::prep_via2viaForbiddenLen_minStepGF12(
-    const frLayerNum& lNum,
-    frViaDef* viaDef1,
-    frViaDef* viaDef2,
-    bool isCurrDirX,
-    ForbiddenRanges& forbiddenRanges)
-{
-  if (!viaDef1 || !viaDef2) {
-    return;
-  }
-
-  if (DBPROCESSNODE != "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
-    return;
-  }
-
-  bool isCurrDirY = !isCurrDirX;
-  if (lNum != 10 || !isCurrDirY) {
-    return;
-  }
-  const bool match12
-      = (viaDef1->getLayer1Num() == lNum) && (viaDef2->getLayer2Num() == lNum);
-  const bool match21
-      = (viaDef1->getLayer2Num() == lNum) && (viaDef2->getLayer1Num() == lNum);
-  if (!match12 && !match21) {
-    return;
-  }
-  Rect enclosureBox1, enclosureBox2;
-  frVia via1(viaDef1);
-  frVia via2(viaDef2);
-  if (viaDef1->getLayer1Num() == lNum) {
-    enclosureBox1 = via1.getLayer1BBox();
-  } else {
-    enclosureBox1 = via1.getLayer2BBox();
-  }
-  if (viaDef2->getLayer1Num() == lNum) {
-    enclosureBox2 = via2.getLayer1BBox();
-  } else {
-    enclosureBox2 = via2.getLayer2BBox();
-  }
-
-  frCoord enclosureBox1Span = enclosureBox1.yMax() - enclosureBox1.yMin();
-  frCoord enclosureBox2Span = enclosureBox2.yMax() - enclosureBox2.yMin();
-  frCoord maxForbiddenLen = (enclosureBox1Span > enclosureBox2Span)
-                                ? (enclosureBox1Span - enclosureBox2Span)
-                                : (enclosureBox2Span - enclosureBox1Span);
-  maxForbiddenLen /= 2;
-
-  forbiddenRanges.push_back(make_pair(0, maxForbiddenLen));
-}
-
 // If a via pad triggers MINIMUMCUT rules, we need to make sure any other via
 // is sufficiently spaced so it isn't included in the rule. Rules of the form
 // "LENGTH length WITHIN distance" need to separate the cut shape from the via
