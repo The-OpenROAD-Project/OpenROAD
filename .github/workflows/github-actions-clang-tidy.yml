@@ -1,0 +1,18 @@
+name: clang-tidy-review
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: ClangTidy Gen
+        uses: The-OpenROAD-Project/clang-tidy-review@v0.10.3
+        with:
+          build_dir: './build'
+          cmake_command: cmake . -B build
+          config_file: '.clang-tidy'
