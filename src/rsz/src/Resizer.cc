@@ -2007,6 +2007,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   ArcDelayCalc *arc_delay_calc = sta->arcDelayCalc();
   Corners *corners = sta->corners();
   corners->copy(sta_->corners());
+  sta->sdc()->makeCornersAfter(corners);
 
   Instance *top_inst = network->topInstance();
   // Tmp net for parasitics to live on.
