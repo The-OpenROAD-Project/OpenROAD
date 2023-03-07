@@ -46,10 +46,10 @@ public:
   Instance* findInstance(const char* path_name) const override;
   InstanceSeq findInstancesMatching(const Instance* contex,
                                             const PatternMatch* pattern) const override;
-  virtual NetSeq findNetsMatching(const Instance*,
-                                  const PatternMatch* pattern) const override;
-  virtual PinSeq findPinsMatching(const Instance* instance,
-                                  const PatternMatch* pattern) const override;
+  NetSeq findNetsMatching(const Instance*,
+                          const PatternMatch* pattern) const override;
+  PinSeq findPinsMatching(const Instance* instance,
+                          const PatternMatch* pattern) const override;
 
 protected:
   void findInstancesMatching1(const PatternMatch* pattern,
