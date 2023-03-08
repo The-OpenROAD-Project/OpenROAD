@@ -29,5 +29,7 @@ read_verilog one_cell_nangate45.v
 link_design one_cell
 
 insert_dft
-write_verilog result_one_cell_nandgate45.v
-diff_files result_one_cell_nandgate45.v result_one_cell_nandgate45.vok
+
+set verilog_file [make_result_file one_cell_nandgate45.v]
+write_verilog $verilog_file
+diff_files $verilog_file one_cell_nandgate45.vok
