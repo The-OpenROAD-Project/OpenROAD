@@ -401,8 +401,9 @@ void FlexTAWorker::initIroute_helper_generic_fix_endpoints(frGuide* guide,
         break;
     }
   }
-  minBegin = newMinBegin;
-  maxEnd = newMaxEnd;
+  minBegin
+      = newMinBegin != std::numeric_limits<int>::max() ? newMinBegin : minBegin;
+  maxEnd = newMaxEnd != std::numeric_limits<int>::min() ? newMaxEnd : maxEnd;
 }
 
 void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
