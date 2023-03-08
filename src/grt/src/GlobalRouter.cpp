@@ -3163,6 +3163,11 @@ void GlobalRouter::extendObstructions(
     int bottom_layer,
     int top_layer)
 {
+  // if it has obs on min_layer + 1, then the min_layer needs to be block
+  if (bottom_layer - 1 == min_routing_layer_) bottom_layer--;
+  // if it has obs on max_layer - 1, then the max_layer needs to be block
+  if (top_layer + 1 == max_routing_layer_) top_layer++;
+
   for (int layer = bottom_layer; layer <= top_layer; layer++) {
     std::vector<odb::Rect>& obs = macro_obs_per_layer[layer];
     std::vector<odb::Rect> extended_obs;
