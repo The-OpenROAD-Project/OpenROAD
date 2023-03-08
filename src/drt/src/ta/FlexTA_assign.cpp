@@ -716,7 +716,8 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
   }
 
   for (auto& [bounds, pr] : result) {
-    // if the overlap bounds intersect with the pin connection, do not add drc cost
+    // if the overlap bounds intersect with the pin connection, do not add drc
+    // cost
     bool pinConn = false;
     for (const Rect& sameNetOverlap : sameNetOverlaps) {
       if (sameNetOverlap.intersects(bounds)) {
@@ -733,7 +734,10 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
         = -max(box.xMin(), bounds.xMin()) + min(box.xMax(), bounds.xMax())
           - max(box.yMin(), bounds.yMin()) + min(box.yMax(), bounds.yMax()) + 1;
     if (tmpOvlp <= 0) {
-      logger_->error(DRT, 412, "assignIroute_getDRCCost_helper overlap value is {}.", tmpOvlp);
+      logger_->error(DRT,
+                     412,
+                     "assignIroute_getDRCCost_helper overlap value is {}.",
+                     tmpOvlp);
     }
     // unknown obj, always add cost
     if (obj == nullptr) {
