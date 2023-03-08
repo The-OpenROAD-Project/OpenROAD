@@ -606,6 +606,9 @@ protected:
   int inserted_buffer_count_;
   bool buffer_moved_into_core_;
   // Slack map variables.
+  // This is the minimum length of wire that is profitable to split and
+  // insert a buffer in the middle of. Theoretically computed using the smallest
+  // drive cell (because larger ones would give us a longer length).
   float max_wire_length_;
   float worst_slack_nets_percent_;
   Map<const Net*, Slack> net_slack_map_;
