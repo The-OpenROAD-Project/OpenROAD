@@ -357,8 +357,15 @@ void FlexTAWorker::initIroute_helper_generic_fix_endpoints(frGuide* guide,
           Point bp = ap->getPoint();
           shiftXform.apply(bp);
           if (getRouteBox().intersects(bp)) {
-            newMinBegin = std::min((isH ? bp.x() : bp.y()), newMinBegin);
-            newMaxEnd = std::max((isH ? bp.x() : bp.y()), newMaxEnd);
+            int beginDist = isH ? std::abs(bp.x() - minBegin)
+                                : std::abs(bp.y() - minBegin);
+            int endDist
+                = isH ? std::abs(bp.x() - maxEnd) : std::abs(bp.y() - maxEnd);
+            if (beginDist < endDist) {
+              newMinBegin = std::min((isH ? bp.x() : bp.y()), newMinBegin);
+            } else {
+              newMaxEnd = std::max((isH ? bp.x() : bp.y()), newMaxEnd);
+            }
           }
           pinIdx++;
         }
@@ -376,8 +383,15 @@ void FlexTAWorker::initIroute_helper_generic_fix_endpoints(frGuide* guide,
           for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
             Point bp = ap->getPoint();
             if (getRouteBox().intersects(bp)) {
-              newMinBegin = std::min((isH ? bp.x() : bp.y()), newMinBegin);
-              newMaxEnd = std::max((isH ? bp.x() : bp.y()), newMaxEnd);
+              int beginDist = isH ? std::abs(bp.x() - minBegin)
+                                  : std::abs(bp.y() - minBegin);
+              int endDist
+                  = isH ? std::abs(bp.x() - maxEnd) : std::abs(bp.y() - maxEnd);
+              if (beginDist < endDist) {
+                newMinBegin = std::min((isH ? bp.x() : bp.y()), newMinBegin);
+              } else {
+                newMaxEnd = std::max((isH ? bp.x() : bp.y()), newMaxEnd);
+              }
             }
           }
         }
