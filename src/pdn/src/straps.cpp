@@ -661,25 +661,25 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFacingCore()
     remove_func = [inst_rect, transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
-      return inst_rect.yMin() != box_rect.yMin();
+      return inst_rect.yMin() < box_rect.yMin();
     };
   } else if (is_south) {
     remove_func = [inst_rect, transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
-      return inst_rect.yMax() != box_rect.yMax();
+      return inst_rect.yMax() > box_rect.yMax();
     };
   } else if (is_west) {
     remove_func = [inst_rect, transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
-      return inst_rect.xMax() != box_rect.xMax();
+      return inst_rect.xMax() > box_rect.xMax();
     };
   } else {
     remove_func = [inst_rect, transform](odb::dbBox* box) {
       odb::Rect box_rect = box->getBox();
       transform.apply(box_rect);
-      return inst_rect.xMin() != box_rect.xMin();
+      return inst_rect.xMin() < box_rect.xMin();
     };
   }
 
