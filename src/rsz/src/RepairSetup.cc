@@ -342,7 +342,7 @@ RepairSetup::repairSetup(PathRef &path,
                  fanout);
 
       if (swapPins(drvr_path, drvr_index, &expanded) ||
-          swapVtCell(drvr_path, drvr_index, &expanded) ||
+          //swapVtCell(drvr_path, drvr_index, &expanded) ||
           upsizeDrvr(drvr_path, drvr_index, &expanded)) {
         changed = true;
         break;
@@ -366,10 +366,14 @@ RepairSetup::repairSetup(PathRef &path,
         }
       }
 
+      //
+      // debugCheckMultipleBuffers(path, &expanded);
+
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
           && !resizer_->dontTouch(net)) {
+        // split loads is putting in buffers for critical fanouts.
         splitLoads(drvr_path, drvr_index, path_slack, &expanded);
         changed = true;
         break;
@@ -383,44 +387,31 @@ bool RepairSetup::swapVtCell(PathRef *drvr_path,
                             int drvr_index,
                             PathExpanded *expanded)
 {
-  Pin *drvr_pin = drvr_path->pin(this);
-  Instance *drvr = network_->instance(drvr_pin);
-  const DcalcAnalysisPt *dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
-  float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
-  int in_index = drvr_index - 1;
-  PathRef *in_path = expanded->path(in_index);
-  Pin *in_pin = in_path->pin(sta_);
-  LibertyPort *in_port = network_->libertyPort(in_pin);
-  if (!resizer_->dontTouch(drvr)) {
-    float prev_drive;
-    if (drvr_index >= 2) {
-      int prev_drvr_index = drvr_index - 2;
-      PathRef *prev_drvr_path = expanded->path(prev_drvr_index);
-      Pin *prev_drvr_pin = prev_drvr_path->pin(sta_);
-      prev_drive = 0.0;
-      LibertyPort *prev_drvr_port = network_->libertyPort(prev_drvr_pin);
-      if (prev_drvr_port) {
-        prev_drive = prev_drvr_port->driveResistance();
-      }
-    }
-    else
-      prev_drive = 0.0;
-    LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-    LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
-                                     prev_drive, dcalc_ap);
-    if (upsize) {
-      debugPrint(logger_, RSZ, "repair_setup", 3, "resize {} {} -> {}",
-                 network_->pathName(drvr_pin),
-                 drvr_port->libertyCell()->name(),
-                 upsize->name());
-      if (!resizer_->dontTouch(drvr)
-          && resizer_->replaceCell(drvr, upsize, true)) {
-        resize_count_++;
-        return true;
+  return false;
+}
+
+void RepairSetup::debugCheckMultipleBuffers(PathRef &path,
+                                            PathExpanded *expanded)
+{
+  if (expanded->size() > 1) {
+    int path_length = expanded->size();
+    int start_index = expanded->startIndex();
+    for (int i = start_index; i < path_length; i++) {
+      PathRef* path = expanded->path(i);
+      Vertex* path_vertex = path->vertex(sta_);
+      const Pin* path_pin = path->pin(sta_);
+      if (i > 0 && network_->isDriver(path_pin)
+          && !network_->isTopLevelPort(path_pin)) {
+        TimingArc* prev_arc = expanded->prevArc(i);
+        Edge* prev_edge = path->prevEdge(prev_arc, sta_);
+        printf("repair_setup %s: %s ---> %s \n",
+               prev_arc->from()->libertyCell()->name(),
+               prev_arc->from()->name(),
+               prev_arc->to()->name());
       }
     }
   }
-  return false;
+  printf("done\n");
 }
 
 bool RepairSetup::swapPins(PathRef *drvr_path,
@@ -436,6 +427,9 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
   PathRef *in_path = expanded->path(in_index);
   Pin *in_pin = in_path->pin(sta_);
 
+  // Very bad hack.
+  static std::unordered_set<const Instance *> instance_set;
+
   if (!resizer_->dontTouch(drvr)) {
     // We get the driver port and the cell for that port.
     LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
@@ -444,15 +438,19 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
     LibertyPort *swap_port = input_port;
 
     if (strstr(cell->name(), "AND") || strstr(cell->name(), "OR")) {
+      if (instance_set.find(drvr) == instance_set.end())
+        instance_set.insert(drvr);
+      else
+        return false;
+
       resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
                                      dcalc_ap, &swap_port);
 
       if (!swap_port->equiv(swap_port, input_port)) {
         // FIXME: Change to debug log.
-        printf("Swap %s %s %s\n", cell->name(), input_port->name(),
-               swap_port->name());
-        resizer_->swapPins(drvr, input_port, swap_port, true);
-        return true;
+        printf("Swap %s (%s) %s %s\n", network_->name(drvr), cell->name(),
+               input_port->name(), swap_port->name());
+        return(resizer_->swapPins(drvr, input_port, swap_port, true));
       }
     }
   }

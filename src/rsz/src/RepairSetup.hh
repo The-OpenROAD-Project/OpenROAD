@@ -93,6 +93,8 @@ private:
   void init();
   bool repairSetup(PathRef &path,
                    Slack path_slack);
+  void debugCheckMultipleBuffers(PathRef &path,
+                            PathExpanded *expanded);
   bool swapPins(PathRef *drvr_path,
                 int drvr_index,
                 PathExpanded *expanded);
