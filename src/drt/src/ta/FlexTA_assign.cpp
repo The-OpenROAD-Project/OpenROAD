@@ -733,8 +733,7 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
         = -max(box.xMin(), bounds.xMin()) + min(box.xMax(), bounds.xMax())
           - max(box.yMin(), bounds.yMin()) + min(box.yMax(), bounds.yMax()) + 1;
     if (tmpOvlp <= 0) {
-      cout << "Error: assignIroute_getDRCCost_helper overlap < 0" << endl;
-      exit(1);
+      logger_->error(DRT, 412, "assignIroute_getDRCCost_helper overlap value is {}.", tmpOvlp);
     }
     // unknown obj, always add cost
     if (obj == nullptr) {
