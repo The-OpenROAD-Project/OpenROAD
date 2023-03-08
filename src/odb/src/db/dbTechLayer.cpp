@@ -227,6 +227,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 
   if (_min_step_max_edges != rhs._min_step_max_edges)
     return false;
+  
+  if (_first_last_pitch != rhs._first_last_pitch)
+    return false;
 
   if (_pt._width != rhs._pt._width)
     return false;
@@ -360,6 +363,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_FIELD(_min_width);
   DIFF_FIELD(_min_step_max_length);
   DIFF_FIELD(_min_step_max_edges);
+  DIFF_FIELD(_first_last_pitch);
   DIFF_FIELD(_pt._length);
   DIFF_FIELD(_pt._from_width);
   DIFF_FIELD(_name);
@@ -438,6 +442,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_min_width);
   DIFF_OUT_FIELD(_min_step_max_length);
   DIFF_OUT_FIELD(_min_step_max_edges);
+  DIFF_OUT_FIELD(_first_last_pitch);
   DIFF_OUT_FIELD(_pt._length);
   DIFF_OUT_FIELD(_pt._from_width);
   DIFF_OUT_FIELD(_name);
@@ -547,7 +552,6 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   flags_.num_masks_ = 1;
   _pitch_x = 0;
   _pitch_y = 0;
-  _first_last_pitch = -1;
   _offset_x = 0;
   _offset_y = 0;
   _width = 0;
@@ -568,6 +572,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   _min_width = 0;
   _min_step_max_length = -1;
   _min_step_max_edges = -1;
+  _first_last_pitch = -1;
   _v55sp_length_idx.clear();
   _v55sp_width_idx.clear();
   _v55sp_spacing.clear();
@@ -677,6 +682,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   _min_step = r._min_step;
   _min_step_max_length = r._min_step_max_length;
   _min_step_max_edges = r._min_step_max_edges;
+  _first_last_pitch = r._first_last_pitch;
   _pt = r._pt;
   _name = NULL;
   _alias = NULL;
@@ -752,6 +758,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj._min_step;
   stream >> obj._min_step_max_length;
   stream >> obj._min_step_max_edges;
+  stream >> obj._first_last_pitch;
   stream >> obj._max_width;
   stream >> obj._min_width;
   stream >> obj._pt._width;
@@ -824,6 +831,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._min_step;
   stream << obj._min_step_max_length;
   stream << obj._min_step_max_edges;
+  stream << obj._first_last_pitch;
   stream << obj._max_width;
   stream << obj._min_width;
   stream << obj._pt._width;
@@ -2009,28 +2017,18 @@ void dbTechLayer::setFirstLastPitch(int first_last_pitch)
   layer->_first_last_pitch = first_last_pitch;
 }
 
-void dbTechLayer::setHasFirstLastPitch()
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_first_last_pitch_ = true;
-}
-
-void dbTechLayer::unsetHasFirstLastPitch()
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-  layer->flags_.has_first_last_pitch_ = true;
-}
-
 bool dbTechLayer::hasXYPitch()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
   return layer->flags_.has_xy_pitch_;
 }
 
-bool dbTechLayer::hasFirstLastPitch()
+bool dbTechLayer::hasPitch()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  return layer->flags_.has_first_last_pitch_;
+  if (layer->_pitch_x)
+    return true;
+  return false;
 }
 
 int dbTechLayer::getOffset()

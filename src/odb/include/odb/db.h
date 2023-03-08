@@ -7199,10 +7199,8 @@ class dbTechLayer : public dbObject
   void setPitch(int pitch);
   void setPitchXY(int pitch_x, int pitch_y);
   void setFirstLastPitch(int first_last_pitch);
-  void setHasFirstLastPitch();
-  void unsetHasFirstLastPitch();
   bool hasXYPitch();
-  bool hasFirstLastPitch();
+  bool hasPitch();
 
   int getOffset();
   int getOffsetX();
@@ -9004,7 +9002,6 @@ class dbTechLayerAreaRule : public dbObject
 
   // User Code End dbTechLayerAreaRule
 };
-
 
 class dbModule : public dbObject
 {

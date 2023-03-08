@@ -596,7 +596,6 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
       cell_row_height = row->getSite()->getHeight();
     }
   }
-   = rows.begin()->getSite()->getHeight();
   Rect die_area = block_->getDieArea();
 
   auto y_track_count

@@ -85,7 +85,6 @@ struct dbTechLayerFlags
   uint has_protrusion_ : 1;
   uint has_alias_ : 1;
   uint has_xy_pitch_ : 1;
-  uint has_first_last_pitch_ : 1;
   uint has_xy_offset_ : 1;
   bool rect_only_ : 1;
   bool right_way_on_grid_only_ : 1;
@@ -140,7 +139,6 @@ class _dbTechLayer : public _dbObject
 
   uint _pitch_x;
   uint _pitch_y;
-  uint _first_last_pitch;
   uint _offset_x;
   uint _offset_y;
   uint _width;
@@ -158,6 +156,7 @@ class _dbTechLayer : public _dbObject
   int _min_step;
   int _min_step_max_length;
   int _min_step_max_edges;
+  uint _first_last_pitch;
 
   struct
   {  // Protrusion
