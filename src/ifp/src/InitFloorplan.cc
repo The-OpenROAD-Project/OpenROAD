@@ -588,45 +588,16 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
   if (layer->getDirection() != dbTechLayerDir::HORIZONTAL) {
     logger_->error(IFP, 40, "Non horizontal layer uses property LEF58_PITCH.");
   }
+
+  int cell_row_height;
   auto rows = block_->getRows();
-  int cell_row_height = rows.begin()->getSite()->getHeight();
-  utl::Validator v(logger_, IFP);
-  v.check_non_null("layer", layer, 38);
-  v.check_non_negative("x_offset", x_offset, 39);
-  v.check_positive("x_pitch", x_pitch, 40);
-  v.check_non_negative("y_offset", y_offset, 41);
-  v.check_positive("y_pitch", y_pitch, 42);
-
+  for (auto row : rows) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::CORE) {
+      cell_row_height = row->getSite()->getHeight();
+    }
+  }
+   = rows.begin()->getSite()->getHeight();
   Rect die_area = block_->getDieArea();
-
-  if (x_offset == 0) {
-    x_offset = x_pitch;
-  }
-  if (y_offset == 0) {
-    y_offset = y_pitch;
-  }
-
-  if (x_offset > die_area.dx()) {
-    logger_->warn(
-        IFP,
-        41,
-        "Track pattern for {} will be skipped due to x_offset > die width.",
-        layer->getName());
-    return;
-  }
-  if (y_offset > die_area.dy()) {
-    logger_->warn(
-        IFP,
-        42,
-        "Track pattern for {} will be skipped due to y_offset > die height.",
-        layer->getName());
-    return;
-  }
-
-  auto grid = block_->findTrackGrid(layer);
-  if (!grid) {
-    grid = dbTrackGrid::create(block_, layer);
-  }
 
   auto y_track_count
       = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
