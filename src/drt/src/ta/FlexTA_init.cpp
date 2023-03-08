@@ -335,7 +335,8 @@ void FlexTAWorker::initIroute_helper_generic_fix_endpoints(frGuide* guide,
     switch (term->typeId()) {
       case frcInstTerm: {
         auto iterm = static_cast<frInstTerm*>(term);
-        if (iterm->getNet() != net) {
+        if (iterm->getNet() != net
+            || !iterm->getInst()->getMaster()->getMasterType().isBlock()) {
           continue;
         }
         frInst* inst = iterm->getInst();
