@@ -14,10 +14,14 @@ design.evalTclString('read_sdc "gcd_nangate45.sdc"')
 part_file = helpers.make_result_file("partition_gcd.part")
 graph_file = helpers.make_result_file("partition_gcd.graph")
 paths_file = helpers.make_result_file("partition_gcd.paths")
+v_file = helpers.make_result_file("partition_gcd.v")
 
-design.getPartitionMgr().tritonPartDesign(2, 1.0, 0, part_file,
-                                          paths_file, graph_file)
+mgr = design.getPartitionMgr()
+mgr.tritonPartDesign(2, 1.0, 0, part_file, paths_file, graph_file)
+
+mgr.writePartitionVerilog(v_file)
 
 helpers.diff_files("partition_gcd.graphok", graph_file)
 helpers.diff_files("partition_gcd.pathsok", paths_file)
 helpers.diff_files("partition_gcd.partok", part_file)
+helpers.diff_files("partition_gcd.vok", v_file)

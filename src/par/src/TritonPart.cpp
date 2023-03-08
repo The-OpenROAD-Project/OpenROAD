@@ -703,6 +703,21 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   if (!solution_filename.empty()) {
     WriteSolution(solution_filename.c_str(), partition);
   }
+
+  for (auto inst : block_->getInsts()) {
+    auto vertex_id_property = odb::dbIntProperty::find(inst, "vertex_id");
+    if (!vertex_id_property) {
+      logger_->error(PAR, 8, "No partition assigned for {}", inst->getName());
+    }
+    const int vertex_id = vertex_id_property->getValue();
+    const int partition_id = partition[vertex_id];
+    if (auto property = odb::dbIntProperty::find(inst, "partition_id")) {
+      property->setValue(partition_id);
+    } else {
+      odb::dbIntProperty::create(inst, "partition_id", partition_id);
+    }
+  }
+
   std::vector<std::vector<int>> timing_paths;
   for (auto& tpath : timing_paths_) {
     timing_paths.push_back(tpath.path);

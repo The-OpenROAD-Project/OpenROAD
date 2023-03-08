@@ -143,3 +143,30 @@ proc triton_part_design { args } {
   par::triton_part_design $num_parts $balance_constraint $seed \
       $solution_file $paths_file $hypergraph_file
 }
+
+#--------------------------------------------------------------------
+# Write partition to verilog
+#--------------------------------------------------------------------
+
+sta::define_cmd_args "write_partition_verilog" { \
+  [-port_prefix prefix] [-module_suffix suffix] [file]
+}
+
+proc write_partition_verilog { args } {
+  sta::parse_key_args "write_partition_verilog" args \
+    keys { -partitioning_id -port_prefix -module_suffix } flags { }
+
+  sta::check_argc_eq1 "write_partition_verilog" $args
+
+  set port_prefix "partition_"
+  if { [info exists keys(-port_prefix)] } {
+    set port_prefix $keys(-port_prefix)
+  }
+
+  set module_suffix "_partition"
+  if { [info exists keys(-module_suffix)] } {
+    set module_suffix $keys(-module_suffix)
+  }
+
+  par::write_partition_verilog $port_prefix $module_suffix $args
+}

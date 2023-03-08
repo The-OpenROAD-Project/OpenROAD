@@ -145,6 +145,8 @@ After Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
 [INFO] Average cuts on critical paths = 0.5
 ===============================================
 Exiting TritonPart
+Writing partition to verilog.
+No differences found.
 No differences found.
 No differences found.
 No differences found.
