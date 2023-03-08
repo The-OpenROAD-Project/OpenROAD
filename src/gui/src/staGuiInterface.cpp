@@ -741,7 +741,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
 
   sta::ExceptionFrom* e_from = nullptr;
   if (!from.empty()) {
-    sta::PinSet* pins = new sta::PinSet;
+    sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(from.begin(), from.end());
     e_from = sta_->makeExceptionFrom(
         pins, nullptr, nullptr, sta::RiseFallBoth::riseFall());
@@ -755,7 +755,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
       if (e_thrus == nullptr) {
         e_thrus = new sta::ExceptionThruSeq;
       }
-      sta::PinSet* pins = new sta::PinSet;
+      sta::PinSet* pins = new sta::PinSet(getNetwork());
       pins->insert(thru_set.begin(), thru_set.end());
       e_thrus->push_back(sta_->makeExceptionThru(
           pins, nullptr, nullptr, sta::RiseFallBoth::riseFall()));
@@ -763,7 +763,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
   }
   sta::ExceptionTo* e_to = nullptr;
   if (!to.empty()) {
-    sta::PinSet* pins = new sta::PinSet;
+    sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(to.begin(), to.end());
     e_to = sta_->makeExceptionTo(pins,
                                  nullptr,
