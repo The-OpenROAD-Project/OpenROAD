@@ -75,7 +75,8 @@ enum class Mode
   DELAY_1,
   DELAY_2,
   DELAY_3,
-  DELAY_4
+  DELAY_4,
+  DELAY_5,
 };
 
 class Restructure
@@ -103,6 +104,7 @@ class Restructure
   void setTieHiPort(sta::LibertyPort* hiport);
   void setTieHiPort(const std::string& cell, const std::string& port);
   void runABCJob(const Mode mode,
+                 const ushort iterations,
                  int& num_instances,
                  int& level_gain,
                  float& delay,
@@ -110,14 +112,19 @@ class Restructure
   void addLibFile(const std::string& lib_file);
   void setDistributed(const std::string& host, unsigned short port);
   void setWorkDirName(const std::string& dir) { work_dir_name_ = dir; }
+  void setPostABCScript(const std::string& path) { post_abc_script_ = path; }
 
  private:
   void deleteComponents();
   void getBlob(unsigned max_depth);
   void runABC();
   void postABC(float worst_slack);
-  bool writeAbcScript(std::string file_name, Mode mode);
-  void writeOptCommands(std::ofstream& script, Mode mode);
+  bool writeAbcScript(std::string file_name,
+                      Mode mode,
+                      const ushort iterations);
+  void writeOptCommands(std::ofstream& script,
+                        Mode mode,
+                        const ushort iterations);
   void initDB();
   void getEndPoints(sta::PinSet& ends, bool area_mode, unsigned max_depth);
   int countConsts(odb::dbBlock* top_block);

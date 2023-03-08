@@ -53,11 +53,17 @@ void RestructureCallBack::onRestructureJobReceived(dst::JobMessage& msg,
     rest_->addLibFile(lib_file);
   }
   rest_->setWorkDirName(desc->getWorkDirName());
+  rest_->setPostABCScript(desc->getPostABCScript());
   int numInstances = -1;
   int levelGain = -1;
   float delay = -1.0;
   std::string blif_path = desc->getBlifPath();
-  rest_->runABCJob(desc->getMode(), numInstances, levelGain, delay, blif_path);
+  rest_->runABCJob(desc->getMode(),
+                   desc->getIterations(),
+                   numInstances,
+                   levelGain,
+                   delay,
+                   blif_path);
 
   dst::JobMessage resultMsg(dst::JobMessage::SUCCESS);
   auto uResultDesc = std::make_unique<RestructureJobDescription>();

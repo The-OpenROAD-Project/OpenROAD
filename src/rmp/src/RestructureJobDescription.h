@@ -41,11 +41,13 @@ namespace rmp {
 class RestructureJobDescription : public dst::JobDescription
 {
  public:
-  RestructureJobDescription() : num_instances_(-1), level_gain_(-1), delay_(-1)
+  RestructureJobDescription()
+      : num_instances_(-1), level_gain_(-1), delay_(-1), iterations_(1)
   {
   }
   void setBlifPath(const std::string& path) { blif_path_ = path; }
   void setWorkDirName(const std::string& path) { work_dir_name_ = path; }
+  void setPostABCScript(const std::string& path) { post_abc_script_ = path; }
   void setHiCellPort(const std::string& cell, const std::string& port)
   {
     hicell_ = cell;
@@ -57,6 +59,7 @@ class RestructureJobDescription : public dst::JobDescription
     loport_ = port;
   }
   void setNumInstances(int value) { num_instances_ = value; }
+  void setIterations(int value) { iterations_ = value; }
   void setLevelGain(int value) { level_gain_ = value; }
   void setDelay(float value) { delay_ = value; }
   void setMode(Mode value) { mode_ = value; }
@@ -70,8 +73,10 @@ class RestructureJobDescription : public dst::JobDescription
   int getNumInstances() const { return num_instances_; }
   int getLevelGain() const { return level_gain_; }
   float getDelay() const { return delay_; }
+  ushort getIterations() const { return iterations_; }
   const std::string& getBlifPath() const { return blif_path_; }
   const std::string& getWorkDirName() const { return work_dir_name_; }
+  const std::string& getPostABCScript() const { return post_abc_script_; }
   const std::vector<std::string>& getLibFiles() const { return lib_files_; }
 
  private:
@@ -83,8 +88,10 @@ class RestructureJobDescription : public dst::JobDescription
   int num_instances_;
   int level_gain_;
   float delay_;
+  ushort iterations_;
   std::string blif_path_;
   std::string work_dir_name_;
+  std::string post_abc_script_;
   std::vector<std::string> lib_files_;
 
   template <class Archive>
@@ -98,9 +105,11 @@ class RestructureJobDescription : public dst::JobDescription
     (ar) & mode_;
     (ar) & num_instances_;
     (ar) & level_gain_;
+    (ar) & iterations_;
     (ar) & delay_;
     (ar) & blif_path_;
     (ar) & work_dir_name_;
+    (ar) & post_abc_script_;
     (ar) & lib_files_;
   }
   friend class boost::serialization::access;

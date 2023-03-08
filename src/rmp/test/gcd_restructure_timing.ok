@@ -87,16 +87,16 @@ Found 517 pins in extracted logic.
 Found 178 instances for restructuring.
 [INFO RMP-0002] Blif writer successfully dumped file with 178 instances.
 Cmd warning: redefining '%graft'
-Reading ABC log ./results/abc_rcon.log3.
+Reading ABC log abc_3_1.log.
 Optimized to 178 instances in iteration 0 with max path depth decrease of 1, delay of 429.69.
 Cmd warning: redefining '%graft'
-Reading ABC log ./results/abc_rcon.log4.
+Reading ABC log abc_4_1.log.
 Optimized to 187 instances in iteration 1 with max path depth decrease of -187, delay of 589.86.
 Cmd warning: redefining '%graft'
-Reading ABC log ./results/abc_rcon.log5.
+Reading ABC log abc_5_1.log.
 Optimized to 180 instances in iteration 2 with max path depth decrease of -185, delay of 528.28.
 Cmd warning: redefining '%graft'
-Reading ABC log ./results/abc_rcon.log6.
+Reading ABC log abc_6_1.log.
 Optimized to 179 instances in iteration 3 with max path depth decrease of -185, delay of 444.33.
 [INFO RMP-0005] Blif parsed successfully, will destroy 178 existing instances.
 [INFO RMP-0006] Found 41 inputs, 587 outputs, 0 clocks, 178 combinational gates, 0 registers after parsing the blif file.
