@@ -147,6 +147,7 @@ class dbNetwork : public ConcreteNetwork
   PortDirection* dbToSta(dbSigType sig_type, dbIoType io_type) const;
   // dbStaCbk::inDbBTermCreate
   void makeTopPort(dbBTerm* bterm);
+  ObjectId id(const Port *port) const override;
 
   ////////////////////////////////////////////////////////////////
   //

@@ -422,6 +422,15 @@ dbNetwork::metersToDbu(double dist) const
   return dist * dbu * 1e+6;
 }
 
+ObjectId dbNetwork::id(const Port *port) const
+{
+  if (!port) {
+    // should not match anything else
+    return std::numeric_limits<ObjectId>::max();
+  }
+  return ConcreteNetwork::id(port);
+}
+
 ////////////////////////////////////////////////////////////////
 
 ObjectId dbNetwork::id(const Instance* instance) const
