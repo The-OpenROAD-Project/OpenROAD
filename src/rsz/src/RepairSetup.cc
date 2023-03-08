@@ -341,9 +341,9 @@ RepairSetup::repairSetup(PathRef &path,
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
 
-      if (swapPins(drvr_path, drvr_index, &expanded) ||
-          //swapVtCell(drvr_path, drvr_index, &expanded) ||
-          upsizeDrvr(drvr_path, drvr_index, &expanded)) {
+      if (//swapVtCell(drvr_path, drvr_index, &expanded) ||
+          upsizeDrvr(drvr_path, drvr_index, &expanded)||
+          swapPins(drvr_path, drvr_index, &expanded)) {
         changed = true;
         break;
       }
