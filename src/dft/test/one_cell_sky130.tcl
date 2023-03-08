@@ -8,5 +8,7 @@ read_verilog one_cell_sky130.v
 link_design one_cell
 
 insert_dft
-write_verilog result_one_cell_sky130.v
-diff_files result_one_cell_sky130.v result_one_cell_sky130.vok
+
+set verilog_file [make_result_file one_cell_sky130.v]
+write_verilog $verilog_file
+diff_files $verilog_file one_cell_sky130.vok
