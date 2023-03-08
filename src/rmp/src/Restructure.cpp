@@ -131,7 +131,7 @@ void Restructure::getBlob(unsigned max_depth)
   open_sta_->ensureLevelized();
   open_sta_->searchPreamble();
 
-  sta::PinSet ends;
+  sta::PinSet ends(open_sta_->getDbNetwork());
 
   getEndPoints(ends, is_area_mode_, max_depth);
   if (ends.size()) {
