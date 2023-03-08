@@ -188,16 +188,19 @@ static PortDirection* determinePortDirection(const Net* net,
   }
 
   // no port is needed
-  if (local_only)
+  if (local_only) {
     return nullptr;
+  }
 
   if (locally_driven && externally_driven) {
     return PortDirection::bidirect();
-  } else if (externally_driven) {
-    return PortDirection::input();
-  } else {
-    return PortDirection::output();
   }
+
+  if (externally_driven) {
+    return PortDirection::input();
+  }
+
+  return PortDirection::output();
 }
 
 // find the correct brackets used in the liberty libraries.
@@ -258,8 +261,9 @@ Instance* PartitionMgr::buildPartitionedInstance(
       network->setDirection(port, db_network_->direction(pin));
       PortDirection* sub_module_dir
           = determinePortDirection(net, insts, db_network_);
-      if (sub_module_dir != nullptr)
+      if (sub_module_dir != nullptr) {
         network->setDirection(port, sub_module_dir);
+      }
 
       port_map->insert({net, port});
     }
@@ -347,14 +351,16 @@ Instance* PartitionMgr::buildPartitionedInstance(
 
     // determine real direction of port
     PortDirection* overall_direction = nullptr;
-    if (port_dirs.size() == 1)  // only one direction is used.
+    if (port_dirs.size() == 1) {  // only one direction is used.
       overall_direction = *port_dirs.begin();
-    else
+    } else {
       overall_direction = PortDirection::bidirect();
+    }
 
     // set port direction to match
-    for (Port* port : ports)
+    for (Port* port : ports) {
       network->setDirection(port, overall_direction);
+    }
 
     // fill in missing ports in bus
     const auto [min_idx, max_idx]
@@ -404,8 +410,9 @@ Instance* PartitionMgr::buildPartitionedInstance(
           network->connect(leaf_inst, port, new_net);
         } else {
           Net* new_net = network->findNet(inst, db_network_->name(net));
-          if (new_net == nullptr)
+          if (new_net == nullptr) {
             new_net = network->makeNet(db_network_->name(net), inst);
+          }
           network->connect(leaf_inst, port, new_net);
         }
       }
@@ -467,15 +474,16 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
                                          const char* module_suffix)
 {
   dbBlock* block = getDbBlock();
-  if (block == nullptr)
+  if (block == nullptr) {
     return;
+  }
 
   logger_->report("Writing partition to verilog.");
   // get top module name
   const std::string top_name = db_network_->name(db_network_->topInstance());
 
   // build partition instance map
-  std::map<long, std::set<Instance*>> instance_map;
+  std::map<int, std::set<Instance*>> instance_map;
   for (dbInst* inst : block->getInsts()) {
     dbIntProperty* prop_id = dbIntProperty::find(inst, "partition_id");
     if (!prop_id) {
@@ -498,8 +506,8 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
       = buildPartitionedTopInstance(top_name.c_str(), library, network);
 
   // build submodule partitions
-  std::map<long, Instance*> sta_instance_map;
-  std::map<long, std::map<Net*, Port*>> sta_port_map;
+  std::map<int, Instance*> sta_instance_map;
+  std::map<int, std::map<Net*, Port*>> sta_port_map;
   for (auto& [partition, instances] : instance_map) {
     const std::string cell_name
         = top_name + module_suffix + std::to_string(partition);
@@ -519,8 +527,9 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
       const char* net_name = network->name(port);
 
       Net* net = network->findNet(top_inst, net_name);
-      if (net == nullptr)
+      if (net == nullptr) {
         net = network->makeNet(net_name, top_inst);
+      }
 
       network->connect(instance, port, net);
     }
