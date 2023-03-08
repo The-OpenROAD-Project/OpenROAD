@@ -54,4 +54,5 @@ record_tests {
   tracks2
   tracks3
   upper_layer_net
+  modeling_instance_obs
 }
