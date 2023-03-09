@@ -758,7 +758,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> obj._min_step;
   stream >> obj._min_step_max_length;
   stream >> obj._min_step_max_edges;
-  stream >> obj._first_last_pitch;
   stream >> obj._max_width;
   stream >> obj._min_width;
   stream >> obj._pt._width;
@@ -789,6 +788,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
         obj.wrong_way_width_ = *rule->getWidthTable().begin();
         break;
       }
+  }
+  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+    stream >> obj._first_last_pitch;
   }
   // User Code End >>
   return stream;
@@ -831,7 +833,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._min_step;
   stream << obj._min_step_max_length;
   stream << obj._min_step_max_edges;
-  stream << obj._first_last_pitch;
   stream << obj._max_width;
   stream << obj._min_width;
   stream << obj._pt._width;
@@ -855,6 +856,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._oxide2;
   if (obj.getDatabase()->isSchema(db_schema_wrongway_width))
     stream << obj.wrong_way_width_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+    stream << obj._first_last_pitch;
+  }
   // User Code End <<
   return stream;
 }
@@ -2026,8 +2030,9 @@ bool dbTechLayer::hasXYPitch()
 bool dbTechLayer::hasPitch()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
-  if (layer->_pitch_x)
+  if (layer->_pitch_x) {
     return true;
+  }
   return false;
 }
 
