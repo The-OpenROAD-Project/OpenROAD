@@ -74,5 +74,13 @@ void triton_part_design(unsigned int num_parts,
                                       hypergraph_filename);
 }
 
+void write_partition_verilog(const char* port_prefix,
+                             const char* module_suffix,
+                             const char* file_name)
+{
+  getPartitionMgr()->writePartitionVerilog(file_name,
+                                           port_prefix,
+                                           module_suffix);
+}
 
 %}

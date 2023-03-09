@@ -38,6 +38,7 @@
 #include <map>
 #include <memory>
 #include <random>
+#include <set>
 
 namespace ord {
 class dbVerilogNetwork;
@@ -104,7 +105,25 @@ class PartitionMgr
       float balance_constraints,
       int seed = 0);
 
+  void writePartitionVerilog(const char* file_name,
+                             const char* port_prefix = "partition_",
+                             const char* module_suffix = "_partition");
+
  private:
+  odb::dbBlock* getDbBlock() const;
+  sta::Instance* buildPartitionedInstance(
+      const char* name,
+      const char* port_prefix,
+      sta::Library* library,
+      sta::NetworkReader* network,
+      sta::Instance* parent,
+      const std::set<sta::Instance*>* insts,
+      std::map<sta::Net*, sta::Port*>* port_map);
+
+  sta::Instance* buildPartitionedTopInstance(const char* name,
+                                             sta::Library* library,
+                                             sta::NetworkReader* network);
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   sta::dbSta* sta_ = nullptr;
