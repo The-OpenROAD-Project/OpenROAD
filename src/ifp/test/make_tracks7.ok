@@ -8,8 +8,4 @@ To avoid this warning in the future, remove this statement from the LEF file wit
 [INFO ODB-0225]     Created 212 library cells
 [INFO ODB-0226] Finished LEF file:  asap7_data/asap7.lef
 [INFO ODB-0128] Design: aes_cipher_top
-[INFO ODB-0130]     Created 388 pins.
-[INFO ODB-0131]     Created 22107 components and 115805 component-terminals.
-[INFO ODB-0132]     Created 2 special nets and 44214 connections.
-[INFO ODB-0133]     Created 21542 nets and 71591 connections.
 No differences found.
