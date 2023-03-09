@@ -51,7 +51,7 @@ class Graphics : public gui::Renderer
   void endPlacement();
 
   // From Renderer API
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
   static bool guiActive();
 
