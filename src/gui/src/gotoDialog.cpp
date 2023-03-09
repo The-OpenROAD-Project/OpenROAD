@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,32 +32,31 @@
 
 #include "gotoDialog.h"
 
-#include <string>
-
 #include "gui/gui.h"
 
 namespace gui {
-GotoObjectDialog::GotoObjectDialog(QWidget* parent) : QDialog(parent)
+GotoLocationDialog::GotoLocationDialog(QWidget* parent) : QDialog(parent)
 {
   setupUi(this);
 }
 
-void GotoObjectDialog::accept()
+void GotoLocationDialog::accept()
 {
-  int x_coord = xEdit->text().toDouble();
-  int y_coord = yEdit->text().toDouble();
-  int box_margin = 100;
-  auto gui = gui::Gui::get();
-  gui->zoomTo(odb::Rect(x_coord - box_margin,
-                        y_coord - box_margin,
-                        x_coord + box_margin,
-                        y_coord + box_margin));
-  QDialog::accept();
-}
 
-void GotoObjectDialog::reject()
-{
-  QDialog::reject();
+  auto gui = gui::Gui::get();
+  bool convert_x_ok;
+  bool convert_y_ok;
+  bool convert_margin_ok;
+  const int x_coord = Descriptor::Property::convert_string(xEdit->text().toStdString(), &convert_x_ok);
+  const int y_coord = Descriptor::Property::convert_string(yEdit->text().toStdString(), &convert_y_ok);
+  const int box_margin = Descriptor::Property::convert_string("100", &convert_margin_ok);
+
+  if (convert_x_ok && convert_y_ok && convert_margin_ok){
+    gui->zoomTo(odb::Rect(x_coord - box_margin,
+                          y_coord - box_margin,
+                          x_coord + box_margin,
+                          y_coord + box_margin));
+  }
 }
 
 }  // namespace gui

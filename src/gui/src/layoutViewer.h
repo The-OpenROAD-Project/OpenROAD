@@ -215,6 +215,8 @@ class LayoutViewer : public QWidget
 
   // center layout at the focus point
   void centerAt(const odb::Point& focus);
+  
+  odb::Point getVisibleCenter();
 
   // indicate that the center has changed, due to the scrollarea changing
   void updateCenter(int dx, int dy);
@@ -317,8 +319,6 @@ class LayoutViewer : public QWidget
   odb::Rect getPaddedRect(const odb::Rect& rect, double factor = 0.05);
 
   bool hasDesign() const;
-
-  odb::Point getVisibleCenter();
 
   int fineViewableResolution();
   int nominalViewableResolution();

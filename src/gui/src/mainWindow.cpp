@@ -102,7 +102,7 @@ MainWindow::MainWindow(QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
       find_dialog_(new FindObjectDialog(this)),
-      goto_dialog_(new GotoObjectDialog(this))
+      goto_dialog_(new GotoLocationDialog(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -515,7 +515,7 @@ void MainWindow::createActions()
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
 
-  goto_position_ = new QAction("Goto position", this);
+  goto_position_ = new QAction("Go to position", this);
   goto_position_->setShortcut(QString("Shift+G"));
 
   zoom_in_ = new QAction("Zoom in", this);
@@ -1135,6 +1135,7 @@ void MainWindow::showGotoDialog()
 {
   if (getBlock() == nullptr)
     return;
+   
   goto_dialog_->exec();
 }
 

@@ -294,7 +294,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   BrowserWidget* hierarchy_widget_;
 
   FindObjectDialog* find_dialog_;
-  GotoObjectDialog* goto_dialog_;
+  GotoLocationDialog* goto_dialog_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;

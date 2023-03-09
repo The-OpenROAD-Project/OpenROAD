@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,13 +37,12 @@
 #include "ui_gotoDlg.h"
 
 namespace gui {
-class GotoObjectDialog : public QDialog, public Ui::GotoObjDialog
+class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
 {
   Q_OBJECT
  public:
-  GotoObjectDialog(QWidget* parent = nullptr);
- public slots:
-  void accept();
-  void reject();
+  GotoLocationDialog(QWidget* parent = nullptr);
+  public slots:
+  void accept() override;
 };
 }  // namespace gui
