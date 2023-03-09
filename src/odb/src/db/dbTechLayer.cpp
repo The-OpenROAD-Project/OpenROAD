@@ -227,7 +227,7 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 
   if (_min_step_max_edges != rhs._min_step_max_edges)
     return false;
-  
+
   if (_first_last_pitch != rhs._first_last_pitch)
     return false;
 
