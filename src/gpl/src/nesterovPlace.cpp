@@ -48,6 +48,7 @@
 #include "utl/Logger.h"
 
 namespace gpl {
+using namespace std;
 
 using namespace std;
 using utl::GPL;

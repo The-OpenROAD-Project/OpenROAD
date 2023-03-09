@@ -324,7 +324,7 @@ void TritonPart::BuildTimingPaths()
   //              bool clk_gating_hold);
   // PathEnds represent search endpoints that are either unconstrained or
   // constrained by a timing check, output delay, data check, or path delay.
-  sta::PathEndSeq* path_ends
+  sta::PathEndSeq path_ends
       = sta_->search()->findPathEnds(  // from, thrus, to, unconstrained
           e_from,                      // return paths from a list of
                    // clocks/instances/ports/register clock pins or latch data
@@ -357,7 +357,7 @@ void TritonPart::BuildTimingPaths()
                   sta_->units()->timeUnit()->scale());
 
   // check all the timing paths
-  for (auto& path_end : *path_ends) {
+  for (auto& path_end : path_ends) {
     // Printing timing paths to logger
     // sta_->reportPathEnd(path_end);
     auto* path = path_end->path();
@@ -418,9 +418,6 @@ void TritonPart::BuildTimingPaths()
     timing_paths_.push_back(timing_path);
     timing_attr_.push_back(slack);
   }
-
-  // release memory
-  delete path_ends;
 }
 
 void TritonPart::GenerateTimingReport(std::vector<int>& partition, bool design)

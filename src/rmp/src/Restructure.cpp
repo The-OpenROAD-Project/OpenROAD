@@ -131,17 +131,17 @@ void Restructure::getBlob(unsigned max_depth)
   open_sta_->ensureLevelized();
   open_sta_->searchPreamble();
 
-  sta::PinSet ends;
+  sta::PinSet ends(open_sta_->getDbNetwork());
 
   getEndPoints(ends, is_area_mode_, max_depth);
   if (ends.size()) {
     sta::PinSet boundary_points = !is_area_mode_
-                                      ? resizer_->findFanins(&ends)
-                                      : resizer_->findFaninFanouts(&ends);
+                                      ? resizer_->findFanins(ends)
+                                      : resizer_->findFaninFanouts(ends);
     // fanin_fanouts.insert(ends.begin(), ends.end()); // Add seq cells
     logger_->report("Found {} pins in extracted logic.",
                     boundary_points.size());
-    for (sta::Pin* pin : boundary_points) {
+    for (const sta::Pin* pin : boundary_points) {
       odb::dbITerm* term = nullptr;
       odb::dbBTerm* port = nullptr;
       open_sta_->getDbNetwork()->staToDb(pin, term, port);

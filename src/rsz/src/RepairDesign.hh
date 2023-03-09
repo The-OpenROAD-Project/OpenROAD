@@ -75,10 +75,10 @@ class LoadRegion
 {
 public:
   LoadRegion();
-  LoadRegion(Vector<Pin*> &pins,
+  LoadRegion(PinSeq& pins,
        Rect &bbox);
 
-  Vector<Pin*> pins_;
+  PinSeq pins_;
   Rect bbox_; // dbu
   vector<LoadRegion> regions_;
 };
