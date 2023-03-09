@@ -1514,9 +1514,7 @@ void FlexPA::prepPattern()
       if (masterType != dbMasterType::CORE
           && masterType != dbMasterType::CORE_TIEHIGH
           && masterType != dbMasterType::CORE_TIELOW
-          && masterType != dbMasterType::CORE_ANTENNACELL
-          && !masterType.isBlock() && !masterType.isPad()
-          && masterType != dbMasterType::RING) {
+          && masterType != dbMasterType::CORE_ANTENNACELL) {
         continue;
       }
 
@@ -1998,8 +1996,7 @@ void FlexPA::getInsts(std::vector<frInst*>& insts)
     if (masterType != dbMasterType::CORE
         && masterType != dbMasterType::CORE_TIEHIGH
         && masterType != dbMasterType::CORE_TIELOW
-        && masterType != dbMasterType::CORE_ANTENNACELL && !masterType.isBlock()
-        && !masterType.isPad() && masterType != dbMasterType::RING) {
+        && masterType != dbMasterType::CORE_ANTENNACELL) {
       continue;
     }
     bool isSkip = true;
