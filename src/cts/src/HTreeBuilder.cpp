@@ -48,7 +48,6 @@
 namespace cts {
 
 using utl::CTS;
-using utl::Logger;
 
 void HTreeBuilder::preSinkClustering(
     std::vector<std::pair<float, float>>& sinks,
@@ -75,7 +74,7 @@ void HTreeBuilder::preSinkClustering(
   SinkClustering matching(options_, techChar_);
   const unsigned numPoints = points.size();
 
-  for (long int pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
+  for (int pointIdx = 0; pointIdx < numPoints; ++pointIdx) {
     const std::pair<float, float>& point = points[pointIdx];
     matching.addPoint(point.first, point.second);
     if (sinkInsts[pointIdx]->getInputCap() == 0) {
@@ -100,8 +99,8 @@ void HTreeBuilder::preSinkClustering(
       std::vector<ClockInst*> clusterClockInsts;  // sink clock insts
       float xSum = 0;
       float ySum = 0;
-      for (long int i = 0; i < cluster.size(); i++) {
-        const std::pair<double, double>& point = points[cluster[i]];
+      for (auto point_idx : cluster) {
+        const std::pair<double, double>& point = points[point_idx];
         const Point<double> mapPoint(point.first, point.second);
         xSum += point.first;
         ySum += point.second;
@@ -284,7 +283,7 @@ void HTreeBuilder::run()
     }
   }
 
-  if (topologyForEachLevel_.size() < 1) {
+  if (topologyForEachLevel_.empty()) {
     createSingleBufferClockNet();
     treeBufLevels_++;
     return;
@@ -519,7 +518,8 @@ unsigned HTreeBuilder::computeMinDelaySegment(unsigned length,
       outputSlew = bestBufSegment.getOutputSlew();
       outputCap = bestBufSegment.getLoad();
       return minBufKey;
-    } else if (tolerance < MAX_TOLERANCE) {
+    }
+    if (tolerance < MAX_TOLERANCE) {
       // Increasing tolerance
       return computeMinDelaySegment(length,
                                     inputSlew,
@@ -732,8 +732,8 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
   clusteringEngine.getClusters(clusters);
   unsigned movedSinks = 0;
   const double errorFactor = 1.2;
-  for (long int clusterIdx = 0; clusterIdx < clusters.size(); ++clusterIdx) {
-    for (long int elementIdx = 0; elementIdx < clusters[clusterIdx].size();
+  for (int clusterIdx = 0; clusterIdx < clusters.size(); ++clusterIdx) {
+    for (int elementIdx = 0; elementIdx < clusters[clusterIdx].size();
          ++elementIdx) {
       const unsigned sinkIdx = clusters[clusterIdx][elementIdx];
       const Point<double> sinkLoc(sinks[sinkIdx].first, sinks[sinkIdx].second);
@@ -748,15 +748,17 @@ void HTreeBuilder::refineBranchingPointsWithClustering(
         topology.addSinkToBranch(branchPtIdx2, sinkLoc);
       }
 
-      if (dist >= distOther * errorFactor)
+      if (dist >= distOther * errorFactor) {
         movedSinks++;
+      }
     }
   }
 
-  if (movedSinks > 0)
+  if (movedSinks > 0) {
     logger_->report(" Out of {} sinks, {} sinks closer to other cluster.",
                     sinks.size(),
                     movedSinks);
+  }
 
   assert(std::abs(branchPt1.computeDist(rootLocation) - targetDist) < 0.001
          && std::abs(branchPt2.computeDist(rootLocation) - targetDist) < 0.001);
@@ -789,7 +791,7 @@ void HTreeBuilder::createClockSubNets()
                            *techChar_,
                            wireSegmentUnit_,
                            this);
-    if (options_->getTreeBuffer() != "") {
+    if (!options_->getTreeBuffer().empty()) {
       builder.build(options_->getTreeBuffer());
     } else {
       builder.build();
@@ -826,7 +828,7 @@ void HTreeBuilder::createClockSubNets()
                              *techChar_,
                              wireSegmentUnit_,
                              this);
-      if (options_->getTreeBuffer() != "") {
+      if (!options_->getTreeBuffer().empty()) {
         builder.build(options_->getTreeBuffer());
       } else {
         builder.build();
@@ -882,8 +884,9 @@ void HTreeBuilder::createSingleBufferClockNet()
 void HTreeBuilder::treeVisualizer()
 {
   graphics_ = std::make_unique<Graphics>(this, &(clock_));
-  if (Graphics::guiActive())
+  if (Graphics::guiActive()) {
     graphics_->clockPlot(true);
+  }
 }
 
 void HTreeBuilder::plotSolution()
@@ -994,7 +997,7 @@ void SegmentBuilder::build(std::string forceBuffer)
   }
 }
 
-void SegmentBuilder::forceBufferInSegment(std::string master)
+void SegmentBuilder::forceBufferInSegment(const std::string& master)
 {
   if (numBufferLevels_ != 0) {
     return;
