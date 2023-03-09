@@ -542,4 +542,79 @@ void PartitionMgr::writePartitionVerilog(const char* file_name,
   delete network;
 }
 
+// Read partitioning input file
+
+void PartitionMgr::readPartitioningFile(const std::string& filename,
+                                        const std::string& instance_map_file)
+{
+  auto block = getDbBlock();
+
+  // determine order the instances will be in the input file
+  std::vector<odb::dbInst*> instance_order;
+  if (!instance_map_file.empty()) {
+    std::ifstream map_file(instance_map_file);
+    if (!map_file) {
+      logger_->error(PAR, 72, "Unable to open file {}.", instance_map_file);
+    }
+    std::string line;
+    while (getline(map_file, line)) {
+      if (line.empty()) {
+        continue;
+      }
+      auto inst = block->findInst(line.c_str());
+      if (!inst) {
+        logger_->error(PAR, 73, "Unable to find instance {}.", line);
+      }
+      instance_order.push_back(inst);
+    }
+  } else {
+    auto insts = block->getInsts();
+    instance_order.assign(insts.begin(), insts.end());
+  }
+
+  std::vector<int> inst_partitions;
+  {
+    std::ifstream file(filename);
+    if (!file) {
+      logger_->error(PAR, 22, "Unable to open file {}.", filename);
+    }
+    std::string line;
+    while (getline(file, line)) {
+      if (line.empty()) {
+        continue;
+      }
+      try {
+        inst_partitions.push_back(std::stoi(line));
+      } catch (const std::logic_error&) {
+        logger_->error(
+            PAR,
+            71,
+            "Unable to convert line \"{}\" to an integer in file: {}",
+            line,
+            filename);
+      }
+    }
+  }
+
+  if (inst_partitions.size() != instance_order.size()) {
+    logger_->error(PAR,
+                   74,
+                   "Instances in partitioning ({}) does not match instances in "
+                   "netlist ({}).",
+                   inst_partitions.size(),
+                   instance_order.size());
+  }
+
+  for (size_t i = 0; i < inst_partitions.size(); i++) {
+    const auto inst = instance_order[i];
+    const auto partition_id = inst_partitions[i];
+
+    if (auto property = odb::dbIntProperty::find(inst, "partition_id")) {
+      property->setValue(partition_id);
+    } else {
+      odb::dbIntProperty::create(inst, "partition_id", partition_id);
+    }
+  }
+}
+
 }  // namespace par

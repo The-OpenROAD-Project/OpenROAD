@@ -105,6 +105,8 @@ class PartitionMgr
       float balance_constraints,
       int seed = 0);
 
+  void readPartitioningFile(const std::string& filename,
+                            const std::string& instance_map_file);
   void writePartitionVerilog(const char* file_name,
                              const char* port_prefix = "partition_",
                              const char* module_suffix = "_partition");
