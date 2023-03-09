@@ -272,8 +272,15 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
           frAccessPoint* ap
               = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
           if (ap == nullptr) {
-            pinIdx++;
-            continue;
+            // if ap is nullptr, get first PA from frMPin
+            frPinAccess* pa = pin->getPinAccess(0);
+            if (pa != nullptr) {
+              // use first ap of frMPin's pin access to set pinCoord of iroute
+              ap = pa->getAccessPoint(0);
+            } else {
+              pinIdx++;
+              continue;
+            }
           }
           Point bp = ap->getPoint();
           shiftXform.apply(bp);
