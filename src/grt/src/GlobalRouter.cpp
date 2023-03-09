@@ -3120,19 +3120,23 @@ bool GlobalRouter::layerIsBlocked(
     std::vector<odb::Rect>& extended_obs)
 {
   // if layer is max or min, then all obs the nearest layer are added
-  if (layer == max_routing_layer_)
+  if (layer == max_routing_layer_) {
     extended_obs = macro_obs_per_layer.at(layer - 1);
-  if (layer == min_routing_layer_)
+  }
+  if (layer == min_routing_layer_) {
     extended_obs = macro_obs_per_layer.at(layer + 1);
+  }
 
   std::vector<odb::Rect> upper_obs;
   std::vector<odb::Rect> lower_obs;
 
   // Get Rect vector to layer + 1 and layer - 1
-  if (macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end())
+  if (macro_obs_per_layer.find(layer + 1) != macro_obs_per_layer.end()) {
     upper_obs = macro_obs_per_layer.at(layer + 1);
-  if (macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end())
+  }
+  if (macro_obs_per_layer.find(layer - 1) != macro_obs_per_layer.end()) {
     lower_obs = macro_obs_per_layer.at(layer - 1);
+  }
 
   // sort vector by min Rect's xlo (increasing order)
   sort(upper_obs.begin(), upper_obs.end());
@@ -3154,7 +3158,7 @@ bool GlobalRouter::layerIsBlocked(
     }
   }
 
-  return extended_obs.size() > 0;
+  return !extended_obs.empty();
 }
 
 // Add obstructions if they appear on upper and lower layer
@@ -3164,19 +3168,22 @@ void GlobalRouter::extendObstructions(
     int top_layer)
 {
   // if it has obs on min_layer + 1, then the min_layer needs to be block
-  if (bottom_layer - 1 == min_routing_layer_)
+  if (bottom_layer - 1 == min_routing_layer_) {
     bottom_layer--;
+  }
   // if it has obs on max_layer - 1, then the max_layer needs to be block
-  if (top_layer + 1 == max_routing_layer_)
+  if (top_layer + 1 == max_routing_layer_) {
     top_layer++;
+  }
 
   for (int layer = bottom_layer; layer <= top_layer; layer++) {
     std::vector<odb::Rect>& obs = macro_obs_per_layer[layer];
     std::vector<odb::Rect> extended_obs;
     // check if layer+1 and layer-1 have obstructions
     // if they have then add to layer Rect vector
-    if (layerIsBlocked(layer, macro_obs_per_layer, extended_obs))
+    if (layerIsBlocked(layer, macro_obs_per_layer, extended_obs)) {
       obs.insert(obs.end(), extended_obs.begin(), extended_obs.end());
+    }
   }
 }
 
