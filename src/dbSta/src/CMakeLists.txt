@@ -44,11 +44,14 @@ swig_lib(NAME          dbSta
                        ${ODB_HOME}/include
          SCRIPTS       ${OPENSTA_HOME}/tcl/Graph.tcl
                        ${OPENSTA_HOME}/tcl/Liberty.tcl
+                       ${OPENSTA_HOME}/tcl/CmdArgs.tcl
+                       ${OPENSTA_HOME}/tcl/CmdUtil.tcl
+                       ${OPENSTA_HOME}/tcl/Property.tcl
+                       ${OPENSTA_HOME}/tcl/WritePathSpice.tcl
                        ${OPENSTA_HOME}/tcl/Network.tcl
                        ${OPENSTA_HOME}/tcl/NetworkEdit.tcl
                        ${OPENSTA_HOME}/tcl/Sdc.tcl
                        ${OPENSTA_HOME}/tcl/Search.tcl
-                       ${OPENSTA_HOME}/tcl/Cmds.tcl
                        ${OPENSTA_HOME}/tcl/Variables.tcl
                        ${OPENSTA_HOME}/tcl/Sta.tcl
                        ${OPENSTA_HOME}/tcl/Splash.tcl

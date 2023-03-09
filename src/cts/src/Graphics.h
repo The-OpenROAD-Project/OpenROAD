@@ -55,7 +55,7 @@ class SinkClustering;
 class Graphics : public gui::Renderer
 {
  public:
-  Graphics(HTreeBuilder* HTreeBuilder, Clock* clock);
+  Graphics(HTreeBuilder* h_tree_builder, Clock* clock);
 
   Graphics(SinkClustering* SinkClustering,
            const std::vector<Point<double>>& points);
@@ -67,7 +67,7 @@ class Graphics : public gui::Renderer
   void status(const std::string& message);
 
   // From Renderer API
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
   // Is the GUI being displayed (true) or are we in batch mode (false)
   static bool guiActive();
