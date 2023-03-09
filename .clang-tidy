@@ -28,6 +28,7 @@ Checks: >
   -google-readability-avoid-underscore-in-googletest-name,
   -google-readability-casting,
   -google-readability-todo,
+  -google-runtime-references,
   performance-*,
   bugprone-*,
   -bugprone-branch-clone,
