@@ -213,7 +213,7 @@ inline WireSegment& TechChar::createWireSegment(uint8_t length,
 }
 
 void TechChar::forEachWireSegment(
-    const std::function<void(unsigned, const WireSegment&)> func) const
+    const std::function<void(unsigned, const WireSegment&)>& func) const
 {
   for (unsigned idx = 0; idx < wireSegments_.size(); ++idx) {
     func(idx, wireSegments_[idx]);
@@ -224,7 +224,7 @@ void TechChar::forEachWireSegment(
     uint8_t length,
     uint8_t load,
     uint8_t outputSlew,
-    const std::function<void(unsigned, const WireSegment&)> func) const
+    const std::function<void(unsigned, const WireSegment&)>& func) const
 {
   const unsigned key = computeKey(length, load, outputSlew);
 
@@ -252,8 +252,7 @@ void TechChar::report() const
   forEachWireSegment([&](unsigned idx, const WireSegment& segment) {
     std::string buffLocs;
     for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-      buffLocs
-          = buffLocs + std::to_string(segment.getBufferLocation(idx)) + " ";
+      buffLocs += std::to_string(segment.getBufferLocation(idx)) + " ";
     }
 
     logger_->report("     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}{}",
@@ -299,8 +298,7 @@ void TechChar::reportSegments(uint8_t length,
       length, load, outputSlew, [&](unsigned idx, const WireSegment& segment) {
         std::string buffLocs;
         for (unsigned idx = 0; idx < segment.getNumBuffers(); ++idx) {
-          buffLocs
-              = buffLocs + std::to_string(segment.getBufferLocation(idx)) + " ";
+          buffLocs += std::to_string(segment.getBufferLocation(idx)) + " ";
         }
         logger_->report(
             "     {:<5}{:<5}{:<10}{:<12}{:<8}{:<8}{:<8}{:<8}{:<10}{}",
@@ -362,7 +360,7 @@ void TechChar::printSolution() const
               * ((float) (segment.getLength())
                  * (float) (options_->getWireSegmentUnit()));
 
-        report += std::to_string((unsigned long) (wirelengthValue));
+        report += std::to_string(lround(wirelengthValue));
         report += "," + segment.getBufferMaster(idx);
         if (!(idx + 1 >= segment.getNumBuffers())) {
           report += ",";
@@ -371,7 +369,7 @@ void TechChar::printSolution() const
     } else {
       const float wirelengthValue = (float) (segment.getLength())
                                     * (float) (options_->getWireSegmentUnit());
-      report += std::to_string((unsigned long) (wirelengthValue));
+      report += std::to_string(lround(wirelengthValue));
     }
 
     logger_->report("{}", report);
