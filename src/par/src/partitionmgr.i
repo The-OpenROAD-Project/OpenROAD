@@ -83,4 +83,9 @@ void write_partition_verilog(const char* port_prefix,
                                            module_suffix);
 }
 
+void read_file(const char* filename, const char* instance_map_file) {
+  getPartitionMgr()->readPartitioningFile(filename, instance_map_file);
+}
+
+
 %}
