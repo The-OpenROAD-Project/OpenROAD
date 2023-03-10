@@ -94,12 +94,13 @@ class InitFloorplan
 
  protected:
   double designArea();
-  void makeRows(dbSite* site,
-                int core_lx,
-                int core_ly,
-                int core_ux,
-                int core_uy,
-                int factor);
+  int makeRows(dbSite* site,
+               int core_lx,
+               int core_ly,
+               int core_ux,
+               int core_uy,
+               int factor,
+               int row_index);
   odb::dbSite* findSite(const char* site_name);
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);

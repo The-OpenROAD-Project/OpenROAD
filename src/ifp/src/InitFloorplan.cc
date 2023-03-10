@@ -195,6 +195,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
 
   if (core.xMin() >= 0 && core.yMin() >= 0) {
     eval_upf(logger_, block_);
+    int row_index = 0;
     for (auto site : sites) {
       // Destroy any existing rows.
       int x_height_site = site->getHeight() / min_site_height;
@@ -227,7 +228,9 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
       }
       int cux = core.xMax();
       int cuy = core.yMax();
-      makeRows(site, clx, cly, cux, cuy, x_height_site);
+      int rows_placed
+          = makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
+      row_index += rows_placed;
       updateVoltageDomain(site, clx, cly, cux, cuy);
     }
   }
@@ -430,12 +433,14 @@ std::set<dbSite*> InitFloorplan::getSites() const
   return sites;
 }
 
-void InitFloorplan::makeRows(dbSite* site,
-                             int core_lx,
-                             int core_ly,
-                             int core_ux,
-                             int core_uy,
-                             int factor)
+// Create the rows for the core area and returns the number of rows it created
+int InitFloorplan::makeRows(dbSite* site,
+                            int core_lx,
+                            int core_ly,
+                            int core_ux,
+                            int core_uy,
+                            int factor,
+                            int row_index)
 {
   int core_dx = abs(core_ux - core_lx);
   int core_dy = abs(core_uy - core_ly);
@@ -449,7 +454,7 @@ void InitFloorplan::makeRows(dbSite* site,
     dbOrientType orient = (factor % 2 == 0 or row % 2 == 0)
                               ? dbOrientType::R0   // N
                               : dbOrientType::MX;  // FS
-    string row_name = stdstrPrint("ROW_%d", row);
+    string row_name = stdstrPrint("ROW_%d", row_index + row);
     dbRow::create(block_,
                   row_name.c_str(),
                   site,
@@ -461,7 +466,15 @@ void InitFloorplan::makeRows(dbSite* site,
                   site_dx);
     y += site_dy;
   }
-  logger_->info(IFP, 1, "Added {} rows of {} sites.", rows_y, rows_x);
+  logger_->info(IFP,
+                1,
+                "Added {} rows of {} site {} with height {}.",
+                rows_y,
+                rows_x,
+                site->getName(),
+                factor);  // using the factor instead of the cell height for
+                          // reporting
+  return rows_y;
 }
 
 dbSite* InitFloorplan::findSite(const char* site_name)
