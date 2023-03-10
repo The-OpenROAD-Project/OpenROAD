@@ -84,7 +84,7 @@ public:
                    double repair_tns_end_percent,
                    int max_passes);
   // For testing.
-  void repairSetup(Pin *drvr_pin);
+  void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);

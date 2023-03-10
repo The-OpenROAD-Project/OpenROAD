@@ -40,11 +40,7 @@
 
 namespace dpl {
 
-using std::max;
-using std::min;
 using std::vector;
-
-using odb::dbPlacementStatus;
 using odb::Direction2D;
 
 using utl::DPL;
@@ -63,20 +59,24 @@ void Opendp::checkPlacement(bool verbose)
   for (Cell& cell : cells_) {
     if (isStdCell(&cell)) {
       // Site alignment check
-      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0)
+      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
         site_align_failures.push_back(&cell);
-      if (!checkInRows(cell))
+      }
+      if (!checkInRows(cell)) {
         in_rows_failures.push_back(&cell);
+      }
     }
     // Placed check
-    if (!isPlaced(&cell))
+    if (!isPlaced(&cell)) {
       placed_failures.push_back(&cell);
+    }
     // Overlap check
-    if (checkOverlap(cell))
+    if (checkOverlap(cell)) {
       overlap_failures.push_back(&cell);
     // One site gap check
     if (disallow_one_site_gaps_ && checkOneSiteGaps(cell)) {
       one_site_gap_failures.push_back(&cell);
+    }
     }
   }
 
@@ -147,8 +147,9 @@ bool Opendp::checkInRows(const Cell& cell) const
     for (int x = x_ll; x < x_ur; x++) {
       Pixel* pixel = gridPixel(x, y);
       if (pixel == nullptr  // outside core
-          || !pixel->is_valid)
+          || !pixel->is_valid) {
         return false;
+      }
     }
   }
   return true;
@@ -180,10 +181,12 @@ Cell* Opendp::checkOverlap(Cell& cell) const
   visitCellPixels(cell, true, [&](Pixel* pixel) {
     Cell* pixel_cell = pixel->cell;
     if (pixel_cell) {
-      if (pixel_cell != &cell && overlap(&cell, pixel_cell))
+      if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
         overlap_cell = pixel_cell;
-    } else
+      }
+    } else {
       pixel->cell = &cell;
+    }
   });
   return overlap_cell;
 }

@@ -70,7 +70,10 @@
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
 #include "pad/MakeICeWall.h"
+#ifdef ENABLE_PAR
+// par causes abseil link error at startup on apple silicon
 #include "par/MakePartitionMgr.h"
+#endif
 #include "pdn/MakePdnGen.hh"
 #include "ppl/MakeIoplacer.h"
 #include "psm/MakePDNSim.hh"
@@ -156,8 +159,9 @@ OpenRoad::OpenRoad()
 OpenRoad::~OpenRoad()
 {
   deleteDbVerilogNetwork(verilog_network_);
-  deleteDbSta(sta_);
-  sta::deleteAllMemory();
+  // Temporarily removed until a crash can be resolved
+  // deleteDbSta(sta_);
+  // sta::deleteAllMemory();
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
@@ -176,7 +180,9 @@ OpenRoad::~OpenRoad()
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
+#ifdef ENABLE_PAR
   deletePartitionMgr(partitionMgr_);
+#endif
   deletePdnGen(pdngen_);
   deleteICeWall(icewall_);
   deleteDistributed(distributer_);
@@ -232,7 +238,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
+#ifdef ENABLE_PAR
   partitionMgr_ = makePartitionMgr();
+#endif
   pdngen_ = makePdnGen();
   icewall_ = makeICeWall();
   distributer_ = makeDistributed();
@@ -271,7 +279,9 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
+#ifdef ENABLE_PAR
   initPartitionMgr(this);
+#endif
   initPdnGen(this);
   initDistributed(this);
   initSteinerTreeBuilder(this);

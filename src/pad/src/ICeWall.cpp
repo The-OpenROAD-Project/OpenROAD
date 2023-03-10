@@ -166,6 +166,7 @@ void ICeWall::makeBTerm(odb::dbNet* net,
   odb::dbBox::create(
       pin, layer, shape.xMin(), shape.yMin(), shape.xMax(), shape.yMax());
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+  Utilities::makeSpecial(net);
 }
 
 void ICeWall::assignBump(odb::dbInst* inst, odb::dbNet* net)

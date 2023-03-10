@@ -113,8 +113,7 @@ bool PowerDensityDataSource::populateMap()
       continue;
     }
 
-    sta::PowerResult power;
-    sta_->power(network->dbToSta(inst), corner_, power);
+    sta::PowerResult power = sta_->power(network->dbToSta(inst), corner_);
 
     float pwr = 0.0;
     if (include_all) {
