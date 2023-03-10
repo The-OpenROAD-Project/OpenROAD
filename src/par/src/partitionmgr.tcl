@@ -170,3 +170,21 @@ proc write_partition_verilog { args } {
 
   par::write_partition_verilog $port_prefix $module_suffix $args
 }
+
+sta::define_cmd_args "read_partitioning" { -read_file name [-instance_map_file file_path] }
+
+proc read_partitioning { args } {
+  sta::parse_key_args "read_partitioning" args \
+    keys { -read_file \
+      -instance_map_file
+    } flags { }
+
+  if { ![info exists keys(-read_file)] } {
+    utl::error PAR 51 "Missing mandatory argument -read_file"
+  }
+  set instance_file ""
+  if { [info exists keys(-instance_map_file)] } {
+    set instance_file $keys(-instance_map_file)
+  }
+  return [par::read_file $keys(-read_file) $instance_file]
+}
