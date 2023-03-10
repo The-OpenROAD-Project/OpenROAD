@@ -8,5 +8,7 @@ read_verilog sub_modules_sky130.v
 link_design sub_modules
 
 insert_dft
-write_verilog result_sub_modules_sky130.v
-diff_files result_sub_modules_sky130.v result_sub_modules_sky130.vok
+
+set verilog_file [make_result_file sub_modules_sky130.v]
+write_verilog $verilog_file
+diff_files $verilog_file sub_modules_sky130.vok

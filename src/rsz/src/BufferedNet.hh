@@ -86,7 +86,7 @@ public:
   // load
   BufferedNet(const BufferedNetType type,
               const Point location,
-              Pin *load_pin,
+              const Pin *load_pin,
               const Corner *corner,
               const Resizer *resizer);
   // wire
@@ -126,7 +126,7 @@ public:
   float maxLoadSlew() const { return max_load_slew_; }
   void setMaxLoadSlew(float max_slew);
   // load
-  Pin *loadPin() const { return load_pin_; }
+  const Pin *loadPin() const { return load_pin_; }
   // wire
   int length() const;
   // routing level
@@ -163,7 +163,7 @@ private:
   BufferedNetType type_;
   Point location_;
   // only used by load type
-  Pin *load_pin_;
+  const Pin *load_pin_;
   // only used by buffer type
   LibertyCell *buffer_cell_;
   // only used by wire type

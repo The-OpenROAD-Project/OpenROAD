@@ -82,7 +82,10 @@ class WireSegment
 
   void addBuffer(double location) { bufferLocations_.push_back(location); }
 
-  void addBufferMaster(std::string name) { bufferMasters_.push_back(name); }
+  void addBufferMaster(const std::string& name)
+  {
+    bufferMasters_.push_back(name);
+  }
 
   double getPower() const { return power_; }
   unsigned getDelay() const { return delay_; }
@@ -91,7 +94,7 @@ class WireSegment
   uint8_t getLength() const { return length_; }
   uint8_t getLoad() const { return load_; }
   uint8_t getOutputSlew() const { return outputSlew_; }
-  bool isBuffered() const { return bufferLocations_.size() > 0; }
+  bool isBuffered() const { return !bufferLocations_.empty(); }
   unsigned getNumBuffers() const { return bufferLocations_.size(); }
   const std::vector<double>& getBufferLocations() { return bufferLocations_; }
   const std::vector<std::string>& getBufferMasters() { return bufferMasters_; }
@@ -144,13 +147,13 @@ class TechChar
   void reportSegments(uint8_t length, uint8_t load, uint8_t outputSlew) const;
 
   void forEachWireSegment(
-      const std::function<void(unsigned, const WireSegment&)> func) const;
+      const std::function<void(unsigned, const WireSegment&)>& func) const;
 
   void forEachWireSegment(
       uint8_t length,
       uint8_t load,
       uint8_t outputSlew,
-      const std::function<void(unsigned, const WireSegment&)> func) const;
+      const std::function<void(unsigned, const WireSegment&)>& func) const;
 
   const WireSegment& getWireSegment(unsigned idx) const
   {
@@ -215,7 +218,7 @@ class TechChar
     }
   };
 
-  typedef uint32_t Key;
+  using Key = uint32_t;
 
   void printCharacterization() const;
   void printSolution() const;
