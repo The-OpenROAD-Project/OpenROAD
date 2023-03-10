@@ -40,8 +40,8 @@
 
 namespace dpl {
 
-using std::vector;
 using odb::Direction2D;
+using std::vector;
 
 using utl::DPL;
 
@@ -73,10 +73,10 @@ void Opendp::checkPlacement(bool verbose)
     // Overlap check
     if (checkOverlap(cell)) {
       overlap_failures.push_back(&cell);
+    }
     // One site gap check
     if (disallow_one_site_gaps_ && checkOneSiteGaps(cell)) {
       one_site_gap_failures.push_back(&cell);
-    }
     }
   }
 
