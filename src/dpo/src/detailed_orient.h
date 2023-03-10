@@ -70,7 +70,7 @@ class DetailedOrient
  public:
   DetailedOrient(Architecture* arch, Network* network);
 
-  void run(DetailedMgr* mgrPtr, std::string command);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
   // Useful to have some of these routines accessible/public.

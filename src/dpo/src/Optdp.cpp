@@ -65,7 +65,6 @@ using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbITerm;
 using odb::dbMaster;
-using odb::dbMasterType;
 using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -80,24 +79,6 @@ using odb::dbSWire;
 using odb::dbTechLayer;
 using odb::dbWireType;
 using odb::Rect;
-
-////////////////////////////////////////////////////////////////
-Optdp::Optdp()
-    : db_(nullptr),
-      logger_(nullptr),
-      opendp_(nullptr),
-      arch_(nullptr),
-      network_(nullptr),
-      routeinfo_(nullptr),
-      hpwlBefore_(0),
-      hpwlAfter_(0)
-{
-}
-
-////////////////////////////////////////////////////////////////
-Optdp::~Optdp()
-{
-}
 
 ////////////////////////////////////////////////////////////////
 void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
@@ -917,7 +898,7 @@ void Optdp::setUpPlacementRegions()
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
 }
 ////////////////////////////////////////////////////////////////
-unsigned Optdp::dbToDpoOrient(dbOrientType dbOrient)
+unsigned Optdp::dbToDpoOrient(const dbOrientType& dbOrient)
 {
   unsigned orient = dpo::Orientation_N;
   switch (dbOrient) {

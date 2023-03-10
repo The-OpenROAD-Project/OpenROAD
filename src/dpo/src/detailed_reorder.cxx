@@ -67,10 +67,7 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, const std::string& command)
   boost::char_separator<char> separators(" \r\t\n;");
   boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
-  for (boost::tokenizer<boost::char_separator<char>>::iterator it
-       = tokens.begin();
-       it != tokens.end();
-       it++) {
+  for (auto it = tokens.begin(); it != tokens.end(); it++) {
     args.push_back(*it);
   }
   run(mgrPtr, args);
