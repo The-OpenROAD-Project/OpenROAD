@@ -18,6 +18,6 @@ record_tests {
   placement_blockage2
   tiecells
   upf_test
-  mock
+  multi_height1
 }
 
