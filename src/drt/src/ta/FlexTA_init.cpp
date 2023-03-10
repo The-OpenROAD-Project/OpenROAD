@@ -275,8 +275,13 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
             // if ap is nullptr, get first PA from frMPin
             frPinAccess* pa = pin->getPinAccess(0);
             if (pa != nullptr) {
-              // use first ap of frMPin's pin access to set pinCoord of iroute
-              ap = pa->getAccessPoint(0);
+              if (pa->getNumAccessPoints() > 0) {
+                // use first ap of frMPin's pin access to set pinCoord of iroute
+                ap = pa->getAccessPoint(0);
+              } else {
+                pinIdx++;
+                continue;
+              }
             } else {
               pinIdx++;
               continue;
