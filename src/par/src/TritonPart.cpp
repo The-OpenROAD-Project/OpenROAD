@@ -324,7 +324,7 @@ void TritonPart::BuildTimingPaths()
   //              bool clk_gating_hold);
   // PathEnds represent search endpoints that are either unconstrained or
   // constrained by a timing check, output delay, data check, or path delay.
-  sta::PathEndSeq* path_ends
+  sta::PathEndSeq path_ends
       = sta_->search()->findPathEnds(  // from, thrus, to, unconstrained
           e_from,                      // return paths from a list of
                    // clocks/instances/ports/register clock pins or latch data
@@ -357,7 +357,7 @@ void TritonPart::BuildTimingPaths()
                   sta_->units()->timeUnit()->scale());
 
   // check all the timing paths
-  for (auto& path_end : *path_ends) {
+  for (auto& path_end : path_ends) {
     // Printing timing paths to logger
     // sta_->reportPathEnd(path_end);
     auto* path = path_end->path();
@@ -418,9 +418,6 @@ void TritonPart::BuildTimingPaths()
     timing_paths_.push_back(timing_path);
     timing_attr_.push_back(slack);
   }
-
-  // release memory
-  delete path_ends;
 }
 
 void TritonPart::GenerateTimingReport(std::vector<int>& partition, bool design)
@@ -703,6 +700,21 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   if (!solution_filename.empty()) {
     WriteSolution(solution_filename.c_str(), partition);
   }
+
+  for (auto inst : block_->getInsts()) {
+    auto vertex_id_property = odb::dbIntProperty::find(inst, "vertex_id");
+    if (!vertex_id_property) {
+      logger_->error(PAR, 8, "No partition assigned for {}", inst->getName());
+    }
+    const int vertex_id = vertex_id_property->getValue();
+    const int partition_id = partition[vertex_id];
+    if (auto property = odb::dbIntProperty::find(inst, "partition_id")) {
+      property->setValue(partition_id);
+    } else {
+      odb::dbIntProperty::create(inst, "partition_id", partition_id);
+    }
+  }
+
   std::vector<std::vector<int>> timing_paths;
   for (auto& tpath : timing_paths_) {
     timing_paths.push_back(tpath.path);

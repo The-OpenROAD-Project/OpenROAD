@@ -124,7 +124,7 @@ public:
 
 protected:
   void locAddPin(Point &loc,
-                 Pin *pin);
+                 const Pin *pin);
 
   stt::Tree tree_;
   const Pin *drvr_pin_;
