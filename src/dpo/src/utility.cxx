@@ -90,9 +90,7 @@ double Utility::hpwl(const Network* nw, double& hpwlx, double& hpwly)
     }
 
     box.reset();
-    for (unsigned p = 0; p < ed->getPins().size(); p++) {
-      const Pin* pin = ed->getPins()[p];
-
+    for (const Pin* pin : ed->getPins()) {
       const Node* ndi = pin->getNode();
       const double py
           = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
@@ -128,9 +126,7 @@ double Utility::hpwl(const Edge* ed, double& hpwlx, double& hpwly)
   }
 
   Rectangle box;
-  for (int p = 0; p < ed->getPins().size(); p++) {
-    const Pin* pin = ed->getPins()[p];
-
+  for (const Pin* pin : ed->getPins()) {
     const Node* ndi = pin->getNode();
     const double py
         = ndi->getBottom() + 0.5 * ndi->getHeight() + pin->getOffsetY();
