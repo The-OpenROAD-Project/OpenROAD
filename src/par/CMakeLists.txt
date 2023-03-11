@@ -36,7 +36,7 @@
 include("openroad")
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -Wall -fPIC")
+set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -m64 -Wall -fPIC")
 set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem ")
 set(LINKER_OPTIONS                  "-Wl,--export-dynamic")
 
