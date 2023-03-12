@@ -55,11 +55,11 @@ class DetailedDisplacement : public DetailedObjective
 {
   // For WL objective.
  public:
-  DetailedDisplacement(Architecture* arch);
+  explicit DetailedDisplacement(Architecture* arch);
 
   void init();
   double curr() override;
-  double delta(const int n,
+  double delta(int n,
                const std::vector<Node*>& nodes,
                const std::vector<int>& curLeft,
                const std::vector<int>& curBottom,
