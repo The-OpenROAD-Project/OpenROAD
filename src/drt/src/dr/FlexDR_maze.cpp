@@ -2015,9 +2015,9 @@ void FlexDRWorker::routeNet_setSrc(
       break;
     }
   }
-  frCoord centerX = totX / totAPCnt;
-  frCoord centerY = totY / totAPCnt;
-  frCoord centerZ = totZ / totAPCnt;
+  const frCoord centerX = totX / totAPCnt;
+  const frCoord centerY = totY / totAPCnt;
+  const frCoord centerZ = totZ / totAPCnt;
   centerPt = {centerX, centerY};
 
   // select the farmost pin from the center point as the src
