@@ -63,11 +63,11 @@ class DetailedHPWL : public DetailedObjective
 {
   // For WL objective.
  public:
-  DetailedHPWL(Network* network);
+  explicit DetailedHPWL(Network* network);
 
   void init();
   double curr() override;
-  double delta(const int n,
+  double delta(int n,
                const std::vector<Node*>& nodes,
                const std::vector<int>& curLeft,
                const std::vector<int>& curBottom,

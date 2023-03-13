@@ -75,10 +75,10 @@ class ShiftLegalizer
   void merge(Clump* r);
   bool violated(Clump* r, Clump*& l, int& dist);
 
-  DetailedMgr* mgr_;
-  Architecture* arch_;
-  Network* network_;
-  RoutingParams* rt_;
+  DetailedMgr* mgr_ = nullptr;
+  Architecture* arch_ = nullptr;
+  Network* network_ = nullptr;
+  RoutingParams* rt_ = nullptr;
 
   // For clumping.
   std::vector<Clump> clumps_;

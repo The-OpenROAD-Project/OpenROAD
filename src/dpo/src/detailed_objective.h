@@ -55,7 +55,7 @@ namespace dpo {
 class DetailedObjective
 {
  public:
-  DetailedObjective(const char* name = "objective") : name_(name) {}
+  explicit DetailedObjective(const char* name = "objective") : name_(name) {}
   virtual ~DetailedObjective() = default;
 
   virtual const std::string& getName() const { return name_; }
@@ -64,7 +64,7 @@ class DetailedObjective
 
   // Different methods for generating moves.  We _must_ overload these.  The
   // generated move should be stored in the manager.
-  virtual double delta(const int n,
+  virtual double delta(int n,
                        const std::vector<Node*>& nodes,
                        const std::vector<int>& curLeft,
                        const std::vector<int>& curBottom,
