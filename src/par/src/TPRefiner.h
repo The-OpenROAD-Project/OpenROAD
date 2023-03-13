@@ -157,7 +157,7 @@ class TPrefiner
         refiner_iters_(refiner_iters),
         refiner_choice_(refiner_choice),
         seed_(seed),
-        thr_he_size_skip_(998),
+        thr_he_size_skip_(0),
         e_wt_factors_(e_wt_factors),
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),

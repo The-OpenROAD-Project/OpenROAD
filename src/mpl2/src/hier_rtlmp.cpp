@@ -287,6 +287,7 @@ void HierRTLMP::setDefaultThresholds()
     macro_blockage_weight_ = outline_weight_ / 2.0;
     logger_->report("Reset macro_blockage_weight : {}", macro_blockage_weight_);
   }
+
   //
   // Set sizes for root level based on coarsening_factor and the number of
   // physical hierarchy levels
@@ -418,24 +419,66 @@ void HierRTLMP::hierRTLMacroPlacer()
 
   // Create physical hierarchy tree in a post-order DFS manner
   logger_->report("\nPerform Clustering..");
-  multiLevelCluster(root_cluster_);
-
-  logger_->report("\nPrint Physical Hierachy Tree\n");
-  printPhysicalHierarchyTree(root_cluster_, 0);
-
-  //
-  // Break mixed leaf clusters into a standard-cell cluster and hard-macro
-  // clusters. Merge macros based on connection signatures and footprints. Based
-  // on types of designs, we support two types of breaking up. Suppose current
-  // cluster is A --
-  // Type 1:  Replace A by A1, A2, A3
-  // Type 2:  Create a subtree for A
-  //          A  ->    A
-  //               |  |   |
-  //              A1  A2  A3
-  //
-  logger_->report("\nBreak mixed clusters into std cell and macro clusters.");
-  leafClusterStdCellHardMacroSep(root_cluster_);
+  // add two enhancements to handle corner cases
+  // (1) the design only has fake macros (for academic fake testcases)
+  // (2) the design has on logical hierarchy (for academic fake testcases)
+  if (metrics_->getNumStdCell() == 0) {
+    logger_->report("[Warning] This design has no standard cells ..");
+    logger_->report("Each macro is treated as a single cluster");
+    auto module = block_->getTopModule();
+    for (odb::dbInst* inst : module->getInsts()) {
+      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+      if (liberty_cell == nullptr)
+        continue;
+      odb::dbMaster* master = inst->getMaster();
+      // check if the instance is a Pad, Cover or empty block (such as marker)
+      if (master->isPad() || master->isCover()) {
+        continue;
+      } else if (master->isBlock()) {
+        std::string cluster_name = inst->getName();
+        Cluster* cluster = new Cluster(cluster_id_, cluster_name, logger_);
+        cluster->addLeafMacro(inst);
+        setInstProperty(cluster);
+        setClusterMetrics(cluster);
+        cluster_map_[cluster_id_++] = cluster;
+        // modify the physical hierarchy tree
+        cluster->setParent(root_cluster_);
+        cluster->setClusterType(HardMacroCluster);
+        root_cluster_->addChild(cluster);
+        logger_->report("model {} as a cluster.", cluster_name);
+      } 
+    }
+    // reset parameters
+    pos_swap_prob_ = 0.3;
+    neg_swap_prob_ = 0.3;
+    double_swap_prob_ = 0.3;
+    exchange_swap_prob_ = 0.1;
+    flip_prob_ = 0.0;
+    resize_prob_ = 0.0; 
+    guidance_weight_ = 0.0;
+    fence_weight_ = 0.0;
+    boundary_weight_ = 0.0;
+    notch_weight_ = 0.0;
+    macro_blockage_weight_ = 0.0;
+    virtual_weight_ = 1.0;
+    max_num_ff_dist_ = 1;  
+    dataflow_weight_ = 1.0;    
+  } else {
+    multiLevelCluster(root_cluster_);
+    //
+    // Break mixed leaf clusters into a standard-cell cluster and hard-macro
+    // clusters. Merge macros based on connection signatures and footprints. Based
+    // on types of designs, we support two types of breaking up. Suppose current
+    // cluster is A --
+    // Type 1:  Replace A by A1, A2, A3
+    // Type 2:  Create a subtree for A
+    //          A  ->    A
+    //               |  |   |
+    //              A1  A2  A3
+    //
+    logger_->report("\nBreak mixed clusters into std cell and macro clusters.");
+    leafClusterStdCellHardMacroSep(root_cluster_);
+  }
 
   logger_->report(
       "\nPrint Physical Hierachy Tree after splitting std cell and macros in "
@@ -5161,15 +5204,15 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   int boundary_h_th = std::numeric_limits<int>::max();
   for (auto& macro_inst : hard_macros) {
     boundary_h_th = std::min(
-        boundary_h_th, static_cast<int>(macro_inst->getRealWidthDBU() * 1.5));
+        boundary_h_th, static_cast<int>(macro_inst->getRealWidthDBU() * 1.0));
     boundary_v_th = std::min(
-        boundary_v_th, static_cast<int>(macro_inst->getRealHeightDBU() * 1.5));
+        boundary_v_th, static_cast<int>(macro_inst->getRealHeightDBU() * 1.0));
   }
   // const int notch_v_th = std::min(micronToDbu(notch_v_th_, dbu_),
   // boundary_v_th); const int notch_h_th = std::min(micronToDbu(notch_h_th_,
   // dbu_), boundary_h_th);
-  const int notch_v_th = boundary_v_th;
-  const int notch_h_th = boundary_h_th;
+  const int notch_v_th = boundary_v_th * 1.25;
+  const int notch_h_th = boundary_h_th * 1.25;
   // const int notch_v_th = micronToDbu(notch_v_th_, dbu_) + boundary_v_th;
   // const int notch_h_th = micronToDbu(notch_h_th_, dbu_) + boundary_h_th;
   logger_->report("boundary_h_th : {}, boundary_v_th : {}",

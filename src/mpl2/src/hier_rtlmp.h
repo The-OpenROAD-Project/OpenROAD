@@ -342,7 +342,7 @@ class HierRTLMP
 
   // the virtual weight between std cell part and corresponding macro part
   // to force them stay together
-  const float virtual_weight_ = 10.0;
+  float virtual_weight_ = 10.0;
 
   // probability of each action
   float pos_swap_prob_ = 0.2;
@@ -360,9 +360,9 @@ class HierRTLMP
   float floorplan_uy_ = 0.0;
 
   // dataflow parameters and store the dataflow
-  const int max_num_ff_dist_ = 5;  // maximum number of FF distances between
-  const float dataflow_factor_ = 2.0;
-  const float dataflow_weight_ = 1;
+  int max_num_ff_dist_ = 5;  // maximum number of FF distances between
+  float dataflow_factor_ = 2.0;
+  float dataflow_weight_ = 1;
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
       macro_ffs_conn_map_;
   std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>

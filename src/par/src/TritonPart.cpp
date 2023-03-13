@@ -293,6 +293,33 @@ void TritonPart::BuildTimingPaths()
   sta_->ensureGraph();     // Ensure that the timing graph has been built
   sta_->searchPreamble();  // Make graph and find delays
 
+  // Find the arrival times,  required times, delay and slack
+  // find the slacks of all the nets
+  sta_->ensureLevelized(); 
+  sta::Graph* graph = sta_->graph(); // timing graph
+  // find all all the drivers
+  std::vector<sta::Vertex*> driver_vertices;
+  sta::VertexIterator vertex_iter(graph);
+  while (vertex_iter.hasNext()) {
+    sta::Vertex *vertex = vertex_iter.next();
+    if (vertex->isDriver(network_))
+      driver_vertices.emplace_back(vertex);
+  }
+
+  for (auto& driver : driver_vertices) {
+    sta::Pin *driver_pin = driver->pin();
+    sta::Net *net = network_->isTopLevelPort(driver_pin) 
+                  ? network_->net(network_->term(driver_pin)) 
+                  : network_->net(driver_pin);
+    if (net && !driver->isConstant()
+         // Hands off special nets.
+         && !network_->isSpecial(net)
+         && !sta_->isClock(driver_pin)) {
+      logger_->report("net_name :  {}", network_->name(net));
+      logger_->report("slack : {}", sta_->vertexSlack(driver, sta::MinMax::max())); // slack 
+    }
+  }
+
   sta::ExceptionFrom* e_from = nullptr;
   sta::ExceptionThruSeq* e_thrus = nullptr;
   sta::ExceptionTo* e_to = nullptr;
