@@ -34,7 +34,9 @@
 
 #include <stdio.h>
 
+#include <cstdint>
 #include <limits>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -1406,6 +1408,7 @@ void defout_impl::writeWire(dbWire* wire)
 
   for (decode.begin(wire);;) {
     dbWireDecoder::OpCode opcode = decode.next();
+    std::optional<uint8_t> color = decode.getColor();
 
     switch (opcode) {
       case dbWireDecoder::PATH:
@@ -1558,8 +1561,23 @@ void defout_impl::writeWire(dbWire* wire)
         deltaY1 = defdist(deltaY1);
         deltaX2 = defdist(deltaX2);
         deltaY2 = defdist(deltaY2);
-        fprintf(
-            _out, " RECT ( %d %d %d %d ) ", deltaX1, deltaY1, deltaX2, deltaY2);
+        if (color.has_value()) {
+          fprintf(_out,
+                  " RECT MASK %d ( %d %d %d %d ) ",
+                  color.value(),
+                  deltaX1,
+                  deltaY1,
+                  deltaX2,
+                  deltaY2);
+
+        } else {
+          fprintf(_out,
+                  " RECT ( %d %d %d %d ) ",
+                  deltaX1,
+                  deltaY1,
+                  deltaX2,
+                  deltaY2);
+        }
         break;
       }
 

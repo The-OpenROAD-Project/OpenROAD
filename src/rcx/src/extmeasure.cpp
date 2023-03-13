@@ -117,8 +117,9 @@ uint extMeasure::createNetSingleWire(char* dirName,
                                      uint s_layout,
                                      int dir)
 {
+  dbTechLayer* layer = _create_net_util.getRoutingLayer()[_met];
+
   if (w_layout == 0) {
-    dbTechLayer* layer = _create_net_util.getRoutingLayer()[_met];
     w_layout = layer->getWidth();
   }
   if (s_layout == 0) {
@@ -149,8 +150,17 @@ uint extMeasure::createNetSingleWire(char* dirName,
     sprintf(netName, "%s_%d", dirName, idCnt);
 
   assert(_create_net_util.getBlock() == _block);
-  dbNet* net = _create_net_util.createNetSingleWire(
-      netName, ll[0], ll[1], ur[0], ur[1], _met);
+
+  dbNet* net;
+  if (layer->getNumMasks() > 1) {
+    // Alternate mask colors based on id
+    uint8_t mask_color = (idCnt % layer->getNumMasks()) + 1;
+    net = _create_net_util.createNetSingleWire(
+        netName, ll[0], ll[1], ur[0], ur[1], _met, mask_color);
+  } else {
+    net = _create_net_util.createNetSingleWire(
+        netName, ll[0], ll[1], ur[0], ur[1], _met);
+  }
 
   dbBTerm* in1 = net->get1stBTerm();
   if (in1 != NULL) {
