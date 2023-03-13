@@ -1,4 +1,4 @@
-OpenROAD 6230132b0e3fd893b08d061e697dc4d53e3dfab3 
+OpenROAD 4bc512dc3939753f0ad3bf5be3c0322191e5419d 
 This program is licensed under the BSD-3 license. See the LICENSE file for details.
 Components of this program may be licensed under more restrictive licenses which must be honored.
 [INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45_tech.lef
@@ -34,7 +34,7 @@ Components of this program may be licensed under more restrictive licenses which
 [INFO ODB-0128] Design: mp_test1
 [INFO ODB-0252]     Updated 8 pins.
 [INFO ODB-0253]     Updated 10 components.
-Floorplan Outline: (0.0, 0.0) (400.0, 400.0),  Core Outline: (4, 4) (444, 443)
+Floorplan Outline: (0.0, 0.0) (450.0, 450.0),  Core Outline: (4, 4) (444, 443)
 Traversed logical hierarchy
 	Number of std cell instances : 0
 	Area of std cell instances : 0.00
@@ -49,13 +49,13 @@ Reset macro_blockage_weight : 50.0
 num level: 1, max_macro: 5, min_macro: 1, max_inst:5000, min_inst:1000
 area_weight_ = 0.1
 outline_weight_ = 100.0
-wirelength_weight_ = 50.0
+wirelength_weight_ = 100.0
 guidance_weight_ = 10.0
 fence_weight_ = 10.0
 boundary_weight_ = 15.0
 notch_weight_ = 10.0
 macro_blockage_weight_ = 50.0
-halo_width_ = 0.0
+halo_width_ = 5.0
 bus_planning_flag_ = false
 
 Create Data Flow

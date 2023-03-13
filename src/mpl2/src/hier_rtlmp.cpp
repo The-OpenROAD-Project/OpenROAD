@@ -449,20 +449,20 @@ void HierRTLMP::hierRTLMacroPlacer()
       } 
     }
     // reset parameters
-    pos_swap_prob_ = 0.3;
-    neg_swap_prob_ = 0.3;
-    double_swap_prob_ = 0.3;
-    exchange_swap_prob_ = 0.1;
-    flip_prob_ = 0.0;
+    pos_swap_prob_ = 0.2;
+    neg_swap_prob_ = 0.2;
+    double_swap_prob_ = 0.2;
+    exchange_swap_prob_ = 0.2;
+    flip_prob_ = 0.2;
     resize_prob_ = 0.0; 
     guidance_weight_ = 0.0;
     fence_weight_ = 0.0;
     boundary_weight_ = 0.0;
     notch_weight_ = 0.0;
     macro_blockage_weight_ = 0.0;
-    virtual_weight_ = 1.0;
-    max_num_ff_dist_ = 1;  
-    dataflow_weight_ = 1.0;    
+    //virtual_weight_ = 1.0;
+    //max_num_ff_dist_ = 1;  
+    //dataflow_weight_ = 1.0;    
   } else {
     multiLevelCluster(root_cluster_);
     //
