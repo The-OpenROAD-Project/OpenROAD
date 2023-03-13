@@ -395,17 +395,21 @@ std::set<dbSite*> InitFloorplan::getSites() const
   // loop over all instantiated cells in the block
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
-    // check if it is a PAD cell
-    if (master->isPad()) {
+
+    auto site = master->getSite();
+    // if site is null, and the core is auto placeable, then warn the user and
+    // skip that cell
+    if (!master->isCoreAutoPlaceable()) {
       continue;
     }
-    auto site = master->getSite();
     if (site == nullptr) {
-      logger_->warn(IFP,
-                    43,
-                    "No site found for instance {} in block {}.",
-                    inst->getName(),
-                    block_->getName());
+      if (master->isCoreAutoPlaceable()) {
+        logger_->warn(IFP,
+                      43,
+                      "No site found for instance {} in block {}.",
+                      inst->getName(),
+                      block_->getName());
+      }
       continue;
     }
     sites.insert(site);
