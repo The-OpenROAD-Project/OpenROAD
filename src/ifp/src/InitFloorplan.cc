@@ -395,6 +395,10 @@ std::set<dbSite*> InitFloorplan::getSites() const
   // loop over all instantiated cells in the block
   for (dbInst* inst : block_->getInsts()) {
     dbMaster* master = inst->getMaster();
+    // check if it is a PAD cell
+    if (master->isPad()) {
+      continue;
+    }
     auto site = master->getSite();
     if (site == nullptr) {
       logger_->warn(IFP,
