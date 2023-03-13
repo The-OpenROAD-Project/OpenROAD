@@ -615,19 +615,22 @@ void dbWireEncoder::end()
   _point_cnt = 0;
 }
 
-void dbWireEncoder::setColor(uint8_t color) {
+void dbWireEncoder::setColor(uint8_t color)
+{
   utl::Logger* logger = _wire->getImpl()->getLogger();
 
   // LEF/DEF says 3 is the max number of supported masks per layer.
   // 0 is also not a valid mask.
   if (color < 1 || color > 3) {
-    logger->error(utl::ODB, 1102, "Mask color: {}, but must be between 1 and 3", color);
+    logger->error(
+        utl::ODB, 1102, "Mask color: {}, but must be between 1 and 3", color);
   }
-  
+
   addOp(WOP_COLOR, color);
 }
 
-void dbWireEncoder::clearColor() {
+void dbWireEncoder::clearColor()
+{
   // 0 is a special value representing no mask color.
   addOp(WOP_COLOR, 0);
 }
@@ -1035,11 +1038,11 @@ nextOpCode:
 
     case WOP_NOP:
       goto nextOpCode;
-    
+
     case WOP_COLOR: {
       // 3 MSB bits of the opcode represent the color
       _color = static_cast<uint8_t>(_wire->_data[_idx]);
-      
+
       if (_color.value() == 0) {
         _color = std::nullopt;
       }
@@ -1104,7 +1107,8 @@ dbTechVia* dbWireDecoder::getTechVia() const
   return via;
 }
 
-std::optional<uint8_t> dbWireDecoder::getColor() const {
+std::optional<uint8_t> dbWireDecoder::getColor() const
+{
   return _color;
 }
 

@@ -73,7 +73,6 @@ namespace odb {
 #define WOP_NOP 15       //  X X X 0 1 1 1 1 :  operand = 0
 #define WOP_COLOR 16     //  X X X 1 0 0 0 0 :  operand = integer operand
 
-
 // opcode-flags
 #define WOP_VIA_EXIT_TOP \
   0x80  // This flag indicates the path exited through the top or bottom via

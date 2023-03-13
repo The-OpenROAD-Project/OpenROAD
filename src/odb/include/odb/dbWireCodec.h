@@ -33,8 +33,8 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 #include <optional>
+#include <vector>
 
 #include "dbTypes.h"
 #include "odb.h"
