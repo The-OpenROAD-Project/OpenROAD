@@ -422,7 +422,24 @@ dbNetwork::metersToDbu(double dist) const
   return dist * dbu * 1e+6;
 }
 
+ObjectId dbNetwork::id(const Port *port) const
+{
+  if (!port) {
+    // should not match anything else
+    return std::numeric_limits<ObjectId>::max();
+  }
+  return ConcreteNetwork::id(port);
+}
+
 ////////////////////////////////////////////////////////////////
+
+ObjectId dbNetwork::id(const Instance* instance) const
+{
+  if (instance == top_instance_) {
+    return 0;
+  }
+  return staToDb(instance)->getId();
+}
 
 const char*
 dbNetwork::name(const Instance* instance) const
@@ -564,24 +581,22 @@ dbNetwork::findNet(const Instance* instance, const char* net_name) const
   return dbToSta(dnet);
 }
 
-void
-dbNetwork::findInstNetsMatching(const Instance* instance,
-                                const PatternMatch* pattern,
-                                // Return value.
-                                NetSeq* nets) const
+void dbNetwork::findInstNetsMatching(const Instance* instance,
+                                     const PatternMatch* pattern,
+                                     NetSeq& nets) const
 {
   if (instance == top_instance_) {
     if (pattern->hasWildcards()) {
       for (dbNet* dnet : block_->getNets()) {
         const char* net_name = dnet->getConstName();
         if (pattern->match(net_name))
-          nets->push_back(dbToSta(dnet));
+          nets.push_back(dbToSta(dnet));
       }
     }
     else {
       dbNet* dnet = block_->findNet(pattern->pattern());
       if (dnet)
-        nets->push_back(dbToSta(dnet));
+        nets.push_back(dbToSta(dnet));
     }
   }
 }
@@ -605,6 +620,18 @@ dbNetwork::netIterator(const Instance* instance) const
 }
 
 ////////////////////////////////////////////////////////////////
+
+ObjectId dbNetwork::id(const Pin* pin) const
+{
+  dbITerm* iterm;
+  dbBTerm* bterm;
+  staToDb(pin, iterm, bterm);
+
+  if (iterm) {
+    return iterm->getId() + iterm->getBlock()->getBTerms().size();
+  }
+  return bterm->getId();
+}
 
 Instance*
 dbNetwork::instance(const Pin* pin) const
@@ -779,6 +806,11 @@ dbNetwork::isPlaced(const Pin* pin) const
 
 ////////////////////////////////////////////////////////////////
 
+ObjectId dbNetwork::id(const Net* net) const
+{
+  return staToDb(net)->getId();
+}
+
 const char*
 dbNetwork::name(const Net* net) const
 {
@@ -820,10 +852,9 @@ dbNetwork::termIterator(const Net* net) const
 }
 
 // override ConcreteNetwork::visitConnectedPins
-void
-dbNetwork::visitConnectedPins(const Net* net,
-                              PinVisitor& visitor,
-                              ConstNetSet& visited_nets) const
+void dbNetwork::visitConnectedPins(const Net* net,
+                                   PinVisitor& visitor,
+                                   NetSet& visited_nets) const
 {
   dbNet* db_net = staToDb(net);
   for (dbITerm* iterm : db_net->getITerms()) {
@@ -836,13 +867,17 @@ dbNetwork::visitConnectedPins(const Net* net,
   }
 }
 
-Net*
-dbNetwork::highestConnectedNet(Net* net) const
+const Net* dbNetwork::highestConnectedNet(Net* net) const
 {
   return net;
 }
 
 ////////////////////////////////////////////////////////////////
+
+ObjectId dbNetwork::id(const Term* term) const
+{
+  return staToDb(term)->getId();
+}
 
 Pin*
 dbNetwork::pin(const Term* term) const
@@ -1231,8 +1266,7 @@ dbNetwork::disconnectPin(Pin* pin)
     bterm->disconnect();
 }
 
-void
-dbNetwork::disconnectPinBefore(Pin* pin)
+void dbNetwork::disconnectPinBefore(const Pin* pin)
 {
   Net* net = this->net(pin);
   // Incrementally update drivers.
@@ -1273,8 +1307,7 @@ dbNetwork::deleteNet(Net* net)
   dbNet::destroy(dnet);
 }
 
-void
-dbNetwork::deleteNetBefore(Net* net)
+void dbNetwork::deleteNetBefore(const Net* net)
 {
   PinSet* drvrs = net_drvr_pin_map_.findKey(net);
   delete drvrs;

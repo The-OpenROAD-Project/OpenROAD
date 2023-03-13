@@ -1707,7 +1707,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       if (isRouted == false) {
         if (OUT_MAZE_FILE == string("")) {
           if (VERBOSE > 0) {
-            cout << "Waring: no output maze log specified, skipped writing "
+            cout << "Warning: no output maze log specified, skipped writing "
                     "maze log"
                  << endl;
           }

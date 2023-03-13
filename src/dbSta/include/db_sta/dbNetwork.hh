@@ -147,6 +147,7 @@ class dbNetwork : public ConcreteNetwork
   PortDirection* dbToSta(dbSigType sig_type, dbIoType io_type) const;
   // dbStaCbk::inDbBTermCreate
   void makeTopPort(dbBTerm* bterm);
+  ObjectId id(const Port *port) const override;
 
   ////////////////////////////////////////////////////////////////
   //
@@ -165,6 +166,7 @@ class dbNetwork : public ConcreteNetwork
   Instance* topInstance() const override;
   // Name local to containing cell/instance.
   const char* name(const Instance* instance) const override;
+  ObjectId id(const Instance *instance) const override;
   Cell* cell(const Instance* instance) const override;
   Instance* parent(const Instance* instance) const override;
   bool isLeaf(const Instance* instance) const override;
@@ -176,6 +178,7 @@ class dbNetwork : public ConcreteNetwork
   
   ////////////////////////////////////////////////////////////////
   // Pin functions
+  ObjectId id(const Pin *pin) const override;
   Pin* findPin(const Instance* instance, const char* port_name) const override;
   Pin* findPin(const Instance* instance, const Port* port) const override;
   Port* port(const Pin* pin) const override;
@@ -190,21 +193,23 @@ class dbNetwork : public ConcreteNetwork
   // Terminal functions
   Net* net(const Term* term) const override;
   Pin* pin(const Term* term) const override;
+  ObjectId id(const Term *term) const override;
 
   ////////////////////////////////////////////////////////////////
   // Net functions
+  ObjectId id(const Net *net) const override;
   Net* findNet(const Instance* instance, const char* net_name) const override;
   void findInstNetsMatching(const Instance* instance,
                             const PatternMatch* pattern,
                             // Return value.
-                            NetSeq* nets) const override;
+                            NetSeq& nets) const override;
   const char* name(const Net* net) const override;
   Instance* instance(const Net* net) const override;
   bool isPower(const Net* net) const override;
   bool isGround(const Net* net) const override;
   NetPinIterator* pinIterator(const Net* net) const override;
   NetTermIterator* termIterator(const Net* net) const override;
-  Net* highestConnectedNet(Net* net) const override;
+  const Net* highestConnectedNet(Net *net) const override;
   bool isSpecial(Net* net);
 
   ////////////////////////////////////////////////////////////////
@@ -221,11 +226,11 @@ class dbNetwork : public ConcreteNetwork
   Pin* connect(Instance* inst, LibertyPort* port, Net* net) override;
   void connectPinAfter(Pin* pin);
   void disconnectPin(Pin* pin) override;
-  void disconnectPinBefore(Pin* pin);
+  void disconnectPinBefore(const Pin* pin);
   void deletePin(Pin* pin) override;
   Net* makeNet(const char* name, Instance* parent) override;
   void deleteNet(Net* net) override;
-  void deleteNetBefore(Net* net);
+  void deleteNetBefore(const Net* net);
   void mergeInto(Net* net, Net* into_net) override;
   Net* mergedInto(Net* net) override;
   double dbuToMeters(int dist) const;
@@ -246,14 +251,14 @@ class dbNetwork : public ConcreteNetwork
   using Network::netIterator;
   using NetworkReader::makeCell;
   using NetworkReader::makeLibrary;
-
+ 
  protected:
   void readDbNetlistAfter();
   void makeTopCell();
   void findConstantNets();
   void visitConnectedPins(const Net* net,
                           PinVisitor& visitor,
-                          ConstNetSet& visited_nets) const override;
+                          NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name);
 
   dbDatabase* db_;

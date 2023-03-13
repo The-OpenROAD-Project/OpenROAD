@@ -101,7 +101,7 @@ class DetailedMgr
                                     int& violatedX,
                                     int& violatedY);
 
-  void internalError(std::string msg);
+  void internalError(const std::string& msg);
 
   void setupObstaclesForDrc();
 
@@ -309,7 +309,7 @@ class DetailedMgr
              int segId,
              int rowId);
   bool shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr);
-  bool shiftLeftHelper(Node* ndi, int xj, int sj, Node* ndr);
+  bool shiftLeftHelper(Node* ndi, int xj, int sj, Node* ndl);
   void getSpaceToLeftAndRight(int seg, int ix, double& left, double& right);
 
   // For composing list of cells for moves or swaps.

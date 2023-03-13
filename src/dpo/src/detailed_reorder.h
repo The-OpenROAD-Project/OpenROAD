@@ -56,8 +56,8 @@ class DetailedReorderer
  private:
   void reorder();
   void reorder(const std::vector<Node*>& nodes,
-               int istrt,
-               int istop,
+               int jstrt,
+               int jstop,
                int leftLimit,
                int rightLimit,
                int segId,

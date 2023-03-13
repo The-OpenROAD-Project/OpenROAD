@@ -122,10 +122,9 @@ bool IsScanEquivalent(
         = FindEquivalentPortInScanCell(non_scan_cell_port, scan_cell);
     if (!scan_equiv_port) {
       return false;
-    } else {
-      port_mapping.insert(
-          {non_scan_cell_port->name(), scan_equiv_port->name()});
     }
+
+    port_mapping.insert({non_scan_cell_port->name(), scan_equiv_port->name()});
   }
 
   sta::LibertyCellPgPortIterator non_scan_cell_pg_ports_iter(non_scan_cell);
@@ -136,10 +135,10 @@ bool IsScanEquivalent(
         = FindEquivalentPortInScanCell(non_scan_cell_pg_port, scan_cell);
     if (!scan_equiv_port) {
       return false;
-    } else {
-      port_mapping.insert(
-          {non_scan_cell_pg_port->name(), scan_equiv_port->name()});
     }
+
+    port_mapping.insert(
+        {non_scan_cell_pg_port->name(), scan_equiv_port->name()});
   }
 
   return true;
@@ -199,7 +198,7 @@ bool HaveDontTouchNets(odb::dbInst* inst)
 
 ScanCandidate::ScanCandidate(
     sta::LibertyCell* scan_cell,
-    std::unordered_map<std::string, std::string> port_mapping)
+    const std::unordered_map<std::string, std::string>& port_mapping)
     : scan_cell_(scan_cell), port_mapping_(port_mapping)
 {
 }

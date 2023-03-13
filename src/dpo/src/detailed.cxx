@@ -123,7 +123,7 @@ bool Detailed::improve(DetailedMgr& mgr)
 //////////////////////////////////////////////////////////////////////////////////
 void Detailed::doDetailedCommand(std::vector<std::string>& args)
 {
-  if (args.size() == 0) {
+  if (args.empty()) {
     return;
   }
 
@@ -132,7 +132,7 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   auto logger = mgr_->getLogger();
 
   // Print something about what command will run.
-  std::string command = "";
+  std::string command;
   if (strcmp(args[0].c_str(), "mis") == 0) {
     command = "independent set matching";
   } else if (strcmp(args[0].c_str(), "gs") == 0) {
