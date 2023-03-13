@@ -1156,7 +1156,7 @@ void TritonRoute::reportDRC(const string& file_name,
       logger_->warn(
           DRT,
           290,
-          "Waring: no DRC report specified, skipped writing DRC report");
+          "Warning: no DRC report specified, skipped writing DRC report");
     }
     return;
   }
