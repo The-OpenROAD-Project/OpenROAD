@@ -2,11 +2,25 @@ import os
 import matplotlib.pyplot as plt
 from math import log
 import json
+import argparse
 
-net_threshold = 1.0
+parser = argparse.ArgumentParser()
+parser.add_argument("--directory", default = "./results/mp_test1", help = "result directory")
+parser.add_argument("--net_threshold", default = -1, help = "nets with weight below net_threshold will not be displayed")
+parser.add_argument("--top_n", default = 50, help = "only show the top_n nets")
 
+args = parser.parse_args()
+design_dir = args.directory
+top_n = args.top_n
+net_threshold = args.net_threshold
+
+# users can set this threshold manually
+# if it's not set, it will be updated automatically
+# only highlight the top n critical edges
+#top_n = 50
+#net_threshold = -1
 highlight_list = []
-design_dir = "./results/mp_test1"
+#design_dir = "./results/mp_test1"
 file_name =  design_dir + "/root.fp.txt"
 macro_map = {   }
 terminal_map = {  }
@@ -26,9 +40,18 @@ with open(file_name) as f:
     content = f.read().splitlines()
 f.close()
 
+net_values = []
 for line in content:
     items = line.split()
     net_map.append([items[0], items[1], float(items[2]) + 1])
+    net_values.append(float(items[2]) + 1)
+
+if (top_n > 0 and net_threshold <= 1 and len(net_values) > top_n):
+  net_values.sort(reverse = True)
+  net_threshold = net_values[top_n]
+  print("Only highlight the top ", top_n, " edges")
+  print("Reset net_threshold to ", net_threshold)
+
 
 lx = 1e9
 ly = 1e9
