@@ -64,12 +64,14 @@ void lefTechLayerCutEnclosureRuleParser::setCutClass(
     odb::dbTechLayer* layer)
 {
   auto cutClass = layer->findTechLayerCutClassRule(val.c_str());
-  if (cutClass == nullptr)
+  if (cutClass == nullptr) {
     lefin_->warning(
         601,
         "cut class {} not found for LEF58_ENCLOSURE rule for layer {}",
         val,
         layer->getName());
+    return;
+  }
   rule->setCutClass(cutClass);
   rule->setCutClassValid(true);
 }
