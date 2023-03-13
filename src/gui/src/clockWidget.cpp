@@ -1161,7 +1161,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
     const PinArrival& output_pin,
     sta::dbNetwork* network)
 {
-  auto convert_pin = [&network](sta::Pin* pin) -> odb::dbITerm* {
+  auto convert_pin = [&network](const sta::Pin* pin) -> odb::dbITerm* {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     network->staToDb(pin, iterm, bterm);

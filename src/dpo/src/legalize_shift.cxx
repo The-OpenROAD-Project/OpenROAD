@@ -63,15 +63,10 @@ struct ShiftLegalizer::Clump
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-ShiftLegalizer::ShiftLegalizer()
-    : mgr_(nullptr), arch_(nullptr), network_(nullptr), rt_(nullptr)
-{
-}
+ShiftLegalizer::ShiftLegalizer() = default;
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-ShiftLegalizer::~ShiftLegalizer()
-{
-}
+ShiftLegalizer::~ShiftLegalizer() = default;
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 bool ShiftLegalizer::legalize(DetailedMgr& mgr)
@@ -117,7 +112,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
 
   std::vector<Node*> cells;  // All movable cells.
   // Snap.
-  if (mgr.getSingleHeightCells().size() != 0) {
+  if (!mgr.getSingleHeightCells().empty()) {
     mgr.assignCellsToSegments(mgr.getSingleHeightCells());
 
     cells.insert(cells.end(),
@@ -125,7 +120,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
                  mgr.getSingleHeightCells().end());
   }
   for (size_t i = 2; i < mgr.getNumMultiHeights(); i++) {
-    if (mgr.getMultiHeightCells(i).size() != 0) {
+    if (!mgr.getMultiHeightCells(i).empty()) {
       mgr.assignCellsToSegments(mgr.getMultiHeightCells(i));
 
       cells.insert(cells.end(),
@@ -135,9 +130,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   }
 
   // Check for displacement after the snap.  Shouldn't be any.
-  for (size_t i = 0; i < cells.size(); i++) {
-    const Node* ndi = cells[i];
-
+  for (const Node* ndi : cells) {
     const double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
     const double dy
         = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
@@ -164,8 +157,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   std::vector<int> count(size, 0);
   std::vector<const Node*> order;
   order.reserve(size);
-  for (size_t i = 0; i < cells.size(); i++) {
-    const Node* ndi = cells[i];
+  for (const Node* ndi : cells) {
     count[ndi->getId()] = (int) incoming_[ndi->getId()].size();
     if (count[ndi->getId()] == 0) {
       visit[ndi->getId()] = true;
@@ -174,8 +166,8 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   }
   for (size_t i = 0; i < order.size(); i++) {
     const Node* ndi = order[i];
-    for (size_t j = 0; j < outgoing_[ndi->getId()].size(); j++) {
-      const Node* ndj = network_->getNode(outgoing_[ndi->getId()][j]);
+    for (auto& outgoing : outgoing_[ndi->getId()]) {
+      const Node* ndj = network_->getNode(outgoing);
 
       --count[ndj->getId()];
       if (count[ndj->getId()] == 0) {
@@ -193,9 +185,7 @@ bool ShiftLegalizer::legalize(DetailedMgr& mgr)
   shift(cells);
 
   // Check for displacement after the shift.  Shouldn't be any.
-  for (size_t i = 0; i < cells.size(); i++) {
-    const Node* ndi = cells[i];
-
+  for (const Node* ndi : cells) {
     const double dx = std::fabs(ndi->getLeft() - origPos[ndi->getId()].first);
     const double dy
         = std::fabs(ndi->getBottom() - origPos[ndi->getId()].second);
@@ -333,11 +323,11 @@ double ShiftLegalizer::shift(std::vector<Node*>& cells)
     }
   }
 
-  for (size_t i = 0; i < dummiesRight_.size(); i++) {
-    delete dummiesRight_[i];
+  for (auto dummiesRight : dummiesRight_) {
+    delete dummiesRight;
   }
-  for (size_t i = 0; i < dummiesLeft_.size(); i++) {
-    delete dummiesLeft_[i];
+  for (auto dummiesLeft : dummiesLeft_) {
+    delete dummiesLeft;
   }
 
   if (isError) {
@@ -361,9 +351,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
   int clumpId = 0;
 
   // Left side of segments.
-  for (size_t i = 0; i < dummiesLeft_.size(); i++) {
-    Node* ndi = dummiesLeft_[i];
-
+  for (Node* ndi : dummiesLeft_) {
     Clump* r = &(clumps_[clumpId]);
 
     offset_[ndi->getId()] = 0;
@@ -372,7 +360,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     const double wt = 1.0e8;
 
     r->id_ = clumpId;
-    r->nodes_.erase(r->nodes_.begin(), r->nodes_.end());
+    r->nodes_.clear();
     r->nodes_.push_back(ndi);
     r->wposn_ = wt * ndi->getLeft();
     r->weight_ = wt;  // Massive weight for segment start.
@@ -392,7 +380,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     const double wt = 1.0;
 
     r->id_ = (int) i;
-    r->nodes_.erase(r->nodes_.begin(), r->nodes_.end());
+    r->nodes_.clear();
     r->nodes_.push_back(ndi);
     r->wposn_ = wt * ndi->getLeft();
     r->weight_ = wt;
@@ -412,9 +400,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
   }
 
   // Right side of segments.
-  for (size_t i = 0; i < dummiesRight_.size(); i++) {
-    Node* ndi = dummiesRight_[i];
-
+  for (Node* ndi : dummiesRight_) {
     Clump* r = &(clumps_[clumpId]);
 
     offset_[ndi->getId()] = 0;
@@ -423,7 +409,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
     const double wt = 1.0e8;
 
     r->id_ = clumpId;
-    r->nodes_.erase(r->nodes_.begin(), r->nodes_.end());
+    r->nodes_.clear();
     r->nodes_.push_back(ndi);
     r->wposn_ = wt * ndi->getLeft();
     r->weight_ = wt;  // Massive weight for segment end.
@@ -439,9 +425,7 @@ double ShiftLegalizer::clump(std::vector<Node*>& order)
 
   // Replace cells.
   double retval = 0.;
-  for (size_t i = 0; i < order.size(); i++) {
-    Node* ndi = order[i];
-
+  for (Node* ndi : order) {
     int rowId = mgr_->getReverseCellToSegs(ndi->getId())[0]->getRowId();
     for (size_t r = 1; r < mgr_->getNumReverseCellToSegs(ndi->getId()); r++) {
       rowId = std::min(rowId,
@@ -479,8 +463,7 @@ void ShiftLegalizer::merge(Clump* r)
     // Merge clump r into clump l which, in turn, could result in more merges.
 
     // Move blocks from r to l and update offsets, etc.
-    for (size_t i = 0; i < r->nodes_.size(); i++) {
-      const Node* ndi = r->nodes_[i];
+    for (const Node* ndi : r->nodes_) {
       offset_[ndi->getId()] += dist;
       ptr_[ndi->getId()] = l;
     }

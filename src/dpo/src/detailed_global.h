@@ -52,11 +52,11 @@ class DetailedGlobalSwap : public DetailedGenerator
   DetailedGlobalSwap();
 
   // Interfaces for scripting.
-  void run(DetailedMgr* mgrPtr, std::string command);
+  void run(DetailedMgr* mgrPtr, const std::string& command);
   void run(DetailedMgr* mgrPtr, std::vector<std::string>& args);
 
   // Interface for move generation.
-  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candidates) override;
   void stats() override;
   void init(DetailedMgr* mgr) override;
 
