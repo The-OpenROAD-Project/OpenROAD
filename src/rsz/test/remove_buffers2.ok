@@ -10,7 +10,7 @@
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
   Delay    Time   Description
@@ -28,7 +28,7 @@ Path Type: max
 [INFO RSZ-0026] Removed 1 buffers.
 Startpoint: in1 (input port)
 Endpoint: out2 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
   Delay    Time   Description

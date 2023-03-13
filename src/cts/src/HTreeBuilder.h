@@ -51,8 +51,8 @@ namespace cts {
 class SegmentBuilder
 {
  public:
-  SegmentBuilder(const std::string instPrefix,
-                 const std::string netPrefix,
+  SegmentBuilder(const std::string& instPrefix,
+                 const std::string& netPrefix,
                  Point<double> root,
                  Point<double> target,
                  const std::vector<unsigned>& techCharWires,
@@ -76,7 +76,7 @@ class SegmentBuilder
   }
 
   void build(std::string forceBuffer = "");
-  void forceBufferInSegment(std::string master);
+  void forceBufferInSegment(const std::string& master);
   Clock::SubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
 
@@ -103,7 +103,7 @@ class HTreeBuilder : public TreeBuilder
    public:
     static constexpr unsigned NO_PARENT = std::numeric_limits<unsigned>::max();
 
-    LevelTopology(double length)
+    explicit LevelTopology(double length)
         : length_(length), outputSlew_(0), outputCap_(0), remainingLength_(0){};
 
     void addWireSegment(unsigned idx) { wireSegments_.push_back(idx); }
@@ -135,7 +135,7 @@ class HTreeBuilder : public TreeBuilder
     double getLength() const { return length_; }
 
     void forEachBranchingPoint(
-        std::function<void(unsigned, Point<double>)> func) const
+        const std::function<void(unsigned, Point<double>)>& func) const
     {
       for (unsigned idx = 0; idx < branchPointLoc_.size(); ++idx) {
         func(idx, branchPointLoc_[idx]);
@@ -189,7 +189,7 @@ class HTreeBuilder : public TreeBuilder
                utl::Logger* logger)
       : TreeBuilder(options, net, parent), logger_(logger){};
 
-  void run();
+  void run() override;
 
   void plotSolution();
 

@@ -370,7 +370,7 @@ Resizer::estimateWireParasitic(const Net *net)
   PinSet *drivers = network_->drivers(net);
   if (drivers && !drivers->empty()) {
     PinSet::Iterator drvr_iter(drivers);
-    Pin *drvr_pin = drvr_iter.next();
+    const Pin *drvr_pin = drvr_iter.next();
     estimateWireParasitic(drvr_pin, net);
   }
 }
@@ -493,7 +493,7 @@ Resizer::parasiticNodeConnectPins(Parasitic *parasitic,
 {
   const PinSeq *pins = tree->pins(pt);
   if (pins) {
-    for (Pin *pin : *pins) {
+    for (const Pin *pin : *pins) {
       ParasiticNode *pin_node = parasitics_->ensureParasiticNode(parasitic, pin);
       // Use a small resistor to keep the connectivity intact.
       parasitics_->makeResistor(nullptr, node, pin_node, 1.0e-3, parasitics_ap);

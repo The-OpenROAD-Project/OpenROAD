@@ -1419,7 +1419,7 @@ void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
 {
   auto* settings = timing_widget_->getSettings();
   settings->setFromPin({});
-  std::set<sta::Pin*> pins;
+  std::set<const sta::Pin*> pins;
   for (const auto& term : terms) {
     pins.insert(settings->convertTerm(term));
   }
