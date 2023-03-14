@@ -176,6 +176,11 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
   if (!site_found_in_instances && !site_name.empty()) {
     dbSite* site_found = findSite(site_name.c_str());
     if (site_found != nullptr) {
+      // this indeed happens for unithd and unit only in PAD.
+      // logger_->warn(IFP,
+      //               434,
+      //               "Number of instances found {}, but Site {} you passed was
+      //               " "not in them.", sites.size(), site_name);
       sites.insert(site_found);
     } else {
       logger_->warn(IFP, 41, "Site {} not found in Database.", site_name);
@@ -194,7 +199,6 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
             ->getHeight();
 
   if (core.xMin() >= 0 && core.yMin() >= 0) {
-    eval_upf(logger_, block_);
     int row_index = 0;
     for (auto site : sites) {
       // Destroy any existing rows.
