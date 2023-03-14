@@ -2027,15 +2027,6 @@ bool dbTechLayer::hasXYPitch()
   return layer->flags_.has_xy_pitch_;
 }
 
-bool dbTechLayer::hasPitch()
-{
-  _dbTechLayer* layer = (_dbTechLayer*) this;
-  if (layer->_pitch_x) {
-    return true;
-  }
-  return false;
-}
-
 int dbTechLayer::getOffset()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;

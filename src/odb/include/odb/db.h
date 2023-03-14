@@ -7200,7 +7200,6 @@ class dbTechLayer : public dbObject
   void setPitchXY(int pitch_x, int pitch_y);
   void setFirstLastPitch(int first_last_pitch);
   bool hasXYPitch();
-  bool hasPitch();
 
   int getOffset();
   int getOffsetX();
