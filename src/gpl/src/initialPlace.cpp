@@ -155,8 +155,26 @@ void InitialPlace::placeInstsCenter()
 
   for (auto& inst : pb_->placeInsts()) {
     if (!inst->isLocked()) {
-      inst->setCenterLocation(centerX, centerY);
+      auto group = inst->dbInst()->getGroup();
+      if(group && group->getType() == odb::dbGroupType::POWER_DOMAIN){
+        auto domain_region = group->getRegion();
+        int domain_xMin = std::numeric_limits<int>::max();
+        int domain_yMin = std::numeric_limits<int>::max();
+        int domain_xMax = std::numeric_limits<int>::min();
+        int domain_yMax = std::numeric_limits<int>::min();
+        for (auto boundary : domain_region->getBoundaries()) {
+          domain_xMin = std::min(domain_xMin, boundary->xMin());
+          domain_yMin = std::min(domain_yMin, boundary->yMin());
+          domain_xMax = std::max(domain_xMax, boundary->xMax());
+          domain_yMax = std::max(domain_yMax, boundary->yMax());
+        }
+        inst->setCenterLocation(domain_xMax - (domain_xMax - domain_xMin)/2, domain_yMax - (domain_yMax - domain_yMin)/2); 
+      }else {
+        inst->setCenterLocation(centerX, centerY);
+      }
+      
     }
+    
   }
 }
 
