@@ -217,7 +217,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
   visitCellBoundaryPixels(
-      cell, true, [&](Pixel* pixel, Direction2D edge, int x, int y) {
+      cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
         Cell* pixel_cell = pixel->cell;
 
         int abut_x = 0;

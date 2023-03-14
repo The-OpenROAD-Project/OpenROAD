@@ -84,8 +84,9 @@ void Opendp::checkOneSiteDbMaster()
   vector<dbMaster*> masters;
   auto db_libs = db_->getLibs();
   for (auto db_lib : db_libs) {
-    if (have_one_site_cells_)
+    if (have_one_site_cells_) {
       break;
+    }
     auto masters = db_lib->getMasters();
     for (auto db_master : masters) {
       if (isOneSiteCell(db_master)) {

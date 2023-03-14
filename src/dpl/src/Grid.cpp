@@ -220,19 +220,23 @@ void Opendp::visitCellBoundaryPixels(
       int y_end = gridEndY(rect.yMax() - core_.yMin());
       for (int x = x_start; x < x_end; x++) {
         Pixel* pixel = gridPixel(x, y_start);
-        if (pixel)
+        if (pixel) {
           visitor(pixel, odb::Direction2D::North, x, y_start);
+        }
         pixel = gridPixel(x, y_end - 1);
-        if (pixel)
+        if (pixel) {
           visitor(pixel, odb::Direction2D::South, x, y_end - 1);
+        }
       }
       for (int y = y_start; y < y_end; y++) {
         Pixel* pixel = gridPixel(x_start, y);
-        if (pixel)
+        if (pixel) {
           visitor(pixel, odb::Direction2D::West, x_start, y);
+        }
         pixel = gridPixel(x_end - 1, y);
-        if (pixel)
+        if (pixel) {
           visitor(pixel, odb::Direction2D::East, x_end - 1, y);
+        }
       }
     }
   }
@@ -244,19 +248,23 @@ void Opendp::visitCellBoundaryPixels(
 
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(x, y_start);
-      if (pixel)
+      if (pixel) {
         visitor(pixel, odb::Direction2D::North, x, y_start);
+      }
       pixel = gridPixel(x, y_end - 1);
-      if (pixel)
+      if (pixel) {
         visitor(pixel, odb::Direction2D::South, x, y_end - 1);
+      }
     }
     for (int y = y_start; y < y_end; y++) {
       Pixel* pixel = gridPixel(x_start, y);
-      if (pixel)
+      if (pixel) {
         visitor(pixel, odb::Direction2D::West, x_start, y);
+      }
       pixel = gridPixel(x_end - 1, y);
-      if (pixel)
+      if (pixel) {
         visitor(pixel, odb::Direction2D::East, x_end - 1, y);
+      }
     }
   }
 }
