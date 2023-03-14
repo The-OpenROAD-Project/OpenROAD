@@ -631,7 +631,7 @@ void lefin::layer(lefiLayer* layer)
     l->setPitch(dbdist(layer->pitch()));
   else if (layer->hasXYPitch())
     l->setPitchXY(dbdist(layer->pitchX()), dbdist(layer->pitchY()));
-  
+
   for (int iii = 0; iii < layer->numProps(); iii++) {
     dbStringProperty::create(l, layer->propName(iii), layer->propValue(iii));
     bool valid = true;
