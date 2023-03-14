@@ -214,7 +214,7 @@ class lefTechLayerPitchRuleParser
   void parse(std::string, odb::dbTechLayer*);
 
  private:
- void setInt(double val,
+  void setInt(double val,
               odb::dbTechLayer* layer,
               void (odb::dbTechLayer::*func)(int));
   void setPitchXY(boost::fusion::vector<double, double>& params,
