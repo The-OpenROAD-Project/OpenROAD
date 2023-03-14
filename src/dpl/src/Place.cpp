@@ -41,12 +41,13 @@
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <memory>
 
-#include "Graphics.h"
+#include "DplObserver.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
-//#define ODP_DEBUG
+// #define ODP_DEBUG
 
 namespace dpl {
 
@@ -62,8 +63,8 @@ using utl::DPL;
 
 void Opendp::detailedPlacement()
 {
-  if (graphics_) {
-    graphics_->startPlacement(block_);
+  if (debug_observer_) {
+    debug_observer_->startPlacement(block_);
   }
 
   placement_failures_.clear();
@@ -80,8 +81,8 @@ void Opendp::detailedPlacement()
   }
   place();
 
-  if (graphics_) {
-    graphics_->endPlacement();
+  if (debug_observer_) {
+    debug_observer_->endPlacement();
   }
 }
 
@@ -569,8 +570,8 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
-    if (graphics_) {
-      graphics_->placeInstance(cell->db_inst_);
+    if (debug_observer_) {
+      debug_observer_->placeInstance(cell->db_inst_);
     }
     return true;
   }
@@ -829,8 +830,8 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
   int height = gridHeight(cell);
   int y_end = bin_y + height;
 
-  if (graphics_) {
-    graphics_->binSearch(cell, bin_x, bin_y, x_end, y_end);
+  if (debug_observer_) {
+    debug_observer_->binSearch(cell, bin_x, bin_y, x_end, y_end);
   }
 
   if (y_end > row_count_) {

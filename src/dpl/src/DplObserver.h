@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, The Regents of the University of California
- * All rights reserved.
+ * Copyright (c) 2021-2023, The Regents of the University of California, Google
+ * LLC All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,41 +27,22 @@
 
 #pragma once
 
-#include "DplObserver.h"
-#include "gui/gui.h"
 #include "odb/db.h"
 
 namespace dpl {
 
-using odb::dbBlock;
-using odb::dbInst;
-using odb::Point;
-using odb::Rect;
-
 class Opendp;
 struct Cell;
 
-class Graphics : public gui::Renderer, public DplObserver
+class DplObserver
 {
  public:
-  Graphics(Opendp* dp, float min_displacement, const dbInst* debug_instance);
-  ~Graphics() override = default;
-  void startPlacement(dbBlock* block) override;
-  void placeInstance(dbInst* instance) override;
-  void binSearch(const Cell* cell, int xl, int yl, int xh, int yh) override;
-  void endPlacement() override;
-
-  // From Renderer API
-  void drawObjects(gui::Painter& painter) override;
-
-  static bool guiActive();
-
- private:
-  Opendp* dp_;
-  const dbInst* debug_instance_;
-  dbBlock* block_;
-  float min_displacement_;  // in row height
-  std::vector<Rect> searched_;
+  virtual void startPlacement(odb::dbBlock* block){};
+  virtual void placeInstance(odb::dbInst* instance){};
+  virtual void binSearch(const Cell* cell, int xl, int yl, int xh, int yh){};
+  virtual void endPlacement(){};
+  virtual ~DplObserver() = default;
+  DplObserver() = default;
 };
 
 }  // namespace dpl
