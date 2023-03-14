@@ -214,12 +214,12 @@ class lefTechLayerPitchRuleParser
   void parse(std::string, odb::dbTechLayer*);
 
  private:
-  lefin* lefin_;
-  void setInt(double val,
+ void setInt(double val,
               odb::dbTechLayer* layer,
               void (odb::dbTechLayer::*func)(int));
   void setPitchXY(boost::fusion::vector<double, double>& params,
                   odb::dbTechLayer* layer);
+  lefin* lefin_;
 };
 
 class ArraySpacingParser
