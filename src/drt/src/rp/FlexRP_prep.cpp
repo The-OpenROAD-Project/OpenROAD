@@ -1628,7 +1628,7 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
       lNum = lNum - 2;
     }
     minNonOverlapDist = isCurrDirX ? (viaBox1.xMax() - viaBox1.xMin())
-                                   : (viaBox2.xMax() - viaBox2.xMin());
+                                   : (viaBox1.yMax() - viaBox1.yMin());
 
     width1 = viaBox1.minDXDY();
     prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
