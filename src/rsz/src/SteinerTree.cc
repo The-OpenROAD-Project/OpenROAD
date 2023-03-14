@@ -94,7 +94,7 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
     vector<int> x, y;
     int drvr_idx = 0;
     for (int i = 0; i < pin_count; i++) {
-      Pin *pin = pins[i];
+      const Pin *pin = pins[i];
       if (pin == drvr_pin)
         drvr_idx = i;
       Point loc = db_network_->location(pin);
@@ -130,7 +130,7 @@ connectedPins(const Net *net,
 {
   NetConnectedPinIterator *pin_iter = network->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
+    const Pin *pin = pin_iter->next();
     pins.push_back(pin);
   }
   delete pin_iter;
@@ -172,7 +172,7 @@ SteinerTree::branchCount() const
 
 void
 SteinerTree::locAddPin(Point &loc,
-                       Pin *pin)
+                       const Pin *pin)
 {
   PinSeq &pins = loc_pin_map_[loc];
   pins.push_back(pin);

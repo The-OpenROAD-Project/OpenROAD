@@ -676,7 +676,7 @@ class extLenOU  // assume cross-section on the z-direction
 class extMeasure
 {
  public:
-  extMeasure();
+  extMeasure(utl::Logger* logger);
   ~extMeasure();
 
   void rcNetInfo();
@@ -705,8 +705,6 @@ class extMeasure
   double GetDBcoords(int coord);
   void printNetCaps();
 
-  void setLogger(Logger* logger) { logger_ = logger; }
-
   void printTraceNetInfo(const char* msg, uint netId, int rsegId);
   bool printTraceNet(const char* msg,
                      bool init,
@@ -714,7 +712,6 @@ class extMeasure
                      uint overSub = 0,
                      uint covered = 0);
 
-  bool parse_setLayer(Ath__parser* parser1, uint& layerNum, bool print = false);
   extDistRC* areaCapOverSub(uint modelNum, extMetRCTable* rcModel);
 
   extDistRC* getUnderLastWidthDistRC(extMetRCTable* rcModel, uint overMet);

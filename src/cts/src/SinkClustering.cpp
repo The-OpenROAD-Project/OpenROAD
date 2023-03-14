@@ -139,11 +139,14 @@ unsigned SinkClustering::numVertex(unsigned x, unsigned y) const
 {
   if ((x == 0) && (y == 0)) {
     return 0;
-  } else if ((x == 0) && (y == 1)) {
+  }
+  if ((x == 0) && (y == 1)) {
     return 1;
-  } else if ((x == 1) && (y == 1)) {
+  }
+  if ((x == 1) && (y == 1)) {
     return 2;
-  } else if ((x == 1) && (y == 0)) {
+  }
+  if ((x == 1) && (y == 0)) {
     return 3;
   }
 
@@ -162,8 +165,9 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
   computeAllThetas();
   sortPoints();
   findBestMatching(groupSize);
-  if (logger_->debugCheck(CTS, "Stree", 1))
+  if (logger_->debugCheck(CTS, "Stree", 1)) {
     writePlotFile(groupSize);
+  }
 
   if (options_->getGuiDebug() || logger_->debugCheck(CTS, "Stree", 1)) {
     clusteringVisualizer(original_points);
@@ -201,14 +205,14 @@ void SinkClustering::findBestMatching(unsigned groupSize)
       if ((i + j) < thetaIndexVector_.size()) {
         // Add vectors in case they are no allocated yet.
         if (solutions.size() < (j + 1)) {
-          solutions.push_back({});
-          solutionPoints.push_back({});
-          solutionPointsIdx.push_back({});
+          solutions.emplace_back();
+          solutionPoints.emplace_back();
+          solutionPointsIdx.emplace_back();
         }
         if (solutions[j].size() < (clusters[j] + 1)) {
-          solutions[j].push_back({});
-          solutionPoints[j].push_back({});
-          solutionPointsIdx[j].push_back({});
+          solutions[j].emplace_back();
+          solutionPoints[j].emplace_back();
+          solutionPointsIdx[j].emplace_back();
         }
         // Get the current point
         const unsigned idx = thetaIndexVector_[i + j].second;
@@ -364,17 +368,18 @@ bool SinkClustering::isLimitExceeded(unsigned size,
 {
   if (useMaxCapLimit_) {
     return (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
-  } else {
-    return (size >= sizeLimit || cost > maxInternalDiameter_);
   }
+
+  return (size >= sizeLimit || cost > maxInternalDiameter_);
 }
 
 void SinkClustering::clusteringVisualizer(
     const std::vector<Point<double>>& points)
 {
   graphics_ = std::make_unique<Graphics>(this, points);
-  if (Graphics::guiActive())
+  if (Graphics::guiActive()) {
     graphics_->clockPlot(true);
+  }
 }
 
 void SinkClustering::writePlotFile(unsigned groupSize)

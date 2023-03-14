@@ -115,11 +115,6 @@ class FlexRP
                                        frViaDef* viaDef2,
                                        bool isCurrDirX,
                                        frNonDefaultRule* ndr = nullptr);
-  void prep_via2viaForbiddenLen_minStepGF12(const frLayerNum& lNum,
-                                            frViaDef* viaDef1,
-                                            frViaDef* viaDef2,
-                                            bool isCurrDirX,
-                                            ForbiddenRanges& forbiddenRanges);
   void prep_via2viaForbiddenLen_minStep(const frLayerNum& lNum,
                                         frViaDef* viaDef1,
                                         frViaDef* viaDef2,

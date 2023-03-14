@@ -38,8 +38,6 @@
 #include <string>
 #include <vector>
 
-#include "ISdb.h"
-#include "dbLogger.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -157,6 +155,8 @@ class dbIsolation;
 
 // Extraction Objects
 class dbExtControl;
+
+class ZContext;
 
 ///
 /// dbProperty - Property base class.

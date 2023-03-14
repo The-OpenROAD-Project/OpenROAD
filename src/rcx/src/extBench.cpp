@@ -232,7 +232,7 @@ uint extRCModel::linesOverBench(extMainOptions* opt)
   if (opt->_met == 0)
     return 0;
 
-  extMeasure measure;
+  extMeasure measure(logger_);
   measure.updateForBench(opt, _extMain);
   measure._diag = false;
 
@@ -290,7 +290,7 @@ uint extRCModel::linesUnderBench(extMainOptions* opt)
   if (opt->_overMet == 0)
     return 0;
 
-  extMeasure measure;
+  extMeasure measure(logger_);
   measure.updateForBench(opt, _extMain);
   measure._diag = false;
 
@@ -343,7 +343,7 @@ uint extRCModel::linesDiagUnderBench(extMainOptions* opt)
   if (opt->_overMet == 0)
     return 0;
 
-  extMeasure measure;
+  extMeasure measure(logger_);
   measure.updateForBench(opt, _extMain);
   measure._diag = true;
 
@@ -400,7 +400,7 @@ uint extRCModel::linesOverUnderBench(extMainOptions* opt)
   if (opt->_overMet == 0)
     return 0;
 
-  extMeasure measure;
+  extMeasure measure(logger_);
   measure.updateForBench(opt, _extMain);
   measure._diag = false;
 

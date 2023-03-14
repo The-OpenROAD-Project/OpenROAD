@@ -92,6 +92,7 @@ void
 deleteDbSta(sta::dbSta* sta)
 {
   delete sta;
+  sta::Sta::setSta(nullptr);
 }
 
 }  // namespace ord
@@ -693,7 +694,7 @@ dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
 void
 dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)
 {
-  sta_->deletePinBefore(network_->dbToSta(bterm));
+  sta_->disconnectPin(network_->dbToSta(bterm));
   // sta::NetworkEdit does not support port removal.
 }
 

@@ -20,7 +20,7 @@ delta HPWL                    0 %
 
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
     Cap    Slew   Delay    Time   Description
@@ -48,7 +48,7 @@ in1 manhtn 0.7 steiner 0.7 0.00
 [INFO RSZ-0039] Resized 2 instances.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
     Cap    Slew   Delay    Time   Description

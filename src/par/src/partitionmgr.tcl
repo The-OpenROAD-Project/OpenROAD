@@ -143,3 +143,48 @@ proc triton_part_design { args } {
   par::triton_part_design $num_parts $balance_constraint $seed \
       $solution_file $paths_file $hypergraph_file
 }
+
+#--------------------------------------------------------------------
+# Write partition to verilog
+#--------------------------------------------------------------------
+
+sta::define_cmd_args "write_partition_verilog" { \
+  [-port_prefix prefix] [-module_suffix suffix] [file]
+}
+
+proc write_partition_verilog { args } {
+  sta::parse_key_args "write_partition_verilog" args \
+    keys { -partitioning_id -port_prefix -module_suffix } flags { }
+
+  sta::check_argc_eq1 "write_partition_verilog" $args
+
+  set port_prefix "partition_"
+  if { [info exists keys(-port_prefix)] } {
+    set port_prefix $keys(-port_prefix)
+  }
+
+  set module_suffix "_partition"
+  if { [info exists keys(-module_suffix)] } {
+    set module_suffix $keys(-module_suffix)
+  }
+
+  par::write_partition_verilog $port_prefix $module_suffix $args
+}
+
+sta::define_cmd_args "read_partitioning" { -read_file name [-instance_map_file file_path] }
+
+proc read_partitioning { args } {
+  sta::parse_key_args "read_partitioning" args \
+    keys { -read_file \
+      -instance_map_file
+    } flags { }
+
+  if { ![info exists keys(-read_file)] } {
+    utl::error PAR 51 "Missing mandatory argument -read_file"
+  }
+  set instance_file ""
+  if { [info exists keys(-instance_map_file)] } {
+    set instance_file $keys(-instance_map_file)
+  }
+  return [par::read_file $keys(-read_file) $instance_file]
+}

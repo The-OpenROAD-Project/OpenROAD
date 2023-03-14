@@ -511,9 +511,17 @@ void MacroPlacer::cutRoundUp(const Layout& layout,
                              bool horizontal)
 {
   dbBlock* block = db_->getChip()->getBlock();
-  dbSet<dbRow> rows = block->getRows();
+  dbSite* site = nullptr;
+  for (auto* row : block->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      site = row->getSite();
+      break;
+    }
+  }
+  if (site == nullptr) {
+    logger_->error(utl::MPL, 97, "Unable to find a site");
+  }
   const double dbu = db_->getTech()->getDbUnitsPerMicron();
-  dbSite* site = rows.begin()->getSite();
   if (horizontal) {
     double siteSizeX = site->getWidth() / dbu;
     cutLine = round(cutLine / siteSizeX) * siteSizeX;

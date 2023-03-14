@@ -60,8 +60,9 @@ void Opendp::initGrid()
   // Make pixel grid
   if (grid_ == nullptr) {
     grid_ = new Pixel*[row_count_];
-    for (int y = 0; y < row_count_; y++)
+    for (int y = 0; y < row_count_; y++) {
       grid_[y] = new Pixel[row_site_count_];
+    }
   }
 
   // Init pixels.
@@ -84,6 +85,9 @@ void Opendp::initGrid()
 
   // Fragmented row support; mark valid sites.
   for (auto db_row : block_->getRows()) {
+    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     int orig_x, orig_y;
     db_row->getOrigin(orig_x, orig_y);
 
@@ -134,10 +138,11 @@ void Opendp::deleteGrid()
 Pixel* Opendp::gridPixel(int grid_x, int grid_y) const
 {
   if (grid_x >= 0 && grid_x < row_site_count_ && grid_y >= 0
-      && grid_y < row_count_)
+      && grid_y < row_count_) {
     return &grid_[grid_y][grid_x];
-  else
-    return nullptr;
+  }
+
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -167,8 +172,9 @@ void Opendp::visitCellPixels(
       for (int x = x_start; x < x_end; x++) {
         for (int y = y_start; y < y_end; y++) {
           Pixel* pixel = gridPixel(x, y);
-          if (pixel)
+          if (pixel) {
             visitor(pixel);
+          }
         }
       }
     }
@@ -181,8 +187,9 @@ void Opendp::visitCellPixels(
     for (int x = x_start; x < x_end; x++) {
       for (int y = y_start; y < y_end; y++) {
         Pixel* pixel = gridPixel(x, y);
-        if (pixel)
+        if (pixel) {
           visitor(pixel);
+        }
       }
     }
   }
@@ -191,9 +198,10 @@ void Opendp::visitCellPixels(
 void Opendp::setFixedGridCells()
 {
   for (Cell& cell : cells_) {
-    if (isFixed(&cell))
+    if (isFixed(&cell)) {
       visitCellPixels(
           cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
+    }
   }
 }
 

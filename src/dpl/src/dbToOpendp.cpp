@@ -41,9 +41,6 @@
 
 namespace dpl {
 
-using std::max;
-using std::min;
-using std::numeric_limits;
 using std::string;
 using std::vector;
 
@@ -51,17 +48,11 @@ using utl::DPL;
 
 using odb::dbBox;
 using odb::dbMaster;
-using odb::dbMPin;
-using odb::dbMTerm;
-using odb::dbNet;
 using odb::dbOrientType;
 using odb::dbRegion;
-using odb::dbSBox;
-using odb::dbSigType;
-using odb::dbSWire;
 using odb::Rect;
 
-static bool swapWidthHeight(dbOrientType orient);
+static bool swapWidthHeight(const dbOrientType& orient);
 
 void Opendp::importDb()
 {
@@ -107,7 +98,13 @@ void Opendp::makeMaster(Master* master, dbMaster* db_master)
 
 void Opendp::examineRows()
 {
-  auto rows = block_->getRows();
+  std::vector<dbRow*> rows;
+  for (auto* row : block_->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    rows.push_back(row);
+  }
   if (!rows.empty()) {
     for (dbRow* db_row : rows) {
       dbSite* site = db_row->getSite();
@@ -116,8 +113,9 @@ void Opendp::examineRows()
     }
     row_site_count_ = divFloor(core_.dx(), site_width_);
     row_count_ = divFloor(core_.dy(), row_height_);
-  } else
+  } else {
     logger_->error(DPL, 12, "no rows found.");
+  }
 }
 
 void Opendp::makeCells()
@@ -127,7 +125,7 @@ void Opendp::makeCells()
   for (auto db_inst : db_insts) {
     dbMaster* db_master = db_inst->getMaster();
     if (db_master->isCoreAutoPlaceable()) {
-      cells_.push_back(Cell());
+      cells_.emplace_back();
       Cell& cell = cells_.back();
       cell.db_inst_ = db_inst;
       db_inst_map_[db_inst] = &cell;
@@ -148,8 +146,9 @@ void Opendp::makeCells()
         have_multi_row_cells_ = true;
       }
     }
-    if (isFiller(db_inst))
+    if (isFiller(db_inst)) {
       have_fillers_ = true;
+    }
   }
 }
 
@@ -165,13 +164,14 @@ Rect Opendp::getBbox(dbInst* inst)
 
   int width = master->getWidth();
   int height = master->getHeight();
-  if (swapWidthHeight(inst->getOrient()))
+  if (swapWidthHeight(inst->getOrient())) {
     std::swap(width, height);
+  }
 
   return Rect(loc_x, loc_y, loc_x + width, loc_y + height);
 }
 
-static bool swapWidthHeight(dbOrientType orient)
+static bool swapWidthHeight(const dbOrientType& orient)
 {
   switch (orient) {
     case dbOrientType::R90:

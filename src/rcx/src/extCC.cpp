@@ -760,8 +760,6 @@ uint Ath__gridTable::couplingCaps(Ath__gridTable* resGridTable,
           resGrid, couplingDist, ccTable, coupleAndCompute, compPtr);
     }
   }
-  notice(0, "Final %d ccaps\n", cnt);
-  notice(0, "      %d interTrack shorts\n", _CCshorts);
   return cnt;
 }
 

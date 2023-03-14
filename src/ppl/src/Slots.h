@@ -88,7 +88,7 @@ struct Section
 {
   odb::Point pos;
   std::vector<int> pin_indices;
-  std::vector<std::vector<int>> pin_groups;
+  std::vector<PinGroupByIndex> pin_groups;
   int cost;
   int begin_slot;
   int end_slot;
@@ -99,19 +99,19 @@ struct Section
 
 struct Constraint
 {
-  Constraint(PinList pins, Direction dir, Interval interv)
+  Constraint(PinSet pins, Direction dir, Interval interv)
       : pin_list(pins), direction(dir), interval(interv)
   {
     box = odb::Rect(-1, -1, -1, -1);
     pins_per_slots = 0;
   }
-  Constraint(PinList pins, Direction dir, odb::Rect b)
+  Constraint(PinSet pins, Direction dir, odb::Rect b)
       : pin_list(pins), direction(dir), interval(Edge::invalid, -1, -1), box(b)
   {
     pins_per_slots = 0;
   }
 
-  PinList pin_list;
+  PinSet pin_list;
   Direction direction;
   Interval interval;
   odb::Rect box;

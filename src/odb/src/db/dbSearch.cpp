@@ -39,13 +39,17 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTypes.h"
+#include "utl/Logger.h"
 
 //#define NEW_TRACKS
 
 #include "dbShape.h"
 namespace odb {
 
-dbBlockSearch::dbBlockSearch(dbBlock* blk, dbTech* tech)
+using utl::ODB;
+
+dbBlockSearch::dbBlockSearch(dbBlock* blk, dbTech* tech, utl::Logger* logger)
+    : logger_(logger)
 {
   _block = blk;
   _tech = tech;
@@ -979,7 +983,6 @@ uint dbBlockSearch::addViaBoxes(dbShape& sVia,
 
     cnt += _dcr->addBox(id, subMenuId, menuId, level, x1, y1, x2, y2, shapeId);
   }
-  notice(0, "_skipCutBoxes=%d\n", _skipCutBoxes);
   if (_skipCutBoxes)
     return cnt;
   for (shape_itr = shapes.begin(); shape_itr != shapes.end(); ++shape_itr) {
@@ -1035,7 +1038,6 @@ uint dbBlockSearch::addViaBoxes(dbBox* viaBox,
     cnt += _dcr->addBox(
         netId, subMenuId, menuId, level, x1, y1, x2, y2, shapeId);
   }
-  notice(0, "_skipCutBoxes=%d\n", _skipCutBoxes);
   if (_skipCutBoxes)
     return cnt;
 
@@ -1537,7 +1539,7 @@ void dbBlockSearch::selectInst()
       inst = dbInst::getInst(_block, instId);
 
     if (inst == NULL) {
-      warning(0, "Cannot find instance in DB with id %d\n", instId);
+      logger_->warn(ODB, 394, "Cannot find instance in DB with id {}", instId);
       return;
     }
     addInstBoxes(inst, true, termShapes, instObs, vias);
@@ -1546,7 +1548,8 @@ void dbBlockSearch::selectInst()
     if (strstr(inspectName, "*") == NULL) {
       inst = _block->findInst(inspectName);
       if (inst == NULL) {
-        warning(0, "Cannot find instance in DB with name %s\n", inspectName);
+        logger_->warn(
+            ODB, 397, "Cannot find instance in DB with name {}", inspectName);
         return;
       }
       addInstBoxes(inst, true, termShapes, instObs, vias);
@@ -1583,7 +1586,8 @@ void dbBlockSearch::selectIterm2Net(uint itermId)
   if (itermId <= iterms.sequential())
     iterm = dbITerm::getITerm(_block, itermId);
   if (iterm == NULL) {
-    warning(0, "Cannot find instance term in DB with id %d\n", itermId);
+    logger_->warn(
+        ODB, 414, "Cannot find instance term in DB with id {}", itermId);
     return;
   }
 
@@ -2078,7 +2082,7 @@ uint dbBlockSearch::selectNet()
     if (netId <= nets.sequential())
       net = dbNet::getNet(_block, netId);
     if (net == NULL) {
-      warning(0, "Cannot find net in DB with id %d\n", netId);
+      logger_->warn(ODB, 415, "Cannot find net in DB with id {}", netId);
       return 0;
     }
     if (isSignalNet(net))
@@ -2094,7 +2098,8 @@ uint dbBlockSearch::selectNet()
     if (strstr(inspectName, "*") == NULL) {
       net = _block->findNet(inspectName);
       if (net == NULL) {
-        warning(0, "Cannot find net in DB with name %s\n", inspectName);
+        logger_->warn(
+            ODB, 418, "Cannot find net in DB with name {}", inspectName);
         return 0;
       }
       if (isSignalNet(net))
@@ -2149,7 +2154,7 @@ void dbBlockSearch::selectBterm2Net(uint btermId)
   if (btermId <= bterms.sequential())
     bterm = dbBTerm::getBTerm(_block, btermId);
   if (bterm == NULL) {
-    warning(0, "Cannot find block term in DB with id %d\n", btermId);
+    logger_->warn(ODB, 416, "Cannot find block term in DB with id {}", btermId);
     return;
   }
   dbNet* net = bterm->getNet();
@@ -2177,7 +2182,8 @@ uint dbBlockSearch::selectBterm()
     if (strstr(inspectName, "*") == NULL) {
       dbBTerm* bterm = _block->findBTerm(inspectName);
       if (bterm == NULL) {
-        warning(0, "Cannot find block term in DB with name %s\n", inspectName);
+        logger_->warn(
+            ODB, 419, "Cannot find block term in DB with name {}", inspectName);
         return 0;
       }
 
