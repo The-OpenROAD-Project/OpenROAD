@@ -594,6 +594,7 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
   for (auto row : rows) {
     if (row->getSite()->getClass() == odb::dbSiteClass::CORE) {
       cell_row_height = row->getSite()->getHeight();
+      break;
     }
   }
 
