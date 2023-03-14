@@ -1641,11 +1641,11 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
       } else if (con->typeId()
                  == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
         minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, width2), prl1);
+            width1, prl1);
       } else if (con->typeId()
                  == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
         minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, width2, prl1);
+            width1, width1, prl1);
       }
       if (ndr)
         minReqDist = max(minReqDist, ndr->getSpacing(lNum / 2 - 1));
