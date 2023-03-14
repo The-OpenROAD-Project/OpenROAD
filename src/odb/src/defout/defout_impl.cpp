@@ -33,6 +33,8 @@
 #include "defout_impl.h"
 
 #include <stdio.h>
+#include <sys/stat.h>
+
 
 #include <cstdint>
 #include <limits>
@@ -40,6 +42,7 @@
 #include <set>
 #include <string>
 
+#include "fmt/format.h"
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbWireCodec.h"
@@ -151,6 +154,10 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
         utl::ODB, 172, "Cannot open DEF file ({}) for writing", def_file);
     return false;
   }
+
+  struct stat stats;
+  fstat(fileno(_out), &stats);
+  setvbuf(_out, NULL, _IOFBF, stats.st_blksize);
 
   if (_version == defout::DEF_5_3) {
     fprintf(_out, "VERSION 5.3 ;\n");
@@ -1448,22 +1455,23 @@ void defout_impl::writeWire(dbWire* wire)
         x = defdist(x);
         y = defdist(y);
 
-        if ((++point_cnt & 7) == 0)
-          fprintf(_out, "\n    ");
 
+        if ((++point_cnt & 7) == 0) {
+          fprintf(_out, "\n    ");
+        }
+
+        std::string mask_statement = "";
+        if (point_cnt % 2 == 0 && color) {
+          mask_statement = fmt::format("MASK {}", color.value());
+        }
+          
         if (point_cnt == 1) {
           fprintf(_out, " ( %d %d )", x, y);
         }
-        /*
-                        else if ( (x == prev_x) && (y == prev_y) )
-                        {
-                            fprintf(_out, " ( * * )");
-                        }
-        */
         else if (x == prev_x) {
-          fprintf(_out, " ( * %d )", y);
+          fprintf(_out, "%s ( * %d )", mask_statement.c_str(), y);
         } else if (y == prev_y) {
-          fprintf(_out, " ( %d * )", x);
+          fprintf(_out, "%s ( %d * )", mask_statement.c_str(), x);
         }
 
         prev_x = x;

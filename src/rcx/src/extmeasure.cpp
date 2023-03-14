@@ -155,8 +155,15 @@ uint extMeasure::createNetSingleWire(char* dirName,
   if (layer->getNumMasks() > 1) {
     // Alternate mask colors based on id
     uint8_t mask_color = (idCnt % layer->getNumMasks()) + 1;
-    net = _create_net_util.createNetSingleWire(
-        netName, ll[0], ll[1], ur[0], ur[1], _met, mask_color);
+    net = _create_net_util.createNetSingleWire(netName,
+                                               ll[0],
+                                               ll[1],
+                                               ur[0],
+                                               ur[1],
+                                               _met,
+                                               /*skipBTerms=*/false,
+                                               /*skipExistsNet=*/false,
+                                               mask_color);
   } else {
     net = _create_net_util.createNetSingleWire(
         netName, ll[0], ll[1], ur[0], ur[1], _met);
