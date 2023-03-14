@@ -626,6 +626,12 @@ void lefin::layer(lefiLayer* layer)
                   layer->name());
     return;
   }
+
+  if (layer->hasPitch())
+    l->setPitch(dbdist(layer->pitch()));
+  else if (layer->hasXYPitch())
+    l->setPitchXY(dbdist(layer->pitchX()), dbdist(layer->pitchY()));
+  
   for (int iii = 0; iii < layer->numProps(); iii++) {
     dbStringProperty::create(l, layer->propName(iii), layer->propValue(iii));
     bool valid = true;
@@ -738,12 +744,6 @@ void lefin::layer(lefiLayer* layer)
     l->setMinWidth(dbdist(layer->minwidth()));
   else if (type == dbTechLayerType::ROUTING)
     l->setMinWidth(l->getWidth());
-  if (!l->hasPitch()) {
-    if (layer->hasPitch())
-      l->setPitch(dbdist(layer->pitch()));
-    else if (layer->hasXYPitch())
-      l->setPitchXY(dbdist(layer->pitchX()), dbdist(layer->pitchY()));
-  }
 
   if (layer->hasOffset())
     l->setOffset(dbdist(layer->offset()));
