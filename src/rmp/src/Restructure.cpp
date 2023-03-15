@@ -205,22 +205,28 @@ void Restructure::runABC()
     modes = {Mode::AREA_1, Mode::AREA_2, Mode::AREA_3};
   } else {
     // Delay Mode
-    modes = {Mode::DELAY_1,
-             Mode::DELAY_2,
-             Mode::DELAY_3,
-             Mode::DELAY_4,
-             Mode::DELAY_5};
+    modes = {Mode::DELAY_5};
   }
+  auto dbFile = fmt::format("{}rmp.odb", work_dir_name_);
+  auto sdcFile = fmt::format("{}rmp.sdc", work_dir_name_);
+  ord::OpenRoad::openRoad()->writeDb(dbFile.c_str());
+  open_sta_->writeSdc(sdcFile.c_str(), false, true, 4, false, false);
+  files_to_remove.push_back(dbFile);
+  files_to_remove.push_back(sdcFile);
   if (dist_host_.empty()) {
     dist_host_ = "127.0.0.1";
-    dist_port_ = 1110;  // load balancer port
-    for (int i = 0; i < modes.size() + 1; i++) {
+    dist_port_ = 1110;             // load balancer port
+    open_sta_->setThreadCount(0);  // needed for forking
+    size_t num_workers = std::min(ord::OpenRoad::openRoad()->getThreadCount(),
+                                  (int) modes.size() * MAX_ITERATIONS);
+    for (int i = 0; i < num_workers + 1; i++) {
       pid_t c_pid = fork();
       if (c_pid == -1) {
         logger_->error(RMP, 17, "Forking Error");
       } else if (c_pid <= 0) {
+        open_sta_->setThreadCount(1);
         if (i == 0) {
-          for (int i = 1; i < modes.size() + 1; i++) {
+          for (int i = 1; i < num_workers + 1; i++) {
             dist_->addWorkerAddress(dist_host_.c_str(), 1110 + i);
           }
           dist_->runLoadBalancer(dist_host_.c_str(), 1110, "");
@@ -230,21 +236,20 @@ void Restructure::runABC()
         child_proc.push_back(c_pid);
       }
     }
+    open_sta_->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount());
   }
 
   std::string best_blif;
   int best_inst_count = std::numeric_limits<int>::max();
-  float best_delay_gain = std::numeric_limits<float>::max();
+  float best_delay_gain = -1 * std::numeric_limits<float>::max();
 
   debugPrint(
       logger_, RMP, "remap", 1, "Running ABC with {} modes.", modes.size());
-  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
-#pragma omp parallel for schedule(dynamic)
+  omp_set_num_threads(modes.size() * MAX_ITERATIONS);
+#pragma omp parallel for collapse(2) schedule(dynamic)
   for (size_t curr_mode_idx = 0; curr_mode_idx < modes.size();
        curr_mode_idx++) {
-    if (modes[curr_mode_idx] == Mode::DELAY_5)
-      continue;
-    for (ushort iterations = 1; iterations <= 1; iterations++) {
+    for (ushort iterations = 1; iterations <= MAX_ITERATIONS; iterations++) {
       int level_gain = 0;
       float delay = std::numeric_limits<float>::max();
       int num_instances = 0;
@@ -259,6 +264,13 @@ void Restructure::runABC()
         uDesc->setBlifPath(input_blif_file_name_);
         uDesc->setIterations(iterations);
         uDesc->setLibFiles(lib_file_names_);
+        uDesc->setODBPath(fmt::format("{}rmp.odb", work_dir_name_));
+        uDesc->setSDCPath(fmt::format("{}rmp.sdc", work_dir_name_));
+        std::vector<std::string> ids;
+        for (auto inst : path_insts_) {
+          ids.push_back(inst->getName());
+        }
+        uDesc->setReplaceableInstsIds(ids);
         dst::JobMessage msg(dst::JobMessage::RESTRUCTURE), result;
         msg.setJobDescription(std::move(uDesc));
         dist_->sendJob(msg, dist_host_.c_str(), dist_port_, result);
@@ -286,7 +298,7 @@ void Restructure::runABC()
             best_blif = blif_path;
           }
         } else {
-          if (delay < best_delay_gain) {
+          if (delay > best_delay_gain) {
             best_delay_gain = delay;
             best_blif = blif_path;
           }
@@ -294,6 +306,7 @@ void Restructure::runABC()
       }
     }
   }
+  // TODO: replace by sending an exit signal to the workers through dst
   for (auto pid : child_proc) {
     kill(pid, SIGKILL);
   }
@@ -333,16 +346,25 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   sta::VertexSet* end_points = sta_state->endpoints();
   std::size_t path_found = end_points->size();
   logger_->report("Number of paths for restructure are {}", path_found);
+  // sta::Slack worst_slack = 0;
+  // sta::Vertex* worst_vertix;
   for (auto& end_point : *end_points) {
     if (!is_area_mode_) {
       sta::PathRef path_ref
           = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
       sta::Path* path = path_ref.path();
+      if (path == nullptr || path->slack(open_sta_) >= 0)
+        continue;
+      // auto path_slack = path->slack(open_sta_);
       sta::PathExpanded expanded(path, open_sta_);
       // Members in expanded include gate output and net so divide by 2
-      logger_->report("Found path of depth {}", expanded.size() / 2);
       if (expanded.size() / 2 > max_depth) {
         ends.insert(end_point->pin());
+        // if (path_slack < worst_slack)
+        // {
+        //   worst_slack = path_slack;
+        //   worst_vertix = end_point;
+        // }
         // Use only one end point to limit blob size for timing
         // break;
       }
@@ -350,6 +372,8 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       ends.insert(end_point->pin());
     }
   }
+  // ends.clear();
+  // ends.insert(worst_vertix->pin());
 
   // unconstrained end points
   if (is_area_mode_) {
@@ -600,6 +624,22 @@ void Restructure::writeOptCommands(std::ofstream& script,
         script << "&get; &st; &if -g -K 6; &dch; &nf; &put" << std::endl;
       break;
     }
+    case Mode::DELAY_6: {
+      script << "&get;" << std::endl;
+      for (ushort i = 0; i < 1; i++)
+        script << "&st; &if -g -K 6 -C 8" << std::endl;
+      for (ushort i = 0; i < 4; i++)
+        script << "&st; &dch; map" << std::endl;
+      break;
+    }
+    case Mode::DELAY_7: {
+      script << "&get;" << std::endl;
+      for (ushort i = 0; i < 2; i++)
+        script << "&st; &if -g -K 6 -C 8" << std::endl;
+      for (ushort i = 0; i < 6; i++)
+        script << "&st; &dch; map" << std::endl;
+      break;
+    }
     case Mode::AREA_2:
     case Mode::AREA_3: {
       script << "choice2" << std::endl;
@@ -671,6 +711,9 @@ void Restructure::runABCJob(const Mode mode,
                             float& delay,
                             std::string& blif_path)
 {
+  delay = -1 * std::numeric_limits<float>::max();
+  num_instances = std::numeric_limits<int>::max();
+  level_gain = std::numeric_limits<int>::min();
   const std::string abc_script_file = fmt::format(
       "{}{}_{}_ord_abc_script.tcl", work_dir_name_, mode, iterations);
   if (logfile_ == "")
@@ -680,8 +723,10 @@ void Restructure::runABCJob(const Mode mode,
       = work_dir_name_ + std::to_string((int) mode) + "_crit_path_out.blif";
   std::vector<std::string> files_to_remove;
   Blif blif_(logger_, open_sta_, locell_, loport_, hicell_, hiport_);
+  blif_.setReplaceableInstances(path_insts_);
   if (writeAbcScript(abc_script_file, mode, iterations)) {
     // call linked abc
+    files_to_remove.emplace_back(abc_script_file);
     Abc_Start();
     Abc_Frame_t* abc_frame = Abc_FrameGetGlobalFrame();
     const std::string command = "source " + abc_script_file;
@@ -689,8 +734,9 @@ void Restructure::runABCJob(const Mode mode,
     fflush(stdout);
     int stdout_fd = dup(STDOUT_FILENO);
     const std::string abc_log_name
-        = fmt::format("abc_{}_{}.log", mode, iterations);
+        = fmt::format("{}abc_{}_{}.log", work_dir_name_, mode, iterations);
     std::ofstream{abc_log_name.c_str()};
+    files_to_remove.emplace_back(abc_log_name);
     int redir_fd = open(abc_log_name.c_str(), O_WRONLY);
     dup2(redir_fd, STDOUT_FILENO);
     close(redir_fd);
@@ -700,23 +746,29 @@ void Restructure::runABCJob(const Mode mode,
     close(stdout_fd);
 
     if (pid) {
-      logger_->error(RMP, 13, "Error executing ABC command {}.", command);
+      logger_->warn(RMP, 13, "Error executing ABC command {}.", command);
+      // for (const auto& file_to_remove : files_to_remove) {
+      //   std::remove(file_to_remove.c_str());
+      // }
       return;
     }
     Abc_Stop();
-    // exit linked abc
-    files_to_remove.emplace_back(abc_script_file);
-    files_to_remove.emplace_back(abc_log_name);
 
     readAbcLog(abc_log_name, level_gain, delay);
     blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
   }
+  blif_.readBlif(output_blif_file_name_.c_str(), block_);
+  postABC(0);
+
   for (const auto& file_to_remove : files_to_remove) {
     std::remove(file_to_remove.c_str());
   }
   if (!post_abc_script_.empty())
     Tcl_EvalFile(ord::OpenRoad::openRoad()->tclInterp(),
                  post_abc_script_.c_str());
+  delay = open_sta_->worstSlack(sta::MinMax::max());
+
+  logger_->report("Worst Slack {}", delay);
 }
 bool Restructure::readAbcLog(std::string abc_file_name,
                              int& level_gain,

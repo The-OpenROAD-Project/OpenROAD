@@ -1,7 +1,4 @@
 record_tests {
-  gcd_restructure
-  gcd_restructure_timing
-  const_cell_removal
   blif_writer
   blif_writer_input_output
   blif_writer_consts
@@ -10,4 +7,10 @@ record_tests {
   blif_reader
   blif_reader_const
   blif_reader_sequential
+}
+
+record_pass_fail_tests {
+  gcd_restructure
+  aes_restructure_timing
+  const_cell_removal
 }

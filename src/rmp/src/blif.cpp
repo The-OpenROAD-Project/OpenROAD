@@ -438,7 +438,6 @@ bool Blif::readBlif(const char* file_name, odb::dbBlock* block)
                 blif.getFlopCount());
 
   for (auto& inst : instances_to_optimize) {
-    std::set<odb::dbNet*> connectedNets;
     auto iterms = inst->getITerms();
     for (auto iterm : iterms) {
       auto net = iterm->getNet();

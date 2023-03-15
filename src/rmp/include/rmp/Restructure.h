@@ -77,7 +77,13 @@ enum class Mode
   DELAY_3,
   DELAY_4,
   DELAY_5,
+  DELAY_6,
+  DELAY_7
 };
+
+const int MAX_ITERATIONS = 1;
+
+class RestructureCallBack;
 
 class Restructure
 {
@@ -159,6 +165,8 @@ class Restructure
   dst::Distributed* dist_;
   std::string dist_host_;
   unsigned short dist_port_;
+  friend class RestructureCallBack;
+
 };
 
 }  // namespace rmp

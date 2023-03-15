@@ -48,6 +48,8 @@ class RestructureJobDescription : public dst::JobDescription
   void setBlifPath(const std::string& path) { blif_path_ = path; }
   void setWorkDirName(const std::string& path) { work_dir_name_ = path; }
   void setPostABCScript(const std::string& path) { post_abc_script_ = path; }
+  void setODBPath(const std::string& path) { odb_path_ = path; }
+  void setSDCPath(const std::string& path) { sdc_path_ = path; }
   void setHiCellPort(const std::string& cell, const std::string& port)
   {
     hicell_ = cell;
@@ -64,6 +66,10 @@ class RestructureJobDescription : public dst::JobDescription
   void setDelay(float value) { delay_ = value; }
   void setMode(Mode value) { mode_ = value; }
   void setLibFiles(const std::vector<std::string>& list) { lib_files_ = list; }
+  void setReplaceableInstsIds(const std::vector<std::string>& list)
+  {
+    replaceable_insts_ids_ = list;
+  }
 
   const std::string& getLoCell() const { return locell_; }
   const std::string& getLoPort() const { return loport_; }
@@ -77,7 +83,13 @@ class RestructureJobDescription : public dst::JobDescription
   const std::string& getBlifPath() const { return blif_path_; }
   const std::string& getWorkDirName() const { return work_dir_name_; }
   const std::string& getPostABCScript() const { return post_abc_script_; }
+  const std::string& getODBPath() const { return odb_path_; }
+  const std::string& getSDCPath() const { return sdc_path_; }
   const std::vector<std::string>& getLibFiles() const { return lib_files_; }
+  const std::vector<std::string>& getReplaceableInstsIds() const
+  {
+    return replaceable_insts_ids_;
+  }
 
  private:
   std::string locell_;
@@ -92,7 +104,10 @@ class RestructureJobDescription : public dst::JobDescription
   std::string blif_path_;
   std::string work_dir_name_;
   std::string post_abc_script_;
+  std::string odb_path_;
+  std::string sdc_path_;
   std::vector<std::string> lib_files_;
+  std::vector<std::string> replaceable_insts_ids_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -111,6 +126,9 @@ class RestructureJobDescription : public dst::JobDescription
     (ar) & work_dir_name_;
     (ar) & post_abc_script_;
     (ar) & lib_files_;
+    (ar) & replaceable_insts_ids_;
+    (ar) & odb_path_;
+    (ar) & sdc_path_;
   }
   friend class boost::serialization::access;
 };

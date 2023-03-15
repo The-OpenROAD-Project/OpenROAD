@@ -47,13 +47,74 @@ void RestructureCallBack::onRestructureJobReceived(dst::JobMessage& msg,
 
   RestructureJobDescription* desc
       = static_cast<RestructureJobDescription*>(msg.getJobDescription());
+  auto db = rest_->db_;
+  if (db->getChip()) {
+    auto newDb = odb::dbDatabase::create();
+    FILE* stream = fopen(desc->getODBPath().c_str(), "r");
+    if (stream == nullptr) {
+      return;
+    }
+    newDb->read(stream);
+    fclose(stream);
+    for (auto inst : db->getChip()->getBlock()->getInsts()) {
+      if (inst->isFixed())
+        continue;
+      for (auto iterm : inst->getITerms()) {
+        auto net = iterm->getNet();
+        if (net == nullptr)
+          continue;
+        iterm->disconnect();
+        if (net->getITerms().size() == 0 && net->getBTerms().size() == 0)
+          odb::dbNet::destroy(net);
+      }
+      odb::dbInst::destroy(inst);
+    }
+    auto block = db->getChip()->getBlock();
+    for (auto net : newDb->getChip()->getBlock()->getNets()) {
+      if (block->findNet(net->getName().c_str()))
+        continue;
+      odb::dbNet::create(block, net->getName().c_str());
+    }
+    for (auto newInst : newDb->getChip()->getBlock()->getInsts()) {
+      if (newInst->isFixed())
+        continue;
+      auto master = db->findMaster(newInst->getMaster()->getName().c_str());
+      auto inst
+          = odb::dbInst::create(block, master, newInst->getName().c_str());
+      for (auto iterm : inst->getITerms()) {
+        auto newNet = newInst->findITerm(iterm->getMTerm()->getName().c_str())
+                          ->getNet();
+        if (newNet) {
+          auto netName
+              = newInst->findITerm(iterm->getMTerm()->getName().c_str())
+                    ->getNet()
+                    ->getName();
+          auto net = block->findNet(netName.c_str());
+          iterm->connect(net);
+        }
+      }
+    }
+
+  } else {
+    for (auto file : desc->getLibFiles()) {
+      Tcl_Eval(ord::OpenRoad::openRoad()->tclInterp(),
+               fmt::format("read_liberty {}", file).c_str());
+    }
+    ord::OpenRoad::openRoad()->readDb(desc->getODBPath().c_str());
+    rest_->block_ = db->getChip()->getBlock();
+    Tcl_Eval(ord::OpenRoad::openRoad()->tclInterp(),
+             fmt::format("read_sdc {}", desc->getSDCPath()).c_str());
+  }
+  rest_->lib_file_names_ = desc->getLibFiles();
   rest_->setTieLoPort(desc->getLoCell(), desc->getLoPort());
   rest_->setTieHiPort(desc->getHiCell(), desc->getHiPort());
-  for (auto lib_file : desc->getLibFiles()) {
-    rest_->addLibFile(lib_file);
-  }
   rest_->setWorkDirName(desc->getWorkDirName());
   rest_->setPostABCScript(desc->getPostABCScript());
+  rest_->path_insts_.clear();
+  auto block = rest_->block_;
+  for (auto id : desc->getReplaceableInstsIds()) {
+    rest_->path_insts_.insert(block->findInst(id.c_str()));
+  }
   int numInstances = -1;
   int levelGain = -1;
   float delay = -1.0;

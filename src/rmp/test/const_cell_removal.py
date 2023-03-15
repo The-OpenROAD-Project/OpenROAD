@@ -18,3 +18,4 @@ rmp_aux.restructure(design, liberty_file_name="Nangate45/Nangate45_typ.lib", tar
                     abc_logfile="results/abc_rcon.log",  tielo_port=tielo, tiehi_port=tiehi)
 
 design.evalTclString("report_design_area")
+print("pass")
