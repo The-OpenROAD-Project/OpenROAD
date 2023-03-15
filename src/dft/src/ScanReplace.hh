@@ -51,8 +51,9 @@ namespace dft {
 class ScanCandidate
 {
  public:
-  ScanCandidate(sta::LibertyCell* scan_cell,
-                std::unordered_map<std::string, std::string> port_mapping);
+  ScanCandidate(
+      sta::LibertyCell* scan_cell,
+      const std::unordered_map<std::string, std::string>& port_mapping);
 
   // Returns the LibertyCell of the scan cell
   sta::LibertyCell* getScanCell() const;

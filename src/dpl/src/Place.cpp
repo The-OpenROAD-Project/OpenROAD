@@ -41,12 +41,13 @@
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <memory>
 
-#include "Graphics.h"
+#include "DplObserver.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
 
-//#define ODP_DEBUG
+// #define ODP_DEBUG
 
 namespace dpl {
 
@@ -62,8 +63,8 @@ using utl::DPL;
 
 void Opendp::detailedPlacement()
 {
-  if (graphics_) {
-    graphics_->startPlacement(block_);
+  if (debug_observer_) {
+    debug_observer_->startPlacement(block_);
   }
 
   placement_failures_.clear();
@@ -80,8 +81,8 @@ void Opendp::detailedPlacement()
   }
   place();
 
-  if (graphics_) {
-    graphics_->endPlacement();
+  if (debug_observer_) {
+    debug_observer_->endPlacement();
   }
 }
 
@@ -192,7 +193,7 @@ void Opendp::prePlaceGroups()
 {
   for (Group& group : groups_) {
     for (Cell* cell : group.cells_) {
-      if (!(isFixed(cell) || cell->is_placed_)) {
+      if (!isFixed(cell) && !cell->is_placed_) {
         int dist = numeric_limits<int>::max();
         bool in_group = false;
         Rect* nearest_rect = nullptr;
@@ -205,6 +206,9 @@ void Opendp::prePlaceGroups()
             dist = rect_dist;
             nearest_rect = &rect;
           }
+        }
+        if (!nearest_rect) {
+          continue;  // degenerate case of empty group.regions
         }
         if (!in_group) {
           Point nearest = nearestPt(cell, nearest_rect);
@@ -253,7 +257,7 @@ int Opendp::distToRect(const Cell* cell, const Rect* rect) const
 class CellPlaceOrderLess
 {
  public:
-  CellPlaceOrderLess(Opendp* opendp);
+  explicit CellPlaceOrderLess(Opendp* opendp);
   bool operator()(const Cell* cell1, const Cell* cell2) const;
 
  private:
@@ -464,8 +468,9 @@ void Opendp::brickPlace2(const Group* group)
       // This looks for a site starting at the nearest corner in rect,
       // which seems broken. It should start looking at the nearest point
       // on the rect boundary. -cherry
-      if (!mapMove(cell, legal))
+      if (!mapMove(cell, legal)) {
         logger_->error(DPL, 17, "cannot place instance {}.", cell->name());
+      }
     }
   }
 }
@@ -558,15 +563,15 @@ bool Opendp::mapMove(Cell* cell)
   return mapMove(cell, init);
 }
 
-bool Opendp::mapMove(Cell* cell, Point grid_pt)
+bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 {
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
-    if (graphics_) {
-      graphics_->placeInstance(cell->db_inst_);
+    if (debug_observer_) {
+      debug_observer_->placeInstance(cell->db_inst_);
     }
     return true;
   }
@@ -587,8 +592,9 @@ void Opendp::shiftMove(Cell* cell)
       Pixel* pixel = gridPixel(x, y);
       if (pixel) {
         Cell* cell = pixel->cell;
-        if (cell && !isFixed(cell))
+        if (cell && !isFixed(cell)) {
           region_cells.insert(cell);
+        }
       }
     }
   }
@@ -601,13 +607,15 @@ void Opendp::shiftMove(Cell* cell)
   }
 
   // place target cell
-  if (!mapMove(cell))
+  if (!mapMove(cell)) {
     placement_failures_.push_back(cell->db_inst_);
+  }
 
   // re-place erased cells
   for (Cell* around_cell : region_cells) {
-    if (cell->inGroup() == around_cell->inGroup() && !mapMove(around_cell))
+    if (cell->inGroup() == around_cell->inGroup() && !mapMove(around_cell)) {
       placement_failures_.push_back(cell->db_inst_);
+    }
   }
 }
 
@@ -643,8 +651,9 @@ bool Opendp::refineMove(Cell* cell)
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
-        || abs(grid_y - pixel_pt.pt.getY()) > max_displacement_y_)
+        || abs(grid_y - pixel_pt.pt.getY()) > max_displacement_y_) {
       return false;
+    }
 
     int dist_change = distChange(cell,
                                  pixel_pt.pt.getX() * site_width_,
@@ -719,8 +728,9 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
 
   // Check the bin at the initial position first.
   PixelPt avail_pt = binSearch(x, cell, x, y);
-  if (avail_pt.pixel)
+  if (avail_pt.pixel) {
     return avail_pt;
+  }
 
   for (int i = 1; i < std::max(max_displacement_y_, max_displacement_x_); i++) {
     PixelPt best_pt;
@@ -731,8 +741,9 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       int y_offset = (i * 2 - j) / 2;
       if (abs(x_offset) < max_displacement_x_
           && abs(y_offset) < max_displacement_y_) {
-        if (j % 2 == 1)
+        if (j % 2 == 1) {
           y_offset = -y_offset;
+        }
         diamondSearchSide(cell,
                           x,
                           y,
@@ -753,8 +764,9 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       int y_offset = ((i + 1) * 2 - j) / 2;
       if (abs(x_offset) < max_displacement_x_
           && abs(y_offset) < max_displacement_y_) {
-        if (j % 2 == 1)
+        if (j % 2 == 1) {
           y_offset = -y_offset;
+        }
         diamondSearchSide(cell,
                           x,
                           y,
@@ -768,8 +780,9 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
                           best_dist);
       }
     }
-    if (best_pt.pixel)
+    if (best_pt.pixel) {
       return best_pt;
+    }
   }
   return PixelPt();
 }
@@ -817,8 +830,8 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
   int height = gridHeight(cell);
   int y_end = bin_y + height;
 
-  if (graphics_) {
-    graphics_->binSearch(cell, bin_x, bin_y, x_end, y_end);
+  if (debug_observer_) {
+    debug_observer_->binSearch(cell, bin_x, bin_y, x_end, y_end);
   }
 
   if (y_end > row_count_) {
@@ -827,13 +840,15 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
 
   if (x > bin_x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
-      if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end))
+      if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(bin_x + i, bin_y), bin_x + i, bin_y);
+      }
     }
   } else {
     for (int i = 0; i < bin_search_width_; i++) {
-      if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end))
+      if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(bin_x + i, bin_y), bin_x + i, bin_y);
+      }
     }
   }
   return PixelPt();
@@ -846,17 +861,16 @@ bool Opendp::checkPixels(const Cell* cell,
                          int x_end,
                          int y_end) const
 {
-  if (x_end > row_site_count_)
+  if (x_end > row_site_count_) {
     return false;
-  else {
-    for (int y1 = y; y1 < y_end; y1++) {
-      for (int x1 = x; x1 < x_end; x1++) {
-        Pixel* pixel = gridPixel(x1, y1);
-        if (pixel == nullptr || pixel->cell || !pixel->is_valid
-            || (cell->inGroup() && pixel->group_ != cell->group_)
-            || (!cell->inGroup() && pixel->group_)) {
-          return false;
-        }
+  }
+  for (int y1 = y; y1 < y_end; y1++) {
+    for (int x1 = x; x1 < x_end; x1++) {
+      Pixel* pixel = gridPixel(x1, y1);
+      if (pixel == nullptr || pixel->cell || !pixel->is_valid
+          || (cell->inGroup() && pixel->group_ != cell->group_)
+          || (!cell->inGroup() && pixel->group_)) {
+        return false;
       }
     }
   }
@@ -868,7 +882,7 @@ bool Opendp::checkPixels(const Cell* cell,
 // Legalize cell origin
 //  inside the core
 //  row site
-Point Opendp::legalPt(const Cell* cell, Point pt) const
+Point Opendp::legalPt(const Cell* cell, const Point& pt) const
 {
   // Move inside core.
   int core_x
@@ -884,7 +898,7 @@ Point Opendp::legalPt(const Cell* cell, Point pt) const
   return Point(legal_x, legal_y);
 }
 
-Point Opendp::legalGridPt(const Cell* cell, Point pt) const
+Point Opendp::legalGridPt(const Cell* cell, const Point& pt) const
 {
   Point legal = legalPt(cell, pt);
   return Point(gridX(legal.getX()), gridY(legal.getY()));
@@ -905,12 +919,14 @@ Point Opendp::nearestBlockEdge(const Cell* cell,
     // left of block
     return legalPt(cell,
                    Point(block_bbox.xMin() - cell->width_, legal_pt.getY()));
-  } else if (x_max_dist <= x_min_dist && x_max_dist <= y_min_dist
-             && x_max_dist <= y_max_dist) {
+  }
+  if (x_max_dist <= x_min_dist && x_max_dist <= y_min_dist
+      && x_max_dist <= y_max_dist) {
     // right of block
     return legalPt(cell, Point(block_bbox.xMax(), legal_pt.getY()));
-  } else if (y_min_dist <= x_min_dist && y_min_dist <= x_max_dist
-             && y_min_dist <= y_max_dist) {
+  }
+  if (y_min_dist <= x_min_dist && y_min_dist <= x_max_dist
+      && y_min_dist <= y_max_dist) {
     // below block
     return legalPt(cell,
                    Point(legal_pt.getX(),
@@ -988,8 +1004,9 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
 //  not in a hopeless site
 Point Opendp::legalPt(const Cell* cell, bool padded) const
 {
-  if (isFixed(cell))
+  if (isFixed(cell)) {
     logger_->critical(DPL, 26, "legalPt called on fixed cell.");
+  }
 
   Point init = initialLocation(cell, padded);
   Point legal_pt = legalPt(cell, init);
@@ -1021,10 +1038,6 @@ Point Opendp::legalPt(const Cell* cell, bool padded) const
           && (legal_y + cell->height_) >= block_bbox.yMin()
           && legal_y <= block_bbox.yMax()) {
         legal_pt = nearestBlockEdge(cell, legal_pt, block_bbox);
-
-        grid_x = gridX(legal_pt.getX());
-        grid_y = gridY(legal_pt.getY());
-        pixel = gridPixel(grid_x, grid_y);
       }
     }
   }
@@ -1039,10 +1052,6 @@ Point Opendp::legalGridPt(const Cell* cell, bool padded) const
 }
 
 ////////////////////////////////////////////////////////////////
-
-PixelPt::PixelPt() : pixel(nullptr)
-{
-}
 
 PixelPt::PixelPt(Pixel* pixel1, int grid_x, int grid_y)
     : pixel(pixel1), pt(grid_x, grid_y)

@@ -44,7 +44,8 @@ void PopulatePortNameToNet(
     std::vector<std::tuple<std::string, odb::dbNet*>>& port_name_to_net)
 {
   for (odb::dbITerm* iterm : instance->getITerms()) {
-    port_name_to_net.push_back({iterm->getMTerm()->getName(), iterm->getNet()});
+    port_name_to_net.emplace_back(iterm->getMTerm()->getName(),
+                                  iterm->getNet());
   }
 }
 

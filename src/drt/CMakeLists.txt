@@ -206,6 +206,7 @@ if (Boost_unit_test_framework_FOUND)
 endif()
 
 add_test(NAME trTest COMMAND trTest)
+add_dependencies(build_and_test trTest)
 
 ############################################################
 # VTune ITT API
