@@ -1628,7 +1628,7 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
       lNum = lNum - 2;
     }
     minNonOverlapDist = isCurrDirX ? (viaBox1.xMax() - viaBox1.xMin())
-                                   : (viaBox2.xMax() - viaBox2.xMin());
+                                   : (viaBox1.yMax() - viaBox1.yMin());
 
     width1 = viaBox1.minDXDY();
     prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
@@ -1641,11 +1641,11 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
       } else if (con->typeId()
                  == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
         minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, width2), prl1);
+            width1, prl1);
       } else if (con->typeId()
                  == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
         minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, width2, prl1);
+            width1, width1, prl1);
       }
       if (ndr)
         minReqDist = max(minReqDist, ndr->getSpacing(lNum / 2 - 1));

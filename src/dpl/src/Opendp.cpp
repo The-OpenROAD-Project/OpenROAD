@@ -44,7 +44,7 @@
 #include <limits>
 #include <map>
 
-#include "Graphics.h"
+#include "DplObserver.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -129,14 +129,9 @@ bool Opendp::havePadding() const
          || !inst_padding_map_.empty();
 }
 
-void Opendp::setDebug(bool displacement,
-                      float min_displacement,
-                      const dbInst* debug_instance)
+void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 {
-  if (Graphics::guiActive()) {
-    graphics_
-        = std::make_unique<Graphics>(this, min_displacement, debug_instance);
-  }
+  debug_observer_ = std::move(observer);
 }
 
 void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)

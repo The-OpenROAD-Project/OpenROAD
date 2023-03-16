@@ -703,14 +703,41 @@ frUInt4 FlexTAWorker::assignIroute_getDRCCost_helper(taPin* iroute,
   }
   workerRegionQuery.queryCost(box, lNum, result);
   bool isCut = false;
+
+  // save same net overlaps
+  std::vector<Rect> sameNetOverlaps;
   for (auto& [bounds, pr] : result) {
+    auto& [obj, con] = pr;
+    if (obj != nullptr && obj->typeId() == frcNet) {
+      if (iroute->getGuide()->getNet() == obj) {
+        sameNetOverlaps.push_back(bounds);
+      }
+    }
+  }
+
+  for (auto& [bounds, pr] : result) {
+    // if the overlap bounds intersect with the pin connection, do not add drc
+    // cost
+    bool pinConn = false;
+    for (const Rect& sameNetOverlap : sameNetOverlaps) {
+      if (sameNetOverlap.intersects(bounds)) {
+        pinConn = true;
+        break;
+      }
+    }
+    if (pinConn) {
+      continue;
+    }
+
     auto& [obj, con] = pr;
     frCoord tmpOvlp
         = -max(box.xMin(), bounds.xMin()) + min(box.xMax(), bounds.xMax())
           - max(box.yMin(), bounds.yMin()) + min(box.yMax(), bounds.yMax()) + 1;
     if (tmpOvlp <= 0) {
-      cout << "Error: assignIroute_getDRCCost_helper overlap < 0" << endl;
-      exit(1);
+      logger_->error(DRT,
+                     412,
+                     "assignIroute_getDRCCost_helper overlap value is {}.",
+                     tmpOvlp);
     }
     // unknown obj, always add cost
     if (obj == nullptr) {
