@@ -95,10 +95,16 @@ void Pin::determineEdge(const odb::Rect& bounds,
                         const odb::Point& pin_position,
                         const std::vector<odb::dbTechLayer*>& layers)
 {
+  odb::Point upper_right = pin_position;
+  // for IO pins, use the position that touches the die edge to detect the edge it is placed
+  if (is_port_) {
+    const int layer = layers_.back();
+    upper_right = boxes_per_layer_[layer].back().ur();
+  }
   // Determine which edge is closest to the pin
-  const int n_dist = bounds.yMax() - pin_position.y();
+  const int n_dist = bounds.yMax() - upper_right.y();
   const int s_dist = pin_position.y() - bounds.yMin();
-  const int e_dist = bounds.xMax() - pin_position.x();
+  const int e_dist = bounds.xMax() - upper_right.x();
   const int w_dist = pin_position.x() - bounds.xMin();
   const int min_dist = std::min({n_dist, s_dist, w_dist, e_dist});
   if (n_dist == min_dist) {
@@ -110,6 +116,7 @@ void Pin::determineEdge(const odb::Rect& bounds,
   } else {
     edge_ = PinEdge::west;
   }
+
 
   // Find the best connection layer as the top layer may not be in the
   // right direction (eg horizontal layer for a south pin).
