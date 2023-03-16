@@ -114,12 +114,19 @@ void PartitionMgr::tritonPartHypergraph(const char* hypergraph_file,
 void PartitionMgr::tritonPartDesign(unsigned int num_parts,
                                     float balance_constraint,
                                     unsigned int seed,
+                                    bool fence_flag,
+                                    float fence_lx,
+                                    float fence_ly,
+                                    float fence_ux,
+                                    float fence_uy,
                                     const std::string& solution_filename,
                                     const std::string& paths_filename,
                                     const std::string& hypergraph_filename)
 {
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  triton_part->SetFenceFlag(fence_flag);
+  triton_part->SetFence(fence_lx, fence_ly, fence_ux, fence_uy);
   triton_part->PartitionDesign(num_parts,
                                balance_constraint,
                                seed,
