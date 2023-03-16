@@ -141,11 +141,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
              int(violating_ends.size() / double(endpoints->size()) * 100));
 
   int end_index = 0;
-  repair_tns_end_percent = 0.01;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
-  // So we will always fix at least 1 endpoint ... the repair_tns_end_percent
-  // thingy is what controls the number of fixes
   max_end_count = max(max_end_count, 1);
   resizer_->incrementalParasiticsBegin();
   for (Vertex *end : violating_ends) {
@@ -436,18 +433,33 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
     LibertyPort* input_port = network_->libertyPort(in_pin);
     LibertyCell* cell = drvr_port->libertyCell();
     LibertyPort *swap_port = input_port;
+    sta::LibertyPortSet ports;
 
-    if (strstr(cell->name(), "AND") || strstr(cell->name(), "OR")) {
-      if (instance_set.find(drvr) == instance_set.end())
-        instance_set.insert(drvr);
-      else
-        return false;
+    // Check if we have already dealt with this instance. Skip if the answer
+    // is a yes.
+    if (instance_set.find(drvr) == instance_set.end())
+      instance_set.insert(drvr);
+    else
+      return false;
 
+    // Find the equivalent pins for a cell (simple implementation for now)
+    // stash them
+    if (equiv_pin_map_.find(cell) == equiv_pin_map_.end()) {
+      if (!strcmp(cell->name(), "sky130_fd_sc_hd__a2111o_4")) {
+        printf("XXXXXX %s\n", cell->name());
+      }
+      equivCellPins(cell, ports);
+      equiv_pin_map_.insert(cell, ports);
+    }
+    ports = equiv_pin_map_[cell];
+    if (ports.size() > 1) {
       resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
                                      dcalc_ap, &swap_port);
-
       if (!swap_port->equiv(swap_port, input_port)) {
         // FIXME: Change to debug log.
+        //debugPrint(logger_, RSZ, "repair_setup", 3, "rebuffer {} inserted {}",
+        //           network_->pathName(drvr_pin),
+        //           rebuffer_count);
         printf("Swap %s (%s) %s %s\n", network_->name(drvr), cell->name(),
                input_port->name(), swap_port->name());
         return(resizer_->swapPins(drvr, input_port, swap_port, true));
@@ -645,5 +657,89 @@ RepairSetup::fanout(Vertex *vertex)
   }
   return fanout;
 }
+
+void
+RepairSetup::getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
+                               sta::FuncExpr::Operator &status)
+{
+  typedef sta::FuncExpr::Operator Operator;
+  Operator curr_op = expr->op();
+
+  if (curr_op == Operator::op_not) {
+    getEquivPortList2(expr->left(), ports, status);
+  }
+  else if (status == Operator::op_zero &&
+           (curr_op == Operator::op_and ||
+            curr_op == Operator::op_or ||
+            curr_op == Operator::op_xor)) {
+    // Start parsing the equivalent pins (if it is simple or/and/xor)
+    status = curr_op;
+    getEquivPortList2(expr->left(), ports, status);
+    if (status == Operator::op_port)
+      return;
+    getEquivPortList2(expr->right(), ports, status);
+    if (status == Operator::op_port)
+      return;
+    status = Operator::op_one;
+  }
+  else if (status == curr_op) {
+    // handle > 2 input scenarios (up to any arbitrary number)
+    getEquivPortList2(expr->left(), ports, status);
+    if (status == Operator::op_port)
+      return;
+    getEquivPortList2(expr->right(), ports, status);
+    if (status == Operator::op_port)
+      return;
+  }
+  else if (curr_op == Operator::op_port && expr->port() != nullptr) {
+    ports.insert(expr->port());
+  }
+  else {
+    status = Operator::op_port; // moved to some other operator.
+    ports.clear();
+  }
+}
+
+void
+RepairSetup::getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports)
+{
+  sta::FuncExpr::Operator status = sta::FuncExpr::op_zero;
+  ports.clear();
+  getEquivPortList2(expr, ports, status);
+  if (status == sta::FuncExpr::op_port) {
+    ports.clear();
+  }
+}
+
+// Lets just look at the first list for now.
+// We may want to cache this information somwhere (by building it up for the whole
+// library).
+// Or just generate it when the cell is being created (depending on agreement).
+void
+RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
+{
+  sta::LibertyCellPortIterator port_iter(cell);
+  unsigned outputs = 0;
+
+  // count number of output ports. Skip ports with > 1 output for now.
+  while (port_iter.hasNext()) {
+    LibertyPort *port = port_iter.next();
+    if (port->direction()->isOutput())
+      ++outputs;
+  }
+
+  if (outputs == 1) {
+    sta::LibertyCellPortIterator port_iter2(cell);
+    while (port_iter2.hasNext()) {
+      LibertyPort *port = port_iter2.next();
+      sta::FuncExpr *expr = port->function();
+      if (expr != nullptr) {
+        getEquivPortList(expr, ports);
+      }
+    }
+  }
+}
+
+
 
 } // namespace
