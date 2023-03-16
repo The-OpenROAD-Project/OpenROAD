@@ -157,9 +157,14 @@ void ICeWall::makeBTerm(odb::dbNet* net,
                         odb::dbTechLayer* layer,
                         const odb::Rect& shape) const
 {
-  odb::dbBTerm* bterm = odb::dbBTerm::create(net, net->getConstName());
+
+  odb::dbBTerm* bterm = net->get1stBTerm();
   if (bterm == nullptr) {
-    bterm = net->get1stBTerm();
+    logger_->warn(utl::PAD, 33, "Creating block terminal: {}", net->getName());
+    bterm = odb::dbBTerm::create(net, net->getConstName());
+    if (bterm == nullptr) {
+      logger_->error(utl::PAD, 34, "Unable to create block terminal: {}", net->getName());
+    }
   }
   bterm->setSigType(net->getSigType());
   odb::dbBPin* pin = odb::dbBPin::create(bterm);
