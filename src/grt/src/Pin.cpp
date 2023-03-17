@@ -96,9 +96,9 @@ void Pin::determineEdge(const odb::Rect& bounds,
                         const std::vector<odb::dbTechLayer*>& layers)
 {
   odb::Point upper_right = pin_position;
-  // for IO pins, use the position that touches the die edge to detect the edge
-  // it is placed
-  if (is_port_) {
+  // for IO and macro pins, use the position that touches the die edge to detect
+  // the edge it is placed
+  if (is_port_ || connected_to_pad_or_macro_) {
     const int layer = layers_.back();
     upper_right = boxes_per_layer_[layer].back().ur();
   }
