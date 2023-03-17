@@ -159,7 +159,11 @@ void ICeWall::makeBTerm(odb::dbNet* net,
 {
   odb::dbBTerm* bterm = net->get1stBTerm();
   if (bterm == nullptr) {
-    logger_->warn(utl::PAD, 33, "Creating block terminal: {}", net->getName());
+    logger_->warn(utl::PAD,
+                  33,
+                  "Could not find a block terminal associated with net: "
+                  "\"{}\", creating now.",
+                  net->getName());
     bterm = odb::dbBTerm::create(net, net->getConstName());
     if (bterm == nullptr) {
       logger_->error(
