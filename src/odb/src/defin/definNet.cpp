@@ -607,6 +607,12 @@ void definNet::pathRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2)
       dbdist(deltaX1), dbdist(deltaY1), dbdist(deltaX2), dbdist(deltaY2));
 }
 
+void definNet::pathColor(int color)
+{
+  _wire_encoder.setColor(static_cast<uint8_t>(color));
+}
+
+
 void definNet::pathEnd()
 {
   _cur_layer = NULL;
