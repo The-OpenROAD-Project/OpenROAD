@@ -102,8 +102,8 @@ void Pin::determineEdge(const odb::Rect& bounds,
   int w_count = 0;
   for (const auto& [layer, boxes] : boxes_per_layer_) {
     for (const auto& box : boxes) {
-      lower_left = boxes_per_layer_[layer].back().ll();
-      upper_right = boxes_per_layer_[layer].back().ur();
+      lower_left = box.ll();
+      upper_right = box.ur();
       // Determine which edge is closest to the pin box
       const int n_dist = bounds.yMax() - upper_right.y();
       const int s_dist = lower_left.y() - bounds.yMin();
