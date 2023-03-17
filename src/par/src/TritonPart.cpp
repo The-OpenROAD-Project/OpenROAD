@@ -497,7 +497,9 @@ void TritonPart::BuildTimingPaths()
       }
     }
     // add timing path
-    timing_paths_.push_back(timing_path);
+    if (timing_path.arcs.size() > 0) {
+      timing_paths_.push_back(timing_path);
+    }
   }
 
   // check the slack on each net
@@ -850,6 +852,8 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
     auto path = timing_paths_[i].path;
     endpoints.insert(path.back());
   }
+  logger_->report("{} endpoints are identified by STA.", endpoints.size());
+
   if (!paths_filename.empty()) {
     WritePathsToFile(paths_filename);
   }
@@ -872,21 +876,11 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
         "[INFO] Worst negative slack = {}",
         *std::max_element(timing_attr_.begin(), timing_attr_.end()));
   }
+
+  // call the multilevel partitioner  
   std::vector<int> partition;
-  if (num_parts_ == 2) {
-    partition = DesignPartTwoWay(num_parts_,
-                                 ub_factor_,
-                                 vertex_dimensions_,
-                                 hyperedge_dimensions_,
-                                 seed_);
-  } else {
-    partition = DesignPartKWay(num_parts_,
-                               ub_factor_,
-                               vertex_dimensions_,
-                               hyperedge_dimensions_,
-                               seed_);
-  }
- 
+  MultiLevelPartition(partition);  
+
   for (auto inst : block_->getInsts()) {
     auto vertex_id_property = odb::dbIntProperty::find(inst, "vertex_id");
     if (!vertex_id_property) {
@@ -928,6 +922,8 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
     }
     file_output.close();
   }
+
+  // analyze the timing-driven partitioning results
   std::vector<std::vector<int>> timing_paths;
   for (auto& tpath : timing_paths_) {
     timing_paths.push_back(tpath.path);
@@ -946,6 +942,208 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   logger_->report("===============================================");
   logger_->report("Exiting TritonPart");
 }
+
+
+// Partition the hypergraph_ with the multilevel methodology
+// the return value is the partitioning solution
+void TritonPart::MultiLevelPartition(std::vector<int>& solution)
+{
+  auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
+  
+  // print all the related parameters
+  std::string e_wt_factors_str;
+  for (auto weight : e_wt_factors_) {
+    e_wt_factors_str += std::to_string(weight ) + " ";
+  }
+  logger_->report("hyperedge weight factor : [ {} ]", e_wt_factors_str);
+  
+  std::string v_wt_factors_str;
+  for (auto& weight : v_wt_factors_) {
+    v_wt_factors_str += std::to_string(weight) + " ";
+  }
+  logger_->report("vertex weight factor : [ {} ]", v_wt_factors_str);
+
+  std::string placement_wt_factors_str;
+  for (auto& weight : placement_wt_factors_) {
+    placement_wt_factors_str += std::to_string(weight) + " ";
+  }
+  logger_->report("placement weight factor : [ {} ]", placement_wt_factors_str);
+
+  logger_->report("path_wt_factor : {}", path_wt_factor_);
+  logger_->report("net_cut_factor : {}", net_cut_factor_);
+  logger_->report("timing_factor : {}", timing_factor_);
+  logger_->report("snaking_wt_factor : {}", snaking_wt_factor_);
+  logger_->report("timing_exp_factor : {}", timing_exp_factor_);
+  logger_->report("path_traverse_step : {}", path_traverse_step_);
+  logger_->report("thr_coarsen_hyperedge_size_skip : {}", thr_coarsen_hyperedge_size_skip_);
+  logger_->report("thr_coarsen_vertices : {}", thr_coarsen_vertices_);
+  logger_->report("thr_coarsen_hyperedges : {}", thr_coarsen_hyperedges_);
+  logger_->report("coarsening_ratio : {}", coarsening_ratio_);
+  logger_->report("max_coarsen_iters : {}", max_coarsen_iters_);
+  logger_->report("adj_diff_ratio : {}", adj_diff_ratio_);
+  logger_->report("min_num_vertcies_each_part : {}", min_num_vertices_each_part_); 
+  logger_->report("he_size_threshold : {}", he_size_threshold_); 
+
+  // refinement related parameters
+  logger_->report("[PARAM] refine_iters : {}", refiner_iters_);
+  logger_->report("[PARAM] max_moves (FM or greedy refinement) : {}", max_moves_);
+  logger_->report("[PARAM] max_num_fm_pass : {}", max_num_fm_pass_);
+
+  
+  // create coarsening class
+  const std::vector<float> tot_vertex_weights
+      = hypergraph_->GetTotalVertexWeights();
+  const std::vector<float> max_vertex_weights
+      = DivideFactor(hypergraph_->GetTotalVertexWeights(), 
+                     min_num_vertices_each_part_ * num_parts_);
+  TP_coarsening_ptr tritonpart_coarsener
+      = std::make_shared<TPcoarsener>(e_wt_factors_,
+                                      v_wt_factors_,
+                                      placement_wt_factors_,
+                                      timing_factor_,
+                                      path_traverse_step_,
+                                      max_vertex_weights,
+                                      thr_coarsen_hyperedge_size_skip_,
+                                      he_size_threshold_,  
+                                      thr_coarsen_vertices_,
+                                      thr_coarsen_hyperedges_,
+                                      coarsening_ratio_,
+                                      max_coarsen_iters_,
+                                      adj_diff_ratio_,
+                                      seed_,
+                                      logger_);
+  // create the balance constraint
+  matrix<float> vertex_balance
+    = hypergraph_->GetVertexBalance(num_parts_, ub_factor_);
+
+
+  // The refiner class and partitioner class are different for k-way partitioning
+  // and two-way partitioning
+  if (num_parts_ == 2) {
+    TP_two_way_refining_ptr tritonpart_twoway_refiner
+      = std::make_shared<TPtwoWayFM>(num_parts_,
+                                     refiner_iters_,
+                                     max_moves_,
+                                     RefinerChoice::TWO_WAY_FM,
+                                     seed_,
+                                     e_wt_factors_,
+                                     path_wt_factor_,
+                                     snaking_wt_factor_,
+                                     logger_);
+
+    TP_greedy_refiner_ptr tritonpart_greedy_refiner
+      = std::make_shared<TPgreedyRefine>(num_parts_,
+                                         refiner_iters_,
+                                         max_moves_,
+                                         RefinerChoice::GREEDY,
+                                         seed_,
+                                         e_wt_factors_,
+                                         path_wt_factor_,
+                                         snaking_wt_factor_,
+                                         logger_);
+
+    TP_ilp_refiner_ptr tritonpart_ilp_refiner
+      = std::make_shared<TPilpRefine>(num_parts_,
+                                      refiner_iters_,
+                                      max_moves_,
+                                      RefinerChoice::GREEDY, // after ILP, apply greedy to further refine
+                                      seed_,
+                                      e_wt_factors_,
+                                      path_wt_factor_,
+                                      snaking_wt_factor_,
+                                      logger_,
+                                      max_moves_  // originally this is the variable wavefront
+                                      ); 
+    
+    TP_partitioning_ptr tritonpart_partitioner
+      = std::make_shared<TPpartitioner>(num_parts_,
+                                        e_wt_factors_,
+                                        path_wt_factor_,
+                                        snaking_wt_factor_,
+                                        early_stop_ratio_,
+                                        max_num_fm_pass_,
+                                        seed_,
+                                        tritonpart_twoway_refiner,
+                                        logger_);
+
+    // During refinement, we will call  twoway_refiner,
+    // greedy_refiner and ilp_refiner in sequence
+    auto tritonpart_mlevel_partitioner
+      = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
+                                                  tritonpart_partitioner,
+                                                  tritonpart_twoway_refiner,
+                                                  tritonpart_greedy_refiner,
+                                                  tritonpart_ilp_refiner,
+                                                  num_parts_,
+                                                  v_cycle_flag_,
+                                                  num_initial_solutions_,
+                                                  num_best_initial_solutions_,
+                                                  num_ubfactor_delta_,
+                                                  max_num_vcycle_,
+                                                  seed_,
+                                                  ub_factor_,
+                                                  RefinerType::KPM_REFINEMENT, // TODO:  This should be deleted
+                                                  logger_);
+    // call the multilevel partitioner
+    solution = tritonpart_mlevel_partitioner->PartitionTwoWay(
+      hypergraph_, hypergraph_, vertex_balance, v_cycle_flag_);
+    // evaluate the solution
+    tritonpart_partitioner->GoldenEvaluator(hypergraph_, solution, true);
+  } else {
+    // k-way partitioning
+    TP_k_way_refining_ptr tritonpart_kway_refiner
+      = std::make_shared<TPkWayFM>(num_parts_,
+                                   refiner_iters_,
+                                   max_moves_,
+                                   RefinerChoice::FLAT_K_WAY_FM,
+                                   seed_,
+                                   e_wt_factors_,
+                                   path_wt_factor_,
+                                   snaking_wt_factor_,
+                                   logger_);
+    
+    TP_partitioning_ptr tritonpart_partitioner
+      = std::make_shared<TPpartitioner>(num_parts_,
+                                        e_wt_factors_,
+                                        path_wt_factor_,
+                                        snaking_wt_factor_,
+                                        early_stop_ratio_,
+                                        max_num_fm_pass_,
+                                        seed_,
+                                        tritonpart_kway_refiner,
+                                        logger_);   
+
+    auto tritonpart_mlevel_partitioner
+      = std::make_shared<TPmultilevelPartitioner>(tritonpart_coarsener,
+                                                  tritonpart_partitioner,
+                                                  tritonpart_kway_refiner,
+                                                  num_parts_,
+                                                  v_cycle_flag_,
+                                                  num_initial_solutions_,
+                                                  num_best_initial_solutions_,
+                                                  num_ubfactor_delta_,
+                                                  max_num_vcycle_,
+                                                  seed_,
+                                                  ub_factor_,
+                                                  RefinerType::KFM_REFINEMENT, // TODO:  This should be replaced later
+                                                  logger_);
+
+    solution = tritonpart_mlevel_partitioner->PartitionKWay(
+      hypergraph_, hypergraph_, vertex_balance, v_cycle_flag_);
+    // evaluate solution
+    tritonpart_partitioner->GoldenEvaluator(hypergraph_, solution, true);
+  }
+
+  // print the runtime
+  auto end_timestamp_global = std::chrono::high_resolution_clock::now();
+  double total_global_time
+      = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            end_timestamp_global - start_time_stamp_global)
+            .count();
+  total_global_time *= 1e-9;
+  logger_->report("[INFO] The runtime of multi-level partitioner : {}", total_global_time);
+}
+
 
 HGraph TritonPart::PreProcessHypergraph()
 {
@@ -1346,6 +1544,7 @@ std::vector<int> TritonPart::DesignPartTwoWay(unsigned int num_parts_,
   total_global_time *= 1e-9;
   return solution;
 }
+
 
 std::vector<int> TritonPart::HypergraphPartKWay(const char* hypergraph_file_arg,
                                                 const char* fixed_file_arg,

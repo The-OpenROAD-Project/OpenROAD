@@ -163,6 +163,7 @@ class TritonPart
   void WriteHypergraph(const std::string& hypergraph_filename);
 
   void BuildTimingPaths();  // Find all the critical timing paths
+  void MultiLevelPartition(std::vector<int>& solution);
 
   ord::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
@@ -212,6 +213,9 @@ class TritonPart
                                // he_size_threshold, then ignore this hyperedge
 
   // coarsening related parameters (stop conditions)
+  int thr_coarsen_hyperedge_size_skip_ = 50; // if the size of a hyperedge is larger than
+                                   // thr_coarsen_hyperedge_size_skip_, then we ignore this
+                                   // hyperedge during coarsening
   int thr_coarsen_vertices_ = 200; // the minimum threshold of number of vertices in the coarsest 
                                    // hypergraph 
   int thr_coarsen_hyperedges_ = 50; // the minimum threshold of number of hyperedges in the 
