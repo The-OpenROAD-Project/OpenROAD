@@ -9,6 +9,7 @@
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
 [INFO IFP-0001] Added 142 rows of 11052 sites.
+[WARNING DPL-0038] No 1-site fill cells detected.  To remove 1-site gaps use the -disallow_one_site_gaps flag.
 Placement Analysis
 ---------------------------------
 total displacement          0.6 u
