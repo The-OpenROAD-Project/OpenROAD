@@ -1998,8 +1998,7 @@ void FlexDRWorker::routeNet_setSrc(
   ccMazeIdx1.set(xDim - 1, yDim - 1, zDim - 1);
   ccMazeIdx2.set(0, 0, 0);
   // first pin selection algorithm goes here
-  // choose the center pin
-  centerPt = {0, 0};
+  // find the center point of all pins
   int totAPCnt = 0;
   frCoord totX = 0;
   frCoord totY = 0;
@@ -2011,18 +2010,17 @@ void FlexDRWorker::routeNet_setSrc(
       Point bp = ap->getPoint();
       totX += bp.x();
       totY += bp.y();
-      centerPt = {centerPt.x() + bp.x(), centerPt.y() + bp.y()};
       totZ += gridGraph_.getZHeight(mi.z());
       totAPCnt++;
       break;
     }
   }
-  totX /= totAPCnt;
-  totY /= totAPCnt;
-  totZ /= totAPCnt;
-  centerPt = {centerPt.x() / totAPCnt, centerPt.y() / totAPCnt};
+  const frCoord centerX = totX / totAPCnt;
+  const frCoord centerY = totY / totAPCnt;
+  const frCoord centerZ = totZ / totAPCnt;
+  centerPt = {centerX, centerY};
 
-  // select the farmost pin
+  // select the farmost pin from the center point as the src
   drPin* currPin = nullptr;
 
   frCoord currDist = 0;
@@ -2030,8 +2028,8 @@ void FlexDRWorker::routeNet_setSrc(
     for (auto& ap : pin->getAccessPatterns()) {
       mi = ap->getMazeIdx();
       Point bp = ap->getPoint();
-      frCoord dist = abs(totX - bp.x()) + abs(totY - bp.y())
-                     + abs(totZ - gridGraph_.getZHeight(mi.z()));
+      frCoord dist = abs(centerX - bp.x()) + abs(centerY - bp.y())
+                     + abs(centerZ - gridGraph_.getZHeight(mi.z()));
       if (dist >= currDist) {
         currDist = dist;
         currPin = pin;
@@ -2092,24 +2090,24 @@ drPin* FlexDRWorker::routeNet_getNextDst(
   gridGraph_.getPoint(ur, ccMazeIdx2.x(), ccMazeIdx2.y());
   frCoord currDist = std::numeric_limits<frCoord>::max();
   drPin* nextDst = nullptr;
-  if (!nextDst)
-    for (auto& [mazeIdx, setS] : mazeIdx2unConnPins) {
-      gridGraph_.getPoint(pt, mazeIdx.x(), mazeIdx.y());
-      frCoord dx = max(max(ll.x() - pt.x(), pt.x() - ur.x()), 0);
-      frCoord dy = max(max(ll.y() - pt.y(), pt.y() - ur.y()), 0);
-      frCoord dz = max(max(gridGraph_.getZHeight(ccMazeIdx1.z())
-                               - gridGraph_.getZHeight(mazeIdx.z()),
-                           gridGraph_.getZHeight(mazeIdx.z())
-                               - gridGraph_.getZHeight(ccMazeIdx2.z())),
-                       0);
-      if (dx + dy + dz < currDist) {
-        currDist = dx + dy + dz;
-        nextDst = *(setS.begin());
-      }
-      if (currDist == 0) {
-        break;
-      }
+  // Find the next dst pin nearest to the src
+  for (auto& [mazeIdx, setS] : mazeIdx2unConnPins) {
+    gridGraph_.getPoint(pt, mazeIdx.x(), mazeIdx.y());
+    frCoord dx = max(max(ll.x() - pt.x(), pt.x() - ur.x()), 0);
+    frCoord dy = max(max(ll.y() - pt.y(), pt.y() - ur.y()), 0);
+    frCoord dz = max(max(gridGraph_.getZHeight(ccMazeIdx1.z())
+                             - gridGraph_.getZHeight(mazeIdx.z()),
+                         gridGraph_.getZHeight(mazeIdx.z())
+                             - gridGraph_.getZHeight(ccMazeIdx2.z())),
+                     0);
+    if (dx + dy + dz < currDist) {
+      currDist = dx + dy + dz;
+      nextDst = *(setS.begin());
     }
+    if (currDist == 0) {
+      break;
+    }
+  }
   if (gridGraph_.getNDR()) {
     if (AUTO_TAPER_NDR_NETS) {
       for (auto& a : pinTaperBoxes) {
