@@ -105,11 +105,7 @@ class InitFloorplan
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
   int snapToMfgGrid(int coord) const;
-  void updateVoltageDomain(odb::dbSite* site,
-                           int core_lx,
-                           int core_ly,
-                           int core_ux,
-                           int core_uy);
+  void updateVoltageDomain(int core_lx, int core_ly, int core_ux, int core_uy);
   std::set<dbSite*> getSites() const;
 
   dbBlock* block_;

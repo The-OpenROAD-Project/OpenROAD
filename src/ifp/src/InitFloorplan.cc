@@ -235,7 +235,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
       int rows_placed
           = makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
       row_index += rows_placed;
-      updateVoltageDomain(site, clx, cly, cux, cuy);
+      updateVoltageDomain(clx, cly, cux, cuy);
     }
   }
 
@@ -254,8 +254,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
 
 // this function is used to create regions ( split overlapped rows and create
 // new ones )
-void InitFloorplan::updateVoltageDomain(dbSite* site,
-                                        int core_lx,
+void InitFloorplan::updateVoltageDomain(int core_lx,
                                         int core_ly,
                                         int core_ux,
                                         int core_uy)
@@ -263,8 +262,6 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
   // The unit for power_domain_y_space is the site height. The real space is
   // power_domain_y_space * site_dy
   static constexpr int power_domain_y_space = 6;
-  uint site_dy = site->getHeight();
-  uint site_dx = site->getWidth();
 
   // checks if a group is defined as a voltage domain, if so it creates a region
   for (dbGroup* group : block_->getGroups()) {
@@ -281,9 +278,6 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
         domain_xMax = std::max(domain_xMax, boundary->xMax());
         domain_yMax = std::max(domain_yMax, boundary->yMax());
       }
-      // snap inward to site grid
-      domain_xMin = odb::makeSiteLoc(domain_xMin, site_dx, false, 0);
-      domain_xMax = odb::makeSiteLoc(domain_xMax, site_dx, true, 0);
 
       string domain_name = group->getName();
 
@@ -304,6 +298,14 @@ void InitFloorplan::updateVoltageDomain(dbSite* site,
         Rect row_bbox = row->getBBox();
         int row_yMin = row_bbox.yMin();
         int row_yMax = row_bbox.yMax();
+        auto site = row->getSite();
+
+        int site_dy = site->getHeight();
+        int site_dx = site->getWidth();
+
+        // snap inward to site grid
+        domain_xMin = odb::makeSiteLoc(domain_xMin, site_dx, false, 0);
+        domain_xMax = odb::makeSiteLoc(domain_xMax, site_dx, true, 0);
 
         // check if the rows overlapped with the area of a defined voltage
         // domains + margin
