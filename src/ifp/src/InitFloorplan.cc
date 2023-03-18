@@ -200,6 +200,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
 
   if (core.xMin() >= 0 && core.yMin() >= 0) {
     int row_index = 0;
+    eval_upf(logger_, block_);
     for (auto site : sites) {
       // Destroy any existing rows.
       int x_height_site = site->getHeight() / min_site_height;
