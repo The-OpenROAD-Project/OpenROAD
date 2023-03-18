@@ -139,32 +139,34 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
   if (targetObjs_.empty()) {
     return false;
   }
+
   auto type = obj->typeId();
-  for (auto targetObj : targetObjs_) {
-    switch (targetObj->typeId()) {
-      case frcInst: {
-        if (type == frcInstTerm
-            && static_cast<frInstTerm*>(obj)->getInst() == targetObj) {
-          return false;
-        } else if (type == frcInstBlockage
-                   && static_cast<frInstBlockage*>(obj)->getInst()
-                          == targetObj) {
-          return false;
-        }
-        break;
+  switch (type) {
+    case frcInstTerm: {
+      auto inst = static_cast<frInstTerm*>(obj)->getInst();
+      if (targetObjs_.find(inst) != targetObjs_.end()) {
+        return false;
       }
-      case frcBTerm: {
-        if (type == frcBTerm
-            && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj)) {
-          return false;
-        }
-        break;
-      }
-      default:
-        logger_->error(
-            DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");
+      return true;
     }
+    case frcInstBlockage: {
+      auto inst = static_cast<frInstBlockage*>(obj)->getInst();
+      if (targetObjs_.find(inst) != targetObjs_.end()) {
+        return false;
+      }
+      return true;
+    }
+    case frcBTerm: {
+      auto term = static_cast<frTerm*>(obj);
+      if (targetObjs_.find(term) != targetObjs_.end()) {
+        return false;
+      }
+      return true;
+    }
+    default:
+      return true;
   }
+
   return true;
 }
 

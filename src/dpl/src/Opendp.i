@@ -35,8 +35,12 @@
 %{
 
 #include "ord/OpenRoad.hh"
+#include "Graphics.h"
+#include "DplObserver.h"
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
+
+
 
 namespace dpl {
 
@@ -162,12 +166,15 @@ optimize_mirroring_cmd()
 }
 
 void
-set_debug_cmd(bool displacement,
-              float min_displacement,
+set_debug_cmd(float min_displacement,
               const odb::dbInst* debug_instance)
 {
-  dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->setDebug(displacement, min_displacement, debug_instance);
+  dpl::Opendp* opendp = ord::OpenRoad::openRoad()->getOpendp();
+  if (dpl::Graphics::guiActive()) {
+      std::unique_ptr<DplObserver> graphics = std::make_unique<dpl::Graphics>(
+          opendp, min_displacement, debug_instance);
+      opendp->setDebug(graphics);
+  }
 }
 
 } // namespace
