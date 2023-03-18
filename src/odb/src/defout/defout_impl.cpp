@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-
 #include <cstdint>
 #include <limits>
 #include <optional>
@@ -1455,7 +1454,6 @@ void defout_impl::writeWire(dbWire* wire)
         x = defdist(x);
         y = defdist(y);
 
-
         if ((++point_cnt & 7) == 0) {
           fprintf(_out, "\n    ");
         }
@@ -1464,11 +1462,10 @@ void defout_impl::writeWire(dbWire* wire)
         if (point_cnt % 2 == 0 && color) {
           mask_statement = fmt::format("MASK {}", color.value());
         }
-          
+
         if (point_cnt == 1) {
           fprintf(_out, " ( %d %d )", x, y);
-        }
-        else if (x == prev_x) {
+        } else if (x == prev_x) {
           fprintf(_out, "%s ( * %d )", mask_statement.c_str(), y);
         } else if (y == prev_y) {
           fprintf(_out, "%s ( %d * )", mask_statement.c_str(), x);
