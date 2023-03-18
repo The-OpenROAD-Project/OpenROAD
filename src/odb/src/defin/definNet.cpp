@@ -612,7 +612,6 @@ void definNet::pathColor(int color)
   _wire_encoder.setColor(static_cast<uint8_t>(color));
 }
 
-
 void definNet::pathEnd()
 {
   _cur_layer = NULL;
