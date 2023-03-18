@@ -1135,8 +1135,8 @@ void MainWindow::showGotoDialog()
 {
   if (getBlock() == nullptr)
     return;
-   
-  goto_dialog_->exec();
+
+  goto_dialog_->show_init(viewer_);
 }
 
 void MainWindow::showHelp()

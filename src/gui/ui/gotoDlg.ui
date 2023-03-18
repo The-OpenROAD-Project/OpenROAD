@@ -3,7 +3,7 @@
  <class>GotoLocDialog</class>
  <widget class="QDialog" name="GotoLocDialog">
   <property name="windowModality">
-   <enum>Qt::WindowModal</enum>
+   <enum>Qt::ApplicationModal</enum>
   </property>
   <property name="enabled">
    <bool>true</bool>
@@ -12,7 +12,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>299</width>
+    <width>206</width>
     <height>106</height>
    </rect>
   </property>
@@ -212,6 +212,22 @@
     <hint type="destinationlabel">
      <x>174</x>
      <y>30</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>GotoLocDialog</sender>
+   <signal>objectNameChanged(QString)</signal>
+   <receiver>yEdit</receiver>
+   <slot>setText(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>149</x>
+     <y>52</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>174</x>
+     <y>75</y>
     </hint>
    </hints>
   </connection>

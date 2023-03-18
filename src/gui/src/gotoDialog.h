@@ -34,6 +34,7 @@
 
 #include <QDialog>
 
+#include "layoutViewer.h"
 #include "ui_gotoDlg.h"
 
 namespace gui {
@@ -42,7 +43,8 @@ class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
   Q_OBJECT
  public:
   GotoLocationDialog(QWidget* parent = nullptr);
-  public slots:
-  void accept() override;
+ public slots:
+  void show_init(LayoutViewer* viewer_ = nullptr);
+  void accept();
 };
 }  // namespace gui

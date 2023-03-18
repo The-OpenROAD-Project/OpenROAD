@@ -40,23 +40,26 @@ GotoLocationDialog::GotoLocationDialog(QWidget* parent) : QDialog(parent)
   setupUi(this);
 }
 
+void GotoLocationDialog::show_init(LayoutViewer* viewer_)
+{
+  xEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
+      viewer_->getVisibleCenter().x(), false)));
+  yEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
+      viewer_->getVisibleCenter().y(), false)));
+  show();
+}
+
 void GotoLocationDialog::accept()
 {
-
   auto gui = gui::Gui::get();
   bool convert_x_ok;
   bool convert_y_ok;
-  bool convert_margin_ok;
-  const int x_coord = Descriptor::Property::convert_string(xEdit->text().toStdString(), &convert_x_ok);
-  const int y_coord = Descriptor::Property::convert_string(yEdit->text().toStdString(), &convert_y_ok);
-  const int box_margin = Descriptor::Property::convert_string("100", &convert_margin_ok);
-
-  if (convert_x_ok && convert_y_ok && convert_margin_ok){
-    gui->zoomTo(odb::Rect(x_coord - box_margin,
-                          y_coord - box_margin,
-                          x_coord + box_margin,
-                          y_coord + box_margin));
+  const int x_coord = Descriptor::Property::convert_string(
+      xEdit->text().toStdString(), &convert_x_ok);
+  const int y_coord = Descriptor::Property::convert_string(
+      yEdit->text().toStdString(), &convert_y_ok);
+  if (convert_x_ok && convert_y_ok) {
+    gui->centerAt({x_coord, y_coord});
   }
 }
-
 }  // namespace gui
