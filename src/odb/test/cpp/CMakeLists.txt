@@ -1,4 +1,4 @@
-find_package(Boost)
+include(openroad)
 
 set(TEST_LIBS
         odb
@@ -15,6 +15,7 @@ set(TEST_LIBS
         utl
 )
 
+add_executable(TestDbWire TestDbWire.cc)
 add_executable(TestCallBacks TestCallBacks.cpp)
 add_executable(TestGeom TestGeom.cpp)
 add_executable(TestModule TestModule.cpp)
@@ -25,6 +26,7 @@ add_executable(TestJournal TestJournal.cpp)
 add_executable(TestAccessPoint TestAccessPoint.cpp)
 add_executable(TestGuide TestGuide.cpp)
 
+target_link_libraries(TestDbWire ${TEST_LIBS} gtest gtest_main)
 target_link_libraries(TestCallBacks ${TEST_LIBS})
 target_link_libraries(TestGeom ${TEST_LIBS})
 target_link_libraries(TestModule ${TEST_LIBS})
@@ -34,3 +36,28 @@ target_link_libraries(TestGCellGrid ${TEST_LIBS})
 target_link_libraries(TestJournal ${TEST_LIBS})
 target_link_libraries(TestAccessPoint ${TEST_LIBS})
 target_link_libraries(TestGuide ${TEST_LIBS})
+
+# FAILING TARGETS
+# add_test(NAME TestLef58Properties COMMAND TestLef58Properties)
+# add_test(NAME TestJournal COMMAND TestJournal)
+# add_test(NAME TestAccessPoint COMMAND TestAccessPoint)
+
+gtest_discover_tests(TestDbWire
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+add_test(NAME odb.TestCallBacks COMMAND TestCallBacks)
+add_test(NAME odb.TestGeom COMMAND TestGeom)
+add_test(NAME odb.TestModule COMMAND TestModule)
+add_test(NAME odb.TestGroup COMMAND TestGroup)
+add_test(NAME odb.TestGCellGrid COMMAND TestGCellGrid)
+add_test(NAME odb.TestGuide COMMAND TestGuide)
+
+add_dependencies(build_and_test 
+        TestCallBacks 
+        TestGeom 
+        TestModule 
+        TestGroup 
+        TestGCellGrid 
+        TestGuide
+        TestDbWire
+)

@@ -382,6 +382,7 @@ int dbWireEncoder::addTechVia(dbTechVia* via)
   dbTechLayer* top = via->getTopLayer();
   dbTechLayer* bot = via->getBottomLayer();
 
+  clearColor();
   if (top == _layer) {
     _layer = bot;
     addOp(WOP_TECH_VIA, via->getImpl()->getOID());
@@ -1041,7 +1042,7 @@ nextOpCode:
 
     case WOP_COLOR: {
       // 3 MSB bits of the opcode represent the color
-      _color = static_cast<uint8_t>(_wire->_data[_idx]);
+      _color = static_cast<uint8_t>(_operand);
 
       if (_color.value() == 0) {
         _color = std::nullopt;
