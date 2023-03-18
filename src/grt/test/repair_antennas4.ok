@@ -22,3 +22,4 @@
 [INFO GRT-0012] Found 8 antenna violations.
 [INFO GRT-0015] Inserted 176 diodes.
 [INFO GRT-0054] Using detailed placer to place 76 diodes.
+[WARNING DPL-0038] No 1-site fill cells detected.  To remove 1-site gaps use the -disallow_one_site_gaps flag.
