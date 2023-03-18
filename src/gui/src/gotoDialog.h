@@ -45,6 +45,6 @@ class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
   GotoLocationDialog(QWidget* parent = nullptr);
  public slots:
   void show_init(LayoutViewer* viewer_ = nullptr);
-  void accept();
+  void accept() override;
 };
 }  // namespace gui
