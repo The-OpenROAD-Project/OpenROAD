@@ -41,7 +41,6 @@
 #include <set>
 #include <string>
 
-#include "fmt/format.h"
 #include "odb/db.h"
 #include "odb/dbMap.h"
 #include "odb/dbWireCodec.h"
