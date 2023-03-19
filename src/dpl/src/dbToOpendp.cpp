@@ -62,8 +62,8 @@ void Opendp::importDb()
   have_one_site_cells_ = false;
 
   importClear();
-  checkOneSiteDbMaster();
   examineRows();
+  checkOneSiteDbMaster();
   makeMacros();
   makeCells();
   makeGroups();
