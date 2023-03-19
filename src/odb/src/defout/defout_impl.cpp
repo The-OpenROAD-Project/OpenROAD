@@ -155,7 +155,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
 
   struct stat stats;
   fstat(fileno(_out), &stats);
-  setvbuf(_out, NULL, _IOFBF, stats.st_blksize);
+  setvbuf(_out, nullptr, _IOFBF, stats.st_blksize);
 
   if (_version == defout::DEF_5_3) {
     fprintf(_out, "VERSION 5.3 ;\n");

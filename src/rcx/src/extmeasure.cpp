@@ -162,7 +162,7 @@ uint extMeasure::createNetSingleWire(char* dirName,
                                                ur[1],
                                                _met,
                                                /*skipBTerms=*/false,
-                                               /*skipExistsNet=*/false,
+                                               /*skipNetExists=*/false,
                                                mask_color);
   } else {
     net = _create_net_util.createNetSingleWire(

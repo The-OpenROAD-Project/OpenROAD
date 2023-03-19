@@ -356,7 +356,7 @@ class dbWireEncoder
   ///
   /// Sets the mask color of shapes following this call.
   ///
-  void setColor(uint8_t color);
+  void setColor(uint8_t mask_color);
 
   ///
   /// Clears the mask color. Shapes following this call will have no mask color.

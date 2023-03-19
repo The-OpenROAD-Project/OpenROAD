@@ -616,18 +616,18 @@ void dbWireEncoder::end()
   _point_cnt = 0;
 }
 
-void dbWireEncoder::setColor(uint8_t color)
+void dbWireEncoder::setColor(uint8_t mask_color)
 {
   utl::Logger* logger = _wire->getImpl()->getLogger();
 
   // LEF/DEF says 3 is the max number of supported masks per layer.
   // 0 is also not a valid mask.
-  if (color < 1 || color > 3) {
+  if (mask_color < 1 || mask_color > 3) {
     logger->error(
-        utl::ODB, 1102, "Mask color: {}, but must be between 1 and 3", color);
+        utl::ODB, 1102, "Mask color: {}, but must be between 1 and 3", mask_color);
   }
 
-  addOp(WOP_COLOR, color);
+  addOp(WOP_COLOR, mask_color);
 }
 
 void dbWireEncoder::clearColor()
