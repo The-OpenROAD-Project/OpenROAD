@@ -406,7 +406,7 @@ std::set<dbSite*> InitFloorplan::getSites() const
     auto site = master->getSite();
     // if site is null, and the core is auto placeable, then warn the user and
     // skip that cell
-    if (!master->isCoreAutoPlaceable()) {
+    if (!master->isCoreAutoPlaceable() || master->isBlock()) {
       continue;
     }
     if (site == nullptr) {
