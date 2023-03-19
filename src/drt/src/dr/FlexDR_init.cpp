@@ -1090,8 +1090,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           bool useCenterLine = true;
-          auto xSpan = instPinRectBBox.xMax() - instPinRectBBox.xMin();
-          auto ySpan = instPinRectBBox.yMax() - instPinRectBBox.yMin();
+          auto xSpan = instPinRectBBox.dx();
+          auto ySpan = instPinRectBBox.dy();
           bool isPinRectHorz = (xSpan > ySpan);
 
           if (!useCenterLine) {

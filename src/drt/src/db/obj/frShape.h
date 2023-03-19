@@ -110,20 +110,20 @@ class frRect : public frShape
   // others
   bool isHor() const
   {
-    frCoord xSpan = box_.xMax() - box_.xMin();
-    frCoord ySpan = box_.yMax() - box_.yMin();
+    frCoord xSpan = box_.dx();
+    frCoord ySpan = box_.dy();
     return (xSpan >= ySpan) ? true : false;
   }
   frCoord width() const
   {
-    frCoord xSpan = box_.xMax() - box_.xMin();
-    frCoord ySpan = box_.yMax() - box_.yMin();
+    frCoord xSpan = box_.dx();
+    frCoord ySpan = box_.dy();
     return (xSpan > ySpan) ? ySpan : xSpan;
   }
   frCoord length() const
   {
-    frCoord xSpan = box_.xMax() - box_.xMin();
-    frCoord ySpan = box_.yMax() - box_.yMin();
+    frCoord xSpan = box_.dx();
+    frCoord ySpan = box_.dy();
     return (xSpan < ySpan) ? ySpan : xSpan;
   }
   frBlockObjectEnum typeId() const override { return frcRect; }
