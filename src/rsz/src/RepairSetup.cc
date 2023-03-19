@@ -338,13 +338,25 @@ RepairSetup::repairSetup(PathRef &path,
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
 
-      if (//swapVtCell(drvr_path, drvr_index, &expanded) ||
-          upsizeDrvr(drvr_path, drvr_index, &expanded)||
-          swapPins(drvr_path, drvr_index, &expanded)) {
+      if (upsizeDrvr(drvr_path, drvr_index, &expanded, false)) {
         changed = true;
         break;
       }
 
+      if (getenv("TRY_NEW_THINGS") != nullptr) {
+        // This is equivalent to Vt cell swapping.
+        // Should really nor run the upsizeDrvr from before
+        // and this one in the same flow. But ok to test for now.
+        if (upsizeDrvr(drvr_path, drvr_index, &expanded, true)) {
+          changed = true;
+          break;
+        }
+
+        if (swapPins(drvr_path, drvr_index, &expanded)) {
+          changed = true;
+          break;
+        }
+      }
       // For tristate nets all we can do is resize the driver.
       bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
       if (fanout > 1
@@ -378,13 +390,6 @@ RepairSetup::repairSetup(PathRef &path,
     }
   }
   return changed;
-}
-
-bool RepairSetup::swapVtCell(PathRef *drvr_path,
-                            int drvr_index,
-                            PathExpanded *expanded)
-{
-  return false;
 }
 
 void RepairSetup::debugCheckMultipleBuffers(PathRef &path,
@@ -472,7 +477,8 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
 bool
 RepairSetup::upsizeDrvr(PathRef *drvr_path,
                         int drvr_index,
-                        PathExpanded *expanded)
+                        PathExpanded *expanded,
+                        bool only_same_size_swap)
 {
   Pin *drvr_pin = drvr_path->pin(this);
   Instance *drvr = network_->instance(drvr_pin);
@@ -497,15 +503,16 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
     else
       prev_drive = 0.0;
     LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
-    LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
-                                     prev_drive, dcalc_ap);
-    if (upsize) {
+    LibertyCell *swap = upsizeCell(in_port, drvr_port, load_cap, prev_drive,
+                                   dcalc_ap, only_same_size_swap);
+
+    if (swap) {
       debugPrint(logger_, RSZ, "repair_setup", 3, "resize {} {} -> {}",
                  network_->pathName(drvr_pin),
                  drvr_port->libertyCell()->name(),
-                 upsize->name());
+                 swap->name());
       if (!resizer_->dontTouch(drvr)
-          && resizer_->replaceCell(drvr, upsize, true)) {
+          && resizer_->replaceCell(drvr, swap, true)) {
         resize_count_++;
         return true;
       }
@@ -514,12 +521,26 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
   return false;
 }
 
+bool
+RepairSetup::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
+                               bool match_size)
+{
+  if (!match_size)
+    return true;
+  dbMaster* lef_cell1 = db_network_->staToDb(cell);
+  dbMaster* lef_cell2 = db_network_->staToDb(equiv);
+  if (lef_cell1->getWidth() == lef_cell2->getWidth())
+    return true;
+  return false;
+}
+
 LibertyCell *
 RepairSetup::upsizeCell(LibertyPort *in_port,
                         LibertyPort *drvr_port,
                         float load_cap,
                         float prev_drive,
-                        const DcalcAnalysisPt *dcalc_ap)
+                        const DcalcAnalysisPt *dcalc_ap,
+                        bool match_size)
 {
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
@@ -555,7 +576,8 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
         + prev_drive * equiv_input->capacitance();
       if (!resizer_->dontUse(equiv)
           && equiv_drive < drive
-          && equiv_delay < delay)
+          && equiv_delay < delay
+          && meetsSizeCriteria(cell, equiv, match_size))
         return equiv;
     }
   }

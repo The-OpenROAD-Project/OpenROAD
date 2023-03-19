@@ -105,12 +105,12 @@ private:
   bool swapPins(PathRef *drvr_path,
                 int drvr_index,
                 PathExpanded *expanded);
-  bool swapVtCell(PathRef *drvr_path,
-                  int drvr_index,
-                  PathExpanded *expanded);
+  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
+                         bool match_size);
   bool upsizeDrvr(PathRef *drvr_path,
                   int drvr_index,
-                  PathExpanded *expanded);
+                  PathExpanded *expanded,
+                  bool only_same_size_swap);
   void splitLoads(PathRef *drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
@@ -119,7 +119,8 @@ private:
                           LibertyPort *drvr_port,
                           float load_cap,
                           float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap);
+                          const DcalcAnalysisPt *dcalc_ap,
+                          bool match_size);
   int fanout(Vertex *vertex);
   bool hasTopLevelOutputPort(Net *net);
 
@@ -155,6 +156,7 @@ private:
   const MinMax *max_;
 
   sta::UnorderedMap<LibertyCell *, sta::LibertyPortSet> equiv_pin_map_;
+  sta::UnorderedMap<LibertyCell *, sta::LibertyCellSeq> equiv_vt_cells_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;
