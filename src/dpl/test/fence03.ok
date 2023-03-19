@@ -7,7 +7,6 @@
 [INFO ODB-0130]     Created 2 pins.
 [INFO ODB-0131]     Created 10 components and 45 component-terminals.
 [INFO ODB-0133]     Created 11 nets and 25 connections.
-[WARNING DPL-0038] No 1-site fill cells detected.  To remove 1-site gaps use the -disallow_one_site_gaps flag.
 Placement Analysis
 ---------------------------------
 total displacement          3.9 u
