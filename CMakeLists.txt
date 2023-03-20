@@ -137,8 +137,12 @@ configure_file(
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-enable_testing()
-add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
+
 
 add_subdirectory(third-party)
+
+enable_testing()
+add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
+include(GoogleTest)
+
 add_subdirectory(src)
