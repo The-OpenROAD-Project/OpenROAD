@@ -156,7 +156,7 @@ class dbIsolation;
 
 // Extraction Objects
 class dbExtControl;
-
+class ZContext;
 ///
 /// dbProperty - Property base class.
 ///
