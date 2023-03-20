@@ -93,7 +93,7 @@ void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_ne
   dbNet* create_pin_net = block->findNet(source_net_name);
   dbTechLayer* PGpin_metal_layer = tech->findLayer("met1"); 
   dbSet<dbSWire> swires = create_pin_net->getSWires();
-  dbSBox* pdn_wire;
+  dbSBox* pdn_wire = new dbSBox();
 
   int num = 0;
   int direction_0;
@@ -211,8 +211,6 @@ void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_ne
 }
 
 void dbPGpin::create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm) {
-  int units = block->getDefUnits();
-
   dbNet* net = block->findNet(nett);
 
   dbInst* inst = block->findInst(instt);
