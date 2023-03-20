@@ -80,7 +80,7 @@ int r2grid (int number, dbTech *db_tech) {
     return round(number / double(grid) * grid);
 }
 
-void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_net_name, int num_connection_points, string position) {
+void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_net_name, int num_connection_points, std::string position) {
   /*
   _dbPGpin* obj = (_dbPGpin*) this;
   dbDatabase* db = (dbDatabase*)obj->getDatabase();
