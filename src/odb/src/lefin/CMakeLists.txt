@@ -40,6 +40,6 @@ target_link_libraries(lefin
         zutil
         lef
         lefzlib
-        utl
+        utl_lib
         Boost::boost
 )

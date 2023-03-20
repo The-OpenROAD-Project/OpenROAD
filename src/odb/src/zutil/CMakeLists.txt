@@ -11,7 +11,7 @@ add_library(zutil
 target_link_libraries(zutil
   PUBLIC
         db
-        utl
+        utl_lib
 )
 
 target_include_directories(zutil

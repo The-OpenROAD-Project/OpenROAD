@@ -12,7 +12,7 @@ set(TEST_LIBS
         cdl
         ${TCL_LIBRARY}
         Boost::boost
-        utl
+        utl_lib
 )
 
 add_executable(TestDbWire TestDbWire.cc)
