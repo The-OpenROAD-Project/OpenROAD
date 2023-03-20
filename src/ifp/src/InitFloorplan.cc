@@ -586,7 +586,7 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
                                          int first_last_pitch)
 {
   if (layer->getDirection() != dbTechLayerDir::HORIZONTAL) {
-    logger_->error(IFP, 40, "Non horizontal layer uses property LEF58_PITCH.");
+    logger_->error(IFP, 44, "Non horizontal layer uses property LEF58_PITCH.");
   }
 
   int cell_row_height = 0;
@@ -600,7 +600,7 @@ void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
 
   if (cell_row_height == 0) {
     logger_->error(
-        IFP, 41, "No routing Row found in layer {}", layer->getName());
+        IFP, 45, "No routing Row found in layer {}", layer->getName());
   }
   Rect die_area = block_->getDieArea();
 
