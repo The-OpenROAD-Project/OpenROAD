@@ -26,7 +26,7 @@ add_executable(TestJournal TestJournal.cpp)
 add_executable(TestAccessPoint TestAccessPoint.cpp)
 add_executable(TestGuide TestGuide.cpp)
 
-target_link_libraries(TestDbWire ${TEST_LIBS} gtest gtest_main)
+target_link_libraries(TestDbWire odb gtest gtest_main)
 target_link_libraries(TestCallBacks ${TEST_LIBS})
 target_link_libraries(TestGeom ${TEST_LIBS})
 target_link_libraries(TestModule ${TEST_LIBS})
