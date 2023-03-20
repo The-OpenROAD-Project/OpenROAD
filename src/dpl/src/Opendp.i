@@ -96,10 +96,10 @@ namespace dpl {
 
 void
 detailed_placement_cmd(int max_displacment_x,
-                       int max_displacment_y)
-{
+                       int max_displacment_y,
+                       bool disallow_one_site_gaps){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y, disallow_one_site_gaps);
 }
 
 void

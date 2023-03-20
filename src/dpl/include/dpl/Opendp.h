@@ -177,7 +177,9 @@ class Opendp
   void initBlock();
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
-  void detailedPlacement(int max_displacement_x, int max_displacement_y);
+  void detailedPlacement(int max_displacement_x,
+                         int max_displacement_y,
+                         bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
   void setPadding(dbMaster* master, int left, int right);
@@ -281,6 +283,12 @@ class Opendp
   void visitCellPixels(Cell& cell,
                        bool padded,
                        const std::function<void(Pixel* pixel)>& visitor) const;
+  void visitCellBoundaryPixels(
+      Cell& cell,
+      bool padded,
+      const std::function<
+          void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor)
+      const;
   void setGridCell(Cell& cell, Pixel* pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
@@ -292,6 +300,7 @@ class Opendp
   static bool isPlaced(const Cell* cell);
   bool checkInRows(const Cell& cell) const;
   Cell* checkOverlap(Cell& cell) const;
+  Cell* checkOneSiteGaps(Cell& cell) const;
   bool overlap(const Cell* cell1, const Cell* cell2) const;
   bool isOverlapPadded(const Cell* cell1, const Cell* cell2) const;
   bool isCrWtBlClass(const Cell* cell) const;
@@ -315,7 +324,7 @@ class Opendp
                 int* y) const;
   int rectDist(const Cell* cell, const Rect* rect) const;
   bool havePadding() const;
-
+  void checkOneSiteDbMaster();
   void deleteGrid();
   Pixel* gridPixel(int x, int y) const;
   // Cell initial location wrt core origin.
@@ -353,7 +362,7 @@ class Opendp
                        const char* prefix,
                        dbMasterSeq* filler_masters);
   bool isFiller(odb::dbInst* db_inst);
-
+  bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(int row, int col);
 
   // Optimizing mirroring
@@ -388,6 +397,7 @@ class Opendp
   int have_multi_row_cells_ = 0;
   int max_displacement_x_ = 0;  // sites
   int max_displacement_y_ = 0;  // sites
+  bool disallow_one_site_gaps_ = false;
   vector<dbInst*> placement_failures_;
 
   // 2D pixel grid
@@ -399,6 +409,7 @@ class Opendp
   GapFillers gap_fillers_;
   int filler_count_ = 0;
   bool have_fillers_ = false;
+  bool have_one_site_cells_ = false;
 
   // Results saved for optional reporting.
   int64_t hpwl_before_ = 0;
