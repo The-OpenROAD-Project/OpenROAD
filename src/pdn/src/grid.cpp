@@ -963,9 +963,24 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
     if (!inst->isFixed()) {
       continue;
     }
+
     auto* master = inst->getMaster();
-    if (!master->isPad() && !master->isBlock() && !master->isCover()) {
+    if (master->isCore()) {
       continue;
+    }
+    auto type = master->getType();
+    if (master->isEndCap()) {
+      switch (master->getType()) {
+        case odb::dbMasterType::ENDCAP_TOPLEFT:
+        case odb::dbMasterType::ENDCAP_TOPRIGHT:
+        case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
+        case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
+          // Master is a pad corner
+          break;
+        default:
+          // Master is a std cell endcap
+          continue;
+      }
     }
 
     if (skip_insts.find(inst) != skip_insts.end()) {
@@ -1321,33 +1336,31 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
   inst->getTransform(transform);
   for (auto* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
-    if (net != nullptr) {
-      for (auto* mpin : iterm->getMTerm()->getMPins()) {
-        for (auto* box : mpin->getGeometry()) {
-          if (box->isVia()) {
-            odb::dbTechVia* tech_via = box->getTechVia();
-            if (tech_via == nullptr) {
-              continue;
-            }
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        if (box->isVia()) {
+          odb::dbTechVia* tech_via = box->getTechVia();
+          if (tech_via == nullptr) {
+            continue;
+          }
 
-            const odb::dbTransform via_transform(box->getViaXY());
-            for (auto* via_box : tech_via->getBoxes()) {
-              odb::Rect box_rect = via_box->getBox();
-              via_transform.apply(box_rect);
-              transform.apply(box_rect);
-              auto shape = std::make_shared<Shape>(
-                  via_box->getTechLayer(), net, box_rect);
-              shape->setShapeType(Shape::FIXED);
-              pins.push_back(shape);
-            }
-          } else {
-            odb::Rect box_rect = box->getBox();
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : tech_via->getBoxes()) {
+            odb::Rect box_rect = via_box->getBox();
+            via_transform.apply(box_rect);
             transform.apply(box_rect);
-            auto shape
-                = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+            auto shape = std::make_shared<Shape>(
+                via_box->getTechLayer(), net, box_rect);
             shape->setShapeType(Shape::FIXED);
             pins.push_back(shape);
           }
+        } else {
+          odb::Rect box_rect = box->getBox();
+          transform.apply(box_rect);
+          auto shape
+              = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+          shape->setShapeType(Shape::FIXED);
+          pins.push_back(shape);
         }
       }
     }
