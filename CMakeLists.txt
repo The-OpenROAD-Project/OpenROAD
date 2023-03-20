@@ -137,22 +137,12 @@ configure_file(
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-# GTEST
-find_package(GTest)
-if(NOT GTest_FOUND)
-  include(FetchContent)
-  FetchContent_Declare(
-    googletest
-    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    # Specify the commit you depend on and update it regularly.
-    URL "https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip"
-  )
-  FetchContent_MakeAvailable(googletest)
-endif()
+
+
+add_subdirectory(third-party)
+
 enable_testing()
 add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
 include(GoogleTest)
-# GTEST
 
-add_subdirectory(third-party)
 add_subdirectory(src)
