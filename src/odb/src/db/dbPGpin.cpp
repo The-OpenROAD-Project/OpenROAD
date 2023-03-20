@@ -219,4 +219,4 @@ void dbPGpin::create_custom_connections (dbBlock* block, const char* nett, const
 
 }
 
-}
+}  // namespace odb
