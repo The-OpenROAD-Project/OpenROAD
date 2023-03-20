@@ -96,6 +96,9 @@ The `-group` flag places together on the die boundary the pin list defined
 in `-pin_names`, similar to the `-group_pins` option on `place_pins` command.
 The `-order` flag places the pins ordered in ascending x/y position.
 
+Only one of the `-region`, `-mirrored_pins` and `-group` constraints is allowed
+per `set_io_pin_constraint` call.
+
 Note that if you call `define_pin_shape_pattern` before
 `set_io_pin_constraint`, the `edge` values are (up, top,
 bottom, left, right). Where `up` relates to the layer created by
