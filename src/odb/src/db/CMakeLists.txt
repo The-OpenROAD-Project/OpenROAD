@@ -78,9 +78,11 @@ add_library(db
     dbNameCache.cpp 
     dbProperty.cpp 
     dbPropertyItr.cpp 
+    dbFlatten.cpp 
     dbUtil.cpp
     gs.cpp
     grids.cpp
+    dbLogger.cpp 
     tmg_conn.cpp
     tmg_conn_g.cpp
     tmg_conn_s.cpp
@@ -124,6 +126,7 @@ add_library(db
     dbRegionGroupItr.cpp
     dbGroupInstItr.cpp
     dbGuideItr.cpp
+    dbPGpin.cpp
     # Generator Code End cpp
 )
 
