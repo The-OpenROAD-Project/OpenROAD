@@ -46,8 +46,8 @@ void GotoLocationDialog::show_init(LayoutViewer* viewer_)
       viewer_->getVisibleCenter().x(), false)));
   yEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer_->getVisibleCenter().y(), false)));
-  sEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
-      300, false)));
+  sEdit->setText(
+      QString::fromStdString(Descriptor::Property::convert_dbu(300, false)));
   show();
 }
 
