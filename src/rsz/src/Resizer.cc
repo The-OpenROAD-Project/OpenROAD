@@ -866,7 +866,7 @@ Resizer::findTargetCell(LibertyCell *cell,
   return best_cell;
 }
 
-bool
+void
 Resizer::swapPins(Instance *inst, LibertyPort *pin1,
                   LibertyPort *pin2, bool journal)
 {
@@ -923,10 +923,7 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
             delete pin_iter;
         }
     }
-    return true;
 }
-
-
 
 // Replace LEF with LEF so ports stay aligned in instance.
 bool

@@ -40,6 +40,7 @@
 
 #include "sta/StaState.hh"
 #include "sta/MinMax.hh"
+#include "sta/FuncExpr.hh"
 
 namespace sta {
 class PathExpanded;
@@ -147,6 +148,7 @@ private:
   int resize_count_;
   int inserted_buffer_count_;
   int rebuffer_net_count_;
+  int swap_pin_count_;
   const MinMax *min_;
   const MinMax *max_;
 

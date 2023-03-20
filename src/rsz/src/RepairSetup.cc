@@ -81,19 +81,20 @@ using sta::Unit;
 using sta::Corners;
 using sta::InputDrive;
 
-RepairSetup::RepairSetup(Resizer *resizer) :
-  StaState(),
-  logger_(nullptr),
-  sta_(nullptr),
-  db_network_(nullptr),
-  resizer_(resizer),
-  corner_(nullptr),
-  drvr_port_(nullptr),
-  resize_count_(0),
-  inserted_buffer_count_(0),
-  rebuffer_net_count_(0),
-  min_(MinMax::min()),
-  max_(MinMax::max())
+RepairSetup::RepairSetup(Resizer* resizer)
+    : StaState(),
+      logger_(nullptr),
+      sta_(nullptr),
+      db_network_(nullptr),
+      resizer_(resizer),
+      corner_(nullptr),
+      drvr_port_(nullptr),
+      resize_count_(0),
+      inserted_buffer_count_(0),
+      swap_pin_count_(0),
+      rebuffer_net_count_(0),
+      min_(MinMax::min()),
+      max_(MinMax::max())
 {
 }
 
@@ -242,6 +243,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+  if (swap_pin_count_ > 0)
+    logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
   Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin))
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
@@ -256,6 +259,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
   init();
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
+  swap_pin_count_ = 0;
 
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
   Slack slack = sta_->vertexSlack(vertex, max_);
@@ -270,6 +274,8 @@ RepairSetup::repairSetup(const Pin *end_pin)
     logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
+  if (swap_pin_count_ > 0)
+    logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pin_count_);
 }
 
 /* This is the main routine for repairing setup violations. We have
@@ -451,9 +457,6 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         // Find the equivalent pins for a cell (simple implementation for now)
         // stash them
         if (equiv_pin_map_.find(cell) == equiv_pin_map_.end()) {
-            if (!strcmp(cell->name(), "sky130_fd_sc_hd__a2111o_4")) {
-                printf("XXXXXX %s\n", cell->name());
-            }
             equivCellPins(cell, ports);
             equiv_pin_map_.insert(cell, ports);
         }
@@ -468,7 +471,9 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
                 //           rebuffer_count);
                 printf("Swap %s (%s) %s %s\n", network_->name(drvr), cell->name(),
                        input_port->name(), swap_port->name());
-                return(resizer_->swapPins(drvr, input_port, swap_port, true));
+                resizer_->swapPins(drvr, input_port, swap_port, true);
+                swap_pin_count_++;
+                return true;
             }
         }
     }
@@ -566,6 +571,7 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
     float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     float delay = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
       + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
+
     for (LibertyCell *equiv : *equiv_cells) {
       LibertyCell *equiv_corner = equiv->cornerCell(lib_ap);
       LibertyPort *equiv_drvr = equiv_corner->findLibertyPort(drvr_port_name);
