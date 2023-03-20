@@ -39,7 +39,6 @@
 #include <vector>
 
 #include "ISdb.h"
-#include "dbLogger.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
