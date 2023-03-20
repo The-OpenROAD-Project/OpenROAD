@@ -618,7 +618,6 @@ void dbWireEncoder::end()
 
 void dbWireEncoder::setColor(uint8_t mask_color)
 {
-
   // LEF/DEF says 3 is the max number of supported masks per layer.
   // 0 is also not a valid mask.
   if (mask_color < 1 || mask_color > 3) {
