@@ -38,6 +38,8 @@
 #include <string>
 #include <vector>
 
+#include "ISdb.h"
+#include "dbLogger.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -155,8 +157,6 @@ class dbIsolation;
 
 // Extraction Objects
 class dbExtControl;
-
-class ZContext;
 
 ///
 /// dbProperty - Property base class.
@@ -9299,6 +9299,14 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
+class dbPGpin : public dbObject
+{
+  public:
+    void create_PGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, std::string position);
+    void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
+
+};
+
 class dbAccessPoint : public dbObject
 {
  public:
@@ -9515,3 +9523,4 @@ class dbIsolation : public dbObject
 // Generator Code End ClassDefinition
 
 }  // namespace odb
+
