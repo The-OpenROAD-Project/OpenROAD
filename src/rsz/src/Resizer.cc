@@ -866,6 +866,68 @@ Resizer::findTargetCell(LibertyCell *cell,
   return best_cell;
 }
 
+bool
+Resizer::swapPins(Instance *inst, LibertyPort *pin1,
+                  LibertyPort *pin2, bool journal)
+{
+    Pin *found_pin1, *found_pin2;
+    Net *net1, *net2;
+    LibertyPort *port1, *port2;
+
+    // Add support for undo.
+    //if (journal)
+    //  journalInstReplaceCellBefore(inst);
+
+    InstancePinIterator *pin_iter = network_->pinIterator(inst);
+    found_pin1 = found_pin2 = nullptr;
+    net1 = net2 = nullptr;
+    while (pin_iter->hasNext()) {
+        Pin *pin = pin_iter->next();
+        Net *net = network_->net(pin);
+        LibertyPort *port = network_->libertyPort(pin);
+        if (port == pin1) {
+            found_pin1 = pin;
+            net1 = net;
+            port1 = port;
+        }
+        if (port == pin2) {
+            found_pin2 = pin;
+            net2 = net;
+            port2 = port;
+        }
+    }
+
+    if (pin1 != nullptr && pin2 != nullptr) {
+        // Swap the ports and nets
+        sta_->disconnectPin(found_pin1);
+        sta_->connectPin(inst, port1, net2);
+        sta_->disconnectPin(found_pin2);
+        sta_->connectPin(inst, port2, net1);
+
+        // Invalidate the parasitics on these two nets.
+        if (haveEstimatedParasitics()) {
+            InstancePinIterator* pin_iter = network_->pinIterator(inst);
+            while (pin_iter->hasNext()) {
+                const Pin* pin = pin_iter->next();
+                const Net* net = network_->net(pin);
+                if (net == net1 || net == net2) {
+                    // ODB is clueless about tristates so go to liberty for reality.
+                    const LibertyPort* port = network_->libertyPort(pin);
+                    // Invalidate estimated parasitics on all instance input pins.
+                    // Tristate nets have multiple drivers and this is drivers^2 if
+                    // the parasitics are updated for each resize.
+                    if (net && !port->direction()->isAnyTristate())
+                        parasiticsInvalid(net);
+                }
+            }
+            delete pin_iter;
+        }
+    }
+    return true;
+}
+
+
+
 // Replace LEF with LEF so ports stay aligned in instance.
 bool
 Resizer::replaceCell(Instance *inst,
@@ -1828,6 +1890,60 @@ Resizer::bufferDelays(LibertyCell *buffer_cell,
   LibertyPort *input, *output;
   buffer_cell->bufferPorts(input, output);
   gateDelays(output, load_cap, dcalc_ap, delays, slews);
+}
+
+// Create a map of all the pins that are equivalent and then use the fastest pin
+// for our violating path. Current implementation does not handle the case
+// where 2 paths go through the same gate (we could end up swapping pins twice)
+void
+Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
+                              float load_cap, const DcalcAnalysisPt *dcalc_ap,
+                              LibertyPort **swap_port)
+{
+    const Pvt *pvt = dcalc_ap->operatingConditions();
+    LibertyCell *cell = drvr_port->libertyCell();
+    std::map<LibertyPort *, ArcDelay> port_delays;
+    ArcDelay base_delay = -INF;
+
+    // Create map of pins and delays except the input pin.
+    for (TimingArcSet *arc_set : cell->timingArcSets()) {
+        if (arc_set->to() == drvr_port
+            && !arc_set->role()->isTimingCheck()) {
+            for (TimingArc *arc : arc_set->arcs()) {
+                RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+                float in_slew = tgt_slews_[in_rf->index()];
+                ArcDelay gate_delay;
+                Slew drvr_slew;
+                LibertyPort *port = arc->from();
+                arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,
+                                           nullptr, 0.0, pvt, dcalc_ap,
+                                           gate_delay,
+                                           drvr_slew);
+
+                if (port == input_port) {
+                    base_delay = std::max(base_delay, gate_delay);
+                } else {
+                    if (port_delays.find(port) == port_delays.end()) {
+                        port_delays.insert(std::make_pair(port, gate_delay));
+                    } else {
+                        port_delays[input_port] = std::max(port_delays[port], gate_delay);
+                    }
+                }
+            }
+        }
+    }
+
+    // Find the candidate port to swap with
+    auto port_iter = sta::LibertyCellPortIterator(cell);
+    while (port_iter.hasNext()) {
+        LibertyPort *port = port_iter.next();
+        if (!input_port->equiv(input_port, port) &&
+            !drvr_port->equiv(drvr_port, port) &&
+            port_delays[port] < base_delay) {
+            *swap_port = port;
+            base_delay = port_delays[port];
+        }
+    }
 }
 
 // Rise/fall delays across all timing arcs into drvr_port.

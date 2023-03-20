@@ -93,9 +93,19 @@ private:
   void init();
   bool repairSetup(PathRef &path,
                    Slack path_slack);
+  void debugCheckMultipleBuffers(PathRef &path,
+                                 PathExpanded *expanded);
+
+  void getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
+                         sta::FuncExpr::Operator &status);
+  void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
+  void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);
+  bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
+  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,                           bool match_size);
   bool upsizeDrvr(PathRef *drvr_path,
                   int drvr_index,
-                  PathExpanded *expanded);
+                  PathExpanded *expanded,
+                  bool only_same_size_swap);
   void splitLoads(PathRef *drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
@@ -104,7 +114,8 @@ private:
                           LibertyPort *drvr_port,
                           float load_cap,
                           float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap);
+                          const DcalcAnalysisPt *dcalc_ap,
+                          bool match_size);
   int fanout(Vertex *vertex);
   bool hasTopLevelOutputPort(Net *net);
 
@@ -138,6 +149,8 @@ private:
   int rebuffer_net_count_;
   const MinMax *min_;
   const MinMax *max_;
+
+  sta::UnorderedMap<LibertyCell *, sta::LibertyPortSet> equiv_pin_map_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;

@@ -53,6 +53,7 @@
 #include "sta/PathRef.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/PortDirection.hh"
 
 namespace rsz {
 
@@ -119,9 +120,14 @@ RepairSetup::repairSetup(float setup_slack_margin,
   resize_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
 
+  logger_->setDebugLevel(RSZ, "repair_setup", 2); // TODO: delete prior to MR.
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
   VertexSeq violating_ends;
+
+  // Should check here whether we can figure out the clock domain for each
+  // vertex. This may be the place where we can do some round robin fun to
+  // individually control each clock domain instead of just fixating on fixing one.
   for (Vertex *end : *endpoints) {
     Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack < setup_slack_margin)
@@ -152,6 +158,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
                delayAsString(end_slack, sta_, digits),
                delayAsString(worst_slack, sta_, digits));
     end_index++;
+    debugPrint(logger_, RSZ, "repair_setup", 1, "Doing {} /{}", end_index, max_end_count);
     if (end_index > max_end_count)
       break;
     Slack prev_end_slack = end_slack;
@@ -265,6 +272,20 @@ RepairSetup::repairSetup(const Pin *end_pin)
     logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
 }
 
+/* This is the main routine for repairing setup violations. We have
+ - upsize driver (step 1)
+ - rebuffer (step 2)
+ - split loads
+ And they are always done in the same order. Not clear whether
+ this order is the best way at all times. Also need to worry about
+ actually using global routes... \
+ Things that can be added:
+ - Intelligent rebuffering .... so if we added 2 buffers then maybe add
+   two inverters instead.
+ - pin swap
+ - Logic cloning
+ - VT swap: why would we not use low threshold cells everywhere
+ */
 bool
 RepairSetup::repairSetup(PathRef &path,
                          Slack path_slack)
@@ -319,9 +340,24 @@ RepairSetup::repairSetup(PathRef &path,
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
 
-      if (upsizeDrvr(drvr_path, drvr_index, &expanded)) {
+      if (upsizeDrvr(drvr_path, drvr_index, &expanded, false)) {
         changed = true;
         break;
+      }
+
+      if (getenv("TRY_NEW_THINGS") != nullptr) {
+          // This is equivalent to Vt cell swapping.
+          // Should really nor run the upsizeDrvr from before
+          // and this one in the same flow. But ok to test for now.
+          if (upsizeDrvr(drvr_path, drvr_index, &expanded, true)) {
+            changed = true;
+            break;
+          }
+
+          if (swapPins(drvr_path, drvr_index, &expanded)) {
+              changed = true;
+              break;
+            }
       }
 
       // For tristate nets all we can do is resize the driver.
@@ -342,6 +378,8 @@ RepairSetup::repairSetup(PathRef &path,
         }
       }
 
+      // debugCheckMultipleBuffers(path, &expanded); TODO Delete before PR
+
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
@@ -355,10 +393,93 @@ RepairSetup::repairSetup(PathRef &path,
   return changed;
 }
 
+void RepairSetup::debugCheckMultipleBuffers(PathRef &path,
+                                            PathExpanded *expanded)
+{
+    if (expanded->size() > 1) {
+        int path_length = expanded->size();
+        int start_index = expanded->startIndex();
+        for (int i = start_index; i < path_length; i++) {
+            PathRef* path = expanded->path(i);
+            Vertex* path_vertex = path->vertex(sta_);
+            const Pin* path_pin = path->pin(sta_);
+            if (i > 0 && network_->isDriver(path_pin)
+                && !network_->isTopLevelPort(path_pin)) {
+                TimingArc* prev_arc = expanded->prevArc(i);
+                Edge* prev_edge = path->prevEdge(prev_arc, sta_);
+                printf("repair_setup %s: %s ---> %s \n",
+                       prev_arc->from()->libertyCell()->name(),
+                       prev_arc->from()->name(),
+                       prev_arc->to()->name());
+            }
+        }
+    }
+    printf("done\n");
+}
+
+bool RepairSetup::swapPins(PathRef *drvr_path,
+                           int drvr_index,
+                           PathExpanded *expanded)
+{
+    Pin *drvr_pin = drvr_path->pin(this);
+    Instance *drvr = network_->instance(drvr_pin);
+    const DcalcAnalysisPt *dcalc_ap = drvr_path->dcalcAnalysisPt(sta_);
+    // int lib_ap = dcalc_ap->libertyIndex(); : check cornerPort
+    float load_cap = graph_delay_calc_->loadCap(drvr_pin, dcalc_ap);
+    int in_index = drvr_index - 1;
+    PathRef *in_path = expanded->path(in_index);
+    Pin *in_pin = in_path->pin(sta_);
+
+    // Very bad hack.
+    static std::unordered_set<const Instance *> instance_set;
+
+    if (!resizer_->dontTouch(drvr)) {
+        // We get the driver port and the cell for that port.
+        LibertyPort* drvr_port = network_->libertyPort(drvr_pin);
+        LibertyPort* input_port = network_->libertyPort(in_pin);
+        LibertyCell* cell = drvr_port->libertyCell();
+        LibertyPort *swap_port = input_port;
+        sta::LibertyPortSet ports;
+
+        // Check if we have already dealt with this instance. Skip if the answer
+        // is a yes.
+        if (instance_set.find(drvr) == instance_set.end())
+            instance_set.insert(drvr);
+        else
+            return false;
+
+        // Find the equivalent pins for a cell (simple implementation for now)
+        // stash them
+        if (equiv_pin_map_.find(cell) == equiv_pin_map_.end()) {
+            if (!strcmp(cell->name(), "sky130_fd_sc_hd__a2111o_4")) {
+                printf("XXXXXX %s\n", cell->name());
+            }
+            equivCellPins(cell, ports);
+            equiv_pin_map_.insert(cell, ports);
+        }
+        ports = equiv_pin_map_[cell];
+        if (ports.size() > 1) {
+            resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
+                                           dcalc_ap, &swap_port);
+            if (!swap_port->equiv(swap_port, input_port)) {
+                // FIXME: Change to debug log.
+                //debugPrint(logger_, RSZ, "repair_setup", 3, "rebuffer {} inserted {}",
+                //           network_->pathName(drvr_pin),
+                //           rebuffer_count);
+                printf("Swap %s (%s) %s %s\n", network_->name(drvr), cell->name(),
+                       input_port->name(), swap_port->name());
+                return(resizer_->swapPins(drvr, input_port, swap_port, true));
+            }
+        }
+    }
+    return false;
+}
+
 bool
 RepairSetup::upsizeDrvr(PathRef *drvr_path,
                         int drvr_index,
-                        PathExpanded *expanded)
+                        PathExpanded *expanded,
+                        bool only_same_size_swap)
 {
   Pin *drvr_pin = drvr_path->pin(this);
   Instance *drvr = network_->instance(drvr_pin);
@@ -384,7 +505,7 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
       prev_drive = 0.0;
     LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
     LibertyCell *upsize = upsizeCell(in_port, drvr_port, load_cap,
-                                     prev_drive, dcalc_ap);
+                                     prev_drive, dcalc_ap, only_same_size_swap);
     if (upsize) {
       debugPrint(logger_, RSZ, "repair_setup", 3, "resize {} {} -> {}",
                  network_->pathName(drvr_pin),
@@ -400,12 +521,26 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
   return false;
 }
 
+bool
+RepairSetup::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
+                               bool match_size)
+{
+    if (!match_size)
+        return true;
+    dbMaster* lef_cell1 = db_network_->staToDb(cell);
+    dbMaster* lef_cell2 = db_network_->staToDb(equiv);
+    if (lef_cell1->getWidth() == lef_cell2->getWidth())
+        return true;
+    return false;
+}
+
 LibertyCell *
 RepairSetup::upsizeCell(LibertyPort *in_port,
                         LibertyPort *drvr_port,
                         float load_cap,
                         float prev_drive,
-                        const DcalcAnalysisPt *dcalc_ap)
+                        const DcalcAnalysisPt *dcalc_ap,
+                        bool match_size)
 {
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
@@ -441,7 +576,8 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
         + prev_drive * equiv_input->capacitance();
       if (!resizer_->dontUse(equiv)
           && equiv_drive < drive
-          && equiv_delay < delay)
+          && equiv_delay < delay
+          && meetsSizeCriteria(cell, equiv, match_size))
         return equiv;
     }
   }
@@ -542,6 +678,88 @@ RepairSetup::fanout(Vertex *vertex)
     fanout++;
   }
   return fanout;
+}
+
+void
+RepairSetup::getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
+                               sta::FuncExpr::Operator &status)
+{
+    typedef sta::FuncExpr::Operator Operator;
+    Operator curr_op = expr->op();
+
+    if (curr_op == Operator::op_not) {
+        getEquivPortList2(expr->left(), ports, status);
+    }
+    else if (status == Operator::op_zero &&
+             (curr_op == Operator::op_and ||
+              curr_op == Operator::op_or ||
+              curr_op == Operator::op_xor)) {
+        // Start parsing the equivalent pins (if it is simple or/and/xor)
+        status = curr_op;
+        getEquivPortList2(expr->left(), ports, status);
+        if (status == Operator::op_port)
+            return;
+        getEquivPortList2(expr->right(), ports, status);
+        if (status == Operator::op_port)
+            return;
+        status = Operator::op_one;
+    }
+    else if (status == curr_op) {
+        // handle > 2 input scenarios (up to any arbitrary number)
+        getEquivPortList2(expr->left(), ports, status);
+        if (status == Operator::op_port)
+            return;
+        getEquivPortList2(expr->right(), ports, status);
+        if (status == Operator::op_port)
+            return;
+    }
+    else if (curr_op == Operator::op_port && expr->port() != nullptr) {
+        ports.insert(expr->port());
+    }
+    else {
+        status = Operator::op_port; // moved to some other operator.
+        ports.clear();
+    }
+}
+
+void
+RepairSetup::getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports)
+{
+    sta::FuncExpr::Operator status = sta::FuncExpr::op_zero;
+    ports.clear();
+    getEquivPortList2(expr, ports, status);
+    if (status == sta::FuncExpr::op_port) {
+        ports.clear();
+    }
+}
+
+// Lets just look at the first list for now.
+// We may want to cache this information somwhere (by building it up for the whole
+// library).
+// Or just generate it when the cell is being created (depending on agreement).
+void
+RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
+{
+    sta::LibertyCellPortIterator port_iter(cell);
+    unsigned outputs = 0;
+
+    // count number of output ports. Skip ports with > 1 output for now.
+    while (port_iter.hasNext()) {
+        LibertyPort *port = port_iter.next();
+        if (port->direction()->isOutput())
+            ++outputs;
+    }
+
+    if (outputs == 1) {
+        sta::LibertyCellPortIterator port_iter2(cell);
+        while (port_iter2.hasNext()) {
+            LibertyPort *port = port_iter2.next();
+            sta::FuncExpr *expr = port->function();
+            if (expr != nullptr) {
+                getEquivPortList(expr, ports);
+            }
+        }
+    }
 }
 
 } // namespace
