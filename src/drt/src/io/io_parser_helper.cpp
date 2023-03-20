@@ -96,14 +96,10 @@ void io::Parser::initDefaultVias()
       Rect layer2Box = via.getLayer2BBox();
       frLayerNum layer1Num = techDefautlViaDef->getLayer1Num();
       frLayerNum layer2Num = techDefautlViaDef->getLayer2Num();
-      bool isLayer1Square = (layer1Box.xMax() - layer1Box.xMin())
-                            == (layer1Box.yMax() - layer1Box.yMin());
-      bool isLayer2Square = (layer2Box.xMax() - layer2Box.xMin())
-                            == (layer2Box.yMax() - layer2Box.yMin());
-      bool isLayer1EncHorz = (layer1Box.xMax() - layer1Box.xMin())
-                             > (layer1Box.yMax() - layer1Box.yMin());
-      bool isLayer2EncHorz = (layer2Box.xMax() - layer2Box.xMin())
-                             > (layer2Box.yMax() - layer2Box.yMin());
+      bool isLayer1Square = layer1Box.dx() == layer1Box.dy();
+      bool isLayer2Square = layer2Box.dx() == layer2Box.dy();
+      bool isLayer1EncHorz = layer1Box.dx() > layer1Box.dy();
+      bool isLayer2EncHorz = layer2Box.dx() > layer2Box.dy();
       bool isLayer1Horz = (tech_->getLayer(layer1Num)->getDir()
                            == dbTechLayerDir::HORIZONTAL);
       bool isLayer2Horz = (tech_->getLayer(layer2Num)->getDir()
@@ -702,8 +698,8 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
       Rect guideBBox = rect.getBBox();
       frCoord guideWidth
           = (tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
-                ? (guideBBox.yMax() - guideBBox.yMin())
-                : (guideBBox.xMax() - guideBBox.xMin());
+                ? guideBBox.dy()
+                : guideBBox.dx();
       if (tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;
