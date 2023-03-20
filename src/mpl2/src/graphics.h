@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "gui/gui.h"
@@ -48,16 +49,48 @@ class Graphics : public gui::Renderer
  public:
   Graphics(int dbu, utl::Logger* logger);
 
+  void startSA();
   void saStep(const std::vector<SoftMacro>& macros);
   void saStep(const std::vector<HardMacro>& macros);
+  void endSA();
+
+  void setAreaPenalty(float area);
+  void setOutlinePenalty(float outline_penalty,
+                         float outline_width,
+                         float outline_height);
+  void setWirelength(float wirelength);
+  void setFencePenalty(float fence_penalty);
+  void setGuidancePenalty(float guidance_penalty);
+  void setBoundaryPenalty(float boundary_penalty);
+  void setMacroBlockagePenalty(float macro_blockage_penalty);
+  void setNotchPenalty(float notch_penalty);
+  void penaltyCalculated(float norm_cost);
 
   virtual void drawObjects(gui::Painter& painter) override;
 
  private:
+  void resetPenalties();
+
+  template <typename T>
+  void report(const char* name, const std::optional<T>& value);
+
   std::vector<SoftMacro> soft_macros_;
   std::vector<HardMacro> hard_macros_;
   int dbu_ = 0;
   utl::Logger* logger_;
+  std::optional<float> outline_penalty_;
+  std::optional<float> fence_penalty_;
+  std::optional<float> wirelength_;
+  std::optional<float> guidance_penalty_;
+  std::optional<float> boundary_penalty_;
+  std::optional<float> macro_blockage_penalty_;
+  std::optional<float> notch_penalty_;
+  std::optional<float> area_penalty_;
+
+  std::optional<float> outline_width_;
+  std::optional<float> outline_height_;
+  float best_norm_cost_ = 0;
+  int skipped_ = 0;
 };
 
 }  // namespace mpl2
