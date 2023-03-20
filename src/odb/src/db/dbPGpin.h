@@ -62,7 +62,7 @@ class _dbObject;
 class _dbPGpin : public _dbObject
 {
  public:
-   _dbPGpin(_dbDatabase*);
+   explicit _dbPGpin(_dbDatabase*);
   ~_dbPGpin();
 };
 
