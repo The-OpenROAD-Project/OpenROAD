@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
@@ -26,7 +27,7 @@
  */
 
 #include "swig_common.h"
-
+#include "../../db/dbPGpin.h"
 #include <libgen.h>
 
 #include <array>
@@ -296,6 +297,18 @@ void createSBoxes(odb::dbSWire* swire,
 {
   for (odb::Point point : points)
     odb::dbSBox::create(swire, via, point.getX(), point.getY(), type);
+}
+
+void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net_name, int num_connection_points, std::string position)
+{
+  odb::dbPGpin PGpin;
+  PGpin.create_PGpin(block, tech, source_net_name, num_connection_points, position);
+}
+
+void p2proute(odb::dbBlock* block, const char* nett, const char* instt, const char* itermm)
+{
+  odb::dbPGpin PGpin;
+  PGpin.create_custom_connections(block, nett, instt, itermm);
 }
 
 void dumpAPs(odb::dbBlock* block, const std::string file_name)

@@ -92,5 +92,8 @@ void createSBoxes(odb::dbSWire* swire,
                   odb::dbVia* via,
                   std::vector<odb::Point> points,
                   odb::dbWireShapeType type);
+void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net_name, int num_connection_points, std::string position);
+
+void p2proute(odb::dbBlock* block, const char* nett, const char* instt, const char* itermm);
 
 void dumpAPs(odb::dbBlock* block, const std::string file_name);
