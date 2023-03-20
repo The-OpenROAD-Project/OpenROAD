@@ -381,7 +381,7 @@ class HardMacro
   float getRealHeight() const;
 
   // Orientation support
-  std::string getOrientation() const;
+  odb::dbOrientType getOrientation() const;
   // We do not allow rotation of macros
   // This may violate the direction of metal layers
   // flip about X or Y axis

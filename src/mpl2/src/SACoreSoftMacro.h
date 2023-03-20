@@ -101,6 +101,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   }
 
  private:
+  float getAreaPenalty() const;
   float calNormCost() const override;
   void calPenalty() override;
 
