@@ -156,7 +156,7 @@ class _dbTechLayer : public _dbObject
   int _min_step;
   int _min_step_max_length;
   int _min_step_max_edges;
-  uint _first_last_pitch;
+  int _first_last_pitch;
 
   struct
   {  // Protrusion
