@@ -392,6 +392,12 @@ protected:
   float portFanoutLoad(LibertyPort *port) const;
   float portCapacitance(LibertyPort *input,
                         const Corner *corner) const;
+  bool swapPins(Instance *inst, LibertyPort *pin1,
+                LibertyPort *pin2, bool journal);
+  void findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
+                            float load_cap, const DcalcAnalysisPt *dcalc_ap,
+                            // Return value
+                            LibertyPort **swap_port);
   void gateDelays(LibertyPort *drvr_port,
                   float load_cap,
                   const DcalcAnalysisPt *dcalc_ap,
@@ -599,6 +605,9 @@ protected:
   int inserted_buffer_count_;
   bool buffer_moved_into_core_;
   // Slack map variables.
+  // This is the minimum length of wire that is worth while to split and
+  // insert a buffer in the middle of. Theoretically computed using the smallest
+  // drive cell (because larger ones would give us a longer length).
   float max_wire_length_;
   float worst_slack_nets_percent_;
   Map<const Net*, Slack> net_slack_map_;
