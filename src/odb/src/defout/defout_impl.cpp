@@ -158,7 +158,7 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   // writes are buffered according to the block size which on modern systems can
   // be as much as 16kb. DEF's have a lot of newlines, and are large in size
   // which makes writing them really slow with line buffering.
-  // 
+  //
   // The following lines enable IO buffering based on disk block size.
   struct stat stats;
   fstat(fileno(_out), &stats);
