@@ -382,7 +382,6 @@ int dbWireEncoder::addTechVia(dbTechVia* via)
   dbTechLayer* top = via->getTopLayer();
   dbTechLayer* bot = via->getBottomLayer();
 
-  clearColor();
   if (top == _layer) {
     _layer = bot;
     addOp(WOP_TECH_VIA, via->getImpl()->getOID());
@@ -393,6 +392,7 @@ int dbWireEncoder::addTechVia(dbTechVia* via)
     ZASSERT(DB_WIRE_ENCODER_INVALID_VIA_LAYER);
     addOp(WOP_TECH_VIA, 0);
   }
+  clearColor();
 
   _via_cnt++;
   return jct_id;
