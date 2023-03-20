@@ -12,8 +12,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>206</width>
-    <height>106</height>
+    <width>150</width>
+    <height>100</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -54,50 +54,50 @@
     <enum>QLayout::SetDefaultConstraint</enum>
    </property>
    <property name="leftMargin">
-    <number>5</number>
+    <number>2</number>
    </property>
    <property name="topMargin">
-    <number>5</number>
+    <number>2</number>
    </property>
    <property name="rightMargin">
-    <number>5</number>
+    <number>2</number>
    </property>
    <property name="bottomMargin">
-    <number>5</number>
+    <number>2</number>
    </property>
    <property name="spacing">
-    <number>6</number>
+    <number>3</number>
    </property>
    <item row="0" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1">
+    <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,1,1">
      <property name="spacing">
       <number>3</number>
      </property>
      <property name="leftMargin">
-      <number>5</number>
+      <number>2</number>
      </property>
      <property name="topMargin">
-      <number>5</number>
+      <number>2</number>
      </property>
      <property name="rightMargin">
-      <number>5</number>
+      <number>2</number>
      </property>
      <property name="bottomMargin">
-      <number>5</number>
+      <number>2</number>
      </property>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,5">
        <property name="leftMargin">
-        <number>5</number>
+        <number>2</number>
        </property>
        <property name="topMargin">
-        <number>5</number>
+        <number>2</number>
        </property>
        <property name="rightMargin">
-        <number>5</number>
+        <number>2</number>
        </property>
        <property name="bottomMargin">
-        <number>5</number>
+        <number>2</number>
        </property>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_9">
@@ -126,16 +126,16 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,5">
        <property name="leftMargin">
-        <number>5</number>
+        <number>2</number>
        </property>
        <property name="topMargin">
-        <number>5</number>
+        <number>2</number>
        </property>
        <property name="rightMargin">
-        <number>5</number>
+        <number>2</number>
        </property>
        <property name="bottomMargin">
-        <number>5</number>
+        <number>2</number>
        </property>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_7">
@@ -156,6 +156,73 @@
             <set>Qt::ImhDigitsOnly</set>
            </property>
           </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,5">
+       <property name="leftMargin">
+        <number>2</number>
+       </property>
+       <property name="topMargin">
+        <number>2</number>
+       </property>
+       <property name="rightMargin">
+        <number>2</number>
+       </property>
+       <property name="bottomMargin">
+        <number>2</number>
+       </property>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="slabel">
+           <property name="layoutDirection">
+            <enum>Qt::LeftToRight</enum>
+           </property>
+           <property name="midLineWidth">
+            <number>0</number>
+           </property>
+           <property name="text">
+            <string>S</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="sEdit"/>
          </item>
         </layout>
        </item>
@@ -228,6 +295,38 @@
     <hint type="destinationlabel">
      <x>174</x>
      <y>75</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sEdit</sender>
+   <signal>editingFinished()</signal>
+   <receiver>GotoLocDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>87</x>
+     <y>85</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>74</x>
+     <y>54</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>GotoLocDialog</sender>
+   <signal>objectNameChanged(QString)</signal>
+   <receiver>sEdit</receiver>
+   <slot>setText(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>74</x>
+     <y>54</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>87</x>
+     <y>85</y>
     </hint>
    </hints>
   </connection>
