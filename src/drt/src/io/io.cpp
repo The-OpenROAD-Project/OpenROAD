@@ -947,8 +947,6 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         unique_ptr<frRect> pinFig = make_unique<frRect>();
         pinFig->setBBox(Rect(xl, yl, xh, yh));
         pinFig->addToPin(pinIn.get());
-        logger_->report("Pin fig: ({}, {}); ({}, {}), layer {}, top: {}",
-                        xl, yl, xh, yh, finalLayerNum, TOP_ROUTING_LAYER);
         pinFig->setLayerNum(finalLayerNum);
         unique_ptr<frPinFig> uptr(std::move(pinFig));
         pinIn->addPinFig(std::move(uptr));
