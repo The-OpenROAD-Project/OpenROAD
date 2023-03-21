@@ -422,7 +422,7 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
   frCoord eolWidth = drCon.eolWidth;
   frCoord eolWithin = drCon.eolWithin;
   // eol to up and down
-  if (tmpBx.xMax() - tmpBx.xMin() <= eolWidth) {
+  if (tmpBx.dx() <= eolWidth) {
     testBox.init(tmpBx.xMin() - eolWithin,
                  tmpBx.yMax(),
                  tmpBx.xMax() + eolWithin,
@@ -436,7 +436,7 @@ void FlexDRWorker::modMinSpacingCostVia_eol(const Rect& box,
     modMinSpacingCostVia_eol_helper(box, testBox, type, isUpperVia, i, j, z);
   }
   // eol to left and right
-  if (tmpBx.yMax() - tmpBx.yMin() <= eolWidth) {
+  if (tmpBx.dy() <= eolWidth) {
     testBox.init(tmpBx.xMax(),
                  tmpBx.yMin() - eolWithin,
                  tmpBx.xMax() + eolSpace,
@@ -620,8 +620,8 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   frCoord defaultWidth = getTech()->getLayer(lNum)->getWidth();
   bool isH
       = (getTech()->getLayer(lNum)->getDir() == dbTechLayerDir::HORIZONTAL);
-  bool isFatVia = (isH) ? (viaBox.yMax() - viaBox.yMin() > defaultWidth)
-                        : (viaBox.xMax() - viaBox.xMin() > defaultWidth);
+  bool isFatVia
+      = (isH) ? (viaBox.dy() > defaultWidth) : (viaBox.dx() > defaultWidth);
 
   frCoord length2_mar = length2;
   frCoord patchLength = 0;
@@ -651,11 +651,11 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
   frCoord bloatDistEolY = 0;
   if (drCon.eolWidth == 0)
     drCon = getTech()->getLayer(lNum)->getDrEolSpacingConstraint();
-  if (viaBox.xMax() - viaBox.xMin() <= drCon.eolWidth) {
+  if (viaBox.dx() <= drCon.eolWidth) {
     bloatDistEolY = max(bloatDistEolY, drCon.eolSpace);
   }
   // eol left and right
-  if (viaBox.yMax() - viaBox.yMin() <= drCon.eolWidth) {
+  if (viaBox.dy() <= drCon.eolWidth) {
     bloatDistEolX = max(bloatDistEolX, drCon.eolSpace);
   }
 
@@ -696,13 +696,13 @@ void FlexDRWorker::modMinSpacingCostVia(const Rect& box,
       // curr is ps
       if (isCurrPs) {
         if (-dy >= 0 && prl == -dy) {
-          prl = viaBox.yMax() - viaBox.yMin();
+          prl = viaBox.dy();
           // ignore svia effect here...
           if (!isH && !isFatVia) {
             prl = max(prl, patchLength);
           }
         } else if (-dx >= 0 && prl == -dx) {
-          prl = viaBox.xMax() - viaBox.xMin();
+          prl = viaBox.dx();
           if (isH && !isFatVia) {
             prl = max(prl, patchLength);
           }
@@ -894,7 +894,7 @@ void FlexDRWorker::modEolSpacingRulesCost(const Rect& box,
   if (eolSpace == 0)
     return;
   Rect testBox;
-  if (box.xMax() - box.xMin() <= eolWidth) {
+  if (box.dx() <= eolWidth) {
     testBox.init(box.xMin() - eolWithin,
                  box.yMax(),
                  box.xMax() + eolWithin,
@@ -916,7 +916,7 @@ void FlexDRWorker::modEolSpacingRulesCost(const Rect& box,
     }
   }
   // eol to left and right
-  if (box.yMax() - box.yMin() <= eolWidth) {
+  if (box.dy() <= eolWidth) {
     testBox.init(box.xMax(),
                  box.yMin() - eolWithin,
                  box.xMax() + eolSpace,

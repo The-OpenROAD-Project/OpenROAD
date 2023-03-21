@@ -135,7 +135,6 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerMinCutRule>* min_cuts_rules_tbl_;
 
   dbTable<_dbTechLayerAreaRule>* area_rules_tbl_;
-
   // User Code Begin Fields
 
   uint _pitch_x;
@@ -157,6 +156,7 @@ class _dbTechLayer : public _dbObject
   int _min_step;
   int _min_step_max_length;
   int _min_step_max_edges;
+  int _first_last_pitch;
 
   struct
   {  // Protrusion

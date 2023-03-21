@@ -144,24 +144,15 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
   switch (type) {
     case frcInstTerm: {
       auto inst = static_cast<frInstTerm*>(obj)->getInst();
-      if (targetObjs_.find(inst) != targetObjs_.end()) {
-        return false;
-      }
-      return true;
+      return targetObjs_.find(inst) == targetObjs_.end();
     }
     case frcInstBlockage: {
       auto inst = static_cast<frInstBlockage*>(obj)->getInst();
-      if (targetObjs_.find(inst) != targetObjs_.end()) {
-        return false;
-      }
-      return true;
+      return targetObjs_.find(inst) == targetObjs_.end();
     }
     case frcBTerm: {
       auto term = static_cast<frTerm*>(obj);
-      if (targetObjs_.find(term) != targetObjs_.end()) {
-        return false;
-      }
-      return true;
+      return targetObjs_.find(term) == targetObjs_.end();
     }
     default:
       return true;

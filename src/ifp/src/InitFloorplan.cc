@@ -580,11 +580,20 @@ void InitFloorplan::makeTracks()
   for (auto layer : block_->getDataBase()->getTech()->getLayers()) {
     if (layer->getType() == dbTechLayerType::ROUTING
         && layer->getRoutingLevel() != 0) {
-      makeTracks(layer,
-                 layer->getOffsetX(),
-                 layer->getPitchX(),
-                 layer->getOffsetY(),
-                 layer->getPitchY());
+      if (layer->getFirstLastPitch() > 0) {
+        makeTracksNonUniform(layer,
+                             layer->getOffsetX(),
+                             layer->getPitchX(),
+                             layer->getOffsetY(),
+                             layer->getPitchY(),
+                             layer->getFirstLastPitch());
+      } else {
+        makeTracks(layer,
+                   layer->getOffsetX(),
+                   layer->getPitchX(),
+                   layer->getOffsetY(),
+                   layer->getPitchY());
+      }
     }
   }
 }
@@ -667,6 +676,43 @@ void InitFloorplan::makeTracks(odb::dbTechLayer* layer,
   }
 
   grid->addGridPatternY(origin_y, y_track_count, y_pitch);
+}
+
+void InitFloorplan::makeTracksNonUniform(odb::dbTechLayer* layer,
+                                         int x_offset,
+                                         int x_pitch,
+                                         int y_offset,
+                                         int y_pitch,
+                                         int first_last_pitch)
+{
+  if (layer->getDirection() != dbTechLayerDir::HORIZONTAL) {
+    logger_->error(IFP, 44, "Non horizontal layer uses property LEF58_PITCH.");
+  }
+
+  int cell_row_height = 0;
+  auto rows = block_->getRows();
+  for (auto row : rows) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::CORE) {
+      cell_row_height = row->getSite()->getHeight();
+      break;
+    }
+  }
+
+  if (cell_row_height == 0) {
+    logger_->error(
+        IFP, 45, "No routing Row found in layer {}", layer->getName());
+  }
+  Rect die_area = block_->getDieArea();
+
+  auto y_track_count
+      = int((cell_row_height - 2 * first_last_pitch) / y_pitch) + 1;
+  int origin_y = die_area.yMin() + first_last_pitch;
+  for (int i = 0; i < y_track_count; i++) {
+    makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
+    origin_y += y_pitch;
+  }
+  origin_y += first_last_pitch - y_pitch;
+  makeTracks(layer, x_offset, x_pitch, origin_y, cell_row_height);
 }
 
 }  // namespace ifp

@@ -14,6 +14,7 @@ record_tests {
   make_tracks4
   make_tracks5
   make_tracks6
+  make_tracks7
   placement_blockage1
   placement_blockage2
   tiecells
