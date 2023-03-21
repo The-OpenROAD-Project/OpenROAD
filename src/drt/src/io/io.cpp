@@ -2402,19 +2402,15 @@ bool io::Parser::readGuide()
       frLayerNum layerNum = layer->getLayerNum();
 
       // get the top layer for a pin of the net
-      int netTopLayer = -1;
+      bool isAboveTopLayer = false;
       for (const auto& bterm : net->getBTerms()) {
-        std::vector<frRect> pinShapes;
-        bterm->getShapes(pinShapes);
-        for (const auto& shape : pinShapes) {
-          netTopLayer = std::max(netTopLayer, shape.getLayerNum());
-        }
+        isAboveTopLayer = bterm->isAboveTopLayer();
       }
 
       // update the layer of the guides above the top routing layer
       // if the guides are used to access a pin above the top routing layer
-      if (layerNum > TOP_ROUTING_LAYER && layerNum <= netTopLayer) {
-        layerNum = TOP_ROUTING_LAYER;
+      if (layerNum > TOP_ROUTING_LAYER && isAboveTopLayer) {
+        continue;
       } else if ((layerNum < BOTTOM_ROUTING_LAYER
                   && layerNum != VIA_ACCESS_LAYERNUM)
                  || layerNum > TOP_ROUTING_LAYER)
