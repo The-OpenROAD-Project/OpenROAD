@@ -994,26 +994,35 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
 
   // get bterm access points
   std::vector<odb::dbAccessPoint*> access_points;
-  for (const odb::dbBPin* bpin : bterm->getBPins()) {
+  odb::Rect pin_rect;
+  for (odb::dbBPin* bpin : bterm->getBPins()) {
     const std::vector<odb::dbAccessPoint*>& bpin_pas = bpin->getAccessPoints();
     access_points.insert(
         access_points.begin(), bpin_pas.begin(), bpin_pas.end());
+    pin_rect = bpin->getBBox();
   }
 
   // set the via position as the first AP in the same layer of the bterm
   odb::dbTechLayer* bterm_bottom_tech_layer
       = tech->findRoutingLayer(bterm_bottom_layer_idx);
   odb::Point via_position;
-  for (const auto& ap : access_points) {
-    if (ap->getLayer()->getRoutingLevel()
-        == bterm_bottom_tech_layer->getRoutingLevel()) {
-      via_position = ap->getPoint();
+  if (!access_points.empty()) {
+    for (const auto& ap : access_points) {
+      if (ap->getLayer()->getRoutingLevel()
+          == bterm_bottom_tech_layer->getRoutingLevel()) {
+        via_position = ap->getPoint();
+      }
     }
+  } else {
+    via_position = odb::Point(pin_rect.xCenter(), pin_rect.yCenter());
   }
 
   // insert the vias from the top routing layer to the bterm bottom layer
   odb::dbNet* net = bterm->getNet();
-  odb::dbWire* wire = odb::dbWire::create(net);
+  odb::dbWire* wire = net->getWire();
+  if (wire == nullptr) {
+    wire = odb::dbWire::create(net);
+  }
   odb::dbWireEncoder wire_encoder;
   wire_encoder.begin(wire);
   for (int layer_idx = top_layer_idx; layer_idx < bterm_bottom_layer_idx;
