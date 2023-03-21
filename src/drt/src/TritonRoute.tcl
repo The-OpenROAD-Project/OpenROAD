@@ -456,4 +456,51 @@ proc check_drc { args } {
   drt::check_drc_cmd $output_file $x1 $y1 $x2 $y2
 }
 
+sta::define_cmd_args "process_ports_above_top_layer" {
+    [-top_routing_layer layer]
+}
+
+proc process_ports_above_top_layer { args } {
+  sta::parse_key_args "process_ports_above_top_layer" args \
+    keys { -top_routing_layer } \
+    flags{}
+
+  if { [info exists keys(-top_routing_layer)] } {
+    set top_routing_layer $keys(-top_routing_layer)
+  } else {
+    set top_routing_layer ""
+  }
+
+  if { !($top_routing_layer eq "") } {
+    set tech [ord::get_db_tech]
+    set block [ord::get_db_block]
+
+    set top_tech_layer [$tech findLayer $top_routing_layer]
+
+    if { $top_tech_layer == "NULL" } {
+      utl::error GRT 5 "Layer $top_routing_layer not found."
+    }
+    set top_layer_idx [$top_tech_layer getRoutingLevel]
+
+    foreach bterm [$block getBTerms] {
+      set bterm_layer_list {}
+      foreach bpin [$bterm getBPins] {
+        foreach box [$bpin getBoxes] {
+          lappend bterm_layer_list [$box getTechLayer]
+        }
+      }
+      set bterm_bottom_layer_idx [[lindex $bterm_layer_list 0] getRoutingLevel]
+      foreach layer $bterm_layer_list {
+        set bterm_bottom_layer_idx [expr min($bterm_bottom_layer_idx, [$layer getRoutingLevel])]
+      }
+
+      if { $bterm_bottom_layer_idx > $top_layer_idx } {
+        drt::stack_vias $bterm $top_layer_idx $bterm_bottom_layer_idx
+      }
+    }
+  } else {
+    utl::warn DRT 413 "-top_routing_layer is required for process_ports_above_top_layer command. Skipping..."
+  }
+}
+
 }
