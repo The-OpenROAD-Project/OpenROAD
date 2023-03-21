@@ -975,7 +975,7 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   for (odb::dbBPin* bpin : bterm->getBPins()) {
     const std::vector<odb::dbAccessPoint*>& bpin_pas = bpin->getAccessPoints();
     access_points.insert(
-        access_points.begin(), bpin_pas.begin(), bpin_pas.end());
+        access_points.end(), bpin_pas.begin(), bpin_pas.end());
     pin_rect = bpin->getBBox();
   }
 
@@ -988,6 +988,7 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
       if (ap->getLayer()->getRoutingLevel()
           == bterm_bottom_tech_layer->getRoutingLevel()) {
         via_position = ap->getPoint();
+        break;
       }
     }
   } else {
@@ -1008,7 +1009,6 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
   for (int layer_idx = top_layer_idx; layer_idx < bterm_bottom_layer_idx;
        layer_idx++) {
-    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
     wire_encoder.addPoint(via_position.getX(), via_position.getY());
     wire_encoder.addTechVia(default_vias[layer_idx]);
   }
