@@ -39,10 +39,12 @@ class frBTerm : public frTerm
 {
  public:
   // constructors
-  frBTerm(const frString& name) : frTerm(name), block_(nullptr), net_(nullptr), isAboveTopLayer_(false)
+  frBTerm(const frString& name)
+      : frTerm(name), block_(nullptr), net_(nullptr), isAboveTopLayer_(false)
   {
   }
-  frBTerm(const frBTerm& in) : frTerm(in), block_(in.block_), isAboveTopLayer_(false)
+  frBTerm(const frBTerm& in)
+      : frTerm(in), block_(in.block_), isAboveTopLayer_(false)
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -116,7 +118,10 @@ class frBTerm : public frTerm
     }
   }
 
-  void setIsAboveTopLayer(bool isAboveTopLayer) { isAboveTopLayer_ = isAboveTopLayer; }
+  void setIsAboveTopLayer(bool isAboveTopLayer)
+  {
+    isAboveTopLayer_ = isAboveTopLayer;
+  }
   const bool isAboveTopLayer() const { return isAboveTopLayer_; }
 
  protected:
