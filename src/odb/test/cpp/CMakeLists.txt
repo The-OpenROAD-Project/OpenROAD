@@ -43,7 +43,7 @@ target_link_libraries(TestGuide ${TEST_LIBS})
 # add_test(NAME TestAccessPoint COMMAND TestAccessPoint)
 
 gtest_discover_tests(TestDbWire
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 add_test(NAME odb.TestCallBacks COMMAND TestCallBacks)
 add_test(NAME odb.TestGeom COMMAND TestGeom)
