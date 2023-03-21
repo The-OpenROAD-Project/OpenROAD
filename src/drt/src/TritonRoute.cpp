@@ -976,6 +976,56 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
   reportDRC(filename, markers, requiredDrcBox);
 }
 
+void TritonRoute::stackVias(odb::dbBTerm* bterm,
+                            int top_layer_idx,
+                            int bterm_bottom_layer_idx)
+{
+  odb::dbTech* tech = db_->getTech();
+  odb::dbSet<odb::dbTechVia> vias = tech->getVias();
+  std::map<int, odb::dbTechVia*> default_vias;
+  for (int i = top_layer_idx; i <= bterm_bottom_layer_idx; i++) {
+    for (odb::dbTechVia* via : vias) {
+      if (via->getBottomLayer()->getRoutingLevel() == i) {
+        default_vias[i] = via;
+        break;
+      }
+    }
+  }
+
+  // get bterm access points
+  std::vector<odb::dbAccessPoint*> access_points;
+  for (const odb::dbBPin* bpin : bterm->getBPins()) {
+    const std::vector<odb::dbAccessPoint*>& bpin_pas = bpin->getAccessPoints();
+    access_points.insert(
+        access_points.begin(), bpin_pas.begin(), bpin_pas.end());
+  }
+
+  // set the via position as the first AP in the same layer of the bterm
+  odb::dbTechLayer* bterm_bottom_tech_layer
+      = tech->findRoutingLayer(bterm_bottom_layer_idx);
+  odb::Point via_position;
+  for (const auto& ap : access_points) {
+    if (ap->getLayer()->getRoutingLevel()
+        == bterm_bottom_tech_layer->getRoutingLevel()) {
+      via_position = ap->getPoint();
+    }
+  }
+
+  // insert the vias from the top routing layer to the bterm bottom layer
+  odb::dbNet* net = bterm->getNet();
+  odb::dbWire* wire = odb::dbWire::create(net);
+  odb::dbWireEncoder wire_encoder;
+  wire_encoder.begin(wire);
+  for (int layer_idx = top_layer_idx; layer_idx < bterm_bottom_layer_idx;
+       layer_idx++) {
+    odb::dbTechLayer* tech_layer = tech->findRoutingLayer(layer_idx);
+    wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
+    wire_encoder.addPoint(via_position.getX(), via_position.getY());
+    wire_encoder.addTechVia(default_vias[layer_idx]);
+  }
+  wire_encoder.end();
+}
+
 void TritonRoute::readParams(const string& fileName)
 {
   logger_->warn(utl::DRT, 252, "params file is deprecated. Use tcl arguments.");
