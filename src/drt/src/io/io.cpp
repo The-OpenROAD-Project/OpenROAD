@@ -2888,7 +2888,12 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
       odb::dbWire* wire = net->getWire();
       if (wire == nullptr)
         wire = odb::dbWire::create(net);
-      _wire_encoder.begin(wire);
+      
+      if (wire == nullptr)
+        _wire_encoder.begin(wire);
+      else
+        _wire_encoder.append(wire);
+
       for (auto& connFig : connFigs_.at(net->getName())) {
         switch (connFig->typeId()) {
           case frcPathSeg: {
