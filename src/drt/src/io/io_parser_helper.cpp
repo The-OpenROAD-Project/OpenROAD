@@ -44,6 +44,88 @@ using namespace boost::polygon::operators;
 
 using Rectangle = boost::polygon::rectangle_data<int>;
 
+bool io::Parser::validWidth(odb::dbTechLayer* layer,
+                            int width,
+                            odb::dbTechLayerDir direction)
+{
+  const bool isWrongDir = (direction != layer->getDirection());
+
+  if (width < layer->getMinWidth()) {
+    return false;
+  }
+
+  if (width > layer->getMaxWidth()) {
+    return false;
+  }
+
+  auto widthTableRules = layer->getTechLayerWidthTableRules();
+  if (widthTableRules.size() == 0) {
+    return true;
+  }
+
+  for (auto* rule : widthTableRules) {
+    if (rule->isWrongDirection() != isWrongDir) {
+      continue;
+    }
+
+    int last_width = 0;
+    for (auto table_width : rule->getWidthTable()) {
+      last_width = table_width;
+      if (table_width == width) {
+        return true;
+      }
+    }
+
+    // The width can be equal to or greater than the last entry
+    if (width >= last_width) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool io::Parser::viaWidthsValid(frViaDef* viaDef)
+{
+  frVia via(viaDef);
+  const auto layer1Box = via.getLayer1BBox();
+  const auto layer2Box = via.getLayer2BBox();
+  const auto layer1Num = viaDef->getLayer1Num();
+  const auto layer2Num = viaDef->getLayer2Num();
+  const auto dbLayer1 = tech_->getLayer(layer1Num)->getDbLayer();
+  const auto dbLayer2 = tech_->getLayer(layer2Num)->getDbLayer();
+
+  // We ignore vias with default width pads because they wont cause width table
+  // violations when connected to preferred direction wires. There might be
+  // issues with wrong direction wires, but we ignore that for now.
+  bool isLayer1Fat;
+  if (dbLayer1->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    isLayer1Fat = (layer1Box.dy() > dbLayer1->getWidth());
+  } else {
+    isLayer1Fat = (layer1Box.dx() > dbLayer1->getWidth());
+  }
+  bool isLayer2Fat;
+  if (dbLayer2->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+    isLayer2Fat = (layer2Box.dy() > dbLayer2->getWidth());
+  } else {
+    isLayer2Fat = (layer2Box.dx() > dbLayer2->getWidth());
+  }
+
+  if ((!isLayer1Fat
+       || (validWidth(dbLayer1, layer1Box.dy(), odb::dbTechLayerDir::HORIZONTAL)
+           && validWidth(
+               dbLayer1, layer1Box.dx(), odb::dbTechLayerDir::VERTICAL)))
+      && (!isLayer2Fat
+          || (validWidth(
+                  dbLayer2, layer2Box.dy(), odb::dbTechLayerDir::HORIZONTAL)
+              && validWidth(
+                  dbLayer2, layer2Box.dx(), odb::dbTechLayerDir::VERTICAL)))) {
+    return true;
+  }
+
+  return false;
+}
+
 void io::Parser::initDefaultVias()
 {
   for (auto& uViaDef : tech_->getVias()) {
@@ -71,6 +153,9 @@ void io::Parser::initDefaultVias()
       continue;
     }
     for (auto& viaDef : layer->getViaDefs()) {
+      if (!viaWidthsValid(viaDef)) {
+        continue;
+      }
       int cutNum = int(viaDef->getCutFigs().size());
       viaRawPriorityTuple priority;
       getViaRawPriority(viaDef, priority);

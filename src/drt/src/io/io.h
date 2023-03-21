@@ -125,6 +125,11 @@ class Parser
   void initCutLayerWidth();
   void initConstraintLayerIdx();
 
+  bool validWidth(odb::dbTechLayer* layer,
+                  int width,
+                  odb::dbTechLayerDir direction);
+  bool viaWidthsValid(frViaDef* viaDef);
+
   // instance analysis
   void instAnalysis();
 
