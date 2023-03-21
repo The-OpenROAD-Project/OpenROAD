@@ -3,6 +3,7 @@ record_tests {
   single_step
   ta_ap_aligned
   ta_pin_aligned
+  top_level_term
 }
 record_pass_fail_tests {
   gc_test
