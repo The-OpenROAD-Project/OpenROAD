@@ -897,6 +897,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     pinIn->setId(0);
     for (auto pin : term->getBPins()) {
       for (auto box : pin->getBoxes()) {
+        odb::Rect bbox = box->getBox();
         if (tech_->name2layer.find(box->getTechLayer()->getName())
             == tech_->name2layer.end())
           logger_->error(DRT,
@@ -940,12 +941,11 @@ void io::Parser::setBTerms(odb::dbBlock* block)
             }
           }
         }
-        frCoord xl = useViaBox ? viaBox.xMin() : box->xMin();
-        frCoord yl = useViaBox ? viaBox.yMin() : box->yMin();
-        frCoord xh = useViaBox ? viaBox.xMax() : box->xMax();
-        frCoord yh = useViaBox ? viaBox.yMax() : box->yMax();
+        if (useViaBox) {
+          bbox = viaBox;
+        }
         unique_ptr<frRect> pinFig = make_unique<frRect>();
-        pinFig->setBBox(Rect(xl, yl, xh, yh));
+        pinFig->setBBox(bbox);
         pinFig->addToPin(pinIn.get());
         pinFig->setLayerNum(finalLayerNum);
         unique_ptr<frPinFig> uptr(std::move(pinFig));
