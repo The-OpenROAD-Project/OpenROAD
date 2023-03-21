@@ -974,8 +974,7 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   odb::Rect pin_rect;
   for (odb::dbBPin* bpin : bterm->getBPins()) {
     const std::vector<odb::dbAccessPoint*>& bpin_pas = bpin->getAccessPoints();
-    access_points.insert(
-        access_points.end(), bpin_pas.begin(), bpin_pas.end());
+    access_points.insert(access_points.end(), bpin_pas.begin(), bpin_pas.end());
     pin_rect = bpin->getBBox();
   }
 
