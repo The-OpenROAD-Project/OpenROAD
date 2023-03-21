@@ -999,6 +999,8 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   odb::dbWire* wire = net->getWire();
   if (wire == nullptr) {
     wire = odb::dbWire::create(net);
+  } else {
+    logger_->error(utl::DRT, 415, "Net {} already has routes.", net->getName());
   }
   odb::dbWireEncoder wire_encoder;
   wire_encoder.begin(wire);
