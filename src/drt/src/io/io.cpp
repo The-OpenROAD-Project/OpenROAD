@@ -38,6 +38,7 @@
 #include "frRTree.h"
 #include "global.h"
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
 
@@ -904,14 +905,51 @@ void io::Parser::setBTerms(odb::dbBlock* block)
                          box->getTechLayer()->getName());
         frLayerNum layerNum
             = tech_->name2layer[box->getTechLayer()->getName()]->getLayerNum();
-        frCoord xl = box->xMin();
-        frCoord yl = box->yMin();
-        frCoord xh = box->xMax();
-        frCoord yh = box->yMax();
+        frLayerNum finalLayerNum = layerNum;
+        odb::Rect viaBox;
+        bool useViaBox = false;
+        if (layerNum > TOP_ROUTING_LAYER) {
+          odb::dbNet* net = term->getNet();
+          odb::dbWire* wire = net->getWire();
+          if (wire != nullptr) {
+            odb::dbWirePath path;
+            odb::dbWirePathShape pshape;
+            odb::dbWirePathItr pitr;
+            for (pitr.begin(wire); pitr.getNextPath(path);) {
+              while (pitr.getNextShape(pshape)) {
+                if (pshape.shape.isVia()) {
+                  odb::dbTechVia* via = pshape.shape.getTechVia();
+                  for (const auto& vbox : via->getBoxes()) {
+                    layerNum = tech_->name2layer[vbox->getTechLayer()->getName()]
+                                   ->getLayerNum();
+                    if (layerNum == TOP_ROUTING_LAYER) {
+                      viaBox = vbox->getBox();
+                      odb::dbTransform xform;
+                      odb::Point path_origin = pshape.point;
+                      xform.setOffset({path_origin.x(), path_origin.y()});
+                      xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+                      xform.apply(viaBox);
+                      useViaBox = true;
+                      finalLayerNum = layerNum;
+                      termIn->setIsAboveTopLayer(true);
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        frCoord xl = useViaBox ? viaBox.xMin() : box->xMin();
+        frCoord yl = useViaBox ? viaBox.yMin() : box->yMin();
+        frCoord xh = useViaBox ? viaBox.xMax() : box->xMax();
+        frCoord yh = useViaBox ? viaBox.yMax() : box->yMax();
         unique_ptr<frRect> pinFig = make_unique<frRect>();
         pinFig->setBBox(Rect(xl, yl, xh, yh));
         pinFig->addToPin(pinIn.get());
-        pinFig->setLayerNum(layerNum);
+        logger_->report("Pin fig: ({}, {}); ({}, {}), layer {}, top: {}",
+                        xl, yl, xh, yh, finalLayerNum, TOP_ROUTING_LAYER);
+        pinFig->setLayerNum(finalLayerNum);
         unique_ptr<frPinFig> uptr(std::move(pinFig));
         pinIn->addPinFig(std::move(uptr));
       }
@@ -2337,6 +2375,31 @@ void io::Parser::readDb()
     logger_->info(DRT, 149, "Reading tech and libs.");
   }
   readTechAndLibs(db_);
+
+  auto tech = design_->getTech();
+  if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
+    if (layer) {
+      BOTTOM_ROUTING_LAYER = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    272,
+                    "bottomRoutingLayer {} not found.",
+                    BOTTOM_ROUTING_LAYER_NAME);
+    }
+  }
+
+  if (!TOP_ROUTING_LAYER_NAME.empty()) {
+    frLayer* layer = tech->getLayer(TOP_ROUTING_LAYER_NAME);
+    if (layer) {
+      TOP_ROUTING_LAYER = layer->getLayerNum();
+    } else {
+      logger_->warn(utl::DRT,
+                    273,
+                    "topRoutingLayer {} not found.",
+                    TOP_ROUTING_LAYER_NAME);
+    }
+  }
   if (VERBOSE > 0) {
     logger_->report("");
     logger_->report("Units:                {}", tech_->getDBUPerUU());

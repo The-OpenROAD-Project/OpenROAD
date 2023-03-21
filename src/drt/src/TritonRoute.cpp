@@ -516,29 +516,6 @@ void TritonRoute::initDesign()
   io::Parser parser(db_, getDesign(), logger_);
   parser.readDb();
   auto tech = getDesign()->getTech();
-  if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(BOTTOM_ROUTING_LAYER_NAME);
-    if (layer) {
-      BOTTOM_ROUTING_LAYER = layer->getLayerNum();
-    } else {
-      logger_->warn(utl::DRT,
-                    272,
-                    "bottomRoutingLayer {} not found.",
-                    BOTTOM_ROUTING_LAYER_NAME);
-    }
-  }
-
-  if (!TOP_ROUTING_LAYER_NAME.empty()) {
-    frLayer* layer = tech->getLayer(TOP_ROUTING_LAYER_NAME);
-    if (layer) {
-      TOP_ROUTING_LAYER = layer->getLayerNum();
-    } else {
-      logger_->warn(utl::DRT,
-                    273,
-                    "topRoutingLayer {} not found.",
-                    TOP_ROUTING_LAYER_NAME);
-    }
-  }
 
   if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
     frLayer* layer = tech->getLayer(VIAINPIN_BOTTOMLAYER_NAME);
