@@ -122,7 +122,7 @@ class frBTerm : public frTerm
   {
     isAboveTopLayer_ = isAboveTopLayer;
   }
-  const bool isAboveTopLayer() const { return isAboveTopLayer_; }
+  bool isAboveTopLayer() const { return isAboveTopLayer_; }
 
  protected:
   frBlock* block_;

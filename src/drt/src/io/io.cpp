@@ -2474,7 +2474,7 @@ bool io::Parser::readGuide()
         continue;
       } else if ((layerNum < BOTTOM_ROUTING_LAYER
                   && layerNum != VIA_ACCESS_LAYERNUM)
-                 || layerNum > TOP_ROUTING_LAYER)
+                 || layerNum > TOP_ROUTING_LAYER) {
         logger_->error(DRT,
                        155,
                        "Guide in net {} uses layer {} ({})"
@@ -2487,6 +2487,8 @@ bool io::Parser::readGuide()
                        BOTTOM_ROUTING_LAYER,
                        tech_->getLayer(TOP_ROUTING_LAYER)->getName(),
                        TOP_ROUTING_LAYER);
+      }
+
       frRect rect;
       rect.setBBox(dbGuide->getBox());
       rect.setLayerNum(layerNum);
@@ -2884,13 +2886,15 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
   for (auto net : block->getNets()) {
     if (connFigs_.find(net->getName()) != connFigs_.end()) {
       odb::dbWire* wire = net->getWire();
-      if (wire == nullptr)
+      if (wire == nullptr) {
         wire = odb::dbWire::create(net);
+      }
       
-      if (wire == nullptr)
+      if (wire == nullptr) {
         _wire_encoder.begin(wire);
-      else
+      } else {
         _wire_encoder.append(wire);
+      }
 
       for (auto& connFig : connFigs_.at(net->getName())) {
         switch (connFig->typeId()) {
