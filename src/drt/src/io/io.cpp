@@ -2400,8 +2400,24 @@ bool io::Parser::readGuide()
         logger_->error(
             DRT, 154, "Cannot find layer {}.", dbGuide->getLayer()->getName());
       frLayerNum layerNum = layer->getLayerNum();
-      if ((layerNum < BOTTOM_ROUTING_LAYER && layerNum != VIA_ACCESS_LAYERNUM)
-          || layerNum > TOP_ROUTING_LAYER)
+
+      // get the top layer for a pin of the net
+      int netTopLayer = -1;
+      for (const auto& bterm : net->getBTerms()) {
+        std::vector<frRect> pinShapes;
+        bterm->getShapes(pinShapes);
+        for (const auto& shape : pinShapes) {
+          netTopLayer = std::max(netTopLayer, shape.getLayerNum());
+        }
+      }
+
+      // update the layer of the guides above the top routing layer
+      // if the guides are used to access a pin above the top routing layer
+      if (layerNum > TOP_ROUTING_LAYER && layerNum <= netTopLayer) {
+        layerNum = TOP_ROUTING_LAYER;
+      } else if ((layerNum < BOTTOM_ROUTING_LAYER
+                  && layerNum != VIA_ACCESS_LAYERNUM)
+                 || layerNum > TOP_ROUTING_LAYER)
         logger_->error(DRT,
                        155,
                        "Guide in net {} uses layer {} ({})"

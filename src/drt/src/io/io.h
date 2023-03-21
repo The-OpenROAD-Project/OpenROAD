@@ -148,7 +148,8 @@ class Parser
                                  std::vector<frRect>& guides);
   void genGuides_merge(
       std::vector<frRect>& rects,
-      std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs);
+      std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs,
+      int netTopLayer);
   void genGuides_split(
       std::vector<frRect>& rects,
       std::vector<std::map<frCoord, boost::icl::interval_set<frCoord>>>& intvs,

@@ -284,10 +284,16 @@ void io::Parser::checkPinForGuideEnclosure(frBlockObject* pin,
 
 void io::Parser::genGuides_merge(
     vector<frRect>& rects,
-    vector<map<frCoord, boost::icl::interval_set<frCoord>>>& intvs)
+    vector<map<frCoord, boost::icl::interval_set<frCoord>>>& intvs,
+    int netTopLayer)
 {
   for (auto& rect : rects) {
-    if (rect.getLayerNum() > TOP_ROUTING_LAYER)
+    // update the layer of the guides above the top routing layer
+    // if the guides are used to access a pin above the top routing layer
+    if (rect.getLayerNum() > TOP_ROUTING_LAYER
+        && rect.getLayerNum() <= netTopLayer) {
+      rect.setLayerNum(TOP_ROUTING_LAYER);
+    } else if (rect.getLayerNum() > TOP_ROUTING_LAYER)
       logger_->error(DRT,
                      3000,
                      "Guide in layer {} which is above max routing layer {}",
@@ -845,6 +851,15 @@ void io::Parser::genGuides_addCoverGuide_helper(frBlockObject* term,
 void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
 {
   net->clearGuides();
+  // get the top layer for a pin of the net
+  int netTopLayer = -1;
+  for (const auto& bterm : net->getBTerms()) {
+    std::vector<frRect> pinShapes;
+    bterm->getShapes(pinShapes);
+    for (const auto& shape : pinShapes) {
+      netTopLayer = std::max(netTopLayer, shape.getLayerNum());
+    }
+  }
 
   genGuides_pinEnclosure(net, rects);
   int size = (int) tech_->getLayers().size();
@@ -855,7 +870,7 @@ void io::Parser::genGuides(frNet* net, vector<frRect>& rects)
   if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
     genGuides_addCoverGuide(net, rects);
   }
-  genGuides_merge(rects, intvs);  // merge and add touching guide
+  genGuides_merge(rects, intvs, netTopLayer);  // merge and add touching guide
 
   map<pair<Point, frLayerNum>, set<frBlockObject*, frBlockObjectComp>>
       gCell2PinMap;
