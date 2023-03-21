@@ -121,7 +121,6 @@ class Parser
                                     frCoord& GCELLOFFSETX,
                                     frCoord& GCELLOFFSETY);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
-  void initDefaultVias_GF14(const std::string& in);
   void initCutLayerWidth();
   void initConstraintLayerIdx();
 
