@@ -156,6 +156,8 @@ class dbIsolation;
 // Extraction Objects
 class dbExtControl;
 
+class ZContext;
+ 
 ///
 /// dbProperty - Property base class.
 ///
@@ -7193,8 +7195,10 @@ class dbTechLayer : public dbObject
   int getPitch();
   int getPitchX();
   int getPitchY();
+  int getFirstLastPitch();
   void setPitch(int pitch);
   void setPitchXY(int pitch_x, int pitch_y);
+  void setFirstLastPitch(int first_last_pitch);
   bool hasXYPitch();
 
   int getOffset();
