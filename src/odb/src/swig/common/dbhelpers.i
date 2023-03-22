@@ -57,7 +57,7 @@ void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net
                   int num_connection_points, 
                   std::string position);
 
-void p2proute(odb::dbBlock* block, const char* nett, const char* instt, const char* itermm);
+void createConnection(odb::dbBlock* block, const char* nett, const char* instt, const char* itermm);
 
 void dumpAPs(odb::dbBlock* block,
              const std::string file_name);
