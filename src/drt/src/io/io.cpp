@@ -921,8 +921,9 @@ void io::Parser::setBTerms(odb::dbBlock* block)
                 if (pshape.shape.isVia()) {
                   odb::dbTechVia* via = pshape.shape.getTechVia();
                   for (const auto& vbox : via->getBoxes()) {
-                    layerNum = tech_->name2layer[vbox->getTechLayer()->getName()]
-                                   ->getLayerNum();
+                    layerNum
+                        = tech_->name2layer[vbox->getTechLayer()->getName()]
+                              ->getLayerNum();
                     if (layerNum == TOP_ROUTING_LAYER) {
                       viaBox = vbox->getBox();
                       odb::dbTransform xform;
@@ -2889,7 +2890,7 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
       if (wire == nullptr) {
         wire = odb::dbWire::create(net);
       }
-      
+
       if (wire == nullptr) {
         _wire_encoder.begin(wire);
       } else {
