@@ -163,7 +163,7 @@ void dbPGpin::create (dbBlock* block, dbTech* tech, const char * source_net_name
 
       } else {
         logger->error(utl::ODB,
-                   102,"wrong position.");
+                   1102,"wrong position.");
         break;
       }
       dbBox::create(r_bpin, pdn_wire->getTechLayer(), xMin[n], pdn_wire->yMin(), xMax[n], pdn_wire->yMax()); //create physical box for net
@@ -193,14 +193,14 @@ void dbPGpin::create (dbBlock* block, dbTech* tech, const char * source_net_name
 
       } else {
         logger->error(utl::ODB,
-                   100,"wrong position.");
+                   1103,"wrong position.");
         break;
       }
       dbBox::create(r_bpin, pdn_wire->getTechLayer(), pdn_wire->xMin(), yMin[n], pdn_wire->xMax(), yMax[n]); //create physical box for net
 
     } else {
       logger->error(utl::ODB,
-                   101,"wrong existed direction.");
+                   1104,"wrong existed direction.");
     }
   }
   
