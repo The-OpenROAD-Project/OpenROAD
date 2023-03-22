@@ -514,7 +514,9 @@ void TritonRoute::initDesign()
     return;
   }
   io::Parser parser(db_, getDesign(), logger_);
-  parser.readDb();
+  parser.readTechAndLibs(db_);
+  processBTermsAboveTopLayer();
+  parser.readDesign(db_);
   auto tech = getDesign()->getTech();
 
   if (!VIAINPIN_BOTTOMLAYER_NAME.empty()) {
@@ -837,7 +839,6 @@ int TritonRoute::main()
     io::Parser parser(db_, getDesign(), logger_);
     ENABLE_VIA_GEN = true;
     parser.readGuide();
-    parser.initDefaultVias();
     parser.postProcessGuide();
   }
   prep();
