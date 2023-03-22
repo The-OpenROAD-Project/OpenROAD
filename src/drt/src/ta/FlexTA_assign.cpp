@@ -577,17 +577,22 @@ void FlexTAWorker::assignIroute_availTracks(taPin* iroute,
   frCoord coordLow = isH ? gBox.yMin() : gBox.xMin();
   frCoord coordHigh = isH ? gBox.yMax() : gBox.xMax();
   coordHigh--;  // to avoid higher track == guide top/right
+  // On unidirectional layers, make sure tracks are not placed close enough to
+  // the edges of the die such that there is no room for a via. Since we might
+  // use a via up or down, consider both directions.
   if (getTech()->getLayer(lNum)->isUnidirectional()) {
     const Rect& dieBx = design_->getTopBlock()->getDieBox();
     frViaDef* via = nullptr;
     Rect testBox;
+    testBox.mergeInit();
     if (lNum + 1 <= getTech()->getTopLayerNum()) {
       via = getTech()->getLayer(lNum + 1)->getDefaultViaDef();
-      testBox = via->getLayer1ShapeBox();
+      testBox.merge(via->getLayer1ShapeBox());
       testBox.merge(via->getLayer2ShapeBox());
-    } else {
+    }
+    if (lNum >= getTech()->getBottomLayerNum() + 1) {
       via = getTech()->getLayer(lNum - 1)->getDefaultViaDef();
-      testBox = via->getLayer1ShapeBox();
+      testBox.merge(via->getLayer1ShapeBox());
       testBox.merge(via->getLayer2ShapeBox());
     }
     int diffLow, diffHigh;
