@@ -9319,6 +9319,27 @@ class dbPGpin : public dbObject
 
 };
 
+//
+// This class include the function that is needed by sroute command. 
+// create_PGpin would create bterms on the net that is suppose to 
+// get connected to and create_custom_connections would link the cell 
+// and the power net/ring
+//
+class dbPGpin : public dbObject
+{
+  public:
+    enum Position
+    {
+      DEFAULT = 0,  
+      MIDDLE = 1,   
+      RIGHT = 2,  
+      LEFT = 3
+    };
+    void create_PGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, Position position);
+    void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
+
+};
+ 
 class dbAccessPoint : public dbObject
 {
  public:
