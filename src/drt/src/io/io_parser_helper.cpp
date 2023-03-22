@@ -54,10 +54,6 @@ bool io::Parser::validWidth(odb::dbTechLayer* layer,
     return false;
   }
 
-  if (width > layer->getMaxWidth()) {
-    return false;
-  }
-
   auto widthTableRules = layer->getTechLayerWidthTableRules();
   if (widthTableRules.size() == 0) {
     return true;
@@ -96,32 +92,36 @@ bool io::Parser::viaWidthsValid(frViaDef* viaDef)
   // We ignore vias with default width pads because they wont cause width table
   // violations when connected to preferred direction wires. There might be
   // issues with wrong direction wires, but we ignore that for now.
-  bool isLayer1Fat;
-  if (dbLayer1->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    isLayer1Fat = (layer1Box.dy() > dbLayer1->getWidth());
-  } else {
-    isLayer1Fat = (layer1Box.dx() > dbLayer1->getWidth());
+  const auto horizontal = odb::dbTechLayerDir::HORIZONTAL;
+  const auto vertical = odb::dbTechLayerDir::VERTICAL;
+
+  const bool isLayer1Fat = (dbLayer1->getDirection() == horizontal)
+                               ? (layer1Box.dy() > dbLayer1->getWidth())
+                               : (layer1Box.dx() > dbLayer1->getWidth());
+  const bool isLayer2Fat = (dbLayer2->getDirection() == horizontal)
+                               ? (layer2Box.dy() > dbLayer2->getWidth())
+                               : (layer2Box.dx() > dbLayer2->getWidth());
+
+  if (isLayer1Fat
+      && (!validWidth(dbLayer1, layer1Box.dy(), horizontal)
+          || !validWidth(dbLayer1, layer1Box.dx(), vertical))) {
+    return false;
   }
-  bool isLayer2Fat;
-  if (dbLayer2->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-    isLayer2Fat = (layer2Box.dy() > dbLayer2->getWidth());
-  } else {
-    isLayer2Fat = (layer2Box.dx() > dbLayer2->getWidth());
+  if (isLayer2Fat
+      && (!validWidth(dbLayer2, layer2Box.dy(), horizontal)
+          || !validWidth(dbLayer2, layer2Box.dx(), vertical))) {
+    return false;
   }
 
-  if ((!isLayer1Fat
-       || (validWidth(dbLayer1, layer1Box.dy(), odb::dbTechLayerDir::HORIZONTAL)
-           && validWidth(
-               dbLayer1, layer1Box.dx(), odb::dbTechLayerDir::VERTICAL)))
-      && (!isLayer2Fat
-          || (validWidth(
-                  dbLayer2, layer2Box.dy(), odb::dbTechLayerDir::HORIZONTAL)
-              && validWidth(
-                  dbLayer2, layer2Box.dx(), odb::dbTechLayerDir::VERTICAL)))) {
-    return true;
+  if (layer1Box.minDXDY() > dbLayer1->getMaxWidth()) {
+    return false;
   }
 
-  return false;
+  if (layer2Box.minDXDY() > dbLayer2->getMaxWidth()) {
+    return false;
+  }
+
+  return true;
 }
 
 void io::Parser::initDefaultVias()
