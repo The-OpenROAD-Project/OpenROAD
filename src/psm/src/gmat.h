@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Holds a pointer to the node of the power grid.
  */
 namespace psm {
-typedef std::map<int, std::map<int, Node*>> NodeMap;
+using NodeMap = std::map<int, std::map<int, Node*>> ;
 
 using GMatLoc = std::pair<NodeIdx, NodeIdx>;
 
@@ -106,7 +106,7 @@ class GMat
   //! Function that prints the G matrix for debug purposes
   void print();
   //! Function to add the conductance value between two nodes
-  void setConductance(const Node* node1, const Node* node2, const double cond);
+  void setConductance(const Node* node1, const Node* node2, double cond);
   //! Function to initialize the sparse dok matrix
   void initializeGmatDok(int numC4);
   //! Function that returns the number of nodes in the G matrix
