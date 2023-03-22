@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 
+#include "ISdb.h"
 #include "dbLogger.h"
 #include "dbObject.h"
 #include "dbSet.h"
@@ -9314,11 +9315,10 @@ class dbPGpin : public dbObject
       RIGHT = 2,  
       LEFT = 3
     };
-    void create_PGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, Position position);
-    void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
-
+    static void create (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, Position position);
+    static void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
 };
- 
+
 class dbAccessPoint : public dbObject
 {
  public:
@@ -9535,4 +9535,3 @@ class dbIsolation : public dbObject
 // Generator Code End ClassDefinition
 
 }  // namespace odb
-
