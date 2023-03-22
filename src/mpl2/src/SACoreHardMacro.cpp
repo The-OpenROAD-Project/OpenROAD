@@ -33,6 +33,7 @@
 
 #include "SACoreHardMacro.h"
 
+#include "graphics.h"
 #include "utl/Logger.h"
 
 namespace mpl2 {
@@ -90,12 +91,17 @@ SACoreHardMacro::SACoreHardMacro(
   flip_prob_ = flip_prob;
 }
 
+float SACoreHardMacro::getAreaPenalty() const
+{
+  const float outline_area = outline_width_ * outline_height_;
+  return (width_ * height_) / outline_area;
+}
+
 float SACoreHardMacro::calNormCost() const
 {
   float cost = 0.0;  // Initialize cost
-  const float outline_area = outline_width_ * outline_height_;
   if (norm_area_penalty_ > 0.0) {
-    cost += area_weight_ * (width_ * height_) / outline_area;
+    cost += area_weight_ * getAreaPenalty();
   }
   if (norm_outline_penalty_ > 0.0) {
     cost += outline_weight_ * outline_penalty_ / norm_outline_penalty_;
@@ -118,6 +124,10 @@ void SACoreHardMacro::calPenalty()
   calWirelength();
   calGuidancePenalty();
   calFencePenalty();
+  if (graphics_) {
+    graphics_->setAreaPenalty(getAreaPenalty());
+    graphics_->penaltyCalculated(calNormCost());
+  }
 }
 
 void SACoreHardMacro::flipMacro()

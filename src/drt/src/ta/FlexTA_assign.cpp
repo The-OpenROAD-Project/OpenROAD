@@ -230,31 +230,31 @@ void FlexTAWorker::modMinSpacingCostVia(const Rect& box,
     if (isH) {           // track is horizontal
       if (dy > 0) {      // via at the bottom of box
         if (isCurrPs) {  // prl maxed out to be viaBox
-          prl = viaBox.xMax() - viaBox.xMin();
+          prl = viaBox.dx();
         } else {  // prl maxed out to be smaller of box and viaBox
-          prl = min(box.xMax() - box.xMin(), viaBox.xMax() - viaBox.xMin());
+          prl = min(box.dx(), viaBox.dx());
         }
         // via at the side of box
       } else {
         if (isCurrPs) {  // prl maxed out to be viaBox
-          prl = viaBox.yMax() - viaBox.yMin();
+          prl = viaBox.dy();
         } else {  // prl maxed out to be smaller of box and viaBox
-          prl = min(box.yMax() - box.yMin(), viaBox.yMax() - viaBox.yMin());
+          prl = min(box.dy(), viaBox.dy());
         }
       }
     } else {             // track is vertical
       if (dx > 0) {      // via at the bottom of box
         if (isCurrPs) {  // prl maxed out to be viaBox
-          prl = viaBox.yMax() - viaBox.yMin();
+          prl = viaBox.dy();
         } else {  // prl maxed out to be smaller of box and viaBox
-          prl = min(box.yMax() - box.yMin(), viaBox.yMax() - viaBox.yMin());
+          prl = min(box.dy(), viaBox.dy());
         }
         // via at the side of box
       } else {
         if (isCurrPs) {  // prl maxed out to be viaBox
-          prl = viaBox.xMax() - viaBox.xMin();
+          prl = viaBox.dx();
         } else {  // prl maxed out to be smaller of box and viaBox
-          prl = min(box.xMax() - box.xMin(), viaBox.xMax() - viaBox.xMin());
+          prl = min(box.dx(), viaBox.dx());
         }
       }
     }

@@ -355,6 +355,11 @@ BOOST_AUTO_TEST_CASE(test_default)
     }
     cnt++;
   }
+
+  layer = dbTech->findLayer("metal2");
+  BOOST_TEST(layer->getPitchX() == 0.36 * distFactor);
+  BOOST_TEST(layer->getPitchY() == 0.36 * distFactor);
+  BOOST_TEST(layer->getFirstLastPitch() == 0.45 * distFactor);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

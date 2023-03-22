@@ -921,9 +921,9 @@ float HardMacro::getRealHeight() const
 }
 
 // Orientation support
-std::string HardMacro::getOrientation() const
+odb::dbOrientType HardMacro::getOrientation() const
 {
-  return orientation_.getString();
+  return orientation_;
 }
 
 // We do not allow rotation of macros

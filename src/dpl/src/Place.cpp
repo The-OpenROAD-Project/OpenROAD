@@ -873,6 +873,42 @@ bool Opendp::checkPixels(const Cell* cell,
         return false;
       }
     }
+    if (disallow_one_site_gaps_) {
+      // here we need to check for abutting first, if there is an abutting cell
+      // then we continue as there is nothing wrong with it
+      // if there is no abutting cell, we will then check cells at 1+ distances
+      // we only need to check on the left and right sides
+      int x_begin = max(0, x - 1);
+      int y_begin = max(0, y - 1);
+      // inclusive search, so we don't add 1 to the end
+      int x_finish = min(x_end, row_site_count_ - 1);
+      int y_finish = min(y_end, row_count_ - 1);
+      auto isAbutted = [this](int x, int y) {
+        Pixel* pixel = gridPixel(x, y);
+        return (pixel == nullptr || pixel->cell);
+      };
+      auto cellAtSite = [this](int x, int y) {
+        Pixel* pixel = gridPixel(x, y);
+        return (pixel != nullptr && pixel->cell);
+      };
+      // upper left corner
+      if (!isAbutted(x_begin, y_begin) && cellAtSite(x_begin - 1, y_begin)) {
+        return false;
+      }
+      // lower left corner
+      if (!isAbutted(x_begin, y_finish) && cellAtSite(x_begin - 1, y_finish)) {
+        return false;
+      }
+      // upper right corner
+      if (!isAbutted(x_finish, y_begin) && cellAtSite(x_finish + 1, y_begin)) {
+        return false;
+      }
+      // lower right corner
+      if (!isAbutted(x_finish, y_finish)
+          && cellAtSite(x_finish + 1, y_finish)) {
+        return false;
+      }
+    }
   }
   return true;
 }

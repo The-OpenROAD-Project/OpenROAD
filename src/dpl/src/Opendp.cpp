@@ -134,7 +134,9 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
   debug_observer_ = std::move(observer);
 }
 
-void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
+void Opendp::detailedPlacement(int max_displacement_x,
+                               int max_displacement_y,
+                               bool disallow_one_site_gaps)
 {
   importDb();
 
@@ -150,7 +152,17 @@ void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
     max_displacement_x_ = max_displacement_x;
     max_displacement_y_ = max_displacement_y;
   }
-
+  disallow_one_site_gaps_ = disallow_one_site_gaps;
+  if (!have_one_site_cells_) {
+    // If 1-site fill cell is not detected && no disallow_one_site_gaps flag:
+    // warn the user then continue as normal
+    if (!disallow_one_site_gaps_) {
+      logger_->warn(DPL,
+                    38,
+                    "No 1-site fill cells detected.  To remove 1-site gaps use "
+                    "the -disallow_one_site_gaps flag.");
+    }
+  }
   hpwl_before_ = hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.
