@@ -602,6 +602,14 @@ void lefin::layer(lefiLayer* layer)
     return;
   }
 
+  for (int i = 0; i < layer->numProps(); i++) {
+    if (!strcmp(layer->propName(i), "LEF58_REGION")) {
+      _logger->warn(
+          utl::ODB, 423, "LEF58_REGION layer {} ignored", layer->name());
+      return;
+    }
+  }
+
   dbTechLayerType type(dbTechLayerType::ROUTING);
 
   if (layer->hasType())
