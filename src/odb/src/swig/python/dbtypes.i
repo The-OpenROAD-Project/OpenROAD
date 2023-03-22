@@ -64,6 +64,15 @@
     $result = list;
 }
 
+%typemap(out) std::optional<uint8_t> {
+    if ($1.has_value()) {
+        $result = PyInt_FromLong((long)$1.value());
+    } else {
+        Py_INCREF(Py_None);
+        $result = Py_None;
+    }
+}
+
 %typemap(out) std::vector< std::pair< T*, int > > {
     PyObject *list = PyList_New($1.size());
     for (unsigned int i = 0; i < $1.size(); i++) {
