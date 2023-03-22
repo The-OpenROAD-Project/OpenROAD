@@ -979,18 +979,33 @@ void TritonRoute::processBTermsAboveTopLayer()
     }
   }
 }
+
 void TritonRoute::stackVias(odb::dbBTerm* bterm,
                             int top_layer_idx,
                             int bterm_bottom_layer_idx)
 {
   odb::dbTech* tech = db_->getTech();
+  auto fr_tech = getDesign()->getTech();
   odb::dbSet<odb::dbTechVia> vias = tech->getVias();
   std::map<int, odb::dbTechVia*> default_vias;
-  for (int i = top_layer_idx; i <= bterm_bottom_layer_idx; i++) {
-    for (odb::dbTechVia* via : vias) {
-      if (via->getBottomLayer()->getRoutingLevel() == i) {
-        default_vias[i] = via;
-        break;
+
+  for (auto layer : tech->getLayers()) {
+    if (layer->getType() == odb::dbTechLayerType::CUT) {
+      frLayer* fr_layer = fr_tech->getLayer(layer->getName());
+      frViaDef* via_def = fr_layer->getDefaultViaDef();
+      odb::dbTechVia* tech_via = tech->findVia(via_def->getName().c_str());
+      int via_bottom_layer_idx = tech_via->getBottomLayer()->getRoutingLevel();
+      default_vias[via_bottom_layer_idx] = tech_via;
+    }
+  }
+
+  if (default_vias.empty()) {
+    for (int i = top_layer_idx; i <= bterm_bottom_layer_idx; i++) {
+      for (odb::dbTechVia* via : vias) {
+        if (via->getBottomLayer()->getRoutingLevel() == i) {
+          default_vias[i] = via;
+          break;
+        }
       }
     }
   }
