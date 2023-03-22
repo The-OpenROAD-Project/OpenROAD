@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2021, The Regents of the University of California
  * All rights reserved.
