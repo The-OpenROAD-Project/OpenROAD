@@ -1063,7 +1063,7 @@ void io::Parser::readDesign(odb::dbDatabase* db)
   tmpBlock_->setId(0);
   design_->setTopBlock(std::move(tmpBlock_));
   addFakeNets();
-  
+
   auto numLefVia = tech_->vias.size();
   if (VERBOSE > 0) {
     logger_->report("");
