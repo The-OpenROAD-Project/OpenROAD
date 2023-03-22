@@ -137,7 +137,7 @@ void dbPGpin::create (dbBlock* block, dbTech* tech, const char * source_net_name
     r_bpin->setPlacementStatus("FIRM");
 
     direction = pdn_wire->getDir();
-    if (direction == 1) {
+    if ((direction == 1) | (direction == -1)) {
       // for horizontal
       if (position == Position::LEFT) {
         int dx = snapToGrid((pdn_wire->getDX())/num_connection_points/2, tech);
@@ -170,7 +170,6 @@ void dbPGpin::create (dbBlock* block, dbTech* tech, const char * source_net_name
     } 
     else if (direction == 0) {
       //for vertical
-      // for horizontal
       if (position == Position::LEFT) {
         int dy = snapToGrid((pdn_wire->getDY())/num_connection_points/2, tech);
         yMin[n] = pdn_wire->yMin() + n*dy;
