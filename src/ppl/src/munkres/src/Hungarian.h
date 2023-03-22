@@ -29,12 +29,12 @@ class HungarianAlgorithm
                          int n_of_rows,
                          int n_of_columns);
   void buildassignmentvector(int* assignment,
-                             bool* star_matrix,
+                             const bool* star_matrix,
                              int n_of_rows,
                              int n_of_columns);
-  void computeassignmentcost(int* assignment,
+  void computeassignmentcost(const int* assignment,
                              int* cost,
-                             int* dist_matrix,
+                             const int* dist_matrix,
                              int n_of_rows);
   void step2a(int* assignment,
               int* dist_matrix,

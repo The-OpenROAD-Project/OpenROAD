@@ -73,11 +73,11 @@ class IRSolver
   IRSolver(odb::dbDatabase* db,
            sta::dbSta* sta,
            utl::Logger* logger,
-           std::string vsrc_loc,
-           std::string power_net,
-           std::string out_file,
-           std::string em_out_file,
-           std::string spice_out_file,
+           const std::string& vsrc_loc,
+           const std::string& power_net,
+           const std::string& out_file,
+           const std::string& em_out_file,
+           const std::string& spice_out_file,
            bool em_analyze,
            int bump_pitch_x,
            int bump_pitch_y,
@@ -143,7 +143,7 @@ class IRSolver
                                      int lb,
                                      int lt,
                                      bool has_params,
-                                     odb::dbViaParams params);
+                                     const odb::dbViaParams& params);
 
   //! Function to create the nodes for the c4 bumps
   int createC4Nodes(bool connection_only, int unit_micron);
