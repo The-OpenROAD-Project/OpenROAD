@@ -80,9 +80,9 @@ static int snapToGrid (int number, dbTech *db_tech) {
     return round(number / double(grid) * grid);
 }
 
-void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_net_name, int num_connection_points, Position position) {
+void dbPGpin::create (dbBlock* block, dbTech* tech, const char * source_net_name, int num_connection_points, Position position) {
 
-  utl::Logger* logger;
+  utl::Logger* logger = new utl::Logger();
   dbNet* create_pin_net = block->findNet(source_net_name);
   dbTechLayer* PGpin_metal_layer; 
   dbSet<dbSWire> swires = create_pin_net->getSWires();
@@ -163,8 +163,7 @@ void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_ne
 
       } else {
         logger->error(utl::ODB,
-                       1,
-                       "wrong position.");
+                   102,"wrong position.");
         break;
       }
       dbBox::create(r_bpin, pdn_wire->getTechLayer(), xMin[n], pdn_wire->yMin(), xMax[n], pdn_wire->yMax()); //create physical box for net
@@ -194,16 +193,14 @@ void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_ne
 
       } else {
         logger->error(utl::ODB,
-                       1,
-                       "wrong position.");
+                   100,"wrong position.");
         break;
       }
       dbBox::create(r_bpin, pdn_wire->getTechLayer(), pdn_wire->xMin(), yMin[n], pdn_wire->xMax(), yMax[n]); //create physical box for net
 
     } else {
       logger->error(utl::ODB,
-                       1,
-                       "wrong existed direction.");
+                   101,"wrong existed direction.");
     }
   }
   
