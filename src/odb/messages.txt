@@ -374,6 +374,6 @@ ODB 1072 lefout.cpp:1319           Cannot open LEF file %s\n
 ODB 1100 dbAccessPoint.cpp:323     Access direction is of unknown type
 ODB 1101 dbAccessPoint.cpp:343     Access direction is of unknown type
 ODB 2000 lefin.cpp:1152            Cannot parse LEF property '{}' with value '{}'
-ODB 1102 dbPGpin.cpp:165           wrong position.
+ODB 1105 dbPGpin.cpp:165           wrong position..
 ODB 1103 dbPGpin.cpp:195           wrong position.
 ODB 1104 dbPGpin.cpp:202           wrong direction.
