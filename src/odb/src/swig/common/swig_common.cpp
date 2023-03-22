@@ -26,16 +26,18 @@
  */
 
 #include "swig_common.h"
+
 #include <libgen.h>
 
 #include <array>
 #include <fstream>
 #include <vector>
-
 #include "odb/defin.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "utl/Logger.h"
+
+#include "../../db/dbPGpin.cpp"
 
 using namespace boost::polygon::operators;
 
@@ -297,16 +299,14 @@ void createSBoxes(odb::dbSWire* swire,
     odb::dbSBox::create(swire, via, point.getX(), point.getY(), type);
 }
 
-void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net_name, int num_connection_points, Position position)
+void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net_name, int num_connection_points, odb::dbPGpin::Position position)
 {
-  odb::dbPGpin PGpin;
-  PGpin.create_PGpin(block, tech, source_net_name, num_connection_points, position);
+  odb::dbPGpin::create(block, tech, source_net_name, num_connection_points, position);
 }
 
-void createConnection(odb::dbBlock* block, const char* nett, const char* instt, const char* itermm)
+void createConnection(odb::dbBlock* block, const char* net, const char* inst, const char* iterm)
 {
-  odb::dbPGpin PGpin;
-  PGpin.create_custom_connections(block, nett, instt, itermm);
+  odb::dbPGpin::create_custom_connections(block, net, inst, iterm);
 }
 
 void dumpAPs(odb::dbBlock* block, const std::string file_name)

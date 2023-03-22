@@ -55,9 +55,9 @@ void createSBoxes(odb::dbSWire* swire,
 
 void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net_name, 
                   int num_connection_points, 
-                  std::string position);
+                  odb::dbPGpin::Position position);
 
-void createConnection(odb::dbBlock* block, const char* nett, const char* instt, const char* itermm);
+void createConnection(odb::dbBlock* block, const char* net, const char* inst, const char* iterm);
 
 void dumpAPs(odb::dbBlock* block,
              const std::string file_name);
