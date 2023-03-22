@@ -43,7 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Holds a pointer to the node of the power grid.
  */
 namespace psm {
-using NodeMap = std::map<int, std::map<int, Node*>> ;
+using NodeMap = std::map<int, std::map<int, Node*>>;
 
 using GMatLoc = std::pair<NodeIdx, NodeIdx>;
 

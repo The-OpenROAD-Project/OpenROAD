@@ -1366,7 +1366,7 @@ int IRSolver::printSpice()
     if (col <= row) {
       continue;  // ignore lower half and diagonal as matrix is symmetric
     }
-    if (abs(cond) < 1e-15) {         // ignore if an empty cell
+    if (abs(cond) < 1e-15) {  // ignore if an empty cell
       continue;
     }
 

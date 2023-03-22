@@ -107,7 +107,7 @@ inline DTYPE flutes_wl_LMD(int d,
 {
   if (d <= FLUTE_D) {
     return flutes_wl_LD(d, xs, ys, s);
-  } 
+  }
   return flutes_wl_MD(d, xs, ys, s, acc);
 }
 
@@ -128,7 +128,7 @@ inline DTYPE flutes_wl(int d,
 {
   if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
     return flutes_wl_RDP(d, xs, ys, s, acc);
-  } 
+  }
   return flutes_wl_ALLD(d, xs, ys, s, acc);
 }
 
@@ -140,7 +140,7 @@ inline Tree flutes_ALLD(int d,
 {
   if (d <= FLUTE_D) {
     return flutes_LD(d, xs, ys, s);
-  } 
+  }
   return flutes_MD(d, xs, ys, s, acc);
 }
 
@@ -152,7 +152,7 @@ inline Tree flutes(const std::vector<DTYPE>& xs,
   int d = xs.size();
   if (FLUTE_REMOVE_DUPLICATE_PIN == 1) {
     return flutes_RDP(d, xs, ys, s, acc);
-  } 
+  }
   return flutes_ALLD(d, xs, ys, s, acc);
 }
 
@@ -164,7 +164,7 @@ inline Tree flutes_LMD(int d,
 {
   if (d <= FLUTE_D) {
     return flutes_LD(d, xs, ys, s);
-  } 
+  }
   return flutes_MD(d, xs, ys, s, acc);
 }
 

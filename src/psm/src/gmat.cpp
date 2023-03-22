@@ -70,7 +70,7 @@ Node* GMat::getNode(NodeIdx node)
 {
   if (0 <= node && n_nodes_ > node) {
     return G_mat_nodes_[node];
-  } 
+  }
   return nullptr;
 }
 
@@ -197,7 +197,7 @@ Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
       const auto y_itr = x_itr->second.find(y);
       if (y_itr != x_itr->second.end()) {
         return y_itr->second;
-      } 
+      }
       logger_->error(utl::PSM, 46, "Node location lookup error for y.");
     } else {
       logger_->error(utl::PSM, 47, "Node location lookup error for x.");
@@ -269,11 +269,11 @@ Node* GMat::setNode(const Point& loc, int layer)
     if (y_itr != x_itr->second.end()) {
       Node* node = y_itr->second;
       return node;
-    } 
+    }
     Node* node = new Node(loc, layer);
     insertNode(node);
     return node;
-  } 
+  }
   Node* node = new Node(loc, layer);
   insertNode(node);
   return node;
@@ -572,7 +572,7 @@ double GMat::getConductance(NodeIdx row, NodeIdx col)
   map<GMatLoc, double>::iterator it = G_mat_dok_.values.find(key);
   if (it != G_mat_dok_.values.end()) {
     return it->second;
-  } 
+  }
   return 0;
 }
 
@@ -625,7 +625,7 @@ Node* GMat::nearestYNode(NodeMap::const_iterator x_itr, int y)
   const int dist2 = abs(y_itr->first - y);
   if (dist1 < dist2) {
     return y_prev->second;
-  } 
+  }
   return y_itr->second;
 }
 
@@ -641,7 +641,7 @@ double GMat::getConductivity(double width, double length, double rho)
 {
   if (0 >= length || 0 >= width || 0 >= rho) {
     return 0.0;
-  } 
+  }
   return width / (rho * length);
 }
 

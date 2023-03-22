@@ -281,8 +281,8 @@ int SteinerTreeBuilder::computeHPWL(odb::dbNet* net)
 
 ////////////////////////////////////////////////////////////////
 
-using PDedge= std::pair<int, int>;
-using PDedges= std::vector<std::set<PDedge>> ;
+using PDedge = std::pair<int, int>;
+using PDedges = std::vector<std::set<PDedge>>;
 
 static int findPathDepth(const Tree& tree, int drvr_index);
 static int findPathDepth(int node, int from, PDedges& edges, int length);
@@ -352,7 +352,7 @@ static int findPathDepth(const Tree& tree, int drvr_index)
       }
     }
     return findPathDepth(drvr_index, drvr_index, edges, 0);
-  } 
+  }
   return 0;
 }
 

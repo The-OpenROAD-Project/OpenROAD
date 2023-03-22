@@ -233,7 +233,7 @@ void HungarianMatching::createMatrixForGroups()
           if (pin_hpwl == hungarian_fail) {
             group_hpwl = hungarian_fail;
             break;
-          } 
+          }
           group_hpwl += pin_hpwl;
         }
         hungarian_matrix_[slot_index][groupIndex] = group_hpwl;

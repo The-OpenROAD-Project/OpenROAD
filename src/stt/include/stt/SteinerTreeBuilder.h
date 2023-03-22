@@ -59,7 +59,7 @@ namespace stt {
 
 using utl::Logger;
 
-using DTYPE = int ;
+using DTYPE = int;
 
 struct Branch
 {
