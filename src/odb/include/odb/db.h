@@ -38,7 +38,7 @@
 #include <string>
 #include <vector>
 
-#include "ISdb.h"
+#include "dbLogger.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -156,7 +156,7 @@ class dbIsolation;
 
 // Extraction Objects
 class dbExtControl;
-class ZContext;
+
 ///
 /// dbProperty - Property base class.
 ///
@@ -7194,10 +7194,8 @@ class dbTechLayer : public dbObject
   int getPitch();
   int getPitchX();
   int getPitchY();
-  int getFirstLastPitch();
   void setPitch(int pitch);
   void setPitchXY(int pitch_x, int pitch_y);
-  void setFirstLastPitch(int first_last_pitch);
   bool hasXYPitch();
 
   int getOffset();
@@ -9300,10 +9298,23 @@ class dbGCellGrid : public dbObject
   // User Code End dbGCellGrid
 };
 
+//
+// This class include the function that is needed by sroute command. 
+// create_PGpin would create bterms on the net that is suppose to 
+// get connected to and create_custom_connections would link the cell 
+// and the power net/ring
+//
 class dbPGpin : public dbObject
 {
   public:
-    void create_PGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, std::string position);
+    enum Position
+    {
+      DEFAULT = 0,  
+      MIDDLE = 1,   
+      RIGHT = 2,  
+      LEFT = 3
+    };
+    void create_PGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, Position position);
     void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
 
 };
