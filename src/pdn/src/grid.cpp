@@ -968,7 +968,6 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
     if (master->isCore()) {
       continue;
     }
-    auto type = master->getType();
     if (master->isEndCap()) {
       switch (master->getType()) {
         case odb::dbMasterType::ENDCAP_TOPLEFT:
