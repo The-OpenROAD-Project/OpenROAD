@@ -7,7 +7,6 @@ read_guides "top_level_term.guide"
 
 set def_file [make_result_file top_level_term.def]
 
-drt::process_ports_above_top_layer -top_routing_layer met3
 detailed_route -bottom_routing_layer met1 -top_routing_layer met3 -verbose 0
 
 write_def $def_file
