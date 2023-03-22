@@ -77,12 +77,10 @@ bool io::Parser::validWidth(odb::dbTechLayer* layer,
     }
 
     // The width can be equal to or greater than the last entry
-    if (width >= last_width) {
-      return true;
-    }
+    return width >= last_width;
   }
 
-  return false;
+  return true;
 }
 
 bool io::Parser::viaWidthsValid(frViaDef* viaDef)
