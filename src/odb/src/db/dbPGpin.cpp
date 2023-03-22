@@ -163,7 +163,7 @@ void dbPGpin::create (dbBlock* block, dbTech* tech, const char * source_net_name
 
       } else {
         logger->error(utl::ODB,
-                   1102,"wrong position.");
+                   1105,"wrong position.");
         break;
       }
       dbBox::create(r_bpin, pdn_wire->getTechLayer(), xMin[n], pdn_wire->yMin(), xMax[n], pdn_wire->yMax()); //create physical box for net
