@@ -953,6 +953,32 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
   reportDRC(filename, markers, requiredDrcBox);
 }
 
+void TritonRoute::processBTermsAboveTopLayer()
+{
+  odb::dbTech* tech = db_->getTech();
+  odb::dbBlock* block = db_->getChip()->getBlock();
+
+  odb::dbTechLayer* top_tech_layer = tech->findLayer(TOP_ROUTING_LAYER_NAME.c_str());
+  if (top_tech_layer != nullptr) {
+    int top_layer_idx = top_tech_layer->getRoutingLevel();
+    for (auto bterm : block->getBTerms()) {
+      std::vector<odb::dbTechLayer*> bterm_layers;
+      for (auto bpin : bterm->getBPins()) {
+        for (auto box : bpin->getBoxes()) {
+          bterm_layers.push_back(box->getTechLayer());
+        }
+      }
+      int bterm_bottom_layer_idx = bterm_layers[0]->getRoutingLevel();
+      for (auto layer : bterm_layers) {
+        bterm_bottom_layer_idx = std::min(bterm_bottom_layer_idx, layer->getRoutingLevel());
+      }
+      
+      if (bterm_bottom_layer_idx > top_layer_idx) {
+        stackVias(bterm, top_layer_idx, bterm_bottom_layer_idx);
+      }
+    }
+  }
+}
 void TritonRoute::stackVias(odb::dbBTerm* bterm,
                             int top_layer_idx,
                             int bterm_bottom_layer_idx)
