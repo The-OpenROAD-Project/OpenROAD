@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -72,7 +72,7 @@ _dbPGpin::~_dbPGpin()
   // User Code End Destructor
 }
 
-int r2grid (int number, dbTech *db_tech) {
+static int snapToGrid (int number, dbTech *db_tech) {
     // This will round "number" to a value that respects the manufacturing grid
     // For example, if the manufacturing grid is 5 microns and number = 20333,
     // the procedure will output 20335.
@@ -80,28 +80,21 @@ int r2grid (int number, dbTech *db_tech) {
     return round(number / double(grid) * grid);
 }
 
-void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_net_name, int num_connection_points, std::string position) {
-  /*
-  _dbPGpin* obj = (_dbPGpin*) this;
-  dbDatabase* db = (dbDatabase*)obj->getDatabase();
-  
-  db->getTech();
-  dbBlock* block = db->getChip()->getBlock();
-  dbTech* tech = db->getTech();
-  */
+void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_net_name, int num_connection_points, Position position) {
 
+  utl::Logger* logger;
   dbNet* create_pin_net = block->findNet(source_net_name);
-  dbTechLayer* PGpin_metal_layer = tech->findLayer("met1"); 
+  dbTechLayer* PGpin_metal_layer; 
   dbSet<dbSWire> swires = create_pin_net->getSWires();
   dbSBox* pdn_wire = new dbSBox();
 
-  int num = 0;
-  int direction_0;
+  bool first = true;
+  int direction;
   //find highest metal layer
   for(auto swire : swires){
     for (auto wire : swire->getWires()) {
-      if (num == 0){
-        num++;
+      if (first){
+        first = false;
         PGpin_metal_layer = wire->getTechLayer();
         pdn_wire = wire;
       }
@@ -111,14 +104,14 @@ void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_ne
           pdn_wire = wire;
         }
         else if (wire->getTechLayer() == PGpin_metal_layer ) {
-          direction_0 = wire->getDir();
-          if (direction_0 == 1) {
-            if ((pdn_wire->yMax() - pdn_wire->yMin()) < (wire->yMax() - wire->yMin())) {
+          direction = wire->getDir();
+          if (direction == 1) {
+            if ((pdn_wire->getDY()) < (wire->getDY())) {
               pdn_wire = wire;
             }
           }
-          else if (direction_0 == 0) {
-            if ((pdn_wire->xMax() - pdn_wire->xMin()) < (wire->xMax() - wire->xMin())) {
+          else if (direction == 0) {
+            if ((pdn_wire->getDX()) < (wire->getDX())) {
               pdn_wire = wire;
             }
           }
@@ -143,33 +136,35 @@ void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_ne
     dbBPin * r_bpin = dbBPin::create(r_bterm);
     r_bpin->setPlacementStatus("FIRM");
 
-    int direction = pdn_wire->getDir();
+    direction = pdn_wire->getDir();
     if (direction == 1) {
       // for horizontal
-      if (position == "left") {
-        int dx = r2grid((pdn_wire->xMax() - pdn_wire->xMin())/num_connection_points/2, tech);
+      if (position == Position::LEFT) {
+        int dx = snapToGrid((pdn_wire->getDX())/num_connection_points/2, tech);
         xMin[n] = pdn_wire->xMin() + n*dx;
         xMax[n] = xMin[n] + dx;
 
 
-      } else if (position == "right") {
-        int dx = r2grid((pdn_wire->xMax() - pdn_wire->xMin())/num_connection_points/2, tech);
-        xMin[n] = pdn_wire->xMin() + (pdn_wire->xMax() - pdn_wire->xMin())/2 + n*dx;
+      } else if (position == Position::RIGHT) {
+        int dx = snapToGrid((pdn_wire->getDX())/num_connection_points/2, tech);
+        xMin[n] = pdn_wire->xMin() + (pdn_wire->getDX())/2 + n*dx;
         xMax[n] = xMin[n] + dx;
 
 
-      } else if (position == "middle") {
-        int dx = r2grid((pdn_wire->xMax() - pdn_wire->xMin())/num_connection_points/2, tech);
-        xMin[n] = pdn_wire->xMin() + (pdn_wire->xMax() - pdn_wire->xMin())/4 + n*dx;
+      } else if (position == Position::MIDDLE) {
+        int dx = snapToGrid((pdn_wire->getDX())/num_connection_points/2, tech);
+        xMin[n] = pdn_wire->xMin() + (pdn_wire->getDX())/4 + n*dx;
         xMax[n] = xMin[n] + dx;
 
-      } else if (position == "default") {
-        int dx = r2grid((pdn_wire->xMax() - pdn_wire->xMin())/num_connection_points, tech);
+      } else if (position == Position::DEFAULT) {
+        int dx = snapToGrid((pdn_wire->getDX())/num_connection_points, tech);
         xMin[n] = pdn_wire->xMin() + n*dx;
         xMax[n] = xMin[n] + dx;
 
       } else {
-        std::cout << "WARNING.";
+        logger->error(utl::ODB,
+                       1,
+                       "wrong position.");
         break;
       }
       dbBox::create(r_bpin, pdn_wire->getTechLayer(), xMin[n], pdn_wire->yMin(), xMax[n], pdn_wire->yMax()); //create physical box for net
@@ -177,45 +172,49 @@ void dbPGpin::create_PGpin (dbBlock* block, dbTech* tech, const char * source_ne
     else if (direction == 0) {
       //for vertical
       // for horizontal
-      if (position == "left") {
-        int dy = r2grid((pdn_wire->yMax() - pdn_wire->yMin())/num_connection_points/2, tech);
+      if (position == Position::LEFT) {
+        int dy = snapToGrid((pdn_wire->getDY())/num_connection_points/2, tech);
         yMin[n] = pdn_wire->yMin() + n*dy;
         yMax[n] = yMin[n] + dy;
 
-      } else if (position == "right") {
-        int dy = r2grid((pdn_wire->yMax() - pdn_wire->yMin())/num_connection_points/2, tech);
-        yMin[n] = pdn_wire->yMin() + (pdn_wire->yMax() - pdn_wire->yMin())/2 + n*dy;
+      } else if (position == Position::RIGHT) {
+        int dy = snapToGrid((pdn_wire->getDY())/num_connection_points/2, tech);
+        yMin[n] = pdn_wire->yMin() + (pdn_wire->getDY())/2 + n*dy;
         yMax[n] = yMin[n] + dy;
 
-      } else if (position == "middle") {
-        int dy = r2grid((pdn_wire->yMax() - pdn_wire->yMin())/num_connection_points/2, tech);
-        yMin[n] = pdn_wire->yMin() + (pdn_wire->yMax() - pdn_wire->yMin())/4 + n*dy;
+      } else if (position == Position::MIDDLE) {
+        int dy = snapToGrid((pdn_wire->getDY())/num_connection_points/2, tech);
+        yMin[n] = pdn_wire->yMin() + (pdn_wire->getDY())/4 + n*dy;
         yMax[n] = yMin[n] + dy;
 
-      } else if (position == "default") {
-        int dy = r2grid((pdn_wire->yMax() - pdn_wire->yMin())/num_connection_points, tech);
+      } else if (position == Position::DEFAULT) {
+        int dy = snapToGrid((pdn_wire->getDY())/num_connection_points, tech);
         yMin[n] = pdn_wire->yMin() + n*dy;
         yMax[n] = yMin[n] + dy;
 
       } else {
-        std::cout << "WARNING.";
+        logger->error(utl::ODB,
+                       1,
+                       "wrong position.");
         break;
       }
       dbBox::create(r_bpin, pdn_wire->getTechLayer(), pdn_wire->xMin(), yMin[n], pdn_wire->xMax(), yMax[n]); //create physical box for net
 
     } else {
-      std::cout << "WARNING.";
+      logger->error(utl::ODB,
+                       1,
+                       "wrong existed direction.");
     }
   }
   
 }
 
-void dbPGpin::create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm) {
-  dbNet* net = block->findNet(nett);
+void dbPGpin::create_custom_connections (dbBlock* block, const char* net, const char* inst, const char* iterm) {
+  dbNet* net_ = block->findNet(net);
 
-  dbInst* inst = block->findInst(instt);
-  dbITerm* iterm = inst->findITerm(itermm);
-  iterm->connect(net);
+  dbInst* inst_ = block->findInst(inst);
+  dbITerm* iterm_ = inst_->findITerm(iterm);
+  iterm_->connect(net_);
 
 }
 
