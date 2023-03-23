@@ -216,6 +216,8 @@ _installRHELCleanUp() {
 
 _installRHELPackages() {
     yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    yum -y install http://ftp.nsc.ru/pub/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
+    yum -y install http://ftp.nsc.ru/pub/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
 
     yum -y install \
         tzdata \
