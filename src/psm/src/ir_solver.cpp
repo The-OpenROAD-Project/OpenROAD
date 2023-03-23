@@ -97,6 +97,7 @@ IRSolver::IRSolver(odb::dbDatabase* db,
                    const std::string& vsrc_loc,
                    const std::string& power_net,
                    const std::string& out_file,
+                   const std::string& error_file,
                    const std::string& em_out_file,
                    const std::string& spice_out_file,
                    bool em_analyze,
@@ -112,6 +113,7 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   vsrc_file_ = vsrc_loc;
   power_net_ = power_net;
   out_file_ = out_file;
+  error_file_ = error_file;
   em_out_file_ = em_out_file;
   em_flag_ = em_analyze;
   spice_out_file_ = spice_out_file;
@@ -1279,6 +1281,11 @@ bool IRSolver::checkConnectivity(bool connection_only)
     }
   }
   bool unconnected_node = false;
+  ofstream error_report;
+  if (!error_file_.empty()) {
+    error_report.open(error_file_);
+  }
+  auto tech = db_->getTech();
   for (Node* node : Gmat_->getAllNodes()) {
     if (!node->getConnected()) {
       const Point node_loc = node->getLoc();
@@ -1293,6 +1300,17 @@ bool IRSolver::checkConnectivity(bool connection_only)
                     loc_x,
                     loc_y,
                     node->getLayerNum());
+      if (!error_file_.empty()) {
+        error_report << "violation type: Unconnected PDN node\n";
+        error_report << "  srcs: \n";
+        error_report << fmt::format(
+            "    bbox = ({}, {}) - ({}, {}) on Layer {}\n",
+            loc_x - 0.05,
+            loc_y - 0.05,
+            loc_x + 0.05,
+            loc_y + 0.05,
+            tech->findRoutingLayer(node->getLayerNum())->getName());
+      }
       if (node->hasInstances()) {
         for (dbInst* inst : node->getInstances()) {
           logger_->warn(utl::PSM,

@@ -67,6 +67,7 @@ class PDNSim
 
   void import_vsrc_cfg(const std::string& vsrc);
   void import_out_file(const std::string& out_file);
+  void import_error_file(const std::string& error_file);
   void import_em_out_file(const std::string& em_out_file);
   void import_enable_em(bool enable_em);
   void import_spice_out_file(const std::string& out_file);
@@ -90,6 +91,7 @@ class PDNSim
   utl::Logger* logger_ = nullptr;
   std::string vsrc_loc_;
   std::string out_file_;
+  std::string error_file_;
   std::string em_out_file_;
   bool enable_em_ = false;
   int bump_pitch_x_ = 0;
