@@ -110,32 +110,39 @@ void Opendp::makeMacros()
 void Opendp::makeMaster(Master* master, dbMaster* db_master)
 {
   const int master_height = db_master->getHeight();
-  const bool is_multi_row
-      = master_height != row_height_ && master_height % row_height_ == 0;
-
-  master->is_multi_row = is_multi_row;
+  master->is_multi_row
+      = (master_height != row_height_ && master_height % row_height_ == 0);
 }
 
 void Opendp::examineRows()
 {
   std::vector<dbRow*> rows;
-  for (auto* row : block_->getRows()) {
+  auto block_rows = block_->getRows();
+  rows.reserve(block_rows.size());
+  for (auto* row : block_rows) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
     rows.push_back(row);
   }
-  if (!rows.empty()) {
-    for (dbRow* db_row : rows) {
-      dbSite* site = db_row->getSite();
-      row_height_ = site->getHeight();
-      site_width_ = site->getWidth();
-    }
-    row_site_count_ = divFloor(core_.dx(), site_width_);
-    row_count_ = divFloor(core_.dy(), row_height_);
-  } else {
+  if (rows.empty()) {
     logger_->error(DPL, 12, "no rows found.");
   }
+
+  int min_row_height_ = std::numeric_limits<int>::max();
+  int min_site_width_ = std::numeric_limits<int>::max();
+
+  for (dbRow* db_row : rows) {
+    dbSite* site = db_row->getSite();
+    min_row_height_
+        = std::min(min_row_height_, static_cast<int>(site->getHeight()));
+    min_site_width_
+        = std::min(min_site_width_, static_cast<int>(site->getWidth()));
+  }
+  row_height_ = min_row_height_;
+  site_width_ = min_site_width_;
+  row_site_count_ = divFloor(core_.dx(), site_width_);
+  row_count_ = divFloor(core_.dy(), row_height_);
 }
 
 void Opendp::makeCells()
