@@ -61,7 +61,7 @@ using utl::Logger;
 class HungarianMatching
 {
  public:
-  HungarianMatching(Section& section,
+  HungarianMatching(const Section& section,
                     Netlist* netlist,
                     Core* core,
                     std::vector<Slot>& slots,

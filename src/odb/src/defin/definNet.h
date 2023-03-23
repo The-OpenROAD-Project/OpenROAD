@@ -96,6 +96,7 @@ class definNet : public definBase
   void pathVia(const char* via);
   void pathVia(const char* via, dbOrientType orient);
   void pathRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2);
+  void pathColor(int color);
   void pathEnd();
   void wireEnd();
   void source(dbSourceType source);

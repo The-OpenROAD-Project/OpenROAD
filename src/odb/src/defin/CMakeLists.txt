@@ -33,7 +33,7 @@ target_link_libraries(defin
         zutil
         def
         defzlib
-        utl
+        utl_lib
 )
 
 set_target_properties(defin
