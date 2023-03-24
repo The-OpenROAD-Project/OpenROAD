@@ -91,7 +91,8 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
 ////////////////////////////////////////////////////////////////
 void Optdp::improvePlacement(int seed,
                              int max_displacement_x,
-                             int max_displacement_y)
+                             int max_displacement_y,
+                             bool disallow_one_site_gaps)
 {
   logger_->report("Detailed placement improvement.");
 
