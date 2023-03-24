@@ -100,7 +100,6 @@ class Ath__parser
   char** _wordArray;
   char _commentChar;
   int _maxWordCnt;
-  int _wordSize;
 
   int _lineNum;
   int _currentWordCnt;

@@ -36,16 +36,62 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "misc_global.h"
 #include "odb/odb.h"
 
 namespace odb {
+
+static FILE* ATH__openFile(const char* name, const char* type)
+{
+  FILE* a = fopen(name, type);
+
+  if (a == NULL) {
+    fprintf(stderr, "Cannot open file %s for \"%s\"\n", name, type);
+    fprintf(stdout, "\nExiting ...\n");
+    exit(0);
+  }
+  return a;
+}
+
+static void ATH__closeFile(FILE* fp)
+{
+  if (fp == NULL) {
+    return;
+  }
+  fclose(fp);
+}
+
+static void ATH__failMessage(const char* msg)
+{
+  fprintf(stderr, "%s\n", msg);
+  fprintf(stderr, "\nexiting ...\n");
+  exit(1);
+}
+
+static char* ATH__allocCharWord(int n)
+{
+  if (n <= 0)
+    ATH__failMessage("Cannot zero/negative number of chars");
+
+  char* a = new char[n];
+  if (a == NULL) {
+    ATH__failMessage("Cannot allocate chars");
+  }
+  a[0] = '\0';
+  return a;
+}
+
+static void ATH__deallocCharWord(const char* a)
+{
+  if (a == NULL) {
+    ATH__failMessage("Cannot deallocate allocate chars");
+  }
+  delete[] a;
+}
 
 Ath__parser::Ath__parser()
 {
   _lineSize = 10000;
   _maxWordCnt = 100;
-  _wordSize = 512;
   init();
 }
 
@@ -89,7 +135,7 @@ void Ath__parser::init()
   }
 
   for (int ii = 0; ii < _maxWordCnt; ii++) {
-    _wordArray[ii] = ATH__allocCharWord(_wordSize);
+    _wordArray[ii] = ATH__allocCharWord(512);
   }
 
   _wordSeparators = ATH__allocCharWord(24);

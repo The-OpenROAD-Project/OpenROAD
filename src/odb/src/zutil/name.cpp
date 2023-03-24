@@ -34,6 +34,15 @@
 
 namespace odb {
 
+static void Ath__hashError(const char* msg, int exitFlag)
+{
+  fprintf(stderr, "Cannot find %s in hash table\n", msg);
+  fprintf(stderr, "\nexiting ...\n");
+
+  if (exitFlag > 0)
+    exit(1);
+}
+
 void Ath__nameBucket::set(char* name, uint tag)
 {
   int len = strlen(name);
