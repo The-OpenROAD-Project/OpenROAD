@@ -85,44 +85,6 @@ extDielectric::extDielectric(Logger* logger)
   logger_ = logger;
 }
 
-void extDielectric::printDielectric(FILE* fp, Ath__parser* parse)
-{
-  fprintf(fp, "DIELECTRIC {\n");
-
-  parse->printString(fp, "\t", "name", _name);
-  parse->printDouble(fp, "\t", "epsilon", _epsilon);
-  if (!_conformal && !_trench)
-    parse->printString(
-        fp, "\t", "non_conformal_metal", _non_conformal_metal, true);
-
-  parse->printDouble(fp, "\t", "height", _height, true);
-  parse->printDouble(fp, "\t", "thickness", _thickness, true);
-
-  parse->printDouble(fp, "\t", "left_thickness", _left_thickness, true);
-  parse->printDouble(fp, "\t", "right_thickness", _right_thickness, true);
-  parse->printDouble(fp, "\t", "top_thickness", _top_thickness, true);
-  parse->printDouble(fp, "\t", "bottom_thickness", _bottom_thickness, true);
-  parse->printDouble(fp, "\t", "bottom_ext", _bottom_ext, true);
-  parse->printDouble(fp, "\t", "slope", _slope, false);
-  parse->printInt(fp, "\t", "met", _met, true);
-  parse->printInt(fp, "\t", "next_met", _nextMet, true);
-
-  fprintf(fp, "}\n");
-}
-
-void extDielectric::printDielectric(FILE* fp,
-                                    float planeWidth,
-                                    float planeThickness)
-{
-  fprintf(fp,
-          "BOX NAME %-15s; CX=0; CY=%g; W=%g; H= %g; DIEL= %g;\n",
-          _name,
-          _height,
-          planeWidth,
-          planeThickness,
-          _epsilon);
-}
-
 void extMasterConductor::writeRaphaelDielPoly(FILE* fp,
                                               double X,
                                               double width,

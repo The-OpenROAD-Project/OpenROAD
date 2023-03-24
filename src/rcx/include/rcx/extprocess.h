@@ -91,8 +91,6 @@ class extDielectric
                 const char* key,
                 int v,
                 bool pos = false);
-  void printDielectric(FILE* fp, Ath__parser* parser);
-  void printDielectric(FILE* fp, float planeWidth, float planeThickness);
 
   char _name[128];
   char _non_conformal_metal[128];
