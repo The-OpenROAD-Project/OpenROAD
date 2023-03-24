@@ -32,9 +32,9 @@
 
 #include "parse.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "misc_global.h"
 #include "odb/odb.h"
@@ -60,20 +60,22 @@ Ath__parser::~Ath__parser()
       }
     }
     pclose(_inFP);
-    _inFP = NULL;
+    _inFP = nullptr;
   }
   ATH__deallocCharWord(_inputFile);
   ATH__deallocCharWord(_line);
   ATH__deallocCharWord(_tmpLine);
   ATH__deallocCharWord(_wordSeparators);
 
-  for (int ii = 0; ii < _maxWordCnt; ii++)
+  for (int ii = 0; ii < _maxWordCnt; ii++) {
     ATH__deallocCharWord(_wordArray[ii]);
+  }
 
   delete[] _wordArray;
 
-  if (_inFP)
+  if (_inFP) {
     ATH__closeFile(_inFP);
+  }
 }
 
 void Ath__parser::init()
@@ -82,11 +84,13 @@ void Ath__parser::init()
   _tmpLine = ATH__allocCharWord(_lineSize);
 
   _wordArray = new char*[_maxWordCnt];
-  if (_wordArray == NULL)
+  if (_wordArray == nullptr) {
     ATH__failMessage("Cannot allocate array of char*");
+  }
 
-  for (int ii = 0; ii < _maxWordCnt; ii++)
+  for (int ii = 0; ii < _maxWordCnt; ii++) {
     _wordArray[ii] = ATH__allocCharWord(_wordSize);
+  }
 
   _wordSeparators = ATH__allocCharWord(24);
 
@@ -97,7 +101,7 @@ void Ath__parser::init()
   _lineNum = 0;
   _currentWordCnt = -1;
 
-  _inFP = NULL;
+  _inFP = nullptr;
   _inputFile = ATH__allocCharWord(512);
 
   _progressLineChunk = 1000000;
@@ -115,12 +119,9 @@ void Ath__parser::resetLineNum(int v)
 
 bool Ath__parser::isDigit(int ii, int jj)
 {
-  char C = _wordArray[ii][jj];
+  const char C = _wordArray[ii][jj];
 
-  if ((C >= '0') && (C <= '9'))
-    return true;
-  else
-    return false;
+  return (C >= '0') && (C <= '9');
 }
 
 void Ath__parser::resetSeparator(const char* s)
@@ -135,13 +136,13 @@ void Ath__parser::addSeparator(const char* s)
 
 void Ath__parser::openFile(char* name)
 {
-  if (name != NULL && strlen(name) > 4
+  if (name != nullptr && strlen(name) > 4
       && !strcmp(name + strlen(name) - 3, ".gz")) {
     char cmd[256];
     sprintf(cmd, "gzip -cd %s", name);
     _inFP = popen(cmd, "r");
     strcpy(_inputFile, name);
-  } else if (name == NULL && strlen(_inputFile) > 4
+  } else if (name == nullptr && strlen(_inputFile) > 4
              && !strcmp(_inputFile + strlen(_inputFile) - 3, ".gz")) {
     char cmd[256];
     if (_inFP) {
@@ -152,11 +153,11 @@ void Ath__parser::openFile(char* name)
         }
       }
       pclose(_inFP);
-      _inFP = NULL;
+      _inFP = nullptr;
     }
     sprintf(cmd, "gzip -cd %s", _inputFile);
     _inFP = popen(cmd, "r");
-  } else if (name != NULL) {
+  } else if (name != nullptr) {
     _inFP = ATH__openFile(name, (char*) "r");
     strcpy(_inputFile, name);
   } else {  //
@@ -171,11 +172,12 @@ void Ath__parser::setInputFP(FILE* fp)
 
 void Ath__parser::printWords(FILE* fp)
 {
-  if (fp == NULL) {  // use motice
+  if (fp == nullptr) {  // use motice
     return;
   }
-  for (int ii = 0; ii < _currentWordCnt; ii++)
+  for (int ii = 0; ii < _currentWordCnt; ii++) {
     fprintf(fp, "%s ", _wordArray[ii]);
+  }
   fprintf(fp, "\n");
 }
 
@@ -191,10 +193,10 @@ char Ath__parser::getFirstChar()
 
 char* Ath__parser::get(int ii)
 {
-  if ((ii < 0) || (ii >= _currentWordCnt))
-    return NULL;
-  else
-    return _wordArray[ii];
+  if ((ii < 0) || (ii >= _currentWordCnt)) {
+    return nullptr;
+  }
+  return _wordArray[ii];
 }
 
 int Ath__parser::getInt(int ii)
@@ -208,8 +210,9 @@ void Ath__parser::printInt(FILE* fp,
                            int v,
                            bool pos)
 {
-  if (pos && !(v > 0))
+  if (pos && !(v > 0)) {
     return;
+  }
 
   fprintf(fp, "%s%s %d\n", sep, key, v);
 }
@@ -220,8 +223,9 @@ void Ath__parser::printDouble(FILE* fp,
                               double v,
                               bool pos)
 {
-  if (pos && !(v > 0))
+  if (pos && !(v > 0)) {
     return;
+  }
 
   fprintf(fp, "%s%s %g\n", sep, key, v);
 }
@@ -232,8 +236,9 @@ void Ath__parser::printString(FILE* fp,
                               char* v,
                               bool pos)
 {
-  if (pos && !((v == NULL) || (strcmp("", v) == 0)))
+  if (pos && !((v == nullptr) || (strcmp("", v) == 0))) {
     return;
+  }
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
 }
@@ -243,8 +248,9 @@ int Ath__parser::getInt(int n, int start)
   char* word = get(n);
   char buff[128];
   int k = 0;
-  for (int ii = start; word[ii] != '\0'; ii++)
+  for (int ii = start; word[ii] != '\0'; ii++) {
     buff[k++] = word[ii];
+  }
   buff[k++] = '\0';
 
   return atoi(buff);
@@ -260,38 +266,44 @@ void Ath__parser::getDoubleArray(Ath__array1D<double>* A,
                                  double mult)
 {
   if (mult == 1.0) {
-    for (int ii = start; ii < _currentWordCnt; ii++)
+    for (int ii = start; ii < _currentWordCnt; ii++) {
       A->add(atof(get(ii)));
+    }
   } else {
-    for (int ii = start; ii < _currentWordCnt; ii++)
+    for (int ii = start; ii < _currentWordCnt; ii++) {
       A->add(atof(get(ii)) * mult);
+    }
   }
 }
 
 Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
                                                    int start1)
 {
-  if ((keyword != NULL) && (strcmp(keyword, get(0)) != 0))
-    return NULL;
+  if ((keyword != nullptr) && (strcmp(keyword, get(0)) != 0)) {
+    return nullptr;
+  }
 
-  if (getWordCnt() < 1)
-    return NULL;
+  if (getWordCnt() < 1) {
+    return nullptr;
+  }
 
   Ath__array1D<double>* A = new Ath__array1D<double>(getWordCnt());
   int start = 0;
-  if (keyword != NULL)
+  if (keyword != nullptr) {
     start = start1;
+  }
   getDoubleArray(A, start);
   return A;
 }
 
 int Ath__parser::mkWords(const char* word, const char* sep)
 {
-  if (word == NULL)
+  if (word == nullptr) {
     return 0;
+  }
 
   char buf1[100];
-  if (sep != NULL) {
+  if (sep != nullptr) {
     strcpy(buf1, _wordSeparators);
     strcpy(_wordSeparators, sep);
   }
@@ -299,8 +311,9 @@ int Ath__parser::mkWords(const char* word, const char* sep)
   strcpy(_line, word);
   _currentWordCnt = mkWords(0);
 
-  if (sep != NULL)
+  if (sep != nullptr) {
     strcpy(_wordSeparators, buf1);
+  }
 
   return _currentWordCnt;
 }
@@ -332,28 +345,31 @@ bool Ath__parser::isSeparator(char a)
 {
   int len = strlen(_wordSeparators);
   for (int k = 0; k < len; k++) {
-    if (a == _wordSeparators[k])
+    if (a == _wordSeparators[k]) {
       return true;
+    }
   }
   return false;
 }
 
 int Ath__parser::mkWords(int jj)
 {
-  //	fprintf(stdout, "%s", _line);
-  if (_line[0] == _commentChar)
+  if (_line[0] == _commentChar) {
     return jj;
+  }
 
   int ii = 0;
   int len = strlen(_line);
   while (ii < len) {
     int k = ii;
     for (; k < len; k++) {
-      if (!isSeparator(_line[k]))
+      if (!isSeparator(_line[k])) {
         break;
+      }
     }
-    if (k == len)
+    if (k == len) {
       break;
+    }
 
     int charIndex = 0;
     for (; k < len; k++) {
@@ -363,8 +379,9 @@ int Ath__parser::mkWords(int jj)
 
         break;
       }
-      if (_line[k] == _commentChar)
+      if (_line[k] == _commentChar) {
         return jj;
+      }
 
       _wordArray[jj][charIndex++] = _line[k];
     }
@@ -379,15 +396,16 @@ int Ath__parser::mkWords(int jj)
 
 int Ath__parser::reportProgress(FILE* fp)
 {
-  if (_lineNum % _progressLineChunk == 0)
+  if (_lineNum % _progressLineChunk == 0) {
     fprintf(fp, "\t\tHave read %d lines\n", _lineNum);
+  }
 
   return _lineNum;
 }
 
 int Ath__parser::readLineAndBreak(int prevWordCnt)
 {
-  if (fgets(_line, _lineSize, _inFP) == NULL) {
+  if (fgets(_line, _lineSize, _inFP) == nullptr) {
     _currentWordCnt = prevWordCnt;
     return prevWordCnt;
   }
@@ -395,10 +413,11 @@ int Ath__parser::readLineAndBreak(int prevWordCnt)
   _lineNum++;
   reportProgress(stdout);
 
-  if (prevWordCnt < 0)
+  if (prevWordCnt < 0) {
     _currentWordCnt = mkWords(0);
-  else
+  } else {
     _currentWordCnt = mkWords(prevWordCnt);
+  }
 
   return _currentWordCnt;
 }
@@ -420,11 +439,10 @@ int Ath__parser::parseNextLine()
 
 bool Ath__parser::isKeyword(int ii, const char* key1)
 {
-  if ((get(ii) != NULL) && (strcmp(get(ii), key1) == 0)) {
+  if ((get(ii) != nullptr) && (strcmp(get(ii), key1) == 0)) {
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 }  // namespace odb

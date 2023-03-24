@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "array1.h"
 
@@ -45,9 +45,9 @@ class Ath__parser
  public:
   Ath__parser();
   ~Ath__parser();
-  void openFile(char* name = NULL);
+  void openFile(char* name = nullptr);
   void setInputFP(FILE* fp);
-  int mkWords(const char* word, const char* sep = NULL);
+  int mkWords(const char* word, const char* sep = nullptr);
   int readLineAndBreak(int prevWordCnt = -1);
   int parseNextLine();
   char* get(int ii);
@@ -91,7 +91,7 @@ class Ath__parser
  private:
   void init();
   int reportProgress(FILE* fp);
-  int mkWords(int ii);
+  int mkWords(int jj);
   bool isSeparator(char a);
 
   char* _line;
