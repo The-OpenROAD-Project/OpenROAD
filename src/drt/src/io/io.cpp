@@ -3090,5 +3090,4 @@ void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access)
     fillConnFigs(false);
     updateDbConn(block, db_tech);
   }
-  updateTrackAssignment(block);
 }

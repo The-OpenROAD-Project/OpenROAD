@@ -121,6 +121,11 @@ void TritonRoute::setDistributed(bool on)
   distributed_ = on;
 }
 
+void TritonRoute::setDebugWriteNetTracks(bool on)
+{
+  debug_->writeNetTracks = on;
+}
+
 void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
 {
   dist_ip_ = ip;
@@ -642,6 +647,8 @@ void TritonRoute::endFR()
   dr_.reset();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_);
+  if (debug_->writeNetTracks)
+    writer.updateTrackAssignment(db_->getChip()->getBlock());
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
   if (!REPAIR_PDN_LAYER_NAME.empty()) {
