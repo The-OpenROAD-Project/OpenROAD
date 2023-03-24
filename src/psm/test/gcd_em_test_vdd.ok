@@ -30,11 +30,11 @@
 [INFO PSM-0040] All PDN stripes on net VDD are connected.
 ########## IR report #################
 Worstcase voltage: 1.10e+00 V
-Average IR drop  : 3.09e-04 V
-Worstcase IR drop: 5.45e-04 V
+Average IR drop  : 2.91e-04 V
+Worstcase IR drop: 5.13e-04 V
 ######################################
 ########## EM analysis ###############
-Maximum current: 8.20e-05 A
-Average current: 2.76e-06 A
+Maximum current: 7.73e-05 A
+Average current: 2.60e-06 A
 Number of resistors: 633
 ######################################
