@@ -40,11 +40,8 @@
 
 namespace dpl {
 
-using std::max;
-using std::min;
+using odb::Direction2D;
 using std::vector;
-
-using odb::dbPlacementStatus;
 
 using utl::DPL;
 
@@ -55,23 +52,32 @@ void Opendp::checkPlacement(bool verbose)
   vector<Cell*> placed_failures;
   vector<Cell*> in_rows_failures;
   vector<Cell*> overlap_failures;
+  vector<Cell*> one_site_gap_failures;
   vector<Cell*> site_align_failures;
 
   initGrid();
   for (Cell& cell : cells_) {
     if (isStdCell(&cell)) {
       // Site alignment check
-      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0)
+      if (cell.x_ % site_width_ != 0 || cell.y_ % row_height_ != 0) {
         site_align_failures.push_back(&cell);
-      if (!checkInRows(cell))
+      }
+      if (!checkInRows(cell)) {
         in_rows_failures.push_back(&cell);
+      }
     }
     // Placed check
-    if (!isPlaced(&cell))
+    if (!isPlaced(&cell)) {
       placed_failures.push_back(&cell);
+    }
     // Overlap check
-    if (checkOverlap(cell))
+    if (checkOverlap(cell)) {
       overlap_failures.push_back(&cell);
+    }
+    // One site gap check
+    if (disallow_one_site_gaps_ && checkOneSiteGaps(cell)) {
+      one_site_gap_failures.push_back(&cell);
+    }
   }
 
   reportFailures(placed_failures, 3, "Placed", verbose);
@@ -81,6 +87,7 @@ void Opendp::checkPlacement(bool verbose)
         reportOverlapFailure(cell);
       });
   reportFailures(site_align_failures, 6, "Site aligned", verbose);
+  reportFailures(one_site_gap_failures, 7, "One site gap", verbose);
 
   logger_->metric("design__violations",
                   placed_failures.size() + in_rows_failures.size()
@@ -140,8 +147,9 @@ bool Opendp::checkInRows(const Cell& cell) const
     for (int x = x_ll; x < x_ur; x++) {
       Pixel* pixel = gridPixel(x, y);
       if (pixel == nullptr  // outside core
-          || !pixel->is_valid)
+          || !pixel->is_valid) {
         return false;
+      }
     }
   }
   return true;
@@ -173,10 +181,12 @@ Cell* Opendp::checkOverlap(Cell& cell) const
   visitCellPixels(cell, true, [&](Pixel* pixel) {
     Cell* pixel_cell = pixel->cell;
     if (pixel_cell) {
-      if (pixel_cell != &cell && overlap(&cell, pixel_cell))
+      if (pixel_cell != &cell && overlap(&cell, pixel_cell)) {
         overlap_cell = pixel_cell;
-    } else
+      }
+    } else {
       pixel->cell = &cell;
+    }
   });
   return overlap_cell;
 }
@@ -201,6 +211,40 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
   }
   return ll1.getX() < ur2.getX() && ur1.getX() > ll2.getX()
          && ll1.getY() < ur2.getY() && ur1.getY() > ll2.getY();
+}
+
+Cell* Opendp::checkOneSiteGaps(Cell& cell) const
+{
+  Cell* gap_cell = nullptr;
+  visitCellBoundaryPixels(
+      cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
+        Cell* pixel_cell = pixel->cell;
+
+        int abut_x = 0;
+
+        switch (edge) {
+          case Direction2D::West:
+            abut_x = -1;
+            break;
+          case Direction2D::East:
+            abut_x = 1;
+            break;
+        }
+        if (0 != abut_x) {
+          // check the abutting pixel
+          Pixel* abut_pixel = gridPixel(x + abut_x, y);
+          bool abuttment_exists
+              = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell);
+          if (!abuttment_exists) {
+            // check the 1 site gap pixel
+            Pixel* gap_pixel = gridPixel(x + 2 * abut_x, y);
+            if (gap_pixel && gap_pixel->cell != pixel_cell) {
+              gap_cell = gap_pixel->cell;
+            }
+          }
+        }
+      });
+  return gap_cell;
 }
 
 bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const

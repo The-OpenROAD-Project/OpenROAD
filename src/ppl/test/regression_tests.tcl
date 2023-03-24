@@ -33,8 +33,11 @@ record_tests {
   add_constraint8
   add_constraint9
   add_constraint10
+  add_constraint11
   add_constraint_error1
   add_constraint_error2
+  add_constraint_error3
+  add_constraint_error4
   group_pins1
   group_pins2
   group_pins3

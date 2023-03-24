@@ -176,6 +176,7 @@ class lefTechLayerEolKeepOutRuleParser
                 odb::dbTechLayerEolKeepOutRule* rule,
                 odb::dbTechLayer* layer);
 };
+
 class lefTechLayerAreaRuleParser
 {
  public:
@@ -204,6 +205,21 @@ class lefTechLayerAreaRuleParser
       odb::dbTechLayerAreaRule* rule,
       odb::dbTechLayer* layer,
       std::vector<std::pair<odb::dbObject*, std::string>>& incomplete_props);
+};
+
+class lefTechLayerPitchRuleParser
+{
+ public:
+  lefTechLayerPitchRuleParser(lefin*);
+  void parse(std::string, odb::dbTechLayer*);
+
+ private:
+  void setInt(double val,
+              odb::dbTechLayer* layer,
+              void (odb::dbTechLayer::*func)(int));
+  void setPitchXY(boost::fusion::vector<double, double>& params,
+                  odb::dbTechLayer* layer);
+  lefin* lefin_;
 };
 
 class ArraySpacingParser

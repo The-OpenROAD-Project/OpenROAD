@@ -147,7 +147,7 @@ target_link_libraries(db
         defout
         tm
         zutil
-        utl
+        utl_lib
         ${TCL_LIBRARY}
 )
 

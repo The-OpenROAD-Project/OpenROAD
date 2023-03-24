@@ -47,13 +47,13 @@ add_library(dpl_lib
   src/Place.cpp
   src/FillerPlacement.cpp
   src/OptMirror.cpp
-  src/Graphics.cpp
 )
 
 target_link_libraries(dpl_lib
-  PRIVATE
-    gui
+  PUBLIC
     odb
+    OpenSTA
+  PRIVATE
     utl
 )
 
@@ -72,11 +72,14 @@ swig_lib(NAME         dpl
 target_sources(dpl
   PRIVATE
     src/MakeOpendp.cpp
+    src/Graphics.cpp
+    src/DplObserver.h
 )
 
 target_include_directories(dpl
   PUBLIC
     include
+    src
 )
 
 target_link_libraries(dpl
@@ -84,6 +87,7 @@ target_link_libraries(dpl
     odb
     dpl_lib
     OpenSTA
+    gui
 )
 
 messages(
@@ -112,7 +116,10 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_link_libraries(dpl_py
     PUBLIC
       dpl_lib
+      gui
       odb
   )
 
 endif()
+
+add_subdirectory(test)

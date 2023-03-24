@@ -96,7 +96,6 @@ class Pin
 
  private:
   void determineEdge(const odb::Rect& bounds,
-                     const odb::Point& pin_position,
                      const std::vector<odb::dbTechLayer*>& layers);
 
   union

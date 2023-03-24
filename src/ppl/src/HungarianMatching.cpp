@@ -39,7 +39,7 @@
 
 namespace ppl {
 
-HungarianMatching::HungarianMatching(Section& section,
+HungarianMatching::HungarianMatching(const Section& section,
                                      Netlist* netlist,
                                      Core* core,
                                      std::vector<Slot>& slots,
@@ -67,8 +67,9 @@ HungarianMatching::HungarianMatching(Section& section,
 void HungarianMatching::findAssignment()
 {
   createMatrix();
-  if (!hungarian_matrix_.empty())
+  if (!hungarian_matrix_.empty()) {
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
+  }
 }
 
 void HungarianMatching::createMatrix()
@@ -102,7 +103,7 @@ inline bool samePos(Point& a, Point& b)
 
 void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
                                            MirroredPins& mirrored_pins,
-                                           bool assign_mirrored) const
+                                           bool assign_mirrored)
 {
   size_t rows = non_blocked_slots_;
   size_t col = 0;
@@ -113,8 +114,9 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
     if (!io_pin.isInGroup()) {
       slot_index = begin_slot_;
       for (size_t row = 0; row < rows; row++) {
-        while (slots_[slot_index].blocked && slot_index < slots_.size())
+        while (slots_[slot_index].blocked && slot_index < slots_.size()) {
           slot_index++;
+        }
         if (assignment_[row] != col) {
           slot_index++;
           continue;
@@ -141,43 +143,54 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
         slots_[slot_index].used = true;
 
         if (assign_mirrored) {
-          odb::dbBTerm* mirrored_term = mirrored_pins[io_pin.getBTerm()];
-          int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
-          IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
-
-          odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
-          mirrored_pin.setPos(mirrored_pos);
-          mirrored_pin.setLayer(slots_[slot_index].layer);
-          mirrored_pin.setPlaced();
-          assignment.push_back(mirrored_pin);
-          slot_index
-              = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
-          if (slot_index < 0) {
-            odb::dbTechLayer* layer
-                = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-            logger_->error(utl::PPL,
-                           82,
-                           "Mirrored position ({}, {}) at layer {} is not a "
-                           "valid position for pin placement.",
-                           mirrored_pos.getX(),
-                           mirrored_pos.getY(),
-                           layer->getName());
-          }
-          slots_[slot_index].used = true;
+          assignMirroredPins(io_pin, mirrored_pins, assignment);
         }
         break;
       }
       col++;
+    } else if (assign_mirrored
+               && mirrored_pins.find(io_pin.getBTerm())
+                      != mirrored_pins.end()) {
+      assignMirroredPins(io_pin, mirrored_pins, assignment);
     }
   }
+}
+
+void HungarianMatching::assignMirroredPins(IOPin& io_pin,
+                                           MirroredPins& mirrored_pins,
+                                           std::vector<IOPin>& assignment)
+{
+  odb::dbBTerm* mirrored_term = mirrored_pins[io_pin.getBTerm()];
+  int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
+  IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
+
+  odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
+  mirrored_pin.setPos(mirrored_pos);
+  mirrored_pin.setLayer(io_pin.getLayer());
+  mirrored_pin.setPlaced();
+  assignment.push_back(mirrored_pin);
+  int slot_index = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
+  if (slot_index < 0) {
+    odb::dbTechLayer* layer
+        = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
+    logger_->error(utl::PPL,
+                   82,
+                   "Mirrored position ({}, {}) at layer {} is not a "
+                   "valid position for pin placement.",
+                   mirrored_pos.getX(),
+                   mirrored_pos.getY(),
+                   layer->getName());
+  }
+  slots_[slot_index].used = true;
 }
 
 void HungarianMatching::findAssignmentForGroups()
 {
   createMatrixForGroups();
 
-  if (!hungarian_matrix_.empty())
+  if (!hungarian_matrix_.empty()) {
     hungarian_solver_.solve(hungarian_matrix_, assignment_);
+  }
 }
 
 void HungarianMatching::createMatrixForGroups()
@@ -230,9 +243,8 @@ void HungarianMatching::createMatrixForGroups()
           if (pin_hpwl == hungarian_fail) {
             group_hpwl = hungarian_fail;
             break;
-          } else {
-            group_hpwl += pin_hpwl;
           }
+          group_hpwl += pin_hpwl;
         }
         hungarian_matrix_[slot_index][groupIndex] = group_hpwl;
         groupIndex++;
@@ -244,8 +256,9 @@ void HungarianMatching::createMatrixForGroups()
 
 void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment)
 {
-  if (hungarian_matrix_.size() <= 0)
+  if (hungarian_matrix_.empty()) {
     return;
+  }
 
   size_t rows = group_slots_;
   size_t col = 0;
@@ -253,8 +266,9 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment)
   for (const auto& [pins, order] : pin_groups_) {
     slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
-      while (slots_[slot_index].blocked && slot_index < slots_.size())
+      while (slots_[slot_index].blocked && slot_index < slots_.size()) {
         slot_index += group_size_;
+      }
       if (assignment_[row] != col) {
         slot_index += group_size_;
         continue;
@@ -271,8 +285,9 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment)
         assignment.push_back(io_pin);
         slots_[slot_index + pin_cnt].used = true;
         slots_[slot_index + pin_cnt].blocked = true;
-        if ((slot_index + pin_cnt) <= end_slot_)
+        if ((slot_index + pin_cnt) <= end_slot_) {
           non_blocked_slots_--;
+        }
         pin_cnt = (edge_ == Edge::top || edge_ == Edge::left) && order
                       ? pin_cnt - 1
                       : pin_cnt + 1;

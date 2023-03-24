@@ -62,8 +62,9 @@ std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta,
   }
 
   const sta::Pvt* pvt = dcalc_ap->operatingConditions();
-  if (pvt == nullptr)
+  if (pvt == nullptr) {
     pvt = default_library->defaultOperatingConditions();
+  }
   if (pvt) {
     power_voltage = pvt->voltage();
   } else {

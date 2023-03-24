@@ -85,9 +85,9 @@ class IOPin
   IOPin(odb::dbBTerm* bterm,
         const odb::Point& pos,
         Direction dir,
-        odb::Point lower_bound,
-        odb::Point upper_bound,
-        odb::dbPlacementStatus placement_status)
+        const odb::Point& lower_bound,
+        const odb::Point& upper_bound,
+        const odb::dbPlacementStatus& placement_status)
       : bterm_(bterm),
         pos_(pos),
         orientation_(Orientation::north),
@@ -108,7 +108,7 @@ class IOPin
   odb::Point getPosition() const { return pos_; }
   void setX(const int x) { pos_.setX(x); }
   void setY(const int y) { pos_.setY(y); }
-  void setPos(const odb::Point pos) { pos_ = pos; }
+  void setPos(const odb::Point& pos) { pos_ = pos; }
   void setPos(const int x, const int y) { pos_ = odb::Point(x, y); }
   void setLowerBound(const int x, const int y)
   {

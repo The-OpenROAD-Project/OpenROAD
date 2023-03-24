@@ -79,9 +79,9 @@ class Point
   {
     if (getX() != other.getX()) {
       return getX() < other.getX();
-    } else {
-      return getY() < other.getY();
     }
+
+    return getY() < other.getY();
   }
 
   friend std::ostream& operator<<(std::ostream& out, const Point<T>& point)

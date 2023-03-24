@@ -96,9 +96,7 @@ double DetailedHPWL::curr()
     }
 
     box.reset();
-    for (int pj = 0; pj < edi->getPins().size(); pj++) {
-      const Pin* pinj = edi->getPins()[pj];
-
+    for (const Pin* pinj : edi->getPins()) {
       const Node* ndj = pinj->getNode();
 
       const double x
@@ -146,9 +144,7 @@ double DetailedHPWL::delta(const int n,
   ++traversal_;
   for (int i = 0; i < n; i++) {
     Node* ndi = nodes[i];
-    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-      Pin* pini = ndi->getPins()[pi];
-
+    for (Pin* pini : ndi->getPins()) {
       Edge* edi = pini->getEdge();
 
       int npins = edi->getNumPins();
@@ -287,7 +283,6 @@ double DetailedHPWL::delta(Node* ndi, double new_x, double new_y)
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedHPWL::getCandidates(std::vector<Node*>& candidates)
 {
-  candidates.erase(candidates.begin(), candidates.end());
   candidates = mgrPtr_->getSingleHeightCells();
 }
 
@@ -392,9 +387,7 @@ double DetailedHPWL::delta(Node* ndi,
 
       old_box.reset();
       new_box.reset();
-      for (int pj = 0; pj < edi->getPins().size(); pj++) {
-        Pin* pinj = edi->getPins()[pj];
-
+      for (Pin* pinj : edi->getPins()) {
         Node* curr = pinj->getNode();
 
         x = curr->getLeft() + 0.5 * curr->getWidth() + pinj->getOffsetX();

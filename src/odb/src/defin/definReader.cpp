@@ -838,8 +838,10 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
             break;
 
           case DEFIPATH_MASK:
+            netR->pathColor(path->getMask());
+            break;
           case DEFIPATH_VIAMASK:
-            UNSUPPORTED("MASK in net's routing is unsupported");
+            UNSUPPORTED("MASK in VIA net's routing is unsupported");
             break;
 
           default:
@@ -1840,9 +1842,10 @@ bool definReader::createBlock(const char* file)
   }
 
   if (res != 0 || errors() != 0) {
-    _logger->warn(utl::ODB, 149, "DEF parser returns an error!");
     if (!_continue_on_errors) {
-      exit(2);
+      _logger->error(utl::ODB, 421, "DEF parser returns an error!");
+    } else {
+      _logger->warn(utl::ODB, 149, "DEF parser returns an error!");
     }
   }
 
@@ -1875,9 +1878,10 @@ bool definReader::replaceWires(const char* file)
 
   int res = defrRead(f, file, (defiUserData) this, /* case sensitive */ 1);
   if (res != 0) {
-    _logger->warn(utl::ODB, 151, "DEF parser returns an error!");
     if (!_continue_on_errors) {
-      exit(2);
+      _logger->error(utl::ODB, 422, "DEF parser returns an error!");
+    } else {
+      _logger->warn(utl::ODB, 151, "DEF parser returns an error!");
     }
   }
 

@@ -47,11 +47,15 @@ class Logger;
 }
 
 namespace fr::io {
-// not default via, upperWidth, lowerWidth, not align upper, upperArea,
-// lowerArea, not align lower, via name
-typedef std::
-    tuple<bool, frCoord, frCoord, bool, frCoord, frCoord, bool, std::string>
-        viaRawPriorityTuple;
+using viaRawPriorityTuple = std::tuple<bool,          // not default via
+                                       frCoord,       // lowerWidth
+                                       frCoord,       // upperWidth
+                                       bool,          // not align upper
+                                       frCoord,       // cutArea
+                                       frCoord,       // upperArea
+                                       frCoord,       // lowerArea
+                                       bool,          // not align lower
+                                       std::string>;  // via name
 
 class Parser
 {

@@ -81,15 +81,15 @@ using odb::Rect;
 
 struct Pixel;
 struct Group;
-class Graphics;
+class DplObserver;
 
 using Grid = Pixel**;
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
 
-typedef map<dbInst*, pair<int, int>> InstPaddingMap;
-typedef map<dbMaster*, pair<int, int>> MasterPaddingMap;
+using InstPaddingMap = map<dbInst*, pair<int, int>>;
+using MasterPaddingMap = map<dbMaster*, pair<int, int>>;
 
 struct Master
 {
@@ -98,30 +98,27 @@ struct Master
 
 struct Cell
 {
-  Cell();
   const char* name() const;
   bool inGroup() const { return group_ != nullptr; }
   int64_t area() const;
 
-  dbInst* db_inst_;
-  int x_, y_;  // lower left wrt core DBU
+  dbInst* db_inst_ = nullptr;
+  int x_ = 0, y_ = 0;  // lower left wrt core DBU
   dbOrientType orient_;
-  int width_, height_;  // DBU
-  bool is_placed_;
-  bool hold_;
-  Group* group_;
-  Rect* region_;  // group rect
+  int width_ = 0, height_ = 0;  // DBU
+  bool is_placed_ = false;
+  bool hold_ = false;
+  Group* group_ = nullptr;
+  Rect* region_ = nullptr;  // group rect
 };
 
 struct Group
 {
-  Group();
-
   string name;
   vector<Rect> regions;
   vector<Cell*> cells_;
   Rect boundary;
-  double util;
+  double util = 0.0;
 };
 
 struct Pixel
@@ -138,20 +135,20 @@ struct Pixel
 class NetBox
 {
  public:
-  NetBox();
+  NetBox() = default;
   NetBox(dbNet* net, Rect box, bool ignore);
   int64_t hpwl();
   void saveBox();
   void restoreBox();
 
-  dbNet* net_;
+  dbNet* net_ = nullptr;
   Rect box_;
   Rect box_saved_;
-  bool ignore_;
+  bool ignore_ = false;
 };
 
-typedef unordered_map<dbNet*, NetBox> NetBoxMap;
-typedef vector<NetBox*> NetBoxes;
+using NetBoxMap = unordered_map<dbNet*, NetBox>;
+using NetBoxes = vector<NetBox*>;
 
 ////////////////////////////////////////////////////////////////
 
@@ -159,9 +156,9 @@ typedef vector<NetBox*> NetBoxes;
 class PixelPt
 {
  public:
-  PixelPt();
+  PixelPt() = default;
   PixelPt(Pixel* pixel, int grid_x, int grid_y);
-  Pixel* pixel;
+  Pixel* pixel = nullptr;
   Point pt;  // grid locataion
 };
 
@@ -180,14 +177,14 @@ class Opendp
   void initBlock();
   // legalize/report
   // max_displacment is in sites. use zero for defaults.
-  void detailedPlacement(int max_displacement_x, int max_displacement_y);
+  void detailedPlacement(int max_displacement_x,
+                         int max_displacement_y,
+                         bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
-  void setPadding(dbMaster* inst, int left, int right);
+  void setPadding(dbMaster* master, int left, int right);
   void setPadding(dbInst* inst, int left, int right);
-  void setDebug(bool displacement,
-                float min_displacement,
-                const dbInst* debug_instance);
+  void setDebug(std::unique_ptr<dpl::DplObserver>& observer);
 
   // Global padding.
   int padGlobalLeft() const { return pad_left_; }
@@ -212,6 +209,7 @@ class Opendp
   int getRowSiteCount() const { return row_site_count_; }
 
  private:
+  friend class OpendpTest_IsPlaced_Test;
   void importDb();
   void importClear();
   Rect getBbox(dbInst* inst);
@@ -256,13 +254,13 @@ class Opendp
   bool checkPixels(const Cell* cell, int x, int y, int x_end, int y_end) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
-  bool mapMove(Cell* cell, Point grid_pt);
+  bool mapMove(Cell* cell, const Point& grid_pt);
   int distChange(const Cell* cell, int x, int y) const;
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
 
-  Point legalPt(const Cell* cell, Point pt) const;
-  Point legalGridPt(const Cell* cell, Point pt) const;
+  Point legalPt(const Cell* cell, const Point& pt) const;
+  Point legalGridPt(const Cell* cell, const Point& pt) const;
   Point legalPt(const Cell* cell, bool padded) const;
   Point legalGridPt(const Cell* cell, bool padded) const;
   Point nearestBlockEdge(const Cell* cell,
@@ -285,6 +283,12 @@ class Opendp
   void visitCellPixels(Cell& cell,
                        bool padded,
                        const std::function<void(Pixel* pixel)>& visitor) const;
+  void visitCellBoundaryPixels(
+      Cell& cell,
+      bool padded,
+      const std::function<
+          void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor)
+      const;
   void setGridCell(Cell& cell, Pixel* pixel);
   void groupAssignCellRegions();
   void groupInitPixels();
@@ -296,6 +300,7 @@ class Opendp
   static bool isPlaced(const Cell* cell);
   bool checkInRows(const Cell& cell) const;
   Cell* checkOverlap(Cell& cell) const;
+  Cell* checkOneSiteGaps(Cell& cell) const;
   bool overlap(const Cell* cell1, const Cell* cell2) const;
   bool isOverlapPadded(const Cell* cell1, const Cell* cell2) const;
   bool isCrWtBlClass(const Cell* cell) const;
@@ -319,7 +324,7 @@ class Opendp
                 int* y) const;
   int rectDist(const Cell* cell, const Rect* rect) const;
   bool havePadding() const;
-
+  void checkOneSiteDbMaster();
   void deleteGrid();
   Pixel* gridPixel(int x, int y) const;
   // Cell initial location wrt core origin.
@@ -357,7 +362,7 @@ class Opendp
                        const char* prefix,
                        dbMasterSeq* filler_masters);
   bool isFiller(odb::dbInst* db_inst);
-
+  bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(int row, int col);
 
   // Optimizing mirroring
@@ -370,11 +375,11 @@ class Opendp
   void saveNetBoxes(dbInst* inst);
   void restoreNetBoxes(dbInst* inst);
 
-  Logger* logger_;
-  dbDatabase* db_;
-  dbBlock* block_;
-  int pad_left_;
-  int pad_right_;
+  Logger* logger_ = nullptr;
+  dbDatabase* db_ = nullptr;
+  dbBlock* block_ = nullptr;
+  int pad_left_ = 0;
+  int pad_right_ = 0;
   InstPaddingMap inst_padding_map_;
   MasterPaddingMap master_padding_map_;
 
@@ -385,35 +390,37 @@ class Opendp
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;
-  int row_height_;  // dbu
-  int site_width_;  // dbu
-  int row_count_;
-  int row_site_count_;
-  int have_multi_row_cells_;
-  int max_displacement_x_;  // sites
-  int max_displacement_y_;  // sites
+  int row_height_ = 0;  // dbu
+  int site_width_ = 0;  // dbu
+  int row_count_ = 0;
+  int row_site_count_ = 0;
+  int have_multi_row_cells_ = 0;
+  int max_displacement_x_ = 0;  // sites
+  int max_displacement_y_ = 0;  // sites
+  bool disallow_one_site_gaps_ = false;
   vector<dbInst*> placement_failures_;
 
   // 2D pixel grid
-  Grid grid_;
+  Grid grid_ = nullptr;
   Cell dummy_cell_;
 
   // Filler placement.
   // gap (in sites) -> seq of masters
   GapFillers gap_fillers_;
-  int filler_count_;
-  bool have_fillers_;
+  int filler_count_ = 0;
+  bool have_fillers_ = false;
+  bool have_one_site_cells_ = false;
 
   // Results saved for optional reporting.
-  int64_t hpwl_before_;
-  int64_t displacement_avg_;
-  int64_t displacement_sum_;
-  int64_t displacement_max_;
+  int64_t hpwl_before_ = 0;
+  int64_t displacement_avg_ = 0;
+  int64_t displacement_sum_ = 0;
+  int64_t displacement_max_ = 0;
 
   // Optimiize mirroring.
   NetBoxMap net_box_map_;
 
-  std::unique_ptr<Graphics> graphics_;
+  std::unique_ptr<DplObserver> debug_observer_;
 
   // Magic numbers
   static constexpr int bin_search_width_ = 10;

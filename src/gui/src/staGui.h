@@ -88,17 +88,17 @@ class TimingPathsModel : public QAbstractTableModel
   TimingPath* getPathAt(const QModelIndex& index) const;
 
   void resetModel();
-  void populateModel(const std::set<sta::Pin*>& from,
-                     const std::vector<std::set<sta::Pin*>>& thru,
-                     const std::set<sta::Pin*>& to);
+  void populateModel(const std::set<const sta::Pin*>& from,
+                     const std::vector<std::set<const sta::Pin*>>& thru,
+                     const std::set<const sta::Pin*>& to);
 
  public slots:
   void sort(int col_index, Qt::SortOrder sort_order) override;
 
  private:
-  bool populatePaths(const std::set<sta::Pin*>& from,
-                     const std::vector<std::set<sta::Pin*>>& thru,
-                     const std::set<sta::Pin*>& to);
+  bool populatePaths(const std::set<const sta::Pin*>& from,
+                     const std::vector<std::set<const sta::Pin*>>& thru,
+                     const std::set<const sta::Pin*>& to);
 
   STAGuiInterface* sta_;
   bool is_setup_;
@@ -239,13 +239,13 @@ class TimingConeRenderer : public gui::Renderer
   void setSTA(sta::dbSta* sta) { sta_ = sta; }
   void setITerm(odb::dbITerm* term, bool fanin, bool fanout);
   void setBTerm(odb::dbBTerm* term, bool fanin, bool fanout);
-  void setPin(sta::Pin* pin, bool fanin, bool fanout);
+  void setPin(const sta::Pin* pin, bool fanin, bool fanout);
 
   virtual void drawObjects(gui::Painter& painter) override;
 
  private:
   sta::dbSta* sta_;
-  sta::Pin* term_;
+  const sta::Pin* term_;
   bool fanin_;
   bool fanout_;
   ConeDepthMap map_;
@@ -253,7 +253,7 @@ class TimingConeRenderer : public gui::Renderer
   float max_timing_;
   SpectrumGenerator color_generator_;
 
-  bool isSupplyPin(sta::Pin* pin) const;
+  bool isSupplyPin(const sta::Pin* pin) const;
 };
 
 class GuiDBChangeListener : public QObject, public odb::dbBlockCallBackObj
@@ -323,9 +323,9 @@ class PinSetWidget : public QWidget
 
   void updatePins();
 
-  void setPins(const std::set<sta::Pin*>& pins);
+  void setPins(const std::set<const sta::Pin*>& pins);
 
-  const std::set<sta::Pin*> getPins() const;
+  const std::set<const sta::Pin*> getPins() const;
 
   bool isAddMode() const { return add_mode_; }
   bool isRemoveMode() const { return !isAddMode(); }
@@ -348,7 +348,7 @@ class PinSetWidget : public QWidget
 
  private:
   sta::dbSta* sta_;
-  std::vector<sta::Pin*> pins_;
+  std::vector<const sta::Pin*> pins_;
 
   QListWidget* box_;
   QLineEdit* find_pin_;
@@ -357,8 +357,8 @@ class PinSetWidget : public QWidget
 
   bool add_mode_;
 
-  void addPin(sta::Pin* pin);
-  void removePin(sta::Pin* pin);
+  void addPin(const sta::Pin* pin);
+  void removePin(const sta::Pin* pin);
   void removeSelectedPins();
 };
 
@@ -383,15 +383,21 @@ class TimingControlsDialog : public QDialog
   void setExpandClock(bool expand);
   bool getExpandClock() const;
 
-  void setFromPin(const std::set<sta::Pin*>& pins) { from_->setPins(pins); }
-  void setThruPin(const std::vector<std::set<sta::Pin*>>& pins);
-  void setToPin(const std::set<sta::Pin*>& pins) { to_->setPins(pins); }
+  void setFromPin(const std::set<const sta::Pin*>& pins)
+  {
+    from_->setPins(pins);
+  }
+  void setThruPin(const std::vector<std::set<const sta::Pin*>>& pins);
+  void setToPin(const std::set<const sta::Pin*>& pins) { to_->setPins(pins); }
 
-  const std::set<sta::Pin*> getFromPins() const { return from_->getPins(); }
-  const std::vector<std::set<sta::Pin*>> getThruPins() const;
-  const std::set<sta::Pin*> getToPins() const { return to_->getPins(); }
+  const std::set<const sta::Pin*> getFromPins() const
+  {
+    return from_->getPins();
+  }
+  const std::vector<std::set<const sta::Pin*>> getThruPins() const;
+  const std::set<const sta::Pin*> getToPins() const { return to_->getPins(); }
 
-  sta::Pin* convertTerm(Gui::odbTerm term) const;
+  const sta::Pin* convertTerm(Gui::odbTerm term) const;
 
   sta::Corner* getCorner() const { return sta_->getCorner(); }
   void setCorner(sta::Corner* corner) { sta_->setCorner(corner); }
@@ -426,7 +432,7 @@ class TimingControlsDialog : public QDialog
 
   void setPinSelections();
 
-  void addThruRow(const std::set<sta::Pin*>& pins);
+  void addThruRow(const std::set<const sta::Pin*>& pins);
   void setupPinRow(const QString& label, PinSetWidget* row, int row_index = -1);
 };
 
