@@ -41,6 +41,41 @@
 
 namespace odb {
 
+Ath__parser::Ath__parser()
+{
+  _lineSize = 10000;
+  _maxWordCnt = 100;
+  _wordSize = 512;
+  init();
+}
+
+Ath__parser::~Ath__parser()
+{
+  if (_inFP && strlen(_inputFile) > 4
+      && !strcmp(_inputFile + strlen(_inputFile) - 3, ".gz")) {
+    char buff[1024];
+    while (!feof(_inFP)) {
+      if (fread(buff, 1, 1023, _inFP) != 1) {
+        break;
+      }
+    }
+    pclose(_inFP);
+    _inFP = NULL;
+  }
+  ATH__deallocCharWord(_inputFile);
+  ATH__deallocCharWord(_line);
+  ATH__deallocCharWord(_tmpLine);
+  ATH__deallocCharWord(_wordSeparators);
+
+  for (int ii = 0; ii < _maxWordCnt; ii++)
+    ATH__deallocCharWord(_wordArray[ii]);
+
+  delete[] _wordArray;
+
+  if (_inFP)
+    ATH__closeFile(_inFP);
+}
+
 void Ath__parser::init()
 {
   _line = ATH__allocCharWord(_lineSize);
@@ -67,21 +102,17 @@ void Ath__parser::init()
 
   _progressLineChunk = 1000000;
 }
-Ath__parser::Ath__parser()
-{
-  _lineSize = 10000;
-  _maxWordCnt = 100;
-  _wordSize = 512;
-  init();
-}
+
 int Ath__parser::getLineNum()
 {
   return _lineNum;
 }
+
 void Ath__parser::resetLineNum(int v)
 {
   _lineNum = v;
 }
+
 bool Ath__parser::isDigit(int ii, int jj)
 {
   char C = _wordArray[ii][jj];
@@ -96,6 +127,7 @@ void Ath__parser::resetSeparator(const char* s)
 {
   strcpy(_wordSeparators, s);
 }
+
 void Ath__parser::addSeparator(const char* s)
 {
   strcat(_wordSeparators, s);
@@ -131,36 +163,12 @@ void Ath__parser::openFile(char* name)
     _inFP = ATH__openFile(_inputFile, (char*) "r");
   }
 }
+
 void Ath__parser::setInputFP(FILE* fp)
 {
   _inFP = fp;
 }
-Ath__parser::~Ath__parser()
-{
-  if (_inFP && strlen(_inputFile) > 4
-      && !strcmp(_inputFile + strlen(_inputFile) - 3, ".gz")) {
-    char buff[1024];
-    while (!feof(_inFP)) {
-      if (fread(buff, 1, 1023, _inFP) != 1) {
-        break;
-      }
-    }
-    pclose(_inFP);
-    _inFP = NULL;
-  }
-  ATH__deallocCharWord(_inputFile);
-  ATH__deallocCharWord(_line);
-  ATH__deallocCharWord(_tmpLine);
-  ATH__deallocCharWord(_wordSeparators);
 
-  for (int ii = 0; ii < _maxWordCnt; ii++)
-    ATH__deallocCharWord(_wordArray[ii]);
-
-  delete[] _wordArray;
-
-  if (_inFP)
-    ATH__closeFile(_inFP);
-}
 void Ath__parser::printWords(FILE* fp)
 {
   if (fp == NULL) {  // use motice
@@ -175,10 +183,12 @@ int Ath__parser::getWordCnt()
 {
   return _currentWordCnt;
 }
+
 char Ath__parser::getFirstChar()
 {
   return get(0)[0];
 }
+
 char* Ath__parser::get(int ii)
 {
   if ((ii < 0) || (ii >= _currentWordCnt))
@@ -186,6 +196,7 @@ char* Ath__parser::get(int ii)
   else
     return _wordArray[ii];
 }
+
 int Ath__parser::getInt(int ii)
 {
   return atoi(get(ii));
@@ -202,6 +213,7 @@ void Ath__parser::printInt(FILE* fp,
 
   fprintf(fp, "%s%s %d\n", sep, key, v);
 }
+
 void Ath__parser::printDouble(FILE* fp,
                               const char* sep,
                               const char* key,
@@ -213,6 +225,7 @@ void Ath__parser::printDouble(FILE* fp,
 
   fprintf(fp, "%s%s %g\n", sep, key, v);
 }
+
 void Ath__parser::printString(FILE* fp,
                               const char* sep,
                               const char* key,
@@ -224,6 +237,7 @@ void Ath__parser::printString(FILE* fp,
 
   fprintf(fp, "%s%s %s\n", sep, key, v);
 }
+
 int Ath__parser::getInt(int n, int start)
 {
   char* word = get(n);
@@ -235,10 +249,12 @@ int Ath__parser::getInt(int n, int start)
 
   return atoi(buff);
 }
+
 double Ath__parser::getDouble(int ii)
 {
   return atof(get(ii));
 }
+
 void Ath__parser::getDoubleArray(Ath__array1D<double>* A,
                                  int start,
                                  double mult)
@@ -251,6 +267,7 @@ void Ath__parser::getDoubleArray(Ath__array1D<double>* A,
       A->add(atof(get(ii)) * mult);
   }
 }
+
 Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
                                                    int start1)
 {
@@ -267,6 +284,7 @@ Ath__array1D<double>* Ath__parser::readDoubleArray(const char* keyword,
   getDoubleArray(A, start);
   return A;
 }
+
 int Ath__parser::mkWords(const char* word, const char* sep)
 {
   if (word == NULL)
@@ -309,6 +327,7 @@ int Ath__parser::mkDirTree(const char* word, const char* sep)
   }
   return _currentWordCnt;
 }
+
 bool Ath__parser::isSeparator(char a)
 {
   int len = strlen(_wordSeparators);
@@ -318,6 +337,7 @@ bool Ath__parser::isSeparator(char a)
   }
   return false;
 }
+
 int Ath__parser::mkWords(int jj)
 {
   //	fprintf(stdout, "%s", _line);
@@ -356,6 +376,7 @@ int Ath__parser::mkWords(int jj)
   }
   return jj;
 }
+
 int Ath__parser::reportProgress(FILE* fp)
 {
   if (_lineNum % _progressLineChunk == 0)
@@ -363,6 +384,7 @@ int Ath__parser::reportProgress(FILE* fp)
 
   return _lineNum;
 }
+
 int Ath__parser::readLineAndBreak(int prevWordCnt)
 {
   if (fgets(_line, _lineSize, _inFP) == NULL) {
@@ -380,6 +402,7 @@ int Ath__parser::readLineAndBreak(int prevWordCnt)
 
   return _currentWordCnt;
 }
+
 int Ath__parser::readMultipleLineAndBreak(char continuationChar)
 {
   strcpy(_tmpLine, "");
@@ -418,11 +441,13 @@ int Ath__parser::readMultipleLineAndBreak(char continuationChar)
 
   return _currentWordCnt;
 }
+
 void Ath__parser::syntaxError(const char* msg)
 {
   fprintf(stderr, "\n Syntax Error at line %d (%s)\n", _lineNum, msg);
   exit(1);
 }
+
 int Ath__parser::parseNextLine(char continuationChar)
 {
   if (continuationChar == '\0') {
@@ -435,6 +460,7 @@ int Ath__parser::parseNextLine(char continuationChar)
 
   return _currentWordCnt;
 }
+
 bool Ath__parser::isKeyword(int ii, const char* key1)
 {
   if ((get(ii) != NULL) && (strcmp(get(ii), key1) == 0)) {
