@@ -74,8 +74,6 @@
 #include "dbGroupPowerNetItr.h"
 #include "dbGuide.h"
 #include "dbGuideItr.h"
-#include "dbNetTrack.h"
-#include "dbNetTrackItr.h"
 #include "dbHashTable.hpp"
 #include "dbHier.h"
 #include "dbITerm.h"
@@ -92,6 +90,8 @@
 #include "dbModuleModInstItr.h"
 #include "dbNameCache.h"
 #include "dbNet.h"
+#include "dbNetTrack.h"
+#include "dbNetTrackItr.h"
 #include "dbObstruction.h"
 #include "dbPowerDomain.h"
 #include "dbPowerSwitch.h"
@@ -221,7 +221,7 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _guide_tbl = new dbTable<_dbGuide>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbGuideObj);
 
- _net_tracks_tbl = new dbTable<_dbNetTrack>(
+  _net_tracks_tbl = new dbTable<_dbNetTrack>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbNetTrackObj);
 
   _box_tbl = new dbTable<_dbBox>(
@@ -459,7 +459,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       = new dbTable<_dbGlobalConnect>(db, this, *block.global_connect_tbl_);
 
   _guide_tbl = new dbTable<_dbGuide>(db, this, *block._guide_tbl);
-  
+
   _net_tracks_tbl = new dbTable<_dbNetTrack>(db, this, *block._net_tracks_tbl);
 
   _box_tbl = new dbTable<_dbBox>(db, this, *block._box_tbl);
@@ -787,7 +787,6 @@ dbObjectTable* _dbBlock::getObjectTable(dbObjectType type)
     case dbGuideObj:
       return _guide_tbl;
 
-
     case dbNetTrackObj:
       return _net_tracks_tbl;
 
@@ -1036,7 +1035,9 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
     stream >> *block.global_connect_tbl_;
   }
   stream >> *block._guide_tbl;
-  stream >> *block._net_tracks_tbl;
+  if (db->isSchema(db_schema_net_tracks)) {
+    stream >> *block._net_tracks_tbl;
+  }
   stream >> *block._box_tbl;
   stream >> *block._via_tbl;
   stream >> *block._gcell_grid_tbl;

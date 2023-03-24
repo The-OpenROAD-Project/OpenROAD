@@ -50,13 +50,13 @@
 #include "dbGroup.h"
 #include "dbGuide.h"
 #include "dbGuideItr.h"
-#include "dbNetTrack.h"
-#include "dbNetTrackItr.h"
 #include "dbITerm.h"
 #include "dbITermItr.h"
 #include "dbInst.h"
 #include "dbJournal.h"
 #include "dbMTerm.h"
+#include "dbNetTrack.h"
+#include "dbNetTrackItr.h"
 #include "dbRSeg.h"
 #include "dbRSegItr.h"
 #include "dbSWire.h"
@@ -196,7 +196,10 @@ dbIStream& operator>>(dbIStream& stream, _dbNet& net)
   stream >> net._ccAdjustOrder;
   stream >> net._groups;
   stream >> net.guides_;
-  stream >> net.tracks_;
+  _dbDatabase* db = net.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_net_tracks)) {
+    stream >> net.tracks_;
+  }
 
   return stream;
 }
