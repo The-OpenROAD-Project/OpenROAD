@@ -59,7 +59,7 @@ namespace stt {
 
 using utl::Logger;
 
-typedef int DTYPE;
+using DTYPE = int;
 
 struct Branch
 {
@@ -87,15 +87,15 @@ class SteinerTreeBuilder
 
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
-                       const int drvr_index,
-                       const float alpha);
+                       int drvr_index,
+                       float alpha);
   Tree makeSteinerTree(const std::vector<int>& x,
                        const std::vector<int>& y,
-                       const int drvr_index);
+                       int drvr_index);
   Tree makeSteinerTree(odb::dbNet* net,
                        const std::vector<int>& x,
                        const std::vector<int>& y,
-                       const int drvr_index);
+                       int drvr_index);
   // API only for FastRoute, that requires the use of flutes in its
   // internal flute implementation
   Tree makeSteinerTree(const std::vector<int>& x,
