@@ -403,59 +403,16 @@ int Ath__parser::readLineAndBreak(int prevWordCnt)
   return _currentWordCnt;
 }
 
-int Ath__parser::readMultipleLineAndBreak(char continuationChar)
-{
-  strcpy(_tmpLine, "");
-
-  if (fgets(_line, _lineSize, _inFP) == NULL) {
-    _currentWordCnt = 0;
-    return -1;
-  }
-
-  do {
-    _lineNum++;
-    int len = strlen(_line);
-
-    int kk = len - 2;
-    if (kk < 0) {
-      continue;
-    }
-
-    while ((kk >= 0) && (_line[kk] == ' '))  // consume spaces
-      kk--;
-
-    if (_line[kk] != continuationChar) {
-      strcat(_tmpLine, _line);
-      strcpy(_line, _tmpLine);
-      break;
-    } else {
-      _line[len - 1] = ' ';  // overwrite the newline
-      _line[kk] = ' ';
-      strcat(_tmpLine, _line);
-    }
-    reportProgress(stdout);
-
-  } while (fgets(_line, _lineSize, _inFP) != NULL);
-
-  _currentWordCnt = mkWords(0);
-
-  return _currentWordCnt;
-}
-
 void Ath__parser::syntaxError(const char* msg)
 {
   fprintf(stderr, "\n Syntax Error at line %d (%s)\n", _lineNum, msg);
   exit(1);
 }
 
-int Ath__parser::parseNextLine(char continuationChar)
+int Ath__parser::parseNextLine()
 {
-  if (continuationChar == '\0') {
-    while (readLineAndBreak() == 0)
-      ;
-  } else {
-    while (readMultipleLineAndBreak(continuationChar) == 0)
-      ;
+  while (readLineAndBreak() == 0) {
+    ;
   }
 
   return _currentWordCnt;

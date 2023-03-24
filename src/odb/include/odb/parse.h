@@ -49,8 +49,7 @@ class Ath__parser
   void setInputFP(FILE* fp);
   int mkWords(const char* word, const char* sep = NULL);
   int readLineAndBreak(int prevWordCnt = -1);
-  int readMultipleLineAndBreak(char continuationChar);
-  int parseNextLine(char continuationChar = '\0');
+  int parseNextLine();
   char* get(int ii);
   int getInt(int ii);
   int getInt(int n, int start);
