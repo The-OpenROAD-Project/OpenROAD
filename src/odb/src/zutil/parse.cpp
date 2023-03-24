@@ -41,8 +41,6 @@
 
 namespace odb {
 
-int Ath__double2int(double v);
-
 void Ath__parser::init()
 {
   _line = ATH__allocCharWord(_lineSize);

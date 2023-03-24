@@ -1,5 +1,4 @@
 add_library(zutil
-    misc_functions.cpp
     files.cpp
     name.cpp
     mem.cpp

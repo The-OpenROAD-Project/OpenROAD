@@ -1309,7 +1309,7 @@ uint extMain::couplingFlow(Rect& extRect,
       stepNum++;
       totalWiresExtracted += processWireCnt;
       float percent_extracted
-          = Ath__double2int(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
+          = lround(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
 
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
           && (percent_extracted - _previous_percent_extracted >= 5.0)) {

@@ -1480,8 +1480,8 @@ uint extSpef::sortRSegs()
   if (_readingNodeCoords == C_ON) {
     ncidx = findNodeIndexFromNodeCoords(drvCapNode->getId());
     if (ncidx >= 0) {
-      ndx = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ncidx));
-      ndy = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ncidx));
+      ndx = lround(_nodeCoordFactor * _xCoordTable->get(ncidx));
+      ndy = lround(_nodeCoordFactor * _yCoordTable->get(ncidx));
       zcfound = true;
     }
   }
@@ -1604,8 +1604,8 @@ uint extSpef::sortRSegs()
     if (_readingNodeCoords == C_ON) {
       ncidx = findNodeIndexFromNodeCoords(tgtCapn);
       if (ncidx >= 0) {
-        x1 = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ncidx));
-        y1 = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ncidx));
+        x1 = lround(_nodeCoordFactor * _xCoordTable->get(ncidx));
+        y1 = lround(_nodeCoordFactor * _yCoordTable->get(ncidx));
         rc->setCoords(x1, y1);
       } else {
         logger_->warn(
