@@ -250,19 +250,6 @@ int Ath__parser::getInt(int ii)
   return atoi(get(ii));
 }
 
-void Ath__parser::printString(FILE* fp,
-                              const char* sep,
-                              const char* key,
-                              char* v,
-                              bool pos)
-{
-  if (pos && !((v == nullptr) || (strcmp("", v) == 0))) {
-    return;
-  }
-
-  fprintf(fp, "%s%s %s\n", sep, key, v);
-}
-
 int Ath__parser::getInt(int n, int start)
 {
   char* word = get(n);

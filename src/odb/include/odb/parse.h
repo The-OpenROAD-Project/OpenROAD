@@ -72,12 +72,6 @@ class Ath__parser
   int getLineNum();
   bool isDigit(int ii, int jj);
 
-  void printString(FILE* fp,
-                   const char* sep,
-                   const char* key,
-                   char* v,
-                   bool pos = false);
-
  private:
   void init();
   int reportProgress();
