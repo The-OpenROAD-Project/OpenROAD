@@ -60,6 +60,17 @@ class RestructureJobDescription : public dst::JobDescription
     locell_ = cell;
     loport_ = port;
   }
+  void setAllRC(const std::vector<double>& signal_res,
+                     const std::vector<double>& signal_cap,
+                     const std::vector<double>& clk_res,
+                     const std::vector<double>& clk_cap
+                     )
+  {
+    wire_signal_res_ = signal_res;
+    wire_signal_cap_ = signal_cap;
+    wire_clk_res_ = clk_res;
+    wire_clk_cap_ = clk_cap;
+  }
   void setNumInstances(int value) { num_instances_ = value; }
   void setIterations(int value) { iterations_ = value; }
   void setLevelGain(int value) { level_gain_ = value; }
@@ -90,6 +101,10 @@ class RestructureJobDescription : public dst::JobDescription
   {
     return replaceable_insts_ids_;
   }
+  const std::vector<double>& getWireSignalRes() const { return wire_signal_res_; }
+  const std::vector<double>& getWireSignalCap() const { return wire_signal_cap_; }
+  const std::vector<double>& getWireClockRes() const { return wire_clk_res_; }
+  const std::vector<double>& getWireClockCap() const { return wire_clk_cap_; }
 
  private:
   std::string locell_;
@@ -108,6 +123,10 @@ class RestructureJobDescription : public dst::JobDescription
   std::string sdc_path_;
   std::vector<std::string> lib_files_;
   std::vector<std::string> replaceable_insts_ids_;
+  std::vector<double> wire_signal_res_;
+  std::vector<double> wire_signal_cap_;
+  std::vector<double> wire_clk_res_;
+  std::vector<double> wire_clk_cap_;
 
   template <class Archive>
   void serialize(Archive& ar, const unsigned int version)
@@ -129,6 +148,10 @@ class RestructureJobDescription : public dst::JobDescription
     (ar) & replaceable_insts_ids_;
     (ar) & odb_path_;
     (ar) & sdc_path_;
+    (ar) & wire_signal_res_;
+    (ar) & wire_signal_cap_;
+    (ar) & wire_clk_res_;
+    (ar) & wire_clk_cap_;
   }
   friend class boost::serialization::access;
 };

@@ -62,6 +62,7 @@ class JobMessage
     UPDATE_DESIGN,
     RESTRUCTURE,
     BALANCER,
+    EXIT,
     SUCCESS,
     ERROR,
     NONE

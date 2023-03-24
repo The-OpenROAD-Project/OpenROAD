@@ -117,28 +117,33 @@ void Restructure::run(char* liberty_file_name,
                       char* abc_logfile,
                       const char* post_abc_script)
 {
-  reset();
   block_ = db_->getChip()->getBlock();
   if (!block_)
     return;
-
-  logfile_ = abc_logfile;
-  post_abc_script_ = post_abc_script;
-  sta::Slack worst_slack = slack_threshold;
-
-  lib_file_names_.emplace_back(liberty_file_name);
   work_dir_name_ = workdir_name;
   work_dir_name_ = work_dir_name_ + "/";
+  logfile_ = abc_logfile;
+  post_abc_script_ = post_abc_script;
 
-  if (is_area_mode_)  // Only in area mode
-    removeConstCells();
+  for(ushort i = 0; i < 10; i++) {
+    reset();
+    dist_host_ = "";
 
-  getBlob(max_depth);
+    lib_file_names_.emplace_back(liberty_file_name);
 
-  if (path_insts_.size()) {
-    runABC();
+    if (is_area_mode_)  // Only in area mode
+      removeConstCells();
 
-    postABC(worst_slack);
+    getBlob(max_depth);
+
+    if (path_insts_.size()) {
+      runABC();
+
+      // Leave the parasitics up to date.
+      resizer_->estimateWireParasitics();
+    }
+    auto delay = open_sta_->worstSlack(sta::MinMax::max());
+    logger_->report("Iteration {} ended with slack {}", i, delay);
   }
 }
 
@@ -205,7 +210,8 @@ void Restructure::runABC()
     modes = {Mode::AREA_1, Mode::AREA_2, Mode::AREA_3};
   } else {
     // Delay Mode
-    modes = {Mode::DELAY_5};
+    modes = {Mode::DELAY_1, Mode::DELAY_2, Mode::DELAY_3, Mode::DELAY_4, Mode::DELAY_5, Mode::DELAY_6, Mode::DELAY_7};
+    // modes = {Mode::DELAY_1};
   }
   auto dbFile = fmt::format("{}rmp.odb", work_dir_name_);
   auto sdcFile = fmt::format("{}rmp.sdc", work_dir_name_);
@@ -239,13 +245,12 @@ void Restructure::runABC()
     open_sta_->setThreadCount(ord::OpenRoad::openRoad()->getThreadCount());
   }
 
-  std::string best_blif;
+  std::string best_odb;
   int best_inst_count = std::numeric_limits<int>::max();
   float best_delay_gain = -1 * std::numeric_limits<float>::max();
-
   debugPrint(
       logger_, RMP, "remap", 1, "Running ABC with {} modes.", modes.size());
-  omp_set_num_threads(modes.size() * MAX_ITERATIONS);
+  omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
 #pragma omp parallel for collapse(2) schedule(dynamic)
   for (size_t curr_mode_idx = 0; curr_mode_idx < modes.size();
        curr_mode_idx++) {
@@ -254,6 +259,7 @@ void Restructure::runABC()
       float delay = std::numeric_limits<float>::max();
       int num_instances = 0;
       std::string blif_path = input_blif_file_name_;
+      std::string dbPath;
       {
         auto uDesc = std::make_unique<RestructureJobDescription>();
         uDesc->setLoCellPort(locell_, loport_);
@@ -266,6 +272,7 @@ void Restructure::runABC()
         uDesc->setLibFiles(lib_file_names_);
         uDesc->setODBPath(fmt::format("{}rmp.odb", work_dir_name_));
         uDesc->setSDCPath(fmt::format("{}rmp.sdc", work_dir_name_));
+        uDesc->setAllRC(resizer_->getAllWireSignalRes(),resizer_->getAllWireSignalCap(),resizer_->getAllWireClockRes(),resizer_->getAllWireClockCap());
         std::vector<std::string> ids;
         for (auto inst : path_insts_) {
           ids.push_back(inst->getName());
@@ -273,7 +280,9 @@ void Restructure::runABC()
         uDesc->setReplaceableInstsIds(ids);
         dst::JobMessage msg(dst::JobMessage::RESTRUCTURE), result;
         msg.setJobDescription(std::move(uDesc));
-        dist_->sendJob(msg, dist_host_.c_str(), dist_port_, result);
+        bool status = dist_->sendJob(msg, dist_host_.c_str(), dist_port_, result);
+        if (!status)
+          logger_->error(RMP, 26, "Sending Job failed");
         RestructureJobDescription* resultDesc
             = static_cast<RestructureJobDescription*>(
                 result.getJobDescription());
@@ -281,40 +290,97 @@ void Restructure::runABC()
         delay = resultDesc->getDelay();
         level_gain = resultDesc->getLevelGain();
         blif_path = resultDesc->getBlifPath();
+        dbPath = resultDesc->getODBPath();
       }
 #pragma omp critical
       {
         logger_->report(
-            "Optimized to {} instances in iteration {} with max path depth "
+            "Optimized to {} instances in mode {} iterations {} with max path depth "
             "decrease of {}, delay of {}.",
             num_instances,
-            curr_mode_idx,
+            modes[curr_mode_idx],
+            iterations,
             level_gain,
             delay);
         files_to_remove.emplace_back(blif_path);
         if (is_area_mode_) {
           if (num_instances < best_inst_count) {
             best_inst_count = num_instances;
-            best_blif = blif_path;
+            best_odb = dbPath;
           }
         } else {
           if (delay > best_delay_gain) {
             best_delay_gain = delay;
-            best_blif = blif_path;
+            best_odb = dbPath;
           }
         }
       }
     }
   }
-  // TODO: replace by sending an exit signal to the workers through dst
-  for (auto pid : child_proc) {
-    kill(pid, SIGKILL);
+  {
+    dst::JobMessage exitMsg(dst::JobMessage::EXIT, dst::JobMessage::BROADCAST), result;
+    dist_->sendJob(exitMsg, dist_host_.c_str(), dist_port_, result);
   }
   if (best_inst_count < std::numeric_limits<int>::max()
       || best_delay_gain < std::numeric_limits<float>::max()) {
     // read back netlist
-    debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}.", best_blif);
-    blif_.readBlif(best_blif.c_str(), block_);
+    logger_->report("Best ODB {}", best_odb);
+    {
+      auto newDb = odb::dbDatabase::create();
+      FILE* stream = fopen(best_odb.c_str(), "r");
+      if (stream == nullptr) {
+        return;
+      }
+      newDb->read(stream);
+      fclose(stream);
+      for (auto inst : block_->getInsts()) {
+        if (inst->isFixed())
+          continue;
+        for (auto iterm : inst->getITerms()) {
+          auto net = iterm->getNet();
+          if (net == nullptr)
+            continue;
+          iterm->disconnect();
+          if (net->getITerms().size() == 0 && net->getBTerms().size() == 0 && !net->isSpecial())
+            odb::dbNet::destroy(net);
+        }
+        odb::dbInst::destroy(inst);
+      }
+      for (auto newInst : newDb->getChip()->getBlock()->getInsts()) {
+        if(block_->findInst(newInst->getName().c_str()))
+          continue;
+        auto master = db_->findMaster(newInst->getMaster()->getName().c_str());
+        auto inst
+            = odb::dbInst::create(block_, master, newInst->getName().c_str());
+        inst->setOrient(newInst->getOrient());
+        int x,y;
+        newInst->getOrigin(x, y);
+        inst->setOrigin(x, y);
+        inst->setPlacementStatus(newInst->getPlacementStatus());
+        inst->setSourceType(newInst->getSourceType());
+        for (auto iterm : inst->getITerms()) {
+          auto newNet = newInst->findITerm(iterm->getMTerm()->getName().c_str())
+                            ->getNet();
+          if (newNet) {
+            auto netName
+                = newInst->findITerm(iterm->getMTerm()->getName().c_str())
+                      ->getNet()
+                      ->getName();
+            auto net = block_->findNet(netName.c_str());
+            if(net == nullptr)
+            {
+              net = odb::dbNet::create(block_, newNet->getName().c_str());
+              net->setSigType(newNet->getSigType());
+            }
+            iterm->connect(net);
+            if(net->isSpecial())
+              iterm->setSpecial();
+          }
+        }
+      }
+    }
+    // debugPrint(logger_, RMP, "remap", 1, "Reading blif file {}.", best_blif);
+    // blif_.readBlif(best_blif.c_str(), block_);
     debugPrint(logger_,
                utl::RMP,
                "remap",
@@ -332,12 +398,6 @@ void Restructure::runABC()
   }
 }
 
-void Restructure::postABC(float worst_slack)
-{
-  // Leave the parasitics up to date.
-  resizer_->estimateWireParasitics();
-}
-
 void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,
                                unsigned max_depth)
@@ -346,8 +406,9 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   sta::VertexSet* end_points = sta_state->endpoints();
   std::size_t path_found = end_points->size();
   logger_->report("Number of paths for restructure are {}", path_found);
-  // sta::Slack worst_slack = 0;
-  // sta::Vertex* worst_vertix;
+  sta::Slack worst_slack = 0;
+  sta::Vertex* worst_vertix;
+  std::set<sta::Slack> slacks;
   for (auto& end_point : *end_points) {
     if (!is_area_mode_) {
       sta::PathRef path_ref
@@ -355,16 +416,17 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       sta::Path* path = path_ref.path();
       if (path == nullptr || path->slack(open_sta_) >= 0)
         continue;
-      // auto path_slack = path->slack(open_sta_);
+      auto path_slack = path->slack(open_sta_);
       sta::PathExpanded expanded(path, open_sta_);
       // Members in expanded include gate output and net so divide by 2
       if (expanded.size() / 2 > max_depth) {
         ends.insert(end_point->pin());
-        // if (path_slack < worst_slack)
-        // {
-        //   worst_slack = path_slack;
-        //   worst_vertix = end_point;
-        // }
+        slacks.insert(path_slack);
+        if (path_slack < worst_slack)
+        {
+          worst_slack = path_slack;
+          worst_vertix = end_point;
+        }
         // Use only one end point to limit blob size for timing
         // break;
       }
@@ -372,8 +434,10 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       ends.insert(end_point->pin());
     }
   }
-  // ends.clear();
-  // ends.insert(worst_vertix->pin());
+  // for(auto slack : slacks)
+  //   logger_->report("Worst Slack Path {}", slack);
+  ends.clear();
+  ends.insert(worst_vertix->pin());
 
   // unconstrained end points
   if (is_area_mode_) {
@@ -569,7 +633,8 @@ void Restructure::writeOptCommands(std::ofstream& script,
       = "alias choice2 \"fraig_store; balance; fraig_store; resyn2; "
         "fraig_store; resyn2; fraig_store; resyn2; fraig_store; "
         "fraig_restore\"";
-  script << "bdd; sop" << std::endl;
+  if (mode < Mode::DELAY_5)
+    script << "bdd; sop" << std::endl;
 
   script << "alias resyn2 \"balance; rewrite; refactor; balance; rewrite; "
             "rewrite -z; balance; refactor -z; rewrite -z; balance\""
@@ -579,7 +644,7 @@ void Restructure::writeOptCommands(std::ofstream& script,
 
   if (mode == Mode::AREA_3)
     script << "choice2" << std::endl;  // << "scleanup" << std::endl;
-  else
+  else if (mode < Mode::DELAY_5)
     script << "resyn2" << std::endl;  // << "scleanup" << std::endl;
 
   switch (mode) {
@@ -621,23 +686,22 @@ void Restructure::writeOptCommands(std::ofstream& script,
     }
     case Mode::DELAY_5: {
       for (ushort i = 0; i < iterations; i++)
-        script << "&get; &st; &if -g -K 6; &dch; &nf; &put" << std::endl;
+        script << "&get -n; &st; &if -g -K 6; &dch; &nf; &put" << std::endl;
       break;
     }
     case Mode::DELAY_6: {
-      script << "&get;" << std::endl;
+      // script << "&get;" << std::endl;
       for (ushort i = 0; i < 1; i++)
-        script << "&st; &if -g -K 6 -C 8" << std::endl;
+        script << "strash; if -g -K 6" << std::endl;
       for (ushort i = 0; i < 4; i++)
-        script << "&st; &dch; map" << std::endl;
+        script << "strash; dch; map" << std::endl;
       break;
     }
     case Mode::DELAY_7: {
-      script << "&get;" << std::endl;
       for (ushort i = 0; i < 2; i++)
-        script << "&st; &if -g -K 6 -C 8" << std::endl;
+        script << "strash; if -g -K 6 -C 8" << std::endl;
       for (ushort i = 0; i < 6; i++)
-        script << "&st; &dch; map" << std::endl;
+        script << "strash; dch; map" << std::endl;
       break;
     }
     case Mode::AREA_2:
@@ -758,7 +822,7 @@ void Restructure::runABCJob(const Mode mode,
     blif_.inspectBlif(output_blif_file_name_.c_str(), num_instances);
   }
   blif_.readBlif(output_blif_file_name_.c_str(), block_);
-  postABC(0);
+  resizer_->estimateWireParasitics();
 
   for (const auto& file_to_remove : files_to_remove) {
     std::remove(file_to_remove.c_str());
@@ -767,8 +831,6 @@ void Restructure::runABCJob(const Mode mode,
     Tcl_EvalFile(ord::OpenRoad::openRoad()->tclInterp(),
                  post_abc_script_.c_str());
   delay = open_sta_->worstSlack(sta::MinMax::max());
-
-  logger_->report("Worst Slack {}", delay);
 }
 bool Restructure::readAbcLog(std::string abc_file_name,
                              int& level_gain,

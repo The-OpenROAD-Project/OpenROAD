@@ -81,8 +81,7 @@ TritonRoute::TritonRoute()
       distributed_(false),
       dist_port_(0),
       results_sz_(0),
-      cloud_sz_(0),
-      dist_pool_(1)
+      cloud_sz_(0)
 {
 }
 
@@ -830,6 +829,10 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
+  if (distributed_ && dist_pool_ != nullptr)
+  {
+    dist_pool_ = std::make_unique<boost::asio::thread_pool>(1);
+  }
   if (debug_->debugDumpDR) {
     std::string globals_path
         = fmt::format("{}/init_globals.bin", debug_->dumpDir);
@@ -837,7 +840,7 @@ int TritonRoute::main()
   }
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   if (distributed_ && !DO_PA) {
-    asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
+    asio::post(*dist_pool_.get(), boost::bind(&TritonRoute::sendDesignDist, this));
   }
   initDesign();
   if (DO_PA) {
@@ -848,7 +851,7 @@ int TritonRoute::main()
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
       if (distributed_)
-        asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
+        asio::post(*dist_pool_.get(), boost::bind(&TritonRoute::sendDesignDist, this));
     }
   }
   if (debug_->debugDumpDR) {
@@ -866,7 +869,7 @@ int TritonRoute::main()
   prep();
   ta();
   if (distributed_) {
-    asio::post(dist_pool_,
+    asio::post(*dist_pool_.get(),
                boost::bind(&TritonRoute::sendDesignUpdates, this, ""));
   }
   dr();

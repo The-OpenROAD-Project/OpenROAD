@@ -185,6 +185,23 @@ public:
   // farads/meter
   double wireSignalCapacitance(const Corner *corner) const;
   double wireClkCapacitance(const Corner *corner) const;
+
+  const std::vector<double>& getAllWireSignalRes() const { return wire_signal_res_; };
+  const std::vector<double>& getAllWireSignalCap() const { return wire_signal_cap_; };
+  const std::vector<double>& getAllWireClockRes() const { return wire_clk_res_; };
+  const std::vector<double>& getAllWireClockCap() const { return wire_clk_cap_; };
+
+  void setAllRC(const std::vector<double>& signal_res,
+                const std::vector<double>& signal_cap,
+                const std::vector<double>& clk_res,
+                const std::vector<double>& clk_cap)
+  {
+    wire_signal_res_ = signal_res;
+    wire_signal_cap_ = signal_cap;
+    wire_clk_res_ = clk_res;
+    wire_clk_cap_ = clk_cap;
+  }
+
   void estimateParasitics(ParasiticsSrc src);
   void estimateWireParasitics();
   void estimateWireParasitic(const Net *net);

@@ -223,6 +223,10 @@ void BalancerConnection::handle_read(boost::system::error_code const& err,
         break;
       }
     }
+    if (msg.getJobType() == JobMessage::EXIT)
+    {
+      exit(0);
+    }
 
   } else {
     logger_->warn(utl::DST,

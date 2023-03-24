@@ -102,6 +102,12 @@ void WorkerConnection::handle_read(boost::system::error_code const& err,
         }
         break;
       }
+      case JobMessage::EXIT: {
+        JobMessage reply(JobMessage::SUCCESS);
+        dist_->sendResult(reply, sock_);
+        sock_.close();
+        exit(0);
+      }
       default:
         logger_->warn(utl::DST,
                       5,

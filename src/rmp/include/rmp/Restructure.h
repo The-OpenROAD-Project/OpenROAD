@@ -37,6 +37,7 @@
 
 #include <functional>
 #include <string>
+#include <iostream>
 
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -81,7 +82,7 @@ enum class Mode
   DELAY_7
 };
 
-const int MAX_ITERATIONS = 1;
+const int MAX_ITERATIONS = 3;
 
 class RestructureCallBack;
 
@@ -124,7 +125,6 @@ class Restructure
   void deleteComponents();
   void getBlob(unsigned max_depth);
   void runABC();
-  void postABC(float worst_slack);
   bool writeAbcScript(std::string file_name,
                       Mode mode,
                       const ushort iterations);
@@ -168,5 +168,43 @@ class Restructure
   friend class RestructureCallBack;
 
 };
+
+inline std::ostream & operator<<(std::ostream &out, const Mode &c)
+{
+  switch (c)
+  {
+  case Mode::AREA_1:
+    out << "AREA_1";
+    break;
+  case Mode::AREA_2:
+    out << "AREA_2";
+    break;
+  case Mode::AREA_3:
+    out << "AREA_3";
+    break;
+  case Mode::DELAY_1:
+    out << "DELAY_1";
+    break;
+  case Mode::DELAY_2:
+    out << "DELAY_2";
+    break;
+  case Mode::DELAY_3:
+    out << "DELAY_3";
+    break;
+  case Mode::DELAY_4:
+    out << "DELAY_4";
+    break;
+  case Mode::DELAY_5:
+    out << "DELAY_5";
+    break;
+  case Mode::DELAY_6:
+    out << "DELAY_6";
+    break;
+  case Mode::DELAY_7:
+    out << "DELAY_7";
+    break;
+  }
+  return out;
+}
 
 }  // namespace rmp

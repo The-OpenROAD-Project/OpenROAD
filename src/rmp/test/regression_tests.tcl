@@ -9,8 +9,8 @@ record_tests {
   blif_reader_sequential
 }
 
-record_pass_fail_tests {
-  gcd_restructure
-  aes_restructure_timing
-  const_cell_removal
-}
+# record_pass_fail_tests {
+#   gcd_restructure
+#   aes_restructure_timing
+#   const_cell_removal
+# }

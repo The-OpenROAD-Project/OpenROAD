@@ -581,7 +581,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
                                        + ">";
         ProfileTask profile(batch_name.c_str());
         if (dist_on_) {
-          router_->dist_pool_.join();
+          router_->dist_pool_->join();
           if (version++ == 0 && !design_->hasUpdates()) {
             std::string serializedViaData;
             serializeViaData(via_data_, serializedViaData);

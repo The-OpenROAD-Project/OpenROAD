@@ -64,23 +64,24 @@ void RestructureCallBack::onRestructureJobReceived(dst::JobMessage& msg,
         if (net == nullptr)
           continue;
         iterm->disconnect();
-        if (net->getITerms().size() == 0 && net->getBTerms().size() == 0)
+        if (net->getITerms().size() == 0 && net->getBTerms().size() == 0 && !net->isSpecial())
           odb::dbNet::destroy(net);
       }
       odb::dbInst::destroy(inst);
     }
     auto block = db->getChip()->getBlock();
-    for (auto net : newDb->getChip()->getBlock()->getNets()) {
-      if (block->findNet(net->getName().c_str()))
-        continue;
-      odb::dbNet::create(block, net->getName().c_str());
-    }
     for (auto newInst : newDb->getChip()->getBlock()->getInsts()) {
-      if (newInst->isFixed())
+      if(block->findInst(newInst->getName().c_str()))
         continue;
       auto master = db->findMaster(newInst->getMaster()->getName().c_str());
       auto inst
           = odb::dbInst::create(block, master, newInst->getName().c_str());
+      inst->setOrient(newInst->getOrient());
+      int x,y;
+      newInst->getOrigin(x, y);
+      inst->setOrigin(x, y);
+      inst->setPlacementStatus(newInst->getPlacementStatus());
+      inst->setSourceType(newInst->getSourceType());
       for (auto iterm : inst->getITerms()) {
         auto newNet = newInst->findITerm(iterm->getMTerm()->getName().c_str())
                           ->getNet();
@@ -90,7 +91,14 @@ void RestructureCallBack::onRestructureJobReceived(dst::JobMessage& msg,
                     ->getNet()
                     ->getName();
           auto net = block->findNet(netName.c_str());
+          if(net == nullptr)
+          {
+            net = odb::dbNet::create(block, newNet->getName().c_str());
+            net->setSigType(newNet->getSigType());
+          }
           iterm->connect(net);
+          if(net->isSpecial())
+            iterm->setSpecial();
         }
       }
     }
@@ -105,6 +113,9 @@ void RestructureCallBack::onRestructureJobReceived(dst::JobMessage& msg,
     Tcl_Eval(ord::OpenRoad::openRoad()->tclInterp(),
              fmt::format("read_sdc {}", desc->getSDCPath()).c_str());
   }
+  rest_->resizer_->setAllRC(desc->getWireSignalRes(), desc->getWireSignalCap(), desc->getWireClockRes(), desc->getWireClockCap());
+  rest_->resizer_->estimateWireParasitics();
+  auto sdelay = rest_->open_sta_->worstSlack(sta::MinMax::max());
   rest_->lib_file_names_ = desc->getLibFiles();
   rest_->setTieLoPort(desc->getLoCell(), desc->getLoPort());
   rest_->setTieHiPort(desc->getHiCell(), desc->getHiPort());
@@ -125,7 +136,8 @@ void RestructureCallBack::onRestructureJobReceived(dst::JobMessage& msg,
                    levelGain,
                    delay,
                    blif_path);
-
+  auto dbFileName = fmt::format("{}{}_{}.db", desc->getWorkDirName(), desc->getMode(), desc->getIterations());
+  ord::OpenRoad::openRoad()->writeDb(dbFileName.c_str());
   dst::JobMessage resultMsg(dst::JobMessage::SUCCESS);
   auto uResultDesc = std::make_unique<RestructureJobDescription>();
   uResultDesc->setMode(desc->getMode());
@@ -133,6 +145,7 @@ void RestructureCallBack::onRestructureJobReceived(dst::JobMessage& msg,
   uResultDesc->setNumInstances(numInstances);
   uResultDesc->setLevelGain(levelGain);
   uResultDesc->setBlifPath(blif_path);
+  uResultDesc->setODBPath(dbFileName);
   resultMsg.setJobDescription(std::move(uResultDesc));
 
   dist_->sendResult(resultMsg, sock);
