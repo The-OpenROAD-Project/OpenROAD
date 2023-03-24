@@ -1298,7 +1298,7 @@ void HierRTLMP::mergeClusters(std::vector<Cluster*>& candidate_clusters)
           for (int j = i + 1; j < num_candidate_clusters; j++) {
             if (cluster_class[j] != -1
                 || candidate_clusters[j]->getNumMacro() > 0
-                || candidate_clusters[i]->getNumStdCell()
+                || candidate_clusters[j]->getNumStdCell()
                        > dust_cluster_std_cell) {
               continue;
             }
