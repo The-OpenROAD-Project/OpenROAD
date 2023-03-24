@@ -64,29 +64,6 @@ extConductor::extConductor(Logger* logger)
   logger_ = logger;
 }
 
-void extConductor::printConductor(FILE* fp, Ath__parser* parse)
-{
-  fprintf(fp, "CONDUCTOR {\n");
-
-  parse->printString(fp, "\t", "name", _name);
-  parse->printDouble(fp, "\t", "height", _height, true);
-  parse->printDouble(fp, "\t", "thickness", _thickness, true);
-
-  parse->printDouble(fp, "\t", "min_width", _min_width, true);
-  parse->printDouble(fp, "\t", "min_spacing", _min_spacing, true);
-  parse->printDouble(fp, "\t", "origin_x", _origin_x, true);
-  parse->printDouble(fp, "\t", "bottom_left_x", _bottom_left_x, true);
-  parse->printDouble(fp, "\t", "bottom_right_x", _bottom_right_x, true);
-  parse->printDouble(fp, "\t", "top_left_x", _top_left_x, true);
-  parse->printDouble(fp, "\t", "top_right_x", _top_right_x, true);
-  parse->printDouble(fp, "\t", "top_extension", _top_ext, false);
-  parse->printDouble(fp, "\t", "bottom_extension", _bot_ext, false);
-  parse->printInt(fp, "\t", "var_table", _var_table_index, true);
-  parse->printDouble(fp, "\t", "resistivity", _p, true);
-
-  fprintf(fp, "}\n");
-}
-
 extDielectric::extDielectric(Logger* logger)
 {
   strcpy(_name, "");

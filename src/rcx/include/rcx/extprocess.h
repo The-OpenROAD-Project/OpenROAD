@@ -52,12 +52,6 @@ class extProcess;
 class extConductor
 {
   extConductor(Logger* logger);
-  void print(FILE* fp,
-             const char* sep,
-             const char* key,
-             int v,
-             bool pos = false);
-  void printConductor(FILE* fp, Ath__parser* parse);
 
   char _name[128];
   double _height;
