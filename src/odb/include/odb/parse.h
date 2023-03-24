@@ -72,16 +72,6 @@ class Ath__parser
   int getLineNum();
   bool isDigit(int ii, int jj);
 
-  void printInt(FILE* fp,
-                const char* sep,
-                const char* key,
-                int v,
-                bool pos = false);
-  void printDouble(FILE* fp,
-                   const char* sep,
-                   const char* key,
-                   double v,
-                   bool pos = false);
   void printString(FILE* fp,
                    const char* sep,
                    const char* key,
@@ -90,7 +80,7 @@ class Ath__parser
 
  private:
   void init();
-  int reportProgress(FILE* fp);
+  int reportProgress();
   int mkWords(int jj);
   bool isSeparator(char a);
 

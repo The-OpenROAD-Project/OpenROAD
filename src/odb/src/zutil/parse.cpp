@@ -250,32 +250,6 @@ int Ath__parser::getInt(int ii)
   return atoi(get(ii));
 }
 
-void Ath__parser::printInt(FILE* fp,
-                           const char* sep,
-                           const char* key,
-                           int v,
-                           bool pos)
-{
-  if (pos && !(v > 0)) {
-    return;
-  }
-
-  fprintf(fp, "%s%s %d\n", sep, key, v);
-}
-
-void Ath__parser::printDouble(FILE* fp,
-                              const char* sep,
-                              const char* key,
-                              double v,
-                              bool pos)
-{
-  if (pos && !(v > 0)) {
-    return;
-  }
-
-  fprintf(fp, "%s%s %g\n", sep, key, v);
-}
-
 void Ath__parser::printString(FILE* fp,
                               const char* sep,
                               const char* key,
@@ -440,10 +414,10 @@ int Ath__parser::mkWords(int jj)
   return jj;
 }
 
-int Ath__parser::reportProgress(FILE* fp)
+int Ath__parser::reportProgress()
 {
   if (_lineNum % _progressLineChunk == 0) {
-    fprintf(fp, "\t\tHave read %d lines\n", _lineNum);
+    printf("\t\tHave read %d lines\n", _lineNum);
   }
 
   return _lineNum;
@@ -457,7 +431,7 @@ int Ath__parser::readLineAndBreak(int prevWordCnt)
   }
 
   _lineNum++;
-  reportProgress(stdout);
+  reportProgress();
 
   if (prevWordCnt < 0) {
     _currentWordCnt = mkWords(0);
@@ -485,10 +459,7 @@ int Ath__parser::parseNextLine()
 
 bool Ath__parser::isKeyword(int ii, const char* key1)
 {
-  if ((get(ii) != nullptr) && (strcmp(get(ii), key1) == 0)) {
-    return true;
-  }
-  return false;
+  return (get(ii) != nullptr) && (strcmp(get(ii), key1) == 0);
 }
 
 }  // namespace odb
