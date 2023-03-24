@@ -386,44 +386,6 @@ double extSpef::printDiffCC(dbNet* net1,
   return diffCap;
 }
 
-bool extSpef::newCouplingCap(char* nodeWord1, char* nodeWord2, char* capWord)
-{
-  sprintf(_tmpBuff1, "%s%sC%s", nodeWord1, nodeWord2, capWord);
-
-  if (_node2nodeHashTable->getDataId(_tmpBuff1, 1, 0) > 0)
-    return false;
-
-  sprintf(_tmpBuff2, "%s%sC%s", nodeWord2, nodeWord1, capWord);
-
-  if (_node2nodeHashTable->getDataId(_tmpBuff2, 1, 0) > 0)
-    return false;
-
-  _node2nodeHashTable->addNewName(_tmpBuff1, _tmpNetSpefId);
-  _node2nodeHashTable->addNewName(_tmpBuff2, _tmpNetSpefId);
-
-  return true;
-}
-
-uint extSpef::getCouplingCapId(uint ccNode1, uint ccNode2)
-{
-  sprintf(_tmpBuff1, "%d-%d", ccNode1, ccNode2);
-  sprintf(_tmpBuff2, "%d-%d", ccNode2, ccNode1);
-
-  uint ccId = _node2nodeHashTable->getDataId(_tmpBuff1, 1, 0);
-  if (ccId <= 0) {
-    ccId = _node2nodeHashTable->getDataId(_tmpBuff2, 1, 0);
-    if (ccId <= 0)
-      return 0;
-  }
-  return ccId;
-}
-
-void extSpef::addCouplingCapId(uint ccId)
-{
-  _node2nodeHashTable->addNewName(_tmpBuff1, ccId);
-  _node2nodeHashTable->addNewName(_tmpBuff2, ccId);
-}
-
 uint extSpef::getCapIdFromCapTable(char* nodeWord)
 {
   if (_cc_app_print_limit) {

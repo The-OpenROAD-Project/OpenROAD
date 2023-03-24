@@ -317,9 +317,6 @@ class extSpef
   uint writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId);
   uint writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
   uint writeCouplingCapsNoSort(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
-  bool newCouplingCap(char* nodeWord1, char* nodeword2, char* capWord);
-  uint getCouplingCapId(uint ccNode1, uint ccNode2);
-  void addCouplingCapId(uint ccId);
   void setSpefFlag(bool v);
   void setExtIds(odb::dbNet* net);
   void setExtIds();
@@ -463,7 +460,6 @@ class extSpef
   Ath__nameTable* _notFoundInst;
   Ath__nameTable* _nodeHashTable;
   uint _tmpCapId;
-  Ath__nameTable* _node2nodeHashTable;
   char _tmpBuff1[1024];
   char _tmpBuff2[1024];
 

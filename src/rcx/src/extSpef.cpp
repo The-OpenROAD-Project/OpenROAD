@@ -143,7 +143,6 @@ extSpef::extSpef(odb::dbTech* tech,
   _addRepeatedCapValue = true;
 
   _nodeHashTable = NULL;
-  _node2nodeHashTable = NULL;
   _tmpCapId = 1;
 
   _gzipFlag = false;
@@ -228,8 +227,6 @@ extSpef::~extSpef()
     delete _nameMapTable;
   if (_nodeHashTable)
     delete _nodeHashTable;
-  if (_node2nodeHashTable)
-    delete _node2nodeHashTable;
   if (_rcPool)
     delete _rcPool;
   if (_rcTrippletTable)
