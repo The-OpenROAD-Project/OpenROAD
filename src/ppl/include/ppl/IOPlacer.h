@@ -185,6 +185,7 @@ class IOPlacer
   bool assignPinToSection(IOPin& io_pin,
                           int idx,
                           std::vector<Section>& sections);
+  void assignMirroredPin(IOPin& io_pin);
   int assignGroupsToSections();
   void assignConstrainedGroupsToSections(Constraint& constraint,
                                          std::vector<Section>& sections);
