@@ -72,7 +72,7 @@ class HungarianMatching
   void findAssignmentForGroups();
   void getFinalAssignment(std::vector<IOPin>& assignment,
                           MirroredPins& mirrored_pins,
-                          bool assign_mirrored) const;
+                          bool assign_mirrored);
   void getAssignmentForGroups(std::vector<IOPin>& assignment);
 
  private:
@@ -99,6 +99,9 @@ class HungarianMatching
 
   void createMatrix();
   void createMatrixForGroups();
+  void assignMirroredPins(IOPin& io_pin,
+                          MirroredPins& mirrored_pins,
+                          std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
 };
 

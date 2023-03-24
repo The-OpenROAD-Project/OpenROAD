@@ -1342,12 +1342,12 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
   }
 
   if (!mirrored_pins_.empty()) {
-    for (const auto& match : hg_vec) {
+    for (auto& match : hg_vec) {
       match.getFinalAssignment(assignment_, mirrored_pins_, true);
     }
   }
 
-  for (const auto& match : hg_vec) {
+  for (auto& match : hg_vec) {
     match.getFinalAssignment(assignment_, mirrored_pins_, false);
   }
 }
