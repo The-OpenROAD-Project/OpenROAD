@@ -435,7 +435,7 @@ dbStaReport::printLine(const char* buffer, size_t length)
     return;
   }
 
-  logger_->report(buffer);
+  logger_->report("{}", buffer);
 }
 
 // Only used by encapsulated Tcl channels, ie puts and command prompt.

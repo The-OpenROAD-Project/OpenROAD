@@ -196,4 +196,11 @@ bool Opendp::isFiller(odb::dbInst* db_inst)
          && db_inst->getPlacementStatus() != odb::dbPlacementStatus::LOCKED;
 }
 
+// Return true if cell is a single site Core Spacer.
+bool Opendp::isOneSiteCell(odb::dbMaster* db_master) const
+{
+  return db_master->getType() == odb::dbMasterType::CORE_SPACER
+         && db_master->getWidth() == site_width_;
+}
+
 }  // namespace dpl

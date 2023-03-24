@@ -59,9 +59,11 @@ void Opendp::importDb()
   block_ = db_->getChip()->getBlock();
   core_ = block_->getCoreArea();
   have_fillers_ = false;
+  have_one_site_cells_ = false;
 
   importClear();
   examineRows();
+  checkOneSiteDbMaster();
   makeMacros();
   makeCells();
   makeGroups();
@@ -75,6 +77,24 @@ void Opendp::importClear()
   db_inst_map_.clear();
   deleteGrid();
   have_multi_row_cells_ = false;
+}
+
+void Opendp::checkOneSiteDbMaster()
+{
+  vector<dbMaster*> masters;
+  auto db_libs = db_->getLibs();
+  for (auto db_lib : db_libs) {
+    if (have_one_site_cells_) {
+      break;
+    }
+    auto masters = db_lib->getMasters();
+    for (auto db_master : masters) {
+      if (isOneSiteCell(db_master)) {
+        have_one_site_cells_ = true;
+        break;
+      }
+    }
+  }
 }
 
 void Opendp::makeMacros()

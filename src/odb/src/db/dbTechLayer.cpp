@@ -228,6 +228,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (_min_step_max_edges != rhs._min_step_max_edges)
     return false;
 
+  if (_first_last_pitch != rhs._first_last_pitch)
+    return false;
+
   if (_pt._width != rhs._pt._width)
     return false;
 
@@ -360,6 +363,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_FIELD(_min_width);
   DIFF_FIELD(_min_step_max_length);
   DIFF_FIELD(_min_step_max_edges);
+  DIFF_FIELD(_first_last_pitch);
   DIFF_FIELD(_pt._length);
   DIFF_FIELD(_pt._from_width);
   DIFF_FIELD(_name);
@@ -438,6 +442,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_min_width);
   DIFF_OUT_FIELD(_min_step_max_length);
   DIFF_OUT_FIELD(_min_step_max_edges);
+  DIFF_OUT_FIELD(_first_last_pitch);
   DIFF_OUT_FIELD(_pt._length);
   DIFF_OUT_FIELD(_pt._from_width);
   DIFF_OUT_FIELD(_name);
@@ -567,6 +572,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   _min_width = 0;
   _min_step_max_length = -1;
   _min_step_max_edges = -1;
+  _first_last_pitch = -1;
   _v55sp_length_idx.clear();
   _v55sp_width_idx.clear();
   _v55sp_spacing.clear();
@@ -676,6 +682,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   _min_step = r._min_step;
   _min_step_max_length = r._min_step_max_length;
   _min_step_max_edges = r._min_step_max_edges;
+  _first_last_pitch = r._first_last_pitch;
   _pt = r._pt;
   _name = NULL;
   _alias = NULL;
@@ -782,6 +789,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
         break;
       }
   }
+  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+    stream >> obj._first_last_pitch;
+  }
   // User Code End >>
   return stream;
 }
@@ -846,6 +856,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._oxide2;
   if (obj.getDatabase()->isSchema(db_schema_wrongway_width))
     stream << obj.wrong_way_width_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+    stream << obj._first_last_pitch;
+  }
   // User Code End <<
   return stream;
 }
@@ -1980,6 +1993,12 @@ int dbTechLayer::getPitchY()
   return layer->_pitch_y;
 }
 
+int dbTechLayer::getFirstLastPitch()
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return layer->_first_last_pitch;
+}
+
 void dbTechLayer::setPitch(int pitch)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
@@ -1994,6 +2013,12 @@ void dbTechLayer::setPitchXY(int pitch_x, int pitch_y)
   layer->_pitch_x = pitch_x;
   layer->_pitch_y = pitch_y;
   layer->flags_.has_xy_pitch_ = true;
+}
+
+void dbTechLayer::setFirstLastPitch(int first_last_pitch)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->_first_last_pitch = first_last_pitch;
 }
 
 bool dbTechLayer::hasXYPitch()

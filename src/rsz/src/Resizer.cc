@@ -96,6 +96,7 @@ using sta::stringLess;
 using sta::NetworkEdit;
 using sta::NetPinIterator;
 using sta::NetConnectedPinIterator;
+using sta::NetTermIterator;
 using sta::InstancePinIterator;
 using sta::LeafInstanceIterator;
 using sta::LibertyLibraryIterator;
@@ -2265,12 +2266,22 @@ Resizer::cloneClkInverter(Instance *inv)
     }
     delete load_iter;
 
-    // Delete inv
-    sta_->disconnectPin(in_pin);
-    sta_->disconnectPin(out_pin);
-    sta_->deleteNet(out_net);
-    parasitics_invalid_.erase(out_net);
-    sta_->deleteInstance(inv);
+    bool has_term = false;
+    NetTermIterator *term_iter = network_->termIterator(out_net);
+    while (term_iter->hasNext()) {
+      has_term = true;
+      break;
+    }
+    delete term_iter;
+
+    if (!has_term) {
+      // Delete inv
+      sta_->disconnectPin(in_pin);
+      sta_->disconnectPin(out_pin);
+      sta_->deleteNet(out_net);
+      parasitics_invalid_.erase(out_net);
+      sta_->deleteInstance(inv);
+    }
   }
 }
 

@@ -10,7 +10,7 @@ target_include_directories(lefout
 
 target_link_libraries(lefout
     db
-    utl
+    utl_lib
     Boost::boost
 )
 

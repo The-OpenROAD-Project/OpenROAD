@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <set>
 #include <string>
 
 namespace utl {
@@ -91,22 +92,28 @@ class InitFloorplan
                   int y_offset,
                   int y_pitch);
 
+  void makeTracksNonUniform(odb::dbTechLayer* layer,
+                            int x_offset,
+                            int x_pitch,
+                            int y_offset,
+                            int y_pitch,
+                            int first_last_pitch);
+
  protected:
   double designArea();
-  void makeRows(dbSite* site,
-                int core_lx,
-                int core_ly,
-                int core_ux,
-                int core_uy);
+  int makeRows(dbSite* site,
+               int core_lx,
+               int core_ly,
+               int core_ux,
+               int core_uy,
+               int factor,
+               int row_index);
   odb::dbSite* findSite(const char* site_name);
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
   int snapToMfgGrid(int coord) const;
-  void updateVoltageDomain(odb::dbSite* site,
-                           int core_lx,
-                           int core_ly,
-                           int core_ux,
-                           int core_uy);
+  void updateVoltageDomain(int core_lx, int core_ly, int core_ux, int core_uy);
+  std::set<dbSite*> getSites() const;
 
   dbBlock* block_;
   Logger* logger_;

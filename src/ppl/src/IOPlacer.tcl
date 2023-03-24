@@ -135,6 +135,14 @@ proc set_io_pin_constraint { args } {
     utl::error PPL 83 "Both -region and -mirrored_pins constraints not allowed."
   }
 
+  if {[info exists keys(-region)] && [info exists flags(-group)]} {
+    utl::error PPL 86 "Both -region and -group constraints not allowed."
+  }
+
+  if {[info exists keys(-mirrored_pins)] && [info exists flags(-group)]} {
+    utl::error PPL 87 "Both -mirrored_pins and -group constraints not allowed."
+  }
+
   if [info exists keys(-region)] {
     set region $keys(-region)
     if [regexp -all {(top|bottom|left|right):(.+)} $region - edge interval] {

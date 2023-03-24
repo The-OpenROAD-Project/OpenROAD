@@ -10,4 +10,8 @@
 [INFO ODB-0130]     Created 135 pins.
 [INFO ODB-0131]     Created 267 components and 2277 component-terminals.
 [INFO ODB-0133]     Created 350 nets and 390 connections.
+[WARNING PAD-0033] Could not find a block terminal associated with net: "DVSS", creating now.
+[WARNING PAD-0033] Could not find a block terminal associated with net: "DVDD", creating now.
+[WARNING PAD-0033] Could not find a block terminal associated with net: "VDD", creating now.
+[WARNING PAD-0033] Could not find a block terminal associated with net: "VSS", creating now.
 No differences found.

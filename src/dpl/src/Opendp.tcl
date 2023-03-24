@@ -32,12 +32,13 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 #############################################################################
 
-sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}]}
+sta::define_cmd_args "detailed_placement" {[-max_displacement disp|{disp_x disp_y}] [-disallow_one_site_gaps]}
 
 proc detailed_placement { args } {
   sta::parse_key_args "detailed_placement" args \
-    keys {-max_displacement} flags {}
+    keys {-max_displacement} flags {-disallow_one_site_gaps}
 
+set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   if { [info exists keys(-max_displacement)] } {
     set max_displacement $keys(-max_displacement)
     if { [llength $max_displacement] == 1 } {
@@ -65,7 +66,8 @@ proc detailed_placement { args } {
                               / [$site getWidth]]
     set max_displacement_y [expr [ord::microns_to_dbu $max_displacement_y] \
                               / [$site getHeight]]
-    dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y
+    dpl::detailed_placement_cmd $max_displacement_x $max_displacement_y \
+                                $disallow_one_site_gaps
     dpl::report_legalization_stats
   } else {
     utl::error "DPL" 27 "no rows defined in design. Use initialize_floorplan to add rows."
@@ -158,10 +160,8 @@ namespace eval dpl {
 # measured as a multiple of row_height.
 proc detailed_placement_debug { args } {
   sta::parse_key_args "detailed_placement_debug" args \
-      keys {-instance -min_displacement} \
-      flags {-displacement}
+      keys {-instance -min_displacement}
 
-  set displacement [info exists flags(-displacement)]
 
   if { [info exists keys(-min_displacement)] } {
     set min_displacement $keys(-min_displacement)
@@ -180,7 +180,7 @@ proc detailed_placement_debug { args } {
       set debug_instance "NULL"
   }
 
-  dpl::set_debug_cmd $displacement $min_displacement $debug_instance
+  dpl::set_debug_cmd $min_displacement $debug_instance
 }
 
 proc get_masters_arg { arg_name arg } {

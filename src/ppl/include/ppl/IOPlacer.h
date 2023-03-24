@@ -71,9 +71,9 @@ using odb::Rect;
 using utl::Logger;
 
 // A list of pins that will be placed together in the die boundary
-typedef std::set<odb::dbBTerm*> PinSet;
-typedef std::vector<odb::dbBTerm*> PinList;
-typedef std::unordered_map<odb::dbBTerm*, odb::dbBTerm*> MirroredPins;
+using PinSet = std::set<odb::dbBTerm*>;
+using PinList = std::vector<odb::dbBTerm*>;
+using MirroredPins = std::unordered_map<odb::dbBTerm*, odb::dbBTerm*>;
 
 struct PinGroup
 {
@@ -149,8 +149,8 @@ class IOPlacer
 
  private:
   void createTopLayerPinPattern();
-  void initNetlistAndCore(std::set<int> hor_layer_idx,
-                          std::set<int> ver_layer_idx);
+  void initNetlistAndCore(const std::set<int>& hor_layer_idx,
+                          const std::set<int>& ver_layer_idx);
   void initIOLists();
   void initParms();
   std::vector<int> getValidSlots(int first, int last, bool top_layer);
@@ -185,6 +185,7 @@ class IOPlacer
   bool assignPinToSection(IOPin& io_pin,
                           int idx,
                           std::vector<Section>& sections);
+  void assignMirroredPin(IOPin& io_pin);
   int assignGroupsToSections();
   void assignConstrainedGroupsToSections(Constraint& constraint,
                                          std::vector<Section>& sections);
@@ -192,7 +193,7 @@ class IOPlacer
                            std::vector<Section>& sections,
                            bool order);
   std::vector<Section> assignConstrainedPinsToSections(Constraint& constraint,
-                                                       int& assigned_pins_cnt,
+                                                       int& mirrored_pins_cnt,
                                                        bool mirrored_only);
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
                                          Netlist* netlist,
@@ -218,11 +219,12 @@ class IOPlacer
   double dbuToMicrons(int64_t dbu);
 
   // db functions
-  void populateIOPlacer(std::set<int> hor_layer_idx,
-                        std::set<int> ver_layer_idx);
+  void populateIOPlacer(const std::set<int>& hor_layer_idx,
+                        const std::set<int>& ver_layer_idx);
   void commitIOPlacementToDB(std::vector<IOPin>& assignment);
   void commitIOPinToDB(const IOPin& pin);
-  void initCore(std::set<int> hor_layer_idxs, std::set<int> ver_layer_idxs);
+  void initCore(const std::set<int>& hor_layer_idxs,
+                const std::set<int>& ver_layer_idxs);
   void initNetlist();
   void initTracks();
   odb::dbBlock* getBlock() const;
@@ -232,15 +234,15 @@ class IOPlacer
   std::unique_ptr<Core> core_;
   std::vector<IOPin> assignment_;
 
-  int slots_per_section_;
-  float slots_increase_factor_;
+  int slots_per_section_ = 0;
+  float slots_increase_factor_ = 0;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;
   std::vector<PinGroup> pin_groups_;
   MirroredPins mirrored_pins_;
 
-  Logger* logger_;
+  Logger* logger_ = nullptr;
   std::unique_ptr<Parameters> parms_;
   std::unique_ptr<Netlist> netlist_io_pins_;
   std::vector<Slot> slots_;
@@ -252,7 +254,7 @@ class IOPlacer
   std::unique_ptr<TopLayerGrid> top_grid_;
 
   // db variables
-  odb::dbDatabase* db_;
+  odb::dbDatabase* db_ = nullptr;
 };
 
 }  // namespace ppl
