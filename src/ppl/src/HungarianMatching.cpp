@@ -103,7 +103,7 @@ inline bool samePos(Point& a, Point& b)
 
 void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
                                            MirroredPins& mirrored_pins,
-                                           bool assign_mirrored) const
+                                           bool assign_mirrored)
 {
   size_t rows = non_blocked_slots_;
   size_t col = 0;
@@ -143,35 +143,45 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
         slots_[slot_index].used = true;
 
         if (assign_mirrored) {
-          odb::dbBTerm* mirrored_term = mirrored_pins[io_pin.getBTerm()];
-          int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
-          IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
-
-          odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
-          mirrored_pin.setPos(mirrored_pos);
-          mirrored_pin.setLayer(slots_[slot_index].layer);
-          mirrored_pin.setPlaced();
-          assignment.push_back(mirrored_pin);
-          slot_index
-              = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
-          if (slot_index < 0) {
-            odb::dbTechLayer* layer
-                = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
-            logger_->error(utl::PPL,
-                           82,
-                           "Mirrored position ({}, {}) at layer {} is not a "
-                           "valid position for pin placement.",
-                           mirrored_pos.getX(),
-                           mirrored_pos.getY(),
-                           layer->getName());
-          }
-          slots_[slot_index].used = true;
+          assignMirroredPins(io_pin, mirrored_pins, assignment);
         }
         break;
       }
       col++;
+    } else if (assign_mirrored
+               && mirrored_pins.find(io_pin.getBTerm())
+                      != mirrored_pins.end()) {
+      assignMirroredPins(io_pin, mirrored_pins, assignment);
     }
   }
+}
+
+void HungarianMatching::assignMirroredPins(IOPin& io_pin,
+                                           MirroredPins& mirrored_pins,
+                                           std::vector<IOPin>& assignment)
+{
+  odb::dbBTerm* mirrored_term = mirrored_pins[io_pin.getBTerm()];
+  int mirrored_pin_idx = netlist_->getIoPinIdx(mirrored_term);
+  IOPin& mirrored_pin = netlist_->getIoPin(mirrored_pin_idx);
+
+  odb::Point mirrored_pos = core_->getMirroredPosition(io_pin.getPos());
+  mirrored_pin.setPos(mirrored_pos);
+  mirrored_pin.setLayer(io_pin.getLayer());
+  mirrored_pin.setPlaced();
+  assignment.push_back(mirrored_pin);
+  int slot_index = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
+  if (slot_index < 0) {
+    odb::dbTechLayer* layer
+        = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
+    logger_->error(utl::PPL,
+                   82,
+                   "Mirrored position ({}, {}) at layer {} is not a "
+                   "valid position for pin placement.",
+                   mirrored_pos.getX(),
+                   mirrored_pos.getY(),
+                   layer->getName());
+  }
+  slots_[slot_index].used = true;
 }
 
 void HungarianMatching::findAssignmentForGroups()
