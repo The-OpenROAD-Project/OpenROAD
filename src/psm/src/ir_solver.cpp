@@ -1283,6 +1283,7 @@ bool IRSolver::checkConnectivity(bool connection_only)
   bool unconnected_node = false;
   ofstream error_report;
   if (!error_file_.empty()) {
+    error_report.exceptions(~std::ios_base::goodbit);
     error_report.open(error_file_);
   }
   auto tech = db_->getTech();
