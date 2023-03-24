@@ -63,10 +63,8 @@ void Ath__parser::init()
   _currentWordCnt = -1;
 
   _inFP = NULL;
-  _dbgFP = NULL;
   _inputFile = ATH__allocCharWord(512);
 
-  _dbg = -1;
   _progressLineChunk = 1000000;
 }
 Ath__parser::Ath__parser()
@@ -132,7 +130,6 @@ void Ath__parser::openFile(char* name)
   } else {  //
     _inFP = ATH__openFile(_inputFile, (char*) "r");
   }
-  //	_dbgFP= ATH__openFile("parse.dbg", (char*) "w");
 }
 void Ath__parser::setInputFP(FILE* fp)
 {
@@ -376,9 +373,6 @@ int Ath__parser::readLineAndBreak(int prevWordCnt)
   _lineNum++;
   reportProgress(stdout);
 
-  if (_dbg > 0)
-    fprintf(stdout, "%s", _line);
-
   if (prevWordCnt < 0)
     _currentWordCnt = mkWords(0);
   else
@@ -419,9 +413,6 @@ int Ath__parser::readMultipleLineAndBreak(char continuationChar)
     reportProgress(stdout);
 
   } while (fgets(_line, _lineSize, _inFP) != NULL);
-
-  if (_dbg > 0)
-    fprintf(stdout, "%s", _line);
 
   _currentWordCnt = mkWords(0);
 

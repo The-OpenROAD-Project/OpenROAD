@@ -60,10 +60,8 @@ class Ath__parser
   int _currentWordCnt;
   int _lineSize;
   FILE* _inFP;
-  FILE* _dbgFP;
   char* _inputFile;
 
-  int _dbg;
   int _progressLineChunk;
 
  public:
