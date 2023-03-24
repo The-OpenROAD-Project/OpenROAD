@@ -99,13 +99,6 @@ class extSpef
   void initSearchForNets();
   uint addNetShapesOnSearch(uint netId);
   void searchDealloc();
-  void getAnchorCoords(odb::dbNet* net,
-                       uint shapeId,
-                       int* x1,
-                       int* y1,
-                       int* x2,
-                       int* y2,
-                       odb::dbTechLayer** layer);
   uint writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet);
 
   void setupMappingForWrite(uint btermCnt = 0, uint itermCnt = 0);
@@ -113,7 +106,6 @@ class extSpef
   void preserveFlag(bool v);
   void setCornerCnt(uint n);
 
-  void incr_wRun() { _wRun++; };
   void incr_rRun() { _rRun++; };
   void writeCNodeNumber();
   odb::dbBlock* getBlock() { return _block; }
@@ -434,7 +426,6 @@ class extSpef
 
   uint _tnetCnt;
 
-  uint _wRun;
   bool _wOnlyClock;
   bool _wConn;
   bool _wCap;

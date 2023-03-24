@@ -2157,7 +2157,7 @@ void extSpef::reinit()
   if (_notFoundInst)
     delete _notFoundInst;
   _notFoundInst = NULL;
-  _rRun = _wRun = 0;
+  _rRun = 0;
 }
 
 uint extSpef::readBlockIncr(uint debug)
