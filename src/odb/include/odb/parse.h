@@ -42,28 +42,6 @@ namespace odb {
 
 class Ath__parser
 {
- private:
-  void init();
-  int reportProgress(FILE* fp);
-  int mkWords(int ii);
-  bool isSeparator(char a);
-
-  char* _line;
-  char* _tmpLine;
-  char* _wordSeparators;
-  char** _wordArray;
-  char _commentChar;
-  int _maxWordCnt;
-  int _wordSize;
-
-  int _lineNum;
-  int _currentWordCnt;
-  int _lineSize;
-  FILE* _inFP;
-  char* _inputFile;
-
-  int _progressLineChunk;
-
  public:
   Ath__parser();
   ~Ath__parser();
@@ -110,6 +88,28 @@ class Ath__parser
                    const char* key,
                    char* v,
                    bool pos = false);
+
+ private:
+  void init();
+  int reportProgress(FILE* fp);
+  int mkWords(int ii);
+  bool isSeparator(char a);
+
+  char* _line;
+  char* _tmpLine;
+  char* _wordSeparators;
+  char** _wordArray;
+  char _commentChar;
+  int _maxWordCnt;
+  int _wordSize;
+
+  int _lineNum;
+  int _currentWordCnt;
+  int _lineSize;
+  FILE* _inFP;
+  char* _inputFile;
+
+  int _progressLineChunk;
 };
 
 }  // namespace odb
