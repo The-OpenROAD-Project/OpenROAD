@@ -31,11 +31,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include <optional>
+
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
-#include <optional>
 
 namespace dft::utils {
 
