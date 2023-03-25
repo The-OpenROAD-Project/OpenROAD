@@ -30,40 +30,23 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%module dft
+#include "cells/ScanCell.hh"
 
-%{
+namespace dft {
 
-#include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
-
-dft::Dft * getDft()
+ScanCell::ScanCell(std::string name, ClockDomain clock_domain)
+    : name_(name), clock_domain_(std::move(clock_domain))
 {
-  return ord::OpenRoad::openRoad()->getDft();
 }
 
-%}
-
-%inline
-%{
-
-void preview_dft(bool verbose)
+const std::string& ScanCell::getName() const
 {
-  getDft()->preview_dft(verbose);
+  return name_;
 }
 
-void insert_dft()
+const ClockDomain& ScanCell::getClockDomain() const
 {
-  getDft()->insert_dft();
+  return clock_domain_;
 }
 
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig().getMutableScanArchitectConfig().setMaxLength(max_length);
-}
-
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
-
-%}  // inline
+}  // namespace dft

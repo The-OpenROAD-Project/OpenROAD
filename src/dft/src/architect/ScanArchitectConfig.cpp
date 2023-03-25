@@ -30,40 +30,48 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%module dft
+#include "architect/ScanArchitectConfig.hh"
 
-%{
+#include "Utils.hh"
 
-#include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
+namespace dft {
 
-dft::Dft * getDft()
+ScanArchitectConfig::ClockMixing ScanArchitectConfig::getClockMixing() const
 {
-  return ord::OpenRoad::openRoad()->getDft();
+  return clock_mixing_;
 }
 
-%}
-
-%inline
-%{
-
-void preview_dft(bool verbose)
+const std::optional<uint64_t>& ScanArchitectConfig::getMaxLength() const
 {
-  getDft()->preview_dft(verbose);
+  return max_length_;
 }
 
-void insert_dft()
+void ScanArchitectConfig::setClockMixing(ClockMixing clock_mixing)
 {
-  getDft()->insert_dft();
+  clock_mixing_ = clock_mixing;
 }
 
-void set_dft_config_max_length(int max_length)
+void ScanArchitectConfig::setMaxLength(uint64_t max_length)
 {
-  getDft()->getMutableDftConfig().getMutableScanArchitectConfig().setMaxLength(max_length);
+  max_length_ = max_length;
 }
 
-void report_dft_config() {
-  getDft()->reportDftConfig();
+void ScanArchitectConfig::report(utl::Logger* logger) const
+{
+  logger->report("Scan Architect Config:");
+  logger->report("- Max Length: {}", utils::FormatForReport(max_length_));
+  logger->report("- Clock Mixing: {}", ClockMixingName(clock_mixing_));
 }
 
-%}  // inline
+std::string ScanArchitectConfig::ClockMixingName(
+    ScanArchitectConfig::ClockMixing clock_mixing)
+{
+  switch (clock_mixing) {
+    case ScanArchitectConfig::ClockMixing::NoMix:
+      return "No Mix";
+    default:
+      return "Missing case in ClockMixingName";
+  }
+}
+
+}  // namespace dft

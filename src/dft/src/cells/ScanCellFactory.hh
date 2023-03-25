@@ -29,41 +29,25 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-%module dft
+#include <memory>
 
-%{
+#include "cells/OneBitScanCell.hh"
+#include "cells/ScanCell.hh"
+#include "db_sta/dbSta.hh"
+#include "odb/db.h"
 
-#include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
+namespace dft {
 
-dft::Dft * getDft()
-{
-  return ord::OpenRoad::openRoad()->getDft();
-}
+// Creates a scan cell based on the given dbInst.
+std::unique_ptr<ScanCell> ScanCellFactory(odb::dbInst* inst,
+                                          utl::Logger* logger);
 
-%}
+// Returns a vector of ScanCells after iterating throught all the design
+// collecting the ScanCells
+std::vector<std::unique_ptr<ScanCell>> CollectScanCells(odb::dbDatabase* db,
+                                                        sta::dbSta* sta,
+                                                        utl::Logger* logger);
 
-%inline
-%{
-
-void preview_dft(bool verbose)
-{
-  getDft()->preview_dft(verbose);
-}
-
-void insert_dft()
-{
-  getDft()->insert_dft();
-}
-
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig().getMutableScanArchitectConfig().setMaxLength(max_length);
-}
-
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
-
-%}  // inline
+}  // namespace dft

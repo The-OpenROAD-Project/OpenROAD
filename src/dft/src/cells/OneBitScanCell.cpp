@@ -30,40 +30,38 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%module dft
+#include "cells/OneBitScanCell.hh"
 
-%{
+namespace dft {
 
-#include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
-
-dft::Dft * getDft()
+OneBitScanCell::OneBitScanCell(std::string name,
+                               ClockDomain clock_domain,
+                               odb::dbInst* inst,
+                               sta::TestCell* test_cell)
+    : ScanCell(name, std::move(clock_domain)),
+      inst_(inst),
+      test_cell_(test_cell)
 {
-  return ord::OpenRoad::openRoad()->getDft();
 }
 
-%}
-
-%inline
-%{
-
-void preview_dft(bool verbose)
+uint64_t OneBitScanCell::getBits() const
 {
-  getDft()->preview_dft(verbose);
+  return 1;
 }
 
-void insert_dft()
+void OneBitScanCell::connectSE() const
 {
-  getDft()->insert_dft();
+  // TODO: Scan stitching
 }
 
-void set_dft_config_max_length(int max_length)
+void OneBitScanCell::connectSI() const
 {
-  getDft()->getMutableDftConfig().getMutableScanArchitectConfig().setMaxLength(max_length);
+  // TODO: Scan stitching
 }
 
-void report_dft_config() {
-  getDft()->reportDftConfig();
+void OneBitScanCell::connectSO() const
+{
+  // TODO: Scan stitching
 }
 
-%}  // inline
+}  // namespace dft

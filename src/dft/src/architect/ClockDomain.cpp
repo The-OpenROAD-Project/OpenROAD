@@ -30,40 +30,39 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%module dft
+#include "architect/ClockDomain.hh"
 
-%{
+namespace dft {
 
-#include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
-
-dft::Dft * getDft()
+std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
+    const ScanArchitectConfig& config)
 {
-  return ord::OpenRoad::openRoad()->getDft();
+  switch (config.getClockMixing()) {
+    // For NoMix, every clock domain is different
+    case ScanArchitectConfig::ClockMixing::NoMix:
+      return [](const ClockDomain& clock_domain) {
+        return std::hash<std::string>{}(clock_domain.getClockName())
+               ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
+      };
+    default:
+      // Not implemented
+      abort();
+  }
 }
 
-%}
-
-%inline
-%{
-
-void preview_dft(bool verbose)
+ClockDomain::ClockDomain(const std::string& clock_name, ClockEdge clock_edge)
+    : clock_name_(clock_name), clock_edge_(clock_edge)
 {
-  getDft()->preview_dft(verbose);
 }
 
-void insert_dft()
+const std::string& ClockDomain::getClockName() const
 {
-  getDft()->insert_dft();
+  return clock_name_;
 }
 
-void set_dft_config_max_length(int max_length)
+const ClockEdge ClockDomain::getClockEdge() const
 {
-  getDft()->getMutableDftConfig().getMutableScanArchitectConfig().setMaxLength(max_length);
+  return clock_edge_;
 }
 
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
-
-%}  // inline
+}  // namespace dft

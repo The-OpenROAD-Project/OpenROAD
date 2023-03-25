@@ -29,41 +29,39 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-%module dft
+#include "architect/ClockDomain.hh"
 
-%{
+namespace dft {
 
-#include "dft/Dft.hh"
-#include "ord/OpenRoad.hh"
-
-dft::Dft * getDft()
+// A Scan Cell is a cell that contains a scan enable, scan in and scan out
+// It also has the number of bits that can be shifted in this cell and a
+// clock domain for architecting.
+//
+// This is an abstraction since there are several types of scan cells that can
+// be use for DFT. The simplest one is just one scan cell but we could support
+// in the future black boxes or CTLs (Core Test Language)
+class ScanCell
 {
-  return ord::OpenRoad::openRoad()->getDft();
-}
+ public:
+  ScanCell(std::string name, ClockDomain clock_domain);
+  virtual ~ScanCell() = default;
+  // Not copyable or movable
+  ScanCell(const ScanCell&) = delete;
+  ScanCell& operator=(const ScanCell&) = delete;
 
-%}
+  virtual uint64_t getBits() const = 0;
+  virtual void connectSE() const = 0;
+  virtual void connectSI() const = 0;
+  virtual void connectSO() const = 0;
 
-%inline
-%{
+  const ClockDomain& getClockDomain() const;
+  const std::string& getName() const;
 
-void preview_dft(bool verbose)
-{
-  getDft()->preview_dft(verbose);
-}
+ private:
+  std::string name_;
+  ClockDomain clock_domain_;
+};
 
-void insert_dft()
-{
-  getDft()->insert_dft();
-}
-
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig().getMutableScanArchitectConfig().setMaxLength(max_length);
-}
-
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
-
-%}  // inline
+}  // namespace dft

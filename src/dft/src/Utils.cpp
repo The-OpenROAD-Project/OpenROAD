@@ -32,6 +32,9 @@
 
 #include "Utils.hh"
 
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include <iostream>
 
 #include "db_sta/dbNetwork.hh"
@@ -39,6 +42,10 @@
 namespace dft::utils {
 
 namespace {
+
+// To signal when the fork has done the work
+constexpr char kDoneKeyword[] = "DONE";
+
 void PopulatePortNameToNet(
     odb::dbInst* instance,
     std::vector<std::tuple<std::string, odb::dbNet*>>& port_name_to_net)
@@ -97,4 +104,56 @@ odb::dbInst* ReplaceCell(
 
   return new_instance;
 }
+
+std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst)
+{
+  std::vector<odb::dbITerm*> clocks;
+  for (odb::dbITerm* iterm : inst->getITerms()) {
+    if (iterm->getSigType() == odb::dbSigType::CLOCK) {
+      clocks.push_back(iterm);
+    }
+  }
+  return clocks;
+}
+
+std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
+{
+  const sta::dbNetwork* db_network = sta->getDbNetwork();
+  const sta::ClockSet clock_set = sta->clocks(db_network->dbToSta(iterm));
+
+  sta::ClockSet::ConstIterator iter(clock_set);
+  while (iter.hasNext()) {
+    // Returns the first clock for the given iterm, TODO can we have more than
+    // one clock driver?
+    return iter.next();
+  }
+  return std::nullopt;
+}
+
+ExitFork::ExitFork(int fd) : fd_(fd)
+{
+}
+
+ExitFork::~ExitFork()
+{
+  write(fd_, kDoneKeyword, std::char_traits<char>::length(kDoneKeyword));
+  exit(EXIT_SUCCESS);
+}
+
+void RunInForkForRollback(std::function<void()> fn)
+{
+  std::array<int, 2> fd;
+  pipe(fd.data());
+
+  int pid = fork();
+  if (pid != 0) {
+    std::array<char, std::char_traits<char>::length(kDoneKeyword)> buff;
+    read(fd[0], buff.data(), strlen(kDoneKeyword));
+  } else {
+    ExitFork exit_fork(
+        fd[1]);  // will exit at the end of the scope and notify the parent
+    fn();
+  }
+}
+
 }  // namespace dft::utils

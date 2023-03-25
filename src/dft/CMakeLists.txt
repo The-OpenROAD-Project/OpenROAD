@@ -45,15 +45,28 @@ swig_lib(NAME dft
 ################################################################
 target_sources(dft
   PRIVATE
-    src/MakeDft.cpp
+  # Keep sorted
     src/Dft.cpp
+    src/DftConfig.cpp
+    src/MakeDft.cpp
+    src/ScanChain.cpp
     src/ScanReplace.cpp
     src/Utils.cpp
+    src/architect/ClockDomain.cpp 
+    src/architect/ScanArchitect.cpp
+    src/architect/ScanArchitectConfig.cpp
+    src/architect/ScanArchitectHeuristic.cpp
+    src/cells/OneBitScanCell.cpp
+    src/cells/ScanCell.cpp
+    src/cells/ScanCellFactory.cpp
 )
 
 target_include_directories(dft
   PUBLIC
     include
+  PRIVATE
+    src
+    src/architect
 )
 
 target_link_libraries(dft
@@ -85,3 +98,4 @@ if (Python3_FOUND AND BUILD_PYTHON)
     )
 
 endif()
+add_subdirectory(test/cpp)

@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include "DftConfig.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -45,18 +46,42 @@ class Dft
 
   // Pre-work for insert_dft. We collect the cells that need to be
   // scan replaced. This function doesn't mutate the design.
-  //
-  // TODO (and not implemented yet)
-  //  - scan architect
   void pre_dft();
+
+  // Calls pre_dft performing scan replace and scan architect.
+  // A report is going to be generated and printed followed by a rollback to
+  // undo the work of scan replace
+  //
+  // Here we do:
+  //  - Scan Replace
+  //  - Scan Architect
+  //  - Rollback
+  //  - Shows Scan Architect report
+  //
+  // If verbose is true, then we show all the cells that are inside the scan
+  // chains
+  void preview_dft(bool verbose);
 
   // Inserts the scan chains into the design. For now this just replace the
   // cells in the design with scan equivalent. This functions mutates the
   // design.
   //
+  // Here we do:
+  //  - Scan Replace
+  //  - Scan Architect
+  //
   // TODO (and not implemented yet)
   // - scan stitching
   void insert_dft();
+
+  // Returns a mutable version of DftConfig
+  DftConfig& getMutableDftConfig();
+
+  // Returns a const version of DftConfig
+  const DftConfig& getDftConfig() const;
+
+  // Prints to stdout
+  void reportDftConfig() const;
 
  private:
   // If we need to run pre_dft to create the internal state
@@ -72,6 +97,7 @@ class Dft
 
   // Internal state
   std::unique_ptr<ScanReplace> scan_replace_;
+  DftConfig dft_config_;
 };
 
 }  // namespace dft

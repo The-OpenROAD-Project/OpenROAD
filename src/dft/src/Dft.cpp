@@ -35,6 +35,10 @@
 #include <iostream>
 
 #include "ScanReplace.hh"
+#include "Utils.hh"
+#include "architect/ScanArchitect.hh"
+#include "cells/ScanCell.hh"
+#include "cells/ScanCellFactory.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
@@ -65,6 +69,56 @@ void Dft::pre_dft()
   need_to_run_pre_dft_ = false;
 }
 
+void Dft::preview_dft(bool verbose)
+{
+  if (need_to_run_pre_dft_) {
+    pre_dft();
+  }
+  // preview_dft should not modify the original design, we do this with a fork.
+  // All design modifications are in the child, we collect the results of the
+  // Scan Architect from the parent and we let the child to exit.
+  utils::RunInForkForRollback([this, verbose]() {
+    // TODO: Move this to a function to be reused in insert_dft
+
+    // Scan replace
+    scan_replace_->scanReplace();
+    std::vector<std::unique_ptr<ScanCell>> scan_cells
+        = CollectScanCells(db_, sta_, logger_);
+
+    std::vector<std::shared_ptr<ScanCell>> shared_scan_cells;
+    std::move(scan_cells.begin(),
+              scan_cells.end(),
+              std::back_inserter(shared_scan_cells));
+
+    // Scan Architect
+    std::unique_ptr<ScanCellsBucket> scan_cells_bucket
+        = std::make_unique<ScanCellsBucket>();
+    scan_cells_bucket->init(dft_config_.getScanArchitectConfig(),
+                            shared_scan_cells);
+
+    std::unique_ptr<ScanArchitect> scan_architect
+        = ScanArchitect::ConstructScanScanArchitect(
+            dft_config_.getScanArchitectConfig(), std::move(scan_cells_bucket));
+    scan_architect->init();
+    scan_architect->architect();
+
+    std::vector<std::unique_ptr<ScanChain>> scan_chains
+        = scan_architect->getScanChains();
+
+    logger_->report("***************************");
+    logger_->report("Preview DFT Report");
+    logger_->report("Number of chains: {:d}", scan_chains.size());
+    logger_->report("Clock domain: {:s}",
+                    ScanArchitectConfig::ClockMixingName(
+                        dft_config_.getScanArchitectConfig().getClockMixing()));
+    logger_->report("***************************\n");
+    for (const auto& scan_chain : scan_chains) {
+      scan_chain->report(logger_, verbose);
+    }
+    logger_->report("");
+  });
+}
+
 void Dft::insert_dft()
 {
   if (need_to_run_pre_dft_) {
@@ -73,6 +127,24 @@ void Dft::insert_dft()
 
   // Perform scan replacement
   scan_replace_->scanReplace();
+
+  // TODO: Scan Architect and Scan Stitching
+}
+
+DftConfig& Dft::getMutableDftConfig()
+{
+  return dft_config_;
+}
+
+const DftConfig& Dft::getDftConfig() const
+{
+  return dft_config_;
+}
+
+void Dft::reportDftConfig() const
+{
+  logger_->report("DFT Config:");
+  dft_config_.report(logger_);
 }
 
 }  // namespace dft
