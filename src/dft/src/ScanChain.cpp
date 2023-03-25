@@ -34,9 +34,7 @@
 
 namespace dft {
 
-ScanChain::ScanChain(const std::string& name)
-    : name_(name),
-      bits_(0)
+ScanChain::ScanChain(const std::string& name) : name_(name), bits_(0)
 {
 }
 
