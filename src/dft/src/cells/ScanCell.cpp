@@ -34,7 +34,7 @@
 
 namespace dft {
 
-ScanCell::ScanCell(std::string name, ClockDomain clock_domain)
+ScanCell::ScanCell(const std::string& name, ClockDomain clock_domain)
     : name_(name), clock_domain_(std::move(clock_domain))
 {
 }

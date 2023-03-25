@@ -45,7 +45,7 @@ namespace dft {
 class ScanCell
 {
  public:
-  ScanCell(std::string name, ClockDomain clock_domain);
+  ScanCell(const std::string& name, ClockDomain clock_domain);
   virtual ~ScanCell() = default;
   // Not copyable or movable
   ScanCell(const ScanCell&) = delete;

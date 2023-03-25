@@ -34,7 +34,7 @@
 
 namespace dft {
 
-OneBitScanCell::OneBitScanCell(std::string name,
+OneBitScanCell::OneBitScanCell(const std::string& name,
                                ClockDomain clock_domain,
                                odb::dbInst* inst,
                                sta::TestCell* test_cell)

@@ -50,14 +50,14 @@ namespace dft {
 class ScanChain
 {
  public:
-  ScanChain(const std::string& name);
+  explicit ScanChain(const std::string& name);
   // Not copyable or movable
   ScanChain(const ScanChain&) = delete;
   ScanChain& operator=(const ScanChain&) = delete;
 
   // Adds a scan cell to the chain. Depending on the edge of the cell, we will
   // move the cell to rising or falling vectors.
-  void add(std::shared_ptr<ScanCell> scan_cell);
+  void add(const std::shared_ptr<ScanCell>& scan_cell);
 
   // Returns true if the scan chain is empty
   bool empty() const;

@@ -36,13 +36,11 @@ namespace dft {
 
 ScanChain::ScanChain(const std::string& name)
     : name_(name),
-      rising_edge_scan_cells_(),
-      falling_edge_scan_cells_(),
       bits_(0)
 {
 }
 
-void ScanChain::add(std::shared_ptr<ScanCell> scan_cell)
+void ScanChain::add(const std::shared_ptr<ScanCell>& scan_cell)
 {
   switch (scan_cell->getClockDomain().getClockEdge()) {
     case ClockEdge::Rising:

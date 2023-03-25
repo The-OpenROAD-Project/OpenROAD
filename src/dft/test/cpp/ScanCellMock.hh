@@ -7,13 +7,13 @@ namespace test {
 class ScanCellMock : public ScanCell
 {
  public:
-  ScanCellMock(std::string name, ClockDomain clock_domain);
-  virtual ~ScanCellMock() = default;
+  ScanCellMock(const std::string& name, ClockDomain clock_domain);
+  ~ScanCellMock() override = default;
 
-  virtual uint64_t getBits() const override;
-  virtual void connectSE() const override;
-  virtual void connectSI() const override;
-  virtual void connectSO() const override;
+  uint64_t getBits() const override;
+  void connectSE() const override;
+  void connectSI() const override;
+  void connectSO() const override;
 };
 
 }  // namespace test

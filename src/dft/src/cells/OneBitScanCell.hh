@@ -41,7 +41,7 @@ namespace dft {
 class OneBitScanCell : public ScanCell
 {
  public:
-  OneBitScanCell(std::string name,
+  OneBitScanCell(const std::string& name,
                  ClockDomain clock_domain,
                  odb::dbInst* inst,
                  sta::TestCell* test_cell);
@@ -49,10 +49,10 @@ class OneBitScanCell : public ScanCell
   OneBitScanCell(const OneBitScanCell&) = delete;
   OneBitScanCell& operator=(const OneBitScanCell&) = delete;
 
-  virtual uint64_t getBits() const override;
-  virtual void connectSE() const override;
-  virtual void connectSI() const override;
-  virtual void connectSO() const override;
+  uint64_t getBits() const override;
+  void connectSE() const override;
+  void connectSI() const override;
+  void connectSO() const override;
 
  private:
   odb::dbInst* inst_;

@@ -3,7 +3,7 @@
 namespace dft {
 namespace test {
 
-ScanCellMock::ScanCellMock(std::string name, ClockDomain clock_domain)
+ScanCellMock::ScanCellMock(const std::string& name, ClockDomain clock_domain)
     : ScanCell(name, std::move(clock_domain))
 {
 }

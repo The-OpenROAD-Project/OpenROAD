@@ -36,6 +36,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <optional>
 
 #include "db_sta/dbNetwork.hh"
 

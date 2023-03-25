@@ -12,8 +12,6 @@ BOOST_AUTO_TEST_SUITE(test_suite)
 
 namespace {
 
-constexpr uint64_t kMaxBits = 10000;
-
 bool operator!=(const ScanArchitect::HashDomainLimits& lhs,
                 const ScanArchitect::HashDomainLimits& rhs)
 {
@@ -27,10 +25,9 @@ bool CompareUnordered(const T& u1, const T& u2)
     auto it = u2.find(key);
     if (it == u2.end()) {
       return false;
-    } else {
-      if (it->second != value) {
-        return false;
-      }
+    }
+    if (it->second != value) {
+      return false;
     }
   }
   return true;

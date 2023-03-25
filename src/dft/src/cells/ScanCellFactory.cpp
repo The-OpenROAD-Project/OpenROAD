@@ -77,9 +77,8 @@ TypeOfCell IdentifyCell(odb::dbInst* inst)
     // we assume that we are only dealing with one bit cells, but in the future
     // we could deal with multibit cells too
     return TypeOfCell::OneBitCell;
-  } else {
-    return TypeOfCell::NotSupported;
   }
+  return TypeOfCell::NotSupported;
 }
 
 ClockDomain GetClockDomainFromClock(sta::LibertyCell* liberty_cell,
@@ -103,7 +102,7 @@ ClockDomain GetClockDomainFromClock(sta::LibertyCell* liberty_cell,
 
   // TODO: Create the clock domain based on the timing instead of the name to
   // better control equivalent clocks
-  return ClockDomain(clock->name(), std::move(edge));
+  return ClockDomain(clock->name(), edge);
 }
 
 std::optional<ClockDomain> FindOneBitCellClockDomain(odb::dbInst* inst,
@@ -119,9 +118,9 @@ std::optional<ClockDomain> FindOneBitCellClockDomain(odb::dbInst* inst,
   if (clock.has_value()) {
     return GetClockDomainFromClock(
         GetLibertyCell(inst->getMaster(), db_network), *clock, clock_pin);
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
