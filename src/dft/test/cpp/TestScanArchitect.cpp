@@ -8,7 +8,6 @@
 #include "architect/ScanArchitectConfig.hh"
 
 using namespace dft;
-namespace tt = boost::test_tools;
 BOOST_AUTO_TEST_SUITE(test_suite)
 
 namespace {
