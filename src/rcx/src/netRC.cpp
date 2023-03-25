@@ -2157,7 +2157,6 @@ uint extMain::writeSPEF(char* filename,
     _spef = new extSpef(_tech, _block, logger_, this);
   }
   _spef->_termJxy = termJxy;
-  _spef->incr_wRun();
 
   _writeNameMap = noNameMap ? false : true;
   _spef->_writeNameMap = _writeNameMap;

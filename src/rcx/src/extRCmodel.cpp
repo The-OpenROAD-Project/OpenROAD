@@ -108,7 +108,7 @@ void extDistRC::set(uint d, double cc, double fr, double a, double r)
 
 void extDistRC::readRC(Ath__parser* parser, double dbFactor)
 {
-  _sep = Ath__double2int(dbFactor * 1000 * parser->getDouble(0));
+  _sep = lround(dbFactor * 1000 * parser->getDouble(0));
   _coupling = parser->getDouble(1) / dbFactor;
   _fringe = parser->getDouble(2) / dbFactor;
   _res = parser->getDouble(3) / dbFactor;
@@ -116,8 +116,8 @@ void extDistRC::readRC(Ath__parser* parser, double dbFactor)
 
 void extDistRC::readRC_res2(Ath__parser* parser, double dbFactor)
 {
-  _sep = Ath__double2int(dbFactor * 1000 * parser->getDouble(1));
-  _coupling = Ath__double2int(dbFactor * 1000 * parser->getDouble(0));
+  _sep = lround(dbFactor * 1000 * parser->getDouble(1));
+  _coupling = lround(dbFactor * 1000 * parser->getDouble(0));
   _fringe = parser->getDouble(2) / dbFactor;
   _res = parser->getDouble(3) / dbFactor;
 }
@@ -390,10 +390,10 @@ uint extMetRCTable::readRCstats(Ath__parser* parser)
       m._overUnder = true;
 
       m._w_m = parser->getDouble(7);
-      m._w_nm = Ath__double2int(m._w_m * 1000);
+      m._w_nm = lround(m._w_m * 1000);
 
       m._s_m = parser->getDouble(9);
-      m._s_nm = Ath__double2int(m._s_m * 1000);
+      m._s_nm = lround(m._s_m * 1000);
 
       extDistRC* rc = _rcPoolPtr->alloc();
 
@@ -411,10 +411,10 @@ uint extMetRCTable::readRCstats(Ath__parser* parser)
       m._underMet = -1;
 
       m._w_m = parser->getDouble(6);
-      m._w_nm = Ath__double2int(m._w_m * 1000);
+      m._w_nm = lround(m._w_m * 1000);
 
       m._s_m = parser->getDouble(8);
-      m._s_nm = Ath__double2int(m._s_m * 1000);
+      m._s_nm = lround(m._s_m * 1000);
 
       extDistRC* rc = _rcPoolPtr->alloc();
 
@@ -432,10 +432,10 @@ uint extMetRCTable::readRCstats(Ath__parser* parser)
       m._over = true;
 
       m._w_m = parser->getDouble(6);
-      m._w_nm = Ath__double2int(m._w_m * 1000);
+      m._w_nm = lround(m._w_m * 1000);
 
       m._s_m = parser->getDouble(8);
-      m._s_nm = Ath__double2int(m._s_m * 1000);
+      m._s_nm = lround(m._s_m * 1000);
 
       extDistRC* rc = _rcPoolPtr->alloc();
 
@@ -774,8 +774,8 @@ void extDistWidthRCTable::createWidthMap()
     double v1 = _widthTable->get(jj);
     double v2 = _widthTable->get(jj + 1);
 
-    int w1 = Ath__double2int(v1);
-    int w2 = Ath__double2int(v2);
+    int w1 = lround(v1);
+    int w2 = lround(v2);
 
     for (int w = w1; w <= w2; w += _modulo) {
       if (w >= _lastWidth)
@@ -859,7 +859,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   int widthCnt = widthTable->getCnt();
   _widthTable = new Ath__array1D<int>(widthCnt);
   for (uint ii = 0; ii < widthCnt; ii++) {
-    int w = Ath__double2int(dbFactor * 1000 * widthTable->get(ii));
+    int w = lround(dbFactor * 1000 * widthTable->get(ii));
     _widthTable->add(w);
   }
   if (widthCnt > 0) {
@@ -877,8 +877,8 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
     double v1 = _widthTable->get(jj);
     double v2 = _widthTable->get(jj + 1);
 
-    int w1 = Ath__double2int(v1);
-    int w2 = Ath__double2int(v2);
+    int w1 = lround(v1);
+    int w2 = lround(v2);
 
     for (int w = w1; w <= w2; w += _modulo) {
       if (w >= _lastWidth)
@@ -935,7 +935,7 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
   uint widthCnt = widthTable->getCnt();
   _widthTable = new Ath__array1D<int>(widthCnt);
   for (uint ii = 0; ii < widthCnt; ii++) {
-    int w = Ath__double2int(dbFactor * 1000 * widthTable->get(ii));
+    int w = lround(dbFactor * 1000 * widthTable->get(ii));
     _widthTable->add(w);
   }
   for (uint i = 0; i < layerCnt; i++) {
@@ -961,8 +961,8 @@ extDistWidthRCTable::extDistWidthRCTable(bool over,
     double v1 = _widthTable->get(jj);
     double v2 = _widthTable->get(jj + 1);
 
-    int w1 = Ath__double2int(v1);
-    int w2 = Ath__double2int(v2);
+    int w1 = lround(v1);
+    int w2 = lround(v2);
 
     for (int w = w1; w <= w2; w += _modulo) {
       if (w >= _lastWidth)
@@ -1006,7 +1006,7 @@ void extDistWidthRCTable::setDiagUnderTables(
   _diagWidthTable[met]->resetCnt();
   uint ii;
   for (ii = 0; ii < diagWidthCnt; ii++) {
-    int w = Ath__double2int(dbFactor * 1000 * diagWidthTable->get(ii));
+    int w = lround(dbFactor * 1000 * diagWidthTable->get(ii));
     _diagWidthTable[met]->add(w);
   }
   _firstDiagWidth->set(met, _diagWidthTable[met]->get(0));
@@ -1014,7 +1014,7 @@ void extDistWidthRCTable::setDiagUnderTables(
   uint diagDistCnt = diagDistTable->getCnt();
   _diagDistTable[met]->resetCnt();
   for (ii = 0; ii < diagDistCnt; ii++) {
-    int s = Ath__double2int(dbFactor * 1000 * diagDistTable->get(ii));
+    int s = lround(dbFactor * 1000 * diagDistTable->get(ii));
     _diagDistTable[met]->add(s);
   }
   _firstDiagDist->set(met, _diagDistTable[met]->get(0));
@@ -1024,8 +1024,8 @@ void extDistWidthRCTable::setDiagUnderTables(
     double v1 = _diagWidthTable[met]->get(jj);
     double v2 = _diagWidthTable[met]->get(jj + 1);
 
-    int w1 = Ath__double2int(v1);
-    int w2 = Ath__double2int(v2);
+    int w1 = lround(v1);
+    int w2 = lround(v2);
 
     for (int w = w1; w <= w2; w += _modulo) {
       if (w >= _lastDiagWidth->geti(met))
@@ -1043,8 +1043,8 @@ void extDistWidthRCTable::setDiagUnderTables(
     double v1 = _diagDistTable[met]->get(jj);
     double v2 = _diagDistTable[met]->get(jj + 1);
 
-    int s1 = Ath__double2int(v1);
-    int s2 = Ath__double2int(v2);
+    int s1 = lround(v1);
+    int s2 = lround(v2);
 
     for (int s = s1; s <= s2; s += _modulo) {
       if (s >= _lastDiagDist->geti(met))
@@ -2353,21 +2353,21 @@ void extMeasure::setTargetParams(double w,
 {
   _w_m = w;
   _s_m = s;
-  _w_nm = Ath__double2int(1000 * w);
-  _s_nm = Ath__double2int(1000 * s);
+  _w_nm = lround(1000 * w);
+  _s_nm = lround(1000 * s);
   _r = r;
   _t = t;
   _h = h;
   if (w2 > 0.0) {
     _w2_m = w2;
-    _w2_nm = Ath__double2int(1000 * w2);
+    _w2_nm = lround(1000 * w2);
   } else {
     _w2_m = _w_m;
     _w2_nm = _w_nm;
   }
   if (s2 > 0.0 || (s2 == 0.0 && _diag)) {
     _s2_m = s2;
-    _s2_nm = Ath__double2int(1000 * s2);
+    _s2_nm = lround(1000 * s2);
   } else {
     _s2_m = _s_m;
     _s2_nm = _s_nm;
@@ -3153,17 +3153,17 @@ int extRCModel::writeBenchWires(FILE* fp, extMeasure* measure)
     double min_pitch = minWidth + minSpace;
     measure->clean2dBoxTable(met, false);
     int i;
-    uint begin = base - Ath__double2int(measure->_seff * 1000)
-                 + Ath__double2int(minWidth * 1000) / 2;
+    uint begin
+        = base - lround(measure->_seff * 1000) + lround(minWidth * 1000) / 2;
     for (i = 0; i < n + 1; i++) {
       netIdTable[idCnt]
           = measure->createDiagNetSingleWire(_wireDirName,
                                              idCnt,
                                              begin,
-                                             Ath__double2int(1000 * minWidth),
-                                             Ath__double2int(1000 * minSpace),
+                                             lround(1000 * minWidth),
+                                             lround(1000 * minSpace),
                                              measure->_dir);
-      begin -= Ath__double2int(min_pitch * 1000);
+      begin -= lround(min_pitch * 1000);
       idCnt++;
     }
 
