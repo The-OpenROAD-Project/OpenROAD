@@ -110,6 +110,26 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
+inline sta::Slack getSlack(sta::dbSta* open_sta_, std::string vertex_name)
+{
+  open_sta_->ensureGraph();
+  open_sta_->ensureLevelized();
+  open_sta_->searchPreamble();
+  auto sta_state = open_sta_->search();
+  sta::VertexSet* end_points = sta_state->endpoints();
+  for (auto& end_point : *end_points) {
+    sta::PathRef path_ref
+        = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
+    sta::Path* path = path_ref.path();
+    if (path == nullptr || path->slack(open_sta_) >= 0)
+      continue;
+    auto path_slack = path->slack(open_sta_);
+    if (std::string(end_point->name(sta_state->network())) == vertex_name)
+      return path_slack;
+  }
+  return 100;
+}
+
 void Restructure::run(char* liberty_file_name,
                       float slack_threshold,
                       unsigned max_depth,
@@ -125,9 +145,8 @@ void Restructure::run(char* liberty_file_name,
   logfile_ = abc_logfile;
   post_abc_script_ = post_abc_script;
 
-  for(ushort i = 0; i < 10; i++) {
+  for (ushort i = 0; i < 1; i++) {
     reset();
-    dist_host_ = "";
 
     lib_file_names_.emplace_back(liberty_file_name);
 
@@ -143,12 +162,16 @@ void Restructure::run(char* liberty_file_name,
       resizer_->estimateWireParasitics();
     }
     auto delay = open_sta_->worstSlack(sta::MinMax::max());
-    logger_->report("Iteration {} ended with slack {}", i, delay);
+    auto improved_slack = getSlack(open_sta_, worst_vertix_);
+    logger_->report(
+        "Improved end point {} to {}", worst_vertix_, improved_slack);
+    logger_->report("Iteration {} ended with worst slack {}", i, delay);
   }
 }
 
 void Restructure::setDistributed(const std::string& host, unsigned short port)
 {
+  use_cloud_ = true;
   dist_host_ = host;
   dist_port_ = port;
 }
@@ -210,8 +233,13 @@ void Restructure::runABC()
     modes = {Mode::AREA_1, Mode::AREA_2, Mode::AREA_3};
   } else {
     // Delay Mode
-    modes = {Mode::DELAY_1, Mode::DELAY_2, Mode::DELAY_3, Mode::DELAY_4, Mode::DELAY_5, Mode::DELAY_6, Mode::DELAY_7};
-    // modes = {Mode::DELAY_1};
+    modes = {Mode::DELAY_1,
+             Mode::DELAY_2,
+             Mode::DELAY_3,
+             Mode::DELAY_4,
+             Mode::DELAY_5,
+             Mode::DELAY_6,
+             Mode::DELAY_7};
   }
   auto dbFile = fmt::format("{}rmp.odb", work_dir_name_);
   auto sdcFile = fmt::format("{}rmp.sdc", work_dir_name_);
@@ -219,7 +247,7 @@ void Restructure::runABC()
   open_sta_->writeSdc(sdcFile.c_str(), false, true, 4, false, false);
   files_to_remove.push_back(dbFile);
   files_to_remove.push_back(sdcFile);
-  if (dist_host_.empty()) {
+  if (!use_cloud_) {
     dist_host_ = "127.0.0.1";
     dist_port_ = 1110;             // load balancer port
     open_sta_->setThreadCount(0);  // needed for forking
@@ -272,7 +300,10 @@ void Restructure::runABC()
         uDesc->setLibFiles(lib_file_names_);
         uDesc->setODBPath(fmt::format("{}rmp.odb", work_dir_name_));
         uDesc->setSDCPath(fmt::format("{}rmp.sdc", work_dir_name_));
-        uDesc->setAllRC(resizer_->getAllWireSignalRes(),resizer_->getAllWireSignalCap(),resizer_->getAllWireClockRes(),resizer_->getAllWireClockCap());
+        uDesc->setAllRC(resizer_->getAllWireSignalRes(),
+                        resizer_->getAllWireSignalCap(),
+                        resizer_->getAllWireClockRes(),
+                        resizer_->getAllWireClockCap());
         std::vector<std::string> ids;
         for (auto inst : path_insts_) {
           ids.push_back(inst->getName());
@@ -280,7 +311,8 @@ void Restructure::runABC()
         uDesc->setReplaceableInstsIds(ids);
         dst::JobMessage msg(dst::JobMessage::RESTRUCTURE), result;
         msg.setJobDescription(std::move(uDesc));
-        bool status = dist_->sendJob(msg, dist_host_.c_str(), dist_port_, result);
+        bool status
+            = dist_->sendJob(msg, dist_host_.c_str(), dist_port_, result);
         if (!status)
           logger_->error(RMP, 26, "Sending Job failed");
         RestructureJobDescription* resultDesc
@@ -295,7 +327,8 @@ void Restructure::runABC()
 #pragma omp critical
       {
         logger_->report(
-            "Optimized to {} instances in mode {} iterations {} with max path depth "
+            "Optimized to {} instances in mode {} iterations {} with max path "
+            "depth "
             "decrease of {}, delay of {}.",
             num_instances,
             modes[curr_mode_idx],
@@ -317,8 +350,9 @@ void Restructure::runABC()
       }
     }
   }
-  {
-    dst::JobMessage exitMsg(dst::JobMessage::EXIT, dst::JobMessage::BROADCAST), result;
+  if (!use_cloud_) {
+    dst::JobMessage exitMsg(dst::JobMessage::EXIT, dst::JobMessage::BROADCAST),
+        result;
     dist_->sendJob(exitMsg, dist_host_.c_str(), dist_port_, result);
   }
   if (best_inst_count < std::numeric_limits<int>::max()
@@ -341,19 +375,20 @@ void Restructure::runABC()
           if (net == nullptr)
             continue;
           iterm->disconnect();
-          if (net->getITerms().size() == 0 && net->getBTerms().size() == 0 && !net->isSpecial())
+          if (net->getITerms().size() == 0 && net->getBTerms().size() == 0
+              && !net->isSpecial())
             odb::dbNet::destroy(net);
         }
         odb::dbInst::destroy(inst);
       }
       for (auto newInst : newDb->getChip()->getBlock()->getInsts()) {
-        if(block_->findInst(newInst->getName().c_str()))
+        if (block_->findInst(newInst->getName().c_str()))
           continue;
         auto master = db_->findMaster(newInst->getMaster()->getName().c_str());
         auto inst
             = odb::dbInst::create(block_, master, newInst->getName().c_str());
         inst->setOrient(newInst->getOrient());
-        int x,y;
+        int x, y;
         newInst->getOrigin(x, y);
         inst->setOrigin(x, y);
         inst->setPlacementStatus(newInst->getPlacementStatus());
@@ -367,13 +402,12 @@ void Restructure::runABC()
                       ->getNet()
                       ->getName();
             auto net = block_->findNet(netName.c_str());
-            if(net == nullptr)
-            {
+            if (net == nullptr) {
               net = odb::dbNet::create(block_, newNet->getName().c_str());
               net->setSigType(newNet->getSigType());
             }
             iterm->connect(net);
-            if(net->isSpecial())
+            if (net->isSpecial())
               iterm->setSpecial();
           }
         }
@@ -407,8 +441,7 @@ void Restructure::getEndPoints(sta::PinSet& ends,
   std::size_t path_found = end_points->size();
   logger_->report("Number of paths for restructure are {}", path_found);
   sta::Slack worst_slack = 0;
-  sta::Vertex* worst_vertix;
-  std::set<sta::Slack> slacks;
+  sta::Vertex* worst_vertix = nullptr;
   for (auto& end_point : *end_points) {
     if (!is_area_mode_) {
       sta::PathRef path_ref
@@ -420,24 +453,19 @@ void Restructure::getEndPoints(sta::PinSet& ends,
       sta::PathExpanded expanded(path, open_sta_);
       // Members in expanded include gate output and net so divide by 2
       if (expanded.size() / 2 > max_depth) {
-        ends.insert(end_point->pin());
-        slacks.insert(path_slack);
-        if (path_slack < worst_slack)
-        {
+        if (path_slack < worst_slack) {
           worst_slack = path_slack;
           worst_vertix = end_point;
         }
-        // Use only one end point to limit blob size for timing
-        // break;
       }
     } else {
       ends.insert(end_point->pin());
     }
   }
-  // for(auto slack : slacks)
-  //   logger_->report("Worst Slack Path {}", slack);
-  ends.clear();
-  ends.insert(worst_vertix->pin());
+  if (!area_mode && worst_vertix != nullptr) {
+    worst_vertix_ = worst_vertix->name(sta_state->network());
+    ends.insert(worst_vertix->pin());
+  }
 
   // unconstrained end points
   if (is_area_mode_) {
@@ -743,24 +771,12 @@ void Restructure::setTieHiPort(sta::LibertyPort* tieHiPort)
   }
 }
 
-void Restructure::setTieHiPort(const std::string& cell, const std::string& port)
-{
-  hicell_ = cell;
-  hiport_ = port;
-}
-
 void Restructure::setTieLoPort(sta::LibertyPort* tieLoPort)
 {
   if (tieLoPort) {
     locell_ = tieLoPort->libertyCell()->name();
     loport_ = tieLoPort->name();
   }
-}
-
-void Restructure::setTieLoPort(const std::string& cell, const std::string& port)
-{
-  locell_ = cell;
-  loport_ = port;
 }
 
 void Restructure::addLibFile(const std::string& lib_file)

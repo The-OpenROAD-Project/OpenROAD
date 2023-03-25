@@ -61,10 +61,9 @@ class RestructureJobDescription : public dst::JobDescription
     loport_ = port;
   }
   void setAllRC(const std::vector<double>& signal_res,
-                     const std::vector<double>& signal_cap,
-                     const std::vector<double>& clk_res,
-                     const std::vector<double>& clk_cap
-                     )
+                const std::vector<double>& signal_cap,
+                const std::vector<double>& clk_res,
+                const std::vector<double>& clk_cap)
   {
     wire_signal_res_ = signal_res;
     wire_signal_cap_ = signal_cap;
@@ -101,8 +100,14 @@ class RestructureJobDescription : public dst::JobDescription
   {
     return replaceable_insts_ids_;
   }
-  const std::vector<double>& getWireSignalRes() const { return wire_signal_res_; }
-  const std::vector<double>& getWireSignalCap() const { return wire_signal_cap_; }
+  const std::vector<double>& getWireSignalRes() const
+  {
+    return wire_signal_res_;
+  }
+  const std::vector<double>& getWireSignalCap() const
+  {
+    return wire_signal_cap_;
+  }
   const std::vector<double>& getWireClockRes() const { return wire_clk_res_; }
   const std::vector<double>& getWireClockCap() const { return wire_clk_cap_; }
 

@@ -36,8 +36,8 @@
 #pragma once
 
 #include <functional>
-#include <string>
 #include <iostream>
+#include <string>
 
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
@@ -107,9 +107,7 @@ class Restructure
 
   void setMode(const char* mode_name);
   void setTieLoPort(sta::LibertyPort* loport);
-  void setTieLoPort(const std::string& cell, const std::string& port);
   void setTieHiPort(sta::LibertyPort* hiport);
-  void setTieHiPort(const std::string& cell, const std::string& port);
   void runABCJob(const Mode mode,
                  const ushort iterations,
                  int& num_instances,
@@ -118,8 +116,6 @@ class Restructure
                  std::string& blif_path);
   void addLibFile(const std::string& lib_file);
   void setDistributed(const std::string& host, unsigned short port);
-  void setWorkDirName(const std::string& dir) { work_dir_name_ = dir; }
-  void setPostABCScript(const std::string& path) { post_abc_script_ = path; }
 
  private:
   void deleteComponents();
@@ -146,6 +142,7 @@ class Restructure
   std::string hiport_;
   std::string work_dir_name_;
   std::string post_abc_script_;
+  std::string worst_vertix_;
 
   // db vars
   sta::dbSta* open_sta_;
@@ -165,44 +162,43 @@ class Restructure
   dst::Distributed* dist_;
   std::string dist_host_;
   unsigned short dist_port_;
+  bool use_cloud_{false};
   friend class RestructureCallBack;
-
 };
 
-inline std::ostream & operator<<(std::ostream &out, const Mode &c)
+inline std::ostream& operator<<(std::ostream& out, const Mode& c)
 {
-  switch (c)
-  {
-  case Mode::AREA_1:
-    out << "AREA_1";
-    break;
-  case Mode::AREA_2:
-    out << "AREA_2";
-    break;
-  case Mode::AREA_3:
-    out << "AREA_3";
-    break;
-  case Mode::DELAY_1:
-    out << "DELAY_1";
-    break;
-  case Mode::DELAY_2:
-    out << "DELAY_2";
-    break;
-  case Mode::DELAY_3:
-    out << "DELAY_3";
-    break;
-  case Mode::DELAY_4:
-    out << "DELAY_4";
-    break;
-  case Mode::DELAY_5:
-    out << "DELAY_5";
-    break;
-  case Mode::DELAY_6:
-    out << "DELAY_6";
-    break;
-  case Mode::DELAY_7:
-    out << "DELAY_7";
-    break;
+  switch (c) {
+    case Mode::AREA_1:
+      out << "AREA_1";
+      break;
+    case Mode::AREA_2:
+      out << "AREA_2";
+      break;
+    case Mode::AREA_3:
+      out << "AREA_3";
+      break;
+    case Mode::DELAY_1:
+      out << "DELAY_1";
+      break;
+    case Mode::DELAY_2:
+      out << "DELAY_2";
+      break;
+    case Mode::DELAY_3:
+      out << "DELAY_3";
+      break;
+    case Mode::DELAY_4:
+      out << "DELAY_4";
+      break;
+    case Mode::DELAY_5:
+      out << "DELAY_5";
+      break;
+    case Mode::DELAY_6:
+      out << "DELAY_6";
+      break;
+    case Mode::DELAY_7:
+      out << "DELAY_7";
+      break;
   }
   return out;
 }
