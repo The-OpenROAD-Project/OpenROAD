@@ -63,7 +63,7 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 
 // Runs the given function in a child process. We can use this function as a way
 // to rollback changes to the netlist
-void RunInForkForRollback(std::function<void()> fn);
+void RunInForkForRollback(const std::function<void()>& fn);
 
 // For child process: This class will write to the given fd that the process
 // finished running. We use the destructor of this class in case there is an
@@ -71,7 +71,7 @@ void RunInForkForRollback(std::function<void()> fn);
 class ExitFork
 {
  public:
-  ExitFork(int fd);
+  explicit ExitFork(int fd);
   ~ExitFork();
 
  private:
@@ -84,9 +84,8 @@ std::string FormatForReport(const std::optional<T>& opt)
 {
   if (opt.has_value()) {
     return fmt::format("{}", opt.value());
-  } else {
-    return "Undefined";
   }
+  return "Undefined";
 }
 
 }  // namespace dft::utils

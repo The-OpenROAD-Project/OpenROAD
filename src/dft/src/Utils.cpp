@@ -141,7 +141,7 @@ ExitFork::~ExitFork()
   exit(EXIT_SUCCESS);
 }
 
-void RunInForkForRollback(std::function<void()> fn)
+void RunInForkForRollback(const std::function<void()>& fn)
 {
   std::array<int, 2> fd;
   pipe(fd.data());
