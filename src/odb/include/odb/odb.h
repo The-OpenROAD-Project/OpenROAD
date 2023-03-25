@@ -34,7 +34,7 @@
 
 #include <cassert>
 #include <climits>
-#include <cmath>
+#include <math.h>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
