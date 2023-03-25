@@ -76,6 +76,7 @@ class IRSolver
            const std::string& vsrc_loc,
            const std::string& power_net,
            const std::string& out_file,
+           const std::string& error_file,
            const std::string& em_out_file,
            const std::string& spice_out_file,
            bool em_analyze,
@@ -178,6 +179,7 @@ class IRSolver
   std::string power_net_;
   //! Resistance configuration file
   std::string out_file_;
+  std::string error_file_;
   std::string em_out_file_;
   bool em_flag_;
   std::string spice_out_file_;
