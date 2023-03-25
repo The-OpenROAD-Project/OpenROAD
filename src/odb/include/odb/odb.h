@@ -32,13 +32,14 @@
 
 #pragma once
 
+#include <math.h>
+
 #include <cassert>
 #include <climits>
-#include <math.h>
 #include <cstdarg>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <cstdint>
 
 namespace odb {
 

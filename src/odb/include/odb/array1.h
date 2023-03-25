@@ -148,10 +148,7 @@ class Ath__array1D
     return _current;
   }
 
-  bool notEmpty()
-  {
-    return _current > 0;
-  }
+  bool notEmpty() { return _current > 0; }
   bool getNext(T& a)
   {
     if (_iterCnt < _current) {
