@@ -139,6 +139,7 @@ class dbTechLayerArraySpacingRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
 class dbGuide;
+class dbNetTrack;
 class dbMetalWidthViaMap;
 class dbTechLayerAreaRule;
 class dbModule;
@@ -2724,6 +2725,10 @@ class dbNet : public dbObject
   dbSet<dbGuide> getGuides() const;
 
   void clearGuides();
+
+  dbSet<dbNetTrack> getTracks() const;
+
+  void clearTracks();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -8893,6 +8898,29 @@ class dbGuide : public dbObject
   static void destroy(dbGuide* guide);
 
   // User Code End dbGuide
+};
+
+class dbNetTrack : public dbObject
+{
+ public:
+  // User Code Begin dbNetTrackEnums
+  // User Code End dbNetTrackEnums
+
+  Rect getBox() const;
+
+  // User Code Begin dbNetTrack
+
+  dbNet* getNet() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbNetTrack* create(dbNet* net, dbTechLayer* layer, Rect box);
+
+  static dbNetTrack* getNetTrack(dbBlock* block, uint dbid);
+
+  static void destroy(dbNetTrack* guide);
+
+  // User Code End dbNetTrack
 };
 
 class dbMetalWidthViaMap : public dbObject
