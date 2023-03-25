@@ -1,11 +1,11 @@
 #include "cells/ScanCell.hh"
 #pragma once
 
-
 namespace dft {
 namespace test {
 
-class ScanCellMock: public ScanCell {
+class ScanCellMock : public ScanCell
+{
  public:
   ScanCellMock(std::string name, ClockDomain clock_domain);
   virtual ~ScanCellMock() = default;
@@ -16,5 +16,5 @@ class ScanCellMock: public ScanCell {
   virtual void connectSO() const override;
 };
 
-} // namespace test
-} // namespace dft
+}  // namespace test
+}  // namespace dft
