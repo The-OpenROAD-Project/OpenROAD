@@ -7,6 +7,8 @@
 #include "architect/ScanArchitect.hh"
 #include "architect/ScanArchitectConfig.hh"
 
+namespace {
+
 using namespace dft;
 using namespace dft::test;
 BOOST_AUTO_TEST_SUITE(test_suite)
@@ -172,3 +174,5 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace

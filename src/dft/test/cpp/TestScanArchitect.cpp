@@ -7,10 +7,11 @@
 #include "architect/ScanArchitect.hh"
 #include "architect/ScanArchitectConfig.hh"
 
-using namespace dft;
+namespace {
+
 BOOST_AUTO_TEST_SUITE(test_suite)
 
-namespace {
+using namespace dft;
 
 bool operator!=(const ScanArchitect::HashDomainLimits& lhs,
                 const ScanArchitect::HashDomainLimits& rhs)
@@ -41,8 +42,6 @@ ScanArchitect::HashDomainLimits CreateTestHashDomainLimits(uint64_t chain_count,
   limits.max_length = max_length;
   return limits;
 }
-
-}  // namespace
 
 // Check if we are correctly calculating the limits of the hash domains
 BOOST_AUTO_TEST_CASE(test_calculate_chain_count_and_max_length)
@@ -81,3 +80,5 @@ BOOST_AUTO_TEST_CASE(test_calculate_chain_count_and_max_length)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+}  // namespace
