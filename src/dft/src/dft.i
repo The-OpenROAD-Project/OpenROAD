@@ -37,16 +37,18 @@
 #include "dft/Dft.hh"
 #include "ord/OpenRoad.hh"
 
-/*dft::dft **/
-/*getDft()*/
-/*{*/
-  /*return ord::OpenRoad::openRoad()->getDft();*/
-/*}*/
+dft::Dft * getDft()
+{
+  return ord::OpenRoad::openRoad()->getDft();
+}
 
 %}
 
-%inline %{
+%inline
+%{
+void insert_dft()
+{
+  getDft()->insert_dft();
+}
 
-//TODO(#2784): Add exposed functions to Python
-
-%} // inline
+%}  // inline

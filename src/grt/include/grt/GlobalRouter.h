@@ -179,6 +179,7 @@ class GlobalRouter
   void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
+  bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
   void estimateRC();
@@ -292,6 +293,7 @@ class GlobalRouter
   std::vector<odb::Point> findOnGridPositions(const Pin& pin,
                                               bool& has_access_points,
                                               odb::Point& pos_on_grid);
+  int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   float getNetSlack(Net* net);
@@ -388,7 +390,7 @@ class GlobalRouter
   std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
-  std::vector<RoutingTracks>* routing_tracks_;
+  std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
   float adjustment_;

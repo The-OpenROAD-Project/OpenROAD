@@ -232,6 +232,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
 
   if (inserted_buffer_count_ > 0)
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+  logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
   Slack worst_slack = sta_->worstSlack(max_);
@@ -243,7 +244,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
 
 // For testing.
 void
-RepairSetup::repairSetup(Pin *end_pin)
+RepairSetup::repairSetup(const Pin *end_pin)
 {
   init();
   inserted_buffer_count_ = 0;
@@ -285,7 +286,7 @@ RepairSetup::repairSetup(PathRef &path,
           && network_->isDriver(path_pin)
           && !network_->isTopLevelPort(path_pin)) {
         TimingArc *prev_arc = expanded.prevArc(i);
-        TimingArc *corner_arc = prev_arc->cornerArc(lib_ap);
+        const TimingArc *corner_arc = prev_arc->cornerArc(lib_ap);
         Edge *prev_edge = path->prevEdge(prev_arc, sta_);
         Delay load_delay = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap->index())
           // Remove intrinsic delay to find load dependent delay.

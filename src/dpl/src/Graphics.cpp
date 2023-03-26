@@ -79,7 +79,7 @@ void Graphics::binSearch(const Cell* cell, int xl, int yl, int xh, int yh)
   int yl_dbu = core.yMin() + yl * dp_->getRowHeight();
   int xh_dbu = core.xMin() + xh * dp_->getSiteWidth();
   int yh_dbu = core.yMin() + yh * dp_->getRowHeight();
-  searched_.push_back(Rect(xl_dbu, yl_dbu, xh_dbu, yh_dbu));
+  searched_.emplace_back(xl_dbu, yl_dbu, xh_dbu, yh_dbu);
 }
 
 void Graphics::endPlacement()
@@ -147,5 +147,4 @@ bool Graphics::guiActive()
 {
   return gui::Gui::enabled();
 }
-
 }  // namespace dpl

@@ -343,8 +343,8 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
   for (auto& viaDef : viaDefs) {
     frVia via(viaDef);
     Rect box = via.getLayer1BBox();
-    auto viaWidth = box.xMax() - box.xMin();
-    auto viaHeight = box.yMax() - box.yMin();
+    auto viaWidth = box.dx();
+    auto viaHeight = box.dy();
     if (viaWidth > rectWidth || viaHeight > rectHeight) {
       // cout <<"@@@" <<viaDef->getName() <<" rect " <<rectWidth <<" "
       // <<rectHeight <<" via " <<viaWidth <<" " <<viaHeight <<endl;

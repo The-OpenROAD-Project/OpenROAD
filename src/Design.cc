@@ -35,6 +35,8 @@
 
 #include "ord/Design.h"
 
+#include <tcl.h>
+
 #include "ant/AntennaChecker.hh"
 #include "grt/GlobalRouter.h"
 #include "ifp/InitFloorplan.hh"
@@ -244,6 +246,12 @@ pdn::PdnGen* Design::getPdnGen()
 {
   auto app = OpenRoad::openRoad();
   return app->getPdnGen();
+}
+
+pad::ICeWall* Design::getICeWall()
+{
+  auto app = OpenRoad::openRoad();
+  return app->getICeWall();
 }
 
 }  // namespace ord

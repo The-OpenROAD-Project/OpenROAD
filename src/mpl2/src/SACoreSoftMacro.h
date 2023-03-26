@@ -101,6 +101,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   }
 
  private:
+  float getAreaPenalty() const;
   float calNormCost() const override;
   void calPenalty() override;
 
@@ -123,7 +124,6 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
   void calBoundaryPenalty();
   void calNotchPenalty();
   void calMacroBlockagePenalty();
-
   std::vector<Rect> blockages_;
 
   // notch threshold

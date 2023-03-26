@@ -105,6 +105,7 @@ enum dbObjectType
   dbTechLayerWidthTableRuleObj,
   dbTechLayerMinCutRuleObj,
   dbGuideObj,
+  dbNetTrackObj,
   dbMetalWidthViaMapObj,
   dbTechLayerAreaRuleObj,
   dbTechLayerKeepOutZoneRuleObj,

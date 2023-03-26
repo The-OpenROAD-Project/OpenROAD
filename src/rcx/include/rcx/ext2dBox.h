@@ -33,7 +33,6 @@
 #pragma once
 
 #include <array>
-#include <cstdio>
 
 namespace rcx {
 
@@ -46,22 +45,10 @@ class ext2dBox  // assume cross-section on the z-direction
   // after pool allocation.
   ext2dBox() = default;
 
-  ext2dBox(std::array<int, 2> ll,
-           std::array<int, 2> ur,
-           unsigned int met,
-           unsigned int id,
-           unsigned int map,
-           bool dir);
+  ext2dBox(std::array<int, 2> ll, std::array<int, 2> ur) : _ll(ll), _ur(ur) {}
 
-  unsigned int length() const;
-  unsigned int width() const;
-  int loX() const;
-  int loY() const;
-  unsigned int id() const;
-
-  unsigned int met() const { return _met; }
-  unsigned int map() const { return _map; }
-  bool dir() const { return _dir; }
+  int loX() const { return _ll[0]; }
+  int loY() const { return _ll[1]; }
 
   int ur0() const { return _ur[0]; }
   int ur1() const { return _ur[1]; }
@@ -71,10 +58,6 @@ class ext2dBox  // assume cross-section on the z-direction
  private:
   std::array<int, 2> _ll;
   std::array<int, 2> _ur;
-  unsigned int _met;
-  unsigned int _id;
-  unsigned int _map;
-  bool _dir;
 };
 
 }  // namespace rcx

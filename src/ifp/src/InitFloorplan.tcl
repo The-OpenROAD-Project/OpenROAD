@@ -51,8 +51,6 @@ proc initialize_floorplan { args } {
   set site_name ""
   if [info exists keys(-site)] {
     set site_name $keys(-site)
-  } else {
-    utl::warn IFP 11 "use -site to add placement rows."
   }
 
   sta::check_argc_eq0 "initialize_floorplan" $args

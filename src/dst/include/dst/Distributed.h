@@ -67,7 +67,7 @@ class Distributed
                           const char* ip,
                           unsigned short port,
                           JobMessage& result);
-  bool sendResult(JobMessage& result, socket& sock);
+  bool sendResult(JobMessage& msg, socket& sock);
   void addCallBack(JobCallBack* cb);
   const std::vector<JobCallBack*>& getCallBacks() const { return callbacks_; }
 

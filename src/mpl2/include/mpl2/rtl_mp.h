@@ -48,6 +48,10 @@ namespace utl {
 class Logger;
 }
 
+namespace par {
+class PartitionMgr;
+}
+
 namespace mpl2 {
 
 class HierRTLMP;
@@ -61,7 +65,8 @@ class MacroPlacer2
   void init(sta::dbNetwork* network,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            utl::Logger* logger);
+            utl::Logger* logger,
+            par::PartitionMgr* tritonpart);
 
   bool place(const int max_num_macro,
              const int min_num_macro,

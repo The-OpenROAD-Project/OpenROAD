@@ -44,7 +44,7 @@
 #include <limits>
 #include <map>
 
-#include "Graphics.h"
+#include "DplObserver.h"
 #include "utl/Logger.h"
 
 namespace dpl {
@@ -54,29 +54,9 @@ using std::string;
 
 using utl::DPL;
 
-using odb::dbBox;
-using odb::dbBPin;
-using odb::dbBTerm;
-using odb::dbITerm;
 using odb::dbMasterType;
-using odb::dbMPin;
-using odb::dbMTerm;
 using odb::dbNet;
-using odb::dbPlacementStatus;
 using odb::Rect;
-
-Cell::Cell()
-    : db_inst_(nullptr),
-      x_(0),
-      y_(0),
-      width_(0),
-      height_(0),
-      is_placed_(false),
-      hold_(false),
-      group_(nullptr),
-      region_(nullptr)
-{
-}
 
 const char* Cell::name() const
 {
@@ -105,30 +85,7 @@ bool Opendp::isMultiRow(const Cell* cell) const
 
 ////////////////////////////////////////////////////////////////
 
-Group::Group() : util(0.0)
-{
-}
-
 Opendp::Opendp()
-    : logger_(nullptr),
-      db_(nullptr),
-      block_(nullptr),
-      pad_left_(0),
-      pad_right_(0),
-      row_height_(0),
-      site_width_(0),
-      row_count_(0),
-      row_site_count_(0),
-      have_multi_row_cells_(false),
-      max_displacement_x_(0),
-      max_displacement_y_(0),
-      grid_(nullptr),
-      filler_count_(0),
-      have_fillers_(false),
-      hpwl_before_(0),
-      displacement_avg_(0),
-      displacement_sum_(0),
-      displacement_max_(0)
 {
   dummy_cell_.is_placed_ = true;
 }
@@ -172,22 +129,20 @@ bool Opendp::havePadding() const
          || !inst_padding_map_.empty();
 }
 
-void Opendp::setDebug(bool displacement,
-                      float min_displacement,
-                      const dbInst* debug_instance)
+void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 {
-  if (Graphics::guiActive()) {
-    graphics_
-        = std::make_unique<Graphics>(this, min_displacement, debug_instance);
-  }
+  debug_observer_ = std::move(observer);
 }
 
-void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
+void Opendp::detailedPlacement(int max_displacement_x,
+                               int max_displacement_y,
+                               bool disallow_one_site_gaps)
 {
   importDb();
 
-  if (have_fillers_)
+  if (have_fillers_) {
     logger_->warn(DPL, 37, "Use remove_fillers before detailed placement.");
+  }
 
   if (max_displacement_x == 0 || max_displacement_y == 0) {
     // defaults
@@ -197,7 +152,17 @@ void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
     max_displacement_x_ = max_displacement_x;
     max_displacement_y_ = max_displacement_y;
   }
-
+  disallow_one_site_gaps_ = disallow_one_site_gaps;
+  if (!have_one_site_cells_) {
+    // If 1-site fill cell is not detected && no disallow_one_site_gaps flag:
+    // warn the user then continue as normal
+    if (!disallow_one_site_gaps_) {
+      logger_->warn(DPL,
+                    38,
+                    "No 1-site fill cells detected.  To remove 1-site gaps use "
+                    "the -disallow_one_site_gaps flag.");
+    }
+  }
   hpwl_before_ = hpwl();
   detailedPlacement();
   // Save displacement stats before updating instance DB locations.
@@ -208,8 +173,9 @@ void Opendp::detailedPlacement(int max_displacement_x, int max_displacement_y)
                   34,
                   "Detailed placement failed on the following {} instances:",
                   placement_failures_.size());
-    for (auto inst : placement_failures_)
+    for (auto inst : placement_failures_) {
       logger_->info(DPL, 35, " {}", inst->getName());
+    }
     logger_->error(DPL, 36, "Detailed placement failed.");
   }
 }
@@ -220,14 +186,16 @@ void Opendp::updateDbInstLocations()
     if (!isFixed(&cell) && isStdCell(&cell)) {
       dbInst* db_inst_ = cell.db_inst_;
       // Only move the instance if necessary to avoid triggering callbacks.
-      if (db_inst_->getOrient() != cell.orient_)
+      if (db_inst_->getOrient() != cell.orient_) {
         db_inst_->setOrient(cell.orient_);
+      }
       int x = core_.xMin() + cell.x_;
       int y = core_.yMin() + cell.y_;
       int inst_x, inst_y;
       db_inst_->getLocation(inst_x, inst_y);
-      if (x != inst_x || y != inst_y)
+      if (x != inst_x || y != inst_y) {
         db_inst_->setLocation(x, y);
+      }
     }
   }
 }
@@ -276,29 +244,31 @@ void Opendp::findDisplacementStats()
       displacement_max_ = displacement;
     }
   }
-  if (cells_.size())
+  if (!cells_.empty()) {
     displacement_avg_ = displacement_sum_ / cells_.size();
-  else
+  } else {
     displacement_avg_ = 0.0;
+  }
 }
 
 // Note that this does NOT use cell/core coordinates.
 int64_t Opendp::hpwl() const
 {
   int64_t hpwl_sum = 0;
-  for (dbNet* net : block_->getNets())
+  for (dbNet* net : block_->getNets()) {
     hpwl_sum += hpwl(net);
+  }
   return hpwl_sum;
 }
 
 int64_t Opendp::hpwl(dbNet* net) const
 {
-  if (net->getSigType().isSupply())
+  if (net->getSigType().isSupply()) {
     return 0;
-  else {
-    Rect bbox = net->getTermBBox();
-    return bbox.dx() + bbox.dy();
   }
+
+  Rect bbox = net->getTermBBox();
+  return bbox.dx() + bbox.dy();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -308,8 +278,9 @@ Point Opendp::initialLocation(const Cell* cell, bool padded) const
   int loc_x, loc_y;
   cell->db_inst_->getLocation(loc_x, loc_y);
   loc_x -= core_.xMin();
-  if (padded)
+  if (padded) {
     loc_x -= padLeft(cell) * site_width_;
+  }
   loc_y -= core_.yMin();
   return Point(loc_x, loc_y);
 }
@@ -452,15 +423,16 @@ int Opendp::padLeft(dbInst* inst) const
 {
   if (isPaddedType(inst)) {
     auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end())
+    if (itr1 != inst_padding_map_.end()) {
       return itr1->second.first;
+    }
     auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end())
+    if (itr2 != master_padding_map_.end()) {
       return itr2->second.first;
-    else
-      return pad_left_;
-  } else
-    return 0;
+    }
+    return pad_left_;
+  }
+  return 0;
 }
 
 int Opendp::padRight(const Cell* cell) const
@@ -472,15 +444,16 @@ int Opendp::padRight(dbInst* inst) const
 {
   if (isPaddedType(inst)) {
     auto itr1 = inst_padding_map_.find(inst);
-    if (itr1 != inst_padding_map_.end())
+    if (itr1 != inst_padding_map_.end()) {
       return itr1->second.second;
+    }
     auto itr2 = master_padding_map_.find(inst->getMaster());
-    if (itr2 != master_padding_map_.end())
+    if (itr2 != master_padding_map_.end()) {
       return itr2->second.second;
-    else
-      return pad_right_;
-  } else
-    return 0;
+    }
+    return pad_right_;
+  }
+  return 0;
 }
 
 int Opendp::paddedWidth(const Cell* cell) const

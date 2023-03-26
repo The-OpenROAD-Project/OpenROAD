@@ -78,11 +78,9 @@ add_library(db
     dbNameCache.cpp 
     dbProperty.cpp 
     dbPropertyItr.cpp 
-    dbFlatten.cpp 
     dbUtil.cpp
     gs.cpp
     grids.cpp
-    dbLogger.cpp 
     tmg_conn.cpp
     tmg_conn_g.cpp
     tmg_conn_s.cpp
@@ -107,6 +105,7 @@ add_library(db
     dbTechLayerWidthTableRule.cpp
     dbTechLayerMinCutRule.cpp
     dbGuide.cpp
+    dbNetTrack.cpp
     dbMetalWidthViaMap.cpp
     dbTechLayerAreaRule.cpp
     dbTechLayerKeepOutZoneRule.cpp
@@ -127,6 +126,7 @@ add_library(db
     dbRegionGroupItr.cpp
     dbGroupInstItr.cpp
     dbGuideItr.cpp
+    dbNetTrackItr.cpp
     # Generator Code End cpp
 )
 
@@ -148,8 +148,7 @@ target_link_libraries(db
         defout
         tm
         zutil
-        upf
-        utl
+        utl_lib
         ${TCL_LIBRARY}
 )
 

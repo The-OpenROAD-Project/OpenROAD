@@ -67,10 +67,7 @@ void DetailedReorderer::run(DetailedMgr* mgrPtr, const std::string& command)
   boost::char_separator<char> separators(" \r\t\n;");
   boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
-  for (boost::tokenizer<boost::char_separator<char>>::iterator it
-       = tokens.begin();
-       it != tokens.end();
-       it++) {
+  for (auto it = tokens.begin(); it != tokens.end(); it++) {
     args.push_back(*it);
   }
   run(mgrPtr, args);
@@ -149,11 +146,11 @@ void DetailedReorderer::reorder()
     const int segId = segPtr->getSegId();
     const int rowId = segPtr->getRowId();
 
-    std::vector<Node*>& nodes = mgrPtr_->cellsInSeg_[segId];
+    const std::vector<Node*>& nodes = mgrPtr_->getCellsInSeg(segId);
     if (nodes.size() < 2) {
       continue;
     }
-    std::sort(nodes.begin(), nodes.end(), DetailedMgr::compareNodesX());
+    mgrPtr_->sortCellsInSeg(segId);
 
     int j = 0;
     const int n = (int) nodes.size();
@@ -200,7 +197,7 @@ void DetailedReorderer::reorder()
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-void DetailedReorderer::reorder(std::vector<Node*>& nodes,
+void DetailedReorderer::reorder(const std::vector<Node*>& nodes,
                                 int jstrt,
                                 int jstop,
                                 int leftLimit,
@@ -325,9 +322,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
   }
 
   // Need to resort.
-  std::stable_sort(nodes.begin() + jstrt,
-                   nodes.begin() + jstop + 1,
-                   DetailedMgr::compareNodesX());
+  mgrPtr_->sortCellsInSeg(segId, jstrt, jstop + 1);
 
   // Check that cells are site aligned and fix if needed.
   {
@@ -372,9 +367,7 @@ void DetailedReorderer::reorder(std::vector<Node*>& nodes,
         Node* ndi = nodes[jstrt + i];
         ndi->setLeft(origLeft[ndi]);
       }
-      std::stable_sort(nodes.begin() + jstrt,
-                       nodes.begin() + jstop + 1,
-                       DetailedMgr::compareNodesX());
+      mgrPtr_->sortCellsInSeg(segId, jstrt, jstop + 1);
     }
   }
 }

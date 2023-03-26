@@ -46,10 +46,8 @@ add_library(rcx_lib
   extmain.cpp
   extmeasure.cpp
   extDebugPrint.cpp
-  extplanes.cpp
   extstats.cpp
   extprocess.cpp
-  ext2dBox.cpp
   netRC.cpp
   extmeasure_res.cpp
 )
@@ -128,6 +126,8 @@ if (Boost_unit_test_framework_FOUND)
 endif()
 
 add_test(NAME trTest COMMAND trTest)
+add_dependencies(build_and_test trTest)
+
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          rcx_py

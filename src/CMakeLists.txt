@@ -56,6 +56,7 @@ endif()
 set(ODB_HOME ${PROJECT_SOURCE_DIR}/src/odb)
 set(DBSTA_HOME ${PROJECT_SOURCE_DIR}/src/dbSta)
 set(RESIZER_HOME ${PROJECT_SOURCE_DIR}/src/rsz)
+set(GUI_HOME ${PROJECT_SOURCE_DIR}/src/gui)
 
 set(OPENROAD_SOURCE
   Design.cc
@@ -159,7 +160,7 @@ endif()
 
 find_package(SWIG 3.0 REQUIRED)
 if (SWIG_VERSION VERSION_GREATER_EQUAL "4.1.0")
-  message(WARNING "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
+  message(STATUS "Using SWIG >= ${SWIG_VERSION} -flatstaticmethod flag for python")
 endif()
 include(UseSWIG)
 
@@ -257,6 +258,7 @@ add_subdirectory(par)
 add_subdirectory(ant)
 add_subdirectory(gui)
 add_subdirectory(drt)
+add_subdirectory(upf)
 add_subdirectory(utl)
 add_subdirectory(dst)
 add_subdirectory(pdn)
@@ -318,7 +320,7 @@ target_link_libraries(openroad
   mpl
   psm
   ant
-  par
+  upf
   utl
   pdn
   dft
@@ -328,11 +330,12 @@ target_link_libraries(openroad
 )
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # mpl2 aborts with link error on darwin so do not link it.
-  target_link_libraries(openroad mpl2)
+  # mpl2 aborts with link error on darwin and par causes abseil link error at startup on apple silicon so do not link it.
+  target_link_libraries(openroad mpl2 par)
   target_compile_definitions(openroad PRIVATE ENABLE_MPL2)
+  target_compile_definitions(openroad PRIVATE ENABLE_PAR)
 else()
-  message(STATUS "Removing MPL2 to avoid run time fatal error.")
+  message(STATUS "Removing MPL2 and PAR to avoid run time fatal error.")
 endif()
 
 # tclReadline
@@ -396,7 +399,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
     drt_py
     dpo_py
     fin_py
-    par_py
     rcx_py
     rmp_py
     stt_py
@@ -404,6 +406,13 @@ if (Python3_FOUND AND BUILD_PYTHON)
     pdn_py
     dft_py
   )
+
+  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    # par_py causes abseil link error at startup on apple silicon so do not link it.
+    target_link_libraries(openroad par_py)
+  else()
+    message(STATUS "Removing PAR_PY to avoid run time fatal error.")
+  endif()
 else()
   message(STATUS "Python3 disabled")
 endif()

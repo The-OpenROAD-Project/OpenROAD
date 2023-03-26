@@ -89,7 +89,8 @@ class TritonCTS
 
  private:
   void addBuilder(TreeBuilder* builder);
-  void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
+  void forEachBuilder(
+      const std::function<void(const TreeBuilder*)>& func) const;
 
   void setupCharacterization();
   void checkCharacterization();
@@ -105,15 +106,15 @@ class TritonCTS
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
   void initOneClockTree(odb::dbNet* driverNet,
-                        std::string sdcClockName,
+                        const std::string& sdcClockName,
                         TreeBuilder* parent);
   TreeBuilder* initClock(odb::dbNet* net,
-                         std::string sdcClock,
+                         const std::string& sdcClock,
                          TreeBuilder* parentBuilder);
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
-  void createClockBuffers(Clock& clk);
+  void createClockBuffers(Clock& clockNet);
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   void countSinksPostDbWrite(TreeBuilder* builder,
                              odb::dbNet* net,

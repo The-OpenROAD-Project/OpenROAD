@@ -375,13 +375,13 @@ Verilog2db::makeDbNets(const Instance* inst)
       PinSeq net_pins;
       NetConnectedPinIterator* pin_iter = network_->connectedPinIterator(net);
       while (pin_iter->hasNext()) {
-        Pin* pin = pin_iter->next();
+        const Pin* pin = pin_iter->next();
         net_pins.push_back(pin);
       }
       delete pin_iter;
       sort(net_pins, PinPathNameLess(network_));
 
-      for (Pin* pin : net_pins) {
+      for (const Pin* pin : net_pins) {
         if (network_->isTopLevelPort(pin)) {
           const char* port_name = network_->portName(pin);
           if (block_->findBTerm(port_name) == nullptr) {

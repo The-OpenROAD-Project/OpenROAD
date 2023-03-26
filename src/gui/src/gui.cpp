@@ -96,7 +96,7 @@ static void message_handler(QtMsgType type,
   }
   switch (type) {
     case QtDebugMsg:
-      logger->debug(utl::GUI, 1, print_msg);
+      logger->debug(utl::GUI, "qt", print_msg);
       break;
     case QtInfoMsg:
       logger->info(utl::GUI, 75, print_msg);
@@ -1034,6 +1034,16 @@ void Gui::removeRouteGuides(odb::dbNet* net)
   main_window->getLayoutViewer()->removeRouteGuides(net);
 }
 
+void Gui::addNetTracks(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->addNetTracks(net);
+}
+
+void Gui::removeNetTracks(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->removeNetTracks(net);
+}
+
 void Gui::removeFocusNet(odb::dbNet* net)
 {
   main_window->getLayoutViewer()->removeFocusNet(net);
@@ -1047,6 +1057,11 @@ void Gui::clearFocusNets()
 void Gui::clearRouteGuides()
 {
   main_window->getLayoutViewer()->clearRouteGuides();
+}
+
+void Gui::clearNetTracks()
+{
+  main_window->getLayoutViewer()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)

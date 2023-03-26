@@ -940,7 +940,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
   }
   frCoord cornerX = gtl::x(cornerPt);
   frCoord cornerY = gtl::y(cornerPt);
-  frCoord candX, candY;
+  frCoord candX = -1, candY = -1;
   // ensure this is a real corner to corner case
   if (con->getCornerType() == frCornerTypeEnum::CONVEX) {
     if (cornerX >= (candX = gtl::xh(*rect))) {
@@ -979,6 +979,21 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
       if (corner->getPrevCorner()->getType() == frCornerTypeEnum::CONVEX
           && gtl::length(*(corner->getPrevEdge())) < con->getEolWidth()) {
         return;
+      }
+      // check for the rect corners
+      if (rect->getNet()) {
+        auto corner2 = rect->getNet()->getPolyCornerAt(
+            candX, candY, rect->getLayerNum());
+        if (corner2->getType() == frCornerTypeEnum::CONVEX) {
+          if (corner2->getNextCorner()->getType() == frCornerTypeEnum::CONVEX
+              && gtl::length(*(corner2->getNextEdge())) < con->getEolWidth()) {
+            return;
+          }
+          if (corner2->getPrevCorner()->getType() == frCornerTypeEnum::CONVEX
+              && gtl::length(*(corner2->getPrevEdge())) < con->getEolWidth()) {
+            return;
+          }
+        }
       }
     }
   }

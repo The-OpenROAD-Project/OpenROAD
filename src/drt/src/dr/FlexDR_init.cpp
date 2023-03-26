@@ -1090,8 +1090,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           bool useCenterLine = true;
-          auto xSpan = instPinRectBBox.xMax() - instPinRectBBox.xMin();
-          auto ySpan = instPinRectBBox.yMax() - instPinRectBBox.yMin();
+          auto xSpan = instPinRectBBox.dx();
+          auto ySpan = instPinRectBBox.dy();
           bool isPinRectHorz = (xSpan > ySpan);
 
           if (!useCenterLine) {
@@ -1724,7 +1724,7 @@ void FlexDRWorker::initNets_boundaryArea()
                   auto obj2 = static_cast<drVia*>(connFig2);
                   pt2 = obj2->getOrigin();
                   if (pt2 == psEp) {
-                    currArea += viaBox2.minDXDY() * viaBox2.maxDXDY() / 2;
+                    currArea += viaBox2.area() / 2;
                     break;
                   }
                 } else if (connFig2->typeId() == drcPatchWire) {
@@ -1755,14 +1755,14 @@ void FlexDRWorker::initNets_boundaryArea()
                   auto obj2 = static_cast<drVia*>(connFig2);
                   pt2 = obj2->getOrigin();
                   if (pt2 == psBp) {
-                    currArea += viaBox2.minDXDY() * viaBox2.maxDXDY() / 2;
+                    currArea += viaBox2.area() / 2;
                     break;
                   }
                 } else if (connFig2->typeId() == drcPatchWire) {
                   auto obj2 = static_cast<drPatchWire*>(connFig2);
                   pt2 = obj2->getOrigin();
                   if (pt2 == psBp) {
-                    currArea += viaBox2.minDXDY() * viaBox2.maxDXDY();
+                    currArea += viaBox2.area();
                     break;
                   }
                 }

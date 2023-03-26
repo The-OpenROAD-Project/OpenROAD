@@ -93,7 +93,7 @@ class LevelBalancer
                        std::vector<ClockInst*> cluster,
                        Clock::SubNet* driverNet,
                        unsigned bufLevels,
-                       const std::string nameSuffix);
+                       const std::string& nameSuffix);
   void fixTreeLevels(TreeBuilder* builder,
                      unsigned parentDepth,
                      unsigned maxTreeDepth);

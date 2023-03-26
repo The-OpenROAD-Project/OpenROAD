@@ -32,50 +32,15 @@
 
 #pragma once
 
-#include <vector>
-
-#ifndef _TCL
 #include <tcl.h>
-#endif
-
-#include "ZException.h"
-#include "geom.h"
-#include "odb.h"
 
 namespace odb {
-
-class dbDatabase;
-class ZSession;
-class ZObject;
-class dbObject;
-
-/////////////////////////////////
-/// Event value types
-/////////////////////////////////
-enum ZValueType
-{
-  Z_CHAR,
-  Z_UCHAR,
-  Z_SHORT,
-  Z_USHORT,
-  Z_INT,
-  Z_UINT,
-  Z_FLOAT,
-  Z_DOUBLE,
-  Z_STRING,
-  Z_BOOL,
-  Z_ZOBJECT,
-  Z_DBOBJECT
-};
 
 /////////////////////////////////////////////////////
 /// ZContext - Context the software is running in.
 /////////////////////////////////////////////////////
 class ZContext
 {
- public:
-  Tcl_Interp* _interp;
-  ZSession* _session;
 };
 
 //////////////////////////////////////////////
@@ -84,65 +49,7 @@ class ZContext
 class ZInterface
 {
  public:
-  ZInterface();
-  virtual ~ZInterface();
-
-  //
-  // Post an event. This method specifies the event as a series of attribute
-  // value pairs. There must be a at least one attribute value pair. Furthermore
-  // the series of attribute value pairs must be terminated with a zero. For
-  // examples:
-  //    int x, y;
-  //    ...
-  //    z->event("foo", "x", Z_INT, x, "y", Z_INT, y, 0 );
-  //
-  // Throws ZException
-  int event(const char* name, const char* attr1, int type, ...);
-
-  //
-  // Post an event. This method specifies the event as a series of attribute
-  // value pairs. There must be a at least one attribute value pair. Furthermore
-  // the series of attribute value pairs must be terminated with a zero. For
-  // examples:
-  //    int x, y;
-  //    ...
-  //    z->event("foo", "x", "10", "y", "11", 0 );
-  // Throws ZException
-  int event(const char* name, const char* attr1, const char* val, ...);
-
-  // idle event
-  int idle(int level);
-
-  // ade event
-  int ade(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
-
-  // milos event
-  int milos(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
-
-  // warning message
-  int warning(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
-
-  // informational message
-  int info(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
-
-  // informational message
-  int notice(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
-
-  // verbose/debugging message
-  int verbose(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
-
-  // debug message
-  // void debug(const char *mod, const char *tag, const char * fmt, ... )
-  // ADS_FORMAT_PRINTF(4,5);
-
-  // error, Throws a ZException
-  void error(int code, const char* fmt, ...) ADS_FORMAT_PRINTF(3, 4);
-
-  // Get the name of this module
-  virtual const char* getModuleName() { return ""; }
-
- public:
-  ZContext _context;
+  virtual ~ZInterface() {}
 };
 
 }  // namespace odb

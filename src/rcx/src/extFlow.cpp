@@ -30,14 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <wire.h>
-
 #include <map>
 #include <vector>
 
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 
@@ -926,19 +925,16 @@ uint extMain::addShapeOnGS(dbNet* net,
         return 0;
     }
   }
-  const bool checkFlag = false;
 
   uint level = layer->getRoutingLevel();
   int n = 0;
   if (!gsRotated) {
-    n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, checkFlag);
+    n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
   } else {
     if (!swap_coords)  // horizontal
-      n = _geomSeq->box(
-          r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, checkFlag);
+      n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
     else
-      n = _geomSeq->box(
-          r.yMin(), r.xMin(), r.yMax(), r.xMax(), level, checkFlag);
+      n = _geomSeq->box(r.yMin(), r.xMin(), r.yMax(), r.xMax(), level);
   }
   if (n == 0) {
     return 1;
@@ -1313,7 +1309,7 @@ uint extMain::couplingFlow(Rect& extRect,
       stepNum++;
       totalWiresExtracted += processWireCnt;
       float percent_extracted
-          = Ath__double2int(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
+          = lround(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
 
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
           && (percent_extracted - _previous_percent_extracted >= 5.0)) {
