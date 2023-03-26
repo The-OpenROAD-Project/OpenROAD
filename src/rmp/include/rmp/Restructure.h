@@ -37,10 +37,12 @@
 
 #include <functional>
 #include <iostream>
+#include <queue>
 #include <string>
 
 #include "db_sta/dbSta.hh"
 #include "rsz/Resizer.hh"
+#include "sta/Delay.hh"
 
 namespace abc {
 }  // namespace abc
@@ -62,6 +64,7 @@ class dbITerm;
 
 namespace sta {
 class dbSta;
+class Vertex;
 }  // namespace sta
 
 namespace rmp {
@@ -85,6 +88,20 @@ enum class Mode
 const int MAX_ITERATIONS = 3;
 
 class RestructureCallBack;
+
+struct vertexSlackComp
+{
+  constexpr bool operator()(
+      std::pair<sta::Vertex*, sta::Slack> const& a,
+      std::pair<sta::Vertex*, sta::Slack> const& b) const noexcept
+  {
+    return a.second > b.second;
+  }
+};
+typedef std::priority_queue<std::pair<sta::Vertex*, sta::Slack>,
+                            std::vector<std::pair<sta::Vertex*, sta::Slack>>,
+                            vertexSlackComp>
+    vertexPQ;
 
 class Restructure
 {
@@ -133,6 +150,8 @@ class Restructure
   void removeConstCells();
   void removeConstCell(odb::dbInst* inst);
   bool readAbcLog(std::string abc_file_name, int& level_gain, float& delay_val);
+
+  vertexPQ getVerticesSlacks() const;
 
   Logger* logger_;
   std::string logfile_;

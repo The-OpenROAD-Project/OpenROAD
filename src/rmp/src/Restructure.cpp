@@ -110,8 +110,10 @@ void Restructure::reset()
   path_insts_.clear();
 }
 
-inline sta::Slack getSlack(sta::dbSta* open_sta_, std::string vertex_name)
+vertexPQ Restructure::getVerticesSlacks() const
 {
+  vertexPQ pq;
+  open_sta_->searchPreamble();
   open_sta_->ensureGraph();
   open_sta_->ensureLevelized();
   open_sta_->searchPreamble();
@@ -124,10 +126,9 @@ inline sta::Slack getSlack(sta::dbSta* open_sta_, std::string vertex_name)
     if (path == nullptr || path->slack(open_sta_) >= 0)
       continue;
     auto path_slack = path->slack(open_sta_);
-    if (std::string(end_point->name(sta_state->network())) == vertex_name)
-      return path_slack;
+    pq.push({end_point, path_slack});
   }
-  return 100;
+  return pq;
 }
 
 void Restructure::run(char* liberty_file_name,
@@ -161,11 +162,31 @@ void Restructure::run(char* liberty_file_name,
       // Leave the parasitics up to date.
       resizer_->estimateWireParasitics();
     }
-    auto delay = open_sta_->worstSlack(sta::MinMax::max());
-    auto improved_slack = getSlack(open_sta_, worst_vertix_);
+    auto itr_worst_slack = open_sta_->worstSlack(sta::MinMax::max());
+    auto pq = getVerticesSlacks();
+    ushort k = 10;
+    sta::Slack improved_slack;
+    while (!pq.empty()) {
+      auto& [end_point, slack] = pq.top();
+      if (k > 0) {
+        k--;
+        debugPrint(logger_,
+                   RMP,
+                   "remap",
+                   1,
+                   "Path {} slack {}",
+                   end_point->name(open_sta_->network()),
+                   slack);
+      }
+      if (std::string(end_point->name(open_sta_->network())) == worst_vertix_) {
+        improved_slack = slack;
+      }
+      pq.pop();
+    }
     logger_->report(
         "Improved end point {} to {}", worst_vertix_, improved_slack);
-    logger_->report("Iteration {} ended with worst slack {}", i, delay);
+    logger_->report(
+        "Iteration {} ended with worst slack {}", i, itr_worst_slack);
   }
 }
 
@@ -436,35 +457,32 @@ void Restructure::getEndPoints(sta::PinSet& ends,
                                bool area_mode,
                                unsigned max_depth)
 {
-  auto sta_state = open_sta_->search();
-  sta::VertexSet* end_points = sta_state->endpoints();
-  std::size_t path_found = end_points->size();
-  logger_->report("Number of paths for restructure are {}", path_found);
-  sta::Slack worst_slack = 0;
-  sta::Vertex* worst_vertix = nullptr;
-  for (auto& end_point : *end_points) {
-    if (!is_area_mode_) {
-      sta::PathRef path_ref
-          = open_sta_->vertexWorstSlackPath(end_point, sta::MinMax::max());
-      sta::Path* path = path_ref.path();
-      if (path == nullptr || path->slack(open_sta_) >= 0)
-        continue;
-      auto path_slack = path->slack(open_sta_);
-      sta::PathExpanded expanded(path, open_sta_);
-      // Members in expanded include gate output and net so divide by 2
-      if (expanded.size() / 2 > max_depth) {
-        if (path_slack < worst_slack) {
-          worst_slack = path_slack;
-          worst_vertix = end_point;
-        }
-      }
-    } else {
+  auto pq = getVerticesSlacks();
+  if (area_mode) {
+    while (!pq.empty()) {
+      auto& [end_point, slack] = pq.top();
+      ends.insert(end_point->pin());
+      pq.pop();
+    }
+  } else {
+    if (!pq.empty()) {
+      auto& [end_point, slack] = pq.top();
+      worst_vertix_ = end_point->name(open_sta_->network());
       ends.insert(end_point->pin());
     }
-  }
-  if (!area_mode && worst_vertix != nullptr) {
-    worst_vertix_ = worst_vertix->name(sta_state->network());
-    ends.insert(worst_vertix->pin());
+    ushort i = 10;
+    while (!pq.empty() && i > 0) {
+      auto& [end_point, slack] = pq.top();
+      debugPrint(logger_,
+                 RMP,
+                 "remap",
+                 1,
+                 "Path {} slack {}",
+                 end_point->name(open_sta_->network()),
+                 slack);
+      pq.pop();
+      i--;
+    }
   }
 
   // unconstrained end points
