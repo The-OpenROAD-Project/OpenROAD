@@ -61,8 +61,9 @@ static void ATH__closeFile(FILE* fp)
 
 static char* ATH__allocCharWord(int n, utl::Logger* logger)
 {
-  if (n <= 0)
+  if (n <= 0) {
     logger->error(utl::ODB, 424, "Cannot zero/negative number of chars");
+  }
 
   char* a = new char[n];
   a[0] = '\0';
