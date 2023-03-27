@@ -974,16 +974,12 @@ void TritonRoute::processBTermsAboveTopLayer()
   if (top_tech_layer != nullptr) {
     int top_layer_idx = top_tech_layer->getRoutingLevel();
     for (auto bterm : block->getBTerms()) {
-      std::vector<odb::dbTechLayer*> bterm_layers;
+      int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
       for (auto bpin : bterm->getBPins()) {
         for (auto box : bpin->getBoxes()) {
-          bterm_layers.push_back(box->getTechLayer());
+          bterm_bottom_layer_idx
+            = std::min(bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
         }
-      }
-      int bterm_bottom_layer_idx = bterm_layers[0]->getRoutingLevel();
-      for (auto layer : bterm_layers) {
-        bterm_bottom_layer_idx
-            = std::min(bterm_bottom_layer_idx, layer->getRoutingLevel());
       }
 
       if (bterm_bottom_layer_idx > top_layer_idx) {
