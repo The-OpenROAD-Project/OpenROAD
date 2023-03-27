@@ -107,6 +107,7 @@ class LayoutViewer : public QWidget
     CLEAR_RULERS_ACT,
     CLEAR_FOCUS_ACT,
     CLEAR_GUIDES_ACT,
+    CLEAR_NET_TRACKS_ACT,
     CLEAR_ALL_ACT
   };
 
@@ -141,10 +142,14 @@ class LayoutViewer : public QWidget
   void removeFocusNet(odb::dbNet* net);
   void addRouteGuides(odb::dbNet* net);
   void removeRouteGuides(odb::dbNet* net);
+  void addNetTracks(odb::dbNet* net);
+  void removeNetTracks(odb::dbNet* net);
   void clearFocusNets();
   void clearRouteGuides();
+  void clearNetTracks();
   const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
   const std::set<odb::dbNet*>& getRouteGuides() { return route_guides_; }
+  const std::set<odb::dbNet*>& getNetTracks() { return net_tracks_; }
 
   const std::map<odb::dbModule*, ModuleSettings>& getModuleSettings()
   {
@@ -302,6 +307,7 @@ class LayoutViewer : public QWidget
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
+  void drawNetTracks(Painter& painter, odb::dbTechLayer* layer);
   void drawModuleView(QPainter* painter,
                       const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter);
@@ -435,6 +441,8 @@ class LayoutViewer : public QWidget
   std::set<odb::dbNet*> focus_nets_;
   // Set of nets to draw route guides for, if empty draw nothing
   std::set<odb::dbNet*> route_guides_;
+  // Set of nets to draw assigned tracks for, if empty draw nothing
+  std::set<odb::dbNet*> net_tracks_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 

@@ -854,19 +854,26 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
         io_pin.assignToSection();
 
         if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
-          odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
-          int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
-          IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
-          // Mark mirrored pin as assigned to section to prevent assigning it to
-          // another section that is not aligned with his pair
-          mirrored_pin.assignToSection();
+          assignMirroredPin(io_pin);
         }
         break;
       }
     }
+  } else if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+    assignMirroredPin(io_pin);
   }
 
   return pin_assigned;
+}
+
+void IOPlacer::assignMirroredPin(IOPin& io_pin)
+{
+  odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
+  int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
+  IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
+  // Mark mirrored pin as assigned to section to prevent assigning it to
+  // another section that is not aligned with his pair
+  mirrored_pin.assignToSection();
 }
 
 void IOPlacer::printConfig()
@@ -1342,12 +1349,12 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
   }
 
   if (!mirrored_pins_.empty()) {
-    for (const auto& match : hg_vec) {
+    for (auto& match : hg_vec) {
       match.getFinalAssignment(assignment_, mirrored_pins_, true);
     }
   }
 
-  for (const auto& match : hg_vec) {
+  for (auto& match : hg_vec) {
     match.getFinalAssignment(assignment_, mirrored_pins_, false);
   }
 }

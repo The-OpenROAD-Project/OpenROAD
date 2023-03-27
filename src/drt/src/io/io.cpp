@@ -3037,6 +3037,19 @@ void updateDbAccessPoint(odb::dbAccessPoint* db_ap,
   }
 }
 
+void io::Writer::updateTrackAssignment(odb::dbBlock* block)
+{
+  for (const auto& net : design_->getTopBlock()->getNets()) {
+    auto dbNet = block->findNet(net->getName().c_str());
+    for (const auto& guide : net->getGuides()) {
+      for (const auto& route : guide->getRoutes()) {
+        frPathSeg* track = static_cast<frPathSeg*>(route.get());
+        auto layer = design_->getTech()->getLayer(track->getLayerNum());
+        odb::dbNetTrack::create(dbNet, layer->getDbLayer(), track->getBBox());
+      }
+    }
+  }
+}
 void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
 {
   for (auto ap : block->getAccessPoints())
