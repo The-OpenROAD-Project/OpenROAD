@@ -55,7 +55,7 @@ void createSBoxes(odb::dbSWire* swire,
 
 void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net_name, 
                   int num_connection_points, 
-                  odb::dbCreateNetUtil::Position position);
+                  int position);
 
 void createConnection(odb::dbBlock* block, const char* net, const char* inst, const char* iterm);
 
