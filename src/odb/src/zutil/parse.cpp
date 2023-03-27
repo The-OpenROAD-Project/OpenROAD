@@ -65,9 +65,6 @@ static char* ATH__allocCharWord(int n, utl::Logger* logger)
     logger->error(utl::ODB, 424, "Cannot zero/negative number of chars");
 
   char* a = new char[n];
-  if (a == nullptr) {
-    logger->error(utl::ODB, 425, "Cannot allocate chars");
-  }
   a[0] = '\0';
   return a;
 }
@@ -123,9 +120,6 @@ void Ath__parser::init()
   _tmpLine = ATH__allocCharWord(_lineSize, _logger);
 
   _wordArray = new char*[_maxWordCnt];
-  if (_wordArray == nullptr) {
-    _logger->error(utl::ODB, 427, "Cannot allocate array of char*");
-  }
 
   for (int ii = 0; ii < _maxWordCnt; ii++) {
     _wordArray[ii] = ATH__allocCharWord(512, _logger);
