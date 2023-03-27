@@ -157,7 +157,7 @@ class dbIsolation;
 class dbExtControl;
 
 class ZContext;
- 
+
 ///
 /// dbProperty - Property base class.
 ///
