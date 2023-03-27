@@ -6,8 +6,18 @@ cd "$(dirname $(readlink -f $0))/../"
 
 # default values, can be overwritten by cmdline args
 buildDir="build"
-numThreads="$(nproc)"
-cmakeOptions=("")
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  numThreads=$(nproc --all)
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  numThreads=$(sysctl -n hw.ncpu)
+else
+  cat << EOF
+WARNING: Unsupported OSTYPE: cannot determine number of host CPUs"
+  Defaulting to 2 threads. Use --threads N to use N threads"
+EOF
+  numThreads=2
+fi
+cmakeOptions=""
 cleanBefore=no
 keepLog=no
 compiler=gcc
@@ -34,7 +44,8 @@ OPTIONS:
   -clean                                        Remove build dir before compile
   -no-gui                                       Disable GUI support
   -threads=NUM_THREADS                          Number of threads to use during
-                                                  compile. Default: \`nproc\`
+                                                  compile. Default: \`nproc\` on linux
+                                                  or \`sysctl -n hw.logicalcpu\` on macOS
   -keep-log                                     Keep a compile log in build dir
   -help                                         Shows this message
   -gpu                                          Enable GPU to accelerate the process
@@ -43,27 +54,37 @@ EOF
     exit "${1:-1}"
 }
 
+__logging()
+{
+        local log_file="${buildDir}/openroad_build.log"
+        echo "[INFO] Saving logs to ${log_file}"
+        echo "[INFO] $__CMD"
+        exec > >(tee -i "${log_file}")
+        exec 2>&1
+}
+
+__CMD="$0 $@"
 while [ "$#" -gt 0 ]; do
     case "${1}" in
         -h|-help)
             _help 0
             ;;
         -no-gui)
-            cmakeOptions+=( -DBUILD_GUI=OFF )
+            cmakeOptions+=" -DBUILD_GUI=OFF"
             ;;
         -compiler=*)
             compiler="${1#*=}"
             ;;
         -no-warnings )
-            cmakeOptions+=( -DALLOW_WARNINGS=OFF )
+            cmakeOptions+=" -DALLOW_WARNINGS=OFF"
             ;;
         -coverage )
-            cmakeOptions+=( -DCMAKE_BUILD_TYPE=Debug )
-            cmakeOptions+=( -DCMAKE_CXX_FLAGS="-fprofile-arcs -ftest-coverage" )
-            cmakeOptions+=( -DCMAKE_EXE_LINKER_FLAGS=-lgcov )
+            cmakeOptions+=" -DCMAKE_BUILD_TYPE=Debug"
+            cmakeOptions+=" -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage'"
+            cmakeOptions+=" -DCMAKE_EXE_LINKER_FLAGS=-lgcov"
             ;;
         -cmake=*)
-            cmakeOptions+=( "${1#*=}" )
+            cmakeOptions+=" ${1#*=}"
             ;;
         -clean )
             cleanBefore=yes
@@ -82,7 +103,7 @@ while [ "$#" -gt 0 ]; do
             _help
             ;;
         -gpu)
-            cmakeOptions+=( -DGPU=ON )
+            cmakeOptions+=" -DGPU=ON"
             ;;
         *)
             echo "unknown option: ${1}" >&2
@@ -113,21 +134,31 @@ case "${compiler}" in
         export CC="$(command -v clang)"
         export CXX="$(command -v clang++)"
         ;;
+    "clang-16" )
+        export CC="$(command -v clang-16)"
+        export CXX="$(command -v clang++-16)"
+        ;;
     *)
-        echo "Compiler $compiler is not supported" >&2
-        _help 1
+        export CC=""
+        export CXX=""
 esac
+
+if [[ -z "${CC}" || -z "${CXX}" ]]; then
+        echo "Compiler $compiler not installed or it is not supported." >&2
+        _help 1
+fi
 
 if [[ "${cleanBefore}" == "yes" ]]; then
     rm -rf "${buildDir}"
 fi
 
 mkdir -p "${buildDir}"
-if [[ "${keepLog}" == "yes"  ]]; then
-    logName="${buildDir}/openroad-build-$(date +%s).log"
-else
-    logName=/dev/null
+__logging
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+    export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
 
-cmake "${cmakeOptions[@]}" -B "${buildDir}" . 2>&1 | tee "${logName}"
-time cmake --build "${buildDir}" -j "${numThreads}" 2>&1 | tee -a "${logName}"
+eval cmake "${cmakeOptions}" -B "${buildDir}" .
+eval time cmake --build "${buildDir}" -j "${numThreads}"

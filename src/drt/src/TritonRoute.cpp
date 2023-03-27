@@ -121,6 +121,11 @@ void TritonRoute::setDistributed(bool on)
   distributed_ = on;
 }
 
+void TritonRoute::setDebugWriteNetTracks(bool on)
+{
+  debug_->writeNetTracks = on;
+}
+
 void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
 {
   dist_ip_ = ip;
@@ -642,6 +647,8 @@ void TritonRoute::endFR()
   dr_.reset();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_);
+  if (debug_->writeNetTracks)
+    writer.updateTrackAssignment(db_->getChip()->getBlock());
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
   if (!REPAIR_PDN_LAYER_NAME.empty()) {
@@ -844,7 +851,7 @@ int TritonRoute::main()
     FlexPA pa(getDesign(), logger_);
     pa.setDebug(debug_.get(), db_);
     pa.main();
-    if (distributed_ || debug_->debugDumpDR) {
+    if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
       if (distributed_)
@@ -1156,7 +1163,7 @@ void TritonRoute::reportDRC(const string& file_name,
       logger_->warn(
           DRT,
           290,
-          "Waring: no DRC report specified, skipped writing DRC report");
+          "Warning: no DRC report specified, skipped writing DRC report");
     }
     return;
   }

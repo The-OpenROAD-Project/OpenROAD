@@ -431,13 +431,13 @@ static float getUsageCapacityRatio(Tile* tile,
 
   // escape tile ratio cals when capacity = 0
   if (curCap == 0) {
-    return -1 * FLT_MAX;
+    return std::numeric_limits<float>::lowest();
   }
 
   // ignore if blockage is too huge in current tile
   float blockageRatio = static_cast<float>(blockage) / curCap;
   if (blockageRatio >= ignoreEdgeRatio) {
-    return -1 * FLT_MAX;
+    return std::numeric_limits<float>::lowest();
   }
 
   // return usage (used routing track + blockage) / total capacity
@@ -522,30 +522,30 @@ void RouteBase::updateRoute()
     if (tile->inflationRatio() > 1.0) {
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 5,
-                 "updateInflationRatio: xy: {} {}",
+                 "updateInflationRatio",
+                 1,
+                 "xy: {} {}",
                  tile->x(),
                  tile->y());
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 5,
-                 "updateInflationRatio: minxy: {} {}",
+                 "updateInflationRatio",
+                 1,
+                 "minxy: {} {}",
                  tile->lx(),
                  tile->ly());
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 5,
-                 "updateInflationRatio: maxxy: {} {}",
+                 "updateInflationRatio",
+                 1,
+                 "maxxy: {} {}",
                  tile->ux(),
                  tile->uy());
       debugPrint(log_,
                  GPL,
-                 "replace",
-                 5,
-                 "updateInflationRatio: calcInflationRatio: {}",
+                 "updateInflationRatio",
+                 1,
+                 "calcInflationRatio: {}",
                  tile->inflationRatio());
     }
   }

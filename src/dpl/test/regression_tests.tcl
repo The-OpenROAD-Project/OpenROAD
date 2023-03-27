@@ -51,4 +51,5 @@ record_tests {
   aes
   gcd
   ibex
+  one_site_gap_disallow
 }

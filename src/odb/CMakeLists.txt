@@ -28,7 +28,6 @@ add_subdirectory(src/def)
 add_subdirectory(src/zutil)
 add_subdirectory(src/tm)
 add_subdirectory(src/cdl)
-add_subdirectory(src/upf)
 add_subdirectory(test/cpp)
 
 add_library(odb INTERFACE)
@@ -42,7 +41,7 @@ target_link_libraries(odb
     lefout
     tm
     zutil
-    utl
+    utl_lib
     ${TCL_LIBRARY}
 )
 
@@ -70,3 +69,16 @@ if (DOXYGEN_FOUND)
 
   doxygen_add_docs(docs include)
 endif()
+
+############################################################
+# Unit testing
+############################################################
+enable_testing()
+
+add_executable(parseTest
+  ${PROJECT_SOURCE_DIR}/test/parseTest.cpp
+)
+
+target_link_libraries(parseTest
+  odb
+)

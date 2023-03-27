@@ -139,32 +139,25 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
   if (targetObjs_.empty()) {
     return false;
   }
+
   auto type = obj->typeId();
-  for (auto targetObj : targetObjs_) {
-    switch (targetObj->typeId()) {
-      case frcInst: {
-        if (type == frcInstTerm
-            && static_cast<frInstTerm*>(obj)->getInst() == targetObj) {
-          return false;
-        } else if (type == frcInstBlockage
-                   && static_cast<frInstBlockage*>(obj)->getInst()
-                          == targetObj) {
-          return false;
-        }
-        break;
-      }
-      case frcBTerm: {
-        if (type == frcBTerm
-            && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj)) {
-          return false;
-        }
-        break;
-      }
-      default:
-        logger_->error(
-            DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");
+  switch (type) {
+    case frcInstTerm: {
+      auto inst = static_cast<frInstTerm*>(obj)->getInst();
+      return targetObjs_.find(inst) == targetObjs_.end();
     }
+    case frcInstBlockage: {
+      auto inst = static_cast<frInstBlockage*>(obj)->getInst();
+      return targetObjs_.find(inst) == targetObjs_.end();
+    }
+    case frcBTerm: {
+      auto term = static_cast<frTerm*>(obj);
+      return targetObjs_.find(term) == targetObjs_.end();
+    }
+    default:
+      return true;
   }
+
   return true;
 }
 
@@ -389,7 +382,6 @@ void FlexGCWorker::Impl::initDRWorker()
   if (!getDRWorker()) {
     return;
   }
-  int cnt = 0;
   for (auto& uDRNet : getDRWorker()->getNets()) {
     // always first generate gcnet in case owner does not have any object
     auto it = owner2nets_.find(uDRNet->getFrNet());
@@ -400,18 +392,15 @@ void FlexGCWorker::Impl::initDRWorker()
     // auto net = uDRNet->getFrNet();
     for (auto& uConnFig : uDRNet->getExtConnFigs()) {
       gNet = initDRObj(uConnFig.get());
-      cnt++;
     }
     for (auto& uConnFig : uDRNet->getRouteConnFigs()) {
       gNet = initDRObj(uConnFig.get());
-      cnt++;
     }
     addNonTaperedPatches(gNet, uDRNet.get());
   }
 }
 void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
 {
-  int cnt = 0;
   auto block = design->getTopBlock();
   for (auto& net : block->getNets()) {
     // always first generate gcnet in case owner does not have any object
@@ -426,7 +415,6 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
         netExists = true;
       }
       gNet = initRouteObj(obj.get());
-      cnt++;
     }
     for (auto& obj : net->getVias()) {
       if (!drcBox_.intersects(obj->getBBox()))
@@ -436,7 +424,6 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
         netExists = true;
       }
       gNet = initRouteObj(obj.get());
-      cnt++;
     }
     for (auto& pwire : net->getPatchWires()) {
       if (!drcBox_.intersects(pwire->getBBox()))
@@ -446,7 +433,6 @@ void FlexGCWorker::Impl::initNetsFromDesign(const frDesign* design)
         netExists = true;
       }
       gNet = initRouteObj(pwire.get());
-      cnt++;
       Rect box = pwire->getBBox();
       int z = pwire->getLayerNum() / 2 - 1;
       for (auto& nt : gNet->getNonTaperedRects(z)) {

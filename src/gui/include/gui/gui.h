@@ -50,6 +50,8 @@
 
 #include "odb/db.h"
 
+struct Tcl_Interp;
+
 namespace utl {
 class Logger;
 }  // namespace utl
@@ -634,6 +636,10 @@ class Gui
   void addRouteGuides(odb::dbNet* net);
   void removeRouteGuides(odb::dbNet* net);
   void clearRouteGuides();
+  // Used to add, remove and clear assigned tracks
+  void addNetTracks(odb::dbNet* net);
+  void removeNetTracks(odb::dbNet* net);
+  void clearNetTracks();
 
   // show/hide widgets
   void showWidget(const std::string& name, bool show);

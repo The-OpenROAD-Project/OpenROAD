@@ -52,6 +52,7 @@
 #include <vector>
 
 #include "browserWidget.h"
+#include "bufferTreeDescriptor.h"
 #include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
@@ -404,6 +405,7 @@ MainWindow::~MainWindow()
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
+  gui->unregisterDescriptor<BufferTree>();
 }
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
@@ -438,10 +440,18 @@ void MainWindow::init(sta::dbSta* sta)
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);
   gui->registerDescriptor<odb::dbInst*>(inst_descriptor);
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(
-      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
-  gui->registerDescriptor<DbNetDescriptor::NetWithSink>(new DbNetDescriptor(
-      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
+  gui->registerDescriptor<odb::dbNet*>(
+      new DbNetDescriptor(db_,
+                          sta,
+                          viewer_->getFocusNets(),
+                          viewer_->getRouteGuides(),
+                          viewer_->getNetTracks()));
+  gui->registerDescriptor<DbNetDescriptor::NetWithSink>(
+      new DbNetDescriptor(db_,
+                          sta,
+                          viewer_->getFocusNets(),
+                          viewer_->getRouteGuides(),
+                          viewer_->getNetTracks()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
@@ -467,6 +477,13 @@ void MainWindow::init(sta::dbSta* sta)
       new DbSiteDescriptor(db_));
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
+
+  gui->registerDescriptor<BufferTree>(
+      new BufferTreeDescriptor(db_,
+                               sta,
+                               viewer_->getFocusNets(),
+                               viewer_->getRouteGuides(),
+                               viewer_->getNetTracks()));
 
   controls_->setDBInstDescriptor(inst_descriptor);
   hierarchy_widget_->setDBInstDescriptor(inst_descriptor);
@@ -1414,7 +1431,7 @@ void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
 {
   auto* settings = timing_widget_->getSettings();
   settings->setFromPin({});
-  std::set<sta::Pin*> pins;
+  std::set<const sta::Pin*> pins;
   for (const auto& term : terms) {
     pins.insert(settings->convertTerm(term));
   }

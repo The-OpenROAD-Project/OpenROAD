@@ -51,40 +51,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace psm {
 
-PDNSim::PDNSim()
-    : db_(nullptr),
-      sta_(nullptr),
-      logger_(nullptr),
-      vsrc_loc_(""),
-      out_file_(""),
-      em_out_file_(""),
-      enable_em_(false),
-      bump_pitch_x_(0),
-      bump_pitch_y_(0),
-      spice_out_file_(""),
-      power_net_(""),
-      node_density_(-1),
-      node_density_factor_(0),
-      min_resolution_(-1)
-{
-}
+PDNSim::PDNSim() = default;
 
-PDNSim::~PDNSim()
-{
-  db_ = nullptr;
-  sta_ = nullptr;
-  vsrc_loc_ = "";
-  power_net_ = "";
-  out_file_ = "";
-  em_out_file_ = "";
-  enable_em_ = false;
-  spice_out_file_ = "";
-  bump_pitch_x_ = 0;
-  bump_pitch_y_ = 0;
-  node_density_ = -1.0;
-  node_density_factor_ = 0;
-  min_resolution_ = -1.0;
-}
+PDNSim::~PDNSim() = default;
 
 void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
 {
@@ -100,7 +69,7 @@ void PDNSim::setDebugGui()
   debug_gui_ = std::make_unique<DebugGui>(this);
 }
 
-void PDNSim::set_power_net(std::string net)
+void PDNSim::set_power_net(const std::string& net)
 {
   power_net_ = net;
 }
@@ -130,20 +99,26 @@ void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage)
   net_voltage_map_.insert(std::pair<std::string, float>(net, voltage));
 }
 
-void PDNSim::import_vsrc_cfg(std::string vsrc)
+void PDNSim::import_vsrc_cfg(const std::string& vsrc)
 {
   vsrc_loc_ = vsrc;
   logger_->info(utl::PSM, 1, "Reading voltage source file: {}.", vsrc_loc_);
 }
 
-void PDNSim::import_out_file(std::string out_file)
+void PDNSim::import_out_file(const std::string& out_file)
 {
   out_file_ = out_file;
   logger_->info(
       utl::PSM, 2, "Output voltage file is specified as: {}.", out_file_);
 }
 
-void PDNSim::import_em_out_file(std::string em_out_file)
+void PDNSim::import_error_file(const std::string& error_file)
+{
+  error_file_ = error_file;
+  logger_->info(utl::PSM, 83, "Error file is specified as: {}.", error_file_);
+}
+
+void PDNSim::import_em_out_file(const std::string& em_out_file)
 {
   em_out_file_ = em_out_file;
   logger_->info(utl::PSM, 3, "Output current file specified {}.", em_out_file_);
@@ -156,7 +131,7 @@ void PDNSim::import_enable_em(bool enable_em)
   }
 }
 
-void PDNSim::import_spice_out_file(std::string out_file)
+void PDNSim::import_spice_out_file(const std::string& out_file)
 {
   spice_out_file_ = out_file;
   logger_->info(
@@ -171,6 +146,7 @@ void PDNSim::write_pg_spice()
                                               vsrc_loc_,
                                               power_net_,
                                               out_file_,
+                                              error_file_,
                                               em_out_file_,
                                               spice_out_file_,
                                               enable_em_,
@@ -201,6 +177,7 @@ void PDNSim::analyze_power_grid()
                                               vsrc_loc_,
                                               power_net_,
                                               out_file_,
+                                              error_file_,
                                               em_out_file_,
                                               spice_out_file_,
                                               enable_em_,
@@ -268,6 +245,7 @@ bool PDNSim::check_connectivity()
                                               vsrc_loc_,
                                               power_net_,
                                               out_file_,
+                                              error_file_,
                                               em_out_file_,
                                               spice_out_file_,
                                               enable_em_,

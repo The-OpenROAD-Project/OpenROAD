@@ -29,8 +29,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <dbRtTree.h>
 
+#include "dbRtTree.h"
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -136,6 +136,7 @@ int extMeasure::computeResDist(SEQ* s,
     seq_release(&tmpTable);
   return len;
 }
+
 uint extMeasure::computeRes(SEQ* s,
                             uint targetMet,
                             uint dir,
@@ -163,6 +164,7 @@ uint extMeasure::computeRes(SEQ* s,
   seq_release(&overlapSeq);
   return len;
 }
+
 int extMeasure::getMaxDist(int tgtMet, uint modelIndex)
 {
   uint modelCnt = _metRCTable.getCnt();
@@ -179,10 +181,12 @@ int extMeasure::getMaxDist(int tgtMet, uint modelIndex)
   int maxDist = distTable->getComputeRC_maxDist();
   return maxDist;
 }
+
 int extDistRCTable::getComputeRC_maxDist()
 {
   return _maxDist;
 }
+
 void extMeasure::calcRes(int rsegId1,
                          uint len,
                          int dist1,
@@ -213,6 +217,7 @@ void extMeasure::calcRes(int rsegId1,
     }
   }
 }
+
 void extMeasure::calcRes0(double* deltaRes,
                           uint tgtMet,
                           uint len,
@@ -230,6 +235,7 @@ void extMeasure::calcRes0(double* deltaRes,
     deltaRes[ii] = R;
   }
 }
+
 void extMain::calcRes0(double* deltaRes,
                        uint tgtMet,
                        uint width,
@@ -251,55 +257,7 @@ void extMain::calcRes0(double* deltaRes,
     deltaRes[jj] = R;
   }
 }
-extDistRC* extDistRCTable::findRes(int dist1, int dist2, bool compute)
-{
-  Ath__array1D<extDistRC*>* table = _computeTable;
-  if (!compute)
-    table = _measureTable;
 
-  if (table->getCnt() == 0)
-    return NULL;
-
-  int target_dist_index = -1;
-  extDistRC* rc = NULL;
-  uint ii = 0;
-  for (; ii < table->getCnt(); ii++) {
-    rc = table->get(ii);
-    if (dist1 == rc->_coupling) {
-      target_dist_index = ii;
-      break;
-    }
-    if (dist1 < rc->_coupling) {
-      target_dist_index = ii;
-      break;
-    }
-  }
-  if (target_dist_index < 0) {
-    rc = table->get(0);  // assume first rec is 0,0
-    return rc;
-  }
-  extDistRC* last_rc = NULL;
-  for (uint ii = target_dist_index; ii < table->getCnt(); ii++) {
-    extDistRC* rc1 = table->get(ii);
-    if (rc->_coupling != rc1->_coupling) {
-      return last_rc;
-    }
-    if (dist2 == rc1->_sep) {
-      return rc1;
-    }
-    if (dist2 < rc1->_sep) {
-      if (last_rc != NULL)
-        return last_rc;
-      return rc1;
-    }
-    last_rc = rc1;
-  }
-  if (table->getCnt() > 0) {
-    rc = table->get(0);  // assume first rec is 0,0
-    return rc;
-  }
-  return NULL;
-}
 extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
 {
   int min_dist = 0;
@@ -388,6 +346,7 @@ extDistRC* extDistRCTable::getComputeRC_res(uint dist1, uint dist2)
   }
   return NULL;
 }
+
 extDistRC* extDistRCTable::findIndexed_res(uint dist1, uint dist2)
 {
   extDistRC* firstRC = _measureTable->get(0);
@@ -417,6 +376,7 @@ extDistRC* extDistWidthRCTable::getRes(uint mou, uint w, int dist1, int dist2)
 
   return rc;
 }
+
 extDistRCTable* extDistWidthRCTable::getRuleTable(uint mou, uint w)
 {
   int wIndex = getWidthIndex(w);

@@ -166,8 +166,8 @@ void DetailedVerticalSwap::verticalSwap()
   mgr_->resortSegments();
 
   // Get candidate cells.
-  std::vector<Node*> candidates = mgr_->singleHeightCells_;
-  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->rng_);
+  std::vector<Node*> candidates = mgr_->getSingleHeightCells();
+  Utility::random_shuffle(candidates.begin(), candidates.end(), mgr_->getRng());
 
   // Wirelength objective.
   DetailedHPWL hpwlObj(network_);
@@ -175,21 +175,19 @@ void DetailedVerticalSwap::verticalSwap()
 
   double currHpwl = hpwlObj.curr();
   // Consider each candidate cell once.
-  for (int attempt = 0; attempt < candidates.size(); attempt++) {
-    Node* ndi = candidates[attempt];
-
+  for (Node* ndi : candidates) {
     if (generate(ndi) == false) {
       continue;
     }
 
-    const double delta = hpwlObj.delta(mgr_->nMoved_,
-                                       mgr_->movedNodes_,
-                                       mgr_->curLeft_,
-                                       mgr_->curBottom_,
-                                       mgr_->curOri_,
-                                       mgr_->newLeft_,
-                                       mgr_->newBottom_,
-                                       mgr_->newOri_);
+    const double delta = hpwlObj.delta(mgr_->getNMoved(),
+                                       mgr_->getMovedNodes(),
+                                       mgr_->getCurLeft(),
+                                       mgr_->getCurBottom(),
+                                       mgr_->getCurOri(),
+                                       mgr_->getNewLeft(),
+                                       mgr_->getNewBottom(),
+                                       mgr_->getNewOri());
 
     const double nextHpwl = currHpwl - delta;  // -delta is +ve is less.
 
@@ -201,7 +199,6 @@ void DetailedVerticalSwap::verticalSwap()
       mgr_->rejectMove();
     }
   }
-  return;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -217,8 +214,8 @@ bool DetailedVerticalSwap::getRange(Node* nd, Rectangle& nodeBbox)
   const double ymin = arch_->getMinY();
   const double ymax = arch_->getMaxY();
 
-  xpts_.erase(xpts_.begin(), xpts_.end());
-  ypts_.erase(ypts_.begin(), ypts_.end());
+  xpts_.clear();
+  ypts_.clear();
   for (unsigned n = 0; n < nd->getPins().size(); n++) {
     const Pin* pin = nd->getPins()[n];
 
@@ -229,9 +226,11 @@ bool DetailedVerticalSwap::getRange(Node* nd, Rectangle& nodeBbox)
     const int numPins = ed->getNumPins();
     if (numPins <= 1) {
       continue;
-    } else if (numPins > skipNetsLargerThanThis_) {
+    }
+    if (numPins > skipNetsLargerThanThis_) {
       continue;
-    } else if (!calculateEdgeBB(ed, nd, nodeBbox)) {
+    }
+    if (!calculateEdgeBB(ed, nd, nodeBbox)) {
       continue;
     }
 
@@ -289,9 +288,7 @@ bool DetailedVerticalSwap::calculateEdgeBB(const Edge* ed,
   bbox.reset();
 
   int count = 0;
-  for (int pe = 0; pe < ed->getPins().size(); pe++) {
-    const Pin* pin = ed->getPins()[pe];
-
+  for (const Pin* pin : ed->getPins()) {
     const Node* other = pin->getNode();
     if (other == nd) {
       continue;
@@ -339,9 +336,7 @@ double DetailedVerticalSwap::delta(Node* ndi, double new_x, double new_y)
 
     old_box.reset();
     new_box.reset();
-    for (int pj = 0; pj < edi->getPins().size(); pj++) {
-      const Pin* pinj = edi->getPins()[pj];
-
+    for (const Pin* pinj : edi->getPins()) {
       const Node* ndj = pinj->getNode();
 
       double x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
@@ -378,9 +373,7 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
   ++traversal_;
   for (int c = 0; c <= 1; c++) {
     const Node* ndi = nodes[c];
-    for (int pi = 0; pi < ndi->getPins().size(); pi++) {
-      const Pin* pini = ndi->getPins()[pi];
-
+    for (const Pin* pini : ndi->getPins()) {
       const Edge* edi = pini->getEdge();
 
       const int npins = edi->getNumPins();
@@ -395,9 +388,7 @@ double DetailedVerticalSwap::delta(Node* ndi, Node* ndj)
       old_box.reset();
       new_box.reset();
 
-      for (int pj = 0; pj < edi->getPins().size(); pj++) {
-        const Pin* pinj = edi->getPins()[pj];
-
+      for (const Pin* pinj : edi->getPins()) {
         const Node* ndj = pinj->getNode();
 
         double x = ndj->getLeft() + 0.5 * ndj->getWidth() + pinj->getOffsetX();
@@ -449,13 +440,13 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   }
 
   // Only single height cell.
-  if (mgr_->reverseCellToSegs_[ndi->getId()].size() != 1) {
+  if (mgr_->getNumReverseCellToSegs(ndi->getId()) != 1) {
     return false;
   }
 
   // Segment and row for bottom of cell.
-  const int si = mgr_->reverseCellToSegs_[ndi->getId()][0]->getSegId();
-  const int ri = mgr_->reverseCellToSegs_[ndi->getId()][0]->getRowId();
+  const int si = mgr_->getReverseCellToSegs(ndi->getId())[0]->getSegId();
+  const int ri = mgr_->getReverseCellToSegs(ndi->getId())[0]->getRowId();
 
   // Center of optimal rectangle.
   const int xj = (int) std::floor(0.5 * (bbox.xmin() + bbox.xmax())
@@ -470,19 +461,19 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   if (yj > yi) {
     const int rmin = std::min(arch_->getNumRows() - 1, ri + 1);
     const int rmax = std::min(arch_->getNumRows() - 1, ri + 2);
-    rj = rmin + ((*(mgr_->rng_))() % (rmax - rmin + 1));
+    rj = rmin + mgr_->getRandom(rmax - rmin + 1);
   } else {
     const int rmax = std::max(0, ri - 1);
     const int rmin = std::max(0, ri - 2);
-    rj = rmin + ((*(mgr_->rng_))() % (rmax - rmin + 1));
+    rj = rmin + mgr_->getRandom(rmax - rmin + 1);
   }
   if (rj == -1) {
     return false;
   }
   yj = arch_->getRow(rj)->getBottom();  // Row alignment.
   int sj = -1;
-  for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
-    const DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
+  for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+    const DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
     if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
       sj = segPtr->getSegId();
       break;
@@ -491,7 +482,7 @@ bool DetailedVerticalSwap::generate(Node* ndi)
   if (sj == -1) {
     return false;
   }
-  if (ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
+  if (ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
     return false;
   }
 
@@ -532,7 +523,7 @@ bool DetailedVerticalSwap::generate(DetailedMgr* mgr,
   network_ = mgr->getNetwork();
   rt_ = mgr->getRoutingParams();
 
-  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
+  Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
   return generate(ndi);
 }

@@ -99,7 +99,6 @@ target_sources(drt
     src/db/infra/frTime_helper.cpp
     src/db/infra/frTime.cpp
     src/db/taObj/taShape.cpp
-    src/db/taObj/taTrack.cpp
     src/db/obj/frShape.cpp
     src/db/obj/frInst.cpp
     src/db/obj/frVia.cpp
@@ -206,6 +205,7 @@ if (Boost_unit_test_framework_FOUND)
 endif()
 
 add_test(NAME trTest COMMAND trTest)
+add_dependencies(build_and_test trTest)
 
 ############################################################
 # VTune ITT API

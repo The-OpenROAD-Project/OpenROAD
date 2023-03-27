@@ -38,8 +38,6 @@
 #include <string>
 #include <vector>
 
-#include "ISdb.h"
-#include "dbLogger.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -141,6 +139,7 @@ class dbTechLayerArraySpacingRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
 class dbGuide;
+class dbNetTrack;
 class dbMetalWidthViaMap;
 class dbTechLayerAreaRule;
 class dbModule;
@@ -157,6 +156,8 @@ class dbIsolation;
 
 // Extraction Objects
 class dbExtControl;
+
+class ZContext;
 
 ///
 /// dbProperty - Property base class.
@@ -2724,6 +2725,10 @@ class dbNet : public dbObject
   dbSet<dbGuide> getGuides() const;
 
   void clearGuides();
+
+  dbSet<dbNetTrack> getTracks() const;
+
+  void clearTracks();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -7195,8 +7200,10 @@ class dbTechLayer : public dbObject
   int getPitch();
   int getPitchX();
   int getPitchY();
+  int getFirstLastPitch();
   void setPitch(int pitch);
   void setPitchXY(int pitch_x, int pitch_y);
+  void setFirstLastPitch(int first_last_pitch);
   bool hasXYPitch();
 
   int getOffset();
@@ -8893,6 +8900,29 @@ class dbGuide : public dbObject
   // User Code End dbGuide
 };
 
+class dbNetTrack : public dbObject
+{
+ public:
+  // User Code Begin dbNetTrackEnums
+  // User Code End dbNetTrackEnums
+
+  Rect getBox() const;
+
+  // User Code Begin dbNetTrack
+
+  dbNet* getNet() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbNetTrack* create(dbNet* net, dbTechLayer* layer, Rect box);
+
+  static dbNetTrack* getNetTrack(dbBlock* block, uint dbid);
+
+  static void destroy(dbNetTrack* guide);
+
+  // User Code End dbNetTrack
+};
+
 class dbMetalWidthViaMap : public dbObject
 {
  public:
@@ -9392,7 +9422,18 @@ class dbPowerDomain : public dbObject
   // User Code End dbPowerDomainEnums
   const char* getName() const;
 
+  dbGroup* getGroup() const;
+
+  void setTop(bool top);
+
+  bool isTop() const;
+
+  void setParent(dbPowerDomain* parent);
+
+  dbPowerDomain* getParent() const;
+
   // User Code Begin dbPowerDomain
+  void setGroup(dbGroup* group);
   static dbPowerDomain* create(dbBlock* block, const char* name);
   static void destroy(dbPowerDomain* pd);
 
@@ -9404,6 +9445,9 @@ class dbPowerDomain : public dbObject
 
   std::vector<dbPowerSwitch*> getPowerSwitches();
   std::vector<dbIsolation*> getIsolations();
+
+  bool setArea(float x1, float y1, float x2, float y2);
+  bool getArea(int& x1, int& y1, int& x2, int& y2);
 
   // User Code End dbPowerDomain
 };
@@ -9490,6 +9534,11 @@ class dbIsolation : public dbObject
   void setIsolationSense(const std::string& isolation_sense);
 
   void setLocation(const std::string& location);
+
+  void addIsolationCell(std::string& master);
+
+  std::vector<dbMaster*> getIsolationCells();
+
   // User Code End dbIsolation
 };
 

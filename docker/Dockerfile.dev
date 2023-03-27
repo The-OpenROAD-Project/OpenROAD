@@ -11,4 +11,6 @@ ARG INSTALLER_ARGS=""
 
 COPY DependencyInstaller.sh /tmp/.
 
-RUN /tmp/DependencyInstaller.sh $INSTALLER_ARGS && rm -f /tmp/DependencyInstaller.sh
+RUN /tmp/DependencyInstaller.sh -base
+RUN /tmp/DependencyInstaller.sh -common $INSTALLER_ARGS
+RUN rm -f /tmp/DependencyInstaller.sh

@@ -34,12 +34,14 @@
 #include <stdlib.h>
 
 #include "db.h"
-#include "dbLogger.h"
 #include "dbShape.h"
 #include "dbWireCodec.h"
 #include "tmg_conn.h"
+#include "utl/Logger.h"
 
 namespace odb {
+
+using utl::ODB;
 
 struct tcg_edge;
 struct tcg_edge
@@ -82,8 +84,6 @@ class tmg_conn_graph
   void init(int ptN, int shortN);
   tcg_edge* newEdge(tmg_conn* conn, int fr, int to)
   {
-    if (_eN >= _eNmax)
-      notice(0, "overflow eN\n");
     tcg_edge* e = _eV + _eN++;
     e->k = -1;
     e->skip = false;
@@ -109,8 +109,6 @@ class tmg_conn_graph
   }
   tcg_edge* newShortEdge(tmg_conn* conn, int fr, int to)
   {
-    if (_eN >= _eNmax)
-      notice(0, "overflow eN\n");
     tcg_edge* e = _eV + _eN++;
     e->k = -1;
     e->skip = false;
@@ -437,7 +435,7 @@ void tmg_conn::relocateShorts()
   _graph->relocateShorts(this);
 }
 
-void tmg_conn::removeShortLoops(int* loop_remaining)
+void tmg_conn::removeShortLoops()
 {
   if (!_graph)
     _graph = new tmg_conn_graph();
@@ -463,7 +461,6 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
     if (s->_skip)
       continue;
     if (pgV[s->_i0].ipath == pgV[s->_i1].ipath) {
-      // notice(0, "removing same-path short\n");
       s->_skip = true;
     }
   }
@@ -514,7 +511,6 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
       e->reverse->visited = 1;
       pg = pgV + e->to;
       if (pg->visited) {
-        // notice(0, "removing short loop\n");
         e->skip = true;
         e->reverse->skip = true;
         e->s->_skip = true;
@@ -549,8 +545,6 @@ void tmg_conn::removeShortLoops(int* loop_remaining)
       }
     }
   }
-  *loop_remaining = loopn;
-  // notice(0, "compn = %d   loopn = %d\n",compn,loopn);
 }
 
 void tmg_conn_graph::addEdges(tmg_conn* conn, int i0, int i1, int k)
@@ -574,13 +568,9 @@ void tmg_conn_graph::addEdges(tmg_conn* conn, int i0, int i1, int k)
   e2->skip = false;
 }
 
-void tmg_conn::removeWireLoops(int* loop_remaining)
+void tmg_conn::removeWireLoops()
 {
-  removeShortLoops(loop_remaining);
-  if (*loop_remaining) {
-    notice(0, "trouble, short loops\n");
-    printConnections();
-  }
+  removeShortLoops();
 
   // loops involving only shorts have already been handled
   if (_rcV.empty())
@@ -613,12 +603,9 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
         e->visited = 1;
         e->reverse->visited = 1;
         pg = pgV + e->to;
-        //  notice(0, "%-3d to %d\n",e->fr,e->to);
         if (pg->visited == 1) {
-          //  notice(0, "pg->visited=1  e= %d %d\n",e->fr,e->to);
           done = 0;
         } else if (pg->visited) {
-          // notice(0, "removing loop at %d\n",e->to);
           k = pg->visited - 2;
           max_dist = 0;
           max_k = 0;
@@ -636,11 +623,8 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
             }
           }
           if (!emax) {
-            notice(0, "emax=nil\n");
             done = 0;
           } else {
-            // notice(0, "removing short %d-%d  dist %d\n", e->fr, e->to,
-            // max_dist); notice(0, "max_dist=%d\n",max_dist);
             emax->skip = true;
             emax->reverse->skip = true;
             emax->s->_skip = true;
@@ -665,8 +649,6 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
     if (!loop_removed)
       break;
   }
-  if (!done)
-    notice(0, "not done\n");
 
   // report all remaining loops, and count components
   int compn = 0;
@@ -684,15 +666,11 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
       pg = pgV + e->to;
       if (pg->visited) {
         loopn++;
-        // notice(0, "loop at %d\n",e->to);
-        if (1) {
-          k = pg->visited - 2;
-          if (k >= 0)
-            for (; k < _graph->_stackN; k++) {
-              eloop = _graph->_stackV[k];
-              // notice(0, " loop edge %d %d\n",eloop->fr,eloop->to);
-            }
-        }
+        k = pg->visited - 2;
+        if (k >= 0)
+          for (; k < _graph->_stackN; k++) {
+            eloop = _graph->_stackV[k];
+          }
         e = _graph->getNextEdge(false);
       } else {
         pg->visited = 2 + _graph->_stackN;
@@ -700,8 +678,6 @@ void tmg_conn::removeWireLoops(int* loop_remaining)
       }
     }
   }
-  // notice(0, "compn = %d   loopn = %d\n",compn,loopn);
-  *loop_remaining = loopn;
 }
 
 void tmg_conn::dfsClear()
@@ -759,17 +735,6 @@ void tmg_conn::checkVisited()
       _connected = false;
       break;
     }
-}
-
-static void print_shape(tmg_rc_sh& s)
-{
-  if (s.getTechVia())
-    notice(0, "%-3s", s.getTechVia()->getName().c_str());
-  else if (s.getVia())
-    notice(0, "%-3s", s.getVia()->getName().c_str());
-  else if (s.getTechLayer())
-    notice(0, "%-3s", s.getTechLayer()->getName().c_str());
-  notice(0, " (%d %d) (%d %d)", s.xMin(), s.yMin(), s.xMax(), s.yMax());
 }
 
 void tmg_conn::printDisconnect()
@@ -835,9 +800,7 @@ void tmg_conn::printDisconnect()
   _graph->clearVisited();
   e = _graph->getFirstEdge(jsmall);
   pgV[jsmall].visited = 1;
-  int last_pt = -1;
   while (e) {
-    last_pt = e->to;
     e->visited = 1;
     e->reverse->visited = 1;
     if (pgV[e->to].visited) {
@@ -846,40 +809,6 @@ void tmg_conn::printDisconnect()
       pgV[e->to].visited = 1;
       e = _graph->getNextEdge(true);
     }
-  }
-
-  notice(0, "net %d has %d components\n", _net->getId(), compn);
-  notice(0, "smallest component:\n");
-  for (unsigned long k = 0; k < _rcV.size(); k++) {
-    if (pgV[_rcV[k]._ifr].visited) {
-      notice(0, "rcV[%ld] ", k);
-      print_shape(_rcV[k]._shape);
-      notice(0, "\n");
-    }
-  }
-
-  if (last_pt >= 0 && _ptV[last_pt]._tindex < 0
-      && pgV[last_pt].edges->next == NULL) {
-    notice(0,
-           "dangling point %d (%d %d) %s\n",
-           last_pt,
-           _ptV[last_pt]._x,
-           _ptV[last_pt]._y,
-           _ptV[last_pt]._layer->getName().c_str());
-    notice(0, "nearby points\n");
-    for (j = 0; j < _ptV.size(); j++)
-      if (!pgV[j].visited) {
-        int dx = _ptV[j]._x - _ptV[last_pt]._x;
-        int dy = _ptV[j]._y - _ptV[last_pt]._y;
-        if (abs(dx) + abs(dy) < 2000) {
-          notice(0,
-                 " %d (%d %d) %s\n",
-                 j,
-                 _ptV[j]._x,
-                 _ptV[j]._y,
-                 _ptV[j]._layer->getName().c_str());
-        }
-      }
   }
 }
 
@@ -896,8 +825,6 @@ void tmg_conn::adjustShapes()
   tmg_rcpt* spV[256];
   int is_h[256], is_v[256];
   int sN;
-  int adjust_done = 0;
-  int adjust_failed = 0;
 
   // find shorts that are not to the same xy
   _graph->clearVisited();
@@ -1004,12 +931,6 @@ void tmg_conn::adjustShapes()
       }
     }
 
-#if 0
-    notice(0, "resolving shorted points, net %d\n",_net->getId());
-    for (k=0;k<pN;k++)
-      notice(0, "%d (%d %d)\n",pS[k], _ptV[pS[k]]._x, _ptV[pS[k]]._y);
-    for (k=0;k<sN;k++) { print_shape(*sV[k]); notice(0, "\n"); }
-#endif
     int ok = 1;
     int ii = 0;
     int tx = 0;
@@ -1058,17 +979,7 @@ void tmg_conn::adjustShapes()
             ok = 0;
         }
       if (ok) {
-#if 1
         adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
-#else
-        for (k = 0; k < pN; k++)
-          if (k != ii) {
-            _ptV[pS[k]]._x = _ptV[pS[ii]]._x;
-            _ptV[pS[k]]._y = _ptV[pS[ii]]._y;
-          }
-#endif
-        // for self-test, it would be good to change the shapes here
-        adjust_done = 1;
         continue;
       }
     }
@@ -1090,8 +1001,6 @@ void tmg_conn::adjustShapes()
             break;
       }
       if (ii == pN) {
-        notice(
-            0, "trouble with collinear, single via, net %d\n", _net->getId());
       } else if (ok_ver) {
         // w = xhi-xlo;
         if (ii < 0) {
@@ -1109,12 +1018,8 @@ void tmg_conn::adjustShapes()
             if (_ptV[pS[k]]._x != _ptV[pS[ii]]._x)
               break;  // not expected
           }
-        if (k < pN) {
-          // notice(0, "trouble with collinear, net %d\n",_net->getId());
-        } else {
+        if (k >= pN) {
           adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
-          // for self-test, it would be good to change the shapes here
-          adjust_done = 1;
           continue;
         }
       } else {
@@ -1134,12 +1039,8 @@ void tmg_conn::adjustShapes()
             if (_ptV[pS[k]]._y != _ptV[pS[ii]]._y)
               break;  // not expected
           }
-        if (k < pN) {
-          // notice(0, "trouble with collinear, net %d\n",_net->getId());
-        } else {
+        if (k >= pN) {
           adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
-          // for self-test, it would be good to change the shapes here
-          adjust_done = 1;
           continue;
         }
       }
@@ -1203,7 +1104,6 @@ void tmg_conn::adjustShapes()
       }
       if (ok) {
         adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
-        adjust_done = 1;
         continue;
       }
     }
@@ -1216,7 +1116,6 @@ void tmg_conn::adjustShapes()
         if (_ptV[pS[k]]._tindex != _ptV[pS[0]]._tindex)
           break;
       if (k == pN) {
-        // notice(0, "removing shorts at term, net %d\n",_net->getId());
         for (k = 0; k < pN; k++)
           pgV[pS[k]].visited = 2;
         for (k = 0; k < pN; k++)
@@ -1246,54 +1145,8 @@ void tmg_conn::adjustShapes()
         continue;
       break;
     }
-    if (k == pN) {
-#if 0
-      notice(0, "two points, try to patch\n");
-      int i0 = pS[0];
-      int i1 = pS[kother];
-      // first, try to just remove the shorts
-      notice(0, "removing shorts from (%d %d) to (%d %d)\n",
-        _ptV[i0]._x,_ptV[i0]._y,_ptV[i1]._x,_ptV[i1]._y);
-      for (k=0;k<pN;k++) {
-        for (e = pgV[pS[k]].edges; e; e=e->next) if (!e->skip && e->s) {
-          if (_ptV[e->fr]._x != _ptV[e->to]._x || _ptV[e->fr]._y != _ptV[e->to]._y)
-           e->skip = true;
-        }
-      }
-      tmg_rc *rc = addRcPatch(i0,i1);
-      if (rc) {
-        _graph->addEdges(this, i0,i1,rc-_rcV);
-        notice(0, "net %d, added patch from (%d %d) to (%d %d)\n",
-          _net->getId(),_ptV[i0]._x,_ptV[i0]._y,_ptV[i1]._x,_ptV[i1]._y);
-      }
-      continue;
-#endif
-    }
-
-    adjust_failed = 1;
-#if 1
-    notice(0, "failed resolving shorted points, net %d\n", _net->getId());
-    for (k = 0; k < pN; k++) {
-      notice(0, "%d (%d %d)", pS[k], _ptV[pS[k]]._x, _ptV[pS[k]]._y);
-      if (_ptV[pS[k]]._tindex >= 0)
-        notice(0, " tindex=%d\n", _ptV[pS[k]]._tindex);
-      notice(0, "\n");
-    }
-    for (k = 0; k < sN; k++) {
-      print_shape(*sV[k]);
-      notice(0, "\n");
-    }
     k = 0;
-#endif
   }
-#if 0
-  if (adjust_done && !adjust_failed)
-    notice(0, "adjusted shapes for net %d %s\n",_net->getId(),_net->getName().c_str());
-#else
-  // quiet compiler warnings
-  (void) adjust_done;
-  (void) adjust_failed;
-#endif
 }
 
 void tmg_conn::adjustCommit(tmg_rcpt* p, tmg_rc** rV, tmg_rcpt** spV, int sN)

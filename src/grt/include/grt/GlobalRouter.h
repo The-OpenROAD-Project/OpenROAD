@@ -179,6 +179,7 @@ class GlobalRouter
   void loadGuidesFromDB();
   void saveGuidesFromFile(std::unordered_map<odb::dbNet*, Guides>& guides);
   void saveGuides();
+  bool isCoveringPin(Net* net, GSegment& segment);
   std::vector<Net*> initFastRoute(int min_routing_layer, int max_routing_layer);
   void initFastRouteIncr(std::vector<Net*>& nets);
   void estimateRC();
@@ -278,6 +279,7 @@ class GlobalRouter
   void computeRegionAdjustments(const odb::Rect& region,
                                 int layer,
                                 float reduction_percentage);
+  void computePinOffsetAdjustments();
   void applyObstructionAdjustment(const odb::Rect& obstruction,
                                   odb::dbTechLayer* tech_layer);
   int computeNetWirelength(odb::dbNet* db_net);
@@ -291,6 +293,7 @@ class GlobalRouter
   std::vector<odb::Point> findOnGridPositions(const Pin& pin,
                                               bool& has_access_points,
                                               odb::Point& pos_on_grid);
+  int getNetMaxRoutingLayer(const Net* net);
   void findPins(Net* net);
   void findPins(Net* net, std::vector<RoutePt>& pins_on_grid, int& root_idx);
   float getNetSlack(Net* net);
@@ -315,9 +318,10 @@ class GlobalRouter
                        const std::map<RoutePt, int>& segs_at_point);
   void mergeSegments(const std::vector<Pin>& pins, GRoute& route);
   bool pinOverlapsWithSingleTrack(const Pin& pin, odb::Point& track_position);
-  GSegment createFakePin(Pin pin,
-                         odb::Point& pin_position,
-                         odb::dbTechLayer* layer);
+  void createFakePin(Pin pin,
+                     odb::Point& pin_position,
+                     odb::dbTechLayer* layer,
+                     Net* net);
   odb::Point findFakePinPosition(Pin& pin, odb::dbNet* db_net);
   void initAdjustments();
   odb::Point getRectMiddle(const odb::Rect& rect);
@@ -386,7 +390,7 @@ class GlobalRouter
   std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
   Grid* grid_;
   std::map<int, odb::dbTechLayer*> routing_layers_;
-  std::vector<RoutingTracks>* routing_tracks_;
+  std::vector<RoutingTracks> routing_tracks_;
 
   // Flow variables
   float adjustment_;

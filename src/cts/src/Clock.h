@@ -114,7 +114,7 @@ class Clock
     bool leafLevel_;
 
    public:
-    SubNet(const std::string& name) : name_(name), leafLevel_(false) {}
+    explicit SubNet(const std::string& name) : name_(name), leafLevel_(false) {}
 
     void setLeafLevel(bool isLeaf) { leafLevel_ = isLeaf; }
     bool isLeafLevel() const { return leafLevel_; }
@@ -194,13 +194,13 @@ class Clock
     return clockBuffers_.back();
   }
 
-  ClockInst* findClockByName(std::string name)
+  ClockInst* findClockByName(const std::string& name)
   {
     if (mapNameToInst_.find(name) == mapNameToInst_.end()) {
       return nullptr;
-    } else {
-      return mapNameToInst_.at(name);
     }
+
+    return mapNameToInst_.at(name);
   }
 
   SubNet& addSubNet(const std::string& name)

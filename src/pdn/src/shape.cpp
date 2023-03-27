@@ -218,6 +218,14 @@ const odb::Rect Shape::getMinimumRect() const
 bool Shape::cut(const ShapeTree& obstructions,
                 std::vector<Shape*>& replacements) const
 {
+  return cut(
+      obstructions, replacements, [](const ShapeValue&) { return true; });
+}
+
+bool Shape::cut(const ShapeTree& obstructions,
+                std::vector<Shape*>& replacements,
+                const std::function<bool(const ShapeValue&)>& obs_filter) const
+{
   using namespace boost::polygon::operators;
   using Rectangle = boost::polygon::rectangle_data<int>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
@@ -228,12 +236,13 @@ bool Shape::cut(const ShapeTree& obstructions,
 
   std::vector<Polygon90> shape_violations;
   for (auto it
-       = obstructions.qbegin(bgi::intersects(getRectBox())
+       = obstructions.qbegin(bgi::intersects(getObstructionBox())
                              && bgi::satisfies([&](const auto& other) {
                                   const auto& other_shape = other.second;
                                   return layer_ == other_shape->getLayer()
                                          || other_shape->getLayer() == nullptr;
-                                }));
+                                })
+                             && bgi::satisfies(obs_filter));
        it != obstructions.qend();
        it++) {
     auto other_shape = it->second;
@@ -241,11 +250,11 @@ bool Shape::cut(const ShapeTree& obstructions,
 
     // ensure the violation overlap fully with the shape to make cut correctly
     if (is_horizontal) {
-      vio_rect.set_ylo(std::min(rect_.yMin(), vio_rect.yMin()));
-      vio_rect.set_yhi(std::max(rect_.yMax(), vio_rect.yMax()));
+      vio_rect.set_ylo(std::min(obs_.yMin(), vio_rect.yMin()));
+      vio_rect.set_yhi(std::max(obs_.yMax(), vio_rect.yMax()));
     } else {
-      vio_rect.set_xlo(std::min(rect_.xMin(), vio_rect.xMin()));
-      vio_rect.set_xhi(std::max(rect_.xMax(), vio_rect.xMax()));
+      vio_rect.set_xlo(std::min(obs_.xMin(), vio_rect.xMin()));
+      vio_rect.set_xhi(std::max(obs_.xMax(), vio_rect.xMax()));
     }
     std::array<Pt, 4> pts = {Pt(vio_rect.xMin(), vio_rect.yMin()),
                              Pt(vio_rect.xMax(), vio_rect.yMin()),
@@ -264,10 +273,10 @@ bool Shape::cut(const ShapeTree& obstructions,
     return false;
   }
 
-  std::array<Pt, 4> pts = {Pt(rect_.xMin(), rect_.yMin()),
-                           Pt(rect_.xMax(), rect_.yMin()),
-                           Pt(rect_.xMax(), rect_.yMax()),
-                           Pt(rect_.xMin(), rect_.yMax())};
+  const std::array<Pt, 4> pts = {Pt(obs_.xMin(), obs_.yMin()),
+                                 Pt(obs_.xMax(), obs_.yMin()),
+                                 Pt(obs_.xMax(), obs_.yMax()),
+                                 Pt(obs_.xMin(), obs_.yMax())};
 
   Polygon90 poly;
   poly.set(pts.begin(), pts.end());
@@ -284,7 +293,12 @@ bool Shape::cut(const ShapeTree& obstructions,
   new_shape.get_rectangles(rects);
 
   for (auto& r : rects) {
-    const odb::Rect new_rect(xl(r), yl(r), xh(r), yh(r));
+    const odb::Rect new_obs_rect(xl(r), yl(r), xh(r), yh(r));
+    if (!new_obs_rect.overlaps(rect_)) {
+      // New shape will exceed original
+      continue;
+    }
+    const odb::Rect new_rect = new_obs_rect.intersect(rect_);
 
     // check if new shape should be accepted,
     // only shapes with the same width will be used
@@ -627,17 +641,14 @@ const odb::Rect FollowPinShape::getMinimumRect() const
 bool FollowPinShape::cut(const ShapeTree& obstructions,
                          std::vector<Shape*>& replacements) const
 {
-  ShapeTree filtered_obstructions;
-
-  for (const auto& [box, shape] : obstructions) {
-    if (shape->shapeType() == GRID_OBS) {
-      // followpins can ignore grid level obstructions
-      continue;
-    }
-    filtered_obstructions.insert({box, shape});
-  }
-
-  return Shape::cut(filtered_obstructions, replacements);
+  return Shape::cut(
+      obstructions, replacements, [](const ShapeValue& other) -> bool {
+        // followpins can ignore grid level obstructions
+        // grid level obstructions represent the other grids defined
+        // followpins should only get cut from real obstructions and
+        // not estimated obstructions
+        return other.second->shapeType() != GRID_OBS;
+      });
 }
 
 }  // namespace pdn

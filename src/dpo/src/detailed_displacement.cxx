@@ -75,20 +75,20 @@ DetailedDisplacement::DetailedDisplacement(Architecture* arch)
 void DetailedDisplacement::init()
 {
   nSets_ = 0;
-  count_.resize(mgrPtr_->multiHeightCells_.size());
+  count_.resize(mgrPtr_->getNumMultiHeights());
   std::fill(count_.begin(), count_.end(), 0);
-  count_[1] = (int) mgrPtr_->singleHeightCells_.size();
+  count_[1] = (int) mgrPtr_->getSingleHeightCells().size();
   if (count_[1] != 0) {
     ++nSets_;
   }
-  for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
-    count_[i] = (int) mgrPtr_->multiHeightCells_[i].size();
+  for (size_t i = 2; i < mgrPtr_->getNumMultiHeights(); i++) {
+    count_[i] = (int) mgrPtr_->getMultiHeightCells(i).size();
     if (count_[i] != 0) {
       ++nSets_;
     }
   }
-  tot_.resize(mgrPtr_->multiHeightCells_.size());
-  del_.resize(mgrPtr_->multiHeightCells_.size());
+  tot_.resize(mgrPtr_->getNumMultiHeights());
+  del_.resize(mgrPtr_->getNumMultiHeights());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,16 +105,14 @@ void DetailedDisplacement::init(DetailedMgr* mgrPtr, DetailedOrient* orientPtr)
 double DetailedDisplacement::curr()
 {
   std::fill(tot_.begin(), tot_.end(), 0.0);
-  for (size_t i = 0; i < mgrPtr_->singleHeightCells_.size(); i++) {
-    const Node* ndi = mgrPtr_->singleHeightCells_[i];
-
+  for (auto ndi : mgrPtr_->getSingleHeightCells()) {
     const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
     const double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
     tot_[1] += dx + dy;
   }
-  for (size_t s = 2; s < mgrPtr_->multiHeightCells_.size(); s++) {
-    for (size_t i = 0; i < mgrPtr_->multiHeightCells_[s].size(); i++) {
-      const Node* ndi = mgrPtr_->multiHeightCells_[s][i];
+  for (size_t s = 2; s < mgrPtr_->getNumMultiHeights(); s++) {
+    for (size_t i = 0; i < mgrPtr_->getMultiHeightCells(s).size(); i++) {
+      const Node* ndi = mgrPtr_->getMultiHeightCells(s)[i];
 
       const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
       const double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
@@ -136,14 +134,14 @@ double DetailedDisplacement::curr()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-double DetailedDisplacement::delta(int n,
-                                   std::vector<Node*>& nodes,
-                                   std::vector<int>& curLeft,
-                                   std::vector<int>& curBottom,
-                                   std::vector<unsigned>& curOri,
-                                   std::vector<int>& newLeft,
-                                   std::vector<int>& newBottom,
-                                   std::vector<unsigned>& newOri)
+double DetailedDisplacement::delta(const int n,
+                                   const std::vector<Node*>& nodes,
+                                   const std::vector<int>& curLeft,
+                                   const std::vector<int>& curBottom,
+                                   const std::vector<unsigned>& curOri,
+                                   const std::vector<int>& newLeft,
+                                   const std::vector<int>& newBottom,
+                                   const std::vector<unsigned>& newOri)
 {
   // Given a list of nodes with their old positions and new positions, compute
   // the change in displacement.  Note that cell orientation is not relevant.
@@ -162,7 +160,7 @@ double DetailedDisplacement::delta(int n,
   for (int i = 0; i < n; i++) {
     const Node* ndi = nodes[i];
 
-    const int spanned = (int) (ndi->getHeight() / singleRowHeight_ + 0.5);
+    const int spanned = std::lround(ndi->getHeight() / singleRowHeight_);
 
     const double dx = std::fabs(ndi->getLeft() - ndi->getOrigLeft());
     const double dy = std::fabs(ndi->getBottom() - ndi->getOrigBottom());
@@ -237,8 +235,8 @@ double DetailedDisplacement::delta(Node* ndi, double new_x, double new_y)
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedDisplacement::getCandidates(std::vector<Node*>& candidates)
 {
-  candidates.erase(candidates.begin(), candidates.end());
-  candidates = mgrPtr_->singleHeightCells_;
+  candidates.clear();
+  candidates = mgrPtr_->getSingleHeightCells();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
