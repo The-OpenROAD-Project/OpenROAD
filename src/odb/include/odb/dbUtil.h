@@ -40,6 +40,10 @@
 #include "geom.h"
 #include "odb.h"
 
+namespace utl {
+class Logger;
+}
+
 namespace odb {
 
 class dbObject;
@@ -74,6 +78,7 @@ class dbCreateNetUtil
   dbNet** _mapArray;
   uint _mapCnt;
   uint _ecoCnt;
+  utl::Logger* logger_;
 
   dbTechVia* getVia(int l1, int l2, Rect& bbox);
   // dbTechLayerRule * getRule(int routingLayer, int width);
@@ -91,7 +96,7 @@ class dbCreateNetUtil
   bool _useLocation;
   bool _verbose;
 
-  dbCreateNetUtil();
+  dbCreateNetUtil(utl::Logger* logger);
   ~dbCreateNetUtil();
   void setBlock(dbBlock* block, bool skipInit = false);
   dbBlock* getBlock() const { return _block; }
@@ -102,7 +107,8 @@ class dbCreateNetUtil
                              int y2,
                              int rlevel,
                              bool skipBterms = false,
-                             bool skipNetExists = false);
+                             bool skipNetExists = false,
+                             uint8_t color = 0);
   dbNet* createNetSingleWire(const char* name,
                              int x1,
                              int y1,
