@@ -238,12 +238,4 @@ void check_drc_cmd(const char* drc_file, int x1, int y1, int x2, int y2)
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->checkDRC(drc_file, x1, y1, x2, y2);
 }
-
-void stack_vias(odb::dbBTerm* bterm,
-                int top_layer_idx,
-                int bterm_bottom_layer_idx)
-{
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->stackVias(bterm, top_layer_idx, bterm_bottom_layer_idx);
-}
 %} // inline
