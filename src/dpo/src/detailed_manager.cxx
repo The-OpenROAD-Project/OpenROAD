@@ -1384,6 +1384,84 @@ int DetailedMgr::checkEdgeSpacingInSegments()
   return err_n + err_p;
 }
 
+std::vector<std::vector<int>> DetailedMgr::getOneSiteGapViolationsPerSegment()
+{
+  // the pair is the segment and the cell index in that segment
+  std::vector<std::vector<int>> violating_cells;
+  violating_cells.resize(segments_.size() + 1);
+
+  std::vector<Node*> temp;
+  temp.reserve(network_->getNumNodes());
+  for (int s = 0; s < segments_.size(); s++) {
+    // To be safe, gather cells in each segment and re-sort them.
+    temp.clear();
+    for (Node* ndj : cellsInSeg_[s]) {
+      temp.push_back(ndj);
+    }
+    std::sort(temp.begin(), temp.end(), compareNodesX());
+
+    // The idea here is to get the last X before the current cell,
+    // it doesn't have to be the one directly before the current cell as
+    // there might be two cells on the same x but different y.
+    // if the difference between the last X and the current cell's X is equal to
+    // 1-site then we might have a violation. we still need to check the
+    // overlaps in the ys
+    // to do this efficiently we can simply loop and check for overlaps in the
+    // ys
+
+    auto isInRange = [](int value, int min, int max) -> bool {
+      return value >= min && value <= max;
+    };
+
+    auto isOverlap
+        = [&isInRange](int bottom1, int top1, int bottom2, int top2) -> bool {
+      return isInRange(bottom1, bottom2, top2)
+             || isInRange(bottom2, bottom1, top1);
+    };
+
+    int lastX = temp[0]->getRight();
+    Node* lastNode = temp[0];
+    int one_site_gap = arch_->getRow(0)->getSiteWidth();
+    double tolerance = 1.0e-3;
+
+    std::vector<Node*> cellsAtLastX(1, temp[0]);
+
+    for (int node_idx = 1; node_idx < temp.size(); node_idx++) {
+      if (temp[node_idx]->getRight() != lastNode->getRight()) {
+        // we have a new X
+        // check if the difference between the last X and the current X is
+        // almost equal to 1-site (using tolerance)
+        if (abs(temp[node_idx]->getLeft() - lastNode->getRight() - one_site_gap)
+            < tolerance) {
+          // we might have a violation
+          // check the ys
+          for (auto cell : cellsAtLastX) {
+            if (isOverlap(cell->getBottom(),
+                          cell->getTop(),
+                          temp[node_idx]->getBottom(),
+                          temp[node_idx]->getTop())) {
+              // we have a violation
+              violating_cells[s].push_back(node_idx);
+              // we can break here because we only need to find at most one
+              // violation for each cell
+              break;
+            }
+          }
+        }
+        // clear the list of cells at the last X
+        cellsAtLastX.clear();
+        lastNode = temp[node_idx];
+      } else {
+        // we don't have a violation but we still need to add the current cell
+        // add the current cell to the list of cells at the last X
+        cellsAtLastX.push_back(temp[node_idx]);
+      }
+    }
+  }
+
+  return violating_cells;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int DetailedMgr::checkRegionAssignment()

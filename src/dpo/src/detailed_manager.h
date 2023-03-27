@@ -129,6 +129,7 @@ class DetailedMgr
   int checkSiteAlignment();
   int checkRowAlignment();
   int checkRegionAssignment();
+  std::vector<std::vector<int>> getOneSiteGapViolationsPerSegment();
 
   void removeCellFromSegment(Node* nd, int seg);
   void addCellToSegment(Node* nd, int seg);
