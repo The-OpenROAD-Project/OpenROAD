@@ -98,6 +98,7 @@ class _dbGroup;
 class _dbAccessPoint;
 class _dbGlobalConnect;
 class _dbGuide;
+class _dbNetTrack;
 class dbJournal;
 
 class dbNetBTermItr;
@@ -128,6 +129,7 @@ class dbDiff;
 class dbBlockSearch;
 class dbBlockCallBackObj;
 class dbGuideItr;
+class dbNetTrackItr;
 
 struct _dbBTermPin
 {
@@ -231,6 +233,7 @@ class _dbBlock : public _dbObject
   dbTable<_dbAccessPoint>* ap_tbl_;
   dbTable<_dbGlobalConnect>* global_connect_tbl_;
   dbTable<_dbGuide>* _guide_tbl;
+  dbTable<_dbNetTrack>* _net_tracks_tbl;
   _dbNameCache* _name_cache;
 
   dbPagedVector<float, 4096, 12>* _r_val_tbl;
@@ -257,6 +260,7 @@ class _dbBlock : public _dbObject
   dbRegionGroupItr* _region_group_itr;
   dbGroupItr* _group_itr;
   dbGuideItr* _guide_itr;
+  dbNetTrackItr* _net_track_itr;
   dbGroupInstItr* _group_inst_itr;
   dbGroupModInstItr* _group_modinst_itr;
   dbGroupPowerNetItr* _group_power_net_itr;

@@ -84,9 +84,10 @@ class dbBlockSearch
   uint _power_via_id;
 
   bool _skipCutBoxes;
+  utl::Logger* logger_;
 
  public:
-  dbBlockSearch(dbBlock* blk, dbTech* tech);
+  dbBlockSearch(dbBlock* blk, dbTech* tech, utl::Logger* logger);
   ~dbBlockSearch();
 
   ZPtr<ISdb> getSignalNetSdb(ZContext& context);

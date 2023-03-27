@@ -602,6 +602,14 @@ void lefin::layer(lefiLayer* layer)
     return;
   }
 
+  for (int i = 0; i < layer->numProps(); i++) {
+    if (!strcmp(layer->propName(i), "LEF58_REGION")) {
+      _logger->warn(
+          utl::ODB, 423, "LEF58_REGION layer {} ignored", layer->name());
+      return;
+    }
+  }
+
   dbTechLayerType type(dbTechLayerType::ROUTING);
 
   if (layer->hasType())
@@ -626,6 +634,12 @@ void lefin::layer(lefiLayer* layer)
                   layer->name());
     return;
   }
+
+  if (layer->hasPitch())
+    l->setPitch(dbdist(layer->pitch()));
+  else if (layer->hasXYPitch())
+    l->setPitchXY(dbdist(layer->pitchX()), dbdist(layer->pitchY()));
+
   for (int iii = 0; iii < layer->numProps(); iii++) {
     dbStringProperty::create(l, layer->propName(iii), layer->propValue(iii));
     bool valid = true;
@@ -671,6 +685,9 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_MINIMUMCUT")) {
         MinCutParser parser(l, this);
         parser.parse(layer->propValue(iii));
+      } else if (!strcmp(layer->propName(iii), "LEF58_PITCH")) {
+        lefTechLayerPitchRuleParser parser(this);
+        parser.parse(layer->propValue(iii), l);
       } else if (!strcmp(layer->propName(iii), "LEF58_AREA")) {
         lefTechLayerAreaRuleParser parser(this);
         parser.parse(layer->propValue(iii), l, _incomplete_props);
@@ -712,6 +729,14 @@ void lefin::layer(lefiLayer* layer)
                     layer->propName(iii),
                     layer->name(),
                     layer->propValue(iii));
+    if (!supported) {
+      _logger->info(utl::ODB,
+                    388,
+                    "unsupported {} property for layer {} :\"{}\"",
+                    layer->propName(iii),
+                    layer->name(),
+                    layer->propValue(iii));
+    }
   }
   // update wrong way width
   for (auto rule : l->getTechLayerWidthTableRules()) {
@@ -727,11 +752,6 @@ void lefin::layer(lefiLayer* layer)
     l->setMinWidth(dbdist(layer->minwidth()));
   else if (type == dbTechLayerType::ROUTING)
     l->setMinWidth(l->getWidth());
-
-  if (layer->hasPitch())
-    l->setPitch(dbdist(layer->pitch()));
-  else if (layer->hasXYPitch())
-    l->setPitchXY(dbdist(layer->pitchX()), dbdist(layer->pitchY()));
 
   if (layer->hasOffset())
     l->setOffset(dbdist(layer->offset()));
@@ -1917,6 +1937,8 @@ void lefin::via(lefiVia* via, dbTechNonDefaultRule* rule)
       P.setXTopEnclosure(dbdist(via->xTopOffset()));
       P.setYTopEnclosure(dbdist(via->yTopOffset()));
     }
+
+    v->setViaParams(P);
 
     if (via->hasCutPattern())
       v->setPattern(via->cutPattern());

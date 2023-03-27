@@ -940,7 +940,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
   }
   frCoord cornerX = gtl::x(cornerPt);
   frCoord cornerY = gtl::y(cornerPt);
-  frCoord candX, candY;
+  frCoord candX = -1, candY = -1;
   // ensure this is a real corner to corner case
   if (con->getCornerType() == frCornerTypeEnum::CONVEX) {
     if (cornerX >= (candX = gtl::xh(*rect))) {
@@ -979,6 +979,21 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
       if (corner->getPrevCorner()->getType() == frCornerTypeEnum::CONVEX
           && gtl::length(*(corner->getPrevEdge())) < con->getEolWidth()) {
         return;
+      }
+      // check for the rect corners
+      if (rect->getNet()) {
+        auto corner2 = rect->getNet()->getPolyCornerAt(
+            candX, candY, rect->getLayerNum());
+        if (corner2->getType() == frCornerTypeEnum::CONVEX) {
+          if (corner2->getNextCorner()->getType() == frCornerTypeEnum::CONVEX
+              && gtl::length(*(corner2->getNextEdge())) < con->getEolWidth()) {
+            return;
+          }
+          if (corner2->getPrevCorner()->getType() == frCornerTypeEnum::CONVEX
+              && gtl::length(*(corner2->getPrevEdge())) < con->getEolWidth()) {
+            return;
+          }
+        }
       }
     }
   }
@@ -1849,9 +1864,57 @@ void FlexGCWorker::Impl::checkMetalShape_addPatch(gcPin* pin, int min_area)
   patch->setLayerNum(layer_idx);
   patch->setOrigin(offset);
   patch->setOffsetBox(patchBx);
+
+  // get drNet for patch
+  gcNet* gc_net = pin->getNet();
+  frNet* fr_net = gc_net->getFrNet();
+  if (fr_net == nullptr) {
+    logger_->error(DRT, 410, "frNet not found.");
+  }
+
+  const std::vector<drNet*>* dr_nets = drWorker_->getDRNets(fr_net);
+  if (dr_nets == nullptr) {
+    logger_->error(
+        DRT, 411, "frNet {} does not have drNets.", fr_net->getName());
+  }
+  if (dr_nets->size() == 1) {
+    patch->addToNet((*dr_nets)[0]);
+  } else {
+    // detect what drNet has objects overlapping with the patch
+    checkMetalShape_patchOwner_helper(patch.get(), dr_nets);
+  }
+
   Rect shiftedPatch = patchBx;
   shiftedPatch.moveTo(offset.x(), offset.y());
   pwires_.push_back(std::move(patch));
+}
+
+void FlexGCWorker::Impl::checkMetalShape_patchOwner_helper(
+    drPatchWire* patch,
+    const std::vector<drNet*>* dr_nets)
+{
+  Rect patch_box = patch->getOffsetBox();
+  for (drNet* dr_net : *dr_nets) {
+    // check if patch overlaps with some rect of dr_net
+    if (patch_box.overlaps(dr_net->getPinBox())) {
+      patch->addToNet(dr_net);
+      return;
+    }
+
+    for (auto&& conn_fig : dr_net->getExtConnFigs()) {
+      if (patch_box.overlaps(conn_fig->getBBox())) {
+        patch->addToNet(dr_net);
+        return;
+      }
+    }
+
+    for (auto&& conn_fig : dr_net->getRouteConnFigs()) {
+      if (patch_box.overlaps(conn_fig->getBBox())) {
+        patch->addToNet(dr_net);
+        return;
+      }
+    }
+  }
 }
 
 void FlexGCWorker::Impl::checkMetalShape_main(gcPin* pin)

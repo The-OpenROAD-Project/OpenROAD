@@ -61,7 +61,7 @@ class CtsOptions
   std::string getClockNets() const { return clockNets_; }
   void setRootBuffer(const std::string& buffer) { rootBuffer_ = buffer; }
   std::string getRootBuffer() const { return rootBuffer_; }
-  void setBufferList(std::vector<std::string> buffers)
+  void setBufferList(const std::vector<std::string>& buffers)
   {
     bufferList_ = buffers;
   }
@@ -115,7 +115,7 @@ class CtsOptions
   bool forceBuffersOnLeafLevel() const { return forceBuffersOnLeafLevel_; }
   void setBufDistRatio(double ratio) { bufDistRatio_ = ratio; }
   double getBufDistRatio() { return bufDistRatio_; }
-  void setClockNetsObjs(std::vector<odb::dbNet*> nets)
+  void setClockNetsObjs(const std::vector<odb::dbNet*>& nets)
   {
     clockNetsObjs_ = nets;
   }
@@ -126,13 +126,13 @@ class CtsOptions
   }
   std::string getMetricsFile() const { return metricFile_; }
   void setNumClockRoots(unsigned roots) { clockRoots_ = roots; }
-  long int getNumClockRoots() const { return clockRoots_; }
-  void setNumClockSubnets(long int nets) { clockSubnets_ = nets; }
-  long int getNumClockSubnets() const { return clockSubnets_; }
-  void setNumBuffersInserted(long int buffers) { buffersInserted_ = buffers; }
-  long int getNumBuffersInserted() const { return buffersInserted_; }
-  void setNumSinks(long int sinks) { sinks_ = sinks; }
-  long int getNumSinks() const { return sinks_; }
+  int getNumClockRoots() const { return clockRoots_; }
+  void setNumClockSubnets(int nets) { clockSubnets_ = nets; }
+  int getNumClockSubnets() const { return clockSubnets_; }
+  void setNumBuffersInserted(int buffers) { buffersInserted_ = buffers; }
+  int getNumBuffersInserted() const { return buffersInserted_; }
+  void setNumSinks(int sinks) { sinks_ = sinks; }
+  int getNumSinks() const { return sinks_; }
   void setTreeBuffer(const std::string& buffer) { treeBuffer_ = buffer; }
   std::string getTreeBuffer() const { return treeBuffer_; }
   unsigned getClusteringPower() const { return clusteringPower_; }
@@ -211,10 +211,10 @@ class CtsOptions
   bool enableFakeLutEntries_ = true;
   bool forceBuffersOnLeafLevel_ = true;
   double bufDistRatio_ = 0.1;
-  long int clockRoots_ = 0;
-  long int clockSubnets_ = 0;
-  long int buffersInserted_ = 0;
-  long int sinks_ = 0;
+  int clockRoots_ = 0;
+  int clockSubnets_ = 0;
+  int buffersInserted_ = 0;
+  int sinks_ = 0;
   double maxDiameter_ = 50;
   unsigned sinkClustersSize_ = 20;
   bool balanceLevels_ = false;

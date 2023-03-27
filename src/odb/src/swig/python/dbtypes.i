@@ -40,16 +40,18 @@
 
 %typemap(out) std::vector< T > {
     PyObject *list = PyList_New($1.size());
+    std::vector<T>& v = *&($1);
     for (unsigned int i=0; i<$1.size(); i++) {
-        T* ptr = new T((($1_type &)$1)[i]);
+        T* ptr = new T(v[i]);
         PyList_SetItem(list, i, SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
     $result = list;
 }
 %typemap(out) std::vector< T* > {
     PyObject *list = PyList_New($1.size());
+    std::vector<T*>& v = *&($1);
     for (unsigned int i = 0; i < $1.size(); i++) {
-        T* ptr = ((($1_type &)$1)[i]);
+        T* ptr = v[i];
         PyList_SetItem(list, i, SWIG_NewInstanceObj(ptr, $descriptor(T *), 0));
     }
     $result = list;
@@ -60,6 +62,15 @@
     PyList_SetItem(list, 0, PyInt_FromLong((long)$1.first));
     PyList_SetItem(list, 1, PyInt_FromLong((long)$1.second));
     $result = list;
+}
+
+%typemap(out) std::optional<uint8_t> {
+    if ($1.has_value()) {
+        $result = PyInt_FromLong((long)$1.value());
+    } else {
+        Py_INCREF(Py_None);
+        $result = Py_None;
+    }
 }
 
 %typemap(out) std::vector< std::pair< T*, int > > {

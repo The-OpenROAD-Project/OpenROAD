@@ -190,7 +190,7 @@ class frLayer
   }
   bool isUnidirectional() const
   {
-    // We don't handle coloring so any double/triple patterned
+    // We don't handle coloring so any multiple patterned
     // layer is treated as unidirectional.
     // RectOnly could allow for a purely wrong-way rect but
     // we ignore that rare case and treat it as unidirectional.

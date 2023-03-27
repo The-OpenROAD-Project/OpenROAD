@@ -1,0 +1,200 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN test ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 100000 100000 ) ;
+ROW ROW_0 unithd 5060 5440 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_1 unithd 5060 8160 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_2 unithd 5060 10880 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_3 unithd 5060 13600 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_4 unithd 5060 16320 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_5 unithd 5060 19040 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_6 unithd 5060 21760 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_7 unithd 5060 24480 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_8 unithd 5060 27200 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_9 unithd 5060 29920 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_10 unithd 5060 32640 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_11 unithd 5060 35360 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_12 unithd 5060 38080 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_13 unithd 5060 40800 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_14 unithd 5060 43520 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_15 unithd 5060 46240 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_16 unithd 5060 48960 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_17 unithd 5060 51680 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_18 unithd 5060 54400 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_19 unithd 5060 57120 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_20 unithd 5060 59840 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_21 unithd 5060 62560 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_22 unithd 5060 65280 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_23 unithd 5060 68000 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_24 unithd 5060 70720 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_25 unithd 5060 73440 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_26 unithd 5060 76160 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_27 unithd 5060 78880 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_28 unithd 5060 81600 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_29 unithd 5060 84320 FS DO 195 BY 1 STEP 460 0 ;
+ROW ROW_30 unithd 5060 87040 N DO 195 BY 1 STEP 460 0 ;
+ROW ROW_31 unithd 5060 89760 FS DO 195 BY 1 STEP 460 0 ;
+TRACKS X 230 DO 217 STEP 460 LAYER li1 ;
+TRACKS Y 170 DO 294 STEP 340 LAYER li1 ;
+TRACKS X 170 DO 294 STEP 340 LAYER met1 ;
+TRACKS Y 170 DO 294 STEP 340 LAYER met1 ;
+TRACKS X 230 DO 217 STEP 460 LAYER met2 ;
+TRACKS Y 230 DO 217 STEP 460 LAYER met2 ;
+TRACKS X 340 DO 147 STEP 680 LAYER met3 ;
+TRACKS Y 340 DO 147 STEP 680 LAYER met3 ;
+TRACKS X 460 DO 109 STEP 920 LAYER met4 ;
+TRACKS Y 460 DO 109 STEP 920 LAYER met4 ;
+TRACKS X 1700 DO 29 STEP 3400 LAYER met5 ;
+TRACKS Y 1700 DO 29 STEP 3400 LAYER met5 ;
+COMPONENTS 0 ;
+END COMPONENTS
+PINS 30 ;
+    - w0_in + NET w0_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 170 ) N ;
+    - w0_out + NET w0_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 99790 ) N ;
+    - w10_in + NET w10_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 3570 ) N ;
+    - w10_out + NET w10_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 96390 ) N ;
+    - w11_in + NET w11_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 3910 ) N ;
+    - w11_out + NET w11_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 96050 ) N ;
+    - w12_in + NET w12_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 4250 ) N ;
+    - w12_out + NET w12_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 95710 ) N ;
+    - w13_in + NET w13_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 4590 ) N ;
+    - w13_out + NET w13_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 95370 ) N ;
+    - w14_in + NET w14_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 4930 ) N ;
+    - w14_out + NET w14_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 95030 ) N ;
+    - w1_in + NET w1_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 510 ) N ;
+    - w1_out + NET w1_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 99450 ) N ;
+    - w2_in + NET w2_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 850 ) N ;
+    - w2_out + NET w2_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 99110 ) N ;
+    - w3_in + NET w3_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 1190 ) N ;
+    - w3_out + NET w3_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 98770 ) N ;
+    - w4_in + NET w4_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 1530 ) N ;
+    - w4_out + NET w4_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 98430 ) N ;
+    - w5_in + NET w5_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 1870 ) N ;
+    - w5_out + NET w5_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 98090 ) N ;
+    - w6_in + NET w6_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 2210 ) N ;
+    - w6_out + NET w6_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 97750 ) N ;
+    - w7_in + NET w7_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 2550 ) N ;
+    - w7_out + NET w7_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 97410 ) N ;
+    - w8_in + NET w8_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 2890 ) N ;
+    - w8_out + NET w8_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 97070 ) N ;
+    - w9_in + NET w9_in + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 3230 ) N ;
+    - w9_out + NET w9_in + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER met1 ( -297 -70 ) ( 297 70 )
+        + FIXED ( 297 96730 ) N ;
+END PINS
+BLOCKAGES 6 ;
+    - LAYER met1 RECT ( 0 5440 ) ( 48070 94560 ) ;
+    - LAYER met2 RECT ( 0 5440 ) ( 48070 94560 ) ;
+    - LAYER met3 RECT ( 0 5440 ) ( 48070 94560 ) ;
+    - LAYER met4 RECT ( 0 5440 ) ( 48070 94560 ) ;
+    - LAYER met5 RECT ( 0 5440 ) ( 48070 94560 ) ;
+    - LAYER li1 RECT ( 0 5440 ) ( 48070 94560 ) ;
+END BLOCKAGES
+NETS 15 ;
+    - w0_in ( PIN w0_out ) ( PIN w0_in ) + USE SIGNAL ;
+    - w10_in ( PIN w10_out ) ( PIN w10_in ) + USE SIGNAL ;
+    - w11_in ( PIN w11_out ) ( PIN w11_in ) + USE SIGNAL ;
+    - w12_in ( PIN w12_out ) ( PIN w12_in ) + USE SIGNAL ;
+    - w13_in ( PIN w13_out ) ( PIN w13_in ) + USE SIGNAL ;
+    - w14_in ( PIN w14_out ) ( PIN w14_in ) + USE SIGNAL ;
+    - w1_in ( PIN w1_out ) ( PIN w1_in ) + USE SIGNAL ;
+    - w2_in ( PIN w2_out ) ( PIN w2_in ) + USE SIGNAL ;
+    - w3_in ( PIN w3_out ) ( PIN w3_in ) + USE SIGNAL ;
+    - w4_in ( PIN w4_out ) ( PIN w4_in ) + USE SIGNAL ;
+    - w5_in ( PIN w5_out ) ( PIN w5_in ) + USE SIGNAL ;
+    - w6_in ( PIN w6_out ) ( PIN w6_in ) + USE SIGNAL ;
+    - w7_in ( PIN w7_out ) ( PIN w7_in ) + USE SIGNAL ;
+    - w8_in ( PIN w8_out ) ( PIN w8_in ) + USE SIGNAL ;
+    - w9_in ( PIN w9_out ) ( PIN w9_in ) + USE SIGNAL ;
+END NETS
+END DESIGN

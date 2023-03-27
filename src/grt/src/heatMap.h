@@ -54,17 +54,30 @@ class RoutingCongestionDataSource : public gui::HeatMapDataSource
                               const double data_area,
                               const double intersection_area,
                               const double rect_area) override;
+  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
+  virtual const std::string formatValue(double value,
+                                        bool legend) const override;
 
  private:
-  odb::dbDatabase* db_;
   enum Direction
   {
     ALL,
     HORIZONTAL,
     VERTICAL
   };
+  enum MapType
+  {
+    Congestion,
+    Usage,
+    Capacity
+  };
+
+  odb::dbDatabase* db_;
   Direction direction_;
   odb::dbTechLayer* layer_;
+
+  MapType type_;
+  double max_;
 
   static constexpr double default_grid_ = 10.0;
 };

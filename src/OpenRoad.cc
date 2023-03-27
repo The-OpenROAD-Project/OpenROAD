@@ -61,6 +61,7 @@
 // mpl2 aborts with link error on darwin
 #include "mpl2/MakeMacroPlacer.h"
 #endif
+#include "dft/MakeDft.hh"
 #include "odb/cdl.h"
 #include "odb/db.h"
 #include "odb/defin.h"
@@ -68,8 +69,11 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
-#include "pad/MakePad.h"
+#include "pad/MakeICeWall.h"
+#ifdef ENABLE_PAR
+// par causes abseil link error at startup on apple silicon
 #include "par/MakePartitionMgr.h"
+#endif
 #include "pdn/MakePdnGen.hh"
 #include "ppl/MakeIoplacer.h"
 #include "psm/MakePDNSim.hh"
@@ -143,8 +147,10 @@ OpenRoad::OpenRoad()
       pdnsim_(nullptr),
       partitionMgr_(nullptr),
       pdngen_(nullptr),
+      icewall_(nullptr),
       distributer_(nullptr),
       stt_builder_(nullptr),
+      dft_(nullptr),
       threads_(1)
 {
   db_ = dbDatabase::create();
@@ -153,7 +159,9 @@ OpenRoad::OpenRoad()
 OpenRoad::~OpenRoad()
 {
   deleteDbVerilogNetwork(verilog_network_);
-  deleteDbSta(sta_);
+  // Temporarily removed until a crash can be resolved
+  // deleteDbSta(sta_);
+  // sta::deleteAllMemory();
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
@@ -172,10 +180,14 @@ OpenRoad::~OpenRoad()
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
+#ifdef ENABLE_PAR
   deletePartitionMgr(partitionMgr_);
+#endif
   deletePdnGen(pdngen_);
+  deleteICeWall(icewall_);
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
+  dft::deleteDft(dft_);
   delete logger_;
 }
 
@@ -226,10 +238,14 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
+#ifdef ENABLE_PAR
   partitionMgr_ = makePartitionMgr();
+#endif
   pdngen_ = makePdnGen();
+  icewall_ = makeICeWall();
   distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
+  dft_ = dft::makeDft();
 
   // Init components.
   Openroad_swig_Init(tcl_interp);
@@ -258,15 +274,18 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initMacroPlacer2(this);
 #endif
   initOpenRCX(this);
-  initPad(this);
+  initICeWall(this);
   initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
+#ifdef ENABLE_PAR
   initPartitionMgr(this);
+#endif
   initPdnGen(this);
   initDistributed(this);
   initSteinerTreeBuilder(this);
+  dft::initDft(this);
 
   // Import exported commands to global namespace.
   Tcl_Eval(tcl_interp, "sta::define_sta_cmds");

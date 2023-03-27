@@ -29,8 +29,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <dbRtTree.h>
 
+#include "dbRtTree.h"
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -61,10 +61,8 @@ using odb::dbWirePath;
 using odb::dbWirePathItr;
 using odb::dbWirePathShape;
 using odb::gs;
-using odb::notice;
 using odb::Rect;
 using odb::SEQ;
-using odb::warning;
 
 void extMeasure::printTraceNetInfo(const char* msg, uint netId, int rsegId)
 {
@@ -121,6 +119,7 @@ bool extMeasure::IsDebugNet()
   else
     return false;
 }
+
 void extMeasure::printNetCaps()
 {
   if (_netId <= 0)
@@ -143,6 +142,7 @@ void extMeasure::printNetCaps()
              net->getTotalResistance(),
              net->getConstName());
 }
+
 bool extMeasure::printTraceNet(const char* msg,
                                bool init,
                                dbCCSeg* cc,
@@ -217,6 +217,7 @@ void extMeasure::segInfo(const char* msg, uint netId, int rsegId)
       rseg->getCapacitance(0, 1.0),
       rseg->getResistance(0));
 }
+
 void extMeasure::rcNetInfo()
 {
   if (_netId <= 0)
@@ -242,6 +243,7 @@ void extMeasure::rcNetInfo()
       totaCap,
       net->getTotalResistance());
 }
+
 bool extMeasure::rcSegInfo()
 {
   if (!IsDebugNet())
@@ -279,6 +281,7 @@ bool extMeasure::ouCovered_debug(int covered)
 
   return true;
 }
+
 bool extMeasure::isVia(uint rsegId)
 {
   dbRSeg* rseg1 = dbRSeg::getRSeg(_block, rsegId);
@@ -291,6 +294,7 @@ bool extMeasure::isVia(uint rsegId)
             : false;
   return rvia1;
 }
+
 bool extMeasure::ouRCvalues(const char* msg, uint jj)
 {
   if (!IsDebugNet())
@@ -313,6 +317,7 @@ bool extMeasure::ouRCvalues(const char* msg, uint jj)
 
   return true;
 }
+
 bool extMeasure::OverSubDebug(extDistRC* rc,
                               int lenOverSub,
                               int lenOverSub_res,
@@ -347,6 +352,7 @@ bool extMeasure::OverSubDebug(extDistRC* rc,
 
   return true;
 }
+
 bool extMeasure::Debug_DiagValues(double res, double cap, const char* openDist)
 {
   if (!IsDebugNet())
@@ -364,6 +370,7 @@ bool extMeasure::Debug_DiagValues(double res, double cap, const char* openDist)
 
   return true;
 }
+
 bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
 {
   if (!IsDebugNet())
@@ -374,6 +381,7 @@ bool extMeasure::OverSubDebug(extDistRC* rc, int lenOverSub, int lenOverSub_res)
 
   return true;
 }
+
 bool extMeasure::DebugStart(bool allNets)
 {
   if (!IsDebugNet() && !allNets)
@@ -430,6 +438,7 @@ bool extMeasure::DebugStart(bool allNets)
              GetDBcoords(_ur[1]) - GetDBcoords(_ll[1]));
   return true;
 }
+
 bool extMeasure::DebugDiagCoords(int met,
                                  int targetMet,
                                  int len1,
@@ -468,6 +477,7 @@ bool extMeasure::DebugDiagCoords(int met,
       GetDBcoords(ur[1]) - GetDBcoords(ll[1]));
   return true;
 }
+
 // -----------------------------------------------------------------
 //
 // from extRCmodel.cpp
@@ -520,10 +530,12 @@ void extDistRC::printDebugRC(const char* from, Logger* logger)
              _coupling + _fringe + _diag,
              _res);
 }
+
 double extDistRC::GetDBcoords(int x, int db_factor)
 {
   return 1.0 * x / db_factor;
 }
+
 void extDistRC::printDebugRC_diag(int met,
                                   int overMet,
                                   int underMet,
@@ -561,6 +573,7 @@ void extDistRC::printDebugRC_diag(int met,
              _coupling + _fringe + _diag,
              _res);
 }
+
 void extDistRC::printDebugRC(int met,
                              int overMet,
                              int underMet,
@@ -605,6 +618,7 @@ void extDistRC::printDebugRC(int met,
              _coupling + _fringe + _diag,
              _res);
 }
+
 void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
 {
   debugPrint(logger,
@@ -623,6 +637,7 @@ void extDistRC::printDebugRC_sum(int len, int dbUnit, Logger* logger)
              _coupling + _fringe + _diag,
              _res);
 }
+
 void extDistRC::printDebugRC_values(const char* msg)
 {
   debugPrint(logger_,

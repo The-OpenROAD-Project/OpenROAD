@@ -36,12 +36,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ZInterface.h"
 #include "array1.h"
 #include "box.h"
 #include "db.h"
 #include "geom.h"
-#include "gseq.h"
 #include "rcx.h"
 
 namespace odb {
@@ -54,6 +52,7 @@ enum Ath__overlapAdjust
 };
 
 class Ath__track;
+struct SEQ;
 
 class Ath__searchBox
 {
@@ -279,7 +278,6 @@ class Ath__track
                     uint currentTrack,
                     uint ccTrackDist,
                     uint ccDomain,
-                    ZInterface* context,
                     Ath__array1D<uint>* ccTable,
                     uint met,
                     rcx::CoupleAndCompute coupleAndCompute,
@@ -291,7 +289,6 @@ class Ath__track
                    Ath__array1D<Ath__wire*>* nwTable,
                    Ath__grid* ccGrid,
                    Ath__array1D<Ath__wire*>* ccTable,
-                   ZInterface* context,
                    uint met,
                    rcx::CoupleAndCompute coupleAndCompute,
                    void* compPtr);
@@ -299,7 +296,6 @@ class Ath__track
   void initTargetWire(int noPowerWire);
   Ath__wire* nextTargetWire(int noPowerWire);
   Ath__wire* getTargetWire();
-  void adjustMetalFill();
   void adjustOverlapMakerEnd(uint markerCnt);
   void adjustOverlapMakerEnd(uint markerCnt, int start, uint markerLen);
   uint trackContextOn(int orig,
@@ -485,7 +481,6 @@ class Ath__grid
                    int* limitArray);
   uint couplingCaps(Ath__grid* resGrid,
                     uint couplingDist,
-                    ZInterface* context,
                     Ath__array1D<uint>* ccTable,
                     rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
@@ -497,7 +492,6 @@ class Ath__grid
               uint* gxy,
               Ath__array1D<uint>* idtable,
               Ath__grid* g);
-  void adjustMetalFill();
   void adjustOverlapMakerEnd();
   void initContextGrids();
   void initContextTracks();
@@ -550,7 +544,6 @@ class Ath__gridTable
   uint _ccFlag;
 
   uint _ccContextDepth;
-  uint* _ccContextLength;
 
   Ath__array1D<int>** _ccContextArray;
 
@@ -672,15 +665,10 @@ class Ath__gridTable
   Ath__array1D<odb::SEQ*>* renewDgContext(uint gridn, uint trackn);
   uint couplingCaps(Ath__gridTable* resGridTable,
                     uint couplingDist,
-                    ZInterface* context,
                     Ath__array1D<uint>* ccTable,
                     rcx::CoupleAndCompute coupleAndCompute,
                     void* compPtr);
-  uint couplingCaps(uint row,
-                    uint col,
-                    Ath__grid* resGrid,
-                    uint couplingDist,
-                    ZInterface* context);
+  uint couplingCaps(uint row, uint col, Ath__grid* resGrid, uint couplingDist);
   void getBox(uint wid,
               int* x1,
               int* y1,
@@ -705,10 +693,6 @@ class Ath__gridTable
   void setCCFlag(uint ccflag) { _ccFlag = ccflag; };
   uint getCcFlag() { return _ccFlag; };
   uint contextDepth() { return _ccContextDepth; };
-  void setContextLength(uint level, uint contextLength)
-  {
-    _ccContextLength[level] = contextLength;
-  };
   Ath__array1D<int>** contextArray() { return _ccContextArray; };
   AthPool<odb::SEQ>* seqPool() { return _seqPool; };
   Ath__array1D<odb::SEQ*>*** dgContextArray() { return _dgContextArray; };
@@ -737,7 +721,6 @@ class Ath__gridTable
                      bool allNet,
                      uint contextDepth,
                      Ath__array1D<int>** contextArray,
-                     uint* contextLength,
                      Ath__array1D<odb::SEQ*>*** dgContextArray,
                      uint* dgContextDepth,
                      uint* dgContextPlanes,
@@ -753,7 +736,6 @@ class Ath__gridTable
   bool usingDbSdb() { return _useDbSdb; }
   void reverseTargetTrack();
   bool targetTrackReversed() { return _targetTrackReversed; };
-  void adjustMetalFill();
   void incrNotAlignedOverlap(Ath__wire* w1, Ath__wire* w2);
   void incrSignalOverlap();
   void incrPowerOverlap();

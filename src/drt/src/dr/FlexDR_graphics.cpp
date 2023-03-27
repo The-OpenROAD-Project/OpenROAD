@@ -119,11 +119,7 @@ gui::Descriptor::Properties GridGraphDescriptor::getProperties(
   // faster navigation.
   Properties costs;
 
-  // Iterating enums sucks in C++
-  for (int dir_int = (int) frDirEnum::D; dir_int <= (int) frDirEnum::U;
-       ++dir_int) {
-    frDirEnum dir = static_cast<frDirEnum>(dir_int);
-
+  for (const auto dir : frDirEnumAll) {
     // Find neighbor's coordinate & name
     frMIdx nx = x;
     frMIdx ny = y;
@@ -502,7 +498,7 @@ void FlexDRGraphics::drawObj(frBlockObject* fig,
 
     default: {
       logger_->debug(
-          DRT, 1, "Unknown fig type {} in drawLayer.", fig->typeId());
+          DRT, "gui", "Unknown fig type {} in drawLayer.", fig->typeId());
     }
   }
 }

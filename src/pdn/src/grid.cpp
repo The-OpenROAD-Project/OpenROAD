@@ -726,6 +726,52 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
              remove_vias.size());
   remove_set_of_vias(remove_vias);
 
+  // Remove overlapping vias and keep largest
+  ViaTree overlapping_via_tree;
+  for (const auto& via : vias) {
+    overlapping_via_tree.insert({via->getBox(), via});
+  }
+  for (const auto& via : vias) {
+    if (via->isFailed()) {
+      continue;
+    }
+    if (overlapping_via_tree.qbegin(
+            bgi::intersects(via->getBox())
+            && bgi::satisfies([&via](const ViaValue& other) -> bool {
+                 const auto& other_via = other.second;
+                 if (via == other_via) {
+                   // ignore the same via
+                   return false;
+                 }
+
+                 if (other_via->isFailed()) {
+                   return false;
+                 }
+
+                 if (via->getLowerLayer() != other_via->getLowerLayer()) {
+                   return false;
+                 }
+
+                 if (via->getUpperLayer() != other_via->getUpperLayer()) {
+                   return false;
+                 }
+
+                 // Remove the smaller of the two vias
+                 return via->getArea().area() <= other_via->getArea().area();
+               }))
+        != overlapping_via_tree.qend()) {
+      remove_vias.insert(via);
+      via->markFailed(failedViaReason::OVERLAPPING);
+    }
+  }
+  debugPrint(getLogger(),
+             utl::PDN,
+             "Via",
+             2,
+             "Removing {} vias due to overlaps.",
+             remove_vias.size());
+  remove_set_of_vias(remove_vias);
+
   // build via tree
   vias_.clear();
   for (auto& via : vias) {
@@ -917,9 +963,23 @@ void Grid::makeInitialObstructions(odb::dbBlock* block,
     if (!inst->isFixed()) {
       continue;
     }
+
     auto* master = inst->getMaster();
-    if (!master->isPad() && !master->isBlock() && !master->isCover()) {
+    if (master->isCore()) {
       continue;
+    }
+    if (master->isEndCap()) {
+      switch (master->getType()) {
+        case odb::dbMasterType::ENDCAP_TOPLEFT:
+        case odb::dbMasterType::ENDCAP_TOPRIGHT:
+        case odb::dbMasterType::ENDCAP_BOTTOMLEFT:
+        case odb::dbMasterType::ENDCAP_BOTTOMRIGHT:
+          // Master is a pad corner
+          break;
+        default:
+          // Master is a std cell endcap
+          continue;
+      }
     }
 
     if (skip_insts.find(inst) != skip_insts.end()) {
@@ -1275,33 +1335,31 @@ ShapeTreeMap InstanceGrid::getInstancePins(odb::dbInst* inst)
   inst->getTransform(transform);
   for (auto* iterm : inst->getITerms()) {
     odb::dbNet* net = iterm->getNet();
-    if (net != nullptr) {
-      for (auto* mpin : iterm->getMTerm()->getMPins()) {
-        for (auto* box : mpin->getGeometry()) {
-          if (box->isVia()) {
-            odb::dbTechVia* tech_via = box->getTechVia();
-            if (tech_via == nullptr) {
-              continue;
-            }
+    for (auto* mpin : iterm->getMTerm()->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        if (box->isVia()) {
+          odb::dbTechVia* tech_via = box->getTechVia();
+          if (tech_via == nullptr) {
+            continue;
+          }
 
-            const odb::dbTransform via_transform(box->getViaXY());
-            for (auto* via_box : tech_via->getBoxes()) {
-              odb::Rect box_rect = via_box->getBox();
-              via_transform.apply(box_rect);
-              transform.apply(box_rect);
-              auto shape = std::make_shared<Shape>(
-                  via_box->getTechLayer(), net, box_rect);
-              shape->setShapeType(Shape::FIXED);
-              pins.push_back(shape);
-            }
-          } else {
-            odb::Rect box_rect = box->getBox();
+          const odb::dbTransform via_transform(box->getViaXY());
+          for (auto* via_box : tech_via->getBoxes()) {
+            odb::Rect box_rect = via_box->getBox();
+            via_transform.apply(box_rect);
             transform.apply(box_rect);
-            auto shape
-                = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+            auto shape = std::make_shared<Shape>(
+                via_box->getTechLayer(), net, box_rect);
             shape->setShapeType(Shape::FIXED);
             pins.push_back(shape);
           }
+        } else {
+          odb::Rect box_rect = box->getBox();
+          transform.apply(box_rect);
+          auto shape
+              = std::make_shared<Shape>(box->getTechLayer(), net, box_rect);
+          shape->setShapeType(Shape::FIXED);
+          pins.push_back(shape);
         }
       }
     }

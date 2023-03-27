@@ -2711,7 +2711,12 @@ Via::Via(Connect* connect,
          const odb::Rect& area,
          const ShapePtr& lower,
          const ShapePtr& upper)
-    : net_(net), area_(area), lower_(lower), upper_(upper), connect_(connect)
+    : net_(net),
+      area_(area),
+      lower_(lower),
+      upper_(upper),
+      connect_(connect),
+      failed_(false)
 {
 }
 
@@ -2822,17 +2827,18 @@ void Via::writeToDb(odb::dbSWire* wire,
     return ripup;
   };
 
-  std::set<odb::dbSBox*> ripup_vias_bottom
+  const std::set<odb::dbSBox*> ripup_shapes_bottom
       = check_shapes(lower_, shapes.bottom);
-  std::set<odb::dbSBox*> ripup_vias_top = check_shapes(upper_, shapes.top);
+  const std::set<odb::dbSBox*> ripup_shapes_top
+      = check_shapes(upper_, shapes.top);
 
-  std::set<odb::dbSBox*> ripup_vias;
-  ripup_vias.insert(ripup_vias_bottom.begin(), ripup_vias_bottom.end());
-  ripup_vias.insert(ripup_vias_top.begin(), ripup_vias_top.end());
+  std::set<odb::dbSBox*> ripup_shapes;
+  ripup_shapes.insert(ripup_shapes_bottom.begin(), ripup_shapes_bottom.end());
+  ripup_shapes.insert(ripup_shapes_top.begin(), ripup_shapes_top.end());
 
   std::set<odb::dbSBox*> ripup_vias_middle;
   for (const auto& [middle_rect, box] : shapes.middle) {
-    for (auto* ripup_via : ripup_vias) {
+    for (auto* ripup_via : ripup_shapes) {
       const odb::Rect ripup_area = ripup_via->getBox();
       if (ripup_area.overlaps(middle_rect)) {
         ripup_vias_middle.insert(box);
@@ -2840,30 +2846,38 @@ void Via::writeToDb(odb::dbSWire* wire,
       }
     }
   }
-  ripup_vias.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
+  ripup_shapes.insert(ripup_vias_middle.begin(), ripup_vias_middle.end());
 
-  if (!ripup_vias.empty()) {
+  if (!ripup_shapes.empty()) {
     const TechLayer tech_layer(lower_->getLayer());
     int x = 0;
     int y = 0;
-    for (auto* via : ripup_vias) {
+    int ripup_count = 0;
+    for (auto* shape : ripup_shapes) {
       int via_x, via_y;
-      via->getViaXY(via_x, via_y);
-      x += via_x;
-      y += via_y;
+      if (shape->getBlockVia() != nullptr || shape->getTechVia() != nullptr) {
+        shape->getViaXY(via_x, via_y);
+        x += via_x;
+        y += via_y;
+        ripup_count++;
+      }
 
-      odb::dbSBox::destroy(via);
+      odb::dbSBox::destroy(shape);
     }
 
+    if (ripup_count == 0) {
+      // this really should not happen but makes clang-tidy happier
+      ripup_count = 1;
+    }
     getLogger()->warn(
         utl::PDN,
         195,
         "Removing {} via(s) between {} and {} at ({:.4f} um, {:.4f} um) for {}",
-        ripup_vias.size(),
+        ripup_count,
         lower_->getLayer()->getName(),
         upper_->getLayer()->getName(),
-        tech_layer.dbuToMicron(x / ripup_vias.size()),
-        tech_layer.dbuToMicron(y / ripup_vias.size()),
+        tech_layer.dbuToMicron(x / ripup_count),
+        tech_layer.dbuToMicron(y / ripup_count),
         lower_->getNet()->getName());
     markFailed(failedViaReason::RIPUP);
   }
@@ -2915,6 +2929,7 @@ utl::Logger* Via::getLogger() const
 
 void Via::markFailed(failedViaReason reason)
 {
+  failed_ = true;
   connect_->addFailedVia(reason, area_, net_);
 }
 

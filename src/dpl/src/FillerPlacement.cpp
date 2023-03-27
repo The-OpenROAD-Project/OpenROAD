@@ -39,20 +39,18 @@
 
 namespace dpl {
 
-using std::max;
-using std::min;
 using std::to_string;
 
 using utl::DPL;
 
-using odb::dbLib;
 using odb::dbMaster;
 using odb::dbPlacementStatus;
 
 void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
 {
-  if (cells_.empty())
+  if (cells_.empty()) {
     importDb();
+  }
 
   std::sort(filler_masters->begin(),
             filler_masters->end(),
@@ -65,17 +63,19 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   initGrid();
   setGridCells();
 
-  for (int row = 0; row < row_count_; row++)
+  for (int row = 0; row < row_count_; row++) {
     placeRowFillers(row, prefix, filler_masters);
+  }
 
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
 }
 
 void Opendp::setGridCells()
 {
-  for (Cell& cell : cells_)
+  for (Cell& cell : cells_) {
     visitCellPixels(
         cell, false, [&](Pixel* pixel) { setGridCell(cell, pixel); });
+  }
 }
 
 void Opendp::placeRowFillers(int row,
@@ -136,14 +136,16 @@ void Opendp::placeRowFillers(int row,
 
 const char* Opendp::gridInstName(int row, int col)
 {
-  if (col < 0)
+  if (col < 0) {
     return "core_left";
-  else if (col > row_site_count_)
+  }
+  if (col > row_site_count_) {
     return "core_right";
-  else {
-    const Cell* cell = gridPixel(col, row)->cell;
-    if (cell)
-      return cell->db_inst_->getConstName();
+  }
+
+  const Cell* cell = gridPixel(col, row)->cell;
+  if (cell) {
+    return cell->db_inst_->getConstName();
   }
   return "?";
 }
@@ -192,6 +194,13 @@ bool Opendp::isFiller(odb::dbInst* db_inst)
   return db_master->getType() == odb::dbMasterType::CORE_SPACER
          // Filter spacer cells used as tapcells.
          && db_inst->getPlacementStatus() != odb::dbPlacementStatus::LOCKED;
+}
+
+// Return true if cell is a single site Core Spacer.
+bool Opendp::isOneSiteCell(odb::dbMaster* db_master) const
+{
+  return db_master->getType() == odb::dbMasterType::CORE_SPACER
+         && db_master->getWidth() == site_width_;
 }
 
 }  // namespace dpl

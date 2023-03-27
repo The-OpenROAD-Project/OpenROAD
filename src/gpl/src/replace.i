@@ -79,17 +79,10 @@ set_nesv_place_iter_cmd(int iter)
 }
 
 void
-set_bin_grid_cnt_x_cmd(int cnt_x)
+set_bin_grid_cnt_cmd(int cnt_x, int cnt_y)
 {
   Replace* replace = getReplace();
-  replace->setBinGridCntX(cnt_x); 
-}
-
-void
-set_bin_grid_cnt_y_cmd(int cnt_y)
-{
-  Replace* replace = getReplace();
-  replace->setBinGridCntY(cnt_y);
+  replace->setBinGridCnt(cnt_x, cnt_y);
 }
 
 void

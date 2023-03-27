@@ -40,7 +40,7 @@
 #include "odb/db.h"
 
 using std::set;
-using ppl::PinList;    
+using ppl::PinSet;    
 using namespace ppl;
 
 template <class TYPE>
@@ -65,7 +65,7 @@ PyListSet(PyObject *const source,
 
 %}
 
-%typemap(in) ppl::PinList* {
+%typemap(in) ppl::PinSet* {
   $1 = PyListSet<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm);
 }
 

@@ -30,12 +30,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <stdio.h>
-
 #include <algorithm>
 
-#include "ZInterface.h"
-#include "dbLogger.h"
+#include "gseq.h"
 #include "wire.h"
 
 namespace rcx {
@@ -96,7 +93,6 @@ void Ath__grid::gridContextOn(int orig, int len, int base, int width)
     }
   }
   context->add(end);
-  _gridtable->setContextLength(_level, clength);
 }
 
 void Ath__grid::contextsOn(int orig, int len, int base, int width)
@@ -120,7 +116,6 @@ uint Ath__track::findOverlap(Ath__wire* origWire,
                              Ath__array1D<Ath__wire*>* nwTable,
                              Ath__grid* ccGrid,
                              Ath__array1D<Ath__wire*>* ccTable,
-                             ZInterface* context,
                              uint met,
                              rcx::CoupleAndCompute coupleAndCompute,
                              void* compPtr)
@@ -341,7 +336,6 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
                               uint srcTrack,
                               uint trackDist,
                               uint ccThreshold,
-                              ZInterface* context,
                               Ath__array1D<uint>* ccIdTable,
                               uint met,
                               rcx::CoupleAndCompute coupleAndCompute,
@@ -443,7 +437,6 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
                            nwTable,
                            ccGrid,
                            &ccTable,
-                           context,
                            met,
                            coupleAndCompute,
                            compPtr);
@@ -518,7 +511,6 @@ uint Ath__track::couplingCaps(Ath__grid* ccGrid,
 
 uint Ath__grid::couplingCaps(Ath__grid* resGrid,
                              uint couplingDist,
-                             ZInterface* context,
                              Ath__array1D<uint>* ccTable,
                              rcx::CoupleAndCompute coupleAndCompute,
                              void* compPtr)
@@ -550,7 +542,6 @@ uint Ath__grid::couplingCaps(Ath__grid* resGrid,
                                       ii,
                                       coupleTrackNum,
                                       ccThreshold,
-                                      context,
                                       ccTable,
                                       _level,
                                       coupleAndCompute,
@@ -563,7 +554,6 @@ uint Ath__grid::couplingCaps(Ath__grid* resGrid,
                                  ii,
                                  coupleTrackNum,
                                  ccThreshold,
-                                 context,
                                  ccTable,
                                  _level,
                                  coupleAndCompute,
@@ -575,6 +565,7 @@ uint Ath__grid::couplingCaps(Ath__grid* resGrid,
 
   return cnt;
 }
+
 void Ath__gridTable::setDefaultWireType(uint v)
 {
   for (uint ii = 0; ii < _rowCnt; ii++) {
@@ -702,6 +693,7 @@ void Ath__grid::buildDgContext(int gridn, int base)
   for (jj = 0; jj < awcnt; jj++)
     allCtxwire[jj]->_ext = 0;
 }
+
 Ath__array1D<SEQ*>* Ath__gridTable::renewDgContext(uint gridn, uint trackn)
 {
   Ath__array1D<SEQ*>* dgContext = _dgContextArray[gridn][trackn];
@@ -746,7 +738,6 @@ void Ath__gridTable::buildDgContext(int base, uint level, uint dir)
 
 uint Ath__gridTable::couplingCaps(Ath__gridTable* resGridTable,
                                   uint couplingDist,
-                                  ZInterface* context,
                                   Ath__array1D<uint>* ccTable,
                                   rcx::CoupleAndCompute coupleAndCompute,
                                   void* compPtr)
@@ -766,21 +757,20 @@ uint Ath__gridTable::couplingCaps(Ath__gridTable* resGridTable,
         continue;
 
       cnt += netGrid->couplingCaps(
-          resGrid, couplingDist, context, ccTable, coupleAndCompute, compPtr);
+          resGrid, couplingDist, ccTable, coupleAndCompute, compPtr);
     }
   }
-  notice(0, "Final %d ccaps\n", cnt);
-  notice(0, "      %d interTrack shorts\n", _CCshorts);
   return cnt;
 }
+
 uint Ath__gridTable::couplingCaps(uint row,
                                   uint col,
                                   Ath__grid* resGrid,
-                                  uint couplingDist,
-                                  ZInterface* context)
+                                  uint couplingDist)
 {
   return 0;
 }
+
 int Ath__grid::couplingCaps(int hiXY,
                             uint couplingDist,
                             uint& wireCnt,
@@ -837,7 +827,6 @@ int Ath__grid::couplingCaps(int hiXY,
                                       coupleTrackNum,
                                       ccThreshold,
                                       NULL,
-                                      NULL,
                                       _level,
                                       coupleAndCompute,
                                       compPtr);
@@ -850,7 +839,6 @@ int Ath__grid::couplingCaps(int hiXY,
                                  coupleTrackNum,
                                  ccThreshold,
                                  NULL,
-                                 NULL,
                                  _level,
                                  coupleAndCompute,
                                  compPtr);
@@ -862,6 +850,7 @@ int Ath__grid::couplingCaps(int hiXY,
   limitArray[5] = hiXY;
   return hiXY;
 }
+
 int Ath__grid::dealloc(int hiXY)
 {
   for (uint ii = _lastFreeTrack; ii <= _searchHiTrack; ii++) {
@@ -886,6 +875,7 @@ int Ath__grid::dealloc(int hiXY)
   _lastFreeTrack = _searchHiTrack;
   return hiXY;
 }
+
 int Ath__gridTable::dealloc(uint dir, int hiXY)
 {
   for (uint jj = 1; jj < _colCnt; jj++) {
@@ -1020,6 +1010,7 @@ int Ath__gridTable::couplingCaps(int hiXY,
   }
   return minExtracted;
 }
+
 int Ath__grid::initCouplingCapLoops(uint couplingDist,
                                     rcx::CoupleAndCompute coupleAndCompute,
                                     void* compPtr,
@@ -1042,6 +1033,7 @@ int Ath__grid::initCouplingCapLoops(uint couplingDist,
 
   return _base + _pitch * _searchHiTrack;
 }
+
 void Ath__gridTable::initCouplingCapLoops(
     uint dir,
     uint couplingDist,

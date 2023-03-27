@@ -98,7 +98,6 @@ void definSNet::init()
 
 void definSNet::begin(const char* name)
 {
-  //	notice(0,"Reading special net %s ...\n", name );
   assert(_cur_net == NULL);
 
   if (!_replace_wires) {
@@ -597,7 +596,6 @@ void definSNet::end()
   if (swires.reversible() && swires.orderReversed())
     swires.reverse();
 
-  //	notice(0,"End\n");
   _cur_net = NULL;
 }
 
@@ -623,10 +621,6 @@ void definSNet::connect_all(dbNet* net, const char* term)
 
   for (itr = iterms.begin(); itr != iterms.end(); ++itr) {
     dbITerm* iterm = *itr;
-
-    // notice(0, "iterm %d - I%d %s M %s\n", iterm->getId(),
-    // iterm->getInst()->getId(), iterm->getInst()->getConstName(),
-    // iterm->getInst()->getMaster()->getConstName());
 
     dbMTerm* mterm = iterm->getMTerm();
 

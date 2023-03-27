@@ -776,7 +776,6 @@ NetRouteMap FastRouteCore::run()
 
   int enlarge_ = 10;
   int newTH = 10;
-  int healingTrigger = 0;
   bool stopDEC = false;
   int upType = 1;
 
@@ -960,17 +959,6 @@ NetRouteMap FastRouteCore::run()
 
     if (maxOverflow < 150) {
       if (i == 20 && past_cong > 200) {
-        if (overflow_reduction_percent < 0.15) {
-          // if after 20 iterations the largest reduction percentage
-          // is smaller than 15%, stop congestion iterations and
-          // consider the design unroutable
-          if (verbose_)
-            logger_->warn(GRT,
-                          227,
-                          "Reached 20 congestion iterations with less than 15% "
-                          "of reduction between iterations.");
-          break;
-        }
         if (verbose_) {
           logger_->info(GRT, 103, "Extra Run for hard benchmark.");
         }
@@ -1019,7 +1007,6 @@ NetRouteMap FastRouteCore::run()
 
     if (past_cong >= last_cong) {
       VIA = 0;
-      healingTrigger++;
     }
 
     if (past_cong < bmfl) {

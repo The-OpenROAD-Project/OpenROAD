@@ -1,0 +1,262 @@
+VERSION 5.8 ;
+DIVIDERCHAR "/" ;
+BUSBITCHARS "[]" ;
+DESIGN test ;
+UNITS DISTANCE MICRONS 1000 ;
+DIEAREA ( 0 0 ) ( 3780 3780 ) ;
+TRACKS X 36 DO 104 STEP 36 LAYER M1 ;
+TRACKS Y 36 DO 104 STEP 36 LAYER M1 ;
+TRACKS X 45 DO 83 STEP 45 LAYER M2 ;
+TRACKS Y 36 DO 104 STEP 36 LAYER M2 ;
+TRACKS X 36 DO 104 STEP 36 LAYER M3 ;
+TRACKS Y 36 DO 104 STEP 36 LAYER M3 ;
+TRACKS X 51 DO 78 STEP 48 LAYER M4 ;
+TRACKS Y 51 DO 78 STEP 48 LAYER M4 ;
+TRACKS X 48 DO 78 STEP 48 LAYER M5 ;
+TRACKS Y 48 DO 78 STEP 48 LAYER M5 ;
+TRACKS X 64 DO 58 STEP 64 LAYER M6 ;
+TRACKS Y 64 DO 58 STEP 64 LAYER M6 ;
+TRACKS X 64 DO 58 STEP 64 LAYER M7 ;
+TRACKS Y 64 DO 58 STEP 64 LAYER M7 ;
+TRACKS X 80 DO 47 STEP 80 LAYER M8 ;
+TRACKS Y 80 DO 47 STEP 80 LAYER M8 ;
+TRACKS X 80 DO 47 STEP 80 LAYER M9 ;
+TRACKS Y 80 DO 47 STEP 80 LAYER M9 ;
+TRACKS X 80 DO 47 STEP 80 LAYER Pad ;
+TRACKS Y 80 DO 47 STEP 80 LAYER Pad ;
+COMPONENTS 0 ;
+END COMPONENTS
+PINS 50 ;
+    - in_0 + NET in_0 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 48 167 ) N ;
+    - in_1 + NET in_1 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 192 167 ) N ;
+    - in_10 + NET in_10 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1584 167 ) N ;
+    - in_11 + NET in_11 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1728 167 ) N ;
+    - in_12 + NET in_12 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1872 167 ) N ;
+    - in_13 + NET in_13 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2016 167 ) N ;
+    - in_14 + NET in_14 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2160 167 ) N ;
+    - in_15 + NET in_15 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2304 167 ) N ;
+    - in_16 + NET in_16 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2448 167 ) N ;
+    - in_17 + NET in_17 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2640 167 ) N ;
+    - in_18 + NET in_18 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2784 167 ) N ;
+    - in_19 + NET in_19 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2928 167 ) N ;
+    - in_2 + NET in_2 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 336 167 ) N ;
+    - in_20 + NET in_20 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3072 167 ) N ;
+    - in_21 + NET in_21 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3216 167 ) N ;
+    - in_22 + NET in_22 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3360 167 ) N ;
+    - in_23 + NET in_23 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3504 167 ) N ;
+    - in_24 + NET in_24 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3696 167 ) N ;
+    - in_3 + NET in_3 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 528 167 ) N ;
+    - in_4 + NET in_4 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 672 167 ) N ;
+    - in_5 + NET in_5 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 816 167 ) N ;
+    - in_6 + NET in_6 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 960 167 ) N ;
+    - in_7 + NET in_7 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1104 167 ) N ;
+    - in_8 + NET in_8 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1248 167 ) N ;
+    - in_9 + NET in_9 + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1392 167 ) N ;
+    - out_0 + NET in_24 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 48 3613 ) N ;
+    - out_1 + NET in_23 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 192 3613 ) N ;
+    - out_10 + NET in_14 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1584 3613 ) N ;
+    - out_11 + NET in_13 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1728 3613 ) N ;
+    - out_12 + NET in_12 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1872 3613 ) N ;
+    - out_13 + NET in_11 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2016 3613 ) N ;
+    - out_14 + NET in_10 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2160 3613 ) N ;
+    - out_15 + NET in_9 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2304 3613 ) N ;
+    - out_16 + NET in_8 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2448 3613 ) N ;
+    - out_17 + NET in_7 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2640 3613 ) N ;
+    - out_18 + NET in_6 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2784 3613 ) N ;
+    - out_19 + NET in_5 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 2928 3613 ) N ;
+    - out_2 + NET in_22 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 336 3613 ) N ;
+    - out_20 + NET in_4 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3072 3613 ) N ;
+    - out_21 + NET in_3 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3216 3613 ) N ;
+    - out_22 + NET in_2 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3360 3613 ) N ;
+    - out_23 + NET in_1 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3504 3613 ) N ;
+    - out_24 + NET in_0 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 3696 3613 ) N ;
+    - out_3 + NET in_21 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 528 3613 ) N ;
+    - out_4 + NET in_20 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 672 3613 ) N ;
+    - out_5 + NET in_19 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 816 3613 ) N ;
+    - out_6 + NET in_18 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 960 3613 ) N ;
+    - out_7 + NET in_17 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1104 3613 ) N ;
+    - out_8 + NET in_16 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1248 3613 ) N ;
+    - out_9 + NET in_15 + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER M5 ( -12 -167 ) ( 12 167 )
+        + FIXED ( 1392 3613 ) N ;
+END PINS
+BLOCKAGES 2 ;
+    - LAYER M4 RECT ( 0 0 ) ( 3780 3780 ) ;
+    - LAYER M7 RECT ( 0 0 ) ( 3780 3780 ) ;
+END BLOCKAGES
+NETS 25 ;
+    - in_0 ( PIN out_24 ) ( PIN in_0 ) + USE SIGNAL ;
+    - in_1 ( PIN out_23 ) ( PIN in_1 ) + USE SIGNAL ;
+    - in_10 ( PIN out_14 ) ( PIN in_10 ) + USE SIGNAL ;
+    - in_11 ( PIN out_13 ) ( PIN in_11 ) + USE SIGNAL ;
+    - in_12 ( PIN out_12 ) ( PIN in_12 ) + USE SIGNAL ;
+    - in_13 ( PIN out_11 ) ( PIN in_13 ) + USE SIGNAL ;
+    - in_14 ( PIN out_10 ) ( PIN in_14 ) + USE SIGNAL ;
+    - in_15 ( PIN out_9 ) ( PIN in_15 ) + USE SIGNAL ;
+    - in_16 ( PIN out_8 ) ( PIN in_16 ) + USE SIGNAL ;
+    - in_17 ( PIN out_7 ) ( PIN in_17 ) + USE SIGNAL ;
+    - in_18 ( PIN out_6 ) ( PIN in_18 ) + USE SIGNAL ;
+    - in_19 ( PIN out_5 ) ( PIN in_19 ) + USE SIGNAL ;
+    - in_2 ( PIN out_22 ) ( PIN in_2 ) + USE SIGNAL ;
+    - in_20 ( PIN out_4 ) ( PIN in_20 ) + USE SIGNAL ;
+    - in_21 ( PIN out_3 ) ( PIN in_21 ) + USE SIGNAL ;
+    - in_22 ( PIN out_2 ) ( PIN in_22 ) + USE SIGNAL ;
+    - in_23 ( PIN out_1 ) ( PIN in_23 ) + USE SIGNAL ;
+    - in_24 ( PIN out_0 ) ( PIN in_24 ) + USE SIGNAL ;
+    - in_3 ( PIN out_21 ) ( PIN in_3 ) + USE SIGNAL ;
+    - in_4 ( PIN out_20 ) ( PIN in_4 ) + USE SIGNAL ;
+    - in_5 ( PIN out_19 ) ( PIN in_5 ) + USE SIGNAL ;
+    - in_6 ( PIN out_18 ) ( PIN in_6 ) + USE SIGNAL ;
+    - in_7 ( PIN out_17 ) ( PIN in_7 ) + USE SIGNAL ;
+    - in_8 ( PIN out_16 ) ( PIN in_8 ) + USE SIGNAL ;
+    - in_9 ( PIN out_15 ) ( PIN in_9 ) + USE SIGNAL ;
+END NETS
+END DESIGN

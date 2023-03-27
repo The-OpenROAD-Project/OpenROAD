@@ -78,10 +78,9 @@ vector<pair<odb::dbInst*, double>> PowerInst::executePowerPerInst(
     Instance* inst = inst_iter->next();
     LibertyCell* cell = network->libertyCell(inst);
     if (cell) {
-      PowerResult inst_power;
-      sta_->power(inst, corner, inst_power);
+      PowerResult inst_power = sta_->power(inst, corner);
       total_calc.incr(inst_power);
-      power_report.push_back({network->staToDb(inst), inst_power.total()});
+      power_report.emplace_back(network->staToDb(inst), inst_power.total());
       debugPrint(logger_,
                  utl::PSM,
                  "get power",

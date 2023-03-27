@@ -75,7 +75,7 @@ to_string(BufferedNetType type);
 // load
 BufferedNet::BufferedNet(const BufferedNetType type,
                          const Point location,
-                         Pin *load_pin,
+                         const Pin *load_pin,
                          const Corner *corner,
                          const Resizer *resizer)
 {
@@ -401,7 +401,7 @@ makeBufferedNetFromTree(const SteinerTree *tree,
   // add the pins repeatedly.  The first node wins and the rest are skipped.
   if (pins && pins_visited.find(to_loc) == pins_visited.end()) {
     pins_visited.insert(to_loc);
-    for (Pin *pin : *pins) {
+    for (const Pin *pin : *pins) {
       if (network->isLoad(pin)) {
         BufferedNetPtr bnet1 = make_shared<BufferedNet>(BufferedNetType::load,
                                                         tree->location(to), pin,
@@ -540,7 +540,7 @@ makeBufferedNet(RoutePt &from,
   const PinSeq &pins = loc_pin_map[to_pt];
   Point from_pt(from.x(), from.y());
   BufferedNetPtr bnet = nullptr;
-  for (Pin *pin : pins) {
+  for (const Pin *pin : pins) {
     if (db_network->isLoad(pin)) {
       auto load_bnet = make_shared<BufferedNet>(BufferedNetType::load,
                                                 to_pt, pin, corner, resizer);

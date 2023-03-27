@@ -410,7 +410,7 @@ class ClockTreeView : public QGraphicsView
 
   struct PinArrival
   {
-    sta::Pin* pin = nullptr;
+    const sta::Pin* pin = nullptr;
     sta::Delay delay = 0.0;
   };
   ClockNodeGraphicsViewItem* addCellToScene(qreal x,
