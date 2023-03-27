@@ -1889,7 +1889,7 @@ bool dbBlock::findSomeMaster(const char* names, std::vector<dbMaster*>& masters)
 
   dbLib* lib = getChip()->getDb()->findLib("lib");
   dbMaster* master;
-  auto parser = std::make_unique<Ath__parser>();
+  auto parser = std::make_unique<Ath__parser>(getImpl()->getLogger());
   parser->mkWords(names, NULL);
   // uint noid;
   char* masterName;
@@ -1918,7 +1918,7 @@ bool dbBlock::findSomeNet(const char* names, std::vector<dbNet*>& nets)
     return false;
   _dbBlock* block = (_dbBlock*) this;
   dbNet* net;
-  auto parser = std::make_unique<Ath__parser>();
+  auto parser = std::make_unique<Ath__parser>(getImpl()->getLogger());
   parser->mkWords(names, NULL);
   uint noid;
   char* netName;
@@ -1943,7 +1943,7 @@ bool dbBlock::findSomeInst(const char* names, std::vector<dbInst*>& insts)
     return false;
   _dbBlock* block = (_dbBlock*) this;
   dbInst* inst;
-  auto parser = std::make_unique<Ath__parser>();
+  auto parser = std::make_unique<Ath__parser>(getImpl()->getLogger());
   parser->mkWords(names, NULL);
   uint ioid;
   char* instName;

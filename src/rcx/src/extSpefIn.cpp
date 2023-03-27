@@ -2296,7 +2296,7 @@ uint extSpef::readBlock(uint debug,
   }
   _readingNodeCoordsInput = _readingNodeCoords;
   if (_readingNodeCoords != C_NONE && _nodeCoordParser == NULL)
-    _nodeCoordParser = new Ath__parser();
+    _nodeCoordParser = new Ath__parser(logger_);
   if (capStatsFile != NULL) {
     _capStatsFP = fopen(capStatsFile, "w");
   }

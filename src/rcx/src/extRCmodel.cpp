@@ -2056,7 +2056,7 @@ extRCModel::extRCModel(uint layerCnt, const char* name, Logger* logger)
   _wireDirName = new char[2048];
   _topDir = new char[1024];
   _patternName = new char[1024];
-  _parser = new Ath__parser();
+  _parser = new Ath__parser(logger_);
   _solverFileName = new char[1024];
   _wireFileName = new char[1024];
   _capLogFP = NULL;
@@ -2093,7 +2093,7 @@ extRCModel::extRCModel(const char* name, Logger* logger)
   _wireDirName = new char[2048];
   _topDir = new char[1024];
   _patternName = new char[1024];
-  _parser = new Ath__parser();
+  _parser = new Ath__parser(logger_);
   _solverFileName = new char[1024];
   _wireFileName = new char[1024];
   _capLogFP = NULL;
@@ -2671,7 +2671,7 @@ uint extRCModel::readCapacitanceBench(bool readCapLog, extMeasure* m)
     _parser->setInputFP(solverFP);
   }
 
-  Ath__parser wParser;
+  Ath__parser wParser(logger_);
 
   bool matrixFlag = false;
   /*
@@ -2757,7 +2757,7 @@ uint extRCModel::readCapacitanceBenchDiag(bool readCapLog, extMeasure* m)
     _parser->setInputFP(solverFP);
   }
 
-  Ath__parser wParser;
+  Ath__parser wParser(logger_);
 
   bool matrixFlag = false;
   uint cnt = 0;
@@ -3698,7 +3698,7 @@ bool extRCModel::readRules(char* name,
   OUREVERSEORDER = false;
   diag = false;
   _ruleFileName = strdup(name);
-  Ath__parser parser;
+  Ath__parser parser(logger_);
   parser.addSeparator("\r");
   parser.openFile(name);
   while (parser.parseNextLine() > 0) {
