@@ -124,7 +124,6 @@ add_library(db
     dbRegionGroupItr.cpp
     dbGroupInstItr.cpp
     dbGuideItr.cpp
-    dbPGpin.cpp
     # Generator Code End cpp
 )
 
