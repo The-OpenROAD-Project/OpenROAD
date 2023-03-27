@@ -41,13 +41,13 @@
 namespace odb {
 
 static FILE* ATH__openFile(const char* name,
-                           const char* type,
+                           const char* mode,
                            utl::Logger* logger)
 {
-  FILE* a = fopen(name, type);
+  FILE* a = fopen(name, mode);
 
   if (a == nullptr) {
-    logger->error(utl::ODB, 428, "Cannot open file {} for \"{}\"", name, type);
+    logger->error(utl::ODB, 428, "Cannot open file {} for \"{}\"", name, mode);
   }
   return a;
 }
@@ -197,10 +197,10 @@ void Ath__parser::openFile(char* name)
     sprintf(cmd, "gzip -cd %s", _inputFile);
     _inFP = popen(cmd, "r");
   } else if (name != nullptr) {
-    _inFP = ATH__openFile(name, (char*) "r", _logger);
+    _inFP = ATH__openFile(name, "r", _logger);
     strcpy(_inputFile, name);
   } else {  //
-    _inFP = ATH__openFile(_inputFile, (char*) "r", _logger);
+    _inFP = ATH__openFile(_inputFile, "r", _logger);
   }
 }
 
