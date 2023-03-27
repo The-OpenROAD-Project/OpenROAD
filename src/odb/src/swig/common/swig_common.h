@@ -28,6 +28,7 @@
 #include <boost/polygon/polygon.hpp>
 
 #include "odb/db.h"
+#include "odb/dbUtil.h"
 #include "odb/defout.h"
 
 bool db_diff(odb::dbDatabase* db1, odb::dbDatabase* db2);
@@ -97,7 +98,7 @@ void createPGpins(odb::dbBlock* block,
                   odb::dbTech* tech, 
                   const char* source_net_name, 
                   int num_connection_points, 
-                  odb::dbPGpin::Position position);
+                  odb::dbCreateNetUtil::Position position);
 
 void createConnection(odb::dbBlock* block, 
                       const char* net, 
