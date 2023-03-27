@@ -40,10 +40,6 @@
 #include "geom.h"
 #include "odb.h"
 
-namespace utl {
-class Logger;
-}
-
 namespace odb {
 
 class dbObject;
@@ -78,7 +74,6 @@ class dbCreateNetUtil
   dbNet** _mapArray;
   uint _mapCnt;
   uint _ecoCnt;
-  utl::Logger* logger_;
 
   dbTechVia* getVia(int l1, int l2, Rect& bbox);
   // dbTechLayerRule * getRule(int routingLayer, int width);
@@ -96,7 +91,7 @@ class dbCreateNetUtil
   bool _useLocation;
   bool _verbose;
 
-  dbCreateNetUtil(utl::Logger* logger);
+  dbCreateNetUtil();
   ~dbCreateNetUtil();
   void setBlock(dbBlock* block, bool skipInit = false);
   dbBlock* getBlock() const { return _block; }
@@ -209,6 +204,22 @@ class dbCreateNetUtil
   dbNet* getCurrentNet();
   // OpenRCX 7/27/20
   std::vector<dbTechLayer*> getRoutingLayer() { return _routingLayers; };
+
+  enum Position
+  {
+    DEFAULT = 0,  
+    MIDDLE = 1,   
+    RIGHT = 2,  
+    LEFT = 3
+  };
+  // These 2 functions below are needed by sroute command. 
+  // create_PGpin would create bterms on the net that is suppose to 
+  // get connected to and create_custom_connections would link the cell 
+  // and the power net/ring
+
+  static void createPGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, Position position);
+  static void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
+
 };
 
 }  // namespace odb
