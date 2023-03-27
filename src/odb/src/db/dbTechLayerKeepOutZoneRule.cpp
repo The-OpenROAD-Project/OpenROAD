@@ -450,10 +450,12 @@ bool dbTechLayerKeepOutZoneRule::isExceptAlignedEnd() const
 
 // User Code Begin dbTechLayerKeepOutZoneRulePublicMethods
 
-dbTechLayerKeepOutZoneRule* dbTechLayerKeepOutZoneRule::create(dbTechLayer* _layer)
+dbTechLayerKeepOutZoneRule* dbTechLayerKeepOutZoneRule::create(
+    dbTechLayer* _layer)
 {
   _dbTechLayer* layer = (_dbTechLayer*) _layer;
-  _dbTechLayerKeepOutZoneRule* newrule = layer->keepout_zone_rules_tbl_->create();
+  _dbTechLayerKeepOutZoneRule* newrule
+      = layer->keepout_zone_rules_tbl_->create();
   return ((dbTechLayerKeepOutZoneRule*) newrule);
 }
 
