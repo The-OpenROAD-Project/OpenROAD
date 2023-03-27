@@ -100,8 +100,8 @@ uint extMain::genExtRules(const char* rulesFileName, int pattern)
   sprintf(buff, "%s.log", rulesFileName);
   FILE* logFP = fopen(buff, "w");
 
-  Ath__parser* p = new Ath__parser();
-  Ath__parser* w = new Ath__parser();
+  Ath__parser* p = new Ath__parser(logger_);
+  Ath__parser* w = new Ath__parser(logger_);
 
   int prev_sep = 0;
   int prev_width = 0;

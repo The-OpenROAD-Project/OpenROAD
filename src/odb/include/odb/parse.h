@@ -37,13 +37,14 @@
 #include <cstring>
 
 #include "array1.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
 class Ath__parser
 {
  public:
-  Ath__parser();
+  Ath__parser(utl::Logger* logger);
   ~Ath__parser();
   void openFile(char* name = nullptr);
   void setInputFP(FILE* fp);
@@ -74,7 +75,7 @@ class Ath__parser
 
  private:
   void init();
-  int reportProgress();
+  void reportProgress();
   int mkWords(int jj);
   bool isSeparator(char a);
 
@@ -92,6 +93,7 @@ class Ath__parser
   char* _inputFile;
 
   int _progressLineChunk;
+  utl::Logger* _logger;
 };
 
 }  // namespace odb
