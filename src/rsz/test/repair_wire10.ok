@@ -8,7 +8,7 @@
 [INFO ODB-0131]     Created 3 components and 12 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 6 connections.
 [INFO ODB-0133]     Created 4 nets and 6 connections.
-[INFO IFP-0001] Added 142 rows of 11052 sites.
+[INFO IFP-0001] Added 142 rows of 11052 site FreePDK45_38x28_10R_NP_162NW_34O with height 1.
 Placement Analysis
 ---------------------------------
 total displacement          0.6 u
@@ -20,7 +20,7 @@ delta HPWL                    0 %
 
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
     Cap    Slew   Delay    Time   Description
@@ -48,7 +48,7 @@ in1 manhtn 0.7 steiner 0.7 0.00
 [INFO RSZ-0039] Resized 2 instances.
 Startpoint: in1 (input port)
 Endpoint: out1 (output port)
-Path Group: (none)
+Path Group: unconstrained
 Path Type: max
 
     Cap    Slew   Delay    Time   Description

@@ -155,9 +155,7 @@ inline void diff_set(dbDiff& diff,
 
     for (itr = rhs_set.begin(); itr != rhs_set.end(); ++itr)
       rhs_vec.push_back(*itr);
-#ifndef WIN32
     set_symmetric_diff(diff, field, lhs_vec, rhs_vec);
-#endif
   }
 }
 
@@ -197,9 +195,7 @@ inline void set_symmetric_diff(dbDiff& diff,
   std::vector<T*> rhs_vec;
   lhs.getObjects(lhs_vec);
   rhs.getObjects(rhs_vec);
-#ifndef WIN32
   set_symmetric_diff(diff, field, lhs_vec, rhs_vec);
-#endif
 }
 
 //
@@ -215,9 +211,7 @@ inline void set_symmetric_diff(dbDiff& diff,
   std::vector<T*> rhs_vec;
   lhs.getObjects(lhs_vec);
   rhs.getObjects(rhs_vec);
-#ifndef WIN32
   set_symmetric_diff(diff, field, lhs_vec, rhs_vec);
-#endif
 }
 
 //

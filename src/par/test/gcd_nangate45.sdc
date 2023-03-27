@@ -1,0 +1,1 @@
+../../../test/gcd_nangate45.sdc

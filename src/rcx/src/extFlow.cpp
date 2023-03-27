@@ -30,14 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <wire.h>
-
 #include <map>
 #include <vector>
 
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 
@@ -918,9 +917,7 @@ uint extMain::addShapeOnGS(dbNet* net,
                            dbTechLayer* layer,
                            bool gsRotated,
                            bool swap_coords,
-                           int dir,
-                           bool specialWire,
-                           dbCreateNetUtil* createDbNet)
+                           int dir)
 {
   if (dir >= 0) {
     if (!plane) {
@@ -928,29 +925,18 @@ uint extMain::addShapeOnGS(dbNet* net,
         return 0;
     }
   }
-  bool checkFlag = false;
-  if (createDbNet != NULL)
-    checkFlag = true;
 
   uint level = layer->getRoutingLevel();
   int n = 0;
   if (!gsRotated) {
-    n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, checkFlag);
+    n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
   } else {
     if (!swap_coords)  // horizontal
-      n = _geomSeq->box(
-          r.xMin(), r.yMin(), r.xMax(), r.yMax(), level, checkFlag);
+      n = _geomSeq->box(r.xMin(), r.yMin(), r.xMax(), r.yMax(), level);
     else
-      n = _geomSeq->box(
-          r.yMin(), r.xMin(), r.yMax(), r.xMax(), level, checkFlag);
+      n = _geomSeq->box(r.yMin(), r.xMin(), r.yMax(), r.xMax(), level);
   }
   if (n == 0) {
-    if (createDbNet != NULL) {
-      if (specialWire)
-        createDbNet->createSpecialWire(NULL, r, layer, sId);
-      else
-        createDbNet->createNetSingleWire(r, level, net->getId(), sId);
-    }
     return 1;
   }
   return 0;
@@ -959,8 +945,7 @@ uint extMain::addShapeOnGS(dbNet* net,
 uint extMain::addNetShapesGs(dbNet* net,
                              bool gsRotated,
                              bool swap_coords,
-                             int dir,
-                             dbCreateNetUtil* createDbNet)
+                             int dir)
 {
   bool USE_DB_UNITS = false;
   uint cnt = 0;
@@ -985,16 +970,8 @@ uint extMain::addNetShapesGs(dbNet* net,
     if (USE_DB_UNITS)
       this->GetDBcoords2(r);
 
-    cnt += addShapeOnGS(net,
-                        shapeId,
-                        r,
-                        plane,
-                        s.getTechLayer(),
-                        gsRotated,
-                        swap_coords,
-                        dir,
-                        true,
-                        createDbNet);
+    cnt += addShapeOnGS(
+        net, shapeId, r, plane, s.getTechLayer(), gsRotated, swap_coords, dir);
   }
   return cnt;
 }
@@ -1002,8 +979,7 @@ uint extMain::addNetShapesGs(dbNet* net,
 uint extMain::addNetSboxesGs(dbNet* net,
                              bool gsRotated,
                              bool swap_coords,
-                             int dir,
-                             dbCreateNetUtil* createDbNet)
+                             int dir)
 {
   uint cnt = 0;
 
@@ -1029,9 +1005,7 @@ uint extMain::addNetSboxesGs(dbNet* net,
                           s->getTechLayer(),
                           gsRotated,
                           swap_coords,
-                          dir,
-                          true,
-                          createDbNet);
+                          dir);
     }
   }
   return cnt;
@@ -1051,8 +1025,7 @@ uint extMain::initPlanes(uint dir,
                          uint* pitchTable,
                          uint* widthTable,
                          uint* dirTable,
-                         int* bb_ll,
-                         bool skipMemAlloc)
+                         int* bb_ll)
 {
   bool rotatedFlag = getRotatedFlag();
 
@@ -1060,7 +1033,7 @@ uint extMain::initPlanes(uint dir,
     delete _geomSeq;
   _geomSeq = new gs(_seqPool);
 
-  _geomSeq->setSlices(layerCnt);
+  _geomSeq->set_slices(layerCnt);
 
   for (uint ii = 1; ii < layerCnt; ii++) {
     uint layerDir = dirTable[ii];
@@ -1081,32 +1054,19 @@ uint extMain::initPlanes(uint dir,
     ur[dir] = getXY_gs(bb_ll[dir], wUR[dir], res[dir]);
 
     if (!rotatedFlag) {
-      _geomSeq->configureSlice(
-          ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1], skipMemAlloc);
+      _geomSeq->configureSlice(ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
     } else {
       if (dir > 0) {  // horizontal segment extraction
         _geomSeq->configureSlice(
-            ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1], skipMemAlloc);
+            ii, res[0], res[1], ll[0], ll[1], ur[0], ur[1]);
       } else {
         if (layerDir > 0) {
-          _geomSeq->configureSlice(ii,
-                                   pitchTable[ii],
-                                   widthTable[ii],
-                                   ll[1],
-                                   ll[0],
-                                   ur[1],
-                                   ur[0],
-                                   skipMemAlloc);
+          _geomSeq->configureSlice(
+              ii, pitchTable[ii], widthTable[ii], ll[1], ll[0], ur[1], ur[0]);
 
         } else {
-          _geomSeq->configureSlice(ii,
-                                   widthTable[ii],
-                                   pitchTable[ii],
-                                   ll[1],
-                                   ll[0],
-                                   ur[1],
-                                   ur[0],
-                                   skipMemAlloc);
+          _geomSeq->configureSlice(
+              ii, widthTable[ii], pitchTable[ii], ll[1], ll[0], ur[1], ur[0]);
         }
       }
     }
@@ -1134,24 +1094,11 @@ uint extMain::fill_gs4(int dir,
                        uint layerCnt,
                        uint* dirTable,
                        uint* pitchTable,
-                       uint* widthTable,
-                       dbCreateNetUtil* createDbNet)
+                       uint* widthTable)
 {
   bool rotatedGs = getRotatedFlag();
 
-  bool skipMemAlloc = false;
-  if (createDbNet != NULL)
-    skipMemAlloc = true;
-
-  initPlanes(dir,
-             lo_gs,
-             hi_gs,
-             layerCnt,
-             pitchTable,
-             widthTable,
-             dirTable,
-             ll,
-             skipMemAlloc);
+  initPlanes(dir, lo_gs, hi_gs, layerCnt, pitchTable, widthTable, dirTable, ll);
 
   const int gs_dir = dir;
 
@@ -1165,16 +1112,10 @@ uint extMain::fill_gs4(int dir,
     if (!((net->getSigType().isSupply())))
       continue;
 
-    if (createDbNet != NULL)
-      createDbNet->createSpecialNet(net, NULL);
-
-    pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
+    pcnt += addNetSboxesGs(net, rotatedGs, !dir, gs_dir);
   }
 
   uint scnt = 0;
-
-  if (createDbNet != NULL)
-    createDbNet->createSpecialNet(NULL, "SIGNALS_GS");
 
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
@@ -1182,7 +1123,7 @@ uint extMain::fill_gs4(int dir,
     if ((net->getSigType().isSupply()))
       continue;
 
-    scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir, createDbNet);
+    scnt += addNetShapesGs(net, rotatedGs, !dir, gs_dir);
   }
 
   return pcnt + scnt;
@@ -1327,8 +1268,7 @@ uint extMain::couplingFlow(Rect& extRect,
                layerCnt,
                dirTable,
                pitchTable,
-               widthTable,
-               NULL);
+               widthTable);
 
       m->_rotatedGs = getRotatedFlag();
       m->_pixelTable = _geomSeq;
@@ -1369,7 +1309,7 @@ uint extMain::couplingFlow(Rect& extRect,
       stepNum++;
       totalWiresExtracted += processWireCnt;
       float percent_extracted
-          = Ath__double2int(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
+          = lround(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
 
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
           && (percent_extracted - _previous_percent_extracted >= 5.0)) {

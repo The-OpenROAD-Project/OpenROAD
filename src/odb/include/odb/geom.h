@@ -297,7 +297,6 @@ class Rect
   uint64 area() const;
   uint64 margin() const;
 
-  void notice(const char* prefix = "");
   void printf(FILE* fp, const char* prefix = "");
   void print(const char* prefix = "");
 
@@ -786,10 +785,6 @@ inline bool Rect::isInverted() const
   return xlo_ > xhi_ || ylo_ > yhi_;
 }
 
-inline void Rect::notice(const char*)
-{
-  ;  // notice(0, "%s%12d %12d - %12d %12d\n", prefix, xlo_, ylo_, dx, dy);
-}
 inline void Rect::printf(FILE* fp, const char* prefix)
 {
   fprintf(fp, "%s%12d %12d - %12d %12d\n", prefix, xlo_, ylo_, dx(), dy());

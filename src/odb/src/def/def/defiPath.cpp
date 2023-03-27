@@ -114,6 +114,9 @@ DEF_COPY_CONSTRUCTOR_C(defiPath)
       //            fprintf(fout, " via rotation %s\n",
       //                    prev.data_[i] ? (char*)(prev.data_[i]) : "" );
     } else if (prev.keys_[i] == 'M') {
+      addMask(prev.data_[i] ? *(int*) (prev.data_[i]) : 0);
+      //            fprintf(fout, " mask %d\n", getMask() );
+    } else if (prev.keys_[i] == 'C') {
       addViaMask(prev.data_[i] ? *(int*) (prev.data_[i]) : 0);
       //            fprintf(fout, " mask %d\n", getMask() );
     } else if (prev.keys_[i] == 'E') {
@@ -223,6 +226,9 @@ DEF_ASSIGN_OPERATOR_C(defiPath)
       //            fprintf(fout, " via rotation %s\n",
       //                    prev.data_[i] ? (char*)(prev.data_[i]) : "" );
     } else if (prev.keys_[i] == 'M') {
+      addMask(prev.data_[i] ? *(int*) (prev.data_[i]) : 0);
+      //            fprintf(fout, " mask %d\n", getMask() );
+    } else if (prev.keys_[i] == 'C') {
       addViaMask(prev.data_[i] ? *(int*) (prev.data_[i]) : 0);
       //            fprintf(fout, " mask %d\n", getMask() );
     } else if (prev.keys_[i] == 'E') {

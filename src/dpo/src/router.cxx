@@ -83,18 +83,20 @@ double RoutingParams::get_spacing(int layer, double width, double parallel)
   const std::vector<double>& w = spacingTableWidth_[layer];
   const std::vector<double>& p = spacingTableLength_[layer];
 
-  if (w.size() == 0 || p.size() == 0) {
+  if (w.empty() || p.empty()) {
     // This means no spacing table is present.  So, return the minimum wire
     // spacing for the layer...
     return wire_spacing_[layer];
   }
 
   int i = (int) w.size() - 1;
-  while (i > 0 && width <= w[i])
+  while (i > 0 && width <= w[i]) {
     i--;
+  }
   int j = (int) p.size() - 1;
-  while (j > 0 && parallel <= p[j])
+  while (j > 0 && parallel <= p[j]) {
     j--;
+  }
 
   return spacingTable_[layer][i][j];
 }
@@ -104,7 +106,7 @@ double RoutingParams::get_maximum_spacing(int layer)
   const std::vector<double>& w = spacingTableWidth_[layer];
   const std::vector<double>& p = spacingTableLength_[layer];
 
-  if (w.size() == 0 || p.size() == 0) {
+  if (w.empty() || p.empty()) {
     // This means no spacing table is present.  So, return the minimum wire
     // spacing for the layer...
     return wire_spacing_[layer];

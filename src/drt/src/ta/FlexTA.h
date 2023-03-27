@@ -219,23 +219,23 @@ class FlexTAWorker
                          frCoord& minEnd,
                          std::set<frCoord>& downViaCoordSet,
                          std::set<frCoord>& upViaCoordSet,
-                         int& wlen,
-                         frCoord& wlen2);
+                         int& nextIrouteDir,
+                         frCoord& pinCoord);
   void initIroute_helper_generic(frGuide* guide,
                                  frCoord& maxBegin,
                                  frCoord& minEnd,
                                  std::set<frCoord>& downViaCoordSet,
                                  std::set<frCoord>& upViaCoordSet,
-                                 int& wlen,
-                                 frCoord& wlen2);
-  void initIroute_helper_generic_helper(frGuide* guide, frCoord& wlen2);
+                                 int& nextIrouteDir,
+                                 frCoord& pinCoord);
+  void initIroute_helper_generic_helper(frGuide* guide, frCoord& pinCoord);
   bool initIroute_helper_pin(frGuide* guide,
                              frCoord& maxBegin,
                              frCoord& minEnd,
                              std::set<frCoord>& downViaCoordSet,
                              std::set<frCoord>& upViaCoordSet,
-                             int& wlen,
-                             frCoord& wlen2);
+                             int& nextIrouteDir,
+                             frCoord& pinCoord);
   void initCosts();
   void sortIroutes();
 
@@ -294,7 +294,7 @@ class FlexTAWorker
   frUInt4 assignIroute_getCost(taPin* iroute,
                                frCoord trackLoc,
                                frUInt4& drcCost);
-  frUInt4 assignIroute_getWlenCost(taPin* iroute, frCoord trackLoc);
+  frUInt4 assignIroute_getNextIrouteDirCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getPinCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getAlignCost(taPin* iroute, frCoord trackLoc);
   frUInt4 assignIroute_getDRCCost(taPin* iroute, frCoord trackLoc);

@@ -1,3 +1,36 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (c) 2020, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+///////////////////////////////////////////////////////////////////////////////
+
 #include "graphics.h"
 
 #include <algorithm>
@@ -12,12 +45,14 @@
 namespace gpl {
 
 Graphics::Graphics(utl::Logger* logger, std::shared_ptr<PlacerBase> pb)
-    : pb_(pb),
+    : HeatMapDataSource(logger, "gpl", "gpl"),
+      pb_(pb),
       nb_(),
       np_(nullptr),
       selected_(nullptr),
       draw_bins_(false),
-      logger_(logger)
+      logger_(logger),
+      heatmap_type_(Density)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -28,15 +63,17 @@ Graphics::Graphics(utl::Logger* logger,
                    std::shared_ptr<NesterovBase> nb,
                    bool draw_bins,
                    odb::dbInst* inst)
-    : pb_(pb),
+    : HeatMapDataSource(logger, "gpl", "gpl"),
+      pb_(pb),
       nb_(nb),
       np_(np),
       selected_(nullptr),
       draw_bins_(draw_bins),
-      logger_(logger)
+      logger_(logger),
+      heatmap_type_(Density)
 {
   gui::Gui::get()->registerRenderer(this);
-
+  initHeatmap();
   if (inst) {
     for (GCell* cell : nb_->gCells()) {
       Instance* cell_inst = cell->instance();
@@ -46,6 +83,37 @@ Graphics::Graphics(utl::Logger* logger,
       }
     }
   }
+}
+
+void Graphics::initHeatmap()
+{
+  addMultipleChoiceSetting(
+      "Type",
+      "Type:",
+      []() {
+        return std::vector<std::string>{"Density", "Overflow"};
+      },
+      [this]() -> std::string {
+        switch (heatmap_type_) {
+          case Density:
+            return "Density";
+          case Overflow:
+            return "Overflow";
+        }
+        return "Density";
+      },
+      [this](const std::string& value) {
+        if (value == "Density") {
+          heatmap_type_ = Density;
+        } else if (value == "Overflow") {
+          heatmap_type_ = Overflow;
+        } else {
+          heatmap_type_ = Density;
+        }
+      });
+
+  setBlock(pb_->db()->getChip()->getBlock());
+  registerHeatMap();
 }
 
 void Graphics::drawBounds(gui::Painter& painter)
@@ -119,6 +187,11 @@ void Graphics::drawNesterov(gui::Painter& painter)
     color.a = 180;
     painter.setBrush(color);
     painter.drawRect({xl, yl, xh, yh});
+  }
+
+  painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
+  for (auto& inst : pb_->nonPlaceInsts()) {
+    painter.drawRect({inst->lx(), inst->ly(), inst->ux(), inst->uy()});
   }
 
   // Draw lines to neighbors
@@ -261,6 +334,63 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
 void Graphics::status(const std::string& message)
 {
   gui::Gui::get()->status(message);
+}
+
+double Graphics::getGridXSize() const
+{
+  const BinGrid& grid = nb_->getBinGrid();
+  return grid.binSizeX() / (double) getBlock()->getDbUnitsPerMicron();
+}
+
+double Graphics::getGridYSize() const
+{
+  const BinGrid& grid = nb_->getBinGrid();
+  return grid.binSizeY() / (double) getBlock()->getDbUnitsPerMicron();
+}
+
+odb::Rect Graphics::getBounds() const
+{
+  return getBlock()->getCoreArea();
+}
+
+bool Graphics::populateMap()
+{
+  const BinGrid& grid = nb_->getBinGrid();
+  double sum = 0;
+  for (const Bin* bin : grid.bins()) {
+    odb::Rect box(bin->lx(), bin->ly(), bin->ux(), bin->uy());
+    if (heatmap_type_ == Density) {
+      const double value = bin->density() * 100.0;
+      addToMap(box, value);
+    } else {
+      // Overflow isn't stored per bin so we recompute it here
+      // (see BinGrid::updateBinsGCellDensityArea).
+
+      int64_t binArea = bin->binArea();
+      const float scaledBinArea
+          = static_cast<float>(binArea * bin->targetDensity());
+
+      double value
+          = std::max(0.0f,
+                     static_cast<float>(bin->instPlacedAreaUnscaled())
+                         + static_cast<float>(bin->nonPlaceAreaUnscaled())
+                         - scaledBinArea);
+      addToMap(box, value);
+      sum += value;
+    }
+  }
+
+  return true;
+}
+
+void Graphics::combineMapData(bool base_has_value,
+                              double& base,
+                              const double new_data,
+                              const double data_area,
+                              const double intersection_area,
+                              const double rect_area)
+{
+  base += new_data * intersection_area / rect_area;
 }
 
 /* static */

@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <cstdint>
+#include <optional>
 #include <vector>
 
 #include "dbTypes.h"
@@ -352,6 +354,16 @@ class dbWireEncoder
   void addRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2);
 
   ///
+  /// Sets the mask color of shapes following this call.
+  ///
+  void setColor(uint8_t mask_color);
+
+  ///
+  /// Clears the mask color. Shapes following this call will have no mask color.
+  ///
+  void clearColor();
+
+  ///
   /// Connect an iterm to the previous point.
   ///
   void addITerm(dbITerm* iterm);
@@ -529,6 +541,7 @@ class dbWireDecoder
   int _deltaY1;
   int _deltaX2;
   int _deltaY2;
+  std::optional<uint8_t> _color;
 
   unsigned char nextOp(int& value);
   unsigned char nextOp(uint& value);
@@ -631,6 +644,11 @@ class dbWireDecoder
   /// junction-id of the previous point from which this branch emerges.
   ///
   int getJunctionValue() const;
+
+  ///
+  /// Get the current mask color.
+  ///
+  std::optional<uint8_t> getColor() const;
 };
 
 ///

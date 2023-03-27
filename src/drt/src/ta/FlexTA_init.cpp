@@ -87,8 +87,8 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
                                          frCoord& minEnd,
                                          set<frCoord>& downViaCoordSet,
                                          set<frCoord>& upViaCoordSet,
-                                         int& wlen,
-                                         frCoord& wlen2)
+                                         int& nextIrouteDir,
+                                         frCoord& pinCoord)
 {
   auto [bp, ep] = guide->getPoints();
   if (!(bp == ep)) {
@@ -157,10 +157,10 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
           auto bNum = ap->getLayerNum();
           shiftXform.apply(bp);
           if (layerNum == bNum && getRouteBox().intersects(bp)) {
-            wlen2 = isH ? bp.y() : bp.x();
+            pinCoord = isH ? bp.y() : bp.x();
             maxBegin = isH ? bp.x() : bp.y();
             minEnd = isH ? bp.x() : bp.y();
-            wlen = 0;
+            nextIrouteDir = 0;
             if (hasDown) {
               downViaCoordSet.insert(maxBegin);
             }
@@ -186,10 +186,10 @@ bool FlexTAWorker::initIroute_helper_pin(frGuide* guide,
             Point bp = ap->getPoint();
             auto bNum = ap->getLayerNum();
             if (layerNum == bNum && getRouteBox().intersects(bp)) {
-              wlen2 = isH ? bp.y() : bp.x();
+              pinCoord = isH ? bp.y() : bp.x();
               maxBegin = isH ? bp.x() : bp.y();
               minEnd = isH ? bp.x() : bp.y();
-              wlen = 0;
+              nextIrouteDir = 0;
               if (hasDown) {
                 downViaCoordSet.insert(maxBegin);
               }
@@ -215,23 +215,28 @@ void FlexTAWorker::initIroute_helper(frGuide* guide,
                                      frCoord& minEnd,
                                      set<frCoord>& downViaCoordSet,
                                      set<frCoord>& upViaCoordSet,
-                                     int& wlen,
-                                     frCoord& wlen2)
+                                     int& nextIrouteDir,
+                                     frCoord& pinCoord)
 {
   if (!initIroute_helper_pin(guide,
                              maxBegin,
                              minEnd,
                              downViaCoordSet,
                              upViaCoordSet,
-                             wlen,
-                             wlen2)) {
-    initIroute_helper_generic(
-        guide, maxBegin, minEnd, downViaCoordSet, upViaCoordSet, wlen, wlen2);
+                             nextIrouteDir,
+                             pinCoord)) {
+    initIroute_helper_generic(guide,
+                              maxBegin,
+                              minEnd,
+                              downViaCoordSet,
+                              upViaCoordSet,
+                              nextIrouteDir,
+                              pinCoord);
   }
 }
 
 void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
-                                                    frCoord& wlen2)
+                                                    frCoord& pinCoord)
 {
   auto [bp, ep] = guide->getPoints();
   auto net = guide->getNet();
@@ -267,13 +272,25 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
           frAccessPoint* ap
               = (static_cast<frInstTerm*>(term)->getAccessPoints())[pinIdx];
           if (ap == nullptr) {
-            pinIdx++;
-            continue;
+            // if ap is nullptr, get first PA from frMPin
+            frPinAccess* pa = pin->getPinAccess(0);
+            if (pa != nullptr) {
+              if (pa->getNumAccessPoints() > 0) {
+                // use first ap of frMPin's pin access to set pinCoord of iroute
+                ap = pa->getAccessPoint(0);
+              } else {
+                pinIdx++;
+                continue;
+              }
+            } else {
+              pinIdx++;
+              continue;
+            }
           }
           Point bp = ap->getPoint();
           shiftXform.apply(bp);
           if (getRouteBox().intersects(bp)) {
-            wlen2 = isH ? bp.y() : bp.x();
+            pinCoord = isH ? bp.y() : bp.x();
             return;
           }
           pinIdx++;
@@ -292,7 +309,7 @@ void FlexTAWorker::initIroute_helper_generic_helper(frGuide* guide,
           for (auto& ap : pin->getPinAccess(0)->getAccessPoints()) {
             Point bp = ap->getPoint();
             if (getRouteBox().intersects(bp)) {
-              wlen2 = isH ? bp.y() : bp.x();
+              pinCoord = isH ? bp.y() : bp.x();
               return;
             }
           }
@@ -310,8 +327,8 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
                                              frCoord& maxEnd,
                                              set<frCoord>& downViaCoordSet,
                                              set<frCoord>& upViaCoordSet,
-                                             int& wlen,
-                                             frCoord& wlen2)
+                                             int& nextIrouteDir,
+                                             frCoord& pinCoord)
 {
   auto net = guide->getNet();
   auto layerNum = guide->getBeginLayerNum();
@@ -319,8 +336,8 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
   bool hasMaxEnd = false;
   minBegin = std::numeric_limits<frCoord>::max();
   maxEnd = std::numeric_limits<frCoord>::min();
-  wlen = 0;
-  // wlen2       = std::numeric_limits<frCoord>::max();
+  nextIrouteDir = 0;
+  // pinCoord       = std::numeric_limits<frCoord>::max();
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
   downViaCoordSet.clear();
   upViaCoordSet.clear();
@@ -383,10 +400,10 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
           }
         }
         if (cp == nbrEp) {
-          wlen -= 1;
+          nextIrouteDir -= 1;
         }
         if (cp == nbrBp) {
-          wlen += 1;
+          nextIrouteDir += 1;
         }
       }
     }
@@ -405,8 +422,8 @@ void FlexTAWorker::initIroute_helper_generic(frGuide* guide,
     maxEnd += 1;
   }
 
-  // wlen2 purely depends on ap regardless of track
-  initIroute_helper_generic_helper(guide, wlen2);
+  // pinCoord purely depends on ap regardless of track
+  initIroute_helper_generic_helper(guide, pinCoord);
 }
 
 void FlexTAWorker::initIroute(frGuide* guide)
@@ -425,10 +442,15 @@ void FlexTAWorker::initIroute(frGuide* guide)
 
   frCoord maxBegin, minEnd;
   set<frCoord> downViaCoordSet, upViaCoordSet;
-  int wlen = 0;
-  frCoord wlen2 = std::numeric_limits<frCoord>::max();
-  initIroute_helper(
-      guide, maxBegin, minEnd, downViaCoordSet, upViaCoordSet, wlen, wlen2);
+  int nextIrouteDir = 0;
+  frCoord pinCoord = std::numeric_limits<frCoord>::max();
+  initIroute_helper(guide,
+                    maxBegin,
+                    minEnd,
+                    downViaCoordSet,
+                    upViaCoordSet,
+                    nextIrouteDir,
+                    pinCoord);
 
   frCoord trackLoc = 0;
   bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
@@ -496,9 +518,9 @@ void FlexTAWorker::initIroute(frGuide* guide)
     rViaPtr->setOrigin(isH ? Point(coord, trackLoc) : Point(trackLoc, coord));
     iroute->addPinFig(std::move(via));
   }
-  iroute->setWlenHelper(wlen);
-  if (wlen2 < std::numeric_limits<frCoord>::max()) {
-    iroute->setWlenHelper2(wlen2);
+  iroute->setNextIrouteDir(nextIrouteDir);
+  if (pinCoord < std::numeric_limits<frCoord>::max()) {
+    iroute->setPinCoord(pinCoord);
   }
   addIroute(std::move(iroute), isExt);
 }
@@ -541,7 +563,7 @@ void FlexTAWorker::initCosts()
           auto [bp, ep] = obj->getPoints();
           bc = isH ? bp.x() : bp.y();
           ec = isH ? ep.x() : ep.y();
-          iroute->setCost(ec - bc + iroute->hasWlenHelper2() * pitch * 1000);
+          iroute->setCost(ec - bc + iroute->hasPinCoord() * pitch * 1000);
         }
       }
     }
@@ -808,9 +830,8 @@ frCoord FlexTAWorker::initFixedObjs_calcBloatDist(frBlockObject* obj,
   auto layer = getTech()->getLayer(lNum);
   frCoord width = layer->getWidth();
   frCoord objWidth = box.minDXDY();
-  frCoord prl = (layer->getDir() == dbTechLayerDir::HORIZONTAL)
-                    ? (box.xMax() - box.xMin())
-                    : (box.yMax() - box.yMin());
+  frCoord prl
+      = (layer->getDir() == dbTechLayerDir::HORIZONTAL) ? box.dx() : box.dy();
   if (obj->typeId() == frcBlockage || obj->typeId() == frcInstBlockage) {
     if (USEMINSPACING_OBS) {
       objWidth = width;

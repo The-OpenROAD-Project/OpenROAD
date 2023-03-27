@@ -32,11 +32,9 @@
 
 #include "rcx/extSpef.h"
 
-#include <dbExtControl.h>
-#include <math.h>
-
 #include <algorithm>
 
+#include "dbExtControl.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -89,7 +87,6 @@ extSpef::extSpef(odb::dbTech* tech,
   _extracted = false;
   _termJxy = false;
 
-  _wRun = 0;
   _wConn = false;
   _wCap = false;
   _wOnlyCCcap = false;
@@ -145,7 +142,6 @@ extSpef::extSpef(odb::dbTech* tech,
   _addRepeatedCapValue = true;
 
   _nodeHashTable = NULL;
-  _node2nodeHashTable = NULL;
   _tmpCapId = 1;
 
   _gzipFlag = false;
@@ -230,8 +226,6 @@ extSpef::~extSpef()
     delete _nameMapTable;
   if (_nodeHashTable)
     delete _nodeHashTable;
-  if (_node2nodeHashTable)
-    delete _node2nodeHashTable;
   if (_rcPool)
     delete _rcPool;
   if (_rcTrippletTable)
@@ -1204,31 +1198,6 @@ uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId)
   return _cCnt;
 }
 
-void extSpef::getAnchorCoords(odb::dbNet* net,
-                              uint shapeId,
-                              int* x1,
-                              int* y1,
-                              int* x2,
-                              int* y2,
-                              odb::dbTechLayer** layer)
-{
-  odb::dbShape s;
-  odb::dbWire* w = net->getWire();
-  w->getShape(shapeId, s);
-  *x1 = s.xMin();
-  *y1 = s.yMin();
-  *x2 = s.xMax();
-  *y2 = s.yMax();
-  odb::dbTechVia* tv = s.getTechVia();
-  odb::dbVia* via = s.getVia();
-  if (tv)
-    *layer = tv->getBottomLayer();
-  else if (via)
-    *layer = via->getBottomLayer();
-  else
-    *layer = s.getTechLayer();
-}
-
 uint extSpef::writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet)
 {
   int dbunit = _block->getDbUnitsPerMicron();
@@ -1607,7 +1576,6 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets)
 
 uint extSpef::writeInstMap()
 {
-  uint cnt = 0;
   char *nname, *nname1;
   uint instMapId = 0;
 
@@ -1629,10 +1597,6 @@ uint extSpef::writeInstMap()
                     "Skip instance {} for cell {} is excluded",
                     inst->getConstName(),
                     inst->getMaster()->getConstName());
-      odb::verbose(0,
-                   "Skip instance %s for cell %s is excluded\n",
-                   inst->getConstName(),
-                   inst->getMaster()->getConstName());
       continue;
     }
     if (_partial && !inst->getUserFlag1())
@@ -1645,8 +1609,6 @@ uint extSpef::writeInstMap()
     nname1 = tinkerSpefName(nname);
     nname1 = addEscChar(nname1, true);
     fprintf(_outFP, "*%d %s\n", instMapId, nname1);
-
-    cnt++;
   }
   return instMapId;
 }

@@ -115,7 +115,7 @@ class NesterovPlace
                       const std::vector<FloatPoint>& curCoordi_,
                       const std::vector<FloatPoint>& curSumGrads_);
 
-  void updateNextIter();
+  void updateNextIter(const int iter);
   float getPhiCoef(float scaledDiffHpwl) const;
 
   void updateDb();

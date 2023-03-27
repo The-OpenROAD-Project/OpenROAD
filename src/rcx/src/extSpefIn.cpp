@@ -30,12 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <math.h>
-#include <wire.h>
-
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 
@@ -386,44 +384,6 @@ double extSpef::printDiffCC(dbNet* net1,
   net2->printNetName(_diffOutFP);
 
   return diffCap;
-}
-
-bool extSpef::newCouplingCap(char* nodeWord1, char* nodeWord2, char* capWord)
-{
-  sprintf(_tmpBuff1, "%s%sC%s", nodeWord1, nodeWord2, capWord);
-
-  if (_node2nodeHashTable->getDataId(_tmpBuff1, 1, 0) > 0)
-    return false;
-
-  sprintf(_tmpBuff2, "%s%sC%s", nodeWord2, nodeWord1, capWord);
-
-  if (_node2nodeHashTable->getDataId(_tmpBuff2, 1, 0) > 0)
-    return false;
-
-  _node2nodeHashTable->addNewName(_tmpBuff1, _tmpNetSpefId);
-  _node2nodeHashTable->addNewName(_tmpBuff2, _tmpNetSpefId);
-
-  return true;
-}
-
-uint extSpef::getCouplingCapId(uint ccNode1, uint ccNode2)
-{
-  sprintf(_tmpBuff1, "%d-%d", ccNode1, ccNode2);
-  sprintf(_tmpBuff2, "%d-%d", ccNode2, ccNode1);
-
-  uint ccId = _node2nodeHashTable->getDataId(_tmpBuff1, 1, 0);
-  if (ccId <= 0) {
-    ccId = _node2nodeHashTable->getDataId(_tmpBuff2, 1, 0);
-    if (ccId <= 0)
-      return 0;
-  }
-  return ccId;
-}
-
-void extSpef::addCouplingCapId(uint ccId)
-{
-  _node2nodeHashTable->addNewName(_tmpBuff1, ccId);
-  _node2nodeHashTable->addNewName(_tmpBuff2, ccId);
 }
 
 uint extSpef::getCapIdFromCapTable(char* nodeWord)
@@ -1520,8 +1480,8 @@ uint extSpef::sortRSegs()
   if (_readingNodeCoords == C_ON) {
     ncidx = findNodeIndexFromNodeCoords(drvCapNode->getId());
     if (ncidx >= 0) {
-      ndx = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ncidx));
-      ndy = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ncidx));
+      ndx = lround(_nodeCoordFactor * _xCoordTable->get(ncidx));
+      ndy = lround(_nodeCoordFactor * _yCoordTable->get(ncidx));
       zcfound = true;
     }
   }
@@ -1644,8 +1604,8 @@ uint extSpef::sortRSegs()
     if (_readingNodeCoords == C_ON) {
       ncidx = findNodeIndexFromNodeCoords(tgtCapn);
       if (ncidx >= 0) {
-        x1 = Ath__double2int(_nodeCoordFactor * _xCoordTable->get(ncidx));
-        y1 = Ath__double2int(_nodeCoordFactor * _yCoordTable->get(ncidx));
+        x1 = lround(_nodeCoordFactor * _xCoordTable->get(ncidx));
+        y1 = lround(_nodeCoordFactor * _yCoordTable->get(ncidx));
         rc->setCoords(x1, y1);
       } else {
         logger_->warn(
@@ -1893,8 +1853,6 @@ uint extSpef::readDNet(uint debug)
   while (_parser->parseNextLine() > 0) {
     if (strcmp("*CONN", _parser->get(0)) == 0) {
       while (_parser->parseNextLine() > 0) {
-        //_parser->printWords(stdout);
-
         if (_readingNodeCoords == C_ON && !_diff) {
           cpos = 0;
           if (strcmp("*N", _parser->get(0)) == 0)
@@ -1932,8 +1890,6 @@ uint extSpef::readDNet(uint debug)
     }
     if (strcmp("*CAP", _parser->get(0)) == 0) {
       while (_parser->parseNextLine() > 0) {
-        //_parser->printWords(stdout);
-
         if (strcmp("*RES", _parser->get(0)) == 0) {
           break;
         }
@@ -2201,7 +2157,7 @@ void extSpef::reinit()
   if (_notFoundInst)
     delete _notFoundInst;
   _notFoundInst = NULL;
-  _rRun = _wRun = 0;
+  _rRun = 0;
 }
 
 uint extSpef::readBlockIncr(uint debug)
@@ -2868,8 +2824,7 @@ bool extSpef::readHeaderInfo(uint debug, bool skipFlag)
         _cap_unit = 1.0 * _parser->getInt(1);
     } else if (_parser->isKeyword(0, "*L_UNIT")) {
       continue;
-    } else if (debug > 0)
-      _parser->printWords(stdout);
+    }
   }
   return false;
 }

@@ -75,7 +75,7 @@ proc rtl_macro_placer { args } {
 #
 # Check for valid design
     if {  [ord::get_db_block] == "NULL" } {
-      utl::error MPL 9998 "No block found for Macro Placement."
+      utl::error MPL 1 "No block found for Macro Placement."
     }
 
 # Set the default parameters for the macro_placer
@@ -90,7 +90,7 @@ proc rtl_macro_placer { args } {
     set num_bundled_ios   3
     set large_net_threshold 50
     set signature_net_threshold 50
-    set halo_width   5.0
+    set halo_width   0.0
     set fence_lx     0.0
     set fence_ly     0.0
     set fence_ux     100000000.0
@@ -98,17 +98,17 @@ proc rtl_macro_placer { args } {
 
     set area_weight  0.1
     set outline_weight 100.0
-    set wirelength_weight 50.0
-    set guidance_weight 5.0
-    set fence_weight   5.0
-    set boundary_weight 1.0
+    set wirelength_weight 100.0
+    set guidance_weight 10.0
+    set fence_weight   10.0
+    set boundary_weight 20.0
     set notch_weight    10.0
-    set macro_blockage_weight 5.0
+    set macro_blockage_weight 10.0
     set pin_access_th   0.00
-    set target_util 0.5
-    set target_dead_space 0.25
+    set target_util 0.25
+    set target_dead_space 0.05
     set min_ar  0.33
-    set snap_layer 4
+    set snap_layer -1
     set report_directory "hier_rtlmp"
       
     if { [info exists keys(-max_num_macro)] } {

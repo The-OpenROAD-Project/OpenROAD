@@ -96,14 +96,10 @@ void io::Parser::initDefaultVias()
       Rect layer2Box = via.getLayer2BBox();
       frLayerNum layer1Num = techDefautlViaDef->getLayer1Num();
       frLayerNum layer2Num = techDefautlViaDef->getLayer2Num();
-      bool isLayer1Square = (layer1Box.xMax() - layer1Box.xMin())
-                            == (layer1Box.yMax() - layer1Box.yMin());
-      bool isLayer2Square = (layer2Box.xMax() - layer2Box.xMin())
-                            == (layer2Box.yMax() - layer2Box.yMin());
-      bool isLayer1EncHorz = (layer1Box.xMax() - layer1Box.xMin())
-                             > (layer1Box.yMax() - layer1Box.yMin());
-      bool isLayer2EncHorz = (layer2Box.xMax() - layer2Box.xMin())
-                             > (layer2Box.yMax() - layer2Box.yMin());
+      bool isLayer1Square = layer1Box.dx() == layer1Box.dy();
+      bool isLayer2Square = layer2Box.dx() == layer2Box.dy();
+      bool isLayer1EncHorz = layer1Box.dx() > layer1Box.dy();
+      bool isLayer2EncHorz = layer2Box.dx() > layer2Box.dy();
       bool isLayer1Horz = (tech_->getLayer(layer1Num)->getDir()
                            == dbTechLayerDir::HORIZONTAL);
       bool isLayer2Horz = (tech_->getLayer(layer2Num)->getDir()
@@ -379,14 +375,35 @@ void io::Parser::getViaRawPriority(frViaDef* viaDef,
   frCoord layer1Area = area(viaLayerPS1);
   frCoord layer2Area = area(viaLayerPS2);
 
+  frCoord cutArea = 0;
+  for (auto& fig : viaDef->getCutFigs()) {
+    cutArea += fig->getBBox().area();
+  }
+
   priority = std::make_tuple(isNotDefaultVia,
                              layer1Width,
                              layer2Width,
                              isNotUpperAlign,
+                             cutArea,
                              layer2Area,
                              layer1Area,
                              isNotLowerAlign,
                              viaDef->getName());
+
+  debugPrint(logger_,
+             DRT,
+             "via_selection",
+             1,
+             "via {} !default={} w1={} w2={} !align2={} area2={} area1={} "
+             "!align1={}",
+             viaDef->getName(),
+             isNotDefaultVia,
+             layer1Width,
+             layer2Width,
+             isNotUpperAlign,
+             layer2Area,
+             layer1Area,
+             isNotLowerAlign);
 }
 
 // 13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB
@@ -702,8 +719,8 @@ void io::Parser::buildGCellPatterns_getWidth(frCoord& GCELLGRIDX,
       Rect guideBBox = rect.getBBox();
       frCoord guideWidth
           = (tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL)
-                ? (guideBBox.yMax() - guideBBox.yMin())
-                : (guideBBox.xMax() - guideBBox.xMin());
+                ? guideBBox.dy()
+                : guideBBox.dx();
       if (tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
         if (guideGridYMap.find(guideWidth) == guideGridYMap.end()) {
           guideGridYMap[guideWidth] = 0;

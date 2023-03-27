@@ -29,41 +29,31 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+
 #include "rcx/ext.h"
 
-#include <errno.h>
-
 #include "odb/wOrder.h"
-#include "sta/StaMain.hh"
 #include "utl/Logger.h"
-
-namespace sta {
-// Tcl files encoded into strings.
-extern const char* rcx_tcl_inits[];
-}  // namespace sta
 
 namespace rcx {
 
 using utl::Logger;
 using utl::RCX;
 
-extern "C" {
-extern int Rcx_Init(Tcl_Interp* interp);
-}
-
-Ext::Ext() : odb::ZInterface(), _ext(std::make_unique<extMain>())
+Ext::Ext() : _ext(std::make_unique<extMain>())
 {
 }
 
-void Ext::init(Tcl_Interp* tcl_interp, odb::dbDatabase* db, Logger* logger)
+void Ext::init(odb::dbDatabase* db,
+               Logger* logger,
+               std::function<void()> rcx_init)
 {
   _db = db;
   logger_ = logger;
   _ext->init(db, logger);
 
   // Define swig TCL commands.
-  Rcx_Init(tcl_interp);
-  sta::evalTclInit(tcl_interp, sta::rcx_tcl_inits);
+  rcx_init();
 }
 
 void Ext::setLogger(Logger* logger)
@@ -81,7 +71,7 @@ void Ext::write_rules(const std::string& name,
   _ext->writeRules(name.c_str(), dir.c_str(), file.c_str(), pattern);
 }
 
-bool Ext::bench_wires(const BenchWiresOptions& bwo)
+void Ext::bench_wires(const BenchWiresOptions& bwo)
 {
   extMainOptions opt;
 
@@ -172,11 +162,9 @@ bool Ext::bench_wires(const BenchWiresOptions& bwo)
     parser.getDoubleArray(&opt._densityTable, 0);
   }
   _ext->benchWires(&opt);
-
-  return TCL_OK;
 }
 
-bool Ext::bench_verilog(const std::string& file)
+void Ext::bench_verilog(const std::string& file)
 {
   _ext->setBlockFromChip();
   char* filename = (char*) file.c_str();
@@ -188,37 +176,26 @@ bool Ext::bench_verilog(const std::string& file)
     logger_->error(RCX, 378, "Can't open file {}", filename);
   }
   _ext->benchVerilog(fp);
-
-  return TCL_OK;
 }
 
-bool Ext::clean(bool all_models, bool ext_only)
-{
-  return TCL_OK;
-}
-
-bool Ext::define_process_corner(int ext_model_index, const std::string& name)
+void Ext::define_process_corner(int ext_model_index, const std::string& name)
 {
   _ext->setBlockFromChip();
   char* cornerName = _ext->addRCCorner(name.c_str(), ext_model_index);
 
   if (cornerName != NULL) {
     logger_->info(RCX, 29, "Defined extraction corner {}", cornerName);
-    return TCL_OK;
-  } else {
-    return TCL_ERROR;
   }
 }
 
-bool Ext::define_derived_corner(const std::string& name,
+void Ext::define_derived_corner(const std::string& name,
                                 const std::string& process_corner_name,
                                 float res_factor,
                                 float cc_factor,
                                 float gndc_factor)
 {
   if (process_corner_name.empty()) {
-    logger_->warn(RCX, 30, "The original process corner name is required");
-    return TCL_ERROR;
+    logger_->error(RCX, 30, "The original process corner name is required");
   }
 
   int model = _ext->getDbCornerModel(process_corner_name.c_str());
@@ -228,94 +205,79 @@ bool Ext::define_derived_corner(const std::string& name,
 
   if (cornerName != NULL) {
     logger_->info(RCX, 31, "Defined Derived extraction corner {}", cornerName);
-    return TCL_OK;
-  } else {
-    return TCL_ERROR;
   }
 }
 
-bool Ext::delete_corners()
+void Ext::delete_corners()
 {
   _ext->deleteCorners();
-  return TCL_OK;
 }
 
-bool Ext::get_corners(std::list<std::string>& corner_list)
+void Ext::get_corners(std::list<std::string>& corner_list)
 {
   _ext->getCorners(corner_list);
-  return TCL_OK;
 }
 
-bool Ext::get_ext_db_corner(int& index, const std::string& name)
+void Ext::get_ext_db_corner(int& index, const std::string& name)
 {
   index = _ext->getDbCornerIndex(name.c_str());
 
   if (index < 0)
     logger_->warn(RCX, 148, "Extraction corner {} not found!", name.c_str());
-
-  return TCL_OK;
 }
 
-bool Ext::extract(ExtractOptions opts)
+void Ext::extract(ExtractOptions opts)
 {
   _ext->setBlockFromChip();
   odb::dbBlock* block = _ext->getBlock();
   logger_->info(
       RCX, 8, "extracting parasitics of {} ...", block->getConstName());
 
-  odb::orderWires(block, false /* force */);
+  odb::orderWires(logger_, block);
 
   _ext->set_debug_nets(opts.debug_net);
   _ext->_lef_res = opts.lef_res;
 
-  if (_ext->makeBlockRCsegs(opts.net,
-                            opts.cc_up,
-                            opts.cc_model,
-                            opts.max_res,
-                            !opts.no_merge_via_res,
-                            !opts.no_gs,
-                            opts.coupling_threshold,
-                            opts.context_depth,
-                            opts.ext_model_file,
-                            this)
-      == 0)
-    return TCL_ERROR;
+  _ext->makeBlockRCsegs(opts.net,
+                        opts.cc_up,
+                        opts.cc_model,
+                        opts.max_res,
+                        !opts.no_merge_via_res,
+                        opts.coupling_threshold,
+                        opts.context_depth,
+                        opts.ext_model_file);
 
   logger_->info(
       RCX, 15, "Finished extracting {}.", _ext->getBlock()->getName().c_str());
-  return 0;
 }
 
-bool Ext::adjust_rc(float res_factor, float cc_factor, float gndc_factor)
+void Ext::adjust_rc(float res_factor, float cc_factor, float gndc_factor)
 {
   _ext->adjustRC(res_factor, cc_factor, gndc_factor);
-  return 0;
 }
 
-bool Ext::write_spef_nets(odb::dbObject* block,
+void Ext::write_spef_nets(odb::dbObject* block,
                           bool flatten,
                           bool parallel,
                           int corner)
 {
   _ext->setBlockFromChip();
   _ext->write_spef_nets(flatten, parallel);
-
-  return 0;
 }
 
-bool Ext::write_spef(const SpefOptions& opts)
+void Ext::write_spef(const SpefOptions& opts)
 {
   _ext->setBlockFromChip();
   if (opts.end) {
     _ext->writeSPEF(true);
-    return 0;
+    return;
   }
   const char* name = opts.ext_corner_name;
 
   uint netId = opts.net_id;
   if (netId > 0) {
     _ext->writeSPEF(netId, opts.single_pi, opts.debug, opts.corner, name);
-    return 0;
+    return;
   }
   if (!opts.init)
     logger_->info(RCX, 16, "Writing SPEF ...");
@@ -342,10 +304,9 @@ bool Ext::write_spef(const SpefOptions& opts)
                   opts.parallel);
 
   logger_->info(RCX, 17, "Finished writing SPEF ...");
-  return 0;
 }
 
-bool Ext::read_spef(ReadSpefOpts& opt)
+void Ext::read_spef(ReadSpefOpts& opt)
 {
   _ext->setBlockFromChip();
   logger_->info(RCX, 1, "Reading SPEF file: {}", opt.file);
@@ -395,11 +356,9 @@ bool Ext::read_spef(ReadSpefOpts& opt)
 
   for (int ii = 1; ii < parser.getWordCnt(); ii++)
     _ext->readSPEFincr(parser.get(ii));
-
-  return 0;
 }
 
-bool Ext::diff_spef(const DiffOptions& opt)
+void Ext::diff_spef(const DiffOptions& opt)
 {
   _ext->setBlockFromChip();
   std::string filename(opt.file);
@@ -444,11 +403,9 @@ bool Ext::diff_spef(const DiffOptions& opt)
                  true /*diff*/,
                  false /*calibrate*/,
                  0);
-
-  return 0;
 }
 
-bool Ext::calibrate(const std::string& spef_file,
+void Ext::calibrate(const std::string& spef_file,
                     const std::string& db_corner_name,
                     int corner,
                     int spef_corner,
@@ -472,7 +429,6 @@ bool Ext::calibrate(const std::string& spef_file,
                   db_corner_name.c_str(),
                   corner,
                   spef_corner);
-  return 0;
 }
 
 }  // namespace rcx

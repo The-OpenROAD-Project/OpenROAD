@@ -952,8 +952,6 @@ void dbTech::checkLayer(bool typeChk,
     if (type.getValue() == dbTechLayerType::CUT)
       continue;
     if (typeChk && type.getValue() != dbTechLayerType::ROUTING) {
-      // TODO: remove this line
-      warning(0, "Layer %s is not a routing layer!\n", layer->getConstName());
       getImpl()->getLogger()->warn(utl::ODB,
                                    58,
                                    "Layer {} is not a routing layer!",

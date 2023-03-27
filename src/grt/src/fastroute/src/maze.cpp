@@ -171,6 +171,9 @@ void FastRouteCore::fixOverlappingEdge(
     std::vector<short> new_route_x, new_route_y;
     const TreeNode& startpoint = treenodes[treeedge->n1];
     const TreeNode& endpoint = treenodes[treeedge->n2];
+    if (startpoint.x == endpoint.x || startpoint.y == endpoint.y) {
+      return;
+    }
     routeLShape(
         startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
 
@@ -1312,16 +1315,15 @@ float getCost(const int i,
   float cost;
   if (cost_type == 2) {
     if (i < capacity - 1)
-      cost
-          = cost_height / (exp((float) (capacity - i - 1) * logis_cof) + 1) + 1;
+      cost = cost_height / (std::exp((capacity - i - 1) * logis_cof) + 1) + 1;
     else
-      cost = cost_height / (exp((float) (capacity - i - 1) * logis_cof) + 1) + 1
+      cost = cost_height / (std::exp((capacity - i - 1) * logis_cof) + 1) + 1
              + cost_height / slope * (i - capacity);
   } else {
     if (i < capacity)
-      cost = cost_height / (exp((float) (capacity - i) * logis_cof) + 1) + 1;
+      cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1;
     else
-      cost = cost_height / (exp((float) (capacity - i) * logis_cof) + 1) + 1
+      cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1
              + cost_height / slope * (i - capacity);
   }
   return cost;

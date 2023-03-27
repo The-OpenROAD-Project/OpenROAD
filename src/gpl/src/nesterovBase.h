@@ -707,8 +707,6 @@ class BinGrid
   void setLogger(utl::Logger* log);
   void setCorePoints(const Die* die);
   void setBinCnt(int binCntX, int binCntY);
-  void setBinCntX(int binCntX);
-  void setBinCntY(int binCntY);
   void setTargetDensity(float density);
   void updateBinsGCellDensityArea(const std::vector<GCell*>& cells);
 
@@ -760,8 +758,7 @@ class BinGrid
   int64_t overflowArea_;
   int64_t overflowAreaUnscaled_;
 
-  unsigned char isSetBinCntX_ : 1;
-  unsigned char isSetBinCntY_ : 1;
+  unsigned char isSetBinCnt_ : 1;
 };
 
 inline const std::vector<Bin*>& BinGrid::bins() const
@@ -777,8 +774,7 @@ class NesterovBaseVars
   int binCntY;
   float minWireLengthForceBar;
   // temp variables
-  unsigned char isSetBinCntX : 1;
-  unsigned char isSetBinCntY : 1;
+  unsigned char isSetBinCnt : 1;
   unsigned char useUniformTargetDensity : 1;
 
   NesterovBaseVars();
@@ -917,6 +913,8 @@ class NesterovBase
   void updateDensityForceBin();
 
   void updateDbGCells();
+
+  const BinGrid& getBinGrid() const { return bg_; }
 
  private:
   NesterovBaseVars nbVars_;

@@ -42,7 +42,9 @@ RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
                              "RoutingCongestion"),
       db_(db),
       direction_(ALL),
-      layer_(nullptr)
+      layer_(nullptr),
+      type_(Congestion),
+      max_(1.0)
 {
   addMultipleChoiceSetting(
       "Direction",
@@ -101,6 +103,32 @@ RoutingCongestionDataSource::RoutingCongestionDataSource(utl::Logger* logger,
           layer_ = nullptr;
         } else {
           layer_ = tech->findLayer(value.c_str());
+        }
+      });
+  addMultipleChoiceSetting(
+      "Type",
+      "Type:",
+      []() -> std::vector<std::string> {
+        return {"Congestion", "Capacity", "Usage"};
+      },
+      [this]() -> std::string {
+        switch (type_) {
+          case Congestion:
+            return "Congestion";
+          case Capacity:
+            return "Capacity";
+          case Usage:
+            return "Usage";
+        }
+        return "Congestion";
+      },
+      [this](const std::string& value) {
+        if (value == "Congestion") {
+          type_ = Congestion;
+        } else if (value == "Capacity") {
+          type_ = Capacity;
+        } else if (value == "Usage") {
+          type_ = Usage;
         }
       });
 }
@@ -195,23 +223,76 @@ bool RoutingCongestionDataSource::populateMap()
         = ver_capacity != 0 ? static_cast<double>(ver_usage) / ver_capacity
                             : -1;
 
-    double congestion = 0.0;
-    if (direction_ == ALL) {
-      congestion = std::max(hor_congestion, ver_congestion);
-    } else if (direction_ == HORIZONTAL) {
-      congestion = hor_congestion;
-    } else {
-      congestion = ver_congestion;
+    double value = 0.0;
+    switch (type_) {
+      case Congestion:
+        if (direction_ == ALL) {
+          value = std::max(hor_congestion, ver_congestion);
+        } else if (direction_ == HORIZONTAL) {
+          value = hor_congestion;
+        } else {
+          value = ver_congestion;
+        }
+        value *= 100.0;
+        break;
+      case Usage:
+        if (direction_ == ALL) {
+          value = std::max(hor_usage, ver_usage);
+        } else if (direction_ == HORIZONTAL) {
+          value = hor_usage;
+        } else {
+          value = ver_usage;
+        }
+        break;
+      case Capacity:
+        if (direction_ == ALL) {
+          value = std::max(hor_capacity, ver_capacity);
+        } else if (direction_ == HORIZONTAL) {
+          value = hor_capacity;
+        } else {
+          value = ver_capacity;
+        }
+        break;
     }
 
-    if (congestion < 0) {
+    if (value < 0) {
       continue;
     }
 
-    addToMap(gcell_rect, 100 * congestion);
+    addToMap(gcell_rect, value);
   }
 
   return true;
+}
+
+void RoutingCongestionDataSource::correctMapScale(HeatMapDataSource::Map& map)
+{
+  if (type_ == Congestion) {
+    return;
+  }
+
+  max_ = 0.0;
+  for (auto& [bbox, map_pt] : map) {
+    max_ = std::max(map_pt->value, max_);
+  }
+
+  if (max_ == 0.0) {
+    return;
+  }
+
+  for (auto& [bbox, map_pt] : map) {
+    map_pt->value = map_pt->value * 100 / max_;
+  }
+}
+
+const std::string RoutingCongestionDataSource::formatValue(double value,
+                                                           bool legend) const
+{
+  if (type_ == Congestion) {
+    return HeatMapDataSource::formatValue(value, legend);
+  }
+
+  return HeatMapDataSource::formatValue(value / 100 * max_, legend);
 }
 
 void RoutingCongestionDataSource::combineMapData(bool base_has_value,

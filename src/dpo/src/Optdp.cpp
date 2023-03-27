@@ -65,7 +65,6 @@ using odb::dbBTerm;
 using odb::dbInst;
 using odb::dbITerm;
 using odb::dbMaster;
-using odb::dbMasterType;
 using odb::dbMPin;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -80,24 +79,6 @@ using odb::dbSWire;
 using odb::dbTechLayer;
 using odb::dbWireType;
 using odb::Rect;
-
-////////////////////////////////////////////////////////////////
-Optdp::Optdp()
-    : db_(nullptr),
-      logger_(nullptr),
-      opendp_(nullptr),
-      arch_(nullptr),
-      network_(nullptr),
-      routeinfo_(nullptr),
-      hpwlBefore_(0),
-      hpwlAfter_(0)
-{
-}
-
-////////////////////////////////////////////////////////////////
-Optdp::~Optdp()
-{
-}
 
 ////////////////////////////////////////////////////////////////
 void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
@@ -270,11 +251,17 @@ void Optdp::initPadding()
 
   // Create and edge type for each amount of padding.  This
   // can be done by querying OpenDP.
-  dbSet<dbRow> rows = db_->getChip()->getBlock()->getRows();
-  if (rows.empty()) {
+  odb::dbSite* site = nullptr;
+  for (auto* row : db_->getChip()->getBlock()->getRows()) {
+    if (row->getSite()->getClass() != odb::dbSiteClass::PAD) {
+      site = row->getSite();
+      break;
+    }
+  }
+  if (site == nullptr) {
     return;
   }
-  int siteWidth = (*rows.begin())->getSite()->getWidth();
+  int siteWidth = site->getWidth();
   std::unordered_map<odb::dbInst*, Node*>::iterator it_n;
 
   dbSet<dbInst> insts = db_->getChip()->getBlock()->getInsts();
@@ -691,11 +678,12 @@ void Optdp::createArchitecture()
 {
   dbBlock* block = db_->getChip()->getBlock();
 
-  dbSet<dbRow> rows = block->getRows();
-
   odb::Rect dieRect = block->getDieArea();
 
-  for (dbRow* row : rows) {
+  for (dbRow* row : block->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     if (row->getDirection() != odb::dbRowDir::HORIZONTAL) {
       // error.
       continue;
@@ -910,7 +898,7 @@ void Optdp::setUpPlacementRegions()
   logger_->info(DPO, 110, "Number of regions is {:d}", arch_->getNumRegions());
 }
 ////////////////////////////////////////////////////////////////
-unsigned Optdp::dbToDpoOrient(dbOrientType dbOrient)
+unsigned Optdp::dbToDpoOrient(const dbOrientType& dbOrient)
 {
   unsigned orient = dpo::Orientation_N;
   switch (dbOrient) {

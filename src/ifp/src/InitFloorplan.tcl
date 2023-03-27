@@ -51,8 +51,6 @@ proc initialize_floorplan { args } {
   set site_name ""
   if [info exists keys(-site)] {
     set site_name $keys(-site)
-  } else {
-    utl::warn IFP 11 "use -site to add placement rows."
   }
 
   sta::check_argc_eq0 "initialize_floorplan" $args
@@ -221,12 +219,12 @@ proc insert_tiecells { args } {
     }
   }
   if { $master == "NULL" } {
-    utl::logger "IFP" 31 "Unable to find master: $tie_cell"
+    utl::error "IFP" 31 "Unable to find master: $tie_cell"
   }
 
   set mterm [$master findMTerm $port]
   if { $master == "NULL" } {
-    utl::logger "IFP" 32 "Unable to find master pin: $args"
+    utl::error "IFP" 32 "Unable to find master pin: $args"
   }
 
   ifp::insert_tiecells_cmd $mterm $prefix

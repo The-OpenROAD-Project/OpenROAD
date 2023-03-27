@@ -37,7 +37,6 @@
 #include "ZObject.h"
 #include "array1.h"
 #include "geom.h"
-#include "gseq.h"
 #include "odb.h"
 #include "rcx.h"
 #include "util.h"
@@ -49,6 +48,7 @@ class dbBox;
 class dbBlock;
 class dbTech;
 class dbNet;
+struct SEQ;
 
 ///
 /// ISdb - Internal User Interface for ZRoute Area Search Infrastructure
@@ -87,7 +87,6 @@ class ISdb : public ZObject
                              AthPool<SEQ>* seqPool)
       = 0;
   virtual void adjustOverlapMakerEnd() = 0;
-  virtual void adjustMetalFill() = 0;
   virtual void setupForBoxes(Rect maxRect, uint minHeight, uint minWidth) = 0;
   virtual void addBox(dbBox* bb, uint wtype, uint id) = 0;
   virtual uint setExtrusionMarker(uint startRow, uint startCol) = 0;

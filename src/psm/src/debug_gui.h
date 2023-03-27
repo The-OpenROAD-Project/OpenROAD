@@ -36,12 +36,11 @@ class PDNSim;
 class DebugGui : public gui::Renderer
 {
  public:
-  DebugGui(PDNSim* pdnsim);
+  explicit DebugGui(PDNSim* pdnsim);
 
-  virtual void drawLayer(odb::dbTechLayer* layer,
-                         gui::Painter& painter) override;
+  void drawLayer(odb::dbTechLayer* layer, gui::Painter& painter) override;
 
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
   void setBumps(const std::vector<IRSolver::BumpData>& bumps, int bump_layer);
 
