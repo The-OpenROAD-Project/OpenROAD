@@ -907,8 +907,6 @@ void io::Parser::setBTerms(odb::dbBlock* block)
         frLayerNum layerNum
             = tech_->name2layer[box->getTechLayer()->getName()]->getLayerNum();
         frLayerNum finalLayerNum = layerNum;
-        odb::Rect viaBox;
-        bool useViaBox = false;
         if (layerNum > TOP_ROUTING_LAYER) {
           odb::dbNet* net = term->getNet();
           odb::dbWire* wire = net->getWire();
@@ -925,16 +923,18 @@ void io::Parser::setBTerms(odb::dbBlock* block)
                         = tech_->name2layer[vbox->getTechLayer()->getName()]
                               ->getLayerNum();
                     if (layerNum == TOP_ROUTING_LAYER) {
-                      viaBox = vbox->getBox();
+                      odb::Rect viaBox = vbox->getBox();
                       odb::dbTransform xform;
                       odb::Point path_origin = pshape.point;
                       xform.setOffset({path_origin.x(), path_origin.y()});
                       xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
                       xform.apply(viaBox);
-                      useViaBox = true;
-                      finalLayerNum = layerNum;
-                      termIn->setIsAboveTopLayer(true);
-                      break;
+                      if (bbox.intersects(viaBox)) {
+                        bbox = viaBox;
+                        finalLayerNum = layerNum;
+                        termIn->setIsAboveTopLayer(true);
+                        break;
+                      }
                     }
                   }
                 }
@@ -942,9 +942,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
             }
           }
         }
-        if (useViaBox) {
-          bbox = viaBox;
-        }
+
         unique_ptr<frRect> pinFig = make_unique<frRect>();
         pinFig->setBBox(bbox);
         pinFig->addToPin(pinIn.get());
