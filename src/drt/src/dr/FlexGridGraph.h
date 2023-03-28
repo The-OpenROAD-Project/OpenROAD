@@ -898,9 +898,9 @@ class FlexGridGraph
   FlexDRGraphics* graphics_;  // owned by FlexDR
 			      //
 #ifdef DEBUG_DRT_UNDERFLOW
-#define COST_BITS 16
+  static constexpr int cost_bits = 16;
 #else
-#define COST_BITS 8
+  static constexpr int cost_bits = 8;
 #endif
 
   struct Node
@@ -925,17 +925,17 @@ class FlexGridGraph
     frUInt4 unused4 : 1;
     frUInt4 unused5 : 1;
     // Byte 2
-    frUInt4 routeShapeCostPlanar : COST_BITS;
+    frUInt4 routeShapeCostPlanar : cost_bits;
     // Byte 3
-    frUInt4 routeShapeCostVia : COST_BITS;
+    frUInt4 routeShapeCostVia : cost_bits;
     // Byte4
-    frUInt4 markerCostPlanar : COST_BITS;
+    frUInt4 markerCostPlanar : cost_bits;
     // Byte5
-    frUInt4 markerCostVia : COST_BITS;
+    frUInt4 markerCostVia : cost_bits;
     // Byte6
-    frUInt4 fixedShapeCostVia : COST_BITS;
+    frUInt4 fixedShapeCostVia : cost_bits;
     // Byte7
-    frUInt4 fixedShapeCostPlanar : COST_BITS;
+    frUInt4 fixedShapeCostPlanar : cost_bits;
 
     template <class Archive>
     void serialize(Archive& ar, const unsigned int version)
@@ -1040,8 +1040,12 @@ class FlexGridGraph
   frUInt4 addToByte(frUInt4 augend, frUInt4 summand)
   {
     frUInt4 result = augend + summand;
-#ifndef DEBUG_DRT_UNDERFLOW
-    constexpr frUInt4 limit = (1u << 8) - 1;
+    constexpr frUInt4 limit = (1u << cost_bits) - 1;
+#ifdef DEBUG_DRT_UNDERFLOW
+    if (result > limit) {
+      logger_->error(utl::DRT, 550, "addToByte overflow");
+    }
+#else
     result = std::min(result, limit);
 #endif
     return result;
@@ -1051,7 +1055,7 @@ class FlexGridGraph
   {
 #ifdef DEBUG_DRT_UNDERFLOW
     if (subtrahend > minuend) {
-      logger_->error(utl::DRT, 200, "subFromByte underflow");
+      logger_->error(utl::DRT, 551, "subFromByte underflow");
     }
 #endif
     return std::max(minuend - subtrahend, 0u);
