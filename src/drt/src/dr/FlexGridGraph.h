@@ -1035,7 +1035,7 @@ class FlexGridGraph
 
   frUInt4 subFromByte(frUInt4 minuend, frUInt4 subtrahend)
   {
-    return std::max(minuend - subtrahend, 0u);
+    return std::max((int) (minuend - subtrahend), 0);
   }
 
   // internal utility
