@@ -1022,8 +1022,8 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   odb::Point via_position;
   if (!access_points.empty()) {
     for (const auto& ap : access_points) {
-      if (ap->getLayer()->getRoutingLevel()
-          == bterm_bottom_tech_layer->getRoutingLevel()) {
+      if (ap->getLayer()
+          == bterm_bottom_tech_layer) {
         via_position = ap->getPoint();
         break;
       }
