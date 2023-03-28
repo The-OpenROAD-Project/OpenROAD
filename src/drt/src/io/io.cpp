@@ -2884,9 +2884,6 @@ void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
       odb::dbWire* wire = net->getWire();
       if (wire == nullptr) {
         wire = odb::dbWire::create(net);
-      }
-
-      if (wire == nullptr) {
         _wire_encoder.begin(wire);
       } else {
         _wire_encoder.append(wire);
