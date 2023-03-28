@@ -977,8 +977,8 @@ void TritonRoute::processBTermsAboveTopLayer()
       int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
       for (auto bpin : bterm->getBPins()) {
         for (auto box : bpin->getBoxes()) {
-          bterm_bottom_layer_idx
-            = std::min(bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
+          bterm_bottom_layer_idx = std::min(
+              bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
         }
       }
 
@@ -1053,8 +1053,8 @@ int TritonRoute::countNetBTermsAboveMaxLayer(odb::dbNet* net)
     int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
     for (auto bpin : bterm->getBPins()) {
       for (auto box : bpin->getBoxes()) {
-        bterm_bottom_layer_idx
-            = std::min(bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
+        bterm_bottom_layer_idx = std::min(
+            bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
       }
     }
     if (bterm_bottom_layer_idx > top_tech_layer->getRoutingLevel()) {
