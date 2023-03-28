@@ -317,7 +317,8 @@ struct frDebugSettings
         fixedShapeCost(-1),
         markerDecay(-1),
         ripupMode(-1),
-        followGuide(-1)
+        followGuide(-1),
+        writeNetTracks(false)
 
   {
   }
@@ -348,6 +349,7 @@ struct frDebugSettings
   float markerDecay;
   int ripupMode;
   int followGuide;
+  bool writeNetTracks;
 };
 
 // Avoids the need to split the whole serializer like
