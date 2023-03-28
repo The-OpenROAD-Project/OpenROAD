@@ -1042,24 +1042,38 @@ void Opendp::legalAllCells() {
   for (Cell& cell : cells_) { 
     if (isFixed(&cell))
       continue;
-    //printf("%s\n", cell.name());
+    //Get cell position
     Point init = initialLocation(&cell, false);
-    int grid_x = gridX(init.getX());
-    int grid_y = gridY(init.getY());
-    Pixel * pixel = gridPixel(grid_x, grid_y);
-    const Cell * block = pixel->cell;
+    int init_x = init.getX();
+    int init_y = init.getY();
 
-    if(block && isBlock(block)) {
+    Pixel* pixel1 = gridPixel(gridX(init_x), gridY(init_y));
+    Pixel* pixel2 = gridPixel(gridX(init_x + cell.width_ - 1), gridY(init_y));
+    Pixel* pixel3 = gridPixel(gridX(init_x), gridY(init_y + cell.height_ - 1));
+    Pixel* pixel4 = gridPixel(gridX(init_x + cell.width_ - 1), gridY(init_y + cell.height_ - 1));
+
+    Cell* block = nullptr;
+    if (pixel1 && pixel1->cell && isBlock(pixel1->cell)) block = pixel1->cell;
+    if (pixel2 && pixel2->cell && isBlock(pixel2->cell)) block = pixel2->cell;
+    if (pixel3 && pixel3->cell && isBlock(pixel3->cell)) block = pixel3->cell;
+    if (pixel4 && pixel4->cell && isBlock(pixel4->cell)) block = pixel4->cell;
+
+    if (block && isBlock(block)){
       printf("Moving %s out of macro %s\n", cell.name(), block->name());
-      Point legal_pt = legalPt(&cell, true);
-      int x = legal_pt.getX();
-      int y = legal_pt.getY();
-      printf("new_point: %d %d\n", x, y);
-      //setGridPaddedLoc(&cell, x, y);
-      dbInst* db_inst = cell.db_inst_;
-      db_inst->setLocation(core_.xMin() + x, core_.yMin() + y);
-      //if(!mapMove(&cell))
-        //logger_->error(DPL, 17779, "cannot place instance {}.", cell.name());
+      // Get new legal position
+      const Rect block_bbox(block->x_,
+                            block->y_,
+                            block->x_ + block->width_,
+                            block->y_ + block->height_);
+      Point legal_pt = nearestBlockEdge(&cell, init, block_bbox);
+      Point legal_grid_pt = Point(gridX(legal_pt.getX()), gridY(legal_pt.getY()));
+      // Transform position on real position
+      int x = (legal_grid_pt.getX() + padLeft(&cell)) * site_width_;
+      int y = legal_grid_pt.getY() * row_height_;
+      printf("old point: %d %d\n", init_x, init_y);
+      printf("new point: %d %d\n", x, y);
+      // Set position of cell on db
+      cell.db_inst_->setLocation(core_.xMin() + x, core_.yMin() + y);
     }
   }
 }
