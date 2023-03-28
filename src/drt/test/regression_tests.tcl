@@ -4,6 +4,7 @@ record_tests {
   ta_ap_aligned
   ta_pin_aligned
   top_level_term
+  top_level_term2
 }
 record_pass_fail_tests {
   gc_test
