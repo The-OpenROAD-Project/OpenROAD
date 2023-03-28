@@ -70,14 +70,6 @@ static char* ATH__allocCharWord(int n, utl::Logger* logger)
   return a;
 }
 
-static void ATH__deallocCharWord(const char* a, utl::Logger* logger)
-{
-  if (a == nullptr) {
-    logger->error(utl::ODB, 426, "Cannot deallocate allocate chars");
-  }
-  delete[] a;
-}
-
 Ath__parser::Ath__parser(utl::Logger* logger)
 {
   _logger = logger;
@@ -99,13 +91,13 @@ Ath__parser::~Ath__parser()
     pclose(_inFP);
     _inFP = nullptr;
   }
-  ATH__deallocCharWord(_inputFile, _logger);
-  ATH__deallocCharWord(_line, _logger);
-  ATH__deallocCharWord(_tmpLine, _logger);
-  ATH__deallocCharWord(_wordSeparators, _logger);
+  delete[] _inputFile;
+  delete[] _line;
+  delete[] _tmpLine;
+  delete[] _wordSeparators;
 
   for (int ii = 0; ii < _maxWordCnt; ii++) {
-    ATH__deallocCharWord(_wordArray[ii], _logger);
+    delete[] _wordArray[ii];
   }
 
   delete[] _wordArray;
