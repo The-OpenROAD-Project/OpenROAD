@@ -82,8 +82,9 @@ using odb::Rect;
 struct Pixel;
 struct Group;
 class DplObserver;
+struct LayerInfo;
 
-using Grid = Pixel**;
+using Grid = Pixel***;
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
@@ -129,6 +130,13 @@ struct Pixel
   dbOrientType orient_;
   bool is_valid;     // false for dummy cells
   bool is_hopeless;  // too far from sites for diamond search
+};
+
+struct LayerInfo
+{
+  int row_count;
+  int site_count;
+  int grid_index;
 };
 
 // For optimize mirroring.
@@ -326,7 +334,7 @@ class Opendp
   bool havePadding() const;
   void checkOneSiteDbMaster();
   void deleteGrid();
-  Pixel* gridPixel(int x, int y) const;
+  Pixel* gridPixel(int layer_idx, int x, int y) const;
   // Cell initial location wrt core origin.
   int gridX(int x) const;
   int gridY(int y) const;
@@ -387,6 +395,7 @@ class Opendp
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
+  map<int, LayerInfo> grid_layers_;
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;
@@ -400,9 +409,10 @@ class Opendp
   bool disallow_one_site_gaps_ = false;
   vector<dbInst*> placement_failures_;
 
-  // 2D pixel grid
+  // 3D pixel grid
   Grid grid_ = nullptr;
   Cell dummy_cell_;
+  int grid_depth_ = 0;
 
   // Filler placement.
   // gap (in sites) -> seq of masters

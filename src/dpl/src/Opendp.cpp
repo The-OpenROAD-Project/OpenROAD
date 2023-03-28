@@ -537,11 +537,13 @@ int Opendp::gridPaddedEndX(const Cell* cell) const
 
 int Opendp::gridEndX(const Cell* cell) const
 {
+  // TODO: this is wrong for cells that span multiple columns
   return divCeil(cell->x_ + cell->width_, site_width_);
 }
 
 int Opendp::gridEndY(const Cell* cell) const
 {
+  // TODO: this is wrong for cells that span multiple rows
   return divCeil(cell->y_ + cell->height_, row_height_);
 }
 
