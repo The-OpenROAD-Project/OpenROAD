@@ -896,7 +896,7 @@ class FlexGridGraph
   Logger* logger_;
   FlexDRWorker* drWorker_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
-			      //
+                              //
 #ifdef DEBUG_DRT_UNDERFLOW
   static constexpr int cost_bits = 16;
 #else
