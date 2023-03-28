@@ -55,6 +55,7 @@ namespace odb {
 class dbDatabase;
 class dbInst;
 class dbBTerm;
+class dbNet;
 }  // namespace odb
 namespace utl {
 class Logger;
@@ -178,10 +179,6 @@ class TritonRoute
                  const std::list<std::unique_ptr<fr::frMarker>>& markers,
                  odb::Rect bbox = odb::Rect(0, 0, 0, 0));
   void checkDRC(const char* drc_file, int x0, int y0, int x1, int y1);
-  void processBTermsAboveTopLayer();
-  void stackVias(odb::dbBTerm* bterm,
-                 int top_layer_idx,
-                 int bterm_bottom_layer_idx);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -213,6 +210,11 @@ class TritonRoute
   void applyUpdates(const std::vector<std::vector<fr::drUpdate>>& updates);
   void getDRCMarkers(std::list<std::unique_ptr<fr::frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
+  void processBTermsAboveTopLayer();
+  void stackVias(odb::dbBTerm* bterm,
+                 int top_layer_idx,
+                 int bterm_bottom_layer_idx);
+  int countNetBTermsAboveMaxLayer(odb::dbNet* net);
   friend class fr::FlexDR;
 };
 }  // namespace triton_route

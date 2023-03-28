@@ -1035,13 +1035,19 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   // insert the vias from the top routing layer to the bterm bottom layer
   odb::dbNet* net = bterm->getNet();
   odb::dbWire* wire = net->getWire();
+  int bterms_above_max_layer = countNetBTermsAboveMaxLayer(net);
+
+  odb::dbWireEncoder wire_encoder;
   if (wire == nullptr) {
     wire = odb::dbWire::create(net);
+    wire_encoder.begin(wire);
+  } else if (bterms_above_max_layer > 1) {
+    // append wire when the net has other pins above the max routing layer
+    wire_encoder.append(wire);
   } else {
     logger_->error(utl::DRT, 415, "Net {} already has routes.", net->getName());
   }
-  odb::dbWireEncoder wire_encoder;
-  wire_encoder.begin(wire);
+
   odb::dbTechLayer* top_tech_layer = tech->findRoutingLayer(top_layer_idx);
   wire_encoder.newPath(top_tech_layer, odb::dbWireType::ROUTED);
   for (int layer_idx = top_layer_idx; layer_idx < bterm_bottom_layer_idx;
@@ -1050,6 +1056,28 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
     wire_encoder.addTechVia(default_vias[layer_idx]);
   }
   wire_encoder.end();
+}
+
+int TritonRoute::countNetBTermsAboveMaxLayer(odb::dbNet* net)
+{
+  odb::dbTech* tech = db_->getTech();
+  odb::dbTechLayer* top_tech_layer
+      = tech->findLayer(TOP_ROUTING_LAYER_NAME.c_str());
+  int bterm_count = 0;
+  for (auto bterm : net->getBTerms()) {
+    int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
+    for (auto bpin : bterm->getBPins()) {
+      for (auto box : bpin->getBoxes()) {
+        bterm_bottom_layer_idx
+            = std::min(bterm_bottom_layer_idx, box->getTechLayer()->getRoutingLevel());
+      }
+    }
+    if (bterm_bottom_layer_idx > top_tech_layer->getRoutingLevel()) {
+      bterm_count++;
+    }
+  }
+
+  return bterm_count;
 }
 
 void TritonRoute::readParams(const string& fileName)
