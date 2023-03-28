@@ -122,6 +122,10 @@ else()
   set(ABC_LIBRARY "libabc")
 endif()
 
+if(DEBUG_DRT_UNDERFLOW)
+  add_definitions(-DDEBUG_DRT_UNDERFLOW=1)
+endif()
+
 ################################################################
 
 # OSX tcl is deprecated and prints a warning, so look for a user installed
