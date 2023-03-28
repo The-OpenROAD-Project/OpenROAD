@@ -1007,30 +1007,15 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
     }
   }
 
-  // get bterm access points
-  std::vector<odb::dbAccessPoint*> access_points;
+  // get bterm rect
   odb::Rect pin_rect;
   for (odb::dbBPin* bpin : bterm->getBPins()) {
-    const std::vector<odb::dbAccessPoint*>& bpin_pas = bpin->getAccessPoints();
-    access_points.insert(access_points.end(), bpin_pas.begin(), bpin_pas.end());
     pin_rect = bpin->getBBox();
+    break;
   }
 
   // set the via position as the first AP in the same layer of the bterm
-  odb::dbTechLayer* bterm_bottom_tech_layer
-      = tech->findRoutingLayer(bterm_bottom_layer_idx);
-  odb::Point via_position;
-  if (!access_points.empty()) {
-    for (const auto& ap : access_points) {
-      if (ap->getLayer()
-          == bterm_bottom_tech_layer) {
-        via_position = ap->getPoint();
-        break;
-      }
-    }
-  } else {
-    via_position = odb::Point(pin_rect.xCenter(), pin_rect.yCenter());
-  }
+  odb::Point via_position = odb::Point(pin_rect.xCenter(), pin_rect.yCenter());
 
   // insert the vias from the top routing layer to the bterm bottom layer
   odb::dbNet* net = bterm->getNet();
