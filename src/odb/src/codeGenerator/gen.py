@@ -91,6 +91,8 @@ if "relations" in schema:
         inParentField['dbSetGetter'] = True
         inParentField['components'] = [inParentField['name']]
         inParentField['flags'] = ["cmp", "serial", "diff", "no-set", "get"]
+        if 'schema' in relation:
+            inParentField['schema'] = relation['schema']
 
         schema['classes'][parent]['fields'].append(inParentField)
         schema['classes'][parent]['cpp_includes'].extend([
