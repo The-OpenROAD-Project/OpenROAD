@@ -343,8 +343,8 @@ void FlexPA::prepPoint_pin_genPoints_rect_genEnc(
   for (auto& viaDef : viaDefs) {
     frVia via(viaDef);
     Rect box = via.getLayer1BBox();
-    auto viaWidth = box.xMax() - box.xMin();
-    auto viaHeight = box.yMax() - box.yMin();
+    auto viaWidth = box.dx();
+    auto viaHeight = box.dy();
     if (viaWidth > rectWidth || viaHeight > rectHeight) {
       // cout <<"@@@" <<viaDef->getName() <<" rect " <<rectWidth <<" "
       // <<rectHeight <<" via " <<viaWidth <<" " <<viaHeight <<endl;
@@ -2270,9 +2270,9 @@ bool FlexPA::genPatterns_gc(std::set<frBlockObject*> targetObjs,
   for (auto& [connFig, owner] : objs) {
     Rect bbox = connFig->getBBox();
     llx = std::min(llx, bbox.xMin());
-    lly = std::min(llx, bbox.yMin());
-    urx = std::max(llx, bbox.xMax());
-    ury = std::max(llx, bbox.yMax());
+    lly = std::min(lly, bbox.yMin());
+    urx = std::max(urx, bbox.xMax());
+    ury = std::max(ury, bbox.yMax());
   }
   Rect extBox(llx - 3000, lly - 3000, urx + 3000, ury + 3000);
   // Rect extBox(llx - 1000, lly - 1000, urx + 1000, ury + 1000);

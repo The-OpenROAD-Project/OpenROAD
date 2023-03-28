@@ -65,14 +65,29 @@ if (Python3_FOUND AND BUILD_PYTHON)
   )
 endif()
 
+add_library(utl_lib
+  src/Metrics.cpp
+  src/CFileUtils.cpp
+  src/ScopedTemporaryFile.cpp
+  src/Logger.cpp
+)
+
+target_include_directories(utl_lib
+  PUBLIC
+    include
+    src
+    ${Boost_INCLUDE_DIRS}
+)
+
+target_link_libraries(utl_lib
+  PUBLIC
+    spdlog::spdlog
+)
+
 target_sources(utl
   PRIVATE
-    src/Logger.cpp
     src/LoggerCommon.cpp
     src/MakeLogger.cpp
-    src/Metrics.cpp
-    src/CFileUtils.cpp
-    src/ScopedTemporaryFile.cpp
 )
   
 target_include_directories(utl
@@ -84,7 +99,7 @@ target_include_directories(utl
 
 target_link_libraries(utl
   PUBLIC
-    spdlog::spdlog
+    utl_lib
 )
 
 ############################################################

@@ -121,6 +121,11 @@ void TritonRoute::setDistributed(bool on)
   distributed_ = on;
 }
 
+void TritonRoute::setDebugWriteNetTracks(bool on)
+{
+  debug_->writeNetTracks = on;
+}
+
 void TritonRoute::setWorkerIpPort(const char* ip, unsigned short port)
 {
   dist_ip_ = ip;
@@ -642,6 +647,8 @@ void TritonRoute::endFR()
   dr_.reset();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_);
+  if (debug_->writeNetTracks)
+    writer.updateTrackAssignment(db_->getChip()->getBlock());
 
   num_drvs_ = design_->getTopBlock()->getNumMarkers();
   if (!REPAIR_PDN_LAYER_NAME.empty()) {
@@ -967,6 +974,9 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
 {
   GC_IGNORE_PDN_LAYER = -1;
   initDesign();
+  if (design_->getTopBlock()->getGCellPatterns().empty()) {
+    initGuide();
+  }
   Rect requiredDrcBox(x1, y1, x2, y2);
   if (requiredDrcBox.area() == 0) {
     requiredDrcBox = design_->getTopBlock()->getBBox();

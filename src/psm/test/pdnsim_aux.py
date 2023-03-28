@@ -38,6 +38,7 @@ from os.path import isfile
 def analyze_power_grid(design, *,
                        vsrc=None,
                        outfile=None,
+                       error_file=None,
                        enable_em=False,
                        em_outfile=None,
                        net=None,
@@ -75,6 +76,9 @@ def analyze_power_grid(design, *,
 
     if bool(outfile):
         pdnsim.import_out_file(outfile)
+
+    if bool(error_file):
+        pdnsim.import_error_file(error_file)
 
     pdnsim.import_enable_em(enable_em)
     

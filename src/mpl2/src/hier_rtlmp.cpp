@@ -2425,16 +2425,16 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
           width,
           height,
           macros,
-          1.0,
-          1000.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,  // penalty weight
-          0.0,  // no notch size
-          0.0,  // no notch size
+          1.0,     // area weight
+          1000.0,  // outline weight
+          0.0,     // wirelength weight
+          0.0,     // guidance weight
+          0.0,     // fence weight
+          0.0,     // boundary weight
+          0.0,     // macro blockage
+          0.0,     // notch weight
+          0.0,     // no notch size
+          0.0,     // no notch size
           pos_swap_prob_ / action_sum,
           neg_swap_prob_ / action_sum,
           double_swap_prob_ / action_sum,
@@ -2487,16 +2487,16 @@ void HierRTLMP::calClusterMacroTilings(Cluster* parent)
           width,
           height,
           macros,
-          1.0,
-          1000.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,  // penalty weight
-          0.0,  // no notch size
-          0.0,  // no notch size
+          1.0,     // area weight
+          1000.0,  // outline weight
+          0.0,     // wirelength weight
+          0.0,     // guidance weight
+          0.0,     // fence weight
+          0.0,     // boundary weight
+          0.0,     // macro blockage
+          0.0,     // notch weight
+          0.0,     // no notch size
+          0.0,     // no notch size
           pos_swap_prob_ / action_sum,
           neg_swap_prob_ / action_sum,
           double_swap_prob_ / action_sum,
@@ -2656,11 +2656,11 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
           width,
           height,
           macros,
-          1.0,     // area_weight_
-          1000.0,  // boundary weight_
-          0.0,
-          0.0,
-          0.0,  // penalty weight
+          1.0,     // area_weight
+          1000.0,  // outline weight
+          0.0,     // wirelength weight
+          0.0,     // guidance
+          0.0,     // fence weight
           pos_swap_prob_ / action_sum,
           neg_swap_prob_ / action_sum,
           double_swap_prob_ / action_sum,
@@ -2713,11 +2713,11 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
           = new SACoreHardMacro(width,
                                 height,
                                 macros,
-                                1.0,  // area_weight_
-                                1000.0,
-                                0.0,
-                                0.0,
-                                0.0,  // penalty weight
+                                1.0,     // area_weight
+                                1000.0,  // outline weight
+                                0.0,     // wirelength weight
+                                0.0,     // guidance
+                                0.0,     // fence weight
                                 pos_swap_prob_ / action_sum,
                                 neg_swap_prob_ / action_sum,
                                 double_swap_prob_ / action_sum,
@@ -2793,6 +2793,16 @@ void HierRTLMP::calHardMacroClusterShape(Cluster* cluster)
                    "This no valid tilings for hard macro cluser: {}",
                    cluster->getName());
   }
+
+  std::string line
+      = "[CalClusterMacroTilings] The macro tiling for hard cluster "
+        + cluster->getName() + "  ";
+  for (auto& shape : tilings) {
+    line += " < " + std::to_string(shape.first) + " , ";
+    line += std::to_string(shape.second) + " >  ";
+  }
+  line += "\n";
+  debugPrint(logger_, MPL, "shaping", 1, "{}", line);
 }
 
 //

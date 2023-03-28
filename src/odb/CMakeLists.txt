@@ -41,7 +41,7 @@ target_link_libraries(odb
     lefout
     tm
     zutil
-    utl
+    utl_lib
     ${TCL_LIBRARY}
 )
 

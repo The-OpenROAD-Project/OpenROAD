@@ -132,6 +132,8 @@ proc exit_summary {} {
 suppress_message PSM 2
 # Output current file specified ...
 suppress_message PSM 3
+# Error file is specified as ...
+suppress_message PSM 83
 # Output spice file is specified as
 suppress_message PSM 5
 # SPICE file is written at

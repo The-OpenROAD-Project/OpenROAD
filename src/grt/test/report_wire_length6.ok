@@ -1,8 +1,4 @@
 [INFO ODB-0222] Reading LEF file: report_wire_length6.lef1
-[INFO ODB-0388] unsupported LEF58_PITCH property for layer M2 :"
- PITCH 0.036 FIRSTLASTPITCH 0.045
-   ;
- "
 [INFO ODB-0223]     Created 24 technology layers
 [INFO ODB-0224]     Created 9 technology vias
 [INFO ODB-0226] Finished LEF file:  report_wire_length6.lef1

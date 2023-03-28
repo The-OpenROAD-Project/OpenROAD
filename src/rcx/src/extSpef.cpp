@@ -87,7 +87,6 @@ extSpef::extSpef(odb::dbTech* tech,
   _extracted = false;
   _termJxy = false;
 
-  _wRun = 0;
   _wConn = false;
   _wCap = false;
   _wOnlyCCcap = false;
@@ -143,7 +142,6 @@ extSpef::extSpef(odb::dbTech* tech,
   _addRepeatedCapValue = true;
 
   _nodeHashTable = NULL;
-  _node2nodeHashTable = NULL;
   _tmpCapId = 1;
 
   _gzipFlag = false;
@@ -228,8 +226,6 @@ extSpef::~extSpef()
     delete _nameMapTable;
   if (_nodeHashTable)
     delete _nodeHashTable;
-  if (_node2nodeHashTable)
-    delete _node2nodeHashTable;
   if (_rcPool)
     delete _rcPool;
   if (_rcTrippletTable)
@@ -1202,31 +1198,6 @@ uint extSpef::writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId)
   return _cCnt;
 }
 
-void extSpef::getAnchorCoords(odb::dbNet* net,
-                              uint shapeId,
-                              int* x1,
-                              int* y1,
-                              int* x2,
-                              int* y2,
-                              odb::dbTechLayer** layer)
-{
-  odb::dbShape s;
-  odb::dbWire* w = net->getWire();
-  w->getShape(shapeId, s);
-  *x1 = s.xMin();
-  *y1 = s.yMin();
-  *x2 = s.xMax();
-  *y2 = s.yMax();
-  odb::dbTechVia* tv = s.getTechVia();
-  odb::dbVia* via = s.getVia();
-  if (tv)
-    *layer = tv->getBottomLayer();
-  else if (via)
-    *layer = via->getBottomLayer();
-  else
-    *layer = s.getTechLayer();
-}
-
 uint extSpef::writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet)
 {
   int dbunit = _block->getDbUnitsPerMicron();
@@ -1407,8 +1378,8 @@ bool extSpef::setInSpef(char* filename, bool onlyOpen)
   strcpy(_inFile, filename);
 
   if (!onlyOpen) {
-    _nodeParser = new Ath__parser();
-    _parser = new Ath__parser();
+    _nodeParser = new Ath__parser(logger_);
+    _parser = new Ath__parser(logger_);
   }
   _parser->openFile(filename);
 

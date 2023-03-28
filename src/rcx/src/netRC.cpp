@@ -1147,7 +1147,7 @@ void extMain::getExtractedCorners()
   if (_processCornerTable != NULL)
     return;
 
-  Ath__parser parser;
+  Ath__parser parser(logger_);
   uint pCornerCnt
       = parser.mkWords(_prevControl->_extractedCornerList.c_str(), " ");
   if (pCornerCnt <= 0)
@@ -1230,7 +1230,7 @@ void extMain::makeCornerMapFromExtControl()
   if (_processCornerTable == NULL)
     return;
 
-  Ath__parser parser;
+  Ath__parser parser(logger_);
   uint wordCnt = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
   if (wordCnt <= 0)
     return;
@@ -2108,7 +2108,7 @@ int extSpef::getWriteCorner(int corner, const char* names)
 
   _active_corner_cnt = 0;
   int cn = 0;
-  Ath__parser parser;
+  Ath__parser parser(logger_);
   parser.mkWords(names, NULL);
   for (int ii = 0; ii < parser.getWordCnt(); ii++) {
     cn = _block->getExtCornerIndex(parser.get(ii));
@@ -2157,7 +2157,6 @@ uint extMain::writeSPEF(char* filename,
     _spef = new extSpef(_tech, _block, logger_, this);
   }
   _spef->_termJxy = termJxy;
-  _spef->incr_wRun();
 
   _writeNameMap = noNameMap ? false : true;
   _spef->_writeNameMap = _writeNameMap;

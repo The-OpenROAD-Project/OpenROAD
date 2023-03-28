@@ -127,6 +127,7 @@ class TritonRoute
   void setDebugMaze(bool on = true);
   void setDebugPA(bool on = true);
   void setDebugTA(bool on = true);
+  void setDebugWriteNetTracks(bool on = true);
   void setDebugNetName(const char* name);  // for DR
   void setDebugPinName(const char* name);  // for PA
   void setDebugWorker(int x, int y);

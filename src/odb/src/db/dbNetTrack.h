@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,22 +30,58 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+// Generator Code Begin Header
 #pragma once
 
-#include <stdio.h>
-#include <string.h>
+#include "dbCore.h"
+#include "odb.h"
+
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
-void Ath__hashError(const char* msg, int exitFlag);
+class dbIStream;
+class dbOStream;
+class dbDiff;
+class _dbDatabase;
+class _dbNet;
+class _dbTechLayer;
+// User Code Begin Classes
+// User Code End Classes
 
-void ATH__failMessage(const char* msg);
+// User Code Begin Structs
+// User Code End Structs
 
-char* ATH__allocCharWord(int n);
-void ATH__deallocCharWord(const char* a);
+class _dbNetTrack : public _dbObject
+{
+ public:
+  // User Code Begin Enums
+  // User Code End Enums
 
-FILE* ATH__openFile(const char* name, const char* type);
+  dbId<_dbNet> net_;
+  Rect box_;
+  dbId<_dbTechLayer> layer_;
+  dbId<_dbNetTrack> track_next_;
 
-void ATH__closeFile(FILE* fp);
-
+  // User Code Begin Fields
+  // User Code End Fields
+  _dbNetTrack(_dbDatabase*, const _dbNetTrack& r);
+  _dbNetTrack(_dbDatabase*);
+  ~_dbNetTrack();
+  bool operator==(const _dbNetTrack& rhs) const;
+  bool operator!=(const _dbNetTrack& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbNetTrack& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbNetTrack& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+};
+dbIStream& operator>>(dbIStream& stream, _dbNetTrack& obj);
+dbOStream& operator<<(dbOStream& stream, const _dbNetTrack& obj);
+// User Code Begin General
+// User Code End General
 }  // namespace odb
+   // Generator Code End Header
