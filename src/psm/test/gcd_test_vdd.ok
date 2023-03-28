@@ -34,4 +34,5 @@ Worstcase IR drop: 5.13e-04 V
 ######################################
 Differences found at line 2.
 buffer41, 68.07, 89.6, 1.09978
-buffer41, 68.07, 89.6, 1.09985
+buffer41, 68.07, 89.6, 1.09977
+No differences found.
