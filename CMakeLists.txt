@@ -69,8 +69,6 @@ option(USE_SYSTEM_OPENSTA "Use system shared OpenSTA library" OFF)
 # Allow to use external shared abc libraries
 option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 
-option(DEBUG_DRT_UNDERFLOW "Check for underflow in drt cost calculations" OFF)
-
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )
