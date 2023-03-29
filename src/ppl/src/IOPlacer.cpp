@@ -658,17 +658,10 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::left, hor_layers_);
 }
 
-std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
-    Constraint& constraint,
-    int& mirrored_pins_cnt,
-    bool mirrored_only)
+int IOPlacer::updateConstraintSections(Constraint& constraint)
 {
   bool top_layer = constraint.interval.getEdge() == Edge::invalid;
   std::vector<Slot>& slots = top_layer ? top_layer_slots_ : slots_;
-  if (!mirrored_only) {
-    assignConstrainedGroupsToSections(constraint, constraint.sections);
-  }
-
   int total_slots_count = 0;
   for (Section& sec : constraint.sections) {
     int new_slots_count = 0;
@@ -679,6 +672,20 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
     sec.num_slots = new_slots_count;
     total_slots_count += new_slots_count;
   }
+
+  return total_slots_count;
+}
+
+std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
+    Constraint& constraint,
+    int& mirrored_pins_cnt,
+    bool mirrored_only)
+{
+  int total_slots_count = updateConstraintSections(constraint);
+  if (!mirrored_only) {
+    assignConstrainedGroupsToSections(constraint, constraint.sections);
+  }
+  total_slots_count = updateConstraintSections(constraint);
 
   std::vector<int> pin_indices = findPinsForConstraint(
       constraint, netlist_io_pins_.get(), mirrored_only);
