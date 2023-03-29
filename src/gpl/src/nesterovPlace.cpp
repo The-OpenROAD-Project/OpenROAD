@@ -877,7 +877,7 @@ float NesterovPlace::getStepLength(
 
   if (gradDistance == 0) {
     return 0;
-  }     return coordiDistance / gradDistance;
+  }    return coordiDistance / gradDistance;
 }
 
 float NesterovPlace::getPhiCoef(float scaledDiffHpwl) const
