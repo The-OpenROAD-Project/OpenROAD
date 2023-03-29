@@ -35,7 +35,7 @@
 
 #pragma once
 
-#include "FastRoute.h"
+//#include "FastRoute.h"
 #include "Grid.h"
 #include "Net.h"
 #include "db_sta/dbSta.hh"
@@ -78,6 +78,8 @@ class MakeWireParasitics
                      GlobalRouter* grouter);
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
+                         GRoute& route) const;
+  void estimateParasitcs(odb::dbNet* net,
                          GRoute& route) const;
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.

@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "MakeWireParasitics.h"
+#include "grt/MakeWireParasitics.h"
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
@@ -107,6 +107,57 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
     makeParasiticsToPins(pins, node_map, corner, analysis_point, parasitic);
 
     // Reduce
+    parasitics_->reduceTo(parasitic,
+                          sta_net,
+                          reduce_to,
+                          op_cond,
+                          corner,
+                          min_max_,
+                          analysis_point);
+  }
+
+  parasitics_->deleteParasiticNetworks(sta_net);
+}
+
+void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
+                                           GRoute& route) const
+{
+  debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
+  if (logger_->debugCheck(GRT, "est_rc", 2)) {
+    for (GSegment& segment : route) {
+      logger_->report(
+          "({:.2f}, {:.2f}) {:2d} -> ({:.2f}, {:.2f}) {:2d} l={:.2f}",
+          grouter_->dbuToMicrons(segment.init_x),
+          grouter_->dbuToMicrons(segment.init_y),
+          segment.init_layer,
+          grouter_->dbuToMicrons(segment.final_x),
+          grouter_->dbuToMicrons(segment.final_y),
+          segment.final_layer,
+          grouter_->dbuToMicrons(segment.length()));
+    }
+  }
+
+  sta::Net* sta_net = network_->dbToSta(net);
+
+  grt::Net* grt_net = grouter_->getNet(net);
+
+  sta::OperatingConditions* op_cond
+      = sta_->sdc()->operatingConditions(min_max_);
+  sta::ReducedParasiticType reduce_to
+      = sta_->arcDelayCalc()->reducedParasiticType();
+  for (sta::Corner* corner : *sta_->corners()) {
+    NodeRoutePtMap node_map;
+
+    sta::ParasiticAnalysisPt* analysis_point
+        = corner->findParasiticAnalysisPt(min_max_);
+    sta::Parasitic* parasitic
+        = parasitics_->makeParasiticNetwork(sta_net, false, analysis_point);
+    makeRouteParasitics(
+        net, route, sta_net, corner, analysis_point, parasitic, node_map);
+    makeParasiticsToPins(grt_net->getPins(), node_map, corner, analysis_point, parasitic);
+
+    // Reduce
+
     parasitics_->reduceTo(parasitic,
                           sta_net,
                           reduce_to,

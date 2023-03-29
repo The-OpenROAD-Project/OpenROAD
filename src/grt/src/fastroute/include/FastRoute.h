@@ -47,6 +47,7 @@
 #include "grt/GRoute.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
+#include "grt/MakeWireParasitics.h"
 
 namespace utl {
 class Logger;
@@ -71,6 +72,7 @@ using boost::icl::interval_set;
 namespace grt {
 
 class FastRouteRenderer;
+class MakeWireParasitics;
 
 // Debug mode settings
 struct DebugSetting
@@ -155,7 +157,7 @@ class FastRouteCore
       const interval<int>::type& last_tile_reduce_interval);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
-  NetRouteMap run();
+  NetRouteMap run(MakeWireParasitics * builder);
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
@@ -205,6 +207,7 @@ class FastRouteCore
   void initNetAuxVars();
   void clearNets();
   NetRouteMap getRoutes();
+  NetRouteMap getPartialRoutes();
 
   // maze functions
   // Maze-routing in different orders

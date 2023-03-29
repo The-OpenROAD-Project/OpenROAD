@@ -51,10 +51,10 @@
 #include <vector>
 
 #include "FastRoute.h"
-#include "Grid.h"
-#include "MakeWireParasitics.h"
+#include "grt/Grid.h"
+#include "grt/MakeWireParasitics.h"
 #include "RepairAntennas.h"
-#include "RoutingTracks.h"
+#include "grt/RoutingTracks.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
@@ -394,7 +394,14 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
-    routes = fastroute_->run();
+    // Remove any existing parasitics.
+    sta_->deleteParasitics();
+
+    // Make separate parasitics for each corner, same for min/max.
+    sta_->setParasiticAnalysisPts(true, false);
+
+    MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
+    routes = fastroute_->run(&builder);
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
     for (auto& net_route : routes) {

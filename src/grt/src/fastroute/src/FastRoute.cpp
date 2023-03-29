@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <unordered_set>
+#include <iostream>
 
 #include "DataType.h"
 #include "gui/gui.h"
@@ -685,6 +686,55 @@ NetRouteMap FastRouteCore::getRoutes()
   return routes;
 }
 
+NetRouteMap FastRouteCore::getPartialRoutes()
+{
+  NetRouteMap routes;
+  for (int netID = 0; netID < netCount(); netID++) {
+    odb::dbNet* db_net = nets_[netID]->getDbNet();
+    GRoute& route = routes[db_net];
+    std::unordered_set<GSegment, GSegmentHash> net_segs;
+
+    const auto& treeedges = sttrees_[netID].edges;
+    const int num_edges = sttrees_[netID].num_edges();
+
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      const TreeEdge* treeedge = &(treeedges[edgeID]);
+      if (treeedge->len > 0) {
+        int routeLen = treeedge->route.routelen;
+        const std::vector<short>& gridsX = treeedge->route.gridsX;
+        const std::vector<short>& gridsY = treeedge->route.gridsY;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
+        int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
+        int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
+        int lastL;
+        if(gridsL.empty()) {
+          lastL= 1;
+        } else {
+          lastL = gridsL[0];
+        }
+        for (int i = 1; i <= routeLen; i++) {
+          const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
+          const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
+
+          GSegment segment
+              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
+          lastX = xreal;
+          lastY = yreal;
+          if(!gridsL.empty()) {
+            lastL = gridsL[i];
+          }
+          if (net_segs.find(segment) == net_segs.end()) {
+            net_segs.insert(segment);
+            route.push_back(segment);
+          }
+        }
+      }
+    }
+  }
+
+  return routes;
+}
+
 void FastRouteCore::updateDbCongestion()
 {
   auto block = db_->getChip()->getBlock();
@@ -719,7 +769,7 @@ void FastRouteCore::updateDbCongestion()
   }
 }
 
-NetRouteMap FastRouteCore::run()
+NetRouteMap FastRouteCore::run(MakeWireParasitics * builder)
 {
   int tUsage;
   int cost_step;
@@ -773,6 +823,16 @@ NetRouteMap FastRouteCore::run()
   int past_cong = getOverflow2D(&maxOverflow);
 
   convertToMazeroute();
+
+  auto partial_routes = getPartialRoutes();
+
+  for (auto& net_route : partial_routes) {
+    odb::dbNet* db_net = net_route.first;
+    GRoute& route = net_route.second;
+    if (!route.empty()) {
+      builder->estimateParasitcs(db_net, route);
+    }
+  }
 
   int enlarge_ = 10;
   int newTH = 10;
