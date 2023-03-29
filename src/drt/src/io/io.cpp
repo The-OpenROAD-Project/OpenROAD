@@ -895,62 +895,51 @@ void io::Parser::setBTerms(odb::dbBlock* block)
     termIn->setDirection(term->getIoType());
     auto pinIn = make_unique<frBPin>();
     pinIn->setId(0);
-    for (auto pin : term->getBPins()) {
-      for (auto box : pin->getBoxes()) {
-        odb::Rect bbox = box->getBox();
-        if (tech_->name2layer.find(box->getTechLayer()->getName())
-            == tech_->name2layer.end())
-          logger_->error(DRT,
-                         112,
-                         "Unsupported layer {}.",
-                         box->getTechLayer()->getName());
-        frLayerNum layerNum
-            = tech_->name2layer[box->getTechLayer()->getName()]->getLayerNum();
-        frLayerNum finalLayerNum = layerNum;
-        if (layerNum > TOP_ROUTING_LAYER) {
-          odb::dbNet* net = term->getNet();
-          odb::dbWire* wire = net->getWire();
-          if (wire != nullptr) {
-            odb::dbWirePath path;
-            odb::dbWirePathShape pshape;
-            odb::dbWirePathItr pitr;
-            for (pitr.begin(wire); pitr.getNextPath(path);) {
-              while (pitr.getNextShape(pshape)) {
-                if (pshape.shape.isVia()) {
-                  odb::dbTechVia* via = pshape.shape.getTechVia();
-                  for (const auto& vbox : via->getBoxes()) {
-                    layerNum
-                        = tech_->name2layer[vbox->getTechLayer()->getName()]
-                              ->getLayerNum();
-                    if (layerNum == TOP_ROUTING_LAYER) {
-                      odb::Rect viaBox = vbox->getBox();
-                      odb::dbTransform xform;
-                      odb::Point path_origin = pshape.point;
-                      xform.setOffset({path_origin.x(), path_origin.y()});
-                      xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
-                      xform.apply(viaBox);
-                      if (bbox.intersects(viaBox)) {
-                        bbox = viaBox;
-                        finalLayerNum = layerNum;
-                        termIn->setIsAboveTopLayer(true);
-                        break;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
 
-        unique_ptr<frRect> pinFig = make_unique<frRect>();
-        pinFig->setBBox(bbox);
-        pinFig->addToPin(pinIn.get());
-        pinFig->setLayerNum(finalLayerNum);
-        unique_ptr<frPinFig> uptr(std::move(pinFig));
-        pinIn->addPinFig(std::move(uptr));
+    int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
+    for (auto bpin : term->getBPins()) {
+      for (auto box : bpin->getBoxes()) {
+        frLayerNum layer_idx
+            = tech_->name2layer[box->getTechLayer()->getName()]->getLayerNum();
+        bterm_bottom_layer_idx = std::min(bterm_bottom_layer_idx, layer_idx);
       }
     }
+
+    if (bterm_bottom_layer_idx > TOP_ROUTING_LAYER) {
+      frLayerNum finalLayerNum = 0;
+      odb::Rect bbox = getViaBoxForTermAboveMaxLayer(term, finalLayerNum);
+      termIn->setIsAboveTopLayer(true);
+
+      unique_ptr<frRect> pinFig = make_unique<frRect>();
+      pinFig->setBBox(bbox);
+      pinFig->addToPin(pinIn.get());
+      pinFig->setLayerNum(finalLayerNum);
+      unique_ptr<frPinFig> uptr(std::move(pinFig));
+      pinIn->addPinFig(std::move(uptr));
+    } else {
+      for (auto pin : term->getBPins()) {
+        for (auto box : pin->getBoxes()) {
+          odb::Rect bbox = box->getBox();
+          if (tech_->name2layer.find(box->getTechLayer()->getName())
+              == tech_->name2layer.end())
+            logger_->error(DRT,
+                           112,
+                           "Unsupported layer {}.",
+                           box->getTechLayer()->getName());
+          frLayerNum layerNum
+              = tech_->name2layer[box->getTechLayer()->getName()]
+                    ->getLayerNum();
+          frLayerNum finalLayerNum = layerNum;
+          unique_ptr<frRect> pinFig = make_unique<frRect>();
+          pinFig->setBBox(bbox);
+          pinFig->addToPin(pinIn.get());
+          pinFig->setLayerNum(finalLayerNum);
+          unique_ptr<frPinFig> uptr(std::move(pinFig));
+          pinIn->addPinFig(std::move(uptr));
+        }
+      }
+    }
+
     auto pa = make_unique<frPinAccess>();
     if (!term->getSigType().isSupply() && term->getBPins().size() == 1) {
       auto db_pin = (odb::dbBPin*) *term->getBPins().begin();
