@@ -88,6 +88,9 @@ class Parser
   void setBTerms(odb::dbBlock*);
   odb::Rect getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
                                           frLayerNum& finalLayerNum);
+  void setBTerms_addPinFig_helper(frBPin* pinIn,
+                                  odb::Rect bbox,
+                                  frLayerNum finalLayerNum);
   void setVias(odb::dbBlock*);
   void setNets(odb::dbBlock*);
   void setAccessPoints(odb::dbDatabase*);

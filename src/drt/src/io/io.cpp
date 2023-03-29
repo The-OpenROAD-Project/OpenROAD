@@ -909,13 +909,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       frLayerNum finalLayerNum = 0;
       odb::Rect bbox = getViaBoxForTermAboveMaxLayer(term, finalLayerNum);
       termIn->setIsAboveTopLayer(true);
-
-      unique_ptr<frRect> pinFig = make_unique<frRect>();
-      pinFig->setBBox(bbox);
-      pinFig->addToPin(pinIn.get());
-      pinFig->setLayerNum(finalLayerNum);
-      unique_ptr<frPinFig> uptr(std::move(pinFig));
-      pinIn->addPinFig(std::move(uptr));
+      setBTerms_addPinFig_helper(pinIn.get(), bbox, finalLayerNum);
     } else {
       for (auto pin : term->getBPins()) {
         for (auto box : pin->getBoxes()) {
@@ -930,12 +924,7 @@ void io::Parser::setBTerms(odb::dbBlock* block)
               = tech_->name2layer[box->getTechLayer()->getName()]
                     ->getLayerNum();
           frLayerNum finalLayerNum = layerNum;
-          unique_ptr<frRect> pinFig = make_unique<frRect>();
-          pinFig->setBBox(bbox);
-          pinFig->addToPin(pinIn.get());
-          pinFig->setLayerNum(finalLayerNum);
-          unique_ptr<frPinFig> uptr(std::move(pinFig));
-          pinIn->addPinFig(std::move(uptr));
+          setBTerms_addPinFig_helper(pinIn.get(), bbox, finalLayerNum);
         }
       }
     }
@@ -993,6 +982,18 @@ odb::Rect io::Parser::getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
   }
 
   return bbox;
+}
+
+void io::Parser::setBTerms_addPinFig_helper(frBPin* pinIn,
+                                            odb::Rect bbox,
+                                            frLayerNum finalLayerNum)
+{
+  unique_ptr<frRect> pinFig = make_unique<frRect>();
+  pinFig->setBBox(bbox);
+  pinFig->addToPin(pinIn);
+  pinFig->setLayerNum(finalLayerNum);
+  unique_ptr<frPinFig> uptr(std::move(pinFig));
+  pinIn->addPinFig(std::move(uptr));
 }
 
 void io::Parser::setAccessPoints(odb::dbDatabase* db)
