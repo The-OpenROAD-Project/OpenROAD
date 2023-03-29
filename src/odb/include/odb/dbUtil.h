@@ -107,8 +107,7 @@ class dbCreateNetUtil
                              int y2,
                              int rlevel,
                              bool skipBterms = false,
-                             bool skipNetExists = false,
-                             uint8_t color = 0);
+                             bool skipNetExists = false);
   dbNet* createNetSingleWire(const char* name,
                              int x1,
                              int y1,
