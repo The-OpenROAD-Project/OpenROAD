@@ -966,6 +966,46 @@ void io::Parser::setBTerms(odb::dbBlock* block)
   }
 }
 
+odb::Rect io::Parser::getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
+                                                    frLayerNum& finalLayerNum)
+{
+  odb::dbNet* net = term->getNet();
+  odb::dbWire* wire = net->getWire();
+  odb::Rect bbox = term->getBBox();
+  if (wire != nullptr) {
+    odb::dbWirePath path;
+    odb::dbWirePathShape pshape;
+    odb::dbWirePathItr pitr;
+    for (pitr.begin(wire); pitr.getNextPath(path);) {
+      while (pitr.getNextShape(pshape)) {
+        if (pshape.shape.isVia()) {
+          odb::dbTechVia* via = pshape.shape.getTechVia();
+          for (const auto& vbox : via->getBoxes()) {
+            frLayerNum layerNum
+                = tech_->name2layer[vbox->getTechLayer()->getName()]
+                      ->getLayerNum();
+            if (layerNum == TOP_ROUTING_LAYER) {
+              odb::Rect viaBox = vbox->getBox();
+              odb::dbTransform xform;
+              odb::Point path_origin = pshape.point;
+              xform.setOffset({path_origin.x(), path_origin.y()});
+              xform.setOrient(odb::dbOrientType(odb::dbOrientType::R0));
+              xform.apply(viaBox);
+              if (bbox.intersects(viaBox)) {
+                bbox = viaBox;
+                finalLayerNum = layerNum;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return bbox;
+}
+
 void io::Parser::setAccessPoints(odb::dbDatabase* db)
 {
   std::map<odb::dbAccessPoint*, frAccessPoint*> ap_map;
