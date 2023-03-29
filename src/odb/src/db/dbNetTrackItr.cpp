@@ -30,121 +30,94 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-/*-------------------------------------------------------------
-////	AUTHOR: SANJEEV MAHAJAN
----------------------------------------------------------------*/
-#pragma once
+// Generator Code Begin Cpp
+#include "dbNetTrackItr.h"
 
-#include <stdlib.h>
-
-#include "assert.h"
+#include "dbNetTrack.h"
+#include "dbTable.h"
+// User Code Begin Includes
+#include "dbNet.h"
+// User Code End Includes
 
 namespace odb {
 
-template <class T>
-class Darr
-{
- public:
-  Darr(int n = 0);
-  ~Darr(void);
-  void insert(T el);
-  void remove(int i);
-  T pop();
-  T get(int i);
-  void set(int i, T el);
-  int n();
-  void dsort(int cmp(const void* a, const void* b));
-  void reset(int n = 0);
+////////////////////////////////////////////////////////////////////
+//
+// dbNetTrackItr - Methods
+//
+////////////////////////////////////////////////////////////////////
 
- private:
-  T* _ar;
-  int _n;
-  int _tot;
-};
-
-template <class T>
-Darr<T>::Darr(int n)
+bool dbNetTrackItr::reversible()
 {
-  _n = 0;
-  _tot = n;
-  if (n == 0) {
-    _ar = NULL;
-    return;
+  return true;
+}
+
+bool dbNetTrackItr::orderReversed()
+{
+  return true;
+}
+
+void dbNetTrackItr::reverse(dbObject* parent)
+{
+  // User Code Begin reverse
+  _dbNet* _parent = (_dbNet*) parent;
+  uint id = _parent->tracks_;
+  uint list = 0;
+
+  while (id != 0) {
+    _dbNetTrack* _child = _net_tracks_tbl->getPtr(id);
+    uint n = _child->track_next_;
+    _child->track_next_ = list;
+    list = id;
+    id = n;
   }
-  _ar = new T[_tot];
-}
-template <class T>
-void Darr<T>::insert(T el)
-{
-  if (_n < _tot) {
-    _ar[_n++] = el;
-    return;
-  }
-  _tot = 2 * _tot + 1;
-  T* ara = new T[_tot];
-  int i;
-  for (i = 0; i < _n; i++)
-    ara[i] = _ar[i];
-  ara[_n++] = el;
-  if (_ar)
-    delete[] _ar;
-  _ar = ara;
-  return;
-}
-template <class T>
-void Darr<T>::remove(int i)
-{
-  assert(i < _n);
-  assert(i >= 0);
-  int j;
-  for (j = i + 1; j < _n; j++)
-    _ar[j - 1] = _ar[j];
-  _n--;
-}
-template <class T>
-T Darr<T>::pop()
-{
-  assert(_n > 0);
-  _n--;
-  return _ar[_n];
+  _parent->tracks_ = list;
+  // User Code End reverse
 }
 
-template <class T>
-T Darr<T>::get(int i)
+uint dbNetTrackItr::sequential()
 {
-  assert(i < _n);
-  assert(i >= 0);
-  return _ar[i];
-}
-template <class T>
-void Darr<T>::set(int i, T el)
-{
-  assert(i < _n);
-  assert(i >= 0);
-  _ar[i] = el;
-}
-template <class T>
-void Darr<T>::reset(int n)
-{
-  if (_n > n)
-    _n = n;
-  assert(_n <= _tot);
-}
-template <class T>
-int Darr<T>::n(void)
-{
-  return _n;
-}
-template <class T>
-Darr<T>::~Darr(void)
-{
-  if (_ar)
-    delete[] _ar;
-}
-template <class T>
-void Darr<T>::dsort(int cmp(const void* a, const void* b))
-{
-  qsort(_ar, _n, sizeof(T), cmp);
+  return 0;
 }
 
+uint dbNetTrackItr::size(dbObject* parent)
+{
+  uint id;
+  uint cnt = 0;
+
+  for (id = dbNetTrackItr::begin(parent); id != dbNetTrackItr::end(parent);
+       id = dbNetTrackItr::next(id))
+    ++cnt;
+
+  return cnt;
+}
+
+uint dbNetTrackItr::begin(dbObject* parent)
+{
+  // User Code Begin begin
+  _dbNet* _parent = (_dbNet*) parent;
+  return _parent->tracks_;
+  // User Code End begin
+}
+
+uint dbNetTrackItr::end(dbObject* /* unused: parent */)
+{
+  return 0;
+}
+
+uint dbNetTrackItr::next(uint id, ...)
+{
+  // User Code Begin next
+  _dbNetTrack* _track = _net_tracks_tbl->getPtr(id);
+  return _track->track_next_;
+  // User Code End next
+}
+
+dbObject* dbNetTrackItr::getObject(uint id, ...)
+{
+  return _net_tracks_tbl->getPtr(id);
+}
+// User Code Begin Methods
+// User Code End Methods
 }  // namespace odb
+   // Generator Code End Cpp

@@ -99,13 +99,6 @@ class extSpef
   void initSearchForNets();
   uint addNetShapesOnSearch(uint netId);
   void searchDealloc();
-  void getAnchorCoords(odb::dbNet* net,
-                       uint shapeId,
-                       int* x1,
-                       int* y1,
-                       int* x2,
-                       int* y2,
-                       odb::dbTechLayer** layer);
   uint writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet);
 
   void setupMappingForWrite(uint btermCnt = 0, uint itermCnt = 0);
@@ -113,7 +106,6 @@ class extSpef
   void preserveFlag(bool v);
   void setCornerCnt(uint n);
 
-  void incr_wRun() { _wRun++; };
   void incr_rRun() { _rRun++; };
   void writeCNodeNumber();
   odb::dbBlock* getBlock() { return _block; }
@@ -317,9 +309,6 @@ class extSpef
   uint writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId);
   uint writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
   uint writeCouplingCapsNoSort(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
-  bool newCouplingCap(char* nodeWord1, char* nodeword2, char* capWord);
-  uint getCouplingCapId(uint ccNode1, uint ccNode2);
-  void addCouplingCapId(uint ccId);
   void setSpefFlag(bool v);
   void setExtIds(odb::dbNet* net);
   void setExtIds();
@@ -437,7 +426,6 @@ class extSpef
 
   uint _tnetCnt;
 
-  uint _wRun;
   bool _wOnlyClock;
   bool _wConn;
   bool _wCap;
@@ -463,7 +451,6 @@ class extSpef
   Ath__nameTable* _notFoundInst;
   Ath__nameTable* _nodeHashTable;
   uint _tmpCapId;
-  Ath__nameTable* _node2nodeHashTable;
   char _tmpBuff1[1024];
   char _tmpBuff2[1024];
 

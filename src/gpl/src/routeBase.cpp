@@ -431,13 +431,13 @@ static float getUsageCapacityRatio(Tile* tile,
 
   // escape tile ratio cals when capacity = 0
   if (curCap == 0) {
-    return -1 * FLT_MAX;
+    return std::numeric_limits<float>::lowest();
   }
 
   // ignore if blockage is too huge in current tile
   float blockageRatio = static_cast<float>(blockage) / curCap;
   if (blockageRatio >= ignoreEdgeRatio) {
-    return -1 * FLT_MAX;
+    return std::numeric_limits<float>::lowest();
   }
 
   // return usage (used routing track + blockage) / total capacity

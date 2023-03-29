@@ -49,6 +49,9 @@
       "src":"dbGuide.json"
     },
     {
+      "src":"dbNetTrack.json"
+    },
+    {
       "src":"dbMetalWidthViaMap.json"
     },
     {
@@ -419,6 +422,14 @@
       "name": "dbGuideItr",
       "parentObject": "dbGuide",
       "tableName": "guide_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0
+    },
+    {
+      "name": "dbNetTrackItr",
+      "parentObject": "dbNetTrack",
+      "tableName": "net_tracks_tbl",
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0

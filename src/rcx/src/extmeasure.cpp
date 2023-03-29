@@ -324,8 +324,7 @@ uint extMeasure::createContextNets(char* dirName,
   dbTechLayer* mlayer = _tech->findRoutingLayer(_met);
   uint minWidth = layer->getWidth();
   uint minSpace = layer->getSpacing();
-  int pitch
-      = Ath__double2int(1000 * ((minWidth + minSpace) * pitchMult) / 1000);
+  int pitch = lround(1000 * ((minWidth + minSpace) * pitchMult) / 1000);
 
   int ll[2];
   int ur[2];

@@ -115,6 +115,13 @@ import_out_file_cmd(const char* out_file)
   pdnsim->import_out_file(out_file);
 }
 
+void
+import_error_file_cmd(const char* error_file)
+{
+  PDNSim* pdnsim = getPDNSim();
+  pdnsim->import_error_file(error_file);
+}
+
 void 
 import_em_out_file_cmd(const char* out_file)
 {
