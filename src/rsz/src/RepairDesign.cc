@@ -167,18 +167,18 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
   resizer_->incrementalParasiticsBegin();
   int max_length = resizer_->metersToDbu(max_wire_length);
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
-    if(i%100 == 0) printf("Iter: %d\n", i);
+    if(i % 100 == 0) printf("Iter: %d -- %ld\n", i, resizer_->level_drvr_vertices_.size() - i);
     Vertex *drvr = resizer_->level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
     Net *net = network_->isTopLevelPort(drvr_pin)
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
-    bool debug = (drvr_pin == resizer_->debug_pin_);
+    bool debug = (drvr_pin == resizer_->debug_pin_); 
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     if (net
         && !resizer_->dontTouch(net)
-        && !sta_->isClock(drvr_pin)
+        //&& !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant())
       repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
@@ -186,6 +186,10 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                 fanout_violations, length_violations);
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 0);
+    // prints to debug
+    //printf("DebugPython slewViol : %d fanoutViol : %d capViol : %d lengthViol : %d\n", slew_violations, fanout_violations, cap_violations, length_violations);
+    //printf("DebugPython Inserted %d buffers in %d nets.\n", inserted_buffer_count_, repaired_net_count);
+    //printf("DebugPython Resized %d instances.\n", resize_count_); 
   }
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
