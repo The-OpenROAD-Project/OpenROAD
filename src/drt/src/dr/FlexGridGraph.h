@@ -1058,7 +1058,7 @@ class FlexGridGraph
       logger_->error(utl::DRT, 551, "subFromByte underflow");
     }
 #endif
-    return std::max(minuend - subtrahend, 0u);
+    return std::max((int) (minuend - subtrahend), 0);
   }
 
   // internal utility
