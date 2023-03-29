@@ -534,6 +534,7 @@ protected:
   void journalEnd();
   void journalRestore(int &resize_count,
                       int &inserted_buffer_count);
+  void journalSwapPins(Instance *inst, LibertyPort *pin1, LibertyPort *pin2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
 
@@ -617,6 +618,7 @@ protected:
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
+  Map<Instance *, std::tuple<LibertyPort *, LibertyPort *>> swapped_pins_;
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
