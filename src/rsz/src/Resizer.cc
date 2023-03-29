@@ -61,6 +61,7 @@
 #include "sta/StaMain.hh"
 #include "sta/Fuzzy.hh"
 
+
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
 namespace sta {
@@ -875,9 +876,12 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
     LibertyPort *port1, *port2;
 
     // Add support for undo.
-    //if (journal)
-    //  journalInstReplaceCellBefore(inst);
+    if (journal) {
+      journalSwapPins(inst, pin1, pin2);
+      printf("Added crap to the journal....\n");
+    }
 
+    printf("%s %s %s ", (journal?"OG SWAP":"UNDO SWAP"), pin1->name(), pin2->name());
     InstancePinIterator *pin_iter = network_->pinIterator(inst);
     found_pin1 = found_pin2 = nullptr;
     net1 = net2 = nullptr;
@@ -897,8 +901,9 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
         }
     }
 
-    if (pin1 != nullptr && pin2 != nullptr) {
+    if (net1 != nullptr && net2 != nullptr) {
         // Swap the ports and nets
+        printf("Actually made the swap\n");
         sta_->disconnectPin(found_pin1);
         sta_->connectPin(inst, port1, net2);
         sta_->disconnectPin(found_pin2);
@@ -922,6 +927,9 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
             }
             delete pin_iter;
         }
+    }
+    else {
+        printf("Did not made the swap\n");
     }
 }
 
@@ -2441,6 +2449,7 @@ Resizer::journalBegin()
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   resized_inst_map_.clear();
   inserted_buffers_.clear();
+  swapped_pins_.clear();
 }
 
 void
@@ -2449,6 +2458,15 @@ Resizer::journalEnd()
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   resized_inst_map_.clear();
   inserted_buffers_.clear();
+  swapped_pins_.clear();
+}
+
+void
+Resizer::journalSwapPins(Instance *inst, LibertyPort *pin1,
+                         LibertyPort *pin2)
+{
+  printf("PPPPXXXXXX %d\n", swapped_pins_.size());
+  swapped_pins_[inst] = std::make_tuple(pin1, pin2);
 }
 
 void
@@ -2485,6 +2503,8 @@ Resizer::journalRestore(int &resize_count,
       resize_count--;
     }
   }
+  inserted_buffer_set_.clear();
+
   while (!inserted_buffers_.empty()) {
   const Instance *buffer = inserted_buffers_.back();
     debugPrint(logger_, RSZ, "journal", 1, "journal remove {}",
@@ -2493,7 +2513,19 @@ Resizer::journalRestore(int &resize_count,
     inserted_buffers_.pop_back();
     inserted_buffer_count--;
   }
-  inserted_buffer_set_.clear();
+
+  for (auto element : swapped_pins_) {
+    printf("XXXXXX %d\n", swapped_pins_.size());
+    Instance *inst = element.first;
+    LibertyPort *port1 = std::get<0>(element.second);
+    LibertyPort *port2 = std::get<1>(element.second);
+    debugPrint(logger_, RSZ, "journal", 1,
+               "journal swap pins {}  {}--->{} ",
+                "inst", port1->name(), port2->name());
+    swapPins(inst, port2, port1, false);
+  }
+  swapped_pins_.clear();
+
 }
 
 ////////////////////////////////////////////////////////////////

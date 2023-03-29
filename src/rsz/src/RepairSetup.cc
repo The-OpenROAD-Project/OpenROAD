@@ -466,11 +466,10 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
                                            dcalc_ap, &swap_port);
             if (!swap_port->equiv(swap_port, input_port)) {
                 // FIXME: Change to debug log.
-                //debugPrint(logger_, RSZ, "repair_setup", 3, "rebuffer {} inserted {}",
-                //           network_->pathName(drvr_pin),
-                //           rebuffer_count);
-                printf("Swap %s (%s) %s %s\n", network_->name(drvr), cell->name(),
-                       input_port->name(), swap_port->name());
+                debugPrint(logger_, RSZ, "repair_setup", 3,
+                           "Swap {} ({}) {} {}",
+                           network_->name(drvr), cell->name(),
+                           input_port->name(), swap_port->name());
                 resizer_->swapPins(drvr, input_port, swap_port, true);
                 swap_pin_count_++;
                 return true;
