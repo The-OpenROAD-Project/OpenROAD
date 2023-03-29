@@ -82,7 +82,8 @@ class BufferTreeDescriptor : public Descriptor
   BufferTreeDescriptor(odb::dbDatabase* db,
                        sta::dbSta* sta,
                        const std::set<odb::dbNet*>& focus_nets,
-                       const std::set<odb::dbNet*>& guide_nets);
+                       const std::set<odb::dbNet*>& guide_nets,
+                       const std::set<odb::dbNet*>& tracks_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -102,6 +103,7 @@ class BufferTreeDescriptor : public Descriptor
   const Descriptor* net_descriptor_;
   const std::set<odb::dbNet*>& focus_nets_;
   const std::set<odb::dbNet*>& guide_nets_;
+  const std::set<odb::dbNet*>& tracks_nets_;
 };
 
 }  // namespace gui

@@ -65,12 +65,13 @@ class PDNSim
 
   void init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta);
 
-  void import_vsrc_cfg(std::string vsrc);
-  void import_out_file(std::string out_file);
-  void import_em_out_file(std::string em_out_file);
+  void import_vsrc_cfg(const std::string& vsrc);
+  void import_out_file(const std::string& out_file);
+  void import_error_file(const std::string& error_file);
+  void import_em_out_file(const std::string& em_out_file);
   void import_enable_em(bool enable_em);
-  void import_spice_out_file(std::string out_file);
-  void set_power_net(std::string net);
+  void import_spice_out_file(const std::string& out_file);
+  void set_power_net(const std::string& net);
   void set_bump_pitch_x(float bump_pitch);
   void set_bump_pitch_y(float bump_pitch);
   void set_node_density(float node_density);
@@ -85,22 +86,23 @@ class PDNSim
   void setDebugGui();
 
  private:
-  odb::dbDatabase* db_;
-  sta::dbSta* sta_;
-  utl::Logger* logger_;
+  odb::dbDatabase* db_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
+  utl::Logger* logger_ = nullptr;
   std::string vsrc_loc_;
   std::string out_file_;
+  std::string error_file_;
   std::string em_out_file_;
-  bool enable_em_;
-  int bump_pitch_x_;
-  int bump_pitch_y_;
+  bool enable_em_ = false;
+  int bump_pitch_x_ = 0;
+  int bump_pitch_y_ = 0;
   std::string spice_out_file_;
   std::string power_net_;
   std::map<std::string, float> net_voltage_map_;
   IRDropByLayer ir_drop_;
-  float node_density_;
-  int node_density_factor_;
-  float min_resolution_;
+  float node_density_ = -1;
+  int node_density_factor_ = 0;
+  float min_resolution_ = -1;
   std::unique_ptr<DebugGui> debug_gui_;
   std::unique_ptr<IRDropDataSource> heatmap_;
 };

@@ -52,8 +52,6 @@ class dbBlock;
 class dbBox;
 using uint = unsigned int;
 
-int Ath__double2int(double v);
-
 // Simple list
 template <class T>
 class AthList
