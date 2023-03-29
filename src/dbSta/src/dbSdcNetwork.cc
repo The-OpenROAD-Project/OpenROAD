@@ -75,8 +75,9 @@ dbSdcNetwork::findInstancesMatching(const Instance*,
       insts.push_back(inst);
     else {
       // Look for a match with path dividers escaped.
-      const char* escaped = escapeChars(pattern->pattern(), divider_, '\0', escape_);
-      inst = findInstance(escaped);
+      std::string escaped = escapeChars(pattern->pattern(), divider_, '\0',
+                                        escape_);
+      inst = findInstance(escaped.c_str());
       if (inst)
         insts.push_back(inst);
       else
@@ -114,8 +115,9 @@ dbSdcNetwork::findNetsMatching(const Instance*,
       nets.push_back(net);
     else {
       // Look for a match with path dividers escaped.
-      const char* escaped = escapeChars(pattern->pattern(), divider_, '\0', escape_);
-      net = findNet(escaped);
+      std::string escaped = escapeChars(pattern->pattern(), divider_, '\0',
+                                            escape_);
+      net = findNet(escaped.c_str());
       if (net)
         nets.push_back(net);
       else
@@ -240,13 +242,13 @@ escapeDividers(const char* token, const Network* network)
       token,
       network->pathDivider(),
       '\0',
-      network->pathEscape());
+      network->pathEscape()).c_str();
 }
 
 static const char*
 escapeBrackets(const char* token, const Network* network)
 {
-  return escapeChars(token, '[', ']', network->pathEscape());
+  return escapeChars(token, '[', ']', network->pathEscape()).c_str();
 }
 
 }  // namespace sta
