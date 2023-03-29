@@ -35,6 +35,8 @@
 
 include("openroad")
 
+option(DEBUG_DRT_UNDERFLOW "Check for underflow in drt cost calculations" OFF)
+
 project(drt
   LANGUAGES CXX
 )
@@ -206,6 +208,13 @@ endif()
 
 add_test(NAME trTest COMMAND trTest)
 add_dependencies(build_and_test trTest)
+
+if(DEBUG_DRT_UNDERFLOW)
+  target_compile_definitions(drt
+    PRIVATE
+    DEBUG_DRT_UNDERFLOW=1
+  )
+endif()
 
 ############################################################
 # VTune ITT API
