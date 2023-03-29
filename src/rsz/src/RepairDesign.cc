@@ -178,7 +178,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     if (net
         && !resizer_->dontTouch(net)
-        //&& !sta_->isClock(drvr_pin)
+        && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant())
       repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
