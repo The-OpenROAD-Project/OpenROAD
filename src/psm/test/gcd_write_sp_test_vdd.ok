@@ -16,5 +16,5 @@
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VDD are connected.
 Differences found at line 18.
-I0 VDD_136140_179200_1 0 3.35398e-07
+I0 VDD_136140_179200_1 0 3.0845e-07
 I0 VDD_136140_179200_1 0 1.74544e-07

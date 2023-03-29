@@ -53,6 +53,7 @@ target_link_libraries(dpl_lib
   PUBLIC
     odb
     OpenSTA
+    tcl
   PRIVATE
     utl
 )
