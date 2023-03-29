@@ -404,16 +404,6 @@ bool Opendp::isBlock(const Cell* cell)
   return type == dbMasterType::BLOCK;
 }
 
-int Opendp::gridEndX() const
-{
-  return gridEndX(core_.dx());
-}
-
-int Opendp::gridEndY() const
-{
-  return gridEndY(core_.dy());
-}
-
 int Opendp::padLeft(const Cell* cell) const
 {
   return padLeft(cell->db_inst_);
@@ -456,19 +446,25 @@ int Opendp::padRight(dbInst* inst) const
   return 0;
 }
 
+int Opendp::paddedWidth(const Cell* cell, int site_width) const
+{
+  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width;
+}
+
 int Opendp::paddedWidth(const Cell* cell) const
 {
-  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width_;
+  int site_width = getSiteWidth(cell);
+  return cell->width_ + (padLeft(cell) + padRight(cell)) * site_width;
 }
 
-int Opendp::gridPaddedWidth(const Cell* cell) const
+int Opendp::gridPaddedWidth(const Cell* cell, int site_width) const
 {
-  return divCeil(paddedWidth(cell), site_width_);
+  return divCeil(paddedWidth(cell), site_width);
 }
 
-int Opendp::gridHeight(const Cell* cell) const
+int Opendp::gridHeight(const Cell* cell, int row_height) const
 {
-  return divCeil(cell->height_, row_height_);
+  return divCeil(cell->height_, row_height);
 }
 
 int64_t Opendp::paddedArea(const Cell* cell) const
@@ -477,74 +473,115 @@ int64_t Opendp::paddedArea(const Cell* cell) const
 }
 
 // Callers should probably be using gridPaddedWidth.
+int Opendp::gridNearestWidth(const Cell* cell, int site_width) const
+{
+  return divRound(paddedWidth(cell), site_width);
+}
+
 int Opendp::gridNearestWidth(const Cell* cell) const
 {
-  return divRound(paddedWidth(cell), site_width_);
+  int site_width = getSiteWidth(cell);
+  return divRound(paddedWidth(cell), site_width);
 }
 
 // Callers should probably be using gridHeight.
+int Opendp::gridNearestHeight(const Cell* cell, int row_height) const
+{
+  return divRound(cell->height_, row_height);
+}
+
 int Opendp::gridNearestHeight(const Cell* cell) const
 {
-  return divRound(cell->height_, row_height_);
+  int row_height = getRowHeight(cell);
+  return divRound(cell->height_, row_height);
 }
 
-int Opendp::gridX(int x) const
+int Opendp::gridEndX(int x, int site_width) const
 {
-  return x / site_width_;
+  return divCeil(x, site_width);
 }
 
-int Opendp::gridEndX(int x) const
+int Opendp::gridY(int y, int row_height) const
 {
-  return divCeil(x, site_width_);
+  return y / row_height;
 }
 
-int Opendp::gridY(int y) const
+int Opendp::gridEndY(int y, int row_height) const
 {
-  return y / row_height_;
+  return divCeil(y, row_height);
 }
 
-int Opendp::gridEndY(int y) const
+int Opendp::gridX(int x, int site_width) const
 {
-  return divCeil(y, row_height_);
+  return x / site_width;
+}
+
+int Opendp::gridX(const Cell* cell, int site_width) const
+{
+  return gridX(cell->x_, site_width);
 }
 
 int Opendp::gridX(const Cell* cell) const
 {
-  return gridX(cell->x_);
+  return gridX(cell->x_, getSiteWidth(cell));
 }
 
 int Opendp::gridPaddedX(const Cell* cell) const
 {
-  return gridX(cell->x_ - padLeft(cell) * site_width_);
+  return gridX(cell->x_ - padLeft(cell) * getSiteWidth(cell),
+               getSiteWidth(cell));
+}
+
+int Opendp::getRowHeight(const Cell* cell) const
+{
+  if (grid_layers_.empty()) {
+    logger_->error(DPL, 41, "No grid layers mapped.");
+  }
+  auto layer = this->grid_layers_.lower_bound(cell->height_);
+  if (layer == this->grid_layers_.end()) {
+    // this means the cell is taller than any layer
+    logger_->error(DPL, 1, "Cell {} is taller than any row.", cell->name());
+  }
+  return layer->first;
+}
+
+int Opendp::getSiteWidth(const Cell* cell) const
+{
+  // TODO: this is not complete, it is here so that future changes to the code
+  // are easier
+  return site_width_;
 }
 
 int Opendp::gridY(const Cell* cell) const
 {
-  return gridY(cell->y_);
+  int row_height = getRowHeight(cell);
+  return gridY(cell->y_, row_height);
 }
 
-void Opendp::setGridPaddedLoc(Cell* cell, int x, int y) const
+void Opendp::setGridPaddedLoc(Cell* cell,
+                              int x,
+                              int y,
+                              int site_width,
+                              int row_height) const
 {
-  cell->x_ = (x + padLeft(cell)) * site_width_;
-  cell->y_ = y * row_height_;
+  cell->x_ = (x + padLeft(cell)) * site_width;
+  cell->y_ = y * row_height;
 }
 
-int Opendp::gridPaddedEndX(const Cell* cell) const
+int Opendp::gridPaddedEndX(const Cell* cell, int site_width) const
 {
-  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width_,
-                 site_width_);
+  return divCeil(cell->x_ + cell->width_ + padRight(cell) * site_width,
+                 site_width);
 }
 
-int Opendp::gridEndX(const Cell* cell) const
+int Opendp::gridEndX(const Cell* cell, int site_width) const
 {
-  // TODO: this is wrong for cells that span multiple columns
-  return divCeil(cell->x_ + cell->width_, site_width_);
+  return divCeil(cell->x_ + cell->width_, site_width);
 }
 
-int Opendp::gridEndY(const Cell* cell) const
+int Opendp::gridEndY(const Cell* cell, int row_height) const
 {
-  // TODO: this is wrong for cells that span multiple rows
-  return divCeil(cell->y_ + cell->height_, row_height_);
+  return divCeil(cell->y_ + cell->height_, row_height);
 }
 
 double Opendp::dbuToMicrons(int64_t dbu) const

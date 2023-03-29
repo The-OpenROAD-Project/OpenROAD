@@ -235,6 +235,7 @@ class Opendp
   void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
+  void initGridLayersMap();
   void detailedPlacement();
   Point nearestPt(const Cell* cell, const Rect* rect) const;
   int distToRect(const Cell* cell, const Rect* rect) const;
@@ -336,28 +337,41 @@ class Opendp
   void deleteGrid();
   Pixel* gridPixel(int layer_idx, int x, int y) const;
   // Cell initial location wrt core origin.
-  int gridX(int x) const;
-  int gridY(int y) const;
-  int gridEndX(int x) const;
-  int gridEndY(int y) const;
-  int gridEndX() const;
-  int gridEndY() const;
-  int gridPaddedWidth(const Cell* cell) const;
+  int getRowHeight(const Cell* cell) const;
+  int getSiteWidth(const Cell* cell) const;
+  int gridPaddedWidth(const Cell* cell, int site_width) const;
   int64_t paddedArea(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell) const;
+  int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
-  int gridHeight(const Cell* cell) const;
+  int gridNearestWidth(const Cell* cell, int site_width) const;
+  int gridHeight(const Cell* cell, int row_height) const;
+  int gridX(int x, int site_width) const;
   int gridX(const Cell* cell) const;
+  int gridX(const Cell* cell, int site_width) const;
   int gridPaddedX(const Cell* cell) const;
+  int gridPaddedX(const Cell* cell, int site_width) const;
+  int gridY(int y, int row_height) const;
   int gridY(const Cell* cell) const;
+  int gridY(const Cell* cell, int row_height) const;
   int gridPaddedEndX(const Cell* cell) const;
+  int gridPaddedEndX(const Cell* cell, int site_width) const;
+  int gridEndX(int x, int site_width) const;
   int gridEndX(const Cell* cell) const;
+  int gridEndX(const Cell* cell, int site_width) const;
+  int gridEndY(int y, int row_height) const;
   int gridEndY(const Cell* cell) const;
-  void setGridPaddedLoc(Cell* cell, int x, int y) const;
+  int gridEndY(const Cell* cell, int row_height) const;
+  void setGridPaddedLoc(Cell* cell,
+                        int x,
+                        int y,
+                        int site_width,
+                        int row_height) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   bool isStdCell(const Cell* cell) const;
   static bool isBlock(const Cell* cell);
+  int paddedWidth(const Cell* cell, int site_width) const;
   int paddedWidth(const Cell* cell) const;
   bool isPaddedType(dbInst* inst) const;
   int padLeft(const Cell* cell) const;

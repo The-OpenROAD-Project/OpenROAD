@@ -55,6 +55,20 @@ using utl::DPL;
 using odb::dbBox;
 using odb::dbTransform;
 
+void Opendp::initGridLayersMap()
+{
+  int grid_index = 0;
+  for (auto db_row : block_->getRows()) {
+    if (grid_layers_.find(db_row->getSite()->getHeight())
+        == grid_layers_.end()) {
+      grid_layers_[db_row->getSite()->getHeight()]
+          = {1, db_row->getSiteCount(), grid_index++};
+    } else {
+      grid_layers_[db_row->getSite()->getHeight()].row_count++;
+    }
+  }
+}
+
 void Opendp::initGrid()
 {
   // the number of layers in the grid is the number of unique row heights
@@ -62,16 +76,7 @@ void Opendp::initGrid()
   // count
 
   if (grid_layers_.empty()) {
-    int grid_index = 0;
-    for (auto db_row : block_->getRows()) {
-      if (grid_layers_.find(db_row->getSite()->getHeight())
-          == grid_layers_.end()) {
-        grid_layers_[db_row->getSite()->getHeight()]
-            = {1, db_row->getSiteCount(), grid_index++};
-      } else {
-        grid_layers_[db_row->getSite()->getHeight()].row_count++;
-      }
-    }
+    initGridLayersMap();
   }
 
   grid_depth_ = grid_layers_.size();
@@ -239,10 +244,10 @@ void Opendp::visitCellPixels(
                      "row-height in the grid.",
                      cell.name(),
                      cell.height_);
-      return;
     }
     auto layer_info = layer->second;
     int layer_idx = layer_info.grid_index;
+    int layer_height = layer->first;
 
     int y_start = gridY(&cell);
     int y_end = gridEndY(&cell);
