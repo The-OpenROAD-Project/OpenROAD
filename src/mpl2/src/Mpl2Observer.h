@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,62 +38,33 @@
 #include <optional>
 #include <vector>
 
-#include "Mpl2Observer.h"
-#include "gui/gui.h"
+#include "object.h"
+#include "utl/Logger.h"
 
 namespace mpl2 {
-class SoftMacro;
-class HardMacro;
 
-class Graphics : public gui::Renderer, public Mpl2Observer
+class Mpl2Observer
 {
  public:
-  Graphics(int dbu, utl::Logger* logger);
+  Mpl2Observer() = default;
+  virtual ~Mpl2Observer() = default;
 
-  virtual ~Graphics() = default;
+  virtual void startSA(){};
+  virtual void saStep(const std::vector<SoftMacro>& macros){};
+  virtual void saStep(const std::vector<HardMacro>& macros){};
+  virtual void endSA(){};
 
-  void startSA() override;
-  void saStep(const std::vector<SoftMacro>& macros) override;
-  void saStep(const std::vector<HardMacro>& macros) override;
-  void endSA() override;
-
-  void setAreaPenalty(float area) override;
-  void setOutlinePenalty(float outline_penalty,
-                         float outline_width,
-                         float outline_height) override;
-  void setWirelength(float wirelength) override;
-  void setFencePenalty(float fence_penalty);
-  void setGuidancePenalty(float guidance_penalty) override;
-  void setBoundaryPenalty(float boundary_penalty) override;
-  void setMacroBlockagePenalty(float macro_blockage_penalty) override;
-  void setNotchPenalty(float notch_penalty) override;
-  void penaltyCalculated(float norm_cost) override;
-
-  void drawObjects(gui::Painter& painter) override;
-
- private:
-  void resetPenalties();
-
-  template <typename T>
-  void report(const char* name, const std::optional<T>& value);
-
-  std::vector<SoftMacro> soft_macros_;
-  std::vector<HardMacro> hard_macros_;
-  int dbu_ = 0;
-  utl::Logger* logger_;
-  std::optional<float> outline_penalty_;
-  std::optional<float> fence_penalty_;
-  std::optional<float> wirelength_;
-  std::optional<float> guidance_penalty_;
-  std::optional<float> boundary_penalty_;
-  std::optional<float> macro_blockage_penalty_;
-  std::optional<float> notch_penalty_;
-  std::optional<float> area_penalty_;
-
-  std::optional<float> outline_width_;
-  std::optional<float> outline_height_;
-  float best_norm_cost_ = 0;
-  int skipped_ = 0;
+  virtual void setAreaPenalty(float area){};
+  virtual void setOutlinePenalty(float outline_penalty,
+                                 float outline_width,
+                                 float outline_height){};
+  virtual void setWirelength(float wirelength){};
+  virtual void setFencePenalty(float fence_penalty){};
+  virtual void setGuidancePenalty(float guidance_penalty){};
+  virtual void setBoundaryPenalty(float boundary_penalty){};
+  virtual void setMacroBlockagePenalty(float macro_blockage_penalty){};
+  virtual void setNotchPenalty(float notch_penalty){};
+  virtual void penaltyCalculated(float norm_cost){};
 };
 
 }  // namespace mpl2

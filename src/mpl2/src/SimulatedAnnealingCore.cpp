@@ -36,7 +36,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "graphics.h"
+#include "Mpl2Observer.h"
 #include "object.h"
 #include "utl/Logger.h"
 
@@ -69,7 +69,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     int k,
     int c,
     unsigned seed,
-    Graphics* graphics,
+    Mpl2Observer* graphics,
     utl::Logger* logger)
     : graphics_(graphics)
 {
