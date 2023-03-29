@@ -50,7 +50,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
  public:
   Graphics(int dbu, utl::Logger* logger);
 
-  virtual ~Graphics() = default;
+  ~Graphics() override = default;
 
   void startSA() override;
   void saStep(const std::vector<SoftMacro>& macros) override;
@@ -62,7 +62,7 @@ class Graphics : public gui::Renderer, public Mpl2Observer
                          float outline_width,
                          float outline_height) override;
   void setWirelength(float wirelength) override;
-  void setFencePenalty(float fence_penalty);
+  void setFencePenalty(float fence_penalty) override;
   void setGuidancePenalty(float guidance_penalty) override;
   void setBoundaryPenalty(float boundary_penalty) override;
   void setMacroBlockagePenalty(float macro_blockage_penalty) override;
