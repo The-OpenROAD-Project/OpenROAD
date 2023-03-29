@@ -45,8 +45,9 @@ class FlexGridGraph
 {
  public:
   // constructors
-  FlexGridGraph(frTechObject* techIn, FlexDRWorker* workerIn)
+  FlexGridGraph(frTechObject* techIn, Logger* loggerIn, FlexDRWorker* workerIn)
       : tech_(techIn),
+        logger_(loggerIn),
         drWorker_(workerIn),
         graphics_(nullptr),
         xCoords_(),
@@ -892,8 +893,15 @@ class FlexGridGraph
 
  private:
   frTechObject* tech_;
+  Logger* logger_;
   FlexDRWorker* drWorker_;
   FlexDRGraphics* graphics_;  // owned by FlexDR
+                              //
+#ifdef DEBUG_DRT_UNDERFLOW
+  static constexpr int cost_bits = 16;
+#else
+  static constexpr int cost_bits = 8;
+#endif
 
   struct Node
   {
@@ -917,17 +925,17 @@ class FlexGridGraph
     frUInt4 unused4 : 1;
     frUInt4 unused5 : 1;
     // Byte 2
-    frUInt4 routeShapeCostPlanar : 8;
+    frUInt4 routeShapeCostPlanar : cost_bits;
     // Byte 3
-    frUInt4 routeShapeCostVia : 8;
+    frUInt4 routeShapeCostVia : cost_bits;
     // Byte4
-    frUInt4 markerCostPlanar : 8;
+    frUInt4 markerCostPlanar : cost_bits;
     // Byte5
-    frUInt4 markerCostVia : 8;
+    frUInt4 markerCostVia : cost_bits;
     // Byte6
-    frUInt4 fixedShapeCostVia : 8;
+    frUInt4 fixedShapeCostVia : cost_bits;
     // Byte7
-    frUInt4 fixedShapeCostPlanar : 8;
+    frUInt4 fixedShapeCostPlanar : cost_bits;
 
     template <class Archive>
     void serialize(Archive& ar, const unsigned int version)
@@ -937,7 +945,9 @@ class FlexGridGraph
     }
     friend class boost::serialization::access;
   };
+#ifndef DEBUG_DRT_UNDERFLOW
   static_assert(sizeof(Node) == 8);
+#endif
   frVector<Node> nodes_;
   std::vector<bool> prevDirs_;
   std::vector<bool> srcs_;
@@ -1029,13 +1039,26 @@ class FlexGridGraph
 
   frUInt4 addToByte(frUInt4 augend, frUInt4 summand)
   {
-    constexpr frUInt4 limit = (1u << 8) - 1;
-    return std::min(augend + summand, limit);
+    frUInt4 result = augend + summand;
+    constexpr frUInt4 limit = (1u << cost_bits) - 1;
+#ifdef DEBUG_DRT_UNDERFLOW
+    if (result > limit) {
+      logger_->error(utl::DRT, 550, "addToByte overflow");
+    }
+#else
+    result = std::min(result, limit);
+#endif
+    return result;
   }
 
   frUInt4 subFromByte(frUInt4 minuend, frUInt4 subtrahend)
   {
-    return std::max(minuend - subtrahend, 0u);
+#ifdef DEBUG_DRT_UNDERFLOW
+    if (subtrahend > minuend) {
+      logger_->error(utl::DRT, 551, "subFromByte underflow");
+    }
+#endif
+    return std::max((int) (minuend - subtrahend), 0);
   }
 
   // internal utility

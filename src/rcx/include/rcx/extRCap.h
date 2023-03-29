@@ -35,7 +35,6 @@
 #include <map>
 
 #include "ZObject.h"
-#include "darr.h"
 #include "db.h"
 #include "dbExtControl.h"
 #include "dbShape.h"
@@ -58,7 +57,6 @@ class extMeasure;
 using odb::Ath__array1D;
 using odb::Ath__gridTable;
 using odb::AthPool;
-using odb::Darr;
 using odb::uint;
 using utl::Logger;
 

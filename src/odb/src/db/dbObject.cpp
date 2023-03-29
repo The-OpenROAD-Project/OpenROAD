@@ -332,8 +332,13 @@ void dbObject::getDbName(char name[max_name_length]) const
         break;
       case dbAccessPointObj:
         *cptr++ = 'h';
+        break;
       case dbGuideObj:
         *cptr++ = ';';
+        id = impl->getOID();
+        break;
+      case dbNetTrackObj:
+        *cptr++ = '~';
         id = impl->getOID();
         break;
       case dbMetalWidthViaMapObj:
@@ -668,6 +673,10 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
         oid = getOid(name);
         obj = dbGuide::getGuide((dbBlock*) obj, oid);
         break;
+      case '~':
+        oid = getOid(name);
+        obj = dbNetTrack::getNetTrack((dbBlock*) obj, oid);
+        break;
       case '^':
         oid = getOid(name);
         obj = dbMetalWidthViaMap::getMetalWidthViaMap((dbTech*) obj, oid);
@@ -739,6 +748,7 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbTechLayerWidthTableRule",
                                  "dbTechLayerMinCutRule",
                                  "dbGuide",
+                                 "dbNetTrack",
                                  "dbMetalWidthViaMap",
                                  "dbTechLayerAreaRule",
                                  "dbModule",

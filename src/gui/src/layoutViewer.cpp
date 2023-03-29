@@ -2286,6 +2286,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     if (draw_shapes) {
       drawTracks(layer, painter, bounds);
       drawRouteGuides(gui_painter, layer);
+      drawNetTracks(gui_painter, layer);
     }
 
     for (auto* renderer : renderers) {
@@ -2430,6 +2431,22 @@ void LayoutViewer::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
     }
   }
 }
+
+void LayoutViewer::drawNetTracks(Painter& painter, odb::dbTechLayer* layer)
+{
+  if (net_tracks_.empty())
+    return;
+  painter.setPen(layer);
+  painter.setBrush(layer);
+  for (auto net : net_tracks_) {
+    for (auto track : net->getTracks()) {
+      if (track->getLayer() != layer)
+        continue;
+      painter.drawRect(track->getBox());
+    }
+  }
+}
+
 void LayoutViewer::drawAccessPoints(Painter& painter,
                                     const std::vector<odb::dbInst*>& insts)
 {
@@ -3233,6 +3250,7 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[CLEAR_RULERS_ACT] = clear_menu->addAction(tr("Rulers"));
   menu_actions_[CLEAR_FOCUS_ACT] = clear_menu->addAction(tr("Focus nets"));
   menu_actions_[CLEAR_GUIDES_ACT] = clear_menu->addAction(tr("Route Guides"));
+  menu_actions_[CLEAR_NET_TRACKS_ACT] = clear_menu->addAction(tr("Net Tracks"));
   menu_actions_[CLEAR_ALL_ACT] = clear_menu->addAction(tr("All"));
 
   // Connect Slots to Actions...
@@ -3307,12 +3325,16 @@ void LayoutViewer::addMenuAndActions()
   connect(menu_actions_[CLEAR_GUIDES_ACT], &QAction::triggered, this, []() {
     Gui::get()->clearRouteGuides();
   });
+  connect(menu_actions_[CLEAR_NET_TRACKS_ACT], &QAction::triggered, this, []() {
+    Gui::get()->clearNetTracks();
+  });
   connect(menu_actions_[CLEAR_ALL_ACT], &QAction::triggered, this, [this]() {
     menu_actions_[CLEAR_SELECTIONS_ACT]->trigger();
     menu_actions_[CLEAR_HIGHLIGHTS_ACT]->trigger();
     menu_actions_[CLEAR_RULERS_ACT]->trigger();
     menu_actions_[CLEAR_FOCUS_ACT]->trigger();
     menu_actions_[CLEAR_GUIDES_ACT]->trigger();
+    menu_actions_[CLEAR_NET_TRACKS_ACT]->trigger();
   });
 }
 
@@ -3360,6 +3382,14 @@ void LayoutViewer::addRouteGuides(odb::dbNet* net)
   }
 }
 
+void LayoutViewer::addNetTracks(odb::dbNet* net)
+{
+  const auto& [itr, inserted] = net_tracks_.insert(net);
+  if (inserted) {
+    fullRepaint();
+  }
+}
+
 void LayoutViewer::removeFocusNet(odb::dbNet* net)
 {
   if (focus_nets_.erase(net) > 0) {
@@ -3371,6 +3401,13 @@ void LayoutViewer::removeFocusNet(odb::dbNet* net)
 void LayoutViewer::removeRouteGuides(odb::dbNet* net)
 {
   if (route_guides_.erase(net) > 0) {
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::removeNetTracks(odb::dbNet* net)
+{
+  if (net_tracks_.erase(net) > 0) {
     fullRepaint();
   }
 }
@@ -3388,6 +3425,14 @@ void LayoutViewer::clearRouteGuides()
 {
   if (!route_guides_.empty()) {
     route_guides_.clear();
+    fullRepaint();
+  }
+}
+
+void LayoutViewer::clearNetTracks()
+{
+  if (!net_tracks_.empty()) {
+    net_tracks_.clear();
     fullRepaint();
   }
 }

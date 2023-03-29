@@ -255,6 +255,7 @@ class Writer
   frDesign* getDesign() const { return design_; }
   // others
   void updateDb(odb::dbDatabase* db, bool pin_access = false);
+  void updateTrackAssignment(odb::dbBlock* block);
 
  private:
   void fillViaDefs();

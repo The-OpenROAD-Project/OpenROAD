@@ -99,13 +99,13 @@ struct Section
 
 struct Constraint
 {
-  Constraint(PinSet pins, Direction dir, Interval interv)
+  Constraint(const PinSet& pins, Direction dir, Interval interv)
       : pin_list(pins), direction(dir), interval(interv)
   {
     box = odb::Rect(-1, -1, -1, -1);
     pins_per_slots = 0;
   }
-  Constraint(PinSet pins, Direction dir, odb::Rect b)
+  Constraint(const PinSet& pins, Direction dir, odb::Rect b)
       : pin_list(pins), direction(dir), interval(Edge::invalid, -1, -1), box(b)
   {
     pins_per_slots = 0;

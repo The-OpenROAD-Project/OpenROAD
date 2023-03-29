@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2020, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,45 +30,44 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+// Generator Code Begin Header
+#pragma once
+
+#include "dbIterator.h"
+#include "odb.h"
+// User Code Begin Includes
+// User Code End Includes
 
 namespace odb {
 
-void ATH__failMessage(const char* msg)
+class _dbNetTrack;
+template <class T>
+class dbTable;
+// User Code Begin classes
+// User Code End classes
+class dbNetTrackItr : public dbIterator
 {
-  fprintf(stderr, "%s\n", msg);
-  fprintf(stderr, "\nexiting ...\n");
-  exit(1);
-}
-void Ath__hashError(const char* msg, int exitFlag)
-{
-  fprintf(stderr, "Cannot find %s in hash table\n", msg);
-  fprintf(stderr, "\nexiting ...\n");
-
-  if (exitFlag > 0)
-    exit(1);
-}
-
-char* ATH__allocCharWord(int n)
-{
-  if (n <= 0)
-    ATH__failMessage("Cannot zero/negative number of chars");
-
-  char* a = new char[n];
-  if (a == NULL) {
-    ATH__failMessage("Cannot allocate chars");
+  dbTable<_dbNetTrack>* _net_tracks_tbl;
+  // User Code Begin Fields
+  // User Code End Fields
+ public:
+  dbNetTrackItr(dbTable<_dbNetTrack>* net_tracks_tbl)
+  {
+    _net_tracks_tbl = net_tracks_tbl;
   }
-  a[0] = '\0';
-  return a;
-}
-void ATH__deallocCharWord(const char* a)
-{
-  if (a == NULL) {
-    ATH__failMessage("Cannot deallocate allocate chars");
-  }
-  delete[] a;
-}
+
+  bool reversible();
+  bool orderReversed();
+  void reverse(dbObject* parent);
+  uint sequential();
+  uint size(dbObject* parent);
+  uint begin(dbObject* parent);
+  uint end(dbObject* parent);
+  uint next(uint id, ...);
+  dbObject* getObject(uint id, ...);
+  // User Code Begin Methods
+  // User Code End Methods
+};
 
 }  // namespace odb
+   // Generator Code End Header
