@@ -1394,6 +1394,35 @@ void IOPlacer::run(bool random_mode)
         sections_for_constraint = assignConstrainedPinsToSections(
             constraint, mirrored_pins_cnt, mirrored_only);
 
+        int slots_available = 0;
+        for (auto& sec : sections_for_constraint) {
+          slots_available += sec.num_slots - sec.used_slots;
+        }
+
+        if (slots_available < 0) {
+          std::string edge_str;
+          const Edge edge = constraint.interval.getEdge();
+          if (edge == Edge::bottom) {
+            edge_str = "BOTTOM";
+          } else if (edge == Edge::top) {
+            edge_str = "TOP";
+          } else if (edge == Edge::left) {
+            edge_str = "LEFT";
+          } else if (edge == Edge::right) {
+            edge_str = "RIGHT";
+          }
+          logger_->error(
+              PPL,
+              88,
+              "Cannot assign {} constrained pins to region {}u-{}u "
+              "at edge {}. Not "
+              "enough space in the defined region.",
+              constraint.pin_list.size(),
+              static_cast<float>(dbuToMicrons(constraint.interval.getBegin())),
+              static_cast<float>(dbuToMicrons(constraint.interval.getEnd())),
+              edge_str);
+        }
+
         findPinAssignment(sections_for_constraint);
         updateSlots();
 
