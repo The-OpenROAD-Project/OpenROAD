@@ -28,7 +28,10 @@ add_subdirectory(src/def)
 add_subdirectory(src/zutil)
 add_subdirectory(src/tm)
 add_subdirectory(src/cdl)
-add_subdirectory(test/cpp)
+
+if(ENABLE_TESTS)
+  add_subdirectory(test/cpp)
+endif()
 
 add_library(odb INTERFACE)
 target_link_libraries(odb
@@ -73,12 +76,14 @@ endif()
 ############################################################
 # Unit testing
 ############################################################
-enable_testing()
+if(ENABLE_TESTS)
+  enable_testing()
 
-add_executable(parseTest
-  ${PROJECT_SOURCE_DIR}/test/parseTest.cpp
-)
+  add_executable(parseTest
+    ${PROJECT_SOURCE_DIR}/test/parseTest.cpp
+  )
 
-target_link_libraries(parseTest
-  odb
-)
+  target_link_libraries(parseTest
+    odb
+  )
+endif()
