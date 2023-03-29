@@ -33,3 +33,4 @@ cmake-build-debug/
 
 coverage-output
 messages.txt
+dependencies/
