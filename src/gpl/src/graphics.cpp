@@ -355,7 +355,6 @@ odb::Rect Graphics::getBounds() const
 bool Graphics::populateMap()
 {
   BinGrid& grid = nb_->getBinGrid();
-  double sum = 0;
   for (const Bin& bin : grid.bins()) {
     odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
     if (heatmap_type_ == Density) {
@@ -374,7 +373,6 @@ bool Graphics::populateMap()
           static_cast<float>(bin.instPlacedAreaUnscaled())
               + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
       addToMap(box, value);
-      sum += value;
     }
   }
 
