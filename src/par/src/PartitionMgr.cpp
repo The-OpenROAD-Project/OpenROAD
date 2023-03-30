@@ -316,17 +316,18 @@ Instance* PartitionMgr::buildPartitionedInstance(
 
     // check if bus and get name
     if (isBusName(portname.c_str(), left_bracket, right_bracket, path_escape)) {
-      char* bus_name;
+      std::string bus_name;
+      bool is_bus;
       int idx;
       parseBusName(portname.c_str(),
                    left_bracket,
                    right_bracket,
                    path_escape,
+                   is_bus,
                    bus_name,
                    idx);
-      portname = bus_name;
-      delete[] bus_name;
 
+      portname = bus_name;
       port_buses[portname].push_back(port);
     }
   }
@@ -334,18 +335,18 @@ Instance* PartitionMgr::buildPartitionedInstance(
     std::set<int> port_idx;
     std::set<PortDirection*> port_dirs;
     for (Port* port : ports) {
-      char* bus_name;
+      std::string bus_name;
+      bool is_bus;
       int idx;
       parseBusName(network->name(port),
                    left_bracket,
                    right_bracket,
                    path_escape,
+                   is_bus,
                    bus_name,
                    idx);
-      delete[] bus_name;
 
       port_idx.insert(idx);
-
       port_dirs.insert(network->direction(port));
     }
 

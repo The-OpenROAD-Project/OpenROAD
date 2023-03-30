@@ -33,6 +33,8 @@
 ##
 ###############################################################################
 include("openroad")
+include(FindZLIB)
+
 project(dst
   LANGUAGES CXX
 )
@@ -62,6 +64,8 @@ target_link_libraries(dst
   PUBLIC
     utl
     OpenSTA
+    tcl
+    ${ZLIB_LIBRARIES}
     Boost::serialization
     Boost::system
     Boost::thread
