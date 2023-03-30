@@ -55,8 +55,8 @@ target_include_directories(FastRoute4.1
 
 target_link_libraries(FastRoute4.1
   PRIVATE
-    utl
-    stt
+    utl_lib
+    stt_lib
     odb
     Boost::boost
 )

@@ -8,7 +8,7 @@ target_link_libraries(dft_replace_lib
     odb
     dbSta
     OpenSTA
-    utl
+    utl_lib
     dft_utils_lib
 )
 

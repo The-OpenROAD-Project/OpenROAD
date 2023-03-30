@@ -36,21 +36,17 @@
 #pragma once
 
 #include "BufferedNet.hh"
-
-#include "utl/Logger.h"
 #include "db_sta/dbSta.hh"
-#include "gui/gui.h"
-
+#include "sta/Corner.hh"
+#include "sta/Delay.hh"
+#include "sta/GraphClass.hh"
 #include "sta/LibertyClass.hh"
 #include "sta/NetworkClass.hh"
-#include "sta/GraphClass.hh"
-#include "sta/Delay.hh"
-#include "sta/Corner.hh"
+#include "utl/Logger.h"
 
 namespace rsz {
 
 class Resizer;
-class FanoutRender;
 
 using std::vector;
 
@@ -86,26 +82,26 @@ public:
 class RepairDesign : StaState
 {
 public:
-  RepairDesign(Resizer *resizer);
-  ~RepairDesign();
-  void repairDesign(double max_wire_length,
-                    double slew_margin,
-                    double cap_margin);
-  void repairDesign(double max_wire_length, // zero for none (meters)
-                    double slew_margin,
-                    double cap_margin,
-                    int &repair_count,
-                    int &slew_violations,
-                    int &cap_violations,
-                    int &fanout_violations,
-                    int &length_violations);
-  int insertedBufferCount() const { return inserted_buffer_count_; }
-  void repairNet(Net *net,
-                 double max_wire_length,
-                 double slew_margin,
-                 double cap_margin);
-  void repairClkNets(double max_wire_length);
-  void repairClkInverters();
+ explicit RepairDesign(Resizer* resizer);
+ ~RepairDesign() override;
+ void repairDesign(double max_wire_length,
+                   double slew_margin,
+                   double cap_margin);
+ void repairDesign(double max_wire_length,  // zero for none (meters)
+                   double slew_margin,
+                   double cap_margin,
+                   int& repair_count,
+                   int& slew_violations,
+                   int& cap_violations,
+                   int& fanout_violations,
+                   int& length_violations);
+ int insertedBufferCount() const { return inserted_buffer_count_; }
+ void repairNet(Net* net,
+                double max_wire_length,
+                double slew_margin,
+                double cap_margin);
+ void repairClkNets(double max_wire_length);
+ void repairClkInverters();
 
 protected:
   void init();
@@ -245,28 +241,8 @@ protected:
   const MinMax *min_;
   const MinMax *max_;
 
-  FanoutRender *fanout_render_;
-
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
-
-  friend class FanoutRender;
 };
 
-class FanoutRender : public gui::Renderer
-{
-public:
-  FanoutRender(RepairDesign *repair);
-  void setRect(Rect &rect);
-  void setDrvrLoc(Point loc);
-  void setPins(PinSeq *pins);
-  void drawObjects(gui::Painter &painter);
-
-private:
-  RepairDesign *repair_;
-  Rect rect_;
-  PinSeq *pins_;
-  Point drvr_loc_;
-};
-
-} // namespace
+}  // namespace rsz

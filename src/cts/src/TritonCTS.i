@@ -37,6 +37,7 @@
 #include "cts/TritonCTS.h"
 #include "CtsOptions.h"
 #include "TechChar.h"
+#include "Graphics.h"
 #include "ord/OpenRoad.hh"
 
 namespace ord {
@@ -116,7 +117,7 @@ set_metric_output(const char* file)
 void
 set_debug_cmd()
 {
-  getTritonCts()->getParms()->setGuiDebug();
+  getTritonCts()->getParms()->setObserver(std::make_unique<Graphics>());
 }
 
 void

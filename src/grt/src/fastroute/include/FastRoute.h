@@ -70,7 +70,7 @@ using boost::icl::interval_set;
 
 namespace grt {
 
-class FastRouteRenderer;
+class AbstractFastRouteRenderer;
 
 // Debug mode settings
 struct DebugSetting
@@ -80,18 +80,13 @@ struct DebugSetting
   bool rectilinearSTree_;
   bool tree2D_;
   bool tree3D_;
-  bool isOn_;
+  std::unique_ptr<AbstractFastRouteRenderer> renderer_;
   std::string sttInputFileName_;
-  DebugSetting()
-      : net_(nullptr),
-        steinerTree_(false),
-        rectilinearSTree_(false),
-        tree2D_(false),
-        tree3D_(false),
-        isOn_(false),
-        sttInputFileName_("")
-  {
-  }
+
+  DebugSetting();
+  ~DebugSetting();
+
+  bool isOn() const { return renderer_ != nullptr; }
 };
 
 using stt::Tree;
@@ -103,8 +98,7 @@ class FastRouteCore
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                stt::SteinerTreeBuilder* stt_builder,
-                gui::Gui* gui);
+                stt::SteinerTreeBuilder* stt_builder);
   ~FastRouteCore();
 
   void clear();
@@ -187,7 +181,7 @@ class FastRouteCore
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
 
   // debug mode functions
-  void setDebugOn(bool isOn);
+  void setDebugOn(std::unique_ptr<AbstractFastRouteRenderer> renderer);
   void setDebugNet(const odb::dbNet* net);
   void setDebugSteinerTree(bool steinerTree);
   void setDebugRectilinearSTree(bool rectiliniarSTree);
@@ -197,6 +191,15 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
+
+  int x_corner() const { return x_corner_; }
+  int y_corner() const { return y_corner_; }
+  int tile_size() const { return tile_size_; }
+
+  AbstractFastRouteRenderer* fastrouteRender()
+  {
+    return debug_->renderer_.get();
+  }
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
@@ -557,7 +560,6 @@ class FastRouteCore
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
 
-  FastRouteRenderer* fastrouteRender_;
   std::unique_ptr<DebugSetting> debug_;
 
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>

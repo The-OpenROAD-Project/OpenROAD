@@ -49,10 +49,6 @@
 #include "odb/dbBlockCallBackObj.h"
 #include "sta/Liberty.hh"
 
-namespace gui {
-class Gui;
-}
-
 namespace utl {
 class Logger;
 }
@@ -97,9 +93,10 @@ class Netlist;
 class RoutingTracks;
 class SteinerTree;
 class RoutePt;
-class GrouteRenderer;
+class AbstractGrouteRenderer;
+class AbstractFastRouteRenderer;
 class GlobalRouter;
-class RoutingCongestionDataSource;
+class AbstractRoutingCongestionDataSource;
 
 struct RegionAdjustment
 {
@@ -142,13 +139,19 @@ class GlobalRouter
  public:
   GlobalRouter();
   ~GlobalRouter();
+
+#ifndef SWIG
   void init(utl::Logger* logger,
             stt::SteinerTreeBuilder* stt_builder,
             odb::dbDatabase* db,
             sta::dbSta* sta,
             rsz::Resizer* resizer,
             ant::AntennaChecker* antenna_checker,
-            dpl::Opendp* opendp);
+            dpl::Opendp* opendp,
+            std::unique_ptr<AbstractRoutingCongestionDataSource>
+                routing_congestion_data_source);
+#endif
+
   void clear();
 
   void setAdjustment(const float adjustment);
@@ -215,7 +218,11 @@ class GlobalRouter
   void setPerturbationAmount(int perturbation);
   void perturbCapacities();
 
-  void initDebugFastRoute();
+#ifndef SWIG
+  void initDebugFastRoute(std::unique_ptr<AbstractFastRouteRenderer> renderer);
+  AbstractFastRouteRenderer* getDebugFastRoute() const;
+#endif
+
   void setDebugNet(const odb::dbNet* net);
   void setDebugSteinerTree(bool steinerTree);
   void setDebugRectilinearSTree(bool rectilinearSTree);
@@ -225,11 +232,6 @@ class GlobalRouter
 
   void saveSttInputFile(Net* net);
 
-  // Highlight route in the gui.
-  void highlightRoute(odb::dbNet* net, bool show_pin_locations);
-
-  // Clear routes in the gui
-  void clearRouteGui();
   // Report the wire length on each layer.
   void reportNetLayerWirelengths(odb::dbNet* db_net, std::ofstream& out);
   void reportLayerWireLengths();
@@ -250,6 +252,20 @@ class GlobalRouter
   bool pinAccessPointPositions(
       const Pin& pin,
       std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
+
+#ifndef SWIG
+  void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
+  AbstractGrouteRenderer* getRenderer();
+#endif
+
+  odb::dbDatabase* db()
+  {
+    return db_;
+  }
+  FastRouteCore* fastroute() const
+  {
+    return fastroute_;
+  }
 
  private:
   // Net functions
@@ -375,7 +391,6 @@ class GlobalRouter
   void initGridAndNets();
 
   utl::Logger* logger_;
-  gui::Gui* gui_;
   stt::SteinerTreeBuilder* stt_builder_;
   ant::AntennaChecker* antenna_checker_;
   dpl::Opendp* opendp_;
@@ -383,7 +398,7 @@ class GlobalRouter
   // Objects variables
   FastRouteCore* fastroute_;
   odb::Point grid_origin_;
-  GrouteRenderer* groute_renderer_;
+  std::unique_ptr<AbstractGrouteRenderer> groute_renderer_;
   NetRouteMap routes_;
 
   std::map<odb::dbNet*, Net*, cmpById> db_net_map_;
@@ -430,7 +445,7 @@ class GlobalRouter
   std::set<odb::dbNet*> dirty_nets_;
 
   RepairAntennas* repair_antennas_;
-  std::unique_ptr<RoutingCongestionDataSource> heatmap_;
+  std::unique_ptr<AbstractRoutingCongestionDataSource> heatmap_;
 
   // variables congestion report file
   const char* congestion_file_name_;

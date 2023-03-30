@@ -10,6 +10,6 @@ target_include_directories(dft_clock_domain_lib
 
 target_link_libraries(dft_clock_domain_lib
   PRIVATE
-    utl
+    utl_lib
     dft_config_lib
 )

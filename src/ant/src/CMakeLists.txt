@@ -37,10 +37,18 @@ swig_lib(NAME      ant
          SCRIPTS   AntennaChecker.tcl
 )
 
+add_library(ant_lib
+    AntennaChecker.cc
+)
+
 target_sources(ant
   PRIVATE
     MakeAntennaChecker.cc
-    AntennaChecker.cc
+)
+
+target_include_directories(ant_lib
+  PUBLIC
+    ../include
 )
 
 target_include_directories(ant
@@ -48,8 +56,17 @@ target_include_directories(ant
     ../include
 )
 
+target_link_libraries(ant_lib
+  PUBLIC
+    odb
+    OpenSTA
+    grt_lib
+    utl_lib
+)
+
 target_link_libraries(ant
   PUBLIC
+    ant_lib
     odb
     OpenSTA
     grt
