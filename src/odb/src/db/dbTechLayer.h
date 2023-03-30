@@ -135,6 +135,7 @@ class _dbTechLayer : public _dbObject
   dbTable<_dbTechLayerMinCutRule>* min_cuts_rules_tbl_;
 
   dbTable<_dbTechLayerAreaRule>* area_rules_tbl_;
+
   // User Code Begin Fields
 
   uint _pitch_x;

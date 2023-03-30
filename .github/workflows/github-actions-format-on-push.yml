@@ -24,7 +24,7 @@ jobs:
       - name: Check format of cpp changed files
         run: |
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-            if [[ "${file##*.}" =~ ^(h|C|cc|cp|cpp|c++|CPP|cxx|hh)$ && "${file}" != "src/sta/"* && "${file}" != "src/dbSta/"* && "${file}" != "src/rsz/"* ]]; then
+            if [[ "${file##*.}" =~ ^(h|C|cc|cp|cpp|c++|CPP|cxx|hh)$ && "${file}" != "src/sta/"* && "${file}" != "src/dbSta/"* && "${file}" != "src/rsz/"* && "${file}" != "src/odb/src/codeGenerator/"* ]]; then
               clang-format --dry-run --Werror $file
             fi
           done

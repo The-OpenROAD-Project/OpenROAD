@@ -1378,8 +1378,8 @@ bool extSpef::setInSpef(char* filename, bool onlyOpen)
   strcpy(_inFile, filename);
 
   if (!onlyOpen) {
-    _nodeParser = new Ath__parser();
-    _parser = new Ath__parser();
+    _nodeParser = new Ath__parser(logger_);
+    _parser = new Ath__parser(logger_);
   }
   _parser->openFile(filename);
 

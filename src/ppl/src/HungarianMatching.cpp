@@ -179,7 +179,7 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
                    "valid position for pin placement.",
                    mirrored_pos.getX(),
                    mirrored_pos.getY(),
-                   layer->getName());
+                   layer ? layer->getName() : "NA");
   }
   slots_[slot_index].used = true;
 }

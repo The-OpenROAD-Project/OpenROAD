@@ -69,6 +69,9 @@ option(USE_SYSTEM_OPENSTA "Use system shared OpenSTA library" OFF)
 # Allow to use external shared abc libraries
 option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 
+# Allow disabling tests
+option(ENABLE_TESTS "Enable OpenROAD tests" ON)
+
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )
@@ -141,8 +144,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 add_subdirectory(third-party)
 
-enable_testing()
-add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
-include(GoogleTest)
+if(ENABLE_TESTS)
+  enable_testing()
+  add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
+  include(GoogleTest)
+endif()
 
 add_subdirectory(src)
