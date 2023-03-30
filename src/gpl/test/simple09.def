@@ -76,11 +76,17 @@ VIAS 3 ;
     - via6_960x2800 + VIARULE Via6Array-0 + CUTSIZE 280 280  + LAYERS metal6 metal7 via6  + CUTSPACING 320 320  + ENCLOSURE 340 360 340 360  + ROWCOL 4 1  ;
 END VIAS
 COMPONENTS 1 ;
-    - _277_ BUF_X4 + PLACED ( 0 0 ) N ;
+    - _277_ BUF_X4 + PLACED ( 27806 28140 ) N ;
 END COMPONENTS
 PINS 2 ;
-    - input + NET input + DIRECTION INPUT + USE SIGNAL + FIXED ( 0 -140 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
-    - out + NET out + DIRECTION OUTPUT + USE SIGNAL + FIXED ( 0 60 ) N + LAYER metal6 ( -140 -140 ) ( 140 140 ) ;
+    - input + NET input + DIRECTION INPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 0 -140 ) N ;
+    - out + NET out + DIRECTION OUTPUT + USE SIGNAL
+      + PORT
+        + LAYER metal6 ( -140 -140 ) ( 140 140 )
+        + FIXED ( 0 60 ) N ;
 END PINS
 SPECIALNETS 2 ;
     - VDD ( * VDD ) + USE POWER
