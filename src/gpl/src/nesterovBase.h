@@ -519,13 +519,13 @@ class Bin
 
   ~Bin();
 
-  int x() const;
-  int y() const;
+  int x() const { return x_; };
+  int y() const { return y_; };
 
-  int lx() const;
-  int ly() const;
-  int ux() const;
-  int uy() const;
+  int lx() const { return lx_; };
+  int ly() const { return ly_; };
+  int ux() const { return ux_; };
+  int uy() const { return uy_; };
   int cx() const;
   int cy() const;
   int dx() const;
@@ -591,36 +591,6 @@ class Bin
   float electroForceX_;
   float electroForceY_;
 };
-
-inline int Bin::x() const
-{
-  return x_;
-}
-
-inline int Bin::y() const
-{
-  return y_;
-}
-
-inline int Bin::lx() const
-{
-  return lx_;
-}
-
-inline int Bin::ly() const
-{
-  return ly_;
-}
-
-inline int Bin::ux() const
-{
-  return ux_;
-}
-
-inline int Bin::uy() const
-{
-  return uy_;
-}
 
 inline int Bin::cx() const
 {
@@ -737,13 +707,13 @@ class BinGrid
   std::pair<int, int> getMinMaxIdxX(const Instance* inst) const;
   std::pair<int, int> getMinMaxIdxY(const Instance* inst) const;
 
-  const std::vector<Bin*>& bins() const;
+  std::vector<Bin>& bins();
+  const std::vector<Bin>& binsConst() const { return bins_; };
 
   void updateBinsNonPlaceArea();
 
  private:
-  std::vector<Bin> binStor_;
-  std::vector<Bin*> bins_;
+  std::vector<Bin> bins_;
   std::shared_ptr<PlacerBase> pb_;
   utl::Logger* log_;
   int lx_;
@@ -761,7 +731,7 @@ class BinGrid
   unsigned char isSetBinCnt_ : 1;
 };
 
-inline const std::vector<Bin*>& BinGrid::bins() const
+inline std::vector<Bin>& BinGrid::bins()
 {
   return bins_;
 }
@@ -827,7 +797,8 @@ class NesterovBase
   int64_t overflowArea() const;
   int64_t overflowAreaUnscaled() const;
 
-  const std::vector<Bin*>& bins() const;
+  std::vector<Bin>& bins();
+  const std::vector<Bin>& binsConst() const { return bg_.binsConst(); };
 
   // filler cells / area control
   // will be used in Routability-driven loop
@@ -914,7 +885,7 @@ class NesterovBase
 
   void updateDbGCells();
 
-  const BinGrid& getBinGrid() const { return bg_; }
+  BinGrid& getBinGrid() { return bg_; }
 
  private:
   NesterovBaseVars nbVars_;
@@ -958,7 +929,7 @@ class NesterovBase
   void reset();
 };
 
-inline const std::vector<Bin*>& NesterovBase::bins() const
+inline std::vector<Bin>& NesterovBase::bins()
 {
   return bg_.bins();
 }
