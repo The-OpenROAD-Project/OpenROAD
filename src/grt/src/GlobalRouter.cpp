@@ -817,6 +817,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
       makeFastrouteNet(net);
     }
   }
+  //printf("End initNets\n");
   fastroute_->setMaxNetDegree(max_degree);
 
   if (verbose_) {
@@ -874,6 +875,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // leaf iterms
     int min_layer, max_layer;
     getNetLayerRange(net, min_layer, max_layer);
+    //printf("Dirty Net: %s\n", net->getDbNet()->getConstName());
 
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
                                        is_clock,
@@ -3991,6 +3993,8 @@ void GlobalRouter::updateDirtyRoutes()
     if (dirty_nets.empty())
       return;
 
+    //printf("DebugPython dirtyNets : %ld\n", dirty_nets.size());
+
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route
@@ -3999,8 +4003,10 @@ void GlobalRouter::updateDirtyRoutes()
     dirty_nets_.clear();
 
     bool reroutingOverflow = true;
+    int aux_cnt = 2;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      if (reroutingOverflow) {
+      while(fastroute_->has2Doverflow() && reroutingOverflow && aux_cnt--) {
+      //if (reroutingOverflow) {
         for (odb::dbNet* db_net : fastroute_->getCongestionNets()) {
           dirty_nets.push_back(db_net_map_[db_net]);
         }

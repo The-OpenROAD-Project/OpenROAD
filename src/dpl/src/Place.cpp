@@ -1047,9 +1047,9 @@ void Opendp::legalAllCells() {
     int init_x = init.getX();
     int init_y = init.getY();
 
-    Pixel* pixel1 = gridPixel(gridX(init_x), gridY(init_y));
-    Pixel* pixel2 = gridPixel(gridX(init_x + cell.width_ - 1), gridY(init_y));
-    Pixel* pixel3 = gridPixel(gridX(init_x), gridY(init_y + cell.height_ - 1));
+    Pixel* pixel1 = gridPixel(gridX(init_x + 1), gridY(init_y + 1));
+    Pixel* pixel2 = gridPixel(gridX(init_x + cell.width_ - 1), gridY(init_y + 1));
+    Pixel* pixel3 = gridPixel(gridX(init_x + 1), gridY(init_y + cell.height_ - 1));
     Pixel* pixel4 = gridPixel(gridX(init_x + cell.width_ - 1), gridY(init_y + cell.height_ - 1));
 
     Cell* block = nullptr;
