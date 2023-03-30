@@ -128,7 +128,7 @@ class Tech;
 class Design
 {
  public:
-  Design(Tech* tech);
+  explicit Design(Tech* tech);
   void readVerilog(const std::string& file_name);
   void readDef(const std::string& file_name,
                bool continue_on_errors = false,
