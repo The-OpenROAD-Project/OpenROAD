@@ -773,7 +773,7 @@ void BinGrid::initBins()
   log_->info(GPL, 29, "BinSize: {} {}", binSizeX_, binSizeY_);
 
   size_t bin_dimensions = binCntX_ * binCntY_;
-  // initialize binStor_, bins_ vector
+  // initialize bins_ vector
   bins_.reserve(bin_dimensions);
   int x = lx_, y = ly_;
   int idxX = 0, idxY = 0;
