@@ -34,14 +34,14 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <libgen.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <tcl.h>
 
 #include <array>
 #include <boost/stacktrace.hpp>
+#include <climits>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 // We have had too many problems with this std::filesytem on various platforms
@@ -325,8 +325,9 @@ static int tclAppInit(int& argc,
   if (findCmdLineFlag(argc, argv, "-gui")) {
     // gobble up remaining -gui flags if present, since this could result in
     // second invocation of the GUI
-    while (findCmdLineFlag(argc, argv, "-gui"))
+    while (findCmdLineFlag(argc, argv, "-gui")) {
       ;
+    }
 
     gui::startGui(argc, argv, interp);
   } else {

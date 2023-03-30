@@ -55,7 +55,6 @@ class Rect;
 namespace sta {
 class dbSta;
 class dbNetwork;
-class Resizer;
 }  // namespace sta
 
 namespace rsz {
@@ -214,14 +213,14 @@ class OpenRoad
 
   void writeDef(const char* filename,
                 // major.minor (avoid including defout.h)
-                string version);
+                const string& version);
 
   void writeCdl(const char* outFilename,
                 const std::vector<const char*>& mastersFilenames,
                 bool includeFillers);
 
   void readVerilog(const char* filename);
-  void linkDesign(const char* top_cell_name);
+  void linkDesign(const char* design_name);
 
   // Used if a design is created programmatically rather than loaded
   // to notify the tools (eg dbSta, gui).
@@ -261,37 +260,37 @@ class OpenRoad
  private:
   OpenRoad();
 
-  Tcl_Interp* tcl_interp_;
-  utl::Logger* logger_;
-  odb::dbDatabase* db_;
-  dbVerilogNetwork* verilog_network_;
-  sta::dbSta* sta_;
-  rsz::Resizer* resizer_;
-  ppl::IOPlacer* ioPlacer_;
-  dpl::Opendp* opendp_;
-  dpo::Optdp* optdp_;
-  fin::Finale* finale_;
-  mpl::MacroPlacer* macro_placer_;
-  mpl2::MacroPlacer2* macro_placer2_;
-  grt::GlobalRouter* global_router_;
-  rmp::Restructure* restructure_;
-  cts::TritonCTS* tritonCts_;
-  tap::Tapcell* tapcell_;
-  rcx::Ext* extractor_;
-  triton_route::TritonRoute* detailed_router_;
-  ant::AntennaChecker* antenna_checker_;
-  gpl::Replace* replace_;
-  psm::PDNSim* pdnsim_;
-  par::PartitionMgr* partitionMgr_;
-  pdn::PdnGen* pdngen_;
-  pad::ICeWall* icewall_;
-  dst::Distributed* distributer_;
-  stt::SteinerTreeBuilder* stt_builder_;
-  dft::Dft* dft_;
+  Tcl_Interp* tcl_interp_ = nullptr;
+  utl::Logger* logger_ = nullptr;
+  odb::dbDatabase* db_ = nullptr;
+  dbVerilogNetwork* verilog_network_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
+  rsz::Resizer* resizer_ = nullptr;
+  ppl::IOPlacer* ioPlacer_ = nullptr;
+  dpl::Opendp* opendp_ = nullptr;
+  dpo::Optdp* optdp_ = nullptr;
+  fin::Finale* finale_ = nullptr;
+  mpl::MacroPlacer* macro_placer_ = nullptr;
+  mpl2::MacroPlacer2* macro_placer2_ = nullptr;
+  grt::GlobalRouter* global_router_ = nullptr;
+  rmp::Restructure* restructure_ = nullptr;
+  cts::TritonCTS* tritonCts_ = nullptr;
+  tap::Tapcell* tapcell_ = nullptr;
+  rcx::Ext* extractor_ = nullptr;
+  triton_route::TritonRoute* detailed_router_ = nullptr;
+  ant::AntennaChecker* antenna_checker_ = nullptr;
+  gpl::Replace* replace_ = nullptr;
+  psm::PDNSim* pdnsim_ = nullptr;
+  par::PartitionMgr* partitionMgr_ = nullptr;
+  pdn::PdnGen* pdngen_ = nullptr;
+  pad::ICeWall* icewall_ = nullptr;
+  dst::Distributed* distributer_ = nullptr;
+  stt::SteinerTreeBuilder* stt_builder_ = nullptr;
+  dft::Dft* dft_ = nullptr;
 
   std::set<Observer*> observers_;
 
-  int threads_;
+  int threads_ = 1;
 };
 
 int tclAppInit(Tcl_Interp* interp);
