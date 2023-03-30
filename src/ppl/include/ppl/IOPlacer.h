@@ -180,6 +180,7 @@ class IOPlacer
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
+  int updateConstraintSections(Constraint& constraint);
   void setupSections(int assigned_pins_count);
   bool assignPinsToSections(int assigned_pins_count);
   bool assignPinToSection(IOPin& io_pin,
