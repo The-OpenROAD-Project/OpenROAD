@@ -107,6 +107,22 @@ void IOPlacer::clearConstraints()
   constraints_.clear();
 }
 
+std::string IOPlacer::getEdgeString(Edge edge)
+{
+  std::string edge_str;
+  if (edge == Edge::bottom) {
+    edge_str = "BOTTOM";
+  } else if (edge == Edge::top) {
+    edge_str = "TOP";
+  } else if (edge == Edge::left) {
+    edge_str = "LEFT";
+  } else if (edge == Edge::right) {
+    edge_str = "RIGHT";
+  }
+
+  return edge_str;
+}
+
 void IOPlacer::initNetlistAndCore(const std::set<int>& hor_layer_idx,
                                   const std::set<int>& ver_layer_idx)
 {
@@ -770,12 +786,21 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
         break;
       }
       int available_slots = sections[i].num_slots - sections[i].used_slots;
-      logger_->error(PPL,
-                     78,
-                     "Not enough available positions ({}) to place the pin "
-                     "group of size {}.",
-                     available_slots,
-                     group_size);
+      std::string edge_str = getEdgeString(sections[i].edge);
+      const odb::Point& section_begin = slots_[sections[i].begin_slot].pos;
+      const odb::Point& section_end = slots_[sections[i].end_slot].pos;
+      logger_->warn(PPL,
+                    78,
+                    "Not enough available positions ({}) in section ({}, "
+                    "{})-({}, {}) at edge {} to place the pin "
+                    "group of size {}.",
+                    available_slots,
+                    dbuToMicrons(section_begin.getX()),
+                    dbuToMicrons(section_begin.getY()),
+                    dbuToMicrons(section_end.getX()),
+                    dbuToMicrons(section_end.getY()),
+                    edge_str,
+                    group_size);
     }
     if (!group_assigned) {
       logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups.");
@@ -1409,17 +1434,7 @@ void IOPlacer::run(bool random_mode)
         }
 
         if (slots_available < 0) {
-          std::string edge_str;
-          const Edge edge = constraint.interval.getEdge();
-          if (edge == Edge::bottom) {
-            edge_str = "BOTTOM";
-          } else if (edge == Edge::top) {
-            edge_str = "TOP";
-          } else if (edge == Edge::left) {
-            edge_str = "LEFT";
-          } else if (edge == Edge::right) {
-            edge_str = "RIGHT";
-          }
+          std::string edge_str = getEdgeString(constraint.interval.getEdge());
           logger_->error(
               PPL,
               88,
