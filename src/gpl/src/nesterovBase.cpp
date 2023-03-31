@@ -772,12 +772,12 @@ void BinGrid::initBins()
 
   log_->info(GPL, 29, "BinSize: {} {}", binSizeX_, binSizeY_);
 
-  size_t bin_dimensions = static_cast<size_t>(binCntX_ * binCntY_);
+  int bin_dimensions = binCntX_ * binCntY_;
   // initialize bins_ vector
   bins_.reserve(bin_dimensions);
   int x = lx_, y = ly_;
   int idxX = 0, idxY = 0;
-  for (size_t i = 0; i < bin_dimensions; i++) {
+  for (int i = 0; i < bin_dimensions; i++) {
     int sizeX = (x + binSizeX_ > ux_) ? ux_ - x : binSizeX_;
     int sizeY = (y + binSizeY_ > uy_) ? uy_ - y : binSizeY_;
 
