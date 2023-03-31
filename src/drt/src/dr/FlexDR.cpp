@@ -286,7 +286,8 @@ void FlexDR::initFromTA()
 void FlexDR::initGCell2BoundaryPin()
 {
   // initialize size
-  auto gCellPatterns = getDesign()->getTopBlock()->getGCellPatterns();
+  auto topBlock = getDesign()->getTopBlock();
+  auto gCellPatterns = topBlock->getGCellPatterns();
   auto& xgp = gCellPatterns.at(0);
   auto& ygp = gCellPatterns.at(1);
   auto tmpVec
@@ -295,7 +296,7 @@ void FlexDR::initGCell2BoundaryPin()
   gcell2BoundaryPin_ = vector<
       vector<map<frNet*, set<pair<Point, frLayerNum>>, frBlockObjectComp>>>(
       (int) xgp.getCount(), tmpVec);
-  for (auto& net : getDesign()->getTopBlock()->getNets()) {
+  for (auto& net : topBlock->getNets()) {
     auto netPtr = net.get();
     for (auto& guide : net->getGuides()) {
       for (auto& connFig : guide->getRoutes()) {
@@ -319,7 +320,7 @@ void FlexDR::initGCell2BoundaryPin()
             int y = idx1.y();
             for (auto x = x1; x <= x2; ++x) {
               Rect gcellBox
-                  = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
+                  = topBlock->getGCellBox(Point(x, y));
               frCoord leftBound = gcellBox.xMin();
               frCoord rightBound = gcellBox.xMax();
               const bool hasLeftBound = bp.x() < leftBound;
@@ -339,7 +340,7 @@ void FlexDR::initGCell2BoundaryPin()
             int y2 = idx2.y();
             for (auto y = y1; y <= y2; ++y) {
               Rect gcellBox
-                  = getDesign()->getTopBlock()->getGCellBox(Point(x, y));
+                  = topBlock->getGCellBox(Point(x, y));
               frCoord bottomBound = gcellBox.yMin();
               frCoord topBound = gcellBox.yMax();
               const bool hasBottomBound = bp.y() < bottomBound;
@@ -463,7 +464,7 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
   std::string profile_name("DR:searchRepair");
   profile_name += std::to_string(iter);
   ProfileTask profile(profile_name.c_str());
-  if (ripupMode != 1 && getDesign()->getTopBlock()->getMarkers().size() == 0) {
+  if (ripupMode != 1 && getDesign()->getTopBlock()->getMarkers().empty()) {
     return;
   }
   if (dist_on_) {
@@ -762,10 +763,12 @@ void FlexDR::end(bool done)
   }
 
   using ULL = unsigned long long;
-  vector<ULL> wlen(getTech()->getLayers().size(), 0);
-  vector<ULL> sCut(getTech()->getLayers().size(), 0);
-  vector<ULL> mCut(getTech()->getLayers().size(), 0);
-  for (auto& net : getDesign()->getTopBlock()->getNets()) {
+  const auto size = getTech()->getLayers().size();
+  vector<ULL> wlen(size, 0);
+  vector<ULL> sCut(size, 0);
+  vector<ULL> mCut(size, 0);
+  auto topBlock = getDesign()->getTopBlock();
+  for (auto& net : topBlock->getNets()) {
     for (auto& shape : net->getShapes()) {
       if (shape->typeId() == frcPathSeg) {
         auto obj = static_cast<frPathSeg*>(shape.get());
@@ -791,22 +794,22 @@ void FlexDR::end(bool done)
 
   if (done) {
     logger_->metric("route__drc_errors",
-                    getDesign()->getTopBlock()->getNumMarkers());
+                    topBlock->getNumMarkers());
     logger_->metric("route__wirelength",
-                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+                    totWlen / topBlock->getDBUPerUU());
     logger_->metric("route__vias", totSCut + totMCut);
     logger_->metric("route__vias__singlecut", totSCut);
     logger_->metric("route__vias__multicut", totMCut);
   } else {
     logger_->metric(fmt::format("route__drc_errors__iter:{}", iter_),
-                    getDesign()->getTopBlock()->getNumMarkers());
+                    topBlock->getNumMarkers());
     logger_->metric(fmt::format("route__wirelength__iter:{}", iter_),
-                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+                    totWlen / topBlock->getDBUPerUU());
   }
 
   if (VERBOSE > 0) {
     logger_->report("Total wire length = {} um.",
-                    totWlen / getDesign()->getTopBlock()->getDBUPerUU());
+                    totWlen / topBlock->getDBUPerUU());
 
     for (int i = getTech()->getBottomLayerNum();
          i <= getTech()->getTopLayerNum();
@@ -814,7 +817,7 @@ void FlexDR::end(bool done)
       if (getTech()->getLayer(i)->getType() == dbTechLayerType::ROUTING) {
         logger_->report("Total wire length on LAYER {} = {} um.",
                         getTech()->getLayer(i)->getName(),
-                        wlen[i] / getDesign()->getTopBlock()->getDBUPerUU());
+                        wlen[i] / topBlock->getDBUPerUU());
       }
     }
     logger_->report("Total number of vias = {}.", totSCut + totMCut);
