@@ -795,10 +795,10 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
                     "{})-({}, {}) at edge {} to place the pin "
                     "group of size {}.",
                     available_slots,
-                    section_begin.getX(),
-                    section_begin.getY(),
-                    section_end.getX(),
-                    section_end.getY(),
+                    dbuToMicrons(section_begin.getX()),
+                    dbuToMicrons(section_begin.getY()),
+                    dbuToMicrons(section_end.getX()),
+                    dbuToMicrons(section_end.getY()),
                     edge_str,
                     group_size);
     }
