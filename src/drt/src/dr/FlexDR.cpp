@@ -326,13 +326,11 @@ void FlexDR::initGCell2BoundaryPin()
               const bool hasRightBound = ep.x() >= rightBound;
               if (hasLeftBound) {
                 Point boundaryPt(leftBound, bp.y());
-                gcell2BoundaryPin_[x][y][netPtr].insert(
-                    make_pair(boundaryPt, layerNum));
+                gcell2BoundaryPin_[x][y][netPtr].emplace(boundaryPt, layerNum);
               }
               if (hasRightBound) {
                 Point boundaryPt(rightBound, ep.y());
-                gcell2BoundaryPin_[x][y][netPtr].insert(
-                    make_pair(boundaryPt, layerNum));
+                gcell2BoundaryPin_[x][y][netPtr].emplace(boundaryPt, layerNum);
               }
             }
           } else if (bp.x() == ep.x()) {
@@ -348,13 +346,11 @@ void FlexDR::initGCell2BoundaryPin()
               const bool hasTopBound = ep.y() >= topBound;
               if (hasBottomBound) {
                 Point boundaryPt(bp.x(), bottomBound);
-                gcell2BoundaryPin_[x][y][netPtr].insert(
-                    make_pair(boundaryPt, layerNum));
+                gcell2BoundaryPin_[x][y][netPtr].emplace(boundaryPt, layerNum);
               }
               if (hasTopBound) {
                 Point boundaryPt(ep.x(), topBound);
-                gcell2BoundaryPin_[x][y][netPtr].insert(
-                    make_pair(boundaryPt, layerNum));
+                gcell2BoundaryPin_[x][y][netPtr].emplace(boundaryPt, layerNum);
               }
             }
           } else {
@@ -436,7 +432,7 @@ FlexDR::initDR_mergeBoundaryPin(int startX,
         for (auto& [pt, lNum] : s) {
           if (pt.x() == routeBox.xMin() || pt.x() == routeBox.xMax()
               || pt.y() == routeBox.yMin() || pt.y() == routeBox.yMax()) {
-            bp[net].insert(make_pair(pt, lNum));
+            bp[net].emplace(pt, lNum);
           }
         }
       }
