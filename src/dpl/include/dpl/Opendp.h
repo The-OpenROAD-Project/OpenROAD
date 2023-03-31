@@ -134,9 +134,9 @@ struct Pixel
 
 struct LayerInfo
 {
-  int row_count;
-  int site_count;
-  int grid_index;
+  const int row_count;
+  const int site_count;
+  const int grid_index;
 };
 
 // For optimize mirroring.
@@ -340,12 +340,15 @@ class Opendp
   int getRowHeight(const Cell* cell) const;
   int getSiteWidth(const Cell* cell) const;
   int gridPaddedWidth(const Cell* cell, int site_width) const;
+  int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
   int gridNearestWidth(const Cell* cell, int site_width) const;
   int gridHeight(const Cell* cell, int row_height) const;
+  int gridHeight(const Cell* cell) const;
+  LayerInfo getLayerInfo(const Cell* cell) const;
   int gridX(int x, int site_width) const;
   int gridX(const Cell* cell) const;
   int gridX(const Cell* cell, int site_width) const;

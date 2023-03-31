@@ -235,19 +235,9 @@ void Opendp::visitCellPixels(
     int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
     int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
 
-    auto layer = grid_layers_.lower_bound(cell.height_);
-
-    if (layer == grid_layers_.end()) {
-      logger_->error(DPL,
-                     1,
-                     "Cell {} has height {} that is larger than the largest "
-                     "row-height in the grid.",
-                     cell.name(),
-                     cell.height_);
-    }
-    auto layer_info = layer->second;
+    int layer_height = getRowHeight(&cell);
+    auto layer_info = grid_layers_.at(layer_height);
     int layer_idx = layer_info.grid_index;
-    int layer_height = layer->first;
 
     int y_start = gridY(&cell);
     int y_end = gridEndY(&cell);
@@ -270,6 +260,11 @@ void Opendp::visitCellBoundaryPixels(
         void(Pixel* pixel, odb::Direction2D edge, int x, int y)>& visitor) const
 {
   dbInst* inst = cell.db_inst_;
+  int site_width = getSiteWidth(&cell);
+  int row_height = getRowHeight(&cell);
+  LayerInfo layer_info = grid_layers_.at(row_height);
+  const int layer_index_in_grid = layer_info.grid_index;
+
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
@@ -282,26 +277,28 @@ void Opendp::visitCellBoundaryPixels(
       dbTransform transform;
       inst->getTransform(transform);
       transform.apply(rect);
-      int x_start = gridX(rect.xMin() - core_.xMin());
-      int x_end = gridEndX(rect.xMax() - core_.xMin());
-      int y_start = gridY(rect.yMin() - core_.yMin());
-      int y_end = gridEndY(rect.yMax() - core_.yMin());
+
+      int x_start = gridX(rect.xMin() - core_.xMin(), site_width);
+      int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);
+      int y_start = gridY(rect.yMin() - core_.yMin(), row_height);
+      int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height);
+
       for (int x = x_start; x < x_end; x++) {
-        Pixel* pixel = gridPixel(x, y_start);
+        Pixel* pixel = gridPixel(layer_index_in_grid, x, y_start);
         if (pixel) {
           visitor(pixel, odb::Direction2D::North, x, y_start);
         }
-        pixel = gridPixel(x, y_end - 1);
+        pixel = gridPixel(layer_index_in_grid, x, y_end - 1);
         if (pixel) {
           visitor(pixel, odb::Direction2D::South, x, y_end - 1);
         }
       }
       for (int y = y_start; y < y_end; y++) {
-        Pixel* pixel = gridPixel(x_start, y);
+        Pixel* pixel = gridPixel(layer_index_in_grid, x_start, y);
         if (pixel) {
           visitor(pixel, odb::Direction2D::West, x_start, y);
         }
-        pixel = gridPixel(x_end - 1, y);
+        pixel = gridPixel(layer_index_in_grid, x_end - 1, y);
         if (pixel) {
           visitor(pixel, odb::Direction2D::East, x_end - 1, y);
         }
@@ -315,21 +312,21 @@ void Opendp::visitCellBoundaryPixels(
     int y_end = gridEndY(&cell);
 
     for (int x = x_start; x < x_end; x++) {
-      Pixel* pixel = gridPixel(x, y_start);
+      Pixel* pixel = gridPixel(layer_index_in_grid, x, y_start);
       if (pixel) {
         visitor(pixel, odb::Direction2D::North, x, y_start);
       }
-      pixel = gridPixel(x, y_end - 1);
+      pixel = gridPixel(layer_index_in_grid, x, y_end - 1);
       if (pixel) {
         visitor(pixel, odb::Direction2D::South, x, y_end - 1);
       }
     }
     for (int y = y_start; y < y_end; y++) {
-      Pixel* pixel = gridPixel(x_start, y);
+      Pixel* pixel = gridPixel(layer_index_in_grid, x_start, y);
       if (pixel) {
         visitor(pixel, odb::Direction2D::West, x_start, y);
       }
-      pixel = gridPixel(x_end - 1, y);
+      pixel = gridPixel(layer_index_in_grid, x_end - 1, y);
       if (pixel) {
         visitor(pixel, odb::Direction2D::East, x_end - 1, y);
       }
@@ -487,11 +484,16 @@ void Opendp::groupInitPixels()
 void Opendp::erasePixel(Cell* cell)
 {
   if (!(isFixed(cell) || !cell->is_placed_)) {
-    int x_end = gridPaddedEndX(cell);
-    int y_end = gridEndY(cell);
-    for (int x = gridPaddedX(cell); x < x_end; x++) {
-      for (int y = gridY(cell); y < y_end; y++) {
-        Pixel* pixel = gridPixel(x, y);
+    int row_height = getRowHeight(cell);
+    int site_width = getSiteWidth(cell);
+    LayerInfo layer_info = grid_layers_.at(row_height);
+    int x_end = gridPaddedEndX(cell, site_width);
+    int y_end = gridEndY(cell, row_height);
+
+    // TODO: We still need to set the pixel free in all layers.
+    for (int x = gridPaddedX(cell, site_width); x < x_end; x++) {
+      for (int y = gridY(cell, row_height); y < y_end; y++) {
+        Pixel* pixel = gridPixel(layer_info.grid_index, x, y);
         pixel->cell = nullptr;
         pixel->util = 0;
       }
@@ -507,8 +509,11 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   int x_end = grid_x + gridPaddedWidth(cell);
   int grid_height = gridHeight(cell);
   int y_end = grid_y + grid_height;
-
-  setGridPaddedLoc(cell, grid_x, grid_y);
+  int site_width = getSiteWidth(cell);
+  int row_height = getRowHeight(cell);
+  LayerInfo layer_info = grid_layers_.at(row_height);
+  const int layer_index_in_grid = layer_info.grid_index;
+  setGridPaddedLoc(cell, grid_x, grid_y, site_width, row_height);
   cell->is_placed_ = true;
 
   debugPrint(logger_,
@@ -524,7 +529,8 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
 
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
-      Pixel* pixel = gridPixel(x, y);
+      // TODO: You need to check all layers.
+      Pixel* pixel = gridPixel(layer_index_in_grid, x, y);
       if (pixel->cell) {
         logger_->error(
             DPL, 13, "Cannot paint grid because it is already occupied.");
@@ -535,8 +541,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
   }
 
-  // This is most likely broken for multi-row cells
-  cell->orient_ = gridPixel(grid_x, grid_y)->orient_;
+  cell->orient_ = gridPixel(layer_index_in_grid, grid_x, grid_y)->orient_;
 }
 
 }  // namespace dpl
