@@ -78,6 +78,7 @@ class HungarianMatching
  private:
   std::vector<std::vector<int>> hungarian_matrix_;
   std::vector<int> assignment_;
+  std::vector<int> valid_starting_slots_;
   HungarianAlgorithm hungarian_solver_;
   Netlist* netlist_;
   Core* core_;
