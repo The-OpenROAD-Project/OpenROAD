@@ -319,8 +319,7 @@ void FlexDR::initGCell2BoundaryPin()
             int x2 = idx2.x();
             int y = idx1.y();
             for (auto x = x1; x <= x2; ++x) {
-              Rect gcellBox
-                  = topBlock->getGCellBox(Point(x, y));
+              Rect gcellBox = topBlock->getGCellBox(Point(x, y));
               frCoord leftBound = gcellBox.xMin();
               frCoord rightBound = gcellBox.xMax();
               const bool hasLeftBound = bp.x() < leftBound;
@@ -339,8 +338,7 @@ void FlexDR::initGCell2BoundaryPin()
             int y1 = idx1.y();
             int y2 = idx2.y();
             for (auto y = y1; y <= y2; ++y) {
-              Rect gcellBox
-                  = topBlock->getGCellBox(Point(x, y));
+              Rect gcellBox = topBlock->getGCellBox(Point(x, y));
               frCoord bottomBound = gcellBox.yMin();
               frCoord topBound = gcellBox.yMax();
               const bool hasBottomBound = bp.y() < bottomBound;
@@ -793,10 +791,8 @@ void FlexDR::end(bool done)
   const ULL totMCut = std::accumulate(mCut.begin(), mCut.end(), ULL(0));
 
   if (done) {
-    logger_->metric("route__drc_errors",
-                    topBlock->getNumMarkers());
-    logger_->metric("route__wirelength",
-                    totWlen / topBlock->getDBUPerUU());
+    logger_->metric("route__drc_errors", topBlock->getNumMarkers());
+    logger_->metric("route__wirelength", totWlen / topBlock->getDBUPerUU());
     logger_->metric("route__vias", totSCut + totMCut);
     logger_->metric("route__vias__singlecut", totSCut);
     logger_->metric("route__vias__multicut", totMCut);
