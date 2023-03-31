@@ -60,7 +60,7 @@ const std::string& ClockDomain::getClockName() const
   return clock_name_;
 }
 
-const ClockEdge ClockDomain::getClockEdge() const
+ClockEdge ClockDomain::getClockEdge() const
 {
   return clock_edge_;
 }

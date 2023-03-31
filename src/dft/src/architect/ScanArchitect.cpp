@@ -46,10 +46,9 @@ bool CompareScanCells(const std::shared_ptr<ScanCell>& lhs,
   // cells so they are ordered by name
   if (lhs->getBits() == rhs->getBits()) {
     return lhs->getName() < rhs->getName();
-  } else {
-    // Bigger elements last
-    return lhs->getBits() < rhs->getBits();
-  }
+  } 
+  // Bigger elements last
+  return lhs->getBits() < rhs->getBits();
 }
 
 void SortScanCells(std::vector<std::shared_ptr<ScanCell>>& scan_cells)
@@ -59,16 +58,12 @@ void SortScanCells(std::vector<std::shared_ptr<ScanCell>>& scan_cells)
 
 }  // namespace
 
-ScanCellsBucket::ScanCellsBucket()
-{
-}
-
 void ScanCellsBucket::init(
     const ScanArchitectConfig& config,
     const std::vector<std::shared_ptr<ScanCell>>& scan_cells)
 {
   auto hash_fn = GetClockDomainHashFn(config);
-  for (std::shared_ptr<ScanCell> scan_cell : scan_cells) {
+  for (const std::shared_ptr<ScanCell>& scan_cell : scan_cells) {
     buckets_[hash_fn(scan_cell->getClockDomain())].push_back(scan_cell);
   }
 
@@ -83,7 +78,7 @@ ScanCellsBucket::getTotalBitsPerHashDomain() const
 {
   std::unordered_map<size_t, uint64_t> total_bits;
   for (const auto& [hash_domain, scan_cells] : buckets_) {
-    for (auto scan_cell : scan_cells) {
+    for (const std::shared_ptr<ScanCell>& scan_cell: scan_cells) {
       total_bits[hash_domain] += scan_cell->getBits();
     }
   }
