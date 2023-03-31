@@ -231,6 +231,7 @@ class IOPlacer
   void initTracks();
   odb::dbBlock* getBlock() const;
   odb::dbTech* getTech() const;
+  std::string getEdgeString(Edge edge);
 
   std::unique_ptr<Netlist> netlist_;
   std::unique_ptr<Core> core_;
