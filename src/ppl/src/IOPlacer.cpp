@@ -661,7 +661,8 @@ void IOPlacer::createSections()
 int IOPlacer::updateSection(Section& section, std::vector<Slot>& slots)
 {
   int new_slots_count = 0;
-  for (int slot_idx = section.begin_slot; slot_idx <= section.end_slot; slot_idx++) {
+  for (int slot_idx = section.begin_slot; slot_idx <= section.end_slot;
+       slot_idx++) {
     new_slots_count
         += (slots[slot_idx].blocked || slots[slot_idx].used) ? 0 : 1;
   }
@@ -770,11 +771,11 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
       }
       int available_slots = sections[i].num_slots - sections[i].used_slots;
       logger_->error(PPL,
-                    78,
-                    "Not enough available positions ({}) to place the pin "
-                    "group of size {}.",
-                    available_slots,
-                    group_size);
+                     78,
+                     "Not enough available positions ({}) to place the pin "
+                     "group of size {}.",
+                     available_slots,
+                     group_size);
     }
     if (!group_assigned) {
       logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups.");
@@ -1398,8 +1399,9 @@ void IOPlacer::run(bool random_mode)
     for (bool mirrored_only : {true, false}) {
       for (Constraint& constraint : constraints_) {
         updateConstraintSections(constraint);
-        std::vector<Section> sections_for_constraint = assignConstrainedPinsToSections(
-            constraint, mirrored_pins_cnt, mirrored_only);
+        std::vector<Section> sections_for_constraint
+            = assignConstrainedPinsToSections(
+                constraint, mirrored_pins_cnt, mirrored_only);
 
         int slots_available = 0;
         for (auto& sec : sections_for_constraint) {
