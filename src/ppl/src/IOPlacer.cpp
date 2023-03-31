@@ -784,24 +784,23 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
         sections[i].pin_groups.push_back({group, order});
         group_assigned = true;
         break;
-      } else {
-        int available_slots = sections[i].num_slots - sections[i].used_slots;
-        std::string edge_str = getEdgeString(sections[i].edge);
-        const odb::Point& section_begin = slots_[sections[i].begin_slot].pos;
-        const odb::Point& section_end = slots_[sections[i].end_slot].pos;
-        logger_->warn(PPL,
-                      78,
-                      "Not enough available positions ({}) in section ({}, "
-                      "{})-({}, {}) at edge {} to place the pin "
-                      "group of size {}.",
-                      available_slots,
-                      section_begin.getX(),
-                      section_begin.getY(),
-                      section_end.getX(),
-                      section_end.getY(),
-                      edge_str,
-                      group_size);
       }
+      int available_slots = sections[i].num_slots - sections[i].used_slots;
+      std::string edge_str = getEdgeString(sections[i].edge);
+      const odb::Point& section_begin = slots_[sections[i].begin_slot].pos;
+      const odb::Point& section_end = slots_[sections[i].end_slot].pos;
+      logger_->warn(PPL,
+                    78,
+                    "Not enough available positions ({}) in section ({}, "
+                    "{})-({}, {}) at edge {} to place the pin "
+                    "group of size {}.",
+                    available_slots,
+                    section_begin.getX(),
+                    section_begin.getY(),
+                    section_end.getX(),
+                    section_end.getY(),
+                    edge_str,
+                    group_size);
     }
     if (!group_assigned) {
       logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups.");
