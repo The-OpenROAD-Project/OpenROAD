@@ -47,6 +47,7 @@ record_tests {
   group_pins7
   group_pins8
   group_pins9
+  group_pins10
   group_pins_warn1
   top_layer1
   top_layer2

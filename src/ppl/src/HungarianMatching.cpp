@@ -200,39 +200,38 @@ void HungarianMatching::createMatrixForGroups()
   }
 
   if (group_size_ > 0) {
-    // end the loop when i > (end_slot_ - group_size_ + 1)
-    // to avoid access invalid positions of slots_.
-    for (int i = begin_slot_; i <= (end_slot_ - group_size_ + 1);
-         i += group_size_) {
+    valid_starting_slots_.clear();
+    int i = begin_slot_;
+    // end the loop to avoid access invalid positions of slots_.
+    const int end_i = (end_slot_ - group_size_ + 1);
+    while (i <= end_i) {
       bool blocked = false;
       for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
         if (slots_[i + pin_cnt].blocked) {
           blocked = true;
+          // Find the next unblocked slot, if any, to try again
+          while (++i <= end_i) {
+            if (!slots_[i + pin_cnt].blocked) {
+              break;
+            }
+          }
+          break;
         }
       }
       if (!blocked) {
         group_slots_++;
+        valid_starting_slots_.push_back(i);
+        // We have a legal position so jump ahead to limit the
+        // number of times we run the hungarian code.
+        i += group_size_;
       }
     }
 
     hungarian_matrix_.resize(group_slots_);
     int slot_index = 0;
-    // end the loop when i > (end_slot_ - group_size_ + 1)
-    // to avoid access invalid positions of slots_.
-    for (int i = begin_slot_; i <= (end_slot_ - group_size_ + 1);
-         i += group_size_) {
+    for (int i : valid_starting_slots_) {
       int groupIndex = 0;
       Point newPos = slots_[i].pos;
-
-      bool blocked = false;
-      for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
-        if (slots_[i + pin_cnt].blocked) {
-          blocked = true;
-        }
-      }
-      if (blocked) {
-        continue;
-      }
 
       hungarian_matrix_[slot_index].resize(num_pin_groups_,
                                            std::numeric_limits<int>::max());
@@ -266,13 +265,10 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment)
   for (const auto& [pins, order] : pin_groups_) {
     slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
-      while (slots_[slot_index].blocked && slot_index < slots_.size()) {
-        slot_index += group_size_;
-      }
       if (assignment_[row] != col) {
-        slot_index += group_size_;
         continue;
       }
+      slot_index = valid_starting_slots_.at(row);
 
       int pin_cnt = (edge_ == Edge::top || edge_ == Edge::left) && order
                         ? pins.size() - 1
