@@ -66,7 +66,6 @@ target_include_directories(dft
     include
   PRIVATE
     src
-    src/architect
 )
 
 target_link_libraries(dft
