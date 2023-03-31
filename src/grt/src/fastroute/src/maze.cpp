@@ -2199,7 +2199,7 @@ void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
   }
 }
 
-int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
+int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage, bool fillNetsVector)
 {
   int H_overflow = 0;
   int V_overflow = 0;
@@ -2210,7 +2210,8 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
 
-  congestion_nets_.clear();
+  if (fillNetsVector)
+    congestion_nets_.clear();
 
   int total_usage = 0;
   for (int i = 0; i < y_grid_; i++) {
@@ -2218,7 +2219,8 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
       total_usage += h_edges_[i][j].usage;
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
-        setCongestionNets(j, i, 1);
+        if (fillNetsVector)
+          setCongestionNets(j, i, 1);
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
         numedges++;
@@ -2231,7 +2233,8 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
       total_usage += v_edges_[i][j].usage;
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
-        setCongestionNets(j, i, 0);
+        if (fillNetsVector)
+          setCongestionNets(j, i, 0);
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
         numedges++;

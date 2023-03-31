@@ -4003,17 +4003,20 @@ void GlobalRouter::updateDirtyRoutes()
     dirty_nets_.clear();
 
     bool reroutingOverflow = true;
-    int aux_cnt = 2;
+    // the maximum number of times that the nets traversing the congestion area will be added
+    int add_max = 2;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      while(fastroute_->has2Doverflow() && reroutingOverflow && aux_cnt--) {
-      //if (reroutingOverflow) {
+      while(fastroute_->has2Doverflow() && reroutingOverflow && add_max > 0) {
+        // the nets that cross the congestion area are obtained and added to the vector of dirty nets
         for (odb::dbNet* db_net : fastroute_->getCongestionNets()) {
           dirty_nets.push_back(db_net_map_[db_net]);
         }
+        // The dirty nets are initialized and then routed
         initFastRouteIncr(dirty_nets);
         NetRouteMap new_route
             = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
         mergeResults(new_route);
+        add_max--;
       }
       if (fastroute_->has2Doverflow()) {
         logger_->error(GRT,

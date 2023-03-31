@@ -801,7 +801,7 @@ NetRouteMap FastRouteCore::run()
                enlarge_);
     routeLVAll(newTH, enlarge_, LOGIS_COF);
 
-    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage, false);
 
     enlarge_ += 5;
     newTH -= 5;
@@ -939,7 +939,7 @@ NetRouteMap FastRouteCore::run()
                   slope,
                   L);
     int last_cong = past_cong;
-    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage, false);
 
     if (minofl > past_cong) {
       minofl = past_cong;
@@ -978,7 +978,7 @@ NetRouteMap FastRouteCore::run()
                       slope,
                       L);
         last_cong = past_cong;
-        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage, false);
 
         str_accu(12);
         L = 1;
@@ -1028,7 +1028,7 @@ NetRouteMap FastRouteCore::run()
                       slope,
                       L);
         last_cong = past_cong;
-        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
+        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage, false);
         if (past_cong < last_cong) {
           copyRS();
           bmfl = past_cong;
@@ -1051,13 +1051,13 @@ NetRouteMap FastRouteCore::run()
         break;
       }
       if (i >= mazeRound) {
-        getOverflow2Dmaze(&maxOverflow, &tUsage);
+        getOverflow2Dmaze(&maxOverflow, &tUsage, false);
         break;
       }
     }
 
     if (i >= mazeRound) {
-      getOverflow2Dmaze(&maxOverflow, &tUsage);
+      getOverflow2Dmaze(&maxOverflow, &tUsage, false);
       break;
     }
 
@@ -1107,7 +1107,7 @@ NetRouteMap FastRouteCore::run()
 
   removeLoops();
 
-  getOverflow2Dmaze(&maxOverflow, &tUsage);
+  getOverflow2Dmaze(&maxOverflow, &tUsage, true);
 
   layerAssignment();
 

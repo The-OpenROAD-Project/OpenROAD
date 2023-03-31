@@ -224,7 +224,7 @@ class FastRouteCore
   void convertToMazeroute();
   void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
   int getOverflow2D(int* maxOverflow);
-  int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
+  int getOverflow2Dmaze(int* maxOverflow, int* tUsage, bool fillNetsVector);
   int getOverflow3D();
   void setCongestionNets(int& posX, int& posY, int dir);
   void str_accu(const int rnd);
