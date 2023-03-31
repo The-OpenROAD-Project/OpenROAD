@@ -106,52 +106,18 @@ extern const char* metrics_filename;
 
 namespace ord {
 
-using std::max;
-using std::min;
-
 using odb::dbBlock;
 using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbLib;
 using odb::dbTech;
-using odb::Point;
 using odb::Rect;
 
-using sta::dbSta;
 using sta::evalTclInit;
-using sta::Resizer;
 
 using utl::ORD;
 
 OpenRoad::OpenRoad()
-    : tcl_interp_(nullptr),
-      logger_(nullptr),
-      db_(nullptr),
-      verilog_network_(nullptr),
-      sta_(nullptr),
-      resizer_(nullptr),
-      ioPlacer_(nullptr),
-      opendp_(nullptr),
-      optdp_(nullptr),
-      finale_(nullptr),
-      macro_placer_(nullptr),
-      macro_placer2_(nullptr),
-      global_router_(nullptr),
-      restructure_(nullptr),
-      tritonCts_(nullptr),
-      tapcell_(nullptr),
-      extractor_(nullptr),
-      detailed_router_(nullptr),
-      antenna_checker_(nullptr),
-      replace_(nullptr),
-      pdnsim_(nullptr),
-      partitionMgr_(nullptr),
-      pdngen_(nullptr),
-      icewall_(nullptr),
-      distributer_(nullptr),
-      stt_builder_(nullptr),
-      dft_(nullptr),
-      threads_(1)
 {
   db_ = dbDatabase::create();
 }
@@ -341,14 +307,16 @@ void OpenRoad::readDef(const char* filename,
   }
 
   odb::defin::MODE mode = odb::defin::DEFAULT;
-  if (floorplan_init)
+  if (floorplan_init) {
     mode = odb::defin::FLOORPLAN;
-  else if (incremental)
+  } else if (incremental) {
     mode = odb::defin::INCREMENTAL;
+  }
   odb::defin def_reader(db_, logger_, mode);
   std::vector<odb::dbLib*> search_libs;
-  for (odb::dbLib* lib : db_->getLibs())
+  for (odb::dbLib* lib : db_->getLibs()) {
     search_libs.push_back(lib);
+  }
   if (continue_on_errors) {
     def_reader.continueOnErrors();
   }
@@ -361,25 +329,30 @@ void OpenRoad::readDef(const char* filename,
   }
 }
 
-static odb::defout::Version stringToDefVersion(string version)
+static odb::defout::Version stringToDefVersion(const string& version)
 {
-  if (version == "5.8")
+  if (version == "5.8") {
     return odb::defout::Version::DEF_5_8;
-  else if (version == "5.7")
+  }
+  if (version == "5.7") {
     return odb::defout::Version::DEF_5_7;
-  else if (version == "5.6")
+  }
+  if (version == "5.6") {
     return odb::defout::Version::DEF_5_6;
-  else if (version == "5.5")
+  }
+  if (version == "5.5") {
     return odb::defout::Version::DEF_5_5;
-  else if (version == "5.4")
+  }
+  if (version == "5.4") {
     return odb::defout::Version::DEF_5_4;
-  else if (version == "5.3")
+  }
+  if (version == "5.3") {
     return odb::defout::Version::DEF_5_3;
-  else
-    return odb::defout::Version::DEF_5_8;
+  }
+  return odb::defout::Version::DEF_5_8;
 }
 
-void OpenRoad::writeDef(const char* filename, string version)
+void OpenRoad::writeDef(const char* filename, const string& version)
 {
   odb::dbChip* chip = db_->getChip();
   if (chip) {
@@ -563,8 +536,9 @@ void OpenRoad::setThreadCount(int threads, bool printInfo)
   }
   threads_ = threads;
 
-  if (printInfo)
+  if (printInfo) {
     logger_->info(ORD, 30, "Using {} thread(s).", threads_);
+  }
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);

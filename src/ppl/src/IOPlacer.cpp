@@ -658,39 +658,41 @@ void IOPlacer::createSections()
   createSectionsPerEdge(Edge::left, hor_layers_);
 }
 
+int IOPlacer::updateSection(Section& section, std::vector<Slot>& slots)
+{
+  int new_slots_count = 0;
+  for (int slot_idx = section.begin_slot; slot_idx <= section.end_slot;
+       slot_idx++) {
+    new_slots_count
+        += (slots[slot_idx].blocked || slots[slot_idx].used) ? 0 : 1;
+  }
+  section.num_slots = new_slots_count;
+  return new_slots_count;
+}
+
+int IOPlacer::updateConstraintSections(Constraint& constraint)
+{
+  bool top_layer = constraint.interval.getEdge() == Edge::invalid;
+  std::vector<Slot>& slots = top_layer ? top_layer_slots_ : slots_;
+  int total_slots_count = 0;
+  for (Section& sec : constraint.sections) {
+    total_slots_count += updateSection(sec, slots);
+  }
+
+  return total_slots_count;
+}
+
 std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
     Constraint& constraint,
     int& mirrored_pins_cnt,
     bool mirrored_only)
 {
-  bool top_layer = constraint.interval.getEdge() == Edge::invalid;
-  std::vector<Slot>& slots = top_layer ? top_layer_slots_ : slots_;
   if (!mirrored_only) {
     assignConstrainedGroupsToSections(constraint, constraint.sections);
   }
 
-  int total_slots_count = 0;
-  for (Section& sec : constraint.sections) {
-    int new_slots_count = 0;
-    for (int slot_idx = sec.begin_slot; slot_idx <= sec.end_slot; slot_idx++) {
-      new_slots_count
-          += (slots[slot_idx].blocked || slots[slot_idx].used) ? 0 : 1;
-    }
-    sec.num_slots = new_slots_count;
-    total_slots_count += new_slots_count;
-  }
-
   std::vector<int> pin_indices = findPinsForConstraint(
       constraint, netlist_io_pins_.get(), mirrored_only);
-
-  if (pin_indices.size() > total_slots_count) {
-    logger_->error(PPL,
-                   74,
-                   "Number of pins ({}) exceed number of valid positions ({}) "
-                   "for constraint.",
-                   pin_indices.size(),
-                   total_slots_count);
-  }
 
   for (int idx : pin_indices) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(idx);
@@ -768,12 +770,12 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
         break;
       }
       int available_slots = sections[i].num_slots - sections[i].used_slots;
-      logger_->warn(PPL,
-                    78,
-                    "Not enough available positions ({}) to place the pin "
-                    "group of size {}.",
-                    available_slots,
-                    group_size);
+      logger_->error(PPL,
+                     78,
+                     "Not enough available positions ({}) to place the pin "
+                     "group of size {}.",
+                     available_slots,
+                     group_size);
     }
     if (!group_assigned) {
       logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups.");
@@ -1344,6 +1346,12 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
     match.getAssignmentForGroups(assignment_);
   }
 
+  for (auto& sec : sections) {
+    bool top_layer = sec.edge == Edge::invalid;
+    std::vector<Slot>& slots = top_layer ? top_layer_slots_ : slots_;
+    updateSection(sec, slots);
+  }
+
   for (auto& match : hg_vec) {
     match.findAssignment();
   }
@@ -1389,10 +1397,40 @@ void IOPlacer::run(bool random_mode)
     int constrained_pins_cnt = 0;
     int mirrored_pins_cnt = 0;
     for (bool mirrored_only : {true, false}) {
-      std::vector<Section> sections_for_constraint;
       for (Constraint& constraint : constraints_) {
-        sections_for_constraint = assignConstrainedPinsToSections(
-            constraint, mirrored_pins_cnt, mirrored_only);
+        updateConstraintSections(constraint);
+        std::vector<Section> sections_for_constraint
+            = assignConstrainedPinsToSections(
+                constraint, mirrored_pins_cnt, mirrored_only);
+
+        int slots_available = 0;
+        for (auto& sec : sections_for_constraint) {
+          slots_available += sec.num_slots - sec.used_slots;
+        }
+
+        if (slots_available < 0) {
+          std::string edge_str;
+          const Edge edge = constraint.interval.getEdge();
+          if (edge == Edge::bottom) {
+            edge_str = "BOTTOM";
+          } else if (edge == Edge::top) {
+            edge_str = "TOP";
+          } else if (edge == Edge::left) {
+            edge_str = "LEFT";
+          } else if (edge == Edge::right) {
+            edge_str = "RIGHT";
+          }
+          logger_->error(
+              PPL,
+              88,
+              "Cannot assign {} constrained pins to region {}u-{}u "
+              "at edge {}. Not "
+              "enough space in the defined region.",
+              constraint.pin_list.size(),
+              static_cast<float>(dbuToMicrons(constraint.interval.getBegin())),
+              static_cast<float>(dbuToMicrons(constraint.interval.getEnd())),
+              edge_str);
+        }
 
         findPinAssignment(sections_for_constraint);
         updateSlots();
@@ -1408,7 +1446,6 @@ void IOPlacer::run(bool random_mode)
     }
 
     setupSections(constrained_pins_cnt);
-
     findPinAssignment(sections_);
   }
 
