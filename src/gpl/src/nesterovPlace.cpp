@@ -540,7 +540,9 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
 
-      if (isnan(newStepLength) || isinf(newStepLength)) {
+      if (isinf(newStepLength)) {
+        newStepLength = 0;
+      } else if (isnan(newStepLength)) {
         isDiverged_ = true;
         divergeMsg_ = "RePlAce diverged at newStepLength.";
         divergeCode_ = 305;
