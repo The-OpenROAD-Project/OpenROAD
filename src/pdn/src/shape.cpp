@@ -216,10 +216,20 @@ const odb::Rect Shape::getMinimumRect() const
 }
 
 bool Shape::cut(const ShapeTree& obstructions,
+                const Grid* ignore_grid,
                 std::vector<Shape*>& replacements) const
 {
-  return cut(
-      obstructions, replacements, [](const ShapeValue&) { return true; });
+  return cut(obstructions,
+             replacements,
+             [ignore_grid](const ShapeValue& other) -> bool {
+               const auto obs = other.second;
+               if (obs->shapeType() != GRID_OBS) {
+                 return true;
+               }
+               const GridObsShape* shape
+                   = static_cast<GridObsShape*>(obs.get());
+               return !shape->belongsTo(ignore_grid);
+             });
 }
 
 bool Shape::cut(const ShapeTree& obstructions,
@@ -527,8 +537,10 @@ const std::string Shape::getRectText(const odb::Rect& rect,
                      rect.yMax() / dbu_to_micron);
 }
 
-Shape* Shape::extendTo(const odb::Rect& rect,
-                       const ShapeTree& obstructions) const
+Shape* Shape::extendTo(
+    const odb::Rect& rect,
+    const ShapeTree& obstructions,
+    const std::function<bool(const ShapeValue&)>& obs_filter) const
 {
   std::unique_ptr<Shape> new_shape(copy());
 
@@ -551,7 +563,8 @@ Shape* Shape::extendTo(const odb::Rect& rect,
                           && bgi::satisfies([this](const auto& other) {
                                // ignore violations that results from itself
                                return other.second.get() != this;
-                             }))
+                             })
+                          && bgi::satisfies(obs_filter))
       != obstructions.qend()) {
     // extension not possible
     return nullptr;
@@ -639,6 +652,7 @@ const odb::Rect FollowPinShape::getMinimumRect() const
 }
 
 bool FollowPinShape::cut(const ShapeTree& obstructions,
+                         const Grid* ignore_grid,
                          std::vector<Shape*>& replacements) const
 {
   return Shape::cut(
@@ -653,9 +667,10 @@ bool FollowPinShape::cut(const ShapeTree& obstructions,
 
 /////////////////////////////////////
 
-GridObsShape::GridObsShape(odb::dbTechLayer* layer, const odb::Rect& rect, const Grid* grid) :
-  Shape(layer, rect, Shape::GRID_OBS),
-  grid_(grid)
+GridObsShape::GridObsShape(odb::dbTechLayer* layer,
+                           const odb::Rect& rect,
+                           const Grid* grid)
+    : Shape(layer, rect, Shape::GRID_OBS), grid_(grid)
 {
   setObstruction(rect);
 }

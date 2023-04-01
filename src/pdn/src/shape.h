@@ -179,9 +179,14 @@ class Shape
   int getNumberOfConnectionsBelow() const;
   int getNumberOfConnectionsAbove() const;
 
-  Shape* extendTo(const odb::Rect& rect, const ShapeTree& obstructions) const;
+  Shape* extendTo(
+      const odb::Rect& rect,
+      const ShapeTree& obstructions,
+      const std::function<bool(const ShapeValue&)>& obs_filter
+      = [](const ShapeValue&) { return true; }) const;
 
   virtual bool cut(const ShapeTree& obstructions,
+                   const Grid* ignore_grid,
                    std::vector<Shape*>& replacements) const;
 
   // return a copy of the shape
@@ -267,6 +272,7 @@ class FollowPinShape : public Shape
   virtual void setAllowsNonPreferredDirectionChange() override {}
 
   virtual bool cut(const ShapeTree& obstructions,
+                   const Grid* ignore_grid,
                    std::vector<Shape*>& replacements) const override;
 
  private:
@@ -276,7 +282,9 @@ class FollowPinShape : public Shape
 class GridObsShape : public Shape
 {
  public:
-  GridObsShape(odb::dbTechLayer* layer, const odb::Rect& rect, const Grid* grid);
+  GridObsShape(odb::dbTechLayer* layer,
+               const odb::Rect& rect,
+               const Grid* grid);
   ~GridObsShape() {}
 
   bool belongsTo(const Grid* grid) const { return grid == grid_; }

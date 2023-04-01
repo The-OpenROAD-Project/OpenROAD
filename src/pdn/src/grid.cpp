@@ -286,6 +286,16 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
              getLongName());
   // find vias that do not overlap completely
   // attempt to extend straps to fit (if owned by grid)
+
+  auto obs_filter = [this](const ShapeValue& other) -> bool {
+    const auto obs = other.second;
+    if (obs->shapeType() != Shape::GRID_OBS) {
+      return true;
+    }
+    const GridObsShape* shape = static_cast<GridObsShape*>(obs.get());
+    return !shape->belongsTo(this);
+  };
+
   std::map<Shape*, Shape*> replace_shapes;
   for (const auto& [box, via] : vias_) {
     // ensure shapes belong to something
@@ -307,15 +317,19 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
     }
 
     if (lower_belongs_to_grid && lower_shape->isModifiable()) {
-      auto* new_lower = lower_shape->extendTo(
-          upper_shape->getRect(), obstructions[lower_shape->getLayer()]);
+      auto* new_lower
+          = lower_shape->extendTo(upper_shape->getRect(),
+                                  obstructions[lower_shape->getLayer()],
+                                  obs_filter);
       if (new_lower != nullptr) {
         replace_shapes[lower_shape.get()] = new_lower;
       }
     }
     if (upper_belongs_to_grid && upper_shape->isModifiable()) {
-      auto* new_upper = upper_shape->extendTo(
-          lower_shape->getRect(), obstructions[upper_shape->getLayer()]);
+      auto* new_upper
+          = upper_shape->extendTo(lower_shape->getRect(),
+                                  obstructions[upper_shape->getLayer()],
+                                  obs_filter);
       if (new_upper != nullptr) {
         replace_shapes[upper_shape.get()] = new_upper;
       }
@@ -684,6 +698,15 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
     }
   }
 
+  auto obs_filter = [this](const ShapeValue& other) -> bool {
+    const auto obs = other.second;
+    if (obs->shapeType() != Shape::GRID_OBS) {
+      return true;
+    }
+    const GridObsShape* shape = static_cast<GridObsShape*>(obs.get());
+    return !shape->belongsTo(this);
+  };
+
   ShapeTreeMap search_obstructions = obstructions;
   for (const auto& [layer, shapes] : search_shapes) {
     auto& obs = search_obstructions[layer];
@@ -710,7 +733,8 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   for (const auto& via : vias) {
     for (auto* layer : via->getConnect()->getIntermediteLayers()) {
       auto& search_obs = search_obstructions[layer];
-      if (search_obs.qbegin(bgi::intersects(via->getBox()))
+      if (search_obs.qbegin(bgi::intersects(via->getBox())
+                            && bgi::satisfies(obs_filter))
           != search_obs.qend()) {
         remove_vias.insert(via);
         via->markFailed(failedViaReason::OBSTRUCTED);
