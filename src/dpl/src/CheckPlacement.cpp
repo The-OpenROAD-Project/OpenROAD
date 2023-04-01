@@ -139,13 +139,16 @@ bool Opendp::isPlaced(const Cell* cell)
 
 bool Opendp::checkInRows(const Cell& cell) const
 {
-  int x_ll = gridX(&cell);
-  int x_ur = gridEndX(&cell);
-  int y_ll = gridY(&cell);
-  int y_ur = gridEndY(&cell);
+  auto layer_info = getRowInfo(&cell);
+  int site_width = getSiteWidth(&cell);
+  int x_ll = gridX(&cell, site_width);
+  int x_ur = gridEndX(&cell, site_width);
+  int y_ll = gridY(&cell, layer_info.first);
+  int y_ur = gridEndY(&cell, layer_info.first);
+  // TODO: Do I need to do this for all layers?
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {
-      Pixel* pixel = gridPixel(x, y);
+      Pixel* pixel = gridPixel(layer_info.second.grid_index, x, y);
       if (pixel == nullptr  // outside core
           || !pixel->is_valid) {
         return false;

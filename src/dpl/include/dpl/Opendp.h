@@ -134,7 +134,7 @@ struct Pixel
 
 struct LayerInfo
 {
-  const int row_count;
+  int row_count;
   const int site_count;
   const int grid_index;
 };
@@ -370,6 +370,7 @@ class Opendp
                         int y,
                         int site_width,
                         int row_height) const;
+  std::pair<int, LayerInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   bool isStdCell(const Cell* cell) const;

@@ -462,7 +462,6 @@ int Opendp::gridPaddedWidth(const Cell* cell, int site_width) const
   return divCeil(paddedWidth(cell), site_width);
 }
 
-
 int Opendp::gridPaddedWidth(const Cell* cell) const
 {
   int site_width = getSiteWidth(cell);
@@ -556,6 +555,19 @@ int Opendp::getRowHeight(const Cell* cell) const
     logger_->error(DPL, 40, "Cell {} is taller than any row.", cell->name());
   }
   return layer->first;
+}
+
+pair<int, LayerInfo> Opendp::getRowInfo(const Cell* cell) const
+{
+  if (grid_layers_.empty()) {
+    logger_->error(DPL, 39, "No grid layers mapped.");
+  }
+  auto layer = this->grid_layers_.lower_bound(cell->height_);
+  if (layer == this->grid_layers_.end()) {
+    // this means the cell is taller than any layer
+    logger_->error(DPL, 40, "Cell {} is taller than any row.", cell->name());
+  }
+  return std::make_pair(layer->first, layer->second);
 }
 
 LayerInfo Opendp::getLayerInfo(const Cell* cell) const

@@ -35,6 +35,7 @@
 #include <algorithm>
 #include <cfloat>
 #include <limits>
+#include <string>
 
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
@@ -225,24 +226,36 @@ void Opendp::makeGroups()
   for (auto db_group : db_groups) {
     dbRegion* parent = db_group->getRegion();
     if (parent) {
-      groups_.emplace_back(Group());
-      struct Group& group = groups_.back();
-      string group_name = db_group->getName();
-      group.name = group_name;
-      group.boundary.mergeInit();
-      auto boundaries = parent->getBoundaries();
-      for (dbBox* boundary : boundaries) {
-        Rect box = boundary->getBox();
-        box = box.intersect(core_);
-        // offset region to core origin
-        box.moveDelta(-core_.xMin(), -core_.yMin());
+      std::set<int> unique_heights;
+      map<int, Group&> cell_height_to_group_map;
+      for (auto db_inst : db_group->getInsts()) {
+        unique_heights.insert(db_inst_map_[db_inst]->height_);
+      }
+      int index = 0;
+      for (auto height : unique_heights) {
+        groups_.emplace_back(Group());
+        struct Group& group = groups_.back();
+        string group_name
+            = string(db_group->getName()) + "_" + std::to_string(index++);
+        group.name = group_name;
+        group.boundary.mergeInit();
+        cell_height_to_group_map[height] = group;
+        auto boundaries = parent->getBoundaries();
 
-        group.regions.push_back(box);
-        group.boundary.merge(box);
+        for (dbBox* boundary : boundaries) {
+          Rect box = boundary->getBox();
+          box = box.intersect(core_);
+          // offset region to core origin
+          box.moveDelta(-core_.xMin(), -core_.yMin());
+
+          group.regions.push_back(box);
+          group.boundary.merge(box);
+        }
       }
 
       for (auto db_inst : db_group->getInsts()) {
         Cell* cell = db_inst_map_[db_inst];
+        Group& group = cell_height_to_group_map[cell->height_];
         group.cells_.push_back(cell);
         cell->group_ = &group;
       }
