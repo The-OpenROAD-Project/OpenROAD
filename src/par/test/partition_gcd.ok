@@ -9,7 +9,7 @@
 ========================================
 [INFO] Partitioning parameters**** 
 [PARAM] Number of partitions = 2
-[PARAM] UBfactor = 1.0
+[PARAM] UBfactor = 1
 [PARAM] Vertex dimensions = 1
 [PARAM] Hyperedge dimensions = 1
 ========================================
@@ -118,7 +118,7 @@ After Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
 [V-Refine] Level 2 :: 207, 301, 154.65254
 [V-Refine] Level 3 :: 312, 370, 154.65254
 [V-Refine] Level 4 :: 469, 451, 154.65254
-[INFO] V-cycle refinement 1 delta cost 0.0
+[INFO] V-cycle refinement 1 delta cost 0
 =========================================
 [STATUS] Running FC multilevel coarsening 
 =========================================
@@ -133,7 +133,7 @@ After Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
 [V-Refine] Level 2 :: 207, 301, 154.65254
 [V-Refine] Level 3 :: 312, 370, 154.65254
 [V-Refine] Level 4 :: 469, 451, 154.65254
-[INFO] V-cycle refinement 2 delta cost 0.0
+[INFO] V-cycle refinement 2 delta cost 0
 [Cutcost of partition : 154.65254]
 [Vertex balance of block_0 : 0.59249  ( 327.17993 )    
 [Vertex balance of block_1 : 0.40751  ( 225.03609 )    

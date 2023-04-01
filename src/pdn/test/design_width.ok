@@ -9,5 +9,5 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 406 components and 1816 component-terminals.
 [INFO ODB-0133]     Created 361 nets and 1004 connections.
-[ERROR PDN-0185] Insufficient width (14.04 um) to add straps on layer M8 in grid "Core" with total strap width 6.0 um and offset 10.0 um.
+[ERROR PDN-0185] Insufficient width (14.04 um) to add straps on layer M8 in grid "Core" with total strap width 6 um and offset 10 um.
 PDN-0185
