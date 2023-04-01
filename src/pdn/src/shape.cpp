@@ -651,4 +651,13 @@ bool FollowPinShape::cut(const ShapeTree& obstructions,
       });
 }
 
+/////////////////////////////////////
+
+GridObsShape::GridObsShape(odb::dbTechLayer* layer, const odb::Rect& rect, const Grid* grid) :
+  Shape(layer, rect, Shape::GRID_OBS),
+  grid_(grid)
+{
+  setObstruction(rect);
+}
+
 }  // namespace pdn

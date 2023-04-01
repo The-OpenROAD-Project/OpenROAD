@@ -891,7 +891,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 
   for (auto* layer : layers) {
-    auto obs = std::make_shared<Shape>(layer, core, Shape::GRID_OBS);
+    auto obs = std::make_shared<GridObsShape>(layer, core, this);
     debugPrint(getLogger(),
                utl::PDN,
                "Obs",
@@ -912,7 +912,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
                               core.xMax() + ver_size + offset[2],
                               core.yMax() + hor_size + offset[3]);
     for (auto* layer : ring->getLayers()) {
-      auto obs = std::make_shared<Shape>(layer, ring_rect, Shape::GRID_OBS);
+      auto obs = std::make_shared<GridObsShape>(layer, ring_rect, this);
       obs->generateObstruction();
       debugPrint(
           getLogger(),
@@ -1312,13 +1312,16 @@ void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
 
   // copy layer obs
   for (const auto& [layer, shapes] : local_obs) {
-    auto obs = std::make_shared<Shape>(layer, inst_box, Shape::GRID_OBS);
+    auto obs = std::make_shared<GridObsShape>(layer, inst_box, this);
     local_obs[layer].insert({obs->getObstructionBox(), obs});
   }
 
   // copy instance obstructions
   for (const auto& [layer, shapes] : getInstanceObstructions(inst_, halos_)) {
-    local_obs[layer].insert(shapes.begin(), shapes.end());
+    for (const auto& [box, shape] : shapes) {
+      auto obs = std::make_shared<GridObsShape>(layer, shape->getRect(), this);
+      local_obs[layer].insert({box, obs});
+    }
   }
 
   // merge local and global obs

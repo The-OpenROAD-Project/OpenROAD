@@ -273,4 +273,17 @@ class FollowPinShape : public Shape
   std::set<odb::dbRow*> rows_;
 };
 
+class GridObsShape : public Shape
+{
+ public:
+  GridObsShape(odb::dbTechLayer* layer, const odb::Rect& rect, const Grid* grid);
+  ~GridObsShape() {}
+
+  bool belongsTo(const Grid* grid) const { return grid == grid_; }
+  const Grid* getGrid() const { return grid_; }
+
+ private:
+  const Grid* grid_;
+};
+
 }  // namespace pdn
