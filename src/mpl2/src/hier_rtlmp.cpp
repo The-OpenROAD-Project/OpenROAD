@@ -446,7 +446,7 @@ void HierRTLMP::hierRTLMacroPlacer()
         cluster->setClusterType(HardMacroCluster);
         root_cluster_->addChild(cluster);
         logger_->report("model {} as a cluster.", cluster_name);
-      } 
+      }
     }
     // reset parameters
     pos_swap_prob_ = 0.2;
@@ -454,24 +454,23 @@ void HierRTLMP::hierRTLMacroPlacer()
     double_swap_prob_ = 0.2;
     exchange_swap_prob_ = 0.2;
     flip_prob_ = 0.2;
-    resize_prob_ = 0.0; 
+    resize_prob_ = 0.0;
     guidance_weight_ = 0.0;
     fence_weight_ = 0.0;
     boundary_weight_ = 0.0;
     notch_weight_ = 0.0;
     macro_blockage_weight_ = 0.0;
-    //virtual_weight_ = 1.0;
-    //max_num_ff_dist_ = 1;  
-    //dataflow_weight_ = 1.0;    
+    // virtual_weight_ = 1.0;
+    // max_num_ff_dist_ = 1;
+    // dataflow_weight_ = 1.0;
   } else {
     multiLevelCluster(root_cluster_);
     //
     // Break mixed leaf clusters into a standard-cell cluster and hard-macro
-    // clusters. Merge macros based on connection signatures and footprints. Based
-    // on types of designs, we support two types of breaking up. Suppose current
-    // cluster is A --
-    // Type 1:  Replace A by A1, A2, A3
-    // Type 2:  Create a subtree for A
+    // clusters. Merge macros based on connection signatures and footprints.
+    // Based on types of designs, we support two types of breaking up. Suppose
+    // current cluster is A -- Type 1:  Replace A by A1, A2, A3 Type 2:  Create
+    // a subtree for A
     //          A  ->    A
     //               |  |   |
     //              A1  A2  A3
