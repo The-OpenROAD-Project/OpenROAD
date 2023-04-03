@@ -212,19 +212,25 @@ class dbCreateNetUtil
 
   enum Position
   {
-    DEFAULT = 0,  
-    MIDDLE = 1,   
-    RIGHT = 2,  
+    DEFAULT = 0,
+    MIDDLE = 1,
+    RIGHT = 2,
     LEFT = 3
   };
-  // These 2 functions below are needed by sroute command. 
-  // create_PGpin would create bterms on the net that is suppose to 
-  // get connected to and create_custom_connections would link the cell 
+  // These 2 functions below are needed by sroute command.
+  // create_PGpin would create bterms on the net that is suppose to
+  // get connected to and create_custom_connections would link the cell
   // and the power net/ring
 
-  void createPGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, Position position);
-  void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
-
+  void createPGpin(dbBlock* block,
+                   dbTech* tech,
+                   const char* source_net_name,
+                   int num_connection_points,
+                   Position position);
+  void create_custom_connections(dbBlock* block,
+                                 const char* nett,
+                                 const char* instt,
+                                 const char* itermm);
 };
 
 }  // namespace odb
