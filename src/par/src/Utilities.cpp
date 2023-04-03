@@ -74,29 +74,30 @@ std::shared_ptr<TimingCuts> AnalyzeTimingOfPartition(
     const std::vector<int>& solution)
 {
   int total_cuts = 0;
-  int worst_cut = -std::numeric_limits<int>::max();
+  int worst_cut = 0;
   int total_paths_cut = 0;
   for (auto& path : paths) {
     std::vector<int> block_path;
     for (auto& v : path) {
-      int block_id = solution[v];
+      const int block_id = solution[v];
       if (block_path.empty() == true || block_path.back() != block_id) {
         block_path.push_back(block_id);
       }
     }
-    int cut = block_path.size() - 1;
+    const int cut = block_path.size() > 0 ? block_path.size() : 0;
     if (cut > 0) {
-      ++total_paths_cut;
+      total_paths_cut++;
     }
     total_cuts += cut;
-    if (cut > worst_cut) {
-      worst_cut = cut;
-    }
+    worst_cut = std::max(worst_cut, cut);     
   }
 
+  float average_critical_paths_cut = paths.size() > 0 
+                                   ? total_cuts * 1.0 / paths.size() 
+                                   : 0.0;
   return std::make_shared<TimingCuts>(
       total_paths_cut,
-      static_cast<float>(total_cuts) / static_cast<float>(paths.size()),
+      average_critical_paths_cut, 
       worst_cut,
       paths.size());
 }

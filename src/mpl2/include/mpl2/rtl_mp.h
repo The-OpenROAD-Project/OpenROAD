@@ -96,6 +96,7 @@ class MacroPlacer2
              const float target_dead_space,
              const float min_ar,
              const int snap_layer,
+             const bool bus_planning_flag,
              const char* report_directory);
 
   void setDebug();

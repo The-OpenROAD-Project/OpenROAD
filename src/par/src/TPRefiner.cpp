@@ -2199,17 +2199,22 @@ void TPilpRefine::SolveIlpInstanceOR(std::shared_ptr<TPilpGraph> hgraph,
   }
   obj_expr->SetMaximization();
 
+  //logger_->report("num_vertices = {}", hgraph->GetNumVertices());
   // Solve the ILP Problem
   const MPSolver::ResultStatus result_status = solver->Solve();
   // Check that the problem has an optimal solution.
   if (result_status == MPSolver::OPTIMAL) {
+    //logger_->report("finish ILP refine");
+    int inst_count = 0;
     for (int i = 0; i < hgraph->GetNumVertices(); ++i) {
       for (int j = 0; j < num_parts_; ++j) {
         if (x[j][i]->solution_value() == 1.0) {
           refined_partition[i] = j;
+          inst_count++;
         }
       }
     }
+    //logger_->report("inst_count = {}", inst_count);
   }
 }
 
@@ -2431,10 +2436,13 @@ void TPilpRefine::Refine(const HGraph hgraph,
                          const matrix<float>& max_vertex_balance,
                          TP_partition& solution)
 {
+  //logger_->report("thr_he_size_skip_ = {}", thr_he_size_skip_);
+
   matrix<int> net_degs = GetNetDegrees(hgraph, solution);
   std::pair<int, int> partition_pair = std::make_pair(0, 1);
   std::vector<int> boundary_vertices
       = FindBoundaryVertices(hgraph, net_degs, partition_pair);
+  //logger_->report("inital boundary vertices.size() = {}", boundary_vertices.size());
   matrix<float> block_balance = GetBlockBalance(hgraph, solution);
   OrderVertexSet(hgraph,
                  boundary_vertices,
@@ -2443,12 +2451,15 @@ void TPilpRefine::Refine(const HGraph hgraph,
                  block_balance,
                  max_vertex_balance);
   int boundary_n = boundary_vertices.size();
+  //logger_->report("boundary_n = {}", boundary_n);
   int wavefront = std::min(boundary_n, 50);
   std::vector<int> wavefront_vertices(boundary_vertices.begin(),
                                       boundary_vertices.begin() + wavefront);
   ContractNonBoundary(hgraph, wavefront_vertices, solution);
   auto clustered_hg_ilp = ContractHypergraph(hgraph, solution, wavefront);
   std::vector<int> partition(clustered_hg_ilp->GetNumVertices(), -1);
+  //logger_->report("hgraph.num_vertices = {}", hgraph->GetNumVertices());
+  //logger_->report("clustered_hg_ilp.num_vertices = {}", clustered_hg_ilp->GetNumVertices());
   SolveIlpInstance(clustered_hg_ilp, partition, max_vertex_balance);
   if (*std::min_element(partition.begin(), partition.end()) > -1) {
     Remap(solution, partition);
