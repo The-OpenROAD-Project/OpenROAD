@@ -287,6 +287,7 @@ RepairHold::repairHold(VertexSeq &ends,
                  inserted_buffer_count_ - hold_buffer_count_before);
       sta_->findRequireds();
       findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
+      //printf("DebugPython pass : %d holdFailures : %ld\n", pass, hold_failures.size());
       pass++;
       progress = inserted_buffer_count_ > hold_buffer_count_before;
     }

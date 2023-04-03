@@ -1059,7 +1059,7 @@ void Opendp::legalAllCells() {
     if (pixel4 && pixel4->cell && isBlock(pixel4->cell)) block = pixel4->cell;
 
     if (block && isBlock(block)){
-      printf("Moving %s out of macro %s\n", cell.name(), block->name());
+      // printf("Moving %s out of macro %s\n", cell.name(), block->name());
       // Get new legal position
       const Rect block_bbox(block->x_,
                             block->y_,
@@ -1070,8 +1070,8 @@ void Opendp::legalAllCells() {
       // Transform position on real position
       int x = (legal_grid_pt.getX() + padLeft(&cell)) * site_width_;
       int y = legal_grid_pt.getY() * row_height_;
-      printf("old point: %d %d\n", init_x, init_y);
-      printf("new point: %d %d\n", x, y);
+      // printf("old point: %d %d\n", init_x, init_y);
+      // printf("new point: %d %d\n", x, y);
       // Set position of cell on db
       cell.db_inst_->setLocation(core_.xMin() + x, core_.yMin() + y);
     }
