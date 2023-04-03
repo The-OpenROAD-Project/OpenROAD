@@ -1322,8 +1322,7 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
                                             int y2,
                                             int routingLayer,
                                             bool skipBterms,
-                                            bool skipExistsNet,
-                                            uint8_t color)
+                                            bool skipExistsNet)
 {
   if ((netName == NULL) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
@@ -1432,11 +1431,6 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   dbWireEncoder encoder;
   encoder.begin(dbWire::create(net));
-
-  // 0 is not a valid value, and is the same as no color.
-  if (color != 0) {
-    encoder.setColor(color);
-  }
 
   if (rule == NULL)
     encoder.newPath(layer, dbWireType::ROUTED);
