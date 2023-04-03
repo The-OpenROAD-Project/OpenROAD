@@ -371,7 +371,6 @@ void TritonPart::BuildTimingPaths()
   sta_->ensureGraph();     // Ensure that the timing graph has been built
   sta_->searchPreamble();  // Make graph and find delays
   sta_->ensureLevelized(); 
-  sta::Graph* graph = sta_->graph(); // timing graph
   logger_->report("[WARNING] We normalized the slack based on maximum clock period");
   
   // Step 1:  find the top_n critical timing paths
