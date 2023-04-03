@@ -285,7 +285,7 @@ class GridObsShape : public Shape
   GridObsShape(odb::dbTechLayer* layer,
                const odb::Rect& rect,
                const Grid* grid);
-  ~GridObsShape() {}
+  ~GridObsShape() override = default;
 
   bool belongsTo(const Grid* grid) const { return grid == grid_; }
   const Grid* getGrid() const { return grid_; }
