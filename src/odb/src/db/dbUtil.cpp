@@ -32,7 +32,6 @@
 
 #include "dbUtil.h"
 
-#include "array1.h"
 #include "db.h"
 #include "dbShape.h"
 #include "dbTechLayerRule.h"
@@ -41,9 +40,7 @@
 
 namespace odb {
 
-using utl::ODB;
-
-dbCreateNetUtil::dbCreateNetUtil(utl::Logger* logger)
+dbCreateNetUtil::dbCreateNetUtil()
     : _tech(nullptr),
       _block(nullptr),
       _ruleNameHint(0),
@@ -52,7 +49,6 @@ dbCreateNetUtil::dbCreateNetUtil(utl::Logger* logger)
       _mapArray(nullptr),
       _mapCnt(0),
       _ecoCnt(0),
-      logger_(logger),
       _skipPowerNets(true),
       _useLocation(false),
       _verbose(false)
@@ -89,10 +85,7 @@ void dbCreateNetUtil::checkAndSet(uint id)
 
     _mapArray = (dbNet**) realloc(_mapArray, n * sizeof(dbNet*));
     if (_mapArray == NULL) {
-      logger_->error(ODB,
-                     389,
-                     "Cannot allocate {} MBytes for mapArray",
-                     n * sizeof(dbNet*));
+      error(0, "Cannot allocate %lu MBytes for mapArray\n", n * sizeof(dbNet*));
     } else {
       for (uint ii = _mapCnt; ii < n; ii++)
         _mapArray[ii] = NULL;
@@ -128,10 +121,8 @@ dbBlock* dbCreateNetUtil::createBlock(dbBlock* blk,
   sprintf(blk_name, "%s__%d", "eco", blk->getId());
   _block = blk->findChild(blk_name);
   if (_block != NULL) {
-    logger_->warn(
-        ODB,
-        417,
-        "There is already an ECO block present! Will continue updating");
+    warning(0,
+            "there is already an ECO block present!, will continue updating\n");
     return _block;
   }
   _block = dbBlock::create(blk, blk_name, '/');
@@ -208,6 +199,17 @@ dbInst* dbCreateNetUtil::updateInst(dbInst* inst0,
                                     bool createInstance,
                                     bool destroyInstance)
 {
+  /*
+          if (strcmp(inst0->getConstName(), "MILOS_SETUP_26415_2")==0) {
+                  int x1,y1;
+                  inst0->getOrigin(x1,y1);
+                  std::string orient1 = inst0->getOrient().getString();
+
+              notice(0, "----> updateInst: %s Orientation %s Location %d %d\n",
+                  inst0->getConstName(), orient1.c_str(), x1, y1);
+      }
+  */
+
   dbInst* ecoInst = _block->findInst(inst0->getConstName());
   if (ecoInst == NULL)
     return createInst(inst0, createInstance, destroyInstance);
@@ -550,6 +552,8 @@ uint dbCreateNetUtil::printModifiedInsts(dbBlock* ecoBlock,
   dbSet<dbInst>::iterator iitr;
   for (iitr = insts.begin(); iitr != insts.end(); ++iitr) {
     dbInst* inst = *iitr;
+    // if (strcmp(inst->getConstName(), "B_19")==0)
+    //	notice(0, "printECO inst: %s\n", inst->getConstName());
     if (inst->getEcoModify())
       cnt += printEcoInst(inst, srcBlock, fp);
   }
@@ -731,33 +735,61 @@ void dbCreateNetUtil::writeEco(dbBlock* ecoBlock,
   FILE* fp = fopen(buff_name, "w");
 
   if (fp == NULL) {
-    logger_->warn(ODB, 398, "Cannot open file {} for writting", fileName);
+    warning(0, "Cannot open file %s for writting\n", fileName);
     return;
   }
+  /*
+     uint n= printDeletedInsts(ecoBlock, srcBlock, fp);
+     if (n>0)
+         notice(0, "%d Deleted Instances\n", n);
+
+     n= printNewInsts(ecoBlock, srcBlock, fp);
+     if (n>0)
+         notice(0, "%d New Instances\n", n);
+
+ */
   fprintf(fp, "#Modified Instances\n");
-  printModifiedInsts(ecoBlock, srcBlock, fp);
+  uint n = printModifiedInsts(ecoBlock, srcBlock, fp);
+  if (n > 0)
+    notice(0, "%d Modified Instances\n", n);
 
   fprintf(fp, "#Disconnected ITerms from Existing Nets\n");
-  printModifiedNets(ecoBlock, false, srcBlock, fp);
+  n = printModifiedNets(ecoBlock, false, srcBlock, fp);
+  if (n > 0)
+    notice(0, "%d Disconnected ITerms from Existing Nets\n", n);
 
   fprintf(fp, "#New Instances\n");
-  printNewInsts(ecoBlock, srcBlock, fp);
+  n = printNewInsts(ecoBlock, srcBlock, fp);
+  if (n > 0)
+    notice(0, "%d New Instances\n", n);
 
   fprintf(fp, "#Connected ITerms from Existing Nets\n");
-  printModifiedNets(ecoBlock, true, srcBlock, fp);
+  n = printModifiedNets(ecoBlock, true, srcBlock, fp);
+  if (n > 0)
+    notice(0, "%d Connected ITerms from Existing Nets\n", n);
 
   fprintf(fp, "# Disconnected ITerms from Deleted Nets\n");
-  printDeletedNets(ecoBlock, srcBlock, fp, -1);
+  uint deletedNetTermCnt = printDeletedNets(ecoBlock, srcBlock, fp, -1);
   fprintf(fp, "# Deleted Nets\n");
-  printDeletedNets(ecoBlock, srcBlock, fp, 0);
+  n = printDeletedNets(ecoBlock, srcBlock, fp, 0);
+  if (n > 0)
+    notice(0, "%d Deleted Nets\n", n);
+  if (deletedNetTermCnt > 0)
+    notice(0, "%d Disconnected ITerms\n", deletedNetTermCnt);
 
   fprintf(fp, "#New Nets\n");
-  printNewNets(ecoBlock, srcBlock, fp, -1);
+  n = printNewNets(ecoBlock, srcBlock, fp, -1);
   fprintf(fp, "# Connected ITerms from New Nets\n");
-  printNewNets(ecoBlock, srcBlock, fp, 0);
+  uint newNetTermCnt = printNewNets(ecoBlock, srcBlock, fp, 0);
+  if (n > 0)
+    notice(0, "%d New Nets\n", n);
+  if (newNetTermCnt > 0)
+    notice(0, "%d Connected ITerms\n", newNetTermCnt);
 
   fprintf(fp, "#Deleted Instances\n");
-  printDeletedInsts(ecoBlock, srcBlock, fp);
+  n = printDeletedInsts(ecoBlock, srcBlock, fp);
+  if (n > 0)
+    notice(0, "%d Deleted Instances\n", n);
 
   fclose(fp);
 }
@@ -773,7 +805,7 @@ void dbCreateNetUtil::writeDetailedEco(dbBlock* ecoBlock,
   FILE* fp = fopen(buff_name, "w");
 
   if (fp == NULL) {
-    logger_->warn(ODB, 399, "Cannot open file {} for writting", fileName);
+    warning(0, "Cannot open file %s for writting\n", fileName);
     return;
   }
 
@@ -1018,12 +1050,11 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   if ((netName == NULL) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
     if (netName == NULL)
-      logger_->warn(ODB, 400, "Cannot create wire, because net name is NULL\n");
+      warning(0, "Cannot create wire, because net name is NULL\n");
     else
-      logger_->warn(ODB,
-                    401,
-                    "Cannot create wire, because routing layer ({}) is invalid",
-                    routingLayer);
+      warning(0,
+              "Cannot create wire, because routing layer (%d) is invalid\n",
+              routingLayer);
 
     return NULL;
   }
@@ -1069,14 +1100,13 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
   if (width < (int) minWidth) {
     std::string ln = layer->getName();
-    logger_->warn(ODB,
-                  402,
-                  "Cannot create net %s, because wire width ({}) is less than "
-                  "minWidth ({}) on layer {}",
-                  netName,
-                  width,
-                  minWidth,
-                  ln.c_str());
+    warning(0,
+            "Cannot create net %s, because wire width (%d) is lessthan "
+            "minWidth (%d) on layer %s\n",
+            netName,
+            width,
+            minWidth,
+            ln.c_str());
     return NULL;
   }
 
@@ -1095,10 +1125,9 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
     if ((blutrms.first == NULL) || (blutrms.second == NULL)) {
       dbNet::destroy(net);
-      logger_->warn(ODB,
-                    403,
-                    "Cannot create net {}, because failed to create bterms",
-                    netName);
+      warning(0,
+              "Cannot create net %s, because failed to create bterms\n",
+              netName);
       return NULL;
     }
   }
@@ -1327,12 +1356,11 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   if ((netName == NULL) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
     if (netName == NULL)
-      logger_->warn(ODB, 404, "Cannot create wire, because net name is NULL");
+      warning(0, "Cannot create wire, because net name is NULL\n");
     else
-      logger_->warn(ODB,
-                    405,
-                    "Cannot create wire, because routing layer ({}) is invalid",
-                    routingLayer);
+      warning(0,
+              "Cannot create wire, because routing layer (%d) is invalid\n",
+              routingLayer);
 
     return NULL;
   }
@@ -1403,7 +1431,7 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   dbNet* net = dbNet::create(_block, netName, skipExistsNet);
 
   if (net == NULL) {
-    logger_->warn(ODB, 406, "Cannot create net {}, duplicate net", netName);
+    warning(0, "Cannot create net %s, duplicate net\n", netName);
     return NULL;
   }
 
@@ -1417,10 +1445,9 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
 
     if ((blutrms.first == NULL) || (blutrms.second == NULL)) {
       dbNet::destroy(net);
-      logger_->warn(ODB,
-                    407,
-                    "Cannot create net {}, because failed to create bterms",
-                    netName);
+      warning(0,
+              "Cannot create net %s, because failed to create bterms\n",
+              netName);
       return NULL;
     }
   }
@@ -1523,14 +1550,14 @@ dbNet* dbCreateNetUtil::createNetSingleVia(const char* netName,
                                            int lay2)
 {
   if (netName == NULL) {
-    logger_->warn(ODB, 408, "Cannot create wire, because net name is NULL");
+    warning(0, "Cannot create wire, because net name is NULL\n");
     return NULL;
   }
 
   dbNet* net = dbNet::create(_block, netName);
 
   if (net == NULL) {
-    logger_->warn(ODB, 409, "Cannot create net {}, duplicate net", netName);
+    warning(0, "Cannot create net %s, duplicate net\n", netName);
     return NULL;
   }
 
@@ -1552,18 +1579,14 @@ dbBox* dbCreateNetUtil::createTechVia(int x1,
                                       int lay2)
 {
   if ((lay1 < 1) || (lay1 > _tech->getRoutingLayerCount())) {
-    logger_->warn(ODB,
-                  410,
-                  "Cannot create wire, because routing layer ({}) is invalid",
-                  lay1);
+    warning(
+        0, "Cannot create wire, because routing layer (%d) is invalid\n", lay1);
     return NULL;
   }
 
   if ((lay2 < 1) || (lay2 > _tech->getRoutingLayerCount())) {
-    logger_->warn(ODB,
-                  411,
-                  "Cannot create wire, because routing layer ({}) is invalid",
-                  lay2);
+    warning(
+        0, "Cannot create wire, because routing layer (%d) is invalid\n", lay2);
     return NULL;
   }
 
@@ -1586,18 +1609,14 @@ bool dbCreateNetUtil::createSingleVia(dbNet* net,
                                       int lay2)
 {
   if ((lay1 < 1) || (lay1 > _tech->getRoutingLayerCount())) {
-    logger_->warn(ODB,
-                  412,
-                  "Cannot create wire, because routing layer ({}) is invalid",
-                  lay1);
+    warning(
+        0, "Cannot create wire, because routing layer (%d) is invalid\n", lay1);
     return false;
   }
 
   if ((lay2 < 1) || (lay2 > _tech->getRoutingLayerCount())) {
-    logger_->warn(ODB,
-                  413,
-                  "Cannot create wire, because routing layer ({}) is invalid",
-                  lay2);
+    warning(
+        0, "Cannot create wire, because routing layer (%d) is invalid\n", lay2);
     return false;
   }
 
@@ -1626,158 +1645,168 @@ bool dbCreateNetUtil::createSingleVia(dbNet* net,
   return true;
 }
 
-static int snapToGrid (int number, dbTech *db_tech) {
-    // This will round "number" to a value that respects the manufacturing grid
-    // For example, if the manufacturing grid is 5 microns and number = 20333,
-    // the procedure will output 20335.
-    auto grid = db_tech->getManufacturingGrid();
-    return round(number / double(grid) * grid);
+static int snapToGrid(int number, dbTech* db_tech)
+{
+  // This will round "number" to a value that respects the manufacturing grid
+  // For example, if the manufacturing grid is 5 microns and number = 20333,
+  // the procedure will output 20335.
+  auto grid = db_tech->getManufacturingGrid();
+  return round(number / double(grid)) * grid;
 }
 
-void dbCreateNetUtil::createPGpin (dbBlock* block, dbTech* tech, const char * source_net_name, int num_connection_points, Position position) {
-
-  utl::Logger* logger = new utl::Logger();
+void dbCreateNetUtil::createPGpin(dbBlock* block,
+                                  dbTech* tech,
+                                  const char* source_net_name,
+                                  int num_connection_points,
+                                  Position position)
+{
   dbNet* create_pin_net = block->findNet(source_net_name);
-  dbTechLayer* PGpin_metal_layer; 
+  dbTechLayer* PGpin_metal_layer;
   dbSet<dbSWire> swires = create_pin_net->getSWires();
   dbSBox* pdn_wire = nullptr;
 
   bool first = true;
   int direction;
-  //find highest metal layer
-  for(auto swire : swires){
+  // find highest metal layer
+  for (auto swire : swires) {
     for (auto wire : swire->getWires()) {
-      if (first){
+      if (first) {
         first = false;
         PGpin_metal_layer = wire->getTechLayer();
         pdn_wire = wire;
-      }
-      else {
-        if (wire->getTechLayer() > PGpin_metal_layer ) {
-          PGpin_metal_layer = wire->getTechLayer();
-          pdn_wire = wire;
-        }
-        else if (wire->getTechLayer() == PGpin_metal_layer ) {
-          direction = wire->getDir();
-          if (direction == 1) {
-            if ((pdn_wire->getDY()) < (wire->getDY())) {
-              pdn_wire = wire;
-            }
+      } else if (wire->getTechLayer() > PGpin_metal_layer) {
+        PGpin_metal_layer = wire->getTechLayer();
+        pdn_wire = wire;
+      } else if (wire->getTechLayer() == PGpin_metal_layer) {
+        direction = wire->getDir();
+        if (direction == 1) {
+          if ((pdn_wire->getDY()) < (wire->getDY())) {
+            pdn_wire = wire;
           }
-          else if (direction == 0) {
-            if ((pdn_wire->getDX()) < (wire->getDX())) {
-              pdn_wire = wire;
-            }
+        } else if (direction == 0) {
+          if ((pdn_wire->getDX()) < (wire->getDX())) {
+            pdn_wire = wire;
           }
         }
       }
     }
   }
-  
-  
+
   std::string r_pin = "pg_" + std::string(source_net_name);
   dbNet* r_net = dbNet::create(block, r_pin.c_str(), true);
   int xMin[num_connection_points];
   int yMin[num_connection_points];
   int xMax[num_connection_points];
   int yMax[num_connection_points];
-  
+
   // create PG_pin in all of the highest metal wires
-  
+
   for (int n = 0; n < num_connection_points; n++) {
-    
-    dbBTerm * r_bterm = dbBTerm::create(r_net, (r_pin+ "_" + std::to_string(n)).c_str());
-    dbBPin * r_bpin = dbBPin::create(r_bterm);
+    dbBTerm* r_bterm
+        = dbBTerm::create(r_net, (r_pin + "_" + std::to_string(n)).c_str());
+    dbBPin* r_bpin = dbBPin::create(r_bterm);
     r_bpin->setPlacementStatus("FIRM");
 
     direction = pdn_wire->getDir();
     if ((direction == 1) | (direction == -1)) {
       // for horizontal
       switch (position) {
-        case(Position::LEFT):
-        {
-          int dx = snapToGrid((pdn_wire->getDX())/num_connection_points/2, tech);
-          xMin[n] = pdn_wire->xMin() + n*dx;
+        case (Position::LEFT): {
+          int dx = snapToGrid((pdn_wire->getDX()) / num_connection_points / 2,
+                              tech);
+          xMin[n] = pdn_wire->xMin() + n * dx;
           xMax[n] = xMin[n] + dx;
-        } 
-        case(Position::RIGHT):
-        {
-          int dx = snapToGrid((pdn_wire->getDX())/num_connection_points/2, tech);
-          xMin[n] = pdn_wire->xMin() + (pdn_wire->getDX())/2 + n*dx;
+          break;
+        }
+        case (Position::RIGHT): {
+          int dx = snapToGrid((pdn_wire->getDX()) / num_connection_points / 2,
+                              tech);
+          xMin[n] = pdn_wire->xMin() + (pdn_wire->getDX()) / 2 + n * dx;
           xMax[n] = xMin[n] + dx;
-        } 
-        case(Position::MIDDLE): 
-        {
-          int dx = snapToGrid((pdn_wire->getDX())/num_connection_points/2, tech);
-          xMin[n] = pdn_wire->xMin() + (pdn_wire->getDX())/4 + n*dx;
+          break;
+        }
+        case (Position::MIDDLE): {
+          int dx = snapToGrid((pdn_wire->getDX()) / num_connection_points / 2,
+                              tech);
+          xMin[n] = pdn_wire->xMin() + (pdn_wire->getDX()) / 4 + n * dx;
           xMax[n] = xMin[n] + dx;
-        } 
-        case(Position::DEFAULT):
-        {
-          int dx = snapToGrid((pdn_wire->getDX())/num_connection_points, tech);
-          xMin[n] = pdn_wire->xMin() + n*dx;
+          break;
+        }
+        case (Position::DEFAULT): {
+          int dx
+              = snapToGrid((pdn_wire->getDX()) / num_connection_points, tech);
+          xMin[n] = pdn_wire->xMin() + n * dx;
           xMax[n] = xMin[n] + dx;
-        } 
-        default:
-        {
-          logger->error(utl::ODB,
-                    1105,"wrong position.");
+          break;
+        }
+        default: {
+          error(utl::ODB, 1105, "wrong position.");
         }
       }
-      dbBox::create(r_bpin, pdn_wire->getTechLayer(), xMin[n], pdn_wire->yMin(), xMax[n], pdn_wire->yMax()); //create physical box for net
-    } 
-    else if (direction == 0) {
-      //for vertical
+      dbBox::create(r_bpin,
+                    pdn_wire->getTechLayer(),
+                    xMin[n],
+                    pdn_wire->yMin(),
+                    xMax[n],
+                    pdn_wire->yMax());  // create physical box for net
+    } else if (direction == 0) {
+      // for vertical
       switch (position) {
-        case(Position::LEFT):
-        {
-          int dy = snapToGrid((pdn_wire->getDY())/num_connection_points/2, tech);
-          yMin[n] = pdn_wire->yMin() + n*dy;
+        case (Position::LEFT): {
+          int dy = snapToGrid((pdn_wire->getDY()) / num_connection_points / 2,
+                              tech);
+          yMin[n] = pdn_wire->yMin() + n * dy;
           yMax[n] = yMin[n] + dy;
-        } 
-        case(Position::RIGHT): 
-        {
-          int dy = snapToGrid((pdn_wire->getDY())/num_connection_points/2, tech);
-          yMin[n] = pdn_wire->yMin() + (pdn_wire->getDY())/2 + n*dy;
+          break;
+        }
+        case (Position::RIGHT): {
+          int dy = snapToGrid((pdn_wire->getDY()) / num_connection_points / 2,
+                              tech);
+          yMin[n] = pdn_wire->yMin() + (pdn_wire->getDY()) / 2 + n * dy;
           yMax[n] = yMin[n] + dy;
-        } 
-        case(Position::MIDDLE): 
-        {
-          int dy = snapToGrid((pdn_wire->getDY())/num_connection_points/2, tech);
-          yMin[n] = pdn_wire->yMin() + (pdn_wire->getDY())/4 + n*dy;
+          break;
+        }
+        case (Position::MIDDLE): {
+          int dy = snapToGrid((pdn_wire->getDY()) / num_connection_points / 2,
+                              tech);
+          yMin[n] = pdn_wire->yMin() + (pdn_wire->getDY()) / 4 + n * dy;
           yMax[n] = yMin[n] + dy;
-
-        } 
-        case(Position::DEFAULT):
-        {
-          int dy = snapToGrid((pdn_wire->getDY())/num_connection_points, tech);
-          yMin[n] = pdn_wire->yMin() + n*dy;
+          break;
+        }
+        case (Position::DEFAULT): {
+          int dy
+              = snapToGrid((pdn_wire->getDY()) / num_connection_points, tech);
+          yMin[n] = pdn_wire->yMin() + n * dy;
           yMax[n] = yMin[n] + dy;
-
-        } 
-        default:
-        {
-          logger->error(utl::ODB,
-                    1103,"wrong position.");
+          break;
+        }
+        default: {
+          error(utl::ODB, 1103, "wrong position.");
         }
       }
-      dbBox::create(r_bpin, pdn_wire->getTechLayer(), pdn_wire->xMin(), yMin[n], pdn_wire->xMax(), yMax[n]); //create physical box for net
+      dbBox::create(r_bpin,
+                    pdn_wire->getTechLayer(),
+                    pdn_wire->xMin(),
+                    yMin[n],
+                    pdn_wire->xMax(),
+                    yMax[n]);  // create physical box for net
 
     } else {
-      logger->error(utl::ODB,
-                   1104,"wrong existed direction.");
+      error(utl::ODB, 1104, "wrong existed direction.");
     }
   }
-  
 }
 
-void dbCreateNetUtil::create_custom_connections (dbBlock* block, const char* net, const char* inst, const char* iterm) {
+void dbCreateNetUtil::create_custom_connections(dbBlock* block,
+                                                const char* net,
+                                                const char* inst,
+                                                const char* iterm)
+{
   dbNet* net_ = block->findNet(net);
 
   dbInst* inst_ = block->findInst(inst);
   dbITerm* iterm_ = inst_->findITerm(iterm);
   iterm_->connect(net_);
-
 }
 
 }  // namespace odb
