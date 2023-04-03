@@ -222,8 +222,8 @@ class dbCreateNetUtil
   // get connected to and create_custom_connections would link the cell 
   // and the power net/ring
 
-  static void createPGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, Position position);
-  static void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
+  void createPGpin (dbBlock* block, dbTech* tech, const char* source_net_name, int num_connection_points, Position position);
+  void create_custom_connections (dbBlock* block, const char* nett, const char* instt, const char* itermm);
 
 };
 
