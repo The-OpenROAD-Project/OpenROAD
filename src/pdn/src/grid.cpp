@@ -286,6 +286,16 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
              getLongName());
   // find vias that do not overlap completely
   // attempt to extend straps to fit (if owned by grid)
+
+  auto obs_filter = [this](const ShapeValue& other) -> bool {
+    const auto obs = other.second;
+    if (obs->shapeType() != Shape::GRID_OBS) {
+      return true;
+    }
+    const GridObsShape* shape = static_cast<GridObsShape*>(obs.get());
+    return !shape->belongsTo(this);
+  };
+
   std::map<Shape*, Shape*> replace_shapes;
   for (const auto& [box, via] : vias_) {
     // ensure shapes belong to something
@@ -307,15 +317,19 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
     }
 
     if (lower_belongs_to_grid && lower_shape->isModifiable()) {
-      auto* new_lower = lower_shape->extendTo(
-          upper_shape->getRect(), obstructions[lower_shape->getLayer()]);
+      auto* new_lower
+          = lower_shape->extendTo(upper_shape->getRect(),
+                                  obstructions[lower_shape->getLayer()],
+                                  obs_filter);
       if (new_lower != nullptr) {
         replace_shapes[lower_shape.get()] = new_lower;
       }
     }
     if (upper_belongs_to_grid && upper_shape->isModifiable()) {
-      auto* new_upper = upper_shape->extendTo(
-          lower_shape->getRect(), obstructions[upper_shape->getLayer()]);
+      auto* new_upper
+          = upper_shape->extendTo(lower_shape->getRect(),
+                                  obstructions[upper_shape->getLayer()],
+                                  obs_filter);
       if (new_upper != nullptr) {
         replace_shapes[upper_shape.get()] = new_upper;
       }
@@ -684,6 +698,15 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
     }
   }
 
+  auto obs_filter = [this](const ShapeValue& other) -> bool {
+    const auto obs = other.second;
+    if (obs->shapeType() != Shape::GRID_OBS) {
+      return true;
+    }
+    const GridObsShape* shape = static_cast<GridObsShape*>(obs.get());
+    return !shape->belongsTo(this);
+  };
+
   ShapeTreeMap search_obstructions = obstructions;
   for (const auto& [layer, shapes] : search_shapes) {
     auto& obs = search_obstructions[layer];
@@ -710,7 +733,8 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   for (const auto& via : vias) {
     for (auto* layer : via->getConnect()->getIntermediteLayers()) {
       auto& search_obs = search_obstructions[layer];
-      if (search_obs.qbegin(bgi::intersects(via->getBox()))
+      if (search_obs.qbegin(bgi::intersects(via->getBox())
+                            && bgi::satisfies(obs_filter))
           != search_obs.qend()) {
         remove_vias.insert(via);
         via->markFailed(failedViaReason::OBSTRUCTED);
@@ -891,7 +915,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 
   for (auto* layer : layers) {
-    auto obs = std::make_shared<Shape>(layer, core, Shape::GRID_OBS);
+    auto obs = std::make_shared<GridObsShape>(layer, core, this);
     debugPrint(getLogger(),
                utl::PDN,
                "Obs",
@@ -912,7 +936,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
                               core.xMax() + ver_size + offset[2],
                               core.yMax() + hor_size + offset[3]);
     for (auto* layer : ring->getLayers()) {
-      auto obs = std::make_shared<Shape>(layer, ring_rect, Shape::GRID_OBS);
+      auto obs = std::make_shared<GridObsShape>(layer, ring_rect, this);
       obs->generateObstruction();
       debugPrint(
           getLogger(),
@@ -1312,13 +1336,16 @@ void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
 
   // copy layer obs
   for (const auto& [layer, shapes] : local_obs) {
-    auto obs = std::make_shared<Shape>(layer, inst_box, Shape::GRID_OBS);
+    auto obs = std::make_shared<GridObsShape>(layer, inst_box, this);
     local_obs[layer].insert({obs->getObstructionBox(), obs});
   }
 
   // copy instance obstructions
   for (const auto& [layer, shapes] : getInstanceObstructions(inst_, halos_)) {
-    local_obs[layer].insert(shapes.begin(), shapes.end());
+    for (const auto& [box, shape] : shapes) {
+      auto obs = std::make_shared<GridObsShape>(layer, shape->getRect(), this);
+      local_obs[layer].insert({box, obs});
+    }
   }
 
   // merge local and global obs
