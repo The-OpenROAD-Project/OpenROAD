@@ -53,6 +53,7 @@ target_link_libraries(dpl_lib
   PUBLIC
     odb
     OpenSTA
+    tcl
   PRIVATE
     utl
 )
@@ -122,4 +123,6 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
 endif()
 
-add_subdirectory(test)
+if(ENABLE_TESTS)
+  add_subdirectory(test)
+endif()
