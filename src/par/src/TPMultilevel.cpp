@@ -95,15 +95,19 @@ TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
     const int seed = std::numeric_limits<int>::max() * dist(gen);
     partitioner_->SetPartitionerSeed(seed);
     partitioner_->Partition(coarsest_hgraph, max_vertex_balance, solution);
-    //logger_->report("seed_ {}", seed);
-    //logger_->report("random cutsize = {}", partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);        
+    // logger_->report("seed_ {}", seed);
+    // logger_->report("random cutsize = {}",
+    // partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);
     two_way_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-    //logger_->report("two way refiner cutsize = {}", partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);            
+    // logger_->report("two way refiner cutsize = {}",
+    // partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);
     if (coarsest_hgraph->num_timing_paths_ == 0) {
       ilp_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-      //logger_->report("ilp refiner cutsize = {}", partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);            
+      // logger_->report("ilp refiner cutsize = {}",
+      // partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);
       greedy_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-      //logger_->report("greedy refiner cutsize = {}", partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);            
+      // logger_->report("greedy refiner cutsize = {}",
+      // partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);
     }
     const float cutsize
         = partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first;

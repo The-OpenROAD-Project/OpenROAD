@@ -35,8 +35,9 @@
 
 #include "TPHypergraph.h"
 
-#include <string>
 #include <iostream>
+#include <string>
+
 #include "Utilities.h"
 #include "utl/Logger.h"
 

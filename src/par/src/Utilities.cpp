@@ -89,17 +89,13 @@ std::shared_ptr<TimingCuts> AnalyzeTimingOfPartition(
       total_paths_cut++;
     }
     total_cuts += cut;
-    worst_cut = std::max(worst_cut, cut);     
+    worst_cut = std::max(worst_cut, cut);
   }
 
-  float average_critical_paths_cut = paths.size() > 0 
-                                   ? total_cuts * 1.0 / paths.size() 
-                                   : 0.0;
+  float average_critical_paths_cut
+      = paths.size() > 0 ? total_cuts * 1.0 / paths.size() : 0.0;
   return std::make_shared<TimingCuts>(
-      total_paths_cut,
-      average_critical_paths_cut, 
-      worst_cut,
-      paths.size());
+      total_paths_cut, average_critical_paths_cut, worst_cut, paths.size());
 }
 
 std::string GetVectorString(const std::vector<float>& vec)

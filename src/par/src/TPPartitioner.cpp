@@ -219,8 +219,8 @@ void TPpartitioner::Partition(const HGraph hgraph,
   } else if (partitioner == PartitionType::INIT_DIRECT_ILP) {
     // Turn off this due to the poor behavior of CP-SAT
     return;
-    //OptimalPartCplexWarmStart(hgraph, max_block_balance, solution);
-    // OptimalPartCplex(hgraph, max_block_balance, solution);
+    // OptimalPartCplexWarmStart(hgraph, max_block_balance, solution);
+    //  OptimalPartCplex(hgraph, max_block_balance, solution);
   } else if (partitioner == PartitionType::INIT_VILE) {
     InitPartVileTwoWay(hgraph, max_block_balance, solution);
   }
@@ -333,7 +333,8 @@ void TPpartitioner::OptimalPartCplexWarmStart(
   // TODO: This code is disabled as CP-SAT is non-deterministic when
   // threaded (see https://github.com/google/or-tools/discussions/3275).
   // This may have some QOR degradation to be quantified.
-  // We notice that for some testcases, the CP-SAT solver is dead (holding for a long time)
+  // We notice that for some testcases, the CP-SAT solver is dead (holding for a
+  // long time)
   return;
 
   logger_->report(

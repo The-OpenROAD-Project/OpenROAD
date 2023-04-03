@@ -59,18 +59,21 @@
 
 namespace par {
 
-struct Rect {
+struct Rect
+{
   // all the values are in db unit
   long long int lx = 0;
   long long int ly = 0;
   long long int ux = 0;
   long long int uy = 0;
 
-  Rect(int lx_, int ly_, int ux_, int uy_) :
-    lx(lx_), ly(ly_), ux(ux_), uy(uy_) { }
+  Rect(int lx_, int ly_, int ux_, int uy_) : lx(lx_), ly(ly_), ux(ux_), uy(uy_)
+  {
+  }
 
   // check if the Rect is valid
-  bool IsValid() const {
+  bool IsValid() const
+  {
     if (ux > lx && uy > ly) {
       return true;
     } else {
@@ -79,13 +82,13 @@ struct Rect {
   }
 };
 
-
 // Define the type for vertices
-enum VertexType {
-   COMB_STD_CELL, // combinational standard cell
-   SEQ_STD_CELL,  // sequential standard cell
-   MACRO, // hard macros
-   PORT // IO ports
+enum VertexType
+{
+  COMB_STD_CELL,  // combinational standard cell
+  SEQ_STD_CELL,   // sequential standard cell
+  MACRO,          // hard macros
+  PORT            // IO ports
 };
 
 class TimingCuts
