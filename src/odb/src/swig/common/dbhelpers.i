@@ -53,11 +53,16 @@ void createSBoxes(odb::dbSWire* swire,
                   std::vector<odb::Point> points,
                   odb::dbWireShapeType type);
 
-void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net_name, 
-                  int num_connection_points, 
+void createPGpins(odb::dbBlock* block,
+                  odb::dbTech* tech,
+                  const char* source_net_name,
+                  int num_connection_points,
                   int position);
 
-void createConnection(odb::dbBlock* block, const char* net, const char* inst, const char* iterm);
+void createConnection(odb::dbBlock* block,
+                      const char* net,
+                      const char* inst,
+                      const char* iterm);
 
 void dumpAPs(odb::dbBlock* block,
              const std::string file_name);

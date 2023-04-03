@@ -32,6 +32,7 @@
 #include <array>
 #include <fstream>
 #include <vector>
+
 #include "odb/defin.h"
 #include "odb/lefin.h"
 #include "odb/lefout.h"
@@ -297,14 +298,31 @@ void createSBoxes(odb::dbSWire* swire,
     odb::dbSBox::create(swire, via, point.getX(), point.getY(), type);
 }
 
-void createPGpins(odb::dbBlock* block, odb::dbTech* tech, const char* source_net_name, int num_connection_points, int position)
+void createPGpins(odb::dbBlock* block,
+                  odb::dbTech* tech,
+                  const char* source_net_name,
+                  int num_connection_points,
+                  int position)
 {
-  odb::dbCreateNetUtil::createPGpin(block, tech, source_net_name, num_connection_points, (odb::dbCreateNetUtil::Position)position);
+  utl::Logger* logger = new utl::Logger(NULL);
+  odb::dbCreateNetUtil PGpin(logger);
+  PGpin.createPGpin(
+      block,
+      tech,
+      source_net_name,
+      num_connection_points,
+      (odb::dbCreateNetUtil::Position) position);
 }
 
-void createConnection(odb::dbBlock* block, const char* net, const char* inst, const char* iterm)
+void createConnection(odb::dbBlock* block,
+                      const char* net,
+                      const char* inst,
+                      const char* iterm)
 {
-  odb::dbCreateNetUtil::create_custom_connections(block, net, inst, iterm);
+  utl::Logger* logger = new utl::Logger(NULL);
+  odb::dbCreateNetUtil connect(logger);
+  connect.create_custom_connections(
+      block, net, inst, iterm);
 }
 
 void dumpAPs(odb::dbBlock* block, const std::string file_name)
