@@ -40,13 +40,11 @@
 
 namespace rcx {
 
-class Ath__nameBucket;
-
-class Ath__nameTable
+class NameTable
 {
  public:
-  ~Ath__nameTable();
-  Ath__nameTable(uint n, char* zero = NULL);
+  ~NameTable();
+  NameTable(uint n, char* zero = NULL);
 
   void writeDB(FILE* fp, char* nameType);
   bool readDB(FILE* fp);
@@ -62,11 +60,13 @@ class Ath__nameTable
                  int* nn = 0);
 
  private:
-  odb::AthHash<int>* _hashTable;
-  odb::AthPool<Ath__nameBucket>* _bucketPool;
+  class NameBucket;
 
   void allocName(char* name, uint nameId, bool hash = false);
   uint addName(char* name, uint dataId);
+
+  odb::AthHash<int>* _hashTable;
+  odb::AthPool<NameBucket>* _bucketPool;
 };
 
 }  // namespace rcx

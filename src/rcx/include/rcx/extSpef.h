@@ -52,7 +52,7 @@ using odb::Ath__gridTable;
 using odb::uint;
 using utl::Logger;
 
-class Ath__nameTable;
+class NameTable;
 
 class extRcTripplet
 {
@@ -448,8 +448,8 @@ class extSpef
   char _nDvdName[2000];
   bool _inputNet;
 
-  Ath__nameTable* _notFoundInst;
-  Ath__nameTable* _nodeHashTable;
+  NameTable* _notFoundInst;
+  NameTable* _nodeHashTable;
   uint _tmpCapId;
   char _tmpBuff1[1024];
   char _tmpBuff2[1024];
