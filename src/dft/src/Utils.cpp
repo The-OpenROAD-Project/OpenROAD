@@ -123,11 +123,12 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
   const sta::ClockSet clock_set = sta->clocks(db_network->dbToSta(iterm));
 
   sta::ClockSet::ConstIterator iter(clock_set);
-  while (iter.hasNext()) {
+  if (!iter.container()->empty()) {
     // Returns the first clock for the given iterm, TODO can we have more than
     // one clock driver?
-    return iter.next();
+    return *iter.container()->begin();
   }
+
   return std::nullopt;
 }
 
