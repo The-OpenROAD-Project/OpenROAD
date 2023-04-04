@@ -35,7 +35,8 @@
 namespace dft {
 
 std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
-    const ScanArchitectConfig& config)
+    const ScanArchitectConfig& config,
+    utl::Logger* logger)
 {
   switch (config.getClockMixing()) {
     // For NoMix, every clock domain is different
@@ -46,7 +47,7 @@ std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
       };
     default:
       // Not implemented
-      abort();
+      logger->error(utl::DFT, 4, "Clock mix config requested is not supported");
   }
 }
 

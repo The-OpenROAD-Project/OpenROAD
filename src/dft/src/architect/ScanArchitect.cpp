@@ -58,11 +58,15 @@ void SortScanCells(std::vector<std::shared_ptr<ScanCell>>& scan_cells)
 
 }  // namespace
 
+ScanCellsBucket::ScanCellsBucket(utl::Logger* logger) : logger_(logger)
+{
+}
+
 void ScanCellsBucket::init(
     const ScanArchitectConfig& config,
     const std::vector<std::shared_ptr<ScanCell>>& scan_cells)
 {
-  auto hash_fn = GetClockDomainHashFn(config);
+  auto hash_fn = GetClockDomainHashFn(config, logger_);
   for (const std::shared_ptr<ScanCell>& scan_cell : scan_cells) {
     buckets_[hash_fn(scan_cell->getClockDomain())].push_back(scan_cell);
   }

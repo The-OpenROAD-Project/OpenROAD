@@ -48,7 +48,7 @@ namespace dft {
 class ScanCellsBucket
 {
  public:
-  ScanCellsBucket() = default;
+  ScanCellsBucket(utl::Logger* logger);
   // Not copyable or movable
   ScanCellsBucket(const ScanCellsBucket&) = delete;
   ScanCellsBucket& operator=(const ScanCellsBucket&) = delete;
@@ -68,6 +68,7 @@ class ScanCellsBucket
 
  private:
   std::unordered_map<size_t, std::vector<std::shared_ptr<ScanCell>>> buckets_;
+  utl::Logger* logger_;
 };
 
 // The Scan Architect. We can implement different algorithms to architect

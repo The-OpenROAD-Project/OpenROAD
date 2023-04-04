@@ -16,6 +16,8 @@ BOOST_AUTO_TEST_SUITE(test_suite)
 // Check if we can architect a simple two chain design with clock no mix
 BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
 {
+  utl::Logger* logger = new utl::Logger();
+
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
   config.setMaxLength(10);
@@ -31,7 +33,7 @@ BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
-      = std::make_unique<ScanCellsBucket>();
+      = std::make_unique<ScanCellsBucket>(logger);
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
@@ -65,6 +67,8 @@ BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
 // clock mixing
 BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
 {
+  utl::Logger* logger = new utl::Logger();
+
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
   config.setMaxLength(10);
@@ -91,7 +95,7 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
-      = std::make_unique<ScanCellsBucket>();
+      = std::make_unique<ScanCellsBucket>(logger);
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
@@ -119,6 +123,8 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
 // clock mixing
 BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
 {
+  utl::Logger* logger = new utl::Logger();
+
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
   config.setMaxLength(10);
@@ -145,7 +151,7 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
-      = std::make_unique<ScanCellsBucket>();
+      = std::make_unique<ScanCellsBucket>(logger);
   scan_cells_bucket->init(config, scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect

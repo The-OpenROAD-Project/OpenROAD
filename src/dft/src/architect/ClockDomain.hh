@@ -75,6 +75,7 @@ class ClockDomain
 // We refer to the generated hash from a ClockDomain as Hash Domain.
 //
 std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
-    const ScanArchitectConfig& config);
+    const ScanArchitectConfig& config,
+    utl::Logger* logger);
 
 }  // namespace dft

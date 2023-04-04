@@ -92,7 +92,7 @@ void Dft::preview_dft(bool verbose)
 
     // Scan Architect
     std::unique_ptr<ScanCellsBucket> scan_cells_bucket
-        = std::make_unique<ScanCellsBucket>();
+        = std::make_unique<ScanCellsBucket>(logger_);
     scan_cells_bucket->init(dft_config_.getScanArchitectConfig(),
                             shared_scan_cells);
 
