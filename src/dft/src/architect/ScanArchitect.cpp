@@ -46,7 +46,7 @@ bool CompareScanCells(const std::shared_ptr<ScanCell>& lhs,
   // cells so they are ordered by name
   if (lhs->getBits() == rhs->getBits()) {
     return lhs->getName() < rhs->getName();
-  } 
+  }
   // Bigger elements last
   return lhs->getBits() < rhs->getBits();
 }
@@ -78,7 +78,7 @@ ScanCellsBucket::getTotalBitsPerHashDomain() const
 {
   std::unordered_map<size_t, uint64_t> total_bits;
   for (const auto& [hash_domain, scan_cells] : buckets_) {
-    for (const std::shared_ptr<ScanCell>& scan_cell: scan_cells) {
+    for (const std::shared_ptr<ScanCell>& scan_cell : scan_cells) {
       total_bits[hash_domain] += scan_cell->getBits();
     }
   }
