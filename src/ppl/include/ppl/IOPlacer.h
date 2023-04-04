@@ -187,6 +187,8 @@ class IOPlacer
                           std::vector<Section>& sections);
   void assignMirroredPin(IOPin& io_pin);
   int assignGroupsToSections();
+  int updateSection(Section& section, std::vector<Slot>& slots);
+  int updateConstraintSections(Constraint& constraint);
   void assignConstrainedGroupsToSections(Constraint& constraint,
                                          std::vector<Section>& sections);
   int assignGroupToSection(const std::vector<int>& io_group,
@@ -229,6 +231,7 @@ class IOPlacer
   void initTracks();
   odb::dbBlock* getBlock() const;
   odb::dbTech* getTech() const;
+  std::string getEdgeString(Edge edge);
 
   std::unique_ptr<Netlist> netlist_;
   std::unique_ptr<Core> core_;

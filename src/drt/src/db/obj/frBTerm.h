@@ -116,10 +116,17 @@ class frBTerm : public frTerm
     }
   }
 
+  void setIsAboveTopLayer(bool isAboveTopLayer)
+  {
+    isAboveTopLayer_ = isAboveTopLayer;
+  }
+  bool isAboveTopLayer() const { return isAboveTopLayer_; }
+
  protected:
   frBlock* block_;
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
   frNet* net_;
+  bool isAboveTopLayer_ = false;
 };
 
 }  // namespace fr
