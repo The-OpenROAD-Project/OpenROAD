@@ -11,9 +11,9 @@ class ScanCellMock : public ScanCell
   ~ScanCellMock() override = default;
 
   uint64_t getBits() const override;
-  void connectSE() const override;
-  void connectSI() const override;
-  void connectSO() const override;
+  void connectScanEnable() const override;
+  void connectScanIn() const override;
+  void connectScanOut() const override;
 };
 
 }  // namespace test

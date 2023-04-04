@@ -52,9 +52,9 @@ class ScanCell
   ScanCell& operator=(const ScanCell&) = delete;
 
   virtual uint64_t getBits() const = 0;
-  virtual void connectSE() const = 0;
-  virtual void connectSI() const = 0;
-  virtual void connectSO() const = 0;
+  virtual void connectScanEnable() const = 0;
+  virtual void connectScanIn() const = 0;
+  virtual void connectScanOut() const = 0;
 
   const ClockDomain& getClockDomain() const;
   const std::string& getName() const;

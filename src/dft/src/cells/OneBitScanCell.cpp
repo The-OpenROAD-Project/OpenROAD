@@ -49,17 +49,17 @@ uint64_t OneBitScanCell::getBits() const
   return 1;
 }
 
-void OneBitScanCell::connectSE() const
+void OneBitScanCell::connectScanEnable() const
 {
   // TODO: Scan stitching
 }
 
-void OneBitScanCell::connectSI() const
+void OneBitScanCell::connectScanIn() const
 {
   // TODO: Scan stitching
 }
 
-void OneBitScanCell::connectSO() const
+void OneBitScanCell::connectScanOut() const
 {
   // TODO: Scan stitching
 }

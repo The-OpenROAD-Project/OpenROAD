@@ -13,15 +13,15 @@ uint64_t ScanCellMock::getBits() const
   return 1;
 }
 
-void ScanCellMock::connectSE() const
+void ScanCellMock::connectScanEnable() const
 {
 }
 
-void ScanCellMock::connectSI() const
+void ScanCellMock::connectScanIn() const
 {
 }
 
-void ScanCellMock::connectSO() const
+void ScanCellMock::connectScanOut() const
 {
 }
 
