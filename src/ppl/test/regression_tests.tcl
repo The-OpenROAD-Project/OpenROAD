@@ -34,6 +34,7 @@ record_tests {
   add_constraint9
   add_constraint10
   add_constraint11
+  add_constraint12
   add_constraint_error1
   add_constraint_error2
   add_constraint_error3
