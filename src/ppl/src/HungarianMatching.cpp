@@ -148,10 +148,6 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
         break;
       }
       col++;
-    } else if (assign_mirrored
-               && mirrored_pins.find(io_pin.getBTerm())
-                      != mirrored_pins.end()) {
-      assignMirroredPins(io_pin, mirrored_pins, assignment);
     }
   }
 }
@@ -170,16 +166,17 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   mirrored_pin.setPlaced();
   assignment.push_back(mirrored_pin);
   int slot_index = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
-  if (slot_index < 0) {
+  if (slot_index < 0 || slots_[slot_index].used) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
     logger_->error(utl::PPL,
                    82,
                    "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position for pin placement.",
+                   "valid position for pin {} placement.",
                    mirrored_pos.getX(),
                    mirrored_pos.getY(),
-                   layer ? layer->getName() : "NA");
+                   layer ? layer->getName() : "NA",
+                   mirrored_pin.getName());
   }
   slots_[slot_index].used = true;
 }
