@@ -39,6 +39,26 @@
 namespace dft {
 class ScanReplace;
 
+// The main DFT implementation.
+//
+// We can split the DFT process in 3 main steps:
+//
+// 1) Scan Replace: Where non scan sequential cells are replaced by the scan
+// equivalent.
+//
+// 2) Scan Architect: We create the scan chains and decide what scan cells are
+// going to be in them. This is an instance of the Bin-Packing problem where we
+// have elements of different size (cells of different bits) and bins (scan
+// chains) where to put them.
+//
+// 3 Scan Stitching: Where we take the scan chains from Scan Architect and
+// connect the cells together to form the scan chains in the design. This is
+// done by connecting the output of each scan scell to the scan input of the
+// next scan cell, based on the order defined in Scan Architect.
+//
+// See:
+//  VLSI Test Principles and Architectures, 2006, Chapter 2.7: Scan Design Flow
+//
 class Dft
 {
  public:
@@ -50,7 +70,8 @@ class Dft
 
   // Calls pre_dft performing scan replace and scan architect.
   // A report is going to be generated and printed followed by a rollback to
-  // undo the work of scan replace
+  // undo the work of scan replace. Use this command/function to iterate
+  // different options like max_length
   //
   // Here we do:
   //  - Scan Replace
