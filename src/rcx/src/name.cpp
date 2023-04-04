@@ -32,7 +32,20 @@
 
 #include "name.h"
 
-namespace odb {
+namespace rcx {
+
+class Ath__nameBucket
+{
+ public:
+  void set(char* name, uint tag);
+  void deallocWord();
+
+ private:
+  char* _name;
+  uint _tag;
+
+  friend class Ath__nameTable;
+};
 
 static void Ath__hashError(const char* msg, int exitFlag)
 {
@@ -65,8 +78,8 @@ Ath__nameTable::Ath__nameTable(uint n, char* zero)
   if (zero == NULL)
     zero = strdup("zeroName");
 
-  _hashTable = new AthHash<int>(n, 0);
-  _bucketPool = new AthPool<Ath__nameBucket>(false, 0);
+  _hashTable = new odb::AthHash<int>(n, 0);
+  _bucketPool = new odb::AthPool<Ath__nameBucket>(false, 0);
 
   addNewName(zero, 0);
 }
@@ -177,4 +190,4 @@ uint Ath__nameTable::getTagId(char* name)
   return 0;
 }
 
-}  // namespace odb
+}  // namespace rcx

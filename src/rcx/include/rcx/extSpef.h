@@ -38,7 +38,6 @@
 #include "db.h"
 #include "dbShape.h"
 #include "extRCap.h"
-#include "name.h"
 #include "odb.h"
 #include "parse.h"
 
@@ -50,9 +49,10 @@ namespace rcx {
 
 using odb::Ath__array1D;
 using odb::Ath__gridTable;
-using odb::Ath__nameTable;
 using odb::uint;
 using utl::Logger;
+
+class Ath__nameTable;
 
 class extRcTripplet
 {

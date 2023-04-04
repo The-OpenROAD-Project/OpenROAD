@@ -38,30 +38,12 @@
 
 #include "util.h"
 
-namespace odb {
-class Ath__nameBucket
-{
- private:
-  char* _name;
-  uint _tag;
+namespace rcx {
 
- public:
-  void set(char* name, uint tag);
-  void deallocWord();
-
-  friend class Ath__nameTable;
-};
+class Ath__nameBucket;
 
 class Ath__nameTable
 {
- private:
-  AthHash<int>* _hashTable;
-  AthPool<Ath__nameBucket>* _bucketPool;
-  // int *nameMap; // TODO
-
-  void allocName(char* name, uint nameId, bool hash = false);
-  uint addName(char* name, uint dataId);
-
  public:
   ~Ath__nameTable();
   Ath__nameTable(uint n, char* zero = NULL);
@@ -78,6 +60,13 @@ class Ath__nameTable
                  uint ignoreFlag = 0,
                  uint exitFlag = 0,
                  int* nn = 0);
+
+ private:
+  odb::AthHash<int>* _hashTable;
+  odb::AthPool<Ath__nameBucket>* _bucketPool;
+
+  void allocName(char* name, uint nameId, bool hash = false);
+  uint addName(char* name, uint dataId);
 };
 
-}  // namespace odb
+}  // namespace rcx

@@ -36,6 +36,7 @@
 
 #include "dbExtControl.h"
 #include "parse.h"
+#include "name.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
 
