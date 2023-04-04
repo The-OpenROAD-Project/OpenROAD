@@ -974,6 +974,9 @@ void TritonRoute::processBTermsAboveTopLayer()
   if (top_tech_layer != nullptr) {
     int top_layer_idx = top_tech_layer->getRoutingLevel();
     for (auto bterm : block->getBTerms()) {
+      if (bterm->getNet()->isSpecial()) {
+        continue;
+      }
       int bterm_bottom_layer_idx = std::numeric_limits<int>::max();
       for (auto bpin : bterm->getBPins()) {
         for (auto box : bpin->getBoxes()) {
