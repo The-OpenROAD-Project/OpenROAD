@@ -46,9 +46,9 @@ class ScanArchitectHeuristic : public ScanArchitect
   // Not copyable or movable
   ScanArchitectHeuristic(const ScanArchitectHeuristic&) = delete;
   ScanArchitectHeuristic& operator=(const ScanArchitectHeuristic&) = delete;
-  virtual ~ScanArchitectHeuristic() = default;
+  ~ScanArchitectHeuristic() override = default;
 
-  virtual void architect() override;
+  void architect() override;
 };
 
 }  // namespace dft

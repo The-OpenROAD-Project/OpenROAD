@@ -48,7 +48,7 @@ namespace dft {
 class ScanCellsBucket
 {
  public:
-  ScanCellsBucket(utl::Logger* logger);
+  explicit ScanCellsBucket(utl::Logger* logger);
   // Not copyable or movable
   ScanCellsBucket(const ScanCellsBucket&) = delete;
   ScanCellsBucket& operator=(const ScanCellsBucket&) = delete;
