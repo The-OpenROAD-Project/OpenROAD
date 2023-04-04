@@ -41,8 +41,8 @@ TritonCTS forced slew degradation on these wires.
     Direction: Vertical
     Sinks per sub-region: 8
     Sub-region size: 6.0909 X 5.3903
-[INFO CTS-0034]     Segment length (rounded): 2.
-    Key: 12 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 2 delay: 1
+[INFO CTS-0034]     Segment length (rounded): 4.
+    Key: 60 inSlew: 1 inCap: 1 outSlew: 2 load: 1 length: 4 delay: 1
 [INFO CTS-0032]  Stop criterion found. Max number of sinks is 15.
 [INFO CTS-0035]  Number of sinks covered: 29.
 [INFO CTS-0018]     Created 34 clock buffers.
@@ -54,6 +54,6 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0098] Clock net "clk"
 [INFO CTS-0099]  Sinks 288
 [INFO CTS-0100]  Leaf buffers 29
-[INFO CTS-0101]  Average sink wire length 131.66 um
+[INFO CTS-0101]  Average sink wire length 137.00 um
 [INFO CTS-0102]  Path depth 3 - 3
 Found 0 unconnected buffers.
