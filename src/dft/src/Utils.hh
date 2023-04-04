@@ -55,7 +55,7 @@ odb::dbInst* ReplaceCell(
 bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
 
 // Returns a vector of dbITerm for every clock that there is in the instance.
-// For black boxes or CTLs, we can have more than one clock
+// For black boxes or CTLs (Core Test Language), we can have more than one clock
 std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst);
 
 // Returns a sta::Clock of the given iterm
