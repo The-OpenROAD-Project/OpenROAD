@@ -40,6 +40,8 @@
 
 namespace rcx {
 
+using uint = unsigned int;
+
 class NameTable
 {
  public:
