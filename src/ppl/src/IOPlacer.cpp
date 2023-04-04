@@ -703,16 +703,14 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
     int& mirrored_pins_cnt,
     bool mirrored_only)
 {
-  if (!mirrored_only) {
-    assignConstrainedGroupsToSections(constraint, constraint.sections);
-  }
+  assignConstrainedGroupsToSections(constraint, constraint.sections, mirrored_pins_cnt, mirrored_only);
 
   std::vector<int> pin_indices = findPinsForConstraint(
       constraint, netlist_io_pins_.get(), mirrored_only);
 
   for (int idx : pin_indices) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(idx);
-    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end() && !io_pin.isAssignedToSection()) {
       mirrored_pins_cnt++;
     }
     assignPinToSection(io_pin, idx, constraint.sections);
@@ -722,7 +720,9 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
 }
 
 void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
-                                                 std::vector<Section>& sections)
+                                                 std::vector<Section>& sections,
+                                                 int& mirrored_pins_cnt,
+                                                 bool mirrored_only)
 {
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
     const PinSet& pin_list = constraint.pin_list;
@@ -730,9 +730,30 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
 
     if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
         != pin_list.end()) {
+      if (mirrored_only && !groupHasMirroredPin(io_group.first)) {
+        continue;
+      }
+      for (int pin_idx : io_group.first) {
+        IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+        if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end() && mirrored_only) {
+          mirrored_pins_cnt++;
+        }
+      }
       assignGroupToSection(io_group.first, sections, io_group.second);
     }
   }
+}
+
+bool IOPlacer::groupHasMirroredPin(std::vector<int>& group)
+{
+  for (int pin_idx : group) {
+    IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 int IOPlacer::assignGroupsToSections()
@@ -779,6 +800,9 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
           group.push_back(pin_idx);
           sections[i].used_slots++;
           io_pin.assignToSection();
+          if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+            assignMirroredPin(io_pin);
+          }
         }
         total_pins_assigned += group_size;
         sections[i].pin_groups.push_back({group, order});
@@ -886,8 +910,6 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
         break;
       }
     }
-  } else if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
-    assignMirroredPin(io_pin);
   }
 
   return pin_assigned;
@@ -1342,7 +1364,7 @@ void IOPlacer::addPinGroup(PinList* group, bool order)
   pin_groups_.push_back({*group, order});
 }
 
-void IOPlacer::findPinAssignment(std::vector<Section>& sections)
+void IOPlacer::findPinAssignment(std::vector<Section>& sections, bool mirrored_groups_only)
 {
   std::vector<HungarianMatching> hg_vec;
   for (const auto& section : sections) {
@@ -1368,7 +1390,7 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections)
   }
 
   for (auto& match : hg_vec) {
-    match.getAssignmentForGroups(assignment_);
+    match.getAssignmentForGroups(assignment_, mirrored_pins_, mirrored_groups_only);
   }
 
   for (auto& sec : sections) {
@@ -1447,7 +1469,7 @@ void IOPlacer::run(bool random_mode)
               edge_str);
         }
 
-        findPinAssignment(sections_for_constraint);
+        findPinAssignment(sections_for_constraint, mirrored_only);
         updateSlots();
 
         if (!mirrored_only) {
@@ -1461,7 +1483,7 @@ void IOPlacer::run(bool random_mode)
     }
 
     setupSections(constrained_pins_cnt);
-    findPinAssignment(sections_);
+    findPinAssignment(sections_, false);
   }
 
   for (auto& pin : assignment_) {
