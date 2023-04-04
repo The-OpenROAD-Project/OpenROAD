@@ -80,7 +80,6 @@ class ScanChain
   const std::string& getName() const;
 
  private:
-  // The name of the scan chain
   std::string name_;
   std::vector<std::shared_ptr<ScanCell>> rising_edge_scan_cells_;
   std::vector<std::shared_ptr<ScanCell>> falling_edge_scan_cells_;
