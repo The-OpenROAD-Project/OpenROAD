@@ -131,9 +131,9 @@ void Dft::insert_dft()
   // TODO: Scan Architect and Scan Stitching
 }
 
-DftConfig& Dft::getMutableDftConfig()
+DftConfig* Dft::getMutableDftConfig()
 {
-  return dft_config_;
+  return &dft_config_;
 }
 
 const DftConfig& Dft::getDftConfig() const

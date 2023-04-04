@@ -46,7 +46,7 @@ class DftConfig
   DftConfig(const DftConfig&) = delete;
   DftConfig& operator=(const DftConfig&) = delete;
 
-  ScanArchitectConfig& getMutableScanArchitectConfig();
+  ScanArchitectConfig* getMutableScanArchitectConfig();
   const ScanArchitectConfig& getScanArchitectConfig() const;
 
   // Prints the information currently being used by DFT for config

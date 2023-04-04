@@ -34,9 +34,9 @@
 
 namespace dft {
 
-ScanArchitectConfig& DftConfig::getMutableScanArchitectConfig()
+ScanArchitectConfig* DftConfig::getMutableScanArchitectConfig()
 {
-  return scan_architect_config_;
+  return &scan_architect_config_;
 }
 
 const ScanArchitectConfig& DftConfig::getScanArchitectConfig() const

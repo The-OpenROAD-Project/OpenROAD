@@ -59,7 +59,7 @@ void insert_dft()
 
 void set_dft_config_max_length(int max_length)
 {
-  getDft()->getMutableDftConfig().getMutableScanArchitectConfig().setMaxLength(max_length);
+  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
 }
 
 void report_dft_config() {

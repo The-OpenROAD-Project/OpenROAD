@@ -96,7 +96,7 @@ class Dft
   void insert_dft();
 
   // Returns a mutable version of DftConfig
-  DftConfig& getMutableDftConfig();
+  DftConfig* getMutableDftConfig();
 
   // Returns a const version of DftConfig
   const DftConfig& getDftConfig() const;
