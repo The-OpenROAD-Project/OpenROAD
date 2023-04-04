@@ -703,14 +703,16 @@ std::vector<Section> IOPlacer::assignConstrainedPinsToSections(
     int& mirrored_pins_cnt,
     bool mirrored_only)
 {
-  assignConstrainedGroupsToSections(constraint, constraint.sections, mirrored_pins_cnt, mirrored_only);
+  assignConstrainedGroupsToSections(
+      constraint, constraint.sections, mirrored_pins_cnt, mirrored_only);
 
   std::vector<int> pin_indices = findPinsForConstraint(
       constraint, netlist_io_pins_.get(), mirrored_only);
 
   for (int idx : pin_indices) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(idx);
-    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end() && !io_pin.isAssignedToSection()) {
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()
+        && !io_pin.isAssignedToSection()) {
       mirrored_pins_cnt++;
     }
     assignPinToSection(io_pin, idx, constraint.sections);
@@ -735,7 +737,8 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
       }
       for (int pin_idx : io_group.first) {
         IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
-        if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end() && mirrored_only) {
+        if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()
+            && mirrored_only) {
           mirrored_pins_cnt++;
         }
       }
@@ -1364,7 +1367,8 @@ void IOPlacer::addPinGroup(PinList* group, bool order)
   pin_groups_.push_back({*group, order});
 }
 
-void IOPlacer::findPinAssignment(std::vector<Section>& sections, bool mirrored_groups_only)
+void IOPlacer::findPinAssignment(std::vector<Section>& sections,
+                                 bool mirrored_groups_only)
 {
   std::vector<HungarianMatching> hg_vec;
   for (const auto& section : sections) {
@@ -1390,7 +1394,8 @@ void IOPlacer::findPinAssignment(std::vector<Section>& sections, bool mirrored_g
   }
 
   for (auto& match : hg_vec) {
-    match.getAssignmentForGroups(assignment_, mirrored_pins_, mirrored_groups_only);
+    match.getAssignmentForGroups(
+        assignment_, mirrored_pins_, mirrored_groups_only);
   }
 
   for (auto& sec : sections) {

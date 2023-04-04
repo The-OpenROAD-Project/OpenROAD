@@ -262,8 +262,8 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
   size_t col = 0;
   int slot_index = 0;
   for (const auto& [pins, order] : pin_groups_) {
-    if ((only_mirrored && !groupHasMirroredPin(pins, mirrored_pins)) ||
-        (!only_mirrored && groupHasMirroredPin(pins, mirrored_pins))) {
+    if ((only_mirrored && !groupHasMirroredPin(pins, mirrored_pins))
+        || (!only_mirrored && groupHasMirroredPin(pins, mirrored_pins))) {
       continue;
     }
 

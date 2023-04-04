@@ -204,7 +204,8 @@ class IOPlacer
                                          Netlist* netlist,
                                          bool mirrored_only);
   int computeIONetsHPWL(Netlist* netlist);
-  void findPinAssignment(std::vector<Section>& sections, bool mirrored_groups_only);
+  void findPinAssignment(std::vector<Section>& sections,
+                         bool mirrored_groups_only);
   void updateSlots();
   void excludeInterval(Interval interval);
 
