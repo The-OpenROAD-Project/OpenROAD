@@ -95,10 +95,10 @@ void ScanChain::report(utl::Logger* logger, bool verbose) const
       logger->report("  {:s} ({:s}, falling)",
                      scan_cell->getName(),
                      scan_cell->getClockDomain().getClockName());
+      current_clock_name = scan_cell->getClockDomain().getClockName();
     } else {
       logger->report("  {:s}", scan_cell->getName());
     }
-    current_clock_name = scan_cell->getClockDomain().getClockName();
   }
 
   // Then positive edge cells
@@ -108,10 +108,10 @@ void ScanChain::report(utl::Logger* logger, bool verbose) const
       logger->report("  {:s} ({:s}, rising)",
                      scan_cell->getName(),
                      scan_cell->getClockDomain().getClockName());
+      current_clock_name = scan_cell->getClockDomain().getClockName();
     } else {
       logger->report("  {:s}", scan_cell->getName());
     }
-    current_clock_name = scan_cell->getClockDomain().getClockName();
   }
   logger->report("");  // line break between scan chains
 }
