@@ -42,7 +42,7 @@ namespace dft {
 // together into a scan chain. A scan chain can mix different clock domains
 // (Equivalent clocks) and different edges too. We are going to connect together
 // first the falling edge cells and then the rising edge to prevent
-// syncronization issues while shifting data in.
+// synchronization issues while shifting data in.
 //
 // TODO:
 //  - Find the scan in and scan out of the chain
