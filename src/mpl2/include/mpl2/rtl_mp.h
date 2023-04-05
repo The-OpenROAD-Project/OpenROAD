@@ -55,6 +55,7 @@ class PartitionMgr;
 namespace mpl2 {
 
 class HierRTLMP;
+class Mpl2Observer;
 
 class MacroPlacer2
 {
@@ -98,7 +99,7 @@ class MacroPlacer2
              const int snap_layer,
              const char* report_directory);
 
-  void setDebug();
+  void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
 
  private:
   std::unique_ptr<HierRTLMP> hier_rtlmp_;
