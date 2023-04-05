@@ -148,10 +148,6 @@ void HungarianMatching::getFinalAssignment(std::vector<IOPin>& assignment,
         break;
       }
       col++;
-    } else if (assign_mirrored
-               && mirrored_pins.find(io_pin.getBTerm())
-                      != mirrored_pins.end()) {
-      assignMirroredPins(io_pin, mirrored_pins, assignment);
     }
   }
 }
@@ -170,16 +166,17 @@ void HungarianMatching::assignMirroredPins(IOPin& io_pin,
   mirrored_pin.setPlaced();
   assignment.push_back(mirrored_pin);
   int slot_index = getSlotIdxByPosition(mirrored_pos, mirrored_pin.getLayer());
-  if (slot_index < 0) {
+  if (slot_index < 0 || slots_[slot_index].used) {
     odb::dbTechLayer* layer
         = db_->getTech()->findRoutingLayer(mirrored_pin.getLayer());
     logger_->error(utl::PPL,
                    82,
                    "Mirrored position ({}, {}) at layer {} is not a "
-                   "valid position for pin placement.",
+                   "valid position for pin {} placement.",
                    mirrored_pos.getX(),
                    mirrored_pos.getY(),
-                   layer ? layer->getName() : "NA");
+                   layer ? layer->getName() : "NA",
+                   mirrored_pin.getName());
   }
   slots_[slot_index].used = true;
 }
@@ -253,7 +250,9 @@ void HungarianMatching::createMatrixForGroups()
   }
 }
 
-void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment)
+void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
+                                               MirroredPins& mirrored_pins,
+                                               bool only_mirrored)
 {
   if (hungarian_matrix_.empty()) {
     return;
@@ -263,6 +262,11 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment)
   size_t col = 0;
   int slot_index = 0;
   for (const auto& [pins, order] : pin_groups_) {
+    if ((only_mirrored && !groupHasMirroredPin(pins, mirrored_pins))
+        || (!only_mirrored && groupHasMirroredPin(pins, mirrored_pins))) {
+      continue;
+    }
+
     slot_index = begin_slot_;
     for (size_t row = 0; row < rows; row++) {
       if (assignment_[row] != col) {
@@ -287,6 +291,9 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment)
         pin_cnt = (edge_ == Edge::top || edge_ == Edge::left) && order
                       ? pin_cnt - 1
                       : pin_cnt + 1;
+        if (mirrored_pins.find(io_pin.getBTerm()) != mirrored_pins.end()) {
+          assignMirroredPins(io_pin, mirrored_pins, assignment);
+        }
       }
       break;
     }
@@ -309,6 +316,19 @@ int HungarianMatching::getSlotIdxByPosition(const odb::Point& position,
   }
 
   return slot_idx;
+}
+
+bool HungarianMatching::groupHasMirroredPin(const std::vector<int>& group,
+                                            MirroredPins& mirrored_pins)
+{
+  for (int pin_idx : group) {
+    IOPin& io_pin = netlist_->getIoPin(pin_idx);
+    if (mirrored_pins.find(io_pin.getBTerm()) != mirrored_pins.end()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 }  // namespace ppl

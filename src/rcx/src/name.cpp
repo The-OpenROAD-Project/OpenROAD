@@ -32,7 +32,20 @@
 
 #include "name.h"
 
-namespace odb {
+namespace rcx {
+
+class NameTable::NameBucket
+{
+ public:
+  void set(char* name, uint tag);
+  void deallocWord();
+
+ private:
+  char* _name;
+  uint _tag;
+
+  friend class NameTable;
+};
 
 static void Ath__hashError(const char* msg, int exitFlag)
 {
@@ -43,37 +56,37 @@ static void Ath__hashError(const char* msg, int exitFlag)
     exit(1);
 }
 
-void Ath__nameBucket::set(char* name, uint tag)
+void NameTable::NameBucket::set(char* name, uint tag)
 {
   int len = strlen(name);
   _name = new char[len + 1];
   strcpy(_name, name);
   _tag = tag;
 }
-void Ath__nameBucket::deallocWord()
+void NameTable::NameBucket::deallocWord()
 {
   delete[] _name;
 }
 
-Ath__nameTable::~Ath__nameTable()
+NameTable::~NameTable()
 {
   delete _hashTable;
   delete _bucketPool;
 }
-Ath__nameTable::Ath__nameTable(uint n, char* zero)
+NameTable::NameTable(uint n, char* zero)
 {
   if (zero == NULL)
     zero = strdup("zeroName");
 
-  _hashTable = new AthHash<int>(n, 0);
-  _bucketPool = new AthPool<Ath__nameBucket>(false, 0);
+  _hashTable = new odb::AthHash<int>(n, 0);
+  _bucketPool = new odb::AthPool<NameBucket>(false, 0);
 
   addNewName(zero, 0);
 }
-uint Ath__nameTable::addName(char* name, uint dataId)
+uint NameTable::addName(char* name, uint dataId)
 {
   uint poolIndex = 0;
-  Ath__nameBucket* b = _bucketPool->alloc(NULL, &poolIndex);
+  NameBucket* b = _bucketPool->alloc(NULL, &poolIndex);
   b->set(name, dataId);
 
   _hashTable->add(b->_name, poolIndex);
@@ -84,13 +97,13 @@ uint Ath__nameTable::addName(char* name, uint dataId)
 // ---------------------------------------------------
 // save/read DB functions
 // ---------------------------------------------------
-void Ath__nameTable::writeDB(FILE* fp, char* nameType)
+void NameTable::writeDB(FILE* fp, char* nameType)
 {
   fprintf(fp, "%s NAMES %d\n", nameType, _bucketPool->getCnt() - 1);
   for (uint i = 1; i < _bucketPool->getCnt(); i++)
     fprintf(fp, "%d %s\n", i, _bucketPool->get(i)->_name);
 }
-bool Ath__nameTable::readDB(FILE* fp)
+bool NameTable::readDB(FILE* fp)
 {
   char type[16];
   char word[16];
@@ -108,10 +121,10 @@ bool Ath__nameTable::readDB(FILE* fp)
   }
   return true;
 }
-void Ath__nameTable::allocName(char* name, uint nameId, bool hash)
+void NameTable::allocName(char* name, uint nameId, bool hash)
 {
   uint poolIndex = 0;
-  Ath__nameBucket* b = _bucketPool->alloc(NULL, &poolIndex);
+  NameBucket* b = _bucketPool->alloc(NULL, &poolIndex);
   b->set(name, 0);
 
   if (poolIndex != nameId) {
@@ -120,11 +133,11 @@ void Ath__nameTable::allocName(char* name, uint nameId, bool hash)
   if (hash)
     _hashTable->add(b->_name, poolIndex);
 }
-void Ath__nameTable::addData(uint poolId, uint dataId)
+void NameTable::addData(uint poolId, uint dataId)
 {
   // when reading DB names, buckets have been allocated already
 
-  Ath__nameBucket* b = _bucketPool->get(poolId);
+  NameBucket* b = _bucketPool->get(poolId);
   b->_tag = dataId;
   _hashTable->add(b->_name, poolId);
 }
@@ -132,7 +145,7 @@ void Ath__nameTable::addData(uint poolId, uint dataId)
 // ---------------------------------------------------------
 // Hash Functions
 // ---------------------------------------------------------
-uint Ath__nameTable::addNewName(char* name, uint dataId)
+uint NameTable::addNewName(char* name, uint dataId)
 {
   int n;
   if (_hashTable->get(name, n)) {
@@ -142,18 +155,15 @@ uint Ath__nameTable::addNewName(char* name, uint dataId)
 
   return addName(name, dataId);
 }
-char* Ath__nameTable::getName(uint poolId)
+char* NameTable::getName(uint poolId)
 {
   return _bucketPool->get(poolId)->_name;
 }
-uint Ath__nameTable::getDataId(int poolId)
+uint NameTable::getDataId(int poolId)
 {
   return _bucketPool->get(poolId)->_tag;
 }
-uint Ath__nameTable::getDataId(char* name,
-                               uint ignoreFlag,
-                               uint exitFlag,
-                               int* nn)
+uint NameTable::getDataId(char* name, uint ignoreFlag, uint exitFlag, int* nn)
 {
   int n;
   if (_hashTable->get(name, n)) {
@@ -168,7 +178,7 @@ uint Ath__nameTable::getDataId(char* name,
   Ath__hashError(name, exitFlag);
   return 0;
 }
-uint Ath__nameTable::getTagId(char* name)
+uint NameTable::getTagId(char* name)
 {
   int n;
   if (_hashTable->get(name, n))
@@ -177,4 +187,4 @@ uint Ath__nameTable::getTagId(char* name)
   return 0;
 }
 
-}  // namespace odb
+}  // namespace rcx

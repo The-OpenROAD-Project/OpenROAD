@@ -33,7 +33,7 @@
 
 #include "SACoreSoftMacro.h"
 
-#include "graphics.h"
+#include "Mpl2Observer.h"
 #include "utl/Logger.h"
 
 namespace mpl2 {
@@ -71,7 +71,7 @@ SACoreSoftMacro::SACoreSoftMacro(
     int k,
     int c,
     unsigned seed,
-    Graphics* graphics,
+    Mpl2Observer* graphics,
     utl::Logger* logger)
     : SimulatedAnnealingCore<SoftMacro>(outline_width,
                                         outline_height,
