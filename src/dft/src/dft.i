@@ -35,6 +35,7 @@
 %{
 
 #include "dft/Dft.hh"
+#include "DftConfig.hh"
 #include "ord/OpenRoad.hh"
 
 dft::Dft * getDft()

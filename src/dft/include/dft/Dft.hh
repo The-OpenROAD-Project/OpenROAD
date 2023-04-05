@@ -31,13 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "DftConfig.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace dft {
 class ScanReplace;
+class DftConfig;
 
 // The main DFT implementation.
 //
@@ -62,6 +62,8 @@ class ScanReplace;
 class Dft
 {
  public:
+  Dft();
+
   void init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger);
 
   // Pre-work for insert_dft. We collect the cells that need to be
@@ -118,7 +120,7 @@ class Dft
 
   // Internal state
   std::unique_ptr<ScanReplace> scan_replace_;
-  DftConfig dft_config_;
+  std::unique_ptr<DftConfig> dft_config_;
 };
 
 }  // namespace dft

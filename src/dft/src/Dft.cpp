@@ -34,6 +34,7 @@
 
 #include <iostream>
 
+#include "DftConfig.hh"
 #include "ScanReplace.hh"
 #include "Utils.hh"
 #include "architect/ScanArchitect.hh"
@@ -43,6 +44,10 @@
 #include "utl/Logger.h"
 
 namespace dft {
+
+Dft::Dft() : dft_config_(std::make_unique<DftConfig>())
+{
+}
 
 void Dft::init(odb::dbDatabase* db, sta::dbSta* sta, utl::Logger* logger)
 {
@@ -93,12 +98,12 @@ void Dft::preview_dft(bool verbose)
   // Scan Architect
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
       = std::make_unique<ScanCellsBucket>(logger_);
-  scan_cells_bucket->init(dft_config_.getScanArchitectConfig(),
+  scan_cells_bucket->init(dft_config_->getScanArchitectConfig(),
                           shared_scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
       = ScanArchitect::ConstructScanScanArchitect(
-          dft_config_.getScanArchitectConfig(), std::move(scan_cells_bucket));
+          dft_config_->getScanArchitectConfig(), std::move(scan_cells_bucket));
   scan_architect->init();
   scan_architect->architect();
 
@@ -110,7 +115,7 @@ void Dft::preview_dft(bool verbose)
   logger_->report("Number of chains: {:d}", scan_chains.size());
   logger_->report("Clock domain: {:s}",
                   ScanArchitectConfig::ClockMixingName(
-                      dft_config_.getScanArchitectConfig().getClockMixing()));
+                      dft_config_->getScanArchitectConfig().getClockMixing()));
   logger_->report("***************************\n");
   for (const auto& scan_chain : scan_chains) {
     scan_chain->report(logger_, verbose);
@@ -135,18 +140,18 @@ void Dft::insert_dft()
 
 DftConfig* Dft::getMutableDftConfig()
 {
-  return &dft_config_;
+  return dft_config_.get();
 }
 
 const DftConfig& Dft::getDftConfig() const
 {
-  return dft_config_;
+  return *dft_config_;
 }
 
 void Dft::reportDftConfig() const
 {
   logger_->report("DFT Config:");
-  dft_config_.report(logger_);
+  dft_config_->report(logger_);
 }
 
 }  // namespace dft
