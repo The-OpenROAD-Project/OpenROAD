@@ -459,25 +459,26 @@ void ScanReplace::rollbackScanReplace(odb::dbBlock* block)
 }
 
 void ScanReplace::addCellForRollback(
-    odb::dbMaster* original_master,
-    odb::dbMaster* new_master,
+    odb::dbMaster* master,
+    odb::dbMaster* master_scan_cell,
     const std::unique_ptr<ScanCandidate>& scan_candidate)
 {
-  auto found = rollback_candidates_.find(new_master);
+  auto found = rollback_candidates_.find(master_scan_cell);
   if (found != rollback_candidates_.end()) {
     // This master already has a rollback, nothing to do
     return;
   }
 
+  // Flip the port mapping to be able to rollback
   std::unordered_map<std::string, std::string> rollback_port_mapping;
   for (const auto& [from, to] : scan_candidate->getPortMapping()) {
     rollback_port_mapping.insert({to, from});
   }
 
   std::unique_ptr<RollbackCandidate> rollback_candidate
-      = std::make_unique<RollbackCandidate>(original_master,
-                                            rollback_port_mapping);
-  rollback_candidates_.insert({new_master, std::move(rollback_candidate)});
+      = std::make_unique<RollbackCandidate>(master, rollback_port_mapping);
+  rollback_candidates_.insert(
+      {master_scan_cell, std::move(rollback_candidate)});
 }
 
 }  // namespace dft

@@ -126,8 +126,8 @@ class ScanReplace
 
   void rollbackScanReplace(odb::dbBlock* block);
 
-  void addCellForRollback(odb::dbMaster* original_master,
-                          odb::dbMaster* master,
+  void addCellForRollback(odb::dbMaster* master,
+                          odb::dbMaster* master_scan_cell,
                           const std::unique_ptr<ScanCandidate>& scan_candidate);
 };
 
