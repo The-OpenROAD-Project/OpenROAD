@@ -1389,8 +1389,7 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
     painter.setBrush(painter.white);
     painter.setPenWidth(700);
 
-    const int deg = stree_.deg;
-    for (int i = 0; i < 2 * deg - 2; i++) {
+    for (int i = 0; i < stree_.branchCount(); i++) {
       const int x1 = tile_size_ * (stree_.branch[i].x + 0.5) + x_corner_;
       const int y1 = tile_size_ * (stree_.branch[i].y + 0.5) + y_corner_;
       const int n = stree_.branch[i].n;
