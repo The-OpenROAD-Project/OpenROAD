@@ -233,6 +233,24 @@ void ScanCandidate::debugPrintPortMapping(utl::Logger* logger) const
   }
 }
 
+RollbackCandidate::RollbackCandidate(
+    odb::dbMaster* master,
+    const std::unordered_map<std::string, std::string>& port_mapping)
+    : master_(master), port_mapping_(port_mapping)
+{
+}
+
+odb::dbMaster* RollbackCandidate::getMaster() const
+{
+  return master_;
+}
+
+const std::unordered_map<std::string, std::string>&
+RollbackCandidate::getPortMapping() const
+{
+  return port_mapping_;
+}
+
 void ScanReplace::collectScanCellAvailable()
 {
   const sta::dbNetwork* db_network = sta_->getDbNetwork();
@@ -388,6 +406,7 @@ void ScanReplace::scanReplace(odb::dbBlock* block)
         block, inst, master_scan_cell, scan_candidate->getPortMapping());
 
     already_replaced.insert(new_cell);
+    addCellForRollback(master, master_scan_cell, scan_candidate);
   }
 
   // Recursive iterate inside the block to look for inside hiers
@@ -408,6 +427,57 @@ void ScanReplace::debugPrintScanEquivalents() const
                liberty_cell->name(),
                scan_candidate->getScanCell()->name());
   }
+}
+
+void ScanReplace::rollbackScanReplace()
+{
+  odb::dbChip* chip = db_->getChip();
+  rollbackScanReplace(chip->getBlock());
+}
+
+void ScanReplace::rollbackScanReplace(odb::dbBlock* block)
+{
+  for (odb::dbInst* inst : block->getInsts()) {
+    auto found = rollback_candidates_.find(inst->getMaster());
+    if (found == rollback_candidates_.end()) {
+      // Cell was not scan replaced, nothing to do
+      continue;
+    }
+
+    RollbackCandidate& rollback_candidate = *found->second;
+
+    utils::ReplaceCell(block,
+                       inst,
+                       rollback_candidate.getMaster(),
+                       rollback_candidate.getPortMapping());
+  }
+
+  // Recursive iterate inside the block to look for inside hiers
+  for (odb::dbBlock* next_block : block->getChildren()) {
+    rollbackScanReplace(next_block);
+  }
+}
+
+void ScanReplace::addCellForRollback(
+    odb::dbMaster* original_master,
+    odb::dbMaster* new_master,
+    const std::unique_ptr<ScanCandidate>& scan_candidate)
+{
+  auto found = rollback_candidates_.find(new_master);
+  if (found != rollback_candidates_.end()) {
+    // This master already has a rollback, nothing to do
+    return;
+  }
+
+  std::unordered_map<std::string, std::string> rollback_port_mapping;
+  for (const auto& [from, to] : scan_candidate->getPortMapping()) {
+    rollback_port_mapping.insert({to, from});
+  }
+
+  std::unique_ptr<RollbackCandidate> rollback_candidate
+      = std::make_unique<RollbackCandidate>(original_master,
+                                            rollback_port_mapping);
+  rollback_candidates_.insert({new_master, std::move(rollback_candidate)});
 }
 
 }  // namespace dft

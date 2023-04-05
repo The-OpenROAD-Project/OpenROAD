@@ -13,6 +13,12 @@ create_clock -name clock2 -period 2.0000 -waveform {0.0000 1.0000} [get_ports {c
 set_dft_config -max_length 5
 
 preview_dft -verbose
+
+# Preview should not modify the net
+set verilog_file_after_preview [make_result_file scan_architect_no_mix_sky130_after_preview.v]
+write_verilog $verilog_file_after_preview
+diff_files $verilog_file_after_preview scan_architect_no_mix_sky130.v
+
 insert_dft
 
 set verilog_file [make_result_file scan_architect_no_mix_sky130.v]

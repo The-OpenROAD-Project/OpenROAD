@@ -61,23 +61,6 @@ std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst);
 // Returns a sta::Clock of the given iterm
 std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 
-// Runs the given function in a child process. We can use this function as a way
-// to rollback changes to the netlist
-void RunInForkForRollback(const std::function<void()>& fn);
-
-// For child process: This class will write to the given fd that the process
-// finished running. We use the destructor of this class in case there is an
-// exception so we don't keep waiting for the child to finish
-class ExitFork
-{
- public:
-  explicit ExitFork(int fd);
-  ~ExitFork();
-
- private:
-  int fd_;
-};
-
 // Helper to format optional values for the config reports
 template <typename T>
 std::string FormatForReport(const std::optional<T>& opt)

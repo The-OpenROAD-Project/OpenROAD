@@ -32,9 +32,6 @@
 
 #include "Utils.hh"
 
-#include <sys/wait.h>
-#include <unistd.h>
-
 #include <iostream>
 #include <optional>
 
@@ -43,9 +40,6 @@
 namespace dft::utils {
 
 namespace {
-
-// To signal when the fork has done the work
-constexpr char kDoneKeyword[] = "DONE";
 
 void PopulatePortNameToNet(
     odb::dbInst* instance,
@@ -130,32 +124,6 @@ std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm)
   }
 
   return std::nullopt;
-}
-
-ExitFork::ExitFork(int fd) : fd_(fd)
-{
-}
-
-ExitFork::~ExitFork()
-{
-  write(fd_, kDoneKeyword, std::char_traits<char>::length(kDoneKeyword));
-  exit(EXIT_SUCCESS);
-}
-
-void RunInForkForRollback(const std::function<void()>& fn)
-{
-  std::array<int, 2> fd;
-  pipe(fd.data());
-
-  int pid = fork();
-  if (pid != 0) {
-    std::array<char, std::char_traits<char>::length(kDoneKeyword)> buff;
-    read(fd[0], buff.data(), strlen(kDoneKeyword));
-  } else {
-    ExitFork exit_fork(
-        fd[1]);  // will exit at the end of the scope and notify the parent
-    fn();
-  }
 }
 
 }  // namespace dft::utils
