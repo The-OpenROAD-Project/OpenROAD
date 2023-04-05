@@ -42,6 +42,11 @@ class FFT
  public:
   FFT();
   FFT(int binCntX, int binCntY, int binSizeX, int binSizeY);
+
+  #ifdef SYCL
+  FFT(int binCntX, int binCntY, int binSizeX, int binSizeY, SYCLContext sycl_ctx);
+  #endif
+
   ~FFT();
 
   // input func
@@ -84,6 +89,10 @@ class FFT
   int binSizeY_;
 
   void init();
+  void doFFT_CPU();
+  #ifdef SYCL
+  void doFFT_SYCL();
+  #endif
 };
 
 //

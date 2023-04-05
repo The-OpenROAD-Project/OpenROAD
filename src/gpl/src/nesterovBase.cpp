@@ -1172,8 +1172,13 @@ void NesterovBase::init()
   bg_.initBins();
 
   // initialize fft structrue based on bins
+  #if defined(SYCL)
+  std::unique_ptr<FFT> fft(
+      new FFT(bg_.binCntX(), bg_.binCntY(), bg_.binSizeX(), bg_.binSizeY()), sycl_ctx_);    
+  #else
   std::unique_ptr<FFT> fft(
       new FFT(bg_.binCntX(), bg_.binCntY(), bg_.binSizeX(), bg_.binSizeY()));
+  #endif
 
   fft_ = std::move(fft);
 

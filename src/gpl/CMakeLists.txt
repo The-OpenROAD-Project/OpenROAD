@@ -117,7 +117,7 @@ endif()
 
 
 option (SYCL "Enable SYCL Acceleration" OFF)
-set(SYCL_BACKEND "intel" CACHE STRING "Use SYCL backend: 'intel', 'opensycl', 'hipsycl'")
+set(SYCL_BACKEND "intel" CACHE STRING "Use SYCL backend: 'intel', 'opensycl'")
 
 if (SYCL)
   message(STATUS "SYCL is enabled with backend '${SYCL_BACKEND}'.")
@@ -145,11 +145,7 @@ if (SYCL)
       
       target_compile_options(gpl PRIVATE "-fsycl")
       target_link_options(gpl PRIVATE "-fsycl")
-
-  # HipSYCL is being renamed to OpenSYCL.
-  elseif(SYCL_Backend STREQUAL "hipsycl")
-    find_package(hipSYCL CONFIG REQUIRED)
-    add_sycl_to_target(TARGET gpl)
+      find_package(bbfft-sycl REQUIRED)
 
   elseif(SYCL_Backend STREQUAL "opensycl")
     find_package(openSYCL CONFIG REQUIRED)

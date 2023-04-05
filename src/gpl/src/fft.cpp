@@ -145,7 +145,26 @@ float FFT::getElectroPhi(int x, int y) const
 
 using namespace std;
 
-void FFT::doFFT()
+#ifdef __INTELLISENSE__
+  #define SYCL
+#endif
+
+void FFT::doFFT() {
+  #if defined(SYCL)
+    doFFT_SYCL();
+  #else
+    doFFT_CPU();
+  #endif
+}
+
+#if defined(SYCL)
+void FFT::doFFT_SYCL() {
+  
+}
+#endif
+
+
+void FFT::doFFT_CPU()
 {
   ddct2d(binCntX_,
          binCntY_,
