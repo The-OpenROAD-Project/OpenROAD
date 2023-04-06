@@ -90,10 +90,12 @@ public:
   ~RepairDesign();
   void repairDesign(double max_wire_length,
                     double slew_margin,
-                    double cap_margin);
+                    double cap_margin,
+                    bool global_route);
   void repairDesign(double max_wire_length, // zero for none (meters)
                     double slew_margin,
                     double cap_margin,
+                    bool global_route,
                     int &repair_count,
                     int &slew_violations,
                     int &cap_violations,

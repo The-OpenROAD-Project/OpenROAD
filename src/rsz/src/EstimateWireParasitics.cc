@@ -324,7 +324,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
     case ParasiticsSrc::global_routing: {  
       grt::IncrementalGRoute incr_groute(global_router_, block_);
       if (hasMacros()) {
-//        // Run detailed placement before grt
+        // Run detailed placement before grt
         dpl::Opendp* opendp_ = openroad_->getOpendp();
         opendp_->legalAllCells();
 //        opendp_->detailedPlacement(0, 0);

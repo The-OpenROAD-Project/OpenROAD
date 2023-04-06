@@ -315,12 +315,13 @@ proc remove_buffers { args } {
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \
-                                      [-cap_margin cap_margin]}
+                                      [-cap_margin cap_margin] \
+                                      [-global_route]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin} \
-    flags {}
+    flags {-global_route}
   
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
@@ -330,7 +331,8 @@ proc repair_design { args } {
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
-  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin
+  set global_route [info exists flags(-global_route)]
+  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $global_route
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}

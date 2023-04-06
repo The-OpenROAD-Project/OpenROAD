@@ -280,7 +280,8 @@ public:
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
                     double slew_margin, // 0.0-1.0
-                    double cap_margin); // 0.0-1.0
+                    double cap_margin, // 0.0-1.0
+                    bool global_route);
   int repairDesignBufferCount() const;
   // for debugging
   void repairNet(Net *net,
