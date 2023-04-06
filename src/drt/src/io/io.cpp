@@ -905,7 +905,8 @@ void io::Parser::setBTerms(odb::dbBlock* block)
       }
     }
 
-    if (bterm_bottom_layer_idx > TOP_ROUTING_LAYER) {
+    if (bterm_bottom_layer_idx > TOP_ROUTING_LAYER
+        && term->getNet()->getWire() != nullptr) {
       frLayerNum finalLayerNum = 0;
       odb::Rect bbox = getViaBoxForTermAboveMaxLayer(term, finalLayerNum);
       termIn->setIsAboveTopLayer(true);

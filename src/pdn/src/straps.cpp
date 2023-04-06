@@ -1490,8 +1490,11 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
   }
   check_layers.push_back(getLayer());
 
+  Shape estimated_shape(getLayer(), estimated_straps, Shape::SHAPE);
+  estimated_shape.generateObstruction();
+
   bool has_obs = false;
-  odb::Rect obs_check = estimated_straps;
+  odb::Rect obs_check = estimated_shape.getObstruction();
   if (is_horizontal) {
     obs_check.set_xlo(obs_check_area_.xMin());
     obs_check.set_xhi(obs_check_area_.xMax());

@@ -39,11 +39,11 @@
 #include <queue>
 #include <thread>
 
+#include "Mpl2Observer.h"
 #include "SACoreHardMacro.h"
 #include "SACoreSoftMacro.h"
 #include "bus_synthesis.h"
 #include "db_sta/dbNetwork.hh"
-#include "graphics.h"
 #include "object.h"
 #include "odb/db.h"
 #include "par/PartitionMgr.h"
@@ -4825,10 +4825,9 @@ void HierRTLMP::FDPlacement(std::vector<Rect>& blocks,
   */
 }
 
-void HierRTLMP::setDebug()
+void HierRTLMP::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
-  int dbu = db_->getTech()->getDbUnitsPerMicron();
-  graphics_ = std::make_unique<Graphics>(dbu, logger_);
+  graphics_ = std::move(graphics);
 }
 
 }  // namespace mpl2

@@ -50,6 +50,7 @@ add_library(rcx_lib
   extprocess.cpp
   netRC.cpp
   extmeasure_res.cpp
+  name.cpp
 )
 
 target_include_directories(rcx_lib
