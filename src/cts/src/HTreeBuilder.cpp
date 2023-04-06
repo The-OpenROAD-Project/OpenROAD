@@ -345,9 +345,8 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
   logger_->report("    Sinks per sub-region: {}", numSinksPerSubRegion);
   logger_->report("    Sub-region size: {:.4f} X {:.4f}", width, height);
 
-  const unsigned minLength = minLengthSinkRegion_;
-  unsigned segmentLength
-      = std::round(width / (double) minLength) * minLength / 2;
+  const unsigned minLength = minLengthSinkRegion_ / 2;
+  unsigned segmentLength = std::round(width / (2.0 * minLength)) * minLength;
   if (isVertical(level)) {
     segmentLength = std::round(height / (2.0 * minLength)) * minLength;
   }
