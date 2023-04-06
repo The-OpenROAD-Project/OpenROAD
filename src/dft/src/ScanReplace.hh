@@ -124,8 +124,11 @@ class ScanReplace
   // internal blocks (if there is any)
   void scanReplace(odb::dbBlock* block);
 
+  // Rollsback the scan replace, replacing the cells with their old master.
   void rollbackScanReplace(odb::dbBlock* block);
 
+  // Stores the master and scan cell's master so we can perform a rollback later
+  // if we are running in preview_dft
   void addCellForRollback(odb::dbMaster* master,
                           odb::dbMaster* master_scan_cell,
                           const std::unique_ptr<ScanCandidate>& scan_candidate);
