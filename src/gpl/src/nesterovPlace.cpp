@@ -602,7 +602,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
                    prevHpwl_);
     }
 
-    if (minSumOverflow > sumOverflowUnscaled_) {
+    // Early iterations may have much lower overflow which misleads
+    // the divergence check.  This can happen when timing-driven comes
+    // on and increases overflow (due the increased net weights).
+    if (iter > 50 && minSumOverflow > sumOverflowUnscaled_) {
       minSumOverflow = sumOverflowUnscaled_;
       hpwlWithMinSumOverflow = prevHpwl_;
     }
