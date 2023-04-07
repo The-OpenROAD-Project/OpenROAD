@@ -3,10 +3,10 @@
 #include <sstream>
 #include <unordered_set>
 
-#include "ScanCellMock.hh"
+#include "ClockDomain.hh"
 #include "ScanArchitect.hh"
 #include "ScanArchitectConfig.hh"
-#include "ClockDomain.hh"
+#include "ScanCellMock.hh"
 
 namespace {
 

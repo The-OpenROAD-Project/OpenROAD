@@ -1,10 +1,12 @@
 #include "ScanCellMock.hh"
+
 #include "ClockDomain.hh"
 
 namespace dft {
 namespace test {
 
-ScanCellMock::ScanCellMock(const std::string& name, std::unique_ptr<ClockDomain> clock_domain)
+ScanCellMock::ScanCellMock(const std::string& name,
+                           std::unique_ptr<ClockDomain> clock_domain)
     : ScanCell(name, std::move(clock_domain))
 {
 }

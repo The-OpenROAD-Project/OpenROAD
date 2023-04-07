@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "OneBitScanCell.hh"
+
 #include "ClockDomain.hh"
 
 namespace dft {

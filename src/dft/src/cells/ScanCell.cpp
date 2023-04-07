@@ -31,11 +31,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ScanCell.hh"
+
 #include "ClockDomain.hh"
 
 namespace dft {
 
-ScanCell::ScanCell(const std::string& name, std::unique_ptr<ClockDomain> clock_domain)
+ScanCell::ScanCell(const std::string& name,
+                   std::unique_ptr<ClockDomain> clock_domain)
     : name_(name), clock_domain_(std::move(clock_domain))
 {
 }

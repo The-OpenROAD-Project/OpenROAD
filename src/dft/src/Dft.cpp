@@ -34,14 +34,14 @@
 
 #include <iostream>
 
+#include "ClockDomain.hh"
 #include "DftConfig.hh"
-#include "ScanReplace.hh"
 #include "ScanArchitect.hh"
 #include "ScanCell.hh"
 #include "ScanCellFactory.hh"
+#include "ScanReplace.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
-#include "ClockDomain.hh"
 
 namespace dft {
 

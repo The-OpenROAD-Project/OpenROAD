@@ -34,8 +34,8 @@
 
 #include <iostream>
 
-#include "Utils.hh"
 #include "ClockDomain.hh"
+#include "Utils.hh"
 #include "db_sta/dbNetwork.hh"
 #include "sta/Clock.hh"
 #include "sta/FuncExpr.hh"
@@ -81,9 +81,10 @@ TypeOfCell IdentifyCell(odb::dbInst* inst)
   return TypeOfCell::NotSupported;
 }
 
-std::unique_ptr<ClockDomain> GetClockDomainFromClock(sta::LibertyCell* liberty_cell,
-                                    sta::Clock* clock,
-                                    odb::dbITerm* clock_pin)
+std::unique_ptr<ClockDomain> GetClockDomainFromClock(
+    sta::LibertyCell* liberty_cell,
+    sta::Clock* clock,
+    odb::dbITerm* clock_pin)
 {
   ClockEdge edge = ClockEdge::Rising;
   const sta::SequentialSeq& sequentials = liberty_cell->sequentials();
@@ -106,7 +107,7 @@ std::unique_ptr<ClockDomain> GetClockDomainFromClock(sta::LibertyCell* liberty_c
 }
 
 std::unique_ptr<ClockDomain> FindOneBitCellClockDomain(odb::dbInst* inst,
-                                                     sta::dbSta* sta)
+                                                       sta::dbSta* sta)
 {
   std::vector<odb::dbITerm*> clock_pins = utils::GetClockPin(inst);
   sta::dbNetwork* db_network = sta->getDbNetwork();
