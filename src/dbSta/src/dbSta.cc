@@ -187,10 +187,9 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   logger_ = logger;
   makeComponents();
   setTclInterp(tcl_interp);
-  db_network_->init(db, logger);
   db_report_->setLogger(logger);
+  db_network_->init(db, logger);
   db_cbk_ = new dbStaCbk(this, logger);
-  Sta::setSta(this);
 }
 
 void dbSta::initPowerDensityHeatmap()
