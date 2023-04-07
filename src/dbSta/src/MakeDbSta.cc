@@ -47,7 +47,7 @@ void initDbSta(OpenRoad* openroad)
   utl::Logger* logger = openroad->getLogger();
   sta->initVars(
       openroad->tclInterp(), openroad->getDb(), gui::Gui::get(), logger);
-  Sta::setSta(sta);
+  sta::Sta::setSta(sta);
 
   Tcl_Interp* tcl_interp = openroad->tclInterp();
 
