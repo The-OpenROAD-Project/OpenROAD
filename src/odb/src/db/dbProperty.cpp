@@ -181,8 +181,11 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& prop)
 
     case DB_STRING_PROP:
       stream >> char_string;
-      prop._value = std::string(char_string);
-      free(char_string);
+      prop._value = "";
+      if (char_string != nullptr) {
+        prop._value = std::string(char_string);
+        free(char_string);
+      }
       break;
 
     case DB_DOUBLE_PROP:
@@ -501,7 +504,7 @@ bool dbBoolProperty::getValue()
 void dbBoolProperty::setValue(bool value)
 {
   _dbProperty* prop = (_dbProperty*) this;
-  prop->_value = value;
+  prop->_value = static_cast<uint>(value);
 }
 
 dbBoolProperty* dbBoolProperty::create(dbObject* object,
@@ -512,7 +515,7 @@ dbBoolProperty* dbBoolProperty::create(dbObject* object,
     return NULL;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_BOOL_PROP);
-  prop->_value = value;
+  prop->_value = static_cast<uint>(value);
   return (dbBoolProperty*) prop;
 }
 
