@@ -112,7 +112,7 @@ struct Section
     int max_contioguous_slots = std::numeric_limits<int>::min();
     for (int i = begin_slot; i <= end_slot; i++) {
       int contiguous_slots = 0;
-      while (!slots[i].blocked && !slots[i].used && i <= end_slot) {
+      while (i <= end_slot && !slots[i].blocked && !slots[i].used) {
         contiguous_slots++;
         i++;
       }
