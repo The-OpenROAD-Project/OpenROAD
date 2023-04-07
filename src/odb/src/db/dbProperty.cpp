@@ -49,8 +49,13 @@ namespace odb {
 template class dbTable<_dbProperty>;
 
 _dbProperty::_dbProperty(_dbDatabase*, const _dbProperty& n)
-    : _flags(n._flags), _name(n._name), _next(n._next), _owner(n._owner), _value(n._value)
-{}
+    : _flags(n._flags),
+      _name(n._name),
+      _next(n._next),
+      _owner(n._owner),
+      _value(n._value)
+{
+}
 
 _dbProperty::_dbProperty(_dbDatabase*)
 {
@@ -156,10 +161,10 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& prop)
   stream >> prop._name;
   stream >> prop._next;
   stream >> prop._owner;
-  
+
   uint boolean;
   int integer;
-  char* char_string; 
+  char* char_string;
   std::string string_property;
   double double_property;
 

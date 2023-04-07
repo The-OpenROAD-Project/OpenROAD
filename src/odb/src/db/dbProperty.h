@@ -32,8 +32,8 @@
 
 #pragma once
 
-#include <variant>
 #include <string>
+#include <variant>
 
 #include "dbCore.h"
 #include "dbId.h"
