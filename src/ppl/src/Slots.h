@@ -82,6 +82,17 @@ struct TopLayerGrid
   int ury() { return region.yMax(); }
 };
 
+// Slot: an on-track position in the die boundary where a pin
+// can be placed
+struct Slot
+{
+  bool blocked;
+  bool used;
+  odb::Point pos;
+  int layer;
+  Edge edge;
+};
+
 // Section: a region in the die boundary that contains a set
 // of slots. By default, each section has 200 slots
 struct Section
@@ -101,7 +112,7 @@ struct Section
     int max_contioguous_slots = std::numeric_limits<int>::min();
     for (int i = begin_slot; i <= end_slot; i++) {
       int contiguous_slots = 0;
-      while (!slots[i].blocked && !slots[i].used) {
+      while (!slots[i].blocked && !slots[i].used && i <= end_slot) {
         contiguous_slots++;
         i++;
       }
@@ -133,17 +144,6 @@ struct Constraint
   odb::Rect box;
   std::vector<Section> sections;
   float pins_per_slots;
-};
-
-// Slot: an on-track position in the die boundary where a pin
-// can be placed
-struct Slot
-{
-  bool blocked;
-  bool used;
-  odb::Point pos;
-  int layer;
-  Edge edge;
 };
 
 template <typename T>
