@@ -47,25 +47,13 @@ target_sources(dft
   PRIVATE
   # Keep sorted
     src/Dft.cpp
-    src/DftConfig.cpp
     src/MakeDft.cpp
-    src/ScanChain.cpp
-    src/ScanReplace.cpp
-    src/Utils.cpp
-    src/architect/ClockDomain.cpp 
-    src/architect/ScanArchitect.cpp
-    src/architect/ScanArchitectConfig.cpp
-    src/architect/ScanArchitectHeuristic.cpp
-    src/cells/OneBitScanCell.cpp
-    src/cells/ScanCell.cpp
-    src/cells/ScanCellFactory.cpp
 )
+
 
 target_include_directories(dft
   PUBLIC
     include
-  PRIVATE
-    src
 )
 
 target_link_libraries(dft
@@ -74,6 +62,17 @@ target_link_libraries(dft
     dbSta
     OpenSTA
 )
+
+target_link_libraries(dft
+  PRIVATE
+    dft_cells_lib
+    dft_architect_lib
+    dft_config_lib
+    dft_replace_lib
+    dft_clock_domain_lib
+)
+
+
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          dft_py
            NAMESPACE     dft
@@ -97,4 +96,12 @@ if (Python3_FOUND AND BUILD_PYTHON)
     )
 
 endif()
+
+# Keep sorted
+add_subdirectory(src/architect)
+add_subdirectory(src/cells)
+add_subdirectory(src/clock_domain)
+add_subdirectory(src/config)
+add_subdirectory(src/replace)
+add_subdirectory(src/utils)
 add_subdirectory(test/cpp)

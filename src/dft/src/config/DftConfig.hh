@@ -29,41 +29,31 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-#include "architect/ClockDomain.hh"
+#include "ScanArchitectConfig.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 
-std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
-    const ScanArchitectConfig& config,
-    utl::Logger* logger)
+// Main class that contains all the DFT configuration.
+// Pass this object by reference to other functions
+class DftConfig
 {
-  switch (config.getClockMixing()) {
-    // For NoMix, every clock domain is different
-    case ScanArchitectConfig::ClockMixing::NoMix:
-      return [](const ClockDomain& clock_domain) {
-        return std::hash<std::string>{}(clock_domain.getClockName())
-               ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
-      };
-    default:
-      // Not implemented
-      logger->error(utl::DFT, 4, "Clock mix config requested is not supported");
-  }
-}
+ public:
+  DftConfig() = default;
+  // Not copyable or movable.
+  DftConfig(const DftConfig&) = delete;
+  DftConfig& operator=(const DftConfig&) = delete;
 
-ClockDomain::ClockDomain(const std::string& clock_name, ClockEdge clock_edge)
-    : clock_name_(clock_name), clock_edge_(clock_edge)
-{
-}
+  ScanArchitectConfig* getMutableScanArchitectConfig();
+  const ScanArchitectConfig& getScanArchitectConfig() const;
 
-const std::string& ClockDomain::getClockName() const
-{
-  return clock_name_;
-}
+  // Prints the information currently being used by DFT for config
+  void report(utl::Logger* logger) const;
 
-ClockEdge ClockDomain::getClockEdge() const
-{
-  return clock_edge_;
-}
+ private:
+  ScanArchitectConfig scan_architect_config_;
+};
 
 }  // namespace dft

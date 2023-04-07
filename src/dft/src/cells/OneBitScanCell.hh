@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "cells/ScanCell.hh"
+#include "ScanCell.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 
@@ -42,7 +42,7 @@ class OneBitScanCell : public ScanCell
 {
  public:
   OneBitScanCell(const std::string& name,
-                 ClockDomain clock_domain,
+                 std::unique_ptr<ClockDomain> clock_domain,
                  odb::dbInst* inst,
                  sta::TestCell* test_cell);
   // Not copyable or movable

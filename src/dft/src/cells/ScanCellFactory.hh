@@ -33,8 +33,8 @@
 
 #include <memory>
 
-#include "cells/OneBitScanCell.hh"
-#include "cells/ScanCell.hh"
+#include "OneBitScanCell.hh"
+#include "ScanCell.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 

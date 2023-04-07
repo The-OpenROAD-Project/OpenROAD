@@ -30,12 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "cells/ScanCellFactory.hh"
+#include "ScanCellFactory.hh"
 
 #include <iostream>
 
 #include "Utils.hh"
-#include "architect/ClockDomain.hh"
+#include "ClockDomain.hh"
 #include "db_sta/dbNetwork.hh"
 #include "sta/Clock.hh"
 #include "sta/FuncExpr.hh"
@@ -81,7 +81,7 @@ TypeOfCell IdentifyCell(odb::dbInst* inst)
   return TypeOfCell::NotSupported;
 }
 
-ClockDomain GetClockDomainFromClock(sta::LibertyCell* liberty_cell,
+std::unique_ptr<ClockDomain> GetClockDomainFromClock(sta::LibertyCell* liberty_cell,
                                     sta::Clock* clock,
                                     odb::dbITerm* clock_pin)
 {
@@ -102,10 +102,10 @@ ClockDomain GetClockDomainFromClock(sta::LibertyCell* liberty_cell,
 
   // TODO: Create the clock domain based on the timing instead of the name to
   // better control equivalent clocks
-  return ClockDomain(clock->name(), edge);
+  return std::make_unique<ClockDomain>(clock->name(), edge);
 }
 
-std::optional<ClockDomain> FindOneBitCellClockDomain(odb::dbInst* inst,
+std::unique_ptr<ClockDomain> FindOneBitCellClockDomain(odb::dbInst* inst,
                                                      sta::dbSta* sta)
 {
   std::vector<odb::dbITerm*> clock_pins = utils::GetClockPin(inst);
@@ -120,7 +120,7 @@ std::optional<ClockDomain> FindOneBitCellClockDomain(odb::dbInst* inst,
         GetLibertyCell(inst->getMaster(), db_network), *clock, clock_pin);
   }
 
-  return std::nullopt;
+  return nullptr;
 }
 
 std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
@@ -128,11 +128,11 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
                                                  utl::Logger* logger)
 {
   sta::dbNetwork* db_network = sta->getDbNetwork();
-  std::optional<ClockDomain> clock_domain
+  std::unique_ptr<ClockDomain> clock_domain
       = FindOneBitCellClockDomain(inst, sta);
   sta::TestCell* test_cell = GetTestCell(inst->getMaster(), db_network);
 
-  if (!clock_domain.has_value()) {
+  if (!clock_domain) {
     logger->warn(utl::DFT,
                  4,
                  "Cell '{:s}' doesn't have a valid clock connected. Can't "
@@ -151,7 +151,7 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
   }
 
   return std::make_unique<OneBitScanCell>(
-      inst->getName(), std::move(*clock_domain), inst, test_cell);
+      inst->getName(), std::move(clock_domain), inst, test_cell);
 }
 
 }  // namespace

@@ -30,12 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "architect/ScanArchitectHeuristic.hh"
+#include "ScanArchitectHeuristic.hh"
 
 #include <iostream>
 #include <sstream>
 
-#include "architect/ScanArchitect.hh"
+#include "ScanArchitect.hh"
 
 namespace dft {
 

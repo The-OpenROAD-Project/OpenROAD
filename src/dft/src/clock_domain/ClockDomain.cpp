@@ -30,48 +30,40 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "architect/ScanArchitectConfig.hh"
-
-#include "Utils.hh"
+#include "ClockDomain.hh"
 
 namespace dft {
 
-ScanArchitectConfig::ClockMixing ScanArchitectConfig::getClockMixing() const
+std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
+    const ScanArchitectConfig& config,
+    utl::Logger* logger)
 {
-  return clock_mixing_;
-}
-
-const std::optional<uint64_t>& ScanArchitectConfig::getMaxLength() const
-{
-  return max_length_;
-}
-
-void ScanArchitectConfig::setClockMixing(ClockMixing clock_mixing)
-{
-  clock_mixing_ = clock_mixing;
-}
-
-void ScanArchitectConfig::setMaxLength(uint64_t max_length)
-{
-  max_length_ = max_length;
-}
-
-void ScanArchitectConfig::report(utl::Logger* logger) const
-{
-  logger->report("Scan Architect Config:");
-  logger->report("- Max Length: {}", utils::FormatForReport(max_length_));
-  logger->report("- Clock Mixing: {}", ClockMixingName(clock_mixing_));
-}
-
-std::string ScanArchitectConfig::ClockMixingName(
-    ScanArchitectConfig::ClockMixing clock_mixing)
-{
-  switch (clock_mixing) {
+  switch (config.getClockMixing()) {
+    // For NoMix, every clock domain is different
     case ScanArchitectConfig::ClockMixing::NoMix:
-      return "No Mix";
+      return [](const ClockDomain& clock_domain) {
+        return std::hash<std::string>{}(clock_domain.getClockName())
+               ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
+      };
     default:
-      return "Missing case in ClockMixingName";
+      // Not implemented
+      logger->error(utl::DFT, 4, "Clock mix config requested is not supported");
   }
+}
+
+ClockDomain::ClockDomain(const std::string& clock_name, ClockEdge clock_edge)
+    : clock_name_(clock_name), clock_edge_(clock_edge)
+{
+}
+
+const std::string& ClockDomain::getClockName() const
+{
+  return clock_name_;
+}
+
+ClockEdge ClockDomain::getClockEdge() const
+{
+  return clock_edge_;
 }
 
 }  // namespace dft

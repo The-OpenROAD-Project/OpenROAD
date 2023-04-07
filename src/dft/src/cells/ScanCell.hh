@@ -31,9 +31,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "architect/ClockDomain.hh"
+#include <memory>
+#include <string>
 
 namespace dft {
+class ClockDomain;
 
 // A Scan Cell is a cell that contains a scan enable, scan in and scan out
 // It also has the number of bits that can be shifted in this cell and a
@@ -45,7 +47,7 @@ namespace dft {
 class ScanCell
 {
  public:
-  ScanCell(const std::string& name, ClockDomain clock_domain);
+  ScanCell(const std::string& name, std::unique_ptr<ClockDomain> clock_domain);
   virtual ~ScanCell() = default;
   // Not copyable or movable
   ScanCell(const ScanCell&) = delete;
@@ -61,7 +63,7 @@ class ScanCell
 
  private:
   std::string name_;
-  ClockDomain clock_domain_;
+  std::unique_ptr<ClockDomain> clock_domain_;
 };
 
 }  // namespace dft

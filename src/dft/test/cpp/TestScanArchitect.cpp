@@ -4,8 +4,8 @@
 #include <random>
 #include <sstream>
 
-#include "architect/ScanArchitect.hh"
-#include "architect/ScanArchitectConfig.hh"
+#include "ScanArchitect.hh"
+#include "ScanArchitectConfig.hh"
 
 namespace {
 

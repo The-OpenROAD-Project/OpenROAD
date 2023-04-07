@@ -29,53 +29,49 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#pragma once
 
-#include <functional>
-#include <memory>
-#include <string>
-#include <vector>
+#include "ScanArchitectConfig.hh"
 
-#include "architect/ScanArchitectConfig.hh"
+#include "Utils.hh"
 
 namespace dft {
 
-enum class ClockEdge
+ScanArchitectConfig::ClockMixing ScanArchitectConfig::getClockMixing() const
 {
-  Rising,  // positive edge triggered
-  Falling  // negative edge triggered
-};
+  return clock_mixing_;
+}
 
-// The clock domain of the scan cells based on the clock name and the edge.
-class ClockDomain
+const std::optional<uint64_t>& ScanArchitectConfig::getMaxLength() const
 {
- public:
-  ClockDomain(const std::string& clock_name, ClockEdge clock_edge);
-  // Allow move, copy is implicitly deleted
-  ClockDomain(ClockDomain&& other) = default;
-  ClockDomain& operator=(ClockDomain&& other) = default;
+  return max_length_;
+}
 
-  const std::string& getClockName() const;
-  ClockEdge getClockEdge() const;
+void ScanArchitectConfig::setClockMixing(ClockMixing clock_mixing)
+{
+  clock_mixing_ = clock_mixing;
+}
 
- private:
-  std::string clock_name_;
-  ClockEdge clock_edge_;
-};
+void ScanArchitectConfig::setMaxLength(uint64_t max_length)
+{
+  max_length_ = max_length;
+}
 
-// Depending on the ScanArchitectConfig's clock mixing setting, there are
-// different ways to calculate the hash of the clock domain.
-//
-// For No Mix clock, we will generate a different hash value for all the clock
-// domains.
-//
-// If we want to mix all the clocks, then the hash will be the same for all the
-// clock doamins.
-//
-// We refer to the generated hash from a ClockDomain as Hash Domain.
-//
-std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
-    const ScanArchitectConfig& config,
-    utl::Logger* logger);
+void ScanArchitectConfig::report(utl::Logger* logger) const
+{
+  logger->report("Scan Architect Config:");
+  logger->report("- Max Length: {}", utils::FormatForReport(max_length_));
+  logger->report("- Clock Mixing: {}", ClockMixingName(clock_mixing_));
+}
+
+std::string ScanArchitectConfig::ClockMixingName(
+    ScanArchitectConfig::ClockMixing clock_mixing)
+{
+  switch (clock_mixing) {
+    case ScanArchitectConfig::ClockMixing::NoMix:
+      return "No Mix";
+    default:
+      return "Missing case in ClockMixingName";
+  }
+}
 
 }  // namespace dft

@@ -36,10 +36,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ScanArchitectConfig.hh"
+#include "ScanCell.hh"
 #include "ScanChain.hh"
-#include "architect/ClockDomain.hh"
-#include "architect/ScanArchitectConfig.hh"
-#include "cells/ScanCell.hh"
 
 namespace dft {
 

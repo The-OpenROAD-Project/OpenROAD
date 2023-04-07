@@ -34,7 +34,8 @@
 #include <memory>
 #include <vector>
 
-#include "cells/ScanCell.hh"
+#include "ScanCell.hh"
+#include "utl/Logger.h"
 
 namespace dft {
 

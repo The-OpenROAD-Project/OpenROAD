@@ -1,4 +1,4 @@
-#include "cells/ScanCell.hh"
+#include "ScanCell.hh"
 #pragma once
 
 namespace dft {
@@ -7,7 +7,7 @@ namespace test {
 class ScanCellMock : public ScanCell
 {
  public:
-  ScanCellMock(const std::string& name, ClockDomain clock_domain);
+  ScanCellMock(const std::string& name, std::unique_ptr<ClockDomain> clock_domain);
   ~ScanCellMock() override = default;
 
   uint64_t getBits() const override;

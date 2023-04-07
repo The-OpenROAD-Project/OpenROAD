@@ -4,8 +4,9 @@
 #include <unordered_set>
 
 #include "ScanCellMock.hh"
-#include "architect/ScanArchitect.hh"
-#include "architect/ScanArchitectConfig.hh"
+#include "ScanArchitect.hh"
+#include "ScanArchitectConfig.hh"
+#include "ClockDomain.hh"
 
 namespace {
 
@@ -29,7 +30,7 @@ BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
     ss << "scan_cell" << i;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), ClockDomain("clk1", ClockEdge::Rising)));
+        ss.str(), std::make_unique<ClockDomain>("clk1", ClockEdge::Rising)));
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
@@ -82,7 +83,7 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
     ++name_number;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), ClockDomain("clk1", ClockEdge::Rising)));
+        ss.str(), std::make_unique<ClockDomain>("clk1", ClockEdge::Rising)));
   }
 
   for (uint64_t i = 0; i < 15; ++i) {
@@ -91,7 +92,7 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
     ++name_number;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), ClockDomain("clk2", ClockEdge::Rising)));
+        ss.str(), std::make_unique<ClockDomain>("clk2", ClockEdge::Rising)));
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
@@ -138,7 +139,7 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
     ++name_number;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), ClockDomain("clk1", ClockEdge::Rising)));
+        ss.str(), std::make_unique<ClockDomain>("clk1", ClockEdge::Rising)));
   }
 
   for (uint64_t i = 0; i < 15; ++i) {
@@ -147,7 +148,7 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
     ++name_number;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), ClockDomain("clk1", ClockEdge::Falling)));
+        ss.str(), std::make_unique<ClockDomain>("clk1", ClockEdge::Falling)));
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket

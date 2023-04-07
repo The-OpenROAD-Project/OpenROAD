@@ -36,12 +36,12 @@
 
 #include "DftConfig.hh"
 #include "ScanReplace.hh"
-#include "Utils.hh"
-#include "architect/ScanArchitect.hh"
-#include "cells/ScanCell.hh"
-#include "cells/ScanCellFactory.hh"
+#include "ScanArchitect.hh"
+#include "ScanCell.hh"
+#include "ScanCellFactory.hh"
 #include "odb/db.h"
 #include "utl/Logger.h"
+#include "ClockDomain.hh"
 
 namespace dft {
 

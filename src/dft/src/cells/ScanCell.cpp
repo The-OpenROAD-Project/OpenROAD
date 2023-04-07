@@ -30,11 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "cells/ScanCell.hh"
+#include "ScanCell.hh"
+#include "ClockDomain.hh"
 
 namespace dft {
 
-ScanCell::ScanCell(const std::string& name, ClockDomain clock_domain)
+ScanCell::ScanCell(const std::string& name, std::unique_ptr<ClockDomain> clock_domain)
     : name_(name), clock_domain_(std::move(clock_domain))
 {
 }
@@ -46,7 +47,7 @@ const std::string& ScanCell::getName() const
 
 const ClockDomain& ScanCell::getClockDomain() const
 {
-  return clock_domain_;
+  return *clock_domain_;
 }
 
 }  // namespace dft

@@ -31,29 +31,51 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "architect/ScanArchitectConfig.hh"
-#include "utl/Logger.h"
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "ScanArchitectConfig.hh"
 
 namespace dft {
 
-// Main class that contains all the DFT configuration.
-// Pass this object by reference to other functions
-class DftConfig
+enum class ClockEdge
+{
+  Rising,  // positive edge triggered
+  Falling  // negative edge triggered
+};
+
+// The clock domain of the scan cells based on the clock name and the edge.
+class ClockDomain
 {
  public:
-  DftConfig() = default;
-  // Not copyable or movable.
-  DftConfig(const DftConfig&) = delete;
-  DftConfig& operator=(const DftConfig&) = delete;
+  ClockDomain(const std::string& clock_name, ClockEdge clock_edge);
+  // Allow move, copy is implicitly deleted
+  ClockDomain(ClockDomain&& other) = default;
+  ClockDomain& operator=(ClockDomain&& other) = default;
 
-  ScanArchitectConfig* getMutableScanArchitectConfig();
-  const ScanArchitectConfig& getScanArchitectConfig() const;
-
-  // Prints the information currently being used by DFT for config
-  void report(utl::Logger* logger) const;
+  const std::string& getClockName() const;
+  ClockEdge getClockEdge() const;
 
  private:
-  ScanArchitectConfig scan_architect_config_;
+  std::string clock_name_;
+  ClockEdge clock_edge_;
 };
+
+// Depending on the ScanArchitectConfig's clock mixing setting, there are
+// different ways to calculate the hash of the clock domain.
+//
+// For No Mix clock, we will generate a different hash value for all the clock
+// domains.
+//
+// If we want to mix all the clocks, then the hash will be the same for all the
+// clock doamins.
+//
+// We refer to the generated hash from a ClockDomain as Hash Domain.
+//
+std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
+    const ScanArchitectConfig& config,
+    utl::Logger* logger);
 
 }  // namespace dft

@@ -30,12 +30,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "cells/OneBitScanCell.hh"
+#include "OneBitScanCell.hh"
+#include "ClockDomain.hh"
 
 namespace dft {
 
 OneBitScanCell::OneBitScanCell(const std::string& name,
-                               ClockDomain clock_domain,
+                               std::unique_ptr<ClockDomain> clock_domain,
                                odb::dbInst* inst,
                                sta::TestCell* test_cell)
     : ScanCell(name, std::move(clock_domain)),
