@@ -755,7 +755,7 @@ void TechChar::createStaInstance()
 {
   // Creates a new OpenSTA instance that is used only for the characterization.
   // Creates the new instance based on the charcterization block.
-  openStaChar_ = sta::makeBlockSta(openroad_, charBlock_);
+  openStaChar_ = openSta_->makeBlockSta(charBlock_);
   // Gets the corner and other analysis attributes from the new instance.
   charCorner_ = openStaChar_->cmdCorner();
   sta::PathAPIndex path_ap_index
@@ -1178,8 +1178,7 @@ void TechChar::create()
         buffersUpdate--;
       } while (buffersUpdate != 0);
     }
-    delete openStaChar_;
-    openStaChar_ = nullptr;
+    openStaChar_.reset(nullptr);
   }
   logger_->info(CTS, 39, "Number of created patterns = {}.", topologiesCreated);
   // Post-processing of the results.
@@ -1197,8 +1196,7 @@ void TechChar::create()
   // super confused -cherry
   if (openStaChar_ != nullptr) {
     openStaChar_->clear();
-    delete openStaChar_;
-    openStaChar_ = nullptr;
+    openStaChar_.reset(nullptr);
   }
 }
 

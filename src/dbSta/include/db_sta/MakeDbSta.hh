@@ -33,10 +33,6 @@
 
 #pragma once
 
-namespace odb {
-class dbDatabase;
-}
-
 namespace sta {
 class dbSta;
 }
@@ -47,6 +43,5 @@ class OpenRoad;
 
 sta::dbSta* makeDbSta();
 void deleteDbSta(sta::dbSta* sta);
-void initDbSta(OpenRoad* openroad);
 
 }  // namespace ord
