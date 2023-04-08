@@ -315,8 +315,8 @@ void Opendp::visitCellBoundaryPixels(
   if (!have_obstructions) {
     int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
     int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
-    int y_start = gridY(&cell);
-    int y_end = gridEndY(&cell);
+    int y_start = gridY(&cell, row_height);
+    int y_end = gridEndY(&cell, row_height);
 
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel = gridPixel(layer_index_in_grid, x, y_start);
@@ -530,6 +530,13 @@ void Opendp::erasePixel(Cell* cell)
   }
 }
 
+int Opendp::map_coordinates(int original_coordinate,
+                            int original_step,
+                            int target_step)
+{
+  return original_step * original_coordinate / target_step;
+}
+
 void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
 {
   assert(!cell->is_placed_);
@@ -556,7 +563,6 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
 
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
-      // TODO: You need to check all layers.
       Pixel* pixel = gridPixel(layer_index_in_grid, x, y);
       if (pixel->cell) {
         logger_->error(
@@ -564,6 +570,30 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
       } else {
         pixel->cell = cell;
         pixel->util = 1.0;
+      }
+    }
+  }
+
+  for (auto layer : grid_layers_) {
+    if (layer.first == row_height) {
+      continue;
+    }
+    int layer_x = map_coordinates(grid_x, site_width, site_width);
+    int layer_x_end = map_coordinates(x_end, site_width, site_width);
+    int layer_y = map_coordinates(grid_y, row_height, layer.first);
+    int layer_y_end = map_coordinates(y_end, row_height, layer.first);
+    for (int x = layer_x; x < layer_x_end; x++) {
+      for (int y = layer_y; y < layer_y_end; y++) {
+        Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
+        if (pixel->cell) {
+          logger_->error(
+              DPL,
+              41,
+              "Cannot paint grid because another layer is already occupied.");
+        } else {
+          pixel->cell = cell;
+          pixel->util = 1.0;
+        }
       }
     }
   }

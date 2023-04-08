@@ -219,6 +219,8 @@ bool Opendp::overlap(const Cell* cell1, const Cell* cell2) const
 Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
+  auto row_info = getRowInfo(&cell);
+  int layer_index_in_grid = row_info.second.grid_index;
   visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
         Cell* pixel_cell = pixel->cell;
@@ -235,12 +237,13 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
         }
         if (0 != abut_x) {
           // check the abutting pixel
-          Pixel* abut_pixel = gridPixel(x + abut_x, y);
+          Pixel* abut_pixel = gridPixel(layer_index_in_grid, x + abut_x, y);
           bool abuttment_exists
               = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell);
           if (!abuttment_exists) {
             // check the 1 site gap pixel
-            Pixel* gap_pixel = gridPixel(x + 2 * abut_x, y);
+            Pixel* gap_pixel
+                = gridPixel(layer_index_in_grid, x + 2 * abut_x, y);
             if (gap_pixel && gap_pixel->cell != pixel_cell) {
               gap_cell = gap_pixel->cell;
             }

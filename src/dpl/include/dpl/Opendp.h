@@ -135,8 +135,8 @@ struct Pixel
 struct LayerInfo
 {
   int row_count;
-  const int site_count;
-  const int grid_index;
+  int site_count;
+  int grid_index;
 };
 
 // For optimize mirroring.
@@ -268,10 +268,22 @@ class Opendp
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
 
-  Point legalPt(const Cell* cell, const Point& pt) const;
-  Point legalGridPt(const Cell* cell, const Point& pt) const;
-  Point legalPt(const Cell* cell, bool padded) const;
-  Point legalGridPt(const Cell* cell, bool padded) const;
+  Point legalPt(const Cell* cell,
+                const Point& pt,
+                int row_height = -1,
+                int site_width = -1) const;
+  Point legalGridPt(const Cell* cell,
+                    const Point& pt,
+                    int row_height = -1,
+                    int site_width = -1) const;
+  Point legalPt(const Cell* cell,
+                bool padded,
+                int row_height = -1,
+                int site_width = -1) const;
+  Point legalGridPt(const Cell* cell,
+                    bool padded,
+                    int row_height = -1,
+                    int site_width = -1) const;
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
@@ -304,6 +316,9 @@ class Opendp
   void groupInitPixels2();
   void erasePixel(Cell* cell);
   void paintPixel(Cell* cell, int grid_x, int grid_y);
+  int map_coordinates(int original_coordinate,
+                      int original_step,
+                      int target_step);
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
@@ -386,10 +401,15 @@ class Opendp
   dbMasterSeq& gapFillers(int gap, dbMasterSeq* filler_masters);
   void placeRowFillers(int row,
                        const char* prefix,
-                       dbMasterSeq* filler_masters);
+                       dbMasterSeq* filler_masters,
+                       int row_height,
+                       LayerInfo Layer_info);
   bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
-  const char* gridInstName(int row, int col);
+  const char* gridInstName(int row,
+                           int col,
+                           int row_height,
+                           LayerInfo Layer_info);
 
   // Optimizing mirroring
   void findNetBoxes();

@@ -227,7 +227,7 @@ void Opendp::makeGroups()
     dbRegion* parent = db_group->getRegion();
     if (parent) {
       std::set<int> unique_heights;
-      map<int, Group&> cell_height_to_group_map;
+      map<int, Group*> cell_height_to_group_map;
       for (auto db_inst : db_group->getInsts()) {
         unique_heights.insert(db_inst_map_[db_inst]->height_);
       }
@@ -239,7 +239,7 @@ void Opendp::makeGroups()
             = string(db_group->getName()) + "_" + std::to_string(index++);
         group.name = group_name;
         group.boundary.mergeInit();
-        cell_height_to_group_map[height] = group;
+        cell_height_to_group_map[height] = &group;
         auto boundaries = parent->getBoundaries();
 
         for (dbBox* boundary : boundaries) {
@@ -255,9 +255,9 @@ void Opendp::makeGroups()
 
       for (auto db_inst : db_group->getInsts()) {
         Cell* cell = db_inst_map_[db_inst];
-        Group& group = cell_height_to_group_map[cell->height_];
-        group.cells_.push_back(cell);
-        cell->group_ = &group;
+        Group* group = cell_height_to_group_map[cell->height_];
+        group->cells_.push_back(cell);
+        cell->group_ = group;
       }
     }
   }

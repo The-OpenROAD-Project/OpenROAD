@@ -63,8 +63,10 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   initGrid();
   setGridCells();
 
-  for (int row = 0; row < row_count_; row++) {
-    placeRowFillers(row, prefix, filler_masters);
+  for (auto layer : grid_layers_) {
+    for (int row = 0; row < layer.second.row_count; row++) {
+      placeRowFillers(row, prefix, filler_masters, layer.first, layer.second);
+    }
   }
 
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
@@ -80,16 +82,19 @@ void Opendp::setGridCells()
 
 void Opendp::placeRowFillers(int row,
                              const char* prefix,
-                             dbMasterSeq* filler_masters)
+                             dbMasterSeq* filler_masters,
+                             int row_height,
+                             LayerInfo layer_info)
 {
   int j = 0;
-  while (j < row_site_count_) {
-    Pixel* pixel = gridPixel(j, row);
+  while (j < layer_info.site_count) {
+    Pixel* pixel = gridPixel(layer_info.grid_index, j, row);
     const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr && pixel->is_valid) {
       int k = j;
-      while (k < row_site_count_ && gridPixel(k, row)->cell == nullptr
-             && gridPixel(k, row)->is_valid) {
+      while (k < layer_info.site_count
+             && gridPixel(layer_info.grid_index, k, row)->cell == nullptr
+             && gridPixel(layer_info.grid_index, k, row)->is_valid) {
         k++;
       }
       int gap = k - j;
@@ -97,7 +102,7 @@ void Opendp::placeRowFillers(int row,
       dbMasterSeq& fillers = gapFillers(gap, filler_masters);
       if (fillers.empty()) {
         int x = core_.xMin() + j * site_width_;
-        int y = core_.yMin() + row * row_height_;
+        int y = core_.yMin() + row * row_height;
         logger_->error(
             DPL,
             2,
@@ -105,8 +110,8 @@ void Opendp::placeRowFillers(int row,
             gap,
             x,
             y,
-            gridInstName(row, j - 1),
-            gridInstName(row, k + 1));
+            gridInstName(row, j - 1, row_height, layer_info),
+            gridInstName(row, k + 1, row_height, layer_info));
       } else {
         k = j;
         for (dbMaster* master : fillers) {
@@ -118,7 +123,7 @@ void Opendp::placeRowFillers(int row,
                                         inst_name.c_str(),
                                         /* physical_only */ true);
           int x = core_.xMin() + k * site_width_;
-          int y = core_.yMin() + row * row_height_;
+          int y = core_.yMin() + row * row_height;
           inst->setOrient(orient);
           inst->setLocation(x, y);
           inst->setPlacementStatus(dbPlacementStatus::PLACED);
@@ -134,16 +139,19 @@ void Opendp::placeRowFillers(int row,
   }
 }
 
-const char* Opendp::gridInstName(int row, int col)
+const char* Opendp::gridInstName(int row,
+                                 int col,
+                                 int row_height,
+                                 LayerInfo layer_info)
 {
   if (col < 0) {
     return "core_left";
   }
-  if (col > row_site_count_) {
+  if (col > layer_info.site_count) {
     return "core_right";
   }
 
-  const Cell* cell = gridPixel(col, row)->cell;
+  const Cell* cell = gridPixel(layer_info.grid_index, col, row)->cell;
   if (cell) {
     return cell->db_inst_->getConstName();
   }
