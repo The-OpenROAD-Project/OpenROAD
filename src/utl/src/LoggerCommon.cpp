@@ -55,25 +55,25 @@ void report(const char* msg)
 void info(utl::ToolId tool, int id, const char* msg)
 {
   Logger* logger = getLogger();
-  logger->info(tool, id, msg);
+  logger->info(tool, id, "{}", msg);
 }
 
 void warn(utl::ToolId tool, int id, const char* msg)
 {
   Logger* logger = getLogger();
-  logger->warn(tool, id, msg);
+  logger->warn(tool, id, "{}", msg);
 }
 
 void error(utl::ToolId tool, int id, const char* msg)
 {
   Logger* logger = getLogger();
-  logger->error(tool, id, msg);
+  logger->error(tool, id, "{}", msg);
 }
 
 void critical(utl::ToolId tool, int id, const char* msg)
 {
   Logger* logger = getLogger();
-  logger->critical(tool, id, msg);
+  logger->critical(tool, id, "{}", msg);
 }
 
 void open_metrics(const char* metrics_filename)

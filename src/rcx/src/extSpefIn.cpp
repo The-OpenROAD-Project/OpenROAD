@@ -30,6 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "name.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
@@ -2450,9 +2451,9 @@ uint extSpef::readBlock(uint debug,
     resetNameTable(_maxMapId + 1);
   }
   if (_nodeHashTable == NULL)
-    _nodeHashTable = new Ath__nameTable(8000000);
+    _nodeHashTable = new NameTable(8000000);
   if (_notFoundInst == NULL)
-    _notFoundInst = new Ath__nameTable(800);
+    _notFoundInst = new NameTable(800);
   if (_rRun == 1 && _extracted && _rOnlyCCcap)
     buildNodeHashTable();
 

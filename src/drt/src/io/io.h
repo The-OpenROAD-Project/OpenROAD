@@ -64,7 +64,8 @@ class Parser
   Parser(odb::dbDatabase* dbIn, frDesign* designIn, Logger* loggerIn);
 
   // others
-  void readDb();
+  void readDesign(odb::dbDatabase*);
+  void readTechAndLibs(odb::dbDatabase*);
   bool readGuide();
   void postProcess();
   void postProcessGuide();
@@ -77,8 +78,6 @@ class Parser
   }
 
  private:
-  void readDesign(odb::dbDatabase*);
-  void readTechAndLibs(odb::dbDatabase*);
   void setMacros(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
@@ -87,6 +86,11 @@ class Parser
   void setInsts(odb::dbBlock*);
   void setObstructions(odb::dbBlock*);
   void setBTerms(odb::dbBlock*);
+  odb::Rect getViaBoxForTermAboveMaxLayer(odb::dbBTerm* term,
+                                          frLayerNum& finalLayerNum);
+  void setBTerms_addPinFig_helper(frBPin* pinIn,
+                                  odb::Rect bbox,
+                                  frLayerNum finalLayerNum);
   void setVias(odb::dbBlock*);
   void setNets(odb::dbBlock*);
   void setAccessPoints(odb::dbDatabase*);

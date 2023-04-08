@@ -345,10 +345,15 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
   logger_->report("    Sinks per sub-region: {}", numSinksPerSubRegion);
   logger_->report("    Sub-region size: {:.4f} X {:.4f}", width, height);
 
-  const unsigned minLength = minLengthSinkRegion_ / 2;
-  unsigned segmentLength = std::round(width / (2.0 * minLength)) * minLength;
+  const unsigned minLength = minLengthSinkRegion_;
+  const unsigned clampedMinLength = std::max(minLength, 1u);
+
+  unsigned segmentLength
+      = std::round(width / (double) clampedMinLength) * minLength / 2;
+
   if (isVertical(level)) {
-    segmentLength = std::round(height / (2.0 * minLength)) * minLength;
+    segmentLength
+        = std::round(height / (double) clampedMinLength) * minLength / 2;
   }
   segmentLength = std::max<unsigned>(segmentLength, 1);
 

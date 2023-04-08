@@ -1619,16 +1619,14 @@ void FlexDRWorker::initNets_numPinsIn()
         }
         if (ap->getPinCost() == 0) {
           pt = ap->getPoint();
-          allPins.push_back(
-              make_pair(Rect(pt.x(), pt.y(), pt.x(), pt.y()), pin.get()));
+          allPins.emplace_back(Rect(pt, pt), pin.get());
           hasPrefAP = true;
           break;
         }
       }
       if (!hasPrefAP) {
         pt = firstAP->getPoint();
-        allPins.push_back(
-            make_pair(Rect(pt.x(), pt.y(), pt.x(), pt.y()), pin.get()));
+        allPins.emplace_back(Rect(pt, pt), pin.get());
       }
     }
   }
@@ -1661,7 +1659,7 @@ void FlexDRWorker::initNets_numPinsIn()
       y2 = std::max(y2, pt.getY());
     }
     if (x1 <= x2 && y1 <= y2) {
-      Rect box = Rect(Point(x1, y1), Point(x2, y2));
+      Rect box = Rect(x1, y1, x2, y2);
       allPins.clear();
       pinRegionQuery.query(bgi::intersects(box), back_inserter(allPins));
       net->setNumPinsIn(allPins.size());

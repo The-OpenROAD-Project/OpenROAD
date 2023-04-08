@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2019, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,55 +30,32 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "Slots.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+namespace ppl {
 
-#include "util.h"
-
-namespace odb {
-class Ath__nameBucket
+int Section::getMaxContiguousSlots(const std::vector<Slot>& slots)
 {
- private:
-  char* _name;
-  uint _tag;
+  int max_contiguous_slots = std::numeric_limits<int>::min();
+  for (int i = begin_slot; i <= end_slot; i++) {
+    // advance to the next free slot
+    while (i <= end_slot && !slots[i].isAvailable()) {
+      i++;
+    }
 
- public:
-  void set(char* name, uint tag);
-  void deallocWord();
+    int contiguous_slots = 0;
+    while (i <= end_slot && slots[i].isAvailable()) {
+      contiguous_slots++;
+      i++;
+    }
 
-  friend class Ath__nameTable;
-};
+    max_contiguous_slots = std::max(max_contiguous_slots, contiguous_slots);
+  }
 
-class Ath__nameTable
-{
- private:
-  AthHash<int>* _hashTable;
-  AthPool<Ath__nameBucket>* _bucketPool;
-  // int *nameMap; // TODO
+  return max_contiguous_slots;
+}
 
-  void allocName(char* name, uint nameId, bool hash = false);
-  uint addName(char* name, uint dataId);
-
- public:
-  ~Ath__nameTable();
-  Ath__nameTable(uint n, char* zero = NULL);
-
-  void writeDB(FILE* fp, char* nameType);
-  bool readDB(FILE* fp);
-  void addData(uint poolId, uint dataId);
-
-  uint addNewName(char* name, uint dataId);
-  char* getName(uint poolId);
-  uint getDataId(int poolId);
-  uint getTagId(char* name);
-  uint getDataId(char* name,
-                 uint ignoreFlag = 0,
-                 uint exitFlag = 0,
-                 int* nn = 0);
-};
-
-}  // namespace odb
+}  // namespace ppl
