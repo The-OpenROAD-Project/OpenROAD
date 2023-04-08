@@ -32,19 +32,24 @@
 
 #include "gotoDialog.h"
 
-#include "gui/gui.h"
 #include <cmath>
 
+#include "gui/gui.h"
+
 namespace gui {
-GotoLocationDialog::GotoLocationDialog(QWidget* parent,LayoutViewer* viewer_) : QDialog(parent)
+GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutViewer* viewer_)
+    : QDialog(parent)
 {
   setupUi(this);
 
   // connect so announcements can be made about changes
-  connect(parent, SIGNAL(displayUnitsChanged(int,bool)), this, SLOT(updateUnits(int,bool)));
+  connect(parent,
+          SIGNAL(displayUnitsChanged(int, bool)),
+          this,
+          SLOT(updateUnits(int, bool)));
 }
 
-void GotoLocationDialog::updateUnits(int dbu_per_micron,bool useDBU)
+void GotoLocationDialog::updateUnits(int dbu_per_micron, bool useDBU)
 {
   if (useDBU) {
     xEdit->setText(QString::number(xEdit->text().toDouble() * dbu_per_micron));
@@ -64,10 +69,15 @@ void GotoLocationDialog::show_init(LayoutViewer* viewer_)
   yEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer_->getVisibleCenter().y(), false)));
 
-  int box_size = sqrt(pow((viewer_->dbu_bounds.lr().x() - viewer_->dbu_bounds.ll().x()),2) + 
-                      pow((viewer_->dbu_bounds.ul().y() - viewer_->dbu_bounds.ll().y()),2))/2;
-  sEdit->setText(
-      QString::fromStdString(Descriptor::Property::convert_dbu(box_size, false)));
+  int box_size
+      = sqrt(
+            pow((viewer_->dbu_bounds.lr().x() - viewer_->dbu_bounds.ll().x()),
+                2)
+            + pow((viewer_->dbu_bounds.ul().y() - viewer_->dbu_bounds.ll().y()),
+                  2))
+        / 2;
+  sEdit->setText(QString::fromStdString(
+      Descriptor::Property::convert_dbu(box_size, false)));
   show();
 }
 

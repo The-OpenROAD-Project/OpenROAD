@@ -206,7 +206,7 @@ MainWindow::MainWindow(QWidget* parent)
           selection_browser_,
           SLOT(updateModels()));
   connect(inspector_,
-          SIGNAL(selecteditemchanged(const selected&)),
+          SIGNAL(selectedItemChanged(const Selected&)),
           viewer_,
           SLOT(update()));
   connect(inspector_,

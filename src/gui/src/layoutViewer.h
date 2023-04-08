@@ -168,9 +168,9 @@ class LayoutViewer : public QWidget
   virtual void mousePressEvent(QMouseEvent* event) override;
   virtual void mouseMoveEvent(QMouseEvent* event) override;
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
-  
+
   odb::Rect dbu_bounds;
-  odb::Rect getDBUbounds() { return dbu_bounds;}
+  odb::Rect getDBUbounds() { return dbu_bounds; }
 
  signals:
   // indicates the current location of the mouse
@@ -187,7 +187,7 @@ class LayoutViewer : public QWidget
   void addRuler(int x0, int y0, int x1, int y1);
 
   void focusNetsChanged();
-  
+
  public slots:
   // zoom in the layout, keeping the current center_
   void zoomIn();
@@ -232,7 +232,7 @@ class LayoutViewer : public QWidget
   void fullRepaint();
 
   odb::Point getVisibleCenter();
-  
+
   void selectHighlightConnectedInst(bool selectFlag);
   void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
 

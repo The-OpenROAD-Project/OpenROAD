@@ -129,7 +129,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void rulersChanged();
 
   void displayUnitsChanged(int dbu_per_micron, bool useDBU);
-  
+
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
