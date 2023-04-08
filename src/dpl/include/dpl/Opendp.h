@@ -434,6 +434,7 @@ class Opendp
 
   map<const dbMaster*, Master> db_master_map_;
   map<int, LayerInfo> grid_layers_;
+  std::vector<LayerInfo*> grid_layers_vector;
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;

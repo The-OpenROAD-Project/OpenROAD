@@ -67,6 +67,11 @@ void Opendp::initGridLayersMap()
       grid_layers_.at(db_row->getSite()->getHeight()).row_count++;
     }
   }
+  grid_layers_vector.resize(grid_layers_.size());
+  for (auto& [row_height, layer_info] : grid_layers_) {
+    grid_layers_vector[layer_info.grid_index] = &layer_info;
+  }
+
   logger_->info(DPL, 1999, "Grid layers: {}", grid_layers_.size());
   for (auto& [row_height, layer_info] : grid_layers_) {
     logger_->info(DPL,
@@ -119,16 +124,16 @@ void Opendp::initGrid()
 
   std::vector<gtl::polygon_90_set_data<int>> hopeless;
   hopeless.resize(grid_depth_);
-
+  for (auto [row_height, layer_info] : grid_layers_) {
+    hopeless[layer_info.grid_index] += gtl::rectangle_data<int>{
+        0, 0, layer_info.site_count, layer_info.row_count};
+  }
   // Fragmented row support; mark valid sites.
   for (auto db_row : block_->getRows()) {
     int current_row_height = db_row->getSite()->getHeight();
     int current_row_site_count = db_row->getSiteCount();
     int current_row_count = grid_layers_.at(current_row_height).row_count;
     int current_row_grid_index = grid_layers_.at(current_row_height).grid_index;
-
-    hopeless[current_row_grid_index] += gtl::rectangle_data<int>{
-        0, 0, current_row_site_count, current_row_count};
 
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
@@ -194,10 +199,10 @@ void Opendp::deleteGrid()
 
 Pixel* Opendp::gridPixel(int layer_idx, int grid_x, int grid_y) const
 {
-  // TODO: if condition here is wrong, number of sites and rows are different
-  // for each layer index, You need to fetch them from the grid_layers_
-  if (grid_x >= 0 && grid_x < row_site_count_ && grid_y >= 0
-      && grid_y < row_count_ && layer_idx >= 0 && layer_idx < grid_depth_) {
+  LayerInfo* layer_info = grid_layers_vector[layer_idx];
+  if (grid_x >= 0 && grid_x < layer_info->site_count && grid_y >= 0
+      && grid_y < layer_info->row_count && layer_idx >= 0
+      && layer_idx < grid_depth_) {
     return &grid_[layer_idx][grid_y][grid_x];
   }
 
@@ -224,7 +229,6 @@ void Opendp::visitCellPixels(
     site_width = site_width_;
     row_height = row_height_;
   }
-  LayerInfo layer_info = grid_layers_.at(row_height);
 
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
@@ -261,8 +265,6 @@ void Opendp::visitCellPixels(
         = padded ? gridPaddedX(&cell, site_width) : gridX(&cell, site_width);
     int x_end = padded ? gridPaddedEndX(&cell, site_width)
                        : gridEndX(&cell, site_width);
-    auto layer_info = grid_layers_.at(row_height);
-    int layer_idx = layer_info.grid_index;
     logger_->warn(DPL,
                   11211141,
                   "row_count {} site_width_ {} height {} site_count {}. ",
