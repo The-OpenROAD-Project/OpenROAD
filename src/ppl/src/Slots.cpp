@@ -58,4 +58,4 @@ int Section::getMaxContiguousSlots(const std::vector<Slot>& slots)
     return max_contiguous_slots;
   }
 
-}
+}  // namespace ppl
