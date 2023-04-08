@@ -679,8 +679,7 @@ int IOPlacer::updateSection(Section& section, std::vector<Slot>& slots)
   int new_slots_count = 0;
   for (int slot_idx = section.begin_slot; slot_idx <= section.end_slot;
        slot_idx++) {
-    new_slots_count
-        += (slots[slot_idx].isAvailable()) ? 1 : 0;
+    new_slots_count += (slots[slot_idx].isAvailable()) ? 1 : 0;
   }
   section.num_slots = new_slots_count;
   return new_slots_count;

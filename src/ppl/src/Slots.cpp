@@ -38,24 +38,24 @@
 namespace ppl {
 
 int Section::getMaxContiguousSlots(const std::vector<Slot>& slots)
-  {
-    int max_contiguous_slots = std::numeric_limits<int>::min();
-    for (int i = begin_slot; i <= end_slot; i++) {
-      // advance to the next free slot
-      while (!slots[i].isAvailable()) {
-        i++;
-      }
-
-      int contiguous_slots = 0;
-      while (i <= end_slot && slots[i].isAvailable()) {
-        contiguous_slots++;
-        i++;
-      }
-
-      max_contiguous_slots = std::max(max_contiguous_slots, contiguous_slots);
+{
+  int max_contiguous_slots = std::numeric_limits<int>::min();
+  for (int i = begin_slot; i <= end_slot; i++) {
+    // advance to the next free slot
+    while (!slots[i].isAvailable()) {
+      i++;
     }
 
-    return max_contiguous_slots;
+    int contiguous_slots = 0;
+    while (i <= end_slot && slots[i].isAvailable()) {
+      contiguous_slots++;
+      i++;
+    }
+
+    max_contiguous_slots = std::max(max_contiguous_slots, contiguous_slots);
   }
+
+  return max_contiguous_slots;
+}
 
 }  // namespace ppl
