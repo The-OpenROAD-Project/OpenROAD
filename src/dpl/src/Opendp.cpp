@@ -558,7 +558,11 @@ int Opendp::getRowHeight(const Cell* cell) const
   auto layer = this->grid_layers_.lower_bound(cell->height_);
   if (layer == this->grid_layers_.end()) {
     // this means the cell is taller than any layer
-    logger_->error(DPL, 40, "Cell {} is taller than any row.", cell->name());
+    logger_->error(DPL,
+                   40,
+                   "Cell {} has height {} which is taller than any row.",
+                   cell->name(),
+                   cell->height_);
   }
   return layer->first;
 }

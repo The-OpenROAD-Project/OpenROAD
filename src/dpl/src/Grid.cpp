@@ -67,6 +67,16 @@ void Opendp::initGridLayersMap()
       grid_layers_.at(db_row->getSite()->getHeight()).row_count++;
     }
   }
+  logger_->info(DPL, 1999, "Grid layers: {}", grid_layers_.size());
+  for (auto& [row_height, layer_info] : grid_layers_) {
+    logger_->info(DPL,
+                  2000,
+                  "  Row height: {}  Row count: {} site count: {} index: {}",
+                  row_height,
+                  layer_info.row_count,
+                  layer_info.site_count,
+                  layer_info.grid_index);
+  }
 }
 
 void Opendp::initGrid()
@@ -205,10 +215,16 @@ void Opendp::visitCellPixels(
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
   bool have_obstructions = false;
-  int site_width = getSiteWidth(&cell);
-  int row_height = getRowHeight(&cell);
+
+  int site_width, row_height;
+  if (isStdCell(&cell)) {
+    site_width = getSiteWidth(&cell);
+    row_height = getRowHeight(&cell);
+  } else {
+    site_width = site_width_;
+    row_height = row_height_;
+  }
   LayerInfo layer_info = grid_layers_.at(row_height);
-  const int layer_index_in_grid = layer_info.grid_index;
 
   for (dbBox* obs : obstructions) {
     if (obs->getTechLayer()->getType()
@@ -231,6 +247,8 @@ void Opendp::visitCellPixels(
           for (int y = y_start; y < y_end; y++) {
             Pixel* pixel = gridPixel(layer_idx, x, y);
             if (pixel) {
+              // logger_->warn(
+              //     DPL, 200, "Visiting pixel {} {} {}.", layer_idx, x, y);
               visitor(pixel);
             }
           }
@@ -239,27 +257,46 @@ void Opendp::visitCellPixels(
     }
   }
   if (!have_obstructions) {
-    int x_start = padded ? gridPaddedX(&cell) : gridX(&cell);
-    int x_end = padded ? gridPaddedEndX(&cell) : gridEndX(&cell);
-
-    int layer_height = getRowHeight(&cell);
-    auto layer_info = grid_layers_.at(layer_height);
+    int x_start
+        = padded ? gridPaddedX(&cell, site_width) : gridX(&cell, site_width);
+    int x_end = padded ? gridPaddedEndX(&cell, site_width)
+                       : gridEndX(&cell, site_width);
+    auto layer_info = grid_layers_.at(row_height);
     int layer_idx = layer_info.grid_index;
+    logger_->warn(DPL,
+                  11211141,
+                  "row_count {} site_width_ {} height {} site_count {}. ",
+                  row_count_,
+                  site_width_,
+                  row_height_,
+                  row_site_count_);
+    int y_start = gridY(&cell, row_height);
+    int y_end = gridEndY(&cell, row_height);
+    for (auto layer_it : grid_layers_) {
+      int layer_x_start = map_coordinates(x_start, site_width, site_width);
+      int layer_x_end = map_coordinates(x_end, site_width, site_width);
 
-    int y_start = gridY(&cell, layer_height);
-    int y_end = gridEndY(&cell, layer_height);
-
-    for (int x = x_start; x < x_end; x++) {
-      for (int y = y_start; y < y_end; y++) {
-        Pixel* pixel = gridPixel(layer_idx, x, y);
-        if (pixel) {
-          visitor(pixel);
+      for (int x = layer_x_start; x < layer_x_end; x++) {
+        int layer_y_start
+            = map_coordinates(y_start, row_height, layer_it.first);
+        int layer_y_end = map_coordinates(y_end, row_height, layer_it.first);
+        for (int y = layer_y_start; y < layer_y_end; y++) {
+          Pixel* pixel = gridPixel(layer_it.second.grid_index, x, y);
+          if (pixel) {
+            // logger_->warn(DPL,
+            //               201,
+            //               "Visiting pixel {} {} {}.",
+            //               layer_it.second.grid_index,
+            //               x,
+            //               y);
+            visitor(pixel);
+          }
         }
       }
     }
   }
 }
-// TODO: Do I need to visit boundaries on all layers?
+
 void Opendp::visitCellBoundaryPixels(
     Cell& cell,
     bool padded,
@@ -345,6 +382,7 @@ void Opendp::setFixedGridCells()
 {
   for (Cell& cell : cells_) {
     if (isFixed(&cell)) {
+      logger_->warn(DPL, 114, "Fixed cell {}.", cell.name());
       visitCellPixels(
           cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
     }
@@ -532,7 +570,7 @@ void Opendp::erasePixel(Cell* cell)
 
 int Opendp::map_coordinates(int original_coordinate,
                             int original_step,
-                            int target_step)
+                            int target_step) const
 {
   return original_step * original_coordinate / target_step;
 }
