@@ -12,8 +12,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>150</width>
-    <height>100</height>
+    <width>486</width>
+    <height>282</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -86,7 +86,10 @@
       <number>2</number>
      </property>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,5">
+      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,4">
+       <property name="spacing">
+        <number>3</number>
+       </property>
        <property name="leftMargin">
         <number>2</number>
        </property>
@@ -106,6 +109,9 @@
            <property name="text">
             <string>X</string>
            </property>
+           <property name="buddy">
+            <cstring>xEdit</cstring>
+           </property>
           </widget>
          </item>
         </layout>
@@ -124,7 +130,10 @@
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,5">
+      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,4">
+       <property name="spacing">
+        <number>3</number>
+       </property>
        <property name="leftMargin">
         <number>2</number>
        </property>
@@ -144,6 +153,9 @@
            <property name="text">
             <string>Y</string>
            </property>
+           <property name="buddy">
+            <cstring>yEdit</cstring>
+           </property>
           </widget>
          </item>
         </layout>
@@ -162,7 +174,10 @@
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,5">
+      <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,4">
+       <property name="spacing">
+        <number>3</number>
+       </property>
        <property name="leftMargin">
         <number>2</number>
        </property>
@@ -198,10 +213,13 @@
             <number>0</number>
            </property>
            <property name="text">
-            <string>S</string>
+            <string>Size</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
+           </property>
+           <property name="buddy">
+            <cstring>sEdit</cstring>
            </property>
           </widget>
          </item>
@@ -241,8 +259,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>174</x>
-     <y>28</y>
+     <x>278</x>
+     <y>60</y>
     </hint>
     <hint type="destinationlabel">
      <x>149</x>
@@ -257,8 +275,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>174</x>
-     <y>62</y>
+     <x>278</x>
+     <y>152</y>
     </hint>
     <hint type="destinationlabel">
      <x>149</x>
@@ -277,8 +295,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>174</x>
-     <y>30</y>
+     <x>278</x>
+     <y>60</y>
     </hint>
    </hints>
   </connection>
@@ -293,8 +311,8 @@
      <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>174</x>
-     <y>75</y>
+     <x>278</x>
+     <y>152</y>
     </hint>
    </hints>
   </connection>
@@ -305,8 +323,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>87</x>
-     <y>85</y>
+     <x>191</x>
+     <y>245</y>
     </hint>
     <hint type="destinationlabel">
      <x>74</x>
@@ -325,8 +343,8 @@
      <y>54</y>
     </hint>
     <hint type="destinationlabel">
-     <x>87</x>
-     <y>85</y>
+     <x>191</x>
+     <y>245</y>
     </hint>
    </hints>
   </connection>

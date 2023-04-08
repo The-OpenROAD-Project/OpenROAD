@@ -53,7 +53,7 @@
 #include <QTranslator>
 #include <boost/geometry.hpp>
 #include <deque>
-#include <iostream>
+
 #include <limits>
 #include <tuple>
 #include <vector>
@@ -688,7 +688,6 @@ void LayoutViewer::centerAt(const odb::Point& focus)
 
   const int x_val = setScrollBar(scroller_->horizontalScrollBar(), pt.x());
   const int y_val = setScrollBar(scroller_->verticalScrollBar(), pt.y());
-
   // set the center now, since center is modified by the updateCenter
   // we only care of the focus point
   center_ = focus;
@@ -1351,7 +1350,7 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
   // emit location in microns
   Point pt_dbu = screenToDBU(mouse_move_pos_);
   emit location(pt_dbu.x(), pt_dbu.y());
-
+ 
   if (building_ruler_) {
     if (!(qGuiApp->keyboardModifiers() & Qt::ControlModifier)) {
       // set to false and toggle to true if edges are available
@@ -2788,8 +2787,9 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
   // apply scaling
   block_painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
-  const Rect dbu_bounds = screenToDBU(area);
-
+  //const Rect dbu_bounds = screenToDBU(area);
+  dbu_bounds = screenToDBU(area);
+  
   // paint layout
   drawBlock(&block_painter, dbu_bounds, 0);
 

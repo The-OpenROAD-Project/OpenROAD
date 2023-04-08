@@ -33,11 +33,28 @@
 #include "gotoDialog.h"
 
 #include "gui/gui.h"
+#include <cmath>
 
 namespace gui {
-GotoLocationDialog::GotoLocationDialog(QWidget* parent) : QDialog(parent)
+GotoLocationDialog::GotoLocationDialog(QWidget* parent,LayoutViewer* viewer_) : QDialog(parent)
 {
   setupUi(this);
+
+  // connect so announcements can be made about changes
+  connect(parent, SIGNAL(displayUnitsChanged(int,bool)), this, SLOT(updateUnits(int,bool)));
+}
+
+void GotoLocationDialog::updateUnits(int dbu_per_micron,bool useDBU)
+{
+  if (useDBU) {
+    xEdit->setText(QString::number(xEdit->text().toDouble() * dbu_per_micron));
+    yEdit->setText(QString::number(yEdit->text().toDouble() * dbu_per_micron));
+    sEdit->setText(QString::number(sEdit->text().toDouble() * dbu_per_micron));
+  } else {
+    xEdit->setText(QString::number(xEdit->text().toDouble() / dbu_per_micron));
+    yEdit->setText(QString::number(yEdit->text().toDouble() / dbu_per_micron));
+    sEdit->setText(QString::number(sEdit->text().toDouble() / dbu_per_micron));
+  }
 }
 
 void GotoLocationDialog::show_init(LayoutViewer* viewer_)
@@ -46,8 +63,11 @@ void GotoLocationDialog::show_init(LayoutViewer* viewer_)
       viewer_->getVisibleCenter().x(), false)));
   yEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer_->getVisibleCenter().y(), false)));
+
+  int box_size = sqrt(pow((viewer_->dbu_bounds.lr().x() - viewer_->dbu_bounds.ll().x()),2) + 
+                      pow((viewer_->dbu_bounds.ul().y() - viewer_->dbu_bounds.ll().y()),2))/2;
   sEdit->setText(
-      QString::fromStdString(Descriptor::Property::convert_dbu(300, false)));
+      QString::fromStdString(Descriptor::Property::convert_dbu(box_size, false)));
   show();
 }
 
@@ -57,11 +77,11 @@ void GotoLocationDialog::accept()
   bool convert_x_ok;
   bool convert_y_ok;
   bool convert_s_ok;
-  const int x_coord = Descriptor::Property::convert_string(
+  int x_coord = Descriptor::Property::convert_string(
       xEdit->text().toStdString(), &convert_x_ok);
-  const int y_coord = Descriptor::Property::convert_string(
+  int y_coord = Descriptor::Property::convert_string(
       yEdit->text().toStdString(), &convert_y_ok);
-  const int box_size = Descriptor::Property::convert_string(
+  int box_size = Descriptor::Property::convert_string(
       sEdit->text().toStdString(), &convert_s_ok);
   if (convert_x_ok && convert_y_ok && convert_s_ok) {
     gui->zoomTo(odb::Rect(x_coord - box_size,

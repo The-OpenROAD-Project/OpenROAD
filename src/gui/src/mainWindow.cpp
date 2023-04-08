@@ -206,7 +206,7 @@ MainWindow::MainWindow(QWidget* parent)
           selection_browser_,
           SLOT(updateModels()));
   connect(inspector_,
-          SIGNAL(selectedItemChanged(const Selected&)),
+          SIGNAL(selecteditemchanged(const selected&)),
           viewer_,
           SLOT(update()));
   connect(inspector_,
@@ -584,6 +584,10 @@ void MainWindow::setUseDBU(bool use_dbu)
 {
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setUseDBU(use_dbu);
+  }
+  auto* block = getBlock();
+  if (block != nullptr) {
+    emit displayUnitsChanged(block->getDbUnitsPerMicron(), use_dbu);
   }
 }
 
