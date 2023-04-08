@@ -303,15 +303,6 @@ void ScanReplace::collectScanCellAvailable()
             std::make_unique<ScanCandidate>(scan_cell, port_mapping));
       }
     }
-
-    // Check if this non_scan_cell have scan equivalents
-    auto found = scan_candidates.find(non_scan_cell);
-    if (found == scan_candidates.end()) {
-      logger_->warn(utl::DFT,
-                    1,
-                    "Lib cell '{:s}' doesn't have an scan equivalent",
-                    non_scan_cell->name());
-    }
   }
 
   // Populate non_scan_to_scan_cells to map non scan to scan cells with just the
