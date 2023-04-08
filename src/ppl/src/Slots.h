@@ -111,18 +111,18 @@ struct Section
 
   int getMaxContiguousSlots(const std::vector<Slot>& slots)
   {
-    int max_contioguous_slots = std::numeric_limits<int>::min();
+    int max_contiguous_slots = std::numeric_limits<int>::min();
     for (int i = begin_slot; i <= end_slot; i++) {
       int contiguous_slots = 0;
-      while (i <= end_slot && !slots[i].blocked && !slots[i].used) {
+      while (i <= end_slot && slots[i].isAvailable()) {
         contiguous_slots++;
         i++;
       }
 
-      max_contioguous_slots = std::max(max_contioguous_slots, contiguous_slots);
+      max_contiguous_slots = std::max(max_contiguous_slots, contiguous_slots);
     }
 
-    return max_contioguous_slots;
+    return max_contiguous_slots;
   }
 };
 
