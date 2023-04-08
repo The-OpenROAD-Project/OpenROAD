@@ -91,6 +91,8 @@ struct Slot
   odb::Point pos;
   int layer;
   Edge edge;
+
+  bool isAvailable() const { return (!blocked && !used); }
 };
 
 // Section: a region in the die boundary that contains a set
