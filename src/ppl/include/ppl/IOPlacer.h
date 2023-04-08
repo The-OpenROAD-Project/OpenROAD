@@ -190,7 +190,10 @@ class IOPlacer
   int updateSection(Section& section, std::vector<Slot>& slots);
   int updateConstraintSections(Constraint& constraint);
   void assignConstrainedGroupsToSections(Constraint& constraint,
-                                         std::vector<Section>& sections);
+                                         std::vector<Section>& sections,
+                                         int& mirrored_pins_cnt,
+                                         bool mirrored_only);
+  bool groupHasMirroredPin(std::vector<int>& group);
   int assignGroupToSection(const std::vector<int>& io_group,
                            std::vector<Section>& sections,
                            bool order);
@@ -201,7 +204,8 @@ class IOPlacer
                                          Netlist* netlist,
                                          bool mirrored_only);
   int computeIONetsHPWL(Netlist* netlist);
-  void findPinAssignment(std::vector<Section>& sections);
+  void findPinAssignment(std::vector<Section>& sections,
+                         bool mirrored_groups_only);
   void updateSlots();
   void excludeInterval(Interval interval);
 

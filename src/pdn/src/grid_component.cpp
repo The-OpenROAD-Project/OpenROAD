@@ -299,7 +299,7 @@ void GridComponent::cutShapes(const ShapeTreeMap& obstructions)
     std::map<Shape*, std::vector<Shape*>> replacement_shapes;
     for (const auto& [box, shape] : shapes) {
       std::vector<Shape*> replacements;
-      if (!shape->cut(obs, replacements)) {
+      if (!shape->cut(obs, getGrid(), replacements)) {
         continue;
       }
 

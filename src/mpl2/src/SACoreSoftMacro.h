@@ -35,6 +35,7 @@
 
 #include <vector>
 
+#include "Mpl2Observer.h"
 #include "SimulatedAnnealingCore.h"
 #include "object.h"
 
@@ -78,7 +79,7 @@ class SACoreSoftMacro : public SimulatedAnnealingCore<SoftMacro>
                   int k,
                   int c,
                   unsigned seed,
-                  Graphics* graphics,
+                  Mpl2Observer* graphics,
                   utl::Logger* logger);
   // accessors
   float getBoundaryPenalty() const;

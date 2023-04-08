@@ -1,7 +1,8 @@
-///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2023, Google LLC
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,55 +30,41 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <optional>
+#include <vector>
 
-#include "util.h"
+#include "object.h"
+#include "utl/Logger.h"
 
-namespace odb {
-class Ath__nameBucket
+namespace mpl2 {
+
+class Mpl2Observer
 {
- private:
-  char* _name;
-  uint _tag;
-
  public:
-  void set(char* name, uint tag);
-  void deallocWord();
+  Mpl2Observer() = default;
+  virtual ~Mpl2Observer() = default;
 
-  friend class Ath__nameTable;
+  virtual void startSA(){};
+  virtual void saStep(const std::vector<SoftMacro>& macros){};
+  virtual void saStep(const std::vector<HardMacro>& macros){};
+  virtual void endSA(){};
+
+  virtual void setAreaPenalty(float area){};
+  virtual void setOutlinePenalty(float outline_penalty,
+                                 float outline_width,
+                                 float outline_height){};
+  virtual void setWirelength(float wirelength){};
+  virtual void setFencePenalty(float fence_penalty){};
+  virtual void setGuidancePenalty(float guidance_penalty){};
+  virtual void setBoundaryPenalty(float boundary_penalty){};
+  virtual void setMacroBlockagePenalty(float macro_blockage_penalty){};
+  virtual void setNotchPenalty(float notch_penalty){};
+  virtual void penaltyCalculated(float norm_cost){};
 };
 
-class Ath__nameTable
-{
- private:
-  AthHash<int>* _hashTable;
-  AthPool<Ath__nameBucket>* _bucketPool;
-  // int *nameMap; // TODO
-
-  void allocName(char* name, uint nameId, bool hash = false);
-  uint addName(char* name, uint dataId);
-
- public:
-  ~Ath__nameTable();
-  Ath__nameTable(uint n, char* zero = NULL);
-
-  void writeDB(FILE* fp, char* nameType);
-  bool readDB(FILE* fp);
-  void addData(uint poolId, uint dataId);
-
-  uint addNewName(char* name, uint dataId);
-  char* getName(uint poolId);
-  uint getDataId(int poolId);
-  uint getTagId(char* name);
-  uint getDataId(char* name,
-                 uint ignoreFlag = 0,
-                 uint exitFlag = 0,
-                 int* nn = 0);
-};
-
-}  // namespace odb
+}  // namespace mpl2

@@ -33,6 +33,7 @@
 
 #include "mpl2/rtl_mp.h"
 
+#include "Mpl2Observer.h"
 #include "hier_rtlmp.h"
 #include "object.h"
 #include "utl/Logger.h"
@@ -117,9 +118,9 @@ bool MacroPlacer2::place(const int max_num_macro,
   return true;
 }
 
-void MacroPlacer2::setDebug()
+void MacroPlacer2::setDebug(std::unique_ptr<Mpl2Observer>& graphics)
 {
-  hier_rtlmp_->setDebug();
+  hier_rtlmp_->setDebug(graphics);
 }
 
 }  // namespace mpl2
