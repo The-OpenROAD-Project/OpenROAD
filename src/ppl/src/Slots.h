@@ -120,6 +120,11 @@ struct Section
       }
 
       max_contiguous_slots = std::max(max_contiguous_slots, contiguous_slots);
+
+      // advance to the next free slot
+      while (!slots[i].isAvailable()) {
+        i++;
+      }
     }
 
     return max_contiguous_slots;
