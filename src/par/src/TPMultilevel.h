@@ -35,6 +35,7 @@
 #pragma once
 
 #include "TPCoarsener.h"
+#include "TPEvaluator.h"
 #include "TPHypergraph.h"
 #include "TPPartitioner.h"
 #include "TPRefiner.h"
@@ -43,157 +44,105 @@
 
 namespace par {
 
-enum class RefinerType
-{
-  KFM_REFINEMENT,  // direct k-way FM refinement
-  KPM_REFINEMENT,  // pair-wise k-way FM refinement
-  KILP_REFINEMENT  // pair-wise ILP-based refinement
-};
-
 using TP_partition = std::vector<int>;
 
 template <typename T>
-using matrix = std::vector<std::vector<T>>;
+using matrix = std::vector<std::vector<T> >;
+
+// Multilevel partitioner
+class TPmultilevelPartitioner;
+using TP_multi_level_partitioner = std::shared_ptr<TPmultilevelPartitioner>;
 
 class TPmultilevelPartitioner
 {
  public:
-  TPmultilevelPartitioner(
-      TP_coarsening_ptr coarsener,
-      TP_partitioning_ptr partitioner,
-      TP_two_way_refining_ptr two_way_refiner,
-      TP_greedy_refiner_ptr greedy_refiner,
-      TP_ilp_refiner_ptr ilp_refiner,
-      int num_parts,
-      bool v_cycle_flag,
-      int num_initial_solutions,       // number of initial random solutions
-      int num_best_initial_solutions,  // number of best initial solutions
-      int num_ubfactor_delta,   // allowing marginal imbalance to improve QoR
-      int max_num_vcycle,       // maximum number of vcycles
-      int seed,                 // random seed
-      float ub_factor,          // ubfactor
-      RefinerType refine_type,  // refinement type
-      utl::Logger* logger)
-      : v_cycle_flag_(v_cycle_flag),
-        coarsener_(coarsener),
-        partitioner_(partitioner),
-        two_way_refiner_(two_way_refiner),
-        greedy_refiner_(greedy_refiner),
-        ilp_refiner_(ilp_refiner),
-        logger_(logger),
-        num_parts_(num_parts),
-        num_initial_solutions_(num_initial_solutions),
-        num_best_initial_solutions_(num_best_initial_solutions),
-        num_ubfactor_delta_(num_ubfactor_delta),
-        max_num_vcycle_(max_num_vcycle),
-        seed_(seed),
-        ub_factor_(ub_factor),
-        refine_type_(refine_type)
+  TPmultilevelPartitioner(const int num_parts,
+                          const float ub_factor,
+                          // user-specified parameters
+                          const bool v_cycle_flag,
+                          const int num_initial_solutions,
+                          const int num_best_initial_solutions,
+                          const int num_ubfactor_delta,
+                          const int max_num_vcycle,
+                          const int seed,
+                          const bool timing_driven_flag, 
+                          // pointers
+                          TP_coarsening_ptr coarsener,
+                          TP_partitioning_ptr partitioner,
+                          TP_k_way_refiner_ptr k_way_refiner,
+                          TP_k_way_pm_refiner_ptr k_way_pm_refiner,
+                          TP_greedy_refiner_ptr greedy_refiner,
+                          TP_ilp_refiner_ptr ilp_refiner,
+                          TP_evaluator_ptr evaluator,
+                          utl::Logger* logger)
+    :  num_parts_(num_parts),
+       ub_factor_(ub_factor),
+       v_cycle_flag_(v_cycle_flag),
+       num_initial_solutions_(num_initial_solutions),
+       num_best_initial_solutions_(num_best_initial_solutions),
+       num_ubfactor_delta_(num_ubfactor_delta),
+       max_num_vcycle_(max_num_vcycle),
+       seed_(seed),
+       timing_driven_flag_(timing_driven_flag)
   {
-  }
-  TPmultilevelPartitioner(
-      TP_coarsening_ptr coarsener,
-      TP_partitioning_ptr partitioner,
-      TP_k_way_refining_ptr k_way_refiner,
-      int num_parts,
-      bool v_cycle_flag,
-      int num_initial_solutions,       // number of initial random solutions
-      int num_best_initial_solutions,  // number of best initial solutions
-      int num_ubfactor_delta,   // allowing marginal imbalance to improve QoR
-      int max_num_vcycle,       // maximum number of vcycles
-      int seed,                 // random seed
-      float ub_factor,          // ubfactor
-      RefinerType refine_type,  // refinement type
-      utl::Logger* logger)
-      : v_cycle_flag_(v_cycle_flag),
-        coarsener_(coarsener),
-        partitioner_(partitioner),
-        k_way_refiner_(k_way_refiner),
-        logger_(logger),
-        num_parts_(num_parts),
-        num_initial_solutions_(num_initial_solutions),
-        num_best_initial_solutions_(num_best_initial_solutions),
-        num_ubfactor_delta_(num_ubfactor_delta),
-        max_num_vcycle_(max_num_vcycle),
-        seed_(seed),
-        ub_factor_(ub_factor),
-        refine_type_(refine_type)
-  {
+    coarsener_ = coarsener;
+    partitioner_ = partitioner;
+    k_way_refiner_ = k_way_pm_refiner;
+    k_way_pm_refiner_ = k_way_pm_refiner;
+    greedy_refiner_ = greedy_refiner;
+    ilp_refiner_ = ilp_refiner;
+    evaluator_ = evaluator;
+    logger_ = logger;
   }
 
-  int GetBestInitSolns() const { return num_best_initial_solutions_; }
-  TP_partition PartitionTwoWay(HGraph hgraph,
-                               HGraph hgraph_processed,
-                               matrix<float> max_vertex_balance,
-                               bool VCycle);
-  TP_partition PartitionKWay(HGraph hgraph,
-                             HGraph hgraph_processed,
-                             matrix<float> max_vertex_balance,
-                             bool VCycle);
+  // Main function
+  // here the hgraph should not be const
+  // Because our slack-rebudgeting algorithm will change hgraph
+  TP_partition Partition(HGraph hgraph,
+                         const matrix<float>& max_block_balance);
 
  private:
-  std::vector<int> MapClusters(TP_coarse_graphs hierarchy);
-  void ParallelPart(HGraph coarsest_hgraph,
-                    matrix<float>& max_vertex_balance,
-                    float& cutsize_vec,
-                    std::vector<int>& solution,
-                    const int seed);
-  std::pair<matrix<int>, std::vector<float>> InitialPartTwoWay(
-      HGraph coarsest_hypergraph,
-      matrix<float>& max_vertex_balance,
-      TP_partition& solution);
-  void MultilevelPartTwoWay(HGraph hgraph,
-                            HGraph hgraph_processed,
-                            matrix<float>& max_vertex_balance,
-                            TP_partition& solution,
-                            bool VCycle);
-  void VcycleTwoWay(std::vector<HGraph> hgraph_vec,
-                    matrix<float>& max_vertex_balance,
-                    TP_partition& solution,
-                    TP_two_way_refining_ptr refiner,
-                    TP_ilp_refiner_ptr i_refiner,
-                    bool print = true);
-  void GuidedVcycleTwoWay(TP_partition& solution,
-                          HGraph hgraph,
-                          matrix<float>& max_vertex_balance,
-                          TP_two_way_refining_ptr refiner,
-                          TP_ilp_refiner_ptr i_refiner);
-  // Functions for K way
-  std::pair<matrix<int>, std::vector<int>> InitialPartKWay(
-      HGraph coarsest_hypergraph,
-      matrix<float>& max_vertex_balance,
-      TP_partition& solution);
-  void MultilevelPartKWay(HGraph hgraph,
-                          HGraph hgraph_processed,
-                          matrix<float>& max_vertex_balance,
-                          TP_partition& solution,
-                          bool VCycle);
-  void VcycleKWay(std::vector<HGraph> hgraph_vec,
-                  matrix<float>& max_vertex_balance,
-                  TP_partition& solution,
-                  TP_k_way_refining_ptr refiner,
-                  bool print = true);
-  void GuidedVcycleKWay(TP_partition& solution,
-                        HGraph hgraph,
-                        matrix<float>& max_vertex_balance,
-                        TP_k_way_refining_ptr refiner);
+  void InitialPartition(const HGraph hgraph, 
+                          matrix<float>& max_block_balance,
+                          matrix<int>& top_initial_solutions,
+                          int& best_solution_id) const;
+    
+  void RefinePartition(TP_coarse_graphs hierarchy,
+                         const matrix<float>& max_block_balance,
+                         matrix<int>& top_solutions,
+                         int& best_solution_id) const;
+    
+  void VcycleRefinement(HGraph hgraph, 
+                          const matrix<float>& max_block_balance,
+                          std::vector<int>& best_solution,
+                          float& best_cost) const;
+    
+  void CallRefiner(const HGraph hgraph, 
+                     const matrix<float>& max_block_balance,
+                     std::vector<int>& solution) const;
 
-  bool v_cycle_flag_;
+  void SingleLevelPartition(HGraph hgraph,
+                            const matrix<float>& max_block_balance) const;
+
+  // basic parameters
+  const int num_parts_ = 2; 
+
+  // user-specified parameters
+  const int num_initial_random_solutions_ = 50;
+  const int num_best_initial_solutions_ = 10;
+  const int max_num_vcycle_ = 10; // maximum number of vcycles
+  const int seed_ = 0; // random seed
+  const bool timing_driven_flag_ = true;
+
+  // pointers
   TP_coarsening_ptr coarsener_ = nullptr;
   TP_partitioning_ptr partitioner_ = nullptr;
-  TP_two_way_refining_ptr two_way_refiner_ = nullptr;
-  TP_k_way_refining_ptr k_way_refiner_ = nullptr;
+  TP_k_way_refiner_ptr k_way_refiner_ = nullptr;
+  TP_k_way_pm_refiner_ptr k_way_pm_refiner_ = nullptr; 
   TP_greedy_refiner_ptr greedy_refiner_ = nullptr;
   TP_ilp_refiner_ptr ilp_refiner_ = nullptr;
+  TP_evaluator_ptr evaluator_ = nullptr;
   utl::Logger* logger_ = nullptr;
-  int num_parts_;
-  int num_initial_solutions_;
-  int num_best_initial_solutions_;
-  int num_ubfactor_delta_;
-  int max_num_vcycle_;
-  int seed_;
-  float ub_factor_;
-  RefinerType refine_type_;
 };
 
 }  // namespace par

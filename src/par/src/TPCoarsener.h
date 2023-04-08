@@ -41,105 +41,149 @@
 // and return a sequence of coarser hypergraphs
 
 #include "TPHypergraph.h"
+#include "TPEvaluator.h"
 #include "utl/Logger.h"
 
 namespace par {
-template <typename T>
-using TP_matrix = std::vector<std::vector<T>>;
 
+template <typename T>
+using matrix = std::vector<std::vector<T> >;
+
+// a sequence of coarser hypergraphs
 using TP_coarse_graphs = std::vector<HGraph>;
 
-enum class Order
+// nickname for shared pointer of Coarsening
+class TPcoarsener;
+using TP_coarsening_ptr = std::shared_ptr<TPcoarsener>;
+
+// the type for vertex ordering
+enum class CoarsenOrder
 {
   RANDOM,
   DEGREE,
   SIZE,
-  DEFAULT,
-  SPECTRAL,
-  TIMING
+  DEFAULT
 };
+
+// function : convert CoarsenOrder to string
+std::string ToString(CoarsenOrder order);
+
+
+// coarsening class
+// during coarsening, all the coarser hypergraph will not have vertex type
+// Because the timing information will become messy in the coarser hypergraph
+// And we will never perform slack propagation on a coarser hypergraph
 
 class TPcoarsener
 {
  public:
-  TPcoarsener(const std::vector<float> e_wt_factors,
-              const std::vector<float> v_wt_factors,
-              const std::vector<float> p_wt_factors,
-              const float timing_factor,
-              const int path_traverse_step,
-              const std::vector<float> thr_cluster_weight,
-              const int thr_coarsen_hyperedge_size,
-              const int thr_match_hyperedge_size,
-              const int thr_coarsen_vertices,
-              const int thr_coarsen_hyperedges,
-              const float coarsen_ratio,
-              const int thr_coarsen_iters,
-              const float adj_diff_ratio,
-              const int seed,
+  TPcoarsener(const int num_parts,
+              const int thr_coarsen_hyperedge_size_skip, // ignore large hyperedge
+              const int thr_coarsen_vertices, // the number of vertices of coarsest hypergraph
+              const int thr_coarsen_hyperedges, // the number of vertices of coarsest hypergraph
+              const float coarsening_ratio, // coarsening ratio of two adjacent hypergraphs
+              const int max_coarsen_iters, // the number of iterations 
+              const float adj_diff_ratio, // the minimum difference of two adjacent hypergraphs
+              const std::vector<float> thr_cluster_weight, // the weight of largest cluster in a hypergraph
+              const int seed, // random seed
+              const CoarsenOrder vertex_order_choice, // vertex order
+              TP_evaluator  evaluator, // evaluator to calculate score
               utl::Logger* logger)
-      : e_wt_factors_(e_wt_factors),
-        v_wt_factors_(v_wt_factors),
-        p_wt_factors_(p_wt_factors),
-        timing_factor_(timing_factor),
-        path_traverse_step_(path_traverse_step),
-        thr_cluster_weight_(thr_cluster_weight),
-        thr_coarsen_hyperedge_size_(thr_coarsen_hyperedge_size),
-        thr_match_hyperedge_size_(thr_match_hyperedge_size),
-        thr_coarsen_vertices_(thr_coarsen_vertices),
-        thr_coarsen_hyperedges_(thr_coarsen_hyperedges),
-        coarsen_ratio_(coarsen_ratio),
-        thr_coarsen_iters_(thr_coarsen_iters),
-        adj_diff_ratio_(adj_diff_ratio),
-        seed_(seed),
-        vertex_order_choice_(Order::DEFAULT),
-        logger_(logger)
-  {
-  }
-  void SetVertexOrderChoice(const Order choice)
-  {
-    vertex_order_choice_ = choice;
-  }
-  Order GetVertexOrderChoice() const { return vertex_order_choice_; }
-  std::vector<int> PathBasedCommunity(HGraph hgraph);
-  TP_coarse_graphs LazyFirstChoice(HGraph hgraph);
+    : num_parts_(num_parts),
+      thr_coarsen_hyperedge_size_skip_(thr_coarsen_hyperedge_size_skip),
+      thr_coarsen_vertices_(thr_coarsen_vertices),
+      thr_coarsen_hyperedges_(thr_coarsen_hyperedges),
+      coarsening_ratio_(coarsening_ratio),
+      max_coarsen_iters_(max_coarsen_iters),
+      adj_diff_ratio_(adj_diff_ratio),
+      thr_cluster_weight_(thr_cluster_weight),
+      seed_(seed),
+      vertex_order_choice_(vertex_order_choice)
+    {
+      evaluator_ = evaluator;
+      logger_ = logger;
+    }
 
- private:
-  const std::vector<float> AverageClusterWt(const HGraph hgraph);
-  void OrderVertices(const HGraph hgraph, std::vector<int>& vertices);
-  const float GetClusterScore(const int he,
-                              HGraph hgraph,
-                              std::vector<float>& algebraic_weights);
-  HGraph Contraction(HGraph hgraph,
-                     std::vector<int>& vertex_c_atrr,
-                     std::vector<int>& community_attr_c,
-                     std::vector<int>& fixed_attr_c,
-                     TP_matrix<float>& vertex_weights_c,
-                     TP_matrix<float>& placement_attr_c);
-  HGraph Aggregate(HGraph hgraph);
-  void VertexMatching(const HGraph hgraph,
-                      std::vector<int>& vertex_c_attr,
-                      std::vector<std::vector<float>>& vertex_weights_c,
-                      std::vector<int>& community_attr_c,
-                      std::vector<int>& fixed_attr_c,
-                      std::vector<std::vector<float>>& placement_attr_c);
-  std::vector<float> e_wt_factors_;
-  std::vector<float> v_wt_factors_;
-  std::vector<float> p_wt_factors_;
-  float timing_factor_;
-  int path_traverse_step_;
-  std::vector<float> thr_cluster_weight_;
-  int thr_coarsen_hyperedge_size_;
-  int thr_match_hyperedge_size_;
-  int thr_coarsen_vertices_;
-  int thr_coarsen_hyperedges_;
-  float coarsen_ratio_;
-  int thr_coarsen_iters_;
-  float adj_diff_ratio_;
-  int seed_;
-  Order vertex_order_choice_;
-  utl::Logger* logger_ = nullptr;
+    // the function of coarsen a hypergraph
+    TP_coarse_graphs LazyFirstChoice(HGraph hgraph) const;
+
+    // create a coarser hypergraph based on specified grouping information
+    // for each vertex.
+    // each vertex has been map its group
+    // (1) remove single-vertex hyperedge
+    // (2) remove lager hyperedge
+    // (3) detect parallel hyperedges
+    // (4) handle group information
+    // (5) group fixed vertices based on each block
+    // group vertices based on group_attr and hgraph->fixed_attr_
+    HGraph GroupVertices(HGraph hgraph, const std::vector<int>& group_attr) const;
+  
+  private:
+    // private functions (utilities)
+    
+    // Single-level Coarsening
+    // The input is a hypergraph
+    // The output is a coarser hypergraph
+    // The input hypergraph will be updated
+    HGraph Aggregate(HGraph hgraph) const;
+
+    // find the vertex matching scheme
+    // the inputs are the hgraph and the attributes of clusters
+    // the lazy update means that we do not change the hgraph itself,
+    // but during the matching process, we do dynamically update 
+    // placement_attr_c. vertex_weights_c, fixed_attr_c and community_attr_c
+    void VertexMatching(const HGraph hgraph,
+                        std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
+                        // the remaining arguments are related to clusters
+                        matrix<float>& vertex_weights_c,
+                        std::vector<int>& community_attr_c,
+                        std::vector<int>& fixed_attr_c,
+                        matrix<float>& placement_attr_c) const;  
+
+    // order the vertices based on user-specified parameters
+    void OrderVertices(const HGraph hgraph, std::vector<int>& vertices) const;
+
+    // Similar to the VertexMatching, 
+    // handle group information
+    // group fixed vertices based on each block
+    // group vertices based on group_attr and hgraph->fixed_attr_
+    void ClusterBasedGroupInfo(const HGraph hgraph,
+                               std::vector<int> group_attr, // Please pass by value here because we need to update the group_attr
+                               std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
+                               // the remaining arguments are related to clusters
+                               matrix<float>& vertex_weights_c,
+                               std::vector<int>& community_attr_c,
+                               std::vector<int>& fixed_attr_c,
+                               matrix<float>& placement_attr_c) const;
+    
+    // create the contracted hypergraph based on the vertex matching in vertex_cluster_id_vec
+    HGraph Contraction(HGraph hgraph,
+                       std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
+                       // the remaining arguments are related to clusters
+                       matrix<float>& vertex_weights_c,
+                       std::vector<int>& community_attr_c,
+                       std::vector<int>& fixed_attr_c,
+                       matrix<float>& placement_attr_c) const;
+
+
+    const int num_parts_ = 2;
+    // coarsening related parameters (stop conditions)
+    const int thr_coarsen_hyperedge_size_skip_ = 50; // if the size of a hyperedge is larger than
+                                                     // thr_coarsen_hyperedge_size_skip_, then we ignore this
+                                                     // hyperedge during coarsening
+    const int thr_coarsen_vertices_ = 200;  // the minimum threshold of number of vertices in the coarsest 
+                                            // hypergraph 
+    const int thr_coarsen_hyperedges_ = 50; // the minimum threshold of number of hyperedges in the 
+                                            // coarsest hypergraph
+    const float coarsening_ratio_ = 1.5;    // the ratio of number of vertices of adjacent coarse hypergraphs
+    const int max_coarsen_iters_ = 20;      // maxinum number of coarsening iterations
+    const float adj_diff_ratio_ = 0.01;   // the ratio of number of vertices of adjacent coarse hypergraphs
+                                            // if the ratio is less than adj_diff_ratio_, then stop coarsening
+    const std::vector<float> thr_cluster_weight_; // the maximum weight of a cluster
+    const int seed_ = 0; // random seed
+    CoarsenOrder vertex_order_choice_ = CoarsenOrder::RANDOM; // not const here
+    TP_evaluator  evaluator_ = nullptr;
+    utl::Logger* logger_ = nullptr;
 };
 
-// nickname for shared pointer of Coarsening
-using TP_coarsening_ptr = std::shared_ptr<TPcoarsener>;
 }  // namespace par

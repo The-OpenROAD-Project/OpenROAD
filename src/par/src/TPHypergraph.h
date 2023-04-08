@@ -44,11 +44,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 #pragma once
 #include <functional>
-
+#include <vector>
+#include <set>
 #include "Utilities.h"
 #include "utl/Logger.h"
 
+// The basic function related to hypergraph should be listed here
+
 namespace par {
+
+struct TPHypergraph;
+using HGraph = std::shared_ptr<TPHypergraph>;
+
 // The data structure for critical timing path
 // A timing path is a sequence of vertices, for example, a -> b -> c -> d
 // A timing path can also be viewed a sequence of hypereges,
@@ -64,162 +71,127 @@ struct TimingPath
 
 // Here we use TPHypergraph class because the Hypegraph class
 // has been used by other programs.
-class TPHypergraph
+struct TPHypergraph
 {
- public:
-  // Multiple constructors
-  // Basic form
   TPHypergraph(int vertex_dimensions,
                int hyperedge_dimensions,
-               const std::vector<std::vector<int>>& hyperedges,
-               const std::vector<std::vector<float>>& vertex_weights,
-               const std::vector<std::vector<float>>& hyperedge_weights,
-               const std::vector<int>& fixed_attr,
-               const std::vector<int>& community_attr,
                int placement_dimensions,
-               const std::vector<std::vector<float>>& placement_attr,
-               const std::vector<std::vector<int>>& paths,
-               const std::vector<float>& timing_attr,
-               utl::Logger* logger);
-
-  TPHypergraph(
-      int num_vertices,
-      int num_hyperedges,
-      int vertex_dimensions,
-      int hyperedge_dimensions,
-      // hyperedges: each hyperedge is a set of vertices
-      const std::vector<int>& eind,
-      const std::vector<int>& eptr,
-      // vertices: each vertex is a set of hyperedges
-      const std::vector<int>& vind,
-      const std::vector<int>& vptr,
-      // weights
-      const std::vector<std::vector<float>>& vertex_weights,
-      const std::vector<std::vector<float>>& hyperedge_weights,
-      // fixed vertices
-      const std::vector<int>& fixed_attr,  // the block id of fixed vertices.
-      // community structure
-      const std::vector<int>& community_attr,
-      // placement information
-      int placement_dimensions,
-      const std::vector<std::vector<float>>& placement_attr,
-      // timing flag
-      // view a timing path as a sequence of hyperedges
-      const std::vector<int>& vind_p,
-      const std::vector<int>& vptr_p,
-      const std::vector<int>& pind_v,
-      const std::vector<int>& pptr_v,
-      // slack for each timing paths
-      const std::vector<float> timing_attr,
-      utl::Logger* logger)
+               const std::vector<std::vector<int> >& hyperedges,
+               const std::vector<std::vector<float> >& vertex_weights,
+               const std::vector<std::vector<float> >& hyperedge_weights,
+               // fixed vertices
+               const std::vector<int>& fixed_attr,  // the block id of fixed vertices.
+               // community attribute
+               const std::vector<int>& community_attr,
+               utl::Logger* logger)
   {
-    num_vertices_ = num_vertices;
-    num_hyperedges_ = num_hyperedges;
     vertex_dimensions_ = vertex_dimensions;
     hyperedge_dimensions_ = hyperedge_dimensions;
-    eind_ = eind;
-    eptr_ = eptr;
-    vind_ = vind;
-    vptr_ = vptr;
+    placement_dimensions_ = placement_dimensions;
+    num_vertices_ = static_cast<int>(vertex_weights_.size());
+    num_hyperedges_ = static_cast<int>(hyperedge_weights_.size());
+
     vertex_weights_ = vertex_weights;
     hyperedge_weights_ = hyperedge_weights;
+
     // fixed vertices
-    fixed_vertex_flag_ = (fixed_attr.size() > 0);
-    fixed_attr_ = fixed_attr;
-    // community structure
-    community_flag_ = (community_attr.size() > 0);
-    community_attr_ = community_attr;
-    // placement information
-    placement_flag_ = (placement_dimensions > 0);
-    placement_dimensions_ = placement_dimensions;
-    placement_attr_ = placement_attr;
-    // timing flag
-    num_timing_paths_ = static_cast<int>(timing_attr.size());
-    vind_p_ = vind_p;
-    vptr_p_ = vptr_p;
-    pind_v_ = pind_v;
-    pptr_v_ = pptr_v;
-    timing_attr_ = timing_attr;
+    fixed_vertex_flag_ = (static_cast<int>(fixed_attr.size()) == num_vertices_);
+    if (fixed_vertex_flag_ == true) {
+      fixed_attr_ = fixed_attr;
+    }
+
+    // community information
+    community_flag_ = (static_cast<int>(community_attr.size()) == num_vertices_);
+    if (community_flag_ == true) {
+      community_attr_ = community_attr;
+    }
     // logger
     logger_ = logger;
   }
 
-  TPHypergraph(
-      int vertex_dimensions,
-      int hyperedge_dimensions,
-      const std::vector<std::vector<int>>& hyperedges,
-      const std::vector<std::vector<float>>& vertex_weights,
-      const std::vector<std::vector<float>>& hyperedge_weights,
-      const std::vector<std::vector<float>>& nonscaled_hyperedge_weights,
-      const std::vector<int>& fixed_attr,
-      const std::vector<int>& community_attr,
-      int placement_dimensions,
-      const std::vector<std::vector<float>>& placement_attr,
-      const std::vector<std::vector<int>>& paths,
-      const std::vector<float>& timing_attr,
-      utl::Logger* logger);
-
-  TPHypergraph(
-      int num_vertices,
-      int num_hyperedges,
-      int vertex_dimensions,
-      int hyperedge_dimensions,
-      // hyperedges: each hyperedge is a set of vertices
-      const std::vector<int>& eind,
-      const std::vector<int>& eptr,
-      // vertices: each vertex is a set of hyperedges
-      const std::vector<int>& vind,
-      const std::vector<int>& vptr,
-      // weights
-      const std::vector<std::vector<float>>& vertex_weights,
-      const std::vector<std::vector<float>>& hyperedge_weights,
-      // Necessary for constraints driven
-      const std::vector<std::vector<float>>& nonscaled_hyperedge_weights,
-      // fixed vertices
-      const std::vector<int>& fixed_attr,  // the block id of fixed vertices.
-      // community structure
-      const std::vector<int>& community_attr,
-      // placement information
-      int placement_dimensions,
-      const std::vector<std::vector<float>>& placement_attr,
-      // timing flag
-      // view a timing path as a sequence of hyperedges
-      const std::vector<int>& vind_p,
-      const std::vector<int>& vptr_p,
-      const std::vector<int>& pind_v,
-      const std::vector<int>& pptr_v,
-      // slack for each timing paths
-      const std::vector<float> timing_attr,
-      utl::Logger* logger)
+  TPHypergraph(int vertex_dimensions,
+               int hyperedge_dimensions,
+               int placement_dimensions,
+               const std::vector<std::vector<int> >& hyperedges,
+               const std::vector<std::vector<float> >& vertex_weights,
+               const std::vector<std::vector<float> >& hyperedge_weights,
+               // fixed vertices
+               const std::vector<int>& fixed_attr,  // the block id of fixed vertices.
+               // community attribute
+               const std::vector<int>& community_attr,
+               // placement information
+               const std::vector<std::vector<float> >& placement_attr,
+               // the type of each vertex
+               std::vector<VertexType> vertex_types,
+               // slack information
+               const std::vector<float>& hyperedges_slack,
+               const std::vector<std::set<int> >& hyperedges_arc_set,
+               const std::vector<TimingPath>& timing_paths,
+               utl::Logger* logger)
   {
-    num_vertices_ = num_vertices;
-    num_hyperedges_ = num_hyperedges;
     vertex_dimensions_ = vertex_dimensions;
     hyperedge_dimensions_ = hyperedge_dimensions;
-    eind_ = eind;
-    eptr_ = eptr;
-    vind_ = vind;
-    vptr_ = vptr;
+    placement_dimensions_ = placement_dimensions;
+    num_vertices_ = static_cast<int>(vertex_weights_.size());
+    num_hyperedges_ = static_cast<int>(hyperedge_weights_.size());
+
     vertex_weights_ = vertex_weights;
     hyperedge_weights_ = hyperedge_weights;
-    nonscaled_hyperedge_weights_ = nonscaled_hyperedge_weights;
+
     // fixed vertices
-    fixed_vertex_flag_ = (fixed_attr.size() > 0);
-    fixed_attr_ = fixed_attr;
-    // community structure
-    community_flag_ = (community_attr.size() > 0);
-    community_attr_ = community_attr;
+    fixed_vertex_flag_ = (static_cast<int>(fixed_attr.size()) == num_vertices_);
+    if (fixed_vertex_flag_ == true) {
+      fixed_attr_ = fixed_attr;
+    }
+
+    // community information
+    community_flag_ = (static_cast<int>(community_attr.size()) == num_vertices_);
+    if (community_flag_ == true) {
+      community_attr_ = community_attr;
+    }
+
     // placement information
-    placement_flag_ = (placement_dimensions > 0);
-    placement_dimensions_ = placement_dimensions;
-    placement_attr_ = placement_attr;
-    // timing flag
-    num_timing_paths_ = static_cast<int>(timing_attr.size());
-    vind_p_ = vind_p;
-    vptr_p_ = vptr_p;
-    pind_v_ = pind_v;
-    pptr_v_ = pptr_v;
-    timing_attr_ = timing_attr;
+    placement_flag_ = (static_cast<int>(placement_attr.size()) == num_vertices_);
+    if (placement_flag_ == true) {
+      placement_attr_ = placement_attr;
+    }
+
+    // add vertex types
+    vertex_types_ = vertex_types;
+
+    // slack information
+    if (static_cast<int>(hyperedges_slack.size()) == num_hyperedges_ &&
+        static_cast<int>(hyperedges_arc_set.size()) == num_hyperedges_) {
+      timing_flag_ = true;
+      num_timing_paths_ = static_cast<int>(timing_paths.size());
+      hyperedge_timing_attr_ = hyperedges_slack;
+      hyperedge_arc_set_ = hyperedges_arc_set;
+      // create the vertex matrix which stores the paths incident to vertex
+      std::vector<std::vector<int> > incident_paths(num_vertices_);
+      vptr_p_.push_back(static_cast<int>(vind_p_.size()));
+      eptr_p_.push_back(static_cast<int>(eind_p_.size()));
+      for (int path_id = 0; path_id < num_timing_paths_; path_id++) {
+        // view each path as a sequence of vertices
+        const auto& timing_path = timing_paths[path_id].path;
+        vind_p_.insert(vind_p_.end(), timing_path.begin(), timing_path.end());
+        vptr_p_.push_back(static_cast<int>(vind_p_.size()));
+        for (auto i = 0; i < timing_path.size(); i++) {
+          const int v = timing_path[i];
+          incident_paths[v].push_back(path_id);
+        }
+        // view each path as a sequence of hyperedge
+        const auto& timing_arc = timing_paths[path_id].arcs;
+        eind_p_.insert(eind_p_.end(), timing_arc.begin(), timing_arc.end());
+        eptr_p_.push_back(static_cast<int>(eind_p_.size()));
+        // add the timing attribute
+        path_timing_attr_.push_back(timing_paths[path_id].slack);
+      }  
+      pptr_v_.push_back(pind_v_.size());
+      for (auto& paths : incident_paths) {
+        pind_v_.insert(pind_v_.end(), paths.begin(), paths.end());
+        pptr_v_.push_back(static_cast<int>(pind_v_.size()));
+      }
+    }    
     // logger
     logger_ = logger;
   }
@@ -227,48 +199,54 @@ class TPHypergraph
   int GetNumVertices() const { return num_vertices_; }
   int GetNumHyperedges() const { return num_hyperedges_; }
   int GetNumTimingPaths() const { return num_timing_paths_; }
+
   std::vector<float> GetTotalVertexWeights() const;
   std::vector<float> GetTotalHyperedgeWeights() const;
+  
   // write the hypergraph out in general hmetis format
   void WriteHypergraph(std::string hypergraph_file) const;
-  void WriteReducedHypergraph(
-      const std::string reduced_file,
-      const std::vector<float> vertex_w_factor,
-      const std::vector<float> hyperedge_w_factor) const;
+  
   // get balance constraints
-  std::vector<std::vector<float>> GetVertexBalance(int num_parts,
-                                                   float ubfactor);
-  std::vector<float> ComputeAlgebraicWights() const;
+  std::vector<std::vector<float> > GetVertexBalance(int num_parts,
+                                                    float ub_factor) const;
 
-  float edge_score(const int e, const std::vector<float>& e_wt_factors) const;
-
- private:
   // basic hypergraph
   int num_vertices_ = 0;
   int num_hyperedges_ = 0;
   int vertex_dimensions_ = 1;
   int hyperedge_dimensions_ = 1;
-  std::vector<std::vector<float>> vertex_weights_;
-  std::vector<std::vector<float>>
-      hyperedge_weights_;  // hyperedge weights can be negative
-  std::vector<std::vector<float>> nonscaled_hyperedge_weights_;
+  std::vector<std::vector<float> > vertex_weights_;
+  std::vector<std::vector<float> > hyperedge_weights_;  // hyperedge weights can be negative
+  // slack for hyperedge
+  std::vector<float> hyperedge_timing_attr_; // slack of each hyperedge
+  std::vector<float> hyperedge_timing_cost_; // translate the slack of hyperedge into cost
+  std::vector<std::set<int> > hyperedge_arc_set_; // map current hyperedge into arcs in timing graph
+                                                  // the slack of each hyperedge e is the minimum_slack_hyperedge_arc_set_[e]
   // hyperedges: each hyperedge is a set of vertices
   std::vector<int> eind_;
   std::vector<int> eptr_;
   // vertices: each vertex is a set of hyperedges
   std::vector<int> vind_;
   std::vector<int> vptr_;
+  
   // Fill vertex_c_attr which maps the vertex to its corresponding cluster
-  // vertex_c_attr has hgraph->num_vertices_ elements
+  // vertex_c_attr has hgraph->num_vertices_ elements.
+  // This is used during coarsening phase
   std::vector<int> vertex_c_attr_;
+  
   // fixed vertices.  If fixed_vertex_flag_ = false, fixed_attr_ is empty
   bool fixed_vertex_flag_ = false;  // If there are fixed vertices
-  std::vector<int> fixed_attr_;     // the block id of fixed vertices.
+  std::vector<int> fixed_attr_;     // the block id of fixed vertices
+
+  // vertex types
+  std::vector<VertexType> vertex_types_; // the type of each vertex
+
   // community structure. If community_flag_ = false, community_ is empty
   // Note that fixed_attr_ and community_attr_ can be different
   // For example, a is fixed to block 1 and a can belong to community 10
   bool community_flag_ = false;      // If there is community structure
   std::vector<int> community_attr_;  // the community id of vertices
+  
   // placement information.
   // The embedding information for the hypergraph
   // This embedding can be real placement from chip layout
@@ -276,42 +254,26 @@ class TPHypergraph
   // If placement_flag = false, placement_attr_ is empty
   bool placement_flag_ = false;
   int placement_dimensions_ = 0;
-  std::vector<std::vector<float>>
-      placement_attr_;  // the embedding for vertices
+  std::vector<std::vector<float> > placement_attr_;  // the embedding for vertices
+  
   // Timing information
-  // if timing_flag_ = false, paths_ is empty
+  bool timing_flag_ = false; // timing flag
   int num_timing_paths_ = 0;
-  // view a timing path as a sequence of vertices
-  std::vector<int> vind_p_;  // each timing path is a sequence of vertices
-  std::vector<int> vptr_p_;
-  std::vector<int> pind_v_;  // All the timing paths connected to the vertex
+  // All the timing paths connected to the vertex
+  std::vector<int> pind_v_;  
   std::vector<int> pptr_v_;
+  // view a timing path as a sequence of vertices
+  std::vector<int> vind_p_;  
+  std::vector<int> vptr_p_;
+  // view a timing path as a sequence of arcs
+  std::vector<int> eind_p_; 
+  std::vector<int> eptr_p_;      
   // slack for each timing paths
-  std::vector<float> timing_attr_;
-
+  std::vector<float> path_timing_attr_;
+  std::vector<float> path_timing_cost_; // translate the slack of timing path into weight
   // logger information
   utl::Logger* logger_ = nullptr;
-
-  friend class TritonPart;               // define friend class for TritonPart
-  friend class Coarsening;               // define friend class for Coarsening
-  friend class TPcoarsener;              // define friend class for TPcoarsening
-  friend class TPmultilevelPartitioner;  // define friend class for
-                                         // TPmultilevelPartitioner
-  friend class TPpartitioner;        // define friend class for TPpartitioner
-  friend class TPrefiner;            // define friend class for TPrefiner
-  friend class TPtwoWayFM;           // define friend class for TPtwoWayFM
-  friend class TPkWayFM;             // define friend class for TPkWayFM
-  friend class TPgreedyRefine;       // define friend class for TPgreedyRefine
-  friend class TPilpRefine;          // define friend class for TPilpRefine
-  friend class TPpriorityQueue;      // define friend class for TPpriorityQueue
-  friend class Partitioners;         // define friend class for Partitioners
-  friend class MultiLevelHierarchy;  // define friend class for
-                                     // MultiLevelHierarchy
-  friend class KPMRefinement;        // define friend class for KPMFM
-  friend class IlpRefiner;  // define friend class for ILP based refinement
 };
 
-// We should use shared_ptr because we enable multi-thread feature during
-// partitioning
-using HGraph = std::shared_ptr<TPHypergraph>;
+
 }  // namespace par
