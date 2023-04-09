@@ -690,6 +690,9 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
                               int y) const
 {
   // Diamond search limits.
+  // TODO: the mistake is in y coordinates.
+  // consider scaling max_displacement_y_ by row height.
+  // the y is getting received wrong.
   int x_min = x - max_displacement_x_;
   int y_min = y - max_displacement_y_;
   int x_max = x + max_displacement_x_;
@@ -719,7 +722,15 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   y_min = max(0, y_min);
   x_max = min(layer_info.site_count, x_max);
   y_max = min(layer_info.row_count, y_max);
-
+  debugPrint(logger_,
+             DPL,
+             "group",
+             1,
+             "x_min {} x_max {} y_min {} y_max {}",
+             x_min,
+             x_max,
+             y_min,
+             y_max);
   debugPrint(logger_,
              DPL,
              "place",
@@ -901,7 +912,7 @@ bool Opendp::checkPixels(const Cell* cell,
       } else {
         logger_->warn(
             DPL,
-            189,
+            184,
             "Success reasons: pixel: {}, pixel cell {}, pixel is valid "
             "{}, cell in group {}, pixel group {}, cell group {}",
             pixel == nullptr,
