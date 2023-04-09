@@ -40,7 +40,7 @@ void FlexTAWorker::saveToGuides()
             = make_unique<frPathSeg>(*static_cast<taPathSeg*>(uPinFig.get()));
         if (save_updates_) {
           drUpdate update(drUpdate::ADD_GUIDE);
-          update.setPathSeg(*pathSeg.get());
+          update.setPathSeg(*pathSeg);
           update.setIndexInOwner(iroute->getGuide()->getIndexInOwner());
           update.setNet(iroute->getGuide()->getNet());
           design_->addUpdate(update);
