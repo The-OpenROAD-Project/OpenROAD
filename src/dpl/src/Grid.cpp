@@ -405,7 +405,11 @@ void Opendp::groupAssignCellRegions()
 {
   for (Group& group : groups_) {
     int64_t site_count = 0;
+    int site_width = site_width_;
+    int row_height = row_height_;
     if (!group.cells_.empty()) {
+      site_width = getSiteWidth(group.cells_.at(0));
+      row_height = getRowHeight(group.cells_.at(0));
       int cell_heights_in_group = group.cells_.at(0)->height_;
       auto layer_info = grid_layers_.at(cell_heights_in_group);
 
@@ -418,7 +422,7 @@ void Opendp::groupAssignCellRegions()
         }
       }
     }
-    int64_t site_area = site_count * site_width_ * row_height_;
+    int64_t site_area = site_count * site_width * row_height;
 
     int64_t cell_area = 0;
     for (Cell* cell : group.cells_) {

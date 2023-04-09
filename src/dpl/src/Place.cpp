@@ -648,7 +648,9 @@ bool Opendp::swapCells(Cell* cell1, Cell* cell2)
 
 bool Opendp::refineMove(Cell* cell)
 {
-  Point grid_pt = legalGridPt(cell, true);
+  int row_height = getRowHeight(cell);
+  int site_width = getSiteWidth(cell);
+  Point grid_pt = legalGridPt(cell, true, row_height, site_width);
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
@@ -658,9 +660,8 @@ bool Opendp::refineMove(Cell* cell)
       return false;
     }
 
-    int dist_change = distChange(cell,
-                                 pixel_pt.pt.getX() * site_width_,
-                                 pixel_pt.pt.getY() * row_height_);
+    int dist_change = distChange(
+        cell, pixel_pt.pt.getX() * site_width, pixel_pt.pt.getY() * row_height);
 
     if (dist_change < 0) {
       erasePixel(cell);
@@ -847,7 +848,6 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
 
   if (x > bin_x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
-      // TODO: You need to check ALL layers
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(layer_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -873,23 +873,11 @@ bool Opendp::checkPixels(const Cell* cell,
                          int x_end,
                          int y_end) const
 {
-  auto [row_height, layer_info] = getRowInfo(cell);
-  if (x_end > layer_info.site_count) {
+  auto row_info = getRowInfo(cell);
+  if (x_end > row_info.second.site_count) {
     return false;
   }
 
-  // the x and x_end represent the begin pixel and end pixel of that layer only.
-  // the same applies to y and y_end, which would be vastly different for
-  // multi_height_cells in different layers.
-  //
-  // to fix this, we need to convert the values to "distance units" that can be
-  // converted to match other layers. Then, we need to loop over those layers
-  // and check the pixels.
-  //
-  // Note: the group would be different since we create different groups per
-  // different layer
-
-  auto row_info = getRowInfo(cell);
   int layer = row_info.second.grid_index;
   for (int y1 = y; y1 < y_end; y1++) {
     for (int x1 = x; x1 < x_end; x1++) {
@@ -897,7 +885,31 @@ bool Opendp::checkPixels(const Cell* cell,
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
           || (cell->inGroup() && pixel->group_ != cell->group_)
           || (!cell->inGroup() && pixel->group_)) {
+        logger_->warn(
+            DPL,
+            189,
+            "Failure reasons: pixel: {}, pixel cell {}, pixel is valid "
+            "{}, cell in group {}, pixel group {}, cell group {}",
+            pixel == nullptr,
+            pixel->cell == nullptr ? "nullptr" : pixel->cell->name(),
+            pixel->is_valid,
+            cell->inGroup(),
+            pixel->group_ == nullptr ? "nullptr" : pixel->group_->name,
+            cell->group_ == nullptr ? "nullptr" : cell->group_->name);
+
         return false;
+      } else {
+        logger_->warn(
+            DPL,
+            189,
+            "Success reasons: pixel: {}, pixel cell {}, pixel is valid "
+            "{}, cell in group {}, pixel group {}, cell group {}",
+            pixel == nullptr,
+            pixel->cell == nullptr ? "nullptr" : pixel->cell->name(),
+            pixel->is_valid,
+            cell->inGroup(),
+            pixel->group_ == nullptr ? "nullptr" : pixel->group_->name,
+            cell->group_ == nullptr ? "nullptr" : cell->group_->name);
       }
     }
     if (disallow_one_site_gaps_) {
@@ -957,7 +969,7 @@ Point Opendp::legalPt(const Cell* cell,
   // Move inside core.
 
   if (row_height == -1) {
-    row_height = cell->height_;
+    row_height = getRowHeight(cell);
   }
   auto layer_info = grid_layers_.at(row_height);
   if (site_width == -1) {
@@ -999,6 +1011,7 @@ Point Opendp::nearestBlockEdge(const Cell* cell,
 {
   const int legal_x = legal_pt.getX();
   const int legal_y = legal_pt.getY();
+  const int row_height = getRowHeight(cell);
   const int x_min_dist = abs(legal_x - block_bbox.xMin());
   const int x_max_dist = abs(block_bbox.xMax() - (legal_x + cell->width_));
   const int y_min_dist = abs(legal_y - block_bbox.yMin());
@@ -1019,13 +1032,13 @@ Point Opendp::nearestBlockEdge(const Cell* cell,
     // below block
     return legalPt(cell,
                    Point(legal_pt.getX(),
-                         divFloor(block_bbox.yMin(), row_height_) * row_height_
+                         divFloor(block_bbox.yMin(), row_height) * row_height
                              - cell->height_));
   }
   // above block
   return legalPt(cell,
                  Point(legal_pt.getX(),
-                       divCeil(block_bbox.yMax(), row_height_) * row_height_));
+                       divCeil(block_bbox.yMax(), row_height) * row_height));
 }
 
 // Find the nearest valid site left/right/above/below, if any.
