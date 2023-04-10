@@ -131,6 +131,7 @@ class dbBlockCallBackObj
   // dbWire Start
   virtual void inDbWireCreate(dbWire*) {}
   virtual void inDbWireDestroy(dbWire*) {}
+  virtual void inDbWirePostModify(dbWire*) {}
   virtual void inDbWirePreAttach(dbWire*, dbNet*) {}
   virtual void inDbWirePostAttach(dbWire*) {}
   virtual void inDbWirePreDetach(dbWire*) {}
