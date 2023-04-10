@@ -109,6 +109,8 @@ class ScanArchitect
   // Returns an ScanArchitect object based on the configuration.
   //
   // TODO: Allow the users to select the scan architect algorithm that they want
+  // from the config. We want to support multiple Scan Architect algorithms
+  // since some of them could generate better scan chains for some designs
   static std::unique_ptr<ScanArchitect> ConstructScanScanArchitect(
       const ScanArchitectConfig& config,
       std::unique_ptr<ScanCellsBucket> scan_cells_bucket);
