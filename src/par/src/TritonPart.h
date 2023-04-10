@@ -86,6 +86,7 @@ class TritonPart
   // (3) stay together attributes in group_file.
   // (4) timing-driven partitioning
   // (5) fence-aware partitioning
+  // (6) placement-aware partitioning, placement information is extracted from OpenDB
   void PartitionDesign(unsigned int num_parts_arg,
                        float balance_constraint_arg,
                        unsigned int seed_arg,
@@ -108,8 +109,9 @@ class TritonPart
   // (1) fixed vertices constraint in fixed_file
   // (2) community attributes in community_file (This can be used to guide the partitioning process)
   // (3) stay together attributes in group_file.
+  // (4) placement information is specified in placement file
   // The format is that each line cooresponds to a group
-  // fixed vertices and community attributes both follows the hMETIS format
+  // fixed vertices, community and placement attributes both follows the hMETIS format
   void PartitionHypergraph(unsigned int num_parts,
                            float balance_constraint,
                            unsigned int seed,
@@ -121,7 +123,6 @@ class TritonPart
                            const char* community_file,
                            const char* group_file,
                            const char* placement_file);
-
 
   // k-way partitioning used by Hier-RTLMP
   std::vector<int> PartitionKWaySimpleMode(unsigned int num_parts_arg,
@@ -245,6 +246,7 @@ class TritonPart
                       std::string placement_file);
 
   // read and build netlist
+  // placement information is extracted from the OpenDB database
   void ReadNetlist(std::string fixed_file,
                    std::string community_file,
                    std::string group_file);    
@@ -290,7 +292,7 @@ class TritonPart
   std::vector<int> fixed_attr_;  // the block id of fixed vertices. (internal representation, size is num_vertices_)
 
   // ---- vertex grouping information
-  std::vector<int> group_attr_; // map vertex to its group id
+  std::vector<std::vector<int> > group_attr_; // each group cooresponds to a group
 
   // coarsening related parameters (stop conditions)
   int thr_coarsen_hyperedge_size_skip_ = 50; // if the size of a hyperedge is larger than

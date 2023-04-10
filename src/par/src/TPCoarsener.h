@@ -66,8 +66,7 @@ enum class CoarsenOrder
 };
 
 // function : convert CoarsenOrder to string
-std::string ToString(CoarsenOrder order);
-
+std::string ToString(const CoarsenOrder order);
 
 // coarsening class
 // during coarsening, all the coarser hypergraph will not have vertex type
@@ -105,6 +104,12 @@ class TPcoarsener
     }
 
     // the function of coarsen a hypergraph
+    // The main function pf TPcoarsener class
+    // The input is a hypergraph 
+    // The output is a sequence of coarser hypergraphs
+    // Notice that the input hypergraph is not const, 
+    // because the hgraphs returned can be edited
+    // The timing cost of hgraph will be initialized if it has been not.
     TP_coarse_graphs LazyFirstChoice(HGraph hgraph) const;
 
     // create a coarser hypergraph based on specified grouping information
@@ -116,7 +121,8 @@ class TPcoarsener
     // (4) handle group information
     // (5) group fixed vertices based on each block
     // group vertices based on group_attr and hgraph->fixed_attr_
-    HGraph GroupVertices(HGraph hgraph, const std::vector<int>& group_attr) const;
+    HGraph GroupVertices(const HGraph hgraph, 
+                         const std::vector<std::vector<int> >& group_attr) const;
   
   private:
     // private functions (utilities)
@@ -125,7 +131,7 @@ class TPcoarsener
     // The input is a hypergraph
     // The output is a coarser hypergraph
     // The input hypergraph will be updated
-    HGraph Aggregate(HGraph hgraph) const;
+    HGraph Aggregate(const HGraph hgraph) const;
 
     // find the vertex matching scheme
     // the inputs are the hgraph and the attributes of clusters
@@ -148,7 +154,7 @@ class TPcoarsener
     // group fixed vertices based on each block
     // group vertices based on group_attr and hgraph->fixed_attr_
     void ClusterBasedGroupInfo(const HGraph hgraph,
-                               std::vector<int> group_attr, // Please pass by value here because we need to update the group_attr
+                               const std::vector<std::vector<int> >& group_attr, // Please pass by value here because we need to update the group_attr
                                std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
                                // the remaining arguments are related to clusters
                                matrix<float>& vertex_weights_c,
@@ -158,12 +164,12 @@ class TPcoarsener
     
     // create the contracted hypergraph based on the vertex matching in vertex_cluster_id_vec
     HGraph Contraction(HGraph hgraph,
-                       std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
+                       const std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
                        // the remaining arguments are related to clusters
-                       matrix<float>& vertex_weights_c,
-                       std::vector<int>& community_attr_c,
-                       std::vector<int>& fixed_attr_c,
-                       matrix<float>& placement_attr_c) const;
+                       const matrix<float>& vertex_weights_c,
+                       const std::vector<int>& community_attr_c,
+                       const std::vector<int>& fixed_attr_c,
+                       const matrix<float>& placement_attr_c) const;
 
 
     const int num_parts_ = 2;

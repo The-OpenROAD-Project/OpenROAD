@@ -91,8 +91,10 @@ namespace par {
 // Key supports: 
 // (1) fixed vertices constraint in fixed_file
 // (2) community attributes in community_file (This can be used to guide the partitioning process)
-// (3) stay together attributes in group_file. The format is that each line cooresponds to a group
-// fixed vertices and community attributes both follows the hMETIS format
+// (3) stay together attributes in group_file.
+// (4) placement information is specified in placement file
+// The format is that each line cooresponds to a group
+// fixed vertices, community and placement attributes both follows the hMETIS format
 void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
                                      float balance_constraint_arg,
                                      unsigned int seed_arg,
@@ -172,14 +174,16 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
 }
 
 
-
-// Partition the design
-// The first step is to convert the netlist into a hypergraph
-// The second step is to get all the features such as timing paths
-// The third step is to partition the design
-// The PartitionDesign only accepts the basic arguments
-// as hMETIS, the remaining hyperparameters should be set by
-// accessor functions
+// Top level interface
+// The function for partitioning a hypergraph
+// This is the main API for TritonPart
+// Key supports:
+// (1) fixed vertices constraint in fixed_file
+// (2) community attributes in community_file (This can be used to guide the partitioning process)
+// (3) stay together attributes in group_file.
+// (4) timing-driven partitioning
+// (5) fence-aware partitioning
+// (6) placement-aware partitioning, placement information is extracted from OpenDB
 void TritonPart::PartitionDesign(unsigned int num_parts_arg,
                                  float balance_constraint_arg,
                                  unsigned int seed_arg,
@@ -323,7 +327,6 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   logger_->report("===============================================");
   logger_->report("Exiting TritonPart");
 }
-
 
 
 // k-way partitioning used by Hier-RTLMP
@@ -510,19 +513,13 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
       logger_->error(PAR, 2503, "Can not open the group file : {}", group_file);
     }
     group_attr_.clear();
-    group_attr_.resize(num_vertices_);
-    std::stoi(group_attr_.begin(), group_attr_.end(), 0); // map the vertex to itself
     std::string cur_line;
     while (std::getline(group_file_input, cur_line)) {
       std::istringstream cur_line_buf(cur_line);
       std::vector<int> group_info { std::istream_iterator<int>(cur_line_buf),
-                               std::istream_iterator<int>() };
+                                    std::istream_iterator<int>() };
       if (group_info.size() > 1) {
-        // map all the vertices to the first vertex
-        const int src_vertex = group_info[0];
-        for (const auto& vertex : group_info) {
-          group_attr_[vertex] = src_vertex;
-        }
+        group_attr_.push_back(group_info);
       }
     }
     group_file_input.close();   
@@ -564,6 +561,7 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
                                                         hyperedge_weights_,
                                                         fixed_attr_,
                                                         community_attr_,
+                                                        placement_attr_,
                                                         logger_);
 }
 
@@ -743,8 +741,6 @@ void TritonPart::ReadNetlist(std::string fixed_file,
       logger_->warn("Cannot open the group file : {}", group_file);
     } else {
       group_attr_.clear();
-      group_attr_.resize(num_vertices_);
-      std::stoi(group_attr_.begin(), group_attr_.end(), 0); // map the vertex to itself
       std::string cur_line;
       while(std::getline(file_input, cur_line)) {
         std::stringstream ss(cur_line);
@@ -758,10 +754,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
           }
         }
         if (inst_group.size() > 1) {
-          const int src_vertex = inst_group[0];
-          for (const auto& vertex : inst_group) {
-            group_attr_[vertex] = src_vertex;
-          }
+          group_attr_.push_back(inst_group);
         }
       }
     }
@@ -1211,15 +1204,25 @@ void TritonPart::MultiLevelPartition()
   // (4) handle group information
   // (5) group fixed vertices based on each block
   // group vertices based on group_attr_
+  // the original_hypergraph_ will be modified by the Group Vertices command
+  // We will store the mapping relationship of vertices between original_hypergraph_
+  // and hypergraph_
   hypergraph_ = tritonpart_coarsener->GroupVertices(original_hypergraph_, group_attr_);  
   // partition on the processed hypergraph
   std::vector<int> solution = tritonpart_mlevel_partitioner->Partition(hypergraph_, block_balance);
   
   // Translate the solution of hypergraph to original_hypergraph_
   // solution to solution_
-
-
-  
+  solution_.clear();
+  solution_.resize(original_hypergraph_->num_vertices_);
+  std::fill(solution_.begin(), solution_.end(), -1);
+  for (int cluster_id = 0; cluster_id < hypergraph_->num_vertices_; cluster_id++) {
+    const int part_id = solution[cluster_id];
+    for (const auto& v : hypergraph_->vertex_c_attr_[part_id]) {
+      solution_[v] = part_id;
+    }
+  }
+    
   // evaluate on the original hypergraph
   tritonpart_evaluator->CutEvaluator(original_hypergraph_, solution_, true);
   // generate the timing report

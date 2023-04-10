@@ -70,31 +70,40 @@ class GoldenEvaluator {
     GoldenEvaluator() {  }
 
     // TODO: update the constructor
-    GoldenEvaluator(const int num_parts,
-                    const std::vector<float>& e_wt_factors, // the factor for hyperedge weight
-                    const std::vector<float>& v_wt_factors, // the factor for vertex weight
-                    const std::vector<float>& placement_wt_factors, // the factor for placement info
-                    const float net_timing_factor, // the factor for hyperedge timing weight
-                    const float path_timing_factor, // weight for cutting a critical timing path
-                    const float path_snaking_factor,  // snaking factor a critical timing path
-                    const float timing_exp_factor, // timing exponetial factor for normalized slack
-                    const float extra_cut_delay, // the extra delay introduced by a cut
-                    const HGraph timing_graph, // the timing graph needed
-                    utl::Logger* logger)
-      : num_parts_(num_parts),
-        e_wt_factors_(e_wt_factors),
-        v_wt_factors_(v_wt_factors),
-        placement_wt_factors_(placement_wt_factors),
-        net_timing_factor_(net_timing_factor),
-        path_timing_factor_(path_timing_factor),
-        path_snaking_factor_(path_snaking_factor),
-        timing_exp_factor_(timing_exp_factor),
-        extra_cut_delay_(extra_cut_delay)
-    {
-      timing_graph_ = timing_graph;
-      logger_ = logger;
-    }
+                      num_parts_, 
+                                          // weight vectors
+                                          e_wt_factors_,
+                                          v_wt_factors_,
+                                          placement_wt_factors_,
+                                          // timing related weight
+                                          net_timing_factor_,
+                                          path_timing_factor_,
+                                          path_snaking_factor_,
+                                          timing_exp_factor_,
+                                          extra_delay_,
+                                          logger_);
 
+
+
+    GoldenEvaluator(const int num_parts,
+                    const float extra_cut_delay, 
+                    const std::vector<float>& e_wt_factors, // the factor for hyperedge weight
+                    const float timing_factor, // the factor for hyperedge timing weight
+                    const float path_wt_factor,// weight for cutting a critical timing path
+                    const float snaking_wt_factor, // snaking factor a critical timing path
+                    const float timing_exp_factor, // timing exponetial factor for normalized slack
+                    utl::Logger* logger)
+        : num_parts_(num_parts),
+          extra_cut_delay_(extra_cut_delay),
+          e_wt_factors_(e_wt_factors),
+          timing_factor_(timing_factor),
+          path_wt_factor_(path_wt_factor),
+          snaking_wt_factor_(snaking_wt_factor),
+          timing_exp_factor_(timing_exp_factor),
+          logger_(logger)
+    {
+    }
+    
     GoldenEvaluator(const GoldenEvaluator&) = delete;
     GoldenEvaluator(GoldenEvaluator&) = delete;
     virtual ~GoldenEvaluator() = default;
@@ -143,23 +152,6 @@ class GoldenEvaluator {
     // Get average the placement location
     float GetAvgPlacementLoc(int v, int u, const HGraph hgraph) const;
 
-
-    // get vertex weight summation
-    std::vector<float> GetVertexWeightSum(const HGraph hgraph, 
-                                          const std::vector<int>& group) const;
-
-    // get the fixed attribute of a group of vertices (maximum)
-    int GetGroupFixedAttr(const HGraph hgraph,
-                          const std::vector<int>& group) const;
-
-    // get the community attribute of a group of vertices (maximum)
-    int GetGroupCommunityAttr(const HGraph hgraph,
-                              const std::vector<int>& group) const;
-
-    // get the placement location
-    std::vector<float> GetGroupPlacementLoc(const HGraph hgraph,
-                          const std::vector<int>& group) const;
-  
     // calculate the average placement location
     std::vector<float> GetAvgPlacementLoc(const std::vector<float>& vertex_weight_a,
                                           const std::vector<float>& vertex_weight_b,
@@ -207,7 +199,14 @@ class GoldenEvaluator {
     std::vector<float> e_wt_factors_;  // the cost introduced by a cut hyperedge e is
                                        // e_wt_factors dot_product hyperedge_weights_[e]
                                        // this parameter is used by coarsening and partitioning
-
+    const float path_wt_factor_ = 1.0; // the cost for cutting a critical timing path once. 
+                                       // If a critical path is cut by 3 times,
+                                       // the cost is defined as 3 * path_wt_factor_ * weight_of_path
+    const float snaking_wt_factor_ = 1.0; // the cost of introducing a snaking timing path, see our paper for detailed explanation
+                                          // of snaking timing paths
+    
+    const float timing_factor_ = 1.0;  // the factor for cutting a hyperedge with timing information
+    const float timing_exp_factor_ = 2.0; // exponential factor
 
        
     const std::vector<float> v_wt_factors_;  // the ``weight'' of a vertex. For placement-driven coarsening,
@@ -224,11 +223,6 @@ class GoldenEvaluator {
                                                     // the distance between u and v is defined as 
                                                     // norm2(placement_attr[u] - placement_attr[v], placement_wt_factors_)
                                                     // this parameter is only used during coarsening     
-
-    const float net_timing_factor_ = 1.0; // the factor for hyperedge timing weight
-    const float path_timing_factor_ = 1.0; // weight for cutting a critical timing path
-    const float path_snaking_factor_ = 1.0;  // snaking factor a critical timing path   
-    const float timing_exp_factor_ = 2.0; // exponential factor
 
     bool initial_path_flag_ = false;
     const HGraph timing_graph_ = nullptr;

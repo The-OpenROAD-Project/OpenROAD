@@ -118,7 +118,7 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
     return cost; // the path is fully within the block
   }
   // timing-related cost (basic path_cost * number of cut on the path)
-  cost = path_net_timing_factor_ * (path.size() - 1) * hgraph->path_timing_cost_[path_id];
+  cost = path_wt_factor_ * (path.size() - 1) * hgraph->path_timing_cost_[path_id];
   // get the snaking factor of the path (maximum repetition of block_id - 1)
   int snaking_factor = 0;
   for (auto& [block_id, count] : block_counter) {
@@ -126,7 +126,7 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
       snaking_factor = count;
     }
   }
-  cost += path_snaking_factor_ * static_cast<float>(snaking_factor - 1);
+  cost += snaking_wt_factor_ * static_cast<float>(snaking_factor - 1);
   return cost;
 }
 
@@ -203,7 +203,7 @@ float GoldenEvaluator::CalculateHyperedgeCost(int e, const HGraph hgraph) const 
     // Note that hgraph->hyperedge_timing_cost_[e] may be different from
     // the CalculateHyperedgeTimingCost(e, hgraph). Because this hyperedge may belong
     // to multiple paths, so we will add these timing related cost to hgraph->hyperedge_timing_cost_[e]
-    cost += net_timing_factor_ * hgraph->hyperedge_timing_cost_[e]; 
+    cost += timing_factor_ * hgraph->hyperedge_timing_cost_[e]; 
   }
   return cost;   
 }
@@ -268,70 +268,6 @@ std::vector<float> GoldenEvaluator::GetAvgPlacementLoc(const std::vector<float>&
          placement_loc_b * b_weight / weight_sum;                          
 }
 
-
-// get vertex weight summation
-std::vector<float> GoldenEvaluator::GetVertexWeightSum(const HGraph hgraph, 
-                                                       const std::vector<int>& group) const
-{
-  std::vector<float> group_weight(hgraph->placement_dimensions_, 0.0f);
-  for (const auto& v : group) {
-    group_weight = group_weight + hgraph->vertex_weights_[v];
-  }
-  return group_weight;
-}
-
-// get the fixed attribute of a group of vertices (maximum)
-int GoldenEvaluator::GetGroupFixedAttr(const HGraph hgraph,
-                                       const std::vector<int>& group) const
-{
-  int fixed_attr = -1;
-  if (hgraph->fixed_vertex_flag_ == false) {
-    return fixed_attr;
-  }
-  
-  for (const auto& v : group) {
-    fixed_attr = std::max(fixed_attr, hgraph->fixed_attr_[v]);
-  }
-
-  return fixed_attr;
-}
-
-// get the community attribute of a group of vertices (maximum)
-int GoldenEvaluator::GetGroupCommunityAttr(const HGraph hgraph,
-                                           const std::vector<int>& group) const
-{
-  int community_attr = -1;
-  if (hgraph->community_flag_ == false) {
-    return community_attr;    
-  }
-
-  for (const auto& v : group) {
-    community_attr = std::max(community_attr, hgraph->community_attr_[v]);
-  }
-
-  return community_attr;
-}
-
-// get the placement location
-std::vector<float> GoldenEvaluator::GetGroupPlacementLoc(const HGraph hgraph,
-                                                         const std::vector<int>& group) const
-{
-  std::vector<float> group_weight(hgraph->placement_dimensions_, 0.0f);
-  std::vector<float> group_loc(hgraph->placement_dimensions_, 0.0f);
-  if (hgraph->placement_flag_ == false) {
-    return group_weight;
-  }
-
-  for (const auto& v : group) {
-    group_loc = GetAvgPlacementLoc(group_weight,
-                                   hgraph->vertex_weights_[v],
-                                   group_loc,
-                                   hgraph->placement_attr_[v]);
-    group_weight = group_weight + hgraph->vertex_weights_[v];
-  }
-
-  return group_weight;
-}
 
 // calculate the hyperedges being cut
 std::vector<int> GoldenEvaluator::GetCutHyperedges(const HGraph hgraph, 
@@ -429,7 +365,6 @@ void GoldenEvaluator::InitializeTiming(HGraph hgraph) const
     }
   }
 }
-
 
 // Update timing information of a hypergraph
 // For timing-driven flow,
