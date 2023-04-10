@@ -394,10 +394,10 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
-    // Remove any existing parasitics.
-    sta_->deleteParasitics();
+      //Remove any existing parasitics.
+    /*sta_->deleteParasitics();
 
-    // Make separate parasitics for each corner, same for min/max.
+    //Make separate parasitics for each corner, same for min/max.*/
     sta_->setParasiticAnalysisPts(true, false);
 
     MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);

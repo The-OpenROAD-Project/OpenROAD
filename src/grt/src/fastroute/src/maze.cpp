@@ -1366,6 +1366,19 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   }
 
   if (ordering) {
+    auto partial_routes = getPartialRoutes();
+    for (auto& net_route : partial_routes) {
+      odb::dbNet* db_net = net_route.first;
+      GRoute& route = net_route.second;
+      if (!route.empty()) {
+        parasitics_builder_->estimateParasitcs(db_net, route);
+      }
+    }
+    for (int netID = 0; netID < netCount(); netID++) {
+      auto fr_net = nets_[netID];
+      odb::dbNet* db_net = fr_net->getDbNet();
+      fr_net->setSlack(parasitics_builder_->getNetSlack(db_net));
+    }
     StNetOrder();
   }
 

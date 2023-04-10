@@ -690,7 +690,8 @@ NetRouteMap FastRouteCore::getPartialRoutes()
 {
   NetRouteMap routes;
   for (int netID = 0; netID < netCount(); netID++) {
-    odb::dbNet* db_net = nets_[netID]->getDbNet();
+    auto fr_net = nets_[netID];
+    odb::dbNet* db_net = fr_net->getDbNet();
     GRoute& route = routes[db_net];
     std::unordered_set<GSegment, GSegmentHash> net_segs;
 
@@ -708,21 +709,24 @@ NetRouteMap FastRouteCore::getPartialRoutes()
         int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
         int lastL;
         if(gridsL.empty()) {
-          lastL= 1;
+          lastL = 1;
         } else {
           lastL = gridsL[0];
         }
         for (int i = 1; i <= routeLen; i++) {
           const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
-
-          GSegment segment
-              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
-          lastX = xreal;
-          lastY = yreal;
-          if(!gridsL.empty()) {
+          GSegment segment;
+          if(gridsL.empty()) {
+            segment
+              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, 2);
+          } else {
+            segment
+              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
             lastL = gridsL[i];
           }
+          lastX = xreal;
+          lastY = yreal;
           if (net_segs.find(segment) == net_segs.end()) {
             net_segs.insert(segment);
             route.push_back(segment);
@@ -783,6 +787,7 @@ NetRouteMap FastRouteCore::run(MakeWireParasitics * builder)
   ycor_.resize(max_degree2);
   dcor_.resize(max_degree2);
   net_eo_.reserve(max_degree2);
+  parasitics_builder_ = builder;
 
   int THRESH_M = 20;
   const int ENLARGE = 15;  // 5
@@ -823,16 +828,6 @@ NetRouteMap FastRouteCore::run(MakeWireParasitics * builder)
   int past_cong = getOverflow2D(&maxOverflow);
 
   convertToMazeroute();
-
-  auto partial_routes = getPartialRoutes();
-
-  for (auto& net_route : partial_routes) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
-    if (!route.empty()) {
-      builder->estimateParasitcs(db_net, route);
-    }
-  }
 
   int enlarge_ = 10;
   int newTH = 10;

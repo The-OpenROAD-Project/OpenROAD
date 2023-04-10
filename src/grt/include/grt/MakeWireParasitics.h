@@ -84,6 +84,8 @@ class MakeWireParasitics
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net) const;
+  // Return the Slack of a given net
+  sta::Slack getNetSlack(odb::dbNet* net);
 
  private:
   typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
@@ -112,6 +114,18 @@ class MakeWireParasitics
                            sta::Corner* corner,
                            sta::ParasiticAnalysisPt* analysis_point,
                            sta::Parasitic* parasitic) const;
+  void makePartialParasiticsToPins(std::vector<Pin>& pins,
+                            NodeRoutePtMap& node_map,
+                            sta::Corner* corner,
+                            sta::ParasiticAnalysisPt* analysis_point,
+                            sta::Parasitic* parasitic,
+                            odb::dbNet* net) const;
+  void makePartialParasiticsToPin(Pin& pin,
+                           NodeRoutePtMap& node_map,
+                           sta::Corner* corner,
+                           sta::ParasiticAnalysisPt* analysis_point,
+                           sta::Parasitic* parasitic,
+                           odb::dbNet* net) const;
   void layerRC(int wire_length_dbu,
                int layer,
                sta::Corner* corner,

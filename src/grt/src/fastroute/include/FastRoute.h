@@ -559,6 +559,7 @@ class FastRouteCore
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
+  MakeWireParasitics * parasitics_builder_;
 
   FastRouteRenderer* fastrouteRender_;
   std::unique_ptr<DebugSetting> debug_;
