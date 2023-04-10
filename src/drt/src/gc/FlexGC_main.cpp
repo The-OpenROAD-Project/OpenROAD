@@ -638,11 +638,11 @@ void FlexGCWorker::Impl::checkMetalSpacing_short_obs(
     std::list<gtl::rectangle_data<frCoord>> res;
     gtl::get_max_rectangles(res, bg2gtl(poly));
     for (const auto& rect : res) {
-      gcRect* rect3 = new gcRect(*rect2);
-      rect3->setRect(rect);
+      gcRect rect3 = *rect2;
+      rect3.setRect(rect);
       gtl::rectangle_data<frCoord> newMarkerRect(markerRect);
-      gtl::intersect(newMarkerRect, *rect3);
-      checkMetalSpacing_short(rect1, rect3, newMarkerRect);
+      gtl::intersect(newMarkerRect, rect3);
+      checkMetalSpacing_short(rect1, &rect3, newMarkerRect);
     }
   }
 }

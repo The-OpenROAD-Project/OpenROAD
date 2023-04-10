@@ -22,4 +22,5 @@ record_tests {
   error01
   diverge01
   density01
+  convergence01
 }

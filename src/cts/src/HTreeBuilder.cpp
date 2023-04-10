@@ -345,10 +345,15 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
   logger_->report("    Sinks per sub-region: {}", numSinksPerSubRegion);
   logger_->report("    Sub-region size: {:.4f} X {:.4f}", width, height);
 
-  const unsigned minLength = minLengthSinkRegion_ / 2;
-  unsigned segmentLength = std::round(width / (2.0 * minLength)) * minLength;
+  const unsigned minLength = minLengthSinkRegion_;
+  const unsigned clampedMinLength = std::max(minLength, 1u);
+
+  unsigned segmentLength
+      = std::round(width / (double) clampedMinLength) * minLength / 2;
+
   if (isVertical(level)) {
-    segmentLength = std::round(height / (2.0 * minLength)) * minLength;
+    segmentLength
+        = std::round(height / (double) clampedMinLength) * minLength / 2;
   }
   segmentLength = std::max<unsigned>(segmentLength, 1);
 
@@ -377,12 +382,11 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
     const unsigned numWires = (segmentLength - length) / charSegLength;
 
     if (numWires >= 1) {
-      length += numWires * charSegLength;
       for (int wireCount = 0; wireCount < numWires; ++wireCount) {
         unsigned outCap = 0, outSlew = 0;
         unsigned key = 0;
         if (options_->isSimpleSegmentEnabled()) {
-          remainingLength = remainingLength - charSegLength;
+          remainingLength -= charSegLength;
 
           if (segmentLength >= vertexBufferLength && (wireCount + 1 >= numWires)
               && options_->isVertexBuffersEnabled()) {
@@ -396,9 +400,8 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
                                          outCap,
                                          true,
                                          remainingLength);
-            remainingLength = remainingLength
-                              + options_->getBufferDistance()
-                                    / (techChar_->getLengthUnit());
+            remainingLength
+                += options_->getBufferDistance() / (techChar_->getLengthUnit());
           } else {
             if (remainingLength <= 0) {
               key = computeMinDelaySegment(charSegLength,
@@ -410,9 +413,8 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
                                            outCap,
                                            true,
                                            remainingLength);
-              remainingLength = remainingLength
-                                + options_->getBufferDistance()
-                                      / (techChar_->getLengthUnit());
+              remainingLength += options_->getBufferDistance()
+                                 / (techChar_->getLengthUnit());
             } else {
               key = computeMinDelaySegment(charSegLength,
                                            inputSlew,
@@ -435,6 +437,12 @@ void HTreeBuilder::computeLevelTopology(unsigned level,
                                        outCap);
         }
 
+        if (key == std::numeric_limits<unsigned>::max()) {
+          // No tech char entry found.
+          continue;
+        }
+
+        length += charSegLength;
         techChar_->reportSegment(key);
 
         inputCap = std::max(outCap, minInputCap_);
