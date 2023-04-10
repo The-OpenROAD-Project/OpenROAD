@@ -83,16 +83,43 @@ struct TPHypergraph
                const std::vector<int>& fixed_attr,  // the block id of fixed vertices.
                // community attribute
                const std::vector<int>& community_attr,
+               // placement information
+               const std::vector<std::vector<float> >& placement_attr,
                utl::Logger* logger)
   {
     vertex_dimensions_ = vertex_dimensions;
     hyperedge_dimensions_ = hyperedge_dimensions;
-    placement_dimensions_ = placement_dimensions;
     num_vertices_ = static_cast<int>(vertex_weights_.size());
     num_hyperedges_ = static_cast<int>(hyperedge_weights_.size());
 
     vertex_weights_ = vertex_weights;
     hyperedge_weights_ = hyperedge_weights;
+
+    // add hyperedge
+    // hyperedges: each hyperedge is a set of vertices
+    eind_.clear();
+    eptr_.clear();
+    eptr_.push_back(static_cast<int>(eind_.size()));
+    for (const auto& hyperedge : hyperedges) {
+      eind_.insert(eind_.end(), hyperedge.begin(), hyperedge.end());
+      eptr_.push_back(static_cast<int>(eind_.size()));      
+    }
+
+    // add vertex
+    // create vertices from hyperedges
+    std::vector<std::vector<int> > vertices(num_vertices_);
+    for (int e = 0; e < num_hyperedges_; e++) {
+      for (auto v : hyperedges_[e]) {
+        vertices[v].push_back(e);  // e is the hyperedge id
+      }
+    }
+    vind_.clear();
+    vptr_.clear();
+    vptr_.push_back(static_cast<int>(vind_.size()));
+    for (const auto& vertex : vertices) {
+      vind_.insert(vind_.end(), vertex.begin(), vertex.end());
+      vptr_.push_back(static_cast<int>(vind_.size()));
+    }
 
     // fixed vertices
     fixed_vertex_flag_ = (static_cast<int>(fixed_attr.size()) == num_vertices_);
@@ -105,6 +132,16 @@ struct TPHypergraph
     if (community_flag_ == true) {
       community_attr_ = community_attr;
     }
+    
+    // placement information
+    placement_flag_ = (placement_dimensions > 0 && static_cast<int>(placement_attr.size()) == num_vertices_);
+    if (placement_flag_ == true) {
+      placement_dimensions_ = placement_dimensions;
+      placement_attr_ = placement_attr;
+    } else {
+      placement_dimensions_ = 0;
+    } 
+    
     // logger
     logger_ = logger;
   }
@@ -122,7 +159,7 @@ struct TPHypergraph
                // placement information
                const std::vector<std::vector<float> >& placement_attr,
                // the type of each vertex
-               std::vector<VertexType> vertex_types,
+               std::vector<VertexType> vertex_types, // except the original timing graph, users do not need to specify this
                // slack information
                const std::vector<float>& hyperedges_slack,
                const std::vector<std::set<int> >& hyperedges_arc_set,
@@ -131,12 +168,37 @@ struct TPHypergraph
   {
     vertex_dimensions_ = vertex_dimensions;
     hyperedge_dimensions_ = hyperedge_dimensions;
-    placement_dimensions_ = placement_dimensions;
     num_vertices_ = static_cast<int>(vertex_weights_.size());
     num_hyperedges_ = static_cast<int>(hyperedge_weights_.size());
 
     vertex_weights_ = vertex_weights;
     hyperedge_weights_ = hyperedge_weights;
+
+    // add hyperedge
+    // hyperedges: each hyperedge is a set of vertices
+    eind_.clear();
+    eptr_.clear();
+    eptr_.push_back(static_cast<int>(eind_.size()));
+    for (const auto& hyperedge : hyperedges) {
+      eind_.insert(eind_.end(), hyperedge.begin(), hyperedge.end());
+      eptr_.push_back(static_cast<int>(eind_.size()));      
+    }
+
+    // add vertex
+    // create vertices from hyperedges
+    std::vector<std::vector<int> > vertices(num_vertices_);
+    for (int e = 0; e < num_hyperedges_; e++) {
+      for (auto v : hyperedges_[e]) {
+        vertices[v].push_back(e);  // e is the hyperedge id
+      }
+    }
+    vind_.clear();
+    vptr_.clear();
+    vptr_.push_back(static_cast<int>(vind_.size()));
+    for (const auto& vertex : vertices) {
+      vind_.insert(vind_.end(), vertex.begin(), vertex.end());
+      vptr_.push_back(static_cast<int>(vind_.size()));
+    }
 
     // fixed vertices
     fixed_vertex_flag_ = (static_cast<int>(fixed_attr.size()) == num_vertices_);
@@ -151,10 +213,13 @@ struct TPHypergraph
     }
 
     // placement information
-    placement_flag_ = (static_cast<int>(placement_attr.size()) == num_vertices_);
+    placement_flag_ = (placement_dimensions > 0 && static_cast<int>(placement_attr.size()) == num_vertices_);
     if (placement_flag_ == true) {
+      placement_dimensions_ = placement_dimensions;
       placement_attr_ = placement_attr;
-    }
+    } else {
+      placement_dimensions_ = 0;
+    } 
 
     // add vertex types
     vertex_types_ = vertex_types;
@@ -186,7 +251,7 @@ struct TPHypergraph
         // add the timing attribute
         path_timing_attr_.push_back(timing_paths[path_id].slack);
       }  
-      pptr_v_.push_back(pind_v_.size());
+      pptr_v_.push_back(static_cast<int>(pind_v_.size()));
       for (auto& paths : incident_paths) {
         pind_v_.insert(pind_v_.end(), paths.begin(), paths.end());
         pptr_v_.push_back(static_cast<int>(pind_v_.size()));
@@ -201,10 +266,6 @@ struct TPHypergraph
   int GetNumTimingPaths() const { return num_timing_paths_; }
 
   std::vector<float> GetTotalVertexWeights() const;
-  std::vector<float> GetTotalHyperedgeWeights() const;
-  
-  // write the hypergraph out in general hmetis format
-  void WriteHypergraph(std::string hypergraph_file) const;
   
   // get balance constraints
   std::vector<std::vector<float> > GetVertexBalance(int num_parts,
@@ -230,10 +291,12 @@ struct TPHypergraph
   std::vector<int> vptr_;
   
   // Fill vertex_c_attr which maps the vertex to its corresponding cluster
+  // To simpify the implementation, the vertex_c_attr maps the original larger hypergraph
   // vertex_c_attr has hgraph->num_vertices_ elements.
   // This is used during coarsening phase
-  std::vector<int> vertex_c_attr_;
-  
+  // similar to hyperedge_arc_set_ 
+  std::vector<std::vector<int> > vertex_c_attr_;
+
   // fixed vertices.  If fixed_vertex_flag_ = false, fixed_attr_ is empty
   bool fixed_vertex_flag_ = false;  // If there are fixed vertices
   std::vector<int> fixed_attr_;     // the block id of fixed vertices
@@ -274,6 +337,5 @@ struct TPHypergraph
   // logger information
   utl::Logger* logger_ = nullptr;
 };
-
 
 }  // namespace par

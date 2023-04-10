@@ -53,15 +53,6 @@ std::vector<float> TPHypergraph::GetTotalVertexWeights() const
   return total_weight;
 }
 
-std::vector<float> TPHypergraph::GetTotalHyperedgeWeights() const
-{
-  std::vector<float> total_weight(hyperedge_dimensions_, 0.0);
-  for (auto& weight : hyperedge_weights_) {
-    Accumulate(total_weight, weight);
-  }
-  return total_weight;
-}
-
 // Get the vertex balance constraint
 std::vector<std::vector<float> > TPHypergraph::GetVertexBalance(int num_parts,
                                                                float ub_factor) const
@@ -70,42 +61,6 @@ std::vector<std::vector<float> > TPHypergraph::GetVertexBalance(int num_parts,
   vertex_balance = MultiplyFactor(
       vertex_balance, ubfactor * 0.01 + 1.0 / static_cast<float>(num_parts));
   return std::vector<std::vector<float> >(num_parts, vertex_balance);
-}
-
-// write the hypergraph out in general hmetis format
-// current two files:  hypergraph, dimension
-void TPHypergraph::WriteHypergraph(std::string hypergraph) const
-{
-  std::string hypergraph_file = hypergraph + ".hgr";
-  std::ofstream file_output;
-  file_output.open(hypergraph_file);
-  file_output << num_hyperedges_ << "  " << num_vertices_ << " 11" << std::endl;
-  // write hyperedge weight and hyperedge first
-  for (int e = 0; e < num_hyperedges_; e++) {
-    for (auto weight : hyperedge_weights_[e]) {
-      file_output << weight << " ";
-    }
-    for (auto idx = eptr_[e]; idx < eptr_[e + 1]; idx++) {
-      file_output << eind_[idx] + 1 << " ";
-    }
-    file_output << std::endl;
-  }
-  // write vertex weight
-  for (const auto& v_weight : vertex_weights_) {
-    for (auto weight : v_weight) {
-      file_output << weight << " ";
-    }
-    file_output << std::endl;
-  }
-  file_output.close();
-
-  // write out the dimension
-  std::string dimension_file = hypergraph + ".dim";
-  file_output.open(dimension_file);
-  file_output << "vertex_dimensions = " << vertex_dimensions_ << std::endl;
-  file_output << "hyperedge_dimensions = " << hyperedge_dimensions_
-              << std::endl;
-  file_output.close();
 }
 
 }  // namespace par
