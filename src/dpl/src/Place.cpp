@@ -567,6 +567,14 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 {
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
+  debugPrint(logger_,
+             DPL,
+             "map",
+             1,
+             "mapMove {} {} {}.",
+             cell->name(),
+             grid_x,
+             grid_y);
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
@@ -896,31 +904,7 @@ bool Opendp::checkPixels(const Cell* cell,
       if (pixel == nullptr || pixel->cell || !pixel->is_valid
           || (cell->inGroup() && pixel->group_ != cell->group_)
           || (!cell->inGroup() && pixel->group_)) {
-        logger_->warn(
-            DPL,
-            189,
-            "Failure reasons: pixel: {}, pixel cell {}, pixel is valid "
-            "{}, cell in group {}, pixel group {}, cell group {}",
-            pixel == nullptr,
-            pixel->cell == nullptr ? "nullptr" : pixel->cell->name(),
-            pixel->is_valid,
-            cell->inGroup(),
-            pixel->group_ == nullptr ? "nullptr" : pixel->group_->name,
-            cell->group_ == nullptr ? "nullptr" : cell->group_->name);
-
         return false;
-      } else {
-        logger_->warn(
-            DPL,
-            184,
-            "Success reasons: pixel: {}, pixel cell {}, pixel is valid "
-            "{}, cell in group {}, pixel group {}, cell group {}",
-            pixel == nullptr,
-            pixel->cell == nullptr ? "nullptr" : pixel->cell->name(),
-            pixel->is_valid,
-            cell->inGroup(),
-            pixel->group_ == nullptr ? "nullptr" : pixel->group_->name,
-            cell->group_ == nullptr ? "nullptr" : cell->group_->name);
       }
     }
     if (disallow_one_site_gaps_) {
@@ -1180,11 +1164,14 @@ Point Opendp::legalGridPt(const Cell* cell,
                           int row_height,
                           int site_width) const
 {
-  Point pt = legalPt(cell, padded, row_height, site_width);
   if (site_width == -1) {
     site_width = getSiteWidth(cell);
   }
-  return Point(gridX(pt.getX(), site_width), gridY(pt.getY(), site_width));
+  if (row_height == -1) {
+    row_height = getRowHeight(cell);
+  }
+  Point pt = legalPt(cell, padded, row_height, site_width);
+  return Point(gridX(pt.getX(), site_width), gridY(pt.getY(), row_height));
 }
 
 ////////////////////////////////////////////////////////////////

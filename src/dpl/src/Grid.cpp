@@ -71,17 +71,6 @@ void Opendp::initGridLayersMap()
   for (auto& [row_height, layer_info] : grid_layers_) {
     grid_layers_vector[layer_info.grid_index] = &layer_info;
   }
-
-  logger_->info(DPL, 1999, "Grid layers: {}", grid_layers_.size());
-  for (auto& [row_height, layer_info] : grid_layers_) {
-    logger_->info(DPL,
-                  2000,
-                  "  Row height: {}  Row count: {} site count: {} index: {}",
-                  row_height,
-                  layer_info.row_count,
-                  layer_info.site_count,
-                  layer_info.grid_index);
-  }
 }
 
 void Opendp::initGrid()
@@ -265,13 +254,6 @@ void Opendp::visitCellPixels(
         = padded ? gridPaddedX(&cell, site_width) : gridX(&cell, site_width);
     int x_end = padded ? gridPaddedEndX(&cell, site_width)
                        : gridEndX(&cell, site_width);
-    logger_->warn(DPL,
-                  11211141,
-                  "row_count {} site_width_ {} height {} site_count {}. ",
-                  row_count_,
-                  site_width_,
-                  row_height_,
-                  row_site_count_);
     int y_start = gridY(&cell, row_height);
     int y_end = gridEndY(&cell, row_height);
     for (auto layer_it : grid_layers_) {
@@ -384,7 +366,6 @@ void Opendp::setFixedGridCells()
 {
   for (Cell& cell : cells_) {
     if (isFixed(&cell)) {
-      logger_->warn(DPL, 114, "Fixed cell {}.", cell.name());
       visitCellPixels(
           cell, true, [&](Pixel* pixel) { setGridCell(cell, pixel); });
     }
