@@ -174,6 +174,12 @@ class Opendp
   Opendp& operator=(const Opendp&&) = delete;
 
   void legalAllCells();
+
+  Point pointOffMacro(Cell cell);
+  void convertDbToCell(dbInst* db_inst, Cell& cell);
+  void legalCellPos(dbInst* db_inst);
+  void initMacrosAndGrid();
+
   void init(dbDatabase* db, Logger* logger);
   void initBlock();
   // legalize/report

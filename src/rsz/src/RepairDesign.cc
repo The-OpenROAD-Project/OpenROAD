@@ -192,6 +192,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
     //printf("DebugPython slewViol : %d fanoutViol : %d capViol : %d lengthViol : %d\n", slew_violations, fanout_violations, cap_violations, length_violations);
     //printf("DebugPython Inserted %d buffers in %d nets.\n", inserted_buffer_count_, repaired_net_count);
     //printf("DebugPython Resized %d instances.\n", resize_count_); 
+    //printf("DebugPython runtime %.2f\n", (double)(clock() - t_start)/CLOCKS_PER_SEC);
   }
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();

@@ -613,6 +613,8 @@ protected:
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
 
+  dpl::Opendp* opendp_;
+
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
   // Prim/Dijkstra gets out of hand with bigger nets.

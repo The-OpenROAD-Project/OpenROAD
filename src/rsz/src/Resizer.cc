@@ -177,7 +177,8 @@ Resizer::Resizer() :
   inserted_buffer_count_(0),
   buffer_moved_into_core_(false),
   max_wire_length_(0),
-  worst_slack_nets_percent_(10)
+  worst_slack_nets_percent_(10),
+  opendp_(nullptr)
 {
 }
 
@@ -877,7 +878,7 @@ Resizer::replaceCell(Instance *inst,
   dbMaster *replacement_master = db_->findMaster(replacement_name);
 
   // Check if the new masterCell is not big & move the instance to fix it
-  uint new_width = replacement_master->getWidth();
+  /*uint new_width = replacement_master->getWidth();
   uint new_height = replacement_master->getHeight();
   odb::Point left_corner = db_network_->staToDb(inst)->getLocation();
   odb::Rect rect = block_->getDieArea();
@@ -889,7 +890,11 @@ Resizer::replaceCell(Instance *inst,
     new_x = MAX_X - new_width;
   if (left_corner.y() + new_height > MAX_Y)
     new_y = MAX_Y - new_height;
-  db_network_->staToDb(inst)->setLocation(new_x, new_y);
+  db_network_->staToDb(inst)->setLocation(new_x, new_y);*/
+  if (opendp_ && parasitics_src_ == ParasiticsSrc::global_routing)
+    opendp_->legalCellPos(db_network_->staToDb(inst));
+  else
+    printf("Error: opendp not init on replace\n");
 
   if (replacement_master) {
     dbInst *dinst = db_network_->staToDb(inst);
@@ -2152,6 +2157,10 @@ Resizer::repairDesign(double max_wire_length,
                       bool global_route)
 {
   resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_ = openroad_->getOpendp();
+    opendp_->initMacrosAndGrid();
+  }
   repair_design_->repairDesign(max_wire_length, slew_margin, cap_margin, global_route);
 }
 
@@ -2294,6 +2303,10 @@ Resizer::repairSetup(double setup_margin,
                      int max_passes)
 {
   resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_ = openroad_->getOpendp();
+    opendp_->initMacrosAndGrid();
+  }
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
 }
 
@@ -2322,6 +2335,10 @@ Resizer::repairHold(double setup_margin,
                     int max_passes)
 {
   resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_ = openroad_->getOpendp();
+    opendp_->initMacrosAndGrid();
+  }
   repair_hold_->repairHold(setup_margin, hold_margin,
                            allow_setup_violations,
                            max_buffer_percent, max_passes);
@@ -2435,6 +2452,10 @@ Resizer::makeInstance(LibertyCell *cell,
   dbInst *db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   setLocation(db_inst, loc);
+  if (opendp_ && parasitics_src_ == ParasiticsSrc::global_routing)
+    opendp_->legalCellPos(db_inst);
+  else
+    printf("Error: opendp not init on insert\n");
   designAreaIncr(area(db_inst->getMaster()));
   return inst;
 }
