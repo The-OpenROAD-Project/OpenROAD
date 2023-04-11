@@ -1230,6 +1230,12 @@ Point Opendp::legalPt(const Cell* cell,
   Pixel* pixel = gridPixel(layer_info.grid_index, grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
+    debugPrint(logger_,
+               DPL,
+               "place",
+               1,
+               "is pixel hopeless? {}",
+               pixel->is_hopeless ? " true " : " false ");
     if (pixel->is_hopeless && moveHopeless(cell, grid_x, grid_y)) {
       legal_pt = Point(grid_x * site_width, grid_y * row_height);
       pixel = gridPixel(layer_info.grid_index, grid_x, grid_y);
