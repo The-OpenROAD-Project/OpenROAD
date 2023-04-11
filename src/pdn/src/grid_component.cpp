@@ -109,9 +109,7 @@ ShapePtr GridComponent::addShape(Shape* shape)
        it != shapes.qend();
        it++) {
     auto& intersecting_shape = it->second;
-    const odb::Rect intersecting_area
-        = shape_ptr->getRect().intersect(intersecting_shape->getRect());
-    if (intersecting_area.area() == 0) {
+    if (!shape_ptr->getRect().overlaps(intersecting_shape->getRect())) {
       continue;
     }
     if (intersecting_shape->getNet() != shape_ptr->getNet()) {

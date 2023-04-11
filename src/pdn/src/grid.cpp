@@ -533,13 +533,13 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
            it != upper_shapes.qend();
            it++) {
         const auto& upper_shape = it->second;
-        const odb::Rect via_rect
-            = lower_shape->getRect().intersect(upper_shape->getRect());
-        if (via_rect.area() == 0) {
-          // intersection did not overlap, so ignore
+        if (!lower_shape->getRect().overlaps(upper_shape->getRect())) {
+          // no overlap, so ignore
           continue;
         }
 
+        const odb::Rect via_rect
+            = lower_shape->getRect().intersect(upper_shape->getRect());
         auto* via = new Via(connect.get(),
                             lower_shape->getNet(),
                             via_rect,

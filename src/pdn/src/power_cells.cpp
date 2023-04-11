@@ -222,8 +222,7 @@ std::set<odb::dbRow*> GridSwitchedPower::getInstanceRows(
     auto* row = itr->second;
     odb::Rect row_box = row->getBBox();
 
-    const auto overlap = row_box.intersect(box);
-    if (overlap.minDXDY() != 0) {
+    if (row_box.overlaps(box)) {
       rows.insert(row);
     }
   }
@@ -474,7 +473,7 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
       }
 
       inst->setLocation(new_pos, y);
-      if (checkInstanceOverlap(inst, overlapping)) {
+      if (!checkInstanceOverlap(inst, overlapping)) {
         debugPrint(
             grid_->getLogger(),
             utl::PDN,
@@ -546,11 +545,7 @@ bool GridSwitchedPower::checkInstanceOverlap(odb::dbInst* inst0,
   odb::Rect inst0_bbox = inst0->getBBox()->getBox();
   odb::Rect inst1_bbox = inst1->getBBox()->getBox();
 
-  const odb::Rect overlap = inst0_bbox.intersect(inst1_bbox);
-  if (overlap.isInverted()) {
-    return true;
-  }
-  return overlap.area() == 0;
+  return inst0_bbox.overlaps(inst1_bbox);
 }
 
 odb::dbInst* GridSwitchedPower::checkOverlappingInst(
@@ -563,7 +558,7 @@ odb::dbInst* GridSwitchedPower::checkOverlappingInst(
        itr != insts.qend();
        itr++) {
     auto* other_inst = itr->second;
-    if (!checkInstanceOverlap(cell, other_inst)) {
+    if (checkInstanceOverlap(cell, other_inst)) {
       return other_inst;
     }
   }
