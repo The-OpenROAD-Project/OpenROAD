@@ -1233,6 +1233,13 @@ Point Opendp::legalPt(const Cell* cell,
     if (pixel->is_hopeless && moveHopeless(cell, grid_x, grid_y)) {
       legal_pt = Point(grid_x * site_width, grid_y * row_height);
       pixel = gridPixel(layer_info.grid_index, grid_x, grid_y);
+      debugPrint(logger_,
+                 DPL,
+                 "place",
+                 2,
+                 "legalpt hopeless {} {} ",
+                 legal_pt.getX(),
+                 legal_pt.getY());
     }
 
     const Cell* block = pixel->cell;
@@ -1241,19 +1248,56 @@ Point Opendp::legalPt(const Cell* cell,
     // edge strategy.  This doesn't consider site availability at the
     // end used so it is secondary.
     if (block && isBlock(block)) {
+      debugPrint(logger_,
+                 DPL,
+                 "place",
+                 2,
+                 "legalpt block {} {} {} ",
+                 block->x_,
+                 block->y_,
+                 block->width_);
       const Rect block_bbox(block->x_,
                             block->y_,
                             block->x_ + block->width_,
                             block->y_ + block->height_);
       const int legal_x = legal_pt.getX();
       const int legal_y = legal_pt.getY();
+      debugPrint(logger_,
+                 DPL,
+                 "place",
+                 2,
+                 "legalpt blockbbox {} {} {} {} {} {} ",
+                 legal_x,
+                 legal_y,
+                 block_bbox.xMin(),
+                 block_bbox.xMax(),
+                 block_bbox.yMin(),
+                 block_bbox.yMax());
       if ((legal_x + cell->width_) >= block_bbox.xMin()
           && legal_x <= block_bbox.xMax()
           && (legal_y + cell->height_) >= block_bbox.yMin()
           && legal_y <= block_bbox.yMax()) {
         legal_pt = nearestBlockEdge(cell, legal_pt, block_bbox);
       }
+    } else {
+      debugPrint(logger_,
+                 DPL,
+                 "place",
+                 2,
+                 "legalpt no block {} {} {} ",
+                 legal_pt.getX(),
+                 legal_pt.getY(),
+                 cell->width_);
     }
+  } else {
+    debugPrint(logger_,
+               DPL,
+               "place",
+               2,
+               "legalpt no pixel {} {} {} ",
+               legal_pt.getX(),
+               legal_pt.getY(),
+               cell->width_);
   }
 
   return legal_pt;
