@@ -228,12 +228,29 @@ void Opendp::visitCellPixels(
   bool have_obstructions = false;
 
   int site_width, row_height;
+  debugPrint(logger_, DPL, "hopeless", 1, "Visiting cell {}.", cell.name());
   if (isStdCell(&cell)) {
     site_width = getSiteWidth(&cell);
     row_height = getRowHeight(&cell);
+    debugPrint(logger_,
+               DPL,
+               "hopeless",
+               1,
+               "Cell {} is a std cell with site width {} and row height {}.",
+               cell.name(),
+               site_width,
+               row_height);
   } else {
     site_width = site_width_;
     row_height = row_height_;
+    debugPrint(logger_,
+               DPL,
+               "hopeless",
+               1,
+               "Cell {} is a macro with site width {} and row height {}.",
+               cell.name(),
+               site_width,
+               row_height);
   }
 
   for (dbBox* obs : obstructions) {
@@ -257,8 +274,14 @@ void Opendp::visitCellPixels(
           for (int y = y_start; y < y_end; y++) {
             Pixel* pixel = gridPixel(layer_idx, x, y);
             if (pixel) {
-              // logger_->warn(
-              //     DPL, 200, "Visiting pixel {} {} {}.", layer_idx, x, y);
+              debugPrint(logger_,
+                         DPL,
+                         "hopeless",
+                         1,
+                         "Visiting pixel ({}, {}, {}) due to obstruction.",
+                         layer_idx,
+                         x,
+                         y);
               visitor(pixel);
             }
           }
@@ -284,12 +307,14 @@ void Opendp::visitCellPixels(
         for (int y = layer_y_start; y < layer_y_end; y++) {
           Pixel* pixel = gridPixel(layer_it.second.grid_index, x, y);
           if (pixel) {
-            // logger_->warn(DPL,
-            //               201,
-            //               "Visiting pixel {} {} {}.",
-            //               layer_it.second.grid_index,
-            //               x,
-            //               y);
+            debugPrint(logger_,
+                       DPL,
+                       "hopeless",
+                       1,
+                       "Visiting pixel ({}, {}, {}) due to cell.",
+                       layer_it.second.grid_index,
+                       x,
+                       y);
             visitor(pixel);
           }
         }
