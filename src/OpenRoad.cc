@@ -287,7 +287,7 @@ void OpenRoad::readLef(const char* filename,
 
   // both are null on parser failure
   if (lib != nullptr || tech != nullptr) {
-    for (Observer* observer : observers_) {
+    for (OpenRoadObserver* observer : observers_) {
       observer->postReadLef(tech, lib);
     }
   }
@@ -323,7 +323,7 @@ void OpenRoad::readDef(const char* filename,
   dbChip* chip = def_reader.createChip(search_libs, filename);
   if (chip) {
     dbBlock* block = chip->getBlock();
-    for (Observer* observer : observers_) {
+    for (OpenRoadObserver* observer : observers_) {
       observer->postReadDef(block);
     }
   }
@@ -421,7 +421,7 @@ void OpenRoad::readDb(const char* filename)
   db_->read(stream);
   fclose(stream);
 
-  for (Observer* observer : observers_) {
+  for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
 }
@@ -477,14 +477,14 @@ void OpenRoad::linkDesign(const char* design_name)
 
 {
   dbLinkDesign(design_name, verilog_network_, db_, logger_);
-  for (Observer* observer : observers_) {
+  for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
 }
 
 void OpenRoad::designCreated()
 {
-  for (Observer* observer : observers_) {
+  for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
 }
@@ -500,25 +500,19 @@ odb::Rect OpenRoad::getCore()
   return db_->getChip()->getBlock()->getCoreArea();
 }
 
-void OpenRoad::addObserver(Observer* observer)
+void OpenRoad::addObserver(OpenRoadObserver* observer)
 {
-  assert(observer->owner_ == nullptr);
-  observer->owner_ = this;
+  observer->set_unregister_observer(
+      [this, observer] { removeObserver(observer); });
   observers_.insert(observer);
 }
 
-void OpenRoad::removeObserver(Observer* observer)
+void OpenRoad::removeObserver(OpenRoadObserver* observer)
 {
-  observer->owner_ = nullptr;
+  observer->set_unregister_observer(nullptr);
   observers_.erase(observer);
 }
 
-OpenRoad::Observer::~Observer()
-{
-  if (owner_) {
-    owner_->removeObserver(this);
-  }
-}
 void OpenRoad::setThreadCount(int threads, bool printInfo)
 {
   int max_threads = std::thread::hardware_concurrency();

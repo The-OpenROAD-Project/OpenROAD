@@ -37,6 +37,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "ifp/InitFloorplan.hh"
+#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 
 // Defined by OpenRoad.i

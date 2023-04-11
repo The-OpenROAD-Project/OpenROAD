@@ -39,6 +39,8 @@
 #include <string>
 #include <vector>
 
+#include "OpenRoadObserver.hh"
+
 extern "C" {
 struct Tcl_Interp;
 }
@@ -235,24 +237,8 @@ class OpenRoad
   void setThreadCount(const char* threads, bool printInfo = true);
   int getThreadCount();
 
-  // Observer interface
-  class Observer
-  {
-   public:
-    virtual ~Observer();
-
-    // Either pointer could be null
-    virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) = 0;
-    virtual void postReadDef(odb::dbBlock* block) = 0;
-    virtual void postReadDb(odb::dbDatabase* db) = 0;
-
-   private:
-    OpenRoad* owner_ = nullptr;
-    friend class OpenRoad;
-  };
-
-  void addObserver(Observer* observer);
-  void removeObserver(Observer* observer);
+  void addObserver(OpenRoadObserver* observer);
+  void removeObserver(OpenRoadObserver* observer);
 
  protected:
   ~OpenRoad();
@@ -288,7 +274,7 @@ class OpenRoad
   stt::SteinerTreeBuilder* stt_builder_ = nullptr;
   dft::Dft* dft_ = nullptr;
 
-  std::set<Observer*> observers_;
+  std::set<OpenRoadObserver*> observers_;
 
   int threads_ = 1;
 };

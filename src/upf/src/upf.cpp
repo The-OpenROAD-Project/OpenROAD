@@ -41,6 +41,7 @@
 
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
+#include "ord/OpenRoad.hh"
 #include "sta/FuncExpr.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
