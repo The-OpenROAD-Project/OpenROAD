@@ -5,6 +5,7 @@ read_liberty Nangate45/fakeram45_64x7.lib
 read_lef Nangate45/Nangate45.lef
 read_lef Nangate45/fakeram45_64x7.lef
 read_def obstruction2.def
+set_debug_level DPL "place" 4
 detailed_placement
 filler_placement FILLCELL*
 check_placement

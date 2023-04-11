@@ -125,6 +125,14 @@ void Opendp::prePlace()
       if (group_rect) {
         Point nearest = nearestPt(&cell, group_rect);
         Point legal = legalGridPt(&cell, nearest);
+        debugPrint(logger_,
+                   DPL,
+                   "place",
+                   4,
+                   "preplace {} {} {}",
+                   cell.name(),
+                   legal.getX(),
+                   legal.getY());
         if (mapMove(&cell, legal)) {
           cell.hold_ = true;
         }
@@ -213,6 +221,15 @@ void Opendp::prePlaceGroups()
         if (!in_group) {
           Point nearest = nearestPt(cell, nearest_rect);
           Point legal = legalGridPt(cell, nearest);
+          debugPrint(logger_,
+                     DPL,
+                     "place",
+                     4,
+                     "preplace groups {} {} {}",
+                     cell->name(),
+                     legal.getX(),
+                     legal.getY());
+
           if (mapMove(cell, legal)) {
             cell->hold_ = true;
           }
@@ -324,6 +341,14 @@ void Opendp::place()
   }
   for (Cell* cell : sorted_cells) {
     if (!isMultiRow(cell) && cellFitsInCore(cell)) {
+      debugPrint(logger_,
+                 DPL,
+                 "place",
+                 4,
+                 "place {} {} {}",
+                 cell->name(),
+                 cell->x_,
+                 cell->y_);
       if (!mapMove(cell)) {
         shiftMove(cell);
       }
@@ -371,6 +396,8 @@ void Opendp::placeGroups2()
         if (!isFixed(cell) && !cell->is_placed_) {
           assert(cell->inGroup());
           if (!isMultiRow(cell)) {
+            debugPrint(
+                logger_, DPL, "place", 4, "place groups 2 {}", cell->name());
             single_pass = mapMove(cell);
             if (!single_pass) {
               break;
@@ -414,6 +441,14 @@ void Opendp::brickPlace1(const Group* group)
     // This looks for a site starting at the nearest corner in rect,
     // which seems broken. It should start looking at the nearest point
     // on the rect boundary. -cherry
+    debugPrint(logger_,
+               DPL,
+               "place",
+               4,
+               "brick place {} {} {}",
+               cell->name(),
+               legal.getX(),
+               legal.getY());
     if (!mapMove(cell, legal)) {
       logger_->error(DPL, 16, "cannot place instance {}.", cell->name());
     }
@@ -468,6 +503,14 @@ void Opendp::brickPlace2(const Group* group)
       // This looks for a site starting at the nearest corner in rect,
       // which seems broken. It should start looking at the nearest point
       // on the rect boundary. -cherry
+      debugPrint(logger_,
+                 DPL,
+                 "place",
+                 4,
+                 "brickplace 2 {} {} {}",
+                 cell->name(),
+                 legal.getX(),
+                 legal.getY());
       if (!mapMove(cell, legal)) {
         logger_->error(DPL, 17, "cannot place instance {}.", cell->name());
       }
@@ -560,6 +603,14 @@ int Opendp::refine()
 bool Opendp::mapMove(Cell* cell)
 {
   Point init = legalGridPt(cell, true);
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "initial map move {} {} {}.",
+             cell->name(),
+             init.getX(),
+             init.getY());
   return mapMove(cell, init);
 }
 
@@ -569,7 +620,7 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
   int grid_y = grid_pt.getY();
   debugPrint(logger_,
              DPL,
-             "map",
+             "place",
              1,
              "mapMove {} {} {}.",
              cell->name(),
@@ -618,12 +669,14 @@ void Opendp::shiftMove(Cell* cell)
   }
 
   // place target cell
+  debugPrint(logger_, DPL, "place", 4, "shift move {}", cell->name());
   if (!mapMove(cell)) {
     placement_failures_.push_back(cell->db_inst_);
   }
 
   // re-place erased cells
   for (Cell* around_cell : region_cells) {
+    debugPrint(logger_, DPL, "place", 4, "re-place {}", cell->name());
     if (cell->inGroup() == around_cell->inGroup() && !mapMove(around_cell)) {
       placement_failures_.push_back(cell->db_inst_);
     }
@@ -972,15 +1025,31 @@ Point Opendp::legalPt(const Cell* cell,
   }
   int core_x = min(max(0, pt.getX()),
                    layer_info.site_count * site_width - cell->width_);
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "core_x {} {} {}",
+             core_x,
+             layer_info.site_count,
+             site_width);
   int core_y = min(max(0, pt.getY()),
                    layer_info.row_count * row_height - cell->height_);
-
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "core_y {} {} {}",
+             core_y,
+             layer_info.row_count,
+             row_height);
   // Align with row site.
   int grid_x = divRound(core_x, site_width);
   int grid_y = divRound(core_y, row_height);
 
   int legal_x = grid_x * site_width;
   int legal_y = grid_y * row_height;
+  debugPrint(logger_, DPL, "place", 1, "legalPt {} {}", legal_x, legal_y);
   return Point(legal_x, legal_y);
 }
 
@@ -989,13 +1058,15 @@ Point Opendp::legalGridPt(const Cell* cell,
                           int row_height,
                           int site_width) const
 {
-  Point legal = legalPt(cell, pt, row_height, site_width);
   if (site_width == -1) {
     site_width = getSiteWidth(cell);
   }
   if (row_height == -1) {
     row_height = getRowHeight(cell);
   }
+  debugPrint(
+      logger_, DPL, "place", 1, "legalGridPt {} {}", pt.getX(), pt.getY());
+  Point legal = legalPt(cell, pt, row_height, site_width);
   return Point(gridX(legal.getX(), site_width),
                gridY(legal.getY(), row_height));
 }
@@ -1007,20 +1078,37 @@ Point Opendp::nearestBlockEdge(const Cell* cell,
   const int legal_x = legal_pt.getX();
   const int legal_y = legal_pt.getY();
   const int row_height = getRowHeight(cell);
+  const int site_width = getSiteWidth(cell);
   const int x_min_dist = abs(legal_x - block_bbox.xMin());
   const int x_max_dist = abs(block_bbox.xMax() - (legal_x + cell->width_));
   const int y_min_dist = abs(legal_y - block_bbox.yMin());
   const int y_max_dist = abs(block_bbox.yMax() - (legal_y + cell->height_));
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "nearestBlockEdge {} {} {} {} {} {}",
+             legal_x,
+             legal_y,
+             block_bbox.xMin(),
+             block_bbox.xMax(),
+             block_bbox.yMin(),
+             block_bbox.yMax());
   if (x_min_dist < x_max_dist && x_min_dist < y_min_dist
       && x_min_dist < y_max_dist) {
     // left of block
     return legalPt(cell,
-                   Point(block_bbox.xMin() - cell->width_, legal_pt.getY()));
+                   Point(block_bbox.xMin() - cell->width_, legal_pt.getY()),
+                   row_height,
+                   site_width);
   }
   if (x_max_dist <= x_min_dist && x_max_dist <= y_min_dist
       && x_max_dist <= y_max_dist) {
     // right of block
-    return legalPt(cell, Point(block_bbox.xMax(), legal_pt.getY()));
+    return legalPt(cell,
+                   Point(block_bbox.xMax(), legal_pt.getY()),
+                   row_height,
+                   site_width);
   }
   if (y_min_dist <= x_min_dist && y_min_dist <= x_max_dist
       && y_min_dist <= y_max_dist) {
@@ -1028,12 +1116,16 @@ Point Opendp::nearestBlockEdge(const Cell* cell,
     return legalPt(cell,
                    Point(legal_pt.getX(),
                          divFloor(block_bbox.yMin(), row_height) * row_height
-                             - cell->height_));
+                             - cell->height_),
+                   row_height,
+                   site_width);
   }
   // above block
   return legalPt(cell,
                  Point(legal_pt.getX(),
-                       divCeil(block_bbox.yMax(), row_height) * row_height));
+                       divCeil(block_bbox.yMax(), row_height) * row_height),
+                 row_height,
+                 site_width);
 }
 
 // Find the nearest valid site left/right/above/below, if any.
@@ -1115,17 +1207,25 @@ Point Opendp::legalPt(const Cell* cell,
   }
 
   if (row_height == -1) {
-    row_height = cell->height_;
+    row_height = getRowHeight(cell);
   }
   if (site_width == -1) {
     site_width = getSiteWidth(cell);
   }
 
   Point init = initialLocation(cell, padded);
-  Point legal_pt = legalPt(cell, init);
+  debugPrint(logger_,
+             DPL,
+             "place",
+             2,
+             "legalpt itself init {} {} ",
+             init.getX(),
+             init.getY());
+  Point legal_pt = legalPt(cell, init, row_height, site_width);
   auto layer_info = getLayerInfo(cell);
   int grid_x = gridX(legal_pt.getX(), site_width);
   int grid_y = gridY(legal_pt.getY(), row_height);
+  debugPrint(logger_, DPL, "place", 2, "grid_x {} grid_y {}", grid_x, grid_y);
 
   Pixel* pixel = gridPixel(layer_info.grid_index, grid_x, grid_y);
   if (pixel) {
@@ -1170,7 +1270,29 @@ Point Opendp::legalGridPt(const Cell* cell,
   if (row_height == -1) {
     row_height = getRowHeight(cell);
   }
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "legalgridpt bef {} {} {} {} {} {}",
+             cell->name(),
+             cell->x_,
+             cell->y_,
+             cell->width_,
+             cell->height_,
+             cell->orient_);
   Point pt = legalPt(cell, padded, row_height, site_width);
+  debugPrint(logger_,
+             DPL,
+             "place",
+             1,
+             "legalpt 1 {} {} {} {} {} {}",
+             cell->name(),
+             pt.getX(),
+             pt.getY(),
+             cell->width_,
+             cell->height_,
+             cell->orient_);
   return Point(gridX(pt.getX(), site_width), gridY(pt.getY(), row_height));
 }
 
