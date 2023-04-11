@@ -48,7 +48,6 @@ class Gui;
 
 namespace ord {
 class OpenRoad;
-void initDbSta(OpenRoad*);
 }
 
 namespace utl {
@@ -88,6 +87,9 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
                 gui::Gui* gui,
                 utl::Logger* logger);
 
+  // Creates the power density heatmap object (for GUI rendering).
+  void initPowerDensityHeatmap();
+
   // Creates a dbSta instance for the given dbBlock using the same context as
   // this dbSta instance (e.g. TCL interpreter, units, etc.)
   std::unique_ptr<dbSta> makeBlockSta(odb::dbBlock* block);
@@ -119,11 +121,6 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
   using Sta::replaceCell;
 
  private:
-  friend void ::ord::initDbSta(::ord::OpenRoad*);
-
-  // Creates the power density heatmap object (for GUI rendering).
-  void initPowerDensityHeatmap();
-
   virtual void makeReport() override;
   virtual void makeNetwork() override;
   virtual void makeSdcNetwork() override;

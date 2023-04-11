@@ -43,5 +43,6 @@ class OpenRoad;
 
 sta::dbSta* makeDbSta();
 void deleteDbSta(sta::dbSta* sta);
+void initDbSta(OpenRoad* openroad);
 
 }  // namespace ord
