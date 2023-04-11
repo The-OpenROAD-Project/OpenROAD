@@ -496,10 +496,6 @@ proc place_pins { args } {
 
   set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
 
-  if { ($bterms_cnt > $num_slots) } {
-    utl::error PPL 24 "Number of pins $bterms_cnt exceeds max possible $num_slots."
-  }
-
   if { $regions != {} } {
     set lef_units [$dbTech getLefUnits]
 
