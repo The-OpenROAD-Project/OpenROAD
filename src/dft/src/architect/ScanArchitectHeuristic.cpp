@@ -30,41 +30,37 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%module dft
+#include "ScanArchitectHeuristic.hh"
 
-%{
+#include <iostream>
+#include <sstream>
 
-#include "dft/Dft.hh"
-#include "DftConfig.hh"
-#include "ord/OpenRoad.hh"
+#include "ScanArchitect.hh"
 
-dft::Dft * getDft()
+namespace dft {
+
+ScanArchitectHeuristic::ScanArchitectHeuristic(
+    const ScanArchitectConfig& config,
+    std::unique_ptr<ScanCellsBucket> scan_cells_bucket)
+    : ScanArchitect(config, std::move(scan_cells_bucket))
 {
-  return ord::OpenRoad::openRoad()->getDft();
 }
 
-%}
-
-%inline
-%{
-
-void preview_dft(bool verbose)
+void ScanArchitectHeuristic::architect()
 {
-  getDft()->preview_dft(verbose);
+  // For each hash_domain, lets distribute the scan cells over the scan chains
+  for (auto& [hash_domain, scan_chains] : hash_domain_scan_chains_) {
+    for (auto& current_chain : scan_chains) {
+      const uint64_t max_length
+          = hash_domain_to_limits_.find(hash_domain)->second.max_length;
+      while (current_chain->getBits() < max_length
+             && scan_cells_bucket_->numberOfCells(hash_domain)) {
+        std::shared_ptr<ScanCell> scan_cell
+            = scan_cells_bucket_->pop(hash_domain);
+        current_chain->add(scan_cell);
+      }
+    }
+  }
 }
 
-void insert_dft()
-{
-  getDft()->insert_dft();
-}
-
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
-}
-
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
-
-%}  // inline
+}  // namespace dft

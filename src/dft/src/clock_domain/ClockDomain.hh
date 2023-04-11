@@ -29,42 +29,53 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-%module dft
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
 
-%{
+#include "ScanArchitectConfig.hh"
 
-#include "dft/Dft.hh"
-#include "DftConfig.hh"
-#include "ord/OpenRoad.hh"
+namespace dft {
 
-dft::Dft * getDft()
+enum class ClockEdge
 {
-  return ord::OpenRoad::openRoad()->getDft();
-}
+  Rising,  // positive edge triggered
+  Falling  // negative edge triggered
+};
 
-%}
-
-%inline
-%{
-
-void preview_dft(bool verbose)
+// The clock domain of the scan cells based on the clock name and the edge.
+class ClockDomain
 {
-  getDft()->preview_dft(verbose);
-}
+ public:
+  ClockDomain(const std::string& clock_name, ClockEdge clock_edge);
+  // Allow move, copy is implicitly deleted
+  ClockDomain(ClockDomain&& other) = default;
+  ClockDomain& operator=(ClockDomain&& other) = default;
 
-void insert_dft()
-{
-  getDft()->insert_dft();
-}
+  const std::string& getClockName() const;
+  ClockEdge getClockEdge() const;
 
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
-}
+ private:
+  std::string clock_name_;
+  ClockEdge clock_edge_;
+};
 
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
+// Depending on the ScanArchitectConfig's clock mixing setting, there are
+// different ways to calculate the hash of the clock domain.
+//
+// For No Mix clock, we will generate a different hash value for all the clock
+// domains.
+//
+// If we want to mix all the clocks, then the hash will be the same for all the
+// clock doamins.
+//
+// We refer to the generated hash from a ClockDomain as Hash Domain.
+//
+std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
+    const ScanArchitectConfig& config,
+    utl::Logger* logger);
 
-%}  // inline
+}  // namespace dft

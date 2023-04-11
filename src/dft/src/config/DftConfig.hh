@@ -29,42 +29,31 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-%module dft
+#include "ScanArchitectConfig.hh"
+#include "utl/Logger.h"
 
-%{
+namespace dft {
 
-#include "dft/Dft.hh"
-#include "DftConfig.hh"
-#include "ord/OpenRoad.hh"
-
-dft::Dft * getDft()
+// Main class that contains all the DFT configuration.
+// Pass this object by reference to other functions
+class DftConfig
 {
-  return ord::OpenRoad::openRoad()->getDft();
-}
+ public:
+  DftConfig() = default;
+  // Not copyable or movable.
+  DftConfig(const DftConfig&) = delete;
+  DftConfig& operator=(const DftConfig&) = delete;
 
-%}
+  ScanArchitectConfig* getMutableScanArchitectConfig();
+  const ScanArchitectConfig& getScanArchitectConfig() const;
 
-%inline
-%{
+  // Prints the information currently being used by DFT for config
+  void report(utl::Logger* logger) const;
 
-void preview_dft(bool verbose)
-{
-  getDft()->preview_dft(verbose);
-}
+ private:
+  ScanArchitectConfig scan_architect_config_;
+};
 
-void insert_dft()
-{
-  getDft()->insert_dft();
-}
-
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
-}
-
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
-
-%}  // inline
+}  // namespace dft

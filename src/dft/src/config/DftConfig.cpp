@@ -30,41 +30,26 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-%module dft
-
-%{
-
-#include "dft/Dft.hh"
 #include "DftConfig.hh"
-#include "ord/OpenRoad.hh"
 
-dft::Dft * getDft()
+namespace dft {
+
+ScanArchitectConfig* DftConfig::getMutableScanArchitectConfig()
 {
-  return ord::OpenRoad::openRoad()->getDft();
+  return &scan_architect_config_;
 }
 
-%}
-
-%inline
-%{
-
-void preview_dft(bool verbose)
+const ScanArchitectConfig& DftConfig::getScanArchitectConfig() const
 {
-  getDft()->preview_dft(verbose);
+  return scan_architect_config_;
 }
 
-void insert_dft()
+void DftConfig::report(utl::Logger* logger) const
 {
-  getDft()->insert_dft();
+  logger->report("***************************");
+  logger->report("DFT Config Report:\n");
+  scan_architect_config_.report(logger);
+  logger->report("***************************");
 }
 
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
-}
-
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
-
-%}  // inline
+}  // namespace dft

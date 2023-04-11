@@ -29,42 +29,43 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-%module dft
+#include <cstdint>
+#include <optional>
 
-%{
+#include "utl/Logger.h"
 
-#include "dft/Dft.hh"
-#include "DftConfig.hh"
-#include "ord/OpenRoad.hh"
+namespace dft {
 
-dft::Dft * getDft()
+class ScanArchitectConfig
 {
-  return ord::OpenRoad::openRoad()->getDft();
-}
+ public:
+  // TODO Add suport for mix_edges, mix_clocks, mix_clocks_not_edges
+  enum class ClockMixing
+  {
+    NoMix  // We create different scan chains for each clock and edge
+  };
 
-%}
+  void setClockMixing(ClockMixing clock_mixing);
 
-%inline
-%{
+  // The max length in bits that a scan chain can have
+  void setMaxLength(uint64_t max_length);
+  const std::optional<uint64_t>& getMaxLength() const;
 
-void preview_dft(bool verbose)
-{
-  getDft()->preview_dft(verbose);
-}
+  ClockMixing getClockMixing() const;
 
-void insert_dft()
-{
-  getDft()->insert_dft();
-}
+  // Prints using logger->report the config used by Scan Architect
+  void report(utl::Logger* logger) const;
 
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
-}
+  static std::string ClockMixingName(ClockMixing clock_mixing);
 
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
+ private:
+  // The max length in bits of the scan chain
+  std::optional<uint64_t> max_length_;
 
-%}  // inline
+  // How we are going to mix the clocks of the scan cells
+  ClockMixing clock_mixing_;
+};
+
+}  // namespace dft

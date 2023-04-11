@@ -29,42 +29,34 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-%module dft
+#include "ScanCell.hh"
+#include "odb/db.h"
+#include "sta/Liberty.hh"
 
-%{
+namespace dft {
 
-#include "dft/Dft.hh"
-#include "DftConfig.hh"
-#include "ord/OpenRoad.hh"
-
-dft::Dft * getDft()
+// A simple single cell with just one bit. Usually one scan FF
+class OneBitScanCell : public ScanCell
 {
-  return ord::OpenRoad::openRoad()->getDft();
-}
+ public:
+  OneBitScanCell(const std::string& name,
+                 std::unique_ptr<ClockDomain> clock_domain,
+                 odb::dbInst* inst,
+                 sta::TestCell* test_cell);
+  // Not copyable or movable
+  OneBitScanCell(const OneBitScanCell&) = delete;
+  OneBitScanCell& operator=(const OneBitScanCell&) = delete;
 
-%}
+  uint64_t getBits() const override;
+  void connectScanEnable() const override;
+  void connectScanIn() const override;
+  void connectScanOut() const override;
 
-%inline
-%{
+ private:
+  odb::dbInst* inst_;
+  sta::TestCell* test_cell_;
+};
 
-void preview_dft(bool verbose)
-{
-  getDft()->preview_dft(verbose);
-}
-
-void insert_dft()
-{
-  getDft()->insert_dft();
-}
-
-void set_dft_config_max_length(int max_length)
-{
-  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
-}
-
-void report_dft_config() {
-  getDft()->reportDftConfig();
-}
-
-%}  // inline
+}  // namespace dft
