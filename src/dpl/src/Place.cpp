@@ -1232,7 +1232,7 @@ Point Opendp::legalPt(const Cell* cell,
     // Move std cells off of macros.  First try the is_hopeless strategy
     debugPrint(logger_,
                DPL,
-               "place",
+               "hopeless",
                1,
                "is pixel hopeless? {}",
                pixel->is_hopeless ? " true " : " false ");

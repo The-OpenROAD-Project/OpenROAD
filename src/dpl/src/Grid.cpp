@@ -152,6 +152,15 @@ void Opendp::initGrid()
 
     hopeless[current_row_grid_index]
         -= gtl::rectangle_data<int>{xl, yl, xh, yh};
+    debugPrint(logger_,
+               DPL,
+               "hopeless",
+               1,
+               "Removing rectangle ({}, {}, {}, {}) from hopeless.",
+               xl,
+               yl,
+               xh,
+               yh);
   }
 
   std::vector<gtl::rectangle_data<int>> rects;
@@ -162,6 +171,14 @@ void Opendp::initGrid()
     for (const auto& rect : rects) {
       for (int y = gtl::yl(rect); y < gtl::yh(rect); y++) {
         for (int x = gtl::xl(rect); x < gtl::xh(rect); x++) {
+          debugPrint(logger_,
+                     DPL,
+                     "hopeless",
+                     1,
+                     "Marking grid pixel ({}, {}, {}) as hopeless.",
+                     h_index,
+                     x,
+                     y);
           grid_[h_index][y][x].is_hopeless = true;
         }
       }
@@ -378,7 +395,16 @@ void Opendp::setGridCell(Cell& cell, Pixel* pixel)
   pixel->util = 1.0;
   if (isBlock(&cell)) {
     // Try the is_hopeless strategy to get off of a block
+    debugPrint(
+        logger_, DPL, "hopeless", 1, "Setting cell {} hopeless.", cell.name());
     pixel->is_hopeless = true;
+  } else {
+    debugPrint(logger_,
+               DPL,
+               "hopeless",
+               1,
+               "Failed isBlock() in Setting cell {} as hopeless.",
+               cell.name());
   }
 }
 
