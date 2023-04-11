@@ -262,14 +262,15 @@ void Opendp::visitCellPixels(
       dbTransform transform;
       inst->getTransform(transform);
       transform.apply(rect);
+      // TODO: - use map_coordiantes here and move this to inside the loop
       int x_start = gridX(rect.xMin() - core_.xMin(), site_width);
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);
-      int y_start = gridY(rect.yMin() - core_.yMin(), site_width);
-      int y_end = gridEndY(rect.yMax() - core_.yMin(), site_width);
+      int y_start = gridY(rect.yMin() - core_.yMin(), row_height);
+      int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height);
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
-      for (int layer_idx = 0; layer_idx < grid_depth_; layer_idx++) {
+      for (int layer_idx = 0; layer_idx < grid_layers_.size(); layer_idx++) {
         for (int x = x_start; x < x_end; x++) {
           for (int y = y_start; y < y_end; y++) {
             Pixel* pixel = gridPixel(layer_idx, x, y);
