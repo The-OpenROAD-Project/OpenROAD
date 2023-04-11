@@ -90,6 +90,8 @@ PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
       "Switching power:",
       [this]() { return include_switching_; },
       [this](bool value) { include_switching_ = value; });
+
+  registerHeatMap();
 }
 
 bool PowerDensityDataSource::populateMap()
