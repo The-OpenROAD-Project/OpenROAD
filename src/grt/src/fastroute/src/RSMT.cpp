@@ -740,6 +740,8 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         wl1 += sttrees_[i].edges[j].len;
     }
 
+    int thisWl = 0;
+
     for (int j = 0; j < rsmt.branchCount(); j++) {
       const int x1 = rsmt.branch[j].x;
       const int y1 = rsmt.branch[j].y;
@@ -747,7 +749,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       const int x2 = rsmt.branch[n].x;
       const int y2 = rsmt.branch[n].y;
 
-      wl += abs(x1 - x2) + abs(y1 - y2);
+      thisWl  += abs(x1 - x2) + abs(y1 - y2);
 
       if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
         // the position of this segment in seglist
@@ -768,6 +770,9 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
         seg.netID = i;
       }
     }  // loop j
+
+    net->setSTTLength(thisWl);
+    wl += thisWl;
 
     totalNumSeg += seglist_[i].size();
 

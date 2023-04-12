@@ -196,6 +196,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-grid_origin origin] \
                                   [-overflow_iterations iterations] \
                                   [-critical_nets_percentage percent] \
+                                  [-scenic_routes_report_file file_name] \
                                   [-allow_congestion] \
                                   [-allow_overflow] \
                                   [-verbose]
@@ -204,7 +205,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -overflow_iterations -grid_origin -critical_nets_percentage
+          -overflow_iterations -grid_origin -critical_nets_percentage \
+          -scenic_routes_report_file
          } \
     flags {-allow_congestion -allow_overflow -verbose}
 
@@ -243,6 +245,11 @@ proc global_route { args } {
   if { [info exists keys(-congestion_report_file) ] } {
     set file_name $keys(-congestion_report_file)
     grt::set_congestion_report_file $file_name
+  }
+
+  if { [info exists keys(-scenic_routes_report_file) ] } {
+    set file_name $keys(-scenic_routes_report_file)
+    grt::set_scenic_routes_report_file $file_name
   }
 
   if { [info exists keys(-overflow_iterations)] } {

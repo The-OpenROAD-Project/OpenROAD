@@ -107,7 +107,8 @@ GlobalRouter::GlobalRouter()
       block_(nullptr),
       repair_antennas_(nullptr),
       heatmap_(nullptr),
-      congestion_file_name_(nullptr)
+      congestion_file_name_(nullptr),
+      scenic_routes_file_name_(nullptr)
 {
 }
 
@@ -286,6 +287,7 @@ void GlobalRouter::globalRoute(bool save_guides)
   updateDbCongestion();
 
   saveCongestion();
+  saveScenicRoutes();
 
   if (fastroute_->has2Doverflow()) {
     if (!allow_congestion_) {
@@ -1331,6 +1333,11 @@ void GlobalRouter::setOverflowIterations(int iterations)
 void GlobalRouter::setCongestionReportFile(const char* file_name)
 {
   congestion_file_name_ = file_name;
+}
+
+void GlobalRouter::setScenicRoutesReportFile(const char* file_name)
+{
+  scenic_routes_file_name_ = file_name;
 }
 
 void GlobalRouter::setGridOrigin(int x, int y)
@@ -4055,6 +4062,53 @@ std::size_t GSegmentHash::operator()(const GSegment& seg) const
 bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const
 {
   return net1->getId() < net2->getId();
+}
+
+void GlobalRouter::saveScenicRoutes()
+{
+  if (scenic_routes_file_name_ == nullptr) {
+    return;
+  }
+  std::ofstream out(scenic_routes_file_name_);
+
+  std::vector<std::pair<int, odb::dbNet*>> lengths;
+
+  for (odb::dbNet* db_net : block_->getNets()) {
+    const auto sttLength = fastroute_->getSTTLength(db_net);
+    const auto grtLength = computeNetWirelength(db_net);
+    const int extraLength = dbuToMicrons(grtLength-sttLength);
+
+    lengths.push_back({extraLength, db_net});
+  }
+
+  std::sort(lengths.rbegin(), lengths.rend());
+
+  for (auto [length, db_net] : lengths) {
+    if (length > 1000) {
+      auto iter = routes_.find(db_net);
+      if (iter == routes_.end()) {
+        logger_->warn(
+            GRT, 300, "Net {} does not have global route.", db_net->getName());
+        continue;
+      }
+      const GRoute& groute = iter->second;
+
+      odb::Rect bbox;
+      bbox.mergeInit();
+      for (const GSegment& seg : groute) {
+        bbox.merge(globalRoutingToBox(seg));
+      }
+
+      out << "  violation type: GRT scenic route " << length << " um longer than RSMT" << std::endl;
+      out << "    srcs: ";
+      out << "net:" << db_net->getName() << std::endl;
+      out << "    bbox = ( " << dbuToMicrons(bbox.xMin()) << ", "
+          << dbuToMicrons(bbox.yMin()) << " ) - ( " << dbuToMicrons(bbox.xMax()) << ", "
+          << dbuToMicrons(bbox.yMax()) << " ) on Layer ";
+      // We don't need the layer, but the format requires it
+      out << routing_layers_[1]->getName() << std::endl;
+    }
+  }
 }
 
 }  // namespace grt
