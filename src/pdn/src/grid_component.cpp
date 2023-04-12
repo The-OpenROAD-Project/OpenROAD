@@ -60,7 +60,7 @@ VoltageDomain* GridComponent::getDomain() const
   return grid_->getDomain();
 }
 
-const std::string GridComponent::typeToString(Type type)
+std::string GridComponent::typeToString(Type type)
 {
   switch (type) {
     case Ring:
@@ -354,7 +354,7 @@ void GridComponent::writeToDb(
 
 void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
                                     int width,
-                                    odb::dbTechLayerDir direction) const
+                                    const odb::dbTechLayerDir& direction) const
 {
   const TechLayer tech_layer(layer);
 
@@ -432,10 +432,11 @@ void GridComponent::checkLayerWidth(odb::dbTechLayer* layer,
   }
 }
 
-void GridComponent::checkLayerSpacing(odb::dbTechLayer* layer,
-                                      int width,
-                                      int spacing,
-                                      odb::dbTechLayerDir /* direction */) const
+void GridComponent::checkLayerSpacing(
+    odb::dbTechLayer* layer,
+    int width,
+    int spacing,
+    const odb::dbTechLayerDir& /* direction */) const
 {
   const TechLayer tech_layer(layer);
 
@@ -483,9 +484,8 @@ std::vector<odb::dbNet*> GridComponent::getNets() const
 {
   if (nets_.empty()) {
     return grid_->getNets(starts_with_power_);
-  } else {
-    return nets_;
   }
+  return nets_;
 }
 
 int GridComponent::getNetCount() const
