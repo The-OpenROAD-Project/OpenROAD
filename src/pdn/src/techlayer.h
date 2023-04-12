@@ -46,7 +46,7 @@ namespace pdn {
 class TechLayer
 {
  public:
-  TechLayer(odb::dbTechLayer* layer);
+  explicit TechLayer(odb::dbTechLayer* layer);
 
   std::string getName() const { return layer_->getName(); }
 

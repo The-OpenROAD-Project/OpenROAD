@@ -196,6 +196,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   virtual void inDbRegionDestroy(odb::dbRegion* region) override;
   virtual void inDbRowCreate(odb::dbRow* row) override;
   virtual void inDbRowDestroy(odb::dbRow* row) override;
+  virtual void inDbWirePostModify(odb::dbWire* wire) override;
 
  signals:
   void modified();

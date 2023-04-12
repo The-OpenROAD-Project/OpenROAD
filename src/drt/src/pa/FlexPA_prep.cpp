@@ -858,7 +858,11 @@ void FlexPA::prepPoint_pin_checkPoint_planar(
   FlexGCWorker gcWorker(getTech(), logger_);
   gcWorker.setIgnoreMinArea();
   gcWorker.setIgnoreCornerSpacing();
-  Rect extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
+  const auto pitch = layer->getPitch();
+  const auto extension = 5 * pitch;
+  Rect tmpBox(bp, bp);
+  Rect extBox;
+  tmpBox.bloat(extension, extBox);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
   if (instTerm) {
@@ -1087,7 +1091,11 @@ bool FlexPA::prepPoint_pin_checkPoint_via_helper(frAccessPoint* ap,
   gcWorker.setIgnoreMinArea();
   gcWorker.setIgnoreLongSideEOL();
   gcWorker.setIgnoreCornerSpacing();
-  Rect extBox(bp.x() - 3000, bp.y() - 3000, bp.x() + 3000, bp.y() + 3000);
+  const auto pitch = getTech()->getLayer(ap->getLayerNum())->getPitch();
+  const auto extension = 5 * pitch;
+  Rect tmpBox(bp, bp);
+  Rect extBox;
+  tmpBox.bloat(extension, extBox);
   gcWorker.setExtBox(extBox);
   gcWorker.setDrcBox(extBox);
   if (instTerm) {
@@ -2270,9 +2278,9 @@ bool FlexPA::genPatterns_gc(std::set<frBlockObject*> targetObjs,
   for (auto& [connFig, owner] : objs) {
     Rect bbox = connFig->getBBox();
     llx = std::min(llx, bbox.xMin());
-    lly = std::min(llx, bbox.yMin());
-    urx = std::max(llx, bbox.xMax());
-    ury = std::max(llx, bbox.yMax());
+    lly = std::min(lly, bbox.yMin());
+    urx = std::max(urx, bbox.xMax());
+    ury = std::max(ury, bbox.yMax());
   }
   Rect extBox(llx - 3000, lly - 3000, urx + 3000, ury + 3000);
   // Rect extBox(llx - 1000, lly - 1000, urx + 1000, ury + 1000);

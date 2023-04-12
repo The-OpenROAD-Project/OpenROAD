@@ -98,7 +98,7 @@ class Shape
   Shape(odb::dbTechLayer* layer,
         odb::dbNet* net,
         const odb::Rect& rect,
-        odb::dbWireShapeType type = odb::dbWireShapeType::NONE);
+        const odb::dbWireShapeType& type = odb::dbWireShapeType::NONE);
   Shape(odb::dbTechLayer* layer, const odb::Rect& rect, ShapeType shape_type);
   virtual ~Shape();
 
@@ -107,7 +107,7 @@ class Shape
   void setNet(odb::dbNet* net) { net_ = net; }
   void setRect(const odb::Rect& rect) { rect_ = rect; }
   const odb::Rect& getRect() const { return rect_; }
-  const Box getRectBox() const;
+  Box getRectBox() const;
   odb::dbWireShapeType getType() const { return type_; }
 
   utl::Logger* getLogger() const;
@@ -124,7 +124,7 @@ class Shape
   bool isValid() const;
 
   const odb::Rect& getObstruction() const { return obs_; }
-  const Box getObstructionBox() const;
+  Box getObstructionBox() const;
   // generates the obstruction box needed to avoid DRC violations with
   // surrounding shapes
   void generateObstruction();
@@ -174,14 +174,19 @@ class Shape
   bool hasTermConnections() const;
 
   // returns the smallest shape possible when attempting to trim
-  virtual const odb::Rect getMinimumRect() const;
+  virtual odb::Rect getMinimumRect() const;
   int getNumberOfConnections() const;
   int getNumberOfConnectionsBelow() const;
   int getNumberOfConnectionsAbove() const;
 
-  Shape* extendTo(const odb::Rect& rect, const ShapeTree& obstructions) const;
+  Shape* extendTo(
+      const odb::Rect& rect,
+      const ShapeTree& obstructions,
+      const std::function<bool(const ShapeValue&)>& obs_filter
+      = [](const ShapeValue&) { return true; }) const;
 
   virtual bool cut(const ShapeTree& obstructions,
+                   const Grid* ignore_grid,
                    std::vector<Shape*>& replacements) const;
 
   // return a copy of the shape
@@ -196,19 +201,18 @@ class Shape
   GridComponent* getGridComponent() const { return grid_component_; }
 
   // returns the text used by the renderer to identify the shape
-  const std::string getDisplayText() const;
+  std::string getDisplayText() const;
 
-  const std::string getReportText() const;
-  static const std::string getRectText(const odb::Rect& rect,
-                                       double dbu_to_micron);
+  std::string getReportText() const;
+  static std::string getRectText(const odb::Rect& rect, double dbu_to_micron);
 
   void writeToDb(odb::dbSWire* swire,
                  bool add_pins,
-                 bool make_shape_rect) const;
+                 bool make_rect_as_pin) const;
   // copy existing shapes into the map
   static void populateMapFromDb(odb::dbNet* net, ShapeTreeMap& map);
 
-  static const Box rectToBox(const odb::Rect& rect);
+  static Box rectToBox(const odb::Rect& rect);
 
   bool allowsNonPreferredDirectionChange() const
   {
@@ -252,25 +256,40 @@ class FollowPinShape : public Shape
   FollowPinShape(odb::dbTechLayer* layer,
                  odb::dbNet* net,
                  const odb::Rect& rect);
-  ~FollowPinShape() {}
 
   void addRow(odb::dbRow* row) { rows_.insert(row); }
 
-  virtual const odb::Rect getMinimumRect() const override;
-  virtual Shape* copy() const override;
-  virtual void merge(Shape* shape) override;
-  virtual void updateTermConnections() override;
+  odb::Rect getMinimumRect() const override;
+  Shape* copy() const override;
+  void merge(Shape* shape) override;
+  void updateTermConnections() override;
 
   // followpins cannot be removed
-  virtual bool isRemovable() const override { return false; }
+  bool isRemovable() const override { return false; }
 
-  virtual void setAllowsNonPreferredDirectionChange() override {}
+  void setAllowsNonPreferredDirectionChange() override {}
 
-  virtual bool cut(const ShapeTree& obstructions,
-                   std::vector<Shape*>& replacements) const override;
+  bool cut(const ShapeTree& obstructions,
+           const Grid* ignore_grid,
+           std::vector<Shape*>& replacements) const override;
 
  private:
   std::set<odb::dbRow*> rows_;
+};
+
+class GridObsShape : public Shape
+{
+ public:
+  GridObsShape(odb::dbTechLayer* layer,
+               const odb::Rect& rect,
+               const Grid* grid);
+  ~GridObsShape() override = default;
+
+  bool belongsTo(const Grid* grid) const { return grid == grid_; }
+  const Grid* getGrid() const { return grid_; }
+
+ private:
+  const Grid* grid_;
 };
 
 }  // namespace pdn

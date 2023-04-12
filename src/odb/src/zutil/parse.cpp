@@ -40,56 +40,39 @@
 
 namespace odb {
 
-static FILE* ATH__openFile(const char* name, const char* type)
+static FILE* ATH__openFile(const char* name,
+                           const char* mode,
+                           utl::Logger* logger)
 {
-  FILE* a = fopen(name, type);
+  FILE* a = fopen(name, mode);
 
-  if (a == NULL) {
-    fprintf(stderr, "Cannot open file %s for \"%s\"\n", name, type);
-    fprintf(stdout, "\nExiting ...\n");
-    exit(0);
+  if (a == nullptr) {
+    logger->error(utl::ODB, 428, "Cannot open file {} for \"{}\"", name, mode);
   }
   return a;
 }
 
 static void ATH__closeFile(FILE* fp)
 {
-  if (fp == NULL) {
-    return;
+  if (fp != nullptr) {
+    fclose(fp);
   }
-  fclose(fp);
 }
 
-static void ATH__failMessage(const char* msg)
+static char* ATH__allocCharWord(int n, utl::Logger* logger)
 {
-  fprintf(stderr, "%s\n", msg);
-  fprintf(stderr, "\nexiting ...\n");
-  exit(1);
-}
-
-static char* ATH__allocCharWord(int n)
-{
-  if (n <= 0)
-    ATH__failMessage("Cannot zero/negative number of chars");
+  if (n <= 0) {
+    logger->error(utl::ODB, 424, "Cannot zero/negative number of chars");
+  }
 
   char* a = new char[n];
-  if (a == NULL) {
-    ATH__failMessage("Cannot allocate chars");
-  }
   a[0] = '\0';
   return a;
 }
 
-static void ATH__deallocCharWord(const char* a)
+Ath__parser::Ath__parser(utl::Logger* logger)
 {
-  if (a == NULL) {
-    ATH__failMessage("Cannot deallocate allocate chars");
-  }
-  delete[] a;
-}
-
-Ath__parser::Ath__parser()
-{
+  _logger = logger;
   _lineSize = 10000;
   _maxWordCnt = 100;
   init();
@@ -108,13 +91,13 @@ Ath__parser::~Ath__parser()
     pclose(_inFP);
     _inFP = nullptr;
   }
-  ATH__deallocCharWord(_inputFile);
-  ATH__deallocCharWord(_line);
-  ATH__deallocCharWord(_tmpLine);
-  ATH__deallocCharWord(_wordSeparators);
+  delete[] _inputFile;
+  delete[] _line;
+  delete[] _tmpLine;
+  delete[] _wordSeparators;
 
   for (int ii = 0; ii < _maxWordCnt; ii++) {
-    ATH__deallocCharWord(_wordArray[ii]);
+    delete[] _wordArray[ii];
   }
 
   delete[] _wordArray;
@@ -126,19 +109,16 @@ Ath__parser::~Ath__parser()
 
 void Ath__parser::init()
 {
-  _line = ATH__allocCharWord(_lineSize);
-  _tmpLine = ATH__allocCharWord(_lineSize);
+  _line = ATH__allocCharWord(_lineSize, _logger);
+  _tmpLine = ATH__allocCharWord(_lineSize, _logger);
 
   _wordArray = new char*[_maxWordCnt];
-  if (_wordArray == nullptr) {
-    ATH__failMessage("Cannot allocate array of char*");
-  }
 
   for (int ii = 0; ii < _maxWordCnt; ii++) {
-    _wordArray[ii] = ATH__allocCharWord(512);
+    _wordArray[ii] = ATH__allocCharWord(512, _logger);
   }
 
-  _wordSeparators = ATH__allocCharWord(24);
+  _wordSeparators = ATH__allocCharWord(24, _logger);
 
   strcpy(_wordSeparators, " \n\t");
 
@@ -148,7 +128,7 @@ void Ath__parser::init()
   _currentWordCnt = -1;
 
   _inFP = nullptr;
-  _inputFile = ATH__allocCharWord(512);
+  _inputFile = ATH__allocCharWord(512, _logger);
 
   _progressLineChunk = 1000000;
 }
@@ -204,10 +184,10 @@ void Ath__parser::openFile(char* name)
     sprintf(cmd, "gzip -cd %s", _inputFile);
     _inFP = popen(cmd, "r");
   } else if (name != nullptr) {
-    _inFP = ATH__openFile(name, (char*) "r");
+    _inFP = ATH__openFile(name, "r", _logger);
     strcpy(_inputFile, name);
   } else {  //
-    _inFP = ATH__openFile(_inputFile, (char*) "r");
+    _inFP = ATH__openFile(_inputFile, "r", _logger);
   }
 }
 
@@ -218,7 +198,7 @@ void Ath__parser::setInputFP(FILE* fp)
 
 void Ath__parser::printWords(FILE* fp)
 {
-  if (fp == nullptr) {  // use motice
+  if (fp == nullptr) {
     return;
   }
   for (int ii = 0; ii < _currentWordCnt; ii++) {
@@ -401,13 +381,11 @@ int Ath__parser::mkWords(int jj)
   return jj;
 }
 
-int Ath__parser::reportProgress()
+void Ath__parser::reportProgress()
 {
   if (_lineNum % _progressLineChunk == 0) {
-    printf("\t\tHave read %d lines\n", _lineNum);
+    _logger->report("\t\tRead {} lines", _lineNum);
   }
-
-  return _lineNum;
 }
 
 int Ath__parser::readLineAndBreak(int prevWordCnt)
@@ -431,8 +409,7 @@ int Ath__parser::readLineAndBreak(int prevWordCnt)
 
 void Ath__parser::syntaxError(const char* msg)
 {
-  fprintf(stderr, "\n Syntax Error at line %d (%s)\n", _lineNum, msg);
-  exit(1);
+  _logger->error(utl::ODB, 429, "Syntax Error at line {} ({})", _lineNum, msg);
 }
 
 int Ath__parser::parseNextLine()

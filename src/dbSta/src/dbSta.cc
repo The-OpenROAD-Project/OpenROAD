@@ -64,39 +64,6 @@
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
 
-namespace ord {
-
-using sta::dbSta;
-using sta::PathExpanded;
-using sta::PathRef;
-
-sta::dbSta*
-makeDbSta()
-{
-  return new sta::dbSta;
-}
-
-void
-initDbSta(OpenRoad* openroad)
-{
-  dbSta* sta = openroad->getSta();
-  sta->init(openroad->tclInterp(),
-            openroad->getDb(),
-            // Broken gui api missing openroad accessor.
-            gui::Gui::get(),
-            openroad->getLogger());
-  openroad->addObserver(sta);
-}
-
-void
-deleteDbSta(sta::dbSta* sta)
-{
-  delete sta;
-  sta::Sta::setSta(nullptr);
-}
-
-}  // namespace ord
-
 ////////////////////////////////////////////////////////////////
 
 namespace sta {
@@ -193,28 +160,6 @@ private:
   static gui::Painter::Color clock_color;
 };
 
-dbSta*
-makeBlockSta(ord::OpenRoad* openroad, dbBlock* block)
-{
-  dbSta* sta = openroad->getSta();
-  dbSta* sta2 = new dbSta;
-  sta2->makeComponents();
-  sta2->initVars(sta->tclInterp(),
-                 openroad->getDb(),
-                 gui::Gui::get(),
-                 openroad->getLogger());
-  sta2->getDbNetwork()->setBlock(block);
-  sta2->copyUnits(sta->units());
-  return sta2;
-}
-
-extern "C" {
-extern int
-Dbsta_Init(Tcl_Interp* interp);
-}
-
-extern const char* dbSta_tcl_inits[];
-
 dbSta::dbSta() :
   Sta(),
   db_(nullptr),
@@ -232,29 +177,10 @@ dbSta::~dbSta()
   delete path_renderer_;
 }
 
-void
-dbSta::init(Tcl_Interp* tcl_interp,
-            dbDatabase* db,
-            gui::Gui* gui,
-            Logger* logger)
-{
-  initSta();
-  initVars(tcl_interp, db, gui, logger);
-  Sta::setSta(this);
-  // Define swig TCL commands.
-  Dbsta_Init(tcl_interp);
-  // Eval encoded sta TCL sources.
-  evalTclInit(tcl_interp, dbSta_tcl_inits);
-
-  power_density_heatmap_ = std::make_unique<PowerDensityDataSource>(this, logger);
-  power_density_heatmap_->registerHeatMap();
-}
-
-void
-dbSta::initVars(Tcl_Interp* tcl_interp,
-                dbDatabase* db,
-                gui::Gui* gui,
-                Logger* logger)
+void dbSta::initVars(Tcl_Interp* tcl_interp,
+                     odb::dbDatabase* db,
+                     gui::Gui* gui,
+                     utl::Logger* logger)
 {
   db_ = db;
   gui_ = gui;
@@ -264,6 +190,23 @@ dbSta::initVars(Tcl_Interp* tcl_interp,
   db_report_->setLogger(logger);
   db_network_->init(db, logger);
   db_cbk_ = new dbStaCbk(this, logger);
+}
+
+void dbSta::initPowerDensityHeatmap()
+{
+  power_density_heatmap_
+      = std::make_unique<PowerDensityDataSource>(this, logger_);
+  power_density_heatmap_->registerHeatMap();
+}
+
+std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
+{
+  auto clone = std::make_unique<dbSta>();
+  clone->makeComponents();
+  clone->initVars(tclInterp(), db_, gui_, logger_);
+  clone->getDbNetwork()->setBlock(block);
+  clone->copyUnits(units());
+  return clone;
 }
 
 ////////////////////////////////////////////////////////////////

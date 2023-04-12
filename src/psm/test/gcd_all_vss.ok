@@ -28,13 +28,13 @@
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 ########## IR report #################
-Worstcase voltage: 1.05e-03 V
-Average IR drop  : 6.73e-04 V
-Worstcase IR drop: 1.05e-03 V
+Worstcase voltage: 9.92e-04 V
+Average IR drop  : 6.34e-04 V
+Worstcase IR drop: 9.92e-04 V
 ######################################
 ########## EM analysis ###############
-Maximum current: 1.20e-04 A
-Average current: 3.62e-06 A
+Maximum current: 1.13e-04 A
+Average current: 3.41e-06 A
 Number of resistors: 506
 ######################################
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
@@ -44,8 +44,8 @@ Number of resistors: 506
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 Differences found at line 2.
-buffer52, 40.07, 91, 0.000897876
+buffer52, 40.07, 91, 0.000846489
 buffer52, 40.07, 91, 0.000595763
 Differences found at line 10.
-I0 VSS_80140_182000_1 0 2.64658e-07
+I0 VSS_80140_182000_1 0 2.42199e-07
 I0 VSS_80140_182000_1 0 1.41152e-07

@@ -33,11 +33,16 @@
 
 %{
 #include "mpl2/rtl_mp.h"
+#include "Mpl2Observer.h"
+#include "graphics.h"
+#include "odb/db.h"
 
 namespace ord {
 // Defined in OpenRoad.i
 mpl2::MacroPlacer2*
 getMacroPlacer2();
+utl::Logger* getLogger();
+odb::dbDatabase* getDb();
 }
 
 using ord::getMacroPlacer2;
@@ -115,7 +120,9 @@ void
 set_debug_cmd()
 {
   auto macro_placer = getMacroPlacer2();
-  macro_placer->setDebug();
+  int dbu = ord::getDb()->getTech()->getDbUnitsPerMicron();
+  std::unique_ptr<Mpl2Observer> graphics = std::make_unique<Graphics>(dbu, ord::getLogger());
+  macro_placer->setDebug(graphics);
 }
 
 } // namespace

@@ -52,17 +52,12 @@ Grid::Grid(VoltageDomain* domain,
            const std::string& name,
            bool starts_with_power,
            const std::vector<odb::dbTechLayer*>& generate_obstructions)
-    : domain_(domain),
-      name_(name),
-      starts_with_power_(starts_with_power),
-      allow_repair_channels_(false)
+    : domain_(domain), name_(name), starts_with_power_(starts_with_power)
 {
   obstruction_layers_ = generate_obstructions;
 }
 
-Grid::~Grid()
-{
-}
+Grid::~Grid() = default;
 
 odb::dbBlock* Grid::getBlock() const
 {
@@ -79,7 +74,7 @@ std::vector<odb::dbNet*> Grid::getNets(bool starts_with_power) const
   return domain_->getNets(starts_with_power);
 }
 
-const std::string Grid::typeToString(Type type)
+std::string Grid::typeToString(Type type)
 {
   switch (type) {
     case Core:
@@ -239,9 +234,8 @@ void Grid::makeRoutingObstructions(odb::dbBlock* block) const
                            [&obs, is_horizontal](int pos) {
                              if (is_horizontal) {
                                return !(obs.yMin() <= pos && pos <= obs.yMax());
-                             } else {
-                               return !(obs.xMin() <= pos && pos <= obs.xMax());
                              }
+                             return !(obs.xMin() <= pos && pos <= obs.xMax());
                            }),
             grid.end());
         // add by tracks
@@ -286,6 +280,16 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
              getLongName());
   // find vias that do not overlap completely
   // attempt to extend straps to fit (if owned by grid)
+
+  auto obs_filter = [this](const ShapeValue& other) -> bool {
+    const auto obs = other.second;
+    if (obs->shapeType() != Shape::GRID_OBS) {
+      return true;
+    }
+    const GridObsShape* shape = static_cast<GridObsShape*>(obs.get());
+    return !shape->belongsTo(this);
+  };
+
   std::map<Shape*, Shape*> replace_shapes;
   for (const auto& [box, via] : vias_) {
     // ensure shapes belong to something
@@ -307,15 +311,19 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
     }
 
     if (lower_belongs_to_grid && lower_shape->isModifiable()) {
-      auto* new_lower = lower_shape->extendTo(
-          upper_shape->getRect(), obstructions[lower_shape->getLayer()]);
+      auto* new_lower
+          = lower_shape->extendTo(upper_shape->getRect(),
+                                  obstructions[lower_shape->getLayer()],
+                                  obs_filter);
       if (new_lower != nullptr) {
         replace_shapes[lower_shape.get()] = new_lower;
       }
     }
     if (upper_belongs_to_grid && upper_shape->isModifiable()) {
-      auto* new_upper = upper_shape->extendTo(
-          lower_shape->getRect(), obstructions[upper_shape->getLayer()]);
+      auto* new_upper
+          = upper_shape->extendTo(lower_shape->getRect(),
+                                  obstructions[upper_shape->getLayer()],
+                                  obs_filter);
       if (new_upper != nullptr) {
         replace_shapes[upper_shape.get()] = new_upper;
       }
@@ -336,7 +344,7 @@ bool Grid::repairVias(const ShapeTreeMap& global_shapes,
   return !replace_shapes.empty();
 }
 
-const ShapeTreeMap Grid::getShapes() const
+ShapeTreeMap Grid::getShapes() const
 {
   ShapeTreeMap shapes;
 
@@ -352,17 +360,17 @@ const ShapeTreeMap Grid::getShapes() const
   return shapes;
 }
 
-const odb::Rect Grid::getDomainArea() const
+odb::Rect Grid::getDomainArea() const
 {
   return domain_->getDomainArea();
 }
 
-const odb::Rect Grid::getDomainBoundary() const
+odb::Rect Grid::getDomainBoundary() const
 {
   return getDomainArea();
 }
 
-const odb::Rect Grid::getGridArea() const
+odb::Rect Grid::getGridArea() const
 {
   if (getBlock() == nullptr) {
     return odb::Rect();
@@ -372,12 +380,12 @@ const odb::Rect Grid::getGridArea() const
   return rect;
 }
 
-const odb::Rect Grid::getGridBoundary() const
+odb::Rect Grid::getGridBoundary() const
 {
   return getGridArea();
 }
 
-const odb::Rect Grid::getRingArea() const
+odb::Rect Grid::getRingArea() const
 {
   if (getBlock() == nullptr) {
     return odb::Rect();
@@ -519,13 +527,13 @@ void Grid::getIntersections(std::vector<ViaPtr>& shape_intersections,
            it != upper_shapes.qend();
            it++) {
         const auto& upper_shape = it->second;
-        const odb::Rect via_rect
-            = lower_shape->getRect().intersect(upper_shape->getRect());
-        if (via_rect.area() == 0) {
-          // intersection did not overlap, so ignore
+        if (!lower_shape->getRect().overlaps(upper_shape->getRect())) {
+          // no overlap, so ignore
           continue;
         }
 
+        const odb::Rect via_rect
+            = lower_shape->getRect().intersect(upper_shape->getRect());
         auto* via = new Via(connect.get(),
                             lower_shape->getNet(),
                             via_rect,
@@ -684,6 +692,15 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
     }
   }
 
+  auto obs_filter = [this](const ShapeValue& other) -> bool {
+    const auto obs = other.second;
+    if (obs->shapeType() != Shape::GRID_OBS) {
+      return true;
+    }
+    const GridObsShape* shape = static_cast<GridObsShape*>(obs.get());
+    return !shape->belongsTo(this);
+  };
+
   ShapeTreeMap search_obstructions = obstructions;
   for (const auto& [layer, shapes] : search_shapes) {
     auto& obs = search_obstructions[layer];
@@ -710,7 +727,8 @@ void Grid::makeVias(const ShapeTreeMap& global_shapes,
   for (const auto& via : vias) {
     for (auto* layer : via->getConnect()->getIntermediteLayers()) {
       auto& search_obs = search_obstructions[layer];
-      if (search_obs.qbegin(bgi::intersects(via->getBox()))
+      if (search_obs.qbegin(bgi::intersects(via->getBox())
+                            && bgi::satisfies(obs_filter))
           != search_obs.qend()) {
         remove_vias.insert(via);
         via->markFailed(failedViaReason::OBSTRUCTED);
@@ -812,7 +830,7 @@ void Grid::removeInvalidVias()
   }
 }
 
-const std::vector<GridComponent*> Grid::getGridComponents() const
+std::vector<GridComponent*> Grid::getGridComponents() const
 {
   std::vector<GridComponent*> components;
   for (const auto& ring : rings_) {
@@ -891,7 +909,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   }
 
   for (auto* layer : layers) {
-    auto obs = std::make_shared<Shape>(layer, core, Shape::GRID_OBS);
+    auto obs = std::make_shared<GridObsShape>(layer, core, this);
     debugPrint(getLogger(),
                utl::PDN,
                "Obs",
@@ -912,7 +930,7 @@ void Grid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
                               core.xMax() + ver_size + offset[2],
                               core.yMax() + hor_size + offset[3]);
     for (auto* layer : ring->getLayers()) {
-      auto obs = std::make_shared<Shape>(layer, ring_rect, Shape::GRID_OBS);
+      auto obs = std::make_shared<GridObsShape>(layer, ring_rect, this);
       obs->generateObstruction();
       debugPrint(
           getLogger(),
@@ -1068,7 +1086,7 @@ CoreGrid::CoreGrid(VoltageDomain* domain,
 {
 }
 
-const odb::Rect CoreGrid::getDomainBoundary() const
+odb::Rect CoreGrid::getDomainBoundary() const
 {
   // account for the width of the follow pins for straps
   odb::Rect core = Grid::getDomainBoundary();
@@ -1151,11 +1169,7 @@ InstanceGrid::InstanceGrid(
     bool start_with_power,
     odb::dbInst* inst,
     const std::vector<odb::dbTechLayer*>& generate_obstructions)
-    : Grid(domain, name, start_with_power, generate_obstructions),
-      inst_(inst),
-      halos_({0, 0, 0, 0}),
-      grid_to_boundary_(false),
-      replaceable_(false)
+    : Grid(domain, name, start_with_power, generate_obstructions), inst_(inst)
 {
   auto* halo = inst->getHalo();
   if (halo != nullptr) {
@@ -1171,7 +1185,7 @@ InstanceGrid::InstanceGrid(
   }
 }
 
-const std::string InstanceGrid::getLongName() const
+std::string InstanceGrid::getLongName() const
 {
   return getName() + " - " + inst_->getName();
 }
@@ -1186,7 +1200,7 @@ void InstanceGrid::setGridToBoundary(bool value)
   grid_to_boundary_ = value;
 }
 
-const odb::Rect InstanceGrid::getDomainArea() const
+odb::Rect InstanceGrid::getDomainArea() const
 {
   auto* bbox = inst_->getBBox();
   odb::Rect inst_box = bbox->getBox();
@@ -1194,34 +1208,34 @@ const odb::Rect InstanceGrid::getDomainArea() const
   return inst_box;
 }
 
-const odb::Rect InstanceGrid::getDomainBoundary() const
+odb::Rect InstanceGrid::getDomainBoundary() const
 {
   if (grid_to_boundary_) {
     // use instance boundary
     return getDomainArea();
-  } else {
-    // find the outline of the supply pins
-    odb::Rect pin_box;
-    pin_box.mergeInit();
+  }
 
-    odb::dbTransform transform;
-    inst_->getTransform(transform);
+  // find the outline of the supply pins
+  odb::Rect pin_box;
+  pin_box.mergeInit();
 
-    for (auto* pin : inst_->getMaster()->getMTerms()) {
-      if (!pin->getSigType().isSupply()) {
-        continue;
-      }
+  odb::dbTransform transform;
+  inst_->getTransform(transform);
 
-      pin_box.merge(pin->getBBox());
+  for (auto* pin : inst_->getMaster()->getMTerms()) {
+    if (!pin->getSigType().isSupply()) {
+      continue;
     }
 
-    transform.apply(pin_box);
-
-    return pin_box;
+    pin_box.merge(pin->getBBox());
   }
+
+  transform.apply(pin_box);
+
+  return pin_box;
 }
 
-const odb::Rect InstanceGrid::getGridArea() const
+odb::Rect InstanceGrid::getGridArea() const
 {
   return applyHalo(getDomainArea(), false, true, true);
 }
@@ -1255,7 +1269,7 @@ odb::Rect InstanceGrid::applyHalo(const odb::Rect& rect,
   return halo_rect;
 }
 
-const odb::Rect InstanceGrid::getGridBoundary() const
+odb::Rect InstanceGrid::getGridBoundary() const
 {
   return getDomainBoundary();
 }
@@ -1312,13 +1326,16 @@ void InstanceGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
 
   // copy layer obs
   for (const auto& [layer, shapes] : local_obs) {
-    auto obs = std::make_shared<Shape>(layer, inst_box, Shape::GRID_OBS);
+    auto obs = std::make_shared<GridObsShape>(layer, inst_box, this);
     local_obs[layer].insert({obs->getObstructionBox(), obs});
   }
 
   // copy instance obstructions
   for (const auto& [layer, shapes] : getInstanceObstructions(inst_, halos_)) {
-    local_obs[layer].insert(shapes.begin(), shapes.end());
+    for (const auto& [box, shape] : shapes) {
+      auto obs = std::make_shared<GridObsShape>(layer, shape->getRect(), this);
+      local_obs[layer].insert({box, obs});
+    }
   }
 
   // merge local and global obs
@@ -1436,9 +1453,7 @@ ExistingGrid::ExistingGrid(
     utl::Logger* logger,
     const std::string& name,
     const std::vector<odb::dbTechLayer*>& generate_obstructions)
-    : Grid(nullptr, name, false, generate_obstructions),
-      shapes_(),
-      domain_(nullptr)
+    : Grid(nullptr, name, false, generate_obstructions), domain_(nullptr)
 {
   std::set<odb::dbNet*> nets;
 

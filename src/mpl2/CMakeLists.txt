@@ -41,6 +41,31 @@ list(APPEND CMAKE_PREFIX_PATH
 
 find_package(ortools REQUIRED)
 
+add_library(mpl2_lib
+  src/rtl_mp.cpp
+  src/hier_rtlmp.cpp
+  src/object.cpp
+  src/SimulatedAnnealingCore.cpp
+  src/SACoreHardMacro.cpp
+  src/SACoreSoftMacro.cpp
+  src/bus_synthesis.cpp
+)
+
+target_include_directories(mpl2_lib
+  PUBLIC
+    include
+)
+
+target_link_libraries(mpl2_lib
+    utl_lib
+    dbSta_lib
+    OpenSTA
+    odb
+    ortools::ortools
+    dl
+    par_lib
+)
+
 swig_lib(NAME      mpl2
          NAMESPACE mpl2
          I_FILE    src/mpl.i
@@ -50,13 +75,6 @@ swig_lib(NAME      mpl2
 target_sources(mpl2
   PRIVATE
     src/MakeMacroPlacer.cpp
-    src/rtl_mp.cpp
-    src/hier_rtlmp.cpp
-    src/object.cpp
-    src/SimulatedAnnealingCore.cpp
-    src/SACoreHardMacro.cpp
-    src/SACoreSoftMacro.cpp
-    src/bus_synthesis.cpp
     src/graphics.cpp
 )
 
@@ -67,16 +85,12 @@ messages(
 target_include_directories(mpl2
   PUBLIC
     include
+    src
 )
 
 target_link_libraries(mpl2
-    utl
-    dbSta
-    OpenSTA
-    odb
+    mpl2_lib
     gui
-    ortools::ortools
-    dl
-    par
 )
 
+add_subdirectory(test/cpp)

@@ -42,6 +42,8 @@
 #include <string>
 #include <vector>
 
+#include "Mpl2Observer.h"
+
 namespace odb {
 class dbBTerm;
 class dbBlock;
@@ -71,7 +73,6 @@ class HardMacro;
 class Metrics;
 struct Rect;
 class SoftMacro;
-class Graphics;
 
 // Hierarchial RTL-MP
 // Support Multi-Level Clustering.
@@ -137,7 +138,7 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
-  void setDebug();
+  void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
 
  private:
   void setDefaultThresholds();
@@ -424,6 +425,6 @@ class HierRTLMP
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
 
-  std::unique_ptr<Graphics> graphics_;
+  std::unique_ptr<Mpl2Observer> graphics_;
 };
 }  // namespace mpl2

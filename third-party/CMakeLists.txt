@@ -33,7 +33,10 @@
 ##
 ###############################################################################
 
-add_subdirectory(gtest EXCLUDE_FROM_ALL)
+
+if(ENABLE_TESTS)
+  add_subdirectory(gtest EXCLUDE_FROM_ALL)
+endif()
 
 if (NOT USE_SYSTEM_ABC)
 
