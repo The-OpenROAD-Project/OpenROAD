@@ -224,6 +224,12 @@ void NesterovPlace::init()
   updateGradients(
       prevSLPSumGrads_, prevSLPWireLengthGrads_, prevSLPDensityGrads_);
 
+  if (wireLengthGradSum_ == 0) {
+    densityPenalty_ = npVars_.initDensityPenalty;
+    updateGradients(
+        prevSLPSumGrads_, prevSLPWireLengthGrads_, prevSLPDensityGrads_);
+  }
+
   if (isDiverged_) {
     return;
   }
@@ -232,8 +238,10 @@ void NesterovPlace::init()
       log_, GPL, "npinit", 1, "WireLengthGradSum {:g}", wireLengthGradSum_);
   debugPrint(log_, GPL, "npinit", 1, "DensityGradSum {:g}", densityGradSum_);
 
-  densityPenalty_
-      = (wireLengthGradSum_ / densityGradSum_) * npVars_.initDensityPenalty;
+  if (wireLengthGradSum_ != 0) {
+    densityPenalty_
+        = (wireLengthGradSum_ / densityGradSum_) * npVars_.initDensityPenalty;
+  }
 
   debugPrint(
       log_, GPL, "npinit", 1, "InitDensityPenalty {:g}", densityPenalty_);
