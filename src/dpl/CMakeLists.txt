@@ -55,7 +55,7 @@ target_link_libraries(dpl_lib
     OpenSTA
     tcl
   PRIVATE
-    utl
+    utl_lib
 )
 
 

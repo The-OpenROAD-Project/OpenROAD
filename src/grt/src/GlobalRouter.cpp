@@ -846,9 +846,9 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     int min_pin_layer = std::numeric_limits<int>::max();
     for (RoutePt& pin_pos : pins_on_grid) {
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
-      min_pin_layer = std::min(min_pin_layer, pin_pos.layer()) - 1;
+      min_pin_layer = std::min(min_pin_layer, pin_pos.layer());
     }
-    fr_net->setMinLayer(std::max(min_pin_layer, min_layer - 1));
+    fr_net->setMinLayer(std::max(min_pin_layer - 1, min_layer - 1));
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()
         && net->getDbNet() == fastroute_->getDebugNet()) {
