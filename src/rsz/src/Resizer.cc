@@ -34,32 +34,35 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
+
+#include <cmath>
+#include <limits>
+#include <optional>
+
 #include "BufferedNet.hh"
 #include "RepairDesign.hh"
-#include "RepairSetup.hh"
 #include "RepairHold.hh"
-
-#include "utl/Logger.h"
+#include "RepairSetup.hh"
 #include "db_sta/dbNetwork.hh"
-
-#include "sta/FuncExpr.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Units.hh"
-#include "sta/Liberty.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
-#include "sta/Network.hh"
-#include "sta/Graph.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Parasitics.hh"
-#include "sta/Sdc.hh"
-#include "sta/InputDrive.hh"
-#include "sta/Corner.hh"
 #include "sta/Bfs.hh"
+#include "sta/Corner.hh"
+#include "sta/FuncExpr.hh"
+#include "sta/Fuzzy.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/InputDrive.hh"
+#include "sta/Liberty.hh"
+#include "sta/Network.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/StaMain.hh"
-#include "sta/Fuzzy.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
+#include "sta/Units.hh"
+#include "utl/Logger.h"
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -1163,7 +1166,15 @@ Resizer::dbuToMeters(int dist) const
 int
 Resizer::metersToDbu(double dist) const
 {
-  return dist * dbu_ * 1e+6;
+  if (dist < 0) {
+    logger_->error(
+        RSZ, 86, "metersToDbu({}) cannot convert negative distances", dist);
+  }
+  // sta::INF is passed to this function in some cases. Protect against
+  // overflow conditions.
+  double distance = dist * dbu_ * 1e+6;
+  return static_cast<int>(std::lround(distance)
+                          & std::numeric_limits<int>::max());
 }
 
 void
@@ -1899,16 +1910,32 @@ Resizer::findMaxWireLength()
 double
 Resizer::findMaxWireLength1()
 {
-  double max_length = INF;
+  std::optional<double> max_length;
   for (const Corner *corner : *sta_->corners()) {
-    if (wireSignalResistance(corner) > 0.0) {
-      for (LibertyCell *buffer_cell : buffer_cells_) {
-        double buffer_length = findMaxWireLength(buffer_cell, corner);
-        max_length = min(max_length, buffer_length);
-      }
+    if (wireSignalResistance(corner) <= 0.0) {
+      logger_->warn(RSZ,
+                    88,
+                    "Corner: {} has no wire signal resistance value.",
+                    corner->name());
+      continue;
+    }
+
+    // buffer_cells_ is required to be non-empty.
+    for (LibertyCell* buffer_cell : buffer_cells_) {
+      double buffer_length = findMaxWireLength(buffer_cell, corner);
+      max_length = min(max_length.value_or(INF), buffer_length);
     }
   }
-  return max_length;
+
+  if (!max_length.has_value()) {
+    logger_->error(RSZ,
+                   89,
+                   "Could not find a resistance value for any corner. Cannot "
+                   "evaluate max wire length for buffer. Check over your "
+                   "`set_wire_rc` configuration");
+  }
+
+  return max_length.value();
 }
 
 // Find the max wire length before it is faster to split the wire
