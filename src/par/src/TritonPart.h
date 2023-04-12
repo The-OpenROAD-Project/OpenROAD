@@ -147,13 +147,13 @@ class TritonPart
     extra_delay_ = extra_delay; // extra delay introduced by cut
   }
                          
-  void SetNetWeight(std::vector<float> e_wt_factors) {
+  void SetNetWeight(const std::vector<float>& e_wt_factors) {
     e_wt_factors_ = e_wt_factors;  // the cost introduced by a cut hyperedge e is
                                    // e_wt_factors dot_product hyperedge_weights_[e]
                                    // this parameter is used by coarsening and partitioning
   }
 
-  void SetVertexWeight(std::vector<float> v_wt_factors) {
+  void SetVertexWeight(const std::vector<float>& v_wt_factors) {
     v_wt_factors_ = v_wt_factors;    // the ``weight'' of a vertex. For placement-driven coarsening,
                                      // when we merge two vertices, we need to update the location
                                      // of merged vertex based on the gravity center of these two 
@@ -162,7 +162,7 @@ class TritonPart
                                      // this parameter is only used in coarsening
   }
 
-  void SetPlacementWeight(std::vector<float> placement_wt_factors) {
+  void SetPlacementWeight(const std::vector<float>& placement_wt_factors) {
     placement_wt_factors_ = placement_wt_factors; // the weight for placement information. For placement-driven 
                                                   // coarsening, when we calculate the score for best-choice coarsening,
                                                   // the placement information also contributes to the score function.

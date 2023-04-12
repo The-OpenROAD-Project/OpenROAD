@@ -600,16 +600,4 @@ bool TPrefiner::CheckHyperedgeMoveLegality(int e, // hyperedge id
   }
 }
                     
-
-
-
-
-
-
-
-
-
-
-
-
 }  // namespace par

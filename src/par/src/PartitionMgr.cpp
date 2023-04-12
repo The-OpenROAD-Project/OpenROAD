@@ -89,68 +89,219 @@ void PartitionMgr::init(odb::dbDatabase* db,
   logger_ = logger;
 }
 
-void PartitionMgr::tritonPartHypergraph(const char* hypergraph_file,
-                                        const char* fixed_file,
-                                        unsigned int num_parts,
+
+// The function for partitioning a hypergraph
+// This is used for replacing hMETIS
+// Key supports: 
+// (1) fixed vertices constraint in fixed_file
+// (2) community attributes in community_file (This can be used to guide the partitioning process)
+// (3) stay together attributes in group_file.
+// (4) placement information is specified in placement file
+// The format is that each line cooresponds to a group
+// fixed vertices, community and placement attributes both follows the hMETIS format
+void PartitionMgr::tritonPartHypergraph(unsigned int num_parts,
                                         float balance_constraint,
-                                        int vertex_dimensions,
-                                        int hyperedge_dimensions,
-                                        unsigned int seed)
+                                        unsigned int seed,
+                                        int vertex_dimension,
+                                        int hyperedge_dimension,
+                                        int placement_dimension,
+                                        const char* hypergraph_file,
+                                        const char* fixed_file,
+                                        const char* community_file,
+                                        const char* group_file,
+                                        const char* placement_file,
+                                        // weight parameters
+                                        const std::vector<float>& e_wt_factors,
+                                        const std::vector<float>& v_wt_factors,
+                                        const std::vector<float>& placement_wt_factors,
+                                        // coarsening related parameters
+                                        int thr_coarsen_hyperedge_size_skip,
+                                        int thr_coarsen_vertices,
+                                        int thr_coarsen_hyperedges,
+                                        float coarsening_ratio,
+                                        int max_coarsen_iters,
+                                        float adj_diff_ratio,
+                                        int min_num_vertices_each_part,
+                                        // initial partitioning related parameters
+                                        int num_initial_solutions,
+                                        int num_best_initial_solutions,
+                                        // refinement related parameters
+                                        int refiner_iters,
+                                        int max_moves,
+                                        int max_num_fm_pass,
+                                        float early_stop_ratio,
+                                        int total_corking_passes,
+                                        // vcycle related parameters
+                                        bool v_cycle_flag,
+                                        int max_num_vcycle,
+                                        int num_ubfactor_delta)
 {
   // Use TritonPart to partition a hypergraph
   // In this mode, TritonPart works as hMETIS.
   // Thus users can use this function to partition the input hypergraph
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
-  triton_part->PartitionHypergraph(hypergraph_file,
-                                   fixed_file,
-                                   num_parts,
+  triton_part->SetNetWeight(e_wt_factors);
+  triton_part->SetVertexWeight(v_wt_factors);
+  triton_part->SetPlacementWeight(placement_wt_factors);
+  triton_part->SetFineTuneParams(// coarsening related parameters
+                                 thr_coarsen_hyperedge_size_skip,
+                                 thr_coarsen_vertices,
+                                 thr_coarsen_hyperedges,
+                                 coarsening_ratio,
+                                 max_coarsen_iters,
+                                 adj_diff_ratio,
+                                 min_num_vertices_each_part,
+                                 // initial partitioning related parameters
+                                 num_initial_solutions,
+                                 num_best_initial_solutions,
+                                 // refinement related parameters
+                                 refiner_iters,
+                                 max_moves,
+                                 max_num_fm_pass,
+                                 early_stop_ratio,
+                                 total_corking_passes,
+                                 // vcycle related parameters
+                                 v_cycle_flag,
+                                 max_num_vcycle,
+                                 num_ubfactor_delta);
+  triton_part->PartitionHypergraph(num_parts,
                                    balance_constraint,
-                                   vertex_dimensions,
-                                   hyperedge_dimensions,
-                                   seed);
+                                   seed,
+                                   vertex_dimension,
+                                   hyperedge_dimension,
+                                   placement_dimension,
+                                   hypergraph_file,
+                                   fixed_file,
+                                   community_file,
+                                   group_file,
+                                   placement_file);
 }
 
-void PartitionMgr::tritonPartDesign(unsigned int num_parts,
-                                    float balance_constraint,
-                                    unsigned int seed,
-                                    bool fence_flag,
-                                    float fence_lx,
-                                    float fence_ly,
-                                    float fence_ux,
-                                    float fence_uy,
-                                    const std::string& solution_filename,
-                                    const std::string& paths_filename,
-                                    const std::string& hypergraph_filename)
+
+
+// Top level interface
+// The function for partitioning a hypergraph
+// This is the main API for TritonPart
+// Key supports:
+// (1) fixed vertices constraint in fixed_file
+// (2) community attributes in community_file (This can be used to guide the partitioning process)
+// (3) stay together attributes in group_file.
+// (4) timing-driven partitioning
+// (5) fence-aware partitioning
+// (6) placement-aware partitioning, placement information is extracted from OpenDB
+void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
+                                    float balance_constraint_arg,
+                                    unsigned int seed_arg,
+                                    bool timing_aware_flag_arg,
+                                    int top_n_arg,
+                                    bool placement_flag_arg,
+                                    bool fence_flag_arg,
+                                    float fence_lx_arg,
+                                    float fence_ly_arg,
+                                    float fence_ux_arg,
+                                    float fence_uy_arg,
+                                    const char* fixed_file_arg,
+                                    const char* community_file_arg,
+                                    const char* group_file_arg,
+                                    const char* solution_filename_arg,
+                                    // timing related parameters
+                                    float net_timing_factor, 
+                                    float path_timing_factor,
+                                    float path_snaking_factor,
+                                    float timing_exp_factor,
+                                    float extra_delay,
+                                    // weight parameters
+                                    const std::vector<float>& e_wt_factors,
+                                    const std::vector<float>& v_wt_factors,
+                                    const std::vector<float>& placement_wt_factors,
+                                    // coarsening related parameters
+                                    int thr_coarsen_hyperedge_size_skip,
+                                    int thr_coarsen_vertices,
+                                    int thr_coarsen_hyperedges,
+                                    float coarsening_ratio,
+                                    int max_coarsen_iters,
+                                    float adj_diff_ratio,
+                                    int min_num_vertices_each_part,
+                                    // initial partitioning related parameters
+                                    int num_initial_solutions,
+                                    int num_best_initial_solutions,
+                                    // refinement related parameters
+                                    int refiner_iters,
+                                    int max_moves,
+                                    int max_num_fm_pass,
+                                    float early_stop_ratio,
+                                    int total_corking_passes,
+                                    // vcycle related parameters
+                                    bool v_cycle_flag,
+                                    int max_num_vcycle,
+                                    int num_ubfactor_delta)
 {
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
-  triton_part->SetFenceFlag(fence_flag);
-  triton_part->SetFence(fence_lx, fence_ly, fence_ux, fence_uy);
-  triton_part->PartitionDesign(num_parts,
-                               balance_constraint,
-                               seed,
-                               solution_filename,
-                               paths_filename,
-                               hypergraph_filename);
+  triton_part->SetTimingParams(net_timing_factor,
+                               path_timing_factor,
+                               path_snaking_factor,
+                               timing_exp_factor,
+                               extra_delay);
+  triton_part->SetNetWeight(e_wt_factors);
+  triton_part->SetVertexWeight(v_wt_factors);
+  triton_part->SetPlacementWeight(placement_wt_factors);
+  triton_part->SetFineTuneParams(// coarsening related parameters
+                                 thr_coarsen_hyperedge_size_skip,
+                                 thr_coarsen_vertices,
+                                 thr_coarsen_hyperedges,
+                                 coarsening_ratio,
+                                 max_coarsen_iters,
+                                 adj_diff_ratio,
+                                 min_num_vertices_each_part,
+                                 // initial partitioning related parameters
+                                 num_initial_solutions,
+                                 num_best_initial_solutions,
+                                 // refinement related parameters
+                                 refiner_iters,
+                                 max_moves,
+                                 max_num_fm_pass,
+                                 early_stop_ratio,
+                                 total_corking_passes,
+                                 // vcycle related parameters
+                                 v_cycle_flag,
+                                 max_num_vcycle,
+                                 num_ubfactor_delta);
+  triton_part->PartitionDesign(num_parts_arg,
+                               balance_constraint_arg,
+                               seed_arg,
+                               timing_aware_flag_arg,
+                               top_n_arg,
+                               placement_flag_arg,
+                               fence_flag_arg,
+                               fence_lx_arg,
+                               fence_ly_arg,
+                               fence_ux_arg,
+                               fence_uy_arg,
+                               fixed_file_arg,
+                               community_file_arg,
+                               group_file_arg,
+                               solution_filename_arg);
 }
 
-std::vector<int> PartitionMgr::TritonPart2Way(
-    int num_vertices,
-    int num_hyperedges,
-    const std::vector<std::vector<int>>& hyperedges,
-    const std::vector<float>& vertex_weights,
-    float balance_constraints,
-    int seed)
+
+// k-way partitioning used by Hier-RTLMP
+std::vector<int> PartitionMgr::PartitionKWaySimpleMode(unsigned int num_parts_arg,
+                                                       float balance_constraint_arg,
+                                                       unsigned int seed_arg,
+                                                       const std::vector<std::vector<int> >& hyperedges,
+                                                       const std::vector<float>& vertex_weights,
+                                                       const std::vector<float>& hyperedge_weights)
 {
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
-  return triton_part->Partition2Way(num_vertices,
-                                    num_hyperedges,
-                                    hyperedges,
-                                    vertex_weights,
-                                    balance_constraints,
-                                    seed);
+  return triton_part->PartitionKWaySimpleMode(num_parts_arg,
+                                              balance_constraint_arg,
+                                              seed_arg,
+                                              hyperedges,
+                                              vertex_weights,
+                                              hyperedge_weights);
 }
 
 // determine the required direction of a port.

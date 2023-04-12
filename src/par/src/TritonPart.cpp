@@ -1218,7 +1218,7 @@ void TritonPart::MultiLevelPartition()
   std::fill(solution_.begin(), solution_.end(), -1);
   for (int cluster_id = 0; cluster_id < hypergraph_->num_vertices_; cluster_id++) {
     const int part_id = solution[cluster_id];
-    for (const auto& v : hypergraph_->vertex_c_attr_[part_id]) {
+    for (const auto& v : hypergraph_->vertex_c_attr_[cluster_id]) {
       solution_[v] = part_id;
     }
   }

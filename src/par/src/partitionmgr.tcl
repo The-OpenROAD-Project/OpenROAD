@@ -36,45 +36,119 @@
 #--------------------------------------------------------------------
 # Partition netlist command
 #--------------------------------------------------------------------
-sta::define_cmd_args "triton_part_hypergraph" { -hypergraph_file hypergraph_file \
-                                                [-fixed_file fixed_file] \
-                                                [-num_parts num_parts] \
-                                                [-balance_constraint balance_constraint] \
-                                                [-vertex_dimension vertex_dimension] \
-                                                [-hyperedge_dimension hyperedge_dimension] \
-                                                [-seed seed] \
-                                              }
+sta::define_cmd_args "triton_part_hypergraph" {
+  -hypergraph_file hypergraph_file \
+  [-balance_constraint balance_constraint] \
+  [-seed seed] \
+  [-vertex_dimension vertex_dimension] \
+  [-hyperedge_dimension hyperedge_dimension] \
+  [-placement_dimension placement_dimension] \
+  [-fixed_file fixed_file] \
+  [-community_file community_file] \
+  [-group_file group_file] \
+  [-placement_file placement_file] \
+  [-e_wt_factors e_wt_factors] \
+  [-v_wt_factors v_wt_factors] \
+  [-placement_wt_factors placement_wt_factors] \
+  [-thr_coarsen_hyperedge_size_skip thr_coarsen_hyperedge_size_skip] \
+  [-thr_coarsen_vertices thr_coarsen_vertices] \
+  [-thr_coarsen_hyperedges thr_coarsen_hyperedges] \
+  [-coarsening_ratio coarsening_ratio] \
+  [-max_coarsen_iters max_coarsen_iters] \
+  [-adj_diff_ratio adj_diff_ratio] \
+  [-min_num_vertices_each_part min_num_vertices_each_part] \
+  [-num_initial_solutions num_initial_solutions] \
+  [-num_best_initial_solutions num_best_initial_solutions] \
+  [-refiner_iters refiner_iters] \
+  [-max_moves max_moves] \
+  [-max_num_fm_pass max_num_fm_pass] \
+  [-early_stop_ratio early_stop_ratio] \
+  [-total_corking_passes total_corking_passes] \
+  [-v_cycle_flag v_cycle_flag ] \
+  [-max_num_vcycle max_num_vcycle] \
+  [-num_ubfactor_delta num_ubfactor_delta] \
+  }
 proc triton_part_hypergraph { args } {
   sta::parse_key_args "triton_part_hypergraph" args \
-      keys {-hypergraph_file
-            -fixed_file
-            -num_parts -balance_constraint
-            -vertex_dimension
-            -hyperedge_dimension
-            -seed } \
+      keys {-num_parts \
+            -balance_constraint \
+            -seed \
+            -vertex_dimension \
+            -hyperedge_dimension \
+            -placement_dimension \
+            -hypergraph_file \
+            -fixed_file \
+            -community_file \
+            -group_file \
+            -placement_file \
+            -e_wt_factors \
+            -v_wt_factors \
+            -placement_wt_factors \
+            -thr_coarsen_hyperedge_size_skip \
+            -thr_coarsen_vertices \
+            -thr_coarsen_hyperedges \
+            -coarsening_ratio \
+            -max_coarsen_iters \
+            -adj_diff_ratio \
+            -min_num_vertices_each_part \
+            -num_initial_solutions \
+            -num_best_initial_solutions \
+            -refiner_iters \
+            -max_moves \
+            -max_num_fm_pass \
+            -early_stop_ratio \
+            -total_corking_passes \
+            -v_cycle_flag \
+            -max_num_vcycle \
+            -num_ubfactor_delta } \
       flags {}
  
   if { ![info exists keys(-hypergraph_file)] } {
     utl::error PAR 0924 "Missing mandatory argument -hypergraph_file."
   }
   set hypergraph_file $keys(-hypergraph_file)
-  set fixed_file ""
   set num_parts 2
   set balance_constraint 1.0
-  set seed 0
+  set seed 0 
   set vertex_dimension 1
   set hyperedge_dimension 1
+  set placement_dimension 0
+  set fixed_file ""
+  set community_file ""
+  set group_file ""
+  set placement_file ""
+  set e_wt_factors { 1.0 }
+  set v_wt_factors { 1.0 }
+  set placement_wt_factors { }
+  set thr_coarsen_hyperedge_size_skip 50
+  set thr_coarsen_vertices 200
+  set thr_coarsen_hyperedges 50
+  set coarsening_ratio 1.5
+  set max_coarsen_iters 20
+  set adj_diff_ratio 0.0001
+  set min_num_vertices_each_part 4
+  set num_initial_solutions 50
+  set num_best_initial_solutions 10
+  set refiner_iters 2
+  set max_moves 50
+  set max_num_fm_pass 10
+  set early_stop_ratio 0.5
+  set total_corking_passes 25
+  set v_cycle_flag true
+  set max_num_vcycle 5
+  set num_ubfactor_delta 5
   
-  if { [info exists keys(-fixed_file)] } {
-    set fixed_file $keys(-fixed_file)
-  }
-
+  
   if { [info exists keys(-num_parts)] } {
     set num_parts $keys(-num_parts)
   }
 
   if { [info exists keys(-balance_constraint)] } {
     set balance_constraint $keys(-balance_constraint)
+  }
+
+  if { [info exists keys(-seed)] } {
+    set seed $keys(-seed)
   }
 
   if { [info exists keys(-vertex_dimension)] } {
@@ -85,66 +159,286 @@ proc triton_part_hypergraph { args } {
     set hyperedge_dimension $keys(-hyperedge_dimension)
   }
 
-  if { [info exists keys(-seed)] } {
-    set seed $keys(-seed)
+  if { [info exists keys(-placement_dimension)] } {
+    set placement_dimension $keys(-placement_dimension)
   }
 
-  par::triton_part_hypergraph $hypergraph_file $fixed_file $num_parts \
-      $balance_constraint $vertex_dimension $hyperedge_dimension $seed
+  if { [info exists keys(-fixed_file)] } {
+    set fixed_file $keys(-fixed_file)
+  }
+
+  if { [info exists keys(-community_file)] } {
+    set community_file $keys(-community_file)
+  }
+
+  if { [info exists keys(-group_file)] } {
+    set group_file $keys(-group_file)
+  }
+
+  if { [info exists keys(-placement_file)] } {
+    set placement_file $keys(-placement_file)
+  }
+
+  if { [info exists keys(-e_wt_factors)] } {
+    set e_wt_factors $keys(-e_wt_factors)
+  }
+
+  if { [info exists keys(-v_wt_factors)] } {
+    set v_wt_factors $keys(-v_wt_factors)
+  }
+
+  if { [info exists keys(-placement_wt_factors)] } {
+    set placement_wt_factors $keys(-placement_wt_factors)
+  }
+
+  if { [info exists keys(-thr_coarsen_hyperedge_size_skip)] } {
+    set thr_coarsen_hyperedge_size_skip $keys(-thr_coarsen_hyperedge_size_skip)
+  }
+
+  if { [info exists keys(-thr_coarsen_vertices)] } {
+    set thr_coarsen_vertices $keys(-thr_coarsen_vertices)
+  }
+
+  if { [info exists keys(-thr_coarsen_hyperedges)] } {
+    set thr_coarsen_hyperedges $keys(-thr_coarsen_hyperedges)
+  }
+
+  if { [info exists keys(-coarsening_ratio)] } {
+    set coarsening_ratio $keys(-coarsening_ratio)
+  }
+  
+  if { [info exists keys(-max_coarsen_iters)] } {
+    set max_coarsen_iters $keys(-max_coarsen_iters)
+  }
+
+  if { [info exists keys(-adj_diff_ratio)] } {
+    set adj_diff_ratio $keys(-adj_diff_ratio)
+  }
+
+  if { [info exists keys(-min_num_vertices_each_part)] } {
+    set min_num_vertices_each_part $keys(-min_num_vertices_each_part)
+  }
+
+  if { [info exists keys(-num_initial_solutions)] } {
+    set num_initial_solutions $keys(-num_initial_solutions)
+  }
+
+  if { [info exists keys(-num_best_initial_solutions)] } {
+    set num_best_initial_solutions $keys(-num_best_initial_solutions)
+  }
+
+  if { [info exists keys(-refiner_iters)] } {
+    set refiner_iters $keys(-refiner_iters)
+  }
+
+  if { [info exists keys(-max_moves)] } {
+    set max_moves $keys(-max_moves)
+  }
+
+  if { [info exists keys(-max_num_fm_pass)] } {
+    set max_num_fm_pass $keys(-max_num_fm_pass)
+  }
+
+  if { [info exists keys(-early_stop_ratio)] } {
+    set early_stop_ratio $keys(-early_stop_ratio)
+  }
+
+  if { [info exists keys(-total_corking_passes)] } {
+    set total_corking_passes $keys(-total_corking_passes)
+  }
+
+  if { [info exists keys(-v_cycle_flag)] } {
+    set v_cycle_flag $keys(-v_cycle_flag)
+  }
+
+  if { [info exists keys(-max_num_vcycle)] } {
+    set max_num_vcycle $keys(-max_num_vcycle)
+  }
+
+  if { [info exists keys(-num_ubfactor_delta)] } {
+    set num_ubfactor_delta $keys(-num_ubfactor_delta)
+  }
+
+  par::triton_part_hypergraph $num_parts \
+            $balance_constraint \
+            $seed \
+            $vertex_dimension \
+            $hyperedge_dimension \
+            $placement_dimension \
+            $hypergraph_file \
+            $fixed_file \
+            $community_file \
+            $group_file \
+            $placement_file \
+            $e_wt_factors \
+            $v_wt_factors \
+            $placement_wt_factors \
+            $thr_coarsen_hyperedge_size_skip \
+            $thr_coarsen_vertices \
+            $thr_coarsen_hyperedges \
+            $coarsening_ratio \
+            $max_coarsen_iters \
+            $adj_diff_ratio \
+            $min_num_vertices_each_part \
+            $num_initial_solutions \
+            $num_best_initial_solutions \
+            $refiner_iters \
+            $max_moves \
+            $max_num_fm_pass \
+            $early_stop_ratio \
+            $total_corking_passes \
+            $v_cycle_flag \
+            $max_num_vcycle \
+            $num_ubfactor_delta
 }
 
 sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-balance_constraint balance_constraint] \
                                             [-seed seed] \
+                                            [-timing_aware_flag timing_aware_flag] \
+                                            [-top_n top_n] \
+                                            [-placement_flag placement_flag] \
                                             [-fence_flag fence_flag] \
                                             [-fence_lx fence_lx] \
                                             [-fence_ly fence_ly] \
                                             [-fence_ux fence_ux] \
                                             [-fence_uy fence_uy] \
-                                            [-solution_file file_name] \
-                                            [-paths_file file_name] \
-                                            [-hypergraph_file file_name] \
+                                            [-fixed_file fixed_file] \
+                                            [-community_file community_file] \
+                                            [-group_file group_file] \
+                                            [-solution_file solution_file] \
+                                            [-net_timing_factor net_timing_factor] \
+                                            [-path_timing_factor path_timing_factor] \
+                                            [-path_snaking_factor path_snaking_factor] \
+                                            [-timing_exp_factor timing_exp_factor] \
+                                            [-extra_delay extra_delay] \
+                                            [-e_wt_factors e_wt_factors] \
+                                            [-v_wt_factors v_wt_factors] \
+                                            [-placement_wt_factors placement_wt_factors] \
+                                            [-thr_coarsen_hyperedge_size_skip thr_coarsen_hyperedge_size_skip] \
+                                            [-thr_coarsen_vertices thr_coarsen_vertices] \
+                                            [-thr_coarsen_hyperedges thr_coarsen_hyperedges] \
+                                            [-coarsening_ratio coarsening_ratio] \
+                                            [-max_coarsen_iters max_coarsen_iters] \
+                                            [-adj_diff_ratio adj_diff_ratio] \
+                                            [-min_num_vertices_each_part min_num_vertices_each_part] \
+                                            [-num_initial_solutions num_initial_solutions] \
+                                            [-num_best_initial_solutions num_best_initial_solutions] \
+                                            [-refiner_iters refiner_iters] \
+                                            [-max_moves max_moves] \
+                                            [-max_num_fm_pass max_num_fm_pass] \
+                                            [-early_stop_ratio early_stop_ratio] \
+                                            [-total_corking_passes total_corking_passes] \
+                                            [-v_cycle_flag v_cycle_flag ] \
+                                            [-max_num_vcycle max_num_vcycle] \
+                                            [-num_ubfactor_delta num_ubfactor_delta] \
                                           }
 proc triton_part_design { args } {
   sta::parse_key_args "triton_part_design" args \
-      keys {-num_parts
-            -balance_constraint
-            -seed
-            -fence_flag fence_flag 
-            -fence_lx fence_lx
-            -fence_ly fence_ly
-            -fence_ux fence_ux
-            -fence_uy fence_uy
+      keys {-num_parts \
+            -balance_constraint \
+            -seed \
+            -timing_aware_flag \
+            -top_n \
+            -placement_flag \
+            -fence_flag  \
+            -fence_lx  \
+            -fence_ly  \
+            -fence_ux  \
+            -fence_uy  \
+            -fixed_file \
+            -community_file \
+            -group_file \
             -solution_file \
-            -paths_file \
-            -hypergraph_file } \
+            -net_timing_factor \
+            -path_timing_factor \
+            -path_snaking_factor \
+            -timing_exp_factor \
+            -extra_delay \
+            -e_wt_factors \
+            -v_wt_factors \
+            -placement_wt_factors \
+            -thr_coarsen_hyperedge_size_skip \
+            -thr_coarsen_vertices \
+            -thr_coarsen_hyperedges \
+            -coarsening_ratio \
+            -max_coarsen_iters \
+            -adj_diff_ratio \
+            -min_num_vertices_each_part \
+            -num_initial_solutions \
+            -num_best_initial_solutions \
+            -refiner_iters \
+            -max_moves \
+            -max_num_fm_pass \
+            -early_stop_ratio \
+            -total_corking_passes \
+            -v_cycle_flag \
+            -max_num_vcycle \
+            -num_ubfactor_delta } \
       flags {}
   set num_parts 2
   set balance_constraint 1.0
   set seed 0
+  set timing_aware_flag true
+  set top_n 100
+  set placement_flag true
   set fence_flag false
   set fence_lx 0.0
   set fence_ly 0.0
   set fence_ux 0.0
   set fence_uy 0.0
-  set hypergraph_file ""
-  set paths_file ""
+  set fixed_file ""
+  set community_file ""
+  set group_file ""
   set solution_file ""
-
-  if { [info exists keys(-solution_file)] } {
-      set solution_file $keys(-solution_file)
-  }
-
-  if { [info exists keys(-paths_file)] } {
-      set paths_file $keys(-paths_file)
-  }
-
-  if { [info exists keys(-hypergraph_file)] } {
-      set hypergraph_file $keys(-hypergraph_file)
-  }
-
+  set net_timing_factor 1.0
+  set path_timing_factor 1.0
+  set path_snaking_factor 1.0
+  set timing_exp_factor 1.0
+  set extra_delay 1.0
+  set e_wt_factors { 1.0 }
+  set v_wt_factors { 1.0 }
+  set placement_wt_factors { }
+  set thr_coarsen_hyperedge_size_skip 50
+  set thr_coarsen_vertices 200
+  set thr_coarsen_hyperedges 50
+  set coarsening_ratio 1.5
+  set max_coarsen_iters 20
+  set adj_diff_ratio 0.0001
+  set min_num_vertices_each_part 4
+  set num_initial_solutions 50
+  set num_best_initial_solutions 10
+  set refiner_iters 2
+  set max_moves 50
+  set max_num_fm_pass 10
+  set early_stop_ratio 0.5
+  set total_corking_passes 25
+  set v_cycle_flag true
+  set max_num_vcycle 5
+  set num_ubfactor_delta 5
+  
   if { [info exists keys(-num_parts)] } {
       set num_parts $keys(-num_parts)
+  }
+
+  if { [info exists keys(-balance_constraint)] } {
+      set balance_constraint $keys(-balance_constraint)
+  }
+
+  if { [info exists keys(-seed)] } {
+      set seed $keys(-seed)
+  }
+
+  if { [info exists keys(-timing_aware_flag)] } {
+    set timing_aware_flag $keys(-timing_aware_flag)
+  }
+
+  if { [info exists keys(-top_n)] } {
+    set top_n $keys(-top_n)
+  }
+
+  if { [info exists keys(-placement_flag)] } {
+    set placement_flag $keys(-placement_flag)
   }
 
   if { [info exists keys(-fence_flag)] && 
@@ -159,17 +453,162 @@ proc triton_part_design { args } {
     set fence_uy $keys(-fence_uy)
   }
 
-  if { [info exists keys(-balance_constraint)] } {
-      set balance_constraint $keys(-balance_constraint)
+  if { [info exists keys(-fixed_file)] } {
+    set fixed_file $keys(-fixed_file)
   }
 
-  if { [info exists keys(-seed)] } {
-      set seed $keys(-seed)
+  if { [info exists keys(-community_file)] } {
+    set community_file $keys(-community_file)
   }
 
-  par::triton_part_design $num_parts $balance_constraint $seed \
-      $fence_flag $fence_lx $fence_ly $fence_ux $fence_uy \
-      $solution_file $paths_file $hypergraph_file
+  if { [info exists keys(-group_file)] } {
+    set group_file $keys(-group_file)
+  }
+
+  if { [info exists keys(-solution_file)] } {
+      set solution_file $keys(-solution_file)
+  }
+  
+  if { [info exists keys(-net_timing_factor)] } {
+    set net_timing_factor $keys(-net_timing_factor)
+  }
+
+  if { [info exists keys(-path_timing_factor)] } {
+    set path_timing_factor $keys(-path_timing_factor)
+  }
+
+  if { [info exists keys(-path_snaking_factor)] } {
+    set path_snaking_factor $keys(-path_snaking_factor)
+  }
+
+  if { [info exists keys(-timing_exp_factor)] } {
+    set timing_exp_factor $keys(-timing_exp_factor)
+  }
+
+  if { [info exists keys(-extra_delay)] } {
+    set extra_delay $keys(-extra_delay)
+  }
+
+  if { [info exists keys(-e_wt_factors)] } {
+    set e_wt_factors $keys(-e_wt_factors)
+  }
+
+  if { [info exists keys(-v_wt_factors)] } {
+    set v_wt_factors $keys(-v_wt_factors)
+  }
+
+  if { [info exists keys(-placement_wt_factors)] } {
+    set placement_wt_factors $keys(-placement_wt_factors)
+  }
+
+  if { [info exists keys(-thr_coarsen_hyperedge_size_skip)] } {
+    set thr_coarsen_hyperedge_size_skip $keys(-thr_coarsen_hyperedge_size_skip)
+  }
+
+  if { [info exists keys(-thr_coarsen_vertices)] } {
+    set thr_coarsen_vertices $keys(-thr_coarsen_vertices)
+  }
+
+  if { [info exists keys(-thr_coarsen_hyperedges)] } {
+    set thr_coarsen_hyperedges $keys(-thr_coarsen_hyperedges)
+  }
+
+  if { [info exists keys(-coarsening_ratio)] } {
+    set coarsening_ratio $keys(-coarsening_ratio)
+  }
+  
+  if { [info exists keys(-max_coarsen_iters)] } {
+    set max_coarsen_iters $keys(-max_coarsen_iters)
+  }
+
+  if { [info exists keys(-adj_diff_ratio)] } {
+    set adj_diff_ratio $keys(-adj_diff_ratio)
+  }
+
+  if { [info exists keys(-min_num_vertices_each_part)] } {
+    set min_num_vertices_each_part $keys(-min_num_vertices_each_part)
+  }
+
+  if { [info exists keys(-num_initial_solutions)] } {
+    set num_initial_solutions $keys(-num_initial_solutions)
+  }
+
+  if { [info exists keys(-num_best_initial_solutions)] } {
+    set num_best_initial_solutions $keys(-num_best_initial_solutions)
+  }
+
+  if { [info exists keys(-refiner_iters)] } {
+    set refiner_iters $keys(-refiner_iters)
+  }
+
+  if { [info exists keys(-max_moves)] } {
+    set max_moves $keys(-max_moves)
+  }
+
+  if { [info exists keys(-max_num_fm_pass)] } {
+    set max_num_fm_pass $keys(-max_num_fm_pass)
+  }
+
+  if { [info exists keys(-early_stop_ratio)] } {
+    set early_stop_ratio $keys(-early_stop_ratio)
+  }
+
+  if { [info exists keys(-total_corking_passes)] } {
+    set total_corking_passes $keys(-total_corking_passes)
+  }
+
+  if { [info exists keys(-v_cycle_flag)] } {
+    set v_cycle_flag $keys(-v_cycle_flag)
+  }
+
+  if { [info exists keys(-max_num_vcycle)] } {
+    set max_num_vcycle $keys(-max_num_vcycle)
+  }
+
+  if { [info exists keys(-num_ubfactor_delta)] } {
+    set num_ubfactor_delta $keys(-num_ubfactor_delta)
+  }
+
+  par::triton_part_design $num_parts \
+            $balance_constraint \
+            $seed \
+            $timing_aware_flag \
+            $top_n \
+            $placement_flag \
+            $fence_flag \
+            $fence_lx \
+            $fence_ly \
+            $fence_ux \
+            $fence_uy \
+            $fixed_file \
+            $community_file \
+            $group_file \
+            $solution_file \
+            $net_timing_factor \
+            $path_timing_factor \
+            $path_snaking_factor \
+            $timing_exp_factor \
+            $extra_delay \
+            $e_wt_factors \
+            $v_wt_factors \
+            $placement_wt_factors \
+            $thr_coarsen_hyperedge_size_skip \
+            $thr_coarsen_vertices \
+            $thr_coarsen_hyperedges \
+            $coarsening_ratio \
+            $max_coarsen_iters \
+            $adj_diff_ratio \
+            $min_num_vertices_each_part \
+            $num_initial_solutions \
+            $num_best_initial_solutions \
+            $refiner_iters \
+            $max_moves \
+            $max_num_fm_pass \
+            $early_stop_ratio \
+            $total_corking_passes \
+            $v_cycle_flag \
+            $max_num_vcycle \
+            $num_ubfactor_delta
 }
 
 #--------------------------------------------------------------------

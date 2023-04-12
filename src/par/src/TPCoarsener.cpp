@@ -43,7 +43,6 @@
 #include "TPEvaluator.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
-
 #include "TPCoarsener.h"
 
 
@@ -330,6 +329,12 @@ void TPcoarsener::VertexMatching(const HGraph hgraph,
     // we just need to check the neighbors of the path
     // because if there is a path, the most important neighbors
     // must have been counter when traversing hyperedges before
+    // We just consider the direct neighbors of the vertex 
+    // i.e., left neighbor and right neighbor
+    // TODO: 20230409:  
+    // Exploration that if we can further improve the results by considering
+    // more neighbors on timing-critical paths 
+    // No idea yet.
     if (hgraph->timing_flag_ == true && hgraph->num_timing_paths_ > 0) {
       const int first_valid_entry_pv = hgraph->pptr_v_[v];
       const int first_invalid_entry_pv = hgraph->pptr_v_[v + 1];
@@ -390,7 +395,7 @@ void TPcoarsener::VertexMatching(const HGraph hgraph,
       // you cannot change the order here
       // update the placement location
       if (hgraph->placement_flag_ == true) {
-        vertex_weights_c[best_cluster_id] 
+        placement_attr_c[best_cluster_id] 
            = evaluator_->GetAvgPlacementLoc(vertex_weights_c[best_cluster_id],
                                             hgraph->vertex_weights_[v],
                                             placement_attr_c[best_cluster_id],
@@ -443,7 +448,6 @@ void TPcoarsener::VertexMatching(const HGraph hgraph,
   }
 }
 
-
 // handle group information
 // group fixed vertices based on each block
 // group vertices based on group_attr and hgraph->fixed_attr_
@@ -473,6 +477,9 @@ void TPcoarsener::ClusterBasedGroupInfo(HGraph hgraph,
     return;
   } 
 
+  // the remaining attributes
+  // we need to convert the fixed vertices into clusters of vertices
+  // in each block
   std::vector<std::vector<int> > fixed_group;
   fix_groups.resize(num_parts_);
   // check fixed vertices
@@ -486,72 +493,84 @@ void TPcoarsener::ClusterBasedGroupInfo(HGraph hgraph,
   // concatenate fixed group and group_info
   fixed_group.insert(fixed_group.end(), 
                      group_info.begin(),
-                     group_info.end());
-  
-
-
-  // group vertices and fixed vertices (hgraph->fixed_attr_)
-  if (static_cast<int>(group_attr.size()) != hgraph->num_vertices_) {
-    group_attr.clear();
-    group_attr.resize(hgraph->num_vertices_);
-    std::stoi(group_attr.begin(), group_attr.end(), 0);
-  }
-
-  // check fixed vertices
-  if (hgraph->fixed_attr_.empty() == false) {
-    std::vector<std::vector<int> > fix_groups;
-    fix_groups.resize(num_parts_);
-    for (int v = 0; v < hgraph->num_vertices_; v++) {
-      if (hgraph->fixed_attr_[v] > -1) {
-        fix_groups[hgraph->fixed_attr_[v]].push_back(v);
-      }
+                     group_info.end());  
+  // We need to merge groups if two groups share at least one common vertex
+  // first initialize the vertex_cluster_id_vec
+  vertex_cluster_id_vec.clear();
+  vertex_cluster_id_vec.resize(hgraph->num_vertices_);
+  std::fill(vertex_cluster_id_vec.begin(), vertex_cluster_id_vec.end(), -1);
+  int cluster_id = 0; // start cluster id
+  for (const auto& group : fixed_group) {
+    // compute the cluster id of current group
+    // to check if we need to merge the group
+    int cur_cluster_id = -1;
+    for (const auto& v : group) {
+      cur_cluster_id = std::max(cur_cluster_id, vertex_cluster_id_vec[v]);
     }
-
-    // convert the fix_group into group_attr
-    // We assume that the each vertex can only to belong maximum group
-    // And fixed vertices in different blocks cannot belong to the same group
-    for (const auto& group : fix_groups) {
-      int cluster_vertex = -1;
-      for (const auto& v : group) {
-        if (group_attr[v] != v) {
-          cluster_vertex = group_attr[v];
-          break;  
-        }
-      }
-      if (cluster_vertex == -1) {
-        cluster_vertex = group.front();
-      }
-      for (const auto& v : group) {
-        group_attr[v] = cluster_vertex;
-      }
+    if (cur_cluster_id == -1) {
+      cur_cluster_id = cluster_id++;
+    }
+    for (const auto& v : group) {
+      vertex_cluster_id_vec[v] = cur_cluster_id;
     }
   }
-
-  // create the vertex_cluster_id_vec
-  // the remaining arguments are related to clusters
-  // matrix<float>& vertex_weights_c,
-  // std::vector<int>& community_attr_c,
-  // std::vector<int>& fixed_attr_c,
-  // matrix<float>& placement_attr_c
-
-  // Step 1: map each ungroup vertex into a cluster
-  int cluster_id = 0;
+  // map remaining vertex into a single-vertex cluster
   for (int v = 0; v < hgraph->num_vertices_; v++) {
-    if (group_attr[v] == v) {
-      vertex_cluster_id_vec[v] = cluster_id;
-      vertex_weights_c.push_back(hgraph->vertex_weights_[v]);
-
-
-
-
-
-      cluster_id++;
+    if (vertex_cluster_id_vec[v] == -1) {
+      vertex_cluster_id_vec[v] = cluster_id++;
     }
   }
 
+  const int num_clusters = cluster_id;
+  // update attributes
+  vertex_weights_c.clear();
+  community_attr_c.clear();
+  fixed_attr_c.clear();
+  placement_attr_c.clear();
+  // update vertex weights
+  vertex_weights_c.clear();
+  for (int v = 0; v < num_clusters; v++) {
+    std::vector<float> v_wt(hgraph->vertex_dimensions_, 0.0);
+  }
+  if (hgraph->community_flag_ == true) {
+    community_attr_c.clear();
+    community_attr_c.resize(num_clusters);
+    std::fill(community_attr_c.begin(), community_attr_c.end(), -1);
+  }    
+  if (hgraph->fixed_vertex_flag_ == true) {
+    fixed_attr_c.clear();
+    fixed_attr_c.resize(num_clusters);
+    std::fill(fixed_attr_c.begin(), fixed_attr_c.end(), -1);
+  }
+  if (hgraph->placement_flag_ == true) {
+    placement_attr_c.clear();
+    for (int v = 0; v < num_clusters; v++) {
+      std::vector<float> v_placement(hgraph->placement_dimensions_, 0.0);
+      placement_attr_c.push_back(v_placement);
+    }    
+  }
 
-
-
+  // Update the attributes of clusters
+  for (int v = 0;  v < hgraph->num_vertices_; v++) {
+    const int cluster_id = vertex_cluster_id_vec[v];
+    if (hgraph->community_flag_ == true) {
+      community_attr_c[cluster_id] = 
+        std::max(community_attr_c[cluster_id], hgraph->community_attr_[v]);
+    }
+    if (hgraph->fixed_vertex_flag_ == true) {
+      fixed_attr_c[cluster_id] = 
+        std::max(fixed_attr_c[cluster_id], hgraph->fixed_attr_[v]);
+    }
+    if (hgraph->placement_flag_ == true) {
+      placement_attr_c[cluster_id] = 
+        evaluator_->GetAvgPlacementLoc(vertex_weights_c[cluster_id],
+                                       hgraph->vertex_weights_[v],
+                                       placement_attr_c[cluster_id],
+                                       hgraph->placement_attr_[v]);
+    }
+    vertex_weights_c[cluster_id] = vertex_weights_c[cluster_id] + 
+                                   hgraph->vertex_weights_[v];    
+  }
 }
 
 
