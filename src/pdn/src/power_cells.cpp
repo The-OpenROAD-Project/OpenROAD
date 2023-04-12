@@ -53,12 +53,11 @@ PowerCell::PowerCell(utl::Logger* logger,
       acknowledge_(acknowledge),
       switched_power_(switched_power),
       alwayson_power_(alwayson_power),
-      ground_(ground),
-      alwayson_power_positions_()
+      ground_(ground)
 {
 }
 
-const std::string PowerCell::getName() const
+std::string PowerCell::getName() const
 {
   return master_->getName();
 }
@@ -130,7 +129,7 @@ GridSwitchedPower::GridSwitchedPower(Grid* grid,
   }
 }
 
-const std::string GridSwitchedPower::toString(NetworkType type)
+std::string GridSwitchedPower::toString(NetworkType type)
 {
   switch (type) {
     case STAR:
@@ -401,9 +400,8 @@ void GridSwitchedPower::updateControlNetworkDAISY(const bool order_by_x)
 
                 if (order_by_x) {
                   return lhs_y < rhs_y;
-                } else {
-                  return lhs_x < rhs_x;
                 }
+                return lhs_x < rhs_x;
               });
   }
 
@@ -413,9 +411,8 @@ void GridSwitchedPower::updateControlNetworkDAISY(const bool order_by_x)
     auto* ack = odb::dbNet::create(grid_->getBlock(), net_name.c_str());
     if (ack == nullptr) {
       return grid_->getBlock()->findNet(net_name.c_str());
-    } else {
-      return ack;
     }
+    return ack;
   };
 
   odb::dbNet* control = control_;
@@ -535,7 +532,6 @@ void GridSwitchedPower::checkAndFixOverlappingInsts(const InstTree& insts)
                overlapping->getName(),
                other_new_loc,
                overlap_y);
-    fixed = true;
   }
 }
 
@@ -610,7 +606,7 @@ Straps* GridSwitchedPower::getLowestStrap() const
   return target;
 }
 
-const ShapeTreeMap GridSwitchedPower::getShapes() const
+ShapeTreeMap GridSwitchedPower::getShapes() const
 {
   odb::dbNet* alwayson = grid_->getDomain()->getAlwaysOnPower();
 

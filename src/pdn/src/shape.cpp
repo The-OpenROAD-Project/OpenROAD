@@ -45,7 +45,7 @@ namespace pdn {
 Shape::Shape(odb::dbTechLayer* layer,
              odb::dbNet* net,
              const odb::Rect& rect,
-             odb::dbWireShapeType type)
+             const odb::dbWireShapeType& type)
     : layer_(layer),
       net_(net),
       rect_(rect),
@@ -71,9 +71,7 @@ Shape::Shape(odb::dbTechLayer* layer,
 {
 }
 
-Shape::~Shape()
-{
-}
+Shape::~Shape() = default;
 
 utl::Logger* Shape::getLogger() const
 {
@@ -101,17 +99,17 @@ void Shape::merge(Shape* shape)
   generateObstruction();
 }
 
-const Box Shape::rectToBox(const odb::Rect& rect)
+Box Shape::rectToBox(const odb::Rect& rect)
 {
   return Box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
 }
 
-const Box Shape::getRectBox() const
+Box Shape::getRectBox() const
 {
   return rectToBox(rect_);
 }
 
-const Box Shape::getObstructionBox() const
+Box Shape::getObstructionBox() const
 {
   return rectToBox(obs_);
 }
@@ -193,7 +191,7 @@ bool Shape::hasTermConnections() const
   return !bterm_connections_.empty() || !iterm_connections_.empty();
 }
 
-const odb::Rect Shape::getMinimumRect() const
+odb::Rect Shape::getMinimumRect() const
 {
   odb::Rect intersected_rect;
   intersected_rect.mergeInit();
@@ -478,7 +476,7 @@ void Shape::generateObstruction()
   obs_.merge(eol_rect);
 }
 
-const std::string Shape::getDisplayText() const
+std::string Shape::getDisplayText() const
 {
   const std::string seperator = ":";
   std::string text;
@@ -514,7 +512,7 @@ bool Shape::isModifiable() const
   return shape_type_ == SHAPE;
 }
 
-const std::string Shape::getReportText() const
+std::string Shape::getReportText() const
 {
   std::string text
       = fmt::format("{} on {}",
@@ -527,8 +525,7 @@ const std::string Shape::getReportText() const
   return text;
 }
 
-const std::string Shape::getRectText(const odb::Rect& rect,
-                                     double dbu_to_micron)
+std::string Shape::getRectText(const odb::Rect& rect, double dbu_to_micron)
 {
   return fmt::format("({:.4f}, {:.4f}) - ({:.4f}, {:.4f})",
                      rect.xMin() / dbu_to_micron,
@@ -621,7 +618,7 @@ void FollowPinShape::updateTermConnections()
   }
 }
 
-const odb::Rect FollowPinShape::getMinimumRect() const
+odb::Rect FollowPinShape::getMinimumRect() const
 {
   odb::Rect min_shape = Shape::getMinimumRect();
 
