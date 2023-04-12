@@ -186,7 +186,7 @@ class FastRouteCore
   }
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
 
-  const int getSTTLength(odb::dbNet* net)
+  int getSTTLength(odb::dbNet* net)
   {
     auto netid = db_net_id_map_[net];
     auto fr_net = nets_[netid];

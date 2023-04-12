@@ -4078,7 +4078,7 @@ void GlobalRouter::saveScenicRoutes()
     const auto grtLength = computeNetWirelength(db_net);
     const int extraLength = dbuToMicrons(grtLength-sttLength);
 
-    lengths.push_back({extraLength, db_net});
+    lengths.emplace_back(extraLength, db_net);
   }
 
   std::sort(lengths.rbegin(), lengths.rend());
