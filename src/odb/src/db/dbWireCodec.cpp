@@ -36,6 +36,7 @@
 
 #include "db.h"
 #include "dbBlock.h"
+#include "dbBlockCallBackObj.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
@@ -614,6 +615,10 @@ void dbWireEncoder::end()
   // Should we calculate the bbox???
   ((_dbBlock*) _block)->_flags._valid_bbox = 0;
   _point_cnt = 0;
+
+  for (auto callback : ((_dbBlock*) _block)->_callbacks) {
+    callback->inDbWirePostModify((dbWire*) _wire);
+  }
 }
 
 void dbWireEncoder::setColor(uint8_t mask_color)

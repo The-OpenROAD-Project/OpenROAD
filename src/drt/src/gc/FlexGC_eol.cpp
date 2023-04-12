@@ -933,9 +933,9 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_main(
                                            ptr->getLowCorner()->y(),
                                            ptr->getHighCorner()->x(),
                                            ptr->getHighCorner()->y());
-      gcRect* rect = new gcRect(
+      gcRect rect(
           segrect, layerNum, ptr->getPin(), ptr->getNet(), ptr->isFixed());
-      checkMetalEOLkeepout_helper(edge, rect, queryRect, constraint);
+      checkMetalEOLkeepout_helper(edge, &rect, queryRect, constraint);
     }
   } else {
     vector<rq_box_value_t<gcRect*>> results;

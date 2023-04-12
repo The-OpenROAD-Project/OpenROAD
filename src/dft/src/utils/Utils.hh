@@ -29,72 +29,46 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-#include "Utils.hh"
+#include <optional>
 
-#include <iostream>
-
-#include "db_sta/dbNetwork.hh"
+#include "db_sta/dbSta.hh"
+#include "odb/db.h"
+#include "sta/Liberty.hh"
+#include "utl/Logger.h"
 
 namespace dft::utils {
 
-namespace {
-void PopulatePortNameToNet(
-    odb::dbInst* instance,
-    std::vector<std::tuple<std::string, odb::dbNet*>>& port_name_to_net)
-{
-  for (odb::dbITerm* iterm : instance->getITerms()) {
-    port_name_to_net.emplace_back(iterm->getMTerm()->getName(),
-                                  iterm->getNet());
-  }
-}
-
-void ConnectPinsToNets(
-    odb::dbInst* instance,
-    const std::vector<std::tuple<std::string, odb::dbNet*>>& port_name_to_net,
-    const std::unordered_map<std::string, std::string>& port_mapping)
-{
-  for (const auto& [port_name_old, net] : port_name_to_net) {
-    if (net == nullptr) {
-      continue;
-    }
-    std::string port_name_new = port_mapping.find(port_name_old)->second;
-    instance->findITerm(port_name_new.c_str())->connect(net);
-  }
-}
-
-}  // namespace
-
-bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance)
-{
-  odb::dbMaster* master = instance->getMaster();
-  sta::Cell* master_cell = db_network->dbToSta(master);
-  sta::LibertyCell* liberty_cell = db_network->libertyCell(master_cell);
-  return liberty_cell->hasSequentials();
-}
-
+// Replace the old_instance cell with a new master. The connections of the old
+// cell will be preserved by using the given port mapping from
+// <old_port_name, new_port_name>. Returns the new instance and deletes the old
+// one. The name of the new instance is going to be the same as the old one.
 odb::dbInst* ReplaceCell(
     odb::dbBlock* top_block,
     odb::dbInst* old_instance,
     odb::dbMaster* new_master,
-    const std::unordered_map<std::string, std::string>& port_mapping)
+    const std::unordered_map<std::string, std::string>& port_mapping);
+
+// Returns true if the given instance cell's is a sequential cell, false
+// otherwise
+bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
+
+// Returns a vector of dbITerm for every clock that there is in the instance.
+// For black boxes or CTLs (Core Test Language), we can have more than one clock
+std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst);
+
+// Returns a sta::Clock of the given iterm
+std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
+
+// Helper to format optional values for the config reports
+template <typename T>
+std::string FormatForReport(const std::optional<T>& opt)
 {
-  std::vector<std::tuple<std::string, odb::dbNet*>> port_name_to_net;
-  PopulatePortNameToNet(old_instance, port_name_to_net);
-
-  odb::dbInst* new_instance
-      = odb::dbInst::create(top_block, new_master, /*name=*/"tmp_scan_flop");
-  std::string old_cell_name = old_instance->getName();
-
-  // Delete the old cell
-  odb::dbInst::destroy(old_instance);
-
-  // Connect the new cell to the old instance's nets
-  ConnectPinsToNets(new_instance, port_name_to_net, port_mapping);
-
-  // Rename as the old cell
-  new_instance->rename(old_cell_name.c_str());
-
-  return new_instance;
+  if (opt.has_value()) {
+    return fmt::format("{}", opt.value());
+  }
+  return "Undefined";
 }
+
 }  // namespace dft::utils
