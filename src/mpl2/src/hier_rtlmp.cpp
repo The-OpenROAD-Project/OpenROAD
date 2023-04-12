@@ -1929,20 +1929,20 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   std::map<odb::dbInst*, int> inst_vertex_id_map;
   const int parent_cluster_id = parent->getId();
   std::vector<odb::dbInst*> std_cells = parent->getLeafStdCells();
-  std::vector<std::vector<int>> hyperedges;
-  std::vector<float> vertex_weight;
+  std::vector<std::vector<int> > hyperedges;
+  std::vector<float> vertex_weights;
   // vertices
   // other clusters behaves like fixed vertices
   // We do not consider vertices only between fixed vertices
   int vertex_id = 0;
   for (auto& [cluster_id, cluster] : cluster_map_) {
     cluster_vertex_id_map[cluster_id] = vertex_id++;
-    vertex_weight.push_back(0.0f);
+    vertex_weights.push_back(0.0f);
   }
   for (auto& macro : parent->getLeafMacros()) {
     inst_vertex_id_map[macro] = vertex_id++;
     const sta::LibertyCell* liberty_cell = network_->libertyCell(macro);
-    vertex_weight.push_back(liberty_cell->area());
+    vertex_weights.push_back(liberty_cell->area());
   }
   int num_fixed_vertices
       = vertex_id;  // we do not consider these vertices in later process
@@ -1950,7 +1950,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   for (auto& std_cell : std_cells) {
     inst_vertex_id_map[std_cell] = vertex_id++;
     const sta::LibertyCell* liberty_cell = network_->libertyCell(std_cell);
-    vertex_weight.push_back(liberty_cell->area());
+    vertex_weights.push_back(liberty_cell->area());
   }
   // Traverse nets to create hyperedges
   for (odb::dbNet* net : block_->getNets()) {
@@ -2011,16 +2011,16 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   }
 
   const int seed = 0;
-  const float balance_constraint = 5.0;
-  const int num_vertices = vertex_weight.size();
-  const int num_hyperedges = hyperedges.size();
-
-  std::vector<int> part = tritonpart_->TritonPart2Way(num_vertices,
-                                                      num_hyperedges,
-                                                      hyperedges,
-                                                      vertex_weight,
-                                                      balance_constraint,
-                                                      seed);
+  const float balance_constraint = 1.0;
+  const int num_parts = 2; // We use two-way partitioning here
+  std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
+  std::vector<int> part = 
+    tritonpart_->PartitionKWaySimpleMode(num_parts,
+                                         balance_constraint,
+                                         seed,
+                                         hyperedges,
+                                         vertex_weights,
+                                         hyperedge_weights);
 
   // create cluster based on partitioning solutions
   // Note that all the std cells are stored in the leaf_std_cells_ for a flat
