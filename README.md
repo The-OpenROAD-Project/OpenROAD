@@ -137,38 +137,14 @@ transceivers, OpenPower-based Microwatt etc.
 
 ## Install dependencies
 
-For a limited number of configurations, the following script can be used
-to install dependencies.  The script `etc/DependencyInstaller.sh` supports
-Centos7, Ubuntu 20.04, Ubuntu 22.04, RHEL 8, Debian 10 and Debian 11. To correctly install the dependencies with the
-script you need to run as root or prepend `sudo` to the commands below.
+To install dependencies to develop or build and run OpenROAD locally,
+follow [this procedure](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
 
-``` shell
-./etc/DependencyInstaller.sh -help
-
-Usage: etc/DependencyInstaller.sh
-                                # Installs all of OpenROAD's dependencies no
-                                #     need to run -base or -common. Requires
-                                #     privileged access.
-                                #
-       etc/DependencyInstaller.sh -base
-                                # Installs OpenROAD's dependencies using
-                                #     package managers (-common must be
-                                #     executed in another command).
-       etc/DependencyInstaller.sh -common
-                                # Installs OpenROAD's common dependencies
-                                #     (-base must be executed in another
-                                #     command).
-       etc/DependencyInstaller.sh -prefix=DIR
-                                # Installs common dependencies in an existing
-                                #     user-specified directory. Only used
-                                #     with -common. This flag cannot be used
-                                #     with sudo or with root access.
-       etc/DependencyInstaller.sh -local
-                                # Installs common dependencies in
-                                #    "$HOME/.local". Only used with
-                                #    -common. This flag cannot be used with
-                                #    sudo or with root access.
-```
+> WARNING
+>
+> `etc/DependencyInstaller.sh` is an implementation detail of
+> the setup procedures and can be harmful if invoked incorrectly.
+> Do not invoke it directly.
 
 ## Build
 
