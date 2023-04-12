@@ -294,7 +294,7 @@ class TechChar
   odb::dbDatabase* db_;
   rsz::Resizer* resizer_;
   sta::dbSta* openSta_;
-  sta::dbSta* openStaChar_;
+  std::unique_ptr<sta::dbSta> openStaChar_;
   sta::dbNetwork* db_network_;
   Logger* logger_;
   sta::PathAnalysisPt* charPathAnalysis_ = nullptr;

@@ -85,6 +85,7 @@ swig_lib(NAME          dbSta
 
 target_sources(dbSta
   PRIVATE
+    MakeDbSta.cc
     dbSta.cc
     heatMap.cpp
 )
