@@ -4076,7 +4076,7 @@ void GlobalRouter::saveScenicRoutes()
   for (odb::dbNet* db_net : block_->getNets()) {
     const auto sttLength = fastroute_->getSTTLength(db_net);
     const auto grtLength = computeNetWirelength(db_net);
-    const int extraLength = dbuToMicrons(grtLength-sttLength);
+    const int extraLength = dbuToMicrons(grtLength - sttLength);
 
     lengths.emplace_back(extraLength, db_net);
   }
@@ -4099,12 +4099,13 @@ void GlobalRouter::saveScenicRoutes()
         bbox.merge(globalRoutingToBox(seg));
       }
 
-      out << "  violation type: GRT scenic route " << length << " um longer than RSMT" << std::endl;
+      out << "  violation type: GRT scenic route " << length
+          << " um longer than RSMT" << std::endl;
       out << "    srcs: ";
       out << "net:" << db_net->getName() << std::endl;
       out << "    bbox = ( " << dbuToMicrons(bbox.xMin()) << ", "
-          << dbuToMicrons(bbox.yMin()) << " ) - ( " << dbuToMicrons(bbox.xMax()) << ", "
-          << dbuToMicrons(bbox.yMax()) << " ) on Layer ";
+          << dbuToMicrons(bbox.yMin()) << " ) - ( " << dbuToMicrons(bbox.xMax())
+          << ", " << dbuToMicrons(bbox.yMax()) << " ) on Layer ";
       // We don't need the layer, but the format requires it
       out << routing_layers_[1]->getName() << std::endl;
     }

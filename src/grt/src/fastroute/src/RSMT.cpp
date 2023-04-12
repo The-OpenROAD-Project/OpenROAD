@@ -749,7 +749,7 @@ void FastRouteCore::gen_brk_RSMT(const bool congestionDriven,
       const int x2 = rsmt.branch[n].x;
       const int y2 = rsmt.branch[n].y;
 
-      thisWl  += abs(x1 - x2) + abs(y1 - y2);
+      thisWl += abs(x1 - x2) + abs(y1 - y2);
 
       if (x1 != x2 || y1 != y2) {  // the branch is not degraded (a point)
         // the position of this segment in seglist
