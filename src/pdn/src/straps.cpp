@@ -1507,8 +1507,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
          itr != shapes.qend();
          itr++) {
       const auto& shape = itr->second;
-      const odb::Rect intersect = obs_check.intersect(shape->getObstruction());
-      if (intersect.area() != 0) {
+      if (obs_check.overlaps(shape->getObstruction())) {
         return true;
       }
     }

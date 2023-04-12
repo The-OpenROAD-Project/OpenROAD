@@ -31,25 +31,39 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "db_sta/dbSta.hh"
-#include "odb/db.h"
-#include "sta/Liberty.hh"
-#include "utl/Logger.h"
+#include <memory>
+#include <string>
 
-namespace dft::utils {
+namespace dft {
+class ClockDomain;
 
-// Replace the old_instance cell with a new master. The connections of the old
-// cell will be preserved by using the given port mapping from
-// <old_port_name, new_port_name>. Returns the new instance and deletes the old
-// one. The name of the new instance is going to be the same as the old one.
-odb::dbInst* ReplaceCell(
-    odb::dbBlock* top_block,
-    odb::dbInst* old_instance,
-    odb::dbMaster* new_master,
-    const std::unordered_map<std::string, std::string>& port_mapping);
+// A Scan Cell is a cell that contains a scan enable, scan in and scan out
+// It also has the number of bits that can be shifted in this cell and a
+// clock domain for architecting.
+//
+// This is an abstraction since there are several types of scan cells that can
+// be use for DFT. The simplest one is just one scan cell but we could support
+// in the future black boxes or CTLs (Core Test Language)
+class ScanCell
+{
+ public:
+  ScanCell(const std::string& name, std::unique_ptr<ClockDomain> clock_domain);
+  virtual ~ScanCell() = default;
+  // Not copyable or movable
+  ScanCell(const ScanCell&) = delete;
+  ScanCell& operator=(const ScanCell&) = delete;
 
-// Returns true if the given instance cell's is a sequential cell, false
-// otherwise
-bool IsSequentialCell(sta::dbNetwork* db_network, odb::dbInst* instance);
+  virtual uint64_t getBits() const = 0;
+  virtual void connectScanEnable() const = 0;
+  virtual void connectScanIn() const = 0;
+  virtual void connectScanOut() const = 0;
 
-}  // namespace dft::utils
+  const ClockDomain& getClockDomain() const;
+  const std::string& getName() const;
+
+ private:
+  std::string name_;
+  std::unique_ptr<ClockDomain> clock_domain_;
+};
+
+}  // namespace dft

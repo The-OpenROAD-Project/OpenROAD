@@ -63,7 +63,6 @@ class dbStaCbk;
 class PathRenderer;
 class PowerDensityDataSource;
 
-using ord::OpenRoad;
 using utl::Logger;
 
 using odb::dbBlock;
@@ -82,15 +81,18 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
  public:
   dbSta();
   virtual ~dbSta();
-  void init(Tcl_Interp* tcl_interp,
-            dbDatabase* db,
-            gui::Gui* gui,
-            Logger* logger);
-  // for makeBlockSta
+
   void initVars(Tcl_Interp* tcl_interp,
-                dbDatabase* db,
+                odb::dbDatabase* db,
                 gui::Gui* gui,
-                Logger* logger);
+                utl::Logger* logger);
+
+  // Creates the power density heatmap object (for GUI rendering).
+  void initPowerDensityHeatmap();
+
+  // Creates a dbSta instance for the given dbBlock using the same context as
+  // this dbSta instance (e.g. TCL interpreter, units, etc.)
+  std::unique_ptr<dbSta> makeBlockSta(odb::dbBlock* block);
 
   dbDatabase* db() { return db_; }
   dbNetwork* getDbNetwork() { return db_network_; }
@@ -118,7 +120,7 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
   using Sta::netSlack;
   using Sta::replaceCell;
 
- protected:
+ private:
   virtual void makeReport() override;
   virtual void makeNetwork() override;
   virtual void makeSdcNetwork() override;
@@ -138,8 +140,5 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
 
   std::unique_ptr<PowerDensityDataSource> power_density_heatmap_;
 };
-
-// Make a stand-alone (scratchpad) sta for block.
-dbSta* makeBlockSta(OpenRoad* openroad, dbBlock* block);
 
 }  // namespace sta

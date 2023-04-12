@@ -90,7 +90,6 @@ using odb::dbBox;
 using odb::dbMaster;
 
 using sta::evalTclInit;
-using sta::makeBlockSta;
 using sta::Level;
 using sta::stringLess;
 using sta::NetworkEdit;
@@ -148,7 +147,6 @@ Resizer::Resizer() :
   wire_clk_res_(0.0),
   wire_clk_cap_(0.0),
   max_area_(0.0),
-  openroad_(nullptr),
   logger_(nullptr),
   stt_builder_(nullptr),
   global_router_(nullptr),
@@ -188,17 +186,14 @@ Resizer::~Resizer()
   delete repair_hold_;
 }
 
-void
-Resizer::init(OpenRoad *openroad,
-              Tcl_Interp *interp,
-              Logger *logger,
-              Gui *gui,
-              dbDatabase *db,
-              dbSta *sta,
-              SteinerTreeBuilder *stt_builder,
-              GlobalRouter *global_router)
+void Resizer::init(Tcl_Interp* interp,
+                   Logger* logger,
+                   Gui* gui,
+                   dbDatabase* db,
+                   dbSta* sta,
+                   SteinerTreeBuilder* stt_builder,
+                   GlobalRouter* global_router)
 {
-  openroad_ = openroad;
   logger_ = logger;
   gui_ = gui;
   db_ = db;
@@ -2002,7 +1997,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
 {
   // Make a (hierarchical) block to use as a scratchpad.
   dbBlock *block = dbBlock::create(block_, "wire_delay", '/');
-  dbSta *sta = makeBlockSta(openroad_, block);
+  std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
   Parasitics *parasitics = sta->parasitics();
   Network *network = sta->network();
   ArcDelayCalc *arc_delay_calc = sta->arcDelayCalc();
@@ -2062,7 +2057,6 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   sta->deleteInstance(drvr);
   sta->deleteInstance(load);
   sta->deleteNet(net);
-  delete sta;
   dbBlock::destroy(block);
 }
 
