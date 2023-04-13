@@ -59,12 +59,20 @@ void Opendp::initGridLayersMap()
 {
   int grid_index = 0;
   for (auto db_row : block_->getRows()) {
+    // TODO: this is potentially a bug due to cut rows.
+    // if a cut was inserted before the original row, the site count will be
+    // smaller
+    // it is also a bug in the row count
     if (grid_layers_.find(db_row->getSite()->getHeight())
         == grid_layers_.end()) {
       grid_layers_.emplace(db_row->getSite()->getHeight(),
                            LayerInfo{1, db_row->getSiteCount(), grid_index++});
     } else {
-      grid_layers_.at(db_row->getSite()->getHeight()).row_count++;
+      int row_height = db_row->getSite()->getHeight();
+      auto& layer_info = grid_layers_.at(row_height);
+      layer_info.row_count++;
+      layer_info.site_count
+          = max(layer_info.site_count, db_row->getSiteCount());
     }
   }
   grid_layers_vector.resize(grid_layers_.size());
@@ -135,17 +143,29 @@ void Opendp::initGrid()
     const int y_row = (orig_y - core_.yMin()) / current_row_height;
 
     for (int x = x_start; x < x_end; x++) {
-      Pixel& pixel = grid_[current_row_grid_index][y_row][x];
-      pixel.is_valid = true;
-      pixel.orient_ = db_row->getOrient();
+      Pixel* pixel;
+      pixel = gridPixel(current_row_grid_index, x, y_row);
+      if (pixel == nullptr) {
+        debugPrint(logger_,
+                   DPL,
+                   "grid",
+                   1,
+                   "row {} has x {} and y_row {} and pixel is null",
+                   db_row->getName(),
+                   x,
+                   y_row);
+        break;
+      }
+      pixel->is_valid = true;
+      pixel->orient_ = db_row->getOrient();
     }
 
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
     const int safety = 20;
     const int xl = std::max(0, x_start - max_displacement_x_ + safety);
-    const int xh = std::min(current_row_site_count,
-                            x_end + max_displacement_x_ - safety);
+    const int xh
+        = std::min(layer_info.site_count, x_end + max_displacement_x_ - safety);
     const int yl = std::max(0, y_row - max_displacement_y_ + safety);
     const int yh
         = std::min(current_row_count, y_row + max_displacement_y_ - safety);
