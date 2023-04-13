@@ -910,7 +910,7 @@ bool IOPlacer::assignPinToSection(IOPin& io_pin,
 {
   bool pin_assigned = false;
 
-  if (!io_pin.isInGroup() && !io_pin.isAssignedToSection()) {
+  if (!io_pin.isInGroup() && !io_pin.isAssignedToSection() && !io_pin.inFallback()) {
     std::vector<int> dst(sections.size());
     for (int i = 0; i < sections.size(); i++) {
       dst[i] = netlist_io_pins_->computeIONetHPWL(idx, sections[i].pos);
@@ -1273,7 +1273,7 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
       continue;
     }
 
-    if (!io_pin.isPlaced() && !io_pin.isAssignedToSection()) {
+    if (!io_pin.isPlaced() && !io_pin.isAssignedToSection() && !io_pin.inFallback()) {
       pin_indices.push_back(idx);
     } else if (!io_pin.isInGroup()) {
       logger_->warn(PPL,
