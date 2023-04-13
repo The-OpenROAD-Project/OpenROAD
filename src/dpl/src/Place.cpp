@@ -344,7 +344,7 @@ void Opendp::place()
       debugPrint(logger_,
                  DPL,
                  "place",
-                 4,
+                 1,
                  "place {} {} {}",
                  cell->name(),
                  cell->x_,
@@ -352,6 +352,15 @@ void Opendp::place()
       if (!mapMove(cell)) {
         shiftMove(cell);
       }
+    } else if (!isMultiRow(cell)) {
+      debugPrint(logger_,
+                 DPL,
+                 "place",
+                 1,
+                 "skip place {} {} {}",
+                 cell->name(),
+                 cell->x_,
+                 cell->y_);
     }
   }
   // This has negligible benefit -cherry
@@ -1217,7 +1226,7 @@ Point Opendp::legalPt(const Cell* cell,
   debugPrint(logger_,
              DPL,
              "place",
-             2,
+             1,
              "legalpt itself init {} {} ",
              init.getX(),
              init.getY());
@@ -1225,7 +1234,7 @@ Point Opendp::legalPt(const Cell* cell,
   auto layer_info = getLayerInfo(cell);
   int grid_x = gridX(legal_pt.getX(), site_width);
   int grid_y = gridY(legal_pt.getY(), row_height);
-  debugPrint(logger_, DPL, "place", 2, "grid_x {} grid_y {}", grid_x, grid_y);
+  debugPrint(logger_, DPL, "place", 1, "grid_x {} grid_y {}", grid_x, grid_y);
 
   Pixel* pixel = gridPixel(layer_info.grid_index, grid_x, grid_y);
   if (pixel) {

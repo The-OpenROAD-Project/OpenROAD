@@ -78,7 +78,16 @@ void Opendp::initGridLayersMap()
   grid_layers_vector.resize(grid_layers_.size());
   for (auto& [row_height, layer_info] : grid_layers_) {
     grid_layers_vector[layer_info.grid_index] = &layer_info;
+    debugPrint(logger_,
+               DPL,
+               "grid",
+               1,
+               "grid layer {} {} {}",
+               row_height,
+               layer_info.row_count,
+               layer_info.site_count);
   }
+  debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
 }
 
 void Opendp::initGrid()
@@ -114,6 +123,7 @@ void Opendp::initGrid()
         }
       }
     }
+    debugPrint(logger_, DPL, "grid", 1, "grid initialized");
   }
 
   namespace gtl = boost::polygon;
@@ -121,17 +131,31 @@ void Opendp::initGrid()
 
   std::vector<gtl::polygon_90_set_data<int>> hopeless;
   hopeless.resize(grid_depth_);
+  debugPrint(logger_, DPL, "grid", 1, "hopeless grid initialized");
   for (auto [row_height, layer_info] : grid_layers_) {
     hopeless[layer_info.grid_index] += gtl::rectangle_data<int>{
         0, 0, layer_info.site_count, layer_info.row_count};
   }
   // Fragmented row support; mark valid sites.
+  debugPrint(
+      logger_, DPL, "grid", 1, "Number of rows: {}", block_->getRows().size());
   for (auto db_row : block_->getRows()) {
     int current_row_height = db_row->getSite()->getHeight();
     int current_row_site_count = db_row->getSiteCount();
     int current_row_count = grid_layers_.at(current_row_height).row_count;
     int current_row_grid_index = grid_layers_.at(current_row_height).grid_index;
-
+    auto layer_info = grid_layers_.at(current_row_height);
+    debugPrint(
+        logger_,
+        DPL,
+        "grid",
+        1,
+        "row {} has height {} and {} sites. grid index is {} and row count {}",
+        db_row->getName(),
+        current_row_height,
+        current_row_site_count,
+        current_row_grid_index,
+        current_row_count);
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
@@ -141,7 +165,15 @@ void Opendp::initGrid()
     const int x_start = (orig_x - core_.xMin()) / db_row->getSite()->getWidth();
     const int x_end = x_start + current_row_site_count;
     const int y_row = (orig_y - core_.yMin()) / current_row_height;
-
+    debugPrint(logger_,
+               DPL,
+               "grid",
+               1,
+               "row {} has x_start {} and x_end {} and y_row {}",
+               db_row->getName(),
+               x_start,
+               x_end,
+               y_row);
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel;
       pixel = gridPixel(current_row_grid_index, x, y_row);
@@ -166,15 +198,26 @@ void Opendp::initGrid()
     const int xl = std::max(0, x_start - max_displacement_x_ + safety);
     const int xh
         = std::min(layer_info.site_count, x_end + max_displacement_x_ - safety);
+    debugPrint(logger_,
+               DPL,
+               "grid",
+               1,
+               "current row {} current_row_site_count {} and x_end {} "
+               "max_displacement_x_ {} safety {}",
+               db_row->getName(),
+               layer_info.site_count,
+               x_end,
+               max_displacement_x_,
+               safety);
+
     const int yl = std::max(0, y_row - max_displacement_y_ + safety);
     const int yh
         = std::min(current_row_count, y_row + max_displacement_y_ - safety);
-
     hopeless[current_row_grid_index]
         -= gtl::rectangle_data<int>{xl, yl, xh, yh};
     debugPrint(logger_,
                DPL,
-               "hopeless",
+               "grid",
                1,
                "Removing rectangle ({}, {}, {}, {}) from hopeless.",
                xl,
@@ -185,6 +228,12 @@ void Opendp::initGrid()
 
   std::vector<gtl::rectangle_data<int>> rects;
   for (auto& grid_layer : grid_layers_) {
+    debugPrint(logger_,
+               DPL,
+               "grid",
+               1,
+               "Marking hopeless pixels for layer {}",
+               grid_layer.first);
     rects.clear();
     int h_index = grid_layer.second.grid_index;
     hopeless[h_index].get_rectangles(rects);
@@ -193,7 +242,7 @@ void Opendp::initGrid()
         for (int x = gtl::xl(rect); x < gtl::xh(rect); x++) {
           debugPrint(logger_,
                      DPL,
-                     "hopeless",
+                     "grid",
                      1,
                      "Marking grid pixel ({}, {}, {}) as hopeless.",
                      h_index,
