@@ -87,6 +87,12 @@ struct PinGroupByIndex
   bool order;
 };
 
+struct FallbackPins
+{
+  std::vector<std::pair<std::vector<int>, bool>> groups;
+  std::vector<int> pins;
+};
+
 enum class Edge
 {
   top,
@@ -248,6 +254,7 @@ class IOPlacer
   std::vector<Constraint> constraints_;
   std::vector<PinGroup> pin_groups_;
   MirroredPins mirrored_pins_;
+  FallbackPins fallback_pins_;
 
   Logger* logger_ = nullptr;
   std::unique_ptr<Parameters> parms_;

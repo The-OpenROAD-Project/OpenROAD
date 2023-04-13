@@ -829,7 +829,8 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
                     group_size);
     }
     if (!group_assigned) {
-      logger_->error(PPL, 42, "Unsuccessfully assigned I/O groups.");
+      logger_->warn(PPL, 42, "Unsuccessfully assigned I/O groups.");
+      fallback_pins_.groups.push_back({io_group, order});
     }
   }
 
