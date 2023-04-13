@@ -42,7 +42,10 @@
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 #include "sta/Path.hh"
-#include "gui/gui.h"
+
+namespace gui {
+class Gui;
+}
 
 namespace grt {
 class GlobalRouter;
