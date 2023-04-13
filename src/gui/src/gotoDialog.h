@@ -41,12 +41,16 @@ namespace gui {
 class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
 {
   Q_OBJECT
+ private:
+  LayoutViewer* viewer_;
+
  public:
   GotoLocationDialog(QWidget* parent = nullptr,
                      LayoutViewer* viewer_ = nullptr);
  public slots:
-  void show_init(LayoutViewer* viewer_ = nullptr);
+  void updateLocation(QLineEdit* xEdit, QLineEdit* yEdit);
   void updateUnits(int dbu_per_micron, bool useDBU);
+  void show_init();
   void accept() override;
 };
 }  // namespace gui

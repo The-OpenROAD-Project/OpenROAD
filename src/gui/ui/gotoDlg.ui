@@ -12,8 +12,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>330</width>
-    <height>142</height>
+    <width>150</width>
+    <height>100</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -254,7 +254,7 @@
  <connections>
   <connection>
    <sender>xEdit</sender>
-   <signal>editingFinished()</signal>
+   <signal>textEdited(QString)</signal>
    <receiver>GotoLocDialog</receiver>
    <slot>accept()</slot>
    <hints>
@@ -270,7 +270,7 @@
   </connection>
   <connection>
    <sender>yEdit</sender>
-   <signal>editingFinished()</signal>
+   <signal>textEdited(QString)</signal>
    <receiver>GotoLocDialog</receiver>
    <slot>accept()</slot>
    <hints>
@@ -318,7 +318,7 @@
   </connection>
   <connection>
    <sender>sEdit</sender>
-   <signal>editingFinished()</signal>
+   <signal>textEdited(QString)</signal>
    <receiver>GotoLocDialog</receiver>
    <slot>accept()</slot>
    <hints>

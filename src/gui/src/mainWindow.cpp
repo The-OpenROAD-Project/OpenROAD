@@ -102,7 +102,7 @@ MainWindow::MainWindow(QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
       find_dialog_(new FindObjectDialog(this)),
-      goto_dialog_(new GotoLocationDialog(this))
+      goto_dialog_(new GotoLocationDialog(this, viewer_))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -1140,7 +1140,7 @@ void MainWindow::showGotoDialog()
   if (getBlock() == nullptr)
     return;
 
-  goto_dialog_->show_init(viewer_);
+  goto_dialog_->show_init();
 }
 
 void MainWindow::showHelp()

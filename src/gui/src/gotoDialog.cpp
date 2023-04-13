@@ -38,7 +38,7 @@
 
 namespace gui {
 GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutViewer* viewer_)
-    : QDialog(parent)
+    : QDialog(parent), viewer_(viewer_)
 {
   setupUi(this);
 
@@ -62,13 +62,17 @@ void GotoLocationDialog::updateUnits(int dbu_per_micron, bool useDBU)
   }
 }
 
-void GotoLocationDialog::show_init(LayoutViewer* viewer_)
+void GotoLocationDialog::updateLocation(QLineEdit* xEdit, QLineEdit* yEdit)
 {
   xEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer_->getVisibleCenter().x(), false)));
   yEdit->setText(QString::fromStdString(Descriptor::Property::convert_dbu(
       viewer_->getVisibleCenter().y(), false)));
+}
 
+void GotoLocationDialog::show_init()
+{
+  GotoLocationDialog::updateLocation(xEdit, yEdit);
   int box_size
       = sqrt(
             pow((viewer_->dbu_bounds.lr().x() - viewer_->dbu_bounds.ll().x()),
@@ -99,5 +103,6 @@ void GotoLocationDialog::accept()
                           x_coord + box_size,
                           y_coord + box_size));
   }
+  GotoLocationDialog::updateLocation(xEdit, yEdit);
 }
 }  // namespace gui
