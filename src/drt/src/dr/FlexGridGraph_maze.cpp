@@ -207,39 +207,35 @@ frCost FlexGridGraph::getEstCost(const FlexMazeIdx& src,
   // avoid propagating to location that will cause forbidden via spacing to
   // boundary pin
   if (dstMazeIdx1 == dstMazeIdx2 && gridZ == dstMazeIdx1.z()) {
-    if (drWorker_ && drWorker_->getDRIter() >= 30
-        && drWorker_->getRipupMode() == 0) {
-      auto layerNum = (gridZ + 1) * 2;
-      auto layer = getTech()->getLayer(layerNum);
-      if (layer->isUnidirectional()) {
-        bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
-        if (isH) {
-          auto gap = abs(nextPoint.y() - dstPoint1.y());
-          if (gap
-              && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, false, false, false, gap, ndr_)
-                  || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-              && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, true, true, false, gap, ndr_)
-                  || layerNum + 2 > getTech()->getTopLayerNum())) {
-            forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
-          }
-        } else {
-          auto gap = abs(nextPoint.x() - dstPoint1.x());
-          if (gap
-              && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, false, false, true, gap, ndr_)
-                  || layerNum - 2 < BOTTOM_ROUTING_LAYER)
-              && (getTech()->isVia2ViaForbiddenLen(
-                      gridZ, true, true, true, gap, ndr_)
-                  || layerNum + 2 > getTech()->getTopLayerNum())) {
-            forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
-          }
+    auto layerNum = (gridZ + 1) * 2;
+    auto layer = getTech()->getLayer(layerNum);
+    if (layer->isUnidirectional()) {
+      bool isH = (layer->getDir() == dbTechLayerDir::HORIZONTAL);
+      if (isH) {
+        auto gap = abs(nextPoint.y() - dstPoint1.y());
+        if (gap
+            && (getTech()->isVia2ViaForbiddenLen(
+                    gridZ, false, false, false, gap, ndr_)
+                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+            && (getTech()->isVia2ViaForbiddenLen(
+                    gridZ, true, true, false, gap, ndr_)
+                || layerNum + 2 > getTech()->getTopLayerNum())) {
+          forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
+        }
+      } else {
+        auto gap = abs(nextPoint.x() - dstPoint1.x());
+        if (gap
+            && (getTech()->isVia2ViaForbiddenLen(
+                    gridZ, false, false, true, gap, ndr_)
+                || layerNum - 2 < BOTTOM_ROUTING_LAYER)
+            && (getTech()->isVia2ViaForbiddenLen(
+                    gridZ, true, true, true, gap, ndr_)
+                || layerNum + 2 > getTech()->getTopLayerNum())) {
+          forbiddenPenalty = layer->getPitch() * ggDRCCost_ * 20;
         }
       }
     }
   }
-
   return (minCostX + minCostY + minCostZ + bendCnt + forbiddenPenalty);
 }
 
