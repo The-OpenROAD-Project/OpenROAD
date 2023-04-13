@@ -830,11 +830,26 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
     }
     if (!group_assigned) {
       logger_->warn(PPL, 42, "Unsuccessfully assigned I/O groups.");
-      fallback_pins_.groups.push_back({io_group, order});
+      addGroupToFallback(io_group, order);
     }
   }
 
   return total_pins_assigned;
+}
+
+void IOPlacer::addGroupToFallback(const std::vector<int>& pin_group, bool order)
+{
+  fallback_pins_.groups.push_back({pin_group, order});
+  for (int pin_idx : pin_group) {
+    IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+    io_pin.setFallback();
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
+      int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
+      IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
+      mirrored_pin.setFallback();
+    }
+  }
 }
 
 bool IOPlacer::assignPinsToSections(int assigned_pins_count)
