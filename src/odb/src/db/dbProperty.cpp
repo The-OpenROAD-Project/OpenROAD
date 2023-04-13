@@ -88,7 +88,7 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
   if (_next != rhs._next)
     return false;
 
-  if (_value == rhs._value) {
+  if (_value != rhs._value) {
     return false;
   }
 
@@ -135,7 +135,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbProperty& prop)
 
   switch (prop._flags._type) {
     case DB_BOOL_PROP:
-      stream << std::get<uint>(prop._value);
+      // Older versions of the spec treated bools as uints
+      // retain backwards compatability
+      stream << static_cast<uint>(std::get<bool>(prop._value));
       break;
 
     case DB_INT_PROP:
@@ -162,24 +164,23 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& prop)
   stream >> prop._next;
   stream >> prop._owner;
 
-  uint boolean;
-  int integer;
-  char* char_string;
-  std::string string_property;
-  double double_property;
-
   switch (prop._flags._type) {
-    case DB_BOOL_PROP:
+    case DB_BOOL_PROP: {
+      // Older versions of the spec treated bools as uints
+      // retain backwards compatability
+      uint boolean;
       stream >> boolean;
-      prop._value = boolean;
+      prop._value = static_cast<bool>(boolean);
       break;
-
-    case DB_INT_PROP:
+    }
+    case DB_INT_PROP: {
+      int integer;
       stream >> integer;
       prop._value = integer;
       break;
-
-    case DB_STRING_PROP:
+    }
+    case DB_STRING_PROP: {
+      char* char_string;
       stream >> char_string;
       prop._value = "";
       if (char_string != nullptr) {
@@ -187,11 +188,13 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& prop)
         free(char_string);
       }
       break;
-
-    case DB_DOUBLE_PROP:
+    }
+    case DB_DOUBLE_PROP: {
+      double double_property;
       stream >> double_property;
       prop._value = double_property;
       break;
+    }
   }
 
   return stream;
@@ -498,13 +501,13 @@ dbSet<dbProperty>::iterator dbProperty::destroy(dbSet<dbProperty>::iterator itr)
 bool dbBoolProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return std::get<uint>(prop->_value);
+  return std::get<bool>(prop->_value);
 }
 
 void dbBoolProperty::setValue(bool value)
 {
   _dbProperty* prop = (_dbProperty*) this;
-  prop->_value = static_cast<uint>(value);
+  prop->_value = value;
 }
 
 dbBoolProperty* dbBoolProperty::create(dbObject* object,
@@ -515,7 +518,7 @@ dbBoolProperty* dbBoolProperty::create(dbObject* object,
     return NULL;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_BOOL_PROP);
-  prop->_value = static_cast<uint>(value);
+  prop->_value = value;
   return (dbBoolProperty*) prop;
 }
 

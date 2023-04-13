@@ -76,7 +76,7 @@ class _dbProperty : public _dbObject
   dbId<_dbProperty> _next;
   uint _owner;
 
-  std::variant<std::string, uint, int, double> _value;
+  std::variant<std::string, bool, int, double> _value;
 
   _dbProperty(_dbDatabase*);
   _dbProperty(_dbDatabase*, const _dbProperty& n);
