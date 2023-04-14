@@ -173,6 +173,7 @@ class FastRouteCore
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
+  void setUpdateSlack(bool u);
   void setOverflowIterations(int iterations);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -503,6 +504,7 @@ class FastRouteCore
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
+  bool update_slack_;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;

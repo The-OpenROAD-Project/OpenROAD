@@ -76,6 +76,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       has_2D_overflow_(false),
       grid_hv_(0),
       verbose_(false),
+      update_slack_(false),
       via_cost_(0),
       mazeedge_threshold_(0),
       v_capacity_lb_(0),
@@ -1204,6 +1205,11 @@ NetRouteMap FastRouteCore::run(MakeWireParasitics * builder)
 void FastRouteCore::setVerbose(bool v)
 {
   verbose_ = v;
+}
+
+void FastRouteCore::setUpdateSlack(bool u)
+{
+  update_slack_ = u;
 }
 
 void FastRouteCore::setOverflowIterations(int iterations)
