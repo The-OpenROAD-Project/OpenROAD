@@ -354,6 +354,8 @@ class Opendp
   // Cell initial location wrt core origin.
   int getRowHeight(const Cell* cell) const;
   int getSiteWidth(const Cell* cell) const;
+  int getRowCount(const Cell* cell) const;
+  int getRowCount(int row_height) const;
   int gridPaddedWidth(const Cell* cell, int site_width) const;
   int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;

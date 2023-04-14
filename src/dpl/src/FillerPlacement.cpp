@@ -87,6 +87,15 @@ void Opendp::placeRowFillers(int row,
                              LayerInfo layer_info)
 {
   int j = 0;
+  debugPrint(logger_,
+             DPL,
+             "filler",
+             2,
+             "filling row {} with site count {} when row_site_count is {}.",
+             row,
+             layer_info.site_count,
+             row_site_count_);
+
   while (j < layer_info.site_count) {
     Pixel* pixel = gridPixel(layer_info.grid_index, j, row);
     const dbOrientType orient = pixel->orient_;

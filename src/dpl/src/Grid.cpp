@@ -63,14 +63,14 @@ void Opendp::initGridLayersMap()
     // if a cut was inserted before the original row, the site count will be
     // smaller
     // it is also a bug in the row count
-    if (grid_layers_.find(db_row->getSite()->getHeight())
-        == grid_layers_.end()) {
-      grid_layers_.emplace(db_row->getSite()->getHeight(),
-                           LayerInfo{1, db_row->getSiteCount(), grid_index++});
+    int row_height = db_row->getSite()->getHeight();
+    if (grid_layers_.find(row_height) == grid_layers_.end()) {
+      grid_layers_.emplace(
+          db_row->getSite()->getHeight(),
+          LayerInfo{
+              getRowCount(row_height), db_row->getSiteCount(), grid_index++});
     } else {
-      int row_height = db_row->getSite()->getHeight();
       auto& layer_info = grid_layers_.at(row_height);
-      layer_info.row_count++;
       layer_info.site_count
           = max(layer_info.site_count, db_row->getSiteCount());
     }

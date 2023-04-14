@@ -555,6 +555,16 @@ int Opendp::gridPaddedX(const Cell* cell, int site_width) const
   return gridX(cell->x_ - padLeft(cell) * site_width, site_width);
 }
 
+int Opendp::getRowCount(const Cell* cell) const
+{
+  return getRowCount(getRowHeight(cell));
+}
+
+int Opendp::getRowCount(int row_height) const
+{
+  return divFloor(core_.dy(), row_height);
+}
+
 int Opendp::getRowHeight(const Cell* cell) const
 {
   if (grid_layers_.empty()) {
