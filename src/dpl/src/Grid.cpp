@@ -178,17 +178,6 @@ void Opendp::initGrid()
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel;
       pixel = gridPixel(current_row_grid_index, x, y_row);
-      if (pixel == nullptr) {
-        debugPrint(logger_,
-                   DPL,
-                   "grid",
-                   1,
-                   "row {} has x {} and y_row {} and pixel is null",
-                   db_row->getName(),
-                   x,
-                   y_row);
-        break;
-      }
       pixel->is_valid = true;
       pixel->orient_ = db_row->getOrient();
     }
