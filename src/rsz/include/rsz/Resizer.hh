@@ -43,6 +43,10 @@
 #include "sta/UnorderedSet.hh"
 #include "sta/Path.hh"
 
+namespace gui {
+class Gui;
+}
+
 namespace grt {
 class GlobalRouter;
 class IncrementalGRoute;
