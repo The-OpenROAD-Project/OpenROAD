@@ -303,7 +303,7 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
       = [this, block, corner_site, corner_sites, ring_index, &xform](
             const std::string& name,
             const odb::Point& origin,
-            odb::dbOrientType orient) -> odb::dbRow* {
+            const odb::dbOrientType& orient) -> odb::dbRow* {
     const std::string row_name = getRowName(name, ring_index);
     odb::dbTransform rotation(orient);
     rotation.concat(xform);
@@ -326,25 +326,26 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
       = create_corner(corner_sw_, corner_origins.ll(), odb::dbOrientType::R0);
 
   // Create rows
-  auto create_row = [this, block, ring_index, &xform](const std::string& name,
-                                                      odb::dbSite* site,
-                                                      int sites,
-                                                      const odb::Point& origin,
-                                                      odb::dbOrientType orient,
-                                                      odb::dbRowDir direction) {
-    const std::string row_name = getRowName(name, ring_index);
-    odb::dbTransform rotation(orient);
-    rotation.concat(xform);
-    odb::dbRow::create(block,
-                       row_name.c_str(),
-                       site,
-                       origin.x(),
-                       origin.y(),
-                       rotation.getOrient(),
-                       direction,
-                       sites,
-                       site->getWidth());
-  };
+  auto create_row
+      = [this, block, ring_index, &xform](const std::string& name,
+                                          odb::dbSite* site,
+                                          int sites,
+                                          const odb::Point& origin,
+                                          const odb::dbOrientType& orient,
+                                          const odb::dbRowDir& direction) {
+          const std::string row_name = getRowName(name, ring_index);
+          odb::dbTransform rotation(orient);
+          rotation.concat(xform);
+          odb::dbRow::create(block,
+                             row_name.c_str(),
+                             site,
+                             origin.x(),
+                             origin.y(),
+                             rotation.getOrient(),
+                             direction,
+                             sites,
+                             site->getWidth());
+        };
   create_row(row_north_,
              vertical_site,
              x_sites,
@@ -487,7 +488,7 @@ odb::dbRow* ICeWall::findRow(const std::string& name) const
 odb::Direction2D::Value ICeWall::getRowEdge(odb::dbRow* row) const
 {
   const std::string row_name = row->getName();
-  auto check_name = [&row_name](const std::string check) -> bool {
+  auto check_name = [&row_name](const std::string& check) -> bool {
     return row_name.substr(0, check.length()) == check;
   };
   if (check_name(row_north_)) {
