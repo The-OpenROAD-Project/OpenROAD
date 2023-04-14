@@ -43,16 +43,16 @@
 
 namespace par {
 
-// matrix is a two-dimensional vectors
+// MATRIX is a two-dimensional vectors
 template <typename T>
-using matrix = std::vector<std::vector<T> >;
+using MATRIX = std::vector<std::vector<T> >;
 // TP_partition is the partitioning solution
 using TP_partition = std::vector<int>; //
 // TP_partition_token is the metrics of a given partition
 // it consists of two part:  cost (cutsize), balance for each block
 // for example, TP_partition_token.second[0] is the balance of 
 // block_0
-using TP_partition_token = std::pair<float, matrix<float> >;
+using TP_partition_token = std::pair<float, MATRIX<float> >;
 
 // Vertex Gain is the basic elements of FM
 // We do not use the classical gain-bucket data structure
@@ -70,7 +70,7 @@ using TP_gain_buckets = std::vector<std::shared_ptr<TPpriorityQueue>>;
 using TP_gain_bucket = std::shared_ptr<TPpriorityQueue>;
 
 class GoldenEvaluator;
-using TP_evaluator = std::shared_ptr<GoldenEvaluator>;
+using TP_evaluator_ptr = std::shared_ptr<GoldenEvaluator>;
 
 // The algorithm we supported
 enum class RefinerChoice
@@ -189,7 +189,7 @@ class TPpriorityQueue
 {
  public:
   // constructors
-  TPpriorityQueue(int total_elements, int maximum_traverse_level, HGraph hypergraph)
+  TPpriorityQueue(int total_elements, int maximum_traverse_level, HGraphPtr hypergraph)
     : maximum_traverse_level_(maximum_traverse_level)
   {
     vertices_map_.resize(total_elements);
@@ -211,8 +211,9 @@ class TPpriorityQueue
 
   // find the vertex gain which can satisfy the balance constraint
   std::shared_ptr<VertexGain> GetBestCandidate(
-      const matrix<float>& curr_block_balance,
-      const matrix<float>& max_block_balance);     
+      const MATRIX<float>& curr_block_balance,
+      const MATRIX<float>& max_block_balance,
+      const HGraphPtr hgraph);     
 
   // update the priority (gain) for the specified vertex
   void ChangePriority(int vertex_id, std::shared_ptr<VertexGain> new_element);
@@ -265,9 +266,14 @@ class TPpriorityQueue
   // This is called when we remove an existing element
   void HeapifyDown(int index);
 
+  // Compare the two elements
+  // If the gains are equal then pick the vertex with the smaller weight
+  // The hope is doing this will incentivize in preventing corking effect
+  bool CompareElementLargeThan(int index_a, int index_b);
+  
   // private variables
   bool active_;
-  HGraph hypergraph_;
+  HGraphPtr hypergraph_;
   std::vector<std::shared_ptr<VertexGain> > vertices_; // elements
   std::vector<int> vertices_map_; // store the location of vertex_gain for each vertex
                                   // vertices_map_ always has the size of hypergraph_->num_vertices_
@@ -289,16 +295,16 @@ class TPrefiner {
               const float path_wt_factor, // weight for cutting a critical timing path
               const float snaking_wt_factor, // weight for snaking timing paths
               const int max_move, // the maximum number of vertices or hyperedges can be moved in each pass
-              TP_evaluator evaluator, // evaluator
+              TP_evaluator_ptr evaluator, // evaluator
               utl::Logger* logger)
         : num_parts_(num_parts),
           refiner_iters_(refiner_iters),
           path_wt_factor_(path_wt_factor),
           snaking_wt_factor_(snaking_wt_factor),
-          max_move_(max_move)
+          max_move_(max_move),
+          max_move_default_(max_move),
+          refiner_iters_default_(refiner_iters)
     {
-      max_move_default_ = max_move;
-      refiner_iters_default_ = refiner_iters;
       evaluator_ = evaluator;
       logger_ = logger;
     }
@@ -308,9 +314,9 @@ class TPrefiner {
     virtual ~TPrefiner() = default;
 
     // The main function 
-    void Refine(const HGraph hgraph,
-                const matrix<float>& max_block_balance,
-                TP_partition& solution) const;
+    void Refine(const HGraphPtr hgraph,
+                const MATRIX<float>& max_block_balance,
+                TP_partition& solution);
 
     // accessor
     void SetMaxMove(int max_move) { 
@@ -332,14 +338,15 @@ class TPrefiner {
 
   protected:
     // protected functions
-    virtual float Pass(const HGraph hgraph,
-                       const matrix<float>& max_block_balance,
-                       matrix<float>& block_balance, // the current block balance
-                       matrix<int>& net_degs, // the current net degree
+    virtual float Pass(const HGraphPtr hgraph,
+                       const MATRIX<float>& max_block_balance,
+                       MATRIX<float>& block_balance, // the current block balance
+                       MATRIX<int>& net_degs, // the current net degree
                        std::vector<float>& paths_cost, // the current path cost
                        TP_partition& solution,
-                       std::vector<bool>& visited_vertices_flag) = 0;
-
+                       std::vector<bool>& visited_vertices_flag) { 
+                        logger_->report("Warning: Call from the Refiner class");
+                        return 0.0; }
  
     // By default, v = -1 and to_pid = -1
     // if to_pid == -1, we are calculate the current cost
@@ -347,29 +354,29 @@ class TPrefiner {
     // else if to_pid != -1, we are culculate the cost of the path
     // after moving v to block to_pid
     float CalculatePathCost(int path_id,
-                            const HGraph hgraph,
+                            const HGraphPtr hgraph,
                             const TP_partition& solution,
                             int v = -1, // v = -1 by default
                             int to_pid = -1 // to_pid = -1 by default
                             ) const;
 
     // Find all the boundary vertices. The boundary vertices will not include any fixed vertices
-    std::vector<int> FindBoundaryVertices(const HGraph hgraph,
-                                          const matrix<int>& net_degs,
+    std::vector<int> FindBoundaryVertices(const HGraphPtr hgraph,
+                                          const MATRIX<int>& net_degs,
                                           const std::vector<bool>& visited_vertices_flag
                                           ) const;
 
-    std::vector<int> FindBoundaryVertices(const HGraph hgraph,
-                                          const matrix<int>& net_degs,
+    std::vector<int> FindBoundaryVertices(const HGraphPtr hgraph,
+                                          const MATRIX<int>& net_degs,
                                           const std::vector<bool>& visited_vertices_flag,
                                           const std::vector<int>& solution,
                                           const std::pair<int,int>& partition_pair) const;
 
-    std::vector<int> FindNeighbors(const HGraph hgraph, 
+    std::vector<int> FindNeighbors(const HGraphPtr hgraph, 
                                    const int vertex_id,
                                    const std::vector<bool>& visited_vertices_flag) const;
   
-    std::vector<int> FindNeighbors(const HGraph hgraph, 
+    std::vector<int> FindNeighbors(const HGraphPtr hgraph, 
                                    const int vertex_id, 
                                    const std::vector<bool>& visited_vertices_flag,
                                    const std::vector<int>& solution,
@@ -391,64 +398,67 @@ class TPrefiner {
     TP_gain_cell CalculateVertexGain(int v,
                                      int from_pid,
                                      int to_pid,
-                                     const HGraph hgraph,
+                                     const HGraphPtr hgraph,
                                      const std::vector<int>& solution,
                                      const std::vector<float>& cur_path_cost,
-                                     const matrix<int>& net_degs) const;
+                                     const MATRIX<int>& net_degs) const;
 
     // accept the vertex gain
     void AcceptVertexGain(TP_gain_cell gain_cell,
-                          const HGraph hgraph,
+                          const HGraphPtr hgraph,
                           float& total_delta_gain,
                           std::vector<bool>& visited_vertices_flag,
                           std::vector<int>& solution,
                           std::vector<float>& cur_paths_cost,
-                          matrix<float>& curr_block_balance,
-                          matrix<int>& net_degs) const;
+                          MATRIX<float>& curr_block_balance,
+                          MATRIX<int>& net_degs) const;
 
 
     // restore the vertex gain            
     void RollBackVertexGain(TP_gain_cell gain_cell,
-                            const HGraph hgraph,
+                            const HGraphPtr hgraph,
                             std::vector<bool>& visited_vertices_flag,
                             std::vector<int>& solution,
                             std::vector<float>& cur_path_cost,
-                            matrix<float>& curr_block_balance,
-                            matrix<int>& net_degs) const;
+                            MATRIX<float>& curr_block_balance,
+                            MATRIX<int>& net_degs) const;
 
     
     // check if we can move the vertex to some block
     bool CheckVertexMoveLegality(int v, // vertex_id
                                  int to_pid, // to block id
-                                 const HGraph hgraph, 
-                                 const matrix<float>& curr_block_balance,
-                                 const matrix<float>& max_block_balance) const;
+                                 const HGraphPtr hgraph, 
+                                 const MATRIX<float>& curr_block_balance,
+                                 const MATRIX<float>& max_block_balance) const;
     
-
+    // calculate the possible gain of moving a entire hyperedge
+    // We can view the process of moving the vertices in hyperege
+    // one by one, then restore the moving sequence to make sure that
+    // the current status is not changed. Solution should not be const
     // calculate the possible gain of moving a hyperedge
     TP_gain_hyperedge CalculateHyperedgeGain(int hyperedge_id, 
                                              int to_pid,
-                                             const HGraph hgraph,
-                                             const std::vector<int>& solution,
+                                             const HGraphPtr hgraph,
+                                             std::vector<int>& solution,
                                              const std::vector<float>& cur_paths_cost,
-                                             const matrix<int>& net_degs) const;
+                                             const MATRIX<int>& net_degs) const;
 
     // check if we can move the hyperegde into some block
     bool CheckHyperedgeMoveLegality(int e, // hyperedge id 
                                     int to_pid, // to block id
-                                    const HGraph hgraph,
+                                    const HGraphPtr hgraph,
                                     const std::vector<int>& solution,
-                                    const matrix<float>& curr_block_balance,
-                                    const matrix<float>& max_block_balance) const;
+                                    const MATRIX<float>& curr_block_balance,
+                                    const MATRIX<float>& max_block_balance) const;
 
     // accpet the hyperedge gain
     void AcceptHyperedgeGain(TP_gain_hyperedge hyperedge_gain,
-                             const HGraph hgraph,
+                             const HGraphPtr hgraph,
                              float& total_delta_gain,
                              std::vector<int>& solution,
                              std::vector<float>& cur_paths_cost,
-                             matrix<float>& curr_block_balance,
-                             matrix<int>& net_degs) const;
+                             MATRIX<float>& curr_block_balance,
+                             MATRIX<int>& net_degs) const;
 
     // Note that there is no RollBackHyperedgeGain
     // Because we only use greedy hyperedge refinement
@@ -469,7 +479,7 @@ class TPrefiner {
     const int max_move_default_ = 50;
     
     utl::Logger* logger_ = nullptr;    
-    TP_evaluator evaluator_ = nullptr;
+    TP_evaluator_ptr evaluator_ = nullptr;
 };
 
 // --------------------------------------------------------------------------
@@ -479,64 +489,78 @@ class TPkWayFMRefine : public TPrefiner
 {
   public:
     // We need the constructor here.  We have one more parameter related to "corking effect"
-    TPKWayFMRefine(const int num_parts,
+    TPkWayFMRefine(const int num_parts,
                    const int refiner_iters, 
                    const float path_wt_factor, // weight for cutting a critical timing path
                    const float snaking_wt_factor, // weight for snaking timing paths
                    const int max_move, // the maximum number of vertices or hyperedges can be moved in each pass
                    const int total_corking_passes,
-                   TP_evaluator evaluator, // evaluator
-                   utl::Logger* logger)
-            : num_parts_(num_parts),
-              refiner_iters_(refiner_iters),
-              path_wt_factor_(path_wt_factor),
-              snaking_wt_factor_(snaking_wt_factor),
-              max_move_(max_move)
-              total_corking_passes_(total_corking_passes),
-    {
-      max_move_default_ = max_move;
-      refiner_iters_default_ = refiner_iters;
-      evaluator_ = evaluator;
-      logger_ = logger;
-    }
-      
-  protected:
+                   TP_evaluator_ptr evaluator, // evaluator
+                   utl::Logger* logger) 
+      : total_corking_passes_(total_corking_passes),
+        TPrefiner(num_parts, refiner_iters, path_wt_factor, snaking_wt_factor,
+                  max_move, evaluator, logger)
+      { }
+    
+
+
+    // Mark these two functions as public.
+    // Because they will be called by multi-threading 
+     // Initialize the single bucket
+    void InitializeSingleGainBucket(
+        TP_gain_buckets& buckets,
+        int to_pid, // move the vertex into this block (block_id = to_pid)
+        const HGraphPtr hgraph,
+        const std::vector<int>& boundary_vertices,
+        const MATRIX<int>& net_degs,
+        const std::vector<float>& cur_paths_cost,
+        const TP_partition& solution) const;
+
+
+    // After moving one vertex, the gain of its neighbors will also need
+    // to be updated. This function is used to update the gain of neighbor vertices
+    // notices that the neighbors has been calculated based on solution, visited status,
+    // boundary vertices status
+    void UpdateSingleGainBucket(int part,
+                                TP_gain_buckets& buckets,
+                                const HGraphPtr hgraph,
+                                const std::vector<int>& neighbors,
+                                const MATRIX<int>& net_degs,
+                                const std::vector<float>& cur_paths_cost,
+                                const TP_partition& solution) const;
+
+
+
+    protected:  
+  //public:
     // The main function for the FM-based refinement
     // In each pass, we only move the boundary vertices
-    float Pass(const HGraph hgraph,
-               const matrix<float>& max_block_balance,
-               matrix<float>& block_balance, // the current block balance
-               matrix<int>& net_degs, // the current net degree
+    float Pass(const HGraphPtr hgraph,
+               const MATRIX<float>& max_block_balance,
+               MATRIX<float>& block_balance, // the current block balance
+               MATRIX<int>& net_degs, // the current net degree
                std::vector<float>& cur_paths_cost, // the current path cost
                TP_partition& solution,
-               std::vector<bool>& visited_vertices_flag) const override;
+               std::vector<bool>& visited_vertices_flag) const;
 
     // gain bucket related functions
     // Initialize the gain buckets in parallel
     void InitializeGainBucketsKWay(
         TP_gain_buckets& buckets,
-        const HGraph hgraph,
+        const HGraphPtr hgraph,
         const std::vector<int>& boundary_vertices,
-        const matrix<int>& net_degs,
+        const MATRIX<int>& net_degs,
         const std::vector<float>& cur_paths_cost,
         const TP_partition& solution) const;
   
-    // Initialize the single bucket
-    void InitializeSingleGainBucket(
-        TP_gain_buckets& buckets,
-        int to_pid, // move the vertex into this block (block_id = to_pid)
-        const HGraph hgraph,
-        const std::vector<int>& boundary_vertices,
-        const matrix<int>& net_degs,
-        const std::vector<float>& cur_paths_cost,
-        const TP_partition& solution) const;
-        
+   
+
     // Determine which vertex gain to be picked
     std::shared_ptr<VertexGain> PickMoveKWay(
         TP_gain_buckets& buckets,
-        const HGraph hgraph,
-        const matrix<float>& curr_block_balance,
-        const matrix<float>& max_block_balance) const;
+        const HGraphPtr hgraph,
+        const MATRIX<float>& curr_block_balance,
+        const MATRIX<float>& max_block_balance) const;
   
     // move one vertex based on the calculated gain_cell
     void AcceptKWayMove(std::shared_ptr<VertexGain> gain_cell,
@@ -544,9 +568,9 @@ class TPkWayFMRefine : public TPrefiner
                         std::vector<TP_gain_cell>& moves_trace,
                         float& total_delta_gain,
                         std::vector<bool>& visited_vertices_flag,
-                        HGraph hgraph,
-                        matrix<float>& curr_block_balance,
-                        matrix<int>& net_degs,
+                        HGraphPtr hgraph,
+                        MATRIX<float>& curr_block_balance,
+                        MATRIX<int>& net_degs,
                         std::vector<float>& cur_paths_cost,
                         std::vector<int>& solution) const;
 
@@ -555,18 +579,6 @@ class TPkWayFMRefine : public TPrefiner
     void HeapEleDeletion(int vertex_id,
                          int part,
                          TP_gain_buckets& buckets) const;
-
-    // After moving one vertex, the gain of its neighbors will also need
-    // to be updated. This function is used to update the gain of neighbor vertices
-    // notices that the neighbors has been calculated based on solution, visited status,
-    // boundary vertices status
-    void UpdateSingleGainBucket(int part,
-                                TP_gain_buckets& buckets,
-                                const HGraph hgraph,
-                                const std::set<int>& neighbors,
-                                const matrix<int>& net_degs,
-                                const std::vector<float>& cur_paths_cost,
-                                const TP_partition& solution) const;
 
     // variables
     int total_corking_passes_ = 25; // the maximum level of traversing the buckets to solve the "corking effect"
@@ -587,6 +599,21 @@ class TPkWayFMRefine : public TPrefiner
 // especially the functions related to gain buckets
 class TPkWayPMRefine : public TPkWayFMRefine
 {
+  public:
+    TPkWayPMRefine(const int num_parts,
+                   const int refiner_iters, 
+                   const float path_wt_factor, // weight for cutting a critical timing path
+                   const float snaking_wt_factor, // weight for snaking timing paths
+                   const int max_move, // the maximum number of vertices or hyperedges can be moved in each pass
+                   const int total_corking_passes,
+                   TP_evaluator_ptr evaluator, // evaluator
+                   utl::Logger* logger) 
+      : TPkWayFMRefine(num_parts, refiner_iters,
+                       path_wt_factor, snaking_wt_factor,
+                       max_move, total_corking_passes, 
+                       evaluator, logger)
+      { }
+  
   private:
     // In each pass, we only move the boundary vertices
     // here we pass block_balance and net_degrees as reference
@@ -594,13 +621,13 @@ class TPkWayPMRefine : public TPkWayFMRefine
     // i.e., block_balance and net_degs will not change too much
     // so we precompute the block_balance and net_degs
     // the return value is the gain improvement
-    float Pass(const HGraph hgraph,
-               const matrix<float>& max_block_balance,
-               matrix<float>& block_balance, // the current block balance
-               matrix<int>& net_degs, // the current net degree
+    float Pass(const HGraphPtr hgraph,
+               const MATRIX<float>& max_block_balance,
+               MATRIX<float>& block_balance, // the current block balance
+               MATRIX<int>& net_degs, // the current net degree
                std::vector<float>& cur_paths_cost, // the current path cost
                TP_partition& solution,
-               std::vector<bool>& visited_vertices_flag) const override;
+               std::vector<bool>& visited_vertices_flag);
 
 
     // The function to calculate the matching_scores
@@ -609,10 +636,10 @@ class TPkWayPMRefine : public TPkWayFMRefine
     
 
     // Perform 2-way FM between blocks in partition pair
-    float PerformPairFM(const HGraph hgraph,
-                        const matrix<float>& max_block_balance,
-                        matrix<float>& block_balance, // the current block balance
-                        matrix<int>& net_degs, // the current net degree
+    float PerformPairFM(const HGraphPtr hgraph,
+                        const MATRIX<float>& max_block_balance,
+                        MATRIX<float>& block_balance, // the current block balance
+                        MATRIX<int>& net_degs, // the current net degree
                         std::vector<float>& paths_cost, // the current path cost
                         TP_partition& solution,
                         TP_gain_buckets& buckets,
@@ -622,9 +649,9 @@ class TPkWayPMRefine : public TPkWayFMRefine
     // gain bucket related functions
     // Initialize the gain buckets in parallel
     void InitializeGainBucketsPM(TP_gain_buckets& buckets,
-                                 const HGraph hgraph,
+                                 const HGraphPtr hgraph,
                                  const std::vector<int>& boundary_vertices,
-                                 const matrix<int>& net_degs,
+                                 const MATRIX<int>& net_degs,
                                  const std::vector<float>& cur_paths_cost,
                                  const TP_partition& solution,
                                  const std::pair<int, int>& partition_pair) const;
@@ -645,6 +672,19 @@ class TPkWayPMRefine : public TPkWayFMRefine
 // ------------------------------------------------------------------------------
 class TPgreedyRefine : public TPrefiner
 {
+  public:
+  TPgreedyRefine(const int num_parts,
+              const int refiner_iters, 
+              const float path_wt_factor, // weight for cutting a critical timing path
+              const float snaking_wt_factor, // weight for snaking timing paths
+              const int max_move, // the maximum number of vertices or hyperedges can be moved in each pass
+              TP_evaluator_ptr evaluator, // evaluator
+              utl::Logger* logger) 
+      : TPrefiner(num_parts, refiner_iters, 
+                  path_wt_factor, snaking_wt_factor,
+                  max_move, evaluator, logger)
+      { }
+  
   private:
     // In each pass, we only move the boundary vertices
     // here we pass block_balance and net_degrees as reference
@@ -652,13 +692,13 @@ class TPgreedyRefine : public TPrefiner
     // i.e., block_balance and net_degs will not change too much
     // so we precompute the block_balance and net_degs
     // the return value is the gain improvement
-    float Pass(const HGraph hgraph,
-               const matrix<float>& max_block_balance,
-               matrix<float>& block_balance, // the current block balance
-               matrix<int>& net_degs, // the current net degree
+    float Pass(const HGraphPtr hgraph,
+               const MATRIX<float>& max_block_balance,
+               MATRIX<float>& block_balance, // the current block balance
+               MATRIX<int>& net_degs, // the current net degree
                std::vector<float>& cur_paths_cost, // the current path cost
                TP_partition& solution,
-               std::vector<bool>& visited_vertices_flag) const override;
+               std::vector<bool>& visited_vertices_flag) const;
 };
 
 
@@ -671,6 +711,19 @@ class TPgreedyRefine : public TPrefiner
 // --------------------------------------------------------------------------------
 class TPilpRefine : public TPrefiner
 {
+  public:
+  TPilpRefine(const int num_parts,
+              const int refiner_iters, 
+              const float path_wt_factor, // weight for cutting a critical timing path
+              const float snaking_wt_factor, // weight for snaking timing paths
+              const int max_move, // the maximum number of vertices or hyperedges can be moved in each pass
+              TP_evaluator_ptr evaluator, // evaluator
+              utl::Logger* logger) 
+      : TPrefiner(num_parts, refiner_iters, 
+                  path_wt_factor, snaking_wt_factor,
+                  max_move, evaluator, logger)
+      { }
+  
   private:
     // In each pass, we only move the boundary vertices
     // here we pass block_balance and net_degrees as reference
@@ -678,13 +731,13 @@ class TPilpRefine : public TPrefiner
     // i.e., block_balance and net_degs will not change too much
     // so we precompute the block_balance and net_degs
     // the return value is the gain improvement
-    float Pass(const HGraph hgraph,
-               const matrix<float>& max_block_balance,
-               matrix<float>& block_balance, // the current block balance
-               matrix<int>& net_degs, // the current net degree
+    float Pass(const HGraphPtr hgraph,
+               const MATRIX<float>& max_block_balance,
+               MATRIX<float>& block_balance, // the current block balance
+               MATRIX<int>& net_degs, // the current net degree
                std::vector<float>& cur_paths_cost, // the current path cost
                TP_partition& solution,
-               std::vector<bool>& visited_vertices_flag) const override;
+               std::vector<bool>& visited_vertices_flag) const;
 };
 
 }  // namespace par

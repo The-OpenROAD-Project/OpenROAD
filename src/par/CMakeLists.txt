@@ -54,7 +54,12 @@ target_sources(par
     src/TPMultilevel.cpp
     src/TPRefiner.cpp
     src/TPPartitioner.cpp
-    src/KPMRefinement.cpp
+    src/TPEvaluator.cpp
+    src/TPGreedyRefine.cpp
+    src/TPILPRefine.cpp
+    src/TPKWayFMRefine.cpp
+    src/TPKWayPMRefine.cpp
+    src/TPPriorityQueue.cpp
 )
 
 messages(

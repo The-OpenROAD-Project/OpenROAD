@@ -59,7 +59,7 @@ std::vector<std::vector<float> > TPHypergraph::GetVertexBalance(int num_parts,
 {
   std::vector<float> vertex_balance = GetTotalVertexWeights();
   vertex_balance = MultiplyFactor(
-      vertex_balance, ubfactor * 0.01 + 1.0 / static_cast<float>(num_parts));
+      vertex_balance, ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts));
   return std::vector<std::vector<float> >(num_parts, vertex_balance);
 }
 

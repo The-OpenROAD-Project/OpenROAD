@@ -47,9 +47,9 @@ sta::define_cmd_args "triton_part_hypergraph" {
   [-community_file community_file] \
   [-group_file group_file] \
   [-placement_file placement_file] \
-  [-e_wt_factors e_wt_factors] \
-  [-v_wt_factors v_wt_factors] \
-  [-placement_wt_factors placement_wt_factors] \
+  [-e_wt_factors <e_wt_factors>] \
+  [-v_wt_factors <v_wt_factors>] \
+  [-placement_wt_factors <placement_wt_factors>] \
   [-thr_coarsen_hyperedge_size_skip thr_coarsen_hyperedge_size_skip] \
   [-thr_coarsen_vertices thr_coarsen_vertices] \
   [-thr_coarsen_hyperedges thr_coarsen_hyperedges] \
@@ -119,7 +119,7 @@ proc triton_part_hypergraph { args } {
   set placement_file ""
   set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
-  set placement_wt_factors { }
+  set placement_wt_factors { 1.0 }
   set thr_coarsen_hyperedge_size_skip 50
   set thr_coarsen_vertices 200
   set thr_coarsen_hyperedges 50

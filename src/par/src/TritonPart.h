@@ -41,6 +41,7 @@
 #include <vector>
 
 #include "TPHypergraph.h"
+#include "TPCoarsener.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
@@ -64,7 +65,7 @@ namespace par {
 // Type 2:  Take the input hypergraph as an argument in the same manner as
 //          hMetis.
 template <typename T>
-using matrix = std::vector<std::vector<T> >;
+using MATRIX = std::vector<std::vector<T> >;
 
 class TritonPart
 {
@@ -374,8 +375,8 @@ class TritonPart
   std::vector<std::vector<float> > hyperedge_weights_;
   // When we create the hypergraph, we ignore all the hyperedges with vertices
   // more than global_net_threshold_
-  HGraph hypergraph_ = nullptr;  // the hypergraph after removing large hyperedges
-  HGraph original_hypergraph_ = nullptr; // the original hypergraph. In the timing-driven flow,
+  HGraphPtr hypergraph_ = nullptr;  // the hypergraph after removing large hyperedges
+  HGraphPtr original_hypergraph_ = nullptr; // the original hypergraph. In the timing-driven flow,
                                          // the original hypergraph also serves as the timing graph
 
   // Final solution

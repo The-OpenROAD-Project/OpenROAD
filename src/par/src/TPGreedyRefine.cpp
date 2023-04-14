@@ -46,10 +46,10 @@ namespace par {
 // Implement the greedy refinement pass
 // Different from the FM refinement, greedy refinement
 // only accepts possible gain
-float TPgreedyRefine::Pass(const HGraph hgraph,
-                           const matrix<float>& max_block_balance,
-                           matrix<float>& block_balance, // the current block balance
-                           matrix<int>& net_degs, // the current net degree
+float TPgreedyRefine::Pass(const HGraphPtr hgraph,
+                           const MATRIX<float>& max_block_balance,
+                           MATRIX<float>& block_balance, // the current block balance
+                           MATRIX<int>& net_degs, // the current net degree
                            std::vector<float>& cur_paths_cost, // the current path cost
                            TP_partition& solution,
                            std::vector<bool>& visited_vertices_flag) const 
@@ -71,7 +71,7 @@ float TPgreedyRefine::Pass(const HGraph hgraph,
     }
     // updated the iteration
     num_move++;
-    if (num_move >= max_moves_) {
+    if (num_move >= max_move_) {
       return total_gain;
     }  
     // find the best candidate block
@@ -81,8 +81,8 @@ float TPgreedyRefine::Pass(const HGraph hgraph,
       if (a->GetGain() > b->GetGain()) {
         return true;
       } else if (a->GetGain() == b->GetGain() && 
-        hgraph->GetHyperedgeVerWtSum(a->GetHyperedge()) 
-          <  hgraph->GetHyperedgeVerWtSum(b->GetHyperedge()) {
+        evaluator_->CalculateHyperedgeVertexWtSum(a->GetHyperedge(), hgraph)
+          < evaluator_->CalculateHyperedgeVertexWtSum(b->GetHyperedge(), hgraph)) {
         return true; // break ties based on vertex weight summation of the hyperedge
       } else {
         return false;
@@ -105,7 +105,7 @@ float TPgreedyRefine::Pass(const HGraph hgraph,
     }
 
     if (best_candidate_block > -1) {
-      AcceptHyperedgeMove(best_gain_hyperedge,
+      AcceptHyperedgeGain(best_gain_hyperedge,
                           hgraph, 
                           total_gain, 
                           solution,

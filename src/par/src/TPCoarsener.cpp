@@ -58,15 +58,15 @@ namespace par {
 // Notice that the input hypergraph is not const, 
 // because the hgraphs returned can be edited
 // The timing cost of hgraph will be initialized if it has been not.
-TP_coarse_graphs TPcoarsener::LazyFirstChoice(HGraph hgraph) const
+TP_coarse_graph_ptrs TPcoarsener::LazyFirstChoice(HGraphPtr hgraph) const
 {
   const auto start_timestamp = std::chrono::high_resolution_clock::now();
-  std::vector<HGraph> hierarchy;  // a sequence of coarser hypergraphs
+  std::vector<HGraphPtr> hierarchy;  // a sequence of coarser hypergraphs
   // start the FC multilevel coarsening by pushing the original hgraph to hierarchy
   // update the timing cost of hgraph if it has been not.
   if (hgraph->timing_flag_ == true &&
       hgraph->path_timing_cost_.empty() == true &&
-      hgrpah->hyperedge_timing_cost_.empty() == true) {
+      hgraph->hyperedge_timing_cost_.empty() == true) {
     evaluator_->InitializeTiming(hgraph);
   }
   hierarchy.push_back(hgraph);    // push original hgraph to hierarchy
@@ -115,14 +115,14 @@ TP_coarse_graphs TPcoarsener::LazyFirstChoice(HGraph hgraph) const
 // (4) handle group information
 // (5) group fixed vertices based on each block
 // group vertices based on group_attr and hgraph->fixed_attr_
-HGraph TPcoarsener::GroupVertices(const HGraph hgraph, 
+HGraphPtr TPcoarsener::GroupVertices(const HGraphPtr hgraph, 
                                   const std::vector<std::vector<int> >& group_attr) const
 {
   std::vector<int> vertex_cluster_id_vec; // map current vertex_id to cluster_id
-  matrix<float> vertex_weights_c; // cluster weight
+  MATRIX<float> vertex_weights_c; // cluster weight
   std::vector<int> community_attr_c; // cluster community information
   std::vector<int> fixed_attr_c; // cluster fixed attribute
-  matrix<float> placement_attr_c; // cluster placement attribute
+  MATRIX<float> placement_attr_c; // cluster placement attribute
 
   // Cluster based group information
   ClusterBasedGroupInfo(hgraph, 
@@ -162,13 +162,13 @@ HGraph TPcoarsener::GroupVertices(const HGraph hgraph,
 // Single-level Coarsening
 // The input is a hypergraph
 // The output is a coarser hypergraph
-HGraph TPcoarsener::Aggregate(const HGraph hgraph) const
+HGraphPtr TPcoarsener::Aggregate(const HGraphPtr hgraph) const
 {
   std::vector<int> vertex_cluster_id_vec;
-  matrix<float> vertex_weights_c;
+  MATRIX<float> vertex_weights_c;
   std::vector<int> community_attr_c;
   std::vector<int> fixed_attr_c;
-  matrix<float> placement_attr_c;
+  MATRIX<float> placement_attr_c;
   
   // find the vertex matching scheme
   VertexMatching(hgraph,
@@ -205,16 +205,16 @@ HGraph TPcoarsener::Aggregate(const HGraph hgraph) const
 // the lazy update means that we do not change the hgraph itself,
 // but during the matching process, we do dynamically update 
 // placement_attr_c. vertex_weights_c, fixed_attr_c and community_attr_c
-void TPcoarsener::VertexMatching(const HGraph hgraph,
+void TPcoarsener::VertexMatching(const HGraphPtr hgraph,
                                  std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
                                  // the remaining arguments are related to clusters
-                                 matrix<float>& vertex_weights_c,
+                                 MATRIX<float>& vertex_weights_c,
                                  std::vector<int>& community_attr_c,
                                  std::vector<int>& fixed_attr_c,
-                                 matrix<float>& placement_attr_c) const
+                                 MATRIX<float>& placement_attr_c) const
 {
   // vertex_cluster_map_vec has the size of the number of vertices of hgraph
-  vertex_cluster_id_vec.clear() 
+  vertex_cluster_id_vec.clear(); 
   vertex_cluster_id_vec.resize(hgraph->num_vertices_);
   std::fill(vertex_cluster_id_vec.begin(),
             vertex_cluster_id_vec.end(), -1);
@@ -258,10 +258,10 @@ void TPcoarsener::VertexMatching(const HGraph hgraph,
   const int num_early_stop_visited_vertices = 
      static_cast<int>(unvisited.size()) / coarsening_ratio_;
   int num_visited_vertices = 0;
-  for (const auto& v_iter = unvisited.begin();
+  for (auto v_iter = unvisited.begin();
        v_iter != unvisited.end(); v_iter++) {
     const int v = *v_iter; // here we should use iterator to enable early-stop mechanism
-    if (vertex_cluster_id_vec[i] > -1) {
+    if (vertex_cluster_id_vec[v] > -1) {
       continue; // this vertex has been mapped
     }
     // initialize the score for neighbors
@@ -378,7 +378,7 @@ void TPcoarsener::VertexMatching(const HGraph hgraph,
     float best_score = -std::numeric_limits<float>::max();
     int best_vertex = -1;
     for (const auto& [u, score] : score_map) {
-      if (score > best_socre) {
+      if (score > best_score) {
         best_vertex = u;
         best_score = score;        
       } else if (score == best_score && vertex_cluster_id_vec[u] == -1) {
@@ -455,21 +455,21 @@ void TPcoarsener::VertexMatching(const HGraph hgraph,
 // the fixed block id of a group vertices is the maximum of the fixed block id of all vertices
 // Two group will be merged if two groups share the same vertex
 // All the fixed vertices in one block will be identified as the same group
-void TPcoarsener::ClusterBasedGroupInfo(HGraph hgraph,
+void TPcoarsener::ClusterBasedGroupInfo(HGraphPtr hgraph,
                                         const std::vector<std::vector<int> >& group_info,
                                         std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
                                         // the remaining arguments are related to clusters
-                                        matrix<float>& vertex_weights_c,
+                                        MATRIX<float>& vertex_weights_c,
                                         std::vector<int>& community_attr_c,
                                         std::vector<int>& fixed_attr_c,
-                                        matrix<float>& placement_attr_c) const
+                                        MATRIX<float>& placement_attr_c) const
 {
   // convert group_attr to vertex_cluster_id_vec
   if (group_info.empty() == true && hgraph->fixed_attr_.empty() == true) {
     // no need to any group based on group_attr and hgraph->fixed_attr_
     vertex_cluster_id_vec.clear();
     vertex_cluster_id_vec.resize(hgraph->num_vertices_);
-    std::stoi(vertex_cluster_id_vec.begin(), vertex_cluster_id_vec.end(), 0);
+    std::iota(vertex_cluster_id_vec.begin(), vertex_cluster_id_vec.end(), 0);
     vertex_weights_c = hgraph->vertex_weights_;
     community_attr_c = hgraph->community_attr_;
     fixed_attr_c = hgraph->fixed_attr_;
@@ -481,12 +481,12 @@ void TPcoarsener::ClusterBasedGroupInfo(HGraph hgraph,
   // we need to convert the fixed vertices into clusters of vertices
   // in each block
   std::vector<std::vector<int> > fixed_group;
-  fix_groups.resize(num_parts_);
+  fixed_group.resize(num_parts_);
   // check fixed vertices
   if (hgraph->fixed_attr_.empty() == false) {
     for (int v = 0; v < hgraph->num_vertices_; v++) {
       if (hgraph->fixed_attr_[v] > -1) {
-        fix_groups[hgraph->fixed_attr_[v]].push_back(v);
+        fixed_group[hgraph->fixed_attr_[v]].push_back(v);
       }
     }
   }
@@ -575,18 +575,18 @@ void TPcoarsener::ClusterBasedGroupInfo(HGraph hgraph,
 
 
 // order the vertices based on user-specified parameters
-void TPcoarsener::OrderVertices(const HGraph hgraph, std::vector<int>& vertices) const 
+void TPcoarsener::OrderVertices(const HGraphPtr hgraph, std::vector<int>& vertices) const 
 {
   switch (vertex_order_choice_)
   {
-  case CoarsenOrder::RANDOM:
+  case CoarsenOrder::RANDOM : 
     shuffle(vertices.begin(), vertices.end(), std::default_random_engine(seed_));
-    break;
+    return;
 
-  case CoarsenOrder::DEFAULT:
-    break;
+  case CoarsenOrder::DEFAULT :
+    return;
 
-  case CoarsenOrder::SIZE:
+  case CoarsenOrder::SIZE : {
     // sort the vertices based on vertex weight
     // calculate the weight for all the vertices
     std::vector<float> average_sizes(hgraph->num_vertices_, 0.0);
@@ -594,13 +594,14 @@ void TPcoarsener::OrderVertices(const HGraph hgraph, std::vector<int>& vertices)
       average_sizes[v] = evaluator_->GetVertexWeightNorm(v, hgraph);
     }
     // define the sort function
-    auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
+    auto lambda_sort_size = [&](int& x, int& y) -> bool {
       return average_sizes[x] < average_sizes[y];
     };
-    std::sort(vertices.begin(), vertices.end(), lambda_sort_criteria);
-    break;
+    std::sort(vertices.begin(), vertices.end(), lambda_sort_size);
+    }
+    return;
   
-  case CoarsenOrder::DEGREE:
+  case CoarsenOrder::DEGREE : {
     // sort the vertices based on degree of each vertex in non-decreasing order
     // i.e., number of neighboring vertices
     std::vector<int> degrees(hgraph->num_vertices_, 0);
@@ -621,32 +622,33 @@ void TPcoarsener::OrderVertices(const HGraph hgraph, std::vector<int>& vertices)
       }
       degrees[v] = static_cast<int>(nbr_vertices.size());
     }
-    auto lambda_sort_criteria
-        = [&](int& x, int& y) -> bool { return degrees[x] > degrees[y]; };
-    std::sort(vertices.begin(), vertices.end(), lambda_sort_criteria);
+    auto lambda_sort_degree = [&](int& x, int& y) -> bool { return degrees[x] > degrees[y]; };
+    std::sort(vertices.begin(), vertices.end(), lambda_sort_degree);
+    }
+    return; 
 
-  default:
-    break; // use the default order of vertices
+  default :
+    return; // use the default order of vertices
   }
 }
 
 
 //  create the contracted hypergraph based on the vertex matching in vertex_cluster_id_vec
-HGraph TPcoarsener::Contraction(HGraph hgraph,
+HGraphPtr TPcoarsener::Contraction(HGraphPtr hgraph,
                                 const std::vector<int>& vertex_cluster_id_vec, // map current vertex_id to cluster_id
                                 // the remaining arguments are related to clusters
-                                const matrix<float>& vertex_weights_c,
+                                const MATRIX<float>& vertex_weights_c,
                                 const std::vector<int>& community_attr_c,
                                 const std::vector<int>& fixed_attr_c,
-                                const matrix<float>& placement_attr_c) const
+                                const MATRIX<float>& placement_attr_c) const
 {  
   // Step 1:  identify the contracted hyperedges
   std::vector<int>  hyperedge_cluster_id_vec; // map the hyperedge to hyperedge in clustered hypergraph
   hyperedge_cluster_id_vec.resize(hgraph->num_hyperedges_);
   // -1 means the hyperedge is fully within one cluster
   std::fill(hyperedge_cluster_id_vec.begin(), hyperedge_cluster_id_vec.end(), -1);
-  matrix<int> hyperedges_c;
-  matrix<float> hyperedges_weights_c;
+  MATRIX<int> hyperedges_c;
+  MATRIX<float> hyperedges_weights_c;
   std::vector<float> hyperedge_slack_c; // the slack for clustered hyperedge
   std::vector<std::set<int> > hyperedge_arc_set_c; // map current hyperedge into arcs in timing graph
   std::map<long long int, int> hash_map; // store the hash value of each contracted hyperedge
@@ -658,6 +660,7 @@ HGraph TPcoarsener::Contraction(HGraph hgraph,
     if (he_size <= 1 || he_size > thr_coarsen_hyperedge_size_skip_) {
       continue; // ignore the single-vertex hyperedge and large hyperedge
     }
+    std::set<int> hyperedge_c;
     for (int j = first_valid_entry; j < first_invalid_entry; ++j) {
       hyperedge_c.insert(vertex_cluster_id_vec[hgraph->eind_[j]]); // get cluster id
     }
@@ -766,9 +769,11 @@ HGraph TPcoarsener::Contraction(HGraph hgraph,
           }
         }
         hash_map[hash_value] = static_cast<int>(timing_paths_c.size());
-        timing_paths_c.emplace_back(path_c, arcs_c, hgraph->path_timing_attr_[p]);
+        TimingPath timing_path_c(path_c, arcs_c, hgraph->path_timing_attr_[p]);
+        timing_paths_c.push_back(timing_path_c);
+        //timing_paths_c.emplace_back(path_c, arcs_c, hgraph->path_timing_attr_[p]);
       } else {
-        const int timing_path_c_id = hash_value[hash_value];
+        const int timing_path_c_id = hash_map[hash_value];
         int parallel_timing_path_c_id = -1; // the timing_path_id of parallel timing path
         if (path_c == timing_paths_c[timing_path_c_id].path) {
           // check the representative timing path
@@ -797,7 +802,7 @@ HGraph TPcoarsener::Contraction(HGraph hgraph,
           timing_paths_c.emplace_back(path_c, arcs_c, hgraph->path_timing_attr_[p]);
         } else {
           // existed
-          timing_paths_c[parallel_timing_path_c_id] = std::min(timing_paths_c[parallel_timing_path_c_id].slack,
+          timing_paths_c[parallel_timing_path_c_id].slack = std::min(timing_paths_c[parallel_timing_path_c_id].slack,
                                                                hgraph->path_timing_attr_[p]);
         }
       }

@@ -2013,6 +2013,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   const int seed = 0;
   const float balance_constraint = 1.0;
   const int num_parts = 2; // We use two-way partitioning here
+  const int num_vertices = static_cast<int>(vertex_weights.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
   std::vector<int> part = 
     tritonpart_->PartitionKWaySimpleMode(num_parts,

@@ -47,10 +47,10 @@
 namespace par {
 
 // Implement the ILP-based refinement pass
-float TPilpRefine::Pass(const HGraph hgraph,
-                        const matrix<float>& max_block_balance,
-                        matrix<float>& block_balance, // the current block balance
-                        matrix<int>& net_degs, // the current net degree
+float TPilpRefine::Pass(const HGraphPtr hgraph,
+                        const MATRIX<float>& max_block_balance,
+                        MATRIX<float>& block_balance, // the current block balance
+                        MATRIX<int>& net_degs, // the current net degree
                         std::vector<float>& cur_paths_cost, // the current path cost
                         TP_partition& solution,
                         std::vector<bool>& visited_vertices_flag) const
@@ -65,8 +65,8 @@ float TPilpRefine::Pass(const HGraph hgraph,
   vertices_extracted.reserve(num_extracted_vertices);
   std::map<int, int> fixed_vertices_extracted; // vertex_id, block_id
   std::map<int, int> vertices_extracted_map; // map the boundary vertices to the extracted vertices
-  matrix<float> vertices_weight_extracted; // extracted vertex weight
-  matrix<int> hyperedges_extracted;
+  MATRIX<float> vertices_weight_extracted; // extracted vertex weight
+  MATRIX<int> hyperedges_extracted;
   std::vector<float> hyperedges_weight_extracted;
   vertices_weight_extracted.reserve(num_extracted_vertices);
   int vertex_id = 0;
@@ -90,7 +90,7 @@ float TPilpRefine::Pass(const HGraph hgraph,
   for (const auto& v : boundary_vertices) {
     for (int idx = hgraph->vptr_[v]; 
         idx < hgraph->vptr_[v+1]; idx++) {
-      boundary_vertices.insert(hgraph->vind_[idx]);
+      boundary_hyperedges.insert(hgraph->vind_[idx]);
     }
   }
   // convert boundary hyperegdes into extracted hyperedges
@@ -108,7 +108,8 @@ float TPilpRefine::Pass(const HGraph hgraph,
     if (hyperedge.size() > 1) {
       hyperedges_extracted.push_back(
         std::vector<int>(hyperedge.begin(), hyperedge.end()));
-      hyperedges_weight_extracted.push_back(hgraph->edge_score(e, e_wt_factors_));      
+      hyperedges_weight_extracted.push_back(
+        evaluator_->CalculateHyperedgeCost(e, hgraph));     
     }
   } 
   // get vertex weight dimension
@@ -122,7 +123,7 @@ float TPilpRefine::Pass(const HGraph hgraph,
                        hyperedges_weight_extracted,
                        vertices_weight_extracted,
                        max_block_balance) == false) {
-    logger_->report("[WARNING] ILP-based partitioning cannot find a valid solution.")
+    logger_->report("[WARNING] ILP-based partitioning cannot find a valid solution.");
     return 0.0; // no valid solution
   }
   // try to update the solution

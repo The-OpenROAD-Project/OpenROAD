@@ -67,8 +67,9 @@ std::shared_ptr<VertexGain> TPpriorityQueue::ExtractMax()
 
 // find the vertex gain which can satisfy the balance constraint
 std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
-      const matrix<float>& curr_block_balance,
-      const matrix<float>& max_block_balance) {     
+      const MATRIX<float>& curr_block_balance,
+      const MATRIX<float>& max_block_balance,
+      const HGraphPtr hgraph) {     
   if (total_elements_ <= 0) { // empty 
     return std::make_shared<VertexGain>(); // return the dummy cell
   }
@@ -108,7 +109,7 @@ std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
     if (right_child < total_elements_ && 
         CheckBalance(right_child) == true && 
         (candidate_index == -1 || CompareElementLargeThan(right_child, candidate_index))) {
-      candidate_index = right_index; // use the right index
+      candidate_index = right_child; // use the right index
     }
 
     if (candidate_index > 0) {
@@ -150,7 +151,7 @@ void TPpriorityQueue::ChangePriority(int vertex_id, std::shared_ptr<VertexGain> 
   } 
   const float old_priority = vertices_[index]->GetGain();
   vertices_[index] = new_element;
-  if (new_element->getGain() > old_priority) {
+  if (new_element->GetGain() > old_priority) {
     HeapifyUp(index);
   } else {
     HeapifyDown(index);

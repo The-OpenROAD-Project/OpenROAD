@@ -43,9 +43,9 @@
 
 namespace par {
 
-// matrix is a two-dimensional vectors
+// MATRIX is a two-dimensional vectors
 template <typename T>
-using matrix = std::vector<std::vector<T> >;
+using MATRIX = std::vector<std::vector<T> >;
 
 // TP_partition is the partitioning solution
 using TP_partition = std::vector<int>; //
@@ -54,12 +54,12 @@ using TP_partition = std::vector<int>; //
 // it consists of two part:  cost (cutsize), balance for each block
 // for example, TP_partition_token.second[0] is the balance of 
 // block_0
-using TP_partition_token = std::pair<float, matrix<float> >;
+using TP_partition_token = std::pair<float, MATRIX<float> >;
 
 
 // GoldenEvaluator
 class GoldenEvaluator;
-using TP_evaluator = std::shared_ptr<GoldenEvaluator>;
+using TP_evaluator_ptr = std::shared_ptr<GoldenEvaluator>;
 
 // ------------------------------------------------------------------------
 // The implementation of GoldenEvaluator
@@ -79,7 +79,7 @@ class GoldenEvaluator {
                     const float path_snaking_factor,  // snaking factor a critical timing path
                     const float timing_exp_factor, // timing exponetial factor for normalized slack
                     const float extra_cut_delay, // the extra delay introduced by a cut
-                    const HGraph timing_graph, // the timing graph needed
+                    HGraphPtr timing_graph, // the timing graph needed
                     utl::Logger* logger)
       : num_parts_(num_parts),
         e_wt_factors_(e_wt_factors),
@@ -100,66 +100,71 @@ class GoldenEvaluator {
     virtual ~GoldenEvaluator() = default;
 
     // calculate the vertex distribution of each net
-    matrix<int> GetNetDegrees(const HGraph hgraph,
+    MATRIX<int> GetNetDegrees(const HGraphPtr hgraph,
                               const TP_partition& solution) const;
                           
     // Get block balance
-    matrix<float> GetBlockBalance(const HGraph hgraph,
+    MATRIX<float> GetBlockBalance(const HGraphPtr hgraph,
                                   const TP_partition& solution) const;
 
     // calculate timing cost of a path
-    float GetPathTimingScore(const HGraph hgraph, const int path_id) const;
+    float GetPathTimingScore(int path_id, const HGraphPtr hgraph) const;
                                  
     // calculate the cost of a path
     float CalculatePathCost(int path_id,
-                            const HGraph hgraph,
+                            const HGraphPtr hgraph,
                             const TP_partition& solution) const;
     
     // get the cost of all the paths: include the timing part and snaking part
-    std::vector<float> GetPathsCost(const HGraph hgraph, 
+    std::vector<float> GetPathsCost(const HGraphPtr hgraph, 
                                     const TP_partition& solution) const;
 
     // calculate the status of timing path cuts
     // total cut, worst cut, average cut
-    std::tuple<int, int, float> GetTimingCuts(const HGraph hgraph,
+    std::tuple<int, int, float> GetTimingCuts(const HGraphPtr hgraph,
                                               const TP_partition& solution) const;
 
     // Calculate the timing cost due to the slack of hyperedge itself
-    float CalculateHyperedgeTimingCost(int e, const HGraph hgraph) const;
+    float CalculateHyperedgeTimingCost(int e, const HGraphPtr hgraph) const;
 
     // Calculate the cost of a hyperedge  
-    float CalculateHyperedgeCost(int e, const HGraph hgraph) const;
+    float CalculateHyperedgeCost(int e, const HGraphPtr hgraph) const;
+
+
+    // Calculate the summation of normalized vertex weights 
+    // connecting to the same hyperedge
+    float CalculateHyperedgeVertexWtSum(int e, const HGraphPtr hgraph) const;
 
     // calculate the hyperedge score. score / (hyperedge.size() - 1)
-    float GetNormEdgeScore(int e, const HGraph hgraph) const;
+    float GetNormEdgeScore(int e, const HGraphPtr hgraph) const;
       
     // calculate the vertex weight norm
     // This is usually used to sort the vertices
-    float GetVertexWeightNorm(int v, const HGraph hgraph) const;
+    float GetVertexWeightNorm(int v, const HGraphPtr hgraph) const;
 
     // calculate the placement score between vertex v and u
-    float GetPlacementScore(int v, int u, const HGraph hgraph) const;
+    float GetPlacementScore(int v, int u, const HGraphPtr hgraph) const;
 
-    // Get average the placement location
-    float GetAvgPlacementLoc(int v, int u, const HGraph hgraph) const;
-
-
+  
     // get vertex weight summation
-    std::vector<float> GetVertexWeightSum(const HGraph hgraph, 
+    std::vector<float> GetVertexWeightSum(const HGraphPtr hgraph, 
                                           const std::vector<int>& group) const;
 
     // get the fixed attribute of a group of vertices (maximum)
-    int GetGroupFixedAttr(const HGraph hgraph,
+    int GetGroupFixedAttr(const HGraphPtr hgraph,
                           const std::vector<int>& group) const;
 
     // get the community attribute of a group of vertices (maximum)
-    int GetGroupCommunityAttr(const HGraph hgraph,
+    int GetGroupCommunityAttr(const HGraphPtr hgraph,
                               const std::vector<int>& group) const;
 
     // get the placement location
-    std::vector<float> GetGroupPlacementLoc(const HGraph hgraph,
+    std::vector<float> GetGroupPlacementLoc(const HGraphPtr hgraph,
                           const std::vector<int>& group) const;
-  
+
+    // Get average the placement location
+    std::vector<float> GetAvgPlacementLoc(int v, int u, const HGraphPtr hgraph) const;
+
     // calculate the average placement location
     std::vector<float> GetAvgPlacementLoc(const std::vector<float>& vertex_weight_a,
                                           const std::vector<float>& vertex_weight_b,
@@ -167,14 +172,20 @@ class GoldenEvaluator {
                                           const std::vector<float>& placement_loc_b) const;
 
     // calculate the hyperedges being cut
-    std::vector<int> GetCutHyperedges(const HGraph hgraph, 
+    std::vector<int> GetCutHyperedges(const HGraphPtr hgraph, 
                                       const std::vector<int>& solution) const;
 
 
+    // get the connectivity between blocks
+    // std::map<std::pair<int, int>, float> : <block_id_a, block_id_b> : score
+    // The score is the summation of hyperedges spanning block_id_a and block_id_b
+    std::map<std::pair<int, int>, float> GetMatchingConnectivity(const HGraphPtr hgraph, 
+                                                        const std::vector<int>& solution);
+    
     // calculate the statistics of a given partitioning solution
     // TP_partition_token.first is the cutsize
     // TP_partition_token.second is the balance constraint
-    TP_partition_token CutEvaluator(const HGraph hgraph,
+    TP_partition_token CutEvaluator(const HGraphPtr hgraph,
                                     const std::vector<int>& solution,
                                     bool print_flag = false) const;      
 
@@ -185,7 +196,7 @@ class GoldenEvaluator {
     // Basically we will transform the path_timing_attr_ to path_timing_cost_,
     // and transform hyperedge_timing_attr_ to hyperedge_timing_cost_.
     // Then overlay the path weighgts onto corresponding weights
-    void InitializeTiming(HGraph hgraph) const; 
+    void InitializeTiming(HGraphPtr hgraph) const; 
 
     // Update timing information of a hypergraph
     // For timing-driven flow,
@@ -196,7 +207,7 @@ class GoldenEvaluator {
     // The timing_graph_ contains all the necessary information, 
     // include the original slack for each path and hyperedge,
     // and the type of each vertex
-    void UpdateTiming(HGraph hgraph, const TP_partition& solution) const;
+    void UpdateTiming(HGraphPtr hgraph, const TP_partition& solution) const;
 
   private:
     // user specified parameters
@@ -231,7 +242,7 @@ class GoldenEvaluator {
     const float timing_exp_factor_ = 2.0; // exponential factor
 
     bool initial_path_flag_ = false;
-    const HGraph timing_graph_ = nullptr;
+    HGraphPtr timing_graph_ = nullptr;
     utl::Logger* logger_ = nullptr;    
 };
 

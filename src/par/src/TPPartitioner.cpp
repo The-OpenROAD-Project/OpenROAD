@@ -44,8 +44,8 @@ using utl::PAR;
 namespace par {
 
 // The main function of Partitioning
-void TPpartitioner::Partition(const HGraph hgraph,
-                              const matrix<float>& max_block_balance,
+void TPpartitioner::Partition(const HGraphPtr hgraph,
+                              const MATRIX<float>& max_block_balance,
                               std::vector<int>& solution,
                               PartitionType partitioner_choice) const
 {
@@ -70,8 +70,6 @@ void TPpartitioner::Partition(const HGraph hgraph,
       RandomPart(hgraph, max_block_balance, solution);
       break;
   }
-
-  return solution;
 }
 
 // ------------------------------------------------------------------------------
@@ -79,12 +77,12 @@ void TPpartitioner::Partition(const HGraph hgraph,
 // ------------------------------------------------------------------------------
 
 // random partitioning
-void TPpartitioner::RandomPart(const HGraph hgraph,
-                               const matrix<float>& max_block_balance,
+void TPpartitioner::RandomPart(const HGraphPtr hgraph,
+                               const MATRIX<float>& max_block_balance,
                                std::vector<int>& solution) const
 {
   // the summation of vertex weights for vertices in current block
-  matrix<float> block_balance(
+  MATRIX<float> block_balance(
       num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0f));
   // determine all the free vertices
   std::vector<bool> visited(hgraph->num_vertices_, false); // if the vertex has been visited
@@ -133,7 +131,7 @@ void TPpartitioner::RandomPart(const HGraph hgraph,
   vertices.insert(vertices.begin(), path_vertices.begin(), path_vertices.end());
   // Step 5: randomly assign block id
   // To achieve better balance, we divide the block balance by num_parts_
-  matrix<float> block_balance_threshold;
+  MATRIX<float> block_balance_threshold;
   for (int block_id = 0; block_id < num_parts_; block_id++) {
     const std::vector<float> balance = DivideFactor(max_block_balance[block_id], num_parts_);
     block_balance_threshold.push_back(balance);
@@ -152,15 +150,15 @@ void TPpartitioner::RandomPart(const HGraph hgraph,
     
 
 // ILP-based partitioning
-void TPpartitioner::ILPPart(const HGraph hgraph,
-                            const matrix<float>& max_block_balance,
+void TPpartitioner::ILPPart(const HGraphPtr hgraph,
+                            const MATRIX<float>& max_block_balance,
                             std::vector<int>& solution) const
 {
   logger_->report("[STATUS] Optimal ILP-based Partitioning (OR-Tools) Starts !");
   std::map<int, int> fixed_vertices_map;
-  matrix<float> vertex_weights; // two-dimensional
+  MATRIX<float> vertex_weights; // two-dimensional
   vertex_weights.reserve(hgraph->num_vertices_);
-  matrix<int> hyperedges; // hyperedges
+  MATRIX<int> hyperedges; // hyperedges
   std::vector<float> hyperedge_weights;  // one-dimensional
   // set vertices
   for (int v = 0; v < hgraph->num_vertices_; v++) {
@@ -177,7 +175,7 @@ void TPpartitioner::ILPPart(const HGraph hgraph,
   // check the hyperedges to be used
   std::vector<int> edge_mask;  // store the hyperedges being used.
   if (ilp_accelerator_factor_ >= 1.0) {
-    std::itoa(edge_mask.begin(), edge_mask.end(), 0);
+    std::iota(edge_mask.begin(), edge_mask.end(), 0);
   } else if (ilp_accelerator_factor_ > 0.0) {
     // define comp structure to compare hyperedge ( function: >)
     struct comp {
@@ -242,7 +240,7 @@ void TPpartitioner::ILPPart(const HGraph hgraph,
 
 // randomly pick one vertex into each block
 // then use refinement functions to get valid solution (See TPMultilevel.cpp)
-void TPpartitioner::VilePart(const HGraph hgraph,
+void TPpartitioner::VilePart(const HGraphPtr hgraph,
                              std::vector<int>& solution) const 
 {
   std::fill(solution.begin(), solution.end(), 0);

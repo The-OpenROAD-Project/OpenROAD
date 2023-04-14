@@ -58,7 +58,7 @@ enum class PartitionType
 };
 
 template <typename T>
-using matrix = std::vector<std::vector<T> >;
+using MATRIX = std::vector<std::vector<T> >;
 
 class TPpartitioner;
 using TP_partitioning_ptr = std::shared_ptr<TPpartitioner>;
@@ -69,7 +69,7 @@ class TPpartitioner
   // Note that please do NOT set ilp_accelerator_factor here
   TPpartitioner(int num_parts,
                 int seed,
-                TP_evaluator evaluator, // evaluator
+                TP_evaluator_ptr evaluator, // evaluator
                 utl::Logger* logger)
       : num_parts_(num_parts),
         seed_(seed)
@@ -80,8 +80,8 @@ class TPpartitioner
   }
 
   // The main function of Partitioning
-  void Partition(const HGraph hgraph,
-                 const matrix<float>& max_block_balance,
+  void Partition(const HGraphPtr hgraph,
+                 const MATRIX<float>& max_block_balance,
                  std::vector<int>& solution,
                  PartitionType partitioner_choice) const;
 
@@ -104,17 +104,17 @@ class TPpartitioner
 
   private:
     // random partitioning
-    void RandomPart(const HGraph hgraph,
-                    const matrix<float>& max_block_balance,
+    void RandomPart(const HGraphPtr hgraph,
+                    const MATRIX<float>& max_block_balance,
                     std::vector<int>& solution) const;
     
     // ILP-based partitioning
-    void ILPPart(const HGraph hgraph,
-                 const matrix<float>& max_block_balance,
+    void ILPPart(const HGraphPtr hgraph,
+                 const MATRIX<float>& max_block_balance,
                  std::vector<int>& solution) const;
 
     // Vile partitioning
-    void VilePart(const HGraph hgraph,
+    void VilePart(const HGraphPtr hgraph,
                   std::vector<int>& solution) const;
 
     const int num_parts_ = 2;
@@ -122,7 +122,7 @@ class TPpartitioner
                                          // If the ilp acceleration is enabled, we only use 
                                          // top ilp_accelerator_factor hyperedges. Range: 0, 1
     int seed_ = 0;
-    TP_evaluator evaluator_ = nullptr; // evaluator
+    TP_evaluator_ptr evaluator_ = nullptr; // evaluator
     utl::Logger* logger_ = nullptr;
 };
 

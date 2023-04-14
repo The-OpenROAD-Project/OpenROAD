@@ -54,7 +54,7 @@
 namespace par {
 
 struct TPHypergraph;
-using HGraph = std::shared_ptr<TPHypergraph>;
+using HGraphPtr = std::shared_ptr<TPHypergraph>;
 
 // The data structure for critical timing path
 // A timing path is a sequence of vertices, for example, a -> b -> c -> d
@@ -62,11 +62,21 @@ using HGraph = std::shared_ptr<TPHypergraph>;
 // for example, e1 -> e2 -> e3
 // In our formulation, we lay the timing graph over the hypergraph
 struct TimingPath
-{
+{ 
   std::vector<int> path;  // a list of vertex id -> path-based method
   std::vector<int> arcs;  // a list of hyperedge id -> net-based method
   float slack = 0.0;      // slack for this critical timing paths (normalized to
                           // clock period)
+  
+  TimingPath() { }
+  
+  TimingPath(const std::vector<int>& path_arg,
+             const std::vector<int>& arcs_arg,
+             float slack_arg) {
+    path = path_arg;
+    arcs = arcs_arg;
+    slack = slack_arg;
+  }
 };
 
 // Here we use TPHypergraph class because the Hypegraph class
@@ -109,7 +119,7 @@ struct TPHypergraph
     // create vertices from hyperedges
     std::vector<std::vector<int> > vertices(num_vertices_);
     for (int e = 0; e < num_hyperedges_; e++) {
-      for (auto v : hyperedges_[e]) {
+      for (auto v : hyperedges[e]) {
         vertices[v].push_back(e);  // e is the hyperedge id
       }
     }
@@ -188,7 +198,7 @@ struct TPHypergraph
     // create vertices from hyperedges
     std::vector<std::vector<int> > vertices(num_vertices_);
     for (int e = 0; e < num_hyperedges_; e++) {
-      for (auto v : hyperedges_[e]) {
+      for (auto v : hyperedges[e]) {
         vertices[v].push_back(e);  // e is the hyperedge id
       }
     }
@@ -231,7 +241,7 @@ struct TPHypergraph
       num_timing_paths_ = static_cast<int>(timing_paths.size());
       hyperedge_timing_attr_ = hyperedges_slack;
       hyperedge_arc_set_ = hyperedges_arc_set;
-      // create the vertex matrix which stores the paths incident to vertex
+      // create the vertex MATRIX which stores the paths incident to vertex
       std::vector<std::vector<int> > incident_paths(num_vertices_);
       vptr_p_.push_back(static_cast<int>(vind_p_.size()));
       eptr_p_.push_back(static_cast<int>(eind_p_.size()));

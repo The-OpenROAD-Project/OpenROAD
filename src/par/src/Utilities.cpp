@@ -234,10 +234,10 @@ bool ILPPartitionInst(int num_parts,
                       int vertex_weight_dimension,
                       std::vector<int>& solution,
                       const std::map<int, int>& fixed_vertices, // vertex_id, block_id
-                      const matrix<int>& hyperedges,
+                      const MATRIX<int>& hyperedges,
                       const std::vector<float>& hyperedge_weights,  // one-dimensional
-                      const matrix<float>& vertex_weights, // two-dimensional
-                      const matrix<float>& max_block_balance)
+                      const MATRIX<float>& vertex_weights, // two-dimensional
+                      const MATRIX<float>& max_block_balance)
 {
   const int num_vertices = static_cast<int>(vertex_weights.size());
   const int num_hyperedges = static_cast<int>(hyperedge_weights.size());
@@ -303,7 +303,7 @@ bool ILPPartitionInst(int num_parts,
   // Hyperedge constraint: x - y >= 0
   // y[i][e] represents the hyperedge e is fully within the block i
   for (int e = 0; e < num_hyperedges; e++) {
-    const std::vector<float>& hyperedge = hyperedges[i];
+    const std::vector<int>& hyperedge = hyperedges[e];
     for (const auto& v : hyperedge) {
       for (int i = 0; i < num_parts; i++) {
         MPConstraint* constraint = solver->MakeRowConstraint(0, infinity, "");

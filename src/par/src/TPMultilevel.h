@@ -47,7 +47,7 @@ namespace par {
 using TP_partition = std::vector<int>;
 
 template <typename T>
-using matrix = std::vector<std::vector<T> >;
+using MATRIX = std::vector<std::vector<T> >;
 
 // Multilevel partitioner
 class TPmultilevelPartitioner;
@@ -73,12 +73,12 @@ class TPmultilevelPartitioner
                           TP_k_way_pm_refiner_ptr k_way_pm_refiner,
                           TP_greedy_refiner_ptr greedy_refiner,
                           TP_ilp_refiner_ptr ilp_refiner,
-                          TP_evaluator evaluator,
+                          TP_evaluator_ptr evaluator,
                           utl::Logger* logger)
     :  num_parts_(num_parts),
        ub_factor_(ub_factor),
        v_cycle_flag_(v_cycle_flag),
-       num_initial_solutions_(num_initial_solutions),
+       num_initial_random_solutions_(num_initial_solutions),
        num_best_initial_solutions_(num_best_initial_solutions),
        num_ubfactor_delta_(num_ubfactor_delta),
        max_num_vcycle_(max_num_vcycle),
@@ -98,51 +98,52 @@ class TPmultilevelPartitioner
   // Main function
   // here the hgraph should not be const
   // Because our slack-rebudgeting algorithm will change hgraph
-  TP_partition Partition(HGraph hgraph,
-                         const matrix<float>& max_block_balance) const;
+  TP_partition Partition(HGraphPtr hgraph,
+                         const MATRIX<float>& max_block_balance) const;
 
  private:
 
   // Run single-level partitioning
-  void SingleLevelPartition(HGraph hgraph,
-                            const matrix<float>& max_block_balance) const;
+  std::vector<int> SingleLevelPartition(HGraphPtr hgraph,
+                            const MATRIX<float>& max_block_balance) const;
 
 
   // Use the initial solution as the community feature
   // Call Vcycle refinement
-  void VcycleRefinement(HGraph hgraph, 
-                        const matrix<float>& max_block_balance,
-                        std::vector<int>& best_solution,
-                        float& best_cost) const;
+  void VcycleRefinement(HGraphPtr hgraph, 
+                        const MATRIX<float>& max_block_balance,
+                        std::vector<int>& best_solution) const;
   
   // Generate initial partitioning
   // Include random partitioning, Vile partitioning and ILP partitioning
-  void InitialPartition(const HGraph hgraph, 
-                        matrix<float>& max_block_balance,
-                        matrix<int>& top_initial_solutions,
+  void InitialPartition(const HGraphPtr hgraph, 
+                        const MATRIX<float>& max_block_balance,
+                        MATRIX<int>& top_initial_solutions,
                         int& best_solution_id) const;
 
 
 
   // Refine the solutions in top_solutions in parallel with multi-threading
   // the top_solutions and best_solution_id will be updated during this process
-  void RefinePartition(TP_coarse_graphs hierarchy,
-                       const matrix<float>& max_block_balance,
-                       matrix<int>& top_solutions,
+  void RefinePartition(TP_coarse_graph_ptrs hierarchy,
+                       const MATRIX<float>& max_block_balance,
+                       MATRIX<int>& top_solutions,
                        int& best_solution_id) const;
     
  
   // Refine function
   // Ilp refinement, k_way_pm_refinement, 
   // k_way_fm_refinement and greedy refinement
-  void CallRefiner(const HGraph hgraph, 
-                   const matrix<float>& max_block_balance,
+  void CallRefiner(const HGraphPtr hgraph, 
+                   const MATRIX<float>& max_block_balance,
                    std::vector<int>& solution) const;
 
   
 
   // basic parameters
   const int num_parts_ = 2; 
+  const float ub_factor_ = 1.0;
+  const int num_ubfactor_delta_ = 5; // We use to relax the ub_factor_ during multilevel refinement
 
   // user-specified parameters
   const int num_initial_random_solutions_ = 50;
@@ -159,7 +160,7 @@ class TPmultilevelPartitioner
   TP_k_way_pm_refiner_ptr k_way_pm_refiner_ = nullptr; 
   TP_greedy_refiner_ptr greedy_refiner_ = nullptr;
   TP_ilp_refiner_ptr ilp_refiner_ = nullptr;
-  TP_evaluator evaluator_ = nullptr;
+  TP_evaluator_ptr evaluator_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };
 

@@ -60,9 +60,9 @@
 namespace par {
 
 
-// matrix is a two-dimensional vectors
+// MATRIX is a two-dimensional vectors
 template <typename T>
-using matrix = std::vector<std::vector<T> >;
+using MATRIX = std::vector<std::vector<T> >;
 
 struct Rect {
   // all the values are in db unit
@@ -149,9 +149,9 @@ bool ILPPartitionInst(int num_parts,
                       int vertex_weight_dimension,
                       std::vector<int>& solution,
                       const std::map<int, int>& fixed_vertices, // vertex_id, block_id
-                      const matrix<int>& hyperedges, // hyperedges
+                      const MATRIX<int>& hyperedges, // hyperedges
                       const std::vector<float>& hyperedge_weights,  // one-dimensional
-                      const matrix<float>& vertex_weights, // two-dimensional
-                      const matrix<float>& max_block_balance); 
+                      const MATRIX<float>& vertex_weights, // two-dimensional
+                      const MATRIX<float>& max_block_balance); 
                       
 }  // namespace par

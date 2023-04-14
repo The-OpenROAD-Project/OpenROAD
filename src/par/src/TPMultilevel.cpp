@@ -47,8 +47,8 @@ namespace par {
 // Main function
 // here the hgraph should not be const
 // Because our slack-rebudgeting algorithm will change hgraph
-TP_partition TPmultilevelPartitioner::Partition(HGraph hgraph,
-                                                const matrix<float>& max_block_balance) const
+TP_partition TPmultilevelPartitioner::Partition(HGraphPtr hgraph,
+                                                const MATRIX<float>& max_block_balance) const
 {
   // Main implementation
   // Step 1: run coarsening
@@ -57,7 +57,7 @@ TP_partition TPmultilevelPartitioner::Partition(HGraph hgraph,
   // Step 4: Guided v-cycle
 
   // Step 1: - Step 3
-  TP_partition best_solution = SingleLevelPartition(hgraph, max_block_balance);
+  std::vector<int> best_solution = SingleLevelPartition(hgraph, max_block_balance);
 
   // Step 4: Guided v-cycle. Note that hgraph has been updated.
   // The best_solution will be refined.
@@ -74,23 +74,23 @@ TP_partition TPmultilevelPartitioner::Partition(HGraph hgraph,
 // Private functions (Utilities)
 
 // Run single-level partitioning
-TP_partition TPmultilevelPartitioner::SingleLevelPartition(HGraph hgraph,
-                                  const matrix<float>& max_block_balance) const
+TP_partition TPmultilevelPartitioner::SingleLevelPartition(HGraphPtr hgraph,
+                                  const MATRIX<float>& max_block_balance) const
 {
   // Step 1: run coarsening
   // Step 2: run initial partitioning
   // Step 3: run refinement
 
   // Step 1: run coarsening
-  TP_coarse_graphs hierarchy = coarsener_->LazyFirstChoice(hgraph);
+  TP_coarse_graph_ptrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
   
   // Step 2: run initial partitioning
-  HGraph coarsest_hgraph = hierarchy.back();
+  HGraphPtr coarsest_hgraph = hierarchy.back();
   
   // pick top num_best_initial_solutions_ solutions from
   // num_initial_random_solutions_ solutions
   // here we reserve num_vertices_ for each top_solution
-  matrix<int> top_solutions;
+  MATRIX<int> top_solutions;
   for (int i = 0; i < num_best_initial_solutions_; i++) {
     std::vector<int> solution { };
     top_solutions.push_back(solution);
@@ -112,11 +112,11 @@ TP_partition TPmultilevelPartitioner::SingleLevelPartition(HGraph hgraph,
 
 // Use the initial solution as the community feature
 // Call Vcycle refinement
-void TPmultilevelPartitioner::VcycleRefinement(HGraph hgraph, 
-                      const matrix<float>& max_block_balance,
-                             std::vector<int>& best_solution,
-                             float& best_cost) const
+void TPmultilevelPartitioner::VcycleRefinement(HGraphPtr hgraph, 
+                      const MATRIX<float>& max_block_balance,
+                             std::vector<int>& best_solution) const
 {
+  float best_cost = evaluator_->CutEvaluator(hgraph, best_solution).first;
   for (int num_cycles = 0; num_cycles < max_num_vcycle_; num_cycles++) {
     // use the initial solution as the community feature
     hgraph->community_flag_ = true;
@@ -134,9 +134,9 @@ void TPmultilevelPartitioner::VcycleRefinement(HGraph hgraph,
 
 // Generate initial partitioning
 // Include random partitioning, Vile partitioning and ILP partitioning
-void TPmultilevelPartitioner::InitialPartition(const HGraph hgraph, 
-                                  matrix<float>& max_block_balance,
-                                matrix<int>& top_initial_solutions,
+void TPmultilevelPartitioner::InitialPartition(const HGraphPtr hgraph, 
+                                const MATRIX<float>& max_block_balance,
+                                MATRIX<int>& top_initial_solutions,
                                              int& best_solution_id) const 
 {
   logger_->report("======================================================================");
@@ -146,7 +146,7 @@ void TPmultilevelPartitioner::InitialPartition(const HGraph hgraph,
   gen.seed(seed_);
   std::uniform_real_distribution<> dist(0.0, 1.0);
   std::vector<float> initial_solutions_cost;
-  matrix<int> initial_solutions;
+  MATRIX<int> initial_solutions;
   if (timing_driven_flag_ == false && num_parts_ <= 2) {
     // random partitioning + Vile + ILP
     initial_solutions.resize(num_initial_random_solutions_ + 2);
@@ -165,7 +165,7 @@ void TPmultilevelPartitioner::InitialPartition(const HGraph hgraph,
     CallRefiner(hgraph, max_block_balance, solution);
     const float cut_cost = evaluator_->CutEvaluator(hgraph, solution).first;
     initial_solutions_cost.push_back(cut_cost);
-    logger_->report("[INIT-PART] {} :: Random part cutcost {}", i, top_initial_solutions_cost.back());
+    logger_->report("[INIT-PART] {} :: Random part cutcost {}", i, initial_solutions_cost.back());
   }
   // Vile partitioning. Vile partitioning needs refiner to generated a balanced partitioning
   auto& vile_solution = initial_solutions[num_initial_random_solutions_];
@@ -176,18 +176,18 @@ void TPmultilevelPartitioner::InitialPartition(const HGraph hgraph,
   k_way_fm_refiner_->RestoreDefaultParameters();
   CallRefiner(hgraph, max_block_balance, vile_solution);
   initial_solutions_cost.push_back(evaluator_->CutEvaluator(hgraph, vile_solution).first);
-  logger_->report("[INIT-PART] :: VILE part cutcost {}", top_initial_solutions_cost.back());
+  logger_->report("[INIT-PART] :: VILE part cutcost {}", initial_solutions_cost.back());
   // ILP partitioning
   if (timing_driven_flag_ == false && num_parts_ <= 2) {
     auto& ilp_solution = initial_solutions.back();
     partitioner_->Partition(hgraph, max_block_balance, ilp_solution, PartitionType::INIT_DIRECT_ILP);
     CallRefiner(hgraph, max_block_balance, ilp_solution);
     initial_solutions_cost.push_back(evaluator_->CutEvaluator(hgraph, ilp_solution).first);
-    logger_->report("[INIT-PART] :: ILP part cutcost {}", top_initial_solutions_cost.back());
+    logger_->report("[INIT-PART] :: ILP part cutcost {}", initial_solutions_cost.back());
   }
   // sort the solutions based on cost
-  std::vector<int> solution_ids(top_initial_solutions_cost.size(), 0);
-  std::stoi(solution_ids.begin(), solution_ids.end(), 0);
+  std::vector<int> solution_ids(initial_solutions_cost.size(), 0);
+  std::iota(solution_ids.begin(), solution_ids.end(), 0);
   // define compare function
   auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
     return initial_solutions_cost[x] < initial_solutions_cost[y];
@@ -198,24 +198,24 @@ void TPmultilevelPartitioner::InitialPartition(const HGraph hgraph,
     top_initial_solutions[i] = initial_solutions[solution_ids[i]];
   }
   best_solution_id = 0; // the first one is the best one
-  logger_->report("[INIT-PART] :: Best initial cutcost {}", top_initial_solutions_cost[solution_ids[best_solution_id]]);
+  logger_->report("[INIT-PART] :: Best initial cutcost {}", initial_solutions_cost[solution_ids[best_solution_id]]);
 }
 
 
 // Refine the solutions in top_solutions in parallel with multi-threading
 // the top_solutions and best_solution_id will be updated during this process
-void TPmultilevelPartitioner::RefinePartition(TP_coarse_graphs hierarchy,
-                                  const matrix<float>& max_block_balance,
-                                              matrix<int>& top_solutions,
+void TPmultilevelPartitioner::RefinePartition(TP_coarse_graph_ptrs hierarchy,
+                                  const MATRIX<float>& max_block_balance,
+                                              MATRIX<int>& top_solutions,
                                                    int& best_solution_id) const
 {
   int num_level = 0;
   // rebudget based on the best solution
   auto hgraph_iter = hierarchy.rbegin();
   while (hgraph_iter != hierarchy.rend()) {
-    HGraph coarse_hgraph = *hgraph_iter;
+    HGraphPtr coarse_hgraph = *hgraph_iter;
     hgraph_iter++;
-    HGraph hgraph = *hgraph_iter;
+    HGraphPtr hgraph = *hgraph_iter;
     // convert the solution in coarse_hgraph to the solution of hgraph
     for (auto i = 0; i < top_solutions.size(); i++) {
       std::vector<int> refined_solution;
@@ -223,7 +223,7 @@ void TPmultilevelPartitioner::RefinePartition(TP_coarse_graphs hierarchy,
       for (int cluster_id = 0; cluster_id < coarse_hgraph->num_vertices_; cluster_id++) {
         const int part_id = top_solutions[i][cluster_id];
         for (const auto& v : coarse_hgraph->vertex_c_attr_[cluster_id]) {
-          refined_solution_[v] = part_id;
+          refined_solution[v] = part_id;
         }
       }
       top_solutions[i] = refined_solution;  
@@ -246,9 +246,9 @@ void TPmultilevelPartitioner::RefinePartition(TP_coarse_graphs hierarchy,
     }
     threads.clear();
     // update the best_solution_id
-    int best_cost = std::numeric_limits<float>::max();
+    float best_cost = std::numeric_limits<float>::max();
     for (auto i = 0; i < num_best_initial_solutions_; i++) {
-      const float cost = evaluator_->CutEvaluator(finer_hypergraph, top_solutions[i]).first;
+      const float cost = evaluator_->CutEvaluator(hgraph, top_solutions[i]).first;
       if (best_cost < cost) {
         best_cost = cost;
         best_solution_id = i;
@@ -257,8 +257,8 @@ void TPmultilevelPartitioner::RefinePartition(TP_coarse_graphs hierarchy,
     logger_->report("[Refinement] Level {} :: num_vertices = {}, num_hyperedges = {},"
                     " cutcost = {}, best_solution_id = {}", 
                      ++num_level,
-                     finer_hypergraph->num_vertices_,
-                     finer_hypergraph->num_hyperedges_,
+                     hgraph->num_vertices_,
+                     hgraph->num_hyperedges_,
                      best_cost, best_solution_id);
   }
 }
@@ -266,8 +266,8 @@ void TPmultilevelPartitioner::RefinePartition(TP_coarse_graphs hierarchy,
 // Refine function
 // Ilp refinement, k_way_pm_refinement, 
 // k_way_fm_refinement and greedy refinement
-void TPmultilevelPartitioner::CallRefiner(const HGraph hgraph, 
-                       const matrix<float>& max_block_balance,
+void TPmultilevelPartitioner::CallRefiner(const HGraphPtr hgraph, 
+                       const MATRIX<float>& max_block_balance,
                                    std::vector<int>& solution) const
 {
   if (timing_driven_flag_ == false && num_parts_ == 2) {
