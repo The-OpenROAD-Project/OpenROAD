@@ -91,22 +91,30 @@ void Opendp::placeRowFillers(int row,
              DPL,
              "filler",
              2,
-             "filling row {} with site count {} when row_site_count is {}.",
+             "filling row {} when row_site_count is {}.",
              row,
-             layer_info.site_count,
              row_site_count_);
 
   while (j < layer_info.site_count) {
     Pixel* pixel = gridPixel(layer_info.grid_index, j, row);
     const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr && pixel->is_valid) {
+      debugPrint(logger_, DPL, "filler", 2, "filling row {} at {}.", row, j);
       int k = j;
       while (k < layer_info.site_count
              && gridPixel(layer_info.grid_index, k, row)->cell == nullptr
              && gridPixel(layer_info.grid_index, k, row)->is_valid) {
         k++;
       }
+
       int gap = k - j;
+      debugPrint(logger_,
+                 DPL,
+                 "filler",
+                 2,
+                 "K value after while loop is {} and gap is {}.",
+                 k,
+                 gap);
       // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
       dbMasterSeq& fillers = gapFillers(gap, filler_masters);
       if (fillers.empty()) {
@@ -123,6 +131,8 @@ void Opendp::placeRowFillers(int row,
             gridInstName(row, k + 1, row_height, layer_info));
       } else {
         k = j;
+        debugPrint(
+            logger_, DPL, "filler", 2, "fillers size is {}.", fillers.size());
         for (dbMaster* master : fillers) {
           string inst_name = prefix + to_string(row) + "_" + to_string(k);
           // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
@@ -141,8 +151,19 @@ void Opendp::placeRowFillers(int row,
           k += master->getWidth() / site_width_;
         }
         j += gap;
+        debugPrint(logger_, DPL, "filler", 2, "j value is {}.", j);
       }
     } else {
+      debugPrint(logger_,
+                 DPL,
+                 "filler",
+                 2,
+                 "skipping row {} at {} cell {} is_valid {}",
+                 row,
+                 j,
+                 pixel->cell->name(),
+                 pixel->is_valid);
+
       j++;
     }
   }

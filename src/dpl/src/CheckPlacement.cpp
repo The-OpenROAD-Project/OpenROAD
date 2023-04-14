@@ -180,6 +180,8 @@ bool Opendp::checkInRows(const Cell& cell) const
 // Return the cell this cell overlaps.
 Cell* Opendp::checkOverlap(Cell& cell) const
 {
+  debugPrint(
+      logger_, DPL, "grid", 2, "checking overlap for cell {}", cell.name());
   Cell* overlap_cell = nullptr;
   visitCellPixels(cell, true, [&](Pixel* pixel) {
     Cell* pixel_cell = pixel->cell;

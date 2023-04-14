@@ -381,10 +381,11 @@ void Opendp::visitCellPixels(
                        DPL,
                        "hopeless",
                        1,
-                       "Visiting pixel ({}, {}, {}) due to cell.",
+                       "Visiting pixel ({}, {}, {}) due to cell {}",
                        layer_it.second.grid_index,
                        x,
-                       y);
+                       y,
+                       cell.name());
             visitor(pixel);
           }
         }
@@ -476,6 +477,7 @@ void Opendp::visitCellBoundaryPixels(
 
 void Opendp::setFixedGridCells()
 {
+  debugPrint(logger_, DPL, "place", 1, "Setting fixed grid cells.");
   for (Cell& cell : cells_) {
     if (isFixed(&cell)) {
       visitCellPixels(
@@ -656,6 +658,7 @@ void Opendp::groupInitPixels()
 
 void Opendp::erasePixel(Cell* cell)
 {
+  debugPrint(logger_, DPL, "place", 1, "Erasing cell {}.", cell->name());
   if (!(isFixed(cell) || !cell->is_placed_)) {
     int row_height = getRowHeight(cell);
     int site_width = getSiteWidth(cell);
@@ -709,6 +712,14 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
 
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
+      debugPrint(logger_,
+                 DPL,
+                 "place",
+                 1,
+                 "  painting {} ({}-{})",
+                 cell->name(),
+                 x,
+                 y);
       Pixel* pixel = gridPixel(layer_index_in_grid, x, y);
       if (pixel->cell) {
         logger_->error(
@@ -731,6 +742,16 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     for (int x = layer_x; x < layer_x_end; x++) {
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
+        debugPrint(logger_,
+                   DPL,
+                   "place",
+                   1,
+                   "  painting in layer {} ({}-{}, {}-{})",
+                   cell->name(),
+                   grid_x,
+                   x_end - 1,
+                   grid_y,
+                   y_end - 1);
         if (pixel->cell) {
           logger_->error(
               DPL,

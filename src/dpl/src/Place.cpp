@@ -648,6 +648,7 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 
 void Opendp::shiftMove(Cell* cell)
 {
+  debugPrint(logger_, DPL, "place", 1, "shift move {}.", cell->name());
   Point grid_pt = legalGridPt(cell, true);
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
