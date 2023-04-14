@@ -117,7 +117,7 @@ proc triton_part_hypergraph { args } {
   set community_file ""
   set group_file ""
   set placement_file ""
-  set e_wt_factors { 1.0 }
+  set e_wt_factors { 1.0, 2.0}
   set v_wt_factors { 1.0 }
   set placement_wt_factors { 1.0 }
   set thr_coarsen_hyperedge_size_skip 50
@@ -258,6 +258,8 @@ proc triton_part_hypergraph { args } {
   if { [info exists keys(-num_ubfactor_delta)] } {
     set num_ubfactor_delta $keys(-num_ubfactor_delta)
   }
+
+  puts $e_wt_factors
 
   par::triton_part_hypergraph $num_parts \
             $balance_constraint \
