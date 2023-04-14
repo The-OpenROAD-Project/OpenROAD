@@ -67,7 +67,9 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 62;  // Current revision number
+const uint db_schema_minor = 63;  // Current revision number
+const uint db_schema_keepout_zone
+    = 63;  // Revision where _dbTechLayer::keepout_zone_rules_tbl_ was added
 const uint db_schema_net_tracks
     = 62;  // Revision where _dbBlock::_net_tracks_tbl was added
 const uint db_schema_lef58_pitch

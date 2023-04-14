@@ -44,6 +44,10 @@
 #include "sta/Path.hh"
 #include "dpl/Opendp.h"
 
+namespace gui {
+class Gui;
+}
+
 namespace grt {
 class GlobalRouter;
 class IncrementalGRoute;
@@ -59,7 +63,6 @@ using std::array;
 using std::string;
 using std::vector;
 
-using ord::OpenRoad;
 using utl::Logger;
 using gui::Gui;
 
@@ -146,14 +149,13 @@ class Resizer : public StaState
 public:
   Resizer();
   ~Resizer();
-  void init(OpenRoad *openroad,
-            Tcl_Interp *interp,
-            Logger *logger,
-            Gui *gui,
-            dbDatabase *db,
-            dbSta *sta,
-            SteinerTreeBuilder *stt_builder,
-            GlobalRouter *global_router);
+  void init(Tcl_Interp* interp,
+            Logger* logger,
+            Gui* gui,
+            dbDatabase* db,
+            dbSta* sta,
+            SteinerTreeBuilder* stt_builder,
+            GlobalRouter* global_router);
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
                   double res,
@@ -564,7 +566,6 @@ protected:
   LibertyCellSet dont_use_;
   double max_area_;
 
-  OpenRoad *openroad_;
   Logger *logger_;
   SteinerTreeBuilder *stt_builder_;
   GlobalRouter *global_router_;

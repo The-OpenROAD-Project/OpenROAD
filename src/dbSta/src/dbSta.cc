@@ -48,8 +48,6 @@
 #include "dbSdcNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
-#include "gui/gui.h"
-#include "heatMap.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Bfs.hh"
@@ -63,39 +61,8 @@
 #include "sta/Search.hh"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
-
-namespace ord {
-
-using sta::dbSta;
-using sta::PathExpanded;
-using sta::PathRef;
-
-sta::dbSta*
-makeDbSta()
-{
-  return new sta::dbSta;
-}
-
-void
-initDbSta(OpenRoad* openroad)
-{
-  dbSta* sta = openroad->getSta();
-  sta->init(openroad->tclInterp(),
-            openroad->getDb(),
-            // Broken gui api missing openroad accessor.
-            gui::Gui::get(),
-            openroad->getLogger());
-  openroad->addObserver(sta);
-}
-
-void
-deleteDbSta(sta::dbSta* sta)
-{
-  delete sta;
-  sta::Sta::setSta(nullptr);
-}
-
-}  // namespace ord
+#include "AbstractPathRenderer.h"
+#include "AbstractPowerDensityDataSource.h"
 
 ////////////////////////////////////////////////////////////////
 
@@ -109,6 +76,9 @@ using utl::STA;
 class dbStaReport : public sta::ReportTcl
 {
 public:
+  explicit dbStaReport(bool gui_is_on)
+    : gui_is_on_(gui_is_on) {}
+
   void setLogger(Logger* logger);
   virtual void warn(int id, const char* fmt, ...)
       __attribute__((format(printf, 3, 4)));
@@ -148,6 +118,7 @@ protected:
 private:
   // text buffer for tcl puts output when in GUI mode.
   std::string tcl_buffer_;
+  bool gui_is_on_;
 };
 
 class dbStaCbk : public dbBlockCallBackObj
@@ -175,50 +146,9 @@ private:
   Logger* logger_;
 };
 
-class PathRenderer : public gui::Renderer
-{
-public:
-  PathRenderer(dbSta* sta);
-  ~PathRenderer();
-  void highlight(PathRef* path);
-  virtual void drawObjects(gui::Painter& /* painter */) override;
-
-private:
-  void highlightInst(const Pin* pin, gui::Painter& painter);
-
-  dbSta* sta_;
-  // Expanded path is owned by PathRenderer.
-  PathExpanded* path_;
-  static gui::Painter::Color signal_color;
-  static gui::Painter::Color clock_color;
-};
-
-dbSta*
-makeBlockSta(ord::OpenRoad* openroad, dbBlock* block)
-{
-  dbSta* sta = openroad->getSta();
-  dbSta* sta2 = new dbSta;
-  sta2->makeComponents();
-  sta2->initVars(sta->tclInterp(),
-                 openroad->getDb(),
-                 gui::Gui::get(),
-                 openroad->getLogger());
-  sta2->getDbNetwork()->setBlock(block);
-  sta2->copyUnits(sta->units());
-  return sta2;
-}
-
-extern "C" {
-extern int
-Dbsta_Init(Tcl_Interp* interp);
-}
-
-extern const char* dbSta_tcl_inits[];
-
 dbSta::dbSta() :
   Sta(),
   db_(nullptr),
-  gui_(nullptr),
   logger_(nullptr),
   db_network_(nullptr),
   db_report_(nullptr),
@@ -227,37 +157,17 @@ dbSta::dbSta() :
 {
 }
 
-dbSta::~dbSta()
-{
-  delete path_renderer_;
-}
+dbSta::~dbSta() = default;
 
-void
-dbSta::init(Tcl_Interp* tcl_interp,
-            dbDatabase* db,
-            gui::Gui* gui,
-            Logger* logger)
-{
-  initSta();
-  initVars(tcl_interp, db, gui, logger);
-  Sta::setSta(this);
-  // Define swig TCL commands.
-  Dbsta_Init(tcl_interp);
-  // Eval encoded sta TCL sources.
-  evalTclInit(tcl_interp, dbSta_tcl_inits);
-
-  power_density_heatmap_ = std::make_unique<PowerDensityDataSource>(this, logger);
-  power_density_heatmap_->registerHeatMap();
-}
-
-void
-dbSta::initVars(Tcl_Interp* tcl_interp,
-                dbDatabase* db,
-                gui::Gui* gui,
-                Logger* logger)
+void dbSta::initVars(Tcl_Interp* tcl_interp,
+                     odb::dbDatabase* db,
+                     std::unique_ptr<AbstractPathRenderer> path_renderer,
+                     std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source,
+                     utl::Logger* logger)
 {
   db_ = db;
-  gui_ = gui;
+  path_renderer_ = std::move(path_renderer);
+  power_density_data_source_ = std::move(power_density_data_source);
   logger_ = logger;
   makeComponents();
   setTclInterp(tcl_interp);
@@ -266,12 +176,22 @@ dbSta::initVars(Tcl_Interp* tcl_interp,
   db_cbk_ = new dbStaCbk(this, logger);
 }
 
+std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
+{
+  auto clone = std::make_unique<dbSta>();
+  clone->makeComponents();
+  clone->initVars(tclInterp(), db_, /*path_renderer=*/nullptr, /*power_density_data_source=*/nullptr, logger_);
+  clone->getDbNetwork()->setBlock(block);
+  clone->copyUnits(units());
+  return clone;
+}
+
 ////////////////////////////////////////////////////////////////
 
 void
 dbSta::makeReport()
 {
-  db_report_ = new dbStaReport();
+  db_report_ = new dbStaReport(/*gui_is_on=*/path_renderer_ != nullptr);
   report_ = db_report_;
 }
 
@@ -475,7 +395,7 @@ dbStaReport::printString(const char* buffer, size_t length)
 
   // if gui enabled, keep tcl_buffer_ until a newline appears
   // otherwise proceed to print directly to console
-  if (!gui::Gui::enabled()) {
+  if (gui_is_on_) {
     // puts without a trailing \n in the string.
     // Tcl command prompts get here.
     // puts "xyz" makes a separate call for the '\n '.
@@ -704,81 +624,7 @@ dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)
 void
 dbSta::highlight(PathRef* path)
 {
-  if (gui::Gui::enabled()) {
-    if (path_renderer_ == nullptr) {
-      path_renderer_ = new PathRenderer(this);
-      gui_->registerRenderer(path_renderer_);
-    }
-    path_renderer_->highlight(path);
-  }
-}
-
-gui::Painter::Color PathRenderer::signal_color = gui::Painter::red;
-gui::Painter::Color PathRenderer::clock_color = gui::Painter::yellow;
-
-PathRenderer::PathRenderer(dbSta* sta) :
-  sta_(sta), path_(nullptr)
-{
-}
-
-PathRenderer::~PathRenderer()
-{
-  delete path_;
-}
-
-void
-PathRenderer::highlight(PathRef* path)
-{
-  if (path_)
-    delete path_;
-  path_ = new PathExpanded(path, sta_);
-}
-
-void
-PathRenderer::drawObjects(gui::Painter& painter)
-{
-  if (path_) {
-    dbNetwork* network = sta_->getDbNetwork();
-    Point prev_pt;
-    for (unsigned int i = 0; i < path_->size(); i++) {
-      PathRef* path = path_->path(i);
-      TimingArc* prev_arc = path_->prevArc(i);
-      // Draw lines for wires on the path.
-      if (prev_arc && prev_arc->role()->isWire()) {
-        PathRef* prev_path = path_->path(i - 1);
-        const Pin* pin = path->pin(sta_);
-        const Pin* prev_pin = prev_path->pin(sta_);
-        Point pt1 = network->location(pin);
-        Point pt2 = network->location(prev_pin);
-        gui::Painter::Color wire_color = sta_->isClock(pin) ? clock_color : signal_color;
-        painter.setPen(wire_color, true);
-        painter.drawLine(pt1, pt2);
-        highlightInst(prev_pin, painter);
-        if (i == path_->size() - 1)
-          highlightInst(pin, painter);
-      }
-    }
-  }
-}
-
-// Color in the instances to make them more visible.
-void
-PathRenderer::highlightInst(const Pin* pin, gui::Painter& painter)
-{
-  dbNetwork* network = sta_->getDbNetwork();
-  const Instance* inst = network->instance(pin);
-  if (!network->isTopInstance(inst)) {
-    dbInst* db_inst;
-    dbModInst* mod_inst;
-    network->staToDb(inst, db_inst, mod_inst);
-    if (db_inst) {
-      odb::dbBox* bbox = db_inst->getBBox();
-      odb::Rect rect = bbox->getBox();
-      gui::Painter::Color inst_color = sta_->isClock(pin) ? clock_color : signal_color;
-      painter.setBrush(inst_color);
-      painter.drawRect(rect);
-    }
-  }
+  path_renderer_->highlight(path);
 }
 
 }  // namespace sta

@@ -2719,7 +2719,10 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
     }
 
     painter.setPen(layer);
-    painter.setBrush(layer);
+    auto color = painter.getPenColor();
+    color.a = 255;
+    painter.setPen(color);
+    painter.setBrush(color);
 
     painter.drawString(pin.pt.x(), pin.pt.y(), anchor, pin.text, do_rotate);
   }
