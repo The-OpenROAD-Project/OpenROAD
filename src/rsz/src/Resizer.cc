@@ -875,23 +875,10 @@ Resizer::replaceCell(Instance *inst,
   const char *replacement_name = replacement->name();
   dbMaster *replacement_master = db_->findMaster(replacement_name);
 
-  // Check if the new masterCell is not big & move the instance to fix it
-  /*uint new_width = replacement_master->getWidth();
-  uint new_height = replacement_master->getHeight();
-  odb::Point left_corner = db_network_->staToDb(inst)->getLocation();
-  odb::Rect rect = block_->getDieArea();
-  uint MAX_X = rect.xMax();
-  uint MAX_Y = rect.yMax();
-  int new_x = left_corner.x();
-  int new_y = left_corner.y();
-  if (left_corner.x() + new_width > MAX_X)
-    new_x = MAX_X - new_width;
-  if (left_corner.y() + new_height > MAX_Y)
-    new_y = MAX_Y - new_height;
-  db_network_->staToDb(inst)->setLocation(new_x, new_y);*/
+  // Check if the new masterCell is not big & move the instance to fix it 
   if (opendp_ && parasitics_src_ == ParasiticsSrc::global_routing)
     opendp_->legalCellPos(db_network_->staToDb(inst));
-  else
+  else if (parasitics_src_ == ParasiticsSrc::global_routing)
     printf("Error: opendp not init on replace\n");
 
   if (replacement_master) {
@@ -2475,7 +2462,7 @@ Resizer::makeInstance(LibertyCell *cell,
   setLocation(db_inst, loc);
   if (opendp_ && parasitics_src_ == ParasiticsSrc::global_routing)
     opendp_->legalCellPos(db_inst);
-  else
+  else if (parasitics_src_ == ParasiticsSrc::global_routing)
     printf("Error: opendp not init on insert\n");
   designAreaIncr(area(db_inst->getMaster()));
   return inst;

@@ -260,13 +260,7 @@ Resizer::updateParasitics()
       estimateWireParasitic(net);
     parasitics_invalid_.clear();
     break;
-  case ParasiticsSrc::global_routing: {
-    //if (hasMacros()) {
-      // Run detailed placement before grt
-      //dpl::Opendp* opendp_ = openroad_->getOpendp();
-      //opendp_->legalAllCells();
-//      opendp_->detailedPlacement(0, 0);
-    //}
+  case ParasiticsSrc::global_routing: { 
     incr_groute_->updateRoutes();
     for (const Net *net : parasitics_invalid_)
       global_router_->estimateRC(db_network_->staToDb(net));
@@ -322,13 +316,7 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
       parasitics_invalid_.erase(net);
       break;
     case ParasiticsSrc::global_routing: {  
-      grt::IncrementalGRoute incr_groute(global_router_, block_);
-      //if (hasMacros()) {
-        // Run detailed placement before grt
-        //dpl::Opendp* opendp_ = openroad_->getOpendp();
-        //opendp_->legalAllCells();
-//        opendp_->detailedPlacement(0, 0);
-      //}
+      grt::IncrementalGRoute incr_groute(global_router_, block_); 
       global_router_->addDirtyNet(db_network_->staToDb(net));
       incr_groute.updateRoutes();
       global_router_->estimateRC(db_network_->staToDb(net));
