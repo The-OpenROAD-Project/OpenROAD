@@ -174,12 +174,7 @@ void Opendp::detailedPlacement(int max_displacement_x,
                   "Detailed placement failed on the following {} instances:",
                   placement_failures_.size());
     for (auto inst : placement_failures_) {
-      logger_->info(DPL,
-                    35,
-                    "Instance: {} Cell: {} with height: {}",
-                    inst->getName(),
-                    db_inst_map_[inst]->name(),
-                    db_inst_map_[inst]->height_);
+      logger_->info(DPL, 35, " {}", inst->getName());
     }
     logger_->error(DPL, 36, "Detailed placement failed.");
   }

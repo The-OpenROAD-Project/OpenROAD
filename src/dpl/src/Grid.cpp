@@ -82,10 +82,11 @@ void Opendp::initGridLayersMap()
                DPL,
                "grid",
                1,
-               "grid layer {} {} {}",
+               "grid layer {} {} site count: {} and row_site_count_ {}",
                row_height,
                layer_info.row_count,
-               layer_info.site_count);
+               layer_info.site_count,
+               row_site_count_);
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
 }
@@ -195,9 +196,13 @@ void Opendp::initGrid()
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
     const int safety = 20;
+    // TODO: fix this, it should be
+    // divFloor(core_.dx() / layer_site_width)
+    int max_row_site_count = row_site_count_;
+
     const int xl = std::max(0, x_start - max_displacement_x_ + safety);
     const int xh
-        = std::min(layer_info.site_count, x_end + max_displacement_x_ - safety);
+        = std::min(max_row_site_count, x_end + max_displacement_x_ - safety);
     debugPrint(logger_,
                DPL,
                "grid",
@@ -205,7 +210,7 @@ void Opendp::initGrid()
                "current row {} current_row_site_count {} and x_end {} "
                "max_displacement_x_ {} safety {}",
                db_row->getName(),
-               layer_info.site_count,
+               max_row_site_count,
                x_end,
                max_displacement_x_,
                safety);
@@ -513,12 +518,15 @@ void Opendp::groupAssignCellRegions()
     int row_height = row_height_;
     if (!group.cells_.empty()) {
       site_width = getSiteWidth(group.cells_.at(0));
+      int max_row_site_count = divFloor(core_.dx(), site_width);
+      int row_count = divFloor(core_.dy(), row_height);
       row_height = getRowHeight(group.cells_.at(0));
+
       int cell_heights_in_group = group.cells_.at(0)->height_;
       auto layer_info = grid_layers_.at(cell_heights_in_group);
 
-      for (int x = 0; x < layer_info.site_count; x++) {
-        for (int y = 0; y < layer_info.row_count; y++) {
+      for (int x = 0; x < max_row_site_count; x++) {
+        for (int y = 0; y < row_count; y++) {
           Pixel* pixel = gridPixel(layer_info.grid_index, x, y);
           if (pixel->is_valid && pixel->group_ == &group) {
             site_count++;
@@ -550,8 +558,10 @@ void Opendp::groupInitPixels2()
   for (auto& layer : grid_layers_) {
     int row_height = layer.first;
     LayerInfo& layer_info = layer.second;
-    for (int x = 0; x < layer_info.site_count; x++) {
-      for (int y = 0; y < layer_info.row_count; y++) {
+    int row_count = divFloor(core_.dy(), row_height);
+    int row_site_count = divFloor(core_.dx(), site_width_);
+    for (int x = 0; x < row_site_count; x++) {
+      for (int y = 0; y < row_count; y++) {
         Rect sub;
         // TODO: Site width here is wrong if multiple site widths are supported!
         sub.init(x * site_width_,
