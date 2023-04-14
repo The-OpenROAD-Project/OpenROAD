@@ -63,7 +63,8 @@ initResizer(OpenRoad *openroad)
                                openroad->getDb(),
                                openroad->getSta(),
                                openroad->getSteinerTreeBuilder(),
-                               openroad->getGlobalRouter());
+                               openroad->getGlobalRouter(),
+                               openroad->getOpendp());
 }
 
 }

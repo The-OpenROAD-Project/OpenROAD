@@ -155,7 +155,8 @@ public:
             dbDatabase* db,
             dbSta* sta,
             SteinerTreeBuilder* stt_builder,
-            GlobalRouter* global_router);
+            GlobalRouter* global_router,
+            dpl::Opendp* opendp);
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
                   double res,

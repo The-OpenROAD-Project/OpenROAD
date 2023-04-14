@@ -196,8 +196,10 @@ void Resizer::init(Tcl_Interp* interp,
                    dbDatabase* db,
                    dbSta* sta,
                    SteinerTreeBuilder* stt_builder,
-                   GlobalRouter* global_router)
+                   GlobalRouter* global_router,
+                   dpl::Opendp* opendp)
 {
+  opendp_ = opendp;
   logger_ = logger;
   gui_ = gui;
   db_ = db;
@@ -2166,7 +2168,6 @@ Resizer::repairDesign(double max_wire_length,
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
-    opendp_ = openroad_->getOpendp();
     opendp_->initMacrosAndGrid();
   }
   repair_design_->repairDesign(max_wire_length, slew_margin, cap_margin, global_route);
@@ -2312,7 +2313,6 @@ Resizer::repairSetup(double setup_margin,
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
-    opendp_ = openroad_->getOpendp();
     opendp_->initMacrosAndGrid();
   }
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
@@ -2344,7 +2344,6 @@ Resizer::repairHold(double setup_margin,
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
-    opendp_ = openroad_->getOpendp();
     opendp_->initMacrosAndGrid();
   }
   repair_hold_->repairHold(setup_margin, hold_margin,
