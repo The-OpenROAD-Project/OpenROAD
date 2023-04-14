@@ -40,8 +40,8 @@ control through an API with bindings in Tcl and Python.
 OpenROAD is a foundational building block in open-source digital flows
 such as [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
 [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
-[Efabless](https://efabless.com/), Silicon Compiler from Zero ASIC; as
-well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
+[Efabless](https://efabless.com/), [Silicon Compiler](https://github.com/siliconcompiler/siliconcompiler)
+from Zero ASIC; as well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
 mixed-signal design flows.
 
 OpenROAD users span hardware designers, industry collaborators,
