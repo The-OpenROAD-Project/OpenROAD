@@ -72,7 +72,9 @@ void Opendp::initGridLayersMap()
     } else {
       auto& layer_info = grid_layers_.at(row_height);
       layer_info.site_count
-          = max(layer_info.site_count, db_row->getSiteCount());
+          = max(layer_info.site_count,
+                max(db_row->getSiteCount(),
+                    divFloor(core_.dx(), db_row->getSite()->getWidth())));
     }
   }
   grid_layers_vector.resize(grid_layers_.size());
@@ -145,7 +147,6 @@ void Opendp::initGrid()
     int current_row_site_count = db_row->getSiteCount();
     int current_row_count = grid_layers_.at(current_row_height).row_count;
     int current_row_grid_index = grid_layers_.at(current_row_height).grid_index;
-    auto layer_info = grid_layers_.at(current_row_height);
     debugPrint(
         logger_,
         DPL,

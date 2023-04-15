@@ -1149,20 +1149,23 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   int best_dist = std::numeric_limits<int>::max();
   int site_width = getSiteWidth(cell);
   auto [row_height, layer_info] = getRowInfo(cell);
+  int grid_index = layer_info.grid_index;
+  int layer_site_count = divFloor(core_.dx(), site_width);
+  int layer_row_count = divFloor(core_.dy(), row_height);
 
   // since the site doesn't have to be empty, we don't need to check all layers.
   // They will be checked in the checkPixels in the diamondSearch method after
   // this initialization
   for (int x = grid_x - 1; x >= 0; --x) {  // left
-    if (grid_[layer_info.grid_index][grid_y][x].is_valid) {
+    if (grid_[grid_index][grid_y][x].is_valid) {
       best_dist = (grid_x - x - 1) * site_width;
       best_x = x;
       best_y = grid_y;
       break;
     }
   }
-  for (int x = grid_x + 1; x < layer_info.site_count; ++x) {  // right
-    if (grid_[layer_info.grid_index][grid_y][x].is_valid) {
+  for (int x = grid_x + 1; x < layer_site_count; ++x) {  // right
+    if (grid_[grid_index][grid_y][x].is_valid) {
       const int dist = (x - grid_x) * site_width - cell->width_;
       if (dist < best_dist) {
         best_dist = dist;
@@ -1173,7 +1176,7 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
     }
   }
   for (int y = grid_y - 1; y >= 0; --y) {  // below
-    if (grid_[layer_info.grid_index][y][grid_x].is_valid) {
+    if (grid_[grid_index][y][grid_x].is_valid) {
       const int dist = (grid_y - y - 1) * row_height;
       if (dist < best_dist) {
         best_dist = dist;
@@ -1183,8 +1186,8 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
       break;
     }
   }
-  for (int y = grid_y + 1; y < layer_info.row_count; ++y) {  // above
-    if (grid_[layer_info.grid_index][y][grid_x].is_valid) {
+  for (int y = grid_y + 1; y < layer_row_count; ++y) {  // above
+    if (grid_[grid_index][y][grid_x].is_valid) {
       const int dist = (y - grid_y) * row_height - cell->height_;
       if (dist < best_dist) {
         best_dist = dist;

@@ -95,13 +95,14 @@ void Opendp::placeRowFillers(int row,
              row,
              row_site_count_);
 
-  while (j < layer_info.site_count) {
+  int row_site_count = divFloor(core_.dx(), site_width_);
+  while (j < row_site_count) {
     Pixel* pixel = gridPixel(layer_info.grid_index, j, row);
     const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr && pixel->is_valid) {
       debugPrint(logger_, DPL, "filler", 2, "filling row {} at {}.", row, j);
       int k = j;
-      while (k < layer_info.site_count
+      while (k < row_site_count
              && gridPixel(layer_info.grid_index, k, row)->cell == nullptr
              && gridPixel(layer_info.grid_index, k, row)->is_valid) {
         k++;
