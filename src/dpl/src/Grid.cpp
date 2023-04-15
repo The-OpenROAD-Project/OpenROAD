@@ -80,15 +80,6 @@ void Opendp::initGridLayersMap()
   grid_layers_vector.resize(grid_layers_.size());
   for (auto& [row_height, layer_info] : grid_layers_) {
     grid_layers_vector[layer_info.grid_index] = &layer_info;
-    debugPrint(logger_,
-               DPL,
-               "grid",
-               1,
-               "grid layer {} {} site count: {} and row_site_count_ {}",
-               row_height,
-               layer_info.row_count,
-               layer_info.site_count,
-               row_site_count_);
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
 }
@@ -114,19 +105,25 @@ void Opendp::initGrid()
       int layer_row_site_count = layer_info.site_count;
       int index = layer_info.grid_index;
       grid_[index] = new Pixel*[layer_row_count];
-      for (int j = 0; j < layer_row_count; j++) {
-        grid_[index][j] = new Pixel[layer_row_site_count];
-        for (int k = 0; k < layer_row_site_count; k++) {
-          Pixel& pixel = grid_[index][j][k];
-          pixel.cell = nullptr;
-          pixel.group_ = nullptr;
-          pixel.util = 0.0;
-          pixel.is_valid = false;
-          pixel.is_hopeless = false;
-        }
+    }
+  }
+
+  for (auto& [row_height, layer_info] : grid_layers_) {
+    int layer_row_count = layer_info.row_count;
+    int layer_row_site_count = layer_info.site_count;
+    int index = layer_info.grid_index;
+    grid_[index] = new Pixel*[layer_row_count];
+    for (int j = 0; j < layer_row_count; j++) {
+      grid_[index][j] = new Pixel[layer_row_site_count];
+      for (int k = 0; k < layer_row_site_count; k++) {
+        Pixel& pixel = grid_[index][j][k];
+        pixel.cell = nullptr;
+        pixel.group_ = nullptr;
+        pixel.util = 0.0;
+        pixel.is_valid = false;
+        pixel.is_hopeless = false;
       }
     }
-    debugPrint(logger_, DPL, "grid", 1, "grid initialized");
   }
 
   namespace gtl = boost::polygon;
@@ -134,7 +131,6 @@ void Opendp::initGrid()
 
   std::vector<gtl::polygon_90_set_data<int>> hopeless;
   hopeless.resize(grid_depth_);
-  debugPrint(logger_, DPL, "grid", 1, "hopeless grid initialized");
   for (auto [row_height, layer_info] : grid_layers_) {
     hopeless[layer_info.grid_index] += gtl::rectangle_data<int>{
         0, 0, layer_info.site_count, layer_info.row_count};
@@ -167,18 +163,12 @@ void Opendp::initGrid()
     const int x_start = (orig_x - core_.xMin()) / db_row->getSite()->getWidth();
     const int x_end = x_start + current_row_site_count;
     const int y_row = (orig_y - core_.yMin()) / current_row_height;
-    debugPrint(logger_,
-               DPL,
-               "grid",
-               1,
-               "row {} has x_start {} and x_end {} and y_row {}",
-               db_row->getName(),
-               x_start,
-               x_end,
-               y_row);
     for (int x = x_start; x < x_end; x++) {
       Pixel* pixel;
       pixel = gridPixel(current_row_grid_index, x, y_row);
+      if (pixel == nullptr) {
+        continue;
+      }
       pixel->is_valid = true;
       pixel->orient_ = db_row->getOrient();
     }
@@ -193,56 +183,22 @@ void Opendp::initGrid()
     const int xl = std::max(0, x_start - max_displacement_x_ + safety);
     const int xh
         = std::min(max_row_site_count, x_end + max_displacement_x_ - safety);
-    debugPrint(logger_,
-               DPL,
-               "grid",
-               1,
-               "current row {} current_row_site_count {} and x_end {} "
-               "max_displacement_x_ {} safety {}",
-               db_row->getName(),
-               max_row_site_count,
-               x_end,
-               max_displacement_x_,
-               safety);
 
     const int yl = std::max(0, y_row - max_displacement_y_ + safety);
     const int yh
         = std::min(current_row_count, y_row + max_displacement_y_ - safety);
     hopeless[current_row_grid_index]
         -= gtl::rectangle_data<int>{xl, yl, xh, yh};
-    debugPrint(logger_,
-               DPL,
-               "grid",
-               1,
-               "Removing rectangle ({}, {}, {}, {}) from hopeless.",
-               xl,
-               yl,
-               xh,
-               yh);
   }
 
   std::vector<gtl::rectangle_data<int>> rects;
   for (auto& grid_layer : grid_layers_) {
-    debugPrint(logger_,
-               DPL,
-               "grid",
-               1,
-               "Marking hopeless pixels for layer {}",
-               grid_layer.first);
     rects.clear();
     int h_index = grid_layer.second.grid_index;
     hopeless[h_index].get_rectangles(rects);
     for (const auto& rect : rects) {
       for (int y = gtl::yl(rect); y < gtl::yh(rect); y++) {
         for (int x = gtl::xl(rect); x < gtl::xh(rect); x++) {
-          debugPrint(logger_,
-                     DPL,
-                     "grid",
-                     1,
-                     "Marking grid pixel ({}, {}, {}) as hopeless.",
-                     h_index,
-                     x,
-                     y);
           grid_[h_index][y][x].is_hopeless = true;
         }
       }
@@ -275,7 +231,6 @@ Pixel* Opendp::gridPixel(int layer_idx, int grid_x, int grid_y) const
       && layer_idx < grid_depth_) {
     return &grid_[layer_idx][grid_y][grid_x];
   }
-
   return nullptr;
 }
 
@@ -292,29 +247,12 @@ void Opendp::visitCellPixels(
   bool have_obstructions = false;
 
   int site_width, row_height;
-  debugPrint(logger_, DPL, "hopeless", 1, "Visiting cell {}.", cell.name());
   if (isStdCell(&cell)) {
     site_width = getSiteWidth(&cell);
     row_height = getRowHeight(&cell);
-    debugPrint(logger_,
-               DPL,
-               "hopeless",
-               1,
-               "Cell {} is a std cell with site width {} and row height {}.",
-               cell.name(),
-               site_width,
-               row_height);
   } else {
     site_width = site_width_;
     row_height = row_height_;
-    debugPrint(logger_,
-               DPL,
-               "hopeless",
-               1,
-               "Cell {} is a macro with site width {} and row height {}.",
-               cell.name(),
-               site_width,
-               row_height);
   }
 
   for (dbBox* obs : obstructions) {
@@ -364,11 +302,10 @@ void Opendp::visitCellPixels(
     for (auto layer_it : grid_layers_) {
       int layer_x_start = map_coordinates(x_start, site_width, site_width);
       int layer_x_end = map_coordinates(x_end, site_width, site_width);
+      int layer_y_start = map_coordinates(y_start, row_height, layer_it.first);
+      int layer_y_end = map_coordinates(y_end, row_height, layer_it.first);
 
       for (int x = layer_x_start; x < layer_x_end; x++) {
-        int layer_y_start
-            = map_coordinates(y_start, row_height, layer_it.first);
-        int layer_y_end = map_coordinates(y_end, row_height, layer_it.first);
         for (int y = layer_y_start; y < layer_y_end; y++) {
           Pixel* pixel = gridPixel(layer_it.second.grid_index, x, y);
           if (pixel) {
@@ -472,7 +409,6 @@ void Opendp::visitCellBoundaryPixels(
 
 void Opendp::setFixedGridCells()
 {
-  debugPrint(logger_, DPL, "place", 1, "Setting fixed grid cells.");
   for (Cell& cell : cells_) {
     if (isFixed(&cell)) {
       visitCellPixels(
@@ -487,16 +423,7 @@ void Opendp::setGridCell(Cell& cell, Pixel* pixel)
   pixel->util = 1.0;
   if (isBlock(&cell)) {
     // Try the is_hopeless strategy to get off of a block
-    debugPrint(
-        logger_, DPL, "hopeless", 1, "Setting cell {} hopeless.", cell.name());
     pixel->is_hopeless = true;
-  } else {
-    debugPrint(logger_,
-               DPL,
-               "hopeless",
-               1,
-               "Failed isBlock() in Setting cell {} as hopeless.",
-               cell.name());
   }
 }
 
@@ -509,11 +436,9 @@ void Opendp::groupAssignCellRegions()
     if (!group.cells_.empty()) {
       site_width = getSiteWidth(group.cells_.at(0));
       int max_row_site_count = divFloor(core_.dx(), site_width);
-      int row_count = divFloor(core_.dy(), row_height);
       row_height = getRowHeight(group.cells_.at(0));
-
-      int cell_heights_in_group = group.cells_.at(0)->height_;
-      auto layer_info = grid_layers_.at(cell_heights_in_group);
+      int row_count = divFloor(core_.dy(), row_height);
+      auto layer_info = grid_layers_.at(row_height);
 
       for (int x = 0; x < max_row_site_count; x++) {
         for (int y = 0; y < row_count; y++) {
@@ -698,17 +623,6 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   const int layer_index_in_grid = layer_info.grid_index;
   setGridPaddedLoc(cell, grid_x, grid_y, site_width, row_height);
   cell->is_placed_ = true;
-
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             " paint {} ({}-{}, {}-{})",
-             cell->name(),
-             grid_x,
-             x_end - 1,
-             grid_y,
-             y_end - 1);
 
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
