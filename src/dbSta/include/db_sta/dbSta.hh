@@ -80,9 +80,11 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
 
   void initVars(Tcl_Interp* tcl_interp,
                 odb::dbDatabase* db,
-                std::unique_ptr<AbstractPathRenderer> path_renderer,
-                std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source,
                 utl::Logger* logger);
+
+  void setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer);
+  void setPowerDensityDataSource(std::unique_ptr<AbstractPowerDensityDataSource>
+                                     power_density_data_source);
 
   // Creates a dbSta instance for the given dbBlock using the same context as
   // this dbSta instance (e.g. TCL interpreter, units, etc.)

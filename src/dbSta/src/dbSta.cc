@@ -161,13 +161,9 @@ dbSta::~dbSta() = default;
 
 void dbSta::initVars(Tcl_Interp* tcl_interp,
                      odb::dbDatabase* db,
-                     std::unique_ptr<AbstractPathRenderer> path_renderer,
-                     std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source,
                      utl::Logger* logger)
 {
   db_ = db;
-  path_renderer_ = std::move(path_renderer);
-  power_density_data_source_ = std::move(power_density_data_source);
   logger_ = logger;
   makeComponents();
   setTclInterp(tcl_interp);
@@ -176,11 +172,22 @@ void dbSta::initVars(Tcl_Interp* tcl_interp,
   db_cbk_ = new dbStaCbk(this, logger);
 }
 
+void dbSta::setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer)
+{
+  path_renderer_ = std::move(path_renderer);
+}
+
+void dbSta::setPowerDensityDataSource(
+    std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source)
+{
+  power_density_data_source_ = std::move(power_density_data_source);
+}
+
 std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 {
   auto clone = std::make_unique<dbSta>();
   clone->makeComponents();
-  clone->initVars(tclInterp(), db_, /*path_renderer=*/nullptr, /*power_density_data_source=*/nullptr, logger_);
+  clone->initVars(tclInterp(), db_, logger_);
   clone->getDbNetwork()->setBlock(block);
   clone->copyUnits(units());
   return clone;
