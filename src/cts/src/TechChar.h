@@ -173,7 +173,7 @@ class TechChar
   double getCapPerDBU() const { return capPerDBU_; }
   utl::Logger* getLogger() { return options_->getLogger(); }
 
- protected:
+ private:
   // SolutionData represents the various different structures of the
   // characterization segment. Ports, insts, nets...
   struct SolutionData
