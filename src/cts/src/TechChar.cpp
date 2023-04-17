@@ -153,8 +153,7 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
 
 void TechChar::initLengthUnits()
 {
-  charLengthUnit_ = options_->getWireSegmentUnit();
-  lengthUnitRatio_ = charLengthUnit_ / lengthUnit_;
+  lengthUnitRatio_ = options_->getWireSegmentUnit() / lengthUnit_;
 }
 
 inline void TechChar::reportCharacterizationBounds() const

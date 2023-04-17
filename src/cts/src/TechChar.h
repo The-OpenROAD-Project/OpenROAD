@@ -272,7 +272,6 @@ class TechChar
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
 
   unsigned lengthUnit_ = 0;
-  unsigned charLengthUnit_ = 0;
   unsigned lengthUnitRatio_ = 0;
 
   unsigned minSegmentLength_ = 0;
