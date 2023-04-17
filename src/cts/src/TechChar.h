@@ -232,7 +232,7 @@ class TechChar
                                  uint8_t inputSlew);
 
   void compileLut(const std::vector<ResultData>& lutSols);
-  void setLengthUnit(unsigned length) { LENGTH_UNIT_MICRON = length; }
+  void setLengthUnit(unsigned length) { lengthUnit_ = length; }
   unsigned computeKey(uint8_t length, uint8_t load, uint8_t outputSlew) const
   {
     return length | (load << NUM_BITS_PER_FIELD)
@@ -270,7 +270,6 @@ class TechChar
 
   static constexpr unsigned NUM_BITS_PER_FIELD = 10;
   static constexpr unsigned MAX_NORMALIZED_VAL = (1 << NUM_BITS_PER_FIELD) - 1;
-  unsigned LENGTH_UNIT_MICRON = 10;
 
   unsigned lengthUnit_ = 0;
   unsigned charLengthUnit_ = 0;
