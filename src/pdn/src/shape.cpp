@@ -114,6 +114,26 @@ Box Shape::getObstructionBox() const
   return rectToBox(obs_);
 }
 
+Shape::ObstructionHalo Shape::getObstructionHalo() const
+{
+  return {rect_.xMin() - obs_.xMin(),
+          obs_.yMax() - rect_.yMax(),
+          obs_.xMax() - rect_.xMax(),
+          rect_.yMin() - obs_.yMin()};
+}
+
+odb::Rect Shape::getRectWithLargestObstructionHalo(
+    const ObstructionHalo& halo) const
+{
+  const ObstructionHalo obs = getObstructionHalo();
+  odb::Rect obs_rect = rect_;
+  obs_rect.set_xlo(obs_rect.xMin() - std::max(obs.left, halo.left));
+  obs_rect.set_yhi(obs_rect.yMax() + std::max(obs.top, halo.top));
+  obs_rect.set_xhi(obs_rect.xMax() + std::max(obs.right, halo.right));
+  obs_rect.set_ylo(obs_rect.yMin() - std::max(obs.bottom, halo.bottom));
+  return obs_rect;
+}
+
 int Shape::getNumberOfConnections() const
 {
   return vias_.size() + iterm_connections_.size() + bterm_connections_.size();
@@ -242,6 +262,8 @@ bool Shape::cut(const ShapeTree& obstructions,
 
   const bool is_horizontal = isHorizontal();
 
+  const ObstructionHalo obs_halo = getObstructionHalo();
+
   std::vector<Polygon90> shape_violations;
   for (auto it
        = obstructions.qbegin(bgi::intersects(getObstructionBox())
@@ -254,7 +276,8 @@ bool Shape::cut(const ShapeTree& obstructions,
        it != obstructions.qend();
        it++) {
     auto other_shape = it->second;
-    odb::Rect vio_rect = other_shape->getObstruction();
+    odb::Rect vio_rect
+        = other_shape->getRectWithLargestObstructionHalo(obs_halo);
 
     // ensure the violation overlap fully with the shape to make cut correctly
     if (is_horizontal) {
