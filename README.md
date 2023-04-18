@@ -42,7 +42,7 @@ such as [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD
 [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
 [Efabless](https://efabless.com/), [Silicon Compiler](https://github.com/siliconcompiler/siliconcompiler)
 from Zero ASIC, [Hammer](https://docs.hammer-eda.org/en/latest/Examples/openroad-nangate45.html)
-from Berkeley; as well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
+from Berkeley and [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
 mixed-signal design flows.
 
 OpenROAD users span hardware designers, industry collaborators,
