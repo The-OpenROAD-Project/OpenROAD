@@ -1323,9 +1323,9 @@ void IOPlacer::updatePinArea(IOPin& pin)
   }
 }
 
-int IOPlacer::computeIONetsHPWL(Netlist* netlist)
+long int IOPlacer::computeIONetsHPWL(Netlist* netlist)
 {
-  int hpwl = 0;
+  long int hpwl = 0;
   int idx = 0;
   for (IOPin& io_pin : netlist->getIOPins()) {
     hpwl += netlist->computeIONetHPWL(idx, io_pin.getPosition());
@@ -1335,7 +1335,7 @@ int IOPlacer::computeIONetsHPWL(Netlist* netlist)
   return hpwl;
 }
 
-int IOPlacer::computeIONetsHPWL()
+long int IOPlacer::computeIONetsHPWL()
 {
   return computeIONetsHPWL(netlist_.get());
 }
@@ -1699,7 +1699,7 @@ void IOPlacer::run(bool random_mode)
   }
 
   if (!random_mode) {
-    int total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
+    long int total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
     logger_->info(PPL,
                   12,
                   "I/O nets HPWL: {:.2f} um.",

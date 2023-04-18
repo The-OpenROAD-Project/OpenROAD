@@ -122,7 +122,7 @@ class IOPlacer
   void run(bool random_mode);
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
-  int computeIONetsHPWL();
+  long int computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
   void addNamesConstraint(PinSet* pins, Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction,
@@ -219,7 +219,7 @@ class IOPlacer
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
                                          Netlist* netlist,
                                          bool mirrored_only);
-  int computeIONetsHPWL(Netlist* netlist);
+  long int computeIONetsHPWL(Netlist* netlist);
   void findPinAssignment(std::vector<Section>& sections,
                          bool mirrored_groups_only);
   void updateSlots();
