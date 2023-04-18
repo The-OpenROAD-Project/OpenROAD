@@ -59,10 +59,6 @@ void Opendp::initGridLayersMap()
 {
   int grid_index = 0;
   for (auto db_row : block_->getRows()) {
-    // TODO: this is potentially a bug due to cut rows.
-    // if a cut was inserted before the original row, the site count will be
-    // smaller
-    // it is also a bug in the row count
     int row_height = db_row->getSite()->getHeight();
     if (grid_layers_.find(row_height) == grid_layers_.end()) {
       grid_layers_.emplace(
@@ -102,7 +98,6 @@ void Opendp::initGrid()
 
     for (auto& [row_height, layer_info] : grid_layers_) {
       int layer_row_count = layer_info.row_count;
-      int layer_row_site_count = layer_info.site_count;
       int index = layer_info.grid_index;
       grid_[index] = new Pixel*[layer_row_count];
     }
@@ -176,9 +171,8 @@ void Opendp::initGrid()
     // The safety margin is to avoid having only a very few sites
     // within the diamond search that may still lead to failures.
     const int safety = 20;
-    // TODO: fix this, it should be
-    // divFloor(core_.dx() / layer_site_width)
-    int max_row_site_count = row_site_count_;
+    int max_row_site_count
+        = divFloor(core_.dx(), db_row->getSite()->getWidth());
 
     const int xl = std::max(0, x_start - max_displacement_x_ + safety);
     const int xh
@@ -264,7 +258,7 @@ void Opendp::visitCellPixels(
       dbTransform transform;
       inst->getTransform(transform);
       transform.apply(rect);
-      // TODO: - use map_coordiantes here and move this to inside the loop
+
       int x_start = gridX(rect.xMin() - core_.xMin(), site_width);
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);
       int y_start = gridY(rect.yMin() - core_.yMin(), row_height);
@@ -272,9 +266,13 @@ void Opendp::visitCellPixels(
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
-      for (int layer_idx = 0; layer_idx < grid_layers_.size(); layer_idx++) {
+      int layer_idx = 0;
+      for (auto [layer_row_height, layer_info] : grid_layers_) {
+        int layer_y_start
+            = map_coordinates(y_start, row_height, layer_row_height);
+        int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
         for (int x = x_start; x < x_end; x++) {
-          for (int y = y_start; y < y_end; y++) {
+          for (int y = layer_y_start; y < layer_y_end; y++) {
             Pixel* pixel = gridPixel(layer_idx, x, y);
             if (pixel) {
               debugPrint(logger_,
@@ -289,6 +287,7 @@ void Opendp::visitCellPixels(
             }
           }
         }
+        layer_idx++;
       }
     }
   }
@@ -587,16 +586,24 @@ void Opendp::erasePixel(Cell* cell)
   if (!(isFixed(cell) || !cell->is_placed_)) {
     int row_height = getRowHeight(cell);
     int site_width = getSiteWidth(cell);
-    LayerInfo layer_info = grid_layers_.at(row_height);
     int x_end = gridPaddedEndX(cell, site_width);
     int y_end = gridEndY(cell, row_height);
+    int y_start = gridY(cell, row_height);
 
-    // TODO: We still need to set the pixel free in all layers.
-    for (int x = gridPaddedX(cell, site_width); x < x_end; x++) {
-      for (int y = gridY(cell, row_height); y < y_end; y++) {
-        Pixel* pixel = gridPixel(layer_info.grid_index, x, y);
-        pixel->cell = nullptr;
-        pixel->util = 0;
+    for (auto [layer_row_height, layer_info] : grid_layers_) {
+      int layer_y_start
+          = map_coordinates(y_start, row_height, layer_row_height);
+      int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
+
+      for (int x = gridPaddedX(cell, site_width); x < x_end; x++) {
+        for (int y = layer_y_start; y < layer_y_end; y++) {
+          Pixel* pixel = gridPixel(layer_info.grid_index, x, y);
+          if (nullptr == pixel) {
+            continue;
+          }
+          pixel->cell = nullptr;
+          pixel->util = 0;
+        }
       }
     }
     cell->is_placed_ = false;
