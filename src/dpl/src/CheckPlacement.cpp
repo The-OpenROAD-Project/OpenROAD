@@ -145,7 +145,7 @@ bool Opendp::checkInRows(const Cell& cell) const
   int x_ur = gridEndX(&cell, site_width);
   int y_ll = gridY(&cell, layer_info.first);
   int y_ur = gridEndY(&cell, layer_info.first);
-  
+
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {
       Pixel* pixel = gridPixel(layer_info.second.grid_index, x, y);

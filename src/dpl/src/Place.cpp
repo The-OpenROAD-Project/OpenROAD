@@ -728,7 +728,7 @@ bool Opendp::refineMove(Cell* cell)
 
   if (pixel_pt.pixel) {
     int scaled_max_displacement_y_
-      = map_coordinates(max_displacement_y_, row_height_, getRowHeight(cell));
+        = map_coordinates(max_displacement_y_, row_height_, getRowHeight(cell));
     if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
         || abs(grid_y - pixel_pt.pt.getY()) > scaled_max_displacement_y_) {
       return false;
@@ -828,7 +828,8 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     return avail_pt;
   }
 
-  for (int i = 1; i < std::max(scaled_max_displacement_y_, max_displacement_x_); i++) {
+  for (int i = 1; i < std::max(scaled_max_displacement_y_, max_displacement_x_);
+       i++) {
     PixelPt best_pt;
     int best_dist = 0;
     // left side
