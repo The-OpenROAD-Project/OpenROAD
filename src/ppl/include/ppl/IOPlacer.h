@@ -165,6 +165,10 @@ class IOPlacer
                        std::vector<int> slot_indices,
                        bool top_layer,
                        bool is_group);
+  void placeFallbackPins();
+  void assignMirroredPins(IOPin& io_pin,
+                          MirroredPins& mirrored_pins,
+                          std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position,
                            int layer,
                            std::vector<Slot>& slots);
@@ -177,8 +181,7 @@ class IOPlacer
                     int end,
                     Edge edge,
                     std::vector<Section>& sections);
-  std::vector<Section> createSectionsPerConstraint(
-      const Constraint& constraint);
+  std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins();
   void initConstraints();
