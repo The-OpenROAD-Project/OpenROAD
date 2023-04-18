@@ -254,6 +254,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       layers_menu_layer_(nullptr),
       ignore_callback_(false),
       ignore_selection_(false),
+      default_site_color_(QColor(0, 0xff, 0, 0x70)),
       db_(nullptr),
       logger_(nullptr),
       sta_(nullptr),

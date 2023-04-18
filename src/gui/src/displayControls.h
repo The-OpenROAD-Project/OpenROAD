@@ -466,6 +466,8 @@ class DisplayControls : public QDockWidget,
   bool ignore_callback_;
   bool ignore_selection_;
 
+  QColor default_site_color_;
+
   // Categories in the model
   ModelRow layers_group_;
   ModelRow tracks_group_;
@@ -529,8 +531,6 @@ class DisplayControls : public QDockWidget,
   static constexpr int callback_item_idx_ = Qt::UserRole + 1;
   static constexpr int doubleclick_item_idx_ = Qt::UserRole + 2;
   static constexpr int exclusivity_item_idx_ = Qt::UserRole + 3;
-
-  static constexpr QColor default_site_color_ = QColor(0, 0xff, 0, 0x70);
 };
 
 }  // namespace gui
