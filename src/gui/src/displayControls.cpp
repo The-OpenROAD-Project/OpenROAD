@@ -1284,11 +1284,6 @@ QColor DisplayControls::color(const odb::dbTechLayer* layer)
   if (it != layer_color_.end()) {
     return it->second;
   }
-  logger_->warn(
-      utl::GUI,
-      78,
-      "Layer {} is not a routing or cut layer and will not be displayed",
-      layer->getName());
   return QColor();
 }
 
@@ -1298,11 +1293,6 @@ Qt::BrushStyle DisplayControls::pattern(const odb::dbTechLayer* layer)
   if (it != layer_pattern_.end()) {
     return it->second;
   }
-  logger_->warn(
-      utl::GUI,
-      79,
-      "Layer {} is not a routing or cut layer and will not be displayed",
-      layer->getName());
   return Qt::NoBrush;
 }
 
