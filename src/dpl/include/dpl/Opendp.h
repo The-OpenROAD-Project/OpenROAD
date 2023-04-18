@@ -82,7 +82,6 @@ using odb::Rect;
 struct Pixel;
 struct Group;
 class DplObserver;
-struct LayerInfo;
 
 using Grid = Pixel***;
 using dbMasterSeq = vector<dbMaster*>;
