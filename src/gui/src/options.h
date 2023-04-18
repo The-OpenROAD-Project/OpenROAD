@@ -39,6 +39,7 @@ namespace odb {
 class dbTechLayer;
 class dbNet;
 class dbInst;
+class dbSite;
 }  // namespace odb
 
 namespace gui {
