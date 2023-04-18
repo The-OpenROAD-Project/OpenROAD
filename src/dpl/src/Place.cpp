@@ -725,9 +725,12 @@ bool Opendp::refineMove(Cell* cell)
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
+
   if (pixel_pt.pixel) {
+    int scaled_max_displacement_y_
+      = map_coordinates(max_displacement_y_, row_height_, getRowHeight(cell));
     if (abs(grid_x - pixel_pt.pt.getX()) > max_displacement_x_
-        || abs(grid_y - pixel_pt.pt.getY()) > max_displacement_y_) {
+        || abs(grid_y - pixel_pt.pt.getY()) > scaled_max_displacement_y_) {
       return false;
     }
 
@@ -761,13 +764,17 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
                               int y) const
 {
   // Diamond search limits.
-  // TODO: the mistake is in y coordinates.
-  // consider scaling max_displacement_y_ by row height.
-  // the y is getting received wrong.
   int x_min = x - max_displacement_x_;
-  int y_min = y - max_displacement_y_;
   int x_max = x + max_displacement_x_;
-  int y_max = y + max_displacement_y_;
+  // TODO: IMO, this is still not correct.
+  //  I am scaling based on the smallest row_height to keep code consistent with
+  //  the original code.
+  //  max_displacement_y_ is in microns, and this doesn't translate directly to
+  //  x and y on the grid.
+  int scaled_max_displacement_y_
+      = map_coordinates(max_displacement_y_, row_height_, getRowHeight(cell));
+  int y_min = y - scaled_max_displacement_y_;
+  int y_max = y + scaled_max_displacement_y_;
 
   auto [row_height, layer_info] = getRowInfo(cell);
   int site_width = getSiteWidth(cell);
@@ -821,7 +828,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
     return avail_pt;
   }
 
-  for (int i = 1; i < std::max(max_displacement_y_, max_displacement_x_); i++) {
+  for (int i = 1; i < std::max(scaled_max_displacement_y_, max_displacement_x_); i++) {
     PixelPt best_pt;
     int best_dist = 0;
     // left side
@@ -829,7 +836,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       int x_offset = -((j + 1) / 2);
       int y_offset = (i * 2 - j) / 2;
       if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < max_displacement_y_) {
+          && abs(y_offset) < scaled_max_displacement_y_) {
         if (j % 2 == 1) {
           y_offset = -y_offset;
         }
@@ -852,7 +859,7 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
       int x_offset = (j - 1) / 2;
       int y_offset = ((i + 1) * 2 - j) / 2;
       if (abs(x_offset) < max_displacement_x_
-          && abs(y_offset) < max_displacement_y_) {
+          && abs(y_offset) < scaled_max_displacement_y_) {
         if (j % 2 == 1) {
           y_offset = -y_offset;
         }
