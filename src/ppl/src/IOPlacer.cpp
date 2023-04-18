@@ -846,13 +846,20 @@ bool IOPlacer::groupHasMirroredPin(std::vector<int>& group)
   return false;
 }
 
-int IOPlacer::assignGroupsToSections()
+int IOPlacer::assignGroupsToSections(int& mirrored_pins_cnt)
 {
   int total_pins_assigned = 0;
 
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
     total_pins_assigned
         += assignGroupToSection(io_group.first, sections_, io_group.second);
+
+    for (int pin_idx : io_group.first) {
+      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+      if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+        mirrored_pins_cnt++;
+      }
+    }
   }
 
   return total_pins_assigned;
@@ -919,6 +926,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
     if (!group_assigned) {
       logger_->warn(PPL, 42, "Unsuccessfully assigned I/O groups.");
       addGroupToFallback(io_group, order);
+      total_pins_assigned += io_group.size();
     }
   }
 
@@ -947,7 +955,8 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
 
   createSections();
 
-  int total_pins_assigned = assignGroupsToSections();
+  int mirrored_pins_cnt = 0;
+  int total_pins_assigned = assignGroupsToSections(mirrored_pins_cnt);
 
   // Mirrored pins first
   int idx = 0;
@@ -969,7 +978,7 @@ bool IOPlacer::assignPinsToSections(int assigned_pins_count)
     idx++;
   }
 
-  total_pins_assigned += assigned_pins_count;
+  total_pins_assigned += assigned_pins_count + mirrored_pins_cnt;
 
   if (total_pins_assigned > net->numIOPins()) {
     logger_->error(
