@@ -36,6 +36,7 @@
 #include <cfloat>
 #include <limits>
 #include <string>
+#include <unordered_set>
 
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
@@ -222,7 +223,20 @@ void Opendp::makeGroups()
   // preallocate groups so it does not grow when push_back is called
   // because region cells point to them.
   auto db_groups = block_->getGroups();
-  groups_.reserve(db_groups.size());
+  int reserve_size = 0;
+  for (auto db_group : db_groups) {
+    dbRegion* parent = db_group->getRegion();
+    std::unordered_set<int> unique_heights;
+    if (parent) {
+      for (auto db_inst : db_group->getInsts()) {
+        unique_heights.insert(db_inst_map_[db_inst]->height_);
+      }
+      reserve_size += unique_heights.size();
+    }
+  }
+  reserve_size = std::max(reserve_size, (int) db_groups.size());
+  groups_.reserve(reserve_size);
+
   for (auto db_group : db_groups) {
     dbRegion* parent = db_group->getRegion();
     if (parent) {
