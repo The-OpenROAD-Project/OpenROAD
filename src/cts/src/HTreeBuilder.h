@@ -80,7 +80,7 @@ class SegmentBuilder
   Clock::SubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
 
- protected:
+ private:
   const std::string instPrefix_;
   const std::string netPrefix_;
   Point<double> root_;
@@ -290,7 +290,7 @@ class HTreeBuilder : public TreeBuilder
     return numSinksPerSubRegion < numMaxLeafSinks_;
   }
 
- protected:
+ private:
   utl::Logger* logger_;
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;

@@ -87,6 +87,13 @@ class VoltageDomain;
 class Shape
 {
  public:
+  struct ObstructionHalo
+  {
+    int left;
+    int top;
+    int right;
+    int bottom;
+  };
   enum ShapeType
   {
     SHAPE,
@@ -129,6 +136,9 @@ class Shape
   // surrounding shapes
   void generateObstruction();
   void setObstruction(const odb::Rect& rect) { obs_ = rect; }
+  ObstructionHalo getObstructionHalo() const;
+  odb::Rect getRectWithLargestObstructionHalo(
+      const ObstructionHalo& halo) const;
 
   bool isHorizontal() const { return rect_.dx() > rect_.dy(); }
   bool isSquare() const { return rect_.dx() == rect_.dy(); }

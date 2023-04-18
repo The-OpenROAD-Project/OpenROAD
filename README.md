@@ -37,11 +37,11 @@ design to foster open access, expertise, rapid innovation, and faster
 design turnaround. The OpenROAD application enables flexible flow
 control through an API with bindings in Tcl and Python.
 
-OpenROAD is a foundational building block in open-source digital flows like
-[OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
+OpenROAD is a foundational building block in open-source digital flows
+such as [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
 [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
-[Efabless](https://efabless.com/), Silicon Compiler Systems; as
-well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
+[Efabless](https://efabless.com/), [Silicon Compiler](https://github.com/siliconcompiler/siliconcompiler)
+from Zero ASIC; as well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
 mixed-signal design flows.
 
 OpenROAD users span hardware designers, industry collaborators,
@@ -86,7 +86,7 @@ The OpenROAD application is PDK independent. However, it has been tested
 and validated with specific PDKs in the context of various flow
 controllers.
 
-OpenLane supports Skywater130.
+OpenLane supports SkyWater 130nm.
 
 OpenROAD-flow-scripts supports several public and private PDKs
 including:
@@ -94,7 +94,7 @@ including:
 #### Open-Source PDKs
 
 -   `GF180` - 180nm
--   `Skywater130` - 130nm
+-   `SKY130` - 130nm
 -   `Nangate45` - 45nm
 -   `ASAP7` - Predictive FinFET 7nm
 
@@ -115,8 +115,8 @@ platform-specific files yourself.
 
 ## Tapeouts
 
-OpenROAD has been used for full physical implementation in over 240 tapeouts
-in Sky130 through the Google-sponsored, Efabless [MPW
+OpenROAD has been used for full physical implementation in over 600 tapeouts
+in SKY130 through the Google-sponsored, Efabless [MPW
 shuttle](https://efabless.com/open_shuttle_program) and
 [ChipIgnite](https://efabless.com/) programs.
 
@@ -284,6 +284,7 @@ Below is a list of the available tools/modules included in the OpenROAD app:
 | [ioPlacer](./src/ppl/README.md) | Pin placement |
 | [ICeWall](./src/pad/README.md) | Chip-level connections |
 | [TritonMacroPlacer](./src/mpl/README.md) | Macro placement |
+| [HierRTLMP](./src/mpl2/README.md) | Hierarchical Macro placement |
 | [Tapcell](./src/tap/README.md) | Tapcell insertion |
 | [PDN](./src/pdn/README.md), [PDNSim](./src/psm/README.md) | PDN analysis |
 | [RePlAce](./src/gpl/README.md) | Global placement |

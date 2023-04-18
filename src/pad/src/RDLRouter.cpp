@@ -546,10 +546,11 @@ std::vector<RDLRouter::grid_vertex> RDLRouter::run(const odb::Point& source,
         graph_,
         start,
         RDLRouterDistanceHeuristic(vertex_point_map_, dest),
-        predecessor_map(make_iterator_property_map(
-                            p.begin(), boost::get(vertex_index, graph_)))
-            .distance_map(make_iterator_property_map(
-                d.begin(), boost::get(vertex_index, graph_)))
+        boost::predecessor_map(
+            boost::make_iterator_property_map(
+                p.begin(), boost::get(boost::vertex_index, graph_)))
+            .distance_map(boost::make_iterator_property_map(
+                d.begin(), boost::get(boost::vertex_index, graph_)))
             .visitor(RDLRouterGoalVisitor<grid_vertex>(goal)));
   } catch (const RDLRouterGoalFound&) {  // found a path to the goal
     std::list<grid_vertex> shortest_path;
@@ -573,7 +574,7 @@ void RDLRouter::makeGraph()
   vertex_point_map_.clear();
   graph_.clear();
 
-  graph_weight_ = boost::get(edge_weight, graph_);
+  graph_weight_ = boost::get(boost::edge_weight, graph_);
 
   std::vector<int> x_grid;
   std::vector<int> y_grid;

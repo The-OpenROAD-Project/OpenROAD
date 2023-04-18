@@ -1048,6 +1048,14 @@ dbNetwork::makeTopPort(dbBTerm* bterm)
   setDirection(port, dir);
 }
 
+void
+dbNetwork::setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type)
+{
+  Port* port = findPort(top_cell_, bterm->getConstName());
+  PortDirection* dir = dbToSta(bterm->getSigType(), bterm->getIoType());
+  setDirection(port, dir);
+}
+
 // read_verilog / Verilog2db::makeDbPins leaves a cookie to know if a bus port
 // is msb first or lsb first.
 bool
