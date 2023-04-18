@@ -317,6 +317,7 @@ void IOPlacer::placeFallbackPins()
 {
   // place groups in fallback mode
   for (const auto& group : fallback_pins_.groups) {
+    bool placed = false;
     // check if group is constrained
     int pin_idx = group.first[0];
     odb::dbBTerm* bterm = netlist_io_pins_->getIoPin(pin_idx).getBTerm();
@@ -335,7 +336,17 @@ void IOPlacer::placeFallbackPins()
         int place_slot = getFirstSlotToPlaceGroup(first_slot, last_slot, group.first.size());
 
         placeFallbackGroup(group, place_slot);
+        placed = true;
+        break;
       }
+    }
+
+    if (!placed) {
+      int first_slot = 0;
+      int last_slot = slots_.size() - 1;
+      int place_slot = getFirstSlotToPlaceGroup(first_slot, last_slot, group.first.size());
+
+      placeFallbackGroup(group, place_slot);
     }
   }
 }
