@@ -1,4 +1,5 @@
 record_tests {
+  rounding
   sky130hd_multi_patterned
   dont_touch
   import_package
