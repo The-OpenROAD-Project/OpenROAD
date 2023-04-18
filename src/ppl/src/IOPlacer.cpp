@@ -869,7 +869,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
 
   IOPin& io_pin = net->getIoPin(io_group[0]);
 
-  if (!io_pin.isAssignedToSection()) {
+  if (!io_pin.isAssignedToSection() && !io_pin.inFallback()) {
     std::vector<int64_t> dst(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
       for (int pin_idx : io_group) {
@@ -1600,6 +1600,11 @@ void IOPlacer::run(bool random_mode)
         }
       }
     }
+
+    for (const auto& group : fallback_pins_.groups) {
+      constrained_pins_cnt += group.first.size();
+    }
+    constrained_pins_cnt += fallback_pins_.pins.size();
 
     setupSections(constrained_pins_cnt);
     findPinAssignment(sections_, false);
