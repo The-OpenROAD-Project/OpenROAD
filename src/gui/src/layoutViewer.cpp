@@ -1012,8 +1012,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
     }
   }
 
-  if (options_->areRowsVisible()) {
-    for (const auto& [row, row_site] : getRowRects(search_line)) {
+  for (const auto& [row, row_site] : getRowRects(search_line)) {
+    odb::dbSite* site = nullptr;
+    if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
+      site = static_cast<odb::dbSite*>(row);
+    } else {
+      site = static_cast<odb::dbRow*>(row)->getSite();
+    }
+    if (options_->isSiteVisible(site) && options_->isSiteSelectable(site)) {
       check_rect(row_site);
     }
   }
@@ -1172,15 +1178,24 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
   }
 
-  if (options_->areRowsVisible() && options_->areRowsSelectable()) {
-    for (const auto& [row_obj, rect] : getRowRects(region)) {
-      if (row_obj->getObjectType() == odb::dbObjectType::dbRowObj) {
-        selections.push_back(
-            gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
-      } else {
-        selections.push_back(gui_->makeSelected(DbSiteDescriptor::SpecificSite{
-            static_cast<odb::dbSite*>(row_obj), rect}));
-      }
+  for (const auto& [row_obj, rect] : getRowRects(region)) {
+    odb::dbSite* site = nullptr;
+    if (row_obj->getObjectType() == odb::dbObjectType::dbSiteObj) {
+      site = static_cast<odb::dbSite*>(row_obj);
+    } else {
+      site = static_cast<odb::dbRow*>(row_obj)->getSite();
+    }
+
+    if (!options_->isSiteVisible(site) || !options_->isSiteSelectable(site)) {
+      continue;
+    }
+
+    if (row_obj->getObjectType() == odb::dbObjectType::dbRowObj) {
+      selections.push_back(
+          gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
+    } else {
+      selections.push_back(
+          gui_->makeSelected(DbSiteDescriptor::SpecificSite{site, rect}));
     }
   }
 }
@@ -1677,18 +1692,21 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
 
 void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
 {
-  if (!options_->areRowsVisible()) {
-    return;
-  }
-
-  QPen pen(options_->rowColor());
-  pen.setCosmetic(true);
-  painter->setPen(pen);
-  painter->setBrush(Qt::NoBrush);
-
   for (const auto& [row, row_site] : getRowRects(bounds)) {
-    painter->drawRect(
-        row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
+    odb::dbSite* site = nullptr;
+    if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
+      site = static_cast<odb::dbSite*>(row);
+    } else {
+      site = static_cast<odb::dbRow*>(row)->getSite();
+    }
+    if (options_->isSiteVisible(site)) {
+      QPen pen(options_->siteColor(site));
+      pen.setCosmetic(true);
+      painter->setPen(pen);
+      painter->setBrush(Qt::NoBrush);
+      painter->drawRect(
+          row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
+    }
   }
 }
 
