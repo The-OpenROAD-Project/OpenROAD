@@ -172,6 +172,8 @@ class IOPlacer
   int getSlotIdxByPosition(const odb::Point& position,
                            int layer,
                            std::vector<Slot>& slots);
+  int getFirstSlotToPlaceGroup(int first_slot, int last_slot, int group_size);
+  void placeFallbackGroup(std::pair<std::vector<int>, bool> group, int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();

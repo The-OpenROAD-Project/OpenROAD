@@ -332,39 +332,9 @@ void IOPlacer::placeFallbackPins()
                          group.first.size());
         }
 
-        int max_contiguous_slots = std::numeric_limits<int>::min();
-        int place_slot = 0;
-        for (int s = first_slot; s <= last_slot; s++) {
-          while (s <= last_slot && !slots_[s].isAvailable()) {
-            s++;
-          }
+        int place_slot = getFirstSlotToPlaceGroup(first_slot, last_slot, group.first.size());
 
-          place_slot = s;
-          int contiguous_slots = 0;
-          while (s <= last_slot && slots_[s].isAvailable()) {
-            contiguous_slots++;
-            s++;
-          }
-
-          max_contiguous_slots
-              = std::max(max_contiguous_slots, contiguous_slots);
-          if (max_contiguous_slots >= group.first.size()) {
-            break;
-          }
-        }
-
-        for (int pin_idx : group.first) {
-          IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
-          io_pin.setPos(slots_[place_slot].pos);
-          io_pin.setLayer(slots_[place_slot].layer);
-          assignment_.push_back(io_pin);
-          slots_[place_slot].used = true;
-          slots_[place_slot].blocked = true;
-          place_slot++;
-          if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
-            assignMirroredPins(io_pin, mirrored_pins_, assignment_);
-          }
-        }
+        placeFallbackGroup(group, place_slot);
       }
     }
   }
@@ -412,6 +382,48 @@ int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
   }
 
   return slot_idx;
+}
+
+int IOPlacer::getFirstSlotToPlaceGroup(int first_slot, int last_slot, int group_size)
+{
+  int max_contiguous_slots = std::numeric_limits<int>::min();
+  int place_slot = 0;
+  for (int s = first_slot; s <= last_slot; s++) {
+    while (s <= last_slot && !slots_[s].isAvailable()) {
+      s++;
+    }
+
+    place_slot = s;
+    int contiguous_slots = 0;
+    while (s <= last_slot && slots_[s].isAvailable()) {
+      contiguous_slots++;
+      s++;
+    }
+
+    max_contiguous_slots
+        = std::max(max_contiguous_slots, contiguous_slots);
+    if (max_contiguous_slots >= group_size) {
+      break;
+    }
+  }
+
+  return place_slot;
+}
+
+void IOPlacer::placeFallbackGroup(std::pair<std::vector<int>, bool> group, int place_slot)
+{
+  for (int pin_idx : group.first) {
+    IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+    io_pin.setPos(slots_[place_slot].pos);
+    io_pin.setLayer(slots_[place_slot].layer);
+    assignment_.push_back(io_pin);
+    slots_[place_slot].used = true;
+    slots_[place_slot].blocked = true;
+    place_slot++;
+    if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      assignMirroredPins(io_pin, mirrored_pins_, assignment_);
+    }
+  }
 }
 
 void IOPlacer::initIOLists()
