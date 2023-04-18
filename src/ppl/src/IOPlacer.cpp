@@ -863,13 +863,17 @@ int IOPlacer::assignGroupsToSections(int& mirrored_pins_cnt)
   int total_pins_assigned = 0;
 
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
+    int before_assignment = total_pins_assigned;
     total_pins_assigned
         += assignGroupToSection(io_group.first, sections_, io_group.second);
 
-    for (int pin_idx : io_group.first) {
-      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
-      if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
-        mirrored_pins_cnt++;
+    // check if group was assigned here, and not during constrained groups
+    if (total_pins_assigned > before_assignment) {
+      for (int pin_idx : io_group.first) {
+        IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+        if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+          mirrored_pins_cnt++;
+        }
       }
     }
   }
