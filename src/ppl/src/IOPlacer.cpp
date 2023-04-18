@@ -318,6 +318,14 @@ void IOPlacer::placeFallbackPins()
   // place groups in fallback mode
   for (const auto& group : fallback_pins_.groups) {
     bool placed = false;
+    bool have_mirrored = false;
+    for (const int pin_idx : group.first) {
+      const IOPin& pin = netlist_io_pins_->getIoPin(pin_idx);
+      if (pin.isMirrored()) {
+        have_mirrored = true;
+        break;
+      }
+    }
     // check if group is constrained
     int pin_idx = group.first[0];
     odb::dbBTerm* bterm = netlist_io_pins_->getIoPin(pin_idx).getBTerm();
@@ -333,7 +341,7 @@ void IOPlacer::placeFallbackPins()
                          group.first.size());
         }
 
-        int place_slot = getFirstSlotToPlaceGroup(first_slot, last_slot, group.first.size());
+        int place_slot = getFirstSlotToPlaceGroup(first_slot, last_slot, group.first.size(), have_mirrored);
 
         placeFallbackGroup(group, place_slot);
         placed = true;
@@ -344,7 +352,7 @@ void IOPlacer::placeFallbackPins()
     if (!placed) {
       int first_slot = 0;
       int last_slot = slots_.size() - 1;
-      int place_slot = getFirstSlotToPlaceGroup(first_slot, last_slot, group.first.size());
+      int place_slot = getFirstSlotToPlaceGroup(first_slot, last_slot, group.first.size(), have_mirrored);
 
       placeFallbackGroup(group, place_slot);
     }
@@ -395,20 +403,28 @@ int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
   return slot_idx;
 }
 
-int IOPlacer::getFirstSlotToPlaceGroup(int first_slot, int last_slot, int group_size)
+int IOPlacer::getFirstSlotToPlaceGroup(int first_slot, int last_slot, int group_size, bool check_mirrored)
 {
   int max_contiguous_slots = std::numeric_limits<int>::min();
   int place_slot = 0;
   for (int s = first_slot; s <= last_slot; s++) {
-    while (s <= last_slot && !slots_[s].isAvailable()) {
+    odb::Point mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
+    int mirrored_slot = getSlotIdxByPosition(mirrored_pos, slots_[s].layer, slots_);
+    while (s <= last_slot && (!slots_[s].isAvailable() || !slots_[mirrored_slot].isAvailable())) {
       s++;
+      mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
+      mirrored_slot = getSlotIdxByPosition(mirrored_pos, slots_[s].layer, slots_);
     }
 
     place_slot = s;
     int contiguous_slots = 0;
-    while (s <= last_slot && slots_[s].isAvailable()) {
+    mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
+    mirrored_slot = getSlotIdxByPosition(mirrored_pos, slots_[s].layer, slots_);
+    while (s <= last_slot && slots_[s].isAvailable() && slots_[mirrored_slot].isAvailable()) {
       contiguous_slots++;
       s++;
+      mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
+      mirrored_slot = getSlotIdxByPosition(mirrored_pos, slots_[s].layer, slots_);
     }
 
     max_contiguous_slots
