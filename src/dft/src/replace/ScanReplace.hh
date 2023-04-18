@@ -70,6 +70,22 @@ class ScanCandidate
   std::unordered_map<std::string, std::string> port_mapping_;
 };
 
+class RollbackCandidate
+{
+ public:
+  RollbackCandidate(
+      odb::dbMaster* master,
+      const std::unordered_map<std::string, std::string>& port_mapping);
+
+  odb::dbMaster* getMaster() const;
+
+  const std::unordered_map<std::string, std::string>& getPortMapping() const;
+
+ private:
+  odb::dbMaster* master_;
+  std::unordered_map<std::string, std::string> port_mapping_;
+};
+
 // Performs scan replacement on a OpenROAD's database
 class ScanReplace
 {
@@ -83,6 +99,8 @@ class ScanReplace
   // Perform the scan replacement of the non-scan cells into scan cells.
   // This method changes the design
   void scanReplace();
+
+  void rollbackScanReplace();
 
   // Debug how we are going to replace non-scan lib cells into the available
   // scan lib cells
@@ -98,9 +116,22 @@ class ScanReplace
       non_scan_to_scan_lib_cells_;
   std::unordered_set<sta::LibertyCell*> available_scan_lib_cells_;
 
+  // Map from master->original master
+  std::unordered_map<odb::dbMaster*, std::unique_ptr<RollbackCandidate>>
+      rollback_candidates_;
+
   // Performs the scan replacement on the given block iterating over the
   // internal blocks (if there is any)
   void scanReplace(odb::dbBlock* block);
+
+  // Rollsback the scan replace, replacing the cells with their old master.
+  void rollbackScanReplace(odb::dbBlock* block);
+
+  // Stores the master and scan cell's master so we can perform a rollback later
+  // if we are running in preview_dft
+  void addCellForRollback(odb::dbMaster* master,
+                          odb::dbMaster* master_scan_cell,
+                          const std::unique_ptr<ScanCandidate>& scan_candidate);
 };
 
 }  // namespace dft

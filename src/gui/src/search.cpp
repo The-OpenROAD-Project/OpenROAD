@@ -160,6 +160,11 @@ void Search::inDbRowDestroy(odb::dbRow* row)
   clearRows();
 }
 
+void Search::inDbWirePostModify(odb::dbWire* wire)
+{
+  clearShapes();
+}
+
 void Search::setBlock(odb::dbBlock* block)
 {
   if (block_ != block) {

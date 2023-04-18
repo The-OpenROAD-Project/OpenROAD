@@ -711,9 +711,12 @@ void lefin::layer(lefiLayer* layer)
       } else if (!strcmp(layer->propName(iii), "LEF58_ARRAYSPACING")) {
         ArraySpacingParser parser(l, this);
         valid = parser.parse(layer->propValue(iii));
-      } else if (!strcmp(layer->propName(iii), "LEF58_TYPE"))
+      } else if (!strcmp(layer->propName(iii), "LEF58_TYPE")) {
         valid = lefTechLayerTypeParser::parse(layer->propValue(iii), l, this);
-      else
+      } else if (!strcmp(layer->propName(iii), "LEF58_KEEPOUTZONE")) {
+        KeepOutZoneParser parser(l, this);
+        parser.parse(layer->propValue(iii));
+      } else
         supported = false;
     } else if (type.getValue() == dbTechLayerType::MASTERSLICE) {
       if (!strcmp(layer->propName(iii), "LEF58_TYPE"))

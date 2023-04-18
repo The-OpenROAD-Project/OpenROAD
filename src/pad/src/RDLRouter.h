@@ -59,8 +59,6 @@ class Logger;
 
 namespace pad {
 
-using namespace boost;
-
 class RDLRouter;
 
 class RDLGui : public gui::Renderer
@@ -126,13 +124,15 @@ class RDLRouter
       = boost::geometry::index::rtree<ObsValue,
                                       boost::geometry::index::quadratic<16>>;
 
-  using GridGraph = adjacency_list<listS,
-                                   vecS,
-                                   undirectedS,
-                                   no_property,
-                                   property<edge_weight_t, int64_t>>;
+  using GridGraph
+      = boost::adjacency_list<boost::listS,
+                              boost::vecS,
+                              boost::undirectedS,
+                              boost::no_property,
+                              boost::property<boost::edge_weight_t, int64_t>>;
 
-  using GridWeightMap = property_map<GridGraph, edge_weight_t>::type;
+  using GridWeightMap
+      = boost::property_map<GridGraph, boost::edge_weight_t>::type;
   using grid_vertex = GridGraph::vertex_descriptor;
   using grid_edge = GridGraph::edge_descriptor;
 

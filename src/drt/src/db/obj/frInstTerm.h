@@ -46,16 +46,11 @@ class frInstTerm : public frBlockObject
  public:
   // constructors
   frInstTerm(frInst* inst, frMTerm* term)
-      : inst_(inst), term_(term), net_(nullptr), ap_(), index_in_owner_(0)
+      : inst_(inst), term_(term), net_(nullptr), ap_()
   {
   }
   frInstTerm(const frInstTerm& in)
-      : frBlockObject(),
-        inst_(in.inst_),
-        term_(in.term_),
-        net_(in.net_),
-        ap_(),
-        index_in_owner_(0)
+      : frBlockObject(), inst_(in.inst_), term_(in.term_), net_(in.net_), ap_()
   {
   }
   // getters
@@ -81,11 +76,13 @@ class frInstTerm : public frBlockObject
   int getIndexInOwner() const { return index_in_owner_; }
 
  private:
+  // Place this first so it is adjacent to "int id_" inherited from
+  // frBlockObject, saving 8 bytes.
+  int index_in_owner_{0};
   frInst* inst_;
   frMTerm* term_;
   frNet* net_;
   std::vector<frAccessPoint*> ap_;  // follows pin index
-  int index_in_owner_;
 };
 
 }  // namespace fr

@@ -1280,12 +1280,20 @@ const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
 
 QColor DisplayControls::color(const odb::dbTechLayer* layer)
 {
-  return layer_color_.at(layer);
+  auto it = layer_color_.find(layer);
+  if (it != layer_color_.end()) {
+    return it->second;
+  }
+  return QColor();
 }
 
 Qt::BrushStyle DisplayControls::pattern(const odb::dbTechLayer* layer)
 {
-  return layer_pattern_.at(layer);
+  auto it = layer_pattern_.find(layer);
+  if (it != layer_pattern_.end()) {
+    return it->second;
+  }
+  return Qt::NoBrush;
 }
 
 QColor DisplayControls::placementBlockageColor()

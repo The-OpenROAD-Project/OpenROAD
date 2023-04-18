@@ -67,6 +67,7 @@
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 // must be loaded in global namespace
 static void loadQTResources()
@@ -1375,17 +1376,16 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
     } else {
       const double dbu_per_micron = block->getDbUnitsPerMicron();
 
-      std::stringstream ss;
       const int precision = std::ceil(std::log10(dbu_per_micron));
       const double micron_value = value / dbu_per_micron;
 
-      ss << std::fixed << std::setprecision(precision) << micron_value;
+      auto str = utl::to_numeric_string(micron_value, precision);
 
       if (add_units) {
-        ss << " \u03BCm";  // micro meter
+        str += " \u03BCm";  // micro meter
       }
 
-      return ss.str();
+      return str;
     }
   }
 }

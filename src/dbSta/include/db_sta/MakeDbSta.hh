@@ -33,10 +33,6 @@
 
 #pragma once
 
-namespace odb {
-class dbDatabase;
-}
-
 namespace sta {
 class dbSta;
 }

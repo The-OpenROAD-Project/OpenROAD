@@ -108,7 +108,7 @@ void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
       int x, y;
       box->getViaXY(x, y);
       fprintf(_out,
-              "%sVIA %g %g %s ;\n",
+              "%sVIA %.11g %.11g %s ;\n",
               indent,
               lefdist(x),
               lefdist(y),
@@ -139,7 +139,7 @@ void lefout::writeBox(const std::string& indent, dbBox* box)
   int y2 = box->yMax();
 
   fprintf(_out,
-          "%s  RECT  %g %g %g %g ;\n",
+          "%s  RECT  %.11g %.11g %.11g %.11g ;\n",
           indent.c_str(),
           lefdist(x1),
           lefdist(y1),
@@ -156,7 +156,7 @@ void lefout::writeRect(const std::string& indent,
   int y2 = boost::polygon::yh(rect);
 
   fprintf(_out,
-          "%s  RECT  %g %g %g %g ;\n",
+          "%s  RECT  %.11g %.11g %.11g %.11g ;\n",
           indent.c_str(),
           lefdist(x1),
           lefdist(y1),
@@ -382,8 +382,8 @@ void lefout::writeBlock(dbBlock* db_block)
   fprintf(_out, "MACRO %s\n", db_block->getName().c_str());
   fprintf(_out, "  FOREIGN %s 0 0 ;\n", db_block->getName().c_str());
   fprintf(_out, "  CLASS BLOCK ;\n");
-  fprintf(_out, "  ORIGIN %g %g ;\n", origin_x, origin_y);
-  fprintf(_out, "  SIZE %g BY %g ;\n", size_x, size_y);
+  fprintf(_out, "  ORIGIN %.11g %.11g ;\n", origin_x, origin_y);
+  fprintf(_out, "  SIZE %.11g BY %.11g ;\n", size_x, size_y);
   writePins(db_block);
   writeObstructions(db_block);
   fprintf(_out, "END %s\n", db_block->getName().c_str());
@@ -461,7 +461,7 @@ void lefout::writeTech(dbTech* tech)
 
   if (tech->hasManufacturingGrid())
     fprintf(_out,
-            "MANUFACTURINGGRID %.4g ;\n",
+            "MANUFACTURINGGRID %.11g ;\n",
             lefdist(tech->getManufacturingGrid()));
 
   dbSet<dbTechLayer> layers = tech->getLayers();
@@ -616,23 +616,25 @@ void lefout::writeLayerRule(dbTechLayerRule* rule)
   fprintf(_out, "\nLAYER %s\n", name.c_str());
 
   if (rule->getWidth())
-    fprintf(_out, "    WIDTH %g ;\n", lefdist(rule->getWidth()));
+    fprintf(_out, "    WIDTH %.11g ;\n", lefdist(rule->getWidth()));
 
   if (rule->getSpacing())
-    fprintf(_out, "    SPACING %g ;\n", lefdist(rule->getSpacing()));
+    fprintf(_out, "    SPACING %.11g ;\n", lefdist(rule->getSpacing()));
 
   if (rule->getWireExtension() != 0.0)
     fprintf(
-        _out, "    WIREEXTENSION %g ;\n", lefdist(rule->getWireExtension()));
+        _out, "    WIREEXTENSION %.11g ;\n", lefdist(rule->getWireExtension()));
 
   if (rule->getResistance() != 0.0)
-    fprintf(_out, "    RESISTANCE RPERSQ %g ;\n", rule->getResistance());
+    fprintf(_out, "    RESISTANCE RPERSQ %.11g ;\n", rule->getResistance());
 
   if (rule->getCapacitance() != 0.0)
-    fprintf(_out, "    CAPACITANCE CPERSQDIST %g ;\n", rule->getCapacitance());
+    fprintf(
+        _out, "    CAPACITANCE CPERSQDIST %.11g ;\n", rule->getCapacitance());
 
   if (rule->getEdgeCapacitance() != 0.0)
-    fprintf(_out, "      EDGECAPACITANCE %g ;\n", rule->getEdgeCapacitance());
+    fprintf(
+        _out, "      EDGECAPACITANCE %.11g ;\n", rule->getEdgeCapacitance());
 
   fprintf(_out, "END %s\n", name.c_str());
 }
@@ -658,7 +660,8 @@ void lefout::writeTechViaRule(dbTechViaRule* rule)
     if (layrule->hasWidth()) {
       int minW, maxW;
       layrule->getWidth(minW, maxW);
-      fprintf(_out, "      WIDTH %g TO %g ;\n", lefdist(minW), lefdist(maxW));
+      fprintf(
+          _out, "      WIDTH %.11g TO %.11g ;\n", lefdist(minW), lefdist(maxW));
     }
   }
 
@@ -694,18 +697,19 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
       fprintf(_out, "      DIRECTION HORIZONTAL ;\n");
 
     if (layrule->hasOverhang())
-      fprintf(_out, "      OVERHANG %g ;\n", lefdist(layrule->getOverhang()));
+      fprintf(
+          _out, "      OVERHANG %.11g ;\n", lefdist(layrule->getOverhang()));
 
     if (layrule->hasMetalOverhang())
       fprintf(_out,
-              "      METALOVERHANG %g ;\n",
+              "      METALOVERHANG %.11g ;\n",
               lefdist(layrule->getMetalOverhang()));
 
     if (layrule->hasEnclosure()) {
       int overhang1, overhang2;
       layrule->getEnclosure(overhang1, overhang2);
       fprintf(_out,
-              "      ENCLOSURE %g %g ;\n",
+              "      ENCLOSURE %.11g %.11g ;\n",
               lefdist(overhang1),
               lefdist(overhang2));
     }
@@ -713,14 +717,15 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
     if (layrule->hasWidth()) {
       int minW, maxW;
       layrule->getWidth(minW, maxW);
-      fprintf(_out, "      WIDTH %g TO %g ;\n", lefdist(minW), lefdist(maxW));
+      fprintf(
+          _out, "      WIDTH %.11g TO %.11g ;\n", lefdist(minW), lefdist(maxW));
     }
 
     if (layrule->hasRect()) {
       Rect r;
       layrule->getRect(r);
       fprintf(_out,
-              "      RECT  %g %g  %g %g  ;\n",
+              "      RECT  %.11g %.11g  %.11g %.11g  ;\n",
               lefdist(r.xMin()),
               lefdist(r.yMin()),
               lefdist(r.xMax()),
@@ -731,13 +736,13 @@ void lefout::writeTechViaGenerateRule(dbTechViaGenerateRule* rule)
       int spacing_x, spacing_y;
       layrule->getSpacing(spacing_x, spacing_y);
       fprintf(_out,
-              "      SPACING %g BY %g ;\n",
+              "      SPACING %.11g BY %.11g ;\n",
               lefdist(spacing_x),
               lefdist(spacing_y));
     }
 
     if (layrule->hasResistance())
-      fprintf(_out, "      RESISTANCE %g ;\n", layrule->getResistance());
+      fprintf(_out, "      RESISTANCE %.11g ;\n", layrule->getResistance());
   }
 
   fprintf(_out, "END %s\n", name.c_str());
@@ -762,13 +767,13 @@ void lefout::writeSameNetRule(dbTechSameNetRule* rule)
 
   if (rule->getAllowStackedVias())
     fprintf(_out,
-            "  SAMENET %s %s %g STACK ;\n",
+            "  SAMENET %s %s %.11g STACK ;\n",
             n1.c_str(),
             n2.c_str(),
             lefdist(rule->getSpacing()));
   else
     fprintf(_out,
-            "  SAMENET %s %s %g ;\n",
+            "  SAMENET %s %s %.11g ;\n",
             n1.c_str(),
             n2.c_str(),
             lefdist(rule->getSpacing()));
@@ -789,31 +794,32 @@ void lefout::writeLayer(dbTechLayer* layer)
     fprintf(_out, "    MASK %u ;\n", layer->getNumMasks());
 
   if (layer->getPitch())
-    fprintf(_out, "    PITCH %g ;\n", lefdist(layer->getPitch()));
+    fprintf(_out, "    PITCH %.11g ;\n", lefdist(layer->getPitch()));
 
   if (layer->getWidth())
-    fprintf(_out, "    WIDTH %g ;\n", lefdist(layer->getWidth()));
+    fprintf(_out, "    WIDTH %.11g ;\n", lefdist(layer->getWidth()));
 
   if (layer->getWireExtension() != 0.0)
-    fprintf(
-        _out, "    WIREEXTENSION %g ;\n", lefdist(layer->getWireExtension()));
+    fprintf(_out,
+            "    WIREEXTENSION %.11g ;\n",
+            lefdist(layer->getWireExtension()));
 
   if (layer->hasArea())
-    fprintf(_out, "    AREA %g ;\n", layer->getArea());
+    fprintf(_out, "    AREA %.11g ;\n", layer->getArea());
 
   uint thickness;
   if (layer->getThickness(thickness))
-    fprintf(_out, "    THICKNESS %.3f ;\n", lefdist(thickness));
+    fprintf(_out, "    THICKNESS %.11g ;\n", lefdist(thickness));
 
   if (layer->hasMaxWidth())
-    fprintf(_out, "    MAXWIDTH %.3f ;\n", lefdist(layer->getMaxWidth()));
+    fprintf(_out, "    MAXWIDTH %.11g ;\n", lefdist(layer->getMaxWidth()));
 
   if (layer->hasMinStep())
-    fprintf(_out, "    MINSTEP %.3f ;\n", lefdist(layer->getMinStep()));
+    fprintf(_out, "    MINSTEP %.11g ;\n", lefdist(layer->getMinStep()));
 
   if (layer->hasProtrusion())
     fprintf(_out,
-            "    PROTRUSIONWIDTH %.3f  LENGTH %.3f  WIDTH %.3f ;\n",
+            "    PROTRUSIONWIDTH %.11g  LENGTH %.11g  WIDTH %.11g ;\n",
             lefdist(layer->getProtrusionWidth()),
             lefdist(layer->getProtrusionLength()),
             lefdist(layer->getProtrusionFromWidth()));
@@ -854,17 +860,18 @@ void lefout::writeLayer(dbTechLayer* layer)
 
   if (layer->getResistance() != 0.0) {
     if (layer->getType() == dbTechLayerType::CUT) {
-      fprintf(_out, "    RESISTANCE %g ;\n", layer->getResistance());
+      fprintf(_out, "    RESISTANCE %.11g ;\n", layer->getResistance());
     } else {
-      fprintf(_out, "    RESISTANCE RPERSQ %g ;\n", layer->getResistance());
+      fprintf(_out, "    RESISTANCE RPERSQ %.11g ;\n", layer->getResistance());
     }
   }
 
   if (layer->getCapacitance() != 0.0)
-    fprintf(_out, "    CAPACITANCE CPERSQDIST %g ;\n", layer->getCapacitance());
+    fprintf(
+        _out, "    CAPACITANCE CPERSQDIST %.11g ;\n", layer->getCapacitance());
 
   if (layer->getEdgeCapacitance() != 0.0)
-    fprintf(_out, "    EDGECAPACITANCE %g ;\n", layer->getEdgeCapacitance());
+    fprintf(_out, "    EDGECAPACITANCE %.11g ;\n", layer->getEdgeCapacitance());
 
   dbProperty::writeProperties(layer, _out);
 
@@ -884,7 +891,7 @@ void lefout::writeVia(dbTechVia* via)
     fprintf(_out, "    TOPOFSTACKONLY\n");
 
   if (via->getResistance() != 0.0)
-    fprintf(_out, "    RESISTANCE %g ;\n", via->getResistance());
+    fprintf(_out, "    RESISTANCE %.11g ;\n", via->getResistance());
 
   dbTechViaGenerateRule* rule = via->getViaGenerateRule();
 
@@ -899,7 +906,7 @@ void lefout::writeVia(dbTechVia* via)
     via->getViaParams(P);
 
     fprintf(_out,
-            " + CUTSIZE %g %g ",
+            " + CUTSIZE %.11g %.11g ",
             lefdist(P.getXCutSize()),
             lefdist(P.getYCutSize()));
     std::string top = P.getTopLayer()->getName();
@@ -907,11 +914,11 @@ void lefout::writeVia(dbTechVia* via)
     std::string cut = P.getCutLayer()->getName();
     fprintf(_out, " + LAYERS %s %s %s ", bot.c_str(), cut.c_str(), top.c_str());
     fprintf(_out,
-            " + CUTSPACING %g %g ",
+            " + CUTSPACING %.11g %.11g ",
             lefdist(P.getXCutSpacing()),
             lefdist(P.getYCutSpacing()));
     fprintf(_out,
-            " + ENCLOSURE %g %g %g %g ",
+            " + ENCLOSURE %.11g %.11g %.11g %.11g ",
             lefdist(P.getXBottomEnclosure()),
             lefdist(P.getYBottomEnclosure()),
             lefdist(P.getXTopEnclosure()),
@@ -922,14 +929,14 @@ void lefout::writeVia(dbTechVia* via)
 
     if ((P.getXOrigin() != 0) || (P.getYOrigin() != 0))
       fprintf(_out,
-              " + ORIGIN %g %g ",
+              " + ORIGIN %.11g %.11g ",
               lefdist(P.getXOrigin()),
               lefdist(P.getYOrigin()));
 
     if ((P.getXTopOffset() != 0) || (P.getYTopOffset() != 0)
         || (P.getXBottomOffset() != 0) || (P.getYBottomOffset() != 0))
       fprintf(_out,
-              " + OFFSET %g %g %g %g ",
+              " + OFFSET %.11g %.11g %.11g %.11g ",
               lefdist(P.getXBottomOffset()),
               lefdist(P.getYBottomOffset()),
               lefdist(P.getXTopOffset()),
@@ -990,7 +997,7 @@ void lefout::writeSite(dbSite* site)
 
   if (site->getWidth() || site->getHeight())
     fprintf(_out,
-            "    SIZE %g BY %g ;\n",
+            "    SIZE %.11g BY %.11g ;\n",
             lefdist(site->getWidth()),
             lefdist(site->getHeight()));
 
@@ -1013,7 +1020,7 @@ void lefout::writeMaster(dbMaster* master)
   master->getOrigin(x, y);
 
   if ((x != 0) || (y != 0))
-    fprintf(_out, "    ORIGIN %g %g ;\n", lefdist(x), lefdist(y));
+    fprintf(_out, "    ORIGIN %.11g %.11g ;\n", lefdist(x), lefdist(y));
 
   if (master->getEEQ()) {
     std::string eeq = master->getEEQ()->getName();
@@ -1035,7 +1042,7 @@ void lefout::writeMaster(dbMaster* master)
   int h = master->getHeight();
 
   if ((w != 0) || (h != 0))
-    fprintf(_out, "    SIZE %g BY %g ;\n", lefdist(w), lefdist(h));
+    fprintf(_out, "    SIZE %.11g BY %.11g ;\n", lefdist(w), lefdist(h));
 
   if (master->getSymmetryX() || master->getSymmetryY()
       || master->getSymmetryR90()) {
