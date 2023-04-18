@@ -249,7 +249,7 @@ class DisplayControls : public QDockWidget,
   virtual void postReadDb() override;
 
   // API from dbBlockCallBackObj
-  virtual void inDbRowCreate(odb::dbRow*) override;
+  void inDbRowCreate(odb::dbRow*) override;
 
  signals:
   // The display options have changed and clients need to update
