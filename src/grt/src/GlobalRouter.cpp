@@ -2968,43 +2968,50 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
 {
   layer_extensions.resize(routing_layers_.size() + 1, 0);
 
+  int min_layer = min_layer_for_clock_ > 0
+                      ? std::min(min_routing_layer_, min_layer_for_clock_)
+                      : min_routing_layer_;
+  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+
   for (auto const& [level, obstruct_layer] : routing_layers_) {
-    int max_int = std::numeric_limits<int>::max();
+    if (level >= min_layer && level <= max_layer) {
+      int max_int = std::numeric_limits<int>::max();
 
-    // Gets the smallest possible minimum spacing that won't cause violations
-    // for ANY configuration of PARALLELRUNLENGTH (the biggest value in the
-    // table)
+      // Gets the smallest possible minimum spacing that won't cause violations
+      // for ANY configuration of PARALLELRUNLENGTH (the biggest value in the
+      // table)
 
-    int spacing_extension = obstruct_layer->getSpacing(max_int, max_int);
+      int spacing_extension = obstruct_layer->getSpacing(max_int, max_int);
 
-    // Check for EOL spacing values and, if the spacing is higher than the one
-    // found, use them as the macro extension instead of PARALLELRUNLENGTH
+      // Check for EOL spacing values and, if the spacing is higher than the one
+      // found, use them as the macro extension instead of PARALLELRUNLENGTH
 
-    for (auto rule : obstruct_layer->getV54SpacingRules()) {
-      int spacing = rule->getSpacing();
-      if (spacing > spacing_extension) {
-        spacing_extension = spacing;
-      }
-    }
-
-    // Check for TWOWIDTHS table values and, if the spacing is higher than the
-    // one found, use them as the macro extension instead of PARALLELRUNLENGTH
-
-    if (obstruct_layer->hasTwoWidthsSpacingRules()) {
-      std::vector<std::vector<uint>> spacing_table;
-      obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
-      if (!spacing_table.empty()) {
-        std::vector<uint> last_row = spacing_table.back();
-        uint last_value = last_row.back();
-        if (last_value > spacing_extension) {
-          spacing_extension = last_value;
+      for (auto rule : obstruct_layer->getV54SpacingRules()) {
+        int spacing = rule->getSpacing();
+        if (spacing > spacing_extension) {
+          spacing_extension = spacing;
         }
       }
+
+      // Check for TWOWIDTHS table values and, if the spacing is higher than the
+      // one found, use them as the macro extension instead of PARALLELRUNLENGTH
+
+      if (obstruct_layer->hasTwoWidthsSpacingRules()) {
+        std::vector<std::vector<uint>> spacing_table;
+        obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
+        if (!spacing_table.empty()) {
+          std::vector<uint> last_row = spacing_table.back();
+          uint last_value = last_row.back();
+          if (last_value > spacing_extension) {
+            spacing_extension = last_value;
+          }
+        }
+      }
+
+      // Save the extension to use when defining Macros
+
+      layer_extensions[level] = spacing_extension;
     }
-
-    // Save the extension to use when defining Macros
-
-    layer_extensions[level] = spacing_extension;
   }
 }
 
