@@ -448,7 +448,7 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
   return place_slot;
 }
 
-void IOPlacer::placeFallbackGroup(std::pair<std::vector<int>, bool> group,
+void IOPlacer::placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                                   int place_slot)
 {
   for (int pin_idx : group.first) {
@@ -999,7 +999,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
 
 void IOPlacer::addGroupToFallback(const std::vector<int>& pin_group, bool order)
 {
-  fallback_pins_.groups.push_back({pin_group, order});
+  fallback_pins_.groups.emplace_back(pin_group, order);
   for (int pin_idx : pin_group) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
     io_pin.setFallback();
@@ -1323,9 +1323,9 @@ void IOPlacer::updatePinArea(IOPin& pin)
   }
 }
 
-long int IOPlacer::computeIONetsHPWL(Netlist* netlist)
+int64 IOPlacer::computeIONetsHPWL(Netlist* netlist)
 {
-  long int hpwl = 0;
+  int64 hpwl = 0;
   int idx = 0;
   for (IOPin& io_pin : netlist->getIOPins()) {
     hpwl += netlist->computeIONetHPWL(idx, io_pin.getPosition());
@@ -1335,7 +1335,7 @@ long int IOPlacer::computeIONetsHPWL(Netlist* netlist)
   return hpwl;
 }
 
-long int IOPlacer::computeIONetsHPWL()
+int64 IOPlacer::computeIONetsHPWL()
 {
   return computeIONetsHPWL(netlist_.get());
 }
@@ -1699,7 +1699,7 @@ void IOPlacer::run(bool random_mode)
   }
 
   if (!random_mode) {
-    long int total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
+    int64 total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
     logger_->info(PPL,
                   12,
                   "I/O nets HPWL: {:.2f} um.",

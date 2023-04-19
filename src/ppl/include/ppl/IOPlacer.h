@@ -111,6 +111,8 @@ enum class Direction
   invalid
 };
 
+using int64 = std::int64_t;
+
 class IOPlacer
 {
  public:
@@ -122,7 +124,7 @@ class IOPlacer
   void run(bool random_mode);
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
-  long int computeIONetsHPWL();
+  int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
   void addNamesConstraint(PinSet* pins, Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction,
@@ -176,7 +178,7 @@ class IOPlacer
                                int last_slot,
                                int group_size,
                                bool check_mirrored);
-  void placeFallbackGroup(std::pair<std::vector<int>, bool> group,
+  void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
   void findSlotsForTopLayer();
@@ -219,7 +221,7 @@ class IOPlacer
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
                                          Netlist* netlist,
                                          bool mirrored_only);
-  long int computeIONetsHPWL(Netlist* netlist);
+  int64 computeIONetsHPWL(Netlist* netlist);
   void findPinAssignment(std::vector<Section>& sections,
                          bool mirrored_groups_only);
   void updateSlots();

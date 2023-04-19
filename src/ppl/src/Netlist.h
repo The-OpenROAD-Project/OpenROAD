@@ -99,8 +99,7 @@ class IOPin
         is_placed_(false),
         in_group_(false),
         assigned_to_section_(false),
-        is_mirrored_(false),
-        in_fallback_(false)
+        is_mirrored_(false)
   {
   }
 
@@ -159,7 +158,7 @@ class IOPin
   bool in_group_;
   bool assigned_to_section_;
   bool is_mirrored_;
-  bool in_fallback_;
+  bool in_fallback_{false};
 };
 
 class Netlist
