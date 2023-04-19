@@ -750,7 +750,8 @@ void BinGrid::initBins()
     // find binCnt: 2, 4, 8, 16, 32, 64, ...
     // s.t. #bins(binCnt) <= idealBinCnt <= #bins(binCnt*2).
     for (foundBinCnt = 2; foundBinCnt <= 1024; foundBinCnt *= 2) {
-      if (foundBinCnt * (foundBinCnt * ratio) <= idealBinCnt
+      if ((foundBinCnt == 2
+           || foundBinCnt * (foundBinCnt * ratio) <= idealBinCnt)
           && 4 * foundBinCnt * (foundBinCnt * ratio) > idealBinCnt) {
         break;
       }

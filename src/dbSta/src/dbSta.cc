@@ -139,6 +139,7 @@ public:
   virtual void inDbBTermPreDisconnect(dbBTerm* bterm) override;
   virtual void inDbBTermCreate(dbBTerm*) override;
   virtual void inDbBTermDestroy(dbBTerm* bterm) override;
+  virtual void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
 
 private:
   dbSta* sta_;
@@ -623,6 +624,12 @@ dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)
 {
   sta_->disconnectPin(network_->dbToSta(bterm));
   // sta::NetworkEdit does not support port removal.
+}
+
+void
+dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
+{
+  sta_->getDbNetwork()->setTopPortDirection(bterm, io_type);
 }
 
 ////////////////////////////////////////////////////////////////

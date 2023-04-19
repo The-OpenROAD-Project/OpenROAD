@@ -39,6 +39,7 @@ namespace odb {
 class dbTechLayer;
 class dbNet;
 class dbInst;
+class dbSite;
 }  // namespace odb
 
 namespace gui {
@@ -57,7 +58,7 @@ class Options
   virtual Qt::BrushStyle regionPattern() = 0;
   virtual QColor instanceNameColor() = 0;
   virtual QFont instanceNameFont() = 0;
-  virtual QColor rowColor() = 0;
+  virtual QColor siteColor(odb::dbSite* site) = 0;
   virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
   virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;
   virtual bool isNetVisible(odb::dbNet* net) = 0;
@@ -72,8 +73,8 @@ class Options
   virtual bool areBlockagesSelectable() = 0;
   virtual bool areObstructionsVisible() = 0;
   virtual bool areObstructionsSelectable() = 0;
-  virtual bool areRowsVisible() = 0;
-  virtual bool areRowsSelectable() = 0;
+  virtual bool isSiteSelectable(odb::dbSite* site) = 0;
+  virtual bool isSiteVisible(odb::dbSite* site) = 0;
   virtual bool arePrefTracksVisible() = 0;
   virtual bool areNonPrefTracksVisible() = 0;
 
