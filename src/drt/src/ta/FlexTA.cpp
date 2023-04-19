@@ -99,8 +99,11 @@ int FlexTAWorker::main_mt()
   return 0;
 }
 
-FlexTA::FlexTA(frDesign* in, Logger* logger)
-    : tech_(in->getTech()), design_(in), logger_(logger)
+FlexTA::FlexTA(frDesign* in, Logger* logger, bool save_updates)
+    : tech_(in->getTech()),
+      design_(in),
+      logger_(logger),
+      save_updates_(save_updates)
 {
 }
 
@@ -120,7 +123,8 @@ int FlexTA::initTA_helper(int iter,
   vector<vector<unique_ptr<FlexTAWorker>>> workers;
   if (isH) {
     for (int i = offset; i < (int) ygp.getCount(); i += size) {
-      auto uworker = make_unique<FlexTAWorker>(getDesign(), logger_);
+      auto uworker
+          = make_unique<FlexTAWorker>(getDesign(), logger_, save_updates_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(0, i));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(
@@ -141,7 +145,8 @@ int FlexTA::initTA_helper(int iter,
     }
   } else {
     for (int i = offset; i < (int) xgp.getCount(); i += size) {
-      auto uworker = make_unique<FlexTAWorker>(getDesign(), logger_);
+      auto uworker
+          = make_unique<FlexTAWorker>(getDesign(), logger_, save_updates_);
       auto& worker = *(uworker.get());
       Rect beginBox = getDesign()->getTopBlock()->getGCellBox(Point(i, 0));
       Rect endBox = getDesign()->getTopBlock()->getGCellBox(

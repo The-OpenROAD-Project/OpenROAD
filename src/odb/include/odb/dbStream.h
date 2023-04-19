@@ -370,6 +370,9 @@ class dbIStream
       c = NULL;
     else {
       c = (char*) malloc(l);
+      if (!c) {
+        read_error();
+      }
       int n = fread(c, l, 1, _f);
       if (n != 1)
         read_error();

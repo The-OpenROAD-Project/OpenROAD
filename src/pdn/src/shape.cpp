@@ -45,7 +45,7 @@ namespace pdn {
 Shape::Shape(odb::dbTechLayer* layer,
              odb::dbNet* net,
              const odb::Rect& rect,
-             odb::dbWireShapeType type)
+             const odb::dbWireShapeType& type)
     : layer_(layer),
       net_(net),
       rect_(rect),
@@ -71,9 +71,7 @@ Shape::Shape(odb::dbTechLayer* layer,
 {
 }
 
-Shape::~Shape()
-{
-}
+Shape::~Shape() = default;
 
 utl::Logger* Shape::getLogger() const
 {
@@ -101,19 +99,39 @@ void Shape::merge(Shape* shape)
   generateObstruction();
 }
 
-const Box Shape::rectToBox(const odb::Rect& rect)
+Box Shape::rectToBox(const odb::Rect& rect)
 {
   return Box(Point(rect.xMin(), rect.yMin()), Point(rect.xMax(), rect.yMax()));
 }
 
-const Box Shape::getRectBox() const
+Box Shape::getRectBox() const
 {
   return rectToBox(rect_);
 }
 
-const Box Shape::getObstructionBox() const
+Box Shape::getObstructionBox() const
 {
   return rectToBox(obs_);
+}
+
+Shape::ObstructionHalo Shape::getObstructionHalo() const
+{
+  return {rect_.xMin() - obs_.xMin(),
+          obs_.yMax() - rect_.yMax(),
+          obs_.xMax() - rect_.xMax(),
+          rect_.yMin() - obs_.yMin()};
+}
+
+odb::Rect Shape::getRectWithLargestObstructionHalo(
+    const ObstructionHalo& halo) const
+{
+  const ObstructionHalo obs = getObstructionHalo();
+  odb::Rect obs_rect = rect_;
+  obs_rect.set_xlo(obs_rect.xMin() - std::max(obs.left, halo.left));
+  obs_rect.set_yhi(obs_rect.yMax() + std::max(obs.top, halo.top));
+  obs_rect.set_xhi(obs_rect.xMax() + std::max(obs.right, halo.right));
+  obs_rect.set_ylo(obs_rect.yMin() - std::max(obs.bottom, halo.bottom));
+  return obs_rect;
 }
 
 int Shape::getNumberOfConnections() const
@@ -193,7 +211,7 @@ bool Shape::hasTermConnections() const
   return !bterm_connections_.empty() || !iterm_connections_.empty();
 }
 
-const odb::Rect Shape::getMinimumRect() const
+odb::Rect Shape::getMinimumRect() const
 {
   odb::Rect intersected_rect;
   intersected_rect.mergeInit();
@@ -244,6 +262,8 @@ bool Shape::cut(const ShapeTree& obstructions,
 
   const bool is_horizontal = isHorizontal();
 
+  const ObstructionHalo obs_halo = getObstructionHalo();
+
   std::vector<Polygon90> shape_violations;
   for (auto it
        = obstructions.qbegin(bgi::intersects(getObstructionBox())
@@ -256,7 +276,8 @@ bool Shape::cut(const ShapeTree& obstructions,
        it != obstructions.qend();
        it++) {
     auto other_shape = it->second;
-    odb::Rect vio_rect = other_shape->getObstruction();
+    odb::Rect vio_rect
+        = other_shape->getRectWithLargestObstructionHalo(obs_halo);
 
     // ensure the violation overlap fully with the shape to make cut correctly
     if (is_horizontal) {
@@ -478,7 +499,7 @@ void Shape::generateObstruction()
   obs_.merge(eol_rect);
 }
 
-const std::string Shape::getDisplayText() const
+std::string Shape::getDisplayText() const
 {
   const std::string seperator = ":";
   std::string text;
@@ -514,7 +535,7 @@ bool Shape::isModifiable() const
   return shape_type_ == SHAPE;
 }
 
-const std::string Shape::getReportText() const
+std::string Shape::getReportText() const
 {
   std::string text
       = fmt::format("{} on {}",
@@ -527,8 +548,7 @@ const std::string Shape::getReportText() const
   return text;
 }
 
-const std::string Shape::getRectText(const odb::Rect& rect,
-                                     double dbu_to_micron)
+std::string Shape::getRectText(const odb::Rect& rect, double dbu_to_micron)
 {
   return fmt::format("({:.4f}, {:.4f}) - ({:.4f}, {:.4f})",
                      rect.xMin() / dbu_to_micron,
@@ -621,7 +641,7 @@ void FollowPinShape::updateTermConnections()
   }
 }
 
-const odb::Rect FollowPinShape::getMinimumRect() const
+odb::Rect FollowPinShape::getMinimumRect() const
 {
   odb::Rect min_shape = Shape::getMinimumRect();
 

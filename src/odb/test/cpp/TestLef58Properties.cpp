@@ -298,6 +298,20 @@ BOOST_AUTO_TEST_CASE(test_default)
   BOOST_TEST(array_spacing_map.size() == 1);
   BOOST_TEST(array_spacing_map[3] == 0.30 * distFactor);
 
+  auto keepoutzoneRules = cutLayer->getTechLayerKeepOutZoneRules();
+  BOOST_TEST(keepoutzoneRules.size() == 1);
+  odb::dbTechLayerKeepOutZoneRule* kozrule = *keepoutzoneRules.begin();
+  BOOST_TEST(!kozrule->isExceptAlignedEnd());
+  BOOST_TEST(kozrule->isExceptAlignedSide());
+  BOOST_TEST(kozrule->getFirstCutClass() == "cls1");
+  BOOST_TEST(kozrule->getSecondCutClass() == "cls2");
+  BOOST_TEST(kozrule->getAlignedSpacing() == 0);
+  BOOST_TEST(kozrule->getEndSideExtension() == 1.0 * distFactor);
+  BOOST_TEST(kozrule->getEndForwardExtension() == 2.0 * distFactor);
+  BOOST_TEST(kozrule->getSideSideExtension() == 0.1 * distFactor);
+  BOOST_TEST(kozrule->getSideForwardExtension() == 0.2 * distFactor);
+  BOOST_TEST(kozrule->getSpiralExtension() == 0.05 * distFactor);
+
   layer = dbTech->findLayer("contact");
   BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::HIGHR);
   layer = dbTech->findLayer("metal2");

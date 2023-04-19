@@ -58,6 +58,9 @@
       "src":"dbTechLayerAreaRule.json"
     },
     {
+      "src":"dbTechLayerKeepOutZoneRule.json"
+    },
+    {
       "name":"dbModule",
       "type":"dbObject",
       "fields":[
@@ -526,6 +529,13 @@
       "second":"dbTechLayerAreaRule",
       "type":"1_n",
       "tbl_name":"area_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerKeepOutZoneRule",
+      "type":"1_n",
+      "tbl_name":"keepout_zone_rules_tbl_",
+      "schema":"db_schema_keepout_zone"
     }
   ]
 }

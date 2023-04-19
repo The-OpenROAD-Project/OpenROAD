@@ -42,10 +42,6 @@
 #include "ord/OpenRoad.hh"
 #include "sta/Sta.hh"
 
-namespace gui {
-class Gui;
-}
-
 namespace ord {
 class OpenRoad;
 }
@@ -60,10 +56,9 @@ class dbSta;
 class dbNetwork;
 class dbStaReport;
 class dbStaCbk;
-class PathRenderer;
-class PowerDensityDataSource;
+class AbstractPathRenderer;
+class AbstractPowerDensityDataSource;
 
-using ord::OpenRoad;
 using utl::Logger;
 
 using odb::dbBlock;
@@ -82,15 +77,18 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
  public:
   dbSta();
   virtual ~dbSta();
-  void init(Tcl_Interp* tcl_interp,
-            dbDatabase* db,
-            gui::Gui* gui,
-            Logger* logger);
-  // for makeBlockSta
+
   void initVars(Tcl_Interp* tcl_interp,
-                dbDatabase* db,
-                gui::Gui* gui,
-                Logger* logger);
+                odb::dbDatabase* db,
+                utl::Logger* logger);
+
+  void setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer);
+  void setPowerDensityDataSource(std::unique_ptr<AbstractPowerDensityDataSource>
+                                     power_density_data_source);
+
+  // Creates a dbSta instance for the given dbBlock using the same context as
+  // this dbSta instance (e.g. TCL interpreter, units, etc.)
+  std::unique_ptr<dbSta> makeBlockSta(odb::dbBlock* block);
 
   dbDatabase* db() { return db_; }
   dbNetwork* getDbNetwork() { return db_network_; }
@@ -112,13 +110,14 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
   virtual void connectPin(Instance* inst, Port* port, Net* net) override;
   virtual void connectPin(Instance* inst, LibertyPort* port, Net* net) override;
   virtual void disconnectPin(Pin* pin) override;
+
   // Highlight path in the gui.
   void highlight(PathRef* path);
 
   using Sta::netSlack;
   using Sta::replaceCell;
 
- protected:
+ private:
   virtual void makeReport() override;
   virtual void makeNetwork() override;
   virtual void makeSdcNetwork() override;
@@ -128,18 +127,14 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
                            LibertyCell* to_lib_cell) override;
 
   dbDatabase* db_;
-  gui::Gui* gui_;
   Logger* logger_;
 
   dbNetwork* db_network_;
   dbStaReport* db_report_;
   dbStaCbk* db_cbk_;
-  PathRenderer* path_renderer_;
 
-  std::unique_ptr<PowerDensityDataSource> power_density_heatmap_;
+  std::unique_ptr<AbstractPathRenderer> path_renderer_;
+  std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;
 };
-
-// Make a stand-alone (scratchpad) sta for block.
-dbSta* makeBlockSta(OpenRoad* openroad, dbBlock* block);
 
 }  // namespace sta

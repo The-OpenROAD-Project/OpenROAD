@@ -679,8 +679,7 @@ int IOPlacer::updateSection(Section& section, std::vector<Slot>& slots)
   int new_slots_count = 0;
   for (int slot_idx = section.begin_slot; slot_idx <= section.end_slot;
        slot_idx++) {
-    new_slots_count
-        += (slots[slot_idx].blocked || slots[slot_idx].used) ? 0 : 1;
+    new_slots_count += (slots[slot_idx].isAvailable()) ? 1 : 0;
   }
   section.num_slots = new_slots_count;
   return new_slots_count;
@@ -795,7 +794,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
       }
     }
     for (auto i : sortIndexes(dst)) {
-      if (sections[i].used_slots + group_size <= sections[i].num_slots) {
+      if (group_size <= sections[i].getMaxContiguousSlots(slots_)) {
         std::vector<int> group;
         for (int pin_idx : io_group) {
           IOPin& io_pin = net->getIoPin(pin_idx);
@@ -1438,6 +1437,15 @@ void IOPlacer::run(bool random_mode)
 
   initIOLists();
   defineSlots();
+
+  if (netlist_io_pins_->getIOPins().size() > slots_.size()) {
+    logger_->error(PPL,
+                   24,
+                   "Number of IO pins ({}) exceeds maximum number of available "
+                   "positions ({}).",
+                   netlist_io_pins_->getIOPins().size(),
+                   slots_.size());
+  }
 
   initMirroredPins();
   initConstraints();

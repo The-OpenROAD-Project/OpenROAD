@@ -35,6 +35,7 @@
 %{
 
 #include "dft/Dft.hh"
+#include "DftConfig.hh"
 #include "ord/OpenRoad.hh"
 
 dft::Dft * getDft()
@@ -46,9 +47,24 @@ dft::Dft * getDft()
 
 %inline
 %{
+
+void preview_dft(bool verbose)
+{
+  getDft()->preview_dft(verbose);
+}
+
 void insert_dft()
 {
   getDft()->insert_dft();
+}
+
+void set_dft_config_max_length(int max_length)
+{
+  getDft()->getMutableDftConfig()->getMutableScanArchitectConfig()->setMaxLength(max_length);
+}
+
+void report_dft_config() {
+  getDft()->reportDftConfig();
 }
 
 %}  // inline

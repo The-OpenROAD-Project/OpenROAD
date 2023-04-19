@@ -48,6 +48,7 @@
 #include "renderer.h"
 #include "rings.h"
 #include "straps.h"
+#include "techlayer.h"
 #include "utl/Logger.h"
 #include "via_repair.h"
 
@@ -56,9 +57,7 @@ namespace pdn {
 using utl::Logger;
 
 using odb::dbBlock;
-using odb::dbBox;
 using odb::dbInst;
-using odb::dbITerm;
 using odb::dbMaster;
 using odb::dbMTerm;
 using odb::dbNet;

@@ -577,7 +577,7 @@ void TritonRoute::gr()
 
 void TritonRoute::ta()
 {
-  FlexTA ta(getDesign(), logger_);
+  FlexTA ta(getDesign(), logger_, distributed_);
   ta.setDebug(debug_.get(), db_);
   ta.main();
 }

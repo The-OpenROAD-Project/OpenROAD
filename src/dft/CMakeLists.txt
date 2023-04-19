@@ -45,11 +45,11 @@ swig_lib(NAME dft
 ################################################################
 target_sources(dft
   PRIVATE
-    src/MakeDft.cpp
+  # Keep sorted
     src/Dft.cpp
-    src/ScanReplace.cpp
-    src/Utils.cpp
+    src/MakeDft.cpp
 )
+
 
 target_include_directories(dft
   PUBLIC
@@ -62,6 +62,17 @@ target_link_libraries(dft
     dbSta
     OpenSTA
 )
+
+target_link_libraries(dft
+  PRIVATE
+    dft_cells_lib
+    dft_architect_lib
+    dft_config_lib
+    dft_replace_lib
+    dft_clock_domain_lib
+)
+
+
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          dft_py
            NAMESPACE     dft
@@ -85,3 +96,12 @@ if (Python3_FOUND AND BUILD_PYTHON)
     )
 
 endif()
+
+# Keep sorted
+add_subdirectory(src/architect)
+add_subdirectory(src/cells)
+add_subdirectory(src/clock_domain)
+add_subdirectory(src/config)
+add_subdirectory(src/replace)
+add_subdirectory(src/utils)
+add_subdirectory(test/cpp)
