@@ -733,8 +733,24 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   // User Code End CopyConstructor
 }
 
+namespace {
+// bump when modifying the operator below, starting with some number
+// that isn't VERY likely to be found in integers.
+static const int VERSION_BASE = 0x12345678;
+static const int VERSION = VERSION_BASE + 1;
+}  // namespace
+
 dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 {
+  int version;
+  stream >> version;
+  if (version != VERSION) {
+    obj.getLogger()->error(utl::ODB,
+                           450,
+                           ".odb file version mismatch. Expected {}, found {}",
+                           VERSION - VERSION_BASE,
+                           version - VERSION_BASE);
+  }
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream >> *flags__bit_field;
   stream >> *obj.cut_class_rules_tbl_;
@@ -812,6 +828,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
 }
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
 {
+  stream << VERSION;
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream << *flags__bit_field;
   stream << *obj.cut_class_rules_tbl_;

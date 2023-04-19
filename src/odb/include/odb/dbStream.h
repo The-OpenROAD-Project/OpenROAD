@@ -49,6 +49,7 @@ class _dbDatabase;
 
 class dbOStream
 {
+  // Bump this when .odb format changes
   _dbDatabase* _db;
   FILE* _f;
   double _lef_area_factor;
