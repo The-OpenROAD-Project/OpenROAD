@@ -112,13 +112,12 @@ RepairDesign::init()
 void
 RepairDesign::repairDesign(double max_wire_length,
                            double slew_margin,
-                           double cap_margin,
-                           bool global_route)
+                           double cap_margin)
 {
   init();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
-  repairDesign(max_wire_length, slew_margin, cap_margin, global_route,
+  repairDesign(max_wire_length, slew_margin, cap_margin,
                repaired_net_count, slew_violations, cap_violations,
                fanout_violations, length_violations);
 
@@ -142,7 +141,6 @@ void
 RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
                            double slew_margin,
                            double cap_margin,
-                           bool global_route,
                            int &repaired_net_count,
                            int &slew_violations,
                            int &cap_violations,
@@ -180,7 +178,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
     if (net
         && !resizer_->dontTouch(net)
-        && (global_route || !sta_->isClock(drvr_pin))
+        && !sta_->isClock(drvr_pin)
         // Exclude tie hi/low cells and supply nets.
         && !drvr->isConstant())
       repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,

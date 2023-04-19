@@ -951,7 +951,7 @@ Resizer::findResizeSlacks()
   estimateWireParasitics();
   int repaired_net_count, slew_violations, cap_violations;
   int fanout_violations, length_violations;
-  repair_design_->repairDesign(max_wire_length_, 0.0, 0.0, false,
+  repair_design_->repairDesign(max_wire_length_, 0.0, 0.0,
                                repaired_net_count, slew_violations, cap_violations,
                                fanout_violations, length_violations);
   findResizeSlacks1();
@@ -2163,14 +2163,13 @@ Resizer::isFuncOneZero(const Pin *drvr_pin)
 void
 Resizer::repairDesign(double max_wire_length,
                       double slew_margin,
-                      double cap_margin,
-                      bool global_route)
+                      double cap_margin)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
   }
-  repair_design_->repairDesign(max_wire_length, slew_margin, cap_margin, global_route);
+  repair_design_->repairDesign(max_wire_length, slew_margin, cap_margin);
 }
 
 int

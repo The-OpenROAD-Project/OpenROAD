@@ -433,12 +433,11 @@ repair_tie_fanout_cmd(LibertyPort *tie_port,
 void
 repair_design_cmd(double max_length,
                   double slew_margin,
-                  double cap_margin,
-                  bool global_route)
+                  double cap_margin)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairDesign(max_length, slew_margin, cap_margin, global_route);
+  resizer->repairDesign(max_length, slew_margin, cap_margin);
 }
 
 int
