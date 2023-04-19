@@ -446,6 +446,13 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
     }
   }
 
+  if (max_contiguous_slots < group_size) {
+    logger_->error(PPL,
+                   93,
+                   "Pin group of size {} does not fit in the die boundaries.",
+                   group_size);
+  }
+
   return place_slot;
 }
 
