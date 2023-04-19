@@ -192,7 +192,7 @@ proc get_masters_arg { arg_name arg } {
     foreach lib [$db getLibs] {
       foreach master [$lib getMasters] {
         set master_name [$master getConstName]
-        if { [regexp $name $master_name] } {
+        if { [string match $name $master_name] } {
           lappend masters $master
           set matched 1
         }
