@@ -52,6 +52,7 @@
 #include "utl/Logger.h"
 
 Q_DECLARE_METATYPE(odb::dbTechLayer*);
+Q_DECLARE_METATYPE(odb::dbSite*);
 Q_DECLARE_METATYPE(std::function<void(void)>);
 
 namespace gui {
@@ -253,6 +254,7 @@ DisplayControls::DisplayControls(QWidget* parent)
       layers_menu_layer_(nullptr),
       ignore_callback_(false),
       ignore_selection_(false),
+      default_site_color_(QColor(0, 0xff, 0, 0x70)),
       db_(nullptr),
       logger_(nullptr),
       sta_(nullptr),
@@ -402,15 +404,14 @@ DisplayControls::DisplayControls(QWidget* parent)
   // Rulers
   ruler_font_ = QApplication::font();  // use default font
   ruler_color_ = Qt::cyan;
-  makeParentItem(rulers_, "Rulers", root, Qt::Checked, true, row_color_);
+  makeParentItem(rulers_, "Rulers", root, Qt::Checked, true, ruler_color_);
   setNameItemDoubleClickAction(rulers_, [this]() {
     ruler_font_
         = QFontDialog::getFont(nullptr, ruler_font_, this, "Ruler font");
   });
 
-  // Rows
-  row_color_ = QColor(0, 0xff, 0, 0x70);
-  makeParentItem(rows_, "Rows", root, Qt::Unchecked, true, row_color_);
+  // Rows / sites
+  makeParentItem(site_group_, "Rows", root, Qt::Checked, true);
 
   // Rows
   makeParentItem(pin_markers_, "Pin Markers", root, Qt::Checked);
@@ -625,7 +626,6 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, nets_group_);
   readSettingsForRow(settings, instance_group_);
   readSettingsForRow(settings, blockage_group_);
-  readSettingsForRow(settings, rows_);
   readSettingsForRow(settings, pin_markers_);
   readSettingsForRow(settings, rulers_);
   readSettingsForRow(settings, tracks_group_);
@@ -635,7 +635,6 @@ void DisplayControls::readSettings(QSettings* settings)
   settings->beginGroup("color");
   getColor(
       blockages_.blockages, placement_blockage_color_, "blockages_placement");
-  getColor(rows_, row_color_, "row");
   getColor(rulers_, ruler_color_, "ruler");
   getColor(instance_shapes_.names, instance_name_color_, "instance_name");
   getColor(misc_.regions, region_color_, "region");
@@ -697,7 +696,6 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, nets_group_);
   writeSettingsForRow(settings, instance_group_);
   writeSettingsForRow(settings, blockage_group_);
-  writeSettingsForRow(settings, rows_);
   writeSettingsForRow(settings, pin_markers_);
   writeSettingsForRow(settings, rulers_);
   writeSettingsForRow(settings, tracks_group_);
@@ -706,7 +704,6 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->beginGroup("other");
   settings->beginGroup("color");
   settings->setValue("blockages_placement", placement_blockage_color_);
-  settings->setValue("row", row_color_);
   settings->setValue("ruler", ruler_color_);
   settings->setValue("instance_name", instance_name_color_);
   settings->setValue("region", region_color_);
@@ -957,8 +954,6 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       item_pattern = &region_pattern_;
     } else if (color_item == instance_shapes_.names.swatch) {
       item_color = &instance_name_color_;
-    } else if (color_item == rows_.swatch) {
-      item_color = &row_color_;
     } else if (color_item == rulers_.swatch) {
       item_color = &ruler_color_;
     } else {
@@ -967,18 +962,20 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
         return;
       }
       auto tech_layer = tech_layer_data.value<odb::dbTechLayer*>();
-      if (tech_layer == nullptr) {
-        return;
-      }
-      item_color = &layer_color_[tech_layer];
-      item_pattern = &layer_pattern_[tech_layer];
-      if (tech_layer->getType() != dbTechLayerType::ROUTING) {
-        if (index.row() != 0) {
-          // ensure if a via is the first layer, it can still be modified
-          return;
+      auto site = tech_layer_data.value<odb::dbSite*>();
+      if (tech_layer != nullptr) {
+        item_color = &layer_color_[tech_layer];
+        item_pattern = &layer_pattern_[tech_layer];
+        if (tech_layer->getType() != dbTechLayerType::ROUTING) {
+          if (index.row() != 0) {
+            // ensure if a via is the first layer, it can still be modified
+            return;
+          }
+        } else {
+          has_sibling = true;
         }
-      } else {
-        has_sibling = true;
+      } else if (site != nullptr) {
+        item_color = &site_color_[site];
       }
     }
 
@@ -1148,6 +1145,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
   }
 
   techInit();
+  libInit();
 
   for (dbTechLayer* layer : tech->getLayers()) {
     dbTechLayerType type = layer->getType();
@@ -1326,7 +1324,8 @@ QFont DisplayControls::instanceNameFont()
   return instance_name_font_;
 }
 
-bool DisplayControls::isRowVisible(const DisplayControls::ModelRow* row) const
+bool DisplayControls::isModelRowVisible(
+    const DisplayControls::ModelRow* row) const
 {
   if (row == nullptr) {
     return true;
@@ -1334,7 +1333,7 @@ bool DisplayControls::isRowVisible(const DisplayControls::ModelRow* row) const
   return row->visible->checkState() != Qt::Unchecked;
 }
 
-bool DisplayControls::isRowSelectable(
+bool DisplayControls::isModelRowSelectable(
     const DisplayControls::ModelRow* row) const
 {
   if (row == nullptr) {
@@ -1353,6 +1352,16 @@ const DisplayControls::ModelRow* DisplayControls::getLayerRow(
   return nullptr;
 }
 
+const DisplayControls::ModelRow* DisplayControls::getSiteRow(
+    odb::dbSite* site) const
+{
+  auto it = site_controls_.find(site);
+  if (it != site_controls_.end()) {
+    return &it->second;
+  }
+  return nullptr;
+}
+
 bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
 {
   auto* row = getLayerRow(layer);
@@ -1360,7 +1369,7 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
     return false;
   }
 
-  return isRowVisible(row);
+  return isModelRowVisible(row);
 }
 
 bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
@@ -1370,12 +1379,12 @@ bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
     return false;
   }
 
-  return isRowSelectable(row);
+  return isModelRowSelectable(row);
 }
 
 bool DisplayControls::isInstanceVisible(odb::dbInst* inst)
 {
-  return isRowVisible(getInstRow(inst));
+  return isModelRowVisible(getInstRow(inst));
 }
 
 const DisplayControls::ModelRow* DisplayControls::getInstRow(
@@ -1441,7 +1450,7 @@ const DisplayControls::ModelRow* DisplayControls::getInstRow(
 
 bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
 {
-  return isRowSelectable(getInstRow(inst));
+  return isModelRowSelectable(getInstRow(inst));
 }
 
 const DisplayControls::ModelRow* DisplayControls::getNetRow(
@@ -1463,42 +1472,42 @@ const DisplayControls::ModelRow* DisplayControls::getNetRow(
 
 bool DisplayControls::isNetVisible(odb::dbNet* net)
 {
-  return isRowVisible(getNetRow(net));
+  return isModelRowVisible(getNetRow(net));
 }
 
 bool DisplayControls::isNetSelectable(odb::dbNet* net)
 {
-  return isRowSelectable(getNetRow(net));
+  return isModelRowSelectable(getNetRow(net));
 }
 
 bool DisplayControls::areInstanceNamesVisible()
 {
-  return isRowVisible(&instance_shapes_.names);
+  return isModelRowVisible(&instance_shapes_.names);
 }
 
 bool DisplayControls::areInstancePinsVisible()
 {
-  return isRowVisible(&instance_shapes_.pins);
+  return isModelRowVisible(&instance_shapes_.pins);
 }
 
 bool DisplayControls::areInstanceBlockagesVisible()
 {
-  return isRowVisible(&instance_shapes_.blockages);
+  return isModelRowVisible(&instance_shapes_.blockages);
 }
 
 bool DisplayControls::areFillsVisible()
 {
-  return isRowVisible(&misc_.fills);
+  return isModelRowVisible(&misc_.fills);
 }
 
 bool DisplayControls::areRulersVisible()
 {
-  return isRowVisible(&rulers_);
+  return isModelRowVisible(&rulers_);
 }
 
 bool DisplayControls::areRulersSelectable()
 {
-  return isRowSelectable(&rulers_);
+  return isModelRowSelectable(&rulers_);
 }
 
 QColor DisplayControls::rulerColor()
@@ -1513,72 +1522,72 @@ QFont DisplayControls::rulerFont()
 
 bool DisplayControls::areBlockagesVisible()
 {
-  return isRowVisible(&blockages_.blockages);
+  return isModelRowVisible(&blockages_.blockages);
 }
 
 bool DisplayControls::areBlockagesSelectable()
 {
-  return isRowSelectable(&blockages_.blockages);
+  return isModelRowSelectable(&blockages_.blockages);
 }
 
 bool DisplayControls::areObstructionsVisible()
 {
-  return isRowVisible(&blockages_.obstructions);
+  return isModelRowVisible(&blockages_.obstructions);
 }
 
 bool DisplayControls::areObstructionsSelectable()
 {
-  return isRowSelectable(&blockages_.obstructions);
+  return isModelRowSelectable(&blockages_.obstructions);
 }
 
 bool DisplayControls::areRegionsSelectable() const
 {
-  return isRowSelectable(&misc_.regions);
+  return isModelRowSelectable(&misc_.regions);
 }
 
-bool DisplayControls::areRowsVisible()
+bool DisplayControls::isSiteVisible(odb::dbSite* site)
 {
-  return isRowVisible(&rows_);
+  return isModelRowVisible(getSiteRow(site));
 }
 
-bool DisplayControls::areRowsSelectable()
+bool DisplayControls::isSiteSelectable(odb::dbSite* site)
 {
-  return isRowSelectable(&rows_);
+  return isModelRowSelectable(getSiteRow(site));
 }
 
-QColor DisplayControls::rowColor()
+QColor DisplayControls::siteColor(odb::dbSite* site)
 {
-  return row_color_;
+  return site_color_[site];
 }
 
 bool DisplayControls::areSelectedVisible()
 {
-  return isRowVisible(&misc_.selected);
+  return isModelRowVisible(&misc_.selected);
 }
 
 bool DisplayControls::isDetailedVisibility()
 {
-  return isRowVisible(&misc_.detailed);
+  return isModelRowVisible(&misc_.detailed);
 }
 
 bool DisplayControls::arePrefTracksVisible()
 {
-  return isRowVisible(&tracks_.pref);
+  return isModelRowVisible(&tracks_.pref);
 }
 
 bool DisplayControls::areNonPrefTracksVisible()
 {
-  return isRowVisible(&tracks_.non_pref);
+  return isModelRowVisible(&tracks_.non_pref);
 }
 
 bool DisplayControls::isScaleBarVisible() const
 {
-  return isRowVisible(&misc_.scale_bar);
+  return isModelRowVisible(&misc_.scale_bar);
 }
 
 bool DisplayControls::arePinMarkersVisible() const
 {
-  return isRowVisible(&pin_markers_);
+  return isModelRowVisible(&pin_markers_);
 }
 
 QFont DisplayControls::pinMarkersFont()
@@ -1588,27 +1597,27 @@ QFont DisplayControls::pinMarkersFont()
 
 bool DisplayControls::areAccessPointsVisible() const
 {
-  return isRowVisible(&misc_.access_points);
+  return isModelRowVisible(&misc_.access_points);
 }
 
 bool DisplayControls::areRegionsVisible() const
 {
-  return isRowVisible(&misc_.regions);
+  return isModelRowVisible(&misc_.regions);
 }
 
 bool DisplayControls::isManufacturingGridVisible() const
 {
-  return isRowVisible(&misc_.manufacturing_grid);
+  return isModelRowVisible(&misc_.manufacturing_grid);
 }
 
 bool DisplayControls::isModuleView() const
 {
-  return isRowVisible(&misc_.module);
+  return isModelRowVisible(&misc_.module);
 }
 
 bool DisplayControls::isGCellGridVisible() const
 {
-  return isRowVisible(&misc_.gcell_grid);
+  return isModelRowVisible(&misc_.gcell_grid);
 }
 
 void DisplayControls::registerRenderer(Renderer* renderer)
@@ -1716,6 +1725,33 @@ void DisplayControls::unregisterRenderer(Renderer* renderer)
   custom_controls_.erase(renderer);
 }
 
+void DisplayControls::inDbRowCreate(odb::dbRow* /* row */)
+{
+  libInit();
+}
+
+void DisplayControls::libInit()
+{
+  if (db_ == nullptr) {
+    return;
+  }
+
+  for (auto* lib : db_->getLibs()) {
+    for (auto* site : lib->getSites()) {
+      if (site_controls_.find(site) == site_controls_.end()) {
+        makeLeafItem(site_controls_[site],
+                     QString::fromStdString(site->getName()),
+                     site_group_.name,
+                     Qt::Checked,
+                     true,
+                     default_site_color_,
+                     QVariant::fromValue(site));
+        site_color_[site] = default_site_color_;
+      }
+    }
+  }
+}
+
 void DisplayControls::techInit()
 {
   if (tech_inited_ || !db_) {
@@ -1797,6 +1833,7 @@ void DisplayControls::techInit()
 void DisplayControls::designLoaded(odb::dbBlock* block)
 {
   setDb(block->getDb());
+  addOwner(block);
 }
 
 void DisplayControls::restoreTclCommands(std::vector<std::string>& cmds)
