@@ -1748,7 +1748,9 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
       last_layer = pins[p].getConnectionLayer();
   }
 
-  if (last_layer == max_routing_layer) {
+  // last_layer can be greater than max routing layer for nets with bumps
+  // at top routing layer
+  if (last_layer >= max_routing_layer) {
     last_layer--;
   }
 
