@@ -417,9 +417,9 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
     odb::Point mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
     int mirrored_slot
         = getSlotIdxByPosition(mirrored_pos, slots_[s].layer, slots_);
-    while (
-        s <= last_slot
-        && (!slots_[s].isAvailable() || !slots_[mirrored_slot].isAvailable())) {
+    while (s <= last_slot
+           && (!slots_[s].isAvailable()
+               || (check_mirrored && !slots_[mirrored_slot].isAvailable()))) {
       s++;
       mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
       mirrored_slot
@@ -431,7 +431,8 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
     mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
     mirrored_slot = getSlotIdxByPosition(mirrored_pos, slots_[s].layer, slots_);
     while (s <= last_slot && slots_[s].isAvailable()
-           && slots_[mirrored_slot].isAvailable()) {
+           && ((check_mirrored && slots_[mirrored_slot].isAvailable())
+               || !check_mirrored)) {
       contiguous_slots++;
       s++;
       mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
@@ -448,8 +449,9 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
   return place_slot;
 }
 
-void IOPlacer::placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
-                                  int place_slot)
+void IOPlacer::placeFallbackGroup(
+    const std::pair<std::vector<int>, bool>& group,
+    int place_slot)
 {
   for (int pin_idx : group.first) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
@@ -954,7 +956,8 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
             group.push_back(pin_idx);
             sections[i].used_slots++;
             io_pin.assignToSection();
-            if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+            if (mirrored_pins_.find(io_pin.getBTerm())
+                != mirrored_pins_.end()) {
               assignMirroredPin(io_pin);
             }
           }
