@@ -82,8 +82,7 @@ using sta::Corners;
 using sta::InputDrive;
 
 RepairSetup::RepairSetup(Resizer* resizer)
-    : ,
-      logger_(nullptr),
+    : logger_(nullptr),
       sta_(nullptr),
       db_network_(nullptr),
       resizer_(resizer),
@@ -408,12 +407,10 @@ void RepairSetup::debugCheckMultipleBuffers(PathRef &path,
         int start_index = expanded->startIndex();
         for (int i = start_index; i < path_length; i++) {
             PathRef* path = expanded->path(i);
-            Vertex* path_vertex = path->vertex(sta_);
             const Pin* path_pin = path->pin(sta_);
             if (i > 0 && network_->isDriver(path_pin)
                 && !network_->isTopLevelPort(path_pin)) {
                 TimingArc* prev_arc = expanded->prevArc(i);
-                Edge* prev_edge = path->prevEdge(prev_arc, sta_);
                 printf("repair_setup %s: %s ---> %s \n",
                        prev_arc->from()->libertyCell()->name(),
                        prev_arc->from()->name(),
@@ -452,9 +449,10 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         // is a yes.
         if (instance_set.find(drvr) == instance_set.end()) {
             instance_set.insert(drvr);
+        }
         else {
             return false;
-}
+        }
 
         // Find the equivalent pins for a cell (simple implementation for now)
         // stash them
