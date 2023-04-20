@@ -879,7 +879,6 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
       journalSwapPins(inst, pin1, pin2);
     }
 
-    printf("%s %s %s ", (journal?"OG SWAP":"UNDO SWAP"), pin1->name(), pin2->name());
     InstancePinIterator *pin_iter = network_->pinIterator(inst);
     found_pin1 = found_pin2 = nullptr;
     net1 = net2 = nullptr;
@@ -901,7 +900,6 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
 
     if (net1 != nullptr && net2 != nullptr) {
         // Swap the ports and nets
-        printf("Actually made the swap\n");
         sta_->disconnectPin(found_pin1);
         sta_->connectPin(inst, port1, net2);
         sta_->disconnectPin(found_pin2);
@@ -926,9 +924,6 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
             }
             delete pin_iter;
         }
-    }
-    else {
-        printf("Did not made the swap\n");
     }
 }
 
