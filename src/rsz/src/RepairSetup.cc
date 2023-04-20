@@ -82,7 +82,7 @@ using sta::Corners;
 using sta::InputDrive;
 
 RepairSetup::RepairSetup(Resizer* resizer)
-    : StaState(),
+    : ,
       logger_(nullptr),
       sta_(nullptr),
       db_network_(nullptr),
@@ -91,8 +91,8 @@ RepairSetup::RepairSetup(Resizer* resizer)
       drvr_port_(nullptr),
       resize_count_(0),
       inserted_buffer_count_(0),
-      swap_pin_count_(0),
       rebuffer_net_count_(0),
+      swap_pin_count_(0),
       min_(MinMax::min()),
       max_(MinMax::max())
 {
@@ -242,8 +242,9 @@ RepairSetup::repairSetup(float setup_slack_margin,
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
-  if (swap_pin_count_ > 0)
+  if (swap_pin_count_ > 0) {
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
+}
   Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin))
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
@@ -273,8 +274,9 @@ RepairSetup::repairSetup(const Pin *end_pin)
     logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
-  if (swap_pin_count_ > 0)
+  if (swap_pin_count_ > 0) {
     logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pin_count_);
+}
 }
 
 /* This is the main routine for repairing setup violations. We have
@@ -448,10 +450,11 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
 
         // Check if we have already dealt with this instance. Skip if the answer
         // is a yes.
-        if (instance_set.find(drvr) == instance_set.end())
+        if (instance_set.find(drvr) == instance_set.end()) {
             instance_set.insert(drvr);
-        else
+        else {
             return false;
+}
 
         // Find the equivalent pins for a cell (simple implementation for now)
         // stash them
@@ -532,8 +535,9 @@ RepairSetup::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
         return true;
     dbMaster* lef_cell1 = db_network_->staToDb(cell);
     dbMaster* lef_cell2 = db_network_->staToDb(equiv);
-    if (lef_cell1->getWidth() == lef_cell2->getWidth())
+    if (lef_cell1->getWidth() == lef_cell2->getWidth()) {
         return true;
+}
     return false;
 }
 
