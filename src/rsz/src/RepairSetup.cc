@@ -355,19 +355,9 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
-      if (getenv("ENABLE_VT_AND_PIN_SWAP") != nullptr) {
-          // This is equivalent to Vt cell swapping.
-          // Should really nor run the upsizeDrvr from before
-          // and this one in the same flow. But ok to test for now.
-          if (upsizeDrvr(drvr_path, drvr_index, &expanded, true)) {
-            changed = true;
-            break;
-          }
-
-          if (swapPins(drvr_path, drvr_index, &expanded)) {
-              changed = true;
-              break;
-            }
+      if (swapPins(drvr_path, drvr_index, &expanded)) {
+          changed = true;
+          break;
       }
 
       // For tristate nets all we can do is resize the driver.
