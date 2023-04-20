@@ -120,7 +120,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
-  
+
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
   VertexSeq violating_ends;

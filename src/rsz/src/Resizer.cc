@@ -2497,7 +2497,6 @@ void
 Resizer::journalSwapPins(Instance *inst, LibertyPort *pin1,
                          LibertyPort *pin2)
 {
-  printf("PPPPXXXXXX %d\n", swapped_pins_.size());
   swapped_pins_[inst] = std::make_tuple(pin1, pin2);
 }
 
@@ -2547,7 +2546,6 @@ Resizer::journalRestore(int &resize_count,
   }
 
   for (auto element : swapped_pins_) {
-    printf("XXXXXX %d\n", swapped_pins_.size());
     Instance *inst = element.first;
     LibertyPort *port1 = std::get<0>(element.second);
     LibertyPort *port2 = std::get<1>(element.second);
@@ -2557,11 +2555,9 @@ Resizer::journalRestore(int &resize_count,
     swapPins(inst, port2, port1, false);
   }
   swapped_pins_.clear();
-
 }
 
 ////////////////////////////////////////////////////////////////
-
 Instance *
 Resizer::makeBuffer(LibertyCell *cell,
                     const char *name,
