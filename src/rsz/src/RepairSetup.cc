@@ -535,8 +535,9 @@ RepairSetup::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
         return true;
     dbMaster* lef_cell1 = db_network_->staToDb(cell);
     dbMaster* lef_cell2 = db_network_->staToDb(equiv);
-    if (lef_cell1->getWidth() == lef_cell2->getWidth())
+    if (lef_cell1->getWidth() == lef_cell2->getWidth()) {
         return true;
+}
     return false;
 }
 
