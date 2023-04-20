@@ -417,7 +417,7 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
     odb::Point mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
     int mirrored_slot
         = getSlotIdxByPosition(mirrored_pos, slots_[s].layer, slots_);
-    while (s <= last_slot
+    while (s < last_slot
            && (!slots_[s].isAvailable()
                || (check_mirrored && !slots_[mirrored_slot].isAvailable()))) {
       s++;
@@ -430,7 +430,7 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
     int contiguous_slots = 0;
     mirrored_pos = core_->getMirroredPosition(slots_[s].pos);
     mirrored_slot = getSlotIdxByPosition(mirrored_pos, slots_[s].layer, slots_);
-    while (s <= last_slot && slots_[s].isAvailable()
+    while (s < last_slot && slots_[s].isAvailable()
            && ((check_mirrored && slots_[mirrored_slot].isAvailable())
                || !check_mirrored)) {
       contiguous_slots++;
