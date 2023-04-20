@@ -877,7 +877,6 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
     // Add support for undo.
     if (journal) {
       journalSwapPins(inst, pin1, pin2);
-      printf("Added crap to the journal....\n");
     }
 
     printf("%s %s %s ", (journal?"OG SWAP":"UNDO SWAP"), pin1->name(), pin2->name());
