@@ -452,8 +452,9 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         // is a yes.
         if (instance_set.find(drvr) == instance_set.end()) {
             instance_set.insert(drvr);
-        else
+        else {
             return false;
+}
 
         // Find the equivalent pins for a cell (simple implementation for now)
         // stash them
