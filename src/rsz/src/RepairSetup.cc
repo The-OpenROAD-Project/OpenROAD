@@ -288,13 +288,15 @@ RepairSetup::repairSetup(const Pin *end_pin)
  - split loads
  And they are always done in the same order. Not clear whether
  this order is the best way at all times. Also need to worry about
- actually using global routes... \
+ actually using global routes... 
  Things that can be added:
  - Intelligent rebuffering .... so if we added 2 buffers then maybe add
    two inverters instead.
- - pin swap
+ - pin swap (V0 is done) 
  - Logic cloning
- - VT swap: why would we not use low threshold cells everywhere
+ - VT swap (already there via the normal resize code.... but we need to
+   figure out how to deal with min implant rules to make it production
+   ready) 
  */
 bool
 RepairSetup::repairSetup(PathRef &path,
