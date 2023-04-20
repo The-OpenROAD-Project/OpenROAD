@@ -1367,6 +1367,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   if (ordering) {
     if (update_slack_) {
+      parasitics_builder_->clearParasitics();
       auto partial_routes = getPartialRoutes();
       for (auto& net_route : partial_routes) {
         odb::dbNet* db_net = net_route.first;

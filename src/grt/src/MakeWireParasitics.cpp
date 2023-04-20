@@ -122,11 +122,6 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
 void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
                                            GRoute& route) const
 {
-  //Remove any existing parasitics.
-  sta_->deleteParasitics();
-
-  //Make separate parasitics for each corner, same for min/max.
-  sta_->setParasiticAnalysisPts(true, false);
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {
     for (GSegment& segment : route) {
@@ -173,6 +168,14 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
   }
 
   parasitics_->deleteParasiticNetworks(sta_net);
+}
+
+void MakeWireParasitics::clearParasitics() {
+  //Remove any existing parasitics.
+  sta_->deleteParasitics();
+
+  //Make separate parasitics for each corner, same for min/max.
+  sta_->setParasiticAnalysisPts(true, false);
 }
 
 sta::Pin* MakeWireParasitics::staPin(Pin& pin) const
@@ -522,6 +525,11 @@ sta::ParasiticNode* MakeWireParasitics::ensureParasiticNode(
 sta::Slack MakeWireParasitics::getNetSlack(odb::dbNet* net) {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Net* sta_net = network->dbToSta(net);
+  if(sta_net == nullptr) {
+    std::cout<<"deu ruim\n";
+  } /*else {
+    std::cout<<"não deu ruim\n";
+  }*/
   sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
   return slack;
 }

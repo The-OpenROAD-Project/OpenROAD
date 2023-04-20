@@ -81,6 +81,8 @@ class MakeWireParasitics
                          GRoute& route) const;
   void estimateParasitcs(odb::dbNet* net,
                          GRoute& route) const;
+  
+  void clearParasitics();
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net) const;
