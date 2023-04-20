@@ -82,7 +82,7 @@ using sta::Corners;
 using sta::InputDrive;
 
 RepairSetup::RepairSetup(Resizer* resizer)
-    : StaState(),
+    : ,
       logger_(nullptr),
       sta_(nullptr),
       db_network_(nullptr),
