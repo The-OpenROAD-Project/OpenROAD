@@ -274,8 +274,9 @@ RepairSetup::repairSetup(const Pin *end_pin)
     logger_->info(RSZ, 30, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 31, "Resized {} instances.", resize_count_);
-  if (swap_pin_count_ > 0)
+  if (swap_pin_count_ > 0) {
     logger_->info(RSZ, 44, "Swapped pins on {} instances.", swap_pin_count_);
+}
 }
 
 /* This is the main routine for repairing setup violations. We have
