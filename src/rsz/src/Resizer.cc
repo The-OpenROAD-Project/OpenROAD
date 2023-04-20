@@ -874,6 +874,8 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
     Net *net1, *net2;
     LibertyPort *port1, *port2;
 
+    port1 = port2 = nullptr;
+    
     // Add support for undo.
     if (journal) {
       journalSwapPins(inst, pin1, pin2);
