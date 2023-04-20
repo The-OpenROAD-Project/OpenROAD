@@ -450,7 +450,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
 
         // Check if we have already dealt with this instance. Skip if the answer
         // is a yes.
-        if (instance_set.find(drvr) == instance_set.end())
+        if (instance_set.find(drvr) == instance_set.end()) {
             instance_set.insert(drvr);
         else
             return false;
