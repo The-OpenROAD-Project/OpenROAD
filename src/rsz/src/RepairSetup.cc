@@ -236,19 +236,23 @@ RepairSetup::repairSetup(float setup_slack_margin,
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (inserted_buffer_count_ > 0)
+  if (inserted_buffer_count_ > 0) {
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+  }
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
-  if (resize_count_ > 0)
+  if (resize_count_ > 0) {
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+  }
   if (swap_pin_count_ > 0) {
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
-}
+  }
   Slack worst_slack = sta_->worstSlack(max_);
-  if (fuzzyLess(worst_slack, setup_slack_margin))
+  if (fuzzyLess(worst_slack, setup_slack_margin)) {
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
-  if (resizer_->overMaxArea())
+  }
+  if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 25, "max utilization reached.");
+  }
 }
 
 // For testing.
@@ -703,11 +707,13 @@ RepairSetup::getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
         // Start parsing the equivalent pins (if it is simple or/and/xor)
         status = curr_op;
         getEquivPortList2(expr->left(), ports, status);
-        if (status == Operator::op_port)
-            return;
+        if (status == Operator::op_port) {
+          return;
+        }
         getEquivPortList2(expr->right(), ports, status);
-        if (status == Operator::op_port)
-            return;
+        if (status == Operator::op_port) {
+          return;
+        }
         status = Operator::op_one;
     }
     else if (status == curr_op) {
@@ -715,10 +721,11 @@ RepairSetup::getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
         getEquivPortList2(expr->left(), ports, status);
         if (status == Operator::op_port) {
             return;
-}
+        }
         getEquivPortList2(expr->right(), ports, status);
-        if (status == Operator::op_port)
+        if (status == Operator::op_port) {
             return;
+        }
     }
     else if (curr_op == Operator::op_port && expr->port() != nullptr) {
         ports.insert(expr->port());
@@ -753,8 +760,9 @@ RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
     // count number of output ports. Skip ports with > 1 output for now.
     while (port_iter.hasNext()) {
         LibertyPort *port = port_iter.next();
-        if (port->direction()->isOutput())
+        if (port->direction()->isOutput()) {
             ++outputs;
+        }
     }
 
     if (outputs == 1) {
@@ -768,5 +776,4 @@ RepairSetup::equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports)
         }
     }
 }
-
-} // namespace
+}  // namespace rsz

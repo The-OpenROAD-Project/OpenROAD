@@ -919,8 +919,9 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
                     // Invalidate estimated parasitics on all instance input pins.
                     // Tristate nets have multiple drivers and this is drivers^2 if
                     // the parasitics are updated for each resize.
-                    if (net && !port->direction()->isAnyTristate())
+                    if (net && !port->direction()->isAnyTristate()) {
                         parasiticsInvalid(net);
+                    }
                 }
             }
             delete pin_iter;
