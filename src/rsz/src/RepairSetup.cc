@@ -468,8 +468,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         if (ports.size() > 1) {
             resizer_->findSwapPinCandidate(input_port, drvr_port, load_cap,
                                            dcalc_ap, &swap_port);
-            if (!swap_port->equiv(swap_port, input_port)) {
-                // FIXME: Change to debug log.
+            if (!sta::LibertyPort::equiv(swap_port, input_port)) {
                 debugPrint(logger_, RSZ, "repair_setup", 3,
                            "Swap {} ({}) {} {}",
                            network_->name(drvr), cell->name(),
@@ -533,13 +532,14 @@ bool
 RepairSetup::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
                                bool match_size)
 {
-    if (!match_size)
-        return true;
+    if (!match_size) {
+      return true;
+    }
     dbMaster* lef_cell1 = db_network_->staToDb(cell);
     dbMaster* lef_cell2 = db_network_->staToDb(equiv);
     if (lef_cell1->getWidth() == lef_cell2->getWidth()) {
         return true;
-}
+    }
     return false;
 }
 
@@ -587,8 +587,9 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
       if (!resizer_->dontUse(equiv)
           && equiv_drive < drive
           && equiv_delay < delay
-          && meetsSizeCriteria(cell, equiv, match_size))
+          && meetsSizeCriteria(cell, equiv, match_size)) {
         return equiv;
+      }
     }
   }
   return nullptr;
