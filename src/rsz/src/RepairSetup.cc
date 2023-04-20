@@ -715,8 +715,9 @@ RepairSetup::getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
     else if (status == curr_op) {
         // handle > 2 input scenarios (up to any arbitrary number)
         getEquivPortList2(expr->left(), ports, status);
-        if (status == Operator::op_port)
+        if (status == Operator::op_port) {
             return;
+}
         getEquivPortList2(expr->right(), ports, status);
         if (status == Operator::op_port)
             return;
