@@ -1950,7 +1950,7 @@ Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
     while (port_iter.hasNext()) {
         LibertyPort *port = port_iter.next();
         if (!sta::LibertyPort::equiv(input_port, port) &&
-            !drvr_port->equiv(drvr_port, port) &&
+            !sta::LibertyPort::equiv(drvr_port, port) &&
             port_delays[port] < base_delay) {
             *swap_port = port;
             base_delay = port_delays[port];
