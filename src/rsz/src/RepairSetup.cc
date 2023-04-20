@@ -242,8 +242,9 @@ RepairSetup::repairSetup(float setup_slack_margin,
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
-  if (swap_pin_count_ > 0)
+  if (swap_pin_count_ > 0) {
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
+}
   Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin))
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
