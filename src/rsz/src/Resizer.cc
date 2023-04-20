@@ -1948,8 +1948,8 @@ Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
     auto port_iter = sta::LibertyCellPortIterator(cell);
     while (port_iter.hasNext()) {
         LibertyPort *port = port_iter.next();
-        if (!input_port->equiv(input_port, port) &&
-            !drvr_port->equiv(drvr_port, port) &&
+        if (!sta::LibertyPort::equiv(input_port, port) &&
+            !sta::LibertyPort::equiv(drvr_port, port) &&
             port_delays[port] < base_delay) {
             *swap_port = port;
             base_delay = port_delays[port];
