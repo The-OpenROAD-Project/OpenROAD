@@ -355,7 +355,7 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
-      if (getenv("TRY_NEW_THINGS") != nullptr) {
+      if (getenv("ENABLE_VT_AND_PIN_SWAP") != nullptr) {
           // This is equivalent to Vt cell swapping.
           // Should really nor run the upsizeDrvr from before
           // and this one in the same flow. But ok to test for now.
