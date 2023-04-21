@@ -510,12 +510,12 @@ void TechChar::initCharacterization()
       = db_->findMaster(options_->getSinkBuffer().c_str());
 
   for (odb::dbMTerm* masterTerminal : charBuf_->getMTerms()) {
-    if (masterTerminal->getIoType() == odb::dbIoType::INPUT
-        && (masterTerminal->getSigType() == odb::dbSigType::SIGNAL
-            || masterTerminal->getSigType() == odb::dbSigType::CLOCK)) {
+    if (masterTerminal->getIoType() == odb::dbIoType::Value::INPUT
+        && (masterTerminal->getSigType() == odb::dbSigType::Value::SIGNAL
+            || masterTerminal->getSigType() == odb::dbSigType::Value::CLOCK)) {
       charBufIn_ = masterTerminal;
-    } else if (masterTerminal->getIoType() == odb::dbIoType::OUTPUT
-               && masterTerminal->getSigType() == odb::dbSigType::SIGNAL) {
+    } else if (masterTerminal->getIoType() == odb::dbIoType::Value::OUTPUT
+               && masterTerminal->getSigType() == odb::dbSigType::Value::SIGNAL) {
       charBufOut_ = masterTerminal;
     }
   }
@@ -671,13 +671,13 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
                                 + std::to_string(wireCounter);
     net = odb::dbNet::create(charBlock_, netName.c_str());
     odb::dbWire::create(net);
-    net->setSigType(odb::dbSigType::SIGNAL);
+    net->setSigType(odb::dbSigType::Value::SIGNAL);
     // Creates the input port.
     const std::string inPortName
         = "in_" + std::to_string(setupWirelength) + solutionCounter.to_string();
     odb::dbBTerm* inPort = odb::dbBTerm::create(
         net, inPortName.c_str());  // sig type is signal by default
-    inPort->setIoType(odb::dbIoType::INPUT);
+    inPort->setIoType(odb::dbIoType::Value::INPUT);
     odb::dbBPin* inPortPin = odb::dbBPin::create(inPort);
     // Updates the topology with the new port.
     topology.inPort = inPortPin;
@@ -712,7 +712,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
         net = odb::dbNet::create(charBlock_, netName.c_str());
         odb::dbWire::create(net);
         bufInstanceOutPin->connect(net);
-        net->setSigType(odb::dbSigType::SIGNAL);
+        net->setSigType(odb::dbSigType::Value::SIGNAL);
         // Updates the topology wih the new instance and the current topology
         // (as a vector of strings).
         topology.instVector.push_back(bufInstance);
@@ -728,7 +728,7 @@ std::vector<TechChar::SolutionData> TechChar::createPatterns(
                                     + solutionCounter.to_string();
     odb::dbBTerm* outPort = odb::dbBTerm::create(
         net, outPortName.c_str());  // sig type is signal by default
-    outPort->setIoType(odb::dbIoType::OUTPUT);
+    outPort->setIoType(odb::dbIoType::Value::OUTPUT);
     odb::dbBPin* outPortPin = odb::dbBPin::create(outPort);
     // Updates the topology with the output port, old new, possible instances
     // and other attributes.
@@ -802,11 +802,11 @@ void TechChar::setParasitics(
                 // iterate over the net ITerms.
         for (odb::dbITerm* iterm : netITerms) {
           if (iterm != nullptr) {
-            if (iterm->getIoType() == odb::dbIoType::INPUT) {
+            if (iterm->getIoType() == odb::dbIoType::Value::INPUT) {
               lastPin = db_network_->dbToSta(iterm);
             }
 
-            if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+            if (iterm->getIoType() == odb::dbIoType::Value::OUTPUT) {
               firstPin = db_network_->dbToSta(iterm);
             }
 

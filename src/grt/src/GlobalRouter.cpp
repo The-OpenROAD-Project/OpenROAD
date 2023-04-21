@@ -652,7 +652,7 @@ void GlobalRouter::findPins(Net* net)
 
 int GlobalRouter::getNetMaxRoutingLayer(const Net* net)
 {
-  return net->getSignalType() == odb::dbSigType::CLOCK
+  return net->getSignalType() == odb::dbSigType::Value::CLOCK
                  && max_layer_for_clock_ > 0
              ? max_layer_for_clock_
              : max_routing_layer_;
@@ -820,7 +820,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
   }
 
   if (!on_grid_local) {
-    bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+    bool is_clock = (net->getSignalType() == odb::dbSigType::Value::CLOCK);
     std::vector<int>* edge_cost_per_layer;
     int edge_cost_for_net;
     computeTrackConsumption(net, edge_cost_for_net, edge_cost_per_layer);
@@ -2772,7 +2772,7 @@ void GlobalRouter::initClockNets()
     logger_->info(GRT, 19, "Found {} clock nets.", clock_nets.size());
 
   for (odb::dbNet* net : clock_nets) {
-    net->setSigType(odb::dbSigType::CLOCK);
+    net->setSigType(odb::dbSigType::Value::CLOCK);
   }
 }
 
@@ -2792,7 +2792,7 @@ bool GlobalRouter::isClkTerm(odb::dbITerm* iterm, sta::dbNetwork* network)
 bool GlobalRouter::isNonLeafClock(odb::dbNet* db_net)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
-  if (db_net->getSigType() != odb::dbSigType::CLOCK) {
+  if (db_net->getSigType() != odb::dbSigType::Value::CLOCK) {
     return false;
   }
 
@@ -2808,7 +2808,7 @@ void GlobalRouter::makeItermPins(Net* net,
                                  odb::dbNet* db_net,
                                  const odb::Rect& die_area)
 {
-  bool is_clock = (net->getSignalType() == odb::dbSigType::CLOCK);
+  bool is_clock = (net->getSignalType() == odb::dbSigType::Value::CLOCK);
   int max_routing_layer = (is_clock && max_layer_for_clock_ > 0)
                               ? max_layer_for_clock_
                               : max_routing_layer_;

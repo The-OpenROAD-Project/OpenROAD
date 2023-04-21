@@ -240,7 +240,7 @@ void TritonPart::ReadNetlist()
       odb::dbInst* inst = iterm->getInst();
       const int vertex_id
           = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT)
+      if (iterm->getIoType() == odb::dbIoType::Value::OUTPUT)
         driver_id = vertex_id;
       else
         loads_id.insert(vertex_id);
@@ -249,7 +249,7 @@ void TritonPart::ReadNetlist()
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       const int vertex_id
           = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
-      if (bterm->getIoType() == odb::dbIoType::INPUT)
+      if (bterm->getIoType() == odb::dbIoType::Value::INPUT)
         driver_id = vertex_id;
       else
         loads_id.insert(vertex_id);

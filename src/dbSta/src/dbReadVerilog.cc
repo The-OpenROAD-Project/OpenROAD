@@ -342,17 +342,17 @@ dbIoType
 Verilog2db::staToDb(PortDirection* dir)
 {
   if (dir == PortDirection::input())
-    return dbIoType::INPUT;
+    return dbIoType::Value::INPUT;
   else if (dir == PortDirection::output())
-    return dbIoType::OUTPUT;
+    return dbIoType::Value::OUTPUT;
   else if (dir == PortDirection::bidirect())
-    return dbIoType::INOUT;
+    return dbIoType::Value::INOUT;
   else if (dir == PortDirection::tristate())
-    return dbIoType::OUTPUT;
+    return dbIoType::Value::OUTPUT;
   else if (dir == PortDirection::unknown())
-    return dbIoType::INPUT;
+    return dbIoType::Value::INPUT;
   else
-    return dbIoType::INOUT;
+    return dbIoType::Value::INOUT;
 }
 
 void
@@ -367,9 +367,9 @@ Verilog2db::makeDbNets(const Instance* inst)
       dbNet* db_net = dbNet::create(block_, net_name);
 
       if (network_->isPower(net))
-        db_net->setSigType(odb::dbSigType::POWER);
+        db_net->setSigType(odb::dbSigType::Value::POWER);
       if (network_->isGround(net))
-        db_net->setSigType(odb::dbSigType::GROUND);
+        db_net->setSigType(odb::dbSigType::Value::GROUND);
 
       // Sort connected pins for regression stability.
       PinSeq net_pins;

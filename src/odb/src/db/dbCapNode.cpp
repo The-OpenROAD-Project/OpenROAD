@@ -510,14 +510,14 @@ bool dbCapNode::isSourceTerm(dbBlock* mblock)
   if (seg->_flags._iterm) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
     iotype = iterm->getIoType();
-    if (iterm->getIoType() == dbIoType::OUTPUT)
+    if (iterm->getIoType() == dbIoType::Value::OUTPUT)
       return true;
     else
       return false;
   } else if (seg->_flags._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
     iotype = bterm->getIoType();
-    if (bterm->getIoType() == dbIoType::INPUT)
+    if (bterm->getIoType() == dbIoType::Value::INPUT)
       return true;
     else
       return false;
@@ -530,13 +530,13 @@ bool dbCapNode::isInoutTerm(dbBlock* mblock)
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
   if (seg->_flags._iterm) {
     dbITerm* iterm = dbITerm::getITerm(block, seg->_node_num);
-    if (iterm->getIoType() == dbIoType::INOUT)
+    if (iterm->getIoType() == dbIoType::Value::INOUT)
       return true;
     else
       return false;
   } else if (seg->_flags._bterm) {
     dbBTerm* bterm = dbBTerm::getBTerm(block, seg->_node_num);
-    if (bterm->getIoType() == dbIoType::INOUT)
+    if (bterm->getIoType() == dbIoType::Value::INOUT)
       return true;
     else
       return false;

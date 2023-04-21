@@ -281,7 +281,7 @@ void dbITerm::setClocked(bool v)
 }
 bool dbITerm::isClocked()
 {
-  bool masterFlag = getMTerm()->getSigType() == dbSigType::CLOCK ? true : false;
+  bool masterFlag = getMTerm()->getSigType() == dbSigType::Value::CLOCK ? true : false;
   _dbITerm* iterm = (_dbITerm*) this;
   return iterm->_flags._clocked > 0 || masterFlag ? true : false;
 }
@@ -601,13 +601,13 @@ bool dbITerm::isOutputSignal(bool io)
   dbSigType sType = dbSigType(mterm->_flags._sig_type);
   dbIoType ioType = dbIoType(mterm->_flags._io_type);
 
-  if ((sType == dbSigType::GROUND) || (sType == dbSigType::POWER))
+  if ((sType == dbSigType::Value::GROUND) || (sType == dbSigType::Value::POWER))
     return false;
 
-  if (ioType == dbIoType::OUTPUT)
+  if (ioType == dbIoType::Value::OUTPUT)
     return true;
 
-  if (io && (ioType == dbIoType::INOUT))
+  if (io && (ioType == dbIoType::Value::INOUT))
     return true;
 
   return false;
@@ -618,13 +618,13 @@ bool dbITerm::isInputSignal(bool io)
   dbSigType sType = dbSigType(mterm->_flags._sig_type);
   dbIoType ioType = dbIoType(mterm->_flags._io_type);
 
-  if ((sType == dbSigType::GROUND) || (sType == dbSigType::POWER))
+  if ((sType == dbSigType::Value::GROUND) || (sType == dbSigType::Value::POWER))
     return false;
 
-  if (ioType == dbIoType::INPUT)
+  if (ioType == dbIoType::Value::INPUT)
     return true;
 
-  if (io && (ioType == dbIoType::INOUT))
+  if (io && (ioType == dbIoType::Value::INOUT))
     return true;
 
   return false;

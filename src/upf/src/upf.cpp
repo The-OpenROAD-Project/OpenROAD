@@ -589,7 +589,7 @@ bool find_smallest_isolation(utl::Logger* logger,
       enable_lib_port = lib_port;
     }
 
-    if (term->getIoType() == odb::dbIoType::OUTPUT) {
+    if (term->getIoType() == odb::dbIoType::Value::OUTPUT) {
       output_term = term;
       out_lib_port = lib_port;
     }
@@ -924,7 +924,7 @@ bool eval_upf(utl::Logger* logger, odb::dbBlock* block)
     for (auto&& inst : insts) {
       auto iterms = inst->getITerms();
       for (auto&& iterm : iterms) {
-        if (iterm->getIoType() != odb::dbIoType::OUTPUT) {
+        if (iterm->getIoType() != odb::dbIoType::Value::OUTPUT) {
           continue;
         }
 

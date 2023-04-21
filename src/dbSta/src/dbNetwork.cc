@@ -829,14 +829,14 @@ bool
 dbNetwork::isPower(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
-  return (dnet->getSigType() == dbSigType::POWER);
+  return (dnet->getSigType() == dbSigType::Value::POWER);
 }
 
 bool
 dbNetwork::isGround(const Net* net) const
 {
   dbNet* dnet = staToDb(net);
-  return (dnet->getSigType() == dbSigType::GROUND);
+  return (dnet->getSigType() == dbSigType::Value::GROUND);
 }
 
 NetPinIterator*
@@ -1076,9 +1076,9 @@ dbNetwork::findConstantNets()
 {
   clearConstantNets();
   for (dbNet* dnet : block_->getNets()) {
-    if (dnet->getSigType() == dbSigType::GROUND)
+    if (dnet->getSigType() == dbSigType::Value::GROUND)
       addConstantNet(dbToSta(dnet), LogicValue::zero);
-    else if (dnet->getSigType() == dbSigType::POWER)
+    else if (dnet->getSigType() == dbSigType::Value::POWER)
       addConstantNet(dbToSta(dnet), LogicValue::one);
   }
 }
@@ -1451,24 +1451,24 @@ dbNetwork::staToDb(PortDirection* dir,
                    dbIoType& io_type) const
 {
   if (dir == PortDirection::input()) {
-    sig_type = dbSigType::SIGNAL;
-    io_type = dbIoType::INPUT;
+    sig_type = dbSigType::Value::SIGNAL;
+    io_type = dbIoType::Value::INPUT;
   }
   else if (dir == PortDirection::output()) {
-    sig_type = dbSigType::SIGNAL;
-    io_type = dbIoType::OUTPUT;
+    sig_type = dbSigType::Value::SIGNAL;
+    io_type = dbIoType::Value::OUTPUT;
   }
   else if (dir == PortDirection::bidirect()) {
-    sig_type = dbSigType::SIGNAL;
-    io_type = dbIoType::INOUT;
+    sig_type = dbSigType::Value::SIGNAL;
+    io_type = dbIoType::Value::INOUT;
   }
   else if (dir == PortDirection::power()) {
-    sig_type = dbSigType::POWER;
-    io_type = dbIoType::INOUT;
+    sig_type = dbSigType::Value::POWER;
+    io_type = dbIoType::Value::INOUT;
   }
   else if (dir == PortDirection::ground()) {
-    sig_type = dbSigType::GROUND;
-    io_type = dbIoType::INOUT;
+    sig_type = dbSigType::Value::GROUND;
+    io_type = dbIoType::Value::INOUT;
   }
   else
     logger_->critical(ORD, 1007, "unhandled port direction");
@@ -1533,17 +1533,17 @@ dbNetwork::dbToSta(dbMaster* master) const
 PortDirection*
 dbNetwork::dbToSta(dbSigType sig_type, dbIoType io_type) const
 {
-  if (sig_type == dbSigType::POWER)
+  if (sig_type == dbSigType::Value::POWER)
     return PortDirection::power();
-  else if (sig_type == dbSigType::GROUND)
+  else if (sig_type == dbSigType::Value::GROUND)
     return PortDirection::ground();
-  else if (io_type == dbIoType::INPUT)
+  else if (io_type == dbIoType::Value::INPUT)
     return PortDirection::input();
-  else if (io_type == dbIoType::OUTPUT)
+  else if (io_type == dbIoType::Value::OUTPUT)
     return PortDirection::output();
-  else if (io_type == dbIoType::INOUT)
+  else if (io_type == dbIoType::Value::INOUT)
     return PortDirection::bidirect();
-  else if (io_type == dbIoType::FEEDTHRU)
+  else if (io_type == dbIoType::Value::FEEDTHRU)
     return PortDirection::bidirect();
   else {
     logger_->critical(ORD, 1008, "unknown master term type");

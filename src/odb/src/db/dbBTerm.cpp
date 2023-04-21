@@ -59,8 +59,8 @@ template class dbTable<_dbBTerm>;
 
 _dbBTerm::_dbBTerm(_dbDatabase*)
 {
-  _flags._io_type = dbIoType::INPUT;
-  _flags._sig_type = dbSigType::SIGNAL;
+  _flags._io_type = dbIoType::Value::INPUT;
+  _flags._sig_type = dbSigType::Value::SIGNAL;
   _flags._orient = 0;
   _flags._status = 0;
   _flags._spef = 0;

@@ -543,7 +543,7 @@ dbMTerm* dbMTerm::create(dbMaster* master_,
   mterm->_flags._io_type = io_type_;
   mterm->_flags._sig_type = sig_type_;
   mterm->_flags._shape_type = shape_type_;
-  if (sig_type_ == dbSigType::CLOCK)
+  if (sig_type_ == dbSigType::Value::CLOCK)
     master_->setSequential(1);
   master->_mterm_hash.insert(mterm);
   master->_mterm_cnt++;

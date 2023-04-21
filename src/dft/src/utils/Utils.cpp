@@ -104,7 +104,7 @@ std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst)
 {
   std::vector<odb::dbITerm*> clocks;
   for (odb::dbITerm* iterm : inst->getITerms()) {
-    if (iterm->getSigType() == odb::dbSigType::CLOCK) {
+    if (iterm->getSigType() == odb::dbSigType::Value::CLOCK) {
       clocks.push_back(iterm);
     }
   }

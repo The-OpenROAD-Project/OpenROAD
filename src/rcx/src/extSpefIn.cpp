@@ -729,7 +729,7 @@ void extSpef::setSpefFlag(bool v)
     dbNet* net = *net_itr;
 
     dbSigType type = net->getSigType();
-    if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+    if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
       continue;
     net->setSpef(v);
   }
@@ -2144,7 +2144,7 @@ void extSpef::buildNodeHashTable()
   for (net_itr = nets.begin(); net_itr != nets.end(); ++net_itr) {
     dbNet* net = *net_itr;
     dbSigType type = net->getSigType();
-    if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+    if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
       continue;
     addNetNodeHash(net);
   }
@@ -2551,7 +2551,7 @@ uint extSpef::readBlock(uint debug,
     for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
       net = *net_itr;
       dbSigType type = net->getSigType();
-      if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+      if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
         continue;
       net->calibrateCouplingCap(_db_ext_corner);
     }
@@ -2583,7 +2583,7 @@ uint extSpef::readBlock(uint debug,
     for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
       net = *net_itr;
       dbSigType type = net->getSigType();
-      if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+      if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
         continue;
       cornerNet = dbNet::getNet(_cornerBlock, net->getId());
       if (!cornerNet->isSpef()) {

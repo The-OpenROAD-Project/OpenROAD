@@ -110,7 +110,7 @@ _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
 
 _dbNet::_dbNet(_dbDatabase* db)
 {
-  _flags._sig_type = dbSigType::SIGNAL;
+  _flags._sig_type = dbSigType::Value::SIGNAL;
   _flags._wire_type = dbWireType::ROUTED;
   _flags._special = 0;
   _flags._wild_connect = 0;
@@ -1608,14 +1608,14 @@ dbITerm* dbNet::getFirstOutput()
   for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
     dbITerm* tr = *iitr;
 
-    if ((tr->getSigType() == dbSigType::GROUND)
-        || (tr->getSigType() == dbSigType::POWER))
+    if ((tr->getSigType() == dbSigType::Value::GROUND)
+        || (tr->getSigType() == dbSigType::Value::POWER))
       continue;
 
     if (tr->isClocked())
       continue;
 
-    if (tr->getIoType() != dbIoType::OUTPUT)
+    if (tr->getIoType() != dbIoType::Value::OUTPUT)
       continue;
 
     return tr;
@@ -1631,14 +1631,14 @@ dbITerm* dbNet::get1stSignalInput(bool io)
   for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
     dbITerm* tr = *iitr;
 
-    if ((tr->getSigType() == dbSigType::GROUND)
-        || (tr->getSigType() == dbSigType::POWER))
+    if ((tr->getSigType() == dbSigType::Value::GROUND)
+        || (tr->getSigType() == dbSigType::Value::POWER))
       continue;
 
-    if (tr->getIoType() != dbIoType::INPUT)
+    if (tr->getIoType() != dbIoType::Value::INPUT)
       continue;
 
-    if (io && (tr->getIoType() != dbIoType::INOUT))
+    if (io && (tr->getIoType() != dbIoType::Value::INOUT))
       continue;
 
     return tr;
@@ -2534,7 +2534,7 @@ void dbNet::getCouplingNets(uint corner,
 void dbNet::getGndTotalCap(double* gndcap, double* totalcap, double mcf)
 {
   dbSigType type = getSigType();
-  if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+  if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
     return;
   dbSet<dbRSeg> rSet = getRSegs();
   if (rSet.begin() == rSet.end()) {
@@ -2580,7 +2580,7 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
   dbCapNode* tgtNode;
   std::vector<dbRSeg*> mrsegs;
   dbSigType type = getSigType();
-  if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+  if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
     return;
   dbSet<dbRSeg> rSet = getRSegs();
   if (rSet.begin() == rSet.end()) {
@@ -2820,7 +2820,7 @@ void dbNet::getPowerWireCount(uint& wireCnt, uint& viaCnt)
 
 void dbNet::getWireCount(uint& wireCnt, uint& viaCnt)
 {
-  if (getSigType() == dbSigType::POWER || getSigType() == dbSigType::GROUND)
+  if (getSigType() == dbSigType::Value::POWER || getSigType() == dbSigType::Value::GROUND)
     getPowerWireCount(wireCnt, viaCnt);
   else
     getSignalWireCount(wireCnt, viaCnt);
@@ -3053,8 +3053,8 @@ uint dbNet::setLevelAtFanout(uint level,
   dbSet<dbITerm>::iterator iitr;
   for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
     dbITerm* iterm = *iitr;
-    if (!((iterm->getIoType() == dbIoType::INPUT)
-          || (iterm->getIoType() == dbIoType::INOUT)))
+    if (!((iterm->getIoType() == dbIoType::Value::INPUT)
+          || (iterm->getIoType() == dbIoType::Value::INOUT)))
       continue;
 
     dbInst* inst = iterm->getInst();
@@ -3164,10 +3164,10 @@ dbNet::createTerms4SingleNet(int x1, int y1, int x2, int y2, dbTechLayer *inly)
       dbBox::create(bupin, inly, -hwidth+x2, -hwidth+y, hwidth+x2, hwidth+y);
   }
 
-  blterm->setSigType(dbSigType::SIGNAL);
-  buterm->setSigType(dbSigType::SIGNAL);
-  blterm->setIoType(dbIoType::INPUT);
-  buterm->setIoType(dbIoType::OUTPUT);
+  blterm->setSigType(dbSigType::Value::SIGNAL);
+  buterm->setSigType(dbSigType::Value::SIGNAL);
+  blterm->setIoType(dbIoType::Value::INPUT);
+  buterm->setIoType(dbIoType::Value::OUTPUT);
   blpin->setPlacementStatus(dbPlacementStatus::PLACED);
   bupin->setPlacementStatus(dbPlacementStatus::PLACED);
 

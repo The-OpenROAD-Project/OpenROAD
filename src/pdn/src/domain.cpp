@@ -278,7 +278,7 @@ void VoltageDomain::determinePowerGroundNets()
 {
   // look for power
   if (power_ == nullptr) {
-    power_ = findDomainNet(odb::dbSigType::POWER);
+    power_ = findDomainNet(odb::dbSigType::Value::POWER);
     logger_->info(utl::PDN,
                   101,
                   "Using {} as power net for {} domain.",
@@ -287,7 +287,7 @@ void VoltageDomain::determinePowerGroundNets()
   }
   // look for ground
   if (ground_ == nullptr) {
-    ground_ = findDomainNet(odb::dbSigType::GROUND);
+    ground_ = findDomainNet(odb::dbSigType::Value::GROUND);
     logger_->info(utl::PDN,
                   102,
                   "Using {} as ground net for {} domain.",

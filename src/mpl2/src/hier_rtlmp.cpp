@@ -217,7 +217,7 @@ void HierRTLMP::setDefaultThresholds()
   for (auto& macro : hard_macro_map_) {
     odb::dbMaster* master = macro.first->getMaster();
     for (odb::dbMTerm* mterm : master->getMTerms()) {
-      if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
+      if (mterm->getSigType() == odb::dbSigType::Value::SIGNAL) {
         for (odb::dbMPin* mpin : mterm->getMPins()) {
           for (odb::dbBox* box : mpin->getGeometry()) {
             odb::dbTechLayer* layer = box->getTechLayer();
@@ -1327,7 +1327,7 @@ void HierRTLMP::calculateConnection()
       }
       const int cluster_id
           = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      if (iterm->getIoType() == odb::dbIoType::Value::OUTPUT) {
         driver_id = cluster_id;
       } else {
         loads_id.push_back(cluster_id);
@@ -1342,7 +1342,7 @@ void HierRTLMP::calculateConnection()
       const int cluster_id
           = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
       io_flag = true;
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+      if (bterm->getIoType() == odb::dbIoType::Value::INPUT) {
         driver_id = cluster_id;
       } else {
         loads_id.push_back(cluster_id);
@@ -1409,7 +1409,7 @@ void HierRTLMP::createDataFlow()
   // all macro pins are flagged as sequential stopping pt
   for (auto& [macro, hard_macro] : hard_macro_map_) {
     for (odb::dbITerm* pin : macro->getITerms()) {
-      if (pin->getSigType() != odb::dbSigType::SIGNAL) {
+      if (pin->getSigType() != odb::dbSigType::Value::SIGNAL) {
         continue;
       }
       odb::dbIntProperty::create(pin, "vertex_id", stop_flag_vec.size());
@@ -1461,7 +1461,7 @@ void HierRTLMP::createDataFlow()
       } else {
         vertex_id = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
       }
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      if (iterm->getIoType() == odb::dbIoType::Value::OUTPUT) {
         driver_id = vertex_id;
       } else {
         loads_id.insert(vertex_id);
@@ -1475,7 +1475,7 @@ void HierRTLMP::createDataFlow()
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       const int vertex_id
           = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+      if (bterm->getIoType() == odb::dbIoType::Value::INPUT) {
         driver_id = vertex_id;
       } else {
         loads_id.insert(vertex_id);
@@ -1926,7 +1926,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
       int vertex_id = (cluster_id != parent_cluster_id)
                           ? cluster_vertex_id_map[cluster_id]
                           : inst_vertex_id_map[inst];
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+      if (iterm->getIoType() == odb::dbIoType::Value::OUTPUT) {
         driver_id = vertex_id;
       } else {
         loads_id.insert(vertex_id);
@@ -1940,7 +1940,7 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     for (odb::dbBTerm* bterm : net->getBTerms()) {
       const int cluster_id
           = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
-      if (bterm->getIoType() == odb::dbIoType::INPUT) {
+      if (bterm->getIoType() == odb::dbIoType::Value::INPUT) {
         driver_id = cluster_vertex_id_map[cluster_id];
       } else {
         loads_id.insert(cluster_vertex_id_map[cluster_id]);

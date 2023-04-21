@@ -318,7 +318,7 @@ void serialize(Archive& ar, odb::Point& p, const unsigned int version)
 template <class Archive>
 void serialize(Archive& ar, odb::dbSigType& type, const unsigned int version)
 {
-  odb::dbSigType::Value v = odb::dbSigType::SIGNAL;
+  odb::dbSigType::Value v = odb::dbSigType::Value::SIGNAL;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbSigType(v);
@@ -331,7 +331,7 @@ void serialize(Archive& ar, odb::dbSigType& type, const unsigned int version)
 template <class Archive>
 void serialize(Archive& ar, odb::dbIoType& type, const unsigned int version)
 {
-  odb::dbIoType::Value v = odb::dbIoType::INOUT;
+  odb::dbIoType::Value v = odb::dbIoType::Value::INOUT;
   if (fr::is_loading(ar)) {
     (ar) & v;
     type = odb::dbIoType(v);
@@ -549,7 +549,7 @@ void serializeBlockObject(Archive& ar, frBlockObject*& obj)
         (ar) & fake;
         (ar) & special;
         if (fake) {
-          if (((frNet*) obj)->getType() == odb::dbSigType::GROUND)
+          if (((frNet*) obj)->getType() == odb::dbSigType::Value::GROUND)
             id = 0;
           else
             id = 1;

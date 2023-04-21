@@ -514,7 +514,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     if (net->getNonDefaultRule())
       uNetIn->updateNondefaultRule(design_->getTech()->getNondefaultRule(
           net->getNonDefaultRule()->getName()));
-    if (net->getSigType() == dbSigType::CLOCK)
+    if (net->getSigType() == dbSigType::Value::CLOCK)
       uNetIn->updateIsClock(true);
     if (is_special)
       uNetIn->setIsSpecial(true);
@@ -870,16 +870,16 @@ void io::Parser::setBTerms(odb::dbBlock* block)
 {
   for (auto term : block->getBTerms()) {
     switch (term->getSigType()) {
-      case odb::dbSigType::POWER:
-      case odb::dbSigType::GROUND:
+      case odb::dbSigType::Value::POWER:
+      case odb::dbSigType::Value::GROUND:
         // We allow for multiple pins
         break;
-      case odb::dbSigType::TIEOFF:
-      case odb::dbSigType::SIGNAL:
-      case odb::dbSigType::CLOCK:
-      case odb::dbSigType::ANALOG:
-      case odb::dbSigType::RESET:
-      case odb::dbSigType::SCAN:
+      case odb::dbSigType::Value::TIEOFF:
+      case odb::dbSigType::Value::SIGNAL:
+      case odb::dbSigType::Value::CLOCK:
+      case odb::dbSigType::Value::ANALOG:
+      case odb::dbSigType::Value::RESET:
+      case odb::dbSigType::Value::SCAN:
         if (term->getBPins().size() > 1)
           logger_->error(utl::DRT,
                          302,
@@ -1126,12 +1126,12 @@ void io::Parser::addFakeNets()
 {
   // add VSS fake net
   auto vssFakeNet = make_unique<frNet>(string("frFakeVSS"));
-  vssFakeNet->setType(dbSigType::GROUND);
+  vssFakeNet->setType(dbSigType::Value::GROUND);
   vssFakeNet->setIsFake(true);
   design_->getTopBlock()->addFakeSNet(std::move(vssFakeNet));
   // add VDD fake net
   auto vddFakeNet = make_unique<frNet>(string("frFakeVDD"));
-  vddFakeNet->setType(dbSigType::POWER);
+  vddFakeNet->setType(dbSigType::Value::POWER);
   vddFakeNet->setIsFake(true);
   design_->getTopBlock()->addFakeSNet(std::move(vddFakeNet));
 }
@@ -3198,8 +3198,8 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
     auto db_term = block->findBTerm(term->getName().c_str());
     if (db_term == nullptr)
       logger_->error(DRT, 301, "bterm {} not found in db", term->getName());
-    if (db_term->getSigType() == odb::dbSigType::POWER
-        || db_term->getSigType() == odb::dbSigType::GROUND)
+    if (db_term->getSigType() == odb::dbSigType::Value::POWER
+        || db_term->getSigType() == odb::dbSigType::Value::GROUND)
       continue;
     auto db_pins = db_term->getBPins();
     auto& pins = term->getPins();

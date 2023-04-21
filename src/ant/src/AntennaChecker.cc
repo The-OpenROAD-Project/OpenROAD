@@ -383,14 +383,14 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
   vector<std::pair<dbWireGraph::Edge*, dbIoType>> edge_vec;
   if (node->in_edge() != nullptr
       && nv.find(node->in_edge()->source()) == nv.end()) {
-    edge_vec.emplace_back(node->in_edge(), dbIoType::INPUT);
+    edge_vec.emplace_back(node->in_edge(), dbIoType::Value::INPUT);
   }
 
   dbWireGraph::Node::edge_iterator edge_it;
 
   for (edge_it = node->begin(); edge_it != node->end(); edge_it++) {
     if (nv.find((*edge_it)->source()) == nv.end()) {
-      edge_vec.emplace_back(*edge_it, dbIoType::OUTPUT);
+      edge_vec.emplace_back(*edge_it, dbIoType::Value::OUTPUT);
     }
   }
 
@@ -401,7 +401,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
     dbIoType edge_io_type = edge_info.second;
     if (edge->type() == dbWireGraph::Edge::Type::VIA
         || edge->type() == dbWireGraph::Edge::Type::TECH_VIA) {
-      if (edge_io_type == dbIoType::INPUT) {
+      if (edge_io_type == dbIoType::Value::INPUT) {
         if (edge->source()->layer()->getRoutingLevel() <= wire_level) {
           std::pair<double, double> areas
               = calculateWireArea(edge->source(), wire_level, nv, level_nodes);
@@ -410,7 +410,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
         }
       }
 
-      if (edge_io_type == dbIoType::OUTPUT) {
+      if (edge_io_type == dbIoType::Value::OUTPUT) {
         if (edge->target()->layer()->getRoutingLevel() <= wire_level) {
           std::pair<double, double> areas
               = calculateWireArea(edge->target(), wire_level, nv, level_nodes);
@@ -422,7 +422,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
 
     if (edge->type() == dbWireGraph::Edge::Type::SEGMENT
         || edge->type() == dbWireGraph::Edge::Type::SHORT) {
-      if (edge_io_type == dbIoType::INPUT) {
+      if (edge_io_type == dbIoType::Value::INPUT) {
         if (node->layer()->getRoutingLevel() == wire_level) {
           level_nodes.insert(node);
           edge->source()->xy(end_x, end_y);
@@ -445,7 +445,7 @@ std::pair<double, double> AntennaChecker::calculateWireArea(
         side_wire_area += areas.second;
       }
 
-      if (edge_io_type == dbIoType::OUTPUT) {
+      if (edge_io_type == dbIoType::Value::OUTPUT) {
         if (node->layer()->getRoutingLevel() == wire_level) {
           level_nodes.insert(node);
           edge->target()->xy(end_x, end_y);
@@ -1543,7 +1543,7 @@ void AntennaChecker::findWireRoots(dbWire* wire,
     if (node->object() && node->object()->getObjectType() == dbITermObj) {
       dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
       dbMTerm* mterm = iterm->getMTerm();
-      if (mterm->getIoType() == dbIoType::INPUT && gateArea(mterm) > 0.0) {
+      if (mterm->getIoType() == dbIoType::Value::INPUT && gateArea(mterm) > 0.0) {
         gate_iterms.push_back(node);
       }
     }

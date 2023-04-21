@@ -416,11 +416,11 @@ void Restructure::removeConstCells()
       continue;
 
     for (auto&& iterm : inst->getITerms()) {
-      if (iterm->getSigType() == odb::dbSigType::POWER
-          || iterm->getSigType() == odb::dbSigType::GROUND)
+      if (iterm->getSigType() == odb::dbSigType::Value::POWER
+          || iterm->getSigType() == odb::dbSigType::Value::GROUND)
         continue;
 
-      if (iterm->getIoType() != odb::dbIoType::OUTPUT)
+      if (iterm->getIoType() != odb::dbIoType::Value::OUTPUT)
         continue;
       outputs++;
       auto pin = open_sta_->getDbNetwork()->dbToSta(iterm);

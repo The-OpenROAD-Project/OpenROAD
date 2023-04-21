@@ -954,7 +954,7 @@ uint extMain::addNetShapesGs(dbNet* net,
     return 0;
 
   bool plane = false;
-  if (net->getSigType() == dbSigType::ANALOG)
+  if (net->getSigType() == dbSigType::Value::ANALOG)
     plane = true;
 
   dbWireShapeItr shapes;

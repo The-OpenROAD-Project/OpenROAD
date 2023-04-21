@@ -1433,7 +1433,7 @@ void lefin::pin(lefiPin* pin)
 
   if (pin->hasDirection()) {
     if (strcasecmp(pin->direction(), "OUTPUT TRISTATE") == 0)
-      io_type = dbIoType(dbIoType::OUTPUT);
+      io_type = dbIoType(dbIoType::Value::OUTPUT);
     else
       io_type = dbIoType(pin->direction());
   }

@@ -17,9 +17,9 @@ dbMaster* createMaster2X1(dbLib* lib,
   master->setWidth(width);
   master->setHeight(height);
   master->setType(dbMasterType::CORE);
-  dbMTerm::create(master, in1, dbIoType::INPUT, dbSigType::SIGNAL);
-  dbMTerm::create(master, in2, dbIoType::INPUT, dbSigType::SIGNAL);
-  dbMTerm::create(master, out, dbIoType::OUTPUT, dbSigType::SIGNAL);
+  dbMTerm::create(master, in1, dbIoType::Value::INPUT, dbSigType::Value::SIGNAL);
+  dbMTerm::create(master, in2, dbIoType::Value::INPUT, dbSigType::Value::SIGNAL);
+  dbMTerm::create(master, out, dbIoType::Value::OUTPUT, dbSigType::Value::SIGNAL);
   master->setFrozen();
   return master;
 }
@@ -87,10 +87,10 @@ dbDatabase* create2LevetDbWithBTerms()
   auto n2 = block->findNet("n2");
   auto n7 = block->findNet("n7");
   dbBTerm* IN1 = dbBTerm::create(n1, "IN1");
-  IN1->setIoType(dbIoType::INPUT);
+  IN1->setIoType(dbIoType::Value::INPUT);
   dbBTerm* IN2 = dbBTerm::create(n2, "IN2");
-  IN2->setIoType(dbIoType::INPUT);
+  IN2->setIoType(dbIoType::Value::INPUT);
   dbBTerm* OUT = dbBTerm::create(n7, "IN3");
-  OUT->setIoType(dbIoType::OUTPUT);
+  OUT->setIoType(dbIoType::Value::OUTPUT);
   return db;
 }

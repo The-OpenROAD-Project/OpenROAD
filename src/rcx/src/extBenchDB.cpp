@@ -317,17 +317,17 @@ double extMain::getTotalCouplingCap(dbNet* net,
 uint extMain::benchVerilog(FILE* fp)
 {
   fprintf(fp, "module %s (\n", _block->getConstName());
-  benchVerilog_bterms(fp, dbIoType::OUTPUT, "  ", ",");
-  benchVerilog_bterms(fp, dbIoType::INPUT, "  ", ",", true);
+  benchVerilog_bterms(fp, dbIoType::Value::OUTPUT, "  ", ",");
+  benchVerilog_bterms(fp, dbIoType::Value::INPUT, "  ", ",", true);
   fprintf(fp, ");\n\n");
-  benchVerilog_bterms(fp, dbIoType::OUTPUT, "  output ", " ;");
+  benchVerilog_bterms(fp, dbIoType::Value::OUTPUT, "  output ", " ;");
   fprintf(fp, "\n");
-  benchVerilog_bterms(fp, dbIoType::INPUT, "  input ", " ;");
+  benchVerilog_bterms(fp, dbIoType::Value::INPUT, "  input ", " ;");
   fprintf(fp, "\n");
 
-  benchVerilog_bterms(fp, dbIoType::OUTPUT, "  wire ", " ;");
+  benchVerilog_bterms(fp, dbIoType::Value::OUTPUT, "  wire ", " ;");
   fprintf(fp, "\n");
-  benchVerilog_bterms(fp, dbIoType::INPUT, "  wire ", " ;");
+  benchVerilog_bterms(fp, dbIoType::Value::INPUT, "  wire ", " ;");
   fprintf(fp, "\n");
 
   benchVerilog_assign(fp);
@@ -370,13 +370,13 @@ uint extMain::benchVerilog_assign(FILE* fp)
     const char* bterm2 = NULL;
     dbSet<dbBTerm> bterms = net->getBTerms();
     for (dbBTerm* bterm : bterms) {
-      if (bterm->getIoType() == dbIoType::OUTPUT) {
+      if (bterm->getIoType() == dbIoType::Value::OUTPUT) {
         bterm1 = bterm->getConstName();
         break;
       }
     }
     for (dbBTerm* bterm : bterms) {
-      if (bterm->getIoType() == dbIoType::INPUT) {
+      if (bterm->getIoType() == dbIoType::Value::INPUT) {
         bterm2 = bterm->getConstName();
         break;
       }

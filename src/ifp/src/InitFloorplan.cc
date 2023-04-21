@@ -538,9 +538,9 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
 
   odb::dbSigType look_for;
   if (is_zero) {
-    look_for = odb::dbSigType::GROUND;
+    look_for = odb::dbSigType::Value::GROUND;
   } else if (is_one) {
-    look_for = odb::dbSigType::POWER;
+    look_for = odb::dbSigType::Value::POWER;
   } else {
     logger_->error(utl::IFP,
                    29,
@@ -563,7 +563,7 @@ void InitFloorplan::insertTiecells(odb::dbMTerm* tie_term,
     auto* inst = odb::dbInst::create(block_, master, inst_name.c_str());
     auto* iterm = inst->findITerm(tie_term->getConstName());
     iterm->connect(net);
-    net->setSigType(odb::dbSigType::SIGNAL);
+    net->setSigType(odb::dbSigType::Value::SIGNAL);
     count++;
   }
 

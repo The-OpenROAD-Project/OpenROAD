@@ -158,9 +158,9 @@ frTerm* Fixture::makeMacroPin(frMaster* master,
   auto term = uTerm.get();
   term->setId(id);
   master->addTerm(std::move(uTerm));
-  dbSigType termType = dbSigType::SIGNAL;
+  dbSigType termType = dbSigType::Value::SIGNAL;
   term->setType(termType);
-  dbIoType termDirection = dbIoType::INPUT;
+  dbIoType termDirection = dbIoType::Value::INPUT;
   term->setDirection(termDirection);
   auto pinIn = make_unique<frMPin>();
   pinIn->setId(0);
@@ -212,12 +212,12 @@ void Fixture::makeDesign()
 
   // GC assumes these fake nets exist
   auto vssFakeNet = std::make_unique<frNet>("frFakeVSS");
-  vssFakeNet->setType(dbSigType::GROUND);
+  vssFakeNet->setType(dbSigType::Value::GROUND);
   vssFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vssFakeNet));
 
   auto vddFakeNet = std::make_unique<frNet>("frFakeVDD");
-  vddFakeNet->setType(dbSigType::POWER);
+  vddFakeNet->setType(dbSigType::Value::POWER);
   vddFakeNet->setIsFake(true);
   block->addFakeSNet(std::move(vddFakeNet));
 

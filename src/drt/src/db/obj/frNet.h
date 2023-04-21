@@ -65,7 +65,7 @@ class frNet : public frBlockObject
         firstNonRPinNode_(nullptr),
         rpins_(),
         guides_(),
-        type_(dbSigType::SIGNAL),
+        type_(dbSigType::Value::SIGNAL),
         modified_(false),
         isFakeNet_(false),
         ndr_(nullptr),

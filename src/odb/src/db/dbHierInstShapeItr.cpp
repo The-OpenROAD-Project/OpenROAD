@@ -282,10 +282,10 @@ bool dbHierInstShapeItr::drawNet(unsigned filter,
   draw_segment = false;
 
   switch (type) {
-    case dbSigType::SCAN:
-    case dbSigType::ANALOG:
-    case dbSigType::TIEOFF:
-    case dbSigType::SIGNAL: {
+    case dbSigType::Value::SCAN:
+    case dbSigType::Value::ANALOG:
+    case dbSigType::Value::TIEOFF:
+    case dbSigType::Value::SIGNAL: {
       if (isFiltered(filter, SIGNAL_WIRE | SIGNAL_VIA))
         return false;
 
@@ -298,8 +298,8 @@ bool dbHierInstShapeItr::drawNet(unsigned filter,
       return true;
     }
 
-    case dbSigType::POWER:
-    case dbSigType::GROUND: {
+    case dbSigType::Value::POWER:
+    case dbSigType::Value::GROUND: {
       if (isFiltered(filter, POWER_WIRE | POWER_VIA))
         return false;
 
@@ -312,7 +312,7 @@ bool dbHierInstShapeItr::drawNet(unsigned filter,
       return true;
     }
 
-    case dbSigType::CLOCK: {
+    case dbSigType::Value::CLOCK: {
       if (isFiltered(filter, CLOCK_WIRE | CLOCK_VIA))
         return false;
 
@@ -325,7 +325,7 @@ bool dbHierInstShapeItr::drawNet(unsigned filter,
       return true;
     }
 
-    case dbSigType::RESET: {
+    case dbSigType::Value::RESET: {
       if (isFiltered(filter, RESET_WIRE | RESET_VIA))
         return false;
 

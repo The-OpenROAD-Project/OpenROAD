@@ -48,8 +48,8 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
         owner = bterm->getNet();
       } else {
         dbSigType sigType = bterm->getType();
-        isFloatingVDD = (sigType == dbSigType::POWER);
-        isFloatingVSS = (sigType == dbSigType::GROUND);
+        isFloatingVDD = (sigType == dbSigType::Value::POWER);
+        isFloatingVSS = (sigType == dbSigType::Value::GROUND);
         owner = obj;
       }
       break;
@@ -60,8 +60,8 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
         owner = instTerm->getNet();
       } else {
         dbSigType sigType = instTerm->getTerm()->getType();
-        isFloatingVDD = (sigType == dbSigType::POWER);
-        isFloatingVSS = (sigType == dbSigType::GROUND);
+        isFloatingVDD = (sigType == dbSigType::Value::POWER);
+        isFloatingVSS = (sigType == dbSigType::Value::GROUND);
         owner = obj;
       }
       break;

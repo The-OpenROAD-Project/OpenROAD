@@ -207,14 +207,14 @@ void TritonCTS::countSinksPostDbWrite(TreeBuilder* builder,
   int driverX = 0;
   int driverY = 0;
   for (odb::dbITerm* iterm : iterms) {
-    if (iterm->getIoType() != odb::dbIoType::INPUT) {
+    if (iterm->getIoType() != odb::dbIoType::Value::INPUT) {
       iterm->getAvgXY(&driverX, &driverY);
       break;
     }
   }
   odb::dbSet<odb::dbBTerm> bterms = net->getBTerms();
   for (odb::dbBTerm* bterm : bterms) {
-    if (bterm->getIoType() == odb::dbIoType::INPUT) {
+    if (bterm->getIoType() == odb::dbIoType::Value::INPUT) {
       for (odb::dbBPin* pin : bterm->getBPins()) {
         odb::dbPlacementStatus status = pin->getPlacementStatus();
         if (status == odb::dbPlacementStatus::NONE
@@ -233,7 +233,7 @@ void TritonCTS::countSinksPostDbWrite(TreeBuilder* builder,
     }
   }
   for (odb::dbITerm* iterm : iterms) {
-    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+    if (iterm->getIoType() == odb::dbIoType::Value::INPUT) {
       std::string name = iterm->getInst()->getName();
       int receiverX, receiverY;
       iterm->getAvgXY(&receiverX, &receiverY);
@@ -626,7 +626,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
   odb::dbInst* topClockInst = block_->findInst(topClockInstName.c_str());
   odb::dbITerm* topClockInstInputPin = getFirstInput(topClockInst);
   topClockInstInputPin->connect(topClockNet);
-  topClockNet->setSigType(odb::dbSigType::CLOCK);
+  topClockNet->setSigType(odb::dbSigType::Value::CLOCK);
 
   std::map<int, uint> fanoutcount;
 
@@ -644,7 +644,7 @@ void TritonCTS::writeClockNetsToDb(Clock& clockNet)
     odb::dbNet* clkSubNet
         = odb::dbNet::create(block_, subNet.getName().c_str());
     ++numClkNets_;
-    clkSubNet->setSigType(odb::dbSigType::CLOCK);
+    clkSubNet->setSigType(odb::dbSigType::Value::CLOCK);
 
     odb::dbInst* driver = subNet.getDriver()->getDbInst();
     odb::dbITerm* driverInputPin = getFirstInput(driver);
@@ -787,7 +787,7 @@ void TritonCTS::disconnectAllSinksFromNet(odb::dbNet* net)
 {
   odb::dbSet<odb::dbITerm> iterms = net->getITerms();
   for (odb::dbITerm* iterm : iterms) {
-    if (iterm->getIoType() == odb::dbIoType::INPUT) {
+    if (iterm->getIoType() == odb::dbIoType::Value::INPUT) {
       iterm->disconnect();
     }
   }

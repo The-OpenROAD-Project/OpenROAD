@@ -3086,10 +3086,10 @@ class dbInst : public dbObject
   ///
   /// Get the all the instances connected to the net of each iterm of this
   /// instance. Only traverse nets of the specified SigType. Default is
-  /// dbSigType::SIGNAL.
+  /// dbSigType::Value::SIGNAL.
   ///
   void getConnectivity(std::vector<dbInst*>& neighbors,
-                       dbSigType::Value value = dbSigType::SIGNAL);
+                       dbSigType::Value value = dbSigType::Value::SIGNAL);
 
   ///
   /// Bind the hierarchical (child) block to this instance.

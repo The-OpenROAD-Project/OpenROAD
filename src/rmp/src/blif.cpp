@@ -135,8 +135,8 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       auto mterm = iterm->getMTerm();
       auto net = iterm->getNet();
 
-      if (iterm->getSigType() == odb::dbSigType::POWER
-          || iterm->getSigType() == odb::dbSigType::GROUND)
+      if (iterm->getSigType() == odb::dbSigType::Value::POWER
+          || iterm->getSigType() == odb::dbSigType::Value::GROUND)
         continue;
 
       sta::Vertex *vertex, *bidirect_drvr_vertex;
@@ -168,10 +168,10 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
       auto connectedIterms = net->getITerms();
 
       if (connectedIterms.size() == 1) {
-        if (iterm->getIoType() == odb::dbIoType::INPUT) {
+        if (iterm->getIoType() == odb::dbIoType::Value::INPUT) {
           inputs.insert(netName);
           addArrival(pin_, netName);
-        } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+        } else if (iterm->getIoType() == odb::dbIoType::Value::OUTPUT) {
           outputs.insert(netName);
           addRequired(pin_, netName);
         }
@@ -184,7 +184,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
           if (instMap.find(connectedInstId) == instMap.end()) {
             // Net is connected to an instance outside the cut out region
             // Check whether it's input or output
-            if (iterm->getIoType() == odb::dbIoType::INPUT) {
+            if (iterm->getIoType() == odb::dbIoType::Value::INPUT) {
               // Net is connected to a pin outside the bubble and should be
               // treated as an input If the driving pin is contant then we'll
               // add a constant gate in blif otherwise just add the net as input
@@ -220,7 +220,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
                 addAsInput = true;
               }
 
-            } else if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+            } else if (iterm->getIoType() == odb::dbIoType::Value::OUTPUT) {
               outputs.insert(netName);
               addRequired(pin_, netName);
             }
@@ -240,7 +240,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
           && const1.find(netName) == const1.end()) {
         auto connectedPorts = net->getBTerms();
         for (auto connectedPort : connectedPorts) {
-          if (connectedPort->getIoType() == odb::dbIoType::INPUT) {
+          if (connectedPort->getIoType() == odb::dbIoType::Value::INPUT) {
             auto pin_ = open_sta_->getDbNetwork()->dbToSta(connectedPort);
             auto network_ = open_sta_->network();
             auto port_ = network_->libertyPort(pin_);
@@ -265,7 +265,7 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
               inputs.insert(netName);
               addArrival(pin_, netName);
             }
-          } else if (connectedPort->getIoType() == odb::dbIoType::OUTPUT) {
+          } else if (connectedPort->getIoType() == odb::dbIoType::Value::OUTPUT) {
             outputs.insert(netName);
             addRequired(pin_, netName);
           }

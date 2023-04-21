@@ -1540,11 +1540,11 @@ dbITerm* dbInst::getFirstOutput()
   for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
     dbITerm* tr = *iitr;
 
-    if ((tr->getSigType() == dbSigType::GROUND)
-        || (tr->getSigType() == dbSigType::POWER))
+    if ((tr->getSigType() == dbSigType::Value::GROUND)
+        || (tr->getSigType() == dbSigType::Value::POWER))
       continue;
 
-    if (tr->getIoType() != dbIoType::OUTPUT)
+    if (tr->getIoType() != dbIoType::Value::OUTPUT)
       continue;
 
     return tr;

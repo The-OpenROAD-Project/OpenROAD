@@ -325,7 +325,7 @@ void Optdp::setupMasterPowers()
     bool isVdd = false;
     bool isGnd = false;
     for (dbMTerm* mterm : master->getMTerms()) {
-      if (mterm->getSigType() == dbSigType::POWER) {
+      if (mterm->getSigType() == dbSigType::Value::POWER) {
         isVdd = true;
         for (dbMPin* mpin : mterm->getMPins()) {
           // Geometry or box?
@@ -338,7 +338,7 @@ void Optdp::setupMasterPowers()
             pwrLayers_.insert(layer);
           }
         }
-      } else if (mterm->getSigType() == dbSigType::GROUND) {
+      } else if (mterm->getSigType() == dbSigType::Value::GROUND) {
         isGnd = true;
         for (dbMPin* mpin : mterm->getMPins()) {
           // Geometry or box?
@@ -777,11 +777,11 @@ void Optdp::createArchitecture()
     if (!net->isSpecial()) {
       continue;
     }
-    if (!(net->getSigType() == dbSigType::POWER
-          || net->getSigType() == dbSigType::GROUND)) {
+    if (!(net->getSigType() == dbSigType::Value::POWER
+          || net->getSigType() == dbSigType::Value::GROUND)) {
       continue;
     }
-    int pwr = (net->getSigType() == dbSigType::POWER)
+    int pwr = (net->getSigType() == dbSigType::Value::POWER)
                   ? Architecture::Row::Power_VDD
                   : Architecture::Row::Power_VSS;
     for (dbSWire* swire : net->getSWires()) {

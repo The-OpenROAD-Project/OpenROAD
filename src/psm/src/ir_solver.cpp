@@ -206,7 +206,7 @@ void IRSolver::solveIR()
     Node* node = Gmat_->getNode(node_num);
     const double volt = x(node_num);
     sum_volt = sum_volt + volt;
-    if (power_net_type_ == dbSigType::POWER) {
+    if (power_net_type_ == dbSigType::Value::POWER) {
       if (volt < wc_voltage) {
         wc_voltage = volt;
       }
@@ -395,7 +395,7 @@ void IRSolver::readC4Data()
                        power_net_);
       }
       power_net_type_ = power_net->getSigType();
-      if (power_net_type_ == dbSigType::GROUND) {
+      if (power_net_type_ == dbSigType::Value::GROUND) {
         supply_voltage_src = supply_voltages.second;
         logger_->warn(utl::PSM,
                       21,
@@ -584,7 +584,7 @@ bool IRSolver::createJ()
   // Creating the J matrix
   for (int i = 0; i < num_nodes; ++i) {
     const Node* node_J = Gmat_->getNode(i);
-    if (power_net_type_ == dbSigType::GROUND) {
+    if (power_net_type_ == dbSigType::Value::GROUND) {
       J_[i] = (node_J->getCurrent());
     } else {
       J_[i] = -1 * (node_J->getCurrent());

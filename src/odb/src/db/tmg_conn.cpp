@@ -71,11 +71,11 @@ static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
   dbITerm* it_inout = NULL;
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
     it = *iterm_itr;
-    if (it->getIoType() == dbIoType::OUTPUT) {
+    if (it->getIoType() == dbIoType::Value::OUTPUT) {
       *iterm = it;
       return;
     }
-    if (it->getIoType() == dbIoType::INOUT && !it_inout)
+    if (it->getIoType() == dbIoType::Value::INOUT && !it_inout)
       it_inout = it;
   }
   dbSet<dbBTerm> bterms = net->getBTerms();
@@ -84,11 +84,11 @@ static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
   dbBTerm* bt_inout = NULL;
   for (bterm_itr = bterms.begin(); bterm_itr != bterms.end(); ++bterm_itr) {
     bt = *bterm_itr;
-    if (bt->getIoType() == dbIoType::INPUT) {
+    if (bt->getIoType() == dbIoType::Value::INPUT) {
       *bterm = bt;
       return;
     }
-    if (bt->getIoType() == dbIoType::INOUT && !bt_inout)
+    if (bt->getIoType() == dbIoType::Value::INOUT && !bt_inout)
       bt_inout = bt;
   }
   if (bt_inout) {

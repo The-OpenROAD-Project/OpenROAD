@@ -610,7 +610,7 @@ DbInstDescriptor::Type DbInstDescriptor::getInstanceType(
         if (net == nullptr) {
           continue;
         }
-        if (net->getSigType() == odb::dbSigType::CLOCK) {
+        if (net->getSigType() == odb::dbSigType::Value::CLOCK) {
           return STD_BUFINV_CLK_TREE;
         }
       }
@@ -908,7 +908,7 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
     }
 
     auto iotype = iterm->getIoType();
-    if (iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT) {
+    if (iotype == odb::dbIoType::Value::OUTPUT || iotype == odb::dbIoType::Value::INOUT) {
       odb::dbTransform transform;
       iterm->getInst()->getTransform(transform);
       get_graph_iterm_targets(iterm->getMTerm(), transform, sources);
@@ -921,8 +921,8 @@ void DbNetDescriptor::findSourcesAndSinks(odb::dbNet* net,
     }
 
     auto iotype = bterm->getIoType();
-    if (iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT
-        || iotype == odb::dbIoType::FEEDTHRU) {
+    if (iotype == odb::dbIoType::Value::INPUT || iotype == odb::dbIoType::Value::INOUT
+        || iotype == odb::dbIoType::Value::FEEDTHRU) {
       get_graph_bterm_targets(bterm, sources);
     }
   }
@@ -1167,22 +1167,22 @@ void DbNetDescriptor::highlight(std::any object, Painter& painter) const
 
   auto is_source_iterm = [](odb::dbITerm* iterm) -> bool {
     const auto iotype = iterm->getIoType();
-    return iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT;
+    return iotype == odb::dbIoType::Value::OUTPUT || iotype == odb::dbIoType::Value::INOUT;
   };
   auto is_sink_iterm = [](odb::dbITerm* iterm) -> bool {
     const auto iotype = iterm->getIoType();
-    return iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT;
+    return iotype == odb::dbIoType::Value::INPUT || iotype == odb::dbIoType::Value::INOUT;
   };
 
   auto is_source_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::INPUT || iotype == odb::dbIoType::INOUT
-           || iotype == odb::dbIoType::FEEDTHRU;
+    return iotype == odb::dbIoType::Value::INPUT || iotype == odb::dbIoType::Value::INOUT
+           || iotype == odb::dbIoType::Value::FEEDTHRU;
   };
   auto is_sink_bterm = [](odb::dbBTerm* bterm) -> bool {
     const auto iotype = bterm->getIoType();
-    return iotype == odb::dbIoType::OUTPUT || iotype == odb::dbIoType::INOUT
-           || iotype == odb::dbIoType::FEEDTHRU;
+    return iotype == odb::dbIoType::Value::OUTPUT || iotype == odb::dbIoType::Value::INOUT
+           || iotype == odb::dbIoType::Value::FEEDTHRU;
   };
 
   // Draw regular routing

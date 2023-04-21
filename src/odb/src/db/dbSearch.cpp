@@ -1598,7 +1598,7 @@ void dbBlockSearch::selectIterm2Net(uint itermId)
   // add context markers
 
   dbSigType type = net->getSigType();
-  if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+  if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
     addNetSBoxesOnSearch(net, false);
   else
     getNetConnectivity(net, false, 0, false, false, false);
@@ -1930,7 +1930,7 @@ uint dbBlockSearch::getConnectivityWires(dbInst* inst, bool ignoreZuiFlags)
       continue;
 
     dbSigType type = net->getSigType();
-    if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+    if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
       continue;
 
     cnt += getNetFromDb(net, ignoreZuiFlags, true);
@@ -2059,7 +2059,7 @@ bool dbBlockSearch::isSignalNet(dbNet* net)
 {
   dbSigType type = net->getSigType();
 
-  return ((type == dbSigType::POWER) || (type == dbSigType::GROUND)) ? false
+  return ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND)) ? false
                                                                      : true;
 }
 uint dbBlockSearch::selectNet()
@@ -2161,7 +2161,7 @@ void dbBlockSearch::selectBterm2Net(uint btermId)
 
   dbSigType type = net->getSigType();
 
-  if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
+  if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
     addNetSBoxesOnSearch(net, false);
   else
     getNetConnectivity(net, false, 0, false, false, false);

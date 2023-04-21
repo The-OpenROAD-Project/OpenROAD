@@ -1202,17 +1202,17 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
       for (auto inst_term : inst_obj->getITerms()) {
         if (inst_term->getNet() == nullptr
-            || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
+            || inst_term->getNet()->getSigType() != odb::dbSigType::Value::SIGNAL)
           continue;
         auto inst_term_dir = inst_term->getIoType();
 
         if (output
-            && (inst_term_dir == odb::dbIoType::OUTPUT
-                || inst_term_dir == odb::dbIoType::INOUT))
+            && (inst_term_dir == odb::dbIoType::Value::OUTPUT
+                || inst_term_dir == odb::dbIoType::Value::INOUT))
           connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet()));
         if (input
-            && (inst_term_dir == odb::dbIoType::INPUT
-                || inst_term_dir == odb::dbIoType::INOUT))
+            && (inst_term_dir == odb::dbIoType::Value::INPUT
+                || inst_term_dir == odb::dbIoType::Value::INOUT))
           connected_nets.insert(Gui::get()->makeSelected(
               DbNetDescriptor::NetWithSink{inst_term->getNet(), inst_term}));
       }

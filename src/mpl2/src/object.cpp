@@ -759,7 +759,7 @@ HardMacro::HardMacro(odb::dbInst* inst, float dbu, float halo_width)
   odb::Rect bbox;
   bbox.mergeInit();
   for (odb::dbMTerm* mterm : master->getMTerms()) {
-    if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
+    if (mterm->getSigType() == odb::dbSigType::Value::SIGNAL) {
       for (odb::dbMPin* mpin : mterm->getMPins()) {
         for (odb::dbBox* box : mpin->getGeometry()) {
           odb::Rect rect = box->getBox();

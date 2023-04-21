@@ -661,7 +661,7 @@ uint dbCreateNetUtil::printModifiedNets(dbBlock* ecoBlock,
 
     if (_skipPowerNets) {
       dbSigType ty = net->getSigType();
-      if ((ty == dbSigType::POWER) || (ty == dbSigType::GROUND))
+      if ((ty == dbSigType::Value::POWER) || (ty == dbSigType::Value::GROUND))
         continue;
     }
 
@@ -680,7 +680,7 @@ dbNet* dbCreateNetUtil::createNet(dbNet* nn, bool create, bool destroy)
   dbNet* net = dbNet::create(_block, nn->getConstName());
 
   dbSigType ty = nn->getSigType();
-  if ((ty == dbSigType::POWER) && (ty == dbSigType::GROUND))
+  if ((ty == dbSigType::Value::POWER) && (ty == dbSigType::Value::GROUND))
     net->setSpecial();
 
   net->setSigType(ty);
@@ -1085,7 +1085,7 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   if (net == NULL)
     return NULL;
 
-  net->setSigType(dbSigType::SIGNAL);
+  net->setSigType(dbSigType::Value::SIGNAL);
 
   std::pair<dbBTerm*, dbBTerm*> blutrms;
 
@@ -1167,11 +1167,11 @@ dbNet* dbCreateNetUtil::createSpecialNet(dbNet* origNet, const char* name)
   if (net == NULL) {
     net = dbNet::create(_block, netName);
     if ((origNet != NULL)
-        && ((origNet->getSigType() == dbSigType::POWER)
-            || (origNet->getSigType() == dbSigType::GROUND)))
+        && ((origNet->getSigType() == dbSigType::Value::POWER)
+            || (origNet->getSigType() == dbSigType::Value::GROUND)))
       net->setSigType(origNet->getSigType());
     else
-      net->setSigType(dbSigType::POWER);
+      net->setSigType(dbSigType::Value::POWER);
 
     dbSWire::create(net, dbWireType::NONE, NULL);
 
@@ -1194,11 +1194,11 @@ dbNet* dbCreateNetUtil::createSpecialNetSingleWire(Rect& r,
   dbNet* net = _block->findNet(netName);
   if (net == NULL) {
     net = dbNet::create(_block, netName);
-    if ((origNet->getSigType() == dbSigType::POWER)
-        || (origNet->getSigType() == dbSigType::GROUND))
+    if ((origNet->getSigType() == dbSigType::Value::POWER)
+        || (origNet->getSigType() == dbSigType::Value::GROUND))
       net->setSigType(origNet->getSigType());
     else
-      net->setSigType(dbSigType::POWER);
+      net->setSigType(dbSigType::Value::POWER);
 
     swire = dbSWire::create(net, dbWireType::NONE, NULL);
   } else {
@@ -1408,7 +1408,7 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
     return NULL;
   }
 
-  net->setSigType(dbSigType::SIGNAL);
+  net->setSigType(dbSigType::Value::SIGNAL);
 
   std::pair<dbBTerm*, dbBTerm*> blutrms;
 
@@ -1508,10 +1508,10 @@ std::pair<dbBTerm*, dbBTerm*> dbCreateNetUtil::createTerms4SingleNet(
         bupin, inly, -hwidth + x2, -hwidth + y, hwidth + x2, hwidth + y);
   }
 
-  blterm->setSigType(dbSigType::SIGNAL);
-  buterm->setSigType(dbSigType::SIGNAL);
-  blterm->setIoType(dbIoType::INPUT);
-  buterm->setIoType(dbIoType::OUTPUT);
+  blterm->setSigType(dbSigType::Value::SIGNAL);
+  buterm->setSigType(dbSigType::Value::SIGNAL);
+  blterm->setIoType(dbIoType::Value::INPUT);
+  buterm->setIoType(dbIoType::Value::OUTPUT);
   blpin->setPlacementStatus(dbPlacementStatus::PLACED);
   bupin->setPlacementStatus(dbPlacementStatus::PLACED);
 
@@ -1540,7 +1540,7 @@ dbNet* dbCreateNetUtil::createNetSingleVia(const char* netName,
     return NULL;
   }
 
-  net->setSigType(dbSigType::SIGNAL);
+  net->setSigType(dbSigType::Value::SIGNAL);
 
   if (!createSingleVia(net, x1, y1, x2, y2, lay1, lay2)) {
     dbNet::destroy(net);

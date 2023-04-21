@@ -1457,13 +1457,13 @@ const DisplayControls::ModelRow* DisplayControls::getNetRow(
     odb::dbNet* net) const
 {
   switch (net->getSigType()) {
-    case dbSigType::SIGNAL:
+    case dbSigType::Value::SIGNAL:
       return &nets_.signal;
-    case dbSigType::POWER:
+    case dbSigType::Value::POWER:
       return &nets_.power;
-    case dbSigType::GROUND:
+    case dbSigType::Value::GROUND:
       return &nets_.ground;
-    case dbSigType::CLOCK:
+    case dbSigType::Value::CLOCK:
       return &nets_.clock;
     default:
       return nullptr;

@@ -182,11 +182,11 @@ std::string Pin::getName() const
 bool Pin::isDriver()
 {
   if (is_port_) {
-    return (bterm_->getIoType() == odb::dbIoType::INPUT);
+    return (bterm_->getIoType() == odb::dbIoType::Value::INPUT);
   } else {
     odb::dbMTerm* mterm = iterm_->getMTerm();
     odb::dbIoType type = mterm->getIoType();
-    return type == odb::dbIoType::OUTPUT || type == odb::dbIoType::INOUT;
+    return type == odb::dbIoType::Value::OUTPUT || type == odb::dbIoType::Value::INOUT;
   }
 }
 

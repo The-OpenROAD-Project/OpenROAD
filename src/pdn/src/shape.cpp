@@ -388,7 +388,7 @@ void Shape::addBPinToDb(const odb::Rect& rect) const
   if (net_->getBTermCount() == 0) {
     bterm = odb::dbBTerm::create(net_, net_->getConstName());
     bterm->setSigType(net_->getSigType());
-    bterm->setIoType(odb::dbIoType::INOUT);
+    bterm->setIoType(odb::dbIoType::Value::INOUT);
     bterm->setSpecial();
   } else {
     bterm = net_->get1stBTerm();

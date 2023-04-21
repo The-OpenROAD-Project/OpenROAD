@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(test_bterm)
   cb->addOwner(block);
   auto n1 = block->findNet("n1");
   dbBTerm* IN1 = dbBTerm::create(n1, "IN1");
-  IN1->setIoType(dbIoType::INPUT);
+  IN1->setIoType(dbIoType::Value::INPUT);
   BOOST_TEST(cb->events.size() == 3);
   BOOST_TEST(cb->events[0] == "Create IN1");
   BOOST_TEST(cb->events[1] == "Preconnect IN1 to n1");

@@ -1471,12 +1471,12 @@ ExistingGrid::ExistingGrid(
   // find a power and ground net for the domain
   for (auto* net : nets) {
     if (power == nullptr) {
-      if (net->getSigType() == odb::dbSigType::POWER) {
+      if (net->getSigType() == odb::dbSigType::Value::POWER) {
         power = net;
       }
     }
     if (ground == nullptr) {
-      if (net->getSigType() == odb::dbSigType::GROUND) {
+      if (net->getSigType() == odb::dbSigType::Value::GROUND) {
         ground = net;
       }
     }

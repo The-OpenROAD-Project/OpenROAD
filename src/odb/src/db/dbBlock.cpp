@@ -2554,7 +2554,7 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
                                    net->getId(),
                                    net->getConstName());
     dbSigType ty = net->getSigType();
-    if ((ty == dbSigType::POWER) && (ty == dbSigType::GROUND))
+    if ((ty == dbSigType::Value::POWER) && (ty == dbSigType::Value::GROUND))
       xnet->setSpecial();
 
     xnet->setSigType(ty);
@@ -3281,7 +3281,7 @@ dbBlock::createNetSingleSWire(const char *innm, int x1, int y1, int x2, int y2, 
   if (!nwnet)
     return NULL;
 
-  nwnet->setSigType(dbSigType::SIGNAL);
+  nwnet->setSigType(dbSigType::Value::SIGNAL);
 
   dbSWire *nwsw = dbSWire::create(nwnet, dbWireType::ROUTED);
   if (!nwsw)
@@ -3324,7 +3324,7 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 	if (!nwnet)
 		return NULL;
 	
-	nwnet->setSigType(dbSigType::SIGNAL);
+	nwnet->setSigType(dbSigType::Value::SIGNAL);
 
 	std::pair<dbBTerm *, dbBTerm *> blutrms;
 	if (! skipBterms ) {
@@ -3602,12 +3602,12 @@ uint dbBlock::levelize(std::vector<dbInst*>& startingInsts,
     dbSet<dbITerm>::iterator iitr;
     for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
       dbITerm* iterm = *iitr;
-      if ((iterm->getSigType() == dbSigType::GROUND)
-          || (iterm->getSigType() == dbSigType::POWER))
+      if ((iterm->getSigType() == dbSigType::Value::GROUND)
+          || (iterm->getSigType() == dbSigType::Value::POWER))
         continue;
 
-      if ((iterm->getIoType() == dbIoType::INPUT)
-          || (iterm->getIoType() == dbIoType::INOUT))
+      if ((iterm->getIoType() == dbIoType::Value::INPUT)
+          || (iterm->getIoType() == dbIoType::Value::INOUT))
         continue;
 
       dbNet* net = iterm->getNet();
@@ -3632,8 +3632,8 @@ uint dbBlock::levelizeFromPrimaryInputs()
     dbNet* net = bterm->getNet();
 
     if (net != NULL) {
-      if ((net->getSigType() == dbSigType::GROUND)
-          || (net->getSigType() == dbSigType::POWER))
+      if ((net->getSigType() == dbSigType::Value::GROUND)
+          || (net->getSigType() == dbSigType::Value::POWER))
         continue;
 
       net->setLevelAtFanout(level, true, instsToBeLeveled);
@@ -3739,8 +3739,8 @@ resultTable)
                 for (iitr= iterms.begin(); iitr != iterms.end(); ++iitr)
                 {
                         dbITerm *iterm= *iitr;
-                        if ((iterm->getSigType() == dbSigType::GROUND)||
-(iterm->getSigType() == dbSigType::POWER)) continue; if
+                        if ((iterm->getSigType() == dbSigType::Value::GROUND)||
+(iterm->getSigType() == dbSigType::Value::POWER)) continue; if
 (!iterm->isInputSignal()) continue; if (iterm->isClocked()) continue;
 
                         dbNet *inputNet= iterm->getNet();
@@ -3748,8 +3748,8 @@ resultTable)
                         if (inputNet==NULL)
                                 continue;
 
-                        if ((inputNet->getSigType()==dbSigType::GROUND)||
-(inputNet->getSigType()==dbSigType::POWER)) continue;
+                        if ((inputNet->getSigType()==dbSigType::Value::GROUND)||
+(inputNet->getSigType()==dbSigType::Value::POWER)) continue;
 
                         dbITerm* out= inputNet->getFirstOutput();
 
@@ -3818,8 +3818,8 @@ int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
       if (inputNet == NULL)
         continue;
 
-      if ((inputNet->getSigType() == dbSigType::GROUND)
-          || (inputNet->getSigType() == dbSigType::POWER))
+      if ((inputNet->getSigType() == dbSigType::Value::GROUND)
+          || (inputNet->getSigType() == dbSigType::Value::POWER))
         continue;
 
       dbITerm* out = inputNet->getFirstOutput();
@@ -3921,8 +3921,8 @@ void dbBlock::setDrivingItermsforNets()
 
   for (nitr = nets.begin(); nitr != nets.end(); ++nitr) {
     dbNet* net = *nitr;
-    if ((net->getSigType() == dbSigType::GROUND)
-        || (net->getSigType() == dbSigType::POWER))
+    if ((net->getSigType() == dbSigType::Value::GROUND)
+        || (net->getSigType() == dbSigType::Value::POWER))
       continue;
 
     net->setDrivingITerm(0);
@@ -3932,7 +3932,7 @@ void dbBlock::setDrivingItermsforNets()
     for (iitr = iterms.begin(); iitr != iterms.end(); ++iitr) {
       dbITerm* tr = *iitr;
 
-      if (tr->getIoType() == dbIoType::OUTPUT) {
+      if (tr->getIoType() == dbIoType::Value::OUTPUT) {
         net->setDrivingITerm(tr->getId());
         break;
       }

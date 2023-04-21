@@ -72,8 +72,8 @@ class frTerm : public frBlockObject
       : frBlockObject(),
         name_(name),
         net_(nullptr),
-        type_(dbSigType::SIGNAL),
-        direction_(dbIoType::INPUT),
+        type_(dbSigType::Value::SIGNAL),
+        direction_(dbIoType::Value::INPUT),
         index_in_owner_(0),
         bbox_()
   {

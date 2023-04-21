@@ -94,8 +94,8 @@ class _dbMTerm : public _dbObject
 
 inline _dbMTerm::_dbMTerm(_dbDatabase*)
 {
-  _flags._io_type = dbIoType::INPUT;
-  _flags._sig_type = dbSigType::SIGNAL;
+  _flags._io_type = dbIoType::Value::INPUT;
+  _flags._sig_type = dbSigType::Value::SIGNAL;
   _flags._shape_type = dbMTermShapeType::NONE;
   _flags._mark = 0;
   _flags._spare_bits = 0;

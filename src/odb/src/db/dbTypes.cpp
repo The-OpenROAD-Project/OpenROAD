@@ -238,34 +238,34 @@ const char* dbGroupType::getString() const
 dbSigType::dbSigType(const char* value)
 {
   if (strcasecmp(value, "SIGNAL") == 0)
-    _value = SIGNAL;
+    _value = Value::SIGNAL;
 
   else if (strcasecmp(value, "POWER") == 0)
-    _value = POWER;
+    _value = Value::POWER;
 
   else if (strcasecmp(value, "GROUND") == 0)
-    _value = GROUND;
+    _value = Value::GROUND;
 
   else if (strcasecmp(value, "CLOCK") == 0)
-    _value = CLOCK;
+    _value = Value::CLOCK;
 
   else if (strcasecmp(value, "ANALOG") == 0)
-    _value = ANALOG;
+    _value = Value::ANALOG;
 
   else if (strcasecmp(value, "ANALOG") == 0)
-    _value = ANALOG;
+    _value = Value::ANALOG;
 
   else if (strcasecmp(value, "RESET") == 0)
-    _value = RESET;
+    _value = Value::RESET;
 
   else if (strcasecmp(value, "SCAN") == 0)
-    _value = SCAN;
+    _value = Value::SCAN;
 
   else if (strcasecmp(value, "TIEOFF") == 0)
-    _value = TIEOFF;
+    _value = Value::TIEOFF;
 
   else
-    _value = SIGNAL;
+    _value = Value::SIGNAL;
 }
 
 dbSigType::dbSigType(Value value)
@@ -275,7 +275,7 @@ dbSigType::dbSigType(Value value)
 
 dbSigType::dbSigType()
 {
-  _value = SIGNAL;
+  _value = Value::SIGNAL;
 }
 
 dbSigType::dbSigType(const dbSigType& value)
@@ -286,15 +286,15 @@ dbSigType::dbSigType(const dbSigType& value)
 bool dbSigType::isSupply() const
 {
   switch (_value) {
-    case POWER:
-    case GROUND:
+    case Value::POWER:
+    case Value::GROUND:
       return true;
-    case SIGNAL:
-    case CLOCK:
-    case ANALOG:
-    case RESET:
-    case SCAN:
-    case TIEOFF:
+    case Value::SIGNAL:
+    case Value::CLOCK:
+    case Value::ANALOG:
+    case Value::RESET:
+    case Value::SCAN:
+    case Value::TIEOFF:
       return false;
   }
   assert(false);
@@ -306,35 +306,35 @@ const char* dbSigType::getString() const
   const char* value = "";
 
   switch (_value) {
-    case SIGNAL:
+    case Value::SIGNAL:
       value = "SIGNAL";
       break;
 
-    case POWER:
+    case Value::POWER:
       value = "POWER";
       break;
 
-    case GROUND:
+    case Value::GROUND:
       value = "GROUND";
       break;
 
-    case CLOCK:
+    case Value::CLOCK:
       value = "CLOCK";
       break;
 
-    case ANALOG:
+    case Value::ANALOG:
       value = "ANALOG";
       break;
 
-    case RESET:
+    case Value::RESET:
       value = "RESET";
       break;
 
-    case SCAN:
+    case Value::SCAN:
       value = "SCAN";
       break;
 
-    case TIEOFF:
+    case Value::TIEOFF:
       value = "TIEOFF";
       break;
   }
@@ -345,19 +345,19 @@ const char* dbSigType::getString() const
 dbIoType::dbIoType(const char* value)
 {
   if (strcasecmp(value, "INPUT") == 0)
-    _value = INPUT;
+    _value = Value::INPUT;
 
   else if (strcasecmp(value, "OUTPUT") == 0)
-    _value = OUTPUT;
+    _value = Value::OUTPUT;
 
   else if (strcasecmp(value, "INOUT") == 0)
-    _value = INOUT;
+    _value = Value::INOUT;
 
   else if (strcasecmp(value, "FEEDTHRU") == 0)
-    _value = FEEDTHRU;
+    _value = Value::FEEDTHRU;
 
   else
-    _value = INPUT;
+    _value = Value::INPUT;
 }
 
 dbIoType::dbIoType(Value value)
@@ -367,7 +367,7 @@ dbIoType::dbIoType(Value value)
 
 dbIoType::dbIoType()
 {
-  _value = INPUT;
+  _value = Value::INPUT;
 }
 
 dbIoType::dbIoType(const dbIoType& value)
@@ -380,19 +380,19 @@ const char* dbIoType::getString() const
   const char* value = "";
 
   switch (_value) {
-    case INPUT:
+    case Value::INPUT:
       value = "INPUT";
       break;
 
-    case OUTPUT:
+    case Value::OUTPUT:
       value = "OUTPUT";
       break;
 
-    case INOUT:
+    case Value::INOUT:
       value = "INOUT";
       break;
 
-    case FEEDTHRU:
+    case Value::FEEDTHRU:
       value = "FEEDTHRU";
       break;
   }

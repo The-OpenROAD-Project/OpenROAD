@@ -2655,9 +2655,9 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
 
         // select marker
         const std::vector<Point>* template_points = &bi_marker;
-        if (pin_dir == odb::dbIoType::INPUT) {
+        if (pin_dir == odb::dbIoType::Value::INPUT) {
           template_points = &in_marker;
-        } else if (pin_dir == odb::dbIoType::OUTPUT) {
+        } else if (pin_dir == odb::dbIoType::Value::OUTPUT) {
           template_points = &out_marker;
         }
 
