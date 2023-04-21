@@ -41,7 +41,7 @@ list(APPEND CMAKE_PREFIX_PATH
 
 find_package(ortools REQUIRED)
 
-add_library(mpl2_lib
+add_library(mpl2_lib STATIC
   src/rtl_mp.cpp
   src/hier_rtlmp.cpp
   src/object.cpp
@@ -93,4 +93,6 @@ target_link_libraries(mpl2
     gui
 )
 
-add_subdirectory(test/cpp)
+if (ENABLE_TESTS)
+    add_subdirectory(test/cpp)
+endif()

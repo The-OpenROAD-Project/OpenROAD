@@ -1,4 +1,4 @@
-add_library(zutil
+add_library(zutil STATIC
     parse.cpp
     poly_decomp.cpp
     util.cpp

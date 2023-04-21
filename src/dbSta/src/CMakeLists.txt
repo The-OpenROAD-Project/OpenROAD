@@ -35,7 +35,7 @@
 
 include("openroad")
 
-add_library(dbSta_lib
+add_library(dbSta_lib STATIC
   dbNetwork.cc
   dbSdcNetwork.cc
   dbReadVerilog.cc

@@ -1,4 +1,4 @@
-add_library(dft_clock_domain_lib
+add_library(dft_clock_domain_lib STATIC
   # Keep sorted
   ClockDomain.cpp
 )

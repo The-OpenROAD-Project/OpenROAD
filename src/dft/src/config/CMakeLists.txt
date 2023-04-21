@@ -1,4 +1,4 @@
-add_library(dft_config_lib
+add_library(dft_config_lib STATIC
   # Keep sorted
   DftConfig.cpp
   ScanArchitectConfig.cpp

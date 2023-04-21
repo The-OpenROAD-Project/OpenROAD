@@ -1,4 +1,4 @@
-add_library(dft_replace_lib
+add_library(dft_replace_lib STATIC
   # Keep sorted
   ScanReplace.cpp
 )

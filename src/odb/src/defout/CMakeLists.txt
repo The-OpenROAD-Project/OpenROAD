@@ -1,4 +1,4 @@
-add_library(defout
+add_library(defout STATIC
     defout.cpp
     defout_impl.cpp
 )

@@ -1,4 +1,4 @@
-add_library(dft_cells_lib
+add_library(dft_cells_lib STATIC
   # Keep sorted
   OneBitScanCell.cpp
   ScanCell.cpp

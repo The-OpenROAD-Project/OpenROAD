@@ -1,4 +1,4 @@
-add_library(tm
+add_library(tm STATIC
     ZFactory.cpp
 )
 

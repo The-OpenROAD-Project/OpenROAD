@@ -13,7 +13,7 @@ bison_target(def_parser
              COMPILE_FLAGS "--name-prefix=defyy"
 )
 
-add_library(def
+add_library(def STATIC
   def/defiAlias.cpp
   def/defiAssertion.cpp
   def/defiBlockage.cpp
@@ -50,7 +50,7 @@ add_library(def
   ${BISON_def_parser_OUTPUT_SOURCE}
 )
 
-add_library(defzlib
+add_library(defzlib STATIC
   defzlib/defzlib.cpp
 )
 

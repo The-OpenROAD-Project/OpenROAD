@@ -1,4 +1,4 @@
-add_library(odb_swig_common
+add_library(odb_swig_common STATIC
     swig_common.cpp
 )
 

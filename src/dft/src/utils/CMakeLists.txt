@@ -1,5 +1,4 @@
-
-add_library(dft_utils_lib
+add_library(dft_utils_lib STATIC
   # Keep sorted
   Utils.cpp
 )

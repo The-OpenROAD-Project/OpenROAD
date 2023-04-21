@@ -1,4 +1,4 @@
-add_library(db
+add_library(db STATIC
     dbBTerm.cpp 
     dbStream.cpp 
     dbBTermItr.cpp 

@@ -1,4 +1,4 @@
-add_library(dft_architect_lib
+add_library(dft_architect_lib STATIC
   # Keep sorted
   ScanArchitect.cpp
   ScanArchitectHeuristic.cpp

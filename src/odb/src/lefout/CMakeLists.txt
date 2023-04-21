@@ -1,4 +1,4 @@
-add_library(lefout
+add_library(lefout STATIC
     lefout.cpp
 )
 

@@ -36,7 +36,7 @@ project(ParquetFP
   LANGUAGES CXX 
 )
 
-add_library(ParquetFP
+add_library(ParquetFP STATIC
   src/AnalytSolve.cxx
   src/baseannealer.cxx
   src/basepacking.cxx
@@ -74,4 +74,3 @@ target_include_directories(ParquetFP
   PUBLIC
     src
 )
-

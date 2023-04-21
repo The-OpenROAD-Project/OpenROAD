@@ -1,4 +1,4 @@
-add_library(lefin
+add_library(lefin STATIC
     lefin.cpp
     reader.cpp
     lefTechLayerSpacingEolParser.cpp

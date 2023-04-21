@@ -34,7 +34,7 @@
 ## POSSIBILITY OF SUCH DAMAGE.
 ################################################################################
 
-add_library(FastRoute4.1
+add_library(FastRoute4.1 STATIC
   src/FastRoute.cpp
   src/RSMT.cpp
   src/RipUp.cpp

@@ -1,4 +1,4 @@
-add_library(cdl
+add_library(cdl STATIC
     cdl.cpp
 )
 

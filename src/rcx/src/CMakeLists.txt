@@ -33,7 +33,7 @@
 
 include("openroad")
 
-add_library(rcx_lib
+add_library(rcx_lib STATIC
   ext.cpp
   extBench.cpp
   extBenchDB.cpp

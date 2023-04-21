@@ -11,7 +11,7 @@ bison_target(lef_parser
 ############################################################
 # Create a library for LEF
 ############################################################
-add_library(lef
+add_library(lef STATIC
   lef/crypt.cpp
   lef/lefiArray.cpp
   lef/lefiCrossTalk.cpp
@@ -37,7 +37,7 @@ add_library(lef
   ${BISON_lef_parser_OUTPUT_SOURCE}
 )
 
-add_library(lefzlib
+add_library(lefzlib STATIC
   lefzlib/lefzlib.cpp
 )
 
