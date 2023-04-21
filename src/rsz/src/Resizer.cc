@@ -2479,10 +2479,10 @@ Resizer::journalEnd()
 }
 
 void
-Resizer::journalSwapPins(Instance *inst, LibertyPort *pin1,
-                         LibertyPort *pin2)
+Resizer::journalSwapPins(Instance *inst, LibertyPort *port1,
+                         LibertyPort *port2)
 {
-  swapped_pins_[inst] = std::make_tuple(pin1, pin2);
+  swapped_pins_[inst] = std::make_tuple(port1, port2);
 }
 
 void
