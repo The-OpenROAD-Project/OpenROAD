@@ -528,7 +528,7 @@ protected:
                       const Corner *&corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance *inst);
-
+  void invalidateParasitics(const Pin *pin, const Net *net);
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
@@ -536,7 +536,7 @@ protected:
   void journalEnd();
   void journalRestore(int &resize_count,
                       int &inserted_buffer_count);
-  void journalSwapPins(Instance *inst, LibertyPort *pin1, LibertyPort *pin2);
+  void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
 

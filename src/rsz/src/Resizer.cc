@@ -867,19 +867,29 @@ Resizer::findTargetCell(LibertyCell *cell,
 }
 
 void
-Resizer::swapPins(Instance *inst, LibertyPort *pin1,
-                  LibertyPort *pin2, bool journal)
+Resizer::invalidateParasitics(const Pin *pin, const Net *net)
 {
-    Pin *found_pin1, *found_pin2;
-    Net *net1, *net2;
-    LibertyPort *port1, *port2;
+  // ODB is clueless about tristates so go to liberty for reality.
+  const LibertyPort* port = network_->libertyPort(pin);
+  // Invalidate estimated parasitics on all instance input pins.
+  // Tristate nets have multiple drivers and this is drivers^2 if
+  // the parasitics are updated for each resize.
+  if (net && !port->direction()->isAnyTristate()) {
+    parasiticsInvalid(net);
+  }
+}
 
-    port1 = port2 = nullptr;
-    
+void
+Resizer::swapPins(Instance *inst, LibertyPort *port1,
+                  LibertyPort *port2, bool journal)
+{
     // Add support for undo.
     if (journal) {
-      journalSwapPins(inst, pin1, pin2);
+      journalSwapPins(inst, port1, port2);
     }
+
+    Pin *found_pin1, *found_pin2;
+    Net *net1, *net2;
 
     InstancePinIterator *pin_iter = network_->pinIterator(inst);
     found_pin1 = found_pin2 = nullptr;
@@ -888,15 +898,13 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
         Pin *pin = pin_iter->next();
         Net *net = network_->net(pin);
         LibertyPort *port = network_->libertyPort(pin);
-        if (port == pin1) {
+        if (port == port1) {
             found_pin1 = pin;
             net1 = net;
-            port1 = port;
         }
-        if (port == pin2) {
+        if (port == port2) {
             found_pin2 = pin;
             net2 = net;
-            port2 = port;
         }
     }
 
@@ -909,22 +917,8 @@ Resizer::swapPins(Instance *inst, LibertyPort *pin1,
 
         // Invalidate the parasitics on these two nets.
         if (haveEstimatedParasitics()) {
-            InstancePinIterator* pin_iter = network_->pinIterator(inst);
-            while (pin_iter->hasNext()) {
-                const Pin* pin = pin_iter->next();
-                const Net* net = network_->net(pin);
-                if (net == net1 || net == net2) {
-                    // ODB is clueless about tristates so go to liberty for reality.
-                    const LibertyPort* port = network_->libertyPort(pin);
-                    // Invalidate estimated parasitics on all instance input pins.
-                    // Tristate nets have multiple drivers and this is drivers^2 if
-                    // the parasitics are updated for each resize.
-                    if (net && !port->direction()->isAnyTristate()) {
-                        parasiticsInvalid(net);
-                    }
-                }
-            }
-            delete pin_iter;
+          invalidateParasitics(found_pin2, net1);
+          invalidateParasitics(found_pin1, net2);
         }
     }
 }
@@ -952,13 +946,7 @@ Resizer::replaceCell(Instance *inst,
       while (pin_iter->hasNext()) {
         const Pin *pin = pin_iter->next();
         const Net *net = network_->net(pin);
-        // ODB is clueless about tristates so go to liberty for reality.
-        const LibertyPort *port = network_->libertyPort(pin);
-        // Invalidate estimated parasitics on all instance input pins.
-        // Tristate nets have multiple drivers and this is drivers^2 if
-        // the parasitics are updated for each resize.
-        if (net && !port->direction()->isAnyTristate())
-          parasiticsInvalid(net);
+        invalidateParasitics(pin, net);
       }
       delete pin_iter;
     }

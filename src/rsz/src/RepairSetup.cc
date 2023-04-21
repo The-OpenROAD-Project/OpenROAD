@@ -380,8 +380,6 @@ RepairSetup::repairSetup(PathRef &path,
         }
       }
 
-      // debugCheckMultipleBuffers(path, &expanded); TODO Delete before PR
-
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
