@@ -63,12 +63,12 @@ class Annealer : public BaseAnnealer
   Annealer() : BaseAnnealer(), _sp(NULL), _spEval(NULL) {}
 
  public:
-  Annealer(const Command_Line* const params, DB* const db);
+  Annealer(const Command_Line* const params, DB* const db): BaseAnnealer(),_sp(NULL), _spEval(NULL) {}
 
-  virtual ~Annealer();
-  void parseConfig();
+  virtual ~Annealer() {}
+  void parseConfig() {}
 
-  virtual bool go();
+  virtual bool go() {}
   void anneal();
   virtual bool packOneBlock() { return true; }
 
@@ -76,8 +76,8 @@ class Annealer : public BaseAnnealer
   virtual void compactSoln(bool minWL,
                            bool fixedOutline,
                            float reqdH,
-                           float reqdW);
-  virtual void takePlfromDB();  // takeSPformDB() + eval()
+                           float reqdW) {}
+  virtual void takePlfromDB() {}  // takeSPformDB() + eval()
   void takeSPfromDB();          // converts the present pl to a seq-pair
 
   void eval();        // just evaluate the current SP and set up required
