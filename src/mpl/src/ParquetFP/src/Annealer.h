@@ -68,7 +68,7 @@ class Annealer : public BaseAnnealer
   virtual ~Annealer() {}
   void parseConfig() {}
 
-  virtual bool go() {}
+  virtual bool go() { return true; }
   void anneal();
   virtual bool packOneBlock() { return true; }
 
