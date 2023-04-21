@@ -9,6 +9,7 @@ initialize_floorplan
   [-site site_name]               LEF site name for ROWS
   -die_area "lx ly ux uy"         die area in microns
   [-core_area "lx ly ux uy"]      core area in microns
+  [-site site_names]              list of sites to make rows for
 or
   -utilization util               utilization (0-100 percent)
   [-aspect_ratio ratio]           height / width, default 1.0
@@ -16,6 +17,7 @@ or
     or "bottom top left right"]   space around core, default 0.0 (microns).
                                   Should be either one value for all margins
                                   or 4 values, one for each margin.
+  [-site site_names]              list of sites to make rows for
 ```
 
 The die area and core area used to write ROWs can be specified explicitly
