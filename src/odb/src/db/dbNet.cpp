@@ -816,7 +816,7 @@ void dbNet::setSigType(dbSigType sig_type)
                1,
                "ECO: net {}, setSigType: {}",
                getId(),
-               sig_type.getValue());
+               sig_type.getString());
     block->_journal->updateField(
         this, _dbNet::FLAGS, prev_flags, flagsToUInt(net));
   }
