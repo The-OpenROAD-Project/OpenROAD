@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include "dbCore.h"
 #include "odb.h"
 
