@@ -38,19 +38,19 @@ sta::define_cmd_args "initialize_floorplan" {[-utilization util]\
 					       [-core_space space | {bottom top left right}]\
 					       [-die_area {lx ly ux uy}]\
 					       [-core_area {lx ly ux uy}]\
-					       [-site site_name]}
+					       [-sites site_name]}
 
 proc initialize_floorplan { args } {
   sta::parse_key_args "initialize_floorplan" args \
     keys {-utilization -aspect_ratio -core_space \
-	    -die_area -core_area -site} \
+	    -die_area -core_area -sites} \
     flags {}
 
   sta::check_argc_eq0 "initialize_floorplan" $args
 
   set sites {}
-  if { [info exists keys(-site)] } {
-    foreach sitename $keys(-site) {
+  if { [info exists keys(-sites)] } {
+    foreach sitename $keys(-sites) {
       set site [ifp::find_site $sitename]
       if { $site == "NULL" } {
         utl::error IFP 11 "Unable to find site: $sitename"
