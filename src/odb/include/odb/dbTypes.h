@@ -173,7 +173,7 @@ class dbGroupType
 class dbSigType
 {
  public:
-  enum class Value: uint
+  enum class Value : uint
   {
     SIGNAL, /** */
     POWER,  /** */
@@ -237,7 +237,7 @@ class dbSigType
 class dbIoType
 {
  public:
-  enum class Value: uint
+  enum class Value : uint
   {
     INPUT,
     OUTPUT,
