@@ -2820,7 +2820,8 @@ void dbNet::getPowerWireCount(uint& wireCnt, uint& viaCnt)
 
 void dbNet::getWireCount(uint& wireCnt, uint& viaCnt)
 {
-  if (getSigType() == dbSigType::Value::POWER || getSigType() == dbSigType::Value::GROUND)
+  if (getSigType() == dbSigType::Value::POWER
+      || getSigType() == dbSigType::Value::GROUND)
     getPowerWireCount(wireCnt, viaCnt);
   else
     getSignalWireCount(wireCnt, viaCnt);

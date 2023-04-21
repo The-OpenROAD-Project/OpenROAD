@@ -17,9 +17,12 @@ dbMaster* createMaster2X1(dbLib* lib,
   master->setWidth(width);
   master->setHeight(height);
   master->setType(dbMasterType::CORE);
-  dbMTerm::create(master, in1, dbIoType::Value::INPUT, dbSigType::Value::SIGNAL);
-  dbMTerm::create(master, in2, dbIoType::Value::INPUT, dbSigType::Value::SIGNAL);
-  dbMTerm::create(master, out, dbIoType::Value::OUTPUT, dbSigType::Value::SIGNAL);
+  dbMTerm::create(
+      master, in1, dbIoType::Value::INPUT, dbSigType::Value::SIGNAL);
+  dbMTerm::create(
+      master, in2, dbIoType::Value::INPUT, dbSigType::Value::SIGNAL);
+  dbMTerm::create(
+      master, out, dbIoType::Value::OUTPUT, dbSigType::Value::SIGNAL);
   master->setFrozen();
   return master;
 }

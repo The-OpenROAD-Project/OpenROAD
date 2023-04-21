@@ -515,7 +515,8 @@ void TechChar::initCharacterization()
             || masterTerminal->getSigType() == odb::dbSigType::Value::CLOCK)) {
       charBufIn_ = masterTerminal;
     } else if (masterTerminal->getIoType() == odb::dbIoType::Value::OUTPUT
-               && masterTerminal->getSigType() == odb::dbSigType::Value::SIGNAL) {
+               && masterTerminal->getSigType()
+                      == odb::dbSigType::Value::SIGNAL) {
       charBufOut_ = masterTerminal;
     }
   }

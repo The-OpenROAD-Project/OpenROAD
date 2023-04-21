@@ -1947,7 +1947,8 @@ uint extMain::makeBlockRCsegs(const char* netNames,
       net = *net_itr;
 
       dbSigType type = net->getSigType();
-      if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
+      if ((type == dbSigType::Value::POWER)
+          || (type == dbSigType::Value::GROUND))
         continue;
       net->setWireAltered(false);
     }

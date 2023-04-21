@@ -420,8 +420,9 @@ void lefout::writePowerPins(dbBlock* db_block)
     }
     fprintf(_out, "  PIN %s\n", net->getName().c_str());
     fprintf(_out, "    USE %s ;\n", net->getSigType().getString());
-    fprintf(
-        _out, "    DIRECTION %s ;\n", dbIoType(dbIoType::Value::INOUT).getString());
+    fprintf(_out,
+            "    DIRECTION %s ;\n",
+            dbIoType(dbIoType::Value::INOUT).getString());
     for (dbSWire* special_wire : net->getSWires()) {
       fprintf(_out, "    PORT\n");
       dbSet<dbSBox> wires = special_wire->getWires();

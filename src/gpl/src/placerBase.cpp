@@ -923,7 +923,8 @@ void PlacerBase::init()
     dbSigType netType = net->getSigType();
 
     // escape nets with VDD/VSS/reset nets
-    if (netType == dbSigType::Value::SIGNAL || netType == dbSigType::Value::CLOCK) {
+    if (netType == dbSigType::Value::SIGNAL
+        || netType == dbSigType::Value::CLOCK) {
       Net myNet(net, pbVars_.skipIoMode);
       netStor_.push_back(myNet);
 

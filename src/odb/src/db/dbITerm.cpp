@@ -281,7 +281,8 @@ void dbITerm::setClocked(bool v)
 }
 bool dbITerm::isClocked()
 {
-  bool masterFlag = getMTerm()->getSigType() == dbSigType::Value::CLOCK ? true : false;
+  bool masterFlag
+      = getMTerm()->getSigType() == dbSigType::Value::CLOCK ? true : false;
   _dbITerm* iterm = (_dbITerm*) this;
   return iterm->_flags._clocked > 0 || masterFlag ? true : false;
 }

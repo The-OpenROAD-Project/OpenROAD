@@ -265,7 +265,8 @@ bool Blif::writeBlif(const char* file_name, bool write_arrival_requireds)
               inputs.insert(netName);
               addArrival(pin_, netName);
             }
-          } else if (connectedPort->getIoType() == odb::dbIoType::Value::OUTPUT) {
+          } else if (connectedPort->getIoType()
+                     == odb::dbIoType::Value::OUTPUT) {
             outputs.insert(netName);
             addRequired(pin_, netName);
           }

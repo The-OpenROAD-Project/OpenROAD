@@ -41,7 +41,7 @@
 #include "dbTypes.h"
 #include "utl/Logger.h"
 
-//#define NEW_TRACKS
+// #define NEW_TRACKS
 
 #include "dbShape.h"
 namespace odb {
@@ -2059,8 +2059,10 @@ bool dbBlockSearch::isSignalNet(dbNet* net)
 {
   dbSigType type = net->getSigType();
 
-  return ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND)) ? false
-                                                                     : true;
+  return ((type == dbSigType::Value::POWER)
+          || (type == dbSigType::Value::GROUND))
+             ? false
+             : true;
 }
 uint dbBlockSearch::selectNet()
 {

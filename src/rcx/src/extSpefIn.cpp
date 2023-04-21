@@ -2551,7 +2551,8 @@ uint extSpef::readBlock(uint debug,
     for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
       net = *net_itr;
       dbSigType type = net->getSigType();
-      if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
+      if ((type == dbSigType::Value::POWER)
+          || (type == dbSigType::Value::GROUND))
         continue;
       net->calibrateCouplingCap(_db_ext_corner);
     }
@@ -2583,7 +2584,8 @@ uint extSpef::readBlock(uint debug,
     for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
       net = *net_itr;
       dbSigType type = net->getSigType();
-      if ((type == dbSigType::Value::POWER) || (type == dbSigType::Value::GROUND))
+      if ((type == dbSigType::Value::POWER)
+          || (type == dbSigType::Value::GROUND))
         continue;
       cornerNet = dbNet::getNet(_cornerBlock, net->getId());
       if (!cornerNet->isSpef()) {

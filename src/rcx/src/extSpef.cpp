@@ -1518,7 +1518,8 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets)
     odb::dbNet* net = *net_itr;
 
     odb::dbSigType type = net->getSigType();
-    if ((type == odb::dbSigType::Value::POWER) || (type == odb::dbSigType::Value::GROUND))
+    if ((type == odb::dbSigType::Value::POWER)
+        || (type == odb::dbSigType::Value::GROUND))
       continue;
     if (!_partial || !net->isMarked())
       continue;
@@ -1558,7 +1559,8 @@ uint extSpef::writeNetMap(odb::dbSet<odb::dbNet>& nets)
     odb::dbNet* net = *net_itr;
 
     odb::dbSigType type = net->getSigType();
-    if ((type == odb::dbSigType::Value::POWER) || (type == odb::dbSigType::Value::GROUND))
+    if ((type == odb::dbSigType::Value::POWER)
+        || (type == odb::dbSigType::Value::GROUND))
       continue;
     if (_partial && !net->isMark_1ed())
       continue;
@@ -1751,7 +1753,8 @@ uint extSpef::writeBlock(char* nodeCoord,
         continue;
     }
     odb::dbSigType type = net->getSigType();
-    if ((type == odb::dbSigType::Value::POWER) || (type == odb::dbSigType::Value::GROUND))
+    if ((type == odb::dbSigType::Value::POWER)
+        || (type == odb::dbSigType::Value::GROUND))
       continue;
     if (_wOnlyClock && type != odb::dbSigType::Value::CLOCK)
       continue;
@@ -1787,7 +1790,8 @@ uint extSpef::write_spef_nets(bool flatten, bool parallel)
     odb::dbNet* net = *net_itr;
 
     odb::dbSigType type = net->getSigType();
-    if ((type == odb::dbSigType::Value::POWER) || (type == odb::dbSigType::Value::GROUND))
+    if ((type == odb::dbSigType::Value::POWER)
+        || (type == odb::dbSigType::Value::GROUND))
       continue;
     if (_wOnlyClock && type != odb::dbSigType::Value::CLOCK)
       continue;

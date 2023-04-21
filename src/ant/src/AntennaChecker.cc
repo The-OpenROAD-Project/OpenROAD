@@ -1543,7 +1543,8 @@ void AntennaChecker::findWireRoots(dbWire* wire,
     if (node->object() && node->object()->getObjectType() == dbITermObj) {
       dbITerm* iterm = dbITerm::getITerm(block_, node->object()->getId());
       dbMTerm* mterm = iterm->getMTerm();
-      if (mterm->getIoType() == dbIoType::Value::INPUT && gateArea(mterm) > 0.0) {
+      if (mterm->getIoType() == dbIoType::Value::INPUT
+          && gateArea(mterm) > 0.0) {
         gate_iterms.push_back(node);
       }
     }

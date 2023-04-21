@@ -186,7 +186,8 @@ bool Pin::isDriver()
   } else {
     odb::dbMTerm* mterm = iterm_->getMTerm();
     odb::dbIoType type = mterm->getIoType();
-    return type == odb::dbIoType::Value::OUTPUT || type == odb::dbIoType::Value::INOUT;
+    return type == odb::dbIoType::Value::OUTPUT
+           || type == odb::dbIoType::Value::INOUT;
   }
 }
 
