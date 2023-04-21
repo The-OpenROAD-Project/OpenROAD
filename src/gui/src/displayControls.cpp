@@ -411,7 +411,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   });
 
   // Rows / sites
-  makeParentItem(site_group_, "Rows", root, Qt::Checked, true);
+  makeParentItem(site_group_, "Rows", root, Qt::Unchecked, true);
 
   // Rows
   makeParentItem(pin_markers_, "Pin Markers", root, Qt::Checked);
@@ -540,22 +540,25 @@ void DisplayControls::createLayerMenu()
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings,
-                                          const ModelRow& row)
+                                          const ModelRow& row,
+                                          bool include_children)
 {
-  writeSettingsForRow(settings, row.name, row.visible, row.selectable);
+  writeSettingsForRow(
+      settings, row.name, row.visible, row.selectable, include_children);
 }
 
 void DisplayControls::writeSettingsForRow(QSettings* settings,
                                           const QStandardItem* name,
                                           const QStandardItem* visible,
-                                          const QStandardItem* selectable)
+                                          const QStandardItem* selectable,
+                                          bool include_children)
 {
   auto asBool = [](const QStandardItem* item) {
-    return item->checkState() == Qt::Checked;
+    return item->checkState() != Qt::Unchecked;
   };
 
   settings->beginGroup(name->text());
-  if (name->hasChildren()) {
+  if (name->hasChildren() && include_children) {
     for (int r = 0; r < name->rowCount(); r++) {
       writeSettingsForRow(settings,
                           name->child(r, Name),
@@ -572,25 +575,29 @@ void DisplayControls::writeSettingsForRow(QSettings* settings,
 }
 
 void DisplayControls::readSettingsForRow(QSettings* settings,
-                                         const ModelRow& row)
+                                         const ModelRow& row,
+                                         bool include_children)
 {
-  readSettingsForRow(settings, row.name, row.visible, row.selectable);
+  readSettingsForRow(
+      settings, row.name, row.visible, row.selectable, include_children);
 }
 
 void DisplayControls::readSettingsForRow(QSettings* settings,
                                          const QStandardItem* name,
                                          QStandardItem* visible,
-                                         QStandardItem* selectable)
+                                         QStandardItem* selectable,
+                                         bool include_children)
 {
-  auto getChecked =
-      [](QSettings* settings, QString name, const QStandardItem* item) {
-        return settings->value(name, item->checkState() == Qt::Checked).toBool()
-                   ? Qt::Checked
-                   : Qt::Unchecked;
-      };
+  auto getChecked = [](QSettings* settings,
+                       QString name,
+                       const QStandardItem* item) {
+    return settings->value(name, item->checkState() != Qt::Unchecked).toBool()
+               ? Qt::Checked
+               : Qt::Unchecked;
+  };
 
   settings->beginGroup(name->text());
-  if (name->hasChildren()) {
+  if (name->hasChildren() && include_children) {
     for (int r = 0; r < name->rowCount(); r++) {
       readSettingsForRow(settings,
                          name->child(r, Name),
@@ -630,6 +637,8 @@ void DisplayControls::readSettings(QSettings* settings)
   readSettingsForRow(settings, rulers_);
   readSettingsForRow(settings, tracks_group_);
   readSettingsForRow(settings, misc_group_);
+
+  readSettingsForRow(settings, site_group_, false);
 
   settings->beginGroup("other");
   settings->beginGroup("color");
@@ -700,6 +709,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   writeSettingsForRow(settings, rulers_);
   writeSettingsForRow(settings, tracks_group_);
   writeSettingsForRow(settings, misc_group_);
+  writeSettingsForRow(settings, site_group_, false);
 
   settings->beginGroup("other");
   settings->beginGroup("color");
@@ -1742,7 +1752,9 @@ void DisplayControls::libInit()
         makeLeafItem(site_controls_[site],
                      QString::fromStdString(site->getName()),
                      site_group_.name,
-                     Qt::Checked,
+                     site_group_.visible->checkState() == Qt::Checked
+                         ? Qt::Checked
+                         : Qt::Unchecked,
                      true,
                      default_site_color_,
                      QVariant::fromValue(site));
@@ -1750,6 +1762,8 @@ void DisplayControls::libInit()
       }
     }
   }
+
+  toggleParent(site_group_);
 }
 
 void DisplayControls::techInit()
