@@ -589,7 +589,7 @@ void DisplayControls::readSettingsForRow(QSettings* settings,
                                          bool include_children)
 {
   auto getChecked = [](QSettings* settings,
-                       QString name,
+                       const QString& name,
                        const QStandardItem* item) {
     return settings->value(name, item->checkState() != Qt::Unchecked).toBool()
                ? Qt::Checked
