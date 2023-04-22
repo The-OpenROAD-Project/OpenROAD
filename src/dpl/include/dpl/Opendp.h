@@ -83,6 +83,10 @@ struct Pixel;
 struct Group;
 class DplObserver;
 
+// The "Grid" is now an array of 2D grids. The new dimension is to support
+// multi-height cells. Each unique row height creates a new grid that is used in
+// legalization. The first index is the grid index (corresponding to row
+// height), second index is the row index, and third index is the site index.
 using Grid = Pixel***;
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
@@ -131,7 +135,7 @@ struct Pixel
   bool is_hopeless;  // too far from sites for diamond search
 };
 
-struct LayerInfo
+struct GridInfo
 {
   int row_count;
   int site_count;
@@ -364,7 +368,7 @@ class Opendp
   int gridNearestWidth(const Cell* cell, int site_width) const;
   int gridHeight(const Cell* cell, int row_height) const;
   int gridHeight(const Cell* cell) const;
-  LayerInfo getLayerInfo(const Cell* cell) const;
+  GridInfo getGridInfo(const Cell* cell) const;
   int gridX(int x, int site_width) const;
   int gridX(const Cell* cell) const;
   int gridX(const Cell* cell, int site_width) const;
@@ -386,7 +390,7 @@ class Opendp
                         int y,
                         int site_width,
                         int row_height) const;
-  std::pair<int, LayerInfo> getRowInfo(const Cell* cell) const;
+  std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   bool isStdCell(const Cell* cell) const;
@@ -404,13 +408,13 @@ class Opendp
                        const char* prefix,
                        dbMasterSeq* filler_masters,
                        int row_height,
-                       LayerInfo Layer_info);
+                       GridInfo grid_info);
   bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
   const char* gridInstName(int row,
                            int col,
                            int row_height,
-                           LayerInfo Layer_info);
+                           GridInfo grid_info);
 
   // Optimizing mirroring
   void findNetBoxes();
@@ -434,8 +438,8 @@ class Opendp
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
-  map<int, LayerInfo> grid_layers_;
-  std::vector<LayerInfo*> grid_layers_vector;
+  map<int, GridInfo> grid_info_map_;
+  std::vector<GridInfo*> grid_info_vector_;
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;
@@ -452,7 +456,6 @@ class Opendp
   // 3D pixel grid
   Grid grid_ = nullptr;
   Cell dummy_cell_;
-  int grid_depth_ = 0;
 
   // Filler placement.
   // gap (in sites) -> seq of masters

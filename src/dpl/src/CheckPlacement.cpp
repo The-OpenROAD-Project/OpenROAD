@@ -139,16 +139,16 @@ bool Opendp::isPlaced(const Cell* cell)
 
 bool Opendp::checkInRows(const Cell& cell) const
 {
-  auto layer_info = getRowInfo(&cell);
+  auto grid_info = getRowInfo(&cell);
   int site_width = getSiteWidth(&cell);
   int x_ll = gridX(&cell, site_width);
   int x_ur = gridEndX(&cell, site_width);
-  int y_ll = gridY(&cell, layer_info.first);
-  int y_ur = gridEndY(&cell, layer_info.first);
+  int y_ll = gridY(&cell, grid_info.first);
+  int y_ur = gridEndY(&cell, grid_info.first);
 
   for (int y = y_ll; y < y_ur; y++) {
     for (int x = x_ll; x < x_ur; x++) {
-      Pixel* pixel = gridPixel(layer_info.second.grid_index, x, y);
+      Pixel* pixel = gridPixel(grid_info.second.grid_index, x, y);
       if (pixel == nullptr  // outside core
           || !pixel->is_valid) {
         return false;
@@ -222,7 +222,7 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
 {
   Cell* gap_cell = nullptr;
   auto row_info = getRowInfo(&cell);
-  int layer_index_in_grid = row_info.second.grid_index;
+  int index_in_grid = row_info.second.grid_index;
   visitCellBoundaryPixels(
       cell, true, [&](Pixel* pixel, const Direction2D& edge, int x, int y) {
         Cell* pixel_cell = pixel->cell;
@@ -239,13 +239,12 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
         }
         if (0 != abut_x) {
           // check the abutting pixel
-          Pixel* abut_pixel = gridPixel(layer_index_in_grid, x + abut_x, y);
+          Pixel* abut_pixel = gridPixel(index_in_grid, x + abut_x, y);
           bool abuttment_exists
               = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell);
           if (!abuttment_exists) {
             // check the 1 site gap pixel
-            Pixel* gap_pixel
-                = gridPixel(layer_index_in_grid, x + 2 * abut_x, y);
+            Pixel* gap_pixel = gridPixel(index_in_grid, x + 2 * abut_x, y);
             if (gap_pixel && gap_pixel->cell != pixel_cell) {
               gap_cell = gap_pixel->cell;
             }

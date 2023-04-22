@@ -63,7 +63,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
   initGrid();
   setGridCells();
 
-  for (auto layer : grid_layers_) {
+  for (auto layer : grid_info_map_) {
     for (int row = 0; row < layer.second.row_count; row++) {
       placeRowFillers(row, prefix, filler_masters, layer.first, layer.second);
     }
@@ -84,7 +84,7 @@ void Opendp::placeRowFillers(int row,
                              const char* prefix,
                              dbMasterSeq* filler_masters,
                              int row_height,
-                             LayerInfo layer_info)
+                             GridInfo grid_info)
 {
   int j = 0;
   debugPrint(logger_,
@@ -97,14 +97,14 @@ void Opendp::placeRowFillers(int row,
 
   int row_site_count = divFloor(core_.dx(), site_width_);
   while (j < row_site_count) {
-    Pixel* pixel = gridPixel(layer_info.grid_index, j, row);
+    Pixel* pixel = gridPixel(grid_info.grid_index, j, row);
     const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr && pixel->is_valid) {
       debugPrint(logger_, DPL, "filler", 2, "filling row {} at {}.", row, j);
       int k = j;
       while (k < row_site_count
-             && gridPixel(layer_info.grid_index, k, row)->cell == nullptr
-             && gridPixel(layer_info.grid_index, k, row)->is_valid) {
+             && gridPixel(grid_info.grid_index, k, row)->cell == nullptr
+             && gridPixel(grid_info.grid_index, k, row)->is_valid) {
         k++;
       }
 
@@ -128,8 +128,8 @@ void Opendp::placeRowFillers(int row,
             gap,
             x,
             y,
-            gridInstName(row, j - 1, row_height, layer_info),
-            gridInstName(row, k + 1, row_height, layer_info));
+            gridInstName(row, j - 1, row_height, grid_info),
+            gridInstName(row, k + 1, row_height, grid_info));
       } else {
         k = j;
         debugPrint(
@@ -173,16 +173,16 @@ void Opendp::placeRowFillers(int row,
 const char* Opendp::gridInstName(int row,
                                  int col,
                                  int row_height,
-                                 LayerInfo layer_info)
+                                 GridInfo grid_info)
 {
   if (col < 0) {
     return "core_left";
   }
-  if (col > layer_info.site_count) {
+  if (col > grid_info.site_count) {
     return "core_right";
   }
 
-  const Cell* cell = gridPixel(layer_info.grid_index, col, row)->cell;
+  const Cell* cell = gridPixel(grid_info.grid_index, col, row)->cell;
   if (cell) {
     return cell->db_inst_->getConstName();
   }

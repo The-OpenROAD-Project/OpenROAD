@@ -60,22 +60,20 @@ void Opendp::initGridLayersMap()
   int grid_index = 0;
   for (auto db_row : block_->getRows()) {
     int row_height = db_row->getSite()->getHeight();
-    if (grid_layers_.find(row_height) == grid_layers_.end()) {
-      grid_layers_.emplace(
+    if (grid_info_map_.find(row_height) == grid_info_map_.end()) {
+      grid_info_map_.emplace(
           db_row->getSite()->getHeight(),
-          LayerInfo{
+          GridInfo{
               getRowCount(row_height), db_row->getSiteCount(), grid_index++});
     } else {
-      auto& layer_info = grid_layers_.at(row_height);
-      layer_info.site_count
-          = max(layer_info.site_count,
-                max(db_row->getSiteCount(),
-                    divFloor(core_.dx(), db_row->getSite()->getWidth())));
+      auto& grid_info = grid_info_map_.at(row_height);
+      grid_info.site_count
+          = divFloor(core_.dx(), db_row->getSite()->getWidth());
     }
   }
-  grid_layers_vector.resize(grid_layers_.size());
-  for (auto& [row_height, layer_info] : grid_layers_) {
-    grid_layers_vector[layer_info.grid_index] = &layer_info;
+  grid_info_vector_.resize(grid_info_map_.size());
+  for (auto& [row_height, grid_info] : grid_info_map_) {
+    grid_info_vector_[grid_info.grid_index] = &grid_info;
   }
   debugPrint(logger_, DPL, "grid", 1, "grid layers map initialized");
 }
@@ -86,27 +84,25 @@ void Opendp::initGrid()
   // the map key is the row height, the value is a pair of row count and site
   // count
 
-  if (grid_layers_.empty()) {
+  if (grid_info_map_.empty()) {
     initGridLayersMap();
   }
 
-  grid_depth_ = grid_layers_.size();
-
   // Make pixel grid
   if (grid_ == nullptr) {
-    grid_ = new Pixel**[grid_depth_];
+    grid_ = new Pixel**[grid_info_map_.size()];
 
-    for (auto& [row_height, layer_info] : grid_layers_) {
-      int layer_row_count = layer_info.row_count;
-      int index = layer_info.grid_index;
+    for (auto& [row_height, grid_info] : grid_info_map_) {
+      int layer_row_count = grid_info.row_count;
+      int index = grid_info.grid_index;
       grid_[index] = new Pixel*[layer_row_count];
     }
   }
 
-  for (auto& [row_height, layer_info] : grid_layers_) {
-    int layer_row_count = layer_info.row_count;
-    int layer_row_site_count = layer_info.site_count;
-    int index = layer_info.grid_index;
+  for (auto& [row_height, grid_info] : grid_info_map_) {
+    const int layer_row_count = grid_info.row_count;
+    const int layer_row_site_count = grid_info.site_count;
+    const int index = grid_info.grid_index;
     grid_[index] = new Pixel*[layer_row_count];
     for (int j = 0; j < layer_row_count; j++) {
       grid_[index][j] = new Pixel[layer_row_site_count];
@@ -125,10 +121,10 @@ void Opendp::initGrid()
   using namespace gtl::operators;
 
   std::vector<gtl::polygon_90_set_data<int>> hopeless;
-  hopeless.resize(grid_depth_);
-  for (auto [row_height, layer_info] : grid_layers_) {
-    hopeless[layer_info.grid_index] += gtl::rectangle_data<int>{
-        0, 0, layer_info.site_count, layer_info.row_count};
+  hopeless.resize(grid_info_map_.size());
+  for (auto [row_height, grid_info] : grid_info_map_) {
+    hopeless[grid_info.grid_index] += gtl::rectangle_data<int>{
+        0, 0, grid_info.site_count, grid_info.row_count};
   }
   // Fragmented row support; mark valid sites.
   debugPrint(
@@ -136,8 +132,9 @@ void Opendp::initGrid()
   for (auto db_row : block_->getRows()) {
     int current_row_height = db_row->getSite()->getHeight();
     int current_row_site_count = db_row->getSiteCount();
-    int current_row_count = grid_layers_.at(current_row_height).row_count;
-    int current_row_grid_index = grid_layers_.at(current_row_height).grid_index;
+    int current_row_count = grid_info_map_.at(current_row_height).row_count;
+    int current_row_grid_index
+        = grid_info_map_.at(current_row_height).grid_index;
     debugPrint(
         logger_,
         DPL,
@@ -186,7 +183,7 @@ void Opendp::initGrid()
   }
 
   std::vector<gtl::rectangle_data<int>> rects;
-  for (auto& grid_layer : grid_layers_) {
+  for (auto& grid_layer : grid_info_map_) {
     rects.clear();
     int h_index = grid_layer.second.grid_index;
     hopeless[h_index].get_rectangles(rects);
@@ -204,8 +201,8 @@ void Opendp::deleteGrid()
 {
   if (grid_) {
     int i = 0;
-    for (auto [row_height, layer_info] : grid_layers_) {
-      int N = layer_info.row_count;
+    for (auto [row_height, grid_info] : grid_info_map_) {
+      int N = grid_info.row_count;
       for (int j = 0; j < N; j++) {
         delete[] grid_[i][j];
       }
@@ -219,10 +216,10 @@ void Opendp::deleteGrid()
 
 Pixel* Opendp::gridPixel(int layer_idx, int grid_x, int grid_y) const
 {
-  LayerInfo* layer_info = grid_layers_vector[layer_idx];
-  if (grid_x >= 0 && grid_x < layer_info->site_count && grid_y >= 0
-      && grid_y < layer_info->row_count && layer_idx >= 0
-      && layer_idx < grid_depth_) {
+  GridInfo* grid_info = grid_info_vector_[layer_idx];
+  if (grid_x >= 0 && grid_x < grid_info->site_count && grid_y >= 0
+      && grid_y < grid_info->row_count && layer_idx >= 0
+      && layer_idx < grid_info_map_.size()) {
     return &grid_[layer_idx][grid_y][grid_x];
   }
   return nullptr;
@@ -267,7 +264,7 @@ void Opendp::visitCellPixels(
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
       int layer_idx = 0;
-      for (auto [layer_row_height, layer_info] : grid_layers_) {
+      for (auto [layer_row_height, grid_info] : grid_info_map_) {
         int layer_y_start
             = map_coordinates(y_start, row_height, layer_row_height);
         int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
@@ -298,7 +295,7 @@ void Opendp::visitCellPixels(
                        : gridEndX(&cell, site_width);
     int y_start = gridY(&cell, row_height);
     int y_end = gridEndY(&cell, row_height);
-    for (auto layer_it : grid_layers_) {
+    for (auto layer_it : grid_info_map_) {
       int layer_x_start = map_coordinates(x_start, site_width, site_width);
       int layer_x_end = map_coordinates(x_end, site_width, site_width);
       int layer_y_start = map_coordinates(y_start, row_height, layer_it.first);
@@ -334,8 +331,8 @@ void Opendp::visitCellBoundaryPixels(
   dbInst* inst = cell.db_inst_;
   int site_width = getSiteWidth(&cell);
   int row_height = getRowHeight(&cell);
-  LayerInfo layer_info = grid_layers_.at(row_height);
-  const int layer_index_in_grid = layer_info.grid_index;
+  GridInfo grid_info = grid_info_map_.at(row_height);
+  const int index_in_grid = grid_info.grid_index;
 
   dbMaster* master = inst->getMaster();
   auto obstructions = master->getObstructions();
@@ -356,21 +353,21 @@ void Opendp::visitCellBoundaryPixels(
       int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height);
 
       for (int x = x_start; x < x_end; x++) {
-        Pixel* pixel = gridPixel(layer_index_in_grid, x, y_start);
+        Pixel* pixel = gridPixel(index_in_grid, x, y_start);
         if (pixel) {
           visitor(pixel, odb::Direction2D::North, x, y_start);
         }
-        pixel = gridPixel(layer_index_in_grid, x, y_end - 1);
+        pixel = gridPixel(index_in_grid, x, y_end - 1);
         if (pixel) {
           visitor(pixel, odb::Direction2D::South, x, y_end - 1);
         }
       }
       for (int y = y_start; y < y_end; y++) {
-        Pixel* pixel = gridPixel(layer_index_in_grid, x_start, y);
+        Pixel* pixel = gridPixel(index_in_grid, x_start, y);
         if (pixel) {
           visitor(pixel, odb::Direction2D::West, x_start, y);
         }
-        pixel = gridPixel(layer_index_in_grid, x_end - 1, y);
+        pixel = gridPixel(index_in_grid, x_end - 1, y);
         if (pixel) {
           visitor(pixel, odb::Direction2D::East, x_end - 1, y);
         }
@@ -384,21 +381,21 @@ void Opendp::visitCellBoundaryPixels(
     int y_end = gridEndY(&cell, row_height);
 
     for (int x = x_start; x < x_end; x++) {
-      Pixel* pixel = gridPixel(layer_index_in_grid, x, y_start);
+      Pixel* pixel = gridPixel(index_in_grid, x, y_start);
       if (pixel) {
         visitor(pixel, odb::Direction2D::North, x, y_start);
       }
-      pixel = gridPixel(layer_index_in_grid, x, y_end - 1);
+      pixel = gridPixel(index_in_grid, x, y_end - 1);
       if (pixel) {
         visitor(pixel, odb::Direction2D::South, x, y_end - 1);
       }
     }
     for (int y = y_start; y < y_end; y++) {
-      Pixel* pixel = gridPixel(layer_index_in_grid, x_start, y);
+      Pixel* pixel = gridPixel(index_in_grid, x_start, y);
       if (pixel) {
         visitor(pixel, odb::Direction2D::West, x_start, y);
       }
-      pixel = gridPixel(layer_index_in_grid, x_end - 1, y);
+      pixel = gridPixel(index_in_grid, x_end - 1, y);
       if (pixel) {
         visitor(pixel, odb::Direction2D::East, x_end - 1, y);
       }
@@ -437,11 +434,11 @@ void Opendp::groupAssignCellRegions()
       int max_row_site_count = divFloor(core_.dx(), site_width);
       row_height = getRowHeight(group.cells_.at(0));
       int row_count = divFloor(core_.dy(), row_height);
-      auto layer_info = grid_layers_.at(row_height);
+      auto grid_info = grid_info_map_.at(row_height);
 
       for (int x = 0; x < max_row_site_count; x++) {
         for (int y = 0; y < row_count; y++) {
-          Pixel* pixel = gridPixel(layer_info.grid_index, x, y);
+          Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
           if (pixel->is_valid && pixel->group_ == &group) {
             site_count++;
           }
@@ -469,9 +466,9 @@ void Opendp::groupAssignCellRegions()
 
 void Opendp::groupInitPixels2()
 {
-  for (auto& layer : grid_layers_) {
+  for (auto& layer : grid_info_map_) {
     int row_height = layer.first;
-    LayerInfo& layer_info = layer.second;
+    GridInfo& grid_info = layer.second;
     int row_count = divFloor(core_.dy(), row_height);
     int row_site_count = divFloor(core_.dx(), site_width_);
     for (int x = 0; x < row_site_count; x++) {
@@ -482,7 +479,7 @@ void Opendp::groupInitPixels2()
                  y * row_height,
                  (x + 1) * site_width_,
                  (y + 1) * row_height);
-        Pixel* pixel = gridPixel(layer_info.grid_index, x, y);
+        Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
         for (Group& group : groups_) {
           for (Rect& rect : group.regions) {
             if (!isInside(sub, rect) && checkOverlap(sub, rect)) {
@@ -512,11 +509,11 @@ bool Opendp::checkOverlap(const Rect& cell, const Rect& box)
 
 void Opendp::groupInitPixels()
 {
-  for (auto layer : grid_layers_) {
-    LayerInfo& layer_info = layer.second;
-    for (int x = 0; x < layer_info.site_count; x++) {
-      for (int y = 0; y < layer_info.row_count; y++) {
-        Pixel* pixel = gridPixel(layer_info.grid_index, x, y);
+  for (auto layer : grid_info_map_) {
+    GridInfo& grid_info = layer.second;
+    for (int x = 0; x < grid_info.site_count; x++) {
+      for (int y = 0; y < grid_info.row_count; y++) {
+        Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
         pixel->util = 0.0;
       }
     }
@@ -528,8 +525,8 @@ void Opendp::groupInitPixels()
     }
     int row_height = group.cells_[0]->height_;
     int site_width = getSiteWidth(group.cells_[0]);
-    LayerInfo& layer_info = grid_layers_[row_height];
-    int grid_index = layer_info.grid_index;
+    GridInfo& grid_info = grid_info_map_[row_height];
+    int grid_index = grid_info.grid_index;
     for (Rect& rect : group.regions) {
       int row_start = divCeil(rect.yMin(), row_height);
       int row_end = divFloor(rect.yMax(), row_height);
@@ -590,14 +587,14 @@ void Opendp::erasePixel(Cell* cell)
     int y_end = gridEndY(cell, row_height);
     int y_start = gridY(cell, row_height);
 
-    for (auto [layer_row_height, layer_info] : grid_layers_) {
+    for (auto [layer_row_height, grid_info] : grid_info_map_) {
       int layer_y_start
           = map_coordinates(y_start, row_height, layer_row_height);
       int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
 
       for (int x = gridPaddedX(cell, site_width); x < x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
-          Pixel* pixel = gridPixel(layer_info.grid_index, x, y);
+          Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
           if (nullptr == pixel) {
             continue;
           }
@@ -626,8 +623,8 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
   int y_end = grid_y + grid_height;
   int site_width = getSiteWidth(cell);
   int row_height = getRowHeight(cell);
-  LayerInfo layer_info = grid_layers_.at(row_height);
-  const int layer_index_in_grid = layer_info.grid_index;
+  GridInfo grid_info = grid_info_map_.at(row_height);
+  const int index_in_grid = grid_info.grid_index;
   setGridPaddedLoc(cell, grid_x, grid_y, site_width, row_height);
   cell->is_placed_ = true;
 
@@ -641,7 +638,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
                  cell->name(),
                  x,
                  y);
-      Pixel* pixel = gridPixel(layer_index_in_grid, x, y);
+      Pixel* pixel = gridPixel(index_in_grid, x, y);
       if (pixel->cell) {
         logger_->error(
             DPL, 13, "Cannot paint grid because it is already occupied.");
@@ -652,7 +649,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
   }
 
-  for (auto layer : grid_layers_) {
+  for (auto layer : grid_info_map_) {
     if (layer.first == row_height) {
       continue;
     }
@@ -686,7 +683,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
   }
 
-  cell->orient_ = gridPixel(layer_index_in_grid, grid_x, grid_y)->orient_;
+  cell->orient_ = gridPixel(index_in_grid, grid_x, grid_y)->orient_;
 }
 
 }  // namespace dpl
