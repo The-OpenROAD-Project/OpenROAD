@@ -135,7 +135,8 @@ void Opendp::placeRowFillers(int row,
         debugPrint(
             logger_, DPL, "filler", 2, "fillers size is {}.", fillers.size());
         for (dbMaster* master : fillers) {
-          string inst_name = prefix + to_string(row) + "_" + to_string(k);
+          string inst_name = prefix + to_string(grid_info.grid_index) + "_"
+                             + to_string(row) + "_" + to_string(k);
           // printf(" filler %s %d\n", inst_name.c_str(), master->getWidth() /
           // site_width_);
           dbInst* inst = dbInst::create(block_,
