@@ -44,7 +44,7 @@ set_isolation iso_d_1 \
 set_isolation iso_d_2 \
   -domain PD_D2 \
   -update \
-  -location parent
+  -location self
 
 
 

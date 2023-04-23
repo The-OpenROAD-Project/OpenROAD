@@ -57,14 +57,14 @@ void InitialPlaceVars::reset()
   forceCPU = false;
 }
 
-InitialPlace::InitialPlace() : ipVars_(), pb_(nullptr), log_(nullptr)
+InitialPlace::InitialPlace() : ipVars_(), pbc_(nullptr), log_(nullptr)
 {
 }
 
 InitialPlace::InitialPlace(InitialPlaceVars ipVars,
-                           std::shared_ptr<PlacerBase> pb,
+                           std::shared_ptr<PlacerBaseCommon> pbc,
                            utl::Logger* log)
-    : ipVars_(ipVars), pb_(pb), log_(log)
+    : ipVars_(ipVars), pbc_(pbc), log_(log)
 {
 }
 
@@ -75,7 +75,7 @@ InitialPlace::~InitialPlace()
 
 void InitialPlace::reset()
 {
-  pb_ = nullptr;
+  pbc_ = nullptr;
   ipVars_.reset();
 }
 
@@ -85,9 +85,9 @@ void InitialPlace::doBicgstabPlace()
   bool run_cpu = true;
 
   std::unique_ptr<Graphics> graphics;
-  if (ipVars_.debug && Graphics::guiActive()) {
-    graphics = make_unique<Graphics>(log_, pb_);
-  }
+  // if (ipVars_.debug && Graphics::guiActive()) {
+  //   graphics = make_unique<Graphics>(log_, pb_);
+  // }
 
   placeInstsCenter();
 
@@ -134,7 +134,7 @@ void InitialPlace::doBicgstabPlace()
     log_->report("[InitialPlace]  Iter: {} CG residual: {:0.8f} HPWL: {}",
                  iter,
                  error_max,
-                 pb_->hpwl());
+                 pbc_->hpwl());
     updateCoordi();
 
     if (graphics) {
@@ -150,10 +150,10 @@ void InitialPlace::doBicgstabPlace()
 // starting point of initial place is center.
 void InitialPlace::placeInstsCenter()
 {
-  const int centerX = pb_->die().coreCx();
-  const int centerY = pb_->die().coreCy();
+  const int centerX = pbc_->die().coreCx();
+  const int centerY = pbc_->die().coreCy();
 
-  for (auto& inst : pb_->placeInsts()) {
+  for (auto& inst : pbc_->placeInsts()) {
     if (!inst->isLocked()) {
       auto group = inst->dbInst()->getGroup();
       if(group && group->getType() == odb::dbGroupType::POWER_DOMAIN){
@@ -173,6 +173,9 @@ void InitialPlace::placeInstsCenter()
         inst->setCenterLocation(centerX, centerY);
       }
       
+      // // Remove before uncommenting above
+      // inst->setCenterLocation(centerX, centerY);
+
     }
     
   }
@@ -181,26 +184,26 @@ void InitialPlace::placeInstsCenter()
 void InitialPlace::setPlaceInstExtId()
 {
   // reset ExtId for all instances
-  for (auto& inst : pb_->insts()) {
+  for (auto& inst : pbc_->insts()) {
     inst->setExtId(INT_MAX);
   }
   // set index only with place-able instances
-  for (auto& inst : pb_->placeInsts()) {
-    inst->setExtId(&inst - &(pb_->placeInsts()[0]));
+  for (auto& inst : pbc_->placeInsts()) {
+    inst->setExtId(&inst - &(pbc_->placeInsts()[0]));
   }
 }
 
 void InitialPlace::updatePinInfo()
 {
   // reset all MinMax attributes
-  for (auto& pin : pb_->pins()) {
+  for (auto& pin : pbc_->pins()) {
     pin->unsetMinPinX();
     pin->unsetMinPinY();
     pin->unsetMaxPinX();
     pin->unsetMaxPinY();
   }
 
-  for (auto& net : pb_->nets()) {
+  for (auto& net : pbc_->nets()) {
     Pin *pinMinX = nullptr, *pinMinY = nullptr;
     Pin *pinMaxX = nullptr, *pinMaxY = nullptr;
     int lx = INT_MAX, ly = INT_MAX;
@@ -251,7 +254,7 @@ void InitialPlace::updatePinInfo()
 // ycg_x_ = ycg_b_ eq.
 void InitialPlace::createSparseMatrix()
 {
-  const int placeCnt = pb_->placeInsts().size();
+  const int placeCnt = pbc_->placeInsts().size();
   instLocVecX_.resize(placeCnt);
   fixedInstForceVecX_.resize(placeCnt);
   instLocVecY_.resize(placeCnt);
@@ -275,7 +278,7 @@ void InitialPlace::createSparseMatrix()
   listY.reserve(1000000);
 
   // initialize vector
-  for (auto& inst : pb_->placeInsts()) {
+  for (auto& inst : pbc_->placeInsts()) {
     int idx = inst->extId();
 
     instLocVecX_(idx) = inst->cx();
@@ -285,7 +288,7 @@ void InitialPlace::createSparseMatrix()
   }
 
   // for each net
-  for (auto& net : pb_->nets()) {
+  for (auto& net : pbc_->nets()) {
     // skip for small nets.
     if (net->pins().size() <= 1) {
       continue;
@@ -434,7 +437,7 @@ void InitialPlace::createSparseMatrix()
 
 void InitialPlace::updateCoordi()
 {
-  for (auto& inst : pb_->placeInsts()) {
+  for (auto& inst : pbc_->placeInsts()) {
     int idx = inst->extId();
     if (!inst->isLocked()) {
       inst->dbSetCenterLocation(instLocVecX_(idx), instLocVecY_(idx));

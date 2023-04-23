@@ -9,8 +9,8 @@ link_design mpd_top
 read_upf -file upf/mpd_top.upf
 
 
-set_domain_area PD_D1 -area {2.3 2.72 16.1 5.44}
-set_domain_area PD_D2 -area {2.3 57.12 16.1 59.84}
+set_domain_area PD_D1 -area {2.3 2.72 57.5 19.04}
+set_domain_area PD_D2 -area {2.3 92.48 57.5 108.8}
 
 
 initialize_floorplan -utilization 1 \

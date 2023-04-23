@@ -44,6 +44,7 @@ class dbInst;
 class dbITerm;
 class dbBTerm;
 class dbNet;
+class dbGroup;
 
 class dbPlacementStatus;
 class dbSigType;
@@ -301,17 +302,87 @@ class PlacerBaseVars
   void reset();
 };
 
+
+// Class includes everything from PlacerBase that is not instance related
+class PlacerBaseCommon
+{
+  public:
+  PlacerBaseCommon();
+  // temp padLeft/Right before OpenDB supporting...
+  PlacerBaseCommon(odb::dbDatabase* db, PlacerBaseVars pbVars, utl::Logger* log);
+  ~PlacerBaseCommon();
+
+  const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
+  const std::vector<Instance*>& insts() const { return insts_; }
+  const std::vector<Pin*>& pins() const { return pins_; }
+  const std::vector<Net*>& nets() const { return nets_; }
+
+  Die& die() { return die_; }
+
+  // Pb : PlacerBase
+  Instance* dbToPb(odb::dbInst* inst) const;
+  Pin* dbToPb(odb::dbITerm* pin) const;
+  Pin* dbToPb(odb::dbBTerm* pin) const;
+  Net* dbToPb(odb::dbNet* net) const;
+
+  int siteSizeX() const { return siteSizeX_; }
+  int siteSizeY() const { return siteSizeY_; }
+
+  int padLeft() const { return pbVars_.padLeft; }
+  int padRight() const { return pbVars_.padRight; }
+
+  int64_t hpwl() const;
+  void printInfo() const;
+
+  int64_t macroInstsArea() const { return macroInstsArea_; }
+
+  odb::dbDatabase* db() const { return db_; }
+
+  void unlockAll();
+
+ private:
+  odb::dbDatabase* db_;
+  utl::Logger* log_;
+
+  PlacerBaseVars pbVars_;
+
+  Die die_;
+
+  std::vector<Instance> instStor_;
+  std::vector<Pin> pinStor_;
+  std::vector<Net> netStor_;
+
+  std::vector<Instance*> insts_;
+  std::vector<Pin*> pins_;
+  std::vector<Net*> nets_;
+
+  std::vector<Instance*> placeInsts_;
+
+
+  std::unordered_map<odb::dbInst*, Instance*> instMap_;
+  std::unordered_map<void*, Pin*> pinMap_;
+  std::unordered_map<odb::dbNet*, Net*> netMap_;
+
+
+  int siteSizeX_;
+  int siteSizeY_;
+
+  int64_t macroInstsArea_;
+
+  void init();
+  void reset();
+};
+
+
 class PlacerBase
 {
  public:
   PlacerBase();
   // temp padLeft/Right before OpenDB supporting...
-  PlacerBase(odb::dbDatabase* db, PlacerBaseVars pbVars, utl::Logger* log);
+  PlacerBase(odb::dbDatabase* db, std::shared_ptr<PlacerBaseCommon> pbCommon, utl::Logger* log, odb::dbGroup* group = NULL);
   ~PlacerBase();
 
   const std::vector<Instance*>& insts() const { return insts_; }
-  const std::vector<Pin*>& pins() const { return pins_; }
-  const std::vector<Net*>& nets() const { return nets_; }
 
   //
   // placeInsts : a real instance that need to be placed
@@ -336,18 +407,17 @@ class PlacerBase
   int siteSizeX() const { return siteSizeX_; }
   int siteSizeY() const { return siteSizeY_; }
 
-  int padLeft() const { return pbVars_.padLeft; }
-  int padRight() const { return pbVars_.padRight; }
 
   int64_t hpwl() const;
   void printInfo() const;
 
   int64_t placeInstsArea() const { return placeInstsArea_; }
   int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
-  int64_t macroInstsArea() const { return macroInstsArea_; }
+  int64_t macroInstsArea() const; 
   int64_t stdInstsArea() const { return stdInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }
+  odb::dbGroup* group() const { return group_; }
 
   void unlockAll();
 
@@ -355,21 +425,11 @@ class PlacerBase
   odb::dbDatabase* db_;
   utl::Logger* log_;
 
-  PlacerBaseVars pbVars_;
-
   Die die_;
 
   std::vector<Instance> instStor_;
-  std::vector<Pin> pinStor_;
-  std::vector<Net> netStor_;
 
   std::vector<Instance*> insts_;
-  std::vector<Pin*> pins_;
-  std::vector<Net*> nets_;
-
-  std::unordered_map<odb::dbInst*, Instance*> instMap_;
-  std::unordered_map<void*, Pin*> pinMap_;
-  std::unordered_map<odb::dbNet*, Net*> netMap_;
 
   std::vector<Instance*> placeInsts_;
   std::vector<Instance*> fixedInsts_;
@@ -387,6 +447,9 @@ class PlacerBase
   // because of target_density tuning
   int64_t macroInstsArea_;
   int64_t stdInstsArea_;
+
+  std::shared_ptr<PlacerBaseCommon> pbCommon_;
+  odb::dbGroup* group_;
 
   void init();
   void initInstsForUnusableSites();

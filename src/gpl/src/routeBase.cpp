@@ -296,7 +296,7 @@ RouteBase::RouteBase()
     : rbVars_(),
       db_(nullptr),
       grouter_(nullptr),
-      nb_(nullptr),
+      nbc_(nullptr),
       log_(nullptr),
       inflatedAreaDelta_(0),
       bloatIterCnt_(0),
@@ -311,14 +311,14 @@ RouteBase::RouteBase()
 RouteBase::RouteBase(RouteBaseVars rbVars,
                      odb::dbDatabase* db,
                      grt::GlobalRouter* grouter,
-                     std::shared_ptr<NesterovBase> nb,
+                     std::shared_ptr<NesterovBaseCommon> nbc,
                      utl::Logger* log)
     : RouteBase()
 {
   rbVars_ = rbVars;
   db_ = db;
   grouter_ = grouter;
-  nb_ = nb;
+  nbc_ = nbc;
   log_ = log;
 
   init();
@@ -332,7 +332,7 @@ void RouteBase::reset()
 {
   rbVars_.reset();
   db_ = nullptr;
-  nb_ = nullptr;
+  nbc_ = nullptr;
   log_ = nullptr;
 
   bloatIterCnt_ = inflationIterCnt_ = 0;
@@ -363,13 +363,13 @@ void RouteBase::init()
   tg_ = std::move(tg);
 
   tg_->setLogger(log_);
-  minRcCellSize_.resize(nb_->gCells().size(), std::make_pair(0, 0));
+  minRcCellSize_.resize(nbc_->gCells().size(), std::make_pair(0, 0));
 }
 
 void RouteBase::getGlobalRouterResult()
 {
   // update gCells' location to DB for GR
-  nb_->updateDbGCells();
+  nbc_->updateDbGCells();
 
   // these two options must be on
   grouter_->setAllowCongestion(true);
@@ -556,191 +556,193 @@ void RouteBase::updateRoute()
 //          (e.g. calling NesterovPlace's init())
 std::pair<bool, bool> RouteBase::routability()
 {
-  increaseCounter();
+  // TODO: update to match new paradigm
+  // increaseCounter();
 
-  // create Tile Grid
-  std::unique_ptr<TileGrid> tg(new TileGrid());
-  tg_ = std::move(tg);
-  tg_->setLogger(log_);
+  // // create Tile Grid
+  // std::unique_ptr<TileGrid> tg(new TileGrid());
+  // tg_ = std::move(tg);
+  // tg_->setLogger(log_);
 
-  getGlobalRouterResult();
+  // getGlobalRouterResult();
 
-  // no need routing if RC is lower than targetRC val
-  float curRc = getRC();
+  // // no need routing if RC is lower than targetRC val
+  // float curRc = getRC();
 
-  if (curRc < rbVars_.targetRC) {
-    resetRoutabilityResources();
-    return make_pair(false, false);
-  }
+  // if (curRc < rbVars_.targetRC) {
+  //   resetRoutabilityResources();
+  //   return make_pair(false, false);
+  // }
 
-  //
-  // saving solutions when minRc happen.
-  // I hope to get lower Rc gradually as RD goes on
-  //
-  if (minRc_ > curRc) {
-    minRc_ = curRc;
-    minRcTargetDensity_ = nb_->targetDensity();
-    minRcViolatedCnt_ = 0;
+  // //
+  // // saving solutions when minRc happen.
+  // // I hope to get lower Rc gradually as RD goes on
+  // //
+  // if (minRc_ > curRc) {
+  //   minRc_ = curRc;
+  //   minRcTargetDensity_ = nbc_->targetDensity();
+  //   minRcViolatedCnt_ = 0;
 
-    // save cell size info
-    for (auto& gCell : nb_->gCells()) {
-      if (!gCell->isStdInstance()) {
-        continue;
-      }
+  //   // save cell size info
+  //   for (auto& gCell : nbc_->gCells()) {
+  //     if (!gCell->isStdInstance()) {
+  //       continue;
+  //     }
 
-      minRcCellSize_[&gCell - &nb_->gCells()[0]]
-          = std::make_pair(gCell->dx(), gCell->dy());
-    }
-  } else {
-    minRcViolatedCnt_++;
-  }
+  //     minRcCellSize_[&gCell - &nbc_->gCells()[0]]
+  //         = std::make_pair(gCell->dx(), gCell->dy());
+  //   }
+  // } else {
+  //   minRcViolatedCnt_++;
+  // }
 
-  // set inflated ratio
-  for (auto& tile : tg_->tiles()) {
-    if (tile->inflationRatio() > 1) {
-      tile->setInflatedRatio(tile->inflationRatio());
-    } else {
-      tile->setInflatedRatio(1.0);
-    }
-  }
+  // // set inflated ratio
+  // for (auto& tile : tg_->tiles()) {
+  //   if (tile->inflationRatio() > 1) {
+  //     tile->setInflatedRatio(tile->inflationRatio());
+  //   } else {
+  //     tile->setInflatedRatio(1.0);
+  //   }
+  // }
 
-  inflatedAreaDelta_ = 0;
+  // inflatedAreaDelta_ = 0;
 
-  // run bloating and get inflatedAreaDelta_
-  for (auto& gCell : nb_->gCells()) {
-    // only care about "standard cell"
-    if (!gCell->isStdInstance()) {
-      continue;
-    }
+  // // run bloating and get inflatedAreaDelta_
+  // for (auto& gCell : nbc_->gCells()) {
+  //   // only care about "standard cell"
+  //   if (!gCell->isStdInstance()) {
+  //     continue;
+  //   }
 
-    int idxX = (gCell->dCx() - tg_->lx()) / tg_->tileSizeX();
-    int idxY = (gCell->dCy() - tg_->ly()) / tg_->tileSizeY();
+  //   int idxX = (gCell->dCx() - tg_->lx()) / tg_->tileSizeX();
+  //   int idxY = (gCell->dCy() - tg_->ly()) / tg_->tileSizeY();
 
-    Tile* tile = tg_->tiles()[idxY * tg_->tileCntX() + idxX];
+  //   Tile* tile = tg_->tiles()[idxY * tg_->tileCntX() + idxX];
 
-    // Don't care when inflRatio <= 1
-    if (tile->inflatedRatio() <= 1.0) {
-      continue;
-    }
+  //   // Don't care when inflRatio <= 1
+  //   if (tile->inflatedRatio() <= 1.0) {
+  //     continue;
+  //   }
 
-    int64_t prevCellArea
-        = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
+  //   int64_t prevCellArea
+  //       = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
 
-    // bloat
-    gCell->setSize(
-        static_cast<int>(round(gCell->dx() * sqrt(tile->inflatedRatio()))),
-        static_cast<int>(round(gCell->dy() * sqrt(tile->inflatedRatio()))));
+  //   // bloat
+  //   gCell->setSize(
+  //       static_cast<int>(round(gCell->dx() * sqrt(tile->inflatedRatio()))),
+  //       static_cast<int>(round(gCell->dy() * sqrt(tile->inflatedRatio()))));
 
-    int64_t newCellArea
-        = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
+  //   int64_t newCellArea
+  //       = static_cast<int64_t>(gCell->dx()) * static_cast<int64_t>(gCell->dy());
 
-    // deltaArea is equal to area * deltaRatio
-    // both of original and density size will be changed
-    inflatedAreaDelta_ += newCellArea - prevCellArea;
+  //   // deltaArea is equal to area * deltaRatio
+  //   // both of original and density size will be changed
+  //   inflatedAreaDelta_ += newCellArea - prevCellArea;
 
-    //    inflatedAreaDelta_
-    //      = static_cast<int64_t>(round(
-    //        static_cast<int64_t>(gCell->dx())
-    //        * static_cast<int64_t>(gCell->dy())
-    //        * (tile->inflatedRatio() - 1.0)));
-  }
+  //   //    inflatedAreaDelta_
+  //   //      = static_cast<int64_t>(round(
+  //   //        static_cast<int64_t>(gCell->dx())
+  //   //        * static_cast<int64_t>(gCell->dy())
+  //   //        * (tile->inflatedRatio() - 1.0)));
+  // }
 
-  // target ratio
-  float targetInflationDeltaAreaRatio
-      = 1.0 / static_cast<float>(rbVars_.maxInflationIter);
+  // // target ratio
+  // float targetInflationDeltaAreaRatio
+  //     = 1.0 / static_cast<float>(rbVars_.maxInflationIter);
 
-  // TODO: will be implemented
-  if (inflatedAreaDelta_
-      > targetInflationDeltaAreaRatio
-            * (nb_->whiteSpaceArea()
-               - (nb_->nesterovInstsArea() + nb_->totalFillerArea()))) {
-    // TODO dynamic inflation procedure?
-  }
+  // // // TODO: FIX ISSUES
+  // // // TODO: will be implemented
+  // // if (inflatedAreaDelta_
+  // //     > targetInflationDeltaAreaRatio
+  // //           * (nbc_->whiteSpaceArea()
+  // //              - (nbc_->nesterovInstsArea() + nb_->totalFillerArea()))) {
+  // //   // TODO dynamic inflation procedure?
+  // // }
 
-  log_->info(GPL, 45, "InflatedAreaDelta: {}", inflatedAreaDelta_);
-  log_->info(GPL, 46, "TargetDensity: {}", nb_->targetDensity());
+  // log_->info(GPL, 45, "InflatedAreaDelta: {}", inflatedAreaDelta_);
+  // log_->info(GPL, 46, "TargetDensity: {}", nbc_->targetDensity());
 
-  int64_t totalGCellArea
-      = inflatedAreaDelta_ + nb_->nesterovInstsArea() + nb_->totalFillerArea();
+  // int64_t totalGCellArea
+  //     = inflatedAreaDelta_ + nbc_->nesterovInstsArea() + nbc_->totalFillerArea();
 
-  // newly set Density
-  nb_->setTargetDensity(static_cast<float>(totalGCellArea)
-                        / static_cast<float>(nb_->whiteSpaceArea()));
+  // // newly set Density
+  // nbc_->setTargetDensity(static_cast<float>(totalGCellArea)
+  //                       / static_cast<float>(nb_->whiteSpaceArea()));
 
-  //
-  // max density detection or,
-  // rc not improvement detection -- (not improved the RC values 3 times in a
-  // row)
-  //
-  if (nb_->targetDensity() > rbVars_.maxDensity || minRcViolatedCnt_ >= 3) {
-    log_->report("Revert Routability Procedure");
-    log_->info(GPL, 47, "SavedMinRC: {}", minRc_);
-    log_->info(GPL, 48, "SavedTargetDensity: {}", minRcTargetDensity_);
+  // //
+  // // max density detection or,
+  // // rc not improvement detection -- (not improved the RC values 3 times in a
+  // // row)
+  // //
+  // if (nbc_->targetDensity() > rbVars_.maxDensity || minRcViolatedCnt_ >= 3) {
+  //   log_->report("Revert Routability Procedure");
+  //   log_->info(GPL, 47, "SavedMinRC: {}", minRc_);
+  //   log_->info(GPL, 48, "SavedTargetDensity: {}", minRcTargetDensity_);
 
-    nb_->setTargetDensity(minRcTargetDensity_);
+  //   nbc_->setTargetDensity(minRcTargetDensity_);
 
-    revertGCellSizeToMinRc();
+  //   revertGCellSizeToMinRc();
 
-    nb_->updateDensitySize();
-    resetRoutabilityResources();
+  //   nbc_->updateDensitySize();
+  //   resetRoutabilityResources();
 
-    return make_pair(false, true);
-  }
+  //   return make_pair(false, true);
+  // }
 
-  log_->info(GPL, 49, "WhiteSpaceArea: {}", nb_->whiteSpaceArea());
-  log_->info(GPL, 50, "NesterovInstsArea: {}", nb_->nesterovInstsArea());
-  log_->info(GPL, 51, "TotalFillerArea: {}", nb_->totalFillerArea());
-  log_->info(GPL,
-             52,
-             "TotalGCellsArea: {}",
-             nb_->nesterovInstsArea() + nb_->totalFillerArea());
-  log_->info(
-      GPL,
-      53,
-      "ExpectedTotalGCellsArea: {}",
-      inflatedAreaDelta_ + nb_->nesterovInstsArea() + nb_->totalFillerArea());
+  // log_->info(GPL, 49, "WhiteSpaceArea: {}", nb_->whiteSpaceArea());
+  // log_->info(GPL, 50, "NesterovInstsArea: {}", nb_->nesterovInstsArea());
+  // log_->info(GPL, 51, "TotalFillerArea: {}", nb_->totalFillerArea());
+  // log_->info(GPL,
+  //            52,
+  //            "TotalGCellsArea: {}",
+  //            nb_->nesterovInstsArea() + nb_->totalFillerArea());
+  // log_->info(
+  //     GPL,
+  //     53,
+  //     "ExpectedTotalGCellsArea: {}",
+  //     inflatedAreaDelta_ + nb_->nesterovInstsArea() + nb_->totalFillerArea());
 
-  // cut filler cells accordingly
-  //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
-  //    nb_->cutFillerCells( nb_->totalFillerArea() - inflatedAreaDelta_ );
-  //  }
-  // routability-driven cannot solve this problem with the given density...
-  // return false
-  //  else {
-  //    return false;
-  //  }
+  // // cut filler cells accordingly
+  // //  if( nb_->totalFillerArea() > inflatedAreaDelta_ ) {
+  // //    nb_->cutFillerCells( nb_->totalFillerArea() - inflatedAreaDelta_ );
+  // //  }
+  // // routability-driven cannot solve this problem with the given density...
+  // // return false
+  // //  else {
+  // //    return false;
+  // //  }
 
-  // updateArea
-  nb_->updateAreas();
+  // // updateArea
+  // nb_->updateAreas();
 
-  log_->info(GPL, 54, "NewTargetDensity: {}", nb_->targetDensity());
-  log_->info(GPL, 55, "NewWhiteSpaceArea: {}", nb_->whiteSpaceArea());
-  log_->info(GPL, 56, "MovableArea: {}", nb_->movableArea());
-  log_->info(GPL, 57, "NewNesterovInstsArea: {}", nb_->nesterovInstsArea());
-  log_->info(GPL, 58, "NewTotalFillerArea: {}", nb_->totalFillerArea());
-  log_->info(GPL,
-             59,
-             "NewTotalGCellsArea: {}",
-             nb_->nesterovInstsArea() + nb_->totalFillerArea());
+  // log_->info(GPL, 54, "NewTargetDensity: {}", nb_->targetDensity());
+  // log_->info(GPL, 55, "NewWhiteSpaceArea: {}", nb_->whiteSpaceArea());
+  // log_->info(GPL, 56, "MovableArea: {}", nb_->movableArea());
+  // log_->info(GPL, 57, "NewNesterovInstsArea: {}", nb_->nesterovInstsArea());
+  // log_->info(GPL, 58, "NewTotalFillerArea: {}", nb_->totalFillerArea());
+  // log_->info(GPL,
+  //            59,
+  //            "NewTotalGCellsArea: {}",
+  //            nb_->nesterovInstsArea() + nb_->totalFillerArea());
 
-  // update densitySizes for all gCell
-  nb_->updateDensitySize();
+  // // update densitySizes for all gCell
+  // nb_->updateDensitySize();
 
-  // reset
-  resetRoutabilityResources();
+  // // reset
+  // resetRoutabilityResources();
 
-  return make_pair(true, true);
+  // return make_pair(true, true);
 }
 
 void RouteBase::revertGCellSizeToMinRc()
 {
   // revert back the gcell sizes
-  for (auto& gCell : nb_->gCells()) {
+  for (auto& gCell : nbc_->gCells()) {
     if (!gCell->isStdInstance()) {
       continue;
     }
 
-    int idx = &gCell - &nb_->gCells()[0];
+    int idx = &gCell - &nbc_->gCells()[0];
 
     gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
   }

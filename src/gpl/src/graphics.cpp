@@ -250,43 +250,43 @@ void Graphics::drawObjects(gui::Painter& painter)
 }
 
 void Graphics::reportSelected()
-{
-  if (!selected_) {
-    return;
-  }
-  auto instance = selected_->instance();
-  logger_->report("Inst: {}", instance->dbInst()->getName());
+{ // TODO: PD_FIX
+  // if (!selected_) {
+  //   return;
+  // }
+  // auto instance = selected_->instance();
+  // logger_->report("Inst: {}", instance->dbInst()->getName());
 
-  if (np_) {
-    auto wlCoeffX = np_->getWireLengthCoefX();
-    auto wlCoeffY = np_->getWireLengthCoefY();
+  // if (np_) {
+  //   auto wlCoeffX = np_->getWireLengthCoefX();
+  //   auto wlCoeffY = np_->getWireLengthCoefY();
 
-    logger_->report("  Wire Length Gradient");
-    for (auto& gPin : selected_->gPins()) {
-      FloatPoint wlGrad
-          = nb_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
-      const float weight = gPin->gNet()->totalWeight();
-      logger_->report("          ({:+.2e}, {:+.2e}) (weight = {}) pin {}",
-                      wlGrad.x,
-                      wlGrad.y,
-                      weight,
-                      gPin->pin()->name());
-    }
+  //   logger_->report("  Wire Length Gradient");
+  //   for (auto& gPin : selected_->gPins()) {
+  //     FloatPoint wlGrad
+  //         = nb_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+  //     const float weight = gPin->gNet()->totalWeight();
+  //     logger_->report("          ({:+.2e}, {:+.2e}) (weight = {}) pin {}",
+  //                     wlGrad.x,
+  //                     wlGrad.y,
+  //                     weight,
+  //                     gPin->pin()->name());
+  //   }
 
-    FloatPoint wlGrad
-        = nb_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
-    logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
+  //   FloatPoint wlGrad
+  //       = nb_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
+  //   logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
 
-    auto densityGrad = nb_->getDensityGradient(selected_);
-    float densityPenalty = np_->getDensityPenalty();
-    logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
-                    densityPenalty * densityGrad.x,
-                    densityPenalty * densityGrad.y,
-                    densityPenalty);
-    logger_->report("  overall ({: .2e}, {: .2e})",
-                    wlGrad.x + densityPenalty * densityGrad.x,
-                    wlGrad.y + densityPenalty * densityGrad.y);
-  }
+  //   auto densityGrad = nb_->getDensityGradient(selected_);
+  //   float densityPenalty = np_->getDensityPenalty();
+  //   logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
+  //                   densityPenalty * densityGrad.x,
+  //                   densityPenalty * densityGrad.y,
+  //                   densityPenalty);
+  //   logger_->report("  overall ({: .2e}, {: .2e})",
+  //                   wlGrad.x + densityPenalty * densityGrad.x,
+  //                   wlGrad.y + densityPenalty * densityGrad.y);
+  // }
 }
 
 void Graphics::cellPlot(bool pause)

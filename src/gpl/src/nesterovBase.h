@@ -54,6 +54,7 @@ namespace gpl {
 
 class Instance;
 class Die;
+class PlacerBaseCommon;
 class PlacerBase;
 
 class Instance;
@@ -781,19 +782,50 @@ class NesterovBaseVars
   void reset();
 };
 
-class NesterovBase
+class NesterovPlaceVars
 {
  public:
-  NesterovBase();
-  NesterovBase(NesterovBaseVars nbVars,
-               std::shared_ptr<PlacerBase> pb,
+  int maxNesterovIter;
+  int maxBackTrack;
+  float initDensityPenalty;           // INIT_LAMBDA
+  float initWireLengthCoef;           // base_wcof
+  float targetOverflow;               // overflow
+  float minPhiCoef;                   // pcof_min
+  float maxPhiCoef;                   // pcof_max
+  float minPreconditioner;            // MIN_PRE
+  float initialPrevCoordiUpdateCoef;  // z_ref_alpha
+  float referenceHpwl;                // refDeltaHpwl
+  float routabilityCheckOverflow;
+
+  static const int maxRecursionWlCoef = 10;
+  static const int maxRecursionInitSLPCoef = 10;
+
+  bool forceCPU;
+  bool timingDrivenMode;
+  bool routabilityDrivenMode;
+  bool debug;
+  int debug_pause_iterations;
+  int debug_update_iterations;
+  bool debug_draw_bins;
+  odb::dbInst* debug_inst;
+
+  NesterovPlaceVars();
+  void reset();
+};
+
+
+// Stores all pins, nets, and actual instances (static and movable)
+// Used for calculating WL gradient
+class NesterovBaseCommon
+{
+ public:
+  NesterovBaseCommon();
+  NesterovBaseCommon(NesterovBaseVars nbVars,
+               std::shared_ptr<PlacerBaseCommon> pb,
                utl::Logger* log);
-  ~NesterovBase();
+  ~NesterovBaseCommon();
 
   const std::vector<GCell*>& gCells() const { return gCells_; }
-  const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
-  const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
-
   const std::vector<GNet*>& gNets() const { return gNets_; }
   const std::vector<GPin*>& gPins() const { return gPins_; }
 
@@ -812,6 +844,83 @@ class NesterovBase
   GPin* dbToNb(odb::dbBTerm* pin) const;
   GNet* dbToNb(odb::dbNet* net) const;
 
+  // WL force update based on WeightedAverage model
+  // wlCoeffX : WireLengthCoefficient for X.
+  //            equal to 1 / gamma_x
+  // wlCoeffY : WireLengthCoefficient for Y.
+  //            equal to 1 / gamma_y
+  //
+  // Gamma is described in the ePlaceMS paper.
+  //
+  void updateWireLengthForceWA(float wlCoeffX, float wlCoeffY);
+
+  FloatPoint getWireLengthGradientPinWA(const GPin* gPin,
+                                        float wlCoeffX,
+                                        float wlCoeffY) const;
+
+  FloatPoint getWireLengthGradientWA(const GCell* gCell,
+                                     float wlCoeffX,
+                                     float wlCoeffY) const;
+
+
+  FloatPoint getRegionGradient(const GCell* gCell, FloatPoint nextLocation) const;
+
+
+  // for preconditioner
+  FloatPoint getWireLengthPreconditioner(const GCell* gCell) const;
+
+  FloatPoint getDensityPreconditioner(const GCell* gCell) const;
+
+  int64_t getHpwl();
+
+  void updateDbGCells();
+
+
+ private:
+  NesterovBaseVars nbVars_;
+  std::shared_ptr<PlacerBaseCommon> pbc_;
+  utl::Logger* log_;
+
+
+  std::vector<GCell> gCellStor_;
+  std::vector<GNet> gNetStor_;
+  std::vector<GPin> gPinStor_;
+
+  std::vector<GCell*> gCells_;
+  std::vector<GNet*> gNets_;
+  std::vector<GPin*> gPins_;
+
+  std::unordered_map<Instance*, GCell*> gCellMap_;
+  std::unordered_map<Pin*, GPin*> gPinMap_;
+  std::unordered_map<Net*, GNet*> gNetMap_;
+
+
+  void init();
+  void reset();
+};
+
+
+// Stores instances belonging to a specific power domain
+// along with fillers and virtual blockages
+// Also stores the bin grid for the power domain
+// Used to calculate density gradient
+class NesterovBase
+{
+ public:
+  NesterovBase();
+  NesterovBase(NesterovBaseVars nbVars,
+               std::shared_ptr<PlacerBase> pb,
+               std::shared_ptr<NesterovBaseCommon> nbc,
+               utl::Logger* log);
+  ~NesterovBase();
+
+  const std::vector<GCell*>& gCells() const { return gCells_; }
+  const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
+  const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
+
+  const float getSumOverflow() const { return sumOverflow_; }
+  const float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
+
   // update gCells with lx, ly
   void updateGCellLocation(const std::vector<FloatPoint>& points);
 
@@ -819,6 +928,8 @@ class NesterovBase
   void updateGCellCenterLocation(const std::vector<FloatPoint>& points);
 
   void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& points);
+
+  void setNesterovPlaceVars(NesterovPlaceVars npVars) { npVars_ = npVars; }
 
   int binCntX() const;
   int binCntY() const;
@@ -882,43 +993,66 @@ class NesterovBase
   float getDensityCoordiLayoutInsideX(const GCell* gCell, float cx) const;
   float getDensityCoordiLayoutInsideY(const GCell* gCell, float cy) const;
 
-  // WL force update based on WeightedAverage model
-  // wlCoeffX : WireLengthCoefficient for X.
-  //            equal to 1 / gamma_x
-  // wlCoeffY : WireLengthCoefficient for Y.
-  //            equal to 1 / gamma_y
-  //
-  // Gamma is described in the ePlaceMS paper.
-  //
-  void updateWireLengthForceWA(float wlCoeffX, float wlCoeffY);
+  
+  // FloatPoint getRegionGradient(const GCell* gCell, FloatPoint nextLocation) const;
 
-  FloatPoint getWireLengthGradientPinWA(const GPin* gPin,
-                                        float wlCoeffX,
-                                        float wlCoeffY) const;
-
-  FloatPoint getWireLengthGradientWA(const GCell* gCell,
-                                     float wlCoeffX,
-                                     float wlCoeffY) const;
 
   // for preconditioner
-  FloatPoint getWireLengthPreconditioner(const GCell* gCell) const;
-
   FloatPoint getDensityPreconditioner(const GCell* gCell) const;
 
   FloatPoint getDensityGradient(const GCell* gCell) const;
 
-  int64_t getHpwl();
-
   // update electrostatic forces within Bin
   void updateDensityForceBin();
 
-  void updateDbGCells();
-
   const BinGrid& getBinGrid() const { return bg_; }
 
+  // Nesterov Loop
+  void initDensity1();
+  float initDensity2();
+  void setNpVars(NesterovPlaceVars npVars) { npVars_ = npVars; }
+
+  void updateGradients(std::vector<FloatPoint>& sumGrads,
+                       std::vector<FloatPoint>& wireLengthGrads,
+                       std::vector<FloatPoint>& densityGrads,
+                       float wlCoeffX, float wlCoeffY);
+
+  void updateInitialPrevSLPCoordi();
+
+  float getStepLength(const std::vector<FloatPoint>& prevCoordi_,
+                      const std::vector<FloatPoint>& prevSumGrads_,
+                      const std::vector<FloatPoint>& curCoordi_,
+                      const std::vector<FloatPoint>& curSumGrads_);
+
+  void updateNextIter(const int iter);
+  float getPhiCoef(float scaledDiffHpwl) const;
+  void cutFillerCoordinates();
+
+  void snapshot(float wlcoeffX, float wlcoeffY);
+
+  bool checkConvergence();
+  bool checkDivergence();
+  bool revertDivergence();
+
+
+  void updatePrevGradient(float wlCoeffX, float wlCoeffY);
+  void updateCurGradient(float wlCoeffX, float wlCoeffY);
+  void updateNextGradient(float wlCoeffX, float wlCoeffY);
+
+  void updateDensityCenterCur();
+  void updateDensityCenterCurSLP();
+  void updateDensityCenterPrevSLP();
+  void updateDensityCenterNextSLP();
+
+  void nesterovUpdateCoordinates(float coeff);
+  bool nesterovUpdateStepLength();
+  void nesterovAdjustPhi();
+
+  bool isDiverged() const { return isDiverged_; }
  private:
   NesterovBaseVars nbVars_;
   std::shared_ptr<PlacerBase> pb_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
   utl::Logger* log_;
 
   BinGrid bg_;
@@ -933,23 +1067,95 @@ class NesterovBase
   int64_t macroInstsArea_;
 
   std::vector<GCell> gCellStor_;
-  std::vector<GNet> gNetStor_;
-  std::vector<GPin> gPinStor_;
 
   std::vector<GCell*> gCells_;
   std::vector<GCell*> gCellInsts_;
   std::vector<GCell*> gCellFillers_;
 
-  std::vector<GNet*> gNets_;
-  std::vector<GPin*> gPins_;
-
-  std::unordered_map<Instance*, GCell*> gCellMap_;
-  std::unordered_map<Pin*, GPin*> gPinMap_;
-  std::unordered_map<Net*, GNet*> gNetMap_;
-
   float sumPhi_;
   float targetDensity_;
   float uniformTargetDensity_;
+
+
+  // Nesterov loop data for each region
+  // SLP is Step Length Prediction.
+  //
+  // y_st, y_dst, y_wdst, w_pdst
+  std::vector<FloatPoint> curSLPCoordi_;
+  std::vector<FloatPoint> curSLPWireLengthGrads_;
+  std::vector<FloatPoint> curSLPDensityGrads_;
+  std::vector<FloatPoint> curSLPSumGrads_;
+
+  // y0_st, y0_dst, y0_wdst, y0_pdst
+  std::vector<FloatPoint> nextSLPCoordi_;
+  std::vector<FloatPoint> nextSLPWireLengthGrads_;
+  std::vector<FloatPoint> nextSLPDensityGrads_;
+  std::vector<FloatPoint> nextSLPSumGrads_;
+
+  // z_st, z_dst, z_wdst, z_pdst
+  std::vector<FloatPoint> prevSLPCoordi_;
+  std::vector<FloatPoint> prevSLPWireLengthGrads_;
+  std::vector<FloatPoint> prevSLPDensityGrads_;
+  std::vector<FloatPoint> prevSLPSumGrads_;
+
+  // x_st and x0_st
+  std::vector<FloatPoint> curCoordi_;
+  std::vector<FloatPoint> nextCoordi_;
+
+  // save initial coordinates -- needed for RD
+  std::vector<FloatPoint> initCoordi_;
+
+  // densityPenalty stor
+  std::vector<float> densityPenaltyStor_;
+
+  float wireLengthGradSum_;
+  float densityGradSum_;
+
+  // alpha
+  float stepLength_;
+
+  // opt_phi_cof
+  float densityPenalty_;
+
+  // base_wcof
+  float baseWireLengthCoef_;
+
+
+  // phi is described in ePlace paper.
+  float sumOverflow_;
+  float sumOverflowUnscaled_;
+
+  // half-parameter-wire-length
+  int64_t prevHpwl_;
+
+  float isDiverged_;
+  float isRoutabilityNeed_;
+
+  std::string divergeMsg_;
+  int divergeCode_;
+
+  int recursionCntWlCoef_;
+  int recursionCntInitSLPCoef_;
+  
+  NesterovPlaceVars npVars_;
+
+  bool isMaxPhiCoefChanged_;
+
+  float minSumOverflow;
+  float hpwlWithMinSumOverflow;
+  int iter_;
+  bool isConverged_;
+
+  // Snapshot data
+  bool isSnapshotSaved;
+  std::vector<FloatPoint> snapshotCoordi;
+  std::vector<FloatPoint> snapshotSLPCoordi;
+  std::vector<FloatPoint> snapshotSLPSumGrads;
+  float snapshotA;
+  float snapshotDensityPenalty;
+  float snapshotStepLength;
+  float snapshotWlCoefX; 
+  float snapshotWlCoefY;
 
   void init();
   void initFillerGCells();
