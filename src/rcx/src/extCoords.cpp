@@ -43,11 +43,7 @@ using utl::RCX;
 
 void extSpef::initSearchForNets()
 {
-  uint W[16];
-  uint S[16];
   uint P[16];
-  int X1[16];
-  int Y1[16];
 
   dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
@@ -64,8 +60,6 @@ void extSpef::initSearchForNets()
       continue;
 
     n = layer->getRoutingLevel();
-    W[n] = 1;
-    S[n] = layer->getSpacing();
     P[n] = layer->getPitch();
     if (P[n] <= 0)
       logger_->error(RCX,
@@ -77,83 +71,9 @@ void extSpef::initSearchForNets()
     tg = _block->findTrackGrid(layer);
     if (tg) {
       tg->getGridX(trackXY);
-      X1[n] = trackXY[0] - layer->getWidth() / 2;
       tg->getGridY(trackXY);
-      Y1[n] = trackXY[0] - layer->getWidth() / 2;
-    } else {
-      X1[n] = maxRect.xMin();
-      Y1[n] = maxRect.yMin();
     }
   }
-  uint layerCnt = n + 1;
-
-  _search = new Ath__gridTable(&maxRect, 2, layerCnt, W, P, S, X1, Y1);
-  _search->setBlock(_block);
-}
-
-uint extSpef::addNetShapesOnSearch(uint netId)
-{
-  dbNet* net = dbNet::getNet(_block, netId);
-
-  dbWire* wire = net->getWire();
-  uint wtype = 9;
-
-  if (wire == NULL)
-    return 0;
-
-  uint cnt = 0;
-
-  int minx = MAX_INT;
-  int miny = MAX_INT;
-  int maxx = -MAX_INT;
-  int maxy = -MAX_INT;
-  dbWireShapeItr shapes;
-  odb::dbShape s;
-  uint level1, level2;
-  odb::dbVia* vv;
-  odb::dbTechVia* tv;
-  for (shapes.begin(wire); shapes.next(s);) {
-    int shapeId = shapes.getShapeId();
-
-    tv = s.getTechVia();
-    vv = s.getVia();
-    if (tv) {
-      level1 = tv->getBottomLayer()->getRoutingLevel();
-      level2 = tv->getTopLayer()->getRoutingLevel();
-    } else if (vv) {
-      level1 = vv->getBottomLayer()->getRoutingLevel();
-      level2 = vv->getTopLayer()->getRoutingLevel();
-    } else {
-      level1 = s.getTechLayer()->getRoutingLevel();
-      level2 = 0;
-    }
-
-    Rect r = s.getBox();
-
-    _search->addBox(
-        r.xMin(), r.yMin(), r.xMax(), r.yMax(), level1, netId, shapeId, wtype);
-    if (level2)
-      _search->addBox(r.xMin(),
-                      r.yMin(),
-                      r.xMax(),
-                      r.yMax(),
-                      level2,
-                      netId,
-                      shapeId,
-                      wtype);
-    cnt++;
-    minx = std::min(r.xMin(), minx);
-    miny = std::min(r.yMin(), miny);
-    maxx = std::max(r.xMax(), maxx);
-    maxy = std::max(r.yMax(), maxy);
-  }
-  _search->setMaxArea(minx, miny, maxx, maxy);
-  for (uint dir = 0; dir < _search->getRowCnt(); dir++) {
-    for (uint layer = 1; layer < _search->getColCnt(); layer++) {
-      _search->getGrid(dir, layer)->setSearchDomain(0);
-    }
-  }
-  return cnt;
 }
 
 void extSpef::initNodeCoordTables(uint memChunk)
@@ -208,9 +128,6 @@ void extSpef::deleteNodeCoordTables()
   if (_levelTable)
     delete _levelTable;
   _levelTable = NULL;
-  if (_search)
-    delete _search;
-  _search = NULL;
   if (_idTable)
     delete _idTable;
   _idTable = NULL;
@@ -262,11 +179,6 @@ int extSpef::findNodeIndexFromNodeCoords(uint targetCapNodeId)  // TO OPTIMIZE
     return -1;
 
   return ii;
-}
-
-void extSpef::searchDealloc()
-{
-  _search->dealloc();
 }
 
 }  // namespace rcx
