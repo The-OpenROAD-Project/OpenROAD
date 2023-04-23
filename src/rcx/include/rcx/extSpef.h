@@ -96,7 +96,6 @@ class extSpef
   bool readNodeCoords(uint cpos);
   void checkCCterm();
   int findNodeIndexFromNodeCoords(uint targetCapNodeId);
-  void initSearchForNets();
   uint writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet);
 
   void setupMappingForWrite(uint btermCnt = 0, uint itermCnt = 0);

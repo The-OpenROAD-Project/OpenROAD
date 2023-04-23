@@ -41,41 +41,6 @@ using namespace odb;
 
 using utl::RCX;
 
-void extSpef::initSearchForNets()
-{
-  uint P[16];
-
-  dbSet<dbTechLayer> layers = _tech->getLayers();
-  dbSet<dbTechLayer>::iterator itr;
-  dbTrackGrid* tg = NULL;
-
-  Rect maxRect = _block->getDieArea();
-
-  std::vector<int> trackXY(32000);
-  uint n = 0;
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer* layer = *itr;
-
-    if (layer->getRoutingLevel() == 0)
-      continue;
-
-    n = layer->getRoutingLevel();
-    P[n] = layer->getPitch();
-    if (P[n] <= 0)
-      logger_->error(RCX,
-                     179,
-                     "Layer {}, routing level {}, has pitch {}",
-                     layer->getConstName(),
-                     n,
-                     P[n]);
-    tg = _block->findTrackGrid(layer);
-    if (tg) {
-      tg->getGridX(trackXY);
-      tg->getGridY(trackXY);
-    }
-  }
-}
-
 void extSpef::initNodeCoordTables(uint memChunk)
 {
   _capNodeTable = new Ath__array1D<uint>(memChunk);
@@ -87,7 +52,6 @@ void extSpef::initNodeCoordTables(uint memChunk)
   _y2CoordTable = new Ath__array1D<int>(memChunk);
   _levelTable = new Ath__array1D<uint>(memChunk);
   _idTable = new Ath__array1D<uint>(16);
-  initSearchForNets();  // search DB
 }
 
 void extSpef::resetNodeCoordTables()
