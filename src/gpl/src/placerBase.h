@@ -56,6 +56,10 @@ class Point;
 
 }  // namespace odb
 
+namespace dpl {
+class Opendp; 
+}
+
 namespace utl {
 class Logger;
 }
@@ -308,10 +312,8 @@ class PlacerBaseCommon
  public:
   PlacerBaseCommon();
   // temp padLeft/Right before OpenDB supporting...
-  PlacerBaseCommon(odb::dbDatabase* db,
-                   PlacerBaseVars pbVars,
-                   utl::Logger* log);
-  ~PlacerBaseCommon();
+  PlacerBase(odb::dbDatabase* db, dpl::Opendp* dp, PlacerBaseVars pbVars, utl::Logger* log);
+  ~PlacerBase();
 
   const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
   const std::vector<Instance*>& insts() const { return insts_; }
@@ -343,6 +345,7 @@ class PlacerBaseCommon
 
  private:
   odb::dbDatabase* db_;
+  dpl::Opendp* dp_;
   utl::Logger* log_;
 
   PlacerBaseVars pbVars_;
