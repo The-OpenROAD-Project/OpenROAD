@@ -515,8 +515,45 @@ void Pin::updateCoordi(odb::dbITerm* iTerm)
     offsetCy_ = (offsetLy + offsetUy) / 2 - instCenterY;
   }
 
-  cx_ = lx + instCenterX + offsetCx_;
-  cy_ = ly + instCenterY + offsetCy_;
+  // Rotate and Mirror depending on instance orientation
+  switch (iTerm->getInst()->getOrient()) {
+    case dbOrientType::R0:
+      cx_ = lx + instCenterX + offsetCx_;
+      cy_ = ly + instCenterY + offsetCy_;
+      break;
+    case dbOrientType::R90:
+      cx_ = lx + instCenterY - offsetCy_;
+      cy_ = ly + instCenterX - offsetCx_;
+      break;
+    case dbOrientType::R180:
+      cx_ = lx + instCenterX - offsetCx_;
+      cy_ = ly + instCenterY - offsetCy_;
+      break;
+    case dbOrientType::R270:
+      cx_ = lx + instCenterY + offsetCy_;
+      cy_ = ly + instCenterX + offsetCx_;
+      break;
+    case dbOrientType::MX:
+      cx_ = lx + instCenterX + offsetCx_;
+      cy_ = ly + instCenterY - offsetCy_;
+      break;
+    case dbOrientType::MY:
+      cx_ = lx + instCenterX - offsetCx_;
+      cy_ = ly + instCenterY + offsetCy_;
+      break;
+    case dbOrientType::MXR90:
+      cx_ = lx + instCenterY + offsetCy_;
+      cy_ = ly + instCenterX - offsetCx_;
+      break;
+    case dbOrientType::MYR90:
+      cx_ = lx + instCenterY - offsetCy_;
+      cy_ = ly + instCenterX + offsetCx_;
+      break;
+    default:
+      cx_ = lx + instCenterX;
+      cy_ = ly + instCenterY;
+      break;
+  }
 }
 
 //
