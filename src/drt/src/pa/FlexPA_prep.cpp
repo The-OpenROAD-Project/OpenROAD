@@ -693,7 +693,7 @@ void FlexPA::prepPoint_pin_genPoints_layerShapes(
     allowVia = false;
   }
   // lower layer is current layer
-  // righway on grid only forbid off track up via access on upper layer
+  // rightway on grid only forbid off track up via access on upper layer
   auto upperLayer = (layerNum + 2 <= getDesign()->getTech()->getTopLayerNum())
                         ? getDesign()->getTech()->getLayer(layerNum + 2)
                         : nullptr;
