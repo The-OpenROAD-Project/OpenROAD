@@ -39,6 +39,7 @@
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
 #include "odb/db.h"
+#include "dpl/Opendp.h"
 #include "placerBase.h"
 #include "routeBase.h"
 #include "rsz/Resizer.hh"
@@ -52,6 +53,7 @@ using utl::GPL;
 
 Replace::Replace()
     : db_(nullptr),
+      dp_(nullptr),
       rs_(nullptr),
       fr_(nullptr),
       log_(nullptr),
@@ -107,11 +109,13 @@ Replace::~Replace()
 }
 
 void Replace::init(odb::dbDatabase* odb,
+                   dpl::Opendp* dp,
                    rsz::Resizer* resizer,
                    grt::GlobalRouter* router,
                    utl::Logger* logger)
 {
   db_ = odb;
+  dp_ = dp;
   rs_ = resizer;
   fr_ = router;
   log_ = logger;
@@ -186,7 +190,7 @@ void Replace::doIncrementalPlace()
     pbVars.padRight = padRight_;
     pbVars.skipIoMode = skipIoMode_;
 
-    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, dp_, pbVars, log_);
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 
@@ -210,8 +214,13 @@ void Replace::doIncrementalPlace()
   for (auto inst : block->getInsts()) {
     auto status = inst->getPlacementStatus();
     if (status == odb::dbPlacementStatus::PLACED) {
-      pbc_->dbToPb(inst)->lock();
-      ++locked_cnt;
+      auto inst_ptr = pbc_->dbToPb(inst);
+      if (inst_ptr != nullptr) {
+        pbc_->dbToPb(inst)->lock();
+        ++locked_cnt;
+      } else {
+        log_->info(GPL, 2345, "Failed to lock {}", inst->getName());
+      }
     } else if (!status.isPlaced()) {
       ++unplaced_cnt;
     }
@@ -264,7 +273,7 @@ void Replace::doInitialPlace()
     pbVars.padRight = padRight_;
     pbVars.skipIoMode = skipIoMode_;
 
-    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, dp_, pbVars, log_);
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 
@@ -304,7 +313,7 @@ bool Replace::initNesterovPlace()
     pbVars.padRight = padRight_;
     pbVars.skipIoMode = skipIoMode_;
 
-    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, dp_, pbVars, log_);
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 

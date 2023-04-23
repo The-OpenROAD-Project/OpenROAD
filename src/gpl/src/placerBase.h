@@ -56,6 +56,10 @@ class Point;
 
 }  // namespace odb
 
+namespace dpl {
+class Opendp; 
+}
+
 namespace utl {
 class Logger;
 }
@@ -309,6 +313,7 @@ class PlacerBaseCommon
   PlacerBaseCommon();
   // temp padLeft/Right before OpenDB supporting...
   PlacerBaseCommon(odb::dbDatabase* db,
+                   dpl::Opendp* dp, 
                    PlacerBaseVars pbVars,
                    utl::Logger* log);
   ~PlacerBaseCommon();
@@ -343,6 +348,7 @@ class PlacerBaseCommon
 
  private:
   odb::dbDatabase* db_;
+  dpl::Opendp* dp_;
   utl::Logger* log_;
 
   PlacerBaseVars pbVars_;
