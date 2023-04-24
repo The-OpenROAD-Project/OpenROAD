@@ -560,8 +560,6 @@ class dbBox : public dbObject
   ///
   void setVisited(bool value);
   bool isVisited();
-  void setMarked(bool value);
-  bool isMarked();
 
   ///
   /// Get the owner of this box

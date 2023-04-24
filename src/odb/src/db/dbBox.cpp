@@ -55,6 +55,7 @@
 #include "dbTechLayer.h"
 #include "dbTechVia.h"
 #include "dbVia.h"
+#include "utl/Logger.h"
 
 namespace odb {
 
@@ -717,7 +718,16 @@ dbBox* dbBox::create(dbBPin* bpin_,
 
   _dbBox* box = block->_box_tbl->create();
   box->_flags._octilinear = false;
-  box->_flags._layer_id = layer_->getImpl()->getOID();
+  const auto layer_id = layer_->getImpl()->getOID();
+  if (layer_id >= (1 << 9)) {
+    bpin->getLogger()->error(
+        utl::ODB,
+        430,
+        "Layer {} has index {} which is too large to be stored",
+        layer_->getName(),
+        layer_id);
+  }
+  box->_flags._layer_id = layer_id;
   box->_flags._owner_type = dbBoxOwner::BPIN;
   box->_owner = bpin->getOID();
   box->_shape._rect.init(x1, y1, x2, y2);
@@ -993,24 +1003,8 @@ bool dbBox::isVisited()
 }
 void dbBox::setVisited(bool value)
 {
-  /*
-          if (getId()==333485)
-  {
-                  fprintf(stdout, "setVisited=%d\n", value);
-  }
-  */
   _dbBox* box = (_dbBox*) this;
   box->_flags._visited = (value == true) ? 1 : 0;
-}
-bool dbBox::isMarked()
-{
-  _dbBox* box = (_dbBox*) this;
-  return box->_flags._mark == 1;
-}
-void dbBox::setMarked(bool value)
-{
-  _dbBox* box = (_dbBox*) this;
-  box->_flags._mark = (value == true) ? 1 : 0;
 }
 
 }  // namespace odb
