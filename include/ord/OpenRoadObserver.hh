@@ -27,7 +27,7 @@ class OpenRoadObserver
  public:
   virtual ~OpenRoadObserver()
   {
-    if (unregister_observer_ != nullptr) {
+    if (unregister_observer_) {
       unregister_observer_();
     }
   }
