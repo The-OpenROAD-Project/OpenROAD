@@ -472,6 +472,8 @@ void IOPlacer::placeFallbackGroup(
       assignMirroredPins(io_pin, mirrored_pins_, assignment_);
     }
   }
+
+  logger_->report("Group of size {} placed during fallback mode.", group.first.size());
 }
 
 void IOPlacer::initIOLists()
@@ -996,7 +998,8 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
       if (to_fallback) {
         logger_->warn(PPL,
                       92,
-                      "Pin group of size {} does not fit any section",
+                      "Pin group of size {} does not fit any section. Adding "
+                      "to fallback mode.",
                       io_group.size());
       }
       addGroupToFallback(io_group, order);
