@@ -228,7 +228,6 @@ extMain::extMain()
   _rotatedGs = false;
 
   _getBandWire = false;
-  _searchFP = NULL;
   _search = NULL;
   _printBandInfo = false;
 
