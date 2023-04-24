@@ -218,10 +218,10 @@ void RepairAntennas::addWireTerms(Net* net,
       int conn_layer = pin->getConnectionLayer();
       std::vector<odb::Rect> pin_boxes = pin->getBoxes().at(conn_layer);
       odb::Point grid_pt = pin->getOnGridPosition();
-      // create the local connection only when the global segment
-      // doesn't overlap the pin
+      odb::Point pin_pt = grid_pt;
+      // create the local connection with the pin center only when the global
+      // segment doesn't overlap the pin
       if (!pinOverlapsGSegment(grid_pt, conn_layer, pin_boxes, route)) {
-        odb::Point pin_pt;
         int min_dist = std::numeric_limits<int>::max();
         for (const odb::Rect& pin_box : pin_boxes) {
           odb::Point pos = grouter_->getRectMiddle(pin_box);
@@ -231,12 +231,12 @@ void RepairAntennas::addWireTerms(Net* net,
             pin_pt = pos;
           }
         }
-        wire_encoder.newPathVirtualWire(
-            jct_id, tech_layer, odb::dbWireType::ROUTED);
-        wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
-        wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
-        wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
       }
+      wire_encoder.newPathVirtualWire(
+          jct_id, tech_layer, odb::dbWireType::ROUTED);
+      wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
+      wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
+      wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
     }
   }
 }
