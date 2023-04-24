@@ -1466,7 +1466,7 @@ bool DisplayControls::isInstanceSelectable(odb::dbInst* inst)
 const DisplayControls::ModelRow* DisplayControls::getNetRow(
     odb::dbNet* net) const
 {
-  switch (net->getSigType()) {
+  switch (net->getSigType().getValue()) {
     case dbSigType::SIGNAL:
       return &nets_.signal;
     case dbSigType::POWER:

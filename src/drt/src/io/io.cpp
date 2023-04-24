@@ -869,7 +869,7 @@ void updatefrAccessPoint(odb::dbAccessPoint* db_ap,
 void io::Parser::setBTerms(odb::dbBlock* block)
 {
   for (auto term : block->getBTerms()) {
-    switch (term->getSigType()) {
+    switch (term->getSigType().getValue()) {
       case odb::dbSigType::POWER:
       case odb::dbSigType::GROUND:
         // We allow for multiple pins

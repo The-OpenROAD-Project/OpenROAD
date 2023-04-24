@@ -1990,7 +1990,7 @@ void IOPlacer::initNetlist()
     }
 
     Direction dir = Direction::inout;
-    switch (b_term->getIoType()) {
+    switch (b_term->getIoType().getValue()) {
       case odb::dbIoType::INPUT:
         dir = Direction::input;
         break;
