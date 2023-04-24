@@ -67,6 +67,7 @@ void Opendp::fillerPlacement(dbMasterSeq* filler_masters, const char* prefix)
     for (int row = 0; row < layer.second.row_count; row++) {
       placeRowFillers(row, prefix, filler_masters, layer.first, layer.second);
     }
+    break;
   }
 
   logger_->info(DPL, 1, "Placed {} filler instances.", filler_count_);
@@ -87,20 +88,12 @@ void Opendp::placeRowFillers(int row,
                              GridInfo grid_info)
 {
   int j = 0;
-  debugPrint(logger_,
-             DPL,
-             "filler",
-             2,
-             "filling row {} when row_site_count is {}.",
-             row,
-             row_site_count_);
 
   int row_site_count = divFloor(core_.dx(), site_width_);
   while (j < row_site_count) {
     Pixel* pixel = gridPixel(grid_info.grid_index, j, row);
     const dbOrientType orient = pixel->orient_;
     if (pixel->cell == nullptr && pixel->is_valid) {
-      debugPrint(logger_, DPL, "filler", 2, "filling row {} at {}.", row, j);
       int k = j;
       while (k < row_site_count
              && gridPixel(grid_info.grid_index, k, row)->cell == nullptr
@@ -109,13 +102,6 @@ void Opendp::placeRowFillers(int row,
       }
 
       int gap = k - j;
-      debugPrint(logger_,
-                 DPL,
-                 "filler",
-                 2,
-                 "K value after while loop is {} and gap is {}.",
-                 k,
-                 gap);
       // printf("filling row %d gap %d %d:%d\n", row, gap, j, k - 1);
       dbMasterSeq& fillers = gapFillers(gap, filler_masters);
       if (fillers.empty()) {
@@ -153,19 +139,8 @@ void Opendp::placeRowFillers(int row,
           k += master->getWidth() / site_width_;
         }
         j += gap;
-        debugPrint(logger_, DPL, "filler", 2, "j value is {}.", j);
       }
     } else {
-      debugPrint(logger_,
-                 DPL,
-                 "filler",
-                 2,
-                 "skipping row {} at {} cell {} is_valid {}",
-                 row,
-                 j,
-                 pixel->cell->name(),
-                 pixel->is_valid);
-
       j++;
     }
   }

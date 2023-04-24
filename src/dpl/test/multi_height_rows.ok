@@ -11,11 +11,12 @@
 [INFO ODB-0131]     Created 5 components and 25 component-terminals.
 Placement Analysis
 ---------------------------------
-total displacement        117.3 u
-average displacement       23.5 u
-max displacement           25.0 u
+total displacement        107.8 u
+average displacement       21.6 u
+max displacement           22.3 u
 original HPWL               0.0 u
 legalized HPWL              0.0 u
 delta HPWL                    0 %
 
+[INFO DPL-0001] Placed 16 filler instances.
 No differences found.

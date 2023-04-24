@@ -612,7 +612,7 @@ int Opendp::map_coordinates(int original_coordinate,
                             int original_step,
                             int target_step) const
 {
-  return original_step * original_coordinate / target_step;
+  return divFloor(original_step * original_coordinate, target_step);
 }
 
 void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
@@ -660,16 +660,6 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     for (int x = layer_x; x < layer_x_end; x++) {
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
-        debugPrint(logger_,
-                   DPL,
-                   "place",
-                   1,
-                   "  painting in layer {} ({}-{}, {}-{})",
-                   cell->name(),
-                   grid_x,
-                   x_end - 1,
-                   grid_y,
-                   y_end - 1);
         if (pixel->cell) {
           logger_->error(
               DPL,
