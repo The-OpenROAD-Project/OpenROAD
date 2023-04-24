@@ -222,7 +222,6 @@ endif()
 
 find_package(spdlog REQUIRED)
 message(STATUS "spdlog: ${spdlog_VERSION}")
-add_definitions(-DFMT_DEPRECATED_OSTREAM=1)
 if (${SPDLOG_FMT_EXTERNAL})
   message(WARNING "spdlog: SPDLOG_FMT_EXTERNAL=${SPDLOG_FMT_EXTERNAL}")
 endif()
