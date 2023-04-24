@@ -1691,7 +1691,7 @@ void FlexDRWorker::route_queue_main(queue<RouteQueueEntry>& rerouteQueue)
       }
       modEolCosts_poly(gcWorker_->getNet(net->getFrNet()),
                        ModCostType::subRouteShape);
-      // route_queue need to unreserve via access if all nets are ripupped
+      // route_queue need to unreserve via access if all nets are ripped up
       // (i.e., not routed) see route_queue_init_queue this
       // is unreserve via via is reserved only when drWorker starts from nothing
       // and via is reserved

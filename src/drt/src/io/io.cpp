@@ -2666,7 +2666,7 @@ void io::Writer::mergeSplitConnFigs(list<shared_ptr<frConnFig>>& connFigs)
   // if (VERBOSE > 0) {
   //   cout <<endl << "merge and split." <<endl;
   // }
-  //  initialzie pathseg and via map
+  //  initialize pathseg and via map
   map<tuple<frLayerNum, bool, frCoord>,
       map<frCoord, vector<tuple<shared_ptr<frPathSeg>, bool>>>>
       pathSegMergeMap;

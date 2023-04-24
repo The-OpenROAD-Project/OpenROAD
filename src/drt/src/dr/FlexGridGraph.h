@@ -1208,7 +1208,7 @@ class FlexGridGraph
     // The wavefront should always be empty here so we don't need to
     // serialize it.
     if (!wavefront_.empty()) {
-      throw std::logic_error("dont't serialize non-empty wavefront");
+      throw std::logic_error("don't serialize non-empty wavefront");
     }
     if (is_loading(ar)) {
       tech_ = ar.getDesign()->getTech();
