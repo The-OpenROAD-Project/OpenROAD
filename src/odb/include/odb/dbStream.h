@@ -230,14 +230,6 @@ class dbOStream
     return *this;
   }
 
-  void markStream()
-  {
-    int marker = ftell(_f);
-    int magic = 0xCCCCCCCC;
-    *this << magic;
-    *this << marker;
-  }
-
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
 
   double lefdist(int value) { return ((double) value * _lef_dist_factor); }
@@ -370,6 +362,9 @@ class dbIStream
       c = NULL;
     else {
       c = (char*) malloc(l);
+      if (!c) {
+        read_error();
+      }
       int n = fread(c, l, 1, _f);
       if (n != 1)
         read_error();
@@ -434,17 +429,6 @@ class dbIStream
     s = std::string(tmp);
     free((void*) tmp);
     return *this;
-  }
-
-  void checkStream()
-  {
-    int marker = ftell(_f);
-    int magic = 0xCCCCCCCC;
-    int smarker;
-    int smagic;
-    *this >> smagic;
-    *this >> smarker;
-    ZASSERT((magic == smagic) && (marker == smarker));
   }
 
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
