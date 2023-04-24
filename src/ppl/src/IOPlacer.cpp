@@ -473,7 +473,8 @@ void IOPlacer::placeFallbackGroup(
     }
   }
 
-  logger_->report("Group of size {} placed during fallback mode.", group.first.size());
+  logger_->report("Group of size {} placed during fallback mode.",
+                  group.first.size());
 }
 
 void IOPlacer::initIOLists()
