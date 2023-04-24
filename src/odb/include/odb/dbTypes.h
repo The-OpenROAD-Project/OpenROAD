@@ -281,7 +281,7 @@ class dbIoType
   const char* getString() const;
 
   ///
-  /// Cast operator
+  /// Comparison operators for type safe dbIoType
   ///
   bool operator==(const dbIoType& v) const { return _value == v._value; };
   bool operator!=(const dbIoType& v) const { return _value != v._value; };
