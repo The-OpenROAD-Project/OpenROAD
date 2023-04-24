@@ -127,25 +127,12 @@ void Opendp::initGrid()
         0, 0, grid_info.site_count, grid_info.row_count};
   }
   // Fragmented row support; mark valid sites.
-  debugPrint(
-      logger_, DPL, "grid", 1, "Number of rows: {}", block_->getRows().size());
   for (auto db_row : block_->getRows()) {
     int current_row_height = db_row->getSite()->getHeight();
     int current_row_site_count = db_row->getSiteCount();
     int current_row_count = grid_info_map_.at(current_row_height).row_count;
     int current_row_grid_index
         = grid_info_map_.at(current_row_height).grid_index;
-    debugPrint(
-        logger_,
-        DPL,
-        "grid",
-        1,
-        "row {} has height {} and {} sites. grid index is {} and row count {}",
-        db_row->getName(),
-        current_row_height,
-        current_row_site_count,
-        current_row_grid_index,
-        current_row_count);
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
@@ -214,13 +201,13 @@ void Opendp::deleteGrid()
   grid_ = nullptr;
 }
 
-Pixel* Opendp::gridPixel(int layer_idx, int grid_x, int grid_y) const
+Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
 {
-  GridInfo* grid_info = grid_info_vector_[layer_idx];
+  GridInfo* grid_info = grid_info_vector_[grid_idx];
   if (grid_x >= 0 && grid_x < grid_info->site_count && grid_y >= 0
-      && grid_y < grid_info->row_count && layer_idx >= 0
-      && layer_idx < grid_info_map_.size()) {
-    return &grid_[layer_idx][grid_y][grid_x];
+      && grid_y < grid_info->row_count && grid_idx >= 0
+      && grid_idx < grid_info_map_.size()) {
+    return &grid_[grid_idx][grid_y][grid_x];
   }
   return nullptr;
 }
@@ -263,28 +250,20 @@ void Opendp::visitCellPixels(
 
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
-      int layer_idx = 0;
+      int grid_idx = 0;
       for (auto [layer_row_height, grid_info] : grid_info_map_) {
         int layer_y_start
             = map_coordinates(y_start, row_height, layer_row_height);
         int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
         for (int x = x_start; x < x_end; x++) {
           for (int y = layer_y_start; y < layer_y_end; y++) {
-            Pixel* pixel = gridPixel(layer_idx, x, y);
+            Pixel* pixel = gridPixel(grid_idx, x, y);
             if (pixel) {
-              debugPrint(logger_,
-                         DPL,
-                         "hopeless",
-                         1,
-                         "Visiting pixel ({}, {}, {}) due to obstruction.",
-                         layer_idx,
-                         x,
-                         y);
               visitor(pixel);
             }
           }
         }
-        layer_idx++;
+        grid_idx++;
       }
     }
   }
@@ -305,15 +284,6 @@ void Opendp::visitCellPixels(
         for (int y = layer_y_start; y < layer_y_end; y++) {
           Pixel* pixel = gridPixel(layer_it.second.grid_index, x, y);
           if (pixel) {
-            debugPrint(logger_,
-                       DPL,
-                       "hopeless",
-                       1,
-                       "Visiting pixel ({}, {}, {}) due to cell {}",
-                       layer_it.second.grid_index,
-                       x,
-                       y,
-                       cell.name());
             visitor(pixel);
           }
         }
@@ -579,7 +549,6 @@ void Opendp::groupInitPixels()
 
 void Opendp::erasePixel(Cell* cell)
 {
-  debugPrint(logger_, DPL, "place", 1, "Erasing cell {}.", cell->name());
   if (!(isFixed(cell) || !cell->is_placed_)) {
     int row_height = getRowHeight(cell);
     int site_width = getSiteWidth(cell);
@@ -630,14 +599,6 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
 
   for (int x = grid_x; x < x_end; x++) {
     for (int y = grid_y; y < y_end; y++) {
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 1,
-                 "  painting {} ({}-{})",
-                 cell->name(),
-                 x,
-                 y);
       Pixel* pixel = gridPixel(index_in_grid, x, y);
       if (pixel->cell) {
         logger_->error(

@@ -3,7 +3,6 @@ read_lef Nangate45/Nangate45.lef
 read_lef Nangate45/fake_macros.lef
 read_def multi_height_rows.def
 detailed_placement
-set_debug_level DPL "filler" 1 
 filler_placement FILL*
 check_placement
 
