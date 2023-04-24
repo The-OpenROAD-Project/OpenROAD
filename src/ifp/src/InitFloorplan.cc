@@ -112,7 +112,7 @@ void InitFloorplan::initFloorplan(double utilization,
                                   int core_space_top,
                                   int core_space_left,
                                   int core_space_right,
-                                  const std::vector<odb::dbSite*>& sites)
+                                  const std::vector<odb::dbSite*>& extra_sites)
 {
   utl::Validator v(logger_, IFP);
   v.check_percentage("utilization", utilization, 12);
@@ -138,7 +138,7 @@ void InitFloorplan::initFloorplan(double utilization,
   const int die_uy = core_uy + core_space_top;
   initFloorplan({die_lx, die_ly, die_ux, die_uy},
                 {core_lx, core_ly, core_ux, core_uy},
-                sites);
+                extra_sites);
 }
 
 double InitFloorplan::designArea()
@@ -160,7 +160,7 @@ static int divCeil(int dividend, int divisor)
 
 void InitFloorplan::initFloorplan(const odb::Rect& die,
                                   const odb::Rect& core,
-                                  const std::vector<odb::dbSite*>& user_sites)
+                                  const std::vector<odb::dbSite*>& extra_sites)
 {
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
@@ -168,7 +168,7 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
   std::set<odb::dbSite*> sites = getSites();
-  sites.insert(user_sites.begin(), user_sites.end());
+  sites.insert(extra_sites.begin(), extra_sites.end());
 
   // Handle duplicated sites
   std::map<std::string, odb::dbSite*> sites_by_name;

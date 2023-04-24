@@ -77,11 +77,11 @@ class InitFloorplan
                      int core_space_top,
                      int core_space_left,
                      int core_space_right,
-                     const std::vector<odb::dbSite*>& sites);
+                     const std::vector<odb::dbSite*>& extra_sites = {});
 
   void initFloorplan(const odb::Rect& die,
                      const odb::Rect& core,
-                     const std::vector<odb::dbSite*>& sites);
+                     const std::vector<odb::dbSite*>& extra_sites = {});
 
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
