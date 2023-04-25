@@ -797,7 +797,7 @@ void FlexGCWorker::Impl::checkMetalSpacing_main(gcRect* ptr1,
                                                 bool isSpcRect)
 {
   // NSMetal does not need self-intersection
-  // Minimum width rule handles outsite this function
+  // Minimum width rule handled outside this function
   if (ptr1 == ptr2) {
     return;
   }
@@ -1032,7 +1032,7 @@ void FlexGCWorker::Impl::checkMetalCornerSpacing_main(
       } else if (maxXY >= reqSpcVal) {
         continue;
       }
-      // no vaiolation if fixed
+      // no violation if fixed
       // if (corner->isFixed() && rect->isFixed() && objPtr->isFixed()) {
       if (rect->isFixed() && objPtr->isFixed()) {
         // if (corner->isFixed() && rect->isFixed()) {
@@ -2144,7 +2144,7 @@ void FlexGCWorker::Impl::checkCutSpacing_spc(
     // skip if no parallel overlap
     if (prl <= 0) {
       return;
-      // skip if paralell overlap but shares the same above/below metal
+      // skip if parallel overlap but shares the same above/below metal
     } else {
       box_t queryBox;
       myBloat(markerRect, 0, queryBox);
@@ -2818,7 +2818,7 @@ void FlexGCWorker::Impl::checkLef58CutSpacing_spc_layer(
         // check curr and next form an EOL edge
         if (corner->getNextCorner()->getType() == frCornerTypeEnum::CONVEX) {
           if (con->hasMinLength()) {
-            // not EOL if minLength is not satsified
+            // not EOL if minLength is not satisfied
             if (gtl::length(*(corner->getPrevEdge())) < con->getMinLength()
                 || gtl::length(*(corner->getNextCorner()->getNextEdge()))
                        < con->getMinLength()) {

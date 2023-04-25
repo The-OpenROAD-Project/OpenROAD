@@ -87,6 +87,12 @@ struct PinGroupByIndex
   bool order;
 };
 
+struct FallbackPins
+{
+  std::vector<std::pair<std::vector<int>, bool>> groups;
+  std::vector<int> pins;
+};
+
 enum class Edge
 {
   top,
@@ -105,6 +111,8 @@ enum class Direction
   invalid
 };
 
+using int64 = std::int64_t;
+
 class IOPlacer
 {
  public:
@@ -116,7 +124,7 @@ class IOPlacer
   void run(bool random_mode);
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
-  int computeIONetsHPWL();
+  int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
   void addNamesConstraint(PinSet* pins, Edge edge, int begin, int end);
   void addDirectionConstraint(Direction direction,
@@ -159,9 +167,19 @@ class IOPlacer
                        std::vector<int> slot_indices,
                        bool top_layer,
                        bool is_group);
+  void placeFallbackPins();
+  void assignMirroredPins(IOPin& io_pin,
+                          MirroredPins& mirrored_pins,
+                          std::vector<IOPin>& assignment);
   int getSlotIdxByPosition(const odb::Point& position,
                            int layer,
                            std::vector<Slot>& slots);
+  int getFirstSlotToPlaceGroup(int first_slot,
+                               int last_slot,
+                               int group_size,
+                               bool check_mirrored);
+  void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
+                          int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
   void findSlotsForTopLayer();
   void filterObstructedSlotsForTopLayer();
@@ -171,8 +189,7 @@ class IOPlacer
                     int end,
                     Edge edge,
                     std::vector<Section>& sections);
-  std::vector<Section> createSectionsPerConstraint(
-      const Constraint& constraint);
+  std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins();
   void initConstraints();
@@ -180,13 +197,14 @@ class IOPlacer
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
+  void addGroupToFallback(const std::vector<int>& pin_group, bool order);
   void setupSections(int assigned_pins_count);
   bool assignPinsToSections(int assigned_pins_count);
   bool assignPinToSection(IOPin& io_pin,
                           int idx,
                           std::vector<Section>& sections);
   void assignMirroredPin(IOPin& io_pin);
-  int assignGroupsToSections();
+  int assignGroupsToSections(int& mirrored_pins_cnt);
   int updateSection(Section& section, std::vector<Slot>& slots);
   int updateConstraintSections(Constraint& constraint);
   void assignConstrainedGroupsToSections(Constraint& constraint,
@@ -203,7 +221,7 @@ class IOPlacer
   std::vector<int> findPinsForConstraint(const Constraint& constraint,
                                          Netlist* netlist,
                                          bool mirrored_only);
-  int computeIONetsHPWL(Netlist* netlist);
+  int64 computeIONetsHPWL(Netlist* netlist);
   void findPinAssignment(std::vector<Section>& sections,
                          bool mirrored_groups_only);
   void updateSlots();
@@ -248,6 +266,7 @@ class IOPlacer
   std::vector<Constraint> constraints_;
   std::vector<PinGroup> pin_groups_;
   MirroredPins mirrored_pins_;
+  FallbackPins fallback_pins_;
 
   Logger* logger_ = nullptr;
   std::unique_ptr<Parameters> parms_;

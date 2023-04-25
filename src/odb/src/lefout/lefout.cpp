@@ -374,15 +374,12 @@ void lefout::writeNameCaseSensitive(const dbOnOffType on_off_type)
 void lefout::writeBlock(dbBlock* db_block)
 {
   dbBox* bounding_box = db_block->getBBox();
-  double origin_x = lefdist(bounding_box->xMin());
-  double origin_y = lefdist(bounding_box->yMin());
-  double size_x = lefdist(bounding_box->getDX());
-  double size_y = lefdist(bounding_box->getDY());
+  double size_x = lefdist(bounding_box->xMax());
+  double size_y = lefdist(bounding_box->yMax());
 
   fprintf(_out, "MACRO %s\n", db_block->getName().c_str());
   fprintf(_out, "  FOREIGN %s 0 0 ;\n", db_block->getName().c_str());
   fprintf(_out, "  CLASS BLOCK ;\n");
-  fprintf(_out, "  ORIGIN %.11g %.11g ;\n", origin_x, origin_y);
   fprintf(_out, "  SIZE %.11g BY %.11g ;\n", size_x, size_y);
   writePins(db_block);
   writeObstructions(db_block);

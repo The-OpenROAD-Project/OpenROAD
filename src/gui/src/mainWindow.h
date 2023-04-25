@@ -67,7 +67,7 @@ class BrowserWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
-class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
+class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 {
   Q_OBJECT
 

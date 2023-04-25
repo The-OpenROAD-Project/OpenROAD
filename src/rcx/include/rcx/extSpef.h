@@ -96,9 +96,6 @@ class extSpef
   bool readNodeCoords(uint cpos);
   void checkCCterm();
   int findNodeIndexFromNodeCoords(uint targetCapNodeId);
-  void initSearchForNets();
-  uint addNetShapesOnSearch(uint netId);
-  void searchDealloc();
   uint writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet);
 
   void setupMappingForWrite(uint btermCnt = 0, uint itermCnt = 0);
@@ -513,7 +510,6 @@ class extSpef
   Ath__array1D<int>* _x2CoordTable;
   Ath__array1D<int>* _y2CoordTable;
   Ath__array1D<uint>* _levelTable;
-  Ath__gridTable* _search;
   Ath__array1D<uint>* _idTable;
   double _lengthUnit;
   double _nodeCoordFactor;

@@ -540,8 +540,8 @@ dbMTerm* dbMTerm::create(dbMaster* master_,
   _dbMTerm* mterm = master->_mterm_tbl->create();
   mterm->_name = strdup(name_);
   ZALLOCATED(mterm->_name);
-  mterm->_flags._io_type = io_type_;
-  mterm->_flags._sig_type = sig_type_;
+  mterm->_flags._io_type = io_type_.getValue();
+  mterm->_flags._sig_type = sig_type_.getValue();
   mterm->_flags._shape_type = shape_type_;
   if (sig_type_ == dbSigType::CLOCK)
     master_->setSequential(1);

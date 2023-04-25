@@ -2138,7 +2138,6 @@ class extMain
   bool _ignoreWarning_1st;
   bool _keepExtModel;
 
-  FILE* _searchFP;
   friend class extMeasure;
 
   FILE* _blkInfoVDD;

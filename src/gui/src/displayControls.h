@@ -418,16 +418,22 @@ class DisplayControls : public QDockWidget,
                     int column);
   void toggleParent(ModelRow& row);
 
-  void readSettingsForRow(QSettings* settings, const ModelRow& row);
+  void readSettingsForRow(QSettings* settings,
+                          const ModelRow& row,
+                          bool include_children = true);
   void readSettingsForRow(QSettings* settings,
                           const QStandardItem* name,
                           QStandardItem* visible = nullptr,
-                          QStandardItem* selectable = nullptr);
-  void writeSettingsForRow(QSettings* settings, const ModelRow& row);
+                          QStandardItem* selectable = nullptr,
+                          bool include_children = true);
+  void writeSettingsForRow(QSettings* settings,
+                           const ModelRow& row,
+                           bool include_children = true);
   void writeSettingsForRow(QSettings* settings,
                            const QStandardItem* name,
                            const QStandardItem* visible = nullptr,
-                           const QStandardItem* selectable = nullptr);
+                           const QStandardItem* selectable = nullptr,
+                           bool include_children = true);
 
   void buildRestoreTclCommands(std::vector<std::string>& cmds,
                                const QStandardItem* parent,

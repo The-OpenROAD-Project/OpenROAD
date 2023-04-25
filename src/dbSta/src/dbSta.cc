@@ -403,7 +403,7 @@ dbStaReport::printString(const char* buffer, size_t length)
 
   // if gui enabled, keep tcl_buffer_ until a newline appears
   // otherwise proceed to print directly to console
-  if (gui_is_on_) {
+  if (!gui_is_on_) {
     // puts without a trailing \n in the string.
     // Tcl command prompts get here.
     // puts "xyz" makes a separate call for the '\n '.
