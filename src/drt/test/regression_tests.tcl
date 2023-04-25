@@ -1,5 +1,6 @@
 record_tests {
   ispd18_sample
+  ndr_vias
   single_step
   ta_ap_aligned
   ta_pin_aligned
