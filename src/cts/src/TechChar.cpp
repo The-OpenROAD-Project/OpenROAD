@@ -58,14 +58,12 @@ namespace cts {
 using utl::CTS;
 
 TechChar::TechChar(CtsOptions* options,
-                   ord::OpenRoad* openroad,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
                    rsz::Resizer* resizer,
                    sta::dbNetwork* db_network,
                    Logger* logger)
     : options_(options),
-      openroad_(openroad),
       db_(db),
       resizer_(resizer),
       openSta_(sta),

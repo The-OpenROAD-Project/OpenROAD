@@ -332,6 +332,7 @@ void dbObject::getDbName(char name[max_name_length]) const
         break;
       case dbAccessPointObj:
         *cptr++ = 'h';
+        id = impl->getOID();
         break;
       case dbGuideObj:
         *cptr++ = ';';

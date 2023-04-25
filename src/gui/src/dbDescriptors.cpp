@@ -3051,11 +3051,6 @@ bool DbNonDefaultRuleDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbTechLayerRuleDescriptor::DbTechLayerRuleDescriptor(odb::dbDatabase* db)
-    : db_(db)
-{
-}
-
 std::string DbTechLayerRuleDescriptor::getName(std::any object) const
 {
   auto* rule = std::any_cast<odb::dbTechLayerRule*>(object);
@@ -3119,11 +3114,6 @@ bool DbTechLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
 }
 
 //////////////////////////////////////////////////
-
-DbTechSameNetRuleDescriptor::DbTechSameNetRuleDescriptor(odb::dbDatabase* db)
-    : db_(db)
-{
-}
 
 std::string DbTechSameNetRuleDescriptor::getName(std::any object) const
 {
