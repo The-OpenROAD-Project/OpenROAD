@@ -64,6 +64,7 @@
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
+#include "slackWidget.h"
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
@@ -102,7 +103,8 @@ MainWindow::MainWindow(QWidget* parent)
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
-      find_dialog_(new FindObjectDialog(this))
+      find_dialog_(new FindObjectDialog(this)),
+      slack_widget_(new SlackWidget(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -122,6 +124,9 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
+  addDockWidget(Qt::RightDockWidgetArea, slack_widget_);
+
+
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
