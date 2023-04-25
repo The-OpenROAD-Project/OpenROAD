@@ -92,7 +92,7 @@ class BufferTreeDescriptor : public Descriptor
   void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Actions getActions(std::any object) const;
+  Actions getActions(std::any object) const override;
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 

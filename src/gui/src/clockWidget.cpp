@@ -572,7 +572,6 @@ ClockRegisterNodeGraphicsViewItem::ClockRegisterNodeGraphicsViewItem(
     odb::dbITerm* iterm,
     QGraphicsItem* parent)
     : ClockNodeGraphicsViewItem(parent),
-      term_(iterm),
       menu_(),
       highlight_path_(new QAction("Highlight path", &menu_))
 {

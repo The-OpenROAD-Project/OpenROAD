@@ -10,6 +10,7 @@ namespace sta {
 
 class AbstractPowerDensityDataSource {
  public:
+  virtual ~AbstractPowerDensityDataSource() = default;
   virtual bool populateMap() = 0;
   virtual void combineMapData(bool base_has_value,
                               double& base,

@@ -470,9 +470,9 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
       new DbNonDefaultRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayerRule*>(
-      new DbTechLayerRuleDescriptor(db_));
+      new DbTechLayerRuleDescriptor());
   gui->registerDescriptor<odb::dbTechSameNetRule*>(
-      new DbTechSameNetRuleDescriptor(db_));
+      new DbTechSameNetRuleDescriptor());
   gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
   gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
       new DbSiteDescriptor(db_));

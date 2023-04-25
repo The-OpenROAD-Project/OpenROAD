@@ -251,9 +251,7 @@ class HierRTLMP
   par::PartitionMgr* tritonpart_ = nullptr;
 
   // flag variables
-  const bool fd_placement_flag_ = false;
   const bool dynamic_congestion_weight_flag_ = false;
-  const bool dynamic_weight_flag_ = false;
   const bool update_boundary_weight_ = false;
 
   // technology-related variables
