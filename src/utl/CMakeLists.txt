@@ -97,6 +97,11 @@ target_include_directories(utl
     ${Boost_INCLUDE_DIRS}
 )
 
+target_compile_definitions(utl
+  PUBLIC
+    FMT_DEPRECATED_OSTREAM=1
+)
+
 target_link_libraries(utl
   PUBLIC
     utl_lib
