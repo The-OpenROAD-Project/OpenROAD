@@ -476,22 +476,35 @@ void Optdp::createNetwork()
 
     // Determine allowed orientations.  Current orientation
     // is N, since we reset everything to this orientation.
-    unsigned orientations = Orientation_N;
-    if (inst->getMaster()->getSymmetryX()
-        && inst->getMaster()->getSymmetryY()) {
-      orientations |= Orientation_FN;
-      orientations |= Orientation_FS;
-      orientations |= Orientation_S;
-    } else if (inst->getMaster()->getSymmetryX()) {
-      orientations |= Orientation_FS;
-    } else if (inst->getMaster()->getSymmetryY()) {
-      orientations |= Orientation_FN;
+    // Only if the cell is not fixed
+    unsigned current_orient = dbToDpoOrient(inst->getOrient());
+    unsigned orientations = current_orient;
+    if (!inst->isFixed()) {
+      if (inst->getMaster()->getSymmetryX()
+          && inst->getMaster()->getSymmetryY()) {
+        orientations |= Orientation_FN;
+        orientations |= Orientation_FS;
+        orientations |= Orientation_S;
+      } else if (inst->getMaster()->getSymmetryX()) {
+        orientations |= Orientation_FS;
+      } else if (inst->getMaster()->getSymmetryY()) {
+        orientations |= Orientation_FN;
+      }
     }
-    // else...  Account for R90?
     ndi->setAvailOrient(orientations);
-    ndi->setCurrOrient(Orientation_N);
-    ndi->setHeight(inst->getMaster()->getHeight());
-    ndi->setWidth(inst->getMaster()->getWidth());
+    ndi->setCurrOrient(current_orient);
+    // Account for R90/R270
+    if(current_orient == dpo::Orientation_E ||
+        current_orient == dpo::Orientation_FE ||
+        current_orient == dpo::Orientation_W ||
+        current_orient == dpo::Orientation_FW) {
+      ndi->setHeight(inst->getMaster()->getWidth());
+      ndi->setWidth(inst->getMaster()->getHeight());
+    }
+    else {
+      ndi->setHeight(inst->getMaster()->getHeight());
+      ndi->setWidth(inst->getMaster()->getWidth());
+    }
 
     ndi->setOrigLeft(inst->getBBox()->xMin());
     ndi->setOrigBottom(inst->getBBox()->yMin());
@@ -604,12 +617,23 @@ void Optdp::createNetwork()
         // Due to old bookshelf, my offsets are from the
         // center of the cell whereas in DEF, it's from
         // the bottom corner.
+        // Width and Height of BBox
         double ww = (mTerm->getBBox().xMax() - mTerm->getBBox().xMin());
         double hh = (mTerm->getBBox().yMax() - mTerm->getBBox().yMax());
+        // Center X and Y of BBox
         double xx = (mTerm->getBBox().xMax() + mTerm->getBBox().xMin()) * 0.5;
         double yy = (mTerm->getBBox().yMax() + mTerm->getBBox().yMax()) * 0.5;
         double dx = xx - ((double) master->getWidth() / 2.);
         double dy = yy - ((double) master->getHeight() / 2.);
+
+        if( iTerm->getInst()->getOrient() == dbOrientType::R90 ||
+            iTerm->getInst()->getOrient() == dbOrientType::MXR90 ||
+            iTerm->getInst()->getOrient() == dbOrientType::MYR90 ||
+            iTerm->getInst()->getOrient() == dbOrientType::R270 ) {
+          double temp = dx;
+          dx = dy;
+          dy = temp;
+        }
 
         ptr->setOffsetX(dx);
         ptr->setOffsetY(dy);
