@@ -18,7 +18,6 @@ assign_ndr -ndr NDR_3W_3S -net clknet_2_1__leaf_clk
 assign_ndr -ndr NDR_3W_3S -net clknet_2_2__leaf_clk
 assign_ndr -ndr NDR_3W_3S -net clknet_2_3__leaf_clk
 
-set_thread_count [expr [exec getconf _NPROCESSORS_ONLN] / 4]
 detailed_route -bottom_routing_layer met1 -top_routing_layer met5 -verbose 0
 
 write_def $def_file

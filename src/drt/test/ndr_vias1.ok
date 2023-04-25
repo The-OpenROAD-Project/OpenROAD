@@ -9,7 +9,6 @@
 [INFO ODB-0130]     Created 1 pins.
 [INFO ODB-0131]     Created 66 components and 347 component-terminals.
 [INFO ODB-0133]     Created 8 nets and 54 connections.
-[INFO ORD-0030] Using 4 thread(s).
 [INFO DRT-0167] List of default vias:
   Layer mcon
     default via: L1M1_PR
