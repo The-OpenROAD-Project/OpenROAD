@@ -39,7 +39,7 @@
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "ord/OpenRoad.hh"
+#include "ord/OpenRoadObserver.hh"
 #include "sta/Sta.hh"
 
 namespace ord {
@@ -72,7 +72,7 @@ using odb::dbMaster;
 using odb::dbNet;
 using odb::dbTech;
 
-class dbSta : public Sta, public ord::OpenRoad::Observer
+class dbSta : public Sta, public ord::OpenRoadObserver
 {
  public:
   dbSta();
