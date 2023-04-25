@@ -354,7 +354,7 @@ class dbDatabase : public dbObject
   /// WARNING: This function destroys the data currently in the database.
   /// Throws ZIOError..
   ///
-  void read(FILE* file);
+  void read(std::ifstream& f);
 
   ///
   /// Write a database to this stream.
@@ -371,14 +371,14 @@ class dbDatabase : public dbObject
   void writeWires(FILE* file, dbBlock* block);
   void writeNets(FILE* file, dbBlock* block);
   void writeParasitics(FILE* file, dbBlock* block);
-  void readTech(FILE* file);
-  void readLib(FILE* file, dbLib*);
-  void readLibs(FILE* file);
-  void readBlock(FILE* file, dbBlock* block);
-  void readWires(FILE* file, dbBlock* block);
-  void readNets(FILE* file, dbBlock* block);
-  void readParasitics(FILE* file, dbBlock* block);
-  void readChip(FILE* file);
+  void readTech(std::ifstream& f);
+  void readLib(std::ifstream& f, dbLib*);
+  void readLibs(std::ifstream& f);
+  void readBlock(std::ifstream& f, dbBlock* block);
+  void readWires(std::ifstream& f, dbBlock* block);
+  void readNets(std::ifstream& f, dbBlock* block);
+  void readParasitics(std::ifstream& f, dbBlock* block);
+  void readChip(std::ifstream& f);
 
   ///
   /// ECO - The following methods implement a simple ECO mechanism for capturing
