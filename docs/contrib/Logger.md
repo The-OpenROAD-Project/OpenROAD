@@ -443,6 +443,7 @@ target_link_libraries(<library_target>
 | -------------------- | ----------------- |
 | antenna_checker      | ant               |
 | dbSta                | sta               |
+| Design For Test      | dft               |
 | FastRoute            | grt               |
 | finale               | fin               |
 | flute3               | stt               |
@@ -459,6 +460,7 @@ target_link_libraries(<library_target>
 | PartMgr              | par               |
 | pdngen               | pdn               |
 | PDNSim               | psm               |
+| remapper             | rmp               |
 | replace              | gpl               |
 | resizer              | rsz               |
 | tapcell              | tap               |
