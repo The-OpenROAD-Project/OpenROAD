@@ -357,10 +357,11 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
-      if (swapPins(drvr_path, drvr_index, &expanded)) {
-          changed = true;
-          break;
-      }
+      // Disabled until CI degradation can be resolved
+      // if (swapPins(drvr_path, drvr_index, &expanded)) {
+      //     changed = true;
+      //     break;
+      // }
 
       // For tristate nets all we can do is resize the driver.
       bool tristate_drvr = resizer_->isTristateDriver(drvr_pin);
