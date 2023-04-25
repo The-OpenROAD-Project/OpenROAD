@@ -2337,11 +2337,13 @@ void FlexDRWorker::routeNet_postAstarWritePath(
         gridGraph_.getPoint(loc, startX, startY);
         FlexMazeIdx mi(startX, startY, currZ);
         auto via = getTech()->getLayer(startLayerNum + 1)->getDefaultViaDef();
-        if (net->getFrNet()->getNondefaultRule()
-            && net->getFrNet()->getNondefaultRule()->getPrefVia(currZ))
-          via = net->getFrNet()->getNondefaultRule()->getPrefVia(currZ);
         if (gridGraph_.isSVia(startX, startY, currZ)) {
           via = apSVia_.find(mi)->second->getAccessViaDef();
+        }
+        auto net_ndr = net->getFrNet()->getNondefaultRule();
+        if (net_ndr != nullptr
+            && net_ndr->getPrefVia((startLayerNum + 1) / 2)) {
+          via = net_ndr->getPrefVia((startLayerNum + 1) / 2);
         }
         auto currVia = make_unique<drVia>(via);
         if (net->hasNDR() && AUTO_TAPER_NDR_NETS) {
