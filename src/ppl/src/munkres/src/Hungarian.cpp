@@ -27,6 +27,7 @@ int HungarianAlgorithm::solve(vector<vector<int>>& dist_matrix,
   int n_cols = dist_matrix[0].size();
 
   int* dist_matrix_in = new int[n_rows * n_cols];
+  std::fill_n(dist_matrix_in, n_rows * n_cols, 0);
   int64 cost = 0;
 
   // Fill in the distMatrixIn. Mind the index is "i + nRows * j".
