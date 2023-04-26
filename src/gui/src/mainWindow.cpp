@@ -403,6 +403,9 @@ MainWindow::~MainWindow()
 {
   auto* gui = Gui::get();
   // unregister descriptors with GUI dependencies
+  for (auto renderer : gui->renderers()) {
+    gui->unregisterRenderer(renderer);
+  }
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
