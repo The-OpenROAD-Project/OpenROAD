@@ -402,10 +402,10 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow()
 {
   auto* gui = Gui::get();
-  // unregister descriptors with GUI dependencies
   for (auto renderer : gui->renderers()) {
     gui->unregisterRenderer(renderer);
   }
+  // unregister descriptors with GUI dependencies
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<odb::dbNet*>();
   gui->unregisterDescriptor<DbNetDescriptor::NetWithSink>();
