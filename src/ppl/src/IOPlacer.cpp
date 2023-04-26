@@ -2237,11 +2237,10 @@ void IOPlacer::initNetlist()
     netlist_->addIONet(io_pin, inst_pins);
   }
 
-  int group_idx = 0;
   for (const auto& [pins, order] : pin_groups_) {
     int group_created = netlist_->createIOGroup(pins, order);
-    if (group_created == pins.size()) {
-      group_idx++;
+    if (group_created != pins.size()) {
+      logger_->error(PPL, 94, "Cannot create group of size {}.", pins.size());
     }
   }
 }
