@@ -83,7 +83,11 @@ struct Pixel;
 struct Group;
 class DplObserver;
 
-using Grid = Pixel**;
+// The "Grid" is now an array of 2D grids. The new dimension is to support
+// multi-height cells. Each unique row height creates a new grid that is used in
+// legalization. The first index is the grid index (corresponding to row
+// height), second index is the row index, and third index is the site index.
+using Grid = Pixel***;
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
@@ -129,6 +133,13 @@ struct Pixel
   dbOrientType orient_;
   bool is_valid;     // false for dummy cells
   bool is_hopeless;  // too far from sites for diamond search
+};
+
+struct GridInfo
+{
+  int row_count;
+  int site_count;
+  int grid_index;
 };
 
 // For optimize mirroring.
@@ -227,6 +238,7 @@ class Opendp
   void makeMaster(Master* master, dbMaster* db_master);
 
   void initGrid();
+  void initGridLayersMap();
   void detailedPlacement();
   Point nearestPt(const Cell* cell, const Rect* rect) const;
   int distToRect(const Cell* cell, const Rect* rect) const;
@@ -259,10 +271,22 @@ class Opendp
   bool swapCells(Cell* cell1, Cell* cell2);
   bool refineMove(Cell* cell);
 
-  Point legalPt(const Cell* cell, const Point& pt) const;
-  Point legalGridPt(const Cell* cell, const Point& pt) const;
-  Point legalPt(const Cell* cell, bool padded) const;
-  Point legalGridPt(const Cell* cell, bool padded) const;
+  Point legalPt(const Cell* cell,
+                const Point& pt,
+                int row_height = -1,
+                int site_width = -1) const;
+  Point legalGridPt(const Cell* cell,
+                    const Point& pt,
+                    int row_height = -1,
+                    int site_width = -1) const;
+  Point legalPt(const Cell* cell,
+                bool padded,
+                int row_height = -1,
+                int site_width = -1) const;
+  Point legalGridPt(const Cell* cell,
+                    bool padded,
+                    int row_height = -1,
+                    int site_width = -1) const;
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
@@ -295,6 +319,9 @@ class Opendp
   void groupInitPixels2();
   void erasePixel(Cell* cell);
   void paintPixel(Cell* cell, int grid_x, int grid_y);
+  int map_coordinates(int original_coordinate,
+                      int original_step,
+                      int target_step) const;
 
   // checkPlacement
   static bool isPlaced(const Cell* cell);
@@ -326,30 +353,49 @@ class Opendp
   bool havePadding() const;
   void checkOneSiteDbMaster();
   void deleteGrid();
-  Pixel* gridPixel(int x, int y) const;
+  Pixel* gridPixel(int grid_idx, int x, int y) const;
   // Cell initial location wrt core origin.
-  int gridX(int x) const;
-  int gridY(int y) const;
-  int gridEndX(int x) const;
-  int gridEndY(int y) const;
-  int gridEndX() const;
-  int gridEndY() const;
+  int getRowHeight(const Cell* cell) const;
+  int getSiteWidth(const Cell* cell) const;
+  int getRowCount(const Cell* cell) const;
+  int getRowCount(int row_height) const;
+  int gridPaddedWidth(const Cell* cell, int site_width) const;
   int gridPaddedWidth(const Cell* cell) const;
   int64_t paddedArea(const Cell* cell) const;
   int gridNearestHeight(const Cell* cell) const;
+  int gridNearestHeight(const Cell* cell, int row_height) const;
   int gridNearestWidth(const Cell* cell) const;
+  int gridNearestWidth(const Cell* cell, int site_width) const;
+  int gridHeight(const Cell* cell, int row_height) const;
   int gridHeight(const Cell* cell) const;
+  GridInfo getGridInfo(const Cell* cell) const;
+  int gridX(int x, int site_width) const;
   int gridX(const Cell* cell) const;
+  int gridX(const Cell* cell, int site_width) const;
   int gridPaddedX(const Cell* cell) const;
+  int gridPaddedX(const Cell* cell, int site_width) const;
+  int gridY(int y, int row_height) const;
   int gridY(const Cell* cell) const;
+  int gridY(const Cell* cell, int row_height) const;
   int gridPaddedEndX(const Cell* cell) const;
+  int gridPaddedEndX(const Cell* cell, int site_width) const;
+  int gridEndX(int x, int site_width) const;
   int gridEndX(const Cell* cell) const;
+  int gridEndX(const Cell* cell, int site_width) const;
+  int gridEndY(int y, int row_height) const;
   int gridEndY(const Cell* cell) const;
-  void setGridPaddedLoc(Cell* cell, int x, int y) const;
+  int gridEndY(const Cell* cell, int row_height) const;
+  void setGridPaddedLoc(Cell* cell,
+                        int x,
+                        int y,
+                        int site_width,
+                        int row_height) const;
+  std::pair<int, GridInfo> getRowInfo(const Cell* cell) const;
   // Lower left corner in core coordinates.
   Point initialLocation(const Cell* cell, bool padded) const;
   bool isStdCell(const Cell* cell) const;
   static bool isBlock(const Cell* cell);
+  int paddedWidth(const Cell* cell, int site_width) const;
   int paddedWidth(const Cell* cell) const;
   bool isPaddedType(dbInst* inst) const;
   int padLeft(const Cell* cell) const;
@@ -360,10 +406,15 @@ class Opendp
   dbMasterSeq& gapFillers(int gap, dbMasterSeq* filler_masters);
   void placeRowFillers(int row,
                        const char* prefix,
-                       dbMasterSeq* filler_masters);
+                       dbMasterSeq* filler_masters,
+                       int row_height,
+                       GridInfo grid_info);
   bool isFiller(odb::dbInst* db_inst);
   bool isOneSiteCell(odb::dbMaster* db_master) const;
-  const char* gridInstName(int row, int col);
+  const char* gridInstName(int row,
+                           int col,
+                           int row_height,
+                           GridInfo grid_info);
 
   // Optimizing mirroring
   void findNetBoxes();
@@ -387,6 +438,8 @@ class Opendp
   vector<Group> groups_;
 
   map<const dbMaster*, Master> db_master_map_;
+  map<int, GridInfo> grid_info_map_;
+  std::vector<GridInfo*> grid_info_vector_;
   map<dbInst*, Cell*> db_inst_map_;
 
   Rect core_;
@@ -400,7 +453,7 @@ class Opendp
   bool disallow_one_site_gaps_ = false;
   vector<dbInst*> placement_failures_;
 
-  // 2D pixel grid
+  // 3D pixel grid
   Grid grid_ = nullptr;
   Cell dummy_cell_;
 

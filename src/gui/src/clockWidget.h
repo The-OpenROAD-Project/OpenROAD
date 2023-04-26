@@ -273,7 +273,6 @@ class ClockRegisterNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   void contextMenuEvent(QGraphicsSceneContextMenuEvent* event) override;
 
  private:
-  odb::dbITerm* term_;
   QMenu menu_;
   QAction* highlight_path_;
 

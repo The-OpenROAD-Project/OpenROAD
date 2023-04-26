@@ -988,7 +988,7 @@ void FlexGCWorker::Impl::checkMetalEOLkeepout_helper(
   if (!gtl::intersects(queryRect, *rect, false))
     return;
   /*
-  if CORNERONLY, then rect is actualy a polygon edge.
+  if CORNERONLY, then rect is actually a polygon edge.
   We check which corners we should consider in our marked violation.(Either both
   or only one)
   */

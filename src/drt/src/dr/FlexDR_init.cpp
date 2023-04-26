@@ -1786,7 +1786,7 @@ void FlexDRWorker::initNets(const frDesign* design)
   if (isInitDR()) {
     initNets_initDR(design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   } else {
-    // find inteTerm/terms using netRouteObjs;
+    // find instTerm/terms using netRouteObjs;
     initNets_searchRepair(
         design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   }
@@ -2542,7 +2542,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
       routes.push_back({net, 0, true});
-      // reserve via because all nets are ripupped
+      // reserve via because all nets are ripped up
       initMazeCost_via_helper(net, true);
       // no need to clear the net because route objs are not pushed to the net
       // (See FlexDRWorker::initNet)
@@ -2579,7 +2579,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     vector<RouteQueueEntry>& checks,
     vector<RouteQueueEntry>& routes)
 {
-  // if shapes dont overlap routeBox, ignore violation
+  // if shapes don't overlap routeBox, ignore violation
   if (!getRouteBox().intersects(marker->getBBox())) {
     bool overlaps = false;
     for (auto& s : marker->getAggressors()) {

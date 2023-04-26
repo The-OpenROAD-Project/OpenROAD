@@ -94,7 +94,7 @@ class dbNetwork : public ConcreteNetwork
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
   void readDbAfter(dbDatabase* db);
-  void readLibertyAfter(LibertyLibrary* lib);
+  void readLibertyAfter(LibertyLibrary* lib) override;
 
   void addObserver(dbNetworkObserver* observer);
   void removeObserver(dbNetworkObserver* observer);

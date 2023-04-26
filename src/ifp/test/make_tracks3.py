@@ -14,7 +14,7 @@ design.link("top")
 floorplan = design.getFloorplan()
 floorplan.initFloorplan(helpers.make_rect(design, 10, 20, 1010, 1020),
                         helpers.make_rect(design, 110, 120, 910, 920),
-                        "FreePDK45_38x28_10R_NP_162NW_34O")
+                        [floorplan.findSite("FreePDK45_38x28_10R_NP_162NW_34O")])
 
 db_tech = ord.get_db_tech()
 m1 = db_tech.findLayer("metal1")

@@ -70,8 +70,7 @@ class SegmentBuilder
         drivingSubNet_(&drivingSubNet),
         techChar_(&techChar),
         tree_(tree),
-        techCharDistUnit_(techCharDistUnit),
-        forceBuffer_(false)
+        techCharDistUnit_(techCharDistUnit)
   {
   }
 
@@ -91,7 +90,6 @@ class SegmentBuilder
   TechChar* techChar_;
   TreeBuilder* tree_;
   unsigned techCharDistUnit_;
-  bool forceBuffer_;
   unsigned numBufferLevels_ = 0;
 };
 class Graphics;
