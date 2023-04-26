@@ -303,7 +303,7 @@ class LayoutViewer : public QWidget
                      odb::dbTechLayer* cut_layer,
                      odb::dbTechLayer* draw_layer,
                      const odb::Rect& bounds,
-                     const int instance_limit);
+                     int instance_limit);
   void drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds);
   void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter);
