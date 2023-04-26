@@ -61,6 +61,7 @@
 #include "colorGenerator.h"
 #include "db.h"
 #include "dbDescriptors.h"
+#include "dbShape.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
@@ -2174,6 +2175,37 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
   }
 }
 
+void LayoutViewer::drawViaShapes(QPainter* painter,
+                                 dbTechLayer* cut_layer,
+                                 dbTechLayer* draw_layer,
+                                 const Rect& bounds,
+                                 const int instance_limit)
+{
+  auto via_sbox_iter = search_.searchViaSBoxShapes(cut_layer,
+                                                   bounds.xMin(),
+                                                   bounds.yMin(),
+                                                   bounds.xMax(),
+                                                   bounds.yMax(),
+                                                   instance_limit);
+
+  std::vector<odb::dbShape> via_shapes;
+  for (auto& [box, sbox, net] : via_sbox_iter) {
+    if (!isNetVisible(net)) {
+      continue;
+    }
+
+    sbox->getViaBoxes(via_shapes);
+    for (auto& shape : via_shapes) {
+      if (shape.getTechLayer() == draw_layer) {
+        painter->drawRect(shape.xMin(),
+                          shape.yMin(),
+                          shape.xMax() - shape.xMin(),
+                          shape.yMax() - shape.yMin());
+      }
+    }
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
@@ -2258,6 +2290,19 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
         const auto& ur = box.max_corner();
         painter->drawRect(
             QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+      }
+
+      if (layer->getType() == dbTechLayerType::CUT) {
+        drawViaShapes(painter, layer, layer, bounds, instance_limit);
+      } else {
+        // Get the enclosure shapes from any vias on the cut layers
+        // above or below this one.
+        if (auto upper = layer->getUpperLayer()) {
+          drawViaShapes(painter, upper, layer, bounds, instance_limit);
+        }
+        if (auto lower = layer->getLowerLayer()) {
+          drawViaShapes(painter, lower, layer, bounds, instance_limit);
+        }
       }
 
       auto polygon_iter = search_.searchPolygonShapes(layer,
