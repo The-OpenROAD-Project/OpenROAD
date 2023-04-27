@@ -537,7 +537,7 @@ class dbBox : public dbObject
   ///
   /// Get the translated boxes of this via on the given layer
   ///
-  void getViaBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes);
+  void getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes);
 
   ///
   /// Get the width (xMax-xMin) of the box.
@@ -3730,7 +3730,7 @@ class dbWire : public dbObject
   ///
   /// returns false if this shape_id is not a via.
   ///
-  bool getViaBoxes(int via_shape_id, std::vector<dbShape>& boxes);
+  bool getViaBoxes(int via_shape_id, std::vector<dbShape>& shapes);
 
   ///
   /// Returns true if this wire is a global-wire

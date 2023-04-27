@@ -807,7 +807,7 @@ void LayoutViewer::searchNearestViaEdge(
   std::vector<odb::dbShape> shapes;
   for (auto& [box, sbox, net] : via_shapes) {
     if (isNetVisible(net)) {
-      sbox->getViaBoxes(search_layer, shapes);
+      sbox->getViaLayerBoxes(search_layer, shapes);
       for (auto& shape : shapes) {
         check_rect(shape.getBox());
       }
@@ -1106,7 +1106,7 @@ void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
   std::vector<odb::dbShape> shapes;
   for (auto& [box, sbox, net] : via_shapes) {
     if (isNetVisible(net) && options_->isNetSelectable(net)) {
-      sbox->getViaBoxes(select_layer, shapes);
+      sbox->getViaLayerBoxes(select_layer, shapes);
       for (auto& shape : shapes) {
         if (shape.getBox().intersects(region)) {
           selections.push_back(gui_->makeSelected(net));
@@ -2266,7 +2266,7 @@ void LayoutViewer::drawViaShapes(QPainter* painter,
       continue;
     }
 
-    sbox->getViaBoxes(draw_layer, via_shapes);
+    sbox->getViaLayerBoxes(draw_layer, via_shapes);
     for (auto& shape : via_shapes) {
       if (shape.getTechLayer() == draw_layer) {
         painter->drawRect(shape.xMin(),

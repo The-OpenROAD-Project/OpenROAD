@@ -553,7 +553,7 @@ void dbBox::getViaBoxes(std::vector<dbShape>& shapes)
   }
 }
 
-void dbBox::getViaBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes)
+void dbBox::getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes)
 {
   _dbBox* box = (_dbBox*) this;
 
