@@ -319,6 +319,11 @@ class LayoutViewer : public QWidget
   void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
   SelectionSet selectAt(odb::Rect region_dbu);
+  void selectViaShapesAt(odb::dbTechLayer* cut_layer,
+                         odb::dbTechLayer* select_layer,
+                         const odb::Rect& region,
+                         int shape_limit,
+                         std::vector<Selected>& selections);
   Selected selectAtPoint(odb::Point pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
@@ -349,6 +354,12 @@ class LayoutViewer : public QWidget
   std::pair<Edge, bool> searchNearestEdge(const odb::Point& pt,
                                           bool horizontal,
                                           bool vertical);
+  void searchNearestViaEdge(
+      odb::dbTechLayer* cut_layer,
+      odb::dbTechLayer* search_layer,
+      const odb::Rect& search_line,
+      const int shape_limit,
+      std::function<void(const odb::Rect& rect)> check_rect);
   int edgeToPointDistance(const odb::Point& pt, const Edge& edge) const;
   bool compareEdges(const Edge& lhs, const Edge& rhs) const;
 

@@ -791,6 +791,30 @@ bool LayoutViewer::compareEdges(const Edge& lhs, const Edge& rhs) const
   return lhs_length_sqrd < rhs_length_sqrd;
 }
 
+void LayoutViewer::searchNearestViaEdge(
+    dbTechLayer* cut_layer,
+    dbTechLayer* search_layer,
+    const Rect& search_line,
+    const int shape_limit,
+    std::function<void(const Rect& rect)> check_rect)
+{
+  auto via_shapes = search_.searchViaSBoxShapes(cut_layer,
+                                                search_line.xMin(),
+                                                search_line.yMin(),
+                                                search_line.xMax(),
+                                                search_line.yMax(),
+                                                shape_limit);
+  std::vector<odb::dbShape> shapes;
+  for (auto& [box, sbox, net] : via_shapes) {
+    if (isNetVisible(net)) {
+      sbox->getViaBoxes(search_layer, shapes);
+      for (auto& shape : shapes) {
+        check_rect(shape.getBox());
+      }
+    }
+  }
+}
+
 std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
     const odb::Point& pt,
     bool horizontal,
@@ -965,6 +989,19 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
+    if (layer->getType() == dbTechLayerType::CUT) {
+      searchNearestViaEdge(layer, layer, search_line, shape_limit, check_rect);
+    } else {
+      if (auto upper = layer->getUpperLayer()) {
+        searchNearestViaEdge(
+            upper, layer, search_line, shape_limit, check_rect);
+      }
+      if (auto lower = layer->getLowerLayer()) {
+        searchNearestViaEdge(
+            lower, layer, search_line, shape_limit, check_rect);
+      }
+    }
+
     auto polygon_shapes = search_.searchPolygonShapes(layer,
                                                       search_line.xMin(),
                                                       search_line.yMin(),
@@ -1053,6 +1090,32 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   return {closest_edge, true};
 }
 
+void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
+                                     dbTechLayer* select_layer,
+                                     const Rect& region,
+                                     const int shape_limit,
+                                     std::vector<Selected>& selections)
+{
+  auto via_shapes = search_.searchViaSBoxShapes(cut_layer,
+                                                region.xMin(),
+                                                region.yMin(),
+                                                region.xMax(),
+                                                region.yMax(),
+                                                shape_limit);
+
+  std::vector<odb::dbShape> shapes;
+  for (auto& [box, sbox, net] : via_shapes) {
+    if (isNetVisible(net) && options_->isNetSelectable(net)) {
+      sbox->getViaBoxes(select_layer, shapes);
+      for (auto& shape : shapes) {
+        if (shape.getBox().intersects(region)) {
+          selections.push_back(gui_->makeSelected(net));
+        }
+      }
+    }
+  }
+}
+
 void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 {
   if (!hasDesign()) {
@@ -1114,10 +1177,20 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                               region.yMax(),
                                               shape_limit);
 
-    // Just return the first one
     for (auto& [box, net] : box_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
         selections.push_back(gui_->makeSelected(net));
+      }
+    }
+
+    if (layer->getType() == dbTechLayerType::CUT) {
+      selectViaShapesAt(layer, layer, region, shape_limit, selections);
+    } else {
+      if (auto upper = layer->getUpperLayer()) {
+        selectViaShapesAt(upper, layer, region, shape_limit, selections);
+      }
+      if (auto lower = layer->getLowerLayer()) {
+        selectViaShapesAt(lower, layer, region, shape_limit, selections);
       }
     }
 
@@ -1128,7 +1201,6 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                                       region.yMax(),
                                                       shape_limit);
 
-    // Just return the first one
     for (auto& [box, poly, net] : polygon_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
         selections.push_back(gui_->makeSelected(net));
@@ -1237,8 +1309,8 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
     // more than one item possible, so return the "next" one
     // method: look for the last selected item in the list and select the next
-    // one that will emulate a circular queue so we don't just oscillate between
-    // the first two
+    // one that will emulate a circular queue so we don't just oscillate
+    // between the first two
     std::vector<bool> is_selected;
     for (auto& sel : selections) {
       is_selected.push_back(selected_.count(sel) != 0);
@@ -2634,8 +2706,8 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
                                      Point(max_dim / 4, max_dim / 2),
                                      Point(0, 0)};
 
-  // RTree used to search for overlapping shapes and decide if rotation of text
-  // is needed.
+  // RTree used to search for overlapping shapes and decide if rotation of
+  // text is needed.
   bgi::rtree<Search::Box, bgi::quadratic<16>> pin_text_spec_shapes;
   struct PinText
   {
@@ -3086,7 +3158,8 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
           if (p1.x() + 0.5 * peg_text_box.width() < end_offset) {
             p2 = p1
                  - QPointF(
-                     0, 3 * bar_height / 4.0);  // make this peg a little taller
+                     0,
+                     3 * bar_height / 4.0);  // make this peg a little taller
             painter->drawText(QPointF(p2.x() - peg_text_box.center().x(),
                                       scale_bar_outline.top() - text_px_offset),
                               peg_text);
@@ -3564,8 +3637,8 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   } else {
     viewer_->zoomOut(mouse_pos, true);
   }
-  // ensure changes are processed before the next wheel event to prevent zoomIn
-  // and Out from jumping around on the ScrollBars
+  // ensure changes are processed before the next wheel event to prevent
+  // zoomIn and Out from jumping around on the ScrollBars
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
