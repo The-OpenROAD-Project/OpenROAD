@@ -358,7 +358,7 @@ class LayoutViewer : public QWidget
       odb::dbTechLayer* cut_layer,
       odb::dbTechLayer* search_layer,
       const odb::Rect& search_line,
-      const int shape_limit,
+      int shape_limit,
       std::function<void(const odb::Rect& rect)> check_rect);
   int edgeToPointDistance(const odb::Point& pt, const Edge& edge) const;
   bool compareEdges(const Edge& lhs, const Edge& rhs) const;
