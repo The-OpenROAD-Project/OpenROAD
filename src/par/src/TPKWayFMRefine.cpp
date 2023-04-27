@@ -43,12 +43,13 @@ namespace par {
 
 // In each pass, we only move the boundary vertices
 float TPkWayFMRefine::Pass(const HGraphPtr hgraph,
-                           const MATRIX<float>& max_block_balance,
+                           const MATRIX<float>& upper_block_balance,
+                           const MATRIX<float>& lower_block_balance,
                            MATRIX<float>& block_balance, // the current block balance
                            MATRIX<int>& net_degs, // the current net degree
                            std::vector<float>& cur_paths_cost, // the current path cost
                            TP_partition& solution,
-                           std::vector<bool>& visited_vertices_flag) const
+                           std::vector<bool>& visited_vertices_flag) 
 {
   // initialize the gain buckets
   TP_gain_buckets buckets;
@@ -63,6 +64,9 @@ float TPkWayFMRefine::Pass(const HGraphPtr hgraph,
   // identify all the boundary vertices
   // fixed vertices will not be identified as boundary vertices
   std::vector<int> boundary_vertices = FindBoundaryVertices(hgraph, net_degs, visited_vertices_flag);
+  if (boundary_vertices.empty() == true) {
+    return 0.0f; // no vertices are available
+  }
   // Initialize current gain in a multi-thread manner
   // set based on max heap (k set)
   // each block has its own max heap
@@ -74,12 +78,26 @@ float TPkWayFMRefine::Pass(const HGraphPtr hgraph,
   // Restoring from backwards will be more efficient
   std::vector<TP_gain_cell> moves_trace;  // store the moved vertex_gain in sequence
   float total_delta_gain = 0.0;
-  float best_gain = -std::numeric_limits<float>::max();
+  // Trick here:  We can adjust the best_gain to value to decide whether we should
+  // accept a worse solution
+  // If the current solution violates the balance constraint, we have to accept 
+  // the worse solution to get a balanced solution
+  // Otherwise we should only accept better solutions
+  float best_gain = 0.0;
+  for (int block_id = 0; block_id < num_parts_; block_id++) {
+    if (upper_block_balance[block_id] < block_balance[block_id] ||
+        block_balance[block_id] < lower_block_balance[block_id]) {
+      best_gain = -std::numeric_limits<float>::max();
+      break;      
+    }    
+  }
+  
   int best_vertex_id = -1; // dummy best vertex id
   // main loop of FM pass
   for (int i = 0; i < max_move_; i++) {
     auto candidate
-        = PickMoveKWay(buckets, hgraph, block_balance, max_block_balance);
+        = PickMoveKWay(buckets, hgraph, block_balance, 
+                       upper_block_balance, lower_block_balance);
     // check the status of candidate
     const int vertex = candidate->GetVertex();  // candidate vertex
     if (vertex < 0) {
@@ -101,9 +119,6 @@ float TPkWayFMRefine::Pass(const HGraphPtr hgraph,
                                     std::ref(cur_paths_cost),
                                     std::ref(solution)));
     }
-    
-    
-
     for (auto& t : threads) {
       t.join();  // wait for all threads to finish
     }
@@ -113,6 +128,7 @@ float TPkWayFMRefine::Pass(const HGraphPtr hgraph,
       best_vertex_id = vertex;
     }
   }  
+
   // find the best solution and restore the status which achieves the best solution
   // traverse the moves_trace in the reversing order
   for (auto move_iter = moves_trace.rbegin();
@@ -198,7 +214,8 @@ std::shared_ptr<VertexGain> TPkWayFMRefine::PickMoveKWay(
     TP_gain_buckets& buckets,
     const HGraphPtr hgraph,
     const MATRIX<float>& curr_block_balance,
-    const MATRIX<float>& max_block_balance) const
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance) const
 {
   // dummy candidate
   int to_pid = -1;
@@ -219,8 +236,10 @@ std::shared_ptr<VertexGain> TPkWayFMRefine::PickMoveKWay(
     auto ele = buckets[i]->GetMax();
     const int vertex = ele->GetVertex();
     const float gain = ele->GetGain();
-    if ((gain > candidate->GetGain())
-        && (curr_block_balance[i] + hgraph->vertex_weights_[vertex] < max_block_balance[i])) {
+    const int from_pid = ele->GetSourcePart();
+    if ((gain > candidate->GetGain()) && 
+        CheckVertexMoveLegality(vertex, i, from_pid, hgraph, 
+          curr_block_balance,upper_block_balance, lower_block_balance) == true) {                      
       to_pid = i;
       candidate = ele;
     }
@@ -230,13 +249,14 @@ std::shared_ptr<VertexGain> TPkWayFMRefine::PickMoveKWay(
       best_to_pid = i;
     }
   }
-  // Case 1:  if there is a candidate available
-  if (to_pid > -1) {
+  // Case 1:  if there is a candidate available or no vertex to move
+  if (to_pid > -1 || best_to_pid == -1) {
     return candidate;
   }
   // Case 2:  "corking effect", i.e., no candidate
   return buckets.at(best_to_pid)->GetBestCandidate(curr_block_balance,
-                                                   max_block_balance, 
+                                                   upper_block_balance, 
+                                                   lower_block_balance,
                                                    hgraph);
 }
 

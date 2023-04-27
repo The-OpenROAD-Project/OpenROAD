@@ -35,14 +35,26 @@
 
 %{
 #include "par/PartitionMgr.h"
+#include <array>
+#include <regex>
+#include <memory>
+#include <vector>
+#include <iostream>
 
 namespace ord {
 // Defined in OpenRoad.i
         par::PartitionMgr* getPartitionMgr();
 }  // namespace ord
 
+using std::regex;
 using ord::getPartitionMgr;
+
 %}
+
+%import <std_vector.i>
+namespace std {
+%template(e_wt_factors) vector<double>;
+}
 
 %include "../../Exception.i"
 
@@ -60,9 +72,9 @@ void triton_part_hypergraph(unsigned int num_parts,
                             const char* group_file,
                             const char* placement_file,
                             // weight parameters
-                            const std::vector<float>& e_wt_factors,
-                            const std::vector<float>& v_wt_factors,
-                            const std::vector<float>& placement_wt_factors,
+                            const char* e_wt_factors_str,
+                            const char* v_wt_factors_str,
+                            const char* placement_wt_factors_str,
                             // coarsening related parameters
                             int thr_coarsen_hyperedge_size_skip,
                             int thr_coarsen_vertices,
@@ -77,13 +89,12 @@ void triton_part_hypergraph(unsigned int num_parts,
                             // refinement related parameters
                             int refiner_iters,
                             int max_moves,
-                            int max_num_fm_pass,
                             float early_stop_ratio,
                             int total_corking_passes,
                             // vcycle related parameters
                             bool v_cycle_flag,
                             int max_num_vcycle,
-                            int num_ubfactor_delta)
+                            int num_clusters_threshold_overlay)
 {
   getPartitionMgr()->tritonPartHypergraph(num_parts,
                                           balance_constraint,
@@ -97,9 +108,9 @@ void triton_part_hypergraph(unsigned int num_parts,
                                           group_file,
                                           placement_file,
                                           // weight parameters
-                                          e_wt_factors,
-                                          v_wt_factors,
-                                          placement_wt_factors,
+                                          e_wt_factors_str,
+                                          v_wt_factors_str,
+                                          placement_wt_factors_str,
                                           // coarsening related parameters
                                           thr_coarsen_hyperedge_size_skip,
                                           thr_coarsen_vertices,
@@ -114,15 +125,37 @@ void triton_part_hypergraph(unsigned int num_parts,
                                           // refinement related parameters
                                           refiner_iters,
                                           max_moves,  
-                                          max_num_fm_pass,
                                           early_stop_ratio,
                                           total_corking_passes,
                                           // vcycle related parameters
                                           v_cycle_flag,
                                           max_num_vcycle,
-                                          num_ubfactor_delta);
+                                          num_clusters_threshold_overlay);
 }
 
+void evaluate_hypergraph_solution(unsigned int num_parts,
+                                  float balance_constraint,
+                                  int vertex_dimension,
+                                  int hyperedge_dimension,
+                                  const char* hypergraph_file,
+                                  const char* fixed_file,
+                                  const char* group_file,
+                                  const char* solution_file,
+                                  // weight parameters
+                                  const char* e_wt_factors_str,
+                                  const char* v_wt_factors_str)
+{
+  getPartitionMgr()->evaluateHypergraphSolution(num_parts,
+                                                balance_constraint,
+                                                vertex_dimension,
+                                                hyperedge_dimension,
+                                                hypergraph_file,
+                                                fixed_file,
+                                                group_file,
+                                                solution_file,
+                                                e_wt_factors_str,
+                                                v_wt_factors_str); 
+}
 
 
 void triton_part_design(unsigned int num_parts_arg,
@@ -147,9 +180,9 @@ void triton_part_design(unsigned int num_parts_arg,
                         float timing_exp_factor,
                         float extra_delay,
                         // weight parameters
-                        const std::vector<float>& e_wt_factors,
-                        const std::vector<float>& v_wt_factors,
-                        const std::vector<float>& placement_wt_factors,
+                        const char* e_wt_factors_str,
+                        const char* v_wt_factors_str,
+                        const char* placement_wt_factors_str,
                         // coarsening related parameters
                         int thr_coarsen_hyperedge_size_skip,
                         int thr_coarsen_vertices,
@@ -164,13 +197,12 @@ void triton_part_design(unsigned int num_parts_arg,
                         // refinement related parameters
                         int refiner_iters,
                         int max_moves,
-                        int max_num_fm_pass,
                         float early_stop_ratio,
                         int total_corking_passes,
                         // vcycle related parameters
                         bool v_cycle_flag,
                         int max_num_vcycle,
-                        int num_ubfactor_delta)
+                        int num_clusters_threshold_overlay)
 {
   getPartitionMgr()->tritonPartDesign(num_parts_arg,
                                       balance_constraint_arg,
@@ -194,9 +226,9 @@ void triton_part_design(unsigned int num_parts_arg,
                                       timing_exp_factor,
                                       extra_delay,
                                       // weight parameters
-                                      e_wt_factors,
-                                      v_wt_factors,
-                                      placement_wt_factors,
+                                      e_wt_factors_str,
+                                      v_wt_factors_str,
+                                      placement_wt_factors_str,
                                       // coarsening related parameters
                                       thr_coarsen_hyperedge_size_skip,
                                       thr_coarsen_vertices,
@@ -211,13 +243,12 @@ void triton_part_design(unsigned int num_parts_arg,
                                       // refinement related parameters
                                       refiner_iters,
                                       max_moves,
-                                      max_num_fm_pass,
                                       early_stop_ratio,
                                       total_corking_passes,
                                       // vcycle related parameters
                                       v_cycle_flag,
                                       max_num_vcycle,
-                                      num_ubfactor_delta);
+                                      num_clusters_threshold_overlay);
 }
 
 void write_partition_verilog(const char* port_prefix,

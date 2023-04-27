@@ -62,7 +62,7 @@ class TPmultilevelPartitioner
                           const bool v_cycle_flag,
                           const int num_initial_solutions,
                           const int num_best_initial_solutions,
-                          const int num_ubfactor_delta,
+                          const int num_clusters_threshold_overlay,
                           const int max_num_vcycle,
                           const int seed,
                           const bool timing_driven_flag, 
@@ -80,7 +80,7 @@ class TPmultilevelPartitioner
        v_cycle_flag_(v_cycle_flag),
        num_initial_random_solutions_(num_initial_solutions),
        num_best_initial_solutions_(num_best_initial_solutions),
-       num_ubfactor_delta_(num_ubfactor_delta),
+       num_clusters_threshold_overlay_(num_clusters_threshold_overlay),
        max_num_vcycle_(max_num_vcycle),
        seed_(seed),
        timing_driven_flag_(timing_driven_flag)
@@ -99,51 +99,64 @@ class TPmultilevelPartitioner
   // here the hgraph should not be const
   // Because our slack-rebudgeting algorithm will change hgraph
   TP_partition Partition(HGraphPtr hgraph,
-                         const MATRIX<float>& max_block_balance) const;
+                         const MATRIX<float>& upper_block_balance,
+                         const MATRIX<float>& lower_block_balance) const;
 
  private:
 
   // Run single-level partitioning
   std::vector<int> SingleLevelPartition(HGraphPtr hgraph,
-                            const MATRIX<float>& max_block_balance) const;
-
+                      const MATRIX<float>& upper_block_balance,
+                      const MATRIX<float>& lower_block_balance) const;
 
   // Use the initial solution as the community feature
   // Call Vcycle refinement
   void VcycleRefinement(HGraphPtr hgraph, 
-                        const MATRIX<float>& max_block_balance,
+                        const MATRIX<float>& upper_block_balance,
+                        const MATRIX<float>& lower_block_balance,
                         std::vector<int>& best_solution) const;
-  
+
+  std::vector<int>  SingleCycleRefinement(HGraphPtr hgraph,
+                                          const MATRIX<float>& upper_block_balance,
+                                          const MATRIX<float>& lower_block_balance) const;
+
   // Generate initial partitioning
   // Include random partitioning, Vile partitioning and ILP partitioning
   void InitialPartition(const HGraphPtr hgraph, 
-                        const MATRIX<float>& max_block_balance,
+                        const MATRIX<float>& upper_block_balance,
+                        const MATRIX<float>& lower_block_balance,
                         MATRIX<int>& top_initial_solutions,
                         int& best_solution_id) const;
-
-
 
   // Refine the solutions in top_solutions in parallel with multi-threading
   // the top_solutions and best_solution_id will be updated during this process
   void RefinePartition(TP_coarse_graph_ptrs hierarchy,
-                       const MATRIX<float>& max_block_balance,
+                       const MATRIX<float>& upper_block_balance,
+                       const MATRIX<float>& lower_block_balance,
                        MATRIX<int>& top_solutions,
-                       int& best_solution_id) const;
-    
+                       int& best_solution_id) const;   
  
   // Refine function
   // Ilp refinement, k_way_pm_refinement, 
   // k_way_fm_refinement and greedy refinement
   void CallRefiner(const HGraphPtr hgraph, 
-                   const MATRIX<float>& max_block_balance,
+                   const MATRIX<float>& upper_block_balance,
+                   const MATRIX<float>& lower_block_balance,
                    std::vector<int>& solution) const;
 
-  
+  // Perform cut-overlay clustering and ILP-based partitioning
+  // The ILP-based partitioning uses top_solutions[best_solution_id] as a hint,
+  // such that the runtime can be signficantly reduced
+  std::vector<int> CutOverlayILPPart(const HGraphPtr hgraph,
+                     const MATRIX<float>& upper_block_balance,
+                     const MATRIX<float>& lower_block_balance,
+                     const MATRIX<int>& top_solutions,
+                     int best_solution_id) const;
 
   // basic parameters
   const int num_parts_ = 2; 
   const float ub_factor_ = 1.0;
-  const int num_ubfactor_delta_ = 5; // We use to relax the ub_factor_ during multilevel refinement
+  const int num_clusters_threshold_overlay_ = 5; // We use to relax the ub_factor_ during multilevel refinement
 
   // user-specified parameters
   const int num_initial_random_solutions_ = 50;

@@ -42,7 +42,8 @@ namespace par {
 
 // The main function of refinement class
 void TPrefiner::Refine(HGraphPtr hgraph,
-                       const MATRIX<float>& max_block_balance,
+                       const MATRIX<float>& upper_block_balance,
+                       const MATRIX<float>& lower_block_balance,
                        TP_partition& solution)
 {
   if (max_move_ <= 0) {
@@ -53,7 +54,10 @@ void TPrefiner::Refine(HGraphPtr hgraph,
   // calculate the basic statistics of current solution
   MATRIX<float> cur_block_balance = evaluator_->GetBlockBalance(hgraph, solution);
   MATRIX<int> net_degs = evaluator_->GetNetDegrees(hgraph, solution);
-  std::vector<float> cur_paths_cost = evaluator_->GetPathsCost(hgraph, solution);
+  std::vector<float> cur_paths_cost;
+  if (hgraph->timing_flag_ == true) {
+    cur_paths_cost = evaluator_->GetPathsCost(hgraph, solution);
+  }
   for (int i = 0; i < refiner_iters_; ++i) {
     // the main function for improving the solution
     // mark the vertices can be moved as unvisited
@@ -65,9 +69,13 @@ void TPrefiner::Refine(HGraphPtr hgraph,
           visited_vertices_flag[v] = true;
         }
       }
-    }    
-    const float gain = Pass(hgraph, max_block_balance, cur_block_balance,
-                            net_degs, cur_paths_cost, solution, visited_vertices_flag);
+    }   
+    const float gain = Pass(hgraph, 
+                            upper_block_balance, 
+                            lower_block_balance,
+                            cur_block_balance,
+                            net_degs, cur_paths_cost, 
+                            solution, visited_vertices_flag);
     if (gain <= 0.0) {
       return; // stop if there is no improvement
     }
@@ -211,7 +219,8 @@ std::vector<int> TPrefiner::FindNeighbors(const HGraphPtr hgraph,
     const int e = hgraph->vind_[idx];
     for (auto v_idx = hgraph->eptr_[e]; v_idx < hgraph->eptr_[e + 1]; v_idx++) {
       const int v = hgraph->eind_[v_idx];
-      if (visited_vertices_flag[v] == true) {
+      if (visited_vertices_flag[v] == false) {
+        // This vertex has not been visited yet
         neighbors.insert(v);
       }
     } 
@@ -233,8 +242,9 @@ std::vector<int> TPrefiner::FindNeighbors(const HGraphPtr hgraph,
     const int e = hgraph->vind_[idx];
     for (auto v_idx = hgraph->eptr_[e]; v_idx < hgraph->eptr_[e + 1]; v_idx++) {
       const int v = hgraph->eind_[v_idx];
-      if (visited_vertices_flag[v] == true && 
+      if (visited_vertices_flag[v] == false && 
           (solution[v] == partition_pair.first || solution[v] == partition_pair.second)) {
+        // This vertex has not been visited yet
         neighbors.insert(v);
       }
     } 
@@ -403,13 +413,15 @@ void TPrefiner::RollBackVertexGain(TP_gain_cell gain_cell,
 // Here we assume the vertex v is not in the block to_pid
 bool TPrefiner::CheckVertexMoveLegality(int v, // vertex id
                                         int to_pid, // to block id
+                                        int from_pid, // from block_id
                                         const HGraphPtr hgraph, 
                                         const MATRIX<float>& curr_block_balance,
-                                        const MATRIX<float>& max_block_balance) const
+                                        const MATRIX<float>& upper_block_balance,
+                                        const MATRIX<float>& lower_block_balance) const
 {
-  const std::vector<float> total_wt
-      = curr_block_balance[to_pid] + hgraph->vertex_weights_[v];
-  if (total_wt <= max_block_balance[to_pid]) {
+  const std::vector<float> total_wt_to_block = curr_block_balance[to_pid] + hgraph->vertex_weights_[v];
+  const std::vector<float> total_wt_from_block = curr_block_balance[from_pid] - hgraph->vertex_weights_[v];
+  if (total_wt_to_block <= upper_block_balance[to_pid] && lower_block_balance[from_pid] <= total_wt_from_block) {
     return true;
   } else {
     return false;
@@ -581,24 +593,37 @@ bool TPrefiner::CheckHyperedgeMoveLegality(int e, // hyperedge id
                                            const HGraphPtr hgraph,
                                            const std::vector<int>& solution,
                                            const MATRIX<float>& curr_block_balance,
-                                           const MATRIX<float>& max_block_balance) const
+                                           const MATRIX<float>& upper_block_balance,
+                                           const MATRIX<float>& lower_block_balance) const
 {
-  std::vector<float> total_wt = curr_block_balance[to_pid];
+  MATRIX<float> update_block_balance = curr_block_balance;
   for (int idx = hgraph->eptr_[e]; idx < hgraph->eptr_[e+1]; ++idx) {
     const int v = hgraph->eind_[idx];
     // check if satisfies the fixed vertices constraint
     if (hgraph->fixed_vertex_flag_ == true && hgraph->fixed_attr_[v] != to_pid) {
       return false; // violate the fixed vertices constraint
     }
+    const int pid = solution[v];
     if (solution[v] != to_pid) {
-      total_wt = total_wt + hgraph->vertex_weights_[v];
+      update_block_balance[pid] = update_block_balance[pid] + hgraph->vertex_weights_[v]; 
+    } else {
+      update_block_balance[pid] = update_block_balance[pid] - hgraph->vertex_weights_[v];
     }
   }
-  if (total_wt <= max_block_balance[to_pid]) {
-    return true;
-  } else {
+  // Violate the upper bound
+  if (upper_block_balance[to_pid] < update_block_balance[to_pid]) {
     return false;
   }
+  // Violate the lower bound
+  for (int pid = 0; pid < num_parts_; pid++) {
+    if (pid != to_pid) {
+      if (update_block_balance[pid] < lower_block_balance[pid]) {
+        return false;
+      }
+    }
+  }
+  // valid move
+  return true;
 }
                     
 }  // namespace par

@@ -370,7 +370,7 @@ std::vector<int> GoldenEvaluator::GetCutHyperedges(const HGraphPtr hgraph,
 // The score is the summation of hyperedges spanning block_id_a and block_id_b
 std::map<std::pair<int, int>, float> 
   GoldenEvaluator::GetMatchingConnectivity(const HGraphPtr hgraph,
-                                 const std::vector<int>& solution)
+                                 const std::vector<int>& solution) const
 {
   std::map<std::pair<int, int>, float> matching_connectivity;
   // the score between block_a and block_b is the same as 
@@ -390,7 +390,7 @@ std::map<std::pair<int, int>, float>
           if (block_b_flag == false && block_id == block_b) {
             block_b_flag = true;
           }
-          if (block_a_flag == true && block_b_flag) {
+          if (block_a_flag == true && block_b_flag == true) {
             score += CalculateHyperedgeCost(e, hgraph);
             break;
           }
@@ -399,6 +399,7 @@ std::map<std::pair<int, int>, float>
       matching_connectivity[std::pair<int,int>(block_a, block_b)] = score;
     }
   }
+  return matching_connectivity;
 }
 
 
@@ -446,6 +447,62 @@ TP_partition_token GoldenEvaluator::CutEvaluator(const HGraphPtr hgraph,
   return std::pair<float, MATRIX<float> >(cost, block_balance);
 }
 
+// check the constraints 
+// balance constraint, group constraint, fixed vertices constraint
+bool GoldenEvaluator::ConstraintAndCutEvaluator(const HGraphPtr hgraph, 
+                                 const std::vector<int>& solution,
+                                 float ub_factor,
+                                 const std::vector<std::vector<int> >& group_attr,
+                                 bool print_flag) const
+{
+  std::pair<float, MATRIX<float> > 
+    solution_token = CutEvaluator(hgraph, solution, print_flag);
+  // check block balance
+  bool balance_satisfied_flag = true;
+  const MATRIX<float> upper_block_balance = hgraph->GetUpperVertexBalance(num_parts_, ub_factor); 
+  const MATRIX<float> lower_block_balance = hgraph->GetLowerVertexBalance(num_parts_, ub_factor);
+  for (int i = 0; i < num_parts_; i++) {
+    if (solution_token.second[i] > upper_block_balance[i] ||
+        solution_token.second[i] < lower_block_balance[i]) {
+      balance_satisfied_flag = false;
+      break;
+    }
+  }
+
+  // check group constraint
+  bool group_satisified_flag = true;
+  for (const auto& group : group_attr) {
+    if (static_cast<int>(group.size()) <= 1) {
+      continue;
+    }
+    int block_id = solution[group.front()];
+    for (const auto& v : group) {
+      if (solution[v] != block_id) {
+        group_satisified_flag = false;
+        break;
+      }
+    }
+  }
+
+  // check fixed vertices constraint
+  bool fixed_satisfied_flag = true;
+  if (static_cast<int>(hgraph->fixed_attr_.size()) == hgraph->num_vertices_) {
+    for (int v = 0; v < hgraph->num_vertices_; v++) {
+      if (hgraph->fixed_attr_[v] > -1 && hgraph->fixed_attr_[v] != solution[v]) {
+        fixed_satisfied_flag = false;
+        break;
+      }
+    }
+  }
+
+  if (print_flag == true) {
+    logger_->report("Satisfy the balance constraint : {}", balance_satisfied_flag);
+    logger_->report("Satisfy the group constraint : {}", group_satisified_flag);
+    logger_->report("Satisfy the fixed vertices constraint : {}", fixed_satisfied_flag);
+  }
+
+  return balance_satisfied_flag && group_satisified_flag && fixed_satisfied_flag;
+}
 
 // hgraph will be updated here
 // For timing-driven flow, 
@@ -497,10 +554,14 @@ void GoldenEvaluator::UpdateTiming(HGraphPtr hgraph, const TP_partition& solutio
   if (hgraph->timing_flag_ == false) {
     return;
   }
+
   // Here we need to update the path_timing_attr_ and hyperedge_timing_attr_ of hgraph
   // Step 1: update the hyperedge_timing_attr_ first
   // identify all the hyperedges being cut in the timing graph
   std::vector<int> cut_hyperedges = GetCutHyperedges(hgraph, solution);
+
+  // Timing arc slacks store the updated slack for each hyperedge in the timing graph
+  // instead of hgraph
   std::vector<float> timing_arc_slacks = timing_graph_->hyperedge_timing_attr_;
   for (const auto& e : cut_hyperedges) {
     for (const auto& arc_id : hgraph->hyperedge_arc_set_[e]) {
@@ -585,11 +646,11 @@ void GoldenEvaluator::UpdateTiming(HGraphPtr hgraph, const TP_partition& solutio
   std::fill(hgraph->hyperedge_timing_attr_.begin(),
             hgraph->hyperedge_timing_attr_.end(),
             std::numeric_limits<float>::max());
-  for (const auto& e : cut_hyperedges) {
+  for (int e = 0; e < hgraph->num_hyperedges_; e++) {
     for (const auto& arc_id : hgraph->hyperedge_arc_set_[e]) {
       hgraph->hyperedge_timing_attr_[e] = 
             std::min(timing_arc_slacks[arc_id], hgraph->hyperedge_timing_attr_[e]);
-    }
+    } 
   }
 
   // Step 2: update the path_timing_attr_.
@@ -607,6 +668,37 @@ void GoldenEvaluator::UpdateTiming(HGraphPtr hgraph, const TP_partition& solutio
 
   // update the corresponding path and hyperedge timing weight
   InitializeTiming(hgraph);
+}
+
+
+// Write the weighted hypergraph in hMETIS format
+void GoldenEvaluator::WriteWeightedHypergraph(HGraphPtr hgraph, const std::string file_name, bool with_weight_flag) const
+{
+  std::ofstream file_output;
+  file_output.open(file_name);
+  if (with_weight_flag == true) {
+    file_output << hgraph->num_hyperedges_ << "  " << hgraph->num_vertices_ << " 11" << std::endl;
+  } else {
+    file_output << hgraph->num_hyperedges_ << "  " << hgraph->num_vertices_ << std::endl;
+  }
+  // write hyperedge weight and hyperedge first
+  for (int e = 0; e < hgraph->num_hyperedges_; e++) {
+    if (with_weight_flag == true) {
+      file_output << CalculateHyperedgeCost(e, hgraph) << "  ";
+    }
+    for (auto idx = hgraph->eptr_[e]; idx < hgraph->eptr_[e + 1]; idx++) {
+      file_output << hgraph->eind_[idx] + 1 << " ";
+    }
+    file_output << std::endl;
+  }
+  // write vertex weight
+  if (with_weight_flag == true) {
+    for (int v = 0; v < hgraph->num_vertices_; v++) {
+      file_output << GetVertexWeightNorm(v, hgraph) << std::endl;
+    }
+  }
+  // close the file
+  file_output.close();
 }
 
 }  // namespace par

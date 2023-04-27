@@ -99,8 +99,8 @@ struct TPHypergraph
   {
     vertex_dimensions_ = vertex_dimensions;
     hyperedge_dimensions_ = hyperedge_dimensions;
-    num_vertices_ = static_cast<int>(vertex_weights_.size());
-    num_hyperedges_ = static_cast<int>(hyperedge_weights_.size());
+    num_vertices_ = static_cast<int>(vertex_weights.size());
+    num_hyperedges_ = static_cast<int>(hyperedge_weights.size());
 
     vertex_weights_ = vertex_weights;
     hyperedge_weights_ = hyperedge_weights;
@@ -178,8 +178,8 @@ struct TPHypergraph
   {
     vertex_dimensions_ = vertex_dimensions;
     hyperedge_dimensions_ = hyperedge_dimensions;
-    num_vertices_ = static_cast<int>(vertex_weights_.size());
-    num_hyperedges_ = static_cast<int>(hyperedge_weights_.size());
+    num_vertices_ = static_cast<int>(vertex_weights.size());
+    num_hyperedges_ = static_cast<int>(hyperedge_weights.size());
 
     vertex_weights_ = vertex_weights;
     hyperedge_weights_ = hyperedge_weights;
@@ -278,8 +278,17 @@ struct TPHypergraph
   std::vector<float> GetTotalVertexWeights() const;
   
   // get balance constraints
+  // TODO:  RePlace the Vertex Balance with UpperVertexBalance
   std::vector<std::vector<float> > GetVertexBalance(int num_parts,
                                                     float ub_factor) const;
+
+
+  std::vector<std::vector<float> > GetUpperVertexBalance(int num_parts,
+                                                         float ub_factor) const;
+
+
+  std::vector<std::vector<float> > GetLowerVertexBalance(int num_parts,
+                                                         float ub_factor) const;
 
   // basic hypergraph
   int num_vertices_ = 0;

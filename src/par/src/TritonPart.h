@@ -125,6 +125,20 @@ class TritonPart
                            const char* group_file,
                            const char* placement_file);
 
+
+  // Evaluate a given solution of a hypergraph
+  // The fixed vertices should statisfy the fixed vertices constraint
+  // The group of vertices should stay together in the solution
+  // The vertex balance should be satisfied  
+  void EvaluateHypergraphSolution(unsigned int num_parts, 
+                                  float balance_constraint,
+                                  int vertex_dimension,
+                                  int hyperedge_dimension,
+                                  const char* hypergraph_file,
+                                  const char* fixed_file,
+                                  const char* group_file,
+                                  const char* solution_file);
+    
   // k-way partitioning used by Hier-RTLMP
   std::vector<int> PartitionKWaySimpleMode(unsigned int num_parts_arg,
                                            float balance_constraint_arg,
@@ -190,13 +204,12 @@ class TritonPart
                          // refinement related parameters
                          int refiner_iters,
                          int max_moves,
-                         int max_num_fm_pass,
                          float early_stop_ratio,
                          int total_corking_passes,
                          // vcycle related parameters
                          bool v_cycle_flag,
                          int max_num_vcycle,
-                         int num_ubfactor_delta)
+                         int num_clusters_threshold_overlay)
   {
     // coarsening related parameters (stop conditions)
     thr_coarsen_hyperedge_size_skip_ = thr_coarsen_hyperedge_size_skip; // if the size of a hyperedge is larger than
@@ -221,7 +234,6 @@ class TritonPart
     refiner_iters_ = refiner_iters; // refinement iterations
     max_moves_ = max_moves;  // the allowed moves for each pass of FM or greedy refinement
                              // or the number of vertices in an ILP instance
-    max_num_fm_pass_ = max_num_fm_pass;  // the allowed number of FM pass in each refinement iteration
     early_stop_ratio_ = early_stop_ratio; // if the number of moved vertices exceeds num_vertices_of_a_hypergraph times
                                           // early_stop_ratio_, then exit current FM pass.
                                           // This parameter is set based on the obersvation that
@@ -232,7 +244,7 @@ class TritonPart
     max_num_vcycle_ = max_num_vcycle;     // maximum number of vcycles
 
     // This parameter is set to avoid early-stuck of FM
-    num_ubfactor_delta_ = num_ubfactor_delta;  // allowing marginal imbalance to improve QoR
+    num_clusters_threshold_overlay_ = num_clusters_threshold_overlay;  // allowing marginal imbalance to improve QoR
   }
 
  private:
@@ -350,7 +362,6 @@ class TritonPart
   int refiner_iters_ = 2; // refinement iterations
   int max_moves_ = 50; // the allowed moves for each pass of FM or greedy refinement
                        // or the number of vertices in an ILP instance
-  int max_num_fm_pass_ = 10; // the allowed number of FM pass in each refinement iteration
   float early_stop_ratio_ = 0.5; // if the number of moved vertices exceeds num_vertices_of_a_hypergraph times
                                  // early_stop_ratio_, then exit current FM pass.
                                  // This parameter is set based on the obersvation that
@@ -360,9 +371,13 @@ class TritonPart
   bool v_cycle_flag_ = true;
   int max_num_vcycle_ = 5;      // maximum number of vcycles
 
-  // This parameter is set to avoid early-stuck of FM
+  // This parameter is set to avoid early-stuck of FM 
+  // We use cut-overlay clustering and ILP-based Partitioning
+  // If the number of clusters after cut-overlay clustering
+  // is larger than num_clusters_threshold_overlay_, we call
+  // FM-based refiner, otherwise call ILP-based partitioning
   // TODO (20230401) : we need to more experiments to tune this, not used now
-  int num_ubfactor_delta_ = 5;  // allowing marginal imbalance to improve QoR
+  int num_clusters_threshold_overlay_ = 500;  // allowing marginal imbalance to improve QoR
                                                                  
   // Hypergraph information
   // basic information

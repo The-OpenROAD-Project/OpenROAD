@@ -59,12 +59,54 @@ namespace par {
 // so we precompute the block_balance and net_degs
 // the return value is the gain improvement
 float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
+                           const MATRIX<float>& upper_block_balance,
+                           const MATRIX<float>& lower_block_balance,
+                           MATRIX<float>& block_balance, // the current block balance
+                           MATRIX<int>& net_degs, // the current net degree
+                           std::vector<float>& paths_cost, // the current path cost
+                           TP_partition& solution,
+                           std::vector<bool>& visited_vertices_flag)  
+{
+  // Step 1: determine the matching score
+  std::vector<std::pair<int, int> > maximum_matches; // maximum matching between blocks
+  std::map<std::pair<int, int>, float> matching_connectivity = 
+      evaluator_->GetMatchingConnectivity(hgraph, solution);  
+  CalculateMaximumMatch(maximum_matches, matching_connectivity);   
+  float delta_gain = 0.0;
+  // Step 2: update the solution based on calculated maximum matching
+  // initialize the gain buckets
+  TP_gain_buckets buckets;
+  for (int i = 0; i < num_parts_; ++i) {
+    // the maxinum size of each bucket is hgraph->num_vertices_
+    TP_gain_bucket bucket
+        = std::make_shared<TPpriorityQueue>(hgraph->num_vertices_, 
+                                            total_corking_passes_,
+                                            hgraph);
+    buckets.push_back(bucket);
+  }
+  for (const auto& partition_pair : maximum_matches) {
+    // after performing FM, the corresponding buckets will be cleared
+    delta_gain += PerformPairFM(hgraph, upper_block_balance, lower_block_balance, block_balance, net_degs,
+                                paths_cost, solution, buckets, visited_vertices_flag, partition_pair);
+  }
+  return delta_gain;
+}
+
+
+/*
+// In each pass, we only move the boundary vertices
+// here we pass block_balance and net_degrees as reference
+// because we only move a few vertices during each pass
+// i.e., block_balance and net_degs will not change too much
+// so we precompute the block_balance and net_degs
+// the return value is the gain improvement
+float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
                            const MATRIX<float>& max_block_balance,
                            MATRIX<float>& block_balance, // the current block balance
                            MATRIX<int>& net_degs, // the current net degree
                            std::vector<float>& paths_cost, // the current path cost
                            TP_partition& solution,
-                           std::vector<bool>& visited_vertices_flag) 
+                           std::vector<bool>& visited_vertices_flag)  
 {
   // Step 1: determine the matching score
   std::vector<std::pair<int, int> > maximum_matches; // maximum matching between blocks
@@ -106,7 +148,7 @@ float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
   }
   return delta_gain;
 }
-
+*/
 
 // The function to calculate the matching_scores
 void TPkWayPMRefine::CalculateMaximumMatch(
@@ -150,7 +192,8 @@ void TPkWayPMRefine::CalculateMaximumMatch(
 
 // Perform 2-way FM between blocks in partition pair
 float TPkWayPMRefine::PerformPairFM(const HGraphPtr hgraph,
-                                    const MATRIX<float>& max_block_balance,
+                                    const MATRIX<float>& upper_block_balance,
+                                    const MATRIX<float>& lower_block_balance,
                                     MATRIX<float>& block_balance, // the current block balance
                                     MATRIX<int>& net_degs, // the current net degree
                                     std::vector<float>& paths_cost, // the current path cost
@@ -190,7 +233,7 @@ float TPkWayPMRefine::PerformPairFM(const HGraphPtr hgraph,
     // directly, because the buckets cooresponding to other blocks are empty
     // Similarly, we can also use AcceptKWayMove method inheriting from TPkWayPMRefine
     auto candidate
-        = PickMoveKWay(buckets, hgraph, block_balance, max_block_balance);
+        = PickMoveKWay(buckets, hgraph, block_balance, upper_block_balance, lower_block_balance);
     // check the status of candidate
     const int vertex = candidate->GetVertex();  // candidate vertex
     if (vertex < 0) {
@@ -271,7 +314,7 @@ void TPkWayPMRefine::InitializeGainBucketsPM(TP_gain_buckets& buckets,
                                   std::ref(buckets),
                                   to_pid,
                                   hgraph,
-                                  std::ref(boundary_vertices), // we only consider       boundary vertices
+                                  std::ref(boundary_vertices), // we only consider boundary vertices
                                   std::ref(net_degs),
                                   std::ref(cur_paths_cost),
                                   std::ref(solution)));

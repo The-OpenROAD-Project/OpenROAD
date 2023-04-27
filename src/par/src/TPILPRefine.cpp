@@ -48,12 +48,13 @@ namespace par {
 
 // Implement the ILP-based refinement pass
 float TPilpRefine::Pass(const HGraphPtr hgraph,
-                        const MATRIX<float>& max_block_balance,
+                        const MATRIX<float>& upper_block_balance,
+                        const MATRIX<float>& lower_block_balance,
                         MATRIX<float>& block_balance, // the current block balance
                         MATRIX<int>& net_degs, // the current net degree
                         std::vector<float>& cur_paths_cost, // the current path cost
                         TP_partition& solution,
-                        std::vector<bool>& visited_vertices_flag) const
+                        std::vector<bool>& visited_vertices_flag) 
 {
   // Step 1: identify all the boundary vertices (boundary vertices will not include fixed vertices)
   std::vector<int> boundary_vertices = FindBoundaryVertices(hgraph, net_degs, visited_vertices_flag); 
@@ -122,7 +123,8 @@ float TPilpRefine::Pass(const HGraphPtr hgraph,
                        hyperedges_extracted,
                        hyperedges_weight_extracted,
                        vertices_weight_extracted,
-                       max_block_balance) == false) {
+                       upper_block_balance,
+                       lower_block_balance) == false) {
     logger_->report("[WARNING] ILP-based partitioning cannot find a valid solution.");
     return 0.0; // no valid solution
   }

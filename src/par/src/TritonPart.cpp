@@ -213,7 +213,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   vertex_dimensions_ = 1; // for design partitioning, vertex weight is the area of the instance
   hyperedge_dimensions_ = 1; // for design partitioning, hyperedge weight is the connectivity
   timing_aware_flag_ = timing_aware_flag_arg;
-  if (timing_aware_flag_ = false) {
+  if (timing_aware_flag_ == false) {
     top_n_ = 0; // timing driven flow is disabled
   } else {
     top_n_ = top_n_arg; // extract the top_n critical timing paths
@@ -328,6 +328,144 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   logger_->report("Exiting TritonPart");
 }
 
+
+void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
+                                            float balance_constraint_arg,
+                                            int vertex_dimension_arg,
+                                            int hyperedge_dimension_arg,
+                                            const char* hypergraph_file_arg,
+                                            const char* fixed_file_arg, 
+                                            const char* group_file_arg,
+                                            const char* solution_file_arg)
+                                   
+{
+  logger_->report("========================================");
+  logger_->report("[STATUS] Starting Evaluating Hypergraph Solution");
+  logger_->report("========================================");
+  logger_->report("[INFO] Partitioning parameters**** ");
+  // Parameters
+  num_parts_ = num_parts_arg;
+  ub_factor_ = balance_constraint_arg;
+  seed_ = 0; // use the default random seed (no meaning in this function)
+  vertex_dimensions_ = vertex_dimension_arg;
+  hyperedge_dimensions_ = hyperedge_dimension_arg;
+  placement_dimensions_ = 0; // use the default value (no meaning in this function)
+  // local parameters
+  std::string hypergraph_file = hypergraph_file_arg;
+  std::string fixed_file = fixed_file_arg;
+  std::string group_file = group_file_arg;
+  // solution file
+  std::string solution_file = solution_file_arg;
+  std::string community_file(""); // no community file is used (no meaning in this function)
+  std::string placement_file(""); // no placement file is used (no meaning in this function)
+  logger_->report("[PARAM] Number of partitions = {}", num_parts_);
+  logger_->report("[PARAM] UBfactor = {}", ub_factor_);
+  logger_->report("[PARAM] Seed_ = {}", seed_);
+  logger_->report("[PARAM] Vertex dimensions = {}", vertex_dimensions_);
+  logger_->report("[PARAM] Hyperedge dimensions = {}", hyperedge_dimensions_);
+  logger_->report("[PARAM] Placement dimensions = {}", placement_dimensions_);
+  logger_->report("[PARAM] Hypergraph file = {}", hypergraph_file);  
+  logger_->report("[PARAM] Solution file = {}", solution_file);
+  if (!fixed_file.empty()) {
+    logger_->report("[PARAM] Fixed file  = {}", fixed_file);
+  }
+  if (!community_file.empty()) {
+    logger_->report("[PARAM] Community file = {}", community_file);
+  }
+  if (!group_file.empty()) {
+    logger_->report("[PARAM] Group file = {}", group_file);
+  }
+  if (!placement_file.empty()) {
+    logger_->report("[PARAM] Placement file = {}", placement_file);
+  }
+
+
+  int part_id = -1;
+  std::ifstream solution_file_input(solution_file);
+  if (!solution_file_input.is_open()) {
+    logger_->error(PAR, 2511, "Can not open the solution file : {}", solution_file);
+  }
+  while (solution_file_input >> part_id) {
+    solution_.push_back(part_id);
+  }
+  solution_file_input.close();
+
+  // set the random seed
+  srand(seed_);  // set the random seed
+  
+  timing_aware_flag_ = false;
+  logger_->report("[WARNING] Reset the timing_aware_flag to false. Timing-driven mode is not supported");
+
+  // build hypergraph: read the basic hypergraph information and other constraints
+  ReadHypergraph(hypergraph_file, fixed_file, community_file, group_file, placement_file);
+
+  // check the weighting scheme
+  if (static_cast<int>(e_wt_factors_.size()) != hyperedge_dimensions_) {
+    logger_->report("[WARNING] no hyperedge weighting is specified. Use default value of 1.");
+    e_wt_factors_.clear();
+    e_wt_factors_.resize(hyperedge_dimensions_);
+    std::fill(e_wt_factors_.begin(), e_wt_factors_.end(), 1.0);
+  }
+  logger_->report("[PARAM] hyperedge weight factor : [ {} ]", GetVectorString(e_wt_factors_));
+
+  if (static_cast<int>(v_wt_factors_.size()) != vertex_dimensions_) {
+    logger_->report("[WARNING] no vertex weighting is specified. Use default value of 1.");
+    v_wt_factors_.clear();
+    v_wt_factors_.resize(vertex_dimensions_);
+    std::fill(v_wt_factors_.begin(), v_wt_factors_.end(), 1.0);
+  }
+  logger_->report("[PARAM] vertex weight factor : [ {} ]", GetVectorString(v_wt_factors_));
+
+  if (static_cast<int>(placement_wt_factors_.size()) != placement_dimensions_) {
+    if (placement_dimensions_ <= 0) {
+      placement_wt_factors_.clear();      
+    } else {
+      logger_->report("[WARNING] no placement weighting is specified. Use default value of 1.");
+      placement_wt_factors_.clear();
+      placement_wt_factors_.resize(placement_dimensions_);
+      std::fill(placement_wt_factors_.begin(), placement_wt_factors_.end(), 1.0f);
+    }
+  }
+  logger_->report("[PARAM] placement weight factor : [ {} ]", GetVectorString(placement_wt_factors_));
+
+  // following parameters are not used
+  net_timing_factor_ = 0.0; 
+  path_timing_factor_ = 0.0;
+  path_snaking_factor_ = 0.0;
+  timing_exp_factor_ = 0.0;
+  extra_delay_ = 0.0;
+
+  // print all the weighting parameters
+  logger_->report("[PARAM] net_timing_factor : {}", net_timing_factor_);
+  logger_->report("[PARAM] path_timing_factor : {}", path_timing_factor_);
+  logger_->report("[PARAM] path_snaking_factor : {}", path_snaking_factor_);
+  logger_->report("[PARAM] timing_exp_factor : {}", timing_exp_factor_);
+  logger_->report("[PARAM] extra_delay : {}", extra_delay_);
+
+  // create the evaluator class
+  TP_evaluator_ptr evaluator = std::make_shared<GoldenEvaluator>(num_parts_, 
+                                          // weight vectors
+                                          e_wt_factors_,
+                                          v_wt_factors_,
+                                          placement_wt_factors_,
+                                          // timing related weight
+                                          net_timing_factor_,
+                                          path_timing_factor_,
+                                          path_snaking_factor_,
+                                          timing_exp_factor_,
+                                          extra_delay_,
+                                          original_hypergraph_,
+                                          logger_);
+
+  evaluator->ConstraintAndCutEvaluator(original_hypergraph_, 
+                                       solution_,
+                                       ub_factor_,
+                                       group_attr_,
+                                       true);
+                                              
+  logger_->report("===============================================");
+  logger_->report("Exiting Evaluating Hypergraph Solution");
+}
 
 // k-way partitioning used by Hier-RTLMP
 std::vector<int> TritonPart::PartitionKWaySimpleMode(unsigned int num_parts_arg,
@@ -519,6 +657,10 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
       std::istringstream cur_line_buf(cur_line);
       std::vector<int> group_info { std::istream_iterator<int>(cur_line_buf),
                                     std::istream_iterator<int>() };
+      // reduce by 1 because definition of hMETIS
+      for (auto& value : group_info) {
+        value--;
+      }
       if (group_info.size() > 1) {
         group_attr_.push_back(group_info);
       }
@@ -548,11 +690,6 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
     }
   }
 
-  // show the status of hypergraph
-  logger_->report("[INFO] Hypergraph Information**");
-  logger_->report("[INFO] Vertices = {}", num_vertices_);
-  logger_->report("[INFO] Hyperedges = {}", num_hyperedges_);
-
   // Build the original hypergraph first
   original_hypergraph_ = std::make_shared<TPHypergraph>(vertex_dimensions_,
                                                         hyperedge_dimensions_,
@@ -564,6 +701,12 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
                                                         community_attr_,
                                                         placement_attr_,
                                                         logger_);
+  
+
+  // show the status of hypergraph
+  logger_->report("[INFO] Hypergraph Information**");
+  logger_->report("[INFO] Vertices = {}", original_hypergraph_->num_vertices_);
+  logger_->report("[INFO] Hyperedges = {}", original_hypergraph_->num_hyperedges_);
 }
 
 
@@ -643,6 +786,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
   } else {
     for (auto term : block_->getBTerms()) {
       odb::dbIntProperty::create(term, "vertex_id", vertex_id++);
+      vertex_types_.emplace_back(PORT);
       std::vector<float> vwts(vertex_dimensions_, 0.0);
       vertex_weights_.push_back(vwts);
       if (placement_flag_ == true) {
@@ -830,10 +974,6 @@ void TritonPart::ReadNetlist(std::string fixed_file,
     BuildTimingPaths();  // create timing paths
   }
 
-  // show the status of hypergraph
-  logger_->report("[INFO] Netlist Information**");
-  logger_->report("[INFO] Vertices = {}", num_vertices_);
-  logger_->report("[INFO] Hyperedges = {}", num_hyperedges_);
   if (num_vertices_ == 0 || num_hyperedges_ == 0) {
     logger_->error(utl::PAR, 2677, "There is no vertices and hyperedges");
   }
@@ -860,6 +1000,10 @@ void TritonPart::ReadNetlist(std::string fixed_file,
                                                         hyperedges_arc_set,
                                                         timing_paths_,
                                                         logger_);
+  // show the status of hypergraph
+  logger_->report("[INFO] Netlist Information**");
+  logger_->report("[INFO] Vertices = {}", original_hypergraph_->num_vertices_);
+  logger_->report("[INFO] Hyperedges = {}", original_hypergraph_->num_hyperedges_);
 }
 
 
@@ -947,6 +1091,7 @@ void TritonPart::BuildTimingPaths()
     const float clock_period = path_end->targetClk(sta_)->period();
     maximum_clock_period_ = std::max(maximum_clock_period_, clock_period);
     timing_path.slack = slack;
+    //logger_->report("clock_period = {}, slack = {}", maximum_clock_period_, timing_path.slack);
     sta::PathExpanded expand(path, sta_);
     expand.path(expand.size() - 1);
     for (size_t i = 0; i < expand.size(); i++) {
@@ -965,7 +1110,7 @@ void TritonPart::BuildTimingPaths()
         if (vertex_id == -1) {
           continue;
         }
-        if (timing_path.path.back() != vertex_id) {
+        if (timing_path.path.empty() == true || timing_path.path.back() != vertex_id) {
           timing_path.path.push_back(vertex_id);
         }     
       } else {
@@ -975,7 +1120,7 @@ void TritonPart::BuildTimingPaths()
         if (vertex_id == -1) {
           continue;
         }
-        if (timing_path.path.back() != vertex_id) {
+        if (timing_path.path.empty() == true || timing_path.path.back() != vertex_id) {
           timing_path.path.push_back(vertex_id);
         }     
       }
@@ -1082,12 +1227,11 @@ void TritonPart::MultiLevelPartition()
   // refinement related parameters
   logger_->report("[PARAM] refine_iters : {}", refiner_iters_);
   logger_->report("[PARAM] max_moves (FM or greedy refinement) : {}", max_moves_);
-  logger_->report("[PARAM] max_num_fm_pass : {}", max_num_fm_pass_);
   logger_->report("[PARAM] early_stop_ratio : {}", early_stop_ratio_);
   logger_->report("[PARAM] total_corking_passes : {}", total_corking_passes_);
   logger_->report("[PARAM] v_cycle_flag : {}", v_cycle_flag_);
   logger_->report("[PARAM] max_num_vcycle : {}", max_num_vcycle_);
-  logger_->report("[PARAM] num_ubfactor_delta :  {}", num_ubfactor_delta_);  
+  logger_->report("[PARAM] num_clusters_threshold_overlay :  {}", num_clusters_threshold_overlay_);  
 
   // create the evaluator class
   TP_evaluator_ptr tritonpart_evaluator 
@@ -1106,10 +1250,11 @@ void TritonPart::MultiLevelPartition()
                                           logger_);
 
   // create the balance constraint
-  MATRIX<float> block_balance = hypergraph_->GetVertexBalance(num_parts_, ub_factor_); 
+  MATRIX<float> upper_block_balance = original_hypergraph_->GetUpperVertexBalance(num_parts_, ub_factor_); 
+  MATRIX<float> lower_block_balance = original_hypergraph_->GetLowerVertexBalance(num_parts_, ub_factor_); 
 
   // Step 1 : create all the coarsening, partitionig and refinement class
-  const std::vector<float> thr_cluster_weight = DivideFactor(hypergraph_->GetTotalVertexWeights(), 
+  const std::vector<float> thr_cluster_weight = DivideFactor(original_hypergraph_->GetTotalVertexWeights(), 
                                                              min_num_vertices_each_part_ * num_parts_);
   
   // create the coarsener cluster
@@ -1185,7 +1330,7 @@ void TritonPart::MultiLevelPartition()
                                                   v_cycle_flag_,
                                                   num_initial_solutions_,
                                                   num_best_initial_solutions_,
-                                                  num_ubfactor_delta_,
+                                                  num_clusters_threshold_overlay_,
                                                   max_num_vcycle_,
                                                   seed_,
                                                   timing_aware_flag_,
@@ -1197,7 +1342,12 @@ void TritonPart::MultiLevelPartition()
                                                   ilp_refiner,
                                                   tritonpart_evaluator,
                                                   logger_);
-        
+
+
+  if (timing_aware_flag_ == true) {
+    // Initialize the timing on original_hypergraph_
+    tritonpart_evaluator->InitializeTiming(original_hypergraph_);
+  }
   // Use coarsening to do preprocessing step
   // Build the hypergraph used to call multi-level partitioner
   // (1) remove single-vertex hyperedge
@@ -1211,7 +1361,7 @@ void TritonPart::MultiLevelPartition()
   // and hypergraph_
   hypergraph_ = tritonpart_coarsener->GroupVertices(original_hypergraph_, group_attr_);  
   // partition on the processed hypergraph
-  std::vector<int> solution = tritonpart_mlevel_partitioner->Partition(hypergraph_, block_balance);
+  std::vector<int> solution = tritonpart_mlevel_partitioner->Partition(hypergraph_, upper_block_balance, lower_block_balance);
   
   // Translate the solution of hypergraph to original_hypergraph_
   // solution to solution_
@@ -1224,9 +1374,15 @@ void TritonPart::MultiLevelPartition()
       solution_[v] = part_id;
     }
   }
-    
+
   // evaluate on the original hypergraph
-  tritonpart_evaluator->CutEvaluator(original_hypergraph_, solution_, true);
+  //tritonpart_evaluator->CutEvaluator(original_hypergraph_, solution_, true);
+  tritonpart_evaluator->ConstraintAndCutEvaluator(original_hypergraph_, 
+                                                  solution_,
+                                                  ub_factor_,
+                                                  group_attr_,
+                                                  true);
+
   // generate the timing report
   if (timing_aware_flag_ == true) {
     logger_->report("[STATUS] Displaying timing path cuts statistics");
@@ -1244,7 +1400,7 @@ void TritonPart::MultiLevelPartition()
             end_timestamp_global - start_time_stamp_global)
             .count();
   total_global_time *= 1e-9;
-  logger_->report("[INFO] The runtime of multi-level partitioner : {}", total_global_time);
+  logger_->report("[INFO] The runtime of multi-level partitioner : {} seconds", total_global_time);
 }
 
 }  // namespace par

@@ -38,7 +38,8 @@
 #--------------------------------------------------------------------
 sta::define_cmd_args "triton_part_hypergraph" {
   -hypergraph_file hypergraph_file \
-  [-balance_constraint balance_constraint] \
+  -num_parts num_parts \
+  -balance_constraint balance_constraint \
   [-seed seed] \
   [-vertex_dimension vertex_dimension] \
   [-hyperedge_dimension hyperedge_dimension] \
@@ -47,9 +48,9 @@ sta::define_cmd_args "triton_part_hypergraph" {
   [-community_file community_file] \
   [-group_file group_file] \
   [-placement_file placement_file] \
-  [-e_wt_factors <e_wt_factors>] \
+  [-e_wt_factors e_wt_factors] \
   [-v_wt_factors <v_wt_factors>] \
-  [-placement_wt_factors <placement_wt_factors>] \
+  [-placement_wt_factors <placement_wt_factors>] 
   [-thr_coarsen_hyperedge_size_skip thr_coarsen_hyperedge_size_skip] \
   [-thr_coarsen_vertices thr_coarsen_vertices] \
   [-thr_coarsen_hyperedges thr_coarsen_hyperedges] \
@@ -61,12 +62,11 @@ sta::define_cmd_args "triton_part_hypergraph" {
   [-num_best_initial_solutions num_best_initial_solutions] \
   [-refiner_iters refiner_iters] \
   [-max_moves max_moves] \
-  [-max_num_fm_pass max_num_fm_pass] \
   [-early_stop_ratio early_stop_ratio] \
   [-total_corking_passes total_corking_passes] \
   [-v_cycle_flag v_cycle_flag ] \
   [-max_num_vcycle max_num_vcycle] \
-  [-num_ubfactor_delta num_ubfactor_delta] \
+  [-num_clusters_threshold_overlay num_clusters_threshold_overlay] \
   }
 proc triton_part_hypergraph { args } {
   sta::parse_key_args "triton_part_hypergraph" args \
@@ -95,12 +95,11 @@ proc triton_part_hypergraph { args } {
             -num_best_initial_solutions \
             -refiner_iters \
             -max_moves \
-            -max_num_fm_pass \
             -early_stop_ratio \
             -total_corking_passes \
             -v_cycle_flag \
             -max_num_vcycle \
-            -num_ubfactor_delta } \
+            -num_clusters_threshold_overlay } \
       flags {}
  
   if { ![info exists keys(-hypergraph_file)] } {
@@ -117,7 +116,7 @@ proc triton_part_hypergraph { args } {
   set community_file ""
   set group_file ""
   set placement_file ""
-  set e_wt_factors { 1.0, 2.0}
+  set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
   set placement_wt_factors { 1.0 }
   set thr_coarsen_hyperedge_size_skip 50
@@ -129,14 +128,13 @@ proc triton_part_hypergraph { args } {
   set min_num_vertices_each_part 4
   set num_initial_solutions 50
   set num_best_initial_solutions 10
-  set refiner_iters 2
+  set refiner_iters 10
   set max_moves 50
-  set max_num_fm_pass 10
   set early_stop_ratio 0.5
   set total_corking_passes 25
   set v_cycle_flag true
   set max_num_vcycle 5
-  set num_ubfactor_delta 5
+  set num_clusters_threshold_overlay 500
   
   
   if { [info exists keys(-num_parts)] } {
@@ -181,14 +179,17 @@ proc triton_part_hypergraph { args } {
 
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
+    set e_wt_factors [list $e_wt_factors]
   }
 
   if { [info exists keys(-v_wt_factors)] } {
     set v_wt_factors $keys(-v_wt_factors)
+    set v_wt_factors [list $v_wt_factors]
   }
 
   if { [info exists keys(-placement_wt_factors)] } {
     set placement_wt_factors $keys(-placement_wt_factors)
+    set placement_wt_factors [list $placement_wt_factors]
   }
 
   if { [info exists keys(-thr_coarsen_hyperedge_size_skip)] } {
@@ -235,10 +236,6 @@ proc triton_part_hypergraph { args } {
     set max_moves $keys(-max_moves)
   }
 
-  if { [info exists keys(-max_num_fm_pass)] } {
-    set max_num_fm_pass $keys(-max_num_fm_pass)
-  }
-
   if { [info exists keys(-early_stop_ratio)] } {
     set early_stop_ratio $keys(-early_stop_ratio)
   }
@@ -255,11 +252,9 @@ proc triton_part_hypergraph { args } {
     set max_num_vcycle $keys(-max_num_vcycle)
   }
 
-  if { [info exists keys(-num_ubfactor_delta)] } {
-    set num_ubfactor_delta $keys(-num_ubfactor_delta)
+  if { [info exists keys(-num_clusters_threshold_overlay)] } {
+    set num_clusters_threshold_overlay $keys(-num_clusters_threshold_overlay)
   }
-
-  puts $e_wt_factors
 
   par::triton_part_hypergraph $num_parts \
             $balance_constraint \
@@ -286,13 +281,105 @@ proc triton_part_hypergraph { args } {
             $num_best_initial_solutions \
             $refiner_iters \
             $max_moves \
-            $max_num_fm_pass \
             $early_stop_ratio \
             $total_corking_passes \
             $v_cycle_flag \
             $max_num_vcycle \
-            $num_ubfactor_delta
+            $num_clusters_threshold_overlay
 }
+
+
+
+sta::define_cmd_args "evaluate_hypergraph_solution" {
+  -num_parts num_parts \
+  -balance_constraint balance_constraint \
+  -hypergraph_file hypergraph_file \
+  -solution_file solution_file
+  [-vertex_dimension vertex_dimension] \
+  [-hyperedge_dimension hyperedge_dimension] \
+  [-fixed_file fixed_file] \
+  [-group_file group_file] \
+  [-e_wt_factors e_wt_factors] \
+  [-v_wt_factors <v_wt_factors>] \ 
+  }
+proc evaluate_hypergraph_solution { args } {
+  sta::parse_key_args "evaluate_hypergraph_solution" args \
+      keys {-num_parts \
+            -balance_constraint \
+            -vertex_dimension \
+            -hyperedge_dimension \
+            -hypergraph_file \
+            -solution_file \
+            -fixed_file \
+            -group_file \
+            -e_wt_factors \
+            -v_wt_factors \
+             } \
+      flags {}
+  if { ![info exists keys(-hypergraph_file)] } {
+    utl::error PAR 0925 "Missing mandatory argument -hypergraph_file."
+  }
+  set hypergraph_file $keys(-hypergraph_file)
+  set solution_file $keys(-solution_file)
+  set num_parts 2
+  set balance_constraint 1.0
+  set vertex_dimension 1
+  set hyperedge_dimension 1
+  set fixed_file ""
+  set group_file ""
+  set e_wt_factors { 1.0 }
+  set v_wt_factors { 1.0 }
+  
+  if { [info exists keys(-num_parts)] } {
+    set num_parts $keys(-num_parts)
+  }
+
+  if { [info exists keys(-balance_constraint)] } {
+    set balance_constraint $keys(-balance_constraint)
+  }
+
+  if { [info exists keys(-seed)] } {
+    set seed $keys(-seed)
+  }
+
+  if { [info exists keys(-vertex_dimension)] } {
+    set vertex_dimension $keys(-vertex_dimension)
+  }
+
+  if { [info exists keys(-hyperedge_dimension)] } {
+    set hyperedge_dimension $keys(-hyperedge_dimension)
+  }
+
+  if { [info exists keys(-fixed_file)] } {
+    set fixed_file $keys(-fixed_file)
+  }
+
+  if { [info exists keys(-group_file)] } {
+    set group_file $keys(-group_file)
+  }
+
+  if { [info exists keys(-e_wt_factors)] } {
+    set e_wt_factors $keys(-e_wt_factors)
+    set e_wt_factors [list $e_wt_factors]
+  }
+
+  if { [info exists keys(-v_wt_factors)] } {
+    set v_wt_factors $keys(-v_wt_factors)
+    set v_wt_factors [list $v_wt_factors]
+  }
+ 
+  par::evaluate_hypergraph_solution $num_parts \
+            $balance_constraint \
+            $vertex_dimension \
+            $hyperedge_dimension \
+            $hypergraph_file \
+            $fixed_file \
+            $group_file \
+            $solution_file \ 
+            $e_wt_factors \
+            $v_wt_factors 
+}
+
 
 sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-balance_constraint balance_constraint] \
@@ -328,12 +415,11 @@ sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-num_best_initial_solutions num_best_initial_solutions] \
                                             [-refiner_iters refiner_iters] \
                                             [-max_moves max_moves] \
-                                            [-max_num_fm_pass max_num_fm_pass] \
                                             [-early_stop_ratio early_stop_ratio] \
                                             [-total_corking_passes total_corking_passes] \
                                             [-v_cycle_flag v_cycle_flag ] \
                                             [-max_num_vcycle max_num_vcycle] \
-                                            [-num_ubfactor_delta num_ubfactor_delta] \
+                                            [-num_clusters_threshold_overlay num_clusters_threshold_overlay] \
                                           }
 proc triton_part_design { args } {
   sta::parse_key_args "triton_part_design" args \
@@ -371,12 +457,11 @@ proc triton_part_design { args } {
             -num_best_initial_solutions \
             -refiner_iters \
             -max_moves \
-            -max_num_fm_pass \
             -early_stop_ratio \
             -total_corking_passes \
             -v_cycle_flag \
             -max_num_vcycle \
-            -num_ubfactor_delta } \
+            -num_clusters_threshold_overlay } \
       flags {}
   set num_parts 2
   set balance_constraint 1.0
@@ -397,7 +482,7 @@ proc triton_part_design { args } {
   set path_timing_factor 1.0
   set path_snaking_factor 1.0
   set timing_exp_factor 1.0
-  set extra_delay 1.0
+  set extra_delay 1e-9
   set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
   set placement_wt_factors { }
@@ -412,12 +497,11 @@ proc triton_part_design { args } {
   set num_best_initial_solutions 10
   set refiner_iters 2
   set max_moves 50
-  set max_num_fm_pass 10
   set early_stop_ratio 0.5
   set total_corking_passes 25
   set v_cycle_flag true
   set max_num_vcycle 5
-  set num_ubfactor_delta 5
+  set num_clusters_threshold_overlay 500
   
   if { [info exists keys(-num_parts)] } {
       set num_parts $keys(-num_parts)
@@ -493,14 +577,17 @@ proc triton_part_design { args } {
 
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
+    set e_wt_factors [list $e_wt_factors]
   }
 
   if { [info exists keys(-v_wt_factors)] } {
     set v_wt_factors $keys(-v_wt_factors)
+    set v_wt_factors [list $v_wt_factors]
   }
 
   if { [info exists keys(-placement_wt_factors)] } {
     set placement_wt_factors $keys(-placement_wt_factors)
+    set placement_wt_factors [list $placement_wt_factors]
   }
 
   if { [info exists keys(-thr_coarsen_hyperedge_size_skip)] } {
@@ -547,10 +634,6 @@ proc triton_part_design { args } {
     set max_moves $keys(-max_moves)
   }
 
-  if { [info exists keys(-max_num_fm_pass)] } {
-    set max_num_fm_pass $keys(-max_num_fm_pass)
-  }
-
   if { [info exists keys(-early_stop_ratio)] } {
     set early_stop_ratio $keys(-early_stop_ratio)
   }
@@ -567,8 +650,8 @@ proc triton_part_design { args } {
     set max_num_vcycle $keys(-max_num_vcycle)
   }
 
-  if { [info exists keys(-num_ubfactor_delta)] } {
-    set num_ubfactor_delta $keys(-num_ubfactor_delta)
+  if { [info exists keys(-num_clusters_threshold_overlay)] } {
+    set num_clusters_threshold_overlay $keys(-num_clusters_threshold_overlay)
   }
 
   par::triton_part_design $num_parts \
@@ -605,12 +688,11 @@ proc triton_part_design { args } {
             $num_best_initial_solutions \
             $refiner_iters \
             $max_moves \
-            $max_num_fm_pass \
             $early_stop_ratio \
             $total_corking_passes \
             $v_cycle_flag \
             $max_num_vcycle \
-            $num_ubfactor_delta
+            $num_clusters_threshold_overlay
 }
 
 #--------------------------------------------------------------------

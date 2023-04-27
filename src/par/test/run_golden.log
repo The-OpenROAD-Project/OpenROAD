@@ -1,0 +1,62 @@
+OpenROAD v2.0-7849-gaa31517df 
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+Starting TritonPart Partitioner
+Partition Parameters**
+Number of partitions = 5
+UBfactor = 2.0
+Vertex dimensions = 1
+Hyperedge dimensions = 1
+Hypergraph Information**
+#Vertices = 91976
+#Hyperedges = 92827
+Pre-processing hypergraph by temporarily removing hyperedges of size 50
+num_hyperedges_  = 92827  num_hyperedges_p = 92001
+Post processing hypergraph information**
+#Vertices = 91976
+#Hyperedges = 92001
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 91976, 92827, 91976 , 92827 
+[COARSEN] Level 1 :: 61317, 70547, 91976 , 72933 
+[COARSEN] Level 2 :: 40877, 53118, 91976 , 56043 
+[COARSEN] Level 3 :: 27251, 40273, 91976 , 43655 
+[COARSEN] Level 4 :: 18167, 30645, 91976 , 34336 
+[COARSEN] Level 5 :: 12111, 23870, 91976 , 27725 
+[COARSEN] Level 6 :: 8073, 18745, 91976 , 22909 
+[COARSEN] Level 7 :: 5381, 14835, 91976 , 19414 
+[COARSEN] Level 8 :: 3587, 11807, 91976 , 16661 
+[COARSEN] Level 9 :: 2391, 9368, 91976 , 14337 
+[COARSEN] Level 10 :: 1593, 7492, 91976 , 12425 
+[COARSEN] Level 11 :: 1061, 5907, 91976 , 10833 
+[COARSEN] Level 12 :: 707, 4800, 91976 , 9782 
+[COARSEN] Level 13 :: 471, 3673, 91976 , 8537 
+[COARSEN] Level 14 :: 313, 2706, 91976 , 7569 
+[COARSEN] Level 15 :: 208, 2038, 91976 , 6889 
+[COARSEN] Level 16 :: 138, 1559, 91976 , 6568 
+[INFO PAR-0001] Hierarchical coarsening time 1.393058616 seconds
+=============================
+[STATUS] Initial Partitioning 
+=============================
+[INIT-PART] 0 :: Random part cutcost 5298.0
+[INIT-PART] 1 :: Random part cutcost 5195.0
+[INIT-PART] 2 :: Random part cutcost 4906.0
+[INIT-PART] 3 :: Random part cutcost 5624.0
+[INIT-PART] 4 :: Random part cutcost 5559.0
+[INIT-PART] 5 :: Random part cutcost 5170.0
+[INIT-PART] 6 :: Random part cutcost 4739.0
+[INIT-PART] 7 :: Random part cutcost 5430.0
+[INIT-PART] 8 :: Random part cutcost 4725.0
+[INIT-PART] 9 :: Random part cutcost 4703.0
+[INIT-PART] 10 :: Random part cutcost 4858.0
+[INIT-PART] 11 :: Random part cutcost 4428.0
+[INIT-PART] 12 :: Random part cutcost 4639.0
+[INIT-PART] 13 :: Random part cutcost 5482.0
+[INIT-PART] 14 :: Random part cutcost 4598.0
+[INIT-PART] 15 :: Random part cutcost 4689.0
+[INIT-PART] 16 :: Random part cutcost 5734.0
+[INIT-PART] 17 :: Random part cutcost 4478.0
+[INIT-PART] 18 :: Random part cutcost 4430.0
+[INIT-PART] 19 :: Random part cutcost 5905.0
+[INIT-PART] 20 :: Random part cutcost 4597.0

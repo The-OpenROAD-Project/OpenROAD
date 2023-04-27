@@ -81,14 +81,16 @@ class TPpartitioner
 
   // The main function of Partitioning
   void Partition(const HGraphPtr hgraph,
-                 const MATRIX<float>& max_block_balance,
+                 const MATRIX<float>& upper_block_balance,
+                 const MATRIX<float>& lower_block_balance,
                  std::vector<int>& solution,
                  PartitionType partitioner_choice) const;
 
   void SetRandomSeed(int seed) {
     seed_ = seed;
-    logger_->report("Set the random seed to {}", seed_);
+    //logger_->report("Set the random seed to {}", seed_);
   }
+
 
   void EnableIlpAcceleration(float acceleration_factor) {
     ilp_accelerator_factor_ = acceleration_factor;
@@ -105,12 +107,13 @@ class TPpartitioner
   private:
     // random partitioning
     void RandomPart(const HGraphPtr hgraph,
-                    const MATRIX<float>& max_block_balance,
+                    const MATRIX<float>& upper_block_balance,
                     std::vector<int>& solution) const;
     
     // ILP-based partitioning
     void ILPPart(const HGraphPtr hgraph,
-                 const MATRIX<float>& max_block_balance,
+                 const MATRIX<float>& upper_block_balance,
+                 const MATRIX<float>& lower_block_balance,
                  std::vector<int>& solution) const;
 
     // Vile partitioning

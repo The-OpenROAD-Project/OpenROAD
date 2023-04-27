@@ -35,6 +35,16 @@
 
 include("openroad")
 
+option(LOAD_CPLEX "Load CPLEX" ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_MODULE_PATH               "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -m64 -Wall -fPIC")
+set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem ")
+set(LINKER_OPTIONS                  "-Wl,--export-dynamic")
+find_package(Cplex)
+include_directories(SYSTEM ${CPLEX_INCLUDE_DIRS})
+
+find_package(Threads REQUIRED)
 find_package(ortools REQUIRED)
 
 swig_lib(NAME      par
@@ -65,6 +75,17 @@ target_sources(par
 messages(
   TARGET par
 )
+
+if (LOAD_CPLEX)
+  target_link_libraries(par
+    PRIVATE
+      ${CPLEX_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      dl
+)
+
+endif (LOAD_CPLEX)
+
 
 target_include_directories(par
   PUBLIC

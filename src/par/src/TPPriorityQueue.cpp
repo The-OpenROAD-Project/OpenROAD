@@ -68,7 +68,8 @@ std::shared_ptr<VertexGain> TPpriorityQueue::ExtractMax()
 // find the vertex gain which can satisfy the balance constraint
 std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
       const MATRIX<float>& curr_block_balance,
-      const MATRIX<float>& max_block_balance,
+      const MATRIX<float>& upper_block_balance,
+      const MATRIX<float>& lower_block_balance,
       const HGraphPtr hgraph) {     
   if (total_elements_ <= 0) { // empty 
     return std::make_shared<VertexGain>(); // return the dummy cell
@@ -80,20 +81,21 @@ std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
   // define the lambda function to check the balance constraint
   auto CheckBalance = [&](int index) {
     const int vertex_id = vertices_[index]->GetVertex();
-    const int block_id = vertices_[index]->GetDestinationPart();
-    if (curr_block_balance[block_id] + hgraph->vertex_weights_[vertex_id] 
-        < max_block_balance[block_id]) {
+    const int to_pid = vertices_[index]->GetDestinationPart();
+    const int from_pid = vertices_[index]->GetSourcePart();
+    if ((curr_block_balance[to_pid] + hgraph->vertex_weights_[vertex_id]  < upper_block_balance[to_pid]) &&
+        (curr_block_balance[from_pid] - hgraph->vertex_weights_[vertex_id] > lower_block_balance[from_pid])) {
       return true;
     } else {
       return false;
     } 
   };
 
-
   // check the first index
   if (CheckBalance(index) == true) {
     return vertices_[index];    
   }
+
   // traverse the max heap
   while (pass < maximum_traverse_level_) {
     pass++;
@@ -114,14 +116,15 @@ std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
 
     if (candidate_index > 0) {
       return vertices_[candidate_index]; // return the candidate gain cell
-    } else { // otherwise go further
+    } else if (left_child >= total_elements_ || right_child >= total_elements_) {
+      // no valid candidate
+      return std::make_shared<VertexGain>(); // return the dummy cell
+    } else  { // otherwise go further
       index = CompareElementLargeThan(right_child, left_child) == true ? right_child : left_child;
     }
   }
-
   return std::make_shared<VertexGain>(); // return the dummy cell
 }
-
 
 // Remove the specifid vertex
 void TPpriorityQueue::Remove(int vertex_id)
@@ -139,7 +142,6 @@ void TPpriorityQueue::Remove(int vertex_id)
   if (total_elements_ <= 0) {
     active_ = false;
   }
-
 }
 
 // Update the priority (gain) for the specified vertex

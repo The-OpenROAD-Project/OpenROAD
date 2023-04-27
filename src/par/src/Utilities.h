@@ -57,6 +57,12 @@
 #include <thread>
 #include <vector>
 
+#ifdef LOAD_CPLEX
+// for ILP solver in CPLEX
+#include "ilcplex/cplex.h"
+#include "ilcplex/ilocplex.h"
+#endif
+
 namespace par {
 
 
@@ -102,6 +108,9 @@ enum VertexType {
 
 std::string GetVectorString(const std::vector<float>& vec);
 
+// Convert Tcl list to vector
+std::vector<float> ConvertTclListToVector(std::string tcl_list_string);
+
 // Add right vector to left vector
 void Accumulate(std::vector<float>& a, const std::vector<float>& b);
 
@@ -133,6 +142,8 @@ std::vector<float> operator*(const std::vector<float>& a,
 
 bool operator<(const std::vector<float>& a, const std::vector<float>& b);
 
+bool operator<=(const MATRIX<float>& a, const MATRIX<float>& b);
+
 bool operator==(const std::vector<float>& a, const std::vector<float>& b);
 
 
@@ -152,6 +163,21 @@ bool ILPPartitionInst(int num_parts,
                       const MATRIX<int>& hyperedges, // hyperedges
                       const std::vector<float>& hyperedge_weights,  // one-dimensional
                       const MATRIX<float>& vertex_weights, // two-dimensional
-                      const MATRIX<float>& max_block_balance); 
-                      
+                      const MATRIX<float>& upper_block_balance,
+                      const MATRIX<float>& lower_block_balance); 
+
+// Call CPLEX to solve the ILP Based Partitioning                      
+#ifdef LOAD_CPLEX
+bool OptimalPartCPlex(int num_parts,
+                      int vertex_weight_dimension,
+                      std::vector<int>& solution,
+                      const std::map<int, int>& fixed_vertices, // vertex_id, block_id
+                      const MATRIX<int>& hyperedges, // hyperedges
+                      const std::vector<float>& hyperedge_weights,  // one-dimensional
+                      const MATRIX<float>& vertex_weights, // two-dimensional
+                      const MATRIX<float>& upper_block_balance,
+                      const MATRIX<float>& lower_block_balance); 
+#endif
+
+
 }  // namespace par

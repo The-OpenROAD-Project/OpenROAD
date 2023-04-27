@@ -98,9 +98,9 @@ void tritonPartHypergraph(unsigned int num_parts,
                           const char* group_file,
                           const char* placement_file,
                           // weight parameters
-                          const std::vector<float>& e_wt_factors,
-                          const std::vector<float>& v_wt_factors,
-                          const std::vector<float>& placement_wt_factors,
+                          const char* e_wt_factors_str,
+                          const char* v_wt_factors_str,
+                          const char* placement_wt_factors_str,
                           // coarsening related parameters
                           int thr_coarsen_hyperedge_size_skip,
                           int thr_coarsen_vertices,
@@ -115,15 +115,31 @@ void tritonPartHypergraph(unsigned int num_parts,
                           // refinement related parameters
                           int refiner_iters,
                           int max_moves,
-                          int max_num_fm_pass,
                           float early_stop_ratio,
                           int total_corking_passes,
                           // vcycle related parameters
                           bool v_cycle_flag,
                           int max_num_vcycle,
-                          int num_ubfactor_delta);
+                          int num_clusters_threshold_overlay);
 
-  // Top level interface
+// Evaluate a given solution of a hypergraph
+// The fixed vertices should statisfy the fixed vertices constraint
+// The group of vertices should stay together in the solution
+// The vertex balance should be satisfied  
+void evaluateHypergraphSolution(unsigned int num_parts,
+                                float balance_constraint,
+                                int vertex_dimension,
+                                int hyperedge_dimension,
+                                const char* hypergraph_file,
+                                const char* fixed_file,
+                                const char* group_file,
+                                const char* solution_file,
+                                // weight parameters
+                                const char* e_wt_factors_str,
+                                const char* v_wt_factors_str);
+                             
+
+// Top level interface
 // The function for partitioning a hypergraph
 // This is the main API for TritonPart
 // Key supports:
@@ -155,9 +171,9 @@ void tritonPartDesign(unsigned int num_parts_arg,
                                     float timing_exp_factor,
                                     float extra_delay,
                                     // weight parameters
-                                    const std::vector<float>& e_wt_factors,
-                                    const std::vector<float>& v_wt_factors,
-                                    const std::vector<float>& placement_wt_factors,
+                                    const char* e_wt_factors_str,
+                                    const char* v_wt_factors_str,
+                                    const char* placement_wt_factors_str,
                                     // coarsening related parameters
                                     int thr_coarsen_hyperedge_size_skip,
                                     int thr_coarsen_vertices,
@@ -172,13 +188,12 @@ void tritonPartDesign(unsigned int num_parts_arg,
                                     // refinement related parameters
                                     int refiner_iters,
                                     int max_moves,
-                                    int max_num_fm_pass,
                                     float early_stop_ratio,
                                     int total_corking_passes,
                                     // vcycle related parameters
                                     bool v_cycle_flag,
                                     int max_num_vcycle,
-                                    int num_ubfactor_delta);  
+                                    int num_clusters_threshold_overlay);  
 
   // k-way partitioning used by Hier-RTLMP
   std::vector<int> PartitionKWaySimpleMode(unsigned int num_parts_arg,

@@ -73,9 +73,64 @@ using operations_research::MPVariable;
 std::string GetVectorString(const std::vector<float>& vec)
 {
   std::string line;
-  for (auto value : vec)
-    line += std::to_string(static_cast<int>(value)) + " ";
+  for (auto value : vec) {
+    line += std::to_string(value) + " ";
+  }
   return line;
+}
+
+
+// Convert Tcl list to vector
+
+// char_match:  determine if the char is part of deliminators
+bool CharMatch(char c, const std::string& delim)
+{
+  auto it = delim.begin();
+  while (it != delim.end()) {
+    if ((*it) == c) {
+      return true;
+    }
+    ++it;
+  }
+  return false;
+}
+
+// find the next position for deliminator char
+std::string::const_iterator FindDelim(std::string::const_iterator start,
+                                      std::string::const_iterator end,
+                                      const std::string& delim)
+{
+  while (start != end && !CharMatch(*start, delim)) {
+    start++;
+  }
+  return start;
+}
+ 
+// find the next position for non deliminator char
+std::string::const_iterator FindNotDelim(std::string::const_iterator start,
+                                         std::string::const_iterator end,
+                                         const std::string& delim)
+{
+  while (start != end && CharMatch(*start, delim)) {
+    start++;
+  }
+  return start;
+}
+
+std::vector<float> ConvertTclListToVector(std::string tcl_list_string)
+{
+  std::vector<float> values;
+  std::string deliminators(",{} "); // empty space , } {
+  auto start = tcl_list_string.cbegin();
+  while (start != tcl_list_string.end()) {
+    start = FindNotDelim(start, tcl_list_string.end(), deliminators);
+    auto end = FindDelim(start, tcl_list_string.end(), deliminators);
+    if (start != tcl_list_string.end()) {
+      values.push_back(std::stof(std::string(start, end)));
+      start = end;
+    }
+  }  
+  return values;
 }
 
 // Add right vector to left vector
@@ -192,6 +247,19 @@ bool operator==(const std::vector<float>& a, const std::vector<float>& b)
   return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin());
 }
 
+bool operator<=(const MATRIX<float>& a, const MATRIX<float>& b)
+{
+  const int num_dim = std::min(static_cast<int>(a.size()), static_cast<int>(b.size()));
+  for (int dim = 0; dim < num_dim; dim++) {
+    if ((a[dim] < b[dim]) || (a[dim] == b[dim])) {
+      continue;
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Basic functions for a vector
 std::vector<float> abs(const std::vector<float>& a)
 {
@@ -237,13 +305,22 @@ bool ILPPartitionInst(int num_parts,
                       const MATRIX<int>& hyperedges,
                       const std::vector<float>& hyperedge_weights,  // one-dimensional
                       const MATRIX<float>& vertex_weights, // two-dimensional
-                      const MATRIX<float>& max_block_balance)
+                      const MATRIX<float>& upper_block_balance,
+                      const MATRIX<float>& lower_block_balance)
 {
   const int num_vertices = static_cast<int>(vertex_weights.size());
   const int num_hyperedges = static_cast<int>(hyperedge_weights.size());
+
   if (num_vertices <= 0 || num_hyperedges <= 0 || num_parts <= 1 || vertex_weight_dimension <= 0) {
     return false; // no need to call ILP-based partitioning
   }
+
+  #ifdef LOAD_CPLEX
+  // call CPLEX to solve the ILP issue
+  return OptimalPartCplex(num_parts, vertex_weight_dimension, solution,
+                          fixed_vertices, hyperedges, hyperedge_wights, vertex_weights, 
+                          upper_block_balance, lower_block_balance);
+  #endif
 
   // reset variable
   solution.clear();
@@ -273,17 +350,19 @@ bool ILPPartitionInst(int num_parts,
           0.0, 1.0, "");  // represent whether the hyperedge is within block
     }
   }
+  const double infinity = solver->infinity(); // single-side constraints
   // handle different types of constraints
   // balance constraint
   for (int i = 0; i < num_parts; i++) {
     // check the balance for each block
     for (int j = 0; j < vertex_weight_dimension; j++) {
       // check balance for each dimension
-      MPConstraint* constraint
-        = solver->MakeRowConstraint(0.0, max_block_balance[i][j], "");
+      MPConstraint* upper_constraint = solver->MakeRowConstraint(0.0, upper_block_balance[i][j], "");
+      MPConstraint* lower_constraint = solver->MakeRowConstraint(lower_block_balance[i][j], infinity, "");
       for (int v = 0; v < num_vertices; v++) {
         const float vwt = vertex_weights[v][j];
-        constraint->SetCoefficient(x[i][v], vwt); 
+        upper_constraint->SetCoefficient(x[i][v], vwt); 
+        lower_constraint->SetCoefficient(x[i][v], vwt);
       }
     }
   }
@@ -299,7 +378,7 @@ bool ILPPartitionInst(int num_parts,
       constraint->SetCoefficient(x[i][v], 1);
     }
   }
-  const double infinity = solver->infinity(); // single-side constraints
+ 
   // Hyperedge constraint: x - y >= 0
   // y[i][e] represents the hyperedge e is fully within the block i
   for (int e = 0; e < num_hyperedges; e++) {
@@ -321,8 +400,10 @@ bool ILPPartitionInst(int num_parts,
     }
   }
   obj_expr->SetMaximization();
+  
   // Solve the ILP Problem
   const MPSolver::ResultStatus result_status = solver->Solve();
+
   // Check that the problem has an optimal solution.
   if (result_status == MPSolver::OPTIMAL) {
     // update the solution
@@ -341,5 +422,133 @@ bool ILPPartitionInst(int num_parts,
     return false;
   }
 }
+
+
+// Call CPLEX to solve the ILP Based Partitioning                      
+#ifdef LOAD_CPLEX
+bool OptimalPartCPlex(int num_parts,
+                      int vertex_weight_dimension,
+                      std::vector<int>& solution,
+                      const std::map<int, int>& fixed_vertices, // vertex_id, block_id
+                      const MATRIX<int>& hyperedges, // hyperedges
+                      const std::vector<float>& hyperedge_weights,  // one-dimensional
+                      const MATRIX<float>& vertex_weights, // two-dimensional
+                      const MATRIX<float>& upper_block_balance,
+                      const MATRIX<float>& lower_block_balance)
+{
+  const int num_vertices = static_cast<int>(vertex_weights.size());
+  const int num_hyperedges = static_cast<int>(hyperedge_weights.size()); 
+  // set the environment 
+  IloEnv myenv;
+  IloModel mymodel(myenv);
+  IloArray<IloNumVarArray> var_x(myenv, num_parts);
+  IloArray<IloNumVarArray> var_y(myenv, num_parts);
+  for (int block_id = 0; block_id < num_parts; ++block_id) {
+    var_x[i] = IloNumVarArray(myenv, num_vertices, 0, 1, ILOINT);
+    var_y[i] = IloNumVarArray(myenv, num_hyperedges, 0, 1, ILOINT);
+  }
+  // define constraints
+ 
+  // balance constraint
+  // check each dimension
+  for (int i = 0; i < vertex_weight_dimension; ++i) {
+    // allowed balance for each dimension
+    for (int block_id = 0; block_id < num_parts; ++block_id) {
+      IloExpr balance_expr(myenv);
+      for (int v = 0; v < num_vertices; ++v) {
+        balance_expr += vertex_weights[v][block_id] * var_x[block_id][v];
+      }  // finish traversing vertices
+      mymodel.add(IloRange(myenv, lower_block_balance[block_id][i], balance_expr, upper_block_balance[block_id][i]));
+      balance_expr.end();
+    }  // finish traversing blocks
+  }    // finish dimension check
+    
+  // Fixed vertices constraint
+  for (const auto& [vertex_id, block_id] : fixed_vertices) {
+    mymodel.add(var_x[block_id][vertex_id] == 1);
+  }
+
+  // each vertex can only belong to one part
+  for (int v = 0; v < num_vertices; ++v) {
+    IloExpr vertex_expr(myenv);
+    for (int block_id = 0; block_id < num_parts; ++block_id) {
+      vertex_expr += var_x[block_id][v];
+    }
+    mymodel.add(vertex_expr == 1);
+    vertex_expr.end();
+  }
+   
+  // Hyperedge constraint
+  for (int e = 0; e < num_hyperedges; e++) {
+    const std::vector<int>& hyperedge = hyperedges[e];
+    for (const auto& v : hyperedge) {
+      for (int block_id = 0; block_id < num_parts; block_id++) {
+        mymodel.add(var_y[block_id][e] <= var_x[block_id][v]);
+      }
+    }
+  }
+
+  // Maximize cutsize objective
+  IloExpr obj_expr(myenv);  // empty expression
+  for (int e = 0; e < num_hyperedges; e++) {
+    for (int block_id = 0; block_id < num_parts; block_id++) {
+      obj_expr += hyperedge_weights[e] * var_y[block_id][e];
+    }
+  } 
+  mymodel.add(IloMaximize(myenv, obj_expr));  // adding minimization objective
+  obj_expr.end();                             // clear memory
+  
+  // Model Solution
+  IloCplex mycplex(myenv);
+  
+  // Add warm-start if applicable
+  if (static_cast<int>(solution.size()) == num_vertices) {
+    IloNumVarArray startVarX(myenv);
+    IloNumArray startValX(myenv); // We just need to provide the partial solution
+    for (int v = 0; v < num_vertices; v++) {
+      startVarX.add(var_x[solution[v]][v]);
+      startValX.add(1);
+    }
+    mycplex.addMIPStart(startVarX, startValX, IloCplex::MIPStartAuto, "secondMIPStart");
+    //mycplex.addMIPStart(startVarX, startValX);
+    // The IloCplex::Param::MIP::Limits::Solutions parameter in CPLEX is used to set a limit
+    // on the maximum number of feasible solutions that the solver should find before stopping. 
+    // This can be useful in cases where you want to terminate the search early 
+    // once a certain number of solutions have been found.
+    mycplex.setParam(IloCplex::Param::MIP::Limits::Solutions, 2);
+    startVarX.end();
+    startValX.end();
+  }
+
+  // Solve the problem
+  mycplex.solve();
+  IloBool feasible = mycplex.solve();
+  bool feasible_flag = false;
+  if (feasible == IloTrue) {
+    // update the solution
+    // all the fixed vertices has been encoded into fixed vertices constraints
+    // so we do not handle fixed vertices here
+    for (int v = 0; v < num_vertices; v++) {
+      for (int block_id = 0; block_id < num_parts; block_id++) {
+        if (mycplex.getValue(var_x[block_id][v]) == 1.0) {
+          solution[v] = block_id;
+          break;
+        }
+      }
+    }
+    // some solution may invalid due to the limitation of ILP solver
+    for (auto& value : solution) {
+       value = (value == -1) ? 0 : value;
+    }
+    feasible_flag = true;
+  } 
+ 
+  // closing the model
+  mycplex.clear();
+  myenv.end();
+  return false;
+}
+#endif
+
 
 }  // namespace par

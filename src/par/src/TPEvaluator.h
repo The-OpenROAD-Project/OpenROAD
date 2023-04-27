@@ -180,7 +180,7 @@ class GoldenEvaluator {
     // std::map<std::pair<int, int>, float> : <block_id_a, block_id_b> : score
     // The score is the summation of hyperedges spanning block_id_a and block_id_b
     std::map<std::pair<int, int>, float> GetMatchingConnectivity(const HGraphPtr hgraph, 
-                                                        const std::vector<int>& solution);
+                                                        const std::vector<int>& solution) const;
     
     // calculate the statistics of a given partitioning solution
     // TP_partition_token.first is the cutsize
@@ -189,6 +189,14 @@ class GoldenEvaluator {
                                     const std::vector<int>& solution,
                                     bool print_flag = false) const;      
 
+
+    // check the constraints 
+    // balance constraint, group constraint, fixed vertices constraint
+    bool ConstraintAndCutEvaluator(const HGraphPtr hgraph, 
+                             const std::vector<int>& solution,
+                             float ub_factor,
+                             const std::vector<std::vector<int> >& group_attr,
+                             bool print_flag = false) const;
 
     // hgraph will be updated here
     // For timing-driven flow, 
@@ -208,6 +216,9 @@ class GoldenEvaluator {
     // include the original slack for each path and hyperedge,
     // and the type of each vertex
     void UpdateTiming(HGraphPtr hgraph, const TP_partition& solution) const;
+
+    // Write the weighted hypergraph in hMETIS format
+    void WriteWeightedHypergraph(HGraphPtr hgraph, const std::string file_name, bool with_weight_flag = true) const;
 
   private:
     // user specified parameters

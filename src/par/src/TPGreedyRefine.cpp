@@ -47,12 +47,13 @@ namespace par {
 // Different from the FM refinement, greedy refinement
 // only accepts possible gain
 float TPgreedyRefine::Pass(const HGraphPtr hgraph,
-                           const MATRIX<float>& max_block_balance,
+                           const MATRIX<float>& upper_block_balance,
+                           const MATRIX<float>& lower_block_balance,
                            MATRIX<float>& block_balance, // the current block balance
                            MATRIX<int>& net_degs, // the current net degree
                            std::vector<float>& cur_paths_cost, // the current path cost
                            TP_partition& solution,
-                           std::vector<bool>& visited_vertices_flag) const 
+                           std::vector<bool>& visited_vertices_flag) 
 {
   float total_gain = 0.0; // total gain improvement
   int num_move = 0;
@@ -89,22 +90,26 @@ float TPgreedyRefine::Pass(const HGraphPtr hgraph,
       }
     };
     
-    int best_candidate_block = -1;
+    //int best_candidate_block = -1;
     TP_gain_hyperedge best_gain_hyperedge = std::make_shared<HyperedgeGain>();
     best_gain_hyperedge->SetGain(0.0f); // we only accept positive gain
     for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
       if (CheckHyperedgeMoveLegality(hyperedge_id, to_pid, hgraph, solution,
-          block_balance, max_block_balance) == true) {
+          block_balance, upper_block_balance, lower_block_balance) == true) {
         TP_gain_hyperedge gain_hyperedge = CalculateHyperedgeGain(hyperedge_id, 
             to_pid, hgraph, solution, cur_paths_cost, net_degs);
-        if (CompareGainHyperedge(gain_hyperedge, best_gain_hyperedge) == true) {
-          best_candidate_block = to_pid;
+        if (best_gain_hyperedge->GetHyperedge() < 0 ||
+            CompareGainHyperedge(gain_hyperedge, best_gain_hyperedge) == true) {
+          //best_candidate_block = to_pid;
           best_gain_hyperedge = gain_hyperedge;
         }        
       }
     }
 
-    if (best_candidate_block > -1) {
+    // We only accept positive move
+    if (best_gain_hyperedge->GetDestinationPart() > -1 &&
+        best_gain_hyperedge->GetGain() >= 0.0f) {
+    //if (best_candidate_block > -1) {
       AcceptHyperedgeGain(best_gain_hyperedge,
                           hgraph, 
                           total_gain, 
