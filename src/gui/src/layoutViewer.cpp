@@ -2194,7 +2194,7 @@ void LayoutViewer::drawViaShapes(QPainter* painter,
       continue;
     }
 
-    sbox->getViaBoxes(via_shapes);
+    sbox->getViaBoxes(draw_layer, via_shapes);
     for (auto& shape : via_shapes) {
       if (shape.getTechLayer() == draw_layer) {
         painter->drawRect(shape.xMin(),

@@ -535,6 +535,11 @@ class dbBox : public dbObject
   void getViaBoxes(std::vector<dbShape>& boxes);
 
   ///
+  /// Get the translated boxes of this via on the given layer
+  ///
+  void getViaBoxes(dbTechLayer* layer, std::vector<dbShape>& boxes);
+
+  ///
   /// Get the width (xMax-xMin) of the box.
   ///
   int getDir();
