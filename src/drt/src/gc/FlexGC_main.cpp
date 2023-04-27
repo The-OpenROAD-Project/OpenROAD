@@ -3481,7 +3481,7 @@ void FlexGCWorker::Impl::checkMinimumCut()
         continue;
       for (auto& pin : targetNet_->getPins(i)) {
         for (auto& maxrect : pin->getMaxRectangles()) {
-          checkCutSpacing_main(maxrect.get());
+          checkMinimumCut_main(maxrect.get());
         }
       }
     }
