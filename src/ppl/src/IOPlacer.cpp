@@ -961,7 +961,10 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
     }
     if (!to_fallback) {
       for (auto i : sortIndexes(dst)) {
-        if (group_size <= sections[i].getMaxContiguousSlots(slots_)) {
+        int section_available_slots
+            = sections[i].num_slots - sections[i].used_slots;
+        if (group_size <= sections[i].getMaxContiguousSlots(slots_)
+            && group_size <= section_available_slots) {
           std::vector<int> group;
           for (int pin_idx : io_group) {
             IOPin& io_pin = net->getIoPin(pin_idx);
