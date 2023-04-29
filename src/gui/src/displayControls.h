@@ -218,8 +218,10 @@ class DisplayControls : public QDockWidget,
   bool areBlockagesSelectable() override;
   bool areObstructionsVisible() override;
   bool areObstructionsSelectable() override;
-  bool isSiteSelectable(odb::dbSite* site) override;
+  bool areSitesVisible() override;
+  bool areSitesSelectable() override;
   bool isSiteVisible(odb::dbSite* site) override;
+  bool isSiteSelectable(odb::dbSite* site) override;
   bool arePrefTracksVisible() override;
   bool areNonPrefTracksVisible() override;
 

@@ -73,6 +73,8 @@ class Options
   virtual bool areBlockagesSelectable() = 0;
   virtual bool areObstructionsVisible() = 0;
   virtual bool areObstructionsSelectable() = 0;
+  virtual bool areSitesVisible() = 0;
+  virtual bool areSitesSelectable() = 0;
   virtual bool isSiteSelectable(odb::dbSite* site) = 0;
   virtual bool isSiteVisible(odb::dbSite* site) = 0;
   virtual bool arePrefTracksVisible() = 0;

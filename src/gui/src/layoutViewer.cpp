@@ -1050,15 +1050,17 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
     }
   }
 
-  for (const auto& [row, row_site] : getRowRects(search_line)) {
-    odb::dbSite* site = nullptr;
-    if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
-      site = static_cast<odb::dbSite*>(row);
-    } else {
-      site = static_cast<odb::dbRow*>(row)->getSite();
-    }
-    if (options_->isSiteVisible(site) && options_->isSiteSelectable(site)) {
-      check_rect(row_site);
+  if (options_->areSitesVisible()) {
+    for (const auto& [row, row_site] : getRowRects(search_line)) {
+      odb::dbSite* site = nullptr;
+      if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
+        site = static_cast<odb::dbSite*>(row);
+      } else {
+        site = static_cast<odb::dbRow*>(row)->getSite();
+      }
+      if (options_->isSiteVisible(site) && options_->isSiteSelectable(site)) {
+        check_rect(row_site);
+      }
     }
   }
 
@@ -1251,24 +1253,26 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
   }
 
-  for (const auto& [row_obj, rect] : getRowRects(region)) {
-    odb::dbSite* site = nullptr;
-    if (row_obj->getObjectType() == odb::dbObjectType::dbSiteObj) {
-      site = static_cast<odb::dbSite*>(row_obj);
-    } else {
-      site = static_cast<odb::dbRow*>(row_obj)->getSite();
-    }
+  if (options_->areSitesVisible() && options_->areSitesSelectable()) {
+    for (const auto& [row_obj, rect] : getRowRects(region)) {
+      odb::dbSite* site = nullptr;
+      if (row_obj->getObjectType() == odb::dbObjectType::dbSiteObj) {
+        site = static_cast<odb::dbSite*>(row_obj);
+      } else {
+        site = static_cast<odb::dbRow*>(row_obj)->getSite();
+      }
 
-    if (!options_->isSiteVisible(site) || !options_->isSiteSelectable(site)) {
-      continue;
-    }
+      if (!options_->isSiteVisible(site) || !options_->isSiteSelectable(site)) {
+        continue;
+      }
 
-    if (row_obj->getObjectType() == odb::dbObjectType::dbRowObj) {
-      selections.push_back(
-          gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
-    } else {
-      selections.push_back(
-          gui_->makeSelected(DbSiteDescriptor::SpecificSite{site, rect}));
+      if (row_obj->getObjectType() == odb::dbObjectType::dbRowObj) {
+        selections.push_back(
+            gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
+      } else {
+        selections.push_back(
+            gui_->makeSelected(DbSiteDescriptor::SpecificSite{site, rect}));
+      }
     }
   }
 }
@@ -1765,6 +1769,10 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
 
 void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
 {
+  if (!options_->areSitesVisible()) {
+    return;
+  }
+
   for (const auto& [row, row_site] : getRowRects(bounds)) {
     odb::dbSite* site = nullptr;
     if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
