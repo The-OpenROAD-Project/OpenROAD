@@ -127,7 +127,6 @@ extSpef::extSpef(odb::dbTech* tech,
   _x2CoordTable = NULL;
   _y2CoordTable = NULL;
   _levelTable = NULL;
-  _search = NULL;
   _idTable = NULL;
 
   _partial = false;

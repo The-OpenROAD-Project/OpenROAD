@@ -94,7 +94,7 @@ class dbNetwork : public ConcreteNetwork
   void readLefAfter(dbLib* lib);
   void readDefAfter(dbBlock* block);
   void readDbAfter(dbDatabase* db);
-  void readLibertyAfter(LibertyLibrary* lib);
+  void readLibertyAfter(LibertyLibrary* lib) override;
 
   void addObserver(dbNetworkObserver* observer);
   void removeObserver(dbNetworkObserver* observer);
@@ -147,6 +147,7 @@ class dbNetwork : public ConcreteNetwork
   PortDirection* dbToSta(dbSigType sig_type, dbIoType io_type) const;
   // dbStaCbk::inDbBTermCreate
   void makeTopPort(dbBTerm* bterm);
+  void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
   ObjectId id(const Port *port) const override;
 
   ////////////////////////////////////////////////////////////////

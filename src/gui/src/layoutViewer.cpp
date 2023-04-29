@@ -61,6 +61,7 @@
 #include "colorGenerator.h"
 #include "db.h"
 #include "dbDescriptors.h"
+#include "dbShape.h"
 #include "dbTransform.h"
 #include "gui/gui.h"
 #include "gui_utils.h"
@@ -790,6 +791,30 @@ bool LayoutViewer::compareEdges(const Edge& lhs, const Edge& rhs) const
   return lhs_length_sqrd < rhs_length_sqrd;
 }
 
+void LayoutViewer::searchNearestViaEdge(
+    dbTechLayer* cut_layer,
+    dbTechLayer* search_layer,
+    const Rect& search_line,
+    const int shape_limit,
+    std::function<void(const Rect& rect)> check_rect)
+{
+  auto via_shapes = search_.searchViaSBoxShapes(cut_layer,
+                                                search_line.xMin(),
+                                                search_line.yMin(),
+                                                search_line.xMax(),
+                                                search_line.yMax(),
+                                                shape_limit);
+  std::vector<odb::dbShape> shapes;
+  for (auto& [box, sbox, net] : via_shapes) {
+    if (isNetVisible(net)) {
+      sbox->getViaLayerBoxes(search_layer, shapes);
+      for (auto& shape : shapes) {
+        check_rect(shape.getBox());
+      }
+    }
+  }
+}
+
 std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
     const odb::Point& pt,
     bool horizontal,
@@ -964,6 +989,19 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
+    if (layer->getType() == dbTechLayerType::CUT) {
+      searchNearestViaEdge(layer, layer, search_line, shape_limit, check_rect);
+    } else {
+      if (auto upper = layer->getUpperLayer()) {
+        searchNearestViaEdge(
+            upper, layer, search_line, shape_limit, check_rect);
+      }
+      if (auto lower = layer->getLowerLayer()) {
+        searchNearestViaEdge(
+            lower, layer, search_line, shape_limit, check_rect);
+      }
+    }
+
     auto polygon_shapes = search_.searchPolygonShapes(layer,
                                                       search_line.xMin(),
                                                       search_line.yMin(),
@@ -1012,8 +1050,14 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
     }
   }
 
-  if (options_->areRowsVisible()) {
-    for (const auto& [row, row_site] : getRowRects(search_line)) {
+  for (const auto& [row, row_site] : getRowRects(search_line)) {
+    odb::dbSite* site = nullptr;
+    if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
+      site = static_cast<odb::dbSite*>(row);
+    } else {
+      site = static_cast<odb::dbRow*>(row)->getSite();
+    }
+    if (options_->isSiteVisible(site) && options_->isSiteSelectable(site)) {
       check_rect(row_site);
     }
   }
@@ -1044,6 +1088,32 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   }
 
   return {closest_edge, true};
+}
+
+void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
+                                     dbTechLayer* select_layer,
+                                     const Rect& region,
+                                     const int shape_limit,
+                                     std::vector<Selected>& selections)
+{
+  auto via_shapes = search_.searchViaSBoxShapes(cut_layer,
+                                                region.xMin(),
+                                                region.yMin(),
+                                                region.xMax(),
+                                                region.yMax(),
+                                                shape_limit);
+
+  std::vector<odb::dbShape> shapes;
+  for (auto& [box, sbox, net] : via_shapes) {
+    if (isNetVisible(net) && options_->isNetSelectable(net)) {
+      sbox->getViaLayerBoxes(select_layer, shapes);
+      for (auto& shape : shapes) {
+        if (shape.getBox().intersects(region)) {
+          selections.push_back(gui_->makeSelected(net));
+        }
+      }
+    }
+  }
 }
 
 void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
@@ -1107,10 +1177,20 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                               region.yMax(),
                                               shape_limit);
 
-    // Just return the first one
     for (auto& [box, net] : box_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
         selections.push_back(gui_->makeSelected(net));
+      }
+    }
+
+    if (layer->getType() == dbTechLayerType::CUT) {
+      selectViaShapesAt(layer, layer, region, shape_limit, selections);
+    } else {
+      if (auto upper = layer->getUpperLayer()) {
+        selectViaShapesAt(upper, layer, region, shape_limit, selections);
+      }
+      if (auto lower = layer->getLowerLayer()) {
+        selectViaShapesAt(lower, layer, region, shape_limit, selections);
       }
     }
 
@@ -1121,7 +1201,6 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                                       region.yMax(),
                                                       shape_limit);
 
-    // Just return the first one
     for (auto& [box, poly, net] : polygon_shapes) {
       if (isNetVisible(net) && options_->isNetSelectable(net)) {
         selections.push_back(gui_->makeSelected(net));
@@ -1172,15 +1251,24 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
   }
 
-  if (options_->areRowsVisible() && options_->areRowsSelectable()) {
-    for (const auto& [row_obj, rect] : getRowRects(region)) {
-      if (row_obj->getObjectType() == odb::dbObjectType::dbRowObj) {
-        selections.push_back(
-            gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
-      } else {
-        selections.push_back(gui_->makeSelected(DbSiteDescriptor::SpecificSite{
-            static_cast<odb::dbSite*>(row_obj), rect}));
-      }
+  for (const auto& [row_obj, rect] : getRowRects(region)) {
+    odb::dbSite* site = nullptr;
+    if (row_obj->getObjectType() == odb::dbObjectType::dbSiteObj) {
+      site = static_cast<odb::dbSite*>(row_obj);
+    } else {
+      site = static_cast<odb::dbRow*>(row_obj)->getSite();
+    }
+
+    if (!options_->isSiteVisible(site) || !options_->isSiteSelectable(site)) {
+      continue;
+    }
+
+    if (row_obj->getObjectType() == odb::dbObjectType::dbRowObj) {
+      selections.push_back(
+          gui_->makeSelected(static_cast<odb::dbRow*>(row_obj)));
+    } else {
+      selections.push_back(
+          gui_->makeSelected(DbSiteDescriptor::SpecificSite{site, rect}));
     }
   }
 }
@@ -1221,8 +1309,8 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
 
     // more than one item possible, so return the "next" one
     // method: look for the last selected item in the list and select the next
-    // one that will emulate a circular queue so we don't just oscillate between
-    // the first two
+    // one that will emulate a circular queue so we don't just oscillate
+    // between the first two
     std::vector<bool> is_selected;
     for (auto& sel : selections) {
       is_selected.push_back(selected_.count(sel) != 0);
@@ -1677,18 +1765,21 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
 
 void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
 {
-  if (!options_->areRowsVisible()) {
-    return;
-  }
-
-  QPen pen(options_->rowColor());
-  pen.setCosmetic(true);
-  painter->setPen(pen);
-  painter->setBrush(Qt::NoBrush);
-
   for (const auto& [row, row_site] : getRowRects(bounds)) {
-    painter->drawRect(
-        row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
+    odb::dbSite* site = nullptr;
+    if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
+      site = static_cast<odb::dbSite*>(row);
+    } else {
+      site = static_cast<odb::dbRow*>(row)->getSite();
+    }
+    if (options_->isSiteVisible(site)) {
+      QPen pen(options_->siteColor(site));
+      pen.setCosmetic(true);
+      painter->setPen(pen);
+      painter->setBrush(Qt::NoBrush);
+      painter->drawRect(
+          row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
+    }
   }
 }
 
@@ -2156,6 +2247,37 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
   }
 }
 
+void LayoutViewer::drawViaShapes(QPainter* painter,
+                                 dbTechLayer* cut_layer,
+                                 dbTechLayer* draw_layer,
+                                 const Rect& bounds,
+                                 const int instance_limit)
+{
+  auto via_sbox_iter = search_.searchViaSBoxShapes(cut_layer,
+                                                   bounds.xMin(),
+                                                   bounds.yMin(),
+                                                   bounds.xMax(),
+                                                   bounds.yMax(),
+                                                   instance_limit);
+
+  std::vector<odb::dbShape> via_shapes;
+  for (auto& [box, sbox, net] : via_sbox_iter) {
+    if (!isNetVisible(net)) {
+      continue;
+    }
+
+    sbox->getViaLayerBoxes(draw_layer, via_shapes);
+    for (auto& shape : via_shapes) {
+      if (shape.getTechLayer() == draw_layer) {
+        painter->drawRect(shape.xMin(),
+                          shape.yMin(),
+                          shape.xMax() - shape.xMin(),
+                          shape.yMax() - shape.yMin());
+      }
+    }
+  }
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
@@ -2240,6 +2362,19 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
         const auto& ur = box.max_corner();
         painter->drawRect(
             QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+      }
+
+      if (layer->getType() == dbTechLayerType::CUT) {
+        drawViaShapes(painter, layer, layer, bounds, instance_limit);
+      } else {
+        // Get the enclosure shapes from any vias on the cut layers
+        // above or below this one.
+        if (auto upper = layer->getUpperLayer()) {
+          drawViaShapes(painter, upper, layer, bounds, instance_limit);
+        }
+        if (auto lower = layer->getLowerLayer()) {
+          drawViaShapes(painter, lower, layer, bounds, instance_limit);
+        }
       }
 
       auto polygon_iter = search_.searchPolygonShapes(layer,
@@ -2571,8 +2706,8 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
                                      Point(max_dim / 4, max_dim / 2),
                                      Point(0, 0)};
 
-  // RTree used to search for overlapping shapes and decide if rotation of text
-  // is needed.
+  // RTree used to search for overlapping shapes and decide if rotation of
+  // text is needed.
   bgi::rtree<Search::Box, bgi::quadratic<16>> pin_text_spec_shapes;
   struct PinText
   {
@@ -2719,7 +2854,10 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
     }
 
     painter.setPen(layer);
-    painter.setBrush(layer);
+    auto color = painter.getPenColor();
+    color.a = 255;
+    painter.setPen(color);
+    painter.setBrush(color);
 
     painter.drawString(pin.pt.x(), pin.pt.y(), anchor, pin.text, do_rotate);
   }
@@ -3020,7 +3158,8 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
           if (p1.x() + 0.5 * peg_text_box.width() < end_offset) {
             p2 = p1
                  - QPointF(
-                     0, 3 * bar_height / 4.0);  // make this peg a little taller
+                     0,
+                     3 * bar_height / 4.0);  // make this peg a little taller
             painter->drawText(QPointF(p2.x() - peg_text_box.center().x(),
                                       scale_bar_outline.top() - text_px_offset),
                               peg_text);
@@ -3498,8 +3637,8 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
   } else {
     viewer_->zoomOut(mouse_pos, true);
   }
-  // ensure changes are processed before the next wheel event to prevent zoomIn
-  // and Out from jumping around on the ScrollBars
+  // ensure changes are processed before the next wheel event to prevent
+  // zoomIn and Out from jumping around on the ScrollBars
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 

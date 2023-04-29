@@ -74,21 +74,17 @@ class TPmultilevelPartitioner
       float ub_factor,          // ubfactor
       RefinerType refine_type,  // refinement type
       utl::Logger* logger)
-      : v_cycle_flag_(v_cycle_flag),
-        coarsener_(coarsener),
+      : coarsener_(coarsener),
         partitioner_(partitioner),
         two_way_refiner_(two_way_refiner),
         greedy_refiner_(greedy_refiner),
         ilp_refiner_(ilp_refiner),
         logger_(logger),
-        num_parts_(num_parts),
         num_initial_solutions_(num_initial_solutions),
         num_best_initial_solutions_(num_best_initial_solutions),
-        num_ubfactor_delta_(num_ubfactor_delta),
         max_num_vcycle_(max_num_vcycle),
         seed_(seed),
-        ub_factor_(ub_factor),
-        refine_type_(refine_type)
+        ub_factor_(ub_factor)
   {
   }
   TPmultilevelPartitioner(
@@ -105,19 +101,15 @@ class TPmultilevelPartitioner
       float ub_factor,          // ubfactor
       RefinerType refine_type,  // refinement type
       utl::Logger* logger)
-      : v_cycle_flag_(v_cycle_flag),
-        coarsener_(coarsener),
+      : coarsener_(coarsener),
         partitioner_(partitioner),
         k_way_refiner_(k_way_refiner),
         logger_(logger),
-        num_parts_(num_parts),
         num_initial_solutions_(num_initial_solutions),
         num_best_initial_solutions_(num_best_initial_solutions),
-        num_ubfactor_delta_(num_ubfactor_delta),
         max_num_vcycle_(max_num_vcycle),
         seed_(seed),
-        ub_factor_(ub_factor),
-        refine_type_(refine_type)
+        ub_factor_(ub_factor)
   {
   }
 
@@ -178,7 +170,6 @@ class TPmultilevelPartitioner
                         matrix<float>& max_vertex_balance,
                         TP_k_way_refining_ptr refiner);
 
-  bool v_cycle_flag_;
   TP_coarsening_ptr coarsener_ = nullptr;
   TP_partitioning_ptr partitioner_ = nullptr;
   TP_two_way_refining_ptr two_way_refiner_ = nullptr;
@@ -186,14 +177,11 @@ class TPmultilevelPartitioner
   TP_greedy_refiner_ptr greedy_refiner_ = nullptr;
   TP_ilp_refiner_ptr ilp_refiner_ = nullptr;
   utl::Logger* logger_ = nullptr;
-  int num_parts_;
   int num_initial_solutions_;
   int num_best_initial_solutions_;
-  int num_ubfactor_delta_;
   int max_num_vcycle_;
   int seed_;
   float ub_factor_;
-  RefinerType refine_type_;
 };
 
 }  // namespace par

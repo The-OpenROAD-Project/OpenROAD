@@ -15,6 +15,7 @@
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
 #include "sta/StaMain.hh"
+#include "PathRenderer.h"
 
 extern "C" {
 extern int Dbsta_Init(Tcl_Interp* interp);
@@ -45,9 +46,14 @@ void initDbSta(OpenRoad* openroad)
   sta::initSta();
 
   utl::Logger* logger = openroad->getLogger();
-  sta->initVars(
-      openroad->tclInterp(), openroad->getDb(), gui::Gui::get(), logger);
+  sta->initVars(openroad->tclInterp(), openroad->getDb(), logger);
   sta::Sta::setSta(sta);
+
+  if (gui::Gui::enabled()) {
+    sta->setPathRenderer(std::make_unique<sta::PathRenderer>(sta));
+    sta->setPowerDensityDataSource(
+        std::make_unique<sta::PowerDensityDataSource>(sta, logger));
+  }
 
   Tcl_Interp* tcl_interp = openroad->tclInterp();
 
@@ -55,8 +61,6 @@ void initDbSta(OpenRoad* openroad)
   Dbsta_Init(tcl_interp);
   // Eval encoded sta TCL sources.
   sta::evalTclInit(tcl_interp, sta::dbSta_tcl_inits);
-
-  sta->initPowerDensityHeatmap();
 
   openroad->addObserver(sta);
 }

@@ -33,25 +33,26 @@
 #pragma once
 
 #include "gui/heatMap.h"
+#include "AbstractPowerDensityDataSource.h"
 
 namespace sta {
 class dbSta;
 class Corner;
 
-class PowerDensityDataSource : public gui::RealValueHeatMapDataSource
+class PowerDensityDataSource : public gui::RealValueHeatMapDataSource, public AbstractPowerDensityDataSource
 {
  public:
   PowerDensityDataSource(dbSta* sta, utl::Logger* logger);
   ~PowerDensityDataSource() {}
 
  protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
+  bool populateMap() override;
+  void combineMapData(bool base_has_value,
+                      double& base,
+                      double new_data,
+                      double data_area,
+                      double intersection_area,
+                      double rect_area) override;
 
  private:
   sta::dbSta* sta_;

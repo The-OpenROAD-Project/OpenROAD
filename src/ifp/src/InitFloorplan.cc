@@ -112,7 +112,7 @@ void InitFloorplan::initFloorplan(double utilization,
                                   int core_space_top,
                                   int core_space_left,
                                   int core_space_right,
-                                  const std::string& site_name)
+                                  const std::vector<odb::dbSite*>& extra_sites)
 {
   utl::Validator v(logger_, IFP);
   v.check_percentage("utilization", utilization, 12);
@@ -138,7 +138,7 @@ void InitFloorplan::initFloorplan(double utilization,
   const int die_uy = core_uy + core_space_top;
   initFloorplan({die_lx, die_ly, die_ux, die_uy},
                 {core_lx, core_ly, core_ux, core_uy},
-                site_name);
+                extra_sites);
 }
 
 double InitFloorplan::designArea()
@@ -160,32 +160,22 @@ static int divCeil(int dividend, int divisor)
 
 void InitFloorplan::initFloorplan(const odb::Rect& die,
                                   const odb::Rect& core,
-                                  const std::string& site_name)
+                                  const std::vector<odb::dbSite*>& extra_sites)
 {
   Rect die_area(snapToMfgGrid(die.xMin()),
                 snapToMfgGrid(die.yMin()),
                 snapToMfgGrid(die.xMax()),
                 snapToMfgGrid(die.yMax()));
   block_->setDieArea(die_area);
-  auto sites = getSites();
-  bool site_found_in_instances
-      = std::any_of(sites.begin(), sites.end(), [&](const auto& site) {
-          return site_name == site->getName();
-        });
+  std::set<odb::dbSite*> sites = getSites();
+  sites.insert(extra_sites.begin(), extra_sites.end());
 
-  if (!site_found_in_instances && !site_name.empty()) {
-    dbSite* site_found = findSite(site_name.c_str());
-    if (site_found != nullptr) {
-      // this indeed happens for unithd and unit only in PAD.
-      // logger_->warn(IFP,
-      //               434,
-      //               "Number of instances found {}, but Site {} you passed was
-      //               " "not in them.", sites.size(), site_name);
-      sites.insert(site_found);
-    } else {
-      logger_->warn(IFP, 41, "Site {} not found in Database.", site_name);
-    }
+  // Handle duplicated sites
+  std::map<std::string, odb::dbSite*> sites_by_name;
+  for (auto* site : sites) {
+    sites_by_name[site->getName()] = site;
   }
+
   if (sites.empty()) {
     logger_->error(IFP, 42, "No sites found.");
   }
@@ -200,8 +190,8 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
 
   if (core.xMin() >= 0 && core.yMin() >= 0) {
     int row_index = 0;
-    eval_upf(logger_, block_);
-    for (auto site : sites) {
+    eval_upf(network_, logger_, block_);
+    for (const auto& [site_name, site] : sites_by_name) {
       // Destroy any existing rows.
       int x_height_site = site->getHeight() / min_site_height;
       auto rows = block_->getRows();

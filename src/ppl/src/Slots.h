@@ -132,6 +132,8 @@ struct Constraint
   odb::Rect box;
   std::vector<Section> sections;
   float pins_per_slots;
+  int first_slot;
+  int last_slot;
 };
 
 template <typename T>

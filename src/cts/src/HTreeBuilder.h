@@ -70,8 +70,7 @@ class SegmentBuilder
         drivingSubNet_(&drivingSubNet),
         techChar_(&techChar),
         tree_(tree),
-        techCharDistUnit_(techCharDistUnit),
-        forceBuffer_(false)
+        techCharDistUnit_(techCharDistUnit)
   {
   }
 
@@ -80,7 +79,7 @@ class SegmentBuilder
   Clock::SubNet* getDrivingSubNet() const { return drivingSubNet_; }
   unsigned getNumBufferLevels() const { return numBufferLevels_; }
 
- protected:
+ private:
   const std::string instPrefix_;
   const std::string netPrefix_;
   Point<double> root_;
@@ -91,7 +90,6 @@ class SegmentBuilder
   TechChar* techChar_;
   TreeBuilder* tree_;
   unsigned techCharDistUnit_;
-  bool forceBuffer_;
   unsigned numBufferLevels_ = 0;
 };
 class Graphics;
@@ -290,7 +288,7 @@ class HTreeBuilder : public TreeBuilder
     return numSinksPerSubRegion < numMaxLeafSinks_;
   }
 
- protected:
+ private:
   utl::Logger* logger_;
   Box<double> sinkRegion_;
   std::vector<LevelTopology> topologyForEachLevel_;

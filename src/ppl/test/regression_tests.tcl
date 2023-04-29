@@ -36,6 +36,7 @@ record_tests {
   add_constraint11
   add_constraint12
   add_constraint13
+  add_constraint14
   add_constraint_error1
   add_constraint_error2
   add_constraint_error3
@@ -51,6 +52,8 @@ record_tests {
   group_pins9
   group_pins10
   group_pins_warn1
+  large_groups1
+  large_groups2
   top_layer1
   top_layer2
   top_layer3

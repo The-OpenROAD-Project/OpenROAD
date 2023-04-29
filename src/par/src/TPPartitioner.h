@@ -87,8 +87,6 @@ class TPpartitioner
         e_wt_factors_(e_wt_factors),
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),
-        early_stop_ratio_(early_stop_ratio),
-        max_num_fm_pass_(max_num_fm_pass),
         seed_(seed),
         logger_(logger)
   {
@@ -107,8 +105,6 @@ class TPpartitioner
         e_wt_factors_(e_wt_factors),
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),
-        early_stop_ratio_(early_stop_ratio),
-        max_num_fm_pass_(max_num_fm_pass),
         seed_(seed),
         logger_(logger)
   {
@@ -155,8 +151,6 @@ class TPpartitioner
   std::vector<float> e_wt_factors_;
   float path_wt_factor_;
   float snaking_wt_factor_;
-  float early_stop_ratio_;
-  int max_num_fm_pass_;
   int seed_;
   PartitionType partitioner_choice_ = PartitionType::INIT_RANDOM;
   utl::Logger* logger_ = nullptr;

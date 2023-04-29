@@ -37,6 +37,7 @@
 
 #include "db_sta/dbSta.hh"
 #include "ifp/InitFloorplan.hh"
+#include "ord/OpenRoad.hh"
 #include "utl/Logger.h"
 
 // Defined by OpenRoad.i
@@ -73,6 +74,8 @@ static ifp::InitFloorplan get_floorplan()
 //
 ////////////////////////////////////////////////////////////////
 
+%import <std_vector.i>
+%import "dbtypes.i"
 %include "../../Exception.i"
 
 %inline %{
@@ -88,11 +91,11 @@ init_floorplan_core(int die_lx,
 		    int core_ly,
 		    int core_ux,
 		    int core_uy,
-		    const char *site_name)
+		    const std::vector<odb::dbSite*>& sites)
 {
   get_floorplan().initFloorplan({die_lx, die_ly, die_ux, die_uy},
                                 {core_lx, core_ly, core_ux, core_uy},
-                                site_name);
+                                sites);
 }
 
 void
@@ -102,12 +105,12 @@ init_floorplan_util(double util,
                      int core_space_top,
                     int core_space_left,
                     int core_space_right,
-                    const char *site_name)
+                    const std::vector<odb::dbSite*>& sites)
 {
   get_floorplan().initFloorplan(util, aspect_ratio,
                                 core_space_bottom, core_space_top,
                                 core_space_left, core_space_right,
-                                site_name);
+                                sites);
 }
 
 void
@@ -130,6 +133,11 @@ make_layer_tracks(odb::dbTechLayer* layer,
                   int y_pitch)
 {
   get_floorplan().makeTracks(layer, x_offset, x_pitch, y_offset, y_pitch);
+}
+
+odb::dbSite* find_site(const char* site_name)
+{
+  return get_floorplan().findSite(site_name);
 }
 
 } // namespace

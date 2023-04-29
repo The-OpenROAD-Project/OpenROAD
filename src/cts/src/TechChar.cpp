@@ -58,14 +58,12 @@ namespace cts {
 using utl::CTS;
 
 TechChar::TechChar(CtsOptions* options,
-                   ord::OpenRoad* openroad,
                    odb::dbDatabase* db,
                    sta::dbSta* sta,
                    rsz::Resizer* resizer,
                    sta::dbNetwork* db_network,
                    Logger* logger)
     : options_(options),
-      openroad_(openroad),
       db_(db),
       resizer_(resizer),
       openSta_(sta),
@@ -153,9 +151,7 @@ void TechChar::compileLut(const std::vector<TechChar::ResultData>& lutSols)
 
 void TechChar::initLengthUnits()
 {
-  charLengthUnit_ = options_->getWireSegmentUnit();
-  lengthUnit_ = LENGTH_UNIT_MICRON;
-  lengthUnitRatio_ = charLengthUnit_ / lengthUnit_;
+  lengthUnitRatio_ = options_->getWireSegmentUnit() / lengthUnit_;
 }
 
 inline void TechChar::reportCharacterizationBounds() const

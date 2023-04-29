@@ -36,6 +36,7 @@
 include("openroad")
 
 add_library(dbSta_lib
+  dbSta.cc
   dbNetwork.cc
   dbSdcNetwork.cc
   dbReadVerilog.cc
@@ -86,8 +87,8 @@ swig_lib(NAME          dbSta
 target_sources(dbSta
   PRIVATE
     MakeDbSta.cc
-    dbSta.cc
     heatMap.cpp
+    PathRenderer.cc
 )
 
 target_include_directories(dbSta

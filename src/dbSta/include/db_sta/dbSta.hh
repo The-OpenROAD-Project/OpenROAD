@@ -39,12 +39,8 @@
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
-#include "ord/OpenRoad.hh"
+#include "ord/OpenRoadObserver.hh"
 #include "sta/Sta.hh"
-
-namespace gui {
-class Gui;
-}
 
 namespace ord {
 class OpenRoad;
@@ -60,8 +56,8 @@ class dbSta;
 class dbNetwork;
 class dbStaReport;
 class dbStaCbk;
-class PathRenderer;
-class PowerDensityDataSource;
+class AbstractPathRenderer;
+class AbstractPowerDensityDataSource;
 
 using utl::Logger;
 
@@ -76,7 +72,7 @@ using odb::dbMaster;
 using odb::dbNet;
 using odb::dbTech;
 
-class dbSta : public Sta, public ord::OpenRoad::Observer
+class dbSta : public Sta, public ord::OpenRoadObserver
 {
  public:
   dbSta();
@@ -84,11 +80,11 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
 
   void initVars(Tcl_Interp* tcl_interp,
                 odb::dbDatabase* db,
-                gui::Gui* gui,
                 utl::Logger* logger);
 
-  // Creates the power density heatmap object (for GUI rendering).
-  void initPowerDensityHeatmap();
+  void setPathRenderer(std::unique_ptr<AbstractPathRenderer> path_renderer);
+  void setPowerDensityDataSource(std::unique_ptr<AbstractPowerDensityDataSource>
+                                     power_density_data_source);
 
   // Creates a dbSta instance for the given dbBlock using the same context as
   // this dbSta instance (e.g. TCL interpreter, units, etc.)
@@ -114,6 +110,7 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
   virtual void connectPin(Instance* inst, Port* port, Net* net) override;
   virtual void connectPin(Instance* inst, LibertyPort* port, Net* net) override;
   virtual void disconnectPin(Pin* pin) override;
+
   // Highlight path in the gui.
   void highlight(PathRef* path);
 
@@ -130,15 +127,14 @@ class dbSta : public Sta, public ord::OpenRoad::Observer
                            LibertyCell* to_lib_cell) override;
 
   dbDatabase* db_;
-  gui::Gui* gui_;
   Logger* logger_;
 
   dbNetwork* db_network_;
   dbStaReport* db_report_;
   dbStaCbk* db_cbk_;
-  PathRenderer* path_renderer_;
 
-  std::unique_ptr<PowerDensityDataSource> power_density_heatmap_;
+  std::unique_ptr<AbstractPathRenderer> path_renderer_;
+  std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;
 };
 
 }  // namespace sta

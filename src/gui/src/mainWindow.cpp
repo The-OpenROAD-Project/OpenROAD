@@ -67,6 +67,7 @@
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 // must be loaded in global namespace
 static void loadQTResources()
@@ -401,6 +402,9 @@ MainWindow::MainWindow(QWidget* parent)
 MainWindow::~MainWindow()
 {
   auto* gui = Gui::get();
+  for (auto renderer : gui->renderers()) {
+    gui->unregisterRenderer(renderer);
+  }
   // unregister descriptors with GUI dependencies
   gui->unregisterDescriptor<Ruler*>();
   gui->unregisterDescriptor<odb::dbNet*>();
@@ -469,9 +473,9 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
       new DbNonDefaultRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayerRule*>(
-      new DbTechLayerRuleDescriptor(db_));
+      new DbTechLayerRuleDescriptor());
   gui->registerDescriptor<odb::dbTechSameNetRule*>(
-      new DbTechSameNetRuleDescriptor(db_));
+      new DbTechSameNetRuleDescriptor());
   gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
   gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
       new DbSiteDescriptor(db_));
@@ -1375,17 +1379,16 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
     } else {
       const double dbu_per_micron = block->getDbUnitsPerMicron();
 
-      std::stringstream ss;
       const int precision = std::ceil(std::log10(dbu_per_micron));
       const double micron_value = value / dbu_per_micron;
 
-      ss << std::fixed << std::setprecision(precision) << micron_value;
+      auto str = utl::to_numeric_string(micron_value, precision);
 
       if (add_units) {
-        ss << " \u03BCm";  // micro meter
+        str += " \u03BCm";  // micro meter
       }
 
-      return ss.str();
+      return str;
     }
   }
 }

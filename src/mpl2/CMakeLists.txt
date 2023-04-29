@@ -93,4 +93,6 @@ target_link_libraries(mpl2
     gui
 )
 
-add_subdirectory(test/cpp)
+if(ENABLE_TESTS)
+  add_subdirectory(test/cpp)
+endif()
