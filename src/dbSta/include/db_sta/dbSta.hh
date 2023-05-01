@@ -75,8 +75,7 @@ using odb::dbTech;
 class dbSta : public Sta, public ord::OpenRoadObserver
 {
  public:
-  dbSta();
-  virtual ~dbSta();
+  ~dbSta() override;
 
   void initVars(Tcl_Interp* tcl_interp,
                 odb::dbDatabase* db,
@@ -97,19 +96,19 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   Slack netSlack(const dbNet* net, const MinMax* min_max);
 
   // From ord::OpenRoad::Observer
-  virtual void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
-  virtual void postReadDef(odb::dbBlock* block) override;
-  virtual void postReadDb(odb::dbDatabase* db) override;
+  void postReadLef(odb::dbTech* tech, odb::dbLib* library) override;
+  void postReadDef(odb::dbBlock* block) override;
+  void postReadDb(odb::dbDatabase* db) override;
 
   // Find clock nets connected by combinational gates from the clock roots.
   std::set<dbNet*> findClkNets();
   std::set<dbNet*> findClkNets(const Clock* clk);
 
-  virtual void deleteInstance(Instance* inst) override;
-  virtual void deleteNet(Net* net) override;
-  virtual void connectPin(Instance* inst, Port* port, Net* net) override;
-  virtual void connectPin(Instance* inst, LibertyPort* port, Net* net) override;
-  virtual void disconnectPin(Pin* pin) override;
+  void deleteInstance(Instance* inst) override;
+  void deleteNet(Net* net) override;
+  void connectPin(Instance* inst, Port* port, Net* net) override;
+  void connectPin(Instance* inst, LibertyPort* port, Net* net) override;
+  void disconnectPin(Pin* pin) override;
 
   // Highlight path in the gui.
   void highlight(PathRef* path);
@@ -118,20 +117,20 @@ class dbSta : public Sta, public ord::OpenRoadObserver
   using Sta::replaceCell;
 
  private:
-  virtual void makeReport() override;
-  virtual void makeNetwork() override;
-  virtual void makeSdcNetwork() override;
+  void makeReport() override;
+  void makeNetwork() override;
+  void makeSdcNetwork() override;
 
-  virtual void replaceCell(Instance* inst,
-                           Cell* to_cell,
-                           LibertyCell* to_lib_cell) override;
+  void replaceCell(Instance* inst,
+                   Cell* to_cell,
+                   LibertyCell* to_lib_cell) override;
 
-  dbDatabase* db_;
-  Logger* logger_;
+  dbDatabase* db_ = nullptr;
+  Logger* logger_ = nullptr;
 
-  dbNetwork* db_network_;
-  dbStaReport* db_report_;
-  dbStaCbk* db_cbk_;
+  dbNetwork* db_network_ = nullptr;
+  dbStaReport* db_report_ = nullptr;
+  dbStaCbk* db_cbk_ = nullptr;
 
   std::unique_ptr<AbstractPathRenderer> path_renderer_;
   std::unique_ptr<AbstractPowerDensityDataSource> power_density_data_source_;

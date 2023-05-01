@@ -10,7 +10,8 @@
 
 namespace sta {
 
-class AbstractPathRenderer {
+class AbstractPathRenderer
+{
  public:
   virtual ~AbstractPathRenderer() = default;
 
