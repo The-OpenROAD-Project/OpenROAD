@@ -32,14 +32,15 @@
 
 #pragma once
 
-#include "gui/heatMap.h"
 #include "AbstractPowerDensityDataSource.h"
+#include "gui/heatMap.h"
 
 namespace sta {
 class dbSta;
 class Corner;
 
-class PowerDensityDataSource : public gui::RealValueHeatMapDataSource, public AbstractPowerDensityDataSource
+class PowerDensityDataSource : public gui::RealValueHeatMapDataSource,
+                               public AbstractPowerDensityDataSource
 {
  public:
   PowerDensityDataSource(dbSta* sta, utl::Logger* logger);

@@ -45,6 +45,8 @@
 
 #include <algorithm>  // min
 
+#include "AbstractPathRenderer.h"
+#include "AbstractPowerDensityDataSource.h"
 #include "dbSdcNetwork.hh"
 #include "db_sta/MakeDbSta.hh"
 #include "db_sta/dbNetwork.hh"
@@ -61,8 +63,6 @@
 #include "sta/Search.hh"
 #include "sta/StaMain.hh"
 #include "utl/Logger.h"
-#include "AbstractPathRenderer.h"
-#include "AbstractPowerDensityDataSource.h"
 
 ////////////////////////////////////////////////////////////////
 
@@ -75,9 +75,8 @@ using utl::STA;
 
 class dbStaReport : public sta::ReportTcl
 {
-public:
-  explicit dbStaReport(bool gui_is_on)
-    : gui_is_on_(gui_is_on) {}
+ public:
+  explicit dbStaReport(bool gui_is_on) : gui_is_on_(gui_is_on) {}
 
   void setLogger(Logger* logger);
   virtual void warn(int id, const char* fmt, ...)
@@ -110,12 +109,12 @@ public:
       __attribute__((format(printf, 3, 4)));
   virtual size_t printString(const char* buffer, size_t length);
 
-protected:
+ protected:
   virtual void printLine(const char* line, size_t length);
 
   Logger* logger_;
 
-private:
+ private:
   // text buffer for tcl puts output when in GUI mode.
   std::string tcl_buffer_;
   bool gui_is_on_;
@@ -123,7 +122,7 @@ private:
 
 class dbStaCbk : public dbBlockCallBackObj
 {
-public:
+ public:
   dbStaCbk(dbSta* sta, Logger* logger);
   void setNetwork(dbNetwork* network);
   virtual void inDbInstCreate(dbInst* inst) override;
@@ -139,22 +138,23 @@ public:
   virtual void inDbBTermPreDisconnect(dbBTerm* bterm) override;
   virtual void inDbBTermCreate(dbBTerm*) override;
   virtual void inDbBTermDestroy(dbBTerm* bterm) override;
-  virtual void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
+  virtual void inDbBTermSetIoType(dbBTerm* bterm,
+                                  const dbIoType& io_type) override;
 
-private:
+ private:
   dbSta* sta_;
   dbNetwork* network_;
   Logger* logger_;
 };
 
-dbSta::dbSta() :
-  Sta(),
-  db_(nullptr),
-  logger_(nullptr),
-  db_network_(nullptr),
-  db_report_(nullptr),
-  db_cbk_(nullptr),
-  path_renderer_(nullptr)
+dbSta::dbSta()
+    : Sta(),
+      db_(nullptr),
+      logger_(nullptr),
+      db_network_(nullptr),
+      db_report_(nullptr),
+      db_cbk_(nullptr),
+      path_renderer_(nullptr)
 {
 }
 
@@ -196,44 +196,38 @@ std::unique_ptr<dbSta> dbSta::makeBlockSta(odb::dbBlock* block)
 
 ////////////////////////////////////////////////////////////////
 
-void
-dbSta::makeReport()
+void dbSta::makeReport()
 {
   db_report_ = new dbStaReport(/*gui_is_on=*/path_renderer_ != nullptr);
   report_ = db_report_;
 }
 
-void
-dbSta::makeNetwork()
+void dbSta::makeNetwork()
 {
   db_network_ = new class dbNetwork();
   network_ = db_network_;
 }
 
-void
-dbSta::makeSdcNetwork()
+void dbSta::makeSdcNetwork()
 {
   sdc_network_ = new dbSdcNetwork(network_);
 }
 
-void
-dbSta::postReadLef(dbTech* tech, dbLib* library)
+void dbSta::postReadLef(dbTech* tech, dbLib* library)
 {
   if (library) {
     db_network_->readLefAfter(library);
   }
 }
 
-void
-dbSta::postReadDef(dbBlock* block)
+void dbSta::postReadDef(dbBlock* block)
 {
   db_network_->readDefAfter(block);
   db_cbk_->addOwner(block);
   db_cbk_->setNetwork(db_network_);
 }
 
-void
-dbSta::postReadDb(dbDatabase* db)
+void dbSta::postReadDb(dbDatabase* db)
 {
   db_network_->readDbAfter(db);
   odb::dbChip* chip = db_->getChip();
@@ -246,15 +240,13 @@ dbSta::postReadDb(dbDatabase* db)
   }
 }
 
-Slack
-dbSta::netSlack(const dbNet* db_net, const MinMax* min_max)
+Slack dbSta::netSlack(const dbNet* db_net, const MinMax* min_max)
 {
   const Net* net = db_network_->dbToSta(db_net);
   return netSlack(net, min_max);
 }
 
-std::set<dbNet*>
-dbSta::findClkNets()
+std::set<dbNet*> dbSta::findClkNets()
 {
   ensureClkNetwork();
   std::set<dbNet*> clk_nets;
@@ -271,8 +263,7 @@ dbSta::findClkNets()
   return clk_nets;
 }
 
-std::set<dbNet*>
-dbSta::findClkNets(const Clock* clk)
+std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
 {
   ensureClkNetwork();
   std::set<dbNet*> clk_nets;
@@ -293,15 +284,13 @@ dbSta::findClkNets(const Clock* clk)
 // These override the default sta functions that call sta before/after
 // functions because the db calls them via callbacks.
 
-void
-dbSta::deleteInstance(Instance* inst)
+void dbSta::deleteInstance(Instance* inst)
 {
   NetworkEdit* network = networkCmdEdit();
   network->deleteInstance(inst);
 }
 
-void
-dbSta::replaceCell(Instance* inst, Cell* to_cell, LibertyCell* to_lib_cell)
+void dbSta::replaceCell(Instance* inst, Cell* to_cell, LibertyCell* to_lib_cell)
 {
   NetworkEdit* network = networkCmdEdit();
   LibertyCell* from_lib_cell = network->libertyCell(inst);
@@ -309,37 +298,32 @@ dbSta::replaceCell(Instance* inst, Cell* to_cell, LibertyCell* to_lib_cell)
     replaceEquivCellBefore(inst, to_lib_cell);
     network->replaceCell(inst, to_cell);
     replaceEquivCellAfter(inst);
-  }
-  else {
+  } else {
     replaceCellBefore(inst, to_lib_cell);
     network->replaceCell(inst, to_cell);
     replaceCellAfter(inst);
   }
 }
 
-void
-dbSta::deleteNet(Net* net)
+void dbSta::deleteNet(Net* net)
 {
   NetworkEdit* network = networkCmdEdit();
   network->deleteNet(net);
 }
 
-void
-dbSta::connectPin(Instance* inst, Port* port, Net* net)
+void dbSta::connectPin(Instance* inst, Port* port, Net* net)
 {
   NetworkEdit* network = networkCmdEdit();
   network->connect(inst, port, net);
 }
 
-void
-dbSta::connectPin(Instance* inst, LibertyPort* port, Net* net)
+void dbSta::connectPin(Instance* inst, LibertyPort* port, Net* net)
 {
   NetworkEdit* network = networkCmdEdit();
   network->connect(inst, port, net);
 }
 
-void
-dbSta::disconnectPin(Pin* pin)
+void dbSta::disconnectPin(Pin* pin)
 {
   NetworkEdit* network = networkCmdEdit();
   network->disconnectPin(pin);
@@ -347,15 +331,13 @@ dbSta::disconnectPin(Pin* pin)
 
 ////////////////////////////////////////////////////////////////
 
-void
-dbStaReport::setLogger(Logger* logger)
+void dbStaReport::setLogger(Logger* logger)
 {
   logger_ = logger;
 }
 
 // Line return \n is implicit.
-void
-dbStaReport::printLine(const char* buffer, size_t length)
+void dbStaReport::printLine(const char* buffer, size_t length)
 {
   if (redirect_to_string_) {
     redirectStringPrint(buffer, length);
@@ -367,8 +349,7 @@ dbStaReport::printLine(const char* buffer, size_t length)
 }
 
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
-size_t
-dbStaReport::printString(const char* buffer, size_t length)
+size_t dbStaReport::printString(const char* buffer, size_t length)
 {
   if (redirect_to_string_) {
     redirectStringPrint(buffer, length);
@@ -387,8 +368,7 @@ dbStaReport::printString(const char* buffer, size_t length)
       // no newlines found, so add entire buf to tcl_buffer_
       tcl_buffer_ = buf;
       buf.clear();
-    }
-    else {
+    } else {
       // save partial line to buffer
       tcl_buffer_ = buf.substr(last_newline + 1);
       buf = buf.substr(0, last_newline + 1);
@@ -416,8 +396,7 @@ dbStaReport::printString(const char* buffer, size_t length)
   return length;
 }
 
-void
-dbStaReport::warn(int id, const char* fmt, ...)
+void dbStaReport::warn(int id, const char* fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -428,12 +407,11 @@ dbStaReport::warn(int id, const char* fmt, ...)
   va_end(args);
 }
 
-void
-dbStaReport::fileWarn(int id,
-                      const char* filename,
-                      int line,
-                      const char* fmt,
-                      ...)
+void dbStaReport::fileWarn(int id,
+                           const char* filename,
+                           int line,
+                           const char* fmt,
+                           ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -445,12 +423,11 @@ dbStaReport::fileWarn(int id,
   va_end(args);
 }
 
-void
-dbStaReport::vfileWarn(int id,
-                       const char* filename,
-                       int line,
-                       const char* fmt,
-                       va_list args)
+void dbStaReport::vfileWarn(int id,
+                            const char* filename,
+                            int line,
+                            const char* fmt,
+                            va_list args)
 {
   printToBuffer("%s line %d, ", filename, line);
   printToBufferAppend(fmt, args);
@@ -458,8 +435,7 @@ dbStaReport::vfileWarn(int id,
   logger_->warn(STA, id, "{}", buffer_);
 }
 
-void
-dbStaReport::error(int id, const char* fmt, ...)
+void dbStaReport::error(int id, const char* fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -470,12 +446,11 @@ dbStaReport::error(int id, const char* fmt, ...)
   va_end(args);
 }
 
-void
-dbStaReport::fileError(int id,
-                       const char* filename,
-                       int line,
-                       const char* fmt,
-                       ...)
+void dbStaReport::fileError(int id,
+                            const char* filename,
+                            int line,
+                            const char* fmt,
+                            ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -487,12 +462,11 @@ dbStaReport::fileError(int id,
   va_end(args);
 }
 
-void
-dbStaReport::vfileError(int id,
-                        const char* filename,
-                        int line,
-                        const char* fmt,
-                        va_list args)
+void dbStaReport::vfileError(int id,
+                             const char* filename,
+                             int line,
+                             const char* fmt,
+                             va_list args)
 {
   printToBuffer("%s line %d, ", filename, line);
   printToBufferAppend(fmt, args);
@@ -500,8 +474,7 @@ dbStaReport::vfileError(int id,
   logger_->error(STA, id, "{}", buffer_);
 }
 
-void
-dbStaReport::critical(int id, const char* fmt, ...)
+void dbStaReport::critical(int id, const char* fmt, ...)
 {
   va_list args;
   va_start(args, fmt);
@@ -518,35 +491,31 @@ dbStaReport::critical(int id, const char* fmt, ...)
 //
 ////////////////////////////////////////////////////////////////
 
-dbStaCbk::dbStaCbk(dbSta* sta, Logger* logger) :
-  sta_(sta),
-  network_(nullptr),  // not built yet
-  logger_(logger)
+dbStaCbk::dbStaCbk(dbSta* sta, Logger* logger)
+    : sta_(sta),
+      network_(nullptr),  // not built yet
+      logger_(logger)
 {
 }
 
-void
-dbStaCbk::setNetwork(dbNetwork* network)
+void dbStaCbk::setNetwork(dbNetwork* network)
 {
   network_ = network;
 }
 
-void
-dbStaCbk::inDbInstCreate(dbInst* inst)
+void dbStaCbk::inDbInstCreate(dbInst* inst)
 {
   sta_->makeInstanceAfter(network_->dbToSta(inst));
 }
 
-void
-dbStaCbk::inDbInstDestroy(dbInst* inst)
+void dbStaCbk::inDbInstDestroy(dbInst* inst)
 {
   // This is called after the iterms have been destroyed
   // so it side-steps Sta::deleteInstanceAfter.
   sta_->deleteLeafInstanceBefore(network_->dbToSta(inst));
 }
 
-void
-dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
+void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
 {
   LibertyCell* to_lib_cell = network_->libertyCell(network_->dbToSta(master));
   LibertyCell* from_lib_cell = network_->libertyCell(inst);
@@ -561,73 +530,63 @@ dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
                    master->getConstName());
 }
 
-void
-dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
+void dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
 {
   sta_->replaceEquivCellAfter(network_->dbToSta(inst));
 }
 
-void
-dbStaCbk::inDbNetDestroy(dbNet* db_net)
+void dbStaCbk::inDbNetDestroy(dbNet* db_net)
 {
   Net* net = network_->dbToSta(db_net);
   sta_->deleteNetBefore(net);
   network_->deleteNetBefore(net);
 }
 
-void
-dbStaCbk::inDbITermPostConnect(dbITerm* iterm)
+void dbStaCbk::inDbITermPostConnect(dbITerm* iterm)
 {
   Pin* pin = network_->dbToSta(iterm);
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
 }
 
-void
-dbStaCbk::inDbITermPreDisconnect(dbITerm* iterm)
+void dbStaCbk::inDbITermPreDisconnect(dbITerm* iterm)
 {
   Pin* pin = network_->dbToSta(iterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
-void
-dbStaCbk::inDbITermDestroy(dbITerm* iterm)
+void dbStaCbk::inDbITermDestroy(dbITerm* iterm)
 {
   sta_->deletePinBefore(network_->dbToSta(iterm));
 }
 
-void
-dbStaCbk::inDbBTermPostConnect(dbBTerm* bterm)
+void dbStaCbk::inDbBTermPostConnect(dbBTerm* bterm)
 {
   Pin* pin = network_->dbToSta(bterm);
   network_->connectPinAfter(pin);
   sta_->connectPinAfter(pin);
 }
 
-void
-dbStaCbk::inDbBTermPreDisconnect(dbBTerm* bterm)
+void dbStaCbk::inDbBTermPreDisconnect(dbBTerm* bterm)
 {
   Pin* pin = network_->dbToSta(bterm);
   sta_->disconnectPinBefore(pin);
   network_->disconnectPinBefore(pin);
 }
 
-void
-dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
+void dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
 {
   sta_->getDbNetwork()->makeTopPort(bterm);
 }
 
-void
-dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)
+void dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)
 {
   sta_->disconnectPin(network_->dbToSta(bterm));
   // sta::NetworkEdit does not support port removal.
 }
 
-void
-dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
+void dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
 {
   sta_->getDbNetwork()->setTopPortDirection(bterm, io_type);
 }
@@ -635,8 +594,7 @@ dbStaCbk::inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type)
 ////////////////////////////////////////////////////////////////
 
 // Highlight path in the gui.
-void
-dbSta::highlight(PathRef* path)
+void dbSta::highlight(PathRef* path)
 {
   path_renderer_->highlight(path);
 }
