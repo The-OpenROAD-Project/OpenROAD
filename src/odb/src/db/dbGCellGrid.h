@@ -95,7 +95,7 @@ class _dbGCellGrid : public _dbObject
                    const _dbGCellGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
-  dbMatrix<dbGCellGrid::GCellData>& get(dbId<_dbTechLayer> lid);
+  dbMatrix<dbGCellGrid::GCellData>& get(const dbId<_dbTechLayer>& lid);
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);

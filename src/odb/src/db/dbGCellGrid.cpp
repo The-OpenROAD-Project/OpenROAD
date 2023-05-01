@@ -222,7 +222,8 @@ dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj)
   return stream;
 }
 
-dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(dbId<_dbTechLayer> lid)
+dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(
+    const dbId<_dbTechLayer>& lid)
 {
   if (congestion_map_.empty()) {
     dbGCellGrid* pub_grid = (dbGCellGrid*) this;
