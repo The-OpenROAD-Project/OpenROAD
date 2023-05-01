@@ -45,11 +45,7 @@ PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
                                       "Power Density",
                                       "Power",
                                       "PowerDensity"),
-      sta_(sta),
-      include_internal_(true),
-      include_leakage_(true),
-      include_switching_(true),
-      corner_(nullptr)
+      sta_(sta)
 {
   setIssueRedraw(false);  // disable during initial setup
   setLogScale(true);
@@ -61,7 +57,7 @@ PowerDensityDataSource::PowerDensityDataSource(sta::dbSta* sta,
       [this]() {
         std::vector<std::string> corners;
         for (auto* corner : *sta_->corners()) {
-          corners.push_back(corner->name());
+          corners.emplace_back(corner->name());
         }
         return corners;
       },
