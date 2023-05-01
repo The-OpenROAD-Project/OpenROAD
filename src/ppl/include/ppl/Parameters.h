@@ -51,7 +51,10 @@ class Parameters
   void setSlotsFactor(float factor) { slots_factor_ = factor; }
   float getSlotsFactor() const { return slots_factor_; }
 
-  void setSlotsPerSection(float slots_per_section) { slots_per_section_ = slots_per_section; }
+  void setSlotsPerSection(float slots_per_section)
+  {
+    slots_per_section_ = slots_per_section;
+  }
   float getSlotsPerSection() const { return slots_per_section_; }
 
   void setHorizontalLengthExtend(int length)

@@ -250,9 +250,9 @@ void HungarianMatching::createMatrixForGroups()
 
     if (hungarian_matrix_.empty()) {
       logger_->error(utl::PPL,
-                    89,
-                    "Could not create matrix for groups. Not available slots "
-                    "inside section.");
+                     89,
+                     "Could not create matrix for groups. Not available slots "
+                     "inside section.");
     }
   }
 }
