@@ -40,6 +40,7 @@
 #include <map>
 
 #include "db.h"
+#include "dbMatrix.h"
 #include "dbVector.h"
 // User Code End Includes
 
@@ -78,8 +79,7 @@ class _dbGCellGrid : public _dbObject
   dbVector<int> y_step_;
   dbVector<int> x_grid_;
   dbVector<int> y_grid_;
-  std::map<dbId<_dbTechLayer>,
-           std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
+  std::map<dbId<_dbTechLayer>, dbMatrix<dbGCellGrid::GCellData>>
       congestion_map_;
 
   // User Code Begin Fields
@@ -95,7 +95,7 @@ class _dbGCellGrid : public _dbObject
                    const _dbGCellGrid& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
-  bool gcellExists(dbId<_dbTechLayer> lid, uint x_idx, uint y_idx) const;
+  dbMatrix<dbGCellGrid::GCellData>& get(dbId<_dbTechLayer> lid);
   // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);

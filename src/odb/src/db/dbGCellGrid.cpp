@@ -145,6 +145,8 @@ _dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
 {
+  _dbDatabase* db = obj.getDatabase();
+
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream >> *flags__bit_field;
   stream >> obj.x_origin_;
@@ -155,8 +157,20 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   stream >> obj.y_step_;
   stream >> obj.x_grid_;
   stream >> obj.y_grid_;
-  stream >> obj.congestion_map_;
   // User Code Begin >>
+  if (db->isSchema(db_schema_gcell_grid_matrix)) {
+    stream >> obj.congestion_map_;
+  } else {
+    std::map<dbId<_dbTechLayer>,
+             std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>>
+        old_format;
+    stream >> old_format;
+    for (const auto& [lid, cells] : old_format) {
+      for (const auto& [coord, data] : cells) {
+        obj.get(lid)(coord.first, coord.second) = data;        
+      }
+    }
+  }
   // User Code End >>
   return stream;
 }
@@ -172,8 +186,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
   stream << obj.y_step_;
   stream << obj.x_grid_;
   stream << obj.y_grid_;
-  stream << obj.congestion_map_;
   // User Code Begin <<
+  stream << obj.congestion_map_;
   // User Code End <<
   return stream;
 }
@@ -208,13 +222,34 @@ dbOStream& operator<<(dbOStream& stream, const dbGCellGrid::GCellData& obj)
   return stream;
 }
 
-bool _dbGCellGrid::gcellExists(dbId<_dbTechLayer> lid,
-                               uint x_idx,
-                               uint y_idx) const
+dbMatrix<dbGCellGrid::GCellData>& _dbGCellGrid::get(dbId<_dbTechLayer> lid)
 {
-  return congestion_map_.find(lid) != congestion_map_.end()
-         && congestion_map_.at(lid).find({x_idx, y_idx})
-                != congestion_map_.at(lid).end();
+  if (congestion_map_.empty()) {
+    dbGCellGrid* pub_grid = (dbGCellGrid*) this;
+    std::vector<int> grid;
+    pub_grid->getGridX(grid);
+    const uint num_x = grid.size();
+    pub_grid->getGridY(grid);
+    const uint num_y = grid.size();
+
+    dbMatrix<dbGCellGrid::GCellData> data(num_x, num_y);
+    auto [iter, ins]
+        = congestion_map_.emplace(std::make_pair(lid, std::move(data)));
+    return iter->second;
+  }
+  auto it = congestion_map_.find(lid);
+  if (it != congestion_map_.end()) {
+    return it->second;
+  }
+
+  it = congestion_map_.begin();
+  const uint num_rows = it->second.numRows();
+  const uint num_cols = it->second.numCols();
+
+  dbMatrix<dbGCellGrid::GCellData> data(num_rows, num_cols);
+  auto [iter, ins]
+      = congestion_map_.emplace(std::make_pair(lid, std::move(data)));
+  return iter->second;
 }
 
 // User Code End PrivateMethods
@@ -410,9 +445,7 @@ uint dbGCellGrid::getHorizontalCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].horizontal_capacity;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).horizontal_capacity;
 }
 
 uint dbGCellGrid::getVerticalCapacity(dbTechLayer* layer,
@@ -421,9 +454,7 @@ uint dbGCellGrid::getVerticalCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].vertical_capacity;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).vertical_capacity;
 }
 
 uint dbGCellGrid::getUpCapacity(dbTechLayer* layer,
@@ -432,9 +463,7 @@ uint dbGCellGrid::getUpCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].up_capacity;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).up_capacity;
 }
 
 uint dbGCellGrid::getHorizontalUsage(dbTechLayer* layer,
@@ -443,9 +472,7 @@ uint dbGCellGrid::getHorizontalUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].horizontal_usage;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).horizontal_usage;
 }
 
 uint dbGCellGrid::getVerticalUsage(dbTechLayer* layer,
@@ -454,18 +481,14 @@ uint dbGCellGrid::getVerticalUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].vertical_usage;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).vertical_usage;
 }
 
 uint dbGCellGrid::getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].up_usage;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).up_usage;
 }
 
 uint dbGCellGrid::getHorizontalBlockage(dbTechLayer* layer,
@@ -474,9 +497,7 @@ uint dbGCellGrid::getHorizontalBlockage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].horizontal_blockage;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).horizontal_blockage;
 }
 
 uint dbGCellGrid::getVerticalBlockage(dbTechLayer* layer,
@@ -485,9 +506,7 @@ uint dbGCellGrid::getVerticalBlockage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].vertical_blockage;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).vertical_blockage;
 }
 
 uint dbGCellGrid::getUpBlockage(dbTechLayer* layer,
@@ -496,9 +515,7 @@ uint dbGCellGrid::getUpBlockage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx))
-    return _grid->congestion_map_[lid][{x_idx, y_idx}].up_blockage;
-  return 0;
+  return _grid->get(lid)(x_idx, y_idx).up_blockage;
 }
 
 void dbGCellGrid::setHorizontalCapacity(dbTechLayer* layer,
@@ -508,9 +525,7 @@ void dbGCellGrid::setHorizontalCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (capacity == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].horizontal_capacity = capacity;
+  _grid->get(lid)(x_idx, y_idx).horizontal_capacity = capacity;
 }
 
 void dbGCellGrid::setVerticalCapacity(dbTechLayer* layer,
@@ -520,9 +535,7 @@ void dbGCellGrid::setVerticalCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (capacity == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].vertical_capacity = capacity;
+  _grid->get(lid)(x_idx, y_idx).vertical_capacity = capacity;
 }
 
 void dbGCellGrid::setUpCapacity(dbTechLayer* layer,
@@ -533,9 +546,7 @@ void dbGCellGrid::setUpCapacity(dbTechLayer* layer,
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
 
-  if (capacity == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].up_capacity = capacity;
+  _grid->get(lid)(x_idx, y_idx).up_capacity = capacity;
 }
 
 void dbGCellGrid::setHorizontalUsage(dbTechLayer* layer,
@@ -545,9 +556,7 @@ void dbGCellGrid::setHorizontalUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (use == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].horizontal_usage = use;
+  _grid->get(lid)(x_idx, y_idx).horizontal_usage = use;
 }
 
 void dbGCellGrid::setVerticalUsage(dbTechLayer* layer,
@@ -557,9 +566,7 @@ void dbGCellGrid::setVerticalUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (use == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].vertical_usage = use;
+  _grid->get(lid)(x_idx, y_idx).vertical_usage = use;
 }
 
 void dbGCellGrid::setUpUsage(dbTechLayer* layer,
@@ -569,9 +576,7 @@ void dbGCellGrid::setUpUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (use == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].up_usage = use;
+  _grid->get(lid)(x_idx, y_idx).up_usage = use;
 }
 
 void dbGCellGrid::setHorizontalBlockage(dbTechLayer* layer,
@@ -581,9 +586,7 @@ void dbGCellGrid::setHorizontalBlockage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (blockage == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].horizontal_blockage = blockage;
+  _grid->get(lid)(x_idx, y_idx).horizontal_blockage = blockage;
 }
 
 void dbGCellGrid::setVerticalBlockage(dbTechLayer* layer,
@@ -593,9 +596,7 @@ void dbGCellGrid::setVerticalBlockage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (blockage == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].vertical_blockage = blockage;
+  _grid->get(lid)(x_idx, y_idx).vertical_blockage = blockage;
 }
 
 void dbGCellGrid::setUpBlockage(dbTechLayer* layer,
@@ -606,9 +607,7 @@ void dbGCellGrid::setUpBlockage(dbTechLayer* layer,
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
 
-  if (blockage == 0 && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  _grid->congestion_map_[lid][{x_idx, y_idx}].up_blockage = blockage;
+  _grid->get(lid)(x_idx, y_idx).up_blockage = blockage;
 }
 
 void dbGCellGrid::setCapacity(dbTechLayer* layer,
@@ -620,10 +619,7 @@ void dbGCellGrid::setCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (horizontal == 0 && vertical == 0 && up == 0
-      && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  dbGCellGrid::GCellData& gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
+  dbGCellGrid::GCellData& gcell = _grid->get(lid)(x_idx, y_idx);
   gcell.horizontal_capacity = horizontal;
   gcell.vertical_capacity = vertical;
   gcell.up_capacity = up;
@@ -638,10 +634,7 @@ void dbGCellGrid::setUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (horizontal == 0 && vertical == 0 && up == 0
-      && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  dbGCellGrid::GCellData& gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
+  dbGCellGrid::GCellData& gcell = _grid->get(lid)(x_idx, y_idx);
   gcell.horizontal_usage = horizontal;
   gcell.vertical_usage = vertical;
   gcell.up_usage = up;
@@ -656,10 +649,7 @@ void dbGCellGrid::setBlockage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (horizontal == 0 && vertical == 0 && up == 0
-      && !_grid->gcellExists(lid, x_idx, y_idx))
-    return;
-  dbGCellGrid::GCellData& gcell = _grid->congestion_map_[lid][{x_idx, y_idx}];
+  dbGCellGrid::GCellData& gcell = _grid->get(lid)(x_idx, y_idx);
   gcell.horizontal_blockage = horizontal;
   gcell.vertical_blockage = vertical;
   gcell.up_blockage = up;
@@ -674,16 +664,10 @@ void dbGCellGrid::getCapacity(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx)) {
-    auto data = _grid->congestion_map_[lid][{x_idx, y_idx}];
-    horizontal = data.horizontal_capacity;
-    vertical = data.vertical_capacity;
-    up = data.up_capacity;
-  } else {
-    horizontal = 0;
-    vertical = 0;
-    up = 0;
-  }
+  auto data = _grid->get(lid)(x_idx, y_idx);
+  horizontal = data.horizontal_capacity;
+  vertical = data.vertical_capacity;
+  up = data.up_capacity;
 }
 
 void dbGCellGrid::getUsage(dbTechLayer* layer,
@@ -695,17 +679,11 @@ void dbGCellGrid::getUsage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx)) {
-    auto data = _grid->congestion_map_[lid][{x_idx, y_idx}];
+  auto data = _grid->get(lid)(x_idx, y_idx);
 
-    horizontal = data.horizontal_usage;
-    vertical = data.vertical_usage;
-    up = data.up_usage;
-  } else {
-    horizontal = 0;
-    vertical = 0;
-    up = 0;
-  }
+  horizontal = data.horizontal_usage;
+  vertical = data.vertical_usage;
+  up = data.up_usage;
 }
 
 void dbGCellGrid::getBlockage(dbTechLayer* layer,
@@ -717,17 +695,11 @@ void dbGCellGrid::getBlockage(dbTechLayer* layer,
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
   uint lid = layer->getId();
-  if (_grid->gcellExists(lid, x_idx, y_idx)) {
-    auto data = _grid->congestion_map_[lid][{x_idx, y_idx}];
+  auto data = _grid->get(lid)(x_idx, y_idx);
 
-    horizontal = data.horizontal_blockage;
-    vertical = data.vertical_blockage;
-    up = data.up_blockage;
-  } else {
-    horizontal = 0;
-    vertical = 0;
-    up = 0;
-  }
+  horizontal = data.horizontal_blockage;
+  vertical = data.vertical_blockage;
+  up = data.up_blockage;
 }
 
 void dbGCellGrid::resetCongestionMap()
@@ -752,29 +724,41 @@ void dbGCellGrid::resetGrid()
   _grid->flags_.y_grid_valid_ = true;
 }
 
-std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>
-dbGCellGrid::getCongestionMap(dbTechLayer* layer)
+dbMatrix<dbGCellGrid::GCellData> dbGCellGrid::getCongestionMap(
+    dbTechLayer* layer)
 {
   _dbGCellGrid* _grid = (_dbGCellGrid*) this;
+  const auto& cmap = _grid->congestion_map_;
   if (layer == nullptr) {
-    std::map<std::pair<uint, uint>, dbGCellGrid::GCellData> congestion;
-    for (auto& [lid, layer_map] : _grid->congestion_map_)
-      for (auto& [key, val] : layer_map) {
-        congestion[key].horizontal_usage += val.horizontal_usage;
-        congestion[key].vertical_usage += val.vertical_usage;
-        congestion[key].up_usage += val.up_usage;
-        congestion[key].horizontal_capacity += val.horizontal_capacity;
-        congestion[key].vertical_capacity += val.vertical_capacity;
-        congestion[key].up_capacity += val.up_capacity;
+    auto iter = cmap.begin();
+    if (iter == cmap.end()) {
+      return {};
+    }
+    const int num_rows = iter->second.numRows();
+    const int num_cols = iter->second.numCols();
+    dbMatrix<dbGCellGrid::GCellData> congestion(num_rows, num_cols);
+    for (auto& [lid, matrix] : cmap) {
+      for (int row = 0; row < num_rows; ++row) {
+        for (int col = 0; col < num_cols; ++col) {
+          congestion(row, col).horizontal_usage
+              += matrix(row, col).horizontal_usage;
+          congestion(row, col).vertical_usage
+              += matrix(row, col).vertical_usage;
+          congestion(row, col).up_usage += matrix(row, col).up_usage;
+          congestion(row, col).horizontal_capacity
+              += matrix(row, col).horizontal_capacity;
+          congestion(row, col).vertical_capacity
+              += matrix(row, col).vertical_capacity;
+          congestion(row, col).up_capacity += matrix(row, col).up_capacity;
+        }
       }
+    }
     return congestion;
-  } else {
-    if (_grid->congestion_map_.find(layer->getId())
-        != _grid->congestion_map_.end())
-      return _grid->congestion_map_[layer->getId()];
-    else
-      return std::map<std::pair<uint, uint>, dbGCellGrid::GCellData>();
   }
+  if (cmap.find(layer->getId()) != cmap.end()) {
+    return cmap.at(layer->getId());
+  }
+  return {};
 }
 // User Code End dbGCellGridPublicMethods
 }  // namespace odb

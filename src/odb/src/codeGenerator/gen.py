@@ -311,7 +311,7 @@ for item in toBeMerged:
             text = read.read()
             out.write(text)
     if item != 'CMakeLists.txt':
-        cf = ['clang-format', '-i', os.path.join(dr, item)]
+        cf = ['/home/mliberty/llvm-project/build/bin/clang-format', '-i', os.path.join(dr, item)]
         retcode = call(cf)
         if retcode != 0:
             print("Failed to format {}".format(os.path.join(dr, item)))
