@@ -167,7 +167,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
     stream >> old_format;
     for (const auto& [lid, cells] : old_format) {
       for (const auto& [coord, data] : cells) {
-        obj.get(lid)(coord.first, coord.second) = data;        
+        obj.get(lid)(coord.first, coord.second) = data;
       }
     }
   }
