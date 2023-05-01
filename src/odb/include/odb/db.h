@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 
+#include "dbMatrix.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -9405,8 +9406,8 @@ class dbGCellGrid : public dbObject
 
   void resetGrid();
 
-  std::map<std::pair<uint, uint>, GCellData> getCongestionMap(dbTechLayer* layer
-                                                              = nullptr);
+  dbMatrix<dbGCellGrid::GCellData> getCongestionMap(dbTechLayer* layer
+                                                    = nullptr);
   // User Code End dbGCellGrid
 };
 
