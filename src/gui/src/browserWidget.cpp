@@ -354,7 +354,7 @@ void BrowserWidget::updateModel()
 
     insts.push_back(inst);
   }
-  addInstanceItems(insts, "Physical only", root);
+  addInstanceItems(insts, "Physical only", root, true);
 
   view_->header()->resizeSections(QHeaderView::ResizeToContents);
   model_modified_ = false;
@@ -381,7 +381,7 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
   for (auto* inst : module->getInsts()) {
     insts.push_back(inst);
   }
-  stats += addInstanceItems(insts, "Leaf instances", parent);
+  stats += addInstanceItems(insts, "Leaf instances", parent, false);
 
   return stats;
 }
@@ -389,7 +389,8 @@ BrowserWidget::ModuleStats BrowserWidget::populateModule(odb::dbModule* module,
 BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
     const std::vector<odb::dbInst*>& insts,
     const std::string& title,
-    QStandardItem* parent)
+    QStandardItem* parent,
+    bool check_instance_limits)
 {
   auto make_leaf_item = [](const std::string& title) -> QStandardItem* {
     QStandardItem* leaf = new QStandardItem(QString::fromStdString(title));
@@ -411,7 +412,9 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
       leaf_parent.item
           = make_leaf_item(inst_descriptor_->getInstanceTypeText(type));
     }
-    leaf_parent.stats += addInstanceItem(inst, leaf_parent.item);
+    const bool create_row = !check_instance_limits
+                            || leaf_parent.stats.insts < max_visible_leafs_;
+    leaf_parent.stats += addInstanceItem(inst, leaf_parent.item, create_row);
   }
 
   ModuleStats total;
@@ -432,13 +435,9 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItems(
 }
 
 BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
-                                                          QStandardItem* parent)
+                                                          QStandardItem* parent,
+                                                          bool create_row)
 {
-  QStandardItem* item = new QStandardItem(inst->getConstName());
-  item->setEditable(false);
-  item->setSelectable(true);
-  item->setData(QVariant::fromValue(inst));
-
   auto* box = inst->getBBox();
 
   ModuleStats stats;
@@ -450,7 +449,14 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
     stats.incrementInstances();
   }
 
-  makeRowItems(item, inst->getMaster()->getConstName(), stats, parent, true);
+  if (create_row) {
+    QStandardItem* item = new QStandardItem(inst->getConstName());
+    item->setEditable(false);
+    item->setSelectable(true);
+    item->setData(QVariant::fromValue(inst));
+
+    makeRowItems(item, inst->getMaster()->getConstName(), stats, parent, true);
+  }
 
   return stats;
 }
