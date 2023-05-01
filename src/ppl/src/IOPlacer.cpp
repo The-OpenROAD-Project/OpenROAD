@@ -131,7 +131,7 @@ void IOPlacer::initNetlistAndCore(const std::set<int>& hor_layer_idx,
 
 void IOPlacer::initParms()
 {
-  slots_per_section_ = 200;
+  slots_per_section_ = parms_->getSlotsPerSection();
   slots_increase_factor_ = 0.01f;
   netlist_ = std::make_unique<Netlist>();
   netlist_io_pins_ = std::make_unique<Netlist>();

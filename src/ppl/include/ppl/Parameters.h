@@ -51,6 +51,9 @@ class Parameters
   void setSlotsFactor(float factor) { slots_factor_ = factor; }
   float getSlotsFactor() const { return slots_factor_; }
 
+  void setSlotsPerSection(float slots_per_section) { slots_per_section_ = slots_per_section; }
+  float getSlotsPerSection() const { return slots_per_section_; }
+
   void setHorizontalLengthExtend(int length)
   {
     horizontal_length_extend_ = length;
@@ -104,6 +107,7 @@ class Parameters
   bool report_hpwl_ = false;
   int num_slots_ = -1;
   float slots_factor_ = -1;
+  int slots_per_section_ = 200;
   float horizontal_thickness_multiplier_ = 1;
   float vertical_thickness_multiplier_ = 1;
   int horizontal_length_extend_ = -1;
