@@ -73,13 +73,13 @@ void GotoLocationDialog::updateLocation(QLineEdit* xEdit, QLineEdit* yEdit)
 void GotoLocationDialog::show_init()
 {
   GotoLocationDialog::updateLocation(xEdit, yEdit);
-  int box_size
-      = sqrt(
-            pow((viewer_->dbu_bounds.lr().x() - viewer_->dbu_bounds.ll().x()),
-                2)
-            + pow((viewer_->dbu_bounds.ul().y() - viewer_->dbu_bounds.ll().y()),
-                  2))
-        / 2;
+  int box_size = sqrt(pow((viewer_->getVisibleBounds().lr().x()
+                           - viewer_->getVisibleBounds().ll().x()),
+                          2)
+                      + pow((viewer_->getVisibleBounds().ul().y()
+                             - viewer_->getVisibleBounds().ll().y()),
+                            2))
+                 / 2;
   sEdit->setText(QString::fromStdString(
       Descriptor::Property::convert_dbu(box_size, false)));
   show();

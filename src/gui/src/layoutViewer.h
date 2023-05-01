@@ -169,8 +169,10 @@ class LayoutViewer : public QWidget
   virtual void mouseMoveEvent(QMouseEvent* event) override;
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
 
-  odb::Rect dbu_bounds;
-  odb::Rect getDBUbounds() { return dbu_bounds; }
+  odb::Rect getVisibleBounds()
+  {
+    return screenToDBU(visibleRegion().boundingRect());
+  }
 
  signals:
   // indicates the current location of the mouse

@@ -2786,7 +2786,7 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
   // apply scaling
   block_painter.scale(pixels_per_dbu_, -pixels_per_dbu_);
 
-  dbu_bounds = screenToDBU(area);
+  const Rect dbu_bounds = screenToDBU(area);
 
   // paint layout
   drawBlock(&block_painter, dbu_bounds, 0);
