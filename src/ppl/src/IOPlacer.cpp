@@ -846,6 +846,8 @@ int IOPlacer::updateConstraintSections(Constraint& constraint)
   int total_slots_count = 0;
   for (Section& sec : constraint.sections) {
     total_slots_count += updateSection(sec, slots);
+    sec.pin_groups.clear();
+    sec.pin_indices.clear();
   }
 
   return total_slots_count;
@@ -1684,13 +1686,11 @@ void IOPlacer::run(bool random_mode)
         findPinAssignment(sections_for_constraint, mirrored_only);
         updateSlots();
 
-        if (!mirrored_only) {
-          for (Section& sec : sections_for_constraint) {
-            constrained_pins_cnt += sec.pin_indices.size();
-          }
-          constrained_pins_cnt += mirrored_pins_cnt;
-          mirrored_pins_cnt = 0;
+        for (Section& sec : sections_for_constraint) {
+          constrained_pins_cnt += sec.pin_indices.size();
         }
+        constrained_pins_cnt += mirrored_pins_cnt;
+        mirrored_pins_cnt = 0;
       }
     }
 
