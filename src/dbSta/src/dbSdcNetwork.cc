@@ -51,10 +51,12 @@ dbSdcNetwork::dbSdcNetwork(Network* network) : SdcNetwork(network)
 Instance* dbSdcNetwork::findInstance(const char* path_name) const
 {
   Instance* inst = network_->findInstance(path_name);
-  if (inst == nullptr)
+  if (inst == nullptr) {
     inst = network_->findInstance(escapeDividers(path_name, this).c_str());
-  if (inst == nullptr)
+  }
+  if (inst == nullptr) {
     inst = network_->findInstance(escapeBrackets(path_name, this).c_str());
+  }
   return inst;
 }
 
@@ -63,22 +65,23 @@ InstanceSeq dbSdcNetwork::findInstancesMatching(
     const PatternMatch* pattern) const
 {
   InstanceSeq insts;
-  if (pattern->hasWildcards())
+  if (pattern->hasWildcards()) {
     findInstancesMatching1(pattern, insts);
-  else {
+  } else {
     Instance* inst = findInstance(pattern->pattern());
-    if (inst)
+    if (inst) {
       insts.push_back(inst);
-    else {
+    } else {
       // Look for a match with path dividers escaped.
       std::string escaped
           = escapeChars(pattern->pattern(), divider_, '\0', escape_);
       inst = findInstance(escaped.c_str());
-      if (inst)
+      if (inst) {
         insts.push_back(inst);
-      else
+      } else {
         // Malo
         findInstancesMatching1(pattern, insts);
+      }
     }
   }
 
@@ -91,8 +94,9 @@ void dbSdcNetwork::findInstancesMatching1(const PatternMatch* pattern,
   InstanceChildIterator* child_iter = childIterator(topInstance());
   while (child_iter->hasNext()) {
     Instance* child = child_iter->next();
-    if (pattern->match(staToSdc(name(child))))
+    if (pattern->match(staToSdc(name(child)))) {
       insts.push_back(child);
+    }
   }
   delete child_iter;
 }
@@ -101,21 +105,22 @@ NetSeq dbSdcNetwork::findNetsMatching(const Instance*,
                                       const PatternMatch* pattern) const
 {
   NetSeq nets;
-  if (pattern->hasWildcards())
+  if (pattern->hasWildcards()) {
     findNetsMatching1(pattern, nets);
-  else {
+  } else {
     Net* net = findNet(pattern->pattern());
-    if (net)
+    if (net) {
       nets.push_back(net);
-    else {
+    } else {
       // Look for a match with path dividers escaped.
       std::string escaped
           = escapeChars(pattern->pattern(), divider_, '\0', escape_);
       net = findNet(escaped.c_str());
-      if (net)
+      if (net) {
         nets.push_back(net);
-      else
+      } else {
         findNetsMatching1(pattern, nets);
+      }
     }
   }
   return nets;
@@ -127,8 +132,9 @@ void dbSdcNetwork::findNetsMatching1(const PatternMatch* pattern,
   NetIterator* net_iter = netIterator(topInstance());
   while (net_iter->hasNext()) {
     Net* net = net_iter->next();
-    if (pattern->match(staToSdc(name(net))))
+    if (pattern->match(staToSdc(name(net)))) {
       nets.push_back(net);
+    }
   }
   delete net_iter;
 }
@@ -157,8 +163,9 @@ PinSeq dbSdcNetwork::findPinsMatching(const Instance* instance,
       PatternMatch inst_pattern(inst_path, pattern);
       InstanceSeq insts = findInstancesMatching(nullptr, &inst_pattern);
       PatternMatch port_pattern(port_name, pattern);
-      for (auto inst : insts)
+      for (auto inst : insts) {
         findMatchingPins(inst, &port_pattern, pins);
+      }
     }
     stringDelete(inst_path);
     stringDelete(port_name);
@@ -186,13 +193,15 @@ void dbSdcNetwork::findMatchingPins(const Instance* instance,
           Port* member_port = member_iter->next();
           Pin* pin = network_->findPin(instance, member_port);
           if (pin) {
-            if (bus_matches)
+            if (bus_matches) {
               pins.push_back(pin);
-            else {
+            } else {
               const char* member_name = network_->name(member_port);
               if (port_pattern->match(member_name)
-                  || port_pattern->match(escapeDividers(member_name, network_)))
+                  || port_pattern->match(
+                      escapeDividers(member_name, network_))) {
                 pins.push_back(pin);
+              }
             }
           }
         }
@@ -200,8 +209,9 @@ void dbSdcNetwork::findMatchingPins(const Instance* instance,
       } else if (port_pattern->match(port_name)
                  || port_pattern->match(escapeDividers(port_name, network_))) {
         Pin* pin = network_->findPin(instance, port);
-        if (pin)
+        if (pin) {
           pins.push_back(pin);
+        }
       }
     }
     delete port_iter;
@@ -215,12 +225,14 @@ Pin* dbSdcNetwork::findPin(const char* path_name) const
   Pin* pin = nullptr;
   if (inst_path) {
     Instance* inst = findInstance(inst_path);
-    if (inst)
+    if (inst) {
       pin = findPin(inst, port_name);
-    else
+    } else {
       pin = nullptr;
-  } else
+    }
+  } else {
     pin = findPin(topInstance(), path_name);
+  }
   stringDelete(inst_path);
   stringDelete(port_name);
   return pin;

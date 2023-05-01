@@ -56,21 +56,17 @@ using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbInst;
 using odb::dbIoType;
-using odb::dbITerm;
-using odb::dbLib;
 using odb::dbMaster;
 using odb::dbModInst;
 using odb::dbModule;
 using odb::dbMTerm;
 using odb::dbNet;
-using odb::dbSet;
 using odb::dbTech;
 using utl::ORD;
 
 using sta::Cell;
 using sta::CellPortBitIterator;
 using sta::CellPortIterator;
-using sta::ConcreteNetwork;
 using sta::ConnectedPinIterator;
 using sta::dbNetwork;
 using sta::deleteVerilogReader;
@@ -79,13 +75,11 @@ using sta::InstanceChildIterator;
 using sta::InstancePinIterator;
 using sta::LeafInstanceIterator;
 using sta::LibertyCell;
-using sta::Library;
 using sta::Net;
 using sta::NetConnectedPinIterator;
 using sta::NetIterator;
 using sta::NetTermIterator;
 using sta::Network;
-using sta::NetworkReader;
 using sta::Pin;
 using sta::PinPathNameLess;
 using sta::PinSeq;
@@ -93,9 +87,8 @@ using sta::Port;
 using sta::PortDirection;
 
 using utl::Logger;
-using utl::STA;
 
-dbVerilogNetwork::dbVerilogNetwork() : ConcreteNetwork(), db_network_(nullptr)
+dbVerilogNetwork::dbVerilogNetwork()
 {
   report_ = nullptr;
   debug_ = nullptr;
@@ -127,8 +120,9 @@ void deleteDbVerilogNetwork(dbVerilogNetwork* verilog_network)
 Cell* dbVerilogNetwork::findAnyCell(const char* name)
 {
   Cell* cell = ConcreteNetwork::findAnyCell(name);
-  if (cell == nullptr)
+  if (cell == nullptr) {
     cell = db_network_->findAnyCell(name);
+  }
   return cell;
 }
 
@@ -157,7 +151,7 @@ class Verilog2db
 
   Network* network_;
   dbDatabase* db_;
-  dbBlock* block_;
+  dbBlock* block_ = nullptr;
   Logger* logger_;
   std::map<Cell*, dbMaster*> master_map_;
   std::map<std::string, int> uniquify_id_;  // key: module name
@@ -180,15 +174,16 @@ void dbLinkDesign(const char* top_cell_name,
 }
 
 Verilog2db::Verilog2db(Network* network, dbDatabase* db, Logger* logger)
-    : network_(network), db_(db), block_(nullptr), logger_(logger)
+    : network_(network), db_(db), logger_(logger)
 {
 }
 
 void Verilog2db::makeBlock()
 {
   dbChip* chip = db_->getChip();
-  if (chip == nullptr)
+  if (chip == nullptr) {
     chip = dbChip::create(db_);
+  }
   block_ = chip->getBlock();
   if (block_) {
     // Delete existing db network objects.
@@ -317,26 +312,32 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
   delete child_iter;
 
   if (module->getChildren().reversible()
-      && module->getChildren().orderReversed())
+      && module->getChildren().orderReversed()) {
     module->getChildren().reverse();
-  if (module->getInsts().reversible() && module->getInsts().orderReversed())
+  }
+  if (module->getInsts().reversible() && module->getInsts().orderReversed()) {
     module->getInsts().reverse();
+  }
 }
 
 dbIoType Verilog2db::staToDb(PortDirection* dir)
 {
-  if (dir == PortDirection::input())
+  if (dir == PortDirection::input()) {
     return dbIoType::INPUT;
-  else if (dir == PortDirection::output())
+  }
+  if (dir == PortDirection::output()) {
     return dbIoType::OUTPUT;
-  else if (dir == PortDirection::bidirect())
+  }
+  if (dir == PortDirection::bidirect()) {
     return dbIoType::INOUT;
-  else if (dir == PortDirection::tristate())
+  }
+  if (dir == PortDirection::tristate()) {
     return dbIoType::OUTPUT;
-  else if (dir == PortDirection::unknown())
+  }
+  if (dir == PortDirection::unknown()) {
     return dbIoType::INPUT;
-  else
-    return dbIoType::INOUT;
+  }
+  return dbIoType::INOUT;
 }
 
 void Verilog2db::makeDbNets(const Instance* inst)
@@ -349,10 +350,12 @@ void Verilog2db::makeDbNets(const Instance* inst)
     if (is_top || !hasTerminals(net)) {
       dbNet* db_net = dbNet::create(block_, net_name);
 
-      if (network_->isPower(net))
+      if (network_->isPower(net)) {
         db_net->setSigType(odb::dbSigType::POWER);
-      if (network_->isGround(net))
+      }
+      if (network_->isGround(net)) {
         db_net->setSigType(odb::dbSigType::GROUND);
+      }
 
       // Sort connected pins for regression stability.
       PinSeq net_pins;
@@ -380,8 +383,9 @@ void Verilog2db::makeDbNets(const Instance* inst)
           if (db_inst) {
             dbMaster* master = db_inst->getMaster();
             dbMTerm* mterm = master->findMTerm(block_, port_name);
-            if (mterm)
+            if (mterm) {
               db_inst->getITerm(mterm)->connect(db_net);
+            }
           }
         }
       }
@@ -408,29 +412,27 @@ bool Verilog2db::hasTerminals(Net* net) const
 dbMaster* Verilog2db::getMaster(Cell* cell)
 {
   auto miter = master_map_.find(cell);
-  if (miter != master_map_.end())
+  if (miter != master_map_.end()) {
     return miter->second;
-  else {
-    const char* cell_name = network_->name(cell);
-    dbMaster* master = db_->findMaster(cell_name);
-    if (master) {
-      master_map_[cell] = master;
-      // Check for corresponding liberty cell.
-      LibertyCell* lib_cell = network_->libertyCell(cell);
-      if (lib_cell == nullptr)
-        logger_->warn(
-            ORD, 1011, "LEF master {} has no liberty cell.", cell_name);
-      return master;
-    } else {
-      LibertyCell* lib_cell = network_->libertyCell(cell);
-      if (lib_cell)
-        logger_->warn(
-            ORD, 1012, "Liberty cell {} has no LEF master.", cell_name);
-      // OpenSTA read_verilog warns about missing cells.
-      master_map_[cell] = nullptr;
-      return nullptr;
-    }
   }
+  const char* cell_name = network_->name(cell);
+  dbMaster* master = db_->findMaster(cell_name);
+  if (master) {
+    master_map_[cell] = master;
+    // Check for corresponding liberty cell.
+    LibertyCell* lib_cell = network_->libertyCell(cell);
+    if (lib_cell == nullptr) {
+      logger_->warn(ORD, 1011, "LEF master {} has no liberty cell.", cell_name);
+    }
+    return master;
+  }
+  LibertyCell* lib_cell = network_->libertyCell(cell);
+  if (lib_cell) {
+    logger_->warn(ORD, 1012, "Liberty cell {} has no LEF master.", cell_name);
+  }
+  // OpenSTA read_verilog warns about missing cells.
+  master_map_[cell] = nullptr;
+  return nullptr;
 }
 
 }  // namespace ord

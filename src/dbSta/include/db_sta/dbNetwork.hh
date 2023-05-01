@@ -86,7 +86,7 @@ class dbNetwork : public ConcreteNetwork
 {
  public:
   dbNetwork();
-  virtual ~dbNetwork();
+  ~dbNetwork() override;
   void init(dbDatabase* db, Logger* logger);
   void setBlock(dbBlock* block);
   void clear() override;
@@ -144,7 +144,8 @@ class dbNetwork : public ConcreteNetwork
   const Net* dbToSta(const dbNet* net) const;
   Cell* dbToSta(dbMaster* master) const;
   Port* dbToSta(dbMTerm* mterm) const;
-  PortDirection* dbToSta(dbSigType sig_type, dbIoType io_type) const;
+  PortDirection* dbToSta(const dbSigType& sig_type,
+                         const dbIoType& io_type) const;
   // dbStaCbk::inDbBTermCreate
   void makeTopPort(dbBTerm* bterm);
   void setTopPortDirection(dbBTerm* bterm, const dbIoType& io_type);
@@ -262,11 +263,11 @@ class dbNetwork : public ConcreteNetwork
                           NetSet& visited_nets) const override;
   bool portMsbFirst(const char* port_name);
 
-  dbDatabase* db_;
-  Logger* logger_;
-  dbBlock* block_;
+  dbDatabase* db_ = nullptr;
+  Logger* logger_ = nullptr;
+  dbBlock* block_ = nullptr;
   Instance* top_instance_;
-  Cell* top_cell_;
+  Cell* top_cell_ = nullptr;
 
   std::set<dbNetworkObserver*> observers_;
 };

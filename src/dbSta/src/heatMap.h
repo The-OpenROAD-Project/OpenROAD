@@ -44,7 +44,6 @@ class PowerDensityDataSource : public gui::RealValueHeatMapDataSource,
 {
  public:
   PowerDensityDataSource(dbSta* sta, utl::Logger* logger);
-  ~PowerDensityDataSource() {}
 
  protected:
   bool populateMap() override;
@@ -58,11 +57,11 @@ class PowerDensityDataSource : public gui::RealValueHeatMapDataSource,
  private:
   sta::dbSta* sta_;
 
-  bool include_internal_;
-  bool include_leakage_;
-  bool include_switching_;
+  bool include_internal_ = true;
+  bool include_leakage_ = true;
+  bool include_switching_ = true;
 
-  sta::Corner* corner_;
+  sta::Corner* corner_ = nullptr;
 
   void ensureCorner();
   void setCorner(const std::string& name);

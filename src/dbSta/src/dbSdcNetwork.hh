@@ -42,7 +42,7 @@ namespace sta {
 class dbSdcNetwork : public SdcNetwork
 {
  public:
-  dbSdcNetwork(Network* network);
+  explicit dbSdcNetwork(Network* network);
   Instance* findInstance(const char* path_name) const override;
   InstanceSeq findInstancesMatching(const Instance* contex,
                                     const PatternMatch* pattern) const override;

@@ -68,8 +68,6 @@
 
 namespace sta {
 
-using std::min;
-
 using utl::Logger;
 using utl::STA;
 
@@ -79,38 +77,38 @@ class dbStaReport : public sta::ReportTcl
   explicit dbStaReport(bool gui_is_on) : gui_is_on_(gui_is_on) {}
 
   void setLogger(Logger* logger);
-  virtual void warn(int id, const char* fmt, ...)
+  void warn(int id, const char* fmt, ...) override
       __attribute__((format(printf, 3, 4)));
-  virtual void fileWarn(int id,
-                        const char* filename,
-                        int line,
-                        const char* fmt,
-                        ...) __attribute__((format(printf, 5, 6)));
-  virtual void vfileWarn(int id,
-                         const char* filename,
-                         int line,
-                         const char* fmt,
-                         va_list args);
+  void fileWarn(int id,
+                const char* filename,
+                int line,
+                const char* fmt,
+                ...) override __attribute__((format(printf, 5, 6)));
+  void vfileWarn(int id,
+                 const char* filename,
+                 int line,
+                 const char* fmt,
+                 va_list args) override;
 
-  virtual void error(int id, const char* fmt, ...)
+  void error(int id, const char* fmt, ...) override
       __attribute__((format(printf, 3, 4)));
-  virtual void fileError(int id,
-                         const char* filename,
-                         int line,
-                         const char* fmt,
-                         ...) __attribute__((format(printf, 5, 6)));
-  virtual void vfileError(int id,
-                          const char* filename,
-                          int line,
-                          const char* fmt,
-                          va_list args);
+  void fileError(int id,
+                 const char* filename,
+                 int line,
+                 const char* fmt,
+                 ...) override __attribute__((format(printf, 5, 6)));
+  void vfileError(int id,
+                  const char* filename,
+                  int line,
+                  const char* fmt,
+                  va_list args) override;
 
-  virtual void critical(int id, const char* fmt, ...)
+  void critical(int id, const char* fmt, ...) override
       __attribute__((format(printf, 3, 4)));
-  virtual size_t printString(const char* buffer, size_t length);
+  size_t printString(const char* buffer, size_t length) override;
 
  protected:
-  virtual void printLine(const char* line, size_t length);
+  void printLine(const char* line, size_t length) override;
 
   Logger* logger_;
 
@@ -125,38 +123,25 @@ class dbStaCbk : public dbBlockCallBackObj
  public:
   dbStaCbk(dbSta* sta, Logger* logger);
   void setNetwork(dbNetwork* network);
-  virtual void inDbInstCreate(dbInst* inst) override;
-  virtual void inDbInstDestroy(dbInst* inst) override;
-  virtual void inDbInstSwapMasterBefore(dbInst* inst,
-                                        dbMaster* master) override;
-  virtual void inDbInstSwapMasterAfter(dbInst* inst) override;
-  virtual void inDbNetDestroy(dbNet* net) override;
-  virtual void inDbITermPostConnect(dbITerm* iterm) override;
-  virtual void inDbITermPreDisconnect(dbITerm* iterm) override;
-  virtual void inDbITermDestroy(dbITerm* iterm) override;
-  virtual void inDbBTermPostConnect(dbBTerm* bterm) override;
-  virtual void inDbBTermPreDisconnect(dbBTerm* bterm) override;
-  virtual void inDbBTermCreate(dbBTerm*) override;
-  virtual void inDbBTermDestroy(dbBTerm* bterm) override;
-  virtual void inDbBTermSetIoType(dbBTerm* bterm,
-                                  const dbIoType& io_type) override;
+  void inDbInstCreate(dbInst* inst) override;
+  void inDbInstDestroy(dbInst* inst) override;
+  void inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master) override;
+  void inDbInstSwapMasterAfter(dbInst* inst) override;
+  void inDbNetDestroy(dbNet* net) override;
+  void inDbITermPostConnect(dbITerm* iterm) override;
+  void inDbITermPreDisconnect(dbITerm* iterm) override;
+  void inDbITermDestroy(dbITerm* iterm) override;
+  void inDbBTermPostConnect(dbBTerm* bterm) override;
+  void inDbBTermPreDisconnect(dbBTerm* bterm) override;
+  void inDbBTermCreate(dbBTerm*) override;
+  void inDbBTermDestroy(dbBTerm* bterm) override;
+  void inDbBTermSetIoType(dbBTerm* bterm, const dbIoType& io_type) override;
 
  private:
   dbSta* sta_;
-  dbNetwork* network_;
+  dbNetwork* network_ = nullptr;
   Logger* logger_;
 };
-
-dbSta::dbSta()
-    : Sta(),
-      db_(nullptr),
-      logger_(nullptr),
-      db_network_(nullptr),
-      db_report_(nullptr),
-      db_cbk_(nullptr),
-      path_renderer_(nullptr)
-{
-}
 
 dbSta::~dbSta() = default;
 
@@ -255,8 +240,9 @@ std::set<dbNet*> dbSta::findClkNets()
     if (clk_pins) {
       for (const Pin* pin : *clk_pins) {
         Net* net = network_->net(pin);
-        if (net)
+        if (net) {
           clk_nets.insert(db_network_->staToDb(net));
+        }
       }
     }
   }
@@ -271,8 +257,9 @@ std::set<dbNet*> dbSta::findClkNets(const Clock* clk)
   if (clk_pins) {
     for (const Pin* pin : *clk_pins) {
       Net* net = network_->net(pin);
-      if (net)
+      if (net) {
         clk_nets.insert(db_network_->staToDb(net));
+      }
     }
   }
   return clk_nets;
@@ -337,15 +324,15 @@ void dbStaReport::setLogger(Logger* logger)
 }
 
 // Line return \n is implicit.
-void dbStaReport::printLine(const char* buffer, size_t length)
+void dbStaReport::printLine(const char* line, size_t length)
 {
   if (redirect_to_string_) {
-    redirectStringPrint(buffer, length);
+    redirectStringPrint(line, length);
     redirectStringPrint("\n", 1);
     return;
   }
 
-  logger_->report("{}", buffer);
+  logger_->report("{}", line);
 }
 
 // Only used by encapsulated Tcl channels, ie puts and command prompt.
@@ -491,10 +478,7 @@ void dbStaReport::critical(int id, const char* fmt, ...)
 //
 ////////////////////////////////////////////////////////////////
 
-dbStaCbk::dbStaCbk(dbSta* sta, Logger* logger)
-    : sta_(sta),
-      network_(nullptr),  // not built yet
-      logger_(logger)
+dbStaCbk::dbStaCbk(dbSta* sta, Logger* logger) : sta_(sta), logger_(logger)
 {
 }
 
@@ -520,14 +504,15 @@ void dbStaCbk::inDbInstSwapMasterBefore(dbInst* inst, dbMaster* master)
   LibertyCell* to_lib_cell = network_->libertyCell(network_->dbToSta(master));
   LibertyCell* from_lib_cell = network_->libertyCell(inst);
   Instance* sta_inst = network_->dbToSta(inst);
-  if (sta::equivCells(from_lib_cell, to_lib_cell))
+  if (sta::equivCells(from_lib_cell, to_lib_cell)) {
     sta_->replaceEquivCellBefore(sta_inst, to_lib_cell);
-  else
+  } else {
     logger_->error(STA,
                    1000,
                    "instance {} swap master {} is not equivalent",
                    inst->getConstName(),
                    master->getConstName());
+  }
 }
 
 void dbStaCbk::inDbInstSwapMasterAfter(dbInst* inst)
