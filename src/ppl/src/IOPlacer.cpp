@@ -213,7 +213,7 @@ void IOPlacer::randomPlacement()
   }
 
   randomPlacement(pin_indices, valid_slots, false, false);
-  placeFallbackPins();
+  placeFallbackPins(true);
 }
 
 void IOPlacer::randomPlacement(std::vector<int> pin_indices,
@@ -327,7 +327,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
   }
 }
 
-void IOPlacer::placeFallbackPins()
+void IOPlacer::placeFallbackPins(bool random)
 {
   // place groups in fallback mode
   for (const auto& group : fallback_pins_.groups) {
@@ -340,27 +340,30 @@ void IOPlacer::placeFallbackPins()
         break;
       }
     }
-    // check if group is constrained
-    int pin_idx = group.first[0];
-    odb::dbBTerm* bterm = netlist_io_pins_->getIoPin(pin_idx).getBTerm();
-    for (Constraint& constraint : constraints_) {
-      if (constraint.pin_list.find(bterm) != constraint.pin_list.end()) {
-        constrained_group = true;
-        int first_slot = constraint.first_slot;
-        int last_slot = constraint.last_slot;
-        int available_slots = last_slot - first_slot;
-        if (available_slots < group.first.size()) {
-          logger_->error(PPL,
-                         90,
-                         "Group of size {} does not fit in constrained region.",
-                         group.first.size());
+    if (!random) {
+      // check if group is constrained
+      int pin_idx = group.first[0];
+      odb::dbBTerm* bterm = netlist_io_pins_->getIoPin(pin_idx).getBTerm();
+      for (Constraint& constraint : constraints_) {
+        if (constraint.pin_list.find(bterm) != constraint.pin_list.end()) {
+          constrained_group = true;
+          int first_slot = constraint.first_slot;
+          int last_slot = constraint.last_slot;
+          int available_slots = last_slot - first_slot;
+          if (available_slots < group.first.size()) {
+            logger_->error(
+                PPL,
+                90,
+                "Group of size {} does not fit in constrained region.",
+                group.first.size());
+          }
+
+          int place_slot = getFirstSlotToPlaceGroup(
+              first_slot, last_slot, group.first.size(), have_mirrored);
+
+          placeFallbackGroup(group, place_slot);
+          break;
         }
-
-        int place_slot = getFirstSlotToPlaceGroup(
-            first_slot, last_slot, group.first.size(), have_mirrored);
-
-        placeFallbackGroup(group, place_slot);
-        break;
       }
     }
 
@@ -1714,7 +1717,7 @@ void IOPlacer::run(bool random_mode)
     findPinAssignment(sections_, false);
   }
 
-  placeFallbackPins();
+  placeFallbackPins(false);
 
   for (auto& pin : assignment_) {
     updateOrientation(pin);
