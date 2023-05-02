@@ -454,8 +454,9 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
                 ++input_port_count;
             }
         }
-        if (input_port_count > 2)
+        if (input_port_count > 2) {
             return false;
+}
 
         // Check if we have already dealt with this instance more than twice.
         // Skip if the answeris a yes.
