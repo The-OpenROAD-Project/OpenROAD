@@ -34,7 +34,7 @@ _installCommonDev() {
     if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
         wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
-        md5sum -c <(echo "${cmakeChecksum}  cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
+        md5sum -c <(echo "${cmakeChecksum} cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
         chmod +x cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
         ./cmake-${cmakeVersionSmall}-${osName}-x86_64.sh --skip-license --prefix=${cmakePrefix}
     else
@@ -48,7 +48,7 @@ _installCommonDev() {
         cd "${baseDir}"
         tarName="v${swigVersion}.tar.gz"
         wget https://github.com/swig/swig/archive/${tarName}
-        md5sum -c <(echo "${swigChecksum}  ${tarName}") || exit 1
+        md5sum -c <(echo "${swigChecksum} ${tarName}") || exit 1
         tar xfz ${tarName}
         cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
 
@@ -591,7 +591,7 @@ case "${platform}" in
         ;;
     "Darwin" )
         if [[ $(id -u) == 0 ]]; then>&2
-            echo "ERROR: cannot install on macOS if you are root or using sudo  (not recommended for brew)." >&2
+            echo "ERROR: cannot install on macOS if you are root or using sudo (not recommended for brew)." >&2
             exit 1
         fi
         os="Darwin"
