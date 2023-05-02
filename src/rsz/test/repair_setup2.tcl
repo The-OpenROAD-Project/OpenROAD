@@ -12,5 +12,5 @@ estimate_parasitics -placement
 
 report_worst_slack
 repair_design
-repair_timing -setup
+repair_timing -setup -skip_pin_swap
 report_worst_slack

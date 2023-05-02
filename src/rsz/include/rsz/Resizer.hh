@@ -233,7 +233,8 @@ public:
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
-                   int max_passes);
+                   int max_passes,
+                   bool skip_pin_swap);
   // For testing.
   void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).

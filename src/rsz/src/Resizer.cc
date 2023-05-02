@@ -2401,10 +2401,12 @@ Resizer::cloneClkInverter(Instance *inv)
 void
 Resizer::repairSetup(double setup_margin,
                      double repair_tns_end_percent,
-                     int max_passes)
+                     int max_passes,
+                     bool skip_pin_swap)
 {
   resizePreamble();
-  repair_setup_->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
+  repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
+                             max_passes, skip_pin_swap);
 }
 
 void
@@ -2482,6 +2484,8 @@ void
 Resizer::journalSwapPins(Instance *inst, LibertyPort *port1,
                          LibertyPort *port2)
 {
+  debugPrint(logger_, RSZ, "journal", 1, "journal swap pins {} ({}->{})",
+             network_->pathName(inst),port1->name(), port2->name());
   swapped_pins_[inst] = std::make_tuple(port1, port2);
 }
 
@@ -2534,9 +2538,8 @@ Resizer::journalRestore(int &resize_count,
     Instance *inst = element.first;
     LibertyPort *port1 = std::get<0>(element.second);
     LibertyPort *port2 = std::get<1>(element.second);
-    debugPrint(logger_, RSZ, "journal", 1,
-               "journal swap pins {}  {}--->{} ",
-                "inst", port1->name(), port2->name());
+    debugPrint(logger_, RSZ, "journal", 1, "journal unswap pins {} ({}<-{})",
+	       network_->pathName(inst),port1->name(), port2->name());
     swapPins(inst, port2, port1, false);
   }
   swapped_pins_.clear();
