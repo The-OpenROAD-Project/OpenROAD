@@ -213,6 +213,7 @@ void IOPlacer::randomPlacement()
   }
 
   randomPlacement(pin_indices, valid_slots, false, false);
+  placeFallbackPins();
 }
 
 void IOPlacer::randomPlacement(std::vector<int> pin_indices,
@@ -221,11 +222,21 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
                                bool is_group)
 {
   if (pin_indices.size() > slot_indices.size()) {
-    logger_->error(PPL,
-                   72,
-                   "Number of pins ({}) exceed number of valid positions ({}).",
-                   pin_indices.size(),
-                   slot_indices.size());
+    if (is_group) {
+      logger_->warn(PPL,
+                    96,
+                    "Pin group of size {} does not fit constraint region. "
+                    "Adding to fallback mode.",
+                    pin_indices.size());
+      addGroupToFallback(pin_indices, false);
+    } else {
+      logger_->error(
+          PPL,
+          72,
+          "Number of pins ({}) exceed number of valid positions ({}).",
+          pin_indices.size(),
+          slot_indices.size());
+    }
   }
 
   const auto seed = parms_->getRandSeed();
