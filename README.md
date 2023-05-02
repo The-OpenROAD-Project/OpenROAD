@@ -61,30 +61,30 @@ Figure below shows the main stages of the OpenROAD-flow-scripts:
 Here are the main steps for a physical design implementation
 using OpenROAD;
 
-- Floorplanning
+- `Floorplanning`
   - Floorplan initialization - define the chip area, utilization 
   - IO pin placement (for designs without pads)
   - Tap cell and well tie insertion 
   - PDN- power distribution network creation
-- Global Placement - Minimize wirelengths
+- `Global Placement` - Minimize wirelengths
   - Macro placement (RAMs, embedded macros)
   - Standard cell placement
   - Automatic placement optimization and repair for max slew, 
     max capacitance, and max fanout violations and long wires
-- Detailed Placement
+- `Detailed Placement`
   - Legalize placement - align to grid, adhere to design rules
   - Incremental timing analysis for early estimates
-- Clock tree synthesis - Generate a balanced tree to meet timing
+- `Clock Tree Synthesis` - Generate a balanced tree to meet timing
   and reduce skews
   - Insert buffers and resize for high fanout nets
-- Optimize setup/hold timing
-- Global routing
+- `Optimize setup/hold timing`
+- `Global routing`
   - Antenna repair
   - Create routing guides
-- Detailed routing
+- `Detailed routing`
   - Legalize routes, DRC-correct routing to meet timing, power
     constraints
-- Chip Finishing
+- `Chip Finishing`
   - Parasitic extraction using OpenRCX
   - Final timing verification
   - Final physical verification 
@@ -166,7 +166,7 @@ transceivers, OpenPower-based Microwatt etc.
 ## Build OpenROAD
 
 To build OpenROAD tools locally in your machine, follow steps
-from [here](./docs/user/Build.md)
+from [here](./docs/user/Build.md).
 
 ## Regression Tests
 
