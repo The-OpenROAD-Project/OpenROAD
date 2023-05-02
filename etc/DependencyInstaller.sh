@@ -9,6 +9,8 @@ _installCommonDev() {
     cmakeChecksum="b8d86f8c5ee990ae03c486c3631cee05"
     cmakeVersionBig=3.24
     cmakeVersionSmall=${cmakeVersionBig}.2
+    pcreVersion=10.42
+    pcreChecksum="37d2f77cfd411a3ddf1c64e1d72e43f7"
     swigVersion=4.1.0
     swigChecksum="794433378154eb61270a3ac127d9c5f3"
     boostVersionBig=1.80
@@ -47,6 +49,13 @@ _installCommonDev() {
         md5sum -c <(echo "${swigChecksum}  ${tarName}") || exit 1
         tar xfz ${tarName}
         cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
+
+        # Check if pcre2 is installed
+        if [[ -z $(pcre2-config --version | grep ${pcreVersion}) ]]; then
+          tarName="pcre2-${pcreVersion}.tar.gz"
+          wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
+          ./Tools/pcre-build.sh
+        fi
         ./autogen.sh
         ./configure --prefix=${swigPrefix}
         make -j $(nproc)
