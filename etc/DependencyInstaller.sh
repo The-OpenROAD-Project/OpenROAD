@@ -132,6 +132,15 @@ _installCommonDev() {
 
     cd "${lastDir}"
     rm -rf "${baseDir}"
+
+    if [[ ! -z ${PREFIX} ]]; then
+      # Emit an environment setup script
+      cat > ${PREFIX}/env.sh <<EOF
+depRoot="\$(dirname \$(readlink -f "\${BASH_SOURCE[0]}"))"
+PATH=\${depRoot}/bin:\${PATH}
+LD_LIBRARY_PATH=\${depRoot}/lib64:\${depRoot}/lib:\${LD_LIBRARY_PATH}
+EOF
+    fi
 }
 
 _installOrTools() {
