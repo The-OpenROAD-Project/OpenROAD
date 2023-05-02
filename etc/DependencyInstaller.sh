@@ -568,7 +568,7 @@ while [ "$#" -gt 0 ]; do
                 echo "WARNING: previous argument -local will be overwritten with -prefix"
                 export isLocal="false"
             fi
-            export PREFIX="$(echo $1 | sed -e 's/^[^=]*=//g')"
+            export PREFIX="$(realpath $(echo $1 | sed -e 's/^[^=]*=//g'))"
             ;;
         *)
             echo "unknown option: ${1}" >&2
