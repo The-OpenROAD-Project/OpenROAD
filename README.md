@@ -218,30 +218,7 @@ the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
-and its description available [here](./docs/contrib/Logger.md#openroad-tool-list)
-
-| Tool | Purpose |
-|-|-|
-| [OpenROAD](./src/README.md) | OpenROAD (global commands) |
-| [OpenDB](./src/odb/README.md) | Database |
-| [OpenRCX](./src/rcx/README.md) | Parasitics extraction |
-| [Restructure](./src/rmp/README.md) | Synthesis |
-| [Floorplan](./src/ifp/README.md) | Initialize floorplan |
-| [ioPlacer](./src/ppl/README.md) | Pin placement |
-| [ICeWall](./src/pad/README.md) | Chip-level connections |
-| [TritonMacroPlacer](./src/mpl/README.md) | Macro placement |
-| [HierRTLMP](./src/mpl2/README.md) | Hierarchical Macro placement |
-| [Tapcell](./src/tap/README.md) | Tapcell insertion |
-| [PDN](./src/pdn/README.md), [PDNSim](./src/psm/README.md) | PDN analysis |
-| [RePlAce](./src/gpl/README.md) | Global placement |
-| [OpenSTA](src/sta/README.md) | Timing analysis |
-| [Resizer](./src/rsz/README.md) | Gate resizer |
-| [OpenDP](./src/dpl/README.md) | Detailed placement |
-| [TritonCTS 2.0](./src/cts/README.md) | Clock tree synthesis |
-| [FastRoute](./src/grt/README.md), [Antenna Checker](./src/ant/README.md) | Global routing |
-| [TritonRoute](./src/drt/README.md) | Detailed routing |
-| [Metal Fill](./src/fin/README.md) | Metal fill |
-| [GUI](./src/gui/README.md) | Graphical user interface |
+and its description available [here](./docs/contrib/Logger.md#openroad-tool-list).
 
 ## License
 
