@@ -30,7 +30,8 @@ _installCommonDev() {
 
     # CMake
     cmakePrefix=${PREFIX:-"/usr/local"}
-    if [[ -z $(${cmakePrefix}/bin/cmake --version | grep ${cmakeVersionBig}) ]]; then
+    cmakeBin=${cmakePrefix}/bin/cmake
+    if [[ ! -f ${cmakeBin} || -z $(${cmakeBin} --version | grep ${cmakeVersionBig}) ]]; then
         cd "${baseDir}"
         wget https://cmake.org/files/v${cmakeVersionBig}/cmake-${cmakeVersionSmall}-${osName}-x86_64.sh
         md5sum -c <(echo "${cmakeChecksum}  cmake-${cmakeVersionSmall}-${osName}-x86_64.sh") || exit 1
@@ -41,8 +42,9 @@ _installCommonDev() {
     fi
 
     # SWIG
-    swigPrefix=${PREFIX:-"/usr"}
-    if [[ -z $(${swigPrefix}/bin/swig -version | grep ${swigVersion}) ]]; then
+    swigPrefix=${PREFIX:-"/usr/local"}
+    swigBin=${swigPrefix}/bin/swig
+    if [[ ! -f ${swigBin} || -z $(${swigBin} -version | grep ${swigVersion}) ]]; then
         cd "${baseDir}"
         tarName="v${swigVersion}.tar.gz"
         wget https://github.com/swig/swig/archive/${tarName}
