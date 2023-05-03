@@ -221,8 +221,8 @@ class TritonPart
       = 50;  // if the size of a hyperedge is larger than
              // thr_coarsen_hyperedge_size_skip_, then we ignore this
              // hyperedge during coarsening
-  int thr_coarsen_vertices_ = 200;  // the minimum threshold of number of
-                                    // vertices in the coarsest hypergraph
+  int thr_coarsen_vertices_ = 200;   // the minimum threshold of number of
+                                     // vertices in the coarsest hypergraph
   int thr_coarsen_hyperedges_ = 50;  // the minimum threshold of number of
                                      // hyperedges in the coarsest hypergraph
   float coarsening_ratio_
