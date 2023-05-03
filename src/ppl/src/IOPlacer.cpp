@@ -170,7 +170,7 @@ void IOPlacer::randomPlacement()
     for (auto& io_group : netlist_io_pins_->getIOGroups()) {
       const PinSet& pin_list = constraint.pin_list;
       IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.first[0]);
-      if (io_pin.isPlaced()) {
+      if (io_pin.isPlaced() || io_pin.inFallback()) {
         continue;
       }
 
@@ -195,7 +195,7 @@ void IOPlacer::randomPlacement()
 
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.first[0]);
-    if (io_pin.isPlaced()) {
+    if (io_pin.isPlaced() || io_pin.inFallback()) {
       continue;
     }
     std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
@@ -207,7 +207,8 @@ void IOPlacer::randomPlacement()
 
   std::vector<int> pin_indices;
   for (int i = 0; i < netlist_io_pins_->numIOPins(); i++) {
-    if (!netlist_io_pins_->getIoPin(i).isPlaced()) {
+    IOPin& io_pin = netlist_io_pins_->getIoPin(i);
+    if (!io_pin.isPlaced() || !io_pin.inFallback()) {
       pin_indices.push_back(i);
     }
   }
