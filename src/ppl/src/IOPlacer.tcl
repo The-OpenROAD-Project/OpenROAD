@@ -220,6 +220,8 @@ proc set_io_pin_constraint { args } {
     }
     ppl::add_pin_group $pin_list [info exists flags(-order)]
     incr group_idx
+  } elseif [info exists flags(-order)] {
+    utl::error PPL 95 "-order cannot be used without -group."
   }
 
   if [info exists keys(-mirrored_pins)] {
