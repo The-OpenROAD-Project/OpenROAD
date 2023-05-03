@@ -40,13 +40,14 @@ and workforce development initiatives through training content and
 courses across several global universities, the Google-SkyWater
 [shuttles](https://platform.efabless.com/projects/public), design
 contests and IC design workshops. The OpenROAD flow has been
-successfully used to-date, in over 600, silicon-ready tapeouts for
+successfully used to date in over 600 silicon-ready tapeouts for
 technologies up to 12nm.
 
 ## OpenROAD Flow Stages
-OpenROAD includes a native flow - [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts).
-However, it also enables the creation of any custom flow controllers
-based on the underlying tools, database and analysis engines.
+OpenROAD provides [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
+as a native, ready-to-use prototyping and tapeout flow. However,
+it also enables the creation of any custom flow controllers based
+on the underlying tools, database and analysis engines.
 
 OpenROAD-flow-scripts(ORFS) is a fully autonomous, RTL-GDSII flow
 for rapid architecture and design space exploration, early prediction
@@ -218,7 +219,7 @@ the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
-and its description available [here](./docs/contrib/Logger.md#openroad-tool-list).
+and there descriptions are available [here](./docs/contrib/Logger.md#openroad-tool-list).
 
 ## License
 

@@ -42,7 +42,7 @@ with every build in the build directory. In case of filing issues,
 it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 
-### Build by hand
+### Build Manually
 
 ``` shell
 mkdir build
@@ -80,14 +80,16 @@ To install in a different directory use:
 ```
 
 ### LTO Options
-By default, OpenROAD is built with link time optimizations enabled. This adds
-about 1 minute to compile times and improves the runtime by about 11%. If
-you would like to disable LTO pass `-DLINK_TIME_OPTIMIZATION=OFF` when
-generating a build.
+By default, OpenROAD is built with link time optimizations enabled.
+This adds about 1 minute to compile times and improves the runtime
+by about 11%. If you would like to disable LTO pass 
+`-DLINK_TIME_OPTIMIZATION=OFF` when generating a build.
 
 ### GPU acceleration
-The default solver for initial placement is single threaded. If you would like
-to enable GPU and use the CUDA solver, set `-DGPU=true` at cmake time.
+OpenROAD offers experimental GPU acceleration for global placement.
+To enable GPU acceleration and use the CUDA solver, set `-DGPU=true`
+at cmake time.
 
-Also, remember to install CUDA Toolkit and proper driver manually.
-See link [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html).
+GPU acceleration requires installation of the CUDA Toolkit and GPU
+driver for your system. See [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html)
+for a CUDA installation guide.
