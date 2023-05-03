@@ -177,6 +177,7 @@ class ClockNodeGraphicsViewItem : public QGraphicsItem
   void setName(odb::dbBTerm* term);
 
   constexpr static Qt::GlobalColor buffer_color_ = Qt::blue;
+  constexpr static Qt::GlobalColor inverter_color_ = Qt::darkCyan;
   constexpr static Qt::GlobalColor root_color_ = Qt::red;
   constexpr static Qt::GlobalColor clock_gate_color_ = Qt::magenta;
   constexpr static Qt::GlobalColor unknown_color_ = Qt::darkGray;
@@ -233,7 +234,10 @@ class ClockBufferNodeGraphicsViewItem : public ClockNodeGraphicsViewItem
   {
     return inverter_ ? "Inverter" : "Buffer";
   }
-  virtual QColor getColor() const override { return buffer_color_; }
+  virtual QColor getColor() const override
+  {
+    return inverter_ ? inverter_color_ : buffer_color_;
+  }
 
   virtual QPointF getBottomAnchor() const override;
 
