@@ -208,7 +208,7 @@ void IOPlacer::randomPlacement()
   std::vector<int> pin_indices;
   for (int i = 0; i < netlist_io_pins_->numIOPins(); i++) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(i);
-    if (!io_pin.isPlaced() || !io_pin.inFallback()) {
+    if (!io_pin.isPlaced() && !io_pin.inFallback()) {
       pin_indices.push_back(i);
     }
   }
@@ -1455,6 +1455,21 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
         || (!mirrored_only
             && mirrored_pins_.find(io_pin.getBTerm())
                    != mirrored_pins_.end())) {
+      continue;
+    }
+
+    if (io_pin.isPlaced() || io_pin.inFallback()) {
+      // If a pin from the constraint is already placed, that means that the pin
+      // was placed for another constraint.
+      Interval interval = constraint.interval;
+      logger_->warn(PPL,
+                    97,
+                    "Pin {} is assigned to another constraint, and will be "
+                    "ignored from region constraint {}, {}-{}.",
+                    io_pin.getName(),
+                    getEdgeString(interval.getEdge()),
+                    interval.getBegin(),
+                    interval.getEnd());
       continue;
     }
 
