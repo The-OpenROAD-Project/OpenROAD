@@ -53,7 +53,7 @@ _installCommonDev() {
         cd swig-${tarName%%.tar*} || cd swig-${swigVersion}
 
         # Check if pcre2 is installed
-        if [[ -z $(pcre2-config --version | grep ${pcreVersion}) ]]; then
+        if [[ -z $(pcre2-config --version) ]]; then
           tarName="pcre2-${pcreVersion}.tar.gz"
           wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
           ./Tools/pcre-build.sh
