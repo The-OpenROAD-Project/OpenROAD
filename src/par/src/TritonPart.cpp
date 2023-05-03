@@ -925,7 +925,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
       str_ss << ".uy_" << fence_.uy / dbu;
       solution_file_name = solution_filename + str_ss.str();
     }
-    logger_->report("solution file name = {}", solution_file_name);
+    logger_->info(utl::PAR, 10, "solution file name = {}", solution_file_name);
     std::ofstream file_output;
     file_output.open(solution_file_name);
     for (auto inst : block_->getInsts()) {
@@ -1159,8 +1159,10 @@ void TritonPart::MultiLevelPartition(std::vector<int>& solution)
             end_timestamp_global - start_time_stamp_global)
             .count();
   total_global_time *= 1e-9;
-  logger_->report("[INFO] The runtime of multi-level partitioner : {}",
-                  total_global_time);
+  logger_->info(utl::PAR,
+                9,
+                "The runtime of multi-level partitioner : {}",
+                total_global_time);
 }
 
 HGraph TritonPart::PreProcessHypergraph()
