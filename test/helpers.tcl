@@ -161,3 +161,5 @@ suppress_message PAR 3
 suppress_message PAR 4
 suppress_message PAR 5
 suppress_message PAR 6
+suppress_message PAR 9
+suppress_message PAR 10
