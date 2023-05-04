@@ -38,6 +38,8 @@ namespace gui {
 
 SlackWidget::SlackWidget(QWidget* parent)
     : QDockWidget("Slack Histogram", parent),
+      update_button_(new QPushButton("Update", this)),
+      settings_button_(new QPushButton("Settings", this)),
       bar_set_(new QBarSet("Slack [ns]")),
       series_(new QBarSeries(this)),
       chart_(new QChart),
@@ -46,25 +48,47 @@ SlackWidget::SlackWidget(QWidget* parent)
 {
   setObjectName("slack_histogram"); // for settings
 
-  bar_set_->setColor(0x328930);
+  QWidget* container = new QWidget(this);
+  QVBoxLayout* layout = new QVBoxLayout;
+  QFrame* controls_frame = new QFrame(this);
+  QChartView *display = new QChartView(chart_);
+  QHBoxLayout* controls_layout = new QHBoxLayout;
 
-  QChartView *display_ = new QChartView(chart_);
-  setWidget(display_);
+  controls_layout->addWidget(settings_button_);
+  controls_layout->addWidget(update_button_);
+  controls_layout->insertStretch(1);
+
+  controls_frame->setLayout(controls_layout);
+  controls_frame->setFrameShape(QFrame::StyledPanel);
+  controls_frame->setFrameShadow(QFrame::Raised);  
+
+  layout->addWidget(controls_frame);
+  layout->addWidget(display);
+  container->setLayout(layout);
+  setWidget(container);
+
+  connect(update_button_,
+          SIGNAL(clicked()),
+          this,
+          SLOT(updateChart()));
+
 }
 
-void SlackWidget::setData() 
+void SlackWidget::updateChart() 
 {
   chart_->setTitle("End-Point Slack");
+  bar_set_->setColor(0x008000);
   *bar_set_ << 1 << 2 << 3 << 4 << 5 
             << 6 << 7 << 8 << 9;
 
   series_->append(bar_set_);
   chart_->addSeries(series_);
 
-  time_values_ << "-0.4" << "-0.3" << "-0.2" << "-0.1" << "0"
+  QStringList time_values;
+  time_values << "-0.4" << "-0.3" << "-0.2" << "-0.1" << "0"
                << "0.1" << "0.2" << "0.3" << "0.4";
 
-  values_x_->append(time_values_);
+  values_x_->append(time_values);
 
   //Essa escala vai depender da leitura da quantidade do número de pinos
   values_y_->setRange(0,10);

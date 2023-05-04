@@ -35,6 +35,8 @@
 #include <QDockWidget>
 #include <QtCharts>
 #include <QString>
+#include <QPushButton>
+#include <QFrame>
 
 #include "gui/gui.h"
 
@@ -48,23 +50,22 @@ class SlackWidget : public QDockWidget
   SlackWidget(QWidget* parent = nullptr);
   ~SlackWidget() {}
 
-  void setData();
-
  signals:
 
  public slots:
 
  private slots:
+  void updateChart();
 
  private:
+  QPushButton* update_button_;
+  QPushButton* settings_button_;
+
   QBarSet* bar_set_;
   QBarSeries* series_;
-  QChart* chart_;
-  QStringList time_values_;  
+  QChart* chart_; 
   QBarCategoryAxis* values_x_;
   QValueAxis* values_y_;
-  QChartView* display_;
-
 
 };
 
