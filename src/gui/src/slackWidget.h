@@ -34,6 +34,7 @@
 
 #include <QDockWidget>
 #include <QtCharts>
+#include <QString>
 
 #include "gui/gui.h"
 
@@ -47,6 +48,8 @@ class SlackWidget : public QDockWidget
   SlackWidget(QWidget* parent = nullptr);
   ~SlackWidget() {}
 
+  void setData();
+
  signals:
 
  public slots:
@@ -57,15 +60,14 @@ class SlackWidget : public QDockWidget
   QBarSet* bar_set_;
   QBarSeries* series_;
   QChart* chart_;
-
-  QStringList time_values_;
-  
+  QStringList time_values_;  
   QBarCategoryAxis* values_x_;
   QValueAxis* values_y_;
   QChartView* display_;
 
 
 };
+
 
 
 }
