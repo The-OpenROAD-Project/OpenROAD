@@ -5,11 +5,13 @@
 To install dependencies to develop or build and run OpenROAD locally,
 follow [this procedure](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
 
-> WARNING
+> :warning: warning :warning:
 >
-> `etc/DependencyInstaller.sh` is an implementation detail of
-> the setup procedures and can be harmful if invoked incorrectly.
-> Do not invoke it directly.
+> `etc/DependencyInstaller.sh` defaults to installing system 
+> packages and requires sudo access. These packages can affect
+> your environment. We recommend users install dependencies
+> locally using [setup.sh](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/setup.sh)
+> from OpenROAD-flow-scripts.
 
 ## Build
 

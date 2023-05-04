@@ -31,7 +31,7 @@ mixed-signal design flows.
 
 OpenROAD fosters a vibrant ecosystem of users through active
 collaboration and partnership through software development and key
-alliances.  Our growing user community includes hardware designers,
+alliances. Our growing user community includes hardware designers,
 software engineers, industry collaborators, VLSI enthusiasts,
 students and researchers.
 
@@ -49,11 +49,11 @@ as a native, ready-to-use prototyping and tapeout flow. However,
 it also enables the creation of any custom flow controllers based
 on the underlying tools, database and analysis engines.
 
-OpenROAD-flow-scripts(ORFS) is a fully autonomous, RTL-GDSII flow
+OpenROAD-flow-scripts (ORFS) is a fully autonomous, RTL-GDSII flow
 for rapid architecture and design space exploration, early prediction
 of QoR and detailed physical design implementation. However, ORFS
 also enables manual intervention for finer user control of individual
-flow stages through tcl commands and python APIs.
+flow stages through Tcl commands and Python APIs.
 
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
