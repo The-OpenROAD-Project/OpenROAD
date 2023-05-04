@@ -1521,7 +1521,7 @@ void IOPlacer::sortConstraints()
 
 void IOPlacer::checkPinsInMultipleConstraints()
 {
-  std::string pins_in_mult_constraints("");
+  std::string pins_in_mult_constraints;
   for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
     int constraint_cnt = 0;
     for (Constraint& constraint : constraints_) {
@@ -1538,7 +1538,7 @@ void IOPlacer::checkPinsInMultipleConstraints()
     }
   }
 
-  if (pins_in_mult_constraints != "") {
+  if (!pins_in_mult_constraints.empty()) {
     logger_->error(PPL,
                    98,
                    "Pins {} are assigned to multiple constraints.",
