@@ -341,10 +341,12 @@ void IOPlacer::placeFallbackPins(bool random)
         break;
       }
     }
+
+    int pin_idx = group.first[0];
+    IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
     if (!random) {
       // check if group is constrained
-      int pin_idx = group.first[0];
-      odb::dbBTerm* bterm = netlist_io_pins_->getIoPin(pin_idx).getBTerm();
+      odb::dbBTerm* bterm = io_pin.getBTerm();
       for (Constraint& constraint : constraints_) {
         if (constraint.pin_list.find(bterm) != constraint.pin_list.end()) {
           constrained_group = true;
@@ -360,7 +362,7 @@ void IOPlacer::placeFallbackPins(bool random)
           }
 
           int place_slot = getFirstSlotToPlaceGroup(
-              first_slot, last_slot, group.first.size(), have_mirrored);
+              first_slot, last_slot, group.first.size(), have_mirrored, io_pin);
 
           placeFallbackGroup(group, place_slot);
           break;
@@ -372,7 +374,7 @@ void IOPlacer::placeFallbackPins(bool random)
       int first_slot = 0;
       int last_slot = slots_.size() - 1;
       int place_slot = getFirstSlotToPlaceGroup(
-          first_slot, last_slot, group.first.size(), have_mirrored);
+          first_slot, last_slot, group.first.size(), have_mirrored, io_pin);
 
       placeFallbackGroup(group, place_slot);
     }
@@ -427,7 +429,8 @@ int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
 int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
                                        int last_slot,
                                        int group_size,
-                                       bool check_mirrored)
+                                       bool check_mirrored,
+                                       IOPin& first_pin)
 {
   int max_contiguous_slots = std::numeric_limits<int>::min();
   int place_slot = 0;
@@ -467,8 +470,10 @@ int IOPlacer::getFirstSlotToPlaceGroup(int first_slot,
   if (max_contiguous_slots < group_size) {
     logger_->error(PPL,
                    93,
-                   "Pin group of size {} does not fit in the die boundaries.",
-                   group_size);
+                   "Pin group of size {} does not fit in the die boundaries. "
+                   "First pin of the group is {}.",
+                   group_size,
+                   first_pin.getName());
   }
 
   return place_slot;

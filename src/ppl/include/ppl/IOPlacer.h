@@ -177,7 +177,8 @@ class IOPlacer
   int getFirstSlotToPlaceGroup(int first_slot,
                                int last_slot,
                                int group_size,
-                               bool check_mirrored);
+                               bool check_mirrored,
+                               IOPin& first_pin);
   void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
