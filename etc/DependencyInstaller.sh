@@ -56,6 +56,7 @@ _installCommonDev() {
         if [[ -z $(pcre2-config --version) ]]; then
           tarName="pcre2-${pcreVersion}.tar.gz"
           wget https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcreVersion}/${tarName}
+          md5sum -c <(echo "${pcreChecksum} ${tarName}") || exit 1
           ./Tools/pcre-build.sh
         fi
         ./autogen.sh
