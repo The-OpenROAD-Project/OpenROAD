@@ -1504,6 +1504,7 @@ void IOPlacer::initConstraints()
     }
   }
   sortConstraints();
+  checkPinsInMultipleConstraints();
 }
 
 void IOPlacer::sortConstraints()
@@ -1516,6 +1517,33 @@ void IOPlacer::sortConstraints()
                      return (c1.pins_per_slots < c2.pins_per_slots)
                             && overlappingConstraints(c1, c2);
                    });
+}
+
+void IOPlacer::checkPinsInMultipleConstraints()
+{
+  std::string pins_in_mult_constraints;
+  for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+    int constraint_cnt = 0;
+    for (Constraint& constraint : constraints_) {
+      const PinSet& pin_list = constraint.pin_list;
+      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
+          != pin_list.end()) {
+        constraint_cnt++;
+      }
+
+      if (constraint_cnt > 1) {
+        pins_in_mult_constraints.append(" " + io_pin.getName());
+        break;
+      }
+    }
+  }
+
+  if (!pins_in_mult_constraints.empty()) {
+    logger_->error(PPL,
+                   98,
+                   "Pins {} are assigned to multiple constraints.",
+                   pins_in_mult_constraints);
+  }
 }
 
 bool IOPlacer::overlappingConstraints(const Constraint& c1,
