@@ -1458,7 +1458,7 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
       continue;
     }
 
-    if (io_pin.isPlaced() || io_pin.inFallback()) {
+    if ((io_pin.isPlaced() || io_pin.inFallback()) && !io_pin.isInGroup()) {
       // If a pin from the constraint is already placed, that means that the pin
       // was placed for another constraint.
       Interval interval = constraint.interval;
