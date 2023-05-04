@@ -2935,7 +2935,6 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
     return;
   }
 
-  last_paint_time_ = now;
   repaint_requested_ = false;
 
   // build new drawing of layout
@@ -2958,6 +2957,7 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
 
   // save the cached layout
   block_drawing_ = std::unique_ptr<QPixmap>(block_drawing);
+  last_paint_time_ = std::chrono::system_clock::now();
 }
 
 void LayoutViewer::paintEvent(QPaintEvent* event)
