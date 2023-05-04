@@ -167,7 +167,7 @@ class IOPlacer
                        std::vector<int> slot_indices,
                        bool top_layer,
                        bool is_group);
-  void placeFallbackPins(bool random);
+  int placeFallbackPins(bool random);
   void assignMirroredPins(IOPin& io_pin,
                           MirroredPins& mirrored_pins,
                           std::vector<IOPin>& assignment);

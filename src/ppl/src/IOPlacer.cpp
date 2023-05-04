@@ -328,8 +328,9 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
   }
 }
 
-void IOPlacer::placeFallbackPins(bool random)
+int IOPlacer::placeFallbackPins(bool random)
 {
+  int placed_pins_cnt = 0;
   // place groups in fallback mode
   for (const auto& group : fallback_pins_.groups) {
     bool constrained_group = false;
@@ -379,6 +380,16 @@ void IOPlacer::placeFallbackPins(bool random)
       placeFallbackGroup(group, place_slot);
     }
   }
+
+  for (const auto& group : fallback_pins_.groups) {
+    placed_pins_cnt += group.first.size();
+  }
+  placed_pins_cnt += fallback_pins_.pins.size();
+
+  fallback_pins_.groups.clear();
+  fallback_pins_.pins.clear();
+
+  return placed_pins_cnt;
 }
 
 void IOPlacer::assignMirroredPins(IOPin& io_pin,
@@ -1718,6 +1729,8 @@ void IOPlacer::run(bool random_mode)
               edge_str);
         }
 
+        constrained_pins_cnt += placeFallbackPins(false);
+
         findPinAssignment(sections_for_constraint, mirrored_only);
         updateSlots();
 
@@ -1729,16 +1742,10 @@ void IOPlacer::run(bool random_mode)
       }
     }
 
-    for (const auto& group : fallback_pins_.groups) {
-      constrained_pins_cnt += group.first.size();
-    }
-    constrained_pins_cnt += fallback_pins_.pins.size();
-
     setupSections(constrained_pins_cnt);
+    constrained_pins_cnt += placeFallbackPins(false);
     findPinAssignment(sections_, false);
   }
-
-  placeFallbackPins(false);
 
   for (auto& pin : assignment_) {
     updateOrientation(pin);
