@@ -5576,6 +5576,11 @@ class dbMaster : public dbObject
   static dbMaster* create(dbLib* lib, const char* name);
 
   ///
+  /// Destroy a dbMaster.
+  ///
+  static void destroy(dbMaster* master);
+
+  ///
   /// Translate a database-id back to a pointer.
   ///
   static dbMaster* getMaster(dbLib* lib, uint oid);
