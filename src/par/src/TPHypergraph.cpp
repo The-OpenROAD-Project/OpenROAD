@@ -35,6 +35,7 @@
 
 #include "TPHypergraph.h"
 
+#include <iostream>
 #include <string>
 
 #include "Utilities.h"
@@ -238,8 +239,9 @@ std::vector<float> TPHypergraph::GetTotalVertexWeights() const
 std::vector<float> TPHypergraph::GetTotalHyperedgeWeights() const
 {
   std::vector<float> total_weight(hyperedge_dimensions_, 0.0);
-  for (auto& weight : hyperedge_weights_)
+  for (auto& weight : hyperedge_weights_) {
     Accumulate(total_weight, weight);
+  }
   return total_weight;
 }
 

@@ -1,3 +1,6 @@
+OpenROAD 4bc512dc3939753f0ad3bf5be3c0322191e5419d 
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
 [INFO ODB-0222] Reading LEF file: ./Nangate45/Nangate45_tech.lef
 [INFO ODB-0223]     Created 22 technology layers
 [INFO ODB-0224]     Created 27 technology vias
@@ -31,77 +34,128 @@
 [INFO ODB-0128] Design: mp_test1
 [INFO ODB-0252]     Updated 8 pins.
 [INFO ODB-0253]     Updated 10 components.
-Running Partition Design...
-[INFO PAR-0402] Traversed logical hierarchy
-	Number of std cell instances: 0
-	Total area: 160000.0
-	Number of hard macros: 10
-[INFO PAR-0490] Number of hops:  0
-[INFO PAR-0490] Number of hops:  1
-[INFO PAR-0490] Number of hops:  2
-[INFO PAR-0490] Number of hops:  3
-[INFO PAR-0413] Ignore keepin as it is outside floorplan bbox
-[INFO PAR-0403] Number of Clusters created: 17
-Start RTL-MP
-[INFO MPL-0009] RTL-MP param: min_aspect_ratio: 0.5.
-[INFO MPL-0009] RTL-MP param: learning_rate: 0.0.
-[INFO MPL-0009] RTL-MP param: shrink_factor: 0.997.
-[INFO MPL-0009] RTL-MP param: shrink_freq: 0.1.
-[INFO MPL-0009] RTL-MP param: halo_width: 0.0.
-[INFO MPL-0009] RTL-MP param: region_file: macro_blockage.txt.
-[INFO MPL-0009] RTL-MP param: location_file: location.txt.
-[INFO MPL-0009] RTL-MP param: num_thread: 10.
-[INFO MPL-0009] RTL-MP param: num_run: 5.
-[INFO MPL-0009] RTL-MP param: heat_rate: 0.1.
-[INFO MPL-0009] RTL-MP param: num_level: 3.
-[INFO MPL-0009] RTL-MP param: num_worker: 10.
-[INFO MPL-0009] RTL-MP param: alpha: 6.0.
-[INFO MPL-0009] RTL-MP param: beta: 40.0.
-[INFO MPL-0009] RTL-MP param: gamma: 100.0.
-[INFO MPL-0009] RTL-MP param: boundary_weight: 2.0.
-[INFO MPL-0009] RTL-MP param: macro_blockage_weight: 1.0.
-[INFO MPL-0009] RTL-MP param: location_weight: 100.0.
-[INFO MPL-0009] RTL-MP param: notch_weight: 212.0.
-[INFO MPL-0009] RTL-MP param: resize_prob: 0.3.
-[INFO MPL-0009] RTL-MP param: pos_swap_prob: 0.3.
-[INFO MPL-0009] RTL-MP param: neg_swap_prob: 0.3.
-[INFO MPL-0009] RTL-MP param: double_swap_prob: 0.1.
-[INFO MPL-0009] RTL-MP param: init_prob: 0.95.
-[INFO MPL-0009] RTL-MP param: rej_ratio: 0.95.
-[INFO MPL-0009] RTL-MP param: k: 5000000.
-[INFO MPL-0009] RTL-MP param: c: 1000.0.
-[INFO MPL-0009] RTL-MP param: snap_layer: 4.
-[INFO MPL-0009] RTL-MP param: max_num_step: 500.
-[INFO MPL-0009] RTL-MP param: perturb_per_step: 60.
-[INFO MPL-0009] RTL-MP param: seed: 0.
-[INFO MPL-1001] Shape engine outline width: 440.04
-[INFO MPL-1002] Shape engine outline height: 439.6
-[INFO MPL-1003] Shape engine chip area: 193441.6
-[INFO MPL-1004] Shape engine macro area: 160000.0
-[INFO MPL-1005] Shape engine stdcell area: 0.0
-[INFO MPL-1006] Shape engine stdcell util: 0.0
-[INFO MPL-1007] Shape Engine Cluster: top_glue_logic_macro_cluster_0_part_0, area: 40000.000000, aspect_ratio: (100.000000,400.000000) .
-[INFO MPL-1007] Shape Engine Cluster: top_glue_logic_macro_cluster_1_part_0, area: 40000.000000, aspect_ratio: (400.000000,100.000000) (200.000000,200.000000) (100.000000,400.000000) .
-[INFO MPL-1007] Shape Engine Cluster: top_glue_logic_macro_cluster_2_part_0, area: 40000.000000, aspect_ratio: (100.000000,400.000000) .
-[INFO MPL-1007] Shape Engine Cluster: top_glue_logic_macro_cluster_2_part_1, area: 40000.000000, aspect_ratio: (400.000000,100.000000) (200.000000,200.000000) (100.000000,400.000000) .
-[INFO MPL-2001] Block placement starts.
-[INFO MPL-2002] Block placement finish initialization.
-[INFO MPL-2003] Block placement Init_T: 553.923.
-[INFO MPL-2004] Block placement level:  0   cost:  85.183044   area:   160000.000000/0.509284   wirelength:  0.000000/-nan   outline_penalty:  0.000000/0.000000   boundary_penalty:  0.000000/0.000000   macro_blockage_penalty:  0.000000/-nan  location_penalty:   0.000000/-nan  notch_penalty:   0.548885/0.387393  .
-[INFO MPL-2005] Block placement level:  1   cost:  85.183044   area:   160000.000000/0.509284   wirelength:  0.000000/-nan   outline_penalty:  0.000000/0.000000   boundary_penalty:  0.000000/0.000000   macro_blockage_penalty:  0.000000/-nan  location_penalty:   0.000000/-nan  notch_penalty:   0.548885/0.387393  .
-[INFO MPL-2006] Block placement level:  2   cost:  85.183044   area:   160000.000000/0.509284   wirelength:  0.000000/-nan   outline_penalty:  0.000000/0.000000   boundary_penalty:  0.000000/0.000000   macro_blockage_penalty:  0.000000/-nan  location_penalty:   0.000000/-nan  notch_penalty:   0.548885/0.387393  .
-[INFO MPL-2007] Block placement floorplan width: 400.0.
-[INFO MPL-2008] Block placement floorplan height: 400.0.
-[INFO MPL-2009] Block placement outline width: 440.04.
-[INFO MPL-2010] Block placement outline height: 439.6.
-[INFO MPL-3001] Starting pin alignment.
-[INFO MPL-3002] Performing pin alignment on macro cluster top_glue_logic_macro_cluster_0_part_0.
-[INFO MPL-3004] Finished pin alignment on macro cluster top_glue_logic_macro_cluster_0_part_0.
-[INFO MPL-3002] Performing pin alignment on macro cluster top_glue_logic_macro_cluster_1_part_0.
-[INFO MPL-3004] Finished pin alignment on macro cluster top_glue_logic_macro_cluster_1_part_0.
-[INFO MPL-3002] Performing pin alignment on macro cluster top_glue_logic_macro_cluster_2_part_0.
-[INFO MPL-3004] Finished pin alignment on macro cluster top_glue_logic_macro_cluster_2_part_0.
-[INFO MPL-3002] Performing pin alignment on macro cluster top_glue_logic_macro_cluster_2_part_1.
-[INFO MPL-3004] Finished pin alignment on macro cluster top_glue_logic_macro_cluster_2_part_1.
-Finish RTL-MP
-No differences found.
+Floorplan Outline: (0.0, 0.0) (450.0, 450.0),  Core Outline: (4, 4) (444, 443)
+Traversed logical hierarchy
+	Number of std cell instances : 0
+	Area of std cell instances : 0.00
+	Number of macros : 10
+	Area of macros : 160000.00
+	Total area : 160000.00
+	Design Utilization : 0.83
+	Core Utilization: 0.00
+
+Reset number of levels to 1
+Reset macro_blockage_weight : 50.0
+num level: 1, max_macro: 5, min_macro: 1, max_inst:5000, min_inst:1000
+area_weight_ = 0.1
+outline_weight_ = 100.0
+wirelength_weight_ = 100.0
+guidance_weight_ = 10.0
+fence_weight_ = 10.0
+boundary_weight_ = 15.0
+notch_weight_ = 10.0
+macro_blockage_weight_ = 50.0
+halo_width_ = 5.0
+bus_planning_flag_ = false
+
+Create Data Flow
+
+Perform Clustering..
+[Warning] This design has no standard cells ..
+Each macro is treated as a single cluster
+model U1 as a cluster.
+model U10 as a cluster.
+model U2 as a cluster.
+model U3 as a cluster.
+model U4 as a cluster.
+model U5 as a cluster.
+model U6 as a cluster.
+model U7 as a cluster.
+model U8 as a cluster.
+model U9 as a cluster.
+
+Print Physical Hierachy Tree after splitting std cell and macros in leaf clusters
+
+root  (0)  num_macro :  10   num_std_cell :  0  macro_area :  160000.0  std_cell_area : 0.0
+
++---L1  (2)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---R1  (8)  num_macro :  0   num_std_cell :  0  macro_area :  0.0  std_cell_area : 0.0
+
++---U1  (13)  num_macro :  1   num_std_cell :  0  macro_area :  40000.0  std_cell_area : 0.0
+
++---U10  (14)  num_macro :  1   num_std_cell :  0  macro_area :  10000.0  std_cell_area : 0.0
+
++---U2  (15)  num_macro :  1   num_std_cell :  0  macro_area :  10000.0  std_cell_area : 0.0
+
++---U3  (16)  num_macro :  1   num_std_cell :  0  macro_area :  10000.0  std_cell_area : 0.0
+
++---U4  (17)  num_macro :  1   num_std_cell :  0  macro_area :  10000.0  std_cell_area : 0.0
+
++---U5  (18)  num_macro :  1   num_std_cell :  0  macro_area :  10000.0  std_cell_area : 0.0
+
++---U6  (19)  num_macro :  1   num_std_cell :  0  macro_area :  40000.0  std_cell_area : 0.0
+
++---U7  (20)  num_macro :  1   num_std_cell :  0  macro_area :  10000.0  std_cell_area : 0.0
+
++---U8  (21)  num_macro :  1   num_std_cell :  0  macro_area :  10000.0  std_cell_area : 0.0
+
++---U9  (22)  num_macro :  1   num_std_cell :  0  macro_area :  10000.0  std_cell_area : 0.0
+
+Determine shaping function for clusters -- Macro Tilings.
+
+Creating the pin blockage for root cluster
+Perform Multilevel macro placement...
+[MultiLevelMacroPlacement] working on children of cluster root
+[MultiLevelMacroPlacement] lx = 4.94, ly = 4.2, ux = 440.04, uy = 439.59998
+[MultiLevelMacroPlacement] Finish calculating connection
+[MultiLevelMacroPlacement] Finish updating dataflow
+Finish creating bundled connections
+[MultiLevelMacroPlacement] Start Simulated Annealing Core
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 1, target_util = 0.25, target_dead_space = 0.05
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 2, target_util = 0.25, target_dead_space = 0.1
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 3, target_util = 0.25, target_dead_space = 0.15
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 4, target_util = 0.25, target_dead_space = 0.2
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 5, target_util = 0.25, target_dead_space = 0.25
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 6, target_util = 0.25, target_dead_space = 0.3
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 7, target_util = 0.25, target_dead_space = 0.35000002
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 8, target_util = 0.25, target_dead_space = 0.4
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 9, target_util = 0.25, target_dead_space = 0.45000002
+[MultiLevelMacroPlacement] Finish generating shapes for children of cluster root
+sa_id = 10, target_util = 0.25, target_dead_space = 0.5
+[MultiLevelMacroPlacement] Finish Simulated Annealing Core
+[MultiLevelMacroPlacement] Finish Simulated Annealing for cluster root
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U1
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U10
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U2
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U3
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U4
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U5
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U6
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U7
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U8
+
+[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: U9
+Align macros within the cluster root
+boundary_h_th : 100.0, boundary_v_th : 100.0
+notch_h_th : 125.0, notch_v_th : 125.0
+number of updated macros : 10
+number of macros in HardMacroCluster : 10

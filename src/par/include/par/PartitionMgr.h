@@ -92,6 +92,11 @@ class PartitionMgr
   void tritonPartDesign(unsigned int num_parts,
                         float balance_constraint,
                         unsigned int seed,
+                        bool fence_flag,
+                        float fence_lx,
+                        float fence_ly,
+                        float fence_ux,
+                        float fence_uy,
                         const std::string& solution_filename,
                         const std::string& paths_filename,
                         const std::string& hypergraph_filename);
