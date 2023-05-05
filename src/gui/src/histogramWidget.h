@@ -37,29 +37,30 @@
 #include <QString>
 #include <QPushButton>
 #include <QFrame>
+#include <QComboBox>
 
 #include "gui/gui.h"
 
 namespace gui {
 
-class SlackWidget : public QDockWidget
+class HistogramWidget : public QDockWidget
 {
   Q_OBJECT
 
  public:
-  SlackWidget(QWidget* parent = nullptr);
-  ~SlackWidget() {}
+  HistogramWidget(QWidget* parent = nullptr);
+  ~HistogramWidget() {}
 
  signals:
 
  public slots:
 
  private slots:
-  void updateChart();
+  void populateChart();
 
  private:
-  QPushButton* update_button_;
   QPushButton* settings_button_;
+  QComboBox* mode_menu_;
 
   QBarSet* bar_set_;
   QBarSeries* series_;

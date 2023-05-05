@@ -64,7 +64,7 @@ class TimingWidget;
 class DRCWidget;
 class ClockWidget;
 class BrowserWidget;
-class SlackWidget;
+class HistogramWidget;
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
@@ -289,7 +289,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   DRCWidget* drc_viewer_;
   ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
-  SlackWidget* slack_widget_;
+  HistogramWidget* histogram_widget_;
 
   FindObjectDialog* find_dialog_;
 

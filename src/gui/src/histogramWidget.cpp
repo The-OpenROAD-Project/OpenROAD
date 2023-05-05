@@ -30,23 +30,23 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "slackWidget.h"
+#include "histogramWidget.h"
 
 #include "gui/gui.h"
 
 namespace gui {
 
-SlackWidget::SlackWidget(QWidget* parent)
-    : QDockWidget("Slack Histogram", parent),
-      update_button_(new QPushButton("Update", this)),
+HistogramWidget::HistogramWidget(QWidget* parent)
+    : QDockWidget("Histogram Plotter", parent),
       settings_button_(new QPushButton("Settings", this)),
+      mode_menu_(new QComboBox(this)),
       bar_set_(new QBarSet("Slack [ns]")),
       series_(new QBarSeries(this)),
       chart_(new QChart),
       values_x_(new QBarCategoryAxis(this)),
       values_y_(new QValueAxis(this))    
 {
-  setObjectName("slack_histogram"); // for settings
+  setObjectName("histogram_widget"); // for settings
 
   QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
@@ -54,8 +54,12 @@ SlackWidget::SlackWidget(QWidget* parent)
   QChartView *display = new QChartView(chart_);
   QHBoxLayout* controls_layout = new QHBoxLayout;
 
+  mode_menu_->addItem("Select a Category");
+  mode_menu_->addItem("End-Point Slack");
+  mode_menu_->addItem("Congestion");
+
+  controls_layout->addWidget(mode_menu_);
   controls_layout->addWidget(settings_button_);
-  controls_layout->addWidget(update_button_);
   controls_layout->insertStretch(1);
 
   controls_frame->setLayout(controls_layout);
@@ -67,15 +71,22 @@ SlackWidget::SlackWidget(QWidget* parent)
   container->setLayout(layout);
   setWidget(container);
 
-  connect(update_button_,
+  connect(mode_menu_,
+          SIGNAL(currentIndexChanged(int)),
+          this,
+          SLOT(populateChart()));
+
+  connect(settings_button_,
           SIGNAL(clicked()),
           this,
-          SLOT(updateChart()));
+          SLOT());  
 
 }
 
-void SlackWidget::updateChart() 
+void HistogramWidget::populateChart()
 {
+  if(mode_menu_->currentIndex() == 1) {
+
   chart_->setTitle("End-Point Slack");
   bar_set_->setColor(0x008000);
   *bar_set_ << 1 << 2 << 3 << 4 << 5 
@@ -103,6 +114,8 @@ void SlackWidget::updateChart()
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
 
+  }
+  
 }
 
 }
