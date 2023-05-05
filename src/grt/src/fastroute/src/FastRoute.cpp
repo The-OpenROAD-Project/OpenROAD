@@ -53,14 +53,11 @@ DebugSetting::DebugSetting()
       steinerTree_(false),
       rectilinearSTree_(false),
       tree2D_(false),
-      tree3D_(false),
-      
+      tree3D_(false)
 {
 }
 
-DebugSetting::~DebugSetting()
-{
-}
+DebugSetting::~DebugSetting() = default;
 
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
