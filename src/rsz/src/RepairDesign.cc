@@ -159,7 +159,7 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
 
   resizer_->incrementalParasiticsBegin();
   int max_length = resizer_->metersToDbu(max_wire_length);
-  int previous_progress = 0;
+  int previous_progress = -1;
   for (int i = resizer_->level_drvr_vertices_.size() - 1; i >= 0; i--) {
     int progress = (int)(100.0F * (1.0F - ((float)i / (float)resizer_->level_drvr_vertices_.size())));
     if (progress > previous_progress) {
