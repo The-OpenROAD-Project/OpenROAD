@@ -21,7 +21,7 @@ class FastRouteRenderer : public gui::Renderer, public AbstractFastRouteRenderer
 
   void redrawAndPause() override;
 
-  virtual void drawObjects(gui::Painter& /* painter */) override;
+  void drawObjects(gui::Painter& /* painter */) override;
 
  private:
   void drawTreeEdges(gui::Painter& painter);

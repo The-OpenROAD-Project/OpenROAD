@@ -13,7 +13,7 @@ namespace cts {
 
 TEST(HTreeBuilderTest, Instantiates)
 {
-  Clock clock(/*net_name=*/"clk",
+  Clock clock(/*netName=*/"clk",
               /*clock_pin=*/"p0",
               /*sdcClockName=*/"clk",
               /*clockPinX=*/0,

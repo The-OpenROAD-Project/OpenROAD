@@ -12,7 +12,7 @@ class SteinerRenderer : public gui::Renderer, public AbstractSteinerRenderer
   ~SteinerRenderer() override = default;
 
   void highlight(SteinerTree* tree) override;
-  virtual void drawObjects(gui::Painter& /* painter */) override;
+  void drawObjects(gui::Painter& /* painter */) override;
 
  private:
   SteinerTree* tree_;
