@@ -54,7 +54,7 @@ DebugSetting::DebugSetting()
       rectilinearSTree_(false),
       tree2D_(false),
       tree3D_(false),
-      sttInputFileName_("")
+      
 {
 }
 

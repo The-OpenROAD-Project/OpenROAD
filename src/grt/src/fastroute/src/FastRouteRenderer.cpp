@@ -65,8 +65,8 @@ void FastRouteRenderer::drawLineObject(int x1,
       painter.setPen(layer);
       painter.setBrush(layer);
     } else {
-      painter.setPen(painter.cyan);
-      painter.setBrush(painter.cyan);
+      painter.setPen(gui::Painter::cyan);
+      painter.setBrush(gui::Painter::cyan);
     }
     painter.setPenWidth(700);
     painter.drawLine(x1, y1, x2, y2);
@@ -75,7 +75,7 @@ void FastRouteRenderer::drawLineObject(int x1,
 void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
 {
   int lastL = 0;
-  for (TreeEdge treeEdge : treeEdges_) {
+  for (const TreeEdge& treeEdge : treeEdges_) {
     if (treeEdge.len == 0) {
       continue;
     }
@@ -87,8 +87,9 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
     int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
     int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
 
-    if (is3DVisualization_)
+    if (is3DVisualization_) {
       lastL = gridsL[0];
+}
 
     for (int i = 1; i <= routeLen; i++) {
       const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
@@ -124,8 +125,8 @@ void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
 void FastRouteRenderer::drawObjects(gui::Painter& painter)
 {
   if (treeStructure_ == TreeStructure::steinerTreeByStt) {
-    painter.setPen(painter.white);
-    painter.setBrush(painter.white);
+    painter.setPen(gui::Painter::white);
+    painter.setBrush(gui::Painter::white);
     painter.setPenWidth(700);
 
     for (int i = 0; i < stree_.branchCount(); i++) {
