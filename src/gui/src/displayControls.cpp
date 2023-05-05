@@ -1555,6 +1555,16 @@ bool DisplayControls::areRegionsSelectable() const
   return isModelRowSelectable(&misc_.regions);
 }
 
+bool DisplayControls::areSitesVisible()
+{
+  return isModelRowVisible(&site_group_);
+}
+
+bool DisplayControls::areSitesSelectable()
+{
+  return isModelRowSelectable(&site_group_);
+}
+
 bool DisplayControls::isSiteVisible(odb::dbSite* site)
 {
   return isModelRowVisible(getSiteRow(site));

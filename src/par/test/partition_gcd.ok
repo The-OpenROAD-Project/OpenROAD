@@ -12,10 +12,30 @@
 [PARAM] UBfactor = 1.0
 [PARAM] Vertex dimensions = 1
 [PARAM] Hyperedge dimensions = 1
+[PARAM] Fence flag = false
+[PARAM] Timing driven flag = true
+[PARAM] Top 1000 critical timing paths are extracted.
 ========================================
 [STATUS] Reading netlist**** 
+[PARAM] num_vertices = 469
+[PARAM] num_hyperedges = 451
 [STATUS] Extracting timing paths**** 
-[INFO] Timing scale : 1e-09 second
+[WARNING] We normalized the slack based on maximum clock period
+[INFO] maximum_clock_period : 4.85e-10 second
+[STATUS] Finish traversing timing graph
+[WARNING] 64 unconstrained hyperedges !
+[WARNING] Reset the slack of all unconstrained hyperedges to 4.85e-10 seconds
+[STATUS] Finish reading netlist****
+[PARAM] community_flag_ = false
+[PARAM] placement_flag_ = false
+[PARAM] fixed_vertex_flag_ = false
+[WARNING] Reset placement_dimension to 0
+52 endpoints are identified by STA.
+net_cut_factor = 1.0
+timing_factor = 1.0
+path_wt_factor = 1.0
+e_wt_factor =  1.000000
+[WARNING] For design partitioning, the hyperedge_dimensions_ is 1
 [STATUS] Building hypergraph**** 
 [STATUS] Writing hypergraph**** 
 ========================================
@@ -24,125 +44,156 @@
 [INFO] Hyperedges = 451
 [INFO] Timing paths = 52
 [INFO] Unique endpoints extracted = 52
-[INFO] Worst negative slack = 1.4492933
+[INFO] Worst negative slack = 0.44929323
+hyperedge weight factor : [ 1.000000  ]
+vertex weight factor : [ 1.000000  ]
+placement weight factor : [  ]
+path_wt_factor : 1.0
+net_cut_factor : 1.0
+timing_factor : 1.0
+snaking_wt_factor : 1.0
+timing_exp_factor : 2.0
+path_traverse_step : 2
+thr_coarsen_hyperedge_size_skip : 50
+thr_coarsen_vertices : 200
+thr_coarsen_hyperedges : 50
+coarsening_ratio : 1.5
+max_coarsen_iters : 20
+adj_diff_ratio : 0.0001
+min_num_vertcies_each_part : 4
+he_size_threshold : 50
+[PARAM] refine_iters : 2
+[PARAM] max_moves (FM or greedy refinement) : 50
+[PARAM] max_num_fm_pass : 10
 =========================================
 [STATUS] Running FC multilevel coarsening 
 =========================================
-[COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 370, 552 , 947 
-[COARSEN] Level 2 :: 207, 301, 552 , 764 
-[COARSEN] Level 3 :: 137, 251, 552 , 670 
+[COARSEN] Level 0 :: 469, 451, 552 , 1420 
+[COARSEN] Level 1 :: 312, 358, 552 , 1204 
+[COARSEN] Level 2 :: 207, 277, 552 , 900 
+[COARSEN] Level 3 :: 137, 227, 552 , 764 
 =============================
 [STATUS] Initial Partitioning 
 =============================
-[INIT-PART] 0 :: Random part cutcost 282.45584
-[INIT-PART] 1 :: Random part cutcost 281.18216
-[INIT-PART] 2 :: Random part cutcost 285.08243
-[INIT-PART] 3 :: Random part cutcost 279.73456
-[INIT-PART] 4 :: Random part cutcost 283.10583
-[INIT-PART] 5 :: Random part cutcost 324.56598
-[INIT-PART] 6 :: Random part cutcost 284.6846
-[INIT-PART] 7 :: Random part cutcost 283.03522
-[INIT-PART] 8 :: Random part cutcost 287.0352
-[INIT-PART] 9 :: Random part cutcost 289.38882
-[INIT-PART] 10 :: Random part cutcost 287.03003
-[INIT-PART] 11 :: Random part cutcost 288.45795
-[INIT-PART] 12 :: Random part cutcost 289.81403
-[INIT-PART] 13 :: Random part cutcost 280.0813
-[INIT-PART] 14 :: Random part cutcost 284.10065
-[INIT-PART] 15 :: Random part cutcost 286.03003
-[INIT-PART] 16 :: Random part cutcost 283.94836
-[INIT-PART] 17 :: Random part cutcost 288.50433
-[INIT-PART] 18 :: Random part cutcost 279.0352
-[INIT-PART] 19 :: Random part cutcost 290.8899
-[INIT-PART] 20 :: Random part cutcost 279.92334
-[INIT-PART] 21 :: Random part cutcost 283.94836
-[INIT-PART] 22 :: Random part cutcost 288.98883
-[INIT-PART] 23 :: Random part cutcost 286.76285
-[INIT-PART] 24 :: Random part cutcost 309.16187
-[INIT-PART] 25 :: Random part cutcost 277.35175
-[INIT-PART] 26 :: Random part cutcost 278.94922
-[INIT-PART] 27 :: Random part cutcost 287.10065
-[INIT-PART] 28 :: Random part cutcost 282.44324
-[INIT-PART] 29 :: Random part cutcost 281.94836
-[INIT-PART] 30 :: Random part cutcost 288.9888
-[INIT-PART] 31 :: Random part cutcost 284.92337
-[INIT-PART] 32 :: Random part cutcost 279.53568
-[INIT-PART] 33 :: Random part cutcost 282.994
-[INIT-PART] 34 :: Random part cutcost 285.48447
-[INIT-PART] 35 :: Random part cutcost 280.63312
-[INIT-PART] 36 :: Random part cutcost 295.20654
-[INIT-PART] 37 :: Random part cutcost 318.42047
-[INIT-PART] 38 :: Random part cutcost 284.81927
-[INIT-PART] 39 :: Random part cutcost 283.99396
-[INIT-PART] 40 :: Random part cutcost 283.92334
-[INIT-PART] 41 :: Random part cutcost 282.62195
-[INIT-PART] 42 :: Random part cutcost 281.05505
-[INIT-PART] 43 :: Random part cutcost 281.03522
-[INIT-PART] 44 :: Random part cutcost 283.05505
-[INIT-PART] 45 :: Random part cutcost 282.0352
-[INIT-PART] 46 :: Random part cutcost 295.07062
-[INIT-PART] 47 :: Random part cutcost 281.2234
-[INIT-PART] 48 :: Random part cutcost 282.63312
-[INIT-PART] 49 :: Random part cutcost 283.994
-[INIT-PART] 50 :: Vile part cutcost 250.12708
-Optimal ILP-based Partitioning (OR-Tools) with warm-start ...
-Before Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
-min_diff_score : 2.6639671e-05
-After Hyperedge Reduction :  num_vertices = 137, num_hyperedges = 251
-[INIT-PART] 51 :: Ilp part cutcost 154.65254
+[INIT-PART] 0 :: Random part cutcost 239.51749
+[INIT-PART] 1 :: Random part cutcost 235.76294
+[INIT-PART] 2 :: Random part cutcost 347.96973
+[INIT-PART] 3 :: Random part cutcost 274.2533
+[INIT-PART] 4 :: Random part cutcost 271.87558
+[INIT-PART] 5 :: Random part cutcost 337.27203
+[INIT-PART] 6 :: Random part cutcost 255.27528
+[INIT-PART] 7 :: Random part cutcost 251.84363
+[INIT-PART] 8 :: Random part cutcost 326.7131
+[INIT-PART] 9 :: Random part cutcost 252.69131
+[INIT-PART] 10 :: Random part cutcost 317.77155
+[INIT-PART] 11 :: Random part cutcost 277.92056
+[INIT-PART] 12 :: Random part cutcost 238.18599
+[INIT-PART] 13 :: Random part cutcost 282.3105
+[INIT-PART] 14 :: Random part cutcost 258.10873
+[INIT-PART] 15 :: Random part cutcost 254.21915
+[INIT-PART] 16 :: Random part cutcost 260.14792
+[INIT-PART] 17 :: Random part cutcost 248.33495
+[INIT-PART] 18 :: Random part cutcost 355.98883
+[INIT-PART] 19 :: Random part cutcost 335.31036
+[INIT-PART] 20 :: Random part cutcost 263.2333
+[INIT-PART] 21 :: Random part cutcost 265.69144
+[INIT-PART] 22 :: Random part cutcost 274.90573
+[INIT-PART] 23 :: Random part cutcost 310.9458
+[INIT-PART] 24 :: Random part cutcost 339.80405
+[INIT-PART] 25 :: Random part cutcost 321.34695
+[INIT-PART] 26 :: Random part cutcost 265.78622
+[INIT-PART] 27 :: Random part cutcost 240.02228
+[INIT-PART] 28 :: Random part cutcost 331.25592
+[INIT-PART] 29 :: Random part cutcost 311.70248
+[INIT-PART] 30 :: Random part cutcost 240.21487
+[INIT-PART] 31 :: Random part cutcost 304.2908
+[INIT-PART] 32 :: Random part cutcost 278.48358
+[INIT-PART] 33 :: Random part cutcost 327.8783
+[INIT-PART] 34 :: Random part cutcost 265.28116
+[INIT-PART] 35 :: Random part cutcost 279.24432
+[INIT-PART] 36 :: Random part cutcost 250.89908
+[INIT-PART] 37 :: Random part cutcost 270.9649
+[INIT-PART] 38 :: Random part cutcost 342.06372
+[INIT-PART] 39 :: Random part cutcost 263.6497
+[INIT-PART] 40 :: Random part cutcost 312.64313
+[INIT-PART] 41 :: Random part cutcost 344.5255
+[INIT-PART] 42 :: Random part cutcost 305.09494
+[INIT-PART] 43 :: Random part cutcost 271.36423
+[INIT-PART] 44 :: Random part cutcost 232.34402
+[INIT-PART] 45 :: Random part cutcost 244.64043
+[INIT-PART] 46 :: Random part cutcost 332.88852
+[INIT-PART] 47 :: Random part cutcost 272.9197
+[INIT-PART] 48 :: Random part cutcost 274.1271
+[INIT-PART] 49 :: Random part cutcost 340.91815
+[INIT-PART] 50 :: Vile part cutcost 280.9829
+[INIT-PART] 51 :: Ilp part cutcost 233.89214
 ====================================================
 [STATUS] Running V-cycle refinement on 10 partitions
 ====================================================
-[INFO] 51 cutcost 154.65254 
-[INFO] 50 cutcost 194.97308 
-[INFO] 25 cutcost 189.51291 
-[INFO] 26 cutcost 211.75716 
-[INFO] 18 cutcost 190.95543 
-[INFO] 32 cutcost 208.36308 
-[INFO] 3 cutcost 259.8958 
-[INFO] 20 cutcost 191.9763 
-[INFO] 13 cutcost 205.29779 
-[INFO] 35 cutcost 191.64151 
+[INFO] 44 cutcost 209.93637 
+[INFO] 51 cutcost 211.57375 
+[INFO] 1 cutcost 184.97781 
+[INFO] 12 cutcost 185.2666 
+[INFO] 0 cutcost 195.67607 
+[INFO] 27 cutcost 208.66995 
+[INFO] 30 cutcost 204.5892 
+[INFO] 45 cutcost 208.71999 
+[INFO] 17 cutcost 190.39732 
+[INFO] 36 cutcost 217.94907 
 =========================================
 [STATUS] Running FC multilevel coarsening 
 =========================================
-[COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 370, 552 , 947 
-[COARSEN] Level 2 :: 207, 301, 552 , 764 
-[COARSEN] Level 3 :: 137, 251, 552 , 670 
+[COARSEN] Level 0 :: 469, 451, 552 , 1420 
+[COARSEN] Level 1 :: 312, 360, 552 , 1210 
+[COARSEN] Level 2 :: 207, 277, 552 , 921 
+[COARSEN] Level 3 :: 137, 233, 552 , 772 
 ===================================
 [STATUS] Running V-cycle refinement
 ===================================
-[V-Refine] Level 1 :: 137, 251, 154.65254
-[V-Refine] Level 2 :: 207, 301, 154.65254
-[V-Refine] Level 3 :: 312, 370, 154.65254
-[V-Refine] Level 4 :: 469, 451, 154.65254
-[INFO] V-cycle refinement 1 delta cost 0.0
+[V-Refine] Level 1 :: 137, 233, 184.97781
+[V-Refine] Level 2 :: 207, 277, 185.05338
+[V-Refine] Level 3 :: 312, 360, 185.05338
+[V-Refine] Level 4 :: 469, 451, 185.05338
+[INFO] V-cycle refinement 1 delta cost -0.07556152
 =========================================
 [STATUS] Running FC multilevel coarsening 
 =========================================
-[COARSEN] Level 0 :: 469, 451, 552 , 1065 
-[COARSEN] Level 1 :: 312, 370, 552 , 947 
-[COARSEN] Level 2 :: 207, 301, 552 , 764 
-[COARSEN] Level 3 :: 137, 251, 552 , 670 
+[COARSEN] Level 0 :: 469, 451, 552 , 1420 
+[COARSEN] Level 1 :: 312, 360, 552 , 1210 
+[COARSEN] Level 2 :: 207, 277, 552 , 921 
+[COARSEN] Level 3 :: 137, 233, 552 , 772 
 ===================================
 [STATUS] Running V-cycle refinement
 ===================================
-[V-Refine] Level 1 :: 137, 251, 154.65254
-[V-Refine] Level 2 :: 207, 301, 154.65254
-[V-Refine] Level 3 :: 312, 370, 154.65254
-[V-Refine] Level 4 :: 469, 451, 154.65254
+[V-Refine] Level 1 :: 137, 233, 185.05338
+[V-Refine] Level 2 :: 207, 277, 185.05338
+[V-Refine] Level 3 :: 312, 360, 185.05338
+[V-Refine] Level 4 :: 469, 451, 185.05338
 [INFO] V-cycle refinement 2 delta cost 0.0
-[Cutcost of partition : 154.65254]
-[Vertex balance of block_0 : 0.59249  ( 327.17993 )    
-[Vertex balance of block_1 : 0.40751  ( 225.03609 )    
+=========================================
+[STATUS] Running FC multilevel coarsening 
+=========================================
+[COARSEN] Level 0 :: 469, 451, 552 , 1420 
+[COARSEN] Level 1 :: 312, 360, 552 , 1210 
+[COARSEN] Level 2 :: 207, 277, 552 , 921 
+[COARSEN] Level 3 :: 137, 233, 552 , 772 
+===================================
+[STATUS] Running V-cycle refinement
+===================================
+[V-Refine] Level 1 :: 137, 233, 185.05338
+[V-Refine] Level 2 :: 207, 277, 185.05338
+[V-Refine] Level 3 :: 312, 360, 185.05338
+[V-Refine] Level 4 :: 469, 451, 185.05338
+[INFO] V-cycle refinement 3 delta cost 0.0
+[Cutcost of partition : 185.05338]
+[Vertex balance of block_0 : 0.49133  ( 271.32001 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89597 )    
 ===============================================
 [STATUS] Displaying timing path cuts statistics
 [INFO] Total timing critical paths = 52
-[INFO] Total paths cut = 26
-[INFO] Worst cut on a path = 1
-[INFO] Average cuts on critical paths = 0.5
+[INFO] Total paths cut = 52
+[INFO] Worst cut on a path = 3
+[INFO] Average cuts on critical paths = 1.8269231
 ===============================================
 Exiting TritonPart
 Writing partition to verilog.

@@ -41,17 +41,17 @@ namespace sta {
 
 class dbSdcNetwork : public SdcNetwork
 {
-public:
-  dbSdcNetwork(Network* network);
+ public:
+  explicit dbSdcNetwork(Network* network);
   Instance* findInstance(const char* path_name) const override;
   InstanceSeq findInstancesMatching(const Instance* contex,
-                                            const PatternMatch* pattern) const override;
+                                    const PatternMatch* pattern) const override;
   NetSeq findNetsMatching(const Instance*,
                           const PatternMatch* pattern) const override;
   PinSeq findPinsMatching(const Instance* instance,
                           const PatternMatch* pattern) const override;
 
-protected:
+ protected:
   void findInstancesMatching1(const PatternMatch* pattern,
                               InstanceSeq& insts) const;
   void findNetsMatching1(const PatternMatch* pattern, NetSeq& nets) const;

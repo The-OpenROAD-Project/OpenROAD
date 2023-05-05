@@ -49,7 +49,7 @@
 
 #include "CtsOptions.h"
 #include "db_sta/dbNetwork.hh"
-#include "ord/OpenRoad.hh"
+#include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 
 namespace utl {
@@ -133,7 +133,6 @@ class TechChar
 {
  public:
   TechChar(CtsOptions* options,
-           ord::OpenRoad* openroad,
            odb::dbDatabase* db,
            sta::dbSta* sta,
            rsz::Resizer* resizer,
@@ -282,13 +281,11 @@ class TechChar
   unsigned maxSlew_ = 0;
 
   unsigned actualMinInputCap_ = 0;
-  unsigned actualMinInputSlew_ = 0;
 
   std::deque<WireSegment> wireSegments_;
   std::unordered_map<Key, std::deque<unsigned>> keyToWireSegments_;
 
   CtsOptions* options_;
-  ord::OpenRoad* openroad_;
   odb::dbDatabase* db_;
   rsz::Resizer* resizer_;
   sta::dbSta* openSta_;

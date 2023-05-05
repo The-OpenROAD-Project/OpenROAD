@@ -6,31 +6,28 @@
 
 #include "PathRenderer.h"
 
+#include "db_sta/dbNetwork.hh"
 #include "sta/PathExpanded.hh"
 #include "sta/TimingRole.hh"
-#include "db_sta/dbNetwork.hh"
 
 namespace sta {
 
 gui::Painter::Color PathRenderer::signal_color = gui::Painter::red;
 gui::Painter::Color PathRenderer::clock_color = gui::Painter::yellow;
 
-PathRenderer::PathRenderer(dbSta* sta) :
-  sta_(sta)
+PathRenderer::PathRenderer(dbSta* sta) : sta_(sta)
 {
   gui::Gui::get()->registerRenderer(this);
 }
 
 PathRenderer::~PathRenderer() = default;
 
-void
-PathRenderer::highlight(PathRef* path)
+void PathRenderer::highlight(PathRef* path)
 {
   path_ = std::make_unique<PathExpanded>(path, sta_);
 }
 
-void
-PathRenderer::drawObjects(gui::Painter& painter)
+void PathRenderer::drawObjects(gui::Painter& painter)
 {
   if (path_ == nullptr) {
     return;
@@ -47,20 +44,20 @@ PathRenderer::drawObjects(gui::Painter& painter)
       const Pin* prev_pin = prev_path->pin(sta_);
       odb::Point pt1 = network->location(pin);
       odb::Point pt2 = network->location(prev_pin);
-      gui::Painter::Color wire_color = sta_->isClock(pin) ? clock_color : signal_color;
+      gui::Painter::Color wire_color
+          = sta_->isClock(pin) ? clock_color : signal_color;
       painter.setPen(wire_color, true);
       painter.drawLine(pt1, pt2);
       highlightInst(prev_pin, painter);
       if (i == path_->size() - 1) {
         highlightInst(pin, painter);
-}
+      }
     }
   }
 }
 
 // Color in the instances to make them more visible.
-void
-PathRenderer::highlightInst(const Pin* pin, gui::Painter& painter)
+void PathRenderer::highlightInst(const Pin* pin, gui::Painter& painter)
 {
   dbNetwork* network = sta_->getDbNetwork();
   const Instance* inst = network->instance(pin);
@@ -71,7 +68,8 @@ PathRenderer::highlightInst(const Pin* pin, gui::Painter& painter)
     if (db_inst != nullptr) {
       odb::dbBox* bbox = db_inst->getBBox();
       odb::Rect rect = bbox->getBox();
-      gui::Painter::Color inst_color = sta_->isClock(pin) ? clock_color : signal_color;
+      gui::Painter::Color inst_color
+          = sta_->isClock(pin) ? clock_color : signal_color;
       painter.setBrush(inst_color);
       painter.drawRect(rect);
     }

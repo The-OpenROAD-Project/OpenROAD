@@ -341,7 +341,11 @@ void GNet::updateBox()
 
 int64_t GNet::hpwl() const
 {
-  return static_cast<int64_t>((ux_ - lx_) + (uy_ - ly_));
+  int64_t lx = lx_;
+  int64_t ly = ly_;
+  int64_t ux = ux_;
+  int64_t uy = uy_;
+  return (ux - lx) + (uy - ly);
 }
 
 void GNet::clearWaVars()

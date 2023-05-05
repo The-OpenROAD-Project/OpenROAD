@@ -112,7 +112,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
                          // Percent of violating ends to repair to
                          // reduce tns (0.0-1.0).
                          double repair_tns_end_percent,
-                         int max_passes)
+                         int max_passes,
+                         bool skip_pin_swap)
 {
   init();
   constexpr int digits = 3;
@@ -175,7 +176,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
-      bool changed = repairSetup(end_path, end_slack);
+      bool changed = repairSetup(end_path, end_slack, skip_pin_swap);
       if (!changed) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
                    "No change after {} decreasing slack passes.",
@@ -268,7 +269,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
   Slack slack = sta_->vertexSlack(vertex, max_);
   PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  repairSetup(path, slack);
+  repairSetup(path, slack, false);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -300,10 +301,12 @@ RepairSetup::repairSetup(const Pin *end_pin)
  */
 bool
 RepairSetup::repairSetup(PathRef &path,
-                         Slack path_slack)
+                         Slack path_slack,
+                         bool skip_pin_swap)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
+
   if (expanded.size() > 1) {
     int path_length = expanded.size();
     vector<pair<int, Delay>> load_delays;
@@ -357,9 +360,11 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
-      if (swapPins(drvr_path, drvr_index, &expanded)) {
+      if (!skip_pin_swap) {
+        if (swapPins(drvr_path, drvr_index, &expanded)) {
           changed = true;
           break;
+        }
       }
 
       // For tristate nets all we can do is resize the driver.
@@ -429,7 +434,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
     Pin *in_pin = in_path->pin(sta_);
 
     // Very bad hack.
-    static std::unordered_set<const Instance *> instance_set;
+    static std::unordered_map<const Instance *, int> instance_set;
 
     if (!resizer_->dontTouch(drvr)) {
         // We get the driver port and the cell for that port.
@@ -439,13 +444,34 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         LibertyPort *swap_port = input_port;
         sta::LibertyPortSet ports;
 
-        // Check if we have already dealt with this instance. Skip if the answer
-        // is a yes.
+        // Results for > 2 input gates are unpredictable. Only swap pins for
+        // 2 input gates for now.
+        int input_port_count = 0;
+        sta::LibertyCellPortIterator port_iter(cell);
+        while (port_iter.hasNext()) {
+            LibertyPort *port = port_iter.next();
+            if (port->direction()->isInput()) {
+                ++input_port_count;
+            }
+        }
+        if (input_port_count > 2) {
+            return false;
+}
+
+        // Check if we have already dealt with this instance more than twice.
+        // Skip if the answeris a yes.
         if (instance_set.find(drvr) == instance_set.end()) {
-            instance_set.insert(drvr);
+            instance_set.insert(std::make_pair(drvr,1));
         }
         else {
-            return false;
+            // If the candidate shows up twice then it is marginal and we should
+            // just stop considering it.
+            if (instance_set[drvr] == 1) {
+                instance_set[drvr] = 2;
+                --swap_pin_count_;
+            }
+            else
+                return false;
         }
 
         // Find the equivalent pins for a cell (simple implementation for now)

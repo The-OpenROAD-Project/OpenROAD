@@ -94,7 +94,8 @@ Same for `pin3` and `pin4`, and for `pin5` and `pin6`.
 
 The `-group` flag places together on the die boundary the pin list defined
 in `-pin_names`, similar to the `-group_pins` option on `place_pins` command.
-The `-order` flag places the pins ordered in ascending x/y position.
+The `-order` flag places the pins ordered in ascending x/y position, and must
+be used only when `-group` is also used.
 
 Only one of the `-region`, `-mirrored_pins` and `-group` constraints is allowed
 per `set_io_pin_constraint` call.

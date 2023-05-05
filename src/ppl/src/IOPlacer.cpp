@@ -131,7 +131,7 @@ void IOPlacer::initNetlistAndCore(const std::set<int>& hor_layer_idx,
 
 void IOPlacer::initParms()
 {
-  slots_per_section_ = 200;
+  slots_per_section_ = parms_->getSlotsPerSection();
   slots_increase_factor_ = 0.01f;
   netlist_ = std::make_unique<Netlist>();
   netlist_io_pins_ = std::make_unique<Netlist>();
@@ -230,9 +230,12 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
 
   const auto seed = parms_->getRandSeed();
 
-  int num_i_os = pin_indices.size();
-  int num_slots = slot_indices.size();
-  double shift = is_group ? 1 : num_slots / double(num_i_os);
+  const int num_i_os = pin_indices.size();
+  if (num_i_os == 0) {
+    return;
+  }
+  const int num_slots = slot_indices.size();
+  const double shift = is_group ? 1 : num_slots / double(num_i_os);
   std::vector<int> vSlots(num_slots);
   std::vector<int> io_pin_indices(num_i_os);
 
@@ -843,6 +846,8 @@ int IOPlacer::updateConstraintSections(Constraint& constraint)
   int total_slots_count = 0;
   for (Section& sec : constraint.sections) {
     total_slots_count += updateSection(sec, slots);
+    sec.pin_groups.clear();
+    sec.pin_indices.clear();
   }
 
   return total_slots_count;
@@ -958,7 +963,10 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
     }
     if (!to_fallback) {
       for (auto i : sortIndexes(dst)) {
-        if (group_size <= sections[i].getMaxContiguousSlots(slots_)) {
+        int section_available_slots
+            = sections[i].num_slots - sections[i].used_slots;
+        if (group_size <= sections[i].getMaxContiguousSlots(slots_)
+            && group_size <= section_available_slots) {
           std::vector<int> group;
           for (int pin_idx : io_group) {
             IOPin& io_pin = net->getIoPin(pin_idx);
@@ -1496,6 +1504,7 @@ void IOPlacer::initConstraints()
     }
   }
   sortConstraints();
+  checkPinsInMultipleConstraints();
 }
 
 void IOPlacer::sortConstraints()
@@ -1508,6 +1517,33 @@ void IOPlacer::sortConstraints()
                      return (c1.pins_per_slots < c2.pins_per_slots)
                             && overlappingConstraints(c1, c2);
                    });
+}
+
+void IOPlacer::checkPinsInMultipleConstraints()
+{
+  std::string pins_in_mult_constraints;
+  for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+    int constraint_cnt = 0;
+    for (Constraint& constraint : constraints_) {
+      const PinSet& pin_list = constraint.pin_list;
+      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
+          != pin_list.end()) {
+        constraint_cnt++;
+      }
+
+      if (constraint_cnt > 1) {
+        pins_in_mult_constraints.append(" " + io_pin.getName());
+        break;
+      }
+    }
+  }
+
+  if (!pins_in_mult_constraints.empty()) {
+    logger_->error(PPL,
+                   98,
+                   "Pins {} are assigned to multiple constraints.",
+                   pins_in_mult_constraints);
+  }
 }
 
 bool IOPlacer::overlappingConstraints(const Constraint& c1,
@@ -1678,13 +1714,11 @@ void IOPlacer::run(bool random_mode)
         findPinAssignment(sections_for_constraint, mirrored_only);
         updateSlots();
 
-        if (!mirrored_only) {
-          for (Section& sec : sections_for_constraint) {
-            constrained_pins_cnt += sec.pin_indices.size();
-          }
-          constrained_pins_cnt += mirrored_pins_cnt;
-          mirrored_pins_cnt = 0;
+        for (Section& sec : sections_for_constraint) {
+          constrained_pins_cnt += sec.pin_indices.size();
         }
+        constrained_pins_cnt += mirrored_pins_cnt;
+        mirrored_pins_cnt = 0;
       }
     }
 
@@ -2237,11 +2271,10 @@ void IOPlacer::initNetlist()
     netlist_->addIONet(io_pin, inst_pins);
   }
 
-  int group_idx = 0;
   for (const auto& [pins, order] : pin_groups_) {
     int group_created = netlist_->createIOGroup(pins, order);
-    if (group_created == pins.size()) {
-      group_idx++;
+    if (group_created != pins.size()) {
+      logger_->error(PPL, 94, "Cannot create group of size {}.", pins.size());
     }
   }
 }

@@ -413,13 +413,12 @@ void OpenRoad::readDb(const char* filename)
         ORD, 47, "You can't load a new db file as the db is already populated");
   }
 
-  FILE* stream = fopen(filename, "r");
-  if (stream == nullptr) {
-    return;
-  }
+  std::ifstream stream;
+  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                    | std::ios::eofbit);
+  stream.open(filename, std::ios::binary);
 
   db_->read(stream);
-  fclose(stream);
 
   for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
@@ -439,15 +438,15 @@ void OpenRoad::diffDbs(const char* filename1,
                        const char* filename2,
                        const char* diffs)
 {
-  FILE* stream1 = fopen(filename1, "r");
-  if (stream1 == nullptr) {
-    logger_->error(ORD, 103, "Can't open {}", filename1);
-  }
+  std::ifstream stream1;
+  stream1.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                     | std::ios::eofbit);
+  stream1.open(filename1, std::ios::binary);
 
-  FILE* stream2 = fopen(filename2, "r");
-  if (stream2 == nullptr) {
-    logger_->error(ORD, 104, "Can't open {}", filename1);
-  }
+  std::ifstream stream2;
+  stream2.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                     | std::ios::eofbit);
+  stream2.open(filename2, std::ios::binary);
 
   FILE* out = fopen(diffs, "w");
   if (out == nullptr) {
@@ -462,8 +461,6 @@ void OpenRoad::diffDbs(const char* filename1,
 
   odb::dbDatabase::diff(db1, db2, out, 2);
 
-  fclose(stream1);
-  fclose(stream2);
   fclose(out);
 }
 

@@ -4121,11 +4121,13 @@ bool GSegment::operator==(const GSegment& segment) const
 
 std::size_t GSegmentHash::operator()(const GSegment& seg) const
 {
-  std::size_t h1 = std::hash<int>()(seg.init_x * seg.init_y * seg.init_layer);
-  std::size_t h2
-      = std::hash<int>()(seg.final_x * seg.final_y * seg.final_layer);
-
-  return h1 ^ h2;
+  return boost::hash<std::tuple<int, int, int, int, int, int>>()(
+      {seg.init_x,
+       seg.init_y,
+       seg.init_layer,
+       seg.final_x,
+       seg.final_y,
+       seg.final_layer});
 }
 
 bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const
