@@ -296,8 +296,16 @@ Resizer::removeBuffers()
   graph_delay_calc_->delaysInvalid();
   search_->arrivalsInvalid();
 
+  int num_insts = block_->getInsts().size();
   int remove_count = 0;
+  int previous_progress = -1;
+  int i = 0;
   for (dbInst *db_inst : block_->getInsts()) {
+    int progress = (int)(100.0F * ((float)i++ / (float)num_insts));
+    if (progress > previous_progress) {
+      logger_->info(RSZ, 1236, "Checked: {}%", progress);
+      previous_progress = progress;
+    }
     LibertyCell *lib_cell = db_network_->libertyCell(db_inst);
     Instance *buffer = db_network_->dbToSta(db_inst);
     if (!db_inst->isDoNotTouch()
