@@ -22,12 +22,17 @@ system innovation. The OpenROAD application enables flexible flow
 control through an API with bindings in Tcl and Python.
 
 OpenROAD is used in both open-source and commercial IC design
-flows such as native [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
-[OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
-[Efabless](https://efabless.com/), [Silicon Compiler](https://github.com/siliconcompiler/siliconcompiler)
-from Zero ASIC, [Hammer](https://docs.hammer-eda.org/en/latest/Examples/openroad-nangate45.html)
-from Berkeley and [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
-mixed-signal design flows.
+flows such as,
+- [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
+  from [OpenROAD](https://theopenroadproject.org/)
+- [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
+  [Efabless](https://efabless.com/)
+- [Silicon Compiler](https://github.com/siliconcompiler/siliconcompiler)
+  from [Zero ASIC](https://www.zeroasic.com/)
+- [Hammer](https://docs.hammer-eda.org/en/latest/Examples/openroad-nangate45.html)
+  from [UC Berkeley](https://github.com/ucb-bar)
+- [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) from
+  [IDEA-FASoC](https://github.com/idea-fasoc) for mixed-signal design flows
 
 OpenROAD fosters a vibrant ecosystem of users through active
 collaboration and partnership through software development and key
@@ -38,10 +43,10 @@ students and researchers.
 OpenROAD strongly advocates and enables IC design-based education
 and workforce development initiatives through training content and
 courses across several global universities, the Google-SkyWater
-[shuttles](https://platform.efabless.com/projects/public), design
-contests and IC design workshops. The OpenROAD flow has been
-successfully used to date in over 600 silicon-ready tapeouts for
-technologies up to 12nm.
+[shuttles](https://platform.efabless.com/projects/public) also
+includes GlobalFoundries shuttles, design contests and IC design
+workshops. The OpenROAD flow has been successfully used to date
+in over 600 silicon-ready tapeouts for technologies up to 12nm.
 
 ## OpenROAD Flow Stages
 
@@ -58,7 +63,7 @@ flow stages through Tcl commands and Python APIs.
 
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
-![ORFS_Flow.webp](./docs/images/ORFS_Flow.webp)
+![ORFS_Flow.webp](./docs/images/ORFS_Flow.svg)
 
 Here are the main steps for a physical design implementation
 using OpenROAD;
