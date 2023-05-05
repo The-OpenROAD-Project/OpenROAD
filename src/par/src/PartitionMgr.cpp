@@ -44,6 +44,7 @@
 #include <iostream>
 
 #include "TritonPart.h"
+#include "Utilities.h"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"
 #include "sta/MakeConcreteNetwork.hh"
@@ -51,7 +52,6 @@
 #include "sta/PortDirection.hh"
 #include "sta/VerilogWriter.hh"
 #include "utl/Logger.h"
-#include "Utilities.h"
 
 using odb::dbBlock;
 using odb::dbInst;
@@ -90,51 +90,53 @@ void PartitionMgr::init(odb::dbDatabase* db,
   logger_ = logger;
 }
 
-
 // The function for partitioning a hypergraph
 // This is used for replacing hMETIS
-// Key supports: 
+// Key supports:
 // (1) fixed vertices constraint in fixed_file
-// (2) community attributes in community_file (This can be used to guide the partitioning process)
-// (3) stay together attributes in group_file.
-// (4) placement information is specified in placement file
-// The format is that each line cooresponds to a group
-// fixed vertices, community and placement attributes both follows the hMETIS format
-void PartitionMgr::tritonPartHypergraph(unsigned int num_parts,
-                                        float balance_constraint,
-                                        unsigned int seed,
-                                        int vertex_dimension,
-                                        int hyperedge_dimension,
-                                        int placement_dimension,
-                                        const char* hypergraph_file,
-                                        const char* fixed_file,
-                                        const char* community_file,
-                                        const char* group_file,
-                                        const char* placement_file,
-                                        // weight parameters
-                                        const char* e_wt_factors_str,
-                                        const char* v_wt_factors_str,
-                                        const char* placement_wt_factors_str,
-                                        // coarsening related parameters
-                                        int thr_coarsen_hyperedge_size_skip,
-                                        int thr_coarsen_vertices,
-                                        int thr_coarsen_hyperedges,
-                                        float coarsening_ratio,
-                                        int max_coarsen_iters,
-                                        float adj_diff_ratio,
-                                        int min_num_vertices_each_part,
-                                        // initial partitioning related parameters
-                                        int num_initial_solutions,
-                                        int num_best_initial_solutions,
-                                        // refinement related parameters
-                                        int refiner_iters,
-                                        int max_moves,
-                                        float early_stop_ratio,
-                                        int total_corking_passes,
-                                        // vcycle related parameters
-                                        bool v_cycle_flag,
-                                        int max_num_vcycle,
-                                        int num_clusters_threshold_overlay)
+// (2) community attributes in community_file (This can be used to guide the
+// partitioning process) (3) stay together attributes in group_file. (4)
+// placement information is specified in placement file The format is that each
+// line cooresponds to a group fixed vertices, community and placement
+// attributes both follows the hMETIS format
+void PartitionMgr::tritonPartHypergraph(
+    unsigned int num_parts,
+    float balance_constraint,
+    unsigned int seed,
+    int vertex_dimension,
+    int hyperedge_dimension,
+    int placement_dimension,
+    const char* hypergraph_file,
+    const char* fixed_file,
+    const char* community_file,
+    const char* group_file,
+    const char* placement_file,
+    // weight parameters
+    const char* e_wt_factors_str,
+    const char* v_wt_factors_str,
+    const char* placement_wt_factors_str,
+    // coarsening related parameters
+    int thr_coarsen_hyperedge_size_skip,
+    int thr_coarsen_vertices,
+    int thr_coarsen_hyperedges,
+    float coarsening_ratio,
+    int max_coarsen_iters,
+    float adj_diff_ratio,
+    int min_num_vertices_each_part,
+    // initial partitioning related parameters
+    int num_initial_solutions,
+    int num_best_initial_solutions,
+    // refinement related parameters
+    int refiner_iters,
+    int max_moves,
+    float early_stop_ratio,
+    int total_corking_passes,
+    // vcycle related parameters
+    bool v_cycle_flag,
+    int max_num_vcycle,
+    int num_coarsen_solutions,
+    int num_vertices_threshold_ilp,
+    int global_net_threshold)
 {
   // Use TritonPart to partition a hypergraph
   // In this mode, TritonPart works as hMETIS.
@@ -146,28 +148,32 @@ void PartitionMgr::tritonPartHypergraph(unsigned int num_parts,
   triton_part->SetNetWeight(e_wt_factors);
   std::vector<float> v_wt_factors = ConvertTclListToVector(v_wt_factors_str);
   triton_part->SetVertexWeight(v_wt_factors);
-  std::vector<float> placement_wt_factors = ConvertTclListToVector(placement_wt_factors_str);
+  std::vector<float> placement_wt_factors
+      = ConvertTclListToVector(placement_wt_factors_str);
   triton_part->SetPlacementWeight(placement_wt_factors);
-  triton_part->SetFineTuneParams(// coarsening related parameters
-                                 thr_coarsen_hyperedge_size_skip,
-                                 thr_coarsen_vertices,
-                                 thr_coarsen_hyperedges,
-                                 coarsening_ratio,
-                                 max_coarsen_iters,
-                                 adj_diff_ratio,
-                                 min_num_vertices_each_part,
-                                 // initial partitioning related parameters
-                                 num_initial_solutions,
-                                 num_best_initial_solutions,
-                                 // refinement related parameters
-                                 refiner_iters,
-                                 max_moves,
-                                 early_stop_ratio,
-                                 total_corking_passes,
-                                 // vcycle related parameters
-                                 v_cycle_flag,
-                                 max_num_vcycle,
-                                 num_clusters_threshold_overlay);
+  triton_part->SetFineTuneParams(  // coarsening related parameters
+      thr_coarsen_hyperedge_size_skip,
+      thr_coarsen_vertices,
+      thr_coarsen_hyperedges,
+      coarsening_ratio,
+      max_coarsen_iters,
+      adj_diff_ratio,
+      min_num_vertices_each_part,
+      // initial partitioning related parameters
+      num_initial_solutions,
+      num_best_initial_solutions,
+      // refinement related parameters
+      refiner_iters,
+      max_moves,
+      early_stop_ratio,
+      total_corking_passes,
+      // vcycle related parameters
+      v_cycle_flag,
+      max_num_vcycle,
+      num_coarsen_solutions,
+      num_vertices_threshold_ilp,
+      global_net_threshold);
+
   triton_part->PartitionHypergraph(num_parts,
                                    balance_constraint,
                                    seed,
@@ -184,7 +190,7 @@ void PartitionMgr::tritonPartHypergraph(unsigned int num_parts,
 // Evaluate a given solution of a hypergraph
 // The fixed vertices should statisfy the fixed vertices constraint
 // The group of vertices should stay together in the solution
-// The vertex balance should be satisfied  
+// The vertex balance should be satisfied
 void PartitionMgr::evaluateHypergraphSolution(unsigned int num_parts,
                                               float balance_constraint,
                                               int vertex_dimension,
@@ -204,27 +210,25 @@ void PartitionMgr::evaluateHypergraphSolution(unsigned int num_parts,
   triton_part->SetNetWeight(e_wt_factors);
   std::vector<float> v_wt_factors = ConvertTclListToVector(v_wt_factors_str);
   triton_part->SetVertexWeight(v_wt_factors);
-  triton_part->EvaluateHypergraphSolution(num_parts, 
+  triton_part->EvaluateHypergraphSolution(num_parts,
                                           balance_constraint,
-                                          vertex_dimension, 
+                                          vertex_dimension,
                                           hyperedge_dimension,
                                           hypergraph_file,
                                           fixed_file,
                                           group_file,
                                           solution_file);
 }
-  
 
 // Top level interface
 // The function for partitioning a hypergraph
 // This is the main API for TritonPart
 // Key supports:
 // (1) fixed vertices constraint in fixed_file
-// (2) community attributes in community_file (This can be used to guide the partitioning process)
-// (3) stay together attributes in group_file.
-// (4) timing-driven partitioning
-// (5) fence-aware partitioning
-// (6) placement-aware partitioning, placement information is extracted from OpenDB
+// (2) community attributes in community_file (This can be used to guide the
+// partitioning process) (3) stay together attributes in group_file. (4)
+// timing-driven partitioning (5) fence-aware partitioning (6) placement-aware
+// partitioning, placement information is extracted from OpenDB
 void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
                                     float balance_constraint_arg,
                                     unsigned int seed_arg,
@@ -241,7 +245,7 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
                                     const char* group_file_arg,
                                     const char* solution_filename_arg,
                                     // timing related parameters
-                                    float net_timing_factor, 
+                                    float net_timing_factor,
                                     float path_timing_factor,
                                     float path_snaking_factor,
                                     float timing_exp_factor,
@@ -269,7 +273,9 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
                                     // vcycle related parameters
                                     bool v_cycle_flag,
                                     int max_num_vcycle,
-                                    int num_clusters_threshold_overlay)
+                                    int num_coarsen_solutions,
+                                    int num_vertices_threshold_ilp,
+                                    int global_net_threshold)
 {
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
@@ -278,33 +284,37 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
   triton_part->SetNetWeight(e_wt_factors);
   std::vector<float> v_wt_factors = ConvertTclListToVector(v_wt_factors_str);
   triton_part->SetVertexWeight(v_wt_factors);
-  std::vector<float> placement_wt_factors = ConvertTclListToVector(placement_wt_factors_str);
+  std::vector<float> placement_wt_factors
+      = ConvertTclListToVector(placement_wt_factors_str);
   triton_part->SetPlacementWeight(placement_wt_factors);
   triton_part->SetTimingParams(net_timing_factor,
                                path_timing_factor,
                                path_snaking_factor,
                                timing_exp_factor,
                                extra_delay);
-  triton_part->SetFineTuneParams(// coarsening related parameters
-                                 thr_coarsen_hyperedge_size_skip,
-                                 thr_coarsen_vertices,
-                                 thr_coarsen_hyperedges,
-                                 coarsening_ratio,
-                                 max_coarsen_iters,
-                                 adj_diff_ratio,
-                                 min_num_vertices_each_part,
-                                 // initial partitioning related parameters
-                                 num_initial_solutions,
-                                 num_best_initial_solutions,
-                                 // refinement related parameters
-                                 refiner_iters,
-                                 max_moves,
-                                 early_stop_ratio,
-                                 total_corking_passes,
-                                 // vcycle related parameters
-                                 v_cycle_flag,
-                                 max_num_vcycle,
-                                 num_clusters_threshold_overlay);
+  triton_part->SetFineTuneParams(  // coarsening related parameters
+      thr_coarsen_hyperedge_size_skip,
+      thr_coarsen_vertices,
+      thr_coarsen_hyperedges,
+      coarsening_ratio,
+      max_coarsen_iters,
+      adj_diff_ratio,
+      min_num_vertices_each_part,
+      // initial partitioning related parameters
+      num_initial_solutions,
+      num_best_initial_solutions,
+      // refinement related parameters
+      refiner_iters,
+      max_moves,
+      early_stop_ratio,
+      total_corking_passes,
+      // vcycle related parameters
+      v_cycle_flag,
+      max_num_vcycle,
+      num_coarsen_solutions,
+      num_vertices_threshold_ilp,
+      global_net_threshold);
+
   triton_part->PartitionDesign(num_parts_arg,
                                balance_constraint_arg,
                                seed_arg,
@@ -323,13 +333,80 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
 }
 
 
+// Function to evaluate the hypergraph partitioning solution
+// This can be used to write the timing-weighted hypergraph
+// and evaluate the solution.
+// If the solution file is empty, then this function is to write the 
+// solution.
+// If the solution file is not empty, then this function is to evaluate
+// the solution without writing the hypergraph again
+// This function is only used for testing
+void PartitionMgr::evaluatePartDesignSolution(unsigned int num_parts_arg,
+                                              float balance_constraint_arg,
+                                              bool timing_aware_flag_arg,
+                                              int top_n_arg,
+                                              bool fence_flag_arg,
+                                              float fence_lx_arg,
+                                              float fence_ly_arg,
+                                              float fence_ux_arg,
+                                              float fence_uy_arg,
+                                              const char* fixed_file_arg,
+                                              const char* community_file_arg,
+                                              const char* group_file_arg,
+                                              const char* hypergraph_file_arg,
+                                              const char* hypergraph_int_weight_file_arg,
+                                              const char* solution_filename_arg,
+                                              // timing related parameters
+                                              float net_timing_factor,
+                                              float path_timing_factor,
+                                              float path_snaking_factor,
+                                              float timing_exp_factor,
+                                              float extra_delay,
+                                              // weight parameters
+                                              const char* e_wt_factors_str,
+                                              const char* v_wt_factors_str)
+{
+  auto triton_part
+      = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
+  // Convert the string e_wt_factors_str to vector
+  std::vector<float> e_wt_factors = ConvertTclListToVector(e_wt_factors_str);
+  triton_part->SetNetWeight(e_wt_factors);
+  std::vector<float> v_wt_factors = ConvertTclListToVector(v_wt_factors_str);
+  triton_part->SetVertexWeight(v_wt_factors);
+  std::vector<float> placement_wt_factors;
+  triton_part->SetPlacementWeight(placement_wt_factors);
+  triton_part->SetTimingParams(net_timing_factor,
+                               path_timing_factor,
+                               path_snaking_factor,
+                               timing_exp_factor,
+                               extra_delay);
+
+  triton_part->EvaluatePartDesignSolution(num_parts_arg,
+                                          balance_constraint_arg,
+                                          timing_aware_flag_arg,
+                                          top_n_arg,
+                                          fence_flag_arg,
+                                          fence_lx_arg,
+                                          fence_ly_arg,
+                                          fence_ux_arg,
+                                          fence_uy_arg,
+                                          fixed_file_arg,
+                                          community_file_arg,
+                                          group_file_arg,
+                                          hypergraph_file_arg,
+                                          hypergraph_int_weight_file_arg,
+                                          solution_filename_arg);
+}
+
+
 // k-way partitioning used by Hier-RTLMP
-std::vector<int> PartitionMgr::PartitionKWaySimpleMode(unsigned int num_parts_arg,
-                                                       float balance_constraint_arg,
-                                                       unsigned int seed_arg,
-                                                       const std::vector<std::vector<int> >& hyperedges,
-                                                       const std::vector<float>& vertex_weights,
-                                                       const std::vector<float>& hyperedge_weights)
+std::vector<int> PartitionMgr::PartitionKWaySimpleMode(
+    unsigned int num_parts_arg,
+    float balance_constraint_arg,
+    unsigned int seed_arg,
+    const std::vector<std::vector<int>>& hyperedges,
+    const std::vector<float>& vertex_weights,
+    const std::vector<float>& hyperedge_weights)
 {
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);

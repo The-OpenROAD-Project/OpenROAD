@@ -32,8 +32,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "TPRefiner.h"
 #include "TPHypergraph.h"
+#include "TPRefiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
@@ -47,26 +47,32 @@
 namespace par {
 
 // Implement the ILP-based refinement pass
-float TPilpRefine::Pass(const HGraphPtr hgraph,
-                        const MATRIX<float>& upper_block_balance,
-                        const MATRIX<float>& lower_block_balance,
-                        MATRIX<float>& block_balance, // the current block balance
-                        MATRIX<int>& net_degs, // the current net degree
-                        std::vector<float>& cur_paths_cost, // the current path cost
-                        TP_partition& solution,
-                        std::vector<bool>& visited_vertices_flag) 
+float TPilpRefine::Pass(
+    const HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    MATRIX<float>& block_balance,        // the current block balance
+    MATRIX<int>& net_degs,               // the current net degree
+    std::vector<float>& cur_paths_cost,  // the current path cost
+    TP_partition& solution,
+    std::vector<bool>& visited_vertices_flag)
 {
-  // Step 1: identify all the boundary vertices (boundary vertices will not include fixed vertices)
-  std::vector<int> boundary_vertices = FindBoundaryVertices(hgraph, net_degs, visited_vertices_flag); 
+  // Step 1: identify all the boundary vertices (boundary vertices will not
+  // include fixed vertices)
+  std::vector<int> boundary_vertices
+      = FindBoundaryVertices(hgraph, net_degs, visited_vertices_flag);
   // Step 2: extract the related information
   // vertices, hyperedges
-  // In our implementation, try to avoid traversing the entire hypergraph multiple times
-  const int num_extracted_vertices = num_parts_ + static_cast<int>(boundary_vertices.size());
+  // In our implementation, try to avoid traversing the entire hypergraph
+  // multiple times
+  const int num_extracted_vertices
+      = num_parts_ + static_cast<int>(boundary_vertices.size());
   std::vector<int> vertices_extracted;
   vertices_extracted.reserve(num_extracted_vertices);
-  std::map<int, int> fixed_vertices_extracted; // vertex_id, block_id
-  std::map<int, int> vertices_extracted_map; // map the boundary vertices to the extracted vertices
-  MATRIX<float> vertices_weight_extracted; // extracted vertex weight
+  std::map<int, int> fixed_vertices_extracted;  // vertex_id, block_id
+  std::map<int, int> vertices_extracted_map;    // map the boundary vertices to
+                                                // the extracted vertices
+  MATRIX<float> vertices_weight_extracted;      // extracted vertex weight
   MATRIX<int> hyperedges_extracted;
   std::vector<float> hyperedges_weight_extracted;
   vertices_weight_extracted.reserve(num_extracted_vertices);
@@ -76,31 +82,31 @@ float TPilpRefine::Pass(const HGraphPtr hgraph,
     vertices_extracted_map[v] = vertex_id++;
     vertices_weight_extracted.push_back(hgraph->vertex_weights_[v]);
     const int block_id = solution[v];
-    block_balance[block_id] = block_balance[block_id] - hgraph->vertex_weights_[v];
+    block_balance[block_id]
+        = block_balance[block_id] - hgraph->vertex_weights_[v];
   }
   const int part_vertex_id_base = vertex_id;
   // the remaining vertices in each block are modeled as a fixed vertex
   for (int block_id = 0; block_id < num_parts_; block_id++) {
-    vertices_extracted.push_back(-1); // map to nothing
+    vertices_extracted.push_back(-1);  // map to nothing
     fixed_vertices_extracted[vertex_id++] = block_id;
     vertices_weight_extracted.push_back(block_balance[block_id]);
   }
-  
+
   // get the hyperedge information
   std::set<int> boundary_hyperedges;
   for (const auto& v : boundary_vertices) {
-    for (int idx = hgraph->vptr_[v]; 
-        idx < hgraph->vptr_[v+1]; idx++) {
+    for (int idx = hgraph->vptr_[v]; idx < hgraph->vptr_[v + 1]; idx++) {
       boundary_hyperedges.insert(hgraph->vind_[idx]);
     }
   }
   // convert boundary hyperegdes into extracted hyperedges
   for (const auto& e : boundary_hyperedges) {
     std::set<int> hyperedge;
-    for (int idx = hgraph->eptr_[e];
-         idx < hgraph->eptr_[e+1]; idx++) {
+    for (int idx = hgraph->eptr_[e]; idx < hgraph->eptr_[e + 1]; idx++) {
       const int vertex_id = hgraph->eind_[idx];
-      if (vertices_extracted_map.find(vertex_id) == vertices_extracted_map.end()) {
+      if (vertices_extracted_map.find(vertex_id)
+          == vertices_extracted_map.end()) {
         hyperedge.insert(part_vertex_id_base + solution[vertex_id]);
       } else {
         hyperedge.insert(vertices_extracted_map[vertex_id]);
@@ -108,63 +114,79 @@ float TPilpRefine::Pass(const HGraphPtr hgraph,
     }
     if (hyperedge.size() > 1) {
       hyperedges_extracted.push_back(
-        std::vector<int>(hyperedge.begin(), hyperedge.end()));
+          std::vector<int>(hyperedge.begin(), hyperedge.end()));
       hyperedges_weight_extracted.push_back(
-        evaluator_->CalculateHyperedgeCost(e, hgraph));     
+          evaluator_->CalculateHyperedgeCost(e, hgraph));
     }
-  } 
+  }
   // get vertex weight dimension
   const int vertex_weight_dimension = hgraph->vertex_dimensions_;
   // call the ILP solver
   std::vector<int> solution_extracted;
-  if (ILPPartitionInst(num_parts_, vertex_weight_dimension,
+  if (ILPPartitionInst(num_parts_,
+                       vertex_weight_dimension,
                        solution_extracted,
                        fixed_vertices_extracted,
                        hyperedges_extracted,
                        hyperedges_weight_extracted,
                        vertices_weight_extracted,
                        upper_block_balance,
-                       lower_block_balance) == false) {
-    logger_->report("[WARNING] ILP-based partitioning cannot find a valid solution.");
-    return 0.0; // no valid solution
+                       lower_block_balance)
+      == false) {
+    logger_->report(
+        "[WARNING] ILP-based partitioning cannot find a valid solution.");
+    return 0.0;  // no valid solution
   }
   // try to update the solution
-  // We have this extra step, because the ILP-based partitioning cannot handle path
-  // related cost
+  // We have this extra step, because the ILP-based partitioning cannot handle
+  // path related cost
   std::vector<TP_gain_cell> moves_trace;
   float best_gain = 0.0;
   float total_gain = 0.0;
-  int best_vertex_id = -1; 
+  int best_vertex_id = -1;
   for (int i = 0; i < part_vertex_id_base; i++) {
     const int vertex_id = vertices_extracted[i];
     const int to_pid = solution_extracted[i];
     // calculate the gain
     TP_gain_cell gain_cell = CalculateVertexGain(vertex_id,
-      solution[vertex_id], to_pid, hgraph, solution, 
-      cur_paths_cost, net_degs);
+                                                 solution[vertex_id],
+                                                 to_pid,
+                                                 hgraph,
+                                                 solution,
+                                                 cur_paths_cost,
+                                                 net_degs);
     moves_trace.push_back(gain_cell);
     // accept the gain
-    AcceptVertexGain(gain_cell, hgraph, 
-                     total_gain, visited_vertices_flag,
-                     solution, cur_paths_cost, 
-                     block_balance, net_degs);
+    AcceptVertexGain(gain_cell,
+                     hgraph,
+                     total_gain,
+                     visited_vertices_flag,
+                     solution,
+                     cur_paths_cost,
+                     block_balance,
+                     net_degs);
     if (total_gain >= best_gain) {
       best_gain = total_gain;
       best_vertex_id = vertex_id;
-    }               
+    }
   }
-  
+
   // update the solution to the status with best_gain
   // traverse the moves_trace in the reversing order
-  for (auto move_iter = moves_trace.rbegin();
-        move_iter != moves_trace.rend(); move_iter++) {
+  for (auto move_iter = moves_trace.rbegin(); move_iter != moves_trace.rend();
+       move_iter++) {
     // stop when we encounter the best_vertex_id
     auto& vertex_move = *move_iter;
     if (vertex_move->GetVertex() == best_vertex_id) {
-      break; // stop here
-    } 
-    RollBackVertexGain(vertex_move, hgraph, visited_vertices_flag,
-                       solution, cur_paths_cost, block_balance, net_degs);        
+      break;  // stop here
+    }
+    RollBackVertexGain(vertex_move,
+                       hgraph,
+                       visited_vertices_flag,
+                       solution,
+                       cur_paths_cost,
+                       block_balance,
+                       net_degs);
   }
   return best_gain;
 }

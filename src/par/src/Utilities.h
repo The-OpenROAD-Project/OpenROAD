@@ -65,23 +65,25 @@
 
 namespace par {
 
-
 // MATRIX is a two-dimensional vectors
 template <typename T>
-using MATRIX = std::vector<std::vector<T> >;
+using MATRIX = std::vector<std::vector<T>>;
 
-struct Rect {
+struct Rect
+{
   // all the values are in db unit
   long long int lx = 0;
   long long int ly = 0;
   long long int ux = 0;
   long long int uy = 0;
 
-  Rect(int lx_, int ly_, int ux_, int uy_) :
-    lx(lx_), ly(ly_), ux(ux_), uy(uy_) { }
+  Rect(int lx_, int ly_, int ux_, int uy_) : lx(lx_), ly(ly_), ux(ux_), uy(uy_)
+  {
+  }
 
   // check if the Rect is valid
-  bool IsValid() const {
+  bool IsValid() const
+  {
     if (ux > lx && uy > ly) {
       return true;
     } else {
@@ -90,7 +92,8 @@ struct Rect {
   }
 
   // reset the fence
-  void Reset() {
+  void Reset()
+  {
     lx = 0;
     ly = 0;
     ux = 0;
@@ -99,17 +102,21 @@ struct Rect {
 };
 
 // Define the type for vertices
-enum VertexType {
-   COMB_STD_CELL, // combinational standard cell
-   SEQ_STD_CELL,  // sequential standard cell
-   MACRO, // hard macros
-   PORT // IO ports
+enum VertexType
+{
+  COMB_STD_CELL,  // combinational standard cell
+  SEQ_STD_CELL,   // sequential standard cell
+  MACRO,          // hard macros
+  PORT            // IO ports
 };
 
 std::string GetVectorString(const std::vector<float>& vec);
 
 // Convert Tcl list to vector
 std::vector<float> ConvertTclListToVector(std::string tcl_list_string);
+
+// Split a string based on deliminator : empty space and ","
+std::vector<std::string> SplitLine(std::string line);
 
 // Add right vector to left vector
 void Accumulate(std::vector<float>& a, const std::vector<float>& b);
@@ -146,7 +153,6 @@ bool operator<=(const MATRIX<float>& a, const MATRIX<float>& b);
 
 bool operator==(const std::vector<float>& a, const std::vector<float>& b);
 
-
 // Basic functions for a vector
 std::vector<float> abs(const std::vector<float>& a);
 
@@ -155,29 +161,30 @@ float norm2(const std::vector<float>& a);
 float norm2(const std::vector<float>& a, const std::vector<float>& factor);
 
 // ILP-based Partitioning Instance
-// Call ILP Solver to partition the design 
-bool ILPPartitionInst(int num_parts,
-                      int vertex_weight_dimension,
-                      std::vector<int>& solution,
-                      const std::map<int, int>& fixed_vertices, // vertex_id, block_id
-                      const MATRIX<int>& hyperedges, // hyperedges
-                      const std::vector<float>& hyperedge_weights,  // one-dimensional
-                      const MATRIX<float>& vertex_weights, // two-dimensional
-                      const MATRIX<float>& upper_block_balance,
-                      const MATRIX<float>& lower_block_balance); 
+// Call ILP Solver to partition the design
+bool ILPPartitionInst(
+    int num_parts,
+    int vertex_weight_dimension,
+    std::vector<int>& solution,
+    const std::map<int, int>& fixed_vertices,     // vertex_id, block_id
+    const MATRIX<int>& hyperedges,                // hyperedges
+    const std::vector<float>& hyperedge_weights,  // one-dimensional
+    const MATRIX<float>& vertex_weights,          // two-dimensional
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance);
 
-// Call CPLEX to solve the ILP Based Partitioning                      
+// Call CPLEX to solve the ILP Based Partitioning
 #ifdef LOAD_CPLEX
-bool OptimalPartCPlex(int num_parts,
-                      int vertex_weight_dimension,
-                      std::vector<int>& solution,
-                      const std::map<int, int>& fixed_vertices, // vertex_id, block_id
-                      const MATRIX<int>& hyperedges, // hyperedges
-                      const std::vector<float>& hyperedge_weights,  // one-dimensional
-                      const MATRIX<float>& vertex_weights, // two-dimensional
-                      const MATRIX<float>& upper_block_balance,
-                      const MATRIX<float>& lower_block_balance); 
+bool OptimalPartCplex(
+    int num_parts,
+    int vertex_weight_dimension,
+    std::vector<int>& solution,
+    const std::map<int, int>& fixed_vertices,     // vertex_id, block_id
+    const MATRIX<int>& hyperedges,                // hyperedges
+    const std::vector<float>& hyperedge_weights,  // one-dimensional
+    const MATRIX<float>& vertex_weights,          // two-dimensional
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance);
 #endif
-
 
 }  // namespace par

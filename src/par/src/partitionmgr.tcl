@@ -66,7 +66,9 @@ sta::define_cmd_args "triton_part_hypergraph" {
   [-total_corking_passes total_corking_passes] \
   [-v_cycle_flag v_cycle_flag ] \
   [-max_num_vcycle max_num_vcycle] \
-  [-num_clusters_threshold_overlay num_clusters_threshold_overlay] \
+  [-num_coarsen_solutions num_coarsen_solutions] \
+  [-num_vertices_threshold_ilp num_vertices_threshold_ilp] \
+  [-global_net_threshold global_net_threshold] \
   }
 proc triton_part_hypergraph { args } {
   sta::parse_key_args "triton_part_hypergraph" args \
@@ -99,7 +101,9 @@ proc triton_part_hypergraph { args } {
             -total_corking_passes \
             -v_cycle_flag \
             -max_num_vcycle \
-            -num_clusters_threshold_overlay } \
+            -num_coarsen_solutions \
+            -num_vertices_threshold_ilp \
+            -global_net_threshold } \
       flags {}
  
   if { ![info exists keys(-hypergraph_file)] } {
@@ -119,23 +123,24 @@ proc triton_part_hypergraph { args } {
   set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
   set placement_wt_factors { 1.0 }
-  set thr_coarsen_hyperedge_size_skip 50
-  set thr_coarsen_vertices 200
+  set thr_coarsen_hyperedge_size_skip 1000
+  set thr_coarsen_vertices 10
   set thr_coarsen_hyperedges 50
   set coarsening_ratio 1.5
-  set max_coarsen_iters 20
+  set max_coarsen_iters 30
   set adj_diff_ratio 0.0001
   set min_num_vertices_each_part 4
   set num_initial_solutions 50
   set num_best_initial_solutions 10
   set refiner_iters 10
-  set max_moves 50
+  set max_moves 100
   set early_stop_ratio 0.5
   set total_corking_passes 25
   set v_cycle_flag true
-  set max_num_vcycle 5
-  set num_clusters_threshold_overlay 500
-  
+  set max_num_vcycle 1
+  set num_coarsen_solutions 4
+  set num_vertices_threshold_ilp 100
+  set global_net_threshold 1000
   
   if { [info exists keys(-num_parts)] } {
     set num_parts $keys(-num_parts)
@@ -252,8 +257,16 @@ proc triton_part_hypergraph { args } {
     set max_num_vcycle $keys(-max_num_vcycle)
   }
 
-  if { [info exists keys(-num_clusters_threshold_overlay)] } {
-    set num_clusters_threshold_overlay $keys(-num_clusters_threshold_overlay)
+  if { [info exists keys(-num_coarsen_solutions)] } {
+    set num_coarsen_solutions $keys(-num_coarsen_solutions)
+  }
+
+  if { [info exists keys(-num_vertices_threshold_ilp)] } {
+    set num_vertices_threshold_ilp $keys(-num_vertices_threshold_ilp)
+  }
+
+  if { [info exists keys(-global_net_threshold)] } {
+    set global_net_threshold $keys(-global_net_threshold)
   }
 
   par::triton_part_hypergraph $num_parts \
@@ -285,7 +298,9 @@ proc triton_part_hypergraph { args } {
             $total_corking_passes \
             $v_cycle_flag \
             $max_num_vcycle \
-            $num_clusters_threshold_overlay
+            $num_coarsen_solutions \
+            $num_vertices_threshold_ilp \
+            $global_net_threshold
 }
 
 
@@ -294,13 +309,13 @@ sta::define_cmd_args "evaluate_hypergraph_solution" {
   -num_parts num_parts \
   -balance_constraint balance_constraint \
   -hypergraph_file hypergraph_file \
-  -solution_file solution_file
+  -solution_file solution_file \
   [-vertex_dimension vertex_dimension] \
   [-hyperedge_dimension hyperedge_dimension] \
   [-fixed_file fixed_file] \
   [-group_file group_file] \
   [-e_wt_factors e_wt_factors] \
-  [-v_wt_factors <v_wt_factors>] \ 
+  [-v_wt_factors v_wt_factors] \ 
   }
 proc evaluate_hypergraph_solution { args } {
   sta::parse_key_args "evaluate_hypergraph_solution" args \
@@ -360,14 +375,17 @@ proc evaluate_hypergraph_solution { args } {
 
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
-    set e_wt_factors [list $e_wt_factors]
   }
 
   if { [info exists keys(-v_wt_factors)] } {
     set v_wt_factors $keys(-v_wt_factors)
-    set v_wt_factors [list $v_wt_factors]
   }
  
+  puts "evaluate_hypergraph_solution"
+  puts "num_parts : ${num_parts}"
+  puts "v_wt_factors : ${v_wt_factors}"  
+
+
   par::evaluate_hypergraph_solution $num_parts \
             $balance_constraint \
             $vertex_dimension \
@@ -376,8 +394,8 @@ proc evaluate_hypergraph_solution { args } {
             $fixed_file \
             $group_file \
             $solution_file \ 
-            $e_wt_factors \
-            $v_wt_factors 
+            $e_wt_factors 
+
 }
 
 
@@ -419,7 +437,9 @@ sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-total_corking_passes total_corking_passes] \
                                             [-v_cycle_flag v_cycle_flag ] \
                                             [-max_num_vcycle max_num_vcycle] \
-                                            [-num_clusters_threshold_overlay num_clusters_threshold_overlay] \
+                                            [-num_coarsen_solutions num_coarsen_solutions] \
+                                            [-num_vertices_threshold_ilp num_vertices_threshold_ilp] \
+                                            [-global_net_threshold global_net_threshold] \
                                           }
 proc triton_part_design { args } {
   sta::parse_key_args "triton_part_design" args \
@@ -461,14 +481,16 @@ proc triton_part_design { args } {
             -total_corking_passes \
             -v_cycle_flag \
             -max_num_vcycle \
-            -num_clusters_threshold_overlay } \
+            -num_coarsen_solutions \
+            -num_vertices_threshold_ilp \
+            -global_net_threshold } \
       flags {}
   set num_parts 2
   set balance_constraint 1.0
-  set seed 0
+  set seed 1
   set timing_aware_flag true
-  set top_n 100
-  set placement_flag true
+  set top_n 1000
+  set placement_flag false
   set fence_flag false
   set fence_lx 0.0
   set fence_ly 0.0
@@ -486,22 +508,24 @@ proc triton_part_design { args } {
   set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
   set placement_wt_factors { }
-  set thr_coarsen_hyperedge_size_skip 50
-  set thr_coarsen_vertices 200
+  set thr_coarsen_hyperedge_size_skip 1000
+  set thr_coarsen_vertices 10
   set thr_coarsen_hyperedges 50
   set coarsening_ratio 1.5
-  set max_coarsen_iters 20
+  set max_coarsen_iters 30
   set adj_diff_ratio 0.0001
   set min_num_vertices_each_part 4
-  set num_initial_solutions 50
+  set num_initial_solutions 100
   set num_best_initial_solutions 10
-  set refiner_iters 2
-  set max_moves 50
+  set refiner_iters 10
+  set max_moves 100
   set early_stop_ratio 0.5
   set total_corking_passes 25
   set v_cycle_flag true
-  set max_num_vcycle 5
-  set num_clusters_threshold_overlay 500
+  set max_num_vcycle 1
+  set num_coarsen_solutions 4
+  set num_vertices_threshold_ilp 100
+  set global_net_threshold 1000
   
   if { [info exists keys(-num_parts)] } {
       set num_parts $keys(-num_parts)
@@ -577,12 +601,10 @@ proc triton_part_design { args } {
 
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
-    set e_wt_factors [list $e_wt_factors]
   }
 
   if { [info exists keys(-v_wt_factors)] } {
     set v_wt_factors $keys(-v_wt_factors)
-    set v_wt_factors [list $v_wt_factors]
   }
 
   if { [info exists keys(-placement_wt_factors)] } {
@@ -650,9 +672,18 @@ proc triton_part_design { args } {
     set max_num_vcycle $keys(-max_num_vcycle)
   }
 
-  if { [info exists keys(-num_clusters_threshold_overlay)] } {
-    set num_clusters_threshold_overlay $keys(-num_clusters_threshold_overlay)
+  if { [info exists keys(-num_coarsen_solutions)] } {
+    set num_coarsen_solutions $keys(-num_coarsen_solutions)
   }
+
+  if { [info exists keys(-num_vertices_threshold_ilp)] } {
+    set num_vertices_threshold_ilp $keys(-num_vertices_threshold_ilp)
+  }
+
+  if { [info exists keys(-global_net_threshold)] } {
+    set global_net_threshold $keys(-global_net_threshold)
+  }
+
 
   par::triton_part_design $num_parts \
             $balance_constraint \
@@ -692,8 +723,189 @@ proc triton_part_design { args } {
             $total_corking_passes \
             $v_cycle_flag \
             $max_num_vcycle \
-            $num_clusters_threshold_overlay
+            $num_coarsen_solutions \
+            $num_vertices_threshold_ilp \
+            $global_net_threshold 
 }
+
+
+sta::define_cmd_args "evaluate_part_design_solution" { 
+  [-num_parts num_parts] \
+  [-balance_constraint balance_constraint] \
+  [-timing_aware_flag timing_aware_flag] \
+  [-top_n top_n] \
+  [-fence_flag fence_flag] \
+  [-fence_lx fence_lx] \
+  [-fence_ly fence_ly] \
+  [-fence_ux fence_ux] \
+  [-fence_uy fence_uy] \
+  [-fixed_file fixed_file] \
+  [-community_file community_file] \
+  [-group_file group_file] \
+  [-hypergraph_file hypergraph_file]
+  [-hypergraph_int_weight_file hypergraph_int_weight_file]
+  [-solution_file solution_file] \
+  [-net_timing_factor net_timing_factor] \
+  [-path_timing_factor path_timing_factor] \
+  [-path_snaking_factor path_snaking_factor] \
+  [-timing_exp_factor timing_exp_factor] \
+  [-extra_delay extra_delay] \
+  [-e_wt_factors e_wt_factors] \
+  [-v_wt_factors v_wt_factors] }
+proc evaluate_part_design_solution { args } {
+  sta::parse_key_args "evaluate_part_design_solution" args \
+      keys {-num_parts \
+            -balance_constraint \
+            -timing_aware_flag \
+            -top_n \
+            -fence_flag  \
+            -fence_lx  \
+            -fence_ly  \
+            -fence_ux  \
+            -fence_uy  \
+            -fixed_file \
+            -community_file \
+            -group_file \
+            -hypergraph_file \
+            -hypergraph_int_weight_file \
+            -solution_file \
+            -net_timing_factor \
+            -path_timing_factor \
+            -path_snaking_factor \
+            -timing_exp_factor \
+            -extra_delay \
+            -e_wt_factors \
+            -v_wt_factors  } \
+      flags {}
+  set num_parts 2
+  set balance_constraint 1.0
+  set timing_aware_flag true
+  set top_n 1000
+  set fence_flag false
+  set fence_lx 0.0
+  set fence_ly 0.0
+  set fence_ux 0.0
+  set fence_uy 0.0
+  set fixed_file ""
+  set community_file ""
+  set group_file ""
+  set hypergraph_file ""
+  set hypergraph_int_weight_file ""
+  set solution_file ""
+  set net_timing_factor 1.0
+  set path_timing_factor 1.0
+  set path_snaking_factor 1.0
+  set timing_exp_factor 1.0
+  set extra_delay 1e-9
+  set e_wt_factors { 1.0 }
+  set v_wt_factors { 1.0 }
+   
+  if { [info exists keys(-num_parts)] } {
+      set num_parts $keys(-num_parts)
+  }
+
+  if { [info exists keys(-balance_constraint)] } {
+      set balance_constraint $keys(-balance_constraint)
+  }
+
+  if { [info exists keys(-timing_aware_flag)] } {
+    set timing_aware_flag $keys(-timing_aware_flag)
+  }
+
+  if { [info exists keys(-top_n)] } {
+    set top_n $keys(-top_n)
+  }
+
+  if { [info exists keys(-fence_flag)] && 
+       [info exists keys(-fence_lx)] && 
+       [info exists keys(-fence_ly)] && 
+       [info exists keys(-fence_ux)] && 
+       [info exists keys(-fence_uy)] } {
+    set fence_flag $keys(-fence_flag)
+    set fence_lx $keys(-fence_lx)
+    set fence_ly $keys(-fence_ly)
+    set fence_ux $keys(-fence_ux)
+    set fence_uy $keys(-fence_uy)
+  }
+
+  if { [info exists keys(-fixed_file)] } {
+    set fixed_file $keys(-fixed_file)
+  }
+
+  if { [info exists keys(-community_file)] } {
+    set community_file $keys(-community_file)
+  }
+
+  if { [info exists keys(-group_file)] } {
+    set group_file $keys(-group_file)
+  }
+
+  if { [info exists keys(-hypergraph_file)] } {
+    set hypergraph_file $keys(-hypergraph_file)
+  }
+  
+  if { [info exists keys(-hypergraph_int_weight_file)] } {
+    set hypergraph_int_weight_file $keys(-hypergraph_int_weight_file)
+  }
+
+  if { [info exists keys(-solution_file)] } {
+      set solution_file $keys(-solution_file)
+  }
+  
+  if { [info exists keys(-net_timing_factor)] } {
+    set net_timing_factor $keys(-net_timing_factor)
+  }
+
+  if { [info exists keys(-path_timing_factor)] } {
+    set path_timing_factor $keys(-path_timing_factor)
+  }
+
+  if { [info exists keys(-path_snaking_factor)] } {
+    set path_snaking_factor $keys(-path_snaking_factor)
+  }
+
+  if { [info exists keys(-timing_exp_factor)] } {
+    set timing_exp_factor $keys(-timing_exp_factor)
+  }
+
+  if { [info exists keys(-extra_delay)] } {
+    set extra_delay $keys(-extra_delay)
+  }
+
+  if { [info exists keys(-e_wt_factors)] } {
+    set e_wt_factors $keys(-e_wt_factors)
+    set e_wt_factors [list $e_wt_factors]
+  }
+
+  if { [info exists keys(-v_wt_factors)] } {
+    set v_wt_factors $keys(-v_wt_factors)
+    set v_wt_factors [list $v_wt_factors]
+  }
+
+  par::evaluate_part_design_solution $num_parts \
+            $balance_constraint \
+            $timing_aware_flag \
+            $top_n \
+            $fence_flag \
+            $fence_lx \
+            $fence_ly \
+            $fence_ux \
+            $fence_uy \
+            $fixed_file \
+            $community_file \
+            $group_file \
+            $hypergraph_file \
+            $hypergraph_int_weight_file \
+            $solution_file \
+            $net_timing_factor \
+            $path_timing_factor \
+            $path_snaking_factor \
+            $timing_exp_factor \
+            $extra_delay \
+            $e_wt_factors \
+            $v_wt_factors 
+}
+
 
 #--------------------------------------------------------------------
 # Write partition to verilog

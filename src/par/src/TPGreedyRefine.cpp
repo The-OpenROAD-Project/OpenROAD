@@ -32,8 +32,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "TPRefiner.h"
 #include "TPHypergraph.h"
+#include "TPRefiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
@@ -46,21 +46,22 @@ namespace par {
 // Implement the greedy refinement pass
 // Different from the FM refinement, greedy refinement
 // only accepts possible gain
-float TPgreedyRefine::Pass(const HGraphPtr hgraph,
-                           const MATRIX<float>& upper_block_balance,
-                           const MATRIX<float>& lower_block_balance,
-                           MATRIX<float>& block_balance, // the current block balance
-                           MATRIX<int>& net_degs, // the current net degree
-                           std::vector<float>& cur_paths_cost, // the current path cost
-                           TP_partition& solution,
-                           std::vector<bool>& visited_vertices_flag) 
+float TPgreedyRefine::Pass(
+    const HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    MATRIX<float>& block_balance,        // the current block balance
+    MATRIX<int>& net_degs,               // the current net degree
+    std::vector<float>& cur_paths_cost,  // the current path cost
+    TP_partition& solution,
+    std::vector<bool>& visited_vertices_flag)
 {
-  float total_gain = 0.0; // total gain improvement
+  float total_gain = 0.0;  // total gain improvement
   int num_move = 0;
-  for (int hyperedge_id = 0; hyperedge_id < hgraph->num_hyperedges_; 
+  for (int hyperedge_id = 0; hyperedge_id < hgraph->num_hyperedges_;
        hyperedge_id++) {
-    // check if the hyperedge is a straddled_hyperedge    
-    std::set<int> block_set; 
+    // check if the hyperedge is a straddled_hyperedge
+    std::set<int> block_set;
     for (int block_id = 0; block_id < num_parts_; block_id++) {
       if (net_degs[hyperedge_id][block_id] > 0) {
         block_set.insert(block_id);
@@ -74,49 +75,60 @@ float TPgreedyRefine::Pass(const HGraphPtr hgraph,
     num_move++;
     if (num_move >= max_move_) {
       return total_gain;
-    }  
+    }
     // find the best candidate block
     // the initialization of best_gain is 0.0
     // define a lambda function to compare two TP_gain_hyperedge (>=)
-    auto CompareGainHyperedge = [&](const TP_gain_hyperedge& a, const TP_gain_hyperedge& b) {
-      if (a->GetGain() > b->GetGain()) {
-        return true;
-      } else if (a->GetGain() == b->GetGain() && 
-        evaluator_->CalculateHyperedgeVertexWtSum(a->GetHyperedge(), hgraph)
-          < evaluator_->CalculateHyperedgeVertexWtSum(b->GetHyperedge(), hgraph)) {
-        return true; // break ties based on vertex weight summation of the hyperedge
-      } else {
-        return false;
-      }
-    };
-    
-    //int best_candidate_block = -1;
+    auto CompareGainHyperedge
+        = [&](const TP_gain_hyperedge& a, const TP_gain_hyperedge& b) {
+            if (a->GetGain() > b->GetGain()) {
+              return true;
+            } else if (a->GetGain() == b->GetGain()
+                       && evaluator_->CalculateHyperedgeVertexWtSum(
+                              a->GetHyperedge(), hgraph)
+                              < evaluator_->CalculateHyperedgeVertexWtSum(
+                                  b->GetHyperedge(), hgraph)) {
+              return true;  // break ties based on vertex weight summation of
+                            // the hyperedge
+            } else {
+              return false;
+            }
+          };
+
+    // int best_candidate_block = -1;
     TP_gain_hyperedge best_gain_hyperedge = std::make_shared<HyperedgeGain>();
-    best_gain_hyperedge->SetGain(0.0f); // we only accept positive gain
+    best_gain_hyperedge->SetGain(0.0f);  // we only accept positive gain
     for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
-      if (CheckHyperedgeMoveLegality(hyperedge_id, to_pid, hgraph, solution,
-          block_balance, upper_block_balance, lower_block_balance) == true) {
-        TP_gain_hyperedge gain_hyperedge = CalculateHyperedgeGain(hyperedge_id, 
-            to_pid, hgraph, solution, cur_paths_cost, net_degs);
-        if (best_gain_hyperedge->GetHyperedge() < 0 ||
-            CompareGainHyperedge(gain_hyperedge, best_gain_hyperedge) == true) {
-          //best_candidate_block = to_pid;
+      if (CheckHyperedgeMoveLegality(hyperedge_id,
+                                     to_pid,
+                                     hgraph,
+                                     solution,
+                                     block_balance,
+                                     upper_block_balance,
+                                     lower_block_balance)
+          == true) {
+        TP_gain_hyperedge gain_hyperedge = CalculateHyperedgeGain(
+            hyperedge_id, to_pid, hgraph, solution, cur_paths_cost, net_degs);
+        if (best_gain_hyperedge->GetHyperedge() < 0
+            || CompareGainHyperedge(gain_hyperedge, best_gain_hyperedge)
+                   == true) {
+          // best_candidate_block = to_pid;
           best_gain_hyperedge = gain_hyperedge;
-        }        
+        }
       }
     }
 
     // We only accept positive move
-    if (best_gain_hyperedge->GetDestinationPart() > -1 &&
-        best_gain_hyperedge->GetGain() >= 0.0f) {
-    //if (best_candidate_block > -1) {
+    if (best_gain_hyperedge->GetDestinationPart() > -1
+        && best_gain_hyperedge->GetGain() >= 0.0f) {
+      // if (best_candidate_block > -1) {
       AcceptHyperedgeGain(best_gain_hyperedge,
-                          hgraph, 
-                          total_gain, 
+                          hgraph,
+                          total_gain,
                           solution,
                           cur_paths_cost,
                           block_balance,
-                          net_degs); 
+                          net_degs);
     }
   }
 

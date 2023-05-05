@@ -94,7 +94,9 @@ void triton_part_hypergraph(unsigned int num_parts,
                             // vcycle related parameters
                             bool v_cycle_flag,
                             int max_num_vcycle,
-                            int num_clusters_threshold_overlay)
+                            int num_coarsen_solutions,
+                            int num_vertices_threshold_ilp,
+                            int global_net_threshold)
 {
   getPartitionMgr()->tritonPartHypergraph(num_parts,
                                           balance_constraint,
@@ -130,7 +132,10 @@ void triton_part_hypergraph(unsigned int num_parts,
                                           // vcycle related parameters
                                           v_cycle_flag,
                                           max_num_vcycle,
-                                          num_clusters_threshold_overlay);
+                                          num_coarsen_solutions,
+                                          num_vertices_threshold_ilp,
+                                          global_net_threshold);
+                                        
 }
 
 void evaluate_hypergraph_solution(unsigned int num_parts,
@@ -145,6 +150,7 @@ void evaluate_hypergraph_solution(unsigned int num_parts,
                                   const char* e_wt_factors_str,
                                   const char* v_wt_factors_str)
 {
+  std::cout << "Enter here" << std::endl;
   getPartitionMgr()->evaluateHypergraphSolution(num_parts,
                                                 balance_constraint,
                                                 vertex_dimension,
@@ -202,7 +208,9 @@ void triton_part_design(unsigned int num_parts_arg,
                         // vcycle related parameters
                         bool v_cycle_flag,
                         int max_num_vcycle,
-                        int num_clusters_threshold_overlay)
+                        int num_coarsen_solutions,
+                        int num_vertices_threshold_ilp,
+                        int global_net_threshold)
 {
   getPartitionMgr()->tritonPartDesign(num_parts_arg,
                                       balance_constraint_arg,
@@ -248,7 +256,62 @@ void triton_part_design(unsigned int num_parts_arg,
                                       // vcycle related parameters
                                       v_cycle_flag,
                                       max_num_vcycle,
-                                      num_clusters_threshold_overlay);
+                                      num_coarsen_solutions,
+                                      num_vertices_threshold_ilp,
+                                      global_net_threshold);
+                                     
+}
+
+
+void evaluate_part_design_solution(unsigned int num_parts_arg,
+                                   float balance_constraint_arg,
+                                   bool timing_aware_flag_arg,
+                                   int top_n_arg,
+                                   bool fence_flag_arg,
+                                   float fence_lx_arg,
+                                   float fence_ly_arg,
+                                   float fence_ux_arg,
+                                   float fence_uy_arg,
+                                   const char* fixed_file_arg,
+                                   const char* community_file_arg,
+                                   const char* group_file_arg,
+                                   const char* hypergraph_file_arg,
+                                   const char* hypergraph_int_weight_file_arg,
+                                   const char* solution_filename_arg,
+                                   // timing related parameters
+                                   float net_timing_factor,
+                                   float path_timing_factor,
+                                   float path_snaking_factor,
+                                   float timing_exp_factor,
+                                   float extra_delay,
+                                   // weight parameters
+                                   const char* e_wt_factors_str,
+                                   const char* v_wt_factors_str)
+{
+  getPartitionMgr()->evaluatePartDesignSolution(num_parts_arg,
+                                                balance_constraint_arg,
+                                                timing_aware_flag_arg,
+                                                top_n_arg,
+                                                fence_flag_arg,
+                                                fence_lx_arg,
+                                                fence_ly_arg,
+                                                fence_ux_arg,
+                                                fence_uy_arg,
+                                                fixed_file_arg,
+                                                community_file_arg,
+                                                group_file_arg,
+                                                hypergraph_file_arg,
+                                                hypergraph_int_weight_file_arg,
+                                                solution_filename_arg,
+                                                // timing related parameters
+                                                net_timing_factor,
+                                                path_timing_factor,
+                                                path_snaking_factor,
+                                                timing_exp_factor,
+                                                extra_delay,
+                                                // weight parameters
+                                                e_wt_factors_str,
+                                                v_wt_factors_str);
 }
 
 void write_partition_verilog(const char* port_prefix,
@@ -263,6 +326,7 @@ void write_partition_verilog(const char* port_prefix,
 void read_file(const char* filename, const char* instance_map_file) {
   getPartitionMgr()->readPartitioningFile(filename, instance_map_file);
 }
+
 
 
 %}

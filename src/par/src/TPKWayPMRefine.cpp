@@ -32,22 +32,22 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "TPRefiner.h"
 #include "TPHypergraph.h"
+#include "TPRefiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
 // ------------------------------------------------------------------------------
 // K-way pair-wise FM refinement
 // ------------------------------------------------------------------------------
-// The motivation is that FM can achieve better performance for 2-way partitioning
-// than k-way partitioning. So we decompose the k-way partitioning into multiple 
-// 2-way partitioning through maximum matching.
-// In the first iteration, the maximum matching is based on connectivity between each
-// blocks.  In the remaing iterations, the maximum matching is based on the delta gain
-// for each block. Based on the paper of pair-wise PM, we can not keep using connectivity
-// based maximum matching.  Otherwise, we may easily got stuck in local minimum.
-// We use multiple multiple member functions of TPkWayFMRefine
+// The motivation is that FM can achieve better performance for 2-way
+// partitioning than k-way partitioning. So we decompose the k-way partitioning
+// into multiple 2-way partitioning through maximum matching. In the first
+// iteration, the maximum matching is based on connectivity between each blocks.
+// In the remaing iterations, the maximum matching is based on the delta gain
+// for each block. Based on the paper of pair-wise PM, we can not keep using
+// connectivity based maximum matching.  Otherwise, we may easily got stuck in
+// local minimum. We use multiple multiple member functions of TPkWayFMRefine
 // especially the functions related to gain buckets
 
 namespace par {
@@ -58,40 +58,47 @@ namespace par {
 // i.e., block_balance and net_degs will not change too much
 // so we precompute the block_balance and net_degs
 // the return value is the gain improvement
-float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
-                           const MATRIX<float>& upper_block_balance,
-                           const MATRIX<float>& lower_block_balance,
-                           MATRIX<float>& block_balance, // the current block balance
-                           MATRIX<int>& net_degs, // the current net degree
-                           std::vector<float>& paths_cost, // the current path cost
-                           TP_partition& solution,
-                           std::vector<bool>& visited_vertices_flag)  
+float TPkWayPMRefine::Pass(
+    const HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    MATRIX<float>& block_balance,    // the current block balance
+    MATRIX<int>& net_degs,           // the current net degree
+    std::vector<float>& paths_cost,  // the current path cost
+    TP_partition& solution,
+    std::vector<bool>& visited_vertices_flag)
 {
   // Step 1: determine the matching score
-  std::vector<std::pair<int, int> > maximum_matches; // maximum matching between blocks
-  std::map<std::pair<int, int>, float> matching_connectivity = 
-      evaluator_->GetMatchingConnectivity(hgraph, solution);  
-  CalculateMaximumMatch(maximum_matches, matching_connectivity);   
+  std::vector<std::pair<int, int>>
+      maximum_matches;  // maximum matching between blocks
+  std::map<std::pair<int, int>, float> matching_connectivity
+      = evaluator_->GetMatchingConnectivity(hgraph, solution);
+  CalculateMaximumMatch(maximum_matches, matching_connectivity);
   float delta_gain = 0.0;
   // Step 2: update the solution based on calculated maximum matching
   // initialize the gain buckets
   TP_gain_buckets buckets;
   for (int i = 0; i < num_parts_; ++i) {
     // the maxinum size of each bucket is hgraph->num_vertices_
-    TP_gain_bucket bucket
-        = std::make_shared<TPpriorityQueue>(hgraph->num_vertices_, 
-                                            total_corking_passes_,
-                                            hgraph);
+    TP_gain_bucket bucket = std::make_shared<TPpriorityQueue>(
+        hgraph->num_vertices_, total_corking_passes_, hgraph);
     buckets.push_back(bucket);
   }
   for (const auto& partition_pair : maximum_matches) {
     // after performing FM, the corresponding buckets will be cleared
-    delta_gain += PerformPairFM(hgraph, upper_block_balance, lower_block_balance, block_balance, net_degs,
-                                paths_cost, solution, buckets, visited_vertices_flag, partition_pair);
+    delta_gain += PerformPairFM(hgraph,
+                                upper_block_balance,
+                                lower_block_balance,
+                                block_balance,
+                                net_degs,
+                                paths_cost,
+                                solution,
+                                buckets,
+                                visited_vertices_flag,
+                                partition_pair);
   }
   return delta_gain;
 }
-
 
 /*
 // In each pass, we only move the boundary vertices
@@ -102,23 +109,23 @@ float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
 // the return value is the gain improvement
 float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
                            const MATRIX<float>& max_block_balance,
-                           MATRIX<float>& block_balance, // the current block balance
-                           MATRIX<int>& net_degs, // the current net degree
-                           std::vector<float>& paths_cost, // the current path cost
-                           TP_partition& solution,
-                           std::vector<bool>& visited_vertices_flag)  
+                           MATRIX<float>& block_balance, // the current block
+balance MATRIX<int>& net_degs, // the current net degree std::vector<float>&
+paths_cost, // the current path cost TP_partition& solution, std::vector<bool>&
+visited_vertices_flag)
 {
   // Step 1: determine the matching score
-  std::vector<std::pair<int, int> > maximum_matches; // maximum matching between blocks
-  if (pre_matching_connectivity_.empty() == true) {
+  std::vector<std::pair<int, int> > maximum_matches; // maximum matching between
+blocks if (pre_matching_connectivity_.empty() == true) {
     // get the connectivity between blocks
     // std::map<std::pair<int, int>, float> : <block_id_a, block_id_b> : score
-    // The score is the summation of hyperedges spanning block_id_a and block_id_b
-    pre_matching_connectivity_ = evaluator_->GetMatchingConnectivity(hgraph, solution);
-    CalculateMaximumMatch(maximum_matches, pre_matching_connectivity_);    
+    // The score is the summation of hyperedges spanning block_id_a and
+block_id_b pre_matching_connectivity_ =
+evaluator_->GetMatchingConnectivity(hgraph, solution);
+    CalculateMaximumMatch(maximum_matches, pre_matching_connectivity_);
   } else {
-    std::map<std::pair<int, int>, float> matching_connectivity = 
-        evaluator_->GetMatchingConnectivity(hgraph, solution);  
+    std::map<std::pair<int, int>, float> matching_connectivity =
+        evaluator_->GetMatchingConnectivity(hgraph, solution);
     // calculate the matching_scores
     std::map<std::pair<int, int>, float> matching_scores;
     for (const auto &ele : matching_connectivity) {
@@ -126,8 +133,8 @@ float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
                                    - matching_connectivity[ele.first];
     }
     pre_matching_connectivity_ = matching_connectivity;
-    CalculateMaximumMatch(maximum_matches, matching_scores);   
-  } 
+    CalculateMaximumMatch(maximum_matches, matching_scores);
+  }
 
   float delta_gain = 0.0;
   // Step 2: update the solution based on calculated maximum matching
@@ -136,15 +143,15 @@ float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
   for (int i = 0; i < num_parts_; ++i) {
     // the maxinum size of each bucket is hgraph->num_vertices_
     TP_gain_bucket bucket
-        = std::make_shared<TPpriorityQueue>(hgraph->num_vertices_, 
+        = std::make_shared<TPpriorityQueue>(hgraph->num_vertices_,
                                             total_corking_passes_,
                                             hgraph);
     buckets.push_back(bucket);
   }
   for (const auto& partition_pair : maximum_matches) {
     // after performing FM, the corresponding buckets will be cleared
-    delta_gain += PerformPairFM(hgraph, max_block_balance, block_balance, net_degs,
-                                paths_cost, solution, buckets, visited_vertices_flag, partition_pair);
+    delta_gain += PerformPairFM(hgraph, max_block_balance, block_balance,
+net_degs, paths_cost, solution, buckets, visited_vertices_flag, partition_pair);
   }
   return delta_gain;
 }
@@ -152,22 +159,22 @@ float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
 
 // The function to calculate the matching_scores
 void TPkWayPMRefine::CalculateMaximumMatch(
-          std::vector<std::pair<int, int> >& maximum_matches,
-          const std::map<std::pair<int, int>, float>& matching_scores) const
+    std::vector<std::pair<int, int>>& maximum_matches,
+    const std::map<std::pair<int, int>, float>& matching_scores) const
 {
   maximum_matches.clear();
-  std::vector<std::pair<std::pair<int, int>, float> > scores;
-  scores.resize(matching_scores.size());
+  std::vector<std::pair<std::pair<int, int>, float>> scores;
   for (const auto& ele : matching_scores) {
     scores.push_back(ele);
-  }  
+  }
   // sort the scores based on value
-  std::sort(scores.begin(), scores.end(),
+  std::sort(scores.begin(),
+            scores.end(),
             // lambda function
             [](const std::pair<std::pair<int, int>, float>& a,
                const std::pair<std::pair<int, int>, float>& b) {
               return a.second > b.second;
-            } // end of lambda expression
+            }  // end of lambda expression
   );
   // set the match flag for each block
   std::vector<bool> match_flag(num_parts_, false);
@@ -175,82 +182,90 @@ void TPkWayPMRefine::CalculateMaximumMatch(
   for (auto& ele : scores) {
     const int block_id_a = ele.first.first;
     const int block_id_b = ele.first.second;
-    if (match_flag[block_id_a] == false && 
-        match_flag[block_id_b] == false) {
-      maximum_matches.push_back(
-        std::pair<int, int>(block_id_a, block_id_b));
+    if (match_flag[block_id_a] == false && match_flag[block_id_b] == false) {
+      maximum_matches.push_back(std::pair<int, int>(block_id_a, block_id_b));
       match_flag[block_id_a] = true;
       match_flag[block_id_b] = true;
       num_match_block += 2;
       if (num_match_block >= num_parts_ - 1) {
-        return; // finish the matching scheme
-      }      
+        return;  // finish the matching scheme
+      }
     }
   }
 }
 
-
 // Perform 2-way FM between blocks in partition pair
-float TPkWayPMRefine::PerformPairFM(const HGraphPtr hgraph,
-                                    const MATRIX<float>& upper_block_balance,
-                                    const MATRIX<float>& lower_block_balance,
-                                    MATRIX<float>& block_balance, // the current block balance
-                                    MATRIX<int>& net_degs, // the current net degree
-                                    std::vector<float>& paths_cost, // the current path cost
-                                    TP_partition& solution,
-                                    TP_gain_buckets& buckets,
-                                    std::vector<bool>& visited_vertices_flag,
-                                    const std::pair<int, int>& partition_pair) const {
+float TPkWayPMRefine::PerformPairFM(
+    const HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    MATRIX<float>& block_balance,    // the current block balance
+    MATRIX<int>& net_degs,           // the current net degree
+    std::vector<float>& paths_cost,  // the current path cost
+    TP_partition& solution,
+    TP_gain_buckets& buckets,
+    std::vector<bool>& visited_vertices_flag,
+    const std::pair<int, int>& partition_pair) const
+{
   // clear the buckets
-  std::vector<int> blocks { partition_pair.first,  partition_pair.second };
+  std::vector<int> blocks{partition_pair.first, partition_pair.second};
   for (auto& block_id : blocks) {
     buckets[block_id]->Clear();
   }
   // identify all the boundary vertices between partition_pair
-  // fixed vertices will not be identified as boundary vertices 
-  std::vector<int> boundary_vertices = FindBoundaryVertices(hgraph, 
-                                                            net_degs,
-                                                            visited_vertices_flag,
-                                                            solution,
-                                                            partition_pair);
+  // fixed vertices will not be identified as boundary vertices
+  std::vector<int> boundary_vertices = FindBoundaryVertices(
+      hgraph, net_degs, visited_vertices_flag, solution, partition_pair);
   // Initialize current gain in a multi-thread manner
   // set based on max heap (k set)
-  InitializeGainBucketsPM(buckets, hgraph, boundary_vertices, net_degs, paths_cost, solution, partition_pair);
-  // Here we do not store the vertex directly, 
+  InitializeGainBucketsPM(buckets,
+                          hgraph,
+                          boundary_vertices,
+                          net_degs,
+                          paths_cost,
+                          solution,
+                          partition_pair);
+  // Here we do not store the vertex directly,
   // because we need to restore the status to the status with best_gain
   // Based on our experiments, the moves is usually very limited.
   // Restoring from backwards will be more efficient
-  std::vector<TP_gain_cell> moves_trace;  // store the moved vertex_gain in sequence
+  std::vector<TP_gain_cell>
+      moves_trace;  // store the moved vertex_gain in sequence
   float total_delta_gain = 0.0;
   // Notice that the best_gain should be initialized as 0 instead of -infinity
   // because after each pass, the total gain should be improved, i.e.,
   // best_gain must be >= 0.0.
   float best_gain = 0.0;
-  int best_vertex_id = -1; // dummy best vertex id
+  int best_vertex_id = -1;  // dummy best vertex id
   // main loop of FM pass
   for (int i = 0; i < max_move_; i++) {
-    // here we use the PickMoveKWay method inheriting from TPkWayPMRefine 
+    // here we use the PickMoveKWay method inheriting from TPkWayPMRefine
     // directly, because the buckets cooresponding to other blocks are empty
-    // Similarly, we can also use AcceptKWayMove method inheriting from TPkWayPMRefine
-    auto candidate
-        = PickMoveKWay(buckets, hgraph, block_balance, upper_block_balance, lower_block_balance);
+    // Similarly, we can also use AcceptKWayMove method inheriting from
+    // TPkWayPMRefine
+    auto candidate = PickMoveKWay(buckets,
+                                  hgraph,
+                                  block_balance,
+                                  upper_block_balance,
+                                  lower_block_balance);
     // check the status of candidate
     const int vertex = candidate->GetVertex();  // candidate vertex
     if (vertex < 0) {
-      break; // no valid vertex found
+      break;  // no valid vertex found
     }
     AcceptKWayMove(candidate,
                    buckets,
                    moves_trace,
                    total_delta_gain,
                    visited_vertices_flag,
-                   hgraph, 
+                   hgraph,
                    block_balance,
                    net_degs,
                    paths_cost,
                    solution);
     // find the neighbors of vertex in partition_pair blocks
-    const std::vector<int> neighbors = FindNeighbors(hgraph, vertex, visited_vertices_flag, solution, partition_pair);
+    const std::vector<int> neighbors = FindNeighbors(
+        hgraph, vertex, visited_vertices_flag, solution, partition_pair);
     // update the neighbors of v for all gain buckets in parallel
     std::vector<std::thread> threads;
     for (auto& to_pid : blocks) {
@@ -272,21 +287,27 @@ float TPkWayPMRefine::PerformPairFM(const HGraphPtr hgraph,
       best_gain = total_delta_gain;
       best_vertex_id = vertex;
     }
-  }  
+  }
 
   // traverse the moves_trace in the reversing order
-  for (auto move_iter = moves_trace.rbegin();
-        move_iter != moves_trace.rend(); move_iter++) {
+  for (auto move_iter = moves_trace.rbegin(); move_iter != moves_trace.rend();
+       move_iter++) {
     // stop when we encounter the best_vertex_id
     auto& vertex_move = *move_iter;
     if (vertex_move->GetVertex() == best_vertex_id) {
-      break; // stop here
-    } 
-    RollBackVertexGain(vertex_move, hgraph, visited_vertices_flag, solution, paths_cost, block_balance, net_degs);        
+      break;  // stop here
+    }
+    RollBackVertexGain(vertex_move,
+                       hgraph,
+                       visited_vertices_flag,
+                       solution,
+                       paths_cost,
+                       block_balance,
+                       net_degs);
   }
 
   // clear the move traces
-  moves_trace.clear();  
+  moves_trace.clear();
   // clear the buckets
   for (auto& block_id : blocks) {
     buckets[block_id]->Clear();
@@ -297,33 +318,35 @@ float TPkWayPMRefine::PerformPairFM(const HGraphPtr hgraph,
 
 // gain bucket related functions
 // Initialize the gain buckets in parallel
-void TPkWayPMRefine::InitializeGainBucketsPM(TP_gain_buckets& buckets,
-                                             const HGraphPtr hgraph,
-                                             const std::vector<int>& boundary_vertices,
-                                             const MATRIX<int>& net_degs,
-                                             const std::vector<float>& cur_paths_cost,
-                                             const TP_partition& solution,
-                                             const std::pair<int, int>& partition_pair) const
+void TPkWayPMRefine::InitializeGainBucketsPM(
+    TP_gain_buckets& buckets,
+    const HGraphPtr hgraph,
+    const std::vector<int>& boundary_vertices,
+    const MATRIX<int>& net_degs,
+    const std::vector<float>& cur_paths_cost,
+    const TP_partition& solution,
+    const std::pair<int, int>& partition_pair) const
 {
   std::vector<std::thread> threads;  // for parallel updating
-  std::vector<int> blocks_id { partition_pair.first, partition_pair.second };
+  std::vector<int> blocks_id{partition_pair.first, partition_pair.second};
+ 
   // parallel initialize the num_parts gain_buckets
   for (const auto to_pid : blocks_id) {
-    threads.push_back(std::thread(&TPkWayFMRefine::InitializeSingleGainBucket,
-                                  this,
-                                  std::ref(buckets),
-                                  to_pid,
-                                  hgraph,
-                                  std::ref(boundary_vertices), // we only consider boundary vertices
-                                  std::ref(net_degs),
-                                  std::ref(cur_paths_cost),
-                                  std::ref(solution)));
+    threads.push_back(std::thread(
+        &TPkWayFMRefine::InitializeSingleGainBucket,
+        this,
+        std::ref(buckets),
+        to_pid,
+        hgraph,
+        std::ref(boundary_vertices),  // we only consider boundary vertices
+        std::ref(net_degs),
+        std::ref(cur_paths_cost),
+        std::ref(solution)));
   }
   for (auto& t : threads) {
     t.join();  // wait for all threads to finish
   }
   threads.clear();
 }
-
 
 }  // namespace par

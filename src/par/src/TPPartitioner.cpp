@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "TPPartitioner.h"
+
 #include "TPEvaluator.h"
 #include "TPHypergraph.h"
 #include "Utilities.h"
@@ -50,25 +51,26 @@ void TPpartitioner::Partition(const HGraphPtr hgraph,
                               std::vector<int>& solution,
                               PartitionType partitioner_choice) const
 {
-  solution.clear();
-  solution.resize(hgraph->num_vertices_);
-  std::fill(solution.begin(), solution.end(), -1);
-  switch (partitioner_choice)
-  {
+  if (static_cast<int>(solution.size()) != hgraph->num_vertices_) {
+    solution.clear();
+    solution.resize(hgraph->num_vertices_);
+    std::fill(solution.begin(), solution.end(), -1);
+  }
+  switch (partitioner_choice) {
     case PartitionType::INIT_RANDOM:
-      RandomPart(hgraph, upper_block_balance, solution);
+      RandomPart(hgraph, upper_block_balance, lower_block_balance, solution);
       break;
-    
+
     case PartitionType::INIT_VILE:
       VilePart(hgraph, solution);
       break;
-    
+
     case PartitionType::INIT_DIRECT_ILP:
       ILPPart(hgraph, upper_block_balance, lower_block_balance, solution);
       break;
 
-    default: 
-      RandomPart(hgraph, upper_block_balance, solution);
+    default:
+      RandomPart(hgraph, upper_block_balance, lower_block_balance, solution);
       break;
   }
 }
@@ -80,26 +82,28 @@ void TPpartitioner::Partition(const HGraphPtr hgraph,
 // random partitioning
 void TPpartitioner::RandomPart(const HGraphPtr hgraph,
                                const MATRIX<float>& upper_block_balance,
+                               const MATRIX<float>& lower_block_balance,
                                std::vector<int>& solution) const
 {
   // the summation of vertex weights for vertices in current block
   MATRIX<float> block_balance(
       num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0f));
   // determine all the free vertices
-  std::vector<bool> visited(hgraph->num_vertices_, false); // if the vertex has been visited
-  std::vector<int> vertices; // the vertices can be moved
+  std::vector<bool> visited(hgraph->num_vertices_,
+                            false);  // if the vertex has been visited
+  std::vector<int> vertices;         // the vertices can be moved
   std::vector<int> path_vertices;
-  // Step 1: check fixed vertices  
+  // Step 1: check fixed vertices
   if (hgraph->fixed_vertex_flag_ == true) {
     for (int v = 0; v < hgraph->num_vertices_; v++) {
       if (hgraph->fixed_attr_[v] > -1) {
         solution[v] = hgraph->fixed_attr_[v];
         block_balance[solution[v]]
             = block_balance[solution[v]] + hgraph->vertex_weights_[v];
-        visited[v] = true;   
-      }    
+        visited[v] = true;
+      }
     }
-  }  
+  }
   // Step 2: put all the vertices related to critical timing paths together
   if (hgraph->num_timing_paths_ > 0) {
     for (int i = 0; i < hgraph->num_timing_paths_; ++i) {
@@ -111,9 +115,9 @@ void TPpartitioner::RandomPart(const HGraphPtr hgraph,
           visited[v] = true;
           path_vertices.push_back(v);
         }
-      } // finish current path
-    } // finish all the paths 
-    std::shuffle(path_vertices.begin(), 
+      }  // finish current path
+    }    // finish all the paths
+    std::shuffle(path_vertices.begin(),
                  path_vertices.end(),
                  std::default_random_engine(seed_));
   }
@@ -123,34 +127,94 @@ void TPpartitioner::RandomPart(const HGraphPtr hgraph,
       vertices.push_back(v);
     }
   }
-  std::shuffle(vertices.begin(), 
-               vertices.end(),
-               std::default_random_engine(seed_));
+  std::shuffle(
+      vertices.begin(), vertices.end(), std::default_random_engine(seed_));
   // Step 4: concatenate path_vertices and vertices
   // Here we insert path_vertices at the beginning,
   // Hopefully we can push all the path_vertices into one block
   vertices.insert(vertices.begin(), path_vertices.begin(), path_vertices.end());
+
+  /*
+  // Step 5: make sure all blocks satisfy the lower_block_balance,
+  int block_id = 0;
+  for (const auto& v : vertices) {
+    solution[v] = block_id;
+    block_balance[block_id] = block_balance[block_id] +
+  hgraph->vertex_weights_[v]; if (block_balance[block_id] >=
+  lower_block_balance[block_id]) { block_id++; block_id = block_id % num_parts_;
+  // adjust the block_id
+    }
+  }
+  */
+  /*
+  MATRIX<float> block_balance_threshold;
+  for (int block_id = 0; block_id < num_parts_; block_id++) {
+    const std::vector<float> balance =
+  DivideFactor(upper_block_balance[block_id], num_parts_ * num_parts_);
+    block_balance_threshold.push_back(balance);
+  }
+  // assign vertex to blocks
+  int block_id = 0;
+  for (const auto& v : vertices) {
+    if (block_balance[block_id] + hgraph->vertex_weights_[v] >
+  upper_block_balance[block_id]) { int iter = 0; int temp_block_id = block_id;
+      while (iter < num_parts_) {
+        temp_block_id++;
+        temp_block_id = temp_block_id % num_parts_;
+        if (block_balance[temp_block_id] + hgraph->vertex_weights_[v] <=
+  upper_block_balance[temp_block_id]) { break;
+        }
+        iter++;
+      }
+      solution[v] = temp_block_id;
+      block_balance[temp_block_id] = block_balance[temp_block_id] +
+  hgraph->vertex_weights_[v]; } else { solution[v] = block_id;
+      block_balance[block_id] = block_balance[block_id] +
+  hgraph->vertex_weights_[v];
+    }
+    if (block_balance[block_id] >= block_balance_threshold[block_id]) {
+      block_id++;
+      block_id = block_id % num_parts_;  // adjust the block_id
+    }
+  }
+  */
+
+  int block_id = 0;
+  bool stop_flag = false;
+  for (const auto& v : vertices) {
+    solution[v] = block_id;
+    block_balance[block_id]
+        = block_balance[block_id] + hgraph->vertex_weights_[v];
+    if (block_balance[block_id] >= lower_block_balance[block_id] && stop_flag == false) {
+      stop_flag = true;
+      block_id++;
+      block_id = block_id % num_parts_;  // adjust the block_id
+    }
+  }
+   
+
+  /*
   // Step 5: randomly assign block id
   // To achieve better balance, we divide the block balance by num_parts_
   MATRIX<float> block_balance_threshold;
   for (int block_id = 0; block_id < num_parts_; block_id++) {
-    const std::vector<float> balance = DivideFactor(upper_block_balance[block_id], num_parts_ * num_parts_);
+    const std::vector<float> balance
+        = DivideFactor(upper_block_balance[block_id], num_parts_ * num_parts_);
     block_balance_threshold.push_back(balance);
   }
   // assign vertex to blocks
   int block_id = 0;
   for (const auto& v : vertices) {
     solution[v] = block_id;
-    block_balance[block_id] = block_balance[block_id] + hgraph->vertex_weights_[v];
-    //block_id++;
-    //block_id = block_id % num_parts_;  // adjust the block_id
+    block_balance[block_id]
+        = block_balance[block_id] + hgraph->vertex_weights_[v];
     if (block_balance[block_id] >= block_balance_threshold[block_id]) {
       block_id++;
       block_id = block_id % num_parts_;  // adjust the block_id
     }
   }
+  */
 }
-    
 
 // ILP-based partitioning
 void TPpartitioner::ILPPart(const HGraphPtr hgraph,
@@ -158,11 +222,11 @@ void TPpartitioner::ILPPart(const HGraphPtr hgraph,
                             const MATRIX<float>& lower_block_balance,
                             std::vector<int>& solution) const
 {
-  logger_->report("[STATUS] Optimal ILP-based Partitioning (OR-Tools) Starts !");
+  logger_->report("[STATUS] Optimal ILP-based Partitioning Starts !");
   std::map<int, int> fixed_vertices_map;
-  MATRIX<float> vertex_weights; // two-dimensional
+  MATRIX<float> vertex_weights;  // two-dimensional
   vertex_weights.reserve(hgraph->num_vertices_);
-  MATRIX<int> hyperedges; // hyperedges
+  MATRIX<int> hyperedges;                // hyperedges
   std::vector<float> hyperedge_weights;  // one-dimensional
   // set vertices
   for (int v = 0; v < hgraph->num_vertices_; v++) {
@@ -179,15 +243,18 @@ void TPpartitioner::ILPPart(const HGraphPtr hgraph,
   // check the hyperedges to be used
   std::vector<int> edge_mask;  // store the hyperedges being used.
   if (ilp_accelerator_factor_ >= 1.0) {
-    logger_->report("All the hyperedges will be used in the ILP-based partitioning!");
+    logger_->report(
+        "All the hyperedges will be used in the ILP-based partitioning!");
     edge_mask.resize(hgraph->num_hyperedges_);
     std::iota(edge_mask.begin(), edge_mask.end(), 0);
   } else if (ilp_accelerator_factor_ > 0.0) {
     // define comp structure to compare hyperedge ( function: >)
-    struct comp {
+    struct comp
+    {
       // comparator function
       bool operator()(const std::pair<int, float>& l,
-                      const std::pair<int, float>& r) const {
+                      const std::pair<int, float>& r) const
+      {
         if (l.second != r.second) {
           return l.second > r.second;
         }
@@ -213,11 +280,14 @@ void TPpartitioner::ILPPart(const HGraphPtr hgraph,
         break;  // the set has been sorted
       }
     }
-    logger_->report("[INFO] ilp_accelerator_factor = {}", ilp_accelerator_factor_);
+    logger_->report("[INFO] ilp_accelerator_factor = {}",
+                    ilp_accelerator_factor_);
     logger_->report("[INFO] Reduce the number of hyperedges from {} to {}.",
-                     hgraph->num_hyperedges_, edge_mask.size());
+                    hgraph->num_hyperedges_,
+                    edge_mask.size());
   } else {
-    logger_->report("[WARNING] ilp_accelerator_factor = {}", ilp_accelerator_factor_);
+    logger_->report("[WARNING] ilp_accelerator_factor = {}",
+                    ilp_accelerator_factor_);
     logger_->report("[WARNING] No hyperedges will be used !!!");
   }
   // update hyperedges and hyperedge_weights
@@ -225,29 +295,35 @@ void TPpartitioner::ILPPart(const HGraphPtr hgraph,
   hyperedges.reserve(edge_mask.size());
   for (auto& e : edge_mask) {
     std::vector<int> hyperedge;
-    for (auto eptr_id = hgraph->eptr_[e]; 
-         eptr_id < hgraph->eptr_[e + 1]; eptr_id++) {
+    for (auto eptr_id = hgraph->eptr_[e]; eptr_id < hgraph->eptr_[e + 1];
+         eptr_id++) {
       hyperedge.push_back(hgraph->eind_[eptr_id]);
     }
     hyperedges.push_back(hyperedge);
     hyperedge_weights.push_back(evaluator_->CalculateHyperedgeCost(e, hgraph));
   }
-  if (ILPPartitionInst(num_parts_, hgraph->vertex_dimensions_, solution,
-                       fixed_vertices_map, hyperedges, hyperedge_weights,
-                       vertex_weights, upper_block_balance, lower_block_balance) == true) {
-    logger_->report("[STATUS] Optimal ILP-based Partitioning (OR-Tools) Finished !");
+  if (ILPPartitionInst(num_parts_,
+                       hgraph->vertex_dimensions_,
+                       solution,
+                       fixed_vertices_map,
+                       hyperedges,
+                       hyperedge_weights,
+                       vertex_weights,
+                       upper_block_balance,
+                       lower_block_balance)
+      == true) {
+    logger_->report("[STATUS] Optimal ILP-based Partitioning Finished !");
   } else {
-    logger_->report("[STATUS] Optimal ILP-based Partitioning (OR-Tools) Failed!");
+    logger_->report("[STATUS] Optimal ILP-based Partitioning Failed!");
     logger_->report("[STATUS] Call random partitioning !");
-    RandomPart(hgraph, upper_block_balance, solution);
+    RandomPart(hgraph, upper_block_balance, lower_block_balance, solution);
   }
 }
-
 
 // randomly pick one vertex into each block
 // then use refinement functions to get valid solution (See TPMultilevel.cpp)
 void TPpartitioner::VilePart(const HGraphPtr hgraph,
-                             std::vector<int>& solution) const 
+                             std::vector<int>& solution) const
 {
   std::fill(solution.begin(), solution.end(), 0);
   std::vector<int> unvisited;
@@ -256,7 +332,7 @@ void TPpartitioner::VilePart(const HGraphPtr hgraph,
   // calculate the weight for all the vertices
   std::vector<float> average_sizes(hgraph->num_vertices_, 0.0);
   // check fixed vertices
-  // Step 1: check fixed vertices  
+  // Step 1: check fixed vertices
   if (hgraph->fixed_vertex_flag_ == true) {
     for (int v = 0; v < hgraph->num_vertices_; v++) {
       if (hgraph->fixed_attr_[v] > -1) {
@@ -264,14 +340,14 @@ void TPpartitioner::VilePart(const HGraphPtr hgraph,
       } else {
         unvisited.push_back(v);
         average_sizes[v] = evaluator_->GetVertexWeightNorm(v, hgraph);
-      }    
+      }
     }
   } else {
     for (int v = 0; v < hgraph->num_vertices_; v++) {
       unvisited.push_back(v);
       average_sizes[v] = evaluator_->GetVertexWeightNorm(v, hgraph);
     }
-  } 
+  }
   // Step 2: sort remaining vertices based on vertex
   // define the sort function
   auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
@@ -284,7 +360,7 @@ void TPpartitioner::VilePart(const HGraphPtr hgraph,
     solution[v] = block_id;
     block_id++;
     block_id = block_id % num_parts_;  // adjust the block_id
-  }   
+  }
 }
 
 }  // namespace par

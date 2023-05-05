@@ -47,7 +47,7 @@ namespace par {
 using TP_partition = std::vector<int>;
 
 template <typename T>
-using MATRIX = std::vector<std::vector<T> >;
+using MATRIX = std::vector<std::vector<T>>;
 
 // Multilevel partitioner
 class TPmultilevelPartitioner;
@@ -62,10 +62,11 @@ class TPmultilevelPartitioner
                           const bool v_cycle_flag,
                           const int num_initial_solutions,
                           const int num_best_initial_solutions,
-                          const int num_clusters_threshold_overlay,
+                          const int num_vertices_threshold_ilp,
                           const int max_num_vcycle,
+                          const int num_coarsen_solutions,
                           const int seed,
-                          const bool timing_driven_flag, 
+                          const bool timing_driven_flag,
                           // pointers
                           TP_coarsening_ptr coarsener,
                           TP_partitioning_ptr partitioner,
@@ -75,15 +76,16 @@ class TPmultilevelPartitioner
                           TP_ilp_refiner_ptr ilp_refiner,
                           TP_evaluator_ptr evaluator,
                           utl::Logger* logger)
-    :  num_parts_(num_parts),
-       ub_factor_(ub_factor),
-       v_cycle_flag_(v_cycle_flag),
-       num_initial_random_solutions_(num_initial_solutions),
-       num_best_initial_solutions_(num_best_initial_solutions),
-       num_clusters_threshold_overlay_(num_clusters_threshold_overlay),
-       max_num_vcycle_(max_num_vcycle),
-       seed_(seed),
-       timing_driven_flag_(timing_driven_flag)
+      : num_parts_(num_parts),
+        ub_factor_(ub_factor),
+        v_cycle_flag_(v_cycle_flag),
+        num_initial_random_solutions_(num_initial_solutions),
+        num_best_initial_solutions_(num_best_initial_solutions),
+        num_vertices_threshold_ilp_(num_vertices_threshold_ilp),
+        max_num_vcycle_(max_num_vcycle),
+        num_coarsen_solutions_(num_coarsen_solutions),
+        seed_(seed),
+        timing_driven_flag_(timing_driven_flag)
   {
     coarsener_ = coarsener;
     partitioner_ = partitioner;
@@ -102,27 +104,30 @@ class TPmultilevelPartitioner
                          const MATRIX<float>& upper_block_balance,
                          const MATRIX<float>& lower_block_balance) const;
 
- private:
-
-  // Run single-level partitioning
-  std::vector<int> SingleLevelPartition(HGraphPtr hgraph,
-                      const MATRIX<float>& upper_block_balance,
-                      const MATRIX<float>& lower_block_balance) const;
-
   // Use the initial solution as the community feature
   // Call Vcycle refinement
-  void VcycleRefinement(HGraphPtr hgraph, 
+  void VcycleRefinement(HGraphPtr hgraph,
                         const MATRIX<float>& upper_block_balance,
                         const MATRIX<float>& lower_block_balance,
                         std::vector<int>& best_solution) const;
+  
+  
+ private:
+  // Run single-level partitioning
+  std::vector<int> SingleLevelPartition(
+      HGraphPtr hgraph,
+      const MATRIX<float>& upper_block_balance,
+      const MATRIX<float>& lower_block_balance) const;
 
-  std::vector<int>  SingleCycleRefinement(HGraphPtr hgraph,
-                                          const MATRIX<float>& upper_block_balance,
-                                          const MATRIX<float>& lower_block_balance) const;
+  // We expose this interface for the last-minute improvement
+  std::vector<int> SingleCycleRefinement(
+      HGraphPtr hgraph,
+      const MATRIX<float>& upper_block_balance,
+      const MATRIX<float>& lower_block_balance) const;
 
   // Generate initial partitioning
   // Include random partitioning, Vile partitioning and ILP partitioning
-  void InitialPartition(const HGraphPtr hgraph, 
+  void InitialPartition(const HGraphPtr hgraph,
                         const MATRIX<float>& upper_block_balance,
                         const MATRIX<float>& lower_block_balance,
                         MATRIX<int>& top_initial_solutions,
@@ -134,12 +139,13 @@ class TPmultilevelPartitioner
                        const MATRIX<float>& upper_block_balance,
                        const MATRIX<float>& lower_block_balance,
                        MATRIX<int>& top_solutions,
-                       int& best_solution_id) const;   
- 
+                       int& best_solution_id) const;
+
+  // For last minute improvement
   // Refine function
-  // Ilp refinement, k_way_pm_refinement, 
+  // Ilp refinement, k_way_pm_refinement,
   // k_way_fm_refinement and greedy refinement
-  void CallRefiner(const HGraphPtr hgraph, 
+  void CallRefiner(const HGraphPtr hgraph,
                    const MATRIX<float>& upper_block_balance,
                    const MATRIX<float>& lower_block_balance,
                    std::vector<int>& solution) const;
@@ -148,21 +154,24 @@ class TPmultilevelPartitioner
   // The ILP-based partitioning uses top_solutions[best_solution_id] as a hint,
   // such that the runtime can be signficantly reduced
   std::vector<int> CutOverlayILPPart(const HGraphPtr hgraph,
-                     const MATRIX<float>& upper_block_balance,
-                     const MATRIX<float>& lower_block_balance,
-                     const MATRIX<int>& top_solutions,
-                     int best_solution_id) const;
+                                     const MATRIX<float>& upper_block_balance,
+                                     const MATRIX<float>& lower_block_balance,
+                                     const MATRIX<int>& top_solutions,
+                                     int best_solution_id) const;
 
   // basic parameters
-  const int num_parts_ = 2; 
+  const int num_parts_ = 2;
   const float ub_factor_ = 1.0;
-  const int num_clusters_threshold_overlay_ = 5; // We use to relax the ub_factor_ during multilevel refinement
+  const int num_vertices_threshold_ilp_
+      = 20;  // number of vertices used for ILP partitioning
 
   // user-specified parameters
   const int num_initial_random_solutions_ = 50;
   const int num_best_initial_solutions_ = 10;
-  const int max_num_vcycle_ = 10; // maximum number of vcycles
-  const int seed_ = 0; // random seed
+  const int max_num_vcycle_ = 10;  // maximum number of vcycles
+  const int num_coarsen_solutions_
+      = 3;  // number of coarsening solutions with different random seed
+  const int seed_ = 0;  // random seed
   const bool timing_driven_flag_ = true;
   const bool v_cycle_flag_ = true;
 
@@ -170,7 +179,7 @@ class TPmultilevelPartitioner
   TP_coarsening_ptr coarsener_ = nullptr;
   TP_partitioning_ptr partitioner_ = nullptr;
   TP_k_way_fm_refiner_ptr k_way_fm_refiner_ = nullptr;
-  TP_k_way_pm_refiner_ptr k_way_pm_refiner_ = nullptr; 
+  TP_k_way_pm_refiner_ptr k_way_pm_refiner_ = nullptr;
   TP_greedy_refiner_ptr greedy_refiner_ = nullptr;
   TP_ilp_refiner_ptr ilp_refiner_ = nullptr;
   TP_evaluator_ptr evaluator_ = nullptr;

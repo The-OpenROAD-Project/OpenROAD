@@ -35,8 +35,9 @@
 
 #include "TPHypergraph.h"
 
-#include <string>
 #include <iostream>
+#include <string>
+
 #include "Utilities.h"
 #include "utl/Logger.h"
 
@@ -54,34 +55,37 @@ std::vector<float> TPHypergraph::GetTotalVertexWeights() const
 }
 
 // Get the vertex balance constraint
-std::vector<std::vector<float> > TPHypergraph::GetVertexBalance(int num_parts,
-                                                               float ub_factor) const
+std::vector<std::vector<float>> TPHypergraph::GetVertexBalance(
+    int num_parts,
+    float ub_factor) const
 {
   std::vector<float> vertex_balance = GetTotalVertexWeights();
   vertex_balance = MultiplyFactor(
       vertex_balance, ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts));
-  return std::vector<std::vector<float> >(num_parts, vertex_balance);
+  return std::vector<std::vector<float>>(num_parts, vertex_balance);
 }
 
 // Get the vertex balance constraint (upper bound)
-std::vector<std::vector<float> > TPHypergraph::GetUpperVertexBalance(int num_parts,
-                                                                     float ub_factor) const
+std::vector<std::vector<float>> TPHypergraph::GetUpperVertexBalance(
+    int num_parts,
+    float ub_factor) const
 {
   std::vector<float> vertex_balance = GetTotalVertexWeights();
   vertex_balance = MultiplyFactor(
       vertex_balance, ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts));
-  return std::vector<std::vector<float> >(num_parts, vertex_balance);
+  return std::vector<std::vector<float>>(num_parts, vertex_balance);
 }
 
 // Get the vertex balance constraint (lower bound)
-std::vector<std::vector<float> > TPHypergraph::GetLowerVertexBalance(int num_parts,
-                                                               float ub_factor) const
+std::vector<std::vector<float>> TPHypergraph::GetLowerVertexBalance(
+    int num_parts,
+    float ub_factor) const
 {
   std::vector<float> vertex_balance = GetTotalVertexWeights();
-  ub_factor = std::max(-1.0 * ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts), 0.0);
+  ub_factor = std::max(
+      -1.0 * ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts), 0.0);
   vertex_balance = MultiplyFactor(vertex_balance, ub_factor);
-  return std::vector<std::vector<float> >(num_parts, vertex_balance);
+  return std::vector<std::vector<float>>(num_parts, vertex_balance);
 }
-
 
 }  // namespace par
