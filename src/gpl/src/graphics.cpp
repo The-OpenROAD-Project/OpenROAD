@@ -215,7 +215,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
   // Draw force direction lines
   if (draw_bins_) {
-    float efMax = 0;
+    double efMax = 0;
     int max_len = std::numeric_limits<int>::max();
     for (Bin& bin : nb_->bins()) {
       efMax = std::max(efMax, hypot(bin.electroForceX(), bin.electroForceY()));

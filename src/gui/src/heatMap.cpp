@@ -71,6 +71,8 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       setup_(nullptr),
       color_generator_(SpectrumGenerator(100.0))
 {
+  clearMap();
+
   // ensure color map is initialized
   updateMapColors();
 }
@@ -101,20 +103,22 @@ void HeatMapDataSource::dumpToFile(const std::string& file)
   const double dbu_to_micron = block_->getDbUnitsPerMicron();
 
   csv << "x0,y0,x1,y1,value" << std::endl;
-  for (const auto& [box, box_value] : map_) {
-    if (!box_value->has_value) {
-      continue;
-    }
-    const odb::Rect& box_rect = box_value->rect;
-    const double scaled_value = convertPercentToValue(box_value->value);
+  for (const auto& map_col : map_) {
+    for (const auto& map_value : map_col) {
+      if (!map_value->has_value) {
+        continue;
+      }
+      const odb::Rect& box_rect = map_value->rect;
+      const double scaled_value = convertPercentToValue(map_value->value);
 
-    csv << std::defaultfloat << std::setprecision(4);
-    csv << box_rect.xMin() / dbu_to_micron << ",";
-    csv << box_rect.yMin() / dbu_to_micron << ",";
-    csv << box_rect.xMax() / dbu_to_micron << ",";
-    csv << box_rect.yMax() / dbu_to_micron << ",";
-    csv << std::scientific << std::setprecision(6);
-    csv << scaled_value << std::endl;
+      csv << std::defaultfloat << std::setprecision(4);
+      csv << box_rect.xMin() / dbu_to_micron << ",";
+      csv << box_rect.yMin() / dbu_to_micron << ",";
+      csv << box_rect.xMax() / dbu_to_micron << ",";
+      csv << box_rect.yMax() / dbu_to_micron << ",";
+      csv << std::scientific << std::setprecision(6);
+      csv << scaled_value << std::endl;
+    }
   }
 
   csv.close();
@@ -335,34 +339,66 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   setColorAlpha(color_alpha_);
 }
 
+const HeatMapDataSource::MapView HeatMapDataSource::getMapView(
+    const odb::Rect& bounds)
+{
+  const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
+
+  const int x_low = std::max(
+      static_cast<int>(
+          std::floor(bounds.xMin() / (getGridXSize() * dbu_per_micron))),
+      0);
+  const int x_high = std::min(
+      static_cast<int>(
+          std::ceil(bounds.xMax() / (getGridXSize() * dbu_per_micron))),
+      static_cast<int>(map_.shape()[0]) - 1);
+  const int y_low = std::max(
+      static_cast<int>(
+          std::floor(bounds.yMin() / (getGridYSize() * dbu_per_micron))),
+      0);
+  const int y_high = std::min(
+      static_cast<int>(
+          std::ceil(bounds.yMax() / (getGridYSize() * dbu_per_micron))),
+      static_cast<int>(map_.shape()[1]) - 1);
+
+  return map_[boost::indices[Map::index_range(x_low, x_high)]
+                            [Map::index_range(y_low, y_high)]];
+}
+
 void HeatMapDataSource::addToMap(const odb::Rect& region, double value)
 {
-  Box query(Point(region.xMin(), region.yMin()),
-            Point(region.xMax(), region.yMax()));
-  for (auto it = map_.qbegin(bgi::intersects(query)); it != map_.qend(); it++) {
-    auto* map_pt = it->second.get();
-    odb::Rect intersection;
-    map_pt->rect.intersection(region, intersection);
+  for (const auto& map_col : getMapView(region)) {
+    for (const auto& map_pt : map_col) {
+      odb::Rect intersection;
+      map_pt->rect.intersection(region, intersection);
 
-    const double intersect_area = intersection.area();
-    const double value_area = region.area();
-    const double region_area = map_pt->rect.area();
+      const double intersect_area = intersection.area();
+      const double value_area = region.area();
+      const double region_area = map_pt->rect.area();
 
-    combineMapData(map_pt->has_value,
-                   map_pt->value,
-                   value,
-                   value_area,
-                   intersect_area,
-                   region_area);
-    map_pt->has_value = true;
+      combineMapData(map_pt->has_value,
+                     map_pt->value,
+                     value,
+                     value_area,
+                     intersect_area,
+                     region_area);
+      map_pt->has_value = true;
 
-    markColorsInvalid();
+      markColorsInvalid();
+    }
   }
 }
 
 odb::Rect HeatMapDataSource::getBounds() const
 {
   return getBlock()->getDieArea();
+}
+
+void HeatMapDataSource::clearMap()
+{
+  map_.resize(boost::extents[1][1]);
+  map_[0][0] = nullptr;
+  populated_ = false;
 }
 
 void HeatMapDataSource::setupMap()
@@ -379,6 +415,8 @@ void HeatMapDataSource::setupMap()
   const int x_grid = std::ceil(bounds.dx() / static_cast<double>(dx));
   const int y_grid = std::ceil(bounds.dy() / static_cast<double>(dy));
 
+  map_.resize(boost::extents[x_grid][y_grid]);
+
   for (int x = 0; x < x_grid; x++) {
     const int xMin = bounds.xMin() + x * dx;
     const int xMax = std::min(xMin + dx, bounds.xMax());
@@ -393,8 +431,7 @@ void HeatMapDataSource::setupMap()
       map_pt->value = 0.0;
       map_pt->color = getColor(0);
 
-      Box bbox(Point(xMin, yMin), Point(xMax, yMax));
-      map_.insert(std::make_pair(bbox, map_pt));
+      map_[x][y] = map_pt;
     }
   }
 }
@@ -409,11 +446,11 @@ void HeatMapDataSource::destroyMap()
 void HeatMapDataSource::ensureMap()
 {
   if (destroy_map_) {
-    map_.clear();
+    clearMap();
     destroy_map_ = false;
   }
 
-  const bool build_map = map_.empty();
+  const bool build_map = map_[0][0] == nullptr;
   if (build_map) {
     setupMap();
   }
@@ -433,7 +470,7 @@ void HeatMapDataSource::ensureMap()
     }
   }
 
-  if (!colors_correct_) {
+  if (!colors_correct_ && isPopulated()) {
     assignMapColors();
   }
 }
@@ -480,8 +517,10 @@ void HeatMapDataSource::updateMapColors()
 
 void HeatMapDataSource::assignMapColors()
 {
-  for (auto& [bbox, map_pt] : map_) {
-    map_pt->color = getColor(map_pt->value);
+  for (const auto& map_col : map_) {
+    for (const auto& map_pt : map_col) {
+      map_pt->color = getColor(map_pt->value);
+    }
   }
   colors_correct_ = true;
 }
@@ -583,18 +622,18 @@ void HeatMapRenderer::drawObjects(Painter& painter)
 
   const odb::Rect& bounds = painter.getBounds();
 
-  for (const auto& [bbox, map_pt] : datasource_.getMap()) {
-    if (!map_pt->has_value) {  // value not set so nothing to draw
-      continue;
-    }
-    if (!show_mins && map_pt->value < min_value) {
-      continue;
-    }
-    if (!show_maxs && map_pt->value > max_value) {
-      continue;
-    }
+  for (const auto& map_col : datasource_.getMapView(bounds)) {
+    for (const auto& map_pt : map_col) {
+      if (!map_pt->has_value) {  // value not set so nothing to draw
+        continue;
+      }
+      if (!show_mins && map_pt->value < min_value) {
+        continue;
+      }
+      if (!show_maxs && map_pt->value > max_value) {
+        continue;
+      }
 
-    if (bounds.overlaps(map_pt->rect)) {
       painter.setPen(map_pt->color, true);
       painter.setBrush(map_pt->color);
 
@@ -687,8 +726,10 @@ void RealValueHeatMapDataSource::correctMapScale(HeatMapDataSource::Map& map)
   min_ = roundData(min_);
   max_ = roundData(max_);
 
-  for (auto& [bbox, map_pt] : map) {
-    map_pt->value = convertValueToPercent(map_pt->value);
+  for (const auto& map_col : map) {
+    for (const auto& map_pt : map_col) {
+      map_pt->value = convertValueToPercent(map_pt->value);
+    }
   }
 
   // reset since all data has been scaled by the appropriate amount
@@ -708,9 +749,11 @@ void RealValueHeatMapDataSource::determineMinMax(
   min_ = std::numeric_limits<double>::max();
   max_ = std::numeric_limits<double>::min();
 
-  for (const auto& [bbox, map_pt] : map) {
-    min_ = std::min(min_, map_pt->value);
-    max_ = std::max(max_, map_pt->value);
+  for (const auto& map_col : map) {
+    for (const auto& map_pt : map_col) {
+      min_ = std::min(min_, map_pt->value);
+      max_ = std::max(max_, map_pt->value);
+    }
   }
 }
 

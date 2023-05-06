@@ -33,9 +33,7 @@
 #pragma once
 
 #include <array>
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point_xy.hpp>
-#include <boost/geometry/index/rtree.hpp>
+#include <boost/multi_array.hpp>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -57,9 +55,6 @@ class Logger;
 namespace gui {
 class HeatMapRenderer;
 class HeatMapSetup;
-
-namespace bg = boost::geometry;
-namespace bgi = boost::geometry::index;
 
 class HeatMapDataSource
 {
@@ -87,11 +82,9 @@ class HeatMapDataSource
     double value;
     Painter::Color color;
   };
-  using Point = bg::model::d2::point_xy<int, bg::cs::cartesian>;
-  using Box = bg::model::box<Point>;
-  using Map = bgi::rtree<std::pair<Box, std::shared_ptr<MapColor>>,
-                         bgi::quadratic<16>>;
 
+  using Map = boost::multi_array<std::shared_ptr<MapColor>, 2>;
+  using MapView = Map::array_view<2>::type;
   using MapSetting = std::variant<MapSettingBoolean, MapSettingMultiChoice>;
 
   HeatMapDataSource(utl::Logger* logger,
@@ -172,6 +165,7 @@ class HeatMapDataSource
   void ensureMap();
   void destroyMap();
   const Map& getMap() const { return map_; }
+  const MapView getMapView(const odb::Rect& bounds);
   bool isPopulated() const { return populated_; }
 
   const std::vector<std::pair<int, double>> getLegendValues() const;
@@ -201,6 +195,7 @@ class HeatMapDataSource
   odb::dbBlock* getBlock() const { return block_; }
 
   void setupMap();
+  void clearMap();
   virtual bool populateMap() = 0;
   void addToMap(const odb::Rect& region, double value);
   virtual void combineMapData(bool base_has_value,
