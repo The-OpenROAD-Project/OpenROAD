@@ -43,6 +43,7 @@ record_tests {
   add_constraint_error3
   add_constraint_error4
   add_constraint_error5
+  add_constraint_error6
   group_pins1
   group_pins2
   group_pins3
