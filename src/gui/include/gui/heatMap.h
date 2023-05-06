@@ -159,6 +159,7 @@ class HeatMapDataSource
   virtual double getGridSizeMaximumValue() const { return 100.0; }
   // The default implementation uses the block's bounds
   virtual odb::Rect getBounds() const;
+  odb::dbBlock* getBlock() const { return block_; }
 
   // map controls
   void update() { destroyMap(); }
@@ -191,8 +192,6 @@ class HeatMapDataSource
       const std::function<std::vector<std::string>(void)>& choices,
       const std::function<std::string(void)>& getter,
       const std::function<void(std::string)>& setter);
-
-  odb::dbBlock* getBlock() const { return block_; }
 
   void setupMap();
   void clearMap();

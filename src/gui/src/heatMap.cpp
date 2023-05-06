@@ -622,43 +622,92 @@ void HeatMapRenderer::drawObjects(Painter& painter)
 
   const odb::Rect& bounds = painter.getBounds();
 
-  for (const auto& map_col : datasource_.getMapView(bounds)) {
-    for (const auto& map_pt : map_col) {
-      if (!map_pt->has_value) {  // value not set so nothing to draw
-        continue;
-      }
-      if (!show_mins && map_pt->value < min_value) {
-        continue;
-      }
-      if (!show_maxs && map_pt->value > max_value) {
-        continue;
-      }
+  // minimum box size is 2 pixels
+  const double min_dbu = 2.0 / painter.getPixelsPerDBU();
 
-      painter.setPen(map_pt->color, true);
-      painter.setBrush(map_pt->color);
+  const double dbu_per_micron = datasource_.getBlock()->getDbUnitsPerMicron();
+  const int x_scale
+      = std::ceil(min_dbu / (datasource_.getGridXSize() * dbu_per_micron));
+  const int y_scale
+      = std::ceil(min_dbu / (datasource_.getGridYSize() * dbu_per_micron));
 
-      painter.drawRect(map_pt->rect);
+  std::vector<HeatMapDataSource::MapColor> draw_pts;
+  const HeatMapDataSource::MapView map_view = datasource_.getMapView(bounds);
+  const int x_size = map_view.shape()[0];
+  const int y_size = map_view.shape()[1];
 
-      if (show_numbers) {
-        const int x = 0.5 * (map_pt->rect.xMin() + map_pt->rect.xMax());
-        const int y = 0.5 * (map_pt->rect.yMin() + map_pt->rect.yMax());
-        const Painter::Anchor text_anchor = Painter::Anchor::CENTER;
-        const double text_rect_margin = 0.8;
+  for (int x = 0; x < x_size; x += x_scale) {
+    for (int y = 0; y < y_size; y += y_scale) {
+      HeatMapDataSource::MapColor draw_pt;
+      draw_pt.rect.mergeInit();
+      draw_pt.has_value = false;
+      draw_pt.value = std::numeric_limits<double>::lowest();
 
-        const std::string text = datasource_.formatValue(map_pt->value, false);
-        const odb::Rect text_bound
-            = painter.stringBoundaries(x, y, text_anchor, text);
-        bool draw = true;
-        if (text_bound.dx() >= text_rect_margin * map_pt->rect.dx()
-            || text_bound.dy() >= text_rect_margin * map_pt->rect.dy()) {
-          // don't draw if text will be too small
-          draw = false;
+      for (int x_sub = 0; x_sub < x_scale; x_sub++) {
+        const int x_idx = x + x_sub;
+        if (x_idx >= x_size) {
+          continue;
         }
 
-        if (draw) {
-          painter.setPen(Painter::white, true);
-          painter.drawString(x, y, text_anchor, text);
+        for (int y_sub = 0; y_sub < y_scale; y_sub++) {
+          const int y_idx = y + y_sub;
+          if (y_idx >= y_size) {
+            continue;
+          }
+
+          const auto& map_pt = map_view[x_idx][y_idx];
+          draw_pt.rect.merge(map_pt->rect);
+          if (!map_pt->has_value) {  // value not set so nothing to do
+            continue;
+          }
+
+          if (draw_pt.value < map_pt->value) {
+            draw_pt.has_value = true;
+            draw_pt.value = map_pt->value;
+            draw_pt.color = map_pt->color;
+          }
         }
+      }
+
+      draw_pts.push_back(draw_pt);
+    }
+  }
+
+  for (const auto& map_pt : draw_pts) {
+    if (!map_pt.has_value) {  // value not set so nothing to draw
+      continue;
+    }
+    if (!show_mins && map_pt.value < min_value) {
+      continue;
+    }
+    if (!show_maxs && map_pt.value > max_value) {
+      continue;
+    }
+
+    painter.setPen(map_pt.color, true);
+    painter.setBrush(map_pt.color);
+
+    painter.drawRect(map_pt.rect);
+
+    if (show_numbers) {
+      const int x = 0.5 * (map_pt.rect.xMin() + map_pt.rect.xMax());
+      const int y = 0.5 * (map_pt.rect.yMin() + map_pt.rect.yMax());
+      const Painter::Anchor text_anchor = Painter::Anchor::CENTER;
+      const double text_rect_margin = 0.8;
+
+      const std::string text = datasource_.formatValue(map_pt.value, false);
+      const odb::Rect text_bound
+          = painter.stringBoundaries(x, y, text_anchor, text);
+      bool draw = true;
+      if (text_bound.dx() >= text_rect_margin * map_pt.rect.dx()
+          || text_bound.dy() >= text_rect_margin * map_pt.rect.dy()) {
+        // don't draw if text will be too small
+        draw = false;
+      }
+
+      if (draw) {
+        painter.setPen(Painter::white, true);
+        painter.drawString(x, y, text_anchor, text);
       }
     }
   }
