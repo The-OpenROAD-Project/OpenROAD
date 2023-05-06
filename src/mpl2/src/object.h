@@ -345,7 +345,7 @@ class HardMacro
   HardMacro(float width, float height, const std::string& name);
   // create a macro from dbInst
   // dbu is needed to convert the database unit to real size
-  HardMacro(odb::dbInst* inst, float dbu, float halo_width = 0.0);
+  HardMacro(odb::dbInst* inst, float dbu, int manufacturing_unit, float halo_width = 0.0);
 
   // overload the comparison operators
   // based on area, width, height order
@@ -444,6 +444,7 @@ class HardMacro
   // each HardMacro cooresponds to one macro
   odb::dbInst* inst_ = nullptr;
   float dbu_ = 0.0;  // DbuPerMicro
+  int manufacturing_unit_ = 10; // Manufacturing grid
 };
 
 // We have three types of SoftMacros
@@ -725,13 +726,11 @@ struct Rect
       uy = core_uy;
     }
 
+    // TODO:  This should not happen in most of cases
     if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
-        || uy > core_uy + 1.0)
-      std::cout << "Error !!!\n"
-                << "core_lx =  " << core_lx << "  "
-                << "core_ly =  " << core_ly << "  "
-                << "core_ux =  " << core_ux << "  "
-                << "core_uy =  " << core_uy << std::endl;
+            || uy > core_uy + 1.0) {
+      return;  
+    }
   }
 
   inline void resetForce()

@@ -742,10 +742,11 @@ HardMacro::HardMacro(float width, float height, const std::string& name)
   pin_y_ = height / 2.0;
 }
 
-HardMacro::HardMacro(odb::dbInst* inst, float dbu, float halo_width)
+HardMacro::HardMacro(odb::dbInst* inst, float dbu, int manufacturing_unit, float halo_width)
 {
   inst_ = inst;
   dbu_ = dbu;
+  manufacturing_unit_ = manufacturing_unit;
   halo_width_ = halo_width;
 
   // set name
@@ -973,6 +974,21 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
   ux = std::round(ux / pitch_x) * pitch_x;
   ly = std::round(ly / pitch_y) * pitch_y;
   uy = std::round(uy / pitch_y) * pitch_y;
+  int round_lx = std::round(micronToDbu(lx, dbu_) / manufacturing_unit_) * manufacturing_unit_;
+  int round_ly = std::round(micronToDbu(ly, dbu_) / manufacturing_unit_) * manufacturing_unit_;
+  int round_ux = std::round(micronToDbu(ux, dbu_) / manufacturing_unit_) * manufacturing_unit_;
+  int round_uy = std::round(micronToDbu(uy, dbu_) / manufacturing_unit_) * manufacturing_unit_;
+  if (orientation_.getString() == std::string("MX")) {
+    inst_->setLocation(round_lx, round_uy);
+  } else if (orientation_.getString() == std::string("MY")) {
+    inst_->setLocation(round_ux, round_ly);
+  } else if (orientation_.getString() == std::string("R180")) {
+    inst_->setLocation(round_ux, round_uy);
+  } else {
+    inst_->setLocation(round_lx, round_ly);
+  }
+
+  /*
   if (orientation_.getString() == std::string("MX")) {
     inst_->setLocation(micronToDbu(lx, dbu_), micronToDbu(uy, dbu_));
   } else if (orientation_.getString() == std::string("MY")) {
@@ -982,6 +998,7 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
   } else {
     inst_->setLocation(micronToDbu(lx, dbu_), micronToDbu(ly, dbu_));
   }
+  */
   inst_->setOrient(orientation_);
   inst_->setPlacementStatus(odb::dbPlacementStatus::LOCKED);
 }

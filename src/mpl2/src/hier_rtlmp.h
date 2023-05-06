@@ -272,6 +272,7 @@ class HierRTLMP
 
   // technology-related variables
   float dbu_ = 0.0;
+  int manufacturing_unit_ = 10; // In DBU, this will be automatically updated
 
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;
