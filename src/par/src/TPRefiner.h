@@ -279,7 +279,7 @@ class TPpriorityQueue
   std::vector<int> vertices_map_;  // store the location of vertex_gain for each
                                    // vertex vertices_map_ always has the size
                                    // of hypergraph_->num_vertices_
-  int total_elements_;               // number of elements in the priority queue
+  int total_elements_;             // number of elements in the priority queue
   int maximum_traverse_level_ = 25;  // the maximum level of traversing the
                                      // buckets to solve the "corking effect"
 };

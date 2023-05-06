@@ -149,7 +149,7 @@ HGraphPtr TPcoarsener::GroupVertices(
   std::vector<int> community_attr_c;  // cluster community information
   std::vector<int> fixed_attr_c;      // cluster fixed attribute
   MATRIX<float> placement_attr_c;     // cluster placement attribute
- 
+
   // Cluster based group information
   ClusterBasedGroupInfo(hgraph,
                         group_attr,
@@ -722,7 +722,7 @@ HGraphPtr TPcoarsener::Contraction(
     const int first_valid_entry = hgraph->eptr_[e];
     const int first_invalid_entry = hgraph->eptr_[e + 1];
     const int he_size = first_invalid_entry - first_valid_entry;
-    //if (he_size <= 1 || he_size > global_net_threshold_) {
+    // if (he_size <= 1 || he_size > global_net_threshold_) {
     //  continue;  // ignore the single-vertex hyperedge and large hyperedge
     //}
     if (he_size <= 1 || he_size > thr_coarsen_hyperedge_size_skip_) {

@@ -745,8 +745,9 @@ void GoldenEvaluator::WriteWeightedHypergraph(HGraphPtr hgraph,
 }
 
 // Write the weighted hypergraph in hMETIS format
-void GoldenEvaluator::WriteIntWeightHypergraph(HGraphPtr hgraph,
-                                               const std::string file_name) const
+void GoldenEvaluator::WriteIntWeightHypergraph(
+    HGraphPtr hgraph,
+    const std::string file_name) const
 {
   std::ofstream file_output;
   file_output.open(file_name);
@@ -767,7 +768,5 @@ void GoldenEvaluator::WriteIntWeightHypergraph(HGraphPtr hgraph,
   // close the file
   file_output.close();
 }
-
-
 
 }  // namespace par

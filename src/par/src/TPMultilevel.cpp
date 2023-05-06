@@ -88,7 +88,8 @@ std::vector<int> TPmultilevelPartitioner::Partition(
                                                      top_solutions,
                                                      best_solution_id);
 
-  logger_->report("[INFO] Finish Cut-Overlay Clustering and Optimal Partitioning");
+  logger_->report(
+      "[INFO] Finish Cut-Overlay Clustering and Optimal Partitioning");
 
   // Step 3: Guided v-cycle. Note that hgraph has been updated.
   // The best_solution will be refined.
@@ -358,7 +359,7 @@ void TPmultilevelPartitioner::InitialPartition(
     for (auto id : solution_ids) {
       if (visited_solution_flag[id] == false) {
         top_initial_solutions[num_chosen_best_init_solution]
-           = initial_solutions[id];
+            = initial_solutions[id];
         visited_solution_flag[id] = true;
         num_chosen_best_init_solution++;
         if (num_chosen_best_init_solution >= num_best_initial_solutions_) {
@@ -422,7 +423,7 @@ void TPmultilevelPartitioner::RefinePartition(
       }
       top_solutions[i] = refined_solution;
     }
-    
+
     // Parallel refine all the solutions
     std::vector<std::thread> threads;
     for (auto i = 0; i < top_solutions.size(); i++) {
@@ -508,11 +509,9 @@ std::vector<int> TPmultilevelPartitioner::CutOverlayILPPart(
       }
     }
   }
-  
+
   // pre-order BFS to traverse the hypergraph
-  auto lambda_detect_connected_components
-      = [&](int v,
-            int cluster_id) -> void {
+  auto lambda_detect_connected_components = [&](int v, int cluster_id) -> void {
     std::queue<int> wavefront;
     wavefront.push(v);
     while (wavefront.empty() == false) {
@@ -526,14 +525,14 @@ std::vector<int> TPmultilevelPartitioner::CutOverlayILPPart(
           continue;  // this hyperedge has been cut
         }
         for (auto v_idx = hgraph->eptr_[e]; v_idx < hgraph->eptr_[e + 1];
-           v_idx++) {
+             v_idx++) {
           const int v_nbr = hgraph->eind_[v_idx];  // vertex v_nbr
           if (vertex_cluster_vec[v_nbr] == -1) {
             vertex_cluster_vec[v_nbr] = cluster_id;
             wavefront.push(v_nbr);
           }
         }
-      }    
+      }
     }
   };
 

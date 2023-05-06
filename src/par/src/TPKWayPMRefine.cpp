@@ -329,7 +329,7 @@ void TPkWayPMRefine::InitializeGainBucketsPM(
 {
   std::vector<std::thread> threads;  // for parallel updating
   std::vector<int> blocks_id{partition_pair.first, partition_pair.second};
- 
+
   // parallel initialize the num_parts gain_buckets
   for (const auto to_pid : blocks_id) {
     threads.push_back(std::thread(

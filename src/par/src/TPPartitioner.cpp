@@ -185,13 +185,13 @@ void TPpartitioner::RandomPart(const HGraphPtr hgraph,
     solution[v] = block_id;
     block_balance[block_id]
         = block_balance[block_id] + hgraph->vertex_weights_[v];
-    if (block_balance[block_id] >= lower_block_balance[block_id] && stop_flag == false) {
+    if (block_balance[block_id] >= lower_block_balance[block_id]
+        && stop_flag == false) {
       stop_flag = true;
       block_id++;
       block_id = block_id % num_parts_;  // adjust the block_id
     }
   }
-   
 
   /*
   // Step 5: randomly assign block id

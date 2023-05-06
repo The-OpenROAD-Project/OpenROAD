@@ -41,7 +41,6 @@
 #include "TritonPart.h"
 
 #include <iostream>
-#include <iostream>
 #include <set>
 #include <string>
 
@@ -305,7 +304,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
       odb::dbIntProperty::create(term, "partition_id", partition_id);
     }
   }
-  
+
   for (auto inst : block_->getInsts()) {
     auto vertex_id_property = odb::dbIntProperty::find(inst, "vertex_id");
     const int vertex_id = vertex_id_property->getValue();
@@ -340,7 +339,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
                     solution_file_name);
     std::ofstream file_output;
     file_output.open(solution_file_name);
-    
+
     for (auto term : block_->getBTerms()) {
       if (auto property = odb::dbIntProperty::find(term, "partition_id")) {
         file_output << term->getName() << "  ";
@@ -515,29 +514,29 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
   logger_->report("Exiting Evaluating Hypergraph Solution");
 }
 
-
 // Function to evaluate the hypergraph partitioning solution
 // This can be used to write the timing-weighted hypergraph
 // and evaluate the solution.
-// If the solution file is empty, then this function is to write the   
-// solution. If the solution file is not empty, then this function is to evaluate
-// the solution without writing the hypergraph again
-// This function is only used for testing
-void TritonPart::EvaluatePartDesignSolution(unsigned int num_parts_arg,
-                                            float balance_constraint_arg,
-                                            bool timing_aware_flag_arg,
-                                            int top_n_arg,
-                                            bool fence_flag_arg,
-                                            float fence_lx_arg,
-                                            float fence_ly_arg,
-                                            float fence_ux_arg,
-                                            float fence_uy_arg,
-                                            const char* fixed_file_arg,
-                                            const char* community_file_arg,
-                                            const char* group_file_arg,
-                                            const char* hypergraph_file_arg,
-                                            const char* hypergraph_int_weight_file_arg,
-                                            const char* solution_filename_arg)
+// If the solution file is empty, then this function is to write the
+// solution. If the solution file is not empty, then this function is to
+// evaluate the solution without writing the hypergraph again This function is
+// only used for testing
+void TritonPart::EvaluatePartDesignSolution(
+    unsigned int num_parts_arg,
+    float balance_constraint_arg,
+    bool timing_aware_flag_arg,
+    int top_n_arg,
+    bool fence_flag_arg,
+    float fence_lx_arg,
+    float fence_ly_arg,
+    float fence_ux_arg,
+    float fence_uy_arg,
+    const char* fixed_file_arg,
+    const char* community_file_arg,
+    const char* group_file_arg,
+    const char* hypergraph_file_arg,
+    const char* hypergraph_int_weight_file_arg,
+    const char* solution_filename_arg)
 {
   logger_->report("========================================");
   logger_->report("[STATUS] Starting TritonPart Partitioner");
@@ -548,7 +547,7 @@ void TritonPart::EvaluatePartDesignSolution(unsigned int num_parts_arg,
   // Parameters
   num_parts_ = num_parts_arg;
   ub_factor_ = balance_constraint_arg;
-  seed_ = 0; // This parameter is not used.  just a random value
+  seed_ = 0;               // This parameter is not used.  just a random value
   vertex_dimensions_ = 1;  // for design partitioning, vertex weight is the area
                            // of the instance
   hyperedge_dimensions_
@@ -559,7 +558,7 @@ void TritonPart::EvaluatePartDesignSolution(unsigned int num_parts_arg,
   } else {
     top_n_ = top_n_arg;  // extract the top_n critical timing paths
   }
-  placement_flag_ = false; // We do not need this parameter here
+  placement_flag_ = false;  // We do not need this parameter here
   if (placement_flag_ == false) {
     placement_dimensions_ = 0;  // no placement information
   } else {
@@ -610,10 +609,11 @@ void TritonPart::EvaluatePartDesignSolution(unsigned int num_parts_arg,
   }
   if (!hypergraph_file.empty()) {
     logger_->report("[PARAM] Hypergraph file = {}", hypergraph_file);
-  } 
+  }
   if (!hypergraph_int_weight_file.empty()) {
-    logger_->report("[PARAM] Hypergraph_int_weight_file = {}", hypergraph_int_weight_file);
-  } 
+    logger_->report("[PARAM] Hypergraph_int_weight_file = {}",
+                    hypergraph_int_weight_file);
+  }
   if (!solution_file.empty()) {
     logger_->report("[PARAM] Solution file = {}", solution_file);
   }
@@ -696,14 +696,15 @@ void TritonPart::EvaluatePartDesignSolution(unsigned int num_parts_arg,
   if (hypergraph_file.empty() == false) {
     evaluator->WriteWeightedHypergraph(original_hypergraph_, hypergraph_file);
     logger_->report("Finish writing hypergraph");
-  } 
+  }
 
   // This is for hMETIS. hMETIS only accept integer weight
   if (hypergraph_int_weight_file.empty() == false) {
-    evaluator->WriteIntWeightHypergraph(original_hypergraph_, hypergraph_int_weight_file);
+    evaluator->WriteIntWeightHypergraph(original_hypergraph_,
+                                        hypergraph_int_weight_file);
     logger_->report("Finish writing integer weight hypergraph");
   }
-  
+
   if (solution_file.empty() == false) {
     int part_id = -1;
     std::ifstream solution_file_input(solution_file);
@@ -715,18 +716,20 @@ void TritonPart::EvaluatePartDesignSolution(unsigned int num_parts_arg,
       solution_.push_back(part_id);
     }
     solution_file_input.close();
-    evaluator->ConstraintAndCutEvaluator(original_hypergraph_, solution_, ub_factor_, group_attr_, true);
- 
+    evaluator->ConstraintAndCutEvaluator(
+        original_hypergraph_, solution_, ub_factor_, group_attr_, true);
+
     // generate the timing report
     if (timing_aware_flag_ == true) {
       logger_->report("[STATUS] Displaying timing path cuts statistics");
       logger_->report("[INFO] Total timing critical paths = {}", top_n_);
       // total cut, worst cut and average cut
       std::tuple<int, int, float> cut_info
-        = evaluator->GetTimingCuts(original_hypergraph_, solution_);
+          = evaluator->GetTimingCuts(original_hypergraph_, solution_);
       logger_->report("[INFO] Total paths cut = {}", std::get<0>(cut_info));
       logger_->report("[INFO] Worst cut on a path = {}", std::get<1>(cut_info));
-      logger_->report("[INFO] Average cuts on critical paths = {}", std::get<2>(cut_info));
+      logger_->report("[INFO] Average cuts on critical paths = {}",
+                      std::get<2>(cut_info));
     }
 
     logger_->report("===============================================");
@@ -950,27 +953,29 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
     }
     std::string cur_line;
     // We assume the embedding has been normalized
-    const float max_placement_value = 1.0; // we assume the embedding has been normalized, 
-                                           // so we assume max_value is 1.0
-    std::vector<std::vector<float> > temp_placement_attr;
+    const float max_placement_value
+        = 1.0;  // we assume the embedding has been normalized,
+                // so we assume max_value is 1.0
+    std::vector<std::vector<float>> temp_placement_attr;
     while (std::getline(placement_file_input, cur_line)) {
-      std::vector<std::string> elements = SplitLine(cur_line); // split the line based on deliminator empty space, ','
+      std::vector<std::string> elements = SplitLine(
+          cur_line);  // split the line based on deliminator empty space, ','
       std::vector<float> vertex_placement;
       for (auto& ele : elements) {
         if (ele == "NaN" || ele == "nan" || ele == "NAN") {
-          vertex_placement.push_back(max_placement_value);          
+          vertex_placement.push_back(max_placement_value);
         } else {
-          vertex_placement.push_back(std::stof(ele));        
+          vertex_placement.push_back(std::stof(ele));
         }
       }
       temp_placement_attr.push_back(vertex_placement);
     }
     placement_file_input.close();
     // Here comes the very important part for placement-driven clustering
-    // Since we have so many vertices, the embedding value for each single vertex
-    // usually very small, around e-5 - e-7
-    // So we need to normalize the placement embedding based on average distance again
-    // Here we randomly sample num_vertices of pairs to compute the average norm
+    // Since we have so many vertices, the embedding value for each single
+    // vertex usually very small, around e-5 - e-7 So we need to normalize the
+    // placement embedding based on average distance again Here we randomly
+    // sample num_vertices of pairs to compute the average norm
     float avg_distance = 0.0;
     int num_random_pair = 0;
     for (int i = 0; i < num_vertices_; i++) {
@@ -985,8 +990,10 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
       }
     }
     avg_distance = avg_distance / num_random_pair;
-    logger_->report("[INFO] Normalize the placement embedding with the value of {} !", avg_distance);
-    
+    logger_->report(
+        "[INFO] Normalize the placement embedding with the value of {} !",
+        avg_distance);
+
     // perform normalization
     for (auto& ele : temp_placement_attr) {
       placement_attr_.push_back(DivideFactor(ele, avg_distance));
@@ -1057,42 +1064,93 @@ void TritonPart::ReadNetlist(std::string fixed_file,
       odb::Rect box = term->getBBox();
       if (box.xMin() >= fence_.lx && box.xMax() <= fence_.ux
           && box.yMin() >= fence_.ly && box.yMax() <= fence_.uy) {
-      if (box.xMin() >= fence_.lx && box.xMax() <= fence_.ux
-          && box.yMin() >= fence_.ly && box.yMax() <= fence_.uy) {
+        if (box.xMin() >= fence_.lx && box.xMax() <= fence_.ux
+            && box.yMin() >= fence_.ly && box.yMax() <= fence_.uy) {
+          odb::dbIntProperty::create(term, "vertex_id", vertex_id++);
+          std::vector<float> vwts(vertex_dimensions_,
+                                  0.0);  // IO port has no area
+          vertex_weights_.emplace_back(vwts);
+          vertex_types_.emplace_back(PORT);
+          odb::dbIntProperty::find(term, "vertex_id")->setValue(vertex_id++);
+          if (placement_flag_ == true) {
+            std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0,
+                                   (box.yMin() + box.yMax()) / 2.0};
+            placement_attr_.emplace_back(loc);
+          }
+        }
+      }
+      // check instances
+      for (auto inst : block_->getInsts()) {
+        // -1 means that the instance is not used by the partitioner
+        odb::dbIntProperty::create(inst, "vertex_id", -1);
+        odb::dbIntProperty::create(inst, "vertex_id", -1);
+        const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+        if (liberty_cell == nullptr) {
+          continue;  // ignore the instance with no liberty
+          continue;  // ignore the instance with no liberty
+        }
+        odb::dbMaster* master = inst->getMaster();
+        // check if the instance is a pad or a cover macro
+        if (master->isPad() || master->isCover()) {
+          continue;
+        }
+        odb::dbBox* box = inst->getBBox();
+        // check if the inst is within the fence
+        if (box->xMin() >= fence_.lx && box->xMax() <= fence_.ux
+            && box->yMin() >= fence_.ly && box->yMax() <= fence_.uy) {
+          if (box->xMin() >= fence_.lx && box->xMax() <= fence_.ux
+              && box->yMin() >= fence_.ly && box->yMax() <= fence_.uy) {
+            const float area = liberty_cell->area();
+            std::vector<float> vwts(vertex_dimensions_, area);
+            vertex_weights_.emplace_back(vwts);
+            if (master->isBlock()) {
+              vertex_types_.emplace_back(MACRO);
+            } else if (liberty_cell->hasSequentials()) {
+              vertex_types_.emplace_back(SEQ_STD_CELL);
+            } else {
+              vertex_types_.emplace_back(COMB_STD_CELL);
+            }
+            if (placement_flag_ == true) {
+              std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0,
+                                     (box->yMin() + box->yMax()) / 2.0};
+              placement_attr_.emplace_back(loc);
+            }
+            odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
+          }
+        }
+      }
+    }
+    else
+    {
+      for (auto term : block_->getBTerms()) {
         odb::dbIntProperty::create(term, "vertex_id", vertex_id++);
-        std::vector<float> vwts(vertex_dimensions_,
-                                0.0);  // IO port has no area
-        vertex_weights_.emplace_back(vwts);
         vertex_types_.emplace_back(PORT);
-        odb::dbIntProperty::find(term, "vertex_id")->setValue(vertex_id++);
+        std::vector<float> vwts(vertex_dimensions_, 0.0);
+        vertex_weights_.push_back(vwts);
         if (placement_flag_ == true) {
+          odb::Rect box = term->getBBox();
           std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0,
                                  (box.yMin() + box.yMax()) / 2.0};
           placement_attr_.emplace_back(loc);
         }
       }
-    }
-    // check instances
-    for (auto inst : block_->getInsts()) {
-      // -1 means that the instance is not used by the partitioner
-      odb::dbIntProperty::create(inst, "vertex_id", -1);
-      odb::dbIntProperty::create(inst, "vertex_id", -1);
-      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-      if (liberty_cell == nullptr) {
-        continue;  // ignore the instance with no liberty
-        continue;  // ignore the instance with no liberty
-      }
-      odb::dbMaster* master = inst->getMaster();
-      // check if the instance is a pad or a cover macro
-      if (master->isPad() || master->isCover()) {
-        continue;
-      }
-      odb::dbBox* box = inst->getBBox();
-      // check if the inst is within the fence
-      if (box->xMin() >= fence_.lx && box->xMax() <= fence_.ux
-          && box->yMin() >= fence_.ly && box->yMax() <= fence_.uy) {
-      if (box->xMin() >= fence_.lx && box->xMax() <= fence_.ux
-          && box->yMin() >= fence_.ly && box->yMax() <= fence_.uy) {
+
+      for (auto inst : block_->getInsts()) {
+        for (auto inst : block_->getInsts()) {
+          // -1 means that the instance is not used by the partitioner
+          odb::dbIntProperty::create(inst, "vertex_id", -1);
+          odb::dbIntProperty::create(inst, "vertex_id", -1);
+          const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
+          if (liberty_cell == nullptr) {
+            continue;  // ignore the instance with no liberty
+            continue;  // ignore the instance with no liberty
+          }
+          odb::dbMaster* master = inst->getMaster();
+          // check if the instance is a pad or a cover macro
+          if (master->isPad() || master->isCover()) {
+            continue;
+          }
+        }
         const float area = liberty_cell->area();
         std::vector<float> vwts(vertex_dimensions_, area);
         vertex_weights_.emplace_back(vwts);
@@ -1103,189 +1161,140 @@ void TritonPart::ReadNetlist(std::string fixed_file,
         } else {
           vertex_types_.emplace_back(COMB_STD_CELL);
         }
+        odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
         if (placement_flag_ == true) {
+          odb::dbBox* box = inst->getBBox();
           std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0,
                                  (box->yMin() + box->yMax()) / 2.0};
           placement_attr_.emplace_back(loc);
         }
-        odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
-      }
-    }
-    }
-  } else {
-    for (auto term : block_->getBTerms()) {
-      odb::dbIntProperty::create(term, "vertex_id", vertex_id++);
-      vertex_types_.emplace_back(PORT);
-      std::vector<float> vwts(vertex_dimensions_, 0.0);
-      vertex_weights_.push_back(vwts);
-      if (placement_flag_ == true) {
-        odb::Rect box = term->getBBox();
-        std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0,
-                               (box.yMin() + box.yMax()) / 2.0};
-        placement_attr_.emplace_back(loc);
       }
     }
 
-    for (auto inst : block_->getInsts()) {
-    for (auto inst : block_->getInsts()) {
-      // -1 means that the instance is not used by the partitioner
-      odb::dbIntProperty::create(inst, "vertex_id", -1);
-      odb::dbIntProperty::create(inst, "vertex_id", -1);
-      const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
-      if (liberty_cell == nullptr) {
-        continue;  // ignore the instance with no liberty
-        continue;  // ignore the instance with no liberty
-      }
-      odb::dbMaster* master = inst->getMaster();
-      // check if the instance is a pad or a cover macro
-      if (master->isPad() || master->isCover()) {
-        continue;
-      }
-      }
-      const float area = liberty_cell->area();
-      std::vector<float> vwts(vertex_dimensions_, area);
-      vertex_weights_.emplace_back(vwts);
-      if (master->isBlock()) {
-        vertex_types_.emplace_back(MACRO);
-      } else if (liberty_cell->hasSequentials()) {
-        vertex_types_.emplace_back(SEQ_STD_CELL);
+    num_vertices_ = vertex_id;
+
+    // read fixed instance file
+    if (fixed_file.empty() == false) {
+      std::ifstream file_input(fixed_file);
+      if (!file_input.is_open()) {
+        logger_->report("[WARNING] Cannot open the fixed instance file : {}",
+                        fixed_file);
       } else {
-        vertex_types_.emplace_back(COMB_STD_CELL);
-      }
-      odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
-      if (placement_flag_ == true) {
-        odb::dbBox* box = inst->getBBox();
-        std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0,
-                               (box->yMin() + box->yMax()) / 2.0};
-        placement_attr_.emplace_back(loc);
-      }
-    }
-  }
-
-
-  num_vertices_ = vertex_id;
-
-  // read fixed instance file
-  if (fixed_file.empty() == false) {
-    std::ifstream file_input(fixed_file);
-    if (!file_input.is_open()) {
-      logger_->report("[WARNING] Cannot open the fixed instance file : {}",
-                      fixed_file);
-    } else {
-      fixed_attr_.resize(num_vertices_);
-      std::fill(fixed_attr_.begin(), fixed_attr_.end(), -1);
-      std::string cur_line;
-      while (std::getline(file_input, cur_line)) {
-        std::stringstream ss(cur_line);
-        std::string inst_name;
-        int partition_id = -1;
-        ss >> inst_name;
-        ss >> partition_id;
-        auto db_inst = block_->findInst(inst_name.c_str());
-        const int vertex_id
-            = odb::dbIntProperty::find(db_inst, "vertex_id")->getValue();
-        if (vertex_id > -1) {
-          fixed_attr_[vertex_id] = partition_id;
-        }
-      }
-    }
-    file_input.close();
-  }
-
-  // read community attribute file
-  if (community_file.empty() == false) {
-    std::ifstream file_input(community_file);
-    if (!file_input.is_open()) {
-      logger_->report("[WARNING] Cannot open the community file : {}",
-                      community_file);
-    } else {
-      community_attr_.resize(num_vertices_);
-      std::fill(community_attr_.begin(), community_attr_.end(), -1);
-      std::string cur_line;
-      while (std::getline(file_input, cur_line)) {
-        std::stringstream ss(cur_line);
-        std::string inst_name;
-        int partition_id = -1;
-        ss >> inst_name;
-        ss >> partition_id;
-        auto db_inst = block_->findInst(inst_name.c_str());
-        const int vertex_id
-            = odb::dbIntProperty::find(db_inst, "vertex_id")->getValue();
-        if (vertex_id > -1) {
-          community_attr_[vertex_id] = partition_id;
-        }
-      }
-    }
-    file_input.close();
-  }
-
-  // read the group file
-  if (group_file.empty() == false) {
-    std::ifstream file_input(group_file);
-    if (!file_input.is_open()) {
-      logger_->report("[WARNING] Cannot open the group file : {}", group_file);
-    } else {
-      group_attr_.clear();
-      std::string cur_line;
-      while (std::getline(file_input, cur_line)) {
-        std::stringstream ss(cur_line);
-        std::string inst_name;
-        std::vector<int> inst_group;
-        while (ss >> inst_name) {
+        fixed_attr_.resize(num_vertices_);
+        std::fill(fixed_attr_.begin(), fixed_attr_.end(), -1);
+        std::string cur_line;
+        while (std::getline(file_input, cur_line)) {
+          std::stringstream ss(cur_line);
+          std::string inst_name;
+          int partition_id = -1;
+          ss >> inst_name;
+          ss >> partition_id;
           auto db_inst = block_->findInst(inst_name.c_str());
           const int vertex_id
               = odb::dbIntProperty::find(db_inst, "vertex_id")->getValue();
           if (vertex_id > -1) {
-            inst_group.push_back(vertex_id);
+            fixed_attr_[vertex_id] = partition_id;
           }
         }
-        if (inst_group.size() > 1) {
-          group_attr_.push_back(inst_group);
+      }
+      file_input.close();
+    }
+
+    // read community attribute file
+    if (community_file.empty() == false) {
+      std::ifstream file_input(community_file);
+      if (!file_input.is_open()) {
+        logger_->report("[WARNING] Cannot open the community file : {}",
+                        community_file);
+      } else {
+        community_attr_.resize(num_vertices_);
+        std::fill(community_attr_.begin(), community_attr_.end(), -1);
+        std::string cur_line;
+        while (std::getline(file_input, cur_line)) {
+          std::stringstream ss(cur_line);
+          std::string inst_name;
+          int partition_id = -1;
+          ss >> inst_name;
+          ss >> partition_id;
+          auto db_inst = block_->findInst(inst_name.c_str());
+          const int vertex_id
+              = odb::dbIntProperty::find(db_inst, "vertex_id")->getValue();
+          if (vertex_id > -1) {
+            community_attr_[vertex_id] = partition_id;
+          }
         }
       }
+      file_input.close();
     }
-    file_input.close();
-  }
 
-  // Check all the hyperedges,
-  // we do not check the parallel hyperedges
-  // because we need to consider timing graph
-  hyperedges_.clear();
-  hyperedge_weights_.clear();
-  // Each net correponds to an hyperedge
-  // Traverse the hyperedge and assign hyperedge_id to each net
-  // the hyperedge_id property will be removed after partitioning
-  int hyperedge_id = 0;
-  for (auto net : block_->getNets()) {
-    odb::dbIntProperty::create(net, "hyperedge_id", -1);
-    // ignore all the power net
-    if (net->getSigType().isSupply())
-      continue;
-    // check the hyperedge
-    int driver_id = -1;      // vertex id of the driver instance
-    std::set<int> loads_id;  // vertex id of sink instances
-    // check the connected instances
-    for (odb::dbITerm* iterm : net->getITerms()) {
-      odb::dbInst* inst = iterm->getInst();
-      const int vertex_id
-          = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
-      if (vertex_id == -1) {
-        continue;  // the current instance is not used
-        continue;  // the current instance is not used
-      }
-      if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
-        driver_id = vertex_id;
+    // read the group file
+    if (group_file.empty() == false) {
+      std::ifstream file_input(group_file);
+      if (!file_input.is_open()) {
+        logger_->report("[WARNING] Cannot open the group file : {}",
+                        group_file);
       } else {
-        loads_id.insert(vertex_id);
+        group_attr_.clear();
+        std::string cur_line;
+        while (std::getline(file_input, cur_line)) {
+          std::stringstream ss(cur_line);
+          std::string inst_name;
+          std::vector<int> inst_group;
+          while (ss >> inst_name) {
+            auto db_inst = block_->findInst(inst_name.c_str());
+            const int vertex_id
+                = odb::dbIntProperty::find(db_inst, "vertex_id")->getValue();
+            if (vertex_id > -1) {
+              inst_group.push_back(vertex_id);
+            }
+          }
+          if (inst_group.size() > 1) {
+            group_attr_.push_back(inst_group);
+          }
+        }
       }
+      file_input.close();
     }
-    // check the connected IO pins
-    for (odb::dbBTerm* bterm : net->getBTerms()) {
-      const int vertex_id
-          = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
-      if (vertex_id == -1) {
-        continue;  // the current bterm is not used
+
+    // Check all the hyperedges,
+    // we do not check the parallel hyperedges
+    // because we need to consider timing graph
+    hyperedges_.clear();
+    hyperedge_weights_.clear();
+    // Each net correponds to an hyperedge
+    // Traverse the hyperedge and assign hyperedge_id to each net
+    // the hyperedge_id property will be removed after partitioning
+    int hyperedge_id = 0;
+    for (auto net : block_->getNets()) {
+      odb::dbIntProperty::create(net, "hyperedge_id", -1);
+      // ignore all the power net
+      if (net->getSigType().isSupply())
+        continue;
+      // check the hyperedge
+      int driver_id = -1;      // vertex id of the driver instance
+      std::set<int> loads_id;  // vertex id of sink instances
+      // check the connected instances
+      for (odb::dbITerm* iterm : net->getITerms()) {
+        odb::dbInst* inst = iterm->getInst();
+        const int vertex_id
+            = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
+        if (vertex_id == -1) {
+          continue;  // the current instance is not used
+          continue;  // the current instance is not used
+        }
+        if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
+          driver_id = vertex_id;
+        } else {
+          loads_id.insert(vertex_id);
+        }
       }
+      // check the connected IO pins
+      for (odb::dbBTerm* bterm : net->getBTerms()) {
+        const int vertex_id
+            = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
+        if (vertex_id == -1) {
+          continue;  // the current bterm is not used
+        }
         continue;  // the current bterm is not used
       }
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
@@ -1305,7 +1314,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
       }
     }
     // Ignore all the single-vertex hyperedge and large global netthreshold
-    //if (hyperedge.size() > 1 && hyperedge.size() <= global_net_threshold_) {
+    // if (hyperedge.size() > 1 && hyperedge.size() <= global_net_threshold_) {
     if (hyperedge.size() > 1) {
       hyperedges_.push_back(hyperedge);
       hyperedge_weights_.push_back(
@@ -1518,7 +1527,7 @@ void TritonPart::BuildTimingPaths()
   for (auto db_net : block_->getNets()) {
     const int hyperedge_id
         = odb::dbIntProperty::find(db_net, "hyperedge_id")->getValue();
-        = odb::dbIntProperty::find(db_net, "hyperedge_id")->getValue();
+    = odb::dbIntProperty::find(db_net, "hyperedge_id")->getValue();
     if (hyperedge_id == -1) {
       continue;  // this net is not used
       continue;  // this net is not used
@@ -1767,11 +1776,11 @@ void TritonPart::MultiLevelPartition()
       solution_[v] = part_id;
     }
   }
-  
-  // Perform the last-minute refinement 
+
+  // Perform the last-minute refinement
   tritonpart_coarsener->SetThrCoarsenHyperedgeSizeSkip(global_net_threshold_);
-  tritonpart_mlevel_partitioner->VcycleRefinement(hypergraph_, 
-    upper_block_balance, lower_block_balance, solution_);
+  tritonpart_mlevel_partitioner->VcycleRefinement(
+      hypergraph_, upper_block_balance, lower_block_balance, solution_);
 
   // evaluate on the original hypergraph
   // tritonpart_evaluator->CutEvaluator(original_hypergraph_, solution_, true);

@@ -209,7 +209,7 @@ class TPcoarsener
   const int thr_coarsen_hyperedges_
       = 50;  // the minimum threshold of number of hyperedges in the
              // coarsest hypergraph
-  //const int global_net_threshold_ = 1000; 
+  // const int global_net_threshold_ = 1000;
   const float coarsening_ratio_
       = 1.5;  // the ratio of number of vertices of adjacent coarse hypergraphs
   const int max_coarsen_iters_ = 20;  // maxinum number of coarsening iterations

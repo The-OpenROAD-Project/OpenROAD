@@ -332,39 +332,39 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
                                solution_filename_arg);
 }
 
-
 // Function to evaluate the hypergraph partitioning solution
 // This can be used to write the timing-weighted hypergraph
 // and evaluate the solution.
-// If the solution file is empty, then this function is to write the 
+// If the solution file is empty, then this function is to write the
 // solution.
 // If the solution file is not empty, then this function is to evaluate
 // the solution without writing the hypergraph again
 // This function is only used for testing
-void PartitionMgr::evaluatePartDesignSolution(unsigned int num_parts_arg,
-                                              float balance_constraint_arg,
-                                              bool timing_aware_flag_arg,
-                                              int top_n_arg,
-                                              bool fence_flag_arg,
-                                              float fence_lx_arg,
-                                              float fence_ly_arg,
-                                              float fence_ux_arg,
-                                              float fence_uy_arg,
-                                              const char* fixed_file_arg,
-                                              const char* community_file_arg,
-                                              const char* group_file_arg,
-                                              const char* hypergraph_file_arg,
-                                              const char* hypergraph_int_weight_file_arg,
-                                              const char* solution_filename_arg,
-                                              // timing related parameters
-                                              float net_timing_factor,
-                                              float path_timing_factor,
-                                              float path_snaking_factor,
-                                              float timing_exp_factor,
-                                              float extra_delay,
-                                              // weight parameters
-                                              const char* e_wt_factors_str,
-                                              const char* v_wt_factors_str)
+void PartitionMgr::evaluatePartDesignSolution(
+    unsigned int num_parts_arg,
+    float balance_constraint_arg,
+    bool timing_aware_flag_arg,
+    int top_n_arg,
+    bool fence_flag_arg,
+    float fence_lx_arg,
+    float fence_ly_arg,
+    float fence_ux_arg,
+    float fence_uy_arg,
+    const char* fixed_file_arg,
+    const char* community_file_arg,
+    const char* group_file_arg,
+    const char* hypergraph_file_arg,
+    const char* hypergraph_int_weight_file_arg,
+    const char* solution_filename_arg,
+    // timing related parameters
+    float net_timing_factor,
+    float path_timing_factor,
+    float path_snaking_factor,
+    float timing_exp_factor,
+    float extra_delay,
+    // weight parameters
+    const char* e_wt_factors_str,
+    const char* v_wt_factors_str)
 {
   auto triton_part
       = std::make_unique<TritonPart>(db_network_, db_, sta_, logger_);
@@ -397,7 +397,6 @@ void PartitionMgr::evaluatePartDesignSolution(unsigned int num_parts_arg,
                                           hypergraph_int_weight_file_arg,
                                           solution_filename_arg);
 }
-
 
 // k-way partitioning used by Hier-RTLMP
 std::vector<int> PartitionMgr::PartitionKWaySimpleMode(

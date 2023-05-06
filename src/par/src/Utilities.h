@@ -82,26 +82,24 @@ struct Rect
   }
 
   // check if the Rect is valid
-  bool IsValid() const
-  {
-  bool IsValid() const
-  {
-    if (ux > lx && uy > ly) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+  bool IsValid() const {bool IsValid()
+                            const {if (ux > lx && uy > ly){return true;
+} else
+{
+  return false;
+}
+}  // namespace par
 
-  // reset the fence
-  void Reset()
-  {
-    lx = 0;
-    ly = 0;
-    ux = 0;
-    uy = 0;
-  }
-};
+// reset the fence
+void Reset()
+{
+  lx = 0;
+  ly = 0;
+  ux = 0;
+  uy = 0;
+}
+}
+;
 
 // Define the type for vertices
 enum VertexType

@@ -131,11 +131,10 @@ std::vector<float> ConvertTclListToVector(std::string tcl_list_string)
   return values;
 }
 
-
 // Split a string based on deliminator : empty space and ","
-std::vector<std::string> SplitLine(std::string line) 
+std::vector<std::string> SplitLine(std::string line)
 {
-  std::vector<std::string>  items;
+  std::vector<std::string> items;
   std::string deliminators(", ");  // empty space ,
   auto start = line.cbegin();
   while (start != line.end()) {
@@ -148,7 +147,6 @@ std::vector<std::string> SplitLine(std::string line)
   }
   return items;
 }
-
 
 // Add right vector to left vector
 void Accumulate(std::vector<float>& a, const std::vector<float>& b)
@@ -514,7 +512,7 @@ bool OptimalPartCplex(
       }
     }
   }
-  
+
   // add a penalty term to ensure the solution is unique
   float cost_step = 1.0;
   for (auto& weight : hyperedge_weights) {

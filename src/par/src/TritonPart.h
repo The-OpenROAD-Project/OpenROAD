@@ -103,14 +103,13 @@ class TritonPart
                        const char* group_file_arg,
                        const char* solution_filename_arg);
 
-
   // Function to evaluate the hypergraph partitioning solution
   // This can be used to write the timing-weighted hypergraph
   // and evaluate the solution.
-  // If the solution file is empty, then this function is to write the   
-  // solution. If the solution file is not empty, then this function is to evaluate
-  // the solution without writing the hypergraph again
-  // This function is only used for testing
+  // If the solution file is empty, then this function is to write the
+  // solution. If the solution file is not empty, then this function is to
+  // evaluate the solution without writing the hypergraph again This function is
+  // only used for testing
   void EvaluatePartDesignSolution(unsigned int num_parts_arg,
                                   float balance_constraint_arg,
                                   bool timing_aware_flag_arg,
@@ -126,7 +125,6 @@ class TritonPart
                                   const char* hypergraph_file,
                                   const char* hypergraph_int_weight_file,
                                   const char* solution_filename_arg);
-                     
 
   // The function for partitioning a hypergraph
   // This is used for replacing hMETIS
@@ -397,8 +395,8 @@ class TritonPart
       = 50;  // if the size of a hyperedge is larger than
              // thr_coarsen_hyperedge_size_skip_, then we ignore this
              // hyperedge during coarsening
-  int thr_coarsen_vertices_ = 200;  // the minimum threshold of number of
-                                    // vertices in the coarsest hypergraph
+  int thr_coarsen_vertices_ = 200;   // the minimum threshold of number of
+                                     // vertices in the coarsest hypergraph
   int thr_coarsen_hyperedges_ = 50;  // the minimum threshold of number of
                                      // hyperedges in the coarsest hypergraph
   float coarsening_ratio_

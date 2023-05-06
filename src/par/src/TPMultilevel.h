@@ -110,8 +110,7 @@ class TPmultilevelPartitioner
                         const MATRIX<float>& upper_block_balance,
                         const MATRIX<float>& lower_block_balance,
                         std::vector<int>& best_solution) const;
-  
-  
+
  private:
   // Run single-level partitioning
   std::vector<int> SingleLevelPartition(

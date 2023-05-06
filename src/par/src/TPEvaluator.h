@@ -230,7 +230,7 @@ class GoldenEvaluator
 
   // Write the weighted hypergraph in hMETIS format
   void WriteIntWeightHypergraph(HGraphPtr hgraph,
-                               const std::string file_name) const;
+                                const std::string file_name) const;
 
  private:
   // user specified parameters
