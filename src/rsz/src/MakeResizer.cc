@@ -56,8 +56,7 @@ deleteResizer(rsz::Resizer *resizer)
 void
 initResizer(OpenRoad *openroad)
 {
-  openroad->getResizer()->init(openroad,
-                               openroad->tclInterp(),
+  openroad->getResizer()->init(openroad->tclInterp(),
                                openroad->getLogger(),
                                // Broken gui api missing openroad accessor.
                                gui::Gui::get(),

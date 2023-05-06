@@ -17,7 +17,8 @@ paths_file = helpers.make_result_file("partition_gcd.paths")
 v_file = helpers.make_result_file("partition_gcd.v")
 
 mgr = design.getPartitionMgr()
-mgr.tritonPartDesign(2, 1.0, 0, part_file, paths_file, graph_file)
+mgr.tritonPartDesign(2, 1.0, 0, False, 0, 0, 0, 0,
+                     part_file, paths_file, graph_file)
 
 mgr.writePartitionVerilog(v_file)
 

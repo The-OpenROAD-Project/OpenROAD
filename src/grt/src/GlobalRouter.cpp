@@ -846,9 +846,9 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     int min_pin_layer = std::numeric_limits<int>::max();
     for (RoutePt& pin_pos : pins_on_grid) {
       fr_net->addPin(pin_pos.x(), pin_pos.y(), pin_pos.layer() - 1);
-      min_pin_layer = std::min(min_pin_layer, pin_pos.layer()) - 1;
+      min_pin_layer = std::min(min_pin_layer, pin_pos.layer());
     }
-    fr_net->setMinLayer(std::max(min_pin_layer, min_layer - 1));
+    fr_net->setMinLayer(std::max(min_pin_layer - 1, min_layer - 1));
     // Save stt input on debug file
     if (fastroute_->hasSaveSttInput()
         && net->getDbNet() == fastroute_->getDebugNet()) {
@@ -1748,7 +1748,9 @@ void GlobalRouter::addGuidesForLocalNets(odb::dbNet* db_net,
       last_layer = pins[p].getConnectionLayer();
   }
 
-  if (last_layer == max_routing_layer) {
+  // last_layer can be greater than max routing layer for nets with bumps
+  // at top routing layer
+  if (last_layer >= max_routing_layer) {
     last_layer--;
   }
 
@@ -2968,43 +2970,50 @@ void GlobalRouter::findLayerExtensions(std::vector<int>& layer_extensions)
 {
   layer_extensions.resize(routing_layers_.size() + 1, 0);
 
+  int min_layer = min_layer_for_clock_ > 0
+                      ? std::min(min_routing_layer_, min_layer_for_clock_)
+                      : min_routing_layer_;
+  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+
   for (auto const& [level, obstruct_layer] : routing_layers_) {
-    int max_int = std::numeric_limits<int>::max();
+    if (level >= min_layer && level <= max_layer) {
+      int max_int = std::numeric_limits<int>::max();
 
-    // Gets the smallest possible minimum spacing that won't cause violations
-    // for ANY configuration of PARALLELRUNLENGTH (the biggest value in the
-    // table)
+      // Gets the smallest possible minimum spacing that won't cause violations
+      // for ANY configuration of PARALLELRUNLENGTH (the biggest value in the
+      // table)
 
-    int spacing_extension = obstruct_layer->getSpacing(max_int, max_int);
+      int spacing_extension = obstruct_layer->getSpacing(max_int, max_int);
 
-    // Check for EOL spacing values and, if the spacing is higher than the one
-    // found, use them as the macro extension instead of PARALLELRUNLENGTH
+      // Check for EOL spacing values and, if the spacing is higher than the one
+      // found, use them as the macro extension instead of PARALLELRUNLENGTH
 
-    for (auto rule : obstruct_layer->getV54SpacingRules()) {
-      int spacing = rule->getSpacing();
-      if (spacing > spacing_extension) {
-        spacing_extension = spacing;
-      }
-    }
-
-    // Check for TWOWIDTHS table values and, if the spacing is higher than the
-    // one found, use them as the macro extension instead of PARALLELRUNLENGTH
-
-    if (obstruct_layer->hasTwoWidthsSpacingRules()) {
-      std::vector<std::vector<uint>> spacing_table;
-      obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
-      if (!spacing_table.empty()) {
-        std::vector<uint> last_row = spacing_table.back();
-        uint last_value = last_row.back();
-        if (last_value > spacing_extension) {
-          spacing_extension = last_value;
+      for (auto rule : obstruct_layer->getV54SpacingRules()) {
+        int spacing = rule->getSpacing();
+        if (spacing > spacing_extension) {
+          spacing_extension = spacing;
         }
       }
+
+      // Check for TWOWIDTHS table values and, if the spacing is higher than the
+      // one found, use them as the macro extension instead of PARALLELRUNLENGTH
+
+      if (obstruct_layer->hasTwoWidthsSpacingRules()) {
+        std::vector<std::vector<uint>> spacing_table;
+        obstruct_layer->getTwoWidthsSpacingTable(spacing_table);
+        if (!spacing_table.empty()) {
+          std::vector<uint> last_row = spacing_table.back();
+          uint last_value = last_row.back();
+          if (last_value > spacing_extension) {
+            spacing_extension = last_value;
+          }
+        }
+      }
+
+      // Save the extension to use when defining Macros
+
+      layer_extensions[level] = spacing_extension;
     }
-
-    // Save the extension to use when defining Macros
-
-    layer_extensions[level] = spacing_extension;
   }
 }
 
@@ -4045,11 +4054,13 @@ bool GSegment::operator==(const GSegment& segment) const
 
 std::size_t GSegmentHash::operator()(const GSegment& seg) const
 {
-  std::size_t h1 = std::hash<int>()(seg.init_x * seg.init_y * seg.init_layer);
-  std::size_t h2
-      = std::hash<int>()(seg.final_x * seg.final_y * seg.final_layer);
-
-  return h1 ^ h2;
+  return boost::hash<std::tuple<int, int, int, int, int, int>>()(
+      {seg.init_x,
+       seg.init_y,
+       seg.init_layer,
+       seg.final_x,
+       seg.final_y,
+       seg.final_layer});
 }
 
 bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const

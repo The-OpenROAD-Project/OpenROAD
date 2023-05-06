@@ -37,11 +37,12 @@ design to foster open access, expertise, rapid innovation, and faster
 design turnaround. The OpenROAD application enables flexible flow
 control through an API with bindings in Tcl and Python.
 
-OpenROAD is a foundational building block in open-source digital flows like
-[OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
+OpenROAD is a foundational building block in open-source digital flows
+such as [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts),
 [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
-[Efabless](https://efabless.com/), Silicon Compiler Systems; as
-well as [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
+[Efabless](https://efabless.com/), [Silicon Compiler](https://github.com/siliconcompiler/siliconcompiler)
+from Zero ASIC, [Hammer](https://docs.hammer-eda.org/en/latest/Examples/openroad-nangate45.html)
+from Berkeley and [OpenFASoC](https://github.com/idea-fasoc/OpenFASOC) for
 mixed-signal design flows.
 
 OpenROAD users span hardware designers, industry collaborators,
@@ -86,7 +87,7 @@ The OpenROAD application is PDK independent. However, it has been tested
 and validated with specific PDKs in the context of various flow
 controllers.
 
-OpenLane supports Skywater130.
+OpenLane supports SkyWater 130nm.
 
 OpenROAD-flow-scripts supports several public and private PDKs
 including:
@@ -94,7 +95,7 @@ including:
 #### Open-Source PDKs
 
 -   `GF180` - 180nm
--   `Skywater130` - 130nm
+-   `SKY130` - 130nm
 -   `Nangate45` - 45nm
 -   `ASAP7` - Predictive FinFET 7nm
 
@@ -115,8 +116,8 @@ platform-specific files yourself.
 
 ## Tapeouts
 
-OpenROAD has been used for full physical implementation in over 240 tapeouts
-in Sky130 through the Google-sponsored, Efabless [MPW
+OpenROAD has been used for full physical implementation in over 600 tapeouts
+in SKY130 through the Google-sponsored, Efabless [MPW
 shuttle](https://efabless.com/open_shuttle_program) and
 [ChipIgnite](https://efabless.com/) programs.
 
@@ -137,38 +138,14 @@ transceivers, OpenPower-based Microwatt etc.
 
 ## Install dependencies
 
-For a limited number of configurations, the following script can be used
-to install dependencies.  The script `etc/DependencyInstaller.sh` supports
-Centos7, Ubuntu 20.04, Ubuntu 22.04, RHEL 8, Debian 10 and Debian 11. To correctly install the dependencies with the
-script you need to run as root or prepend `sudo` to the commands below.
+To install dependencies to develop or build and run OpenROAD locally,
+follow [this procedure](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
 
-``` shell
-./etc/DependencyInstaller.sh -help
-
-Usage: etc/DependencyInstaller.sh
-                                # Installs all of OpenROAD's dependencies no
-                                #     need to run -base or -common. Requires
-                                #     privileged access.
-                                #
-       etc/DependencyInstaller.sh -base
-                                # Installs OpenROAD's dependencies using
-                                #     package managers (-common must be
-                                #     executed in another command).
-       etc/DependencyInstaller.sh -common
-                                # Installs OpenROAD's common dependencies
-                                #     (-base must be executed in another
-                                #     command).
-       etc/DependencyInstaller.sh -prefix=DIR
-                                # Installs common dependencies in an existing
-                                #     user-specified directory. Only used
-                                #     with -common. This flag cannot be used
-                                #     with sudo or with root access.
-       etc/DependencyInstaller.sh -local
-                                # Installs common dependencies in
-                                #    "$HOME/.local". Only used with
-                                #    -common. This flag cannot be used with
-                                #    sudo or with root access.
-```
+> WARNING
+>
+> `etc/DependencyInstaller.sh` is an implementation detail of
+> the setup procedures and can be harmful if invoked incorrectly.
+> Do not invoke it directly.
 
 ## Build
 
@@ -308,6 +285,7 @@ Below is a list of the available tools/modules included in the OpenROAD app:
 | [ioPlacer](./src/ppl/README.md) | Pin placement |
 | [ICeWall](./src/pad/README.md) | Chip-level connections |
 | [TritonMacroPlacer](./src/mpl/README.md) | Macro placement |
+| [HierRTLMP](./src/mpl2/README.md) | Hierarchical Macro placement |
 | [Tapcell](./src/tap/README.md) | Tapcell insertion |
 | [PDN](./src/pdn/README.md), [PDNSim](./src/psm/README.md) | PDN analysis |
 | [RePlAce](./src/gpl/README.md) | Global placement |

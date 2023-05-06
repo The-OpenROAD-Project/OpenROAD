@@ -34,14 +34,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <libgen.h>
-#include <limits.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <tcl.h>
 
 #include <array>
 #include <boost/stacktrace.hpp>
+#include <climits>
+#include <clocale>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 // We have had too many problems with this std::filesytem on various platforms
@@ -213,8 +214,12 @@ int main(int argc, char* argv[])
 {
   // This avoids problems with locale setting dependent
   // C functions like strtod (e.g. 0.5 vs 0,5).
-  setenv("LC_ALL", "en_US.UTF-8", /* override */ 1);
-  setenv("LANG", "en_US.UTF-8", /* override */ 1);
+  std::array locales = {"en_US.UTF-8", "C.UTF-8", "C"};
+  for (auto locale : locales) {
+    if (std::setlocale(LC_ALL, locale) != nullptr) {
+      break;
+    }
+  }
 
   // Generate a stacktrace on crash
   signal(SIGABRT, handler);
@@ -325,8 +330,9 @@ static int tclAppInit(int& argc,
   if (findCmdLineFlag(argc, argv, "-gui")) {
     // gobble up remaining -gui flags if present, since this could result in
     // second invocation of the GUI
-    while (findCmdLineFlag(argc, argv, "-gui"))
+    while (findCmdLineFlag(argc, argv, "-gui")) {
       ;
+    }
 
     gui::startGui(argc, argv, interp);
   } else {

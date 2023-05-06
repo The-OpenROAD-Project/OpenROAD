@@ -35,6 +35,8 @@
 
 include("openroad")
 
+option(DEBUG_DRT_UNDERFLOW "Check for underflow in drt cost calculations" OFF)
+
 project(drt
   LANGUAGES CXX
 )
@@ -170,42 +172,51 @@ target_compile_options(drt
 ############################################################
 # Unit testing
 ############################################################
-enable_testing()
+if(ENABLE_TESTS)
+  enable_testing()
 
-add_executable(trTest
-  ${FLEXROUTE_HOME}/test/gcTest.cpp
-  ${FLEXROUTE_HOME}/test/fixture.cpp
-  ${FLEXROUTE_HOME}/test/stubs.cpp
-  ${OPENROAD_HOME}/src/gui/src/stub.cpp
-)
-
-target_include_directories(trTest
-  PRIVATE
-  ${FLEXROUTE_HOME}/src
-  ${OPENROAD_HOME}/include
-)
-
-target_link_libraries(trTest
-  drt
-  odb
-)
-
-# Use the shared library if found.  We need to pass this info to
-# the code to select the corresponding include.  Using the shared
-# library speeds up compilation.
-if (Boost_unit_test_framework_FOUND)
-  message(STATUS "Boost unit_test_framework library found")
-  target_link_libraries(trTest
-    Boost::unit_test_framework
+  add_executable(trTest
+    ${FLEXROUTE_HOME}/test/gcTest.cpp
+    ${FLEXROUTE_HOME}/test/fixture.cpp
+    ${FLEXROUTE_HOME}/test/stubs.cpp
+    ${OPENROAD_HOME}/src/gui/src/stub.cpp
   )
-  target_compile_definitions(trTest
+
+  target_include_directories(trTest
     PRIVATE
-    HAS_BOOST_UNIT_TEST_LIBRARY
+    ${FLEXROUTE_HOME}/src
+    ${OPENROAD_HOME}/include
   )
-endif()
 
-add_test(NAME trTest COMMAND trTest)
-add_dependencies(build_and_test trTest)
+  target_link_libraries(trTest
+    drt
+    odb
+  )
+
+  # Use the shared library if found.  We need to pass this info to
+  # the code to select the corresponding include.  Using the shared
+  # library speeds up compilation.
+  if (Boost_unit_test_framework_FOUND)
+    message(STATUS "Boost unit_test_framework library found")
+    target_link_libraries(trTest
+      Boost::unit_test_framework
+    )
+    target_compile_definitions(trTest
+      PRIVATE
+      HAS_BOOST_UNIT_TEST_LIBRARY
+    )
+  endif()
+
+  add_test(NAME trTest COMMAND trTest)
+  add_dependencies(build_and_test trTest)
+
+  if(DEBUG_DRT_UNDERFLOW)
+    target_compile_definitions(drt
+      PRIVATE
+      DEBUG_DRT_UNDERFLOW=1
+    )
+  endif()
+endif()
 
 ############################################################
 # VTune ITT API

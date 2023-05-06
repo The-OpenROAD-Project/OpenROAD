@@ -339,6 +339,7 @@ class TritonPart
   sta::dbSta* sta_ = nullptr;
 
   // user-specified parameters
+  // user-specified parameters
 
   // constraints information
   float ub_factor_ = 1.0;  // balance constraint
@@ -352,6 +353,12 @@ class TritonPart
   bool placement_flag_
       = false;  // if use placement information to guide partitioning
   int placement_dimensions_ = 2;  // by default, we are working on 2D canvas
+  std::vector<std::vector<float>>
+      placement_attr_;  // (internal representation, size is num_vertices_)
+
+  bool fence_flag_ = false;  // if use fence constraint
+  Rect fence_{0, 0, 0, 0};   // only consider the netlist within the fence
+
   std::vector<std::vector<float>>
       placement_attr_;  // (internal representation, size is num_vertices_)
 
@@ -414,7 +421,31 @@ class TritonPart
       e_wt_factors_;  // the cost introduced by a cut hyperedge e is
                       // e_wt_factors dot_product hyperedge_weights_[e]
                       // this parameter is used by coarsening and partitioning
+  std::vector<float>
+      e_wt_factors_;  // the cost introduced by a cut hyperedge e is
+                      // e_wt_factors dot_product hyperedge_weights_[e]
+                      // this parameter is used by coarsening and partitioning
 
+  std::vector<float>
+      v_wt_factors_;  // the ``weight'' of a vertex. For placement-driven
+                      // coarsening, when we merge two vertices, we need to
+                      // update the location of merged vertex based on the
+                      // gravity center of these two vertices.  The weight of
+                      // vertex v is defined as v_wt_factors dot_product
+                      // vertex_weights_[v] this parameter is only used in
+                      // coarsening
+
+  std::vector<float>
+      placement_wt_factors_;  // the weight for placement information. For
+                              // placement-driven coarsening, when we calculate
+                              // the score for best-choice coarsening, the
+                              // placement information also contributes to the
+                              // score function. we prefer to merge two vertices
+                              // which are adjacent physically the distance
+                              // between u and v is defined as
+                              // norm2(placement_attr[u] - placement_attr[v],
+                              // placement_wt_factors_) this parameter is only
+                              // used during coarsening
   std::vector<float>
       v_wt_factors_;  // the ``weight'' of a vertex. For placement-driven
                       // coarsening, when we merge two vertices, we need to
@@ -452,6 +483,10 @@ class TritonPart
       = 50;  // number of initial random solutions generated
   int num_best_initial_solutions_
       = 10;  // number of best initial solutions used for stability
+  int num_initial_solutions_
+      = 50;  // number of initial random solutions generated
+  int num_best_initial_solutions_
+      = 10;  // number of best initial solutions used for stability
 
   // refinement related parameter
   int refiner_iters_ = 2;  // refinement iterations
@@ -479,6 +514,7 @@ class TritonPart
 
   // Hypergraph information
   // basic information
+  std::vector<std::vector<int>> hyperedges_;
   std::vector<std::vector<int>> hyperedges_;
   int num_vertices_ = 0;
   int num_hyperedges_ = 0;

@@ -485,6 +485,8 @@ ostream& operator<<(ostream& os, const frMarker& m)
       return os << "frcSpacingTablePrlConstraint";
     case frConstraintTypeEnum::frcSpacingTableTwConstraint:
       return os << "frcSpacingTableTwConstraint";
+    case frConstraintTypeEnum::frcLef58KeepOutZoneConstraint:
+      return os << "frcLef58KeepOutZoneConstraint";
     default:
       return os << "unknown viol";
   }

@@ -47,6 +47,32 @@ include_directories(SYSTEM ${CPLEX_INCLUDE_DIRS})
 find_package(Threads REQUIRED)
 find_package(ortools REQUIRED)
 
+add_library(par_lib
+  src/PartitionMgr.cpp
+  src/TritonPart.cpp
+  src/TPHypergraph.cpp
+  src/Utilities.cpp
+  src/TPCoarsener.cpp
+  src/TPMultilevel.cpp
+  src/TPRefiner.cpp
+  src/TPPartitioner.cpp
+  src/KPMRefinement.cpp
+)
+
+target_include_directories(par_lib
+  PUBLIC
+    include
+)
+
+target_link_libraries(par_lib
+  PRIVATE
+    odb
+    OpenSTA
+    utl_lib
+    dbSta_lib
+    ortools::ortools
+)
+
 swig_lib(NAME      par
          NAMESPACE par
          I_FILE    src/partitionmgr.i
@@ -96,9 +122,7 @@ target_link_libraries(par
   PRIVATE
     odb
     OpenSTA
-    utl
-    dbSta
-    ortools::ortools
+    par_lib
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)
@@ -117,7 +141,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(par_py
     PUBLIC
-      par
+      par_lib
   )
 
 endif()

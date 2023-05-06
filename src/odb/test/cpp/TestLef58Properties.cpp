@@ -2,6 +2,7 @@
 #include <libgen.h>
 
 #include <boost/test/included/unit_test.hpp>
+#include <fstream>
 #include <iostream>
 
 #include "db.h"
@@ -53,12 +54,17 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   lefParser.createTechAndLib(libname, path.c_str());
 
-  FILE *write, *read;
+  FILE* write;
   path = std::string(std::getenv("BASE_DIR"))
          + "/results/TestLef58PropertiesDbRW";
   write = fopen(path.c_str(), "w");
   db1->write(write);
-  read = fopen(path.c_str(), "r");
+
+  std::ifstream read;
+  read.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+  read.open(path.c_str(), std::ios::binary);
+
   db2->read(read);
 
   auto dbTech = db2->getTech();
@@ -297,6 +303,20 @@ BOOST_AUTO_TEST_CASE(test_default)
   auto array_spacing_map = aspRule->getCutsArraySpacing();
   BOOST_TEST(array_spacing_map.size() == 1);
   BOOST_TEST(array_spacing_map[3] == 0.30 * distFactor);
+
+  auto keepoutzoneRules = cutLayer->getTechLayerKeepOutZoneRules();
+  BOOST_TEST(keepoutzoneRules.size() == 1);
+  odb::dbTechLayerKeepOutZoneRule* kozrule = *keepoutzoneRules.begin();
+  BOOST_TEST(!kozrule->isExceptAlignedEnd());
+  BOOST_TEST(kozrule->isExceptAlignedSide());
+  BOOST_TEST(kozrule->getFirstCutClass() == "cls1");
+  BOOST_TEST(kozrule->getSecondCutClass() == "cls2");
+  BOOST_TEST(kozrule->getAlignedSpacing() == 0);
+  BOOST_TEST(kozrule->getEndSideExtension() == 1.0 * distFactor);
+  BOOST_TEST(kozrule->getEndForwardExtension() == 2.0 * distFactor);
+  BOOST_TEST(kozrule->getSideSideExtension() == 0.1 * distFactor);
+  BOOST_TEST(kozrule->getSideForwardExtension() == 0.2 * distFactor);
+  BOOST_TEST(kozrule->getSpiralExtension() == 0.05 * distFactor);
 
   layer = dbTech->findLayer("contact");
   BOOST_TEST(layer->getLef58Type() == odb::dbTechLayer::LEF58_TYPE::HIGHR);

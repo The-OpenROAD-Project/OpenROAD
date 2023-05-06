@@ -41,6 +41,7 @@
 #include "TritonPart.h"
 
 #include <iostream>
+#include <iostream>
 #include <set>
 #include <string>
 
@@ -1052,7 +1053,10 @@ void TritonPart::ReadNetlist(std::string fixed_file,
     for (auto term : block_->getBTerms()) {
       // -1 means that the instance is not used by the partitioner
       odb::dbIntProperty::create(term, "vertex_id", -1);
+      odb::dbIntProperty::create(term, "vertex_id", -1);
       odb::Rect box = term->getBBox();
+      if (box.xMin() >= fence_.lx && box.xMax() <= fence_.ux
+          && box.yMin() >= fence_.ly && box.yMax() <= fence_.uy) {
       if (box.xMin() >= fence_.lx && box.xMax() <= fence_.ux
           && box.yMin() >= fence_.ly && box.yMax() <= fence_.uy) {
         odb::dbIntProperty::create(term, "vertex_id", vertex_id++);
@@ -1072,8 +1076,10 @@ void TritonPart::ReadNetlist(std::string fixed_file,
     for (auto inst : block_->getInsts()) {
       // -1 means that the instance is not used by the partitioner
       odb::dbIntProperty::create(inst, "vertex_id", -1);
+      odb::dbIntProperty::create(inst, "vertex_id", -1);
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
       if (liberty_cell == nullptr) {
+        continue;  // ignore the instance with no liberty
         continue;  // ignore the instance with no liberty
       }
       odb::dbMaster* master = inst->getMaster();
@@ -1083,6 +1089,8 @@ void TritonPart::ReadNetlist(std::string fixed_file,
       }
       odb::dbBox* box = inst->getBBox();
       // check if the inst is within the fence
+      if (box->xMin() >= fence_.lx && box->xMax() <= fence_.ux
+          && box->yMin() >= fence_.ly && box->yMax() <= fence_.uy) {
       if (box->xMin() >= fence_.lx && box->xMax() <= fence_.ux
           && box->yMin() >= fence_.ly && box->yMax() <= fence_.uy) {
         const float area = liberty_cell->area();
@@ -1103,6 +1111,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
         odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
       }
     }
+    }
   } else {
     for (auto term : block_->getBTerms()) {
       odb::dbIntProperty::create(term, "vertex_id", vertex_id++);
@@ -1118,16 +1127,20 @@ void TritonPart::ReadNetlist(std::string fixed_file,
     }
 
     for (auto inst : block_->getInsts()) {
+    for (auto inst : block_->getInsts()) {
       // -1 means that the instance is not used by the partitioner
+      odb::dbIntProperty::create(inst, "vertex_id", -1);
       odb::dbIntProperty::create(inst, "vertex_id", -1);
       const sta::LibertyCell* liberty_cell = network_->libertyCell(inst);
       if (liberty_cell == nullptr) {
+        continue;  // ignore the instance with no liberty
         continue;  // ignore the instance with no liberty
       }
       odb::dbMaster* master = inst->getMaster();
       // check if the instance is a pad or a cover macro
       if (master->isPad() || master->isCover()) {
         continue;
+      }
       }
       const float area = liberty_cell->area();
       std::vector<float> vwts(vertex_dimensions_, area);
@@ -1148,6 +1161,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
       }
     }
   }
+
 
   num_vertices_ = vertex_id;
 
@@ -1257,6 +1271,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
           = odb::dbIntProperty::find(inst, "vertex_id")->getValue();
       if (vertex_id == -1) {
         continue;  // the current instance is not used
+        continue;  // the current instance is not used
       }
       if (iterm->getIoType() == odb::dbIoType::OUTPUT) {
         driver_id = vertex_id;
@@ -1269,6 +1284,8 @@ void TritonPart::ReadNetlist(std::string fixed_file,
       const int vertex_id
           = odb::dbIntProperty::find(bterm, "vertex_id")->getValue();
       if (vertex_id == -1) {
+        continue;  // the current bterm is not used
+      }
         continue;  // the current bterm is not used
       }
       if (bterm->getIoType() == odb::dbIoType::INPUT) {
@@ -1416,6 +1433,7 @@ void TritonPart::BuildTimingPaths()
     // sta_->reportPathEnd(path_end);
     auto* path = path_end->path();
     TimingPath timing_path;                     // create the timing path
+    TimingPath timing_path;                     // create the timing path
     const float slack = path_end->slack(sta_);  // slack information
     // TODO: to be deleted.  We should not
     // normalize the slack according to the clock period for multi-clock design
@@ -1500,9 +1518,12 @@ void TritonPart::BuildTimingPaths()
   for (auto db_net : block_->getNets()) {
     const int hyperedge_id
         = odb::dbIntProperty::find(db_net, "hyperedge_id")->getValue();
+        = odb::dbIntProperty::find(db_net, "hyperedge_id")->getValue();
     if (hyperedge_id == -1) {
       continue;  // this net is not used
+      continue;  // this net is not used
     }
+    sta::Net* net = network_->dbToSta(db_net);
     sta::Net* net = network_->dbToSta(db_net);
     const float slack = sta_->netSlack(net, sta::MinMax::max());
     // set the slack of unconstrained net to max_clock_period_

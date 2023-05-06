@@ -69,10 +69,14 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   template <typename T>
   using BoxValue = std::tuple<Box, T>;
   template <typename T>
+  using SBoxValue = std::tuple<Box, odb::dbSBox*, T>;
+  template <typename T>
   using PolygonValue = std::tuple<Box, Polygon, T>;
 
   template <typename T>
   using RtreeBox = bgi::rtree<BoxValue<T>, bgi::quadratic<16>>;
+  template <typename T>
+  using RtreeSBox = bgi::rtree<SBoxValue<T>, bgi::quadratic<16>>;
   template <typename T>
   using RtreePolygon = bgi::rtree<PolygonValue<T>, bgi::quadratic<16>>;
 
@@ -97,6 +101,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   };
   using InstRange = Range<RtreeBox<odb::dbInst*>>;
   using BoxRange = Range<RtreeBox<odb::dbNet*>>;
+  using SBoxRange = Range<RtreeSBox<odb::dbNet*>>;
   using PolygonRange = Range<RtreePolygon<odb::dbNet*>>;
   using FillRange = Range<RtreeBox<odb::dbFill*>>;
   using ObstructionRange = Range<RtreeBox<odb::dbObstruction*>>;
@@ -116,6 +121,15 @@ class Search : public QObject, public odb::dbBlockCallBackObj
                            int x_hi,
                            int y_hi,
                            int min_size = 0);
+
+  // Find all via sbox shapes in the given bounds on the given layer which
+  // are at least min_size in either dimension.
+  SBoxRange searchViaSBoxShapes(odb::dbTechLayer* layer,
+                                int x_lo,
+                                int y_lo,
+                                int x_hi,
+                                int y_hi,
+                                int min_size = 0);
 
   // Find all polgyon shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
@@ -196,6 +210,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
   virtual void inDbRegionDestroy(odb::dbRegion* region) override;
   virtual void inDbRowCreate(odb::dbRow* row) override;
   virtual void inDbRowDestroy(odb::dbRow* row) override;
+  virtual void inDbWirePostModify(odb::dbWire* wire) override;
 
  signals:
   void modified();
@@ -227,6 +242,10 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   // The net is used for filter shapes by net type
   std::map<odb::dbTechLayer*, RtreeBox<odb::dbNet*>> box_shapes_;
+  // Special net vias may be large multi-cut vias.  It is more efficient
+  // to store the dbSBox (ie the via) than all the cuts.  This is
+  // particularly true when you have parallel straps like m1 & m2 in asap7.
+  std::map<odb::dbTechLayer*, RtreeSBox<odb::dbNet*>> via_sbox_shapes_;
   std::map<odb::dbTechLayer*, RtreePolygon<odb::dbNet*>> polygon_shapes_;
   bool shapes_init_{false};
   std::map<odb::dbTechLayer*, RtreeBox<odb::dbFill*>> fills_;

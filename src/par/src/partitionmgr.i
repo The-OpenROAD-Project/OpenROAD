@@ -150,7 +150,6 @@ void evaluate_hypergraph_solution(unsigned int num_parts,
                                   const char* e_wt_factors_str,
                                   const char* v_wt_factors_str)
 {
-  std::cout << "Enter here" << std::endl;
   getPartitionMgr()->evaluateHypergraphSolution(num_parts,
                                                 balance_constraint,
                                                 vertex_dimension,

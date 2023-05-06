@@ -47,6 +47,7 @@
 #include "db_sta/dbSta.hh"
 #include "sta/Liberty.hh"
 #include "utl/Logger.h"
+#include "utl/algorithms.h"
 
 namespace gui {
 
@@ -85,10 +86,6 @@ static void populateODBProperties(Descriptor::Properties& props,
 
 static std::string convertUnits(double value, bool area = false)
 {
-  std::stringstream ss;
-  const int precision = 3;
-  ss << std::fixed << std::setprecision(precision);
-  const char* micron = "\u03BC";
   double log_value = value;
   if (area) {
     log_value = std::sqrt(log_value);
@@ -110,6 +107,7 @@ static std::string convertUnits(double value, bool area = false)
     unit = "n";
   } else if (log_units <= -6) {
     unit_scale = 1e6;
+    const char* micron = "\u03BC";
     unit = micron;
   } else if (log_units <= -3) {
     unit_scale = 1e3;
@@ -126,9 +124,11 @@ static std::string convertUnits(double value, bool area = false)
     unit_scale *= unit_scale;
   }
 
-  ss << value * unit_scale << unit;
+  const int precision = 3;
+  auto str = utl::to_numeric_string(value * unit_scale, precision);
+  str += " " + unit;
 
-  return ss.str();
+  return str;
 }
 
 // renames an object
@@ -2147,6 +2147,14 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
       text += " - below only";
     }
 
+    uint length;
+    uint distance;
+    if (min_cut_rule->getLengthForCuts(length, distance)) {
+      text += fmt::format(" LENGTH {} WITHIN {}",
+                          Property::convert_dbu(length, true),
+                          Property::convert_dbu(distance, true));
+    }
+
     minimum_cuts.emplace_back(text, static_cast<int>(numcuts));
   }
   if (!minimum_cuts.empty()) {
@@ -3043,11 +3051,6 @@ bool DbNonDefaultRuleDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbTechLayerRuleDescriptor::DbTechLayerRuleDescriptor(odb::dbDatabase* db)
-    : db_(db)
-{
-}
-
 std::string DbTechLayerRuleDescriptor::getName(std::any object) const
 {
   auto* rule = std::any_cast<odb::dbTechLayerRule*>(object);
@@ -3111,11 +3114,6 @@ bool DbTechLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
 }
 
 //////////////////////////////////////////////////
-
-DbTechSameNetRuleDescriptor::DbTechSameNetRuleDescriptor(odb::dbDatabase* db)
-    : db_(db)
-{
-}
 
 std::string DbTechSameNetRuleDescriptor::getName(std::any object) const
 {

@@ -42,6 +42,8 @@
 #include <string>
 #include <vector>
 
+#include "Mpl2Observer.h"
+
 namespace odb {
 class dbBTerm;
 class dbBlock;
@@ -71,7 +73,6 @@ class HardMacro;
 class Metrics;
 struct Rect;
 class SoftMacro;
-class Graphics;
 
 // Hierarchial RTL-MP
 // Support Multi-Level Clustering.
@@ -137,7 +138,7 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
-  void setDebug();
+  void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
   void setBusPlanningFlag(bool bus_planning_flag)
   {
     bus_planning_flag_ = bus_planning_flag;
@@ -259,14 +260,12 @@ class HierRTLMP
   par::PartitionMgr* tritonpart_ = nullptr;
 
   // flag variables
-  const bool fd_placement_flag_ = false;
   const bool dynamic_congestion_weight_flag_ = false;
-  const bool dynamic_weight_flag_ = false;
   const bool update_boundary_weight_ = false;
   // Our experiments show that for most testcases, turn off bus planning
   // can generate better results.
   // We recommand that you turn off this flag for technology nodes with very
-  // limited routing layers such as SkyWater130.  But for NanGate45, GF12,
+  // limited routing layers such as SkyWater130.  But for NanGate45,
   // ASASP7, you should turn off this option.
   bool bus_planning_flag_ = false;
 
@@ -440,6 +439,6 @@ class HierRTLMP
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
 
-  std::unique_ptr<Graphics> graphics_;
+  std::unique_ptr<Mpl2Observer> graphics_;
 };
 }  // namespace mpl2

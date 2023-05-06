@@ -84,6 +84,8 @@ struct Rect
   // check if the Rect is valid
   bool IsValid() const
   {
+  bool IsValid() const
+  {
     if (ux > lx && uy > ly) {
       return true;
     } else {

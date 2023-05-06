@@ -640,8 +640,6 @@ EOF
 To install or run openroad, update your path with:
     export PATH="\$(brew --prefix bison)/bin:\$(brew --prefix flex)/bin:\$(brew --prefix tcl-tk)/bin:\${PATH}"
     export CMAKE_PREFIX_PATH=\$(brew --prefix or-tools)
-
-You may wish to add these lines to your .bashrc file.
 EOF
         ;;
     "openSUSE Leap" )
@@ -677,13 +675,3 @@ EOF
         _help
         ;;
 esac
-
-if [[ ! -z "${PREFIX}" ]]; then
-            cat <<EOF
-To use cmake, set cmake as an alias:
-    alias cmake='${PREFIX}/bin/cmake'
-    or  run
-    echo export PATH=${PREFIX}/bin:\${PATH} >> ~/.bash_profile
-    source ~/.bash_profile
-EOF
-fi

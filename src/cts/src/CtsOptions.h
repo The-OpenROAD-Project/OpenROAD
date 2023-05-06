@@ -178,8 +178,8 @@ class CtsOptions
   void setSinkBufferInputCap(double cap) { sinkBufferInputCap_ = cap; }
   double getSinkBufferInputCap() const { return sinkBufferInputCap_; }
   std::string getSinkBuffer() const { return sinkBuffer_; }
-  utl::Logger* getLogger() { return logger_; }
-  stt::SteinerTreeBuilder* getSttBuilder() { return sttBuilder_; }
+  utl::Logger* getLogger() const { return logger_; }
+  stt::SteinerTreeBuilder* getSttBuilder() const { return sttBuilder_; }
 
  private:
   std::string clockNets_ = "";

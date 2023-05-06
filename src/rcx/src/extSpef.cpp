@@ -35,6 +35,7 @@
 #include <algorithm>
 
 #include "dbExtControl.h"
+#include "name.h"
 #include "parse.h"
 #include "rcx/extRCap.h"
 #include "utl/Logger.h"
@@ -126,7 +127,6 @@ extSpef::extSpef(odb::dbTech* tech,
   _x2CoordTable = NULL;
   _y2CoordTable = NULL;
   _levelTable = NULL;
-  _search = NULL;
   _idTable = NULL;
 
   _partial = false;

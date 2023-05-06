@@ -35,6 +35,7 @@
 
 #include <vector>
 
+#include "Mpl2Observer.h"
 #include "SimulatedAnnealingCore.h"
 #include "object.h"
 
@@ -71,7 +72,7 @@ class SACoreHardMacro : public SimulatedAnnealingCore<HardMacro>
                   int k,
                   int c,
                   unsigned seed,
-                  Graphics* graphics,
+                  Mpl2Observer* graphics,
                   utl::Logger* logger);
 
   // Initialize the SA worker

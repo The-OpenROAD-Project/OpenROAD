@@ -39,10 +39,8 @@ class frBTerm : public frTerm
 {
  public:
   // constructors
-  frBTerm(const frString& name) : frTerm(name), block_(nullptr), net_(nullptr)
-  {
-  }
-  frBTerm(const frBTerm& in) : frTerm(in), block_(in.block_)
+  frBTerm(const frString& name) : frTerm(name), net_(nullptr) {}
+  frBTerm(const frBTerm& in) : frTerm(in)
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -50,8 +48,7 @@ class frBTerm : public frTerm
       addPin(std::move(tmp));
     }
   }
-  frBTerm(const frBTerm& in, const dbTransform& xform)
-      : frTerm(in), block_(in.block_)
+  frBTerm(const frBTerm& in, const dbTransform& xform) : frTerm(in)
   {
     for (auto& uPin : in.getPins()) {
       auto pin = uPin.get();
@@ -62,11 +59,9 @@ class frBTerm : public frTerm
   // getters
   bool hasNet() const override { return (net_); }
   frNet* getNet() const override { return net_; }
-  frBlock* getBlock() const { return block_; }
   const std::vector<std::unique_ptr<frBPin>>& getPins() const { return pins_; }
   // setters
   void addToNet(frNet* in) { net_ = in; }
-  void setBlock(frBlock* in) { block_ = in; }
   void addPin(std::unique_ptr<frBPin> in)
   {
     in->setTerm(this);
@@ -116,10 +111,16 @@ class frBTerm : public frTerm
     }
   }
 
+  void setIsAboveTopLayer(bool isAboveTopLayer)
+  {
+    isAboveTopLayer_ = isAboveTopLayer;
+  }
+  bool isAboveTopLayer() const { return isAboveTopLayer_; }
+
  protected:
-  frBlock* block_;
   std::vector<std::unique_ptr<frBPin>> pins_;  // set later
   frNet* net_;
+  bool isAboveTopLayer_ = false;
 };
 
 }  // namespace fr

@@ -109,6 +109,12 @@ SITE DoubleHeightSite
 END DoubleHeightSite
 
 
+site TripleHeightSite
+  SYMMETRY y ;
+  CLASS core ;
+  SIZE 0.19 BY 4.2 ;
+END TripleHeightSite
+
 MACRO MOCK_DOUBLE
   CLASS CORE ;
   ORIGIN 0 0 ;
@@ -127,6 +133,25 @@ MACRO MOCK_DOUBLE
   PIN VSS 
   END VSS
 END MOCK_DOUBLE
+
+MACRO MOCK_TRIPLE
+  CLASS CORE ;
+  ORIGIN 0 0 ;
+  FOREIGN AND2_X1 0 0 ;
+  SIZE 0.76 BY 4.2 ;
+  SYMMETRY X Y ;
+  SITE TripleHeightSite ;
+  PIN A1 
+  END A1
+  PIN A2 
+  END A2
+  PIN ZN 
+  END ZN
+  PIN VDD 
+  END VDD
+  PIN VSS 
+  END VSS
+END MOCK_TRIPLE
 
 MACRO MOCK_SINGLE
   CLASS CORE ;

@@ -54,6 +54,8 @@ class frMarker;
 namespace odb {
 class dbDatabase;
 class dbInst;
+class dbBTerm;
+class dbNet;
 }  // namespace odb
 namespace utl {
 class Logger;
@@ -208,6 +210,11 @@ class TritonRoute
   void applyUpdates(const std::vector<std::vector<fr::drUpdate>>& updates);
   void getDRCMarkers(std::list<std::unique_ptr<fr::frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
+  void processBTermsAboveTopLayer();
+  void stackVias(odb::dbBTerm* bterm,
+                 int top_layer_idx,
+                 int bterm_bottom_layer_idx);
+  int countNetBTermsAboveMaxLayer(odb::dbNet* net);
   friend class fr::FlexDR;
 };
 }  // namespace triton_route

@@ -43,11 +43,7 @@
 namespace pdn {
 
 ViaRepair::ViaRepair(utl::Logger* logger, const std::set<odb::dbNet*>& nets)
-    : logger_(logger),
-      nets_(nets),
-      use_obs_(true),
-      use_nets_(true),
-      use_inst_(true)
+    : logger_(logger), nets_(nets)
 {
 }
 

@@ -489,8 +489,6 @@ class DbNonDefaultRuleDescriptor : public Descriptor
 class DbTechLayerRuleDescriptor : public Descriptor
 {
  public:
-  DbTechLayerRuleDescriptor(odb::dbDatabase* db);
-
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
 
@@ -503,16 +501,11 @@ class DbTechLayerRuleDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
-
- private:
-  odb::dbDatabase* db_;
 };
 
 class DbTechSameNetRuleDescriptor : public Descriptor
 {
  public:
-  DbTechSameNetRuleDescriptor(odb::dbDatabase* db);
-
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
 
@@ -525,9 +518,6 @@ class DbTechSameNetRuleDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
-
- private:
-  odb::dbDatabase* db_;
 };
 
 class DbSiteDescriptor : public Descriptor

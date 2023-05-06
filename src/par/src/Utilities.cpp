@@ -465,19 +465,6 @@ bool OptimalPartCplex(
 {
   const int num_vertices = static_cast<int>(vertex_weights.size());
   const int num_hyperedges = static_cast<int>(hyperedge_weights.size());
-  
-  std::cout << "Upper block balance " << std::endl;
-  for (auto& ele : upper_block_balance) {
-    std::cout << GetVectorString(ele) << "  ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "lower block balance " << std::endl;
-  for (auto& ele : lower_block_balance) {
-    std::cout << GetVectorString(ele) << "  ";
-  }
-  std::cout << std::endl;
-
 
   // set the environment
   IloEnv myenv;
@@ -534,8 +521,6 @@ bool OptimalPartCplex(
     cost_step = std::min(cost_step, weight);
   }
   cost_step = cost_step / num_parts / (num_vertices * (num_vertices + 1) / 2.0);
-  // TODO : remove this
-  cost_step = 0.0;
   // Maximize cutsize objective
   IloExpr obj_expr(myenv);  // empty expression
   for (int e = 0; e < num_hyperedges; e++) {

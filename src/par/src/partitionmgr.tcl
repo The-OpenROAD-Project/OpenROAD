@@ -381,10 +381,6 @@ proc evaluate_hypergraph_solution { args } {
     set v_wt_factors $keys(-v_wt_factors)
   }
  
-  puts "evaluate_hypergraph_solution"
-  puts "num_parts : ${num_parts}"
-  puts "v_wt_factors : ${v_wt_factors}"  
-
   par::evaluate_hypergraph_solution $num_parts \
             $balance_constraint \
             $vertex_dimension \

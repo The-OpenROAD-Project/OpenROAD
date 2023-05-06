@@ -34,32 +34,36 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "rsz/Resizer.hh"
+
+#include <cmath>
+#include <limits>
+#include <optional>
+
 #include "BufferedNet.hh"
 #include "RepairDesign.hh"
-#include "RepairSetup.hh"
 #include "RepairHold.hh"
-
-#include "utl/Logger.h"
+#include "RepairSetup.hh"
 #include "db_sta/dbNetwork.hh"
-
-#include "sta/FuncExpr.hh"
-#include "sta/PortDirection.hh"
-#include "sta/Units.hh"
-#include "sta/Liberty.hh"
-#include "sta/TimingArc.hh"
-#include "sta/TimingModel.hh"
-#include "sta/Network.hh"
-#include "sta/Graph.hh"
 #include "sta/ArcDelayCalc.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Parasitics.hh"
-#include "sta/Sdc.hh"
-#include "sta/InputDrive.hh"
-#include "sta/Corner.hh"
 #include "sta/Bfs.hh"
+#include "sta/Corner.hh"
+#include "sta/FuncExpr.hh"
+#include "sta/Fuzzy.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/InputDrive.hh"
+#include "sta/Liberty.hh"
+#include "sta/Network.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
 #include "sta/Search.hh"
 #include "sta/StaMain.hh"
-#include "sta/Fuzzy.hh"
+#include "sta/TimingArc.hh"
+#include "sta/TimingModel.hh"
+#include "sta/Units.hh"
+#include "utl/Logger.h"
+
 
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
 
@@ -90,7 +94,6 @@ using odb::dbBox;
 using odb::dbMaster;
 
 using sta::evalTclInit;
-using sta::makeBlockSta;
 using sta::Level;
 using sta::stringLess;
 using sta::NetworkEdit;
@@ -148,7 +151,6 @@ Resizer::Resizer() :
   wire_clk_res_(0.0),
   wire_clk_cap_(0.0),
   max_area_(0.0),
-  openroad_(nullptr),
   logger_(nullptr),
   stt_builder_(nullptr),
   global_router_(nullptr),
@@ -188,17 +190,14 @@ Resizer::~Resizer()
   delete repair_hold_;
 }
 
-void
-Resizer::init(OpenRoad *openroad,
-              Tcl_Interp *interp,
-              Logger *logger,
-              Gui *gui,
-              dbDatabase *db,
-              dbSta *sta,
-              SteinerTreeBuilder *stt_builder,
-              GlobalRouter *global_router)
+void Resizer::init(Tcl_Interp* interp,
+                   Logger* logger,
+                   Gui* gui,
+                   dbDatabase* db,
+                   dbSta* sta,
+                   SteinerTreeBuilder* stt_builder,
+                   GlobalRouter* global_router)
 {
-  openroad_ = openroad;
   logger_ = logger;
   gui_ = gui;
   db_ = db;
@@ -867,6 +866,63 @@ Resizer::findTargetCell(LibertyCell *cell,
   return best_cell;
 }
 
+void
+Resizer::invalidateParasitics(const Pin *pin, const Net *net)
+{
+  // ODB is clueless about tristates so go to liberty for reality.
+  const LibertyPort* port = network_->libertyPort(pin);
+  // Invalidate estimated parasitics on all instance input pins.
+  // Tristate nets have multiple drivers and this is drivers^2 if
+  // the parasitics are updated for each resize.
+  if (net && !port->direction()->isAnyTristate()) {
+    parasiticsInvalid(net);
+  }
+}
+
+void
+Resizer::swapPins(Instance *inst, LibertyPort *port1,
+                  LibertyPort *port2, bool journal)
+{
+    // Add support for undo.
+    if (journal) {
+      journalSwapPins(inst, port1, port2);
+    }
+
+    Pin *found_pin1, *found_pin2;
+    Net *net1, *net2;
+
+    InstancePinIterator *pin_iter = network_->pinIterator(inst);
+    found_pin1 = found_pin2 = nullptr;
+    net1 = net2 = nullptr;
+    while (pin_iter->hasNext()) {
+        Pin *pin = pin_iter->next();
+        Net *net = network_->net(pin);
+        LibertyPort *port = network_->libertyPort(pin);
+        if (port == port1) {
+            found_pin1 = pin;
+            net1 = net;
+        }
+        if (port == port2) {
+            found_pin2 = pin;
+            net2 = net;
+        }
+    }
+
+    if (net1 != nullptr && net2 != nullptr) {
+        // Swap the ports and nets
+        sta_->disconnectPin(found_pin1);
+        sta_->connectPin(inst, port1, net2);
+        sta_->disconnectPin(found_pin2);
+        sta_->connectPin(inst, port2, net1);
+
+        // Invalidate the parasitics on these two nets.
+        if (haveEstimatedParasitics()) {
+          invalidateParasitics(found_pin2, net1);
+          invalidateParasitics(found_pin1, net2);
+        }
+    }
+}
+
 // Replace LEF with LEF so ports stay aligned in instance.
 bool
 Resizer::replaceCell(Instance *inst,
@@ -890,13 +946,7 @@ Resizer::replaceCell(Instance *inst,
       while (pin_iter->hasNext()) {
         const Pin *pin = pin_iter->next();
         const Net *net = network_->net(pin);
-        // ODB is clueless about tristates so go to liberty for reality.
-        const LibertyPort *port = network_->libertyPort(pin);
-        // Invalidate estimated parasitics on all instance input pins.
-        // Tristate nets have multiple drivers and this is drivers^2 if
-        // the parasitics are updated for each resize.
-        if (net && !port->direction()->isAnyTristate())
-          parasiticsInvalid(net);
+        invalidateParasitics(pin, net);
       }
       delete pin_iter;
     }
@@ -1168,7 +1218,15 @@ Resizer::dbuToMeters(int dist) const
 int
 Resizer::metersToDbu(double dist) const
 {
-  return dist * dbu_ * 1e+6;
+  if (dist < 0) {
+    logger_->error(
+        RSZ, 86, "metersToDbu({}) cannot convert negative distances", dist);
+  }
+  // sta::INF is passed to this function in some cases. Protect against
+  // overflow conditions.
+  double distance = dist * dbu_ * 1e+6;
+  return static_cast<int>(std::lround(distance)
+                          & std::numeric_limits<int>::max());
 }
 
 void
@@ -1831,6 +1889,60 @@ Resizer::bufferDelays(LibertyCell *buffer_cell,
   gateDelays(output, load_cap, dcalc_ap, delays, slews);
 }
 
+// Create a map of all the pins that are equivalent and then use the fastest pin
+// for our violating path. Current implementation does not handle the case
+// where 2 paths go through the same gate (we could end up swapping pins twice)
+void
+Resizer::findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
+                              float load_cap, const DcalcAnalysisPt *dcalc_ap,
+                              LibertyPort **swap_port)
+{
+    const Pvt *pvt = dcalc_ap->operatingConditions();
+    LibertyCell *cell = drvr_port->libertyCell();
+    std::map<LibertyPort *, ArcDelay> port_delays;
+    ArcDelay base_delay = -INF;
+
+    // Create map of pins and delays except the input pin.
+    for (TimingArcSet *arc_set : cell->timingArcSets()) {
+        if (arc_set->to() == drvr_port
+            && !arc_set->role()->isTimingCheck()) {
+            for (TimingArc *arc : arc_set->arcs()) {
+                RiseFall *in_rf = arc->fromEdge()->asRiseFall();
+                float in_slew = tgt_slews_[in_rf->index()];
+                ArcDelay gate_delay;
+                Slew drvr_slew;
+                LibertyPort *port = arc->from();
+                arc_delay_calc_->gateDelay(cell, arc, in_slew, load_cap,
+                                           nullptr, 0.0, pvt, dcalc_ap,
+                                           gate_delay,
+                                           drvr_slew);
+
+                if (port == input_port) {
+                    base_delay = std::max(base_delay, gate_delay);
+                } else {
+                    if (port_delays.find(port) == port_delays.end()) {
+                        port_delays.insert(std::make_pair(port, gate_delay));
+                    } else {
+                        port_delays[input_port] = std::max(port_delays[port], gate_delay);
+                    }
+                }
+            }
+        }
+    }
+
+    // Find the candidate port to swap with
+    auto port_iter = sta::LibertyCellPortIterator(cell);
+    while (port_iter.hasNext()) {
+        LibertyPort *port = port_iter.next();
+        if (!sta::LibertyPort::equiv(input_port, port) &&
+            !sta::LibertyPort::equiv(drvr_port, port) &&
+            port_delays[port] < base_delay) {
+            *swap_port = port;
+            base_delay = port_delays[port];
+        }
+    }
+}
+
 // Rise/fall delays across all timing arcs into drvr_port.
 // Uses target slew for input slew.
 void
@@ -1904,16 +2016,32 @@ Resizer::findMaxWireLength()
 double
 Resizer::findMaxWireLength1()
 {
-  double max_length = INF;
+  std::optional<double> max_length;
   for (const Corner *corner : *sta_->corners()) {
-    if (wireSignalResistance(corner) > 0.0) {
-      for (LibertyCell *buffer_cell : buffer_cells_) {
-        double buffer_length = findMaxWireLength(buffer_cell, corner);
-        max_length = min(max_length, buffer_length);
-      }
+    if (wireSignalResistance(corner) <= 0.0) {
+      logger_->warn(RSZ,
+                    88,
+                    "Corner: {} has no wire signal resistance value.",
+                    corner->name());
+      continue;
+    }
+
+    // buffer_cells_ is required to be non-empty.
+    for (LibertyCell* buffer_cell : buffer_cells_) {
+      double buffer_length = findMaxWireLength(buffer_cell, corner);
+      max_length = min(max_length.value_or(INF), buffer_length);
     }
   }
-  return max_length;
+
+  if (!max_length.has_value()) {
+    logger_->error(RSZ,
+                   89,
+                   "Could not find a resistance value for any corner. Cannot "
+                   "evaluate max wire length for buffer. Check over your "
+                   "`set_wire_rc` configuration");
+  }
+
+  return max_length.value();
 }
 
 // Find the max wire length before it is faster to split the wire
@@ -2002,7 +2130,7 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
 {
   // Make a (hierarchical) block to use as a scratchpad.
   dbBlock *block = dbBlock::create(block_, "wire_delay", '/');
-  dbSta *sta = makeBlockSta(openroad_, block);
+  std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
   Parasitics *parasitics = sta->parasitics();
   Network *network = sta->network();
   ArcDelayCalc *arc_delay_calc = sta->arcDelayCalc();
@@ -2062,7 +2190,6 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
   sta->deleteInstance(drvr);
   sta->deleteInstance(load);
   sta->deleteNet(net);
-  delete sta;
   dbBlock::destroy(block);
 }
 
@@ -2274,10 +2401,12 @@ Resizer::cloneClkInverter(Instance *inv)
 void
 Resizer::repairSetup(double setup_margin,
                      double repair_tns_end_percent,
-                     int max_passes)
+                     int max_passes,
+                     bool skip_pin_swap)
 {
   resizePreamble();
-  repair_setup_->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
+  repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
+                             max_passes, skip_pin_swap);
 }
 
 void
@@ -2339,6 +2468,7 @@ Resizer::journalBegin()
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   resized_inst_map_.clear();
   inserted_buffers_.clear();
+  swapped_pins_.clear();
 }
 
 void
@@ -2347,6 +2477,16 @@ Resizer::journalEnd()
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   resized_inst_map_.clear();
   inserted_buffers_.clear();
+  swapped_pins_.clear();
+}
+
+void
+Resizer::journalSwapPins(Instance *inst, LibertyPort *port1,
+                         LibertyPort *port2)
+{
+  debugPrint(logger_, RSZ, "journal", 1, "journal swap pins {} ({}->{})",
+             network_->pathName(inst),port1->name(), port2->name());
+  swapped_pins_[inst] = std::make_tuple(port1, port2);
 }
 
 void
@@ -2383,6 +2523,8 @@ Resizer::journalRestore(int &resize_count,
       resize_count--;
     }
   }
+  inserted_buffer_set_.clear();
+
   while (!inserted_buffers_.empty()) {
   const Instance *buffer = inserted_buffers_.back();
     debugPrint(logger_, RSZ, "journal", 1, "journal remove {}",
@@ -2391,11 +2533,19 @@ Resizer::journalRestore(int &resize_count,
     inserted_buffers_.pop_back();
     inserted_buffer_count--;
   }
-  inserted_buffer_set_.clear();
+
+  for (auto element : swapped_pins_) {
+    Instance *inst = element.first;
+    LibertyPort *port1 = std::get<0>(element.second);
+    LibertyPort *port2 = std::get<1>(element.second);
+    debugPrint(logger_, RSZ, "journal", 1, "journal unswap pins {} ({}<-{})",
+	       network_->pathName(inst),port1->name(), port2->name());
+    swapPins(inst, port2, port1, false);
+  }
+  swapped_pins_.clear();
 }
 
 ////////////////////////////////////////////////////////////////
-
 Instance *
 Resizer::makeBuffer(LibertyCell *cell,
                     const char *name,

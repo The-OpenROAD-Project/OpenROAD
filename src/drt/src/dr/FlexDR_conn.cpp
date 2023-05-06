@@ -444,7 +444,7 @@ void FlexDRConnectivityChecker::finish(
         regionQuery->removeDRObj(via);
         net->removeVia(via);
       } else {
-        cout << "Error: finish unsupporterd type" << endl;
+        cout << "Error: finish unsupported type" << endl;
         exit(1);
       }
       netRouteObjs[i] = nullptr;
@@ -880,8 +880,8 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
 {
   sort(splitPoints.begin(), splitPoints.end());
   if (splitPoints[splitPoints.size() - 1]
-      == highestPs->high())  // we dont need this split point, only those inside
-                             // the overlapping interval
+      == highestPs->high())  // we don't need this split point, only those
+                             // inside the overlapping interval
     splitPoints.erase(std::prev(splitPoints.end()));
   if (!splitPoints.empty()) {
     frEndStyle highestPsEndStyle = highestPs->getEndStyle();
