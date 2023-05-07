@@ -218,7 +218,9 @@ void Graphics::drawNesterov(gui::Painter& painter)
     float efMax = 0;
     int max_len = std::numeric_limits<int>::max();
     for (Bin& bin : nb_->bins()) {
-      efMax = std::max(efMax, hypot(bin.electroForceX(), bin.electroForceY()));
+      efMax = std::max(
+          efMax,
+          static_cast<float>(hypot(bin.electroForceX(), bin.electroForceY())));
       max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
