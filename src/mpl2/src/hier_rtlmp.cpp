@@ -317,6 +317,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   //
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
+  manufacturing_unit_ = db_->getTech()->getManufacturingGrid();
 
   //
   // Get the floorplan information
@@ -605,7 +606,7 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
       num_macro += 1;
       macro_area += inst_area;
       // add hard macro to corresponding map
-      HardMacro* macro = new HardMacro(inst, dbu_, halo_width_);
+      HardMacro* macro = new HardMacro(inst, dbu_, manufacturing_unit_, halo_width_);
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;
