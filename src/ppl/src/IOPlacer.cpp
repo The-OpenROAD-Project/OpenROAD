@@ -1410,7 +1410,18 @@ void IOPlacer::excludeInterval(Interval interval)
 void IOPlacer::addNamesConstraint(PinSet* pins, Edge edge, int begin, int end)
 {
   Interval interval(edge, begin, end);
-  constraints_.emplace_back(*pins, Direction::invalid, interval);
+  bool inserted = false;
+  for (Constraint& constraint : constraints_) {
+    if (constraint.interval == interval) {
+      constraint.pin_list.insert(pins->begin(), pins->end());
+      inserted = true;
+      break;
+    }
+  }
+
+  if (!inserted) {
+    constraints_.emplace_back(*pins, Direction::invalid, interval);
+  }
 }
 
 void IOPlacer::addDirectionConstraint(Direction direction,
