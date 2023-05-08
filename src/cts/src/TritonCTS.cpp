@@ -174,9 +174,7 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();
   for (odb::dbITerm* iterm : iterms) {
     if (iterm != driver && iterm->isInputSignal()) {
-      if (!isSink(iterm)
-          && (iterm->getInst()->isCore()
-              || iterm->getInst()->isPad())) {  // Clock Gate
+      if (!isSink(iterm)) {
         odb::dbITerm* outputPin = getSingleOutput(iterm->getInst(), iterm);
         if (outputPin && outputPin->getNet()) {
           odb::dbNet* outputNet = outputPin->getNet();
@@ -911,7 +909,11 @@ bool TritonCTS::isSink(odb::dbITerm* iterm)
   sta::Cell* masterCell = network_->dbToSta(inst->getMaster());
   sta::LibertyCell* libertyCell = network_->libertyCell(masterCell);
   if (!libertyCell) {
-    return false;
+    return true;
+  }
+
+  if (inst->isBlock()) {
+    return true;
   }
 
   sta::LibertyPort* inputPort
