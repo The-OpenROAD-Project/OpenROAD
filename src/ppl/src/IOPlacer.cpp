@@ -1729,6 +1729,20 @@ void IOPlacer::run(bool random_mode)
   } else {
     int constrained_pins_cnt = 0;
     int mirrored_pins_cnt = 0;
+
+    // add groups to fallback
+    for (const auto& io_group : netlist_io_pins_->getIOGroups()) {
+      if (io_group.first.size() > slots_per_section_) {
+        logger_->warn(PPL,
+                      92,
+                      "Pin group of size {} does not fit any section. Adding "
+                      "to fallback mode.",
+                      io_group.first.size());
+        addGroupToFallback(io_group.first, io_group.second);
+      }
+    }
+    constrained_pins_cnt += placeFallbackPins(false);
+
     for (bool mirrored_only : {true, false}) {
       for (Constraint& constraint : constraints_) {
         updateConstraintSections(constraint);
