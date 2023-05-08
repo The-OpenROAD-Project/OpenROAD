@@ -51,6 +51,7 @@ class Logger;
 namespace gpl {
 
 class NesterovBaseCommon;
+class NesterovBase;
 class GNet;
 class Die;
 
@@ -223,6 +224,7 @@ class RouteBase
             odb::dbDatabase* db,
             grt::GlobalRouter* grouter,
             std::shared_ptr<NesterovBaseCommon> nbc,
+            std::vector<std::shared_ptr<NesterovBase>> nbVec,
             utl::Logger* log);
   ~RouteBase();
 
@@ -251,6 +253,7 @@ class RouteBase
   grt::GlobalRouter* grouter_;
 
   std::shared_ptr<NesterovBaseCommon> nbc_;
+  std::vector<std::shared_ptr<NesterovBase>> nbVec_;
   utl::Logger* log_;
 
   std::unique_ptr<TileGrid> tg_;

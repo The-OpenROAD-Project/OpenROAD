@@ -60,14 +60,9 @@ NesterovPlace::NesterovPlace()
       rb_(nullptr),
       tb_(nullptr),
       npVars_(),
-      wireLengthGradSum_(0),
-      densityGradSum_(0),
-      densityPenalty_(0),
       baseWireLengthCoef_(0),
       wireLengthCoefX_(0),
       wireLengthCoefY_(0),
-      sumOverflow_(0),
-      sumOverflowUnscaled_(0),
       prevHpwl_(0),
       isDiverged_(false),
       isRoutabilityNeed_(true),
@@ -96,11 +91,10 @@ NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
   tb_ = tb;
   log_ = log;
 
-  // TODO: FIX THIS
-  // if (npVars.debug && Graphics::guiActive()) {
-  //   graphics_ = make_unique<Graphics>(
-  //       log_, this, pb, nb, npVars_.debug_draw_bins, npVars.debug_inst);
-  // }
+  if (npVars.debug && Graphics::guiActive()) {
+    graphics_ = make_unique<Graphics>(
+        log_, this, pbc, nbc, pbVec, nbVec, npVars_.debug_draw_bins, npVars.debug_inst);
+  }
   init();
 }
 
@@ -109,33 +103,153 @@ NesterovPlace::~NesterovPlace()
   reset();
 }
 
+void NesterovPlace::updatePrevGradient(std::shared_ptr<NesterovBase> nb){
+  nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
+  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
+  auto densityGradSum_ = nb->getDensityGradSum();
+  // printf("wireLengthGradSum_ = %g\n", wireLengthGradSum_);
+  // printf("densityGradSum_ = %g\n", densityGradSum_);
+
+  if (wireLengthGradSum_ == 0
+      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+    wireLengthCoefX_ *= 0.5;
+    wireLengthCoefY_ *= 0.5;
+    baseWireLengthCoef_ *= 0.5;
+    debugPrint(
+        log_,
+        GPL,
+        "updateGrad",
+        1,
+        "sum(WL gradient) = 0 detected, trying again with wlCoef: {:g} {:g}",
+        wireLengthCoefX_,
+        wireLengthCoefY_);
+
+    // update WL forces
+    nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+    // printf("In recursion prev, doing stuf..\n\n");
+    // recursive call again with smaller wirelength coef
+    recursionCntWlCoef_++;
+    updatePrevGradient(nb);
+    return;
+  }
+
+  // divergence detection on
+  // Wirelength / density gradient calculation
+  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
+      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+    isDiverged_ = true;
+    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
+    divergeCode_ = 306;
+  }
+}
+
+void NesterovPlace::updateCurGradient(std::shared_ptr<NesterovBase> nb){
+  nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
+  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
+  auto densityGradSum_ = nb->getDensityGradSum();
+  // printf("wireLengthGradSum_ = %g\n", wireLengthGradSum_);
+  // printf("densityGradSum_ = %g\n", densityGradSum_);
+
+  if (wireLengthGradSum_ == 0
+      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+    wireLengthCoefX_ *= 0.5;
+    wireLengthCoefY_ *= 0.5;
+    baseWireLengthCoef_ *= 0.5;
+    debugPrint(
+        log_,
+        GPL,
+        "updateGrad",
+        1,
+        "sum(WL gradient) = 0 detected, trying again with wlCoef: {:g} {:g}",
+        wireLengthCoefX_,
+        wireLengthCoefY_);
+
+    // update WL forces
+    nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+    // printf("In recursion cur, doing stuf..\n\n");
+    // recursive call again with smaller wirelength coef
+    recursionCntWlCoef_++;
+    updateCurGradient(nb);
+    return;
+  }
+
+  // divergence detection on
+  // Wirelength / density gradient calculation
+  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
+      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+    isDiverged_ = true;
+    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
+    divergeCode_ = 306;
+  }
+}
+
+void NesterovPlace::updateNextGradient(std::shared_ptr<NesterovBase> nb){
+  nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
+
+  auto wireLengthGradSum_ = nb->getWireLengthGradSum();
+  auto densityGradSum_ = nb->getDensityGradSum();
+
+  if (wireLengthGradSum_ == 0
+      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+    wireLengthCoefX_ *= 0.5;
+    wireLengthCoefY_ *= 0.5;
+    baseWireLengthCoef_ *= 0.5;
+    debugPrint(
+        log_,
+        GPL,
+        "updateGrad",
+        1,
+        "sum(WL gradient) = 0 detected, trying again with wlCoef: {:g} {:g}",
+        wireLengthCoefX_,
+        wireLengthCoefY_);
+
+    // update WL forces
+    nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+    // printf("In recursion next, doing stuf..\n\n");
+    // recursive call again with smaller wirelength coef
+    recursionCntWlCoef_++;
+    updateNextGradient(nb);
+    return;
+  }
+
+  // divergence detection on
+  // Wirelength / density gradient calculation
+  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
+      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+    isDiverged_ = true;
+    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
+    divergeCode_ = 306;
+  }
+}
+
 void NesterovPlace::init()
 {
   // foreach nesterovbase call init
-  float totalSumOverflow = 0;
+  total_sum_overflow_ = 0;
   float totalBaseWireLengthCoeff = 0;
   for(auto& nb : nbVec_){
-    nb->setNpVars(npVars_);
+    nb->setNpVars(&npVars_);
     nb->initDensity1();
-    totalSumOverflow += nb->getSumOverflow();
+    total_sum_overflow_ += nb->getSumOverflow();
     totalBaseWireLengthCoeff += nb->getBaseWireLengthCoef();
   }
 
+  average_overflow_ = total_sum_overflow_ / nbVec_.size();
   baseWireLengthCoef_ = totalBaseWireLengthCoeff / nbVec_.size();
   
-  updateWireLengthCoef(totalSumOverflow / nbVec_.size());
+  updateWireLengthCoef(average_overflow_);
 
-  debugPrint(
-      log_, GPL, "npinit", 1, "npinit: WireLengthCoef: {:g}", wireLengthCoefX_);
+  // printf("npinit: WireLengthCoef: %f, ", wireLengthCoefX_);
 
-  printf("npinit: WireLengthCoefX: %f, WireLengthCoefY: %f\n", wireLengthCoefX_, wireLengthCoefY_);
+  // printf("npinit: WireLengthCoefX: %f, WireLengthCoefY: %f\n", wireLengthCoefX_, wireLengthCoefY_);
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
   for(auto& nb : nbVec_){
 
     // fill in curSLPSumGrads_, curSLPWireLengthGrads_, curSLPDensityGrads_
-    nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
+    updateCurGradient(nb);
+    // nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
 
     // approximately fill in
     // prevSLPCoordi_ to calculate lc vars
@@ -146,12 +260,15 @@ void NesterovPlace::init()
     nb->updateDensityForceBin();
   }
 
+  // printf("npinit 2: WireLengthCoefX: %f, WireLengthCoefY: %f\n", wireLengthCoefX_, wireLengthCoefY_);
+
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
 
   for(auto& nb : nbVec_){
     // update previSumGrads_, prevSLPWireLengthGrads_, prevSLPDensityGrads_
-    nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
+    updatePrevGradient(nb);
+    // nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
   }
 
 
@@ -192,9 +309,6 @@ void NesterovPlace::reset()
 
   densityPenaltyStor_.shrink_to_fit();
 
-  wireLengthGradSum_ = 0;
-  densityGradSum_ = 0;
-  densityPenalty_ = 0;
   baseWireLengthCoef_ = 0;
   wireLengthCoefX_ = wireLengthCoefY_ = 0;
   prevHpwl_ = 0;
@@ -222,34 +336,21 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     graphics_->cellPlot(true);
   }
 
-  // backTracking variable.
-  float curA = 1.0;
-
-  // divergence detection
-  // float minSumOverflow = 1e30;
-  // float hpwlWithMinSumOverflow = 1e30;
-
-  // dynamic adjustment of max_phi_coef
-  // bool isMaxPhiCoefChanged = false;
-
   // snapshot saving detection
-  // bool isSnapshotSaved = false;
+  bool isSnapshotSaved = false;
 
   // snapshot info
-  // vector<FloatPoint> snapshotCoordi;
-  // vector<FloatPoint> snapshotSLPCoordi;
-  // vector<FloatPoint> snapshotSLPSumGrads;
-  // float snapshotA = 0;
-  // float snapshotDensityPenalty = 0;
-  // float snapshotStepLength = 0;
-  // float snapshotWlCoefX = 0, snapshotWlCoefY = 0;
+  float snapshotA = 0;
+  float snapshotWlCoefX = 0, snapshotWlCoefY = 0;
+  bool isDivergeTriedRevert = false;
 
-  // bool isDivergeTriedRevert = false;
+  // backTracking variable.
+  float curA = 1.0;
 
   // Core Nesterov Loop
   int iter = start_iter;
   for (; iter < npVars_.maxNesterovIter; iter++) {
-    debugPrint(log_, GPL, "np", 1, "Iter: {}", iter + 1);
+    // printf("Iter: %d\n", iter + 1);
 
     float prevA = curA;
 
@@ -261,9 +362,15 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     // coeff is (a_k - 1) / ( a_(k+1) ) in paper.
     float coeff = (prevA - 1.0) / curA;
 
-    debugPrint(log_, GPL, "np", 1, "PreviousA: {:g}", prevA);
-    debugPrint(log_, GPL, "np", 1, "CurrentA: {:g}", curA);
-    debugPrint(log_, GPL, "np", 1, "Coefficient: {:g}", coeff);
+    // printf("PreviousA: %f,", prevA);
+    // printf("CurrentA: %f,", curA);
+    // printf("Coefficient: %f,", coeff);
+
+
+    // for(auto& nb : nbVec_){
+    //     nb->printStepLength();
+    // }
+    
 
     // Back-Tracking loop
     int numBackTrak = 0;
@@ -278,12 +385,13 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
       int numDiverge = 0;
       for(auto& nb : nbVec_){
-        nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
+        updateNextGradient(nb);
+        // nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
         numDiverge += nb->isDiverged();
       }
 
       // NaN or inf is detected in WireLength/Density Coef
-      if (numDiverge > 0) {
+      if (numDiverge > 0 || isDiverged_) {
         isDiverged_ = true;
         divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
         divergeCode_ = 306;
@@ -330,25 +438,24 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     updateNextIter(iter);
 
-    // TODO: FIX THIS
-    // // For JPEG Saving
-    // // debug
+    // For JPEG Saving
+    // debug
 
-    // if (graphics_) {
-    //   bool update
-    //       = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
-    //   if (update) {
-    //     bool pause
-    //         = (iter == 0 || (iter + 1) % npVars_.debug_pause_iterations == 0);
-    //     graphics_->cellPlot(pause);
-    //   }
-    // }
+    if (graphics_) {
+      bool update
+          = (iter == 0 || (iter + 1) % npVars_.debug_update_iterations == 0);
+      if (update) {
+        bool pause
+            = (iter == 0 || (iter + 1) % npVars_.debug_pause_iterations == 0);
+        graphics_->cellPlot(pause);
+      }
+    }
 
 
     // timing driven feature
     // do reweight on timing-critical nets.
     if (npVars_.timingDrivenMode
-        && tb_->isTimingNetWeightOverflow(sumOverflow_)) {
+        && tb_->isTimingNetWeightOverflow(average_overflow_)) {
       // update db's instance location from current density coordinates
       updateDb();
 
@@ -357,7 +464,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       // and update GNet's weights from worst timing paths.
       //
       // See timingBase.cpp in detail
-      bool shouldTdProceed = tb_->updateGNetWeights(sumOverflow_);
+      bool shouldTdProceed = tb_->updateGNetWeights(average_overflow_);
 
       // problem occured
       // escape timing driven later
@@ -383,88 +490,77 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       divergeCode_ = 307;
       isDiverged_ = true;
 
-      // // TODO: find a way to revert back 
-      // // revert back to the original rb solutions
-      // // one more opportunity
-      // if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
-      //   // get back to the working rc size
-      //   rb_->revertGCellSizeToMinRc();
+      // revert back to the original rb solutions
+      // one more opportunity
+      if (!isDivergeTriedRevert && rb_->numCall() >= 1) {
+        // get back to the working rc size
+        rb_->revertGCellSizeToMinRc();
+        
+        curA = snapshotA;
+        wireLengthCoefX_ = snapshotWlCoefX;
+        wireLengthCoefY_ = snapshotWlCoefY;
 
-      //   // revert back the current density penality
-      //   curCoordi_ = snapshotCoordi;
-      //   curSLPCoordi_ = snapshotSLPCoordi;
-      //   curSLPSumGrads_ = snapshotSLPSumGrads;
-      //   curA = snapshotA;
-      //   densityPenalty_ = snapshotDensityPenalty;
-      //   stepLength_ = snapshotStepLength;
-      //   wireLengthCoefX_ = snapshotWlCoefX;
-      //   wireLengthCoefY_ = snapshotWlCoefY;
+        nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
-      //   nb_->updateGCellDensityCenterLocation(curCoordi_);
-      //   nb_->updateDensityForceBin();
-      //   nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+        for(auto& nb : nbVec_){
+          nb->revertDivergence();
+        }
+        
+        isDiverged_ = false;
+        divergeCode_ = 0;
+        divergeMsg_ = "";
+        isDivergeTriedRevert = true;
+        // turn off the RD forcely
+        isRoutabilityNeed_ = false;
+      } else {
+        // no way to revert
+        break;
+      }
 
-      //   isDiverged_ = false;
-      //   divergeCode_ = 0;
-      //   divergeMsg_ = "";
-      //   isDivergeTriedRevert = true;
-
-      //   // turn off the RD forcely
-      //   isRoutabilityNeed_ = false;
-      // } else {
-      //   // no way to revert
-      //   break;
-      // }
-
-      // TODO: remove when fixed above!
-      break;
     }
 
+    if (!isSnapshotSaved && npVars_.routabilityDrivenMode
+        && 0.6 >= average_overflow_unscaled_) {    
+        snapshotWlCoefX = wireLengthCoefX_;
+        snapshotWlCoefY = wireLengthCoefY_;
+        snapshotA = curA;
+        isSnapshotSaved =  true;
 
-    // TODO: 
-    // problem here is when to snapshot wirelength coeffecient
-    // since we snapshot at different times depending on each region's overflow 
-    // it's not straight forward which one to use 
-    // for now will be using the last one
-    for(auto& nb : nbVec_){
-      nb->snapshot(wireLengthCoefX_, wireLengthCoefY_);
+        for(auto& nb : nbVec_){
+          nb->snapshot();
+        }
+
+        log_->report("[NesterovSolve] Snapshot saved at iter = {}", iter);
     }
+    
 
+    // check routability using GR
+    if (npVars_.routabilityDrivenMode && isRoutabilityNeed_
+        && npVars_.routabilityCheckOverflow >= average_overflow_unscaled_) {
+      // recover the densityPenalty values
+      // if further routability-driven is needed
+      std::pair<bool, bool> result = rb_->routability();
+      isRoutabilityNeed_ = result.first;
+      bool isRevertInitNeeded = result.second;
 
-    // // TODO: find a way to revert back for wire length coeffecients
-    // // check routability using GR
-    // if (npVars_.routabilityDrivenMode && isRoutabilityNeed_
-    //     && npVars_.routabilityCheckOverflow >= sumOverflowUnscaled_) {
-    //   // recover the densityPenalty values
-    //   // if further routability-driven is needed
-    //   std::pair<bool, bool> result = rb_->routability();
-    //   isRoutabilityNeed_ = result.first;
-    //   bool isRevertInitNeeded = result.second;
+      // if routability is needed
+      if (isRoutabilityNeed_ || isRevertInitNeeded) {
+        // cutFillerCoordinates();
 
-    //   // if routability is needed
-    //   if (isRoutabilityNeed_ || isRevertInitNeeded) {
-    //     // cutFillerCoordinates();
+        // revert back the current density penality
+        curA = snapshotA;
+        wireLengthCoefX_ = snapshotWlCoefX;
+        wireLengthCoefY_ = snapshotWlCoefY;
 
-    //     // revert back the current density penality
-    //     curCoordi_ = snapshotCoordi;
-    //     curSLPCoordi_ = snapshotSLPCoordi;
-    //     curSLPSumGrads_ = snapshotSLPSumGrads;
-    //     curA = snapshotA;
-    //     densityPenalty_ = snapshotDensityPenalty;
-    //     stepLength_ = snapshotStepLength;
-    //     wireLengthCoefX_ = snapshotWlCoefX;
-    //     wireLengthCoefY_ = snapshotWlCoefY;
+        nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
-    //     nb_->updateGCellDensityCenterLocation(curCoordi_);
-    //     nb_->updateDensityForceBin();
-    //     nb_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-
-    //     // reset the divergence detect conditions
-    //     minSumOverflow = 1e30;
-    //     hpwlWithMinSumOverflow = 1e30;
-    //     log_->report("[NesterovSolve] Revert back to snapshot coordi");
-    //   }
-    // }
+        for(auto& nb : nbVec_){
+          nb->revertDivergence();
+          nb->resetMinSumOverflow();
+        }
+        log_->report("[NesterovSolve] Revert back to snapshot coordi");
+      }
+    }
 
     // check each for converge and if all are converged then stop
     int numConverge = 0;
@@ -473,7 +569,7 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     }
 
     if(numConverge == nbVec_.size()){
-      log_->report("[NesterovSolve] Finished, all regions converged");
+      // log_->report("[NesterovSolve] Finished, all regions converged");
       break;
     }
   }
@@ -485,10 +581,10 @@ int NesterovPlace::doNesterovPlace(int start_iter)
     log_->error(GPL, divergeCode_, divergeMsg_);
   }
 
-  // if (graphics_) {
-  //   graphics_->status("End placement");
-  //   graphics_->cellPlot(true);
-  // }
+  if (graphics_) {
+    graphics_->status("End placement");
+    graphics_->cellPlot(true);
+  }
 
   return iter;
 }
@@ -513,23 +609,20 @@ void NesterovPlace::updateWireLengthCoef(float overflow)
 void NesterovPlace::updateNextIter(const int iter)
 {
   
-  float total_sum_overflow = 0;
+  total_sum_overflow_ = 0;
+  total_sum_overflow_unscaled_ = 0;
 
   for(auto& nb : nbVec_){
     nb->updateNextIter(iter);
-    total_sum_overflow += nb->getSumOverflow();
+    total_sum_overflow_ += nb->getSumOverflow();
+    total_sum_overflow_unscaled_ += nb->getSumOverflowUnscaled();
   }
+
+  average_overflow_ = total_sum_overflow_ / nbVec_.size();
+  average_overflow_unscaled_ = total_sum_overflow_unscaled_ / nbVec_.size();
 
   // For coefficient, using average regions' overflow
-  updateWireLengthCoef(total_sum_overflow / nbVec_.size());
-
-
-  // updateWireLengthCoef(sumOverflow_);
-
-  // for routability densityPenalty recovery
-  if (rb_->numCall() == 0) {
-    densityPenaltyStor_.push_back(densityPenalty_);
-  }
+  updateWireLengthCoef(average_overflow_);
 }
 
 

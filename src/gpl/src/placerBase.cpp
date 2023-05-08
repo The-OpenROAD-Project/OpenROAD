@@ -962,7 +962,6 @@ void PlacerBaseCommon::init()
     nets_.push_back(&net);
   }
 
-  printInfo();
 }
 
 
@@ -1022,21 +1021,6 @@ Net* PlacerBaseCommon::dbToPb(odb::dbNet* net) const
 void PlacerBaseCommon::printInfo() const
 {
   
-  log_->info(GPL, 6, "NumInstances: {}", instStor_.size());
-  log_->info(GPL, 10, "NumNets: {}", nets_.size());
-  log_->info(GPL, 11, "NumPins: {}", pins_.size());
-
-  int maxFanout = INT_MIN;
-  for (auto& net : nets_) {
-    if (maxFanout < (int) net->pins().size()) {
-      maxFanout = (int) net->pins().size();
-    }
-  }
-
-  log_->info(GPL, 12, "DieAreaLxLy: {} {}", die_.dieLx(), die_.dieLy());
-  log_->info(GPL, 13, "DieAreaUxUy: {} {}", die_.dieUx(), die_.dieUy());
-  log_->info(GPL, 14, "CoreAreaLxLy: {} {}", die_.coreLx(), die_.coreLy());
-  log_->info(GPL, 15, "CoreAreaUxUy: {} {}", die_.coreUx(), die_.coreUy());
 }
 
 
@@ -1092,7 +1076,7 @@ void PlacerBase::init()
   siteSizeX_ = pbCommon_->siteSizeX();
   siteSizeY_ = pbCommon_->siteSizeY();
 
-  printf("Current group: %s\n", group_ ? group_->getName() : "None");
+  // printf("Current group: %s\n", group_ ? group_->getName() : "None");
   for(auto& inst : pbCommon_->insts()) {
 
     if(!inst->isInstance()) {
@@ -1104,7 +1088,7 @@ void PlacerBase::init()
       continue;
     }
 
-    printf("Adding instance %s\n", inst->dbInst()->getName().c_str());
+    // printf("Adding instance %s\n", inst->dbInst()->getName().c_str());
 
     
     if (inst->isFixed()) {
@@ -1330,28 +1314,34 @@ void PlacerBase::reset()
 void PlacerBase::printInfo() const
 {
   
-  log_->info(GPL, 101, "Domain: {}", group_ == NULL ? "Top" : group_->getName());
-  log_->info(GPL, 106, "NumInstances: {}", instStor_.size());
-  log_->info(GPL, 107, "NumPlaceInstances: {}", placeInsts_.size());
-  log_->info(GPL, 108, "NumFixedInstances: {}", fixedInsts_.size());
-  log_->info(GPL, 109, "NumDummyInstances: {}", dummyInsts_.size());
+  log_->info(GPL, 6, "NumInstances: {}", placeInsts_.size() + fixedInsts_.size() + dummyInsts_.size());
+  log_->info(GPL, 7, "NumPlaceInstances: {}", placeInsts_.size());
+  log_->info(GPL, 8, "NumFixedInstances: {}", fixedInsts_.size());
+  log_->info(GPL, 9, "NumDummyInstances: {}", dummyInsts_.size());
+  log_->info(GPL, 10, "NumNets: {}", pbCommon_->nets().size());
+  log_->info(GPL, 11, "NumPins: {}", pbCommon_->pins().size());
+  
+  log_->info(GPL, 12, "DieAreaLxLy: {} {}", die_.dieLx(), die_.dieLy());
+  log_->info(GPL, 13, "DieAreaUxUy: {} {}", die_.dieUx(), die_.dieUy());
+  log_->info(GPL, 14, "CoreAreaLxLy: {} {}", die_.coreLx(), die_.coreLy());
+  log_->info(GPL, 15, "CoreAreaUxUy: {} {}", die_.coreUx(), die_.coreUy());
 
 
   const int64_t coreArea = die_.coreArea();
   float util = static_cast<float>(placeInstsArea_)
                / (coreArea - nonPlaceInstsArea_) * 100;
 
-  log_->info(GPL, 1016, "CoreArea: {}", coreArea);
-  log_->info(GPL, 1017, "NonPlaceInstsArea: {}", nonPlaceInstsArea_);
+  log_->info(GPL, 16, "CoreArea: {}", coreArea);
+  log_->info(GPL, 17, "NonPlaceInstsArea: {}", nonPlaceInstsArea_);
 
-  log_->info(GPL, 1018, "PlaceInstsArea: {}", placeInstsArea_);
-  log_->info(GPL, 1019, "Util(%): {:.2f}", util);
+  log_->info(GPL, 18, "PlaceInstsArea: {}", placeInstsArea_);
+  log_->info(GPL, 19, "Util(%): {:.2f}", util);
 
-  log_->info(GPL, 1020, "StdInstsArea: {}", stdInstsArea_);
-  log_->info(GPL, 1021, "MacroInstsArea: {}", macroInstsArea_);
+  log_->info(GPL, 20, "StdInstsArea: {}", stdInstsArea_);
+  log_->info(GPL, 21, "MacroInstsArea: {}", macroInstsArea_);
 
   if (util >= 100.1) {
-    log_->error(GPL, 10301, "Utilization exceeds 100%.");
+    log_->error(GPL, 301, "Utilization exceeds 100%.");
   }
 }
 

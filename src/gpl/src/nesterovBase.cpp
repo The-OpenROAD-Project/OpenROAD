@@ -120,6 +120,10 @@ GCell::~GCell()
   insts_.clear();
 }
 
+void GCell::clearInstances(){
+  insts_.clear();
+}
+
 void GCell::setInstance(Instance* inst)
 {
   insts_.push_back(inst);
@@ -338,7 +342,7 @@ void GNet::updateBox()
 {
   lx_ = ly_ = INT_MAX;
   ux_ = uy_ = INT_MIN;
-
+  // printf("Net %s with %ld pins\n", nets_[0]->dbNet()->getName().c_str(), gPins_.size());
   for (auto& gPin : gPins_) {
     lx_ = std::min(gPin->cx(), lx_);
     ly_ = std::min(gPin->cy(), ly_);
@@ -807,8 +811,10 @@ void BinGrid::initBins()
       idxX = 0;
     }
 
+    // printf("bin: %d %d %d %d %f\n", x, y, x + sizeX, y + sizeY, targetDensity_);
     bins_.push_back(&bin);
   }
+
 
   log_->info(GPL, 30, "NumBins: {}", bins_.size());
 
@@ -845,6 +851,14 @@ void BinGrid::updateBinsNonPlaceArea()
       }
     }
   }
+
+  // print all bins' nonPlaceArea using printf
+  // for(int i = 0; i < bins_.size(); i++) {
+  //   Bin* bin = bins_[i];
+  //   printf("Bin: NonPlaceArea: %ld, NonPlaceAreaUnscaled: %ld\n",
+  //          bin->nonPlaceArea(),
+  //          bin->nonPlaceAreaUnscaled());
+  // }
 }
 
 // Core Part
@@ -889,6 +903,9 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
                 = getOverlapDensityArea(bin, cell) * cell->densityScale();
             bin->addInstPlacedArea(scaledArea);
             bin->addInstPlacedAreaUnscaled(scaledArea);
+            // printf("%s : (%d, %d) - (%d, %d) .\n", cell->instance()->dbInst()->getName().c_str(), cell->dLx(), cell->dLy(), cell->dUx(), cell->dUy());
+            // printf("(%d, %d) - (%d, %d) .\n", bin->lx(), bin->ly(), bin->ux(), bin->uy());
+            // printf("%f , %f = %f .\n", getOverlapDensityArea(bin, cell), cell->densityScale(), scaledArea);
           }
         }
       }
@@ -903,6 +920,8 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
     }
   }
 
+  // printf("-----------------------\nbins:\n");
+
   overflowArea_ = 0;
   overflowAreaUnscaled_ = 0;
   // update density and overflowArea
@@ -916,6 +935,10 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
                      + static_cast<float>(bin->nonPlaceArea()))
                     / scaledBinArea);
 
+    // printf("bin overflow: %f, scaled bin area: %f\n", 
+    //                           static_cast<float>(bin->instPlacedArea())
+    //                               + static_cast<float>(bin->nonPlaceArea())
+    //                               - scaledBinArea, scaledBinArea);
     overflowArea_ += std::max(0.0f,
                               static_cast<float>(bin->instPlacedArea())
                                   + static_cast<float>(bin->nonPlaceArea())
@@ -1073,15 +1096,12 @@ void NesterovBaseCommon::reset()
 }
 
 void NesterovBaseCommon::init()
-{
-  // Set a fixed seed
-  srand(42);
-  
+{  
   // gCellStor init
-  gCellStor_.reserve(pbc_->insts().size());
+  gCellStor_.reserve(pbc_->placeInsts().size());
 
 
-  for (auto& inst : pbc_->insts()) {
+  for (auto& inst : pbc_->placeInsts()) {
     gCellStor_.push_back(GCell(inst));
   }
 
@@ -1152,9 +1172,6 @@ void NesterovBaseCommon::init()
     }
   }
 
-  log_->info(GPL, 31, "NBCommon: NumGCells: {}", gCells_.size());
-  log_->info(GPL, 32, "NBCommon: NumGNets: {}", gNets_.size());
-  log_->info(GPL, 33, "NBCommon: NumGPins: {}", gPins_.size());
 }
 
 
@@ -1305,6 +1322,7 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
 {
   FloatPoint gradientPair;
 
+  // printf("UpdateWLGRAD %s\n", (gCell->isInstance())? gCell->instance()->dbInst()->getName().c_str(): "filler");
   for (auto& gPin : gCell->gPins()) {
     auto tmpPair = getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
 
@@ -1320,9 +1338,11 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
     tmpPair.x *= gPin->gNet()->totalWeight();
     tmpPair.y *= gPin->gNet()->totalWeight();
 
+    // printf("GPin: %f %f\n", tmpPair.x, tmpPair.y);
     gradientPair.x += tmpPair.x;
     gradientPair.y += tmpPair.y;
   }
+
 
   if (gCell->isInstance()) {
     debugPrint(log_,
@@ -1332,6 +1352,8 @@ FloatPoint NesterovBaseCommon::getWireLengthGradientWA(const GCell* gCell,
                "gradient: {:g} {:g}",
                gradientPair.x,
                gradientPair.y);
+
+    
   }
 
   // return sum
@@ -1422,7 +1444,7 @@ void NesterovBaseCommon::updateDbGCells()
       inst->setPlacementStatus(odb::dbPlacementStatus::PLACED);
       
       Instance* replInst = gCell->instance();
-      printf("Final location before: %d %d - Final location after: %d %d\n", gCell->cx(), gCell->cy(), gCell->dCx() - replInst->dx() / 2 + pbc_->siteSizeX() * pbc_->padLeft(), gCell->dCy() - replInst->dy() / 2);
+      // printf("Final location before: %d %d - Final location after: %d %d\n", gCell->cx(), gCell->cy(), gCell->dCx() - replInst->dx() / 2 + pbc_->siteSizeX() * pbc_->padLeft(), gCell->dCy() - replInst->dy() / 2);
       // pad awareness on X coordinates
       inst->setLocation(
           gCell->dCx() - replInst->dx() / 2 + pbc_->siteSizeX() * pbc_->padLeft(),
@@ -1437,6 +1459,7 @@ int64_t NesterovBaseCommon::getHpwl()
   for (auto& gNet : gNets_) {
     gNet->updateBox();
     hpwl += gNet->hpwl();
+    // printf("Net HPWL: %ld\n", gNet->hpwl());
   }
   return hpwl;
 }
@@ -1459,6 +1482,10 @@ NesterovBase::NesterovBase()
       sumPhi_(0),
       targetDensity_(0),
       uniformTargetDensity_(0),
+      stepLength_(0),
+      densityPenalty_(0),
+      
+
       isDiverged_(false),
       isMaxPhiCoefChanged_(false),
       minSumOverflow(1e30),
@@ -1549,17 +1576,17 @@ void NesterovBase::init()
 
   int dbu_per_micron = pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron();
 
-  for (auto& inst : pb_->placeInsts()) {
-    // For any cell, add a random noise between -1 and 1 microns to each of its
-    // x and y components. This is added to make it very unlikely that identical
-    // cells connected in parallel do not start at the exact same position and
-    // consequently shadow each other throughout the entire placement process
+  // for (auto& inst : pb_->placeInsts()) {
+  //   // For any cell, add a random noise between -1 and 1 microns to each of its
+  //   // x and y components. This is added to make it very unlikely that identical
+  //   // cells connected in parallel do not start at the exact same position and
+  //   // consequently shadow each other throughout the entire placement process
 
-    int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
-    int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
-    printf("Initial location: %d %d, Updated location: %d %d\n", inst->lx(), inst->ly(),  inst->lx() + x_offset, inst->ly() + y_offset);
-    inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
-  }
+  //   int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+  //   int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+  //   printf("Inst: %s, Initial location: %d %d, Updated location: %d %d\n", inst->dbInst()->getName().c_str(), inst->lx(), inst->ly(),  inst->lx() + x_offset, inst->ly() + y_offset);
+  //   nbc_->pbToNb(inst)->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
+  // }
 
   // TODO:
   // at this moment, GNet and GPin is equal to
@@ -1569,32 +1596,50 @@ void NesterovBase::init()
   initFillerGCells();
 
   gCells_.reserve(pb_->insts().size() + gCellStor_.size());
+  
+  // add place instances
+  for (auto& inst : pb_->placeInsts()) {
+    int x_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+    int y_offset = rand() % (2 * dbu_per_micron) - dbu_per_micron;
+    
+    GCell* gCell = nbc_->pbToNb(inst);
+
+    inst->setLocation(inst->lx() + x_offset, inst->ly() + y_offset);
+
+    gCell->clearInstances();
+    gCell->setInstance(inst);
+    // gCell->setLocation(inst->lx(), inst->ly());
+    // gCell->setDensityLocation(inst->lx(), inst->ly());
+
+  
+    // printf("%s %d %d\n", gCell->instance()->dbInst()->getName().c_str(), gCell->dCx(), gCell->dCy());
+    gCells_.push_back(gCell);
+  }
 
   // add filler cells to gCells_
   for (auto& gCell : gCellStor_) {
     gCells_.push_back(&gCell);
   }
 
-  // add place instances
-  for (auto& inst : pb_->placeInsts()) {
-    GCell* gCell = nbc_->pbToNb(inst);
-    gCells_.push_back(gCell);
-  }
 
+  // printf("---------------------------\n");
   for (auto& gCell : gCells_){
     if (gCell->isInstance()) {
       gCellInsts_.push_back(gCell);
-      // pins_ fill
-      for (auto& pin : gCell->instance()->pins()) {
-        gCell->addGPin(nbc_->pbToNb(pin));
-      }
+      // // pins_ fill
+      // for (auto& pin : gCell->instance()->pins()) {
+      //   gCell->addGPin(nbc_->pbToNb(pin));
+      // }
     } else if (gCell->isFiller()) {
       gCellFillers_.push_back(gCell);
     }
   }
   
+  log_->info(GPL, 31, "FillerInit: NumGCells: {}", gCells_.size());
+  log_->info(GPL, 32, "FillerInit: NumGNets: {}", nbc_->gNets().size());
+  log_->info(GPL, 33, "FillerInit: NumGPins: {}", nbc_->gPins().size());
 
-  log_->info(GPL, 310, "NB Init: Domain: {}, NumGCells: {}", ((pb_->group())?  pb_->group()->getName() : "TOP"), gCells_.size());
+  // log_->info(GPL, 310, "NB Init: Domain: {}, NumGCells: {}", ((pb_->group())?  pb_->group()->getName() : "TOP"), gCells_.size());
 
   // initialize bin grid structure
   // send param into binGrid structure
@@ -1618,9 +1663,6 @@ void NesterovBase::init()
 
   // update densitySize and densityScale in each gCell
   updateDensitySize();
-
-
-  // TODO: INITIALIZE ALL NESTEROV LOOP VARS
 }
 
 // virtual filler GCells
@@ -1687,7 +1729,7 @@ void NesterovBase::initFillerGCells()
   if (nbVars_.useUniformTargetDensity) {
     targetDensity_ = tmp_targetDensity;
   } else {
-    targetDensity_ = std::max(nbVars_.targetDensity, tmp_targetDensity);
+    targetDensity_ = nbVars_.targetDensity;
   }
 
   // TODO density screening
@@ -1697,9 +1739,9 @@ void NesterovBase::initFillerGCells()
   uniformTargetDensity_ = static_cast<float>(nesterovInstsArea())
                           / static_cast<float>(whiteSpaceArea_);
 
-  printf("for group %s, movable area is %ld, total filler area is %ld, nesterov area is %ld , target density is %f, uniform target density is %f\n",
-          ((pb_->group())? pb_->group()->getName() : "TOP"),
-          movableArea_, totalFillerArea_, nesterovInstsArea() ,targetDensity_, uniformTargetDensity_); 
+  // printf("for group %s, movable area is %ld, total filler area is %ld, nesterov area is %ld , target density is %f, uniform target density is %f\n",
+  //         ((pb_->group())? pb_->group()->getName() : "TOP"),
+  //         movableArea_, totalFillerArea_, nesterovInstsArea() ,targetDensity_, uniformTargetDensity_); 
 
   if (totalFillerArea_ < 0) {
     uniformTargetDensity_ = ceilf(uniformTargetDensity_ * 100) / 100;
@@ -1725,6 +1767,14 @@ void NesterovBase::initFillerGCells()
   debugPrint(log_, GPL, "FillerInit", 1, "FillerCellArea {}", fillerCellArea());
   debugPrint(
       log_, GPL, "FillerInit", 1, "FillerCellSize {} {}", fillerDx_, fillerDy_);
+
+  // printf( "CoreArea %ld, ", coreArea);
+  // printf( "WhiteSpaceArea %ld, ", whiteSpaceArea_);
+  // printf( "MovableArea %ld, ", movableArea_);
+  // printf("TotalFillerArea %ld, ", totalFillerArea_);
+  // printf( "NumFillerCells %d, ", fillerCnt);
+  // printf( "FillerCellArea %ld, ", fillerCellArea());
+  // printf("FillerCellSize %d %d\n", fillerDx_, fillerDy_);
 
   //
   // mt19937 supports huge range of random values.
@@ -1771,13 +1821,16 @@ void NesterovBase::updateGCellDensityCenterLocation(
   for (auto& coordi : coordis) {
     int idx = &coordi - &coordis[0];
     gCells_[idx]->setDensityCenterLocation(coordi.x, coordi.y);
+    // auto gCell = gCells_[idx];
+    // printf("GCell (%s): (%d, %d) - (%d, %d)\n",(gCell->isInstance()? gCell->instance()->dbInst()->getName().c_str() : ""), gCell->dLx(), gCell->dLy(), gCell->dUx(), gCell->dUy());
+
   }
   bg_.updateBinsGCellDensityArea(gCells_);
 }
 
 void NesterovBase::setTargetDensity(float density)
 {
-  printf("Forcing new targer density: %f\n", density);
+  // printf("Forcing new targer density: %f\n", density);
   targetDensity_ = density;
   bg_.setTargetDensity(density);
   for (auto& bin : bins()) {
@@ -1909,7 +1962,7 @@ void NesterovBase::updateDensitySize()
 
 void NesterovBase::updateAreas()
 {
-  printf("Using update areas ran by route base\n");
+  // printf("Using update areas ran by route base\n");
   // bloating can change the following :
   // stdInstsArea and macroInstsArea
   stdInstsArea_ = macroInstsArea_ = 0;
@@ -2200,11 +2253,31 @@ void NesterovBase::initDensity1(){
 
   initCoordi_.resize(gCellSize, FloatPoint());
 
+  // printf("Number of cells: %d\n", gCellSize);
+
   for (auto& gCell : gCells_) {
     updateDensityCoordiLayoutInside(gCell);
     int idx = &gCell - &gCells_[0];
     curSLPCoordi_[idx] = prevSLPCoordi_[idx] = curCoordi_[idx]
         = initCoordi_[idx] = FloatPoint(gCell->dCx(), gCell->dCy());
+
+    std::string type = "Uknown";
+    if(gCell->isInstance()){
+      type = "StdCell";
+    } else if(gCell->isMacroInstance()){
+      type = "Macro";
+    } else if(gCell->isFiller()){
+      type = "Filler";
+    } 
+
+    // printf("Inst (%s - %s): (%d, %d) - (%d, %d)\n", type.c_str(), (gCell->isInstance()? gCell->instance()->dbInst()->getName().c_str() : ""), gCell->dLx(), gCell->dLy(), gCell->dUx(), gCell->dUy());
+    // printf("%d %d\n", gCell->dCx(), gCell->dCy());
+    // if(gCell->isInstance()){
+    //   printf("Width: %d\n", gCell->instance()->dbInst()->getMaster()->getWidth());
+    // }
+    // if(gCell->isInstance()){
+    //   printf("%s %d %d\n", gCell->instance()->dbInst()->getName().c_str(), gCell->dCx(), gCell->dCy());
+    // }
   }
 
   // bin
@@ -2212,17 +2285,16 @@ void NesterovBase::initDensity1(){
 
   prevHpwl_ = nbc_->getHpwl();
 
-  debugPrint(log_, GPL, "npinit", 1, "InitialHPWL: {}", prevHpwl_);
+  // printf("InitialHPWL: %ld, ", prevHpwl_);
 
   // FFT update
   updateDensityForceBin();
 
   baseWireLengthCoef_
-      = npVars_.initWireLengthCoef
+      = npVars_->initWireLengthCoef
         / (static_cast<float>(binSizeX() + binSizeY()) * 0.5);
 
-  debugPrint(
-      log_, GPL, "npinit", 1, "BaseWireLengthCoef: {:g}", baseWireLengthCoef_);
+  // printf("BaseWireLengthCoef: %f, ", baseWireLengthCoef_);
 
   sumOverflow_ = static_cast<float>(overflowArea())
                  / static_cast<float>(nesterovInstsArea());
@@ -2230,21 +2302,21 @@ void NesterovBase::initDensity1(){
   sumOverflowUnscaled_ = static_cast<float>(overflowAreaUnscaled())
                          / static_cast<float>(nesterovInstsArea());
 
-  debugPrint(log_, GPL, "npinit", 1, "OverflowArea: {}", overflowArea());
-  debugPrint(
-      log_, GPL, "npinit", 1, "NesterovInstArea: {}", nesterovInstsArea());
-  debugPrint(
-      log_, GPL, "npinit", 1, "InitSumOverflow: {:g}", sumOverflowUnscaled_);
+  // printf("OverflowArea: %ld, ", overflowArea());
+  // printf("NesterovInstArea: %ld, ", nesterovInstsArea());
+  // printf("InitSumOverflow: %f, ", sumOverflowUnscaled_);
 
 }
 
 float NesterovBase::initDensity2(){
 
-  densityPenalty_
-      = (wireLengthGradSum_ / densityGradSum_) * npVars_.initDensityPenalty;
+  // printf("WireLengthGradSum %f, ", wireLengthGradSum_);
+  // printf("DensityGradSum %f, ", densityGradSum_);
 
-  debugPrint(
-      log_, GPL, "npinit", 1, "InitDensityPenalty {:g}", densityPenalty_);
+  densityPenalty_
+      = (wireLengthGradSum_ / densityGradSum_) * npVars_->initDensityPenalty;
+
+  // printf("InitDensityPenalty %f, ", densityPenalty_);
 
   sumOverflow_ = static_cast<float>(overflowArea())
                  / static_cast<float>(nesterovInstsArea());
@@ -2252,18 +2324,21 @@ float NesterovBase::initDensity2(){
   sumOverflowUnscaled_ = static_cast<float>(overflowAreaUnscaled())
                          / static_cast<float>(nesterovInstsArea());
 
-  debugPrint(
-      log_, GPL, "npinit", 1, "PrevSumOverflow {:g}", sumOverflowUnscaled_);
+  // printf("PrevSumOverflow %f\n", sumOverflowUnscaled_);
+
+  // for(int i = 0; i < prevSLPCoordi_.size(); i++){
+  //   printf("Cell %d: (%g, %g) - (%g, %g)\n", i, prevSLPCoordi_[i].x, prevSLPCoordi_[i].y, curSLPCoordi_[i].x, curSLPCoordi_[i].y);
+  // }
 
   stepLength_ = getStepLength(
       prevSLPCoordi_, prevSLPSumGrads_, curSLPCoordi_, curSLPSumGrads_);
 
   // print all previous variables
-  printf("[init density 2] Group %s, wirelengthgradsum: %f, densitygradsum: %f, densitypenalty: %f, sumOverflow: %f, sumOverFlowUnscaled: %f ,stepLength: %f\n",
-    (pb_->group())? pb_->group()->getName() : "TOP", wireLengthGradSum_, densityGradSum_, densityPenalty_, sumOverflow_, sumOverflowUnscaled_, stepLength_);
+  // printf("[init density 2] Group %s, wirelengthgradsum: %f, densitygradsum: %f, densitypenalty: %f, sumOverflow: %f, sumOverFlowUnscaled: %f ,stepLength: %f\n",
+  //   (pb_->group())? pb_->group()->getName() : "TOP", wireLengthGradSum_, densityGradSum_, densityPenalty_, sumOverflow_, sumOverflowUnscaled_, stepLength_);
 
   
-  debugPrint(log_, GPL, "npinit", 1, "InitialStepLength {:g}", stepLength_);
+  // printf("InitialStepLength %f\n", stepLength_);
 
   return stepLength_;
 
@@ -2287,8 +2362,9 @@ float NesterovBase::getStepLength(
   debugPrint(
       log_, GPL, "getStepLength", 1, "GradientDistance: {:g}", gradDistance);
 
-  printf("[getStepLength] coordiDistance: %f, gradDistance: %f \n", coordiDistance, gradDistance);
-
+  // printf("[getStepLength] coordiDistance: %f, gradDistance: %f \n", coordiDistance, gradDistance);
+  // printf("CoordinateDistance: %g\n", coordiDistance);
+  // printf("GradientDistance: %g\n", gradDistance);
   return coordiDistance / gradDistance;
 }
 
@@ -2348,25 +2424,29 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
         wireLengthPreCondi.x + densityPenalty_ * densityPrecondi.x,
         wireLengthPreCondi.y + densityPenalty_ * densityPrecondi.y);
 
-    if (sumPrecondi.x <= npVars_.minPreconditioner) {
-      sumPrecondi.x = npVars_.minPreconditioner;
+    if (sumPrecondi.x <= npVars_->minPreconditioner) {
+      sumPrecondi.x = npVars_->minPreconditioner;
     }
 
-    if (sumPrecondi.y <= npVars_.minPreconditioner) {
-      sumPrecondi.y = npVars_.minPreconditioner;
+    if (sumPrecondi.y <= npVars_->minPreconditioner) {
+      sumPrecondi.y = npVars_->minPreconditioner;
     }
 
-    if(gCell->isInstance()){
-      printf("WireLength gradient for cell %s is: (%f,%f) \n", gCell->instance()->dbInst()->getName().c_str(), wireLengthGrads[i].x, wireLengthGrads[i].y);
-      printf("Density gradient for cell %s is: (%f,%f) \n", gCell->instance()->dbInst()->getName().c_str(), densityPenalty_ * densityGrads[i].x, densityPenalty_ * densityGrads[i].y);
-      printf("Sum gradient for cell %s is: (%f,%f) \n", gCell->instance()->dbInst()->getName().c_str(), sumGrads[i].x, sumGrads[i].y);
-      printf("--------------\n");
-    }
+    // if(gCell->isInstance()){
+    //   printf("WireLength gradient for cell %s is: (%f,%f) \n", gCell->instance()->dbInst()->getName().c_str(), wireLengthGrads[i].x, wireLengthGrads[i].y);
+    //   printf("Density gradient for cell %s is: (%f,%f) \n", gCell->instance()->dbInst()->getName().c_str(), densityPenalty_ * densityGrads[i].x, densityPenalty_ * densityGrads[i].y);
+    //   printf("Sum gradient for cell %s is: (%f,%f) \n", gCell->instance()->dbInst()->getName().c_str(), sumGrads[i].x, sumGrads[i].y);
+    //   printf("--------------\n");
+    // }
 
     sumGrads[i].x /= sumPrecondi.x;
     sumGrads[i].y /= sumPrecondi.y;
     
-    
+    // printf("Wirelength gradient for cell %ld is: (%f,%f) \n", i, wireLengthGrads[i].x, wireLengthGrads[i].y);
+    // printf("Density gradient for cell %ld is: (%f,%f) \n", i, densityGrads[i].x, densityGrads[i].y);
+    // printf("Sum gradient for cell %ld is: (%f,%f) \n", i, sumGrads[i].x, sumGrads[i].y);
+    // printf("Density penalty is: %f \n", densityPenalty_);
+    // printf("Sum preconditioner is: (%f,%f) \n", sumPrecondi.x, sumPrecondi.y);
 
     gradSum += fabs(sumGrads[i].x) + fabs(sumGrads[i].y);
   }
@@ -2381,37 +2461,38 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
       log_, GPL, "updateGrad", 1, "DensityGradSum: {:g}", densityGradSum_);
   debugPrint(log_, GPL, "updateGrad", 1, "GradSum: {:g}", gradSum);
 
-  // sometimes wirelength gradient is zero when design is too small
-  if (wireLengthGradSum_ == 0
-      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
-    wlCoeffX *= 0.5;
-    wlCoeffY *= 0.5;
-    baseWireLengthCoef_ *= 0.5;
-    debugPrint(
-        log_,
-        GPL,
-        "updateGrad",
-        1,
-        "sum(WL gradient) = 0 detected, trying again with wlCoef: {:g} {:g}",
-        wlCoeffX,
-        wlCoeffY);
+  // // sometimes wirelength gradient is zero when design is too small
+  // if (wireLengthGradSum_ == 0
+  //     && recursionCntWlCoef_ < npVars_->maxRecursionWlCoef) {
+  //   wlCoeffX *= 0.5;
+  //   wlCoeffY *= 0.5;
+  //   baseWireLengthCoef_ *= 0.5;
+  //   debugPrint(
+  //       log_,
+  //       GPL,
+  //       "updateGrad",
+  //       1,
+  //       "sum(WL gradient) = 0 detected, trying again with wlCoef: {:g} {:g}",
+  //       wlCoeffX,
+  //       wlCoeffY);
 
-    // update WL forces
-    nbc_->updateWireLengthForceWA(wlCoeffX, wlCoeffY);
+  //   // update WL forces
+  //   nbc_->updateWireLengthForceWA(wlCoeffX, wlCoeffY);
 
-    // recursive call again with smaller wirelength coef
-    recursionCntWlCoef_++;
-    updateGradients(sumGrads, wireLengthGrads, densityGrads, wlCoeffX, wlCoeffY);
-  }
+  //   // recursive call again with smaller wirelength coef
+  //   recursionCntWlCoef_++;
+  //   updateGradients(sumGrads, wireLengthGrads, densityGrads, wlCoeffX, wlCoeffY);
+  // }
 
-  // divergence detection on
-  // Wirelength / density gradient calculation
-  if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
-      || isnan(densityGradSum_) || isinf(densityGradSum_)) {
-    isDiverged_ = true;
-    divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
-    divergeCode_ = 306;
-  }
+  // // divergence detection on
+  // // Wirelength / density gradient calculation
+  // if (isnan(wireLengthGradSum_) || isinf(wireLengthGradSum_)
+  //     || isnan(densityGradSum_) || isinf(densityGradSum_)) {
+  //   isDiverged_ = true;
+  //   divergeMsg_ = "RePlAce diverged at wire/density gradient Sum.";
+  //   divergeCode_ = 306;
+  // }
+
 }
 
 
@@ -2429,21 +2510,25 @@ void NesterovBase::updateNextGradient(float wlCoeffX, float wlCoeffY){
 
 void NesterovBase::updateInitialPrevSLPCoordi()
 {
+  // printf("\n---------\nInitial PrevSLPCoordi with coeff: %f\n", npVars_->initialPrevCoordiUpdateCoef);
   for (size_t i = 0; i < gCells_.size(); i++) {
     GCell* curGCell = gCells_[i];
 
     float prevCoordiX
         = curSLPCoordi_[i].x
-          - npVars_.initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].x;
+          - npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].x;
 
     float prevCoordiY
         = curSLPCoordi_[i].y
-          - npVars_.initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y;
+          - npVars_->initialPrevCoordiUpdateCoef * curSLPSumGrads_[i].y;
 
     FloatPoint newCoordi(
         getDensityCoordiLayoutInsideX(curGCell, prevCoordiX),
         getDensityCoordiLayoutInsideY(curGCell, prevCoordiY));
 
+    // printf("%s - %f %f\n", (curGCell->isInstance())? curGCell->instance()->dbInst()->getName().c_str() : "Filler", newCoordi.x, newCoordi.y);
+
+    // printf("%ld - (%f,%f) => (%f %f)\n", i, curSLPSumGrads_[i].x, curSLPSumGrads_[i].y, newCoordi.x, newCoordi.y);
     prevSLPCoordi_[i] = newCoordi;
   }
 }
@@ -2462,16 +2547,22 @@ void NesterovBase::updateDensityCenterNextSLP(){
   updateGCellDensityCenterLocation(nextSLPCoordi_);
 }
 
+void NesterovBase::resetMinSumOverflow(){
+  // reset the divergence detect conditions
+  minSumOverflow = 1e30;
+  hpwlWithMinSumOverflow = 1e30;
+}
+
 float NesterovBase::getPhiCoef(float scaledDiffHpwl) const
 {
   debugPrint(
       log_, GPL, "getPhiCoef", 1, "InputScaleDiffHPWL: {:g}", scaledDiffHpwl);
 
   float retCoef = (scaledDiffHpwl < 0)
-                      ? npVars_.maxPhiCoef
-                      : npVars_.maxPhiCoef
-                            * pow(npVars_.maxPhiCoef, scaledDiffHpwl * -1.0);
-  retCoef = std::max(npVars_.minPhiCoef, retCoef);
+                      ? npVars_->maxPhiCoef
+                      : npVars_->maxPhiCoef
+                            * pow(npVars_->maxPhiCoef, scaledDiffHpwl * -1.0);
+  retCoef = std::max(npVars_->minPhiCoef, retCoef);
   return retCoef;
 }
 
@@ -2517,7 +2608,7 @@ void NesterovBase::updateNextIter(const int iter)
   // to our limited ability to move instances off macros cleanly.  As that
   // improves this should no longer be needed.
   const float fractionOfMaxIters
-      = static_cast<float>(iter) / npVars_.maxNesterovIter;
+      = static_cast<float>(iter) / npVars_->maxNesterovIter;
   const float overflowDenominator
       = std::max(static_cast<float>(nesterovInstsArea()),
                  fractionOfMaxIters * pb_->nonPlaceInstsArea() * 0.05f);
@@ -2543,7 +2634,7 @@ void NesterovBase::updateNextIter(const int iter)
   debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
 
   float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
-                             / npVars_.referenceHpwl);
+                             / npVars_->referenceHpwl);
 
   prevHpwl_ = hpwl;
   densityPenalty_ *= phiCoef;
@@ -2638,7 +2729,7 @@ void NesterovBase::nesterovAdjustPhi(){
   // large designs
   if (!isMaxPhiCoefChanged_ && sumOverflowUnscaled_ < 0.35f) {
     isMaxPhiCoefChanged_ = true;
-    npVars_.maxPhiCoef *= 0.99;
+    npVars_->maxPhiCoef *= 0.99;
   }
 }
 
@@ -2665,33 +2756,32 @@ void NesterovBase::cutFillerCoordinates()
 }
 
 
-void NesterovBase::snapshot(float wlcoeffX, float wlcoeffY){
+void NesterovBase::snapshot(){
+  if (isConverged_) {
+    return;
+  }
   // save snapshots for routability-driven
-    if (!isSnapshotSaved && npVars_.routabilityDrivenMode
-        && 0.6 >= sumOverflowUnscaled_) {
-      snapshotCoordi = curCoordi_;
-      snapshotSLPCoordi = curSLPCoordi_;
-      snapshotSLPSumGrads = curSLPSumGrads_;
-      // TODO: see if we need to save this
-      // snapshotA = curA;
-      snapshotDensityPenalty = densityPenalty_;
-      snapshotStepLength = stepLength_;
-      snapshotWlCoefX = wlcoeffX;
-      snapshotWlCoefY = wlcoeffY;
-
-      isSnapshotSaved = true;
-      log_->report("[NesterovSolve] Snapshot saved at iter = {}", iter_);
-    }
+  snapshotCoordi = curCoordi_;
+  snapshotSLPCoordi = curSLPCoordi_;
+  snapshotSLPSumGrads = curSLPSumGrads_;
+  snapshotDensityPenalty = densityPenalty_;
+  snapshotStepLength = stepLength_;
+  isSnapshotSaved = true;
 }
 
 bool NesterovBase::checkConvergence() {
   if (isConverged_) {
     return true;
   }
-  if (sumOverflowUnscaled_ <= npVars_.targetOverflow) {
-      log_->report("[NesterovSolve] Group: {}, Finished with Overflow: {:.6f}",
-                   (pb_->group())? pb_->group()->getName() : "TOP",
+  if (sumOverflowUnscaled_ <= npVars_->targetOverflow) {
+
+      if(pb_->group()){
+        log_->report("[NesterovSolve] PowerDomain {} finished with Overflow: {:.6f}",
+                   pb_->group()->getName(),
                    sumOverflowUnscaled_);
+      }else {
+        log_->report("[NesterovSolve] Finished with Overflow: {:.6f}", sumOverflowUnscaled_);
+      }
 
       for (size_t k = 0; k < gCells_.size(); k++) {
           if(!gCells_[k]->isInstance()){
@@ -2722,23 +2812,22 @@ bool NesterovBase::checkDivergence(){
 
 
 bool NesterovBase::revertDivergence(){
-  // // revert back the current density penality
-  // curCoordi_ = snapshotCoordi;
-  // curSLPCoordi_ = snapshotSLPCoordi;
-  // curSLPSumGrads_ = snapshotSLPSumGrads;
-  // curA = snapshotA;
-  // densityPenalty_ = snapshotDensityPenalty;
-  // stepLength_ = snapshotStepLength;
-  // wireLengthCoefX_ = snapshotWlCoefX;
-  // wireLengthCoefY_ = snapshotWlCoefY;
+  if (isConverged_) {
+    return true;
+  }
+  // revert back the current density penality
+  curCoordi_ = snapshotCoordi;
+  curSLPCoordi_ = snapshotSLPCoordi;
+  curSLPSumGrads_ = snapshotSLPSumGrads;
+  densityPenalty_ = snapshotDensityPenalty;
+  stepLength_ = snapshotStepLength;
 
-  // updateGCellDensityCenterLocation(curCoordi_);
-  // updateDensityForceBin();
-  // updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
+  updateGCellDensityCenterLocation(curCoordi_);
+  updateDensityForceBin();
 
-  // isDiverged_ = false;
-  // divergeCode_ = 0;
-  // divergeMsg_ = "";
+  isDiverged_ = false;
+  divergeCode_ = 0;
+  divergeMsg_ = "";
 
   return true;
 

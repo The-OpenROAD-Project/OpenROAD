@@ -85,6 +85,7 @@ class GCell
 
   void setClusteredInstance(const std::vector<Instance*>& insts);
   void setInstance(Instance* inst);
+  void clearInstances();
   void setFiller();
 
   // normal coordinates
@@ -919,7 +920,13 @@ class NesterovBase
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
   const float getSumOverflow() const { return sumOverflow_; }
+  const float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
   const float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
+  float getDensityPenalty() const { return densityPenalty_; }
+  
+
+  float getWireLengthGradSum() const { return wireLengthGradSum_; }
+  float getDensityGradSum() const { return densityGradSum_; }
 
   // update gCells with lx, ly
   void updateGCellLocation(const std::vector<FloatPoint>& points);
@@ -929,7 +936,6 @@ class NesterovBase
 
   void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& points);
 
-  void setNesterovPlaceVars(NesterovPlaceVars npVars) { npVars_ = npVars; }
 
   int binCntX() const;
   int binCntY() const;
@@ -1010,7 +1016,7 @@ class NesterovBase
   // Nesterov Loop
   void initDensity1();
   float initDensity2();
-  void setNpVars(NesterovPlaceVars npVars) { npVars_ = npVars; }
+  void setNpVars(NesterovPlaceVars* npVars) { npVars_ = npVars; }
 
   void updateGradients(std::vector<FloatPoint>& sumGrads,
                        std::vector<FloatPoint>& wireLengthGrads,
@@ -1028,7 +1034,7 @@ class NesterovBase
   float getPhiCoef(float scaledDiffHpwl) const;
   void cutFillerCoordinates();
 
-  void snapshot(float wlcoeffX, float wlcoeffY);
+  void snapshot();
 
   bool checkConvergence();
   bool checkDivergence();
@@ -1047,6 +1053,12 @@ class NesterovBase
   void nesterovUpdateCoordinates(float coeff);
   bool nesterovUpdateStepLength();
   void nesterovAdjustPhi();
+
+  void resetMinSumOverflow();
+
+  void printStepLength() {
+    printf("stepLength = %f\n", stepLength_);
+  }
 
   bool isDiverged() const { return isDiverged_; }
  private:
@@ -1137,7 +1149,7 @@ class NesterovBase
   int recursionCntWlCoef_;
   int recursionCntInitSLPCoef_;
   
-  NesterovPlaceVars npVars_;
+  NesterovPlaceVars* npVars_;
 
   bool isMaxPhiCoefChanged_;
 

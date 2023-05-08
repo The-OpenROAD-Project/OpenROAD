@@ -84,10 +84,16 @@ class NesterovPlace
 
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
-  float getDensityPenalty() const { return densityPenalty_; }
+  
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
+
+
+  void updatePrevGradient(std::shared_ptr<NesterovBase> nb);
+  void updateCurGradient(std::shared_ptr<NesterovBase> nb);
+  void updateNextGradient(std::shared_ptr<NesterovBase> nb);
+
 
  private:
   std::shared_ptr<PlacerBaseCommon> pbc_;
@@ -100,42 +106,14 @@ class NesterovPlace
   NesterovPlaceVars npVars_;
   std::unique_ptr<Graphics> graphics_;
 
-  // // SLP is Step Length Prediction.
-  // //
-  // // y_st, y_dst, y_wdst, w_pdst
-  // std::vector<FloatPoint> curSLPCoordi_;
-  // std::vector<FloatPoint> curSLPWireLengthGrads_;
-  // std::vector<FloatPoint> curSLPDensityGrads_;
-  // std::vector<FloatPoint> curSLPSumGrads_;
-
-  // // y0_st, y0_dst, y0_wdst, y0_pdst
-  // std::vector<FloatPoint> nextSLPCoordi_;
-  // std::vector<FloatPoint> nextSLPWireLengthGrads_;
-  // std::vector<FloatPoint> nextSLPDensityGrads_;
-  // std::vector<FloatPoint> nextSLPSumGrads_;
-
-  // // z_st, z_dst, z_wdst, z_pdst
-  // std::vector<FloatPoint> prevSLPCoordi_;
-  // std::vector<FloatPoint> prevSLPWireLengthGrads_;
-  // std::vector<FloatPoint> prevSLPDensityGrads_;
-  // std::vector<FloatPoint> prevSLPSumGrads_;
-
-  // // x_st and x0_st
-  // std::vector<FloatPoint> curCoordi_;
-  // std::vector<FloatPoint> nextCoordi_;
-
-  // // save initial coordinates -- needed for RD
-  // std::vector<FloatPoint> initCoordi_;
-
+  float total_sum_overflow_;
+  float total_sum_overflow_unscaled_;
+  float average_overflow_;
+  float average_overflow_unscaled_;
+  
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;
 
-  float wireLengthGradSum_;
-  float densityGradSum_;
-
-
-  // opt_phi_cof
-  float densityPenalty_;
 
   // base_wcof
   float baseWireLengthCoef_;
@@ -144,12 +122,9 @@ class NesterovPlace
   float wireLengthCoefX_;
   float wireLengthCoefY_;
 
-  // phi is described in ePlace paper.
-  float sumOverflow_;
-  float sumOverflowUnscaled_;
-
   // half-parameter-wire-length
   int64_t prevHpwl_;
+  
 
   float isDiverged_;
   float isRoutabilityNeed_;

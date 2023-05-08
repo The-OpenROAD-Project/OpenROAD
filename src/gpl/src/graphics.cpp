@@ -44,10 +44,12 @@
 
 namespace gpl {
 
-Graphics::Graphics(utl::Logger* logger, std::shared_ptr<PlacerBase> pb)
+Graphics::Graphics(utl::Logger* logger, std::shared_ptr<PlacerBaseCommon> pbc, std::vector<std::shared_ptr<PlacerBase>>& pbVec)
     : HeatMapDataSource(logger, "gpl", "gpl"),
-      pb_(pb),
-      nb_(),
+      pbc_(pbc),
+      nbc_(),
+      pbVec_(pbVec),
+      nbVec_(),
       np_(nullptr),
       selected_(nullptr),
       draw_bins_(false),
@@ -59,13 +61,17 @@ Graphics::Graphics(utl::Logger* logger, std::shared_ptr<PlacerBase> pb)
 
 Graphics::Graphics(utl::Logger* logger,
                    NesterovPlace* np,
-                   std::shared_ptr<PlacerBase> pb,
-                   std::shared_ptr<NesterovBase> nb,
+                   std::shared_ptr<PlacerBaseCommon> pbc,
+                   std::shared_ptr<NesterovBaseCommon> nbc,
+                   std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                   std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                    bool draw_bins,
                    odb::dbInst* inst)
     : HeatMapDataSource(logger, "gpl", "gpl"),
-      pb_(pb),
-      nb_(nb),
+      pbc_(pbc),
+      nbc_(nbc),
+      pbVec_(pbVec),
+      nbVec_(nbVec),
       np_(np),
       selected_(nullptr),
       draw_bins_(draw_bins),
@@ -75,7 +81,7 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (GCell* cell : nb_->gCells()) {
+    for (GCell* cell : nbc_->gCells()) {
       Instance* cell_inst = cell->instance();
       if (cell_inst && cell_inst->dbInst() == inst) {
         selected_ = cell;
@@ -112,14 +118,14 @@ void Graphics::initHeatmap()
         }
       });
 
-  setBlock(pb_->db()->getChip()->getBlock());
+  setBlock(pbc_->db()->getChip()->getBlock());
   registerHeatMap();
 }
 
 void Graphics::drawBounds(gui::Painter& painter)
 {
   // draw core bounds
-  auto& die = pb_->die();
+  auto& die = pbc_->die();
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
   painter.drawLine(die.coreLx(), die.coreLy(), die.coreUx(), die.coreLy());
   painter.drawLine(die.coreUx(), die.coreLy(), die.coreUx(), die.coreUy());
@@ -132,7 +138,7 @@ void Graphics::drawInitial(gui::Painter& painter)
   drawBounds(painter);
 
   painter.setPen(gui::Painter::white, /* cosmetic */ true);
-  for (auto& inst : pb_->placeInsts()) {
+  for (auto& inst : pbc_->placeInsts()) {
     int lx = inst->lx();
     int ly = inst->ly();
     int ux = inst->ux();
@@ -147,11 +153,12 @@ void Graphics::drawInitial(gui::Painter& painter)
 
 void Graphics::drawNesterov(gui::Painter& painter)
 {
+  // TODO: Support graphics for multiple Nesterov instances
   drawBounds(painter);
   if (draw_bins_) {
     // Draw the bins
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
-    for (auto& bin : nb_->bins()) {
+    for (auto& bin : nbVec_[0]->bins()) {
       int color = bin->density() * 50 + 20;
 
       color = (color > 255) ? 255 : (color < 20) ? 20 : color;
@@ -164,7 +171,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
   // Draw the placeable objects
   painter.setPen(gui::Painter::white);
-  for (auto* gCell : nb_->gCells()) {
+  for (auto* gCell : nbc_->gCells()) {
     const int gcx = gCell->dCx();
     const int gcy = gCell->dCy();
 
@@ -190,7 +197,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
-  for (auto& inst : pb_->nonPlaceInsts()) {
+  for (auto& inst : pbVec_[0]->nonPlaceInsts()) {
     painter.drawRect({inst->lx(), inst->ly(), inst->ux(), inst->uy()});
   }
 
@@ -217,13 +224,13 @@ void Graphics::drawNesterov(gui::Painter& painter)
   if (draw_bins_) {
     float efMax = 0;
     int max_len = std::numeric_limits<int>::max();
-    for (auto& bin : nb_->bins()) {
+    for (auto& bin : nbVec_[0]->bins()) {
       efMax
           = std::max(efMax, hypot(bin->electroForceX(), bin->electroForceY()));
       max_len = std::min({max_len, bin->dx(), bin->dy()});
     }
 
-    for (auto& bin : nb_->bins()) {
+    for (auto& bin : nbVec_[0]->bins()) {
       float fx = bin->electroForceX();
       float fy = bin->electroForceY();
       float f = hypot(fx, fy);
@@ -242,7 +249,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
 void Graphics::drawObjects(gui::Painter& painter)
 {
-  if (nb_) {
+  if (nbc_) {
     drawNesterov(painter);
   } else {
     drawInitial(painter);
@@ -251,42 +258,42 @@ void Graphics::drawObjects(gui::Painter& painter)
 
 void Graphics::reportSelected()
 { // TODO: PD_FIX
-  // if (!selected_) {
-  //   return;
-  // }
-  // auto instance = selected_->instance();
-  // logger_->report("Inst: {}", instance->dbInst()->getName());
+  if (!selected_) {
+    return;
+  }
+  auto instance = selected_->instance();
+  logger_->report("Inst: {}", instance->dbInst()->getName());
 
-  // if (np_) {
-  //   auto wlCoeffX = np_->getWireLengthCoefX();
-  //   auto wlCoeffY = np_->getWireLengthCoefY();
+  if (np_) {
+    auto wlCoeffX = np_->getWireLengthCoefX();
+    auto wlCoeffY = np_->getWireLengthCoefY();
 
-  //   logger_->report("  Wire Length Gradient");
-  //   for (auto& gPin : selected_->gPins()) {
-  //     FloatPoint wlGrad
-  //         = nb_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
-  //     const float weight = gPin->gNet()->totalWeight();
-  //     logger_->report("          ({:+.2e}, {:+.2e}) (weight = {}) pin {}",
-  //                     wlGrad.x,
-  //                     wlGrad.y,
-  //                     weight,
-  //                     gPin->pin()->name());
-  //   }
+    logger_->report("  Wire Length Gradient");
+    for (auto& gPin : selected_->gPins()) {
+      FloatPoint wlGrad
+          = nbc_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+      const float weight = gPin->gNet()->totalWeight();
+      logger_->report("          ({:+.2e}, {:+.2e}) (weight = {}) pin {}",
+                      wlGrad.x,
+                      wlGrad.y,
+                      weight,
+                      gPin->pin()->name());
+    }
 
-  //   FloatPoint wlGrad
-  //       = nb_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
-  //   logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
+    FloatPoint wlGrad
+        = nbc_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
+    logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
 
-  //   auto densityGrad = nb_->getDensityGradient(selected_);
-  //   float densityPenalty = np_->getDensityPenalty();
-  //   logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
-  //                   densityPenalty * densityGrad.x,
-  //                   densityPenalty * densityGrad.y,
-  //                   densityPenalty);
-  //   logger_->report("  overall ({: .2e}, {: .2e})",
-  //                   wlGrad.x + densityPenalty * densityGrad.x,
-  //                   wlGrad.y + densityPenalty * densityGrad.y);
-  // }
+    auto densityGrad = nbVec_[0]->getDensityGradient(selected_);
+    float densityPenalty = nbVec_[0]->getDensityPenalty();
+    logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
+                    densityPenalty * densityGrad.x,
+                    densityPenalty * densityGrad.y,
+                    densityPenalty);
+    logger_->report("  overall ({: .2e}, {: .2e})",
+                    wlGrad.x + densityPenalty * densityGrad.x,
+                    wlGrad.y + densityPenalty * densityGrad.y);
+  }
 }
 
 void Graphics::cellPlot(bool pause)
@@ -303,11 +310,11 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
 {
   selected_ = nullptr;
 
-  if (layer || !nb_) {
+  if (layer || !nbc_) {
     return gui::SelectionSet();
   }
 
-  for (GCell* cell : nb_->gCells()) {
+  for (GCell* cell : nbc_->gCells()) {
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 
@@ -338,13 +345,13 @@ void Graphics::status(const std::string& message)
 
 double Graphics::getGridXSize() const
 {
-  const BinGrid& grid = nb_->getBinGrid();
+  const BinGrid& grid = nbVec_[0]->getBinGrid();
   return grid.binSizeX() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
 double Graphics::getGridYSize() const
 {
-  const BinGrid& grid = nb_->getBinGrid();
+  const BinGrid& grid = nbVec_[0]->getBinGrid();
   return grid.binSizeY() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
@@ -355,7 +362,7 @@ odb::Rect Graphics::getBounds() const
 
 bool Graphics::populateMap()
 {
-  const BinGrid& grid = nb_->getBinGrid();
+  const BinGrid& grid = nbVec_[0]->getBinGrid();
   double sum = 0;
   for (const Bin* bin : grid.bins()) {
     odb::Rect box(bin->lx(), bin->ly(), bin->ux(), bin->uy());

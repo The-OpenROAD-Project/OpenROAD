@@ -180,12 +180,27 @@ void Replace::reset()
 
 void Replace::doIncrementalPlace()
 {
-  PlacerBaseVars pbVars;
-  pbVars.padLeft = padLeft_;
-  pbVars.padRight = padRight_;
-  pbVars.skipIoMode = skipIoMode_;
+  if (pbc_ == nullptr) {
+    PlacerBaseVars pbVars;
+    pbVars.padLeft = padLeft_;
+    pbVars.padRight = padRight_;
+    pbVars.skipIoMode = skipIoMode_;
 
-  pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
+    pbc_ = std::make_shared<PlacerBaseCommon>(db_, pbVars, log_);
+
+    pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
+
+    for(auto pd : db_->getChip()->getBlock()->getPowerDomains()){
+      if(pd->getGroup()){
+        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+      }
+    } 
+
+    total_placeable_insts_ = 0;
+    for(auto pb : pbVec_){
+      total_placeable_insts_ += pb->placeInsts().size();
+    }
+  }
 
   // Lock down already placed objects
   int locked_cnt = 0;
@@ -337,7 +352,7 @@ bool Replace::initNesterovPlace()
     rbVars.rcK3 = routabilityRcK3_;
     rbVars.rcK4 = routabilityRcK4_;
 
-    rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nbc_, log_);
+    rb_ = std::make_shared<RouteBase>(rbVars, db_, fr_, nbc_, nbVec_, log_);
   }
 
   if (!tb_) {
@@ -366,7 +381,7 @@ bool Replace::initNesterovPlace()
     npVars.debug_inst = gui_debug_inst_;
 
     for(auto nb : nbVec_){
-      nb->setNesterovPlaceVars(npVars);
+      nb->setNpVars(&npVars);
     }
 
     std::unique_ptr<NesterovPlace> np(
