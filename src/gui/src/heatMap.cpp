@@ -631,7 +631,6 @@ void HeatMapRenderer::drawObjects(Painter& painter)
   const int y_scale
       = std::ceil(min_dbu / (datasource_.getGridYSize() * dbu_per_micron));
 
-  std::vector<HeatMapDataSource::MapColor> draw_pts;
   const HeatMapDataSource::MapView map_view = datasource_.getMapView(bounds);
   const int x_size = map_view.shape()[0];
   const int y_size = map_view.shape()[1];
@@ -669,45 +668,41 @@ void HeatMapRenderer::drawObjects(Painter& painter)
         }
       }
 
-      draw_pts.push_back(draw_pt);
-    }
-  }
-
-  for (const auto& map_pt : draw_pts) {
-    if (!map_pt.has_value) {  // value not set so nothing to draw
-      continue;
-    }
-    if (!show_mins && map_pt.value < min_value) {
-      continue;
-    }
-    if (!show_maxs && map_pt.value > max_value) {
-      continue;
-    }
-
-    painter.setPen(map_pt.color, true);
-    painter.setBrush(map_pt.color);
-
-    painter.drawRect(map_pt.rect);
-
-    if (show_numbers) {
-      const int x = 0.5 * (map_pt.rect.xMin() + map_pt.rect.xMax());
-      const int y = 0.5 * (map_pt.rect.yMin() + map_pt.rect.yMax());
-      const Painter::Anchor text_anchor = Painter::Anchor::CENTER;
-      const double text_rect_margin = 0.8;
-
-      const std::string text = datasource_.formatValue(map_pt.value, false);
-      const odb::Rect text_bound
-          = painter.stringBoundaries(x, y, text_anchor, text);
-      bool draw = true;
-      if (text_bound.dx() >= text_rect_margin * map_pt.rect.dx()
-          || text_bound.dy() >= text_rect_margin * map_pt.rect.dy()) {
-        // don't draw if text will be too small
-        draw = false;
+      if (!draw_pt.has_value) {  // value not set so nothing to draw
+        continue;
+      }
+      if (!show_mins && draw_pt.value < min_value) {
+        continue;
+      }
+      if (!show_maxs && draw_pt.value > max_value) {
+        continue;
       }
 
-      if (draw) {
-        painter.setPen(Painter::white, true);
-        painter.drawString(x, y, text_anchor, text);
+      painter.setPen(draw_pt.color, true);
+      painter.setBrush(draw_pt.color);
+
+      painter.drawRect(draw_pt.rect);
+
+      if (show_numbers) {
+        const int x = draw_pt.rect.xCenter();
+        const int y = draw_pt.rect.yCenter();
+        const Painter::Anchor text_anchor = Painter::Anchor::CENTER;
+        const double text_rect_margin = 0.8;
+
+        const std::string text = datasource_.formatValue(draw_pt.value, false);
+        const odb::Rect text_bound
+            = painter.stringBoundaries(x, y, text_anchor, text);
+        bool draw = true;
+        if (text_bound.dx() >= text_rect_margin * draw_pt.rect.dx()
+            || text_bound.dy() >= text_rect_margin * draw_pt.rect.dy()) {
+          // don't draw if text will be too small
+          draw = false;
+        }
+
+        if (draw) {
+          painter.setPen(Painter::white, true);
+          painter.drawString(x, y, text_anchor, text);
+        }
       }
     }
   }
