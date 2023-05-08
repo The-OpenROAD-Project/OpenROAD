@@ -981,7 +981,6 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
 
   IOPin& io_pin = net->getIoPin(io_group[0]);
 
-  bool to_fallback = io_group.size() > slots_per_section_;
   if (!io_pin.isAssignedToSection() && !io_pin.inFallback()) {
     std::vector<int64_t> dst(sections.size(), 0);
     for (int i = 0; i < sections.size(); i++) {
@@ -994,46 +993,60 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
         dst[i] += pin_hpwl;
       }
     }
-    if (!to_fallback) {
-      for (auto i : sortIndexes(dst)) {
-        int section_available_slots
-            = sections[i].num_slots - sections[i].used_slots;
-        if (group_size <= sections[i].getMaxContiguousSlots(slots_)
-            && group_size <= section_available_slots) {
-          std::vector<int> group;
-          for (int pin_idx : io_group) {
-            IOPin& io_pin = net->getIoPin(pin_idx);
-            sections[i].pin_indices.push_back(pin_idx);
-            group.push_back(pin_idx);
-            sections[i].used_slots++;
-            io_pin.assignToSection();
-            if (mirrored_pins_.find(io_pin.getBTerm())
-                != mirrored_pins_.end()) {
-              assignMirroredPin(io_pin);
-            }
-          }
-          total_pins_assigned += group_size;
-          sections[i].pin_groups.push_back({group, order});
-          group_assigned = true;
-          break;
-        }
-        int available_slots = sections[i].num_slots - sections[i].used_slots;
-        std::string edge_str = getEdgeString(sections[i].edge);
-        const odb::Point& section_begin = slots_[sections[i].begin_slot].pos;
-        const odb::Point& section_end = slots_[sections[i].end_slot].pos;
-        logger_->warn(PPL,
-                      78,
-                      "Not enough available positions ({}) in section ({}, "
-                      "{})-({}, {}) at edge {} to place the pin "
-                      "group of size {}.",
-                      available_slots,
-                      dbuToMicrons(section_begin.getX()),
-                      dbuToMicrons(section_begin.getY()),
-                      dbuToMicrons(section_end.getX()),
-                      dbuToMicrons(section_end.getY()),
-                      edge_str,
-                      group_size);
+
+    for (auto i : sortIndexes(dst)) {
+      int section_available_slots
+          = sections[i].num_slots - sections[i].used_slots;
+
+      int section_max_group = 0;
+      for (const auto& group : sections[i].pin_groups) {
+        section_max_group
+            = std::max((int) group.pin_indices.size(), section_max_group);
       }
+
+      // avoid two or more groups in a same section when one of the number of
+      // pins of one group is greater than half of the number of slots per
+      // section. it avoids errors during Hungarian matching.
+      if ((group_size > slots_per_section_ / 2
+           && !sections[i].pin_groups.empty())
+          || (section_max_group > slots_per_section_ / 2)) {
+        continue;
+      }
+
+      if (group_size <= sections[i].getMaxContiguousSlots(slots_)
+          && group_size <= section_available_slots) {
+        std::vector<int> group;
+        for (int pin_idx : io_group) {
+          IOPin& io_pin = net->getIoPin(pin_idx);
+          sections[i].pin_indices.push_back(pin_idx);
+          group.push_back(pin_idx);
+          sections[i].used_slots++;
+          io_pin.assignToSection();
+          if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+            assignMirroredPin(io_pin);
+          }
+        }
+        total_pins_assigned += group_size;
+        sections[i].pin_groups.push_back({group, order});
+        group_assigned = true;
+        break;
+      }
+      int available_slots = sections[i].num_slots - sections[i].used_slots;
+      std::string edge_str = getEdgeString(sections[i].edge);
+      const odb::Point& section_begin = slots_[sections[i].begin_slot].pos;
+      const odb::Point& section_end = slots_[sections[i].end_slot].pos;
+      logger_->warn(PPL,
+                    78,
+                    "Not enough available positions ({}) in section ({}, "
+                    "{})-({}, {}) at edge {} to place the pin "
+                    "group of size {}.",
+                    available_slots,
+                    dbuToMicrons(section_begin.getX()),
+                    dbuToMicrons(section_begin.getY()),
+                    dbuToMicrons(section_end.getX()),
+                    dbuToMicrons(section_end.getY()),
+                    edge_str,
+                    group_size);
     }
     if (!group_assigned) {
       logger_->warn(PPL, 42, "Unsuccessfully assigned I/O groups.");
