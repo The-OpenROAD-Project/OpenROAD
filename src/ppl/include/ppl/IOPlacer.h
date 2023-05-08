@@ -195,6 +195,7 @@ class IOPlacer
   void initMirroredPins();
   void initConstraints();
   void sortConstraints();
+  void checkPinsInMultipleConstraints();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
