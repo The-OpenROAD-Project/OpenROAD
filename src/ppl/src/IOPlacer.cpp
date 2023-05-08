@@ -1476,21 +1476,6 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
       continue;
     }
 
-    if ((io_pin.isPlaced() || io_pin.inFallback()) && !io_pin.isInGroup()) {
-      // If a pin from the constraint is already placed, that means that the pin
-      // was placed for another constraint.
-      Interval interval = constraint.interval;
-      logger_->warn(PPL,
-                    97,
-                    "Pin {} is assigned to another constraint, and will be "
-                    "ignored from region constraint {}, {}-{}.",
-                    io_pin.getName(),
-                    getEdgeString(interval.getEdge()),
-                    interval.getBegin(),
-                    interval.getEnd());
-      continue;
-    }
-
     if (io_pin.isMirrored()
         && mirrored_pins_.find(io_pin.getBTerm()) == mirrored_pins_.end()) {
       logger_->warn(PPL,
