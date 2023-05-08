@@ -1037,15 +1037,6 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
     }
     if (!group_assigned) {
       logger_->warn(PPL, 42, "Unsuccessfully assigned I/O groups.");
-      if (to_fallback) {
-        logger_->warn(PPL,
-                      92,
-                      "Pin group of size {} does not fit any section. Adding "
-                      "to fallback mode.",
-                      io_group.size());
-      }
-      addGroupToFallback(io_group, order);
-      total_pins_assigned += io_group.size();
     }
   }
 
