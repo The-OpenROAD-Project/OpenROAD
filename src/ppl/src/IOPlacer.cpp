@@ -1775,8 +1775,6 @@ void IOPlacer::run(bool random_mode)
               edge_str);
         }
 
-        constrained_pins_cnt += placeFallbackPins(false);
-
         findPinAssignment(sections_for_constraint, mirrored_only);
         updateSlots();
 
@@ -1789,7 +1787,6 @@ void IOPlacer::run(bool random_mode)
     }
 
     setupSections(constrained_pins_cnt);
-    constrained_pins_cnt += placeFallbackPins(false);
     findPinAssignment(sections_, false);
   }
 
