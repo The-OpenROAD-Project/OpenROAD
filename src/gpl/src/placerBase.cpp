@@ -1134,6 +1134,7 @@ int64_t PlacerBase::hpwl() const
     net->updateBox(pbVars_.skipIoMode);
     hpwl += net->hpwl();
   }
+  assert(hpwl>=0);
   return hpwl;
 }
 
