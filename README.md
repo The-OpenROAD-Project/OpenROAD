@@ -9,7 +9,7 @@ semiconductor digital design. The OpenROAD flow delivers an
 Autonomous, No-Human-In-Loop (NHIL) flow, 24 hour turnaround from
 RTL-GDSII for rapid design exploration and physical design implementation.
 
-![rtl2gds.webp](./docs/images/rtl2gds.webp)
+![rtl2gds.svg](./docs/images/rtl2gds.svg)
 
 Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
@@ -107,11 +107,15 @@ CTS.
 
 ![ibexGui.webp](./docs/images/ibexGui.webp)
 
-### Placement Congestion View:
+### Automatic Hierarchical Macro Placement
+
+![Ariane133](./docs/images/ariane133_mpl2.webp)
+
+### Placement Congestion Visualization
 
 ![pl_congestion.webp](./docs/images/pl_congestion.webp)
 
-### CTS:
+### CTS
 
 ![clk_routing.webp](./docs/images/clk_routing.webp)
 
@@ -121,7 +125,7 @@ The OpenROAD application is PDK independent. However, it has been tested
 and validated with specific PDKs in the context of various flow
 controllers.
 
-OpenLane supports SkyWater 130nm.
+OpenLane supports SkyWater 130nm and GlobalFoundries 180nm.
 
 OpenROAD-flow-scripts supports several public and private PDKs
 including:
@@ -150,10 +154,10 @@ platform-specific files yourself.
 
 ## Tapeouts
 
-OpenROAD has been used for full physical implementation in over 600 tapeouts
-in SKY130 through the Google-sponsored, Efabless [MPW
-shuttle](https://efabless.com/open_shuttle_program) and
-[ChipIgnite](https://efabless.com/) programs.
+OpenROAD has been used for full physical implementation in over
+600 tapeouts in SKY130 and GF180 through the Google-sponsored,
+Efabless [MPW shuttle](https://efabless.com/open_shuttle_program)
+and [ChipIgnite](https://efabless.com/) programs.
 
 ![shuttle.webp](./docs/images/shuttle.webp)
 
