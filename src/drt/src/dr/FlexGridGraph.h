@@ -41,7 +41,7 @@
 namespace fr {
 class FlexDRWorker;
 class FlexDRGraphics;
-class FlexGridGraph
+class FlexGridGraph final
 {
  public:
   // constructors
