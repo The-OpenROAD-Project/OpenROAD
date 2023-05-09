@@ -2028,20 +2028,26 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
   painter->setBrush(QBrush());
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
-    // setup the instance's transform
-    QTransform xfm = initial_xfm;
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
-    addInstTransform(xfm, inst_xfm);
-    painter->setTransform(xfm);
 
-    // draw bbox
-    Rect master_box;
-    master->getPlacementBoundary(master_box);
-
-    if (minimum_size > master_box.dx() && minimum_size > master_box.dy()) {
-      painter->drawPoint(master_box.xMin(), master_box.yMin());
+    if (minimum_size > master->getWidth()
+        && minimum_size > master->getHeight()) {
+      painter->setTransform(initial_xfm);
+      int x;
+      int y;
+      inst->getOrigin(x, y);
+      painter->drawPoint(x, y);
     } else {
+      // setup the instance's transform
+      QTransform xfm = initial_xfm;
+      dbTransform inst_xfm;
+      inst->getTransform(inst_xfm);
+      addInstTransform(xfm, inst_xfm);
+      painter->setTransform(xfm);
+
+      // draw bbox
+      Rect master_box;
+      master->getPlacementBoundary(master_box);
+
       painter->drawRect(master_box.xMin(),
                         master_box.yMin(),
                         master_box.dx(),
@@ -2303,6 +2309,8 @@ void LayoutViewer::drawViaShapes(QPainter* painter,
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
 {
+  auto start_time = std::chrono::high_resolution_clock::now();
+
   const int instance_limit = instanceSizeLimit();
   const int shape_limit = shapeSizeLimit();
 
@@ -2473,6 +2481,13 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
+  }
+  if (logger_->debugCheck(utl::GUI, "draw", 1)) {
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto time_span
+        = std::chrono::duration<double, std::milli>(end_time - start_time);
+    logger_->debug(
+        utl::GUI, "draw", "elapsed render time {}ms", time_span.count());
   }
 }
 
