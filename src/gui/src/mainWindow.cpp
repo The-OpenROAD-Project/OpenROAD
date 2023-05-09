@@ -444,6 +444,7 @@ void MainWindow::init(sta::dbSta* sta)
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
   clock_viewer_->setSTA(sta);
+  histogram_widget_->setSTA(sta);
   // register descriptors
   auto* gui = Gui::get();
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);

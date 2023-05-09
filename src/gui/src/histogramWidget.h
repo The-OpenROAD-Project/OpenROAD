@@ -32,14 +32,18 @@
 
 #pragma once
 
-#include <QDockWidget>
-#include <QtCharts>
-#include <QString>
-#include <QPushButton>
-#include <QFrame>
 #include <QComboBox>
+#include <QDockWidget>
+#include <QPushButton>
+#include <QString>
+#include <QtCharts>
+#include <memory>
 
 #include "gui/gui.h"
+
+namespace sta {
+class dbSta;
+}
 
 namespace gui {
 
@@ -49,7 +53,9 @@ class HistogramWidget : public QDockWidget
 
  public:
   HistogramWidget(QWidget* parent = nullptr);
-  ~HistogramWidget() {}
+  ~HistogramWidget() {} 
+
+  void setSTA(sta::dbSta* sta);
 
  signals:
 
@@ -59,17 +65,16 @@ class HistogramWidget : public QDockWidget
   void populateChart();
 
  private:
+  sta::dbSta* sta_;
+
   QPushButton* settings_button_;
   QComboBox* mode_menu_;
 
   QBarSet* bar_set_;
   QBarSeries* series_;
-  QChart* chart_; 
+  QChart* chart_;
   QBarCategoryAxis* values_x_;
   QValueAxis* values_y_;
-
 };
 
-
-
-}
+}  // namespace gui
