@@ -107,12 +107,12 @@ class HeatMapDataSource
 
   // setup
   void showSetup();
-  virtual const std::string formatValue(double value, bool legend) const;
+  virtual std::string formatValue(double value, bool legend) const;
   const std::vector<MapSetting>& getMapSettings() const { return settings_; }
 
   // settings
   const std::string& getSettingsGroupName() const { return settings_group_; }
-  virtual const Renderer::Settings getSettings() const;
+  virtual Renderer::Settings getSettings() const;
   virtual void setSettings(const Renderer::Settings& settings);
 
   void setDisplayRange(double min, double max);
@@ -126,13 +126,13 @@ class HeatMapDataSource
   double getRealRangeMinimumValue() const;
   double getRealRangeMaximumValue() const;
   virtual double getDisplayRangeIncrement() const { return 1.0; }
-  virtual const std::string getValueUnits() const { return "%"; }
+  virtual std::string getValueUnits() const { return "%"; }
   virtual double convertValueToPercent(double value) const { return value; }
   virtual double convertPercentToValue(double percent) const { return percent; }
 
-  void setDrawBelowRangeMin(bool value);
+  void setDrawBelowRangeMin(bool show);
   bool getDrawBelowRangeMin() const { return draw_below_min_display_range_; }
-  void setDrawAboveRangeMax(bool value);
+  void setDrawAboveRangeMax(bool show);
   bool getDrawAboveRangeMax() const { return draw_above_max_display_range_; }
 
   void setLogScale(bool scale);
@@ -166,11 +166,11 @@ class HeatMapDataSource
   void ensureMap();
   void destroyMap();
   const Map& getMap() const { return map_; }
-  const MapView getMapView(const odb::Rect& bounds);
+  MapView getMapView(const odb::Rect& bounds);
   bool isPopulated() const { return populated_; }
 
-  const std::vector<std::pair<int, double>> getLegendValues() const;
-  const Painter::Color getColor(double value) const;
+  std::vector<std::pair<int, double>> getLegendValues() const;
+  Painter::Color getColor(double value) const;
   const SpectrumGenerator& getColorGenerator() const
   {
     return color_generator_;
@@ -268,8 +268,8 @@ class HeatMapRenderer : public Renderer
 
   virtual void drawObjects(Painter& painter) override;
 
-  virtual const std::string getSettingsGroupName() override;
-  virtual const Settings getSettings() override;
+  virtual std::string getSettingsGroupName() override;
+  virtual Settings getSettings() override;
   virtual void setSettings(const Settings& settings) override;
 
  private:
@@ -290,9 +290,8 @@ class RealValueHeatMapDataSource : public HeatMapDataSource
                              const std::string& settings_group = "");
   ~RealValueHeatMapDataSource() {}
 
-  virtual const std::string formatValue(double value,
-                                        bool legend) const override;
-  virtual const std::string getValueUnits() const override;
+  virtual std::string formatValue(double value, bool legend) const override;
+  virtual std::string getValueUnits() const override;
   virtual double convertValueToPercent(double value) const override;
   virtual double convertPercentToValue(double percent) const override;
   virtual double getDisplayRangeIncrement() const override;

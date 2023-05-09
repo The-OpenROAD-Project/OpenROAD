@@ -5,8 +5,6 @@ Checks: >
   -clang-analyzer-core.NonNullParamChecker,
   -clang-analyzer-cplusplus.NewDeleteLeaks,
   -clang-analyzer-optin.performance.Padding,
-  abseil-*,
-  -abseil-no-namespace,
   readability-*,
   -readability-identifier-naming
   -readability-braces-around-statements,

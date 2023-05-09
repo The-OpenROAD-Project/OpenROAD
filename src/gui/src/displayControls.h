@@ -102,10 +102,10 @@ class DisplayColorDialog : public QDialog
 {
   Q_OBJECT
  public:
-  DisplayColorDialog(QColor color,
+  DisplayColorDialog(const QColor& color,
                      Qt::BrushStyle pattern,
                      QWidget* parent = nullptr);
-  DisplayColorDialog(QColor color, QWidget* parent = nullptr);
+  DisplayColorDialog(const QColor& color, QWidget* parent = nullptr);
   ~DisplayColorDialog();
 
   QColor getSelectedColor() const { return color_; }
@@ -267,7 +267,7 @@ class DisplayControls : public QDockWidget,
 
   // This is called by the check boxes to update the state
   void itemChanged(QStandardItem* item);
-  void displayItemSelected(const QItemSelection& selected);
+  void displayItemSelected(const QItemSelection& selection);
   void displayItemDblClicked(const QModelIndex& index);
 
  private slots:
@@ -412,7 +412,7 @@ class DisplayControls : public QDockWidget,
                     const QColor& color = Qt::transparent,
                     const QVariant& user_data = QVariant());
 
-  const QIcon makeSwatchIcon(const QColor& color);
+  QIcon makeSwatchIcon(const QColor& color);
 
   void toggleAllChildren(bool checked, QStandardItem* parent, Column column);
   void toggleParent(const QStandardItem* parent,
@@ -454,7 +454,7 @@ class DisplayControls : public QDockWidget,
                                 int lower,
                                 int upper,
                                 std::set<const odb::dbTechLayer*>& layers);
-  void setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*> layers);
+  void setOnlyVisibleLayers(const std::set<const odb::dbTechLayer*>& layers);
 
   const ModelRow* getLayerRow(const odb::dbTechLayer* layer) const;
   const ModelRow* getSiteRow(odb::dbSite* site) const;

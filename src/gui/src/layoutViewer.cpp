@@ -87,7 +87,23 @@
 
 namespace gui {
 
-using namespace odb;
+using odb::dbBlock;
+using odb::dbBox;
+using odb::dbInst;
+using odb::dbMaster;
+using odb::dbMPin;
+using odb::dbMTerm;
+using odb::dbOrientType;
+using odb::dbRowDir;
+using odb::dbSite;
+using odb::dbTech;
+using odb::dbTechLayer;
+using odb::dbTechLayerDir;
+using odb::dbTechLayerType;
+using odb::dbTrackGrid;
+using odb::dbTransform;
+using odb::Point;
+using odb::Rect;
 
 // This class wraps the QPainter in the abstract Painter API for
 // Renderer instances to use.
@@ -126,7 +142,7 @@ class GuiPainter : public Painter
     painter_->setPen(pen);
   }
 
-  virtual void setPenWidth(int width) override
+  void setPenWidth(int width) override
   {
     QPen pen(painter_->pen().color());
     pen.setCosmetic(painter_->pen().isCosmetic());
@@ -187,14 +203,15 @@ class GuiPainter : public Painter
   }
   void drawRect(const odb::Rect& rect, int roundX = 0, int roundY = 0) override
   {
-    if (roundX > 0 || roundY > 0)
+    if (roundX > 0 || roundY > 0) {
       painter_->drawRoundedRect(
           QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()),
           roundX,
           roundY,
           Qt::RelativeSize);
-    else
+    } else {
       painter_->drawRect(QRect(rect.xMin(), rect.yMin(), rect.dx(), rect.dy()));
+    }
   }
   void drawPolygon(const std::vector<odb::Point>& points) override
   {
@@ -222,11 +239,11 @@ class GuiPainter : public Painter
     painter_->drawLine(x - o, y + o, x + o, y - o);
   }
 
-  const odb::Point determineStringOrigin(int x,
-                                         int y,
-                                         Anchor anchor,
-                                         const QString& text,
-                                         bool rotate_90 = false)
+  odb::Point determineStringOrigin(int x,
+                                   int y,
+                                   Anchor anchor,
+                                   const QString& text,
+                                   bool rotate_90 = false)
   {
     const QRect text_bbox = painter_->fontMetrics().boundingRect(text);
     const QPoint text_bbox_center = text_bbox.center();
@@ -304,10 +321,10 @@ class GuiPainter : public Painter
     painter_->setTransform(transform);
   }
 
-  virtual const odb::Rect stringBoundaries(int x,
-                                           int y,
-                                           Anchor anchor,
-                                           const std::string& s) override
+  odb::Rect stringBoundaries(int x,
+                             int y,
+                             Anchor anchor,
+                             const std::string& s) override
   {
     const QString text = QString::fromStdString(s);
     const odb::Point origin = determineStringOrigin(x, y, anchor, text);
@@ -334,7 +351,7 @@ class GuiPainter : public Painter
       const int x_dist = std::abs(x0 - x1);
       const int y_dist = std::abs(y0 - y1);
       std::string x_label = label;
-      std::string y_label = "";
+      std::string y_label;
       if (y_dist > x_dist) {
         std::swap(x_label, y_label);
       }
@@ -466,15 +483,16 @@ class GuiPainter : public Painter
   }
 };
 
-LayoutViewer::LayoutViewer(Options* options,
-                           ScriptWidget* output_widget,
-                           const SelectionSet& selected,
-                           const HighlightSet& highlighted,
-                           const std::vector<std::unique_ptr<Ruler>>& rulers,
-                           Gui* gui,
-                           std::function<bool(void)> usingDBU,
-                           std::function<bool(void)> showRulerAsEuclidian,
-                           QWidget* parent)
+LayoutViewer::LayoutViewer(
+    Options* options,
+    ScriptWidget* output_widget,
+    const SelectionSet& selected,
+    const HighlightSet& highlighted,
+    const std::vector<std::unique_ptr<Ruler>>& rulers,
+    Gui* gui,
+    const std::function<bool(void)>& usingDBU,
+    const std::function<bool(void)>& showRulerAsEuclidian,
+    QWidget* parent)
     : QWidget(parent),
       block_(nullptr),
       options_(options),
@@ -494,13 +512,9 @@ LayoutViewer::LayoutViewer(Options* options,
       building_ruler_(false),
       ruler_start_(nullptr),
       snap_edge_showing_(false),
-      snap_edge_(),
-      inspector_selection_(Selected()),
-      focus_(Selected()),
       animate_selection_(nullptr),
       block_drawing_(nullptr),
       repaint_requested_(true),
-      last_paint_time_(),
       repaint_interval_(0),
       logger_(nullptr),
       layout_context_menu_(new QMenu(tr("Layout Menu"), this))
@@ -678,13 +692,13 @@ void LayoutViewer::centerAt(const odb::Point& focus)
     if (value > max_value) {
       bar->setValue(max_value);
       return max_value + bar->pageStep() / 2;
-    } else if (value < min_value) {
+    }
+    if (value < min_value) {
       bar->setValue(min_value);
       return bar->pageStep() / 2;
-    } else {
-      bar->setValue(value);
-      return 0;
     }
+    bar->setValue(value);
+    return 0;
   };
 
   const int x_val = setScrollBar(scroller_->horizontalScrollBar(), pt.x());
@@ -783,10 +797,12 @@ int LayoutViewer::edgeToPointDistance(const odb::Point& pt,
 
 bool LayoutViewer::compareEdges(const Edge& lhs, const Edge& rhs) const
 {
-  const uint64 lhs_length_sqrd = std::pow(lhs.first.x() - lhs.second.x(), 2)
-                                 + std::pow(lhs.first.y() - lhs.second.y(), 2);
-  const uint64 rhs_length_sqrd = std::pow(rhs.first.x() - rhs.second.x(), 2)
-                                 + std::pow(rhs.first.y() - rhs.second.y(), 2);
+  const uint64_t lhs_length_sqrd
+      = std::pow(lhs.first.x() - lhs.second.x(), 2)
+        + std::pow(lhs.first.y() - lhs.second.y(), 2);
+  const uint64_t rhs_length_sqrd
+      = std::pow(rhs.first.x() - rhs.second.x(), 2)
+        + std::pow(rhs.first.y() - rhs.second.y(), 2);
 
   return lhs_length_sqrd < rhs_length_sqrd;
 }
@@ -796,7 +812,7 @@ void LayoutViewer::searchNearestViaEdge(
     dbTechLayer* search_layer,
     const Rect& search_line,
     const int shape_limit,
-    std::function<void(const Rect& rect)> check_rect)
+    const std::function<void(const Rect& rect)>& check_rect)
 {
   auto via_shapes = search_.searchViaSBoxShapes(cut_layer,
                                                 search_line.xMin(),
@@ -1300,7 +1316,7 @@ SelectionSet LayoutViewer::selectAt(odb::Rect region)
   return selected;
 }
 
-Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
+Selected LayoutViewer::selectAtPoint(const odb::Point& pt_dbu)
 {
   std::vector<Selected> selections;
   selectAt({pt_dbu.x(), pt_dbu.y(), pt_dbu.x(), pt_dbu.y()}, selections);
@@ -1316,6 +1332,7 @@ Selected LayoutViewer::selectAtPoint(odb::Point pt_dbu)
     // one that will emulate a circular queue so we don't just oscillate
     // between the first two
     std::vector<bool> is_selected;
+    is_selected.reserve(selections.size());
     for (auto& sel : selections) {
       is_selected.push_back(selected_.count(sel) != 0);
     }
@@ -1353,24 +1370,23 @@ odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt, bool snap)
 {
   if (!snap) {
     return end_pt;
-  } else {
-    odb::Point snapped = end_pt;
-    if (snap_edge_showing_) {
-      if (snap_edge_.first.x() == snap_edge_.second.x()
-          && snap_edge_.first.y() == snap_edge_.second.y()) {  // point snap
-        return {snap_edge_.first.x(), snap_edge_.first.y()};
-      }
-
-      bool is_vertical_edge = snap_edge_.first.x() == snap_edge_.second.x();
-      if (is_vertical_edge) {
-        snapped.setX(snap_edge_.first.x());
-      } else {
-        snapped.setY(snap_edge_.first.y());
-      }
+  }
+  odb::Point snapped = end_pt;
+  if (snap_edge_showing_) {
+    if (snap_edge_.first.x() == snap_edge_.second.x()
+        && snap_edge_.first.y() == snap_edge_.second.y()) {  // point snap
+      return {snap_edge_.first.x(), snap_edge_.first.y()};
     }
 
-    return snapped;
+    bool is_vertical_edge = snap_edge_.first.x() == snap_edge_.second.x();
+    if (is_vertical_edge) {
+      snapped.setX(snap_edge_.first.x());
+    } else {
+      snapped.setY(snap_edge_.first.y());
+    }
   }
+
+  return snapped;
 }
 
 odb::Point LayoutViewer::findNextSnapPoint(const odb::Point& end_pt,
@@ -1396,14 +1412,12 @@ odb::Point LayoutViewer::findNextRulerPoint(const odb::Point& mouse)
   const bool do_snap = !(qGuiApp->keyboardModifiers() & Qt::ControlModifier);
   if (ruler_start_ == nullptr) {
     return findNextSnapPoint(mouse, do_snap);
-  } else {
-    const bool do_any_snap = qGuiApp->keyboardModifiers() & Qt::ShiftModifier;
-    if (do_any_snap) {
-      return findNextSnapPoint(mouse, do_snap);
-    } else {
-      return findNextSnapPoint(mouse, *ruler_start_, do_snap);
-    }
   }
+  const bool do_any_snap = qGuiApp->keyboardModifiers() & Qt::ShiftModifier;
+  if (do_any_snap) {
+    return findNextSnapPoint(mouse, do_snap);
+  }
+  return findNextSnapPoint(mouse, *ruler_start_, do_snap);
 }
 
 void LayoutViewer::mousePressEvent(QMouseEvent* event)
@@ -1454,10 +1468,8 @@ void LayoutViewer::mouseMoveEvent(QMouseEvent* event)
 
       if (ruler_start_ != nullptr
           && !(qGuiApp->keyboardModifiers() & Qt::ShiftModifier)) {
-        const odb::Point mouse_pos = pt_dbu;
-
-        if (std::abs(ruler_start_->x() - mouse_pos.x())
-            < std::abs(ruler_start_->y() - mouse_pos.y())) {
+        if (std::abs(ruler_start_->x() - pt_dbu.x())
+            < std::abs(ruler_start_->y() - pt_dbu.y())) {
           // mostly vertical, so don't look for vertical snaps
           do_ver = false;
         } else {
@@ -1911,9 +1923,9 @@ void LayoutViewer::selectionAnimation(const Selected& selection,
     animate_selection_->timer = std::make_unique<QTimer>();
     animate_selection_->timer->setInterval(update_interval);
 
-    const qint64 max_animate_time
-        = QDateTime::currentMSecsSinceEpoch()
-          + (animate_selection_->max_state_count + 2) * update_interval;
+    const qint64 max_animate_time = QDateTime::currentMSecsSinceEpoch()
+                                    + (animate_selection_->max_state_count + 2)
+                                          * (qint64) update_interval;
     connect(animate_selection_->timer.get(),
             &QTimer::timeout,
             [this, max_animate_time]() {
@@ -2149,7 +2161,8 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
 
     if (master_height < minimum_size) {
       continue;
-    } else if (!inst->getMaster()->isCore() && master_width < minimum_size) {
+    }
+    if (!inst->getMaster()->isCore() && master_width < minimum_size) {
       // if core cell, just check master height
       continue;
     }
@@ -2562,14 +2575,16 @@ void LayoutViewer::drawRegions(QPainter* painter)
 
 void LayoutViewer::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
 {
-  if (route_guides_.empty())
+  if (route_guides_.empty()) {
     return;
+  }
   painter.setPen(layer);
   painter.setBrush(layer);
   for (auto net : route_guides_) {
     for (auto guide : net->getGuides()) {
-      if (guide->getLayer() != layer)
+      if (guide->getLayer() != layer) {
         continue;
+      }
       painter.drawRect(guide->getBox());
     }
   }
@@ -2577,14 +2592,16 @@ void LayoutViewer::drawRouteGuides(Painter& painter, odb::dbTechLayer* layer)
 
 void LayoutViewer::drawNetTracks(Painter& painter, odb::dbTechLayer* layer)
 {
-  if (net_tracks_.empty())
+  if (net_tracks_.empty()) {
     return;
+  }
   painter.setPen(layer);
   painter.setBrush(layer);
   for (auto net : net_tracks_) {
     for (auto track : net->getTracks()) {
-      if (track->getLayer() != layer)
+      if (track->getLayer() != layer) {
         continue;
+      }
       painter.drawRect(track->getBox());
     }
   }
@@ -3150,7 +3167,7 @@ void LayoutViewer::drawScaleBar(QPainter* painter, const QRect& rect)
     for (int i = 1; i < peg_incr; i++) {
       QPointF p1(scale_bar_outline.left() + i * segment_width,
                  scale_bar_outline.bottom());
-      QPointF p2 = p1 - QPointF(0, bar_height / 2);
+      QPointF p2 = p1 - QPointF(0, bar_height / 2.0);
 
       if (!middle_shown) {
         // only one peg increment

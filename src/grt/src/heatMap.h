@@ -55,8 +55,7 @@ class RoutingCongestionDataSource : public gui::HeatMapDataSource
                               const double intersection_area,
                               const double rect_area) override;
   virtual void correctMapScale(HeatMapDataSource::Map& map) override;
-  virtual const std::string formatValue(double value,
-                                        bool legend) const override;
+  virtual std::string formatValue(double value, bool legend) const override;
 
  private:
   enum Direction
