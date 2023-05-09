@@ -92,17 +92,19 @@ void FlexGridGraph::initGrids(
 bool FlexGridGraph::outOfDieVia(frMIdx x,
                                 frMIdx y,
                                 frMIdx z,
-                                const Rect& dieBox)
+                                const Rect& dieBox,
+                                const std::vector<Rect>& defaultVia)
 {
-  frLayerNum lNum = getLayerNum(z) + 1;
-  if (lNum > getTech()->getTopLayerNum())
+  size_t lNum = getLayerNum(z) + 1;
+  if (lNum * 2 > defaultVia.size())
     return false;
-  frViaDef* via = getTech()->getLayer(lNum)->getDefaultViaDef();
-  Rect viaBox(via->getLayer1ShapeBox());
-  viaBox.merge(via->getLayer2ShapeBox());
+  const auto* via = &defaultVia[lNum * 2];
+  Rect viaBox(via[0]);
+  viaBox.merge(via[1]);
   viaBox.moveDelta(xCoords_[x], yCoords_[y]);
   return !dieBox.contains(viaBox);
 }
+
 bool FlexGridGraph::hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z)
 {
   const frLayerNum lNum = getLayerNum(z);
@@ -189,6 +191,19 @@ void FlexGridGraph::initEdges(
   // initialize grid graph
   frMIdx xIdx = 0, yIdx = 0, zIdx = 0;
   dieBox_ = design->getTopBlock()->getDieBox();
+
+  // Keep the data on hand for outOfDieVia() method without pointer chasing
+  const size_t topLayerNum = getTech()->getTopLayerNum();
+  std::vector<Rect> defaultVia(topLayerNum * 2);
+  for (size_t i = 0; i < topLayerNum; i++) {
+    const auto* via = getTech()->getLayer(i)->getDefaultViaDef();
+    if (!via) {
+      continue;
+    }
+    defaultVia[i * 2] = via->getLayer1ShapeBox();
+    defaultVia[i * 2 + 1] = via->getLayer2ShapeBox();
+  }
+
   for (const auto& [layerNum, dir] : zMap) {
     frLayerNum nonPrefLayerNum;
     const auto layer = getTech()->getLayer(layerNum);
@@ -216,7 +231,7 @@ void FlexGridGraph::initEdges(
         bool xFound2 = (xIt2 != xSubMap.end());
         bool xFound3 = (xIt3 != xSubMap.end());
         // add cost to out-of-die edge
-        bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_);
+        bool isOutOfDieVia = outOfDieVia(xIdx, yIdx, zIdx, dieBox_, defaultVia);
         // add edge for preferred direction
         if (dir == dbTechLayerDir::HORIZONTAL && yFound) {
           if (layerNum >= BOTTOM_ROUTING_LAYER

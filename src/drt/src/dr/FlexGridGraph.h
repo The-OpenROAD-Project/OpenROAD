@@ -1198,7 +1198,11 @@ class FlexGridGraph
       const map<frLayerNum, frTrackPattern*>& ySubMap) const;
 
  private:
-  bool outOfDieVia(frMIdx x, frMIdx y, frMIdx z, const Rect& dieBox);
+  bool outOfDieVia(frMIdx x,
+                   frMIdx y,
+                   frMIdx z,
+                   const Rect& dieBox,
+                   const std::vector<Rect>& defaultVia);
   bool hasOutOfDieViol(frMIdx x, frMIdx y, frMIdx z);
   bool isWorkerBorder(frMIdx v, bool isVert);
 
