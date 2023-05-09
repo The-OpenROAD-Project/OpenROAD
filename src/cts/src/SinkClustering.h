@@ -64,14 +64,14 @@ class Matching
   unsigned getP1() const { return p_1; }
 
  private:
-  unsigned p_0;
-  unsigned p_1;
+  const unsigned p_0;
+  const unsigned p_1;
 };
 
 class SinkClustering
 {
  public:
-  SinkClustering(CtsOptions* options, TechChar* techChar);
+  SinkClustering(const CtsOptions* options, TechChar* techChar);
 
   void addPoint(double x, double y) { points_.emplace_back(x, y); }
   void addCap(float cap) { pointsCap_.emplace_back(cap); }
@@ -107,9 +107,9 @@ class SinkClustering
   static bool isOne(double pos);
   static bool isZero(double pos);
 
-  CtsOptions* options_;
+  const CtsOptions* options_;
   Logger* logger_;
-  TechChar* techChar_;
+  const TechChar* techChar_;
   std::vector<Point<double>> points_;
   std::vector<float> pointsCap_;
   std::vector<std::pair<double, unsigned>> thetaIndexVector_;

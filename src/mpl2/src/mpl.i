@@ -82,6 +82,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                           const float target_dead_space,
                           const float min_ar,
                           const int snap_layer,
+                          const bool bus_planning_flag,
                           const char* report_directory) {
 
   auto macro_placer = getMacroPlacer2();
@@ -113,6 +114,7 @@ bool rtl_macro_placer_cmd(const int max_num_macro,
                              target_dead_space,
                              min_ar,
                              snap_layer,
+                             bus_planning_flag,
                              report_directory);
 }
 

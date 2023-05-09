@@ -101,6 +101,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dbSta
       OpenSTA
       odb
+      rsz
   )
 
 endif()

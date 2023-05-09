@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 
+#include "dbMatrix.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -354,7 +355,7 @@ class dbDatabase : public dbObject
   /// WARNING: This function destroys the data currently in the database.
   /// Throws ZIOError..
   ///
-  void read(FILE* file);
+  void read(std::ifstream& f);
 
   ///
   /// Write a database to this stream.
@@ -371,14 +372,14 @@ class dbDatabase : public dbObject
   void writeWires(FILE* file, dbBlock* block);
   void writeNets(FILE* file, dbBlock* block);
   void writeParasitics(FILE* file, dbBlock* block);
-  void readTech(FILE* file);
-  void readLib(FILE* file, dbLib*);
-  void readLibs(FILE* file);
-  void readBlock(FILE* file, dbBlock* block);
-  void readWires(FILE* file, dbBlock* block);
-  void readNets(FILE* file, dbBlock* block);
-  void readParasitics(FILE* file, dbBlock* block);
-  void readChip(FILE* file);
+  void readTech(std::ifstream& f);
+  void readLib(std::ifstream& f, dbLib*);
+  void readLibs(std::ifstream& f);
+  void readBlock(std::ifstream& f, dbBlock* block);
+  void readWires(std::ifstream& f, dbBlock* block);
+  void readNets(std::ifstream& f, dbBlock* block);
+  void readParasitics(std::ifstream& f, dbBlock* block);
+  void readChip(std::ifstream& f);
 
   ///
   /// ECO - The following methods implement a simple ECO mechanism for capturing
@@ -532,7 +533,12 @@ class dbBox : public dbObject
   ///
   /// Get the translated boxes of this via
   ///
-  void getViaBoxes(std::vector<dbShape>& boxes);
+  void getViaBoxes(std::vector<dbShape>& shapes);
+
+  ///
+  /// Get the translated boxes of this via on the given layer
+  ///
+  void getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes);
 
   ///
   /// Get the width (xMax-xMin) of the box.
@@ -3725,7 +3731,7 @@ class dbWire : public dbObject
   ///
   /// returns false if this shape_id is not a via.
   ///
-  bool getViaBoxes(int via_shape_id, std::vector<dbShape>& boxes);
+  bool getViaBoxes(int via_shape_id, std::vector<dbShape>& shapes);
 
   ///
   /// Returns true if this wire is a global-wire
@@ -5568,6 +5574,11 @@ class dbMaster : public dbObject
   /// Returns NULL if a master with this name already exists
   ///
   static dbMaster* create(dbLib* lib, const char* name);
+
+  ///
+  /// Destroy a dbMaster.
+  ///
+  static void destroy(dbMaster* master);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -9400,8 +9411,8 @@ class dbGCellGrid : public dbObject
 
   void resetGrid();
 
-  std::map<std::pair<uint, uint>, GCellData> getCongestionMap(dbTechLayer* layer
-                                                              = nullptr);
+  dbMatrix<dbGCellGrid::GCellData> getCongestionMap(dbTechLayer* layer
+                                                    = nullptr);
   // User Code End dbGCellGrid
 };
 

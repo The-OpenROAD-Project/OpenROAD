@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <iostream>
+
 #include "dbCore.h"
 #include "odb.h"
 
@@ -67,7 +69,10 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 64;  // Current revision number
+const uint db_schema_minor = 65;  // Current revision number
+
+// Revision where _dbGCellGrid switch to using dbMatrix
+const uint db_schema_gcell_grid_matrix = 65;
 
 // Revision where _dbBoxFlags shifted _mark bit to _layer_id
 const uint db_schema_box_layer_bits = 64;

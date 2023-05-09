@@ -59,6 +59,9 @@ void Opendp::initGridLayersMap()
 {
   int grid_index = 0;
   for (auto db_row : block_->getRows()) {
+    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     int row_height = db_row->getSite()->getHeight();
     if (grid_info_map_.find(row_height) == grid_info_map_.end()) {
       grid_info_map_.emplace(
@@ -128,6 +131,9 @@ void Opendp::initGrid()
   }
   // Fragmented row support; mark valid sites.
   for (auto db_row : block_->getRows()) {
+    if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
     int current_row_height = db_row->getSite()->getHeight();
     int current_row_site_count = db_row->getSiteCount();
     int current_row_count = grid_info_map_.at(current_row_height).row_count;

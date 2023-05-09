@@ -135,10 +135,6 @@ proc set_io_pin_constraint { args } {
     utl::error PPL 83 "Both -region and -mirrored_pins constraints not allowed."
   }
 
-  if {[info exists keys(-region)] && [info exists flags(-group)]} {
-    utl::error PPL 86 "Both -region and -group constraints not allowed."
-  }
-
   if {[info exists keys(-mirrored_pins)] && [info exists flags(-group)]} {
     utl::error PPL 87 "Both -mirrored_pins and -group constraints not allowed."
   }
@@ -203,19 +199,9 @@ proc set_io_pin_constraint { args } {
     } else {
       utl::warn PPL 73 "Constraint with region $region has an invalid edge."
     }
-  } elseif [info exists keys(-mirrored_pins)] {
-    set mirrored_pins $keys(-mirrored_pins)
-    if { [expr [llength $mirrored_pins] % 2] != 0 } {
-      utl::error PPL 81 "List of pins must have an even number of pins."
-    }
+  }
 
-    foreach {pin1 pin2} $mirrored_pins {
-      utl::info PPL 80 "Mirroring pins $pin1 and $pin2."
-      set bterm1 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin1]
-      set bterm2 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin2]
-      ppl::add_mirrored_pins $bterm1 $bterm2
-    }
-  } elseif [info exists flags(-group)] {
+  if [info exists flags(-group)] {
     if [info exists keys(-pin_names)] {
         set group $keys(-pin_names)
     } else {
@@ -234,7 +220,24 @@ proc set_io_pin_constraint { args } {
     }
     ppl::add_pin_group $pin_list [info exists flags(-order)]
     incr group_idx
+  } elseif [info exists flags(-order)] {
+    utl::error PPL 95 "-order cannot be used without -group."
   }
+
+  if [info exists keys(-mirrored_pins)] {
+    set mirrored_pins $keys(-mirrored_pins)
+    if { [expr [llength $mirrored_pins] % 2] != 0 } {
+      utl::error PPL 81 "List of pins must have an even number of pins."
+    }
+
+    foreach {pin1 pin2} $mirrored_pins {
+      utl::info PPL 80 "Mirroring pins $pin1 and $pin2."
+      set bterm1 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin1]
+      set bterm2 [ppl::parse_pin_names "set_io_pin_constraint -mirrored_pins" $pin2]
+      ppl::add_mirrored_pins $bterm1 $bterm2
+    }
+  }
+
 }
 
 proc clear_io_pin_constraints {} {
@@ -654,6 +657,11 @@ proc add_pins_to_constraint {cmd names edge begin end edge_name} {
 proc add_pins_to_top_layer {cmd names llx lly urx ury} {
   set tech [ord::get_db_tech]
   set top_layer [ppl::get_top_layer]
+  
+  if {$top_layer == "NULL"} {
+    utl::error PPL 99 "Constraint up:{$llx $lly $urx $ury} cannot be created. Pin placement grid on top layer not created."
+  }
+
   set top_layer_name [$top_layer getConstName]
   utl::info PPL 60 "Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name."
   set pin_list [ppl::parse_pin_names $cmd $names]

@@ -2,6 +2,7 @@
 #include <libgen.h>
 
 #include <boost/test/included/unit_test.hpp>
+#include <fstream>
 #include <iostream>
 
 #include "db.h"
@@ -53,12 +54,17 @@ BOOST_AUTO_TEST_CASE(test_default)
 
   lefParser.createTechAndLib(libname, path.c_str());
 
-  FILE *write, *read;
+  FILE* write;
   path = std::string(std::getenv("BASE_DIR"))
          + "/results/TestLef58PropertiesDbRW";
   write = fopen(path.c_str(), "w");
   db1->write(write);
-  read = fopen(path.c_str(), "r");
+
+  std::ifstream read;
+  read.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+  read.open(path.c_str(), std::ios::binary);
+
   db2->read(read);
 
   auto dbTech = db2->getTech();

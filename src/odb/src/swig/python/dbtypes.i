@@ -257,6 +257,6 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
   }
 }
 
-%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & boxes };
+%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & shapes };
 
 %include containers.i

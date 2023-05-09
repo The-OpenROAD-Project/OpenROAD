@@ -7,61 +7,61 @@ MACRO HM_100x400_4x4
   FOREIGN HM_100x400_4x4 0 0 ;
   ORIGIN 0 0 ;
   SYMMETRY X Y ;
-  SIZE 100 BY 400 ;
+  SIZE 100 BY 430 ;
   PIN I1
     DIRECTION INPUT ;
     PORT
       LAYER metal1 ;
-        RECT 0 200 1 201  ;
+        RECT 0 215 1 216  ;
     END
   END I1
   PIN I2
     DIRECTION INPUT ;
     PORT
       LAYER metal1 ;
-        RECT 0 210 1 211  ;
+        RECT 0 225 1 226  ;
     END
   END I2 
   PIN I3
     DIRECTION INPUT ;
     PORT
       LAYER metal1 ;
-        RECT 0 220 1 221  ;
+        RECT 0 235 1 236  ;
     END
   END I3 
   PIN I4
     DIRECTION INPUT ;
     PORT
       LAYER metal1 ;
-        RECT 0 230 1 231  ;
+        RECT 0 245 1 246  ;
     END
   END I4 
   PIN O1 
     DIRECTION OUTPUT ;
     PORT
       LAYER metal1 ;
-        RECT 99 200 100 201  ;
+        RECT 99 215 100 216  ;
     END
   END O1 
   PIN O2 
     DIRECTION OUTPUT ;
     PORT
       LAYER metal1 ;
-        RECT 99 210 100 211  ;
+        RECT 99 225 100 226  ;
     END
   END O2 
   PIN O3 
     DIRECTION OUTPUT ;
     PORT
       LAYER metal1 ;
-        RECT 99 220 100 221  ;
+        RECT 99 235 100 236  ;
     END
   END O3 
   PIN O4 
     DIRECTION OUTPUT ;
     PORT
       LAYER metal1 ;
-        RECT 99 230 100 231  ;
+        RECT 99 245 100 246  ;
     END
   END O4
   OBS
