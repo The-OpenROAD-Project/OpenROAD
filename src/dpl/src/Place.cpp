@@ -986,12 +986,14 @@ bool Opendp::checkPixels(const Cell* cell,
       int x_begin = max(0, x - 1);
       int y_begin = max(0, y - 1);
       // inclusive search, so we don't add 1 to the end
-      int x_finish = min(x_end, row_site_count_ - 1);
-      int y_finish = min(y_end, row_count_ - 1);
+      int x_finish = min(x_end, row_info.second.site_count - 1);
+      int y_finish = min(y_end, row_info.second.row_count - 1);
+
       auto isAbutted = [this](int layer, int x, int y) {
         Pixel* pixel = gridPixel(layer, x, y);
         return (pixel == nullptr || pixel->cell);
       };
+
       auto cellAtSite = [this](int layer, int x, int y) {
         Pixel* pixel = gridPixel(layer, x, y);
         return (pixel != nullptr && pixel->cell);
@@ -1015,6 +1017,32 @@ bool Opendp::checkPixels(const Cell* cell,
       if (!isAbutted(layer, x_finish, y_finish)
           && cellAtSite(layer, x_finish + 1, y_finish)) {
         return false;
+      }
+
+      int min_row_height = grid_info_map_.begin()->first;
+      int steps = row_info.first / min_row_height;
+      // This is needed for the scenario where we are placing a triple height
+      // cell and we are not sure if there is a single height cell direcly in
+      // the middle that would be missed by the 4 corners check above.
+      // So, we loop with steps of min_row_height and check the left and right
+      int y_begin_mapped
+          = map_coordinates(y_begin, row_info.first, min_row_height);
+
+      int offset = 0;
+      for (int step = 0; step < steps; step++) {
+        // left side
+        // x_begin doesn't need to be mapped since we support only uniform site
+        // width in all grids for now
+        if (!isAbutted(0, x_begin, y_begin_mapped + offset)
+            && cellAtSite(0, x_begin - 1, y_begin_mapped + offset)) {
+          return false;
+        }
+        // right side
+        if (!isAbutted(0, x_finish, y_begin_mapped + offset)
+            && cellAtSite(0, x_finish + 1, y_begin_mapped + offset)) {
+          return false;
+        }
+        offset += min_row_height;
       }
     }
   }
