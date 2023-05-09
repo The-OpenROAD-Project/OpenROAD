@@ -979,6 +979,14 @@ bool Opendp::checkPixels(const Cell* cell,
       }
     }
     if (disallow_one_site_gaps_) {
+      debugPrint(logger_,
+                 DPL,
+                 "gaps",
+                 1,
+                 "  Disallow one site gaps checkPixels {} ({:4},{:4})",
+                 cell->name(),
+                 x,
+                 y1);
       // here we need to check for abutting first, if there is an abutting cell
       // then we continue as there is nothing wrong with it
       // if there is no abutting cell, we will then check cells at 1+ distances
@@ -988,6 +996,17 @@ bool Opendp::checkPixels(const Cell* cell,
       // inclusive search, so we don't add 1 to the end
       int x_finish = min(x_end, row_info.second.site_count - 1);
       int y_finish = min(y_end, row_info.second.row_count - 1);
+
+      debugPrint(logger_,
+                 DPL,
+                 "gaps",
+                 1,
+                 "  Disallow one site gaps checkPixels x_begin {} y_begin {} "
+                 "x_finish {} y_finish {}",
+                 x_begin,
+                 y_begin,
+                 x_finish,
+                 y_finish);
 
       auto isAbutted = [this](int layer, int x, int y) {
         Pixel* pixel = gridPixel(layer, x, y);
@@ -1021,6 +1040,14 @@ bool Opendp::checkPixels(const Cell* cell,
 
       int min_row_height = grid_info_map_.begin()->first;
       int steps = row_info.first / min_row_height;
+      debugPrint(logger_,
+                 DPL,
+                 "gaps",
+                 1,
+                 "  Disallow one site gaps checkPixels min_row_height {} "
+                 "steps {}",
+                 min_row_height,
+                 steps);
       // This is needed for the scenario where we are placing a triple height
       // cell and we are not sure if there is a single height cell direcly in
       // the middle that would be missed by the 4 corners check above.
@@ -1028,11 +1055,29 @@ bool Opendp::checkPixels(const Cell* cell,
       int y_begin_mapped
           = map_coordinates(y_begin, row_info.first, min_row_height);
 
+      debugPrint(
+          logger_,
+          DPL,
+          "gaps",
+          1,
+          "  Disallow one site gaps checkPixels y_begin {} y_begin_mapped {}",
+          y_begin,
+          y_begin_mapped);
+
       int offset = 0;
       for (int step = 0; step < steps; step++) {
         // left side
         // x_begin doesn't need to be mapped since we support only uniform site
         // width in all grids for now
+        debugPrint(
+            logger_,
+            DPL,
+            "gaps",
+            1,
+            "  Disallow one site gaps checkPixels step {} offset {} y_check {}",
+            step,
+            offset,
+            y_begin_mapped + offset);
         if (!isAbutted(0, x_begin, y_begin_mapped + offset)
             && cellAtSite(0, x_begin - 1, y_begin_mapped + offset)) {
           return false;

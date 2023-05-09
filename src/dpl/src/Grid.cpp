@@ -327,7 +327,10 @@ void Opendp::visitCellBoundaryPixels(
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);
       int y_start = gridY(rect.yMin() - core_.yMin(), row_height);
       int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height);
-
+      // TODO: This is used in the check one site gaps logic, but it doesn't do
+      // the required check
+      //  we need to loop over all the pixel in steps of row_height and
+      //  site_width of the smallest site
       for (int x = x_start; x < x_end; x++) {
         Pixel* pixel = gridPixel(index_in_grid, x, y_start);
         if (pixel) {
