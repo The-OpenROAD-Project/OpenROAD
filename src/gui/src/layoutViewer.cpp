@@ -2397,12 +2397,18 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
         drawViaShapes(painter, layer, layer, bounds, instance_limit);
       } else {
         // Get the enclosure shapes from any vias on the cut layers
-        // above or below this one.
+        // above or below this one.  Skip enclosure shapes if they
+        // will be too small based on the cut size (enclosure shapes
+        // are generally only slightly larger).
         if (auto upper = layer->getUpperLayer()) {
-          drawViaShapes(painter, upper, layer, bounds, instance_limit);
+          if (cut_maximum_size_[upper] >= shape_limit) {
+            drawViaShapes(painter, upper, layer, bounds, instance_limit);
+          }
         }
         if (auto lower = layer->getLowerLayer()) {
-          drawViaShapes(painter, lower, layer, bounds, instance_limit);
+          if (cut_maximum_size_[lower] >= shape_limit) {
+            drawViaShapes(painter, lower, layer, bounds, instance_limit);
+          }
         }
       }
 
