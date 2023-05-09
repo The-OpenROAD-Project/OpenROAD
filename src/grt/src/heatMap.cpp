@@ -273,21 +273,25 @@ void RoutingCongestionDataSource::correctMapScale(HeatMapDataSource::Map& map)
   }
 
   max_ = 0.0;
-  for (auto& [bbox, map_pt] : map) {
-    max_ = std::max(map_pt->value, max_);
+  for (const auto& map_col : map) {
+    for (const auto& map_pt : map_col) {
+      max_ = std::max(map_pt->value, max_);
+    }
   }
 
   if (max_ == 0.0) {
     return;
   }
 
-  for (auto& [bbox, map_pt] : map) {
-    map_pt->value = map_pt->value * 100 / max_;
+  for (const auto& map_col : map) {
+    for (const auto& map_pt : map_col) {
+      map_pt->value = map_pt->value * 100 / max_;
+    }
   }
 }
 
-const std::string RoutingCongestionDataSource::formatValue(double value,
-                                                           bool legend) const
+std::string RoutingCongestionDataSource::formatValue(double value,
+                                                     bool legend) const
 {
   if (type_ == Congestion) {
     return HeatMapDataSource::formatValue(value, legend);

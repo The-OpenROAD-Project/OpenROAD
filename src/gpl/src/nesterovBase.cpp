@@ -341,6 +341,9 @@ void GNet::updateBox()
 
 int64_t GNet::hpwl() const
 {
+  if (ux_ < lx_) {  // dangling net
+    return 0;
+  }
   int64_t lx = lx_;
   int64_t ly = ly_;
   int64_t ux = ux_;

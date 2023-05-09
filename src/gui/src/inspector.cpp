@@ -48,8 +48,6 @@ Q_DECLARE_METATYPE(std::string);
 
 namespace gui {
 
-using namespace odb;
-
 SelectedItemModel::SelectedItemModel(const Selected& object,
                                      const QColor& selectable,
                                      const QColor& editable,
@@ -171,10 +169,8 @@ QStandardItem* SelectedItemModel::makeItem(const std::any& item,
     item->setData(QVariant::fromValue(*selected),
                   EditorItemDelegate::selected_);
     return item;
-  } else {
-    return makeItem(
-        QString::fromStdString(Descriptor::Property::toString(item)));
   }
+  return makeItem(QString::fromStdString(Descriptor::Property::toString(item)));
 }
 
 template <typename Iterator>
@@ -361,21 +357,26 @@ EditorItemDelegate::EditType EditorItemDelegate::getEditorType(
 {
   if (std::any_cast<const char*>(&value)) {
     return EditorItemDelegate::STRING;
-  } else if (std::any_cast<const std::string>(&value)) {
-    return EditorItemDelegate::STRING;
-  } else if (std::any_cast<int>(&value)) {
-    return EditorItemDelegate::NUMBER;
-  } else if (std::any_cast<unsigned int>(&value)) {
-    return EditorItemDelegate::NUMBER;
-  } else if (std::any_cast<double>(&value)) {
-    return EditorItemDelegate::NUMBER;
-  } else if (std::any_cast<float>(&value)) {
-    return EditorItemDelegate::NUMBER;
-  } else if (std::any_cast<bool>(&value)) {
-    return EditorItemDelegate::BOOL;
-  } else {
+  }
+  if (std::any_cast<const std::string>(&value)) {
     return EditorItemDelegate::STRING;
   }
+  if (std::any_cast<int>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  }
+  if (std::any_cast<unsigned int>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  }
+  if (std::any_cast<double>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  }
+  if (std::any_cast<float>(&value)) {
+    return EditorItemDelegate::NUMBER;
+  }
+  if (std::any_cast<bool>(&value)) {
+    return EditorItemDelegate::BOOL;
+  }
+  return EditorItemDelegate::STRING;
 }
 
 ////////
@@ -494,9 +495,7 @@ void ActionLayout::setGeometry(const QRect& rect)
   const int button_height = rowHeight();
 
   int y = effective_rect.y();
-  for (auto row_itr = rows.begin(); row_itr != rows.end(); row_itr++) {
-    ItemList& items = *row_itr;
-
+  for (ItemList& items : rows) {
     int x = effective_rect.x();
     int empty_space = effective_rect.right() - (x + rowWidth(items));
     const int size_adder
@@ -621,15 +620,12 @@ Inspector::Inspector(const SelectionSet& selected,
       action_layout_(new ActionLayout),
       selected_(selected),
       selected_itr_(selected.begin()),
-      selection_(Selected()),
       button_frame_(new QFrame(this)),
       button_next_(
           new QPushButton("Next \u2192", this)),  // \u2192 = right arrow
       button_prev_(
           new QPushButton("\u2190 Previous", this)),  // \u2190 = left arrow
       selected_itr_label_(new QLabel(this)),
-      mouse_timer_(),
-      clicked_index_(),
       highlighted_(highlighted)
 {
   setObjectName("inspector");  // for settings

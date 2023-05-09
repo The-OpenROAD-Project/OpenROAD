@@ -42,8 +42,6 @@ CmdInputWidget::CmdInputWidget(const QString& interp_name, QWidget* parent)
       line_height_(0),
       document_margins_(0),
       max_height_(QWIDGETSIZE_MAX),
-      history_(),
-      history_buffer_last_(),
       historyPosition_(0)
 {
   setObjectName("interperter_scripting");  // for settings
@@ -64,9 +62,7 @@ CmdInputWidget::CmdInputWidget(const QString& interp_name, QWidget* parent)
           SLOT(commandFinished(bool)));
 }
 
-CmdInputWidget::~CmdInputWidget()
-{
-}
+CmdInputWidget::~CmdInputWidget() = default;
 
 void CmdInputWidget::setWidgetFont(const QFont& font)
 {

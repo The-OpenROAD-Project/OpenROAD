@@ -240,7 +240,7 @@ class BrowserWidget : public QDockWidget,
                             QStandardItem* parent,
                             bool expand);
 
-  const QIcon makeModuleIcon(const QColor& color);
+  QIcon makeModuleIcon(const QColor& color);
 
   void makeRowItems(QStandardItem* item,
                     const std::string& master,
