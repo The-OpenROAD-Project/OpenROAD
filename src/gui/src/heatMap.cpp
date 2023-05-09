@@ -66,7 +66,6 @@ HeatMapDataSource::HeatMapDataSource(utl::Logger* logger,
       reverse_log_(false),
       show_numbers_(false),
       show_legend_(false),
-      map_(),
       renderer_(std::make_unique<HeatMapRenderer>(*this)),
       setup_(nullptr),
       color_generator_(SpectrumGenerator(100.0))
@@ -221,7 +220,7 @@ void HeatMapDataSource::setShowLegend(bool legend)
   redraw();
 }
 
-const Painter::Color HeatMapDataSource::getColor(double value) const
+Painter::Color HeatMapDataSource::getColor(double value) const
 {
   auto find_val
       = std::find_if(color_lower_bounds_.begin(),
@@ -251,8 +250,7 @@ void HeatMapDataSource::showSetup()
   }
 }
 
-const std::string HeatMapDataSource::formatValue(double value,
-                                                 bool legend) const
+std::string HeatMapDataSource::formatValue(double value, bool legend) const
 {
   QString text;
   text.setNum(value, 'f', 2);
@@ -268,7 +266,7 @@ void HeatMapDataSource::addBooleanSetting(
     const std::function<bool(void)>& getter,
     const std::function<void(bool)>& setter)
 {
-  settings_.push_back(MapSettingBoolean{name, label, getter, setter});
+  settings_.emplace_back(MapSettingBoolean{name, label, getter, setter});
 }
 
 void HeatMapDataSource::addMultipleChoiceSetting(
@@ -278,11 +276,11 @@ void HeatMapDataSource::addMultipleChoiceSetting(
     const std::function<std::string(void)>& getter,
     const std::function<void(std::string)>& setter)
 {
-  settings_.push_back(
+  settings_.emplace_back(
       MapSettingMultiChoice{name, label, choices, getter, setter});
 }
 
-const Renderer::Settings HeatMapDataSource::getSettings() const
+Renderer::Settings HeatMapDataSource::getSettings() const
 {
   Renderer::Settings settings{{"DisplayMin", display_range_min_},
                               {"DisplayMax", display_range_max_},
@@ -339,7 +337,7 @@ void HeatMapDataSource::setSettings(const Renderer::Settings& settings)
   setColorAlpha(color_alpha_);
 }
 
-const HeatMapDataSource::MapView HeatMapDataSource::getMapView(
+HeatMapDataSource::MapView HeatMapDataSource::getMapView(
     const odb::Rect& bounds)
 {
   const double dbu_per_micron = getBlock()->getDbUnitsPerMicron();
@@ -498,9 +496,8 @@ void HeatMapDataSource::updateMapColors()
     }
 
     if (reverse_log_) {
-      for (size_t i = 0; i < color_lower_bounds_.size(); i++) {
-        color_lower_bounds_[i]
-            = display_range_max_ - color_lower_bounds_[i] + display_range_min_;
+      for (auto& lower_bound : color_lower_bounds_) {
+        lower_bound = display_range_max_ - lower_bound + display_range_min_;
       }
     } else {
       std::reverse(color_lower_bounds_.begin(), color_lower_bounds_.end());
@@ -535,8 +532,7 @@ double HeatMapDataSource::getRealRangeMaximumValue() const
   return color_lower_bounds_[color_lower_bounds_.size() - 1];
 }
 
-const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues()
-    const
+std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues() const
 {
   const int color_count = color_generator_.getColorCount();
   const int count = 6;
@@ -555,7 +551,7 @@ const std::vector<std::pair<int, double>> HeatMapDataSource::getLegendValues()
       value = linear_step * i + linear_start;
     }
 
-    values.push_back({idx, value});
+    values.emplace_back(idx, value);
   }
   return values;
 }
@@ -712,20 +708,20 @@ void HeatMapRenderer::drawObjects(Painter& painter)
     std::vector<std::pair<int, std::string>> legend;
     for (const auto& [color_index, color_value] :
          datasource_.getLegendValues()) {
-      legend.push_back(
-          {color_index, datasource_.formatValue(color_value, true)});
+      legend.emplace_back(color_index,
+                          datasource_.formatValue(color_value, true));
     }
 
     datasource_.getColorGenerator().drawLegend(painter, legend);
   }
 }
 
-const std::string HeatMapRenderer::getSettingsGroupName()
+std::string HeatMapRenderer::getSettingsGroupName()
 {
   return groupname_prefix_ + datasource_.getSettingsGroupName();
 }
 
-const Renderer::Settings HeatMapRenderer::getSettings()
+Renderer::Settings HeatMapRenderer::getSettings()
 {
   Renderer::Settings settings = Renderer::getSettings();
   for (const auto& [name, value] : datasource_.getSettings()) {
@@ -827,8 +823,8 @@ void RealValueHeatMapDataSource::determineUnits()
   units_ += unit_suffix_;
 }
 
-const std::string RealValueHeatMapDataSource::formatValue(double value,
-                                                          bool legend) const
+std::string RealValueHeatMapDataSource::formatValue(double value,
+                                                    bool legend) const
 {
   int digits = legend ? 3 : 2;
 
@@ -840,7 +836,7 @@ const std::string RealValueHeatMapDataSource::formatValue(double value,
   return text.toStdString();
 }
 
-const std::string RealValueHeatMapDataSource::getValueUnits() const
+std::string RealValueHeatMapDataSource::getValueUnits() const
 {
   return units_;
 }
