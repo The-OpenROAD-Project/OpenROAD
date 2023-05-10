@@ -2278,14 +2278,14 @@ void LayoutViewer::drawViaShapes(QPainter* painter,
                                  dbTechLayer* cut_layer,
                                  dbTechLayer* draw_layer,
                                  const Rect& bounds,
-                                 const int instance_limit)
+                                 const int shape_limit)
 {
   auto via_sbox_iter = search_.searchViaSBoxShapes(cut_layer,
                                                    bounds.xMin(),
                                                    bounds.yMin(),
                                                    bounds.xMax(),
                                                    bounds.yMax(),
-                                                   instance_limit);
+                                                   shape_limit);
 
   std::vector<odb::dbShape> via_shapes;
   for (auto& [box, sbox, net] : via_sbox_iter) {
@@ -2381,7 +2381,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
                                               bounds.yMin(),
                                               bounds.xMax(),
                                               bounds.yMax(),
-                                              instance_limit);
+                                              shape_limit);
 
       for (auto& [box, net] : box_iter) {
         if (!isNetVisible(net)) {
@@ -2394,7 +2394,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
       }
 
       if (layer->getType() == dbTechLayerType::CUT) {
-        drawViaShapes(painter, layer, layer, bounds, instance_limit);
+        drawViaShapes(painter, layer, layer, bounds, shape_limit);
       } else {
         // Get the enclosure shapes from any vias on the cut layers
         // above or below this one.  Skip enclosure shapes if they
@@ -2402,7 +2402,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
         // are generally only slightly larger).
         if (auto upper = layer->getUpperLayer()) {
           if (cut_maximum_size_[upper] >= shape_limit) {
-            drawViaShapes(painter, upper, layer, bounds, instance_limit);
+            drawViaShapes(painter, upper, layer, bounds, shape_limit);
           }
         }
         if (auto lower = layer->getLowerLayer()) {
