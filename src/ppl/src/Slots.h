@@ -120,11 +120,15 @@ struct Constraint
   {
     box = odb::Rect(-1, -1, -1, -1);
     pins_per_slots = 0;
+    first_slot = -1;
+    last_slot = -1;
   }
   Constraint(const PinSet& pins, Direction dir, odb::Rect b)
       : pin_list(pins), direction(dir), interval(Edge::invalid, -1, -1), box(b)
   {
     pins_per_slots = 0;
+    first_slot = -1;
+    last_slot = -1;
   }
 
   PinSet pin_list;
