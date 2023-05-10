@@ -2417,7 +2417,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
                                                       bounds.yMin(),
                                                       bounds.xMax(),
                                                       bounds.yMax(),
-                                                      instance_limit);
+                                                      shape_limit);
 
       for (auto& [box, poly, net] : polygon_iter) {
         if (!isNetVisible(net)) {
