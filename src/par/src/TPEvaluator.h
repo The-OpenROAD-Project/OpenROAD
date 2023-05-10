@@ -43,6 +43,24 @@
 
 namespace par {
 
+
+// The path related statistics
+struct PathStats {
+  int tot_num_path = 0; // total number of paths
+  int tot_num_critical_path = 0; // total number of critical timing paths
+  int tot_num_noncritical_path = 0; // total number of noncritical timing paths
+  int worst_cut_critical_path = 0; // worst number of cuts on all the paths
+  float avg_cut_critical_path = 0; // average number of cuts on each path
+  int number_non2critical_path = 0; // total number of noncritical paths become critical
+  int worst_cut_non2critical_path = 0; // worst number of cuts on noncritical paths that become
+                                       // critical
+  float avg_cut_non2critical_path = 0.0f; // average number of cuts on noncritical paths that
+                                          // become critical
+  
+  PathStats() {   };
+};
+
+
 // MATRIX is a two-dimensional vectors
 template <typename T>
 using MATRIX = std::vector<std::vector<T>>;
@@ -125,9 +143,10 @@ class GoldenEvaluator
                                   const TP_partition& solution) const;
 
   // calculate the status of timing path cuts
-  // total cut, worst cut, average cut
-  std::tuple<int, int, float> GetTimingCuts(const HGraphPtr hgraph,
-                                            const TP_partition& solution) const;
+  PathStats GetTimingCuts(const HGraphPtr hgraph,
+                          const std::vector<int>& solution) const;
+
+  void PrintPathStats(const PathStats& path_stats) const;
 
   // Calculate the timing cost due to the slack of hyperedge itself
   float CalculateHyperedgeTimingCost(int e, const HGraphPtr hgraph) const;

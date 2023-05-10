@@ -722,14 +722,8 @@ void TritonPart::EvaluatePartDesignSolution(
     // generate the timing report
     if (timing_aware_flag_ == true) {
       logger_->report("[STATUS] Displaying timing path cuts statistics");
-      logger_->report("[INFO] Total timing critical paths = {}", top_n_);
-      // total cut, worst cut and average cut
-      std::tuple<int, int, float> cut_info
-          = evaluator->GetTimingCuts(original_hypergraph_, solution_);
-      logger_->report("[INFO] Total paths cut = {}", std::get<0>(cut_info));
-      logger_->report("[INFO] Worst cut on a path = {}", std::get<1>(cut_info));
-      logger_->report("[INFO] Average cuts on critical paths = {}",
-                      std::get<2>(cut_info));
+      PathStats path_stats = evaluator->GetTimingCuts(original_hypergraph_, solution_);
+      evaluator->PrintPathStats(path_stats);
     }
 
     logger_->report("===============================================");
@@ -1343,6 +1337,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
   logger_->report("[INFO] Vertices = {}", original_hypergraph_->num_vertices_);
   logger_->report("[INFO] Hyperedges = {}",
                   original_hypergraph_->num_hyperedges_);
+  logger_->report("[INFO] Number of timing paths = {}", timing_paths_.size());
 }
 
 // Find all the critical timing paths
@@ -1768,15 +1763,10 @@ void TritonPart::MultiLevelPartition()
   // generate the timing report
   if (timing_aware_flag_ == true) {
     logger_->report("[STATUS] Displaying timing path cuts statistics");
-    logger_->report("[INFO] Total timing critical paths = {}", top_n_);
-    // total cut, worst cut and average cut
-    std::tuple<int, int, float> cut_info
-        = tritonpart_evaluator->GetTimingCuts(original_hypergraph_, solution_);
-    logger_->report("[INFO] Total paths cut = {}", std::get<0>(cut_info));
-    logger_->report("[INFO] Worst cut on a path = {}", std::get<1>(cut_info));
-    logger_->report("[INFO] Average cuts on critical paths = {}",
-                    std::get<2>(cut_info));
+    PathStats path_stats = tritonpart_evaluator->GetTimingCuts(original_hypergraph_, solution_);
+    tritonpart_evaluator->PrintPathStats(path_stats);
   }
+  
   // print the runtime
   auto end_timestamp_global = std::chrono::high_resolution_clock::now();
   double total_global_time

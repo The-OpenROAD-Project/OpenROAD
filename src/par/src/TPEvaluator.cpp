@@ -158,6 +158,88 @@ std::vector<float> GoldenEvaluator::GetPathsCost(
   return paths_cost;
 }
 
+
+// calculate the status of timing path cuts
+PathStats GoldenEvaluator::GetTimingCuts(
+    const HGraphPtr hgraph, 
+    const std::vector<int>& solution) const
+{
+  PathStats path_stats; // create tha path related statistics
+  if (hgraph->num_timing_paths_ <= 0) {
+    logger_->report(
+        "[WARNING] This no timing-critical paths when calling GetTimingCuts()");
+    return path_stats;
+  }
+  
+  // Initialize the initial values
+  path_stats.tot_num_path = hgraph->num_timing_paths_;
+  for (int i = 0; i < hgraph->num_timing_paths_; ++i) {
+    const int first_valid_entry = hgraph->vptr_p_[i];
+    const int first_invalid_entry = hgraph->vptr_p_[i + 1];
+    std::vector<int> block_path;  // It must be a vector
+    for (int j = first_valid_entry; j < first_invalid_entry; ++j) {
+      const int v = hgraph->vind_p_[j];
+      const int block_id = solution[v];
+      if (block_path.size() == 0 || block_path.back() != block_id) {
+        block_path.push_back(block_id);
+      }
+    }
+    const int cut_on_path = block_path.size() - 1;
+    float path_slack = hgraph->path_timing_attr_[i]; // the slack of current path
+    if (path_slack < 0) { // critical path
+      path_stats.tot_num_critical_path += 1;
+      if (cut_on_path > 0) {
+        path_stats.worst_cut_critical_path = std::max(cut_on_path, path_stats.worst_cut_critical_path);
+        path_stats.avg_cut_critical_path += cut_on_path;                      
+      }
+    } else { // noncritical path
+      path_stats.tot_num_noncritical_path += 1;
+      // update the path slack based on extra delay
+      path_slack -= extra_cut_delay_ * cut_on_path;
+      if (path_slack < 0.0f) {
+        path_stats.number_non2critical_path += 1;
+        path_stats.worst_cut_non2critical_path = 
+            std::max(cut_on_path, path_stats.worst_cut_non2critical_path);    
+        path_stats.avg_cut_non2critical_path += cut_on_path;
+      }
+    }
+  }
+  
+  // normalization to calculate average
+  if (path_stats.tot_num_critical_path > 0) {
+    path_stats.avg_cut_critical_path 
+      = path_stats.avg_cut_critical_path / path_stats.tot_num_critical_path;
+  } 
+
+  if (path_stats.number_non2critical_path > 0) {
+    path_stats.avg_cut_non2critical_path 
+      = path_stats.avg_cut_non2critical_path / path_stats.number_non2critical_path;
+  }
+
+  return path_stats;
+}
+
+
+void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
+{
+  logger_->report("[INFO] Total number of timing paths = {}", path_stats.tot_num_path);
+  logger_->report("[INFO] Total number of timing-critical paths = {}",
+                   path_stats.tot_num_critical_path);
+  logger_->report("[INFO] Total number of timing-noncritical paths = {}", 
+                   path_stats.tot_num_noncritical_path);
+  logger_->report("[INFO] The worst number of cuts on timing-critical paths = {}",
+                   path_stats.worst_cut_critical_path);
+  logger_->report("[INFO] The average number of cuts on timing-critical paths = {}",
+                   path_stats.avg_cut_critical_path);
+  logger_->report("[INFO] Total number of timing-noncritical to timing critical paths = {}",
+                   path_stats.number_non2critical_path);
+  logger_->report("[INFO] The worst number of cuts on timing-non2critical paths = {}",
+                   path_stats.worst_cut_non2critical_path);
+  logger_->report("[INFO] The average number of cuts on timing-non2critical paths = {}",
+                   path_stats.avg_cut_non2critical_path);
+}
+
+/*
 // calculate the status of timing path cuts
 // total cut, worst cut, average cut
 std::tuple<int, int, float> GoldenEvaluator::GetTimingCuts(
@@ -192,6 +274,8 @@ std::tuple<int, int, float> GoldenEvaluator::GetTimingCuts(
       = 1.0 * total_critical_paths_cut / hgraph->num_timing_paths_;
   return std::make_tuple(total_critical_paths_cut, worst_cut, avg_cut);
 }
+*/
+ 
 
 // Calculate the timing cost due to the slack of hyperedge itself
 float GoldenEvaluator::CalculateHyperedgeTimingCost(
