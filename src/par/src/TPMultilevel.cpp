@@ -35,6 +35,10 @@
 
 #include "TPMultilevel.h"
 
+#include <functional>
+#include <queue>
+
+#include "TPEvaluator.h"
 #include "TPHypergraph.h"
 #include "TPPartitioner.h"
 #include "utl/Logger.h"
@@ -43,673 +47,550 @@ using utl::PAR;
 
 namespace par {
 
-TP_partition TPmultilevelPartitioner::PartitionTwoWay(
-    HGraph hgraph,
-    HGraph hgraph_processed,
-    matrix<float> max_vertex_balance,
-    bool VCycle)
+// Main function
+// here the hgraph should not be const
+// Because our slack-rebudgeting algorithm will change hgraph
+std::vector<int> TPmultilevelPartitioner::Partition(
+    HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance) const
 {
-  TP_partition solution;
-  MultilevelPartTwoWay(
-      hgraph, hgraph_processed, max_vertex_balance, solution, VCycle);
-  return solution;
-}
+  // Main implementation
+  // Step 1: run initial partitioning with different random seed
+  // Step 2: run cut-overlay clustering to enhance the solution
+  // Step 3: Guided v-cycle
 
-void TPmultilevelPartitioner::ParallelPart(HGraph coarsest_hgraph,
-                                           matrix<float>& max_vertex_balance,
-                                           float& cutsize,
-                                           std::vector<int>& solution,
-                                           const int seed)
-{
-  partitioner_->SetPartitionerSeed(seed);
-  partitioner_->Partition(coarsest_hgraph, max_vertex_balance, solution);
-  two_way_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-  if (coarsest_hgraph->num_timing_paths_ == 0) {
-    ilp_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-    greedy_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
+  // Step 1: run initial partitioning with different random seed
+  // In experiments, we observe that the benefits of increasing number of
+  // vcycles is very limited. However, the quality of solutions will change a
+  // lot with different random seed
+  MATRIX<int> top_solutions;
+  float best_cost = std::numeric_limits<float>::max();
+  int best_solution_id = -1;
+  for (int id = 0; id < num_coarsen_solutions_; id++) {
+    coarsener_->IncreaseRandomSeed();
+    top_solutions.push_back(
+        SingleLevelPartition(hgraph, upper_block_balance, lower_block_balance));
+    const float cost
+        = evaluator_->CutEvaluator(hgraph, top_solutions.back(), false).first;
+    if (cost <= best_cost) {
+      best_cost = cost;
+      best_solution_id = id;
+    }
   }
-  cutsize
-      = partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first;
+
+  logger_->report("[INFO] Finish Candidate Solutions Generation");
+
+  // Step 2: run cut-overlay clustering to enhance the solution
+  std::vector<int> best_solution = CutOverlayILPPart(hgraph,
+                                                     upper_block_balance,
+                                                     lower_block_balance,
+                                                     top_solutions,
+                                                     best_solution_id);
+
+  logger_->report(
+      "[INFO] Finish Cut-Overlay Clustering and Optimal Partitioning");
+
+  // Step 3: Guided v-cycle. Note that hgraph has been updated.
+  // The best_solution will be refined.
+  // The initial value of best solution will be used to guide the coarsening
+  // process and use as the initial solution
+  if (v_cycle_flag_ == true) {
+    VcycleRefinement(
+        hgraph, upper_block_balance, lower_block_balance, best_solution);
+  }
+
+  logger_->report("[INFO] Finish Vcycle Refinement");
+
+  return best_solution;
 }
 
-std::pair<matrix<int>, std::vector<float>>
-TPmultilevelPartitioner::InitialPartTwoWay(HGraph coarsest_hgraph,
-                                           matrix<float>& max_vertex_balance,
-                                           TP_partition& solution)
+// Private functions (Utilities)
+
+// Run single-level partitioning
+std::vector<int> TPmultilevelPartitioner::SingleLevelPartition(
+    HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance) const
 {
-  logger_->report("=============================");
+  // Step 1: run coarsening
+  // Step 2: run initial partitioning
+  // Step 3: run refinement
+  // Step 4: cut-overlay clustering and ILP-based partitioning
+
+  // Step 1: run coarsening
+  TP_coarse_graph_ptrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
+
+  // Step 2: run initial partitioning
+  HGraphPtr coarsest_hgraph = hierarchy.back();
+
+  // pick top num_best_initial_solutions_ solutions from
+  // num_initial_random_solutions_ solutions
+  // here we reserve num_vertices_ for each top_solution
+  MATRIX<int> top_solutions;
+  for (int i = 0; i < num_best_initial_solutions_; i++) {
+    std::vector<int> solution{};
+    top_solutions.push_back(solution);
+    top_solutions.back().reserve(hgraph->num_vertices_);  // reserve the size
+  }
+  int best_solution_id = -1;
+  InitialPartition(coarsest_hgraph,
+                   upper_block_balance,
+                   lower_block_balance,
+                   top_solutions,
+                   best_solution_id);
+
+  // Step 3: run refinement
+  // Here we need to do rebugetting on the best solution
+  RefinePartition(hierarchy,
+                  upper_block_balance,
+                  lower_block_balance,
+                  top_solutions,
+                  best_solution_id);
+
+  // Step 4: cut-overlay clustering and ILP-based partitioning
+  // Perform cut-overlay clustering and ILP-based partitioning
+  // The ILP-based partitioning uses top_solutions[best_solution_id] as a hint,
+  // such that the runtime can be signficantly reduced
+  return CutOverlayILPPart(hgraph,
+                           upper_block_balance,
+                           lower_block_balance,
+                           top_solutions,
+                           best_solution_id);
+}
+
+// Use the initial solution as the community feature
+// Call Vcycle refinement
+void TPmultilevelPartitioner::VcycleRefinement(
+    HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    std::vector<int>& best_solution) const
+{
+  float best_cost = evaluator_->CutEvaluator(hgraph, best_solution).first;
+  MATRIX<int> candidate_solutions;
+  candidate_solutions.push_back(best_solution);
+  for (int num_cycles = 0; num_cycles < max_num_vcycle_; num_cycles++) {
+    // use the initial solution as the community feature
+    hgraph->community_flag_ = true;
+    hgraph->community_attr_ = best_solution;
+    best_solution = SingleCycleRefinement(
+        hgraph, upper_block_balance, lower_block_balance);
+    candidate_solutions.push_back(best_solution);
+    const float cost
+        = evaluator_->CutEvaluator(hgraph, best_solution, false).first;
+    logger_->report("[INFO][V-cycle Refinement] num_cycles = {}, cutcost = {}",
+                    num_cycles,
+                    cost);
+  }
+
+  // Perform Cut-overlay clustering and ILP-based partitioning
+  best_solution
+      = CutOverlayILPPart(hgraph,
+                          upper_block_balance,
+                          lower_block_balance,
+                          candidate_solutions,
+                          static_cast<int>(candidate_solutions.size()) - 1);
+}
+
+// Single Vcycle Refinement
+std::vector<int> TPmultilevelPartitioner::SingleCycleRefinement(
+    HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance) const
+{
+  // Step 1: run coarsening
+  // Step 2: run refinement
+
+  // Step 1: run coarsening
+  TP_coarse_graph_ptrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
+
+  // Step 2: run initial refinement
+  HGraphPtr coarsest_hgraph = hierarchy.back();
+  MATRIX<int> top_solutions{coarsest_hgraph->community_attr_};
+  int best_solution_id = 0;  // only one solution
+  if (coarsest_hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
+    partitioner_->Partition(coarsest_hgraph,
+                            upper_block_balance,
+                            lower_block_balance,
+                            top_solutions[best_solution_id],
+                            PartitionType::INIT_DIRECT_ILP);
+  }
+  // Here we need to do rebugetting on the best solution
+  RefinePartition(hierarchy,
+                  upper_block_balance,
+                  lower_block_balance,
+                  top_solutions,
+                  best_solution_id);
+
+  return top_solutions[best_solution_id];
+}
+
+// Generate initial partitioning
+// Include random partitioning, Vile partitioning and ILP partitioning
+void TPmultilevelPartitioner::InitialPartition(
+    const HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    MATRIX<int>& top_initial_solutions,
+    int& best_solution_id) const
+{
+  logger_->report(
+      "======================================================================");
   logger_->report("[STATUS] Initial Partitioning ");
-  logger_->report("=============================");
+  logger_->report(
+      "======================================================================");
   std::mt19937 gen;
   gen.seed(seed_);
   std::uniform_real_distribution<> dist(0.0, 1.0);
-  // set the solution set
-  matrix<int> solution_set;
-  std::vector<float> cutsize_vec;
-  int best_solution_id = -1;
-  float best_cutsize = std::numeric_limits<float>::max();
-  partitioner_->SetPartitionerChoice(PartitionType::INIT_RANDOM);
-  const auto start_timestamp = std::chrono::high_resolution_clock::now();
-
-  for (int i = 0; i < num_initial_solutions_; ++i) {
+  std::vector<float> initial_solutions_cost;
+  std::vector<bool>
+      initial_solutions_flag;  // if the solutions statisfy balance constraint
+  MATRIX<int> initial_solutions;
+  if (hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
+    // random partitioning + Vile + ILP
+    initial_solutions.resize(num_initial_random_solutions_ + 2);
+  } else {
+    // random partitioning + Vile
+    initial_solutions.resize(num_initial_random_solutions_ + 1);
+  }
+  // We need k_way_fm_refiner to generate a balanced partitioning
+  k_way_fm_refiner_->SetMaxMove(hgraph->num_vertices_);
+  // generate random seed
+  for (int i = 0; i < num_initial_random_solutions_; ++i) {
     const int seed = std::numeric_limits<int>::max() * dist(gen);
-    partitioner_->SetPartitionerSeed(seed);
-    partitioner_->Partition(coarsest_hgraph, max_vertex_balance, solution);
-    // logger_->report("seed_ {}", seed);
-    // logger_->report("random cutsize = {}",
-    // partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);
-    two_way_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-    // logger_->report("two way refiner cutsize = {}",
-    // partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);
-    if (coarsest_hgraph->num_timing_paths_ == 0) {
-      ilp_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-      // logger_->report("ilp refiner cutsize = {}",
-      // partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);
-      greedy_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-      // logger_->report("greedy refiner cutsize = {}",
-      // partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first);
-    }
-    const float cutsize
-        = partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first;
-    cutsize_vec.push_back(cutsize);
-    solution_set.push_back(solution);
-    logger_->report("[INIT-PART] {} :: Random part cutcost {}", i, cutsize);
-    if (cutsize < best_cutsize) {
-      best_cutsize = cutsize;
-      best_solution_id = i;
-    }
-  }
-  // VILE initial partitioning
-  partitioner_->SetPartitionerChoice(PartitionType::INIT_VILE);
-  std::vector<int> vile_solution(coarsest_hgraph->num_vertices_);
-  partitioner_->Partition(coarsest_hgraph, max_vertex_balance, vile_solution);
-  // Run greedy and ilp refinement only if no timing paths are present
-  if (coarsest_hgraph->num_timing_paths_ == 0) {
-    ilp_refiner_->Refine(coarsest_hgraph, max_vertex_balance, vile_solution);
-    greedy_refiner_->Refine(coarsest_hgraph, max_vertex_balance, vile_solution);
-  }
-  float cutsize
-      = partitioner_->GoldenEvaluator(coarsest_hgraph, vile_solution, false)
-            .first;
-  solution_set.push_back(vile_solution);
-  cutsize_vec.push_back(cutsize);
-  logger_->report("[INIT-PART] {} :: Vile part cutcost {}",
-                  solution_set.size() - 1,
-                  cutsize);
-  if (cutsize < best_cutsize) {
-    best_cutsize = cutsize;
-    best_solution_id = solution_set.size() - 1;
-  }
-
-  // ILP initial partitioning
-  std::vector<int> ilp_part = solution_set.at(best_solution_id);
-  // if (coarsest_hgraph->num_hyperedges_ > 1000) {
-  if (coarsest_hgraph->num_hyperedges_ > 0) {
-    partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
-    // partitioner_->SetPartitionerChoice(INIT_DIRECT_WARM_ILP);
-    partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
-  } else {
-    partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
-    partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
-  }
-  // timing driven refinement
-  if (coarsest_hgraph->num_timing_paths_ > 0) {
-    two_way_refiner_->Refine(coarsest_hgraph, max_vertex_balance, ilp_part);
-  } else {
-    greedy_refiner_->Refine(coarsest_hgraph, max_vertex_balance, ilp_part);
-  }
-  cutsize
-      = partitioner_->GoldenEvaluator(coarsest_hgraph, ilp_part, false).first;
-  solution_set.push_back(ilp_part);
-  cutsize_vec.push_back(cutsize);
-  logger_->report("[INIT-PART] {} :: Ilp part cutcost {}",
-                  solution_set.size() - 1,
-                  cutsize);
-  if (cutsize < best_cutsize) {
-    best_cutsize = cutsize;
-    best_solution_id = solution_set.size() - 1;
-  }
-
-  auto end_timestamp = std::chrono::high_resolution_clock::now();
-  double time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                          end_timestamp - start_timestamp)
-                          .count()
-                      * 1e-9;
-  logger_->info(PAR, 2, "Initial partitioning time = {} seconds", time_taken);
-  return std::make_pair(solution_set, cutsize_vec);
-}
-
-void TPmultilevelPartitioner::VcycleTwoWay(std::vector<HGraph> hgraph_vec,
-                                           matrix<float>& max_vertex_balance,
-                                           TP_partition& solution,
-                                           TP_two_way_refining_ptr refiner,
-                                           TP_ilp_refiner_ptr i_refiner,
-                                           bool print)
-{
-  std::vector<int> refined_solution;
-  if (print == true) {
-    logger_->report("===================================");
-    logger_->report("[STATUS] Running V-cycle refinement");
-    logger_->report("===================================");
-  }
-  int num_levels = hgraph_vec.size();
-  int limit_levels = static_cast<int>(num_levels / 2);
-  float ub_factor_delta = 2.0 / limit_levels;
-  std::vector<float> ub_factors_tol(num_levels, 0.0);
-  for (int i = 0; i < num_levels; ++i) {
-    int tol = (i - limit_levels) * ub_factor_delta;
-    if (tol < 0) {
-      tol = 0.0;
-    }
-    ub_factors_tol[i] = ceil(ub_factor_ + tol);
-  }
-  int iter = 0;
-  int hier_ptr = hgraph_vec.size();
-  for (auto it = hgraph_vec.crbegin(); it != hgraph_vec.crend(); ++it) {
-    --hier_ptr;
-    HGraph coarse_hypergraph = *it;
-    refined_solution.clear();
-    refined_solution.resize(coarse_hypergraph->num_vertices_);
-    std::fill(refined_solution.begin(), refined_solution.end(), 0);
-    for (int v = 0; v < coarse_hypergraph->num_vertices_; ++v) {
-      refined_solution[v] = solution[coarse_hypergraph->vertex_c_attr_[v]];
-    }
-    /*if (hier_ptr == 0) {
-      refiner->SetHeSizeSkip(20);
-      refiner->SetMaxMoves(25);
-      refiner->SetMaxPasses(1);
-    }*/
-    /*refiner->BalancePartition(coarse_hypergraph, max_vertex_balance,
-    refined_solution); const matrix<float> max_vertex_balance_tol =
-    coarse_hypergraph->GetVertexBalance( num_parts_,
-    ub_factors_tol[hgraph_vec.size() - 1]);*/
-    refiner->Refine(coarse_hypergraph, max_vertex_balance, refined_solution);
-    if (coarse_hypergraph->num_vertices_ < 1000
-        && coarse_hypergraph->num_timing_paths_ == 0) {
-      i_refiner->Refine(
-          coarse_hypergraph, max_vertex_balance, refined_solution);
-    }
-    if (coarse_hypergraph->num_timing_paths_ == 0) {
-      greedy_refiner_->Refine(
-          coarse_hypergraph, max_vertex_balance, refined_solution);
-    }
-    solution = refined_solution;  // update the initial solution
-    if (print == true) {
-      logger_->report(
-          "[V-Refine] Level {} :: {}, {}, {}",
-          ++iter,
-          coarse_hypergraph->num_vertices_,
-          coarse_hypergraph->num_hyperedges_,
-          partitioner_
-              ->GoldenEvaluator(coarse_hypergraph, refined_solution, false)
-              .first);
-    }
-  }
-}
-
-void TPmultilevelPartitioner::GuidedVcycleTwoWay(
-    TP_partition& solution,
-    HGraph hgraph,
-    matrix<float>& max_vertex_balance,
-    TP_two_way_refining_ptr refiner,
-    TP_ilp_refiner_ptr i_refiner)
-{
-  int num_cycles = 0;
-  float delta_cost = std::numeric_limits<float>::max();
-  float cutsize_before_vcycle
-      = partitioner_->GoldenEvaluator(hgraph, solution, false).first;
-  const int stagnation_count = 2;
-  int stagnation = 0;
-  /*while ((num_cycles < max_num_vcycle_ && delta_cost > 0.0)
-         || last_run == false) {*/
-  while (true) {
-    ++num_cycles;
-    hgraph->community_attr_ = solution;
-    hgraph->community_flag_ = true;
-    // coarse the hgraph with initial_solution as community constraints
-    auto hierarchy = coarsener_->LazyFirstChoice(hgraph);
-    auto coarsest_hgraph = hierarchy.back();
-    coarsest_hgraph->vertex_c_attr_.resize(coarsest_hgraph->num_vertices_);
-    std::iota(coarsest_hgraph->vertex_c_attr_.begin(),
-              coarsest_hgraph->vertex_c_attr_.end(),
-              0);
-    // update the initial solution as the coarsest hgraph
-    solution.clear();
-    for (auto value : hierarchy.back()->community_attr_)
-      solution.push_back(value);
-    VcycleTwoWay(hierarchy, max_vertex_balance, solution, refiner, i_refiner);
-    float cutsize_after_vcycle
-        = partitioner_->GoldenEvaluator(hgraph, solution, false).first;
-    delta_cost = cutsize_before_vcycle - cutsize_after_vcycle;
-    cutsize_before_vcycle = cutsize_after_vcycle;
+    auto& solution = initial_solutions[i];
+    // call random partitioning
+    partitioner_->SetRandomSeed(seed);
+    partitioner_->Partition(hgraph,
+                            upper_block_balance,
+                            lower_block_balance,
+                            solution,
+                            PartitionType::INIT_RANDOM);
+    // call FM refiner to improve the solution
+    k_way_fm_refiner_->Refine(
+        hgraph, upper_block_balance, lower_block_balance, solution);
+    const std::pair<float, MATRIX<float>> token
+        = evaluator_->CutEvaluator(hgraph, solution, true);
+    initial_solutions_cost.push_back(token.first);
+    // Here we only check the upper bound to make sure more possible solutions
+    initial_solutions_flag.push_back(token.second <= upper_block_balance);
     logger_->report(
-        "[INFO] V-cycle refinement {} delta cost {}", num_cycles, delta_cost);
-    if (delta_cost == 0.0) {
-      ++stagnation;
-      if (stagnation == stagnation_count) {
+        "[INIT-PART] {} :: Random part cutcost = {}, balance_flag = {}",
+        i,
+        initial_solutions_cost.back(),
+        initial_solutions_flag.back());
+  }
+  // Vile partitioning. Vile partitioning needs refiner to generated a balanced
+  // partitioning
+  auto& vile_solution = initial_solutions[num_initial_random_solutions_];
+  partitioner_->Partition(hgraph,
+                          upper_block_balance,
+                          lower_block_balance,
+                          vile_solution,
+                          PartitionType::INIT_VILE);
+  // We need k_way_fm_refiner to generate a balanced partitioning
+  k_way_fm_refiner_->Refine(
+      hgraph, upper_block_balance, lower_block_balance, vile_solution);
+  k_way_fm_refiner_->RestoreDefaultParameters();
+  const std::pair<float, MATRIX<float>> vile_token
+      = evaluator_->CutEvaluator(hgraph, vile_solution, true);
+  initial_solutions_cost.push_back(vile_token.first);
+  initial_solutions_flag.push_back(vile_token.second <= upper_block_balance);
+  logger_->report("[INIT-PART] :: VILE part cutcost = {}, balance_flag = {}",
+                  initial_solutions_cost.back(),
+                  initial_solutions_flag.back());
+  // ILP partitioning
+  if (hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
+    auto& ilp_solution = initial_solutions.back();
+    // Use previous best solution as a starting point
+    int ilp_solution_id = 0;
+    float ilp_solution_cost = std::numeric_limits<float>::max();
+    for (auto id = 0; id < initial_solutions_cost.size(); id++) {
+      if (initial_solutions_flag[id] == true
+          && initial_solutions_cost[id] < ilp_solution_cost) {
+        ilp_solution_id = id;
+        ilp_solution_cost = initial_solutions_cost[id];
+      }
+    }
+    ilp_solution = initial_solutions[ilp_solution_id];
+    partitioner_->Partition(hgraph,
+                            upper_block_balance,
+                            lower_block_balance,
+                            ilp_solution,
+                            PartitionType::INIT_DIRECT_ILP);
+    const std::pair<float, MATRIX<float>> ilp_token
+        = evaluator_->CutEvaluator(hgraph, ilp_solution, true);
+    initial_solutions_cost.push_back(ilp_token.first);
+    initial_solutions_flag.push_back(ilp_token.second <= upper_block_balance);
+    logger_->report("[INIT-PART] :: ILP part cutcost = {}, balance_flag = {}",
+                    initial_solutions_cost.back(),
+                    initial_solutions_flag.back());
+  }
+  // sort the solutions based on cost
+  std::vector<int> solution_ids(initial_solutions_cost.size(), 0);
+  std::iota(solution_ids.begin(), solution_ids.end(), 0);
+  // define compare function
+  auto lambda_sort_criteria = [&](int& x, int& y) -> bool {
+    return initial_solutions_cost[x] < initial_solutions_cost[y];
+  };
+  std::sort(solution_ids.begin(), solution_ids.end(), lambda_sort_criteria);
+  // pick the top num_best_initial_solutions_ solutions
+  // while satisfying the balance constraint
+  int num_chosen_best_init_solution = 0;
+  float best_initial_cost = 0.0;
+  std::vector<bool> visited_solution_flag(solution_ids.size(), false);
+  for (auto id : solution_ids) {
+    if (initial_solutions_flag[id] == true) {
+      top_initial_solutions[num_chosen_best_init_solution]
+          = initial_solutions[id];
+      visited_solution_flag[id] = true;
+      num_chosen_best_init_solution++;
+      if (num_chosen_best_init_solution == 1) {
+        best_initial_cost = initial_solutions_cost[id];
+      }
+      if (num_chosen_best_init_solution >= num_best_initial_solutions_) {
         break;
       }
     }
-    if (num_cycles >= max_num_vcycle_) {
-      break;
-    }
-  }
-}
-
-std::vector<int> TPmultilevelPartitioner::MapClusters(
-    TP_coarse_graphs hierarchy)
-{
-  int hier_ptr = hierarchy.size();
-  std::vector<int> old_map = hierarchy.back()->vertex_c_attr_;
-  std::vector<int> curr_map = old_map;
-#ifndef NDEBUG
-  const int max_id = *std::max_element(old_map.begin(), old_map.end());
-#endif
-  for (auto it = hierarchy.crbegin(); it != hierarchy.crend(); ++it) {
-    --hier_ptr;
-    if (hier_ptr == hierarchy.size() - 1) {
-      continue;
-    }
-    HGraph coarse_hypergraph = *it;
-    curr_map.resize(coarse_hypergraph->num_vertices_);
-    for (int i = 0; i < curr_map.size(); ++i) {
-      curr_map[i] = old_map[coarse_hypergraph->vertex_c_attr_[i]];
-      assert(curr_map[i] <= max_id);
-    }
-    old_map = curr_map;
-  }
-  return curr_map;
-}
-
-void TPmultilevelPartitioner::MultilevelPartTwoWay(
-    HGraph hgraph,
-    HGraph hgraph_processed,
-    matrix<float>& max_vertex_balance,
-    TP_partition& solution,
-    bool VCycle)
-{
-  coarsener_->SetVertexOrderChoice(Order::RANDOM);
-  TP_coarse_graphs hierarchy = coarsener_->LazyFirstChoice(hgraph);
-  HGraph coarsest_hgraph = hierarchy.back();
-  hierarchy.pop_back();
-  two_way_refiner_->SetHeSizeSkip(500);
-  auto init_partitions
-      = InitialPartTwoWay(coarsest_hgraph, max_vertex_balance, solution);
-  logger_->report("====================================================");
-  logger_->report("[STATUS] Running V-cycle refinement on {} partitions",
-                  GetBestInitSolns());
-  logger_->report("====================================================");
-  // sort the solution based on cutsize
-  matrix<int> partitions_vec = init_partitions.first;
-  std::vector<float> cutsize_vec = init_partitions.second;
-  std::vector<int> partition_ids(partitions_vec.size());
-  std::iota(partition_ids.begin(), partition_ids.end(), 0);
-  std::sort(partition_ids.begin(),
-            partition_ids.end(),
-            [&](const int x, const int y) {
-              return cutsize_vec[x] < cutsize_vec[y];
-            });
-  solution = partitions_vec[partition_ids.front()];
-  if (hgraph->num_timing_paths_ == 0) {
-    two_way_refiner_->SetHeSizeSkip(50);
-    ilp_refiner_->SetHeSizeSkip(50);
-    greedy_refiner_->SetMaxMoves(
-        std::min(coarsest_hgraph->num_hyperedges_, 10));
-  } else {
-    two_way_refiner_->SetHeSizeSkip(10000);
   }
 
-  std::vector<std::thread> threads;
-  matrix<HGraph> hg_threads(GetBestInitSolns());
-  std::vector<TP_two_way_refining_ptr> refiner_threads;
-  std::vector<TP_ilp_refiner_ptr> i_refiner_threads;
-  for (int i = 0; i < GetBestInitSolns(); ++i) {
-    for (auto& hg : hierarchy) {
-      std::shared_ptr<TPHypergraph> hg_thread(new TPHypergraph(*hg));
-      hg_threads[i].push_back(hg_thread);
-    }
-    TP_two_way_refining_ptr refiner_thread
-        = std::make_shared<TPtwoWayFM>(two_way_refiner_->GetNumParts(),
-                                       two_way_refiner_->GetIters(),
-                                       two_way_refiner_->GetMaxMoves(),
-                                       two_way_refiner_->GetRefinerChoice(),
-                                       two_way_refiner_->GetSeed(),
-                                       two_way_refiner_->GetEdgeWtFactors(),
-                                       two_way_refiner_->GetPathWtFactor(),
-                                       two_way_refiner_->GetSnakingWtFactor(),
-                                       two_way_refiner_->GetLogger());
-    TP_ilp_refiner_ptr ilp_thread
-        = std::make_shared<TPilpRefine>(ilp_refiner_->GetNumParts(),
-                                        ilp_refiner_->GetIters(),
-                                        two_way_refiner_->GetMaxMoves(),
-                                        ilp_refiner_->GetRefinerChoice(),
-                                        ilp_refiner_->GetSeed(),
-                                        ilp_refiner_->GetEdgeWtFactors(),
-                                        ilp_refiner_->GetPathWtFactor(),
-                                        ilp_refiner_->GetSnakingWtFactor(),
-                                        ilp_refiner_->GetLogger(),
-                                        ilp_refiner_->GetWavefront());
-    if (hgraph->num_timing_paths_ > 0) {
-      refiner_thread->SetHeSizeSkip(10000);
-    } else {
-      refiner_thread->SetHeSizeSkip(50);
-      ilp_thread->SetHeSizeSkip(50);
-    }
-    refiner_threads.push_back(refiner_thread);
-    i_refiner_threads.push_back(ilp_thread);
-  }
-  for (int i = 0; i < GetBestInitSolns(); ++i) {
-    threads.push_back(std::thread(&par::TPmultilevelPartitioner::VcycleTwoWay,
-                                  this,
-                                  std::ref(hg_threads[i]),
-                                  std::ref(max_vertex_balance),
-                                  std::ref(partitions_vec[partition_ids[i]]),
-                                  refiner_threads[i],
-                                  i_refiner_threads[i],
-                                  false));
-  }
-  for (auto& th : threads) {
-    th.join();
-  }
-  threads.clear();
-  float best_cut = std::numeric_limits<float>::max();
-  int best_partition_id = 0;
-  for (int i = 0; i < GetBestInitSolns(); ++i) {
-    const float refined_cut
-        = two_way_refiner_
-              ->CutEvaluator(hgraph, partitions_vec[partition_ids[i]])
-              .first;
-    logger_->report("[INFO] {} cutcost {} ", partition_ids[i], refined_cut);
-    if (refined_cut < best_cut) {
-      best_cut = refined_cut;
-      best_partition_id = partition_ids[i];
-    }
-  }
-  solution = partitions_vec[best_partition_id];
-  if (VCycle == false) {
-    return;
-  }
-  GuidedVcycleTwoWay(
-      solution, hgraph, max_vertex_balance, two_way_refiner_, ilp_refiner_);
-}
-
-// K way multilevel partitioner implementation starts here
-
-TP_partition TPmultilevelPartitioner::PartitionKWay(
-    HGraph hgraph,
-    HGraph hgraph_processed,
-    matrix<float> max_vertex_balance,
-    bool VCycle)
-{
-  TP_partition solution;
-  MultilevelPartKWay(
-      hgraph, hgraph_processed, max_vertex_balance, solution, VCycle);
-  return solution;
-}
-
-std::pair<matrix<int>, std::vector<int>>
-TPmultilevelPartitioner::InitialPartKWay(HGraph coarsest_hgraph,
-                                         matrix<float>& max_vertex_balance,
-                                         TP_partition& solution)
-{
-  logger_->report("=============================");
-  logger_->report("[STATUS] Initial Partitioning ");
-  logger_->report("=============================");
-  std::mt19937 gen;
-  gen.seed(seed_);
-  std::uniform_real_distribution<> dist(0.0, 1.0);
-  // coarsest_hgraph->WriteHypergraph("coarsest");
-  // set the solution set
-  matrix<int> solution_set;
-  std::vector<int> cutsize_vec;
-  int best_solution_id = -1;
-  float best_cutsize = std::numeric_limits<float>::max();
-  partitioner_->SetPartitionerChoice(PartitionType::INIT_RANDOM);
-  const auto start_timestamp = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < num_initial_solutions_; ++i) {
-    const int seed = std::numeric_limits<int>::max() * dist(gen);
-    partitioner_->SetPartitionerSeed(seed);
-    partitioner_->Partition(coarsest_hgraph, max_vertex_balance, solution);
-    k_way_refiner_->Refine(coarsest_hgraph, max_vertex_balance, solution);
-    const float cutsize
-        = partitioner_->GoldenEvaluator(coarsest_hgraph, solution, false).first;
-    cutsize_vec.push_back(cutsize);
-    solution_set.push_back(solution);
-    logger_->report("[INIT-PART] {} :: Random part cutcost {}", i, cutsize);
-    // partitioner_->TimingCutsEvaluator(coarsest_hgraph, solution);
-    if (cutsize < best_cutsize) {
-      best_cutsize = cutsize;
-      best_solution_id = i;
-    }
-  }
-  // ILP initial partitioning
-  std::vector<int> ilp_part = solution_set.at(best_solution_id);
-  if (coarsest_hgraph->num_hyperedges_ > 0) {
-    partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
-    // partitioner_->SetPartitionerChoice(INIT_DIRECT_WARM_ILP);
-    partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
-  } else {
-    partitioner_->SetPartitionerChoice(PartitionType::INIT_DIRECT_ILP);
-    partitioner_->Partition(coarsest_hgraph, max_vertex_balance, ilp_part);
-  }
-  k_way_refiner_->Refine(coarsest_hgraph, max_vertex_balance, ilp_part);
-  const float cutsize
-      = partitioner_->GoldenEvaluator(coarsest_hgraph, ilp_part, false).first;
-  solution_set.push_back(ilp_part);
-  cutsize_vec.push_back(cutsize);
-  logger_->report("[INIT-PART] {} :: Ilp part cutcost {}",
-                  solution_set.size() - 1,
-                  cutsize);
-  if (cutsize < best_cutsize) {
-    best_cutsize = cutsize;
-    best_solution_id = solution_set.size() - 1;
-  }
-  auto end_timestamp = std::chrono::high_resolution_clock::now();
-  double time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                          end_timestamp - start_timestamp)
-                          .count()
-                      * 1e-9;
-  logger_->info(PAR, 3, "Initial partitioning time = {} seconds", time_taken);
-  return std::make_pair(solution_set, cutsize_vec);
-}
-
-void TPmultilevelPartitioner::VcycleKWay(std::vector<HGraph> hgraph_vec,
-                                         matrix<float>& max_vertex_balance,
-                                         TP_partition& solution,
-                                         TP_k_way_refining_ptr refiner,
-                                         bool print)
-{
-  std::vector<int> refined_solution;
-  if (print == true) {
-    logger_->report("===================================");
-    logger_->report("[STATUS] Running V-cycle refinement");
-    logger_->report("===================================");
-  }
-  int num_levels = hgraph_vec.size();
-  int limit_levels = static_cast<int>(num_levels / 2);
-  float ub_factor_delta = 2.0 / limit_levels;
-  std::vector<float> ub_factors_tol(num_levels, 0.0);
-  for (int i = 0; i < num_levels; ++i) {
-    int tol = (i - limit_levels) * ub_factor_delta;
-    if (tol < 0) {
-      tol = 0.0;
-    }
-    ub_factors_tol[i] = ceil(ub_factor_ + tol);
-  }
-  int iter = 0;
-  for (auto it = hgraph_vec.crbegin(); it != hgraph_vec.crend(); ++it) {
-    HGraph coarse_hypergraph = *it;
-    refined_solution.clear();
-    refined_solution.resize(coarse_hypergraph->num_vertices_);
-    std::fill(refined_solution.begin(), refined_solution.end(), 0);
-    for (int v = 0; v < coarse_hypergraph->num_vertices_; ++v) {
-      refined_solution[v] = solution[coarse_hypergraph->vertex_c_attr_[v]];
-    }
-    // partitioner_->TimingCutsEvaluator(coarse_hypergraph, refined_solution);
-    refiner->Refine(coarse_hypergraph, max_vertex_balance, refined_solution);
-    // partitioner_->TimingCutsEvaluator(coarse_hypergraph, refined_solution);
-    solution = refined_solution;  // update the initial solution
-    if (print == true) {
-      logger_->report(
-          "[V-Refine] Level {} :: {}, {}, {}",
-          ++iter,
-          coarse_hypergraph->num_vertices_,
-          coarse_hypergraph->num_hyperedges_,
-          partitioner_
-              ->GoldenEvaluator(coarse_hypergraph, refined_solution, false)
-              .first);
-    }
-  }
-}
-
-void TPmultilevelPartitioner::GuidedVcycleKWay(
-    TP_partition& solution,
-    HGraph hgraph,
-    matrix<float>& max_vertex_balance,
-    TP_k_way_refining_ptr refiner)
-{
-  int num_cycles = 0;
-  float delta_cost = std::numeric_limits<float>::max();
-  float cutsize_before_vcycle
-      = partitioner_->GoldenEvaluator(hgraph, solution, false).first;
-  const int stagnation_count = 2;
-  int stagnation = 0;
-  while (true) {
-    ++num_cycles;
-    hgraph->community_attr_ = solution;
-    hgraph->community_flag_ = true;
-    // coarse the hgraph with initial_solution as community constraints
-    auto hierarchy = coarsener_->LazyFirstChoice(hgraph);
-    auto coarsest_hgraph = hierarchy.back();
-    coarsest_hgraph->vertex_c_attr_.resize(coarsest_hgraph->num_vertices_);
-    std::iota(coarsest_hgraph->vertex_c_attr_.begin(),
-              coarsest_hgraph->vertex_c_attr_.end(),
-              0);
-    // update the initial solution as the coarsest hgraph
-    solution.clear();
-    for (auto value : hierarchy.back()->community_attr_)
-      solution.push_back(value);
-    VcycleKWay(hierarchy, max_vertex_balance, solution, refiner);
-    float cutsize_after_vcycle
-        = partitioner_->GoldenEvaluator(hgraph, solution, false).first;
-    delta_cost = cutsize_before_vcycle - cutsize_after_vcycle;
-    cutsize_before_vcycle = cutsize_after_vcycle;
-    logger_->report(
-        "[INFO] V-cycle refinement {} delta cost {}", num_cycles, delta_cost);
-    if (delta_cost == 0.0) {
-      ++stagnation;
-      if (stagnation == stagnation_count) {
-        break;
+  if (num_chosen_best_init_solution < num_best_initial_solutions_) {
+    for (auto id : solution_ids) {
+      if (visited_solution_flag[id] == false) {
+        top_initial_solutions[num_chosen_best_init_solution]
+            = initial_solutions[id];
+        visited_solution_flag[id] = true;
+        num_chosen_best_init_solution++;
+        if (num_chosen_best_init_solution >= num_best_initial_solutions_) {
+          break;
+        }
       }
     }
-    if (num_cycles >= max_num_vcycle_) {
-      break;
+  }
+
+  /*
+  // Check if there are some valid solutions
+  if (num_chosen_best_init_solution == 0) {
+    num_chosen_best_init_solution++;
+    top_initial_solutions[0] = initial_solutions[solution_ids[0]];
+  }
+  */
+
+  // remove invalid solution
+  while (top_initial_solutions.size() > num_chosen_best_init_solution) {
+    top_initial_solutions.pop_back();
+  }
+  logger_->report("[INFO] Number of chosen best initial solutions = {}",
+                  num_chosen_best_init_solution);
+  best_solution_id = 0;  // the first one is the best one
+  logger_->report("[INIT-PART] :: Best initial cutcost {}", best_initial_cost);
+}
+
+// Refine the solutions in top_solutions in parallel with multi-threading
+// the top_solutions and best_solution_id will be updated during this process
+void TPmultilevelPartitioner::RefinePartition(
+    TP_coarse_graph_ptrs hierarchy,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    MATRIX<int>& top_solutions,
+    int& best_solution_id) const
+{
+  if (hierarchy.size() <= 1) {
+    return;  // no need to refine.
+  }
+
+  int num_level = 0;
+  // rebudget based on the best solution
+  auto hgraph_iter = hierarchy.rbegin();
+  while (hgraph_iter != hierarchy.rend()) {
+    HGraphPtr coarse_hgraph = *hgraph_iter;
+    hgraph_iter++;
+    if (hgraph_iter == hierarchy.rend()) {
+      return;
     }
+    HGraphPtr hgraph = *hgraph_iter;
+    // convert the solution in coarse_hgraph to the solution of hgraph
+    for (auto i = 0; i < top_solutions.size(); i++) {
+      std::vector<int> refined_solution;
+      refined_solution.resize(hgraph->num_vertices_);
+      for (int cluster_id = 0; cluster_id < coarse_hgraph->num_vertices_;
+           cluster_id++) {
+        const int part_id = top_solutions[i][cluster_id];
+        for (const auto& v : coarse_hgraph->vertex_c_attr_[cluster_id]) {
+          refined_solution[v] = part_id;
+        }
+      }
+      top_solutions[i] = refined_solution;
+    }
+
+    // Parallel refine all the solutions
+    std::vector<std::thread> threads;
+    for (auto i = 0; i < top_solutions.size(); i++) {
+      threads.push_back(std::thread(&par::TPmultilevelPartitioner::CallRefiner,
+                                    this,
+                                    hgraph,
+                                    std::ref(upper_block_balance),
+                                    std::ref(lower_block_balance),
+                                    std::ref(top_solutions[i])));
+    }
+    for (auto& th : threads) {
+      th.join();
+    }
+    threads.clear();
+
+    // update the best_solution_id
+    float best_cost = std::numeric_limits<float>::max();
+    for (auto i = 0; i < top_solutions.size(); i++) {
+      const float cost
+          = evaluator_->CutEvaluator(hgraph, top_solutions[i], true).first;
+      if (best_cost > cost) {
+        best_cost = cost;
+        best_solution_id = i;
+      }
+    }
+    logger_->report(
+        "[Refinement] Level {} :: num_vertices = {}, num_hyperedges = {},"
+        " cutcost = {}, best_solution_id = {}",
+        ++num_level,
+        hgraph->num_vertices_,
+        hgraph->num_hyperedges_,
+        best_cost,
+        best_solution_id);
   }
 }
 
-void TPmultilevelPartitioner::MultilevelPartKWay(
-    HGraph hgraph,
-    HGraph hgraph_processed,
-    matrix<float>& max_vertex_balance,
-    TP_partition& solution,
-    bool VCycle)
+// Refine function
+// k_way_pm_refinement,
+// k_way_fm_refinement and greedy refinement
+void TPmultilevelPartitioner::CallRefiner(
+    const HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    std::vector<int>& solution) const
 {
-  coarsener_->SetVertexOrderChoice(Order::RANDOM);
-  auto community = coarsener_->PathBasedCommunity(hgraph);
-  hgraph->community_attr_ = community;
-  hgraph->community_flag_ = true;
-  TP_coarse_graphs hierarchy = coarsener_->LazyFirstChoice(hgraph);
-  // return exit(EXIT_SUCCESS);
-  HGraph coarsest_hgraph = hierarchy.back();
-  hierarchy.pop_back();
-  if (hgraph->num_timing_paths_ > 0) {
-    k_way_refiner_->SetHeSizeSkip(1000);
+  if (num_parts_ > 1) {  // Pair-wise FM only used for multi-way partitioning
+    k_way_pm_refiner_->Refine(
+        hgraph, upper_block_balance, lower_block_balance, solution);
+  }
+  k_way_fm_refiner_->Refine(
+      hgraph, upper_block_balance, lower_block_balance, solution);
+  greedy_refiner_->Refine(
+      hgraph, upper_block_balance, lower_block_balance, solution);
+}
+
+// Perform cut-overlay clustering and ILP-based partitioning
+// The ILP-based partitioning uses top_solutions[best_solution_id] as a hint,
+// such that the runtime can be signficantly reduced
+std::vector<int> TPmultilevelPartitioner::CutOverlayILPPart(
+    const HGraphPtr hgraph,
+    const MATRIX<float>& upper_block_balance,
+    const MATRIX<float>& lower_block_balance,
+    const MATRIX<int>& top_solutions,
+    int best_solution_id) const
+{
+  std::vector<int> optimal_solution = top_solutions[best_solution_id];
+  std::vector<int> vertex_cluster_vec(hgraph->num_vertices_, -1);
+  // check if the hyperedge is cut by solutions
+  std::vector<bool> hyperedge_mask(hgraph->num_hyperedges_, false);
+  for (const auto& solution : top_solutions) {
+    for (int e = 0; e < hgraph->num_hyperedges_; e++) {
+      if (hyperedge_mask[e] == true) {
+        continue;  // This hyperedge has been cut
+      }
+      const int start_idx = hgraph->eptr_[e];
+      const int end_idx = hgraph->eptr_[e + 1];
+      const int block_id = solution[hgraph->eind_[start_idx]];
+      for (int idx = start_idx + 1; idx < end_idx; idx++) {
+        if (solution[hgraph->eind_[idx]] != block_id) {
+          hyperedge_mask[e] = true;
+          break;  // end this hyperedge
+        }
+      }
+    }
+  }
+
+  // pre-order BFS to traverse the hypergraph
+  auto lambda_detect_connected_components = [&](int v, int cluster_id) -> void {
+    std::queue<int> wavefront;
+    wavefront.push(v);
+    while (wavefront.empty() == false) {
+      const int u = wavefront.front();
+      wavefront.pop();
+      const int start_idx = hgraph->vptr_[u];
+      const int end_idx = hgraph->vptr_[u + 1];
+      for (int idx = start_idx; idx < end_idx; idx++) {
+        const int e = hgraph->vind_[idx];
+        if (hyperedge_mask[e] == true) {
+          continue;  // this hyperedge has been cut
+        }
+        for (auto v_idx = hgraph->eptr_[e]; v_idx < hgraph->eptr_[e + 1];
+             v_idx++) {
+          const int v_nbr = hgraph->eind_[v_idx];  // vertex v_nbr
+          if (vertex_cluster_vec[v_nbr] == -1) {
+            vertex_cluster_vec[v_nbr] = cluster_id;
+            wavefront.push(v_nbr);
+          }
+        }
+      }
+    }
+  };
+
+  // detect the connected components and mask each connected component as a
+  // cluster
+  int cluster_id = -1;
+  // map the initial optimal solution to the solution of clustered hgraph
+  std::vector<int> init_solution;
+  for (int v = 0; v < hgraph->num_vertices_; v++) {
+    if (vertex_cluster_vec[v] == -1) {
+      vertex_cluster_vec[v] = ++cluster_id;
+      init_solution.push_back(top_solutions[best_solution_id][v]);
+      lambda_detect_connected_components(v, cluster_id);
+    }
+  }
+
+  const int num_clusters = cluster_id + 1;
+  std::vector<std::vector<int>> cluster_attr;
+  cluster_attr.reserve(num_clusters);
+  for (int id = 0; id < num_clusters; id++) {
+    std::vector<int> group_cluster{};
+    cluster_attr.push_back(group_cluster);
+  }
+  for (int v = 0; v < hgraph->num_vertices_; v++) {
+    cluster_attr[vertex_cluster_vec[v]].push_back(v);
+  }
+
+  // Call ILP-based partitioning
+  HGraphPtr clustered_hgraph = coarsener_->GroupVertices(hgraph, cluster_attr);
+  logger_->report(
+      "[INFO] Cut-Overlay Clustering : num_vertices = {}, num_hyperedges = {}",
+      clustered_hgraph->num_vertices_,
+      clustered_hgraph->num_hyperedges_);
+
+  if (num_clusters <= num_vertices_threshold_ilp_) {
+    partitioner_->Partition(clustered_hgraph,
+                            upper_block_balance,
+                            lower_block_balance,
+                            init_solution,
+                            PartitionType::INIT_DIRECT_ILP);
   } else {
-    k_way_refiner_->SetHeSizeSkip(500);
+    clustered_hgraph->community_flag_ = true;
+    clustered_hgraph->community_attr_ = init_solution;
+    init_solution = SingleCycleRefinement(
+        clustered_hgraph, upper_block_balance, lower_block_balance);
   }
-  k_way_refiner_->SetMaxMoves(50);
-  auto init_partitions
-      = InitialPartKWay(coarsest_hgraph, max_vertex_balance, solution);
-  logger_->report("sort the solutions based on cutsize");
-  // sort the solution based on cutsize
-  matrix<int> partitions_vec = init_partitions.first;
-  std::vector<int> cutsize_vec = init_partitions.second;
-  std::vector<int> partition_ids(partitions_vec.size());
-  std::iota(partition_ids.begin(), partition_ids.end(), 0);
-  std::sort(partition_ids.begin(),
-            partition_ids.end(),
-            [&](const int x, const int y) {
-              return cutsize_vec[x] < cutsize_vec[y];
-            });
-  solution = partitions_vec[partition_ids.front()];
-  if (hgraph->num_timing_paths_ > 0) {
-    k_way_refiner_->SetHeSizeSkip(1000);
-  } else {
-    k_way_refiner_->SetHeSizeSkip(50);
-  }
-  logger_->report("====================================================");
-  logger_->report("[STATUS] Running V-cycle refinement on {} partitions ",
-                  GetBestInitSolns());
-  logger_->report("====================================================");
-  std::vector<std::thread> threads;
-  matrix<HGraph> hg_threads(GetBestInitSolns());
-  std::vector<TP_k_way_refining_ptr> refiner_threads;
-  for (int i = 0; i < GetBestInitSolns(); ++i) {
-    for (auto& hg : hierarchy) {
-      std::shared_ptr<TPHypergraph> hg_thread(new TPHypergraph(*hg));
-      hg_threads[i].push_back(hg_thread);
-    }
-    TP_k_way_refining_ptr refiner_thread
-        = std::make_shared<TPkWayFM>(k_way_refiner_->GetNumParts(),
-                                     k_way_refiner_->GetIters(),
-                                     k_way_refiner_->GetMaxMoves(),
-                                     k_way_refiner_->GetRefinerChoice(),
-                                     k_way_refiner_->GetSeed(),
-                                     k_way_refiner_->GetEdgeWtFactors(),
-                                     k_way_refiner_->GetPathWtFactor(),
-                                     k_way_refiner_->GetSnakingWtFactor(),
-                                     k_way_refiner_->GetLogger());
-    if (hgraph->num_timing_paths_ > 0) {
-      refiner_thread->SetHeSizeSkip(1000);
-    } else {
-      refiner_thread->SetHeSizeSkip(50);
-    }
-    refiner_threads.push_back(refiner_thread);
-  }
-  for (int i = 0; i < GetBestInitSolns(); ++i) {
-    threads.push_back(std::thread(&par::TPmultilevelPartitioner::VcycleKWay,
-                                  this,
-                                  std::ref(hg_threads[i]),
-                                  std::ref(max_vertex_balance),
-                                  std::ref(partitions_vec[partition_ids[i]]),
-                                  refiner_threads[i],
-                                  false));
-  }
-  for (auto& th : threads) {
-    th.join();
-  }
-  threads.clear();
-  float best_cut = std::numeric_limits<float>::max();
-  int best_partition_id = 0;
-  logger_->report("=============================");
-  for (int i = 0; i < GetBestInitSolns(); ++i) {
-    const float refined_cut
-        = k_way_refiner_->CutEvaluator(hgraph, partitions_vec[partition_ids[i]])
-              .first;
-    logger_->report(
-        "[REFINED PART] {} cutcost {} ", partition_ids[i], refined_cut);
-    if (refined_cut < best_cut) {
-      best_cut = refined_cut;
-      best_partition_id = partition_ids[i];
+
+  // map the solution back to the original hypergraph
+  for (int c_id = 0; c_id < clustered_hgraph->num_vertices_; c_id++) {
+    const int block_id = init_solution[c_id];
+    for (const auto& v : clustered_hgraph->vertex_c_attr_[c_id]) {
+      optimal_solution[v] = block_id;
     }
   }
-  logger_->report("=============================");
-  solution = partitions_vec[best_partition_id];
-  if (VCycle == false) {
-    return;
-  }
-  GuidedVcycleKWay(solution, hgraph, max_vertex_balance, k_way_refiner_);
+
+  logger_->report("[INFO] Statistics of cut-overlay solution:");
+  evaluator_->CutEvaluator(hgraph, optimal_solution, true);
+  return optimal_solution;
 }
 
 }  // namespace par

@@ -35,6 +35,18 @@
 
 include("openroad")
 
+option(LOAD_CPLEX "Load CPLEX" OFF)
+if (LOAD_CPLEX)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_MODULE_PATH               "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+  set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -m64 -Wall -fPIC")
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem ")
+  set(LINKER_OPTIONS                  "-Wl,--export-dynamic")
+  find_package(Cplex)
+  include_directories(SYSTEM ${CPLEX_INCLUDE_DIRS})
+endif (LOAD_CPLEX)
+
+find_package(Threads REQUIRED)
 find_package(ortools REQUIRED)
 
 add_library(par_lib
@@ -46,7 +58,12 @@ add_library(par_lib
   src/TPMultilevel.cpp
   src/TPRefiner.cpp
   src/TPPartitioner.cpp
-  src/KPMRefinement.cpp
+  src/TPEvaluator.cpp
+  src/TPGreedyRefine.cpp
+  src/TPILPRefine.cpp
+  src/TPKWayFMRefine.cpp
+  src/TPKWayPMRefine.cpp
+  src/TPPriorityQueue.cpp
 )
 
 target_include_directories(par_lib
@@ -89,6 +106,21 @@ target_link_libraries(par
     OpenSTA
     par_lib
 )
+
+if (LOAD_CPLEX)
+  target_compile_definitions(par
+    PRIVATE
+      LOAD_CPLEX
+  )
+
+  target_link_libraries(par
+    PRIVATE
+      ${CPLEX_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      dl
+  )
+endif (LOAD_CPLEX)
+
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          par_py
