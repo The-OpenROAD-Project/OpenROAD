@@ -21,8 +21,7 @@ open access to rapid, low-cost IC design software and expertise and
 system innovation. The OpenROAD application enables flexible flow
 control through an API with bindings in Tcl and Python.
 
-OpenROAD is used in both open-source and commercial IC design
-flows such as,
+OpenROAD is used in reserach and commercial applications such as,
 - [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
   from [OpenROAD](https://theopenroadproject.org/)
 - [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from

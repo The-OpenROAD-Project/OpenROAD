@@ -37,7 +37,6 @@ Optional CMake variables passed as `-D<var>=<value>` arguments to CMake are show
 | `TCL_HEADER`           | Path to `tcl.h`           |
 | `ZLIB_ROOT`            | Path to `zlib`            |
 | `CMAKE_INSTALL_PREFIX` | Path to install binary    |
-| `GPU`                  | true, false               |
 
 > **Note:** There is a `openroad_build.log` file that is generated
 with every build in the build directory. In case of filing issues,
@@ -86,12 +85,3 @@ By default, OpenROAD is built with link time optimizations enabled.
 This adds about 1 minute to compile times and improves the runtime
 by about 11%. If you would like to disable LTO pass 
 `-DLINK_TIME_OPTIMIZATION=OFF` when generating a build.
-
-### GPU acceleration
-OpenROAD offers experimental GPU acceleration for global placement.
-To enable GPU acceleration and use the CUDA solver, set `-DGPU=true`
-at cmake time.
-
-GPU acceleration requires installation of the CUDA Toolkit and GPU
-driver for your system. See [here](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html)
-for a CUDA installation guide.
