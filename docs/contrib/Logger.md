@@ -439,34 +439,37 @@ target_link_libraries(<library_target>
 )
 ```
 
-| Tool                 | message/namespace |
-| -------------------- | ----------------- |
-| antenna_checker      | ant               |
-| dbSta                | sta               |
-| Design For Test      | dft               |
-| FastRoute            | grt               |
-| finale               | fin               |
-| flute3               | stt               |
-| gui                  | gui               |
-| ICeWall              | pad               |
-| init_fp              | ifp               |
-| ioPlacer             | ppl               |
-| OpenDB               | odb               |
-| opendp               | dpl               |
-| detailedPlacer       | dpo               |
-| OpenRCX              | rcx               |
-| *OpenROAD*           | ord               |
-| OpenSTA              | sta               |
-| PartMgr              | par               |
-| pdngen               | pdn               |
-| PDNSim               | psm               |
-| remapper             | rmp               |
-| replace              | gpl               |
-| resizer              | rsz               |
-| tapcell              | tap               |
-| TritonCTS            | cts               |
-| TritonMacroPlace     | mpl               |
-| TritonRoute          | drt               |
-| Distributed          | dst               |
-| Unified Power Format | upf               |
-| utility              | utl               |
+### OpenROAD Tool List
+
+| Tool                 | message/namespace | Description                               |
+| -------------------- | ----------------- | ----------------------------------------- |
+| antenna_checker      | ant               | Diode Insertion                           |
+| dbSta                | sta               | Interface between odb & sta               |
+| Design For Test      | dft               | Design For Test                           |
+| FastRoute            | grt               | Gloabl Routing                            |
+| finale               | fin               | Metal Fill                                |
+| flute3               | stt               | Steiner tree generation                   |
+| gui                  | gui               | Graphical User Interface                  |
+| ICeWall              | pad               | Chip-Level Connections                    |
+| init_fp              | ifp               | Initialize Floorplan                      |
+| ioPlacer             | ppl               | Pin Placement                             |
+| OpenDB               | odb               | Open Data Base                            |
+| opendp               | dpl               | Detail Placement                          |
+| detailedPlacer       | dpo               | Detailed Placer                           |
+| OpenRCX              | rcx               | Parasitic Extraction                      |
+| *OpenROAD*           | ord               | OpenROAD(Global commands)                 |
+| OpenSTA              | sta               | Timing Analysis                           |
+| PartMgr              | par               | Timing-aware Advanced Partitioner         |
+| pdngen               | pdn               | PDN Analysis                              |
+| PDNSim               | psm               | IR Drop Analysis                          |
+| remapper             | rmp               | Synthesis Restructure                     |
+| replace              | gpl               | Global Placement                          |
+| resizer              | rsz               | Gate ReSizer                              |
+| tapcell              | tap               | Tapcell Insertion                         |
+| TritonCTS            | cts               | Clock Tree Synthesis                      |
+| TritonMacroPlace     | mpl               | Macro Placement                           |
+| Hier RTL-MP          | mpl2              | Hierarchy Macro Placement                 |
+| TritonRoute          | drt               | Detail Routing                            |
+| Distributed          | dst               | Infrastructure for distributed processing | 
+| Unified Power Format | upf               | Unified Power Format                      |
+| utility              | utl               | Utility                                   |

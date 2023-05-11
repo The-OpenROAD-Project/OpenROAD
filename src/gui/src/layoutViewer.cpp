@@ -71,6 +71,7 @@
 #include "scriptWidget.h"
 #include "search.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
@@ -104,6 +105,7 @@ using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Point;
 using odb::Rect;
+using utl::GUI;
 
 // This class wraps the QPainter in the abstract Painter API for
 // Renderer instances to use.
@@ -2020,6 +2022,7 @@ void LayoutViewer::drawRulers(Painter& painter)
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
+  utl::Timer timer;
   int minimum_height_for_tag = nominalViewableResolution();
   int minimum_size = fineViewableResolution();
   const QTransform initial_xfm = painter->transform();
@@ -2028,20 +2031,26 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
   painter->setBrush(QBrush());
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
-    // setup the instance's transform
-    QTransform xfm = initial_xfm;
-    dbTransform inst_xfm;
-    inst->getTransform(inst_xfm);
-    addInstTransform(xfm, inst_xfm);
-    painter->setTransform(xfm);
 
-    // draw bbox
-    Rect master_box;
-    master->getPlacementBoundary(master_box);
-
-    if (minimum_size > master_box.dx() && minimum_size > master_box.dy()) {
-      painter->drawPoint(master_box.xMin(), master_box.yMin());
+    if (minimum_size > master->getWidth()
+        && minimum_size > master->getHeight()) {
+      painter->setTransform(initial_xfm);
+      int x;
+      int y;
+      inst->getOrigin(x, y);
+      painter->drawPoint(x, y);
     } else {
+      // setup the instance's transform
+      QTransform xfm = initial_xfm;
+      dbTransform inst_xfm;
+      inst->getTransform(inst_xfm);
+      addInstTransform(xfm, inst_xfm);
+      painter->setTransform(xfm);
+
+      // draw bbox
+      Rect master_box;
+      master->getPlacementBoundary(master_box);
+
       painter->drawRect(master_box.xMin(),
                         master_box.yMin(),
                         master_box.dx(),
@@ -2060,6 +2069,7 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     }
   }
   painter->setTransform(initial_xfm);
+  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", timer);
 }
 
 // Draw the instances' shapes
@@ -2272,14 +2282,14 @@ void LayoutViewer::drawViaShapes(QPainter* painter,
                                  dbTechLayer* cut_layer,
                                  dbTechLayer* draw_layer,
                                  const Rect& bounds,
-                                 const int instance_limit)
+                                 const int shape_limit)
 {
   auto via_sbox_iter = search_.searchViaSBoxShapes(cut_layer,
                                                    bounds.xMin(),
                                                    bounds.yMin(),
                                                    bounds.xMax(),
                                                    bounds.yMax(),
-                                                   instance_limit);
+                                                   shape_limit);
 
   std::vector<odb::dbShape> via_shapes;
   for (auto& [box, sbox, net] : via_sbox_iter) {
@@ -2303,6 +2313,8 @@ void LayoutViewer::drawViaShapes(QPainter* painter,
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
 {
+  utl::Timer timer;
+
   const int instance_limit = instanceSizeLimit();
   const int shape_limit = shapeSizeLimit();
 
@@ -2325,6 +2337,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
 
   drawManufacturingGrid(painter, bounds);
 
+  utl::Timer inst_timer;
   auto inst_range = search_.searchInsts(bounds.xMin(),
                                         bounds.yMin(),
                                         bounds.xMax(),
@@ -2340,6 +2353,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
       insts.push_back(inst);
     }
   }
+  debugPrint(logger_, GUI, "draw", 1, "inst search {}", inst_timer);
 
   drawInstanceOutlines(painter, insts);
 
@@ -2351,6 +2365,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     if (!options_->isVisible(layer)) {
       continue;
     }
+    utl::Timer layer_timer;
 
     // Skip the cut layer if the cuts will be too small to see
     const bool draw_shapes = !(layer->getType() == dbTechLayerType::CUT
@@ -2373,7 +2388,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
                                               bounds.yMin(),
                                               bounds.xMax(),
                                               bounds.yMax(),
-                                              instance_limit);
+                                              shape_limit);
 
       for (auto& [box, net] : box_iter) {
         if (!isNetVisible(net)) {
@@ -2386,15 +2401,21 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
       }
 
       if (layer->getType() == dbTechLayerType::CUT) {
-        drawViaShapes(painter, layer, layer, bounds, instance_limit);
+        drawViaShapes(painter, layer, layer, bounds, shape_limit);
       } else {
         // Get the enclosure shapes from any vias on the cut layers
-        // above or below this one.
+        // above or below this one.  Skip enclosure shapes if they
+        // will be too small based on the cut size (enclosure shapes
+        // are generally only slightly larger).
         if (auto upper = layer->getUpperLayer()) {
-          drawViaShapes(painter, upper, layer, bounds, instance_limit);
+          if (cut_maximum_size_[upper] >= shape_limit) {
+            drawViaShapes(painter, upper, layer, bounds, shape_limit);
+          }
         }
         if (auto lower = layer->getLowerLayer()) {
-          drawViaShapes(painter, lower, layer, bounds, instance_limit);
+          if (cut_maximum_size_[lower] >= shape_limit) {
+            drawViaShapes(painter, lower, layer, bounds, shape_limit);
+          }
         }
       }
 
@@ -2403,7 +2424,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
                                                       bounds.yMin(),
                                                       bounds.xMax(),
                                                       bounds.yMax(),
-                                                      instance_limit);
+                                                      shape_limit);
 
       for (auto& [box, poly, net] : polygon_iter) {
         if (!isNetVisible(net)) {
@@ -2450,6 +2471,13 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
       renderer->drawLayer(layer, gui_painter);
       gui_painter.restoreState();
     }
+    debugPrint(logger_,
+               GUI,
+               "draw",
+               1,
+               "layer {} render {}",
+               layer->getName(),
+               layer_timer);
   }
   // draw instance names
   drawInstanceNames(painter, insts);
@@ -2474,6 +2502,8 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
+
+  debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }
 
 void LayoutViewer::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
@@ -3722,6 +3752,13 @@ void LayoutViewer::generateCutLayerMaximumSizes()
         }
       }
       cut_maximum_size_[layer] = width;
+      debugPrint(logger_,
+                 GUI,
+                 "cut_size",
+                 1,
+                 "Cut size for layer {} is {}",
+                 layer->getName(),
+                 width);
     }
   }
 }
