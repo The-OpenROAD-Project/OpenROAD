@@ -1778,7 +1778,7 @@ void dbCreateNetUtil::createPGpin(dbBlock* block,
   }
 }
 
-void dbCreateNetUtil::create_custom_connections(dbBlock* block,
+void dbCreateNetUtil::createCustomConnections(dbBlock* block,
                                                 const char* net,
                                                 const char* inst,
                                                 const char* iterm)
