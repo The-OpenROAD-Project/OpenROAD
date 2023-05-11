@@ -304,7 +304,7 @@ void createPGpins(odb::dbBlock* block,
                   int num_connection_points,
                   int position)
 {
-  utl::Logger* logger = new utl::Logger(NULL);
+  utl::Logger* logger = new utl::Logger(nullptr);
   odb::dbCreateNetUtil PGpin(logger);
   PGpin.createPGpin(
       block,
@@ -319,9 +319,9 @@ void createConnection(odb::dbBlock* block,
                       const char* inst,
                       const char* iterm)
 {
-  utl::Logger* logger = new utl::Logger(NULL);
+  utl::Logger* logger = new utl::Logger(nullptr);
   odb::dbCreateNetUtil connect(logger);
-  connect.create_custom_connections(
+  connect.createCustomConnections(
       block, net, inst, iterm);
 }
 
