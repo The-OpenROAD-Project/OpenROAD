@@ -2554,8 +2554,9 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
                                    net->getId(),
                                    net->getConstName());
     dbSigType ty = net->getSigType();
-    if ((ty == dbSigType::POWER) && (ty == dbSigType::GROUND))
+    if (ty.isSupply()) {
       xnet->setSpecial();
+    }
 
     xnet->setSigType(ty);
   }

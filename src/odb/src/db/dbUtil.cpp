@@ -680,8 +680,9 @@ dbNet* dbCreateNetUtil::createNet(dbNet* nn, bool create, bool destroy)
   dbNet* net = dbNet::create(_block, nn->getConstName());
 
   dbSigType ty = nn->getSigType();
-  if ((ty == dbSigType::POWER) && (ty == dbSigType::GROUND))
+  if (ty.isSupply()) {
     net->setSpecial();
+  }
 
   net->setSigType(ty);
 
