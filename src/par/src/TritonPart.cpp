@@ -1064,8 +1064,8 @@ void TritonPart::ReadNetlist(std::string fixed_file,
         vertex_types_.emplace_back(PORT);
         odb::dbIntProperty::find(term, "vertex_id")->setValue(vertex_id++);
         if (placement_flag_ == true) {
-          std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0,
-                                 (box.yMin() + box.yMax()) / 2.0};
+          std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0f,
+                                 (box.yMin() + box.yMax()) / 2.0f};
           placement_attr_.emplace_back(loc);
         }
       }
@@ -1098,8 +1098,8 @@ void TritonPart::ReadNetlist(std::string fixed_file,
           vertex_types_.emplace_back(COMB_STD_CELL);
         }
         if (placement_flag_ == true) {
-          std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0,
-                                 (box->yMin() + box->yMax()) / 2.0};
+          std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0f,
+                                 (box->yMin() + box->yMax()) / 2.0f};
           placement_attr_.emplace_back(loc);
         }
         odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
@@ -1113,8 +1113,8 @@ void TritonPart::ReadNetlist(std::string fixed_file,
       vertex_weights_.push_back(vwts);
       if (placement_flag_ == true) {
         odb::Rect box = term->getBBox();
-        std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0,
-                               (box.yMin() + box.yMax()) / 2.0};
+        std::vector<float> loc{(box.xMin() + box.xMax()) / 2.0f,
+                               (box.yMin() + box.yMax()) / 2.0f};
         placement_attr_.emplace_back(loc);
       }
     }
@@ -1144,8 +1144,8 @@ void TritonPart::ReadNetlist(std::string fixed_file,
       odb::dbIntProperty::find(inst, "vertex_id")->setValue(vertex_id++);
       if (placement_flag_ == true) {
         odb::dbBox* box = inst->getBBox();
-        std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0,
-                               (box->yMin() + box->yMax()) / 2.0};
+        std::vector<float> loc{(box->xMin() + box->xMax()) / 2.0f,
+                               (box->yMin() + box->yMax()) / 2.0f};
         placement_attr_.emplace_back(loc);
       }
     }

@@ -78,14 +78,14 @@ class TPmultilevelPartitioner
                           utl::Logger* logger)
       : num_parts_(num_parts),
         ub_factor_(ub_factor),
-        v_cycle_flag_(v_cycle_flag),
+        num_vertices_threshold_ilp_(num_vertices_threshold_ilp),
         num_initial_random_solutions_(num_initial_solutions),
         num_best_initial_solutions_(num_best_initial_solutions),
-        num_vertices_threshold_ilp_(num_vertices_threshold_ilp),
         max_num_vcycle_(max_num_vcycle),
         num_coarsen_solutions_(num_coarsen_solutions),
         seed_(seed),
-        timing_driven_flag_(timing_driven_flag)
+        timing_driven_flag_(timing_driven_flag),
+        v_cycle_flag_(v_cycle_flag)
   {
     coarsener_ = coarsener;
     partitioner_ = partitioner;
