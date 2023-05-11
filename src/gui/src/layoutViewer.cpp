@@ -71,6 +71,7 @@
 #include "scriptWidget.h"
 #include "search.h"
 #include "utl/Logger.h"
+#include "utl/timer.h"
 
 // Qt's coordinate system is defined with the origin at the UPPER-left
 // and y values increase as you move DOWN the screen.  All EDA tools
@@ -104,6 +105,7 @@ using odb::dbTrackGrid;
 using odb::dbTransform;
 using odb::Point;
 using odb::Rect;
+using utl::GUI;
 
 // This class wraps the QPainter in the abstract Painter API for
 // Renderer instances to use.
@@ -2020,6 +2022,7 @@ void LayoutViewer::drawRulers(Painter& painter)
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
+  utl::Timer timer;
   int minimum_height_for_tag = nominalViewableResolution();
   int minimum_size = fineViewableResolution();
   const QTransform initial_xfm = painter->transform();
@@ -2066,6 +2069,7 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     }
   }
   painter->setTransform(initial_xfm);
+  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", timer);
 }
 
 // Draw the instances' shapes
@@ -2309,7 +2313,7 @@ void LayoutViewer::drawViaShapes(QPainter* painter,
 // is there for hierarchical design support.
 void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
 {
-  auto start_time = std::chrono::high_resolution_clock::now();
+  utl::Timer timer;
 
   const int instance_limit = instanceSizeLimit();
   const int shape_limit = shapeSizeLimit();
@@ -2333,6 +2337,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
 
   drawManufacturingGrid(painter, bounds);
 
+  utl::Timer inst_timer;
   auto inst_range = search_.searchInsts(bounds.xMin(),
                                         bounds.yMin(),
                                         bounds.xMax(),
@@ -2348,6 +2353,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
       insts.push_back(inst);
     }
   }
+  debugPrint(logger_, GUI, "draw", 1, "inst search {}", inst_timer);
 
   drawInstanceOutlines(painter, insts);
 
@@ -2359,6 +2365,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     if (!options_->isVisible(layer)) {
       continue;
     }
+    utl::Timer layer_timer;
 
     // Skip the cut layer if the cuts will be too small to see
     const bool draw_shapes = !(layer->getType() == dbTechLayerType::CUT
@@ -2407,7 +2414,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
         }
         if (auto lower = layer->getLowerLayer()) {
           if (cut_maximum_size_[lower] >= shape_limit) {
-            drawViaShapes(painter, lower, layer, bounds, instance_limit);
+            drawViaShapes(painter, lower, layer, bounds, shape_limit);
           }
         }
       }
@@ -2464,6 +2471,13 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
       renderer->drawLayer(layer, gui_painter);
       gui_painter.restoreState();
     }
+    debugPrint(logger_,
+               GUI,
+               "draw",
+               1,
+               "layer {} render {}",
+               layer->getName(),
+               layer_timer);
   }
   // draw instance names
   drawInstanceNames(painter, insts);
@@ -2488,13 +2502,8 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
-  if (logger_->debugCheck(utl::GUI, "draw", 1)) {
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto time_span
-        = std::chrono::duration<double, std::milli>(end_time - start_time);
-    logger_->debug(
-        utl::GUI, "draw", "elapsed render time {}ms", time_span.count());
-  }
+
+  debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }
 
 void LayoutViewer::drawGCellGrid(QPainter* painter, const odb::Rect& bounds)
@@ -3743,6 +3752,13 @@ void LayoutViewer::generateCutLayerMaximumSizes()
         }
       }
       cut_maximum_size_[layer] = width;
+      debugPrint(logger_,
+                 GUI,
+                 "cut_size",
+                 1,
+                 "Cut size for layer {} is {}",
+                 layer->getName(),
+                 width);
     }
   }
 }
