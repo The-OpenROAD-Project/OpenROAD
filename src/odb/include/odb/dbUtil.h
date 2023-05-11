@@ -212,10 +212,10 @@ class dbCreateNetUtil
 
   enum Position
   {
-    DEFAULT = 0,
-    MIDDLE = 1,
-    RIGHT = 2,
-    LEFT = 3
+    DEFAULT = 0, //use the whole area for create pins
+    MIDDLE = 1,  //use the middle 1/2 area for create pins
+    RIGHT = 2,   //use the right 1/2 area for create pins
+    LEFT = 3     //use the left 1/2 area for create pins
   };
   // These 2 functions below are needed by sroute command.
   // create_PGpin would create bterms on the net that is suppose to
@@ -227,7 +227,7 @@ class dbCreateNetUtil
                    const char* source_net_name,
                    int num_connection_points,
                    Position position);
-  void create_custom_connections(dbBlock* block,
+  void createCustomConnections(dbBlock* block,
                                  const char* nett,
                                  const char* instt,
                                  const char* itermm);
