@@ -2407,7 +2407,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
         }
         if (auto lower = layer->getLowerLayer()) {
           if (cut_maximum_size_[lower] >= shape_limit) {
-            drawViaShapes(painter, lower, layer, bounds, instance_limit);
+            drawViaShapes(painter, lower, layer, bounds, shape_limit);
           }
         }
       }
