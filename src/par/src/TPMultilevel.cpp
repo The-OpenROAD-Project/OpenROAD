@@ -167,7 +167,6 @@ void TPmultilevelPartitioner::VcycleRefinement(
     const MATRIX<float>& lower_block_balance,
     std::vector<int>& best_solution) const
 {
-  float best_cost = evaluator_->CutEvaluator(hgraph, best_solution).first;
   MATRIX<int> candidate_solutions;
   candidate_solutions.push_back(best_solution);
   for (int num_cycles = 0; num_cycles < max_num_vcycle_; num_cycles++) {

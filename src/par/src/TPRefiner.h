@@ -308,8 +308,8 @@ class TPrefiner
         path_wt_factor_(path_wt_factor),
         snaking_wt_factor_(snaking_wt_factor),
         max_move_(max_move),
-        max_move_default_(max_move),
-        refiner_iters_default_(refiner_iters)
+        refiner_iters_default_(refiner_iters),
+        max_move_default_(max_move)
   {
     evaluator_ = evaluator;
     logger_ = logger;
@@ -523,14 +523,14 @@ class TPkWayFMRefine : public TPrefiner
       const int total_corking_passes,
       TP_evaluator_ptr evaluator,  // evaluator
       utl::Logger* logger)
-      : total_corking_passes_(total_corking_passes),
-        TPrefiner(num_parts,
+      : TPrefiner(num_parts,
                   refiner_iters,
                   path_wt_factor,
                   snaking_wt_factor,
                   max_move,
                   evaluator,
-                  logger)
+                  logger),
+        total_corking_passes_(total_corking_passes)
   {
   }
 

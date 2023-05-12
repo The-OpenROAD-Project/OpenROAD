@@ -105,14 +105,14 @@ class GoldenEvaluator
       HGraphPtr timing_graph,       // the timing graph needed
       utl::Logger* logger)
       : num_parts_(num_parts),
+        extra_cut_delay_(extra_cut_delay),
         e_wt_factors_(e_wt_factors),
         v_wt_factors_(v_wt_factors),
         placement_wt_factors_(placement_wt_factors),
         net_timing_factor_(net_timing_factor),
         path_timing_factor_(path_timing_factor),
         path_snaking_factor_(path_snaking_factor),
-        timing_exp_factor_(timing_exp_factor),
-        extra_cut_delay_(extra_cut_delay)
+        timing_exp_factor_(timing_exp_factor)
   {
     timing_graph_ = timing_graph;
     logger_ = logger;

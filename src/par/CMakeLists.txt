@@ -35,7 +35,7 @@
 
 include("openroad")
 
-option(LOAD_CPLEX "Load CPLEX" ON)
+option(LOAD_CPLEX "Load CPLEX" OFF)
 if (LOAD_CPLEX)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_MODULE_PATH               "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
