@@ -80,6 +80,21 @@ target_link_libraries(par_lib
     ortools::ortools
 )
 
+if (LOAD_CPLEX)
+  target_compile_definitions(par_lib
+    PRIVATE
+      LOAD_CPLEX
+  )
+
+  target_link_libraries(par_lib
+    PRIVATE
+      ${CPLEX_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      dl
+  )
+endif (LOAD_CPLEX)
+
+
 swig_lib(NAME      par
          NAMESPACE par
          I_FILE    src/partitionmgr.i

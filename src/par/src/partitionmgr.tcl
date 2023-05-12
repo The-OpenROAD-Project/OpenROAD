@@ -139,7 +139,7 @@ proc triton_part_hypergraph { args } {
   set v_cycle_flag true
   set max_num_vcycle 1
   set num_coarsen_solutions 4
-  set num_vertices_threshold_ilp 10
+  set num_vertices_threshold_ilp 50
   set global_net_threshold 1000
   
   if { [info exists keys(-num_parts)] } {
@@ -524,7 +524,7 @@ proc triton_part_design { args } {
   set v_cycle_flag true
   set max_num_vcycle 1
   set num_coarsen_solutions 4
-  set num_vertices_threshold_ilp 10
+  set num_vertices_threshold_ilp 50
   set global_net_threshold 1000
   
   if { [info exists keys(-num_parts)] } {
