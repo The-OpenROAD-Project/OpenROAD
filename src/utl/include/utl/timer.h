@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,56 +30,29 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-#include "gui/heatMap.h"
+#include <chrono>
+#include <iostream>
 
-namespace grt {
+namespace utl {
 
-class RoutingCongestionDataSource : public gui::HeatMapDataSource
+// A basic timer class for measuring elapsed time.
+class Timer
 {
  public:
-  RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
-  ~RoutingCongestionDataSource() {}
-
-  virtual bool canAdjustGrid() const override { return false; }
-  virtual double getGridXSize() const override;
-  virtual double getGridYSize() const override;
-
- protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
-  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
-  virtual std::string formatValue(double value, bool legend) const override;
+  double elapsed() const;  // in seconds
+  void reset();
 
  private:
-  enum Direction
-  {
-    ALL,
-    HORIZONTAL,
-    VERTICAL
-  };
-  enum MapType
-  {
-    Congestion,
-    Usage,
-    Capacity
-  };
+  using Clock = std::chrono::steady_clock;
 
-  odb::dbDatabase* db_;
-  Direction direction_;
-  odb::dbTechLayer* layer_;
-
-  MapType type_;
-  double max_;
-
-  static constexpr double default_grid_ = 10.0;
+  std::chrono::time_point<Clock> start_{Clock::now()};
 };
 
-}  // namespace grt
+std::ostream& operator<<(std::ostream& os, const Timer& t);
+
+}  // namespace utl

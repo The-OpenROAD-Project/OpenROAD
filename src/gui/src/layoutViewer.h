@@ -128,8 +128,8 @@ class LayoutViewer : public QWidget
                const HighlightSet& highlighted,
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                Gui* gui,
-               std::function<bool(void)> usingDBU,
-               std::function<bool(void)> showRulerAsEuclidian,
+               const std::function<bool(void)>& usingDBU,
+               const std::function<bool(void)>& showRulerAsEuclidian,
                QWidget* parent = nullptr);
 
   void setLogger(utl::Logger* logger);
@@ -164,7 +164,7 @@ class LayoutViewer : public QWidget
 
   // save image of the layout
   void saveImage(const QString& filepath,
-                 const odb::Rect& rect = odb::Rect(),
+                 const odb::Rect& region = odb::Rect(),
                  double dbu_per_pixel = 0);
 
   // From QWidget
@@ -225,7 +225,7 @@ class LayoutViewer : public QWidget
   void updateCenter(int dx, int dy);
 
   // set the layout resolution
-  void setResolution(qreal dbu_per_pixel);
+  void setResolution(qreal pixels_per_dbu);
 
   // update the fit resolution (the maximum pixels_per_dbu without scroll bars)
   void viewportUpdated();
@@ -233,8 +233,8 @@ class LayoutViewer : public QWidget
   // signals that the cache should be flushed and a full repaint should occur.
   void fullRepaint();
 
-  void selectHighlightConnectedInst(bool selectFlag);
-  void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
+  void selectHighlightConnectedInst(bool select_flag);
+  void selectHighlightConnectedNets(bool select_flag, bool output, bool input);
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
@@ -303,7 +303,7 @@ class LayoutViewer : public QWidget
                      odb::dbTechLayer* cut_layer,
                      odb::dbTechLayer* draw_layer,
                      const odb::Rect& bounds,
-                     int instance_limit);
+                     int shape_limit);
   void drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds);
   void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter);
@@ -324,7 +324,7 @@ class LayoutViewer : public QWidget
                          const odb::Rect& region,
                          int shape_limit,
                          std::vector<Selected>& selections);
-  Selected selectAtPoint(odb::Point pt_dbu);
+  Selected selectAtPoint(const odb::Point& pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
 
@@ -359,7 +359,7 @@ class LayoutViewer : public QWidget
       odb::dbTechLayer* search_layer,
       const odb::Rect& search_line,
       int shape_limit,
-      std::function<void(const odb::Rect& rect)> check_rect);
+      const std::function<void(const odb::Rect& rect)>& check_rect);
   int edgeToPointDistance(const odb::Point& pt, const Edge& edge) const;
   bool compareEdges(const Edge& lhs, const Edge& rhs) const;
 

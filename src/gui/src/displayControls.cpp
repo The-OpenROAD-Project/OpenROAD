@@ -57,7 +57,8 @@ Q_DECLARE_METATYPE(std::function<void(void)>);
 
 namespace gui {
 
-using namespace odb;
+using odb::dbTechLayer;
+using odb::dbTechLayerType;
 
 PatternButton::PatternButton(Qt::BrushStyle pattern, QWidget* parent)
     : QRadioButton(parent), pattern_(pattern)
@@ -78,7 +79,7 @@ void PatternButton::paintEvent(QPaintEvent* event)
   qp.end();
 }
 
-DisplayColorDialog::DisplayColorDialog(QColor color,
+DisplayColorDialog::DisplayColorDialog(const QColor& color,
                                        Qt::BrushStyle pattern,
                                        QWidget* parent)
     : QDialog(parent), color_(color), pattern_(pattern), show_brush_(true)
@@ -86,7 +87,7 @@ DisplayColorDialog::DisplayColorDialog(QColor color,
   buildUI();
 }
 
-DisplayColorDialog::DisplayColorDialog(QColor color, QWidget* parent)
+DisplayColorDialog::DisplayColorDialog(const QColor& color, QWidget* parent)
     : QDialog(parent),
       color_(color),
       pattern_(Qt::SolidPattern),
@@ -117,10 +118,11 @@ void DisplayColorDialog::buildUI()
       for (auto pattern : pattern_group) {
         PatternButton* pattern_button = new PatternButton(pattern, this);
         pattern_buttons_.push_back(pattern_button);
-        if (pattern == pattern_)
+        if (pattern == pattern_) {
           pattern_button->setChecked(true);
-        else
+        } else {
           pattern_button->setChecked(false);
+        }
         grid_layout_->addWidget(pattern_button, row_index, col_index);
         ++col_index;
       }
@@ -139,15 +141,14 @@ void DisplayColorDialog::buildUI()
   setWindowTitle("Layer Config");
 }
 
-DisplayColorDialog::~DisplayColorDialog()
-{
-}
+DisplayColorDialog::~DisplayColorDialog() = default;
 
 Qt::BrushStyle DisplayColorDialog::getSelectedPattern() const
 {
   for (auto pattern_button : pattern_buttons_) {
-    if (pattern_button->isChecked())
+    if (pattern_button->isChecked()) {
       return pattern_button->pattern();
+    }
   }
   return Qt::SolidPattern;
 }
@@ -175,7 +176,7 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
     QStandardItem* item = itemFromIndex(index);
     QVariant data = item->data(user_data_item_idx_);
     if (data.isValid()) {
-      odb::dbTechLayer* layer = data.value<odb::dbTechLayer*>();
+      dbTechLayer* layer = data.value<dbTechLayer*>();
       auto selected = Gui::get()->makeSelected(layer);
       if (selected) {
         auto props = selected.getProperties();
@@ -233,9 +234,11 @@ QVariant DisplayControlModel::headerData(int section,
     } else if (role == Qt::DecorationRole) {
       if (section == 1) {
         return QIcon(":/palette.png");
-      } else if (section == 2) {
+      }
+      if (section == 2) {
         return QIcon(":/visible.png");
-      } else if (section == 3) {
+      }
+      if (section == 3) {
         return QIcon(":/select.png");
       }
     }
@@ -928,7 +931,7 @@ void DisplayControls::displayItemSelected(const QItemSelection& selection)
     if (!tech_layer_data.isValid()) {
       continue;
     }
-    auto* tech_layer = tech_layer_data.value<odb::dbTechLayer*>();
+    auto* tech_layer = tech_layer_data.value<dbTechLayer*>();
     if (tech_layer == nullptr) {
       continue;
     }
@@ -971,7 +974,7 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       if (!tech_layer_data.isValid()) {
         return;
       }
-      auto tech_layer = tech_layer_data.value<odb::dbTechLayer*>();
+      auto tech_layer = tech_layer_data.value<dbTechLayer*>();
       auto site = tech_layer_data.value<odb::dbSite*>();
       if (tech_layer != nullptr) {
         item_color = &layer_color_[tech_layer];
@@ -1065,15 +1068,14 @@ bool DisplayControls::checkControlByPath(const std::string& path,
 
   if (items.size() == 1) {
     return items[0]->checkState() == Qt::Checked;
-  } else {
-    logger_->warn(utl::GUI,
-                  34,
-                  "Found {} controls matching {} at {}.",
-                  items.size(),
-                  path,
-                  is_visible ? "visible" : "select");
-    return false;
   }
+  logger_->warn(utl::GUI,
+                34,
+                "Found {} controls matching {} at {}.",
+                items.size(),
+                path,
+                is_visible ? "visible" : "select");
+  return false;
 }
 
 void DisplayControls::collectControls(
@@ -1145,7 +1147,7 @@ void DisplayControls::setDb(odb::dbDatabase* db)
     return;
   }
 
-  dbTech* tech = db->getTech();
+  odb::dbTech* tech = db->getTech();
   if (!tech) {
     return;
   }
@@ -1173,8 +1175,9 @@ void DisplayControls::setDb(odb::dbDatabase* db)
 
   toggleParent(layers_group_);
 
-  for (int i = 0; i < 4; i++)
+  for (int i = 0; i < 4; i++) {
     view_->resizeColumnToContents(i);
+  }
   emit changed();
 }
 
@@ -1278,7 +1281,7 @@ void DisplayControls::setItemExclusivity(
   row.visible->setData(QVariant::fromValue(names), exclusivity_item_idx_);
 }
 
-const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
+QIcon DisplayControls::makeSwatchIcon(const QColor& color)
 {
   QPixmap swatch(20, 20);
   swatch.fill(color);
@@ -1286,7 +1289,7 @@ const QIcon DisplayControls::makeSwatchIcon(const QColor& color)
   return QIcon(swatch);
 }
 
-QColor DisplayControls::color(const odb::dbTechLayer* layer)
+QColor DisplayControls::color(const dbTechLayer* layer)
 {
   auto it = layer_color_.find(layer);
   if (it != layer_color_.end()) {
@@ -1295,7 +1298,7 @@ QColor DisplayControls::color(const odb::dbTechLayer* layer)
   return QColor();
 }
 
-Qt::BrushStyle DisplayControls::pattern(const odb::dbTechLayer* layer)
+Qt::BrushStyle DisplayControls::pattern(const dbTechLayer* layer)
 {
   auto it = layer_pattern_.find(layer);
   if (it != layer_pattern_.end()) {
@@ -1353,7 +1356,7 @@ bool DisplayControls::isModelRowSelectable(
 }
 
 const DisplayControls::ModelRow* DisplayControls::getLayerRow(
-    const odb::dbTechLayer* layer) const
+    const dbTechLayer* layer) const
 {
   auto it = layer_controls_.find(layer);
   if (it != layer_controls_.end()) {
@@ -1372,7 +1375,7 @@ const DisplayControls::ModelRow* DisplayControls::getSiteRow(
   return nullptr;
 }
 
-bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
+bool DisplayControls::isVisible(const dbTechLayer* layer)
 {
   auto* row = getLayerRow(layer);
   if (row == nullptr) {
@@ -1382,7 +1385,7 @@ bool DisplayControls::isVisible(const odb::dbTechLayer* layer)
   return isModelRowVisible(row);
 }
 
-bool DisplayControls::isSelectable(const odb::dbTechLayer* layer)
+bool DisplayControls::isSelectable(const dbTechLayer* layer)
 {
   auto* row = getLayerRow(layer);
   if (row == nullptr) {
@@ -1467,13 +1470,13 @@ const DisplayControls::ModelRow* DisplayControls::getNetRow(
     odb::dbNet* net) const
 {
   switch (net->getSigType().getValue()) {
-    case dbSigType::SIGNAL:
+    case odb::dbSigType::SIGNAL:
       return &nets_.signal;
-    case dbSigType::POWER:
+    case odb::dbSigType::POWER:
       return &nets_.power;
-    case dbSigType::GROUND:
+    case odb::dbSigType::GROUND:
       return &nets_.ground;
-    case dbSigType::CLOCK:
+    case odb::dbSigType::CLOCK:
       return &nets_.clock;
     default:
       return nullptr;
@@ -1782,7 +1785,7 @@ void DisplayControls::techInit()
     return;
   }
 
-  dbTech* tech = db_->getTech();
+  odb::dbTech* tech = db_->getTech();
   if (!tech) {
     return;
   }
@@ -1917,7 +1920,7 @@ void DisplayControls::itemContextMenu(const QPoint& point)
   const QModelIndex name_index = model_->index(index.row(), Name, parent);
   auto* name_item = model_->itemFromIndex(name_index);
   layers_menu_layer_
-      = name_item->data(user_data_item_idx_).value<odb::dbTechLayer*>();
+      = name_item->data(user_data_item_idx_).value<dbTechLayer*>();
 
   layers_menu_->popup(view_->viewport()->mapToGlobal(point));
 }
@@ -1928,7 +1931,7 @@ void DisplayControls::layerShowOnlySelectedNeighbors(int lower, int upper)
     return;
   }
 
-  std::set<const odb::dbTechLayer*> layers;
+  std::set<const dbTechLayer*> layers;
   collectNeighboringLayers(layers_menu_layer_, lower, upper, layers);
   setOnlyVisibleLayers(layers);
 
@@ -1936,10 +1939,10 @@ void DisplayControls::layerShowOnlySelectedNeighbors(int lower, int upper)
 }
 
 void DisplayControls::collectNeighboringLayers(
-    odb::dbTechLayer* layer,
+    dbTechLayer* layer,
     int lower,
     int upper,
-    std::set<const odb::dbTechLayer*>& layers)
+    std::set<const dbTechLayer*>& layers)
 {
   if (layer == nullptr) {
     return;
@@ -1956,7 +1959,7 @@ void DisplayControls::collectNeighboringLayers(
 }
 
 void DisplayControls::setOnlyVisibleLayers(
-    const std::set<const odb::dbTechLayer*> layers)
+    const std::set<const dbTechLayer*>& layers)
 {
   for (auto& [layer, row] : layer_controls_) {
     row.visible->setCheckState(Qt::Unchecked);

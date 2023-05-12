@@ -1,8 +1,9 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 3-Clause License
+/////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2021, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
+//
+// BSD 3-Clause License
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -29,56 +30,29 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "utl/timer.h"
 
-#include "gui/heatMap.h"
+#include "utl/Logger.h"
 
-namespace grt {
+namespace utl {
 
-class RoutingCongestionDataSource : public gui::HeatMapDataSource
+void Timer::reset()
 {
- public:
-  RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
-  ~RoutingCongestionDataSource() {}
+  start_ = Clock::now();
+}
 
-  virtual bool canAdjustGrid() const override { return false; }
-  virtual double getGridXSize() const override;
-  virtual double getGridYSize() const override;
+double Timer::elapsed() const
+{
+  return std::chrono::duration<double>{Clock::now() - start_}.count();
+}
 
- protected:
-  virtual bool populateMap() override;
-  virtual void combineMapData(bool base_has_value,
-                              double& base,
-                              const double new_data,
-                              const double data_area,
-                              const double intersection_area,
-                              const double rect_area) override;
-  virtual void correctMapScale(HeatMapDataSource::Map& map) override;
-  virtual std::string formatValue(double value, bool legend) const override;
+std::ostream& operator<<(std::ostream& os, const Timer& t)
+{
+  os << t.elapsed() << " sec";
+  return os;
+}
 
- private:
-  enum Direction
-  {
-    ALL,
-    HORIZONTAL,
-    VERTICAL
-  };
-  enum MapType
-  {
-    Congestion,
-    Usage,
-    Capacity
-  };
-
-  odb::dbDatabase* db_;
-  Direction direction_;
-  odb::dbTechLayer* layer_;
-
-  MapType type_;
-  double max_;
-
-  static constexpr double default_grid_ = 10.0;
-};
-
-}  // namespace grt
+}  // namespace utl

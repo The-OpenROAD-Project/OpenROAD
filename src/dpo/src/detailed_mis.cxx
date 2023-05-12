@@ -181,8 +181,12 @@ void DetailedMis::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   // Do some things that only need to be done once regardless
   // of the number of passes.
   collectMovableCells();  // Movable cells.
-  colorCells();           // Color the cells.
-  buildGrid();            // Grid for searching for neigbours.
+  if (candidates_.empty()) {
+    mgrPtr_->getLogger()->info(DPO, 202, "No movable cells found");
+    return;
+  }
+  colorCells();  // Color the cells.
+  buildGrid();   // Grid for searching for neigbours.
 
   for (int p = 1; p <= passes; p++) {
     const double curr_obj = (obj_ == DetailedMis::Hpwl) ? curr_hpwl : curr_disp;
