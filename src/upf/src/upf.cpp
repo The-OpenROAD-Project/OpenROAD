@@ -590,7 +590,7 @@ static bool find_smallest_isolation(sta::dbNetwork* network,
     }
   }
 
-  if (!output_term || !data_term || !enable_term) {
+  if (!output_term || !data_term || !enable_term || !out_lib_port) {
     logger->warn(utl::UPF,
                  10022,
                  "Isolation %s cells defined, but can't find one of output, "
