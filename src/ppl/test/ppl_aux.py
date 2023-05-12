@@ -370,7 +370,7 @@ def set_io_pin_constraint(design, *,
 
     elif group:
         if pin_names != None:
-            utl.info(utl.PPL, 44, f"Pin group: [{pin_names}]")
+            utl.info(utl.PPL, 44, f"Pin group: [ {pin_names} ]")
             names = pin_names.split()
             pin_list = []
             for pin_name in names:

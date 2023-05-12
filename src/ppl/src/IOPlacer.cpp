@@ -434,6 +434,15 @@ int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
     }
   }
 
+  if (slot_idx == -1) {
+    logger_->error(utl::PPL,
+                   101,
+                   "Slot for position ({}, {}) in layer {} not found",
+                   position.getX(),
+                   position.getY(),
+                   layer);
+  }
+
   return slot_idx;
 }
 
