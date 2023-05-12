@@ -473,7 +473,7 @@ class TritonPart
   // number of vertices used for ILP partitioning
   // If the number of vertices of a hypergraph is larger than
   // num_vertices_threshold_ilp_, then we will NOT use ILP-based partitioning
-  int num_vertices_threshold_ilp_ = 20;
+  int num_vertices_threshold_ilp_ = 10;
 
   // Hypergraph information
   // basic information

@@ -1413,6 +1413,7 @@ void TritonPart::BuildTimingPaths()
       // clk_gating_setup, clk_gating_hold
       false,
       false);
+
   // check all the timing paths
   for (auto& path_end : path_ends) {
     // Printing timing paths to logger
