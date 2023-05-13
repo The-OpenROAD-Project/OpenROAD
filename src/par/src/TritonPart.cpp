@@ -950,6 +950,10 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
     const float max_placement_value
         = 1.0;  // we assume the embedding has been normalized,
                 // so we assume max_value is 1.0
+    const float invalid_placement_thr = max_placement_value / 2.0; // The threshold
+                // for detecting invalid placement value. If the abs(emb) is larger than
+                // invalid_placement_thr, we think the placement is invalid
+    const float default_placement_value = 0.0; // default placement value
     std::vector<std::vector<float>> temp_placement_attr;
     while (std::getline(placement_file_input, cur_line)) {
       std::vector<std::string> elements = SplitLine(
@@ -957,9 +961,14 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
       std::vector<float> vertex_placement;
       for (auto& ele : elements) {
         if (ele == "NaN" || ele == "nan" || ele == "NAN") {
-          vertex_placement.push_back(max_placement_value);
+          vertex_placement.push_back(default_placement_value);
         } else {
-          vertex_placement.push_back(std::stof(ele));
+          const float ele_value = std::stof(ele);
+          if (std::abs(ele_value) < invalid_placement_thr) {
+            vertex_placement.push_back(std::stof(ele));
+          } else {
+            vertex_placement.push_back(default_placement_value);
+          }              
         }
       }
       temp_placement_attr.push_back(vertex_placement);
@@ -970,40 +979,18 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
     // vertex usually very small, around e-5 - e-7 So we need to normalize the
     // placement embedding based on average distance again Here we randomly
     // sample num_vertices of pairs to compute the average norm
-    float avg_distance = 0.0;
-    int num_random_pair = 0;
-    for (int i = 0; i < num_vertices_; i++) {
-      std::mt19937 gen;
-      std::uniform_real_distribution<> dist(0.0, 1.0);
-      gen.seed(seed_);
-      const int u = num_vertices_ * dist(gen);
-      const int v = num_vertices_ * dist(gen);
-      if (u != v) {
-        avg_distance += norm2(temp_placement_attr[u] - temp_placement_attr[v]);
-        num_random_pair++;
+    std::vector<float> mean_placement_value_list(placement_dimensions_, 0.0f);
+    for (auto i = 0; i < temp_placement_attr.size(); i++) {
+      for (int j = 0; j < placement_dimensions_; j++) {
+        mean_placement_value_list[j] += temp_placement_attr[i][j];
       }
     }
-    avg_distance = avg_distance / num_random_pair;
-    logger_->report(
-        "[INFO] Normalize the placement embedding with the value of {} !",
-        avg_distance);
-
+    mean_placement_value_list = DivideFactor(mean_placement_value_list, temp_placement_attr.size() * 1.0);
     // perform normalization
-    for (auto& ele : temp_placement_attr) {
-      placement_attr_.push_back(DivideFactor(ele, avg_distance));
+    for (auto& emb : temp_placement_attr) {
+      placement_attr_.push_back(DivideVectorElebyEle(emb, mean_placement_value_list));
     }
 
-    /*
-    while (std::getline(placement_file_input, cur_line)) {
-      std::istringstream cur_line_buf(cur_line);
-      std::vector<float> vertex_placement{
-          std::istream_iterator<float>(cur_line_buf),
-          std::istream_iterator<float>()};
-      if (static_cast<int>(vertex_placement.size()) == placement_dimensions_) {
-        placement_attr_.push_back(vertex_placement);
-      }
-    }
-    */
     if (static_cast<int>(placement_attr_.size()) != num_vertices_) {
       logger_->report("[WARNING] Reset the placement attributes to NONE !");
       placement_attr_.clear();

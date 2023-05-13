@@ -131,6 +131,10 @@ std::vector<float> WeightedSum(const std::vector<float>& a,
 std::vector<float> DivideFactor(const std::vector<float>& a,
                                 const float factor);
 
+// divide the vectors element by element
+std::vector<float> DivideVectorElebyEle(const std::vector<float>& emb, 
+                                        const std::vector<float>& factor);
+
 // multiplty the vector
 std::vector<float> MultiplyFactor(const std::vector<float>& a,
                                   const float factor);
