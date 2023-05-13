@@ -1244,6 +1244,45 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
   }
 }
 
+void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
+                                                     int highlight_group)
+{
+  SelectionSet connected_objects;
+  for (auto& sel_obj : selected_) {
+    if (sel_obj.isInst()) {
+      auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
+      for (auto inst_term : inst_obj->getITerms()) {
+        auto inst_term_dir = inst_term->getIoType();
+        if (!inst_term->getSigType().isSupply()
+            && (inst_term_dir == odb::dbIoType::OUTPUT
+                || inst_term_dir == odb::dbIoType::INOUT)) {
+          auto net_obj = inst_term->getNet();
+          gui::BufferTree buffer_tree_obj = gui::BufferTree(net_obj, false);
+
+          for (auto Bterm : buffer_tree_obj.getBTerms()) {
+            connected_objects.insert(Gui::get()->makeSelected(Bterm));
+          }
+
+          for (auto net : buffer_tree_obj.getNets()) {
+            connected_objects.insert(Gui::get()->makeSelected(net));
+          }
+
+          for (auto inst : buffer_tree_obj.getInsts()) {
+            connected_objects.insert(Gui::get()->makeSelected(inst));
+          }
+        }
+      }
+    }
+  }
+
+  if (connected_objects.empty())
+    return;
+  if (select_flag)
+    addSelected(connected_objects);
+  else
+    addHighlighted(connected_objects, highlight_group);
+}
+
 void MainWindow::saveSettings()
 {
   QSettings settings("OpenRoad Project", "openroad");

@@ -3263,6 +3263,17 @@ void LayoutViewer::selectHighlightConnectedNets(bool select_flag,
       select_flag, output, input, highlight_group);
 }
 
+void LayoutViewer::selectHighlightConnectedBufferTrees(bool select_flag)
+{
+  int highlight_group = 0;
+  if (!select_flag) {
+    HighlightGroupDialog dlg;
+    dlg.exec();
+    highlight_group = dlg.getSelectedHighlightGroup();
+  }
+  Gui::get()->selectHighlightConnectedBufferTrees(select_flag, highlight_group);
+}
+
 void LayoutViewer::updateContextMenuItems()
 {
   if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
@@ -3271,18 +3282,22 @@ void LayoutViewer::updateContextMenuItems()
     menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(true);
+    menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]->setDisabled(true);
 
     menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(true);
+    menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT]->setDisabled(true);
   } else {
     menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(false);
+    menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]->setDisabled(false);
 
     menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
+    menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT]->setDisabled(false);
   }
 
   if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
@@ -3416,6 +3431,8 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[SELECT_INPUT_NETS_ACT]
       = select_menu->addAction(tr("Input Nets"));
   menu_actions_[SELECT_ALL_NETS_ACT] = select_menu->addAction(tr("All Nets"));
+  menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]
+      = select_menu->addAction(tr("All buffer trees"));
 
   // Highlight Actions
   menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]
@@ -3426,6 +3443,8 @@ void LayoutViewer::addMenuAndActions()
       = highlight_menu->addAction(tr("Input Nets"));
   menu_actions_[HIGHLIGHT_ALL_NETS_ACT]
       = highlight_menu->addAction(tr("All Nets"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT]
+      = highlight_menu->addAction(tr("All buffer trees"));
 
   // View Actions
   menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
@@ -3464,6 +3483,10 @@ void LayoutViewer::addMenuAndActions()
       menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, this, [this]() {
         selectHighlightConnectedNets(true, true, true);
       });
+  connect(menu_actions_[SELECT_ALL_BUFFER_TREES_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { selectHighlightConnectedBufferTrees(true); });
 
   connect(menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT],
           &QAction::triggered,
@@ -3481,6 +3504,10 @@ void LayoutViewer::addMenuAndActions()
           &QAction::triggered,
           this,
           [this]() { selectHighlightConnectedNets(false, true, true); });
+  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { selectHighlightConnectedBufferTrees(false); });
 
   connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
     zoomIn();

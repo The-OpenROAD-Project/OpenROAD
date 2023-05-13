@@ -46,9 +46,9 @@ namespace gui {
 
 sta::dbSta* BufferTree::sta_ = nullptr;
 
-BufferTree::BufferTree(odb::dbNet* net)
+BufferTree::BufferTree(odb::dbNet* net, bool timingSource)
 {
-  populate(net);
+  populate(net, timingSource);
 
   // Sort nets to ensure stable color order
   std::sort(
@@ -59,7 +59,7 @@ BufferTree::BufferTree(odb::dbNet* net)
   name_ = nets_[0]->getName();
 }
 
-void BufferTree::populate(odb::dbNet* net)
+void BufferTree::populate(odb::dbNet* net, bool timingSource)
 {
   if (net == nullptr) {
     return;
@@ -77,7 +77,7 @@ void BufferTree::populate(odb::dbNet* net)
 
   for (auto* iterm : net->getITerms()) {
     auto* inst = iterm->getInst();
-    if (!BufferTree::isAggregate(inst)) {
+    if (!BufferTree::isAggregate(inst, timingSource)) {
       iterm_terms_.insert(iterm);
       continue;
     }
@@ -86,20 +86,20 @@ void BufferTree::populate(odb::dbNet* net)
 
     for (auto* next_iterm : inst->getITerms()) {
       if (!next_iterm->getSigType().isSupply()) {
-        populate(next_iterm->getNet());
+        populate(next_iterm->getNet(), timingSource);
       }
     }
   }
 }
 
-bool BufferTree::isAggregate(odb::dbNet* net)
+bool BufferTree::isAggregate(odb::dbNet* net, bool timingSource)
 {
   if (net == nullptr) {
     return false;
   }
 
   for (auto* iterm : net->getITerms()) {
-    if (BufferTree::isAggregate(iterm->getInst())) {
+    if (BufferTree::isAggregate(iterm->getInst(), timingSource)) {
       return true;
     }
   }
@@ -107,14 +107,14 @@ bool BufferTree::isAggregate(odb::dbNet* net)
   return false;
 }
 
-bool BufferTree::isAggregate(odb::dbInst* inst)
+bool BufferTree::isAggregate(odb::dbInst* inst, bool timingSource)
 {
   if (inst == nullptr) {
     return false;
   }
 
   auto* network = sta_->getDbNetwork();
-  if (inst->getSourceType() != odb::dbSourceType::TIMING) {
+  if (inst->getSourceType() != odb::dbSourceType::TIMING && timingSource) {
     return false;
   }
 

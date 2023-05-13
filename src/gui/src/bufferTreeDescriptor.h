@@ -51,11 +51,11 @@ namespace gui {
 class BufferTree
 {
  public:
-  BufferTree(odb::dbNet* net);
+  BufferTree(odb::dbNet* net, bool timingSource = true);
 
   static void setSTA(sta::dbSta* sta) { sta_ = sta; }
-  static bool isAggregate(odb::dbNet* net);
-  static bool isAggregate(odb::dbInst* inst);
+  static bool isAggregate(odb::dbNet* net, bool timingSource = true);
+  static bool isAggregate(odb::dbInst* inst, bool timingSource = true);
 
   const std::string& getName() const { return name_; }
   const std::vector<odb::dbNet*>& getNets() const { return nets_; }
@@ -73,7 +73,7 @@ class BufferTree
 
   static sta::dbSta* sta_;
 
-  void populate(odb::dbNet* net);
+  void populate(odb::dbNet* net, bool timingSource = true);
 };
 
 class BufferTreeDescriptor : public Descriptor

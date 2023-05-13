@@ -569,7 +569,7 @@ class Gui
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
-
+  void selectHighlightConnectedBufferTrees(bool select_flag, int highlight_group = 0);
   void addInstToHighlightSet(const char* name, int highlight_group = 0);
   void addNetToHighlightSet(const char* name, int highlight_group = 0);
 

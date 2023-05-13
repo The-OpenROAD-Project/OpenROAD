@@ -89,11 +89,13 @@ class LayoutViewer : public QWidget
     SELECT_OUTPUT_NETS_ACT,
     SELECT_INPUT_NETS_ACT,
     SELECT_ALL_NETS_ACT,
+    SELECT_ALL_BUFFER_TREES_ACT,
 
     HIGHLIGHT_CONNECTED_INST_ACT,
     HIGHLIGHT_OUTPUT_NETS_ACT,
     HIGHLIGHT_INPUT_NETS_ACT,
     HIGHLIGHT_ALL_NETS_ACT,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT,
 
     VIEW_ZOOMIN_ACT,
     VIEW_ZOOMOUT_ACT,
@@ -235,6 +237,7 @@ class LayoutViewer : public QWidget
 
   void selectHighlightConnectedInst(bool select_flag);
   void selectHighlightConnectedNets(bool select_flag, bool output, bool input);
+  void selectHighlightConnectedBufferTrees(bool selectFlag);
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
