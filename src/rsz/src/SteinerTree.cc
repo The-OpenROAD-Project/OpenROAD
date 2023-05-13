@@ -253,7 +253,7 @@ SteinerTree::pins(SteinerPt pt) const
 }
 
 SteinerPt
-SteinerTree::drvrPt(const Network *network) const
+SteinerTree::drvrPt() const
 {
   return drvr_steiner_pt_;
 }
