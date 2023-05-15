@@ -2722,15 +2722,15 @@ void LayoutViewer::drawModuleView(QPainter* painter,
 
 void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
 {
-  auto block_bbox = block_->getBBox();
-  auto block_width = block_bbox->getWidth();
-  auto block_height = block_bbox->getLength();
+  auto die_area = block_->getDieArea();
+  auto die_width = die_area.dx();
+  auto die_height = die_area.dy();
   const double scale_factor
       = 0.02;  // 4 Percent of bounds is used to draw pin-markers
-  const int block_max_dim
-      = std::min(std::max(block_width, block_height), bounds.maxDXDY());
+  const int die_max_dim
+      = std::min(std::max(die_width, die_height), bounds.maxDXDY());
   const double abs_min_dim = 8.0;  // prevent markers from falling apart
-  const double max_dim = std::max(scale_factor * block_max_dim, abs_min_dim);
+  const double max_dim = std::max(scale_factor * die_max_dim, abs_min_dim);
 
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
   const QFont initial_font = qpainter->font();
@@ -2739,7 +2739,7 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
 
   const QFontMetrics font_metrics(marker_font);
   // draw names of pins when 100 pins would fit on an edge
-  const bool draw_names = std::max(block_width, block_height) * pixels_per_dbu_
+  const bool draw_names = std::max(die_width, die_height) * pixels_per_dbu_
                           > 100 * font_metrics.height();
   const int text_margin = 2.0 / pixels_per_dbu_;
 
@@ -2789,10 +2789,10 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
         Point pin_center((box->xMin() + box->xMax()) / 2,
                          (box->yMin() + box->yMax()) / 2);
 
-        auto dist_to_left = std::abs(box->xMin() - block_bbox->xMin());
-        auto dist_to_right = std::abs(box->xMax() - block_bbox->xMax());
-        auto dist_to_top = std::abs(box->yMax() - block_bbox->yMax());
-        auto dist_to_bot = std::abs(box->yMin() - block_bbox->yMin());
+        auto dist_to_left = std::abs(box->xMin() - die_area.xMin());
+        auto dist_to_right = std::abs(box->xMax() - die_area.xMax());
+        auto dist_to_top = std::abs(box->yMax() - die_area.yMax());
+        auto dist_to_bot = std::abs(box->yMin() - die_area.yMin());
         std::vector<int> dists{
             dist_to_left, dist_to_right, dist_to_top, dist_to_bot};
         int arg_min = std::distance(
@@ -2802,22 +2802,22 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
         if (arg_min == 0) {  // left
           xfm.setOrient(dbOrientType::R90);
           if (dist_to_left == 0) {  // touching edge so draw on edge
-            xfm.setOffset({block_bbox->xMin(), pin_center.y()});
+            xfm.setOffset({die_area.xMin(), pin_center.y()});
           }
         } else if (arg_min == 1) {  // right
           xfm.setOrient(dbOrientType::R270);
           if (dist_to_right == 0) {  // touching edge so draw on edge
-            xfm.setOffset({block_bbox->xMax(), pin_center.y()});
+            xfm.setOffset({die_area.xMax(), pin_center.y()});
           }
         } else if (arg_min == 2) {  // top
           // none needed
           if (dist_to_top == 0) {  // touching edge so draw on edge
-            xfm.setOffset({pin_center.x(), block_bbox->yMax()});
+            xfm.setOffset({pin_center.x(), die_area.yMax()});
           }
         } else {  // bottom
           xfm.setOrient(dbOrientType::MX);
           if (dist_to_bot == 0) {  // touching edge so draw on edge
-            xfm.setOffset({pin_center.x(), block_bbox->yMin()});
+            xfm.setOffset({pin_center.x(), die_area.yMin()});
           }
         }
 
