@@ -61,6 +61,7 @@ class JobMessage
     ROUTING,
     UPDATE_DESIGN,
     BALANCER,
+    PIN_ACCESS,
     SUCCESS,
     ERROR,
     NONE

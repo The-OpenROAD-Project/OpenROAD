@@ -35,6 +35,7 @@
 
 #include "DesignCallBack.h"
 #include "db/tech/frTechObject.h"
+#include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingCallBack.h"
 #include "distributed/drUpdate.h"
 #include "distributed/frArchive.h"
@@ -290,9 +291,11 @@ void TritonRoute::resetDb(const char* file_name)
   design_ = std::make_unique<frDesign>(logger_);
   ord::OpenRoad::openRoad()->readDb(file_name);
   initDesign();
-  initGuide();
-  prep();
-  design_->getRegionQuery()->initDRObj();
+  if (!db_->getChip()->getBlock()->getAccessPoints().empty()) {
+    initGuide();
+    prep();
+    design_->getRegionQuery()->initDRObj();
+  }
 }
 
 void TritonRoute::clearDesign()
@@ -827,7 +830,8 @@ int TritonRoute::main()
   }
   initDesign();
   if (DO_PA) {
-    FlexPA pa(getDesign(), logger_);
+    FlexPA pa(getDesign(), logger_, dist_);
+    // pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
     pa.setDebug(debug_.get(), db_);
     pa.main();
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
@@ -863,13 +867,29 @@ int TritonRoute::main()
 
 void TritonRoute::pinAccess(std::vector<odb::dbInst*> target_insts)
 {
+  if (distributed_) {
+    asio::post(dist_pool_, [this]() {
+      sendDesignDist();
+      dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                          dst::JobMessage::BROADCAST),
+          result;
+      auto uDesc = std::make_unique<PinAccessJobDescription>();
+      uDesc->setType(PinAccessJobDescription::INIT_PA);
+      msg.setJobDescription(std::move(uDesc));
+      dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+    });
+  }
   clearDesign();
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
   ENABLE_VIA_GEN = true;
   initDesign();
-  FlexPA pa(getDesign(), logger_);
+  FlexPA pa(getDesign(), logger_, dist_);
   pa.setTargetInstances(target_insts);
   pa.setDebug(debug_.get(), db_);
+  if (distributed_) {
+    pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
+    dist_pool_.join();
+  }
   pa.main();
   io::Writer writer(getDesign(), logger_);
   writer.updateDb(db_, true);

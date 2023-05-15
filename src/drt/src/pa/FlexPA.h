@@ -37,6 +37,12 @@ namespace odb {
 class dbDatabase;
 }
 
+namespace dst {
+class Distributed;
+}
+namespace boost::serialization {
+class access;
+}
 namespace fr {
 // not default via, upperWidth, lowerWidth, not align upper, upperArea,
 // lowerArea, not align lower, via name
@@ -56,22 +62,40 @@ class FlexPA
   };
 
   // constructor
-  FlexPA(frDesign* in, Logger* logger);
+  FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist);
   ~FlexPA();
   // getters
   frDesign* getDesign() const { return design_; }
   frTechObject* getTech() const { return design_->getTech(); }
   // setters
   int main();
+  void init();
+  void prep();
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   void setTargetInstances(frCollection<odb::dbInst*> insts)
   {
     target_insts_ = insts;
   }
+  void setDistributed(std::string rhost,
+                      ushort rport,
+                      std::string shared_vol,
+                      int cloud_sz)
+  {
+    remote_host_ = rhost;
+    remote_port_ = rport;
+    shared_vol_ = shared_vol;
+    cloud_sz_ = cloud_sz;
+  }
+  void setDesign(frDesign* in) { design_ = in; }
+  void applyUpdatesFile(const char* file_path);
+  void applyPatternsFile(const char* file_path);
+  void genInstRowPattern(std::vector<frInst*>& insts);
 
  private:
   frDesign* design_;
   Logger* logger_;
+  dst::Distributed* dist_;
+
   std::unique_ptr<FlexPAGraphics> graphics_;
   std::string debugPinName_;
 
@@ -92,7 +116,7 @@ class FlexPA
       unique2paidx_;  // unique instance to pinaccess index
   std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
   std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
-      uniqueInstPatterns_;
+      uniqueInstPatterns_;  // needs serialization
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
@@ -104,14 +128,19 @@ class FlexPA
       masterOT2Insts;  // master orient track-offset to instances
   frCollection<odb::dbInst*> target_insts_;
 
+  std::string remote_host_;
+  ushort remote_port_;
+  std::string shared_vol_;
+  int cloud_sz_;
+
   // helper functions
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
   bool isSkipInstTerm(frInstTerm* in);
+  bool isDistributed() const { return !remote_host_.empty(); }
 
   // init
-  void init();
   void initUniqueInstance();
   void initUniqueInstance_master2PinLayerRange(
       std::map<frMaster*,
@@ -128,7 +157,6 @@ class FlexPA
   void initViaRawPriority();
   void checkFigsOnGrid(const frMPin* pin);
   // prep
-  void prep();
   void prepPoint();
   void getViasFromMetalWidthMap(
       const Point& pt,
@@ -268,6 +296,7 @@ class FlexPA
       frAccessPointEnum upperType);
 
   void prepPattern();
+  void prepPatternInstRows(std::vector<std::vector<frInst*>> inst_rows);
   int prepPattern_inst(frInst* inst,
                        const int currUniqueInstIdx,
                        const double xWeight);
@@ -328,7 +357,6 @@ class FlexPA
                       std::set<frBlockObject*>* owners = nullptr);
 
   void getInsts(std::vector<frInst*>& insts);
-  void genInstRowPattern(std::vector<frInst*>& insts);
   void genInstRowPattern_init(std::vector<FlexDPNode>& nodes,
                               const std::vector<frInst*>& insts);
   void genInstRowPattern_perform(std::vector<FlexDPNode>& nodes,
@@ -359,6 +387,13 @@ class FlexPinAccessPattern
         left_(nullptr),
         right_(nullptr),
         cost_(std::numeric_limits<int>::max())
+  {
+  }
+  FlexPinAccessPattern(const FlexPinAccessPattern& rhs)
+      : pattern_(rhs.pattern_),
+        left_(rhs.left_),
+        right_(rhs.right_),
+        cost_(rhs.cost_)
   {
   }
   // getter
@@ -392,6 +427,9 @@ class FlexPinAccessPattern
   frAccessPoint* left_;
   frAccessPoint* right_;
   int cost_;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version);
+  friend class boost::serialization::access;
 };
 
 // dynamic programming related
