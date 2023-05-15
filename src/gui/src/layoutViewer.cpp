@@ -3378,6 +3378,7 @@ void LayoutViewer::designLoaded(dbBlock* block)
 {
   if (block->getParent()) {
     search_.addChildBlock(block);
+    fullRepaint();
   } else {
     search_.setTopBlock(block);
   }
