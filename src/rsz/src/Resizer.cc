@@ -2553,7 +2553,7 @@ Resizer::journalRestore(int &resize_count,
     inserted_buffer_count--;
   }
 
-  for (auto element : swapped_pins_) {
+  for (const auto& element : swapped_pins_) {
     Instance *inst = element.first;
     LibertyPort *port1 = std::get<0>(element.second);
     LibertyPort *port2 = std::get<1>(element.second);

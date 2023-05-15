@@ -434,6 +434,15 @@ int IOPlacer::getSlotIdxByPosition(const odb::Point& position,
     }
   }
 
+  if (slot_idx == -1) {
+    logger_->error(utl::PPL,
+                   101,
+                   "Slot for position ({}, {}) in layer {} not found",
+                   position.getX(),
+                   position.getY(),
+                   layer);
+  }
+
   return slot_idx;
 }
 
@@ -496,13 +505,19 @@ void IOPlacer::placeFallbackGroup(
     const std::pair<std::vector<int>, bool>& group,
     int place_slot)
 {
-  for (int pin_idx : group.first) {
+  auto edge = slots_[place_slot].edge;
+  const bool reverse = edge == Edge::top || edge == Edge::left;
+  const int group_last = group.first.size() - 1;
+
+  for (int i = 0; i <= group_last; ++i) {
+    const int pin_idx = group.first[reverse ? group_last - i : i];
     IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
-    io_pin.setPos(slots_[place_slot].pos);
-    io_pin.setLayer(slots_[place_slot].layer);
+    Slot& slot = slots_[place_slot];
+    io_pin.setPos(slot.pos);
+    io_pin.setLayer(slot.layer);
     assignment_.push_back(io_pin);
-    slots_[place_slot].used = true;
-    slots_[place_slot].blocked = true;
+    slot.used = true;
+    slot.blocked = true;
     place_slot++;
     if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
       assignMirroredPins(io_pin, mirrored_pins_, assignment_);
