@@ -347,7 +347,7 @@ void Search::updateRows(odb::dbBlock* block)
 void Search::addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y)
 {
   BlockData& data = getData(net->getBlock());
-  
+
   if (shape->getType() == odb::dbShape::TECH_VIA) {
     odb::dbTechVia* via = shape->getTechVia();
     for (odb::dbBox* box : via->getBoxes()) {
@@ -670,7 +670,8 @@ Search::InstRange Search::searchInsts(odb::dbBlock* block,
         data.insts_.qend());
   }
 
-  return InstRange(data.insts_.qbegin(bgi::intersects(query)), data.insts_.qend());
+  return InstRange(data.insts_.qbegin(bgi::intersects(query)),
+                   data.insts_.qend());
 }
 
 Search::BlockageRange Search::searchBlockages(odb::dbBlock* block,

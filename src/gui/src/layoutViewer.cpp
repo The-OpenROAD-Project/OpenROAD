@@ -2384,8 +2384,7 @@ void LayoutViewer::drawLayer(QPainter* painter,
                              && cut_maximum_size_[layer] < shape_limit);
 
   if (draw_shapes) {
-    drawInstanceShapes(
-        layer, painter, insts, bounds, gui_painter);
+    drawInstanceShapes(layer, painter, insts, bounds, gui_painter);
   }
 
   drawObstructions(block, layer, painter, bounds);

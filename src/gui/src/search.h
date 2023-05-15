@@ -115,7 +115,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   // Add a child block of the top block
   void addChildBlock(odb::dbBlock* block);
-  
+
   // Find all box shapes in the given bounds on the given layer which
   // are at least min_size in either dimension.
   BoxRange searchBoxShapes(odb::dbBlock* block,
@@ -229,7 +229,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
  private:
   struct BlockData;
-  
+
   void addSNet(odb::dbNet* net);
   void addNet(odb::dbNet* net);
   void addVia(odb::dbNet* net, odb::dbShape* shape, int x, int y);
