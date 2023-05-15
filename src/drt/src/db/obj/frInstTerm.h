@@ -66,6 +66,7 @@ class frInstTerm : public frBlockObject
   void setAPSize(int size) { ap_.resize(size, nullptr); }
   void setAccessPoint(int idx, frAccessPoint* in) { ap_[idx] = in; }
   void addAccessPoint(frAccessPoint* in) { ap_.push_back(in); }
+  void setAccessPoints(const std::vector<frAccessPoint*>& in) { ap_ = in; }
   // others
   frBlockObjectEnum typeId() const override { return frcInstTerm; }
   frAccessPoint* getAccessPoint(frCoord x, frCoord y, frLayerNum lNum);
