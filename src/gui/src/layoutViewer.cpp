@@ -2022,7 +2022,6 @@ void LayoutViewer::drawRulers(Painter& painter)
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
-  utl::Timer timer;
   int minimum_height_for_tag = nominalViewableResolution();
   int minimum_size = fineViewableResolution();
   const QTransform initial_xfm = painter->transform();
@@ -2069,7 +2068,6 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     }
   }
   painter->setTransform(initial_xfm);
-  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", timer);
 }
 
 // Draw the instances' shapes
@@ -2315,6 +2313,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
 {
   utl::Timer timer;
 
+  utl::Timer manufacturing_grid_timer;
   const int instance_limit = instanceSizeLimit();
   const int shape_limit = shapeSizeLimit();
 
@@ -2336,6 +2335,12 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
   }
 
   drawManufacturingGrid(painter, bounds);
+  debugPrint(logger_,
+             GUI,
+             "draw",
+             1,
+             "manufacturing grid {}",
+             manufacturing_grid_timer);
 
   utl::Timer inst_timer;
   auto inst_range = search_.searchInsts(bounds.xMin(),
@@ -2355,10 +2360,14 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
   }
   debugPrint(logger_, GUI, "draw", 1, "inst search {}", inst_timer);
 
+  utl::Timer insts_outline;
   drawInstanceOutlines(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", insts_outline);
 
   // draw blockages
+  utl::Timer inst_blockages;
   drawBlockages(painter, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
   dbTech* tech = block_->getDataBase()->getTech();
   for (dbTechLayer* layer : tech->getLayers()) {
@@ -2479,6 +2488,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
                layer->getName(),
                layer_timer);
   }
+  utl::Timer inst_various;
   // draw instance names
   drawInstanceNames(painter, insts);
 
@@ -2502,6 +2512,7 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
+  debugPrint(logger_, GUI, "draw", 1, "various {}", inst_various);
 
   debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }
