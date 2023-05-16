@@ -37,6 +37,7 @@
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
+#include <QLabel>
 #include <memory>
 
 #include "gui/gui.h"
@@ -55,26 +56,27 @@ class HistogramWidget : public QDockWidget
   HistogramWidget(QWidget* parent = nullptr);
   ~HistogramWidget() {} 
 
-  void setSTA(sta::dbSta* sta);
+  void setSTA(sta::dbSta* sta) { sta_ = sta; };
 
+  void setSlackMode();
+  void clearChart();
+  
  signals:
 
  public slots:
 
  private slots:
-  void populateChart();
+  void changeMode();
 
  private:
   sta::dbSta* sta_;
 
-  QPushButton* settings_button_;
+  QLabel* label_;
   QComboBox* mode_menu_;
-
-  QBarSet* bar_set_;
-  QBarSeries* series_;
   QChart* chart_;
-  QBarCategoryAxis* values_x_;
-  QValueAxis* values_y_;
+  QChartView* display_;
+  QBarCategoryAxis* axis_x_;
+  QValueAxis* axis_y_;
 };
 
 }  // namespace gui
