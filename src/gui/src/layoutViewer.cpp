@@ -1808,16 +1808,19 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
 std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
     const odb::Rect& bounds)
 {
-  int min_resolution = nominalViewableResolution();
+  const int min_resolution_site = nominalViewableResolution();
+  int min_resolution_row = min_resolution_site;
   if (options_->isDetailedVisibility()) {
-    min_resolution = 0;
+    // we only do this for the row as the sites can be too
+    // numerous and small to draw even in detailed mode
+    min_resolution_row = 0;
   }
 
   auto rows = search_.searchRows(bounds.xMin(),
                                  bounds.yMin(),
                                  bounds.xMax(),
                                  bounds.yMax(),
-                                 min_resolution);
+                                 min_resolution_row);
 
   std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
   for (auto& [box, row] : rows) {
@@ -1832,8 +1835,8 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
     int w = site->getWidth();
     int h = site->getHeight();
 
-    bool w_visible = w >= min_resolution;
-    bool h_visible = h >= min_resolution;
+    bool w_visible = w >= min_resolution_site;
+    bool h_visible = h >= min_resolution_row;
 
     switch (row->getOrient()) {
       case dbOrientType::R0:
