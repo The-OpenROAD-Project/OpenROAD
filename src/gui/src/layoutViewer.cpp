@@ -1796,11 +1796,12 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
       site = static_cast<odb::dbRow*>(row)->getSite();
     }
     if (options_->isSiteVisible(site)) {
-      QPen pen(options_->siteColor(site));
-      pen.setCosmetic(true);
-      painter->setPen(pen);
-      painter->drawRect(
-          row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
+      // Disable everything but rendering
+      // QPen pen(options_->siteColor(site));
+      // pen.setCosmetic(true);
+      // painter->setPen(pen);
+      // painter->drawRect(
+      //     row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
     }
   }
 }
