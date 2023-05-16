@@ -1787,6 +1787,7 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
     return;
   }
 
+  painter->setBrush(Qt::NoBrush);
   for (const auto& [row, row_site] : getRowRects(bounds)) {
     odb::dbSite* site = nullptr;
     if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
@@ -1798,7 +1799,6 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
       QPen pen(options_->siteColor(site));
       pen.setCosmetic(true);
       painter->setPen(pen);
-      painter->setBrush(Qt::NoBrush);
       painter->drawRect(
           row_site.xMin(), row_site.yMin(), row_site.dx(), row_site.dy());
     }
