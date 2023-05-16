@@ -2488,31 +2488,46 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
                layer->getName(),
                layer_timer);
   }
-  utl::Timer inst_various;
-  // draw instance names
-  drawInstanceNames(painter, insts);
 
+  utl::Timer inst_names;
+  drawInstanceNames(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "instance names {}", inst_names);
+
+  utl::Timer inst_rows;
   drawRows(painter, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "rows {}", inst_rows);
+
+  utl::Timer inst_access_points;
   if (options_->areAccessPointsVisible()) {
     drawAccessPoints(gui_painter, insts);
   }
+  debugPrint(logger_, GUI, "draw", 1, "access points {}", inst_access_points);
 
+  utl::Timer inst_module_view;
   drawModuleView(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "module view {}", inst_module_view);
 
+  utl::Timer inst_regions;
   drawRegions(painter);
+  debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
 
+  utl::Timer inst_pin_markers;
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, bounds);
   }
+  debugPrint(logger_, GUI, "draw", 1, "pin markers {}", inst_pin_markers);
 
+  utl::Timer inst_cell_grid;
   drawGCellGrid(painter, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
 
+  utl::Timer inst_save_restore;
   for (auto* renderer : renderers) {
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
-  debugPrint(logger_, GUI, "draw", 1, "various {}", inst_various);
+  debugPrint(logger_, GUI, "draw", 1, "save restore {}", inst_save_restore);
 
   debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }
