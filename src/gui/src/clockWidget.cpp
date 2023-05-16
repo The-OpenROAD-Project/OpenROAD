@@ -741,7 +741,7 @@ ClockTreeView::ClockTreeView(ClockTree* tree,
 
   sta::Unit* unit = sta->getSTA()->units()->timeUnit();
   unit_scale_ = unit->scale();
-  unit_suffix_ = unit->scaleAbreviation();
+  unit_suffix_ = unit->scaleAbbreviation();
   unit_suffix_ += unit->suffix();
 
   const int tree_width = tree_->getTotalFanout();
@@ -1006,7 +1006,7 @@ QString ClockTreeView::convertDelayToString(sta::Delay delay) const
   const sta::Unit* unit = tree_->getNetwork()->units()->timeUnit();
   std::string sdelay = unit->asString(delay, 3);
   sdelay += " ";
-  sdelay += unit->scaleAbreviation();
+  sdelay += unit->scaleAbbreviation();
   sdelay += unit->suffix();
   return QString::fromStdString(sdelay);
 }
