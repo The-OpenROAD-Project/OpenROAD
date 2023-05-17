@@ -317,7 +317,12 @@ void HierRTLMP::hierRTLMacroPlacer()
   //
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
-  manufacturing_grid_ = db_->getTech()->getManufacturingGrid();
+  if (db_->getTech()->hasManufacturingGrid())
+    manufacturing_grid_ = db_->getTech()->getManufacturingGrid();
+  else {
+    // No manufacturing grid value in tech lef. set to default
+    manufacturing_grid_ = 1;
+  }
 
   //
   // Get the floorplan information
