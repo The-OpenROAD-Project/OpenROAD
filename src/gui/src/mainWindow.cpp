@@ -1268,7 +1268,11 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  emit designLoaded(block);
+  if (!block->getParent()) {
+    emit designLoaded(block);
+  } else {
+    viewer_->fullRepaint();
+  }
 }
 
 void MainWindow::postReadDb(odb::dbDatabase* db)

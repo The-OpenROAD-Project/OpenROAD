@@ -209,7 +209,8 @@ class OpenRoad
   void readDef(const char* filename,
                bool continue_on_errors,
                bool floorplan_init,
-               bool incremental);
+               bool incremental,
+               bool child);
 
   void writeLef(const char* filename);
 
