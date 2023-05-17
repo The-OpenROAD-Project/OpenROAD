@@ -853,20 +853,18 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
                                          int ripupTHub,
                                          int layerOrientation)
 {
-  multi_array<Direction, 3> directions_3D(
+  static multi_array<Direction, 3> directions_3D(
       boost::extents[num_layers_][y_grid_][x_grid_]);
-  multi_array<int, 3> corr_edge_3D(
+  static multi_array<int, 3> corr_edge_3D(
       boost::extents[num_layers_][y_grid_][x_grid_]);
-  multi_array<parent3D, 3> pr_3D_(
+  static multi_array<parent3D, 3> pr_3D_(
       boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  std::vector<bool> pop_heap2_3D(num_layers_ * y_range_ * x_range_, false);
+  static std::vector<bool> pop_heap2_3D(num_layers_ * y_range_ * x_range_, false);
 
   // allocate memory for priority queue
-  std::vector<int*> src_heap_3D;
-  std::vector<int*> dest_heap_3D;
-  src_heap_3D.resize(y_grid_ * x_grid_ * num_layers_);
-  dest_heap_3D.resize(y_grid_ * x_grid_ * num_layers_);
+  static std::vector<int*> src_heap_3D(y_grid_ * x_grid_ * num_layers_);
+  static std::vector<int*> dest_heap_3D(y_grid_ * x_grid_ * num_layers_);
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
@@ -876,8 +874,8 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
 
   const int endIND = tree_order_pv_.size() * 0.9;
 
-  multi_array<int, 3> d1_3D(boost::extents[num_layers_][y_range_][x_range_]);
-  multi_array<int, 3> d2_3D(boost::extents[num_layers_][y_range_][x_range_]);
+  static multi_array<int, 3> d1_3D(boost::extents[num_layers_][y_range_][x_range_]);
+  static multi_array<int, 3> d2_3D(boost::extents[num_layers_][y_range_][x_range_]);
 
   for (int orderIndex = 0; orderIndex < endIND; orderIndex++) {
     const int netID = tree_order_pv_[orderIndex].treeIndex;
