@@ -977,14 +977,14 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
   ux = std::round(ux / pitch_x) * pitch_x;
   ly = std::round(ly / pitch_y) * pitch_y;
   uy = std::round(uy / pitch_y) * pitch_y;
-  int round_lx
-      = std::round(float(micronToDbu(lx, dbu_)) / manufacturing_grid_) * manufacturing_grid_;
-  int round_ly
-      = std::round(float(micronToDbu(ly, dbu_)) / manufacturing_grid_) * manufacturing_grid_;
-  int round_ux
-      = std::round(float(micronToDbu(ux, dbu_)) / manufacturing_grid_) * manufacturing_grid_;
-  int round_uy
-      = std::round(float(micronToDbu(uy, dbu_)) / manufacturing_grid_) * manufacturing_grid_;
+  int round_lx = std::round(float(micronToDbu(lx, dbu_)) / manufacturing_grid_)
+                 * manufacturing_grid_;
+  int round_ly = std::round(float(micronToDbu(ly, dbu_)) / manufacturing_grid_)
+                 * manufacturing_grid_;
+  int round_ux = std::round(float(micronToDbu(ux, dbu_)) / manufacturing_grid_)
+                 * manufacturing_grid_;
+  int round_uy = std::round(float(micronToDbu(uy, dbu_)) / manufacturing_grid_)
+                 * manufacturing_grid_;
   if (orientation_.getString() == std::string("MX")) {
     inst_->setLocation(round_lx, round_uy);
   } else if (orientation_.getString() == std::string("MY")) {
