@@ -71,7 +71,8 @@ void Design::readVerilog(const std::string& file_name)
 void Design::readDef(const std::string& file_name,
                      bool continue_on_errors,  // = false
                      bool floorplan_init,      // = false
-                     bool incremental          // = false
+                     bool incremental,         // = false
+                     bool child                // = false
 )
 {
   auto app = OpenRoad::openRoad();
@@ -84,8 +85,11 @@ void Design::readDef(const std::string& file_name,
   if (tech_->getDB()->getTech() == nullptr) {
     getLogger()->error(utl::ORD, 102, "No technology has been read.");
   }
-  app->readDef(
-      file_name.c_str(), continue_on_errors, floorplan_init, incremental);
+  app->readDef(file_name.c_str(),
+               continue_on_errors,
+               floorplan_init,
+               incremental,
+               child);
 }
 
 void Design::link(const std::string& design_name)

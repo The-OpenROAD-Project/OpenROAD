@@ -260,6 +260,11 @@ Rect dbRow::getBBox()
   }
 }
 
+dbBlock* dbRow::getBlock()
+{
+  return (dbBlock*) getImpl()->getOwner();
+}
+
 dbRow* dbRow::create(dbBlock* block_,
                      const char* name,
                      dbSite* site_,
