@@ -160,7 +160,7 @@ proc set_wire_rc { args } {
     # Unfortunately this does not work very well with technologies like sky130
     # that use inappropriate kohm/pf units.
     if { 0 } {
-      utl::info RSZ 61 "$signal_clk wire resistance [sta::format_resistance [expr $wire_res * 1e-6] 6] [sta::unit_scale_abreviation resistance][sta::unit_suffix resistance]/um capacitance [sta::format_capacitance [expr $wire_cap * 1e-6] 6] [sta::unit_scale_abreviation capacitance][sta::unit_suffix capacitance]/um."
+      utl::info RSZ 61 "$signal_clk wire resistance [sta::format_resistance [expr $wire_res * 1e-6] 6] [sta::unit_scale_abbreviation resistance][sta::unit_suffix resistance]/um capacitance [sta::format_capacitance [expr $wire_cap * 1e-6] 6] [sta::unit_scale_abbreviation capacitance][sta::unit_suffix capacitance]/um."
     }
   } else {
     ord::ensure_units_initialized
