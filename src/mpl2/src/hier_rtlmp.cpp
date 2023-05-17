@@ -317,9 +317,9 @@ void HierRTLMP::hierRTLMacroPlacer()
   //
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
-  if (db_->getTech()->hasManufacturingGrid())
+  if (db_->getTech()->hasManufacturingGrid()) {
     manufacturing_grid_ = db_->getTech()->getManufacturingGrid();
-  else {
+  } else {
     // No manufacturing grid value in tech lef. set to default
     manufacturing_grid_ = 1;
   }
