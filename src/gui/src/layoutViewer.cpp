@@ -2106,6 +2106,8 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
   const QTransform initial_xfm = painter->transform();
   std::vector<dbInst*> child_insts;
   const int instance_limit = instanceSizeLimit();
+  const bool has_child_blocks
+      = insts.empty() ? false : !insts[0]->getBlock()->getChildren().empty();
 
   // Draw the instances' shapes
   for (auto inst : insts) {
@@ -2114,7 +2116,9 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
       continue;
     }
 
-    if (auto child = inst->getBlock()->findChild(master->getName().c_str())) {
+    dbBlock* child;
+    if (has_child_blocks
+        && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
       // setup the instance's transform
       QTransform xfm = initial_xfm;
       dbTransform inst_xfm;
