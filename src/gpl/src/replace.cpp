@@ -219,7 +219,10 @@ void Replace::doIncrementalPlace()
   if (unplaced_cnt == 0) {
     // Everything was already placed so we do the old incremental mode
     // which just skips initial placement and runs nesterov.
-    pbc_->unlockAll();
+    for(auto& pb : pbVec_){
+      pb->unlockAll();
+    }
+    // pbc_->unlockAll();
     doNesterovPlace();
     return;
   }
@@ -242,7 +245,9 @@ void Replace::doIncrementalPlace()
 
   // Finish the overflow resolution from the rough placement
   log_->info(GPL, 133, "Unlocked instances");
-  pbc_->unlockAll();
+  for(auto& pb : pbVec_){
+      pb->unlockAll();
+  }
 
   setTargetOverflow(previous_overflow);
   if (previous_overflow < rough_oveflow) {
@@ -283,7 +288,7 @@ void Replace::doInitialPlace()
   ipVars.debug = gui_debug_initial_;
   ipVars.forceCPU = forceCPU_;
 
-  std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pbc_, log_));
+  std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace();
 }
@@ -462,11 +467,9 @@ void Replace::setUniformTargetDensityMode(bool mode)
 
 float Replace::getUniformTargetDensity()
 { 
-  // TODO: find a solution which density to return
+  // TODO: update to be compatible with multiple target densities
   initNesterovPlace();
-  // return nb_->uniformTargetDensity();
-
-  return 0.0;
+  return nbVec_[0]->uniformTargetDensity();
 }
 
 void Replace::setInitDensityPenalityFactor(float penaltyFactor)

@@ -189,6 +189,9 @@ void NesterovPlace::updateNextGradient(std::shared_ptr<NesterovBase> nb){
   auto wireLengthGradSum_ = nb->getWireLengthGradSum();
   auto densityGradSum_ = nb->getDensityGradSum();
 
+  // printf("wireLengthGradSum_ = %g\n", wireLengthGradSum_);
+  // printf("densityGradSum_ = %g\n", densityGradSum_);
+
   if (wireLengthGradSum_ == 0
       && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
@@ -346,6 +349,12 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
   // backTracking variable.
   float curA = 1.0;
+
+  for(auto& nb : nbVec_){
+    nb->setIter(start_iter);
+    nb->setMaxPhiCoefChanged(false);
+    nb->resetMinSumOverflow();
+  }
 
   // Core Nesterov Loop
   int iter = start_iter;

@@ -46,6 +46,7 @@ class Logger;
 namespace gpl {
 
 class PlacerBaseCommon;
+class PlacerBase;
 class Graphics;
 
 class InitialPlaceVars
@@ -71,6 +72,7 @@ class InitialPlace
   InitialPlace();
   InitialPlace(InitialPlaceVars ipVars,
                std::shared_ptr<PlacerBaseCommon> pbc,
+               std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                utl::Logger* logger);
   ~InitialPlace();
   void doBicgstabPlace();
@@ -78,6 +80,7 @@ class InitialPlace
  private:
   InitialPlaceVars ipVars_;
   std::shared_ptr<PlacerBaseCommon> pbc_;
+  std::vector<std::shared_ptr<PlacerBase>> pbVec_;
   utl::Logger* log_;
 
   // Solve two SparseMatrix equations here;

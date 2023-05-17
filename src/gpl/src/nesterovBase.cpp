@@ -66,6 +66,9 @@ static float getDistance(const vector<FloatPoint>& a,
                          const vector<FloatPoint>& b);
 
 
+static float getDistanceBackup(const vector<FloatPoint>& a,
+                               const vector<FloatPoint>& b);
+
 static float getSecondNorm(const vector<FloatPoint>& a);
 
 
@@ -1223,7 +1226,8 @@ GNet* NesterovBaseCommon::dbToNb(odb::dbNet* net) const
 // * Note that wlCoeffX and wlCoeffY is 1/gamma
 // in ePlace paper.
 void NesterovBaseCommon::updateWireLengthForceWA(float wlCoeffX, float wlCoeffY)
-{
+{ 
+  // printf("wlCoeffX: %f, wlCoeffY: %f\n", wlCoeffX, wlCoeffY);
   // clear all WA variables.
   for (auto& gNet : gNets_) {
     gNet->clearWaVars();
@@ -2201,6 +2205,8 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
       electroForce.y += overlapArea * bin->electroForceY();
     }
   }
+
+  // printf("getDensityGradient: %f %f\n", electroForce.x, electroForce.y);
   return electroForce;
 }
 
@@ -2351,7 +2357,10 @@ float NesterovBase::getStepLength(
     const std::vector<FloatPoint>& curSLPSumGrads_)
 {
   float coordiDistance = getDistance(prevSLPCoordi_, curSLPCoordi_);
-  float gradDistance = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
+  // float gradDistance = getDistance(prevSLPSumGrads_, curSLPSumGrads_);
+
+  // TODO: Remove after testing 
+  float gradDistance = getDistanceBackup(prevSLPSumGrads_, curSLPSumGrads_);
 
   debugPrint(log_,
              GPL,
@@ -2362,7 +2371,7 @@ float NesterovBase::getStepLength(
   debugPrint(
       log_, GPL, "getStepLength", 1, "GradientDistance: {:g}", gradDistance);
 
-  // printf("[getStepLength] coordiDistance: %f, gradDistance: %f \n", coordiDistance, gradDistance);
+  // printf("[getStepLength] coordiDistance: %g, gradDistance: %g \n", coordiDistance, gradDistance);
   // printf("CoordinateDistance: %g\n", coordiDistance);
   // printf("GradientDistance: %g\n", gradDistance);
   return coordiDistance / gradDistance;
@@ -2385,6 +2394,11 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
   if(isConverged_){
     return;
   }
+
+  // TODO: remove
+  float wirelengthPreconditionerSum = 0;
+  float densityPreconditionerSum = 0;
+  float sumPreconditionerSum = 0;
 
   wireLengthGradSum_ = 0;
   densityGradSum_ = 0;
@@ -2432,6 +2446,10 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
       sumPrecondi.y = npVars_->minPreconditioner;
     }
 
+    wirelengthPreconditionerSum += wireLengthPreCondi.x + wireLengthPreCondi.y;
+    densityPreconditionerSum += densityPrecondi.x + densityPrecondi.y;
+    sumPreconditionerSum  += sumPrecondi.x + sumPrecondi.y;
+
     // if(gCell->isInstance()){
     //   printf("WireLength gradient for cell %s is: (%f,%f) \n", gCell->instance()->dbInst()->getName().c_str(), wireLengthGrads[i].x, wireLengthGrads[i].y);
     //   printf("Density gradient for cell %s is: (%f,%f) \n", gCell->instance()->dbInst()->getName().c_str(), densityPenalty_ * densityGrads[i].x, densityPenalty_ * densityGrads[i].y);
@@ -2450,6 +2468,16 @@ void NesterovBase::updateGradients(std::vector<FloatPoint>& sumGrads,
 
     gradSum += fabs(sumGrads[i].x) + fabs(sumGrads[i].y);
   }
+
+
+  // printf("wireLengthGradSum_ = %f\n", wireLengthGradSum_);
+  // printf("densityGradSum_ = %f\n", densityGradSum_);
+  // printf("gradSum = %f\n", gradSum);
+  // printf("densityPenalty_ = %g\n", densityPenalty_);
+  // printf("wirelengthPreconditionerSum = %f\n", wirelengthPreconditionerSum);
+  // printf("densityPreconditionerSum = %f\n", densityPreconditionerSum);
+  // printf("sumPreconditionerSum = %f\n", sumPreconditionerSum);
+  // printf("minPreconditioner = %f\n", npVars_->minPreconditioner);
 
   debugPrint(log_,
              GPL,
@@ -2575,8 +2603,6 @@ void NesterovBase::updateNextIter(const int iter)
     return;
   }
 
-  iter_ ++;
-
   // swap vector pointers
   std::swap(prevSLPCoordi_, curSLPCoordi_);
   std::swap(prevSLPWireLengthGrads_, curSLPWireLengthGrads_);
@@ -2584,17 +2610,19 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
+  int total_locked = 0;
   for (size_t k = 0; k < gCells_.size(); ++k) {
     if (gCells_[k]->isInstance() && gCells_[k]->instance()->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
       nextSLPWireLengthGrads_[k] = curSLPWireLengthGrads_[k];
       nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
       nextSLPSumGrads_[k] = curSLPSumGrads_[k];
-
+      total_locked++;
       nextCoordi_[k] = curCoordi_[k];
     }
   }
 
+  // printf("total locked: %d, totalGcells = %d\n", total_locked, gCells_.size());
   std::swap(curSLPCoordi_, nextSLPCoordi_);
   std::swap(curSLPWireLengthGrads_, nextSLPWireLengthGrads_);
   std::swap(curSLPDensityGrads_, nextSLPDensityGrads_);
@@ -2617,6 +2645,10 @@ void NesterovBase::updateNextIter(const int iter)
 
   sumOverflowUnscaled_ = overflowAreaUnscaled() / overflowDenominator;
 
+  // if (iter == 0 || (iter + 1) % 10 == 0) {
+    // printf("fractionOfMaxIters = %f, overflowDenominator = %f, areaUnscaled = %ld\n", fractionOfMaxIters, overflowDenominator, overflowAreaUnscaled());
+  // }
+
   debugPrint(log_,
              GPL,
              "updateNextIter",
@@ -2630,14 +2662,24 @@ void NesterovBase::updateNextIter(const int iter)
 
   int64_t hpwl = nbc_->getHpwl();
 
+  
+
   debugPrint(log_, GPL, "updateNextIter", 1, "PreviousHPWL: {}", prevHpwl_);
   debugPrint(log_, GPL, "updateNextIter", 1, "NewHPWL: {}", hpwl);
 
   float phiCoef = getPhiCoef(static_cast<float>(hpwl - prevHpwl_)
                              / npVars_->referenceHpwl);
 
+
+  // printf("hpwl = %ld\n", hpwl);
+  // printf("prevHpwl_ = %ld\n", prevHpwl_);
+  // printf("referenceHpwl = %f\n", npVars_->referenceHpwl);
+  // printf("phiCoef = %f, minphiCoef = %f, maxphiCoef = %f\n", phiCoef, npVars_->minPhiCoef, npVars_->maxPhiCoef);
+
   prevHpwl_ = hpwl;
   densityPenalty_ *= phiCoef;
+
+  
 
   debugPrint(log_, GPL, "updateNextIter", 1, "PhiCoef: {:g}", phiCoef);
 
@@ -2660,10 +2702,14 @@ bool NesterovBase::nesterovUpdateStepLength(){
     return true;
   }
 
+  // printf("wireLengthGradSum_ = %f\n", wireLengthGradSum_);
+  // printf("densityGradSum_ = %f\n", densityGradSum_);
+
   float newStepLength = getStepLength(
           curSLPCoordi_, curSLPSumGrads_, nextSLPCoordi_, nextSLPSumGrads_);
 
   debugPrint(log_, GPL, "np", 1, "NewStepLength: {:g}", newStepLength);
+  // printf("New steplength: %f\n", newStepLength);
 
   if (isnan(newStepLength) || isinf(newStepLength)) {
     isDiverged_ = true;
@@ -2968,6 +3014,25 @@ static float getDistance(const vector<FloatPoint>& a,
     sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
   }
 
+  return sqrt(sumDistance / (2.0 * a.size()));
+}
+
+static float getDistanceBackup(const vector<FloatPoint>& a,
+                         const vector<FloatPoint>& b)
+{
+  float sumAx = 0.0f, sumAy = 0.0f;
+  float sumBx = 0.0f, sumBy = 0.0f;
+  float sumDistance = 0.0f;
+  for (size_t i = 0; i < a.size(); i++) {
+    sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
+    sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
+    sumAx += a[i].x;
+    sumAy += a[i].y;
+    sumBx += b[i].x;
+    sumBy += b[i].y; 
+  }
+
+  // printf("sumAx %f sumAy %f sumBx %f sumBy %f\n", sumAx, sumAy, sumBx, sumBy);
   return sqrt(sumDistance / (2.0 * a.size()));
 }
 

@@ -1017,6 +1017,8 @@ class NesterovBase
   void initDensity1();
   float initDensity2();
   void setNpVars(NesterovPlaceVars* npVars) { npVars_ = npVars; }
+  void setIter(int iter) { iter_ = iter; }
+  void setMaxPhiCoefChanged(bool maxPhiCoefChanged) { isMaxPhiCoefChanged_ = maxPhiCoefChanged; }
 
   void updateGradients(std::vector<FloatPoint>& sumGrads,
                        std::vector<FloatPoint>& wireLengthGrads,

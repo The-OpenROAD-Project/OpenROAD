@@ -57,14 +57,15 @@ void InitialPlaceVars::reset()
   forceCPU = false;
 }
 
-InitialPlace::InitialPlace() : ipVars_(), pbc_(nullptr), log_(nullptr)
+InitialPlace::InitialPlace() : ipVars_(), pbc_(nullptr), pbVec_(), log_(nullptr)
 {
 }
 
 InitialPlace::InitialPlace(InitialPlaceVars ipVars,
                            std::shared_ptr<PlacerBaseCommon> pbc,
+                           std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                            utl::Logger* log)
-    : ipVars_(ipVars), pbc_(pbc), log_(log)
+    : ipVars_(ipVars), pbc_(pbc), pbVec_(pbVec), log_(log)
 {
 }
 
@@ -85,9 +86,9 @@ void InitialPlace::doBicgstabPlace()
   bool run_cpu = true;
 
   std::unique_ptr<Graphics> graphics;
-  // if (ipVars_.debug && Graphics::guiActive()) {
-  //   graphics = make_unique<Graphics>(log_, pb_);
-  // }
+  if (ipVars_.debug && Graphics::guiActive()) {
+    graphics = make_unique<Graphics>(log_, pbc_, pbVec_);
+  }
 
   placeInstsCenter();
 
@@ -172,9 +173,6 @@ void InitialPlace::placeInstsCenter()
       }else {
         inst->setCenterLocation(centerX, centerY);
       }
-      
-      // // Remove before uncommenting above
-      // inst->setCenterLocation(centerX, centerY);
 
     }
     
