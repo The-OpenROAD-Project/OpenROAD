@@ -718,7 +718,6 @@ float STAGuiInterface::getPinSlack(const sta::Pin* pin) const
                         use_max_ ? sta::MinMax::max() : sta::MinMax::min());
 }
 
-
 int STAGuiInterface::getEndPointCount() const
 {
   return sta_->endpoints()->size();

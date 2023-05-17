@@ -126,8 +126,6 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, histogram_widget_);
 
-
-
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
 

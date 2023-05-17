@@ -142,7 +142,7 @@ void HistogramWidget::setSlackMode()
   }
 
   if(unconstrained_count != 0) {
-    QString label_message = "Number of unconstrained pins: ";
+    const QString label_message = "Number of unconstrained pins: ";
     QString unconstrained_number;
     unconstrained_number.setNum(unconstrained_count);
     label_->setText(label_message + unconstrained_number);
