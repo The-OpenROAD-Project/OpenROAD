@@ -3376,12 +3376,7 @@ void LayoutViewer::showLayoutCustomMenu(QPoint pos)
 
 void LayoutViewer::designLoaded(dbBlock* block)
 {
-  if (block->getParent()) {
-    search_.addChildBlock(block);
-    fullRepaint();
-  } else {
-    search_.setTopBlock(block);
-  }
+  search_.setTopBlock(block);
 }
 
 void LayoutViewer::setScroller(LayoutScroll* scroller)

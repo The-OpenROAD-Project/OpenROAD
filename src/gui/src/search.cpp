@@ -182,11 +182,6 @@ void Search::setTopBlock(odb::dbBlock* block)
   emit newBlock(block);
 }
 
-void Search::addChildBlock(odb::dbBlock* block)
-{
-  child_block_data_[block] = BlockData();
-}
-
 void Search::announceModified(bool& flag)
 {
   const bool current_flag = flag;
@@ -241,7 +236,7 @@ void Search::clearRows()
 
 Search::BlockData& Search::getData(odb::dbBlock* block)
 {
-  return block == top_block_ ? top_block_data_ : child_block_data_.at(block);
+  return block == top_block_ ? top_block_data_ : child_block_data_[block];
 }
 
 void Search::updateShapes(odb::dbBlock* block)
