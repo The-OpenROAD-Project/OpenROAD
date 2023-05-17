@@ -345,7 +345,10 @@ class HardMacro
   HardMacro(float width, float height, const std::string& name);
   // create a macro from dbInst
   // dbu is needed to convert the database unit to real size
-  HardMacro(odb::dbInst* inst, float dbu, int manufacturing_grid, float halo_width = 0.0);
+  HardMacro(odb::dbInst* inst,
+            float dbu,
+            int manufacturing_grid,
+            float halo_width = 0.0);
 
   // overload the comparison operators
   // based on area, width, height order
