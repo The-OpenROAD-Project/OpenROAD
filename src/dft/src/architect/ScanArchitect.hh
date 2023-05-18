@@ -32,8 +32,8 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
 #include "ScanArchitectConfig.hh"
@@ -101,8 +101,7 @@ class ScanArchitect
 
   // Calculates the max_length per hash domain based on the given global
   // max_length
-  static std::unordered_map<size_t, HashDomainLimits>
-  inferChainCountFromMaxLength(
+  static std::map<size_t, HashDomainLimits> inferChainCountFromMaxLength(
       const std::unordered_map<size_t, uint64_t>& hash_domains_total_bit,
       uint64_t max_length);
 
@@ -121,7 +120,9 @@ class ScanArchitect
   std::vector<std::unique_ptr<ScanChain>> scan_chains_;
   std::unordered_map<size_t, std::vector<std::unique_ptr<ScanChain>>>
       hash_domain_scan_chains_;
-  std::unordered_map<size_t, HashDomainLimits> hash_domain_to_limits_;
+  // We use a map instead of an unordered_map to keep consistency between runs
+  // regarding what scan chain is assigned to each hash domain
+  std::map<size_t, HashDomainLimits> hash_domain_to_limits_;
 
   void createScanChains();
   void inferChainCount();
