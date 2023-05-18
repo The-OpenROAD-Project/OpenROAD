@@ -20,6 +20,9 @@ odb::dbNet* ScanPin::getNet() const
       return right()->getNet();
       break;
   }
+  // unreachable code. There are only two values in the EitherSide enum. This
+  // prevents warnings and compilation errors: See https://abseil.io/tips/147
+  return nullptr;
 }
 
 std::string_view ScanPin::getName() const
@@ -32,6 +35,9 @@ std::string_view ScanPin::getName() const
       return right()->getConstName();
       break;
   }
+  // unreachable code. There are only two values in the EitherSide enum. This
+  // prevents warnings and compilation errors: See https://abseil.io/tips/147
+  return nullptr;
 }
 
 ScanLoad::ScanLoad(Left<odb::dbITerm*>&& left) : ScanPin(std::move(left))
