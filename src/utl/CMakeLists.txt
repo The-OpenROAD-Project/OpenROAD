@@ -70,6 +70,7 @@ add_library(utl_lib
   src/CFileUtils.cpp
   src/ScopedTemporaryFile.cpp
   src/Logger.cpp
+  src/timer.cpp
 )
 
 target_include_directories(utl_lib

@@ -167,7 +167,7 @@ class IOPlacer
                        std::vector<int> slot_indices,
                        bool top_layer,
                        bool is_group);
-  void placeFallbackPins();
+  int placeFallbackPins(bool random);
   void assignMirroredPins(IOPin& io_pin,
                           MirroredPins& mirrored_pins,
                           std::vector<IOPin>& assignment);
@@ -177,7 +177,8 @@ class IOPlacer
   int getFirstSlotToPlaceGroup(int first_slot,
                                int last_slot,
                                int group_size,
-                               bool check_mirrored);
+                               bool check_mirrored,
+                               IOPin& first_pin);
   void placeFallbackGroup(const std::pair<std::vector<int>, bool>& group,
                           int place_slot);
   void findSlots(const std::set<int>& layers, Edge edge);
@@ -194,6 +195,7 @@ class IOPlacer
   void initMirroredPins();
   void initConstraints();
   void sortConstraints();
+  void checkPinsInMultipleConstraints();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();

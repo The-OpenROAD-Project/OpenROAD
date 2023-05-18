@@ -98,7 +98,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   ScriptWidget* getScriptWidget() const { return script_; }
   Inspector* getInspector() const { return inspector_; }
 
-  const std::vector<std::string> getRestoreTclCommands();
+  std::vector<std::string> getRestoreTclCommands();
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -156,7 +156,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void setSelected(const Selected& selection, bool show_connectivity = false);
 
   // Add the selections to highlight set
-  void addHighlighted(const SelectionSet& selection, int highlight_group = -1);
+  void addHighlighted(const SelectionSet& highlights, int highlight_group = -1);
 
   // Remove a selection from the set of highlights
   void removeHighlighted(const Selected& selection);
@@ -207,24 +207,23 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   void showHelp();
 
   // add/remove toolbar button
-  const std::string addToolbarButton(const std::string& name,
-                                     const QString& text,
-                                     const QString& script,
-                                     bool echo);
+  std::string addToolbarButton(const std::string& name,
+                               const QString& text,
+                               const QString& script,
+                               bool echo);
   void removeToolbarButton(const std::string& name);
 
   // add/remove menu actions
-  const std::string addMenuItem(const std::string& name,
-                                const QString& path,
-                                const QString& text,
-                                const QString& script,
-                                const QString& shortcut,
-                                bool echo);
+  std::string addMenuItem(const std::string& name,
+                          const QString& path,
+                          const QString& text,
+                          const QString& script,
+                          const QString& shortcut,
+                          bool echo);
   void removeMenuItem(const std::string& name);
 
   // request for user input
-  const std::string requestUserInput(const QString& title,
-                                     const QString& question);
+  std::string requestUserInput(const QString& title, const QString& question);
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);

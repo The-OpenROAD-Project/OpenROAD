@@ -331,6 +331,7 @@ void ScanReplace::scanReplace()
 {
   odb::dbChip* chip = db_->getChip();
   scanReplace(chip->getBlock());
+  sta_->networkChanged();
 }
 
 // Recursive function that iterates over a block (and the blocks inside this
@@ -424,6 +425,7 @@ void ScanReplace::rollbackScanReplace()
 {
   odb::dbChip* chip = db_->getChip();
   rollbackScanReplace(chip->getBlock());
+  sta_->networkChanged();
 }
 
 void ScanReplace::rollbackScanReplace(odb::dbBlock* block)

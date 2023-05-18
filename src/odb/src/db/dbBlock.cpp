@@ -1648,6 +1648,9 @@ dbBlock* dbBlock::getParent()
   _dbBlock* block = (_dbBlock*) this;
   _dbDatabase* db = block->getDatabase();
   _dbChip* chip = db->_chip_tbl->getPtr(block->_chip);
+  if (!block->_parent.isValid()) {
+    return nullptr;
+  }
   _dbBlock* parent = chip->_block_tbl->getPtr(block->_parent);
   return (dbBlock*) parent;
 }
@@ -2554,8 +2557,9 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
                                    net->getId(),
                                    net->getConstName());
     dbSigType ty = net->getSigType();
-    if ((ty == dbSigType::POWER) && (ty == dbSigType::GROUND))
+    if (ty.isSupply()) {
       xnet->setSpecial();
+    }
 
     xnet->setSigType(ty);
   }

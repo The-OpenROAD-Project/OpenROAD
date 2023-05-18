@@ -133,7 +133,8 @@ class Design
   void readDef(const std::string& file_name,
                bool continue_on_errors = false,
                bool floorplan_init = false,
-               bool incremental = false);
+               bool incremental = false,
+               bool child = false);
   void link(const std::string& design_name);
 
   void readDb(const std::string& file_name);

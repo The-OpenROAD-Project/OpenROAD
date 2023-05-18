@@ -108,7 +108,7 @@ public:
   void report(Logger *logger,
               const Network *network);
   // Return the steiner pt connected to the driver pin.
-  SteinerPt drvrPt(const Network *network) const;
+  SteinerPt drvrPt() const;
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,

@@ -632,6 +632,9 @@ int Net::cy() const
 
 int64_t Net::hpwl() const
 {
+  if (ux_ < lx_) {  // dangling net
+    return 0;
+  }
   return static_cast<int64_t>((ux_ - lx_) + (uy_ - ly_));
 }
 
