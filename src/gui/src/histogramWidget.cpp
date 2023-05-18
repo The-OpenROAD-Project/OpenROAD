@@ -57,7 +57,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
       label_(new QLabel(this)),
       mode_menu_(new QComboBox(this)),
       chart_(new QChart),
-      display_(new QChartView(chart_)),
+      display_(new QChartView(chart_, this)),
       axis_x_(new QBarCategoryAxis(this)),
       axis_y_(new QValueAxis(this))    
 {
