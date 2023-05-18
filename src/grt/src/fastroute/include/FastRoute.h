@@ -75,16 +75,13 @@ class AbstractFastRouteRenderer;
 // Debug mode settings
 struct DebugSetting
 {
-  const odb::dbNet* net_;
-  bool steinerTree_;
-  bool rectilinearSTree_;
-  bool tree2D_;
-  bool tree3D_;
+  const odb::dbNet* net_ = nullptr;
+  bool steinerTree_ = false;
+  bool rectilinearSTree_ = false;
+  bool tree2D_ = false;
+  bool tree3D_ = false;
   std::unique_ptr<AbstractFastRouteRenderer> renderer_;
   std::string sttInputFileName_;
-
-  DebugSetting();
-  ~DebugSetting();
 
   bool isOn() const { return renderer_ != nullptr; }
 };

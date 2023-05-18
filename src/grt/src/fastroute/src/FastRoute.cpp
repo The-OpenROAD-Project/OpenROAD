@@ -48,17 +48,6 @@ namespace grt {
 
 using utl::GRT;
 
-DebugSetting::DebugSetting()
-    : net_(nullptr),
-      steinerTree_(false),
-      rectilinearSTree_(false),
-      tree2D_(false),
-      tree3D_(false)
-{
-}
-
-DebugSetting::~DebugSetting() = default;
-
 FastRouteCore::FastRouteCore(odb::dbDatabase* db,
                              utl::Logger* log,
                              stt::SteinerTreeBuilder* stt_builder)

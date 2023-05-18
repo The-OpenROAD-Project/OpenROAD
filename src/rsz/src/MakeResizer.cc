@@ -67,7 +67,7 @@ void
 initResizer(OpenRoad *openroad)
 {
   std::unique_ptr<rsz::AbstractSteinerRenderer> steiner_renderer;
-  if (gui::Gui::get()->enabled()) {
+  if (gui::Gui::enabled()) {
     steiner_renderer = std::make_unique<rsz::SteinerRenderer>();
   }
   Tcl_Interp* interp = openroad->tclInterp();

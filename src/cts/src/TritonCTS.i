@@ -52,6 +52,9 @@ using ord::getTritonCts;
 
 %include "../../Exception.i"
 
+%ignore cts::CtsOptions::setObserver;
+%ignore cts::CtsOptions::getObserver;
+
 %inline %{
 
 void

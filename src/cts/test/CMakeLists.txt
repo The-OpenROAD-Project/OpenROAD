@@ -12,8 +12,8 @@ target_include_directories(cts_unittest
     ${OPENROAD_HOME}
 )
 
-target_link_libraries(cts_unittest 
-    gtest 
+target_link_libraries(cts_unittest
+    gtest
     gtest_main
     cts_lib
     utl_lib

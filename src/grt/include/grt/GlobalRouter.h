@@ -140,7 +140,6 @@ class GlobalRouter
   GlobalRouter();
   ~GlobalRouter();
 
-#ifndef SWIG
   void init(utl::Logger* logger,
             stt::SteinerTreeBuilder* stt_builder,
             odb::dbDatabase* db,
@@ -150,7 +149,6 @@ class GlobalRouter
             dpl::Opendp* opendp,
             std::unique_ptr<AbstractRoutingCongestionDataSource>
                 routing_congestion_data_source);
-#endif
 
   void clear();
 
@@ -218,10 +216,8 @@ class GlobalRouter
   void setPerturbationAmount(int perturbation);
   void perturbCapacities();
 
-#ifndef SWIG
   void initDebugFastRoute(std::unique_ptr<AbstractFastRouteRenderer> renderer);
   AbstractFastRouteRenderer* getDebugFastRoute() const;
-#endif
 
   void setDebugNet(const odb::dbNet* net);
   void setDebugSteinerTree(bool steinerTree);
@@ -253,10 +249,8 @@ class GlobalRouter
       const Pin& pin,
       std::vector<std::pair<odb::Point, odb::Point>>& ap_positions);
 
-#ifndef SWIG
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();
-#endif
 
   odb::dbDatabase* db()
   {

@@ -1,3 +1,9 @@
+// Copyright 2023 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
+
 #pragma once
 
 #include "AbstractSteinerRenderer.h"
@@ -9,7 +15,6 @@ class SteinerRenderer : public gui::Renderer, public AbstractSteinerRenderer
 {
  public:
   SteinerRenderer();
-  ~SteinerRenderer() override = default;
 
   void highlight(SteinerTree* tree) override;
   void drawObjects(gui::Painter& /* painter */) override;

@@ -62,7 +62,6 @@ using sta::LibertyPort;
 using sta::dbNetwork;
 using sta::dbSta;
 using sta::MinMax;
-using sta::Vector;
 
 using odb::Rect;
 
@@ -90,7 +89,7 @@ public:
  void repairDesign(double max_wire_length,  // zero for none (meters)
                    double slew_margin,
                    double cap_margin,
-                   int& repair_count,
+                   int& repaired_net_count,
                    int& slew_violations,
                    int& cap_violations,
                    int& fanout_violations,
