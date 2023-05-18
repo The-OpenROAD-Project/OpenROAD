@@ -81,10 +81,7 @@ class CtsOptions
   {
     observer_ = std::move(observer);
   }
-  CtsObserver* getObserver() const
-  {
-    return observer_.get();
-  }
+  CtsObserver* getObserver() const { return observer_.get(); }
 
   void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
   bool getSinkClustering() const { return sinkClusteringEnable_; }

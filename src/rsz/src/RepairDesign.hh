@@ -50,18 +50,18 @@ class Resizer;
 
 using std::vector;
 
-using sta::StaState;
+using sta::Corner;
+using sta::dbNetwork;
+using sta::dbSta;
+using sta::LibertyCell;
+using sta::LibertyPort;
+using sta::MinMax;
 using sta::Net;
 using sta::Pin;
 using sta::PinSeq;
-using sta::Vertex;
 using sta::Slew;
-using sta::Corner;
-using sta::LibertyCell;
-using sta::LibertyPort;
-using sta::dbNetwork;
-using sta::dbSta;
-using sta::MinMax;
+using sta::StaState;
+using sta::Vertex;
 
 using odb::Rect;
 
