@@ -252,14 +252,8 @@ class GlobalRouter
   void setRenderer(std::unique_ptr<AbstractGrouteRenderer> groute_renderer);
   AbstractGrouteRenderer* getRenderer();
 
-  odb::dbDatabase* db()
-  {
-    return db_;
-  }
-  FastRouteCore* fastroute() const
-  {
-    return fastroute_;
-  }
+  odb::dbDatabase* db() const { return db_; }
+  FastRouteCore* fastroute() const { return fastroute_; }
 
  private:
   // Net functions
