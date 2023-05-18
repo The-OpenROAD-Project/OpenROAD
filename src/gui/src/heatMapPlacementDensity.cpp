@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
+// Copyright (c) 2019-2023, The Regents of the University of California, Google
+// LLC All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,11 @@
 
 #include "heatMapPlacementDensity.h"
 
+#include <utility>
+
 #include "db_sta/dbNetwork.hh"
+#include "odb/db.h"
+#include "odb/dbTransform.h"
 
 namespace gui {
 
@@ -68,25 +72,50 @@ bool PlacementDensityDataSource::populateMap()
     return false;
   }
 
-  for (auto* inst : getBlock()->getInsts()) {
-    if (!inst->getPlacementStatus().isPlaced()) {
-      continue;
-    }
-    if (!include_filler_ && inst->getMaster()->isFiller()) {
-      continue;
-    }
-    if (!include_taps_
-        && (inst->getMaster()->getType() == odb::dbMasterType::CORE_WELLTAP
-            || inst->getMaster()->isEndCap())) {
-      continue;
-    }
-    if (!include_io_
-        && (inst->getMaster()->isPad() || inst->getMaster()->isCover())) {
-      continue;
-    }
-    odb::Rect inst_box = inst->getBBox()->getBox();
+  // Iterate through blocks hierarchically to gather the flattended data
+  // for this view.
+  std::vector<std::pair<odb::dbBlock*, odb::dbTransform>> blocks
+      = {{getBlock(), odb::dbTransform()}};
 
-    addToMap(inst_box, 100.0);
+  while (!blocks.empty()) {
+    auto& current_block_instance = blocks.back();
+    blocks.pop_back();
+
+    odb::dbBlock* current_block = current_block_instance.first;
+    odb::dbTransform current_transform = current_block_instance.second;
+    const bool has_child_blocks = !current_block->getChildren().empty();
+
+    for (auto* inst : current_block->getInsts()) {
+      if (!inst->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+      if (!include_filler_ && inst->getMaster()->isFiller()) {
+        continue;
+      }
+      if (!include_taps_
+          && (inst->getMaster()->getType() == odb::dbMasterType::CORE_WELLTAP
+              || inst->getMaster()->isEndCap())) {
+        continue;
+      }
+      if (!include_io_
+          && (inst->getMaster()->isPad() || inst->getMaster()->isCover())) {
+        continue;
+      }
+
+      odb::dbMaster* master = inst->getMaster();
+      odb::dbBlock* child;
+      if (has_child_blocks
+          && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
+        odb::dbTransform child_transform;
+        inst->getTransform(child_transform);
+        blocks.push_back({child, child_transform});
+        continue;
+      }
+      odb::Rect inst_box = inst->getBBox()->getBox();
+      current_transform.apply(inst_box);
+
+      addToMap(inst_box, 100.0);
+    }
   }
 
   return true;
