@@ -5,25 +5,6 @@
 [INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
 [INFO ODB-0225]     Created 437 library cells
 [INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output10 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output11 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output12 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output13 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output14 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output15 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output16 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output17 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output18 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output19 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output2 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output20 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output3 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output4 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output5 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output6 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output7 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output8 is not in the port list.
-[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output9 is not in the port list.
 ***************************
 Preview DFT Report
 Number of chains: 4

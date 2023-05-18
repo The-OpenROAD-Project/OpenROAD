@@ -1,49 +1,62 @@
 module scan_architect (clock1,
     clock2,
     output1,
+    output10,
+    output11,
+    output12,
+    output13,
+    output14,
+    output15,
+    output16,
+    output17,
+    output18,
+    output19,
+    output2,
+    output20,
+    output3,
+    output4,
+    output5,
+    output6,
+    output7,
+    output8,
+    output9,
     port1,
     set_b,
     scan_enable_1,
     scan_in_1,
     scan_in_2,
-    scan_out_1,
     scan_in_3,
-    scan_out_2,
-    scan_in_4,
-    scan_out_3);
+    scan_in_4);
  input clock1;
  input clock2;
  output output1;
+ output output10;
+ output output11;
+ output output12;
+ output output13;
+ output output14;
+ output output15;
+ output output16;
+ output output17;
+ output output18;
+ output output19;
+ output output2;
+ output output20;
+ output output3;
+ output output4;
+ output output5;
+ output output6;
+ output output7;
+ output output8;
+ output output9;
  input port1;
  input set_b;
  input scan_enable_1;
  input scan_in_1;
  input scan_in_2;
- output scan_out_1;
  input scan_in_3;
- output scan_out_2;
  input scan_in_4;
- output scan_out_3;
 
- wire output10;
- wire output11;
- wire output12;
- wire output13;
- wire output14;
- wire output15;
- wire output16;
- wire output17;
- wire output18;
- wire output19;
- wire output2;
- wire output20;
- wire output3;
- wire output4;
- wire output5;
- wire output6;
- wire output7;
- wire output8;
- wire output9;
 
  sky130_fd_sc_hd__sdfsbp_1 ff1_clk1_rising (.D(port1),
     .Q(output1),
@@ -165,7 +178,4 @@ module scan_architect (clock1,
     .SCE(scan_enable_1),
     .SET_B(set_b),
     .CLK_N(clock1));
- assign scan_out_1 = output11;
- assign scan_out_2 = output10;
- assign scan_out_3 = output20;
 endmodule
