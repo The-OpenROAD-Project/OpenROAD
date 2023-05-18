@@ -37,7 +37,7 @@ std::string_view ScanPin::getName() const
   }
   // unreachable code. There are only two values in the EitherSide enum. This
   // prevents warnings and compilation errors: See https://abseil.io/tips/147
-  return nullptr;
+  return {};
 }
 
 ScanLoad::ScanLoad(Left<odb::dbITerm*>&& left) : ScanPin(std::move(left))
