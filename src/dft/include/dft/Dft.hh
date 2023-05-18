@@ -114,6 +114,10 @@ class Dft
   // Resets the internal state
   void reset();
 
+  // Common function to perform scan replace and scan architect. Shared between
+  // preview_dft and insert_dft
+  std::vector<std::unique_ptr<ScanChain>> replaceAndArchitect();
+
   // Global state
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
@@ -122,10 +126,6 @@ class Dft
   // Internal state
   std::unique_ptr<ScanReplace> scan_replace_;
   std::unique_ptr<DftConfig> dft_config_;
-
-  // Common function to perform scan replace and scan architect. Shared between
-  // preview_dft and insert_dft
-  std::vector<std::unique_ptr<ScanChain>> replaceAndArchitect();
 };
 
 }  // namespace dft

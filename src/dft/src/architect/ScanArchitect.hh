@@ -115,6 +115,9 @@ class ScanArchitect
       std::unique_ptr<ScanCellsBucket> scan_cells_bucket);
 
  protected:
+  void createScanChains();
+  void inferChainCount();
+
   const ScanArchitectConfig& config_;
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket_;
   std::vector<std::unique_ptr<ScanChain>> scan_chains_;
@@ -123,9 +126,6 @@ class ScanArchitect
   // We use a map instead of an unordered_map to keep consistency between runs
   // regarding what scan chain is assigned to each hash domain
   std::map<size_t, HashDomainLimits> hash_domain_to_limits_;
-
-  void createScanChains();
-  void inferChainCount();
 };
 
 }  // namespace dft

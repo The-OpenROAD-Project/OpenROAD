@@ -51,15 +51,15 @@ class ScanStitch
   void Stitch(odb::dbBlock* block, const ScanChain& scan_chain);
 
  private:
-  odb::dbDatabase* db_;
-  odb::dbBlock* top_block_;
-  // Scan Enable is global within this scan stitching
-  std::optional<ScanDriver> scan_enable_;
-
   void FindOrCreateScanEnable(odb::dbBlock* block);
   ScanDriver FindOrCreateScanIn(odb::dbBlock* block);
   ScanLoad FindOrCreateScanOut(odb::dbBlock* block,
                                const ScanDriver& cell_scan_out);
+
+  odb::dbDatabase* db_;
+  odb::dbBlock* top_block_;
+  // Scan Enable is global within this scan stitching
+  std::optional<ScanDriver> scan_enable_;
 };
 
 }  // namespace dft

@@ -74,8 +74,6 @@ class ScanCell
   std::unique_ptr<ClockDomain> clock_domain_;
 
  protected:
-  utl::Logger* logger_;
-
   // Top function to connect either dbBTerms or dbITerms
   void Connect(const ScanLoad& load,
                const ScanDriver& driver,
@@ -143,6 +141,8 @@ class ScanCell
   // Helpers to get the name in a generic way from a BTerm and ITerm
   static const char* GetTermName(odb::dbBTerm* term);
   static const char* GetTermName(odb::dbITerm* term);
+
+  utl::Logger* logger_;
 };
 
 }  // namespace dft

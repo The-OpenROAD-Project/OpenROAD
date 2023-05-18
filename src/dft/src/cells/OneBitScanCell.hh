@@ -60,11 +60,11 @@ class OneBitScanCell : public ScanCell
   ScanDriver getScanOut() const override;
 
  private:
+  odb::dbITerm* findITerm(sta::LibertyPort* liberty_port) const;
+
   odb::dbInst* inst_;
   sta::TestCell* test_cell_;
   sta::dbNetwork* db_network_;
-
-  odb::dbITerm* findITerm(sta::LibertyPort* liberty_port) const;
 };
 
 }  // namespace dft
