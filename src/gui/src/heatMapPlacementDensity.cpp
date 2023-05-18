@@ -108,7 +108,7 @@ bool PlacementDensityDataSource::populateMap()
           && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
         odb::dbTransform child_transform;
         inst->getTransform(child_transform);
-        blocks.push_back({child, child_transform});
+        blocks.emplace_back(child, child_transform);
         continue;
       }
       odb::Rect inst_box = inst->getBBox()->getBox();
