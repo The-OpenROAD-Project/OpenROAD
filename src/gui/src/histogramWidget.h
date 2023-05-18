@@ -54,17 +54,11 @@ class HistogramWidget : public QDockWidget
 
  public:
   HistogramWidget(QWidget* parent = nullptr);
-  ~HistogramWidget() {} 
 
   void setSTA(sta::dbSta* sta) { sta_ = sta; };
-
   void setSlackMode();
   void clearChart();
   
- signals:
-
- public slots:
-
  private slots:
   void changeMode();
 

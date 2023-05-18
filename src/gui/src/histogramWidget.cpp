@@ -223,7 +223,7 @@ void HistogramWidget::setSlackMode()
   series->setBarWidth(1.0);
   chart_->addSeries(series);
 
-  axis_y_->setTitleText("N. of Endpoints");
+  axis_y_->setTitleText("Number of Endpoints");
   axis_y_->setRange(0, max_y);
   axis_y_->setTickCount(15);
   axis_y_->setLabelFormat("%i");
