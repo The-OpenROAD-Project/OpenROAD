@@ -8,7 +8,8 @@ class ScanCellMock : public ScanCell
 {
  public:
   ScanCellMock(const std::string& name,
-               std::unique_ptr<ClockDomain> clock_domain, utl::Logger* logger);
+               std::unique_ptr<ClockDomain> clock_domain,
+               utl::Logger* logger);
   ~ScanCellMock() override = default;
 
   uint64_t getBits() const override;

@@ -6,7 +6,8 @@ namespace dft {
 namespace test {
 
 ScanCellMock::ScanCellMock(const std::string& name,
-                           std::unique_ptr<ClockDomain> clock_domain, utl::Logger* logger)
+                           std::unique_ptr<ClockDomain> clock_domain,
+                           utl::Logger* logger)
     : ScanCell(name, std::move(clock_domain), logger)
 {
 }
@@ -28,7 +29,8 @@ void ScanCellMock::connectScanOut(const ScanLoad& pin) const
 {
 }
 
-ScanDriver ScanCellMock::getScanOut() const {
+ScanDriver ScanCellMock::getScanOut() const
+{
 }
 
 }  // namespace test
