@@ -72,17 +72,15 @@ bool PlacementDensityDataSource::populateMap()
     return false;
   }
 
-  // Iterate through blocks hierarchically to gather the flattended data
+  // Iterate through blocks hierarchically to gather the flattened data
   // for this view.
   std::vector<std::pair<odb::dbBlock*, odb::dbTransform>> blocks
       = {{getBlock(), odb::dbTransform()}};
 
   while (!blocks.empty()) {
-    auto& current_block_instance = blocks.back();
+    auto [current_block, current_transform] = blocks.back();
     blocks.pop_back();
 
-    odb::dbBlock* current_block = current_block_instance.first;
-    odb::dbTransform current_transform = current_block_instance.second;
     const bool has_child_blocks = !current_block->getChildren().empty();
 
     for (auto* inst : current_block->getInsts()) {
