@@ -1257,7 +1257,7 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
             && (inst_term_dir == odb::dbIoType::OUTPUT
                 || inst_term_dir == odb::dbIoType::INOUT)) {
           auto net_obj = inst_term->getNet();
-          gui::BufferTree buffer_tree_obj = gui::BufferTree(net_obj, false);
+          gui::BufferTree buffer_tree_obj = gui::BufferTree(net_obj);
 
           for (auto Bterm : buffer_tree_obj.getBTerms()) {
             connected_objects.insert(Gui::get()->makeSelected(Bterm));
@@ -1275,12 +1275,14 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
     }
   }
 
-  if (connected_objects.empty())
+  if (connected_objects.empty()) {
     return;
-  if (select_flag)
+  }
+  if (select_flag) {
     addSelected(connected_objects);
-  else
+  } else {
     addHighlighted(connected_objects, highlight_group);
+  }
 }
 
 void MainWindow::saveSettings()

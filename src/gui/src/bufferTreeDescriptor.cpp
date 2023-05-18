@@ -46,9 +46,9 @@ namespace gui {
 
 sta::dbSta* BufferTree::sta_ = nullptr;
 
-BufferTree::BufferTree(odb::dbNet* net, bool timingSource)
+BufferTree::BufferTree(odb::dbNet* net)
 {
-  populate(net, timingSource);
+  populate(net);
 
   // Sort nets to ensure stable color order
   std::sort(
@@ -59,7 +59,7 @@ BufferTree::BufferTree(odb::dbNet* net, bool timingSource)
   name_ = nets_[0]->getName();
 }
 
-void BufferTree::populate(odb::dbNet* net, bool timingSource)
+void BufferTree::populate(odb::dbNet* net)
 {
   if (net == nullptr) {
     return;
@@ -77,7 +77,7 @@ void BufferTree::populate(odb::dbNet* net, bool timingSource)
 
   for (auto* iterm : net->getITerms()) {
     auto* inst = iterm->getInst();
-    if (!BufferTree::isAggregate(inst, timingSource)) {
+    if (!BufferTree::isAggregate(inst)) {
       iterm_terms_.insert(iterm);
       continue;
     }
@@ -86,20 +86,20 @@ void BufferTree::populate(odb::dbNet* net, bool timingSource)
 
     for (auto* next_iterm : inst->getITerms()) {
       if (!next_iterm->getSigType().isSupply()) {
-        populate(next_iterm->getNet(), timingSource);
+        populate(next_iterm->getNet());
       }
     }
   }
 }
 
-bool BufferTree::isAggregate(odb::dbNet* net, bool timingSource)
+bool BufferTree::isAggregate(odb::dbNet* net)
 {
   if (net == nullptr) {
     return false;
   }
 
   for (auto* iterm : net->getITerms()) {
-    if (BufferTree::isAggregate(iterm->getInst(), timingSource)) {
+    if (BufferTree::isAggregate(iterm->getInst())) {
       return true;
     }
   }
@@ -107,17 +107,13 @@ bool BufferTree::isAggregate(odb::dbNet* net, bool timingSource)
   return false;
 }
 
-bool BufferTree::isAggregate(odb::dbInst* inst, bool timingSource)
+bool BufferTree::isAggregate(odb::dbInst* inst)
 {
   if (inst == nullptr) {
     return false;
   }
 
   auto* network = sta_->getDbNetwork();
-  if (inst->getSourceType() != odb::dbSourceType::TIMING && timingSource) {
-    return false;
-  }
-
   auto* master = inst->getMaster();
   auto* cell = network->dbToSta(master);
   if (cell == nullptr) {
