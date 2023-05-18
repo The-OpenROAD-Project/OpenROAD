@@ -31,6 +31,7 @@ void ScanCellMock::connectScanOut(const ScanLoad& pin) const
 
 ScanDriver ScanCellMock::getScanOut() const
 {
+  return ScanDriver(Right<odb::dbBTerm*>(nullptr));
 }
 
 }  // namespace test

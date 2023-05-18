@@ -31,6 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "ScanChain.hh"
