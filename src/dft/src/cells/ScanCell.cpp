@@ -57,29 +57,15 @@ void ScanCell::Connect(const ScanLoad& load,
                        const ScanDriver& driver,
                        bool preserve) const
 {
-  // Dispatch to the correct function to connect the given pins
-  switch (load.getSide()) {
-    case EitherSide::Left:
-      switch (driver.getSide()) {
-        case EitherSide::Left:
-          Connect(load.left(), driver.left(), preserve);
-          break;
-        case EitherSide::Right:
-          Connect(load.left(), driver.right(), preserve);
-          break;
-      }
-      break;
-    case EitherSide::Right:
-      switch (driver.getSide()) {
-        case EitherSide::Left:
-          Connect(load.right(), driver.left(), preserve);
-          break;
-        case EitherSide::Right:
-          Connect(load.right(), driver.right(), preserve);
-          break;
-      }
-      break;
-  }
+  std::visit(
+      [this, &driver, preserve](auto&& load_term) {
+        std::visit(
+            [this, &load_term, preserve](auto&& driver_term) {
+              this->Connect(load_term, driver_term, preserve);
+            },
+            driver.getValue());
+      },
+      load.getValue());
 }
 
 const char* ScanCell::GetTermName(odb::dbBTerm* term)

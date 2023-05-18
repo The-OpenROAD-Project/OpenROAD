@@ -31,30 +31,44 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "Either.hh"
+#include <variant>
+
 #include "odb/db.h"
 
 namespace dft {
 
+// Helper struct to match over variants
+template <class... Ts>
+struct overloaded : Ts...
+{
+  using Ts::operator()...;
+};
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
 // A Scan Pin can be either iterm or bterm because sometimes we can want to
 // connect a pin of a cell to a port or to the pin of another cell
-class ScanPin : public Either<odb::dbITerm*, odb::dbBTerm*>
+class ScanPin
 {
  public:
-  explicit ScanPin(Left<odb::dbITerm*>&& left);
-  explicit ScanPin(Right<odb::dbBTerm*>&& right);
+  explicit ScanPin(odb::dbITerm* iterm);
+  explicit ScanPin(odb::dbBTerm* bterm);
   ScanPin(const ScanPin&) = delete;  // no copy
 
   odb::dbNet* getNet() const;
   std::string_view getName() const;
+  const std::variant<odb::dbITerm*, odb::dbBTerm*>& getValue() const;
+
+ protected:
+  std::variant<odb::dbITerm*, odb::dbBTerm*> value_;
 };
 
 // Typesafe wrapper for load pins
 class ScanLoad : public ScanPin
 {
  public:
-  explicit ScanLoad(Left<odb::dbITerm*>&& left);
-  explicit ScanLoad(Right<odb::dbBTerm*>&& right);
+  explicit ScanLoad(odb::dbITerm* iterm);
+  explicit ScanLoad(odb::dbBTerm* bterm);
   ScanLoad(const ScanLoad&) = delete;  // no copy
 };
 
@@ -62,8 +76,8 @@ class ScanLoad : public ScanPin
 class ScanDriver : public ScanPin
 {
  public:
-  explicit ScanDriver(Left<odb::dbITerm*>&& left);
-  explicit ScanDriver(Right<odb::dbBTerm*>&& right);
+  explicit ScanDriver(odb::dbITerm* iterm);
+  explicit ScanDriver(odb::dbBTerm* bterm);
   ScanDriver(const ScanDriver&) = delete;  // no copy
 };
 

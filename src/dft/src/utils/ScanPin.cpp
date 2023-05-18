@@ -2,57 +2,49 @@
 
 namespace dft {
 
-ScanPin::ScanPin(Left<odb::dbITerm*>&& left) : Either(std::move(left))
+ScanPin::ScanPin(odb::dbITerm* iterm) : value_(iterm)
 {
 }
 
-ScanPin::ScanPin(Right<odb::dbBTerm*>&& right) : Either(std::move(right))
+ScanPin::ScanPin(odb::dbBTerm* bterm) : value_(bterm)
 {
 }
 
 odb::dbNet* ScanPin::getNet() const
 {
-  switch (getSide()) {
-    case EitherSide::Left:
-      return left()->getNet();
-      break;
-    case EitherSide::Right:
-      return right()->getNet();
-      break;
-  }
-  // unreachable code. There are only two values in the EitherSide enum. This
-  // prevents warnings and compilation errors: See https://abseil.io/tips/147
-  return nullptr;
+  return std::visit(
+      overloaded{[](odb::dbITerm* iterm) { return iterm->getNet(); },
+                 [](odb::dbBTerm* iterm) { return iterm->getNet(); }},
+      value_);
 }
 
 std::string_view ScanPin::getName() const
 {
-  switch (getSide()) {
-    case EitherSide::Left:
-      return left()->getMTerm()->getConstName();
-      break;
-    case EitherSide::Right:
-      return right()->getConstName();
-      break;
-  }
-  // unreachable code. There are only two values in the EitherSide enum. This
-  // prevents warnings and compilation errors: See https://abseil.io/tips/147
-  return {};
+  return std::visit(
+      overloaded{
+          [](odb::dbITerm* iterm) { return iterm->getMTerm()->getConstName(); },
+          [](odb::dbBTerm* iterm) { return iterm->getConstName(); }},
+      value_);
 }
 
-ScanLoad::ScanLoad(Left<odb::dbITerm*>&& left) : ScanPin(std::move(left))
+const std::variant<odb::dbITerm*, odb::dbBTerm*>& ScanPin::getValue() const
+{
+  return value_;
+}
+
+ScanLoad::ScanLoad(odb::dbITerm* iterm) : ScanPin(iterm)
 {
 }
 
-ScanLoad::ScanLoad(Right<odb::dbBTerm*>&& right) : ScanPin(std::move(right))
+ScanLoad::ScanLoad(odb::dbBTerm* bterm) : ScanPin(bterm)
 {
 }
 
-ScanDriver::ScanDriver(Left<odb::dbITerm*>&& left) : ScanPin(std::move(left))
+ScanDriver::ScanDriver(odb::dbITerm* iterm) : ScanPin(iterm)
 {
 }
 
-ScanDriver::ScanDriver(Right<odb::dbBTerm*>&& right) : ScanPin(std::move(right))
+ScanDriver::ScanDriver(odb::dbBTerm* bterm) : ScanPin(bterm)
 {
 }
 

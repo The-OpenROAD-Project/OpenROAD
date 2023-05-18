@@ -116,7 +116,7 @@ void ScanStitch::FindOrCreateScanEnable(odb::dbBlock* block)
           = odb::dbBTerm::create(net, scan_enable_pin_name.c_str());
       scan_enable_port->setSigType(odb::dbSigType::SCAN);
       scan_enable_port->setIoType(odb::dbIoType::INPUT);
-      scan_enable_.emplace(Right(scan_enable_port));
+      scan_enable_.emplace(scan_enable_port);
       return;
     }
   }
@@ -137,10 +137,10 @@ ScanDriver ScanStitch::FindOrCreateScanIn(odb::dbBlock* block)
       scan_in = odb::dbBTerm::create(net, scan_in_pin_name.c_str());
       scan_in->setSigType(odb::dbSigType::SCAN);
       scan_in->setIoType(odb::dbIoType::INPUT);
-      return ScanDriver(Right(scan_in));
+      return ScanDriver(scan_in);
     }
   }
-  return ScanDriver(Right<odb::dbBTerm*>(nullptr));
+  return ScanDriver(static_cast<odb::dbBTerm*>(nullptr));
 }
 
 ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
@@ -158,7 +158,7 @@ ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
     // is the top block, otherwise we will punch a new port
     for (odb::dbBTerm* bterm : scan_out_net->getBTerms()) {
       if (bterm->getIoType() == odb::dbIoType::OUTPUT) {
-        return ScanLoad(Right(bterm));
+        return ScanLoad(bterm);
       }
     }
   }
@@ -173,10 +173,10 @@ ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
       scan_out = odb::dbBTerm::create(net, scan_out_pin_name.c_str());
       scan_out->setSigType(odb::dbSigType::SCAN);
       scan_out->setIoType(odb::dbIoType::OUTPUT);
-      return ScanLoad(Right(scan_out));
+      return ScanLoad(scan_out);
     }
   }
-  return ScanLoad(Right<odb::dbBTerm*>(nullptr));
+  return ScanLoad(static_cast<odb::dbBTerm*>(nullptr));
 }
 
 }  // namespace dft

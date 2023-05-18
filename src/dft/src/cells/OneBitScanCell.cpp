@@ -56,14 +56,14 @@ uint64_t OneBitScanCell::getBits() const
 
 void OneBitScanCell::connectScanEnable(const ScanDriver& driver) const
 {
-  Connect(ScanLoad(Left(findITerm(test_cell_->scanEnable()))),
+  Connect(ScanLoad(findITerm(test_cell_->scanEnable())),
           driver,
           /*preserve=*/false);
 }
 
 void OneBitScanCell::connectScanIn(const ScanDriver& driver) const
 {
-  Connect(ScanLoad(Left(findITerm(test_cell_->scanIn()))),
+  Connect(ScanLoad(findITerm(test_cell_->scanIn())),
           driver,
           /*preserve=*/false);
 }
@@ -73,13 +73,13 @@ void OneBitScanCell::connectScanOut(const ScanLoad& load) const
   // The scan out usually will be connected to functional data paths already, we
   // need to preserve the connections
   Connect(load,
-          ScanDriver(Left(findITerm(test_cell_->scanOut()))),
+          ScanDriver(findITerm(test_cell_->scanOut())),
           /*preserve=*/true);
 }
 
 ScanDriver OneBitScanCell::getScanOut() const
 {
-  return ScanDriver(Left(findITerm(test_cell_->scanOut())));
+  return ScanDriver(findITerm(test_cell_->scanOut()));
 }
 
 odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const
