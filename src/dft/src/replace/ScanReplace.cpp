@@ -438,7 +438,6 @@ void ScanReplace::rollbackScanReplace(odb::dbBlock* block)
     }
 
     RollbackCandidate& rollback_candidate = *found->second;
-
     utils::ReplaceCell(block,
                        inst,
                        rollback_candidate.getMaster(),

@@ -29,63 +29,36 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-#include "OneBitScanCell.hh"
+#include <vector>
 
-#include "ClockDomain.hh"
+#include "ScanChain.hh"
+#include "odb/db.h"
 
 namespace dft {
 
-OneBitScanCell::OneBitScanCell(const std::string& name,
-                               std::unique_ptr<ClockDomain> clock_domain,
-                               odb::dbInst* inst,
-                               sta::TestCell* test_cell,
-                               sta::dbNetwork* db_network,
-                               utl::Logger* logger)
-    : ScanCell(name, std::move(clock_domain), logger),
-      inst_(inst),
-      test_cell_(test_cell),
-      db_network_(db_network)
+// Performs Scan Stitch over the given set of scan chains. All the scan chains
+// are going to share the same scan_enable
+class ScanStitch
 {
-}
+ public:
+  explicit ScanStitch(odb::dbDatabase* db);
 
-uint64_t OneBitScanCell::getBits() const
-{
-  return 1;
-}
+  // Stitch all the cells inside each one of the scan chains together.
+  void Stitch(const std::vector<std::unique_ptr<ScanChain>>& scan_chains);
+  void Stitch(odb::dbBlock* block, const ScanChain& scan_chain);
 
-void OneBitScanCell::connectScanEnable(const ScanDriver& driver) const
-{
-  Connect(ScanLoad(Left(findITerm(test_cell_->scanEnable()))),
-          driver,
-          /*preserve=*/false);
-}
+ private:
+  odb::dbDatabase* db_;
+  odb::dbBlock* top_block_;
+  // Scan Enable is global within this scan stitching
+  std::optional<ScanDriver> scan_enable_;
 
-void OneBitScanCell::connectScanIn(const ScanDriver& driver) const
-{
-  Connect(ScanLoad(Left(findITerm(test_cell_->scanIn()))),
-          driver,
-          /*preserve=*/false);
-}
-
-void OneBitScanCell::connectScanOut(const ScanLoad& load) const
-{
-  // The scan out usually will be connected to functional data paths already, we
-  // need to preserve the connections
-  Connect(load,
-          ScanDriver(Left(findITerm(test_cell_->scanOut()))),
-          /*preserve=*/true);
-}
-
-ScanDriver OneBitScanCell::getScanOut() const
-{
-  return ScanDriver(Left(findITerm(test_cell_->scanOut())));
-}
-
-odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const
-{
-  odb::dbMTerm* mterm = db_network_->staToDb(liberty_port);
-  return inst_->getITerm(mterm);
-}
+  void FindOrCreateScanEnable(odb::dbBlock* block);
+  ScanDriver FindOrCreateScanIn(odb::dbBlock* block);
+  ScanLoad FindOrCreateScanOut(odb::dbBlock* block,
+                               const ScanDriver& cell_scan_out);
+};
 
 }  // namespace dft

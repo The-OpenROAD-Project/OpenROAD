@@ -29,63 +29,42 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
+#pragma once
 
-#include "OneBitScanCell.hh"
-
-#include "ClockDomain.hh"
+#include "Either.hh"
+#include "odb/db.h"
 
 namespace dft {
 
-OneBitScanCell::OneBitScanCell(const std::string& name,
-                               std::unique_ptr<ClockDomain> clock_domain,
-                               odb::dbInst* inst,
-                               sta::TestCell* test_cell,
-                               sta::dbNetwork* db_network,
-                               utl::Logger* logger)
-    : ScanCell(name, std::move(clock_domain), logger),
-      inst_(inst),
-      test_cell_(test_cell),
-      db_network_(db_network)
+// A Scan Pin can be either iterm or bterm because sometimes we can want to
+// connect a pin of a cell to a port or to the pin of another cell
+class ScanPin : public Either<odb::dbITerm*, odb::dbBTerm*>
 {
-}
+ public:
+  explicit ScanPin(Left<odb::dbITerm*>&& left);
+  explicit ScanPin(Right<odb::dbBTerm*>&& right);
+  ScanPin(const ScanPin&) = delete;  // no copy
 
-uint64_t OneBitScanCell::getBits() const
-{
-  return 1;
-}
+  odb::dbNet* getNet() const;
+  std::string_view getName() const;
+};
 
-void OneBitScanCell::connectScanEnable(const ScanDriver& driver) const
+// Typesafe wrapper for load pins
+class ScanLoad : public ScanPin
 {
-  Connect(ScanLoad(Left(findITerm(test_cell_->scanEnable()))),
-          driver,
-          /*preserve=*/false);
-}
+ public:
+  explicit ScanLoad(Left<odb::dbITerm*>&& left);
+  explicit ScanLoad(Right<odb::dbBTerm*>&& right);
+  ScanLoad(const ScanLoad&) = delete;  // no copy
+};
 
-void OneBitScanCell::connectScanIn(const ScanDriver& driver) const
+// Typesafe wrapper for driver pins
+class ScanDriver : public ScanPin
 {
-  Connect(ScanLoad(Left(findITerm(test_cell_->scanIn()))),
-          driver,
-          /*preserve=*/false);
-}
-
-void OneBitScanCell::connectScanOut(const ScanLoad& load) const
-{
-  // The scan out usually will be connected to functional data paths already, we
-  // need to preserve the connections
-  Connect(load,
-          ScanDriver(Left(findITerm(test_cell_->scanOut()))),
-          /*preserve=*/true);
-}
-
-ScanDriver OneBitScanCell::getScanOut() const
-{
-  return ScanDriver(Left(findITerm(test_cell_->scanOut())));
-}
-
-odb::dbITerm* OneBitScanCell::findITerm(sta::LibertyPort* liberty_port) const
-{
-  odb::dbMTerm* mterm = db_network_->staToDb(liberty_port);
-  return inst_->getITerm(mterm);
-}
+ public:
+  explicit ScanDriver(Left<odb::dbITerm*>&& left);
+  explicit ScanDriver(Right<odb::dbBTerm*>&& right);
+  ScanDriver(const ScanDriver&) = delete;  // no copy
+};
 
 }  // namespace dft

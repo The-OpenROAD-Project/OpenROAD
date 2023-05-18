@@ -37,8 +37,9 @@
 namespace dft {
 
 ScanCell::ScanCell(const std::string& name,
-                   std::unique_ptr<ClockDomain> clock_domain)
-    : name_(name), clock_domain_(std::move(clock_domain))
+                   std::unique_ptr<ClockDomain> clock_domain,
+                   utl::Logger* logger)
+    : name_(name), clock_domain_(std::move(clock_domain)), logger_(logger)
 {
 }
 
@@ -50,6 +51,45 @@ const std::string& ScanCell::getName() const
 const ClockDomain& ScanCell::getClockDomain() const
 {
   return *clock_domain_;
+}
+
+void ScanCell::Connect(const ScanLoad& load,
+                       const ScanDriver& driver,
+                       bool preserve) const
+{
+  // Dispatch to the correct function to connect the given pins
+  switch (load.getSide()) {
+    case EitherSide::Left:
+      switch (driver.getSide()) {
+        case EitherSide::Left:
+          Connect(load.left(), driver.left(), preserve);
+          break;
+        case EitherSide::Right:
+          Connect(load.left(), driver.right(), preserve);
+          break;
+      }
+      break;
+    case EitherSide::Right:
+      switch (driver.getSide()) {
+        case EitherSide::Left:
+          Connect(load.right(), driver.left(), preserve);
+          break;
+        case EitherSide::Right:
+          Connect(load.right(), driver.right(), preserve);
+          break;
+      }
+      break;
+  }
+}
+
+const char* ScanCell::GetTermName(odb::dbBTerm* term)
+{
+  return term->getConstName();
+}
+
+const char* ScanCell::GetTermName(odb::dbITerm* term)
+{
+  return term->getMTerm()->getConstName();
 }
 
 }  // namespace dft

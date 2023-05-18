@@ -5,6 +5,25 @@
 [INFO ODB-0222] Reading LEF file: sky130hd/sky130_fd_sc_hd_merged.lef
 [INFO ODB-0225]     Created 437 library cells
 [INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output10 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output11 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output12 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output13 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output14 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output15 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output16 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output17 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output18 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output19 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output2 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output20 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output3 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output4 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output5 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output6 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output7 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output8 is not in the port list.
+[WARNING STA-0197] scan_architect_sky130.v line 1, module scan_architect declared signal output9 is not in the port list.
 ***************************
 Preview DFT Report
 Number of chains: 4
@@ -13,21 +32,13 @@ Clock domain: No Mix
 
 Scan chain 'chain_0' has 5 cells (5 bits)
 
-  ff8_clk2_falling (clock2, falling)
-  ff6_clk2_falling
-  ff4_clk2_falling
-  ff2_clk2_falling
-  ff10_clk2_falling
-
-Scan chain 'chain_1' has 5 cells (5 bits)
-
   ff9_clk1_rising (clock1, rising)
   ff7_clk1_rising
   ff5_clk1_rising
   ff3_clk1_rising
   ff1_clk1_rising
 
-Scan chain 'chain_2' has 5 cells (5 bits)
+Scan chain 'chain_1' has 5 cells (5 bits)
 
   ff9_clk1_falling (clock1, falling)
   ff7_clk1_falling
@@ -35,13 +46,21 @@ Scan chain 'chain_2' has 5 cells (5 bits)
   ff3_clk1_falling
   ff1_clk1_falling
 
-Scan chain 'chain_3' has 5 cells (5 bits)
+Scan chain 'chain_2' has 5 cells (5 bits)
 
   ff8_clk2_rising (clock2, rising)
   ff6_clk2_rising
   ff4_clk2_rising
   ff2_clk2_rising
   ff10_clk2_rising
+
+Scan chain 'chain_3' has 5 cells (5 bits)
+
+  ff8_clk2_falling (clock2, falling)
+  ff6_clk2_falling
+  ff4_clk2_falling
+  ff2_clk2_falling
+  ff10_clk2_falling
 
 
 No differences found.

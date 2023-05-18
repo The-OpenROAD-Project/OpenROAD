@@ -12,6 +12,7 @@ target_link_libraries(dft_architect_lib
     dft_cells_lib
     dft_clock_domain_lib
     dft_config_lib
+    dft_utils_lib
 )
 
 target_link_libraries(dft_architect_lib
