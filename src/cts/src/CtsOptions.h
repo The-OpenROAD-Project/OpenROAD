@@ -77,7 +77,6 @@ class CtsOptions
   void setPlotSolution(bool plot) { plotSolution_ = plot; }
   bool getPlotSolution() const { return plotSolution_; }
 
-#ifndef SWIG
   void setObserver(std::unique_ptr<CtsObserver> observer)
   {
     observer_ = std::move(observer);
@@ -86,7 +85,6 @@ class CtsOptions
   {
     return observer_.get();
   }
-#endif
 
   void setSinkClustering(bool enable) { sinkClusteringEnable_ = enable; }
   bool getSinkClustering() const { return sinkClusteringEnable_; }

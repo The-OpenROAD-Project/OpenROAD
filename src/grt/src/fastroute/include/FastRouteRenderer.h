@@ -1,3 +1,9 @@
+// Copyright 2023 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
+
 #pragma once
 
 #include "AbstractFastRouteRenderer.h"
@@ -28,10 +34,10 @@ class FastRouteRenderer : public gui::Renderer, public AbstractFastRouteRenderer
   void drawCircleObjects(gui::Painter& painter);
   void drawLineObject(int x1,
                       int y1,
-                      int l1,
+                      int layer1,
                       int x2,
                       int y2,
-                      int l2,
+                      int layer2,
                       gui::Painter& painter);
 
   TreeStructure treeStructure_;

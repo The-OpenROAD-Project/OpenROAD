@@ -51,11 +51,6 @@ target_include_directories(ant_lib
     ../include
 )
 
-target_include_directories(ant
-  PUBLIC
-    ../include
-)
-
 target_link_libraries(ant_lib
   PUBLIC
     odb
@@ -67,8 +62,6 @@ target_link_libraries(ant_lib
 target_link_libraries(ant
   PUBLIC
     ant_lib
-    odb
-    OpenSTA
     grt
     utl
 )

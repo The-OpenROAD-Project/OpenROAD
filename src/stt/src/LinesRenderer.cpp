@@ -1,3 +1,9 @@
+// Copyright 2023 Google LLC
+//
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
+
 #include "stt/LinesRenderer.h"
 
 #include "stt/SteinerTreeBuilder.h"
@@ -34,11 +40,11 @@ void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
     std::vector<std::pair<odb::Point, odb::Point>> lines;
     for (int i = 0; i < tree.branchCount(); i++) {
       const stt::Branch& branch = tree.branch[i];
-      int x1 = branch.x;
-      int y1 = branch.y;
+      const int x1 = branch.x;
+      const int y1 = branch.y;
       const stt::Branch& neighbor = tree.branch[branch.n];
-      int x2 = neighbor.x;
-      int y2 = neighbor.y;
+      const int x2 = neighbor.x;
+      const int y2 = neighbor.y;
       lines.emplace_back(odb::Point(x1, y1), odb::Point(x2, y2));
     }
     LinesRenderer::lines_renderer->highlight(lines, gui::Painter::red);

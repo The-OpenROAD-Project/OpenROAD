@@ -53,10 +53,6 @@ class OneBitScanCell : public ScanCell
   void connectScanEnable() const override;
   void connectScanIn() const override;
   void connectScanOut() const override;
-
- private:
-  odb::dbInst* inst_;
-  sta::TestCell* test_cell_;
 };
 
 }  // namespace dft

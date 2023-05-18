@@ -42,7 +42,6 @@ class RoutingCongestionDataSource : public gui::HeatMapDataSource,
 {
  public:
   RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
-  ~RoutingCongestionDataSource() override = default;
 
   virtual bool canAdjustGrid() const override { return false; }
   virtual double getGridXSize() const override;

@@ -40,9 +40,7 @@ OneBitScanCell::OneBitScanCell(const std::string& name,
                                std::unique_ptr<ClockDomain> clock_domain,
                                odb::dbInst* inst,
                                sta::TestCell* test_cell)
-    : ScanCell(name, std::move(clock_domain)),
-      inst_(inst),
-      test_cell_(test_cell)
+    : ScanCell(name, std::move(clock_domain))
 {
 }
 
