@@ -2221,12 +2221,12 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     int master_height = master->getHeight();
-    int master_width = master->getHeight();
+    int master_width = master->getWidth();
 
     if (master_height < minimum_size) {
       continue;
     }
-    if (!inst->getMaster()->isCore() && master_width < minimum_size) {
+    if (!master->isCore() && master_width < minimum_size) {
       // if core cell, just check master height
       continue;
     }
