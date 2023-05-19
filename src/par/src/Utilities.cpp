@@ -192,6 +192,25 @@ std::vector<float> MultiplyFactor(const std::vector<float>& a,
   return result;
 }
 
+// divide the vectors element by element
+std::vector<float> DivideVectorElebyEle(const std::vector<float>& emb, 
+                                        const std::vector<float>& factor)
+{
+  std::vector<float> result;
+  auto emb_iter = emb.begin();
+  auto factor_iter = factor.begin();
+  while (emb_iter != emb.end() && factor_iter != factor.end()) {
+    if ((*factor_iter) != 0.0) {
+      result.push_back((*emb_iter) / (*factor_iter));
+    } else {
+      result.push_back(*emb_iter);
+    }
+    emb_iter++;
+    factor_iter++;
+  }
+  return result;
+}
+
 // operation for two vectors +, -, *,  ==, <
 std::vector<float> operator+(const std::vector<float>& a,
                              const std::vector<float>& b)

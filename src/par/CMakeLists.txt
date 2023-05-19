@@ -35,7 +35,7 @@
 
 include("openroad")
 
-option(LOAD_CPLEX "Load CPLEX" ON)
+option(LOAD_CPLEX "Load CPLEX" OFF)
 if (LOAD_CPLEX)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_MODULE_PATH               "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -79,6 +79,21 @@ target_link_libraries(par_lib
     dbSta_lib
     ortools::ortools
 )
+
+if (LOAD_CPLEX)
+  target_compile_definitions(par_lib
+    PRIVATE
+      LOAD_CPLEX
+  )
+
+  target_link_libraries(par_lib
+    PRIVATE
+      ${CPLEX_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      dl
+  )
+endif (LOAD_CPLEX)
+
 
 swig_lib(NAME      par
          NAMESPACE par

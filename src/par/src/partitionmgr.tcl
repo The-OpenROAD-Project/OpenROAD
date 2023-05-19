@@ -123,23 +123,23 @@ proc triton_part_hypergraph { args } {
   set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
   set placement_wt_factors { 1.0 }
-  set thr_coarsen_hyperedge_size_skip 1000
+  set thr_coarsen_hyperedge_size_skip 200
   set thr_coarsen_vertices 10
   set thr_coarsen_hyperedges 50
-  set coarsening_ratio 1.5
+  set coarsening_ratio 1.6
   set max_coarsen_iters 30
   set adj_diff_ratio 0.0001
   set min_num_vertices_each_part 4
   set num_initial_solutions 50
   set num_best_initial_solutions 10
   set refiner_iters 10
-  set max_moves 100
+  set max_moves 60
   set early_stop_ratio 0.5
   set total_corking_passes 25
   set v_cycle_flag true
   set max_num_vcycle 1
-  set num_coarsen_solutions 4
-  set num_vertices_threshold_ilp 100
+  set num_coarsen_solutions 3
+  set num_vertices_threshold_ilp 50
   set global_net_threshold 1000
   
   if { [info exists keys(-num_parts)] } {
@@ -508,23 +508,23 @@ proc triton_part_design { args } {
   set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
   set placement_wt_factors { }
-  set thr_coarsen_hyperedge_size_skip 1000
+  set thr_coarsen_hyperedge_size_skip 200
   set thr_coarsen_vertices 10
   set thr_coarsen_hyperedges 50
-  set coarsening_ratio 1.5
+  set coarsening_ratio 1.6
   set max_coarsen_iters 30
   set adj_diff_ratio 0.0001
   set min_num_vertices_each_part 4
   set num_initial_solutions 100
   set num_best_initial_solutions 10
   set refiner_iters 10
-  set max_moves 100
+  set max_moves 60
   set early_stop_ratio 0.5
   set total_corking_passes 25
   set v_cycle_flag true
   set max_num_vcycle 1
-  set num_coarsen_solutions 4
-  set num_vertices_threshold_ilp 100
+  set num_coarsen_solutions 3
+  set num_vertices_threshold_ilp 50
   set global_net_threshold 1000
   
   if { [info exists keys(-num_parts)] } {

@@ -209,10 +209,12 @@ void Opendp::deleteGrid()
 
 Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
 {
+  if (grid_idx < 0 || grid_idx >= grid_info_vector_.size()) {
+    return nullptr;
+  }
   GridInfo* grid_info = grid_info_vector_[grid_idx];
   if (grid_x >= 0 && grid_x < grid_info->site_count && grid_y >= 0
-      && grid_y < grid_info->row_count && grid_idx >= 0
-      && grid_idx < grid_info_map_.size()) {
+      && grid_y < grid_info->row_count) {
     return &grid_[grid_idx][grid_y][grid_x];
   }
   return nullptr;
@@ -257,7 +259,7 @@ void Opendp::visitCellPixels(
       // Since there is an obstruction, we need to visit all the pixels at all
       // layers (for all row heights)
       int grid_idx = 0;
-      for (auto [layer_row_height, grid_info] : grid_info_map_) {
+      for (const auto& [layer_row_height, grid_info] : grid_info_map_) {
         int layer_y_start
             = map_coordinates(y_start, row_height, layer_row_height);
         int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
@@ -485,8 +487,8 @@ bool Opendp::checkOverlap(const Rect& cell, const Rect& box)
 
 void Opendp::groupInitPixels()
 {
-  for (auto layer : grid_info_map_) {
-    GridInfo& grid_info = layer.second;
+  for (const auto& layer : grid_info_map_) {
+    const GridInfo& grid_info = layer.second;
     for (int x = 0; x < grid_info.site_count; x++) {
       for (int y = 0; y < grid_info.row_count; y++) {
         Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
@@ -616,7 +618,7 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
   }
 
-  for (auto layer : grid_info_map_) {
+  for (const auto& layer : grid_info_map_) {
     if (layer.first == row_height) {
       continue;
     }

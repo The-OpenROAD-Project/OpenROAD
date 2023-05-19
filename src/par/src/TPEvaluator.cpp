@@ -347,8 +347,13 @@ float GoldenEvaluator::GetPlacementScore(int v,
                                          int u,
                                          const HGraphPtr hgraph) const
 {
-  return norm2(hgraph->placement_attr_[v] - hgraph->placement_attr_[u],
+  const float dist = norm2(hgraph->placement_attr_[v] - hgraph->placement_attr_[u],
                placement_wt_factors_);
+  if (dist == 0.0) {
+    return std::numeric_limits<float>::max() / 2.0;
+  } else {
+    return 1.0f / dist;
+  }
 }
 
 // Get average the placement location

@@ -308,7 +308,6 @@ TP_gain_cell TPrefiner::CalculateVertexGain(
     const int e = hgraph->vind_[e_idx];  // hyperedge id
     const int connectivity = GetConnectivity(e);
     const float e_score = evaluator_->CalculateHyperedgeCost(e, hgraph);
-    const int he_size = hgraph->eptr_[e + 1] - hgraph->eptr_[e];
     if (connectivity == 0) {
       // ignore the hyperedge consisting of multiple vertices
       // ignore single-vertex hyperedge
@@ -506,7 +505,6 @@ TP_gain_hyperedge TPrefiner::CalculateHyperedgeGain(
       const int e = hgraph->vind_[e_idx];  // hyperedge id
       const int connectivity = GetConnectivity(e);
       const float e_score = evaluator_->CalculateHyperedgeCost(e, hgraph);
-      const int he_size = hgraph->eptr_[e + 1] - hgraph->eptr_[e];
       if (connectivity == 0) {
         // ignore the hyperedge consisting of multiple vertices
         // ignore single-vertex hyperedge
