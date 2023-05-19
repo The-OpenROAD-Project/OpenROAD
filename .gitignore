@@ -34,3 +34,4 @@ debug/
 
 coverage-output
 messages.txt
+.metals/
