@@ -199,7 +199,9 @@ class LayoutViewer : public QWidget
   // do_delta_focus indicates (if true) that the center of the layout should
   // zoom in around the focus instead of making it the new center. This is used
   // when scrolling with the mouse to keep the mouse point steady in the layout
-  void zoomIn(const odb::Point& focus, int angleDelta = 120, bool do_delta_focus = false);
+  void zoomIn(const odb::Point& focus,
+              int angleDelta = 120,
+              bool do_delta_focus = false);
 
   // zoom out the layout, keeping the current center_
   void zoomOut();
@@ -208,7 +210,9 @@ class LayoutViewer : public QWidget
   // do_delta_focus indicates (if true) that the center of the layout should
   // zoom in around the focus instead of making it the new center. This is used
   // when scrolling with the mouse to keep the mouse point steady in the layout
-  void zoomOut(const odb::Point& focus, int angleDelta = 120, bool do_delta_focus = false);
+  void zoomOut(const odb::Point& focus,
+               int angleDelta = 120,
+               bool do_delta_focus = false);
 
   // zoom to the specified rect
   void zoomTo(const odb::Rect& rect_dbu);

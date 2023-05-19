@@ -725,7 +725,9 @@ void LayoutViewer::zoomIn()
   zoomIn(getVisibleCenter(), false);
 }
 
-void LayoutViewer::zoomIn(const odb::Point& focus, int angleDelta, bool do_delta_focus)
+void LayoutViewer::zoomIn(const odb::Point& focus,
+                          int angleDelta,
+                          bool do_delta_focus)
 {
   zoom(focus, (angleDelta / 120.0) * zoom_scale_factor_, do_delta_focus);
 }
@@ -735,7 +737,9 @@ void LayoutViewer::zoomOut()
   zoomOut(getVisibleCenter(), false);
 }
 
-void LayoutViewer::zoomOut(const odb::Point& focus, int angleDelta, bool do_delta_focus)
+void LayoutViewer::zoomOut(const odb::Point& focus,
+                           int angleDelta,
+                           bool do_delta_focus)
 {
   zoom(focus, (angleDelta / 120.0) / zoom_scale_factor_, do_delta_focus);
 }
