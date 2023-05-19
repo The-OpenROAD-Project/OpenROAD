@@ -28,16 +28,18 @@ void ScanStitch::Stitch(
     return;
   }
 
+  ScanDriver scan_enable = FindOrCreateScanEnable(top_block_);
   odb::dbChip* chip = db_->getChip();
   odb::dbBlock* block = chip->getBlock();
-  FindOrCreateScanEnable(block);
 
   for (const std::unique_ptr<ScanChain>& scan_chain : scan_chains) {
-    Stitch(block, *scan_chain);
+    Stitch(block, *scan_chain, scan_enable);
   }
 }
 
-void ScanStitch::Stitch(odb::dbBlock* block, const ScanChain& scan_chain)
+void ScanStitch::Stitch(odb::dbBlock* block,
+                        const ScanChain& scan_chain,
+                        const ScanDriver& scan_enable)
 {
   // Let's create the scan in and scan out of the chain
   // TODO: Suport user defined scan signals
@@ -60,7 +62,7 @@ void ScanStitch::Stitch(odb::dbBlock* block, const ScanChain& scan_chain)
 
   // All the cells in the scan chain are controlled by the same scan enable
   for (const auto& scan_cell : scan_cells) {
-    scan_cell->connectScanEnable(*scan_enable_);
+    scan_cell->connectScanEnable(scan_enable);
   }
 
   // Lets get the first and last cell
@@ -83,7 +85,7 @@ void ScanStitch::Stitch(odb::dbBlock* block, const ScanChain& scan_chain)
   }
 
   // Let's connect the first cell
-  first_scan_cell->connectScanEnable(*scan_enable_);
+  first_scan_cell->connectScanEnable(scan_enable);
   first_scan_cell->connectScanIn(scan_in_port);
 
   if (!scan_cells.empty()) {
@@ -101,46 +103,18 @@ void ScanStitch::Stitch(odb::dbBlock* block, const ScanChain& scan_chain)
   last_scan_cell->connectScanOut(scan_out_port);
 }
 
-void ScanStitch::FindOrCreateScanEnable(odb::dbBlock* block)
+ScanDriver ScanStitch::FindOrCreateScanEnable(odb::dbBlock* block)
 {
   // TODO: For now we will create a new scan_enable pin at the top level. We
   // need to support defining DFT signals for scan_enable
-  for (uint64_t scan_enable_number = 1;; ++scan_enable_number) {
-    std::string scan_enable_pin_name
-        = fmt::format(kScanEnableNamePattern, scan_enable_number);
-    odb::dbBTerm* scan_enable = block->findBTerm(scan_enable_pin_name.c_str());
-    if (!scan_enable) {
-      odb::dbNet* net = odb::dbNet::create(block, scan_enable_pin_name.c_str());
-      net->setSigType(odb::dbSigType::SCAN);
-      odb::dbBTerm* scan_enable_port
-          = odb::dbBTerm::create(net, scan_enable_pin_name.c_str());
-      scan_enable_port->setSigType(odb::dbSigType::SCAN);
-      scan_enable_port->setIoType(odb::dbIoType::INPUT);
-      scan_enable_.emplace(scan_enable_port);
-      return;
-    }
-  }
+  return CreateNewPort<ScanDriver>(block, kScanEnableNamePattern);
 }
 
 ScanDriver ScanStitch::FindOrCreateScanIn(odb::dbBlock* block)
 {
   // TODO: For now we will create a new scan_in pin at the top level. We
   // need to support defining DFT signals for scan_in
-
-  for (uint64_t scan_in_number = 1;; ++scan_in_number) {
-    std::string scan_in_pin_name
-        = fmt::format(kScanInNamePattern, scan_in_number);
-    odb::dbBTerm* scan_in = block->findBTerm(scan_in_pin_name.c_str());
-    if (!scan_in) {
-      odb::dbNet* net = odb::dbNet::create(block, scan_in_pin_name.c_str());
-      net->setSigType(odb::dbSigType::SCAN);
-      scan_in = odb::dbBTerm::create(net, scan_in_pin_name.c_str());
-      scan_in->setSigType(odb::dbSigType::SCAN);
-      scan_in->setIoType(odb::dbIoType::INPUT);
-      return ScanDriver(scan_in);
-    }
-  }
-  return ScanDriver(static_cast<odb::dbBTerm*>(nullptr));
+  return CreateNewPort<ScanDriver>(block, kScanInNamePattern);
 }
 
 ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
@@ -163,20 +137,7 @@ ScanLoad ScanStitch::FindOrCreateScanOut(odb::dbBlock* block,
     }
   }
 
-  for (uint64_t scan_out_number = 1;; ++scan_out_number) {
-    std::string scan_out_pin_name
-        = fmt::format(kScanOutNamePattern, scan_out_number);
-    odb::dbBTerm* scan_out = block->findBTerm(scan_out_pin_name.c_str());
-    if (!scan_out) {
-      odb::dbNet* net = odb::dbNet::create(block, scan_out_pin_name.c_str());
-      net->setSigType(odb::dbSigType::SCAN);
-      scan_out = odb::dbBTerm::create(net, scan_out_pin_name.c_str());
-      scan_out->setSigType(odb::dbSigType::SCAN);
-      scan_out->setIoType(odb::dbIoType::OUTPUT);
-      return ScanLoad(scan_out);
-    }
-  }
-  return ScanLoad(static_cast<odb::dbBTerm*>(nullptr));
+  return CreateNewPort<ScanLoad>(block, kScanOutNamePattern);
 }
 
 }  // namespace dft
