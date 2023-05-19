@@ -220,14 +220,14 @@ void ScanCandidate::debugPrintPortMapping(utl::Logger* logger) const
              utl::DFT,
              "print_port_mapping_scan_candidate",
              2,
-             "Port mapping for cell: {:s}",
+             "Port mapping for cell: {}",
              scan_cell_->name());
   for (const auto& [from_port, to_port] : port_mapping_) {
     debugPrint(logger,
                utl::DFT,
                "print_port_mapping_scan_candidate",
                2,
-               "    {:s} -> {:s}",
+               "    {} -> {}",
                from_port,
                to_port);
   }

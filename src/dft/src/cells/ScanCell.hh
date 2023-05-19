@@ -88,7 +88,7 @@ class ScanCell
                utl::DFT,
                "scan_cell_connect",
                1,
-               "Cell \"{:s}\", driver: \"{:s}\" -> load: \"{:s}\"",
+               "Cell \"{}\", driver: \"{}\" -> load: \"{}\"",
                name_,
                GetTermName(driver),
                GetTermName(load));
@@ -101,7 +101,7 @@ class ScanCell
                    "scan_cell_connect",
                    1,
                    "    Preserving connections 1: Connecting driver net "
-                   "\"{:s}\" -> load pin \"{:s}\"",
+                   "\"{}\" -> load pin \"{}\"",
                    driver_net->getName(),
                    GetTermName(load));
         load->connect(driver_net);
@@ -114,7 +114,7 @@ class ScanCell
                    "scan_cell_connect",
                    1,
                    "    Preserving connections 2: Connecting driver pin "
-                   "\"{:s}\" -> load net \"{:s}\"",
+                   "\"{}\" -> load net \"{}\"",
                    GetTermName(driver),
                    load_net->getName());
         driver->connect(load_net);
@@ -131,8 +131,8 @@ class ScanCell
                utl::DFT,
                "scan_cell_connect",
                1,
-               "    New connection: Connecting driver net \"{:s}\" -> load pin "
-               "\"{:s}\"",
+               "    New connection: Connecting driver net \"{}\" -> load pin "
+               "\"{}\"",
                driver_net->getName(),
                GetTermName(load));
     load->connect(driver_net);
