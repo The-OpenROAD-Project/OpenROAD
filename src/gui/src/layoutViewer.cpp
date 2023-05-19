@@ -725,9 +725,9 @@ void LayoutViewer::zoomIn()
   zoomIn(getVisibleCenter(), false);
 }
 
-void LayoutViewer::zoomIn(const odb::Point& focus, bool do_delta_focus)
+void LayoutViewer::zoomIn(const odb::Point& focus, int angleDelta, bool do_delta_focus)
 {
-  zoom(focus, 1 * zoom_scale_factor_, do_delta_focus);
+  zoom(focus, (angleDelta / 120.0) * zoom_scale_factor_, do_delta_focus);
 }
 
 void LayoutViewer::zoomOut()
@@ -735,9 +735,9 @@ void LayoutViewer::zoomOut()
   zoomOut(getVisibleCenter(), false);
 }
 
-void LayoutViewer::zoomOut(const odb::Point& focus, bool do_delta_focus)
+void LayoutViewer::zoomOut(const odb::Point& focus, int angleDelta, bool do_delta_focus)
 {
-  zoom(focus, 1 / zoom_scale_factor_, do_delta_focus);
+  zoom(focus, (angleDelta / 120.0) / zoom_scale_factor_, do_delta_focus);
 }
 
 void LayoutViewer::zoom(const odb::Point& focus,
@@ -3793,10 +3793,11 @@ void LayoutScroll::wheelEvent(QWheelEvent* event)
 
   const odb::Point mouse_pos
       = viewer_->screenToDBU(viewer_->mapFromGlobal(QCursor::pos()));
-  if (event->angleDelta().y() > 0) {
-    viewer_->zoomIn(mouse_pos, true);
+  auto angleDeltaY = event->angleDelta().y();
+  if (angleDeltaY > 0) {
+    viewer_->zoomIn(mouse_pos, angleDeltaY, true);
   } else {
-    viewer_->zoomOut(mouse_pos, true);
+    viewer_->zoomOut(mouse_pos, -angleDeltaY, true);
   }
   // ensure changes are processed before the next wheel event to prevent
   // zoomIn and Out from jumping around on the ScrollBars

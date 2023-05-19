@@ -1129,6 +1129,9 @@ int startGui(int& argc,
   font.setPointSize(12);
   QApplication::setFont(font);
 
+  // Enable coalescing of high-frequency events
+  QCoreApplication::setAttribute(Qt::AA_CompressHighFrequencyEvents);
+
   auto* open_road = ord::OpenRoad::openRoad();
 
   // create new MainWindow
