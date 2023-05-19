@@ -32,19 +32,19 @@
 
 #include "histogramWidget.h"
 
-#include <QWidget>
-#include <QFrame>
 #include <QColor>
+#include <QFrame>
 #include <QString>
+#include <QWidget>
 #include <QtCharts>
-#include <vector>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <set>
+#include <vector>
 
-#include <sta/MinMax.hh>
-#include <sta/Units.hh>
+#include "sta/MinMax.hh"
+#include "sta/Units.hh"
 #include "staGuiInterface.h"
 
 namespace gui {
@@ -60,9 +60,9 @@ HistogramWidget::HistogramWidget(QWidget* parent)
       chart_(new QChart),
       display_(new QChartView(chart_, this)),
       axis_x_(new QBarCategoryAxis(this)),
-      axis_y_(new QValueAxis(this))    
+      axis_y_(new QValueAxis(this))
 {
-  setObjectName("histogram_widget"); // for settings
+  setObjectName("histogram_widget");  // for settings
 
   QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
@@ -78,7 +78,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
 
   controls_frame->setLayout(controls_layout);
   controls_frame->setFrameShape(QFrame::StyledPanel);
-  controls_frame->setFrameShadow(QFrame::Raised);  
+  controls_frame->setFrameShadow(QFrame::Raised);
 
   layout->addWidget(controls_frame);
   layout->addWidget(display_);
@@ -88,21 +88,19 @@ HistogramWidget::HistogramWidget(QWidget* parent)
   chart_->addAxis(axis_y_, Qt::AlignLeft);
   chart_->addAxis(axis_x_, Qt::AlignBottom);
 
-  connect(mode_menu_,
-          SIGNAL(currentIndexChanged(int)),
-          this,
-          SLOT(changeMode()));
+  connect(
+      mode_menu_, SIGNAL(currentIndexChanged(int)), this, SLOT(changeMode()));
 }
 
 void HistogramWidget::changeMode()
 {
-  if(mode_menu_->currentIndex() == SELECT) {
+  if (mode_menu_->currentIndex() == SELECT) {
     return;
   }
 
   clearChart();
 
-  if(mode_menu_->currentIndex() == SLACK_MODE) {
+  if (mode_menu_->currentIndex() == SLACK_MODE) {
     setSlackMode();
   }
 }
@@ -125,45 +123,43 @@ void HistogramWidget::setSlackMode()
   chart_->setTitle("Endpoint Slack");
 
   STAGuiInterface sta_gui(sta_);
-  
+
   auto time_units = sta_->units()->timeUnit();
   auto end_points = sta_gui.getEndPoints();
   auto pin_iterator = end_points.begin();
   std::vector<float> all_slack;
   int unconstrained_count = 0;
 
-  for(int i = 0; i < end_points.size(); ++i) {
+  for (int i = 0; i < end_points.size(); ++i) {
     double pin_slack = 0;
     pin_slack = sta_gui.getPinSlack(*pin_iterator);
-    if(pin_slack != sta::INF)
+    if (pin_slack != sta::INF)
       all_slack.push_back(time_units->staToUser(pin_slack));
     else
       unconstrained_count++;
     pin_iterator++;
   }
 
-  if(unconstrained_count != 0) {
+  if (unconstrained_count != 0) {
     const QString label_message = "Number of unconstrained pins: ";
     QString unconstrained_number;
     unconstrained_number.setNum(unconstrained_count);
     label_->setText(label_message + unconstrained_number);
   }
 
-  auto max_slack = std::max_element(all_slack.begin(),
-                                    all_slack.end());
+  auto max_slack = std::max_element(all_slack.begin(), all_slack.end());
 
-  auto min_slack = std::min_element(all_slack.begin(),
-                                    all_slack.end());
+  auto min_slack = std::min_element(all_slack.begin(), all_slack.end());
 
   //+1 for values around zero
   int total_pos_buckets = *max_slack + 1;
   int total_neg_buckets = abs(*min_slack) + 1;
-  int offset = abs(*min_slack);    
+  int offset = abs(*min_slack);
   std::vector<float> pos_buckets[total_pos_buckets];
   std::vector<float> neg_buckets[total_neg_buckets];
 
-  for(int i = 0; i < all_slack.size(); ++i) {
-    if(all_slack[i] < 0) {
+  for (int i = 0; i < all_slack.size(); ++i) {
+    if (all_slack[i] < 0) {
       int bucket_index = all_slack[i];
       neg_buckets[bucket_index + offset].push_back(all_slack[i]);
     } else {
@@ -173,15 +169,15 @@ void HistogramWidget::setSlackMode()
   }
 
   QBarSet* neg_set = new QBarSet("");
-  neg_set->setBorderColor(0x8b0000);  //darkred
-  neg_set->setColor(0xf08080);        //lightcoral
+  neg_set->setBorderColor(0x8b0000);  // darkred
+  neg_set->setColor(0xf08080);        // lightcoral
 
   QBarSet* pos_set = new QBarSet("");
-  pos_set->setBorderColor(0x006400);  //darkgreen
-  pos_set->setColor(0x90ee90);        //lightgreen
+  pos_set->setBorderColor(0x006400);  // darkgreen
+  pos_set->setColor(0x90ee90);        // lightgreen
 
   QStringList time_values;
-  
+
   const QString open_bracket = "[";
   const QString close_parenthesis = ")";
   const QString comma = ", ";
@@ -190,25 +186,27 @@ void HistogramWidget::setSlackMode()
   int bucket_count = 0;
   int max_y = 0;
 
-  for(int i = 0; i < total_neg_buckets; ++i) {
+  for (int i = 0; i < total_neg_buckets; ++i) {
     bucket_count = neg_buckets[i].size();
     *neg_set << bucket_count;
     *pos_set << 0;
     curr_slack = neg_buckets[i][0];
     QString prev_value;
-    time_values << open_bracket + prev_value.setNum(curr_slack-1) + comma + curr_value.setNum(curr_slack) + close_parenthesis;
-    if(max_y < bucket_count)
+    time_values << open_bracket + prev_value.setNum(curr_slack - 1) + comma
+                       + curr_value.setNum(curr_slack) + close_parenthesis;
+    if (max_y < bucket_count)
       max_y = bucket_count;
   }
 
-  for(int i = 0; i < total_pos_buckets; ++i) {
+  for (int i = 0; i < total_pos_buckets; ++i) {
     bucket_count = pos_buckets[i].size();
     *pos_set << pos_buckets[i].size();
     *neg_set << 0;
     curr_slack = pos_buckets[i][0];
     QString next_value;
-    time_values << open_bracket + curr_value.setNum(curr_slack) + comma + next_value.setNum(curr_slack+1) + close_parenthesis;
-    if(max_y < bucket_count)
+    time_values << open_bracket + curr_value.setNum(curr_slack) + comma
+                       + next_value.setNum(curr_slack + 1) + close_parenthesis;
+    if (max_y < bucket_count)
       max_y = bucket_count;
   }
 
@@ -216,7 +214,8 @@ void HistogramWidget::setSlackMode()
   const QString time_suffix = time_units->suffix();
   const QString time_scale_abreviation = time_units->scaleAbreviation();
   const QString end_title = "]";
-  const QString axis_x_title = start_title + time_scale_abreviation + time_suffix + end_title;
+  const QString axis_x_title
+      = start_title + time_scale_abreviation + time_suffix + end_title;
 
   axis_x_->setTitleText(axis_x_title);
   axis_x_->append(time_values);
@@ -243,7 +242,6 @@ void HistogramWidget::setSlackMode()
   chart_->legend()->markers(series)[1]->setVisible(false);
   chart_->legend()->setVisible(true);
   chart_->legend()->setAlignment(Qt::AlignBottom);
-  
 }
 
-}
+}  // namespace gui

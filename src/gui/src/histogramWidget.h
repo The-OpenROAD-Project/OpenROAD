@@ -34,10 +34,10 @@
 
 #include <QComboBox>
 #include <QDockWidget>
+#include <QLabel>
 #include <QPushButton>
 #include <QString>
 #include <QtCharts>
-#include <QLabel>
 #include <memory>
 
 #include "gui/gui.h"
@@ -58,7 +58,7 @@ class HistogramWidget : public QDockWidget
   void setSTA(sta::dbSta* sta) { sta_ = sta; };
   void setSlackMode();
   void clearChart();
-  
+
  private slots:
   void changeMode();
 
