@@ -44,6 +44,7 @@
 #include <set>
 
 #include <sta/MinMax.hh>
+#include <sta/Units.hh>
 #include "staGuiInterface.h"
 
 namespace gui {
@@ -125,17 +126,17 @@ void HistogramWidget::setSlackMode()
 
   STAGuiInterface sta_gui(sta_);
   
+  auto time_units = sta_->units()->timeUnit();
   auto end_points = sta_gui.getEndPoints();
   auto pin_iterator = end_points.begin();
   std::vector<float> all_slack;
   int unconstrained_count = 0;
 
   for(int i = 0; i < end_points.size(); ++i) {
-    const int converter = 1e9;
-    float pin_slack = 0;
+    double pin_slack = 0;
     pin_slack = sta_gui.getPinSlack(*pin_iterator);
     if(pin_slack != sta::INF)
-      all_slack.push_back(pin_slack*converter);
+      all_slack.push_back(time_units->staToUser(pin_slack));
     else
       unconstrained_count++;
     pin_iterator++;
@@ -211,7 +212,13 @@ void HistogramWidget::setSlackMode()
       max_y = bucket_count;
   }
 
-  axis_x_->setTitleText("Slack [ns]");
+  const QString start_title = "Slack [";
+  const QString time_suffix = time_units->suffix();
+  const QString time_scale_abreviation = time_units->scaleAbreviation();
+  const QString end_title = "]";
+  const QString axis_x_title = start_title + time_scale_abreviation + time_suffix + end_title;
+
+  axis_x_->setTitleText(axis_x_title);
   axis_x_->append(time_values);
   axis_x_->setGridLineVisible(false);
   axis_x_->setVisible(true);
