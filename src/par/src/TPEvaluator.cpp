@@ -683,11 +683,13 @@ void GoldenEvaluator::UpdateTiming(HGraphPtr hgraph,
   // Timing arc slacks store the updated slack for each hyperedge in the timing
   // graph instead of hgraph
   std::vector<float> timing_arc_slacks = timing_graph_->hyperedge_timing_attr_;
+  /*
   for (const auto& e : cut_hyperedges) {
     for (const auto& arc_id : hgraph->hyperedge_arc_set_[e]) {
       timing_arc_slacks[arc_id] -= extra_cut_delay_;
     }
   }
+  */
 
   // Function < return type (parameter  types) > functionName
   // Propogate the delay
@@ -765,6 +767,7 @@ void GoldenEvaluator::UpdateTiming(HGraphPtr hgraph,
   // propagate the delay
   for (const auto& e : cut_hyperedges) {
     for (const auto& arc_id : hgraph->hyperedge_arc_set_[e]) {
+      timing_arc_slacks[arc_id] -= extra_cut_delay_;
       lambda_forward(arc_id);
       lambda_backward(arc_id);
     }

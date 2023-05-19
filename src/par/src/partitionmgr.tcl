@@ -138,7 +138,7 @@ proc triton_part_hypergraph { args } {
   set total_corking_passes 25
   set v_cycle_flag true
   set max_num_vcycle 1
-  set num_coarsen_solutions 3
+  set num_coarsen_solutions 4
   set num_vertices_threshold_ilp 50
   set global_net_threshold 1000
   
@@ -419,6 +419,7 @@ sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-path_snaking_factor path_snaking_factor] \
                                             [-timing_exp_factor timing_exp_factor] \
                                             [-extra_delay extra_delay] \
+                                            [-guardband_flag guardband_flag] \
                                             [-e_wt_factors e_wt_factors] \
                                             [-v_wt_factors v_wt_factors] \
                                             [-placement_wt_factors placement_wt_factors] \
@@ -463,6 +464,7 @@ proc triton_part_design { args } {
             -path_snaking_factor \
             -timing_exp_factor \
             -extra_delay \
+            -guardband_flag \
             -e_wt_factors \
             -v_wt_factors \
             -placement_wt_factors \
@@ -505,25 +507,26 @@ proc triton_part_design { args } {
   set path_snaking_factor 1.0
   set timing_exp_factor 1.0
   set extra_delay 1e-9
+  set guardband_flag false
   set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
   set placement_wt_factors { }
-  set thr_coarsen_hyperedge_size_skip 200
+  set thr_coarsen_hyperedge_size_skip 1000
   set thr_coarsen_vertices 10
   set thr_coarsen_hyperedges 50
-  set coarsening_ratio 1.6
+  set coarsening_ratio 1.5
   set max_coarsen_iters 30
   set adj_diff_ratio 0.0001
   set min_num_vertices_each_part 4
   set num_initial_solutions 100
   set num_best_initial_solutions 10
   set refiner_iters 10
-  set max_moves 60
+  set max_moves 100
   set early_stop_ratio 0.5
   set total_corking_passes 25
   set v_cycle_flag true
   set max_num_vcycle 1
-  set num_coarsen_solutions 3
+  set num_coarsen_solutions 4
   set num_vertices_threshold_ilp 50
   set global_net_threshold 1000
   
@@ -597,6 +600,10 @@ proc triton_part_design { args } {
 
   if { [info exists keys(-extra_delay)] } {
     set extra_delay $keys(-extra_delay)
+  }
+
+  if { [info exists keys(-guardband_flag)] } {
+    set guardband_flag $keys(-guardband_flag)
   }
 
   if { [info exists keys(-e_wt_factors)] } {
@@ -705,6 +712,7 @@ proc triton_part_design { args } {
             $path_snaking_factor \
             $timing_exp_factor \
             $extra_delay \
+            $guardband_flag \
             $e_wt_factors \
             $v_wt_factors \
             $placement_wt_factors \
@@ -750,6 +758,7 @@ sta::define_cmd_args "evaluate_part_design_solution" {
   [-path_snaking_factor path_snaking_factor] \
   [-timing_exp_factor timing_exp_factor] \
   [-extra_delay extra_delay] \
+  [-guardband_flag guardband_flag] \
   [-e_wt_factors e_wt_factors] \
   [-v_wt_factors v_wt_factors] }
 proc evaluate_part_design_solution { args } {
@@ -774,6 +783,7 @@ proc evaluate_part_design_solution { args } {
             -path_snaking_factor \
             -timing_exp_factor \
             -extra_delay \
+            -guardband_flag \
             -e_wt_factors \
             -v_wt_factors  } \
       flags {}
@@ -799,6 +809,8 @@ proc evaluate_part_design_solution { args } {
   set extra_delay 1e-9
   set e_wt_factors { 1.0 }
   set v_wt_factors { 1.0 }
+  # For fair evaluation, guardband_flag should be turned off
+  set guardband_flag false 
    
   if { [info exists keys(-num_parts)] } {
       set num_parts $keys(-num_parts)
@@ -872,6 +884,10 @@ proc evaluate_part_design_solution { args } {
     set extra_delay $keys(-extra_delay)
   }
 
+  if { [info exists keys(-guardband_flag)] } {
+    set guardband_flag $keys(-guardband_flag)
+  }
+
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
     set e_wt_factors [list $e_wt_factors]
@@ -902,6 +918,7 @@ proc evaluate_part_design_solution { args } {
             $path_snaking_factor \
             $timing_exp_factor \
             $extra_delay \
+            $guardband_flag \
             $e_wt_factors \
             $v_wt_factors 
 }

@@ -183,6 +183,7 @@ void triton_part_design(unsigned int num_parts_arg,
                         float path_snaking_factor,
                         float timing_exp_factor,
                         float extra_delay,
+                        bool guardband_flag,
                         // weight parameters
                         const char* e_wt_factors_str,
                         const char* v_wt_factors_str,
@@ -231,6 +232,7 @@ void triton_part_design(unsigned int num_parts_arg,
                                       path_snaking_factor,
                                       timing_exp_factor,
                                       extra_delay,
+                                      guardband_flag,
                                       // weight parameters
                                       e_wt_factors_str,
                                       v_wt_factors_str,
@@ -282,6 +284,7 @@ void evaluate_part_design_solution(unsigned int num_parts_arg,
                                    float path_snaking_factor,
                                    float timing_exp_factor,
                                    float extra_delay,
+                                   bool guardband_flag,
                                    // weight parameters
                                    const char* e_wt_factors_str,
                                    const char* v_wt_factors_str)
@@ -307,6 +310,7 @@ void evaluate_part_design_solution(unsigned int num_parts_arg,
                                                 path_snaking_factor,
                                                 timing_exp_factor,
                                                 extra_delay,
+                                                guardband_flag,
                                                 // weight parameters
                                                 e_wt_factors_str,
                                                 v_wt_factors_str);

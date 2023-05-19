@@ -248,6 +248,7 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   logger_->report("[PARAM] Hyperedge dimensions = {}", hyperedge_dimensions_);
   logger_->report("[PARAM] Placement dimensions = {}", placement_dimensions_);
   logger_->report("[PARAM] Timing aware flag = {}", timing_aware_flag_);
+  logger_->report("[PARAM] Guardband flag = {}", guardband_flag_);
   logger_->report("[PARAM] Global net threshold = {}", global_net_threshold_);
   logger_->report("[PARAM] Top {} critical timing paths are extracted.",
                   top_n_);
@@ -585,6 +586,7 @@ void TritonPart::EvaluatePartDesignSolution(
   logger_->report("[PARAM] Vertex dimensions = {}", vertex_dimensions_);
   logger_->report("[PARAM] Hyperedge dimensions = {}", hyperedge_dimensions_);
   logger_->report("[PARAM] Placement dimensions = {}", placement_dimensions_);
+  logger_->report("[PARAM] Guardband flag = {}", guardband_flag_);
   logger_->report("[PARAM] Timing aware flag = {}", timing_aware_flag_);
   logger_->report("[PARAM] Global net threshold = {}", global_net_threshold_);
   logger_->report("[PARAM] Top {} critical timing paths are extracted.",
@@ -1471,8 +1473,14 @@ void TritonPart::BuildTimingPaths()
                   maximum_clock_period_);
   extra_delay_ = extra_delay_ / maximum_clock_period_;
   logger_->report("[INFO] normalized extra delay : {}", extra_delay_);
-  for (auto& timing_path : timing_paths_) {
-    timing_path.slack = timing_path.slack / maximum_clock_period_;
+  if (guardband_flag_ == false) {
+    for (auto& timing_path : timing_paths_) {
+      timing_path.slack = timing_path.slack / maximum_clock_period_;
+    }
+  } else {
+    for (auto& timing_path : timing_paths_) {
+      timing_path.slack = timing_path.slack / maximum_clock_period_ - extra_delay_;
+    }
   }
   logger_->report(
       "[INFO] We normalized the slack of each path based on maximum clock "
@@ -1501,8 +1509,12 @@ void TritonPart::BuildTimingPaths()
       num_unconstrained_hyperedges++;
       hyperedge_slacks_[hyperedge_id] = 1.0;
     } else {
-      hyperedge_slacks_[hyperedge_id] = slack / maximum_clock_period_;
-    }
+      if (guardband_flag_ == false) {
+        hyperedge_slacks_[hyperedge_id] = slack / maximum_clock_period_;
+      } else  {
+        hyperedge_slacks_[hyperedge_id] = slack / maximum_clock_period_ - extra_delay_;
+      }
+    } 
   }
   logger_->report("[STATUS] Finish traversing timing graph");
   logger_->report("[WARNING] {} unconstrained hyperedges !",

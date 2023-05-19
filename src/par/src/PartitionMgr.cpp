@@ -250,6 +250,7 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
                                     float path_snaking_factor,
                                     float timing_exp_factor,
                                     float extra_delay,
+                                    bool guardband_flag,
                                     // weight parameters
                                     const char* e_wt_factors_str,
                                     const char* v_wt_factors_str,
@@ -291,7 +292,8 @@ void PartitionMgr::tritonPartDesign(unsigned int num_parts_arg,
                                path_timing_factor,
                                path_snaking_factor,
                                timing_exp_factor,
-                               extra_delay);
+                               extra_delay,
+                               guardband_flag);
   triton_part->SetFineTuneParams(  // coarsening related parameters
       thr_coarsen_hyperedge_size_skip,
       thr_coarsen_vertices,
@@ -362,6 +364,7 @@ void PartitionMgr::evaluatePartDesignSolution(
     float path_snaking_factor,
     float timing_exp_factor,
     float extra_delay,
+    bool guardband_flag,
     // weight parameters
     const char* e_wt_factors_str,
     const char* v_wt_factors_str)
@@ -379,7 +382,8 @@ void PartitionMgr::evaluatePartDesignSolution(
                                path_timing_factor,
                                path_snaking_factor,
                                timing_exp_factor,
-                               extra_delay);
+                               extra_delay,
+                               guardband_flag);
 
   triton_part->EvaluatePartDesignSolution(num_parts_arg,
                                           balance_constraint_arg,
