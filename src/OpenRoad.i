@@ -318,10 +318,11 @@ void
 read_def_cmd(const char *filename,
              bool continue_on_errors,
              bool floorplan_init,
-             bool incremental)
+             bool incremental,
+             bool child)
 {
   OpenRoad *ord = getOpenRoad();
-  ord->readDef(filename, continue_on_errors, floorplan_init, incremental);
+  ord->readDef(filename, continue_on_errors, floorplan_init, incremental, child);
 }
 
 void

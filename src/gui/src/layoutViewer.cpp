@@ -816,7 +816,8 @@ void LayoutViewer::searchNearestViaEdge(
     const int shape_limit,
     const std::function<void(const Rect& rect)>& check_rect)
 {
-  auto via_shapes = search_.searchViaSBoxShapes(cut_layer,
+  auto via_shapes = search_.searchViaSBoxShapes(block_,
+                                                cut_layer,
                                                 search_line.xMin(),
                                                 search_line.yMin(),
                                                 search_line.xMax(),
@@ -938,7 +939,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
                             pt.y() + search_radius);
   }
 
-  auto inst_range = search_.searchInsts(search_line.xMin(),
+  auto inst_range = search_.searchInsts(block_,
+                                        search_line.xMin(),
                                         search_line.yMin(),
                                         search_line.xMax(),
                                         search_line.yMax(),
@@ -995,7 +997,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
-    auto box_shapes = search_.searchBoxShapes(layer,
+    auto box_shapes = search_.searchBoxShapes(block_,
+                                              layer,
                                               search_line.xMin(),
                                               search_line.yMin(),
                                               search_line.xMax(),
@@ -1020,7 +1023,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
       }
     }
 
-    auto polygon_shapes = search_.searchPolygonShapes(layer,
+    auto polygon_shapes = search_.searchPolygonShapes(block_,
+                                                      layer,
                                                       search_line.xMin(),
                                                       search_line.yMin(),
                                                       search_line.xMax(),
@@ -1033,7 +1037,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
     }
 
     if (options_->areFillsVisible()) {
-      auto fills = search_.searchFills(layer,
+      auto fills = search_.searchFills(block_,
+                                       layer,
                                        search_line.xMin(),
                                        search_line.yMin(),
                                        search_line.xMax(),
@@ -1045,7 +1050,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
     }
 
     if (options_->areObstructionsVisible()) {
-      auto obs = search_.searchObstructions(layer,
+      auto obs = search_.searchObstructions(block_,
+                                            layer,
                                             search_line.xMin(),
                                             search_line.yMin(),
                                             search_line.xMax(),
@@ -1058,7 +1064,8 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   }
 
   if (options_->areBlockagesVisible()) {
-    auto blcks = search_.searchBlockages(search_line.xMin(),
+    auto blcks = search_.searchBlockages(block_,
+                                         search_line.xMin(),
                                          search_line.yMin(),
                                          search_line.xMax(),
                                          search_line.yMax(),
@@ -1069,7 +1076,7 @@ std::pair<LayoutViewer::Edge, bool> LayoutViewer::searchNearestEdge(
   }
 
   if (options_->areSitesVisible()) {
-    for (const auto& [row, row_site] : getRowRects(search_line)) {
+    for (const auto& [row, row_site] : getRowRects(block_, search_line)) {
       odb::dbSite* site = nullptr;
       if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
         site = static_cast<odb::dbSite*>(row);
@@ -1116,7 +1123,8 @@ void LayoutViewer::selectViaShapesAt(dbTechLayer* cut_layer,
                                      const int shape_limit,
                                      std::vector<Selected>& selections)
 {
-  auto via_shapes = search_.searchViaSBoxShapes(cut_layer,
+  auto via_shapes = search_.searchViaSBoxShapes(block_,
+                                                cut_layer,
                                                 region.xMin(),
                                                 region.yMin(),
                                                 region.xMax(),
@@ -1149,7 +1157,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   const int shape_limit = shapeSizeLimit();
 
   if (options_->areBlockagesVisible() && options_->areBlockagesSelectable()) {
-    auto blockages = search_.searchBlockages(region.xMin(),
+    auto blockages = search_.searchBlockages(block_,
+                                             region.xMin(),
                                              region.yMin(),
                                              region.xMax(),
                                              region.yMax(),
@@ -1179,7 +1188,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
 
     if (options_->areObstructionsVisible()
         && options_->areObstructionsSelectable()) {
-      auto obs = search_.searchObstructions(layer,
+      auto obs = search_.searchObstructions(block_,
+                                            layer,
                                             region.xMin(),
                                             region.yMin(),
                                             region.xMax(),
@@ -1190,7 +1200,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
 
-    auto box_shapes = search_.searchBoxShapes(layer,
+    auto box_shapes = search_.searchBoxShapes(block_,
+                                              layer,
                                               region.xMin(),
                                               region.yMin(),
                                               region.xMax(),
@@ -1214,7 +1225,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
     }
 
-    auto polygon_shapes = search_.searchPolygonShapes(layer,
+    auto polygon_shapes = search_.searchPolygonShapes(block_,
+                                                      layer,
                                                       region.xMin(),
                                                       region.yMin(),
                                                       region.xMax(),
@@ -1236,7 +1248,8 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 
   // Look for an instance since no shape was found
-  auto insts = search_.searchInsts(region.xMin(),
+  auto insts = search_.searchInsts(block_,
+                                   region.xMin(),
                                    region.yMin(),
                                    region.xMax(),
                                    region.yMax(),
@@ -1272,7 +1285,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   }
 
   if (options_->areSitesVisible() && options_->areSitesSelectable()) {
-    for (const auto& [row_obj, rect] : getRowRects(region)) {
+    for (const auto& [row_obj, rect] : getRowRects(block_, region)) {
       odb::dbSite* site = nullptr;
       if (row_obj->getObjectType() == odb::dbObjectType::dbSiteObj) {
         site = static_cast<odb::dbSite*>(row_obj);
@@ -1781,13 +1794,15 @@ void LayoutViewer::drawTracks(dbTechLayer* layer,
   }
 }
 
-void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
+void LayoutViewer::drawRows(QPainter* painter,
+                            odb::dbBlock* block,
+                            const Rect& bounds)
 {
   if (!options_->areSitesVisible()) {
     return;
   }
 
-  for (const auto& [row, row_site] : getRowRects(bounds)) {
+  for (const auto& [row, row_site] : getRowRects(block, bounds)) {
     odb::dbSite* site = nullptr;
     if (row->getObjectType() == odb::dbObjectType::dbSiteObj) {
       site = static_cast<odb::dbSite*>(row);
@@ -1806,18 +1821,23 @@ void LayoutViewer::drawRows(QPainter* painter, const Rect& bounds)
 }
 
 std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
+    odb::dbBlock* block,
     const odb::Rect& bounds)
 {
-  int min_resolution = nominalViewableResolution();
+  const int min_resolution_site = nominalViewableResolution();
+  int min_resolution_row = min_resolution_site;
   if (options_->isDetailedVisibility()) {
-    min_resolution = 0;
+    // we only do this for the row as the sites can be too
+    // numerous and small to draw even in detailed mode
+    min_resolution_row = 0;
   }
 
-  auto rows = search_.searchRows(bounds.xMin(),
+  auto rows = search_.searchRows(block,
+                                 bounds.xMin(),
                                  bounds.yMin(),
                                  bounds.xMax(),
                                  bounds.yMax(),
-                                 min_resolution);
+                                 min_resolution_row);
 
   std::vector<std::pair<odb::dbObject*, odb::Rect>> rects;
   for (auto& [box, row] : rows) {
@@ -1832,8 +1852,8 @@ std::vector<std::pair<odb::dbObject*, odb::Rect>> LayoutViewer::getRowRects(
     int w = site->getWidth();
     int h = site->getHeight();
 
-    bool w_visible = w >= min_resolution;
-    bool h_visible = h >= min_resolution;
+    bool w_visible = w >= min_resolution_site;
+    bool h_visible = h >= min_resolution_row;
 
     switch (row->getOrient()) {
       case dbOrientType::R0:
@@ -2022,7 +2042,6 @@ void LayoutViewer::drawRulers(Painter& painter)
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
-  utl::Timer timer;
   int minimum_height_for_tag = nominalViewableResolution();
   int minimum_size = fineViewableResolution();
   const QTransform initial_xfm = painter->transform();
@@ -2069,13 +2088,14 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     }
   }
   painter->setTransform(initial_xfm);
-  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", timer);
 }
 
 // Draw the instances' shapes
 void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
                                       QPainter* painter,
-                                      const std::vector<odb::dbInst*>& insts)
+                                      const std::vector<odb::dbInst*>& insts,
+                                      const Rect& bounds,
+                                      GuiPainter& gui_painter)
 {
   const bool show_blockages = options_->areInstanceBlockagesVisible();
   const bool show_pins = options_->areInstancePinsVisible();
@@ -2085,10 +2105,44 @@ void LayoutViewer::drawInstanceShapes(dbTechLayer* layer,
 
   const int minimum_height = nominalViewableResolution();
   const QTransform initial_xfm = painter->transform();
+  std::vector<dbInst*> child_insts;
+  const int instance_limit = instanceSizeLimit();
+  const bool has_child_blocks
+      = insts.empty() ? false : !insts[0]->getBlock()->getChildren().empty();
+
   // Draw the instances' shapes
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     if (master->getHeight() < minimum_height) {
+      continue;
+    }
+
+    dbBlock* child;
+    if (has_child_blocks
+        && (child = inst->getBlock()->findChild(master->getName().c_str()))) {
+      // setup the instance's transform
+      QTransform xfm = initial_xfm;
+      dbTransform inst_xfm;
+      inst->getTransform(inst_xfm);
+      addInstTransform(xfm, inst_xfm);
+      painter->setTransform(xfm);
+      Rect bbox = child->getBBox()->getBox();
+      // TODO: Use transformed bounds for search
+      auto inst_range = search_.searchInsts(child,
+                                            bbox.xMin(),
+                                            bbox.yMin(),
+                                            bbox.xMax(),
+                                            bbox.yMax(),
+                                            instance_limit);
+      child_insts.clear();
+      child_insts.reserve(10000);
+      for (auto& [box, inst] : inst_range) {
+        if (options_->isInstanceVisible(inst)) {
+          child_insts.push_back(inst);
+        }
+      }
+
+      drawLayer(painter, child, layer, child_insts, bbox, gui_painter);
       continue;
     }
 
@@ -2167,12 +2221,12 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     int master_height = master->getHeight();
-    int master_width = master->getHeight();
+    int master_width = master->getWidth();
 
     if (master_height < minimum_size) {
       continue;
     }
-    if (!inst->getMaster()->isCore() && master_width < minimum_size) {
+    if (!master->isCore() && master_width < minimum_size) {
       // if core cell, just check master height
       continue;
     }
@@ -2231,7 +2285,9 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   painter->setFont(initial_font);
 }
 
-void LayoutViewer::drawBlockages(QPainter* painter, const Rect& bounds)
+void LayoutViewer::drawBlockages(QPainter* painter,
+                                 odb::dbBlock* block,
+                                 const Rect& bounds)
 {
   if (!options_->areBlockagesVisible()) {
     return;
@@ -2240,7 +2296,8 @@ void LayoutViewer::drawBlockages(QPainter* painter, const Rect& bounds)
   painter->setBrush(QBrush(options_->placementBlockageColor(),
                            options_->placementBlockagePattern()));
 
-  auto blockage_range = search_.searchBlockages(bounds.xMin(),
+  auto blockage_range = search_.searchBlockages(block,
+                                                bounds.xMin(),
                                                 bounds.yMin(),
                                                 bounds.xMax(),
                                                 bounds.yMax(),
@@ -2252,7 +2309,8 @@ void LayoutViewer::drawBlockages(QPainter* painter, const Rect& bounds)
   }
 }
 
-void LayoutViewer::drawObstructions(dbTechLayer* layer,
+void LayoutViewer::drawObstructions(odb::dbBlock* block,
+                                    dbTechLayer* layer,
                                     QPainter* painter,
                                     const Rect& bounds)
 {
@@ -2265,7 +2323,8 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
   Qt::BrushStyle brush_pattern = getPattern(layer);
   painter->setBrush(QBrush(color, brush_pattern));
 
-  auto obstructions_range = search_.searchObstructions(layer,
+  auto obstructions_range = search_.searchObstructions(block,
+                                                       layer,
                                                        bounds.xMin(),
                                                        bounds.yMin(),
                                                        bounds.xMax(),
@@ -2279,12 +2338,14 @@ void LayoutViewer::drawObstructions(dbTechLayer* layer,
 }
 
 void LayoutViewer::drawViaShapes(QPainter* painter,
+                                 odb::dbBlock* block,
                                  dbTechLayer* cut_layer,
                                  dbTechLayer* draw_layer,
                                  const Rect& bounds,
                                  const int shape_limit)
 {
-  auto via_sbox_iter = search_.searchViaSBoxShapes(cut_layer,
+  auto via_sbox_iter = search_.searchViaSBoxShapes(block,
+                                                   cut_layer,
                                                    bounds.xMin(),
                                                    bounds.yMin(),
                                                    bounds.xMax(),
@@ -2309,36 +2370,172 @@ void LayoutViewer::drawViaShapes(QPainter* painter,
   }
 }
 
+void LayoutViewer::drawLayer(QPainter* painter,
+                             odb::dbBlock* block,
+                             dbTechLayer* layer,
+                             const std::vector<dbInst*>& insts,
+                             const Rect& bounds,
+                             GuiPainter& gui_painter)
+{
+  if (!options_->isVisible(layer)) {
+    return;
+  }
+  utl::Timer layer_timer;
+
+  const int shape_limit = shapeSizeLimit();
+
+  // Skip the cut layer if the cuts will be too small to see
+  const bool draw_shapes = !(layer->getType() == dbTechLayerType::CUT
+                             && cut_maximum_size_[layer] < shape_limit);
+
+  if (draw_shapes) {
+    drawInstanceShapes(layer, painter, insts, bounds, gui_painter);
+  }
+
+  drawObstructions(block, layer, painter, bounds);
+
+  if (draw_shapes) {
+    // Now draw the shapes
+    QColor color = getColor(layer);
+    Qt::BrushStyle brush_pattern = getPattern(layer);
+    painter->setBrush(QBrush(color, brush_pattern));
+    painter->setPen(QPen(color, 0));
+    auto box_iter = search_.searchBoxShapes(block,
+                                            layer,
+                                            bounds.xMin(),
+                                            bounds.yMin(),
+                                            bounds.xMax(),
+                                            bounds.yMax(),
+                                            shape_limit);
+
+    for (auto& [box, net] : box_iter) {
+      if (!isNetVisible(net)) {
+        continue;
+      }
+      const auto& ll = box.min_corner();
+      const auto& ur = box.max_corner();
+      painter->drawRect(
+          QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+    }
+
+    if (layer->getType() == dbTechLayerType::CUT) {
+      drawViaShapes(painter, block, layer, layer, bounds, shape_limit);
+    } else {
+      // Get the enclosure shapes from any vias on the cut layers
+      // above or below this one.  Skip enclosure shapes if they
+      // will be too small based on the cut size (enclosure shapes
+      // are generally only slightly larger).
+      if (auto upper = layer->getUpperLayer()) {
+        if (cut_maximum_size_[upper] >= shape_limit) {
+          drawViaShapes(painter, block, upper, layer, bounds, shape_limit);
+        }
+      }
+      if (auto lower = layer->getLowerLayer()) {
+        if (cut_maximum_size_[lower] >= shape_limit) {
+          drawViaShapes(painter, block, lower, layer, bounds, shape_limit);
+        }
+      }
+    }
+
+    auto polygon_iter = search_.searchPolygonShapes(block,
+                                                    layer,
+                                                    bounds.xMin(),
+                                                    bounds.yMin(),
+                                                    bounds.xMax(),
+                                                    bounds.yMax(),
+                                                    shape_limit);
+
+    for (auto& [box, poly, net] : polygon_iter) {
+      if (!isNetVisible(net)) {
+        continue;
+      }
+      const int size = poly.outer().size();
+      QPolygon qpoly(size);
+      for (int i = 0; i < size; i++) {
+        qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
+      }
+      painter->drawPolygon(qpoly);
+    }
+
+    // Now draw the fills
+    if (options_->areFillsVisible()) {
+      QColor color = getColor(layer).lighter(50);
+      Qt::BrushStyle brush_pattern = getPattern(layer);
+      painter->setBrush(QBrush(color, brush_pattern));
+      painter->setPen(QPen(color, 0));
+      auto iter = search_.searchFills(block,
+                                      layer,
+                                      bounds.xMin(),
+                                      bounds.yMin(),
+                                      bounds.xMax(),
+                                      bounds.yMax(),
+                                      shape_limit);
+
+      for (auto& i : iter) {
+        const auto& ll = std::get<0>(i).min_corner();
+        const auto& ur = std::get<0>(i).max_corner();
+        painter->drawRect(
+            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
+      }
+    }
+  }
+
+  if (draw_shapes) {
+    drawTracks(layer, painter, bounds);
+    drawRouteGuides(gui_painter, layer);
+    drawNetTracks(gui_painter, layer);
+  }
+
+  for (auto* renderer : Gui::get()->renderers()) {
+    gui_painter.saveState();
+    renderer->drawLayer(layer, gui_painter);
+    gui_painter.restoreState();
+  }
+  debugPrint(logger_,
+             GUI,
+             "draw",
+             1,
+             "layer {} render {}",
+             layer->getName(),
+             layer_timer);
+}
+
 // Draw the region of the block.  Depth is not yet used but
 // is there for hierarchical design support.
-void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
+void LayoutViewer::drawBlock(QPainter* painter,
+                             dbBlock* block,
+                             const Rect& bounds,
+                             int depth)
 {
   utl::Timer timer;
 
+  utl::Timer manufacturing_grid_timer;
   const int instance_limit = instanceSizeLimit();
-  const int shape_limit = shapeSizeLimit();
 
   LayerBoxes boxes;
 
-  auto& renderers = Gui::get()->renderers();
-  GuiPainter gui_painter(painter,
-                         options_,
-                         bounds,
-                         pixels_per_dbu_,
-                         block_->getDbUnitsPerMicron());
+  GuiPainter gui_painter(
+      painter, options_, bounds, pixels_per_dbu_, block->getDbUnitsPerMicron());
 
   // Draw die area, if set
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush());
-  Rect bbox = block_->getDieArea();
+  Rect bbox = block->getDieArea();
   if (bbox.area() > 0) {
     painter->drawRect(bbox.xMin(), bbox.yMin(), bbox.dx(), bbox.dy());
   }
 
   drawManufacturingGrid(painter, bounds);
+  debugPrint(logger_,
+             GUI,
+             "draw",
+             1,
+             "manufacturing grid {}",
+             manufacturing_grid_timer);
 
   utl::Timer inst_timer;
-  auto inst_range = search_.searchInsts(bounds.xMin(),
+  auto inst_range = search_.searchInsts(block,
+                                        bounds.xMin(),
                                         bounds.yMin(),
                                         bounds.xMax(),
                                         bounds.yMax(),
@@ -2355,153 +2552,59 @@ void LayoutViewer::drawBlock(QPainter* painter, const Rect& bounds, int depth)
   }
   debugPrint(logger_, GUI, "draw", 1, "inst search {}", inst_timer);
 
+  utl::Timer insts_outline;
   drawInstanceOutlines(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", insts_outline);
 
   // draw blockages
-  drawBlockages(painter, bounds);
+  utl::Timer inst_blockages;
+  drawBlockages(painter, block, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
-  dbTech* tech = block_->getDataBase()->getTech();
+  dbTech* tech = block->getDataBase()->getTech();
   for (dbTechLayer* layer : tech->getLayers()) {
-    if (!options_->isVisible(layer)) {
-      continue;
-    }
-    utl::Timer layer_timer;
-
-    // Skip the cut layer if the cuts will be too small to see
-    const bool draw_shapes = !(layer->getType() == dbTechLayerType::CUT
-                               && cut_maximum_size_[layer] < shape_limit);
-
-    if (draw_shapes) {
-      drawInstanceShapes(layer, painter, insts);
-    }
-
-    drawObstructions(layer, painter, bounds);
-
-    if (draw_shapes) {
-      // Now draw the shapes
-      QColor color = getColor(layer);
-      Qt::BrushStyle brush_pattern = getPattern(layer);
-      painter->setBrush(QBrush(color, brush_pattern));
-      painter->setPen(QPen(color, 0));
-      auto box_iter = search_.searchBoxShapes(layer,
-                                              bounds.xMin(),
-                                              bounds.yMin(),
-                                              bounds.xMax(),
-                                              bounds.yMax(),
-                                              shape_limit);
-
-      for (auto& [box, net] : box_iter) {
-        if (!isNetVisible(net)) {
-          continue;
-        }
-        const auto& ll = box.min_corner();
-        const auto& ur = box.max_corner();
-        painter->drawRect(
-            QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
-      }
-
-      if (layer->getType() == dbTechLayerType::CUT) {
-        drawViaShapes(painter, layer, layer, bounds, shape_limit);
-      } else {
-        // Get the enclosure shapes from any vias on the cut layers
-        // above or below this one.  Skip enclosure shapes if they
-        // will be too small based on the cut size (enclosure shapes
-        // are generally only slightly larger).
-        if (auto upper = layer->getUpperLayer()) {
-          if (cut_maximum_size_[upper] >= shape_limit) {
-            drawViaShapes(painter, upper, layer, bounds, shape_limit);
-          }
-        }
-        if (auto lower = layer->getLowerLayer()) {
-          if (cut_maximum_size_[lower] >= shape_limit) {
-            drawViaShapes(painter, lower, layer, bounds, shape_limit);
-          }
-        }
-      }
-
-      auto polygon_iter = search_.searchPolygonShapes(layer,
-                                                      bounds.xMin(),
-                                                      bounds.yMin(),
-                                                      bounds.xMax(),
-                                                      bounds.yMax(),
-                                                      shape_limit);
-
-      for (auto& [box, poly, net] : polygon_iter) {
-        if (!isNetVisible(net)) {
-          continue;
-        }
-        const int size = poly.outer().size();
-        QPolygon qpoly(size);
-        for (int i = 0; i < size; i++) {
-          qpoly.setPoint(i, poly.outer()[i].x(), poly.outer()[i].y());
-        }
-        painter->drawPolygon(qpoly);
-      }
-
-      // Now draw the fills
-      if (options_->areFillsVisible()) {
-        QColor color = getColor(layer).lighter(50);
-        Qt::BrushStyle brush_pattern = getPattern(layer);
-        painter->setBrush(QBrush(color, brush_pattern));
-        painter->setPen(QPen(color, 0));
-        auto iter = search_.searchFills(layer,
-                                        bounds.xMin(),
-                                        bounds.yMin(),
-                                        bounds.xMax(),
-                                        bounds.yMax(),
-                                        shape_limit);
-
-        for (auto& i : iter) {
-          const auto& ll = std::get<0>(i).min_corner();
-          const auto& ur = std::get<0>(i).max_corner();
-          painter->drawRect(
-              QRect(ll.x(), ll.y(), ur.x() - ll.x(), ur.y() - ll.y()));
-        }
-      }
-    }
-
-    if (draw_shapes) {
-      drawTracks(layer, painter, bounds);
-      drawRouteGuides(gui_painter, layer);
-      drawNetTracks(gui_painter, layer);
-    }
-
-    for (auto* renderer : renderers) {
-      gui_painter.saveState();
-      renderer->drawLayer(layer, gui_painter);
-      gui_painter.restoreState();
-    }
-    debugPrint(logger_,
-               GUI,
-               "draw",
-               1,
-               "layer {} render {}",
-               layer->getName(),
-               layer_timer);
+    drawLayer(painter, block, layer, insts, bounds, gui_painter);
   }
-  // draw instance names
-  drawInstanceNames(painter, insts);
 
-  drawRows(painter, bounds);
+  utl::Timer inst_names;
+  drawInstanceNames(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "instance names {}", inst_names);
+
+  utl::Timer inst_rows;
+  drawRows(painter, block, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "rows {}", inst_rows);
+
+  utl::Timer inst_access_points;
   if (options_->areAccessPointsVisible()) {
     drawAccessPoints(gui_painter, insts);
   }
+  debugPrint(logger_, GUI, "draw", 1, "access points {}", inst_access_points);
 
+  utl::Timer inst_module_view;
   drawModuleView(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "module view {}", inst_module_view);
 
-  drawRegions(painter);
+  utl::Timer inst_regions;
+  drawRegions(painter, block);
+  debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
 
+  utl::Timer inst_pin_markers;
   if (options_->arePinMarkersVisible()) {
-    drawPinMarkers(gui_painter, bounds);
+    drawPinMarkers(gui_painter, block, bounds);
   }
+  debugPrint(logger_, GUI, "draw", 1, "pin markers {}", inst_pin_markers);
 
+  utl::Timer inst_cell_grid;
   drawGCellGrid(painter, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
 
-  for (auto* renderer : renderers) {
+  utl::Timer inst_save_restore;
+  for (auto* renderer : Gui::get()->renderers()) {
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
+  debugPrint(logger_, GUI, "draw", 1, "renderers {}", inst_save_restore);
 
   debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }
@@ -2581,7 +2684,7 @@ void LayoutViewer::drawManufacturingGrid(QPainter* painter,
   painter->drawPoints(points);
 }
 
-void LayoutViewer::drawRegions(QPainter* painter)
+void LayoutViewer::drawRegions(QPainter* painter, odb::dbBlock* block)
 {
   if (!options_->areRegionsVisible()) {
     return;
@@ -2590,7 +2693,7 @@ void LayoutViewer::drawRegions(QPainter* painter)
   painter->setPen(QPen(Qt::gray, 0));
   painter->setBrush(QBrush(options_->regionColor(), options_->regionPattern()));
 
-  for (auto* region : block_->getRegions()) {
+  for (auto* region : block->getRegions()) {
     for (auto* box : region->getBoundaries()) {
       odb::Rect region_box = box->getBox();
       if (region_box.area() > 0) {
@@ -2720,11 +2823,14 @@ void LayoutViewer::drawModuleView(QPainter* painter,
   }
 }
 
-void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
+void LayoutViewer::drawPinMarkers(Painter& painter,
+                                  odb::dbBlock* block,
+                                  const odb::Rect& bounds)
 {
-  auto die_area = block_->getDieArea();
+  auto die_area = block->getDieArea();
   auto die_width = die_area.dx();
   auto die_height = die_area.dy();
+
   const double scale_factor
       = 0.02;  // 4 Percent of bounds is used to draw pin-markers
   const int die_max_dim
@@ -2775,7 +2881,7 @@ void LayoutViewer::drawPinMarkers(Painter& painter, const odb::Rect& bounds)
   };
   std::vector<PinText> pin_text_spec;
 
-  for (odb::dbBTerm* term : block_->getBTerms()) {
+  for (odb::dbBTerm* term : block->getBTerms()) {
     for (odb::dbBPin* pin : term->getBPins()) {
       odb::dbPlacementStatus status = pin->getPlacementStatus();
       if (!status.isPlaced()) {
@@ -3000,7 +3106,7 @@ void LayoutViewer::updateBlockPainting(const QRect& area)
   const Rect dbu_bounds = screenToDBU(area);
 
   // paint layout
-  drawBlock(&block_painter, dbu_bounds, 0);
+  drawBlock(&block_painter, block_, dbu_bounds, 0);
 
   // save the cached layout
   block_drawing_ = std::unique_ptr<QPixmap>(block_drawing);
@@ -3303,7 +3409,7 @@ void LayoutViewer::showLayoutCustomMenu(QPoint pos)
 
 void LayoutViewer::designLoaded(dbBlock* block)
 {
-  search_.setBlock(block);
+  search_.setTopBlock(block);
 }
 
 void LayoutViewer::setScroller(LayoutScroll* scroller)
