@@ -67,7 +67,7 @@ class ScanStitch
   template <typename Port>
   Port CreateNewPort(odb::dbBlock* block, std::string_view name_pattern)
   {
-    for (uint64_t port_number = 1;; ++port_number) {
+    for (int port_number = 1;; ++port_number) {
       std::string port_name = fmt::format(name_pattern, port_number);
       odb::dbBTerm* port = block->findBTerm(port_name.c_str());
       if (!port) {
