@@ -53,6 +53,7 @@
 
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
+#include "chartsWidget.h"
 #include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
@@ -64,7 +65,6 @@
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
-#include "chartsWidget.h"
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
@@ -104,7 +104,7 @@ MainWindow::MainWindow(QWidget* parent)
       hierarchy_widget_(
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
       charts_widget_(new ChartsWidget(this)),
-      find_dialog_(new FindObjectDialog(this))      
+      find_dialog_(new FindObjectDialog(this))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
