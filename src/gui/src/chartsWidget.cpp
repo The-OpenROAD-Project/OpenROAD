@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "histogramWidget.h"
+#include "chartsWidget.h"
 
 #include <QColor>
 #include <QFrame>
@@ -52,8 +52,8 @@ namespace gui {
 const int SELECT = 0;
 const int SLACK_MODE = 1;
 
-HistogramWidget::HistogramWidget(QWidget* parent)
-    : QDockWidget("Histogram Plotter", parent),
+ChartsWidget::ChartsWidget(QWidget* parent)
+    : QDockWidget("Charts", parent),
       sta_(nullptr),
       label_(new QLabel(this)),
       mode_menu_(new QComboBox(this)),
@@ -62,7 +62,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
       axis_x_(new QBarCategoryAxis(this)),
       axis_y_(new QValueAxis(this))
 {
-  setObjectName("histogram_widget");  // for settings
+  setObjectName("charts_widget");  // for settings
 
   QWidget* container = new QWidget(this);
   QVBoxLayout* layout = new QVBoxLayout;
@@ -92,7 +92,7 @@ HistogramWidget::HistogramWidget(QWidget* parent)
       mode_menu_, SIGNAL(currentIndexChanged(int)), this, SLOT(changeMode()));
 }
 
-void HistogramWidget::changeMode()
+void ChartsWidget::changeMode()
 {
   if (mode_menu_->currentIndex() == SELECT) {
     return;
@@ -105,7 +105,7 @@ void HistogramWidget::changeMode()
   }
 }
 
-void HistogramWidget::clearChart()
+void ChartsWidget::clearChart()
 {
   chart_->setTitle("");
   chart_->removeAllSeries();
@@ -118,7 +118,7 @@ void HistogramWidget::clearChart()
   axis_y_->hide();
 }
 
-void HistogramWidget::setSlackMode()
+void ChartsWidget::setSlackMode()
 {
   chart_->setTitle("Endpoint Slack");
 

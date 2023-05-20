@@ -48,12 +48,12 @@ class dbSta;
 
 namespace gui {
 
-class HistogramWidget : public QDockWidget
+class ChartsWidget : public QDockWidget
 {
   Q_OBJECT
 
  public:
-  HistogramWidget(QWidget* parent = nullptr);
+  ChartsWidget(QWidget* parent = nullptr);
 
   void setSTA(sta::dbSta* sta) { sta_ = sta; };
   void setSlackMode();

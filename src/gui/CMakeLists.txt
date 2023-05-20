@@ -56,7 +56,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/gui_utils.cpp
     src/colorGenerator.cpp
     src/bufferTreeDescriptor.cpp
-    src/histogramWidget.cpp
+    src/chartsWidget.cpp
     resources/resource.qrc
   )
 

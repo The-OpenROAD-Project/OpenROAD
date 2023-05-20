@@ -64,7 +64,7 @@
 #include "layoutViewer.h"
 #include "scriptWidget.h"
 #include "selectHighlightWindow.h"
-#include "histogramWidget.h"
+#include "chartsWidget.h"
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
@@ -103,7 +103,7 @@ MainWindow::MainWindow(QWidget* parent)
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
-      histogram_widget_(new HistogramWidget(this)),
+      charts_widget_(new ChartsWidget(this)),
       find_dialog_(new FindObjectDialog(this))      
 {
   // Size and position the window
@@ -124,7 +124,7 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
-  addDockWidget(Qt::RightDockWidgetArea, histogram_widget_);
+  addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -442,7 +442,7 @@ void MainWindow::init(sta::dbSta* sta)
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
   clock_viewer_->setSTA(sta);
-  histogram_widget_->setSTA(sta);
+  charts_widget_->setSTA(sta);
   // register descriptors
   auto* gui = Gui::get();
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);
@@ -645,7 +645,7 @@ void MainWindow::createMenus()
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
-  windows_menu_->addAction(histogram_widget_->toggleViewAction());
+  windows_menu_->addAction(charts_widget_->toggleViewAction());
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
