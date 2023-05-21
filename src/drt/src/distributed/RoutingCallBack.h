@@ -168,6 +168,17 @@ class RoutingCallBack : public dst::JobCallBack
         pa_.setDesign(router_->getDesign());
         pa_.init();
         break;
+      case PinAccessJobDescription::FINAL_UPDATES: {
+        paUpdate update;
+        paUpdate::deserialize(router_->getDesign(), update, desc->getPath());
+        for (const auto& [term, aps] : update.getGroupResults()) {
+          term->setAccessPoints(aps);
+        }
+        router_->initGuide();
+        router_->prep();
+        router_->getDesign()->getRegionQuery()->initDRObj();
+        break;
+      }
       case PinAccessJobDescription::INST_ROWS: {
         auto instRows = deserializeInstRows(desc->getPath());
         omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
