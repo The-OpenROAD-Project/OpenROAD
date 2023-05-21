@@ -819,26 +819,40 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
+  asio::thread_pool pa_pool(1);
+  if (!distributed_)
+    pa_pool.join();
   if (debug_->debugDumpDR) {
     std::string globals_path
         = fmt::format("{}/init_globals.bin", debug_->dumpDir);
     writeGlobals(globals_path);
   }
   MAX_THREADS = ord::OpenRoad::openRoad()->getThreadCount();
-  if (distributed_ && !DO_PA) {
-    asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
+  if (distributed_) {
+    if (DO_PA)
+      asio::post(pa_pool, [this]() {
+        sendDesignDist();
+        dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                            dst::JobMessage::BROADCAST),
+            result;
+        auto uDesc = std::make_unique<PinAccessJobDescription>();
+        uDesc->setType(PinAccessJobDescription::INIT_PA);
+        msg.setJobDescription(std::move(uDesc));
+        dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+      });
+    else
+      asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
   }
   initDesign();
   if (DO_PA) {
     FlexPA pa(getDesign(), logger_, dist_);
-    // pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
+    pa.setDistributed(dist_ip_, dist_port_, shared_volume_, cloud_sz_);
     pa.setDebug(debug_.get(), db_);
+    pa_pool.join();
     pa.main();
     if (distributed_ || debug_->debugDR || debug_->debugDumpDR) {
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
-      if (distributed_)
-        asio::post(dist_pool_, boost::bind(&TritonRoute::sendDesignDist, this));
     }
   }
   if (debug_->debugDumpDR) {

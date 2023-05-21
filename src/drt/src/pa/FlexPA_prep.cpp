@@ -1530,6 +1530,7 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
   if (isDistributed()) {
     omp_set_num_threads(cloud_sz_);
     int batch_size = instRows.size() / cloud_sz_;
+    paUpdate allUpdates;
 #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < cloud_sz_; i++) {
       try {
@@ -1561,6 +1562,9 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
         }
 #pragma omp critical
         {
+          for (const auto& res : update.getGroupResults()) {
+            allUpdates.addGroupResult(res);
+          }
           cnt += batch.size();
           if (VERBOSE > 0) {
             if (cnt < 10000) {
@@ -1578,6 +1582,20 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
         exception.capture();
       }
     }
+    // send updates back to workers
+    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                        dst::JobMessage::BROADCAST),
+        result;
+    std::string updatesPath = fmt::format("{}/final_updates.bin", shared_vol_);
+    paUpdate::serialize(allUpdates, updatesPath);
+    std::unique_ptr<PinAccessJobDescription> uDesc
+        = std::make_unique<PinAccessJobDescription>();
+    uDesc->setPath(updatesPath);
+    uDesc->setType(PinAccessJobDescription::FINAL_UPDATES);
+    msg.setJobDescription(std::move(uDesc));
+    bool ok = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    if (!ok)
+      logger_->error(utl::DRT, 332, "Error sending FINAL_UPDATES Job to cloud");
   } else {
     omp_set_num_threads(MAX_THREADS);
     // choose access pattern of a row of insts
