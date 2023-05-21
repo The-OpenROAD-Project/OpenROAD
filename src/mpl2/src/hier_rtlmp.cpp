@@ -1793,13 +1793,17 @@ void HierRTLMP::dataFlowDFSMacroPin(
 void HierRTLMP::updateDataFlow()
 {
   // bterm, macros or ffs
+
   for (const auto& [bterm, insts] : io_ffs_conn_map_) {
+    if (! odb::dbIntProperty::find(bterm, "cluster_id"))
+      continue;
     const int driver_id
         = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
       const float weight = dataflow_weight_ / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
       for (auto& inst : insts[i]) {
+	logger_->report("Inst = {}", inst->getName());
         const int cluster_id
             = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
         sink_clusters.insert(cluster_id);
@@ -3124,6 +3128,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   }
 
   // update the connnection
+
   calculateConnection();
   debugPrint(logger_,
              MPL,
