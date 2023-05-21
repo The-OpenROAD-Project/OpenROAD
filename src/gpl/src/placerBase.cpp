@@ -1002,8 +1002,8 @@ void PlacerBase::initInstsForUnusableSites()
 {
   dbSet<dbRow> rows = db_->getChip()->getBlock()->getRows();
 
-  int siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
-  int siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
+  int64 siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
+  int64 siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
 
   enum PlaceInfo
   {
