@@ -854,6 +854,14 @@ int TritonRoute::main()
       io::Writer writer(getDesign(), logger_);
       writer.updateDb(db_, true);
     }
+    if (distributed_) {
+      asio::post(dist_pool_, [this]() {
+        dst::JobMessage msg(dst::JobMessage::GRDR_INIT,
+                            dst::JobMessage::BROADCAST),
+            result;
+        dist_->sendJob(msg, dist_ip_.c_str(), dist_port_, result);
+      });
+    }
   }
   if (debug_->debugDumpDR) {
     ord::OpenRoad::openRoad()->writeDb(

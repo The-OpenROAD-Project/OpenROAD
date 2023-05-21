@@ -158,9 +158,20 @@ class RoutingCallBack : public dst::JobCallBack
     logger_->report("Received PA Job");
     dst::JobMessage result(dst::JobMessage::SUCCESS);
     switch (desc->getType()) {
-      case PinAccessJobDescription::UPDATE_PA:
-        pa_.applyUpdatesFile(desc->getPath().c_str());
+      case PinAccessJobDescription::UPDATE_PA: {
+        paUpdate update;
+        paUpdate::deserialize(router_->getDesign(), update, desc->getPath());
+        for (auto& [pin, pa_vec] : update.getPinAccess()) {
+          for (auto& pa : pa_vec) {
+            int idx = pa->getId();
+            pin->setPinAccess(idx, std::move(pa));
+          }
+        }
+        for (const auto& [term, aps] : update.getGroupResults()) {
+          term->setAccessPoints(aps);
+        }
         break;
+      }
       case PinAccessJobDescription::UPDATE_PATTERNS:
         pa_.applyPatternsFile(desc->getPath().c_str());
         break;
@@ -168,17 +179,6 @@ class RoutingCallBack : public dst::JobCallBack
         pa_.setDesign(router_->getDesign());
         pa_.init();
         break;
-      case PinAccessJobDescription::FINAL_UPDATES: {
-        paUpdate update;
-        paUpdate::deserialize(router_->getDesign(), update, desc->getPath());
-        for (const auto& [term, aps] : update.getGroupResults()) {
-          term->setAccessPoints(aps);
-        }
-        router_->initGuide();
-        router_->prep();
-        router_->getDesign()->getRegionQuery()->initDRObj();
-        break;
-      }
       case PinAccessJobDescription::INST_ROWS: {
         auto instRows = deserializeInstRows(desc->getPath());
         omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
@@ -202,6 +202,17 @@ class RoutingCallBack : public dst::JobCallBack
       }
     }
 
+    dist_->sendResult(result, sock);
+    sock.close();
+  }
+  void onGRDRInitJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  {
+    if (msg.getJobType() != dst::JobMessage::GRDR_INIT)
+      return;
+    router_->initGuide();
+    router_->prep();
+    router_->getDesign()->getRegionQuery()->initDRObj();
+    dst::JobMessage result(dst::JobMessage::SUCCESS);
     dist_->sendResult(result, sock);
     sock.close();
   }

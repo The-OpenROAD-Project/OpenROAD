@@ -50,6 +50,9 @@ class HelperCallBack : public dst::JobCallBack
   void onPinAccessJobReceived(dst::JobMessage& msg, dst::socket& sock) override
   {
   }
+  void onGRDRInitJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  {
+  }
 
  private:
   dst::Distributed* dist_;

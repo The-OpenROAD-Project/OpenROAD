@@ -37,12 +37,11 @@ class frDesign;
 class paUpdate
 {
  public:
-  paUpdate() : pin_(nullptr) {}
-  void setPin(frPin* in) { pin_ = in; }
-  void addPinAccess(const frPinAccess& in) { pa_.push_back(in); }
-  void setPinAccess(const std::vector<frPinAccess>& pa)
+  paUpdate() = default;
+
+  void addPinAccess(frPin* pin, std::vector<std::unique_ptr<frPinAccess>> pa)
   {
-    std::copy(pa.begin(), pa.end(), std::back_inserter(pa_));
+    pin_access_.push_back({pin, std::move(pa)});
   }
   void setInstRows(const std::vector<std::vector<frInst*>>& in)
   {
@@ -59,8 +58,11 @@ class paUpdate
   {
     group_results_.push_back(in);
   }
-  std::vector<frPinAccess>& getPinAccess() { return pa_; }
-  frPin* getPin() const { return pin_; }
+  std::vector<std::pair<frPin*, std::vector<std::unique_ptr<frPinAccess>>>>&
+  getPinAccess()
+  {
+    return pin_access_;
+  }
   const std::vector<std::vector<frInst*>>& getInstRows() const
   {
     return inst_rows_;
@@ -76,8 +78,8 @@ class paUpdate
                           const std::string& path);
 
  private:
-  std::vector<frPinAccess> pa_;
-  frPin* pin_;
+  std::vector<std::pair<frPin*, std::vector<std::unique_ptr<frPinAccess>>>>
+      pin_access_;
   std::vector<std::vector<frInst*>> inst_rows_;
   std::vector<std::pair<frInstTerm*, std::vector<frAccessPoint*>>>
       group_results_;

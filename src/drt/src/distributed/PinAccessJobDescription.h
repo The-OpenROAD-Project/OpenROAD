@@ -46,8 +46,7 @@ class PinAccessJobDescription : public dst::JobDescription
     UPDATE_PA,
     UPDATE_PATTERNS,
     INIT_PA,
-    INST_ROWS,
-    FINAL_UPDATES
+    INST_ROWS
   };
   PinAccessJobDescription() : type_(UPDATE_PA) {}
   void setPath(const std::string& path) { path_ = path; }

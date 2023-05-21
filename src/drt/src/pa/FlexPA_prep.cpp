@@ -1591,11 +1591,11 @@ void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
     std::unique_ptr<PinAccessJobDescription> uDesc
         = std::make_unique<PinAccessJobDescription>();
     uDesc->setPath(updatesPath);
-    uDesc->setType(PinAccessJobDescription::FINAL_UPDATES);
+    uDesc->setType(PinAccessJobDescription::UPDATE_PA);
     msg.setJobDescription(std::move(uDesc));
     bool ok = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
     if (!ok)
-      logger_->error(utl::DRT, 332, "Error sending FINAL_UPDATES Job to cloud");
+      logger_->error(utl::DRT, 332, "Error sending UPDATE_PA Job to cloud");
   } else {
     omp_set_num_threads(MAX_THREADS);
     // choose access pattern of a row of insts
