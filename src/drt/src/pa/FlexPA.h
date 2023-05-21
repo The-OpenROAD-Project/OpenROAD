@@ -69,8 +69,6 @@ class FlexPA
   frTechObject* getTech() const { return design_->getTech(); }
   // setters
   int main();
-  void init();
-  void prep();
   void setDebug(frDebugSettings* settings, odb::dbDatabase* db);
   void setTargetInstances(frCollection<odb::dbInst*> insts)
   {
@@ -86,10 +84,6 @@ class FlexPA
     shared_vol_ = shared_vol;
     cloud_sz_ = cloud_sz;
   }
-  void setDesign(frDesign* in) { design_ = in; }
-  void applyUpdatesFile(const char* file_path);
-  void applyPatternsFile(const char* file_path);
-  void genInstRowPattern(std::vector<frInst*>& insts);
 
  private:
   frDesign* design_;
@@ -116,7 +110,7 @@ class FlexPA
       unique2paidx_;  // unique instance to pinaccess index
   std::map<frInst*, int, frBlockObjectComp> unique2Idx_;
   std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>
-      uniqueInstPatterns_;  // needs serialization
+      uniqueInstPatterns_;
 
   // helper structures
   std::vector<std::map<frCoord, frAccessPointEnum>> trackCoords_;
@@ -134,6 +128,8 @@ class FlexPA
   int cloud_sz_;
 
   // helper functions
+  void setDesign(frDesign* in) { design_ = in; }
+  void applyPatternsFile(const char* file_path);
   void getPrefTrackPatterns(std::vector<frTrackPattern*>& prefTrackPatterns);
   bool hasTrackPattern(frTrackPattern* tp, const Rect& box);
   void getViaRawPriority(frViaDef* viaDef, viaRawPriorityTuple& priority);
@@ -141,6 +137,7 @@ class FlexPA
   bool isDistributed() const { return !remote_host_.empty(); }
 
   // init
+  void init();
   void initUniqueInstance();
   void initUniqueInstance_master2PinLayerRange(
       std::map<frMaster*,
@@ -157,6 +154,7 @@ class FlexPA
   void initViaRawPriority();
   void checkFigsOnGrid(const frMPin* pin);
   // prep
+  void prep();
   void prepPoint();
   void getViasFromMetalWidthMap(
       const Point& pt,
@@ -357,6 +355,7 @@ class FlexPA
                       std::set<frBlockObject*>* owners = nullptr);
 
   void getInsts(std::vector<frInst*>& insts);
+  void genInstRowPattern(std::vector<frInst*>& insts);
   void genInstRowPattern_init(std::vector<FlexDPNode>& nodes,
                               const std::vector<frInst*>& insts);
   void genInstRowPattern_perform(std::vector<FlexDPNode>& nodes,
@@ -376,6 +375,8 @@ class FlexPA
       std::vector<std::pair<frConnFig*, frBlockObject*>>& objs,
       std::vector<std::unique_ptr<frVia>>& vias,
       bool isPrev);
+
+  friend class RoutingCallBack;
 };
 
 class FlexPinAccessPattern

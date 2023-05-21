@@ -97,34 +97,6 @@ void FlexPA::init()
   initPinAccess();
 }
 
-static void serializeUpdates(const std::vector<paUpdate>& updates,
-                             const std::string& file_name)
-{
-  std::ofstream file(file_name.c_str());
-  frOArchive ar(file);
-  registerTypes(ar);
-  ar << updates;
-  file.close();
-}
-
-void FlexPA::applyUpdatesFile(const char* file_path)
-{
-  std::vector<paUpdate> updates;
-  std::ifstream file(file_path);
-  frIArchive ar(file);
-  ar.setDesign(design_);
-  registerTypes(ar);
-  ar >> updates;
-  file.close();
-  for (auto& update : updates) {
-    frPin* pin = update.getPin();
-    for (auto& pa : update.getPinAccess()) {
-      pin->setPinAccess(pa.getId(),
-                        std::move(std::make_unique<frPinAccess>(pa)));
-    }
-  }
-}
-
 void FlexPA::applyPatternsFile(const char* file_path)
 {
   uniqueInstPatterns_.clear();
@@ -143,35 +115,35 @@ void FlexPA::prep()
   revertAccessPoints();
   if (isDistributed()) {
     std::vector<paUpdate> updates;
+    paUpdate update;
     for (const auto& master : design_->getMasters()) {
       for (const auto& term : master->getTerms()) {
         for (const auto& pin : term->getPins()) {
-          paUpdate update;
-          update.setPin(pin.get());
+          std::vector<std::unique_ptr<frPinAccess>> pa;
           for (int i = 0; i < pin->getNumPinAccess(); i++) {
-            update.addPinAccess(*pin->getPinAccess(i));
+            pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
           }
-          updates.push_back(update);
+          update.addPinAccess(pin.get(), std::move(pa));
         }
       }
     }
     for (const auto& term : design_->getTopBlock()->getTerms()) {
       for (const auto& pin : term->getPins()) {
-        paUpdate update;
-        update.setPin(pin.get());
+        std::vector<std::unique_ptr<frPinAccess>> pa;
         for (int i = 0; i < pin->getNumPinAccess(); i++) {
-          update.addPinAccess(*pin->getPinAccess(i));
+          pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
         }
-        updates.push_back(update);
+        update.addPinAccess(pin.get(), std::move(pa));
       }
     }
+
     dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
                         dst::JobMessage::BROADCAST),
         result;
     std::unique_ptr<PinAccessJobDescription> uDesc
         = std::make_unique<PinAccessJobDescription>();
     std::string updates_file = fmt::format("{}/updates.bin", shared_vol_);
-    serializeUpdates(updates, updates_file);
+    paUpdate::serialize(update, updates_file);
     uDesc->setPath(updates_file);
     uDesc->setType(PinAccessJobDescription::UPDATE_PA);
     msg.setJobDescription(std::move(uDesc));

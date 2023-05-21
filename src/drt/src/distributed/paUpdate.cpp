@@ -55,13 +55,20 @@ void paUpdate::deserialize(frDesign* design,
 template <class Archive>
 void paUpdate::serialize(Archive& ar, const unsigned int version)
 {
-  (ar) & pa_;
-  frBlockObject* obj = pin_;
-  serializeBlockObject(ar, obj);
-  pin_ = (frPin*) obj;
   if (is_loading(ar)) {
-    // inst_rows_
     int sz;
+    // pin_access_;
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      frPin* pin = (frPin*) obj;
+      std::vector<std::unique_ptr<frPinAccess>> pa;
+      (ar) & pa;
+      pin_access_.push_back({pin, std::move(pa)});
+    }
+
+    // inst_rows_
     (ar) & sz;
     while (sz--) {
       inst_rows_.push_back({});
@@ -90,8 +97,16 @@ void paUpdate::serialize(Archive& ar, const unsigned int version)
     }
 
   } else {
+    // pin_access_
+    int sz = pin_access_.size();
+    (ar) & sz;
+    for (auto& [pin, pa] : pin_access_) {
+      frBlockObject* obj = pin;
+      serializeBlockObject(ar, obj);
+      (ar) & pa;
+    }
     // inst_rows_
-    int sz = inst_rows_.size();
+    sz = inst_rows_.size();
     (ar) & sz;
     for (const auto& row : inst_rows_) {
       sz = row.size();
