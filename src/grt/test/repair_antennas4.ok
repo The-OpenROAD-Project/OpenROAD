@@ -12,7 +12,6 @@
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [WARNING ANT-0009] Net clk requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[11] requires more than 10 diodes per gate to repair violations.
-[WARNING ANT-0009] Net resp_msg[11] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[13] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[14] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net resp_msg[1] requires more than 10 diodes per gate to repair violations.
@@ -20,5 +19,5 @@
 [WARNING ANT-0009] Net resp_msg[7] requires more than 10 diodes per gate to repair violations.
 [WARNING ANT-0009] Net _229_ requires more than 10 diodes per gate to repair violations.
 [INFO GRT-0012] Found 8 antenna violations.
-[INFO GRT-0015] Inserted 176 diodes.
-[INFO GRT-0054] Using detailed placer to place 76 diodes.
+[INFO GRT-0015] Inserted 165 diodes.
+[INFO GRT-0054] Using detailed placer to place 65 diodes.
