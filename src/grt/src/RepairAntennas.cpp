@@ -133,19 +133,22 @@ odb::dbWire* RepairAntennas::makeNetWire(
           int bottom_layer = std::min(l1, l2);
           odb::dbTechLayer* bottom_tech_layer
               = tech->findRoutingLayer(bottom_layer);
-          wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
-          wire_encoder.addPoint(x1, y1);
-          int jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
-          addWireTerms(net,
-                       route,
-                       x1,
-                       y1,
-                       bottom_layer,
-                       bottom_tech_layer,
-                       jct_id,
-                       route_pt_pins,
-                       wire_encoder);
-          wire_segments.insert(seg);
+          if (bottom_layer >= grouter_->getMinRoutingLayer()) {
+            wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
+            wire_encoder.addPoint(x1, y1);
+            int jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
+            addWireTerms(net,
+                        route,
+                        x1,
+                        y1,
+                        bottom_layer,
+                        bottom_tech_layer,
+                        jct_id,
+                        route_pt_pins,
+                        wire_encoder,
+                        default_vias);
+            wire_segments.insert(seg);
+          }
         } else {
           // Add wire
           int x2 = seg.final_x;
@@ -163,7 +166,8 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          tech_layer,
                          jct_id1,
                          route_pt_pins,
-                         wire_encoder);
+                         wire_encoder,
+                         default_vias);
             addWireTerms(net,
                          route,
                          x2,
@@ -172,7 +176,8 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          tech_layer,
                          jct_id2,
                          route_pt_pins,
-                         wire_encoder);
+                         wire_encoder,
+                         default_vias);
             wire_segments.insert(seg);
           }
         }
@@ -210,8 +215,12 @@ void RepairAntennas::addWireTerms(Net* net,
                                   odb::dbTechLayer* tech_layer,
                                   int jct_id,
                                   RoutePtPins& route_pt_pins,
-                                  odb::dbWireEncoder& wire_encoder)
+                                  odb::dbWireEncoder& wire_encoder,
+                                  std::map<int, odb::dbTechVia*>& default_vias)
 {
+  if (layer == grouter_->getMinRoutingLayer()) {
+    layer--;
+  }
   auto itr = route_pt_pins.find(RoutePt(grid_x, grid_y, layer));
   if (itr != route_pt_pins.end()) {
     for (const Pin* pin : itr->second) {
@@ -232,11 +241,45 @@ void RepairAntennas::addWireTerms(Net* net,
           }
         }
       }
-      wire_encoder.newPathVirtualWire(
-          jct_id, tech_layer, odb::dbWireType::ROUTED);
-      wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
-      wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
-      wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
+
+      if (conn_layer >= grouter_->getMinRoutingLayer()) {
+        wire_encoder.newPathVirtualWire(
+            jct_id, tech_layer, odb::dbWireType::ROUTED);
+        wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
+        wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
+        wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
+      } else {
+        odb::dbTech* tech = db_->getTech();
+        odb::dbTechLayer* layer1
+            = tech->findRoutingLayer(grouter_->getMinRoutingLayer());
+        odb::dbTechLayer* layer2
+            = tech->findRoutingLayer(grouter_->getMinRoutingLayer() + 1);
+        odb::dbTechLayer* h_layer
+            = layer1->getDirection() == odb::dbTechLayerDir::HORIZONTAL
+                  ? layer1
+                  : layer2;
+        odb::dbTechLayer* v_layer
+            = layer1->getDirection() == odb::dbTechLayerDir::VERTICAL ? layer1
+                                                                      : layer2;
+        // create horizontal wire to connect to the pin
+        wire_encoder.newPathVirtualWire(
+            jct_id, h_layer, odb::dbWireType::ROUTED);
+        wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
+        wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
+        jct_id = wire_encoder.addTechVia(
+            default_vias[grouter_->getMinRoutingLayer()]);
+
+        // create vertical wire to connect to the pin
+        wire_encoder.newPathVirtualWire(
+            jct_id, v_layer, odb::dbWireType::ROUTED);
+        wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
+        wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
+
+        // create vias to reach the pin
+        for (int i = v_layer->getRoutingLevel() - 1; i >= conn_layer; i--) {
+          wire_encoder.addTechVia(default_vias[i]);
+        }
+      }
     }
   }
 }
