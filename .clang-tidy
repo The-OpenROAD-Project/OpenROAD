@@ -54,6 +54,10 @@ Checks: >
   -misc-redundant-expression,
   -misc-unused-parameters,
 
+CheckOptions:
+   - key:             google-runtime-int.TypeSuffix
+     value:           _t
+
 # Not currently handling identifier naming
 # WarningsAsErrors: "*"
 
