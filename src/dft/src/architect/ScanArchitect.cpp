@@ -138,12 +138,12 @@ void ScanArchitect::inferChainCount()
   }
 }
 
-std::unordered_map<size_t, ScanArchitect::HashDomainLimits>
+std::map<size_t, ScanArchitect::HashDomainLimits>
 ScanArchitect::inferChainCountFromMaxLength(
     const std::unordered_map<size_t, uint64_t>& hash_domains_total_bit,
     uint64_t max_length)
 {
-  std::unordered_map<size_t, HashDomainLimits> hash_domain_to_limits;
+  std::map<size_t, HashDomainLimits> hash_domain_to_limits;
   for (const auto& [hash_domain, bits] : hash_domains_total_bit) {
     uint64_t domain_chain_count = 0;
     if (bits % max_length != 0) {

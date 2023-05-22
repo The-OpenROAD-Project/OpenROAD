@@ -317,7 +317,12 @@ void HierRTLMP::hierRTLMacroPlacer()
   //
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
-  manufacturing_unit_ = db_->getTech()->getManufacturingGrid();
+  if (db_->getTech()->hasManufacturingGrid()) {
+    manufacturing_grid_ = db_->getTech()->getManufacturingGrid();
+  } else {
+    // No manufacturing grid value in tech lef. set to default
+    manufacturing_grid_ = 1;
+  }
 
   //
   // Get the floorplan information
@@ -365,14 +370,16 @@ void HierRTLMP::hierRTLMacroPlacer()
       "\tArea of macros : {:.2f}\n"
       "\tTotal area : {:.2f}\n"
       "\tDesign Utilization : {:.2f}\n"
-      "\tCore Utilization: {:.2f}\n",
+      "\tCore Utilization: {:.2f}\n"
+      "\tManufacturing Grid: {}\n",
       metrics_->getNumStdCell(),
       metrics_->getStdCellArea(),
       metrics_->getNumMacro(),
       metrics_->getMacroArea(),
       metrics_->getStdCellArea() + metrics_->getMacroArea(),
       util,
-      core_util);
+      core_util,
+      manufacturing_grid_);
 
   setDefaultThresholds();
   // report the default parameters
@@ -606,7 +613,7 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
       num_macro += 1;
       macro_area += inst_area;
       // add hard macro to corresponding map
-      HardMacro* macro = new HardMacro(inst, dbu_, manufacturing_unit_, halo_width_);
+      HardMacro* macro = new HardMacro(inst, dbu_, halo_width_);
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;
@@ -3419,7 +3426,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
-                 "macro_plamcement",
+                 "macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
@@ -5216,7 +5223,7 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   int boundary_h_th = std::numeric_limits<int>::max();
   for (auto& macro_inst : hard_macros) {
     boundary_h_th = std::min(
-        boundary_h_th, static_cast<int>(macro_inst->getWidthDBU() * 1.0));
+        boundary_h_th, static_cast<int>(macro_inst->getRealWidthDBU() * 1.0));
     boundary_v_th = std::min(
         boundary_v_th, static_cast<int>(macro_inst->getHeightDBU() * 1.0));
   }

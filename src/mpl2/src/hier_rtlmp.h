@@ -271,7 +271,8 @@ class HierRTLMP
 
   // technology-related variables
   float dbu_ = 0.0;
-  int manufacturing_unit_ = 10; // the manufacture grid in dbu
+  int manufacturing_grid_ = 1;  // the default manufacture grid in dbu
+                                // will be over written by the tech lef value
 
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;

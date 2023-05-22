@@ -66,6 +66,7 @@ class dbTechLayer;
 
 namespace gui {
 
+class GuiPainter;
 class LayoutScroll;
 class Ruler;
 class ScriptWidget;
@@ -278,8 +279,17 @@ class LayoutViewer : public QWidget
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   void setPixelsPerDBU(qreal pixels_per_dbu);
-  void drawBlock(QPainter* painter, const odb::Rect& bounds, int depth);
-  void drawRegions(QPainter* painter);
+  void drawBlock(QPainter* painter,
+                 odb::dbBlock* block,
+                 const odb::Rect& bounds,
+                 int depth);
+  void drawLayer(QPainter* painter,
+                 odb::dbBlock* block,
+                 odb::dbTechLayer* layer,
+                 const std::vector<odb::dbInst*>& insts,
+                 const odb::Rect& bounds,
+                 GuiPainter& gui_painter);
+  void drawRegions(QPainter* painter, odb::dbBlock* block);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -291,15 +301,23 @@ class LayoutViewer : public QWidget
                             const std::vector<odb::dbInst*>& insts);
   void drawInstanceShapes(odb::dbTechLayer* layer,
                           QPainter* painter,
-                          const std::vector<odb::dbInst*>& insts);
+                          const std::vector<odb::dbInst*>& insts,
+                          const odb::Rect& bounds,
+                          GuiPainter& gui_painter);
   void drawInstanceNames(QPainter* painter,
                          const std::vector<odb::dbInst*>& insts);
-  void drawBlockages(QPainter* painter, const odb::Rect& bounds);
-  void drawObstructions(odb::dbTechLayer* layer,
+  void drawBlockages(QPainter* painter,
+                     odb::dbBlock* block,
+                     const odb::Rect& bounds);
+  void drawObstructions(odb::dbBlock* block,
+                        odb::dbTechLayer* layer,
                         QPainter* painter,
                         const odb::Rect& bounds);
-  void drawRows(QPainter* painter, const odb::Rect& bounds);
+  void drawRows(QPainter* painter,
+                odb::dbBlock* block,
+                const odb::Rect& bounds);
   void drawViaShapes(QPainter* painter,
+                     odb::dbBlock* block,
                      odb::dbTechLayer* cut_layer,
                      odb::dbTechLayer* draw_layer,
                      const odb::Rect& bounds,
@@ -308,7 +326,9 @@ class LayoutViewer : public QWidget
   void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
-  void drawPinMarkers(Painter& painter, const odb::Rect& bounds);
+  void drawPinMarkers(Painter& painter,
+                      odb::dbBlock* block,
+                      const odb::Rect& bounds);
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
@@ -343,6 +363,7 @@ class LayoutViewer : public QWidget
   int shapeSizeLimit();
 
   std::vector<std::pair<odb::dbObject*, odb::Rect>> getRowRects(
+      odb::dbBlock* block,
       const odb::Rect& bounds);
 
   void generateCutLayerMaximumSizes();
