@@ -2042,7 +2042,6 @@ void LayoutViewer::drawRulers(Painter& painter)
 void LayoutViewer::drawInstanceOutlines(QPainter* painter,
                                         const std::vector<odb::dbInst*>& insts)
 {
-  utl::Timer timer;
   int minimum_height_for_tag = nominalViewableResolution();
   int minimum_size = fineViewableResolution();
   const QTransform initial_xfm = painter->transform();
@@ -2089,7 +2088,6 @@ void LayoutViewer::drawInstanceOutlines(QPainter* painter,
     }
   }
   painter->setTransform(initial_xfm);
-  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", timer);
 }
 
 // Draw the instances' shapes
@@ -2223,12 +2221,12 @@ void LayoutViewer::drawInstanceNames(QPainter* painter,
   for (auto inst : insts) {
     dbMaster* master = inst->getMaster();
     int master_height = master->getHeight();
-    int master_width = master->getHeight();
+    int master_width = master->getWidth();
 
     if (master_height < minimum_size) {
       continue;
     }
-    if (!inst->getMaster()->isCore() && master_width < minimum_size) {
+    if (!master->isCore() && master_width < minimum_size) {
       // if core cell, just check master height
       continue;
     }
@@ -2511,6 +2509,7 @@ void LayoutViewer::drawBlock(QPainter* painter,
 {
   utl::Timer timer;
 
+  utl::Timer manufacturing_grid_timer;
   const int instance_limit = instanceSizeLimit();
 
   LayerBoxes boxes;
@@ -2527,6 +2526,12 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
 
   drawManufacturingGrid(painter, bounds);
+  debugPrint(logger_,
+             GUI,
+             "draw",
+             1,
+             "manufacturing grid {}",
+             manufacturing_grid_timer);
 
   utl::Timer inst_timer;
   auto inst_range = search_.searchInsts(block,
@@ -2547,38 +2552,59 @@ void LayoutViewer::drawBlock(QPainter* painter,
   }
   debugPrint(logger_, GUI, "draw", 1, "inst search {}", inst_timer);
 
+  utl::Timer insts_outline;
   drawInstanceOutlines(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "inst outline render {}", insts_outline);
 
   // draw blockages
+  utl::Timer inst_blockages;
   drawBlockages(painter, block, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "blockages {}", inst_blockages);
 
   dbTech* tech = block->getDataBase()->getTech();
   for (dbTechLayer* layer : tech->getLayers()) {
     drawLayer(painter, block, layer, insts, bounds, gui_painter);
   }
-  // draw instance names
-  drawInstanceNames(painter, insts);
 
+  utl::Timer inst_names;
+  drawInstanceNames(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "instance names {}", inst_names);
+
+  utl::Timer inst_rows;
   drawRows(painter, block, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "rows {}", inst_rows);
+
+  utl::Timer inst_access_points;
   if (options_->areAccessPointsVisible()) {
     drawAccessPoints(gui_painter, insts);
   }
+  debugPrint(logger_, GUI, "draw", 1, "access points {}", inst_access_points);
 
+  utl::Timer inst_module_view;
   drawModuleView(painter, insts);
+  debugPrint(logger_, GUI, "draw", 1, "module view {}", inst_module_view);
 
+  utl::Timer inst_regions;
   drawRegions(painter, block);
+  debugPrint(logger_, GUI, "draw", 1, "regions {}", inst_regions);
 
+  utl::Timer inst_pin_markers;
   if (options_->arePinMarkersVisible()) {
     drawPinMarkers(gui_painter, block, bounds);
   }
+  debugPrint(logger_, GUI, "draw", 1, "pin markers {}", inst_pin_markers);
 
+  utl::Timer inst_cell_grid;
   drawGCellGrid(painter, bounds);
+  debugPrint(logger_, GUI, "draw", 1, "save cell grid {}", inst_cell_grid);
 
+  utl::Timer inst_save_restore;
   for (auto* renderer : Gui::get()->renderers()) {
     gui_painter.saveState();
     renderer->drawObjects(gui_painter);
     gui_painter.restoreState();
   }
+  debugPrint(logger_, GUI, "draw", 1, "renderers {}", inst_save_restore);
 
   debugPrint(logger_, GUI, "draw", 1, "total render {}", timer);
 }

@@ -31,40 +31,54 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
-#include "ScanCell.hh"
-#include "ScanPin.hh"
-#include "db_sta/dbNetwork.hh"
+#include <variant>
+
 #include "odb/db.h"
-#include "sta/Liberty.hh"
 
 namespace dft {
 
-// A simple single cell with just one bit. Usually one scan FF
-class OneBitScanCell : public ScanCell
+// Helper struct to match over variants
+template <class... Ts>
+struct overloaded : Ts...
+{
+  using Ts::operator()...;
+};
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
+
+// A Scan Pin can be either iterm or bterm because sometimes we can want to
+// connect a pin of a cell to a port or to the pin of another cell
+class ScanPin
 {
  public:
-  OneBitScanCell(const std::string& name,
-                 std::unique_ptr<ClockDomain> clock_domain,
-                 odb::dbInst* inst,
-                 sta::TestCell* test_cell,
-                 sta::dbNetwork* db_network,
-                 utl::Logger* logger);
-  // Not copyable or movable
-  OneBitScanCell(const OneBitScanCell&) = delete;
-  OneBitScanCell& operator=(const OneBitScanCell&) = delete;
+  explicit ScanPin(odb::dbITerm* iterm);
+  explicit ScanPin(odb::dbBTerm* bterm);
+  ScanPin(const ScanPin&) = delete;  // no copy
 
-  uint64_t getBits() const override;
-  void connectScanEnable(const ScanDriver& driver) const override;
-  void connectScanIn(const ScanDriver& driver) const override;
-  void connectScanOut(const ScanLoad& load) const override;
-  ScanDriver getScanOut() const override;
+  odb::dbNet* getNet() const;
+  std::string_view getName() const;
+  const std::variant<odb::dbITerm*, odb::dbBTerm*>& getValue() const;
 
- private:
-  odb::dbITerm* findITerm(sta::LibertyPort* liberty_port) const;
+ protected:
+  std::variant<odb::dbITerm*, odb::dbBTerm*> value_;
+};
 
-  odb::dbInst* inst_;
-  sta::TestCell* test_cell_;
-  sta::dbNetwork* db_network_;
+// Typesafe wrapper for load pins
+class ScanLoad : public ScanPin
+{
+ public:
+  explicit ScanLoad(odb::dbITerm* iterm);
+  explicit ScanLoad(odb::dbBTerm* bterm);
+  ScanLoad(const ScanLoad&) = delete;  // no copy
+};
+
+// Typesafe wrapper for driver pins
+class ScanDriver : public ScanPin
+{
+ public:
+  explicit ScanDriver(odb::dbITerm* iterm);
+  explicit ScanDriver(odb::dbBTerm* bterm);
+  ScanDriver(const ScanDriver&) = delete;  // no copy
 };
 
 }  // namespace dft

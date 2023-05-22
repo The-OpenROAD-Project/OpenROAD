@@ -30,7 +30,9 @@ BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
     ss << "scan_cell" << i;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), std::make_unique<ClockDomain>("clk1", ClockEdge::Rising)));
+        ss.str(),
+        std::make_unique<ClockDomain>("clk1", ClockEdge::Rising),
+        logger));
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
@@ -83,7 +85,9 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
     ++name_number;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), std::make_unique<ClockDomain>("clk1", ClockEdge::Rising)));
+        ss.str(),
+        std::make_unique<ClockDomain>("clk1", ClockEdge::Rising),
+        logger));
   }
 
   for (uint64_t i = 0; i < 15; ++i) {
@@ -92,7 +96,9 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
     ++name_number;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), std::make_unique<ClockDomain>("clk2", ClockEdge::Rising)));
+        ss.str(),
+        std::make_unique<ClockDomain>("clk2", ClockEdge::Rising),
+        logger));
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
@@ -139,7 +145,9 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
     ++name_number;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), std::make_unique<ClockDomain>("clk1", ClockEdge::Rising)));
+        ss.str(),
+        std::make_unique<ClockDomain>("clk1", ClockEdge::Rising),
+        logger));
   }
 
   for (uint64_t i = 0; i < 15; ++i) {
@@ -148,7 +156,9 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
     ++name_number;
     scan_cell_names.push_back(ss.str());
     scan_cells.push_back(std::make_shared<ScanCellMock>(
-        ss.str(), std::make_unique<ClockDomain>("clk1", ClockEdge::Falling)));
+        ss.str(),
+        std::make_unique<ClockDomain>("clk1", ClockEdge::Falling),
+        logger));
   }
 
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket

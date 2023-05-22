@@ -317,6 +317,12 @@ void HierRTLMP::hierRTLMacroPlacer()
   //
   block_ = db_->getChip()->getBlock();
   dbu_ = db_->getTech()->getDbUnitsPerMicron();
+  if (db_->getTech()->hasManufacturingGrid()) {
+    manufacturing_grid_ = db_->getTech()->getManufacturingGrid();
+  } else {
+    // No manufacturing grid value in tech lef. set to default
+    manufacturing_grid_ = 1;
+  }
 
   //
   // Get the floorplan information
@@ -364,14 +370,16 @@ void HierRTLMP::hierRTLMacroPlacer()
       "\tArea of macros : {:.2f}\n"
       "\tTotal area : {:.2f}\n"
       "\tDesign Utilization : {:.2f}\n"
-      "\tCore Utilization: {:.2f}\n",
+      "\tCore Utilization: {:.2f}\n"
+      "\tManufacturing Grid: {}\n",
       metrics_->getNumStdCell(),
       metrics_->getStdCellArea(),
       metrics_->getNumMacro(),
       metrics_->getMacroArea(),
       metrics_->getStdCellArea() + metrics_->getMacroArea(),
       util,
-      core_util);
+      core_util,
+      manufacturing_grid_);
 
   setDefaultThresholds();
   // report the default parameters
@@ -605,7 +613,8 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
       num_macro += 1;
       macro_area += inst_area;
       // add hard macro to corresponding map
-      HardMacro* macro = new HardMacro(inst, dbu_, halo_width_);
+      HardMacro* macro
+          = new HardMacro(inst, dbu_, manufacturing_grid_, halo_width_);
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;
@@ -3416,7 +3425,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
-                 "macro_plamcement",
+                 "macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
@@ -5212,10 +5221,10 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   int boundary_v_th = std::numeric_limits<int>::max();
   int boundary_h_th = std::numeric_limits<int>::max();
   for (auto& macro_inst : hard_macros) {
-    boundary_h_th = std::min(
-        boundary_h_th, static_cast<int>(macro_inst->getRealWidthDBU() * 1.0));
+    boundary_h_th = std::min(boundary_h_th,
+                             static_cast<int>(macro_inst->getWidthDBU() * 1.0));
     boundary_v_th = std::min(
-        boundary_v_th, static_cast<int>(macro_inst->getRealHeightDBU() * 1.0));
+        boundary_v_th, static_cast<int>(macro_inst->getHeightDBU() * 1.0));
   }
   // const int notch_v_th = std::min(micronToDbu(notch_v_th_, dbu_),
   // boundary_v_th); const int notch_h_th = std::min(micronToDbu(notch_h_th_,
@@ -5233,10 +5242,10 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   // define lamda function for check if the move is allowed
   auto isValidMove = [&](size_t macro_id) {
     // check if the macro can fit into the core area
-    const int macro_lx = hard_macros[macro_id]->getRealXDBU();
-    const int macro_ly = hard_macros[macro_id]->getRealYDBU();
-    const int macro_ux = hard_macros[macro_id]->getRealUXDBU();
-    const int macro_uy = hard_macros[macro_id]->getRealUYDBU();
+    const int macro_lx = hard_macros[macro_id]->getXDBU();
+    const int macro_ly = hard_macros[macro_id]->getYDBU();
+    const int macro_ux = hard_macros[macro_id]->getUXDBU();
+    const int macro_uy = hard_macros[macro_id]->getUYDBU();
     if (macro_lx < core_lx || macro_ly < core_ly || macro_ux > core_ux
         || macro_uy > core_uy)
       return false;
@@ -5244,10 +5253,10 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
     for (auto i = 0; i < hard_macros.size(); i++) {
       if (i == macro_id)
         continue;
-      const int lx = hard_macros[i]->getRealXDBU();
-      const int ly = hard_macros[i]->getRealYDBU();
-      const int ux = hard_macros[i]->getRealUXDBU();
-      const int uy = hard_macros[i]->getRealUYDBU();
+      const int lx = hard_macros[i]->getXDBU();
+      const int ly = hard_macros[i]->getYDBU();
+      const int ux = hard_macros[i]->getUXDBU();
+      const int uy = hard_macros[i]->getUYDBU();
       if (macro_lx >= ux || macro_ly >= uy || macro_ux <= lx || macro_uy <= ly)
         continue;
       else
