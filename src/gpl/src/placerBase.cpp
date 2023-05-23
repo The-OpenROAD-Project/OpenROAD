@@ -1147,6 +1147,10 @@ void PlacerBase::initInstsForUnusableSites()
   int siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
   int siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
 
+  // printf("Site count: %d %d\n", siteCountX, siteCountY);
+  // printf("Site size: %d %d\n", siteSizeX_, siteSizeY_);
+
+
   enum PlaceInfo
   {
     Empty,
@@ -1165,6 +1169,8 @@ void PlacerBase::initInstsForUnusableSites()
   // sites that belong to the power domain as Empty
 
   if(group_ != NULL) {
+    // printf("belongs to group!\n");
+    
     for(auto boundary : group_->getRegion()->getBoundaries()){
       Rect rect = boundary->getBox();
 
@@ -1177,12 +1183,15 @@ void PlacerBase::initInstsForUnusableSites()
       for (int i = pairX.first; i < pairX.second; i++) {
         for (int j = pairY.first; j < pairY.second; j++) {
           siteGrid[j * siteCountX + i] = Row;
+          
         }
       }
     }
   }
   else {
     // fill in rows' bbox
+    // printf("no group\n");
+    int c = 0;
     for (dbRow* row : rows) {
       Rect rect = row->getBBox();
 
@@ -1195,9 +1204,12 @@ void PlacerBase::initInstsForUnusableSites()
       for (int i = pairX.first; i < pairX.second; i++) {
         for (int j = pairY.first; j < pairY.second; j++) {
           siteGrid[j * siteCountX + i] = Row;
+          ++c;
         }
       }
     }
+
+    // printf("total %d sites in rows\n", c);
   }
 
 
@@ -1232,17 +1244,21 @@ void PlacerBase::initInstsForUnusableSites()
         ++cells;
       }
     }
+
+    // printf("filled %d cells out of %d\n", filled, cells);
+    // printf("filler density: %f\n", filler_density);
+
   }
 
   // fill fixed instances' bbox
-  for (auto& inst : instStor_) {
-    if (!inst.isFixed()) {
+  for (auto& inst : pbCommon_->insts()) {
+    if (!inst->isFixed()) {
       continue;
     }
     std::pair<int, int> pairX = getMinMaxIdx(
-        inst.lx(), inst.ux(), die_.coreLx(), siteSizeX_, 0, siteCountX);
+        inst->lx(), inst->ux(), die_.coreLx(), siteSizeX_, 0, siteCountX);
     std::pair<int, int> pairY = getMinMaxIdx(
-        inst.ly(), inst.uy(), die_.coreLy(), siteSizeY_, 0, siteCountY);
+        inst->ly(), inst->uy(), die_.coreLy(), siteSizeY_, 0, siteCountY);
 
     for (int i = pairX.first; i < pairX.second; i++) {
       for (int j = pairY.first; j < pairY.second; j++) {
@@ -1254,7 +1270,9 @@ void PlacerBase::initInstsForUnusableSites()
   // In the case of top level power domain i.e no group, 
   // mark all other power domains as empty
   if(group_ == NULL){
+    // printf("no group again \n");
     for(dbPowerDomain* pd : pds){
+        // printf("found a power domain: %s\n", pd->getName());
         if(pd->getGroup() != NULL){
           for(auto boundary : pd->getGroup()->getRegion()->getBoundaries()){
             Rect rect = boundary->getBox();
@@ -1280,14 +1298,18 @@ void PlacerBase::initInstsForUnusableSites()
   // Search the "Empty" coordinates on site-grid
   // --> These sites need to be dummyInstance
   //
+  int c = 0;
+  int dummies = 0;
   for (int j = 0; j < siteCountY; j++) {
     for (int i = 0; i < siteCountX; i++) {
       // if empty spot found
       if (siteGrid[j * siteCountX + i] == Empty) {
+        ++c;
         int startX = i;
         // find end points
         while (i < siteCountX && siteGrid[j * siteCountX + i] == Empty) {
           i++;
+          ++c;
         }
         int endX = i;
         Instance myInst(die_.coreLx() + siteSizeX_ * startX,
@@ -1295,9 +1317,13 @@ void PlacerBase::initInstsForUnusableSites()
                         die_.coreLx() + siteSizeX_ * endX,
                         die_.coreLy() + siteSizeY_ * (j + 1));
         instStor_.push_back(myInst);
+        dummies++;
       }
     }
   }
+
+  // printf("total %d sites in empty\n", c); 
+  // printf("total %d dummies\n", dummies);
 }
 
 void PlacerBase::reset()
@@ -1353,7 +1379,7 @@ void PlacerBase::unlockAll()
 }
 
 int64_t PlacerBase::macroInstsArea() const { 
-  return pbCommon_->macroInstsArea(); 
+  return macroInstsArea_;
 }
 
 
