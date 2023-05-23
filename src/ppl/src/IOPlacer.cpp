@@ -384,7 +384,7 @@ int IOPlacer::placeFallbackPins(bool random)
             logger_->error(PPL,
                            93,
                            "Pin group of size {} does not fit in the "
-                           "constrained region {}-{} at {} edge. "
+                           "constrained region {:.2f}-{:.2f} at {} edge. "
                            "First pin of the group is {}.",
                            group.first.size(),
                            dbuToMicrons(interval.getBegin()),
