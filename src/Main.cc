@@ -217,6 +217,7 @@ int main(int argc, char* argv[])
   std::array locales = {"en_US.UTF-8", "C.UTF-8", "C"};
   for (auto locale : locales) {
     if (std::setlocale(LC_ALL, locale) != nullptr) {
+      setenv("LC_ALL", locale, /* override */ 1);
       break;
     }
   }
