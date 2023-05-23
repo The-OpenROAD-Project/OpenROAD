@@ -21,7 +21,7 @@ initialize_floorplan -utilization 20 \
 set def_file [make_result_file upf_aes_ifp.def]
 write_def $def_file
 
-global_placement -skip_initial_place
+global_placement -skip_initial_place -density 0.82
 set def_file [make_result_file upf_aes_gpl.def]
 write_def $def_file
 
