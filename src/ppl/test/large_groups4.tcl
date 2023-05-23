@@ -15,7 +15,12 @@ for {set i 300} {$i < 371} {incr i} {
 
 set_io_pin_constraint -region top:* -group -order -pin_names $group1
 
-set_io_pin_constraint -region top:* -group -order -pin_names $group2
+set_io_pin_constraint -region bottom:* -group -order -pin_names $group2
 
-catch {place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 15 -min_distance 0.12} error
-puts $error
+place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 15 -min_distance 0.12
+
+set def_file [make_result_file large_groups4.def]
+
+write_def $def_file
+
+diff_file large_groups4.defok $def_file
