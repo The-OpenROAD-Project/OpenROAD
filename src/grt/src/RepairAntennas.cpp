@@ -138,15 +138,15 @@ odb::dbWire* RepairAntennas::makeNetWire(
             wire_encoder.addPoint(x1, y1);
             int jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
             addWireTerms(net,
-                        route,
-                        x1,
-                        y1,
-                        bottom_layer,
-                        bottom_tech_layer,
-                        jct_id,
-                        route_pt_pins,
-                        wire_encoder,
-                        default_vias);
+                         route,
+                         x1,
+                         y1,
+                         bottom_layer,
+                         bottom_tech_layer,
+                         jct_id,
+                         route_pt_pins,
+                         wire_encoder,
+                         default_vias);
             wire_segments.insert(seg);
           }
         } else {
