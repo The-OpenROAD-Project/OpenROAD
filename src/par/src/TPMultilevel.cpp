@@ -248,10 +248,10 @@ void TPmultilevelPartitioner::InitialPartition(
   MATRIX<int> initial_solutions;
   if (hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
     // random partitioning + Vile + ILP
-    initial_solutions.resize(num_initial_random_solutions_ + 2);
+    initial_solutions.resize(num_initial_random_solutions_  * 2 + 2);
   } else {
     // random partitioning + Vile
-    initial_solutions.resize(num_initial_random_solutions_ + 1);
+    initial_solutions.resize(num_initial_random_solutions_  * 2 + 1);
   }
   // We need k_way_fm_refiner to generate a balanced partitioning
   k_way_fm_refiner_->SetMaxMove(hgraph->num_vertices_);
@@ -280,9 +280,35 @@ void TPmultilevelPartitioner::InitialPartition(
         initial_solutions_cost.back(),
         initial_solutions_flag.back());
   }
+  // generate random vile solution
+  for (int i = 0; i < num_initial_random_solutions_; ++i) {
+    const int seed = std::numeric_limits<int>::max() * dist(gen);
+    auto& solution = initial_solutions[i + num_initial_random_solutions_];
+    // call random partitioning
+    partitioner_->SetRandomSeed(seed);
+    partitioner_->Partition(hgraph,
+                            upper_block_balance,
+                            lower_block_balance,
+                            solution,
+                            PartitionType::INIT_RANDOM_VILE);
+    // call FM refiner to improve the solution
+    k_way_fm_refiner_->Refine(
+        hgraph, upper_block_balance, lower_block_balance, solution);
+    const std::pair<float, MATRIX<float>> token
+        = evaluator_->CutEvaluator(hgraph, solution, true);
+    initial_solutions_cost.push_back(token.first);
+    // Here we only check the upper bound to make sure more possible solutions
+    initial_solutions_flag.push_back(token.second <= upper_block_balance);
+    logger_->report(
+        "[INIT-PART] {} :: Random VILE part cutcost = {}, balance_flag = {}",
+        i,
+        initial_solutions_cost.back(),
+        initial_solutions_flag.back());
+  }
+
   // Vile partitioning. Vile partitioning needs refiner to generated a balanced
   // partitioning
-  auto& vile_solution = initial_solutions[num_initial_random_solutions_];
+  auto& vile_solution = initial_solutions[num_initial_random_solutions_ * 2];
   partitioner_->Partition(hgraph,
                           upper_block_balance,
                           lower_block_balance,
@@ -368,18 +394,11 @@ void TPmultilevelPartitioner::InitialPartition(
     }
   }
 
-  /*
-  // Check if there are some valid solutions
-  if (num_chosen_best_init_solution == 0) {
-    num_chosen_best_init_solution++;
-    top_initial_solutions[0] = initial_solutions[solution_ids[0]];
-  }
-  */
-
   // remove invalid solution
   while (top_initial_solutions.size() > num_chosen_best_init_solution) {
     top_initial_solutions.pop_back();
   }
+  
   logger_->report("[INFO] Number of chosen best initial solutions = {}",
                   num_chosen_best_init_solution);
   best_solution_id = 0;  // the first one is the best one
@@ -409,6 +428,7 @@ void TPmultilevelPartitioner::RefinePartition(
       return;
     }
     HGraphPtr hgraph = *hgraph_iter;
+    
     // convert the solution in coarse_hgraph to the solution of hgraph
     for (auto i = 0; i < top_solutions.size(); i++) {
       std::vector<int> refined_solution;

@@ -54,6 +54,7 @@ namespace par {
 enum class PartitionType
 {
   INIT_RANDOM,
+  INIT_RANDOM_VILE,
   INIT_VILE,
   INIT_DIRECT_ILP
 };
@@ -109,11 +110,17 @@ class TPpartitioner
   }
 
  private:
+    
   // random partitioning
+  // Different to other random partitioning, 
+  // we enable two modes of random partitioning.
+  // If vile_mode == false, we try to generate balanced random partitioning
+  // If vile_mode == true,  we try to generate unbalanced random partitioning
   void RandomPart(const HGraphPtr hgraph,
                   const MATRIX<float>& upper_block_balance,
                   const MATRIX<float>& lower_block_balance,
-                  std::vector<int>& solution) const;
+                  std::vector<int>& solution,
+                  bool vile_mode = false) const;
 
   // ILP-based partitioning
   void ILPPart(const HGraphPtr hgraph,
