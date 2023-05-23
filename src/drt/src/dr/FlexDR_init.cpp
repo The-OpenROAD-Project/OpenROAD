@@ -43,7 +43,14 @@ void FlexDRWorker::initNetObjs_pathSeg(
 {
   const auto [begin, end] = pathSeg->getPoints();
   if (begin.x() != end.x() && begin.y() != end.y()) {
-    logger_->error(DRT, 1010, "Unsupported non-orthogonal wire");
+    logger_->error(
+        DRT,
+        1010,
+        "Unsupported non-orthogonal wire begin=({}, {}) end=({}, {})",
+        begin.x(),
+        begin.y(),
+        end.x(),
+        end.y());
   }
 
   const auto gridBBox = getRouteBox();
