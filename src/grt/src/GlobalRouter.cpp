@@ -2906,9 +2906,19 @@ void GlobalRouter::makeBtermPins(Net* net,
           continue;
         }
 
-        const odb::Rect rect = bpin_box->getBox();
+        odb::Rect rect = bpin_box->getBox();
         if (!die_area.contains(rect) && verbose_) {
           logger_->warn(GRT, 36, "Pin {} is outside die area.", pin_name);
+          odb::Rect intersection;
+          rect.intersection(die_area, intersection);
+          rect = intersection;
+          if (rect.area() == 0) {
+            logger_->error(GRT,
+                           209,
+                           "Pin {} is completely outside the die area and "
+                           "cannot bet routed.",
+                           pin_name);
+          }
         }
         pin_boxes[tech_layer].push_back(rect);
 
