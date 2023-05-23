@@ -69,7 +69,7 @@ puts "Start TritonPart with slack propagation"
 triton_part_design -num_parts $num_parts -balance_constraint $balance_constraint \
                    -seed $seed -top_n $top_n \
                    -timing_aware_flag $timing_aware_flag -extra_delay $extra_delay_cut \
-                   -guardband_flag $guardband_flag \
+                   -guardband_flag $timing_guardband \
                    -solution_file $part_design_solution_file 
 
 puts "Convert the solution format for transformation"
