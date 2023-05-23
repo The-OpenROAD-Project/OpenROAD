@@ -1,6 +1,6 @@
-/* Authors: Mahfouz-z */
+/* Authors: Osama */
 /*
- * Copyright (c) 2022, The Regents of the University of California
+ * Copyright (c) 2023, The Regents of the University of California
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,34 +26,44 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "dst/Distributed.h"
-#include "dst/JobCallBack.h"
+#pragma once
+#include <boost/serialization/base_object.hpp>
+#include <string>
+#include <vector>
+
 #include "dst/JobMessage.h"
+#include "paUpdate.h"
+namespace boost::serialization {
+class access;
+}
+namespace fr {
 
-using namespace dst;
-
-class HelperCallBack : public dst::JobCallBack
+class PinAccessJobDescription : public dst::JobDescription
 {
  public:
-  HelperCallBack(dst::Distributed* dist) : dist_(dist) {}
-  void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  enum JobType
   {
-    JobMessage replyMsg;
-    if (msg.getJobType() == JobMessage::JobType::ROUTING)
-      replyMsg.setJobType(JobMessage::JobType::SUCCESS);
-    else
-      replyMsg.setJobType(JobMessage::JobType::ERROR);
-    dist_->sendResult(replyMsg, sock);
-  }
-
-  void onFrDesignUpdated(dst::JobMessage& msg, dst::socket& sock) override {}
-  void onPinAccessJobReceived(dst::JobMessage& msg, dst::socket& sock) override
-  {
-  }
-  void onGRDRInitJobReceived(dst::JobMessage& msg, dst::socket& sock) override
-  {
-  }
+    UPDATE_PA,
+    UPDATE_PATTERNS,
+    INIT_PA,
+    INST_ROWS
+  };
+  PinAccessJobDescription() : type_(UPDATE_PA) {}
+  void setPath(const std::string& path) { path_ = path; }
+  void setType(JobType in) { type_ = in; }
+  JobType getType() const { return type_; }
+  const std::string getPath() const { return path_; }
 
  private:
-  dst::Distributed* dist_;
+  std::string path_;
+  JobType type_;
+  template <class Archive>
+  void serialize(Archive& ar, const unsigned int version)
+  {
+    (ar) & boost::serialization::base_object<dst::JobDescription>(*this);
+    (ar) & path_;
+    (ar) & type_;
+  }
+  friend class boost::serialization::access;
 };
+}  // namespace fr

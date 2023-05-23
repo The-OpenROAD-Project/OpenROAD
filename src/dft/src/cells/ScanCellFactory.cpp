@@ -151,8 +151,12 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
     return nullptr;
   }
 
-  return std::make_unique<OneBitScanCell>(
-      inst->getName(), std::move(clock_domain), inst, test_cell);
+  return std::make_unique<OneBitScanCell>(inst->getName(),
+                                          std::move(clock_domain),
+                                          inst,
+                                          test_cell,
+                                          db_network,
+                                          logger);
 }
 
 }  // namespace
@@ -204,6 +208,13 @@ std::vector<std::unique_ptr<ScanCell>> CollectScanCells(odb::dbDatabase* db,
 
   odb::dbChip* chip = db->getChip();
   CollectScanCells(chip->getBlock(), sta, logger, scan_cells);
+
+  // To keep preview_dft consistent between calls and rollbacks
+  std::sort(scan_cells.begin(),
+            scan_cells.end(),
+            [](const auto& lhs, const auto& rhs) {
+              return lhs->getName() < rhs->getName();
+            });
 
   return scan_cells;
 }
