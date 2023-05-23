@@ -783,6 +783,48 @@ void FlexTAWorker::initFixedObjs()
         cout << "Warning: unsupported type in initFixedObjs" << endl;
       }
     }
+    auto costResults
+        = [this, layerNum, width](
+              bool upper, const frRegionQuery::Objects<frBlockObject>& result) {
+            Rect box;
+            for (auto& [bounds, obj] : result) {
+              bounds.bloat(-1, box);
+              auto type = obj->typeId();
+              switch (type) {
+                case frcInstBlockage: {
+                  auto instBlkg = (static_cast<frInstBlockage*>(obj));
+                  auto inst = instBlkg->getInst();
+                  dbMasterType masterType = inst->getMaster()->getMasterType();
+                  if (!masterType.isBlock() && !masterType.isPad()
+                      && masterType != dbMasterType::RING)
+                    continue;
+                  if (bounds.minDXDY() <= 2 * width)
+                    continue;
+                  auto cutLayer = getTech()->getLayer(upper ? layerNum + 1
+                                                            : layerNum - 1);
+                  auto bloatDist = initFixedObjs_calcOBSBloatDistVia(
+                      cutLayer->getDefaultViaDef(), layerNum, bounds);
+                  initFixedObjs_helper(box, bloatDist, layerNum, nullptr);
+                  break;
+                }
+                default:
+                  break;
+              }
+            }
+          };
+
+    result.clear();
+    if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
+        && getTech()->getLayer(layerNum - 2)->getType()
+               == dbTechLayerType::ROUTING)
+      getRegionQuery()->query(getExtBox(), layerNum - 2, result);
+    costResults(false, result);
+    result.clear();
+    if (layerNum + 2 < getDesign()->getTech()->getLayers().size()
+        && getTech()->getLayer(layerNum + 2)->getType()
+               == dbTechLayerType::ROUTING)
+      getRegionQuery()->query(getExtBox(), layerNum + 2, result);
+    costResults(true, result);
   }
 }
 
