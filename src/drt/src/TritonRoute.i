@@ -118,6 +118,7 @@ void detailed_route_cmd(const char* outputMazeFile,
                     saveGuideUpdates,
                     repairPDNLayerName});
   router->main();
+  router->setDistributed(false);
 }
 
 void pin_access_cmd(const char* dbProcessNode,
@@ -135,6 +136,7 @@ void pin_access_cmd(const char* dbProcessNode,
   params.minAccessPoints = minAccessPoints;
   router->setParams(params);
   router->pinAccess();
+  router->setDistributed(false);
 }
 
 void detailed_route_cmd(const char* param_file)
