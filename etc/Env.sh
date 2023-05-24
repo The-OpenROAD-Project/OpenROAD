@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $DIR/..
+# Make sure we are on the correct folder before beginning
+cd "$(dirname $(readlink -f $0))"
 
 mkdir -p build
 exec > >(tee -i build/openroad-env.log)
