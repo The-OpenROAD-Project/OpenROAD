@@ -815,18 +815,18 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
 
       const double max_area_diff_PAR
           = (diffPAR_PWL_ratio
-                * (par_info.iterm_gate_area
+                 * (par_info.iterm_gate_area
                     + plus_diff_factor * par_info.iterm_diff_area)
-            + minus_diff_factor * par_info.iterm_diff_area)
+             + minus_diff_factor * par_info.iterm_diff_area)
             / diff_metal_factor * diff_metal_reduce_factor;
       par_info.max_wire_length_diff_PAR
           = max_area_diff_PAR / wire_width - wire_width;
 
       const double max_area_diff_PSR
           = (diffPSR_PWL_ratio
-                * (par_info.iterm_gate_area
+                 * (par_info.iterm_gate_area
                     + plus_diff_factor * par_info.iterm_diff_area)
-            + minus_diff_factor * par_info.iterm_diff_area)
+             + minus_diff_factor * par_info.iterm_diff_area)
             / diff_side_metal_factor * diff_metal_reduce_factor;
       par_info.max_wire_length_diff_PSR
           = (max_area_diff_PSR - 2 * wire_width * wire_thickness)
@@ -837,17 +837,17 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
       par_info.PAR
           = (diff_metal_factor * par_info.wire_area) / par_info.iterm_gate_area;
       par_info.PSR = (diff_side_metal_factor * par_info.side_wire_area)
-                    / par_info.iterm_gate_area;
+                     / par_info.iterm_gate_area;
       par_info.diff_PAR
           = (diff_metal_factor * par_info.wire_area * diff_metal_reduce_factor
-            - minus_diff_factor * par_info.iterm_diff_area)
+             - minus_diff_factor * par_info.iterm_diff_area)
             / (par_info.iterm_gate_area
-              + plus_diff_factor * par_info.iterm_diff_area);
+               + plus_diff_factor * par_info.iterm_diff_area);
       par_info.diff_PSR = (diff_side_metal_factor * par_info.side_wire_area
-                              * diff_metal_reduce_factor
-                          - minus_diff_factor * par_info.iterm_diff_area)
+                               * diff_metal_reduce_factor
+                           - minus_diff_factor * par_info.iterm_diff_area)
                           / (par_info.iterm_gate_area
-                            + plus_diff_factor * par_info.iterm_diff_area);
+                             + plus_diff_factor * par_info.iterm_diff_area);
     } else {
       // Calculate the maximum allowed wire length for each PAR variant
       double max_area_PAR = PAR_ratio * par_info.iterm_gate_area / metal_factor;
@@ -861,12 +861,13 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
             - wire_width;
 
       double max_area_diff_PAR = (diffPAR_PWL_ratio * par_info.iterm_gate_area)
-                                / (diff_metal_reduce_factor * metal_factor);
+                                 / (diff_metal_reduce_factor * metal_factor);
       par_info.max_wire_length_diff_PAR
           = max_area_diff_PAR / wire_width - wire_width;
 
-      double max_area_diff_PSR = (diffPSR_PWL_ratio * par_info.iterm_gate_area)
-                                / (diff_metal_reduce_factor * side_metal_factor);
+      double max_area_diff_PSR
+          = (diffPSR_PWL_ratio * par_info.iterm_gate_area)
+            / (diff_metal_reduce_factor * side_metal_factor);
       par_info.max_wire_length_diff_PSR
           = (max_area_diff_PSR - 2 * wire_width * wire_thickness)
                 / (2 * wire_thickness)
@@ -877,12 +878,12 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
       par_info.PAR
           = (metal_factor * par_info.wire_area) / par_info.iterm_gate_area;
       par_info.PSR = (side_metal_factor * par_info.side_wire_area)
-                    / par_info.iterm_gate_area;
+                     / par_info.iterm_gate_area;
       par_info.diff_PAR
           = (metal_factor * par_info.wire_area * diff_metal_reduce_factor)
             / par_info.iterm_gate_area;
       par_info.diff_PSR = (side_metal_factor * par_info.side_wire_area
-                          * diff_metal_reduce_factor)
+                           * diff_metal_reduce_factor)
                           / (par_info.iterm_gate_area);
     }
   }
