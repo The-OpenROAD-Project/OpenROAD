@@ -39,6 +39,7 @@
 #include <limits>
 #include <optional>
 
+#include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
@@ -64,12 +65,7 @@
 #include "sta/Units.hh"
 #include "utl/Logger.h"
 
-
 // http://vlsicad.eecs.umich.edu/BK/Slots/cache/dropzone.tamu.edu/~zhuoli/GSRC/fast_buffer_insertion.html
-
-namespace sta {
-extern const char *rsz_tcl_inits[];
-}
 
 namespace rsz {
 
@@ -93,7 +89,6 @@ using odb::dbMPin;
 using odb::dbBox;
 using odb::dbMaster;
 
-using sta::evalTclInit;
 using sta::Level;
 using sta::stringLess;
 using sta::NetworkEdit;
@@ -136,51 +131,44 @@ using sta::Corners;
 using sta::InputDrive;
 using sta::PinConnectedPinIterator;
 
-extern "C" {
-extern int Rsz_Init(Tcl_Interp *interp);
-}
-
-Resizer::Resizer() :
-  StaState(),
-  repair_design_(new RepairDesign(this)),
-  repair_setup_(new RepairSetup(this)),
-  repair_hold_(new RepairHold(this)),
-  steiner_renderer_(nullptr),
-  wire_signal_res_(0.0),
-  wire_signal_cap_(0.0),
-  wire_clk_res_(0.0),
-  wire_clk_cap_(0.0),
-  max_area_(0.0),
-  logger_(nullptr),
-  stt_builder_(nullptr),
-  global_router_(nullptr),
-  incr_groute_(nullptr),
-  gui_(nullptr),
-  sta_(nullptr),
-  db_network_(nullptr),
-  db_(nullptr),
-  block_(nullptr),
-  dbu_(0),
-  debug_pin_(nullptr),
-  core_exists_(false),
-  parasitics_src_(ParasiticsSrc::none),
-  design_area_(0.0),
-  min_(MinMax::min()),
-  max_(MinMax::max()),
-  buffer_lowest_drive_(nullptr),
-  target_load_map_(nullptr),
-  level_drvr_vertices_valid_(false),
-  tgt_slews_{0.0, 0.0},
-  tgt_slew_corner_(nullptr),
-  tgt_slew_dcalc_ap_(nullptr),
-  unique_net_index_(1),
-  unique_inst_index_(1),
-  resize_count_(0),
-  inserted_buffer_count_(0),
-  buffer_moved_into_core_(false),
-  max_wire_length_(0),
-  worst_slack_nets_percent_(10),
-  opendp_(nullptr)
+Resizer::Resizer()
+    : repair_design_(new RepairDesign(this)),
+      repair_setup_(new RepairSetup(this)),
+      repair_hold_(new RepairHold(this)),
+      wire_signal_res_(0.0),
+      wire_signal_cap_(0.0),
+      wire_clk_res_(0.0),
+      wire_clk_cap_(0.0),
+      max_area_(0.0),
+      logger_(nullptr),
+      stt_builder_(nullptr),
+      global_router_(nullptr),
+      incr_groute_(nullptr),
+      sta_(nullptr),
+      db_network_(nullptr),
+      db_(nullptr),
+      block_(nullptr),
+      dbu_(0),
+      debug_pin_(nullptr),
+      core_exists_(false),
+      parasitics_src_(ParasiticsSrc::none),
+      design_area_(0.0),
+      min_(MinMax::min()),
+      max_(MinMax::max()),
+      buffer_lowest_drive_(nullptr),
+      target_load_map_(nullptr),
+      level_drvr_vertices_valid_(false),
+      tgt_slews_{0.0, 0.0},
+      tgt_slew_corner_(nullptr),
+      tgt_slew_dcalc_ap_(nullptr),
+      unique_net_index_(1),
+      unique_inst_index_(1),
+      resize_count_(0),
+      inserted_buffer_count_(0),
+      buffer_moved_into_core_(false),
+      max_wire_length_(0),
+      worst_slack_nets_percent_(10),
+      opendp_(nullptr)
 {
 }
 
@@ -191,18 +179,16 @@ Resizer::~Resizer()
   delete repair_hold_;
 }
 
-void Resizer::init(Tcl_Interp* interp,
-                   Logger* logger,
-                   Gui* gui,
+void Resizer::init(Logger* logger,
                    dbDatabase* db,
                    dbSta* sta,
                    SteinerTreeBuilder* stt_builder,
                    GlobalRouter* global_router,
-                   dpl::Opendp* opendp)
+                   dpl::Opendp* opendp,
+                   std::unique_ptr<AbstractSteinerRenderer> steiner_renderer)
 {
   opendp_ = opendp;
   logger_ = logger;
-  gui_ = gui;
   db_ = db;
   block_ = nullptr;
   sta_ = sta;
@@ -212,11 +198,8 @@ void Resizer::init(Tcl_Interp* interp,
   db_network_ = sta->getDbNetwork();
   resized_multi_output_insts_ = InstanceSet(db_network_);
   inserted_buffer_set_ = InstanceSet(db_network_);
+  steiner_renderer_ = std::move(steiner_renderer);
   copyState(sta);
-  // Define swig TCL commands.
-  Rsz_Init(interp);
-  // Eval encoded sta TCL sources.
-  evalTclInit(interp, sta::rsz_tcl_inits);
 }
 
 ////////////////////////////////////////////////////////////////

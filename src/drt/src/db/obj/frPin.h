@@ -63,7 +63,14 @@ class frPin : public frBlockObject
   void addPinAccess(std::unique_ptr<frPinAccess> in)
   {
     in->setId(aps_.size());
+    in->setPin(this);
     aps_.push_back(std::move(in));
+  }
+  void setPinAccess(int idx, std::unique_ptr<frPinAccess> in)
+  {
+    in->setId(idx);
+    in->setPin(this);
+    aps_[idx] = std::move(in);
   }
   // others
   virtual frBlockObjectEnum typeId() const = 0;

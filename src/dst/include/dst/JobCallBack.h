@@ -35,6 +35,8 @@ class JobCallBack
  public:
   virtual void onRoutingJobReceived(JobMessage& msg, socket& sock) = 0;
   virtual void onFrDesignUpdated(JobMessage& msg, socket& sock) = 0;
+  virtual void onPinAccessJobReceived(JobMessage& msg, socket& sock) = 0;
+  virtual void onGRDRInitJobReceived(JobMessage& msg, socket& sock) = 0;
   virtual ~JobCallBack() {}
 };
 }  // namespace dst

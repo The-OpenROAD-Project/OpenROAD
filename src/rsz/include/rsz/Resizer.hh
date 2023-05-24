@@ -44,10 +44,6 @@
 #include "sta/Path.hh"
 #include "dpl/Opendp.h"
 
-namespace gui {
-class Gui;
-}
-
 namespace grt {
 class GlobalRouter;
 class IncrementalGRoute;
@@ -64,7 +60,6 @@ using std::string;
 using std::vector;
 
 using utl::Logger;
-using gui::Gui;
 
 using odb::Rect;
 using odb::Point;
@@ -122,7 +117,7 @@ using sta::ParasiticNode;
 using sta::PinSeq;
 using sta::Slack;
 
-class SteinerRenderer;
+class AbstractSteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
 
@@ -148,15 +143,14 @@ class Resizer : public StaState
 {
 public:
   Resizer();
-  ~Resizer();
-  void init(Tcl_Interp* interp,
-            Logger* logger,
-            Gui* gui,
+  ~Resizer() override;
+  void init(Logger* logger,
             dbDatabase* db,
             dbSta* sta,
             SteinerTreeBuilder* stt_builder,
             GlobalRouter* global_router,
-            dpl::Opendp* opendp);
+            dpl::Opendp* opendp,
+            std::unique_ptr<AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
                   double res,
@@ -560,7 +554,7 @@ protected:
   RepairDesign *repair_design_;
   RepairSetup *repair_setup_;
   RepairHold *repair_hold_;
-  SteinerRenderer *steiner_renderer_;
+  std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   vector<vector<double>> layer_res_; // ohms/meter
@@ -577,8 +571,7 @@ protected:
   Logger *logger_;
   SteinerTreeBuilder *stt_builder_;
   GlobalRouter *global_router_;
-  IncrementalGRoute *incr_groute_;
-  Gui *gui_;
+  IncrementalGRoute* incr_groute_;
   dbSta *sta_;
   dbNetwork *db_network_;
   dbDatabase *db_;

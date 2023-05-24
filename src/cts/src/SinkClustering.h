@@ -41,7 +41,6 @@
 #include <vector>
 
 #include "CtsOptions.h"
-#include "Graphics.h"
 #include "TechChar.h"
 #include "Util.h"
 
@@ -50,8 +49,6 @@ class Logger;
 }  // namespace utl
 
 namespace cts {
-
-class Graphics;
 
 using utl::Logger;
 
@@ -95,7 +92,6 @@ class SinkClustering
   void writePlotFile();
   void findBestMatching(unsigned groupSize);
   void writePlotFile(unsigned groupSize);
-  void clusteringVisualizer(const std::vector<Point<double>>& points);
 
   double computeTheta(double x, double y) const;
   unsigned numVertex(unsigned x, unsigned y) const;
@@ -120,7 +116,6 @@ class SinkClustering
   float capPerUnit_;
   bool useMaxCapLimit_;
   int scaleFactor_;
-  std::unique_ptr<Graphics> graphics_;
   static constexpr double max_cap__factor_ = 10;
 };
 
