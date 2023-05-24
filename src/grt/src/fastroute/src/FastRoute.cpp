@@ -1113,16 +1113,6 @@ NetRouteMap FastRouteCore::run()
   costheight_ = 3;
   via_cost_ = 1;
 
-  // Debug mode Tree 3D after layer assignament
-  if (debug_->isOn() && debug_->tree3D_) {
-    for (int netID = 0; netID < netCount(); netID++) {
-      if (nets_[netID]->getDbNet() == debug_->net_
-          && !nets_[netID]->isRouted()) {
-        StTreeVisualization(sttrees_[netID], nets_[netID], true);
-      }
-    }
-  }
-
   if (goingLV && past_cong == 0) {
     mazeRouteMSMDOrder3D(enlarge_, 0, 20, layer_orientation_);
     mazeRouteMSMDOrder3D(enlarge_, 0, 12, layer_orientation_);
@@ -1139,7 +1129,7 @@ NetRouteMap FastRouteCore::run()
   }
 
   // Debug mode Tree 3D after layer assignament
-  if (debug_->isOn_ && debug_->tree3D_) {
+  if (debug_->isOn() && debug_->tree3D_) {
     for (int netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->getDbNet() == debug_->net_
           && !nets_[netID]->isRouted()) {
@@ -1147,6 +1137,7 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
+  
   // verifyEdgeUsage();
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
