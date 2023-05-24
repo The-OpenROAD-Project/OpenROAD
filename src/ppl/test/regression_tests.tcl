@@ -42,6 +42,7 @@ record_tests {
   large_groups1
   large_groups2
   large_groups3
+  large_groups4
   min_dist_in_tracks1
   min_dist_in_tracks2
   multi_layers

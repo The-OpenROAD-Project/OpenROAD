@@ -36,6 +36,8 @@
 
 %{
 #include "grt/GlobalRouter.h"
+#include "GrouteRenderer.h"
+#include "FastRouteRenderer.h"
 #include "ord/OpenRoad.hh"
 #include "sta/Liberty.hh"
 
@@ -49,6 +51,11 @@ using sta::LibertyPort;
 %}
 
 %include "../../Exception.i"
+
+%ignore grt::GlobalRouter::init;
+%ignore grt::GlobalRouter::initDebugFastRoute;
+%ignore grt::GlobalRouter::getDebugFastRoute;
+%ignore grt::GlobalRouter::setRenderer;
 
 %import <stl.i>
 %import <std_vector.i>
@@ -199,7 +206,16 @@ repair_antennas(odb::dbMTerm* diode_mterm, int iterations, float ratio_margin)
 void
 highlight_net_route(odb::dbNet *net, bool show_pin_locations)
 {
-  getGlobalRouter()->highlightRoute(net, show_pin_locations);
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
+  GlobalRouter* router = getGlobalRouter();
+  if (router->getRenderer() == nullptr) {
+    router->setRenderer(std::make_unique<GrouteRenderer>(router, router->db()->getTech()));
+  }
+
+  router->getRenderer()->highlightRoute(net, show_pin_locations);
 }
 
 void
@@ -214,7 +230,18 @@ void set_global_route_debug_cmd(const odb::dbNet *net,
                                 bool tree2D,
                                 bool tree3D)
 {
-  getGlobalRouter()->initDebugFastRoute();
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
+  GlobalRouter* global_router = getGlobalRouter();
+  if (global_router->getDebugFastRoute() == nullptr) {
+    FastRouteCore* fast_route_core = global_router->fastroute();
+    global_router->initDebugFastRoute(std::make_unique<FastRouteRenderer>(
+      global_router->db()->getTech(),
+      fast_route_core->tile_size(),
+      fast_route_core->x_corner(), fast_route_core->y_corner()));
+  }
   getGlobalRouter()->setDebugNet(net);
   getGlobalRouter()->setDebugSteinerTree(steinerTree);
   getGlobalRouter()->setDebugRectilinearSTree(rectilinearSTree);
@@ -245,7 +272,9 @@ void report_net_wire_length(odb::dbNet* net,
 void
 clear_route_guides()
 {
-  getGlobalRouter()->clearRouteGui();
+  if (auto* renderer = getGlobalRouter()->getRenderer()) {
+    renderer->clearRoute();
+  }
 }
 
 void
