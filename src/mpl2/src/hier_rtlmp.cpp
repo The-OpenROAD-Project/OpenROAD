@@ -1803,7 +1803,6 @@ void HierRTLMP::updateDataFlow()
       const float weight = dataflow_weight_ / std::pow(dataflow_factor_, i);
       std::set<int> sink_clusters;
       for (auto& inst : insts[i]) {
-        logger_->report("Inst = {}", inst->getName());
         const int cluster_id
             = odb::dbIntProperty::find(inst, "cluster_id")->getValue();
         sink_clusters.insert(cluster_id);
