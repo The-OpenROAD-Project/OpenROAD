@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Make sure we are on the correct folder before beginning
-cd "$(dirname $(readlink -f $0))"
+cd "$(dirname $(readlink -f $0))/../"
 
 mkdir -p build
 exec > >(tee -i build/openroad-env.log)
