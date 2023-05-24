@@ -45,7 +45,14 @@ bool CompareScanCells(const std::shared_ptr<ScanCell>& lhs,
   // If they have the same number of bits, then we compare the names of the
   // cells so they are ordered by name
   if (lhs->getBits() == rhs->getBits()) {
-    return lhs->getName() < rhs->getName();
+    const ClockDomain& lhs_clock_domain = lhs->getClockDomain();
+    const ClockDomain& rhs_clock_domain = rhs->getClockDomain();
+
+    if (lhs_clock_domain.getClockName() == rhs_clock_domain.getClockName()) {
+      return lhs_clock_domain.getClockEdge() < rhs_clock_domain.getClockEdge();
+    }
+
+    return lhs_clock_domain.getClockName() < rhs_clock_domain.getClockName();
   }
   // Bigger elements last
   return lhs->getBits() < rhs->getBits();
