@@ -10,7 +10,7 @@ target_link_libraries(dft_cells_lib
     odb
     dbSta
     OpenSTA
-    utl
+    utl_lib
     dft_clock_domain_lib
     dft_config_lib
     dft_utils_lib

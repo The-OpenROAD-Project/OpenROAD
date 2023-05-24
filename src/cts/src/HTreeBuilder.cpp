@@ -296,8 +296,8 @@ void HTreeBuilder::run()
     plotSolution();
   }
 
-  if (options_->getGuiDebug() || logger_->debugCheck(utl::CTS, "HTree", 2)) {
-    treeVisualizer();
+  if (CtsObserver* observer = options_->getObserver()) {
+    observer->initializeWithClock(this, clock_);
   }
 
   createClockSubNets();
@@ -890,14 +890,6 @@ void HTreeBuilder::createSingleBufferClockNet()
   clockSubNet.addInst(rootBuffer);
 
   clock_.forEachSink([&](ClockInst& inst) { clockSubNet.addInst(inst); });
-}
-
-void HTreeBuilder::treeVisualizer()
-{
-  graphics_ = std::make_unique<Graphics>(this, &(clock_));
-  if (Graphics::guiActive()) {
-    graphics_->clockPlot(true);
-  }
 }
 
 void HTreeBuilder::plotSolution()

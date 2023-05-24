@@ -130,6 +130,4 @@ void reportSteinerTree(const Tree& tree,
                        Logger* logger);
 void reportSteinerTree(const stt::Tree& tree, Logger* logger);
 
-void highlightSteinerTree(const Tree& tree, gui::Gui* gui);
-
 }  // namespace stt

@@ -53,7 +53,6 @@ target_link_libraries(dpl_lib
   PUBLIC
     odb
     OpenSTA
-    tcl
   PRIVATE
     utl_lib
 )
@@ -85,6 +84,7 @@ target_include_directories(dpl
 
 target_link_libraries(dpl
   PRIVATE
+    tcl
     odb
     dpl_lib
     OpenSTA
