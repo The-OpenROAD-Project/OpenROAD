@@ -302,14 +302,15 @@ class PlacerBaseVars
   void reset();
 };
 
-
 // Class includes everything from PlacerBase that is not region specific
 class PlacerBaseCommon
 {
-  public:
+ public:
   PlacerBaseCommon();
   // temp padLeft/Right before OpenDB supporting...
-  PlacerBaseCommon(odb::dbDatabase* db, PlacerBaseVars pbVars, utl::Logger* log);
+  PlacerBaseCommon(odb::dbDatabase* db,
+                   PlacerBaseVars pbVars,
+                   utl::Logger* log);
   ~PlacerBaseCommon();
 
   const std::vector<Instance*>& placeInsts() const { return placeInsts_; }
@@ -358,11 +359,9 @@ class PlacerBaseCommon
 
   std::vector<Instance*> placeInsts_;
 
-
   std::unordered_map<odb::dbInst*, Instance*> instMap_;
   std::unordered_map<void*, Pin*> pinMap_;
   std::unordered_map<odb::dbNet*, Net*> netMap_;
-
 
   int siteSizeX_;
   int siteSizeY_;
@@ -373,13 +372,15 @@ class PlacerBaseCommon
   void reset();
 };
 
-
 class PlacerBase
 {
  public:
   PlacerBase();
   // temp padLeft/Right before OpenDB supporting...
-  PlacerBase(odb::dbDatabase* db, std::shared_ptr<PlacerBaseCommon> pbCommon, utl::Logger* log, odb::dbGroup* group = NULL);
+  PlacerBase(odb::dbDatabase* db,
+             std::shared_ptr<PlacerBaseCommon> pbCommon,
+             utl::Logger* log,
+             odb::dbGroup* group = NULL);
   ~PlacerBase();
 
   const std::vector<Instance*>& insts() const { return insts_; }
@@ -401,13 +402,12 @@ class PlacerBase
   int siteSizeX() const { return siteSizeX_; }
   int siteSizeY() const { return siteSizeY_; }
 
-
   int64_t hpwl() const;
   void printInfo() const;
 
   int64_t placeInstsArea() const { return placeInstsArea_; }
   int64_t nonPlaceInstsArea() const { return nonPlaceInstsArea_; }
-  int64_t macroInstsArea() const; 
+  int64_t macroInstsArea() const;
   int64_t stdInstsArea() const { return stdInstsArea_; }
 
   odb::dbDatabase* db() const { return db_; }

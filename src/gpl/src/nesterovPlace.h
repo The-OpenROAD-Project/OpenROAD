@@ -37,8 +37,8 @@
 #include <string>
 #include <vector>
 
-#include "point.h"
 #include "nesterovBase.h"
+#include "point.h"
 
 namespace utl {
 class Logger;
@@ -74,9 +74,7 @@ class NesterovPlace
   // return iteration count
   int doNesterovPlace(int start_iter = 0);
 
-
   void updateWireLengthCoef(float overflow);
-
 
   void updateNextIter(const int iter);
 
@@ -84,11 +82,9 @@ class NesterovPlace
 
   float getWireLengthCoefX() const { return wireLengthCoefX_; }
   float getWireLengthCoefY() const { return wireLengthCoefY_; }
-  
 
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
-
 
   void updatePrevGradient(std::shared_ptr<NesterovBase> nb);
   void updateCurGradient(std::shared_ptr<NesterovBase> nb);
@@ -109,10 +105,9 @@ class NesterovPlace
   float total_sum_overflow_unscaled_;
   float average_overflow_;
   float average_overflow_unscaled_;
-  
+
   // densityPenalty stor
   std::vector<float> densityPenaltyStor_;
-
 
   // base_wcof
   float baseWireLengthCoef_;
@@ -123,7 +118,6 @@ class NesterovPlace
 
   // half-parameter-wire-length
   int64_t prevHpwl_;
-  
 
   float isDiverged_;
   float isRoutabilityNeed_;

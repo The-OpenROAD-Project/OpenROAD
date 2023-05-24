@@ -779,7 +779,6 @@ void PlacerBaseVars::reset()
 ////////////////////////////////////////////////////////
 // PlacerBaseCommon
 
-
 PlacerBaseCommon::PlacerBaseCommon()
     : db_(nullptr),
       log_(nullptr),
@@ -791,8 +790,8 @@ PlacerBaseCommon::PlacerBaseCommon()
 }
 
 PlacerBaseCommon::PlacerBaseCommon(odb::dbDatabase* db,
-                       PlacerBaseVars pbVars,
-                       utl::Logger* log)
+                                   PlacerBaseVars pbVars,
+                                   utl::Logger* log)
     : PlacerBaseCommon()
 {
   db_ = db;
@@ -864,11 +863,11 @@ void PlacerBaseCommon::init()
     }
 
     instStor_.push_back(myInst);
-    
+
     if (myInst.dy() > siteSizeY_ * 6) {
-          macroInstsArea_ += myInst.area();
+      macroInstsArea_ += myInst.area();
     }
-    
+
     dbBox* bbox = inst->getBBox();
     if (bbox->getDY() > die_.coreDy())
       log_->error(
@@ -878,15 +877,14 @@ void PlacerBaseCommon::init()
           GPL, 120, "instance {} width is larger than core.", inst->getName());
   }
 
-  for(auto& inst : instStor_){
+  for (auto& inst : instStor_) {
     instMap_[inst.dbInst()] = &inst;
     insts_.push_back(&inst);
 
-    if(!inst.isFixed()){
+    if (!inst.isFixed()) {
       placeInsts_.push_back(&inst);
     }
   }
-
 
   // nets fill
   dbSet<dbNet> nets = block->getNets();
@@ -961,9 +959,7 @@ void PlacerBaseCommon::init()
     }
     nets_.push_back(&net);
   }
-
 }
-
 
 void PlacerBaseCommon::reset()
 {
@@ -993,7 +989,6 @@ int64_t PlacerBaseCommon::hpwl() const
   return hpwl;
 }
 
-
 Instance* PlacerBaseCommon::dbToPb(odb::dbInst* inst) const
 {
   auto instPtr = instMap_.find(inst);
@@ -1020,9 +1015,7 @@ Net* PlacerBaseCommon::dbToPb(odb::dbNet* net) const
 
 void PlacerBaseCommon::printInfo() const
 {
-  
 }
-
 
 void PlacerBaseCommon::unlockAll()
 {
@@ -1076,17 +1069,15 @@ void PlacerBase::init()
   siteSizeX_ = pbCommon_->siteSizeX();
   siteSizeY_ = pbCommon_->siteSizeY();
 
-  for(auto& inst : pbCommon_->insts()) {
-
-    if(!inst->isInstance()) {
+  for (auto& inst : pbCommon_->insts()) {
+    if (!inst->isInstance()) {
       continue;
     }
 
-
-    if(inst->dbInst() && inst->dbInst()->getGroup() != group_) {
+    if (inst->dbInst() && inst->dbInst()->getGroup() != group_) {
       continue;
     }
-    
+
     if (inst->isFixed()) {
       // Check whether fixed instance is
       // within the corearea
@@ -1098,31 +1089,30 @@ void PlacerBase::init()
         nonPlaceInstsArea_ += getOverlapWithCoreArea(die_, *inst);
       }
     } else {
-        placeInsts_.push_back(inst);
-        int64_t instArea = inst->area();
-        placeInstsArea_ += instArea;
-        // macro cells should be
-        // macroInstsArea_
-        if (inst->dy() > siteSizeY_ * 6) {
-          macroInstsArea_ += instArea;
-        }
-        // smaller or equal height cells should be
-        // stdInstArea_
-        else {
-          stdInstsArea_ += instArea;
-        }
+      placeInsts_.push_back(inst);
+      int64_t instArea = inst->area();
+      placeInstsArea_ += instArea;
+      // macro cells should be
+      // macroInstsArea_
+      if (inst->dy() > siteSizeY_ * 6) {
+        macroInstsArea_ += instArea;
       }
+      // smaller or equal height cells should be
+      // stdInstArea_
+      else {
+        stdInstsArea_ += instArea;
+      }
+    }
 
-      insts_.push_back(inst);
+    insts_.push_back(inst);
   }
-
 
   // insts fill with fake instances (fragmented row or blockage)
   initInstsForUnusableSites();
 
   // handle newly added dummy instances
   for (auto& inst : instStor_) {
-   if (inst.isDummy()) {
+    if (inst.isDummy()) {
       dummyInsts_.push_back(&inst);
       nonPlaceInsts_.push_back(&inst);
       nonPlaceInstsArea_ += inst.area();
@@ -1138,7 +1128,7 @@ void PlacerBase::init()
 void PlacerBase::initInstsForUnusableSites()
 {
   dbSet<dbRow> rows = db_->getChip()->getBlock()->getRows();
-  dbSet<dbPowerDomain> pds =  db_->getChip()->getBlock()->getPowerDomains();
+  dbSet<dbPowerDomain> pds = db_->getChip()->getBlock()->getPowerDomains();
 
   int siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
   int siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
@@ -1156,12 +1146,12 @@ void PlacerBase::initInstsForUnusableSites()
   std::vector<PlaceInfo> siteGrid(siteCountX * siteCountY, PlaceInfo::Empty);
 
   // check if this belongs to a group
-  // if there is a group, only mark the sites that belong to the group as Row 
-  // if there is no group, then mark all as Row, and then for each power domain, mark the 
-  // sites that belong to the power domain as Empty
+  // if there is a group, only mark the sites that belong to the group as Row
+  // if there is no group, then mark all as Row, and then for each power domain,
+  // mark the sites that belong to the power domain as Empty
 
-  if(group_ != NULL) {    
-    for(auto boundary : group_->getRegion()->getBoundaries()){
+  if (group_ != NULL) {
+    for (auto boundary : group_->getRegion()->getBoundaries()) {
       Rect rect = boundary->getBox();
 
       std::pair<int, int> pairX = getMinMaxIdx(
@@ -1173,12 +1163,10 @@ void PlacerBase::initInstsForUnusableSites()
       for (int i = pairX.first; i < pairX.second; i++) {
         for (int j = pairY.first; j < pairY.second; j++) {
           siteGrid[j * siteCountX + i] = Row;
-          
         }
       }
     }
-  }
-  else {
+  } else {
     // fill in rows' bbox
     int c = 0;
     for (dbRow* row : rows) {
@@ -1197,7 +1185,6 @@ void PlacerBase::initInstsForUnusableSites()
         }
       }
     }
-
   }
 
   // Mark blockage areas as empty so that their sites will be blocked.
@@ -1250,30 +1237,38 @@ void PlacerBase::initInstsForUnusableSites()
     }
   }
 
-  // In the case of top level power domain i.e no group, 
+  // In the case of top level power domain i.e no group,
   // mark all other power domains as empty
-  if(group_ == NULL){
-    for(dbPowerDomain* pd : pds){
-        if(pd->getGroup() != NULL){
-          for(auto boundary : pd->getGroup()->getRegion()->getBoundaries()){
-            Rect rect = boundary->getBox();
+  if (group_ == NULL) {
+    for (dbPowerDomain* pd : pds) {
+      if (pd->getGroup() != NULL) {
+        for (auto boundary : pd->getGroup()->getRegion()->getBoundaries()) {
+          Rect rect = boundary->getBox();
 
-            std::pair<int, int> pairX = getMinMaxIdx(
-                rect.xMin(), rect.xMax(), die_.coreLx(), siteSizeX_, 0, siteCountX);
+          std::pair<int, int> pairX = getMinMaxIdx(rect.xMin(),
+                                                   rect.xMax(),
+                                                   die_.coreLx(),
+                                                   siteSizeX_,
+                                                   0,
+                                                   siteCountX);
 
-            std::pair<int, int> pairY = getMinMaxIdx(
-                rect.yMin(), rect.yMax(), die_.coreLy(), siteSizeY_, 0, siteCountY);
+          std::pair<int, int> pairY = getMinMaxIdx(rect.yMin(),
+                                                   rect.yMax(),
+                                                   die_.coreLy(),
+                                                   siteSizeY_,
+                                                   0,
+                                                   siteCountY);
 
-            for (int i = pairX.first; i < pairX.second; i++) {
-              for (int j = pairY.first; j < pairY.second; j++) {
-                siteGrid[j * siteCountX + i] = Empty;
-              }
+          for (int i = pairX.first; i < pairX.second; i++) {
+            for (int j = pairY.first; j < pairY.second; j++) {
+              siteGrid[j * siteCountX + i] = Empty;
             }
           }
         }
       }
+    }
   }
-  
+
   //
   // Search the "Empty" coordinates on site-grid
   // --> These sites need to be dummyInstance
@@ -1308,22 +1303,22 @@ void PlacerBase::reset()
   nonPlaceInsts_.clear();
 }
 
-
 void PlacerBase::printInfo() const
 {
-  
-  log_->info(GPL, 6, "NumInstances: {}", placeInsts_.size() + fixedInsts_.size() + dummyInsts_.size());
+  log_->info(GPL,
+             6,
+             "NumInstances: {}",
+             placeInsts_.size() + fixedInsts_.size() + dummyInsts_.size());
   log_->info(GPL, 7, "NumPlaceInstances: {}", placeInsts_.size());
   log_->info(GPL, 8, "NumFixedInstances: {}", fixedInsts_.size());
   log_->info(GPL, 9, "NumDummyInstances: {}", dummyInsts_.size());
   log_->info(GPL, 10, "NumNets: {}", pbCommon_->nets().size());
   log_->info(GPL, 11, "NumPins: {}", pbCommon_->pins().size());
-  
+
   log_->info(GPL, 12, "DieAreaLxLy: {} {}", die_.dieLx(), die_.dieLy());
   log_->info(GPL, 13, "DieAreaUxUy: {} {}", die_.dieUx(), die_.dieUy());
   log_->info(GPL, 14, "CoreAreaLxLy: {} {}", die_.coreLx(), die_.coreLy());
   log_->info(GPL, 15, "CoreAreaUxUy: {} {}", die_.coreUx(), die_.coreUy());
-
 
   const int64_t coreArea = die_.coreArea();
   float util = static_cast<float>(placeInstsArea_)
@@ -1350,10 +1345,10 @@ void PlacerBase::unlockAll()
   }
 }
 
-int64_t PlacerBase::macroInstsArea() const { 
+int64_t PlacerBase::macroInstsArea() const
+{
   return macroInstsArea_;
 }
-
 
 // https://stackoverflow.com/questions/33333363/built-in-mod-vs-custom-mod-function-improve-the-performance-of-modulus-op
 static int fastModulo(const int input, const int ceil)
