@@ -113,7 +113,6 @@ class FastRouteCore
                 int max_layer,
                 float slack,
                 std::vector<int>* edge_cost_per_layer);
-
   void initEdges();
   void setNumAdjustments(int nAdjustements);
   void addAdjustment(int x1,

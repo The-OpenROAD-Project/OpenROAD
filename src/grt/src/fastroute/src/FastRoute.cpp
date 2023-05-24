@@ -769,9 +769,8 @@ NetRouteMap FastRouteCore::run()
   newrouteZAll(10);
   int past_cong = getOverflow2D(&maxOverflow);
 
-  // verify2DEdgesUsage();
   convertToMazeroute();
-  // verifyEdgeUsage();
+
   int enlarge_ = 10;
   int newTH = 10;
   bool stopDEC = false;
@@ -809,6 +808,7 @@ NetRouteMap FastRouteCore::run()
 
   // check and fix invalid embedded trees
   fixEmbeddedTrees();
+
   //  past_cong = getOverflow2Dmaze( &maxOverflow);
 
   InitEstUsage();
@@ -1079,6 +1079,7 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
+
   has_2D_overflow_ = total_overflow_ > 0;
 
   if (minofl > 0) {
@@ -1091,6 +1092,7 @@ NetRouteMap FastRouteCore::run()
                minoflrnd);
     copyBR();
   }
+
   if (overflow_increases > max_overflow_increases) {
     if (verbose_)
       logger_->warn(
@@ -1107,8 +1109,6 @@ NetRouteMap FastRouteCore::run()
   getOverflow2Dmaze(&maxOverflow, &tUsage, true);
 
   layerAssignment();
-
-  // verifyEdgeUsage();
 
   costheight_ = 3;
   via_cost_ = 1;
@@ -1138,7 +1138,6 @@ NetRouteMap FastRouteCore::run()
     }
   }
   
-  // verifyEdgeUsage();
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
   return routes;

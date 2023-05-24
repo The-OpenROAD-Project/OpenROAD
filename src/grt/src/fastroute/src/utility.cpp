@@ -1281,7 +1281,6 @@ void FastRouteCore::verifyEdgeUsage()
 
       for (int i = 0; i < routeLen; i++) {
         if (gridsL[i] != gridsL[i + 1]) {
-          // if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
           continue;
         } else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
@@ -1677,11 +1676,10 @@ void FastRouteCore::copyRS(void)
 
       sttrees_bk_[netID].edges[edgeID].route.routelen
           = sttrees_[netID].edges[edgeID].route.routelen;
+
       if (sttrees_[netID].edges[edgeID].len
           > 0)  // only route the non-degraded edges (len>0)
       {
-        // sttrees_bk_[netID].edges[edgeID].route.routelen
-        //   = sttrees_[netID].edges[edgeID].route.routelen;
         sttrees_bk_[netID].edges[edgeID].route.gridsX.resize(
             sttrees_[netID].edges[edgeID].route.routelen + 1, 0);
         sttrees_bk_[netID].edges[edgeID].route.gridsY.resize(
@@ -1715,9 +1713,6 @@ void FastRouteCore::copyBR(void)
         }
       }
     }
-    // sttrees_.clear();
-
-    // sttrees_.resize(netCount());
 
     for (netID = 0; netID < netCount(); netID++) {
       if (nets_[netID]->isRouted())
@@ -1752,16 +1747,10 @@ void FastRouteCore::copyBR(void)
         sttrees_[netID].edges[edgeID].route.type = RouteType::MazeRoute;
         sttrees_[netID].edges[edgeID].route.routelen
             = sttrees_bk_[netID].edges[edgeID].route.routelen;
-
-        sttrees_[netID].edges[edgeID].route.type = RouteType::MazeRoute;
-        sttrees_[netID].edges[edgeID].route.routelen
-            = sttrees_bk_[netID].edges[edgeID].route.routelen;
+ 
         if (sttrees_bk_[netID].edges[edgeID].len
             > 0)  // only route the non-degraded edges (len>0)
         {
-          // sttrees_[netID].edges[edgeID].route.type = RouteType::MazeRoute;
-          // sttrees_[netID].edges[edgeID].route.routelen
-          //   = sttrees_bk_[netID].edges[edgeID].route.routelen;
           sttrees_[netID].edges[edgeID].route.gridsX.resize(
               sttrees_bk_[netID].edges[edgeID].route.routelen + 1, 0);
           sttrees_[netID].edges[edgeID].route.gridsY.resize(
@@ -1789,8 +1778,6 @@ void FastRouteCore::copyBR(void)
       }
     }
     for (netID = 0; netID < netCount(); netID++) {
-      // if (nets_[netID]->isRouted())
-      // continue;
 
       numEdges = sttrees_[netID].num_edges();
       int edgeCost = nets_[netID]->getEdgeCost();

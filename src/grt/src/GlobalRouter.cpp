@@ -304,29 +304,27 @@ void GlobalRouter::globalRoute(bool save_guides,
     updateDbCongestion();
     saveCongestion();
 
-  saveCongestion();
-
-  if (fastroute_->has2Doverflow()) {
-    if (!allow_congestion_) {
-      if (congestion_file_name_ != nullptr) {
-        logger_->error(
-            GRT,
-            119,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI and load {} in the DRC viewer.",
-            congestion_file_name_);
-      } else {
-        logger_->error(
-            GRT,
-            118,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI.");
+    if (fastroute_->has2Doverflow()) {
+      if (!allow_congestion_) {
+        if (congestion_file_name_ != nullptr) {
+          logger_->error(
+              GRT,
+              119,
+              "Routing congestion too high. Check the congestion heatmap "
+              "in the GUI and load {} in the DRC viewer.",
+              congestion_file_name_);
+        } else {
+          logger_->error(
+              GRT,
+              118,
+              "Routing congestion too high. Check the congestion heatmap "
+              "in the GUI.");
+        }
       }
     }
-  }
-  if (fastroute_->totalOverflow() > 0 && verbose_) {
-    logger_->warn(GRT, 115, "Global routing finished with overflow.");
-  }
+    if (fastroute_->totalOverflow() > 0 && verbose_) {
+      logger_->warn(GRT, 115, "Global routing finished with overflow.");
+    }
 
     if (verbose_)
       reportCongestion();
@@ -817,7 +815,6 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
       makeFastrouteNet(net);
     }
   }
-  //printf("End initNets\n");
   fastroute_->setMaxNetDegree(max_degree);
 
   if (verbose_) {
@@ -875,7 +872,6 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // leaf iterms
     int min_layer, max_layer;
     getNetLayerRange(net, min_layer, max_layer);
-    //printf("Dirty Net: %s\n", net->getDbNet()->getConstName());
 
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
                                        is_clock,
@@ -3934,8 +3930,6 @@ void GlobalRouter::updateDirtyRoutes()
 
     if (dirty_nets.empty())
       return;
-
-    //printf("DebugPython dirtyNets : %ld\n", dirty_nets.size());
 
     initFastRouteIncr(dirty_nets);
 

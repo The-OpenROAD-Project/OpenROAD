@@ -39,6 +39,7 @@
 #include "utl/Logger.h"
 
 namespace utl {
+
 // Reads all of the contents of "file" to a C++ string.
 //
 // NOTE: C-style `FILE*` constructs are not recommended for use in new code,

@@ -260,7 +260,7 @@ Resizer::updateParasitics()
       estimateWireParasitic(net);
     parasitics_invalid_.clear();
     break;
-  case ParasiticsSrc::global_routing: { 
+  case ParasiticsSrc::global_routing: {
     incr_groute_->updateRoutes();
     for (const Net *net : parasitics_invalid_)
       global_router_->estimateRC(db_network_->staToDb(net));
@@ -286,19 +286,6 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin)
     ensureWireParasitic(drvr_pin, net);
 }
 
-bool
-Resizer::hasMacros()
-{
-  //return true;
-  for (odb::dbInst* inst : block_->getInsts()) {
-    odb::dbMaster* master = inst->getMaster();
-    if (master->isBlock()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 void
 Resizer::ensureWireParasitic(const Pin *drvr_pin,
                              const Net *net)
@@ -315,8 +302,8 @@ Resizer::ensureWireParasitic(const Pin *drvr_pin,
       estimateWireParasitic(drvr_pin, net);
       parasitics_invalid_.erase(net);
       break;
-    case ParasiticsSrc::global_routing: {  
-      grt::IncrementalGRoute incr_groute(global_router_, block_); 
+    case ParasiticsSrc::global_routing: {
+      grt::IncrementalGRoute incr_groute(global_router_, block_);
       global_router_->addDirtyNet(db_network_->staToDb(net));
       incr_groute.updateRoutes();
       global_router_->estimateRC(db_network_->staToDb(net));

@@ -2182,7 +2182,6 @@ void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
 
       for (int i = 0; i < routeLen; i++) {
         if (gridsL[i] != gridsL[i + 1]) {
-          // if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
           continue;
         } else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
@@ -2193,7 +2192,6 @@ void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
           if (gridsY[i] == posY && xmin == posX && dir == 1)
             congestion_nets_.insert(nets_[netID]->getDbNet());
         }
-        //}
       }
     }
   }

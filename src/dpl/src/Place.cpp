@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////t/
+/////////////////////////////////////////////////////////////////////////////
 // Original authors: SangGi Do(sanggido@unist.ac.kr), Mingyu
 // Woo(mwoo@eng.ucsd.edu)
 //          (respective Ph.D. advisors: Seokhyeong Kang, Andrew B. Kahng)
@@ -1250,7 +1250,6 @@ Point Opendp::pointOffMacro(Cell cell){
   if (pixel4 && pixel4->cell && isBlock(pixel4->cell)) block = pixel4->cell;
 
   if (block && isBlock(block)){
-    // printf("Moving %s out of macro %s\n", cell.name(), block->name());
     // Get new legal position
     const Rect block_bbox(block->x_,
                           block->y_,
