@@ -771,118 +771,120 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
   }
 
   // Find the theoretical limits for PAR and its variants
-  const dbTechLayerAntennaRule* antenna_rule
-      = tech_layer->getDefaultAntennaRule();
+  if (tech_layer->hasDefaultAntennaRule()) {
+    const dbTechLayerAntennaRule* antenna_rule
+        = tech_layer->getDefaultAntennaRule();
 
-  const double PAR_ratio = antenna_rule->getPAR();
-  const dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
-  const double diffPAR_PWL_ratio
-      = getPwlFactor(diffPAR, par_info.iterm_diff_area, 0);
+    const double PAR_ratio = antenna_rule->getPAR();
+    const dbTechLayerAntennaRule::pwl_pair diffPAR = antenna_rule->getDiffPAR();
+    const double diffPAR_PWL_ratio
+        = getPwlFactor(diffPAR, par_info.iterm_diff_area, 0);
 
-  const double PSR_ratio = antenna_rule->getPSR();
-  const dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
-  const double diffPSR_PWL_ratio
-      = getPwlFactor(diffPSR, par_info.iterm_diff_area, 0.0);
+    const double PSR_ratio = antenna_rule->getPSR();
+    const dbTechLayerAntennaRule::pwl_pair diffPSR = antenna_rule->getDiffPSR();
+    const double diffPSR_PWL_ratio
+        = getPwlFactor(diffPSR, par_info.iterm_diff_area, 0.0);
 
-  // Extract the width and thickness
-  const double wire_width = dbuToMicrons(tech_layer->getWidth());
-  uint thickness;
-  tech_layer->getThickness(thickness);
-  const double wire_thickness = dbuToMicrons(thickness);
+    // Extract the width and thickness
+    const double wire_width = dbuToMicrons(tech_layer->getWidth());
+    uint thickness;
+    tech_layer->getThickness(thickness);
+    const double wire_thickness = dbuToMicrons(thickness);
 
-  // Calculate the current wire length from the area taking into consideration
-  // the extensions
-  par_info.wire_length = par_info.wire_area / wire_width - wire_width;
-  par_info.side_wire_length
-      = (par_info.side_wire_area - 2 * wire_width * wire_thickness)
-            / (2 * wire_thickness)
-        - wire_width;
-
-  // Consider when there is a diffusion region connected
-  if (par_info.iterm_diff_area != 0) {
-    // Calculate the maximum allowed wire length for each PAR variant
-    const double max_area_PAR
-        = PAR_ratio * par_info.iterm_gate_area / diff_metal_factor;
-    par_info.max_wire_length_PAR = max_area_PAR / wire_width - wire_width;
-
-    const double max_area_PSR
-        = PSR_ratio * par_info.iterm_gate_area / diff_side_metal_factor;
-    par_info.max_wire_length_PSR
-        = (max_area_PSR - 2 * wire_width * wire_thickness)
+    // Calculate the current wire length from the area taking into consideration
+    // the extensions
+    par_info.wire_length = par_info.wire_area / wire_width - wire_width;
+    par_info.side_wire_length
+        = (par_info.side_wire_area - 2 * wire_width * wire_thickness)
               / (2 * wire_thickness)
           - wire_width;
 
-    const double max_area_diff_PAR
-        = (diffPAR_PWL_ratio
-               * (par_info.iterm_gate_area
-                  + plus_diff_factor * par_info.iterm_diff_area)
-           + minus_diff_factor * par_info.iterm_diff_area)
-          / diff_metal_factor * diff_metal_reduce_factor;
-    par_info.max_wire_length_diff_PAR
-        = max_area_diff_PAR / wire_width - wire_width;
+    // Consider when there is a diffusion region connected
+    if (par_info.iterm_diff_area != 0) {
+      // Calculate the maximum allowed wire length for each PAR variant
+      const double max_area_PAR
+          = PAR_ratio * par_info.iterm_gate_area / diff_metal_factor;
+      par_info.max_wire_length_PAR = max_area_PAR / wire_width - wire_width;
 
-    const double max_area_diff_PSR
-        = (diffPSR_PWL_ratio
-               * (par_info.iterm_gate_area
-                  + plus_diff_factor * par_info.iterm_diff_area)
-           + minus_diff_factor * par_info.iterm_diff_area)
-          / diff_side_metal_factor * diff_metal_reduce_factor;
-    par_info.max_wire_length_diff_PSR
-        = (max_area_diff_PSR - 2 * wire_width * wire_thickness)
-              / (2 * wire_thickness)
-          - wire_width;
+      const double max_area_PSR
+          = PSR_ratio * par_info.iterm_gate_area / diff_side_metal_factor;
+      par_info.max_wire_length_PSR
+          = (max_area_PSR - 2 * wire_width * wire_thickness)
+                / (2 * wire_thickness)
+            - wire_width;
 
-    // Calculate PAR, PSR, diff_PAR and diff_PSR
-    par_info.PAR
-        = (diff_metal_factor * par_info.wire_area) / par_info.iterm_gate_area;
-    par_info.PSR = (diff_side_metal_factor * par_info.side_wire_area)
-                   / par_info.iterm_gate_area;
-    par_info.diff_PAR
-        = (diff_metal_factor * par_info.wire_area * diff_metal_reduce_factor
-           - minus_diff_factor * par_info.iterm_diff_area)
-          / (par_info.iterm_gate_area
-             + plus_diff_factor * par_info.iterm_diff_area);
-    par_info.diff_PSR = (diff_side_metal_factor * par_info.side_wire_area
-                             * diff_metal_reduce_factor
-                         - minus_diff_factor * par_info.iterm_diff_area)
-                        / (par_info.iterm_gate_area
-                           + plus_diff_factor * par_info.iterm_diff_area);
-  } else {
-    // Calculate the maximum allowed wire length for each PAR variant
-    double max_area_PAR = PAR_ratio * par_info.iterm_gate_area / metal_factor;
-    par_info.max_wire_length_PAR = max_area_PAR / wire_width - wire_width;
+      const double max_area_diff_PAR
+          = (diffPAR_PWL_ratio
+                * (par_info.iterm_gate_area
+                    + plus_diff_factor * par_info.iterm_diff_area)
+            + minus_diff_factor * par_info.iterm_diff_area)
+            / diff_metal_factor * diff_metal_reduce_factor;
+      par_info.max_wire_length_diff_PAR
+          = max_area_diff_PAR / wire_width - wire_width;
 
-    double max_area_PSR
-        = PSR_ratio * par_info.iterm_gate_area / side_metal_factor;
-    par_info.max_wire_length_PSR
-        = (max_area_PSR - 2 * wire_width * wire_thickness)
-              / (2 * wire_thickness)
-          - wire_width;
+      const double max_area_diff_PSR
+          = (diffPSR_PWL_ratio
+                * (par_info.iterm_gate_area
+                    + plus_diff_factor * par_info.iterm_diff_area)
+            + minus_diff_factor * par_info.iterm_diff_area)
+            / diff_side_metal_factor * diff_metal_reduce_factor;
+      par_info.max_wire_length_diff_PSR
+          = (max_area_diff_PSR - 2 * wire_width * wire_thickness)
+                / (2 * wire_thickness)
+            - wire_width;
 
-    double max_area_diff_PAR = (diffPAR_PWL_ratio * par_info.iterm_gate_area)
-                               / (diff_metal_reduce_factor * metal_factor);
-    par_info.max_wire_length_diff_PAR
-        = max_area_diff_PAR / wire_width - wire_width;
+      // Calculate PAR, PSR, diff_PAR and diff_PSR
+      par_info.PAR
+          = (diff_metal_factor * par_info.wire_area) / par_info.iterm_gate_area;
+      par_info.PSR = (diff_side_metal_factor * par_info.side_wire_area)
+                    / par_info.iterm_gate_area;
+      par_info.diff_PAR
+          = (diff_metal_factor * par_info.wire_area * diff_metal_reduce_factor
+            - minus_diff_factor * par_info.iterm_diff_area)
+            / (par_info.iterm_gate_area
+              + plus_diff_factor * par_info.iterm_diff_area);
+      par_info.diff_PSR = (diff_side_metal_factor * par_info.side_wire_area
+                              * diff_metal_reduce_factor
+                          - minus_diff_factor * par_info.iterm_diff_area)
+                          / (par_info.iterm_gate_area
+                            + plus_diff_factor * par_info.iterm_diff_area);
+    } else {
+      // Calculate the maximum allowed wire length for each PAR variant
+      double max_area_PAR = PAR_ratio * par_info.iterm_gate_area / metal_factor;
+      par_info.max_wire_length_PAR = max_area_PAR / wire_width - wire_width;
 
-    double max_area_diff_PSR = (diffPSR_PWL_ratio * par_info.iterm_gate_area)
-                               / (diff_metal_reduce_factor * side_metal_factor);
-    par_info.max_wire_length_diff_PSR
-        = (max_area_diff_PSR - 2 * wire_width * wire_thickness)
-              / (2 * wire_thickness)
-          - wire_width;
+      double max_area_PSR
+          = PSR_ratio * par_info.iterm_gate_area / side_metal_factor;
+      par_info.max_wire_length_PSR
+          = (max_area_PSR - 2 * wire_width * wire_thickness)
+                / (2 * wire_thickness)
+            - wire_width;
 
-    // Calculate PAR, PSR, diff_PAR and diff_PSR
+      double max_area_diff_PAR = (diffPAR_PWL_ratio * par_info.iterm_gate_area)
+                                / (diff_metal_reduce_factor * metal_factor);
+      par_info.max_wire_length_diff_PAR
+          = max_area_diff_PAR / wire_width - wire_width;
 
-    par_info.PAR
-        = (metal_factor * par_info.wire_area) / par_info.iterm_gate_area;
-    par_info.PSR = (side_metal_factor * par_info.side_wire_area)
-                   / par_info.iterm_gate_area;
-    par_info.diff_PAR
-        = (metal_factor * par_info.wire_area * diff_metal_reduce_factor)
-          / par_info.iterm_gate_area;
-    par_info.diff_PSR = (side_metal_factor * par_info.side_wire_area
-                         * diff_metal_reduce_factor)
-                        / (par_info.iterm_gate_area);
+      double max_area_diff_PSR = (diffPSR_PWL_ratio * par_info.iterm_gate_area)
+                                / (diff_metal_reduce_factor * side_metal_factor);
+      par_info.max_wire_length_diff_PSR
+          = (max_area_diff_PSR - 2 * wire_width * wire_thickness)
+                / (2 * wire_thickness)
+            - wire_width;
+
+      // Calculate PAR, PSR, diff_PAR and diff_PSR
+
+      par_info.PAR
+          = (metal_factor * par_info.wire_area) / par_info.iterm_gate_area;
+      par_info.PSR = (side_metal_factor * par_info.side_wire_area)
+                    / par_info.iterm_gate_area;
+      par_info.diff_PAR
+          = (metal_factor * par_info.wire_area * diff_metal_reduce_factor)
+            / par_info.iterm_gate_area;
+      par_info.diff_PSR = (side_metal_factor * par_info.side_wire_area
+                          * diff_metal_reduce_factor)
+                          / (par_info.iterm_gate_area);
+    }
   }
 }
 
