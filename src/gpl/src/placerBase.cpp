@@ -1076,7 +1076,6 @@ void PlacerBase::init()
   siteSizeX_ = pbCommon_->siteSizeX();
   siteSizeY_ = pbCommon_->siteSizeY();
 
-  // printf("Current group: %s\n", group_ ? group_->getName() : "None");
   for(auto& inst : pbCommon_->insts()) {
 
     if(!inst->isInstance()) {
@@ -1087,9 +1086,6 @@ void PlacerBase::init()
     if(inst->dbInst() && inst->dbInst()->getGroup() != group_) {
       continue;
     }
-
-    // printf("Adding instance %s\n", inst->dbInst()->getName().c_str());
-
     
     if (inst->isFixed()) {
       // Check whether fixed instance is
@@ -1147,10 +1143,6 @@ void PlacerBase::initInstsForUnusableSites()
   int siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
   int siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
 
-  // printf("Site count: %d %d\n", siteCountX, siteCountY);
-  // printf("Site size: %d %d\n", siteSizeX_, siteSizeY_);
-
-
   enum PlaceInfo
   {
     Empty,
@@ -1168,9 +1160,7 @@ void PlacerBase::initInstsForUnusableSites()
   // if there is no group, then mark all as Row, and then for each power domain, mark the 
   // sites that belong to the power domain as Empty
 
-  if(group_ != NULL) {
-    // printf("belongs to group!\n");
-    
+  if(group_ != NULL) {    
     for(auto boundary : group_->getRegion()->getBoundaries()){
       Rect rect = boundary->getBox();
 
@@ -1190,7 +1180,6 @@ void PlacerBase::initInstsForUnusableSites()
   }
   else {
     // fill in rows' bbox
-    // printf("no group\n");
     int c = 0;
     for (dbRow* row : rows) {
       Rect rect = row->getBBox();
@@ -1209,9 +1198,7 @@ void PlacerBase::initInstsForUnusableSites()
       }
     }
 
-    // printf("total %d sites in rows\n", c);
   }
-
 
   // Mark blockage areas as empty so that their sites will be blocked.
   for (dbBlockage* blockage : db_->getChip()->getBlock()->getBlockages()) {
@@ -1244,10 +1231,6 @@ void PlacerBase::initInstsForUnusableSites()
         ++cells;
       }
     }
-
-    // printf("filled %d cells out of %d\n", filled, cells);
-    // printf("filler density: %f\n", filler_density);
-
   }
 
   // fill fixed instances' bbox
@@ -1270,9 +1253,7 @@ void PlacerBase::initInstsForUnusableSites()
   // In the case of top level power domain i.e no group, 
   // mark all other power domains as empty
   if(group_ == NULL){
-    // printf("no group again \n");
     for(dbPowerDomain* pd : pds){
-        // printf("found a power domain: %s\n", pd->getName());
         if(pd->getGroup() != NULL){
           for(auto boundary : pd->getGroup()->getRegion()->getBoundaries()){
             Rect rect = boundary->getBox();
@@ -1293,23 +1274,18 @@ void PlacerBase::initInstsForUnusableSites()
       }
   }
   
-
   //
   // Search the "Empty" coordinates on site-grid
   // --> These sites need to be dummyInstance
   //
-  int c = 0;
-  int dummies = 0;
   for (int j = 0; j < siteCountY; j++) {
     for (int i = 0; i < siteCountX; i++) {
       // if empty spot found
       if (siteGrid[j * siteCountX + i] == Empty) {
-        ++c;
         int startX = i;
         // find end points
         while (i < siteCountX && siteGrid[j * siteCountX + i] == Empty) {
           i++;
-          ++c;
         }
         int endX = i;
         Instance myInst(die_.coreLx() + siteSizeX_ * startX,
@@ -1317,13 +1293,9 @@ void PlacerBase::initInstsForUnusableSites()
                         die_.coreLx() + siteSizeX_ * endX,
                         die_.coreLy() + siteSizeY_ * (j + 1));
         instStor_.push_back(myInst);
-        dummies++;
       }
     }
   }
-
-  // printf("total %d sites in empty\n", c); 
-  // printf("total %d dummies\n", dummies);
 }
 
 void PlacerBase::reset()

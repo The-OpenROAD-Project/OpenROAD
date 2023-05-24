@@ -303,7 +303,7 @@ class PlacerBaseVars
 };
 
 
-// Class includes everything from PlacerBase that is not instance related
+// Class includes everything from PlacerBase that is not region specific
 class PlacerBaseCommon
 {
   public:
@@ -397,12 +397,6 @@ class PlacerBase
   const std::vector<Instance*>& nonPlaceInsts() const { return nonPlaceInsts_; }
 
   Die& die() { return die_; }
-
-  // Pb : PlacerBase
-  Instance* dbToPb(odb::dbInst* inst) const;
-  Pin* dbToPb(odb::dbITerm* pin) const;
-  Pin* dbToPb(odb::dbBTerm* pin) const;
-  Net* dbToPb(odb::dbNet* net) const;
 
   int siteSizeX() const { return siteSizeX_; }
   int siteSizeY() const { return siteSizeY_; }

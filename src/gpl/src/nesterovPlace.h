@@ -94,7 +94,6 @@ class NesterovPlace
   void updateCurGradient(std::shared_ptr<NesterovBase> nb);
   void updateNextGradient(std::shared_ptr<NesterovBase> nb);
 
-
  private:
   std::shared_ptr<PlacerBaseCommon> pbc_;
   std::shared_ptr<NesterovBaseCommon> nbc_;

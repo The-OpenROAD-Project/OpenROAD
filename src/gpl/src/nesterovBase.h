@@ -864,13 +864,8 @@ class NesterovBaseCommon
                                      float wlCoeffY) const;
 
 
-  FloatPoint getRegionGradient(const GCell* gCell, FloatPoint nextLocation) const;
-
-
   // for preconditioner
   FloatPoint getWireLengthPreconditioner(const GCell* gCell) const;
-
-  FloatPoint getDensityPreconditioner(const GCell* gCell) const;
 
   int64_t getHpwl();
 
@@ -955,10 +950,6 @@ class NesterovBase
   int64_t whiteSpaceArea() const;
   int64_t movableArea() const;
   int64_t totalFillerArea() const;
-
-  // bloating cell will change the following areas.
-  int64_t stdInstsArea() const;
-  int64_t macroInstsArea() const;
 
   // update
   // fillerArea, whiteSpaceArea, movableArea
@@ -1090,7 +1081,6 @@ class NesterovBase
   float targetDensity_;
   float uniformTargetDensity_;
 
-
   // Nesterov loop data for each region
   // SLP is Step Length Prediction.
   //
@@ -1173,8 +1163,6 @@ class NesterovBase
 
   void init();
   void initFillerGCells();
-  void initBinGrid();
-
   void reset();
 };
 

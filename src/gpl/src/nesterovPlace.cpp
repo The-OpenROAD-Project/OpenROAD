@@ -107,9 +107,7 @@ void NesterovPlace::updatePrevGradient(std::shared_ptr<NesterovBase> nb){
   nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
   auto wireLengthGradSum_ = nb->getWireLengthGradSum();
   auto densityGradSum_ = nb->getDensityGradSum();
-  // printf("wireLengthGradSum_ = %g\n", wireLengthGradSum_);
-  // printf("densityGradSum_ = %g\n", densityGradSum_);
-
+  
   if (wireLengthGradSum_ == 0
       && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
@@ -126,7 +124,7 @@ void NesterovPlace::updatePrevGradient(std::shared_ptr<NesterovBase> nb){
 
     // update WL forces
     nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-    // printf("In recursion prev, doing stuf..\n\n");
+
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
     updatePrevGradient(nb);
@@ -147,8 +145,6 @@ void NesterovPlace::updateCurGradient(std::shared_ptr<NesterovBase> nb){
   nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
   auto wireLengthGradSum_ = nb->getWireLengthGradSum();
   auto densityGradSum_ = nb->getDensityGradSum();
-  // printf("wireLengthGradSum_ = %g\n", wireLengthGradSum_);
-  // printf("densityGradSum_ = %g\n", densityGradSum_);
 
   if (wireLengthGradSum_ == 0
       && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
@@ -166,7 +162,7 @@ void NesterovPlace::updateCurGradient(std::shared_ptr<NesterovBase> nb){
 
     // update WL forces
     nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-    // printf("In recursion cur, doing stuf..\n\n");
+
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
     updateCurGradient(nb);
@@ -189,9 +185,6 @@ void NesterovPlace::updateNextGradient(std::shared_ptr<NesterovBase> nb){
   auto wireLengthGradSum_ = nb->getWireLengthGradSum();
   auto densityGradSum_ = nb->getDensityGradSum();
 
-  // printf("wireLengthGradSum_ = %g\n", wireLengthGradSum_);
-  // printf("densityGradSum_ = %g\n", densityGradSum_);
-
   if (wireLengthGradSum_ == 0
       && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
@@ -208,7 +201,7 @@ void NesterovPlace::updateNextGradient(std::shared_ptr<NesterovBase> nb){
 
     // update WL forces
     nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
-    // printf("In recursion next, doing stuf..\n\n");
+
     // recursive call again with smaller wirelength coef
     recursionCntWlCoef_++;
     updateNextGradient(nb);
@@ -242,17 +235,12 @@ void NesterovPlace::init()
   
   updateWireLengthCoef(average_overflow_);
 
-  // printf("npinit: WireLengthCoef: %f, ", wireLengthCoefX_);
-
-  // printf("npinit: WireLengthCoefX: %f, WireLengthCoefY: %f\n", wireLengthCoefX_, wireLengthCoefY_);
-
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
   for(auto& nb : nbVec_){
 
     // fill in curSLPSumGrads_, curSLPWireLengthGrads_, curSLPDensityGrads_
     updateCurGradient(nb);
-    // nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
 
     // approximately fill in
     // prevSLPCoordi_ to calculate lc vars
@@ -263,15 +251,12 @@ void NesterovPlace::init()
     nb->updateDensityForceBin();
   }
 
-  // printf("npinit 2: WireLengthCoefX: %f, WireLengthCoefY: %f\n", wireLengthCoefX_, wireLengthCoefY_);
-
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);
 
 
   for(auto& nb : nbVec_){
     // update previSumGrads_, prevSLPWireLengthGrads_, prevSLPDensityGrads_
     updatePrevGradient(nb);
-    // nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
   }
 
 
@@ -359,8 +344,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
   // Core Nesterov Loop
   int iter = start_iter;
   for (; iter < npVars_.maxNesterovIter; iter++) {
-    // printf("Iter: %d\n", iter + 1);
-
     float prevA = curA;
 
     // here, prevA is a_(k), curA is a_(k+1)
@@ -370,16 +353,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
 
     // coeff is (a_k - 1) / ( a_(k+1) ) in paper.
     float coeff = (prevA - 1.0) / curA;
-
-    // printf("PreviousA: %f,", prevA);
-    // printf("CurrentA: %f,", curA);
-    // printf("Coefficient: %f,", coeff);
-
-
-    // for(auto& nb : nbVec_){
-    //     nb->printStepLength();
-    // }
-    
 
     // Back-Tracking loop
     int numBackTrak = 0;
@@ -395,7 +368,6 @@ int NesterovPlace::doNesterovPlace(int start_iter)
       int numDiverge = 0;
       for(auto& nb : nbVec_){
         updateNextGradient(nb);
-        // nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
         numDiverge += nb->isDiverged();
       }
 
