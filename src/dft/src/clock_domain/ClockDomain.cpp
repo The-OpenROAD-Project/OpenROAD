@@ -45,6 +45,9 @@ std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
         return std::hash<std::string>{}(clock_domain.getClockName())
                ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
       };
+    // For ClockMix, we only have one clock domain
+    case ScanArchitectConfig::ClockMixing::ClockMix:
+      return [](const ClockDomain& clock_domain) { return 1; };
     default:
       // Not implemented
       logger->error(utl::DFT, 4, "Clock mix config requested is not supported");
