@@ -65,9 +65,6 @@ static int64_t getOverlapAreaUnscaled(const Bin* bin, const Instance* inst);
 static float getDistance(const vector<FloatPoint>& a,
                          const vector<FloatPoint>& b);
 
-static float getDistanceBackup(const vector<FloatPoint>& a,
-                               const vector<FloatPoint>& b);
-
 static float getSecondNorm(const vector<FloatPoint>& a);
 
 // Note that
@@ -2711,24 +2708,6 @@ static float getDistance(const vector<FloatPoint>& a,
   for (size_t i = 0; i < a.size(); i++) {
     sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
     sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
-  }
-
-  return sqrt(sumDistance / (2.0 * a.size()));
-}
-
-static float getDistanceBackup(const vector<FloatPoint>& a,
-                               const vector<FloatPoint>& b)
-{
-  float sumAx = 0.0f, sumAy = 0.0f;
-  float sumBx = 0.0f, sumBy = 0.0f;
-  float sumDistance = 0.0f;
-  for (size_t i = 0; i < a.size(); i++) {
-    sumDistance += (a[i].x - b[i].x) * (a[i].x - b[i].x);
-    sumDistance += (a[i].y - b[i].y) * (a[i].y - b[i].y);
-    sumAx += a[i].x;
-    sumAy += a[i].y;
-    sumBx += b[i].x;
-    sumBy += b[i].y;
   }
 
   return sqrt(sumDistance / (2.0 * a.size()));

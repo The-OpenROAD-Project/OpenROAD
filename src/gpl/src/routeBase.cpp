@@ -651,14 +651,13 @@ std::pair<bool, bool> RouteBase::routability()
   float targetInflationDeltaAreaRatio
       = 1.0 / static_cast<float>(rbVars_.maxInflationIter);
 
-  // // TODO: FIX ISSUES
-  // // TODO: will be implemented
-  // if (inflatedAreaDelta_
-  //     > targetInflationDeltaAreaRatio
-  //           * (nbc_->whiteSpaceArea()
-  //              - (nbc_->nesterovInstsArea() + nb_->totalFillerArea()))) {
-  //   // TODO dynamic inflation procedure?
-  // }
+  // TODO: will be implemented
+  if (inflatedAreaDelta_
+      > targetInflationDeltaAreaRatio
+            * (nbVec_[0]->whiteSpaceArea()
+               - (nbVec_[0]->nesterovInstsArea() + nbVec_[0]->totalFillerArea()))) {
+    // TODO dynamic inflation procedure?
+  }
 
   log_->info(GPL, 45, "InflatedAreaDelta: {}", inflatedAreaDelta_);
   log_->info(GPL, 46, "TargetDensity: {}", nbVec_[0]->targetDensity());
