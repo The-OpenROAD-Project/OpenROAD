@@ -1793,7 +1793,11 @@ void HierRTLMP::dataFlowDFSMacroPin(
 void HierRTLMP::updateDataFlow()
 {
   // bterm, macros or ffs
+
   for (const auto& [bterm, insts] : io_ffs_conn_map_) {
+    if (!odb::dbIntProperty::find(bterm, "cluster_id")) {
+      continue;
+    }
     const int driver_id
         = odb::dbIntProperty::find(bterm, "cluster_id")->getValue();
     for (int i = 0; i < max_num_ff_dist_; i++) {
@@ -3120,6 +3124,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
   }
 
   // update the connnection
+
   calculateConnection();
   debugPrint(logger_,
              MPL,
