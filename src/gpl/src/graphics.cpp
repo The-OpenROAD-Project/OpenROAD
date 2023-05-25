@@ -159,6 +159,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   if (draw_bins_) {
     // Draw the bins
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
+
     for (auto& bin : nbVec_[0]->bins()) {
       int color = bin.density() * 50 + 20;
 
@@ -364,7 +365,7 @@ odb::Rect Graphics::getBounds() const
 bool Graphics::populateMap()
 {
   BinGrid& grid = nbVec_[0]->getBinGrid();
-  for (Bin bin : grid.bins()) {
+  for (Bin& bin : grid.bins()) {
     odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
     if (heatmap_type_ == Density) {
       const double value = bin.density() * 100.0;
