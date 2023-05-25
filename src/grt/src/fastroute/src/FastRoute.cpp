@@ -1137,7 +1137,7 @@ NetRouteMap FastRouteCore::run()
       }
     }
   }
-  
+
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
   return routes;

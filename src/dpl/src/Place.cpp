@@ -1213,13 +1213,15 @@ bool Opendp::moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const
   return false;
 }
 
-void Opendp::initMacrosAndGrid() {
+void Opendp::initMacrosAndGrid()
+{
   importDb();
   initGrid();
   setFixedGridCells();
 }
 
-void Opendp::convertDbToCell(dbInst* db_inst, Cell& cell) {
+void Opendp::convertDbToCell(dbInst* db_inst, Cell& cell)
+{
   cell.db_inst_ = db_inst;
   Rect bbox = getBbox(db_inst);
   cell.width_ = bbox.dx();
@@ -1229,8 +1231,9 @@ void Opendp::convertDbToCell(dbInst* db_inst, Cell& cell) {
   cell.orient_ = db_inst->getOrient();
 }
 
-Point Opendp::pointOffMacro(Cell cell){
-  //Get cell position
+Point Opendp::pointOffMacro(Cell cell)
+{
+  // Get cell position
   Point init = initialLocation(&cell, false);
   int init_x = init.getX();
   int init_y = init.getY();
@@ -1238,18 +1241,30 @@ Point Opendp::pointOffMacro(Cell cell){
   int site_width = site_width_;
 
   auto grid_info = getGridInfo(&cell);
-  Pixel* pixel1 = gridPixel(grid_info.grid_index, gridX(init_x, site_width), gridY(init_y, row_height));
-  Pixel* pixel2 = gridPixel(grid_info.grid_index, gridX(init_x + cell.width_, site_width), gridY(init_y, row_height));
-  Pixel* pixel3 = gridPixel(grid_info.grid_index, gridX(init_x, site_width), gridY(init_y + cell.height_, row_height));
-  Pixel* pixel4 = gridPixel(grid_info.grid_index, gridX(init_x + cell.width_, site_width), gridY(init_y + cell.height_, row_height));
+  Pixel* pixel1 = gridPixel(grid_info.grid_index,
+                            gridX(init_x, site_width),
+                            gridY(init_y, row_height));
+  Pixel* pixel2 = gridPixel(grid_info.grid_index,
+                            gridX(init_x + cell.width_, site_width),
+                            gridY(init_y, row_height));
+  Pixel* pixel3 = gridPixel(grid_info.grid_index,
+                            gridX(init_x, site_width),
+                            gridY(init_y + cell.height_, row_height));
+  Pixel* pixel4 = gridPixel(grid_info.grid_index,
+                            gridX(init_x + cell.width_, site_width),
+                            gridY(init_y + cell.height_, row_height));
 
   Cell* block = nullptr;
-  if (pixel1 && pixel1->cell && isBlock(pixel1->cell)) block = pixel1->cell;
-  if (pixel2 && pixel2->cell && isBlock(pixel2->cell)) block = pixel2->cell;
-  if (pixel3 && pixel3->cell && isBlock(pixel3->cell)) block = pixel3->cell;
-  if (pixel4 && pixel4->cell && isBlock(pixel4->cell)) block = pixel4->cell;
+  if (pixel1 && pixel1->cell && isBlock(pixel1->cell))
+    block = pixel1->cell;
+  if (pixel2 && pixel2->cell && isBlock(pixel2->cell))
+    block = pixel2->cell;
+  if (pixel3 && pixel3->cell && isBlock(pixel3->cell))
+    block = pixel3->cell;
+  if (pixel4 && pixel4->cell && isBlock(pixel4->cell))
+    block = pixel4->cell;
 
-  if (block && isBlock(block)){
+  if (block && isBlock(block)) {
     // Get new legal position
     const Rect block_bbox(block->x_,
                           block->y_,
@@ -1258,19 +1273,21 @@ Point Opendp::pointOffMacro(Cell cell){
     Point legal_pt = nearestBlockEdge(&cell, init, block_bbox);
     return legal_pt;
   }
-  return init;  
+  return init;
 }
 
-void Opendp::legalCellPos(dbInst* db_inst) {
+void Opendp::legalCellPos(dbInst* db_inst)
+{
   Cell cell;
   convertDbToCell(db_inst, cell);
-  Point legal_pt = pointOffMacro(cell); // return real position
-  Point new_pos = legalPt(&cell, legal_pt); // return real position
+  Point legal_pt = pointOffMacro(cell);      // return real position
+  Point new_pos = legalPt(&cell, legal_pt);  // return real position
 
   int row_height = row_height_;
   int site_width = site_width_;
   // transform to grid Pos for align
-  Point legal_grid_pt = Point(gridX(new_pos.getX(), site_width), gridY(new_pos.getY(), row_height)); 
+  Point legal_grid_pt = Point(gridX(new_pos.getX(), site_width),
+                              gridY(new_pos.getY(), row_height));
   // Transform position on real position
   int x = (legal_grid_pt.getX() + padLeft(&cell)) * site_width_;
   int y = legal_grid_pt.getY() * row_height_;

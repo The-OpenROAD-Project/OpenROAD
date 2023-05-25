@@ -1747,7 +1747,7 @@ void FastRouteCore::copyBR(void)
         sttrees_[netID].edges[edgeID].route.type = RouteType::MazeRoute;
         sttrees_[netID].edges[edgeID].route.routelen
             = sttrees_bk_[netID].edges[edgeID].route.routelen;
- 
+
         if (sttrees_bk_[netID].edges[edgeID].len
             > 0)  // only route the non-degraded edges (len>0)
         {
@@ -1778,7 +1778,6 @@ void FastRouteCore::copyBR(void)
       }
     }
     for (netID = 0; netID < netCount(); netID++) {
-
       numEdges = sttrees_[netID].num_edges();
       int edgeCost = nets_[netID]->getEdgeCost();
 

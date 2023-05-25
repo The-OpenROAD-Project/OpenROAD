@@ -268,10 +268,9 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool start_incremental,
                                bool end_incremental)
 {
-  if(start_incremental && end_incremental) {
+  if (start_incremental && end_incremental) {
     logger_->error(GRT, 251, "Both option defined.");
-  }
-  else if(start_incremental){
+  } else if (start_incremental) {
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
   } else {
@@ -542,14 +541,14 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
   perturbation_amount_ = perturbation;
 };
 
-void GlobalRouter::updateDirtyNets(std::vector<Net*> &dirty_nets)
+void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 {
   initRoutingLayers();
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
     // get last pin positions
     std::vector<odb::Point> last_pos;
-    for (const Pin& pin : net->getPins()) 
+    for (const Pin& pin : net->getPins())
       last_pos.push_back(pin.getOnGridPosition());
     net->destroyPins();
     // update pin positions
@@ -823,7 +822,8 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 }
 
-bool GlobalRouter::checkPinPositions(Net* net, std::vector<odb::Point>& last_pos)
+bool GlobalRouter::checkPinPositions(Net* net,
+                                     std::vector<odb::Point>& last_pos)
 {
   bool is_dif = false;
   std::map<odb::Point, int> cnt_pos;
@@ -3939,11 +3939,13 @@ void GlobalRouter::updateDirtyRoutes()
     dirty_nets_.clear();
 
     bool reroutingOverflow = true;
-    // the maximum number of times that the nets traversing the congestion area will be added
+    // the maximum number of times that the nets traversing the congestion area
+    // will be added
     int add_max = 2;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      while(fastroute_->has2Doverflow() && reroutingOverflow && add_max > 0) {
-        // the nets that cross the congestion area are obtained and added to the vector of dirty nets
+      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max > 0) {
+        // the nets that cross the congestion area are obtained and added to the
+        // vector of dirty nets
         for (odb::dbNet* db_net : fastroute_->getCongestionNets()) {
           dirty_nets.push_back(db_net_map_[db_net]);
         }

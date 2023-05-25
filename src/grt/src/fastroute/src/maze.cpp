@@ -2197,7 +2197,9 @@ void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
   }
 }
 
-int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage, bool fillNetsVector)
+int FastRouteCore::getOverflow2Dmaze(int* maxOverflow,
+                                     int* tUsage,
+                                     bool fillNetsVector)
 {
   int H_overflow = 0;
   int V_overflow = 0;
