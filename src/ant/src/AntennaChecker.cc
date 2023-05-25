@@ -766,13 +766,10 @@ void AntennaChecker::calculateParInfo(PARinfo& par_info)
         antenna_rule->getAreaDiffReduce(), par_info.iterm_diff_area, 1.0);
   }
 
-  if (par_info.iterm_gate_area == 0) {
+  if (par_info.iterm_gate_area == 0 || !tech_layer->hasDefaultAntennaRule()) {
     return;
   }
 
-  if (!tech_layer->hasDefaultAntennaRule()) {
-    return;
-  }
   // Find the theoretical limits for PAR and its variants
   const dbTechLayerAntennaRule* antenna_rule
       = tech_layer->getDefaultAntennaRule();
