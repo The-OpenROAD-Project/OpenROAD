@@ -179,6 +179,8 @@ class TritonRoute
                  const std::list<std::unique_ptr<fr::frMarker>>& markers,
                  odb::Rect bbox = odb::Rect(0, 0, 0, 0));
   void checkDRC(const char* drc_file, int x0, int y0, int x1, int y1);
+  bool initGuide();
+  void prep();
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -202,8 +204,6 @@ class TritonRoute
   boost::asio::thread_pool dist_pool_;
 
   void initDesign();
-  bool initGuide();
-  void prep();
   void gr();
   void ta();
   void dr();

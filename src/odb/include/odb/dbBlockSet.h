@@ -146,6 +146,11 @@ class dbSet<dbBlock>
   iterator end() { return iterator(_itr, _itr->end(_parent), _parent); }
 
   ///
+  /// Returns true if set is empty
+  ///
+  bool empty() { return begin() == end(); }
+
+  ///
   /// Returns the maximum number sequential elements the this set
   /// may iterate.
   ///
