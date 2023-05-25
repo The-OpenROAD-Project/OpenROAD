@@ -35,13 +35,33 @@
 
 include("openroad")
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -Wall -fPIC")
-set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem ")
-set(LINKER_OPTIONS                  "-Wl,--export-dynamic")
-
-find_package(Threads REQUIRED)
 find_package(ortools REQUIRED)
+
+add_library(par_lib
+  src/PartitionMgr.cpp
+  src/TritonPart.cpp
+  src/TPHypergraph.cpp
+  src/Utilities.cpp
+  src/TPCoarsener.cpp
+  src/TPMultilevel.cpp
+  src/TPRefiner.cpp
+  src/TPPartitioner.cpp
+  src/KPMRefinement.cpp
+)
+
+target_include_directories(par_lib
+  PUBLIC
+    include
+)
+
+target_link_libraries(par_lib
+  PRIVATE
+    odb
+    OpenSTA
+    utl_lib
+    dbSta_lib
+    ortools::ortools
+)
 
 swig_lib(NAME      par
          NAMESPACE par
@@ -52,15 +72,6 @@ swig_lib(NAME      par
 target_sources(par
   PRIVATE
     src/MakePartitionMgr.cpp
-    src/PartitionMgr.cpp
-    src/TritonPart.cpp
-    src/TPHypergraph.cpp
-    src/Utilities.cpp
-    src/TPCoarsener.cpp
-    src/TPMultilevel.cpp
-    src/TPRefiner.cpp
-    src/TPPartitioner.cpp
-    src/KPMRefinement.cpp
 )
 
 messages(
@@ -73,14 +84,10 @@ target_include_directories(par
 )
 
 target_link_libraries(par
-  PUBLIC
+  PRIVATE
     odb
     OpenSTA
-    utl
-    dbSta
-  PRIVATE
-    ortools::ortools
-    dl
+    par_lib
 )
 
 if (Python3_FOUND AND BUILD_PYTHON)
@@ -99,7 +106,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(par_py
     PUBLIC
-      par
+      par_lib
   )
 
 endif()

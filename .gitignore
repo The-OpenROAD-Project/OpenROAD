@@ -30,6 +30,8 @@ docs/main
 
 .idea/
 cmake-build-debug/
+debug/
 
 coverage-output
 messages.txt
+.metals/

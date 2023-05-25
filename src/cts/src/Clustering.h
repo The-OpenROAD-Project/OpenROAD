@@ -89,7 +89,7 @@ class Clustering
   std::vector<Sink> sinks_;
   std::vector<std::vector<Sink*>> clusters_;
 
-  float segment_length_;
+  float segment_length_ = 0.0;
   std::pair<float, float> branching_point_;
 };
 

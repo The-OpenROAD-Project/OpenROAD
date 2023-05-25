@@ -32,20 +32,20 @@
 
 #pragma once
 
-#include <assert.h>
-#include <float.h>
-#include <limits.h>
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cassert>
+#include <climits>
+#include <cmath>
+#include <cstdarg>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 
 namespace odb {
 
-typedef unsigned int uint;
-typedef unsigned char uchar;
+using uint = unsigned int;
+using uchar = unsigned char;
 
-typedef long long int64;
-typedef unsigned long long uint64;
+using int64 = std::int64_t;
+using uint64 = std::uint64_t;
 
 }  // namespace odb

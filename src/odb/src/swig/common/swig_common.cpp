@@ -150,15 +150,14 @@ odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)
   if (db == NULL) {
     db = odb::dbDatabase::create();
   }
-  FILE* fp = fopen(db_path, "rb");
-  if (!fp) {
-    int errnum = errno;
-    fprintf(stderr, "Error opening file: %s\n", strerror(errnum));
-    fprintf(stderr, "Errno: %d\n", errno);
-    return NULL;
-  }
-  db->read(fp);
-  fclose(fp);
+
+  std::ifstream file;
+  file.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                  | std::ios::eofbit);
+  file.open(db_path, std::ios::binary);
+
+  db->read(file);
+
   return db;
 }
 

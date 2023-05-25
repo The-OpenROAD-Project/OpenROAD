@@ -339,16 +339,16 @@ TRACKS Y 140 DO 282 STEP 3200 LAYER metal9 ;
 TRACKS X 190 DO 282 STEP 3200 LAYER metal10 ;
 TRACKS Y 140 DO 282 STEP 3200 LAYER metal10 ;
 COMPONENTS 10 ;
-    - U1 HM_100x400_4x4 + FIXED ( 689920 8400 ) N ;
-    - U10 HM_100x100_1x1 + FIXED ( 210000 8400 ) FS ;
-    - U2 HM_100x100_1x1 + FIXED ( 210000 487760 ) FS ;
-    - U3 HM_100x100_1x1 + FIXED ( 10080 687680 ) FS ;
-    - U4 HM_100x100_1x1 + FIXED ( 210000 687680 ) FS ;
-    - U5 HM_100x100_1x1 + FIXED ( 10080 487760 ) FS ;
-    - U6 HM_100x400_4x4 + FIXED ( 490000 8400 ) N ;
-    - U7 HM_100x100_1x1 + FIXED ( 10080 208320 ) FS ;
-    - U8 HM_100x100_1x1 + FIXED ( 210000 208320 ) FS ;
-    - U9 HM_100x100_1x1 + FIXED ( 10080 8400 ) FS ;
+    - U1 HM_100x400_4x4 + FIXED ( 19880 17640 ) N ;
+    - U10 HM_100x100_1x1 + FIXED ( 680040 238280 ) FN ;
+    - U2 HM_100x100_1x1 + FIXED ( 239960 238280 ) N ;
+    - U3 HM_100x100_1x1 + FIXED ( 239960 18480 ) N ;
+    - U4 HM_100x100_1x1 + FIXED ( 239960 677600 ) N ;
+    - U5 HM_100x100_1x1 + FIXED ( 239960 458360 ) N ;
+    - U6 HM_100x400_4x4 + FIXED ( 460040 17640 ) N ;
+    - U7 HM_100x100_1x1 + FIXED ( 679840 458360 ) N ;
+    - U8 HM_100x100_1x1 + FIXED ( 680040 18480 ) FN ;
+    - U9 HM_100x100_1x1 + FIXED ( 680040 677600 ) FN ;
 END COMPONENTS
 PINS 8 ;
     - i1 + NET i1 + DIRECTION INPUT + USE SIGNAL
@@ -409,12 +409,4 @@ NETS 23 ;
     - w41 ( U6 I4 ) ( U5 O1 ) + USE SIGNAL ;
     - w42 ( U6 O4 ) + USE SIGNAL ;
 END NETS
-GROUPS 4 ;
-    - top_glue_logic_macro_cluster_0_part_0 U1 ;
-    - top_glue_logic_macro_cluster_1_part_0 U9 U8 U7
-         U10 ;
-    - top_glue_logic_macro_cluster_2_part_0 U6 ;
-    - top_glue_logic_macro_cluster_2_part_1 U5 U4 U3
-         U2 ;
-END GROUPS
 END DESIGN

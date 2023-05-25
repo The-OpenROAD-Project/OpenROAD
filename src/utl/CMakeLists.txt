@@ -65,14 +65,30 @@ if (Python3_FOUND AND BUILD_PYTHON)
   )
 endif()
 
+add_library(utl_lib
+  src/Metrics.cpp
+  src/CFileUtils.cpp
+  src/ScopedTemporaryFile.cpp
+  src/Logger.cpp
+  src/timer.cpp
+)
+
+target_include_directories(utl_lib
+  PUBLIC
+    include
+    src
+    ${Boost_INCLUDE_DIRS}
+)
+
+target_link_libraries(utl_lib
+  PUBLIC
+    spdlog::spdlog
+)
+
 target_sources(utl
   PRIVATE
-    src/Logger.cpp
     src/LoggerCommon.cpp
     src/MakeLogger.cpp
-    src/Metrics.cpp
-    src/CFileUtils.cpp
-    src/ScopedTemporaryFile.cpp
 )
   
 target_include_directories(utl
@@ -82,26 +98,33 @@ target_include_directories(utl
     ${Boost_INCLUDE_DIRS}
 )
 
+target_compile_definitions(utl
+  PUBLIC
+    FMT_DEPRECATED_OSTREAM=1
+)
+
 target_link_libraries(utl
   PUBLIC
-    spdlog::spdlog
+    utl_lib
 )
 
 ############################################################
 # Unit testing
-############################################################
-enable_testing()
+############################################################\
+if(ENABLE_TESTS)
+  enable_testing()
 
-add_executable(CFileUtilsTest
-  ${PROJECT_SOURCE_DIR}/src/utl/test/CFileUtilsTest.cpp
-)
+  add_executable(CFileUtilsTest
+    ${PROJECT_SOURCE_DIR}/src/utl/test/CFileUtilsTest.cpp
+  )
 
-target_include_directories(CFileUtilsTest
-  PRIVATE
-  ${PROJECT_SOURCE_DIR}/src
-  ${OPENROAD_HOME}/include
-)
+  target_include_directories(CFileUtilsTest
+    PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${OPENROAD_HOME}/include
+  )
 
-target_link_libraries(CFileUtilsTest
-  utl
-)
+  target_link_libraries(CFileUtilsTest
+    utl
+  )
+endif()

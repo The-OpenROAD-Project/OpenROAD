@@ -38,6 +38,7 @@
 #include <mutex>
 
 #include "db/infra/frTime.h"
+#include "distributed/PinAccessJobDescription.h"
 #include "distributed/RoutingJobDescription.h"
 #include "distributed/frArchive.h"
 #include "dr/FlexDR.h"
@@ -46,6 +47,7 @@
 #include "dst/JobMessage.h"
 #include "global.h"
 #include "ord/OpenRoad.hh"
+#include "pa/FlexPA.h"
 #include "triton_route/TritonRoute.h"
 #include "utl/Logger.h"
 
@@ -61,7 +63,11 @@ class RoutingCallBack : public dst::JobCallBack
   RoutingCallBack(triton_route::TritonRoute* router,
                   dst::Distributed* dist,
                   utl::Logger* logger)
-      : router_(router), dist_(dist), logger_(logger), init_(true)
+      : router_(router),
+        dist_(dist),
+        logger_(logger),
+        init_(true),
+        pa_(router->getDesign(), logger, nullptr)
   {
   }
   void onRoutingJobReceived(dst::JobMessage& msg, dst::socket& sock) override
@@ -143,6 +149,74 @@ class RoutingCallBack : public dst::JobCallBack
     sock.close();
   }
 
+  void onPinAccessJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  {
+    if (msg.getJobType() != dst::JobMessage::PIN_ACCESS)
+      return;
+    PinAccessJobDescription* desc
+        = static_cast<PinAccessJobDescription*>(msg.getJobDescription());
+    logger_->report("Received PA Job");
+    dst::JobMessage result(dst::JobMessage::SUCCESS);
+    switch (desc->getType()) {
+      case PinAccessJobDescription::UPDATE_PA: {
+        paUpdate update;
+        paUpdate::deserialize(router_->getDesign(), update, desc->getPath());
+        for (auto& [pin, pa_vec] : update.getPinAccess()) {
+          for (auto& pa : pa_vec) {
+            int idx = pa->getId();
+            pin->setPinAccess(idx, std::move(pa));
+          }
+        }
+        for (const auto& [term, aps] : update.getGroupResults()) {
+          term->setAccessPoints(aps);
+        }
+        break;
+      }
+      case PinAccessJobDescription::UPDATE_PATTERNS:
+        pa_.applyPatternsFile(desc->getPath().c_str());
+        break;
+      case PinAccessJobDescription::INIT_PA:
+        pa_.setDesign(router_->getDesign());
+        pa_.init();
+        break;
+      case PinAccessJobDescription::INST_ROWS: {
+        auto instRows = deserializeInstRows(desc->getPath());
+        omp_set_num_threads(ord::OpenRoad::openRoad()->getThreadCount());
+#pragma omp parallel for schedule(dynamic)
+        for (int i = 0; i < instRows.size(); i++) {
+          pa_.genInstRowPattern(instRows.at(i));
+        }
+        paUpdate update;
+        for (const auto& row : instRows) {
+          for (auto inst : row) {
+            for (const auto& iterm : inst->getInstTerms()) {
+              update.addGroupResult({iterm.get(), iterm->getAccessPoints()});
+            }
+          }
+        }
+        auto uResultDesc = std::make_unique<PinAccessJobDescription>();
+        uResultDesc->setPath(fmt::format("{}.res", desc->getPath()));
+        paUpdate::serialize(update, uResultDesc->getPath());
+        result.setJobDescription(std::move(uResultDesc));
+        break;
+      }
+    }
+
+    dist_->sendResult(result, sock);
+    sock.close();
+  }
+  void onGRDRInitJobReceived(dst::JobMessage& msg, dst::socket& sock) override
+  {
+    if (msg.getJobType() != dst::JobMessage::GRDR_INIT)
+      return;
+    router_->initGuide();
+    router_->prep();
+    router_->getDesign()->getRegionQuery()->initDRObj();
+    dst::JobMessage result(dst::JobMessage::SUCCESS);
+    dist_->sendResult(result, sock);
+    sock.close();
+  }
+
  private:
   void sendResult(std::vector<std::pair<int, std::string>> results,
                   dst::socket& sock,
@@ -163,6 +237,15 @@ class RoutingCallBack : public dst::JobCallBack
       sock.close();
   }
 
+  std::vector<std::vector<frInst*>> deserializeInstRows(std::string file_path)
+  {
+    std::vector<std::vector<frInst*>> instRows;
+    paUpdate update;
+    paUpdate::deserialize(router_->getDesign(), update, file_path);
+    instRows = update.getInstRows();
+    return instRows;
+  }
+
   triton_route::TritonRoute* router_;
   dst::Distributed* dist_;
   utl::Logger* logger_;
@@ -170,6 +253,7 @@ class RoutingCallBack : public dst::JobCallBack
   std::string globals_path_;
   bool init_;
   FlexDRViaData via_data_;
+  FlexPA pa_;
 };
 
 }  // namespace fr

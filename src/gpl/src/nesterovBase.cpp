@@ -72,7 +72,7 @@ static float getSecondNorm(const vector<FloatPoint>& a);
 // runtime is doubled compared with float.
 //
 // Choose to use "float" only in the following functions
-static float getOverlapDensityArea(const Bin* bin, const GCell* cell);
+static float getOverlapDensityArea(const Bin& bin, const GCell* cell);
 
 static float fastExp(float exp);
 
@@ -352,7 +352,14 @@ void GNet::updateBox()
 
 int64_t GNet::hpwl() const
 {
-  return static_cast<int64_t>((ux_ - lx_) + (uy_ - ly_));
+  if (ux_ < lx_) {  // dangling net
+    return 0;
+  }
+  int64_t lx = lx_;
+  int64_t ly = ly_;
+  int64_t ux = ux_;
+  int64_t uy = uy_;
+  return (ux - lx) + (uy - ly);
 }
 
 void GNet::clearWaVars()
@@ -613,7 +620,6 @@ BinGrid::BinGrid(Die* die) : BinGrid()
 
 BinGrid::~BinGrid()
 {
-  binStor_.clear();
   bins_.clear();
   binCntX_ = binCntY_ = 0;
   binSizeX_ = binSizeY_ = 0;
@@ -762,7 +768,8 @@ void BinGrid::initBins()
     // find binCnt: 2, 4, 8, 16, 32, 64, ...
     // s.t. #bins(binCnt) <= idealBinCnt <= #bins(binCnt*2).
     for (foundBinCnt = 2; foundBinCnt <= 1024; foundBinCnt *= 2) {
-      if (foundBinCnt * (foundBinCnt * ratio) <= idealBinCnt
+      if ((foundBinCnt == 2
+           || foundBinCnt * (foundBinCnt * ratio) <= idealBinCnt)
           && 4 * foundBinCnt * (foundBinCnt * ratio) > idealBinCnt) {
         break;
       }
@@ -784,19 +791,16 @@ void BinGrid::initBins()
 
   log_->info(GPL, 29, "BinSize: {} {}", binSizeX_, binSizeY_);
 
-  // initialize binStor_, bins_ vector
-  binStor_.resize(binCntX_ * binCntY_);
-  bins_.reserve(binCntX_ * binCntY_);
+  int bin_dimensions = binCntX_ * binCntY_;
+  // initialize bins_ vector
+  bins_.reserve(bin_dimensions);
   int x = lx_, y = ly_;
   int idxX = 0, idxY = 0;
-  for (auto& bin : binStor_) {
+  for (int i = 0; i < bin_dimensions; i++) {
     int sizeX = (x + binSizeX_ > ux_) ? ux_ - x : binSizeX_;
     int sizeY = (y + binSizeY_ > uy_) ? uy_ - y : binSizeY_;
 
-    // cout << "idxX: " << idxX << " idxY: " << idxY
-    //   << " x:" << x << " y:" << y
-    //   << " " << x+sizeX << " " << y+sizeY << endl;
-    bin = Bin(idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
+    bins_.emplace_back(idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
 
     // move x, y coordinates.
     x += binSizeX_;
@@ -809,8 +813,6 @@ void BinGrid::initBins()
       idxY++;
       idxX = 0;
     }
-
-    bins_.push_back(&bin);
   }
 
   log_->info(GPL, 30, "NumBins: {}", bins_.size());
@@ -822,8 +824,8 @@ void BinGrid::initBins()
 void BinGrid::updateBinsNonPlaceArea()
 {
   for (auto& bin : bins_) {
-    bin->setNonPlaceArea(0);
-    bin->setNonPlaceAreaUnscaled(0);
+    bin.setNonPlaceArea(0);
+    bin.setNonPlaceAreaUnscaled(0);
   }
 
   for (auto& inst : pb_->nonPlaceInsts()) {
@@ -831,20 +833,20 @@ void BinGrid::updateBinsNonPlaceArea()
     std::pair<int, int> pairY = getMinMaxIdxY(inst);
     for (int i = pairX.first; i < pairX.second; i++) {
       for (int j = pairY.first; j < pairY.second; j++) {
-        Bin* bin = bins_[j * binCntX_ + i];
+        Bin& bin = bins_[j * binCntX_ + i];
 
         // Note that nonPlaceArea should have scale-down with
         // target density.
         // See MS-replace paper
         //
-        bin->addNonPlaceArea(
+        bin.addNonPlaceArea(
             getOverlapArea(
-                bin,
+                &bin,
                 inst,
                 pb_->db()->getChip()->getBlock()->getDbUnitsPerMicron())
-            * bin->targetDensity());
-        bin->addNonPlaceAreaUnscaled(getOverlapAreaUnscaled(bin, inst)
-                                     * bin->targetDensity());
+            * bin.targetDensity());
+        bin.addNonPlaceAreaUnscaled(getOverlapAreaUnscaled(&bin, inst)
+                                    * bin.targetDensity());
       }
     }
   }
@@ -854,10 +856,10 @@ void BinGrid::updateBinsNonPlaceArea()
 void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
 {
   // clear the Bin-area info
-  for (auto& bin : bins_) {
-    bin->setInstPlacedArea(0);
-    bin->setInstPlacedAreaUnscaled(0);
-    bin->setFillerArea(0);
+  for (Bin& bin : bins_) {
+    bin.setInstPlacedArea(0);
+    bin.setInstPlacedAreaUnscaled(0);
+    bin.setFillerArea(0);
   }
 
   for (auto& cell : cells) {
@@ -873,13 +875,13 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
       if (cell->isMacroInstance()) {
         for (int i = pairX.first; i < pairX.second; i++) {
           for (int j = pairY.first; j < pairY.second; j++) {
-            Bin* bin = bins_[j * binCntX_ + i];
+            Bin& bin = bins_[j * binCntX_ + i];
 
             const float scaledAvea = getOverlapDensityArea(bin, cell)
                                      * cell->densityScale()
-                                     * bin->targetDensity();
-            bin->addInstPlacedArea(scaledAvea);
-            bin->addInstPlacedAreaUnscaled(scaledAvea);
+                                     * bin.targetDensity();
+            bin.addInstPlacedArea(scaledAvea);
+            bin.addInstPlacedAreaUnscaled(scaledAvea);
           }
         }
       }
@@ -887,20 +889,20 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
       else if (cell->isStdInstance()) {
         for (int i = pairX.first; i < pairX.second; i++) {
           for (int j = pairY.first; j < pairY.second; j++) {
-            Bin* bin = bins_[j * binCntX_ + i];
+            Bin& bin = bins_[j * binCntX_ + i];
             const float scaledArea
                 = getOverlapDensityArea(bin, cell) * cell->densityScale();
-            bin->addInstPlacedArea(scaledArea);
-            bin->addInstPlacedAreaUnscaled(scaledArea);
+            bin.addInstPlacedArea(scaledArea);
+            bin.addInstPlacedAreaUnscaled(scaledArea);
           }
         }
       }
     } else if (cell->isFiller()) {
       for (int i = pairX.first; i < pairX.second; i++) {
         for (int j = pairY.first; j < pairY.second; j++) {
-          Bin* bin = bins_[j * binCntX_ + i];
-          bin->addFillerArea(getOverlapDensityArea(bin, cell)
-                             * cell->densityScale());
+          Bin& bin = bins_[j * binCntX_ + i];
+          bin.addFillerArea(getOverlapDensityArea(bin, cell)
+                            * cell->densityScale());
         }
       }
     }
@@ -910,24 +912,24 @@ void BinGrid::updateBinsGCellDensityArea(const std::vector<GCell*>& cells)
   overflowAreaUnscaled_ = 0;
   // update density and overflowArea
   // for nesterov use and FFT library
-  for (auto& bin : bins_) {
-    int64_t binArea = bin->binArea();
+  for (Bin& bin : bins_) {
+    int64_t binArea = bin.binArea();
     const float scaledBinArea
-        = static_cast<float>(binArea * bin->targetDensity());
-    bin->setDensity((static_cast<float>(bin->instPlacedArea())
-                     + static_cast<float>(bin->fillerArea())
-                     + static_cast<float>(bin->nonPlaceArea()))
-                    / scaledBinArea);
+        = static_cast<float>(binArea * bin.targetDensity());
+    bin.setDensity((static_cast<float>(bin.instPlacedArea())
+                    + static_cast<float>(bin.fillerArea())
+                    + static_cast<float>(bin.nonPlaceArea()))
+                   / scaledBinArea);
 
     overflowArea_ += std::max(0.0f,
-                              static_cast<float>(bin->instPlacedArea())
-                                  + static_cast<float>(bin->nonPlaceArea())
+                              static_cast<float>(bin.instPlacedArea())
+                                  + static_cast<float>(bin.nonPlaceArea())
                                   - scaledBinArea);
 
     overflowAreaUnscaled_ += std::max(
         0.0f,
-        static_cast<float>(bin->instPlacedAreaUnscaled())
-            + static_cast<float>(bin->nonPlaceAreaUnscaled()) - scaledBinArea);
+        static_cast<float>(bin.instPlacedAreaUnscaled())
+            + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
   }
 }
 
@@ -1751,7 +1753,7 @@ void NesterovBase::setTargetDensity(float density)
   targetDensity_ = density;
   bg_.setTargetDensity(density);
   for (auto& bin : bins()) {
-    bin->setTargetDensity(density);
+    bin.setTargetDensity(density);
   }
   // update nonPlaceArea's target denstiy
   bg_.updateBinsNonPlaceArea();
@@ -2016,12 +2018,12 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
 
   for (int i = pairX.first; i < pairX.second; i++) {
     for (int j = pairY.first; j < pairY.second; j++) {
-      Bin* bin = bg_.bins()[j * binCntX() + i];
+      const Bin& bin = bg_.binsConst()[j * binCntX() + i];
       float overlapArea
           = getOverlapDensityArea(bin, gCell) * gCell->densityScale();
 
-      electroForce.x += overlapArea * bin->electroForceX();
-      electroForce.y += overlapArea * bin->electroForceY();
+      electroForce.x += overlapArea * bin.electroForceX();
+      electroForce.y += overlapArea * bin.electroForceY();
     }
   }
 
@@ -2032,8 +2034,8 @@ FloatPoint NesterovBase::getDensityGradient(const GCell* gCell) const
 void NesterovBase::updateDensityForceBin()
 {
   // copy density to utilize FFT
-  for (auto& bin : bg_.bins()) {
-    fft_->updateDensity(bin->x(), bin->y(), bin->density());
+  for (Bin& bin : bg_.bins()) {
+    fft_->updateDensity(bin.x(), bin.y(), bin.density());
   }
 
   // do FFT
@@ -2042,16 +2044,16 @@ void NesterovBase::updateDensityForceBin()
   // update electroPhi and electroForce
   // update sumPhi_ for nesterov loop
   sumPhi_ = 0;
-  for (auto& bin : bg_.bins()) {
-    auto eForcePair = fft_->getElectroForce(bin->x(), bin->y());
-    bin->setElectroForce(eForcePair.first, eForcePair.second);
+  for (Bin& bin : bg_.bins()) {
+    auto eForcePair = fft_->getElectroForce(bin.x(), bin.y());
+    bin.setElectroForce(eForcePair.first, eForcePair.second);
 
-    float electroPhi = fft_->getElectroPhi(bin->x(), bin->y());
-    bin->setElectroPhi(electroPhi);
+    float electroPhi = fft_->getElectroPhi(bin.x(), bin.y());
+    bin.setElectroPhi(electroPhi);
 
     sumPhi_ += electroPhi
-               * static_cast<float>(bin->nonPlaceArea() + bin->instPlacedArea()
-                                    + bin->fillerArea());
+               * static_cast<float>(bin.nonPlaceArea() + bin.instPlacedArea()
+                                    + bin.fillerArea());
   }
 }
 
@@ -2112,10 +2114,17 @@ void NesterovBase::initDensity1()
                          / static_cast<float>(nesterovInstsArea());
 }
 
-float NesterovBase::initDensity2()
+float NesterovBase::initDensity2(float wlCoeffX, float wlCoeffY)
 {
-  densityPenalty_
-      = (wireLengthGradSum_ / densityGradSum_) * npVars_->initDensityPenalty;
+  if (wireLengthGradSum_ == 0) {
+    densityPenalty_ = npVars_->initDensityPenalty;
+    updatePrevGradient(wlCoeffX, wlCoeffY);
+  }
+
+  if (wireLengthGradSum_ != 0) {
+    densityPenalty_
+        = (wireLengthGradSum_ / densityGradSum_) * npVars_->initDensityPenalty;
+  }
 
   sumOverflow_ = static_cast<float>(overflowArea())
                  / static_cast<float>(nesterovInstsArea());
@@ -2390,7 +2399,7 @@ void NesterovBase::updateNextIter(const int iter)
                  prevHpwl_);
   }
 
-  if (minSumOverflow > sumOverflowUnscaled_) {
+  if (iter > 50 && minSumOverflow > sumOverflowUnscaled_) {
     minSumOverflow = sumOverflowUnscaled_;
     hpwlWithMinSumOverflow = prevHpwl_;
   }
@@ -2581,12 +2590,10 @@ static int fastModulo(const int input, const int ceil)
   return input >= ceil ? input % ceil : input;
 }
 
-static float getOverlapDensityArea(const Bin* bin, const GCell* cell)
+static float getOverlapDensityArea(const Bin& bin, const GCell* cell)
 {
-  int rectLx = max(bin->lx(), cell->dLx()),
-      rectLy = max(bin->ly(), cell->dLy()),
-      rectUx = min(bin->ux(), cell->dUx()),
-      rectUy = min(bin->uy(), cell->dUy());
+  int rectLx = max(bin.lx(), cell->dLx()), rectLy = max(bin.ly(), cell->dLy()),
+      rectUx = min(bin.ux(), cell->dUx()), rectUy = min(bin.uy(), cell->dUy());
 
   if (rectLx >= rectUx || rectLy >= rectUy) {
     return 0;

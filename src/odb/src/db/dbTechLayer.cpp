@@ -49,6 +49,7 @@
 #include "dbTechLayerCutSpacingTableOrthRule.h"
 #include "dbTechLayerEolExtensionRule.h"
 #include "dbTechLayerEolKeepOutRule.h"
+#include "dbTechLayerKeepOutZoneRule.h"
 #include "dbTechLayerMinCutRule.h"
 #include "dbTechLayerMinStepRule.h"
 #include "dbTechLayerSpacingEolRule.h"
@@ -161,6 +162,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
     return false;
 
+  if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_)
+    return false;
+
   // User Code Begin ==
   if (flags_.type_ != rhs.flags_.type_)
     return false;
@@ -226,6 +230,9 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
     return false;
 
   if (_min_step_max_edges != rhs._min_step_max_edges)
+    return false;
+
+  if (_first_last_pitch != rhs._first_last_pitch)
     return false;
 
   if (_pt._width != rhs._pt._width)
@@ -337,6 +344,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_TABLE(width_table_rules_tbl_);
   DIFF_TABLE(min_cuts_rules_tbl_);
   DIFF_TABLE(area_rules_tbl_);
+  DIFF_TABLE(keepout_zone_rules_tbl_);
   // User Code Begin Differences
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.direction_);
@@ -360,6 +368,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   DIFF_FIELD(_min_width);
   DIFF_FIELD(_min_step_max_length);
   DIFF_FIELD(_min_step_max_edges);
+  DIFF_FIELD(_first_last_pitch);
   DIFF_FIELD(_pt._length);
   DIFF_FIELD(_pt._from_width);
   DIFF_FIELD(_name);
@@ -414,6 +423,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_TABLE(width_table_rules_tbl_);
   DIFF_OUT_TABLE(min_cuts_rules_tbl_);
   DIFF_OUT_TABLE(area_rules_tbl_);
+  DIFF_OUT_TABLE(keepout_zone_rules_tbl_);
 
   // User Code Begin Out
   DIFF_OUT_FIELD(flags_.type_);
@@ -438,6 +448,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_min_width);
   DIFF_OUT_FIELD(_min_step_max_length);
   DIFF_OUT_FIELD(_min_step_max_edges);
+  DIFF_OUT_FIELD(_first_last_pitch);
   DIFF_OUT_FIELD(_pt._length);
   DIFF_OUT_FIELD(_pt._from_width);
   DIFF_OUT_FIELD(_name);
@@ -540,6 +551,11 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       this,
       (GetObjTbl_t) &_dbTechLayer::getObjectTable,
       dbTechLayerAreaRuleObj);
+  keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
+      db,
+      this,
+      (GetObjTbl_t) &_dbTechLayer::getObjectTable,
+      dbTechLayerKeepOutZoneRuleObj);
   // User Code Begin Constructor
   flags_.type_ = dbTechLayerType::ROUTING;
   flags_.direction_ = dbTechLayerDir::NONE;
@@ -567,6 +583,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
   _min_width = 0;
   _min_step_max_length = -1;
   _min_step_max_edges = -1;
+  _first_last_pitch = -1;
   _v55sp_length_idx.clear();
   _v55sp_width_idx.clear();
   _v55sp_spacing.clear();
@@ -655,6 +672,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
       = new dbTable<_dbTechLayerMinCutRule>(db, this, *r.min_cuts_rules_tbl_);
   area_rules_tbl_
       = new dbTable<_dbTechLayerAreaRule>(db, this, *r.area_rules_tbl_);
+  keepout_zone_rules_tbl_ = new dbTable<_dbTechLayerKeepOutZoneRule>(
+      db, this, *r.keepout_zone_rules_tbl_);
   // User Code Begin CopyConstructor
   flags_ = r.flags_;
   _pitch_x = r._pitch_x;
@@ -676,6 +695,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   _min_step = r._min_step;
   _min_step_max_length = r._min_step_max_length;
   _min_step_max_edges = r._min_step_max_edges;
+  _first_last_pitch = r._first_last_pitch;
   _pt = r._pt;
   _name = NULL;
   _alias = NULL;
@@ -733,6 +753,8 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   stream >> *obj.width_table_rules_tbl_;
   stream >> *obj.min_cuts_rules_tbl_;
   stream >> *obj.area_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
+    stream >> *obj.keepout_zone_rules_tbl_;
   // User Code Begin >>
   stream >> obj._pitch_x;
   stream >> obj._pitch_y;
@@ -782,6 +804,9 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
         break;
       }
   }
+  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+    stream >> obj._first_last_pitch;
+  }
   // User Code End >>
   return stream;
 }
@@ -805,6 +830,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << *obj.width_table_rules_tbl_;
   stream << *obj.min_cuts_rules_tbl_;
   stream << *obj.area_rules_tbl_;
+  if (obj.getDatabase()->isSchema(db_schema_keepout_zone))
+    stream << *obj.keepout_zone_rules_tbl_;
   // User Code Begin <<
   stream << obj._pitch_x;
   stream << obj._pitch_y;
@@ -846,6 +873,9 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
   stream << obj._oxide2;
   if (obj.getDatabase()->isSchema(db_schema_wrongway_width))
     stream << obj.wrong_way_width_;
+  if (obj.getDatabase()->isSchema(db_schema_lef58_pitch)) {
+    stream << obj._first_last_pitch;
+  }
   // User Code End <<
   return stream;
 }
@@ -883,6 +913,8 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
       return min_cuts_rules_tbl_;
     case dbTechLayerAreaRuleObj:
       return area_rules_tbl_;
+    case dbTechLayerKeepOutZoneRuleObj:
+      return keepout_zone_rules_tbl_;
       // User Code Begin getObjectTable
     case dbTechLayerSpacingRuleObj:
       return _spacing_rules_tbl;
@@ -918,6 +950,7 @@ _dbTechLayer::~_dbTechLayer()
   delete width_table_rules_tbl_;
   delete min_cuts_rules_tbl_;
   delete area_rules_tbl_;
+  delete keepout_zone_rules_tbl_;
   // User Code Begin Destructor
   if (_name)
     free((void*) _name);
@@ -1093,6 +1126,13 @@ dbSet<dbTechLayerAreaRule> dbTechLayer::getTechLayerAreaRules() const
 {
   _dbTechLayer* obj = (_dbTechLayer*) this;
   return dbSet<dbTechLayerAreaRule>(obj, obj->area_rules_tbl_);
+}
+
+dbSet<dbTechLayerKeepOutZoneRule> dbTechLayer::getTechLayerKeepOutZoneRules()
+    const
+{
+  _dbTechLayer* obj = (_dbTechLayer*) this;
+  return dbSet<dbTechLayerKeepOutZoneRule>(obj, obj->keepout_zone_rules_tbl_);
 }
 
 void dbTechLayer::setRectOnly(bool rect_only)
@@ -1980,6 +2020,12 @@ int dbTechLayer::getPitchY()
   return layer->_pitch_y;
 }
 
+int dbTechLayer::getFirstLastPitch()
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  return layer->_first_last_pitch;
+}
+
 void dbTechLayer::setPitch(int pitch)
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
@@ -1994,6 +2040,12 @@ void dbTechLayer::setPitchXY(int pitch_x, int pitch_y)
   layer->_pitch_x = pitch_x;
   layer->_pitch_y = pitch_y;
   layer->flags_.has_xy_pitch_ = true;
+}
+
+void dbTechLayer::setFirstLastPitch(int first_last_pitch)
+{
+  _dbTechLayer* layer = (_dbTechLayer*) this;
+  layer->_first_last_pitch = first_last_pitch;
 }
 
 bool dbTechLayer::hasXYPitch()

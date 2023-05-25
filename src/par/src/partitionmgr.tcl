@@ -96,6 +96,11 @@ proc triton_part_hypergraph { args } {
 sta::define_cmd_args "triton_part_design" { [-num_parts num_parts] \
                                             [-balance_constraint balance_constraint] \
                                             [-seed seed] \
+                                            [-fence_flag fence_flag] \
+                                            [-fence_lx fence_lx] \
+                                            [-fence_ly fence_ly] \
+                                            [-fence_ux fence_ux] \
+                                            [-fence_uy fence_uy] \
                                             [-solution_file file_name] \
                                             [-paths_file file_name] \
                                             [-hypergraph_file file_name] \
@@ -105,6 +110,11 @@ proc triton_part_design { args } {
       keys {-num_parts
             -balance_constraint
             -seed
+            -fence_flag fence_flag 
+            -fence_lx fence_lx
+            -fence_ly fence_ly
+            -fence_ux fence_ux
+            -fence_uy fence_uy
             -solution_file \
             -paths_file \
             -hypergraph_file } \
@@ -112,6 +122,11 @@ proc triton_part_design { args } {
   set num_parts 2
   set balance_constraint 1.0
   set seed 0
+  set fence_flag false
+  set fence_lx 0.0
+  set fence_ly 0.0
+  set fence_ux 0.0
+  set fence_uy 0.0
   set hypergraph_file ""
   set paths_file ""
   set solution_file ""
@@ -132,6 +147,18 @@ proc triton_part_design { args } {
       set num_parts $keys(-num_parts)
   }
 
+  if { [info exists keys(-fence_flag)] && 
+       [info exists keys(-fence_lx)] && 
+       [info exists keys(-fence_ly)] && 
+       [info exists keys(-fence_ux)] && 
+       [info exists keys(-fence_uy)] } {
+    set fence_flag $keys(-fence_flag)
+    set fence_lx $keys(-fence_lx)
+    set fence_ly $keys(-fence_ly)
+    set fence_ux $keys(-fence_ux)
+    set fence_uy $keys(-fence_uy)
+  }
+
   if { [info exists keys(-balance_constraint)] } {
       set balance_constraint $keys(-balance_constraint)
   }
@@ -141,6 +168,7 @@ proc triton_part_design { args } {
   }
 
   par::triton_part_design $num_parts $balance_constraint $seed \
+      $fence_flag $fence_lx $fence_ly $fence_ux $fence_uy \
       $solution_file $paths_file $hypergraph_file
 }
 

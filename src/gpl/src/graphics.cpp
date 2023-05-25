@@ -34,6 +34,7 @@
 #include "graphics.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <limits>
 
@@ -159,13 +160,13 @@ void Graphics::drawNesterov(gui::Painter& painter)
     // Draw the bins
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
     for (auto& bin : nbVec_[0]->bins()) {
-      int color = bin->density() * 50 + 20;
+      int color = bin.density() * 50 + 20;
 
       color = (color > 255) ? 255 : (color < 20) ? 20 : color;
       color = 255 - color;
 
       painter.setBrush({color, color, color, 180});
-      painter.drawRect({bin->lx(), bin->ly(), bin->ux(), bin->uy()});
+      painter.drawRect({bin.lx(), bin.ly(), bin.ux(), bin.uy()});
     }
   }
 
@@ -222,24 +223,24 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
   // Draw force direction lines
   if (draw_bins_) {
-    float efMax = 0;
+    double efMax = 0;
     int max_len = std::numeric_limits<int>::max();
     for (auto& bin : nbVec_[0]->bins()) {
       efMax
-          = std::max(efMax, hypot(bin->electroForceX(), bin->electroForceY()));
-      max_len = std::min({max_len, bin->dx(), bin->dy()});
+          = std::max(efMax, hypot(bin.electroForceX(), bin.electroForceY()));
+      max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
     for (auto& bin : nbVec_[0]->bins()) {
-      float fx = bin->electroForceX();
-      float fy = bin->electroForceY();
+      float fx = bin.electroForceX();
+      float fy = bin.electroForceY();
       float f = hypot(fx, fy);
       float ratio = f / efMax;
       float dx = fx / f * max_len * ratio;
       float dy = fy / f * max_len * ratio;
 
-      int cx = bin->cx();
-      int cy = bin->cy();
+      int cx = bin.cx();
+      int cy = bin.cy();
 
       painter.setPen(gui::Painter::red, true);
       painter.drawLine(cx, cy, cx + dx, cy + dy);
@@ -362,28 +363,25 @@ odb::Rect Graphics::getBounds() const
 
 bool Graphics::populateMap()
 {
-  const BinGrid& grid = nbVec_[0]->getBinGrid();
-  double sum = 0;
-  for (const Bin* bin : grid.bins()) {
-    odb::Rect box(bin->lx(), bin->ly(), bin->ux(), bin->uy());
+  BinGrid& grid = nbVec_[0]->getBinGrid();
+  for (Bin bin : grid.bins()) {
+    odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
     if (heatmap_type_ == Density) {
-      const double value = bin->density() * 100.0;
+      const double value = bin.density() * 100.0;
       addToMap(box, value);
     } else {
       // Overflow isn't stored per bin so we recompute it here
       // (see BinGrid::updateBinsGCellDensityArea).
 
-      int64_t binArea = bin->binArea();
+      int64_t binArea = bin.binArea();
       const float scaledBinArea
-          = static_cast<float>(binArea * bin->targetDensity());
+          = static_cast<float>(binArea * bin.targetDensity());
 
-      double value
-          = std::max(0.0f,
-                     static_cast<float>(bin->instPlacedAreaUnscaled())
-                         + static_cast<float>(bin->nonPlaceAreaUnscaled())
-                         - scaledBinArea);
+      double value = std::max(
+          0.0f,
+          static_cast<float>(bin.instPlacedAreaUnscaled())
+              + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
       addToMap(box, value);
-      sum += value;
     }
   }
 

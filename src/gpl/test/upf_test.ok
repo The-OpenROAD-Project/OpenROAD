@@ -6,7 +6,7 @@
 [INFO ODB-0225]     Created 437 library cells
 [INFO ODB-0226] Finished LEF file:  sky130hd/sky130_fd_sc_hd_merged.lef
 [WARNING IFP-0028] Core area lower left (2.000, 2.000) snapped to (2.300, 2.720).
-[INFO IFP-0001] Added 39 rows of 235 sites.
+[INFO IFP-0001] Added 39 rows of 235 site unithd with height 1.
 [INFO GPL-0002] DBU: 1000
 [INFO GPL-0003] SiteSize: 460 2720
 [INFO GPL-0004] CoreAreaLxLy: 2300 2720

@@ -614,15 +614,12 @@ void FlexRP::prep_viaForbiddenTurnLen_minSpc(const frLayerNum& lNum,
     viaBox1 = via1.getLayer2BBox();
   }
   int width1 = viaBox1.minDXDY();
-  bool isVia1Fat = isCurrDirX
-                       ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
-                       : (viaBox1.xMax() - viaBox1.xMin() > defaultWidth);
-  auto prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
-                         : (viaBox1.xMax() - viaBox1.xMin());
+  bool isVia1Fat = isCurrDirX ? (viaBox1.dy() > defaultWidth)
+                              : (viaBox1.dx() > defaultWidth);
+  auto prl1 = isCurrDirX ? viaBox1.dy() : viaBox1.dx();
 
-  frCoord minNonOverlapDist
-      = isCurrDirX ? ((viaBox1.xMax() - viaBox1.xMin() + width) / 2)
-                   : ((viaBox1.yMax() - viaBox1.yMin() + width) / 2);
+  frCoord minNonOverlapDist = isCurrDirX ? ((viaBox1.dx() + width) / 2)
+                                         : ((viaBox1.dy() + width) / 2);
   frCoord minReqDist = INT_MIN;
   if (isVia1Fat || ndr) {
     auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
@@ -1114,15 +1111,11 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
   bool isSide1;
   bool isSide2;
   if (isCurrDirY) {
-    isSide1
-        = (cutBox1.xMax() - cutBox1.xMin()) > (cutBox1.yMax() - cutBox1.yMin());
-    isSide2
-        = (cutBox2.xMax() - cutBox2.xMin()) > (cutBox2.yMax() - cutBox2.yMin());
+    isSide1 = cutBox1.dx() > cutBox1.dy();
+    isSide2 = cutBox2.dx() > cutBox2.dy();
   } else {
-    isSide1
-        = (cutBox1.xMax() - cutBox1.xMin()) < (cutBox1.yMax() - cutBox1.yMin());
-    isSide2
-        = (cutBox2.xMax() - cutBox2.xMin()) < (cutBox2.yMax() - cutBox2.yMin());
+    isSide1 = cutBox1.dx() < cutBox1.dy();
+    isSide2 = cutBox2.dx() < cutBox2.dy();
   }
   if (layer1->getLayerNum() == layer2->getLayerNum()) {
     frLef58CutSpacingTableConstraint* lef58con = nullptr;
@@ -1138,11 +1131,9 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
       if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
           && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
         if (!swapped)
-          reqSpcVal += isCurrDirY ? (cutBox1.yMax() - cutBox1.yMin())
-                                  : (cutBox1.xMax() - cutBox1.xMin());
+          reqSpcVal += isCurrDirY ? cutBox1.dy() : cutBox1.dx();
         else
-          reqSpcVal += isCurrDirY ? (cutBox2.yMax() - cutBox2.yMin())
-                                  : (cutBox2.xMax() - cutBox2.xMin());
+          reqSpcVal += isCurrDirY ? cutBox2.dy() : cutBox2.dx();
       }
       if (reqSpcVal != 0)
         forbiddenRanges.push_back(make_pair(0, reqSpcVal));
@@ -1164,12 +1155,8 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpcTbl(
       return;
     if (!dbRule->isCenterToCenter(cutClass1, cutClass2)
         && !dbRule->isCenterAndEdge(cutClass1, cutClass2)) {
-      reqSpcVal += isCurrDirY ? ((cutBox1.yMax() - cutBox1.yMin()
-                                  + cutBox2.yMax() - cutBox2.yMin())
-                                 / 2)
-                              : ((cutBox1.xMax() - cutBox1.xMin()
-                                  + cutBox2.xMax() - cutBox2.xMin())
-                                 / 2);
+      reqSpcVal += isCurrDirY ? ((cutBox1.dy() + cutBox2.dy()) / 2)
+                              : ((cutBox1.dx() + cutBox2.dx()) / 2);
     }
     forbiddenRanges.push_back(make_pair(0, reqSpcVal));
   }
@@ -1182,9 +1169,8 @@ void FlexRP::prep_via2viaForbiddenLen_lef58CutSpc_helper(
     frCoord reqSpcVal,
     pair<frCoord, frCoord>& range)
 {
-  frCoord overlapLen = min((enclosureBox1.yMax() - enclosureBox1.yMin()),
-                           (enclosureBox2.yMax() - enclosureBox2.yMin()));
-  frCoord cutLen = cutBox.yMax() - cutBox.yMin();
+  frCoord overlapLen = min(enclosureBox1.dy(), enclosureBox2.dy());
+  frCoord cutLen = cutBox.dy();
   frCoord forbiddenLowerBound, forbiddenUpperBound;
   forbiddenLowerBound = max(0, (overlapLen - cutLen) / 2 - reqSpcVal);
   forbiddenUpperBound = reqSpcVal + (overlapLen + cutLen) / 2;
@@ -1443,8 +1429,7 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
         }
         auto reqSpcVal = con->getCutSpacing();
         if (!con->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? (cutBox1.yMax() - cutBox1.yMin())
-                                  : (cutBox1.xMax() - cutBox1.xMin());
+          reqSpcVal += isCurrDirY ? cutBox1.dy() : cutBox1.dx();
         }
         forbiddenRanges.push_back(make_pair(0, reqSpcVal));
       }
@@ -1461,8 +1446,7 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
         }
         auto reqSpcVal = con->getCutSpacing();
         if (!con->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? (cutBox1.yMax() - cutBox1.yMin())
-                                  : (cutBox1.xMax() - cutBox1.xMin());
+          reqSpcVal += isCurrDirY ? cutBox1.dy() : cutBox1.dx();
         }
         forbiddenRanges.push_back(make_pair(0, reqSpcVal));
       }
@@ -1526,12 +1510,8 @@ void FlexRP::prep_via2viaForbiddenLen_cutSpc(const frLayerNum& lNum,
         ;
       } else {
         if (!samenetCon->hasCenterToCenter()) {
-          reqSpcVal += isCurrDirY ? ((cutBox1.yMax() - cutBox1.yMin()
-                                      + cutBox2.yMax() - cutBox2.yMin())
-                                     / 2)
-                                  : ((cutBox1.xMax() - cutBox1.xMin()
-                                      + cutBox2.xMax() - cutBox2.xMin())
-                                     / 2);
+          reqSpcVal += isCurrDirY ? ((cutBox1.dy() + cutBox2.dy()) / 2)
+                                  : ((cutBox1.dx() + cutBox2.dx()) / 2);
         }
       }
       if (reqSpcVal != 0 && !samenetCon->hasStack()) {
@@ -1563,11 +1543,9 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
     viaBox1 = via1.getLayer2BBox();
   }
   auto width1 = viaBox1.minDXDY();
-  bool isVia1Fat = isCurrDirX
-                       ? (viaBox1.yMax() - viaBox1.yMin() > defaultWidth)
-                       : (viaBox1.xMax() - viaBox1.xMin() > defaultWidth);
-  auto prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
-                         : (viaBox1.xMax() - viaBox1.xMin());
+  bool isVia1Fat = isCurrDirX ? (viaBox1.dy() > defaultWidth)
+                              : (viaBox1.dx() > defaultWidth);
+  auto prl1 = isCurrDirX ? viaBox1.dy() : viaBox1.dx();
 
   frVia via2(viaDef2);
   Rect viaBox2;
@@ -1577,18 +1555,12 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
     viaBox2 = via2.getLayer2BBox();
   }
   auto width2 = viaBox2.minDXDY();
-  bool isVia2Fat = isCurrDirX
-                       ? (viaBox2.yMax() - viaBox2.yMin() > defaultWidth)
-                       : (viaBox2.xMax() - viaBox2.xMin() > defaultWidth);
-  auto prl2 = isCurrDirX ? (viaBox2.yMax() - viaBox2.yMin())
-                         : (viaBox2.xMax() - viaBox2.xMin());
+  bool isVia2Fat = isCurrDirX ? (viaBox2.dy() > defaultWidth)
+                              : (viaBox2.dx() > defaultWidth);
+  auto prl2 = isCurrDirX ? viaBox2.dy() : viaBox2.dx();
 
-  frCoord minNonOverlapDist = isCurrDirX ? ((viaBox1.xMax() - viaBox1.xMin()
-                                             + viaBox2.xMax() - viaBox2.xMin())
-                                            / 2)
-                                         : ((viaBox1.yMax() - viaBox1.yMin()
-                                             + viaBox2.yMax() - viaBox2.yMin())
-                                            / 2);
+  frCoord minNonOverlapDist = isCurrDirX ? ((viaBox1.dx() + viaBox2.dx()) / 2)
+                                         : ((viaBox1.dy() + viaBox2.dy()) / 2);
   frCoord minReqDist = INT_MIN;
 
   // check minSpc rule
@@ -1627,12 +1599,10 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
       viaBox1 = via1.getLayer1BBox();
       lNum = lNum - 2;
     }
-    minNonOverlapDist = isCurrDirX ? (viaBox1.xMax() - viaBox1.xMin())
-                                   : (viaBox2.xMax() - viaBox2.xMin());
+    minNonOverlapDist = isCurrDirX ? viaBox1.dx() : viaBox1.dy();
 
     width1 = viaBox1.minDXDY();
-    prl1 = isCurrDirX ? (viaBox1.yMax() - viaBox1.yMin())
-                      : (viaBox1.xMax() - viaBox1.xMin());
+    prl1 = isCurrDirX ? viaBox1.dy() : viaBox1.dx();
     minReqDist = INT_MIN;
     auto con = getDesign()->getTech()->getLayer(lNum)->getMinSpacing();
     if (con) {
@@ -1641,11 +1611,11 @@ void FlexRP::prep_via2viaForbiddenLen_minSpc(frLayerNum lNum,
       } else if (con->typeId()
                  == frConstraintTypeEnum::frcSpacingTablePrlConstraint) {
         minReqDist = static_cast<frSpacingTablePrlConstraint*>(con)->find(
-            max(width1, width2), prl1);
+            width1, prl1);
       } else if (con->typeId()
                  == frConstraintTypeEnum::frcSpacingTableTwConstraint) {
         minReqDist = static_cast<frSpacingTableTwConstraint*>(con)->find(
-            width1, width2, prl1);
+            width1, width1, prl1);
       }
       if (ndr)
         minReqDist = max(minReqDist, ndr->getSpacing(lNum / 2 - 1));

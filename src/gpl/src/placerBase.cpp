@@ -632,6 +632,9 @@ int Net::cy() const
 
 int64_t Net::hpwl() const
 {
+  if (ux_ < lx_) {  // dangling net
+    return 0;
+  }
   return static_cast<int64_t>((ux_ - lx_) + (uy_ - ly_));
 }
 
@@ -1130,8 +1133,8 @@ void PlacerBase::initInstsForUnusableSites()
   dbSet<dbRow> rows = db_->getChip()->getBlock()->getRows();
   dbSet<dbPowerDomain> pds = db_->getChip()->getBlock()->getPowerDomains();
 
-  int siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
-  int siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
+  int64_t siteCountX = (die_.coreUx() - die_.coreLx()) / siteSizeX_;
+  int64_t siteCountY = (die_.coreUy() - die_.coreLy()) / siteSizeY_;
 
   enum PlaceInfo
   {

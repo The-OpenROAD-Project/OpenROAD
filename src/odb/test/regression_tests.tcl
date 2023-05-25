@@ -1,4 +1,6 @@
 record_tests {
+  rounding
+  sky130hd_multi_patterned
   dont_touch
   import_package
   read_lef
@@ -25,6 +27,7 @@ record_tests {
   ndr
   gcd_abstract_lef
   gcd_abstract_lef_with_power
+  abstract_origin
 }
 
 record_pass_fail_tests {

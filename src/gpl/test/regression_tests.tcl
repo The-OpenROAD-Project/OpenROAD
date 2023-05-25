@@ -23,4 +23,6 @@ record_tests {
   diverge01
   density01
   upf_test
+  convergence01
+  nograd01
 }

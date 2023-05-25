@@ -75,7 +75,7 @@ class GridComponent
     RepairChannel
   };
 
-  GridComponent(Grid* grid);
+  explicit GridComponent(Grid* grid);
   virtual ~GridComponent() = default;
 
   odb::dbBlock* getBlock() const;
@@ -111,7 +111,7 @@ class GridComponent
 
   virtual void report() const = 0;
   virtual Type type() const = 0;
-  static const std::string typeToString(Type type);
+  static std::string typeToString(Type type);
 
   virtual void checkLayerSpecifications() const = 0;
 
@@ -127,11 +127,11 @@ class GridComponent
  protected:
   void checkLayerWidth(odb::dbTechLayer* layer,
                        int width,
-                       odb::dbTechLayerDir direction) const;
+                       const odb::dbTechLayerDir& direction) const;
   void checkLayerSpacing(odb::dbTechLayer* layer,
                          int width,
                          int spacing,
-                         odb::dbTechLayerDir direction) const;
+                         const odb::dbTechLayerDir& direction) const;
   ShapePtr addShape(Shape* shape);
 
  private:

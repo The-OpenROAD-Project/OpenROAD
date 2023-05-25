@@ -10,7 +10,7 @@ target_include_directories(defout
 )
 target_link_libraries(defout
     db
-    utl
+    utl_lib
 )
 
 set_target_properties(defout

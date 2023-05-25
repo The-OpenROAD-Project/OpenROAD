@@ -31,17 +31,14 @@
 #include "db.h"
 #include "dbShape.h"
 #include "dbViaParams.h"
-#include "dbRtEdge.h"
 #include "dbWireCodec.h"
 #include "dbBlockCallBackObj.h"
 #include "dbIterator.h"
-#include "dbRtNode.h"
 #include "dbTransform.h"
 #include "dbWireGraph.h"
 #include "dbBlockSet.h"
 #include "dbNetSet.h"
 #include "dbMap.h"
-#include "dbRtTree.h"
 #include "dbCCSegSet.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -76,6 +73,7 @@ using namespace odb;
 %ignore odb::Rect::get(Orientation2D orient, Direction1D dir) const;
 %ignore odb::Rect::set(Orientation2D orient, Direction1D dir, int value);
 %ignore odb::Point::set(Orientation2D orient, int value);
+%ignore odb::Rect::bloat(int margin, Orientation2D orient) const;
 
 %include "dbenums.i"
 %include "parserenums.i"
@@ -90,15 +88,12 @@ using namespace odb;
 %include "dbdiff.i"
 
 %include "odb/dbViaParams.h"
-%include "odb/dbRtEdge.h"
 %include "odb/dbWireCodec.h"
 %include "odb/dbBlockCallBackObj.h"
 %include "odb/dbIterator.h"
-%include "odb/dbRtNode.h"
 %include "odb/dbTransform.h"
 %include "odb/dbWireGraph.h"
 %include "odb/dbBlockSet.h"
 %include "odb/dbNetSet.h"
-%include "odb/dbRtTree.h"
 %include "odb/dbCCSegSet.h"
 %include "odb/wOrder.h"
