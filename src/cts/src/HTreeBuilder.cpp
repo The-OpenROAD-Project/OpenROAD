@@ -541,6 +541,9 @@ unsigned HTreeBuilder::computeMinDelaySegment(const unsigned length,
   }
 
   if (minKey == std::numeric_limits<unsigned>::max()) {
+    if (tolerance >= MAX_TOLERANCE) {
+      return minKey;
+    }
     // Increasing tolerance
     return computeMinDelaySegment(length,
                                   inputSlew,
