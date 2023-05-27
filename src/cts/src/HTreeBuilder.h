@@ -38,8 +38,8 @@
 #include <cmath>
 #include <limits>
 
+#include "CtsObserver.h"
 #include "CtsOptions.h"
-#include "Graphics.h"
 #include "TreeBuilder.h"
 
 namespace utl {
@@ -174,7 +174,9 @@ class HTreeBuilder : public TreeBuilder
                Clock& net,
                TreeBuilder* parent,
                utl::Logger* logger)
-      : TreeBuilder(options, net, parent), logger_(logger){};
+      : TreeBuilder(options, net, parent), logger_(logger)
+  {
+  }
 
   void run() override;
 
@@ -198,7 +200,6 @@ class HTreeBuilder : public TreeBuilder
                                   unsigned& outputCap) const;
 
  private:
-  void treeVisualizer();
   void initSinkRegion();
   void computeLevelTopology(unsigned level, double width, double height);
   unsigned computeNumberOfSinksPerSubRegion(unsigned level) const;
@@ -283,7 +284,6 @@ class HTreeBuilder : public TreeBuilder
   std::vector<LevelTopology> topologyForEachLevel_;
   std::map<Point<double>, ClockInst*> mapLocationToSink_;
   std::vector<std::pair<float, float>> topLevelSinksClustered_;
-  std::unique_ptr<Graphics> graphics_;
 
   int wireSegmentUnit_ = 0;
   unsigned minInputCap_ = 0;

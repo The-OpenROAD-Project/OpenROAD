@@ -5,8 +5,8 @@ include("openroad")
 set(DFT_HOME ${PROJECT_SOURCE_DIR})
 
 set(TEST_LIBS
-  utl
-  dbSta
+  utl_lib
+  dbSta_lib
   odb
   dft_cells_lib
   dft_config_lib

@@ -14,6 +14,6 @@ target_link_libraries(dft_config_lib
     odb
     dbSta
     OpenSTA
-    utl
+    utl_lib
     dft_utils_lib
 )

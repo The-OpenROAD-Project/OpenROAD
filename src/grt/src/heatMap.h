@@ -32,19 +32,23 @@
 
 #pragma once
 
+#include "AbstractRoutingCongestionDataSource.h"
 #include "gui/heatMap.h"
 
 namespace grt {
 
-class RoutingCongestionDataSource : public gui::HeatMapDataSource
+class RoutingCongestionDataSource : public gui::HeatMapDataSource,
+                                    public AbstractRoutingCongestionDataSource
 {
  public:
   RoutingCongestionDataSource(utl::Logger* logger, odb::dbDatabase* db);
-  ~RoutingCongestionDataSource() {}
 
   virtual bool canAdjustGrid() const override { return false; }
   virtual double getGridXSize() const override;
   virtual double getGridYSize() const override;
+
+  void registerHeatMap() override { gui::HeatMapDataSource::registerHeatMap(); }
+  void update() override { gui::HeatMapDataSource::update(); }
 
  protected:
   virtual bool populateMap() override;

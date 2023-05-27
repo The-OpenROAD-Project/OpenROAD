@@ -261,7 +261,6 @@ class HierRTLMP
 
   // flag variables
   const bool dynamic_congestion_weight_flag_ = false;
-  const bool update_boundary_weight_ = false;
   // Our experiments show that for most testcases, turn off bus planning
   // can generate better results.
   // We recommand that you turn off this flag for technology nodes with very

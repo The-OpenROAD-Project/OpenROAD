@@ -7,7 +7,7 @@ add_library(dft_architect_lib
 
 target_link_libraries(dft_architect_lib
   PRIVATE
-    utl
+    utl_lib
     dft_utils_lib
     dft_cells_lib
     dft_clock_domain_lib
