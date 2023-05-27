@@ -107,11 +107,6 @@ class ScanReplace
   void debugPrintScanEquivalents() const;
 
  private:
-  odb::dbDatabase* db_;
-  sta::dbSta* sta_;
-  utl::Logger* logger_;
-  sta::dbNetwork* db_network_;
-
   std::unordered_map<sta::LibertyCell*, std::unique_ptr<ScanCandidate>>
       non_scan_to_scan_lib_cells_;
   std::unordered_set<sta::LibertyCell*> available_scan_lib_cells_;
@@ -132,6 +127,11 @@ class ScanReplace
   void addCellForRollback(odb::dbMaster* master,
                           odb::dbMaster* master_scan_cell,
                           const std::unique_ptr<ScanCandidate>& scan_candidate);
+
+  odb::dbDatabase* db_;
+  sta::dbSta* sta_;
+  utl::Logger* logger_;
+  sta::dbNetwork* db_network_;
 };
 
 }  // namespace dft

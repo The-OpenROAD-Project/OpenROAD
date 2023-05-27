@@ -61,6 +61,10 @@ void TPpartitioner::Partition(const HGraphPtr hgraph,
       RandomPart(hgraph, upper_block_balance, lower_block_balance, solution);
       break;
 
+    case PartitionType::INIT_RANDOM_VILE:
+      RandomPart(hgraph, upper_block_balance, lower_block_balance, solution, true);
+      break;
+
     case PartitionType::INIT_VILE:
       VilePart(hgraph, solution);
       break;
@@ -78,12 +82,17 @@ void TPpartitioner::Partition(const HGraphPtr hgraph,
 // ------------------------------------------------------------------------------
 // The remaining functions are all private functions
 // ------------------------------------------------------------------------------
+// Different to other random partitioning, 
+// we enable two modes of random partitioning.
+// If vile_mode == false, we try to generate balanced random partitioning
+// If vile_mode == true,  we try to generate unbalanced random partitioning
 
 // random partitioning
 void TPpartitioner::RandomPart(const HGraphPtr hgraph,
                                const MATRIX<float>& upper_block_balance,
                                const MATRIX<float>& lower_block_balance,
-                               std::vector<int>& solution) const
+                               std::vector<int>& solution,
+                               bool vile_mode) const
 {
   // the summation of vertex weights for vertices in current block
   MATRIX<float> block_balance(
@@ -134,83 +143,36 @@ void TPpartitioner::RandomPart(const HGraphPtr hgraph,
   // Hopefully we can push all the path_vertices into one block
   vertices.insert(vertices.begin(), path_vertices.begin(), path_vertices.end());
 
-  /*
-  // Step 5: make sure all blocks satisfy the lower_block_balance,
-  int block_id = 0;
-  for (const auto& v : vertices) {
-    solution[v] = block_id;
-    block_balance[block_id] = block_balance[block_id] +
-  hgraph->vertex_weights_[v]; if (block_balance[block_id] >=
-  lower_block_balance[block_id]) { block_id++; block_id = block_id % num_parts_;
-  // adjust the block_id
-    }
-  }
-  */
-  /*
-  MATRIX<float> block_balance_threshold;
-  for (int block_id = 0; block_id < num_parts_; block_id++) {
-    const std::vector<float> balance =
-  DivideFactor(upper_block_balance[block_id], num_parts_ * num_parts_);
-    block_balance_threshold.push_back(balance);
-  }
-  // assign vertex to blocks
-  int block_id = 0;
-  for (const auto& v : vertices) {
-    if (block_balance[block_id] + hgraph->vertex_weights_[v] >
-  upper_block_balance[block_id]) { int iter = 0; int temp_block_id = block_id;
-      while (iter < num_parts_) {
-        temp_block_id++;
-        temp_block_id = temp_block_id % num_parts_;
-        if (block_balance[temp_block_id] + hgraph->vertex_weights_[v] <=
-  upper_block_balance[temp_block_id]) { break;
-        }
-        iter++;
+  if (vile_mode == false) {
+    // try to generate balanced random partitioning
+    int block_id = 0;
+    for (const auto& v : vertices) {
+      solution[v] = block_id;
+      block_balance[block_id]
+        = block_balance[block_id] + hgraph->vertex_weights_[v];
+      if (block_balance[block_id] >= lower_block_balance[block_id]) {
+        block_id++;
+        block_id = block_id % num_parts_;  // adjust the block_id
       }
-      solution[v] = temp_block_id;
-      block_balance[temp_block_id] = block_balance[temp_block_id] +
-  hgraph->vertex_weights_[v]; } else { solution[v] = block_id;
-      block_balance[block_id] = block_balance[block_id] +
-  hgraph->vertex_weights_[v];
     }
-    if (block_balance[block_id] >= block_balance_threshold[block_id]) {
-      block_id++;
-      block_id = block_id % num_parts_;  // adjust the block_id
-    }
-  }
-  */
-
-  int block_id = 0;
-  for (const auto& v : vertices) {
-    solution[v] = block_id;
-    block_balance[block_id]
-        = block_balance[block_id] + hgraph->vertex_weights_[v];
-    if (block_balance[block_id] >= lower_block_balance[block_id]) {
-      block_id++;
-      block_id = block_id % num_parts_;  // adjust the block_id
+  } else {
+    // try to generate unbalanced random partitioning
+    // Basically, for 0, ...., num_parts - 2 blocks, we try to satisfy
+    // only lower block balance, then put all remaining vertices to last block
+    int block_id = 0;
+    bool stop_flag = false;
+    for (const auto& v : vertices) {
+      solution[v] = block_id;
+      block_balance[block_id] = block_balance[block_id] + hgraph->vertex_weights_[v];
+      if (block_balance[block_id] >= upper_block_balance[block_id] && stop_flag == false) {
+        block_id++;
+        solution[v] = block_id; // move the vertex to next block
+        if (block_id == num_parts_ - 1) {
+          stop_flag = true;
+        }
+      }
     }
   }
-
-  /*
-  // Step 5: randomly assign block id
-  // To achieve better balance, we divide the block balance by num_parts_
-  MATRIX<float> block_balance_threshold;
-  for (int block_id = 0; block_id < num_parts_; block_id++) {
-    const std::vector<float> balance
-        = DivideFactor(upper_block_balance[block_id], num_parts_ * num_parts_);
-    block_balance_threshold.push_back(balance);
-  }
-  // assign vertex to blocks
-  int block_id = 0;
-  for (const auto& v : vertices) {
-    solution[v] = block_id;
-    block_balance[block_id]
-        = block_balance[block_id] + hgraph->vertex_weights_[v];
-    if (block_balance[block_id] >= block_balance_threshold[block_id]) {
-      block_id++;
-      block_id = block_id % num_parts_;  // adjust the block_id
-    }
-  }
-  */
 }
 
 // ILP-based partitioning

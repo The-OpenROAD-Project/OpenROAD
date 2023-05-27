@@ -437,10 +437,21 @@ bool ILPPartitionInst(
   }
   // Maximize the number of hyperedges fully within one block
   // -> minimize the cutsize
+  // add a penalty term to ensure the solution is unique
+  float cost_step = 1.0;
+  for (auto& weight : hyperedge_weights) {
+    cost_step = std::min(cost_step, weight);
+  }
+  cost_step = cost_step / num_parts / (num_vertices * (num_vertices + 1) / 2.0);
   MPObjective* const obj_expr = solver->MutableObjective();
   for (int e = 0; e < num_hyperedges; e++) {
     for (int i = 0; i < num_parts; i++) {
       obj_expr->SetCoefficient(y[i][e], hyperedge_weights[e]);
+    }
+  }
+  for (int v = 0; v < num_vertices; v++) {
+    for (int block_id = 1; block_id < num_parts; block_id++) {
+      obj_expr->SetCoefficient(x[block_id][v], cost_step * block_id);
     }
   }
   obj_expr->SetMaximization();

@@ -3427,7 +3427,7 @@ void HierRTLMP::multiLevelMacroPlacement(Cluster* parent)
       // determine the shape for each macro
       debugPrint(logger_,
                  MPL,
-                 "macro_plamcement",
+                 "macro_placement",
                  1,
                  "Start Simulated Annealing (run_id = {})",
                  run_id);
@@ -5223,8 +5223,8 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   int boundary_v_th = std::numeric_limits<int>::max();
   int boundary_h_th = std::numeric_limits<int>::max();
   for (auto& macro_inst : hard_macros) {
-    boundary_h_th = std::min(boundary_h_th,
-                             static_cast<int>(macro_inst->getWidthDBU() * 1.0));
+    boundary_h_th = std::min(
+        boundary_h_th, static_cast<int>(macro_inst->getRealWidthDBU() * 1.0));
     boundary_v_th = std::min(
         boundary_v_th, static_cast<int>(macro_inst->getHeightDBU() * 1.0));
   }

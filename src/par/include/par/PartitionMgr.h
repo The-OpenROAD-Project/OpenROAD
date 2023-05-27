@@ -169,6 +169,7 @@ class PartitionMgr
                         float path_snaking_factor,
                         float timing_exp_factor,
                         float extra_delay,
+                        bool guardband_flag,
                         // weight parameters
                         const char* e_wt_factors_str,
                         const char* v_wt_factors_str,
@@ -217,6 +218,7 @@ class PartitionMgr
                                   float path_snaking_factor,
                                   float timing_exp_factor,
                                   float extra_delay,
+                                  bool guardband_flag,
                                   // weight parameters
                                   const char* e_wt_factors_str,
                                   const char* v_wt_factors_str);

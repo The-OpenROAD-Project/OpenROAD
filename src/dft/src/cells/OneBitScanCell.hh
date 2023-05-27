@@ -32,6 +32,8 @@
 #pragma once
 
 #include "ScanCell.hh"
+#include "ScanPin.hh"
+#include "db_sta/dbNetwork.hh"
 #include "odb/db.h"
 #include "sta/Liberty.hh"
 
@@ -44,19 +46,25 @@ class OneBitScanCell : public ScanCell
   OneBitScanCell(const std::string& name,
                  std::unique_ptr<ClockDomain> clock_domain,
                  odb::dbInst* inst,
-                 sta::TestCell* test_cell);
+                 sta::TestCell* test_cell,
+                 sta::dbNetwork* db_network,
+                 utl::Logger* logger);
   // Not copyable or movable
   OneBitScanCell(const OneBitScanCell&) = delete;
   OneBitScanCell& operator=(const OneBitScanCell&) = delete;
 
   uint64_t getBits() const override;
-  void connectScanEnable() const override;
-  void connectScanIn() const override;
-  void connectScanOut() const override;
+  void connectScanEnable(const ScanDriver& driver) const override;
+  void connectScanIn(const ScanDriver& driver) const override;
+  void connectScanOut(const ScanLoad& load) const override;
+  ScanDriver getScanOut() const override;
 
  private:
+  odb::dbITerm* findITerm(sta::LibertyPort* liberty_port) const;
+
   odb::dbInst* inst_;
   sta::TestCell* test_cell_;
+  sta::dbNetwork* db_network_;
 };
 
 }  // namespace dft
