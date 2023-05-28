@@ -130,7 +130,7 @@ proc triton_part_hypergraph { args } {
   set max_coarsen_iters 30
   set adj_diff_ratio 0.0001
   set min_num_vertices_each_part 4
-  set num_initial_solutions 25
+  set num_initial_solutions 50
   set num_best_initial_solutions 10
   set refiner_iters 10
   set max_moves 60
