@@ -50,6 +50,9 @@
 #include <utility>
 #include <vector>
 
+#include "AbstractFastRouteRenderer.h"
+#include "AbstractGrouteRenderer.h"
+#include "AbstractRoutingCongestionDataSource.h"
 #include "FastRoute.h"
 #include "Grid.h"
 #include "MakeWireParasitics.h"
@@ -58,8 +61,6 @@
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
-#include "gui/gui.h"
-#include "heatMap.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
@@ -78,7 +79,6 @@ using utl::GRT;
 
 GlobalRouter::GlobalRouter()
     : logger_(nullptr),
-      gui_(nullptr),
       stt_builder_(nullptr),
       antenna_checker_(nullptr),
       opendp_(nullptr),
@@ -117,21 +117,21 @@ void GlobalRouter::init(utl::Logger* logger,
                         sta::dbSta* sta,
                         rsz::Resizer* resizer,
                         ant::AntennaChecker* antenna_checker,
-                        dpl::Opendp* opendp)
+                        dpl::Opendp* opendp,
+                        std::unique_ptr<AbstractRoutingCongestionDataSource>
+                            routing_congestion_data_source)
 {
   logger_ = logger;
-  // Broken gui api missing openroad accessor.
-  gui_ = gui::Gui::get();
   stt_builder_ = stt_builder;
   db_ = db;
   stt_builder_ = stt_builder;
   antenna_checker_ = antenna_checker;
   opendp_ = opendp;
-  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_, gui_);
+  fastroute_ = new FastRouteCore(db_, logger_, stt_builder_);
   sta_ = sta;
   resizer_ = resizer;
 
-  heatmap_ = std::make_unique<RoutingCongestionDataSource>(logger_, db_);
+  heatmap_ = std::move(routing_congestion_data_source);
   heatmap_->registerHeatMap();
 }
 
@@ -2906,9 +2906,19 @@ void GlobalRouter::makeBtermPins(Net* net,
           continue;
         }
 
-        const odb::Rect rect = bpin_box->getBox();
+        odb::Rect rect = bpin_box->getBox();
         if (!die_area.contains(rect) && verbose_) {
           logger_->warn(GRT, 36, "Pin {} is outside die area.", pin_name);
+          odb::Rect intersection;
+          rect.intersection(die_area, intersection);
+          rect = intersection;
+          if (rect.area() == 0) {
+            logger_->error(GRT,
+                           209,
+                           "Pin {} is completely outside the die area and "
+                           "cannot bet routed.",
+                           pin_name);
+          }
         }
         pin_boxes[tech_layer].push_back(rect);
 
@@ -3757,9 +3767,14 @@ void GlobalRouter::createWLReportFile(const char* file_name, bool verbose)
   out << "\n";
 }
 
-void GlobalRouter::initDebugFastRoute()
+void GlobalRouter::initDebugFastRoute(
+    std::unique_ptr<AbstractFastRouteRenderer> renderer)
 {
-  fastroute_->setDebugOn(true);
+  fastroute_->setDebugOn(std::move(renderer));
+}
+AbstractFastRouteRenderer* GlobalRouter::getDebugFastRoute() const
+{
+  return fastroute_->fastrouteRender();
 }
 void GlobalRouter::setDebugSteinerTree(bool steinerTree)
 {
@@ -3818,98 +3833,6 @@ bool operator<(const RoutePt& p1, const RoutePt& p2)
          || (p1.x_ == p2.x_ && p1.y_ == p2.y_ && p1.layer_ < p2.layer_);
 }
 
-class GrouteRenderer : public gui::Renderer
-{
- public:
-  GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech);
-  void highlight(odb::dbNet* net, bool show_pin_locations);
-  void clear();
-  virtual void drawLayer(odb::dbTechLayer* layer,
-                         gui::Painter& painter) override;
-
- private:
-  GlobalRouter* groute_;
-  odb::dbTech* tech_;
-  std::set<odb::dbNet*> nets_;
-  std::unordered_map<odb::dbNet*, bool> show_pin_locations_;
-};
-
-// Highlight guide in the gui.
-void GlobalRouter::highlightRoute(odb::dbNet* net, bool show_pin_locations)
-{
-  if (gui::Gui::enabled()) {
-    if (groute_renderer_ == nullptr) {
-      groute_renderer_ = new GrouteRenderer(this, db_->getTech());
-      gui_->registerRenderer(groute_renderer_);
-    }
-    groute_renderer_->highlight(net, show_pin_locations);
-  }
-}
-
-void GlobalRouter::clearRouteGui()
-{
-  if (groute_renderer_)
-    groute_renderer_->clear();
-}
-
-void GrouteRenderer::clear()
-{
-  nets_.clear();
-  show_pin_locations_.clear();
-  redraw();
-}
-
-GrouteRenderer::GrouteRenderer(GlobalRouter* groute, odb::dbTech* tech)
-    : groute_(groute), tech_(tech)
-{
-}
-
-void GrouteRenderer::highlight(odb::dbNet* net, bool show_pin_locations)
-{
-  nets_.insert(net);
-  show_pin_locations_[net] = show_pin_locations;
-  redraw();
-}
-
-void GrouteRenderer::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
-{
-  painter.setPen(layer);
-  painter.setBrush(layer);
-
-  for (odb::dbNet* net : nets_) {
-    Net* gr_net = groute_->getNet(net);
-    if (show_pin_locations_[net]) {
-      // draw on grid pin locations
-      for (const Pin& pin : gr_net->getPins()) {
-        if (pin.getConnectionLayer() == layer->getRoutingLevel()) {
-          painter.drawCircle(pin.getOnGridPosition().x(),
-                             pin.getOnGridPosition().y(),
-                             (int) (groute_->getTileSize() / 1.5));
-        }
-      }
-    }
-
-    // draw guides
-    NetRouteMap& routes = groute_->getRoutes();
-    GRoute& groute = routes[const_cast<odb::dbNet*>(net)];
-    for (GSegment& seg : groute) {
-      int layer1 = seg.init_layer;
-      int layer2 = seg.final_layer;
-      if (layer1 != layer2) {
-        continue;
-      }
-      odb::dbTechLayer* seg_layer = tech_->findRoutingLayer(layer1);
-      if (seg_layer != layer) {
-        continue;
-      }
-      // Draw rect because drawLine does not have a way to set the pen
-      // thickness.
-      odb::Rect rect = groute_->globalRoutingToBox(seg);
-      painter.drawRect(rect);
-    }
-  }
-}
-
 ////////////////////////////////////////////////////////////////
 
 IncrementalGRoute::IncrementalGRoute(GlobalRouter* groute, odb::dbBlock* block)
@@ -3929,6 +3852,16 @@ IncrementalGRoute::~IncrementalGRoute()
   // don't bother updating it.
   // groute_->updateDbCongestion();
   db_cbk_.removeOwner();
+}
+
+void GlobalRouter::setRenderer(
+    std::unique_ptr<AbstractGrouteRenderer> groute_renderer)
+{
+  groute_renderer_ = std::move(groute_renderer);
+}
+AbstractGrouteRenderer* GlobalRouter::getRenderer()
+{
+  return groute_renderer_.get();
 }
 
 void GlobalRouter::addDirtyNet(odb::dbNet* net)
