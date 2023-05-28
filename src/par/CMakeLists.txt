@@ -107,7 +107,7 @@ target_sources(par
 )
 
 messages(
-  TARGET par
+  TARGET par_lib
 )
 
 target_include_directories(par
