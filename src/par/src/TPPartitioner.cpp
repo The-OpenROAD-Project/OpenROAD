@@ -62,7 +62,8 @@ void TPpartitioner::Partition(const HGraphPtr hgraph,
       break;
 
     case PartitionType::INIT_RANDOM_VILE:
-      RandomPart(hgraph, upper_block_balance, lower_block_balance, solution, true);
+      RandomPart(
+          hgraph, upper_block_balance, lower_block_balance, solution, true);
       break;
 
     case PartitionType::INIT_VILE:
@@ -82,7 +83,7 @@ void TPpartitioner::Partition(const HGraphPtr hgraph,
 // ------------------------------------------------------------------------------
 // The remaining functions are all private functions
 // ------------------------------------------------------------------------------
-// Different to other random partitioning, 
+// Different to other random partitioning,
 // we enable two modes of random partitioning.
 // If vile_mode == false, we try to generate balanced random partitioning
 // If vile_mode == true,  we try to generate unbalanced random partitioning
@@ -149,7 +150,7 @@ void TPpartitioner::RandomPart(const HGraphPtr hgraph,
     for (const auto& v : vertices) {
       solution[v] = block_id;
       block_balance[block_id]
-        = block_balance[block_id] + hgraph->vertex_weights_[v];
+          = block_balance[block_id] + hgraph->vertex_weights_[v];
       if (block_balance[block_id] >= lower_block_balance[block_id]) {
         block_id++;
         block_id = block_id % num_parts_;  // adjust the block_id
@@ -163,10 +164,12 @@ void TPpartitioner::RandomPart(const HGraphPtr hgraph,
     bool stop_flag = false;
     for (const auto& v : vertices) {
       solution[v] = block_id;
-      block_balance[block_id] = block_balance[block_id] + hgraph->vertex_weights_[v];
-      if (block_balance[block_id] >= upper_block_balance[block_id] && stop_flag == false) {
+      block_balance[block_id]
+          = block_balance[block_id] + hgraph->vertex_weights_[v];
+      if (block_balance[block_id] >= upper_block_balance[block_id]
+          && stop_flag == false) {
         block_id++;
-        solution[v] = block_id; // move the vertex to next block
+        solution[v] = block_id;  // move the vertex to next block
         if (block_id == num_parts_ - 1) {
           stop_flag = true;
         }

@@ -110,9 +110,8 @@ class TPpartitioner
   }
 
  private:
-    
   // random partitioning
-  // Different to other random partitioning, 
+  // Different to other random partitioning,
   // we enable two modes of random partitioning.
   // If vile_mode == false, we try to generate balanced random partitioning
   // If vile_mode == true,  we try to generate unbalanced random partitioning

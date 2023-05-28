@@ -125,26 +125,26 @@ void TritonPart::PartitionHypergraph(unsigned int num_parts_arg,
   // solution file
   std::string solution_file
       = hypergraph_file + std::string(".part.") + std::to_string(num_parts_);
-  logger_->report("[PARAM] Number of partitions = {}", num_parts_);
-  logger_->report("[PARAM] UBfactor = {}", ub_factor_);
-  logger_->report("[PARAM] Seed = {}", seed_);
-  logger_->report("[PARAM] Vertex dimensions = {}", vertex_dimensions_);
-  logger_->report("[PARAM] Hyperedge dimensions = {}", hyperedge_dimensions_);
-  logger_->report("[PARAM] Placement dimensions = {}", placement_dimensions_);
-  logger_->report("[PARAM] Hypergraph file = {}", hypergraph_file);
-  logger_->report("[PARAM] Solution file = {}", solution_file);
-  logger_->report("[PARAM] Global net threshold = {}", global_net_threshold_);
+  logger_->info(PAR, 2, "Number of partitions = {}", num_parts_);
+  logger_->info(PAR, 3, "UBfactor = {}", ub_factor_);
+  logger_->info(PAR, 4, "Seed = {}", seed_);
+  logger_->info(PAR, 5, "Vertex dimensions = {}", vertex_dimensions_);
+  logger_->info(PAR, 6, "Hyperedge dimensions = {}", hyperedge_dimensions_);
+  logger_->info(PAR, 7, "Placement dimensions = {}", placement_dimensions_);
+  logger_->info(PAR, 8, "Hypergraph file = {}", hypergraph_file);
+  logger_->info(PAR, 9, "Solution file = {}", solution_file);
+  logger_->info(PAR, 10, "Global net threshold = {}", global_net_threshold_);
   if (!fixed_file.empty()) {
-    logger_->report("[PARAM] Fixed file  = {}", fixed_file);
+    logger_->info(PAR, 11, "Fixed file  = {}", fixed_file);
   }
   if (!community_file.empty()) {
-    logger_->report("[PARAM] Community file = {}", community_file);
+    logger_->info(PAR, 12, "Community file = {}", community_file);
   }
   if (!group_file.empty()) {
-    logger_->report("[PARAM] Group file = {}", group_file);
+    logger_->info(PAR, 13, "Group file = {}", group_file);
   }
   if (!placement_file.empty()) {
-    logger_->report("[PARAM] Placement file = {}", placement_file);
+    logger_->info(PAR, 14, "Placement file = {}", placement_file);
   }
 
   // set the random seed
@@ -241,37 +241,37 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
   std::string community_file = community_file_arg;
   std::string group_file = group_file_arg;
   std::string solution_file = solution_filename_arg;
-  logger_->report("[PARAM] Number of partitions = {}", num_parts_);
-  logger_->report("[PARAM] UBfactor = {}", ub_factor_);
-  logger_->report("[PARAM] Seed = {}", seed_);
-  logger_->report("[PARAM] Vertex dimensions = {}", vertex_dimensions_);
-  logger_->report("[PARAM] Hyperedge dimensions = {}", hyperedge_dimensions_);
-  logger_->report("[PARAM] Placement dimensions = {}", placement_dimensions_);
-  logger_->report("[PARAM] Timing aware flag = {}", timing_aware_flag_);
-  logger_->report("[PARAM] Guardband flag = {}", guardband_flag_);
-  logger_->report("[PARAM] Global net threshold = {}", global_net_threshold_);
-  logger_->report("[PARAM] Top {} critical timing paths are extracted.",
-                  top_n_);
-  logger_->report("[PARAM] Fence aware flag = {}", fence_flag_);
+  logger_->info(PAR, 102, "Number of partitions = {}", num_parts_);
+  logger_->info(PAR, 16, "UBfactor = {}", ub_factor_);
+  logger_->info(PAR, 17, "Seed = {}", seed_);
+  logger_->info(PAR, 18, "Vertex dimensions = {}", vertex_dimensions_);
+  logger_->info(PAR, 19, "Hyperedge dimensions = {}", hyperedge_dimensions_);
+  logger_->info(PAR, 20, "Placement dimensions = {}", placement_dimensions_);
+  logger_->info(PAR, 21, "Timing aware flag = {}", timing_aware_flag_);
+  logger_->info(PAR, 103, "Guardband flag = {}", guardband_flag_);
+  logger_->info(PAR, 23, "Global net threshold = {}", global_net_threshold_);
+  logger_->info(PAR, 24, "Top {} critical timing paths are extracted.", top_n_);
+  logger_->info(PAR, 25, "Fence aware flag = {}", fence_flag_);
   if (fence_flag_ == true) {
-    logger_->report(
-        "[PARAM] fence_lx = {}, fence_ly = {}, fence_ux = {}, fence_uy = {}",
-        fence_.lx / dbu,
-        fence_.ly / dbu,
-        fence_.ux / dbu,
-        fence_.uy / dbu);
+    logger_->info(PAR,
+                  26,
+                  "fence_lx = {}, fence_ly = {}, fence_ux = {}, fence_uy = {}",
+                  fence_.lx / dbu,
+                  fence_.ly / dbu,
+                  fence_.ux / dbu,
+                  fence_.uy / dbu);
   }
   if (!fixed_file.empty()) {
-    logger_->report("[PARAM] Fixed file  = {}", fixed_file);
+    logger_->info(PAR, 27, "Fixed file  = {}", fixed_file);
   }
   if (!community_file.empty()) {
-    logger_->report("[PARAM] Community file = {}", community_file);
+    logger_->info(PAR, 28, "Community file = {}", community_file);
   }
   if (!group_file.empty()) {
-    logger_->report("[PARAM] Group file = {}", group_file);
+    logger_->info(PAR, 29, "Group file = {}", group_file);
   }
   if (!solution_file.empty()) {
-    logger_->report("[PARAM] Solution file = {}", solution_file);
+    logger_->info(PAR, 30, "Solution file = {}", solution_file);
   }
 
   // set the random seed
@@ -336,8 +336,8 @@ void TritonPart::PartitionDesign(unsigned int num_parts_arg,
       str_ss << ".uy_" << fence_.uy / dbu;
       solution_file_name = solution_file_name + str_ss.str();
     }
-    logger_->report("[INFO] Updated solution file name = {}",
-                    solution_file_name);
+    logger_->info(
+        PAR, 110, "Updated solution file name = {}", solution_file_name);
     std::ofstream file_output;
     file_output.open(solution_file_name);
 
@@ -395,25 +395,25 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
       "");  // no community file is used (no meaning in this function)
   std::string placement_file(
       "");  // no placement file is used (no meaning in this function)
-  logger_->report("[PARAM] Number of partitions = {}", num_parts_);
-  logger_->report("[PARAM] UBfactor = {}", ub_factor_);
-  logger_->report("[PARAM] Seed = {}", seed_);
-  logger_->report("[PARAM] Vertex dimensions = {}", vertex_dimensions_);
-  logger_->report("[PARAM] Hyperedge dimensions = {}", hyperedge_dimensions_);
-  logger_->report("[PARAM] Placement dimensions = {}", placement_dimensions_);
-  logger_->report("[PARAM] Hypergraph file = {}", hypergraph_file);
-  logger_->report("[PARAM] Solution file = {}", solution_file);
+  logger_->info(PAR, 31, "Number of partitions = {}", num_parts_);
+  logger_->info(PAR, 32, "UBfactor = {}", ub_factor_);
+  logger_->info(PAR, 33, "Seed = {}", seed_);
+  logger_->info(PAR, 34, "Vertex dimensions = {}", vertex_dimensions_);
+  logger_->info(PAR, 35, "Hyperedge dimensions = {}", hyperedge_dimensions_);
+  logger_->info(PAR, 36, "Placement dimensions = {}", placement_dimensions_);
+  logger_->info(PAR, 37, "Hypergraph file = {}", hypergraph_file);
+  logger_->info(PAR, 38, "Solution file = {}", solution_file);
   if (!fixed_file.empty()) {
-    logger_->report("[PARAM] Fixed file  = {}", fixed_file);
+    logger_->info(PAR, 39, "Fixed file  = {}", fixed_file);
   }
   if (!community_file.empty()) {
-    logger_->report("[PARAM] Community file = {}", community_file);
+    logger_->info(PAR, 40, "Community file = {}", community_file);
   }
   if (!group_file.empty()) {
-    logger_->report("[PARAM] Group file = {}", group_file);
+    logger_->info(PAR, 41, "Group file = {}", group_file);
   }
   if (!placement_file.empty()) {
-    logger_->report("[PARAM] Placement file = {}", placement_file);
+    logger_->info(PAR, 42, "Placement file = {}", placement_file);
   }
 
   int part_id = -1;
@@ -449,8 +449,10 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
     e_wt_factors_.resize(hyperedge_dimensions_);
     std::fill(e_wt_factors_.begin(), e_wt_factors_.end(), 1.0);
   }
-  logger_->report("[PARAM] hyperedge weight factor : [ {} ]",
-                  GetVectorString(e_wt_factors_));
+  logger_->info(PAR,
+                43,
+                "hyperedge weight factor : [ {} ]",
+                GetVectorString(e_wt_factors_));
 
   if (static_cast<int>(v_wt_factors_.size()) != vertex_dimensions_) {
     logger_->report(
@@ -459,8 +461,8 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
     v_wt_factors_.resize(vertex_dimensions_);
     std::fill(v_wt_factors_.begin(), v_wt_factors_.end(), 1.0);
   }
-  logger_->report("[PARAM] vertex weight factor : [ {} ]",
-                  GetVectorString(v_wt_factors_));
+  logger_->info(
+      PAR, 44, "vertex weight factor : [ {} ]", GetVectorString(v_wt_factors_));
 
   if (static_cast<int>(placement_wt_factors_.size()) != placement_dimensions_) {
     if (placement_dimensions_ <= 0) {
@@ -475,8 +477,10 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
           placement_wt_factors_.begin(), placement_wt_factors_.end(), 1.0f);
     }
   }
-  logger_->report("[PARAM] placement weight factor : [ {} ]",
-                  GetVectorString(placement_wt_factors_));
+  logger_->info(PAR,
+                45,
+                "placement weight factor : [ {} ]",
+                GetVectorString(placement_wt_factors_));
 
   // following parameters are not used
   net_timing_factor_ = 0.0;
@@ -486,11 +490,11 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
   extra_delay_ = 0.0;
 
   // print all the weighting parameters
-  logger_->report("[PARAM] net_timing_factor : {}", net_timing_factor_);
-  logger_->report("[PARAM] path_timing_factor : {}", path_timing_factor_);
-  logger_->report("[PARAM] path_snaking_factor : {}", path_snaking_factor_);
-  logger_->report("[PARAM] timing_exp_factor : {}", timing_exp_factor_);
-  logger_->report("[PARAM] extra_delay : {}", extra_delay_);
+  logger_->info(PAR, 46, "net_timing_factor : {}", net_timing_factor_);
+  logger_->info(PAR, 47, "path_timing_factor : {}", path_timing_factor_);
+  logger_->info(PAR, 48, "path_snaking_factor : {}", path_snaking_factor_);
+  logger_->info(PAR, 49, "timing_exp_factor : {}", timing_exp_factor_);
+  logger_->info(PAR, 50, "extra_delay : {}", extra_delay_);
 
   // create the evaluator class
   TP_evaluator_ptr evaluator
@@ -580,44 +584,44 @@ void TritonPart::EvaluatePartDesignSolution(
   std::string solution_file = solution_filename_arg;
   std::string hypergraph_file = hypergraph_file_arg;
   std::string hypergraph_int_weight_file = hypergraph_int_weight_file_arg;
-  logger_->report("[PARAM] Number of partitions = {}", num_parts_);
-  logger_->report("[PARAM] UBfactor = {}", ub_factor_);
-  logger_->report("[PARAM] Seed = {}", seed_);
-  logger_->report("[PARAM] Vertex dimensions = {}", vertex_dimensions_);
-  logger_->report("[PARAM] Hyperedge dimensions = {}", hyperedge_dimensions_);
-  logger_->report("[PARAM] Placement dimensions = {}", placement_dimensions_);
-  logger_->report("[PARAM] Guardband flag = {}", guardband_flag_);
-  logger_->report("[PARAM] Timing aware flag = {}", timing_aware_flag_);
-  logger_->report("[PARAM] Global net threshold = {}", global_net_threshold_);
-  logger_->report("[PARAM] Top {} critical timing paths are extracted.",
-                  top_n_);
-  logger_->report("[PARAM] Fence aware flag = {}", fence_flag_);
+  logger_->info(PAR, 104, "Number of partitions = {}", num_parts_);
+  logger_->info(PAR, 52, "UBfactor = {}", ub_factor_);
+  logger_->info(PAR, 53, "Seed = {}", seed_);
+  logger_->info(PAR, 54, "Vertex dimensions = {}", vertex_dimensions_);
+  logger_->info(PAR, 55, "Hyperedge dimensions = {}", hyperedge_dimensions_);
+  logger_->info(PAR, 56, "Placement dimensions = {}", placement_dimensions_);
+  logger_->info(PAR, 57, "Guardband flag = {}", guardband_flag_);
+  logger_->info(PAR, 58, "Timing aware flag = {}", timing_aware_flag_);
+  logger_->info(PAR, 59, "Global net threshold = {}", global_net_threshold_);
+  logger_->info(PAR, 60, "Top {} critical timing paths are extracted.", top_n_);
+  logger_->info(PAR, 61, "Fence aware flag = {}", fence_flag_);
   if (fence_flag_ == true) {
-    logger_->report(
-        "[PARAM] fence_lx = {}, fence_ly = {}, fence_ux = {}, fence_uy = {}",
-        fence_.lx / dbu,
-        fence_.ly / dbu,
-        fence_.ux / dbu,
-        fence_.uy / dbu);
+    logger_->info(PAR,
+                  62,
+                  "fence_lx = {}, fence_ly = {}, fence_ux = {}, fence_uy = {}",
+                  fence_.lx / dbu,
+                  fence_.ly / dbu,
+                  fence_.ux / dbu,
+                  fence_.uy / dbu);
   }
   if (!fixed_file.empty()) {
-    logger_->report("[PARAM] Fixed file  = {}", fixed_file);
+    logger_->info(PAR, 63, "Fixed file  = {}", fixed_file);
   }
   if (!community_file.empty()) {
-    logger_->report("[PARAM] Community file = {}", community_file);
+    logger_->info(PAR, 64, "Community file = {}", community_file);
   }
   if (!group_file.empty()) {
-    logger_->report("[PARAM] Group file = {}", group_file);
+    logger_->info(PAR, 65, "Group file = {}", group_file);
   }
   if (!hypergraph_file.empty()) {
-    logger_->report("[PARAM] Hypergraph file = {}", hypergraph_file);
+    logger_->info(PAR, 66, "Hypergraph file = {}", hypergraph_file);
   }
   if (!hypergraph_int_weight_file.empty()) {
-    logger_->report("[PARAM] Hypergraph_int_weight_file = {}",
-                    hypergraph_int_weight_file);
+    logger_->info(
+        PAR, 67, "Hypergraph_int_weight_file = {}", hypergraph_int_weight_file);
   }
   if (!solution_file.empty()) {
-    logger_->report("[PARAM] Solution file = {}", solution_file);
+    logger_->info(PAR, 68, "Solution file = {}", solution_file);
   }
 
   // set the random seed
@@ -641,8 +645,10 @@ void TritonPart::EvaluatePartDesignSolution(
     e_wt_factors_.resize(hyperedge_dimensions_);
     std::fill(e_wt_factors_.begin(), e_wt_factors_.end(), 1.0);
   }
-  logger_->report("[PARAM] hyperedge weight factor : [ {} ]",
-                  GetVectorString(e_wt_factors_));
+  logger_->info(PAR,
+                69,
+                "hyperedge weight factor : [ {} ]",
+                GetVectorString(e_wt_factors_));
 
   if (static_cast<int>(v_wt_factors_.size()) != vertex_dimensions_) {
     logger_->report(
@@ -651,8 +657,8 @@ void TritonPart::EvaluatePartDesignSolution(
     v_wt_factors_.resize(vertex_dimensions_);
     std::fill(v_wt_factors_.begin(), v_wt_factors_.end(), 1.0);
   }
-  logger_->report("[PARAM] vertex weight factor : [ {} ]",
-                  GetVectorString(v_wt_factors_));
+  logger_->info(
+      PAR, 70, "vertex weight factor : [ {} ]", GetVectorString(v_wt_factors_));
 
   if (static_cast<int>(placement_wt_factors_.size()) != placement_dimensions_) {
     if (placement_dimensions_ <= 0) {
@@ -667,15 +673,17 @@ void TritonPart::EvaluatePartDesignSolution(
           placement_wt_factors_.begin(), placement_wt_factors_.end(), 1.0f);
     }
   }
-  logger_->report("[PARAM] placement weight factor : [ {} ]",
-                  GetVectorString(placement_wt_factors_));
+  logger_->info(PAR,
+                105,
+                "placement weight factor : [ {} ]",
+                GetVectorString(placement_wt_factors_));
 
   // print all the weighting parameters
-  logger_->report("[PARAM] net_timing_factor : {}", net_timing_factor_);
-  logger_->report("[PARAM] path_timing_factor : {}", path_timing_factor_);
-  logger_->report("[PARAM] path_snaking_factor : {}", path_snaking_factor_);
-  logger_->report("[PARAM] timing_exp_factor : {}", timing_exp_factor_);
-  logger_->report("[PARAM] extra_delay : {}", extra_delay_);
+  logger_->info(PAR, 106, "net_timing_factor : {}", net_timing_factor_);
+  logger_->info(PAR, 107, "path_timing_factor : {}", path_timing_factor_);
+  logger_->info(PAR, 108, "path_snaking_factor : {}", path_snaking_factor_);
+  logger_->info(PAR, 75, "timing_exp_factor : {}", timing_exp_factor_);
+  logger_->info(PAR, 76, "extra_delay : {}", extra_delay_);
 
   // create the evaluator class
   TP_evaluator_ptr evaluator
@@ -724,7 +732,8 @@ void TritonPart::EvaluatePartDesignSolution(
     // generate the timing report
     if (timing_aware_flag_ == true) {
       logger_->report("[STATUS] Displaying timing path cuts statistics");
-      PathStats path_stats = evaluator->GetTimingCuts(original_hypergraph_, solution_);
+      PathStats path_stats
+          = evaluator->GetTimingCuts(original_hypergraph_, solution_);
       evaluator->PrintPathStats(path_stats);
     }
 
@@ -952,10 +961,13 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
     const float max_placement_value
         = 1.0;  // we assume the embedding has been normalized,
                 // so we assume max_value is 1.0
-    const float invalid_placement_thr = max_placement_value / 2.0; // The threshold
-                // for detecting invalid placement value. If the abs(emb) is larger than
-                // invalid_placement_thr, we think the placement is invalid
-    const float default_placement_value = 0.0; // default placement value
+    const float invalid_placement_thr
+        = max_placement_value
+          / 2.0;  // The threshold
+                  // for detecting invalid placement value. If the abs(emb) is
+                  // larger than invalid_placement_thr, we think the placement
+                  // is invalid
+    const float default_placement_value = 0.0;  // default placement value
     std::vector<std::vector<float>> temp_placement_attr;
     while (std::getline(placement_file_input, cur_line)) {
       std::vector<std::string> elements = SplitLine(
@@ -970,7 +982,7 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
             vertex_placement.push_back(std::stof(ele));
           } else {
             vertex_placement.push_back(default_placement_value);
-          }              
+          }
         }
       }
       temp_placement_attr.push_back(vertex_placement);
@@ -987,10 +999,12 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
         mean_placement_value_list[j] += temp_placement_attr[i][j];
       }
     }
-    mean_placement_value_list = DivideFactor(mean_placement_value_list, temp_placement_attr.size() * 1.0);
+    mean_placement_value_list = DivideFactor(mean_placement_value_list,
+                                             temp_placement_attr.size() * 1.0);
     // perform normalization
     for (auto& emb : temp_placement_attr) {
-      placement_attr_.push_back(DivideVectorElebyEle(emb, mean_placement_value_list));
+      placement_attr_.push_back(
+          DivideVectorElebyEle(emb, mean_placement_value_list));
     }
 
     if (static_cast<int>(placement_attr_.size()) != num_vertices_) {
@@ -1296,7 +1310,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
   }
 
   if (num_vertices_ == 0 || num_hyperedges_ == 0) {
-    logger_->error(utl::PAR, 2677, "There is no vertices and hyperedges");
+    logger_->error(PAR, 2677, "There is no vertices and hyperedges");
   }
 
   // build the timing graph
@@ -1479,7 +1493,8 @@ void TritonPart::BuildTimingPaths()
     }
   } else {
     for (auto& timing_path : timing_paths_) {
-      timing_path.slack = timing_path.slack / maximum_clock_period_ - extra_delay_;
+      timing_path.slack
+          = timing_path.slack / maximum_clock_period_ - extra_delay_;
     }
   }
   logger_->report(
@@ -1511,10 +1526,11 @@ void TritonPart::BuildTimingPaths()
     } else {
       if (guardband_flag_ == false) {
         hyperedge_slacks_[hyperedge_id] = slack / maximum_clock_period_;
-      } else  {
-        hyperedge_slacks_[hyperedge_id] = slack / maximum_clock_period_ - extra_delay_;
+      } else {
+        hyperedge_slacks_[hyperedge_id]
+            = slack / maximum_clock_period_ - extra_delay_;
       }
-    } 
+    }
   }
   logger_->report("[STATUS] Finish traversing timing graph");
   logger_->report("[WARNING] {} unconstrained hyperedges !",
@@ -1539,8 +1555,10 @@ void TritonPart::MultiLevelPartition()
     e_wt_factors_.resize(hyperedge_dimensions_);
     std::fill(e_wt_factors_.begin(), e_wt_factors_.end(), 1.0);
   }
-  logger_->report("[PARAM] hyperedge weight factor : [ {} ]",
-                  GetVectorString(e_wt_factors_));
+  logger_->info(PAR,
+                77,
+                "hyperedge weight factor : [ {} ]",
+                GetVectorString(e_wt_factors_));
 
   if (static_cast<int>(v_wt_factors_.size()) != vertex_dimensions_) {
     logger_->report(
@@ -1549,8 +1567,8 @@ void TritonPart::MultiLevelPartition()
     v_wt_factors_.resize(vertex_dimensions_);
     std::fill(v_wt_factors_.begin(), v_wt_factors_.end(), 1.0);
   }
-  logger_->report("[PARAM] vertex weight factor : [ {} ]",
-                  GetVectorString(v_wt_factors_));
+  logger_->info(
+      PAR, 78, "vertex weight factor : [ {} ]", GetVectorString(v_wt_factors_));
 
   if (static_cast<int>(placement_wt_factors_.size()) != placement_dimensions_) {
     if (placement_dimensions_ <= 0) {
@@ -1565,40 +1583,44 @@ void TritonPart::MultiLevelPartition()
           placement_wt_factors_.begin(), placement_wt_factors_.end(), 1.0f);
     }
   }
-  logger_->report("[PARAM] placement weight factor : [ {} ]",
-                  GetVectorString(placement_wt_factors_));
+  logger_->info(PAR,
+                79,
+                "placement weight factor : [ {} ]",
+                GetVectorString(placement_wt_factors_));
   // print all the weighting parameters
-  logger_->report("[PARAM] net_timing_factor : {}", net_timing_factor_);
-  logger_->report("[PARAM] path_timing_factor : {}", path_timing_factor_);
-  logger_->report("[PARAM] path_snaking_factor : {}", path_snaking_factor_);
-  logger_->report("[PARAM] timing_exp_factor : {}", timing_exp_factor_);
+  logger_->info(PAR, 80, "net_timing_factor : {}", net_timing_factor_);
+  logger_->info(PAR, 81, "path_timing_factor : {}", path_timing_factor_);
+  logger_->info(PAR, 82, "path_snaking_factor : {}", path_snaking_factor_);
+  logger_->info(PAR, 83, "timing_exp_factor : {}", timing_exp_factor_);
   // coarsening related parameters
-  logger_->report("[PARAM] coarsen order : {}", ToString(coarsen_order_));
-  logger_->report("[PARAM] thr_coarsen_hyperedge_size_skip : {}",
-                  thr_coarsen_hyperedge_size_skip_);
-  logger_->report("[PARAM] thr_coarsen_vertices : {}", thr_coarsen_vertices_);
-  logger_->report("[PARAM] thr_coarsen_hyperedges : {}",
-                  thr_coarsen_hyperedges_);
-  logger_->report("[PARAM] coarsening_ratio : {}", coarsening_ratio_);
-  logger_->report("[PARAM] max_coarsen_iters : {}", max_coarsen_iters_);
-  logger_->report("[PARAM] adj_diff_ratio : {}", adj_diff_ratio_);
-  logger_->report("[PARAM] min_num_vertcies_each_part : {}",
-                  min_num_vertices_each_part_);
+  logger_->info(PAR, 84, "coarsen order : {}", ToString(coarsen_order_));
+  logger_->info(PAR,
+                85,
+                "thr_coarsen_hyperedge_size_skip : {}",
+                thr_coarsen_hyperedge_size_skip_);
+  logger_->info(PAR, 86, "thr_coarsen_vertices : {}", thr_coarsen_vertices_);
+  logger_->info(
+      PAR, 87, "thr_coarsen_hyperedges : {}", thr_coarsen_hyperedges_);
+  logger_->info(PAR, 88, "coarsening_ratio : {}", coarsening_ratio_);
+  logger_->info(PAR, 89, "max_coarsen_iters : {}", max_coarsen_iters_);
+  logger_->info(PAR, 90, "adj_diff_ratio : {}", adj_diff_ratio_);
+  logger_->info(
+      PAR, 91, "min_num_vertcies_each_part : {}", min_num_vertices_each_part_);
   // initial partitioning parameter
-  logger_->report("[PARAM] num_initial_solutions : {}", num_initial_solutions_);
-  logger_->report("[PARAM] num_best_initial_solutions : {}",
-                  num_best_initial_solutions_);
+  logger_->info(PAR, 92, "num_initial_solutions : {}", num_initial_solutions_);
+  logger_->info(
+      PAR, 93, "num_best_initial_solutions : {}", num_best_initial_solutions_);
   // refinement related parameters
-  logger_->report("[PARAM] refine_iters : {}", refiner_iters_);
-  logger_->report("[PARAM] max_moves (FM or greedy refinement) : {}",
-                  max_moves_);
-  logger_->report("[PARAM] early_stop_ratio : {}", early_stop_ratio_);
-  logger_->report("[PARAM] total_corking_passes : {}", total_corking_passes_);
-  logger_->report("[PARAM] v_cycle_flag : {}", v_cycle_flag_);
-  logger_->report("[PARAM] max_num_vcycle : {}", max_num_vcycle_);
-  logger_->report("[PARAM] num_coarsen_solutions : {}", num_coarsen_solutions_);
-  logger_->report("[PARAM] num_vertices_threshold_ilp : {}",
-                  num_vertices_threshold_ilp_);
+  logger_->info(PAR, 94, "refine_iters : {}", refiner_iters_);
+  logger_->info(
+      PAR, 95, "max_moves (FM or greedy refinement) : {}", max_moves_);
+  logger_->info(PAR, 96, "early_stop_ratio : {}", early_stop_ratio_);
+  logger_->info(PAR, 97, "total_corking_passes : {}", total_corking_passes_);
+  logger_->info(PAR, 98, "v_cycle_flag : {}", v_cycle_flag_);
+  logger_->info(PAR, 99, "max_num_vcycle : {}", max_num_vcycle_);
+  logger_->info(PAR, 100, "num_coarsen_solutions : {}", num_coarsen_solutions_);
+  logger_->info(
+      PAR, 101, "num_vertices_threshold_ilp : {}", num_vertices_threshold_ilp_);
 
   // create the evaluator class
   TP_evaluator_ptr tritonpart_evaluator
@@ -1763,10 +1785,11 @@ void TritonPart::MultiLevelPartition()
   // generate the timing report
   if (timing_aware_flag_ == true) {
     logger_->report("[STATUS] Displaying timing path cuts statistics");
-    PathStats path_stats = tritonpart_evaluator->GetTimingCuts(original_hypergraph_, solution_);
+    PathStats path_stats
+        = tritonpart_evaluator->GetTimingCuts(original_hypergraph_, solution_);
     tritonpart_evaluator->PrintPathStats(path_stats);
   }
-  
+
   // print the runtime
   auto end_timestamp_global = std::chrono::high_resolution_clock::now();
   double total_global_time
@@ -1774,8 +1797,10 @@ void TritonPart::MultiLevelPartition()
             end_timestamp_global - start_time_stamp_global)
             .count();
   total_global_time *= 1e-9;
-  logger_->report("[INFO] The runtime of multi-level partitioner : {} seconds",
-                  total_global_time);
+  logger_->info(PAR,
+                109,
+                "The runtime of multi-level partitioner : {} seconds",
+                total_global_time);
 }
 
 }  // namespace par

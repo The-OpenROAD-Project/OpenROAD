@@ -248,10 +248,10 @@ void TPmultilevelPartitioner::InitialPartition(
   MATRIX<int> initial_solutions;
   if (hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
     // random partitioning + Vile + ILP
-    initial_solutions.resize(num_initial_random_solutions_  * 2 + 2);
+    initial_solutions.resize(num_initial_random_solutions_ * 2 + 2);
   } else {
     // random partitioning + Vile
-    initial_solutions.resize(num_initial_random_solutions_  * 2 + 1);
+    initial_solutions.resize(num_initial_random_solutions_ * 2 + 1);
   }
   // We need k_way_fm_refiner to generate a balanced partitioning
   k_way_fm_refiner_->SetMaxMove(hgraph->num_vertices_);
@@ -398,7 +398,7 @@ void TPmultilevelPartitioner::InitialPartition(
   while (top_initial_solutions.size() > num_chosen_best_init_solution) {
     top_initial_solutions.pop_back();
   }
-  
+
   logger_->report("[INFO] Number of chosen best initial solutions = {}",
                   num_chosen_best_init_solution);
   best_solution_id = 0;  // the first one is the best one
@@ -428,7 +428,7 @@ void TPmultilevelPartitioner::RefinePartition(
       return;
     }
     HGraphPtr hgraph = *hgraph_iter;
-    
+
     // convert the solution in coarse_hgraph to the solution of hgraph
     for (auto i = 0; i < top_solutions.size(); i++) {
       std::vector<int> refined_solution;

@@ -132,7 +132,7 @@ std::vector<float> DivideFactor(const std::vector<float>& a,
                                 const float factor);
 
 // divide the vectors element by element
-std::vector<float> DivideVectorElebyEle(const std::vector<float>& emb, 
+std::vector<float> DivideVectorElebyEle(const std::vector<float>& emb,
                                         const std::vector<float>& factor);
 
 // multiplty the vector

@@ -175,7 +175,7 @@ class TritonPart
                        float path_snaking_factor,
                        float timing_exp_factor,
                        float extra_delay,
-                       bool  guardband_flag)
+                       bool guardband_flag)
   {
     net_timing_factor_
         = net_timing_factor;  // the timing weight for cutting a hyperedge
@@ -189,7 +189,7 @@ class TritonPart
                                 // of snaking timing paths
     timing_exp_factor_ = timing_exp_factor;  // exponential factor
     extra_delay_ = extra_delay;              // extra delay introduced by cut
-    guardband_flag_ = guardband_flag; // timing guardband_flag
+    guardband_flag_ = guardband_flag;        // timing guardband_flag
   }
 
   void SetNetWeight(const std::vector<float>& e_wt_factors)
@@ -366,7 +366,7 @@ class TritonPart
   std::vector<VertexType> vertex_types_;  // the vertex type of each instances
   std::vector<TimingPath>
       timing_paths_;  // critical timing paths, extracted based OpenSTA
-  bool guardband_flag_ = true; // Turn on the timing guardband option
+  bool guardband_flag_ = true;  // Turn on the timing guardband option
 
   // ---- community information
   // ---- all the vertices in the same community will stay together
