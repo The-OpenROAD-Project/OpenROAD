@@ -1,12 +1,10 @@
 set libs "  
-    NangateOpenCellLibrary_typical.lib \
-    fakeram45_256x16.lib \
-    fakeram45_256x64.lib \
+    Nangate45/Nangate45_typ.lib \
+    Nangate45/fakeram45_256x16.lib \
     "
 
 set lefs "  
-    NangateOpenCellLibrary.tech.lef \
-    NangateOpenCellLibrary.macro.mod.lef \
-    fakeram45_256x16.lef \
-    fakeram45_256x64.lef \
+    Nangate45/Nangate45_tech.lef \
+    Nangate45/Nangate45_stdcell.lef \
+    Nangate45/fakeram45_256x16.lef \
     "
