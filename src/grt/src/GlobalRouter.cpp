@@ -269,7 +269,10 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool end_incremental)
 {
   if (start_incremental && end_incremental) {
-    logger_->error(GRT, 251, "The start_incremental and end_incremental flags cannot be defined together");
+    logger_->error(GRT,
+                   251,
+                   "The start_incremental and end_incremental flags cannot be "
+                   "defined together");
   } else if (start_incremental) {
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
