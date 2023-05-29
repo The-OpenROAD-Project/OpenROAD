@@ -1282,7 +1282,8 @@ void FastRouteCore::verifyEdgeUsage()
       for (int i = 0; i < routeLen; i++) {
         if (gridsL[i] != gridsL[i + 1]) {
           continue;
-        } else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
+        }
+        if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
           s_v_edges[ymin][gridsX[i]].insert(netID);
           v_edges[ymin][gridsX[i]] += edgeCost;
@@ -1788,8 +1789,9 @@ void FastRouteCore::copyBR(void)
           const std::vector<short>& gridsY
               = sttrees_[netID].edges[edgeID].route.gridsY;
           for (i = 0; i < sttrees_[netID].edges[edgeID].route.routelen; i++) {
-            if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1])
+            if (gridsX[i] == gridsX[i + 1] && gridsY[i] == gridsY[i + 1]) {
               continue;
+            }
             if (gridsX[i] == gridsX[i + 1])  // a vertical edge
             {
               min_y = std::min(gridsY[i], gridsY[i + 1]);

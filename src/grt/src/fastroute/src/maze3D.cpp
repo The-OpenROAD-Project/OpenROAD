@@ -860,12 +860,13 @@ void FastRouteCore::mazeRouteMSMDOrder3D(int expand,
   static multi_array<parent3D, 3> pr_3D_(
       boost::extents[num_layers_][y_grid_][x_grid_]);
 
-  static std::vector<bool> pop_heap2_3D(num_layers_ * y_range_ * x_range_,
-                                        false);
+  long total_size = num_layers_ * y_range_ * x_range;
+  _ static std::vector<bool> pop_heap2_3D(total_size, false);
 
   // allocate memory for priority queue
-  static std::vector<int*> src_heap_3D(y_grid_ * x_grid_ * num_layers_);
-  static std::vector<int*> dest_heap_3D(y_grid_ * x_grid_ * num_layers_);
+  total_size = y_grid_ * x_grid_ * num_layers_;
+  static std::vector<int*> src_heap_3D(total_size);
+  static std::vector<int*> dest_heap_3D(total_size);
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_; j++) {
