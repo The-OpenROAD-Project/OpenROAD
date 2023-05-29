@@ -2167,8 +2167,9 @@ void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
-    if (!nets_[netID]->isRouted())
+    if (!nets_[netID]->isRouted()) {
       continue;
+    }
 
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
@@ -2183,7 +2184,7 @@ void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
       for (int i = 0; i < routeLen; i++) {
         if (gridsL[i] != gridsL[i + 1]) {
           continue;
-        } else if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
+        } if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
           if (ymin == posY && gridsX[i] == posX && dir == 0)
             congestion_nets_.insert(nets_[netID]->getDbNet());
@@ -2210,8 +2211,9 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow,
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
 
-  if (fillNetsVector)
+  if (fillNetsVector) {
     congestion_nets_.clear();
+  }
 
   int total_usage = 0;
   for (int i = 0; i < y_grid_; i++) {

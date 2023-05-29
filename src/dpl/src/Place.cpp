@@ -1231,7 +1231,7 @@ void Opendp::convertDbToCell(dbInst* db_inst, Cell& cell)
   cell.orient_ = db_inst->getOrient();
 }
 
-Point Opendp::pointOffMacro(Cell cell)
+Point Opendp::pointOffMacro(const Cell& cell)
 {
   // Get cell position
   Point init = initialLocation(&cell, false);
@@ -1255,14 +1255,15 @@ Point Opendp::pointOffMacro(Cell cell)
                             gridY(init_y + cell.height_, row_height));
 
   Cell* block = nullptr;
-  if (pixel1 && pixel1->cell && isBlock(pixel1->cell))
+  if (pixel1 && pixel1->cell && isBlock(pixel1->cell)) {
     block = pixel1->cell;
-  if (pixel2 && pixel2->cell && isBlock(pixel2->cell))
+  } if (pixel2 && pixel2->cell && isBlock(pixel2->cell)) {
     block = pixel2->cell;
-  if (pixel3 && pixel3->cell && isBlock(pixel3->cell))
+  } if (pixel3 && pixel3->cell && isBlock(pixel3->cell)) {
     block = pixel3->cell;
-  if (pixel4 && pixel4->cell && isBlock(pixel4->cell))
+  } if (pixel4 && pixel4->cell && isBlock(pixel4->cell)) {
     block = pixel4->cell;
+  }
 
   if (block && isBlock(block)) {
     // Get new legal position

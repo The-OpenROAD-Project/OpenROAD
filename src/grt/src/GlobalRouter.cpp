@@ -269,7 +269,7 @@ void GlobalRouter::globalRoute(bool save_guides,
                                bool end_incremental)
 {
   if (start_incremental && end_incremental) {
-    logger_->error(GRT, 251, "Both option defined.");
+    logger_->error(GRT, 251, "The start_incremental and end_incremental flags cannot be defined together");
   } else if (start_incremental) {
     grouter_cbk_ = new GRouteDbCbk(this);
     grouter_cbk_->addOwner(block_);
@@ -294,8 +294,9 @@ void GlobalRouter::globalRoute(bool save_guides,
 
       std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
-      if (verbose_)
+      if (verbose_) {
         reportResources();
+      }
 
       routes_ = findRouting(nets, min_layer, max_layer);
     }
@@ -325,13 +326,16 @@ void GlobalRouter::globalRoute(bool save_guides,
       logger_->warn(GRT, 115, "Global routing finished with overflow.");
     }
 
-    if (verbose_)
+    if (verbose_) {
       reportCongestion();
+    }
     computeWirelength();
-    if (verbose_)
+    if (verbose_) {
       logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
-    if (save_guides)
+    }
+    if (save_guides) {
       saveGuides();
+    }
   }
 }
 
@@ -548,16 +552,18 @@ void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
     Net* net = db_net_map_[db_net];
     // get last pin positions
     std::vector<odb::Point> last_pos;
-    for (const Pin& pin : net->getPins())
+    for (const Pin& pin : net->getPins()) {
       last_pos.push_back(pin.getOnGridPosition());
+    }
     net->destroyPins();
     // update pin positions
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
     findPins(net);
     // compare new positions with last positions & add on vector
-    if (checkPinPositions(net, last_pos))
+    if (checkPinPositions(net, last_pos)) {
       dirty_nets.push_back(db_net_map_[db_net]);
+    }
   }
 }
 
@@ -825,19 +831,21 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
 bool GlobalRouter::checkPinPositions(Net* net,
                                      std::vector<odb::Point>& last_pos)
 {
-  bool is_dif = false;
+  bool is_diferent = false;
   std::map<odb::Point, int> cnt_pos;
-  for (const Pin& pin : net->getPins())
+  for (const Pin& pin : net->getPins()) {
     cnt_pos[pin.getOnGridPosition()]++;
-  for (const odb::Point last : last_pos)
+  }
+  for (const odb::Point& last : last_pos) {
     cnt_pos[last]--;
-  for (auto it : cnt_pos) {
+  }
+  for (const auto& it : cnt_pos) {
     if (it.second != 0) {
-      is_dif = true;
+      is_diferent = true;
       break;
     }
   }
-  return is_dif;
+  return is_diferent;
 }
 
 bool GlobalRouter::makeFastrouteNet(Net* net)
@@ -3914,7 +3922,6 @@ void GlobalRouter::addDirtyNet(odb::dbNet* net)
 
 void GlobalRouter::updateDirtyRoutes()
 {
-  setVerbose(false);
   if (!dirty_nets_.empty()) {
     fastroute_->setVerbose(false);
     if (verbose_)
@@ -3928,8 +3935,9 @@ void GlobalRouter::updateDirtyRoutes()
     std::vector<Net*> dirty_nets;
     updateDirtyNets(dirty_nets);
 
-    if (dirty_nets.empty())
+    if (dirty_nets.empty()) {
       return;
+    }
 
     initFastRouteIncr(dirty_nets);
 

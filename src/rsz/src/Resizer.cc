@@ -919,7 +919,7 @@ Resizer::replaceCell(Instance *inst,
   dbMaster *replacement_master = db_->findMaster(replacement_name);
 
   // Legalize the position of the instance in case it leaves the die
-  if (opendp_ && parasitics_src_ == ParasiticsSrc::global_routing)
+  if (parasitics_src_ == ParasiticsSrc::global_routing)
     opendp_->legalCellPos(db_network_->staToDb(inst));
   else if (parasitics_src_ == ParasiticsSrc::global_routing)
     logger_->error(RSZ, 91, "Opendp was not initialized before resized an instance");
@@ -2571,7 +2571,7 @@ Resizer::makeInstance(LibertyCell *cell,
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   setLocation(db_inst, loc);
   // Legalize the position of the instance in case it leaves the die
-  if (opendp_ && parasitics_src_ == ParasiticsSrc::global_routing)
+  if (parasitics_src_ == ParasiticsSrc::global_routing)
     opendp_->legalCellPos(db_inst);
   else if (parasitics_src_ == ParasiticsSrc::global_routing)
     logger_->error(RSZ, 90, "Opendp was not initialized before inserting a new instance");
