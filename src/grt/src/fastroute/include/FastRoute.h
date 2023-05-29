@@ -72,6 +72,7 @@ using boost::icl::interval_set;
 namespace grt {
 
 class FastRouteRenderer;
+class AStarRenderer;
 class MakeWireParasitics;
 
 // Debug mode settings
@@ -173,7 +174,7 @@ class FastRouteCore
   void incrementEdge3DUsage(int x1, int y1, int x2, int y2, int layer);
   void setMaxNetDegree(int);
   void setVerbose(bool v);
-  void setUpdateSlack(bool u);
+  void setUpdateSlack(int u);
   void setOverflowIterations(int iterations);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -214,15 +215,16 @@ class FastRouteCore
   // Maze-routing in different orders
   void mazeRouteMSMD(const int iter,
                      const int expand,
-                     const float cost_height,
+                     const float _cost_height,
                      const int ripup_threshold,
                      const int maze_edge_threshold,
                      const bool ordering,
                      const int cost_type,
-                     const float logis_cof,
+                     const float _logis_cof,
                      const int via,
                      const int slope,
-                     const int L);
+                     const int L,
+                     float& slack_th);
   void convertToMazeroute();
   void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
   int getOverflow2D(int* maxOverflow);
@@ -231,6 +233,7 @@ class FastRouteCore
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
+  void SaveLastRouteLen();
   void fixEmbeddedTrees();
   void checkAndFixEmbeddedTree(const int net_id);
   bool areEdgesOverlapping(const int net_id,
@@ -415,6 +418,16 @@ class FastRouteCore
                      const int netID,
                      const int edgeID);
 
+  bool newRipupCheck(const TreeEdge* treeedge,
+                     const int x1,
+                     const int y1,
+                     const int x2,
+                     const int y2,
+                     const int ripup_threshold,
+                     const float critical_slack,
+                     const int netID,
+                     const int edgeID);
+
   bool newRipupType2(const TreeEdge* treeedge,
                      TreeNode* treenodes,
                      const int x1,
@@ -446,6 +459,7 @@ class FastRouteCore
   void netpinOrderInc();
   void checkRoute3D();
   void StNetOrder();
+  float CalculatePartialSlack();
   bool checkRoute2DTree(int netID);
   void removeLoops();
   void netedgeOrderDec(int netID);
@@ -466,6 +480,8 @@ class FastRouteCore
   void StTreeVisualization(const StTree& stree,
                            FrNet* net,
                            bool is3DVisualization);
+  void AStarVisualization(const std::vector<float*>& src_heap,
+                          float* d1);
   int netCount() const { return nets_.size(); }
 
   typedef std::tuple<int, int, int> Tile;
@@ -504,7 +520,7 @@ class FastRouteCore
   bool has_2D_overflow_;
   int grid_hv_;
   bool verbose_;
-  bool update_slack_;
+  int update_slack_;
   int via_cost_;
   int mazeedge_threshold_;
   float v_capacity_lb_;
@@ -564,6 +580,7 @@ class FastRouteCore
   MakeWireParasitics * parasitics_builder_;
 
   FastRouteRenderer* fastrouteRender_;
+  AStarRenderer* aStarRender_;
   std::unique_ptr<DebugSetting> debug_;
 
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>

@@ -407,7 +407,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
   }
   // Use the route layer above the pin layer if there is a via
   // to the pin.
-  int layer = 2;
+  int layer = 3;
   RoutePt grid_route(grid_pt.getX(), grid_pt.getY(), layer);
   sta::ParasiticNode* grid_node = node_map[grid_route];
   float via_res = 0;
@@ -525,11 +525,6 @@ sta::ParasiticNode* MakeWireParasitics::ensureParasiticNode(
 sta::Slack MakeWireParasitics::getNetSlack(odb::dbNet* net) {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Net* sta_net = network->dbToSta(net);
-  if(sta_net == nullptr) {
-    std::cout<<"deu ruim\n";
-  } /*else {
-    std::cout<<"não deu ruim\n";
-  }*/
   sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
   return slack;
 }

@@ -775,7 +775,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 
   if (critical_nets_percentage_ != 0) {
-    fastroute_->setUpdateSlack(true);
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
     computeNetSlacks();
   }
 

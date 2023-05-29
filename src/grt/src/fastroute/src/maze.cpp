@@ -1337,13 +1337,16 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const int maze_edge_threshold,
                                   const bool ordering,
                                   const int cost_type,
-                                  const float logis_cof,
+                                  const float _logis_cof,
                                   const int via,
                                   const int slope,
-                                  const int L)
+                                  const int L,
+                                  float& slack_th)
 {
   // maze routing for multi-source, multi-destination
   int tmpX, tmpY;
+
+  float logis_cof = _logis_cof;
 
   const int max_usage_multiplier = 40;
 
@@ -1367,20 +1370,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   if (ordering) {
     if (update_slack_) {
-      parasitics_builder_->clearParasitics();
-      auto partial_routes = getPartialRoutes();
-      for (auto& net_route : partial_routes) {
-        odb::dbNet* db_net = net_route.first;
-        GRoute& route = net_route.second;
-        if (!route.empty()) {
-          parasitics_builder_->estimateParasitcs(db_net, route);
-        }
-      }
-      for (int netID = 0; netID < netCount(); netID++) {
-        auto fr_net = nets_[netID];
-        odb::dbNet* db_net = fr_net->getDbNet();
-        fr_net->setSlack(parasitics_builder_->getNetSlack(db_net));
-      }
+      slack_th = CalculatePartialSlack();
     }
     StNetOrder();
   }
@@ -1397,7 +1387,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
-
+    bool critical = false;
     if (nets_[netID]->isRouted())
       continue;
 
@@ -1430,11 +1420,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       }
 
       const bool enter = newRipupCheck(
-          treeedge, n1x, n1y, n2x, n2y, ripup_threshold, netID, edgeID);
+          treeedge, n1x, n1y, n2x, n2y, ripup_threshold, slack_th, netID, edgeID);
 
       if (!enter) {
         continue;
-      }
+      }    
 
       // ripup the routing for the edge
       const int ymin = std::min(n1y, n2y);
@@ -1444,6 +1434,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       const int xmax = std::max(n1x, n2x);
 
       enlarge_ = std::min(origENG, (iter / 6 + 3) * treeedge->route.routelen);
+
+      if(nets_[netID]->isCritical()) {
+        int decrease = std::min((iter / 4) * 5, enlarge_/2);
+        enlarge_ = enlarge_ - decrease;
+      }
       const int regionX1 = std::max(xmin - enlarge_, 0);
       const int regionX2 = std::min(xmax + enlarge_, x_grid_ - 1);
       const int regionY1 = std::max(ymin - enlarge_, 0);
@@ -1506,7 +1501,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = h_edges_[curY][curX - 1].usage_red()
                            + L * h_edges_[curY][(curX - 1)].last_usage;
 
-          if (pos1 < h_cost_table_.size())
+          if (pos1 < h_cost_table_.size() && !critical)
             cost1 = h_cost_table_.at(pos1);
           else
             cost1 = getCost(
@@ -1519,7 +1514,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = h_edges_[curY][curX].usage_red()
                                + L * h_edges_[curY][curX].last_usage;
 
-              if (pos2 < h_cost_table_.size())
+              if (pos2 < h_cost_table_.size() && !critical)
                 cost2 = h_cost_table_.at(pos2);
               else
                 cost2 = getCost(pos2,
@@ -1568,7 +1563,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = h_edges_[curY][curX].usage_red()
                            + L * h_edges_[curY][curX].last_usage;
 
-          if (pos1 < h_cost_table_.size())
+          if (pos1 < h_cost_table_.size() && !critical)
             cost1 = h_cost_table_.at(pos1);
           else
             cost1 = getCost(
@@ -1581,7 +1576,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = h_edges_[curY][curX - 1].usage_red()
                                + L * h_edges_[curY][curX - 1].last_usage;
 
-              if (pos2 < h_cost_table_.size())
+              if (pos2 < h_cost_table_.size() && !critical)
                 cost2 = h_cost_table_.at(pos2);
               else
                 cost2 = getCost(pos2,
@@ -1629,7 +1624,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = v_edges_[curY - 1][curX].usage_red()
                            + L * v_edges_[curY - 1][curX].last_usage;
 
-          if (pos1 < v_cost_table_.size())
+          if (pos1 < v_cost_table_.size() && !critical)
             cost1 = v_cost_table_.at(pos1);
           else
             cost1 = getCost(
@@ -1642,7 +1637,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = v_edges_[curY][curX].usage_red()
                                + L * v_edges_[curY][curX].last_usage;
 
-              if (pos2 < v_cost_table_.size())
+              if (pos2 < v_cost_table_.size() && !critical)
                 cost2 = v_cost_table_.at(pos2);
               else
                 cost2 = getCost(pos2,
@@ -1689,7 +1684,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = v_edges_[curY][curX].usage_red()
                            + L * v_edges_[curY][curX].last_usage;
 
-          if (pos1 < v_cost_table_.size())
+          if (pos1 < v_cost_table_.size() && !critical)
             cost1 = v_cost_table_.at(pos1);
           else
             cost1 = getCost(
@@ -1702,7 +1697,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = v_edges_[curY - 1][curX].usage_red()
                                + L * v_edges_[curY - 1][curX].last_usage;
 
-              if (pos2 < v_cost_table_.size())
+              if (pos2 < v_cost_table_.size() && !critical)
                 cost2 = v_cost_table_.at(pos2);
               else
                 cost2 = getCost(pos2,
@@ -2426,6 +2421,19 @@ void FastRouteCore::InitLastUsage(const int upType)
       for (int j = 0; j < x_grid_; j++) {
         v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.2;
       }
+    }
+  }
+}
+
+void FastRouteCore::SaveLastRouteLen()
+{
+  for(int netID = 0; netID < netCount(); netID++) {
+    auto& treeedges = sttrees_[netID].edges;
+    // loop for all the tree edges
+    const int num_edges = sttrees_[netID].num_edges();
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      auto& edge = treeedges[edgeID];
+      edge.last_len = edge.route.routelen;
     }
   }
 }
