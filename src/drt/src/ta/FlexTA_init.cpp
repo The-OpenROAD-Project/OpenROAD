@@ -783,35 +783,50 @@ void FlexTAWorker::initFixedObjs()
         cout << "Warning: unsupported type in initFixedObjs" << endl;
       }
     }
-    auto costResults
-        = [this, layerNum, width](
-              bool upper, const frRegionQuery::Objects<frBlockObject>& result) {
-            Rect box;
-            for (auto& [bounds, obj] : result) {
-              bounds.bloat(-1, box);
-              auto type = obj->typeId();
-              switch (type) {
-                case frcInstBlockage: {
-                  auto instBlkg = (static_cast<frInstBlockage*>(obj));
-                  auto inst = instBlkg->getInst();
-                  dbMasterType masterType = inst->getMaster()->getMasterType();
-                  if (!masterType.isBlock() && !masterType.isPad()
-                      && masterType != dbMasterType::RING)
-                    continue;
-                  if (bounds.minDXDY() <= 2 * width)
-                    continue;
-                  auto cutLayer = getTech()->getLayer(upper ? layerNum + 1
-                                                            : layerNum - 1);
-                  auto bloatDist = initFixedObjs_calcOBSBloatDistVia(
-                      cutLayer->getDefaultViaDef(), layerNum, bounds);
-                  initFixedObjs_helper(box, bloatDist, layerNum, nullptr);
-                  break;
-                }
-                default:
-                  break;
-              }
-            }
-          };
+    auto costResults = [this, layerNum, width](
+                           bool upper,
+                           const frRegionQuery::Objects<frBlockObject>&
+                               result) {
+      Rect box;
+      for (auto& [bounds, obj] : result) {
+        bounds.bloat(-1, box);
+        auto type = obj->typeId();
+        switch (type) {
+          case frcInstBlockage: {
+            auto instBlkg = (static_cast<frInstBlockage*>(obj));
+            auto inst = instBlkg->getInst();
+            dbMasterType masterType = inst->getMaster()->getMasterType();
+            if (!masterType.isBlock() && !masterType.isPad()
+                && masterType != dbMasterType::RING)
+              continue;
+            if (bounds.minDXDY() <= 2 * width)
+              continue;
+            auto cutLayer
+                = getTech()->getLayer(upper ? layerNum + 1 : layerNum - 1);
+            auto bloatDist = initFixedObjs_calcOBSBloatDistVia(
+                cutLayer->getDefaultViaDef(), layerNum, bounds);
+            Rect bloatBox;
+            box.bloat(bloatDist, bloatBox);
+
+            Rect borderBox(
+                bloatBox.xMin(), bloatBox.yMin(), box.xMin(), bloatBox.yMax());
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            borderBox.init(
+                bloatBox.xMin(), box.yMax(), bloatBox.xMax(), bloatBox.yMax());
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            borderBox.init(
+                box.xMax(), bloatBox.yMin(), bloatBox.xMax(), bloatBox.yMax());
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            borderBox.init(
+                bloatBox.xMin(), bloatBox.yMin(), bloatBox.xMax(), box.yMin());
+            initFixedObjs_helper(borderBox, 0, layerNum, nullptr);
+            break;
+          }
+          default:
+            break;
+        }
+      }
+    };
 
     result.clear();
     if (layerNum - 2 >= getDesign()->getTech()->getBottomLayerNum()
