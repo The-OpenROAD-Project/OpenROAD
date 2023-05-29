@@ -137,10 +137,10 @@ std::vector<std::string> SplitLine(std::string line)
   std::vector<std::string> items;
   std::string deliminators(", ");  // empty space ,
   auto start = line.cbegin();
-  while (start != line.end()) {
-    start = FindNotDelim(start, line.end(), deliminators);
-    auto end = FindDelim(start, line.end(), deliminators);
-    if (start != line.end()) {
+  while (start != line.cend()) {
+    start = FindNotDelim(start, line.cend(), deliminators);
+    auto end = FindDelim(start, line.cend(), deliminators);
+    if (start != line.cend()) {
       items.push_back(std::string(start, end));
       start = end;
     }
