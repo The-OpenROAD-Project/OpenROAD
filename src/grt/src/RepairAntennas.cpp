@@ -447,7 +447,8 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
     const int right_pad = opendp_->padRight(diode_inst);
     diode_inst->setOrient(inst_orient);
     if (sink_inst->isBlock() || sink_inst->isPad()) {
-      odb::dbOrientType orient = getRowOrient(odb::Point(inst_loc_x + offset, inst_loc_y));
+      odb::dbOrientType orient
+          = getRowOrient(odb::Point(inst_loc_x + offset, inst_loc_y));
       diode_inst->setOrient(orient);
     }
     diode_inst->setLocation(inst_loc_x + offset, inst_loc_y);
