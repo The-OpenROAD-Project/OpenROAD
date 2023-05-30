@@ -44,6 +44,16 @@
 
 namespace par {
 
+// The algorithms we support
+enum class RefinerChoice
+{
+  GREEDY,         // greedy refinement. try to one entire hyperedge each time
+  FLAT_K_WAY_FM,  // direct k-way FM
+  KPM_FM,         // K-way pair-wise FM
+  ILP_REFINE      // ILP-based partitioning (only for two-way since k-way ILP
+                  // partitioning is too timing-consuming)
+};
+
 class VertexGain;
 using GainCell = std::shared_ptr<VertexGain>;  // for abbreviation
 
@@ -53,16 +63,6 @@ using HyperedgeGainPtr = std::shared_ptr<HyperedgeGain>;
 // Priority-queue based gain bucket
 using GainBucket = std::shared_ptr<PriorityQueue>;
 using GainBuckets = std::vector<GainBucket>;
-
-// The algorithm we supported
-enum class RefinerChoice
-{
-  GREEDY,         // greedy refinement. try to one entire hyperedge each time
-  FLAT_K_WAY_FM,  // direct k-way FM
-  KPM_FM,         // K-way pair-wise FM
-  ILP_REFINE      // ILP-based partitioning (only for two-way since k-way ILP
-                  // partitioning is too timing-consuming)
-};
 
 class KWayFMRefine;
 using KWayFMRefinerPtr = std::shared_ptr<KWayFMRefine>;
@@ -110,9 +110,8 @@ class HyperedgeGain
 
 // ------------------------------------------------------------------------
 // The base class for refinement Refiner
-// It implements the most basic functions for refinement
-// and provides the basic parameters.
-// Note that the Refiner is an operator class
+// It implements the most basic functions for refinement and provides
+// the basic parameters.  Note that the Refiner is an operator class
 // It should not modify the hypergraph itself
 // ------------------------------------------------------------------------
 class Refiner
@@ -124,7 +123,7 @@ class Refiner
           float snaking_wt_factor,  // weight for snaking timing paths
           int max_move,  // the maximum number of vertices or hyperedges can
                          // be moved in each pass
-          EvaluatorPtr evaluator,  // evaluator
+          EvaluatorPtr evaluator,
           utl::Logger* logger);
 
   Refiner(const Refiner&) = delete;
@@ -137,15 +136,12 @@ class Refiner
               const Matrix<float>& lower_block_balance,
               Partitions& solution);
 
-  // accessor
   void SetMaxMove(int max_move);
-
   void SetRefineIters(int refiner_iters);
 
   void RestoreDefaultParameters();
 
  protected:
-  // protected functions
   virtual float Pass(const HGraphPtr& hgraph,
                      const Matrix<float>& upper_block_balance,
                      const Matrix<float>& lower_block_balance,
@@ -156,17 +152,14 @@ class Refiner
                      std::vector<bool>& visited_vertices_flag)
       = 0;
 
-  // By default, v = -1 and to_pid = -1
-  // if to_pid == -1, we are calculate the current cost
-  // of the path;
-  // else if to_pid != -1, we are culculate the cost of the path
+  // If to_pid == -1, we are calculate the current cost of the path;
+  // else if to_pid != -1, we are calculate the cost of the path
   // after moving v to block to_pid
   float CalculatePathCost(int path_id,
                           const HGraphPtr& hgraph,
                           const Partitions& solution,
-                          int v = -1,      // v = -1 by default
-                          int to_pid = -1  // to_pid = -1 by default
-  ) const;
+                          int v = -1,
+                          int to_pid = -1) const;
 
   // Find all the boundary vertices. The boundary vertices will not include any
   // fixed vertices
@@ -243,7 +236,7 @@ class Refiner
                                const Matrix<float>& upper_block_balance,
                                const Matrix<float>& lower_block_balance) const;
 
-  // calculate the possible gain of moving a entire hyperedge
+  // Calculate the possible gain of moving a entire hyperedge.
   // We can view the process of moving the vertices in hyperege
   // one by one, then restore the moving sequence to make sure that
   // the current status is not changed. Solution should not be const
@@ -281,16 +274,20 @@ class Refiner
   // user specified parameters
   const int num_parts_ = 2;  // number of blocks in the partitioning
   int refiner_iters_ = 2;    // number of refinement iterations
-  const float path_wt_factor_
-      = 1.0;  // the cost for cutting a critical timing path once.
-              // If a critical path is cut by 3 times,
-              // the cost is defined as 3 * path_wt_factor_ * weight_of_path
-  const float snaking_wt_factor_
-      = 1.0;  // the cost of introducing a snaking timing path, see our paper
-              // for detailed explanation of snaking timing paths
-  int max_move_
-      = 50;  // the maxinum number of vertices can be moved in each pass
-  // defualt parameters
+
+  // the cost for cutting a critical timing path once.  If a critical
+  // path is cut by 3 times, the cost is defined as 3 *
+  // path_wt_factor_ * weight_of_path
+  const float path_wt_factor_ = 1.0;
+
+  // the cost of introducing a snaking timing path, see our paper for
+  // detailed explanation of snaking timing paths
+  const float snaking_wt_factor_ = 1.0;
+
+  // the maxinum number of vertices can be moved in each pass
+  int max_move_ = 50;
+
+  // default parameters
   // during partitioning, we may need to update the value
   // of refiner_iters_ and max_move_ for the coarsest hypergraphs
   const int refiner_iters_default_ = 2;
@@ -306,8 +303,7 @@ class Refiner
 class KWayFMRefine : public Refiner
 {
  public:
-  // We need the constructor here.  We have one more parameter related to
-  // "corking effect"
+  // We have one more parameter related to "corking effect"
   KWayFMRefine(
       int num_parts,
       int refiner_iters,
@@ -316,7 +312,7 @@ class KWayFMRefine : public Refiner
       int max_move,  // the maximum number of vertices or hyperedges can
                      // be moved in each pass
       int total_corking_passes,
-      EvaluatorPtr evaluator,  // evaluator
+      EvaluatorPtr evaluator,
       utl::Logger* logger);
 
   // Mark these two functions as public.
