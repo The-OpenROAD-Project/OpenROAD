@@ -132,7 +132,7 @@ std::vector<float> ConvertTclListToVector(std::string tcl_list_string)
 }
 
 // Split a string based on deliminator : empty space and ","
-std::vector<std::string> SplitLine(std::string line)
+std::vector<std::string> SplitLine(const std::string& line)
 {
   std::vector<std::string> items;
   std::string deliminators(", ");  // empty space ,
@@ -141,7 +141,7 @@ std::vector<std::string> SplitLine(std::string line)
     start = FindNotDelim(start, line.cend(), deliminators);
     auto end = FindDelim(start, line.cend(), deliminators);
     if (start != line.cend()) {
-      items.push_back(std::string(start, end));
+      items.emplace_back(start, end);
       start = end;
     }
   }
@@ -177,8 +177,9 @@ std::vector<float> WeightedSum(const std::vector<float>& a,
 std::vector<float> DivideFactor(const std::vector<float>& a, const float factor)
 {
   std::vector<float> result = a;
-  for (auto& value : result)
+  for (auto& value : result) {
     value /= factor;
+  }
   return result;
 }
 
@@ -187,8 +188,9 @@ std::vector<float> MultiplyFactor(const std::vector<float>& a,
                                   const float factor)
 {
   std::vector<float> result = a;
-  for (auto& value : result)
+  for (auto& value : result) {
     value *= factor;
+  }
   return result;
 }
 
@@ -258,8 +260,9 @@ std::vector<float> operator*(const std::vector<float>& a, const float factor)
 {
   std::vector<float> result;
   result.reserve(a.size());
-  for (auto value : a)
+  for (auto value : a) {
     result.push_back(value * factor);
+  }
   return result;
 }
 
@@ -269,8 +272,9 @@ bool operator<(const std::vector<float>& a, const std::vector<float>& b)
   auto a_iter = a.begin();
   auto b_iter = b.begin();
   while (a_iter != a.end()) {
-    if ((*a_iter++) >= (*b_iter++))
+    if ((*a_iter++) >= (*b_iter++)) {
       return false;
+    }
   }
   return true;
 }
@@ -287,9 +291,8 @@ bool operator<=(const MATRIX<float>& a, const MATRIX<float>& b)
   for (int dim = 0; dim < num_dim; dim++) {
     if ((a[dim] < b[dim]) || (a[dim] == b[dim])) {
       continue;
-    } else {
-      return false;
     }
+    return false;
   }
   return true;
 }
@@ -473,9 +476,8 @@ bool ILPPartitionInst(
       }
     }
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 // Call CPLEX to solve the ILP Based Partitioning

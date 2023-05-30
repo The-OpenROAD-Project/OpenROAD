@@ -72,10 +72,10 @@ using MATRIX = std::vector<std::vector<T>>;
 struct Rect
 {
   // all the values are in db unit
-  long long int lx = 0;
-  long long int ly = 0;
-  long long int ux = 0;
-  long long int uy = 0;
+  int64_t lx = 0;
+  int64_t ly = 0;
+  int64_t ux = 0;
+  int64_t uy = 0;
 
   Rect(int lx_, int ly_, int ux_, int uy_) : lx(lx_), ly(ly_), ux(ux_), uy(uy_)
   {
@@ -86,9 +86,8 @@ struct Rect
   {
     if (ux > lx && uy > ly) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
   // reset the fence
@@ -116,28 +115,26 @@ std::string GetVectorString(const std::vector<float>& vec);
 std::vector<float> ConvertTclListToVector(std::string tcl_list_string);
 
 // Split a string based on deliminator : empty space and ","
-std::vector<std::string> SplitLine(std::string line);
+std::vector<std::string> SplitLine(const std::string& line);
 
 // Add right vector to left vector
 void Accumulate(std::vector<float>& a, const std::vector<float>& b);
 
 // weighted sum
 std::vector<float> WeightedSum(const std::vector<float>& a,
-                               const float a_factor,
+                               float a_factor,
                                const std::vector<float>& b,
-                               const float b_factor);
+                               float b_factor);
 
 // divide the vector
-std::vector<float> DivideFactor(const std::vector<float>& a,
-                                const float factor);
+std::vector<float> DivideFactor(const std::vector<float>& a, float factor);
 
 // divide the vectors element by element
 std::vector<float> DivideVectorElebyEle(const std::vector<float>& emb,
                                         const std::vector<float>& factor);
 
 // multiplty the vector
-std::vector<float> MultiplyFactor(const std::vector<float>& a,
-                                  const float factor);
+std::vector<float> MultiplyFactor(const std::vector<float>& a, float factor);
 
 // operation for two vectors +, -, *,  ==, <
 std::vector<float> operator+(const std::vector<float>& a,

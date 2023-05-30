@@ -40,11 +40,11 @@
 namespace par {
 
 // insert one element into the priority queue
-void TPpriorityQueue::InsertIntoPQ(std::shared_ptr<VertexGain> vertex)
+void TPpriorityQueue::InsertIntoPQ(const std::shared_ptr<VertexGain>& element)
 {
   total_elements_++;
-  vertices_.push_back(vertex);
-  vertices_map_[vertex->GetVertex()] = total_elements_ - 1;
+  vertices_.push_back(element);
+  vertices_map_[element->GetVertex()] = total_elements_ - 1;
   HeapifyUp(total_elements_ - 1);
 }
 
@@ -69,7 +69,7 @@ std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
     const MATRIX<float>& curr_block_balance,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
-    const HGraphPtr hgraph)
+    const HGraphPtr& hgraph)
 {
   if (total_elements_ <= 0) {               // empty
     return std::make_shared<VertexGain>();  // return the dummy cell
@@ -88,9 +88,8 @@ std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
         && (curr_block_balance[from_pid] - hgraph->vertex_weights_[vertex_id]
             > lower_block_balance[from_pid])) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   };
 
   // check the first index
@@ -117,15 +116,14 @@ std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
 
     if (candidate_index > 0) {
       return vertices_[candidate_index];  // return the candidate gain cell
-    } else if (left_child >= total_elements_
-               || right_child >= total_elements_) {
+    }
+    if (left_child >= total_elements_ || right_child >= total_elements_) {
       // no valid candidate
       return std::make_shared<VertexGain>();  // return the dummy cell
-    } else {                                  // otherwise go further
-      index = CompareElementLargeThan(right_child, left_child) == true
-                  ? right_child
-                  : left_child;
     }
+    index = CompareElementLargeThan(right_child, left_child) == true
+                ? right_child
+                : left_child;
   }
   return std::make_shared<VertexGain>();  // return the dummy cell
 }
@@ -149,8 +147,9 @@ void TPpriorityQueue::Remove(int vertex_id)
 }
 
 // Update the priority (gain) for the specified vertex
-void TPpriorityQueue::ChangePriority(int vertex_id,
-                                     std::shared_ptr<VertexGain> new_element)
+void TPpriorityQueue::ChangePriority(
+    int vertex_id,
+    const std::shared_ptr<VertexGain>& new_element)
 {
   const int index = vertices_map_[vertex_id];
   if (index == -1) {
@@ -176,14 +175,10 @@ bool TPpriorityQueue::CompareElementLargeThan(int index_a, int index_b)
 {
   if (vertices_[index_a]->GetGain() > vertices_[index_b]->GetGain()) {
     return true;
-  } else if ((vertices_[index_a]->GetGain() == vertices_[index_b]->GetGain())
-             && (hypergraph_->vertex_weights_[vertices_[index_a]->GetVertex()]
-                 < hypergraph_
-                       ->vertex_weights_[vertices_[index_b]->GetVertex()])) {
-    return true;
-  } else {
-    return false;
   }
+  return ((vertices_[index_a]->GetGain() == vertices_[index_b]->GetGain())
+          && (hypergraph_->vertex_weights_[vertices_[index_a]->GetVertex()]
+              < hypergraph_->vertex_weights_[vertices_[index_b]->GetVertex()]));
 }
 
 // push the element at location index to its ordered location

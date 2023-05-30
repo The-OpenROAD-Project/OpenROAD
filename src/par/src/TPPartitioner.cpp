@@ -40,12 +40,10 @@
 #include "Utilities.h"
 #include "utl/Logger.h"
 
-using utl::PAR;
-
 namespace par {
 
 // The main function of Partitioning
-void TPpartitioner::Partition(const HGraphPtr hgraph,
+void TPpartitioner::Partition(const HGraphPtr& hgraph,
                               const MATRIX<float>& upper_block_balance,
                               const MATRIX<float>& lower_block_balance,
                               std::vector<int>& solution,
@@ -89,7 +87,7 @@ void TPpartitioner::Partition(const HGraphPtr hgraph,
 // If vile_mode == true,  we try to generate unbalanced random partitioning
 
 // random partitioning
-void TPpartitioner::RandomPart(const HGraphPtr hgraph,
+void TPpartitioner::RandomPart(const HGraphPtr& hgraph,
                                const MATRIX<float>& upper_block_balance,
                                const MATRIX<float>& lower_block_balance,
                                std::vector<int>& solution,
@@ -179,7 +177,7 @@ void TPpartitioner::RandomPart(const HGraphPtr hgraph,
 }
 
 // ILP-based partitioning
-void TPpartitioner::ILPPart(const HGraphPtr hgraph,
+void TPpartitioner::ILPPart(const HGraphPtr& hgraph,
                             const MATRIX<float>& upper_block_balance,
                             const MATRIX<float>& lower_block_balance,
                             std::vector<int>& solution) const
@@ -284,7 +282,7 @@ void TPpartitioner::ILPPart(const HGraphPtr hgraph,
 
 // randomly pick one vertex into each block
 // then use refinement functions to get valid solution (See TPMultilevel.cpp)
-void TPpartitioner::VilePart(const HGraphPtr hgraph,
+void TPpartitioner::VilePart(const HGraphPtr& hgraph,
                              std::vector<int>& solution) const
 {
   std::fill(solution.begin(), solution.end(), 0);

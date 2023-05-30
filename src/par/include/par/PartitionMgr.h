@@ -64,8 +64,6 @@ namespace utl {
 class Logger;
 }
 
-using utl::Logger;
-
 namespace par {
 
 class PartitionMgr
@@ -74,7 +72,7 @@ class PartitionMgr
   void init(odb::dbDatabase* db,
             sta::dbNetwork* db_network,
             sta::dbSta* sta,
-            Logger* logger);
+            utl::Logger* logger);
 
   // The function for partitioning a hypergraph
   // This is used for replacing hMETIS
@@ -256,7 +254,7 @@ class PartitionMgr
   odb::dbDatabase* db_ = nullptr;
   sta::dbNetwork* db_network_ = nullptr;
   sta::dbSta* sta_ = nullptr;
-  Logger* logger_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 };
 
 }  // namespace par

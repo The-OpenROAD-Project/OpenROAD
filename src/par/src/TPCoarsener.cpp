@@ -59,7 +59,7 @@ namespace par {
 // Notice that the input hypergraph is not const,
 // because the hgraphs returned can be edited
 // The timing cost of hgraph will be initialized if it has been not.
-TP_coarse_graph_ptrs TPcoarsener::LazyFirstChoice(HGraphPtr hgraph) const
+TP_coarse_graph_ptrs TPcoarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
 {
   const auto start_timestamp = std::chrono::high_resolution_clock::now();
   const bool timing_flag = hgraph->timing_flag_;
@@ -140,7 +140,7 @@ TP_coarse_graph_ptrs TPcoarsener::LazyFirstChoice(HGraphPtr hgraph) const
 // (5) group fixed vertices based on each block
 // group vertices based on group_attr and hgraph->fixed_attr_
 HGraphPtr TPcoarsener::GroupVertices(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<std::vector<int>>& group_attr) const
 {
   std::vector<int>
@@ -188,7 +188,7 @@ HGraphPtr TPcoarsener::GroupVertices(
 // Single-level Coarsening
 // The input is a hypergraph
 // The output is a coarser hypergraph
-HGraphPtr TPcoarsener::Aggregate(const HGraphPtr hgraph) const
+HGraphPtr TPcoarsener::Aggregate(const HGraphPtr& hgraph) const
 {
   std::vector<int> vertex_cluster_id_vec;
   MATRIX<float> vertex_weights_c;
@@ -232,7 +232,7 @@ HGraphPtr TPcoarsener::Aggregate(const HGraphPtr hgraph) const
 // but during the matching process, we do dynamically update
 // placement_attr_c. vertex_weights_c, fixed_attr_c and community_attr_c
 void TPcoarsener::VertexMatching(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
@@ -343,7 +343,7 @@ void TPcoarsener::VertexMatching(
       }
     }  // finish traversing all the neighbors
     // if there is no neighbor, map current vertex as a single-vertex cluster
-    if (score_map.size() == 0) {
+    if (score_map.empty()) {
       num_visited_vertices++;
       vertex_cluster_id_vec[v] = cluster_id++;
       vertex_weights_c.push_back(hgraph->vertex_weights_[v]);
@@ -502,8 +502,8 @@ void TPcoarsener::VertexMatching(
 // the same vertex All the fixed vertices in one block will be identified as the
 // same group
 void TPcoarsener::ClusterBasedGroupInfo(
-    HGraphPtr hgraph,
-    const std::vector<std::vector<int>>& group_info,
+    const HGraphPtr& hgraph,
+    const std::vector<std::vector<int>>& group_attr,
     std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
@@ -513,7 +513,7 @@ void TPcoarsener::ClusterBasedGroupInfo(
     MATRIX<float>& placement_attr_c) const
 {
   // convert group_attr to vertex_cluster_id_vec
-  if (group_info.empty() == true && hgraph->fixed_attr_.empty() == true) {
+  if (group_attr.empty() == true && hgraph->fixed_attr_.empty() == true) {
     // no need to any group based on group_attr and hgraph->fixed_attr_
     vertex_cluster_id_vec.clear();
     vertex_cluster_id_vec.resize(hgraph->num_vertices_);
@@ -546,8 +546,8 @@ void TPcoarsener::ClusterBasedGroupInfo(
     }
   }
 
-  // concatenate fixed group and group_info
-  fixed_group.insert(fixed_group.end(), group_info.begin(), group_info.end());
+  // concatenate fixed group and group_attr
+  fixed_group.insert(fixed_group.end(), group_attr.begin(), group_attr.end());
   // We need to merge groups if two groups share at least one common vertex
   // first initialize the vertex_cluster_id_vec
   vertex_cluster_id_vec.clear();
@@ -628,7 +628,7 @@ void TPcoarsener::ClusterBasedGroupInfo(
 }
 
 // order the vertices based on user-specified parameters
-void TPcoarsener::OrderVertices(const HGraphPtr hgraph,
+void TPcoarsener::OrderVertices(const HGraphPtr& hgraph,
                                 std::vector<int>& vertices) const
 {
   switch (vertex_order_choice_) {
@@ -690,7 +690,7 @@ void TPcoarsener::OrderVertices(const HGraphPtr hgraph,
 //  create the contracted hypergraph based on the vertex matching in
 //  vertex_cluster_id_vec
 HGraphPtr TPcoarsener::Contraction(
-    HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
@@ -760,56 +760,55 @@ HGraphPtr TPcoarsener::Contraction(
             hgraph->hyperedge_arc_set_[e]);  // map the hyperedge to timing arcs
       }
       continue;
-    } else {
-      // there may be parallel hyperedges
-      const int hash_hyperedge_c_id
-          = hash_map[hash_value];  // the hyperedge_c has been found
-      std::vector<int> hyperedge_vec(hyperedge_c.begin(), hyperedge_c.end());
+    }
+
+    // there may be parallel hyperedges
+    const int hash_hyperedge_c_id
+        = hash_map[hash_value];  // the hyperedge_c has been found
+    std::vector<int> hyperedge_vec(hyperedge_c.begin(), hyperedge_c.end());
+    // check the representative hyperedge_c
+    int parallel_hyperedge_c_id
+        = -1;  // the hyperedge_c_id of parallel hyperedge
+    // find the parallel_hyperedge_c_id
+    if (hyperedge_vec == hyperedges_c[hash_hyperedge_c_id]) {
       // check the representative hyperedge_c
-      int parallel_hyperedge_c_id
-          = -1;  // the hyperedge_c_id of parallel hyperedge
-      // find the parallel_hyperedge_c_id
-      if (hyperedge_vec == hyperedges_c[hash_hyperedge_c_id]) {
-        // check the representative hyperedge_c
-        parallel_hyperedge_c_id = hash_hyperedge_c_id;
-      } else {
-        // check the parallel hyperedge_c_id
-        for (const auto& candidate_id : parallel_hash_map[hash_value]) {
-          if (hyperedge_vec == hyperedges_c[candidate_id]) {
-            parallel_hyperedge_c_id = candidate_id;
-            break;  // found the same hyperedge_c
-          }
+      parallel_hyperedge_c_id = hash_hyperedge_c_id;
+    } else {
+      // check the parallel hyperedge_c_id
+      for (const auto& candidate_id : parallel_hash_map[hash_value]) {
+        if (hyperedge_vec == hyperedges_c[candidate_id]) {
+          parallel_hyperedge_c_id = candidate_id;
+          break;  // found the same hyperedge_c
         }
       }
-      // check if the hyperedge has been existed
-      if (parallel_hyperedge_c_id == -1) {
-        // not existed
-        const int hyperedge_c_id = static_cast<int>(hyperedges_c.size());
-        hyperedge_cluster_id_vec[e] = hyperedge_c_id;
-        parallel_hash_map[hash_value].push_back(hyperedge_c_id);
-        hyperedges_c.push_back(hyperedge_vec);
-        hyperedges_weights_c.push_back(hgraph->hyperedge_weights_[e]);
-        if (hgraph->timing_flag_ == true) {
-          hyperedge_slack_c.push_back(
-              hgraph->hyperedge_timing_attr_[e]);  // the slack of hyperedge
-          hyperedge_arc_set_c.push_back(
-              hgraph
-                  ->hyperedge_arc_set_[e]);  // map the hyperedge to timing arcs
-        }
-      } else {
-        // existed
-        hyperedges_weights_c[parallel_hyperedge_c_id]
-            = hyperedges_weights_c[parallel_hyperedge_c_id]
-              + hgraph->hyperedge_weights_[e];
-        hyperedge_cluster_id_vec[e] = parallel_hyperedge_c_id;
-        if (hgraph->timing_flag_ == true) {
-          hyperedge_slack_c[parallel_hyperedge_c_id]
-              = std::min(hyperedge_slack_c[parallel_hyperedge_c_id],
-                         hgraph->hyperedge_timing_attr_[e]);
-          hyperedge_arc_set_c[parallel_hyperedge_c_id].insert(
-              hgraph->hyperedge_arc_set_[e].begin(),
-              hgraph->hyperedge_arc_set_[e].end());
-        }
+    }
+    // check if the hyperedge has been existed
+    if (parallel_hyperedge_c_id == -1) {
+      // not existed
+      const int hyperedge_c_id = static_cast<int>(hyperedges_c.size());
+      hyperedge_cluster_id_vec[e] = hyperedge_c_id;
+      parallel_hash_map[hash_value].push_back(hyperedge_c_id);
+      hyperedges_c.push_back(hyperedge_vec);
+      hyperedges_weights_c.push_back(hgraph->hyperedge_weights_[e]);
+      if (hgraph->timing_flag_ == true) {
+        hyperedge_slack_c.push_back(
+            hgraph->hyperedge_timing_attr_[e]);  // the slack of hyperedge
+        hyperedge_arc_set_c.push_back(
+            hgraph->hyperedge_arc_set_[e]);  // map the hyperedge to timing arcs
+      }
+    } else {
+      // existed
+      hyperedges_weights_c[parallel_hyperedge_c_id]
+          = hyperedges_weights_c[parallel_hyperedge_c_id]
+            + hgraph->hyperedge_weights_[e];
+      hyperedge_cluster_id_vec[e] = parallel_hyperedge_c_id;
+      if (hgraph->timing_flag_ == true) {
+        hyperedge_slack_c[parallel_hyperedge_c_id]
+            = std::min(hyperedge_slack_c[parallel_hyperedge_c_id],
+                       hgraph->hyperedge_timing_attr_[e]);
+        hyperedge_arc_set_c[parallel_hyperedge_c_id].insert(
+            hgraph->hyperedge_arc_set_[e].begin(),
+            hgraph->hyperedge_arc_set_[e].end());
       }
     }
   }

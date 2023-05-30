@@ -35,11 +35,10 @@
 
 #include "par/PartitionMgr.h"
 
-#include <time.h>
-
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 

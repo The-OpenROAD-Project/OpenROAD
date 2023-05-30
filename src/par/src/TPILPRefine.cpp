@@ -48,7 +48,7 @@ namespace par {
 
 // Implement the ILP-based refinement pass
 float TPilpRefine::Pass(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     MATRIX<float>& block_balance,        // the current block balance

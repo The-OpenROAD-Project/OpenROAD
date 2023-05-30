@@ -69,7 +69,7 @@ struct TimingPath
   float slack = 0.0;      // slack for this critical timing paths (normalized to
                           // clock period)
 
-  TimingPath() {}
+  TimingPath() = default;
 
   TimingPath(const std::vector<int>& path_arg,
              const std::vector<int>& arcs_arg,
@@ -98,69 +98,7 @@ struct TPHypergraph
       const std::vector<int>& community_attr,
       // placement information
       const std::vector<std::vector<float>>& placement_attr,
-      utl::Logger* logger)
-  {
-    vertex_dimensions_ = vertex_dimensions;
-    hyperedge_dimensions_ = hyperedge_dimensions;
-    num_vertices_ = static_cast<int>(vertex_weights.size());
-    num_hyperedges_ = static_cast<int>(hyperedge_weights.size());
-
-    vertex_weights_ = vertex_weights;
-    hyperedge_weights_ = hyperedge_weights;
-
-    // add hyperedge
-    // hyperedges: each hyperedge is a set of vertices
-    eind_.clear();
-    eptr_.clear();
-    eptr_.push_back(static_cast<int>(eind_.size()));
-    for (const auto& hyperedge : hyperedges) {
-      eind_.insert(eind_.end(), hyperedge.begin(), hyperedge.end());
-      eptr_.push_back(static_cast<int>(eind_.size()));
-    }
-
-    // add vertex
-    // create vertices from hyperedges
-    std::vector<std::vector<int>> vertices(num_vertices_);
-    for (int e = 0; e < num_hyperedges_; e++) {
-      for (auto v : hyperedges[e]) {
-        vertices[v].push_back(e);  // e is the hyperedge id
-      }
-    }
-    vind_.clear();
-    vptr_.clear();
-    vptr_.push_back(static_cast<int>(vind_.size()));
-    for (const auto& vertex : vertices) {
-      vind_.insert(vind_.end(), vertex.begin(), vertex.end());
-      vptr_.push_back(static_cast<int>(vind_.size()));
-    }
-
-    // fixed vertices
-    fixed_vertex_flag_ = (static_cast<int>(fixed_attr.size()) == num_vertices_);
-    if (fixed_vertex_flag_ == true) {
-      fixed_attr_ = fixed_attr;
-    }
-
-    // community information
-    community_flag_
-        = (static_cast<int>(community_attr.size()) == num_vertices_);
-    if (community_flag_ == true) {
-      community_attr_ = community_attr;
-    }
-
-    // placement information
-    placement_flag_
-        = (placement_dimensions > 0
-           && static_cast<int>(placement_attr.size()) == num_vertices_);
-    if (placement_flag_ == true) {
-      placement_dimensions_ = placement_dimensions;
-      placement_attr_ = placement_attr;
-    } else {
-      placement_dimensions_ = 0;
-    }
-
-    // logger
-    logger_ = logger;
-  }
+      utl::Logger* logger);
 
   TPHypergraph(
       int vertex_dimensions,
@@ -176,112 +114,14 @@ struct TPHypergraph
       // placement information
       const std::vector<std::vector<float>>& placement_attr,
       // the type of each vertex
-      std::vector<VertexType>
+      const std::vector<VertexType>&
           vertex_types,  // except the original timing graph, users do not need
                          // to specify this
       // slack information
       const std::vector<float>& hyperedges_slack,
       const std::vector<std::set<int>>& hyperedges_arc_set,
       const std::vector<TimingPath>& timing_paths,
-      utl::Logger* logger)
-  {
-    vertex_dimensions_ = vertex_dimensions;
-    hyperedge_dimensions_ = hyperedge_dimensions;
-    num_vertices_ = static_cast<int>(vertex_weights.size());
-    num_hyperedges_ = static_cast<int>(hyperedge_weights.size());
-
-    vertex_weights_ = vertex_weights;
-    hyperedge_weights_ = hyperedge_weights;
-
-    // add hyperedge
-    // hyperedges: each hyperedge is a set of vertices
-    eind_.clear();
-    eptr_.clear();
-    eptr_.push_back(static_cast<int>(eind_.size()));
-    for (const auto& hyperedge : hyperedges) {
-      eind_.insert(eind_.end(), hyperedge.begin(), hyperedge.end());
-      eptr_.push_back(static_cast<int>(eind_.size()));
-    }
-
-    // add vertex
-    // create vertices from hyperedges
-    std::vector<std::vector<int>> vertices(num_vertices_);
-    for (int e = 0; e < num_hyperedges_; e++) {
-      for (auto v : hyperedges[e]) {
-        vertices[v].push_back(e);  // e is the hyperedge id
-      }
-    }
-    vind_.clear();
-    vptr_.clear();
-    vptr_.push_back(static_cast<int>(vind_.size()));
-    for (const auto& vertex : vertices) {
-      vind_.insert(vind_.end(), vertex.begin(), vertex.end());
-      vptr_.push_back(static_cast<int>(vind_.size()));
-    }
-
-    // fixed vertices
-    fixed_vertex_flag_ = (static_cast<int>(fixed_attr.size()) == num_vertices_);
-    if (fixed_vertex_flag_ == true) {
-      fixed_attr_ = fixed_attr;
-    }
-
-    // community information
-    community_flag_
-        = (static_cast<int>(community_attr.size()) == num_vertices_);
-    if (community_flag_ == true) {
-      community_attr_ = community_attr;
-    }
-
-    // placement information
-    placement_flag_
-        = (placement_dimensions > 0
-           && static_cast<int>(placement_attr.size()) == num_vertices_);
-    if (placement_flag_ == true) {
-      placement_dimensions_ = placement_dimensions;
-      placement_attr_ = placement_attr;
-    } else {
-      placement_dimensions_ = 0;
-    }
-
-    // add vertex types
-    vertex_types_ = vertex_types;
-
-    // slack information
-    if (static_cast<int>(hyperedges_slack.size()) == num_hyperedges_
-        && static_cast<int>(hyperedges_arc_set.size()) == num_hyperedges_) {
-      timing_flag_ = true;
-      num_timing_paths_ = static_cast<int>(timing_paths.size());
-      hyperedge_timing_attr_ = hyperedges_slack;
-      hyperedge_arc_set_ = hyperedges_arc_set;
-      // create the vertex MATRIX which stores the paths incident to vertex
-      std::vector<std::vector<int>> incident_paths(num_vertices_);
-      vptr_p_.push_back(static_cast<int>(vind_p_.size()));
-      eptr_p_.push_back(static_cast<int>(eind_p_.size()));
-      for (int path_id = 0; path_id < num_timing_paths_; path_id++) {
-        // view each path as a sequence of vertices
-        const auto& timing_path = timing_paths[path_id].path;
-        vind_p_.insert(vind_p_.end(), timing_path.begin(), timing_path.end());
-        vptr_p_.push_back(static_cast<int>(vind_p_.size()));
-        for (auto i = 0; i < timing_path.size(); i++) {
-          const int v = timing_path[i];
-          incident_paths[v].push_back(path_id);
-        }
-        // view each path as a sequence of hyperedge
-        const auto& timing_arc = timing_paths[path_id].arcs;
-        eind_p_.insert(eind_p_.end(), timing_arc.begin(), timing_arc.end());
-        eptr_p_.push_back(static_cast<int>(eind_p_.size()));
-        // add the timing attribute
-        path_timing_attr_.push_back(timing_paths[path_id].slack);
-      }
-      pptr_v_.push_back(static_cast<int>(pind_v_.size()));
-      for (auto& paths : incident_paths) {
-        pind_v_.insert(pind_v_.end(), paths.begin(), paths.end());
-        pptr_v_.push_back(static_cast<int>(pind_v_.size()));
-      }
-    }
-    // logger
-    logger_ = logger;
-  }
+      utl::Logger* logger);
 
   int GetNumVertices() const { return num_vertices_; }
   int GetNumHyperedges() const { return num_hyperedges_; }

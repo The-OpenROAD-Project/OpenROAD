@@ -57,7 +57,6 @@ class TPmultilevelPartitioner
 {
  public:
   TPmultilevelPartitioner(const int num_parts,
-                          const float ub_factor,
                           // user-specified parameters
                           const bool v_cycle_flag,
                           const int num_initial_solutions,
@@ -66,7 +65,6 @@ class TPmultilevelPartitioner
                           const int max_num_vcycle,
                           const int num_coarsen_solutions,
                           const int seed,
-                          const bool timing_driven_flag,
                           // pointers
                           TP_coarsening_ptr coarsener,
                           TP_partitioning_ptr partitioner,
@@ -77,36 +75,34 @@ class TPmultilevelPartitioner
                           TP_evaluator_ptr evaluator,
                           utl::Logger* logger)
       : num_parts_(num_parts),
-        ub_factor_(ub_factor),
         num_vertices_threshold_ilp_(num_vertices_threshold_ilp),
         num_initial_random_solutions_(num_initial_solutions),
         num_best_initial_solutions_(num_best_initial_solutions),
         max_num_vcycle_(max_num_vcycle),
         num_coarsen_solutions_(num_coarsen_solutions),
         seed_(seed),
-        timing_driven_flag_(timing_driven_flag),
         v_cycle_flag_(v_cycle_flag)
   {
-    coarsener_ = coarsener;
-    partitioner_ = partitioner;
-    k_way_fm_refiner_ = k_way_fm_refiner;
-    k_way_pm_refiner_ = k_way_pm_refiner;
-    greedy_refiner_ = greedy_refiner;
-    ilp_refiner_ = ilp_refiner;
-    evaluator_ = evaluator;
+    coarsener_ = std::move(coarsener);
+    partitioner_ = std::move(partitioner);
+    k_way_fm_refiner_ = std::move(k_way_fm_refiner);
+    k_way_pm_refiner_ = std::move(k_way_pm_refiner);
+    greedy_refiner_ = std::move(greedy_refiner);
+    ilp_refiner_ = std::move(ilp_refiner);
+    evaluator_ = std::move(evaluator);
     logger_ = logger;
   }
 
   // Main function
   // here the hgraph should not be const
   // Because our slack-rebudgeting algorithm will change hgraph
-  TP_partition Partition(HGraphPtr hgraph,
+  TP_partition Partition(const HGraphPtr& hgraph,
                          const MATRIX<float>& upper_block_balance,
                          const MATRIX<float>& lower_block_balance) const;
 
   // Use the initial solution as the community feature
   // Call Vcycle refinement
-  void VcycleRefinement(HGraphPtr hgraph,
+  void VcycleRefinement(const HGraphPtr& hgraph,
                         const MATRIX<float>& upper_block_balance,
                         const MATRIX<float>& lower_block_balance,
                         std::vector<int>& best_solution) const;
@@ -114,19 +110,19 @@ class TPmultilevelPartitioner
  private:
   // Run single-level partitioning
   std::vector<int> SingleLevelPartition(
-      HGraphPtr hgraph,
+      const HGraphPtr& hgraph,
       const MATRIX<float>& upper_block_balance,
       const MATRIX<float>& lower_block_balance) const;
 
   // We expose this interface for the last-minute improvement
   std::vector<int> SingleCycleRefinement(
-      HGraphPtr hgraph,
+      const HGraphPtr& hgraph,
       const MATRIX<float>& upper_block_balance,
       const MATRIX<float>& lower_block_balance) const;
 
   // Generate initial partitioning
   // Include random partitioning, Vile partitioning and ILP partitioning
-  void InitialPartition(const HGraphPtr hgraph,
+  void InitialPartition(const HGraphPtr& hgraph,
                         const MATRIX<float>& upper_block_balance,
                         const MATRIX<float>& lower_block_balance,
                         MATRIX<int>& top_initial_solutions,
@@ -144,7 +140,7 @@ class TPmultilevelPartitioner
   // Refine function
   // Ilp refinement, k_way_pm_refinement,
   // k_way_fm_refinement and greedy refinement
-  void CallRefiner(const HGraphPtr hgraph,
+  void CallRefiner(const HGraphPtr& hgraph,
                    const MATRIX<float>& upper_block_balance,
                    const MATRIX<float>& lower_block_balance,
                    std::vector<int>& solution) const;
@@ -152,7 +148,7 @@ class TPmultilevelPartitioner
   // Perform cut-overlay clustering and ILP-based partitioning
   // The ILP-based partitioning uses top_solutions[best_solution_id] as a hint,
   // such that the runtime can be signficantly reduced
-  std::vector<int> CutOverlayILPPart(const HGraphPtr hgraph,
+  std::vector<int> CutOverlayILPPart(const HGraphPtr& hgraph,
                                      const MATRIX<float>& upper_block_balance,
                                      const MATRIX<float>& lower_block_balance,
                                      const MATRIX<int>& top_solutions,
@@ -160,7 +156,6 @@ class TPmultilevelPartitioner
 
   // basic parameters
   const int num_parts_ = 2;
-  const float ub_factor_ = 1.0;
   const int num_vertices_threshold_ilp_
       = 20;  // number of vertices used for ILP partitioning
 
@@ -171,7 +166,6 @@ class TPmultilevelPartitioner
   const int num_coarsen_solutions_
       = 3;  // number of coarsening solutions with different random seed
   const int seed_ = 0;  // random seed
-  const bool timing_driven_flag_ = true;
   const bool v_cycle_flag_ = true;
 
   // pointers
