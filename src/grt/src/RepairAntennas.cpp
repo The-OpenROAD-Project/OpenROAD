@@ -446,6 +446,10 @@ void RepairAntennas::insertDiode(odb::dbNet* net,
     const int left_pad = opendp_->padLeft(diode_inst);
     const int right_pad = opendp_->padRight(diode_inst);
     diode_inst->setOrient(inst_orient);
+    if (sink_inst->isBlock() || sink_inst->isPad()) {
+      odb::dbOrientType orient = getRowOrient(odb::Point(inst_loc_x + offset, inst_loc_y));
+      diode_inst->setOrient(orient);
+    }
     diode_inst->setLocation(inst_loc_x + offset, inst_loc_y);
 
     odb::dbBox* instBox = diode_inst->getBBox();
@@ -569,6 +573,20 @@ bool RepairAntennas::diodeInRow(odb::Rect diode_rect)
   }
 
   return false;
+}
+
+odb::dbOrientType RepairAntennas::getRowOrient(odb::Point point)
+{
+  odb::dbOrientType orient;
+  for (odb::dbRow* row : block_->getRows()) {
+    odb::Rect row_rect = row->getBBox();
+
+    if (row_rect.overlaps(point)) {
+      orient = row->getOrient();
+    }
+  }
+
+  return orient;
 }
 
 odb::dbMTerm* RepairAntennas::findDiodeMTerm()
