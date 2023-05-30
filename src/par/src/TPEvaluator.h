@@ -58,8 +58,6 @@ struct PathStats
   float avg_cut_non2critical_path
       = 0.0f;  // average number of cuts on noncritical paths that
                // become critical
-
-  PathStats() = default;
 };
 
 // MATRIX is a two-dimensional vectors
@@ -86,8 +84,6 @@ using TP_evaluator_ptr = std::shared_ptr<GoldenEvaluator>;
 class GoldenEvaluator
 {
  public:
-  GoldenEvaluator() = default;
-
   // TODO: update the constructor
   GoldenEvaluator(
       const int num_parts,

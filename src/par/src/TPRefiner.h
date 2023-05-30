@@ -191,8 +191,6 @@ class TPpriorityQueue
 {
  public:
   // constructors
-  TPpriorityQueue() = default;
-
   TPpriorityQueue(int total_elements,
                   int maximum_traverse_level,
                   HGraphPtr hypergraph)
