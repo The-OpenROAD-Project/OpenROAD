@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #include "Hypergraph.h"
-#include "Refiner.h"
+#include "PriorityQueue.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
