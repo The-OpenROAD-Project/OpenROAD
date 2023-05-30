@@ -80,10 +80,10 @@ KWayPMRefine::KWayPMRefine(const int num_parts,
 // the return value is the gain improvement
 float KWayPMRefine::Pass(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,    // the current block balance
-    MATRIX<int>& net_degs,           // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,    // the current block balance
+    Matrix<int>& net_degs,           // the current net degree
     std::vector<float>& paths_cost,  // the current path cost
     Partitions& solution,
     std::vector<bool>& visited_vertices_flag)
@@ -128,9 +128,9 @@ float KWayPMRefine::Pass(
 // so we precompute the block_balance and net_degs
 // the return value is the gain improvement
 float KWayPMRefine::Pass(const HGraphPtr hgraph,
-                           const MATRIX<float>& max_block_balance,
-                           MATRIX<float>& block_balance, // the current block
-balance MATRIX<int>& net_degs, // the current net degree std::vector<float>&
+                           const Matrix<float>& max_block_balance,
+                           Matrix<float>& block_balance, // the current block
+balance Matrix<int>& net_degs, // the current net degree std::vector<float>&
 paths_cost, // the current path cost Partitions& solution, std::vector<bool>&
 visited_vertices_flag)
 {
@@ -218,10 +218,10 @@ void KWayPMRefine::CalculateMaximumMatch(
 // Perform 2-way FM between blocks in partition pair
 float KWayPMRefine::PerformPairFM(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,    // the current block balance
-    MATRIX<int>& net_degs,           // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,    // the current block balance
+    Matrix<int>& net_degs,           // the current net degree
     std::vector<float>& paths_cost,  // the current path cost
     Partitions& solution,
     GainBuckets& buckets,
@@ -343,7 +343,7 @@ void KWayPMRefine::InitializeGainBucketsPM(
     GainBuckets& buckets,
     const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
     const Partitions& solution,
     const std::pair<int, int>& partition_pair) const

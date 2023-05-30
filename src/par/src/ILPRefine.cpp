@@ -65,10 +65,10 @@ IlpRefine::IlpRefine(const int num_parts,
 // Implement the ILP-based refinement pass
 float IlpRefine::Pass(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,        // the current block balance
-    MATRIX<int>& net_degs,               // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,        // the current block balance
+    Matrix<int>& net_degs,               // the current net degree
     std::vector<float>& cur_paths_cost,  // the current path cost
     Partitions& solution,
     std::vector<bool>& visited_vertices_flag)
@@ -88,8 +88,8 @@ float IlpRefine::Pass(
   std::map<int, int> fixed_vertices_extracted;  // vertex_id, block_id
   std::map<int, int> vertices_extracted_map;    // map the boundary vertices to
                                                 // the extracted vertices
-  MATRIX<float> vertices_weight_extracted;      // extracted vertex weight
-  MATRIX<int> hyperedges_extracted;
+  Matrix<float> vertices_weight_extracted;      // extracted vertex weight
+  Matrix<int> hyperedges_extracted;
   std::vector<float> hyperedges_weight_extracted;
   vertices_weight_extracted.reserve(num_extracted_vertices);
   int vertex_id = 0;

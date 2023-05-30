@@ -69,8 +69,8 @@ void Partitioner::DisableIlpAcceleration()
 
 // The main function of Partitioning
 void Partitioner::Partition(const HGraphPtr& hgraph,
-                            const MATRIX<float>& upper_block_balance,
-                            const MATRIX<float>& lower_block_balance,
+                            const Matrix<float>& upper_block_balance,
+                            const Matrix<float>& lower_block_balance,
                             std::vector<int>& solution,
                             PartitionType partitioner_choice) const
 {
@@ -113,13 +113,13 @@ void Partitioner::Partition(const HGraphPtr& hgraph,
 
 // random partitioning
 void Partitioner::RandomPart(const HGraphPtr& hgraph,
-                             const MATRIX<float>& upper_block_balance,
-                             const MATRIX<float>& lower_block_balance,
+                             const Matrix<float>& upper_block_balance,
+                             const Matrix<float>& lower_block_balance,
                              std::vector<int>& solution,
                              bool vile_mode) const
 {
   // the summation of vertex weights for vertices in current block
-  MATRIX<float> block_balance(
+  Matrix<float> block_balance(
       num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0f));
   // determine all the free vertices
   std::vector<bool> visited(hgraph->num_vertices_,
@@ -203,15 +203,15 @@ void Partitioner::RandomPart(const HGraphPtr& hgraph,
 
 // ILP-based partitioning
 void Partitioner::ILPPart(const HGraphPtr& hgraph,
-                          const MATRIX<float>& upper_block_balance,
-                          const MATRIX<float>& lower_block_balance,
+                          const Matrix<float>& upper_block_balance,
+                          const Matrix<float>& lower_block_balance,
                           std::vector<int>& solution) const
 {
   logger_->report("[STATUS] Optimal ILP-based Partitioning Starts !");
   std::map<int, int> fixed_vertices_map;
-  MATRIX<float> vertex_weights;  // two-dimensional
+  Matrix<float> vertex_weights;  // two-dimensional
   vertex_weights.reserve(hgraph->num_vertices_);
-  MATRIX<int> hyperedges;                // hyperedges
+  Matrix<int> hyperedges;                // hyperedges
   std::vector<float> hyperedge_weights;  // one-dimensional
   // set vertices
   for (int v = 0; v < hgraph->num_vertices_; v++) {

@@ -86,9 +86,9 @@ std::shared_ptr<VertexGain> PriorityQueue::ExtractMax()
 
 // find the vertex gain which can satisfy the balance constraint
 std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
-    const MATRIX<float>& curr_block_balance,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
+    const Matrix<float>& curr_block_balance,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
     const HGraphPtr& hgraph)
 {
   if (total_elements_ <= 0) {               // empty

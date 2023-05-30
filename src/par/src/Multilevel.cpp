@@ -88,8 +88,8 @@ MultilevelPartitioner::MultilevelPartitioner(
 // Because our slack-rebudgeting algorithm will change hgraph
 std::vector<int> MultilevelPartitioner::Partition(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance) const
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance) const
 {
   // Main implementation
   // Step 1: run initial partitioning with different random seed
@@ -100,7 +100,7 @@ std::vector<int> MultilevelPartitioner::Partition(
   // In experiments, we observe that the benefits of increasing number of
   // vcycles is very limited. However, the quality of solutions will change a
   // lot with different random seed
-  MATRIX<int> top_solutions;
+  Matrix<int> top_solutions;
   float best_cost = std::numeric_limits<float>::max();
   int best_solution_id = -1;
   for (int id = 0; id < num_coarsen_solutions_; id++) {
@@ -146,8 +146,8 @@ std::vector<int> MultilevelPartitioner::Partition(
 // Run single-level partitioning
 std::vector<int> MultilevelPartitioner::SingleLevelPartition(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance) const
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance) const
 {
   // Step 1: run coarsening
   // Step 2: run initial partitioning
@@ -163,7 +163,7 @@ std::vector<int> MultilevelPartitioner::SingleLevelPartition(
   // pick top num_best_initial_solutions_ solutions from
   // num_initial_random_solutions_ solutions
   // here we reserve num_vertices_ for each top_solution
-  MATRIX<int> top_solutions;
+  Matrix<int> top_solutions;
   for (int i = 0; i < num_best_initial_solutions_; i++) {
     std::vector<int> solution{};
     top_solutions.push_back(solution);
@@ -199,11 +199,11 @@ std::vector<int> MultilevelPartitioner::SingleLevelPartition(
 // Call Vcycle refinement
 void MultilevelPartitioner::VcycleRefinement(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
     std::vector<int>& best_solution) const
 {
-  MATRIX<int> candidate_solutions;
+  Matrix<int> candidate_solutions;
   candidate_solutions.push_back(best_solution);
   for (int num_cycles = 0; num_cycles < max_num_vcycle_; num_cycles++) {
     // use the initial solution as the community feature
@@ -231,8 +231,8 @@ void MultilevelPartitioner::VcycleRefinement(
 // Single Vcycle Refinement
 std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance) const
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance) const
 {
   // Step 1: run coarsening
   // Step 2: run refinement
@@ -242,7 +242,7 @@ std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
 
   // Step 2: run initial refinement
   HGraphPtr coarsest_hgraph = hierarchy.back();
-  MATRIX<int> top_solutions{coarsest_hgraph->community_attr_};
+  Matrix<int> top_solutions{coarsest_hgraph->community_attr_};
   int best_solution_id = 0;  // only one solution
   if (coarsest_hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
     partitioner_->Partition(coarsest_hgraph,
@@ -265,9 +265,9 @@ std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
 // Include random partitioning, Vile partitioning and ILP partitioning
 void MultilevelPartitioner::InitialPartition(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<int>& top_initial_solutions,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<int>& top_initial_solutions,
     int& best_solution_id) const
 {
   logger_->report(
@@ -281,7 +281,7 @@ void MultilevelPartitioner::InitialPartition(
   std::vector<float> initial_solutions_cost;
   std::vector<bool>
       initial_solutions_flag;  // if the solutions statisfy balance constraint
-  MATRIX<int> initial_solutions;
+  Matrix<int> initial_solutions;
   if (hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
     // random partitioning + Vile + ILP
     initial_solutions.resize(num_initial_random_solutions_ * 2 + 2);
@@ -305,7 +305,7 @@ void MultilevelPartitioner::InitialPartition(
     // call FM refiner to improve the solution
     k_way_fm_refiner_->Refine(
         hgraph, upper_block_balance, lower_block_balance, solution);
-    const std::pair<float, MATRIX<float>> token
+    const std::pair<float, Matrix<float>> token
         = evaluator_->CutEvaluator(hgraph, solution, true);
     initial_solutions_cost.push_back(token.first);
     // Here we only check the upper bound to make sure more possible solutions
@@ -330,7 +330,7 @@ void MultilevelPartitioner::InitialPartition(
     // call FM refiner to improve the solution
     k_way_fm_refiner_->Refine(
         hgraph, upper_block_balance, lower_block_balance, solution);
-    const std::pair<float, MATRIX<float>> token
+    const std::pair<float, Matrix<float>> token
         = evaluator_->CutEvaluator(hgraph, solution, true);
     initial_solutions_cost.push_back(token.first);
     // Here we only check the upper bound to make sure more possible solutions
@@ -354,7 +354,7 @@ void MultilevelPartitioner::InitialPartition(
   k_way_fm_refiner_->Refine(
       hgraph, upper_block_balance, lower_block_balance, vile_solution);
   k_way_fm_refiner_->RestoreDefaultParameters();
-  const std::pair<float, MATRIX<float>> vile_token
+  const std::pair<float, Matrix<float>> vile_token
       = evaluator_->CutEvaluator(hgraph, vile_solution, true);
   initial_solutions_cost.push_back(vile_token.first);
   initial_solutions_flag.push_back(vile_token.second <= upper_block_balance);
@@ -380,7 +380,7 @@ void MultilevelPartitioner::InitialPartition(
                             lower_block_balance,
                             ilp_solution,
                             PartitionType::INIT_DIRECT_ILP);
-    const std::pair<float, MATRIX<float>> ilp_token
+    const std::pair<float, Matrix<float>> ilp_token
         = evaluator_->CutEvaluator(hgraph, ilp_solution, true);
     initial_solutions_cost.push_back(ilp_token.first);
     initial_solutions_flag.push_back(ilp_token.second <= upper_block_balance);
@@ -445,9 +445,9 @@ void MultilevelPartitioner::InitialPartition(
 // the top_solutions and best_solution_id will be updated during this process
 void MultilevelPartitioner::RefinePartition(
     CoarseGraphPtrs hierarchy,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<int>& top_solutions,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<int>& top_solutions,
     int& best_solution_id) const
 {
   if (hierarchy.size() <= 1) {
@@ -521,8 +521,8 @@ void MultilevelPartitioner::RefinePartition(
 // k_way_fm_refinement and greedy refinement
 void MultilevelPartitioner::CallRefiner(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
     std::vector<int>& solution) const
 {
   if (num_parts_ > 1) {  // Pair-wise FM only used for multi-way partitioning
@@ -540,9 +540,9 @@ void MultilevelPartitioner::CallRefiner(
 // such that the runtime can be signficantly reduced
 std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    const MATRIX<int>& top_solutions,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    const Matrix<int>& top_solutions,
     int best_solution_id) const
 {
   std::vector<int> optimal_solution = top_solutions[best_solution_id];

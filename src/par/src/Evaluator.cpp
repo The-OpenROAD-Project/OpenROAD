@@ -74,10 +74,10 @@ GoldenEvaluator::GoldenEvaluator(const int num_parts,
 }
 
 // calculate the vertex distribution of each net
-MATRIX<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr& hgraph,
+Matrix<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr& hgraph,
                                            const Partitions& solution) const
 {
-  MATRIX<int> net_degs(hgraph->num_hyperedges_,
+  Matrix<int> net_degs(hgraph->num_hyperedges_,
                        std::vector<int>(num_parts_, 0));
   for (int e = 0; e < hgraph->num_hyperedges_; e++) {
     for (int idx = hgraph->eptr_[e]; idx < hgraph->eptr_[e + 1]; idx++) {
@@ -88,10 +88,10 @@ MATRIX<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr& hgraph,
 }
 
 // Get block balance
-MATRIX<float> GoldenEvaluator::GetBlockBalance(const HGraphPtr& hgraph,
+Matrix<float> GoldenEvaluator::GetBlockBalance(const HGraphPtr& hgraph,
                                                const Partitions& solution) const
 {
-  MATRIX<float> block_balance(
+  Matrix<float> block_balance(
       num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0));
   // update the block_balance
   for (int v = 0; v < hgraph->num_vertices_; v++) {
@@ -548,7 +548,7 @@ PartitionToken GoldenEvaluator::CutEvaluator(const HGraphPtr& hgraph,
                                              const std::vector<int>& solution,
                                              bool print_flag) const
 {
-  MATRIX<float> block_balance = GetBlockBalance(hgraph, solution);
+  Matrix<float> block_balance = GetBlockBalance(hgraph, solution);
   float edge_cost = 0.0;
   float path_cost = 0.0;
   // check the cutsize
@@ -583,7 +583,7 @@ PartitionToken GoldenEvaluator::CutEvaluator(const HGraphPtr& hgraph,
     }  // finish block balance
   }
 
-  return std::pair<float, MATRIX<float>>(cost, block_balance);
+  return std::pair<float, Matrix<float>>(cost, block_balance);
 }
 
 // check the constraints
@@ -595,13 +595,13 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
     const std::vector<std::vector<int>>& group_attr,
     bool print_flag) const
 {
-  std::pair<float, MATRIX<float>> solution_token
+  std::pair<float, Matrix<float>> solution_token
       = CutEvaluator(hgraph, solution, print_flag);
   // check block balance
   bool balance_satisfied_flag = true;
-  const MATRIX<float> upper_block_balance
+  const Matrix<float> upper_block_balance
       = hgraph->GetUpperVertexBalance(num_parts_, ub_factor);
-  const MATRIX<float> lower_block_balance
+  const Matrix<float> lower_block_balance
       = hgraph->GetLowerVertexBalance(num_parts_, ub_factor);
   for (int i = 0; i < num_parts_; i++) {
     if (solution_token.second[i] > upper_block_balance[i]

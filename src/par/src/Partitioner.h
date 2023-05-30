@@ -73,8 +73,8 @@ class Partitioner
 
   // The main function of Partitioning
   void Partition(const HGraphPtr& hgraph,
-                 const MATRIX<float>& upper_block_balance,
-                 const MATRIX<float>& lower_block_balance,
+                 const Matrix<float>& upper_block_balance,
+                 const Matrix<float>& lower_block_balance,
                  std::vector<int>& solution,
                  PartitionType partitioner_choice) const;
 
@@ -91,15 +91,15 @@ class Partitioner
   // If vile_mode == false, we try to generate balanced random partitioning
   // If vile_mode == true,  we try to generate unbalanced random partitioning
   void RandomPart(const HGraphPtr& hgraph,
-                  const MATRIX<float>& upper_block_balance,
-                  const MATRIX<float>& lower_block_balance,
+                  const Matrix<float>& upper_block_balance,
+                  const Matrix<float>& lower_block_balance,
                   std::vector<int>& solution,
                   bool vile_mode = false) const;
 
   // ILP-based partitioning
   void ILPPart(const HGraphPtr& hgraph,
-               const MATRIX<float>& upper_block_balance,
-               const MATRIX<float>& lower_block_balance,
+               const Matrix<float>& upper_block_balance,
+               const Matrix<float>& lower_block_balance,
                std::vector<int>& solution) const;
 
   // Vile partitioning

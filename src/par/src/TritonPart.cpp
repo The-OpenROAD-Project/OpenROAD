@@ -1761,9 +1761,9 @@ void TritonPart::MultiLevelPartition()
                                           logger_);
 
   // create the balance constraint
-  MATRIX<float> upper_block_balance
+  Matrix<float> upper_block_balance
       = original_hypergraph_->GetUpperVertexBalance(num_parts_, ub_factor_);
-  MATRIX<float> lower_block_balance
+  Matrix<float> lower_block_balance
       = original_hypergraph_->GetLowerVertexBalance(num_parts_, ub_factor_);
 
   // Step 1 : create all the coarsening, partitionig and refinement class

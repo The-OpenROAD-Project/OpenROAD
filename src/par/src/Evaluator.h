@@ -67,7 +67,7 @@ using Partitions = std::vector<int>;  //
 // it consists of two part:  cost (cutsize), balance for each block
 // for example, PartitionToken.second[0] is the balance of
 // block_0
-using PartitionToken = std::pair<float, MATRIX<float>>;
+using PartitionToken = std::pair<float, Matrix<float>>;
 
 // GoldenEvaluator
 class GoldenEvaluator;
@@ -101,11 +101,11 @@ class GoldenEvaluator
   virtual ~GoldenEvaluator() = default;
 
   // calculate the vertex distribution of each net
-  MATRIX<int> GetNetDegrees(const HGraphPtr& hgraph,
+  Matrix<int> GetNetDegrees(const HGraphPtr& hgraph,
                             const Partitions& solution) const;
 
   // Get block balance
-  MATRIX<float> GetBlockBalance(const HGraphPtr& hgraph,
+  Matrix<float> GetBlockBalance(const HGraphPtr& hgraph,
                                 const Partitions& solution) const;
 
   // calculate timing cost of a path

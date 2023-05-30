@@ -144,10 +144,10 @@ class Coarsener
       std::vector<int>&
           vertex_cluster_id_vec,  // map current vertex_id to cluster_id
       // the remaining arguments are related to clusters
-      MATRIX<float>& vertex_weights_c,
+      Matrix<float>& vertex_weights_c,
       std::vector<int>& community_attr_c,
       std::vector<int>& fixed_attr_c,
-      MATRIX<float>& placement_attr_c) const;
+      Matrix<float>& placement_attr_c) const;
 
   // order the vertices based on user-specified parameters
   void OrderVertices(const HGraphPtr& hgraph, std::vector<int>& vertices) const;
@@ -164,10 +164,10 @@ class Coarsener
       std::vector<int>&
           vertex_cluster_id_vec,  // map current vertex_id to cluster_id
       // the remaining arguments are related to clusters
-      MATRIX<float>& vertex_weights_c,
+      Matrix<float>& vertex_weights_c,
       std::vector<int>& community_attr_c,
       std::vector<int>& fixed_attr_c,
-      MATRIX<float>& placement_attr_c) const;
+      Matrix<float>& placement_attr_c) const;
 
   // create the contracted hypergraph based on the vertex matching in
   // vertex_cluster_id_vec
@@ -176,10 +176,10 @@ class Coarsener
       const std::vector<int>&
           vertex_cluster_id_vec,  // map current vertex_id to cluster_id
       // the remaining arguments are related to clusters
-      const MATRIX<float>& vertex_weights_c,
+      const Matrix<float>& vertex_weights_c,
       const std::vector<int>& community_attr_c,
       const std::vector<int>& fixed_attr_c,
-      const MATRIX<float>& placement_attr_c) const;
+      const Matrix<float>& placement_attr_c) const;
 
   const int num_parts_ = 2;
   // coarsening related parameters (stop conditions)

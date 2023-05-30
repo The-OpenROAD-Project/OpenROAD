@@ -209,7 +209,7 @@ Hypergraph::Hypergraph(
     num_timing_paths_ = static_cast<int>(timing_paths.size());
     hyperedge_timing_attr_ = hyperedges_slack;
     hyperedge_arc_set_ = hyperedges_arc_set;
-    // create the vertex MATRIX which stores the paths incident to vertex
+    // create the vertex Matrix which stores the paths incident to vertex
     std::vector<std::vector<int>> incident_paths(num_vertices_);
     vptr_p_.push_back(static_cast<int>(vind_p_.size()));
     eptr_p_.push_back(static_cast<int>(eind_p_.size()));

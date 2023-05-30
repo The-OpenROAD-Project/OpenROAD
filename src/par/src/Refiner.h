@@ -180,9 +180,9 @@ class PriorityQueue
 
   // find the vertex gain which can satisfy the balance constraint
   std::shared_ptr<VertexGain> GetBestCandidate(
-      const MATRIX<float>& curr_block_balance,
-      const MATRIX<float>& upper_block_balance,
-      const MATRIX<float>& lower_block_balance,
+      const Matrix<float>& curr_block_balance,
+      const Matrix<float>& upper_block_balance,
+      const Matrix<float>& lower_block_balance,
       const HGraphPtr& hgraph);
 
   // update the priority (gain) for the specified vertex
@@ -264,8 +264,8 @@ class Refiner
 
   // The main function
   void Refine(const HGraphPtr& hgraph,
-              const MATRIX<float>& upper_block_balance,
-              const MATRIX<float>& lower_block_balance,
+              const Matrix<float>& upper_block_balance,
+              const Matrix<float>& lower_block_balance,
               Partitions& solution);
 
   // accessor
@@ -278,10 +278,10 @@ class Refiner
  protected:
   // protected functions
   virtual float Pass(const HGraphPtr& hgraph,
-                     const MATRIX<float>& upper_block_balance,
-                     const MATRIX<float>& lower_block_balance,
-                     MATRIX<float>& block_balance,  // the current block balance
-                     MATRIX<int>& net_degs,         // the current net degree
+                     const Matrix<float>& upper_block_balance,
+                     const Matrix<float>& lower_block_balance,
+                     Matrix<float>& block_balance,  // the current block balance
+                     Matrix<int>& net_degs,         // the current net degree
                      std::vector<float>& paths_cost,  // the current path cost
                      Partitions& solution,
                      std::vector<bool>& visited_vertices_flag)
@@ -303,12 +303,12 @@ class Refiner
   // fixed vertices
   std::vector<int> FindBoundaryVertices(
       const HGraphPtr& hgraph,
-      const MATRIX<int>& net_degs,
+      const Matrix<int>& net_degs,
       const std::vector<bool>& visited_vertices_flag) const;
 
   std::vector<int> FindBoundaryVertices(
       const HGraphPtr& hgraph,
-      const MATRIX<int>& net_degs,
+      const Matrix<int>& net_degs,
       const std::vector<bool>& visited_vertices_flag,
       const std::vector<int>& solution,
       const std::pair<int, int>& partition_pair) const;
@@ -344,7 +344,7 @@ class Refiner
                                const HGraphPtr& hgraph,
                                const std::vector<int>& solution,
                                const std::vector<float>& cur_paths_cost,
-                               const MATRIX<int>& net_degs) const;
+                               const Matrix<int>& net_degs) const;
 
   // accept the vertex gain
   void AcceptVertexGain(const GainCell& gain_cell,
@@ -353,8 +353,8 @@ class Refiner
                         std::vector<bool>& visited_vertices_flag,
                         std::vector<int>& solution,
                         std::vector<float>& cur_paths_cost,
-                        MATRIX<float>& curr_block_balance,
-                        MATRIX<int>& net_degs) const;
+                        Matrix<float>& curr_block_balance,
+                        Matrix<int>& net_degs) const;
 
   // restore the vertex gain
   void RollBackVertexGain(const GainCell& gain_cell,
@@ -362,17 +362,17 @@ class Refiner
                           std::vector<bool>& visited_vertices_flag,
                           std::vector<int>& solution,
                           std::vector<float>& cur_paths_cost,
-                          MATRIX<float>& curr_block_balance,
-                          MATRIX<int>& net_degs) const;
+                          Matrix<float>& curr_block_balance,
+                          Matrix<int>& net_degs) const;
 
   // check if we can move the vertex to some block
   bool CheckVertexMoveLegality(int v,         // vertex_id
                                int to_pid,    // to block id
                                int from_pid,  // from block id
                                const HGraphPtr& hgraph,
-                               const MATRIX<float>& curr_block_balance,
-                               const MATRIX<float>& upper_block_balance,
-                               const MATRIX<float>& lower_block_balance) const;
+                               const Matrix<float>& curr_block_balance,
+                               const Matrix<float>& upper_block_balance,
+                               const Matrix<float>& lower_block_balance) const;
 
   // calculate the possible gain of moving a entire hyperedge
   // We can view the process of moving the vertices in hyperege
@@ -385,7 +385,7 @@ class Refiner
       const HGraphPtr& hgraph,
       std::vector<int>& solution,
       const std::vector<float>& cur_paths_cost,
-      const MATRIX<int>& net_degs) const;
+      const Matrix<int>& net_degs) const;
 
   // check if we can move the hyperegde into some block
   bool CheckHyperedgeMoveLegality(
@@ -393,9 +393,9 @@ class Refiner
       int to_pid,  // to block id
       const HGraphPtr& hgraph,
       const std::vector<int>& solution,
-      const MATRIX<float>& curr_block_balance,
-      const MATRIX<float>& upper_block_balance,
-      const MATRIX<float>& lower_block_balance) const;
+      const Matrix<float>& curr_block_balance,
+      const Matrix<float>& upper_block_balance,
+      const Matrix<float>& lower_block_balance) const;
 
   // accpet the hyperedge gain
   void AcceptHyperedgeGain(const HyperedgeGainPtr& hyperedge_gain,
@@ -403,8 +403,8 @@ class Refiner
                            float& total_delta_gain,
                            std::vector<int>& solution,
                            std::vector<float>& cur_paths_cost,
-                           MATRIX<float>& cur_block_balance,
-                           MATRIX<int>& net_degs) const;
+                           Matrix<float>& cur_block_balance,
+                           Matrix<int>& net_degs) const;
 
   // Note that there is no RollBackHyperedgeGain
   // Because we only use greedy hyperedge refinement
@@ -458,7 +458,7 @@ class KWayFMRefine : public Refiner
       int to_pid,  // move the vertex into this block (block_id = to_pid)
       const HGraphPtr& hgraph,
       const std::vector<int>& boundary_vertices,
-      const MATRIX<int>& net_degs,
+      const Matrix<int>& net_degs,
       const std::vector<float>& cur_paths_cost,
       const Partitions& solution) const;
 
@@ -470,7 +470,7 @@ class KWayFMRefine : public Refiner
                               GainBuckets& buckets,
                               const HGraphPtr& hgraph,
                               const std::vector<int>& neighbors,
-                              const MATRIX<int>& net_degs,
+                              const Matrix<int>& net_degs,
                               const std::vector<float>& cur_paths_cost,
                               const Partitions& solution) const;
 
@@ -478,10 +478,10 @@ class KWayFMRefine : public Refiner
   // The main function for the FM-based refinement
   // In each pass, we only move the boundary vertices
   float Pass(const HGraphPtr& hgraph,
-             const MATRIX<float>& upper_block_balance,
-             const MATRIX<float>& lower_block_balance,
-             MATRIX<float>& block_balance,        // the current block balance
-             MATRIX<int>& net_degs,               // the current net degree
+             const Matrix<float>& upper_block_balance,
+             const Matrix<float>& lower_block_balance,
+             Matrix<float>& block_balance,        // the current block balance
+             Matrix<int>& net_degs,               // the current net degree
              std::vector<float>& cur_paths_cost,  // the current path cost
              Partitions& solution,
              std::vector<bool>& visited_vertices_flag) override;
@@ -491,7 +491,7 @@ class KWayFMRefine : public Refiner
   void InitializeGainBucketsKWay(GainBuckets& buckets,
                                  const HGraphPtr& hgraph,
                                  const std::vector<int>& boundary_vertices,
-                                 const MATRIX<int>& net_degs,
+                                 const Matrix<int>& net_degs,
                                  const std::vector<float>& cur_paths_cost,
                                  const Partitions& solution) const;
 
@@ -499,9 +499,9 @@ class KWayFMRefine : public Refiner
   std::shared_ptr<VertexGain> PickMoveKWay(
       GainBuckets& buckets,
       const HGraphPtr& hgraph,
-      const MATRIX<float>& curr_block_balance,
-      const MATRIX<float>& upper_block_balance,
-      const MATRIX<float>& lower_block_balance) const;
+      const Matrix<float>& curr_block_balance,
+      const Matrix<float>& upper_block_balance,
+      const Matrix<float>& lower_block_balance) const;
 
   // move one vertex based on the calculated gain_cell
   void AcceptKWayMove(const std::shared_ptr<VertexGain>& gain_cell,
@@ -510,8 +510,8 @@ class KWayFMRefine : public Refiner
                       float& total_delta_gain,
                       std::vector<bool>& visited_vertices_flag,
                       const HGraphPtr& hgraph,
-                      MATRIX<float>& curr_block_balance,
-                      MATRIX<int>& net_degs,
+                      Matrix<float>& curr_block_balance,
+                      Matrix<int>& net_degs,
                       std::vector<float>& cur_paths_cost,
                       std::vector<int>& solution) const;
 
@@ -558,10 +558,10 @@ class KWayPMRefine : public KWayFMRefine
   // so we precompute the block_balance and net_degs
   // the return value is the gain improvement
   float Pass(const HGraphPtr& hgraph,
-             const MATRIX<float>& upper_block_balance,
-             const MATRIX<float>& lower_block_balance,
-             MATRIX<float>& block_balance,        // the current block balance
-             MATRIX<int>& net_degs,               // the current net degree
+             const Matrix<float>& upper_block_balance,
+             const Matrix<float>& lower_block_balance,
+             Matrix<float>& block_balance,        // the current block balance
+             Matrix<int>& net_degs,               // the current net degree
              std::vector<float>& cur_paths_cost,  // the current path cost
              Partitions& solution,
              std::vector<bool>& visited_vertices_flag) override;
@@ -574,10 +574,10 @@ class KWayPMRefine : public KWayFMRefine
   // Perform 2-way FM between blocks in partition pair
   float PerformPairFM(
       const HGraphPtr& hgraph,
-      const MATRIX<float>& upper_block_balance,
-      const MATRIX<float>& lower_block_balance,
-      MATRIX<float>& block_balance,    // the current block balance
-      MATRIX<int>& net_degs,           // the current net degree
+      const Matrix<float>& upper_block_balance,
+      const Matrix<float>& lower_block_balance,
+      Matrix<float>& block_balance,    // the current block balance
+      Matrix<int>& net_degs,           // the current net degree
       std::vector<float>& paths_cost,  // the current path cost
       Partitions& solution,
       GainBuckets& buckets,
@@ -589,7 +589,7 @@ class KWayPMRefine : public KWayFMRefine
   void InitializeGainBucketsPM(GainBuckets& buckets,
                                const HGraphPtr& hgraph,
                                const std::vector<int>& boundary_vertices,
-                               const MATRIX<int>& net_degs,
+                               const Matrix<int>& net_degs,
                                const std::vector<float>& cur_paths_cost,
                                const Partitions& solution,
                                const std::pair<int, int>& partition_pair) const;
@@ -628,10 +628,10 @@ class GreedyRefine : public Refiner
   // so we precompute the block_balance and net_degs
   // the return value is the gain improvement
   float Pass(const HGraphPtr& hgraph,
-             const MATRIX<float>& upper_block_balance,
-             const MATRIX<float>& lower_block_balance,
-             MATRIX<float>& block_balance,        // the current block balance
-             MATRIX<int>& net_degs,               // the current net degree
+             const Matrix<float>& upper_block_balance,
+             const Matrix<float>& lower_block_balance,
+             Matrix<float>& block_balance,        // the current block balance
+             Matrix<int>& net_degs,               // the current net degree
              std::vector<float>& cur_paths_cost,  // the current path cost
              Partitions& solution,
              std::vector<bool>& visited_vertices_flag) override;
@@ -665,10 +665,10 @@ class IlpRefine : public Refiner
   // so we precompute the block_balance and net_degs
   // the return value is the gain improvement
   float Pass(const HGraphPtr& hgraph,
-             const MATRIX<float>& upper_block_balance,
-             const MATRIX<float>& lower_block_balance,
-             MATRIX<float>& block_balance,        // the current block balance
-             MATRIX<int>& net_degs,               // the current net degree
+             const Matrix<float>& upper_block_balance,
+             const Matrix<float>& lower_block_balance,
+             Matrix<float>& block_balance,        // the current block balance
+             Matrix<int>& net_degs,               // the current net degree
              std::vector<float>& cur_paths_cost,  // the current path cost
              Partitions& solution,
              std::vector<bool>& visited_vertices_flag) override;

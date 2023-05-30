@@ -65,10 +65,10 @@ GreedyRefine::GreedyRefine(const int num_parts,
 // only accepts possible gain
 float GreedyRefine::Pass(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,        // the current block balance
-    MATRIX<int>& net_degs,               // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,        // the current block balance
+    Matrix<int>& net_degs,               // the current net degree
     std::vector<float>& cur_paths_cost,  // the current path cost
     Partitions& solution,
     std::vector<bool>& visited_vertices_flag)

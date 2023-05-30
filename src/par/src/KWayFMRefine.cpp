@@ -64,10 +64,10 @@ KWayFMRefine::KWayFMRefine(const int num_parts,
 // In each pass, we only move the boundary vertices
 float KWayFMRefine::Pass(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,        // the current block balance
-    MATRIX<int>& net_degs,               // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,        // the current block balance
+    Matrix<int>& net_degs,               // the current net degree
     std::vector<float>& cur_paths_cost,  // the current path cost
     Partitions& solution,
     std::vector<bool>& visited_vertices_flag)
@@ -195,7 +195,7 @@ void KWayFMRefine::InitializeGainBucketsKWay(
     GainBuckets& buckets,
     const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
     const Partitions& solution) const
 {
@@ -226,7 +226,7 @@ void KWayFMRefine::InitializeSingleGainBucket(
     int to_pid,  // move the vertex into this block (block_id = to_pid)
     const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
     const Partitions& solution) const
 {
@@ -252,9 +252,9 @@ void KWayFMRefine::InitializeSingleGainBucket(
 std::shared_ptr<VertexGain> KWayFMRefine::PickMoveKWay(
     GainBuckets& buckets,
     const HGraphPtr& hgraph,
-    const MATRIX<float>& curr_block_balance,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance) const
+    const Matrix<float>& curr_block_balance,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance) const
 {
   // dummy candidate
   int to_pid = -1;
@@ -311,8 +311,8 @@ void KWayFMRefine::AcceptKWayMove(const std::shared_ptr<VertexGain>& gain_cell,
                                   float& total_delta_gain,
                                   std::vector<bool>& visited_vertices_flag,
                                   const HGraphPtr& hgraph,
-                                  MATRIX<float>& curr_block_balance,
-                                  MATRIX<int>& net_degs,
+                                  Matrix<float>& curr_block_balance,
+                                  Matrix<int>& net_degs,
                                   std::vector<float>& cur_paths_cost,
                                   std::vector<int>& solution) const
 {
@@ -359,7 +359,7 @@ void KWayFMRefine::UpdateSingleGainBucket(
     GainBuckets& buckets,
     const HGraphPtr& hgraph,
     const std::vector<int>& neighbors,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
     const Partitions& solution) const
 {

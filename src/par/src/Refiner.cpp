@@ -108,8 +108,8 @@ void Refiner::RestoreDefaultParameters()
 
 // The main function of refinement class
 void Refiner::Refine(const HGraphPtr& hgraph,
-                     const MATRIX<float>& upper_block_balance,
-                     const MATRIX<float>& lower_block_balance,
+                     const Matrix<float>& upper_block_balance,
+                     const Matrix<float>& lower_block_balance,
                      Partitions& solution)
 {
   if (max_move_ <= 0) {
@@ -118,9 +118,9 @@ void Refiner::Refine(const HGraphPtr& hgraph,
     return;
   }
   // calculate the basic statistics of current solution
-  MATRIX<float> cur_block_balance
+  Matrix<float> cur_block_balance
       = evaluator_->GetBlockBalance(hgraph, solution);
-  MATRIX<int> net_degs = evaluator_->GetNetDegrees(hgraph, solution);
+  Matrix<int> net_degs = evaluator_->GetNetDegrees(hgraph, solution);
   std::vector<float> cur_paths_cost;
   if (hgraph->timing_flag_ == true) {
     cur_paths_cost = evaluator_->GetPathsCost(hgraph, solution);
@@ -212,7 +212,7 @@ float Refiner::CalculatePathCost(int path_id,
 // The boundary vertices do not include fixed vertices
 std::vector<int> Refiner::FindBoundaryVertices(
     const HGraphPtr& hgraph,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<bool>& visited_vertices_flag) const
 {
   // Step 1 : found all the boundary hyperedges
@@ -247,7 +247,7 @@ std::vector<int> Refiner::FindBoundaryVertices(
 
 std::vector<int> Refiner::FindBoundaryVertices(
     const HGraphPtr& hgraph,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<bool>& visited_vertices_flag,
     const std::vector<int>& solution,
     const std::pair<int, int>& partition_pair) const
@@ -341,7 +341,7 @@ GainCell Refiner::CalculateVertexGain(int v,
                                       const HGraphPtr& hgraph,
                                       const std::vector<int>& solution,
                                       const std::vector<float>& cur_paths_cost,
-                                      const MATRIX<int>& net_degs) const
+                                      const Matrix<int>& net_degs) const
 {
   // We assume from_pid == solution[v] when we call CalculateGain
   // we need solution argument to update the score related to path
@@ -413,8 +413,8 @@ void Refiner::AcceptVertexGain(const GainCell& gain_cell,
                                std::vector<bool>& visited_vertices_flag,
                                std::vector<int>& solution,
                                std::vector<float>& cur_paths_cost,
-                               MATRIX<float>& curr_block_balance,
-                               MATRIX<int>& net_degs) const
+                               Matrix<float>& curr_block_balance,
+                               Matrix<int>& net_degs) const
 {
   const int vertex_id = gain_cell->GetVertex();
   visited_vertices_flag[vertex_id] = true;
@@ -449,8 +449,8 @@ void Refiner::RollBackVertexGain(const GainCell& gain_cell,
                                  std::vector<bool>& visited_vertices_flag,
                                  std::vector<int>& solution,
                                  std::vector<float>& cur_paths_cost,
-                                 MATRIX<float>& curr_block_balance,
-                                 MATRIX<int>& net_degs) const
+                                 Matrix<float>& curr_block_balance,
+                                 Matrix<int>& net_degs) const
 {
   const int vertex_id = gain_cell->GetVertex();
   visited_vertices_flag[vertex_id] = false;
@@ -485,9 +485,9 @@ bool Refiner::CheckVertexMoveLegality(
     int to_pid,    // to block id
     int from_pid,  // from block_id
     const HGraphPtr& hgraph,
-    const MATRIX<float>& curr_block_balance,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance) const
+    const Matrix<float>& curr_block_balance,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance) const
 {
   const std::vector<float> total_wt_to_block
       = curr_block_balance[to_pid] + hgraph->vertex_weights_[v];
@@ -507,7 +507,7 @@ HyperedgeGainPtr Refiner::CalculateHyperedgeGain(
     const HGraphPtr& hgraph,
     std::vector<int>& solution,
     const std::vector<float>& cur_paths_cost,
-    const MATRIX<int>& net_degs) const
+    const Matrix<int>& net_degs) const
 {
   // We assume from_pid == solution[v] when we call CalculateGain
   // we need solution argument to update the score related to path
@@ -622,8 +622,8 @@ void Refiner::AcceptHyperedgeGain(const HyperedgeGainPtr& hyperedge_gain,
                                   float& total_delta_gain,
                                   std::vector<int>& solution,
                                   std::vector<float>& cur_paths_cost,
-                                  MATRIX<float>& cur_block_balance,
-                                  MATRIX<int>& net_degs) const
+                                  Matrix<float>& cur_block_balance,
+                                  Matrix<int>& net_degs) const
 {
   const int hyperedge_id = hyperedge_gain->GetHyperedge();
   total_delta_gain += hyperedge_gain->GetGain();
@@ -666,11 +666,11 @@ bool Refiner::CheckHyperedgeMoveLegality(
     int to_pid,  // to block id
     const HGraphPtr& hgraph,
     const std::vector<int>& solution,
-    const MATRIX<float>& curr_block_balance,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance) const
+    const Matrix<float>& curr_block_balance,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance) const
 {
-  MATRIX<float> update_block_balance = curr_block_balance;
+  Matrix<float> update_block_balance = curr_block_balance;
   for (int idx = hgraph->eptr_[e]; idx < hgraph->eptr_[e + 1]; ++idx) {
     const int v = hgraph->eind_[idx];
     // check if satisfies the fixed vertices constraint

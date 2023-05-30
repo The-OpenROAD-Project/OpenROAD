@@ -172,10 +172,10 @@ HGraphPtr Coarsener::GroupVertices(
 {
   std::vector<int>
       vertex_cluster_id_vec;          // map current vertex_id to cluster_id
-  MATRIX<float> vertex_weights_c;     // cluster weight
+  Matrix<float> vertex_weights_c;     // cluster weight
   std::vector<int> community_attr_c;  // cluster community information
   std::vector<int> fixed_attr_c;      // cluster fixed attribute
-  MATRIX<float> placement_attr_c;     // cluster placement attribute
+  Matrix<float> placement_attr_c;     // cluster placement attribute
 
   // Cluster based group information
   ClusterBasedGroupInfo(hgraph,
@@ -218,10 +218,10 @@ HGraphPtr Coarsener::GroupVertices(
 HGraphPtr Coarsener::Aggregate(const HGraphPtr& hgraph) const
 {
   std::vector<int> vertex_cluster_id_vec;
-  MATRIX<float> vertex_weights_c;
+  Matrix<float> vertex_weights_c;
   std::vector<int> community_attr_c;
   std::vector<int> fixed_attr_c;
-  MATRIX<float> placement_attr_c;
+  Matrix<float> placement_attr_c;
 
   // find the vertex matching scheme
   VertexMatching(hgraph,
@@ -263,10 +263,10 @@ void Coarsener::VertexMatching(
     std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
-    MATRIX<float>& vertex_weights_c,
+    Matrix<float>& vertex_weights_c,
     std::vector<int>& community_attr_c,
     std::vector<int>& fixed_attr_c,
-    MATRIX<float>& placement_attr_c) const
+    Matrix<float>& placement_attr_c) const
 {
   // vertex_cluster_map_vec has the size of the number of vertices of hgraph
   vertex_cluster_id_vec.clear();
@@ -534,10 +534,10 @@ void Coarsener::ClusterBasedGroupInfo(
     std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
-    MATRIX<float>& vertex_weights_c,
+    Matrix<float>& vertex_weights_c,
     std::vector<int>& community_attr_c,
     std::vector<int>& fixed_attr_c,
-    MATRIX<float>& placement_attr_c) const
+    Matrix<float>& placement_attr_c) const
 {
   // convert group_attr to vertex_cluster_id_vec
   if (group_attr.empty() == true && hgraph->fixed_attr_.empty() == true) {
@@ -721,10 +721,10 @@ HGraphPtr Coarsener::Contraction(
     const std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
-    const MATRIX<float>& vertex_weights_c,
+    const Matrix<float>& vertex_weights_c,
     const std::vector<int>& community_attr_c,
     const std::vector<int>& fixed_attr_c,
-    const MATRIX<float>& placement_attr_c) const
+    const Matrix<float>& placement_attr_c) const
 {
   // Step 1:  identify the contracted hyperedges
   std::vector<int> hyperedge_cluster_id_vec;  // map the hyperedge to hyperedge
@@ -733,8 +733,8 @@ HGraphPtr Coarsener::Contraction(
   // -1 means the hyperedge is fully within one cluster
   std::fill(
       hyperedge_cluster_id_vec.begin(), hyperedge_cluster_id_vec.end(), -1);
-  MATRIX<int> hyperedges_c;  // represent each hyperedge as a set of clusters
-  MATRIX<float> hyperedges_weights_c;  // each element represents the weight of
+  Matrix<int> hyperedges_c;  // represent each hyperedge as a set of clusters
+  Matrix<float> hyperedges_weights_c;  // each element represents the weight of
                                        // the clustered hyperedge
   std::vector<float> hyperedge_slack_c;  // the slack for clustered hyperedge.
   std::vector<std::set<int>>
