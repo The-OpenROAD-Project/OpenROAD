@@ -126,18 +126,16 @@ void ChartsWidget::setSlackMode()
 
   auto time_units = sta_->units()->timeUnit();
   auto end_points = sta_gui.getEndPoints();
-  auto pin_iterator = end_points.begin();
   std::vector<float> all_slack;
   int unconstrained_count = 0;
 
-  for (int i = 0; i < end_points.size(); ++i) {
+  for (auto pin : end_points) {
     double pin_slack = 0;
-    pin_slack = sta_gui.getPinSlack(*pin_iterator);
+    pin_slack = sta_gui.getPinSlack(pin);
     if (pin_slack != sta::INF)
       all_slack.push_back(time_units->staToUser(pin_slack));
     else
       unconstrained_count++;
-    pin_iterator++;
   }
 
   if (unconstrained_count != 0) {
@@ -158,13 +156,13 @@ void ChartsWidget::setSlackMode()
   std::vector<float> pos_buckets[total_pos_buckets];
   std::vector<float> neg_buckets[total_neg_buckets];
 
-  for (int i = 0; i < all_slack.size(); ++i) {
-    if (all_slack[i] < 0) {
-      int bucket_index = all_slack[i];
-      neg_buckets[bucket_index + offset].push_back(all_slack[i]);
+  for (auto slack : all_slack) {
+    if (slack < 0) {
+      int bucket_index = slack;
+      neg_buckets[bucket_index + offset].push_back(slack);
     } else {
-      int bucket_index = all_slack[i];
-      pos_buckets[bucket_index].push_back(all_slack[i]);
+      int bucket_index = slack;
+      pos_buckets[bucket_index].push_back(slack);
     }
   }
 
@@ -181,34 +179,32 @@ void ChartsWidget::setSlackMode()
   const QString open_bracket = "[";
   const QString close_parenthesis = ")";
   const QString comma = ", ";
-  QString curr_value;
-  int curr_slack = 0;
   int bucket_count = 0;
   int max_y = 0;
 
   for (int i = 0; i < total_neg_buckets; ++i) {
-    bucket_count = neg_buckets[i].size();
+    bucket_count = neg_buckets[i].size();     
     *neg_set << bucket_count;
     *pos_set << 0;
-    curr_slack = neg_buckets[i][0];
-    QString prev_value;
-    time_values << open_bracket + prev_value.setNum(curr_slack - 1) + comma
-                       + curr_value.setNum(curr_slack) + close_parenthesis;
+    QString curr_value = "";
+    QString next_value = "";
+    time_values << open_bracket + curr_value.setNum(i - total_neg_buckets) + comma
+                    + next_value.setNum((i+1) - total_neg_buckets) + close_parenthesis;
     if (max_y < bucket_count)
       max_y = bucket_count;
   }
 
   for (int i = 0; i < total_pos_buckets; ++i) {
     bucket_count = pos_buckets[i].size();
-    *pos_set << pos_buckets[i].size();
+    *pos_set << bucket_count;
     *neg_set << 0;
-    curr_slack = pos_buckets[i][0];
-    QString next_value;
-    time_values << open_bracket + curr_value.setNum(curr_slack) + comma
-                       + next_value.setNum(curr_slack + 1) + close_parenthesis;
+    QString curr_value = "";
+    QString next_value = "";
+    time_values << open_bracket + curr_value.setNum(i) + comma
+                      + next_value.setNum(i + 1) + close_parenthesis;
     if (max_y < bucket_count)
       max_y = bucket_count;
-  }
+  }    
 
   const QString start_title = "Slack [";
   const QString time_suffix = time_units->suffix();
