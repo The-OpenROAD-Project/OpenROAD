@@ -64,10 +64,7 @@ struct Rect
   }
 
   // check if the Rect is valid
-  bool IsValid() const
-  {
-    return ux > lx && uy > ly;
-  }
+  bool IsValid() const { return ux > lx && uy > ly; }
 
   // reset the fence
   void Reset()

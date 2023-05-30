@@ -631,7 +631,7 @@ class IlpRefine : public Refiner
 {
  public:
   using Refiner::Refiner;
-  
+
  private:
   // In each pass, we only move the boundary vertices
   // here we pass block_balance and net_degrees as reference
