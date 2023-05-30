@@ -322,8 +322,8 @@ class PlacerBaseCommon
 
   // Pb : PlacerBase
   Instance* dbToPb(odb::dbInst* inst) const;
-  Pin* dbToPb(odb::dbITerm* pin) const;
-  Pin* dbToPb(odb::dbBTerm* pin) const;
+  Pin* dbToPb(odb::dbITerm* term) const;
+  Pin* dbToPb(odb::dbBTerm* term) const;
   Net* dbToPb(odb::dbNet* net) const;
 
   int siteSizeX() const { return siteSizeX_; }
@@ -380,7 +380,7 @@ class PlacerBase
   PlacerBase(odb::dbDatabase* db,
              std::shared_ptr<PlacerBaseCommon> pbCommon,
              utl::Logger* log,
-             odb::dbGroup* group = NULL);
+             odb::dbGroup* group = nullptr);
   ~PlacerBase();
 
   const std::vector<Instance*>& insts() const { return insts_; }

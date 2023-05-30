@@ -197,7 +197,7 @@ void Replace::doIncrementalPlace()
     } 
 
     total_placeable_insts_ = 0;
-    for(auto pb : pbVec_){
+    for(const auto& pb : pbVec_){
       total_placeable_insts_ += pb->placeInsts().size();
     }
   }
@@ -274,7 +274,7 @@ void Replace::doInitialPlace()
     } 
 
     total_placeable_insts_ = 0;
-    for(auto pb : pbVec_){
+    for(const auto& pb : pbVec_){
       total_placeable_insts_ += pb->placeInsts().size();
     }
   }
@@ -312,7 +312,7 @@ bool Replace::initNesterovPlace()
     } 
 
     total_placeable_insts_ = 0;
-    for(auto pb : pbVec_){
+    for(const auto& pb : pbVec_){
       total_placeable_insts_ += pb->placeInsts().size();
     }
   }
@@ -337,7 +337,7 @@ bool Replace::initNesterovPlace()
 
     nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_);
 
-    for(auto pb : pbVec_){
+    for(const auto& pb : pbVec_){
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
     }
   }
@@ -385,7 +385,7 @@ bool Replace::initNesterovPlace()
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
 
-    for(auto nb : nbVec_){
+    for(const auto& nb : nbVec_){
       nb->setNpVars(&npVars);
     }
 

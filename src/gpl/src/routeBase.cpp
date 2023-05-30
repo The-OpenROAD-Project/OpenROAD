@@ -37,6 +37,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "grt/GlobalRouter.h"
 #include "nesterovBase.h"
@@ -319,9 +320,9 @@ RouteBase::RouteBase(RouteBaseVars rbVars,
   rbVars_ = rbVars;
   db_ = db;
   grouter_ = grouter;
-  nbc_ = nbc;
+  nbc_ = std::move(nbc);
   log_ = log;
-  nbVec_ = nbVec;
+  nbVec_ = std::move(nbVec);
   init();
 }
 

@@ -878,21 +878,21 @@ class NesterovBase
   const std::vector<GCell*>& gCellInsts() const { return gCellInsts_; }
   const std::vector<GCell*>& gCellFillers() const { return gCellFillers_; }
 
-  const float getSumOverflow() const { return sumOverflow_; }
-  const float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
-  const float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
+  float getSumOverflow() const { return sumOverflow_; }
+  float getSumOverflowUnscaled() const { return sumOverflowUnscaled_; }
+  float getBaseWireLengthCoef() const { return baseWireLengthCoef_; }
   float getDensityPenalty() const { return densityPenalty_; }
 
   float getWireLengthGradSum() const { return wireLengthGradSum_; }
   float getDensityGradSum() const { return densityGradSum_; }
 
   // update gCells with lx, ly
-  void updateGCellLocation(const std::vector<FloatPoint>& points);
+  void updateGCellLocation(const std::vector<FloatPoint>& coordis);
 
   // update gCells with cx, cy
-  void updateGCellCenterLocation(const std::vector<FloatPoint>& points);
+  void updateGCellCenterLocation(const std::vector<FloatPoint>& coordis);
 
-  void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& points);
+  void updateGCellDensityCenterLocation(const std::vector<FloatPoint>& coordis);
 
   int binCntX() const;
   int binCntY() const;
@@ -984,12 +984,12 @@ class NesterovBase
 
   void updateInitialPrevSLPCoordi();
 
-  float getStepLength(const std::vector<FloatPoint>& prevCoordi_,
-                      const std::vector<FloatPoint>& prevSumGrads_,
-                      const std::vector<FloatPoint>& curCoordi_,
-                      const std::vector<FloatPoint>& curSumGrads_);
+  float getStepLength(const std::vector<FloatPoint>& prevSLPCoordi_,
+                      const std::vector<FloatPoint>& prevSLPSumGrads_,
+                      const std::vector<FloatPoint>& curSLPCoordi_,
+                      const std::vector<FloatPoint>& curSLPSumGrads_);
 
-  void updateNextIter(const int iter);
+  void updateNextIter(int iter);
   float getPhiCoef(float scaledDiffHpwl) const;
   void cutFillerCoordinates();
 

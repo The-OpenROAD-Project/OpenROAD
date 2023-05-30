@@ -37,6 +37,7 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <utility>
 
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
@@ -47,10 +48,10 @@ namespace gpl {
 
 Graphics::Graphics(utl::Logger* logger, std::shared_ptr<PlacerBaseCommon> pbc, std::vector<std::shared_ptr<PlacerBase>>& pbVec)
     : HeatMapDataSource(logger, "gpl", "gpl"),
-      pbc_(pbc),
-      nbc_(),
+      pbc_(std::move(pbc)),
+      
       pbVec_(pbVec),
-      nbVec_(),
+      
       np_(nullptr),
       selected_(nullptr),
       draw_bins_(false),
@@ -69,8 +70,8 @@ Graphics::Graphics(utl::Logger* logger,
                    bool draw_bins,
                    odb::dbInst* inst)
     : HeatMapDataSource(logger, "gpl", "gpl"),
-      pbc_(pbc),
-      nbc_(nbc),
+      pbc_(std::move(pbc)),
+      nbc_(std::move(nbc)),
       pbVec_(pbVec),
       nbVec_(nbVec),
       np_(np),
@@ -223,11 +224,11 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
   // Draw force direction lines
   if (draw_bins_) {
-    double efMax = 0;
+    float efMax = 0;
     int max_len = std::numeric_limits<int>::max();
     for (auto& bin : nbVec_[0]->bins()) {
       efMax
-          = std::max(efMax, hypot(bin.electroForceX(), bin.electroForceY()));
+          = std::max(efMax, std::hypot(bin.electroForceX(), bin.electroForceY()));
       max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
@@ -364,7 +365,7 @@ odb::Rect Graphics::getBounds() const
 bool Graphics::populateMap()
 {
   BinGrid& grid = nbVec_[0]->getBinGrid();
-  for (Bin bin : grid.bins()) {
+  for (const Bin& bin : grid.bins()) {
     odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
     if (heatmap_type_ == Density) {
       const double value = bin.density() * 100.0;

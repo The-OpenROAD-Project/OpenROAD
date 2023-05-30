@@ -62,8 +62,8 @@ class NesterovPlace
  public:
   NesterovPlace();
   NesterovPlace(const NesterovPlaceVars& npVars,
-                std::shared_ptr<PlacerBaseCommon> pbc,
-                std::shared_ptr<NesterovBaseCommon> nbc,
+                const std::shared_ptr<PlacerBaseCommon>& pbc,
+                const std::shared_ptr<NesterovBaseCommon>& nbc,
                 std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                 std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                 std::shared_ptr<RouteBase> rb,
@@ -86,9 +86,9 @@ class NesterovPlace
   void setTargetOverflow(float overflow) { npVars_.targetOverflow = overflow; }
   void setMaxIters(int limit) { npVars_.maxNesterovIter = limit; }
 
-  void updatePrevGradient(std::shared_ptr<NesterovBase> nb);
-  void updateCurGradient(std::shared_ptr<NesterovBase> nb);
-  void updateNextGradient(std::shared_ptr<NesterovBase> nb);
+  void updatePrevGradient(const std::shared_ptr<NesterovBase>& nb);
+  void updateCurGradient(const std::shared_ptr<NesterovBase>& nb);
+  void updateNextGradient(const std::shared_ptr<NesterovBase>& nb);
 
  private:
   std::shared_ptr<PlacerBaseCommon> pbc_;

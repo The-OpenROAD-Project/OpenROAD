@@ -33,6 +33,8 @@
 
 #include "initialPlace.h"
 
+#include <utility>
+
 #include "placerBase.h"
 #include "solver.h"
 
@@ -57,7 +59,7 @@ void InitialPlaceVars::reset()
   forceCPU = false;
 }
 
-InitialPlace::InitialPlace() : ipVars_(), pbc_(nullptr), pbVec_(), log_(nullptr)
+InitialPlace::InitialPlace() : ipVars_(), pbc_(nullptr),  log_(nullptr)
 {
 }
 
@@ -65,7 +67,7 @@ InitialPlace::InitialPlace(InitialPlaceVars ipVars,
                            std::shared_ptr<PlacerBaseCommon> pbc,
                            std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                            utl::Logger* log)
-    : ipVars_(ipVars), pbc_(pbc), pbVec_(pbVec), log_(log)
+    : ipVars_(ipVars), pbc_(std::move(pbc)), pbVec_(pbVec), log_(log)
 {
 }
 

@@ -36,6 +36,7 @@
 #include <odb/db.h>
 
 #include <iostream>
+#include <utility>
 
 #include "nesterovBase.h"
 #include "utl/Logger.h"
@@ -1052,7 +1053,7 @@ PlacerBase::PlacerBase(odb::dbDatabase* db,
 {
   db_ = db;
   log_ = log;
-  pbCommon_ = pbCommon;
+  pbCommon_ = std::move(pbCommon);
   group_ = group;
   init();
 }
@@ -1153,7 +1154,7 @@ void PlacerBase::initInstsForUnusableSites()
   // if there is no group, then mark all as Row, and then for each power domain,
   // mark the sites that belong to the power domain as Empty
 
-  if (group_ != NULL) {
+  if (group_ != nullptr) {
     for (auto boundary : group_->getRegion()->getBoundaries()) {
       Rect rect = boundary->getBox();
 
@@ -1242,9 +1243,9 @@ void PlacerBase::initInstsForUnusableSites()
 
   // In the case of top level power domain i.e no group,
   // mark all other power domains as empty
-  if (group_ == NULL) {
+  if (group_ == nullptr) {
     for (dbPowerDomain* pd : pds) {
-      if (pd->getGroup() != NULL) {
+      if (pd->getGroup() != nullptr) {
         for (auto boundary : pd->getGroup()->getRegion()->getBoundaries()) {
           Rect rect = boundary->getBox();
 

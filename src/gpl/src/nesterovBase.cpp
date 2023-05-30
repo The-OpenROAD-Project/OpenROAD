@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <iostream>
 #include <random>
+#include <utility>
 
 #include "fft.h"
 #include "nesterovPlace.h"
@@ -1035,7 +1036,7 @@ NesterovBaseCommon::NesterovBaseCommon(NesterovBaseVars nbVars,
     : NesterovBaseCommon()
 {
   nbVars_ = nbVars;
-  pbc_ = pbc;
+  pbc_ = std::move(pbc);
   log_ = log;
   init();
 }
@@ -1475,8 +1476,8 @@ NesterovBase::NesterovBase(NesterovBaseVars nbVars,
     : NesterovBase()
 {
   nbVars_ = nbVars;
-  pb_ = pb;
-  nbc_ = nbc;
+  pb_ = std::move(pb);
+  nbc_ = std::move(nbc);
   log_ = log;
   init();
 }
@@ -2426,7 +2427,7 @@ bool NesterovBase::nesterovUpdateStepLength()
   if (newStepLength > stepLength_ * 0.95) {
     stepLength_ = newStepLength;
     return false;
-  } else if (newStepLength < 0.01) {
+  } if (newStepLength < 0.01) {
     stepLength_ = 0.01;
     return false;
   } else {
@@ -2534,11 +2535,11 @@ bool NesterovBase::checkConvergence()
                    sumOverflowUnscaled_);
     }
 
-    for (size_t k = 0; k < gCells_.size(); k++) {
-      if (!gCells_[k]->isInstance()) {
+    for (auto & gCell : gCells_) {
+      if (!gCell->isInstance()) {
         continue;
       }
-      gCells_[k]->instance()->lock();
+      gCell->instance()->lock();
     }
 
     isConverged_ = true;

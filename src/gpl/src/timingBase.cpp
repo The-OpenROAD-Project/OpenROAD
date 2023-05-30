@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 #include "nesterovBase.h"
 #include "placerBase.h"
@@ -58,7 +59,7 @@ TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
     : TimingBase()
 {
   rs_ = rs;
-  nbc_ = nbc;
+  nbc_ = std::move(nbc);
   log_ = log;
 }
 

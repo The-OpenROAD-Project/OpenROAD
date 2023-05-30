@@ -73,8 +73,8 @@ NesterovPlace::NesterovPlace()
 }
 
 NesterovPlace::NesterovPlace(const NesterovPlaceVars& npVars,
-                             std::shared_ptr<PlacerBaseCommon> pbc,
-                             std::shared_ptr<NesterovBaseCommon> nbc,
+                             const std::shared_ptr<PlacerBaseCommon>& pbc,
+                             const std::shared_ptr<NesterovBaseCommon>& nbc,
                              std::vector<std::shared_ptr<PlacerBase>>& pbVec,
                              std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                              std::shared_ptr<RouteBase> rb,
@@ -109,14 +109,14 @@ NesterovPlace::~NesterovPlace()
   reset();
 }
 
-void NesterovPlace::updatePrevGradient(std::shared_ptr<NesterovBase> nb)
+void NesterovPlace::updatePrevGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updatePrevGradient(wireLengthCoefX_, wireLengthCoefY_);
   auto wireLengthGradSum_ = nb->getWireLengthGradSum();
   auto densityGradSum_ = nb->getDensityGradSum();
 
   if (wireLengthGradSum_ == 0
-      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+      && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
@@ -148,14 +148,14 @@ void NesterovPlace::updatePrevGradient(std::shared_ptr<NesterovBase> nb)
   }
 }
 
-void NesterovPlace::updateCurGradient(std::shared_ptr<NesterovBase> nb)
+void NesterovPlace::updateCurGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updateCurGradient(wireLengthCoefX_, wireLengthCoefY_);
   auto wireLengthGradSum_ = nb->getWireLengthGradSum();
   auto densityGradSum_ = nb->getDensityGradSum();
 
   if (wireLengthGradSum_ == 0
-      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+      && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
@@ -187,7 +187,7 @@ void NesterovPlace::updateCurGradient(std::shared_ptr<NesterovBase> nb)
   }
 }
 
-void NesterovPlace::updateNextGradient(std::shared_ptr<NesterovBase> nb)
+void NesterovPlace::updateNextGradient(const std::shared_ptr<NesterovBase>& nb)
 {
   nb->updateNextGradient(wireLengthCoefX_, wireLengthCoefY_);
 
@@ -195,7 +195,7 @@ void NesterovPlace::updateNextGradient(std::shared_ptr<NesterovBase> nb)
   auto densityGradSum_ = nb->getDensityGradSum();
 
   if (wireLengthGradSum_ == 0
-      && recursionCntWlCoef_ < npVars_.maxRecursionWlCoef) {
+      && recursionCntWlCoef_ < gpl::NesterovPlaceVars::maxRecursionWlCoef) {
     wireLengthCoefX_ *= 0.5;
     wireLengthCoefY_ *= 0.5;
     baseWireLengthCoef_ *= 0.5;
@@ -269,7 +269,7 @@ void NesterovPlace::init()
   for (auto& nb : nbVec_) {
     auto stepL = nb->initDensity2(wireLengthCoefX_, wireLengthCoefY_);
     if ((isnan(stepL) || isinf(stepL))
-        && recursionCntInitSLPCoef_ < npVars_.maxRecursionInitSLPCoef) {
+        && recursionCntInitSLPCoef_ < gpl::NesterovPlaceVars::maxRecursionInitSLPCoef) {
       npVars_.initialPrevCoordiUpdateCoef *= 10;
       debugPrint(log_,
                  GPL,
