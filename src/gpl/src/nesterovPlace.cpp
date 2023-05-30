@@ -241,7 +241,6 @@ void NesterovPlace::init()
 
   average_overflow_ = total_sum_overflow_ / nbVec_.size();
   baseWireLengthCoef_ = totalBaseWireLengthCoeff / nbVec_.size();
-
   updateWireLengthCoef(average_overflow_);
 
   nbc_->updateWireLengthForceWA(wireLengthCoefX_, wireLengthCoefY_);

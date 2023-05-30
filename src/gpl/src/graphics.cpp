@@ -160,6 +160,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   if (draw_bins_) {
     // Draw the bins
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
+
     for (auto& bin : nbVec_[0]->bins()) {
       int color = bin.density() * 50 + 20;
 
