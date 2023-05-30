@@ -48,6 +48,8 @@
 
 namespace par {
 
+using utl::PAR;
+
 GoldenEvaluator::GoldenEvaluator(const int num_parts,
                                  const std::vector<float>& e_wt_factors,
                                  const std::vector<float>& v_wt_factors,
@@ -108,9 +110,10 @@ float GoldenEvaluator::GetPathTimingScore(int path_id,
   if (hgraph->num_timing_paths_ <= 0
       || hgraph->path_timing_attr_.size() < hgraph->num_timing_paths_
       || path_id >= hgraph->num_timing_paths_) {
-    logger_->report(
-        "[WARNING] This no timing-critical paths when calling "
-        "GetPathTimingScore()");
+    logger_->warn(
+        PAR,
+        111,
+        "This no timing-critical paths when calling GetPathTimingScore()");
     return 0.0;
   }
   return std::pow(1.0 - hgraph->path_timing_attr_[path_id], timing_exp_factor_);
@@ -124,9 +127,10 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
   if (hgraph->num_timing_paths_ <= 0
       || hgraph->path_timing_cost_.size() < hgraph->num_timing_paths_
       || path_id >= hgraph->num_timing_paths_) {
-    logger_->report(
-        "[WARNING] This no timing-critical paths when calling "
-        "CalculatePathsCost()");
+    logger_->warn(
+        PAR,
+        112,
+        "This no timing-critical paths when calling CalculatePathsCost()");
     return 0.0;
   }
   float cost = 0.0;
@@ -173,8 +177,8 @@ std::vector<float> GoldenEvaluator::GetPathsCost(
   std::vector<float> paths_cost;  // the path_cost for each path
   if (hgraph->num_timing_paths_ <= 0
       || hgraph->path_timing_cost_.size() < hgraph->num_timing_paths_) {
-    logger_->report(
-        "[WARNING] This no timing-critical paths when calling GetPathsCost()");
+    logger_->warn(
+        PAR, 113, "This no timing-critical paths when calling GetPathsCost()");
     return paths_cost;
   }
   // check each timing path
@@ -190,8 +194,8 @@ PathStats GoldenEvaluator::GetTimingCuts(const HGraphPtr& hgraph,
 {
   PathStats path_stats;  // create tha path related statistics
   if (hgraph->num_timing_paths_ <= 0) {
-    logger_->report(
-        "[WARNING] This no timing-critical paths when calling GetTimingCuts()");
+    logger_->warn(
+        PAR, 114, "This no timing-critical paths when calling GetTimingCuts()");
     return path_stats;
   }
 
@@ -248,27 +252,37 @@ PathStats GoldenEvaluator::GetTimingCuts(const HGraphPtr& hgraph,
 
 void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
 {
-  logger_->report("[INFO] Total number of timing paths = {}",
-                  path_stats.tot_num_path);
-  logger_->report("[INFO] Total number of timing-critical paths = {}",
-                  path_stats.tot_num_critical_path);
-  logger_->report("[INFO] Total number of timing-noncritical paths = {}",
-                  path_stats.tot_num_noncritical_path);
-  logger_->report(
-      "[INFO] The worst number of cuts on timing-critical paths = {}",
-      path_stats.worst_cut_critical_path);
-  logger_->report(
-      "[INFO] The average number of cuts on timing-critical paths = {}",
-      path_stats.avg_cut_critical_path);
-  logger_->report(
-      "[INFO] Total number of timing-noncritical to timing critical paths = {}",
+  logger_->info(
+      PAR, 143, "Total number of timing paths = {}", path_stats.tot_num_path);
+  logger_->info(PAR,
+                144,
+                "Total number of timing-critical paths = {}",
+                path_stats.tot_num_critical_path);
+  logger_->info(PAR,
+                145,
+                "Total number of timing-noncritical paths = {}",
+                path_stats.tot_num_noncritical_path);
+  logger_->info(PAR,
+                146,
+                "The worst number of cuts on timing-critical paths = {}",
+                path_stats.worst_cut_critical_path);
+  logger_->info(PAR,
+                147,
+                "The average number of cuts on timing-critical paths = {}",
+                path_stats.avg_cut_critical_path);
+  logger_->info(
+      PAR,
+      148,
+      "Total number of timing-noncritical to timing critical paths = {}",
       path_stats.number_non2critical_path);
-  logger_->report(
-      "[INFO] The worst number of cuts on timing-non2critical paths = {}",
-      path_stats.worst_cut_non2critical_path);
-  logger_->report(
-      "[INFO] The average number of cuts on timing-non2critical paths = {}",
-      path_stats.avg_cut_non2critical_path);
+  logger_->info(PAR,
+                149,
+                "The worst number of cuts on timing-non2critical paths = {}",
+                path_stats.worst_cut_non2critical_path);
+  logger_->info(PAR,
+                150,
+                "The average number of cuts on timing-non2critical paths = {}",
+                path_stats.avg_cut_non2critical_path);
 }
 
 /*
@@ -279,8 +293,8 @@ std::tuple<int, int, float> GoldenEvaluator::GetTimingCuts(
     const Partitions& solution) const
 {
   if (hgraph->num_timing_paths_ <= 0) {
-    logger_->report(
-        "[WARNING] This no timing-critical paths when calling GetTimingCuts()");
+    logger_->warn(PAR, 142,
+        "This no timing-critical paths when calling GetTimingCuts()");
     return std::make_tuple(0, 0, 0.0f);
   }
   int total_critical_paths_cut = 0;
@@ -583,7 +597,7 @@ PartitionToken GoldenEvaluator::CutEvaluator(const HGraphPtr& hgraph,
     }  // finish block balance
   }
 
-  return std::pair<float, Matrix<float>>(cost, block_balance);
+  return PartitionToken{cost, block_balance};
 }
 
 // check the constraints
@@ -595,8 +609,7 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
     const std::vector<std::vector<int>>& group_attr,
     bool print_flag) const
 {
-  std::pair<float, Matrix<float>> solution_token
-      = CutEvaluator(hgraph, solution, print_flag);
+  auto solution_token = CutEvaluator(hgraph, solution, print_flag);
   // check block balance
   bool balance_satisfied_flag = true;
   const Matrix<float> upper_block_balance
@@ -604,8 +617,8 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
   const Matrix<float> lower_block_balance
       = hgraph->GetLowerVertexBalance(num_parts_, ub_factor);
   for (int i = 0; i < num_parts_; i++) {
-    if (solution_token.second[i] > upper_block_balance[i]
-        || solution_token.second[i] < lower_block_balance[i]) {
+    if (solution_token.block_balance[i] > upper_block_balance[i]
+        || solution_token.block_balance[i] < lower_block_balance[i]) {
       balance_satisfied_flag = false;
       break;
     }

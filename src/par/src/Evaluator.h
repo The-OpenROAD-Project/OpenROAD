@@ -61,13 +61,14 @@ struct PathStats
 };
 
 // Partitions is the partitioning solution
-using Partitions = std::vector<int>;  //
+using Partitions = std::vector<int>;
 
 // PartitionToken is the metrics of a given partition
-// it consists of two part:  cost (cutsize), balance for each block
-// for example, PartitionToken.second[0] is the balance of
-// block_0
-using PartitionToken = std::pair<float, Matrix<float>>;
+struct PartitionToken
+{
+  float cost;                   // cutsize
+  Matrix<float> block_balance;  // balance for each block
+};
 
 // GoldenEvaluator
 class GoldenEvaluator;

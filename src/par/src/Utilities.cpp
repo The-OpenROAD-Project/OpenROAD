@@ -115,22 +115,6 @@ std::string::const_iterator FindNotDelim(std::string::const_iterator start,
   return start;
 }
 
-std::vector<float> ConvertTclListToVector(std::string tcl_list_string)
-{
-  std::vector<float> values;
-  std::string deliminators(",{} ");  // empty space , } {
-  auto start = tcl_list_string.cbegin();
-  while (start != tcl_list_string.end()) {
-    start = FindNotDelim(start, tcl_list_string.end(), deliminators);
-    auto end = FindDelim(start, tcl_list_string.end(), deliminators);
-    if (start != tcl_list_string.end()) {
-      values.push_back(std::stof(std::string(start, end)));
-      start = end;
-    }
-  }
-  return values;
-}
-
 // Split a string based on deliminator : empty space and ","
 std::vector<std::string> SplitLine(const std::string& line)
 {

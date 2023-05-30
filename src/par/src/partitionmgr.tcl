@@ -184,17 +184,14 @@ proc triton_part_hypergraph { args } {
 
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
-    set e_wt_factors [list $e_wt_factors]
   }
 
   if { [info exists keys(-v_wt_factors)] } {
     set v_wt_factors $keys(-v_wt_factors)
-    set v_wt_factors [list $v_wt_factors]
   }
 
   if { [info exists keys(-placement_wt_factors)] } {
     set placement_wt_factors $keys(-placement_wt_factors)
-    set placement_wt_factors [list $placement_wt_factors]
   }
 
   if { [info exists keys(-thr_coarsen_hyperedge_size_skip)] } {
@@ -375,17 +372,12 @@ proc evaluate_hypergraph_solution { args } {
 
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
-    set e_wt_factors [list $e_wt_factors]
   }
 
   if { [info exists keys(-v_wt_factors)] } {
     set v_wt_factors $keys(-v_wt_factors)
-    set v_wt_factors [list $v_wt_factors]
   }
-
-  set e_wt_factors [list $e_wt_factors]
-  set v_wt_factors [list $v_wt_factors]
-  
+ 
   par::evaluate_hypergraph_solution $num_parts \
             $balance_constraint \
             $vertex_dimension \
@@ -616,7 +608,6 @@ proc triton_part_design { args } {
 
   if { [info exists keys(-placement_wt_factors)] } {
     set placement_wt_factors $keys(-placement_wt_factors)
-    set placement_wt_factors [list $placement_wt_factors]
   }
 
   if { [info exists keys(-thr_coarsen_hyperedge_size_skip)] } {
@@ -890,12 +881,10 @@ proc evaluate_part_design_solution { args } {
 
   if { [info exists keys(-e_wt_factors)] } {
     set e_wt_factors $keys(-e_wt_factors)
-    set e_wt_factors [list $e_wt_factors]
   }
 
   if { [info exists keys(-v_wt_factors)] } {
     set v_wt_factors $keys(-v_wt_factors)
-    set v_wt_factors [list $v_wt_factors]
   }
 
   par::evaluate_part_design_solution $num_parts \

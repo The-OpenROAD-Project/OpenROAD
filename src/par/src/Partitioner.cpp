@@ -43,6 +43,9 @@
 #include "utl/Logger.h"
 
 namespace par {
+
+using utl::PAR;
+
 Partitioner::Partitioner(int num_parts,
                          int seed,
                          const EvaluatorPtr& evaluator,
@@ -56,15 +59,15 @@ void Partitioner::EnableIlpAcceleration(float acceleration_factor)
   ilp_accelerator_factor_ = acceleration_factor;
   ilp_accelerator_factor_ = std::max(ilp_accelerator_factor_, 0.0f);
   ilp_accelerator_factor_ = std::min(ilp_accelerator_factor_, 1.0f);
-  logger_->report("[INFO] Set ILP accelerator factor to {}",
-                  ilp_accelerator_factor_);
+  logger_->info(
+      PAR, 159, "Set ILP accelerator factor to {}", ilp_accelerator_factor_);
 }
 
 void Partitioner::DisableIlpAcceleration()
 {
   ilp_accelerator_factor_ = 1.0;
-  logger_->report("[INFO] Reset ILP accelerator factor to {}",
-                  ilp_accelerator_factor_);
+  logger_->info(
+      PAR, 160, "Reset ILP accelerator factor to {}", ilp_accelerator_factor_);
 }
 
 // The main function of Partitioning
@@ -265,15 +268,17 @@ void Partitioner::ILPPart(const HGraphPtr& hgraph,
         break;  // the set has been sorted
       }
     }
-    logger_->report("[INFO] ilp_accelerator_factor = {}",
-                    ilp_accelerator_factor_);
-    logger_->report("[INFO] Reduce the number of hyperedges from {} to {}.",
-                    hgraph->num_hyperedges_,
-                    edge_mask.size());
+    logger_->info(
+        PAR, 161, "ilp_accelerator_factor = {}", ilp_accelerator_factor_);
+    logger_->info(PAR,
+                  162,
+                  "Reduce the number of hyperedges from {} to {}.",
+                  hgraph->num_hyperedges_,
+                  edge_mask.size());
   } else {
-    logger_->report("[WARNING] ilp_accelerator_factor = {}",
-                    ilp_accelerator_factor_);
-    logger_->report("[WARNING] No hyperedges will be used !!!");
+    logger_->warn(
+        PAR, 116, "ilp_accelerator_factor = {}", ilp_accelerator_factor_);
+    logger_->warn(PAR, 117, "No hyperedges will be used !!!");
   }
   // update hyperedges and hyperedge_weights
   hyperedge_weights.reserve(edge_mask.size());

@@ -7,7 +7,7 @@
 ========================================
 [STATUS] Starting TritonPart Partitioner
 ========================================
-[INFO] Partitioning parameters**** 
+[INFO PAR-0168] [INFO] Partitioning parameters**** 
 [INFO PAR-0102] Number of partitions = 2
 [INFO PAR-0016] UBfactor = 1.0
 [INFO PAR-0017] Seed = 1
@@ -22,17 +22,17 @@
 ========================================
 [STATUS] Reading netlist**** 
 [STATUS] Extracting timing paths**** 
-[INFO] maximum_clock_period : 4.85e-10 second
-[INFO] normalized extra delay : 2.0618558
-[INFO] We normalized the slack of each path based on maximum clock period
-[INFO] We normalized the slack of each net based on maximum clock period
+[INFO PAR-0178] maximum_clock_period : 4.85e-10 second
+[INFO PAR-0179] normalized extra delay : 2.0618558
+[INFO PAR-0180] We normalized the slack of each path based on maximum clock period
+[INFO PAR-0181] We normalized the slack of each net based on maximum clock period
 [STATUS] Finish traversing timing graph
-[WARNING] 1 unconstrained hyperedges !
-[WARNING] Reset the slack of all unconstrained hyperedges to 4.85e-10 seconds
-[INFO] Netlist Information**
-[INFO] Vertices = 469
-[INFO] Hyperedges = 451
-[INFO] Number of timing paths = 52
+[WARNING PAR-0137] 1 unconstrained hyperedges !
+[WARNING PAR-0138] Reset the slack of all unconstrained hyperedges to 4.85e-10 seconds
+[INFO PAR-0174] Netlist Information**
+[INFO PAR-0175] Vertices = 469
+[INFO PAR-0176] Hyperedges = 451
+[INFO PAR-0177] Number of timing paths = 52
 [STATUS] Finish reading netlist****
 [INFO PAR-0077] hyperedge weight factor : [ 1.000000  ]
 [INFO PAR-0078] vertex weight factor : [ 1.000000  ]
@@ -75,7 +75,7 @@
 ======================================================================
 [STATUS] Initial Partitioning 
 ======================================================================
-[INFO] Set the max_move to 11
+[INFO PAR-0163] Set the max_move to 11
 [Cutcost of partition : 107.45897]
 [Vertex balance of block_0 : 0.50482  ( 278.76801 )    
 [Vertex balance of block_1 : 0.49518  ( 273.44800 )    
@@ -876,8 +876,8 @@
 [Vertex balance of block_0 : 0.48410  ( 267.33002 )    
 [Vertex balance of block_1 : 0.51590  ( 284.88599 )    
 [INIT-PART] 99 :: Random VILE part cutcost = 124.69098, balance_flag = false
-[INFO] Reset the max_move to 100
-[INFO] Reset the refiner_iters to 10
+[INFO PAR-0165] Reset the max_move to 100
+[INFO PAR-0166] Reset the refiner_iters to 10
 [Cutcost of partition : 97.37478]
 [Vertex balance of block_0 : 0.54528  ( 301.11200 )    
 [Vertex balance of block_1 : 0.45472  ( 251.10400 )    
@@ -889,8 +889,8 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.50145  ( 276.90601 )    
 [Vertex balance of block_1 : 0.49855  ( 275.31000 )    
 [INIT-PART] :: ILP part cutcost = 102.71945, balance_flag = true
-[INFO] Number of chosen best initial solutions = 10
-[INIT-PART] :: Best initial cutcost 83.5356
+[INFO PAR-0155] Number of chosen best initial solutions = 10
+[INFO PAR-0156] Best initial cutcost 83.5356
 [Cutcost of partition : 87.13652]
 [Vertex balance of block_0 : 0.50915  ( 281.16199 )    
 [Vertex balance of block_1 : 0.49085  ( 271.05402 )    
@@ -1170,11 +1170,11 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.50915  ( 281.16199 )    
 [Vertex balance of block_1 : 0.49085  ( 271.05402 )    
 [Refinement] Level 9 :: num_vertices = 469, num_hyperedges = 451, cutcost = 94.785545, best_solution_id = 9
-[INFO] Cut-Overlay Clustering : num_vertices = 33, num_hyperedges = 48
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 33, num_hyperedges = 48
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
 [STATUS] Optimal ILP-based Partitioning Finished !
-[INFO] Statistics of cut-overlay solution:
+[INFO PAR-0158] Statistics of cut-overlay solution:
 [Cutcost of partition : 134.49876]
 [Vertex balance of block_0 : 0.50000  ( 276.10800 )    
 [Vertex balance of block_1 : 0.50000  ( 276.10797 )    
@@ -1195,7 +1195,7 @@ All the hyperedges will be used in the ILP-based partitioning!
 ======================================================================
 [STATUS] Initial Partitioning 
 ======================================================================
-[INFO] Set the max_move to 10
+[INFO PAR-0163] Set the max_move to 10
 [Cutcost of partition : 142.14874]
 [Vertex balance of block_0 : 0.57996  ( 320.26401 )    
 [Vertex balance of block_1 : 0.42004  ( 231.95200 )    
@@ -1996,8 +1996,8 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.45761  ( 252.70001 )    
 [Vertex balance of block_1 : 0.54239  ( 299.51599 )    
 [INIT-PART] 99 :: Random VILE part cutcost = 148.35129, balance_flag = false
-[INFO] Reset the max_move to 100
-[INFO] Reset the refiner_iters to 10
+[INFO PAR-0165] Reset the max_move to 100
+[INFO PAR-0166] Reset the refiner_iters to 10
 [Cutcost of partition : 134.37767]
 [Vertex balance of block_0 : 0.44701  ( 246.84799 )    
 [Vertex balance of block_1 : 0.55299  ( 305.36801 )    
@@ -2010,8 +2010,8 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.57996  ( 320.26401 )    
 [Vertex balance of block_1 : 0.42004  ( 231.95200 )    
 [INIT-PART] :: ILP part cutcost = 142.14874, balance_flag = false
-[INFO] Number of chosen best initial solutions = 10
-[INIT-PART] :: Best initial cutcost 0.0
+[INFO PAR-0155] Number of chosen best initial solutions = 10
+[INFO PAR-0156] Best initial cutcost 0.0
 [Cutcost of partition : 113.57807]
 [Vertex balance of block_0 : 0.53661  ( 296.32401 )    
 [Vertex balance of block_1 : 0.46339  ( 255.89200 )    
@@ -2322,7 +2322,7 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.49518  ( 273.44803 )    
 [Vertex balance of block_1 : 0.50482  ( 278.76797 )    
 [Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 73.07727, best_solution_id = 4
-[INFO] Cut-Overlay Clustering : num_vertices = 53, num_hyperedges = 78
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 53, num_hyperedges = 78
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
@@ -2340,7 +2340,7 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.50963  ( 281.42804 )    
 [Vertex balance of block_1 : 0.49037  ( 270.78802 )    
 [Refinement] Level 2 :: num_vertices = 53, num_hyperedges = 78, cutcost = 63.07744, best_solution_id = 0
-[INFO] Statistics of cut-overlay solution:
+[INFO PAR-0158] Statistics of cut-overlay solution:
 [Cutcost of partition : 73.07727]
 [Vertex balance of block_0 : 0.50963  ( 281.42798 )    
 [Vertex balance of block_1 : 0.49037  ( 270.78799 )    
@@ -2361,7 +2361,7 @@ All the hyperedges will be used in the ILP-based partitioning!
 ======================================================================
 [STATUS] Initial Partitioning 
 ======================================================================
-[INFO] Set the max_move to 9
+[INFO PAR-0163] Set the max_move to 9
 [Cutcost of partition : 133.58472]
 [Vertex balance of block_0 : 0.55154  ( 304.56998 )    
 [Vertex balance of block_1 : 0.44846  ( 247.64600 )    
@@ -3162,8 +3162,8 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.47543  ( 262.54199 )    
 [Vertex balance of block_1 : 0.52457  ( 289.67398 )    
 [INIT-PART] 99 :: Random VILE part cutcost = 120.38967, balance_flag = false
-[INFO] Reset the max_move to 100
-[INFO] Reset the refiner_iters to 10
+[INFO PAR-0165] Reset the max_move to 100
+[INFO PAR-0166] Reset the refiner_iters to 10
 [Cutcost of partition : 152.13791]
 [Vertex balance of block_0 : 0.54817  ( 302.70801 )    
 [Vertex balance of block_1 : 0.45183  ( 249.50800 )    
@@ -3176,8 +3176,8 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.57466  ( 317.33798 )    
 [Vertex balance of block_1 : 0.42534  ( 234.87801 )    
 [INIT-PART] :: ILP part cutcost = 122.46422, balance_flag = false
-[INFO] Number of chosen best initial solutions = 10
-[INIT-PART] :: Best initial cutcost 0.0
+[INFO PAR-0155] Number of chosen best initial solutions = 10
+[INFO PAR-0156] Best initial cutcost 0.0
 [Cutcost of partition : 102.331215]
 [Vertex balance of block_0 : 0.48218  ( 266.26599 )    
 [Vertex balance of block_1 : 0.51782  ( 285.95001 )    
@@ -3488,11 +3488,11 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.49181  ( 271.58600 )    
 [Vertex balance of block_1 : 0.50819  ( 280.63000 )    
 [Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 99.10402, best_solution_id = 3
-[INFO] Cut-Overlay Clustering : num_vertices = 47, num_hyperedges = 68
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 47, num_hyperedges = 68
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
 [STATUS] Optimal ILP-based Partitioning Finished !
-[INFO] Statistics of cut-overlay solution:
+[INFO PAR-0158] Statistics of cut-overlay solution:
 [Cutcost of partition : 134.49876]
 [Vertex balance of block_0 : 0.50145  ( 276.90598 )    
 [Vertex balance of block_1 : 0.49856  ( 275.31000 )    
@@ -3513,7 +3513,7 @@ All the hyperedges will be used in the ILP-based partitioning!
 ======================================================================
 [STATUS] Initial Partitioning 
 ======================================================================
-[INFO] Set the max_move to 10
+[INFO PAR-0163] Set the max_move to 10
 [Cutcost of partition : 124.065994]
 [Vertex balance of block_0 : 0.51252  ( 283.02399 )    
 [Vertex balance of block_1 : 0.48748  ( 269.19199 )    
@@ -4314,8 +4314,8 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.39451  ( 217.85399 )    
 [Vertex balance of block_1 : 0.60549  ( 334.36200 )    
 [INIT-PART] 99 :: Random VILE part cutcost = 131.52184, balance_flag = false
-[INFO] Reset the max_move to 100
-[INFO] Reset the refiner_iters to 10
+[INFO PAR-0165] Reset the max_move to 100
+[INFO PAR-0166] Reset the refiner_iters to 10
 [Cutcost of partition : 143.79599]
 [Vertex balance of block_0 : 0.48507  ( 267.86200 )    
 [Vertex balance of block_1 : 0.51493  ( 284.35400 )    
@@ -4327,8 +4327,8 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.49759  ( 274.77798 )    
 [Vertex balance of block_1 : 0.50241  ( 277.43799 )    
 [INIT-PART] :: ILP part cutcost = 98.7546, balance_flag = true
-[INFO] Number of chosen best initial solutions = 10
-[INIT-PART] :: Best initial cutcost 98.7546
+[INFO PAR-0155] Number of chosen best initial solutions = 10
+[INFO PAR-0156] Best initial cutcost 98.7546
 [Cutcost of partition : 99.604614]
 [Vertex balance of block_0 : 0.49759  ( 274.77798 )    
 [Vertex balance of block_1 : 0.50241  ( 277.43799 )    
@@ -4639,24 +4639,24 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.50819  ( 280.62997 )    
 [Vertex balance of block_1 : 0.49181  ( 271.58600 )    
 [Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 73.07727, best_solution_id = 6
-[INFO] Cut-Overlay Clustering : num_vertices = 24, num_hyperedges = 33
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 24, num_hyperedges = 33
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
 [STATUS] Optimal ILP-based Partitioning Finished !
-[INFO] Statistics of cut-overlay solution:
+[INFO PAR-0158] Statistics of cut-overlay solution:
 [Cutcost of partition : 115.5777]
 [Vertex balance of block_0 : 0.49133  ( 271.31998 )    
 [Vertex balance of block_1 : 0.50867  ( 280.89600 )    
-[INFO] Finish Candidate Solutions Generation
-[INFO] Cut-Overlay Clustering : num_vertices = 17, num_hyperedges = 22
+[INFO PAR-0151] Finish Candidate Solutions Generation
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 17, num_hyperedges = 22
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
 [STATUS] Optimal ILP-based Partitioning Finished !
-[INFO] Statistics of cut-overlay solution:
+[INFO PAR-0158] Statistics of cut-overlay solution:
 [Cutcost of partition : 129.06133]
 [Vertex balance of block_0 : 0.49518  ( 273.44800 )    
 [Vertex balance of block_1 : 0.50482  ( 278.76797 )    
-[INFO] Finish Cut-Overlay Clustering and Optimal Partitioning
+[INFO PAR-0152] Finish Cut-Overlay Clustering and Optimal Partitioning
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
@@ -4709,16 +4709,16 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.50819  ( 280.62997 )    
 [Vertex balance of block_1 : 0.49181  ( 271.58600 )    
 [Refinement] Level 9 :: num_vertices = 469, num_hyperedges = 451, cutcost = 73.07727, best_solution_id = 0
-[INFO][V-cycle Refinement] num_cycles = 0, cutcost = 73.07727
-[INFO] Cut-Overlay Clustering : num_vertices = 14, num_hyperedges = 19
+[INFO PAR-0154] [V-cycle Refinement] num_cycles = 0, cutcost = 73.07727
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 14, num_hyperedges = 19
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
 [STATUS] Optimal ILP-based Partitioning Finished !
-[INFO] Statistics of cut-overlay solution:
+[INFO PAR-0158] Statistics of cut-overlay solution:
 [Cutcost of partition : 134.56757]
 [Vertex balance of block_0 : 0.49133  ( 271.31998 )    
 [Vertex balance of block_1 : 0.50867  ( 280.89597 )    
-[INFO] Finish Vcycle Refinement
+[INFO PAR-0153] Finish Vcycle Refinement
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
@@ -4771,12 +4771,12 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.49711  ( 274.51199 )    
 [Vertex balance of block_1 : 0.50289  ( 277.70401 )    
 [Refinement] Level 9 :: num_vertices = 469, num_hyperedges = 451, cutcost = 93.332855, best_solution_id = 0
-[INFO][V-cycle Refinement] num_cycles = 0, cutcost = 93.332855
-[INFO] Cut-Overlay Clustering : num_vertices = 14, num_hyperedges = 18
+[INFO PAR-0154] [V-cycle Refinement] num_cycles = 0, cutcost = 93.332855
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 14, num_hyperedges = 18
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
 [STATUS] Optimal ILP-based Partitioning Finished !
-[INFO] Statistics of cut-overlay solution:
+[INFO PAR-0158] Statistics of cut-overlay solution:
 [Cutcost of partition : 134.56757]
 [Vertex balance of block_0 : 0.49133  ( 271.31998 )    
 [Vertex balance of block_1 : 0.50867  ( 280.89597 )    
@@ -4787,14 +4787,14 @@ Satisfy the balance constraint : true
 Satisfy the group constraint : true
 Satisfy the fixed vertices constraint : true
 [STATUS] Displaying timing path cuts statistics
-[INFO] Total number of timing paths = 52
-[INFO] Total number of timing-critical paths = 1
-[INFO] Total number of timing-noncritical paths = 51
-[INFO] The worst number of cuts on timing-critical paths = 1
-[INFO] The average number of cuts on timing-critical paths = 1.0
-[INFO] Total number of timing-noncritical to timing critical paths = 40
-[INFO] The worst number of cuts on timing-non2critical paths = 3
-[INFO] The average number of cuts on timing-non2critical paths = 1.8
+[INFO PAR-0143] Total number of timing paths = 52
+[INFO PAR-0144] Total number of timing-critical paths = 1
+[INFO PAR-0145] Total number of timing-noncritical paths = 51
+[INFO PAR-0146] The worst number of cuts on timing-critical paths = 1
+[INFO PAR-0147] The average number of cuts on timing-critical paths = 1.0
+[INFO PAR-0148] Total number of timing-noncritical to timing critical paths = 40
+[INFO PAR-0149] The worst number of cuts on timing-non2critical paths = 3
+[INFO PAR-0150] The average number of cuts on timing-non2critical paths = 1.8
 ===============================================
 Exiting TritonPart
 Writing partition to verilog.

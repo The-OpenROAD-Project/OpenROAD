@@ -46,6 +46,8 @@
 
 namespace par {
 
+using utl::PAR;
+
 // Implement the ILP-based refinement pass
 float IlpRefine::Pass(
     const HGraphPtr& hgraph,
@@ -133,8 +135,8 @@ float IlpRefine::Pass(
                        upper_block_balance,
                        lower_block_balance)
       == false) {
-    logger_->report(
-        "[WARNING] ILP-based partitioning cannot find a valid solution.");
+    logger_->warn(
+        PAR, 115, "ILP-based partitioning cannot find a valid solution.");
     return 0.0;  // no valid solution
   }
   // try to update the solution
