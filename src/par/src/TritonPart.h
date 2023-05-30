@@ -40,6 +40,7 @@
 #include <string>
 #include <vector>
 
+#include "TPCoarsener.h"
 #include "TPHypergraph.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
@@ -64,7 +65,7 @@ namespace par {
 // Type 2:  Take the input hypergraph as an argument in the same manner as
 //          hMetis.
 template <typename T>
-using matrix = std::vector<std::vector<T>>;
+using MATRIX = std::vector<std::vector<T>>;
 
 class TritonPart
 {
@@ -78,89 +79,260 @@ class TritonPart
   }
 
   // Top level interface
-  void PartitionDesign(unsigned int num_parts,
-                       float balance_constraint,
-                       unsigned int seed,
-                       const std::string& solution_filename,
-                       const std::string& paths_filename,
-                       const std::string& hypergraph_filename);
-  // This is only used for replacing hMETIS
-  void PartitionHypergraph(const char* hypergraph_file,
-                           const char* fixed_file,
-                           unsigned int num_parts,
+  // The function for partitioning a hypergraph
+  // This is the main API for TritonPart
+  // Key supports:
+  // (1) fixed vertices constraint in fixed_file
+  // (2) community attributes in community_file (This can be used to guide the
+  // partitioning process) (3) stay together attributes in group_file. (4)
+  // timing-driven partitioning (5) fence-aware partitioning (6) placement-aware
+  // partitioning, placement information is extracted from OpenDB
+  void PartitionDesign(unsigned int num_parts_arg,
+                       float balance_constraint_arg,
+                       unsigned int seed_arg,
+                       bool timing_aware_flag_arg,
+                       int top_n_arg,
+                       bool placement_flag_arg,
+                       bool fence_flag_arg,
+                       float fence_lx_arg,
+                       float fence_ly_arg,
+                       float fence_ux_arg,
+                       float fence_uy_arg,
+                       const char* fixed_file_arg,
+                       const char* community_file_arg,
+                       const char* group_file_arg,
+                       const char* solution_filename_arg);
+
+  // Function to evaluate the hypergraph partitioning solution
+  // This can be used to write the timing-weighted hypergraph
+  // and evaluate the solution.
+  // If the solution file is empty, then this function is to write the
+  // solution. If the solution file is not empty, then this function is to
+  // evaluate the solution without writing the hypergraph again This function is
+  // only used for testing
+  void EvaluatePartDesignSolution(unsigned int num_parts_arg,
+                                  float balance_constraint_arg,
+                                  bool timing_aware_flag_arg,
+                                  int top_n_arg,
+                                  bool fence_flag_arg,
+                                  float fence_lx_arg,
+                                  float fence_ly_arg,
+                                  float fence_ux_arg,
+                                  float fence_uy_arg,
+                                  const char* fixed_file_arg,
+                                  const char* community_file_arg,
+                                  const char* group_file_arg,
+                                  const char* hypergraph_file,
+                                  const char* hypergraph_int_weight_file,
+                                  const char* solution_filename_arg);
+
+  // The function for partitioning a hypergraph
+  // This is used for replacing hMETIS
+  // Key supports:
+  // (1) fixed vertices constraint in fixed_file
+  // (2) community attributes in community_file (This can be used to guide the
+  // partitioning process) (3) stay together attributes in group_file. (4)
+  // placement information is specified in placement file The format is that
+  // each line cooresponds to a group fixed vertices, community and placement
+  // attributes both follows the hMETIS format
+  void PartitionHypergraph(unsigned int num_parts,
                            float balance_constraint,
+                           unsigned int seed,
                            int vertex_dimension,
                            int hyperedge_dimension,
-                           unsigned int seed);
+                           int placement_dimension,
+                           const char* hypergraph_file,
+                           const char* fixed_file,
+                           const char* community_file,
+                           const char* group_file,
+                           const char* placement_file);
 
-  // 2-way partition c++ interface for Hier-RTLMP
-  std::vector<int> Partition2Way(
-      int num_vertices,
-      int num_hyperedges,
+  // Evaluate a given solution of a hypergraph
+  // The fixed vertices should statisfy the fixed vertices constraint
+  // The group of vertices should stay together in the solution
+  // The vertex balance should be satisfied
+  void EvaluateHypergraphSolution(unsigned int num_parts,
+                                  float balance_constraint,
+                                  int vertex_dimension,
+                                  int hyperedge_dimension,
+                                  const char* hypergraph_file,
+                                  const char* fixed_file,
+                                  const char* group_file,
+                                  const char* solution_file);
+
+  // k-way partitioning used by Hier-RTLMP
+  std::vector<int> PartitionKWaySimpleMode(
+      unsigned int num_parts_arg,
+      float balance_constraint_arg,
+      unsigned int seed_arg,
       const std::vector<std::vector<int>>& hyperedges,
       const std::vector<float>& vertex_weights,
-      float balance_constraints,
-      int seed = 0);
+      const std::vector<float>& hyperedge_weights);
 
-  // APIs
-  void SetFenceFlag(bool fence_flag) { fence_flag_ = fence_flag; }
-
-  void SetFence(float fence_lx, float fence_ly, float fence_ux, float fence_uy)
+  // Main APIs
+  void SetTimingParams(float net_timing_factor,
+                       float path_timing_factor,
+                       float path_snaking_factor,
+                       float timing_exp_factor,
+                       float extra_delay,
+                       bool guardband_flag)
   {
-    const int dbu = db_->getTech()->getDbUnitsPerMicron();
-    fence_
-        = Rect(fence_lx * dbu, fence_ly * dbu, fence_ux * dbu, fence_uy * dbu);
+    net_timing_factor_
+        = net_timing_factor;  // the timing weight for cutting a hyperedge
+    path_timing_factor_
+        = path_timing_factor;  // the cost for cutting a critical timing path
+                               // once. If a critical path is cut by 3 times,
+                               // the cost is defined as 3 * path_timing_factor_
+    path_snaking_factor_
+        = path_snaking_factor;  // the cost of introducing a snaking timing
+                                // path, see our paper for detailed explanation
+                                // of snaking timing paths
+    timing_exp_factor_ = timing_exp_factor;  // exponential factor
+    extra_delay_ = extra_delay;              // extra delay introduced by cut
+    guardband_flag_ = guardband_flag;        // timing guardband_flag
+  }
+
+  void SetNetWeight(const std::vector<float>& e_wt_factors)
+  {
+    e_wt_factors_ = e_wt_factors;  // the cost introduced by a cut hyperedge e
+                                   // is e_wt_factors dot_product
+                                   // hyperedge_weights_[e] this parameter is
+                                   // used by coarsening and partitioning
+  }
+
+  void SetVertexWeight(const std::vector<float>& v_wt_factors)
+  {
+    v_wt_factors_
+        = v_wt_factors;  // the ``weight'' of a vertex. For placement-driven
+                         // coarsening, when we merge two vertices, we need to
+                         // update the location of merged vertex based on the
+                         // gravity center of these two vertices.  The weight of
+                         // vertex v is defined as v_wt_factors dot_product
+                         // vertex_weights_[v] this parameter is only used in
+                         // coarsening
+  }
+
+  void SetPlacementWeight(const std::vector<float>& placement_wt_factors)
+  {
+    placement_wt_factors_
+        = placement_wt_factors;  // the weight for placement information. For
+                                 // placement-driven coarsening, when we
+                                 // calculate the score for best-choice
+                                 // coarsening, the placement information also
+                                 // contributes to the score function. we prefer
+                                 // to merge two vertices which are adjacent
+                                 // physically the distance between u and v is
+                                 // defined as norm2(placement_attr[u] -
+                                 // placement_attr[v], placement_wt_factors_)
+                                 // this parameter is only used during
+                                 // coarsening
+  }
+
+  // Set detailed parameters
+  // There parameters only used by users who want to exploit the performance
+  // limits of TritonPart
+  void SetFineTuneParams(  // coarsening related parameters
+      int thr_coarsen_hyperedge_size_skip,
+      int thr_coarsen_vertices,
+      int thr_coarsen_hyperedges,
+      float coarsening_ratio,
+      int max_coarsen_iters,
+      float adj_diff_ratio,
+      int min_num_vertices_each_part,
+      // initial partitioning related parameters
+      int num_initial_solutions,
+      int num_best_initial_solutions,
+      // refinement related parameters
+      int refiner_iters,
+      int max_moves,
+      float early_stop_ratio,
+      int total_corking_passes,
+      // vcycle related parameters
+      bool v_cycle_flag,
+      int max_num_vcycle,
+      int num_coarsen_solutions,
+      int num_vertices_threshold_ilp,
+      int global_net_threshold)
+  {
+    // coarsening related parameters (stop conditions)
+    thr_coarsen_hyperedge_size_skip_
+        = thr_coarsen_hyperedge_size_skip;  // if the size of a hyperedge is
+                                            // larger than
+                                            // thr_coarsen_hyperedge_size_skip_,
+                                            // then we ignore this hyperedge
+                                            // during coarsening
+    thr_coarsen_vertices_
+        = thr_coarsen_vertices;  // the minimum threshold of number of vertices
+                                 // in the coarsest hypergraph
+    thr_coarsen_hyperedges_
+        = thr_coarsen_hyperedges;  // the minimum threshold of number of
+                                   // hyperedges in the coarsest hypergraph
+    coarsening_ratio_ = coarsening_ratio;  // the ratio of number of vertices of
+                                           // adjacent coarse hypergraphs
+    max_coarsen_iters_
+        = max_coarsen_iters;  // maxinum number of coarsening iterations
+    adj_diff_ratio_
+        = adj_diff_ratio;  // the ratio of number of vertices of adjacent coarse
+                           // hypergraphs if the ratio is less than
+                           // adj_diff_ratio_, then stop coarsening
+    min_num_vertices_each_part_
+        = min_num_vertices_each_part;  // minimum number of vertices in each
+                                       // block for the partitioning solution of
+                                       // the coareset hypergraph We achieve
+                                       // this by controlling the maximum vertex
+                                       // weight during coarsening
+    // initial partitioning related parameters
+    num_initial_solutions_ = num_initial_solutions;  // number of initial random
+                                                     // solutions generated
+    num_best_initial_solutions_
+        = num_best_initial_solutions;  // number of best initial solutions used
+                                       // for stability
+    // refinement related parameter
+    refiner_iters_ = refiner_iters;  // refinement iterations
+    max_moves_
+        = max_moves;  // the allowed moves for each pass of FM or greedy
+                      // refinement or the number of vertices in an ILP instance
+    early_stop_ratio_
+        = early_stop_ratio;  // if the number of moved vertices exceeds
+                             // num_vertices_of_a_hypergraph times
+                             // early_stop_ratio_, then exit current FM pass.
+                             // This parameter is set based on the obersvation
+                             // that in a FM pass, most of the gains are
+                             // achieved by first several moves
+    total_corking_passes_
+        = total_corking_passes;  // the maximum level of traversing the buckets
+                                 // to solve the "corking effect"
+    // V-cycle related parameters
+    v_cycle_flag_ = v_cycle_flag;
+    max_num_vcycle_ = max_num_vcycle;  // maximum number of vcycles
+    num_coarsen_solutions_ = num_coarsen_solutions;
+
+    // ILP threshold
+    num_vertices_threshold_ilp_ = num_vertices_threshold_ilp;
+
+    // global net threshold
+    global_net_threshold_ = global_net_threshold;
   }
 
  private:
-  // Pre process the hypergraph by skipping large hyperedges
-  HGraph PreProcessHypergraph();
-  // Generate timing report
-  void GenerateTimingReport(std::vector<int>& partition, bool design);
-  void WritePathsToFile(const std::string& paths_filename);
-  std::vector<int> DesignPartTwoWay(unsigned int num_parts_,
-                                    float ub_factor_,
-                                    int vertex_dimensions_,
-                                    int hyperedge_dimensions_,
-                                    unsigned int seed_);
-  std::vector<int> DesignPartKWay(unsigned int num_parts_,
-                                  float ub_factor_,
-                                  int vertex_dimensions_,
-                                  int hyperedge_dimensions_,
-                                  unsigned int seed_);
-  std::vector<int> HypergraphPartTwoWay(const char* hypergraph_file,
-                                        const char* fixed_file,
-                                        unsigned int num_parts,
-                                        float balance_constraint,
-                                        int vertex_dimension,
-                                        int hyperedge_dimension,
-                                        unsigned int seed);
-  std::vector<int> HypergraphPartKWay(const char* hypergraph_file,
-                                      const char* fixed_file,
-                                      unsigned int num_parts,
-                                      float balance_constraint,
-                                      int vertex_dimension,
-                                      int hyperedge_dimension,
-                                      unsigned int seed);
-  void PartRecursive(const char* hypergraph_file,
-                     const char* fixed_file,
-                     unsigned int num_parts,
-                     float balance_constraint,
-                     int vertex_dimension,
-                     int hyperedge_dimension,
-                     unsigned int seed);
-  // Utility functions for reading hypergraph
-  void ReadNetlistWithTypes();
-  void ReadNetlist();  // read hypergraph from netlist
-  void ReadHypergraph(std::string hypergraph, std::string fixed_file);
-  // Read hypergraph from input files
-  void BuildHypergraph();
-  // Write the hypergraph to file
-  void WriteHypergraph(const std::string& hypergraph_filename);
+  // Main partititon function
+  void MultiLevelPartition();
 
+  // read and build hypergraph
+  void ReadHypergraph(std::string hypergraph,
+                      std::string fixed_file,
+                      std::string community_file,
+                      std::string group_file,
+                      std::string placement_file);
+
+  // read and build netlist
+  // placement information is extracted from the OpenDB database
+  void ReadNetlist(std::string fixed_file,
+                   std::string community_file,
+                   std::string group_file);
   void BuildTimingPaths();  // Find all the critical timing paths
-  void MultiLevelPartition(std::vector<int>& solution);
 
+  // private member functions
   ord::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
@@ -179,8 +351,6 @@ class TritonPart
   // ---- for example, pin-3D flow
   bool placement_flag_
       = false;  // if use placement information to guide partitioning
-  std::map<std::string, std::vector<float>>
-      placement_info_;            // vertex_name, location of vertex
   int placement_dimensions_ = 2;  // by default, we are working on 2D canvas
   std::vector<std::vector<float>>
       placement_attr_;  // (internal representation, size is num_vertices_)
@@ -192,29 +362,29 @@ class TritonPart
   bool timing_aware_flag_ = true;  // Enable timing aware
   int top_n_ = 1000;               // top_n timing paths
   float maximum_clock_period_ = 0.0;
-  std::vector<float> hyperedge_slacks_;  // normalized by clock period
+  std::vector<float> hyperedge_slacks_;   // normalized by clock period
+  std::vector<VertexType> vertex_types_;  // the vertex type of each instances
   std::vector<TimingPath>
       timing_paths_;  // critical timing paths, extracted based OpenSTA
-  std::vector<float>
-      timing_attr_;  // (internal representation, size is num_hyperedges)
+  bool guardband_flag_ = true;  // Turn on the timing guardband option
 
   // ---- community information
   // ---- all the vertices in the same community will stay together
-  bool community_flag_ = false;  // if community information is used
-  std::map<std::string, int>
-      community_info_;               // vertex_name, community of vertex
   std::vector<int> community_attr_;  // the community id of vertices (internal
                                      // representation, size is num_vertices_)
 
   // ---- fixed vertex information
-  bool fixed_vertex_flag_ = false;  // if fixed vertices are specified
-  std::map<std::string, int> fixed_vertex_info_;  // vertex name, block id
   std::vector<int> fixed_attr_;  // the block id of fixed vertices. (internal
                                  // representation, size is num_vertices_)
 
-  // other parameters
-  int he_size_threshold_ = 50;  // if the size of a hyperedge is larger than
-                                // he_size_threshold, then ignore this hyperedge
+  // ---- vertex grouping information
+  std::vector<std::vector<int>>
+      group_attr_;  // each group cooresponds to a group
+
+  // --- Global net threshold
+  int global_net_threshold_
+      = 1000;  // If the net is larger than global_net_threshold_,
+               // Then it will be ignored by TritonPart
 
   // coarsening related parameters (stop conditions)
   int thr_coarsen_hyperedge_size_skip_
@@ -237,11 +407,8 @@ class TritonPart
             // for the partitioning solution of the coareset hypergraph
             // We achieve this by controlling the maximum vertex weight
             // during coarsening
+  CoarsenOrder coarsen_order_ = CoarsenOrder::RANDOM;
   // weight related parameter
-
-  int path_traverse_step_
-      = 2;  // during coarsening, use this parameter to check the neighbors
-            // in the critial timing paths
 
   // cost related parameter
   std::vector<float>
@@ -270,16 +437,16 @@ class TritonPart
                               // placement_wt_factors_) this parameter is only
                               // used during coarsening
 
-  float path_wt_factor_ = 1.0;  // the cost for cutting a critical timing path
-                                // once. If a critical path is cut by 3 times,
-                                // the cost is defined as 3 * path_wt_factor_
-  float net_cut_factor_
-      = 1.0;  // the cost for cutting a net, without timing information
-  float timing_factor_ = 1.0;  // the weight for cutting a path
-  float snaking_wt_factor_
+  float net_timing_factor_ = 1.0;  // the timing weight for cutting a hyperedge
+  float path_timing_factor_
+      = 1.0;  // the cost for cutting a critical timing path once. If a critical
+              // path is cut by 3 times, the cost is defined as 3 *
+              // path_timing_factor_
+  float path_snaking_factor_
       = 1.0;  // the cost of introducing a snaking timing path, see our paper
               // for detailed explanation of snaking timing paths
   float timing_exp_factor_ = 2.0;  // exponential factor
+  float extra_delay_ = 1;          // extra delay introduced by cut
 
   // initial partitioning related parameters
   int num_initial_solutions_
@@ -292,21 +459,24 @@ class TritonPart
   int max_moves_
       = 50;  // the allowed moves for each pass of FM or greedy refinement
              // or the number of vertices in an ILP instance
-  int max_num_fm_pass_
-      = 10;  // the allowed number of FM pass in each refinement iteration
   float early_stop_ratio_
       = 0.5;  // if the number of moved vertices exceeds
               // num_vertices_of_a_hypergraph times early_stop_ratio_, then exit
               // current FM pass. This parameter is set based on the obersvation
               // that in a FM pass, most of the gains are achieved by first
               // several moves
-
+  int total_corking_passes_ = 25;  // the maximum level of traversing the
+                                   // buckets to solve the "corking effect"
   // V-cycle related parameters
   bool v_cycle_flag_ = true;
   int max_num_vcycle_ = 5;  // maximum number of vcycles
+  int num_coarsen_solutions_
+      = 3;  // number of coarsening solutions with different random seed
 
-  // This parameter is set to avoid early-stuck of FM
-  int num_ubfactor_delta_ = 5;  // allowing marginal imbalance to improve QoR
+  // number of vertices used for ILP partitioning
+  // If the number of vertices of a hypergraph is larger than
+  // num_vertices_threshold_ilp_, then we will NOT use ILP-based partitioning
+  int num_vertices_threshold_ilp_ = 50;
 
   // Hypergraph information
   // basic information
@@ -316,16 +486,17 @@ class TritonPart
   int vertex_dimensions_ = 1;     // specified in the hypergraph
   int hyperedge_dimensions_ = 1;  // specified in the hypergraph
   std::vector<std::vector<float>> vertex_weights_;
-  std::vector<VertexType> vertex_types_;  // the vertex type of each instances
   std::vector<std::vector<float>> hyperedge_weights_;
-  std::vector<std::vector<float>> nonscaled_hyperedge_weights_;
-
   // When we create the hypergraph, we ignore all the hyperedges with vertices
   // more than global_net_threshold_
-  HGraph hypergraph_ = nullptr;  // the original hypergraph
+  HGraphPtr hypergraph_
+      = nullptr;  // the hypergraph after removing large hyperedges
+  HGraphPtr original_hypergraph_
+      = nullptr;  // the original hypergraph. In the timing-driven flow,
+                  // the original hypergraph also serves as the timing graph
 
   // Final solution
-  std::vector<int> parts_;  // store the part_id for each vertex
+  std::vector<int> solution_;  // store the part_id for each vertex
 
   // logger
   utl::Logger* logger_ = nullptr;

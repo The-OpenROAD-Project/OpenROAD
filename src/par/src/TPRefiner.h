@@ -36,280 +36,167 @@
 
 #include <set>
 
+#include "TPEvaluator.h"
 #include "TPHypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
 namespace par {
 
+// MATRIX is a two-dimensional vectors
 template <typename T>
-using matrix = std::vector<std::vector<T>>;
-using TP_partition = std::vector<int>;
-using TP_partition_token = std::pair<float, matrix<float>>;
+using MATRIX = std::vector<std::vector<T>>;
+// TP_partition is the partitioning solution
+using TP_partition = std::vector<int>;  //
+// TP_partition_token is the metrics of a given partition
+// it consists of two part:  cost (cutsize), balance for each block
+// for example, TP_partition_token.second[0] is the balance of
+// block_0
+using TP_partition_token = std::pair<float, MATRIX<float>>;
 
+// Vertex Gain is the basic elements of FM
+// We do not use the classical gain-bucket data structure
+// We design our own priority-queue based gain-bucket data structure
+// to support float gain
+class VertexGain;
+using TP_gain_cell = std::shared_ptr<VertexGain>;  // for abbreviation
+
+class HyperedgeGain;
+using TP_gain_hyperedge = std::shared_ptr<HyperedgeGain>;
+
+// Priority-queue based gain bucket
+class TPpriorityQueue;
+using TP_gain_buckets = std::vector<std::shared_ptr<TPpriorityQueue>>;
+using TP_gain_bucket = std::shared_ptr<TPpriorityQueue>;
+
+class GoldenEvaluator;
+using TP_evaluator_ptr = std::shared_ptr<GoldenEvaluator>;
+
+// The algorithm we supported
 enum class RefinerChoice
 {
-  TWO_WAY_FM,
-  GREEDY,
-  FLAT_K_WAY_FM,
-  KPM_FM,
-  ILP_REFINE
+  GREEDY,         // greedy refinement. try to one entire hyperedge each time
+  FLAT_K_WAY_FM,  // direct k-way FM
+  KPM_FM,         // K-way pair-wise FM
+  ILP_REFINE      // ILP-based partitioning (only for two-way since k-way ILP
+                  // partitioning is too timing-consuming)
 };
 
+class TPkWayFMRefine;
+using TP_k_way_fm_refiner_ptr = std::shared_ptr<TPkWayFMRefine>;
+
+class TPkWayPMRefine;
+using TP_k_way_pm_refiner_ptr = std::shared_ptr<TPkWayPMRefine>;
+
+class TPgreedyRefine;
+using TP_greedy_refiner_ptr = std::shared_ptr<TPgreedyRefine>;
+
+class TPilpRefine;
+using TP_ilp_refiner_ptr = std::shared_ptr<TPilpRefine>;
+
+// Vertex Gain is the basic elements of FM
+// We do not use the classical gain-bucket data structure
+// We design our own priority-queue based gain-bucket data structure
+// to support float gain
 class VertexGain
 {
  public:
-  VertexGain()
+  // constructors
+  VertexGain() {}
+
+  VertexGain(const int vertex,
+             const int src_block_id,
+             const int destination_block_id,
+             const float gain,
+             const std::map<int, float> path_cost)
+      : vertex_(vertex),
+        source_part_(src_block_id),
+        destination_part_(destination_block_id),
+        gain_(gain),
+        path_cost_(path_cost)
   {
-    status_ = false;
-    vertex_ = -1;
-    source_part_ = -1;
-    potential_move_ = -1;
-    gain_ = -1;
   }
-  VertexGain(int arg_vertex, float arg_gain)
-      : vertex_(arg_vertex), gain_(arg_gain)
-  {
-    source_part_ = -1;
-    potential_move_ = -1;
-    status_ = true;
-  }
-  VertexGain(int arg_vertex, float arg_gain, int part)
-      : vertex_(arg_vertex), source_part_(part), gain_(arg_gain)
-  {
-    potential_move_ = -1;
-    status_ = true;
-  }
-  VertexGain(int arg_vertex, float arg_gain, std::map<int, float> arg_path_cost)
-      : vertex_(arg_vertex), gain_(arg_gain), path_cost_(arg_path_cost)
-  {
-    source_part_ = -1;
-    potential_move_ = -1;
-    status_ = true;
-  }
-  VertexGain(int arg_vertex,
-             float arg_gain,
-             int part,
-             std::map<int, float> arg_path_cost)
-      : vertex_(arg_vertex),
-        source_part_(part),
-        gain_(arg_gain),
-        path_cost_(arg_path_cost)
-  {
-    potential_move_ = -1;
-    status_ = true;
-  }
-  bool operator<(const VertexGain& vertex_gain) const
-  {
-    if (gain_ > vertex_gain.gain_) {
-      return true;
-    } else if (gain_ == vertex_gain.gain_ && vertex_ < vertex_gain.vertex_) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  bool operator==(const VertexGain& vertex_gain) const
-  {
-    if (gain_ == vertex_gain.gain_ && path_cost_ == vertex_gain.path_cost_) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+
+  // accessor functions
   int GetVertex() const { return vertex_; }
-  int GetPotentialMove() const { return potential_move_; }
-  float GetGain() const { return gain_; }
-  bool GetStatus() const { return status_; }
   void SetVertex(int vertex) { vertex_ = vertex; }
+
+  float GetGain() const { return gain_; }
   void SetGain(float gain) { gain_ = gain; }
-  void SetActive() { status_ = true; }
-  void SetDeactive() { status_ = false; }
-  void SetPotentialMove(int move) { potential_move_ = move; }
-  void SetPathCost(int path_id, float cost) { path_cost_[path_id] = cost; }
-  float GetPathCost(int path_id) { return path_cost_[path_id]; }
-  int GetTotalPaths() const { return path_cost_.size(); }
+
+  // get the delta path cost
+  std::map<int, float> GetPathCost() const { return path_cost_; }
+
   int GetSourcePart() const { return source_part_; }
+  int GetDestinationPart() const { return destination_part_; }
 
  private:
-  int vertex_;
-  int source_part_;
-  int potential_move_;
-  float gain_;
-  bool status_;
-  std::map<int, float> path_cost_;  // the updated path cost after moving vertex
+  int vertex_ = -1;            // vertex id
+  int source_part_ = -1;       // the source block id
+  int destination_part_ = -1;  // the destination block id
+  float gain_
+      = -std::numeric_limits<float>::max();  // gain value of moving this vertex
+  std::map<int, float>
+      path_cost_;  // the updated DELTA path cost after moving vertex
+                   // the path_cost will change because we will dynamically
+                   // update the the weight of the path based on the number of
+                   // the cut on the path
 };
 
-using TP_gain_cell = std::shared_ptr<VertexGain>;
-
-class TPrefiner
+// Hyperedge Gain.
+// Compared to VertexGain, there is no source_part_
+// Because this hyperedge spans multiple blocks
+class HyperedgeGain
 {
  public:
-  TPrefiner(const int num_parts,
-            const int refiner_iters,
-            const RefinerChoice refiner_choice,
-            const int seed,
-            const std::vector<float> e_wt_factors,
-            const float path_wt_factor,
-            const float snaking_wt_factor,
-            utl::Logger* logger)
-      : num_parts_(num_parts),
-        refiner_iters_(refiner_iters),
-        refiner_choice_(refiner_choice),
-        seed_(seed),
-        thr_he_size_skip_(0),
-        e_wt_factors_(e_wt_factors),
-        path_wt_factor_(path_wt_factor),
-        snaking_wt_factor_(snaking_wt_factor),
-        tolerance_(0),
-        logger_(logger)
+  HyperedgeGain() {}
+  HyperedgeGain(const int hyperedge_id,
+                const int destination_part,
+                const float gain,
+                const std::map<int, float>& path_cost)
   {
+    hyperedge_id_ = hyperedge_id;
+    destination_part_ = destination_part;
+    gain_ = gain;
+    path_cost_ = path_cost;
   }
-  TPrefiner(const TPrefiner&) = delete;
-  TPrefiner(TPrefiner&&) = delete;
-  TPrefiner& operator=(const TPrefiner&) = delete;
-  TPrefiner& operator=(TPrefiner&&) = delete;
-  virtual ~TPrefiner() = default;
-  virtual void BalancePartition(const HGraph hgraph,
-                                const matrix<float>& max_block_balance,
-                                std::vector<int>& solution)
-      = 0;
-  virtual void Refine(const HGraph hgraph,
-                      const matrix<float>& max_block_balance,
-                      TP_partition& solution)
-      = 0;
-  // virtual void BalancePartition(HGraph hgraph, TP_partition& solution);
-  matrix<int> GetNetDegrees(const HGraph hgraph, std::vector<int>& solution);
-  void FindNeighbors(const HGraph hgraph,
-                     int& vertex,
-                     std::pair<int, int>& partition_pair,
-                     TP_partition& solution,
-                     std::set<int>& neighbors,
-                     bool k_flag);
-  bool CheckBoundaryVertex(const HGraph hgraph,
-                           const int& v,
-                           const std::pair<int, int> partition_pair,
-                           const matrix<int>& net_degs) const;
-  std::vector<int> FindBoundaryVertices(const HGraph hgraph,
-                                        matrix<int>& net_degs,
-                                        std::pair<int, int>& partition_pair);
-  TP_partition_token CutEvaluator(const HGraph hgraph,
-                                  std::vector<int>& solution);
-  float CalculatePathCost(int path_id,
-                          const HGraph hgraph,
-                          const std::vector<int>& solution,
-                          int v = -1,
-                          int to_pid = -1);
-  void UpdateNeighboringPaths(const std::pair<int, int>& partition_pair,
-                              const std::set<int>& neighbors,
-                              const HGraph hgraph,
-                              const TP_partition& solution,
-                              std::vector<float>& paths_cost);
-  matrix<float> GetBlockBalance(const HGraph hgraph,
-                                std::vector<int>& solution);
-  TP_gain_cell CalculateGain(int v,
-                             int from_pid,
-                             int to_pid,
-                             const HGraph hgraph,
-                             const std::vector<int>& solution,
-                             const std::vector<float>& cur_path_cost,
-                             const matrix<int>& net_degs);
-  bool CheckLegality(const HGraph hgraph,
-                     int to,
-                     std::shared_ptr<VertexGain> v,
-                     const matrix<float>& curr_block_balance,
-                     const matrix<float>& max_block_balance);
-  virtual void RollbackMoves(std::vector<VertexGain>& trace,
-                             matrix<int>& net_degs,
-                             int& best_move,
-                             float& total_delta_gain,
-                             HGraph hgraph,
-                             matrix<float>& curr_block_balance,
-                             std::vector<float>& cur_path_cost,
-                             std::vector<int>& solution)
-      = 0;
-  void InitVisitFlags(int total_ele)
-  {
-    visit_.resize(total_ele);
-    std::fill(visit_.begin(), visit_.end(), false);
-  }
-  void ResetVisitFlags(int total_ele)
-  {
-    std::fill(visit_.begin(), visit_.end(), false);
-  }
-  void InitBoundaryFlags(int total_ele)
-  {
-    boundary_.resize(total_ele);
-    std::fill(boundary_.begin(), boundary_.end(), false);
-  }
-  void ResetBoundaryFlags(int total_ele)
-  {
-    std::fill(boundary_.begin(), boundary_.end(), false);
-  }
-  void ResetVisited(int v) { visit_[v] = false; }
-  void MarkVisited(int v) { visit_[v] = true; }
-  bool GetVisitStatus(int v) const { return visit_[v]; }
-  void MarkBoundary(int v) { boundary_[v] = true; }
-  bool GetBoundaryStatus(int v) const { return boundary_[v]; }
-  void SetHeSizeSkip(const int he_size_skip)
-  {
-    thr_he_size_skip_ = he_size_skip;
-  }
-  int GetHeSizeSkip() const { return thr_he_size_skip_; }
-  void SetSeed(const int seed) { seed_ = seed; }
-  int GetSeed() const { return seed_; }
-  int GetIters() const { return refiner_iters_; }
-  void SetTolerance(float tol) { tolerance_ = tol; }
-  float GetTolerance() const { return tolerance_; }
-  int GetNumParts() const { return num_parts_; }
-  int GetRefinerIters() const { return refiner_iters_; }
-  RefinerChoice GetRefinerChoice() const { return refiner_choice_; }
-  std::vector<float> GetEdgeWtFactors() const { return e_wt_factors_; }
-  float GetPathWtFactor() const { return path_wt_factor_; }
-  float GetSnakingWtFactor() const { return snaking_wt_factor_; }
-  void GeneratePathsAsEdges(const HGraph hgraph);
-  void ReweighTimingWeights(int path,
-                            const HGraph hgraph,
-                            std::vector<int>& solution,
-                            std::vector<float>& path_cost);
-  std::pair<int, int> GetTimingCuts(const HGraph hgraph,
-                                    std::vector<int>& solution);
-  void InitPathCuts(const HGraph hgraph,
-                    std::vector<int>& path_cuts,
-                    std::vector<int>& solution);
-  void SetPathCuts(const int val)
-  {
-    path_cuts_.resize(val);
-    std::fill(path_cuts_.begin(), path_cuts_.end(), 0);
-  }
-  int GetPathCuts(int pathid, const HGraph hgraph, std::vector<int>& solution);
-  void InitPaths(const HGraph hgraph,
-                 std::vector<float>& path_cost,
-                 std::vector<int>& solution);
-  utl::Logger* GetLogger() const { return logger_; }
 
- protected:
-  int num_parts_;
-  int refiner_iters_;
-  RefinerChoice refiner_choice_;
-  int seed_;
-  int thr_he_size_skip_;
-  std::vector<float> e_wt_factors_;
-  std::vector<bool> boundary_;
-  std::vector<bool> visit_;
-  matrix<int> paths_;  // paths represented as set of hyperedges
-  std::vector<int> path_cuts_;
-  float path_wt_factor_;
-  float snaking_wt_factor_;
-  float tolerance_;
-  utl::Logger* logger_ = nullptr;
+  float GetGain() const { return gain_; }
+  void SetGain(float gain) { gain_ = gain; }
+
+  int GetHyperedge() const { return hyperedge_id_; }
+
+  int GetDestinationPart() const { return destination_part_; }
+
+  const std::map<int, float> GetPathCost() const { return path_cost_; }
+
+ private:
+  int hyperedge_id_ = -1;      // hyperedge id
+  int destination_part_ = -1;  // the destination block id
+  float gain_ = 0.0;           // the initialization should be 0.0
+  std::map<int, float>
+      path_cost_;  // the updated DELTA path cost after moving vertex
+                   // the path_cost will change because we will dynamically
+                   // update the the weight of the path based on the number of
+                   // the cut on the path
 };
 
-// Priority queue implementation
+// ------------------------------------------------------------
+// Priority-queue based gain bucket (Only for VertexGain)
+// Actually we implement the priority queue with Max Heap
+// We did not use the STL priority queue becuase we need
+// to record the location of each element (vertex gain)
+// -------------------------------------------------------------
 class TPpriorityQueue
 {
  public:
-  TPpriorityQueue(int total_elements, HGraph hypergraph)
+  // constructors
+  TPpriorityQueue(){};
+
+  TPpriorityQueue(int total_elements,
+                  int maximum_traverse_level,
+                  HGraphPtr hypergraph)
+      : maximum_traverse_level_(maximum_traverse_level)
   {
     vertices_map_.resize(total_elements);
     std::fill(vertices_map_.begin(), vertices_map_.end(), -1);
@@ -317,41 +204,45 @@ class TPpriorityQueue
     hypergraph_ = hypergraph;
     active_ = false;
   }
-  TPpriorityQueue(std::vector<std::shared_ptr<VertexGain>>& vertices,
-                  std::vector<int>& vertices_map)
-      : vertices_(vertices), vertices_map_(vertices_map)
-  {
-  }
-  void HeapifyUp(int index);
-  void HeapifyDown(int index);
+
+  // insert one element (std::shared_ptr<VertexGain>) into the priority queue
   void InsertIntoPQ(std::shared_ptr<VertexGain> element);
+
+  // extract the largest element, i.e.,
+  // get the largest element and remove it from the heap
   std::shared_ptr<VertexGain> ExtractMax();
-  void ChangePriority(int index, float priority);
+
+  // get the largest element without removing it from the heap
   std::shared_ptr<VertexGain> GetMax() { return vertices_.front(); }
-  void RemoveAt(int location);
-  bool CheckIfEmpty() { return vertices_.empty(); }
+
+  // find the vertex gain which can satisfy the balance constraint
+  std::shared_ptr<VertexGain> GetBestCandidate(
+      const MATRIX<float>& curr_block_balance,
+      const MATRIX<float>& upper_block_balance,
+      const MATRIX<float>& lower_block_balance,
+      const HGraphPtr hgraph);
+
+  // update the priority (gain) for the specified vertex
+  void ChangePriority(int vertex_id, std::shared_ptr<VertexGain> new_element);
+
+  // Remove the specified vertex
+  void Remove(int vertex_id);
+
+  // Basic accessors
+  bool CheckIfEmpty() const { return vertices_.empty(); }
   int GetTotalElements() const { return total_elements_; }
-  int GetSizeOfPQ() const { return vertices_.size(); }
+  // the size of the max heap
   int GetSizeOfMap() const { return vertices_map_.size(); }
-  int GetLocationOfVertex(int v) const { return vertices_map_[v]; }
-  std::shared_ptr<VertexGain> GetHeapVertex(int index)
+  // check if the vertex exists
+  bool CheckIfVertexExists(int v) const
   {
-    return vertices_[index];
+    return vertices_map_[v] > -1 ? true : false;
   }
-  std::shared_ptr<VertexGain> GetHeapVertexFromId(int vertex_id)
-  {
-    assert(CheckIfVertexExists(vertex_id) == true);
-    const int map_loc = GetLocationOfVertex(vertex_id);
-    return vertices_[map_loc];
-    // return &(vertices_[map_loc]);
-  }
+  // check the status of the heap
   void SetActive() { active_ = true; }
   void SetDeactive() { active_ = false; }
   bool GetStatus() const { return active_; }
-  bool CheckIfVertexExists(int v)
-  {
-    return GetLocationOfVertex(v) > -1 ? true : false;
-  }
+  // clear the heap
   void Clear()
   {
     active_ = false;
@@ -361,497 +252,538 @@ class TPpriorityQueue
   }
 
  private:
-  int Parent(int& element) { return floor((element - 1) / 2); }
-  int LeftChild(int& element) { return ((2 * element) + 1); }
-  int RightChild(int& element) { return ((2 * element) + 2); }
+  // The max heap (priority queue) is organized as a binary tree
+  // Get parent, left child and right child index
+  // Generic functions of max heap
+  inline int Parent(int element) const { return std::floor((element - 1) / 2); }
 
+  inline int LeftChild(int& element) const { return 2 * element + 1; }
+
+  inline int RightChild(int& element) const { return 2 * element + 2; }
+
+  // This is called when we add a new element
+  void HeapifyUp(int index);
+
+  // This is called when we remove an existing element
+  void HeapifyDown(int index);
+
+  // Compare the two elements
+  // If the gains are equal then pick the vertex with the smaller weight
+  // The hope is doing this will incentivize in preventing corking effect
+  bool CompareElementLargeThan(int index_a, int index_b);
+
+  // private variables
   bool active_;
-  HGraph hypergraph_;
-  std::vector<std::shared_ptr<VertexGain>> vertices_;
-  std::vector<int> vertices_map_;
-  int total_elements_;
+  HGraphPtr hypergraph_;
+  std::vector<std::shared_ptr<VertexGain>> vertices_;  // elements
+  std::vector<int> vertices_map_;  // store the location of vertex_gain for each
+                                   // vertex vertices_map_ always has the size
+                                   // of hypergraph_->num_vertices_
+  int total_elements_;             // number of elements in the priority queue
+  int maximum_traverse_level_ = 25;  // the maximum level of traversing the
+                                     // buckets to solve the "corking effect"
 };
 
-using TP_gain_buckets = std::vector<std::shared_ptr<TPpriorityQueue>>;
-using TP_gain_bucket = std::shared_ptr<TPpriorityQueue>;
-
-class TPtwoWayFM : public TPrefiner
+// ------------------------------------------------------------------------
+// The base class for refinement TPrefiner
+// It implements the most basic functions for refinement
+// and provides the basic parameters.
+// Note that the TPrefiner is an operator class
+// It should not modify the hypergraph itself
+// ------------------------------------------------------------------------
+class TPrefiner
 {
  public:
-  TPtwoWayFM(const int num_parts,
-             const int refiner_iters,
-             const int max_moves,
-             const RefinerChoice refiner_choice,
-             const int seed,
-             const std::vector<float> e_wt_factors,
-             const float path_wt_factor,
-             const float snaking_wt_factor,
-             utl::Logger* logger)
-      : TPrefiner(num_parts,
-                  refiner_iters,
-                  refiner_choice,
-                  seed,
-                  e_wt_factors,
-                  path_wt_factor,
-                  snaking_wt_factor,
-                  logger)
+  TPrefiner(
+      const int num_parts,
+      const int refiner_iters,
+      const float path_wt_factor,  // weight for cutting a critical timing path
+      const float snaking_wt_factor,  // weight for snaking timing paths
+      const int max_move,  // the maximum number of vertices or hyperedges can
+                           // be moved in each pass
+      TP_evaluator_ptr evaluator,  // evaluator
+      utl::Logger* logger)
+      : num_parts_(num_parts),
+        refiner_iters_(refiner_iters),
+        path_wt_factor_(path_wt_factor),
+        snaking_wt_factor_(snaking_wt_factor),
+        max_move_(max_move),
+        refiner_iters_default_(refiner_iters),
+        max_move_default_(max_move)
   {
-    max_moves_ = max_moves;
+    evaluator_ = evaluator;
+    logger_ = logger;
   }
-  void SetMaxPasses(const int passes) { refiner_iters_ = passes; }
-  void BalancePartition(const HGraph hgraph,
-                        const matrix<float>& max_block_balance,
-                        std::vector<int>& solution) override;
-  void Refine(const HGraph hgraph,
-              const matrix<float>& max_block_balance,
-              TP_partition& solution) override;
-  void SetMaxMoves(const int moves) { max_moves_ = moves; }
-  int GetMaxMoves() const { return max_moves_; }
-  // void BalancePartition(HGraph hgraph, TP_partition& solution) override;
 
- private:
-  std::shared_ptr<VertexGain> FindMovableVertex(
-      const int corking_part,
-      const HGraph hgraph,
-      TP_gain_buckets& buckets,
-      const matrix<float>& curr_block_balance,
-      const matrix<float>& max_block_balance);
-  std::shared_ptr<VertexGain> SolveCorkingEffect(
-      const int corking_part,
-      const HGraph hgraph,
-      TP_gain_buckets& buckets,
-      const matrix<float>& curr_block_balance,
-      const matrix<float>& max_block_balance);
-  std::shared_ptr<VertexGain> PickMoveTwoWay(
-      const HGraph hgraph,
-      TP_gain_buckets& buckets,
-      const matrix<float>& curr_block_balance,
-      const matrix<float>& max_block_balance);
-  void RollbackMoves(std::vector<VertexGain>& trace,
-                     matrix<int>& net_degs,
-                     int& best_move,
-                     float& total_delta_gain,
-                     HGraph hgraph,
-                     matrix<float>& curr_block_balance,
-                     std::vector<float>& cur_path_cost,
-                     std::vector<int>& solution) override;
-  void UpdateNeighbors(const HGraph hgraph,
-                       const std::pair<int, int>& partition_pair,
-                       const std::set<int>& neighbors,
-                       const TP_partition& solution,
-                       const std::vector<float>& cur_path_cost,
-                       const matrix<int>& net_degs,
-                       TP_gain_buckets& gain_buckets);
-  void AcceptTwoWayMove(std::shared_ptr<VertexGain> gain_cell,
-                        HGraph hgraph,
-                        std::vector<VertexGain>& moves_trace,
-                        float& total_gain,
+  TPrefiner(const TPrefiner&) = delete;
+  TPrefiner(TPrefiner&) = delete;
+  virtual ~TPrefiner() = default;
+
+  // The main function
+  void Refine(const HGraphPtr hgraph,
+              const MATRIX<float>& upper_block_balance,
+              const MATRIX<float>& lower_block_balance,
+              TP_partition& solution);
+
+  // accessor
+  void SetMaxMove(int max_move)
+  {
+    logger_->report("[INFO] Set the max_move to {}", max_move);
+    max_move_ = max_move;
+  }
+
+  void SetRefineIters(int refiner_iters)
+  {
+    logger_->report("[INFO] Set the refiner_iter to {}", refiner_iters);
+    refiner_iters_ = refiner_iters;
+  }
+
+  void RestoreDefaultParameters()
+  {
+    max_move_ = max_move_default_;
+    refiner_iters_ = refiner_iters_default_;
+    logger_->report("[INFO] Reset the max_move to {}", max_move_);
+    logger_->report("[INFO] Reset the refiner_iters to {}", refiner_iters_);
+  }
+
+ protected:
+  // protected functions
+  virtual float Pass(const HGraphPtr hgraph,
+                     const MATRIX<float>& upper_block_balance,
+                     const MATRIX<float>& lower_block_balance,
+                     MATRIX<float>& block_balance,  // the current block balance
+                     MATRIX<int>& net_degs,         // the current net degree
+                     std::vector<float>& paths_cost,  // the current path cost
+                     TP_partition& solution,
+                     std::vector<bool>& visited_vertices_flag)
+  {
+    logger_->report("Warning: Call from the Refiner class");
+    return 0.0;
+  }
+
+  // By default, v = -1 and to_pid = -1
+  // if to_pid == -1, we are calculate the current cost
+  // of the path;
+  // else if to_pid != -1, we are culculate the cost of the path
+  // after moving v to block to_pid
+  float CalculatePathCost(int path_id,
+                          const HGraphPtr hgraph,
+                          const TP_partition& solution,
+                          int v = -1,      // v = -1 by default
+                          int to_pid = -1  // to_pid = -1 by default
+  ) const;
+
+  // Find all the boundary vertices. The boundary vertices will not include any
+  // fixed vertices
+  std::vector<int> FindBoundaryVertices(
+      const HGraphPtr hgraph,
+      const MATRIX<int>& net_degs,
+      const std::vector<bool>& visited_vertices_flag) const;
+
+  std::vector<int> FindBoundaryVertices(
+      const HGraphPtr hgraph,
+      const MATRIX<int>& net_degs,
+      const std::vector<bool>& visited_vertices_flag,
+      const std::vector<int>& solution,
+      const std::pair<int, int>& partition_pair) const;
+
+  std::vector<int> FindNeighbors(
+      const HGraphPtr hgraph,
+      const int vertex_id,
+      const std::vector<bool>& visited_vertices_flag) const;
+
+  std::vector<int> FindNeighbors(
+      const HGraphPtr hgraph,
+      const int vertex_id,
+      const std::vector<bool>& visited_vertices_flag,
+      const std::vector<int>& solution,
+      const std::pair<int, int>& partition_pair) const;
+
+  // Functions related to move a vertex and hyperedge
+  // -----------------------------------------------------------
+  // The most important function for refinent
+  // If we want to update the score function for other purposes
+  // we should update this function.
+  // -----------------------------------------------------------
+  // calculate the possible gain of moving a vertex
+  // we need following arguments:
+  // from_pid : from block id
+  // to_pid : to block id
+  // solution : the current solution
+  // cur_path_cost : current path cost
+  // net_degs : current net degrees
+  TP_gain_cell CalculateVertexGain(int v,
+                                   int from_pid,
+                                   int to_pid,
+                                   const HGraphPtr hgraph,
+                                   const std::vector<int>& solution,
+                                   const std::vector<float>& cur_path_cost,
+                                   const MATRIX<int>& net_degs) const;
+
+  // accept the vertex gain
+  void AcceptVertexGain(TP_gain_cell gain_cell,
+                        const HGraphPtr hgraph,
                         float& total_delta_gain,
-                        std::pair<int, int>& partition_pair,
+                        std::vector<bool>& visited_vertices_flag,
                         std::vector<int>& solution,
-                        std::vector<float>& paths_cost,
-                        matrix<float>& curr_block_balance,
-                        TP_gain_buckets& gain_buckets,
-                        matrix<int>& net_degs);
-  void InitGainBucketsTwoWay(const HGraph hgraph,
-                             TP_partition& solution,
-                             const matrix<int> net_degs,
-                             const std::vector<int>& boundary_vertices,
-                             const std::vector<float>& cur_path_cost,
-                             TP_gain_buckets& buckets);
-  float Pass(const HGraph hgraph,
-             const matrix<float>& max_block_balance,
-             TP_partition& solution,
-             std::vector<float>& paths_cost);
-  int max_moves_;
+                        std::vector<float>& cur_paths_cost,
+                        MATRIX<float>& curr_block_balance,
+                        MATRIX<int>& net_degs) const;
+
+  // restore the vertex gain
+  void RollBackVertexGain(TP_gain_cell gain_cell,
+                          const HGraphPtr hgraph,
+                          std::vector<bool>& visited_vertices_flag,
+                          std::vector<int>& solution,
+                          std::vector<float>& cur_path_cost,
+                          MATRIX<float>& curr_block_balance,
+                          MATRIX<int>& net_degs) const;
+
+  // check if we can move the vertex to some block
+  bool CheckVertexMoveLegality(int v,         // vertex_id
+                               int to_pid,    // to block id
+                               int from_pid,  // from block id
+                               const HGraphPtr hgraph,
+                               const MATRIX<float>& curr_block_balance,
+                               const MATRIX<float>& upper_block_balance,
+                               const MATRIX<float>& lower_block_balance) const;
+
+  // calculate the possible gain of moving a entire hyperedge
+  // We can view the process of moving the vertices in hyperege
+  // one by one, then restore the moving sequence to make sure that
+  // the current status is not changed. Solution should not be const
+  // calculate the possible gain of moving a hyperedge
+  TP_gain_hyperedge CalculateHyperedgeGain(
+      int hyperedge_id,
+      int to_pid,
+      const HGraphPtr hgraph,
+      std::vector<int>& solution,
+      const std::vector<float>& cur_paths_cost,
+      const MATRIX<int>& net_degs) const;
+
+  // check if we can move the hyperegde into some block
+  bool CheckHyperedgeMoveLegality(
+      int e,       // hyperedge id
+      int to_pid,  // to block id
+      const HGraphPtr hgraph,
+      const std::vector<int>& solution,
+      const MATRIX<float>& curr_block_balance,
+      const MATRIX<float>& upper_block_balance,
+      const MATRIX<float>& lower_block_balance) const;
+
+  // accpet the hyperedge gain
+  void AcceptHyperedgeGain(TP_gain_hyperedge hyperedge_gain,
+                           const HGraphPtr hgraph,
+                           float& total_delta_gain,
+                           std::vector<int>& solution,
+                           std::vector<float>& cur_paths_cost,
+                           MATRIX<float>& curr_block_balance,
+                           MATRIX<int>& net_degs) const;
+
+  // Note that there is no RollBackHyperedgeGain
+  // Because we only use greedy hyperedge refinement
+
+  // user specified parameters
+  const int num_parts_ = 2;  // number of blocks in the partitioning
+  int refiner_iters_ = 2;    // number of refinement iterations
+  const float path_wt_factor_
+      = 1.0;  // the cost for cutting a critical timing path once.
+              // If a critical path is cut by 3 times,
+              // the cost is defined as 3 * path_wt_factor_ * weight_of_path
+  const float snaking_wt_factor_
+      = 1.0;  // the cost of introducing a snaking timing path, see our paper
+              // for detailed explanation of snaking timing paths
+  int max_move_
+      = 50;  // the maxinum number of vertices can be moved in each pass
+  // defualt parameters
+  // during partitioning, we may need to update the value
+  // of refiner_iters_ and max_move_ for the coarsest hypergraphs
+  const int refiner_iters_default_ = 2;
+  const int max_move_default_ = 50;
+
+  utl::Logger* logger_ = nullptr;
+  TP_evaluator_ptr evaluator_ = nullptr;
 };
 
-using TP_two_way_refining_ptr = std::shared_ptr<TPtwoWayFM>;
-
-class TPkWayFM : public TPrefiner
+// --------------------------------------------------------------------------
+// FM-based direct k-way refinement
+// --------------------------------------------------------------------------
+class TPkWayFMRefine : public TPrefiner
 {
  public:
-  TPkWayFM(const int num_parts,
-           const int refiner_iters,
-           const int max_moves,
-           const RefinerChoice refiner_choice,
-           const int seed,
-           const std::vector<float> e_wt_factors,
-           const float path_wt_factor,
-           const float snaking_wt_factor,
-           utl::Logger* logger)
+  // We need the constructor here.  We have one more parameter related to
+  // "corking effect"
+  TPkWayFMRefine(
+      const int num_parts,
+      const int refiner_iters,
+      const float path_wt_factor,  // weight for cutting a critical timing path
+      const float snaking_wt_factor,  // weight for snaking timing paths
+      const int max_move,  // the maximum number of vertices or hyperedges can
+                           // be moved in each pass
+      const int total_corking_passes,
+      TP_evaluator_ptr evaluator,  // evaluator
+      utl::Logger* logger)
       : TPrefiner(num_parts,
                   refiner_iters,
-                  refiner_choice,
-                  seed,
-                  e_wt_factors,
                   path_wt_factor,
                   snaking_wt_factor,
-                  logger)
+                  max_move,
+                  evaluator,
+                  logger),
+        total_corking_passes_(total_corking_passes)
   {
-    max_moves_ = max_moves;
   }
-  void Refine(const HGraph hgraph,
-              const matrix<float>& max_block_balance,
-              TP_partition& solution) override;
-  void SetMaxMoves(const int moves) { max_moves_ = moves; }
-  int GetMaxMoves() const { return max_moves_; }
-  void BalancePartition(const HGraph hgraph,
-                        const matrix<float>& max_block_balance,
-                        TP_partition& solution) override
+
+  // Mark these two functions as public.
+  // Because they will be called by multi-threading
+  // Initialize the single bucket
+  void InitializeSingleGainBucket(
+      TP_gain_buckets& buckets,
+      int to_pid,  // move the vertex into this block (block_id = to_pid)
+      const HGraphPtr hgraph,
+      const std::vector<int>& boundary_vertices,
+      const MATRIX<int>& net_degs,
+      const std::vector<float>& cur_paths_cost,
+      const TP_partition& solution) const;
+
+  // After moving one vertex, the gain of its neighbors will also need
+  // to be updated. This function is used to update the gain of neighbor
+  // vertices notices that the neighbors has been calculated based on solution,
+  // visited status, boundary vertices status
+  void UpdateSingleGainBucket(int part,
+                              TP_gain_buckets& buckets,
+                              const HGraphPtr hgraph,
+                              const std::vector<int>& neighbors,
+                              const MATRIX<int>& net_degs,
+                              const std::vector<float>& cur_paths_cost,
+                              const TP_partition& solution) const;
+
+ protected:
+  // The main function for the FM-based refinement
+  // In each pass, we only move the boundary vertices
+  float Pass(const HGraphPtr hgraph,
+             const MATRIX<float>& upper_block_balance,
+             const MATRIX<float>& lower_block_balance,
+             MATRIX<float>& block_balance,        // the current block balance
+             MATRIX<int>& net_degs,               // the current net degree
+             std::vector<float>& cur_paths_cost,  // the current path cost
+             TP_partition& solution,
+             std::vector<bool>& visited_vertices_flag) override;
+
+  // gain bucket related functions
+  // Initialize the gain buckets in parallel
+  void InitializeGainBucketsKWay(TP_gain_buckets& buckets,
+                                 const HGraphPtr hgraph,
+                                 const std::vector<int>& boundary_vertices,
+                                 const MATRIX<int>& net_degs,
+                                 const std::vector<float>& cur_paths_cost,
+                                 const TP_partition& solution) const;
+
+  // Determine which vertex gain to be picked
+  std::shared_ptr<VertexGain> PickMoveKWay(
+      TP_gain_buckets& buckets,
+      const HGraphPtr hgraph,
+      const MATRIX<float>& curr_block_balance,
+      const MATRIX<float>& upper_block_balance,
+      const MATRIX<float>& lower_block_balance) const;
+
+  // move one vertex based on the calculated gain_cell
+  void AcceptKWayMove(std::shared_ptr<VertexGain> gain_cell,
+                      TP_gain_buckets& gain_buckets,
+                      std::vector<TP_gain_cell>& moves_trace,
+                      float& total_delta_gain,
+                      std::vector<bool>& visited_vertices_flag,
+                      HGraphPtr hgraph,
+                      MATRIX<float>& curr_block_balance,
+                      MATRIX<int>& net_degs,
+                      std::vector<float>& cur_paths_cost,
+                      std::vector<int>& solution) const;
+
+  // Remove vertex from a heap
+  // Remove the vertex id related vertex gain
+  void HeapEleDeletion(int vertex_id, int part, TP_gain_buckets& buckets) const;
+
+  // variables
+  int total_corking_passes_ = 25;  // the maximum level of traversing the
+                                   // buckets to solve the "corking effect"
+};
+
+// ------------------------------------------------------------------------------
+// K-way pair-wise FM refinement
+// ------------------------------------------------------------------------------
+// The motivation is that FM can achieve better performance for 2-way
+// partitioning than k-way partitioning. So we decompose the k-way partitioning
+// into multiple 2-way partitioning through maximum matching. In the first
+// iteration, the maximum matching is based on connectivity between each blocks.
+// In the remaing iterations, the maximum matching is based on the delta gain
+// for each block. Based on the paper of pair-wise PM, we can not keep using
+// connectivity based maximum matching.  Otherwise, we may easily got stuck in
+// local minimum. We use multiple multiple member functions of TPkWayFMRefine
+// especially the functions related to gain buckets
+class TPkWayPMRefine : public TPkWayFMRefine
+{
+ public:
+  TPkWayPMRefine(
+      const int num_parts,
+      const int refiner_iters,
+      const float path_wt_factor,  // weight for cutting a critical timing path
+      const float snaking_wt_factor,  // weight for snaking timing paths
+      const int max_move,  // the maximum number of vertices or hyperedges can
+                           // be moved in each pass
+      const int total_corking_passes,
+      TP_evaluator_ptr evaluator,  // evaluator
+      utl::Logger* logger)
+      : TPkWayFMRefine(num_parts,
+                       refiner_iters,
+                       path_wt_factor,
+                       snaking_wt_factor,
+                       max_move,
+                       total_corking_passes,
+                       evaluator,
+                       logger)
   {
   }
 
  private:
-  float Pass(const HGraph hgraph,
-             const matrix<float>& max_block_balance,
+  // In each pass, we only move the boundary vertices
+  // here we pass block_balance and net_degrees as reference
+  // because we only move a few vertices during each pass
+  // i.e., block_balance and net_degs will not change too much
+  // so we precompute the block_balance and net_degs
+  // the return value is the gain improvement
+  float Pass(const HGraphPtr hgraph,
+             const MATRIX<float>& upper_block_balance,
+             const MATRIX<float>& lower_block_balance,
+             MATRIX<float>& block_balance,        // the current block balance
+             MATRIX<int>& net_degs,               // the current net degree
+             std::vector<float>& cur_paths_cost,  // the current path cost
              TP_partition& solution,
-             std::vector<float>& paths_cost);
-  void HeapEleDeletion(int vertex_id, int part, TP_gain_buckets& buckets);
-  void InitializeSingleGainBucket(TP_gain_buckets& buckets,
-                                  int to_pid,
-                                  const std::vector<int>& boundary_vertices,
-                                  const HGraph hgraph,
-                                  const TP_partition& solution,
-                                  const std::vector<float>& cur_path_cost,
-                                  const matrix<int>& net_degs);
-  void UpdateSingleGainBucket(int part,
-                              const std::set<int>& neighbors,
-                              TP_gain_buckets& buckets,
-                              const HGraph hgraph,
-                              const TP_partition& solution,
-                              const std::vector<float>& cur_path_cost,
-                              const matrix<int>& net_degs);
-  void InitializeGainBucketsKWay(const HGraph hgraph,
-                                 const TP_partition& solution,
-                                 const matrix<int>& net_degs,
-                                 const std::vector<int>& boundary_vertices,
-                                 const std::vector<float>& cur_path_cost,
-                                 TP_gain_buckets& buckets);
-  void AcceptKWayMove(std::shared_ptr<VertexGain> gain_cell,
-                      HGraph hgraph,
-                      std::vector<VertexGain>& moves_trace,
-                      float& total_gain,
-                      float& total_delta_gain,
-                      std::pair<int, int>& partition_pair,
-                      std::vector<int>& solution,
-                      std::vector<float>& paths_cost,
-                      matrix<float>& curr_block_balance,
-                      TP_gain_buckets& gain_buckets,
-                      matrix<int>& net_degs);
-  void RollbackMoves(std::vector<VertexGain>& trace,
-                     matrix<int>& net_degs,
-                     int& best_move,
-                     float& total_delta_gain,
-                     HGraph hgraph,
-                     matrix<float>& curr_block_balance,
-                     std::vector<float>& cur_path_cost,
-                     std::vector<int>& solution) override
-  {
-  }
-  void RollbackMovesKWay(std::vector<VertexGain>& trace,
-                         matrix<int>& net_degs,
-                         int& best_move,
-                         float& total_delta_gain,
-                         HGraph hgraph,
-                         matrix<float>& curr_block_balance,
-                         std::vector<float>& cur_path_cost,
-                         std::vector<int>& solution,
-                         std::vector<int>& partition_trace);
-  std::shared_ptr<VertexGain> PickMoveKWay(
-      const HGraph hgraph,
+             std::vector<bool>& visited_vertices_flag) override;
+
+  // The function to calculate the matching_scores
+  void CalculateMaximumMatch(
+      std::vector<std::pair<int, int>>& maximum_matches,
+      const std::map<std::pair<int, int>, float>& matching_scores) const;
+
+  // Perform 2-way FM between blocks in partition pair
+  float PerformPairFM(
+      const HGraphPtr hgraph,
+      const MATRIX<float>& upper_block_balance,
+      const MATRIX<float>& lower_block_balance,
+      MATRIX<float>& block_balance,    // the current block balance
+      MATRIX<int>& net_degs,           // the current net degree
+      std::vector<float>& paths_cost,  // the current path cost
+      TP_partition& solution,
       TP_gain_buckets& buckets,
-      const matrix<float>& curr_block_balance,
-      const matrix<float>& max_block_balance);
-  int max_moves_;
+      std::vector<bool>& visited_vertices_flag,
+      const std::pair<int, int>& partition_pair) const;
+
+  // gain bucket related functions
+  // Initialize the gain buckets in parallel
+  void InitializeGainBucketsPM(TP_gain_buckets& buckets,
+                               const HGraphPtr hgraph,
+                               const std::vector<int>& boundary_vertices,
+                               const MATRIX<int>& net_degs,
+                               const std::vector<float>& cur_paths_cost,
+                               const TP_partition& solution,
+                               const std::pair<int, int>& partition_pair) const;
+
+  // variables
+  // the connectivity between different blocks.
+  // (block_a, block_b, score) where block_a < block_b
+  std::map<std::pair<int, int>, float> pre_matching_connectivity_;
 };
 
-using TP_k_way_refining_ptr = std::shared_ptr<TPkWayFM>;
-
+// ------------------------------------------------------------------------------
+// K-way hyperedge greedy refinement
+// Basically during hyperedge greedy refinement, we try to move the straddle
+// hyperedge into some block, to minimize the cost.
+// Moving the entire hyperedge can help to escape the local minimum caused
+// by moving vertex one by one
+// ------------------------------------------------------------------------------
 class TPgreedyRefine : public TPrefiner
 {
  public:
-  TPgreedyRefine(const int num_parts,
-                 const int refiner_iters,
-                 const int max_moves,
-                 const RefinerChoice refiner_choice,
-                 const int seed,
-                 const std::vector<float> e_wt_factors,
-                 const float path_wt_factor,
-                 const float snaking_wt_factor,
-                 utl::Logger* logger)
+  TPgreedyRefine(
+      const int num_parts,
+      const int refiner_iters,
+      const float path_wt_factor,  // weight for cutting a critical timing path
+      const float snaking_wt_factor,  // weight for snaking timing paths
+      const int max_move,  // the maximum number of vertices or hyperedges can
+                           // be moved in each pass
+      TP_evaluator_ptr evaluator,  // evaluator
+      utl::Logger* logger)
       : TPrefiner(num_parts,
                   refiner_iters,
-                  refiner_choice,
-                  seed,
-                  e_wt_factors,
                   path_wt_factor,
                   snaking_wt_factor,
-                  logger),
-        max_moves_(0)
-  {
-  }
-  void SetMaxMoves(const int moves) { max_moves_ = moves; }
-  int GetMaxMoves() const { return max_moves_; }
-  void Refine(const HGraph hgraph,
-              const matrix<float>& max_vertex_balance,
-              TP_partition& solution) override;
-  void BalancePartition(const HGraph hgraph,
-                        const matrix<float>& max_block_balance,
-                        std::vector<int>& solution) override
-  {
-  }
-  void RollbackMoves(std::vector<VertexGain>& trace,
-                     matrix<int>& net_degs,
-                     int& best_move,
-                     float& total_delta_gain,
-                     HGraph hgraph,
-                     matrix<float>& curr_block_balance,
-                     std::vector<float>& cur_path_cost,
-                     std::vector<int>& solution) override
+                  max_move,
+                  evaluator,
+                  logger)
   {
   }
 
  private:
-  float CalculateGain(HGraph hgraph,
-                      int straddle_he,
-                      int from,
-                      int to,
-                      std::vector<int>& straddle,
-                      matrix<int>& net_degs);
-  void CommitStraddle(int to,
-                      HGraph hgraph,
-                      std::vector<int>& straddle,
-                      TP_partition& solution,
-                      matrix<int>& net_degs,
-                      matrix<float>& block_balance);
-  float MoveStraddle(int he,
-                     std::vector<int>& straddle_0,
-                     std::vector<int>& straddle_1,
-                     HGraph hgraph,
-                     TP_partition& solution,
-                     matrix<int>& net_degs,
-                     matrix<float>& block_balance,
-                     const matrix<float>& max_block_balance);
-  float Pass(HGraph hgraph,
+  // In each pass, we only move the boundary vertices
+  // here we pass block_balance and net_degrees as reference
+  // because we only move a few vertices during each pass
+  // i.e., block_balance and net_degs will not change too much
+  // so we precompute the block_balance and net_degs
+  // the return value is the gain improvement
+  float Pass(const HGraphPtr hgraph,
+             const MATRIX<float>& upper_block_balance,
+             const MATRIX<float>& lower_block_balance,
+             MATRIX<float>& block_balance,        // the current block balance
+             MATRIX<int>& net_degs,               // the current net degree
+             std::vector<float>& cur_paths_cost,  // the current path cost
              TP_partition& solution,
-             const matrix<float>& max_vertex_balance);
-  int max_moves_;
+             std::vector<bool>& visited_vertices_flag) override;
 };
 
-using TP_greedy_refiner_ptr = std::shared_ptr<TPgreedyRefine>;
-
-class TPilpGraph
-{
- public:
-  TPilpGraph(const int vertex_dimensions,
-             const int hyperedge_dimensions,
-             const bool fixed_flag,
-             std::vector<int> fixed,
-             const matrix<int> hyperedges,
-             const matrix<float> vertex_weights,
-             const matrix<float> hyperedge_weights)
-  {
-    num_vertices_ = static_cast<int>(vertex_weights.size());
-    num_hyperedges_ = static_cast<int>(hyperedge_weights.size());
-    vertex_dimensions_ = vertex_dimensions;
-    hyperedge_dimensions_ = hyperedge_dimensions;
-    vertex_weights_ = vertex_weights;
-    hyperedge_weights_ = hyperedge_weights;
-    fixed_flag_ = fixed_flag;
-    fixed_ = fixed;
-    // hyperedges
-    eind_.clear();
-    eptr_.clear();
-    eptr_.push_back(static_cast<int>(eind_.size()));
-    for (const auto& hyperedge : hyperedges) {
-      eind_.insert(eind_.end(), hyperedge.begin(), hyperedge.end());
-      eptr_.push_back(static_cast<int>(eind_.size()));
-    }
-  }
-  const int GetVertexDimensions() const { return vertex_dimensions_; }
-  const int GetHyperedgeDimensions() const { return hyperedge_dimensions_; }
-  const int GetNumVertices() const { return num_vertices_; }
-  const int GetNumHyperedges() const { return num_hyperedges_; }
-  std::pair<int, int> GetEdgeIndices(const int he) const
-  {
-    return std::make_pair(eptr_[he], eptr_[he + 1]);
-  }
-  std::vector<float> const& GetVertexWeight(const int& v) const
-  {
-    return vertex_weights_[v];
-  }
-  std::vector<float> const& GetHyperedgeWeight(const int& e) const
-  {
-    return hyperedge_weights_[e];
-  }
-  bool CheckFixedStatus(const int v) const { return fixed_[v] > -1; }
-  int GetFixedPart(const int v) const { return fixed_[v]; }
-  bool CheckFixedFlag() const { return fixed_flag_; }
-  std::vector<float> GetTotalVertexWeights()
-  {
-    std::vector<float> total_wt(GetVertexDimensions(), 0.0);
-    for (auto vWt : vertex_weights_) {
-      total_wt = total_wt + vWt;
-    }
-    return total_wt;
-  }
-  std::vector<int> eind_;
-
- private:
-  int hyperedge_dimensions_;
-  int vertex_dimensions_;
-  int num_vertices_;
-  int num_hyperedges_;
-  bool fixed_flag_;
-  std::vector<int> fixed_;
-  std::vector<int> eptr_;
-  matrix<float> vertex_weights_;
-  matrix<float> hyperedge_weights_;
-};
-
+// ------------------------------------------------------------------------------
+// K-way ILP Based Refinement
+// ILP Based Refinement is usually very slow and cannot handle path related
+// cost.  Please try to avoid using ILP-Based Refinement for K-way partitioning
+// and path-related partitioning.  But ILP Based Refinement is good for 2=way
+// min-cut problem
+// --------------------------------------------------------------------------------
 class TPilpRefine : public TPrefiner
 {
  public:
-  TPilpRefine(const int num_parts,
-              const int refiner_iters,
-              const int max_moves,
-              const RefinerChoice refiner_choice,
-              const int seed,
-              const std::vector<float> e_wt_factors,
-              const float path_wt_factor,
-              const float snaking_wt_factor,
-              utl::Logger* logger,
-              int wavefront)
+  TPilpRefine(
+      const int num_parts,
+      const int refiner_iters,
+      const float path_wt_factor,  // weight for cutting a critical timing path
+      const float snaking_wt_factor,  // weight for snaking timing paths
+      const int max_move,  // the maximum number of vertices or hyperedges can
+                           // be moved in each pass
+      TP_evaluator_ptr evaluator,  // evaluator
+      utl::Logger* logger)
       : TPrefiner(num_parts,
                   refiner_iters,
-                  refiner_choice,
-                  seed,
-                  e_wt_factors,
                   path_wt_factor,
                   snaking_wt_factor,
+                  max_move,
+                  evaluator,
                   logger)
   {
-    wavefront_ = wavefront;
-    he_thr_ = 0;
   }
-  void SolveIlpInstanceOR(std::shared_ptr<TPilpGraph> hgraph,
-                          TP_partition& refined_partition,
-                          const matrix<float>& max_block_balance);
-  void SolveIlpInstance(std::shared_ptr<TPilpGraph> hgraph,
-                        TP_partition& refined_partition,
-                        const matrix<float>& max_block_balance);
-  void Refine(const HGraph hgraph,
-              const matrix<float>& max_vertex_balance,
-              TP_partition& solution) override;
-  void BalancePartition(const HGraph hgraph,
-                        const matrix<float>& max_block_balance,
-                        std::vector<int>& solution) override
-  {
-  }
-  void RollbackMoves(std::vector<VertexGain>& trace,
-                     matrix<int>& net_degs,
-                     int& best_move,
-                     float& total_delta_gain,
-                     HGraph hgraph,
-                     matrix<float>& curr_block_balance,
-                     std::vector<float>& cur_path_cost,
-                     std::vector<int>& solution) override
-  {
-  }
-  void SetHyperedgeThr(const int thr) { he_thr_ = thr; }
-  int GetHyperedgeThr() const { return he_thr_; }
-  int GetWavefront() const { return wavefront_; }
 
  private:
-  void Remap(std::vector<int>& partition, std::vector<int>& refined_partition);
-  std::shared_ptr<TPilpGraph> ContractHypergraph(HGraph hgraph,
-                                                 TP_partition& solution,
-                                                 int wavefront);
-  void OrderVertexSet(HGraph hgraph,
-                      std::vector<int>& vertices,
-                      TP_partition& solution,
-                      matrix<int>& net_degs,
-                      matrix<float>& block_balance,
-                      const matrix<float>& max_block_balance);
-  void ContractNonBoundary(HGraph hgraph,
-                           std::vector<int>& vertices,
-                           TP_partition& solution);
-  float CalculateGain(int vertex,
-                      TP_partition& solution,
-                      HGraph hgraph,
-                      matrix<int>& net_degs);
-  int wavefront_;
-  int he_thr_;
-  std::vector<int> cluster_map_;
+  // In each pass, we only move the boundary vertices
+  // here we pass block_balance and net_degrees as reference
+  // because we only move a few vertices during each pass
+  // i.e., block_balance and net_degs will not change too much
+  // so we precompute the block_balance and net_degs
+  // the return value is the gain improvement
+  float Pass(const HGraphPtr hgraph,
+             const MATRIX<float>& upper_block_balance,
+             const MATRIX<float>& lower_block_balance,
+             MATRIX<float>& block_balance,        // the current block balance
+             MATRIX<int>& net_degs,               // the current net degree
+             std::vector<float>& cur_paths_cost,  // the current path cost
+             TP_partition& solution,
+             std::vector<bool>& visited_vertices_flag);
 };
 
-using TP_ilp_refiner_ptr = std::shared_ptr<TPilpRefine>;
-
-// structure to save partition pair for pairwise FM
-/*
-class TPpartitionPair
-{
- public:
-  TPpartitionPair(const i, const int x, const int y, const float xcon)
-      : pair_id_(i), pair_x_(x), pair_y_(y), connectivity_(xcon)
-  {
-  }
-  void SetId(const int i) { pair_id_ = i; }
-  int GetId() const { return pair_id_; }
-  void SetPairX(const int x) { pair_x_ = x; }
-  void SetPairY(const int y) { pair_y_ = y; }
-  int GetPairX() const { return pair_x_; }
-  int GetPairY() const { return pair_y_; }
-  void SetConnectivity(const float connection) { connectivity_ = connection; }
-  float GetConnectivity() const { return connectivity_; }
-
- private:
-  int pair_id_;
-  int pair_x_;
-  int pair_y_;
-  float connectivity_;
-};
-
-using TP_partition_pair_ptr = std::shared_ptr<TPpartitionPair>;
-
-class TPkpm : public TPrefiner, public TPtwoWayFM
-{
- public:
-  TPkpm(const int num_parts,
-        const int refiner_iters,
-        const int max_moves,
-        const RefinerChoice refiner_choice,
-        const int seed,
-        const std::vector<float> e_wt_factors,
-        const float path_wt_factor,
-        const float snaking_wt_factor,
-        utl::Logger* logger)
-      : TPrefiner(num_parts,
-                  refiner_iters,
-                  refiner_choice,
-                  seed,
-                  e_wt_factors,
-                  path_wt_factor,
-                  snaking_wt_factor,
-                  logger)
-  {
-    max_moves_ = max_moves;
-  }
-  void Refine(const HGraph hgraph,
-              const matrix<float>& max_vertex_balance,
-              TP_partition& solution) override;
-  void BalancePartition(const HGraph hgraph,
-                        const matrix<float>& max_block_balance,
-                        std::vector<int>& solution) override;
-
- private:
-  void FindTightlyConnectedPairs(const HGraph hgraph,
-                                 std::vector<int>& solution);
-  float CalculateSpan(const HGraph hgraph,
-                      int& from_pid,
-                      int& to_pid,
-                      std::vector<int>& solution);
-  int max_moves_;
-};*/
 }  // namespace par

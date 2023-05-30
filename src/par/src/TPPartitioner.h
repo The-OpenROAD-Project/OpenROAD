@@ -33,25 +33,18 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
-//
+
 // This file define the Paritioner class
 // Paritioner is an operator class, which takes a hypergraph
 // and perform partitioning based on multiple options.
 // The Partitioner class implements following types of partitioning algorithm:
-// 1) Greedy partitioning
-// 2) Priority-queue FM-based partitioning
-// 3) ILP-based partitioning
-// 4) Iterative k-way partitioning
-// 5) Direct k-way partitioning
-// Currently we only consider the balance constraints on vertices
-// TO DOs:
-//    1) Handle the constraints on pins
-//
-//
-#include <set>
+// 1) Random Paritioning (INIT_RANDOM)
+// 2) VILE Partitioning (INIT_VILE) : randomly pick one vertex into each block,
+// then put remaining vertices into the first block 3) ILP-based Partitioning
+// (INIT_DIRECT_ILP)
 
+#include "TPEvaluator.h"
 #include "TPHypergraph.h"
-#include "TPRefiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
@@ -61,101 +54,90 @@ namespace par {
 enum class PartitionType
 {
   INIT_RANDOM,
+  INIT_RANDOM_VILE,
   INIT_VILE,
-  INIT_DIRECT_ILP,
-  INIT_DIRECT_WARM_ILP,
+  INIT_DIRECT_ILP
 };
 
-using TP_partition_token = std::pair<float, std::vector<std::vector<float>>>;
 template <typename T>
-using matrix = std::vector<std::vector<T>>;
+using MATRIX = std::vector<std::vector<T>>;
+
+class TPpartitioner;
+using TP_partitioning_ptr = std::shared_ptr<TPpartitioner>;
 
 class TPpartitioner
 {
  public:
+  // Note that please do NOT set ilp_accelerator_factor here
   TPpartitioner(int num_parts,
-                const std::vector<float>& e_wt_factors,
-                float path_wt_factor,
-                float snaking_wt_factor,
-                float early_stop_ratio,
-                int max_num_fm_pass,
                 int seed,
-                TP_two_way_refining_ptr tritonpart_two_way_refiner,
+                TP_evaluator_ptr evaluator,  // evaluator
                 utl::Logger* logger)
-      : tritonpart_two_way_refiner_(tritonpart_two_way_refiner),
-        num_parts_(num_parts),
-        e_wt_factors_(e_wt_factors),
-        path_wt_factor_(path_wt_factor),
-        snaking_wt_factor_(snaking_wt_factor),
-        seed_(seed),
-        logger_(logger)
+      : num_parts_(num_parts), seed_(seed)
   {
-  }
-  TPpartitioner(int num_parts,
-                const std::vector<float>& e_wt_factors,
-                float path_wt_factor,
-                float snaking_wt_factor,
-                float early_stop_ratio,
-                int max_num_fm_pass,
-                int seed,
-                TP_k_way_refining_ptr tritonpart_k_way_refiner,
-                utl::Logger* logger)
-      : tritonpart_k_way_refiner_(tritonpart_k_way_refiner),
-        num_parts_(num_parts),
-        e_wt_factors_(e_wt_factors),
-        path_wt_factor_(path_wt_factor),
-        snaking_wt_factor_(snaking_wt_factor),
-        seed_(seed),
-        logger_(logger)
-  {
+    ilp_accelerator_factor_ = 1.0;  // set to default value
+    evaluator_ = evaluator;
+    logger_ = logger;
   }
 
-  TP_partition_token GoldenEvaluator(const HGraph hgraph,
-                                     std::vector<int>& solution,
-                                     bool print_flag = true);
-  void TimingCutsEvaluator(const HGraph hgraph, std::vector<int>& solution);
-  void Partition(const HGraph hgraph,
-                 const matrix<float>& max_block_balance,
-                 std::vector<int>& solutione);
-  void SetPartitionerSeed(int seed) { seed_ = seed; }
-  int GetPartitionerSeed() const { return seed_; }
-  void SetPartitionerChoice(const PartitionType choice)
+  // The main function of Partitioning
+  void Partition(const HGraphPtr hgraph,
+                 const MATRIX<float>& upper_block_balance,
+                 const MATRIX<float>& lower_block_balance,
+                 std::vector<int>& solution,
+                 PartitionType partitioner_choice) const;
+
+  void SetRandomSeed(int seed)
   {
-    partitioner_choice_ = choice;
+    seed_ = seed;
+    // logger_->report("Set the random seed to {}", seed_);
   }
-  PartitionType GetPartitionerChoice() const { return partitioner_choice_; }
-  float CalculatePathCost(int path_id,
-                          const HGraph hgraph,
-                          const std::vector<int>& solution,
-                          int v = -1,
-                          int to_pid = -1);
+
+  void EnableIlpAcceleration(float acceleration_factor)
+  {
+    ilp_accelerator_factor_ = acceleration_factor;
+    ilp_accelerator_factor_ = std::max(ilp_accelerator_factor_, 0.0f);
+    ilp_accelerator_factor_ = std::min(ilp_accelerator_factor_, 1.0f);
+    logger_->report("[INFO] Set ILP accelerator factor to {}",
+                    ilp_accelerator_factor_);
+  }
+
+  void DisableIlpAcceleration()
+  {
+    ilp_accelerator_factor_ = 1.0;
+    logger_->report("[INFO] Reset ILP accelerator factor to {}",
+                    ilp_accelerator_factor_);
+  }
 
  private:
-  matrix<float> GetBlockBalance(const HGraph hgraph,
-                                std::vector<int>& solution);
-  void InitPartVileTwoWay(const HGraph hgraph,
-                          const matrix<float>& max_block_balance,
-                          std::vector<int>& solution);
-  void InitPartVileKWay(const HGraph hgraph,
-                        const matrix<float>& max_block_balance,
-                        std::vector<int>& solution);
-  void RandomPart(const HGraph graph,
-                  const matrix<float>& max_block_balance,
-                  std::vector<int>& solution);
-  void OptimalPartCplexWarmStart(const HGraph graph,
-                                 const matrix<float>& max_block_balance,
-                                 std::vector<int>& solution);
-  TP_two_way_refining_ptr tritonpart_two_way_refiner_ = nullptr;
-  TP_k_way_refining_ptr tritonpart_k_way_refiner_ = nullptr;
-  int num_parts_;
-  std::vector<float> e_wt_factors_;
-  float path_wt_factor_;
-  float snaking_wt_factor_;
-  int seed_;
-  PartitionType partitioner_choice_ = PartitionType::INIT_RANDOM;
+  // random partitioning
+  // Different to other random partitioning,
+  // we enable two modes of random partitioning.
+  // If vile_mode == false, we try to generate balanced random partitioning
+  // If vile_mode == true,  we try to generate unbalanced random partitioning
+  void RandomPart(const HGraphPtr hgraph,
+                  const MATRIX<float>& upper_block_balance,
+                  const MATRIX<float>& lower_block_balance,
+                  std::vector<int>& solution,
+                  bool vile_mode = false) const;
+
+  // ILP-based partitioning
+  void ILPPart(const HGraphPtr hgraph,
+               const MATRIX<float>& upper_block_balance,
+               const MATRIX<float>& lower_block_balance,
+               std::vector<int>& solution) const;
+
+  // Vile partitioning
+  void VilePart(const HGraphPtr hgraph, std::vector<int>& solution) const;
+
+  const int num_parts_ = 2;
+  float ilp_accelerator_factor_
+      = 1.0;  // In the default mode, we do not use ilp acceleration
+              // If the ilp acceleration is enabled, we only use
+              // top ilp_accelerator_factor hyperedges. Range: 0, 1
+  int seed_ = 0;
+  TP_evaluator_ptr evaluator_ = nullptr;  // evaluator
   utl::Logger* logger_ = nullptr;
 };
-
-using TP_partitioning_ptr = std::shared_ptr<TPpartitioner>;
 
 }  // namespace par
