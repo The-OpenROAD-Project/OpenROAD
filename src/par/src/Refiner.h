@@ -210,11 +210,11 @@ class PriorityQueue
   // The max heap (priority queue) is organized as a binary tree
   // Get parent, left child and right child index
   // Generic functions of max heap
-  inline int Parent(int element) const { return std::floor((element - 1) / 2); }
+  int Parent(int element) const { return std::floor((element - 1) / 2); }
 
-  inline int LeftChild(int& element) const { return 2 * element + 1; }
+  int LeftChild(int& element) const { return 2 * element + 1; }
 
-  inline int RightChild(int& element) const { return 2 * element + 2; }
+  int RightChild(int& element) const { return 2 * element + 2; }
 
   // This is called when we add a new element
   void HeapifyUp(int index);
