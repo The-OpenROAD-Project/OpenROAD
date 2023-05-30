@@ -32,10 +32,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "Hypergraph.h"
+
 #include "PriorityQueue.h"
-#include "Utilities.h"
-#include "utl/Logger.h"
+
+#include "Hypergraph.h"
 
 namespace par {
 

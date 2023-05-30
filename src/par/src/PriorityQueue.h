@@ -36,10 +36,7 @@
 
 #include <set>
 
-#include "Evaluator.h"
 #include "Hypergraph.h"
-#include "Utilities.h"
-#include "utl/Logger.h"
 
 namespace par {
 
