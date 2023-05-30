@@ -590,7 +590,7 @@ std::pair<bool, bool> RouteBase::routability()
         continue;
       }
 
-      minRcCellSize_[&gCell - &nbc_->gCells()[0]]
+      minRcCellSize_[&gCell - nbc_->gCells().data()]
           = std::make_pair(gCell->dx(), gCell->dy());
     }
   } else {
@@ -745,7 +745,7 @@ void RouteBase::revertGCellSizeToMinRc()
       continue;
     }
 
-    int idx = &gCell - &nbc_->gCells()[0];
+    int idx = &gCell - nbc_->gCells().data();
 
     gCell->setSize(minRcCellSize_[idx].first, minRcCellSize_[idx].second);
   }

@@ -59,7 +59,7 @@ void InitialPlaceVars::reset()
   forceCPU = false;
 }
 
-InitialPlace::InitialPlace() : ipVars_(), pbc_(nullptr), log_(nullptr)
+InitialPlace::InitialPlace() : pbc_(nullptr), log_(nullptr)
 {
 }
 
@@ -188,7 +188,7 @@ void InitialPlace::setPlaceInstExtId()
   }
   // set index only with place-able instances
   for (auto& inst : pbc_->placeInsts()) {
-    inst->setExtId(&inst - &(pbc_->placeInsts()[0]));
+    inst->setExtId(&inst - pbc_->placeInsts().data());
   }
 }
 

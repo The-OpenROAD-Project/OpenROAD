@@ -2431,9 +2431,9 @@ bool NesterovBase::nesterovUpdateStepLength()
   if (newStepLength < 0.01) {
     stepLength_ = 0.01;
     return false;
-  } else {
-    stepLength_ = newStepLength;
   }
+
+  stepLength_ = newStepLength;
 
   return true;
 }
