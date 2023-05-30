@@ -36,6 +36,7 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
+#include <string>
 
 #include "point.h"
 
@@ -1096,13 +1097,9 @@ class NesterovBase
   int64_t prevHpwl_;
 
   float isDiverged_;
-  float isRoutabilityNeed_;
 
   std::string divergeMsg_;
   int divergeCode_;
-
-  int recursionCntWlCoef_;
-  int recursionCntInitSLPCoef_;
 
   NesterovPlaceVars* npVars_;
 

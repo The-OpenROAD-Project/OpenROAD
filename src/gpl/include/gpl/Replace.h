@@ -167,7 +167,7 @@ class Replace
   bool forceCPU_;
 
   int total_placeable_insts_;
-  
+
   int nesterovPlaceMaxIter_;
   int binGridCntX_;
   int binGridCntY_;
