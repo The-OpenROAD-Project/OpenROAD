@@ -57,7 +57,9 @@ class Graphics : public gui::Renderer, public gui::HeatMapDataSource
 {
  public:
   // Debug InitialPlace
-  Graphics(utl::Logger* logger, std::shared_ptr<PlacerBaseCommon> pbc, std::vector<std::shared_ptr<PlacerBase>>& pbVec);
+  Graphics(utl::Logger* logger,
+           std::shared_ptr<PlacerBaseCommon> pbc,
+           std::vector<std::shared_ptr<PlacerBase>>& pbVec);
 
   // Debug NesterovPlace
   Graphics(utl::Logger* logger,
