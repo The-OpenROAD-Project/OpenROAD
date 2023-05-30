@@ -37,7 +37,7 @@
 #include <set>
 #include <tuple>
 
-#include "TPHypergraph.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
@@ -60,22 +60,18 @@ struct PathStats
                // become critical
 };
 
-// MATRIX is a two-dimensional vectors
-template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
+// Partitions is the partitioning solution
+using Partitions = std::vector<int>;  //
 
-// TP_partition is the partitioning solution
-using TP_partition = std::vector<int>;  //
-
-// TP_partition_token is the metrics of a given partition
+// PartitionToken is the metrics of a given partition
 // it consists of two part:  cost (cutsize), balance for each block
-// for example, TP_partition_token.second[0] is the balance of
+// for example, PartitionToken.second[0] is the balance of
 // block_0
-using TP_partition_token = std::pair<float, MATRIX<float>>;
+using PartitionToken = std::pair<float, Matrix<float>>;
 
 // GoldenEvaluator
 class GoldenEvaluator;
-using TP_evaluator_ptr = std::shared_ptr<GoldenEvaluator>;
+using EvaluatorPtr = std::shared_ptr<GoldenEvaluator>;
 
 // ------------------------------------------------------------------------
 // The implementation of GoldenEvaluator
@@ -86,46 +82,31 @@ class GoldenEvaluator
  public:
   // TODO: update the constructor
   GoldenEvaluator(
-      const int num_parts,
+      int num_parts,
       const std::vector<float>&
           e_wt_factors,  // the factor for hyperedge weight
       const std::vector<float>& v_wt_factors,  // the factor for vertex weight
       const std::vector<float>&
-          placement_wt_factors,       // the factor for placement info
-      const float net_timing_factor,  // the factor for hyperedge timing weight
-      const float
-          path_timing_factor,  // weight for cutting a critical timing path
-      const float path_snaking_factor,  // snaking factor a critical timing path
-      const float
-          timing_exp_factor,  // timing exponetial factor for normalized slack
-      const float extra_cut_delay,  // the extra delay introduced by a cut
-      HGraphPtr timing_graph,       // the timing graph needed
-      utl::Logger* logger)
-      : num_parts_(num_parts),
-        extra_cut_delay_(extra_cut_delay),
-        e_wt_factors_(e_wt_factors),
-        v_wt_factors_(v_wt_factors),
-        placement_wt_factors_(placement_wt_factors),
-        net_timing_factor_(net_timing_factor),
-        path_timing_factor_(path_timing_factor),
-        path_snaking_factor_(path_snaking_factor),
-        timing_exp_factor_(timing_exp_factor)
-  {
-    timing_graph_ = std::move(timing_graph);
-    logger_ = logger;
-  }
+          placement_wt_factors,   // the factor for placement info
+      float net_timing_factor,    // the factor for hyperedge timing weight
+      float path_timing_factor,   // weight for cutting a critical timing path
+      float path_snaking_factor,  // snaking factor a critical timing path
+      float timing_exp_factor,  // timing exponetial factor for normalized slack
+      float extra_cut_delay,    // the extra delay introduced by a cut
+      HGraphPtr timing_graph,   // the timing graph needed
+      utl::Logger* logger);
 
   GoldenEvaluator(const GoldenEvaluator&) = delete;
   GoldenEvaluator(GoldenEvaluator&) = delete;
   virtual ~GoldenEvaluator() = default;
 
   // calculate the vertex distribution of each net
-  MATRIX<int> GetNetDegrees(const HGraphPtr& hgraph,
-                            const TP_partition& solution) const;
+  Matrix<int> GetNetDegrees(const HGraphPtr& hgraph,
+                            const Partitions& solution) const;
 
   // Get block balance
-  MATRIX<float> GetBlockBalance(const HGraphPtr& hgraph,
-                                const TP_partition& solution) const;
+  Matrix<float> GetBlockBalance(const HGraphPtr& hgraph,
+                                const Partitions& solution) const;
 
   // calculate timing cost of a path
   float GetPathTimingScore(int path_id, const HGraphPtr& hgraph) const;
@@ -133,11 +114,11 @@ class GoldenEvaluator
   // calculate the cost of a path
   float CalculatePathCost(int path_id,
                           const HGraphPtr& hgraph,
-                          const TP_partition& solution) const;
+                          const Partitions& solution) const;
 
   // get the cost of all the paths: include the timing part and snaking part
   std::vector<float> GetPathsCost(const HGraphPtr& hgraph,
-                                  const TP_partition& solution) const;
+                                  const Partitions& solution) const;
 
   // calculate the status of timing path cuts
   PathStats GetTimingCuts(const HGraphPtr& hgraph,
@@ -205,11 +186,11 @@ class GoldenEvaluator
       const std::vector<int>& solution) const;
 
   // calculate the statistics of a given partitioning solution
-  // TP_partition_token.first is the cutsize
-  // TP_partition_token.second is the balance constraint
-  TP_partition_token CutEvaluator(const HGraphPtr& hgraph,
-                                  const std::vector<int>& solution,
-                                  bool print_flag = false) const;
+  // PartitionToken.first is the cutsize
+  // PartitionToken.second is the balance constraint
+  PartitionToken CutEvaluator(const HGraphPtr& hgraph,
+                              const std::vector<int>& solution,
+                              bool print_flag = false) const;
 
   // check the constraints
   // balance constraint, group constraint, fixed vertices constraint
@@ -237,8 +218,7 @@ class GoldenEvaluator
   // The timing_graph_ contains all the necessary information,
   // include the original slack for each path and hyperedge,
   // and the type of each vertex
-  void UpdateTiming(const HGraphPtr& hgraph,
-                    const TP_partition& solution) const;
+  void UpdateTiming(const HGraphPtr& hgraph, const Partitions& solution) const;
 
   // Write the weighted hypergraph in hMETIS format
   void WriteWeightedHypergraph(const HGraphPtr& hgraph,

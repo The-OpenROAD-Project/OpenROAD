@@ -54,8 +54,8 @@
 
 namespace par {
 
-struct TPHypergraph;
-using HGraphPtr = std::shared_ptr<TPHypergraph>;
+struct Hypergraph;
+using HGraphPtr = std::shared_ptr<Hypergraph>;
 
 // The data structure for critical timing path
 // A timing path is a sequence of vertices, for example, a -> b -> c -> d
@@ -81,11 +81,11 @@ struct TimingPath
   }
 };
 
-// Here we use TPHypergraph class because the Hypegraph class
+// Here we use Hypergraph class because the Hypegraph class
 // has been used by other programs.
-struct TPHypergraph
+struct Hypergraph
 {
-  TPHypergraph(
+  Hypergraph(
       int vertex_dimensions,
       int hyperedge_dimensions,
       int placement_dimensions,
@@ -100,7 +100,7 @@ struct TPHypergraph
       const std::vector<std::vector<float>>& placement_attr,
       utl::Logger* logger);
 
-  TPHypergraph(
+  Hypergraph(
       int vertex_dimensions,
       int hyperedge_dimensions,
       int placement_dimensions,

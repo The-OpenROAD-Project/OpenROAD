@@ -34,30 +34,49 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include <thread>
 
-#include "TPHypergraph.h"
-#include "TPRefiner.h"
+#include "Hypergraph.h"
+#include "Refiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
 // Implement the direct k-way FM refinement
 namespace par {
 
+KWayFMRefine::KWayFMRefine(const int num_parts,
+                           const int refiner_iters,
+                           const float path_wt_factor,
+                           const float snaking_wt_factor,
+                           const int max_move,
+                           const int total_corking_passes,
+                           EvaluatorPtr evaluator,
+                           utl::Logger* logger)
+    : Refiner(num_parts,
+              refiner_iters,
+              path_wt_factor,
+              snaking_wt_factor,
+              max_move,
+              std::move(evaluator),
+              logger),
+      total_corking_passes_(total_corking_passes)
+{
+}
+
 // In each pass, we only move the boundary vertices
-float TPkWayFMRefine::Pass(
+float KWayFMRefine::Pass(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,        // the current block balance
-    MATRIX<int>& net_degs,               // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,        // the current block balance
+    Matrix<int>& net_degs,               // the current net degree
     std::vector<float>& cur_paths_cost,  // the current path cost
-    TP_partition& solution,
+    Partitions& solution,
     std::vector<bool>& visited_vertices_flag)
 {
   // initialize the gain buckets
-  TP_gain_buckets buckets;
+  GainBuckets buckets;
   for (int i = 0; i < num_parts_; ++i) {
     // the maxinum size of each bucket is hgraph->num_vertices_
-    TP_gain_bucket bucket = std::make_shared<TPpriorityQueue>(
+    auto bucket = std::make_shared<PriorityQueue>(
         hgraph->num_vertices_, total_corking_passes_, hgraph);
     buckets.push_back(bucket);
   }
@@ -77,8 +96,7 @@ float TPkWayFMRefine::Pass(
   // because we need to restore the status to the status with   best_gain
   // Based on our experiments, the moves is usually very limited.
   // Restoring from backwards will be more efficient
-  std::vector<TP_gain_cell>
-      moves_trace;  // store the moved vertex_gain in sequence
+  std::vector<GainCell> moves_trace;  // store the moved vertex_gain in sequence
   float total_delta_gain = 0.0;
   // Trick here:  We can adjust the best_gain to value to decide whether we
   // should accept a worse solution If the current solution violates the balance
@@ -122,7 +140,7 @@ float TPkWayFMRefine::Pass(
     std::vector<std::thread> threads;
     threads.reserve(num_parts_);
     for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
-      threads.emplace_back(&TPkWayFMRefine::UpdateSingleGainBucket,
+      threads.emplace_back(&KWayFMRefine::UpdateSingleGainBucket,
                            this,
                            to_pid,
                            std::ref(buckets),
@@ -173,20 +191,20 @@ float TPkWayFMRefine::Pass(
 // gain bucket related functions
 
 // Initialize the gain buckets in parallel
-void TPkWayFMRefine::InitializeGainBucketsKWay(
-    TP_gain_buckets& buckets,
+void KWayFMRefine::InitializeGainBucketsKWay(
+    GainBuckets& buckets,
     const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
-    const TP_partition& solution) const
+    const Partitions& solution) const
 {
   std::vector<std::thread> threads;  // for parallel updating
   threads.reserve(num_parts_);
   // parallel initialize the num_parts gain_buckets
   for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
     threads.emplace_back(
-        &TPkWayFMRefine::InitializeSingleGainBucket,
+        &KWayFMRefine::InitializeSingleGainBucket,
         this,
         std::ref(buckets),
         to_pid,
@@ -203,14 +221,14 @@ void TPkWayFMRefine::InitializeGainBucketsKWay(
 }
 
 // Initialize the single bucket
-void TPkWayFMRefine::InitializeSingleGainBucket(
-    TP_gain_buckets& buckets,
+void KWayFMRefine::InitializeSingleGainBucket(
+    GainBuckets& buckets,
     int to_pid,  // move the vertex into this block (block_id = to_pid)
     const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
-    const TP_partition& solution) const
+    const Partitions& solution) const
 {
   // set current bucket to active
   buckets[to_pid]->SetActive();
@@ -231,23 +249,23 @@ void TPkWayFMRefine::InitializeSingleGainBucket(
 }
 
 // Determine which vertex gain to be picked
-std::shared_ptr<VertexGain> TPkWayFMRefine::PickMoveKWay(
-    TP_gain_buckets& buckets,
+std::shared_ptr<VertexGain> KWayFMRefine::PickMoveKWay(
+    GainBuckets& buckets,
     const HGraphPtr& hgraph,
-    const MATRIX<float>& curr_block_balance,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance) const
+    const Matrix<float>& curr_block_balance,
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance) const
 {
   // dummy candidate
   int to_pid = -1;
-  std::shared_ptr<VertexGain> candidate = std::make_shared<VertexGain>();
+  auto candidate = std::make_shared<VertexGain>();
 
   // best gain bucket for "corking effect".
   // i.e., if there is no normal candidate available,
   // we will traverse the best_to_pid bucket
   int best_to_pid = -1;  // block id with best_gain
   float best_gain = -std::numeric_limits<float>::max();
-  std::shared_ptr<VertexGain> dummy_cell = std::make_shared<VertexGain>();
+  auto dummy_cell = std::make_shared<VertexGain>();
 
   // checking the first elements in each bucket
   for (int i = 0; i < num_parts_; ++i) {
@@ -287,17 +305,16 @@ std::shared_ptr<VertexGain> TPkWayFMRefine::PickMoveKWay(
 }
 
 // move one vertex based on the calculated gain_cell
-void TPkWayFMRefine::AcceptKWayMove(
-    const std::shared_ptr<VertexGain>& gain_cell,
-    TP_gain_buckets& gain_buckets,
-    std::vector<TP_gain_cell>& moves_trace,
-    float& total_delta_gain,
-    std::vector<bool>& visited_vertices_flag,
-    const HGraphPtr& hgraph,
-    MATRIX<float>& curr_block_balance,
-    MATRIX<int>& net_degs,
-    std::vector<float>& cur_paths_cost,
-    std::vector<int>& solution) const
+void KWayFMRefine::AcceptKWayMove(const std::shared_ptr<VertexGain>& gain_cell,
+                                  GainBuckets& gain_buckets,
+                                  std::vector<GainCell>& moves_trace,
+                                  float& total_delta_gain,
+                                  std::vector<bool>& visited_vertices_flag,
+                                  const HGraphPtr& hgraph,
+                                  Matrix<float>& curr_block_balance,
+                                  Matrix<int>& net_degs,
+                                  std::vector<float>& cur_paths_cost,
+                                  std::vector<int>& solution) const
 {
   const int vertex_id = gain_cell->GetVertex();
   moves_trace.push_back(gain_cell);
@@ -313,7 +330,7 @@ void TPkWayFMRefine::AcceptKWayMove(
   std::vector<std::thread> deletion_threads;
   deletion_threads.reserve(num_parts_);
   for (int i = 0; i < num_parts_; ++i) {
-    deletion_threads.emplace_back(&par::TPkWayFMRefine::HeapEleDeletion,
+    deletion_threads.emplace_back(&par::KWayFMRefine::HeapEleDeletion,
                                   this,
                                   vertex_id,
                                   i,
@@ -326,9 +343,9 @@ void TPkWayFMRefine::AcceptKWayMove(
 
 // Remove vertex from a heap
 // Remove the vertex id related vertex gain
-void TPkWayFMRefine::HeapEleDeletion(int vertex_id,
-                                     int part,
-                                     TP_gain_buckets& buckets) const
+void KWayFMRefine::HeapEleDeletion(int vertex_id,
+                                   int part,
+                                   GainBuckets& buckets) const
 {
   buckets[part]->Remove(vertex_id);
 }
@@ -337,14 +354,14 @@ void TPkWayFMRefine::HeapEleDeletion(int vertex_id,
 // to be updated. This function is used to update the gain of neighbor vertices
 // notices that the neighbors has been calculated based on solution, visited
 // status, boundary vertices status
-void TPkWayFMRefine::UpdateSingleGainBucket(
+void KWayFMRefine::UpdateSingleGainBucket(
     int part,
-    TP_gain_buckets& buckets,
+    GainBuckets& buckets,
     const HGraphPtr& hgraph,
     const std::vector<int>& neighbors,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
-    const TP_partition& solution) const
+    const Partitions& solution) const
 {
   std::set<int> neighboring_hyperedges;
   for (const int& v : neighbors) {

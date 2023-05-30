@@ -32,11 +32,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "TPHypergraph.h"
-#include "TPRefiner.h"
+#include <thread>
+
+#include "Hypergraph.h"
+#include "Refiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
-
 // ------------------------------------------------------------------------------
 // K-way pair-wise FM refinement
 // ------------------------------------------------------------------------------
@@ -47,7 +48,7 @@
 // In the remaing iterations, the maximum matching is based on the delta gain
 // for each block. Based on the paper of pair-wise PM, we can not keep using
 // connectivity based maximum matching.  Otherwise, we may easily got stuck in
-// local minimum. We use multiple multiple member functions of TPkWayFMRefine
+// local minimum. We use multiple multiple member functions of KWayFMRefine
 // especially the functions related to gain buckets
 
 namespace par {
@@ -58,14 +59,14 @@ namespace par {
 // i.e., block_balance and net_degs will not change too much
 // so we precompute the block_balance and net_degs
 // the return value is the gain improvement
-float TPkWayPMRefine::Pass(
+float KWayPMRefine::Pass(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,    // the current block balance
-    MATRIX<int>& net_degs,           // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,    // the current block balance
+    Matrix<int>& net_degs,           // the current net degree
     std::vector<float>& paths_cost,  // the current path cost
-    TP_partition& solution,
+    Partitions& solution,
     std::vector<bool>& visited_vertices_flag)
 {
   // Step 1: determine the matching score
@@ -77,10 +78,10 @@ float TPkWayPMRefine::Pass(
   float delta_gain = 0.0;
   // Step 2: update the solution based on calculated maximum matching
   // initialize the gain buckets
-  TP_gain_buckets buckets;
+  GainBuckets buckets;
   for (int i = 0; i < num_parts_; ++i) {
     // the maxinum size of each bucket is hgraph->num_vertices_
-    TP_gain_bucket bucket = std::make_shared<TPpriorityQueue>(
+    auto bucket = std::make_shared<PriorityQueue>(
         hgraph->num_vertices_, total_corking_passes_, hgraph);
     buckets.push_back(bucket);
   }
@@ -107,11 +108,11 @@ float TPkWayPMRefine::Pass(
 // i.e., block_balance and net_degs will not change too much
 // so we precompute the block_balance and net_degs
 // the return value is the gain improvement
-float TPkWayPMRefine::Pass(const HGraphPtr hgraph,
-                           const MATRIX<float>& max_block_balance,
-                           MATRIX<float>& block_balance, // the current block
-balance MATRIX<int>& net_degs, // the current net degree std::vector<float>&
-paths_cost, // the current path cost TP_partition& solution, std::vector<bool>&
+float KWayPMRefine::Pass(const HGraphPtr hgraph,
+                           const Matrix<float>& max_block_balance,
+                           Matrix<float>& block_balance, // the current block
+balance Matrix<int>& net_degs, // the current net degree std::vector<float>&
+paths_cost, // the current path cost Partitions& solution, std::vector<bool>&
 visited_vertices_flag)
 {
   // Step 1: determine the matching score
@@ -139,13 +140,13 @@ evaluator_->GetMatchingConnectivity(hgraph, solution);
   float delta_gain = 0.0;
   // Step 2: update the solution based on calculated maximum matching
   // initialize the gain buckets
-  TP_gain_buckets buckets;
+  GainBuckets buckets;
   for (int i = 0; i < num_parts_; ++i) {
     // the maxinum size of each bucket is hgraph->num_vertices_
-    TP_gain_bucket bucket
-        = std::make_shared<TPpriorityQueue>(hgraph->num_vertices_,
-                                            total_corking_passes_,
-                                            hgraph);
+    GainBucket bucket
+        = std::make_shared<PriorityQueue>(hgraph->num_vertices_,
+                                          total_corking_passes_,
+                                          hgraph);
     buckets.push_back(bucket);
   }
   for (const auto& partition_pair : maximum_matches) {
@@ -158,7 +159,7 @@ net_degs, paths_cost, solution, buckets, visited_vertices_flag, partition_pair);
 */
 
 // The function to calculate the matching_scores
-void TPkWayPMRefine::CalculateMaximumMatch(
+void KWayPMRefine::CalculateMaximumMatch(
     std::vector<std::pair<int, int>>& maximum_matches,
     const std::map<std::pair<int, int>, float>& matching_scores) const
 {
@@ -196,15 +197,15 @@ void TPkWayPMRefine::CalculateMaximumMatch(
 }
 
 // Perform 2-way FM between blocks in partition pair
-float TPkWayPMRefine::PerformPairFM(
+float KWayPMRefine::PerformPairFM(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,    // the current block balance
-    MATRIX<int>& net_degs,           // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,    // the current block balance
+    Matrix<int>& net_degs,           // the current net degree
     std::vector<float>& paths_cost,  // the current path cost
-    TP_partition& solution,
-    TP_gain_buckets& buckets,
+    Partitions& solution,
+    GainBuckets& buckets,
     std::vector<bool>& visited_vertices_flag,
     const std::pair<int, int>& partition_pair) const
 {
@@ -230,8 +231,7 @@ float TPkWayPMRefine::PerformPairFM(
   // because we need to restore the status to the status with best_gain
   // Based on our experiments, the moves is usually very limited.
   // Restoring from backwards will be more efficient
-  std::vector<TP_gain_cell>
-      moves_trace;  // store the moved vertex_gain in sequence
+  std::vector<GainCell> moves_trace;  // store the moved vertex_gain in sequence
   float total_delta_gain = 0.0;
   // Notice that the best_gain should be initialized as 0 instead of -infinity
   // because after each pass, the total gain should be improved, i.e.,
@@ -240,10 +240,10 @@ float TPkWayPMRefine::PerformPairFM(
   int best_vertex_id = -1;  // dummy best vertex id
   // main loop of FM pass
   for (int i = 0; i < max_move_; i++) {
-    // here we use the PickMoveKWay method inheriting from TPkWayPMRefine
+    // here we use the PickMoveKWay method inheriting from KWayPMRefine
     // directly, because the buckets cooresponding to other blocks are empty
     // Similarly, we can also use AcceptKWayMove method inheriting from
-    // TPkWayPMRefine
+    // KWayPMRefine
     auto candidate = PickMoveKWay(buckets,
                                   hgraph,
                                   block_balance,
@@ -271,7 +271,7 @@ float TPkWayPMRefine::PerformPairFM(
     std::vector<std::thread> threads;
     threads.reserve(blocks.size());
     for (auto& to_pid : blocks) {
-      threads.emplace_back(&TPkWayFMRefine::UpdateSingleGainBucket,
+      threads.emplace_back(&KWayFMRefine::UpdateSingleGainBucket,
                            this,
                            to_pid,
                            std::ref(buckets),
@@ -320,13 +320,13 @@ float TPkWayPMRefine::PerformPairFM(
 
 // gain bucket related functions
 // Initialize the gain buckets in parallel
-void TPkWayPMRefine::InitializeGainBucketsPM(
-    TP_gain_buckets& buckets,
+void KWayPMRefine::InitializeGainBucketsPM(
+    GainBuckets& buckets,
     const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
-    const MATRIX<int>& net_degs,
+    const Matrix<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
-    const TP_partition& solution,
+    const Partitions& solution,
     const std::pair<int, int>& partition_pair) const
 {
   std::vector<int> blocks_id{partition_pair.first, partition_pair.second};
@@ -336,7 +336,7 @@ void TPkWayPMRefine::InitializeGainBucketsPM(
   // parallel initialize the num_parts gain_buckets
   for (const auto to_pid : blocks_id) {
     threads.emplace_back(
-        &TPkWayFMRefine::InitializeSingleGainBucket,
+        &KWayFMRefine::InitializeSingleGainBucket,
         this,
         std::ref(buckets),
         to_pid,

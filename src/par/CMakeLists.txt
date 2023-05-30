@@ -52,18 +52,18 @@ find_package(ortools REQUIRED)
 add_library(par_lib
   src/PartitionMgr.cpp
   src/TritonPart.cpp
-  src/TPHypergraph.cpp
+  src/Hypergraph.cpp
   src/Utilities.cpp
-  src/TPCoarsener.cpp
-  src/TPMultilevel.cpp
-  src/TPRefiner.cpp
-  src/TPPartitioner.cpp
-  src/TPEvaluator.cpp
-  src/TPGreedyRefine.cpp
-  src/TPILPRefine.cpp
-  src/TPKWayFMRefine.cpp
-  src/TPKWayPMRefine.cpp
-  src/TPPriorityQueue.cpp
+  src/Coarsener.cpp
+  src/Multilevel.cpp
+  src/Refiner.cpp
+  src/Partitioner.cpp
+  src/Evaluator.cpp
+  src/GreedyRefine.cpp
+  src/ILPRefine.cpp
+  src/KWayFMRefine.cpp
+  src/KWayPMRefine.cpp
+  src/PriorityQueue.cpp
 )
 
 target_include_directories(par_lib

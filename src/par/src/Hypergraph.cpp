@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TPHypergraph.h"
+#include "Hypergraph.h"
 
 #include <iostream>
 #include <string>
@@ -43,7 +43,7 @@
 
 namespace par {
 
-TPHypergraph::TPHypergraph(
+Hypergraph::Hypergraph(
     const int vertex_dimensions,
     const int hyperedge_dimensions,
     const int placement_dimensions,
@@ -119,7 +119,7 @@ TPHypergraph::TPHypergraph(
   logger_ = logger;
 }
 
-TPHypergraph::TPHypergraph(
+Hypergraph::Hypergraph(
     const int vertex_dimensions,
     const int hyperedge_dimensions,
     const int placement_dimensions,
@@ -209,7 +209,7 @@ TPHypergraph::TPHypergraph(
     num_timing_paths_ = static_cast<int>(timing_paths.size());
     hyperedge_timing_attr_ = hyperedges_slack;
     hyperedge_arc_set_ = hyperedges_arc_set;
-    // create the vertex MATRIX which stores the paths incident to vertex
+    // create the vertex Matrix which stores the paths incident to vertex
     std::vector<std::vector<int>> incident_paths(num_vertices_);
     vptr_p_.push_back(static_cast<int>(vind_p_.size()));
     eptr_p_.push_back(static_cast<int>(eind_p_.size()));
@@ -238,7 +238,7 @@ TPHypergraph::TPHypergraph(
   logger_ = logger;
 }
 
-std::vector<float> TPHypergraph::GetTotalVertexWeights() const
+std::vector<float> Hypergraph::GetTotalVertexWeights() const
 {
   std::vector<float> total_weight(vertex_dimensions_, 0.0);
   for (auto& weight : vertex_weights_) {
@@ -248,7 +248,7 @@ std::vector<float> TPHypergraph::GetTotalVertexWeights() const
 }
 
 // Get the vertex balance constraint
-std::vector<std::vector<float>> TPHypergraph::GetVertexBalance(
+std::vector<std::vector<float>> Hypergraph::GetVertexBalance(
     int num_parts,
     float ub_factor) const
 {
@@ -259,7 +259,7 @@ std::vector<std::vector<float>> TPHypergraph::GetVertexBalance(
 }
 
 // Get the vertex balance constraint (upper bound)
-std::vector<std::vector<float>> TPHypergraph::GetUpperVertexBalance(
+std::vector<std::vector<float>> Hypergraph::GetUpperVertexBalance(
     int num_parts,
     float ub_factor) const
 {
@@ -270,7 +270,7 @@ std::vector<std::vector<float>> TPHypergraph::GetUpperVertexBalance(
 }
 
 // Get the vertex balance constraint (lower bound)
-std::vector<std::vector<float>> TPHypergraph::GetLowerVertexBalance(
+std::vector<std::vector<float>> Hypergraph::GetLowerVertexBalance(
     int num_parts,
     float ub_factor) const
 {

@@ -33,21 +33,46 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TPPartitioner.h"
+#include "Partitioner.h"
 
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
+#include <random>
+
+#include "Evaluator.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
 namespace par {
+Partitioner::Partitioner(int num_parts,
+                         int seed,
+                         const EvaluatorPtr& evaluator,
+                         utl::Logger* logger)
+    : num_parts_(num_parts), seed_(seed), evaluator_(evaluator), logger_(logger)
+{
+}
+
+void Partitioner::EnableIlpAcceleration(float acceleration_factor)
+{
+  ilp_accelerator_factor_ = acceleration_factor;
+  ilp_accelerator_factor_ = std::max(ilp_accelerator_factor_, 0.0f);
+  ilp_accelerator_factor_ = std::min(ilp_accelerator_factor_, 1.0f);
+  logger_->report("[INFO] Set ILP accelerator factor to {}",
+                  ilp_accelerator_factor_);
+}
+
+void Partitioner::DisableIlpAcceleration()
+{
+  ilp_accelerator_factor_ = 1.0;
+  logger_->report("[INFO] Reset ILP accelerator factor to {}",
+                  ilp_accelerator_factor_);
+}
 
 // The main function of Partitioning
-void TPpartitioner::Partition(const HGraphPtr& hgraph,
-                              const MATRIX<float>& upper_block_balance,
-                              const MATRIX<float>& lower_block_balance,
-                              std::vector<int>& solution,
-                              PartitionType partitioner_choice) const
+void Partitioner::Partition(const HGraphPtr& hgraph,
+                            const Matrix<float>& upper_block_balance,
+                            const Matrix<float>& lower_block_balance,
+                            std::vector<int>& solution,
+                            PartitionType partitioner_choice) const
 {
   if (static_cast<int>(solution.size()) != hgraph->num_vertices_) {
     solution.clear();
@@ -87,14 +112,14 @@ void TPpartitioner::Partition(const HGraphPtr& hgraph,
 // If vile_mode == true,  we try to generate unbalanced random partitioning
 
 // random partitioning
-void TPpartitioner::RandomPart(const HGraphPtr& hgraph,
-                               const MATRIX<float>& upper_block_balance,
-                               const MATRIX<float>& lower_block_balance,
-                               std::vector<int>& solution,
-                               bool vile_mode) const
+void Partitioner::RandomPart(const HGraphPtr& hgraph,
+                             const Matrix<float>& upper_block_balance,
+                             const Matrix<float>& lower_block_balance,
+                             std::vector<int>& solution,
+                             bool vile_mode) const
 {
   // the summation of vertex weights for vertices in current block
-  MATRIX<float> block_balance(
+  Matrix<float> block_balance(
       num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0f));
   // determine all the free vertices
   std::vector<bool> visited(hgraph->num_vertices_,
@@ -177,16 +202,16 @@ void TPpartitioner::RandomPart(const HGraphPtr& hgraph,
 }
 
 // ILP-based partitioning
-void TPpartitioner::ILPPart(const HGraphPtr& hgraph,
-                            const MATRIX<float>& upper_block_balance,
-                            const MATRIX<float>& lower_block_balance,
-                            std::vector<int>& solution) const
+void Partitioner::ILPPart(const HGraphPtr& hgraph,
+                          const Matrix<float>& upper_block_balance,
+                          const Matrix<float>& lower_block_balance,
+                          std::vector<int>& solution) const
 {
   logger_->report("[STATUS] Optimal ILP-based Partitioning Starts !");
   std::map<int, int> fixed_vertices_map;
-  MATRIX<float> vertex_weights;  // two-dimensional
+  Matrix<float> vertex_weights;  // two-dimensional
   vertex_weights.reserve(hgraph->num_vertices_);
-  MATRIX<int> hyperedges;                // hyperedges
+  Matrix<int> hyperedges;                // hyperedges
   std::vector<float> hyperedge_weights;  // one-dimensional
   // set vertices
   for (int v = 0; v < hgraph->num_vertices_; v++) {
@@ -281,9 +306,9 @@ void TPpartitioner::ILPPart(const HGraphPtr& hgraph,
 }
 
 // randomly pick one vertex into each block
-// then use refinement functions to get valid solution (See TPMultilevel.cpp)
-void TPpartitioner::VilePart(const HGraphPtr& hgraph,
-                             std::vector<int>& solution) const
+// then use refinement functions to get valid solution (See Multilevel.cpp)
+void Partitioner::VilePart(const HGraphPtr& hgraph,
+                           std::vector<int>& solution) const
 {
   std::fill(solution.begin(), solution.end(), 0);
   std::vector<int> unvisited;

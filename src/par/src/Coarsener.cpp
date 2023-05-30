@@ -38,12 +38,14 @@
 // a sequence of coarser hypergraphs. (Top level function: LazyFirstChoice)
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TPCoarsener.h"
+#include "Coarsener.h"
 
+#include <numeric>
+#include <random>
 #include <set>
 
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
+#include "Evaluator.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
@@ -51,15 +53,40 @@ using utl::PAR;
 
 namespace par {
 
-// Implemention of TPcoarsener class
+Coarsener::Coarsener(const int num_parts,
+                     const int thr_coarsen_hyperedge_size_skip,
+                     const int thr_coarsen_vertices,
+                     const int thr_coarsen_hyperedges,
+                     const float coarsening_ratio,
+                     const int max_coarsen_iters,
+                     const float adj_diff_ratio,
+                     const std::vector<float>& thr_cluster_weight,
+                     const int seed,
+                     const CoarsenOrder vertex_order_choice,
+                     EvaluatorPtr evaluator,
+                     utl::Logger* logger)
+    : num_parts_(num_parts),
+      thr_coarsen_hyperedge_size_skip_(thr_coarsen_hyperedge_size_skip),
+      thr_coarsen_vertices_(thr_coarsen_vertices),
+      thr_coarsen_hyperedges_(thr_coarsen_hyperedges),
+      coarsening_ratio_(coarsening_ratio),
+      max_coarsen_iters_(max_coarsen_iters),
+      adj_diff_ratio_(adj_diff_ratio),
+      thr_cluster_weight_(thr_cluster_weight),
+      seed_(seed),
+      vertex_order_choice_(vertex_order_choice)
+{
+  evaluator_ = std::move(evaluator);
+  logger_ = logger;
+}
 
-// The main function pf TPcoarsener class
+// The main function pf Coarsener class
 // The input is a hypergraph
 // The output is a sequence of coarser hypergraphs
 // Notice that the input hypergraph is not const,
 // because the hgraphs returned can be edited
 // The timing cost of hgraph will be initialized if it has been not.
-TP_coarse_graph_ptrs TPcoarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
+CoarseGraphPtrs Coarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
 {
   const auto start_timestamp = std::chrono::high_resolution_clock::now();
   const bool timing_flag = hgraph->timing_flag_;
@@ -139,16 +166,16 @@ TP_coarse_graph_ptrs TPcoarsener::LazyFirstChoice(const HGraphPtr& hgraph) const
 // (4) handle group information
 // (5) group fixed vertices based on each block
 // group vertices based on group_attr and hgraph->fixed_attr_
-HGraphPtr TPcoarsener::GroupVertices(
+HGraphPtr Coarsener::GroupVertices(
     const HGraphPtr& hgraph,
     const std::vector<std::vector<int>>& group_attr) const
 {
   std::vector<int>
       vertex_cluster_id_vec;          // map current vertex_id to cluster_id
-  MATRIX<float> vertex_weights_c;     // cluster weight
+  Matrix<float> vertex_weights_c;     // cluster weight
   std::vector<int> community_attr_c;  // cluster community information
   std::vector<int> fixed_attr_c;      // cluster fixed attribute
-  MATRIX<float> placement_attr_c;     // cluster placement attribute
+  Matrix<float> placement_attr_c;     // cluster placement attribute
 
   // Cluster based group information
   ClusterBasedGroupInfo(hgraph,
@@ -188,13 +215,13 @@ HGraphPtr TPcoarsener::GroupVertices(
 // Single-level Coarsening
 // The input is a hypergraph
 // The output is a coarser hypergraph
-HGraphPtr TPcoarsener::Aggregate(const HGraphPtr& hgraph) const
+HGraphPtr Coarsener::Aggregate(const HGraphPtr& hgraph) const
 {
   std::vector<int> vertex_cluster_id_vec;
-  MATRIX<float> vertex_weights_c;
+  Matrix<float> vertex_weights_c;
   std::vector<int> community_attr_c;
   std::vector<int> fixed_attr_c;
-  MATRIX<float> placement_attr_c;
+  Matrix<float> placement_attr_c;
 
   // find the vertex matching scheme
   VertexMatching(hgraph,
@@ -231,15 +258,15 @@ HGraphPtr TPcoarsener::Aggregate(const HGraphPtr& hgraph) const
 // the lazy update means that we do not change the hgraph itself,
 // but during the matching process, we do dynamically update
 // placement_attr_c. vertex_weights_c, fixed_attr_c and community_attr_c
-void TPcoarsener::VertexMatching(
+void Coarsener::VertexMatching(
     const HGraphPtr& hgraph,
     std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
-    MATRIX<float>& vertex_weights_c,
+    Matrix<float>& vertex_weights_c,
     std::vector<int>& community_attr_c,
     std::vector<int>& fixed_attr_c,
-    MATRIX<float>& placement_attr_c) const
+    Matrix<float>& placement_attr_c) const
 {
   // vertex_cluster_map_vec has the size of the number of vertices of hgraph
   vertex_cluster_id_vec.clear();
@@ -501,16 +528,16 @@ void TPcoarsener::VertexMatching(
 // fixed block id of all vertices Two group will be merged if two groups share
 // the same vertex All the fixed vertices in one block will be identified as the
 // same group
-void TPcoarsener::ClusterBasedGroupInfo(
+void Coarsener::ClusterBasedGroupInfo(
     const HGraphPtr& hgraph,
     const std::vector<std::vector<int>>& group_attr,
     std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
-    MATRIX<float>& vertex_weights_c,
+    Matrix<float>& vertex_weights_c,
     std::vector<int>& community_attr_c,
     std::vector<int>& fixed_attr_c,
-    MATRIX<float>& placement_attr_c) const
+    Matrix<float>& placement_attr_c) const
 {
   // convert group_attr to vertex_cluster_id_vec
   if (group_attr.empty() == true && hgraph->fixed_attr_.empty() == true) {
@@ -628,8 +655,8 @@ void TPcoarsener::ClusterBasedGroupInfo(
 }
 
 // order the vertices based on user-specified parameters
-void TPcoarsener::OrderVertices(const HGraphPtr& hgraph,
-                                std::vector<int>& vertices) const
+void Coarsener::OrderVertices(const HGraphPtr& hgraph,
+                              std::vector<int>& vertices) const
 {
   switch (vertex_order_choice_) {
     case CoarsenOrder::RANDOM:
@@ -689,15 +716,15 @@ void TPcoarsener::OrderVertices(const HGraphPtr& hgraph,
 
 //  create the contracted hypergraph based on the vertex matching in
 //  vertex_cluster_id_vec
-HGraphPtr TPcoarsener::Contraction(
+HGraphPtr Coarsener::Contraction(
     const HGraphPtr& hgraph,
     const std::vector<int>&
         vertex_cluster_id_vec,  // map current vertex_id to cluster_id
     // the remaining arguments are related to clusters
-    const MATRIX<float>& vertex_weights_c,
+    const Matrix<float>& vertex_weights_c,
     const std::vector<int>& community_attr_c,
     const std::vector<int>& fixed_attr_c,
-    const MATRIX<float>& placement_attr_c) const
+    const Matrix<float>& placement_attr_c) const
 {
   // Step 1:  identify the contracted hyperedges
   std::vector<int> hyperedge_cluster_id_vec;  // map the hyperedge to hyperedge
@@ -706,8 +733,8 @@ HGraphPtr TPcoarsener::Contraction(
   // -1 means the hyperedge is fully within one cluster
   std::fill(
       hyperedge_cluster_id_vec.begin(), hyperedge_cluster_id_vec.end(), -1);
-  MATRIX<int> hyperedges_c;  // represent each hyperedge as a set of clusters
-  MATRIX<float> hyperedges_weights_c;  // each element represents the weight of
+  Matrix<int> hyperedges_c;  // represent each hyperedge as a set of clusters
+  Matrix<float> hyperedges_weights_c;  // each element represents the weight of
                                        // the clustered hyperedge
   std::vector<float> hyperedge_slack_c;  // the slack for clustered hyperedge.
   std::vector<std::set<int>>
@@ -909,22 +936,22 @@ HGraphPtr TPcoarsener::Contraction(
 
   // Step 3: create the contracted hypergraph
   auto clustered_hgraph
-      = std::make_shared<TPHypergraph>(hgraph->vertex_dimensions_,
-                                       hgraph->hyperedge_dimensions_,
-                                       hgraph->placement_dimensions_,
-                                       hyperedges_c,
-                                       vertex_weights_c,
-                                       hyperedges_weights_c,
-                                       // vertex attributes
-                                       fixed_attr_c,
-                                       community_attr_c,
-                                       placement_attr_c,
-                                       vertex_types_c,
-                                       // timing information
-                                       hyperedge_slack_c,
-                                       hyperedge_arc_set_c,
-                                       timing_paths_c,
-                                       logger_);
+      = std::make_shared<Hypergraph>(hgraph->vertex_dimensions_,
+                                     hgraph->hyperedge_dimensions_,
+                                     hgraph->placement_dimensions_,
+                                     hyperedges_c,
+                                     vertex_weights_c,
+                                     hyperedges_weights_c,
+                                     // vertex attributes
+                                     fixed_attr_c,
+                                     community_attr_c,
+                                     placement_attr_c,
+                                     vertex_types_c,
+                                     // timing information
+                                     hyperedge_slack_c,
+                                     hyperedge_arc_set_c,
+                                     timing_paths_c,
+                                     logger_);
 
   // fill ertex_c_attr which maps the vertex to its corresponding cluster
   // To simpify the implementation, the vertex_c_attr maps the original larger

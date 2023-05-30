@@ -36,25 +36,8 @@
 // This file includes the basic utility functions for operations
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include <algorithm>
-#include <cassert>
-#include <chrono>
-#include <climits>
-#include <cmath>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
 #include <map>
-#include <memory>
-#include <queue>
-#include <random>
-#include <sstream>
-#include <stack>
-#include <stdexcept>
 #include <string>
-#include <thread>
 #include <vector>
 
 #ifdef LOAD_CPLEX
@@ -65,30 +48,24 @@
 
 namespace par {
 
-// MATRIX is a two-dimensional vectors
+// Matrix is a two-dimensional vectors
 template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
+using Matrix = std::vector<std::vector<T>>;
 
 struct Rect
 {
   // all the values are in db unit
-  int64_t lx = 0;
-  int64_t ly = 0;
-  int64_t ux = 0;
-  int64_t uy = 0;
+  int lx = 0;
+  int ly = 0;
+  int ux = 0;
+  int uy = 0;
 
   Rect(int lx_, int ly_, int ux_, int uy_) : lx(lx_), ly(ly_), ux(ux_), uy(uy_)
   {
   }
 
   // check if the Rect is valid
-  bool IsValid() const
-  {
-    if (ux > lx && uy > ly) {
-      return true;
-    }
-    return false;
-  }
+  bool IsValid() const { return ux > lx && uy > ly; }
 
   // reset the fence
   void Reset()
@@ -150,7 +127,7 @@ std::vector<float> operator*(const std::vector<float>& a,
 
 bool operator<(const std::vector<float>& a, const std::vector<float>& b);
 
-bool operator<=(const MATRIX<float>& a, const MATRIX<float>& b);
+bool operator<=(const Matrix<float>& a, const Matrix<float>& b);
 
 bool operator==(const std::vector<float>& a, const std::vector<float>& b);
 
@@ -168,11 +145,11 @@ bool ILPPartitionInst(
     int vertex_weight_dimension,
     std::vector<int>& solution,
     const std::map<int, int>& fixed_vertices,     // vertex_id, block_id
-    const MATRIX<int>& hyperedges,                // hyperedges
+    const Matrix<int>& hyperedges,                // hyperedges
     const std::vector<float>& hyperedge_weights,  // one-dimensional
-    const MATRIX<float>& vertex_weights,          // two-dimensional
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance);
+    const Matrix<float>& vertex_weights,          // two-dimensional
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance);
 
 // Call CPLEX to solve the ILP Based Partitioning
 #ifdef LOAD_CPLEX
@@ -181,11 +158,11 @@ bool OptimalPartCplex(
     int vertex_weight_dimension,
     std::vector<int>& solution,
     const std::map<int, int>& fixed_vertices,     // vertex_id, block_id
-    const MATRIX<int>& hyperedges,                // hyperedges
+    const Matrix<int>& hyperedges,                // hyperedges
     const std::vector<float>& hyperedge_weights,  // one-dimensional
-    const MATRIX<float>& vertex_weights,          // two-dimensional
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance);
+    const Matrix<float>& vertex_weights,          // two-dimensional
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance);
 #endif
 
 }  // namespace par

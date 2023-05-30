@@ -32,8 +32,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "TPHypergraph.h"
-#include "TPRefiner.h"
+#include "Hypergraph.h"
+#include "Refiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
@@ -47,14 +47,14 @@
 namespace par {
 
 // Implement the ILP-based refinement pass
-float TPilpRefine::Pass(
+float IlpRefine::Pass(
     const HGraphPtr& hgraph,
-    const MATRIX<float>& upper_block_balance,
-    const MATRIX<float>& lower_block_balance,
-    MATRIX<float>& block_balance,        // the current block balance
-    MATRIX<int>& net_degs,               // the current net degree
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance,
+    Matrix<float>& block_balance,        // the current block balance
+    Matrix<int>& net_degs,               // the current net degree
     std::vector<float>& cur_paths_cost,  // the current path cost
-    TP_partition& solution,
+    Partitions& solution,
     std::vector<bool>& visited_vertices_flag)
 {
   // Step 1: identify all the boundary vertices (boundary vertices will not
@@ -72,8 +72,8 @@ float TPilpRefine::Pass(
   std::map<int, int> fixed_vertices_extracted;  // vertex_id, block_id
   std::map<int, int> vertices_extracted_map;    // map the boundary vertices to
                                                 // the extracted vertices
-  MATRIX<float> vertices_weight_extracted;      // extracted vertex weight
-  MATRIX<int> hyperedges_extracted;
+  Matrix<float> vertices_weight_extracted;      // extracted vertex weight
+  Matrix<int> hyperedges_extracted;
   std::vector<float> hyperedges_weight_extracted;
   vertices_weight_extracted.reserve(num_extracted_vertices);
   int vertex_id = 0;
@@ -140,7 +140,7 @@ float TPilpRefine::Pass(
   // try to update the solution
   // We have this extra step, because the ILP-based partitioning cannot handle
   // path related cost
-  std::vector<TP_gain_cell> moves_trace;
+  std::vector<GainCell> moves_trace;
   float best_gain = 0.0;
   float total_gain = 0.0;
   int best_vertex_id = -1;
@@ -148,13 +148,13 @@ float TPilpRefine::Pass(
     const int vertex_id = vertices_extracted[i];
     const int to_pid = solution_extracted[i];
     // calculate the gain
-    TP_gain_cell gain_cell = CalculateVertexGain(vertex_id,
-                                                 solution[vertex_id],
-                                                 to_pid,
-                                                 hgraph,
-                                                 solution,
-                                                 cur_paths_cost,
-                                                 net_degs);
+    GainCell gain_cell = CalculateVertexGain(vertex_id,
+                                             solution[vertex_id],
+                                             to_pid,
+                                             hgraph,
+                                             solution,
+                                             cur_paths_cost,
+                                             net_degs);
     moves_trace.push_back(gain_cell);
     // accept the gain
     AcceptVertexGain(gain_cell,

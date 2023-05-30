@@ -43,8 +43,8 @@
 // then put remaining vertices into the first block 3) ILP-based Partitioning
 // (INIT_DIRECT_ILP)
 
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
+#include "Evaluator.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
@@ -59,55 +59,30 @@ enum class PartitionType
   INIT_DIRECT_ILP
 };
 
-template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
+class Partitioner;
+using PartitioningPtr = std::shared_ptr<Partitioner>;
 
-class TPpartitioner;
-using TP_partitioning_ptr = std::shared_ptr<TPpartitioner>;
-
-class TPpartitioner
+class Partitioner
 {
  public:
   // Note that please do NOT set ilp_accelerator_factor here
-  TPpartitioner(int num_parts,
-                int seed,
-                TP_evaluator_ptr evaluator,  // evaluator
-                utl::Logger* logger)
-      : num_parts_(num_parts), seed_(seed)
-  {
-    ilp_accelerator_factor_ = 1.0;  // set to default value
-    evaluator_ = std::move(evaluator);
-    logger_ = logger;
-  }
+  Partitioner(int num_parts,
+              int seed,
+              const EvaluatorPtr& evaluator,
+              utl::Logger* logger);
 
   // The main function of Partitioning
   void Partition(const HGraphPtr& hgraph,
-                 const MATRIX<float>& upper_block_balance,
-                 const MATRIX<float>& lower_block_balance,
+                 const Matrix<float>& upper_block_balance,
+                 const Matrix<float>& lower_block_balance,
                  std::vector<int>& solution,
                  PartitionType partitioner_choice) const;
 
-  void SetRandomSeed(int seed)
-  {
-    seed_ = seed;
-    // logger_->report("Set the random seed to {}", seed_);
-  }
+  void SetRandomSeed(int seed) { seed_ = seed; }
 
-  void EnableIlpAcceleration(float acceleration_factor)
-  {
-    ilp_accelerator_factor_ = acceleration_factor;
-    ilp_accelerator_factor_ = std::max(ilp_accelerator_factor_, 0.0f);
-    ilp_accelerator_factor_ = std::min(ilp_accelerator_factor_, 1.0f);
-    logger_->report("[INFO] Set ILP accelerator factor to {}",
-                    ilp_accelerator_factor_);
-  }
+  void EnableIlpAcceleration(float acceleration_factor);
 
-  void DisableIlpAcceleration()
-  {
-    ilp_accelerator_factor_ = 1.0;
-    logger_->report("[INFO] Reset ILP accelerator factor to {}",
-                    ilp_accelerator_factor_);
-  }
+  void DisableIlpAcceleration();
 
  private:
   // random partitioning
@@ -116,15 +91,15 @@ class TPpartitioner
   // If vile_mode == false, we try to generate balanced random partitioning
   // If vile_mode == true,  we try to generate unbalanced random partitioning
   void RandomPart(const HGraphPtr& hgraph,
-                  const MATRIX<float>& upper_block_balance,
-                  const MATRIX<float>& lower_block_balance,
+                  const Matrix<float>& upper_block_balance,
+                  const Matrix<float>& lower_block_balance,
                   std::vector<int>& solution,
                   bool vile_mode = false) const;
 
   // ILP-based partitioning
   void ILPPart(const HGraphPtr& hgraph,
-               const MATRIX<float>& upper_block_balance,
-               const MATRIX<float>& lower_block_balance,
+               const Matrix<float>& upper_block_balance,
+               const Matrix<float>& lower_block_balance,
                std::vector<int>& solution) const;
 
   // Vile partitioning
@@ -136,7 +111,7 @@ class TPpartitioner
               // If the ilp acceleration is enabled, we only use
               // top ilp_accelerator_factor hyperedges. Range: 0, 1
   int seed_ = 0;
-  TP_evaluator_ptr evaluator_ = nullptr;  // evaluator
+  EvaluatorPtr evaluator_ = nullptr;  // evaluator
   utl::Logger* logger_ = nullptr;
 };
 

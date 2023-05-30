@@ -34,106 +34,83 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "TPCoarsener.h"
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
-#include "TPPartitioner.h"
-#include "TPRefiner.h"
+#include "Coarsener.h"
+#include "Evaluator.h"
+#include "Hypergraph.h"
+#include "Partitioner.h"
+#include "Refiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
 namespace par {
 
-using TP_partition = std::vector<int>;
-
-template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
-
 // Multilevel partitioner
-class TPmultilevelPartitioner;
-using TP_multi_level_partitioner = std::shared_ptr<TPmultilevelPartitioner>;
+class MultilevelPartitioner;
+using MultiLevelPartitioner = std::shared_ptr<MultilevelPartitioner>;
 
-class TPmultilevelPartitioner
+class MultilevelPartitioner
 {
  public:
-  TPmultilevelPartitioner(const int num_parts,
-                          // user-specified parameters
-                          const bool v_cycle_flag,
-                          const int num_initial_solutions,
-                          const int num_best_initial_solutions,
-                          const int num_vertices_threshold_ilp,
-                          const int max_num_vcycle,
-                          const int num_coarsen_solutions,
-                          const int seed,
-                          // pointers
-                          TP_coarsening_ptr coarsener,
-                          TP_partitioning_ptr partitioner,
-                          TP_k_way_fm_refiner_ptr k_way_fm_refiner,
-                          TP_k_way_pm_refiner_ptr k_way_pm_refiner,
-                          TP_greedy_refiner_ptr greedy_refiner,
-                          TP_ilp_refiner_ptr ilp_refiner,
-                          TP_evaluator_ptr evaluator,
-                          utl::Logger* logger)
-      : num_parts_(num_parts),
-        num_vertices_threshold_ilp_(num_vertices_threshold_ilp),
-        num_initial_random_solutions_(num_initial_solutions),
-        num_best_initial_solutions_(num_best_initial_solutions),
-        max_num_vcycle_(max_num_vcycle),
-        num_coarsen_solutions_(num_coarsen_solutions),
-        seed_(seed),
-        v_cycle_flag_(v_cycle_flag)
-  {
-    coarsener_ = std::move(coarsener);
-    partitioner_ = std::move(partitioner);
-    k_way_fm_refiner_ = std::move(k_way_fm_refiner);
-    k_way_pm_refiner_ = std::move(k_way_pm_refiner);
-    greedy_refiner_ = std::move(greedy_refiner);
-    ilp_refiner_ = std::move(ilp_refiner);
-    evaluator_ = std::move(evaluator);
-    logger_ = logger;
-  }
+  MultilevelPartitioner(const int num_parts,
+                        // user-specified parameters
+                        const bool v_cycle_flag,
+                        const int num_initial_solutions,
+                        const int num_best_initial_solutions,
+                        const int num_vertices_threshold_ilp,
+                        const int max_num_vcycle,
+                        const int num_coarsen_solutions,
+                        const int seed,
+                        // pointers
+                        CoarseningPtr coarsener,
+                        PartitioningPtr partitioner,
+                        KWayFMRefinerPtr k_way_fm_refiner,
+                        KWayPMRefinerPtr k_way_pm_refiner,
+                        GreedyRefinerPtr greedy_refiner,
+                        IlpRefinerPtr ilp_refiner,
+                        EvaluatorPtr evaluator,
+                        utl::Logger* logger);
 
   // Main function
   // here the hgraph should not be const
   // Because our slack-rebudgeting algorithm will change hgraph
-  TP_partition Partition(const HGraphPtr& hgraph,
-                         const MATRIX<float>& upper_block_balance,
-                         const MATRIX<float>& lower_block_balance) const;
+  Partitions Partition(const HGraphPtr& hgraph,
+                       const Matrix<float>& upper_block_balance,
+                       const Matrix<float>& lower_block_balance) const;
 
   // Use the initial solution as the community feature
   // Call Vcycle refinement
   void VcycleRefinement(const HGraphPtr& hgraph,
-                        const MATRIX<float>& upper_block_balance,
-                        const MATRIX<float>& lower_block_balance,
+                        const Matrix<float>& upper_block_balance,
+                        const Matrix<float>& lower_block_balance,
                         std::vector<int>& best_solution) const;
 
  private:
   // Run single-level partitioning
   std::vector<int> SingleLevelPartition(
       const HGraphPtr& hgraph,
-      const MATRIX<float>& upper_block_balance,
-      const MATRIX<float>& lower_block_balance) const;
+      const Matrix<float>& upper_block_balance,
+      const Matrix<float>& lower_block_balance) const;
 
   // We expose this interface for the last-minute improvement
   std::vector<int> SingleCycleRefinement(
       const HGraphPtr& hgraph,
-      const MATRIX<float>& upper_block_balance,
-      const MATRIX<float>& lower_block_balance) const;
+      const Matrix<float>& upper_block_balance,
+      const Matrix<float>& lower_block_balance) const;
 
   // Generate initial partitioning
   // Include random partitioning, Vile partitioning and ILP partitioning
   void InitialPartition(const HGraphPtr& hgraph,
-                        const MATRIX<float>& upper_block_balance,
-                        const MATRIX<float>& lower_block_balance,
-                        MATRIX<int>& top_initial_solutions,
+                        const Matrix<float>& upper_block_balance,
+                        const Matrix<float>& lower_block_balance,
+                        Matrix<int>& top_initial_solutions,
                         int& best_solution_id) const;
 
   // Refine the solutions in top_solutions in parallel with multi-threading
   // the top_solutions and best_solution_id will be updated during this process
-  void RefinePartition(TP_coarse_graph_ptrs hierarchy,
-                       const MATRIX<float>& upper_block_balance,
-                       const MATRIX<float>& lower_block_balance,
-                       MATRIX<int>& top_solutions,
+  void RefinePartition(CoarseGraphPtrs hierarchy,
+                       const Matrix<float>& upper_block_balance,
+                       const Matrix<float>& lower_block_balance,
+                       Matrix<int>& top_solutions,
                        int& best_solution_id) const;
 
   // For last minute improvement
@@ -141,17 +118,17 @@ class TPmultilevelPartitioner
   // Ilp refinement, k_way_pm_refinement,
   // k_way_fm_refinement and greedy refinement
   void CallRefiner(const HGraphPtr& hgraph,
-                   const MATRIX<float>& upper_block_balance,
-                   const MATRIX<float>& lower_block_balance,
+                   const Matrix<float>& upper_block_balance,
+                   const Matrix<float>& lower_block_balance,
                    std::vector<int>& solution) const;
 
   // Perform cut-overlay clustering and ILP-based partitioning
   // The ILP-based partitioning uses top_solutions[best_solution_id] as a hint,
   // such that the runtime can be signficantly reduced
   std::vector<int> CutOverlayILPPart(const HGraphPtr& hgraph,
-                                     const MATRIX<float>& upper_block_balance,
-                                     const MATRIX<float>& lower_block_balance,
-                                     const MATRIX<int>& top_solutions,
+                                     const Matrix<float>& upper_block_balance,
+                                     const Matrix<float>& lower_block_balance,
+                                     const Matrix<int>& top_solutions,
                                      int best_solution_id) const;
 
   // basic parameters
@@ -169,13 +146,13 @@ class TPmultilevelPartitioner
   const bool v_cycle_flag_ = true;
 
   // pointers
-  TP_coarsening_ptr coarsener_ = nullptr;
-  TP_partitioning_ptr partitioner_ = nullptr;
-  TP_k_way_fm_refiner_ptr k_way_fm_refiner_ = nullptr;
-  TP_k_way_pm_refiner_ptr k_way_pm_refiner_ = nullptr;
-  TP_greedy_refiner_ptr greedy_refiner_ = nullptr;
-  TP_ilp_refiner_ptr ilp_refiner_ = nullptr;
-  TP_evaluator_ptr evaluator_ = nullptr;
+  CoarseningPtr coarsener_ = nullptr;
+  PartitioningPtr partitioner_ = nullptr;
+  KWayFMRefinerPtr k_way_fm_refiner_ = nullptr;
+  KWayPMRefinerPtr k_way_pm_refiner_ = nullptr;
+  GreedyRefinerPtr greedy_refiner_ = nullptr;
+  IlpRefinerPtr ilp_refiner_ = nullptr;
+  EvaluatorPtr evaluator_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };
 
