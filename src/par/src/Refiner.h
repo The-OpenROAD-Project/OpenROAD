@@ -539,16 +539,7 @@ class KWayFMRefine : public Refiner
 class KWayPMRefine : public KWayFMRefine
 {
  public:
-  KWayPMRefine(
-      const int num_parts,
-      const int refiner_iters,
-      const float path_wt_factor,  // weight for cutting a critical timing path
-      const float snaking_wt_factor,  // weight for snaking timing paths
-      const int max_move,  // the maximum number of vertices or hyperedges can
-                           // be moved in each pass
-      const int total_corking_passes,
-      EvaluatorPtr evaluator,
-      utl::Logger* logger);
+  using KWayFMRefine::KWayFMRefine;
 
  private:
   // In each pass, we only move the boundary vertices
@@ -610,15 +601,7 @@ class KWayPMRefine : public KWayFMRefine
 class GreedyRefine : public Refiner
 {
  public:
-  GreedyRefine(
-      const int num_parts,
-      const int refiner_iters,
-      const float path_wt_factor,  // weight for cutting a critical timing path
-      const float snaking_wt_factor,  // weight for snaking timing paths
-      const int max_move,  // the maximum number of vertices or hyperedges can
-                           // be moved in each pass
-      EvaluatorPtr evaluator,
-      utl::Logger* logger);
+  using Refiner::Refiner;
 
  private:
   // In each pass, we only move the boundary vertices
@@ -647,16 +630,8 @@ class GreedyRefine : public Refiner
 class IlpRefine : public Refiner
 {
  public:
-  IlpRefine(
-      const int num_parts,
-      const int refiner_iters,
-      const float path_wt_factor,  // weight for cutting a critical timing path
-      const float snaking_wt_factor,  // weight for snaking timing paths
-      const int max_move,  // the maximum number of vertices or hyperedges can
-                           // be moved in each pass
-      EvaluatorPtr evaluator,
-      utl::Logger* logger);
-
+  using Refiner::Refiner;
+  
  private:
   // In each pass, we only move the boundary vertices
   // here we pass block_balance and net_degrees as reference
