@@ -52,6 +52,25 @@
 
 namespace par {
 
+TPkWayPMRefine::TPkWayPMRefine(const int num_parts,
+                               const int refiner_iters,
+                               const float path_wt_factor,
+                               const float snaking_wt_factor,
+                               const int max_move,
+                               const int total_corking_passes,
+                               TP_evaluator_ptr evaluator,
+                               utl::Logger* logger)
+    : TPkWayFMRefine(num_parts,
+                     refiner_iters,
+                     path_wt_factor,
+                     snaking_wt_factor,
+                     max_move,
+                     total_corking_passes,
+                     std::move(evaluator),
+                     logger)
+{
+}
+
 // In each pass, we only move the boundary vertices
 // here we pass block_balance and net_degrees as reference
 // because we only move a few vertices during each pass

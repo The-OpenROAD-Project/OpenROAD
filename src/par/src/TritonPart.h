@@ -73,10 +73,7 @@ class TritonPart
   TritonPart(ord::dbNetwork* network,
              odb::dbDatabase* db,
              sta::dbSta* sta,
-             utl::Logger* logger)
-      : network_(network), db_(db), sta_(sta), logger_(logger)
-  {
-  }
+             utl::Logger* logger);
 
   // Top level interface
   // The function for partitioning a hypergraph
@@ -175,63 +172,44 @@ class TritonPart
                        float path_snaking_factor,
                        float timing_exp_factor,
                        float extra_delay,
-                       bool guardband_flag)
-  {
-    net_timing_factor_
-        = net_timing_factor;  // the timing weight for cutting a hyperedge
-    path_timing_factor_
-        = path_timing_factor;  // the cost for cutting a critical timing path
-                               // once. If a critical path is cut by 3 times,
-                               // the cost is defined as 3 * path_timing_factor_
-    path_snaking_factor_
-        = path_snaking_factor;  // the cost of introducing a snaking timing
-                                // path, see our paper for detailed explanation
-                                // of snaking timing paths
-    timing_exp_factor_ = timing_exp_factor;  // exponential factor
-    extra_delay_ = extra_delay;              // extra delay introduced by cut
-    guardband_flag_ = guardband_flag;        // timing guardband_flag
-  }
+                       bool guardband_flag);
 
+  // The cost introduced by a cut hyperedge e is e_wt_factors
+  // dot_product hyperedge_weights_[e]. This parameter is used by
+  // coarsening and partitioning
   void SetNetWeight(const std::vector<float>& e_wt_factors)
   {
-    e_wt_factors_ = e_wt_factors;  // the cost introduced by a cut hyperedge e
-                                   // is e_wt_factors dot_product
-                                   // hyperedge_weights_[e] this parameter is
-                                   // used by coarsening and partitioning
+    e_wt_factors_ = e_wt_factors;
   }
 
+  // The ``weight'' of a vertex. For placement-driven coarsening, when
+  // we merge two vertices, we need to update the location of merged
+  // vertex based on the gravity center of these two vertices.  The
+  // weight of vertex v is defined as v_wt_factors dot_product
+  // vertex_weights_[v] this parameter is only used in coarsening
   void SetVertexWeight(const std::vector<float>& v_wt_factors)
   {
-    v_wt_factors_
-        = v_wt_factors;  // the ``weight'' of a vertex. For placement-driven
-                         // coarsening, when we merge two vertices, we need to
-                         // update the location of merged vertex based on the
-                         // gravity center of these two vertices.  The weight of
-                         // vertex v is defined as v_wt_factors dot_product
-                         // vertex_weights_[v] this parameter is only used in
-                         // coarsening
+    v_wt_factors_ = v_wt_factors;
   }
 
+  // The weight for placement information. For placement-driven
+  // coarsening, when we calculate the score for best-choice
+  // coarsening, the placement information also contributes to the
+  // score function. we prefer to merge two vertices which are
+  // adjacent physically the distance between u and v is defined as
+  // norm2(placement_attr[u] - placement_attr[v],
+  // placement_wt_factors_) this parameter is only used during
+  // coarsening
   void SetPlacementWeight(const std::vector<float>& placement_wt_factors)
   {
-    placement_wt_factors_
-        = placement_wt_factors;  // the weight for placement information. For
-                                 // placement-driven coarsening, when we
-                                 // calculate the score for best-choice
-                                 // coarsening, the placement information also
-                                 // contributes to the score function. we prefer
-                                 // to merge two vertices which are adjacent
-                                 // physically the distance between u and v is
-                                 // defined as norm2(placement_attr[u] -
-                                 // placement_attr[v], placement_wt_factors_)
-                                 // this parameter is only used during
-                                 // coarsening
+    placement_wt_factors_ = placement_wt_factors;
   }
 
   // Set detailed parameters
   // There parameters only used by users who want to exploit the performance
   // limits of TritonPart
-  void SetFineTuneParams(  // coarsening related parameters
+  void SetFineTuneParams(
+      // coarsening related parameters
       int thr_coarsen_hyperedge_size_skip,
       int thr_coarsen_vertices,
       int thr_coarsen_hyperedges,
@@ -252,67 +230,7 @@ class TritonPart
       int max_num_vcycle,
       int num_coarsen_solutions,
       int num_vertices_threshold_ilp,
-      int global_net_threshold)
-  {
-    // coarsening related parameters (stop conditions)
-    thr_coarsen_hyperedge_size_skip_
-        = thr_coarsen_hyperedge_size_skip;  // if the size of a hyperedge is
-                                            // larger than
-                                            // thr_coarsen_hyperedge_size_skip_,
-                                            // then we ignore this hyperedge
-                                            // during coarsening
-    thr_coarsen_vertices_
-        = thr_coarsen_vertices;  // the minimum threshold of number of vertices
-                                 // in the coarsest hypergraph
-    thr_coarsen_hyperedges_
-        = thr_coarsen_hyperedges;  // the minimum threshold of number of
-                                   // hyperedges in the coarsest hypergraph
-    coarsening_ratio_ = coarsening_ratio;  // the ratio of number of vertices of
-                                           // adjacent coarse hypergraphs
-    max_coarsen_iters_
-        = max_coarsen_iters;  // maxinum number of coarsening iterations
-    adj_diff_ratio_
-        = adj_diff_ratio;  // the ratio of number of vertices of adjacent coarse
-                           // hypergraphs if the ratio is less than
-                           // adj_diff_ratio_, then stop coarsening
-    min_num_vertices_each_part_
-        = min_num_vertices_each_part;  // minimum number of vertices in each
-                                       // block for the partitioning solution of
-                                       // the coareset hypergraph We achieve
-                                       // this by controlling the maximum vertex
-                                       // weight during coarsening
-    // initial partitioning related parameters
-    num_initial_solutions_ = num_initial_solutions;  // number of initial random
-                                                     // solutions generated
-    num_best_initial_solutions_
-        = num_best_initial_solutions;  // number of best initial solutions used
-                                       // for stability
-    // refinement related parameter
-    refiner_iters_ = refiner_iters;  // refinement iterations
-    max_moves_
-        = max_moves;  // the allowed moves for each pass of FM or greedy
-                      // refinement or the number of vertices in an ILP instance
-    early_stop_ratio_
-        = early_stop_ratio;  // if the number of moved vertices exceeds
-                             // num_vertices_of_a_hypergraph times
-                             // early_stop_ratio_, then exit current FM pass.
-                             // This parameter is set based on the obersvation
-                             // that in a FM pass, most of the gains are
-                             // achieved by first several moves
-    total_corking_passes_
-        = total_corking_passes;  // the maximum level of traversing the buckets
-                                 // to solve the "corking effect"
-    // V-cycle related parameters
-    v_cycle_flag_ = v_cycle_flag;
-    max_num_vcycle_ = max_num_vcycle;  // maximum number of vcycles
-    num_coarsen_solutions_ = num_coarsen_solutions;
-
-    // ILP threshold
-    num_vertices_threshold_ilp_ = num_vertices_threshold_ilp;
-
-    // global net threshold
-    global_net_threshold_ = global_net_threshold;
-  }
+      int global_net_threshold);
 
  private:
   // Main partititon function

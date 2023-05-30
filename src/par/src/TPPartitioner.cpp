@@ -41,6 +41,29 @@
 #include "utl/Logger.h"
 
 namespace par {
+TPpartitioner::TPpartitioner(int num_parts,
+                             int seed,
+                             const TP_evaluator_ptr& evaluator,
+                             utl::Logger* logger)
+    : num_parts_(num_parts), seed_(seed), evaluator_(evaluator), logger_(logger)
+{
+}
+
+void TPpartitioner::EnableIlpAcceleration(float acceleration_factor)
+{
+  ilp_accelerator_factor_ = acceleration_factor;
+  ilp_accelerator_factor_ = std::max(ilp_accelerator_factor_, 0.0f);
+  ilp_accelerator_factor_ = std::min(ilp_accelerator_factor_, 1.0f);
+  logger_->report("[INFO] Set ILP accelerator factor to {}",
+                  ilp_accelerator_factor_);
+}
+
+void TPpartitioner::DisableIlpAcceleration()
+{
+  ilp_accelerator_factor_ = 1.0;
+  logger_->report("[INFO] Reset ILP accelerator factor to {}",
+                  ilp_accelerator_factor_);
+}
 
 // The main function of Partitioning
 void TPpartitioner::Partition(const HGraphPtr& hgraph,

@@ -41,6 +41,71 @@
 
 namespace par {
 
+VertexGain::VertexGain(const int vertex,
+                       const int src_block_id,
+                       const int destination_block_id,
+                       const float gain,
+                       const std::map<int, float>& path_cost)
+    : vertex_(vertex),
+      source_part_(src_block_id),
+      destination_part_(destination_block_id),
+      gain_(gain),
+      path_cost_(path_cost)
+{
+}
+
+HyperedgeGain::HyperedgeGain(const int hyperedge_id,
+                             const int destination_part,
+                             const float gain,
+                             const std::map<int, float>& path_cost)
+{
+  hyperedge_id_ = hyperedge_id;
+  destination_part_ = destination_part;
+  gain_ = gain;
+  path_cost_ = path_cost;
+}
+
+TPrefiner::TPrefiner(
+    const int num_parts,
+    const int refiner_iters,
+    const float path_wt_factor,     // weight for cutting a critical timing path
+    const float snaking_wt_factor,  // weight for snaking timing paths
+    const int max_move,  // the maximum number of vertices or hyperedges can
+                         // be moved in each pass
+    TP_evaluator_ptr evaluator,  // evaluator
+    utl::Logger* logger)
+    : num_parts_(num_parts),
+      refiner_iters_(refiner_iters),
+      path_wt_factor_(path_wt_factor),
+      snaking_wt_factor_(snaking_wt_factor),
+      max_move_(max_move),
+      refiner_iters_default_(refiner_iters),
+      max_move_default_(max_move)
+{
+  evaluator_ = std::move(evaluator);
+  logger_ = logger;
+}
+
+void TPrefiner::SetMaxMove(const int max_move)
+{
+  logger_->report("[INFO] Set the max_move to {}", max_move);
+  max_move_ = max_move;
+}
+
+void TPrefiner::SetRefineIters(const int refiner_iters)
+{
+  logger_->report("[INFO] Set the refiner_iter to {}", refiner_iters);
+  refiner_iters_ = refiner_iters;
+}
+
+void TPrefiner::RestoreDefaultParameters()
+{
+  max_move_ = max_move_default_;
+  refiner_iters_ = refiner_iters_default_;
+  logger_->report("[INFO] Reset the max_move to {}", max_move_);
+  logger_->report("[INFO] Reset the refiner_iters to {}", refiner_iters_);
+}
+
 // The main function of refinement class
 void TPrefiner::Refine(const HGraphPtr& hgraph,
                        const MATRIX<float>& upper_block_balance,

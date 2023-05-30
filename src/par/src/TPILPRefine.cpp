@@ -45,6 +45,22 @@
 // ------------------------------------------------------------------------------
 
 namespace par {
+TPilpRefine::TPilpRefine(const int num_parts,
+                         const int refiner_iters,
+                         const float path_wt_factor,
+                         const float snaking_wt_factor,
+                         const int max_move,
+                         TP_evaluator_ptr evaluator,
+                         utl::Logger* logger)
+    : TPrefiner(num_parts,
+                refiner_iters,
+                path_wt_factor,
+                snaking_wt_factor,
+                max_move,
+                std::move(evaluator),
+                logger)
+{
+}
 
 // Implement the ILP-based refinement pass
 float TPilpRefine::Pass(

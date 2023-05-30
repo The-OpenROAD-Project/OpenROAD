@@ -93,21 +93,7 @@ class TPcoarsener
       const int seed,          // random seed
       const CoarsenOrder vertex_order_choice,  // vertex order
       TP_evaluator_ptr evaluator,              // evaluator to calculate score
-      utl::Logger* logger)
-      : num_parts_(num_parts),
-        thr_coarsen_hyperedge_size_skip_(thr_coarsen_hyperedge_size_skip),
-        thr_coarsen_vertices_(thr_coarsen_vertices),
-        thr_coarsen_hyperedges_(thr_coarsen_hyperedges),
-        coarsening_ratio_(coarsening_ratio),
-        max_coarsen_iters_(max_coarsen_iters),
-        adj_diff_ratio_(adj_diff_ratio),
-        thr_cluster_weight_(thr_cluster_weight),
-        seed_(seed),
-        vertex_order_choice_(vertex_order_choice)
-  {
-    evaluator_ = std::move(evaluator);
-    logger_ = logger;
-  }
+      utl::Logger* logger);
 
   // the function of coarsen a hypergraph
   // The main function pf TPcoarsener class

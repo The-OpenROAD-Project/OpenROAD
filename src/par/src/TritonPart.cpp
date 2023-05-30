@@ -83,6 +83,131 @@ namespace par {
 // Public functions
 // -----------------------------------------------------------------------------------
 
+TritonPart::TritonPart(ord::dbNetwork* network,
+                       odb::dbDatabase* db,
+                       sta::dbSta* sta,
+                       utl::Logger* logger)
+    : network_(network), db_(db), sta_(sta), logger_(logger)
+{
+}
+
+void TritonPart::SetTimingParams(float net_timing_factor,
+                                 float path_timing_factor,
+                                 float path_snaking_factor,
+                                 float timing_exp_factor,
+                                 float extra_delay,
+                                 bool guardband_flag)
+{
+  // the timing weight for cutting a hyperedge
+  net_timing_factor_ = net_timing_factor;
+
+  // the cost for cutting a critical timing path once. If a critical
+  // path is cut by 3 times, the cost is defined as 3 *
+  // path_timing_factor_
+  path_timing_factor_ = path_timing_factor;
+
+  // the cost of introducing a snaking timing path, see our paper for
+  // detailed explanation of snaking timing paths
+  path_snaking_factor_ = path_snaking_factor;
+
+  timing_exp_factor_ = timing_exp_factor;  // exponential factor
+  extra_delay_ = extra_delay;              // extra delay introduced by cut
+  guardband_flag_ = guardband_flag;        // timing guardband_flag
+}
+
+void TritonPart::SetFineTuneParams(
+    // coarsening related parameters
+    int thr_coarsen_hyperedge_size_skip,
+    int thr_coarsen_vertices,
+    int thr_coarsen_hyperedges,
+    float coarsening_ratio,
+    int max_coarsen_iters,
+    float adj_diff_ratio,
+    int min_num_vertices_each_part,
+    // initial partitioning related parameters
+    int num_initial_solutions,
+    int num_best_initial_solutions,
+    // refinement related parameters
+    int refiner_iters,
+    int max_moves,
+    float early_stop_ratio,
+    int total_corking_passes,
+    // vcycle related parameters
+    bool v_cycle_flag,
+    int max_num_vcycle,
+    int num_coarsen_solutions,
+    int num_vertices_threshold_ilp,
+    int global_net_threshold)
+{
+  // coarsening related parameters (stop conditions)
+
+  // if the size of a hyperedge is larger than
+  // thr_coarsen_hyperedge_size_skip_, then we ignore this hyperedge
+  // during coarsening
+  thr_coarsen_hyperedge_size_skip_ = thr_coarsen_hyperedge_size_skip;
+
+  // the minimum threshold of number of vertices in the coarsest
+  // hypergraph
+  thr_coarsen_vertices_ = thr_coarsen_vertices;
+
+  // the minimum threshold of number of hyperedges in the coarsest
+  // hypergraph
+  thr_coarsen_hyperedges_ = thr_coarsen_hyperedges;
+
+  // the ratio of number of vertices of adjacent coarse hypergraphs
+  coarsening_ratio_ = coarsening_ratio;
+
+  // maxinum number of coarsening iterations
+  max_coarsen_iters_ = max_coarsen_iters;
+
+  // the ratio of number of vertices of adjacent coarse hypergraphs if
+  // the ratio is less than adj_diff_ratio_, then stop coarsening
+  adj_diff_ratio_ = adj_diff_ratio;
+
+  // minimum number of vertices in each block for the partitioning
+  // solution of the coareset hypergraph We achieve this by
+  // controlling the maximum vertex weight during coarsening
+  min_num_vertices_each_part_ = min_num_vertices_each_part;
+
+  // initial partitioning related parameters
+
+  // number of initial random solutions generated
+  num_initial_solutions_ = num_initial_solutions;
+
+  // number of best initial solutions used for stability
+  num_best_initial_solutions_ = num_best_initial_solutions;
+
+  // refinement related parameter
+
+  refiner_iters_ = refiner_iters;  // refinement iterations
+
+  // the allowed moves for each pass of FM or greedy refinement or the
+  // number of vertices in an ILP instance
+  max_moves_ = max_moves;
+
+  // If the number of moved vertices exceeds
+  // num_vertices_of_a_hypergraph times early_stop_ratio_, then exit
+  // current FM pass.  This parameter is set based on the obersvation
+  // that in a FM pass, most of the gains are achieved by first
+  // several moves
+  early_stop_ratio_ = early_stop_ratio;
+
+  // the maximum level of traversing the buckets to solve the "corking
+  // effect"
+  total_corking_passes_ = total_corking_passes;
+
+  // V-cycle related parameters
+  v_cycle_flag_ = v_cycle_flag;
+  max_num_vcycle_ = max_num_vcycle;  // maximum number of vcycles
+  num_coarsen_solutions_ = num_coarsen_solutions;
+
+  // ILP threshold
+  num_vertices_threshold_ilp_ = num_vertices_threshold_ilp;
+
+  // global net threshold
+  global_net_threshold_ = global_net_threshold;
+}
+
 // The function for partitioning a hypergraph
 // This is used for replacing hMETIS
 // Key supports:

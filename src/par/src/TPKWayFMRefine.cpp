@@ -42,6 +42,25 @@
 // Implement the direct k-way FM refinement
 namespace par {
 
+TPkWayFMRefine::TPkWayFMRefine(const int num_parts,
+                               const int refiner_iters,
+                               const float path_wt_factor,
+                               const float snaking_wt_factor,
+                               const int max_move,
+                               const int total_corking_passes,
+                               TP_evaluator_ptr evaluator,
+                               utl::Logger* logger)
+    : TPrefiner(num_parts,
+                refiner_iters,
+                path_wt_factor,
+                snaking_wt_factor,
+                max_move,
+                std::move(evaluator),
+                logger),
+      total_corking_passes_(total_corking_passes)
+{
+}
+
 // In each pass, we only move the boundary vertices
 float TPkWayFMRefine::Pass(
     const HGraphPtr& hgraph,

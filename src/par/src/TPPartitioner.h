@@ -71,14 +71,8 @@ class TPpartitioner
   // Note that please do NOT set ilp_accelerator_factor here
   TPpartitioner(int num_parts,
                 int seed,
-                TP_evaluator_ptr evaluator,  // evaluator
-                utl::Logger* logger)
-      : num_parts_(num_parts), seed_(seed)
-  {
-    ilp_accelerator_factor_ = 1.0;  // set to default value
-    evaluator_ = std::move(evaluator);
-    logger_ = logger;
-  }
+                const TP_evaluator_ptr& evaluator,
+                utl::Logger* logger);
 
   // The main function of Partitioning
   void Partition(const HGraphPtr& hgraph,
@@ -87,27 +81,11 @@ class TPpartitioner
                  std::vector<int>& solution,
                  PartitionType partitioner_choice) const;
 
-  void SetRandomSeed(int seed)
-  {
-    seed_ = seed;
-    // logger_->report("Set the random seed to {}", seed_);
-  }
+  void SetRandomSeed(int seed) { seed_ = seed; }
 
-  void EnableIlpAcceleration(float acceleration_factor)
-  {
-    ilp_accelerator_factor_ = acceleration_factor;
-    ilp_accelerator_factor_ = std::max(ilp_accelerator_factor_, 0.0f);
-    ilp_accelerator_factor_ = std::min(ilp_accelerator_factor_, 1.0f);
-    logger_->report("[INFO] Set ILP accelerator factor to {}",
-                    ilp_accelerator_factor_);
-  }
+  void EnableIlpAcceleration(float acceleration_factor);
 
-  void DisableIlpAcceleration()
-  {
-    ilp_accelerator_factor_ = 1.0;
-    logger_->report("[INFO] Reset ILP accelerator factor to {}",
-                    ilp_accelerator_factor_);
-  }
+  void DisableIlpAcceleration();
 
  private:
   // random partitioning

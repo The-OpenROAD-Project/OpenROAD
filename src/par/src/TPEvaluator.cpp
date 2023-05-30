@@ -46,6 +46,31 @@
 
 namespace par {
 
+GoldenEvaluator::GoldenEvaluator(const int num_parts,
+                                 const std::vector<float>& e_wt_factors,
+                                 const std::vector<float>& v_wt_factors,
+                                 const std::vector<float>& placement_wt_factors,
+                                 const float net_timing_factor,
+                                 const float path_timing_factor,
+                                 const float path_snaking_factor,
+                                 const float timing_exp_factor,
+                                 const float extra_cut_delay,
+                                 HGraphPtr timing_graph,
+                                 utl::Logger* logger)
+    : num_parts_(num_parts),
+      extra_cut_delay_(extra_cut_delay),
+      e_wt_factors_(e_wt_factors),
+      v_wt_factors_(v_wt_factors),
+      placement_wt_factors_(placement_wt_factors),
+      net_timing_factor_(net_timing_factor),
+      path_timing_factor_(path_timing_factor),
+      path_snaking_factor_(path_snaking_factor),
+      timing_exp_factor_(timing_exp_factor)
+{
+  timing_graph_ = std::move(timing_graph);
+  logger_ = logger;
+}
+
 // calculate the vertex distribution of each net
 MATRIX<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr& hgraph,
                                            const TP_partition& solution) const

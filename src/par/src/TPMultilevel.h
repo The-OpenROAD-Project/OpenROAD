@@ -73,25 +73,7 @@ class TPmultilevelPartitioner
                           TP_greedy_refiner_ptr greedy_refiner,
                           TP_ilp_refiner_ptr ilp_refiner,
                           TP_evaluator_ptr evaluator,
-                          utl::Logger* logger)
-      : num_parts_(num_parts),
-        num_vertices_threshold_ilp_(num_vertices_threshold_ilp),
-        num_initial_random_solutions_(num_initial_solutions),
-        num_best_initial_solutions_(num_best_initial_solutions),
-        max_num_vcycle_(max_num_vcycle),
-        num_coarsen_solutions_(num_coarsen_solutions),
-        seed_(seed),
-        v_cycle_flag_(v_cycle_flag)
-  {
-    coarsener_ = std::move(coarsener);
-    partitioner_ = std::move(partitioner);
-    k_way_fm_refiner_ = std::move(k_way_fm_refiner);
-    k_way_pm_refiner_ = std::move(k_way_pm_refiner);
-    greedy_refiner_ = std::move(greedy_refiner);
-    ilp_refiner_ = std::move(ilp_refiner);
-    evaluator_ = std::move(evaluator);
-    logger_ = logger;
-  }
+                          utl::Logger* logger);
 
   // Main function
   // here the hgraph should not be const

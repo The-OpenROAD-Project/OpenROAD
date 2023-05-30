@@ -86,34 +86,19 @@ class GoldenEvaluator
  public:
   // TODO: update the constructor
   GoldenEvaluator(
-      const int num_parts,
+      int num_parts,
       const std::vector<float>&
           e_wt_factors,  // the factor for hyperedge weight
       const std::vector<float>& v_wt_factors,  // the factor for vertex weight
       const std::vector<float>&
-          placement_wt_factors,       // the factor for placement info
-      const float net_timing_factor,  // the factor for hyperedge timing weight
-      const float
-          path_timing_factor,  // weight for cutting a critical timing path
-      const float path_snaking_factor,  // snaking factor a critical timing path
-      const float
-          timing_exp_factor,  // timing exponetial factor for normalized slack
-      const float extra_cut_delay,  // the extra delay introduced by a cut
-      HGraphPtr timing_graph,       // the timing graph needed
-      utl::Logger* logger)
-      : num_parts_(num_parts),
-        extra_cut_delay_(extra_cut_delay),
-        e_wt_factors_(e_wt_factors),
-        v_wt_factors_(v_wt_factors),
-        placement_wt_factors_(placement_wt_factors),
-        net_timing_factor_(net_timing_factor),
-        path_timing_factor_(path_timing_factor),
-        path_snaking_factor_(path_snaking_factor),
-        timing_exp_factor_(timing_exp_factor)
-  {
-    timing_graph_ = std::move(timing_graph);
-    logger_ = logger;
-  }
+          placement_wt_factors,   // the factor for placement info
+      float net_timing_factor,    // the factor for hyperedge timing weight
+      float path_timing_factor,   // weight for cutting a critical timing path
+      float path_snaking_factor,  // snaking factor a critical timing path
+      float timing_exp_factor,  // timing exponetial factor for normalized slack
+      float extra_cut_delay,    // the extra delay introduced by a cut
+      HGraphPtr timing_graph,   // the timing graph needed
+      utl::Logger* logger);
 
   GoldenEvaluator(const GoldenEvaluator&) = delete;
   GoldenEvaluator(GoldenEvaluator&) = delete;

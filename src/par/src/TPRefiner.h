@@ -104,18 +104,11 @@ class VertexGain
   // constructors
   VertexGain() = default;
 
-  VertexGain(const int vertex,
-             const int src_block_id,
-             const int destination_block_id,
-             const float gain,
-             const std::map<int, float>& path_cost)
-      : vertex_(vertex),
-        source_part_(src_block_id),
-        destination_part_(destination_block_id),
-        gain_(gain),
-        path_cost_(path_cost)
-  {
-  }
+  VertexGain(int vertex,
+             int src_block_id,
+             int destination_block_id,
+             float gain,
+             const std::map<int, float>& path_cost);
 
   // accessor functions
   int GetVertex() const { return vertex_; }
@@ -150,16 +143,10 @@ class HyperedgeGain
 {
  public:
   HyperedgeGain() = default;
-  HyperedgeGain(const int hyperedge_id,
-                const int destination_part,
-                const float gain,
-                const std::map<int, float>& path_cost)
-  {
-    hyperedge_id_ = hyperedge_id;
-    destination_part_ = destination_part;
-    gain_ = gain;
-    path_cost_ = path_cost;
-  }
+  HyperedgeGain(int hyperedge_id,
+                int destination_part,
+                float gain,
+                const std::map<int, float>& path_cost);
 
   float GetGain() const { return gain_; }
   void SetGain(float gain) { gain_ = gain; }
@@ -193,15 +180,7 @@ class TPpriorityQueue
   // constructors
   TPpriorityQueue(int total_elements,
                   int maximum_traverse_level,
-                  HGraphPtr hypergraph)
-      : maximum_traverse_level_(maximum_traverse_level)
-  {
-    vertices_map_.resize(total_elements);
-    std::fill(vertices_map_.begin(), vertices_map_.end(), -1);
-    total_elements_ = 0;
-    hypergraph_ = std::move(hypergraph);
-    active_ = false;
-  }
+                  HGraphPtr hypergraph);
 
   // insert one element (std::shared_ptr<VertexGain>) into the priority queue
   void InsertIntoPQ(const std::shared_ptr<VertexGain>& element);
@@ -233,22 +212,13 @@ class TPpriorityQueue
   // the size of the max heap
   int GetSizeOfMap() const { return vertices_map_.size(); }
   // check if the vertex exists
-  bool CheckIfVertexExists(int v) const
-  {
-    return vertices_map_[v] > -1 ? true : false;
-  }
+  bool CheckIfVertexExists(int v) const { return vertices_map_[v] > -1; }
   // check the status of the heap
   void SetActive() { active_ = true; }
   void SetDeactive() { active_ = false; }
   bool GetStatus() const { return active_; }
   // clear the heap
-  void Clear()
-  {
-    active_ = false;
-    vertices_.clear();
-    total_elements_ = 0;
-    std::fill(vertices_map_.begin(), vertices_map_.end(), -1);
-  }
+  void Clear();
 
  private:
   // The max heap (priority queue) is organized as a binary tree
@@ -293,26 +263,14 @@ class TPpriorityQueue
 class TPrefiner
 {
  public:
-  TPrefiner(
-      const int num_parts,
-      const int refiner_iters,
-      const float path_wt_factor,  // weight for cutting a critical timing path
-      const float snaking_wt_factor,  // weight for snaking timing paths
-      const int max_move,  // the maximum number of vertices or hyperedges can
+  TPrefiner(int num_parts,
+            int refiner_iters,
+            float path_wt_factor,  // weight for cutting a critical timing path
+            float snaking_wt_factor,  // weight for snaking timing paths
+            int max_move,  // the maximum number of vertices or hyperedges can
                            // be moved in each pass
-      TP_evaluator_ptr evaluator,  // evaluator
-      utl::Logger* logger)
-      : num_parts_(num_parts),
-        refiner_iters_(refiner_iters),
-        path_wt_factor_(path_wt_factor),
-        snaking_wt_factor_(snaking_wt_factor),
-        max_move_(max_move),
-        refiner_iters_default_(refiner_iters),
-        max_move_default_(max_move)
-  {
-    evaluator_ = std::move(evaluator);
-    logger_ = logger;
-  }
+            TP_evaluator_ptr evaluator,  // evaluator
+            utl::Logger* logger);
 
   TPrefiner(const TPrefiner&) = delete;
   TPrefiner(TPrefiner&) = delete;
@@ -325,25 +283,11 @@ class TPrefiner
               TP_partition& solution);
 
   // accessor
-  void SetMaxMove(int max_move)
-  {
-    logger_->report("[INFO] Set the max_move to {}", max_move);
-    max_move_ = max_move;
-  }
+  void SetMaxMove(int max_move);
 
-  void SetRefineIters(int refiner_iters)
-  {
-    logger_->report("[INFO] Set the refiner_iter to {}", refiner_iters);
-    refiner_iters_ = refiner_iters;
-  }
+  void SetRefineIters(int refiner_iters);
 
-  void RestoreDefaultParameters()
-  {
-    max_move_ = max_move_default_;
-    refiner_iters_ = refiner_iters_default_;
-    logger_->report("[INFO] Reset the max_move to {}", max_move_);
-    logger_->report("[INFO] Reset the refiner_iters to {}", refiner_iters_);
-  }
+  void RestoreDefaultParameters();
 
  protected:
   // protected functions
@@ -355,10 +299,7 @@ class TPrefiner
                      std::vector<float>& paths_cost,  // the current path cost
                      TP_partition& solution,
                      std::vector<bool>& visited_vertices_flag)
-  {
-    logger_->report("Warning: Call from the Refiner class");
-    return 0.0;
-  }
+      = 0;
 
   // By default, v = -1 and to_pid = -1
   // if to_pid == -1, we are calculate the current cost
@@ -513,25 +454,15 @@ class TPkWayFMRefine : public TPrefiner
   // We need the constructor here.  We have one more parameter related to
   // "corking effect"
   TPkWayFMRefine(
-      const int num_parts,
-      const int refiner_iters,
-      const float path_wt_factor,  // weight for cutting a critical timing path
-      const float snaking_wt_factor,  // weight for snaking timing paths
-      const int max_move,  // the maximum number of vertices or hyperedges can
-                           // be moved in each pass
-      const int total_corking_passes,
+      int num_parts,
+      int refiner_iters,
+      float path_wt_factor,     // weight for cutting a critical timing path
+      float snaking_wt_factor,  // weight for snaking timing paths
+      int max_move,  // the maximum number of vertices or hyperedges can
+                     // be moved in each pass
+      int total_corking_passes,
       TP_evaluator_ptr evaluator,  // evaluator
-      utl::Logger* logger)
-      : TPrefiner(num_parts,
-                  refiner_iters,
-                  path_wt_factor,
-                  snaking_wt_factor,
-                  max_move,
-                  std::move(evaluator),
-                  logger),
-        total_corking_passes_(total_corking_passes)
-  {
-  }
+      utl::Logger* logger);
 
   // Mark these two functions as public.
   // Because they will be called by multi-threading
@@ -630,18 +561,8 @@ class TPkWayPMRefine : public TPkWayFMRefine
       const int max_move,  // the maximum number of vertices or hyperedges can
                            // be moved in each pass
       const int total_corking_passes,
-      TP_evaluator_ptr evaluator,  // evaluator
-      utl::Logger* logger)
-      : TPkWayFMRefine(num_parts,
-                       refiner_iters,
-                       path_wt_factor,
-                       snaking_wt_factor,
-                       max_move,
-                       total_corking_passes,
-                       std::move(evaluator),
-                       logger)
-  {
-  }
+      TP_evaluator_ptr evaluator,
+      utl::Logger* logger);
 
  private:
   // In each pass, we only move the boundary vertices
@@ -710,17 +631,8 @@ class TPgreedyRefine : public TPrefiner
       const float snaking_wt_factor,  // weight for snaking timing paths
       const int max_move,  // the maximum number of vertices or hyperedges can
                            // be moved in each pass
-      TP_evaluator_ptr evaluator,  // evaluator
-      utl::Logger* logger)
-      : TPrefiner(num_parts,
-                  refiner_iters,
-                  path_wt_factor,
-                  snaking_wt_factor,
-                  max_move,
-                  std::move(evaluator),
-                  logger)
-  {
-  }
+      TP_evaluator_ptr evaluator,
+      utl::Logger* logger);
 
  private:
   // In each pass, we only move the boundary vertices
@@ -756,17 +668,8 @@ class TPilpRefine : public TPrefiner
       const float snaking_wt_factor,  // weight for snaking timing paths
       const int max_move,  // the maximum number of vertices or hyperedges can
                            // be moved in each pass
-      TP_evaluator_ptr evaluator,  // evaluator
-      utl::Logger* logger)
-      : TPrefiner(num_parts,
-                  refiner_iters,
-                  path_wt_factor,
-                  snaking_wt_factor,
-                  max_move,
-                  std::move(evaluator),
-                  logger)
-  {
-  }
+      TP_evaluator_ptr evaluator,
+      utl::Logger* logger);
 
  private:
   // In each pass, we only move the boundary vertices

@@ -51,7 +51,32 @@ using utl::PAR;
 
 namespace par {
 
-// Implemention of TPcoarsener class
+TPcoarsener::TPcoarsener(const int num_parts,
+                         const int thr_coarsen_hyperedge_size_skip,
+                         const int thr_coarsen_vertices,
+                         const int thr_coarsen_hyperedges,
+                         const float coarsening_ratio,
+                         const int max_coarsen_iters,
+                         const float adj_diff_ratio,
+                         const std::vector<float>& thr_cluster_weight,
+                         const int seed,
+                         const CoarsenOrder vertex_order_choice,
+                         TP_evaluator_ptr evaluator,
+                         utl::Logger* logger)
+    : num_parts_(num_parts),
+      thr_coarsen_hyperedge_size_skip_(thr_coarsen_hyperedge_size_skip),
+      thr_coarsen_vertices_(thr_coarsen_vertices),
+      thr_coarsen_hyperedges_(thr_coarsen_hyperedges),
+      coarsening_ratio_(coarsening_ratio),
+      max_coarsen_iters_(max_coarsen_iters),
+      adj_diff_ratio_(adj_diff_ratio),
+      thr_cluster_weight_(thr_cluster_weight),
+      seed_(seed),
+      vertex_order_choice_(vertex_order_choice)
+{
+  evaluator_ = std::move(evaluator);
+  logger_ = logger;
+}
 
 // The main function pf TPcoarsener class
 // The input is a hypergraph
