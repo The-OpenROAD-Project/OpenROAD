@@ -703,6 +703,21 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
 {
 }
 
+StaPins STAGuiInterface::getEndPoints() const
+{
+  StaPins pins;
+  for (auto end : *sta_->endpoints()) {
+    pins.insert(end->pin());
+  }
+  return pins;
+}
+
+float STAGuiInterface::getPinSlack(const sta::Pin* pin) const
+{
+  return sta_->pinSlack(pin,
+                        use_max_ ? sta::MinMax::max() : sta::MinMax::min());
+}
+
 int STAGuiInterface::getEndPointCount() const
 {
   return sta_->endpoints()->size();
