@@ -501,7 +501,7 @@ bool Refiner::CheckVertexMoveLegality(
 // We can view the process of moving the vertices in hyperege
 // one by one, then restore the moving sequence to make sure that
 // the current status is not changed. Solution should not be const
-GainHyperedge Refiner::CalculateHyperedgeGain(
+HyperedgeGainPtr Refiner::CalculateHyperedgeGain(
     int hyperedge_id,
     int to_pid,
     const HGraphPtr& hgraph,
@@ -617,7 +617,7 @@ GainHyperedge Refiner::CalculateHyperedgeGain(
 }
 
 // accpet the hyperedge gain
-void Refiner::AcceptHyperedgeGain(const GainHyperedge& hyperedge_gain,
+void Refiner::AcceptHyperedgeGain(const HyperedgeGainPtr& hyperedge_gain,
                                   const HGraphPtr& hgraph,
                                   float& total_delta_gain,
                                   std::vector<int>& solution,

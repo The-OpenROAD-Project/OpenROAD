@@ -95,9 +95,9 @@ float GreedyRefine::Pass(
     }
     // find the best candidate block
     // the initialization of best_gain is 0.0
-    // define a lambda function to compare two GainHyperedge (>=)
-    auto CompareGainHyperedge
-        = [&](const GainHyperedge& a, const GainHyperedge& b) {
+    // define a lambda function to compare two HyperedgeGainPtr (>=)
+    auto CompareHyperedgeGain
+        = [&](const HyperedgeGainPtr& a, const HyperedgeGainPtr& b) {
             if (a->GetGain() > b->GetGain()) {
               return true;
             }
@@ -124,10 +124,10 @@ float GreedyRefine::Pass(
                                      upper_block_balance,
                                      lower_block_balance)
           == true) {
-        GainHyperedge gain_hyperedge = CalculateHyperedgeGain(
+        HyperedgeGainPtr gain_hyperedge = CalculateHyperedgeGain(
             hyperedge_id, to_pid, hgraph, solution, cur_paths_cost, net_degs);
         if (best_gain_hyperedge->GetHyperedge() < 0
-            || CompareGainHyperedge(gain_hyperedge, best_gain_hyperedge)
+            || CompareHyperedgeGain(gain_hyperedge, best_gain_hyperedge)
                    == true) {
           // best_candidate_block = to_pid;
           best_gain_hyperedge = gain_hyperedge;

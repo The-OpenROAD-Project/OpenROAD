@@ -51,12 +51,12 @@ class VertexGain;
 using GainCell = std::shared_ptr<VertexGain>;  // for abbreviation
 
 class HyperedgeGain;
-using GainHyperedge = std::shared_ptr<HyperedgeGain>;
+using HyperedgeGainPtr = std::shared_ptr<HyperedgeGain>;
 
 // Priority-queue based gain bucket
 class PriorityQueue;
-using GainBuckets = std::vector<std::shared_ptr<PriorityQueue>>;
 using GainBucket = std::shared_ptr<PriorityQueue>;
+using GainBuckets = std::vector<GainBucket>;
 
 // The algorithm we supported
 enum class RefinerChoice
@@ -104,7 +104,7 @@ class VertexGain
   void SetGain(float gain) { gain_ = gain; }
 
   // get the delta path cost
-  std::map<int, float> GetPathCost() const { return path_cost_; }
+  const std::map<int, float>& GetPathCost() const { return path_cost_; }
 
   int GetSourcePart() const { return source_part_; }
   int GetDestinationPart() const { return destination_part_; }
@@ -379,12 +379,13 @@ class Refiner
   // one by one, then restore the moving sequence to make sure that
   // the current status is not changed. Solution should not be const
   // calculate the possible gain of moving a hyperedge
-  GainHyperedge CalculateHyperedgeGain(int hyperedge_id,
-                                       int to_pid,
-                                       const HGraphPtr& hgraph,
-                                       std::vector<int>& solution,
-                                       const std::vector<float>& cur_paths_cost,
-                                       const MATRIX<int>& net_degs) const;
+  HyperedgeGainPtr CalculateHyperedgeGain(
+      int hyperedge_id,
+      int to_pid,
+      const HGraphPtr& hgraph,
+      std::vector<int>& solution,
+      const std::vector<float>& cur_paths_cost,
+      const MATRIX<int>& net_degs) const;
 
   // check if we can move the hyperegde into some block
   bool CheckHyperedgeMoveLegality(
@@ -397,7 +398,7 @@ class Refiner
       const MATRIX<float>& lower_block_balance) const;
 
   // accpet the hyperedge gain
-  void AcceptHyperedgeGain(const GainHyperedge& hyperedge_gain,
+  void AcceptHyperedgeGain(const HyperedgeGainPtr& hyperedge_gain,
                            const HGraphPtr& hgraph,
                            float& total_delta_gain,
                            std::vector<int>& solution,
