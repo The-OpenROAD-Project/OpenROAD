@@ -575,7 +575,7 @@ bool RepairAntennas::diodeInRow(odb::Rect diode_rect)
   return false;
 }
 
-odb::dbOrientType RepairAntennas::getRowOrient(odb::Point point)
+odb::dbOrientType RepairAntennas::getRowOrient(const odb::Point& point)
 {
   odb::dbOrientType orient;
   for (odb::dbRow* row : block_->getRows()) {
