@@ -42,7 +42,7 @@
 namespace par {
 
 // The main function of refinement class
-void TPrefiner::Refine(HGraphPtr hgraph,
+void TPrefiner::Refine(const HGraphPtr& hgraph,
                        const MATRIX<float>& upper_block_balance,
                        const MATRIX<float>& lower_block_balance,
                        TP_partition& solution)
@@ -96,7 +96,7 @@ void TPrefiner::Refine(HGraphPtr hgraph,
 // else if to_pid != -1, we are culculate the cost of the path
 // after moving v to block to_pid
 float TPrefiner::CalculatePathCost(int path_id,
-                                   const HGraphPtr hgraph,
+                                   const HGraphPtr& hgraph,
                                    const TP_partition& solution,
                                    int v,      // v = -1 by default
                                    int to_pid  // to_pid = -1 by default
@@ -116,7 +116,7 @@ float TPrefiner::CalculatePathCost(int path_id,
     if ((to_pid != -1) && (u == v)) {
       block_id = to_pid;
     }
-    if (path.size() == 0 || path.back() != block_id) {
+    if (path.empty() || path.back() != block_id) {
       path.push_back(block_id);
       if (block_counter.find(block_id) != block_counter.end()) {
         block_counter[block_id] += 1;
@@ -146,7 +146,7 @@ float TPrefiner::CalculatePathCost(int path_id,
 // Find all the boundary vertices.
 // The boundary vertices do not include fixed vertices
 std::vector<int> TPrefiner::FindBoundaryVertices(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<int>& net_degs,
     const std::vector<bool>& visited_vertices_flag) const
 {
@@ -181,7 +181,7 @@ std::vector<int> TPrefiner::FindBoundaryVertices(
 }
 
 std::vector<int> TPrefiner::FindBoundaryVertices(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<int>& net_degs,
     const std::vector<bool>& visited_vertices_flag,
     const std::vector<int>& solution,
@@ -213,7 +213,7 @@ std::vector<int> TPrefiner::FindBoundaryVertices(
 
 // Find the neighboring vertices
 std::vector<int> TPrefiner::FindNeighbors(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const int vertex_id,
     const std::vector<bool>& visited_vertices_flag) const
 {
@@ -234,7 +234,7 @@ std::vector<int> TPrefiner::FindNeighbors(
 
 // Find the neighboring vertices in specified blocks
 std::vector<int> TPrefiner::FindNeighbors(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const int vertex_id,
     const std::vector<bool>& visited_vertices_flag,
     const std::vector<int>& solution,
@@ -274,7 +274,7 @@ TP_gain_cell TPrefiner::CalculateVertexGain(
     int v,
     int from_pid,
     int to_pid,
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& solution,
     const std::vector<float>& cur_paths_cost,
     const MATRIX<int>& net_degs) const
@@ -286,8 +286,8 @@ TP_gain_cell TPrefiner::CalculateVertexGain(
   std::map<int, float>
       delta_path_cost;       // map path_id to the change of path cost
   if (from_pid == to_pid) {  // no gain for this case
-    return std::shared_ptr<VertexGain>(
-        new VertexGain(v, from_pid, to_pid, 0.0f, delta_path_cost));
+    return std::make_shared<VertexGain>(
+        v, from_pid, to_pid, 0.0f, delta_path_cost);
   }
   // define lambda function
   // for checking connectivity (number of blocks connected by a hyperedge)
@@ -338,13 +338,13 @@ TP_gain_cell TPrefiner::CalculateVertexGain(
     }
   }
   const float score = cut_score + path_score;
-  return std::shared_ptr<VertexGain>(
-      new VertexGain(v, from_pid, to_pid, score, delta_path_cost));
+  return std::make_shared<VertexGain>(
+      v, from_pid, to_pid, score, delta_path_cost);
 }
 
 // move one vertex based on the calculated gain_cell
-void TPrefiner::AcceptVertexGain(TP_gain_cell gain_cell,
-                                 const HGraphPtr hgraph,
+void TPrefiner::AcceptVertexGain(const TP_gain_cell& gain_cell,
+                                 const HGraphPtr& hgraph,
                                  float& total_delta_gain,
                                  std::vector<bool>& visited_vertices_flag,
                                  std::vector<int>& solution,
@@ -380,8 +380,8 @@ void TPrefiner::AcceptVertexGain(TP_gain_cell gain_cell,
 }
 
 // restore one vertex based on the calculated gain_cell
-void TPrefiner::RollBackVertexGain(TP_gain_cell gain_cell,
-                                   const HGraphPtr hgraph,
+void TPrefiner::RollBackVertexGain(const TP_gain_cell& gain_cell,
+                                   const HGraphPtr& hgraph,
                                    std::vector<bool>& visited_vertices_flag,
                                    std::vector<int>& solution,
                                    std::vector<float>& cur_paths_cost,
@@ -420,7 +420,7 @@ bool TPrefiner::CheckVertexMoveLegality(
     int v,         // vertex id
     int to_pid,    // to block id
     int from_pid,  // from block_id
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& curr_block_balance,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance) const
@@ -429,12 +429,8 @@ bool TPrefiner::CheckVertexMoveLegality(
       = curr_block_balance[to_pid] + hgraph->vertex_weights_[v];
   const std::vector<float> total_wt_from_block
       = curr_block_balance[from_pid] - hgraph->vertex_weights_[v];
-  if (total_wt_to_block <= upper_block_balance[to_pid]
-      && lower_block_balance[from_pid] <= total_wt_from_block) {
-    return true;
-  } else {
-    return false;
-  }
+  return total_wt_to_block <= upper_block_balance[to_pid]
+         && lower_block_balance[from_pid] <= total_wt_from_block;
 }
 
 // calculate the possible gain of moving a entire hyperedge
@@ -444,7 +440,7 @@ bool TPrefiner::CheckVertexMoveLegality(
 TP_gain_hyperedge TPrefiner::CalculateHyperedgeGain(
     int hyperedge_id,
     int to_pid,
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     std::vector<int>& solution,
     const std::vector<float>& cur_paths_cost,
     const MATRIX<int>& net_degs) const
@@ -466,7 +462,7 @@ TP_gain_hyperedge TPrefiner::CalculateHyperedgeGain(
        idx++) {
     const int vertex_id = hgraph->eind_[idx];
     if (solution[vertex_id] != to_pid) {
-      vertices.push_back(std::pair<int, int>(vertex_id, solution[vertex_id]));
+      vertices.emplace_back(vertex_id, solution[vertex_id]);
       for (int idx = hgraph->vptr_[vertex_id];
            idx < hgraph->vptr_[vertex_id + 1];
            idx++) {
@@ -552,13 +548,13 @@ TP_gain_hyperedge TPrefiner::CalculateHyperedgeGain(
   }
 
   score = cut_score + path_score;
-  return std::shared_ptr<HyperedgeGain>(
-      new HyperedgeGain(hyperedge_id, to_pid, score, delta_path_cost));
+  return std::make_shared<HyperedgeGain>(
+      hyperedge_id, to_pid, score, delta_path_cost);
 }
 
 // accpet the hyperedge gain
-void TPrefiner::AcceptHyperedgeGain(TP_gain_hyperedge hyperedge_gain,
-                                    const HGraphPtr hgraph,
+void TPrefiner::AcceptHyperedgeGain(const TP_gain_hyperedge& hyperedge_gain,
+                                    const HGraphPtr& hgraph,
                                     float& total_delta_gain,
                                     std::vector<int>& solution,
                                     std::vector<float>& cur_paths_cost,
@@ -604,7 +600,7 @@ void TPrefiner::AcceptHyperedgeGain(TP_gain_hyperedge hyperedge_gain,
 bool TPrefiner::CheckHyperedgeMoveLegality(
     int e,       // hyperedge id
     int to_pid,  // to block id
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& solution,
     const MATRIX<float>& curr_block_balance,
     const MATRIX<float>& upper_block_balance,

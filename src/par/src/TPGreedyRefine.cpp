@@ -47,7 +47,7 @@ namespace par {
 // Different from the FM refinement, greedy refinement
 // only accepts possible gain
 float TPgreedyRefine::Pass(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     MATRIX<float>& block_balance,        // the current block balance
@@ -83,16 +83,16 @@ float TPgreedyRefine::Pass(
         = [&](const TP_gain_hyperedge& a, const TP_gain_hyperedge& b) {
             if (a->GetGain() > b->GetGain()) {
               return true;
-            } else if (a->GetGain() == b->GetGain()
-                       && evaluator_->CalculateHyperedgeVertexWtSum(
-                              a->GetHyperedge(), hgraph)
-                              < evaluator_->CalculateHyperedgeVertexWtSum(
-                                  b->GetHyperedge(), hgraph)) {
+            }
+            if (a->GetGain() == b->GetGain()
+                && evaluator_->CalculateHyperedgeVertexWtSum(a->GetHyperedge(),
+                                                             hgraph)
+                       < evaluator_->CalculateHyperedgeVertexWtSum(
+                           b->GetHyperedge(), hgraph)) {
               return true;  // break ties based on vertex weight summation of
                             // the hyperedge
-            } else {
-              return false;
             }
+            return false;
           };
 
     // int best_candidate_block = -1;

@@ -66,7 +66,7 @@ enum class CoarsenOrder
 };
 
 // function : convert CoarsenOrder to string
-std::string ToString(const CoarsenOrder order);
+std::string ToString(CoarsenOrder order);
 
 // coarsening class
 // during coarsening, all the coarser hypergraph will not have vertex type
@@ -88,7 +88,7 @@ class TPcoarsener
       const int max_coarsen_iters,  // the number of iterations
       const float
           adj_diff_ratio,  // the minimum difference of two adjacent hypergraphs
-      const std::vector<float>
+      const std::vector<float>&
           thr_cluster_weight,  // the weight of largest cluster in a hypergraph
       const int seed,          // random seed
       const CoarsenOrder vertex_order_choice,  // vertex order
@@ -105,7 +105,7 @@ class TPcoarsener
         seed_(seed),
         vertex_order_choice_(vertex_order_choice)
   {
-    evaluator_ = evaluator;
+    evaluator_ = std::move(evaluator);
     logger_ = logger;
   }
 
@@ -116,7 +116,7 @@ class TPcoarsener
   // Notice that the input hypergraph is not const,
   // because the hgraphs returned can be edited
   // The timing cost of hgraph will be initialized if it has been not.
-  TP_coarse_graph_ptrs LazyFirstChoice(HGraphPtr hgraph) const;
+  TP_coarse_graph_ptrs LazyFirstChoice(const HGraphPtr& hgraph) const;
 
   // create a coarser hypergraph based on specified grouping information
   // for each vertex.
@@ -128,7 +128,7 @@ class TPcoarsener
   // (5) group fixed vertices based on each block
   // group vertices based on group_attr and hgraph->fixed_attr_
   HGraphPtr GroupVertices(
-      const HGraphPtr hgraph,
+      const HGraphPtr& hgraph,
       const std::vector<std::vector<int>>& group_attr) const;
 
   // Set the size of hyperedge to skip
@@ -149,7 +149,7 @@ class TPcoarsener
   // The input is a hypergraph
   // The output is a coarser hypergraph
   // The input hypergraph will be updated
-  HGraphPtr Aggregate(const HGraphPtr hgraph) const;
+  HGraphPtr Aggregate(const HGraphPtr& hgraph) const;
 
   // find the vertex matching scheme
   // the inputs are the hgraph and the attributes of clusters
@@ -157,7 +157,7 @@ class TPcoarsener
   // but during the matching process, we do dynamically update
   // placement_attr_c. vertex_weights_c, fixed_attr_c and community_attr_c
   void VertexMatching(
-      const HGraphPtr hgraph,
+      const HGraphPtr& hgraph,
       std::vector<int>&
           vertex_cluster_id_vec,  // map current vertex_id to cluster_id
       // the remaining arguments are related to clusters
@@ -167,14 +167,14 @@ class TPcoarsener
       MATRIX<float>& placement_attr_c) const;
 
   // order the vertices based on user-specified parameters
-  void OrderVertices(const HGraphPtr hgraph, std::vector<int>& vertices) const;
+  void OrderVertices(const HGraphPtr& hgraph, std::vector<int>& vertices) const;
 
   // Similar to the VertexMatching,
   // handle group information
   // group fixed vertices based on each block
   // group vertices based on group_attr and hgraph->fixed_attr_
   void ClusterBasedGroupInfo(
-      const HGraphPtr hgraph,
+      const HGraphPtr& hgraph,
       const std::vector<std::vector<int>>&
           group_attr,  // Please pass by value here because we need to update
                        // the group_attr
@@ -189,7 +189,7 @@ class TPcoarsener
   // create the contracted hypergraph based on the vertex matching in
   // vertex_cluster_id_vec
   HGraphPtr Contraction(
-      HGraphPtr hgraph,
+      const HGraphPtr& hgraph,
       const std::vector<int>&
           vertex_cluster_id_vec,  // map current vertex_id to cluster_id
       // the remaining arguments are related to clusters

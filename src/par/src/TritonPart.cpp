@@ -49,7 +49,6 @@
 #include "TPMultilevel.h"
 #include "TPPartitioner.h"
 #include "TPRefiner.h"
-#include "TritonPart.h"
 #include "Utilities.h"
 #include "odb/db.h"
 #include "sta/ArcDelayCalc.hh"
@@ -391,10 +390,10 @@ void TritonPart::EvaluateHypergraphSolution(unsigned int num_parts_arg,
   std::string group_file = group_file_arg;
   // solution file
   std::string solution_file = solution_file_arg;
-  std::string community_file(
-      "");  // no community file is used (no meaning in this function)
-  std::string placement_file(
-      "");  // no placement file is used (no meaning in this function)
+  std::string community_file;  // no community file is used (no meaning in this
+                               // function)
+  std::string placement_file;  // no placement file is used (no meaning in this
+                               // function)
   logger_->info(PAR, 31, "Number of partitions = {}", num_parts_);
   logger_->info(PAR, 32, "UBfactor = {}", ub_factor_);
   logger_->info(PAR, 33, "Seed = {}", seed_);
@@ -804,11 +803,11 @@ std::vector<int> TritonPart::PartitionKWaySimpleMode(
 
 // for hypergraph partitioning
 // Read hypergraph from input files and related constraint files
-void TritonPart::ReadHypergraph(std::string hypergraph_file,
-                                std::string fixed_file,
-                                std::string community_file,
-                                std::string group_file,
-                                std::string placement_file)
+void TritonPart::ReadHypergraph(const std::string& hypergraph_file,
+                                const std::string& fixed_file,
+                                const std::string& community_file,
+                                const std::string& group_file,
+                                const std::string& placement_file)
 {
   // read hypergraph file
   std::ifstream hypergraph_file_input(hypergraph_file);
@@ -892,7 +891,7 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
   }
 
   // Read fixed vertices
-  if (fixed_file.size() > 0) {
+  if (!fixed_file.empty()) {
     int part_id = -1;
     std::ifstream fixed_file_input(fixed_file);
     if (!fixed_file_input.is_open()) {
@@ -909,7 +908,7 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
   }
 
   // Read community file
-  if (community_file.size() > 0) {
+  if (!community_file.empty()) {
     int part_id = -1;
     std::ifstream community_file_input(community_file);
     if (!community_file_input.is_open()) {
@@ -927,7 +926,7 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
   }
 
   // read group file
-  if (group_file.size() > 0) {
+  if (!group_file.empty()) {
     std::ifstream group_file_input(group_file);
     if (!group_file_input.is_open()) {
       logger_->error(PAR, 2503, "Can not open the group file : {}", group_file);
@@ -950,7 +949,7 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
   }
 
   // Read placement file
-  if (placement_file.size() > 0) {
+  if (!placement_file.empty()) {
     std::ifstream placement_file_input(placement_file);
     if (!placement_file_input.is_open()) {
       logger_->error(
@@ -994,9 +993,9 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
     // placement embedding based on average distance again Here we randomly
     // sample num_vertices of pairs to compute the average norm
     std::vector<float> mean_placement_value_list(placement_dimensions_, 0.0f);
-    for (auto i = 0; i < temp_placement_attr.size(); i++) {
+    for (auto& attr : temp_placement_attr) {
       for (int j = 0; j < placement_dimensions_; j++) {
-        mean_placement_value_list[j] += temp_placement_attr[i][j];
+        mean_placement_value_list[j] += attr[j];
       }
     }
     mean_placement_value_list = DivideFactor(mean_placement_value_list,
@@ -1037,9 +1036,9 @@ void TritonPart::ReadHypergraph(std::string hypergraph_file,
 // read fixed_file, community_file and group_file
 // read placement information
 // read timing information
-void TritonPart::ReadNetlist(std::string fixed_file,
-                             std::string community_file,
-                             std::string group_file)
+void TritonPart::ReadNetlist(const std::string& fixed_file,
+                             const std::string& community_file,
+                             const std::string& group_file)
 {
   // assign vertex_id property of each instance and each IO port
   // the vertex_id property will be removed after the partitioning
@@ -1250,8 +1249,9 @@ void TritonPart::ReadNetlist(std::string fixed_file,
   for (auto net : block_->getNets()) {
     odb::dbIntProperty::create(net, "hyperedge_id", -1);
     // ignore all the power net
-    if (net->getSigType().isSupply())
+    if (net->getSigType().isSupply()) {
       continue;
+    }
     // check the hyperedge
     int driver_id = -1;      // vertex id of the driver instance
     std::set<int> loads_id;  // vertex id of sink instances
@@ -1284,7 +1284,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
     }
     // check the hyperedges
     std::vector<int> hyperedge;
-    if (driver_id != -1 && loads_id.size() > 0) {
+    if (driver_id != -1 && !loads_id.empty()) {
       hyperedge.push_back(driver_id);
       for (auto& load_id : loads_id) {
         if (load_id != driver_id) {
@@ -1296,8 +1296,7 @@ void TritonPart::ReadNetlist(std::string fixed_file,
     // if (hyperedge.size() > 1 && hyperedge.size() <= global_net_threshold_) {
     if (hyperedge.size() > 1) {
       hyperedges_.push_back(hyperedge);
-      hyperedge_weights_.push_back(
-          std::vector<float>(hyperedge_dimensions_, 1.0));
+      hyperedge_weights_.emplace_back(hyperedge_dimensions_, 1.0);
       odb::dbIntProperty::find(net, "hyperedge_id")->setValue(hyperedge_id++);
     }
   }  // finish hyperedge
@@ -1477,7 +1476,7 @@ void TritonPart::BuildTimingPaths()
       timing_path.arcs.push_back(hyperedge_id);
     }
     // add timing path
-    if (timing_path.arcs.size() > 0) {
+    if (!timing_path.arcs.empty()) {
       timing_paths_.push_back(timing_path);
     }
   }
@@ -1716,7 +1715,6 @@ void TritonPart::MultiLevelPartition()
   // create the multi-level class
   TP_multi_level_partitioner tritonpart_mlevel_partitioner
       = std::make_shared<TPmultilevelPartitioner>(num_parts_,
-                                                  ub_factor_,
                                                   v_cycle_flag_,
                                                   num_initial_solutions_,
                                                   num_best_initial_solutions_,
@@ -1724,7 +1722,6 @@ void TritonPart::MultiLevelPartition()
                                                   max_num_vcycle_,
                                                   num_coarsen_solutions_,
                                                   seed_,
-                                                  timing_aware_flag_,
                                                   tritonpart_coarsener,
                                                   tritonpart_partitioner,
                                                   k_way_fm_refiner,

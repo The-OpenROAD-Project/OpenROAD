@@ -43,15 +43,13 @@
 #include "TPPartitioner.h"
 #include "utl/Logger.h"
 
-using utl::PAR;
-
 namespace par {
 
 // Main function
 // here the hgraph should not be const
 // Because our slack-rebudgeting algorithm will change hgraph
 std::vector<int> TPmultilevelPartitioner::Partition(
-    HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance) const
 {
@@ -109,7 +107,7 @@ std::vector<int> TPmultilevelPartitioner::Partition(
 
 // Run single-level partitioning
 std::vector<int> TPmultilevelPartitioner::SingleLevelPartition(
-    HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance) const
 {
@@ -162,7 +160,7 @@ std::vector<int> TPmultilevelPartitioner::SingleLevelPartition(
 // Use the initial solution as the community feature
 // Call Vcycle refinement
 void TPmultilevelPartitioner::VcycleRefinement(
-    HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     std::vector<int>& best_solution) const
@@ -194,7 +192,7 @@ void TPmultilevelPartitioner::VcycleRefinement(
 
 // Single Vcycle Refinement
 std::vector<int> TPmultilevelPartitioner::SingleCycleRefinement(
-    HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance) const
 {
@@ -228,7 +226,7 @@ std::vector<int> TPmultilevelPartitioner::SingleCycleRefinement(
 // Generate initial partitioning
 // Include random partitioning, Vile partitioning and ILP partitioning
 void TPmultilevelPartitioner::InitialPartition(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     MATRIX<int>& top_initial_solutions,
@@ -308,7 +306,7 @@ void TPmultilevelPartitioner::InitialPartition(
 
   // Vile partitioning. Vile partitioning needs refiner to generated a balanced
   // partitioning
-  auto& vile_solution = initial_solutions[num_initial_random_solutions_ * 2];
+  auto& vile_solution = initial_solutions[num_initial_random_solutions_ * 2L];
   partitioner_->Partition(hgraph,
                           upper_block_balance,
                           lower_block_balance,
@@ -430,28 +428,29 @@ void TPmultilevelPartitioner::RefinePartition(
     HGraphPtr hgraph = *hgraph_iter;
 
     // convert the solution in coarse_hgraph to the solution of hgraph
-    for (auto i = 0; i < top_solutions.size(); i++) {
+    for (auto& top_solution : top_solutions) {
       std::vector<int> refined_solution;
       refined_solution.resize(hgraph->num_vertices_);
       for (int cluster_id = 0; cluster_id < coarse_hgraph->num_vertices_;
            cluster_id++) {
-        const int part_id = top_solutions[i][cluster_id];
+        const int part_id = top_solution[cluster_id];
         for (const auto& v : coarse_hgraph->vertex_c_attr_[cluster_id]) {
           refined_solution[v] = part_id;
         }
       }
-      top_solutions[i] = refined_solution;
+      top_solution = refined_solution;
     }
 
     // Parallel refine all the solutions
     std::vector<std::thread> threads;
-    for (auto i = 0; i < top_solutions.size(); i++) {
-      threads.push_back(std::thread(&par::TPmultilevelPartitioner::CallRefiner,
-                                    this,
-                                    hgraph,
-                                    std::ref(upper_block_balance),
-                                    std::ref(lower_block_balance),
-                                    std::ref(top_solutions[i])));
+    threads.reserve(top_solutions.size());
+    for (auto& top_solution : top_solutions) {
+      threads.emplace_back(&par::TPmultilevelPartitioner::CallRefiner,
+                           this,
+                           hgraph,
+                           std::ref(upper_block_balance),
+                           std::ref(lower_block_balance),
+                           std::ref(top_solution));
     }
     for (auto& th : threads) {
       th.join();
@@ -483,7 +482,7 @@ void TPmultilevelPartitioner::RefinePartition(
 // k_way_pm_refinement,
 // k_way_fm_refinement and greedy refinement
 void TPmultilevelPartitioner::CallRefiner(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     std::vector<int>& solution) const
@@ -502,7 +501,7 @@ void TPmultilevelPartitioner::CallRefiner(
 // The ILP-based partitioning uses top_solutions[best_solution_id] as a hint,
 // such that the runtime can be signficantly reduced
 std::vector<int> TPmultilevelPartitioner::CutOverlayILPPart(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     const MATRIX<int>& top_solutions,

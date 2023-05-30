@@ -47,7 +47,7 @@
 namespace par {
 
 // calculate the vertex distribution of each net
-MATRIX<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr hgraph,
+MATRIX<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr& hgraph,
                                            const TP_partition& solution) const
 {
   MATRIX<int> net_degs(hgraph->num_hyperedges_,
@@ -62,7 +62,7 @@ MATRIX<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr hgraph,
 
 // Get block balance
 MATRIX<float> GoldenEvaluator::GetBlockBalance(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const TP_partition& solution) const
 {
   MATRIX<float> block_balance(
@@ -77,7 +77,7 @@ MATRIX<float> GoldenEvaluator::GetBlockBalance(
 
 // calculate timing cost of a path
 float GoldenEvaluator::GetPathTimingScore(int path_id,
-                                          const HGraphPtr hgraph) const
+                                          const HGraphPtr& hgraph) const
 {
   if (hgraph->num_timing_paths_ <= 0
       || hgraph->path_timing_attr_.size() < hgraph->num_timing_paths_
@@ -92,7 +92,7 @@ float GoldenEvaluator::GetPathTimingScore(int path_id,
 
 // calculate the cost of a path : including timing and snaking cost
 float GoldenEvaluator::CalculatePathCost(int path_id,
-                                         const HGraphPtr hgraph,
+                                         const HGraphPtr& hgraph,
                                          const TP_partition& solution) const
 {
   if (hgraph->num_timing_paths_ <= 0
@@ -112,7 +112,7 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
        ++idx) {
     const int u = hgraph->vind_p_[idx];  // current vertex
     const int block_id = solution[u];
-    if (path.size() == 0 || path.back() != block_id) {
+    if (path.empty() || path.back() != block_id) {
       path.push_back(block_id);
       if (block_counter.find(block_id) != block_counter.end()) {
         block_counter[block_id] += 1;
@@ -141,7 +141,7 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
 
 // Get Paths cost: include the timing part and snaking part
 std::vector<float> GoldenEvaluator::GetPathsCost(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const TP_partition& solution) const
 {
   std::vector<float> paths_cost;  // the path_cost for each path
@@ -159,7 +159,7 @@ std::vector<float> GoldenEvaluator::GetPathsCost(
 }
 
 // calculate the status of timing path cuts
-PathStats GoldenEvaluator::GetTimingCuts(const HGraphPtr hgraph,
+PathStats GoldenEvaluator::GetTimingCuts(const HGraphPtr& hgraph,
                                          const std::vector<int>& solution) const
 {
   PathStats path_stats;  // create tha path related statistics
@@ -178,7 +178,7 @@ PathStats GoldenEvaluator::GetTimingCuts(const HGraphPtr hgraph,
     for (int j = first_valid_entry; j < first_invalid_entry; ++j) {
       const int v = hgraph->vind_p_[j];
       const int block_id = solution[v];
-      if (block_path.size() == 0 || block_path.back() != block_id) {
+      if (block_path.empty() || block_path.back() != block_id) {
         block_path.push_back(block_id);
       }
     }
@@ -285,19 +285,18 @@ std::tuple<int, int, float> GoldenEvaluator::GetTimingCuts(
 // Calculate the timing cost due to the slack of hyperedge itself
 float GoldenEvaluator::CalculateHyperedgeTimingCost(
     int e,
-    const HGraphPtr hgraph) const
+    const HGraphPtr& hgraph) const
 {
   if (hgraph->timing_flag_ == true) {
     return std::pow(1.0 - hgraph->hyperedge_timing_attr_[e],
                     timing_exp_factor_);
-  } else {
-    return 0.0;
   }
+  return 0.0;
 }
 
 // Calculate the cost of a hyperedge
 float GoldenEvaluator::CalculateHyperedgeCost(int e,
-                                              const HGraphPtr hgraph) const
+                                              const HGraphPtr& hgraph) const
 {
   // calculate the edge score
   float cost = std::inner_product(hgraph->hyperedge_weights_[e].begin(),
@@ -315,7 +314,7 @@ float GoldenEvaluator::CalculateHyperedgeCost(int e,
 }
 
 // calculate the hyperedge score. score / (hyperedge.size() - 1)
-float GoldenEvaluator::GetNormEdgeScore(int e, const HGraphPtr hgraph) const
+float GoldenEvaluator::GetNormEdgeScore(int e, const HGraphPtr& hgraph) const
 {
   const int he_size = hgraph->eptr_[e + 1] - hgraph->eptr_[e];
   if (he_size <= 1) {
@@ -328,7 +327,7 @@ float GoldenEvaluator::GetNormEdgeScore(int e, const HGraphPtr hgraph) const
 // connecting to the same hyperedge
 float GoldenEvaluator::CalculateHyperedgeVertexWtSum(
     int e,
-    const HGraphPtr hgraph) const
+    const HGraphPtr& hgraph) const
 {
   float weight = 0.0;
   for (int idx = hgraph->eptr_[e]; idx < hgraph->eptr_[e + 1]; idx++) {
@@ -339,7 +338,7 @@ float GoldenEvaluator::CalculateHyperedgeVertexWtSum(
 
 // calculate the vertex weight norm
 // This is usually used to sort the vertices
-float GoldenEvaluator::GetVertexWeightNorm(int v, const HGraphPtr hgraph) const
+float GoldenEvaluator::GetVertexWeightNorm(int v, const HGraphPtr& hgraph) const
 {
   return std::inner_product(hgraph->vertex_weights_[v].begin(),
                             hgraph->vertex_weights_[v].end(),
@@ -350,21 +349,20 @@ float GoldenEvaluator::GetVertexWeightNorm(int v, const HGraphPtr hgraph) const
 // calculate the placement score between vertex v and u
 float GoldenEvaluator::GetPlacementScore(int v,
                                          int u,
-                                         const HGraphPtr hgraph) const
+                                         const HGraphPtr& hgraph) const
 {
   const float dist
       = norm2(hgraph->placement_attr_[v] - hgraph->placement_attr_[u],
               placement_wt_factors_);
   if (dist == 0.0) {
     return std::numeric_limits<float>::max() / 2.0;
-  } else {
-    return 1.0f / dist;
   }
+  return 1.0f / dist;
 }
 
 // Get average the placement location
 std::vector<float>
-GoldenEvaluator::GetAvgPlacementLoc(int v, int u, const HGraphPtr hgraph) const
+GoldenEvaluator::GetAvgPlacementLoc(int v, int u, const HGraphPtr& hgraph) const
 {
   const float v_weight = GetVertexWeightNorm(v, hgraph);
   const float u_weight = GetVertexWeightNorm(u, hgraph);
@@ -398,7 +396,7 @@ std::vector<float> GoldenEvaluator::GetAvgPlacementLoc(
 
 // get vertex weight summation
 std::vector<float> GoldenEvaluator::GetVertexWeightSum(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& group) const
 {
   std::vector<float> group_weight(hgraph->placement_dimensions_, 0.0f);
@@ -409,7 +407,7 @@ std::vector<float> GoldenEvaluator::GetVertexWeightSum(
 }
 
 // get the fixed attribute of a group of vertices (maximum)
-int GoldenEvaluator::GetGroupFixedAttr(const HGraphPtr hgraph,
+int GoldenEvaluator::GetGroupFixedAttr(const HGraphPtr& hgraph,
                                        const std::vector<int>& group) const
 {
   int fixed_attr = -1;
@@ -425,7 +423,7 @@ int GoldenEvaluator::GetGroupFixedAttr(const HGraphPtr hgraph,
 }
 
 // get the community attribute of a group of vertices (maximum)
-int GoldenEvaluator::GetGroupCommunityAttr(const HGraphPtr hgraph,
+int GoldenEvaluator::GetGroupCommunityAttr(const HGraphPtr& hgraph,
                                            const std::vector<int>& group) const
 {
   int community_attr = -1;
@@ -442,7 +440,7 @@ int GoldenEvaluator::GetGroupCommunityAttr(const HGraphPtr hgraph,
 
 // get the placement location
 std::vector<float> GoldenEvaluator::GetGroupPlacementLoc(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& group) const
 {
   std::vector<float> group_weight(hgraph->placement_dimensions_, 0.0f);
@@ -464,7 +462,7 @@ std::vector<float> GoldenEvaluator::GetGroupPlacementLoc(
 
 // calculate the hyperedges being cut
 std::vector<int> GoldenEvaluator::GetCutHyperedges(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& solution) const
 {
   std::vector<int> cut_hyperedges;
@@ -484,7 +482,7 @@ std::vector<int> GoldenEvaluator::GetCutHyperedges(
 // std::map<std::pair<int, int>, float> : <block_id_a, block_id_b> : score
 // The score is the summation of hyperedges spanning block_id_a and block_id_b
 std::map<std::pair<int, int>, float> GoldenEvaluator::GetMatchingConnectivity(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& solution) const
 {
   std::map<std::pair<int, int>, float> matching_connectivity;
@@ -521,7 +519,7 @@ std::map<std::pair<int, int>, float> GoldenEvaluator::GetMatchingConnectivity(
 // TP_partition_token.first is the cutsize
 // TP_partition_token.second is the balance constraint
 TP_partition_token GoldenEvaluator::CutEvaluator(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& solution,
     bool print_flag) const
 {
@@ -566,7 +564,7 @@ TP_partition_token GoldenEvaluator::CutEvaluator(
 // check the constraints
 // balance constraint, group constraint, fixed vertices constraint
 bool GoldenEvaluator::ConstraintAndCutEvaluator(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& solution,
     float ub_factor,
     const std::vector<std::vector<int>>& group_attr,
@@ -633,7 +631,7 @@ bool GoldenEvaluator::ConstraintAndCutEvaluator(
 // Basically we will transform the path_timing_attr_ to path_timing_cost_,
 // and transform hyperedge_timing_attr_ to hyperedge_timing_cost_.
 // Then overlay the path weighgts onto corresponding weights
-void GoldenEvaluator::InitializeTiming(HGraphPtr hgraph) const
+void GoldenEvaluator::InitializeTiming(const HGraphPtr& hgraph) const
 {
   if (hgraph->timing_flag_ == false) {
     return;
@@ -674,7 +672,7 @@ void GoldenEvaluator::InitializeTiming(HGraphPtr hgraph) const
 // The timing_graph_ contains all the necessary information,
 // include the original slack for each path and hyperedge,
 // and the type of each vertex
-void GoldenEvaluator::UpdateTiming(HGraphPtr hgraph,
+void GoldenEvaluator::UpdateTiming(const HGraphPtr& hgraph,
                                    const TP_partition& solution) const
 {
   if (hgraph->timing_flag_ == false) {
@@ -809,8 +807,8 @@ void GoldenEvaluator::UpdateTiming(HGraphPtr hgraph,
 }
 
 // Write the weighted hypergraph in hMETIS format
-void GoldenEvaluator::WriteWeightedHypergraph(HGraphPtr hgraph,
-                                              const std::string file_name,
+void GoldenEvaluator::WriteWeightedHypergraph(const HGraphPtr& hgraph,
+                                              const std::string& file_name,
                                               bool with_weight_flag) const
 {
   std::ofstream file_output;
@@ -844,8 +842,8 @@ void GoldenEvaluator::WriteWeightedHypergraph(HGraphPtr hgraph,
 
 // Write the weighted hypergraph in hMETIS format
 void GoldenEvaluator::WriteIntWeightHypergraph(
-    HGraphPtr hgraph,
-    const std::string file_name) const
+    const HGraphPtr& hgraph,
+    const std::string& file_name) const
 {
   std::ofstream file_output;
   file_output.open(file_name);
@@ -853,7 +851,7 @@ void GoldenEvaluator::WriteIntWeightHypergraph(
               << " 11" << std::endl;
   // write hyperedge weight and hyperedge first
   for (int e = 0; e < hgraph->num_hyperedges_; e++) {
-    file_output << round(CalculateHyperedgeCost(e, hgraph)) << "  ";
+    file_output << std::round(CalculateHyperedgeCost(e, hgraph)) << "  ";
     for (auto idx = hgraph->eptr_[e]; idx < hgraph->eptr_[e + 1]; idx++) {
       file_output << hgraph->eind_[idx] + 1 << " ";
     }
@@ -861,7 +859,7 @@ void GoldenEvaluator::WriteIntWeightHypergraph(
   }
   // write vertex weight
   for (int v = 0; v < hgraph->num_vertices_; v++) {
-    file_output << round(GetVertexWeightNorm(v, hgraph)) << std::endl;
+    file_output << std::round(GetVertexWeightNorm(v, hgraph)) << std::endl;
   }
   // close the file
   file_output.close();

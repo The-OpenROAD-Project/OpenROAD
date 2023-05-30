@@ -319,17 +319,17 @@ class TritonPart
   void MultiLevelPartition();
 
   // read and build hypergraph
-  void ReadHypergraph(std::string hypergraph,
-                      std::string fixed_file,
-                      std::string community_file,
-                      std::string group_file,
-                      std::string placement_file);
+  void ReadHypergraph(const std::string& hypergraph,
+                      const std::string& fixed_file,
+                      const std::string& community_file,
+                      const std::string& group_file,
+                      const std::string& placement_file);
 
   // read and build netlist
   // placement information is extracted from the OpenDB database
-  void ReadNetlist(std::string fixed_file,
-                   std::string community_file,
-                   std::string group_file);
+  void ReadNetlist(const std::string& fixed_file,
+                   const std::string& community_file,
+                   const std::string& group_file);
   void BuildTimingPaths();  // Find all the critical timing paths
 
   // private member functions

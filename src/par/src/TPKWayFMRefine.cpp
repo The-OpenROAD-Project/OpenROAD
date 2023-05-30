@@ -44,7 +44,7 @@ namespace par {
 
 // In each pass, we only move the boundary vertices
 float TPkWayFMRefine::Pass(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     MATRIX<float>& block_balance,        // the current block balance
@@ -120,16 +120,17 @@ float TPkWayFMRefine::Pass(
         = FindNeighbors(hgraph, vertex, visited_vertices_flag);
     // update the neighbors of v for all gain buckets in parallel
     std::vector<std::thread> threads;
+    threads.reserve(num_parts_);
     for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
-      threads.push_back(std::thread(&TPkWayFMRefine::UpdateSingleGainBucket,
-                                    this,
-                                    to_pid,
-                                    std::ref(buckets),
-                                    hgraph,
-                                    std::ref(neighbors),
-                                    std::ref(net_degs),
-                                    std::ref(cur_paths_cost),
-                                    std::ref(solution)));
+      threads.emplace_back(&TPkWayFMRefine::UpdateSingleGainBucket,
+                           this,
+                           to_pid,
+                           std::ref(buckets),
+                           hgraph,
+                           std::ref(neighbors),
+                           std::ref(net_degs),
+                           std::ref(cur_paths_cost),
+                           std::ref(solution));
     }
     for (auto& t : threads) {
       t.join();  // wait for all threads to finish
@@ -174,16 +175,17 @@ float TPkWayFMRefine::Pass(
 // Initialize the gain buckets in parallel
 void TPkWayFMRefine::InitializeGainBucketsKWay(
     TP_gain_buckets& buckets,
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
     const MATRIX<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
     const TP_partition& solution) const
 {
   std::vector<std::thread> threads;  // for parallel updating
+  threads.reserve(num_parts_);
   // parallel initialize the num_parts gain_buckets
   for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
-    threads.push_back(std::thread(
+    threads.emplace_back(
         &TPkWayFMRefine::InitializeSingleGainBucket,
         this,
         std::ref(buckets),
@@ -192,7 +194,7 @@ void TPkWayFMRefine::InitializeGainBucketsKWay(
         std::ref(boundary_vertices),  // we only consider boundary vertices
         std::ref(net_degs),
         std::ref(cur_paths_cost),
-        std::ref(solution)));
+        std::ref(solution));
   }
   for (auto& t : threads) {
     t.join();  // wait for all threads to finish
@@ -204,7 +206,7 @@ void TPkWayFMRefine::InitializeGainBucketsKWay(
 void TPkWayFMRefine::InitializeSingleGainBucket(
     TP_gain_buckets& buckets,
     int to_pid,  // move the vertex into this block (block_id = to_pid)
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
     const MATRIX<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
@@ -231,7 +233,7 @@ void TPkWayFMRefine::InitializeSingleGainBucket(
 // Determine which vertex gain to be picked
 std::shared_ptr<VertexGain> TPkWayFMRefine::PickMoveKWay(
     TP_gain_buckets& buckets,
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& curr_block_balance,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance) const
@@ -285,16 +287,17 @@ std::shared_ptr<VertexGain> TPkWayFMRefine::PickMoveKWay(
 }
 
 // move one vertex based on the calculated gain_cell
-void TPkWayFMRefine::AcceptKWayMove(std::shared_ptr<VertexGain> gain_cell,
-                                    TP_gain_buckets& gain_buckets,
-                                    std::vector<TP_gain_cell>& moves_trace,
-                                    float& total_delta_gain,
-                                    std::vector<bool>& visited_vertices_flag,
-                                    HGraphPtr hgraph,
-                                    MATRIX<float>& curr_block_balance,
-                                    MATRIX<int>& net_degs,
-                                    std::vector<float>& cur_paths_cost,
-                                    std::vector<int>& solution) const
+void TPkWayFMRefine::AcceptKWayMove(
+    const std::shared_ptr<VertexGain>& gain_cell,
+    TP_gain_buckets& gain_buckets,
+    std::vector<TP_gain_cell>& moves_trace,
+    float& total_delta_gain,
+    std::vector<bool>& visited_vertices_flag,
+    const HGraphPtr& hgraph,
+    MATRIX<float>& curr_block_balance,
+    MATRIX<int>& net_degs,
+    std::vector<float>& cur_paths_cost,
+    std::vector<int>& solution) const
 {
   const int vertex_id = gain_cell->GetVertex();
   moves_trace.push_back(gain_cell);
@@ -308,13 +311,13 @@ void TPkWayFMRefine::AcceptKWayMove(std::shared_ptr<VertexGain> gain_cell,
                    net_degs);
   // Remove vertex from all buckets where vertex is present
   std::vector<std::thread> deletion_threads;
+  deletion_threads.reserve(num_parts_);
   for (int i = 0; i < num_parts_; ++i) {
-    deletion_threads.push_back(
-        std::thread(&par::TPkWayFMRefine::HeapEleDeletion,
-                    this,
-                    vertex_id,
-                    i,
-                    std::ref(gain_buckets)));
+    deletion_threads.emplace_back(&par::TPkWayFMRefine::HeapEleDeletion,
+                                  this,
+                                  vertex_id,
+                                  i,
+                                  std::ref(gain_buckets));
   }
   for (auto& th : deletion_threads) {
     th.join();
@@ -337,7 +340,7 @@ void TPkWayFMRefine::HeapEleDeletion(int vertex_id,
 void TPkWayFMRefine::UpdateSingleGainBucket(
     int part,
     TP_gain_buckets& buckets,
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& neighbors,
     const MATRIX<int>& net_degs,
     const std::vector<float>& cur_paths_cost,

@@ -76,12 +76,12 @@ class TPpartitioner
       : num_parts_(num_parts), seed_(seed)
   {
     ilp_accelerator_factor_ = 1.0;  // set to default value
-    evaluator_ = evaluator;
+    evaluator_ = std::move(evaluator);
     logger_ = logger;
   }
 
   // The main function of Partitioning
-  void Partition(const HGraphPtr hgraph,
+  void Partition(const HGraphPtr& hgraph,
                  const MATRIX<float>& upper_block_balance,
                  const MATRIX<float>& lower_block_balance,
                  std::vector<int>& solution,
@@ -115,20 +115,20 @@ class TPpartitioner
   // we enable two modes of random partitioning.
   // If vile_mode == false, we try to generate balanced random partitioning
   // If vile_mode == true,  we try to generate unbalanced random partitioning
-  void RandomPart(const HGraphPtr hgraph,
+  void RandomPart(const HGraphPtr& hgraph,
                   const MATRIX<float>& upper_block_balance,
                   const MATRIX<float>& lower_block_balance,
                   std::vector<int>& solution,
                   bool vile_mode = false) const;
 
   // ILP-based partitioning
-  void ILPPart(const HGraphPtr hgraph,
+  void ILPPart(const HGraphPtr& hgraph,
                const MATRIX<float>& upper_block_balance,
                const MATRIX<float>& lower_block_balance,
                std::vector<int>& solution) const;
 
   // Vile partitioning
-  void VilePart(const HGraphPtr hgraph, std::vector<int>& solution) const;
+  void VilePart(const HGraphPtr& hgraph, std::vector<int>& solution) const;
 
   const int num_parts_ = 2;
   float ilp_accelerator_factor_

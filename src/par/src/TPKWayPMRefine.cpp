@@ -59,7 +59,7 @@ namespace par {
 // so we precompute the block_balance and net_degs
 // the return value is the gain improvement
 float TPkWayPMRefine::Pass(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     MATRIX<float>& block_balance,    // the current block balance
@@ -164,8 +164,9 @@ void TPkWayPMRefine::CalculateMaximumMatch(
 {
   maximum_matches.clear();
   std::vector<std::pair<std::pair<int, int>, float>> scores;
+  scores.reserve(matching_scores.size());
   for (const auto& ele : matching_scores) {
-    scores.push_back(ele);
+    scores.emplace_back(ele);
   }
   // sort the scores based on value
   std::sort(scores.begin(),
@@ -183,7 +184,7 @@ void TPkWayPMRefine::CalculateMaximumMatch(
     const int block_id_a = ele.first.first;
     const int block_id_b = ele.first.second;
     if (match_flag[block_id_a] == false && match_flag[block_id_b] == false) {
-      maximum_matches.push_back(std::pair<int, int>(block_id_a, block_id_b));
+      maximum_matches.emplace_back(block_id_a, block_id_b);
       match_flag[block_id_a] = true;
       match_flag[block_id_b] = true;
       num_match_block += 2;
@@ -196,7 +197,7 @@ void TPkWayPMRefine::CalculateMaximumMatch(
 
 // Perform 2-way FM between blocks in partition pair
 float TPkWayPMRefine::PerformPairFM(
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     MATRIX<float>& block_balance,    // the current block balance
@@ -268,16 +269,17 @@ float TPkWayPMRefine::PerformPairFM(
         hgraph, vertex, visited_vertices_flag, solution, partition_pair);
     // update the neighbors of v for all gain buckets in parallel
     std::vector<std::thread> threads;
+    threads.reserve(blocks.size());
     for (auto& to_pid : blocks) {
-      threads.push_back(std::thread(&TPkWayFMRefine::UpdateSingleGainBucket,
-                                    this,
-                                    to_pid,
-                                    std::ref(buckets),
-                                    hgraph,
-                                    std::ref(neighbors),
-                                    std::ref(net_degs),
-                                    std::ref(paths_cost),
-                                    std::ref(solution)));
+      threads.emplace_back(&TPkWayFMRefine::UpdateSingleGainBucket,
+                           this,
+                           to_pid,
+                           std::ref(buckets),
+                           hgraph,
+                           std::ref(neighbors),
+                           std::ref(net_degs),
+                           std::ref(paths_cost),
+                           std::ref(solution));
     }
     for (auto& t : threads) {
       t.join();  // wait for all threads to finish
@@ -320,19 +322,20 @@ float TPkWayPMRefine::PerformPairFM(
 // Initialize the gain buckets in parallel
 void TPkWayPMRefine::InitializeGainBucketsPM(
     TP_gain_buckets& buckets,
-    const HGraphPtr hgraph,
+    const HGraphPtr& hgraph,
     const std::vector<int>& boundary_vertices,
     const MATRIX<int>& net_degs,
     const std::vector<float>& cur_paths_cost,
     const TP_partition& solution,
     const std::pair<int, int>& partition_pair) const
 {
-  std::vector<std::thread> threads;  // for parallel updating
   std::vector<int> blocks_id{partition_pair.first, partition_pair.second};
+  std::vector<std::thread> threads;  // for parallel updating
+  threads.reserve(blocks_id.size());
 
   // parallel initialize the num_parts gain_buckets
   for (const auto to_pid : blocks_id) {
-    threads.push_back(std::thread(
+    threads.emplace_back(
         &TPkWayFMRefine::InitializeSingleGainBucket,
         this,
         std::ref(buckets),
@@ -341,7 +344,7 @@ void TPkWayPMRefine::InitializeGainBucketsPM(
         std::ref(boundary_vertices),  // we only consider boundary vertices
         std::ref(net_degs),
         std::ref(cur_paths_cost),
-        std::ref(solution)));
+        std::ref(solution));
   }
   for (auto& t : threads) {
     t.join();  // wait for all threads to finish
