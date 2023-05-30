@@ -780,27 +780,17 @@ void BinGrid::initBins()
 
   log_->info(GPL, 29, "BinSize: {} {}", binSizeX_, binSizeY_);
 
-  int bin_dimensions = binCntX_ * binCntY_;
   // initialize bins_ vector
-  bins_.reserve(bin_dimensions);
-  int x = lx_, y = ly_;
-  int idxX = 0, idxY = 0;
-  for (int i = 0; i < bin_dimensions; i++) {
-    int sizeX = (x + binSizeX_ > ux_) ? ux_ - x : binSizeX_;
-    int sizeY = (y + binSizeY_ > uy_) ? uy_ - y : binSizeY_;
+  bins_.reserve(binCntX_ * (size_t) binCntY_);
+  for (int idxY = 0; idxY < binCntY_; ++idxY) {
+    for (int idxX = 0; idxX < binCntX_; ++idxX) {
+      const int x = lx_ + idxX * binSizeX_;
+      const int y = ly_ + idxY * binSizeY_;
+      const int sizeX = std::min(ux_ - x, binSizeX_);
+      const int sizeY = std::min(uy_ - y, binSizeY_);
 
-    bins_.emplace_back(idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
-
-    // move x, y coordinates.
-    x += binSizeX_;
-    idxX += 1;
-
-    if (x >= ux_) {
-      y += binSizeY_;
-      x = lx_;
-
-      idxY++;
-      idxX = 0;
+      bins_.emplace_back(
+          idxX, idxY, x, y, x + sizeX, y + sizeY, targetDensity_);
     }
   }
 
