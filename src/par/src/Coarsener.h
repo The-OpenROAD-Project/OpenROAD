@@ -37,7 +37,7 @@
 // This file contains the classes for Coarsening Phase
 // Coarsening Phase is to generate a sequence of coarser hypergraph
 // We define Coarsening as an operator class.
-// It will accept a HGraphPtr (std::shared_ptr<TPHypergraph>) as input
+// It will accept a HGraphPtr (std::shared_ptr<Hypergraph>) as input
 // and return a sequence of coarser hypergraphs
 
 #include "Evaluator.h"
@@ -46,15 +46,12 @@
 
 namespace par {
 
-template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
-
 // a sequence of coarser hypergraphs
-using TP_coarse_graph_ptrs = std::vector<HGraphPtr>;
+using CoarseGraphPtrs = std::vector<HGraphPtr>;
 
 // nickname for shared pointer of Coarsening
-class TPcoarsener;
-using TP_coarsening_ptr = std::shared_ptr<TPcoarsener>;
+class Coarsener;
+using CoarseningPtr = std::shared_ptr<Coarsener>;
 
 // the type for vertex ordering
 enum class CoarsenOrder
@@ -73,10 +70,10 @@ std::string ToString(CoarsenOrder order);
 // Because the timing information will become messy in the coarser hypergraph
 // And we will never perform slack propagation on a coarser hypergraph
 
-class TPcoarsener
+class Coarsener
 {
  public:
-  TPcoarsener(
+  Coarsener(
       const int num_parts,
       const int thr_coarsen_hyperedge_size_skip,  // ignore large hyperedge
       const int thr_coarsen_vertices,    // the number of vertices of coarsest
@@ -92,17 +89,17 @@ class TPcoarsener
           thr_cluster_weight,  // the weight of largest cluster in a hypergraph
       const int seed,          // random seed
       const CoarsenOrder vertex_order_choice,  // vertex order
-      TP_evaluator_ptr evaluator,              // evaluator to calculate score
+      EvaluatorPtr evaluator,                  // evaluator to calculate score
       utl::Logger* logger);
 
   // the function of coarsen a hypergraph
-  // The main function pf TPcoarsener class
+  // The main function pf Coarsener class
   // The input is a hypergraph
   // The output is a sequence of coarser hypergraphs
   // Notice that the input hypergraph is not const,
   // because the hgraphs returned can be edited
   // The timing cost of hgraph will be initialized if it has been not.
-  TP_coarse_graph_ptrs LazyFirstChoice(const HGraphPtr& hgraph) const;
+  CoarseGraphPtrs LazyFirstChoice(const HGraphPtr& hgraph) const;
 
   // create a coarser hypergraph based on specified grouping information
   // for each vertex.
@@ -208,7 +205,7 @@ class TPcoarsener
   std::vector<float> thr_cluster_weight_;  // the maximum weight of a cluster
   int seed_ = 0;                           // random seed
   CoarsenOrder vertex_order_choice_ = CoarsenOrder::RANDOM;  // not const here
-  TP_evaluator_ptr evaluator_ = nullptr;
+  EvaluatorPtr evaluator_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };
 

@@ -44,43 +44,38 @@
 
 namespace par {
 
-using TP_partition = std::vector<int>;
-
-template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
-
 // Multilevel partitioner
-class TPmultilevelPartitioner;
-using TP_multi_level_partitioner = std::shared_ptr<TPmultilevelPartitioner>;
+class MultilevelPartitioner;
+using MultiLevelPartitioner = std::shared_ptr<MultilevelPartitioner>;
 
-class TPmultilevelPartitioner
+class MultilevelPartitioner
 {
  public:
-  TPmultilevelPartitioner(const int num_parts,
-                          // user-specified parameters
-                          const bool v_cycle_flag,
-                          const int num_initial_solutions,
-                          const int num_best_initial_solutions,
-                          const int num_vertices_threshold_ilp,
-                          const int max_num_vcycle,
-                          const int num_coarsen_solutions,
-                          const int seed,
-                          // pointers
-                          TP_coarsening_ptr coarsener,
-                          TP_partitioning_ptr partitioner,
-                          TP_k_way_fm_refiner_ptr k_way_fm_refiner,
-                          TP_k_way_pm_refiner_ptr k_way_pm_refiner,
-                          TP_greedy_refiner_ptr greedy_refiner,
-                          TP_ilp_refiner_ptr ilp_refiner,
-                          TP_evaluator_ptr evaluator,
-                          utl::Logger* logger);
+  MultilevelPartitioner(const int num_parts,
+                        // user-specified parameters
+                        const bool v_cycle_flag,
+                        const int num_initial_solutions,
+                        const int num_best_initial_solutions,
+                        const int num_vertices_threshold_ilp,
+                        const int max_num_vcycle,
+                        const int num_coarsen_solutions,
+                        const int seed,
+                        // pointers
+                        CoarseningPtr coarsener,
+                        PartitioningPtr partitioner,
+                        KWayFMRefinerPtr k_way_fm_refiner,
+                        KWayPMRefinerPtr k_way_pm_refiner,
+                        GreedyRefinerPtr greedy_refiner,
+                        IlpRefinerPtr ilp_refiner,
+                        EvaluatorPtr evaluator,
+                        utl::Logger* logger);
 
   // Main function
   // here the hgraph should not be const
   // Because our slack-rebudgeting algorithm will change hgraph
-  TP_partition Partition(const HGraphPtr& hgraph,
-                         const MATRIX<float>& upper_block_balance,
-                         const MATRIX<float>& lower_block_balance) const;
+  Partitions Partition(const HGraphPtr& hgraph,
+                       const MATRIX<float>& upper_block_balance,
+                       const MATRIX<float>& lower_block_balance) const;
 
   // Use the initial solution as the community feature
   // Call Vcycle refinement
@@ -112,7 +107,7 @@ class TPmultilevelPartitioner
 
   // Refine the solutions in top_solutions in parallel with multi-threading
   // the top_solutions and best_solution_id will be updated during this process
-  void RefinePartition(TP_coarse_graph_ptrs hierarchy,
+  void RefinePartition(CoarseGraphPtrs hierarchy,
                        const MATRIX<float>& upper_block_balance,
                        const MATRIX<float>& lower_block_balance,
                        MATRIX<int>& top_solutions,
@@ -151,13 +146,13 @@ class TPmultilevelPartitioner
   const bool v_cycle_flag_ = true;
 
   // pointers
-  TP_coarsening_ptr coarsener_ = nullptr;
-  TP_partitioning_ptr partitioner_ = nullptr;
-  TP_k_way_fm_refiner_ptr k_way_fm_refiner_ = nullptr;
-  TP_k_way_pm_refiner_ptr k_way_pm_refiner_ = nullptr;
-  TP_greedy_refiner_ptr greedy_refiner_ = nullptr;
-  TP_ilp_refiner_ptr ilp_refiner_ = nullptr;
-  TP_evaluator_ptr evaluator_ = nullptr;
+  CoarseningPtr coarsener_ = nullptr;
+  PartitioningPtr partitioner_ = nullptr;
+  KWayFMRefinerPtr k_way_fm_refiner_ = nullptr;
+  KWayPMRefinerPtr k_way_pm_refiner_ = nullptr;
+  GreedyRefinerPtr greedy_refiner_ = nullptr;
+  IlpRefinerPtr ilp_refiner_ = nullptr;
+  EvaluatorPtr evaluator_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };
 

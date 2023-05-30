@@ -60,22 +60,18 @@ struct PathStats
                // become critical
 };
 
-// MATRIX is a two-dimensional vectors
-template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
+// Partitions is the partitioning solution
+using Partitions = std::vector<int>;  //
 
-// TP_partition is the partitioning solution
-using TP_partition = std::vector<int>;  //
-
-// TP_partition_token is the metrics of a given partition
+// PartitionToken is the metrics of a given partition
 // it consists of two part:  cost (cutsize), balance for each block
-// for example, TP_partition_token.second[0] is the balance of
+// for example, PartitionToken.second[0] is the balance of
 // block_0
-using TP_partition_token = std::pair<float, MATRIX<float>>;
+using PartitionToken = std::pair<float, MATRIX<float>>;
 
 // GoldenEvaluator
 class GoldenEvaluator;
-using TP_evaluator_ptr = std::shared_ptr<GoldenEvaluator>;
+using EvaluatorPtr = std::shared_ptr<GoldenEvaluator>;
 
 // ------------------------------------------------------------------------
 // The implementation of GoldenEvaluator
@@ -106,11 +102,11 @@ class GoldenEvaluator
 
   // calculate the vertex distribution of each net
   MATRIX<int> GetNetDegrees(const HGraphPtr& hgraph,
-                            const TP_partition& solution) const;
+                            const Partitions& solution) const;
 
   // Get block balance
   MATRIX<float> GetBlockBalance(const HGraphPtr& hgraph,
-                                const TP_partition& solution) const;
+                                const Partitions& solution) const;
 
   // calculate timing cost of a path
   float GetPathTimingScore(int path_id, const HGraphPtr& hgraph) const;
@@ -118,11 +114,11 @@ class GoldenEvaluator
   // calculate the cost of a path
   float CalculatePathCost(int path_id,
                           const HGraphPtr& hgraph,
-                          const TP_partition& solution) const;
+                          const Partitions& solution) const;
 
   // get the cost of all the paths: include the timing part and snaking part
   std::vector<float> GetPathsCost(const HGraphPtr& hgraph,
-                                  const TP_partition& solution) const;
+                                  const Partitions& solution) const;
 
   // calculate the status of timing path cuts
   PathStats GetTimingCuts(const HGraphPtr& hgraph,
@@ -190,11 +186,11 @@ class GoldenEvaluator
       const std::vector<int>& solution) const;
 
   // calculate the statistics of a given partitioning solution
-  // TP_partition_token.first is the cutsize
-  // TP_partition_token.second is the balance constraint
-  TP_partition_token CutEvaluator(const HGraphPtr& hgraph,
-                                  const std::vector<int>& solution,
-                                  bool print_flag = false) const;
+  // PartitionToken.first is the cutsize
+  // PartitionToken.second is the balance constraint
+  PartitionToken CutEvaluator(const HGraphPtr& hgraph,
+                              const std::vector<int>& solution,
+                              bool print_flag = false) const;
 
   // check the constraints
   // balance constraint, group constraint, fixed vertices constraint
@@ -222,8 +218,7 @@ class GoldenEvaluator
   // The timing_graph_ contains all the necessary information,
   // include the original slack for each path and hyperedge,
   // and the type of each vertex
-  void UpdateTiming(const HGraphPtr& hgraph,
-                    const TP_partition& solution) const;
+  void UpdateTiming(const HGraphPtr& hgraph, const Partitions& solution) const;
 
   // Write the weighted hypergraph in hMETIS format
   void WriteWeightedHypergraph(const HGraphPtr& hgraph,

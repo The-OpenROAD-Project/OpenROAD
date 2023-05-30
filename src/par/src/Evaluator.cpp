@@ -73,7 +73,7 @@ GoldenEvaluator::GoldenEvaluator(const int num_parts,
 
 // calculate the vertex distribution of each net
 MATRIX<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr& hgraph,
-                                           const TP_partition& solution) const
+                                           const Partitions& solution) const
 {
   MATRIX<int> net_degs(hgraph->num_hyperedges_,
                        std::vector<int>(num_parts_, 0));
@@ -86,9 +86,8 @@ MATRIX<int> GoldenEvaluator::GetNetDegrees(const HGraphPtr& hgraph,
 }
 
 // Get block balance
-MATRIX<float> GoldenEvaluator::GetBlockBalance(
-    const HGraphPtr& hgraph,
-    const TP_partition& solution) const
+MATRIX<float> GoldenEvaluator::GetBlockBalance(const HGraphPtr& hgraph,
+                                               const Partitions& solution) const
 {
   MATRIX<float> block_balance(
       num_parts_, std::vector<float>(hgraph->vertex_dimensions_, 0.0));
@@ -118,7 +117,7 @@ float GoldenEvaluator::GetPathTimingScore(int path_id,
 // calculate the cost of a path : including timing and snaking cost
 float GoldenEvaluator::CalculatePathCost(int path_id,
                                          const HGraphPtr& hgraph,
-                                         const TP_partition& solution) const
+                                         const Partitions& solution) const
 {
   if (hgraph->num_timing_paths_ <= 0
       || hgraph->path_timing_cost_.size() < hgraph->num_timing_paths_
@@ -167,7 +166,7 @@ float GoldenEvaluator::CalculatePathCost(int path_id,
 // Get Paths cost: include the timing part and snaking part
 std::vector<float> GoldenEvaluator::GetPathsCost(
     const HGraphPtr& hgraph,
-    const TP_partition& solution) const
+    const Partitions& solution) const
 {
   std::vector<float> paths_cost;  // the path_cost for each path
   if (hgraph->num_timing_paths_ <= 0
@@ -275,7 +274,7 @@ void GoldenEvaluator::PrintPathStats(const PathStats& path_stats) const
 // total cut, worst cut, average cut
 std::tuple<int, int, float> GoldenEvaluator::GetTimingCuts(
     const HGraphPtr hgraph,
-    const TP_partition& solution) const
+    const Partitions& solution) const
 {
   if (hgraph->num_timing_paths_ <= 0) {
     logger_->report(
@@ -541,12 +540,11 @@ std::map<std::pair<int, int>, float> GoldenEvaluator::GetMatchingConnectivity(
 }
 
 // calculate the statistics of a given partitioning solution
-// TP_partition_token.first is the cutsize
-// TP_partition_token.second is the balance constraint
-TP_partition_token GoldenEvaluator::CutEvaluator(
-    const HGraphPtr& hgraph,
-    const std::vector<int>& solution,
-    bool print_flag) const
+// PartitionToken.first is the cutsize
+// PartitionToken.second is the balance constraint
+PartitionToken GoldenEvaluator::CutEvaluator(const HGraphPtr& hgraph,
+                                             const std::vector<int>& solution,
+                                             bool print_flag) const
 {
   MATRIX<float> block_balance = GetBlockBalance(hgraph, solution);
   float edge_cost = 0.0;
@@ -698,7 +696,7 @@ void GoldenEvaluator::InitializeTiming(const HGraphPtr& hgraph) const
 // include the original slack for each path and hyperedge,
 // and the type of each vertex
 void GoldenEvaluator::UpdateTiming(const HGraphPtr& hgraph,
-                                   const TP_partition& solution) const
+                                   const Partitions& solution) const
 {
   if (hgraph->timing_flag_ == false) {
     return;

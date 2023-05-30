@@ -59,20 +59,17 @@ enum class PartitionType
   INIT_DIRECT_ILP
 };
 
-template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
+class Partitioner;
+using PartitioningPtr = std::shared_ptr<Partitioner>;
 
-class TPpartitioner;
-using TP_partitioning_ptr = std::shared_ptr<TPpartitioner>;
-
-class TPpartitioner
+class Partitioner
 {
  public:
   // Note that please do NOT set ilp_accelerator_factor here
-  TPpartitioner(int num_parts,
-                int seed,
-                const TP_evaluator_ptr& evaluator,
-                utl::Logger* logger);
+  Partitioner(int num_parts,
+              int seed,
+              const EvaluatorPtr& evaluator,
+              utl::Logger* logger);
 
   // The main function of Partitioning
   void Partition(const HGraphPtr& hgraph,
@@ -114,7 +111,7 @@ class TPpartitioner
               // If the ilp acceleration is enabled, we only use
               // top ilp_accelerator_factor hyperedges. Range: 0, 1
   int seed_ = 0;
-  TP_evaluator_ptr evaluator_ = nullptr;  // evaluator
+  EvaluatorPtr evaluator_ = nullptr;  // evaluator
   utl::Logger* logger_ = nullptr;
 };
 

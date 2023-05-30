@@ -41,15 +41,15 @@
 #include "utl/Logger.h"
 
 namespace par {
-TPpartitioner::TPpartitioner(int num_parts,
-                             int seed,
-                             const TP_evaluator_ptr& evaluator,
-                             utl::Logger* logger)
+Partitioner::Partitioner(int num_parts,
+                         int seed,
+                         const EvaluatorPtr& evaluator,
+                         utl::Logger* logger)
     : num_parts_(num_parts), seed_(seed), evaluator_(evaluator), logger_(logger)
 {
 }
 
-void TPpartitioner::EnableIlpAcceleration(float acceleration_factor)
+void Partitioner::EnableIlpAcceleration(float acceleration_factor)
 {
   ilp_accelerator_factor_ = acceleration_factor;
   ilp_accelerator_factor_ = std::max(ilp_accelerator_factor_, 0.0f);
@@ -58,7 +58,7 @@ void TPpartitioner::EnableIlpAcceleration(float acceleration_factor)
                   ilp_accelerator_factor_);
 }
 
-void TPpartitioner::DisableIlpAcceleration()
+void Partitioner::DisableIlpAcceleration()
 {
   ilp_accelerator_factor_ = 1.0;
   logger_->report("[INFO] Reset ILP accelerator factor to {}",
@@ -66,11 +66,11 @@ void TPpartitioner::DisableIlpAcceleration()
 }
 
 // The main function of Partitioning
-void TPpartitioner::Partition(const HGraphPtr& hgraph,
-                              const MATRIX<float>& upper_block_balance,
-                              const MATRIX<float>& lower_block_balance,
-                              std::vector<int>& solution,
-                              PartitionType partitioner_choice) const
+void Partitioner::Partition(const HGraphPtr& hgraph,
+                            const MATRIX<float>& upper_block_balance,
+                            const MATRIX<float>& lower_block_balance,
+                            std::vector<int>& solution,
+                            PartitionType partitioner_choice) const
 {
   if (static_cast<int>(solution.size()) != hgraph->num_vertices_) {
     solution.clear();
@@ -110,11 +110,11 @@ void TPpartitioner::Partition(const HGraphPtr& hgraph,
 // If vile_mode == true,  we try to generate unbalanced random partitioning
 
 // random partitioning
-void TPpartitioner::RandomPart(const HGraphPtr& hgraph,
-                               const MATRIX<float>& upper_block_balance,
-                               const MATRIX<float>& lower_block_balance,
-                               std::vector<int>& solution,
-                               bool vile_mode) const
+void Partitioner::RandomPart(const HGraphPtr& hgraph,
+                             const MATRIX<float>& upper_block_balance,
+                             const MATRIX<float>& lower_block_balance,
+                             std::vector<int>& solution,
+                             bool vile_mode) const
 {
   // the summation of vertex weights for vertices in current block
   MATRIX<float> block_balance(
@@ -200,10 +200,10 @@ void TPpartitioner::RandomPart(const HGraphPtr& hgraph,
 }
 
 // ILP-based partitioning
-void TPpartitioner::ILPPart(const HGraphPtr& hgraph,
-                            const MATRIX<float>& upper_block_balance,
-                            const MATRIX<float>& lower_block_balance,
-                            std::vector<int>& solution) const
+void Partitioner::ILPPart(const HGraphPtr& hgraph,
+                          const MATRIX<float>& upper_block_balance,
+                          const MATRIX<float>& lower_block_balance,
+                          std::vector<int>& solution) const
 {
   logger_->report("[STATUS] Optimal ILP-based Partitioning Starts !");
   std::map<int, int> fixed_vertices_map;
@@ -304,9 +304,9 @@ void TPpartitioner::ILPPart(const HGraphPtr& hgraph,
 }
 
 // randomly pick one vertex into each block
-// then use refinement functions to get valid solution (See TPMultilevel.cpp)
-void TPpartitioner::VilePart(const HGraphPtr& hgraph,
-                             std::vector<int>& solution) const
+// then use refinement functions to get valid solution (See Multilevel.cpp)
+void Partitioner::VilePart(const HGraphPtr& hgraph,
+                           std::vector<int>& solution) const
 {
   std::fill(solution.begin(), solution.end(), 0);
   std::vector<int> unvisited;

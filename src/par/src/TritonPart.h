@@ -64,8 +64,6 @@ namespace par {
 //          Each signal net is modeled as a hyperedge.
 // Type 2:  Take the input hypergraph as an argument in the same manner as
 //          hMetis.
-template <typename T>
-using MATRIX = std::vector<std::vector<T>>;
 
 class TritonPart
 {

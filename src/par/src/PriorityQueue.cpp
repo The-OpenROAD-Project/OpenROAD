@@ -39,9 +39,9 @@
 
 namespace par {
 
-TPpriorityQueue::TPpriorityQueue(const int total_elements,
-                                 const int maximum_traverse_level,
-                                 HGraphPtr hypergraph)
+PriorityQueue::PriorityQueue(const int total_elements,
+                             const int maximum_traverse_level,
+                             HGraphPtr hypergraph)
     : maximum_traverse_level_(maximum_traverse_level)
 {
   vertices_map_.resize(total_elements);
@@ -51,7 +51,7 @@ TPpriorityQueue::TPpriorityQueue(const int total_elements,
   active_ = false;
 }
 
-void TPpriorityQueue::Clear()
+void PriorityQueue::Clear()
 {
   active_ = false;
   vertices_.clear();
@@ -60,7 +60,7 @@ void TPpriorityQueue::Clear()
 }
 
 // insert one element into the priority queue
-void TPpriorityQueue::InsertIntoPQ(const std::shared_ptr<VertexGain>& element)
+void PriorityQueue::InsertIntoPQ(const std::shared_ptr<VertexGain>& element)
 {
   total_elements_++;
   vertices_.push_back(element);
@@ -69,7 +69,7 @@ void TPpriorityQueue::InsertIntoPQ(const std::shared_ptr<VertexGain>& element)
 }
 
 // get the largest element
-std::shared_ptr<VertexGain> TPpriorityQueue::ExtractMax()
+std::shared_ptr<VertexGain> PriorityQueue::ExtractMax()
 {
   auto max_element = vertices_.front();
   // replace the first element with the last element, then
@@ -85,7 +85,7 @@ std::shared_ptr<VertexGain> TPpriorityQueue::ExtractMax()
 }
 
 // find the vertex gain which can satisfy the balance constraint
-std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
+std::shared_ptr<VertexGain> PriorityQueue::GetBestCandidate(
     const MATRIX<float>& curr_block_balance,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
@@ -149,7 +149,7 @@ std::shared_ptr<VertexGain> TPpriorityQueue::GetBestCandidate(
 }
 
 // Remove the specifid vertex
-void TPpriorityQueue::Remove(int vertex_id)
+void PriorityQueue::Remove(int vertex_id)
 {
   const int index = vertices_map_[vertex_id];
   if (index == -1) {
@@ -167,7 +167,7 @@ void TPpriorityQueue::Remove(int vertex_id)
 }
 
 // Update the priority (gain) for the specified vertex
-void TPpriorityQueue::ChangePriority(
+void PriorityQueue::ChangePriority(
     int vertex_id,
     const std::shared_ptr<VertexGain>& new_element)
 {
@@ -191,7 +191,7 @@ void TPpriorityQueue::ChangePriority(
 // Compare the two elements
 // If the gains are equal then pick the vertex with the smaller weight
 // The hope is doing this will incentivize in preventing corking effect
-bool TPpriorityQueue::CompareElementLargeThan(int index_a, int index_b)
+bool PriorityQueue::CompareElementLargeThan(int index_a, int index_b)
 {
   if (vertices_[index_a]->GetGain() > vertices_[index_b]->GetGain()) {
     return true;
@@ -203,7 +203,7 @@ bool TPpriorityQueue::CompareElementLargeThan(int index_a, int index_b)
 
 // push the element at location index to its ordered location
 // This function is called when we insert a new element
-void TPpriorityQueue::HeapifyUp(int index)
+void PriorityQueue::HeapifyUp(int index)
 {
   while (index > 0 && CompareElementLargeThan(index, Parent(index)) == true) {
     // Update the map (exchange parent and child)
@@ -219,7 +219,7 @@ void TPpriorityQueue::HeapifyUp(int index)
 }
 
 // This function is called when we delete an existing element
-void TPpriorityQueue::HeapifyDown(int index)
+void PriorityQueue::HeapifyDown(int index)
 {
   int max_index = index;
 

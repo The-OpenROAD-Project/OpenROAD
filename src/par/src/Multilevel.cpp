@@ -45,7 +45,7 @@
 
 namespace par {
 
-TPmultilevelPartitioner::TPmultilevelPartitioner(
+MultilevelPartitioner::MultilevelPartitioner(
     const int num_parts,
     const bool v_cycle_flag,
     const int num_initial_solutions,
@@ -54,13 +54,13 @@ TPmultilevelPartitioner::TPmultilevelPartitioner(
     const int max_num_vcycle,
     const int num_coarsen_solutions,
     const int seed,
-    TP_coarsening_ptr coarsener,
-    TP_partitioning_ptr partitioner,
-    TP_k_way_fm_refiner_ptr k_way_fm_refiner,
-    TP_k_way_pm_refiner_ptr k_way_pm_refiner,
-    TP_greedy_refiner_ptr greedy_refiner,
-    TP_ilp_refiner_ptr ilp_refiner,
-    TP_evaluator_ptr evaluator,
+    CoarseningPtr coarsener,
+    PartitioningPtr partitioner,
+    KWayFMRefinerPtr k_way_fm_refiner,
+    KWayPMRefinerPtr k_way_pm_refiner,
+    GreedyRefinerPtr greedy_refiner,
+    IlpRefinerPtr ilp_refiner,
+    EvaluatorPtr evaluator,
     utl::Logger* logger)
     : num_parts_(num_parts),
       num_vertices_threshold_ilp_(num_vertices_threshold_ilp),
@@ -84,7 +84,7 @@ TPmultilevelPartitioner::TPmultilevelPartitioner(
 // Main function
 // here the hgraph should not be const
 // Because our slack-rebudgeting algorithm will change hgraph
-std::vector<int> TPmultilevelPartitioner::Partition(
+std::vector<int> MultilevelPartitioner::Partition(
     const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance) const
@@ -142,7 +142,7 @@ std::vector<int> TPmultilevelPartitioner::Partition(
 // Private functions (Utilities)
 
 // Run single-level partitioning
-std::vector<int> TPmultilevelPartitioner::SingleLevelPartition(
+std::vector<int> MultilevelPartitioner::SingleLevelPartition(
     const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance) const
@@ -153,7 +153,7 @@ std::vector<int> TPmultilevelPartitioner::SingleLevelPartition(
   // Step 4: cut-overlay clustering and ILP-based partitioning
 
   // Step 1: run coarsening
-  TP_coarse_graph_ptrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
+  CoarseGraphPtrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
 
   // Step 2: run initial partitioning
   HGraphPtr coarsest_hgraph = hierarchy.back();
@@ -195,7 +195,7 @@ std::vector<int> TPmultilevelPartitioner::SingleLevelPartition(
 
 // Use the initial solution as the community feature
 // Call Vcycle refinement
-void TPmultilevelPartitioner::VcycleRefinement(
+void MultilevelPartitioner::VcycleRefinement(
     const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
@@ -227,7 +227,7 @@ void TPmultilevelPartitioner::VcycleRefinement(
 }
 
 // Single Vcycle Refinement
-std::vector<int> TPmultilevelPartitioner::SingleCycleRefinement(
+std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
     const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance) const
@@ -236,7 +236,7 @@ std::vector<int> TPmultilevelPartitioner::SingleCycleRefinement(
   // Step 2: run refinement
 
   // Step 1: run coarsening
-  TP_coarse_graph_ptrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
+  CoarseGraphPtrs hierarchy = coarsener_->LazyFirstChoice(hgraph);
 
   // Step 2: run initial refinement
   HGraphPtr coarsest_hgraph = hierarchy.back();
@@ -261,7 +261,7 @@ std::vector<int> TPmultilevelPartitioner::SingleCycleRefinement(
 
 // Generate initial partitioning
 // Include random partitioning, Vile partitioning and ILP partitioning
-void TPmultilevelPartitioner::InitialPartition(
+void MultilevelPartitioner::InitialPartition(
     const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
@@ -441,8 +441,8 @@ void TPmultilevelPartitioner::InitialPartition(
 
 // Refine the solutions in top_solutions in parallel with multi-threading
 // the top_solutions and best_solution_id will be updated during this process
-void TPmultilevelPartitioner::RefinePartition(
-    TP_coarse_graph_ptrs hierarchy,
+void MultilevelPartitioner::RefinePartition(
+    CoarseGraphPtrs hierarchy,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
     MATRIX<int>& top_solutions,
@@ -481,7 +481,7 @@ void TPmultilevelPartitioner::RefinePartition(
     std::vector<std::thread> threads;
     threads.reserve(top_solutions.size());
     for (auto& top_solution : top_solutions) {
-      threads.emplace_back(&par::TPmultilevelPartitioner::CallRefiner,
+      threads.emplace_back(&par::MultilevelPartitioner::CallRefiner,
                            this,
                            hgraph,
                            std::ref(upper_block_balance),
@@ -517,7 +517,7 @@ void TPmultilevelPartitioner::RefinePartition(
 // Refine function
 // k_way_pm_refinement,
 // k_way_fm_refinement and greedy refinement
-void TPmultilevelPartitioner::CallRefiner(
+void MultilevelPartitioner::CallRefiner(
     const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
@@ -536,7 +536,7 @@ void TPmultilevelPartitioner::CallRefiner(
 // Perform cut-overlay clustering and ILP-based partitioning
 // The ILP-based partitioning uses top_solutions[best_solution_id] as a hint,
 // such that the runtime can be signficantly reduced
-std::vector<int> TPmultilevelPartitioner::CutOverlayILPPart(
+std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
     const HGraphPtr& hgraph,
     const MATRIX<float>& upper_block_balance,
     const MATRIX<float>& lower_block_balance,
