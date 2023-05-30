@@ -2427,7 +2427,8 @@ bool NesterovBase::nesterovUpdateStepLength()
   if (newStepLength > stepLength_ * 0.95) {
     stepLength_ = newStepLength;
     return false;
-  } if (newStepLength < 0.01) {
+  }
+  if (newStepLength < 0.01) {
     stepLength_ = 0.01;
     return false;
   } else {
@@ -2535,7 +2536,7 @@ bool NesterovBase::checkConvergence()
                    sumOverflowUnscaled_);
     }
 
-    for (auto & gCell : gCells_) {
+    for (auto& gCell : gCells_) {
       if (!gCell->isInstance()) {
         continue;
       }

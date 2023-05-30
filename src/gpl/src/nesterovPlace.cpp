@@ -268,7 +268,8 @@ void NesterovPlace::init()
   for (auto& nb : nbVec_) {
     auto stepL = nb->initDensity2(wireLengthCoefX_, wireLengthCoefY_);
     if ((isnan(stepL) || isinf(stepL))
-        && recursionCntInitSLPCoef_ < gpl::NesterovPlaceVars::maxRecursionInitSLPCoef) {
+        && recursionCntInitSLPCoef_
+               < gpl::NesterovPlaceVars::maxRecursionInitSLPCoef) {
       npVars_.initialPrevCoordiUpdateCoef *= 10;
       debugPrint(log_,
                  GPL,

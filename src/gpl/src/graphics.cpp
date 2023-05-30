@@ -46,12 +46,14 @@
 
 namespace gpl {
 
-Graphics::Graphics(utl::Logger* logger, std::shared_ptr<PlacerBaseCommon> pbc, std::vector<std::shared_ptr<PlacerBase>>& pbVec)
+Graphics::Graphics(utl::Logger* logger,
+                   std::shared_ptr<PlacerBaseCommon> pbc,
+                   std::vector<std::shared_ptr<PlacerBase>>& pbVec)
     : HeatMapDataSource(logger, "gpl", "gpl"),
       pbc_(std::move(pbc)),
-      
+
       pbVec_(pbVec),
-      
+
       np_(nullptr),
       selected_(nullptr),
       draw_bins_(false),
@@ -228,8 +230,8 @@ void Graphics::drawNesterov(gui::Painter& painter)
     float efMax = 0;
     int max_len = std::numeric_limits<int>::max();
     for (auto& bin : nbVec_[0]->bins()) {
-      efMax
-          = std::max(efMax, std::hypot(bin.electroForceX(), bin.electroForceY()));
+      efMax = std::max(efMax,
+                       std::hypot(bin.electroForceX(), bin.electroForceY()));
       max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
@@ -260,7 +262,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 }
 
 void Graphics::reportSelected()
-{ // TODO: PD_FIX
+{  // TODO: PD_FIX
   if (!selected_) {
     return;
   }

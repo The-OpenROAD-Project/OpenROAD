@@ -190,14 +190,15 @@ void Replace::doIncrementalPlace()
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 
-    for(auto pd : db_->getChip()->getBlock()->getPowerDomains()){
-      if(pd->getGroup()){
-        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
+      if (pd->getGroup()) {
+        pbVec_.push_back(
+            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
       }
-    } 
+    }
 
     total_placeable_insts_ = 0;
-    for(const auto& pb : pbVec_){
+    for (const auto& pb : pbVec_) {
       total_placeable_insts_ += pb->placeInsts().size();
     }
   }
@@ -219,7 +220,7 @@ void Replace::doIncrementalPlace()
   if (unplaced_cnt == 0) {
     // Everything was already placed so we do the old incremental mode
     // which just skips initial placement and runs nesterov.
-    for(auto& pb : pbVec_){
+    for (auto& pb : pbVec_) {
       pb->unlockAll();
     }
     // pbc_->unlockAll();
@@ -245,8 +246,8 @@ void Replace::doIncrementalPlace()
 
   // Finish the overflow resolution from the rough placement
   log_->info(GPL, 133, "Unlocked instances");
-  for(auto& pb : pbVec_){
-      pb->unlockAll();
+  for (auto& pb : pbVec_) {
+    pb->unlockAll();
   }
 
   setTargetOverflow(previous_overflow);
@@ -267,14 +268,15 @@ void Replace::doInitialPlace()
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 
-    for(auto pd : db_->getChip()->getBlock()->getPowerDomains()){
-      if(pd->getGroup()){
-        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
+      if (pd->getGroup()) {
+        pbVec_.push_back(
+            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
       }
-    } 
+    }
 
     total_placeable_insts_ = 0;
-    for(const auto& pb : pbVec_){
+    for (const auto& pb : pbVec_) {
       total_placeable_insts_ += pb->placeInsts().size();
     }
   }
@@ -288,7 +290,8 @@ void Replace::doInitialPlace()
   ipVars.debug = gui_debug_initial_;
   ipVars.forceCPU = forceCPU_;
 
-  std::unique_ptr<InitialPlace> ip(new InitialPlace(ipVars, pbc_, pbVec_, log_));
+  std::unique_ptr<InitialPlace> ip(
+      new InitialPlace(ipVars, pbc_, pbVec_, log_));
   ip_ = std::move(ip);
   ip_->doBicgstabPlace();
 }
@@ -305,18 +308,18 @@ bool Replace::initNesterovPlace()
 
     pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_));
 
-    for(auto pd : db_->getChip()->getBlock()->getPowerDomains()){
-      if(pd->getGroup()){
-        pbVec_.push_back(std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
+    for (auto pd : db_->getChip()->getBlock()->getPowerDomains()) {
+      if (pd->getGroup()) {
+        pbVec_.push_back(
+            std::make_shared<PlacerBase>(db_, pbc_, log_, pd->getGroup()));
       }
-    } 
+    }
 
     total_placeable_insts_ = 0;
-    for(const auto& pb : pbVec_){
+    for (const auto& pb : pbVec_) {
       total_placeable_insts_ += pb->placeInsts().size();
     }
   }
-
 
   if (total_placeable_insts_ == 0) {
     log_->warn(GPL, 136, "No placeable instances - skipping placement.");
@@ -337,12 +340,10 @@ bool Replace::initNesterovPlace()
 
     nbc_ = std::make_shared<NesterovBaseCommon>(nbVars, pbc_, log_);
 
-    for(const auto& pb : pbVec_){
+    for (const auto& pb : pbVec_) {
       nbVec_.push_back(std::make_shared<NesterovBase>(nbVars, pb, nbc_, log_));
     }
   }
-
-
 
   if (!rb_) {
     RouteBaseVars rbVars;
@@ -385,14 +386,13 @@ bool Replace::initNesterovPlace()
     npVars.debug_draw_bins = gui_debug_draw_bins_;
     npVars.debug_inst = gui_debug_inst_;
 
-    for(const auto& nb : nbVec_){
+    for (const auto& nb : nbVec_) {
       nb->setNpVars(&npVars);
     }
 
     std::unique_ptr<NesterovPlace> np(
         new NesterovPlace(npVars, pbc_, nbc_, pbVec_, nbVec_, rb_, tb_, log_));
-    
-   
+
     np_ = std::move(np);
   }
   return true;
@@ -466,7 +466,7 @@ void Replace::setUniformTargetDensityMode(bool mode)
 }
 
 float Replace::getUniformTargetDensity()
-{ 
+{
   // TODO: update to be compatible with multiple target densities
   initNesterovPlace();
   return nbVec_[0]->uniformTargetDensity();

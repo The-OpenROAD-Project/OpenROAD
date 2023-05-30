@@ -59,7 +59,7 @@ void InitialPlaceVars::reset()
   forceCPU = false;
 }
 
-InitialPlace::InitialPlace() : ipVars_(), pbc_(nullptr),  log_(nullptr)
+InitialPlace::InitialPlace() : ipVars_(), pbc_(nullptr), log_(nullptr)
 {
 }
 
@@ -159,7 +159,7 @@ void InitialPlace::placeInstsCenter()
   for (auto& inst : pbc_->placeInsts()) {
     if (!inst->isLocked()) {
       auto group = inst->dbInst()->getGroup();
-      if(group && group->getType() == odb::dbGroupType::POWER_DOMAIN){
+      if (group && group->getType() == odb::dbGroupType::POWER_DOMAIN) {
         auto domain_region = group->getRegion();
         int domain_xMin = std::numeric_limits<int>::max();
         int domain_yMin = std::numeric_limits<int>::max();
@@ -171,13 +171,12 @@ void InitialPlace::placeInstsCenter()
           domain_xMax = std::max(domain_xMax, boundary->xMax());
           domain_yMax = std::max(domain_yMax, boundary->yMax());
         }
-        inst->setCenterLocation(domain_xMax - (domain_xMax - domain_xMin)/2, domain_yMax - (domain_yMax - domain_yMin)/2); 
-      }else {
+        inst->setCenterLocation(domain_xMax - (domain_xMax - domain_xMin) / 2,
+                                domain_yMax - (domain_yMax - domain_yMin) / 2);
+      } else {
         inst->setCenterLocation(centerX, centerY);
       }
-
     }
-    
   }
 }
 
