@@ -40,6 +40,8 @@
 
 #include "Coarsener.h"
 
+#include <numeric>
+#include <random>
 #include <set>
 
 #include "Evaluator.h"

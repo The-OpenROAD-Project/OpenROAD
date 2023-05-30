@@ -34,7 +34,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include "Evaluator.h"
 
+#include <fstream>
 #include <functional>
+#include <numeric>
 
 #include "Hypergraph.h"
 #include "Utilities.h"

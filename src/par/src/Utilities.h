@@ -36,25 +36,7 @@
 // This file includes the basic utility functions for operations
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include <algorithm>
-#include <cassert>
-#include <chrono>
-#include <climits>
-#include <cmath>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
 #include <map>
-#include <memory>
-#include <queue>
-#include <random>
-#include <sstream>
-#include <stack>
-#include <stdexcept>
-#include <string>
-#include <thread>
 #include <vector>
 
 #ifdef LOAD_CPLEX
@@ -72,10 +54,10 @@ using MATRIX = std::vector<std::vector<T>>;
 struct Rect
 {
   // all the values are in db unit
-  int64_t lx = 0;
-  int64_t ly = 0;
-  int64_t ux = 0;
-  int64_t uy = 0;
+  int lx = 0;
+  int ly = 0;
+  int ux = 0;
+  int uy = 0;
 
   Rect(int lx_, int ly_, int ux_, int uy_) : lx(lx_), ly(ly_), ux(ux_), uy(uy_)
   {
@@ -84,10 +66,7 @@ struct Rect
   // check if the Rect is valid
   bool IsValid() const
   {
-    if (ux > lx && uy > ly) {
-      return true;
-    }
-    return false;
+    return ux > lx && uy > ly;
   }
 
   // reset the fence

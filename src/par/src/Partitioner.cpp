@@ -35,6 +35,8 @@
 
 #include "Partitioner.h"
 
+#include <random>
+
 #include "Evaluator.h"
 #include "Hypergraph.h"
 #include "Utilities.h"

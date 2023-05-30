@@ -37,6 +37,8 @@
 
 #include <functional>
 #include <queue>
+#include <random>
+#include <thread>
 
 #include "Evaluator.h"
 #include "Hypergraph.h"
