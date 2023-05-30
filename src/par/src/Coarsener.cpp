@@ -38,12 +38,12 @@
 // a sequence of coarser hypergraphs. (Top level function: LazyFirstChoice)
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TPCoarsener.h"
+#include "Coarsener.h"
 
 #include <set>
 
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
+#include "Evaluator.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 

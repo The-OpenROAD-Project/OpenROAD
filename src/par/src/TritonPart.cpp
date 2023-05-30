@@ -44,11 +44,11 @@
 #include <set>
 #include <string>
 
-#include "TPCoarsener.h"
-#include "TPHypergraph.h"
-#include "TPMultilevel.h"
-#include "TPPartitioner.h"
-#include "TPRefiner.h"
+#include "Coarsener.h"
+#include "Hypergraph.h"
+#include "Multilevel.h"
+#include "Partitioner.h"
+#include "Refiner.h"
 #include "Utilities.h"
 #include "odb/db.h"
 #include "sta/ArcDelayCalc.hh"

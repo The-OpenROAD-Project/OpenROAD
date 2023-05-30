@@ -36,8 +36,8 @@
 
 #include <set>
 
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
+#include "Evaluator.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 

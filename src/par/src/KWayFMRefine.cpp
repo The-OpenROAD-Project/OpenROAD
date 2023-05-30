@@ -34,8 +34,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include <thread>
 
-#include "TPHypergraph.h"
-#include "TPRefiner.h"
+#include "Hypergraph.h"
+#include "Refiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 

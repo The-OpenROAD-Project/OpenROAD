@@ -40,8 +40,8 @@
 #include <string>
 #include <vector>
 
-#include "TPCoarsener.h"
-#include "TPHypergraph.h"
+#include "Coarsener.h"
+#include "Hypergraph.h"
 #include "db_sta/dbReadVerilog.hh"
 #include "db_sta/dbSta.hh"
 #include "odb/db.h"

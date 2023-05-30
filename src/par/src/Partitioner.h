@@ -43,8 +43,8 @@
 // then put remaining vertices into the first block 3) ILP-based Partitioning
 // (INIT_DIRECT_ILP)
 
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
+#include "Evaluator.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 

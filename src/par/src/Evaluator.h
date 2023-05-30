@@ -37,7 +37,7 @@
 #include <set>
 #include <tuple>
 
-#include "TPHypergraph.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 

@@ -33,14 +33,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "TPMultilevel.h"
+#include "Multilevel.h"
 
 #include <functional>
 #include <queue>
 
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
-#include "TPPartitioner.h"
+#include "Evaluator.h"
+#include "Hypergraph.h"
+#include "Partitioner.h"
 #include "utl/Logger.h"
 
 namespace par {

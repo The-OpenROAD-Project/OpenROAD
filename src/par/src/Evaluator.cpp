@@ -32,11 +32,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "TPEvaluator.h"
+#include "Evaluator.h"
 
 #include <functional>
 
-#include "TPHypergraph.h"
+#include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 

@@ -34,11 +34,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "TPCoarsener.h"
-#include "TPEvaluator.h"
-#include "TPHypergraph.h"
-#include "TPPartitioner.h"
-#include "TPRefiner.h"
+#include "Coarsener.h"
+#include "Evaluator.h"
+#include "Hypergraph.h"
+#include "Partitioner.h"
+#include "Refiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
