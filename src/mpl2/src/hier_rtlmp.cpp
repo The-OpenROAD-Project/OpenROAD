@@ -2022,19 +2022,18 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
     }
   }
 
-
   const int seed = 0;
   const float balance_constraint = 1.0;
-  const int num_parts = 2; // We use two-way partitioning here
+  const int num_parts = 2;  // We use two-way partitioning here
   const int num_vertices = static_cast<int>(vertex_weight.size());
   std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
-  std::vector<int> part =
-  tritonpart_->PartitionKWaySimpleMode(num_parts,
-                                          balance_constraint,
-                                          seed,
-                                          hyperedges,
-                                          vertex_weight,
-                                          hyperedge_weights);
+  std::vector<int> part
+      = tritonpart_->PartitionKWaySimpleMode(num_parts,
+                                             balance_constraint,
+                                             seed,
+                                             hyperedges,
+                                             vertex_weight,
+                                             hyperedge_weights);
 
   // create cluster based on partitioning solutions
   // Note that all the std cells are stored in the leaf_std_cells_ for a flat
