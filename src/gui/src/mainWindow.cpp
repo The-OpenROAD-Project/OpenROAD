@@ -103,6 +103,7 @@ MainWindow::MainWindow(QWidget* parent)
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
       find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewer_))
+
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
