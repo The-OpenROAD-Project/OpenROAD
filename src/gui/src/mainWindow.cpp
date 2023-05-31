@@ -53,9 +53,6 @@
 
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
-#ifdef ENABLE_CHARTS
-#include "chartsWidget.h"
-#endif
 #include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
@@ -70,7 +67,6 @@
 #include "staGui.h"
 #include "timingWidget.h"
 #include "utl/Logger.h"
-#include "utl/algorithms.h"
 
 // must be loaded in global namespace
 static void loadQTResources()
@@ -105,10 +101,7 @@ MainWindow::MainWindow(QWidget* parent)
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
-#ifdef ENABLE_CHARTS
-      charts_widget_(new ChartsWidget(this)),
-#endif
-      find_dialog_(new FindObjectDialog(this))
+      find_dialog_(new FindObjectDialog(this)),
       goto_dialog_(new GotoLocationDialog(this, viewer_))
 {
   // Size and position the window
@@ -129,9 +122,6 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
-#ifdef ENABLE_CHARTS
-  addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
-#endif
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -446,27 +436,15 @@ void MainWindow::init(sta::dbSta* sta)
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
   clock_viewer_->setSTA(sta);
-#ifdef ENABLE_CHARTS
-  charts_widget_->setSTA(sta);
-#endif
-
   // register descriptors
   auto* gui = Gui::get();
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);
   gui->registerDescriptor<odb::dbInst*>(inst_descriptor);
   gui->registerDescriptor<odb::dbMaster*>(new DbMasterDescriptor(db_, sta));
-  gui->registerDescriptor<odb::dbNet*>(
-      new DbNetDescriptor(db_,
-                          sta,
-                          viewer_->getFocusNets(),
-                          viewer_->getRouteGuides(),
-                          viewer_->getNetTracks()));
-  gui->registerDescriptor<DbNetDescriptor::NetWithSink>(
-      new DbNetDescriptor(db_,
-                          sta,
-                          viewer_->getFocusNets(),
-                          viewer_->getRouteGuides(),
-                          viewer_->getNetTracks()));
+  gui->registerDescriptor<odb::dbNet*>(new DbNetDescriptor(
+      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
+  gui->registerDescriptor<DbNetDescriptor::NetWithSink>(new DbNetDescriptor(
+      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
@@ -484,21 +462,17 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
       new DbNonDefaultRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechLayerRule*>(
-      new DbTechLayerRuleDescriptor());
+      new DbTechLayerRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechSameNetRule*>(
-      new DbTechSameNetRuleDescriptor());
+      new DbTechSameNetRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
   gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
       new DbSiteDescriptor(db_));
   gui->registerDescriptor<odb::dbRow*>(new DbRowDescriptor(db_));
   gui->registerDescriptor<Ruler*>(new RulerDescriptor(rulers_, db_));
 
-  gui->registerDescriptor<BufferTree>(
-      new BufferTreeDescriptor(db_,
-                               sta,
-                               viewer_->getFocusNets(),
-                               viewer_->getRouteGuides(),
-                               viewer_->getNetTracks()));
+  gui->registerDescriptor<BufferTree>(new BufferTreeDescriptor(
+      db_, sta, viewer_->getFocusNets(), viewer_->getRouteGuides()));
 
   controls_->setDBInstDescriptor(inst_descriptor);
   hierarchy_widget_->setDBInstDescriptor(inst_descriptor);
@@ -662,9 +636,6 @@ void MainWindow::createMenus()
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
-#ifdef ENABLE_CHARTS
-  windows_menu_->addAction(charts_widget_->toggleViewAction());
-#endif
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
@@ -686,10 +657,10 @@ void MainWindow::createToolbars()
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
 
-std::string MainWindow::addToolbarButton(const std::string& name,
-                                         const QString& text,
-                                         const QString& script,
-                                         bool echo)
+const std::string MainWindow::addToolbarButton(const std::string& name,
+                                               const QString& text,
+                                               const QString& script,
+                                               bool echo)
 {
   // ensure key is unique
   std::string key;
@@ -775,12 +746,12 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
   return findMenu(path, menu);
 }
 
-std::string MainWindow::addMenuItem(const std::string& name,
-                                    const QString& path,
-                                    const QString& text,
-                                    const QString& script,
-                                    const QString& shortcut,
-                                    bool echo)
+const std::string MainWindow::addMenuItem(const std::string& name,
+                                          const QString& path,
+                                          const QString& text,
+                                          const QString& script,
+                                          const QString& shortcut,
+                                          bool echo)
 {
   // ensure key is unique
   std::string key;
@@ -864,8 +835,8 @@ void MainWindow::removeMenuItem(const std::string& name)
   menu_actions_.erase(name);
 }
 
-std::string MainWindow::requestUserInput(const QString& title,
-                                         const QString& question)
+const std::string MainWindow::requestUserInput(const QString& title,
+                                               const QString& question)
 {
   QString text = QInputDialog::getText(this, title, question);
   return text.toStdString();
@@ -961,9 +932,8 @@ void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
 {
   selected_.clear();
   addSelected(selection);
-  if (show_connectivity) {
+  if (show_connectivity)
     selectHighlightConnectedNets(true, true, true, false);
-  }
 
   emit selectionChanged();
 }
@@ -1074,9 +1044,8 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
 
 void MainWindow::clearHighlighted(int highlight_group)
 {
-  if (highlighted_.empty()) {
+  if (highlighted_.empty())
     return;
-  }
   int num_items_cleared = 0;
   if (highlight_group < 0) {
     for (auto& highlighted_set : highlighted_) {
@@ -1087,9 +1056,8 @@ void MainWindow::clearHighlighted(int highlight_group)
     num_items_cleared += highlighted_[highlight_group].size();
     highlighted_[highlight_group].clear();
   }
-  if (num_items_cleared > 0) {
+  if (num_items_cleared > 0)
     emit highlightChanged();
-  }
 }
 
 void MainWindow::clearRulers()
@@ -1104,9 +1072,8 @@ void MainWindow::clearRulers()
 
 void MainWindow::removeFromSelected(const QList<const Selected*>& items)
 {
-  if (items.empty()) {
+  if (items.empty())
     return;
-  }
   for (auto& item : items) {
     selected_.erase(*item);
   }
@@ -1116,14 +1083,12 @@ void MainWindow::removeFromSelected(const QList<const Selected*>& items)
 void MainWindow::removeFromHighlighted(const QList<const Selected*>& items,
                                        int highlight_group)
 {
-  if (items.empty()) {
+  if (items.empty())
     return;
-  }
   if (highlight_group < 0) {
     for (auto& item : items) {
-      for (auto& highlighted_set : highlighted_) {
+      for (auto& highlighted_set : highlighted_)
         highlighted_set.erase(*item);
-      }
     }
   } else if (highlight_group < highlighted_.size()) {
     for (auto& item : items) {
@@ -1141,9 +1106,8 @@ void MainWindow::zoomTo(const odb::Rect& rect_dbu)
 
 void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 {
-  if (items.empty()) {
+  if (items.empty())
     return;
-  }
   odb::Rect items_bbox;
   items_bbox.mergeInit();
   int merge_cnt = 0;
@@ -1154,9 +1118,8 @@ void MainWindow::zoomInToItems(const QList<const Selected*>& items)
       items_bbox.merge(item_bbox);
     }
   }
-  if (merge_cnt == 0) {
+  if (merge_cnt == 0)
     return;
-  }
   zoomTo(items_bbox);
 }
 
@@ -1167,9 +1130,8 @@ void MainWindow::status(const std::string& message)
 
 void MainWindow::showFindDialog()
 {
-  if (getBlock() == nullptr) {
+  if (getBlock() == nullptr)
     return;
-  }
   find_dialog_->exec();
 }
 
@@ -1198,19 +1160,17 @@ bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
   if (selection_set) {
     for (auto& selected_obj : selected_) {
       if ((selected_obj.isInst() && obj_type == odb::dbInstObj)
-          || (selected_obj.isNet() && obj_type == odb::dbNetObj)) {
+          || (selected_obj.isNet() && obj_type == odb::dbNetObj))
         return true;
-      }
     }
     return false;
-  }
-  for (auto& highlight_set : highlighted_) {
-    for (auto& selected_obj : highlight_set) {
-      if (selected_obj.isInst() && obj_type == odb::dbInstObj) {
-        return true;
-      }
-      if (selected_obj.isNet() && obj_type == odb::dbNetObj) {
-        return true;
+  } else {
+    for (auto& highlight_set : highlighted_) {
+      for (auto& selected_obj : highlight_set) {
+        if (selected_obj.isInst() && obj_type == odb::dbInstObj)
+          return true;
+        if (selected_obj.isNet() && obj_type == odb::dbNetObj)
+          return true;
       }
     }
   }
@@ -1229,14 +1189,12 @@ void MainWindow::selectHighlightConnectedInsts(bool select_flag,
       }
     }
   }
-  if (connected_insts.empty()) {
+  if (connected_insts.empty())
     return;
-  }
-  if (select_flag) {
+  if (select_flag)
     addSelected(connected_insts);
-  } else {
+  else
     addHighlighted(connected_insts, highlight_group);
-  }
 }
 
 void MainWindow::selectHighlightConnectedNets(bool select_flag,
@@ -1250,33 +1208,28 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
       for (auto inst_term : inst_obj->getITerms()) {
         if (inst_term->getNet() == nullptr
-            || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL) {
+            || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
           continue;
-        }
         auto inst_term_dir = inst_term->getIoType();
 
         if (output
             && (inst_term_dir == odb::dbIoType::OUTPUT
-                || inst_term_dir == odb::dbIoType::INOUT)) {
+                || inst_term_dir == odb::dbIoType::INOUT))
           connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet()));
-        }
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
-                || inst_term_dir == odb::dbIoType::INOUT)) {
+                || inst_term_dir == odb::dbIoType::INOUT))
           connected_nets.insert(Gui::get()->makeSelected(
               DbNetDescriptor::NetWithSink{inst_term->getNet(), inst_term}));
-        }
       }
     }
   }
-  if (connected_nets.empty()) {
+  if (connected_nets.empty())
     return;
-  }
-  if (select_flag) {
+  if (select_flag)
     addSelected(connected_nets);
-  } else {
+  else
     addHighlighted(connected_nets, highlight_group);
-  }
 }
 
 void MainWindow::saveSettings()
@@ -1303,11 +1256,7 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  if (!block->getParent()) {
-    emit designLoaded(block);
-  } else {
-    viewer_->fullRepaint();
-  }
+  emit designLoaded(block);
 }
 
 void MainWindow::postReadDb(odb::dbDatabase* db)
@@ -1393,7 +1342,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
   }
 }
 
-std::vector<std::string> MainWindow::getRestoreTclCommands()
+const std::vector<std::string> MainWindow::getRestoreTclCommands()
 {
   std::vector<std::string> cmds;
   // Save rulers
@@ -1426,23 +1375,26 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
 {
   if (show_dbu_->isChecked()) {
     return std::to_string(value);
+  } else {
+    auto* block = getBlock();
+    if (block == nullptr) {
+      return std::to_string(value);
+    } else {
+      const double dbu_per_micron = block->getDbUnitsPerMicron();
+
+      std::stringstream ss;
+      const int precision = std::ceil(std::log10(dbu_per_micron));
+      const double micron_value = value / dbu_per_micron;
+
+      ss << std::fixed << std::setprecision(precision) << micron_value;
+
+      if (add_units) {
+        ss << " \u03BCm";  // micro meter
+      }
+
+      return ss.str();
+    }
   }
-  auto* block = getBlock();
-  if (block == nullptr) {
-    return std::to_string(value);
-  }
-  const double dbu_per_micron = block->getDbUnitsPerMicron();
-
-  const int precision = std::ceil(std::log10(dbu_per_micron));
-  const double micron_value = value / dbu_per_micron;
-
-  auto str = utl::to_numeric_string(micron_value, precision);
-
-  if (add_units) {
-    str += " \u03BCm";  // micro meter
-  }
-
-  return str;
 }
 
 int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
@@ -1459,14 +1411,16 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
 
   if (show_dbu_->isChecked()) {
     return new_value.toInt(ok);
-  }
-  auto* block = getBlock();
-  if (block == nullptr) {
-    return new_value.toInt(ok);
-  }
-  const int dbu_per_micron = block->getDbUnitsPerMicron();
+  } else {
+    auto* block = getBlock();
+    if (block == nullptr) {
+      return new_value.toInt(ok);
+    } else {
+      const int dbu_per_micron = block->getDbUnitsPerMicron();
 
-  return new_value.toDouble(ok) * dbu_per_micron;
+      return new_value.toDouble(ok) * dbu_per_micron;
+    }
+  }
 }
 
 void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)
@@ -1484,7 +1438,7 @@ void MainWindow::timingPathsThrough(const std::set<Gui::odbTerm>& terms)
 {
   auto* settings = timing_widget_->getSettings();
   settings->setFromPin({});
-  std::set<const sta::Pin*> pins;
+  std::set<sta::Pin*> pins;
   for (const auto& term : terms) {
     pins.insert(settings->convertTerm(term));
   }
