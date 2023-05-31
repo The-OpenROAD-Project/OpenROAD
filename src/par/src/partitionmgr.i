@@ -49,12 +49,20 @@ namespace ord {
 using std::regex;
 using ord::getPartitionMgr;
 
+// From tcl/std_vector.i - not sure why it isn't found automatically
+template <typename Type>
+int SwigDouble_As(Tcl_Interp *interp, Tcl_Obj *o, Type *val) {
+    int return_val;
+    double temp_val;
+    return_val = Tcl_GetDoubleFromObj(interp, o, &temp_val);
+    *val = (Type) temp_val;
+    return return_val;
+}
+
 %}
 
 %import <std_vector.i>
-namespace std {
-%template(e_wt_factors) vector<double>;
-}
+%template(wt_factors) std::vector<float>;
 
 %include "../../Exception.i"
 
@@ -72,9 +80,9 @@ void triton_part_hypergraph(unsigned int num_parts,
                             const char* group_file,
                             const char* placement_file,
                             // weight parameters
-                            const char* e_wt_factors_str,
-                            const char* v_wt_factors_str,
-                            const char* placement_wt_factors_str,
+                            const std::vector<float>& e_wt_factors,
+                            const std::vector<float>& v_wt_factors,
+                            const std::vector<float>& placement_wt_factors,
                             // coarsening related parameters
                             int thr_coarsen_hyperedge_size_skip,
                             int thr_coarsen_vertices,
@@ -110,9 +118,9 @@ void triton_part_hypergraph(unsigned int num_parts,
                                           group_file,
                                           placement_file,
                                           // weight parameters
-                                          e_wt_factors_str,
-                                          v_wt_factors_str,
-                                          placement_wt_factors_str,
+                                          e_wt_factors,
+                                          v_wt_factors,
+                                          placement_wt_factors,
                                           // coarsening related parameters
                                           thr_coarsen_hyperedge_size_skip,
                                           thr_coarsen_vertices,
@@ -146,8 +154,8 @@ void evaluate_hypergraph_solution(unsigned int num_parts,
                                   const char* fixed_file,
                                   const char* group_file,
                                   const char* solution_file,
-                                  const char* e_wt_factors_str,
-                                  const char* v_wt_factors_str)
+                                  const std::vector<float>& e_wt_factors,
+                                  const std::vector<float>& v_wt_factors)
 {
   getPartitionMgr()->evaluateHypergraphSolution(num_parts,
                                                 balance_constraint,
@@ -157,8 +165,8 @@ void evaluate_hypergraph_solution(unsigned int num_parts,
                                                 fixed_file,
                                                 group_file,
                                                 solution_file,
-                                                e_wt_factors_str,
-                                                v_wt_factors_str); 
+                                                e_wt_factors,
+                                                v_wt_factors); 
 }
 
 
@@ -185,9 +193,9 @@ void triton_part_design(unsigned int num_parts_arg,
                         float extra_delay,
                         bool guardband_flag,
                         // weight parameters
-                        const char* e_wt_factors_str,
-                        const char* v_wt_factors_str,
-                        const char* placement_wt_factors_str,
+                        const std::vector<float>& e_wt_factors,
+                        const std::vector<float>& v_wt_factors,
+                        const std::vector<float>& placement_wt_factors,
                         // coarsening related parameters
                         int thr_coarsen_hyperedge_size_skip,
                         int thr_coarsen_vertices,
@@ -234,9 +242,9 @@ void triton_part_design(unsigned int num_parts_arg,
                                       extra_delay,
                                       guardband_flag,
                                       // weight parameters
-                                      e_wt_factors_str,
-                                      v_wt_factors_str,
-                                      placement_wt_factors_str,
+                                      e_wt_factors,
+                                      v_wt_factors,
+                                      placement_wt_factors,
                                       // coarsening related parameters
                                       thr_coarsen_hyperedge_size_skip,
                                       thr_coarsen_vertices,
@@ -286,8 +294,8 @@ void evaluate_part_design_solution(unsigned int num_parts_arg,
                                    float extra_delay,
                                    bool guardband_flag,
                                    // weight parameters
-                                   const char* e_wt_factors_str,
-                                   const char* v_wt_factors_str)
+                                   const std::vector<float>& e_wt_factors,
+                                   const std::vector<float>& v_wt_factors)
 {
   getPartitionMgr()->evaluatePartDesignSolution(num_parts_arg,
                                                 balance_constraint_arg,
@@ -312,8 +320,8 @@ void evaluate_part_design_solution(unsigned int num_parts_arg,
                                                 extra_delay,
                                                 guardband_flag,
                                                 // weight parameters
-                                                e_wt_factors_str,
-                                                v_wt_factors_str);
+                                                e_wt_factors,
+                                                v_wt_factors);
 }
 
 void write_partition_verilog(const char* port_prefix,

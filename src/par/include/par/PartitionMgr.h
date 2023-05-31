@@ -95,9 +95,9 @@ class PartitionMgr
                             const char* group_file,
                             const char* placement_file,
                             // weight parameters
-                            const char* e_wt_factors_str,
-                            const char* v_wt_factors_str,
-                            const char* placement_wt_factors_str,
+                            const std::vector<float>& e_wt_factors,
+                            const std::vector<float>& v_wt_factors,
+                            const std::vector<float>& placement_wt_factors,
                             // coarsening related parameters
                             int thr_coarsen_hyperedge_size_skip,
                             int thr_coarsen_vertices,
@@ -134,8 +134,8 @@ class PartitionMgr
                                   const char* group_file,
                                   const char* solution_file,
                                   // weight parameters
-                                  const char* e_wt_factors_str,
-                                  const char* v_wt_factors_str);
+                                  const std::vector<float>& e_wt_factors,
+                                  const std::vector<float>& v_wt_factors);
 
   // Top level interface
   // The function for partitioning a hypergraph
@@ -169,9 +169,9 @@ class PartitionMgr
                         float extra_delay,
                         bool guardband_flag,
                         // weight parameters
-                        const char* e_wt_factors_str,
-                        const char* v_wt_factors_str,
-                        const char* placement_wt_factors_str,
+                        const std::vector<float>& e_wt_factors,
+                        const std::vector<float>& v_wt_factors,
+                        const std::vector<float>& placement_wt_factors,
                         // coarsening related parameters
                         int thr_coarsen_hyperedge_size_skip,
                         int thr_coarsen_vertices,
@@ -218,8 +218,8 @@ class PartitionMgr
                                   float extra_delay,
                                   bool guardband_flag,
                                   // weight parameters
-                                  const char* e_wt_factors_str,
-                                  const char* v_wt_factors_str);
+                                  const std::vector<float>& e_wt_factors,
+                                  const std::vector<float>& v_wt_factors);
 
   // k-way partitioning used by Hier-RTLMP
   std::vector<int> PartitionKWaySimpleMode(

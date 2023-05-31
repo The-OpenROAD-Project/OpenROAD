@@ -88,9 +88,6 @@ enum VertexType
 
 std::string GetVectorString(const std::vector<float>& vec);
 
-// Convert Tcl list to vector
-std::vector<float> ConvertTclListToVector(std::string tcl_list_string);
-
 // Split a string based on deliminator : empty space and ","
 std::vector<std::string> SplitLine(const std::string& line);
 

@@ -61,7 +61,7 @@ Coarsener::Coarsener(const int num_parts,
                      const int max_coarsen_iters,
                      const float adj_diff_ratio,
                      const std::vector<float>& thr_cluster_weight,
-                     const int seed,
+                     const int random_seed,
                      const CoarsenOrder vertex_order_choice,
                      EvaluatorPtr evaluator,
                      utl::Logger* logger)
@@ -73,7 +73,7 @@ Coarsener::Coarsener(const int num_parts,
       max_coarsen_iters_(max_coarsen_iters),
       adj_diff_ratio_(adj_diff_ratio),
       thr_cluster_weight_(thr_cluster_weight),
-      seed_(seed),
+      random_seed_(random_seed),
       vertex_order_choice_(vertex_order_choice)
 {
   evaluator_ = std::move(evaluator);
@@ -660,8 +660,9 @@ void Coarsener::OrderVertices(const HGraphPtr& hgraph,
 {
   switch (vertex_order_choice_) {
     case CoarsenOrder::RANDOM:
-      shuffle(
-          vertices.begin(), vertices.end(), std::default_random_engine(seed_));
+      shuffle(vertices.begin(),
+              vertices.end(),
+              std::default_random_engine(random_seed_));
       return;
 
     case CoarsenOrder::DEFAULT:

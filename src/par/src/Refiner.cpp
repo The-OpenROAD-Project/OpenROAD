@@ -41,6 +41,8 @@
 
 namespace par {
 
+using utl::PAR;
+
 VertexGain::VertexGain(const int vertex,
                        const int src_block_id,
                        const int destination_block_id,
@@ -88,13 +90,13 @@ Refiner::Refiner(
 
 void Refiner::SetMaxMove(const int max_move)
 {
-  logger_->report("[INFO] Set the max_move to {}", max_move);
+  logger_->info(PAR, 163, "Set the max_move to {}", max_move);
   max_move_ = max_move;
 }
 
 void Refiner::SetRefineIters(const int refiner_iters)
 {
-  logger_->report("[INFO] Set the refiner_iter to {}", refiner_iters);
+  logger_->info(PAR, 164, "Set the refiner_iter to {}", refiner_iters);
   refiner_iters_ = refiner_iters;
 }
 
@@ -102,8 +104,8 @@ void Refiner::RestoreDefaultParameters()
 {
   max_move_ = max_move_default_;
   refiner_iters_ = refiner_iters_default_;
-  logger_->report("[INFO] Reset the max_move to {}", max_move_);
-  logger_->report("[INFO] Reset the refiner_iters to {}", refiner_iters_);
+  logger_->info(PAR, 165, "Reset the max_move to {}", max_move_);
+  logger_->info(PAR, 166, "Reset the refiner_iters to {}", refiner_iters_);
 }
 
 // The main function of refinement class
@@ -114,7 +116,7 @@ void Refiner::Refine(const HGraphPtr& hgraph,
 {
   if (max_move_ <= 0) {
     logger_->report("[PARAMS] max_move = {}", max_move_);
-    logger_->report("[WARNING] Exit Refinement.");
+    logger_->info(PAR, 118, "Exit Refinement.");
     return;
   }
   // calculate the basic statistics of current solution

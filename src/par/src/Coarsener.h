@@ -87,7 +87,7 @@ class Coarsener
           adj_diff_ratio,  // the minimum difference of two adjacent hypergraphs
       const std::vector<float>&
           thr_cluster_weight,  // the weight of largest cluster in a hypergraph
-      const int seed,          // random seed
+      const int random_seed,
       const CoarsenOrder vertex_order_choice,  // vertex order
       EvaluatorPtr evaluator,                  // evaluator to calculate score
       utl::Logger* logger);
@@ -123,7 +123,7 @@ class Coarsener
     // hyperedge during coarsening
   }
 
-  void IncreaseRandomSeed() { seed_++; }
+  void IncreaseRandomSeed() { random_seed_++; }
 
  private:
   // private functions (utilities)
@@ -183,28 +183,34 @@ class Coarsener
 
   const int num_parts_ = 2;
   // coarsening related parameters (stop conditions)
-  int thr_coarsen_hyperedge_size_skip_
-      = 50;  // if the size of a hyperedge is larger than
-             // thr_coarsen_hyperedge_size_skip_, then we ignore this
-             // hyperedge during coarsening
-  const int thr_coarsen_vertices_ = 200;  // the minimum threshold of number of
-                                          // vertices in the coarsest hypergraph
-  const int thr_coarsen_hyperedges_
-      = 50;  // the minimum threshold of number of hyperedges in the
-             // coarsest hypergraph
-  // const int global_net_threshold_ = 1000;
-  const float coarsening_ratio_
-      = 1.5;  // the ratio of number of vertices of adjacent coarse hypergraphs
-  const int max_coarsen_iters_ = 20;  // maxinum number of coarsening iterations
-  const float adj_diff_ratio_
-      = 0.01;  // the ratio of number of vertices of adjacent coarse hypergraphs
-               // if the ratio is less than adj_diff_ratio_, then stop
-               // coarsening
-  // const std::vector<float> thr_cluster_weight_; // the maximum weight of a
-  // cluster
+
+  // If the size of a hyperedge is larger than
+  // thr_coarsen_hyperedge_size_skip_, then we ignore this hyperedge
+  // during coarsening
+  int thr_coarsen_hyperedge_size_skip_ = 50;
+
+  // If the size of a hyperedge is larger than
+  // thr_coarsen_hyperedge_size_skip_, then we ignore this hyperedge
+  // during coarsening
+  const int thr_coarsen_vertices_ = 200;
+
+  // The minimum threshold of number of hyperedges in the coarsest
+  // hypergraph
+  const int thr_coarsen_hyperedges_ = 50;
+
+  // The ratio of number of vertices of adjacent coarse hypergraphs
+  const float coarsening_ratio_ = 1.5;
+
+  // Maxinum number of coarsening iterations
+  const int max_coarsen_iters_ = 20;
+
+  // The ratio of number of vertices of adjacent coarse hypergraphs if
+  // the ratio is less than adj_diff_ratio_, then stop coarsening
+  const float adj_diff_ratio_ = 0.01;
+
   std::vector<float> thr_cluster_weight_;  // the maximum weight of a cluster
-  int seed_ = 0;                           // random seed
-  CoarsenOrder vertex_order_choice_ = CoarsenOrder::RANDOM;  // not const here
+  int random_seed_ = 0;
+  CoarsenOrder vertex_order_choice_ = CoarsenOrder::RANDOM;
   EvaluatorPtr evaluator_ = nullptr;
   utl::Logger* logger_ = nullptr;
 };
