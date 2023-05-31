@@ -389,6 +389,7 @@ protected:
   float portFanoutLoad(LibertyPort *port) const;
   float portCapacitance(LibertyPort *input,
                         const Corner *corner) const;
+  float pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const;
   void swapPins(Instance *inst, LibertyPort *port1,
                 LibertyPort *port2, bool journal);
   void findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,

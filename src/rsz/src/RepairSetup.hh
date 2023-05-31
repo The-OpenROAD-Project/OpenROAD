@@ -132,8 +132,6 @@ private:
   addWireAndBuffer(BufferedNetSeq Z,
                    BufferedNetPtr bnet_wire,
                    int level);
-  float pinCapacitance(const Pin *pin,
-                       const DcalcAnalysisPt *dcalc_ap);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
   Slack slackPenalized(BufferedNetPtr bnet);

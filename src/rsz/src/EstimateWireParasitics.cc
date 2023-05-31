@@ -459,6 +459,19 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
   }
 }
 
+float
+Resizer::pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const
+{
+  LibertyPort *port = network_->libertyPort(pin);
+  if (port) {
+    int lib_ap = dcalc_ap->libertyIndex();
+    LibertyPort *corner_port = port->cornerPort(lib_ap);
+    return corner_port->capacitance();
+  }
+  else
+    return 0.0;
+}
+
 void
 Resizer::parasiticNodeConnectPins(Parasitic *parasitic,
                                   ParasiticNode *node,
