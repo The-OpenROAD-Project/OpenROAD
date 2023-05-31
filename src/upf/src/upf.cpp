@@ -429,7 +429,7 @@ static bool instantiate_logic_ports(utl::Logger* logger, odb::dbBlock* block)
     if (!odb::dbNet::create(block, port->getName())) {
       logger->warn(utl::UPF,
                    10019,
-                   "Creation of '%s' dbNet from UPF Logic Port failed",
+                   "Creation of '{}' dbNet from UPF Logic Port failed",
                    port->getName());
       success = false;
     }
@@ -729,7 +729,7 @@ static bool isolate_port(utl::Logger* logger,
   if (!control_net) {
     logger->warn(utl::UPF,
                  10023,
-                 "Isolation %s has nonexisting control net %s",
+                 "Isolation {} has nonexisting control net {}",
                  iso->getName(),
                  iso->getIsolationSignal());
 
