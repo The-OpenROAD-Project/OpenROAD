@@ -85,9 +85,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     case drcPathSeg:
     case drcVia:
     case drcPatchWire: {
-      auto shape = static_cast<drShape*>(obj);
-      if (shape->hasNet()) {
-        owner = shape->getNet()->getFrNet();
+      auto fig = static_cast<drConnFig*>(obj);
+      if (fig->hasNet()) {
+        owner = fig->getNet()->getFrNet();
       } else {
         logger_->error(
             DRT, 38, "init_design_helper shape does not have dr net.");
@@ -139,32 +139,25 @@ bool FlexGCWorker::Impl::initDesign_skipObj(frBlockObject* obj)
   if (targetObjs_.empty()) {
     return false;
   }
+
   auto type = obj->typeId();
-  for (auto targetObj : targetObjs_) {
-    switch (targetObj->typeId()) {
-      case frcInst: {
-        if (type == frcInstTerm
-            && static_cast<frInstTerm*>(obj)->getInst() == targetObj) {
-          return false;
-        } else if (type == frcInstBlockage
-                   && static_cast<frInstBlockage*>(obj)->getInst()
-                          == targetObj) {
-          return false;
-        }
-        break;
-      }
-      case frcBTerm: {
-        if (type == frcBTerm
-            && static_cast<frTerm*>(obj) == static_cast<frTerm*>(targetObj)) {
-          return false;
-        }
-        break;
-      }
-      default:
-        logger_->error(
-            DRT, 40, "FlexGCWorker::initDesign_skipObj type not supported.");
+  switch (type) {
+    case frcInstTerm: {
+      auto inst = static_cast<frInstTerm*>(obj)->getInst();
+      return targetObjs_.find(inst) == targetObjs_.end();
     }
+    case frcInstBlockage: {
+      auto inst = static_cast<frInstBlockage*>(obj)->getInst();
+      return targetObjs_.find(inst) == targetObjs_.end();
+    }
+    case frcBTerm: {
+      auto term = static_cast<frTerm*>(obj);
+      return targetObjs_.find(term) == targetObjs_.end();
+    }
+    default:
+      return true;
   }
+
   return true;
 }
 

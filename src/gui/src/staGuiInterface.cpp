@@ -215,11 +215,13 @@ void TimingPath::populateNodeList(sta::Path* path,
     while (iter.hasNext()) {
       sta::Edge* edge = iter.next();
       if (edge->isWire()) {
-        sta::Pin* pin = edge->to(graph)->pin();
+        const sta::Pin* pin = edge->to(graph)->pin();
         if (network->isTopLevelPort(pin)) {
           // Output port counts as a fanout.
           sta::Port* port = network->port(pin);
-          fanout += sdc->portExtFanout(port, sta::MinMax::max()) + 1;
+          fanout += sdc->portExtFanout(
+                        port, dcalc_ap->corner(), sta::MinMax::max())
+                    + 1;
         } else {
           fanout++;
         }
@@ -368,18 +370,18 @@ ClockTree::ClockTree(sta::Clock* clock, sta::dbNetwork* network)
   net_ = getNet(*clock_->pins().begin());
 }
 
-std::set<sta::Pin*> ClockTree::getDrivers() const
+std::set<const sta::Pin*> ClockTree::getDrivers() const
 {
-  std::set<sta::Pin*> drivers;
+  std::set<const sta::Pin*> drivers;
   for (const auto& [driver, arrival] : drivers_) {
     drivers.insert(driver);
   }
   return drivers;
 }
 
-std::set<sta::Pin*> ClockTree::getLeaves() const
+std::set<const sta::Pin*> ClockTree::getLeaves() const
 {
-  std::set<sta::Pin*> leaves;
+  std::set<const sta::Pin*> leaves;
   for (auto& [leaf, arrival] : leaves_) {
     leaves.insert(leaf);
   }
@@ -580,7 +582,7 @@ void ClockTree::addPath(sta::PathExpanded& path, const sta::StaState* sta)
   addPath(path, 0, sta);
 }
 
-sta::Net* ClockTree::getNet(sta::Pin* pin) const
+sta::Net* ClockTree::getNet(const sta::Pin* pin) const
 {
   sta::Term* term = network_->term(pin);
   if (term != nullptr) {
@@ -590,14 +592,14 @@ sta::Net* ClockTree::getNet(sta::Pin* pin) const
   }
 }
 
-bool ClockTree::isLeaf(sta::Pin* pin) const
+bool ClockTree::isLeaf(const sta::Pin* pin) const
 {
   return network_->isRegClkPin(pin) || network_->isLatchData(pin);
 }
 
 bool ClockTree::addVertex(sta::Vertex* vertex, sta::Delay delay)
 {
-  sta::Pin* pin = vertex->pin();
+  const sta::Pin* pin = vertex->pin();
 
   if (isLeaf(pin)) {
     leaves_[pin] = delay;
@@ -612,8 +614,8 @@ bool ClockTree::addVertex(sta::Vertex* vertex, sta::Delay delay)
   }
 }
 
-std::pair<sta::Pin*, sta::Delay> ClockTree::getPairedSink(
-    sta::Pin* paired_pin) const
+std::pair<const sta::Pin*, sta::Delay> ClockTree::getPairedSink(
+    const sta::Pin* paired_pin) const
 {
   sta::Instance* inst = network_->instance(paired_pin);
 
@@ -630,21 +632,21 @@ std::pair<sta::Pin*, sta::Delay> ClockTree::getPairedSink(
   return {nullptr, 0.0};
 }
 
-std::vector<std::pair<sta::Pin*, sta::Pin*>> ClockTree::findPathTo(
-    sta::Pin* pin) const
+std::vector<std::pair<const sta::Pin*, const sta::Pin*>> ClockTree::findPathTo(
+    const sta::Pin* pin) const
 {
   auto pin_map = getPinMapping();
 
-  std::vector<std::pair<sta::Pin*, sta::Pin*>> path;
+  std::vector<std::pair<const sta::Pin*, const sta::Pin*>> path;
 
   // looking for path to root
-  sta::Pin* root = drivers_.begin()->first;
+  const sta::Pin* root = drivers_.begin()->first;
 
-  sta::Pin* search_pin = pin;
+  const sta::Pin* search_pin = pin;
   while (search_pin != root) {
     const auto connections = pin_map[search_pin];
 
-    for (sta::Pin* connect : connections) {
+    for (const sta::Pin* connect : connections) {
       path.emplace_back(connect, search_pin);
     }
 
@@ -658,9 +660,10 @@ std::vector<std::pair<sta::Pin*, sta::Pin*>> ClockTree::findPathTo(
   return path;
 }
 
-std::map<sta::Pin*, std::set<sta::Pin*>> ClockTree::getPinMapping() const
+std::map<const sta::Pin*, std::set<const sta::Pin*>> ClockTree::getPinMapping()
+    const
 {
-  std::map<sta::Pin*, std::set<sta::Pin*>> pins;
+  std::map<const sta::Pin*, std::set<const sta::Pin*>> pins;
 
   const auto drivers = getDrivers();
   for (const auto& [leaf, arrival] : leaves_) {
@@ -672,7 +675,7 @@ std::map<sta::Pin*, std::set<sta::Pin*>> ClockTree::getPinMapping() const
   }
 
   if (parent_ != nullptr) {
-    for (sta::Pin* driver : drivers) {
+    for (const sta::Pin* driver : drivers) {
       const auto& [parent_sink, time] = parent_->getPairedSink(driver);
       pins[driver].insert(parent_sink);
     }
@@ -700,13 +703,28 @@ STAGuiInterface::STAGuiInterface(sta::dbSta* sta)
 {
 }
 
+StaPins STAGuiInterface::getEndPoints() const
+{
+  StaPins pins;
+  for (auto end : *sta_->endpoints()) {
+    pins.insert(end->pin());
+  }
+  return pins;
+}
+
+float STAGuiInterface::getPinSlack(const sta::Pin* pin) const
+{
+  return sta_->pinSlack(pin,
+                        use_max_ ? sta::MinMax::max() : sta::MinMax::min());
+}
+
 int STAGuiInterface::getEndPointCount() const
 {
   return sta_->endpoints()->size();
 }
 
 std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
-    sta::Pin* pin) const
+    const sta::Pin* pin) const
 {
   for (const auto& path : getTimingPaths(pin)) {
     for (const auto& node : path->getPathNodes()) {
@@ -722,7 +740,7 @@ std::unique_ptr<TimingPathNode> STAGuiInterface::getTimingNode(
   return nullptr;
 }
 
-TimingPathList STAGuiInterface::getTimingPaths(sta::Pin* thru) const
+TimingPathList STAGuiInterface::getTimingPaths(const sta::Pin* thru) const
 {
   return getTimingPaths({}, {{thru}}, {});
 }
@@ -738,7 +756,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
 
   sta::ExceptionFrom* e_from = nullptr;
   if (!from.empty()) {
-    sta::PinSet* pins = new sta::PinSet;
+    sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(from.begin(), from.end());
     e_from = sta_->makeExceptionFrom(
         pins, nullptr, nullptr, sta::RiseFallBoth::riseFall());
@@ -752,7 +770,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
       if (e_thrus == nullptr) {
         e_thrus = new sta::ExceptionThruSeq;
       }
-      sta::PinSet* pins = new sta::PinSet;
+      sta::PinSet* pins = new sta::PinSet(getNetwork());
       pins->insert(thru_set.begin(), thru_set.end());
       e_thrus->push_back(sta_->makeExceptionThru(
           pins, nullptr, nullptr, sta::RiseFallBoth::riseFall()));
@@ -760,7 +778,7 @@ TimingPathList STAGuiInterface::getTimingPaths(
   }
   sta::ExceptionTo* e_to = nullptr;
   if (!to.empty()) {
-    sta::PinSet* pins = new sta::PinSet;
+    sta::PinSet* pins = new sta::PinSet(getNetwork());
     pins->insert(to.begin(), to.end());
     e_to = sta_->makeExceptionTo(pins,
                                  nullptr,
@@ -771,8 +789,8 @@ TimingPathList STAGuiInterface::getTimingPaths(
 
   sta::Search* search = sta_->search();
 
-  std::unique_ptr<sta::PathEndSeq> path_ends(
-      search->findPathEnds(  // from, thrus, to, unconstrained
+  sta::PathEndSeq path_ends
+      = search->findPathEnds(  // from, thrus, to, unconstrained
           e_from,
           e_thrus,
           e_to,
@@ -795,9 +813,9 @@ TimingPathList STAGuiInterface::getTimingPaths(
           false,
           // clk_gating_setup, clk_gating_hold
           false,
-          false));
+          false);
 
-  for (auto& path_end : *path_ends) {
+  for (auto& path_end : path_ends) {
     TimingPath* timing_path = new TimingPath();
     sta::Path* path = path_end->path();
 
@@ -852,18 +870,18 @@ TimingPathList STAGuiInterface::getTimingPaths(
   return paths;
 }
 
-ConeDepthMapPinSet STAGuiInterface::getFaninCone(sta::Pin* pin) const
+ConeDepthMapPinSet STAGuiInterface::getFaninCone(const sta::Pin* pin) const
 {
   sta::PinSeq pins_to;
   pins_to.push_back(pin);
 
-  auto* pins = sta_->findFaninPins(&pins_to,
-                                   true,   // flat
-                                   false,  // startpoints_only
-                                   0,
-                                   0,
-                                   true,   // thru_disabled
-                                   true);  // thru_constants
+  auto pins = sta_->findFaninPins(&pins_to,
+                                  true,   // flat
+                                  false,  // startpoints_only
+                                  0,
+                                  0,
+                                  true,   // thru_disabled
+                                  true);  // thru_constants
 
   ConeDepthMapPinSet depth_map;
   for (auto& [level, pin_list] : getCone(pin, pins, true)) {
@@ -873,23 +891,23 @@ ConeDepthMapPinSet STAGuiInterface::getFaninCone(sta::Pin* pin) const
   return depth_map;
 }
 
-ConeDepthMapPinSet STAGuiInterface::getFanoutCone(sta::Pin* pin) const
+ConeDepthMapPinSet STAGuiInterface::getFanoutCone(const sta::Pin* pin) const
 {
   sta::PinSeq pins_from;
   pins_from.push_back(pin);
 
-  auto* pins = sta_->findFanoutPins(&pins_from,
-                                    true,   // flat
-                                    false,  // startpoints_only
-                                    0,
-                                    0,
-                                    true,   // thru_disabled
-                                    true);  // thru_constants
+  sta::PinSet pins = sta_->findFanoutPins(&pins_from,
+                                          true,   // flat
+                                          false,  // startpoints_only
+                                          0,
+                                          0,
+                                          true,   // thru_disabled
+                                          true);  // thru_constants
   return getCone(pin, pins, false);
 }
 
-ConeDepthMapPinSet STAGuiInterface::getCone(sta::Pin* source_pin,
-                                            sta::PinSet* pins,
+ConeDepthMapPinSet STAGuiInterface::getCone(const sta::Pin* source_pin,
+                                            sta::PinSet pins,
                                             bool is_fanin) const
 {
   initSTA();
@@ -897,16 +915,16 @@ ConeDepthMapPinSet STAGuiInterface::getCone(sta::Pin* source_pin,
   auto* graph = sta_->graph();
 
   auto filter_pins
-      = [network](sta::Pin* pin) { return network->isRegClkPin(pin); };
+      = [network](const sta::Pin* pin) { return network->isRegClkPin(pin); };
 
-  pins->erase(source_pin);
+  pins.erase(source_pin);
 
   int level = 0;
-  std::map<int, std::set<sta::Pin*>> mapped_pins;
+  std::map<int, std::set<const sta::Pin*>> mapped_pins;
   mapped_pins[level].insert(source_pin);
   int pins_size = -1;
-  while (!pins->empty() && pins_size != pins->size()) {
-    pins_size = pins->size();
+  while (!pins.empty() && pins_size != pins.size()) {
+    pins_size = pins.size();
     int next_level = level + 1;
 
     auto& source_pins = mapped_pins[level];
@@ -929,13 +947,13 @@ ConeDepthMapPinSet STAGuiInterface::getCone(sta::Pin* source_pin,
           next_vertex = next_edge->from(graph);
         }
         auto* next_pin = next_vertex->pin();
-        auto pin_find = pins->find(next_pin);
-        if (pin_find != pins->end()) {
+        auto pin_find = pins.find(next_pin);
+        if (pin_find != pins.end()) {
           if (!filter_pins(next_pin)) {
             next_pins.insert(next_pin);
           }
 
-          pins->erase(pin_find);
+          pins.erase(pin_find);
         }
       }
 
@@ -944,7 +962,6 @@ ConeDepthMapPinSet STAGuiInterface::getCone(sta::Pin* source_pin,
 
     level = next_level;
   }
-  delete pins;
 
   ConeDepthMapPinSet depth_map;
 
@@ -959,7 +976,7 @@ ConeDepthMapPinSet STAGuiInterface::getCone(sta::Pin* source_pin,
 }
 
 ConeDepthMap STAGuiInterface::buildConeConnectivity(
-    sta::Pin* stapin,
+    const sta::Pin* stapin,
     ConeDepthMapPinSet& depth_map) const
 {
   auto* network = sta_->getDbNetwork();
@@ -1023,7 +1040,7 @@ ConeDepthMap STAGuiInterface::buildConeConnectivity(
   return map;
 }
 
-void STAGuiInterface::annotateConeTiming(sta::Pin* source_pin,
+void STAGuiInterface::annotateConeTiming(const sta::Pin* source_pin,
                                          ConeDepthMap& map) const
 {
   int min_map_index = std::numeric_limits<int>::max();
@@ -1094,7 +1111,7 @@ std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
   sta_->ensureClkArrivals();
 
   std::vector<std::unique_ptr<ClockTree>> trees;
-  std::map<sta::Clock*, ClockTree*> roots;
+  std::map<const sta::Clock*, ClockTree*> roots;
   for (sta::Clock* clk : *sta_->sdc()->clocks()) {
     ClockTree* root = new ClockTree(clk, getNetwork());
     roots[clk] = root;
@@ -1113,7 +1130,7 @@ std::vector<std::unique_ptr<ClockTree>> STAGuiInterface::getClockTrees() const
 
       sta::PathExpanded expand(path, sta_);
 
-      sta::Clock* clock = path->clock(sta_);
+      const sta::Clock* clock = path->clock(sta_);
       if (clock) {
         roots[clock]->addPath(expand, sta_);
       }

@@ -33,6 +33,7 @@ record_tests {
   pd4
   pin_access1
   pin_access2
+  pin_edge
   pin_track_not_aligned
   pre_routed1
   region_adjustment
@@ -49,7 +50,8 @@ record_tests {
   report_wire_length5
   report_wire_length6
   silence
-  top_level_term
+  top_level_term1
+  top_level_term2
   tracks1
   tracks2
   tracks3

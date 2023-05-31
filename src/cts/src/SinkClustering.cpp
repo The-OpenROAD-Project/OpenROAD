@@ -51,7 +51,7 @@ namespace cts {
 using std::vector;
 using utl::CTS;
 
-SinkClustering::SinkClustering(CtsOptions* options, TechChar* techChar)
+SinkClustering::SinkClustering(const CtsOptions* options, TechChar* techChar)
     : options_(options),
       logger_(options->getLogger()),
       techChar_(techChar),
@@ -104,18 +104,18 @@ void SinkClustering::sortPoints()
 }
 
 /* static */
-bool SinkClustering::isOne(double pos)
+bool SinkClustering::isOne(const double pos)
 {
   return (1 - pos) < std::numeric_limits<double>::epsilon();
 }
 
 /* static */
-bool SinkClustering::isZero(double pos)
+bool SinkClustering::isZero(const double pos)
 {
   return pos < std::numeric_limits<double>::epsilon();
 }
 
-double SinkClustering::computeTheta(double x, double y) const
+double SinkClustering::computeTheta(const double x, const double y) const
 {
   if (isOne(x) && isOne(y)) {
     return 0.5;
@@ -135,15 +135,18 @@ double SinkClustering::computeTheta(double x, double y) const
   return fractal;
 }
 
-unsigned SinkClustering::numVertex(unsigned x, unsigned y) const
+unsigned SinkClustering::numVertex(const unsigned x, const unsigned y) const
 {
   if ((x == 0) && (y == 0)) {
     return 0;
-  } else if ((x == 0) && (y == 1)) {
+  }
+  if ((x == 0) && (y == 1)) {
     return 1;
-  } else if ((x == 1) && (y == 1)) {
+  }
+  if ((x == 1) && (y == 1)) {
     return 2;
-  } else if ((x == 1) && (y == 0)) {
+  }
+  if ((x == 1) && (y == 0)) {
     return 3;
   }
 
@@ -153,7 +156,9 @@ unsigned SinkClustering::numVertex(unsigned x, unsigned y) const
   return 4;
 }
 
-void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
+void SinkClustering::run(const unsigned groupSize,
+                         const float maxDiameter,
+                         const int scaleFactor)
 {
   scaleFactor_ = scaleFactor;
 
@@ -162,15 +167,16 @@ void SinkClustering::run(unsigned groupSize, float maxDiameter, int scaleFactor)
   computeAllThetas();
   sortPoints();
   findBestMatching(groupSize);
-  if (logger_->debugCheck(CTS, "Stree", 1))
+  if (logger_->debugCheck(CTS, "Stree", 1)) {
     writePlotFile(groupSize);
+  }
 
-  if (options_->getGuiDebug() || logger_->debugCheck(CTS, "Stree", 1)) {
-    clusteringVisualizer(original_points);
+  if (CtsObserver* observer = options_->getObserver()) {
+    observer->initializeWithPoints(this, original_points);
   }
 }
 
-void SinkClustering::findBestMatching(unsigned groupSize)
+void SinkClustering::findBestMatching(const unsigned groupSize)
 {
   // Counts how many clusters are in each solution.
   vector<unsigned> clusters(groupSize, 0);
@@ -201,14 +207,14 @@ void SinkClustering::findBestMatching(unsigned groupSize)
       if ((i + j) < thetaIndexVector_.size()) {
         // Add vectors in case they are no allocated yet.
         if (solutions.size() < (j + 1)) {
-          solutions.push_back({});
-          solutionPoints.push_back({});
-          solutionPointsIdx.push_back({});
+          solutions.emplace_back();
+          solutionPoints.emplace_back();
+          solutionPointsIdx.emplace_back();
         }
         if (solutions[j].size() < (clusters[j] + 1)) {
-          solutions[j].push_back({});
-          solutionPoints[j].push_back({});
-          solutionPointsIdx[j].push_back({});
+          solutions[j].emplace_back();
+          solutionPoints[j].emplace_back();
+          solutionPointsIdx[j].emplace_back();
         }
         // Get the current point
         const unsigned idx = thetaIndexVector_[i + j].second;
@@ -357,24 +363,16 @@ void SinkClustering::findBestMatching(unsigned groupSize)
   bestSolution_ = solutions[bestSolution];
 }
 
-bool SinkClustering::isLimitExceeded(unsigned size,
-                                     double cost,
-                                     double capCost,
-                                     unsigned sizeLimit)
+bool SinkClustering::isLimitExceeded(const unsigned size,
+                                     const double cost,
+                                     const double capCost,
+                                     const unsigned sizeLimit)
 {
   if (useMaxCapLimit_) {
     return (capCost > options_->getSinkBufferInputCap() * max_cap__factor_);
-  } else {
-    return (size >= sizeLimit || cost > maxInternalDiameter_);
   }
-}
 
-void SinkClustering::clusteringVisualizer(
-    const std::vector<Point<double>>& points)
-{
-  graphics_ = std::make_unique<Graphics>(this, points);
-  if (Graphics::guiActive())
-    graphics_->clockPlot(true);
+  return (size >= sizeLimit || cost > maxInternalDiameter_);
 }
 
 void SinkClustering::writePlotFile(unsigned groupSize)
@@ -444,4 +442,5 @@ double SinkClustering::getWireLength(const vector<Point<double>>& points) const
   const int wl = pdTree.length;
   return wl / double(options_->getDbUnits());
 }
+
 }  // namespace cts

@@ -344,6 +344,7 @@ nextOpCode:
     case WOP_BTERM:
     case WOP_OPERAND:
     case WOP_PROPERTY:
+    case WOP_COLOR:
     case WOP_NOP:
       goto nextOpCode;
 

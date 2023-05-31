@@ -36,7 +36,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "graphics.h"
+#include "Mpl2Observer.h"
 #include "object.h"
 #include "utl/Logger.h"
 
@@ -69,7 +69,7 @@ SimulatedAnnealingCore<T>::SimulatedAnnealingCore(
     int k,
     int c,
     unsigned seed,
-    Graphics* graphics,
+    Mpl2Observer* graphics,
     utl::Logger* logger)
     : graphics_(graphics)
 {
@@ -228,6 +228,10 @@ void SimulatedAnnealingCore<T>::calOutlinePenalty()
   outline_penalty_ = max_width * max_height - outline_area;
   // normalization
   outline_penalty_ = outline_penalty_ / (outline_area);
+  if (graphics_) {
+    graphics_->setOutlinePenalty(
+        outline_penalty_, outline_width_, outline_height_);
+  }
 }
 
 template <class T>
@@ -259,6 +263,10 @@ void SimulatedAnnealingCore<T>::calWirelength()
   // normalization
   wirelength_
       = wirelength_ / tot_net_weight / (outline_height_ + outline_width_);
+
+  if (graphics_) {
+    graphics_->setWirelength(wirelength_);
+  }
 }
 
 template <class T>
@@ -298,6 +306,9 @@ void SimulatedAnnealingCore<T>::calFencePenalty()
   }
   // normalization
   fence_penalty_ = fence_penalty_ / fences_.size();
+  if (graphics_) {
+    graphics_->setFencePenalty(fence_penalty_);
+  }
 }
 
 template <class T>
@@ -328,6 +339,9 @@ void SimulatedAnnealingCore<T>::calGuidancePenalty()
     guidance_penalty_ += x_dist * x_dist + y_dist * y_dist;
   }
   guidance_penalty_ = guidance_penalty_ / guides_.size();
+  if (graphics_) {
+    graphics_->setGuidancePenalty(guidance_penalty_);
+  }
 }
 
 // Determine the positions of macros based on sequence pair
@@ -491,6 +505,9 @@ float SimulatedAnnealingCore<T>::calAverage(std::vector<float>& value_list)
 template <class T>
 void SimulatedAnnealingCore<T>::fastSA()
 {
+  if (graphics_) {
+    graphics_->startSA();
+  }
   // perturb();  // Perturb from beginning
   std::iota(pos_seq_.begin(), pos_seq_.end(), 0);
   std::iota(neg_seq_.begin(), neg_seq_.end(), 0);
@@ -556,6 +573,9 @@ void SimulatedAnnealingCore<T>::fastSA()
   // update the final results
   packFloorplan();
   calPenalty();
+  if (graphics_) {
+    graphics_->endSA();
+  }
 }
 
 template <class T>

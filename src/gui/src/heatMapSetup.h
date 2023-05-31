@@ -59,8 +59,8 @@ class HeatMapSetup : public QDialog
  private slots:
   void updateShowNumbers(int option);
   void updateShowLegend(int option);
-  void updateShowMinRange(int show);
-  void updateShowMaxRange(int show);
+  void updateShowMinRange(int option);
+  void updateShowMaxRange(int option);
   void updateScale(int option);
   void updateReverseScale(int option);
   void updateAlpha(int alpha);

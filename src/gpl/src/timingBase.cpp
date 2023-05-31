@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 #include "nesterovBase.h"
 #include "placerBase.h"
@@ -48,17 +49,17 @@ using utl::GPL;
 
 // TimingBase
 TimingBase::TimingBase()
-    : rs_(nullptr), log_(nullptr), nb_(nullptr), net_weight_max_(1.9)
+    : rs_(nullptr), log_(nullptr), nbc_(nullptr), net_weight_max_(1.9)
 {
 }
 
-TimingBase::TimingBase(std::shared_ptr<NesterovBase> nb,
+TimingBase::TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
                        rsz::Resizer* rs,
                        utl::Logger* log)
     : TimingBase()
 {
   rs_ = rs;
-  nb_ = nb;
+  nbc_ = std::move(nbc);
   log_ = log;
 }
 
@@ -169,7 +170,7 @@ bool TimingBase::updateGNetWeights(float overflow)
   }
 
   int weighted_net_count = 0;
-  for (auto& gNet : nb_->gNets()) {
+  for (auto& gNet : nbc_->gNets()) {
     // default weight
     gNet->setTimingWeight(1.0);
     if (gNet->gPins().size() > 1) {

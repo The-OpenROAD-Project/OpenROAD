@@ -1,11 +1,12 @@
 import utl
 import re
+import typing as t
 
-def detailed_placement(design, *, max_displacement=None, suppress=False):
-    if max_displacement == None:
+def detailed_placement(design, *, max_displacement: t.Optional[t.Union[int, t.List[int]]]=None, disallow_one_site_gaps: bool = False, suppress=False):
+    if not max_displacement:
         max_disp_x = 0
         max_disp_y = 0
-    elif isinstance(int, max_displacement): 
+    elif isinstance(max_displacement, int): 
         max_disp_x = max_displacement
         max_disp_y = max_displacement
     elif len(max_displacement) == 2:
@@ -20,7 +21,7 @@ def detailed_placement(design, *, max_displacement=None, suppress=False):
         site = design.getBlock().getRows()[0].getSite()
         max_disp_x = int(design.micronToDBU(max_disp_x) / site.getWidth())
         max_disp_y = int(design.micronToDBU(max_disp_y) / site.getHeight())
-        dpl.detailedPlacement(max_disp_x, max_disp_y)
+        dpl.detailedPlacement(max_disp_x, max_disp_y, disallow_one_site_gaps)
         if not suppress:
             dpl.reportLegalizationStats()
     else:

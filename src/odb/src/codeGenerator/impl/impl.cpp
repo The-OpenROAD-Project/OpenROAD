@@ -248,6 +248,9 @@ namespace odb {
         stream >> *{{field.name}}_bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
+          {% if 'schema' in field %}
+          if (obj.getDatabase()->isSchema({{field.schema}}))
+          {% endif %}
           stream >> {% if field.table %}*{% endif %}obj.{{field.name}};
         {% endif %}
       {% endif %}
@@ -268,6 +271,9 @@ namespace odb {
         stream << *{{field.name}}_bit_field;
       {% else %}
         {% if 'no-serial' not in field.flags %}
+          {% if 'schema' in field %}
+          if (obj.getDatabase()->isSchema({{field.schema}}))
+          {% endif %}
           stream << {% if field.table %}*{% endif %}obj.{{field.name}};
         {% endif %}
       {% endif %}

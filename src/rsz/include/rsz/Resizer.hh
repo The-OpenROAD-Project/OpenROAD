@@ -58,9 +58,7 @@ using std::array;
 using std::string;
 using std::vector;
 
-using ord::OpenRoad;
 using utl::Logger;
-using gui::Gui;
 
 using odb::Rect;
 using odb::Point;
@@ -118,7 +116,7 @@ using sta::ParasiticNode;
 using sta::PinSeq;
 using sta::Slack;
 
-class SteinerRenderer;
+class AbstractSteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
 
@@ -144,15 +142,13 @@ class Resizer : public StaState
 {
 public:
   Resizer();
-  ~Resizer();
-  void init(OpenRoad *openroad,
-            Tcl_Interp *interp,
-            Logger *logger,
-            Gui *gui,
-            dbDatabase *db,
-            dbSta *sta,
-            SteinerTreeBuilder *stt_builder,
-            GlobalRouter *global_router);
+  ~Resizer() override;
+  void init(Logger* logger,
+            dbDatabase* db,
+            dbSta* sta,
+            SteinerTreeBuilder* stt_builder,
+            GlobalRouter* global_router,
+            std::unique_ptr<AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
                   double res,
@@ -231,9 +227,10 @@ public:
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
-                   int max_passes);
+                   int max_passes,
+                   bool skip_pin_swap);
   // For testing.
-  void repairSetup(Pin *drvr_pin);
+  void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);
@@ -246,7 +243,7 @@ public:
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
                   int max_passes);
-  void repairHold(Pin *end_pin,
+  void repairHold(const Pin *end_pin,
                   double setup_margin,
                   double hold_margin,
                   bool allow_setup_violations,
@@ -329,8 +326,8 @@ public:
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
-  PinSet findFaninFanouts(PinSet *end_pins);
-  PinSet findFanins(PinSet *end_pins);
+  PinSet findFaninFanouts(PinSet& end_pins);
+  PinSet findFanins(PinSet& end_pins);
 
   ////////////////////////////////////////////////////////////////
   void highlightSteiner(const Pin *drvr);
@@ -346,7 +343,7 @@ protected:
   void ensureLevelDrvrVertices();
   Instance *bufferInput(const Pin *top_pin,
                         LibertyCell *buffer_cell);
-  void bufferOutput(Pin *top_pin,
+  void bufferOutput(const Pin *top_pin,
                     LibertyCell *buffer_cell);
   bool hasTristateOrDontTouchDriver(const Net *net);
   bool isTristateDriver(const Pin *pin);
@@ -392,6 +389,12 @@ protected:
   float portFanoutLoad(LibertyPort *port) const;
   float portCapacitance(LibertyPort *input,
                         const Corner *corner) const;
+  void swapPins(Instance *inst, LibertyPort *port1,
+                LibertyPort *port2, bool journal);
+  void findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
+                            float load_cap, const DcalcAnalysisPt *dcalc_ap,
+                            // Return value
+                            LibertyPort **swap_port);
   void gateDelays(LibertyPort *drvr_port,
                   float load_cap,
                   const DcalcAnalysisPt *dcalc_ap,
@@ -454,7 +457,7 @@ protected:
                  PinSeq &loads);
   bool isFuncOneZero(const Pin *drvr_pin);
   bool hasPins(Net *net);
-  Point tieLocation(Pin *load,
+  Point tieLocation(const Pin *load,
                     int separation);
   bool hasFanout(Vertex *drvr);
   InstanceSeq findClkInverters();
@@ -520,7 +523,7 @@ protected:
                       const Corner *&corner);
   void warnBufferMovedIntoCore();
   bool isLogicStdCell(const Instance *inst);
-
+  void invalidateParasitics(const Pin *pin, const Net *net);
   ////////////////////////////////////////////////////////////////
   // Jounalling support for checkpointing and backing out changes
   // during repair timing.
@@ -528,6 +531,7 @@ protected:
   void journalEnd();
   void journalRestore(int &resize_count,
                       int &inserted_buffer_count);
+  void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
 
@@ -546,7 +550,7 @@ protected:
   RepairDesign *repair_design_;
   RepairSetup *repair_setup_;
   RepairHold *repair_hold_;
-  SteinerRenderer *steiner_renderer_;
+  std::unique_ptr<AbstractSteinerRenderer> steiner_renderer_;
 
   // Layer RC per wire length indexed by layer->getNumber(), corner->index
   vector<vector<double>> layer_res_; // ohms/meter
@@ -560,12 +564,10 @@ protected:
   LibertyCellSet dont_use_;
   double max_area_;
 
-  OpenRoad *openroad_;
   Logger *logger_;
   SteinerTreeBuilder *stt_builder_;
   GlobalRouter *global_router_;
-  IncrementalGRoute *incr_groute_;
-  Gui *gui_;
+  IncrementalGRoute* incr_groute_;
   dbSta *sta_;
   dbNetwork *db_network_;
   dbDatabase *db_;
@@ -599,6 +601,9 @@ protected:
   int inserted_buffer_count_;
   bool buffer_moved_into_core_;
   // Slack map variables.
+  // This is the minimum length of wire that is worth while to split and
+  // insert a buffer in the middle of. Theoretically computed using the smallest
+  // drive cell (because larger ones would give us a longer length).
   float max_wire_length_;
   float worst_slack_nets_percent_;
   Map<const Net*, Slack> net_slack_map_;
@@ -608,6 +613,7 @@ protected:
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
+  Map<Instance *, std::tuple<LibertyPort *, LibertyPort *>> swapped_pins_;
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;

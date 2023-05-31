@@ -77,7 +77,7 @@ typedef array<Required, RiseFall::index_count> Requireds;
 
 enum class BufferedNetType { load, junction, wire, buffer };
 
-// The routing tree is represented a binary tree with the sinks being the leaves
+// The routing tree is represented as a binary tree with the sinks being the leaves
 // of the tree, the junctions being the Steiner nodes and the root being the
 // source of the net.
 class BufferedNet
@@ -86,7 +86,7 @@ public:
   // load
   BufferedNet(const BufferedNetType type,
               const Point location,
-              Pin *load_pin,
+              const Pin *load_pin,
               const Corner *corner,
               const Resizer *resizer);
   // wire
@@ -126,7 +126,7 @@ public:
   float maxLoadSlew() const { return max_load_slew_; }
   void setMaxLoadSlew(float max_slew);
   // load
-  Pin *loadPin() const { return load_pin_; }
+  const Pin *loadPin() const { return load_pin_; }
   // wire
   int length() const;
   // routing level
@@ -163,7 +163,7 @@ private:
   BufferedNetType type_;
   Point location_;
   // only used by load type
-  Pin *load_pin_;
+  const Pin *load_pin_;
   // only used by buffer type
   LibertyCell *buffer_cell_;
   // only used by wire type
