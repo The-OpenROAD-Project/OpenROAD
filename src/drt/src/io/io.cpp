@@ -598,9 +598,9 @@ void io::Parser::setNets(odb::dbBlock* block)
     frCoord endX = -1;
     frCoord endY = -1;
     frCoord endExt = -1;
-    string prevLayer = "";
-    string lower_layer = "";
-    string top_layer = "";
+    string prevLayer;
+    string lower_layer;
+    string top_layer;
     bool hasRect = false;
     frCoord left = -1;
     frCoord bottom = -1;
