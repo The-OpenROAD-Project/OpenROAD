@@ -72,9 +72,9 @@ float KWayFMRefine::Pass(
   // initialize the gain buckets
   GainBuckets buckets;
   for (int i = 0; i < num_parts_; ++i) {
-    // the maxinum size of each bucket is hgraph->num_vertices_
+    // the maxinum size of each bucket is hgraph->GetNumVertices()
     auto bucket = std::make_shared<PriorityQueue>(
-        hgraph->num_vertices_, total_corking_passes_, hgraph);
+        hgraph->GetNumVertices(), total_corking_passes_, hgraph);
     buckets.push_back(bucket);
   }
   // identify all the boundary vertices
