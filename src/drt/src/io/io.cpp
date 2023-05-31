@@ -592,9 +592,14 @@ void io::Parser::setNets(odb::dbBlock* block)
     frCoord beginX = -1;
     frCoord beginY = -1;
     frCoord beginExt = -1;
+    frCoord nextX = -1;
+    frCoord nextY = -1;
     frCoord endX = -1;
     frCoord endY = -1;
     frCoord endExt = -1;
+    string prevLayer = "";
+    string lower_layer = "";
+    string top_layer = "";
     bool hasRect = false;
     frCoord left = -1;
     frCoord bottom = -1;
@@ -660,6 +665,14 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::TECH_VIA:
               viaName = string(decoder.getTechVia()->getName());
+              lower_layer = decoder.getTechVia()->getBottomLayer()->getName();
+              top_layer = decoder.getTechVia()->getTopLayer()->getName();
+              layerName = prevLayer == top_layer ? lower_layer : top_layer;
+              if (!hasBeginPoint) {
+                beginX = nextX;
+                beginY = nextY;
+                hasBeginPoint = true;
+              }
               break;
             case odb::dbWireDecoder::RECT:
               decoder.getRect(left, bottom, right, top);
@@ -674,8 +687,18 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
           }
           pathId = decoder.next();
-          if ((int) pathId <= 3 || pathId == odb::dbWireDecoder::END_DECODE)
+          if ((int) pathId <= 3 || pathId == odb::dbWireDecoder::TECH_VIA
+              || pathId == odb::dbWireDecoder::END_DECODE) {
+            if (hasEndPoint) {
+              nextX = endX;
+              nextY = endY;
+            } else {
+              nextX = beginX;
+              nextY = beginY;
+            }
+            prevLayer = layerName;
             endpath = true;
+          }
         } while (!endpath);
         auto layerNum = tech_->name2layer[layerName]->getLayerNum();
         if (hasRect) {
