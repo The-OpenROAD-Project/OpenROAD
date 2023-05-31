@@ -235,8 +235,8 @@ class LayoutViewer : public QWidget
 
   odb::Point getVisibleCenter();
 
-  void selectHighlightConnectedInst(bool selectFlag);
-  void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
+  void selectHighlightConnectedInst(bool select_flag);
+  void selectHighlightConnectedNets(bool select_flag, bool output, bool input);
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
