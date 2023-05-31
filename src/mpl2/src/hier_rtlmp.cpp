@@ -2023,16 +2023,17 @@ void HierRTLMP::breakLargeFlatCluster(Cluster* parent)
   }
 
   const int seed = 0;
-  const float balance_constraint = 5.0;
-  const int num_vertices = vertex_weight.size();
-  const int num_hyperedges = hyperedges.size();
-
-  std::vector<int> part = tritonpart_->TritonPart2Way(num_vertices,
-                                                      num_hyperedges,
-                                                      hyperedges,
-                                                      vertex_weight,
-                                                      balance_constraint,
-                                                      seed);
+  const float balance_constraint = 1.0;
+  const int num_parts = 2;  // We use two-way partitioning here
+  const int num_vertices = static_cast<int>(vertex_weight.size());
+  std::vector<float> hyperedge_weights(hyperedges.size(), 1.0f);
+  std::vector<int> part
+      = tritonpart_->PartitionKWaySimpleMode(num_parts,
+                                             balance_constraint,
+                                             seed,
+                                             hyperedges,
+                                             vertex_weight,
+                                             hyperedge_weights);
 
   // create cluster based on partitioning solutions
   // Note that all the std cells are stored in the leaf_std_cells_ for a flat
@@ -5222,8 +5223,8 @@ void HierRTLMP::alignHardMacroGlobal(Cluster* parent)
   int boundary_v_th = std::numeric_limits<int>::max();
   int boundary_h_th = std::numeric_limits<int>::max();
   for (auto& macro_inst : hard_macros) {
-    boundary_h_th = std::min(boundary_h_th,
-                             static_cast<int>(macro_inst->getWidthDBU() * 1.0));
+    boundary_h_th = std::min(
+        boundary_h_th, static_cast<int>(macro_inst->getRealWidthDBU() * 1.0));
     boundary_v_th = std::min(
         boundary_v_th, static_cast<int>(macro_inst->getHeightDBU() * 1.0));
   }
