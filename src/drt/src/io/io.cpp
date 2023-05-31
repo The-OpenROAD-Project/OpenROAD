@@ -589,6 +589,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     string shape = "";
     bool hasBeginPoint = false;
     bool hasEndPoint = false;
+    bool beginInVia = false;
     frCoord beginX = -1;
     frCoord beginY = -1;
     frCoord beginExt = -1;
@@ -618,6 +619,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         shape = "";
         hasBeginPoint = false;
         hasEndPoint = false;
+        beginInVia = false;
         beginX = -1;
         beginY = -1;
         beginExt = -1;
@@ -672,6 +674,7 @@ void io::Parser::setNets(odb::dbBlock* block)
                 beginX = nextX;
                 beginY = nextY;
                 hasBeginPoint = true;
+                beginInVia = true;
               }
               break;
             case odb::dbWireDecoder::RECT:
@@ -755,7 +758,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             logger_->error(DRT, 108, "Unsupported via in db.");
           } else {
             Point p;
-            if (hasEndPoint) {
+            if (hasEndPoint && !beginInVia) {
               p = {endX, endY};
             } else {
               p = {beginX, beginY};
