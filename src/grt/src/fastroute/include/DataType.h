@@ -112,6 +112,9 @@ struct FrNet  // A Net is a set of connected MazePoints
   void setMaxLayer(int max_layer) { max_layer_ = max_layer; }
   void setMinLayer(int min_layer) { min_layer_ = min_layer; }
 
+  int getSTTLength() const { return stt_length_; }
+  void setSTTLength(int length) { stt_length_ = length; }
+
  private:
   odb::dbNet* db_net_;
   std::vector<int> pin_x_;  // x coordinates of pins
@@ -126,6 +129,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   // Non-null when an NDR has been applied to the net.
   std::unique_ptr<std::vector<int>> edge_cost_per_layer_;
   bool is_routed_ = false;
+  int stt_length_;
 };
 
 struct Edge  // An Edge is the routing track holder between two adjacent

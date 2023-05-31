@@ -169,6 +169,7 @@ class GlobalRouter
   void setVerbose(const bool v);
   void setOverflowIterations(int iterations);
   void setCongestionReportFile(const char* file_name);
+  void setScenicRoutesReportFile(const char* file_name);
   void setGridOrigin(int x, int y);
   void setAllowCongestion(bool allow_congestion);
   void setMacroExtension(int macro_extension);
@@ -190,6 +191,7 @@ class GlobalRouter
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
   void globalRoute(bool save_guides = false);
   void saveCongestion();
+  void saveScenicRoutes();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes();
   Net* getNet(odb::dbNet* db_net);
@@ -437,6 +439,9 @@ class GlobalRouter
 
   // variables congestion report file
   const char* congestion_file_name_;
+
+  // variables scenic routes report file
+  const char* scenic_routes_file_name_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;

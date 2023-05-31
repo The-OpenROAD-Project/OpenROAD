@@ -124,6 +124,11 @@ void set_congestion_report_file (const char * file_name)
   getGlobalRouter()->setCongestionReportFile(file_name);
 }
 
+void set_scenic_routes_report_file (const char * file_name)
+{
+  getGlobalRouter()->setScenicRoutesReportFile(file_name);
+}
+
 void
 set_grid_origin(int x, int y)
 {
