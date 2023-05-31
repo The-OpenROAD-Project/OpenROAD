@@ -37,6 +37,7 @@
 
 #include "ScanChain.hh"
 #include "odb/db.h"
+#include "db_sta/dbSta.hh"
 
 namespace dft {
 
@@ -49,7 +50,7 @@ inline constexpr bool always_false_v = false;
 class ScanStitch
 {
  public:
-  explicit ScanStitch(odb::dbDatabase* db);
+  explicit ScanStitch(odb::dbDatabase* db, sta::dbSta* sta);
 
   // Stitch all the cells inside each one of the scan chains together.
   void Stitch(const std::vector<std::unique_ptr<ScanChain>>& scan_chains);
@@ -91,6 +92,7 @@ class ScanStitch
   }
 
   odb::dbDatabase* db_;
+  sta::dbSta* sta_;
   odb::dbBlock* top_block_;
 };
 

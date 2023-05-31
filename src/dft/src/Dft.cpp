@@ -110,7 +110,7 @@ void Dft::insert_dft()
 
   std::vector<std::unique_ptr<ScanChain>> scan_chains = replaceAndArchitect();
 
-  ScanStitch stitch(db_);
+  ScanStitch stitch(db_, sta_);
   stitch.Stitch(scan_chains);
 }
 
