@@ -664,6 +664,15 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::VIA:
               viaName = string(decoder.getVia()->getName());
+              lower_layer = decoder.getVia()->getBottomLayer()->getName();
+              top_layer = decoder.getVia()->getTopLayer()->getName();
+              layerName = prevLayer == top_layer ? lower_layer : top_layer;
+              if (!hasBeginPoint) {
+                beginX = nextX;
+                beginY = nextY;
+                hasBeginPoint = true;
+                beginInVia = true;
+              }
               break;
             case odb::dbWireDecoder::TECH_VIA:
               viaName = string(decoder.getTechVia()->getName());
@@ -691,6 +700,7 @@ void io::Parser::setNets(odb::dbBlock* block)
           }
           pathId = decoder.next();
           if ((int) pathId <= 3 || pathId == odb::dbWireDecoder::TECH_VIA
+              || pathId == odb::dbWireDecoder::VIA
               || pathId == odb::dbWireDecoder::END_DECODE) {
             if (hasEndPoint) {
               nextX = endX;
