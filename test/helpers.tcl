@@ -132,6 +132,8 @@ proc exit_summary {} {
 suppress_message PSM 2
 # Output current file specified ...
 suppress_message PSM 3
+# Error file is specified as ...
+suppress_message PSM 83
 # Output spice file is specified as
 suppress_message PSM 5
 # SPICE file is written at
@@ -154,8 +156,7 @@ suppress_message TAP 101
 
 # suppress par messages with runtime
 suppress_message PAR 1
-suppress_message PAR 2
-suppress_message PAR 3
-suppress_message PAR 4
-suppress_message PAR 5
-suppress_message PAR 6
+suppress_message PAR 30
+suppress_message PAR 109
+suppress_message PAR 110
+

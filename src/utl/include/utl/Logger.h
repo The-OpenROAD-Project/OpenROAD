@@ -76,10 +76,8 @@ namespace utl {
   X(PAD)                \
   X(PAR)                \
   X(PDN)                \
-  X(PDR)                \
   X(PPL)                \
   X(PSM)                \
-  X(PSN)                \
   X(RCX)                \
   X(RMP)                \
   X(RSZ)                \

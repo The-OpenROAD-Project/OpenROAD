@@ -341,6 +341,10 @@ void dbBTerm::setIoType(dbIoType type)
     block->_journal->updateField(
         this, _dbBTerm::FLAGS, prev_flags, flagsToUInt(bterm));
   }
+
+  for (auto callback : block->_callbacks) {
+    callback->inDbBTermSetIoType(this, type);
+  }
 }
 
 dbIoType dbBTerm::getIoType()

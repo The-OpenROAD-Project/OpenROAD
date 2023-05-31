@@ -39,6 +39,9 @@ swig_lib(NAME      ifp
          NAMESPACE ifp
          I_FILE    InitFloorplan.i
          SCRIPTS   InitFloorplan.tcl
+         SWIG_INCLUDES ${ODB_HOME}/src/swig/common
+                       ${ODB_HOME}/src/swig/tcl
+                       ${ODB_HOME}/include
 )
 
 target_sources(ifp
@@ -67,6 +70,9 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        InitFloorplan-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/src/ifp/include
+                         ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+                         ${ODB_HOME}/include
            SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/ifp_py.py
   )
 

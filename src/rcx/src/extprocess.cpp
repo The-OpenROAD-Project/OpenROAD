@@ -64,29 +64,6 @@ extConductor::extConductor(Logger* logger)
   logger_ = logger;
 }
 
-void extConductor::printConductor(FILE* fp, Ath__parser* parse)
-{
-  fprintf(fp, "CONDUCTOR {\n");
-
-  parse->printString(fp, "\t", "name", _name);
-  parse->printDouble(fp, "\t", "height", _height, true);
-  parse->printDouble(fp, "\t", "thickness", _thickness, true);
-
-  parse->printDouble(fp, "\t", "min_width", _min_width, true);
-  parse->printDouble(fp, "\t", "min_spacing", _min_spacing, true);
-  parse->printDouble(fp, "\t", "origin_x", _origin_x, true);
-  parse->printDouble(fp, "\t", "bottom_left_x", _bottom_left_x, true);
-  parse->printDouble(fp, "\t", "bottom_right_x", _bottom_right_x, true);
-  parse->printDouble(fp, "\t", "top_left_x", _top_left_x, true);
-  parse->printDouble(fp, "\t", "top_right_x", _top_right_x, true);
-  parse->printDouble(fp, "\t", "top_extension", _top_ext, false);
-  parse->printDouble(fp, "\t", "bottom_extension", _bot_ext, false);
-  parse->printInt(fp, "\t", "var_table", _var_table_index, true);
-  parse->printDouble(fp, "\t", "resistivity", _p, true);
-
-  fprintf(fp, "}\n");
-}
-
 extDielectric::extDielectric(Logger* logger)
 {
   strcpy(_name, "");
@@ -106,44 +83,6 @@ extDielectric::extDielectric(Logger* logger)
   _met = 0;
   _nextMet = 0;
   logger_ = logger;
-}
-
-void extDielectric::printDielectric(FILE* fp, Ath__parser* parse)
-{
-  fprintf(fp, "DIELECTRIC {\n");
-
-  parse->printString(fp, "\t", "name", _name);
-  parse->printDouble(fp, "\t", "epsilon", _epsilon);
-  if (!_conformal && !_trench)
-    parse->printString(
-        fp, "\t", "non_conformal_metal", _non_conformal_metal, true);
-
-  parse->printDouble(fp, "\t", "height", _height, true);
-  parse->printDouble(fp, "\t", "thickness", _thickness, true);
-
-  parse->printDouble(fp, "\t", "left_thickness", _left_thickness, true);
-  parse->printDouble(fp, "\t", "right_thickness", _right_thickness, true);
-  parse->printDouble(fp, "\t", "top_thickness", _top_thickness, true);
-  parse->printDouble(fp, "\t", "bottom_thickness", _bottom_thickness, true);
-  parse->printDouble(fp, "\t", "bottom_ext", _bottom_ext, true);
-  parse->printDouble(fp, "\t", "slope", _slope, false);
-  parse->printInt(fp, "\t", "met", _met, true);
-  parse->printInt(fp, "\t", "next_met", _nextMet, true);
-
-  fprintf(fp, "}\n");
-}
-
-void extDielectric::printDielectric(FILE* fp,
-                                    float planeWidth,
-                                    float planeThickness)
-{
-  fprintf(fp,
-          "BOX NAME %-15s; CX=0; CY=%g; W=%g; H= %g; DIEL= %g;\n",
-          _name,
-          _height,
-          planeWidth,
-          planeThickness,
-          _epsilon);
 }
 
 void extMasterConductor::writeRaphaelDielPoly(FILE* fp,

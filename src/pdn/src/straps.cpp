@@ -57,13 +57,7 @@ Straps::Straps(Grid* grid,
       width_(width),
       spacing_(spacing),
       pitch_(pitch),
-      offset_(0),
-      number_of_straps_(number_of_straps),
-      direction_(odb::dbTechLayerDir::NONE),
-      snap_(false),
-      extend_mode_(ExtensionMode::CORE),
-      strap_start_(0),
-      strap_end_(0)
+      number_of_straps_(number_of_straps)
 {
   if (spacing_ == 0 && pitch_ != 0) {
     // spacing not defined, so use pitch / (# of nets)
@@ -496,12 +490,7 @@ PadDirectConnectionStraps::PadDirectConnectionStraps(
     Grid* grid,
     odb::dbITerm* iterm,
     const std::vector<odb::dbTechLayer*>& connect_pad_layers)
-    : Straps(grid, nullptr, 0, 0),
-      iterm_(iterm),
-      target_shapes_(odb::dbWireShapeType::RING),
-      pad_edge_(odb::dbDirection::NONE),
-      type_(None),
-      layers_(connect_pad_layers)
+    : Straps(grid, nullptr, 0, 0), iterm_(iterm), layers_(connect_pad_layers)
 {
   initialize(type_);
 }
@@ -710,6 +699,10 @@ std::vector<odb::dbBox*> PadDirectConnectionStraps::getPinsFormingRing()
       pins = layer_pins;
       top_layer = layer;
     }
+  }
+
+  if (top_layer == nullptr) {
+    return {};
   }
 
   odb::dbTechLayer* routing_layer = top_layer;
@@ -1260,8 +1253,7 @@ RepairChannelStraps::RepairChannelStraps(Grid* grid,
       nets_(nets),
       connect_to_(connect_to),
       area_(area),
-      obs_check_area_(obs_check_area),
-      invalid_(false)
+      obs_check_area_(obs_check_area)
 {
   // use snap to grid
   setSnapToGrid(true);
@@ -1308,9 +1300,8 @@ int RepairChannelStraps::getMaxLength() const
   const odb::Rect core = getGrid()->getDomainArea();
   if (isHorizontal()) {
     return core.dx();
-  } else {
-    return core.dy();
   }
+  return core.dy();
 }
 
 bool RepairChannelStraps::isAtEndOfRepairOptions() const
@@ -1490,8 +1481,11 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
   }
   check_layers.push_back(getLayer());
 
+  Shape estimated_shape(getLayer(), estimated_straps, Shape::SHAPE);
+  estimated_shape.generateObstruction();
+
   bool has_obs = false;
-  odb::Rect obs_check = estimated_straps;
+  odb::Rect obs_check = estimated_shape.getObstruction();
   if (is_horizontal) {
     obs_check.set_xlo(obs_check_area_.xMin());
     obs_check.set_xhi(obs_check_area_.xMax());
@@ -1504,8 +1498,7 @@ bool RepairChannelStraps::determineOffset(const ShapeTreeMap& obstructions,
          itr != shapes.qend();
          itr++) {
       const auto& shape = itr->second;
-      const odb::Rect intersect = obs_check.intersect(shape->getObstruction());
-      if (intersect.area() != 0) {
+      if (obs_check.overlaps(shape->getObstruction())) {
         return true;
       }
     }
@@ -1992,7 +1985,7 @@ void RepairChannelStraps::repairGridChannels(Grid* grid,
     grid->makeVias(global_shapes, obstructions);
   }
 
-  if (channels.size() != areas_repaired.size() && areas_repaired.size() != 0) {
+  if (channels.size() != areas_repaired.size() && !areas_repaired.empty()) {
     // channels were skipped so, try again
     repairGridChannels(grid, global_shapes, obstructions, allow);
   } else {

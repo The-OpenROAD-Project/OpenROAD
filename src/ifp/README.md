@@ -6,7 +6,7 @@
 
 ```
 initialize_floorplan
-  [-site site_name]               LEF site name for ROWS
+  [-sites site_names]             list of sites to make rows for
   -die_area "lx ly ux uy"         die area in microns
   [-core_area "lx ly ux uy"]      core area in microns
 or

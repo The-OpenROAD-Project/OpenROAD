@@ -46,10 +46,10 @@ target_include_directories(upf_lib
 
 target_link_libraries(upf_lib 
   PRIVATE
-    utl
-    dbSta
     OpenSTA
+    dbSta
     odb
+    utl
 )
 
 swig_lib(NAME      upf
@@ -59,21 +59,13 @@ swig_lib(NAME      upf
 )
 
 messages(
-TARGET upf
-OUTPUT_DIR ..
+  TARGET upf
+  OUTPUT_DIR ..
 )
-
-target_include_directories(upf
-  PUBLIC
-    ${PROJECT_SOURCE_DIR}/include
-    ${TCL_INCLUDE_PATH}
-  PRIVATE
-    .
- )
 
 target_link_libraries(upf 
   PRIVATE
+    odb
     upf_lib
     utl
-    odb
- )
+)

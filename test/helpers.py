@@ -45,6 +45,8 @@ def diff_files(file1, file2):
 utl.suppress_message(utl.PSM, 2)
 # Output current file specified ...
 utl.suppress_message(utl.PSM, 3)
+# Error file is specified as ...
+utl.suppress_message(utl.PSM, 83)
 # Output spice file is specified as
 utl.suppress_message(utl.PSM, 5)
 # SPICE file is written at
@@ -67,8 +69,6 @@ utl.suppress_message(utl.TAP, 101)
 
 # suppress par messages with runtime
 utl.suppress_message(utl.PAR, 1)
-utl.suppress_message(utl.PAR, 2)
-utl.suppress_message(utl.PAR, 3)
-utl.suppress_message(utl.PAR, 4)
-utl.suppress_message(utl.PAR, 5)
-utl.suppress_message(utl.PAR, 6)
+utl.suppress_message(utl.PAR, 30)
+utl.suppress_message(utl.PAR, 109)
+utl.suppress_message(utl.PAR, 110)

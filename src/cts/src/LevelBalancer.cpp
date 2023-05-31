@@ -73,17 +73,18 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
                  child->getClock().getName());
       cgcLevelMap_[drivingInst] = std::make_pair(depth, child);
     }
-    if (depth > maxDepth)
+    if (depth > maxDepth) {
       maxDepth = depth;
+    }
   }
   return parent->getTreeBufLevels() + maxDepth;
 }
 
 void LevelBalancer::addBufferLevels(TreeBuilder* builder,
-                                    std::vector<ClockInst*> cluster,
+                                    const std::vector<ClockInst*> cluster,
                                     Clock::SubNet* driverNet,
-                                    unsigned bufLevels,
-                                    const std::string nameSuffix)
+                                    const unsigned bufLevels,
+                                    const std::string& nameSuffix)
 {
   Clock::SubNet* prevLevelSubNet = driverNet;
 
@@ -127,8 +128,8 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
 }
 
 void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
-                                  unsigned parentDepth,
-                                  unsigned maxTreeDepth)
+                                  const unsigned parentDepth,
+                                  const unsigned maxTreeDepth)
 {
   const unsigned currLevel = builder->getTreeBufLevels() + parentDepth;
   if (currLevel >= maxTreeDepth) {
@@ -158,8 +159,9 @@ void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
       }
       instsToRemove.insert(clkInst);
     });
-    if (!subClusters.size())
+    if (subClusters.empty()) {
       return;
+    }
 
     clusterCnt++;
     subNet.removeSinks(instsToRemove);

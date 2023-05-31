@@ -35,16 +35,12 @@
 
 #pragma once
 
-#include <unistd.h>
-
-#include <cstdio>
-#include <list>
-#include <map>
-#include <string>
-#include <vector>
-
 #include "db.h"
-#include "odb.h"
+#include "utl/Logger.h"
+
+namespace sta {
+class dbNetwork;
+}
 
 namespace upf {
 
@@ -104,6 +100,8 @@ bool set_domain_area(utl::Logger* logger,
                      float x2,
                      float y2);
 
-bool eval_upf(utl::Logger* logger, odb::dbBlock* block);
+bool eval_upf(sta::dbNetwork* network,
+              utl::Logger* logger,
+              odb::dbBlock* block);
 
 }  // namespace upf

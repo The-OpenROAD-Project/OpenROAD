@@ -298,7 +298,6 @@ class frBlock : public frBlockObject
   void addTerm(std::unique_ptr<frBTerm> in)
   {
     in->setIndexInOwner(terms_.size());
-    in->setBlock(this);
     name2term_[in->getName()] = in.get();
     terms_.push_back(std::move(in));
   }

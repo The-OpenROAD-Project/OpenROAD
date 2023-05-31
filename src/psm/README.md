@@ -59,6 +59,9 @@ with a description specified [here](doc/Vsrc_description.md).
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+psm+in%3Atitle)
 about this tool.
 
+## Detailed paper
+
+See [here](doc/PDNSim-documentation.pdf).
 
 ## Cite this Work
 

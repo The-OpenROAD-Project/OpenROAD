@@ -105,8 +105,10 @@ add_library(db
     dbTechLayerWidthTableRule.cpp
     dbTechLayerMinCutRule.cpp
     dbGuide.cpp
+    dbNetTrack.cpp
     dbMetalWidthViaMap.cpp
     dbTechLayerAreaRule.cpp
+    dbTechLayerKeepOutZoneRule.cpp
     dbModule.cpp
     dbModInst.cpp
     dbGroup.cpp
@@ -124,6 +126,7 @@ add_library(db
     dbRegionGroupItr.cpp
     dbGroupInstItr.cpp
     dbGuideItr.cpp
+    dbNetTrackItr.cpp
     # Generator Code End cpp
 )
 
@@ -145,7 +148,7 @@ target_link_libraries(db
         defout
         tm
         zutil
-        utl
+        utl_lib
         ${TCL_LIBRARY}
 )
 

@@ -35,7 +35,9 @@
 
 #pragma once
 
+#include <set>
 #include <string>
+#include <vector>
 
 namespace utl {
 class Logger;
@@ -75,11 +77,11 @@ class InitFloorplan
                      int core_space_top,
                      int core_space_left,
                      int core_space_right,
-                     const std::string& site_name);
+                     const std::vector<odb::dbSite*>& extra_sites = {});
 
   void initFloorplan(const odb::Rect& die,
                      const odb::Rect& core,
-                     const std::string& site_name);
+                     const std::vector<odb::dbSite*>& extra_sites = {});
 
   void insertTiecells(odb::dbMTerm* tie_term,
                       const std::string& prefix = "TIEOFF_");
@@ -91,22 +93,29 @@ class InitFloorplan
                   int y_offset,
                   int y_pitch);
 
+  void makeTracksNonUniform(odb::dbTechLayer* layer,
+                            int x_offset,
+                            int x_pitch,
+                            int y_offset,
+                            int y_pitch,
+                            int first_last_pitch);
+
+  odb::dbSite* findSite(const char* site_name);
+
  protected:
   double designArea();
-  void makeRows(dbSite* site,
-                int core_lx,
-                int core_ly,
-                int core_ux,
-                int core_uy);
-  odb::dbSite* findSite(const char* site_name);
+  int makeRows(dbSite* site,
+               int core_lx,
+               int core_ly,
+               int core_ux,
+               int core_uy,
+               int factor,
+               int row_index);
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
   int snapToMfgGrid(int coord) const;
-  void updateVoltageDomain(odb::dbSite* site,
-                           int core_lx,
-                           int core_ly,
-                           int core_ux,
-                           int core_uy);
+  void updateVoltageDomain(int core_lx, int core_ly, int core_ux, int core_uy);
+  std::set<dbSite*> getSites() const;
 
   dbBlock* block_;
   Logger* logger_;

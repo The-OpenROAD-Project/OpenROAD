@@ -280,8 +280,8 @@ void DetailedABU::computeUtils()
 void DetailedABU::computeBuckets()
 {
   // Put bins into buckets.
-  for (size_t i = 0; i < utilBuckets_.size(); i++) {
-    utilBuckets_[i].erase(utilBuckets_[i].begin(), utilBuckets_[i].end());
+  for (auto bucket : utilBuckets_) {
+    bucket.clear();
   }
   for (int j = 0; j < abuGridNumY_; j++) {
     for (int k = 0; k < abuGridNumX_; k++) {
@@ -373,14 +373,8 @@ double DetailedABU::calculateABU(bool print)
   std::sort(util_array.begin(), util_array.end());
 
   // Get different values.
-  double abu1 = 0.0, abu2 = 0.0, abu5 = 0.0, abu10 = 0.0, abu20 = 0.0;
-  int clip_index = (int) (0.01 * abuNumBins_);
-  for (int j = abuNumBins_ - 1; j > abuNumBins_ - 1 - clip_index; j--) {
-    abu1 += util_array[j];
-  }
-  abu1 = (clip_index) ? abu1 / clip_index : util_array[abuNumBins_ - 1];
-
-  clip_index = (int) (0.02 * abuNumBins_);
+  double abu2 = 0.0, abu5 = 0.0, abu10 = 0.0, abu20 = 0.0;
+  int clip_index = (int) (0.02 * abuNumBins_);
   for (int j = abuNumBins_ - 1; j > abuNumBins_ - 1 - clip_index; j--) {
     abu2 += util_array[j];
   }
@@ -412,9 +406,8 @@ double DetailedABU::calculateABU(bool print)
 
   /* calculate overflow and penalty */
   if (std::fabs(abuTargUt_ - 1.0) <= 1.0e-3) {
-    abu1 = abu2 = abu5 = abu10 = abu20 = 0.0;
+    abu2 = abu5 = abu10 = abu20 = 0.0;
   } else {
-    abu1 = std::max(0.0, abu1 / abuTargUt_ - 1.0);
     abu2 = std::max(0.0, abu2 / abuTargUt_ - 1.0);
     abu5 = std::max(0.0, abu5 / abuTargUt_ - 1.0);
     abu10 = std::max(0.0, abu10 / abuTargUt_ - 1.0);
@@ -447,8 +440,9 @@ double DetailedABU::calculateABU(bool print)
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedABU::curr()
 {
-  if (abuTargUt_ >= 0.999)
-    return 0.;
+  if (abuTargUt_ >= 0.999) {
+    return 0;
+  }
 
   clearUtils();
   computeUtils();
@@ -463,7 +457,7 @@ double DetailedABU::curr()
   double fof = 0.;
   for (int i = n; (i * denom) > abuTargUt_;) {
     --i;
-    if (utilBuckets_[i].size() != 0) {
+    if (!utilBuckets_[i].empty()) {
       fof += utilTotals_[i] / (double) utilBuckets_[i].size();
     }
   }
@@ -488,7 +482,7 @@ double DetailedABU::delta(const int n,
   double fofOld = 0.;
   for (int i = (int) utilBuckets_.size(); (i * denom) > abuTargUt_;) {
     --i;
-    if (utilBuckets_[i].size() != 0) {
+    if (!utilBuckets_[i].empty()) {
       fofOld += utilTotals_[i] / (double) utilBuckets_[i].size();
     }
   }
@@ -512,9 +506,7 @@ double DetailedABU::delta(const int n,
   double util = 0.;
   int ix = -1;
   std::set<int>::iterator it;
-  for (int i = 0; i < abuChangedBins_.size(); i++) {
-    int binId = abuChangedBins_[i];
-
+  for (int binId : abuChangedBins_) {
     space = abuBins_[binId].area - abuBins_[binId].f_util;
 
     util = abuBins_[binId].c_util;
@@ -537,7 +529,7 @@ double DetailedABU::delta(const int n,
   double fofNew = 0.;
   for (int i = (int) utilBuckets_.size(); (i * denom) > abuTargUt_;) {
     --i;
-    if (utilBuckets_[i].size() != 0) {
+    if (!utilBuckets_[i].empty()) {
       fofNew += utilTotals_[i] / (double) utilBuckets_[i].size();
     }
   }
@@ -556,16 +548,16 @@ double DetailedABU::delta(const int n,
 ////////////////////////////////////////////////////////////////////////////////
 double DetailedABU::delta()
 {
-  if (abuTargUt_ >= 0.999)
+  if (abuTargUt_ >= 0.999) {
     return 0.0;
+  }
 
   double util_0 = 0., util_1 = 0.;
   double pen_0 = 0., pen_1 = 0.;
   double delta = 0.;
   double sum_0 = 0.;
   double sum_1 = 0.;
-  for (int i = 0; i < abuChangedBins_.size(); i++) {
-    int binId = abuChangedBins_[i];
+  for (int binId : abuChangedBins_) {
     if (abuBins_[binId].area
         > abuGridUnit_ * abuGridUnit_ * BIN_AREA_THRESHOLD) {
       double free_space = abuBins_[binId].area - abuBins_[binId].f_util;
@@ -649,7 +641,7 @@ void DetailedABU::updateBins(Node* nd, double x, double y, int addSub)
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedABU::acceptBins()
 {
-  abuChangedBins_.erase(abuChangedBins_.begin(), abuChangedBins_.end());
+  abuChangedBins_.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -660,8 +652,7 @@ void DetailedABU::rejectBins()
   double util = 0.;
   int ix = -1;
   std::set<int>::iterator it;
-  for (int i = 0; i < abuChangedBins_.size(); i++) {
-    int binId = abuChangedBins_[i];
+  for (int binId : abuChangedBins_) {
     space = abuBins_[binId].area - abuBins_[binId].f_util;
 
     // Remove from current bucket.
@@ -686,7 +677,7 @@ void DetailedABU::rejectBins()
     abuBins_[binId].m_util = abuBins_[binId].c_util;
   }
 
-  abuChangedBins_.erase(abuChangedBins_.begin(), abuChangedBins_.end());
+  abuChangedBins_.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

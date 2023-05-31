@@ -96,7 +96,7 @@ class VoltageDomain
   odb::dbRegion* getRegion() const { return region_; }
 
   // returns the area of the region or core
-  const odb::Rect getDomainArea() const;
+  odb::Rect getDomainArea() const;
 
   void addGrid(std::unique_ptr<Grid> grid);
   void resetGrids();
@@ -105,7 +105,7 @@ class VoltageDomain
   const std::vector<std::unique_ptr<Grid>>& getGrids() const { return grids_; }
 
   // get the rows associated with the core or region
-  const std::vector<odb::dbRow*> getRows() const;
+  std::vector<odb::dbRow*> getRows() const;
 
   void report() const;
 
@@ -127,16 +127,16 @@ class VoltageDomain
   std::vector<std::unique_ptr<Grid>> grids_;
 
   int getRegionRectCount(odb::dbRegion* region) const;
-  const odb::Rect getRegionBoundary(odb::dbRegion* region) const;
+  odb::Rect getRegionBoundary(odb::dbRegion* region) const;
   // returns just the rows associated with the region
-  const std::vector<odb::dbRow*> getRegionRows() const;
+  std::vector<odb::dbRow*> getRegionRows() const;
   // returns only rows that are not associated with a region
-  const std::vector<odb::dbRow*> getDomainRows() const;
+  std::vector<odb::dbRow*> getDomainRows() const;
 
   // find power and ground nets if they are not specified
   void determinePowerGroundNets();
 
-  odb::dbNet* findDomainNet(odb::dbSigType type) const;
+  odb::dbNet* findDomainNet(const odb::dbSigType& type) const;
 };
 
 }  // namespace pdn

@@ -36,84 +36,79 @@
 // This file includes the basic utility functions for operations
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
-#include <algorithm>
-#include <cassert>
-#include <chrono>
-#include <climits>
-#include <cmath>
-#include <fstream>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <iterator>
 #include <map>
-#include <memory>
-#include <queue>
-#include <random>
-#include <sstream>
-#include <stack>
-#include <stdexcept>
 #include <string>
-#include <thread>
 #include <vector>
+
+#ifdef LOAD_CPLEX
+// for ILP solver in CPLEX
+#include "ilcplex/cplex.h"
+#include "ilcplex/ilocplex.h"
+#endif
 
 namespace par {
 
-class TimingCuts
+// Matrix is a two-dimensional vectors
+template <typename T>
+using Matrix = std::vector<std::vector<T>>;
+
+struct Rect
 {
- public:
-  TimingCuts(const int total_critical_paths_cut,
-             const float average_critical_paths_cut,
-             int worst_cut,
-             int total_paths)
-      : total_critical_paths_cut_(total_critical_paths_cut),
-        average_critical_paths_cut_(average_critical_paths_cut),
-        worst_cut_(worst_cut),
-        total_paths_(total_paths)
+  // all the values are in db unit
+  int lx = 0;
+  int ly = 0;
+  int ux = 0;
+  int uy = 0;
+
+  Rect(int lx_, int ly_, int ux_, int uy_) : lx(lx_), ly(ly_), ux(ux_), uy(uy_)
   {
   }
 
-  int GetTotalCriticalPathsCut() const { return total_critical_paths_cut_; }
-  float GetAvereageCriticalPathsCut() const
-  {
-    return average_critical_paths_cut_;
-  }
-  int GetWorstCut() const { return worst_cut_; }
-  int GetTotalPaths() const { return total_paths_; }
+  // check if the Rect is valid
+  bool IsValid() const { return ux > lx && uy > ly; }
 
- private:
-  int total_critical_paths_cut_;
-  float average_critical_paths_cut_;
-  int worst_cut_;
-  int total_paths_;
+  // reset the fence
+  void Reset()
+  {
+    lx = 0;
+    ly = 0;
+    ux = 0;
+    uy = 0;
+  }
 };
 
-// Function for write solution
-void WriteSolution(const char* solution_file, const std::vector<int>& solution);
-
-// Analyze a timing paths file and a partition to find timing related metrics
-std::shared_ptr<TimingCuts> AnalyzeTimingOfPartition(
-    const std::vector<std::vector<int>>& paths,
-    const std::vector<int>& solution);
+// Define the type for vertices
+enum VertexType
+{
+  COMB_STD_CELL,  // combinational standard cell
+  SEQ_STD_CELL,   // sequential standard cell
+  MACRO,          // hard macros
+  PORT            // IO ports
+};
 
 std::string GetVectorString(const std::vector<float>& vec);
+
+// Split a string based on deliminator : empty space and ","
+std::vector<std::string> SplitLine(const std::string& line);
 
 // Add right vector to left vector
 void Accumulate(std::vector<float>& a, const std::vector<float>& b);
 
 // weighted sum
 std::vector<float> WeightedSum(const std::vector<float>& a,
-                               const float a_factor,
+                               float a_factor,
                                const std::vector<float>& b,
-                               const float b_factor);
+                               float b_factor);
 
 // divide the vector
-std::vector<float> DivideFactor(const std::vector<float>& a,
-                                const float factor);
+std::vector<float> DivideFactor(const std::vector<float>& a, float factor);
+
+// divide the vectors element by element
+std::vector<float> DivideVectorElebyEle(const std::vector<float>& emb,
+                                        const std::vector<float>& factor);
 
 // multiplty the vector
-std::vector<float> MultiplyFactor(const std::vector<float>& a,
-                                  const float factor);
+std::vector<float> MultiplyFactor(const std::vector<float>& a, float factor);
 
 // operation for two vectors +, -, *,  ==, <
 std::vector<float> operator+(const std::vector<float>& a,
@@ -127,11 +122,9 @@ std::vector<float> operator-(const std::vector<float>& a,
 std::vector<float> operator*(const std::vector<float>& a,
                              const std::vector<float>& b);
 
-int PartitionWithMinWt(const std::vector<std::vector<float>>& area);
-
-int PartitionWithMaxWt(const std::vector<std::vector<float>>& area);
-
 bool operator<(const std::vector<float>& a, const std::vector<float>& b);
+
+bool operator<=(const Matrix<float>& a, const Matrix<float>& b);
 
 bool operator==(const std::vector<float>& a, const std::vector<float>& b);
 
@@ -141,4 +134,32 @@ std::vector<float> abs(const std::vector<float>& a);
 float norm2(const std::vector<float>& a);
 
 float norm2(const std::vector<float>& a, const std::vector<float>& factor);
+
+// ILP-based Partitioning Instance
+// Call ILP Solver to partition the design
+bool ILPPartitionInst(
+    int num_parts,
+    int vertex_weight_dimension,
+    std::vector<int>& solution,
+    const std::map<int, int>& fixed_vertices,     // vertex_id, block_id
+    const Matrix<int>& hyperedges,                // hyperedges
+    const std::vector<float>& hyperedge_weights,  // one-dimensional
+    const Matrix<float>& vertex_weights,          // two-dimensional
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance);
+
+// Call CPLEX to solve the ILP Based Partitioning
+#ifdef LOAD_CPLEX
+bool OptimalPartCplex(
+    int num_parts,
+    int vertex_weight_dimension,
+    std::vector<int>& solution,
+    const std::map<int, int>& fixed_vertices,     // vertex_id, block_id
+    const Matrix<int>& hyperedges,                // hyperedges
+    const std::vector<float>& hyperedge_weights,  // one-dimensional
+    const Matrix<float>& vertex_weights,          // two-dimensional
+    const Matrix<float>& upper_block_balance,
+    const Matrix<float>& lower_block_balance);
+#endif
+
 }  // namespace par

@@ -44,6 +44,7 @@ class dbFill;
 class dbInst;
 class dbMaster;
 class dbNet;
+class dbIoType;
 class dbITerm;
 class dbWire;
 class dbBTerm;
@@ -55,6 +56,7 @@ class dbRegion;
 class dbRow;
 class dbSBox;
 class dbSWire;
+
 ///////////////////////////////////////////////////////////////////////////////
 ///
 /// dbBlockCallBackObj - An object comprising a list of stub routines
@@ -101,6 +103,7 @@ class dbBlockCallBackObj
   virtual void inDbBTermPostConnect(dbBTerm*) {}
   virtual void inDbBTermPreDisconnect(dbBTerm*) {}
   virtual void inDbBTermPostDisConnect(dbBTerm*, dbNet*) {}
+  virtual void inDbBTermSetIoType(dbBTerm*, const dbIoType&) {}
   // dbBTerm End
 
   // dbBPin Start
@@ -131,6 +134,7 @@ class dbBlockCallBackObj
   // dbWire Start
   virtual void inDbWireCreate(dbWire*) {}
   virtual void inDbWireDestroy(dbWire*) {}
+  virtual void inDbWirePostModify(dbWire*) {}
   virtual void inDbWirePreAttach(dbWire*, dbNet*) {}
   virtual void inDbWirePostAttach(dbWire*) {}
   virtual void inDbWirePreDetach(dbWire*) {}

@@ -49,10 +49,16 @@
       "src":"dbGuide.json"
     },
     {
+      "src":"dbNetTrack.json"
+    },
+    {
       "src":"dbMetalWidthViaMap.json"
     },
     {
       "src":"dbTechLayerAreaRule.json"
+    },
+    {
+      "src":"dbTechLayerKeepOutZoneRule.json"
     },
     {
       "name":"dbModule",
@@ -422,6 +428,14 @@
       "reversible": "true",
       "orderReversed": "true",
       "sequential": 0
+    },
+    {
+      "name": "dbNetTrackItr",
+      "parentObject": "dbNetTrack",
+      "tableName": "net_tracks_tbl",
+      "reversible": "true",
+      "orderReversed": "true",
+      "sequential": 0
     }
   ],
   "relations":[
@@ -515,6 +529,13 @@
       "second":"dbTechLayerAreaRule",
       "type":"1_n",
       "tbl_name":"area_rules_tbl_"
+    },
+    {
+      "first":"dbTechLayer",
+      "second":"dbTechLayerKeepOutZoneRule",
+      "type":"1_n",
+      "tbl_name":"keepout_zone_rules_tbl_",
+      "schema":"db_schema_keepout_zone"
     }
   ]
 }

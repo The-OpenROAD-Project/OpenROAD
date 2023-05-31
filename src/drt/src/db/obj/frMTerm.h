@@ -76,6 +76,7 @@ class frMTerm : public frTerm
           bbox_.merge(static_cast<frRect*>(pinFig)->getBBox());
       }
     }
+    in->setId(pins_.size());
     pins_.push_back(std::move(in));
   }
   // others

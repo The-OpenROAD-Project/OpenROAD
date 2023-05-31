@@ -514,9 +514,8 @@ QString ClockGateNodeGraphicsViewItem::getType() const
 {
   if (is_clock_gate_) {
     return "Clock gate";
-  } else {
-    return "Assumed clock gate";
   }
+  return "Assumed clock gate";
 }
 
 ////////////////
@@ -572,8 +571,6 @@ ClockRegisterNodeGraphicsViewItem::ClockRegisterNodeGraphicsViewItem(
     odb::dbITerm* iterm,
     QGraphicsItem* parent)
     : ClockNodeGraphicsViewItem(parent),
-      term_(iterm),
-      menu_(),
       highlight_path_(new QAction("Highlight path", &menu_))
 {
   setName(iterm);
@@ -1161,7 +1158,7 @@ ClockNodeGraphicsViewItem* ClockTreeView::addCellToScene(
     const PinArrival& output_pin,
     sta::dbNetwork* network)
 {
-  auto convert_pin = [&network](sta::Pin* pin) -> odb::dbITerm* {
+  auto convert_pin = [&network](const sta::Pin* pin) -> odb::dbITerm* {
     odb::dbITerm* iterm;
     odb::dbBTerm* bterm;
     network->staToDb(pin, iterm, bterm);

@@ -12,8 +12,8 @@ link_design top
 #  -site unithd
 create_voltage_domain TEMP_ANALOG -area {33.58 32.64 64.86 62.56}
 initialize_floorplan -die_area "0 0 155.48 146.88" \
-  -core_area "18.4 16.32 137.08 130.56" \
-  -site unithd
+  -core_area "18.4 16.32 137.08 130.56" 
+  
 set def_file [make_result_file init_floorplan9.def]
 write_def $def_file
 diff_files init_floorplan9.defok $def_file

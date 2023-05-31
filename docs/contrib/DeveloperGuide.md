@@ -184,7 +184,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 
 ## Building
 
-Instructions for building are available [here](../user/BuildLocally.md).
+Instructions for building are available [here](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
 
 ## Example of Adding a Tool to OpenROAD
 
