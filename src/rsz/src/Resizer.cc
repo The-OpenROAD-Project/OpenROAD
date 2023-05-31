@@ -165,6 +165,7 @@ Resizer::Resizer()
       unique_inst_index_(1),
       resize_count_(0),
       inserted_buffer_count_(0),
+      cloned_gate_count_(0),
       buffer_moved_into_core_(false),
       max_wire_length_(0),
       worst_slack_nets_percent_(10)
@@ -980,7 +981,7 @@ Resizer::findResizeSlacks()
                                repaired_net_count, slew_violations, cap_violations,
                                fanout_violations, length_violations);
   findResizeSlacks1();
-  journalRestore(resize_count_, inserted_buffer_count_);
+  journalRestore(resize_count_, inserted_buffer_count_, cloned_gate_count_);
 }
   
 void
@@ -2495,7 +2496,8 @@ Resizer::journalMakeBuffer(Instance *buffer)
 
 void
 Resizer::journalRestore(int &resize_count,
-                        int &inserted_buffer_count)
+                        int &inserted_buffer_count,
+                        int &cloned_gate_count)
 {
   for (auto [inst, lib_cell] : resized_inst_map_) {
     if (!inserted_buffer_set_.hasKey(inst)) {

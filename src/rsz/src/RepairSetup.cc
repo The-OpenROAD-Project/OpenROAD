@@ -92,6 +92,7 @@ RepairSetup::RepairSetup(Resizer* resizer)
       inserted_buffer_count_(0),
       rebuffer_net_count_(0),
       swap_pin_count_(0),
+      cloned_gate_count_(0),
       min_(MinMax::min()),
       max_(MinMax::max())
 {
@@ -172,7 +173,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
                    "Restoring best slack end slack {} worst slack {}",
                    delayAsString(prev_end_slack, sta_, digits),
                    delayAsString(prev_worst_slack, sta_, digits));
-        resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+        resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+                                 cloned_gate_count_);
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
@@ -185,7 +187,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
                    "Restoring best slack end slack {} worst slack {}",
                    delayAsString(prev_end_slack, sta_, digits),
                    delayAsString(prev_worst_slack, sta_, digits));
-        resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+        resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+                                 cloned_gate_count_);
         break;
       }
       resizer_->updateParasitics();
@@ -222,7 +225,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
                      "Restoring best end slack {} worst slack {}",
                      delayAsString(prev_end_slack, sta_, digits),
                      delayAsString(prev_worst_slack, sta_, digits));
-          resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+          resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+                                   cloned_gate_count_);
           break;
         }
       }
@@ -247,6 +251,9 @@ RepairSetup::repairSetup(float setup_slack_margin,
   if (swap_pin_count_ > 0) {
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
   }
+  if (cloned_gate_count_ > 0) {
+    logger_->info(RSZ, 45, "Cloned {} instances.", cloned_gate_count_);
+  }
   Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin)) {
     logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
@@ -264,6 +271,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   swap_pin_count_ = 0;
+  cloned_gate_count_ = 0;
 
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
   Slack slack = sta_->vertexSlack(vertex, max_);

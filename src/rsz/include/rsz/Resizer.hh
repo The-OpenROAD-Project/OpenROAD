@@ -530,7 +530,8 @@ protected:
   void journalBegin();
   void journalEnd();
   void journalRestore(int &resize_count,
-                      int &inserted_buffer_count);
+                      int &inserted_buffer_count,
+                      int &cloned_gate_count);
   void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
@@ -599,6 +600,7 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
+  int cloned_gate_count_;
   bool buffer_moved_into_core_;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and

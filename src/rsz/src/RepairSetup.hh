@@ -151,6 +151,7 @@ private:
   int inserted_buffer_count_;
   int rebuffer_net_count_;
   int swap_pin_count_;
+  int cloned_gate_count_;
   const MinMax *min_;
   const MinMax *max_;
 
