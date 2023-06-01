@@ -112,11 +112,28 @@ public:
               const Network *network);
   // Return the steiner pt connected to the driver pin.
   SteinerPt drvrPt() const;
+  // new APIs for gate cloning
+  SteinerPt top() const;
+  SteinerPt left(SteinerPt pt) const;
+  SteinerPt right(SteinerPt pt) const;
+  void validatePoint(SteinerPt pt) const;
+
+  void populateSides();
+  void populateSides(SteinerPt from, SteinerPt to,
+                     std::vector<SteinerPt>& adj1,
+                     std::vector<SteinerPt>& adj2,
+                     std::vector<SteinerPt>& adj3);
+  void populateSides(SteinerPt from, SteinerPt to, SteinerPt adj,
+                     std::vector<SteinerPt>& adj1,
+                     std::vector<SteinerPt>& adj2,
+                     std::vector<SteinerPt>& adj3);
+  int distance(SteinerPt& from, SteinerPt& to) const;
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,
                    const Network *network);
   const PinSeq *pins(SteinerPt pt) const;
+  const Pin *pin(SteinerPt pt) const;
   Point location(SteinerPt pt) const;
   void setTree(const stt::Tree& tree,
                const dbNetwork *network);
