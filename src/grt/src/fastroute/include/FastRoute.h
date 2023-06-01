@@ -72,7 +72,6 @@ using boost::icl::interval_set;
 namespace grt {
 
 class FastRouteRenderer;
-class AStarRenderer;
 class MakeWireParasitics;
 
 // Debug mode settings
@@ -580,7 +579,6 @@ class FastRouteCore
   MakeWireParasitics * parasitics_builder_;
 
   FastRouteRenderer* fastrouteRender_;
-  AStarRenderer* aStarRender_;
   std::unique_ptr<DebugSetting> debug_;
 
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>

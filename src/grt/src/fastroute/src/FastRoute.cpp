@@ -83,7 +83,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       logger_(log),
       stt_builder_(stt_builder),
       fastrouteRender_(nullptr),
-      aStarRender_(nullptr),
       debug_(new DebugSetting())
 {
 }
@@ -1437,7 +1436,7 @@ void FastRouteRenderer::drawLineObject(int x1,
       painter.setPen(painter.cyan);
       painter.setBrush(painter.cyan);
     }
-    painter.setPenWidth(1000);
+    painter.setPenWidth(700);
     painter.drawLine(x1, y1, x2, y2);
   }
 }
@@ -1478,7 +1477,7 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
 }
 void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
 {
-  painter.setPenWidth(1000);
+  painter.setPenWidth(700);
   for (auto i = 0; i < pinX_.size(); i++) {
     const int xreal = tile_size_ * (pinX_[i] + 0.5) + x_corner_;
     const int yreal = tile_size_ * (pinY_[i] + 0.5) + y_corner_;
@@ -1495,7 +1494,7 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
   if (treeStructure_ == TreeStructure::steinerTreeByStt) {
     painter.setPen(painter.white);
     painter.setBrush(painter.white);
-    painter.setPenWidth(1000);
+    painter.setPenWidth(700);
 
     const int deg = stree_.deg;
     for (int i = 0; i < stree_.branchCount()/*2 * deg - 2*/; i++) {
@@ -1516,69 +1515,6 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
 
     drawCircleObjects(painter);
   }
-}
-
-class AStarRenderer : public gui::Renderer
-{
- public:
-  AStarRenderer(odb::dbTech* tech,
-                    int tile_size,
-                    int x_corner,
-                    int y_corner,
-                    int x_range);
-  void setSrcHeap(const std::vector<float*>& src_heap);
-  void setD1(float* d1);
-
-  virtual void drawObjects(gui::Painter& /* painter */) override;
-
- private:
-  void drawCircleObjects(gui::Painter& painter);
-  std::vector<float*> src_heap_;
-  float* d1_;
-
-  odb::dbTech* tech_;
-  int tile_size_, x_corner_, y_corner_, x_range_;
-};
-
-AStarRenderer::AStarRenderer(odb::dbTech* tech,
-                                     int tile_size,
-                                     int x_corner,
-                                     int y_corner,
-                                     int x_range)
-    : tech_(tech),
-      tile_size_(tile_size),
-      x_corner_(x_corner),
-      y_corner_(y_corner),
-      x_range_(x_range)
-{
-}
-void AStarRenderer::setSrcHeap(const std::vector<float*>& src_heap)
-{
-  src_heap_ = src_heap;
-}
-void AStarRenderer::setD1(float* d1)
-{
-  d1_ = d1;
-}
-
-void AStarRenderer::drawCircleObjects(gui::Painter& painter)
-{
-  painter.setPenWidth(700);
-  for(auto heap_element : src_heap_){
-    int temp_ind = heap_element - d1_;
-    const int xreal = tile_size_ * ((temp_ind % x_range_) + 0.5) + x_corner_;
-    const int yreal = tile_size_ * ((temp_ind / x_range_) + 0.5) + y_corner_;
-
-    odb::dbTechLayer* layer = tech_->findRoutingLayer(1 + 1);
-    painter.setPen(layer);
-    painter.setBrush(layer);
-    painter.drawCircle(xreal, yreal, 1500);
-  }
-}
-
-void AStarRenderer::drawObjects(gui::Painter& painter)
-{
-  drawCircleObjects(painter);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1657,24 +1593,6 @@ void FastRouteCore::StTreeVisualization(const StTree& stree,
     fastrouteRender_->setIs3DVisualization(is3DVisualization);
     fastrouteRender_->setStTreeValues(stree);
     fastrouteRender_->setTreeStructure(TreeStructure::steinerTreeByFastroute);
-    gui_->redraw();
-    gui_->pause();
-  }
-}
-
-void FastRouteCore::AStarVisualization(const std::vector<float*>& src_heap,
-                                       float* d1)
-{
-  // init FastRouteRender
-  if (gui_) {
-    if (aStarRender_ == nullptr) {
-      aStarRender_ = new AStarRenderer(
-          db_->getTech(), tile_size_, x_corner_, y_corner_, x_range_);
-      gui_->registerRenderer(aStarRender_);
-    }
-    aStarRender_->setD1(d1);
-    aStarRender_->setSrcHeap(src_heap);
-
     gui_->redraw();
     gui_->pause();
   }
