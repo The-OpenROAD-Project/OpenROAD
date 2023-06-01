@@ -73,8 +73,9 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
     : network_->net(drvr_pin);
   debugPrint(logger_, RSZ, "steiner", 1, "Net {}",
              sdc_network->pathName(net));
-  SteinerTree *tree = new SteinerTree(drvr_pin);
+  SteinerTree *tree = new SteinerTree(drvr_pin, this);
   PinSeq &pins = tree->pins();
+  // Find all the connected pins
   connectedPins(net, network_, pins);
   // Sort pins by location because connectedPins order is not deterministic.
   sort(pins, [=](const Pin *pin1, const Pin *pin2) {
@@ -86,23 +87,26 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
   });
   int pin_count = pins.size();
   bool is_placed = true;
+  // Warn if there are too many pins (>10000)
   if (pin_count > max_steiner_pin_count_)
     logger_->warn(RSZ, 69, "skipping net {} with {} pins.",
                   sdc_network->pathName(net),
                   pin_count);
   else if (pin_count >= 2) {
-    vector<int> x, y;
-    int drvr_idx = 0;
+    vector<int> x, y;  // Two separate vectors of coordinates needed by flute.
+    int drvr_idx = 0; // The "driver_pin" or the root of the Steiner tree.
     for (int i = 0; i < pin_count; i++) {
       const Pin *pin = pins[i];
-      if (pin == drvr_pin)
-        drvr_idx = i;
+      if (pin == drvr_pin) {
+        drvr_idx = i;  // drvr_index is needed by flute.
+      }
       Point loc = db_network_->location(pin);
       x.push_back(loc.x());
       y.push_back(loc.y());
       debugPrint(logger_, RSZ, "steiner", 3, " {} ({} {})",
                  sdc_network->pathName(pin),
                  loc.x(), loc.y());
+      // Track that all our pins are placed.
       is_placed &= db_network_->isPlaced(pin);
 
       // Flute may reorder the input points, so it takes some unravelling
@@ -115,6 +119,7 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
                                                       x, y, drvr_idx);
       
       tree->setTree(ftree, db_network_);
+      tree->createSteinerPtToPinMap();
       return tree;
     }
   }
@@ -158,10 +163,31 @@ SteinerTree::setTree(const stt::Tree& tree,
   }
 }
 
-SteinerTree::SteinerTree(const Pin *drvr_pin) :
+SteinerTree::SteinerTree(const Pin *drvr_pin, Resizer *resizer) :
   drvr_pin_(drvr_pin),
-  drvr_steiner_pt_(0)
+  drvr_steiner_pt_(0),
+  resizer_(resizer)
 {
+}
+
+void
+SteinerTree::createSteinerPtToPinMap()
+{
+  unsigned int pin_count = pins_.size();
+  // TODO
+  /*
+  point_pin_array_.resize(pin_count);
+
+  for (unsigned int i = 0; i < pin_count; i++) {
+    stt::Branch& branch_pt = tree_.branch[i];
+    odb::Point pt(branch_pt.x, branch_pt.y);
+    std::vector<const Pin*>& pin_locations = loc_pin_map_[pt];
+    auto pin = pin_locations.back();
+    pin_locations.pop_back();
+    point_pin_array_[i] = pin;
+  }
+  populateSides();
+   */
 }
 
 int

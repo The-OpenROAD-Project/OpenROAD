@@ -45,6 +45,9 @@
 #include "odb/geom.h"
 
 #include "stt/SteinerTreeBuilder.h"
+#include "stt/flute.h"
+
+const int   SteinerNull = -1;
 
 namespace rsz {
 
@@ -93,7 +96,7 @@ class SteinerTree;
 class SteinerTree
 {
 public:
-  SteinerTree(const Pin *drvr_pin);
+  SteinerTree(const Pin *drvr_pin, Resizer *resizer);
   PinSeq &pins() { return pins_; }
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
@@ -119,6 +122,7 @@ public:
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
   stt::Tree &fluteTree() { return tree_; }
+  void createSteinerPtToPinMap();
 
   static SteinerPt null_pt;
 
@@ -128,10 +132,14 @@ protected:
 
   stt::Tree tree_;
   const Pin *drvr_pin_;
-  int drvr_steiner_pt_;
-  PinSeq pins_;
-  // location -> pins
-  LocPinMap loc_pin_map_;
+  int drvr_steiner_pt_;            // index into tree_.branch
+  PinSeq pins_;                    // Initial input
+  LocPinMap loc_pin_map_;          // location -> pins map
+  std::vector<SteinerPt>  left_;
+  std::vector<SteinerPt>  right_;
+  std::vector<const Pin*> point_pin_array_;
+  Resizer *resizer_;
+
 
   friend class Resizer;
 };
