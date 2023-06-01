@@ -13,7 +13,8 @@ constexpr std::string_view kScanOutNamePattern = "scan_out_{}";
 
 namespace dft {
 
-ScanStitch::ScanStitch(odb::dbDatabase* db, sta::dbSta* sta) : db_(db), sta_(sta)
+ScanStitch::ScanStitch(odb::dbDatabase* db, sta::dbSta* sta)
+    : db_(db), sta_(sta)
 {
   odb::dbChip* chip = db_->getChip();
   top_block_ = chip->getBlock();
