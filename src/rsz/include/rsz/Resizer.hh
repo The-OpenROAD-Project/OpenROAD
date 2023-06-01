@@ -627,6 +627,7 @@ protected:
   static constexpr int max_steiner_pin_count_ = 100000;
 
   friend class BufferedNet;
+  friend class GateCloner;
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;
