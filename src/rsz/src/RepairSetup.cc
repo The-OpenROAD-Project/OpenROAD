@@ -34,26 +34,27 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
+
+#include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 
-#include "utl/Logger.h"
-#include "db_sta/dbNetwork.hh"
-
-#include "sta/Units.hh"
-#include "sta/Liberty.hh"
-#include "sta/TimingArc.hh"
-#include "sta/Graph.hh"
-#include "sta/DcalcAnalysisPt.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Parasitics.hh"
-#include "sta/Sdc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Corner.hh"
-#include "sta/PathVertex.hh"
-#include "sta/PathRef.hh"
-#include "sta/PathExpanded.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/InputDrive.hh"
+#include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/PathRef.hh"
+#include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Units.hh"
+
+#include "utl/Logger.h"
 
 namespace rsz {
 

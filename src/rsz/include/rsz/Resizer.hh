@@ -620,6 +620,7 @@ protected:
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
   Map<Instance *, std::tuple<LibertyPort *, LibertyPort *>> swapped_pins_;
+  Map<Instance *, Instance *> cloned_gates_;
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;
