@@ -40,6 +40,7 @@
 #include <memory>
 
 #include "findDialog.h"
+#include "gotoDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
@@ -130,6 +131,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   // Ruler Requested on the Layout
   void rulersChanged();
 
+  void displayUnitsChanged(int dbu_per_micron, bool useDBU);
+
  public slots:
   // Save the current state into settings for the next session.
   void saveSettings();
@@ -205,6 +208,9 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 
   // Show Find Dialog Box
   void showFindDialog();
+
+  // Show Goto Dialog Box
+  void showGotoDialog();
 
   // Show help in browser
   void showHelp();
@@ -295,6 +301,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 #endif
 
   FindObjectDialog* find_dialog_;
+  GotoLocationDialog* goto_dialog_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;
@@ -313,6 +320,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   QAction* timing_debug_;
   QAction* zoom_in_;
   QAction* zoom_out_;
+  QAction* goto_position_;
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;

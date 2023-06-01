@@ -713,11 +713,13 @@ void ICeWall::placeFiller(
     }
 
     if (sites > 0) {
-      logger_->error(utl::PAD,
-                     30,
-                     "Unable to fill gap completely {:.3f}um -> {:.3f}um",
-                     it->lower() / dbus,
-                     it->upper() / dbus);
+      logger_->error(
+          utl::PAD,
+          30,
+          "Unable to fill gap completely {:.3f}um -> {:.3f}um in row {}",
+          it->lower() / dbus,
+          it->upper() / dbus,
+          row->getName());
     }
     fill_group++;
   }

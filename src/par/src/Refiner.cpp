@@ -60,11 +60,11 @@ HyperedgeGain::HyperedgeGain(const int hyperedge_id,
                              const int destination_part,
                              const float gain,
                              const std::map<int, float>& path_cost)
+    : hyperedge_id_(hyperedge_id),
+      destination_part_(destination_part),
+      gain_(gain),
+      path_cost_(path_cost)
 {
-  hyperedge_id_ = hyperedge_id;
-  destination_part_ = destination_part;
-  gain_ = gain;
-  path_cost_ = path_cost;
 }
 
 Refiner::Refiner(

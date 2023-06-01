@@ -32,10 +32,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "Hypergraph.h"
-#include "Refiner.h"
-#include "Utilities.h"
-#include "utl/Logger.h"
+#include "GreedyRefine.h"
 
 // ------------------------------------------------------------------------------
 // K-way hyperedge greedy refinement
@@ -84,20 +81,16 @@ float GreedyRefine::Pass(
             if (a->GetGain() > b->GetGain()) {
               return true;
             }
-            if (a->GetGain() == b->GetGain()
-                && evaluator_->CalculateHyperedgeVertexWtSum(a->GetHyperedge(),
-                                                             hgraph)
-                       < evaluator_->CalculateHyperedgeVertexWtSum(
-                           b->GetHyperedge(), hgraph)) {
-              return true;  // break ties based on vertex weight summation of
-                            // the hyperedge
-            }
-            return false;
+            // break ties based on vertex weight summation of
+            // the hyperedge
+            return a->GetGain() == b->GetGain()
+                   && evaluator_->CalculateHyperedgeVertexWtSum(
+                          a->GetHyperedge(), hgraph)
+                          < evaluator_->CalculateHyperedgeVertexWtSum(
+                              b->GetHyperedge(), hgraph);
           };
 
-    // int best_candidate_block = -1;
-    auto best_gain_hyperedge = std::make_shared<HyperedgeGain>();
-    best_gain_hyperedge->SetGain(0.0f);  // we only accept positive gain
+    std::shared_ptr<HyperedgeGain> best_gain_hyperedge;
     for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
       if (CheckHyperedgeMoveLegality(hyperedge_id,
                                      to_pid,
@@ -109,19 +102,16 @@ float GreedyRefine::Pass(
           == true) {
         HyperedgeGainPtr gain_hyperedge = CalculateHyperedgeGain(
             hyperedge_id, to_pid, hgraph, solution, cur_paths_cost, net_degs);
-        if (best_gain_hyperedge->GetHyperedge() < 0
-            || CompareHyperedgeGain(gain_hyperedge, best_gain_hyperedge)
-                   == true) {
-          // best_candidate_block = to_pid;
+        if (!best_gain_hyperedge
+            || CompareHyperedgeGain(gain_hyperedge, best_gain_hyperedge)) {
           best_gain_hyperedge = gain_hyperedge;
         }
       }
     }
 
     // We only accept positive move
-    if (best_gain_hyperedge->GetDestinationPart() > -1
+    if (best_gain_hyperedge && best_gain_hyperedge->GetDestinationPart() > -1
         && best_gain_hyperedge->GetGain() >= 0.0f) {
-      // if (best_candidate_block > -1) {
       AcceptHyperedgeGain(best_gain_hyperedge,
                           hgraph,
                           total_gain,

@@ -36,9 +36,12 @@
 
 #include "Coarsener.h"
 #include "Evaluator.h"
+#include "GreedyRefine.h"
 #include "Hypergraph.h"
+#include "ILPRefine.h"
+#include "KWayFMRefine.h"
+#include "KWayPMRefine.h"
 #include "Partitioner.h"
-#include "Refiner.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
 
