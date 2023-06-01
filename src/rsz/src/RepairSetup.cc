@@ -372,12 +372,10 @@ RepairSetup::repairSetup(PathRef &path,
 
       bool do_gate_cloning = false;
       if (do_gate_cloning) {
-        logger_->setDebugLevel(RSZ, "gate_cloner", 2);
-        printf("Gate cloning start ....\n");
+        // logger_->setDebugLevel(RSZ, "gate_cloner", 2);
         rsz::GateCloner cloner(resizer_);
-        // Current problem. Infinite cloning. Never returns from this code.
-        cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
-        printf("Gate cloning end ....%d\n", resizer_->cloned_gate_count_);
+        cloned_gate_count_ += cloner.run(drvr_pin, drvr_path,
+                                                   drvr_index, &expanded);
       }
 
       if (!skip_pin_swap) {

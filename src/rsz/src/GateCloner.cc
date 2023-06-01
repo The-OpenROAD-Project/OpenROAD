@@ -753,8 +753,10 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
           resizer_->makeInstance(driver_cell, instance_name.c_str(),
                                  network_->topInstance(), tree->location(prev));
       resizer_->cloned_gate_count_++;
-      printf("XXXX %s(%s) %s %s\n", instance_name.c_str(), driver_cell->name(),
-             output_port->name(), network_->name(clone_net));
+      debugPrint(logger_, RSZ, "gate_cloner", 1,
+                 "Gate cloning {}({}) {} {}", instance_name.c_str(),
+                 driver_cell->name(), output_port->name(),
+                 network_->name(clone_net));
       sta_->connectPin(cloned_inst, output_port, clone_net);
 
       // TODO: Need to double check on this. But what we need to do here is to

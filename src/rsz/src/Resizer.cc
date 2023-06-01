@@ -2547,33 +2547,32 @@ Resizer::journalRestore(int &resize_count,
     swapPins(inst, port2, port1, false);
   }
   swapped_pins_.clear();
-  
-  /* TODO Undo cloned gates
-   * // TODO
-// This code is supposedly the restore. We are removing all the pins and
-// also deleting the instance. This should really go into the journaling
-// section of the resizer code
+
+  // Clear out cloned gates since there was no improvement in timing
   for (auto element : cloned_gates_) {
-    if (postslack <= preslack || new_ws < ws) {
-const Pin *clone_pin = outputPins(cloned_inst)[0];
-Net *clone_out_net = network_->net(clone_pin);
-std::vector<const Pin*> clone_sinks = fanoutPins(clone_out_net, true);
-disconnectAll(clone_out_net);
-for (auto& pin : clone_sinks) {
-Instance *inst      = network_->instance(pin);
-auto term_port = network_->port(pin);
-sta_->connectPin(inst, term_port, output_net);
-}
-sta_->deleteNet(clone_net);
-para_nets.erase(clone_net);
-sta_->deleteInstance(cloned_inst);
-for (auto& net : para_nets) {
-resizer_->estimateWireParasitic(net);
-}
-sta_->graphDelayCalc()->delaysInvalid();
-}
+    auto original_gate = element.first;
+    auto cloned_gate = element.second;
+
+    /*
+    const Pin* clone_pin = outputPins(cloned_inst)[0];
+    Net* clone_out_net = network_->net(clone_pin);
+    std::vector<const Pin*> clone_sinks = fanoutPins(clone_out_net, true);
+    disconnectAll(clone_out_net);
+    for (auto& pin : clone_sinks) {
+      Instance* inst = network_->instance(pin);
+      auto term_port = network_->port(pin);
+      sta_->connectPin(inst, term_port, output_net);
+    }
+    sta_->deleteNet(clone_net);
+    para_nets.erase(clone_net);
+    sta_->deleteInstance(cloned_inst);
+    for (auto& net : para_nets) {
+      resizer_->estimateWireParasitic(net);
+    }
+    sta_->graphDelayCalc()->delaysInvalid();
+    */
   }
-   */
+  cloned_gates_.clear();
 }
 
 ////////////////////////////////////////////////////////////////
