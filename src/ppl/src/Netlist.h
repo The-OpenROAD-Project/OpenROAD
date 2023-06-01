@@ -142,6 +142,8 @@ class IOPin
   bool isAssignedToSection() { return assigned_to_section_; }
   void setMirrored() { is_mirrored_ = true; }
   bool isMirrored() const { return is_mirrored_; }
+  bool inFallback() const { return in_fallback_; }
+  void setFallback() { in_fallback_ = true; }
 
  private:
   odb::dbBTerm* bterm_;
@@ -156,6 +158,7 @@ class IOPin
   bool in_group_;
   bool assigned_to_section_;
   bool is_mirrored_;
+  bool in_fallback_{false};
 };
 
 class Netlist

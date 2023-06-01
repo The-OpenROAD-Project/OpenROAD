@@ -52,4 +52,5 @@ record_tests {
   gcd
   ibex
   one_site_gap_disallow
+  multi_height_rows
 }

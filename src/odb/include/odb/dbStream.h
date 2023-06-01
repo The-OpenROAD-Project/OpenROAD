@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include <array>
+#include <fstream>
 #include <string>
 
 #include "ZException.h"
@@ -230,14 +231,6 @@ class dbOStream
     return *this;
   }
 
-  void markStream()
-  {
-    int marker = ftell(_f);
-    int magic = 0xCCCCCCCC;
-    *this << magic;
-    *this << marker;
-  }
-
   double lefarea(int value) { return ((double) value * _lef_area_factor); }
 
   double lefdist(int value) { return ((double) value * _lef_dist_factor); }
@@ -245,23 +238,13 @@ class dbOStream
 
 class dbIStream
 {
-  FILE* _f;
+  std::ifstream& _f;
   _dbDatabase* _db;
   double _lef_area_factor;
   double _lef_dist_factor;
 
-  void read_error()
-  {
-    if (feof(_f))
-      throw ZException(
-          "read failed on database stream (unexpected end-of-file encounted).");
-    else
-      throw ZException("read failed on database stream; system io error: (%s)",
-                       strerror(ferror(_f)));
-  }
-
  public:
-  dbIStream(_dbDatabase* db, FILE* f);
+  dbIStream(_dbDatabase* db, std::ifstream& f);
 
   _dbDatabase* getDatabase() { return _db; }
 
@@ -275,89 +258,67 @@ class dbIStream
 
   dbIStream& operator>>(char& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(unsigned char& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(short& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(unsigned short& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(int& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(uint64_t& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(unsigned int& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(int8_t& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(float& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(double& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
   dbIStream& operator>>(long double& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
@@ -370,9 +331,7 @@ class dbIStream
       c = NULL;
     else {
       c = (char*) malloc(l);
-      int n = fread(c, l, 1, _f);
-      if (n != 1)
-        read_error();
+      _f.read(reinterpret_cast<char*>(c), l);
     }
 
     return *this;
@@ -380,9 +339,7 @@ class dbIStream
 
   dbIStream& operator>>(dbObjectType& c)
   {
-    int n = fread(&c, sizeof(c), 1, _f);
-    if (n != 1)
-      read_error();
+    _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
@@ -434,17 +391,6 @@ class dbIStream
     s = std::string(tmp);
     free((void*) tmp);
     return *this;
-  }
-
-  void checkStream()
-  {
-    int marker = ftell(_f);
-    int magic = 0xCCCCCCCC;
-    int smarker;
-    int smagic;
-    *this >> smagic;
-    *this >> smarker;
-    ZASSERT((magic == smagic) && (marker == smarker));
   }
 
   double lefarea(int value) { return ((double) value * _lef_area_factor); }

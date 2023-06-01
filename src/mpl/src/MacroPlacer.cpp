@@ -411,7 +411,7 @@ void MacroPlacer::placeMacrosCornerMaxWl()
   solution_count_ = 0;
   bool found_best = false;
   int best_setIdx = 0;
-  double bestWwl = -DBL_MAX;
+  double bestWwl = std::numeric_limits<double>::lowest();
   for (auto& partition_set : allSets) {
     // skip for top partition
     if (partition_set.size() == 1) {

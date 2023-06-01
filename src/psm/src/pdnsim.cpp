@@ -112,6 +112,12 @@ void PDNSim::import_out_file(const std::string& out_file)
       utl::PSM, 2, "Output voltage file is specified as: {}.", out_file_);
 }
 
+void PDNSim::import_error_file(const std::string& error_file)
+{
+  error_file_ = error_file;
+  logger_->info(utl::PSM, 83, "Error file is specified as: {}.", error_file_);
+}
+
 void PDNSim::import_em_out_file(const std::string& em_out_file)
 {
   em_out_file_ = em_out_file;
@@ -140,6 +146,7 @@ void PDNSim::write_pg_spice()
                                               vsrc_loc_,
                                               power_net_,
                                               out_file_,
+                                              error_file_,
                                               em_out_file_,
                                               spice_out_file_,
                                               enable_em_,
@@ -170,6 +177,7 @@ void PDNSim::analyze_power_grid()
                                               vsrc_loc_,
                                               power_net_,
                                               out_file_,
+                                              error_file_,
                                               em_out_file_,
                                               spice_out_file_,
                                               enable_em_,
@@ -190,10 +198,10 @@ void PDNSim::analyze_power_grid()
                   irsolve_h->getWorstCaseVoltage());
   logger_->report(
       "Average IR drop  : {:3.2e} V",
-      abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage()));
-  logger_->report(
-      "Worstcase IR drop: {:3.2e} V",
-      abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getWorstCaseVoltage()));
+      std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage()));
+  logger_->report("Worstcase IR drop: {:3.2e} V",
+                  std::abs(irsolve_h->getSupplyVoltageSrc()
+                           - irsolve_h->getWorstCaseVoltage()));
   logger_->report("######################################");
   if (enable_em_) {
     logger_->report("########## EM analysis ###############");
@@ -218,7 +226,7 @@ void PDNSim::analyze_power_grid()
     // Absolute is needed for GND nets. In case of GND net voltage is higher
     // than supply.
     ir_drop[node_layer][point]
-        = abs(irsolve_h->getSupplyVoltageSrc() - voltage);
+        = std::abs(irsolve_h->getSupplyVoltageSrc() - voltage);
   }
   ir_drop_ = ir_drop;
   min_resolution_ = irsolve_h->getMinimumResolution();
@@ -237,6 +245,7 @@ bool PDNSim::check_connectivity()
                                               vsrc_loc_,
                                               power_net_,
                                               out_file_,
+                                              error_file_,
                                               em_out_file_,
                                               spice_out_file_,
                                               enable_em_,

@@ -32,9 +32,9 @@
 
 #pragma once
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
 
 namespace odb {
 
@@ -49,26 +49,28 @@ class Ath__array1D
   int _iterCnt;
 
  public:
-  Ath__array1D(int chunk = 0)
+  explicit Ath__array1D(int chunk = 0)
   {
     _chunk = chunk;
-    if (_chunk <= 0)
+    if (_chunk <= 0) {
       _chunk = 1024;
+    }
 
     _current = 0;
     if (chunk > 0) {
       _size = _chunk;
-      _array = (T*) realloc(NULL, _size * sizeof(T));
+      _array = (T*) realloc(nullptr, _size * sizeof(T));
     } else {
       _size = 0;
-      _array = NULL;
+      _array = nullptr;
     }
     _iterCnt = 0;
   }
   ~Ath__array1D()
   {
-    if (_array != NULL)
+    if (_array != nullptr) {
       ::free(_array);
+    }
   }
   int add(T t)
   {
@@ -83,13 +85,14 @@ class Ath__array1D
   }
   int reSize(int maxSize)
   {
-    if (maxSize < _size)
+    if (maxSize < _size) {
       return _size;
+    }
 
     _size = (maxSize / _chunk + 1) * _chunk;
     _array = (T*) realloc(_array, _size * sizeof(T));
 
-    if (_array == NULL) {
+    if (_array == nullptr) {
       fprintf(stderr, "Cannot allocate array of size %d\n", _size);
       assert(0);
     }
@@ -104,8 +107,9 @@ class Ath__array1D
   }
   T& geti(int i)
   {
-    if (i >= _size)
+    if (i >= _size) {
       reSize(i + 1);
+    }
 
     return _array[i];
   }
@@ -117,8 +121,9 @@ class Ath__array1D
   }
   void clear(T t)
   {
-    for (int ii = 0; ii < _size; ii++)
+    for (int ii = 0; ii < _size; ii++) {
       _array[ii] = t;
+    }
   }
   int findIndex(T t)
   {
@@ -133,28 +138,24 @@ class Ath__array1D
   int findNextBiggestIndex(T t, int start = 0)
   {
     for (int ii = start; ii < _current; ii++) {
-      if (t == _array[ii])
+      if (t == _array[ii]) {
         return ii;
-      if (t < _array[ii])
+      }
+      if (t < _array[ii]) {
         return ii > 0 ? ii - 1 : 0;
+      }
     }
     return _current;
   }
 
-  bool notEmpty()
-  {
-    if (_current > 0)
-      return true;
-    else
-      return false;
-  }
+  bool notEmpty() { return _current > 0; }
   bool getNext(T& a)
   {
     if (_iterCnt < _current) {
       a = _array[_iterCnt++];
       return true;
-    } else
-      return false;
+    }
+    return false;
   }
   T& pop()
   {
@@ -164,18 +165,19 @@ class Ath__array1D
 
     return _array[_current];
   }
-  unsigned int getSize(void) { return _size; }
+  unsigned int getSize() { return _size; }
   void resetIterator(unsigned int v = 0) { _iterCnt = v; }
   void resetCnt(unsigned int v = 0)
   {
     _current = v;
     _iterCnt = v;
   }
-  unsigned int getCnt(void) { return _current; }
+  unsigned int getCnt() { return _current; }
   void set(int ii, T t)
   {
-    if (ii >= _size)
+    if (ii >= _size) {
       reSize(ii + 1);
+    }
 
     _array[ii] = t;
   }

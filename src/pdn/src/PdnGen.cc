@@ -48,6 +48,7 @@
 #include "renderer.h"
 #include "rings.h"
 #include "straps.h"
+#include "techlayer.h"
 #include "utl/Logger.h"
 #include "via_repair.h"
 
@@ -56,9 +57,7 @@ namespace pdn {
 using utl::Logger;
 
 using odb::dbBlock;
-using odb::dbBox;
 using odb::dbInst;
-using odb::dbITerm;
 using odb::dbMaster;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -110,6 +109,9 @@ void PdnGen::buildGrids(bool trim)
 
   ShapeTreeMap block_obs;
   Grid::makeInitialObstructions(block, block_obs, insts_in_grids, logger_);
+  for (auto* grid : grids) {
+    grid->getGridLevelObstructions(block_obs);
+  }
 
   ShapeTreeMap all_shapes;
 
@@ -125,20 +127,14 @@ void PdnGen::buildGrids(bool trim)
   for (auto* grid : grids) {
     debugPrint(
         logger_, utl::PDN, "Make", 2, "Build start grid - {}", grid->getName());
-    ShapeTreeMap obs_local = block_obs;
-    for (auto* grid_other : grids) {
-      if (grid != grid_other) {
-        grid_other->getGridLevelObstructions(obs_local);
-        grid_other->getObstructions(obs_local);
-      }
-    }
-    grid->makeShapes(all_shapes, obs_local);
+    grid->makeShapes(all_shapes, block_obs);
     for (const auto& [layer, shapes] : grid->getShapes()) {
       auto& all_shapes_layer = all_shapes[layer];
       for (auto& shape : shapes) {
         all_shapes_layer.insert(shape);
       }
     }
+    grid->getObstructions(block_obs);
     debugPrint(
         logger_, utl::PDN, "Make", 2, "Build end grid - {}", grid->getName());
   }

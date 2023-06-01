@@ -132,6 +132,12 @@ set_slots_factor(float factor)
   getIOPlacer()->getParameters()->setSlotsFactor(factor);
 }
 
+void
+set_slots_per_section(int slots_per_section)
+{
+  getIOPlacer()->getParameters()->setSlotsPerSection(slots_per_section);
+}
+
 Edge
 get_edge(const char* edge)
 {

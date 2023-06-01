@@ -33,6 +33,7 @@
 #include "dbMaster.h"
 
 #include "db.h"
+#include "dbBlock.h"
 #include "dbBox.h"
 #include "dbBoxItr.h"
 #include "dbDatabase.h"
@@ -48,8 +49,11 @@
 #include "dbTargetItr.h"
 #include "dbTechLayerAntennaRule.h"
 #include "dbTransform.h"
+#include "utl/Logger.h"
 
 namespace odb {
+
+class _dbInstHdr;
 
 template class dbHashTable<_dbMTerm>;
 template class dbTable<_dbMaster>;
@@ -722,6 +726,27 @@ dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
   master->_id = db->_master_id++;
   lib->_master_hash.insert(master);
   return (dbMaster*) master;
+}
+
+void dbMaster::destroy(dbMaster* master)
+{
+  auto db = master->getDb();
+  _dbMaster* master_impl = (_dbMaster*) master;
+  if (db->getChip() && db->getChip()->getBlock()) {
+    _dbBlock* block = (_dbBlock*) db->getChip()->getBlock();
+    _dbInstHdr* inst_hdr = block->_inst_hdr_hash.find(master_impl->_id);
+    if (inst_hdr) {
+      master->getImpl()->getLogger()->error(
+          utl::ODB,
+          431,
+          "Can't delete master {} which still has instances",
+          master->getName());
+    }
+  }
+
+  _dbLib* lib = (_dbLib*) master->getLib();
+  lib->_master_hash.remove(master_impl);
+  lib->_master_tbl->destroy(master_impl);
 }
 
 dbMaster* dbMaster::getMaster(dbLib* lib_, uint dbid_)

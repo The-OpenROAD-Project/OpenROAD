@@ -41,7 +41,7 @@ static constexpr long long PIXFILL = 0xffffffffffffffffLL;
 static constexpr long long PIXMAX = 0x8000000000000000LL;
 static constexpr int PIXADJUST = 2;
 
-/* Values for the member variable _init
+/* Values for the member variable init_
  * INIT = created,
  * CONFIGURED = has reasonable values for width, height, slices, etc
  * ALLOCATED = memory has been allocated

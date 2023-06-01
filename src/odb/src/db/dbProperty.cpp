@@ -49,9 +49,12 @@ namespace odb {
 template class dbTable<_dbProperty>;
 
 _dbProperty::_dbProperty(_dbDatabase*, const _dbProperty& n)
-    : _flags(n._flags), _name(n._name), _next(n._next), _owner(n._owner)
+    : _flags(n._flags),
+      _name(n._name),
+      _next(n._next),
+      _owner(n._owner),
+      _value(n._value)
 {
-  memcpy(&_value, &n._value, sizeof(_value));
 }
 
 _dbProperty::_dbProperty(_dbDatabase*)
@@ -60,7 +63,6 @@ _dbProperty::_dbProperty(_dbDatabase*)
   _flags._spare_bits = 0;
   _name = 0;
   _owner = 0;
-  memset(&_value, 0, sizeof(_value));
 }
 
 _dbProperty::~_dbProperty()
@@ -86,30 +88,8 @@ bool _dbProperty::operator==(const _dbProperty& rhs) const
   if (_next != rhs._next)
     return false;
 
-  switch (_flags._type) {
-    case DB_STRING_PROP:
-      if (strcmp(_value._str_val, rhs._value._str_val) != 0)
-        return false;
-
-      break;
-
-    case DB_BOOL_PROP:
-      if (_value._bool_val != rhs._value._bool_val)
-        return false;
-
-      break;
-
-    case DB_INT_PROP:
-      if (_value._int_val != rhs._value._int_val)
-        return false;
-
-      break;
-
-    case DB_DOUBLE_PROP:
-      if (_value._double_val != rhs._value._double_val)
-        return false;
-
-      break;
+  if (_value != rhs._value) {
+    return false;
   }
 
   return true;
@@ -155,19 +135,21 @@ dbOStream& operator<<(dbOStream& stream, const _dbProperty& prop)
 
   switch (prop._flags._type) {
     case DB_BOOL_PROP:
-      stream << prop._value._bool_val;
+      // Older versions of the spec treated bools as uints
+      // retain backwards compatability
+      stream << static_cast<uint>(std::get<bool>(prop._value));
       break;
 
     case DB_INT_PROP:
-      stream << prop._value._int_val;
+      stream << std::get<int>(prop._value);
       break;
 
     case DB_STRING_PROP:
-      stream << prop._value._str_val;
+      stream << std::get<std::string>(prop._value).c_str();
       break;
 
     case DB_DOUBLE_PROP:
-      stream << prop._value._double_val;
+      stream << std::get<double>(prop._value);
       break;
   }
 
@@ -183,21 +165,36 @@ dbIStream& operator>>(dbIStream& stream, _dbProperty& prop)
   stream >> prop._owner;
 
   switch (prop._flags._type) {
-    case DB_BOOL_PROP:
-      stream >> prop._value._bool_val;
+    case DB_BOOL_PROP: {
+      // Older versions of the spec treated bools as uints
+      // retain backwards compatability
+      uint boolean;
+      stream >> boolean;
+      prop._value = static_cast<bool>(boolean);
       break;
-
-    case DB_INT_PROP:
-      stream >> prop._value._int_val;
+    }
+    case DB_INT_PROP: {
+      int integer;
+      stream >> integer;
+      prop._value = integer;
       break;
-
-    case DB_STRING_PROP:
-      stream >> prop._value._str_val;
+    }
+    case DB_STRING_PROP: {
+      char* char_string;
+      stream >> char_string;
+      prop._value = "";
+      if (char_string != nullptr) {
+        prop._value = std::string(char_string);
+        free(char_string);
+      }
       break;
-
-    case DB_DOUBLE_PROP:
-      stream >> prop._value._double_val;
+    }
+    case DB_DOUBLE_PROP: {
+      double double_property;
+      stream >> double_property;
+      prop._value = double_property;
       break;
+    }
   }
 
   return stream;
@@ -504,13 +501,13 @@ dbSet<dbProperty>::iterator dbProperty::destroy(dbSet<dbProperty>::iterator itr)
 bool dbBoolProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return prop->_value._bool_val;
+  return std::get<bool>(prop->_value);
 }
 
 void dbBoolProperty::setValue(bool value)
 {
   _dbProperty* prop = (_dbProperty*) this;
-  prop->_value._bool_val = value;
+  prop->_value = value;
 }
 
 dbBoolProperty* dbBoolProperty::create(dbObject* object,
@@ -521,7 +518,7 @@ dbBoolProperty* dbBoolProperty::create(dbObject* object,
     return NULL;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_BOOL_PROP);
-  prop->_value._bool_val = value;
+  prop->_value = value;
   return (dbBoolProperty*) prop;
 }
 
@@ -538,19 +535,14 @@ dbBoolProperty* dbBoolProperty::find(dbObject* object, const char* name)
 std::string dbStringProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return prop->_value._str_val;
+  return std::get<std::string>(prop->_value);
 }
 
 void dbStringProperty::setValue(const char* value)
 {
   _dbProperty* prop = (_dbProperty*) this;
   assert(value);
-
-  if (prop->_value._str_val)
-    free((void*) prop->_value._str_val);
-
-  prop->_value._str_val = strdup(value);
-  ZALLOCATED(prop->_value._str_val);
+  prop->_value = std::string(value);
 }
 
 dbStringProperty* dbStringProperty::create(dbObject* object,
@@ -559,16 +551,12 @@ dbStringProperty* dbStringProperty::create(dbObject* object,
 {
   _dbProperty* prop = (_dbProperty*) find(object, name);
   if (prop) {
-    std::string val = std::string(prop->_value._str_val) + " " + value;
-    free(prop->_value._str_val);
-    prop->_value._str_val = strdup(val.c_str());
-    ZALLOCATED(prop->_value._str_val);
+    prop->_value = std::get<std::string>(prop->_value) + " " + value;
     return (dbStringProperty*) prop;
   }
 
   prop = _dbProperty::createProperty(object, name, DB_STRING_PROP);
-  prop->_value._str_val = strdup(value);
-  ZALLOCATED(prop->_value._str_val);
+  prop->_value = std::string(value);
   return (dbStringProperty*) prop;
 }
 
@@ -585,13 +573,13 @@ dbStringProperty* dbStringProperty::find(dbObject* object, const char* name)
 int dbIntProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return prop->_value._int_val;
+  return std::get<int>(prop->_value);
 }
 
 void dbIntProperty::setValue(int value)
 {
   _dbProperty* prop = (_dbProperty*) this;
-  prop->_value._int_val = value;
+  prop->_value = value;
 }
 
 dbIntProperty* dbIntProperty::create(dbObject* object,
@@ -602,7 +590,7 @@ dbIntProperty* dbIntProperty::create(dbObject* object,
     return NULL;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_INT_PROP);
-  prop->_value._int_val = value;
+  prop->_value = value;
   return (dbIntProperty*) prop;
 }
 
@@ -618,13 +606,13 @@ dbIntProperty* dbIntProperty::find(dbObject* object, const char* name)
 double dbDoubleProperty::getValue()
 {
   _dbProperty* prop = (_dbProperty*) this;
-  return prop->_value._double_val;
+  return std::get<double>(prop->_value);
 }
 
 void dbDoubleProperty::setValue(double value)
 {
   _dbProperty* prop = (_dbProperty*) this;
-  prop->_value._double_val = value;
+  prop->_value = value;
 }
 
 dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
@@ -635,7 +623,7 @@ dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
     return NULL;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_DOUBLE_PROP);
-  prop->_value._double_val = value;
+  prop->_value = value;
   return (dbDoubleProperty*) prop;
 }
 

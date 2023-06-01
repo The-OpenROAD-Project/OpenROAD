@@ -58,6 +58,7 @@ class Interval
   int getBegin() const { return begin_; }
   int getEnd() const { return end_; }
   int getLayer() const { return layer_; }
+  bool operator==(const Interval& interval) const;
 
  private:
   Edge edge_;
@@ -82,6 +83,19 @@ struct TopLayerGrid
   int ury() { return region.yMax(); }
 };
 
+// Slot: an on-track position in the die boundary where a pin
+// can be placed
+struct Slot
+{
+  bool blocked;
+  bool used;
+  odb::Point pos;
+  int layer;
+  Edge edge;
+
+  bool isAvailable() const { return (!blocked && !used); }
+};
+
 // Section: a region in the die boundary that contains a set
 // of slots. By default, each section has 200 slots
 struct Section
@@ -95,6 +109,8 @@ struct Section
   int used_slots;
   int num_slots;
   Edge edge;
+
+  int getMaxContiguousSlots(const std::vector<Slot>& slots);
 };
 
 struct Constraint
@@ -104,11 +120,15 @@ struct Constraint
   {
     box = odb::Rect(-1, -1, -1, -1);
     pins_per_slots = 0;
+    first_slot = -1;
+    last_slot = -1;
   }
   Constraint(const PinSet& pins, Direction dir, odb::Rect b)
       : pin_list(pins), direction(dir), interval(Edge::invalid, -1, -1), box(b)
   {
     pins_per_slots = 0;
+    first_slot = -1;
+    last_slot = -1;
   }
 
   PinSet pin_list;
@@ -117,17 +137,8 @@ struct Constraint
   odb::Rect box;
   std::vector<Section> sections;
   float pins_per_slots;
-};
-
-// Slot: an on-track position in the die boundary where a pin
-// can be placed
-struct Slot
-{
-  bool blocked;
-  bool used;
-  odb::Point pos;
-  int layer;
-  Edge edge;
+  int first_slot = 0;
+  int last_slot = 0;
 };
 
 template <typename T>

@@ -25,6 +25,8 @@ add_executable(TestGCellGrid TestGCellGrid.cpp)
 add_executable(TestJournal TestJournal.cpp)
 add_executable(TestAccessPoint TestAccessPoint.cpp)
 add_executable(TestGuide TestGuide.cpp)
+add_executable(TestNetTrack TestNetTrack.cpp)
+add_executable(TestMaster TestMaster.cpp)
 
 target_link_libraries(TestDbWire odb gtest gtest_main)
 target_link_libraries(TestCallBacks ${TEST_LIBS})
@@ -36,6 +38,8 @@ target_link_libraries(TestGCellGrid ${TEST_LIBS})
 target_link_libraries(TestJournal ${TEST_LIBS})
 target_link_libraries(TestAccessPoint ${TEST_LIBS})
 target_link_libraries(TestGuide ${TEST_LIBS})
+target_link_libraries(TestNetTrack ${TEST_LIBS})
+target_link_libraries(TestMaster ${TEST_LIBS})
 
 # FAILING TARGETS
 # add_test(NAME TestLef58Properties COMMAND TestLef58Properties)
@@ -51,6 +55,8 @@ add_test(NAME odb.TestModule COMMAND TestModule)
 add_test(NAME odb.TestGroup COMMAND TestGroup)
 add_test(NAME odb.TestGCellGrid COMMAND TestGCellGrid)
 add_test(NAME odb.TestGuide COMMAND TestGuide)
+add_test(NAME odb.TestNetTrack COMMAND TestNetTrack)
+add_test(NAME odb.TestMaster COMMAND TestMaster)
 
 add_dependencies(build_and_test 
         TestCallBacks 
@@ -59,5 +65,7 @@ add_dependencies(build_and_test
         TestGroup 
         TestGCellGrid 
         TestGuide
+        TestNetTrack
+        TestMaster
         TestDbWire
 )

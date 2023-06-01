@@ -38,7 +38,6 @@
 #include "db.h"
 #include "dbShape.h"
 #include "extRCap.h"
-#include "name.h"
 #include "odb.h"
 #include "parse.h"
 
@@ -50,9 +49,10 @@ namespace rcx {
 
 using odb::Ath__array1D;
 using odb::Ath__gridTable;
-using odb::Ath__nameTable;
 using odb::uint;
 using utl::Logger;
+
+class NameTable;
 
 class extRcTripplet
 {
@@ -96,16 +96,6 @@ class extSpef
   bool readNodeCoords(uint cpos);
   void checkCCterm();
   int findNodeIndexFromNodeCoords(uint targetCapNodeId);
-  void initSearchForNets();
-  uint addNetShapesOnSearch(uint netId);
-  void searchDealloc();
-  void getAnchorCoords(odb::dbNet* net,
-                       uint shapeId,
-                       int* x1,
-                       int* y1,
-                       int* x2,
-                       int* y2,
-                       odb::dbTechLayer** layer);
   uint writeNodeCoords(uint netId, odb::dbSet<odb::dbRSeg>& rSet);
 
   void setupMappingForWrite(uint btermCnt = 0, uint itermCnt = 0);
@@ -113,7 +103,6 @@ class extSpef
   void preserveFlag(bool v);
   void setCornerCnt(uint n);
 
-  void incr_wRun() { _wRun++; };
   void incr_rRun() { _rRun++; };
   void writeCNodeNumber();
   odb::dbBlock* getBlock() { return _block; }
@@ -317,9 +306,6 @@ class extSpef
   uint writeCouplingCaps(std::vector<odb::dbCCSeg*>& vec_cc, uint netId);
   uint writeCouplingCaps(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
   uint writeCouplingCapsNoSort(odb::dbSet<odb::dbCCSeg>& capSet, uint netId);
-  bool newCouplingCap(char* nodeWord1, char* nodeword2, char* capWord);
-  uint getCouplingCapId(uint ccNode1, uint ccNode2);
-  void addCouplingCapId(uint ccId);
   void setSpefFlag(bool v);
   void setExtIds(odb::dbNet* net);
   void setExtIds();
@@ -437,7 +423,6 @@ class extSpef
 
   uint _tnetCnt;
 
-  uint _wRun;
   bool _wOnlyClock;
   bool _wConn;
   bool _wCap;
@@ -460,10 +445,9 @@ class extSpef
   char _nDvdName[2000];
   bool _inputNet;
 
-  Ath__nameTable* _notFoundInst;
-  Ath__nameTable* _nodeHashTable;
+  NameTable* _notFoundInst;
+  NameTable* _nodeHashTable;
   uint _tmpCapId;
-  Ath__nameTable* _node2nodeHashTable;
   char _tmpBuff1[1024];
   char _tmpBuff2[1024];
 
@@ -526,7 +510,6 @@ class extSpef
   Ath__array1D<int>* _x2CoordTable;
   Ath__array1D<int>* _y2CoordTable;
   Ath__array1D<uint>* _levelTable;
-  Ath__gridTable* _search;
   Ath__array1D<uint>* _idTable;
   double _lengthUnit;
   double _nodeCoordFactor;

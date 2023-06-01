@@ -269,7 +269,7 @@ class FlexDRWorker
         historyMarkers_(std::vector<std::set<FlexMazeIdx>>(3)),
         nets_(),
         owner2nets_(),
-        gridGraph_(design->getTech(), this),
+        gridGraph_(design->getTech(), logger, this),
         markers_(),
         rq_(this),
         gcWorker_(nullptr),

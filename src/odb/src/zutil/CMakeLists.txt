@@ -1,8 +1,4 @@
 add_library(zutil
-    misc_functions.cpp
-    files.cpp
-    name.cpp
-    mem.cpp
     parse.cpp
     poly_decomp.cpp
     util.cpp

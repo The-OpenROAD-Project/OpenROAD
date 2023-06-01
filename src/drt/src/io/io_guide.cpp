@@ -110,7 +110,7 @@ void io::Parser::patchGuides(frNet* net,
       pinBBox.yMin() + 1,
       pinBBox.xMax() - 1,
       pinBBox.yMax()
-          - 1);  // pins tangent to gcell arent considered as part of them
+          - 1);  // pins tangent to gcell aren't considered as part of them
   // set pinBBox to gCell coords
   Point llGcell = design_->getTopBlock()->getGCellIdx(pinBBox.ll());
   Point urGcell = design_->getTopBlock()->getGCellIdx(pinBBox.ur());
@@ -607,7 +607,7 @@ void io::Parser::genGuides_gCell2TermMap(
           }
         }
       } else {
-        logger_->error(DRT, 232, "genGuides_gCell2TermMap unsupoprted pinfig.");
+        logger_->error(DRT, 232, "genGuides_gCell2TermMap unsupported pinfig.");
       }
     }
   }
@@ -1069,7 +1069,7 @@ void io::Parser::genGuides_final(
       }
     }
   }
-  // guideIdx2Pins enables fiding from guide to pin
+  // guideIdx2Pins enables finding from guide to pin
   // adjVisited tells guide to write back
   for (int i = 0; i < gCnt; i++) {
     if (!adjVisited[i]) {

@@ -81,9 +81,9 @@ unsigned LevelBalancer::computeMaxTreeDepth(TreeBuilder* parent)
 }
 
 void LevelBalancer::addBufferLevels(TreeBuilder* builder,
-                                    std::vector<ClockInst*> cluster,
+                                    const std::vector<ClockInst*> cluster,
                                     Clock::SubNet* driverNet,
-                                    unsigned bufLevels,
+                                    const unsigned bufLevels,
                                     const std::string& nameSuffix)
 {
   Clock::SubNet* prevLevelSubNet = driverNet;
@@ -128,8 +128,8 @@ void LevelBalancer::addBufferLevels(TreeBuilder* builder,
 }
 
 void LevelBalancer::fixTreeLevels(TreeBuilder* builder,
-                                  unsigned parentDepth,
-                                  unsigned maxTreeDepth)
+                                  const unsigned parentDepth,
+                                  const unsigned maxTreeDepth)
 {
   const unsigned currLevel = builder->getTreeBufLevels() + parentDepth;
   if (currLevel >= maxTreeDepth) {

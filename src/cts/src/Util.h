@@ -132,7 +132,7 @@ class Box
     return out;
   }
 
- protected:
+ private:
   T xMin_;
   T yMin_;
   T width_;

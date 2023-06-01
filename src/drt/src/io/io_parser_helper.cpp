@@ -268,7 +268,7 @@ void io::Parser::initCutLayerWidth()
       continue;
     }
     auto layer = design_->getTech()->getLayer(layerNum);
-    // update cut layer width is not specifed in LEF
+    // update cut layer width is not specified in LEF
     if (layer->getWidth() == 0) {
       // first check default via size, if it is square, use that size
       auto viaDef = layer->getDefaultViaDef();
