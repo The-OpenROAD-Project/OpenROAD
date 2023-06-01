@@ -176,18 +176,15 @@ SteinerTree::createSteinerPtToPinMap()
   unsigned int pin_count = pins_.size();
 
   point_pin_array_.resize(pin_count);
-  // TODO FIX
-  return;
   for (unsigned int i = 0; i < pin_count; i++) {
     stt::Branch& branch_pt = tree_.branch[i];
     odb::Point pt(branch_pt.x, branch_pt.y);
-    std::vector<const Pin*>& pin_locations = loc_pin_map_[pt];
+    std::vector<const Pin*> pin_locations = loc_pin_map_[pt];
     auto pin = pin_locations.back();
-    //TODO  Most likely the problem is with this pop_back call
     pin_locations.pop_back();
     point_pin_array_[i] = pin;
   }
-  // TODO  populateSides();
+  populateSides();
 }
 
 int
