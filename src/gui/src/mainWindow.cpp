@@ -1257,19 +1257,11 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
             && (inst_term_dir == odb::dbIoType::OUTPUT
                 || inst_term_dir == odb::dbIoType::INOUT)) {
           auto net_obj = inst_term->getNet();
-          gui::BufferTree buffer_tree_obj = gui::BufferTree(net_obj);
-
-          for (auto Bterm : buffer_tree_obj.getBTerms()) {
-            connected_objects.insert(Gui::get()->makeSelected(Bterm));
+          if (!net_obj) {
+            continue;
           }
-
-          for (auto net : buffer_tree_obj.getNets()) {
-            connected_objects.insert(Gui::get()->makeSelected(net));
-          }
-
-          for (auto inst : buffer_tree_obj.getInsts()) {
-            connected_objects.insert(Gui::get()->makeSelected(inst));
-          }
+          connected_objects.insert(
+              Gui::get()->makeSelected(gui::BufferTree(net_obj)));
         }
       }
     }
