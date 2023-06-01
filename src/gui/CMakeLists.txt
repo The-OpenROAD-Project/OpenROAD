@@ -54,6 +54,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     src/gui.cpp
     src/search.cpp 
     src/findDialog.cpp
+    src/gotoDialog.cpp
     src/inspector.cpp
     src/dbDescriptors.cpp
     src/highlightGroupDialog.cpp

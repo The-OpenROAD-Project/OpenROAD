@@ -32,12 +32,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include <thread>
+#include "KWayFMRefine.h"
 
-#include "Hypergraph.h"
-#include "Refiner.h"
-#include "Utilities.h"
-#include "utl/Logger.h"
+#include <thread>
 
 // Implement the direct k-way FM refinement
 namespace par {

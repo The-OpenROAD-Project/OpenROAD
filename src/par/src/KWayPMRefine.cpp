@@ -32,12 +32,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
+#include "KWayPMRefine.h"
+
 #include <thread>
 
-#include "Hypergraph.h"
-#include "Refiner.h"
-#include "Utilities.h"
-#include "utl/Logger.h"
 // ------------------------------------------------------------------------------
 // K-way pair-wise FM refinement
 // ------------------------------------------------------------------------------
