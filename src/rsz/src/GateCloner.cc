@@ -435,9 +435,7 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
   if (tree == nullptr) {
     return;
   }
-  // TODO fix
-  // tree->populateSides(); // needed to build up the data structures
-
+  tree->populateSides(); // needed to build up the data structures
   LibertyCell *drvr_cell = network_->libertyCell(inst);
   float total_net_load = resizer_->totalLoad(tree);
   float output_target_load = resizer_->findTargetLoad(drvr_cell);
@@ -508,9 +506,7 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
              cellName);
   output_target_load = (*(resizer_->target_load_map_))[half_drvr];
   c_limit = cap_factor * output_target_load;
-
-  // TODO FIX
-  // topDownClone(tree, tree->top(), tree->drvrPt(), c_limit, half_drvr);
+  topDownClone(tree, tree->top(), tree->drvrPt(), c_limit, half_drvr);
 }
 
 /* bool
@@ -661,8 +657,7 @@ void GateCloner::topDownClone(SteinerTree *tree, SteinerPt current, SteinerPt pr
     double wire_cap = resizer_->wireSignalCapacitance(corner);
     cap_per_micron = std::max(cap_per_micron, wire_cap);
   }
-  // TODO FIX all this
-  /*
+
   float src_wire_len =   resizer_->dbuToMeters(tree->distance(drvr, current));
   float src_wire_cap = src_wire_len * cap_per_micron;
   if (src_wire_cap > c_limit) {
@@ -692,13 +687,10 @@ void GateCloner::topDownClone(SteinerTree *tree, SteinerPt current, SteinerPt pr
       topDownClone(tree, right, current, c_limit, driver_cell);
     }
   }
-   */
 }
 
 void GateCloner::topDownConnect(SteinerTree *tree, SteinerPt k, Net* net)
 {
-  // TODO fix
-  /*
   if (k == SteinerNull) {
     return;
   }
@@ -711,13 +703,12 @@ void GateCloner::topDownConnect(SteinerTree *tree, SteinerPt k, Net* net)
     topDownConnect(tree, tree->left(k), net);
     topDownConnect(tree, tree->right(k), net);
   }
-   */
 }
 void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt prev,
                                LibertyCell* driver_cell)
 {
   SteinerPt drvr = tree->drvrPt();
-  Pin *output_pin = nullptr;// TODO FIX tree->pin(drvr);
+  const Pin *output_pin = tree->pin(drvr);
   auto inst = network_->instance(output_pin);
   Net* output_net = network_->net(output_pin);
 
