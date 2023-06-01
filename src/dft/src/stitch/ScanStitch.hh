@@ -36,8 +36,8 @@
 #include <vector>
 
 #include "ScanChain.hh"
-#include "odb/db.h"
 #include "db_sta/dbSta.hh"
+#include "odb/db.h"
 
 namespace dft {
 
