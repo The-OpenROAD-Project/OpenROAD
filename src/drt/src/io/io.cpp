@@ -146,7 +146,40 @@ void io::Parser::setInsts(odb::dbBlock* block)
     tmpInst->setOrient(inst->getOrient());
     int numInstTerms = 0;
     tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
+    dbTransform xform = tmpInst->getUpdatedXform();
+    auto grid = tech_->getManufacturingGrid();
     for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
+      if (master->getMasterType().isBlock()) {
+        for (auto& pin : uTerm->getPins()) {
+          for (auto& uFig : pin->getFigs()) {
+            if (uFig->typeId() == frcRect) {
+              auto shape = uFig.get();
+              Rect box = shape->getBBox();
+              xform.apply(box);
+              if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
+                  || box.yMax() % grid) {
+                logger_->error(DRT,
+                               416,
+                               "Term {} of {} contains offgrid pin shape",
+                               uTerm->getName(),
+                               tmpInst->getName());
+              }
+            } else if (uFig->typeId() == frcPolygon) {
+              auto polygon = static_cast<frPolygon*>(uFig.get());
+              for (Point pt : polygon->getPoints()) {
+                xform.apply(pt);
+                if (pt.getX() % grid || pt.getY() % grid) {
+                  logger_->error(DRT,
+                                 417,
+                                 "Term {} of {} contains offgrid pin shape",
+                                 uTerm->getName(),
+                                 tmpInst->getName());
+                }
+              }
+            }
+          }
+        }
+      }
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
       instTerm->setId(numTerms_++);
@@ -2097,7 +2130,7 @@ void io::Parser::setLayers(odb::dbTech* db_tech)
   }
 }
 
-void io::Parser::setMacros(odb::dbDatabase* db)
+void io::Parser::setMasters(odb::dbDatabase* db)
 {
   const frLayerNum numLayers = tech_->getLayers().size();
   std::vector<RTree<frMPin*>> pin_shapes;
@@ -2477,7 +2510,7 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   setLayers(tech);
   setTechVias(db->getTech());
   setTechViaRules(db->getTech());
-  setMacros(db);
+  setMasters(db);
   setNDRs(db);
   initDefaultVias();
 

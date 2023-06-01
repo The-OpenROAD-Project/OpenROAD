@@ -78,7 +78,7 @@ class Parser
   }
 
  private:
-  void setMacros(odb::dbDatabase*);
+  void setMasters(odb::dbDatabase*);
   void setTechVias(odb::dbTech*);
   void setTechViaRules(odb::dbTech*);
   void setDieArea(odb::dbBlock*);
