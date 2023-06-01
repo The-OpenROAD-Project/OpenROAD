@@ -97,6 +97,7 @@ class AbstractGrouteRenderer;
 class AbstractFastRouteRenderer;
 class GlobalRouter;
 class AbstractRoutingCongestionDataSource;
+class GRouteDbCbk;
 
 struct RegionAdjustment
 {
@@ -188,7 +189,9 @@ class GlobalRouter
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net);
-  void globalRoute(bool save_guides = false);
+  void globalRoute(bool save_guides = false,
+                   bool start_incremental = false,
+                   bool end_incremental = false);
   void saveCongestion();
   NetRouteMap& getRoutes() { return routes_; }
   bool haveRoutes();
@@ -274,6 +277,7 @@ class GlobalRouter
   void setCapacities(int min_routing_layer, int max_routing_layer);
   void initNets(std::vector<Net*>& nets);
   bool makeFastrouteNet(Net* net);
+  bool checkPinPositions(Net* net, std::vector<odb::Point>& last_pos);
   void getNetLayerRange(Net* net, int& min_layer, int& max_layer);
   void computeGridAdjustments(int min_routing_layer, int max_routing_layer);
   void computeTrackAdjustments(int min_routing_layer, int max_routing_layer);
@@ -345,7 +349,7 @@ class GlobalRouter
   // incremental funcions
   void updateDirtyRoutes();
   void mergeResults(NetRouteMap& routes);
-  void updateDirtyNets();
+  void updateDirtyNets(std::vector<Net*>& dirty_nets);
   void updateDbCongestion();
 
   // db functions
@@ -437,6 +441,9 @@ class GlobalRouter
 
   // variables congestion report file
   const char* congestion_file_name_;
+
+  // incremental grt
+  GRouteDbCbk* grouter_cbk_;
 
   friend class IncrementalGRoute;
   friend class GRouteDbCbk;

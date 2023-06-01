@@ -15,10 +15,10 @@ worst slack -3.23
 worst slack 0.22
 Placement Analysis
 ---------------------------------
-total displacement         14.0 u
-average displacement        0.7 u
-max displacement            5.1 u
-original HPWL            6888.6 u
+total displacement          9.6 u
+average displacement        0.5 u
+max displacement            4.1 u
+original HPWL            6886.7 u
 legalized HPWL           6886.8 u
 delta HPWL                    0 %
 

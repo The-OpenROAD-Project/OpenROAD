@@ -42,6 +42,7 @@
 #include "db_sta/dbSta.hh"
 #include "sta/UnorderedSet.hh"
 #include "sta/Path.hh"
+#include "dpl/Opendp.h"
 
 namespace grt {
 class GlobalRouter;
@@ -148,6 +149,7 @@ public:
             dbSta* sta,
             SteinerTreeBuilder* stt_builder,
             GlobalRouter* global_router,
+            dpl::Opendp* opendp,
             std::unique_ptr<AbstractSteinerRenderer> steiner_renderer);
   void setLayerRC(dbTechLayer *layer,
                   const Corner *corner,
@@ -621,6 +623,8 @@ protected:
   InstanceSet inserted_buffer_set_;
   Map<Instance *, std::tuple<LibertyPort *, LibertyPort *>> swapped_pins_;
   Map<Instance *, Instance *> cloned_gates_;
+
+  dpl::Opendp* opendp_;
 
   // "factor debatable"
   static constexpr float tgt_slew_load_cap_factor = 10.0;

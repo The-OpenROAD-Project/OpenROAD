@@ -168,7 +168,8 @@ Resizer::Resizer()
       cloned_gate_count_(0),
       buffer_moved_into_core_(false),
       max_wire_length_(0),
-      worst_slack_nets_percent_(10)
+      worst_slack_nets_percent_(10),
+      opendp_(nullptr)
 {
 }
 
@@ -184,8 +185,10 @@ void Resizer::init(Logger* logger,
                    dbSta* sta,
                    SteinerTreeBuilder* stt_builder,
                    GlobalRouter* global_router,
+                   dpl::Opendp* opendp,
                    std::unique_ptr<AbstractSteinerRenderer> steiner_renderer)
 {
+  opendp_ = opendp;
   logger_ = logger;
   db_ = db;
   block_ = nullptr;
@@ -915,6 +918,13 @@ Resizer::replaceCell(Instance *inst,
 {
   const char *replacement_name = replacement->name();
   dbMaster *replacement_master = db_->findMaster(replacement_name);
+
+  // Legalize the position of the instance in case it leaves the die
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_->legalCellPos(db_network_->staToDb(inst));
+  } else if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    logger_->error(RSZ, 91, "Opendp was not initialized before resized an instance");
+  }
   if (replacement_master) {
     dbInst *dinst = db_network_->staToDb(inst);
     dbMaster *master = dinst->getMaster();
@@ -2246,6 +2256,9 @@ Resizer::repairDesign(double max_wire_length,
                       double cap_margin)
 {
   resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_->initMacrosAndGrid();
+  }
   repair_design_->repairDesign(max_wire_length, slew_margin, cap_margin);
 }
 
@@ -2389,6 +2402,9 @@ Resizer::repairSetup(double setup_margin,
                      bool skip_pin_swap)
 {
   resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_->initMacrosAndGrid();
+  }
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
                              max_passes, skip_pin_swap);
 }
@@ -2418,6 +2434,9 @@ Resizer::repairHold(double setup_margin,
                     int max_passes)
 {
   resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_->initMacrosAndGrid();
+  }
   repair_hold_->repairHold(setup_margin, hold_margin,
                            allow_setup_violations,
                            max_buffer_percent, max_passes);
@@ -2580,6 +2599,12 @@ Resizer::makeInstance(LibertyCell *cell,
   dbInst *db_inst = db_network_->staToDb(inst);
   db_inst->setSourceType(odb::dbSourceType::TIMING);
   setLocation(db_inst, loc);
+  // Legalize the position of the instance in case it leaves the die
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_->legalCellPos(db_inst);
+  } else if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    logger_->error(RSZ, 90, "Opendp was not initialized before inserting a new instance");
+  }
   designAreaIncr(area(db_inst->getMaster()));
   return inst;
 }
