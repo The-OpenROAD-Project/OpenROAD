@@ -38,7 +38,6 @@
 
 #include <algorithm>
 #include <unordered_set>
-#include <iostream>
 
 #include "DataType.h"
 #include "gui/gui.h"
@@ -722,6 +721,7 @@ NetRouteMap FastRouteCore::getPartialRoutes()
             lastL_v = 2;
           }
         } else {
+          lastL_h = gridsL[0];
           lastL_v = gridsL[0];
         }
         int second_x = tile_size_ * (gridsX[1] + 0.5) + x_corner_;
@@ -1082,21 +1082,6 @@ NetRouteMap FastRouteCore::run(MakeWireParasitics * builder)
                       slack_th);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
-
-        // debug mode Rectilinear Steiner Tree before overflow iterations
-        if (debug_->isOn_ && debug_->rectilinearSTree_) {
-          for (int netID = 0; netID < netCount(); netID++) {
-            if (nets_[netID]->getDbNet() == debug_->net_
-                && !nets_[netID]->isRouted()) {
-              std::cout<<"update slack: "<<update_slack_<<"\n";
-              std::cout<<"Net "<<nets_[netID]->getName()<<" slack: "<<nets_[netID]->getSlack()<<"\n";
-              printTree2D(netID);
-              std::cout<<"Num terminals: "<<sttrees_[netID].num_terminals<<"\n";
-              StTreeVisualization(sttrees_[netID], nets_[netID], false);
-            }
-          }
-        }
-
         str_accu(12);
         L = 1;
         stopDEC = false;
@@ -1452,7 +1437,7 @@ void FastRouteRenderer::drawLineObject(int x1,
       painter.setPen(painter.cyan);
       painter.setBrush(painter.cyan);
     }
-    painter.setPenWidth(700);
+    painter.setPenWidth(1000);
     painter.drawLine(x1, y1, x2, y2);
   }
 }
@@ -1493,7 +1478,7 @@ void FastRouteRenderer::drawTreeEdges(gui::Painter& painter)
 }
 void FastRouteRenderer::drawCircleObjects(gui::Painter& painter)
 {
-  painter.setPenWidth(700);
+  painter.setPenWidth(1000);
   for (auto i = 0; i < pinX_.size(); i++) {
     const int xreal = tile_size_ * (pinX_[i] + 0.5) + x_corner_;
     const int yreal = tile_size_ * (pinY_[i] + 0.5) + y_corner_;
@@ -1510,7 +1495,7 @@ void FastRouteRenderer::drawObjects(gui::Painter& painter)
   if (treeStructure_ == TreeStructure::steinerTreeByStt) {
     painter.setPen(painter.white);
     painter.setBrush(painter.white);
-    painter.setPenWidth(700);
+    painter.setPenWidth(1000);
 
     const int deg = stree_.deg;
     for (int i = 0; i < stree_.branchCount()/*2 * deg - 2*/; i++) {
@@ -1723,6 +1708,7 @@ void FrNet::reset(odb::dbNet* db_net,
 {
   db_net_ = db_net;
   is_routed_ = false;
+  is_critical_= false;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
   edge_cost_ = edge_cost;

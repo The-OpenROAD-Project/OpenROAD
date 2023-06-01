@@ -1387,7 +1387,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
   for (int nidRPC = 0; nidRPC < netCount(); nidRPC++) {
     const int netID = ordering ? tree_order_cong_[nidRPC].treeIndex : nidRPC;
-    bool critical = false;
+
     if (nets_[netID]->isRouted())
       continue;
 
@@ -1435,14 +1435,15 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       enlarge_ = std::min(origENG, (iter / 6 + 3) * treeedge->route.routelen);
 
+      int decrease = 0;
+
       if(nets_[netID]->isCritical()) {
-        int decrease = std::min((iter / 4) * 5, enlarge_/2);
-        enlarge_ = enlarge_ - decrease;
+        decrease = std::min((iter / 6) * 5, enlarge_/2);
       }
-      const int regionX1 = std::max(xmin - enlarge_, 0);
-      const int regionX2 = std::min(xmax + enlarge_, x_grid_ - 1);
-      const int regionY1 = std::max(ymin - enlarge_, 0);
-      const int regionY2 = std::min(ymax + enlarge_, y_grid_ - 1);
+      const int regionX1 = std::max(xmin - enlarge_ + decrease, 0);
+      const int regionX2 = std::min(xmax + enlarge_ - decrease, x_grid_ - 1);
+      const int regionY1 = std::max(ymin - enlarge_ + decrease, 0);
+      const int regionY2 = std::min(ymax + enlarge_ - decrease, y_grid_ - 1);
 
       // initialize d1[][] and d2[][] as BIG_INT
       for (int i = regionY1; i <= regionY2; i++) {
@@ -1501,7 +1502,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = h_edges_[curY][curX - 1].usage_red()
                            + L * h_edges_[curY][(curX - 1)].last_usage;
 
-          if (pos1 < h_cost_table_.size() && !critical)
+          if (pos1 < h_cost_table_.size())
             cost1 = h_cost_table_.at(pos1);
           else
             cost1 = getCost(
@@ -1514,7 +1515,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = h_edges_[curY][curX].usage_red()
                                + L * h_edges_[curY][curX].last_usage;
 
-              if (pos2 < h_cost_table_.size() && !critical)
+              if (pos2 < h_cost_table_.size())
                 cost2 = h_cost_table_.at(pos2);
               else
                 cost2 = getCost(pos2,
@@ -1563,7 +1564,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = h_edges_[curY][curX].usage_red()
                            + L * h_edges_[curY][curX].last_usage;
 
-          if (pos1 < h_cost_table_.size() && !critical)
+          if (pos1 < h_cost_table_.size())
             cost1 = h_cost_table_.at(pos1);
           else
             cost1 = getCost(
@@ -1576,7 +1577,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = h_edges_[curY][curX - 1].usage_red()
                                + L * h_edges_[curY][curX - 1].last_usage;
 
-              if (pos2 < h_cost_table_.size() && !critical)
+              if (pos2 < h_cost_table_.size())
                 cost2 = h_cost_table_.at(pos2);
               else
                 cost2 = getCost(pos2,
@@ -1624,7 +1625,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = v_edges_[curY - 1][curX].usage_red()
                            + L * v_edges_[curY - 1][curX].last_usage;
 
-          if (pos1 < v_cost_table_.size() && !critical)
+          if (pos1 < v_cost_table_.size())
             cost1 = v_cost_table_.at(pos1);
           else
             cost1 = getCost(
@@ -1637,7 +1638,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = v_edges_[curY][curX].usage_red()
                                + L * v_edges_[curY][curX].last_usage;
 
-              if (pos2 < v_cost_table_.size() && !critical)
+              if (pos2 < v_cost_table_.size())
                 cost2 = v_cost_table_.at(pos2);
               else
                 cost2 = getCost(pos2,
@@ -1684,7 +1685,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
           const int pos1 = v_edges_[curY][curX].usage_red()
                            + L * v_edges_[curY][curX].last_usage;
 
-          if (pos1 < v_cost_table_.size() && !critical)
+          if (pos1 < v_cost_table_.size())
             cost1 = v_cost_table_.at(pos1);
           else
             cost1 = getCost(
@@ -1697,7 +1698,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
               const int pos2 = v_edges_[curY - 1][curX].usage_red()
                                + L * v_edges_[curY - 1][curX].last_usage;
 
-              if (pos2 < v_cost_table_.size() && !critical)
+              if (pos2 < v_cost_table_.size())
                 cost2 = v_cost_table_.at(pos2);
               else
                 cost2 = getCost(pos2,

@@ -121,7 +121,7 @@ struct FrNet  // A Net is a set of connected MazePoints
   std::vector<int> pin_y_;  // y coordinates of pins
   std::vector<int> pin_l_;  // l coordinates of pins
   bool is_clock_;           // flag that indicates if net is a clock net
-  bool is_critical_;         // flakg that indicates if the net is critial
+  bool is_critical_;
   int driver_idx_;
   int edge_cost_;
   int min_layer_;

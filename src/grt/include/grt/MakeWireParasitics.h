@@ -35,7 +35,7 @@
 
 #pragma once
 
-//#include "FastRoute.h"
+#include "FastRoute.h"
 #include "Grid.h"
 #include "Net.h"
 #include "db_sta/dbSta.hh"
