@@ -403,9 +403,25 @@ namespace eval pad {
     }
   }
 
-  proc connect_iterm { inst term net } {
-    [[[ord::get_db_block] findInst $inst] findITerm $term] connect [[ord::get_db_block] findNet $net]
-  }
+  proc connect_iterm { inst_name iterm_name net_name } {
+    set block [ord::get_db_block]
+    set inst [$block findInst $inst_name]
+    if { $inst == "NULL" } {
+      utl::error PAD 109 "Unable to find instance: $inst_name"
+    }
+
+    set iterm [$inst findITerm $iterm_name]
+    if { $iterm == "NULL" } {
+      utl::error PAD 110 "Unable to find iterm: $iterm_name of $inst_name"
+    }
+
+    set net [$block findNet $net_name]
+    if { $net == "NULL" } {
+      utl::error PAD 111 "Unable to find net: $net_name"
+    }
+
+    $iterm connect $net
+}
 
   proc convert_tcl {} {
     set cmds []

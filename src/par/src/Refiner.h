@@ -64,25 +64,12 @@ using HyperedgeGainPtr = std::shared_ptr<HyperedgeGain>;
 using GainBucket = std::shared_ptr<PriorityQueue>;
 using GainBuckets = std::vector<GainBucket>;
 
-class KWayFMRefine;
-using KWayFMRefinerPtr = std::shared_ptr<KWayFMRefine>;
-
-class KWayPMRefine;
-using KWayPMRefinerPtr = std::shared_ptr<KWayPMRefine>;
-
-class GreedyRefine;
-using GreedyRefinerPtr = std::shared_ptr<GreedyRefine>;
-
-class IlpRefine;
-using IlpRefinerPtr = std::shared_ptr<IlpRefine>;
-
 // Hyperedge Gain.
 // Compared to VertexGain, there is no source_part_
 // Because this hyperedge spans multiple blocks
 class HyperedgeGain
 {
  public:
-  HyperedgeGain() = default;
   HyperedgeGain(int hyperedge_id,
                 int destination_part,
                 float gain,
@@ -98,18 +85,18 @@ class HyperedgeGain
   const std::map<int, float>& GetPathCost() const { return path_cost_; }
 
  private:
-  int hyperedge_id_ = -1;      // hyperedge id
-  int destination_part_ = -1;  // the destination block id
-  float gain_ = 0.0;           // the initialization should be 0.0
-  std::map<int, float>
-      path_cost_;  // the updated DELTA path cost after moving vertex
-                   // the path_cost will change because we will dynamically
-                   // update the the weight of the path based on the number of
-                   // the cut on the path
+  const int hyperedge_id_ = -1;
+  const int destination_part_ = -1;  // the destination block id
+  float gain_ = 0.0;
+
+  // The updated DELTA path cost after moving vertex the path_cost
+  // will change because we will dynamically update the the weight of
+  // the path based on the number of the cut on the path
+  const std::map<int, float> path_cost_;
 };
 
 // ------------------------------------------------------------------------
-// The base class for refinement Refiner
+// The abstract base class for refinement.
 // It implements the most basic functions for refinement and provides
 // the basic parameters.  Note that the Refiner is an operator class
 // It should not modify the hypergraph itself
@@ -295,223 +282,6 @@ class Refiner
 
   utl::Logger* logger_ = nullptr;
   EvaluatorPtr evaluator_ = nullptr;
-};
-
-// --------------------------------------------------------------------------
-// FM-based direct k-way refinement
-// --------------------------------------------------------------------------
-class KWayFMRefine : public Refiner
-{
- public:
-  // We have one more parameter related to "corking effect"
-  KWayFMRefine(
-      int num_parts,
-      int refiner_iters,
-      float path_wt_factor,     // weight for cutting a critical timing path
-      float snaking_wt_factor,  // weight for snaking timing paths
-      int max_move,  // the maximum number of vertices or hyperedges can
-                     // be moved in each pass
-      int total_corking_passes,
-      EvaluatorPtr evaluator,
-      utl::Logger* logger);
-
-  // Mark these two functions as public.
-  // Because they will be called by multi-threading
-  // Initialize the single bucket
-  void InitializeSingleGainBucket(
-      GainBuckets& buckets,
-      int to_pid,  // move the vertex into this block (block_id = to_pid)
-      const HGraphPtr& hgraph,
-      const std::vector<int>& boundary_vertices,
-      const Matrix<int>& net_degs,
-      const std::vector<float>& cur_paths_cost,
-      const Partitions& solution) const;
-
-  // After moving one vertex, the gain of its neighbors will also need
-  // to be updated. This function is used to update the gain of neighbor
-  // vertices notices that the neighbors has been calculated based on solution,
-  // visited status, boundary vertices status
-  void UpdateSingleGainBucket(int part,
-                              GainBuckets& buckets,
-                              const HGraphPtr& hgraph,
-                              const std::vector<int>& neighbors,
-                              const Matrix<int>& net_degs,
-                              const std::vector<float>& cur_paths_cost,
-                              const Partitions& solution) const;
-
- protected:
-  // The main function for the FM-based refinement
-  // In each pass, we only move the boundary vertices
-  float Pass(const HGraphPtr& hgraph,
-             const Matrix<float>& upper_block_balance,
-             const Matrix<float>& lower_block_balance,
-             Matrix<float>& block_balance,        // the current block balance
-             Matrix<int>& net_degs,               // the current net degree
-             std::vector<float>& cur_paths_cost,  // the current path cost
-             Partitions& solution,
-             std::vector<bool>& visited_vertices_flag) override;
-
-  // gain bucket related functions
-  // Initialize the gain buckets in parallel
-  void InitializeGainBucketsKWay(GainBuckets& buckets,
-                                 const HGraphPtr& hgraph,
-                                 const std::vector<int>& boundary_vertices,
-                                 const Matrix<int>& net_degs,
-                                 const std::vector<float>& cur_paths_cost,
-                                 const Partitions& solution) const;
-
-  // Determine which vertex gain to be picked
-  std::shared_ptr<VertexGain> PickMoveKWay(
-      GainBuckets& buckets,
-      const HGraphPtr& hgraph,
-      const Matrix<float>& curr_block_balance,
-      const Matrix<float>& upper_block_balance,
-      const Matrix<float>& lower_block_balance) const;
-
-  // move one vertex based on the calculated gain_cell
-  void AcceptKWayMove(const std::shared_ptr<VertexGain>& gain_cell,
-                      GainBuckets& gain_buckets,
-                      std::vector<GainCell>& moves_trace,
-                      float& total_delta_gain,
-                      std::vector<bool>& visited_vertices_flag,
-                      const HGraphPtr& hgraph,
-                      Matrix<float>& curr_block_balance,
-                      Matrix<int>& net_degs,
-                      std::vector<float>& cur_paths_cost,
-                      std::vector<int>& solution) const;
-
-  // Remove vertex from a heap
-  // Remove the vertex id related vertex gain
-  void HeapEleDeletion(int vertex_id, int part, GainBuckets& buckets) const;
-
-  // variables
-  int total_corking_passes_ = 25;  // the maximum level of traversing the
-                                   // buckets to solve the "corking effect"
-};
-
-// ------------------------------------------------------------------------------
-// K-way pair-wise FM refinement
-// ------------------------------------------------------------------------------
-// The motivation is that FM can achieve better performance for 2-way
-// partitioning than k-way partitioning. So we decompose the k-way partitioning
-// into multiple 2-way partitioning through maximum matching. In the first
-// iteration, the maximum matching is based on connectivity between each blocks.
-// In the remaing iterations, the maximum matching is based on the delta gain
-// for each block. Based on the paper of pair-wise PM, we can not keep using
-// connectivity based maximum matching.  Otherwise, we may easily got stuck in
-// local minimum. We use multiple multiple member functions of KWayFMRefine
-// especially the functions related to gain buckets
-class KWayPMRefine : public KWayFMRefine
-{
- public:
-  using KWayFMRefine::KWayFMRefine;
-
- private:
-  // In each pass, we only move the boundary vertices
-  // here we pass block_balance and net_degrees as reference
-  // because we only move a few vertices during each pass
-  // i.e., block_balance and net_degs will not change too much
-  // so we precompute the block_balance and net_degs
-  // the return value is the gain improvement
-  float Pass(const HGraphPtr& hgraph,
-             const Matrix<float>& upper_block_balance,
-             const Matrix<float>& lower_block_balance,
-             Matrix<float>& block_balance,        // the current block balance
-             Matrix<int>& net_degs,               // the current net degree
-             std::vector<float>& cur_paths_cost,  // the current path cost
-             Partitions& solution,
-             std::vector<bool>& visited_vertices_flag) override;
-
-  // The function to calculate the matching_scores
-  void CalculateMaximumMatch(
-      std::vector<std::pair<int, int>>& maximum_matches,
-      const std::map<std::pair<int, int>, float>& matching_scores) const;
-
-  // Perform 2-way FM between blocks in partition pair
-  float PerformPairFM(
-      const HGraphPtr& hgraph,
-      const Matrix<float>& upper_block_balance,
-      const Matrix<float>& lower_block_balance,
-      Matrix<float>& block_balance,    // the current block balance
-      Matrix<int>& net_degs,           // the current net degree
-      std::vector<float>& paths_cost,  // the current path cost
-      Partitions& solution,
-      GainBuckets& buckets,
-      std::vector<bool>& visited_vertices_flag,
-      const std::pair<int, int>& partition_pair) const;
-
-  // gain bucket related functions
-  // Initialize the gain buckets in parallel
-  void InitializeGainBucketsPM(GainBuckets& buckets,
-                               const HGraphPtr& hgraph,
-                               const std::vector<int>& boundary_vertices,
-                               const Matrix<int>& net_degs,
-                               const std::vector<float>& cur_paths_cost,
-                               const Partitions& solution,
-                               const std::pair<int, int>& partition_pair) const;
-
-  // variables
-  // the connectivity between different blocks.
-  // (block_a, block_b, score) where block_a < block_b
-  std::map<std::pair<int, int>, float> pre_matching_connectivity_;
-};
-
-// ------------------------------------------------------------------------------
-// K-way hyperedge greedy refinement
-// Basically during hyperedge greedy refinement, we try to move the straddle
-// hyperedge into some block, to minimize the cost.
-// Moving the entire hyperedge can help to escape the local minimum caused
-// by moving vertex one by one
-// ------------------------------------------------------------------------------
-class GreedyRefine : public Refiner
-{
- public:
-  using Refiner::Refiner;
-
- private:
-  // In each pass, we only move the boundary vertices
-  // here we pass block_balance and net_degrees as reference
-  // because we only move a few vertices during each pass
-  // i.e., block_balance and net_degs will not change too much
-  // so we precompute the block_balance and net_degs
-  // the return value is the gain improvement
-  float Pass(const HGraphPtr& hgraph,
-             const Matrix<float>& upper_block_balance,
-             const Matrix<float>& lower_block_balance,
-             Matrix<float>& block_balance,        // the current block balance
-             Matrix<int>& net_degs,               // the current net degree
-             std::vector<float>& cur_paths_cost,  // the current path cost
-             Partitions& solution,
-             std::vector<bool>& visited_vertices_flag) override;
-};
-
-// ------------------------------------------------------------------------------
-// K-way ILP Based Refinement
-// ILP Based Refinement is usually very slow and cannot handle path related
-// cost.  Please try to avoid using ILP-Based Refinement for K-way partitioning
-// and path-related partitioning.  But ILP Based Refinement is good for 2=way
-// min-cut problem
-// --------------------------------------------------------------------------------
-class IlpRefine : public Refiner
-{
- public:
-  using Refiner::Refiner;
-
- private:
-  // In each pass, we only move the boundary vertices
-  // here we pass block_balance and net_degrees as reference
-  // because we only move a few vertices during each pass
-  // i.e., block_balance and net_degs will not change too much
-  // so we precompute the block_balance and net_degs
-  // the return value is the gain improvement
-  float Pass(const HGraphPtr& hgraph,
-             const Matrix<float>& upper_block_balance,
-             const Matrix<float>& lower_block_balance,
-             Matrix<float>& block_balance,        // the current block balance
-             Matrix<int>& net_degs,               // the current net degree
-             std::vector<float>& cur_paths_cost,  // the current path cost
-             Partitions& solution,
-             std::vector<bool>& visited_vertices_flag) override;
 };
 
 }  // namespace par

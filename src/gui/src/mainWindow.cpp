@@ -108,7 +108,8 @@ MainWindow::MainWindow(QWidget* parent)
 #ifdef ENABLE_CHARTS
       charts_widget_(new ChartsWidget(this)),
 #endif
-      find_dialog_(new FindObjectDialog(this))
+      find_dialog_(new FindObjectDialog(this)),
+      goto_dialog_(new GotoLocationDialog(this, viewer_))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -539,6 +540,10 @@ void MainWindow::createActions()
 
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
+
+  goto_position_ = new QAction("Go to position", this);
+  goto_position_->setShortcut(QString("Shift+G"));
+
   zoom_in_ = new QAction("Zoom in", this);
   zoom_in_->setShortcut(QString("Z"));
 
@@ -579,6 +584,7 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
+  connect(goto_position_, SIGNAL(triggered()), this, SLOT(showGotoDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
   connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
   connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
@@ -605,6 +611,10 @@ void MainWindow::setUseDBU(bool use_dbu)
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setUseDBU(use_dbu);
   }
+  auto* block = getBlock();
+  if (block != nullptr) {
+    emit displayUnitsChanged(block->getDbUnitsPerMicron(), use_dbu);
+  }
 }
 
 void MainWindow::showApplicationFont()
@@ -629,6 +639,7 @@ void MainWindow::createMenus()
   view_menu_ = menuBar()->addMenu("&View");
   view_menu_->addAction(fit_);
   view_menu_->addAction(find_);
+  view_menu_->addAction(goto_position_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
 
@@ -1160,6 +1171,14 @@ void MainWindow::showFindDialog()
     return;
   }
   find_dialog_->exec();
+}
+
+void MainWindow::showGotoDialog()
+{
+  if (getBlock() == nullptr)
+    return;
+
+  goto_dialog_->show_init();
 }
 
 void MainWindow::showHelp()

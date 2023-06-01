@@ -53,7 +53,6 @@
 #include <QTranslator>
 #include <boost/geometry.hpp>
 #include <deque>
-#include <iostream>
 #include <limits>
 #include <tuple>
 #include <vector>
@@ -705,7 +704,6 @@ void LayoutViewer::centerAt(const odb::Point& focus)
 
   const int x_val = setScrollBar(scroller_->horizontalScrollBar(), pt.x());
   const int y_val = setScrollBar(scroller_->verticalScrollBar(), pt.y());
-
   // set the center now, since center is modified by the updateCenter
   // we only care of the focus point
   center_ = focus;

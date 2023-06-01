@@ -175,6 +175,11 @@ class LayoutViewer : public QWidget
   virtual void mouseMoveEvent(QMouseEvent* event) override;
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
 
+  odb::Rect getVisibleBounds()
+  {
+    return screenToDBU(visibleRegion().boundingRect());
+  }
+
  signals:
   // indicates the current location of the mouse
   void location(int x, int y);
@@ -233,6 +238,8 @@ class LayoutViewer : public QWidget
 
   // signals that the cache should be flushed and a full repaint should occur.
   void fullRepaint();
+
+  odb::Point getVisibleCenter();
 
   void selectHighlightConnectedInst(bool select_flag);
   void selectHighlightConnectedNets(bool select_flag, bool output, bool input);
@@ -354,8 +361,6 @@ class LayoutViewer : public QWidget
 
   bool hasDesign() const;
 
-  odb::Point getVisibleCenter();
-
   int fineViewableResolution();
   int nominalViewableResolution();
   int coarseViewableResolution();
@@ -424,6 +429,7 @@ class LayoutViewer : public QWidget
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
   Gui* gui_;
+
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
 

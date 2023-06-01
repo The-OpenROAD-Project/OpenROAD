@@ -1,9 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2019, The Regents of the University of California
-// All rights reserved.
-//
+///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
+//
+// Copyright (c) 2023, The Regents of the University of California
+// All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
@@ -30,58 +29,28 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////////
 
-#include "rsz/MakeResizer.hh"
+#pragma once
 
-#include "SteinerRenderer.h"
-#include "gui/gui.h"
-#include "ord/OpenRoad.hh"
-#include "rsz/Resizer.hh"
-#include "sta/StaMain.hh"
+#include <QDialog>
 
-extern "C" {
-extern int Rsz_Init(Tcl_Interp* interp);
-}
+#include "layoutViewer.h"
+#include "ui_gotoDlg.h"
 
-namespace sta {
-extern const char* rsz_tcl_inits[];
-}
-
-namespace ord {
-
-rsz::Resizer *
-makeResizer()
+namespace gui {
+class GotoLocationDialog : public QDialog, public Ui::GotoLocDialog
 {
-  return new rsz::Resizer;
-}
+  Q_OBJECT
+ private:
+  LayoutViewer* viewer_;
 
-void
-deleteResizer(rsz::Resizer *resizer)
-{
-  delete resizer;
-}
-
-void
-initResizer(OpenRoad *openroad)
-{
-  std::unique_ptr<rsz::AbstractSteinerRenderer> steiner_renderer;
-  if (gui::Gui::enabled()) {
-    steiner_renderer = std::make_unique<rsz::SteinerRenderer>();
-  }
-  Tcl_Interp* interp = openroad->tclInterp();
-  openroad->getResizer()->init(openroad->getLogger(),
-                               openroad->getDb(),
-                               openroad->getSta(),
-                               openroad->getSteinerTreeBuilder(),
-                               openroad->getGlobalRouter(),
-                               openroad->getOpendp(),
-                               std::move(steiner_renderer));
-  // Define swig TCL commands.
-  Rsz_Init(interp);
-  // Eval encoded sta TCL sources.
-  sta::evalTclInit(interp, sta::rsz_tcl_inits);
-}
-
-}  // namespace ord
+ public:
+  GotoLocationDialog(QWidget* parent = nullptr,
+                     LayoutViewer* viewer_ = nullptr);
+ public slots:
+  void updateLocation(QLineEdit* xEdit, QLineEdit* yEdit);
+  void updateUnits(int dbu_per_micron, bool useDBU);
+  void show_init();
+  void accept() override;
+};
+}  // namespace gui

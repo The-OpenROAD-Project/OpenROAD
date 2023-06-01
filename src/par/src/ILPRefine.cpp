@@ -32,10 +32,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "Hypergraph.h"
-#include "Refiner.h"
-#include "Utilities.h"
-#include "utl/Logger.h"
+#include "ILPRefine.h"
 
 // ------------------------------------------------------------------------------
 // ILP-based refinement
