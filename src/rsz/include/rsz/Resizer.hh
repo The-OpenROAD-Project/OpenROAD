@@ -473,6 +473,9 @@ protected:
                            const Net *net);
   void estimateWireParasiticSteiner(const Pin *drvr_pin,
                                     const Net *net);
+  float totalLoad(SteinerTree *tree) const;
+  float subtreeLoad(SteinerTree *tree, float cap_per_micron,
+                    SteinerPt pt) const;
   void makePadParasitic(const Net *net);
   bool isPadNet(const Net *net) const;
   bool isPadPin(const Pin *pin) const;
