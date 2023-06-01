@@ -478,9 +478,6 @@ Resizer::totalLoad(SteinerTree *tree) const
   if (!tree)
     return 0;
 
-  return 0;
-  // TODO this needs to be fixed
-  /*
   SteinerPt top_pt = tree->top();
   SteinerPt drvr_pt = tree->drvrPt();
   float load = 0.0, max_load = 0.0;
@@ -499,15 +496,11 @@ Resizer::totalLoad(SteinerTree *tree) const
     max_load = std::max(max_load, load);
   }
   return max_load;
-   */
 }
 
 float
 Resizer::subtreeLoad(SteinerTree *tree, float cap_per_micron, SteinerPt pt) const
 {
-  return 0;
-  // TODO this needs to be fixed
-  /*
   if (pt == SteinerNull) {
     return 0;
   }
@@ -535,7 +528,6 @@ Resizer::subtreeLoad(SteinerTree *tree, float cap_per_micron, SteinerPt pt) cons
     }
     return left_cap + right_cap;
   }
-   */
 }
 
 void
