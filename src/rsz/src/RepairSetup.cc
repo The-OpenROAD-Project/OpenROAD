@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
+#include "GateCloner.hh"
 
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -367,6 +368,16 @@ RepairSetup::repairSetup(PathRef &path,
       if (upsizeDrvr(drvr_path, drvr_index, &expanded, false)) {
         changed = true;
         break;
+      }
+
+      bool do_gate_cloning = false;
+      if (do_gate_cloning) {
+        logger_->setDebugLevel(RSZ, "gate_cloner", 2);
+        printf("Gate cloning start ....\n");
+        rsz::GateCloner cloner(resizer_);
+        // Current problem. Infinite cloning. Never returns from this code.
+        cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
+        printf("Gate cloning end ....%d\n", resizer_->cloned_gate_count_);
       }
 
       if (!skip_pin_swap) {
