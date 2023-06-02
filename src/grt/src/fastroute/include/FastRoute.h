@@ -89,10 +89,10 @@ struct DebugSetting
 
 using stt::Tree;
 
-typedef std::unordered_map<std::pair<int, int>,
-                           std::unordered_set<odb::dbNet*>,
-                           boost::hash<std::pair<int, int>>>
-    NetsPerCongestedArea;
+using NetsPerCongestedArea
+    = std::unordered_map<std::pair<int, int>,
+                         std::unordered_set<odb::dbNet*>,
+                         boost::hash<std::pair<int, int>>>;
 
 class FastRouteCore
 {
