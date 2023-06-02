@@ -160,5 +160,5 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     export CMAKE_PREFIX_PATH=$(brew --prefix or-tools)
 fi
 
-eval cmake "${cmakeOptions}" -B "${buildDir}" .
+eval cmake "${cmakeOptions} -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined'" -B "${buildDir}" .
 eval time cmake --build "${buildDir}" -j "${numThreads}"
