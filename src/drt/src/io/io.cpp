@@ -598,9 +598,9 @@ void io::Parser::setNets(odb::dbBlock* block)
     frCoord endX = -1;
     frCoord endY = -1;
     frCoord endExt = -1;
-    string prevLayer;
-    string lower_layer;
-    string top_layer;
+    odb::dbTechLayer* prevLayer = nullptr;
+    odb::dbTechLayer* lower_layer = nullptr;
+    odb::dbTechLayer* top_layer = nullptr;
     bool hasRect = false;
     frCoord left = -1;
     frCoord bottom = -1;
@@ -639,7 +639,8 @@ void io::Parser::setNets(odb::dbBlock* block)
             case odb::dbWireDecoder::JUNCTION:
             case odb::dbWireDecoder::SHORT:
             case odb::dbWireDecoder::VWIRE:
-              layerName = decoder.getLayer()->getName();
+              prevLayer = decoder.getLayer();
+              layerName = prevLayer->getName();
               if (tech_->name2layer.find(layerName) == tech_->name2layer.end())
                 logger_->error(DRT, 107, "Unsupported layer {}.", layerName);
               break;
@@ -664,9 +665,9 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::VIA:
               viaName = string(decoder.getVia()->getName());
-              lower_layer = decoder.getVia()->getBottomLayer()->getName();
-              top_layer = decoder.getVia()->getTopLayer()->getName();
-              layerName = prevLayer == top_layer ? lower_layer : top_layer;
+              lower_layer = decoder.getVia()->getBottomLayer();
+              top_layer = decoder.getVia()->getTopLayer();
+              layerName = prevLayer == top_layer ? lower_layer->getName() : top_layer->getName();
               if (!hasBeginPoint) {
                 beginX = nextX;
                 beginY = nextY;
@@ -676,9 +677,9 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::TECH_VIA:
               viaName = string(decoder.getTechVia()->getName());
-              lower_layer = decoder.getTechVia()->getBottomLayer()->getName();
-              top_layer = decoder.getTechVia()->getTopLayer()->getName();
-              layerName = prevLayer == top_layer ? lower_layer : top_layer;
+              lower_layer = decoder.getTechVia()->getBottomLayer();
+              top_layer = decoder.getTechVia()->getTopLayer();
+              layerName = prevLayer == top_layer ? lower_layer->getName() : top_layer->getName();
               if (!hasBeginPoint) {
                 beginX = nextX;
                 beginY = nextY;
@@ -709,7 +710,6 @@ void io::Parser::setNets(odb::dbBlock* block)
               nextX = beginX;
               nextY = beginY;
             }
-            prevLayer = layerName;
             endpath = true;
           }
         } while (!endpath);
