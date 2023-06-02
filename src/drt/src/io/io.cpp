@@ -667,7 +667,8 @@ void io::Parser::setNets(odb::dbBlock* block)
               viaName = string(decoder.getVia()->getName());
               lower_layer = decoder.getVia()->getBottomLayer();
               top_layer = decoder.getVia()->getTopLayer();
-              layerName = prevLayer == top_layer ? lower_layer->getName() : top_layer->getName();
+              layerName = prevLayer == top_layer ? lower_layer->getName()
+                                                 : top_layer->getName();
               if (!hasBeginPoint) {
                 beginX = nextX;
                 beginY = nextY;
@@ -679,7 +680,8 @@ void io::Parser::setNets(odb::dbBlock* block)
               viaName = string(decoder.getTechVia()->getName());
               lower_layer = decoder.getTechVia()->getBottomLayer();
               top_layer = decoder.getTechVia()->getTopLayer();
-              layerName = prevLayer == top_layer ? lower_layer->getName() : top_layer->getName();
+              layerName = prevLayer == top_layer ? lower_layer->getName()
+                                                 : top_layer->getName();
               if (!hasBeginPoint) {
                 beginX = nextX;
                 beginY = nextY;
