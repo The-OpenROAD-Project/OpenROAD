@@ -724,7 +724,7 @@ NetRouteMap FastRouteCore::run()
   int minoflrnd = 0;
   int bwcnt = 0;
 
-  // Init some variables when use debug mode
+  // Init grid variables when debug mode is actived
   if (debug_->isOn()) {
     fastrouteRender()->setGridVariables(tile_size_, x_corner_, y_corner_);
   }

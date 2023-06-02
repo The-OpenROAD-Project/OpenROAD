@@ -19,7 +19,9 @@ FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech)
   gui::Gui::get()->registerRenderer(this);
 }
 
-void FastRouteRenderer::setGridVariables(int tile_size, int x_corner, int y_corner)
+void FastRouteRenderer::setGridVariables(int tile_size,
+                                         int x_corner,
+                                         int y_corner)
 {
   tile_size_ = tile_size;
   x_corner_ = x_corner;
