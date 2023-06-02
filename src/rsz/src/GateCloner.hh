@@ -96,7 +96,6 @@ class GateCloner
   std::vector<PathPoint> worstSlackPath(const Pin* term,
                                         bool trim = false) const;
   float required(Pin* term, bool is_rise, PathAnalysisPt* path_ap) const;
-  int disconnectAll(Net* net) const;
   bool violatesMaximumCapacitance(Pin* term, float limit_scale_factor = 1.0);
   bool violatesMaximumTransition(Pin* term, float limit_scale_factor = 1.0);
   std::vector<const Pin*> pins(Net* net) const;

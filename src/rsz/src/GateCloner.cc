@@ -560,17 +560,6 @@ GateCloner::worstSlack() const
   return ws;
 }
 
-int
-GateCloner::disconnectAll(Net* net) const
-{
-  int count = 0;
-  for (auto& pin : pins(net)) {
-    sta_->disconnectPin(const_cast<Pin*>(pin));
-    count++;
-  }
-  return count;
-}
-
 std::vector<const Pin*>
 GateCloner::filterPins(std::vector<const Pin*>& terms,
                        sta::PortDirection *direction,
@@ -740,7 +729,11 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
 
   int fanout_count = fanoutPins(network_->net(output_pin)).size();
   if (fanout_count == 0) {
-    disconnectAll(clone_net);
+    // Disconnect all the pins
+    for (auto& pin : pins(clone_net)) {
+      sta_->disconnectPin(const_cast<Pin*>(pin));
+    }
+    // now connect them to the right net.
     topDownConnect(tree, current, output_net);
     sta_->deleteNet(clone_net);
     para_nets.erase(clone_net);
@@ -780,7 +773,9 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
       clone_count_++;
     }
     else {
-      disconnectAll(clone_net);
+      for (auto& pin : pins(clone_net)) {
+        sta_->disconnectPin(const_cast<Pin*>(pin));
+      }
       topDownConnect(tree, current, output_net);
       sta_->deleteNet(clone_net);
       para_nets.erase(clone_net);

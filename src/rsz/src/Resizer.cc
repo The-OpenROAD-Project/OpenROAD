@@ -2550,27 +2550,23 @@ Resizer::journalRestore(int &resize_count,
 
   // Clear out cloned gates since there was no improvement in timing
   for (auto element : cloned_gates_) {
-    auto original_gate = element.first;
-    auto cloned_gate = element.second;
-
-    /*
-    const Pin* clone_pin = outputPins(cloned_inst)[0];
+    auto original_inst = element.first;
+    auto cloned_inst = element.second;
+    const Pin* clone_pin = nullptr; // TODO outputPins(cloned_inst)[0];
     Net* clone_out_net = network_->net(clone_pin);
-    std::vector<const Pin*> clone_sinks = fanoutPins(clone_out_net, true);
-    disconnectAll(clone_out_net);
+    std::vector<const Pin*> clone_sinks; // TODO fanoutPins(clone_out_net, true);
+    // disconnect all the pins
+    for (auto& pin : clone_sinks) {
+      sta_->disconnectPin(const_cast<Pin*>(pin));
+    }
     for (auto& pin : clone_sinks) {
       Instance* inst = network_->instance(pin);
       auto term_port = network_->port(pin);
-      sta_->connectPin(inst, term_port, output_net);
+      // TODO: sta_->connectPin(inst, term_port, output_net);
     }
-    sta_->deleteNet(clone_net);
-    para_nets.erase(clone_net);
+    sta_->deleteNet(clone_out_net);
     sta_->deleteInstance(cloned_inst);
-    for (auto& net : para_nets) {
-      resizer_->estimateWireParasitic(net);
-    }
     sta_->graphDelayCalc()->delaysInvalid();
-    */
   }
   cloned_gates_.clear();
 }
