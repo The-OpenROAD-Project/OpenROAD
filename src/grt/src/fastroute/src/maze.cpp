@@ -2137,8 +2137,9 @@ std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
   std::vector<std::string> nets;
   for (int netID = 0; netID < netCount(); netID++) {
     bool added = false;
-    if (!nets_[netID]->isRouted())
+    if (!nets_[netID]->isRouted()) {
       continue;
+    }
 
     const auto& treeedges = sttrees_[netID].edges;
     const int num_edges = sttrees_[netID].num_edges();
@@ -2147,9 +2148,9 @@ std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
       const TreeEdge* treeedge = &(treeedges[edgeID]);
       if (treeedge->len > 0) {
         int routeLen = treeedge->route.routelen;
-        const std::vector<short>& gridsX = treeedge->route.gridsX;
-        const std::vector<short>& gridsY = treeedge->route.gridsY;
-        const std::vector<short>& gridsL = treeedge->route.gridsL;
+        const std::vector<int16_t>& gridsX = treeedge->route.gridsX;
+        const std::vector<int16_t>& gridsY = treeedge->route.gridsY;
+        const std::vector<int16_t>& gridsL = treeedge->route.gridsL;
         int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
         int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
         int lastL = gridsL[0];
@@ -2163,13 +2164,13 @@ std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
 
           if (vertical && xreal == lastX) {
             if ((x == xreal && y == yreal) || (x == lastX && y == lastY)) {
-              nets.push_back(nets_[netID]->getName());
+              nets.emplace_back(nets_[netID]->getName());
               added = true;
               break;
             }
           } else if (!vertical && yreal == lastY) {
             if ((x == xreal && y == yreal) || (x == lastX && y == lastY)) {
-              nets.push_back(nets_[netID]->getName());
+              nets.emplace_back(nets_[netID]->getName());
               added = true;
               break;
             }
