@@ -2130,12 +2130,74 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   v_cost_table_.clear();
 }
 
+std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
+                                                               int y,
+                                                               bool vertical)
+{
+  std::vector<std::string> nets;
+  for (int netID = 0; netID < netCount(); netID++) {
+    bool added = false;
+    if (!nets_[netID]->isRouted())
+      continue;
+
+    const auto& treeedges = sttrees_[netID].edges;
+    const int num_edges = sttrees_[netID].num_edges();
+
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      const TreeEdge* treeedge = &(treeedges[edgeID]);
+      if (treeedge->len > 0) {
+        int routeLen = treeedge->route.routelen;
+        const std::vector<short>& gridsX = treeedge->route.gridsX;
+        const std::vector<short>& gridsY = treeedge->route.gridsY;
+        const std::vector<short>& gridsL = treeedge->route.gridsL;
+        int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
+        int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
+        int lastL = gridsL[0];
+
+        for (int i = 1; i <= routeLen; i++) {
+          const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
+          const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
+
+          GSegment segment
+              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
+
+          if (vertical && xreal == lastX) {
+            if ((x == xreal && y == yreal) || (x == lastX && y == lastY)) {
+              nets.push_back(nets_[netID]->getName());
+              added = true;
+              break;
+            }
+          } else if (!vertical && yreal == lastY) {
+            if ((x == xreal && y == yreal) || (x == lastX && y == lastY)) {
+              nets.push_back(nets_[netID]->getName());
+              added = true;
+              break;
+            }
+          }
+
+          lastX = xreal;
+          lastY = yreal;
+          lastL = gridsL[i];
+        }
+      }
+      if (added) {
+        break;
+      }
+    }
+  }
+
+  return nets;
+}
+
 void FastRouteCore::getCongestionGrid(
-    std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV,
-    std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH)
+    std::vector<std::tuple<GSegment, TileCongestion, std::vector<std::string>>>&
+        congestionGridV,
+    std::vector<std::tuple<GSegment, TileCongestion, std::vector<std::string>>>&
+        congestionGridH)
 {
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
+      std::vector<std::string> horizontal_srcs;
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
@@ -2143,13 +2205,18 @@ void FastRouteCore::getCongestionGrid(
         const GSegment segment = GSegment(xreal, yreal, 1, xreal, yreal, 1);
         const int usage = h_edges_[i][j].usage;
         const int capacity = h_edges_[i][j].cap;
-        congestionGridH.push_back({segment, {capacity, usage}});
+        if (usage > capacity) {
+          horizontal_srcs = getNetsInCongestedEdge(xreal, yreal, false);
+        }
+        congestionGridH.push_back(
+            {segment, {capacity, usage}, horizontal_srcs});
       }
     }
   }
 
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
+      std::vector<std::string> vertical_srcs;
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
@@ -2157,7 +2224,10 @@ void FastRouteCore::getCongestionGrid(
         GSegment segment = GSegment(xreal, yreal, 1, xreal, yreal, 1);
         const int usage = v_edges_[i][j].usage;
         const int capacity = v_edges_[i][j].cap;
-        congestionGridV.push_back({segment, {capacity, usage}});
+        if (usage > capacity) {
+          vertical_srcs = getNetsInCongestedEdge(xreal, yreal, true);
+        }
+        congestionGridV.push_back({segment, {capacity, usage}, vertical_srcs});
       }
     }
   }

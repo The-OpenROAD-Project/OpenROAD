@@ -150,9 +150,14 @@ class FastRouteCore
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
+  std::vector<std::string> getNetsInCongestedEdge(int x, int y, bool vertical);
   void getCongestionGrid(
-      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV,
-      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH);
+      std::vector<
+          std::tuple<GSegment, TileCongestion, std::vector<std::string>>>&
+          congestionGridV,
+      std::vector<
+          std::tuple<GSegment, TileCongestion, std::vector<std::string>>>&
+          congestionGridH);
 
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
