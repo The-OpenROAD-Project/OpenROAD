@@ -1254,10 +1254,12 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
       for (auto inst_term : inst_obj->getITerms()) {
         auto inst_term_dir = inst_term->getIoType();
         if (!inst_term->getSigType().isSupply()
-            && (inst_term_dir == odb::dbIoType::OUTPUT
+            && (inst_term_dir == odb::dbIoType::INPUT
+                || inst_term_dir == odb::dbIoType::OUTPUT
                 || inst_term_dir == odb::dbIoType::INOUT)) {
           auto net_obj = inst_term->getNet();
-          if (!net_obj) {
+          if (net_obj == nullptr
+            || net_obj->getSigType() != odb::dbSigType::SIGNAL) {
             continue;
           }
           connected_objects.insert(
