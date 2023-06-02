@@ -107,7 +107,8 @@ GlobalRouter::GlobalRouter()
       block_(nullptr),
       repair_antennas_(nullptr),
       heatmap_(nullptr),
-      congestion_file_name_(nullptr)
+      congestion_file_name_(nullptr),
+      grouter_cbk_(nullptr)
 {
 }
 
@@ -283,59 +284,82 @@ bool GlobalRouter::haveRoutes()
   return !routes_.empty();
 }
 
-void GlobalRouter::globalRoute(bool save_guides)
+void GlobalRouter::globalRoute(bool save_guides,
+                               bool start_incremental,
+                               bool end_incremental)
 {
-  clear();
-  block_ = db_->getChip()->getBlock();
+  if (start_incremental && end_incremental) {
+    logger_->error(GRT,
+                   251,
+                   "The start_incremental and end_incremental flags cannot be "
+                   "defined together");
+  } else if (start_incremental) {
+    grouter_cbk_ = new GRouteDbCbk(this);
+    grouter_cbk_->addOwner(block_);
+  } else {
+    if (end_incremental) {
+      updateDirtyRoutes();
+      grouter_cbk_->removeOwner();
+      delete grouter_cbk_;
+      grouter_cbk_ = nullptr;
+    } else {
+      clear();
+      block_ = db_->getChip()->getBlock();
 
-  if (max_routing_layer_ == -1) {
-    max_routing_layer_ = computeMaxRoutingLayer();
-  }
+      if (max_routing_layer_ == -1) {
+        max_routing_layer_ = computeMaxRoutingLayer();
+      }
 
-  int min_layer = min_layer_for_clock_ > 0
-                      ? std::min(min_routing_layer_, min_layer_for_clock_)
-                      : min_routing_layer_;
-  int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
+      int min_layer = min_layer_for_clock_ > 0
+                          ? std::min(min_routing_layer_, min_layer_for_clock_)
+                          : min_routing_layer_;
+      int max_layer = std::max(max_routing_layer_, max_layer_for_clock_);
 
-  std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
+      std::vector<Net*> nets = initFastRoute(min_layer, max_layer);
 
-  if (verbose_)
-    reportResources();
+      if (verbose_) {
+        reportResources();
+      }
 
-  routes_ = findRouting(nets, min_layer, max_layer);
-  updateDbCongestion();
+      routes_ = findRouting(nets, min_layer, max_layer);
+    }
 
-  saveCongestion();
+    updateDbCongestion();
+    saveCongestion();
 
-  if (fastroute_->has2Doverflow()) {
-    if (!allow_congestion_) {
-      if (congestion_file_name_ != nullptr) {
-        logger_->error(
-            GRT,
-            119,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI and load {} in the DRC viewer.",
-            congestion_file_name_);
-      } else {
-        logger_->error(
-            GRT,
-            118,
-            "Routing congestion too high. Check the congestion heatmap "
-            "in the GUI.");
+    if (fastroute_->has2Doverflow()) {
+      if (!allow_congestion_) {
+        if (congestion_file_name_ != nullptr) {
+          logger_->error(
+              GRT,
+              119,
+              "Routing congestion too high. Check the congestion heatmap "
+              "in the GUI and load {} in the DRC viewer.",
+              congestion_file_name_);
+        } else {
+          logger_->error(
+              GRT,
+              118,
+              "Routing congestion too high. Check the congestion heatmap "
+              "in the GUI.");
+        }
       }
     }
-  }
-  if (fastroute_->totalOverflow() > 0 && verbose_) {
-    logger_->warn(GRT, 115, "Global routing finished with overflow.");
-  }
+    if (fastroute_->totalOverflow() > 0 && verbose_) {
+      logger_->warn(GRT, 115, "Global routing finished with overflow.");
+    }
 
-  if (verbose_)
-    reportCongestion();
-  computeWirelength();
-  if (verbose_)
-    logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
-  if (save_guides)
-    saveGuides();
+    if (verbose_) {
+      reportCongestion();
+    }
+    computeWirelength();
+    if (verbose_) {
+      logger_->info(GRT, 14, "Routed nets: {}", routes_.size());
+    }
+    if (save_guides) {
+      saveGuides();
+    }
+  }
 }
 
 void GlobalRouter::updateDbCongestion()
@@ -544,15 +568,25 @@ void GlobalRouter::setPerturbationAmount(int perturbation)
   perturbation_amount_ = perturbation;
 };
 
-void GlobalRouter::updateDirtyNets()
+void GlobalRouter::updateDirtyNets(std::vector<Net*>& dirty_nets)
 {
   initRoutingLayers();
   for (odb::dbNet* db_net : dirty_nets_) {
     Net* net = db_net_map_[db_net];
+    // get last pin positions
+    std::vector<odb::Point> last_pos;
+    for (const Pin& pin : net->getPins()) {
+      last_pos.push_back(pin.getOnGridPosition());
+    }
     net->destroyPins();
+    // update pin positions
     makeItermPins(net, db_net, grid_->getGridArea());
     makeBtermPins(net, db_net, grid_->getGridArea());
     findPins(net);
+    // compare new positions with last positions & add on vector
+    if (checkPinPositions(net, last_pos)) {
+      dirty_nets.push_back(db_net_map_[db_net]);
+    }
   }
 }
 
@@ -815,6 +849,26 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
+}
+
+bool GlobalRouter::checkPinPositions(Net* net,
+                                     std::vector<odb::Point>& last_pos)
+{
+  bool is_diferent = false;
+  std::map<odb::Point, int> cnt_pos;
+  for (const Pin& pin : net->getPins()) {
+    cnt_pos[pin.getOnGridPosition()]++;
+  }
+  for (const odb::Point& last : last_pos) {
+    cnt_pos[last]--;
+  }
+  for (const auto& it : cnt_pos) {
+    if (it.second != 0) {
+      is_diferent = true;
+      break;
+    }
+  }
+  return is_diferent;
 }
 
 bool GlobalRouter::makeFastrouteNet(Net* net)
@@ -3901,12 +3955,13 @@ void GlobalRouter::updateDirtyRoutes()
         debugPrint(logger_, GRT, "incr", 2, " {}", net->getConstName());
     }
 
-    updateDirtyNets();
     std::vector<Net*> dirty_nets;
-    dirty_nets.reserve(dirty_nets_.size());
-    for (odb::dbNet* db_net : dirty_nets_) {
-      dirty_nets.push_back(db_net_map_[db_net]);
+    updateDirtyNets(dirty_nets);
+
+    if (dirty_nets.empty()) {
+      return;
     }
+
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route
@@ -3914,11 +3969,30 @@ void GlobalRouter::updateDirtyRoutes()
     mergeResults(new_route);
     dirty_nets_.clear();
 
+    bool reroutingOverflow = true;
+    // the maximum number of times that the nets traversing the congestion area
+    // will be added
+    int add_max = 2;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      logger_->error(GRT,
-                     232,
-                     "Routing congestion too high. Check the congestion "
-                     "heatmap in the GUI.");
+      while (fastroute_->has2Doverflow() && reroutingOverflow && add_max > 0) {
+        // the nets that cross the congestion area are obtained and added to the
+        // vector of dirty nets
+        for (odb::dbNet* db_net : fastroute_->getCongestionNets()) {
+          dirty_nets.push_back(db_net_map_[db_net]);
+        }
+        // The dirty nets are initialized and then routed
+        initFastRouteIncr(dirty_nets);
+        NetRouteMap new_route
+            = findRouting(dirty_nets, min_routing_layer_, max_routing_layer_);
+        mergeResults(new_route);
+        add_max--;
+      }
+      if (fastroute_->has2Doverflow()) {
+        logger_->error(GRT,
+                       232,
+                       "Routing congestion too high. Check the congestion "
+                       "heatmap in the GUI.");
+      }
     }
   }
 }
