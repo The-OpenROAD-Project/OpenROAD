@@ -220,17 +220,27 @@ void GlobalRouter::saveCongestion()
   }
   std::ofstream out(congestion_file_name_);
 
-  std::vector<std::pair<GSegment, TileCongestion>> congestionGridsV,
-      congestionGridsH;
+  std::vector<std::tuple<GSegment, TileCongestion, std::vector<std::string>>>
+      congestionGridsV, congestionGridsH;
   fastroute_->getCongestionGrid(congestionGridsV, congestionGridsH);
   for (auto& it : congestionGridsH) {
+    GSegment seg;
+    TileCongestion tile;
+    std::vector<std::string> srcs;
+    std::tie(seg, tile, srcs) = it;
     out << "violation type: Horizontal congestion\n";
-    const int capacity = it.second.first;
-    const int usage = it.second.second;
-    out << "\tsrcs: \n";
+    const int capacity = tile.first;
+    const int usage = tile.second;
+    out << "\tsrcs: ";
+    if (!srcs.empty()) {
+      for (const auto& net : srcs) {
+        out << "net:" << net << " ";
+      }
+    }
+    out << "\n";
     out << "\tcongestion information: capacity:" << capacity
         << " usage:" << usage << " overflow:" << usage - capacity << "\n";
-    odb::Rect rect = globalRoutingToBox(it.first);
+    odb::Rect rect = globalRoutingToBox(seg);
     out << "\tbbox = ";
     out << "( " << dbuToMicrons(rect.xMin()) << ", "
         << dbuToMicrons(rect.yMin()) << " ) - ";
@@ -239,13 +249,23 @@ void GlobalRouter::saveCongestion()
   }
 
   for (auto& it : congestionGridsV) {
+    GSegment seg;
+    TileCongestion tile;
+    std::vector<std::string> srcs;
+    std::tie(seg, tile, srcs) = it;
     out << "violation type: Vertical congestion\n";
-    const int capacity = it.second.first;
-    const int usage = it.second.second;
-    out << "\tsrcs: \n";
+    const int capacity = tile.first;
+    const int usage = tile.second;
+    out << "\tsrcs: ";
+    if (!srcs.empty()) {
+      for (const auto& net : srcs) {
+        out << "net:" << net << " ";
+      }
+    }
+    out << "\n";
     out << "\tcongestion information: capacity:" << capacity
         << " usage:" << usage << " overflow:" << usage - capacity << "\n";
-    odb::Rect rect = globalRoutingToBox(it.first);
+    odb::Rect rect = globalRoutingToBox(seg);
     out << "\tbbox = ";
     out << "( " << dbuToMicrons(rect.xMin()) << ", "
         << dbuToMicrons(rect.yMin()) << " ) - ";
