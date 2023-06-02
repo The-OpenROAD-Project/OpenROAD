@@ -92,6 +92,7 @@ RepairSetup::RepairSetup(Resizer* resizer)
       drvr_port_(nullptr),
       resize_count_(0),
       inserted_buffer_count_(0),
+      split_load_buffer_count_(0),
       rebuffer_net_count_(0),
       swap_pin_count_(0),
       cloned_gate_count_(0),
@@ -112,16 +113,17 @@ RepairSetup::init()
 
 void
 RepairSetup::repairSetup(float setup_slack_margin,
-                         // Percent of violating ends to repair to
-                         // reduce tns (0.0-1.0).
                          double repair_tns_end_percent,
                          int max_passes,
-                         bool skip_pin_swap)
+                         bool skip_pin_swap,
+                         bool skip_gate_cloning)
 {
   init();
   constexpr int digits = 3;
   inserted_buffer_count_ = 0;
+  split_load_buffer_count_ = 0;
   resize_count_ = 0;
+  cloned_gate_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
@@ -180,7 +182,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
-      bool changed = repairSetup(end_path, end_slack, skip_pin_swap);
+      bool changed = repairSetup(end_path, end_slack, skip_pin_swap,
+                                 skip_gate_cloning);
       if (!changed) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
                    "No change after {} decreasing slack passes.",
@@ -243,8 +246,12 @@ RepairSetup::repairSetup(float setup_slack_margin,
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (inserted_buffer_count_ > 0) {
+  if (inserted_buffer_count_ > 0 && split_load_buffer_count_ == 0) {
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+  }
+  else if (inserted_buffer_count_ > 0 && split_load_buffer_count_ > 0) {
+        logger_->info(RSZ, 42, "Inserted {} buffers, {} to split loads.",
+                          inserted_buffer_count_, split_load_buffer_count_);
   }
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0) {
@@ -254,7 +261,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
   }
   if (cloned_gate_count_ > 0) {
-    logger_->info(RSZ, 45, "Cloned {} instances.", cloned_gate_count_);
+    logger_->info(RSZ, 49, "Cloned {} instances.", cloned_gate_count_);
   }
   Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin)) {
@@ -279,7 +286,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
   Slack slack = sta_->vertexSlack(vertex, max_);
   PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  repairSetup(path, slack, false);
+  repairSetup(path, slack, false, false);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -312,7 +319,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
 bool
 RepairSetup::repairSetup(PathRef &path,
                          Slack path_slack,
-                         bool skip_pin_swap)
+                         bool skip_pin_swap, bool skip_gate_cloning)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -370,12 +377,19 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
-      bool do_gate_cloning = false;
-      if (do_gate_cloning) {
-        // logger_->setDebugLevel(RSZ, "gate_cloner", 2);
-        rsz::GateCloner cloner(resizer_);
-        cloned_gate_count_ += cloner.run(drvr_pin, drvr_path,
-                                                   drvr_index, &expanded);
+      skip_gate_cloning = false;
+      if (!skip_gate_cloning)
+        if (fanout > 1
+            && !resizer_->dontTouch(net)
+            && !resizer_->isTristateDriver(drvr_pin)) {
+          rsz::GateCloner cloner(resizer_);
+          int inserted_gates = cloner.run(drvr_pin, drvr_path,
+                                          drvr_index, &expanded);
+          if (inserted_gates > 0) {
+            changed = true;
+            cloned_gate_count_ += inserted_gates;
+            break;
+          }
       }
 
       if (!skip_pin_swap) {
@@ -407,7 +421,9 @@ RepairSetup::repairSetup(PathRef &path,
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
           && !resizer_->dontTouch(net)) {
+        int init_buffer_count = inserted_buffer_count_;
         splitLoads(drvr_path, drvr_index, path_slack, &expanded);
+        split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
         changed = true;
         break;
       }

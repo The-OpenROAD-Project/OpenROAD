@@ -425,6 +425,7 @@ proc repair_timing { args } {
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   set skip_pin_swap [info exists flags(-skip_pin_swap)]
+  set skip_gate_cloning [info exists flags(-skip_gate_cloning)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
   
   set max_buffer_percent 20
@@ -448,7 +449,7 @@ proc repair_timing { args } {
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
   if { $setup } {
-    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes $skip_pin_swap
+    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes $skip_pin_swap $skip_gate_cloning
   }
   if { $hold } {
     rsz::repair_hold $setup_margin $hold_margin \

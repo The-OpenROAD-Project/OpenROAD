@@ -394,24 +394,6 @@ float GateCloner::pin_slew(Pin* term) const
 
 float GateCloner::slew(Pin* term, bool is_rise) const
 {
-  if (network_->direction(term)->isInput()) {
-    return sta_->vertexSlew(vertex(term),
-        is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
-        sta::MinMax::max());
-  }
-
-  auto pin_net = network_->net(term);
-  // TODO: Fix with usual pin iterator fun
-  /*
-  auto net_pins = network_->pinspins(pin_net);
-  for (auto connected_pin : net_pins) {
-    if (connected_pin != term) {
-      return sta_->vertexSlew(vertex(connected_pin),
-          is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
-          sta::MinMax::max());
-    }
-  }
-   */
   return sta_->vertexSlew(vertex(term),
       is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
       sta::MinMax::max());
@@ -452,9 +434,6 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
 
   // TODO: Why do we have a cap_limit and c_limit. Seems a bit redundant. Double check
   float c_limit = cap_factor * output_target_load;
-  auto slew = pin_slew(output_pin);
-  float cap = sta_->graphDelayCalc()->loadCap(output_pin,
-                                              resizer_->tgt_slew_dcalc_ap_);
   LibertyPort *output_port = network_->libertyPort(output_pin);
   bool exists;
   float slew_limit;
@@ -462,11 +441,6 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
   output_port->capacitanceLimit(MinMax::max(), cap_limit, exists);
   sta_->findSlewLimit(output_port, sta_->cmdCorner(), MinMax::max(),
                       slew_limit, exists);
-  float slew_ratio = slew / slew_limit;
-  float cap_ratio = -1;
-  if (cap_limit > 0) {
-    cap_ratio = cap / cap_limit;
-  }
 
   const char *cellName = drvr_cell->name();
   const char *instName = network_->name(inst);
@@ -477,13 +451,7 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
   debugPrint(logger_, RSZ, "gate_cloner", 1, "{} {} total_net_load: {}",
              instName, cellName, total_net_load);
 
-  // TODO: This predicate is very questionable
-  //if (slew_ratio < 1.4 && cap_ratio < 1.4 ) {
-  //  return;
-  // }
-
   clone_largest_only = false;
-
   if (clone_largest_only && drvr_cell != largestLibraryCell(drvr_cell)) {
     debugPrint(logger_, RSZ, "gate_cloner", 1,  "{} {} is not the largest cell",
                instName, cellName);
@@ -715,8 +683,6 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
     return;
   }
 
-  auto preslack = worstSlack(wp[wp.size() - 1].pin());
-  auto ws       = worstSlack();
   Net* clone_net = resizer_->Resizer::makeUniqueNet();
   LibertyPort *output_port = network_->libertyPort(output_pin);
   // Double check what this topDownConnect fun does.

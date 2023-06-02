@@ -224,13 +224,11 @@ public:
   float targetLoadCap(LibertyCell *cell);
 
   ////////////////////////////////////////////////////////////////
-
   void repairSetup(double setup_margin,
-                   // Percent of violating ends to repair to
-                   // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
                    int max_passes,
-                   bool skip_pin_swap);
+                   bool skip_pin_swap,
+                   bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
