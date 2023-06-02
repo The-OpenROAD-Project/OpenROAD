@@ -93,8 +93,18 @@ struct cmpById
   bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
 };
 
+typedef std::pair<int, int> TileCongestion;
+
+struct CongestionInformation
+{
+  GSegment segment;
+  TileCongestion congestion;
+  std::vector<std::string> sources;
+};
+
 // class Route is defined in fastroute core.
-typedef std::vector<GSegment> GRoute;
+typedef std::vector<GSegment>
+    GRoute;
 typedef std::map<odb::dbNet*, GRoute, cmpById> NetRouteMap;
 void print(GRoute& groute);
 

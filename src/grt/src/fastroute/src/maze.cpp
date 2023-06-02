@@ -2185,10 +2185,8 @@ std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
 }
 
 void FastRouteCore::getCongestionGrid(
-    std::vector<std::tuple<GSegment, TileCongestion, std::vector<std::string>>>&
-        congestionGridV,
-    std::vector<std::tuple<GSegment, TileCongestion, std::vector<std::string>>>&
-        congestionGridH)
+    std::vector<CongestionInformation>& congestionGridV,
+    std::vector<CongestionInformation>& congestionGridH)
 {
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {

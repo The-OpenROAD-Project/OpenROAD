@@ -221,19 +221,15 @@ void GlobalRouter::saveCongestion()
   }
   std::ofstream out(congestion_file_name_);
 
-  std::vector<std::tuple<GSegment, TileCongestion, std::vector<std::string>>>
-      congestionGridsV, congestionGridsH;
+  std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
   fastroute_->getCongestionGrid(congestionGridsV, congestionGridsH);
   for (auto& it : congestionGridsH) {
-    GSegment seg;
-    TileCongestion tile;
-    std::vector<std::string> srcs;
-    std::tie(seg, tile, srcs) = it;
+    const auto& [seg, tile, srcs] = it;
     out << "violation type: Horizontal congestion\n";
     const int capacity = tile.first;
     const int usage = tile.second;
-    out << "\tsrcs: ";
     if (!srcs.empty()) {
+      out << "\tsrcs: ";
       for (const auto& net : srcs) {
         out << "net:" << net << " ";
       }
@@ -250,15 +246,12 @@ void GlobalRouter::saveCongestion()
   }
 
   for (auto& it : congestionGridsV) {
-    GSegment seg;
-    TileCongestion tile;
-    std::vector<std::string> srcs;
-    std::tie(seg, tile, srcs) = it;
+    const auto& [seg, tile, srcs] = it;
     out << "violation type: Vertical congestion\n";
     const int capacity = tile.first;
     const int usage = tile.second;
-    out << "\tsrcs: ";
     if (!srcs.empty()) {
+      out << "\tsrcs: ";
       for (const auto& net : srcs) {
         out << "net:" << net << " ";
       }
