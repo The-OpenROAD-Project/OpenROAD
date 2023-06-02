@@ -2150,17 +2150,12 @@ std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
         int routeLen = treeedge->route.routelen;
         const std::vector<int16_t>& gridsX = treeedge->route.gridsX;
         const std::vector<int16_t>& gridsY = treeedge->route.gridsY;
-        const std::vector<int16_t>& gridsL = treeedge->route.gridsL;
         int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
         int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
-        int lastL = gridsL[0];
 
         for (int i = 1; i <= routeLen; i++) {
           const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
-
-          GSegment segment
-              = GSegment(lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
 
           if (vertical && xreal == lastX) {
             if ((x == xreal && y == yreal) || (x == lastX && y == lastY)) {
@@ -2178,7 +2173,6 @@ std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
 
           lastX = xreal;
           lastY = yreal;
-          lastL = gridsL[i];
         }
       }
       if (added) {
