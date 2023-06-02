@@ -1259,7 +1259,7 @@ void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
                 || inst_term_dir == odb::dbIoType::INOUT)) {
           auto net_obj = inst_term->getNet();
           if (net_obj == nullptr
-            || net_obj->getSigType() != odb::dbSigType::SIGNAL) {
+              || net_obj->getSigType() != odb::dbSigType::SIGNAL) {
             continue;
           }
           connected_objects.insert(
