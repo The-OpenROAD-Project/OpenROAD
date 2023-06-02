@@ -35,6 +35,7 @@
 #pragma once
 
 #include <map>
+#include <unordered_set>
 #include <vector>
 
 namespace odb {
@@ -99,12 +100,11 @@ struct CongestionInformation
 {
   GSegment segment;
   TileCongestion congestion;
-  std::vector<std::string> sources;
+  std::unordered_set<odb::dbNet*> sources;
 };
 
 // class Route is defined in fastroute core.
-typedef std::vector<GSegment>
-    GRoute;
+typedef std::vector<GSegment> GRoute;
 typedef std::map<odb::dbNet*, GRoute, cmpById> NetRouteMap;
 void print(GRoute& groute);
 

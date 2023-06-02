@@ -2130,13 +2130,11 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   v_cost_table_.clear();
 }
 
-std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
-                                                               int y,
-                                                               bool vertical)
+NetsPerCongestedArea FastRouteCore::findCongestedEdgesNets()
 {
+  NetsPerCongestedArea nets_in_congested_edges;
   std::vector<std::string> nets;
   for (int netID = 0; netID < netCount(); netID++) {
-    bool added = false;
     if (!nets_[netID]->isRouted()) {
       continue;
     }
@@ -2157,40 +2155,28 @@ std::vector<std::string> FastRouteCore::getNetsInCongestedEdge(int x,
           const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
 
-          if (vertical && xreal == lastX) {
-            if ((x == xreal && y == yreal) || (x == lastX && y == lastY)) {
-              nets.emplace_back(nets_[netID]->getName());
-              added = true;
-              break;
-            }
-          } else if (!vertical && yreal == lastY) {
-            if ((x == xreal && y == yreal) || (x == lastX && y == lastY)) {
-              nets.emplace_back(nets_[netID]->getName());
-              added = true;
-              break;
-            }
-          }
-
+          nets_in_congested_edges[{lastX, lastY}].insert(
+              nets_[netID]->getDbNet());
+          nets_in_congested_edges[{xreal, yreal}].insert(
+              nets_[netID]->getDbNet());
           lastX = xreal;
           lastY = yreal;
         }
       }
-      if (added) {
-        break;
-      }
     }
   }
 
-  return nets;
+  return nets_in_congested_edges;
 }
 
 void FastRouteCore::getCongestionGrid(
     std::vector<CongestionInformation>& congestionGridV,
-    std::vector<CongestionInformation>& congestionGridH)
+    std::vector<CongestionInformation>& congestionGridH,
+    NetsPerCongestedArea& nets_in_congested_edges)
 {
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
-      std::vector<std::string> horizontal_srcs;
+      std::unordered_set<odb::dbNet*> horizontal_srcs;
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
@@ -2199,7 +2185,7 @@ void FastRouteCore::getCongestionGrid(
         const int usage = h_edges_[i][j].usage;
         const int capacity = h_edges_[i][j].cap;
         if (usage > capacity) {
-          horizontal_srcs = getNetsInCongestedEdge(xreal, yreal, false);
+          horizontal_srcs = nets_in_congested_edges[{xreal, yreal}];
         }
         congestionGridH.push_back(
             {segment, {capacity, usage}, horizontal_srcs});
@@ -2209,7 +2195,7 @@ void FastRouteCore::getCongestionGrid(
 
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
-      std::vector<std::string> vertical_srcs;
+      std::unordered_set<odb::dbNet*> vertical_srcs;
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
@@ -2218,7 +2204,7 @@ void FastRouteCore::getCongestionGrid(
         const int usage = v_edges_[i][j].usage;
         const int capacity = v_edges_[i][j].cap;
         if (usage > capacity) {
-          vertical_srcs = getNetsInCongestedEdge(xreal, yreal, true);
+          vertical_srcs = nets_in_congested_edges[{xreal, yreal}];
         }
         congestionGridV.push_back({segment, {capacity, usage}, vertical_srcs});
       }

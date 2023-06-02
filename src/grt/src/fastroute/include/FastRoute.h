@@ -41,6 +41,7 @@
 #include <boost/icl/interval_set.hpp>
 #include <boost/multi_array.hpp>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "DataType.h"
@@ -88,7 +89,10 @@ struct DebugSetting
 
 using stt::Tree;
 
-typedef std::pair<int, int> TileCongestion;
+typedef std::unordered_map<std::pair<int, int>,
+                           std::unordered_set<odb::dbNet*>,
+                           boost::hash<std::pair<int, int>>>
+    NetsPerCongestedArea;
 
 class FastRouteCore
 {
@@ -150,14 +154,10 @@ class FastRouteCore
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
-  std::vector<std::string> getNetsInCongestedEdge(int x, int y, bool vertical);
-  void getCongestionGrid(
-      std::vector<
-          std::tuple<GSegment, TileCongestion, std::vector<std::string>>>&
-          congestionGridV,
-      std::vector<
-          std::tuple<GSegment, TileCongestion, std::vector<std::string>>>&
-          congestionGridH);
+  NetsPerCongestedArea findCongestedEdgesNets();
+  void getCongestionGrid(std::vector<CongestionInformation>& congestionGridV,
+                         std::vector<CongestionInformation>& congestionGridH,
+                         NetsPerCongestedArea& nets_in_congested_edges);
 
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
