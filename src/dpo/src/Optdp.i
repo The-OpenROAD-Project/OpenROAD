@@ -40,8 +40,7 @@
 
 %include "../../Exception.i"
 
-%inline %
-{
+%inline %{
   namespace dpo {
 
   void improve_placement_cmd(int seed,
@@ -56,5 +55,4 @@
 
   }  // namespace dpo
 
-  %
-}  // inline
+%}  // inline
