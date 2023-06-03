@@ -40,6 +40,7 @@
 #include <memory>
 
 #include "findDialog.h"
+#include "gotoDialog.h"
 #include "gui/gui.h"
 #include "ord/OpenRoad.hh"
 #include "ruler.h"
@@ -64,10 +65,13 @@ class TimingWidget;
 class DRCWidget;
 class ClockWidget;
 class BrowserWidget;
+#ifdef ENABLE_CHARTS
+class ChartsWidget;
+#endif
 
 // This is the main window for the GUI.  Currently we use a single
 // instance of this class.
-class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
+class MainWindow : public QMainWindow, public ord::OpenRoadObserver
 {
   Q_OBJECT
 
@@ -98,7 +102,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   ScriptWidget* getScriptWidget() const { return script_; }
   Inspector* getInspector() const { return inspector_; }
 
-  const std::vector<std::string> getRestoreTclCommands();
+  std::vector<std::string> getRestoreTclCommands();
 
  signals:
   // Signaled when we get a postRead callback to tell the sub-widgets
@@ -126,6 +130,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
 
   // Ruler Requested on the Layout
   void rulersChanged();
+
+  void displayUnitsChanged(int dbu_per_micron, bool useDBU);
 
  public slots:
   // Save the current state into settings for the next session.
@@ -156,7 +162,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   void setSelected(const Selected& selection, bool show_connectivity = false);
 
   // Add the selections to highlight set
-  void addHighlighted(const SelectionSet& selection, int highlight_group = -1);
+  void addHighlighted(const SelectionSet& highlights, int highlight_group = -1);
 
   // Remove a selection from the set of highlights
   void removeHighlighted(const Selected& selection);
@@ -203,28 +209,30 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   // Show Find Dialog Box
   void showFindDialog();
 
+  // Show Goto Dialog Box
+  void showGotoDialog();
+
   // Show help in browser
   void showHelp();
 
   // add/remove toolbar button
-  const std::string addToolbarButton(const std::string& name,
-                                     const QString& text,
-                                     const QString& script,
-                                     bool echo);
+  std::string addToolbarButton(const std::string& name,
+                               const QString& text,
+                               const QString& script,
+                               bool echo);
   void removeToolbarButton(const std::string& name);
 
   // add/remove menu actions
-  const std::string addMenuItem(const std::string& name,
-                                const QString& path,
-                                const QString& text,
-                                const QString& script,
-                                const QString& shortcut,
-                                bool echo);
+  std::string addMenuItem(const std::string& name,
+                          const QString& path,
+                          const QString& text,
+                          const QString& script,
+                          const QString& shortcut,
+                          bool echo);
   void removeMenuItem(const std::string& name);
 
   // request for user input
-  const std::string requestUserInput(const QString& title,
-                                     const QString& question);
+  std::string requestUserInput(const QString& title, const QString& question);
 
   bool anyObjectInSet(bool selection_set, odb::dbObjectType obj_type);
   void selectHighlightConnectedInsts(bool select_flag, int highlight_group = 0);
@@ -288,8 +296,12 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   DRCWidget* drc_viewer_;
   ClockWidget* clock_viewer_;
   BrowserWidget* hierarchy_widget_;
+#ifdef ENABLE_CHARTS
+  ChartsWidget* charts_widget_;
+#endif
 
   FindObjectDialog* find_dialog_;
+  GotoLocationDialog* goto_dialog_;
 
   QMenu* file_menu_;
   QMenu* view_menu_;
@@ -308,6 +320,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoad::Observer
   QAction* timing_debug_;
   QAction* zoom_in_;
   QAction* zoom_out_;
+  QAction* goto_position_;
   QAction* help_;
   QAction* build_ruler_;
   QAction* show_dbu_;

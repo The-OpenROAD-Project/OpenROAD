@@ -42,8 +42,6 @@
 #include "dbStream.h"
 #include "dbTable.h"
 
-//#define ADS_DB_CHECK_STREAM
-
 namespace odb {
 
 template <class T>
@@ -612,9 +610,6 @@ void dbTable<T>::copy_page(uint page_id, dbTablePage* page)
 template <class T>
 dbOStream& operator<<(dbOStream& stream, const dbTable<T>& table)
 {
-#ifdef ADS_DB_CHECK_STREAM
-  stream.markStream();
-#endif
   stream << table._page_mask;
   stream << table._page_shift;
   stream << table._top_idx;
@@ -632,19 +627,12 @@ dbOStream& operator<<(dbOStream& stream, const dbTable<T>& table)
 
   stream << table._prop_list;
 
-#ifdef ADS_DB_CHECK_STREAM
-  stream.markStream();
-#endif
-
   return stream;
 }
 
 template <class T>
 dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
 {
-#ifdef ADS_DB_CHECK_STREAM
-  stream.checkStream();
-#endif
   table.clear();
   stream >> table._page_mask;
   stream >> table._page_shift;
@@ -678,9 +666,6 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
 
   stream >> table._prop_list;
 
-#ifdef ADS_DB_CHECK_STREAM
-  stream.checkStream();
-#endif
   return stream;
 }
 

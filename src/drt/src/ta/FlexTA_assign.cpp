@@ -660,9 +660,14 @@ frUInt4 FlexTAWorker::assignIroute_getPinCost(taPin* iroute, frCoord trackLoc)
   frUInt4 sol = 0;
   if (iroute->hasPinCoord()) {
     sol = abs(trackLoc - iroute->getPinCoord());
-    if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+
+    // add cost to locations that will cause forbidden via spacing to
+    // boundary pin
+    auto layerNum = iroute->getGuide()->getBeginLayerNum();
+    auto layer = getTech()->getLayer(layerNum);
+
+    if (layer->isUnidirectional()) {
       bool isH = (getDir() == dbTechLayerDir::HORIZONTAL);
-      auto layerNum = iroute->getGuide()->getBeginLayerNum();
       int zIdx = layerNum / 2 - 1;
       if (sol) {
         if (isH) {

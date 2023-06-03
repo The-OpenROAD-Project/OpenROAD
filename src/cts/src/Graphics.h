@@ -38,6 +38,7 @@
 #include <memory>
 
 #include "Clock.h"
+#include "CtsObserver.h"
 #include "HTreeBuilder.h"
 #include "SinkClustering.h"
 #include "gui/gui.h"
@@ -52,19 +53,19 @@ class HTreeBuilder;
 class SinkClustering;
 
 // This class draws debugging graphics on the layout
-class Graphics : public gui::Renderer
+class Graphics : public gui::Renderer, public CtsObserver
 {
  public:
-  Graphics(HTreeBuilder* h_tree_builder, Clock* clock);
+  void initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock) override;
 
-  Graphics(SinkClustering* SinkClustering,
-           const std::vector<Point<double>>& points);
+  void initializeWithPoints(SinkClustering* SinkClustering,
+                            const std::vector<Point<double>>& points) override;
 
   // Draw the graphics; optionally pausing afterwards
-  void clockPlot(bool pause = false);
+  void clockPlot(bool pause) override;
 
   // Show a message in the status bar
-  void status(const std::string& message);
+  void status(const std::string& message) override;
 
   // From Renderer API
   void drawObjects(gui::Painter& painter) override;

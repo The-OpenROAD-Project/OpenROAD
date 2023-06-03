@@ -21,6 +21,7 @@ add_library(lefin
     WidthTableParser.cpp
     MinCutParser.cpp
     MetalWidthViaMapParser.cpp
+    KeepOutZoneParser.cpp
 )
 
 target_include_directories(lefin
@@ -41,6 +42,6 @@ target_link_libraries(lefin
         zutil
         lef
         lefzlib
-        utl
+        utl_lib
         Boost::boost
 )

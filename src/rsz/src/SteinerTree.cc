@@ -35,15 +35,15 @@
 
 #include "SteinerTree.hh"
 
-#include <string>
 #include <memory>
+#include <string>
 
-#include "rsz/Resizer.hh"
+#include "AbstractSteinerRenderer.h"
 #include "db_sta/dbNetwork.hh"
-#include "utl/Logger.h"
-#include "gui/gui.h"
+#include "rsz/Resizer.hh"
 #include "sta/NetworkCmp.hh"
 #include "stt/SteinerTreeBuilder.h"
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -253,7 +253,7 @@ SteinerTree::pins(SteinerPt pt) const
 }
 
 SteinerPt
-SteinerTree::drvrPt(const Network *network) const
+SteinerTree::drvrPt() const
 {
   return drvr_steiner_pt_;
 }
@@ -267,55 +267,15 @@ SteinerTree::location(SteinerPt pt) const
 
 ////////////////////////////////////////////////////////////////
 
-class SteinerRenderer : public gui::Renderer
-{
-public:
-  SteinerRenderer();
-  void highlight(SteinerTree *tree);
-  virtual void drawObjects(gui::Painter& /* painter */) override;
-
-private:
-  SteinerTree *tree_;
-};
-
 void
 Resizer::highlightSteiner(const Pin *drvr)
 {
-  if (gui::Gui::enabled()) {
-    if (steiner_renderer_ == nullptr) {
-      steiner_renderer_ = new SteinerRenderer();
-      gui_->registerRenderer(steiner_renderer_);
-    }
+  if (steiner_renderer_) {
     SteinerTree *tree = nullptr;
-    if (drvr)
+    if (drvr) {
       tree = makeSteinerTree(drvr);
-    steiner_renderer_->highlight(tree);
-  }
-}
-
-SteinerRenderer::SteinerRenderer() :
-  tree_(nullptr)
-{
-}
-
-void
-SteinerRenderer::highlight(SteinerTree *tree)
-{
-  tree_ = tree;
-}
-
-void
-SteinerRenderer::drawObjects(gui::Painter &painter)
-{
-  if (tree_) {
-    painter.setPen(gui::Painter::red, true);
-    for (int i = 0 ; i < tree_->branchCount(); ++i) {
-      Point pt1, pt2;
-      int steiner_pt1, steiner_pt2;
-      int wire_length;
-      tree_->branch(i, pt1, steiner_pt1, pt2, steiner_pt2, wire_length);
-      painter.drawLine(pt1, pt2);
     }
+    steiner_renderer_->highlight(tree);
   }
 }
 

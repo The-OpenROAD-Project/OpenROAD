@@ -38,35 +38,38 @@
 #include <optional>
 #include <vector>
 
+#include "Mpl2Observer.h"
 #include "gui/gui.h"
 
 namespace mpl2 {
 class SoftMacro;
 class HardMacro;
 
-class Graphics : public gui::Renderer
+class Graphics : public gui::Renderer, public Mpl2Observer
 {
  public:
   Graphics(int dbu, utl::Logger* logger);
 
-  void startSA();
-  void saStep(const std::vector<SoftMacro>& macros);
-  void saStep(const std::vector<HardMacro>& macros);
-  void endSA();
+  ~Graphics() override = default;
 
-  void setAreaPenalty(float area);
+  void startSA() override;
+  void saStep(const std::vector<SoftMacro>& macros) override;
+  void saStep(const std::vector<HardMacro>& macros) override;
+  void endSA() override;
+
+  void setAreaPenalty(float area) override;
   void setOutlinePenalty(float outline_penalty,
                          float outline_width,
-                         float outline_height);
-  void setWirelength(float wirelength);
-  void setFencePenalty(float fence_penalty);
-  void setGuidancePenalty(float guidance_penalty);
-  void setBoundaryPenalty(float boundary_penalty);
-  void setMacroBlockagePenalty(float macro_blockage_penalty);
-  void setNotchPenalty(float notch_penalty);
-  void penaltyCalculated(float norm_cost);
+                         float outline_height) override;
+  void setWirelength(float wirelength) override;
+  void setFencePenalty(float fence_penalty) override;
+  void setGuidancePenalty(float guidance_penalty) override;
+  void setBoundaryPenalty(float boundary_penalty) override;
+  void setMacroBlockagePenalty(float macro_blockage_penalty) override;
+  void setNotchPenalty(float notch_penalty) override;
+  void penaltyCalculated(float norm_cost) override;
 
-  virtual void drawObjects(gui::Painter& painter) override;
+  void drawObjects(gui::Painter& painter) override;
 
  private:
   void resetPenalties();

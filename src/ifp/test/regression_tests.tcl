@@ -20,5 +20,6 @@ record_tests {
   tiecells
   upf_test
   multi_height1
+  multi_height2
 }
 

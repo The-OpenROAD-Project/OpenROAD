@@ -838,8 +838,10 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
             break;
 
           case DEFIPATH_MASK:
+            netR->pathColor(path->getMask());
+            break;
           case DEFIPATH_VIAMASK:
-            UNSUPPORTED("MASK in net's routing is unsupported");
+            UNSUPPORTED("MASK in VIA net's routing is unsupported");
             break;
 
           default:
@@ -1788,6 +1790,7 @@ bool definReader::createBlock(const char* file)
     defrSetSNetCbk(specialNetCallback);
     defrSetViaCbk(viaCallback);
     defrSetBlockageCbk(blockageCallback);
+    defrSetNonDefaultCbk(nonDefaultRuleCallback);
 
     defrSetAddPathToNet();
   }
@@ -1806,7 +1809,6 @@ bool definReader::createBlock(const char* file)
     defrSetGroupNameCbk(groupNameCallback);
     defrSetHistoryCbk(historyCallback);
 
-    defrSetNonDefaultCbk(nonDefaultRuleCallback);
     defrSetRegionCbk(regionCallback);
 
     defrSetScanchainsStartCbk(scanchainsCallback);

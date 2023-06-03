@@ -10,5 +10,5 @@
 Found 0 macro blocks.
 Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
-[INFO PPL-0007] Random pin placement.
-No differences found.
+[ERROR PPL-0098] Pins  req_msg[17] req_msg[16] req_msg[15] req_msg[14] are assigned to multiple constraints.
+PPL-0098

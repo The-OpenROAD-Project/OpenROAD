@@ -36,6 +36,7 @@
 
 #include "db.h"
 #include "dbBlock.h"
+#include "dbBlockCallBackObj.h"
 #include "dbDatabase.h"
 #include "dbNet.h"
 #include "dbTable.h"
@@ -392,6 +393,7 @@ int dbWireEncoder::addTechVia(dbTechVia* via)
     ZASSERT(DB_WIRE_ENCODER_INVALID_VIA_LAYER);
     addOp(WOP_TECH_VIA, 0);
   }
+  clearColor();
 
   _via_cnt++;
   return jct_id;
@@ -613,6 +615,31 @@ void dbWireEncoder::end()
   // Should we calculate the bbox???
   ((_dbBlock*) _block)->_flags._valid_bbox = 0;
   _point_cnt = 0;
+
+  for (auto callback : ((_dbBlock*) _block)->_callbacks) {
+    callback->inDbWirePostModify((dbWire*) _wire);
+  }
+}
+
+void dbWireEncoder::setColor(uint8_t mask_color)
+{
+  // LEF/DEF says 3 is the max number of supported masks per layer.
+  // 0 is also not a valid mask.
+  if (mask_color < 1 || mask_color > 3) {
+    utl::Logger* logger = _wire->getImpl()->getLogger();
+    logger->error(utl::ODB,
+                  1102,
+                  "Mask color: {}, but must be between 1 and 3",
+                  mask_color);
+  }
+
+  addOp(WOP_COLOR, mask_color);
+}
+
+void dbWireEncoder::clearColor()
+{
+  // 0 is a special value representing no mask color.
+  addOp(WOP_COLOR, 0);
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -1019,6 +1046,17 @@ nextOpCode:
     case WOP_NOP:
       goto nextOpCode;
 
+    case WOP_COLOR: {
+      // 3 MSB bits of the opcode represent the color
+      _color = static_cast<uint8_t>(_operand);
+
+      if (_color.value() == 0) {
+        _color = std::nullopt;
+      }
+
+      goto nextOpCode;
+    }
+
     default:
       ZASSERT(DB_WIRE_DECODE_INVALID_OPCODE);
       goto nextOpCode;
@@ -1074,6 +1112,11 @@ dbTechVia* dbWireDecoder::getTechVia() const
   ZASSERT(_opcode == TECH_VIA);
   dbTechVia* via = dbTechVia::getTechVia(_tech, _operand);
   return via;
+}
+
+std::optional<uint8_t> dbWireDecoder::getColor() const
+{
+  return _color;
 }
 
 void dbWireDecoder::getRect(int& deltaX1,

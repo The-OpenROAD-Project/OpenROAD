@@ -20,6 +20,14 @@
     Tcl_SetObjResult(interp, list);
 }
 
+%typemap(out) std::optional<uint8_t> {
+    if ($1.has_value()) {
+        Tcl_SetIntObj($result, (int) $1.value());
+    } else {
+        Tcl_Obj *obj = Tcl_NewStringObj("NULL", 4);
+        Tcl_SetObjResult(interp, obj);
+    }
+}
 
 // Wrapper for dbSet, dbVector...etc
 %define WRAP_DB_CONTAINER(T) 
@@ -224,6 +232,6 @@ WRAP_OBJECT_RETURN_REF(odb::dbViaParams, params_return)
   }
 }
 
-%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & boxes };
+%apply std::vector<odb::dbShape> &OUTPUT { std::vector<odb::dbShape> & shapes };
 
 %include containers.i

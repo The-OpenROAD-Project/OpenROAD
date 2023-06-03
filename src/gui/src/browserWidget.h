@@ -229,15 +229,18 @@ class BrowserWidget : public QDockWidget,
 
   ModuleStats populateModule(odb::dbModule* module, QStandardItem* parent);
 
-  ModuleStats addInstanceItem(odb::dbInst* inst, QStandardItem* parent);
+  ModuleStats addInstanceItem(odb::dbInst* inst,
+                              QStandardItem* parent,
+                              bool create_row);
   ModuleStats addInstanceItems(const std::vector<odb::dbInst*>& insts,
                                const std::string& title,
-                               QStandardItem* parent);
+                               QStandardItem* parent,
+                               bool check_instance_limits);
   ModuleStats addModuleItem(odb::dbModule* module,
                             QStandardItem* parent,
                             bool expand);
 
-  const QIcon makeModuleIcon(const QColor& color);
+  QIcon makeModuleIcon(const QColor& color);
 
   void makeRowItems(QStandardItem* item,
                     const std::string& master,
@@ -254,6 +257,9 @@ class BrowserWidget : public QDockWidget,
     Modules,
     Area
   };
+
+  // Limit number of visible physical instances
+  static constexpr int max_visible_leafs_ = 1000;
 };
 
 }  // namespace gui

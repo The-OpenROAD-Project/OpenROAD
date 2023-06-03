@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Service
+metadata:
+   name:  workers
+   labels:
+      app: distributed-routing
+spec:
+  selector:
+   app: distributed-routing
+  clusterIP: None 
+  type: ClusterIP
+  ports:
+  - protocol: UDP
+    port: 1111
+    targetPort: 1111
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: worker-deployment
+  labels:
+    app: distributed-routing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: distributed-routing
+  serviceName: "workers"
+  podManagementPolicy: "Parallel"
+  template:
+    metadata:
+      labels:
+        app: distributed-routing
+    spec:
+      hostNetwork: true
+      containers:
+        - name: openroad
+          image: openroad/centos-binary:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo -e 'set_thread_count $::env(MY_POD_CPU)\nrun_worker -host $::env(MY_POD_IP) -port 1111' > /home/worker.tcl ;
+              /usr/bin/openroad /home/worker.tcl ;
+          ports:
+          - containerPort: 1111
+          volumeMounts:
+          - name: nfs-volume
+            mountPath: ${SHARED_FOLDER_PATH}
+          env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: MY_POD_CPU
+            value: "20"
+          resources:
+            requests:
+              cpu: 20
+      volumes:
+      - name: nfs-volume
+        nfs:
+          server: ${NFS_SERVER_IP}
+          path: ${SHARED_FOLDER_PATH}
+          readOnly: no
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: balancer-deployment
+  labels:
+    app: balancer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: balancer
+  template:
+    metadata:
+      labels:
+        app: balancer
+    spec:
+      containers:
+        - name: openroad
+          image: openroad/centos-binary:latest
+          imagePullPolicy: Always
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo 'run_load_balancer -host $::env(MY_POD_IP) -port 1111 -workers_domain headless-udp' > /home/balancer.tcl ;
+              /usr/bin/openroad /home/balancer.tcl ;
+          ports:
+          - containerPort: 1111
+          env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          resources:
+            requests:
+              cpu: 31
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: balancer-service
+spec:
+  selector:
+    app: balancer
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 1111
+      targetPort: 1111
+      nodePort: 30001

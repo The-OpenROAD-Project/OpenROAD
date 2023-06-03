@@ -46,14 +46,14 @@ class Logger;
 
 namespace gpl {
 
-class NesterovBase;
+class NesterovBaseCommon;
 class GNet;
 
 class TimingBase
 {
  public:
   TimingBase();
-  TimingBase(std::shared_ptr<NesterovBase> nb,
+  TimingBase(std::shared_ptr<NesterovBaseCommon> nbc,
              rsz::Resizer* rs,
              utl::Logger* log);
 
@@ -75,7 +75,7 @@ class TimingBase
  private:
   rsz::Resizer* rs_;
   utl::Logger* log_;
-  std::shared_ptr<NesterovBase> nb_;
+  std::shared_ptr<NesterovBaseCommon> nbc_;
 
   std::vector<int> timingNetWeightOverflow_;
   std::vector<int> timingOverflowChk_;

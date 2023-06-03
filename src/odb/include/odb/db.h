@@ -38,6 +38,7 @@
 #include <string>
 #include <vector>
 
+#include "dbMatrix.h"
 #include "dbObject.h"
 #include "dbSet.h"
 #include "dbTypes.h"
@@ -139,8 +140,10 @@ class dbTechLayerArraySpacingRule;
 class dbTechLayerWidthTableRule;
 class dbTechLayerMinCutRule;
 class dbGuide;
+class dbNetTrack;
 class dbMetalWidthViaMap;
 class dbTechLayerAreaRule;
+class dbTechLayerKeepOutZoneRule;
 class dbModule;
 class dbModInst;
 class dbGroup;
@@ -352,7 +355,7 @@ class dbDatabase : public dbObject
   /// WARNING: This function destroys the data currently in the database.
   /// Throws ZIOError..
   ///
-  void read(FILE* file);
+  void read(std::ifstream& f);
 
   ///
   /// Write a database to this stream.
@@ -369,14 +372,14 @@ class dbDatabase : public dbObject
   void writeWires(FILE* file, dbBlock* block);
   void writeNets(FILE* file, dbBlock* block);
   void writeParasitics(FILE* file, dbBlock* block);
-  void readTech(FILE* file);
-  void readLib(FILE* file, dbLib*);
-  void readLibs(FILE* file);
-  void readBlock(FILE* file, dbBlock* block);
-  void readWires(FILE* file, dbBlock* block);
-  void readNets(FILE* file, dbBlock* block);
-  void readParasitics(FILE* file, dbBlock* block);
-  void readChip(FILE* file);
+  void readTech(std::ifstream& f);
+  void readLib(std::ifstream& f, dbLib*);
+  void readLibs(std::ifstream& f);
+  void readBlock(std::ifstream& f, dbBlock* block);
+  void readWires(std::ifstream& f, dbBlock* block);
+  void readNets(std::ifstream& f, dbBlock* block);
+  void readParasitics(std::ifstream& f, dbBlock* block);
+  void readChip(std::ifstream& f);
 
   ///
   /// ECO - The following methods implement a simple ECO mechanism for capturing
@@ -530,7 +533,12 @@ class dbBox : public dbObject
   ///
   /// Get the translated boxes of this via
   ///
-  void getViaBoxes(std::vector<dbShape>& boxes);
+  void getViaBoxes(std::vector<dbShape>& shapes);
+
+  ///
+  /// Get the translated boxes of this via on the given layer
+  ///
+  void getViaLayerBoxes(dbTechLayer* layer, std::vector<dbShape>& shapes);
 
   ///
   /// Get the width (xMax-xMin) of the box.
@@ -558,8 +566,6 @@ class dbBox : public dbObject
   ///
   void setVisited(bool value);
   bool isVisited();
-  void setMarked(bool value);
-  bool isMarked();
 
   ///
   /// Get the owner of this box
@@ -2724,6 +2730,10 @@ class dbNet : public dbObject
   dbSet<dbGuide> getGuides() const;
 
   void clearGuides();
+
+  dbSet<dbNetTrack> getTracks() const;
+
+  void clearTracks();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3721,7 +3731,7 @@ class dbWire : public dbObject
   ///
   /// returns false if this shape_id is not a via.
   ///
-  bool getViaBoxes(int via_shape_id, std::vector<dbShape>& boxes);
+  bool getViaBoxes(int via_shape_id, std::vector<dbShape>& shapes);
 
   ///
   /// Returns true if this wire is a global-wire
@@ -4938,6 +4948,11 @@ class dbRow : public dbObject
   Rect getBBox();
 
   ///
+  /// Get the block this row belongs too.
+  ///
+  dbBlock* getBlock();
+
+  ///
   /// Create a new row.
   ///
   static dbRow* create(dbBlock* block,
@@ -5564,6 +5579,11 @@ class dbMaster : public dbObject
   /// Returns NULL if a master with this name already exists
   ///
   static dbMaster* create(dbLib* lib, const char* name);
+
+  ///
+  /// Destroy a dbMaster.
+  ///
+  static void destroy(dbMaster* master);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -7037,6 +7057,8 @@ class dbTechLayer : public dbObject
   dbSet<dbTechLayerMinCutRule> getTechLayerMinCutRules() const;
 
   dbSet<dbTechLayerAreaRule> getTechLayerAreaRules() const;
+
+  dbSet<dbTechLayerKeepOutZoneRule> getTechLayerKeepOutZoneRules() const;
 
   void setRectOnly(bool rect_only);
 
@@ -8895,6 +8917,29 @@ class dbGuide : public dbObject
   // User Code End dbGuide
 };
 
+class dbNetTrack : public dbObject
+{
+ public:
+  // User Code Begin dbNetTrackEnums
+  // User Code End dbNetTrackEnums
+
+  Rect getBox() const;
+
+  // User Code Begin dbNetTrack
+
+  dbNet* getNet() const;
+
+  dbTechLayer* getLayer() const;
+
+  static dbNetTrack* create(dbNet* net, dbTechLayer* layer, Rect box);
+
+  static dbNetTrack* getNetTrack(dbBlock* block, uint dbid);
+
+  static void destroy(dbNetTrack* guide);
+
+  // User Code End dbNetTrack
+};
+
 class dbMetalWidthViaMap : public dbObject
 {
  public:
@@ -9000,6 +9045,81 @@ class dbTechLayerAreaRule : public dbObject
   static void destroy(dbTechLayerAreaRule* rule);
 
   // User Code End dbTechLayerAreaRule
+};
+
+class dbTechLayerKeepOutZoneRule : public dbObject
+{
+ public:
+  // User Code Begin dbTechLayerKeepOutZoneRuleEnums
+  // User Code End dbTechLayerKeepOutZoneRuleEnums
+
+  void setFirstCutClass(std::string first_cut_class);
+
+  std::string getFirstCutClass() const;
+
+  void setSecondCutClass(std::string second_cut_class);
+
+  std::string getSecondCutClass() const;
+
+  void setAlignedSpacing(int aligned_spacing);
+
+  int getAlignedSpacing() const;
+
+  void setSideExtension(int side_extension);
+
+  int getSideExtension() const;
+
+  void setForwardExtension(int forward_extension);
+
+  int getForwardExtension() const;
+
+  void setEndSideExtension(int end_side_extension);
+
+  int getEndSideExtension() const;
+
+  void setEndForwardExtension(int end_forward_extension);
+
+  int getEndForwardExtension() const;
+
+  void setSideSideExtension(int side_side_extension);
+
+  int getSideSideExtension() const;
+
+  void setSideForwardExtension(int side_forward_extension);
+
+  int getSideForwardExtension() const;
+
+  void setSpiralExtension(int spiral_extension);
+
+  int getSpiralExtension() const;
+
+  void setSameMask(bool same_mask);
+
+  bool isSameMask() const;
+
+  void setSameMetal(bool same_metal);
+
+  bool isSameMetal() const;
+
+  void setDiffMetal(bool diff_metal);
+
+  bool isDiffMetal() const;
+
+  void setExceptAlignedSide(bool except_aligned_side);
+
+  bool isExceptAlignedSide() const;
+
+  void setExceptAlignedEnd(bool except_aligned_end);
+
+  bool isExceptAlignedEnd() const;
+
+  // User Code Begin dbTechLayerKeepOutZoneRule
+
+  static dbTechLayerKeepOutZoneRule* create(dbTechLayer* _layer);
+
+  static void destroy(dbTechLayerKeepOutZoneRule* rule);
+
+  // User Code End dbTechLayerKeepOutZoneRule
 };
 
 class dbModule : public dbObject
@@ -9296,8 +9416,8 @@ class dbGCellGrid : public dbObject
 
   void resetGrid();
 
-  std::map<std::pair<uint, uint>, GCellData> getCongestionMap(dbTechLayer* layer
-                                                              = nullptr);
+  dbMatrix<dbGCellGrid::GCellData> getCongestionMap(dbTechLayer* layer
+                                                    = nullptr);
   // User Code End dbGCellGrid
 };
 
