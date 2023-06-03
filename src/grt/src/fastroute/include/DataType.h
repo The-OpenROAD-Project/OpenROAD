@@ -40,6 +40,8 @@ namespace odb {
 class dbNet;
 }
 
+using int64 = std::int64_t;
+
 namespace grt {
 
 enum class RouteType

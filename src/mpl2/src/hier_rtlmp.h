@@ -261,7 +261,6 @@ class HierRTLMP
 
   // flag variables
   const bool dynamic_congestion_weight_flag_ = false;
-  const bool update_boundary_weight_ = false;
   // Our experiments show that for most testcases, turn off bus planning
   // can generate better results.
   // We recommand that you turn off this flag for technology nodes with very
@@ -271,6 +270,8 @@ class HierRTLMP
 
   // technology-related variables
   float dbu_ = 0.0;
+  int manufacturing_grid_ = 1;  // the default manufacture grid in dbu
+                                // will be over written by the tech lef value
 
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;

@@ -290,8 +290,8 @@ void RoutingCongestionDataSource::correctMapScale(HeatMapDataSource::Map& map)
   }
 }
 
-const std::string RoutingCongestionDataSource::formatValue(double value,
-                                                           bool legend) const
+std::string RoutingCongestionDataSource::formatValue(double value,
+                                                     bool legend) const
 {
   if (type_ == Congestion) {
     return HeatMapDataSource::formatValue(value, legend);

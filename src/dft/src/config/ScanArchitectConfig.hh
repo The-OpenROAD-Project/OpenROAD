@@ -44,7 +44,8 @@ class ScanArchitectConfig
   // TODO Add suport for mix_edges, mix_clocks, mix_clocks_not_edges
   enum class ClockMixing
   {
-    NoMix  // We create different scan chains for each clock and edge
+    NoMix,    // We create different scan chains for each clock and edge
+    ClockMix  // We architect the flops of different clock and edge together
   };
 
   void setClockMixing(ClockMixing clock_mixing);

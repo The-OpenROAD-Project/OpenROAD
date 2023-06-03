@@ -35,8 +35,13 @@
 #include "FlexPA.h"
 #include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
+#include "distributed/PinAccessJobDescription.h"
+#include "distributed/frArchive.h"
+#include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "serialization.h"
 #include "utl/exception.h"
 
 using namespace std;
@@ -1402,6 +1407,26 @@ int FlexPA::prepPoint_pin(T* pin, frInstTerm* instTerm)
   return nAps;
 }
 
+static inline void serializePatterns(
+    const std::vector<std::vector<std::unique_ptr<FlexPinAccessPattern>>>&
+        patterns,
+    const std::string& file_name)
+{
+  std::ofstream file(file_name.c_str());
+  frOArchive ar(file);
+  registerTypes(ar);
+  ar << patterns;
+  file.close();
+}
+static inline void serializeInstRows(
+    const std::vector<std::vector<frInst*>>& inst_rows,
+    const std::string& file_name)
+{
+  paUpdate update;
+  update.setInstRows(inst_rows);
+  paUpdate::serialize(update, file_name);
+}
+
 void FlexPA::prepPoint()
 {
   ProfileTask profile("PA:point");
@@ -1498,6 +1523,115 @@ void FlexPA::prepPoint()
   }
 }
 
+void FlexPA::prepPatternInstRows(std::vector<std::vector<frInst*>> instRows)
+{
+  ThreadException exception;
+  int cnt = 0;
+  if (isDistributed()) {
+    omp_set_num_threads(cloud_sz_);
+    int batch_size = instRows.size() / cloud_sz_;
+    paUpdate allUpdates;
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < cloud_sz_; i++) {
+      try {
+        vector<std::vector<frInst*>>::const_iterator start
+            = instRows.begin() + (i * batch_size);
+        vector<std::vector<frInst*>>::const_iterator end
+            = (i == cloud_sz_ - 1) ? instRows.end() : start + batch_size;
+        std::vector<std::vector<frInst*>> batch(start, end);
+        std::string path = fmt::format("{}/batch_{}.bin", shared_vol_, i);
+        serializeInstRows(batch, path);
+        dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                            dst::JobMessage::UNICAST),
+            result;
+        std::unique_ptr<PinAccessJobDescription> uDesc
+            = std::make_unique<PinAccessJobDescription>();
+        uDesc->setPath(path);
+        uDesc->setType(PinAccessJobDescription::INST_ROWS);
+        msg.setJobDescription(std::move(uDesc));
+        bool ok
+            = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+        if (!ok)
+          logger_->error(utl::DRT, 329, "Error sending INST_ROWS Job to cloud");
+        auto desc
+            = static_cast<PinAccessJobDescription*>(result.getJobDescription());
+        paUpdate update;
+        paUpdate::deserialize(design_, update, desc->getPath());
+        for (const auto& [term, aps] : update.getGroupResults()) {
+          term->setAccessPoints(aps);
+        }
+#pragma omp critical
+        {
+          for (const auto& res : update.getGroupResults()) {
+            allUpdates.addGroupResult(res);
+          }
+          cnt += batch.size();
+          if (VERBOSE > 0) {
+            if (cnt < 10000) {
+              if (cnt % 1000 == 0) {
+                logger_->info(DRT, 110, "  Complete {} groups.", cnt);
+              }
+            } else {
+              if (cnt % 10000 == 0) {
+                logger_->info(DRT, 111, "  Complete {} groups.", cnt);
+              }
+            }
+          }
+        }
+      } catch (...) {
+        exception.capture();
+      }
+    }
+    // send updates back to workers
+    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                        dst::JobMessage::BROADCAST),
+        result;
+    std::string updatesPath = fmt::format("{}/final_updates.bin", shared_vol_);
+    paUpdate::serialize(allUpdates, updatesPath);
+    std::unique_ptr<PinAccessJobDescription> uDesc
+        = std::make_unique<PinAccessJobDescription>();
+    uDesc->setPath(updatesPath);
+    uDesc->setType(PinAccessJobDescription::UPDATE_PA);
+    msg.setJobDescription(std::move(uDesc));
+    bool ok = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    if (!ok)
+      logger_->error(utl::DRT, 332, "Error sending UPDATE_PA Job to cloud");
+  } else {
+    omp_set_num_threads(MAX_THREADS);
+    // choose access pattern of a row of insts
+    int rowIdx = 0;
+#pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < (int) instRows.size(); i++) {
+      try {
+        auto& instRow = instRows[i];
+        genInstRowPattern(instRow);
+#pragma omp critical
+        {
+          rowIdx++;
+          cnt++;
+          if (VERBOSE > 0) {
+            if (cnt < 10000) {
+              if (cnt % 1000 == 0) {
+                logger_->info(DRT, 82, "  Complete {} groups.", cnt);
+              }
+            } else {
+              if (cnt % 10000 == 0) {
+                logger_->info(DRT, 83, "  Complete {} groups.", cnt);
+              }
+            }
+          }
+        }
+      } catch (...) {
+        exception.capture();
+      }
+    }
+  }
+  exception.rethrow();
+  if (VERBOSE > 0) {
+    logger_->info(DRT, 84, "  Complete {} groups.", cnt);
+  }
+}
+
 void FlexPA::prepPattern()
 {
   ProfileTask profile("PA:pattern");
@@ -1566,6 +1700,22 @@ void FlexPA::prepPattern()
   if (VERBOSE > 0) {
     logger_->info(DRT, 81, "  Complete {} unique inst patterns.", cnt);
   }
+  if (isDistributed()) {
+    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                        dst::JobMessage::BROADCAST),
+        result;
+    std::unique_ptr<PinAccessJobDescription> uDesc
+        = std::make_unique<PinAccessJobDescription>();
+    std::string patterns_file = fmt::format("{}/patterns.bin", shared_vol_);
+    serializePatterns(uniqueInstPatterns_, patterns_file);
+    uDesc->setPath(patterns_file);
+    uDesc->setType(PinAccessJobDescription::UPDATE_PATTERNS);
+    msg.setJobDescription(std::move(uDesc));
+    bool ok = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    if (!ok)
+      logger_->error(
+          utl::DRT, 330, "Error sending UPDATE_PATTERNS Job to cloud");
+  }
 
   // prep pattern for each row
   std::vector<frInst*> insts;
@@ -1607,41 +1757,7 @@ void FlexPA::prepPattern()
   if (!rowInsts.empty()) {
     instRows.push_back(rowInsts);
   }
-
-  // choose access pattern of a row of insts
-  int rowIdx = 0;
-  cnt = 0;
-  // for (auto &instRow: instRows) {
-  omp_set_num_threads(MAX_THREADS);
-#pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < (int) instRows.size(); i++) {
-    try {
-      auto& instRow = instRows[i];
-      genInstRowPattern(instRow);
-#pragma omp critical
-      {
-        rowIdx++;
-        cnt++;
-        if (VERBOSE > 0) {
-          if (cnt < 10000) {
-            if (cnt % 1000 == 0) {
-              logger_->info(DRT, 82, "  Complete {} groups.", cnt);
-            }
-          } else {
-            if (cnt % 10000 == 0) {
-              logger_->info(DRT, 83, "  Complete {} groups.", cnt);
-            }
-          }
-        }
-      }
-    } catch (...) {
-      exception.capture();
-    }
-  }
-  exception.rethrow();
-  if (VERBOSE > 0) {
-    logger_->info(DRT, 84, "  Complete {} groups.", cnt);
-  }
+  prepPatternInstRows(instRows);
 }
 
 void FlexPA::revertAccessPoints()

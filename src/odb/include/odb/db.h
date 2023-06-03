@@ -4948,6 +4948,11 @@ class dbRow : public dbObject
   Rect getBBox();
 
   ///
+  /// Get the block this row belongs too.
+  ///
+  dbBlock* getBlock();
+
+  ///
   /// Create a new row.
   ///
   static dbRow* create(dbBlock* block,

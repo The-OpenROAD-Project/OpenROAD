@@ -53,6 +53,9 @@
 
 #include "browserWidget.h"
 #include "bufferTreeDescriptor.h"
+#ifdef ENABLE_CHARTS
+#include "chartsWidget.h"
+#endif
 #include "clockWidget.h"
 #include "dbDescriptors.h"
 #include "displayControls.h"
@@ -102,7 +105,11 @@ MainWindow::MainWindow(QWidget* parent)
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
           new BrowserWidget(viewer_->getModuleSettings(), controls_, this)),
-      find_dialog_(new FindObjectDialog(this))
+#ifdef ENABLE_CHARTS
+      charts_widget_(new ChartsWidget(this)),
+#endif
+      find_dialog_(new FindObjectDialog(this)),
+      goto_dialog_(new GotoLocationDialog(this, viewer_))
 {
   // Size and position the window
   QSize size = QDesktopWidget().availableGeometry(this).size();
@@ -122,6 +129,9 @@ MainWindow::MainWindow(QWidget* parent)
   addDockWidget(Qt::RightDockWidgetArea, timing_widget_);
   addDockWidget(Qt::RightDockWidgetArea, drc_viewer_);
   addDockWidget(Qt::RightDockWidgetArea, clock_viewer_);
+#ifdef ENABLE_CHARTS
+  addDockWidget(Qt::RightDockWidgetArea, charts_widget_);
+#endif
 
   tabifyDockWidget(selection_browser_, script_);
   selection_browser_->hide();
@@ -436,6 +446,10 @@ void MainWindow::init(sta::dbSta* sta)
   controls_->setSTA(sta);
   hierarchy_widget_->setSTA(sta);
   clock_viewer_->setSTA(sta);
+#ifdef ENABLE_CHARTS
+  charts_widget_->setSTA(sta);
+#endif
+
   // register descriptors
   auto* gui = Gui::get();
   auto* inst_descriptor = new DbInstDescriptor(db_, sta);
@@ -526,6 +540,10 @@ void MainWindow::createActions()
 
   find_ = new QAction("Find", this);
   find_->setShortcut(QString("Ctrl+F"));
+
+  goto_position_ = new QAction("Go to position", this);
+  goto_position_->setShortcut(QString("Shift+G"));
+
   zoom_in_ = new QAction("Zoom in", this);
   zoom_in_->setShortcut(QString("Z"));
 
@@ -566,6 +584,7 @@ void MainWindow::createActions()
   connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
   connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
+  connect(goto_position_, SIGNAL(triggered()), this, SLOT(showGotoDialog()));
   connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
   connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
   connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
@@ -592,6 +611,10 @@ void MainWindow::setUseDBU(bool use_dbu)
   for (auto* heat_map : Gui::get()->getHeatMaps()) {
     heat_map->setUseDBU(use_dbu);
   }
+  auto* block = getBlock();
+  if (block != nullptr) {
+    emit displayUnitsChanged(block->getDbUnitsPerMicron(), use_dbu);
+  }
 }
 
 void MainWindow::showApplicationFont()
@@ -616,6 +639,7 @@ void MainWindow::createMenus()
   view_menu_ = menuBar()->addMenu("&View");
   view_menu_->addAction(fit_);
   view_menu_->addAction(find_);
+  view_menu_->addAction(goto_position_);
   view_menu_->addAction(zoom_in_);
   view_menu_->addAction(zoom_out_);
 
@@ -638,6 +662,9 @@ void MainWindow::createMenus()
   windows_menu_->addAction(drc_viewer_->toggleViewAction());
   windows_menu_->addAction(clock_viewer_->toggleViewAction());
   windows_menu_->addAction(hierarchy_widget_->toggleViewAction());
+#ifdef ENABLE_CHARTS
+  windows_menu_->addAction(charts_widget_->toggleViewAction());
+#endif
 
   auto option_menu = menuBar()->addMenu("&Options");
   option_menu->addAction(hide_option_);
@@ -659,10 +686,10 @@ void MainWindow::createToolbars()
   view_tool_bar_->setObjectName("view_toolbar");  // for settings
 }
 
-const std::string MainWindow::addToolbarButton(const std::string& name,
-                                               const QString& text,
-                                               const QString& script,
-                                               bool echo)
+std::string MainWindow::addToolbarButton(const std::string& name,
+                                         const QString& text,
+                                         const QString& script,
+                                         bool echo)
 {
   // ensure key is unique
   std::string key;
@@ -748,12 +775,12 @@ QMenu* MainWindow::findMenu(QStringList& path, QMenu* parent)
   return findMenu(path, menu);
 }
 
-const std::string MainWindow::addMenuItem(const std::string& name,
-                                          const QString& path,
-                                          const QString& text,
-                                          const QString& script,
-                                          const QString& shortcut,
-                                          bool echo)
+std::string MainWindow::addMenuItem(const std::string& name,
+                                    const QString& path,
+                                    const QString& text,
+                                    const QString& script,
+                                    const QString& shortcut,
+                                    bool echo)
 {
   // ensure key is unique
   std::string key;
@@ -837,8 +864,8 @@ void MainWindow::removeMenuItem(const std::string& name)
   menu_actions_.erase(name);
 }
 
-const std::string MainWindow::requestUserInput(const QString& title,
-                                               const QString& question)
+std::string MainWindow::requestUserInput(const QString& title,
+                                         const QString& question)
 {
   QString text = QInputDialog::getText(this, title, question);
   return text.toStdString();
@@ -934,8 +961,9 @@ void MainWindow::setSelected(const Selected& selection, bool show_connectivity)
 {
   selected_.clear();
   addSelected(selection);
-  if (show_connectivity)
+  if (show_connectivity) {
     selectHighlightConnectedNets(true, true, true, false);
+  }
 
   emit selectionChanged();
 }
@@ -1046,8 +1074,9 @@ void MainWindow::updateHighlightedSet(const QList<const Selected*>& items,
 
 void MainWindow::clearHighlighted(int highlight_group)
 {
-  if (highlighted_.empty())
+  if (highlighted_.empty()) {
     return;
+  }
   int num_items_cleared = 0;
   if (highlight_group < 0) {
     for (auto& highlighted_set : highlighted_) {
@@ -1058,8 +1087,9 @@ void MainWindow::clearHighlighted(int highlight_group)
     num_items_cleared += highlighted_[highlight_group].size();
     highlighted_[highlight_group].clear();
   }
-  if (num_items_cleared > 0)
+  if (num_items_cleared > 0) {
     emit highlightChanged();
+  }
 }
 
 void MainWindow::clearRulers()
@@ -1074,8 +1104,9 @@ void MainWindow::clearRulers()
 
 void MainWindow::removeFromSelected(const QList<const Selected*>& items)
 {
-  if (items.empty())
+  if (items.empty()) {
     return;
+  }
   for (auto& item : items) {
     selected_.erase(*item);
   }
@@ -1085,12 +1116,14 @@ void MainWindow::removeFromSelected(const QList<const Selected*>& items)
 void MainWindow::removeFromHighlighted(const QList<const Selected*>& items,
                                        int highlight_group)
 {
-  if (items.empty())
+  if (items.empty()) {
     return;
+  }
   if (highlight_group < 0) {
     for (auto& item : items) {
-      for (auto& highlighted_set : highlighted_)
+      for (auto& highlighted_set : highlighted_) {
         highlighted_set.erase(*item);
+      }
     }
   } else if (highlight_group < highlighted_.size()) {
     for (auto& item : items) {
@@ -1108,8 +1141,9 @@ void MainWindow::zoomTo(const odb::Rect& rect_dbu)
 
 void MainWindow::zoomInToItems(const QList<const Selected*>& items)
 {
-  if (items.empty())
+  if (items.empty()) {
     return;
+  }
   odb::Rect items_bbox;
   items_bbox.mergeInit();
   int merge_cnt = 0;
@@ -1120,8 +1154,9 @@ void MainWindow::zoomInToItems(const QList<const Selected*>& items)
       items_bbox.merge(item_bbox);
     }
   }
-  if (merge_cnt == 0)
+  if (merge_cnt == 0) {
     return;
+  }
   zoomTo(items_bbox);
 }
 
@@ -1132,9 +1167,18 @@ void MainWindow::status(const std::string& message)
 
 void MainWindow::showFindDialog()
 {
+  if (getBlock() == nullptr) {
+    return;
+  }
+  find_dialog_->exec();
+}
+
+void MainWindow::showGotoDialog()
+{
   if (getBlock() == nullptr)
     return;
-  find_dialog_->exec();
+
+  goto_dialog_->show_init();
 }
 
 void MainWindow::showHelp()
@@ -1154,17 +1198,19 @@ bool MainWindow::anyObjectInSet(bool selection_set, odb::dbObjectType obj_type)
   if (selection_set) {
     for (auto& selected_obj : selected_) {
       if ((selected_obj.isInst() && obj_type == odb::dbInstObj)
-          || (selected_obj.isNet() && obj_type == odb::dbNetObj))
+          || (selected_obj.isNet() && obj_type == odb::dbNetObj)) {
         return true;
+      }
     }
     return false;
-  } else {
-    for (auto& highlight_set : highlighted_) {
-      for (auto& selected_obj : highlight_set) {
-        if (selected_obj.isInst() && obj_type == odb::dbInstObj)
-          return true;
-        if (selected_obj.isNet() && obj_type == odb::dbNetObj)
-          return true;
+  }
+  for (auto& highlight_set : highlighted_) {
+    for (auto& selected_obj : highlight_set) {
+      if (selected_obj.isInst() && obj_type == odb::dbInstObj) {
+        return true;
+      }
+      if (selected_obj.isNet() && obj_type == odb::dbNetObj) {
+        return true;
       }
     }
   }
@@ -1183,12 +1229,14 @@ void MainWindow::selectHighlightConnectedInsts(bool select_flag,
       }
     }
   }
-  if (connected_insts.empty())
+  if (connected_insts.empty()) {
     return;
-  if (select_flag)
+  }
+  if (select_flag) {
     addSelected(connected_insts);
-  else
+  } else {
     addHighlighted(connected_insts, highlight_group);
+  }
 }
 
 void MainWindow::selectHighlightConnectedNets(bool select_flag,
@@ -1202,28 +1250,33 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
       auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
       for (auto inst_term : inst_obj->getITerms()) {
         if (inst_term->getNet() == nullptr
-            || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL)
+            || inst_term->getNet()->getSigType() != odb::dbSigType::SIGNAL) {
           continue;
+        }
         auto inst_term_dir = inst_term->getIoType();
 
         if (output
             && (inst_term_dir == odb::dbIoType::OUTPUT
-                || inst_term_dir == odb::dbIoType::INOUT))
+                || inst_term_dir == odb::dbIoType::INOUT)) {
           connected_nets.insert(Gui::get()->makeSelected(inst_term->getNet()));
+        }
         if (input
             && (inst_term_dir == odb::dbIoType::INPUT
-                || inst_term_dir == odb::dbIoType::INOUT))
+                || inst_term_dir == odb::dbIoType::INOUT)) {
           connected_nets.insert(Gui::get()->makeSelected(
               DbNetDescriptor::NetWithSink{inst_term->getNet(), inst_term}));
+        }
       }
     }
   }
-  if (connected_nets.empty())
+  if (connected_nets.empty()) {
     return;
-  if (select_flag)
+  }
+  if (select_flag) {
     addSelected(connected_nets);
-  else
+  } else {
     addHighlighted(connected_nets, highlight_group);
+  }
 }
 
 void MainWindow::saveSettings()
@@ -1250,7 +1303,11 @@ void MainWindow::postReadLef(odb::dbTech* tech, odb::dbLib* library)
 
 void MainWindow::postReadDef(odb::dbBlock* block)
 {
-  emit designLoaded(block);
+  if (!block->getParent()) {
+    emit designLoaded(block);
+  } else {
+    viewer_->fullRepaint();
+  }
 }
 
 void MainWindow::postReadDb(odb::dbDatabase* db)
@@ -1336,7 +1393,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
   }
 }
 
-const std::vector<std::string> MainWindow::getRestoreTclCommands()
+std::vector<std::string> MainWindow::getRestoreTclCommands()
 {
   std::vector<std::string> cmds;
   // Save rulers
@@ -1369,25 +1426,23 @@ std::string MainWindow::convertDBUToString(int value, bool add_units) const
 {
   if (show_dbu_->isChecked()) {
     return std::to_string(value);
-  } else {
-    auto* block = getBlock();
-    if (block == nullptr) {
-      return std::to_string(value);
-    } else {
-      const double dbu_per_micron = block->getDbUnitsPerMicron();
-
-      const int precision = std::ceil(std::log10(dbu_per_micron));
-      const double micron_value = value / dbu_per_micron;
-
-      auto str = utl::to_numeric_string(micron_value, precision);
-
-      if (add_units) {
-        str += " \u03BCm";  // micro meter
-      }
-
-      return str;
-    }
   }
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return std::to_string(value);
+  }
+  const double dbu_per_micron = block->getDbUnitsPerMicron();
+
+  const int precision = std::ceil(std::log10(dbu_per_micron));
+  const double micron_value = value / dbu_per_micron;
+
+  auto str = utl::to_numeric_string(micron_value, precision);
+
+  if (add_units) {
+    str += " \u03BCm";  // micro meter
+  }
+
+  return str;
 }
 
 int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
@@ -1404,16 +1459,14 @@ int MainWindow::convertStringToDBU(const std::string& value, bool* ok) const
 
   if (show_dbu_->isChecked()) {
     return new_value.toInt(ok);
-  } else {
-    auto* block = getBlock();
-    if (block == nullptr) {
-      return new_value.toInt(ok);
-    } else {
-      const int dbu_per_micron = block->getDbUnitsPerMicron();
-
-      return new_value.toDouble(ok) * dbu_per_micron;
-    }
   }
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return new_value.toInt(ok);
+  }
+  const int dbu_per_micron = block->getDbUnitsPerMicron();
+
+  return new_value.toDouble(ok) * dbu_per_micron;
 }
 
 void MainWindow::timingCone(Gui::odbTerm term, bool fanin, bool fanout)

@@ -296,9 +296,10 @@ void OpenRoad::readLef(const char* filename,
 void OpenRoad::readDef(const char* filename,
                        bool continue_on_errors,
                        bool floorplan_init,
-                       bool incremental)
+                       bool incremental,
+                       bool child)
 {
-  if (!floorplan_init && !incremental && db_->getChip()
+  if (!floorplan_init && !incremental && !child && db_->getChip()
       && db_->getChip()->getBlock()) {
     logger_->error(
         ORD,
@@ -320,9 +321,17 @@ void OpenRoad::readDef(const char* filename,
   if (continue_on_errors) {
     def_reader.continueOnErrors();
   }
-  dbChip* chip = def_reader.createChip(search_libs, filename);
-  if (chip) {
-    dbBlock* block = chip->getBlock();
+  dbBlock* block = nullptr;
+  if (child) {
+    auto parent = db_->getChip()->getBlock();
+    block = def_reader.createBlock(parent, search_libs, filename);
+  } else {
+    dbChip* chip = def_reader.createChip(search_libs, filename);
+    if (chip) {
+      block = chip->getBlock();
+    }
+  }
+  if (block) {
     for (OpenRoadObserver* observer : observers_) {
       observer->postReadDef(block);
     }

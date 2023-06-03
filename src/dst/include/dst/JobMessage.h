@@ -61,6 +61,8 @@ class JobMessage
     ROUTING,
     UPDATE_DESIGN,
     BALANCER,
+    PIN_ACCESS,
+    GRDR_INIT,
     SUCCESS,
     ERROR,
     NONE

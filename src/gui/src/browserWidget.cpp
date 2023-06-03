@@ -258,11 +258,10 @@ Selected BrowserWidget::getSelectedFromIndex(const QModelIndex& index)
     auto* inst = data.value<odb::dbInst*>();
     if (inst != nullptr) {
       return gui->makeSelected(inst);
-    } else {
-      auto* module = data.value<odb::dbModule*>();
-      if (module != nullptr) {
-        return gui->makeSelected(module);
-      }
+    }
+    auto* module = data.value<odb::dbModule*>();
+    if (module != nullptr) {
+      return gui->makeSelected(module);
     }
   }
 
@@ -441,7 +440,7 @@ BrowserWidget::ModuleStats BrowserWidget::addInstanceItem(odb::dbInst* inst,
   auto* box = inst->getBBox();
 
   ModuleStats stats;
-  stats.area = box->getDX() * box->getDY();
+  stats.area = box->getDX() * (int64_t) box->getDY();
 
   if (inst->isBlock()) {
     stats.incrementMacros();
@@ -534,9 +533,8 @@ void BrowserWidget::makeRowItems(QStandardItem* item,
       = [&locale](int current, int total, bool is_leaf) -> QString {
     if (!is_leaf) {
       return locale.toString(current) + "/" + locale.toString(total);
-    } else {
-      return locale.toString(total);
     }
+    return locale.toString(total);
   };
 
   QStandardItem* master_item
@@ -693,7 +691,7 @@ bool BrowserWidget::eventFilter(QObject* obj, QEvent* event)
   return QDockWidget::eventFilter(obj, event);
 }
 
-const QIcon BrowserWidget::makeModuleIcon(const QColor& color)
+QIcon BrowserWidget::makeModuleIcon(const QColor& color)
 {
   QPixmap swatch(20, 20);
   swatch.fill(color);

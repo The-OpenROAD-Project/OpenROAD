@@ -1147,7 +1147,11 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
   }
 
   if (terms.size() < 2) {
-    logger_->error(utl::PAD, 10, "{} only has one iterm", net->getName());
+    logger_->error(utl::PAD,
+                   10,
+                   "{} only has one iterm on {} layer",
+                   net->getName(),
+                   layer_->getName());
   }
 
   std::vector<TargetPair> pairs;

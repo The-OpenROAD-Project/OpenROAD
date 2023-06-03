@@ -220,14 +220,14 @@ void ScanCandidate::debugPrintPortMapping(utl::Logger* logger) const
              utl::DFT,
              "print_port_mapping_scan_candidate",
              2,
-             "Port mapping for cell: {:s}",
+             "Port mapping for cell: {}",
              scan_cell_->name());
   for (const auto& [from_port, to_port] : port_mapping_) {
     debugPrint(logger,
                utl::DFT,
                "print_port_mapping_scan_candidate",
                2,
-               "    {:s} -> {:s}",
+               "    {} -> {}",
                from_port,
                to_port);
   }
@@ -331,6 +331,7 @@ void ScanReplace::scanReplace()
 {
   odb::dbChip* chip = db_->getChip();
   scanReplace(chip->getBlock());
+  sta_->networkChanged();
 }
 
 // Recursive function that iterates over a block (and the blocks inside this
@@ -424,6 +425,7 @@ void ScanReplace::rollbackScanReplace()
 {
   odb::dbChip* chip = db_->getChip();
   rollbackScanReplace(chip->getBlock());
+  sta_->networkChanged();
 }
 
 void ScanReplace::rollbackScanReplace(odb::dbBlock* block)
@@ -436,7 +438,6 @@ void ScanReplace::rollbackScanReplace(odb::dbBlock* block)
     }
 
     RollbackCandidate& rollback_candidate = *found->second;
-
     utils::ReplaceCell(block,
                        inst,
                        rollback_candidate.getMaster(),

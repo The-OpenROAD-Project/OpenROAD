@@ -47,7 +47,7 @@ proc insert_dft {} {
 
 proc set_dft_config { args } {
   sta::parse_key_args "set_dft_config" args \
-    keys {-max_length} \
+    keys {-max_length -clock_mixing} \
     flags {}
 
   sta::check_argc_eq0 "set_dft_config" $args
@@ -56,6 +56,12 @@ proc set_dft_config { args } {
     set max_length $keys(-max_length)
     sta::check_positive_integer "-max_length" $max_length
     dft::set_dft_config_max_length $max_length
+  }
+
+  if [info exists keys(-clock_mixing)] {
+    set clock_mixing $keys(-clock_mixing)
+    puts $clock_mixing
+    dft::set_dft_config_clock_mixing $clock_mixing
   }
 }
 
