@@ -1533,11 +1533,14 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
                          temp[node_idx]->getTop(),
                          cell->getBottom(),
                          cell->getTop());
-              if (node_idx + 1 < temp.size()
-                  && shiftRightHelper(temp[node_idx],
-                                      temp[node_idx]->getLeft() + one_site_gap,
-                                      s,
-                                      temp[node_idx + 1])) {
+              if (node_idx < temp.size()
+                  && tryMove(temp[node_idx],
+                             temp[node_idx]->getLeft(),
+                             temp[node_idx]->getBottom(),
+                             s,
+                             temp[node_idx]->getLeft() + one_site_gap,
+                             temp[node_idx]->getBottom(),
+                             s)) {
                 logger_->info(DPO,
                               999,
                               "Moved cell {} its left is now at {}",
@@ -2848,7 +2851,18 @@ bool DetailedMgr::tryMove2(Node* ndi,
                            int sj)
 {
   // Very simple move within the same segment.
-
+  debugPrint(logger_, DPO, "detailed", 1, "trying move2");
+  debugPrint(logger_, DPO, "detailed", 1, "Printing cells in segment {}", sj);
+  for (auto cell : cellsInSeg_[sj]) {
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "shiftRightHelper: cell {} Left {} and Right {}",
+               cell->getId(),
+               cell->getLeft(),
+               cell->getRight());
+  }
   // Nothing to move.
   clearMoveList();
 
@@ -2857,6 +2871,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
   int spanned = arch_->getCellHeightInRows(ndi);
   if (sj != si || sj == -1 || ndi->getRegionId() != segments_[sj]->getRegId()
       || spanned != 1) {
+    debugPrint(logger_, DPO, "detailed", 1, "here 1");
     return false;
   }
 
@@ -2889,6 +2904,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
   }
   // We should find something...  At least "ndi"!
   if (ix_j == -1 || ndj == nullptr) {
+    debugPrint(logger_, DPO, "detailed", 1, "here 2");
     return false;
   }
 
@@ -2910,9 +2926,11 @@ bool DetailedMgr::tryMove2(Node* ndi,
   rx = ndj->getLeft() - arch_->getCellSpacing(ndi, ndj);
   if (ndi->getWidth() <= rx - lx) {
     if (!alignPos(ndi, xj, lx, rx)) {
+      debugPrint(logger_, DPO, "detailed", 1, "here 3");
       return false;
     }
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
+      debugPrint(logger_, DPO, "detailed", 1, "here 4");
       return false;
     }
     return true;
@@ -2925,15 +2943,27 @@ bool DetailedMgr::tryMove2(Node* ndi,
   } else {
     rx = segPtr->getMaxX() - arch_->getCellSpacing(ndi, nullptr);
   }
+  debugPrint(logger_,
+             DPO,
+             "detailed",
+             1,
+             "lx {} rx {} so diff is {} and our width is {}",
+             lx,
+             rx,
+             rx - lx,
+             ndi->getWidth());
   if (ndi->getWidth() <= rx - lx) {
     if (!alignPos(ndi, xj, lx, rx)) {
+      debugPrint(logger_, DPO, "detailed", 1, "here 5");
       return false;
     }
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
+      debugPrint(logger_, DPO, "detailed", 1, "here 6");
       return false;
     }
     return true;
   }
+  debugPrint(logger_, DPO, "detailed", 1, "here 7");
   return false;
 }
 
