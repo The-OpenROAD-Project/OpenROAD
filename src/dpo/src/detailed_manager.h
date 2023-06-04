@@ -133,7 +133,7 @@ class DetailedMgr
   int checkRegionAssignment();
   void getOneSiteGapViolationsPerSegment(
       std::vector<std::vector<int>>& violations);
-
+  void moveSegmentOneSiteGapViolators();
   void removeCellFromSegment(Node* nd, int seg);
   void addCellToSegment(Node* nd, int seg);
   double getCellSpacing(Node* ndl, Node* ndr, bool checkPinsOnCells);

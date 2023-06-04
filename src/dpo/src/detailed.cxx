@@ -117,6 +117,7 @@ bool Detailed::improve(DetailedMgr& mgr)
   mgr.checkEdgeSpacingInSegments();
 
   if (mgr.getDisallowOneSiteGaps()) {
+    mgr.moveSegmentOneSiteGapViolators();
     std::vector<std::vector<int>> oneSiteViolations;
     mgr.getOneSiteGapViolationsPerSegment(oneSiteViolations);
     for (auto& segment_violations : oneSiteViolations) {

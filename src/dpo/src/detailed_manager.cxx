@@ -1478,6 +1478,72 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
   }
 }
 
+void DetailedMgr::moveSegmentOneSiteGapViolators()
+{
+  std::vector<Node*> temp;
+  temp.reserve(network_->getNumNodes());
+  for (int s = 0; s < segments_.size(); s++) {
+    // To be safe, gather cells in each segment and re-sort them.
+    temp.clear();
+    if (cellsInSeg_[s].size() == 0) {
+      continue;
+    }
+    temp = cellsInSeg_[s];
+    std::sort(temp.begin(), temp.end(), compareNodesX());
+    auto isInRange = [](int value, int min, int max) -> bool {
+      return min <= value && value <= max;
+    };
+    auto isOverlap
+        = [&isInRange](int bottom1, int top1, int bottom2, int top2) -> bool {
+      return isInRange(bottom1, bottom2, top2)
+             || isInRange(bottom2, bottom1, top1);
+    };
+
+    Node* lastNode = temp[0];
+    int one_site_gap = arch_->getRow(0)->getSiteWidth();
+    std::vector<Node*> cellsAtLastX(1, temp[0]);
+
+    for (int node_idx = 1; node_idx < temp.size(); node_idx++) {
+      if (temp[node_idx]->getRight() != lastNode->getRight()) {
+        if (abs(temp[node_idx]->getLeft() - lastNode->getRight())
+            == one_site_gap) {
+          // we might have a violation
+          // check the ys
+          for (auto cell : cellsAtLastX) {
+            if (isOverlap(cell->getBottom(),
+                          cell->getTop(),
+                          temp[node_idx]->getBottom(),
+                          temp[node_idx]->getTop())) {
+              // we have a violation
+              // node_idx is the index of the violating cell
+              if (node_idx + 1 < temp.size()
+                  && shiftRightHelper(temp[node_idx],
+                                      temp[node_idx]->getRight() + one_site_gap,
+                                      s,
+                                      temp[node_idx + 1])) {
+                logger_->info(
+                    DPO, 999, "Moved cell {}", temp[node_idx]->getId());
+              } else {
+                logger_->info(DPO,
+                              331,
+                              "Cannot move cell {} from {} to {}",
+                              temp[node_idx]->getId(),
+                              temp[node_idx]->getRight(),
+                              temp[node_idx]->getRight() + one_site_gap);
+              }
+              break;
+            }
+          }
+        }
+        cellsAtLastX.clear();
+        lastNode = temp[node_idx];
+      } else {
+        cellsAtLastX.push_back(temp[node_idx]);
+      }
+    }
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int DetailedMgr::checkRegionAssignment()
@@ -2354,10 +2420,22 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
   //
   // We will attempt to push cells starting at "ndr" to the right to
   // maintain no overlap, satisfy spacing, etc.
-
+  logger_->info(DPO,
+                997,
+                "shiftRightHelper: cell {} from {} to {}",
+                ndi->getId(),
+                ndi->getRight(),
+                xj);
   auto it = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndr);
   if (cellsInSeg_[sj].end() == it) {
     // Error.
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "shiftRightHelper: cell {} not found in segment {}",
+               ndr->getId(),
+               sj);
     return false;
   }
   int ix = (int) (it - cellsInSeg_[sj].begin());
@@ -2379,6 +2457,14 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
     // Determine a proper site-aligned position for cell ndr.
     xj += ndi->getWidth();
     xj += arch_->getCellSpacing(ndi, ndr);
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "shiftRightHelper: cell {} from {} to {}",
+               ndr->getId(),
+               ndr->getLeft(),
+               xj);
 
     int site = (xj - originX) / siteSpacing;
 
@@ -2416,7 +2502,12 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
       // We shifted down to the last cell... Everything must be okay!
       break;
     }
-
+    logger_->info(DPO,
+                  998,
+                  "Shifting cell {} to right from {} to pos {}",
+                  ndr->getId(),
+                  ndr->getRight(),
+                  xj);
     ndi = ndr;
     ndr = cellsInSeg_[sj][++ix];
   }
