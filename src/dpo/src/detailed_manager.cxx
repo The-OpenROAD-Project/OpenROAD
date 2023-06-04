@@ -1450,15 +1450,16 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
                   DPO,
                   "detailed",
                   1,
-                  "Violation found between cells {} and {} and one site "
-                  "width is {} and Ys of first {} to {} and second {} to {}",
+                  "Violation found between cells {} whose at left: {} and "
+                  "right {} and cell {} at left {} and right {} and one site "
+                  "width {}",
+                  temp[node_idx]->getId(),
                   temp[node_idx]->getLeft(),
-                  lastNode->getRight(),
-                  one_site_gap,
-                  temp[node_idx]->getBottom(),
-                  temp[node_idx]->getTop(),
-                  cell->getBottom(),
-                  cell->getTop());
+                  temp[node_idx]->getRight(),
+                  cell->getId(),
+                  cell->getLeft(),
+                  cell->getRight(),
+                  one_site_gap);
 
               // we can break here because we only need to find at most one
               // violation for each cell
@@ -1516,20 +1517,39 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
                           temp[node_idx]->getTop())) {
               // we have a violation
               // node_idx is the index of the violating cell
+              debugPrint(logger_,
+                         DPO,
+                         "detailed",
+                         1,
+                         "Violation between cells {} whose left {} and {} "
+                         "whose right {} and one site width "
+                         "is {} and Ys of first {} to {} and second {} to {}",
+                         temp[node_idx]->getId(),
+                         temp[node_idx]->getLeft(),
+                         cell->getId(),
+                         cell->getRight(),
+                         one_site_gap,
+                         temp[node_idx]->getBottom(),
+                         temp[node_idx]->getTop(),
+                         cell->getBottom(),
+                         cell->getTop());
               if (node_idx + 1 < temp.size()
                   && shiftRightHelper(temp[node_idx],
-                                      temp[node_idx]->getRight() + one_site_gap,
+                                      temp[node_idx]->getLeft() + one_site_gap,
                                       s,
                                       temp[node_idx + 1])) {
-                logger_->info(
-                    DPO, 999, "Moved cell {}", temp[node_idx]->getId());
+                logger_->info(DPO,
+                              999,
+                              "Moved cell {} its left is now at {}",
+                              temp[node_idx]->getId(),
+                              temp[node_idx]->getLeft());
               } else {
                 logger_->info(DPO,
                               331,
                               "Cannot move cell {} from {} to {}",
                               temp[node_idx]->getId(),
-                              temp[node_idx]->getRight(),
-                              temp[node_idx]->getRight() + one_site_gap);
+                              temp[node_idx]->getLeft(),
+                              temp[node_idx]->getLeft() + one_site_gap);
               }
               break;
             }
@@ -2420,12 +2440,25 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
   //
   // We will attempt to push cells starting at "ndr" to the right to
   // maintain no overlap, satisfy spacing, etc.
-  logger_->info(DPO,
-                997,
-                "shiftRightHelper: cell {} from {} to {}",
-                ndi->getId(),
-                ndi->getRight(),
-                xj);
+  debugPrint(logger_,
+             DPO,
+             "detailed",
+             1,
+             "shiftRightHelper: cell {} from {} to {}",
+             ndi->getId(),
+             ndi->getLeft(),
+             xj);
+  debugPrint(logger_, DPO, "detailed", 1, "Printing cells in segment {}", sj);
+  for (auto cell : cellsInSeg_[sj]) {
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "shiftRightHelper: cell {} Left {} and Right {}",
+               cell->getId(),
+               cell->getLeft(),
+               cell->getRight());
+  }
   auto it = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndr);
   if (cellsInSeg_[sj].end() == it) {
     // Error.
@@ -2461,7 +2494,7 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
                DPO,
                "detailed",
                1,
-               "shiftRightHelper: cell {} from {} to {}",
+               "while shiftRightHelper: cell {} from {} to {}",
                ndr->getId(),
                ndr->getLeft(),
                xj);
@@ -2504,9 +2537,9 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
     }
     logger_->info(DPO,
                   998,
-                  "Shifting cell {} to right from {} to pos {}",
+                  "Shifting cell {} to the right from {} to pos {}",
                   ndr->getId(),
-                  ndr->getRight(),
+                  ndr->getLeft(),
                   xj);
     ndi = ndr;
     ndr = cellsInSeg_[sj][++ix];
