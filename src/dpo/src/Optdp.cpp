@@ -109,6 +109,7 @@ void Optdp::improvePlacement(int seed,
     // Various settings.
     mgr.setSeed(seed);
     mgr.setMaxDisplacement(max_displacement_x, max_displacement_y);
+    mgr.setDisallowOneSiteGaps(disallow_one_site_gaps);
 
     // Legalization.  Doesn't particularly do much.  It only
     // populates the data structures required for detailed
@@ -137,6 +138,10 @@ void Optdp::improvePlacement(int seed,
     // Random moves and swaps with hpwl as a cost function.  Use
     // random moves and hpwl objective right now.
     dtParams.script_ += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
+
+    if (disallow_one_site_gaps) {
+      dtParams.script_ += "disallow_one_site_gaps;";
+    }
 
     // Run the script.
     dpo::Detailed dt(dtParams);

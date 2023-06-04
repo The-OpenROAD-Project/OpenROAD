@@ -159,6 +159,11 @@ void DetailedMgr::setMaxDisplacement(int x, int y)
                 maxDispY_);
 }
 
+void DetailedMgr::setDisallowOneSiteGaps(bool disallowOneSiteGaps)
+{
+  disallowOneSiteGaps_ = disallowOneSiteGaps;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::internalError(const std::string& msg)
@@ -1384,10 +1389,10 @@ int DetailedMgr::checkEdgeSpacingInSegments()
   return err_n + err_p;
 }
 
-std::vector<std::vector<int>> DetailedMgr::getOneSiteGapViolationsPerSegment()
+void DetailedMgr::getOneSiteGapViolationsPerSegment(
+    std::vector<std::vector<int>>& violating_cells)
 {
   // the pair is the segment and the cell index in that segment
-  std::vector<std::vector<int>> violating_cells;
   violating_cells.resize(segments_.size() + 1);
 
   std::vector<Node*> temp;
@@ -1395,9 +1400,10 @@ std::vector<std::vector<int>> DetailedMgr::getOneSiteGapViolationsPerSegment()
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp.clear();
-    for (Node* ndj : cellsInSeg_[s]) {
-      temp.push_back(ndj);
+    if (cellsInSeg_[s].size() == 0) {
+      continue;
     }
+    temp = cellsInSeg_[s];
     std::sort(temp.begin(), temp.end(), compareNodesX());
 
     // The idea here is to get the last X before the current cell,
@@ -1410,7 +1416,7 @@ std::vector<std::vector<int>> DetailedMgr::getOneSiteGapViolationsPerSegment()
     // ys
 
     auto isInRange = [](int value, int min, int max) -> bool {
-      return value >= min && value <= max;
+      return min <= value && value <= max;
     };
 
     auto isOverlap
@@ -1419,11 +1425,8 @@ std::vector<std::vector<int>> DetailedMgr::getOneSiteGapViolationsPerSegment()
              || isInRange(bottom2, bottom1, top1);
     };
 
-    int lastX = temp[0]->getRight();
     Node* lastNode = temp[0];
     int one_site_gap = arch_->getRow(0)->getSiteWidth();
-    double tolerance = 1.0e-3;
-
     std::vector<Node*> cellsAtLastX(1, temp[0]);
 
     for (int node_idx = 1; node_idx < temp.size(); node_idx++) {
@@ -1431,8 +1434,8 @@ std::vector<std::vector<int>> DetailedMgr::getOneSiteGapViolationsPerSegment()
         // we have a new X
         // check if the difference between the last X and the current X is
         // almost equal to 1-site (using tolerance)
-        if (abs(temp[node_idx]->getLeft() - lastNode->getRight() - one_site_gap)
-            < tolerance) {
+        if (abs(temp[node_idx]->getLeft() - lastNode->getRight())
+            == one_site_gap) {
           // we might have a violation
           // check the ys
           for (auto cell : cellsAtLastX) {
@@ -1442,6 +1445,21 @@ std::vector<std::vector<int>> DetailedMgr::getOneSiteGapViolationsPerSegment()
                           temp[node_idx]->getTop())) {
               // we have a violation
               violating_cells[s].push_back(node_idx);
+              debugPrint(
+                  logger_,
+                  DPO,
+                  "detailed",
+                  1,
+                  "Violation found between cells {} and {} and one site "
+                  "width is {} and Ys of first {} to {} and second {} to {}",
+                  temp[node_idx]->getLeft(),
+                  lastNode->getRight(),
+                  one_site_gap,
+                  temp[node_idx]->getBottom(),
+                  temp[node_idx]->getTop(),
+                  cell->getBottom(),
+                  cell->getTop());
+
               // we can break here because we only need to find at most one
               // violation for each cell
               break;
@@ -1458,8 +1476,6 @@ std::vector<std::vector<int>> DetailedMgr::getOneSiteGapViolationsPerSegment()
       }
     }
   }
-
-  return violating_cells;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

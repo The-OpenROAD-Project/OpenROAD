@@ -89,6 +89,7 @@ class DetailedMgr
   void setSeed(int s);
 
   void setMaxDisplacement(int x, int y);
+  void setDisallowOneSiteGaps(bool disallowOneSiteGaps);
   void getMaxDisplacement(int& x, int& y) const
   {
     x = maxDispX_;
@@ -96,6 +97,7 @@ class DetailedMgr
   }
   int getMaxDisplacementX() const { return maxDispX_; }
   int getMaxDisplacementY() const { return maxDispY_; }
+  bool getDisallowOneSiteGaps() const { return disallowOneSiteGaps_; }
   double measureMaximumDisplacement(double& maxX,
                                     double& maxY,
                                     int& violatedX,
@@ -129,7 +131,8 @@ class DetailedMgr
   int checkSiteAlignment();
   int checkRowAlignment();
   int checkRegionAssignment();
-  std::vector<std::vector<int>> getOneSiteGapViolationsPerSegment();
+  void getOneSiteGapViolationsPerSegment(
+      std::vector<std::vector<int>>& violations);
 
   void removeCellFromSegment(Node* nd, int seg);
   void addCellToSegment(Node* nd, int seg);
@@ -348,7 +351,7 @@ class DetailedMgr
   // Target displacement limits.
   int maxDispX_;
   int maxDispY_;
-
+  bool disallowOneSiteGaps_;
   std::vector<Node*> fixedCells_;  // Fixed; filler, macros, temporary, etc.
 
   // Blockages and segments.

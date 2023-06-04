@@ -116,6 +116,19 @@ bool Detailed::improve(DetailedMgr& mgr)
   mgr.checkOverlapInSegments();
   mgr.checkEdgeSpacingInSegments();
 
+  if (mgr.getDisallowOneSiteGaps()) {
+    std::vector<std::vector<int>> oneSiteViolations;
+    mgr.getOneSiteGapViolationsPerSegment(oneSiteViolations);
+    for (auto& segment_violations : oneSiteViolations) {
+      if (segment_violations.size() > 0) {
+        mgr_->getLogger()->warn(DPO,
+                                323,
+                                "One site gap violation in segment {:d}.",
+                                segment_violations[0]);
+      }
+    }
+  }
+
   return true;
 }
 
@@ -145,6 +158,8 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
     command = "orienting";
   } else if (strcmp(args[0].c_str(), "default") == 0) {
     command = "random improvement";
+  } else if (strcmp(args[0].c_str(), "disallow_one_site_gaps") == 0) {
+    command = "disallow_one_site_gaps";
   } else {
     logger->error(DPO, 1, "Unknown algorithm {:s}.", args[0]);
   }
@@ -168,6 +183,8 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   } else if (strcmp(args[0].c_str(), "default") == 0) {
     DetailedRandom random(arch_, network_);
     random.run(mgr_, args);
+  } else if (strcmp(args[0].c_str(), "disallow_one_site_gaps") == 0) {
+    debugPrint(logger, DPO, "detailed", 1, "Disallowed one site gaps.");
   } else {
     return;
   }
