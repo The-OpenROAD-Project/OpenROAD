@@ -85,7 +85,7 @@ DetailedMgr::DetailedMgr(Architecture* arch,
   targetUt_ = 1.0;
 
   // For generating a move list...
-  moveLimit_ = 10;
+  moveLimit_ = 100;
   nMoved_ = 0;
   curLeft_.resize(moveLimit_);
   curBottom_.resize(moveLimit_);
@@ -1433,7 +1433,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
       if (temp[node_idx]->getRight() != lastNode->getRight()) {
         // we have a new X
         // check if the difference between the last X and the current X is
-        // almost equal to 1-site (using tolerance)
+        // almost equal to 1-site
         if (abs(temp[node_idx]->getLeft() - lastNode->getRight())
             == one_site_gap) {
           // we might have a violation
@@ -1444,6 +1444,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
                           temp[node_idx]->getBottom(),
                           temp[node_idx]->getTop())) {
               // we have a violation
+
               violating_cells[s].push_back(node_idx);
               debugPrint(
                   logger_,
@@ -1504,7 +1505,22 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
     Node* lastNode = temp[0];
     int one_site_gap = arch_->getRow(0)->getSiteWidth();
     std::vector<Node*> cellsAtLastX(1, temp[0]);
-
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "Before moving - Printing cells in segment {}",
+               s);
+    for (auto cell : cellsInSeg_[s]) {
+      debugPrint(logger_,
+                 DPO,
+                 "detailed",
+                 1,
+                 "shiftRightHelper: cell {} Left {} and Right {}",
+                 cell->getId(),
+                 cell->getLeft(),
+                 cell->getRight());
+    }
     for (int node_idx = 1; node_idx < temp.size(); node_idx++) {
       if (temp[node_idx]->getRight() != lastNode->getRight()) {
         if (abs(temp[node_idx]->getLeft() - lastNode->getRight())
@@ -1544,6 +1560,7 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
                       s,
                       temp[node_idx])) {
                 acceptMove();  // without this, the cells are not moved
+                clearMoveList();
                 logger_->info(DPO,
                               999,
                               "Move accepted - cell {} its left is now at {}",
@@ -2464,25 +2481,7 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
   //
   // We will attempt to push cells starting at "ndr" to the right to
   // maintain no overlap, satisfy spacing, etc.
-  debugPrint(logger_,
-             DPO,
-             "detailed",
-             1,
-             "shiftRightHelper: cell {} from {} to {}",
-             ndi->getId(),
-             ndi->getLeft(),
-             xj);
-  debugPrint(logger_, DPO, "detailed", 1, "Printing cells in segment {}", sj);
-  for (auto cell : cellsInSeg_[sj]) {
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "shiftRightHelper: cell {} Left {} and Right {}",
-               cell->getId(),
-               cell->getLeft(),
-               cell->getRight());
-  }
+
   auto it = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndr);
   if (cellsInSeg_[sj].end() == it) {
     // Error.
@@ -2501,18 +2500,6 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
   int rj = segments_[sj]->getRowId();
   int originX = arch_->getRow(rj)->getLeft();
   int siteSpacing = arch_->getRow(rj)->getSiteSpacing();
-  debugPrint(logger_,
-             DPO,
-             "detailed",
-             1,
-             "shift here 1 ix {} n {}  ndr left {} should be < xj {} + ndi "
-             "width {} and cell spacing {}",
-             ix,
-             n,
-             ndr->getLeft(),
-             xj,
-             ndi->getWidth(),
-             arch_->getCellSpacing(ndi, ndr));
 
   // Shift single height cells to the right until we encounter some
   // sort of problem.
@@ -2526,14 +2513,6 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
     // Determine a proper site-aligned position for cell ndr.
     xj += ndi->getWidth();
     xj += arch_->getCellSpacing(ndi, ndr);
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "while shiftRightHelper: cell {} from {} to {}",
-               ndr->getId(),
-               ndr->getLeft(),
-               xj);
 
     int site = (xj - originX) / siteSpacing;
 
@@ -2558,16 +2537,15 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
                        xj,
                        ndr->getBottom(),
                        sj)) {
-      return false;
-    } else {
       debugPrint(logger_,
                  DPO,
                  "detailed",
                  1,
-                 "addToMoveList: cell {} from {} to {}",
+                 "addToMoveList failed: cell {} from {} to {}",
                  ndr->getId(),
                  ndr->getLeft(),
                  xj);
+      return false;
     }
 
     // Fail if we shift off end of segment.
@@ -3411,6 +3389,11 @@ bool DetailedMgr::addToMoveList(Node* ndi,
 {
   // Limit maximum number of cells that can move at once.
   if (nMoved_ >= moveLimit_) {
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "DetailedMgr::addToMoveList(): move limit reached.\n");
     return false;
   }
 
@@ -3421,6 +3404,11 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   double dy = std::fabs(newBottom - ndi->getOrigBottom());
   double dx = std::fabs(newLeft - ndi->getOrigLeft());
   if ((int) std::ceil(dx) > maxDispX_ || (int) std::ceil(dy) > maxDispY_) {
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "DetailedMgr::addToMoveList(): displacement limit reached.\n");
     return false;
   }
 
@@ -3478,17 +3466,7 @@ void DetailedMgr::acceptMove()
     }
 
     // Update position and orientation.
-    int old_left = ndi->getLeft();
     ndi->setLeft(newLeft_[i]);
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "Moving cell {} from {} to {}",
-               ndi->getId(),
-               old_left,
-               ndi->getLeft());
-
     ndi->setBottom(newBottom_[i]);
     // XXX: Need to do the orientiation.
     ;
