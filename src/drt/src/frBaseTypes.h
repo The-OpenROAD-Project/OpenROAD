@@ -204,7 +204,8 @@ enum class frConstraintTypeEnum
   frcLef58EolKeepOutConstraint,
   frcLef58MinimumCutConstraint,
   frcMetalWidthViaConstraint,
-  frcLef58AreaConstraint
+  frcLef58AreaConstraint,
+  frcLef58KeepOutZoneConstraint
 };
 
 std::ostream& operator<<(std::ostream& os, frConstraintTypeEnum type);
@@ -317,7 +318,8 @@ struct frDebugSettings
         fixedShapeCost(-1),
         markerDecay(-1),
         ripupMode(-1),
-        followGuide(-1)
+        followGuide(-1),
+        writeNetTracks(false)
 
   {
   }
@@ -348,6 +350,7 @@ struct frDebugSettings
   float markerDecay;
   int ripupMode;
   int followGuide;
+  bool writeNetTracks;
 };
 
 // Avoids the need to split the whole serializer like

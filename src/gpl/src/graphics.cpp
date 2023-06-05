@@ -34,8 +34,10 @@
 #include "graphics.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <limits>
+#include <utility>
 
 #include "nesterovBase.h"
 #include "nesterovPlace.h"
@@ -44,10 +46,14 @@
 
 namespace gpl {
 
-Graphics::Graphics(utl::Logger* logger, std::shared_ptr<PlacerBase> pb)
+Graphics::Graphics(utl::Logger* logger,
+                   std::shared_ptr<PlacerBaseCommon> pbc,
+                   std::vector<std::shared_ptr<PlacerBase>>& pbVec)
     : HeatMapDataSource(logger, "gpl", "gpl"),
-      pb_(pb),
-      nb_(),
+      pbc_(std::move(pbc)),
+
+      pbVec_(pbVec),
+
       np_(nullptr),
       selected_(nullptr),
       draw_bins_(false),
@@ -59,13 +65,17 @@ Graphics::Graphics(utl::Logger* logger, std::shared_ptr<PlacerBase> pb)
 
 Graphics::Graphics(utl::Logger* logger,
                    NesterovPlace* np,
-                   std::shared_ptr<PlacerBase> pb,
-                   std::shared_ptr<NesterovBase> nb,
+                   std::shared_ptr<PlacerBaseCommon> pbc,
+                   std::shared_ptr<NesterovBaseCommon> nbc,
+                   std::vector<std::shared_ptr<PlacerBase>>& pbVec,
+                   std::vector<std::shared_ptr<NesterovBase>>& nbVec,
                    bool draw_bins,
                    odb::dbInst* inst)
     : HeatMapDataSource(logger, "gpl", "gpl"),
-      pb_(pb),
-      nb_(nb),
+      pbc_(std::move(pbc)),
+      nbc_(std::move(nbc)),
+      pbVec_(pbVec),
+      nbVec_(nbVec),
       np_(np),
       selected_(nullptr),
       draw_bins_(draw_bins),
@@ -75,7 +85,7 @@ Graphics::Graphics(utl::Logger* logger,
   gui::Gui::get()->registerRenderer(this);
   initHeatmap();
   if (inst) {
-    for (GCell* cell : nb_->gCells()) {
+    for (GCell* cell : nbc_->gCells()) {
       Instance* cell_inst = cell->instance();
       if (cell_inst && cell_inst->dbInst() == inst) {
         selected_ = cell;
@@ -112,14 +122,14 @@ void Graphics::initHeatmap()
         }
       });
 
-  setBlock(pb_->db()->getChip()->getBlock());
+  setBlock(pbc_->db()->getChip()->getBlock());
   registerHeatMap();
 }
 
 void Graphics::drawBounds(gui::Painter& painter)
 {
   // draw core bounds
-  auto& die = pb_->die();
+  auto& die = pbc_->die();
   painter.setPen(gui::Painter::yellow, /* cosmetic */ true);
   painter.drawLine(die.coreLx(), die.coreLy(), die.coreUx(), die.coreLy());
   painter.drawLine(die.coreUx(), die.coreLy(), die.coreUx(), die.coreUy());
@@ -132,7 +142,7 @@ void Graphics::drawInitial(gui::Painter& painter)
   drawBounds(painter);
 
   painter.setPen(gui::Painter::white, /* cosmetic */ true);
-  for (auto& inst : pb_->placeInsts()) {
+  for (auto& inst : pbc_->placeInsts()) {
     int lx = inst->lx();
     int ly = inst->ly();
     int ux = inst->ux();
@@ -147,24 +157,26 @@ void Graphics::drawInitial(gui::Painter& painter)
 
 void Graphics::drawNesterov(gui::Painter& painter)
 {
+  // TODO: Support graphics for multiple Nesterov instances
   drawBounds(painter);
   if (draw_bins_) {
     // Draw the bins
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
-    for (auto& bin : nb_->bins()) {
-      int color = bin->density() * 50 + 20;
+
+    for (auto& bin : nbVec_[0]->bins()) {
+      int color = bin.density() * 50 + 20;
 
       color = (color > 255) ? 255 : (color < 20) ? 20 : color;
       color = 255 - color;
 
       painter.setBrush({color, color, color, 180});
-      painter.drawRect({bin->lx(), bin->ly(), bin->ux(), bin->uy()});
+      painter.drawRect({bin.lx(), bin.ly(), bin.ux(), bin.uy()});
     }
   }
 
   // Draw the placeable objects
   painter.setPen(gui::Painter::white);
-  for (auto* gCell : nb_->gCells()) {
+  for (auto* gCell : nbc_->gCells()) {
     const int gcx = gCell->dCx();
     const int gcy = gCell->dCy();
 
@@ -190,7 +202,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
   }
 
   painter.setBrush(gui::Painter::Color(gui::Painter::light_gray, 50));
-  for (auto& inst : pb_->nonPlaceInsts()) {
+  for (auto& inst : pbVec_[0]->nonPlaceInsts()) {
     painter.drawRect({inst->lx(), inst->ly(), inst->ux(), inst->uy()});
   }
 
@@ -217,22 +229,22 @@ void Graphics::drawNesterov(gui::Painter& painter)
   if (draw_bins_) {
     float efMax = 0;
     int max_len = std::numeric_limits<int>::max();
-    for (auto& bin : nb_->bins()) {
-      efMax
-          = std::max(efMax, hypot(bin->electroForceX(), bin->electroForceY()));
-      max_len = std::min({max_len, bin->dx(), bin->dy()});
+    for (auto& bin : nbVec_[0]->bins()) {
+      efMax = std::max(efMax,
+                       std::hypot(bin.electroForceX(), bin.electroForceY()));
+      max_len = std::min({max_len, bin.dx(), bin.dy()});
     }
 
-    for (auto& bin : nb_->bins()) {
-      float fx = bin->electroForceX();
-      float fy = bin->electroForceY();
+    for (auto& bin : nbVec_[0]->bins()) {
+      float fx = bin.electroForceX();
+      float fy = bin.electroForceY();
       float f = hypot(fx, fy);
       float ratio = f / efMax;
       float dx = fx / f * max_len * ratio;
       float dy = fy / f * max_len * ratio;
 
-      int cx = bin->cx();
-      int cy = bin->cy();
+      int cx = bin.cx();
+      int cy = bin.cy();
 
       painter.setPen(gui::Painter::red, true);
       painter.drawLine(cx, cy, cx + dx, cy + dy);
@@ -242,7 +254,7 @@ void Graphics::drawNesterov(gui::Painter& painter)
 
 void Graphics::drawObjects(gui::Painter& painter)
 {
-  if (nb_) {
+  if (nbc_) {
     drawNesterov(painter);
   } else {
     drawInitial(painter);
@@ -250,7 +262,7 @@ void Graphics::drawObjects(gui::Painter& painter)
 }
 
 void Graphics::reportSelected()
-{
+{  // TODO: PD_FIX
   if (!selected_) {
     return;
   }
@@ -264,7 +276,7 @@ void Graphics::reportSelected()
     logger_->report("  Wire Length Gradient");
     for (auto& gPin : selected_->gPins()) {
       FloatPoint wlGrad
-          = nb_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
+          = nbc_->getWireLengthGradientPinWA(gPin, wlCoeffX, wlCoeffY);
       const float weight = gPin->gNet()->totalWeight();
       logger_->report("          ({:+.2e}, {:+.2e}) (weight = {}) pin {}",
                       wlGrad.x,
@@ -274,11 +286,11 @@ void Graphics::reportSelected()
     }
 
     FloatPoint wlGrad
-        = nb_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
+        = nbc_->getWireLengthGradientWA(selected_, wlCoeffX, wlCoeffY);
     logger_->report("  sum wl  ({: .2e}, {: .2e})", wlGrad.x, wlGrad.y);
 
-    auto densityGrad = nb_->getDensityGradient(selected_);
-    float densityPenalty = np_->getDensityPenalty();
+    auto densityGrad = nbVec_[0]->getDensityGradient(selected_);
+    float densityPenalty = nbVec_[0]->getDensityPenalty();
     logger_->report("  density ({: .2e}, {: .2e}) (penalty: {})",
                     densityPenalty * densityGrad.x,
                     densityPenalty * densityGrad.y,
@@ -303,11 +315,11 @@ gui::SelectionSet Graphics::select(odb::dbTechLayer* layer,
 {
   selected_ = nullptr;
 
-  if (layer || !nb_) {
+  if (layer || !nbc_) {
     return gui::SelectionSet();
   }
 
-  for (GCell* cell : nb_->gCells()) {
+  for (GCell* cell : nbc_->gCells()) {
     const int gcx = cell->dCx();
     const int gcy = cell->dCy();
 
@@ -338,13 +350,13 @@ void Graphics::status(const std::string& message)
 
 double Graphics::getGridXSize() const
 {
-  const BinGrid& grid = nb_->getBinGrid();
+  const BinGrid& grid = nbVec_[0]->getBinGrid();
   return grid.binSizeX() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
 double Graphics::getGridYSize() const
 {
-  const BinGrid& grid = nb_->getBinGrid();
+  const BinGrid& grid = nbVec_[0]->getBinGrid();
   return grid.binSizeY() / (double) getBlock()->getDbUnitsPerMicron();
 }
 
@@ -355,28 +367,25 @@ odb::Rect Graphics::getBounds() const
 
 bool Graphics::populateMap()
 {
-  const BinGrid& grid = nb_->getBinGrid();
-  double sum = 0;
-  for (const Bin* bin : grid.bins()) {
-    odb::Rect box(bin->lx(), bin->ly(), bin->ux(), bin->uy());
+  BinGrid& grid = nbVec_[0]->getBinGrid();
+  for (const Bin& bin : grid.bins()) {
+    odb::Rect box(bin.lx(), bin.ly(), bin.ux(), bin.uy());
     if (heatmap_type_ == Density) {
-      const double value = bin->density() * 100.0;
+      const double value = bin.density() * 100.0;
       addToMap(box, value);
     } else {
       // Overflow isn't stored per bin so we recompute it here
       // (see BinGrid::updateBinsGCellDensityArea).
 
-      int64_t binArea = bin->binArea();
+      int64_t binArea = bin.binArea();
       const float scaledBinArea
-          = static_cast<float>(binArea * bin->targetDensity());
+          = static_cast<float>(binArea * bin.targetDensity());
 
-      double value
-          = std::max(0.0f,
-                     static_cast<float>(bin->instPlacedAreaUnscaled())
-                         + static_cast<float>(bin->nonPlaceAreaUnscaled())
-                         - scaledBinArea);
+      double value = std::max(
+          0.0f,
+          static_cast<float>(bin.instPlacedAreaUnscaled())
+              + static_cast<float>(bin.nonPlaceAreaUnscaled()) - scaledBinArea);
       addToMap(box, value);
-      sum += value;
     }
   }
 

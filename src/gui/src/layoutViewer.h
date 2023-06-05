@@ -66,6 +66,7 @@ class dbTechLayer;
 
 namespace gui {
 
+class GuiPainter;
 class LayoutScroll;
 class Ruler;
 class ScriptWidget;
@@ -107,6 +108,7 @@ class LayoutViewer : public QWidget
     CLEAR_RULERS_ACT,
     CLEAR_FOCUS_ACT,
     CLEAR_GUIDES_ACT,
+    CLEAR_NET_TRACKS_ACT,
     CLEAR_ALL_ACT
   };
 
@@ -127,8 +129,8 @@ class LayoutViewer : public QWidget
                const HighlightSet& highlighted,
                const std::vector<std::unique_ptr<Ruler>>& rulers,
                Gui* gui,
-               std::function<bool(void)> usingDBU,
-               std::function<bool(void)> showRulerAsEuclidian,
+               const std::function<bool(void)>& usingDBU,
+               const std::function<bool(void)>& showRulerAsEuclidian,
                QWidget* parent = nullptr);
 
   void setLogger(utl::Logger* logger);
@@ -141,10 +143,14 @@ class LayoutViewer : public QWidget
   void removeFocusNet(odb::dbNet* net);
   void addRouteGuides(odb::dbNet* net);
   void removeRouteGuides(odb::dbNet* net);
+  void addNetTracks(odb::dbNet* net);
+  void removeNetTracks(odb::dbNet* net);
   void clearFocusNets();
   void clearRouteGuides();
+  void clearNetTracks();
   const std::set<odb::dbNet*>& getFocusNets() { return focus_nets_; }
   const std::set<odb::dbNet*>& getRouteGuides() { return route_guides_; }
+  const std::set<odb::dbNet*>& getNetTracks() { return net_tracks_; }
 
   const std::map<odb::dbModule*, ModuleSettings>& getModuleSettings()
   {
@@ -159,7 +165,7 @@ class LayoutViewer : public QWidget
 
   // save image of the layout
   void saveImage(const QString& filepath,
-                 const odb::Rect& rect = odb::Rect(),
+                 const odb::Rect& region = odb::Rect(),
                  double dbu_per_pixel = 0);
 
   // From QWidget
@@ -168,6 +174,11 @@ class LayoutViewer : public QWidget
   virtual void mousePressEvent(QMouseEvent* event) override;
   virtual void mouseMoveEvent(QMouseEvent* event) override;
   virtual void mouseReleaseEvent(QMouseEvent* event) override;
+
+  odb::Rect getVisibleBounds()
+  {
+    return screenToDBU(visibleRegion().boundingRect());
+  }
 
  signals:
   // indicates the current location of the mouse
@@ -220,7 +231,7 @@ class LayoutViewer : public QWidget
   void updateCenter(int dx, int dy);
 
   // set the layout resolution
-  void setResolution(qreal dbu_per_pixel);
+  void setResolution(qreal pixels_per_dbu);
 
   // update the fit resolution (the maximum pixels_per_dbu without scroll bars)
   void viewportUpdated();
@@ -228,8 +239,10 @@ class LayoutViewer : public QWidget
   // signals that the cache should be flushed and a full repaint should occur.
   void fullRepaint();
 
-  void selectHighlightConnectedInst(bool selectFlag);
-  void selectHighlightConnectedNets(bool selectFlag, bool output, bool input);
+  odb::Point getVisibleCenter();
+
+  void selectHighlightConnectedInst(bool select_flag);
+  void selectHighlightConnectedNets(bool select_flag, bool output, bool input);
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
@@ -273,8 +286,17 @@ class LayoutViewer : public QWidget
   void boxesByLayer(odb::dbMaster* master, LayerBoxes& boxes);
   const Boxes* boxesByLayer(odb::dbMaster* master, odb::dbTechLayer* layer);
   void setPixelsPerDBU(qreal pixels_per_dbu);
-  void drawBlock(QPainter* painter, const odb::Rect& bounds, int depth);
-  void drawRegions(QPainter* painter);
+  void drawBlock(QPainter* painter,
+                 odb::dbBlock* block,
+                 const odb::Rect& bounds,
+                 int depth);
+  void drawLayer(QPainter* painter,
+                 odb::dbBlock* block,
+                 odb::dbTechLayer* layer,
+                 const std::vector<odb::dbInst*>& insts,
+                 const odb::Rect& bounds,
+                 GuiPainter& gui_painter);
+  void drawRegions(QPainter* painter, odb::dbBlock* block);
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);
@@ -286,29 +308,50 @@ class LayoutViewer : public QWidget
                             const std::vector<odb::dbInst*>& insts);
   void drawInstanceShapes(odb::dbTechLayer* layer,
                           QPainter* painter,
-                          const std::vector<odb::dbInst*>& insts);
+                          const std::vector<odb::dbInst*>& insts,
+                          const odb::Rect& bounds,
+                          GuiPainter& gui_painter);
   void drawInstanceNames(QPainter* painter,
                          const std::vector<odb::dbInst*>& insts);
-  void drawBlockages(QPainter* painter, const odb::Rect& bounds);
-  void drawObstructions(odb::dbTechLayer* layer,
+  void drawBlockages(QPainter* painter,
+                     odb::dbBlock* block,
+                     const odb::Rect& bounds);
+  void drawObstructions(odb::dbBlock* block,
+                        odb::dbTechLayer* layer,
                         QPainter* painter,
                         const odb::Rect& bounds);
-  void drawRows(QPainter* painter, const odb::Rect& bounds);
+  void drawRows(QPainter* painter,
+                odb::dbBlock* block,
+                const odb::Rect& bounds);
+  void drawViaShapes(QPainter* painter,
+                     odb::dbBlock* block,
+                     odb::dbTechLayer* cut_layer,
+                     odb::dbTechLayer* draw_layer,
+                     const odb::Rect& bounds,
+                     int shape_limit);
   void drawManufacturingGrid(QPainter* painter, const odb::Rect& bounds);
   void drawGCellGrid(QPainter* painter, const odb::Rect& bounds);
   void drawSelected(Painter& painter);
   void drawHighlighted(Painter& painter);
-  void drawPinMarkers(Painter& painter, const odb::Rect& bounds);
+  void drawPinMarkers(Painter& painter,
+                      odb::dbBlock* block,
+                      const odb::Rect& bounds);
   void drawAccessPoints(Painter& painter,
                         const std::vector<odb::dbInst*>& insts);
   void drawRouteGuides(Painter& painter, odb::dbTechLayer* layer);
+  void drawNetTracks(Painter& painter, odb::dbTechLayer* layer);
   void drawModuleView(QPainter* painter,
                       const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter);
   void drawScaleBar(QPainter* painter, const QRect& rect);
   void selectAt(odb::Rect region_dbu, std::vector<Selected>& selection);
   SelectionSet selectAt(odb::Rect region_dbu);
-  Selected selectAtPoint(odb::Point pt_dbu);
+  void selectViaShapesAt(odb::dbTechLayer* cut_layer,
+                         odb::dbTechLayer* select_layer,
+                         const odb::Rect& region,
+                         int shape_limit,
+                         std::vector<Selected>& selections);
+  Selected selectAtPoint(const odb::Point& pt_dbu);
 
   void zoom(const odb::Point& focus, qreal factor, bool do_delta_focus);
 
@@ -318,8 +361,6 @@ class LayoutViewer : public QWidget
 
   bool hasDesign() const;
 
-  odb::Point getVisibleCenter();
-
   int fineViewableResolution();
   int nominalViewableResolution();
   int coarseViewableResolution();
@@ -327,6 +368,7 @@ class LayoutViewer : public QWidget
   int shapeSizeLimit();
 
   std::vector<std::pair<odb::dbObject*, odb::Rect>> getRowRects(
+      odb::dbBlock* block,
       const odb::Rect& bounds);
 
   void generateCutLayerMaximumSizes();
@@ -338,6 +380,12 @@ class LayoutViewer : public QWidget
   std::pair<Edge, bool> searchNearestEdge(const odb::Point& pt,
                                           bool horizontal,
                                           bool vertical);
+  void searchNearestViaEdge(
+      odb::dbTechLayer* cut_layer,
+      odb::dbTechLayer* search_layer,
+      const odb::Rect& search_line,
+      int shape_limit,
+      const std::function<void(const odb::Rect& rect)>& check_rect);
   int edgeToPointDistance(const odb::Point& pt, const Edge& edge) const;
   bool compareEdges(const Edge& lhs, const Edge& rhs) const;
 
@@ -381,6 +429,7 @@ class LayoutViewer : public QWidget
   QPoint mouse_move_pos_;
   bool rubber_band_showing_;
   Gui* gui_;
+
   std::function<bool(void)> usingDBU_;
   std::function<bool(void)> showRulerAsEuclidian_;
 
@@ -435,6 +484,8 @@ class LayoutViewer : public QWidget
   std::set<odb::dbNet*> focus_nets_;
   // Set of nets to draw route guides for, if empty draw nothing
   std::set<odb::dbNet*> route_guides_;
+  // Set of nets to draw assigned tracks for, if empty draw nothing
+  std::set<odb::dbNet*> net_tracks_;
 
   static constexpr qreal zoom_scale_factor_ = 1.2;
 

@@ -43,7 +43,16 @@ void FlexDRWorker::initNetObjs_pathSeg(
 {
   const auto [begin, end] = pathSeg->getPoints();
   if (begin.x() != end.x() && begin.y() != end.y()) {
-    logger_->error(DRT, 1010, "Unsupported non-orthogonal wire");
+    double dbu = getTech()->getDBUPerUU();
+    logger_->error(
+        DRT,
+        1010,
+        "Unsupported non-orthogonal wire begin=({}, {}) end=({}, {}), layer {}",
+        begin.x() / dbu,
+        begin.y() / dbu,
+        end.x() / dbu,
+        end.y() / dbu,
+        getTech()->getLayer(pathSeg->getLayerNum())->getName());
   }
 
   const auto gridBBox = getRouteBox();
@@ -1090,8 +1099,8 @@ void FlexDRWorker::initNet_termGenAp_new(const frDesign* design, drPin* dPin)
           // pinRect now equals intersection of pinRect and routeRect
           auto currPrefRouteDir = getTech()->getLayer(currLayerNum)->getDir();
           bool useCenterLine = true;
-          auto xSpan = instPinRectBBox.xMax() - instPinRectBBox.xMin();
-          auto ySpan = instPinRectBBox.yMax() - instPinRectBBox.yMin();
+          auto xSpan = instPinRectBBox.dx();
+          auto ySpan = instPinRectBBox.dy();
           bool isPinRectHorz = (xSpan > ySpan);
 
           if (!useCenterLine) {
@@ -1619,16 +1628,14 @@ void FlexDRWorker::initNets_numPinsIn()
         }
         if (ap->getPinCost() == 0) {
           pt = ap->getPoint();
-          allPins.push_back(
-              make_pair(Rect(pt.x(), pt.y(), pt.x(), pt.y()), pin.get()));
+          allPins.emplace_back(Rect(pt, pt), pin.get());
           hasPrefAP = true;
           break;
         }
       }
       if (!hasPrefAP) {
         pt = firstAP->getPoint();
-        allPins.push_back(
-            make_pair(Rect(pt.x(), pt.y(), pt.x(), pt.y()), pin.get()));
+        allPins.emplace_back(Rect(pt, pt), pin.get());
       }
     }
   }
@@ -1661,7 +1668,7 @@ void FlexDRWorker::initNets_numPinsIn()
       y2 = std::max(y2, pt.getY());
     }
     if (x1 <= x2 && y1 <= y2) {
-      Rect box = Rect(Point(x1, y1), Point(x2, y2));
+      Rect box = Rect(x1, y1, x2, y2);
       allPins.clear();
       pinRegionQuery.query(bgi::intersects(box), back_inserter(allPins));
       net->setNumPinsIn(allPins.size());
@@ -1788,7 +1795,7 @@ void FlexDRWorker::initNets(const frDesign* design)
   if (isInitDR()) {
     initNets_initDR(design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   } else {
-    // find inteTerm/terms using netRouteObjs;
+    // find instTerm/terms using netRouteObjs;
     initNets_searchRepair(
         design, nets, netRouteObjs, netExtObjs, netOrigGuides);
   }
@@ -2544,7 +2551,7 @@ void FlexDRWorker::route_queue_init_queue(queue<RouteQueueEntry>& rerouteQueue)
     mazeIterInit_sortRerouteNets(0, ripupNets);
     for (auto& net : ripupNets) {
       routes.push_back({net, 0, true});
-      // reserve via because all nets are ripupped
+      // reserve via because all nets are ripped up
       initMazeCost_via_helper(net, true);
       // no need to clear the net because route objs are not pushed to the net
       // (See FlexDRWorker::initNet)
@@ -2581,7 +2588,7 @@ void FlexDRWorker::route_queue_update_from_marker(
     vector<RouteQueueEntry>& checks,
     vector<RouteQueueEntry>& routes)
 {
-  // if shapes dont overlap routeBox, ignore violation
+  // if shapes don't overlap routeBox, ignore violation
   if (!getRouteBox().intersects(marker->getBBox())) {
     bool overlaps = false;
     for (auto& s : marker->getAggressors()) {

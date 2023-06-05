@@ -20,5 +20,7 @@ if { [odb::db_diff $db $new_db] } {
   exit 1
 }
 
+file delete diffs.rpt
+
 puts "pass"
 exit 0

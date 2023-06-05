@@ -71,5 +71,5 @@
 [INFO ODB-0222] Reading LEF file: skywater130_io_fd/lef/sky130io_fill.lef
 [INFO ODB-0225]     Created 2 library cells
 [INFO ODB-0226] Finished LEF file:  skywater130_io_fd/lef/sky130io_fill.lef
-[INFO IFP-0001] Added 1265 rows of 10416 sites.
+[INFO IFP-0001] Added 1265 rows of 10416 site unit with height 1.
 No differences found.

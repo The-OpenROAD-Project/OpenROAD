@@ -43,20 +43,28 @@
 
 namespace cts {
 
-Graphics::Graphics(HTreeBuilder* h_tree_builder, Clock* clock)
-    : clock_(clock), h_tree_builder_(h_tree_builder), sink_clustering_(nullptr)
+void Graphics::initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock)
 {
+  clock_ = &clock;
+  h_tree_builder_ = h_tree_builder;
+  sink_clustering_ = nullptr;
   gui::Gui::get()->registerRenderer(this);
+  if (guiActive()) {
+    clockPlot(true);
+  }
 }
 
-Graphics::Graphics(SinkClustering* SinkClustering,
-                   const std::vector<Point<double>>& points)
-    : clock_(nullptr),
-      h_tree_builder_(nullptr),
-      sink_clustering_(SinkClustering),
-      points_(points)
+void Graphics::initializeWithPoints(SinkClustering* SinkClustering,
+                                    const std::vector<Point<double>>& points)
 {
+  clock_ = nullptr;
+  h_tree_builder_ = nullptr;
+  sink_clustering_ = SinkClustering;
+  points_ = points;
   gui::Gui::get()->registerRenderer(this);
+  if (guiActive()) {
+    clockPlot(true);
+  }
 }
 
 void Graphics::drawCluster(gui::Painter& painter)

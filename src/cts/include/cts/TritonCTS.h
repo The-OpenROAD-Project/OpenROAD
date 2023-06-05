@@ -40,10 +40,6 @@
 #include <set>
 #include <string>
 
-namespace ord {
-class OpenRoad;
-}  // namespace ord
-
 namespace utl {
 class Logger;
 }
@@ -56,11 +52,19 @@ class dbNet;
 class dbITerm;
 }  // namespace odb
 
+namespace rsz {
+class Resizer;
+}
+
 namespace sta {
 class dbSta;
 class Clock;
 class dbNetwork;
 }  // namespace sta
+
+namespace stt {
+class SteinerTreeBuilder;
+}
 
 namespace cts {
 
@@ -79,7 +83,12 @@ class TritonCTS
   TritonCTS() = default;
   ~TritonCTS();
 
-  void init(ord::OpenRoad* openroad);
+  void init(utl::Logger* logger,
+            odb::dbDatabase* db,
+            sta::dbNetwork* network,
+            sta::dbSta* sta,
+            stt::SteinerTreeBuilder* st_builder,
+            rsz::Resizer* resizer);
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
@@ -136,7 +145,6 @@ class TritonCTS
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
 
-  ord::OpenRoad* openroad_;
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;
   Logger* logger_;

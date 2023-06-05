@@ -458,6 +458,9 @@ class FlexGCWorker::Impl
       gcRect* ptr1,
       gcRect* ptr2,
       frLef58CutSpacingConstraint* con);
+  // LEF58_KEEPOUTZONE
+  void checKeepOutZone_main(gcRect* rect, frLef58KeepOutZoneConstraint* con);
+
   frCoord checkLef58CutSpacing_getMaxSpcVal(frLef58CutSpacingConstraint* con);
   void checkMetalShape_lef58MinStep(gcPin* pin);
   void checkMetalShape_lef58MinStep_noBetweenEol(gcPin* pin,

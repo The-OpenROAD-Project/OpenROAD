@@ -110,7 +110,9 @@ class DbInstDescriptor : public Descriptor
                          std::vector<EditorOption>& options) const;
   void makePlacementStatusOptions(std::vector<EditorOption>& options) const;
   void makeOrientationOptions(std::vector<EditorOption>& options) const;
-  bool setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const;
+  bool setNewLocation(odb::dbInst* inst,
+                      const std::any& value,
+                      bool is_x) const;
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;
@@ -156,7 +158,8 @@ class DbNetDescriptor : public Descriptor
   DbNetDescriptor(odb::dbDatabase* db,
                   sta::dbSta* sta,
                   const std::set<odb::dbNet*>& focus_nets,
-                  const std::set<odb::dbNet*>& guide_nets);
+                  const std::set<odb::dbNet*>& guide_nets,
+                  const std::set<odb::dbNet*>& tracks_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -205,6 +208,7 @@ class DbNetDescriptor : public Descriptor
 
   const std::set<odb::dbNet*>& focus_nets_;
   const std::set<odb::dbNet*>& guide_nets_;
+  const std::set<odb::dbNet*>& tracks_nets_;
 
   odb::dbNet* getNet(std::any object) const;
   odb::dbObject* getSink(std::any object) const;
@@ -487,8 +491,6 @@ class DbNonDefaultRuleDescriptor : public Descriptor
 class DbTechLayerRuleDescriptor : public Descriptor
 {
  public:
-  DbTechLayerRuleDescriptor(odb::dbDatabase* db);
-
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
 
@@ -501,16 +503,11 @@ class DbTechLayerRuleDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
-
- private:
-  odb::dbDatabase* db_;
 };
 
 class DbTechSameNetRuleDescriptor : public Descriptor
 {
  public:
-  DbTechSameNetRuleDescriptor(odb::dbDatabase* db);
-
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
 
@@ -523,9 +520,6 @@ class DbTechSameNetRuleDescriptor : public Descriptor
   bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
-
- private:
-  odb::dbDatabase* db_;
 };
 
 class DbSiteDescriptor : public Descriptor

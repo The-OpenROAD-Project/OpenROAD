@@ -58,7 +58,7 @@ class RDLRouterDistanceHeuristic
  public:
   RDLRouterDistanceHeuristic(
       const std::map<RDLRouter::grid_vertex, odb::Point>& vertex_map,
-      odb::Point goal)
+      const odb::Point& goal)
       : vertex_map_(vertex_map), goal_(goal)
   {
   }
@@ -81,7 +81,7 @@ template <class Vertex>
 class RDLRouterGoalVisitor : public boost::default_astar_visitor
 {
  public:
-  RDLRouterGoalVisitor(RDLRouter::grid_vertex goal) : goal_(goal) {}
+  explicit RDLRouterGoalVisitor(RDLRouter::grid_vertex goal) : goal_(goal) {}
   template <class Graph>
   void examine_vertex(Vertex u, Graph& g)
   {
@@ -498,9 +498,7 @@ std::set<std::pair<odb::Point, odb::Point>> RDLRouter::commitRoute(
     const std::vector<grid_vertex>& route)
 {
   std::set<grid_edge> edges;
-  for (size_t i = 0; i < route.size(); i++) {
-    auto v = route[i];
-
+  for (const auto& v : route) {
     GridGraph::out_edge_iterator oit, oend;
     std::tie(oit, oend) = boost::out_edges(v, graph_);
     for (; oit != oend; oit++) {
@@ -548,10 +546,11 @@ std::vector<RDLRouter::grid_vertex> RDLRouter::run(const odb::Point& source,
         graph_,
         start,
         RDLRouterDistanceHeuristic(vertex_point_map_, dest),
-        predecessor_map(make_iterator_property_map(
-                            p.begin(), boost::get(vertex_index, graph_)))
-            .distance_map(make_iterator_property_map(
-                d.begin(), boost::get(vertex_index, graph_)))
+        boost::predecessor_map(
+            boost::make_iterator_property_map(
+                p.begin(), boost::get(boost::vertex_index, graph_)))
+            .distance_map(boost::make_iterator_property_map(
+                d.begin(), boost::get(boost::vertex_index, graph_)))
             .visitor(RDLRouterGoalVisitor<grid_vertex>(goal)));
   } catch (const RDLRouterGoalFound&) {  // found a path to the goal
     std::list<grid_vertex> shortest_path;
@@ -575,7 +574,7 @@ void RDLRouter::makeGraph()
   vertex_point_map_.clear();
   graph_.clear();
 
-  graph_weight_ = boost::get(edge_weight, graph_);
+  graph_weight_ = boost::get(boost::edge_weight, graph_);
 
   std::vector<int> x_grid;
   std::vector<int> y_grid;
@@ -800,15 +799,17 @@ std::vector<std::pair<odb::Point, odb::Point>> RDLRouter::simplifyRoute(
       = [](const odb::Point& s, const odb::Point& t) -> Direction {
     if (s.y() == t.y()) {
       return Direction::HORIZONTAL;
-    } else if (s.x() == t.x()) {
-      return Direction::VERTICAL;
-    } else if (s.x() < t.x() && s.y() < t.y()) {
-      return Direction::ANGLE45;
-    } else if (s.x() > t.x() && s.y() > t.y()) {
-      return Direction::ANGLE45;
-    } else {
-      return Direction::ANGLE135;
     }
+    if (s.x() == t.x()) {
+      return Direction::VERTICAL;
+    }
+    if (s.x() < t.x() && s.y() < t.y()) {
+      return Direction::ANGLE45;
+    }
+    if (s.x() > t.x() && s.y() > t.y()) {
+      return Direction::ANGLE45;
+    }
+    return Direction::ANGLE135;
   };
 
   wire.emplace_back(vertex_point_map_.at(route[0]),
@@ -993,7 +994,7 @@ void RDLRouter::populateObstructions(const std::vector<odb::dbNet*>& nets)
   obstructions_.clear();
 
   const int bloat = getBloatFactor();
-  auto rect_to_poly = [this, bloat](const odb::Rect& rect) -> Box {
+  auto rect_to_poly = [bloat](const odb::Rect& rect) -> Box {
     odb::Rect bloated;
     rect.bloat(bloat, bloated);
     return Box(Point(bloated.xMin(), bloated.yMin()),
@@ -1085,7 +1086,8 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
     if (via != nullptr) {
       if (via->getBottomLayer() != layer_) {
         return via->getBottomLayer();
-      } else if (via->getTopLayer() != layer_) {
+      }
+      if (via->getTopLayer() != layer_) {
         return via->getTopLayer();
       }
     }
@@ -1145,7 +1147,11 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
   }
 
   if (terms.size() < 2) {
-    logger_->error(utl::PAD, 10, "{} only has one iterm", net->getName());
+    logger_->error(utl::PAD,
+                   10,
+                   "{} only has one iterm on {} layer",
+                   net->getName(),
+                   layer_->getName());
   }
 
   std::vector<TargetPair> pairs;
@@ -1210,7 +1216,7 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
 
 /////////////////////////////////////
 
-RDLGui::RDLGui() : router_(nullptr)
+RDLGui::RDLGui()
 {
   addDisplayControl(draw_vertex_, true);
   addDisplayControl(draw_edge_, true);

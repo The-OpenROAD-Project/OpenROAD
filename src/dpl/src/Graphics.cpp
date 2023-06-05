@@ -147,5 +147,4 @@ bool Graphics::guiActive()
 {
   return gui::Gui::enabled();
 }
-
 }  // namespace dpl

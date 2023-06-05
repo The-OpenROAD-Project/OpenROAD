@@ -65,7 +65,7 @@ using utl::CTS;
 
 struct Sink
 {
-  Sink(const float x, const float y, unsigned idx)
+  Sink(const float x, const float y, const unsigned idx)
       : x(x), y(y), cluster_idx(-1), sink_idx(idx){};
 
   // location
@@ -78,7 +78,7 @@ Clustering::Clustering(const std::vector<std::pair<float, float>>& sinks,
                        const float xBranch,
                        const float yBranch,
                        Logger* logger)
-    : logger_(logger), segment_length_(0.0), branching_point_(xBranch, yBranch)
+    : logger_(logger), branching_point_(xBranch, yBranch)
 {
   sinks_.reserve(sinks.size());
   for (size_t i = 0; i < sinks.size(); ++i) {

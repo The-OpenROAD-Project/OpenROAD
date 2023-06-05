@@ -70,9 +70,8 @@ Node* GMat::getNode(NodeIdx node)
 {
   if (0 <= node && n_nodes_ > node) {
     return G_mat_nodes_[node];
-  } else {
-    return nullptr;
   }
+  return nullptr;
 }
 
 //! Function to return a vector of nodes in an area
@@ -91,8 +90,9 @@ vector<Node*> GMat::getNodes(int layer,
     const map<int, Node*>& y_itr_map = x_itr->second;
     for (auto y_map_itr = y_itr_map.lower_bound(y_min);
          y_map_itr != y_itr_map.end() && y_map_itr->first <= y_max;
-         ++y_map_itr)
+         ++y_map_itr) {
       block_nodes.push_back(y_map_itr->second);
+    }
   }
   return block_nodes;
 }
@@ -107,35 +107,40 @@ map<pair<int, int>, Node*> GMat::getNodes(int layer,
                                           int y_max)
 {
   NodeMap& layer_map = layer_maps_[layer];
-  if (x_min > x_max || y_min > y_max)
+  if (x_min > x_max || y_min > y_max) {
     logger_->warn(utl::PSM,
                   80,
                   "Creating stripe condunctance with invalid inputs. Min and "
                   "max values for X or Y are interchanged.");
+  }
   map<pair<int, int>, Node*> node_map;
   // Also check one node before and after to see if it has an overlapping
   // enclosure
   // Start iterating from the first value in the map that is lower than x_min
   auto x_strt = layer_map.lower_bound(x_min);
-  if (x_strt != layer_map.begin())
+  if (x_strt != layer_map.begin()) {
     --x_strt;
+  }
 
   // End iteration on the first value in the map that is larger than x_max
   auto x_end = layer_map.upper_bound(x_max);
-  if (x_end != layer_map.end())
+  if (x_end != layer_map.end()) {
     x_end++;
+  }
 
   for (auto x_itr = x_strt; x_itr != x_end; ++x_itr) {
     const map<int, Node*> y_itr_map = x_itr->second;
     // Start iterating from the first value in the map that is lower than y_min
     auto y_strt = y_itr_map.lower_bound(y_min);
-    if (y_strt != y_itr_map.begin())
+    if (y_strt != y_itr_map.begin()) {
       y_strt--;
+    }
 
     // End iteration on the first value in the map that is larger than y_max
     auto y_end = y_itr_map.upper_bound(y_max);
-    if (y_end != y_itr_map.end())
+    if (y_end != y_itr_map.end()) {
       y_end++;
+    }
 
     for (auto y_itr = y_strt; y_itr != y_end; ++y_itr) {
       auto encl = (y_itr->second)->getEnclosure();
@@ -166,10 +171,11 @@ map<pair<int, int>, Node*> GMat::getNodes(int layer,
 //! Function to check if the layer_map exists for a layer
 bool GMat::findLayer(int layer)
 {
-  if (layer > layer_maps_.size() || layer <= 0)
+  if (layer > layer_maps_.size() || layer <= 0) {
     return false;
+  }
   const NodeMap& layer_map = layer_maps_[layer];
-  return (layer_map.size() != 0);
+  return !layer_map.empty();
 }
 
 //! Function to return a pointer to the node with a index
@@ -181,8 +187,9 @@ bool GMat::findLayer(int layer)
 */
 Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
 {
-  if (!findLayer(layer))
+  if (!findLayer(layer)) {
     logger_->error(utl::PSM, 45, "Layer {} contains no grid nodes.", layer);
+  }
   const NodeMap& layer_map = layer_maps_[layer];
   if (nearest == false) {
     const auto x_itr = layer_map.find(x);
@@ -190,9 +197,8 @@ Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
       const auto y_itr = x_itr->second.find(y);
       if (y_itr != x_itr->second.end()) {
         return y_itr->second;
-      } else {
-        logger_->error(utl::PSM, 46, "Node location lookup error for y.");
       }
+      logger_->error(utl::PSM, 46, "Node location lookup error for y.");
     } else {
       logger_->error(utl::PSM, 47, "Node location lookup error for x.");
     }
@@ -255,25 +261,22 @@ Node* GMat::setNode(const Point& loc, int layer)
   if (layer_map.empty()) {
     Node* node = new Node(loc, layer);
     insertNode(node);
-    return (node);
+    return node;
   }
   NodeMap::iterator x_itr = layer_map.find(loc.getX());
   if (x_itr != layer_map.end()) {
     map<int, Node*>::iterator y_itr = x_itr->second.find(loc.getY());
     if (y_itr != x_itr->second.end()) {
       Node* node = y_itr->second;
-      return (node);
-    } else {
-      Node* node = new Node(loc, layer);
-      insertNode(node);
-      return (node);
+      return node;
     }
-
-  } else {
     Node* node = new Node(loc, layer);
     insertNode(node);
-    return (node);
+    return node;
   }
+  Node* node = new Node(loc, layer);
+  insertNode(node);
+  return node;
 }
 
 //! Function to print the G matrix
@@ -384,11 +387,12 @@ void GMat::generateStripeConductance(int layer,
                                      int y_max,
                                      double rho)
 {
-  if (x_min > x_max || y_min > y_max)
+  if (x_min > x_max || y_min > y_max) {
     logger_->warn(utl::PSM,
                   50,
                   "Creating stripe condunctance with invalid inputs. Min and "
                   "max values for X or Y are interchanged.");
+  }
   auto node_map = getNodes(layer, layer_dir, x_min, x_max, y_min, y_max);
   int i = 0;
   pair<pair<int, int>, Node*> node_prev;
@@ -405,8 +409,9 @@ void GMat::generateStripeConductance(int layer,
         width = x_max - x_min;
       }
       int length = (node_itr.first).first - (node_prev.first).first;
-      if (length == 0)
+      if (length == 0) {
         length = (node_itr.first).second - (node_prev.first).second;
+      }
       double cond = getConductivity(width, length, rho);
       setConductance(node1, node2, cond);
     }
@@ -567,9 +572,8 @@ double GMat::getConductance(NodeIdx row, NodeIdx col)
   map<GMatLoc, double>::iterator it = G_mat_dok_.values.find(key);
   if (it != G_mat_dok_.values.end()) {
     return it->second;
-  } else {
-    return 0;
   }
+  return 0;
 }
 
 //! Function which modifies the values the values in the G matrix for the
@@ -609,9 +613,11 @@ Node* GMat::nearestYNode(NodeMap::const_iterator x_itr, int y)
   const auto y_itr = y_map.lower_bound(y);
   if (y_map.size() == 1) {
     return y_map.begin()->second;
-  } else if (y_itr == y_map.end()) {
+  }
+  if (y_itr == y_map.end()) {
     return prev(y_itr)->second;
-  } else if (y_itr == y_map.begin()) {
+  }
+  if (y_itr == y_map.begin()) {
     return y_itr->second;
   }
   const auto y_prev = prev(y_itr);
@@ -619,9 +625,8 @@ Node* GMat::nearestYNode(NodeMap::const_iterator x_itr, int y)
   const int dist2 = abs(y_itr->first - y);
   if (dist1 < dist2) {
     return y_prev->second;
-  } else {
-    return y_itr->second;
   }
+  return y_itr->second;
 }
 
 //! Function to get conductivity using formula R = rho*l/A
@@ -636,9 +641,8 @@ double GMat::getConductivity(double width, double length, double rho)
 {
   if (0 >= length || 0 >= width || 0 >= rho) {
     return 0.0;
-  } else {
-    return width / (rho * length);
   }
+  return width / (rho * length);
 }
 
 //! Function to return a vector which contains pointers to all nodes

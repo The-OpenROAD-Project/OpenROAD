@@ -46,13 +46,9 @@
 
 namespace pad {
 
-ICeWall::ICeWall() : db_(nullptr), logger_(nullptr), router_(nullptr)
-{
-}
+ICeWall::ICeWall() = default;
 
-ICeWall::~ICeWall()
-{
-}
+ICeWall::~ICeWall() = default;
 
 void ICeWall::init(odb::dbDatabase* db, utl::Logger* logger)
 {
@@ -71,7 +67,7 @@ odb::dbBlock* ICeWall::getBlock() const
 }
 
 void ICeWall::assertMasterType(odb::dbMaster* master,
-                               odb::dbMasterType type) const
+                               const odb::dbMasterType& type) const
 {
   if (master == nullptr) {
     logger_->error(utl::PAD, 23, "Master must be specified.");
@@ -86,7 +82,8 @@ void ICeWall::assertMasterType(odb::dbMaster* master,
   }
 }
 
-void ICeWall::assertMasterType(odb::dbInst* inst, odb::dbMasterType type) const
+void ICeWall::assertMasterType(odb::dbInst* inst,
+                               const odb::dbMasterType& type) const
 {
   auto* master = inst->getMaster();
   if (master->getType() != type) {
@@ -157,9 +154,18 @@ void ICeWall::makeBTerm(odb::dbNet* net,
                         odb::dbTechLayer* layer,
                         const odb::Rect& shape) const
 {
-  odb::dbBTerm* bterm = odb::dbBTerm::create(net, net->getConstName());
+  odb::dbBTerm* bterm = net->get1stBTerm();
   if (bterm == nullptr) {
-    bterm = net->get1stBTerm();
+    logger_->warn(utl::PAD,
+                  33,
+                  "Could not find a block terminal associated with net: "
+                  "\"{}\", creating now.",
+                  net->getName());
+    bterm = odb::dbBTerm::create(net, net->getConstName());
+    if (bterm == nullptr) {
+      logger_->error(
+          utl::PAD, 34, "Unable to create block terminal: {}", net->getName());
+    }
   }
   bterm->setSigType(net->getSigType());
   odb::dbBPin* pin = odb::dbBPin::create(bterm);
@@ -232,9 +238,8 @@ std::string ICeWall::getRowName(const std::string& name, int ring_index) const
 {
   if (ring_index < 0) {
     return name;
-  } else {
-    return fmt::format("{}_{}", name, ring_index);
   }
+  return fmt::format("{}_{}", name, ring_index);
 }
 
 void ICeWall::makeIORow(odb::dbSite* horizontal_site,
@@ -244,7 +249,7 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                         int north_offset,
                         int east_offset,
                         int south_offset,
-                        odb::dbOrientType rotation,
+                        const odb::dbOrientType& rotation,
                         int ring_index)
 {
   auto* block = getBlock();
@@ -298,7 +303,7 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
       = [this, block, corner_site, corner_sites, ring_index, &xform](
             const std::string& name,
             const odb::Point& origin,
-            odb::dbOrientType orient) -> odb::dbRow* {
+            const odb::dbOrientType& orient) -> odb::dbRow* {
     const std::string row_name = getRowName(name, ring_index);
     odb::dbTransform rotation(orient);
     rotation.concat(xform);
@@ -321,25 +326,26 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
       = create_corner(corner_sw_, corner_origins.ll(), odb::dbOrientType::R0);
 
   // Create rows
-  auto create_row = [this, block, ring_index, &xform](const std::string& name,
-                                                      odb::dbSite* site,
-                                                      int sites,
-                                                      const odb::Point& origin,
-                                                      odb::dbOrientType orient,
-                                                      odb::dbRowDir direction) {
-    const std::string row_name = getRowName(name, ring_index);
-    odb::dbTransform rotation(orient);
-    rotation.concat(xform);
-    odb::dbRow::create(block,
-                       row_name.c_str(),
-                       site,
-                       origin.x(),
-                       origin.y(),
-                       rotation.getOrient(),
-                       direction,
-                       sites,
-                       site->getWidth());
-  };
+  auto create_row
+      = [this, block, ring_index, &xform](const std::string& name,
+                                          odb::dbSite* site,
+                                          int sites,
+                                          const odb::Point& origin,
+                                          const odb::dbOrientType& orient,
+                                          const odb::dbRowDir& direction) {
+          const std::string row_name = getRowName(name, ring_index);
+          odb::dbTransform rotation(orient);
+          rotation.concat(xform);
+          odb::dbRow::create(block,
+                             row_name.c_str(),
+                             site,
+                             origin.x(),
+                             origin.y(),
+                             rotation.getOrient(),
+                             direction,
+                             sites,
+                             site->getWidth());
+        };
   create_row(row_north_,
              vertical_site,
              x_sites,
@@ -482,30 +488,28 @@ odb::dbRow* ICeWall::findRow(const std::string& name) const
 odb::Direction2D::Value ICeWall::getRowEdge(odb::dbRow* row) const
 {
   const std::string row_name = row->getName();
-  auto check_name = [&row_name](const std::string check) -> bool {
+  auto check_name = [&row_name](const std::string& check) -> bool {
     return row_name.substr(0, check.length()) == check;
   };
   if (check_name(row_north_)) {
     return odb::Direction2D::North;
-  } else if (check_name(row_south_)) {
-    return odb::Direction2D::South;
-  } else if (check_name(row_east_)) {
-    return odb::Direction2D::East;
-  } else if (check_name(row_west_)) {
-    return odb::Direction2D::West;
-  } else {
-    logger_->error(utl::PAD, 29, "{} is not a recognized IO row.", row_name);
   }
-
-  // Return north by default, but error would have been generated before
-  // reaching this
-  return odb::Direction2D::North;
+  if (check_name(row_south_)) {
+    return odb::Direction2D::South;
+  }
+  if (check_name(row_east_)) {
+    return odb::Direction2D::East;
+  }
+  if (check_name(row_west_)) {
+    return odb::Direction2D::West;
+  }
+  logger_->error(utl::PAD, 29, "{} is not a recognized IO row.", row_name);
 }
 
 void ICeWall::placeInstance(odb::dbRow* row,
                             int index,
                             odb::dbInst* inst,
-                            odb::dbOrientType base_orient,
+                            const odb::dbOrientType& base_orient,
                             bool allow_overlap) const
 {
   const int origin_offset = index * row->getSpacing();
@@ -709,11 +713,13 @@ void ICeWall::placeFiller(
     }
 
     if (sites > 0) {
-      logger_->error(utl::PAD,
-                     30,
-                     "Unable to fill gap completely {:.3f}um -> {:.3f}um",
-                     it->lower() / dbus,
-                     it->upper() / dbus);
+      logger_->error(
+          utl::PAD,
+          30,
+          "Unable to fill gap completely {:.3f}um -> {:.3f}um in row {}",
+          it->lower() / dbus,
+          it->upper() / dbus,
+          row->getName());
     }
     fill_group++;
   }
@@ -742,7 +748,7 @@ void ICeWall::removeFiller(odb::dbRow* row)
 
 void ICeWall::placeBondPads(odb::dbMaster* bond,
                             const std::vector<odb::dbInst*>& pads,
-                            odb::dbOrientType rotation,
+                            const odb::dbOrientType& rotation,
                             const odb::Point& offset,
                             const std::string& prefix)
 {

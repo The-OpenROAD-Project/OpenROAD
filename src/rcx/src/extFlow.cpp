@@ -426,29 +426,17 @@ uint extMain::addNetSBoxes(dbNet* net,
       if (isIncludedInsearch(r, dir, bb_ll, bb_ur)) {
         uint level = s->getTechLayer()->getRoutingLevel();
 
-        int trackNum = -1;
         if (netUtil != NULL) {
           netUtil->createSpecialWire(NULL, r, s->getTechLayer(), s->getId());
         } else {
-          trackNum = _search->addBox(r.xMin(),
-                                     r.yMin(),
-                                     r.xMax(),
-                                     r.yMax(),
-                                     level,
-                                     s->getId(),
-                                     0,
-                                     wtype);
-
-          if (_searchFP != NULL) {
-            fprintf(_searchFP,
-                    "%d  %d %d  %d %d %d\n",
-                    level,
-                    r.xMin(),
-                    r.yMin(),
-                    r.xMax(),
-                    r.yMax(),
-                    trackNum);
-          }
+          _search->addBox(r.xMin(),
+                          r.yMin(),
+                          r.xMax(),
+                          r.yMax(),
+                          level,
+                          s->getId(),
+                          0,
+                          wtype);
         }
 
         cnt++;
@@ -718,17 +706,6 @@ uint extMain::addNetShapesOnSearch(dbNet* net,
                   net->getId());
             }
           }
-        }
-
-        if (_searchFP != NULL) {
-          fprintf(_searchFP,
-                  "%d  %d %d  %d %d %d\n",
-                  level,
-                  r.xMin(),
-                  r.yMin(),
-                  r.xMax(),
-                  r.yMax(),
-                  trackNum);
         }
       }
 
@@ -1309,7 +1286,7 @@ uint extMain::couplingFlow(Rect& extRect,
       stepNum++;
       totalWiresExtracted += processWireCnt;
       float percent_extracted
-          = Ath__double2int(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
+          = lround(100.0 * (1.0 * totalWiresExtracted / totWireCnt));
 
       if ((totWireCnt > 0) && (totalWiresExtracted > 0)
           && (percent_extracted - _previous_percent_extracted >= 5.0)) {

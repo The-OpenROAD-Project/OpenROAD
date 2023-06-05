@@ -48,7 +48,6 @@ class Logger;
 namespace sta {
 class dbSta;
 class dbNetwork;
-class Resizer;
 class LibertyCell;
 }  // namespace sta
 

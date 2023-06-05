@@ -77,21 +77,17 @@ void OpenRoad::readDb(const char*)
 {
 }
 
-void OpenRoad::addObserver(Observer* observer)
+void OpenRoad::addObserver(OpenRoadObserver* observer)
 {
 }
 
-void OpenRoad::removeObserver(Observer* observer)
+void OpenRoad::removeObserver(OpenRoadObserver* observer)
 {
 }
 
 int OpenRoad::getThreadCount()
 {
   return 0;
-}
-
-OpenRoad::Observer::~Observer()
-{
 }
 
 }  // namespace ord

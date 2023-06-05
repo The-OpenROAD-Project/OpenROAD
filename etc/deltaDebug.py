@@ -38,6 +38,7 @@ parser.add_argument('--error_string', type=str, help='The output that indicates 
 parser.add_argument('--step', type=str, help='Command used to perform step on the input odb file')
 parser.add_argument('--persistence', type=int, default=1, choices=[1,2,3,4,5,6], help= 'Indicates maximum input fragmentation; fragments = 2^persistence; value in [1,6]')
 parser.add_argument('--use_stdout', action='store_true', help='Enables reading the error string from standard output')
+parser.add_argument('--exit_early_on_error', action='store_true', help='Exit early on unrelated errors to speed things up, but risks exiting on false negatives.')
 parser.add_argument('--dump_def', action='store_true', help='Determines whether to dumb def at each step in addition to the odb')
 
 
@@ -56,6 +57,7 @@ class deltaDebugger:
 
         self.error_string = opt.error_string
         self.use_stdout = opt.use_stdout
+        self.exit_early_on_error = opt.exit_early_on_error
         self.step_count = 0
 
         # timeout used to measure the time the original input takes
@@ -231,7 +233,7 @@ class deltaDebugger:
                     os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                     error_string = self.error_string
                     break
-                elif(output.find("ERROR") != -1): 
+                elif(self.exit_early_on_error and output.find("ERROR") != -1):
                     # Found different error (bad cut) so we can just
                     # terminate early and ignore this cut.
                     os.killpg(os.getpgid(process.pid), signal.SIGKILL)
