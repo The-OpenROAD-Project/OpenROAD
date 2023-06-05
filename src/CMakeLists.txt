@@ -191,9 +191,7 @@ add_compile_options(
 )
 
 if (ASAN)
-  add_link_options(
-    -fsanitize=address
-  )
+  add_link_options(-fsanitize=address)
 endif()
 
 ################################################################
@@ -287,10 +285,7 @@ target_compile_options(openroad
   $<$<BOOL:${ASAN}>:-g>
 )
 if (ASAN)
-  target_link_options(openroad
-    PRIVATE
-    -fsanitize=address
-  )
+  target_link_options(openroad PRIVATE -fsanitize=address)
 endif()
 
 # Needed for boost stacktrace
