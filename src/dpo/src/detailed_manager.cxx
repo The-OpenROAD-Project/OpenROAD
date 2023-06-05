@@ -1470,6 +1470,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
         // clear the list of cells at the last X
         cellsAtLastX.clear();
         lastNode = temp[node_idx];
+        cellsAtLastX.push_back(temp[node_idx]);
       } else {
         // we don't have a violation but we still need to add the current cell
         // add the current cell to the list of cells at the last X
@@ -1562,6 +1563,7 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
         }
         cellsAtLastX.clear();
         lastNode = temp[node_idx];
+        cellsAtLastX.push_back(temp[node_idx]);
       } else {
         cellsAtLastX.push_back(temp[node_idx]);
       }
