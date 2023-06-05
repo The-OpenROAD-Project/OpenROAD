@@ -185,7 +185,16 @@ add_compile_options(
   $<$<CXX_COMPILER_ID:Clang>:-Wno-gnu-zero-variadic-macro-arguments>
   # Apple clang 14.0.0 deprecates sprintf, which generates 900 warnings.
   $<$<CXX_COMPILER_ID:AppleClang>:-Wno-deprecated-declarations>
+  $<$<BOOL:${ASAN}>:-fsanitize=address>
+  $<$<BOOL:${ASAN}>:-fno-omit-frame-pointer>
+  $<$<BOOL:${ASAN}>:-g>
 )
+
+if (ASAN)
+  add_link_options(
+    -fsanitize=address
+  )
+endif()
 
 ################################################################
 
@@ -273,7 +282,16 @@ add_executable(openroad
 target_compile_options(openroad
   PRIVATE
     -Wextra -pedantic -Wcast-qual
+  $<$<BOOL:${ASAN}>:-fsanitize=address>
+  $<$<BOOL:${ASAN}>:-fno-omit-frame-pointer>
+  $<$<BOOL:${ASAN}>:-g>
 )
+if (ASAN)
+  target_link_options(openroad
+    PRIVATE
+    -fsanitize=address
+  )
+endif()
 
 # Needed for boost stacktrace
 if(APPLE)
