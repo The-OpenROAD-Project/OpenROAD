@@ -1534,16 +1534,18 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
                          cell->getBottom(),
                          cell->getTop());
               if (node_idx < temp.size()
-                  && tryMove(temp[node_idx],
-                             temp[node_idx]->getLeft(),
-                             temp[node_idx]->getBottom(),
-                             s,
-                             temp[node_idx]->getLeft() + one_site_gap,
-                             temp[node_idx]->getBottom(),
-                             s)) {
+                  && shiftRightHelper(
+                      cell,
+                      cell->getLeft()
+                          + (one_site_gap
+                             * 2),  // assume we will insert the cell
+                                    // before us at this location
+                      s,
+                      temp[node_idx])) {
+                acceptMove();  // without this, the cells are not moved
                 logger_->info(DPO,
                               999,
-                              "Moved cell {} its left is now at {}",
+                              "Move accepted - cell {} its left is now at {}",
                               temp[node_idx]->getId(),
                               temp[node_idx]->getLeft());
               } else {
@@ -1563,6 +1565,23 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
       } else {
         cellsAtLastX.push_back(temp[node_idx]);
       }
+    }
+
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "After moving - Printing cells in segment {}",
+               s);
+    for (auto cell : cellsInSeg_[s]) {
+      debugPrint(logger_,
+                 DPO,
+                 "detailed",
+                 1,
+                 "shiftRightHelper: cell {} Left {} and Right {}",
+                 cell->getId(),
+                 cell->getLeft(),
+                 cell->getRight());
     }
   }
 }
@@ -2480,6 +2499,18 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
   int rj = segments_[sj]->getRowId();
   int originX = arch_->getRow(rj)->getLeft();
   int siteSpacing = arch_->getRow(rj)->getSiteSpacing();
+  debugPrint(logger_,
+             DPO,
+             "detailed",
+             1,
+             "shift here 1 ix {} n {}  ndr left {} should be < xj {} + ndi "
+             "width {} and cell spacing {}",
+             ix,
+             n,
+             ndr->getLeft(),
+             xj,
+             ndi->getWidth(),
+             arch_->getCellSpacing(ndi, ndr));
 
   // Shift single height cells to the right until we encounter some
   // sort of problem.
@@ -2526,6 +2557,15 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
                        ndr->getBottom(),
                        sj)) {
       return false;
+    } else {
+      debugPrint(logger_,
+                 DPO,
+                 "detailed",
+                 1,
+                 "addToMoveList: cell {} from {} to {}",
+                 ndr->getId(),
+                 ndr->getLeft(),
+                 xj);
     }
 
     // Fail if we shift off end of segment.
@@ -2780,7 +2820,7 @@ bool DetailedMgr::tryMove1(Node* ndi,
   }
 
   if (ndl == nullptr && ndr != nullptr) {
-    // End of segment, cells to the left.
+    // left-end of segment, cells to the right.
     DetailedSeg* segPtr = segments_[sj];
 
     // Reject if not enough space.
@@ -2851,18 +2891,6 @@ bool DetailedMgr::tryMove2(Node* ndi,
                            int sj)
 {
   // Very simple move within the same segment.
-  debugPrint(logger_, DPO, "detailed", 1, "trying move2");
-  debugPrint(logger_, DPO, "detailed", 1, "Printing cells in segment {}", sj);
-  for (auto cell : cellsInSeg_[sj]) {
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "shiftRightHelper: cell {} Left {} and Right {}",
-               cell->getId(),
-               cell->getLeft(),
-               cell->getRight());
-  }
   // Nothing to move.
   clearMoveList();
 
@@ -2904,7 +2932,6 @@ bool DetailedMgr::tryMove2(Node* ndi,
   }
   // We should find something...  At least "ndi"!
   if (ix_j == -1 || ndj == nullptr) {
-    debugPrint(logger_, DPO, "detailed", 1, "here 2");
     return false;
   }
 
@@ -2926,11 +2953,9 @@ bool DetailedMgr::tryMove2(Node* ndi,
   rx = ndj->getLeft() - arch_->getCellSpacing(ndi, ndj);
   if (ndi->getWidth() <= rx - lx) {
     if (!alignPos(ndi, xj, lx, rx)) {
-      debugPrint(logger_, DPO, "detailed", 1, "here 3");
       return false;
     }
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
-      debugPrint(logger_, DPO, "detailed", 1, "here 4");
       return false;
     }
     return true;
@@ -2943,27 +2968,17 @@ bool DetailedMgr::tryMove2(Node* ndi,
   } else {
     rx = segPtr->getMaxX() - arch_->getCellSpacing(ndi, nullptr);
   }
-  debugPrint(logger_,
-             DPO,
-             "detailed",
-             1,
-             "lx {} rx {} so diff is {} and our width is {}",
-             lx,
-             rx,
-             rx - lx,
-             ndi->getWidth());
+
   if (ndi->getWidth() <= rx - lx) {
     if (!alignPos(ndi, xj, lx, rx)) {
-      debugPrint(logger_, DPO, "detailed", 1, "here 5");
       return false;
     }
     if (!addToMoveList(ndi, ndi->getLeft(), ndi->getBottom(), si, xj, yj, sj)) {
-      debugPrint(logger_, DPO, "detailed", 1, "here 6");
       return false;
     }
     return true;
   }
-  debugPrint(logger_, DPO, "detailed", 1, "here 7");
+
   return false;
 }
 
@@ -3461,7 +3476,17 @@ void DetailedMgr::acceptMove()
     }
 
     // Update position and orientation.
+    int old_left = ndi->getLeft();
     ndi->setLeft(newLeft_[i]);
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               1,
+               "Moving cell {} from {} to {}",
+               ndi->getId(),
+               old_left,
+               ndi->getLeft());
+
     ndi->setBottom(newBottom_[i]);
     // XXX: Need to do the orientiation.
     ;
