@@ -1483,6 +1483,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
 
 void DetailedMgr::moveSegmentOneSiteGapViolators()
 {
+  int moved_in_segment = 0;
   std::vector<Node*> temp;
   temp.reserve(network_->getNumNodes());
   for (int s = 0; s < segments_.size(); s++) {
@@ -1538,18 +1539,13 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
                          DPO,
                          "detailed",
                          1,
-                         "Violation between cells {} whose left {} and {} "
-                         "whose right {} and one site width "
-                         "is {} and Ys of first {} to {} and second {} to {}",
+                         "Violation between cell {} left {} and cell {} "
+                         "right {} -> diff = {}",
                          temp[node_idx]->getId(),
                          temp[node_idx]->getLeft(),
                          cell->getId(),
                          cell->getRight(),
-                         one_site_gap,
-                         temp[node_idx]->getBottom(),
-                         temp[node_idx]->getTop(),
-                         cell->getBottom(),
-                         cell->getTop());
+                         temp[node_idx]->getLeft() - cell->getRight());
               if (node_idx < temp.size()
                   && shiftRightHelper(
                       cell,
@@ -1561,13 +1557,9 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
                       temp[node_idx])) {
                 acceptMove();  // without this, the cells are not moved
                 clearMoveList();
-                logger_->info(DPO,
-                              999,
-                              "Move accepted - cell {} its left is now at {}",
-                              temp[node_idx]->getId(),
-                              temp[node_idx]->getLeft());
+                moved_in_segment++;
               } else {
-                logger_->info(DPO,
+                logger_->warn(DPO,
                               331,
                               "Cannot move cell {} from {} to {}",
                               temp[node_idx]->getId(),
@@ -1585,22 +1577,23 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
         cellsAtLastX.push_back(temp[node_idx]);
       }
     }
-
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "After moving - Printing cells in segment {}",
-               s);
-    for (auto cell : cellsInSeg_[s]) {
+    if (moved_in_segment > 0) {
       debugPrint(logger_,
                  DPO,
                  "detailed",
                  1,
-                 "shiftRightHelper: cell {} Left {} and Right {}",
-                 cell->getId(),
-                 cell->getLeft(),
-                 cell->getRight());
+                 "After moving - Printing cells in segment {}",
+                 s);
+      for (auto cell : cellsInSeg_[s]) {
+        debugPrint(logger_,
+                   DPO,
+                   "detailed",
+                   1,
+                   "shiftRightHelper: cell {} Left {} and Right {}",
+                   cell->getId(),
+                   cell->getLeft(),
+                   cell->getRight());
+      }
     }
   }
 }
