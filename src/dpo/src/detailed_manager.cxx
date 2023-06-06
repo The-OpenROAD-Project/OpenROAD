@@ -1400,7 +1400,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp.clear();
-    if (cellsInSeg_[s].size() == 0) {
+    if (cellsInSeg_[s].size() < 2) {
       continue;
     }
     temp = cellsInSeg_[s];
@@ -1445,7 +1445,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
                           temp[node_idx]->getTop())) {
               // we have a violation
 
-              violating_cells[s].push_back(node_idx);
+              violating_cells[s].push_back(temp[node_idx]->getId());
               debugPrint(
                   logger_,
                   DPO,
@@ -1488,7 +1488,7 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
   for (int s = 0; s < segments_.size(); s++) {
     // To be safe, gather cells in each segment and re-sort them.
     temp.clear();
-    if (cellsInSeg_[s].size() == 0) {
+    if (cellsInSeg_[s].size() < 2) {
       continue;
     }
     temp = cellsInSeg_[s];

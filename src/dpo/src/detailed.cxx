@@ -120,12 +120,19 @@ bool Detailed::improve(DetailedMgr& mgr)
     mgr.moveSegmentOneSiteGapViolators();
     std::vector<std::vector<int>> oneSiteViolations;
     mgr.getOneSiteGapViolationsPerSegment(oneSiteViolations);
-    for (auto& segment_violations : oneSiteViolations) {
-      if (segment_violations.size() > 0) {
-        mgr_->getLogger()->warn(DPO,
-                                323,
-                                "One site gap violation in segment {:d}.",
-                                segment_violations[0]);
+    for (int i = 0; i < oneSiteViolations.size(); i++) {
+      if (!oneSiteViolations[i].empty()) {
+        std::string violating_node_ids = "[";
+        for (int nodeId : oneSiteViolations[i]) {
+          violating_node_ids += std::to_string(nodeId)
+                                + ",]"[nodeId == oneSiteViolations[i].back()];
+        }
+        mgr_->getLogger()->warn(
+            DPO,
+            323,
+            "One site gap violation in segment {:d} nodes: {}",
+            i,
+            violating_node_ids);
       }
     }
   }
