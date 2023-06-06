@@ -98,8 +98,6 @@ class GateCloner
   float required(Pin* term, bool is_rise, PathAnalysisPt* path_ap) const;
   bool violatesMaximumCapacitance(Pin* term, float limit_scale_factor = 1.0);
   bool violatesMaximumTransition(Pin* term, float limit_scale_factor = 1.0);
-  std::vector<const Pin*> pins(Net* net) const;
-  std::vector<const Pin*> pins(Instance* inst) const;
   std::vector<const Pin*> filterPins(std::vector<const Pin*>& terms,
                                      sta::PortDirection* direction,
                                      bool include_top_level) const;
@@ -112,10 +110,6 @@ class GateCloner
   std::vector<sta::LibertyPort *> libraryPins(LibertyCell* cell) const;
   std::vector<sta::LibertyPort *> libraryInputPins(LibertyCell* cell) const;
   std::vector<sta::LibertyPort *> libraryOutputPins(LibertyCell* cell) const;
-  std::vector<const Pin*> inputPins(Instance* inst,
-                                    bool include_top_level = false) const;
-  std::vector<const Pin*> outputPins(Instance* inst,
-                                     bool include_top_level= false) const;
 
   LibertyCell* halfDrivingPowerCell(Instance* inst);
   LibertyCell* halfDrivingPowerCell(LibertyCell* cell);

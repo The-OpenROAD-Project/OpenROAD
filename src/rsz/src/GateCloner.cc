@@ -194,43 +194,6 @@ GateCloner::libraryOutputPins(LibertyCell* cell) const
   return pins;
 }
 
-std::vector<const Pin*> GateCloner::pins(Net* net) const
-{
-  std::vector<const Pin*> terms;
-  auto pin_iter = network_->pinIterator(net);
-  while (pin_iter->hasNext()) {
-    auto pin = pin_iter->next();
-    terms.push_back(pin);
-  }
-  return terms;
-}
-
-std::vector<const Pin*> GateCloner::pins(Instance* inst) const
-{
-  std::vector<const Pin*> terms;
-  auto pin_iter = network_->pinIterator(inst);
-  while (pin_iter->hasNext()) {
-    auto pin = pin_iter->next();
-    terms.push_back(pin);
-  }
-  return terms;
-}
-
-std::vector<const Pin*>
-GateCloner::inputPins(Instance* inst, bool include_top_level) const
-{
-  vector<const Pin*> inst_pins = pins(inst);
-  return filterPins(inst_pins, sta::PortDirection::input(), include_top_level);
-}
-
-std::vector<const Pin*>
-GateCloner::outputPins(Instance* inst, bool include_top_level) const
-{
-  vector<const Pin*> inst_pins = pins(inst);
-  return filterPins(inst_pins, sta::PortDirection::output(), include_top_level);
-
-}
-
 int GateCloner::gateClone(const Pin *drvr_pin, PathRef* drvr_path,
                           int drvr_index, PathExpanded* expanded,
                           float cap_factor, bool clone_largest_only)
@@ -328,7 +291,7 @@ std::vector<const Pin *>
 GateCloner::fanoutPins(Net* pin_net, bool include_top_level) const
 {
   std::vector<const Pin *> filtered_inst_pins;
-  auto inst_pins = pins(pin_net);
+  auto inst_pins = resizer_->getPins(pin_net);
   filtered_inst_pins = filterPins(inst_pins, sta::PortDirection::input(),
                                   include_top_level);
 
@@ -704,7 +667,7 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
   int fanout_count = fanoutPins(network_->net(output_pin)).size();
   if (fanout_count == 0) {
     // Disconnect all the pins
-    for (auto& pin : pins(clone_net)) {
+    for (auto& pin : resizer_->getPins(clone_net)) {
       sta_->disconnectPin(const_cast<Pin*>(pin));
     }
     // now connect them to the right net.
@@ -747,7 +710,7 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
       clone_count_++;
     }
     else {
-      for (auto& pin : pins(clone_net)) {
+      for (auto& pin : resizer_->getPins(clone_net)) {
         sta_->disconnectPin(const_cast<Pin*>(pin));
       }
       topDownConnect(tree, current, output_net);
