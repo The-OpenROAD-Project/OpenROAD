@@ -474,6 +474,18 @@ Resizer::hasPins(Net *net)
   return has_pins;
 }
 
+std::vector<const Pin*>
+Resizer::getPins(Net* net) const
+{
+  std::vector<const Pin*> pins;
+  auto pin_iter = network_->pinIterator(net);
+  while (pin_iter->hasNext()) {
+    const Pin *pin = pin_iter->next();
+    pins.push_back(pin);
+  }
+  return pins;
+}
+
 Instance *
 Resizer::bufferInput(const Pin *top_pin,
                      LibertyCell *buffer_cell)
@@ -2539,6 +2551,7 @@ Resizer::journalRestore(int &resize_count,
     inserted_buffer_count--;
   }
 
+  // Undo pin swaps
   for (const auto& element : swapped_pins_) {
     Instance *inst = element.first;
     LibertyPort *port1 = std::get<0>(element.second);
@@ -2549,7 +2562,7 @@ Resizer::journalRestore(int &resize_count,
   }
   swapped_pins_.clear();
 
-  // Clear out cloned gates since there was no improvement in timing
+  // Undo gate cloning
   for (auto element : cloned_gates_) {
     auto original_inst = element.first;
     auto cloned_inst = element.second;
