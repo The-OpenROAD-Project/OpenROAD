@@ -82,7 +82,7 @@ GateCloner::GateCloner(Resizer *resizer)
 
 std::vector<Pin *>
 GateCloner::levelDriverPins(bool reverse,
-                            const std::unordered_set<Pin *> filter_pins) const
+                            const std::unordered_set<Pin *> &filter_pins) const
 {
   sta_->ensureGraph();
   sta_->ensureLevelized();
