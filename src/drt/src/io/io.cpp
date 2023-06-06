@@ -149,45 +149,44 @@ void io::Parser::setInsts(odb::dbBlock* block)
     dbTransform xform = tmpInst->getUpdatedXform();
     auto grid = tech_->getManufacturingGrid();
     for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
-      if (true || master->getMasterType().isBlock()) {
-        for (auto& pin : uTerm->getPins()) {
-          for (auto& uFig : pin->getFigs()) {
-            if (uFig->typeId() == frcRect) {
-              auto shape = uFig.get();
-              Rect box = shape->getBBox();
-              xform.apply(box);
-              if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
-                  || box.yMax() % grid) {
+      for (auto& pin : uTerm->getPins()) {
+        for (auto& uFig : pin->getFigs()) {
+          if (uFig->typeId() == frcRect) {
+            auto shape = uFig.get();
+            Rect box = shape->getBBox();
+            xform.apply(box);
+            if (box.xMin() % grid || box.yMin() % grid || box.xMax() % grid
+                || box.yMax() % grid) {
+              logger_->error(
+                  DRT,
+                  416,
+                  "Term {} of {} contains offgrid pin shape. Pin shape {} is "
+                  "not a multiple of the manufacturing grid {}.",
+                  uTerm->getName(),
+                  tmpInst->getName(),
+                  box,
+                  grid);
+            }
+          } else if (uFig->typeId() == frcPolygon) {
+            auto polygon = static_cast<frPolygon*>(uFig.get());
+            for (Point pt : polygon->getPoints()) {
+              xform.apply(pt);
+              if (pt.getX() % grid || pt.getY() % grid) {
                 logger_->error(
                     DRT,
-                    416,
-                    "Term {} of {} contains offgrid pin shape. Pin shape {} is "
-                    "not a multiple of the manufacturing grid {}.",
+                    417,
+                    "Term {} of {} contains offgrid pin shape. Polygon point "
+                    "{} is not a multiple of the manufacturing grid {}.",
                     uTerm->getName(),
                     tmpInst->getName(),
-                    box,
+                    pt,
                     grid);
-              }
-            } else if (uFig->typeId() == frcPolygon) {
-              auto polygon = static_cast<frPolygon*>(uFig.get());
-              for (Point pt : polygon->getPoints()) {
-                xform.apply(pt);
-                if (pt.getX() % grid || pt.getY() % grid) {
-                  logger_->error(
-                      DRT,
-                      417,
-                      "Term {} of {} contains offgrid pin shape. Polygon point "
-                      "{} is not a multiple of the manufacturing grid {}.",
-                      uTerm->getName(),
-                      tmpInst->getName(),
-                      pt,
-                      grid);
-                }
               }
             }
           }
         }
       }
+
       auto term = uTerm.get();
       unique_ptr<frInstTerm> instTerm = make_unique<frInstTerm>(tmpInst, term);
       instTerm->setId(numTerms_++);
