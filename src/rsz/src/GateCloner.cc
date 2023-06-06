@@ -64,7 +64,6 @@ namespace rsz {
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::PathAnalysisPt;
-using utl::Logger;
 using utl::RSZ;
 using sta::PathExpanded;
 
@@ -83,7 +82,7 @@ GateCloner::GateCloner(Resizer *resizer)
 
 std::vector<Pin *>
 GateCloner::levelDriverPins(bool reverse,
-                            std::unordered_set<Pin *> filter_pins) const
+                            const std::unordered_set<Pin *> filter_pins) const
 {
   sta_->ensureGraph();
   sta_->ensureLevelized();
@@ -93,8 +92,9 @@ GateCloner::levelDriverPins(bool reverse,
   sta::VertexIterator        itr(network_->graph());
   while (itr.hasNext()) {
     Vertex* vtx = itr.next();
-    if (vtx->isDriver(network_))
+    if (vtx->isDriver(network_)) {
       vertices.push_back(vtx);
+    }
   }
   std::sort(
       vertices.begin(),
@@ -105,10 +105,10 @@ GateCloner::levelDriverPins(bool reverse,
                    && sta::stringLess(network_->pathName(v1->pin()),
                                       network_->pathName(v2->pin())));
       });
-  for (auto& v : vertices) {
-    auto pn = v->pin();
-    if (!filter_pins.size() || filter_pins.count(pn)) {
-      terms.push_back(v->pin());
+  for (auto& vertex : vertices) {
+    auto pin = vertex->pin();
+    if (filter_pins.empty() || filter_pins.count(pin)) {
+      terms.push_back(pin);
     }
   }
   if (reverse) {
@@ -265,7 +265,7 @@ LibertyCell* GateCloner::closestDriver(LibertyCell* cell,
                                        LibertyCellSeq *candidates, float scale)
 {
   LibertyCell* closest = nullptr;
-  if (candidates == nullptr || candidates->size() == 0  ||
+  if (candidates == nullptr || candidates->empty()  ||
       !isSingleOutputCombinational(cell)) {
     return nullptr;
   }
@@ -548,7 +548,7 @@ GateCloner::expandPath(sta::Path* path, bool enumed) const
       path_required = required(pin, is_rising, path_ap);
     }
     auto slack = enumed ? path_required - arrival : ref->slack(sta_);
-    points.push_back(
+    points.emplace_back(
         PathPoint(pin, is_rising, arrival, path_required, slack, path_ap));
   }
   return points;
@@ -617,19 +617,19 @@ void GateCloner::topDownClone(SteinerTree *tree, SteinerPt current, SteinerPt pr
   }
 }
 
-void GateCloner::topDownConnect(SteinerTree *tree, SteinerPt k, Net* net)
+void GateCloner::topDownConnect(SteinerTree *tree, SteinerPt current, Net* net)
 {
-  if (k == SteinerNull) {
+  if (current == SteinerNull) {
     return;
   }
-  if (tree->left(k) == SteinerNull && tree->right(k) == SteinerNull) {
-    Instance *inst      = network_->instance(tree->pin(k));
-    auto term_port = network_->port(tree->pin(k));
+  if (tree->left(current) == SteinerNull && tree->right(current) == SteinerNull) {
+    Instance *inst      = network_->instance(tree->pin(current));
+    auto term_port = network_->port(tree->pin(current));
     sta_->connectPin(inst, term_port, net);
   }
   else {
-    topDownConnect(tree, tree->left(k), net);
-    topDownConnect(tree, tree->right(k), net);
+    topDownConnect(tree, tree->left(current), net);
+    topDownConnect(tree, tree->right(current), net);
   }
 }
 void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt prev,
@@ -641,7 +641,7 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
   Net* output_net = network_->net(output_pin);
 
   // TODO remove this if condition later
-  if  (output_net == NULL) {
+  if  (output_net == nullptr) {
     return;
   }
   resizer_->estimateWireParasitic(output_net);
@@ -650,7 +650,7 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
   sta_->findDelays();
 
   auto wp = worstSlackPath(output_pin);
-  if (!wp.size()) {
+  if (wp.empty()) {
     return;
   }
 
@@ -676,7 +676,7 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
     para_nets.erase(clone_net);
   }
   else {
-    if (wp.size()) {
+    if (!wp.empty()) {
       std::string instance_name =  resizer_->makeUniqueInstName("clone_");
       // Make a cloned instance and connect it to the design
       Instance *cloned_inst =

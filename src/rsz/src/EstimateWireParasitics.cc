@@ -468,8 +468,7 @@ Resizer::pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const
     LibertyPort *corner_port = port->cornerPort(lib_ap);
     return corner_port->capacitance();
   }
-  else
-    return 0.0;
+  return 0.0;
 }
 
 float
@@ -512,22 +511,22 @@ Resizer::subtreeLoad(SteinerTree *tree, float cap_per_micron, SteinerPt pt) cons
     const Pin* pin = tree->pin(pt);
     float capacitance = this->pinCapacitance(pin, tgt_slew_dcalc_ap_);
     return capacitance;
-  } else {
-    float left_cap = 0;
-    float right_cap = 0;
-
-    if (left_pt != SteinerNull) {
-      float left_length = dbuToMeters(tree->distance(pt, left_pt));
-      left_cap = subtreeLoad(tree, cap_per_micron, left_pt)
-                 + (left_length * cap_per_micron);
-    }
-    if (right_pt != SteinerNull) {
-      float right_length = dbuToMeters(tree->distance(pt, right_pt));
-      right_cap = subtreeLoad(tree, cap_per_micron, right_pt)
-                  + (right_length * cap_per_micron);
-    }
-    return left_cap + right_cap;
   }
+
+  float left_cap = 0;
+  float right_cap = 0;
+
+  if (left_pt != SteinerNull) {
+    float left_length = dbuToMeters(tree->distance(pt, left_pt));
+    left_cap = subtreeLoad(tree, cap_per_micron, left_pt)
+      + (left_length * cap_per_micron);
+  }
+  if (right_pt != SteinerNull) {
+    float right_length = dbuToMeters(tree->distance(pt, right_pt));
+    right_cap = subtreeLoad(tree, cap_per_micron, right_pt)
+      + (right_length * cap_per_micron);
+  }
+  return left_cap + right_cap;
 }
 
 void

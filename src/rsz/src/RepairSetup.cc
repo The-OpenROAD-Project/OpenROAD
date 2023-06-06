@@ -250,7 +250,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
   }
   else if (inserted_buffer_count_ > 0 && split_load_buffer_count_ > 0) {
-        logger_->info(RSZ, 42, "Inserted {} buffers, {} to split loads.",
+        logger_->info(RSZ, 45, "Inserted {} buffers, {} to split loads.",
                           inserted_buffer_count_, split_load_buffer_count_);
   }
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
@@ -377,19 +377,18 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
-      skip_gate_cloning = false;
-      if (!skip_gate_cloning)
-        if (fanout > 1
-            && !resizer_->dontTouch(net)
-            && !resizer_->isTristateDriver(drvr_pin)) {
-          rsz::GateCloner cloner(resizer_);
-          int inserted_gates = cloner.run(drvr_pin, drvr_path,
-                                          drvr_index, &expanded);
-          if (inserted_gates > 0) {
-            changed = true;
-            cloned_gate_count_ += inserted_gates;
-            break;
-          }
+      skip_gate_cloning = true;
+      //atoi(getenv("ENABLE_PIN_SWAP"))==1 &&
+      if (!skip_gate_cloning && fanout > 1 && !resizer_->dontTouch(net)
+          && !resizer_->isTristateDriver(drvr_pin)) {
+        rsz::GateCloner cloner(resizer_);
+        int inserted_gates
+            = cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
+        if (inserted_gates > 0) {
+          changed = true;
+          cloned_gate_count_ += inserted_gates;
+          break;
+        }
       }
 
       if (!skip_pin_swap) {
@@ -490,7 +489,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         }
         if (input_port_count > 2) {
             return false;
-}
+        }
 
         // Check if we have already dealt with this instance more than twice.
         // Skip if the answeris a yes.

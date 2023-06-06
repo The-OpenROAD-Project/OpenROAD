@@ -302,16 +302,18 @@ SteinerTree::top() const
 SteinerPt
 SteinerTree::left(SteinerPt pt) const
 {
-  if (pt >= (int) left_.size())
+  if (pt >= (int) left_.size()) {
     return SteinerNull;
+  }
   return left_[pt];
 }
 
 SteinerPt
 SteinerTree::right(SteinerPt pt) const
 {
-  if (pt >= (int) right_.size())
+  if (pt >= (int) right_.size()) {
     return SteinerNull;
+  }
   return right_[pt];
 }
 
@@ -335,19 +337,25 @@ void SteinerTree::populateSides()
     stt::Branch& branch_pt = tree_.branch[i];
     SteinerPt j = branch_pt.n;
     if (j != i) {
-      if (adj1[i] == SteinerNull)
+      if (adj1[i] == SteinerNull) {
         adj1[i] = j;
-      else if (adj2[i] == SteinerNull)
+      }
+      else if (adj2[i] == SteinerNull) {
         adj2[i] = j;
-      else
+      }
+      else {
         adj3[i] = j;
+      }
 
-      if (adj1[j] == SteinerNull)
+      if (adj1[j] == SteinerNull) {
         adj1[j] = i;
-      else if (adj2[j] == SteinerNull)
+      }
+      else if (adj2[j] == SteinerNull) {
         adj2[j] = i;
-      else
+      }
+      else {
         adj3[j] = i;
+      }
     }
   }
 
@@ -435,9 +443,7 @@ const Pin *SteinerTree::pin(SteinerPt pt) const
   if (pt < (int)pins_.size()) {
     return point_pin_array_[pt];
   }
-  else {
-    return nullptr;
-  }
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////

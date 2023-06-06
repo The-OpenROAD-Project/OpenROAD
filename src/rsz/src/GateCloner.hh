@@ -56,9 +56,9 @@ using sta::PathExpanded;
 class PathPoint
 {
  public:
-  PathPoint(Pin* path_pin = nullptr, bool is_rise = false,
-            float path_arrival = 0, float path_required = 0,
-            float path_slack = 0, sta::PathAnalysisPt* pt = nullptr);
+  explicit PathPoint(Pin* path_pin = nullptr, bool is_rise = false,
+		     float path_arrival = 0, float path_required = 0,
+		     float path_slack = 0, sta::PathAnalysisPt* pt = nullptr);
   Pin*                pin() const;
   bool                 isRise() const;
   float                arrival() const;
@@ -80,7 +80,7 @@ class GateCloner
 {
  private:
   std::vector<Pin*> levelDriverPins(bool reverse = false,
-                                    std::unordered_set<Pin*> filter_pins
+                                    const std::unordered_set<Pin*> filter_pins
                                     = std::unordered_set<Pin*>()) const;
   LibertyCell* largestLibraryCell(LibertyCell* cell);
   float maxLoad(LibertyCell* cell);
@@ -116,10 +116,10 @@ class GateCloner
   LibertyCell* closestDriver(LibertyCell* cell, LibertyCellSeq *candidates,
                              float scale);
   void cloneTree(Instance* inst, float cap_factor, bool clone_largest_only);
-  void topDownClone(SteinerTree* tree, SteinerPt k, SteinerPt prev,
+  void topDownClone(SteinerTree* tree, SteinerPt current, SteinerPt prev,
                     float c_limit, LibertyCell* driver_cell);
-  void topDownConnect(SteinerTree* tree, SteinerPt k, Net* net);
-  void cloneInstance(SteinerTree* tree, SteinerPt k,
+  void topDownConnect(SteinerTree* tree, SteinerPt current, Net* net);
+  void cloneInstance(SteinerTree* tree, SteinerPt current,
                      SteinerPt prev, LibertyCell* driver_cell);
 
   int clone_count_;
@@ -134,7 +134,7 @@ class GateCloner
   //const Corner *corner_;
 
  public:
-  GateCloner(Resizer *resizer);
+  explicit GateCloner(Resizer *resizer);
   int gateClone(const Pin *drvr_pin, PathRef* drvr_path, int drvr_index,
                 PathExpanded* expanded, float cap_factor,
                 bool clone_largest_only);
