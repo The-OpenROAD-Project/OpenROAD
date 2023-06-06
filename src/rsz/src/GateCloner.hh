@@ -133,6 +133,7 @@ class GateCloner
   dbSta* sta_;
   dbNetwork* db_network_;
   Network* network_;
+  sta::Graph *graph_;
   Resizer* resizer_;
   const sta::MinMax* min_max_;
   bool capacitance_limits_initialized_;

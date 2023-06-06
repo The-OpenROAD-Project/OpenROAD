@@ -72,6 +72,7 @@ GateCloner::GateCloner(Resizer *resizer)
 {
   resizer_ = resizer;
   sta_ = resizer->sta_;
+  graph_ = resizer->graph();
   logger_ = resizer->logger();
   db_network_ = resizer->db_network_;
   network_ = resizer->network();
@@ -403,11 +404,18 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
                            bool clone_largest_only)
 {
   std::unique_ptr<InstancePinIterator> inst_pin_iter{network_->pinIterator(inst)};
-  if (!inst_pin_iter->hasNext()) {
-    return;
+  Pin *output_pin = nullptr;
+
+  while (inst_pin_iter->hasNext()) {
+    output_pin = inst_pin_iter->next();
+    if (network_->direction(output_pin)->isOutput()) {
+        break;
+    }
+  }
+  if (output_pin == nullptr || network_->direction(output_pin)->isInput()) {
+  return;
   }
 
-  Pin *output_pin = inst_pin_iter->next();
   Net* net = network_->net(output_pin);
   if (net == nullptr) {
     return;
@@ -426,11 +434,11 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
   if (total_net_load < output_target_load) {
     return;
   }
-
-  if (!violatesMaximumTransition(output_pin) &&
+  // TODO: Crashing right now. Fix later
+  /*if (!violatesMaximumTransition(output_pin) &&
       !violatesMaximumCapacitance(output_pin)) {
     return;
-  }
+  }*/
 
   // TODO: Why do we have a cap_limit and c_limit. Seems a bit redundant. Double check
   float c_limit = cap_factor * output_target_load;
