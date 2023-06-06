@@ -1483,7 +1483,6 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
 
 void DetailedMgr::moveSegmentOneSiteGapViolators()
 {
-  int moved_in_segment = 0;
   std::vector<Node*> temp;
   temp.reserve(network_->getNumNodes());
   for (int s = 0; s < segments_.size(); s++) {
@@ -1506,21 +1505,25 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
     Node* lastNode = temp[0];
     int one_site_gap = arch_->getRow(0)->getSiteWidth();
     std::vector<Node*> cellsAtLastX(1, temp[0]);
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "Before moving - Printing cells in segment {}",
-               s);
-    for (auto cell : cellsInSeg_[s]) {
+    {
       debugPrint(logger_,
                  DPO,
                  "detailed",
-                 1,
-                 "shiftRightHelper: cell {} Left {} and Right {}",
-                 cell->getId(),
-                 cell->getLeft(),
-                 cell->getRight());
+                 3,
+                 "Before moving - Printing cells in segment {}",
+                 s);
+      for (auto cell : cellsInSeg_[s]) {
+        debugPrint(logger_,
+                   DPO,
+                   "detailed",
+                   3,
+                   "shiftRightHelper: cell {} Left {} and Right {}",
+                   cell->getId(),
+                   cell->getLeft(),
+                   cell->getRight());
+      }
+      debugPrint(
+          logger_, DPO, "detailed", 3, "Done printing cells in segment {}", s);
     }
     for (int node_idx = 1; node_idx < temp.size(); node_idx++) {
       if (temp[node_idx]->getRight() != lastNode->getRight()) {
@@ -1546,8 +1549,7 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
                          cell->getId(),
                          cell->getRight(),
                          temp[node_idx]->getLeft() - cell->getRight());
-              if (node_idx < temp.size()
-                  && shiftRightHelper(
+              if (shiftRightHelper(
                       cell,
                       cell->getLeft()
                           + (one_site_gap
@@ -1557,7 +1559,6 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
                       temp[node_idx])) {
                 acceptMove();  // without this, the cells are not moved
                 clearMoveList();
-                moved_in_segment++;
               } else {
                 logger_->warn(DPO,
                               331,
@@ -1572,28 +1573,25 @@ void DetailedMgr::moveSegmentOneSiteGapViolators()
         }
         cellsAtLastX.clear();
         lastNode = temp[node_idx];
-        cellsAtLastX.push_back(temp[node_idx]);
-      } else {
-        cellsAtLastX.push_back(temp[node_idx]);
       }
+      cellsAtLastX.push_back(temp[node_idx]);
     }
-    if (moved_in_segment > 0) {
+
+    debugPrint(logger_,
+               DPO,
+               "detailed",
+               3,
+               "After moving - Printing cells in segment {}",
+               s);
+    for (auto cell : cellsInSeg_[s]) {
       debugPrint(logger_,
                  DPO,
                  "detailed",
-                 1,
-                 "After moving - Printing cells in segment {}",
-                 s);
-      for (auto cell : cellsInSeg_[s]) {
-        debugPrint(logger_,
-                   DPO,
-                   "detailed",
-                   1,
-                   "shiftRightHelper: cell {} Left {} and Right {}",
-                   cell->getId(),
-                   cell->getLeft(),
-                   cell->getRight());
-      }
+                 3,
+                 "shiftRightHelper: cell {} Left {} and Right {}",
+                 cell->getId(),
+                 cell->getLeft(),
+                 cell->getRight());
     }
   }
 }
@@ -2500,6 +2498,12 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
          && (ndr->getLeft()
              < xj + ndi->getWidth() + arch_->getCellSpacing(ndi, ndr))) {
     if (arch_->getCellHeightInRows(ndr) != 1) {
+      debugPrint(logger_,
+                 DPO,
+                 "detailed",
+                 1,
+                 "shiftRightHelper: cell {} is not single height",
+                 ndr->getId());
       return false;
     }
 
@@ -2544,19 +2548,29 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
     // Fail if we shift off end of segment.
     if (xj + ndr->getWidth() + arch_->getCellSpacing(ndr, nullptr)
         > segments_[sj]->getMaxX()) {
+      debugPrint(
+          logger_,
+          DPO,
+          "detailed",
+          1,
+          "shiftRightHelper: cell {} shifted off end of segment {} at {}",
+          ndr->getId(),
+          sj,
+          segments_[sj]->getMaxX());
       return false;
     }
 
     if (ix == n) {
       // We shifted down to the last cell... Everything must be okay!
+      debugPrint(logger_,
+                 DPO,
+                 "detailed",
+                 1,
+                 "shiftRightHelper: cell {} shifted to end of segment {}",
+                 ndr->getId(),
+                 sj);
       break;
     }
-    logger_->info(DPO,
-                  998,
-                  "Shifting cell {} to the right from {} to pos {}",
-                  ndr->getId(),
-                  ndr->getLeft(),
-                  xj);
     ndi = ndr;
     ndr = cellsInSeg_[sj][++ix];
   }
