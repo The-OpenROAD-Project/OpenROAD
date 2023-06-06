@@ -163,7 +163,7 @@ proc write_fanout_load_terms { stream fanout load_inst load_in } {
 proc write_clone_test_def { filename clone_gate fanout} {
     write_clone_test_def1 $filename $clone_gate $fanout \
 	"drvr" "DFF_X1" "CK" "Q" \
-	"load" "DFF_X1" "CK" "D" 30000\
+	"load" "DFF_X1" "CK" "D" 300000\
 	"metal3" 1000
 }
 
