@@ -2563,9 +2563,11 @@ Resizer::journalRestore(int &resize_count,
   swapped_pins_.clear();
 
   // Undo gate cloning
+  // TODO
+  /*
   for (auto element : cloned_gates_) {
-    // TODO
-    /*    
+
+
     auto original_inst = element.first;
     auto cloned_inst = element.second;
     const Pin* clone_pin = nullptr; // TODO outputPins(cloned_inst)[0];
@@ -2583,8 +2585,8 @@ Resizer::journalRestore(int &resize_count,
     sta_->deleteNet(clone_out_net);
     sta_->deleteInstance(cloned_inst);
     sta_->graphDelayCalc()->delaysInvalid();
-    */
   }
+   */
   cloned_gates_.clear();
 }
 
