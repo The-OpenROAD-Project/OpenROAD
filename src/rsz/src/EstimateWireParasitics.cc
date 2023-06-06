@@ -474,8 +474,9 @@ Resizer::pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const
 float
 Resizer::totalLoad(SteinerTree *tree) const
 {
-  if (!tree)
+  if (!tree) {
     return 0;
+}
 
   SteinerPt top_pt = tree->top();
   SteinerPt drvr_pt = tree->drvrPt();
