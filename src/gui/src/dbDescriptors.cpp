@@ -276,6 +276,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   auto placed = inst->getPlacementStatus();
   auto* module = inst->getModule();
   Properties props;
+  props.push_back({"Block", inst->getBlock()->getName()});
   if (module != nullptr) {
     props.push_back({"Module", gui->makeSelected(module)});
   }
@@ -1320,7 +1321,8 @@ bool DbNetDescriptor::isNet(std::any object) const
 Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
 {
   auto net = getNet(object);
-  Properties props({{"Signal type", net->getSigType().getString()},
+  Properties props({{"Block", net->getBlock()->getName()},
+                    {"Signal type", net->getSigType().getString()},
                     {"Source type", net->getSourceType().getString()},
                     {"Wire type", net->getWireType().getString()},
                     {"Special", net->isSpecial()},
