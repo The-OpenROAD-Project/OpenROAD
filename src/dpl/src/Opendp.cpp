@@ -91,6 +91,7 @@ Opendp::Opendp()
 }
 
 Opendp::~Opendp() = default;
+
 void Opendp::init(dbDatabase* db, Logger* logger)
 {
   db_ = db;

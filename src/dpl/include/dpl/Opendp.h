@@ -357,6 +357,7 @@ class Opendp
   int rectDist(const Cell* cell, const Rect* rect) const;
   bool havePadding() const;
   void checkOneSiteDbMaster();
+  void deleteGrid();
   Pixel* gridPixel(int grid_idx, int x, int y) const;
   // Cell initial location wrt core origin.
   int getRowHeight(const Cell* cell) const;

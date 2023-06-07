@@ -191,6 +191,10 @@ void Opendp::initGrid()
   }
 }
 
+void Opendp::deleteGrid() {
+  grid_.clear();
+}
+
 Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
 {
   if (grid_idx < 0 || grid_idx >= grid_info_vector_.size()) {
@@ -199,7 +203,7 @@ Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
   GridInfo* grid_info = grid_info_vector_[grid_idx];
   if (grid_x >= 0 && grid_x < grid_info->site_count && grid_y >= 0
       && grid_y < grid_info->row_count) {
-    return const_cast<Pixel*>(&grid_[grid_idx][grid_y].data()[grid_x]);
+    return const_cast<Pixel*>(&grid_[grid_idx][grid_y][grid_x]);
   }
   return nullptr;
 }
