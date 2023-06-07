@@ -64,252 +64,180 @@ namespace utl {
 class Logger;
 }
 
-using utl::Logger;
-
 namespace par {
-
-class Graph;
-class Hypergraph;
-
-enum GraphType : uint8_t
-{
-  CLIQUE,
-  HYBRID,
-  STAR
-};
-
-class PartOptions
-{
- public:
-  PartOptions() = default;
-
-  void setNumStarts(unsigned numStarts) { numStarts_ = numStarts; }
-  unsigned getNumStarts() const { return numStarts_; }
-  void setTargetPartitions(unsigned target) { targetPartitions_ = target; }
-  unsigned getTargetPartitions() const { return targetPartitions_; }
-  void setWeightedVertices(bool enable) { weightedVertices_ = enable; }
-  bool getWeightedVertices() const { return weightedVertices_; }
-  void setCoarRatio(double cratio) { coarRatio_ = cratio; }
-  double getCoarRatio() { return coarRatio_; }
-  void setCoarVertices(unsigned coarVertices) { coarVertices_ = coarVertices; }
-  unsigned getCoarVertices() const { return coarVertices_; }
-  void setTermProp(bool enable) { termProp_ = enable; }
-  bool getTermProp() const { return termProp_; }
-  void setCutHopRatio(double ratio) { cutHopRatio_ = ratio; }
-  double getCutHopRatio() { return cutHopRatio_; }
-  void setArchTopology(const std::vector<int>& arch) { archTopology_ = arch; }
-  const std::vector<int>& getArchTopology() const { return archTopology_; }
-  void setTool(const std::string& tool) { tool_ = tool; }
-  std::string getTool() const { return tool_; }
-  void setGraphModel(const std::string& graphModel)
-  {
-    if (graphModel == "clique") {
-      graphModel_ = CLIQUE;
-    } else if (graphModel == "star") {
-      graphModel_ = STAR;
-    } else
-      graphModel_ = HYBRID;
-  }
-  GraphType getGraphModel() const { return graphModel_; }
-  void setCliqueThreshold(unsigned threshold) { cliqueThreshold_ = threshold; }
-  unsigned getCliqueThreshold() const { return cliqueThreshold_; }
-  void setWeightModel(unsigned model) { weightModel_ = model; }
-  unsigned getWeightModel() const { return weightModel_; }
-  void setMaxEdgeWeight(unsigned weight) { maxEdgeWeight_ = weight; }
-  unsigned getMaxEdgeWeight() const { return maxEdgeWeight_; }
-  void setMaxVertexWeight(unsigned weight) { maxVertexWeight_ = weight; }
-  unsigned getMaxVertexWeight() const { return maxVertexWeight_; }
-  void setBalanceConstraint(unsigned constraint)
-  {
-    balanceConstraint_ = constraint;
-  }
-  unsigned getBalanceConstraint() const { return balanceConstraint_; }
-  void setRefinement(unsigned number) { refinement_ = number; }
-  unsigned getRefinement() const { return refinement_; }
-  void setRandomSeed(int seed);
-  void generateSeeds(int seeds);
-  int getNewSeed() { return seedGenerator_(); }
-  void setSeeds(const std::set<int>& seeds) { seeds_ = seeds; }
-  const std::set<int>& getSeeds() const { return seeds_; }
-  void setExistingID(int id) { existingId_ = id; }
-  int getExistingID() const { return existingId_; }
-  void setPartitionsToTest(const std::vector<int>& partIds)
-  {
-    partitionsToTest_ = partIds;
-  }
-  const std::vector<int>& getPartitionsToTest() const
-  {
-    return partitionsToTest_;
-  }
-  void setEvaluationFunction(const std::string& function)
-  {
-    evaluationFunction_ = function;
-  }
-  std::string getEvaluationFunction() const { return evaluationFunction_; }
-  void setLevel(unsigned level) { level_ = level; }
-  unsigned getLevel() const { return level_; }
-  void setFinalPartitions(unsigned target) { finalPartitions_ = target; }
-  unsigned getFinalPartitions() { return finalPartitions_; }
-  void setForceGraph(bool force) { forceGraph_ = force; }
-  bool getForceGraph() { return forceGraph_; }
-
- private:
-  unsigned numStarts_ = 1;
-  unsigned targetPartitions_ = 0;
-  bool weightedVertices_ = false;
-  double coarRatio_ = 0.7;
-  unsigned coarVertices_ = 2500;
-  bool termProp_ = false;
-  double cutHopRatio_ = 1.0;
-  std::string tool_ = "chaco";
-  GraphType graphModel_ = HYBRID;
-  std::string evaluationFunction_ = "hyperedges";
-  unsigned cliqueThreshold_ = 50;
-  unsigned weightModel_ = 1;
-  unsigned maxEdgeWeight_ = 100;
-  unsigned maxVertexWeight_ = 100;
-  unsigned balanceConstraint_ = 2;
-  unsigned refinement_ = 0;
-  int level_ = -1;
-  int existingId_ = -1;
-  unsigned finalPartitions_ = 2;
-  bool forceGraph_ = false;
-  std::vector<int> archTopology_;
-  std::set<int> seeds_;
-  std::vector<int> partitionsToTest_;
-  std::mt19937 seedGenerator_ = std::mt19937();
-};
-
-class PartSolutions
-{
- public:
-  void addAssignment(const std::vector<unsigned long>& currentAssignment,
-                     const unsigned long runtime,
-                     const int seed);
-  void clearAssignments();
-  const std::vector<unsigned long>& getAssignment(unsigned idx) const
-  {
-    return assignmentResults_[idx];
-  }
-  unsigned long getRuntime(unsigned idx) const { return runtimeResults_[idx]; }
-  int getSeed(unsigned idx) const { return seeds_[idx]; }
-  void setToolName(const std::string& name) { toolName_ = name; }
-  std::string getToolName() const { return toolName_; }
-  void setPartitionId(unsigned id) { partitionId_ = id; }
-  unsigned getPartitionId() const { return partitionId_; }
-  void setClusterId(unsigned id) { clusterId_ = id; }
-  unsigned getClusterId() const { return clusterId_; }
-  void setBestSolutionIdx(unsigned idx) { bestSolutionIdx_ = idx; }
-  unsigned getBestSolutionIdx() const { return bestSolutionIdx_; }
-  unsigned getNumOfRuns() const { return seeds_.size(); }
-  void setBestSetSize(double result) { bestSetSizeSD_ = result; }
-  double getBestSetSize() const { return bestSetSizeSD_; }
-  void setBestSetArea(double result) { bestSetAreaSD_ = result; }
-  double getBestSetArea() const { return bestSetAreaSD_; }
-  void setBestNumTerminals(unsigned long result) { bestNumTerminals_ = result; }
-  unsigned long getBestNumTerminals() const { return bestNumTerminals_; }
-  void setBestNumHyperedgeCuts(unsigned long result)
-  {
-    bestNumHyperedgeCuts_ = result;
-  }
-  unsigned long getBestNumHyperedgeCuts() const
-  {
-    return bestNumHyperedgeCuts_;
-  }
-  void setBestRuntime(unsigned long result) { bestRuntime_ = result; }
-  unsigned long getBestRuntime() const { return bestRuntime_; }
-  void setBestHopWeigth(unsigned long result) { bestHopWeigth_ = result; }
-  unsigned long getBestHopWeigth() const { return bestHopWeigth_; }
-
-  void resetEvaluation();
-
- private:
-  std::vector<std::vector<unsigned long>> assignmentResults_;
-  std::vector<unsigned long> runtimeResults_;
-  std::vector<int> seeds_;
-  std::string toolName_ = "";
-  unsigned partitionId_ = 0;
-  unsigned clusterId_ = 0;
-  unsigned bestSolutionIdx_ = 0;
-  double bestSetSizeSD_ = 0;
-  double bestSetAreaSD_ = 0;
-  unsigned long bestNumTerminals_ = 0;
-  unsigned long bestNumHyperedgeCuts_ = 0;
-  unsigned long bestRuntime_ = 0;
-  unsigned long bestHopWeigth_ = 0;
-};
 
 class PartitionMgr
 {
- private:
-  odb::dbBlock* getDbBlock() const;
-  unsigned getNumPartitioningResults() const { return results_.size(); }
-  unsigned getNumClusteringResults() const { return clusResults_.size(); }
-  const PartSolutions& getPartitioningResult(unsigned id) const
-  {
-    return results_[id];
-  }
-  const PartSolutions& getClusteringResult(unsigned id) const
-  {
-    return clusResults_[id];
-  }
-
-  PartOptions options_;
-  odb::dbDatabase* db_ = nullptr;
-  sta::dbNetwork* db_network_ = nullptr;
-  sta::dbSta* _sta = nullptr;
-  unsigned bestId_ = 0;
-  Logger* logger_;
-  std::unique_ptr<Graph> graph_;
-  std::unique_ptr<Hypergraph> hypergraph_;
-  std::vector<PartSolutions> results_;
-  std::vector<PartSolutions> clusResults_;
-
  public:
-  PartitionMgr();
-  ~PartitionMgr();
   void init(odb::dbDatabase* db,
             sta::dbNetwork* db_network,
             sta::dbSta* sta,
-            Logger* logger);
-  void runPartitioning();
-  void runClustering();
-  void evaluatePartitioning();
-  unsigned getCurrentBestId() const { return bestId_; }
-  void setCurrentBestId(unsigned id) { bestId_ = id; }
-  void runChaco();
-  void runGpMetis();
-  void runMlPart();
-  void runChacoClustering();
-  void runGpMetisClustering();
-  void runMlPartClustering();
-  PartOptions& getOptions() { return options_; }
-  unsigned getCurrentId() const { return (results_.size() - 1); }
-  unsigned getCurrentClusId() const { return (clusResults_.size() - 1); }
-  void toGraph();
-  void toHypergraph();
-  void hypergraph(bool buildGraph = false);
-  unsigned generatePartitionId() const;
-  unsigned generateClusterId() const;
-  void computePartitionResult(unsigned partitionId, std::string function);
-  bool comparePartitionings(const PartSolutions& oldPartition,
-                            const PartSolutions& newPartition,
-                            const std::string& function);
-  void reportPartitionResult(const unsigned partitionId);
-  void writePartitioningToDb(const unsigned partitionId);
-  void dumpPartIdToFile(std::string name);
-  void writeClusteringToDb(unsigned clusteringId);
-  void dumpClusIdToFile(std::string name) const;
-  void reportNetlistPartitions(unsigned partitionId);
-  unsigned readPartitioningFile(const std::string& filename,
-                                const std::string& instance_map_file);
-  void reportGraph();
+            utl::Logger* logger);
 
-  void writePartitionVerilog(const char* path,
-                             const char* port_prefix,
-                             const char* module_suffix);
+  // The function for partitioning a hypergraph
+  // This is used for replacing hMETIS
+  // Key supports:
+  // (1) fixed vertices constraint in fixed_file
+  // (2) community attributes in community_file (This can be used to guide the
+  // partitioning process) (3) stay together attributes in group_file. (4)
+  // placement information is specified in placement file The format is that
+  // each line cooresponds to a group fixed vertices, community and placement
+  // attributes both follows the hMETIS format
+  void tritonPartHypergraph(unsigned int num_parts,
+                            float balance_constraint,
+                            unsigned int seed,
+                            int vertex_dimension,
+                            int hyperedge_dimension,
+                            int placement_dimension,
+                            const char* hypergraph_file,
+                            const char* fixed_file,
+                            const char* community_file,
+                            const char* group_file,
+                            const char* placement_file,
+                            // weight parameters
+                            const std::vector<float>& e_wt_factors,
+                            const std::vector<float>& v_wt_factors,
+                            const std::vector<float>& placement_wt_factors,
+                            // coarsening related parameters
+                            int thr_coarsen_hyperedge_size_skip,
+                            int thr_coarsen_vertices,
+                            int thr_coarsen_hyperedges,
+                            float coarsening_ratio,
+                            int max_coarsen_iters,
+                            float adj_diff_ratio,
+                            int min_num_vertices_each_part,
+                            // initial partitioning related parameters
+                            int num_initial_solutions,
+                            int num_best_initial_solutions,
+                            // refinement related parameters
+                            int refiner_iters,
+                            int max_moves,
+                            float early_stop_ratio,
+                            int total_corking_passes,
+                            // vcycle related parameters
+                            bool v_cycle_flag,
+                            int max_num_vcycle,
+                            int num_coarsen_solutions,
+                            int num_vertices_threshold_ilp,
+                            int global_net_threshold);
+
+  // Evaluate a given solution of a hypergraph
+  // The fixed vertices should statisfy the fixed vertices constraint
+  // The group of vertices should stay together in the solution
+  // The vertex balance should be satisfied
+  void evaluateHypergraphSolution(unsigned int num_parts,
+                                  float balance_constraint,
+                                  int vertex_dimension,
+                                  int hyperedge_dimension,
+                                  const char* hypergraph_file,
+                                  const char* fixed_file,
+                                  const char* group_file,
+                                  const char* solution_file,
+                                  // weight parameters
+                                  const std::vector<float>& e_wt_factors,
+                                  const std::vector<float>& v_wt_factors);
+
+  // Top level interface
+  // The function for partitioning a hypergraph
+  // This is the main API for TritonPart
+  // Key supports:
+  // (1) fixed vertices constraint in fixed_file
+  // (2) community attributes in community_file (This can be used to guide the
+  // partitioning process) (3) stay together attributes in group_file. (4)
+  // timing-driven partitioning (5) fence-aware partitioning (6) placement-aware
+  // partitioning, placement information is extracted from OpenDB
+  void tritonPartDesign(unsigned int num_parts_arg,
+                        float balance_constraint_arg,
+                        unsigned int seed_arg,
+                        bool timing_aware_flag_arg,
+                        int top_n_arg,
+                        bool placement_flag_arg,
+                        bool fence_flag_arg,
+                        float fence_lx_arg,
+                        float fence_ly_arg,
+                        float fence_ux_arg,
+                        float fence_uy_arg,
+                        const char* fixed_file_arg,
+                        const char* community_file_arg,
+                        const char* group_file_arg,
+                        const char* solution_filename_arg,
+                        // timing related parameters
+                        float net_timing_factor,
+                        float path_timing_factor,
+                        float path_snaking_factor,
+                        float timing_exp_factor,
+                        float extra_delay,
+                        bool guardband_flag,
+                        // weight parameters
+                        const std::vector<float>& e_wt_factors,
+                        const std::vector<float>& v_wt_factors,
+                        const std::vector<float>& placement_wt_factors,
+                        // coarsening related parameters
+                        int thr_coarsen_hyperedge_size_skip,
+                        int thr_coarsen_vertices,
+                        int thr_coarsen_hyperedges,
+                        float coarsening_ratio,
+                        int max_coarsen_iters,
+                        float adj_diff_ratio,
+                        int min_num_vertices_each_part,
+                        // initial partitioning related parameters
+                        int num_initial_solutions,
+                        int num_best_initial_solutions,
+                        // refinement related parameters
+                        int refiner_iters,
+                        int max_moves,
+                        float early_stop_ratio,
+                        int total_corking_passes,
+                        // vcycle related parameters
+                        bool v_cycle_flag,
+                        int max_num_vcycle,
+                        int num_coarsen_solutions,
+                        int num_vertices_threshold_ilp,
+                        int global_net_threshold);
+
+  void evaluatePartDesignSolution(unsigned int num_parts_arg,
+                                  float balance_constraint_arg,
+                                  bool timing_aware_flag_arg,
+                                  int top_n_arg,
+                                  bool fence_flag_arg,
+                                  float fence_lx_arg,
+                                  float fence_ly_arg,
+                                  float fence_ux_arg,
+                                  float fence_uy_arg,
+                                  const char* fixed_file_arg,
+                                  const char* community_file_arg,
+                                  const char* group_file_arg,
+                                  const char* hypergraph_file_arg,
+                                  const char* hypergraph_int_weight_file_arg,
+                                  const char* solution_filename_arg,
+                                  // timing related parameters
+                                  float net_timing_factor,
+                                  float path_timing_factor,
+                                  float path_snaking_factor,
+                                  float timing_exp_factor,
+                                  float extra_delay,
+                                  bool guardband_flag,
+                                  // weight parameters
+                                  const std::vector<float>& e_wt_factors,
+                                  const std::vector<float>& v_wt_factors);
+
+  // k-way partitioning used by Hier-RTLMP
+  std::vector<int> PartitionKWaySimpleMode(
+      unsigned int num_parts_arg,
+      float balance_constraint_arg,
+      unsigned int seed_arg,
+      const std::vector<std::vector<int>>& hyperedges,
+      const std::vector<float>& vertex_weights,
+      const std::vector<float>& hyperedge_weights);
+
+  void readPartitioningFile(const std::string& filename,
+                            const std::string& instance_map_file);
+  void writePartitionVerilog(const char* file_name,
+                             const char* port_prefix = "partition_",
+                             const char* module_suffix = "_partition");
 
  private:
+  odb::dbBlock* getDbBlock() const;
   sta::Instance* buildPartitionedInstance(
       const char* name,
       const char* port_prefix,
@@ -318,9 +246,15 @@ class PartitionMgr
       sta::Instance* parent,
       const std::set<sta::Instance*>* insts,
       std::map<sta::Net*, sta::Port*>* port_map);
+
   sta::Instance* buildPartitionedTopInstance(const char* name,
                                              sta::Library* library,
                                              sta::NetworkReader* network);
+
+  odb::dbDatabase* db_ = nullptr;
+  sta::dbNetwork* db_network_ = nullptr;
+  sta::dbSta* sta_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 };
 
 }  // namespace par

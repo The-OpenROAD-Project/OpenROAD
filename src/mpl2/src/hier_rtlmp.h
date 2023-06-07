@@ -42,6 +42,8 @@
 #include <string>
 #include <vector>
 
+#include "Mpl2Observer.h"
+
 namespace odb {
 class dbBTerm;
 class dbBlock;
@@ -60,6 +62,10 @@ namespace utl {
 class Logger;
 }
 
+namespace par {
+class PartitionMgr;
+}
+
 namespace mpl2 {
 struct BundledNet;
 class Cluster;
@@ -67,7 +73,6 @@ class HardMacro;
 class Metrics;
 struct Rect;
 class SoftMacro;
-class Graphics;
 
 // Hierarchial RTL-MP
 // Support Multi-Level Clustering.
@@ -85,16 +90,16 @@ class HierRTLMP
   HierRTLMP(sta::dbNetwork* network,
             odb::dbDatabase* db,
             sta::dbSta* sta,
-            utl::Logger* logger);
+            utl::Logger* logger,
+            par::PartitionMgr* tritonpart);
   ~HierRTLMP();
 
   // Top Level Interface Function
   // This function is the inferface for calling HierRTLMP
   // This function works as following:
   // 1) Traverse the logical hierarchy, get all the statistics of each logical
-  // module
-  //    in logical_module_map_ and associate each hard macro with its HardMacro
-  //    object
+  //    module in logical_module_map_ and associate each hard macro with its
+  //    HardMacro object
   // 2) Create Bundled pins and treat each bundled pin as a cluster with no size
   //    The number of bundled IOs is num_bundled_IOs_ x 4  (four boundaries)
   // 3) Create physical hierarchy tree in a DFS manner (Postorder)
@@ -133,9 +138,14 @@ class HierRTLMP
   void setMinAR(float min_ar);
   void setSnapLayer(int snap_layer);
   void setReportDirectory(const char* report_directory);
-  void setDebug();
+  void setDebug(std::unique_ptr<Mpl2Observer>& graphics);
+  void setBusPlanningFlag(bool bus_planning_flag)
+  {
+    bus_planning_flag_ = bus_planning_flag;
+  }
 
  private:
+  void setDefaultThresholds();
   void createDataFlow();
   void updateDataFlow();
   void dataFlowDFSIOPin(int parent,
@@ -183,7 +193,7 @@ class HierRTLMP
   void printConnection();
   void printClusters();
   void updateSubTree(Cluster* parent);
-  // Break large flat clusters with MLPart
+  // Break large flat clusters with TritonPart
   // A flat cluster does not have a logical module
   void breakLargeFlatCluster(Cluster* cluster);
 
@@ -213,6 +223,11 @@ class HierRTLMP
   // (Preorder DFS)
   void multiLevelMacroPlacement(Cluster* parent);
   // place macros within the HardMacroCluster
+  void multiLevelMacroPlacementWithoutBusPlanning(Cluster* parent);
+  // For some testcase with very high density, it may be very difficuit to
+  // generate a tiling for clusters.  In this case, we may want to try to set
+  // the area of all standard-cell clusters to 0.0
+  void enhancedMacroPlacement(Cluster* parent);
   void hardMacroClusterMacroPlacement(Cluster* parent);
   // Merge nets to reduce runtime
   void mergeNets(std::vector<BundledNet>& nets);
@@ -226,14 +241,37 @@ class HierRTLMP
   void callBusPlanning(std::vector<SoftMacro>& shaped_macros,
                        std::vector<BundledNet>& nets_old);
 
+  // Align all the macros globally to reduce the waste of empty space
+  void alignHardMacroGlobal(Cluster* parent);  // call this function after
+                                               // multilevel macro placement
+
+  // force-directed placement to generate guides for macros
+  void FDPlacement(std::vector<Rect>& blocks,
+                   const std::vector<BundledNet>& nets,
+                   float outline_width,
+                   float outline_height,
+                   std::string file_name);
+
   sta::dbNetwork* network_ = nullptr;
   odb::dbDatabase* db_ = nullptr;
   odb::dbBlock* block_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   utl::Logger* logger_ = nullptr;
+  par::PartitionMgr* tritonpart_ = nullptr;
+
+  // flag variables
+  const bool dynamic_congestion_weight_flag_ = false;
+  // Our experiments show that for most testcases, turn off bus planning
+  // can generate better results.
+  // We recommand that you turn off this flag for technology nodes with very
+  // limited routing layers such as SkyWater130.  But for NanGate45,
+  // ASASP7, you should turn off this option.
+  bool bus_planning_flag_ = false;
 
   // technology-related variables
   float dbu_ = 0.0;
+  int manufacturing_grid_ = 1;  // the default manufacture grid in dbu
+                                // will be over written by the tech lef value
 
   int num_updated_macros_ = 0;
   int num_hard_macros_cluster_ = 0;
@@ -294,8 +332,8 @@ class HierRTLMP
 
   // Fast SA hyperparameter
   float init_prob_ = 0.9;
-  const int max_num_step_ = 5000;
-  const int num_perturb_per_step_ = 3000;
+  const int max_num_step_ = 2000;
+  const int num_perturb_per_step_ = 500;
   // if step < k_, T = init_T_ / (c_ * step_);
   // else T = init_T_ / step
   const int k_ = 5000000;
@@ -303,15 +341,15 @@ class HierRTLMP
 
   // the virtual weight between std cell part and corresponding macro part
   // to force them stay together
-  const float virtual_weight_ = 2000.0;
+  float virtual_weight_ = 10.0;
 
   // probability of each action
   float pos_swap_prob_ = 0.2;
   float neg_swap_prob_ = 0.2;
-  float double_swap_prob_ = 0.1;
+  float double_swap_prob_ = 0.2;
   float exchange_swap_prob_ = 0.0;
-  float flip_prob_ = 0.5;
-  float resize_prob_ = 0.5;
+  float flip_prob_ = 0.4;
+  float resize_prob_ = 0.4;
 
   // design-related variables
   // core area (in float)
@@ -321,8 +359,9 @@ class HierRTLMP
   float floorplan_uy_ = 0.0;
 
   // dataflow parameters and store the dataflow
-  const int max_num_ff_dist_ = 3;  // maximum number of FF distances between
-  const float dataflow_factor_ = 2.0;
+  int max_num_ff_dist_ = 5;  // maximum number of FF distances between
+  float dataflow_factor_ = 2.0;
+  float dataflow_weight_ = 1;
   std::vector<std::pair<odb::dbITerm*, std::vector<std::set<odb::dbInst*>>>>
       macro_ffs_conn_map_;
   std::vector<std::pair<odb::dbBTerm*, std::vector<std::set<odb::dbInst*>>>>
@@ -367,7 +406,7 @@ class HierRTLMP
   // we only consider bus when we do bus planning
   const int bus_net_threshold_ = 32;
   // the weight used for balance timing and congestion
-  const float congestion_weight_ = 0.5;
+  float congestion_weight_ = 0.5;
 
   // Determine if the cluster is macro dominated
   // if num_std_cell * macro_dominated_cluster_threshold_ < num_macro
@@ -400,6 +439,6 @@ class HierRTLMP
   // map IO pins to Pads (for designs with IO pads)
   std::map<odb::dbBTerm*, odb::dbInst*> io_pad_map_;
 
-  std::unique_ptr<Graphics> graphics_;
+  std::unique_ptr<Mpl2Observer> graphics_;
 };
 }  // namespace mpl2

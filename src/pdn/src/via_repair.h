@@ -67,9 +67,9 @@ class ViaRepair
   utl::Logger* logger_;
   std::set<odb::dbNet*> nets_;
 
-  bool use_obs_;
-  bool use_nets_;
-  bool use_inst_;
+  bool use_obs_ = true;
+  bool use_nets_ = true;
+  bool use_inst_ = true;
 
   std::map<odb::dbTechLayer*, int> via_count_;
   std::map<odb::dbTechLayer*, int> removal_count_;

@@ -51,7 +51,7 @@ namespace gui {
 class BufferTree
 {
  public:
-  BufferTree(odb::dbNet* net);
+  explicit BufferTree(odb::dbNet* net);
 
   static void setSTA(sta::dbSta* sta) { sta_ = sta; }
   static bool isAggregate(odb::dbNet* net);
@@ -82,7 +82,8 @@ class BufferTreeDescriptor : public Descriptor
   BufferTreeDescriptor(odb::dbDatabase* db,
                        sta::dbSta* sta,
                        const std::set<odb::dbNet*>& focus_nets,
-                       const std::set<odb::dbNet*>& guide_nets);
+                       const std::set<odb::dbNet*>& guide_nets,
+                       const std::set<odb::dbNet*>& tracks_nets);
 
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;
@@ -91,7 +92,7 @@ class BufferTreeDescriptor : public Descriptor
   void highlight(std::any object, Painter& painter) const override;
 
   Properties getProperties(std::any object) const override;
-  Actions getActions(std::any object) const;
+  Actions getActions(std::any object) const override;
   Selected makeSelected(std::any object) const override;
   bool lessThan(std::any l, std::any r) const override;
 
@@ -102,6 +103,7 @@ class BufferTreeDescriptor : public Descriptor
   const Descriptor* net_descriptor_;
   const std::set<odb::dbNet*>& focus_nets_;
   const std::set<odb::dbNet*>& guide_nets_;
+  const std::set<odb::dbNet*>& tracks_nets_;
 };
 
 }  // namespace gui

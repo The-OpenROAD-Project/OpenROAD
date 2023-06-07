@@ -288,6 +288,9 @@ class Rect
   // Bloat each side of the rectangle by the margin.
   void bloat(int margin, Rect& result) const;
 
+  // Bloat the rectangle by the margin in the required orientation.
+  Rect bloat(int margin, Orientation2D orient) const;
+
   // Compute the intersection of these two rectangles.
   void intersection(const Rect& r, Rect& result) const;
 
@@ -297,7 +300,6 @@ class Rect
   uint64 area() const;
   uint64 margin() const;
 
-  void notice(const char* prefix = "");
   void printf(FILE* fp, const char* prefix = "");
   void print(const char* prefix = "");
 
@@ -731,6 +733,23 @@ inline void Rect::bloat(int margin, Rect& result) const
   result.yhi_ = yhi_ + margin;
 }
 
+inline Rect Rect::bloat(int margin, Orientation2D orient) const
+{
+  Rect result;
+  if (orient == horizontal) {
+    result.xlo_ = xlo_ - margin;
+    result.xhi_ = xhi_ + margin;
+    result.ylo_ = ylo_;
+    result.yhi_ = yhi_;
+  } else {
+    result.xlo_ = xlo_;
+    result.xhi_ = xhi_;
+    result.ylo_ = ylo_ - margin;
+    result.yhi_ = yhi_ + margin;
+  }
+  return result;
+}
+
 // Compute the intersection of these two rectangles.
 inline void Rect::intersection(const Rect& r, Rect& result) const
 {
@@ -786,10 +805,6 @@ inline bool Rect::isInverted() const
   return xlo_ > xhi_ || ylo_ > yhi_;
 }
 
-inline void Rect::notice(const char*)
-{
-  ;  // notice(0, "%s%12d %12d - %12d %12d\n", prefix, xlo_, ylo_, dx, dy);
-}
 inline void Rect::printf(FILE* fp, const char* prefix)
 {
   fprintf(fp, "%s%12d %12d - %12d %12d\n", prefix, xlo_, ylo_, dx(), dy());

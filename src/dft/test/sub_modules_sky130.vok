@@ -1,0 +1,32 @@
+module sub_modules (clock,
+    output1,
+    port1,
+    set_b,
+    scan_enable_1,
+    scan_in_1,
+    scan_out_1);
+ input clock;
+ output output1;
+ input port1;
+ input set_b;
+ input scan_enable_1;
+ input scan_in_1;
+ output scan_out_1;
+
+ wire \my_shift_register/net1 ;
+ wire \my_shift_register/set_b ;
+
+ sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff2  (.D(\my_shift_register/net1 ),
+    .Q(output1),
+    .SCD(scan_in_1),
+    .SCE(scan_enable_1),
+    .SET_B(\my_shift_register/set_b ),
+    .CLK(clock));
+ sky130_fd_sc_hd__sdfsbp_1 \my_shift_register/ff1  (.D(port1),
+    .Q(\my_shift_register/net1 ),
+    .SCD(output1),
+    .SCE(scan_enable_1),
+    .SET_B(\my_shift_register/set_b ),
+    .CLK(clock));
+ assign scan_out_1 = \my_shift_register/net1 ;
+endmodule

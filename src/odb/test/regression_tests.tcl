@@ -1,4 +1,6 @@
 record_tests {
+  rounding
+  sky130hd_multi_patterned
   dont_touch
   import_package
   read_lef
@@ -25,12 +27,13 @@ record_tests {
   ndr
   gcd_abstract_lef
   gcd_abstract_lef_with_power
-  upf_test
+  abstract_origin
 }
 
 record_pass_fail_tests {
   cpp_tests
   dump_netlists
   dump_netlists_withfill
+  parser_unit_test
 }
 

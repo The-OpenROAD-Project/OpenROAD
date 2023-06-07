@@ -120,8 +120,7 @@ def global_placement(design, *,
         gpl.setReferenceHpwl(reference_hpwl)
 
     if is_pos_int(bin_grid_count):
-        gpl.setBinGridCntX(bin_grid_count)
-        gpl.setBinGridCntY(bin_grid_count)
+        gpl.setBinGridCnt(bin_grid_count, bin_grid_count)
 
     if is_pos_float(overflow):
         gpl.setTargetOverflow(overflow)

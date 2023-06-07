@@ -47,29 +47,22 @@ struct SEQ
 class gs
 {
  public:
-  gs(AthPool<SEQ>* seqPool = NULL);
+  gs(AthPool<SEQ>* seqPool);
   ~gs();
 
-  int configureSlice(int slicenum,
-                     int xres,
-                     int yres,
-                     int x0,
-                     int y0,
-                     int x1,
-                     int y1,
-                     bool skipAlloc = false);
+  void configureSlice(int slicenum,
+                      int xres,
+                      int yres,
+                      int x0,
+                      int y0,
+                      int x1,
+                      int y1);
 
   // render a rectangle
-  int box(int x0, int y0, int x1, int y1, int slice, bool checkOnly = false);
-
-  // allocate (re-allocate) memory
-  int alloc_mem();
+  int box(int x0, int y0, int x1, int y1, int slice);
 
   // set the number of slices
-  int set_slices(int nslices, bool skipMemAlloc = false);
-
-  int get_seqrow(int y, int plane, int start, int& end, int& bw);
-  int get_seqcol(int x, int plane, int start, int& end, int& bw);
+  int set_slices(int nslices);
 
   uint get_seq(int* ll,
                int* ur,
@@ -108,68 +101,45 @@ class gs
     int pixstride;       // how many memory blocks per row
     int pixfullblox;     // how many "full" blocks per row
                          // (equal to stride, or one less if pixwrem > 0)
-    int pixwidth;        // how many pixels pixmap is wide, upped to multiple of
-                         // PIXMAPGRID
     pixmap* plalloc;
     pixmap* plane;
     pixmap* plptr;
   };
 
   // set the size parameters
-  int setSize(int pl,
-              int xres,
-              int yres,
-              int x0,
-              int x1,
-              int y0,
-              int y1,
-              bool skipAlloc = false);
+  void setSize(int pl, int xres, int yres, int x0, int x1, int y0, int y1);
 
-  int free_mem();
+  void alloc_mem();
+  void free_mem();
 
   int check_slice(int sl);
 
-  static constexpr long long PIXFILL = 0xffffffffffffffffLL;
-  static constexpr long long PIXMAX = 0x8000000000000000LL;
-  static constexpr int PIXADJUST = 2;
+  int get_seqrow(const int y,
+                 const int plane,
+                 const int start,
+                 int& end,
+                 int& bw);
+  int get_seqcol(const int x,
+                 const int plane,
+                 const int start,
+                 int& end,
+                 int& bw);
+
   static constexpr int PIXMAPGRID = 64;
-
-  /* Values for the member variable _init
-   * INIT = created,
-   * CONFIGURED = has reasonable values for width, height, slices, etc
-   * ALLOCATED = memory has been allocated
-   */
-  static constexpr int INIT = 0;
-  static constexpr int WIDTH = 1;
-  static constexpr int SLICES = 2;
-  static constexpr int SCALING = 4;
-  static constexpr int ALLOCATED = 8;
-  static constexpr int GS_ALL = (WIDTH | SLICES | SCALING | ALLOCATED);
-
-  static constexpr int GS_WHITE = 0;
-  static constexpr int GS_BLACK = 1;
-  static constexpr int GS_NONE = 3;
-
-  static constexpr int GS_ROW = 1;
-  static constexpr int GS_COLUMN = 0;
 
   int nslices_;   // max number of slices
   int maxslice_;  // maximum used slice
-  int csize_;     // size of the color table
 
   int init_;
 
   plconfig* plc_;
-  plconfig** pldata_;
-
-  int maxplane_;
+  plconfig** pldata_;  // size == nslices_ when init_ == ALLOCATED
 
   pixint start_[PIXMAPGRID];
   pixint middle_[PIXMAPGRID];
   pixint end_[PIXMAPGRID];
 
   AthPool<SEQ>* seqPool_;
-  bool allocSEQ_;
 };
 
 }  // namespace odb

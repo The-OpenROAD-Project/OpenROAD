@@ -29,7 +29,6 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <dbRtTree.h>
 
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
@@ -56,26 +55,6 @@ bool extMeasure::getFirstShape(dbNet* net, dbShape& s)
     break;
   }
   return status;
-}
-
-bool extMeasure::parse_setLayer(Ath__parser* parser1,
-                                uint& layerNum,
-                                bool print)
-{
-  if (parser1->isKeyword(0, "(setLayer")) {
-    if (print)
-      parser1->printWords(stdout);
-
-    layerNum = parser1->getInt(1);
-    return true;
-  } else if (parser1->isKeyword(0, "setLayer")) {
-    if (print)
-      parser1->printWords(stdout);
-
-    layerNum = parser1->getInt(1);
-    return true;
-  }
-  return false;
 }
 
 dbRSeg* extMeasure::getRseg(const char* netname,
@@ -137,8 +116,9 @@ uint extMeasure::createNetSingleWire(char* dirName,
                                      uint s_layout,
                                      int dir)
 {
+  dbTechLayer* layer = _create_net_util.getRoutingLayer()[_met];
+
   if (w_layout == 0) {
-    dbTechLayer* layer = _create_net_util.getRoutingLayer()[_met];
     w_layout = layer->getWidth();
   }
   if (s_layout == 0) {
@@ -169,8 +149,24 @@ uint extMeasure::createNetSingleWire(char* dirName,
     sprintf(netName, "%s_%d", dirName, idCnt);
 
   assert(_create_net_util.getBlock() == _block);
-  dbNet* net = _create_net_util.createNetSingleWire(
-      netName, ll[0], ll[1], ur[0], ur[1], _met);
+
+  dbNet* net;
+  if (layer->getNumMasks() > 1) {
+    // Alternate mask colors based on id
+    uint8_t mask_color = (idCnt % layer->getNumMasks()) + 1;
+    net = _create_net_util.createNetSingleWire(netName,
+                                               ll[0],
+                                               ll[1],
+                                               ur[0],
+                                               ur[1],
+                                               _met,
+                                               /*skipBTerms=*/false,
+                                               /*skipNetExists=*/false,
+                                               mask_color);
+  } else {
+    net = _create_net_util.createNetSingleWire(
+        netName, ll[0], ll[1], ur[0], ur[1], _met);
+  }
 
   dbBTerm* in1 = net->get1stBTerm();
   if (in1 != NULL) {
@@ -178,7 +174,7 @@ uint extMeasure::createNetSingleWire(char* dirName,
   }
 
   uint netId = net->getId();
-  addNew2dBox(net, ll, ur, _met, _dir, netId, false);
+  addNew2dBox(net, ll, ur, _met, false);
 
   _extMain->makeNetRCsegs(net);
 
@@ -239,7 +235,7 @@ uint extMeasure::createDiagNetSingleWire(char* dirName,
   assert(_create_net_util.getBlock() == _block);
   dbNet* net = _create_net_util.createNetSingleWire(
       netName, ll[0], ll[1], ur[0], ur[1], met);
-  addNew2dBox(net, ll, ur, met, _dir, net->getId(), false);
+  addNew2dBox(net, ll, ur, met, false);
 
   _extMain->makeNetRCsegs(net);
 
@@ -250,8 +246,6 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
                                   int* ll,
                                   int* ur,
                                   uint m,
-                                  uint d,
-                                  uint id,
                                   bool cntx)
 {
   ext2dBox* bb = _2dBoxPool->alloc();
@@ -267,10 +261,7 @@ ext2dBox* extMeasure::addNew2dBox(dbNet* net,
     bb_ur = {ur[0], ur[1]};
   }
 
-  if (d != 0 && d != 1)
-    logger_->error(RCX, 498, "Direction value is out of range.");
-
-  new (bb) ext2dBox(bb_ll, bb_ur, /*met=*/m, id, /*map=*/0, /*dir=*/d);
+  new (bb) ext2dBox(bb_ll, bb_ur);
 
   if (cntx)  // context net
     _2dBoxTable[1][m].add(bb);
@@ -289,20 +280,6 @@ void extMeasure::clean2dBoxTable(int met, bool cntx)
     _2dBoxPool->free(bb);
   }
   _2dBoxTable[cntx][met].resetCnt();
-}
-
-uint extMeasure::getBoxLength(uint ii, int met, bool cntx)
-{
-  if (met <= 0)
-    return 0;
-
-  int cnt = _2dBoxTable[cntx][met].getCnt();
-  if (cnt <= 0)
-    return 0;
-
-  ext2dBox* bb = _2dBoxTable[cntx][met].get(ii);
-
-  return bb->width();
 }
 
 void extMeasure::getBox(int met,
@@ -347,8 +324,7 @@ uint extMeasure::createContextNets(char* dirName,
   dbTechLayer* mlayer = _tech->findRoutingLayer(_met);
   uint minWidth = layer->getWidth();
   uint minSpace = layer->getSpacing();
-  int pitch
-      = Ath__double2int(1000 * ((minWidth + minSpace) * pitchMult) / 1000);
+  int pitch = lround(1000 * ((minWidth + minSpace) * pitchMult) / 1000);
 
   int ll[2];
   int ur[2];
@@ -391,7 +367,7 @@ uint extMeasure::createContextNets(char* dirName,
                                                  met,
                                                  mlayer->getDirection(),
                                                  false);
-    addNew2dBox(net, ll, ur, met, not_dir, net->getId(), true);
+    addNew2dBox(net, ll, ur, met, true);
   }
   return cnt - 1;
 }
@@ -931,14 +907,7 @@ uint extMeasure::computeOverUnder(int* ll,
                                   int* ur,
                                   Ath__array1D<SEQ*>* resTable)
 {
-  uint ouLen = 0;
-
-  if (_ouPixelTableIndexMap != NULL) {
-    uint ou_plane = _ouPixelTableIndexMap[_underMet][_overMet];
-    ouLen = _pixelTable->get_seq(ll, ur, _dir, ou_plane, resTable);
-  } else {
-    ouLen = computeOUwith2planes(ll, ur, resTable);
-  }
+  uint ouLen = computeOUwith2planes(ll, ur, resTable);
 
   if ((ouLen < 0) || (ouLen > _len)) {
     logger_->info(RCX,
@@ -2488,9 +2457,6 @@ void extMeasure::measureRC(CoupleOptions& options)
   _rsegTgtId = rsegId2;
 
   defineBox(options);
-
-  if (_extMain->_lefRC)
-    return;
 
   dbRSeg* rseg1 = NULL;
   dbNet* srcNet = NULL;

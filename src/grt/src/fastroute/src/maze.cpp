@@ -171,6 +171,9 @@ void FastRouteCore::fixOverlappingEdge(
     std::vector<short> new_route_x, new_route_y;
     const TreeNode& startpoint = treenodes[treeedge->n1];
     const TreeNode& endpoint = treenodes[treeedge->n2];
+    if (startpoint.x == endpoint.x || startpoint.y == endpoint.y) {
+      return;
+    }
     routeLShape(
         startpoint, endpoint, blocked_positions, new_route_x, new_route_y);
 
@@ -1312,16 +1315,15 @@ float getCost(const int i,
   float cost;
   if (cost_type == 2) {
     if (i < capacity - 1)
-      cost
-          = cost_height / (exp((float) (capacity - i - 1) * logis_cof) + 1) + 1;
+      cost = cost_height / (std::exp((capacity - i - 1) * logis_cof) + 1) + 1;
     else
-      cost = cost_height / (exp((float) (capacity - i - 1) * logis_cof) + 1) + 1
+      cost = cost_height / (std::exp((capacity - i - 1) * logis_cof) + 1) + 1
              + cost_height / slope * (i - capacity);
   } else {
     if (i < capacity)
-      cost = cost_height / (exp((float) (capacity - i) * logis_cof) + 1) + 1;
+      cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1;
     else
-      cost = cost_height / (exp((float) (capacity - i) * logis_cof) + 1) + 1
+      cost = cost_height / (std::exp((capacity - i) * logis_cof) + 1) + 1
              + cost_height / slope * (i - capacity);
   }
   return cost;
@@ -2161,7 +2163,47 @@ void FastRouteCore::getCongestionGrid(
   }
 }
 
-int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
+void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
+{
+  // get Nets with overflow
+  for (int netID = 0; netID < netCount(); netID++) {
+    if (!nets_[netID]->isRouted()) {
+      continue;
+    }
+
+    const auto& treeedges = sttrees_[netID].edges;
+    const int num_edges = sttrees_[netID].num_edges();
+
+    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
+      const TreeEdge* treeedge = &(treeedges[edgeID]);
+      const std::vector<short>& gridsX = treeedge->route.gridsX;
+      const std::vector<short>& gridsY = treeedge->route.gridsY;
+      const std::vector<short>& gridsL = treeedge->route.gridsL;
+      const int routeLen = treeedge->route.routelen;
+
+      for (int i = 0; i < routeLen; i++) {
+        if (gridsL[i] != gridsL[i + 1]) {
+          continue;
+        }
+        if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
+          const int ymin = std::min(gridsY[i], gridsY[i + 1]);
+          if (ymin == posY && gridsX[i] == posX && dir == 0) {
+            congestion_nets_.insert(nets_[netID]->getDbNet());
+          }
+        } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
+          const int xmin = std::min(gridsX[i], gridsX[i + 1]);
+          if (gridsY[i] == posY && xmin == posX && dir == 1) {
+            congestion_nets_.insert(nets_[netID]->getDbNet());
+          }
+        }
+      }
+    }
+  }
+}
+
+int FastRouteCore::getOverflow2Dmaze(int* maxOverflow,
+                                     int* tUsage,
+                                     bool fillNetsVector)
 {
   int H_overflow = 0;
   int V_overflow = 0;
@@ -2172,13 +2214,19 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
 
-  int total_usage = 0;
+  if (fillNetsVector) {
+    congestion_nets_.clear();
+  }
 
+  int total_usage = 0;
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       total_usage += h_edges_[i][j].usage;
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
+        if (fillNetsVector) {
+          setCongestionNets(j, i, 1);
+        }
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
         numedges++;
@@ -2191,6 +2239,9 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
       total_usage += v_edges_[i][j].usage;
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
+        if (fillNetsVector) {
+          setCongestionNets(j, i, 0);
+        }
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
         numedges++;

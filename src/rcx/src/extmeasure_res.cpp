@@ -29,7 +29,6 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include <dbRtTree.h>
 
 #include "dbUtil.h"
 #include "rcx/extRCap.h"
@@ -48,7 +47,6 @@ using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbNet;
 using odb::dbRSeg;
-using odb::dbRtTree;
 using odb::dbSet;
 using odb::dbShape;
 using odb::dbSigType;

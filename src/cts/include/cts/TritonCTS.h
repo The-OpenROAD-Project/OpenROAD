@@ -40,10 +40,6 @@
 #include <set>
 #include <string>
 
-namespace ord {
-class OpenRoad;
-}  // namespace ord
-
 namespace utl {
 class Logger;
 }
@@ -56,11 +52,19 @@ class dbNet;
 class dbITerm;
 }  // namespace odb
 
+namespace rsz {
+class Resizer;
+}
+
 namespace sta {
 class dbSta;
 class Clock;
 class dbNetwork;
 }  // namespace sta
+
+namespace stt {
+class SteinerTreeBuilder;
+}
 
 namespace cts {
 
@@ -79,7 +83,12 @@ class TritonCTS
   TritonCTS() = default;
   ~TritonCTS();
 
-  void init(ord::OpenRoad* openroad);
+  void init(utl::Logger* logger,
+            odb::dbDatabase* db,
+            sta::dbNetwork* network,
+            sta::dbSta* sta,
+            stt::SteinerTreeBuilder* st_builder,
+            rsz::Resizer* resizer);
   void runTritonCts();
   void reportCtsMetrics();
   CtsOptions* getParms() { return options_; }
@@ -89,7 +98,8 @@ class TritonCTS
 
  private:
   void addBuilder(TreeBuilder* builder);
-  void forEachBuilder(const std::function<void(const TreeBuilder*)> func) const;
+  void forEachBuilder(
+      const std::function<void(const TreeBuilder*)>& func) const;
 
   void setupCharacterization();
   void checkCharacterization();
@@ -105,15 +115,15 @@ class TritonCTS
   void clearNumClocks() { numberOfClocks_ = 0; }
   unsigned getNumClocks() const { return numberOfClocks_; }
   void initOneClockTree(odb::dbNet* driverNet,
-                        std::string sdcClockName,
+                        const std::string& sdcClockName,
                         TreeBuilder* parent);
   TreeBuilder* initClock(odb::dbNet* net,
-                         std::string sdcClock,
+                         const std::string& sdcClock,
                          TreeBuilder* parentBuilder);
   void disconnectAllSinksFromNet(odb::dbNet* net);
   void disconnectAllPinsFromNet(odb::dbNet* net);
   void checkUpstreamConnections(odb::dbNet* net);
-  void createClockBuffers(Clock& clk);
+  void createClockBuffers(Clock& clockNet);
   void computeITermPosition(odb::dbITerm* term, int& x, int& y) const;
   void countSinksPostDbWrite(TreeBuilder* builder,
                              odb::dbNet* net,
@@ -135,7 +145,6 @@ class TritonCTS
   bool isSink(odb::dbITerm* iterm);
   ClockInst* getClockFromInst(odb::dbInst* inst);
 
-  ord::OpenRoad* openroad_;
   sta::dbSta* openSta_;
   sta::dbNetwork* network_;
   Logger* logger_;

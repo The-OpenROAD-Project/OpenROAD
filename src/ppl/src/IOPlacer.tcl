@@ -116,11 +116,14 @@ proc define_pin_shape_pattern { args } {
 sta::define_cmd_args "set_io_pin_constraint" {[-direction direction] \
                                               [-pin_names names] \
                                               [-region region] \
-                                              [-mirrored_pins pins]}
+                                              [-mirrored_pins pins] \
+                                              [-group]
+                                              [-order]}
 
 proc set_io_pin_constraint { args } {
   sta::parse_key_args "set_io_pin_constraint" args \
-  keys {-direction -pin_names -region -mirrored_pins}
+  keys {-direction -pin_names -region -mirrored_pins} \
+  flags {-group -order}
 
   sta::check_argc_eq0 "set_io_pin_constraint" $args
 
@@ -130,6 +133,10 @@ proc set_io_pin_constraint { args } {
 
   if {[info exists keys(-region)] && [info exists keys(-mirrored_pins)]} {
     utl::error PPL 83 "Both -region and -mirrored_pins constraints not allowed."
+  }
+
+  if {[info exists keys(-mirrored_pins)] && [info exists flags(-group)]} {
+    utl::error PPL 87 "Both -mirrored_pins and -group constraints not allowed."
   }
 
   if [info exists keys(-region)] {
@@ -192,7 +199,37 @@ proc set_io_pin_constraint { args } {
     } else {
       utl::warn PPL 73 "Constraint with region $region has an invalid edge."
     }
-  } elseif [info exists keys(-mirrored_pins)] {
+  }
+
+  if [info exists flags(-group)] {
+    if [info exists keys(-pin_names)] {
+        set group $keys(-pin_names)
+    } else {
+      utl::error PPL 58 "The -pin_names argument is required when using -group flag."
+    }
+
+    set pin_list {}
+    set final_group ""
+    foreach pin_name $group {
+      set db_bterm [$dbBlock findBTerm $pin_name]
+      if { $db_bterm != "NULL" } {
+        lappend pin_list $db_bterm
+        set final_group "$final_group $pin_name"
+      } else {
+        utl::warn PPL 47 "Group pin $pin_name not found in the design."
+      }
+    }
+
+    if { [llength $pin_list] != 0} {
+      utl::info PPL 44 "Pin group: \[$final_group \]"
+      ppl::add_pin_group $pin_list [info exists flags(-order)]
+      incr group_idx
+    }
+  } elseif [info exists flags(-order)] {
+    utl::error PPL 95 "-order cannot be used without -group."
+  }
+
+  if [info exists keys(-mirrored_pins)] {
     set mirrored_pins $keys(-mirrored_pins)
     if { [expr [llength $mirrored_pins] % 2] != 0 } {
       utl::error PPL 81 "List of pins must have an even number of pins."
@@ -205,6 +242,7 @@ proc set_io_pin_constraint { args } {
       ppl::add_mirrored_pins $bterm1 $bterm2
     }
   }
+
 }
 
 proc clear_io_pin_constraints {} {
@@ -466,10 +504,6 @@ proc place_pins { args } {
 
   set num_slots [expr (2*$num_tracks_x + 2*$num_tracks_y)/$min_dist]
 
-  if { ($bterms_cnt > $num_slots) } {
-    utl::error PPL 24 "Number of pins $bterms_cnt exceeds max possible $num_slots."
-  }
-
   if { $regions != {} } {
     set lef_units [$dbTech getLefUnits]
 
@@ -515,7 +549,7 @@ proc place_pins { args } {
           utl::warn PPL 43 "Pin $pin_name not found in group $group_idx."
         }
       }
-      ppl::add_pin_group $pin_list
+      ppl::add_pin_group $pin_list 0
       incr group_idx
     }
   }
@@ -628,6 +662,11 @@ proc add_pins_to_constraint {cmd names edge begin end edge_name} {
 proc add_pins_to_top_layer {cmd names llx lly urx ury} {
   set tech [ord::get_db_tech]
   set top_layer [ppl::get_top_layer]
+  
+  if {$top_layer == "NULL"} {
+    utl::error PPL 99 "Constraint up:{$llx $lly $urx $ury} cannot be created. Pin placement grid on top layer not created."
+  }
+
   set top_layer_name [$top_layer getConstName]
   utl::info PPL 60 "Restrict pins \[$names\] to region ([ord::dbu_to_microns $llx]u, [ord::dbu_to_microns $lly]u)-([ord::dbu_to_microns $urx]u, [ord::dbu_to_microns $urx]u) at routing layer $top_layer_name."
   set pin_list [ppl::parse_pin_names $cmd $names]

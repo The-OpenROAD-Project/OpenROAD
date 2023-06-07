@@ -54,8 +54,9 @@ class TreeBuilder
   TreeBuilder(CtsOptions* options, Clock& clk, TreeBuilder* parent)
       : options_(options), clock_(clk), parent_(parent)
   {
-    if (parent)
+    if (parent) {
       parent->children_.emplace_back(this);
+    }
   }
 
   virtual void run() = 0;

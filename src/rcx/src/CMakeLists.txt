@@ -33,34 +33,46 @@
 
 include("openroad")
 
+add_library(rcx_lib
+  ext.cpp
+  extBench.cpp
+  extBenchDB.cpp
+  extCC.cpp
+  extCoords.cpp
+  extFlow.cpp
+  extRCmodel.cpp
+  extSpef.cpp
+  extSpefIn.cpp
+  extmain.cpp
+  extmeasure.cpp
+  extDebugPrint.cpp
+  extstats.cpp
+  extprocess.cpp
+  netRC.cpp
+  extmeasure_res.cpp
+  name.cpp
+)
+
+target_include_directories(rcx_lib
+  PUBLIC
+    ../include
+)
+
+target_link_libraries(rcx_lib
+  PUBLIC
+    odb
+    utl
+)
+
 swig_lib(NAME      rcx
          NAMESPACE rcx
          I_FILE    ext.i
          SCRIPTS   OpenRCX.tcl
 )
 
-
 target_sources(rcx
   PRIVATE
-    ext.cpp
-    extBench.cpp
-    extBenchDB.cpp
-    extCC.cpp
-    extCoords.cpp
-    extFlow.cpp
-    extRCmodel.cpp
-    extSpef.cpp
-    extSpefIn.cpp
-    extmain.cpp
-    extmeasure.cpp
-    extDebugPrint.cpp
-    extplanes.cpp
-    extstats.cpp
-    extprocess.cpp
-    ext2dBox.cpp
-    netRC.cpp
     MakeOpenRCX.cpp
-    extmeasure_res.cpp
 )
 
 target_include_directories(rcx
@@ -70,7 +82,7 @@ target_include_directories(rcx
 
 target_link_libraries(rcx
   PUBLIC
-    odb
+    rcx_lib
     utl
   PRIVATE
     OpenSTA
@@ -84,37 +96,40 @@ messages(
 ############################################################
 # Unit testing
 ############################################################
-enable_testing()
+if(ENABLE_TESTS)
+  enable_testing()
 
-add_executable(rcxUnitTest
-  ${PROJECT_SOURCE_DIR}/test/ext2dBoxTest.cpp
-)
-
-target_include_directories(rcxUnitTest
-  PRIVATE
-  ${PROJECT_SOURCE_DIR}/src
-  ${OPENROAD_HOME}/include
-)
-
-target_link_libraries(rcxUnitTest
-  rcx
-)
-
-# Use the shared library if found.  We need to pass this info to
-# the code to select the corresponding include.  Using the shared
-# library speeds up compilation.
-if (Boost_unit_test_framework_FOUND)
-  message(STATUS "Boost unit_test_framework library found")
-  target_link_libraries(trTest
-    Boost::unit_test_framework
+  add_executable(rcxUnitTest
+    ${PROJECT_SOURCE_DIR}/test/ext2dBoxTest.cpp
   )
-  target_compile_definitions(trTest
+
+  target_include_directories(rcxUnitTest
     PRIVATE
-    HAS_BOOST_UNIT_TEST_LIBRARY
+    ${PROJECT_SOURCE_DIR}/src
+    ${OPENROAD_HOME}/include
   )
-endif()
 
-add_test(NAME trTest COMMAND trTest)
+  target_link_libraries(rcxUnitTest
+    rcx_lib
+  )
+
+  # Use the shared library if found.  We need to pass this info to
+  # the code to select the corresponding include.  Using the shared
+  # library speeds up compilation.
+  if (Boost_unit_test_framework_FOUND)
+    message(STATUS "Boost unit_test_framework library found")
+    target_link_libraries(rcxUnitTest
+      Boost::unit_test_framework
+    )
+    target_compile_definitions(rcxUnitTest
+      PRIVATE
+      HAS_BOOST_UNIT_TEST_LIBRARY
+    )
+  endif()
+
+  add_test(NAME rcxUnitTest COMMAND rcxUnitTest)
+  add_dependencies(build_and_test rcxUnitTest)
+endif()
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          rcx_py
@@ -132,7 +147,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(rcx_py
     PUBLIC
-      rcx
+      rcx_lib
   )
 
 endif()

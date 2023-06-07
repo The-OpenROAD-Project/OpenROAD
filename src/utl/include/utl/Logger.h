@@ -76,10 +76,8 @@ namespace utl {
   X(PAD)                \
   X(PAR)                \
   X(PDN)                \
-  X(PDR)                \
   X(PPL)                \
   X(PSM)                \
-  X(PSN)                \
   X(RCX)                \
   X(RMP)                \
   X(RSZ)                \
@@ -87,6 +85,7 @@ namespace utl {
   X(STT)                \
   X(TAP)                \
   X(UKN)                \
+  X(UPF)                \
   X(UTL)
 
 #define GENERATE_ENUM(ENUM) ENUM,
@@ -124,16 +123,16 @@ class Logger
   // below)
   template <typename... Args>
   inline void debug(ToolId tool,
-                    int level,
+                    const std::string& group,
                     const std::string& message,
                     const Args&... args)
   {
     // Message counters do NOT apply to debug messages.
     logger_->log(spdlog::level::level_enum::debug,
-                 FMT_RUNTIME("[{} {}-{:04d}] " + message),
+                 FMT_RUNTIME("[{} {}-{}] " + message),
                  level_names[spdlog::level::level_enum::debug],
                  tool_names_[tool],
-                 level,
+                 group,
                  args...);
     logger_->flush();
   }
@@ -319,7 +318,7 @@ class Logger
 // varargs when no message is issued.
 #define debugPrint(logger, tool, group, level, ...) \
   if (logger->debugCheck(tool, group, level)) {     \
-    logger->debug(tool, level, ##__VA_ARGS__);      \
+    logger->debug(tool, group, ##__VA_ARGS__);      \
   }
 
 #undef FOREACH_TOOL

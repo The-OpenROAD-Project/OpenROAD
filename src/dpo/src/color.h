@@ -39,7 +39,7 @@ namespace dpo {
 class Graph
 {
  public:
-  Graph(int v) : v_(v)
+  explicit Graph(int v) : v_(v)
   {
     adj_.resize(v_);
 

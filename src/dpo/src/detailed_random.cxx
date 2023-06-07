@@ -64,24 +64,27 @@ using utl::DPO;
 
 namespace dpo {
 
-bool DetailedRandom::isOperator(char ch)
+bool DetailedRandom::isOperator(char ch) const
 {
-  if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^')
+  if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^') {
     return true;
+  }
   return false;
 }
 
-bool DetailedRandom::isObjective(char ch)
+bool DetailedRandom::isObjective(char ch) const
 {
-  if (ch >= 'a' && ch <= 'z')
+  if (ch >= 'a' && ch <= 'z') {
     return true;
+  }
   return false;
 }
 
-bool DetailedRandom::isNumber(char ch)
+bool DetailedRandom::isNumber(char ch) const
 {
-  if (ch >= '0' && ch <= '9')
+  if (ch >= '0' && ch <= '9') {
     return true;
+  }
   return false;
 }
 
@@ -94,14 +97,12 @@ DetailedRandom::DetailedRandom(Architecture* arch, Network* network)
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-void DetailedRandom::run(DetailedMgr* mgrPtr, std::string command)
+void DetailedRandom::run(DetailedMgr* mgrPtr, const std::string& command)
 {
   // A temporary interface to allow for a string which we will decode to create
   // the arguments.
-  std::string scriptString = command;
   boost::char_separator<char> separators(" \r\t\n;");
-  boost::tokenizer<boost::char_separator<char>> tokens(scriptString,
-                                                       separators);
+  boost::tokenizer<boost::char_separator<char>> tokens(command, separators);
   std::vector<std::string> args;
   for (boost::tokenizer<boost::char_separator<char>>::iterator it
        = tokens.begin();
@@ -122,9 +123,9 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
 
   mgrPtr_ = mgrPtr;
 
-  std::string generatorStr = "";
-  std::string objectiveStr = "";
-  std::string costStr = "";
+  std::string generatorStr;
+  std::string objectiveStr;
+  std::string costStr;
   movesPerCandidate_ = 3.0;
   int passes = 1;
   double tol = 0.01;
@@ -147,14 +148,14 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
   passes = std::max(passes, 1);
 
   // Generators.
-  for (size_t i = 0; i < generators_.size(); i++) {
-    delete generators_[i];
+  for (auto generator : generators_) {
+    delete generator;
   }
   generators_.clear();
 
   // Additional generators per the command. XXX: Need to write the code for
   // these objects; just a concept now.
-  if (generatorStr != "") {
+  if (!generatorStr.empty()) {
     boost::char_separator<char> separators(" \r\t\n:");
     boost::tokenizer<boost::char_separator<char>> tokens(generatorStr,
                                                          separators);
@@ -166,45 +167,43 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
       gens.push_back(*it);
     }
 
-    for (size_t i = 0; i < gens.size(); i++) {
+    for (const auto& gen : gens) {
       // if( gens[i] == "ro" )       std::cout << "reorder generator requested."
       // << std::endl; else if( gens[i] == "mis" ) std::cout << "set matching
       // generator requested." << std::endl;
-      if (gens[i] == "gs") {
+      if (gen == "gs") {
         generators_.push_back(new DetailedGlobalSwap());
-      } else if (gens[i] == "vs") {
+      } else if (gen == "vs") {
         generators_.push_back(new DetailedVerticalSwap());
-      } else if (gens[i] == "rng") {
+      } else if (gen == "rng") {
         generators_.push_back(new RandomGenerator());
-      } else if (gens[i] == "disp") {
+      } else if (gen == "disp") {
         generators_.push_back(new DisplacementGenerator());
-      } else {
-        ;
       }
     }
   }
-  if (generators_.size() == 0) {
+  if (generators_.empty()) {
     // Default generator.
     generators_.push_back(new RandomGenerator());
   }
-  for (size_t i = 0; i < generators_.size(); i++) {
-    generators_[i]->init(mgrPtr_);
+  for (auto generator : generators_) {
+    generator->init(mgrPtr_);
 
     mgrPtr_->getLogger()->info(DPO,
                                324,
                                "Random improver is using {:s} generator.",
-                               generators_[i]->getName().c_str());
+                               generator->getName().c_str());
   }
 
   // Objectives.
-  for (size_t i = 0; i < objectives_.size(); i++) {
-    delete objectives_[i];
+  for (auto objective : objectives_) {
+    delete objective;
   }
   objectives_.clear();
 
   // Additional objectives per the command. XXX: Need to write the code for
   // these objects; just a concept now.
-  if (objectiveStr != "") {
+  if (!objectiveStr.empty()) {
     boost::char_separator<char> separators(" \r\t\n:");
     boost::tokenizer<boost::char_separator<char>> tokens(objectiveStr,
                                                          separators);
@@ -216,42 +215,38 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
       objs.push_back(*it);
     }
 
-    for (size_t i = 0; i < objs.size(); i++) {
-      // else if( objs[i] == "drc" )   std::cout << "drc objective requested."
-      // << std::endl;
-      if (objs[i] == "abu") {
+    for (const auto& obj : objs) {
+      if (obj == "abu") {
         auto objABU = new DetailedABU(arch_, network_);
         objABU->init(mgrPtr_, nullptr);
         objectives_.push_back(objABU);
-      } else if (objs[i] == "disp") {
+      } else if (obj == "disp") {
         auto objDisp = new DetailedDisplacement(arch_);
         objDisp->init(mgrPtr_, nullptr);
         objectives_.push_back(objDisp);
-      } else if (objs[i] == "hpwl") {
+      } else if (obj == "hpwl") {
         auto objHpwl = new DetailedHPWL(network_);
         objHpwl->init(mgrPtr_, nullptr);
         objectives_.push_back(objHpwl);
-      } else {
-        ;
       }
     }
   }
-  if (objectives_.size() == 0) {
+  if (objectives_.empty()) {
     // Default objective.
     auto objHpwl = new DetailedHPWL(network_);
     objHpwl->init(mgrPtr_, nullptr);
     objectives_.push_back(objHpwl);
   }
 
-  for (size_t i = 0; i < objectives_.size(); i++) {
+  for (auto objective : objectives_) {
     mgrPtr_->getLogger()->info(DPO,
                                325,
                                "Random improver is using {:s} objective.",
-                               objectives_[i]->getName().c_str());
+                               objective->getName().c_str());
   }
 
   // Should I just be figuring out the objectives needed from the cost string?
-  if (costStr != "") {
+  if (!costStr.empty()) {
     // Replace substrings of objectives with a number.
     for (size_t i = objectives_.size(); i > 0;) {
       --i;
@@ -327,17 +322,17 @@ void DetailedRandom::run(DetailedMgr* mgrPtr, std::vector<std::string>& args)
       DPO, 328, "End of random improver; improvement is {:.6f} percent.", imp);
 
   // Cleanup.
-  for (size_t i = 0; i < generators_.size(); i++) {
-    delete generators_[i];
+  for (auto generator : generators_) {
+    delete generator;
   }
   generators_.clear();
-  for (size_t i = 0; i < objectives_.size(); i++) {
-    delete objectives_[i];
+  for (auto objective : objectives_) {
+    delete objective;
   }
   objectives_.clear();
 }
 
-double DetailedRandom::doOperation(double a, double b, char op)
+double DetailedRandom::doOperation(double a, double b, char op) const
 {
   switch (op) {
     case '+':
@@ -361,12 +356,11 @@ double DetailedRandom::doOperation(double a, double b, char op)
   return 0.0;
 }
 
-double DetailedRandom::eval(std::vector<double>& costs,
-                            std::vector<std::string>& expr)
+double DetailedRandom::eval(const std::vector<double>& costs,
+                            const std::vector<std::string>& expr) const
 {
   std::stack<double> stk;
-  for (size_t i = 0; i < expr.size(); i++) {
-    std::string& val = expr[i];
+  for (const std::string& val : expr) {
     if (isOperator(val[0])) {
       double a = stk.top();
       stk.pop();
@@ -392,7 +386,7 @@ double DetailedRandom::eval(std::vector<double>& costs,
 //////////////////////////////////////////////////////////////////////////////////
 double DetailedRandom::go()
 {
-  if (generators_.size() == 0) {
+  if (generators_.empty()) {
     mgrPtr_->getLogger()->info(
         DPO, 329, "Random improver requires at least one generator.");
     return 0.0;
@@ -400,12 +394,16 @@ double DetailedRandom::go()
 
   // Collect candidate cells.
   collectCandidates();
+  if (candidates_.empty()) {
+    mgrPtr_->getLogger()->info(DPO, 203, "No movable cells found");
+    return 0.0;
+  }
 
   // Try to improve.
   int maxAttempts
       = (int) std::ceil(movesPerCandidate_ * (double) candidates_.size());
   Utility::random_shuffle(
-      candidates_.begin(), candidates_.end(), mgrPtr_->rng_);
+      candidates_.begin(), candidates_.end(), mgrPtr_->getRng());
 
   deltaCost_.resize(objectives_.size());
   initCost_.resize(objectives_.size());
@@ -436,16 +434,14 @@ double DetailedRandom::go()
 
   double currTotalCost;
   double initTotalCost;
-  double nextTotalCost;
   initTotalCost = eval(currCost_, expr_);
   currTotalCost = initTotalCost;
-  nextTotalCost = initTotalCost;
 
   std::vector<int> gen_count(generators_.size());
   std::fill(gen_count.begin(), gen_count.end(), 0);
   for (int attempt = 0; attempt < maxAttempts; attempt++) {
     // Pick a generator at random.
-    int g = (int) ((*(mgrPtr_->rng_))() % (generators_.size()));
+    int g = (int) mgrPtr_->getRandom(generators_.size());
     ++gen_count[g];
     // Generate a move list.
     if (generators_[g]->generate(mgrPtr_, candidates_) == false) {
@@ -460,19 +456,19 @@ double DetailedRandom::go()
     // better than zero implies improvement.
     for (size_t i = 0; i < objectives_.size(); i++) {
       // XXX: NEED TO WEIGHT EACH OBJECTIVE!
-      double change = objectives_[i]->delta(mgrPtr_->nMoved_,
-                                            mgrPtr_->movedNodes_,
-                                            mgrPtr_->curLeft_,
-                                            mgrPtr_->curBottom_,
-                                            mgrPtr_->curOri_,
-                                            mgrPtr_->newLeft_,
-                                            mgrPtr_->newBottom_,
-                                            mgrPtr_->newOri_);
+      double change = objectives_[i]->delta(mgrPtr_->getNMoved(),
+                                            mgrPtr_->getMovedNodes(),
+                                            mgrPtr_->getCurLeft(),
+                                            mgrPtr_->getCurBottom(),
+                                            mgrPtr_->getCurOri(),
+                                            mgrPtr_->getNewLeft(),
+                                            mgrPtr_->getNewBottom(),
+                                            mgrPtr_->getNewOri());
 
       deltaCost_[i] = change;
       nextCost_[i] = currCost_[i] - deltaCost_[i];  // -delta is +ve is less.
     }
-    nextTotalCost = eval(nextCost_, expr_);
+    const double nextTotalCost = eval(nextCost_, expr_);
 
     //        std::cout << boost::format( "Move consisting of %d cells generated
     //        benefit of %.2lf; Will %s.\n" )
@@ -481,8 +477,8 @@ double DetailedRandom::go()
     //        if( delta > 0.0 )
     if (nextTotalCost <= currTotalCost) {
       mgrPtr_->acceptMove();
-      for (size_t i = 0; i < objectives_.size(); i++) {
-        objectives_[i]->accept();
+      for (auto objective : objectives_) {
+        objective->accept();
       }
 
       // A great, but time-consuming, check here is to recompute the costs from
@@ -496,8 +492,8 @@ double DetailedRandom::go()
       currTotalCost = nextTotalCost;
     } else {
       mgrPtr_->rejectMove();
-      for (size_t i = 0; i < objectives_.size(); i++) {
-        objectives_[i]->reject();
+      for (auto objective : objectives_) {
+        objective->reject();
       }
     }
   }
@@ -508,8 +504,8 @@ double DetailedRandom::go()
                                generators_[i]->getName().c_str(),
                                gen_count[i]);
   }
-  for (size_t i = 0; i < generators_.size(); i++) {
-    generators_[i]->stats();
+  for (auto generator : generators_) {
+    generator->stats();
   }
 
   for (size_t i = 0; i < objectives_.size(); i++) {
@@ -534,7 +530,7 @@ double DetailedRandom::go()
       }
     }
   }
-  nextTotalCost = eval(nextCost_, expr_);
+  const double nextTotalCost = eval(nextCost_, expr_);
   mgrPtr_->getLogger()->info(
       DPO, 338, "End of pass, Total cost is {:.6e}.", nextTotalCost);
 
@@ -545,28 +541,20 @@ double DetailedRandom::go()
 //////////////////////////////////////////////////////////////////////////////////
 void DetailedRandom::collectCandidates()
 {
-  candidates_.erase(candidates_.begin(), candidates_.end());
+  candidates_.clear();
   candidates_.insert(candidates_.end(),
-                     mgrPtr_->singleHeightCells_.begin(),
-                     mgrPtr_->singleHeightCells_.end());
-  for (size_t i = 2; i < mgrPtr_->multiHeightCells_.size(); i++) {
+                     mgrPtr_->getSingleHeightCells().begin(),
+                     mgrPtr_->getSingleHeightCells().end());
+  for (size_t i = 2; i < mgrPtr_->getNumMultiHeights(); i++) {
     candidates_.insert(candidates_.end(),
-                       mgrPtr_->multiHeightCells_[i].begin(),
-                       mgrPtr_->multiHeightCells_[i].end());
+                       mgrPtr_->getMultiHeightCells(i).begin(),
+                       mgrPtr_->getMultiHeightCells(i).end());
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-RandomGenerator::RandomGenerator()
-    : DetailedGenerator("displacement"),
-      mgr_(nullptr),
-      arch_(nullptr),
-      network_(nullptr),
-      rt_(nullptr),
-      attempts_(0),
-      moves_(0),
-      swaps_(0)
+RandomGenerator::RandomGenerator() : DetailedGenerator("displacement")
 {
 }
 
@@ -581,23 +569,22 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
   network_ = mgr->getNetwork();
   rt_ = mgr->getRoutingParams();
 
-  double ywid = mgr_->getSingleRowHeight();
   const int ydim = mgr_->getNumSingleHeightRows();
   double xwid = arch_->getRow(0)->getSiteSpacing();
   const int xdim
       = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()) / xwid));
 
   xwid = (arch_->getMaxX() - arch_->getMinX()) / (double) xdim;
-  ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
+  double ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
 
-  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
+  Node* ndi = candidates[mgr_->getRandom(candidates.size())];
   const int spanned_i = arch_->getCellHeightInRows(ndi);
   if (spanned_i != 1) {
     return false;
   }
   // Segments for the source.
   const std::vector<DetailedSeg*>& segs_i
-      = mgr_->reverseCellToSegs_[ndi->getId()];
+      = mgr_->getReverseCellToSegs(ndi->getId());
   if (segs_i.size() != 1) {
     mgr_->getLogger()->error(
         DPO, 385, "Only working with single height cells currently.");
@@ -622,8 +609,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     const int grid_yi = std::min(
         ydim - 1, std::max(0, (int) ((yi - arch_->getMinY()) / ywid)));
 
-    const int rel_x = (*(mgr_->rng_))() % (2 * rlx + 1);
-    const int rel_y = (*(mgr_->rng_))() % (2 * rly + 1);
+    const int rel_x = mgr_->getRandom(2 * rlx + 1);
+    const int rel_y = mgr_->getRandom(2 * rly + 1);
 
     const int grid_xj
         = std::min(xdim - 1, std::max(0, (grid_xi - rlx + rel_x)));
@@ -639,8 +626,8 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     rj = std::min(mgr_->getNumSingleHeightRows() - 1, std::max(0, rj));
     yj = arch_->getRow(rj)->getBottom();
     int sj = -1;
-    for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
-      const DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
+    for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+      const DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
       if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
         sj = segPtr->getSegId();
         break;
@@ -648,7 +635,7 @@ bool RandomGenerator::generate(DetailedMgr* mgr, std::vector<Node*>& candidates)
     }
 
     // Need to determine validity of things.
-    if (sj == -1 || ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
+    if (sj == -1 || ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
       // The target segment cannot support the candidate cell.
       continue;
     }
@@ -694,15 +681,7 @@ void RandomGenerator::stats()
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-DisplacementGenerator::DisplacementGenerator()
-    : DetailedGenerator("random"),
-      mgr_(nullptr),
-      arch_(nullptr),
-      network_(nullptr),
-      rt_(nullptr),
-      attempts_(0),
-      moves_(0),
-      swaps_(0)
+DisplacementGenerator::DisplacementGenerator() : DetailedGenerator("random")
 {
 }
 
@@ -718,20 +697,19 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
   network_ = mgr->getNetwork();
   rt_ = mgr->getRoutingParams();
 
-  double ywid = mgr_->getSingleRowHeight();
   const int ydim = mgr_->getNumSingleHeightRows();
   double xwid = arch_->getRow(0)->getSiteSpacing();
   const int xdim
       = std::max(0, (int) ((arch_->getMaxX() - arch_->getMinX()) / xwid));
 
   xwid = (arch_->getMaxX() - arch_->getMinX()) / (double) xdim;
-  ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
+  double ywid = (arch_->getMaxY() - arch_->getMinY()) / (double) ydim;
 
-  Node* ndi = candidates[(*(mgr_->rng_))() % (candidates.size())];
+  Node* ndi = candidates[mgr_->getRandom(candidates.size())];
 
   // Segments for the source.
   const std::vector<DetailedSeg*>& segs_i
-      = mgr_->reverseCellToSegs_[ndi->getId()];
+      = mgr_->getReverseCellToSegs(ndi->getId());
 
   // For the window size.  This should be parameterized.
   const int rly = 5;
@@ -761,8 +739,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       const int grid_yi = std::min(
           ydim - 1, std::max(0, (int) ((orig_yc - arch_->getMinY()) / ywid)));
 
-      const int rel_x = (*(mgr_->rng_))() % (2 * rlx + 1);
-      const int rel_y = (*(mgr_->rng_))() % (2 * rly + 1);
+      const int rel_x = mgr_->getRandom(2 * rlx + 1);
+      const int rel_y = mgr_->getRandom(2 * rly + 1);
 
       const int grid_xj
           = std::min(xdim - 1, std::max(0, (grid_xi - rlx + rel_x)));
@@ -795,16 +773,18 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
       int grid_yj = std::min(
           ydim - 1, std::max(0, (int) ((orig_yc - arch_->getMinY()) / ywid)));
 
-      if (grid_xi > grid_xj)
+      if (grid_xi > grid_xj) {
         std::swap(grid_xi, grid_xj);
-      if (grid_yi > grid_yj)
+      }
+      if (grid_yi > grid_yj) {
         std::swap(grid_yi, grid_yj);
+      }
 
       const int w = grid_xj - grid_xi;
       const int h = grid_yj - grid_yi;
 
-      const int rel_x = (*(mgr_->rng_))() % (w + 1);
-      const int rel_y = (*(mgr_->rng_))() % (h + 1);
+      const int rel_x = mgr_->getRandom(w + 1);
+      const int rel_y = mgr_->getRandom(h + 1);
 
       grid_xj = std::min(xdim - 1, std::max(0, (grid_xi + rel_x)));
       grid_yj = std::min(ydim - 1, std::max(0, (grid_yi + rel_y)));
@@ -818,8 +798,8 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     rj = std::min(mgr_->getNumSingleHeightRows() - 1, std::max(0, rj));
     yj = arch_->getRow(rj)->getBottom();
     int sj = -1;
-    for (int s = 0; s < mgr_->segsInRow_[rj].size(); s++) {
-      DetailedSeg* segPtr = mgr_->segsInRow_[rj][s];
+    for (int s = 0; s < mgr_->getNumSegsInRow(rj); s++) {
+      DetailedSeg* segPtr = mgr_->getSegsInRow(rj)[s];
       if (xj >= segPtr->getMinX() && xj <= segPtr->getMaxX()) {
         sj = segPtr->getSegId();
         break;
@@ -827,7 +807,7 @@ bool DisplacementGenerator::generate(DetailedMgr* mgr,
     }
 
     // Need to determine validity of things.
-    if (sj == -1 || ndi->getRegionId() != mgr_->segments_[sj]->getRegId()) {
+    if (sj == -1 || ndi->getRegionId() != mgr_->getSegment(sj)->getRegId()) {
       // The target segment cannot support the candidate cell.
       continue;
     }

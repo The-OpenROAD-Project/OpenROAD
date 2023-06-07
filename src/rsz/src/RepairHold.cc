@@ -143,7 +143,7 @@ RepairHold::repairHold(double setup_margin,
 
 // For testing/debug.
 void
-RepairHold::repairHold(Pin *end_pin,
+RepairHold::repairHold(const Pin *end_pin,
                        double setup_margin,
                        double hold_margin,
                        bool allow_setup_violations,
@@ -299,7 +299,6 @@ RepairHold::repairHold(VertexSeq &ends,
       logger_->info(RSZ, 32, "Inserted {} hold buffers.", inserted_buffer_count_);
       resizer_->level_drvr_vertices_valid_ = false;
     }
-    logger_->metric("design__instance__count__hold_buffer", inserted_buffer_count_);
     if (inserted_buffer_count_ > max_buffer_count)
       logger_->error(RSZ, 60, "Max buffer count reached.");
     if (resizer_->overMaxArea())
@@ -307,6 +306,7 @@ RepairHold::repairHold(VertexSeq &ends,
   }
   else
     logger_->info(RSZ, 33, "No hold violations found.");
+  logger_->metric("design__instance__count__hold_buffer", inserted_buffer_count_);
 }
 
 void
@@ -535,14 +535,14 @@ RepairHold::makeHoldDelay(Vertex *drvr,
   sta_->connectPin(buffer, output, out_net);
   resizer_->parasiticsInvalid(out_net);
 
-  for (Pin *load_pin : load_pins) {
+  for (const Pin *load_pin : load_pins) {
     Net *load_net = network_->isTopLevelPort(load_pin)
       ? network_->net(network_->term(load_pin))
       : network_->net(load_pin);
     if (load_net != out_net) {
       Instance *load = db_network_->instance(load_pin);
       Port *load_port = db_network_->port(load_pin);
-      sta_->disconnectPin(load_pin);
+      sta_->disconnectPin(const_cast<Pin*>(load_pin));
       sta_->connectPin(load, load_port, out_net);
     }
   }

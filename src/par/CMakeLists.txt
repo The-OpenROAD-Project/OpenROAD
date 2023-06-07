@@ -35,12 +35,65 @@
 
 include("openroad")
 
-option(LOAD_PARTITIONERS "Load GPMetis and Chaco" OFF)
+option(LOAD_CPLEX "Load CPLEX" OFF)
+if (LOAD_CPLEX)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_MODULE_PATH               "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+  set(CMAKE_CXX_FLAGS                 "${CMAKE_CXX_FLAGS} -DIL_STD -m64 -Wall -fPIC")
+  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX   "-isystem ")
+  set(LINKER_OPTIONS                  "-Wl,--export-dynamic")
+  find_package(Cplex)
+  include_directories(SYSTEM ${CPLEX_INCLUDE_DIRS})
+endif (LOAD_CPLEX)
 
-if (LOAD_PARTITIONERS)
-    set(PATH_PARTITIONERS ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Path to Partitioners Folder")
-    message(STATUS "Using partitioners")
-endif (LOAD_PARTITIONERS)
+find_package(Threads REQUIRED)
+find_package(ortools REQUIRED)
+
+add_library(par_lib
+  src/PartitionMgr.cpp
+  src/TritonPart.cpp
+  src/Hypergraph.cpp
+  src/Utilities.cpp
+  src/Coarsener.cpp
+  src/Multilevel.cpp
+  src/Refiner.cpp
+  src/Partitioner.cpp
+  src/Evaluator.cpp
+  src/GreedyRefine.cpp
+  src/ILPRefine.cpp
+  src/KWayFMRefine.cpp
+  src/KWayPMRefine.cpp
+  src/PriorityQueue.cpp
+)
+
+target_include_directories(par_lib
+  PUBLIC
+    include
+)
+
+target_link_libraries(par_lib
+  PRIVATE
+    odb
+    OpenSTA
+    utl_lib
+    dbSta_lib
+    ortools::ortools
+)
+
+if (LOAD_CPLEX)
+  target_compile_definitions(par_lib
+    PRIVATE
+      LOAD_CPLEX
+  )
+
+  target_link_libraries(par_lib
+    PRIVATE
+      ${CPLEX_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      dl
+  )
+endif (LOAD_CPLEX)
+
 
 swig_lib(NAME      par
          NAMESPACE par
@@ -50,60 +103,12 @@ swig_lib(NAME      par
 
 target_sources(par
   PRIVATE
-    src/Hypergraph.cpp
     src/MakePartitionMgr.cpp
-    src/PartitionMgr.cpp
-    src/HypergraphDecomposition.cpp
-    src/PartitionNetwork.cpp
-    src/PartOptions.cpp
 )
 
 messages(
-  TARGET par
+  TARGET par_lib
 )
-
-add_subdirectory(src/MLPart)
-
-target_link_libraries(par
-    PRIVATE
-      MLPart
-)
-
-if (LOAD_PARTITIONERS)
-  target_compile_definitions(par
-    PRIVATE
-      PARTITIONERS
-  )
-  target_include_directories(par
-    PRIVATE
-      ${PATH_PARTITIONERS}/Partitioners/Chaco/code
-      ${PATH_PARTITIONERS}/Partitioners/Metis/include
-  )
-
-  find_library(CHACO NAMES Chaco
-          PATHS ${PATH_PARTITIONERS}/Partitioners
-          PATH_SUFFIXES build/Chaco/code)
-
-  if (NOT CHACO)
-          add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Chaco/code Chaco/code)
-          set(CHACO Chaco)
-  endif()
-
-  find_library(METIS NAMES metis
-          PATHS ${PATH_PARTITIONERS}/Partitioners
-          PATH_SUFFIXES build/Metis build/Metis/libmetis)
-
-  if (NOT METIS)
-          add_subdirectory(${PATH_PARTITIONERS}/Partitioners/Metis Metis)
-          set(METIS metis)
-  endif()
-
-  target_link_libraries(par
-    PUBLIC
-      ${CHACO}
-      ${METIS}
-  )
-endif (LOAD_PARTITIONERS)
 
 target_include_directories(par
   PUBLIC
@@ -111,14 +116,26 @@ target_include_directories(par
 )
 
 target_link_libraries(par
-  PUBLIC
+  PRIVATE
     odb
     OpenSTA
-    utl
-    dbSta
+    par_lib
 )
 
-unset(LOAD_PARTITIONERS)
+if (LOAD_CPLEX)
+  target_compile_definitions(par
+    PRIVATE
+      LOAD_CPLEX
+  )
+
+  target_link_libraries(par
+    PRIVATE
+      ${CPLEX_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      dl
+  )
+endif (LOAD_CPLEX)
+
 
 if (Python3_FOUND AND BUILD_PYTHON)
   swig_lib(NAME          par_py
@@ -136,7 +153,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(par_py
     PUBLIC
-      par
+      par_lib
   )
 
 endif()

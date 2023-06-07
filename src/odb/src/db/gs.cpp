@@ -37,14 +37,31 @@
 
 namespace odb {
 
-// ----------------------------------------------------------------------------
-//
-// gs - Methods
-//
-// ----------------------------------------------------------------------------
+static constexpr long long PIXFILL = 0xffffffffffffffffLL;
+static constexpr long long PIXMAX = 0x8000000000000000LL;
+static constexpr int PIXADJUST = 2;
+
+/* Values for the member variable init_
+ * INIT = created,
+ * CONFIGURED = has reasonable values for width, height, slices, etc
+ * ALLOCATED = memory has been allocated
+ */
+static constexpr int INIT = 0;
+static constexpr int WIDTH = 1;
+static constexpr int SLICES = 2;
+static constexpr int SCALING = 4;
+static constexpr int ALLOCATED = 8;
+static constexpr int GS_ALL = (WIDTH | SLICES | SCALING | ALLOCATED);
+
+static constexpr int GS_WHITE = 0;
+static constexpr int GS_BLACK = 1;
+static constexpr int GS_NONE = 3;
+
+static constexpr int GS_ROW = 1;
+static constexpr int GS_COLUMN = 0;
+
 gs::gs(AthPool<SEQ>* pool)
 {
-  allocSEQ_ = false;
   init_ = INIT;
 
   pixint sum = PIXFILL;
@@ -66,22 +83,15 @@ gs::gs(AthPool<SEQ>* pool)
   nslices_ = -1;
   maxslice_ = -1;
 
-  if (pool != nullptr) {
-    seqPool_ = pool;
-  } else {
-    seqPool_ = new AthPool<SEQ>(false, 1024);
-    allocSEQ_ = true;
-  }
+  seqPool_ = pool;
 }
 
 gs::~gs()
 {
   free_mem();
-  if (allocSEQ_)
-    delete seqPool_;
 }
 
-int gs::free_mem()
+void gs::free_mem()
 {
   if (init_ & ALLOCATED) {
     for (int s = 0; s < nslices_; s++) {
@@ -92,19 +102,16 @@ int gs::free_mem()
     }
 
     init_ = (init_ & ~ALLOCATED);
-    return 0;
-  } else {
-    return -1;
   }
 }
 
-int gs::alloc_mem()
+void gs::alloc_mem()
 {
-  if ((init_ & ALLOCATED)) {
+  if (init_ & ALLOCATED) {
     free_mem();
   }
 
-  if ((init_ & SLICES)) {
+  if (init_ & SLICES) {
     pldata_ = (plconfig**) calloc(nslices_, sizeof(plconfig*));
 
     for (int s = 0; s < nslices_; s++) {
@@ -113,32 +120,20 @@ int gs::alloc_mem()
     }
 
     init_ |= ALLOCATED;
-
-    return 0;
-  } else {
-    return -1;
   }
 }
 
-int gs::set_slices(int nslices, bool /* unused: skipMemAlloc */)
+int gs::set_slices(int nslices)
 {
   free_mem();
   nslices_ = nslices;
-  maxplane_ = nslices_ - 1;
   init_ |= SLICES;
   alloc_mem();
 
   return 0;
 }
 
-int gs::setSize(int pl,
-                int xres,
-                int yres,
-                int x0,
-                int y0,
-                int x1,
-                int y1,
-                bool skipPixmap)
+void gs::setSize(int pl, int xres, int yres, int x0, int y0, int x1, int y1)
 {
   plc_ = pldata_[pl];
 
@@ -172,24 +167,17 @@ int gs::setSize(int pl,
 
   plc_->pixwrem = plc_->width % PIXMAPGRID;
 
-  plc_->pixwidth = plc_->width;
+  // how many pixels pixmap is wide, upped to multiple of PIXMAPGRID
+  int pixwidth = plc_->width;
   if (plc_->pixwrem != 0) {
-    // round off to next multiple of PIXMAPGRID
-    plc_->pixwidth += (PIXMAPGRID - (plc_->width % PIXMAPGRID));
+    pixwidth += (PIXMAPGRID - plc_->pixwrem);
   }
 
-  plc_->pixstride = plc_->pixwidth / PIXMAPGRID;
+  plc_->pixstride = pixwidth / PIXMAPGRID;
 
   plc_->pixfullblox = plc_->pixstride;
   if (plc_->pixwrem != 0) {
     plc_->pixfullblox--;
-  }
-  plc_->pixwrem--;
-
-  if (skipPixmap) {
-    plc_->plalloc = nullptr;
-    plc_->plane = nullptr;
-    return 0;
   }
 
   pixmap* pm = (pixmap*) calloc(plc_->height * plc_->pixstride + PIXADJUST,
@@ -203,26 +191,19 @@ int gs::setSize(int pl,
 
   plc_->plalloc = pm;
   plc_->plane = pm;
-
-  return 0;
 }
 
-int gs::configureSlice(int _slicenum,
-                       int _xres,
-                       int _yres,
-                       int _x0,
-                       int _y0,
-                       int _x1,
-                       int _y1,
-                       bool skipAlloc)
+void gs::configureSlice(int _slicenum,
+                        int _xres,
+                        int _yres,
+                        int _x0,
+                        int _y0,
+                        int _x1,
+                        int _y1)
 {
-  if (init_ & ALLOCATED) {
-    if (_slicenum < nslices_) {
-      setSize(_slicenum, _xres, _yres, _x0, _y0, _x1, _y1, skipAlloc);
-    }
+  if ((init_ & ALLOCATED) && _slicenum < nslices_) {
+    setSize(_slicenum, _xres, _yres, _x0, _y0, _x1, _y1);
   }
-
-  return 0;
 }
 
 static int clip(const int p, const int min, const int max)
@@ -230,7 +211,7 @@ static int clip(const int p, const int min, const int max)
   return (p < min) ? min : (p >= max) ? (max - 1) : p;
 }
 
-int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
+int gs::box(int px0, int py0, int px1, int py1, int sl)
 {
   if ((sl < 0) || (sl > nslices_)) {
     fprintf(stderr,
@@ -252,29 +233,21 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
   plc_ = pldata_[sl];
 
   // normalize bbox
-  long a;
   if (px0 > px1) {
-    a = px0;
-    px0 = px1;
-    px1 = a;
+    std::swap(px0, px1);
   }
   if (py0 > py1) {
-    a = py0;
-    py0 = py1;
-    py1 = a;
+    std::swap(py0, py1);
   }
 
-  if ((px0 < plc_->x0) && (px1 < plc_->x0))
+  if (px1 < plc_->x0)
     return -1;
-  if ((px0 > plc_->x1) && (px1 > plc_->x1))
+  if (px0 > plc_->x1)
     return -1;
-  if ((py0 < plc_->y0) && (py1 < plc_->y0))
+  if (py1 < plc_->y0)
     return -1;
-  if ((py0 > plc_->y1) && (py1 > plc_->y1))
+  if (py0 > plc_->y1)
     return -1;
-
-  if (checkOnly)
-    return 0;
 
   // convert to pixel space
   int cx0 = int((px0 - plc_->x0) / plc_->xres);
@@ -289,30 +262,23 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
   cy1 = clip(cy1, 0, plc_->height);
   // now fill in planes object
 
-  pixmap* pm;
-  pixmap* pcb;
-
   // xbs = x block start - block the box starts in
-  int xbs = cx0 / PIXMAPGRID;
-  // xbs = x block end - block the box ends in
-  int xbe = cx1 / PIXMAPGRID;
-
-  int xee = cx1 % PIXMAPGRID;
+  const int xbs = cx0 / PIXMAPGRID;
+  // xbe = x block end - block the box ends in
+  const int xbe = cx1 / PIXMAPGRID;
 
   pixint smask = start_[cx0 % PIXMAPGRID];
-  pixint emask = end_[xee];
-
-  int mb;
+  const pixint emask = end_[cx1 % PIXMAPGRID];
 
   if (xbe == xbs) {
-    smask = smask & emask;
+    smask &= emask;
   }
 
-  pm = plc_->plane + plc_->pixstride * cy0 + xbs;
+  pixmap* pm = plc_->plane + plc_->pixstride * cy0 + xbs;
 
   for (int yb = cy0; yb <= cy1; yb++) {
     // start block
-    pcb = pm;
+    pixmap* pcb = pm;
 
     // for next time through loop - allow compiler time for out-of-order
     pm += plc_->pixstride;
@@ -321,12 +287,11 @@ int gs::box(int px0, int py0, int px1, int py1, int sl, bool checkOnly)
     pcb->lword = pcb->lword | smask;
 
     // do "middle" block
-    for (mb = xbs + 1; mb < xbe;) {
+    for (int mb = xbs + 1; mb < xbe;) {
       pcb++;
       // moved here to allow for out-of-order execution
       mb++;
 
-      // if( pcb->lword != PIXFILL )
       pcb->lword = PIXFILL;
     }
 
@@ -462,8 +427,8 @@ uint gs::get_seq(int* ll,
   SEQ* s = salloc();
 
   // convert into internal coordinates
-  int cx0 = int((ll[0] - plc_->x0) / plc_->xres);
-  int cy0 = int((ll[1] - plc_->y0) / plc_->yres);
+  const int cx0 = int((ll[0] - plc_->x0) / plc_->xres);
+  const int cy0 = int((ll[1] - plc_->y0) / plc_->yres);
 
   int cx1 = int((ur[0] - plc_->x0) / plc_->xres);
   if (((ur[0] - plc_->x0 + 1) % plc_->xres) != 0) {
@@ -474,21 +439,16 @@ uint gs::get_seq(int* ll,
     cy1++;
   }
 
-  int row, col;
-  int rs, re;
-  int cs, ce;
   int blacksum = 0;
-  int start, end;
-  bool flag;
 
   if (order == GS_ROW) {
-    rs = ll[1];
-    re = ur[1];
+    int rs = ll[1];
+    int re = ur[1];
 
-    for (row = cy0; row <= cy1; row++) {
-      start = cx0;
-      end = cx1;
-      flag = false;
+    for (int row = cy0; row <= cy1; row++) {
+      int start = cx0;
+      int end = cx1;
+      bool flag = false;
       while (get_seqrow(row, plane, start, end, s->type) == 0) {
         s->_ll[0] = (int) (start * (plc_->xres) + plc_->x0);
         s->_ur[0] = (int) ((end + 1) * (plc_->xres) + (plc_->x0) - 1);
@@ -511,7 +471,7 @@ uint gs::get_seq(int* ll,
           array->add(s);
           s = salloc();
         }
-        if (flag == true) {
+        if (flag) {
           seqPool_->free(s);
           return blacksum;
         }
@@ -523,8 +483,8 @@ uint gs::get_seq(int* ll,
       re += plc_->yres;
     }
   } else if (order == GS_COLUMN) {
-    cs = ((cx1 + cx0) / 2) * plc_->xres + plc_->x0;
-    ce = cs;
+    int cs = ((cx1 + cx0) / 2) * plc_->xres + plc_->x0;
+    int ce = cs;
 
     if (cs < ll[0])
       cs = ll[0];
@@ -532,9 +492,10 @@ uint gs::get_seq(int* ll,
     if (ce > ur[0])
       ce = ur[0];
 
-    for (col = cx0; col <= cx0; col++) {
-      start = cy0;
-      flag = false;
+    for (int col = cx0; col <= cx0; col++) {
+      int start = cy0;
+      int end;
+      bool flag = false;
       while (get_seqcol(col, plane, start, end, s->type) == 0) {
         s->_ll[1] = (int) (start * plc_->yres + plc_->y0);
         s->_ur[1] = (int) ((end + 1) * plc_->yres + plc_->y0 - 1);
@@ -557,7 +518,7 @@ uint gs::get_seq(int* ll,
           array->add(s);
           s = salloc();
         }
-        if (flag == true) {
+        if (flag) {
           seqPool_->free(s);
           return blacksum;
         }
@@ -574,7 +535,11 @@ uint gs::get_seq(int* ll,
   return blacksum;
 }
 
-int gs::get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol)
+int gs::get_seqrow(const int y,
+                   const int plane,
+                   const int stpix,
+                   int& epix,
+                   int& seqcol)
 {
   if (!(init_ & ALLOCATED)) {
     return -1;
@@ -586,40 +551,34 @@ int gs::get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol)
   if (stpix >= plc_->width)
     return -1;
 
-  int st;
-  int bit;
-
-  long offset;
-
   int sto = stpix / PIXMAPGRID;
-  int str = stpix - (sto * PIXMAPGRID);
+  const int str = stpix - (sto * PIXMAPGRID);
 
-  offset = y * plc_->pixstride + sto;
+  const long offset = y * plc_->pixstride + sto;
   pixmap* pl = pldata_[plane]->plane + offset;
 
   seqcol = GS_NONE;
-  pixint bc;
 
   // take care of start
-  if ((pl->lword & (start_[str])) == start_[str]) {
+  if ((pl->lword & start_[str]) == start_[str]) {
     seqcol = GS_BLACK;
     sto++;
     pl++;
-  } else if ((pl->lword & (start_[str])) == 0) {
+  } else if ((pl->lword & start_[str]) == 0) {
     seqcol = GS_WHITE;
     sto++;
     pl++;
   } else {
     // ends here already
-    bc = (pl->lword) & middle_[str];
+    const pixint bc = (pl->lword) & middle_[str];
     if (bc != 0) {
       seqcol = GS_BLACK;
     } else {
       seqcol = GS_WHITE;
     }
     epix = (sto * PIXMAPGRID) + str;
-    for (bit = str + 1; bit < PIXMAPGRID; bit++) {
-      if (((pl->lword) & middle_[bit]) == 0) {
+    for (int bit = str + 1; bit < PIXMAPGRID; bit++) {
+      if ((pl->lword & middle_[bit]) == 0) {
         if (seqcol == GS_BLACK) {
           break;
         }
@@ -639,6 +598,7 @@ int gs::get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol)
     return 0;
   }
 
+  int st;
   for (st = sto; st < plc_->pixfullblox; st++) {
     if ((pl->lword) == PIXFILL) {
       if (seqcol != GS_BLACK) {
@@ -653,7 +613,7 @@ int gs::get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol)
     } else {
       // ends here
       epix = st * PIXMAPGRID - 1;
-      for (bit = 0; bit < PIXMAPGRID; bit++) {
+      for (int bit = 0; bit < PIXMAPGRID; bit++) {
         if (((pl->lword) & middle_[bit]) == 0) {
           if (seqcol == GS_BLACK) {
             break;
@@ -672,7 +632,7 @@ int gs::get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol)
   }
   // handle non-even case
   epix = st * PIXMAPGRID - 1;
-  for (bit = 0; bit <= plc_->pixwrem; bit++) {
+  for (int bit = 0; bit < plc_->pixwrem; bit++) {
     if (((pl->lword) & middle_[bit]) == 0) {
       if (seqcol == GS_BLACK) {
         break;
@@ -687,7 +647,11 @@ int gs::get_seqrow(int y, int plane, int stpix, int& epix, int& seqcol)
   return 0;
 }
 
-int gs::get_seqcol(int x, int plane, int stpix, int& epix, int& seqcol)
+int gs::get_seqcol(const int x,
+                   const int plane,
+                   const int stpix,
+                   int& epix,
+                   int& seqcol)
 {
   if (!(init_ & ALLOCATED)) {
     return -1;
@@ -699,28 +663,25 @@ int gs::get_seqcol(int x, int plane, int stpix, int& epix, int& seqcol)
   if (stpix >= plc_->height)
     return -1;
 
-  long offset;
-
   // get proper "word" offset
-  int sto = x / PIXMAPGRID;
-  int stc = x - (sto * PIXMAPGRID);
+  const int sto = x / PIXMAPGRID;
+  const int stc = x - (sto * PIXMAPGRID);
 
-  int row = stpix;
-  offset = sto + row * plc_->pixstride;
-  pixint bitmask = middle_[stc];
+  const long offset = sto + stpix * plc_->pixstride;
+  const pixint bitmask = middle_[stc];
   pixmap* pl = pldata_[plane]->plane + offset;
 
   seqcol = GS_NONE;
 
-  if ((pl->lword) & bitmask) {
+  if (pl->lword & bitmask) {
     seqcol = GS_BLACK;
   } else {
     seqcol = GS_WHITE;
   }
 
-  for (row = stpix + 1; row < plc_->height; row++) {
+  for (int row = stpix + 1; row < plc_->height; row++) {
     pl += plc_->pixstride;
-    if ((pl->lword) & bitmask) {
+    if (pl->lword & bitmask) {
       if (seqcol == GS_BLACK) {
         continue;
       } else {

@@ -69,8 +69,11 @@
 #include "odb/lefin.h"
 #include "odb/lefout.h"
 #include "ord/InitOpenRoad.hh"
-#include "pad/MakePad.h"
+#include "pad/MakeICeWall.h"
+#ifdef ENABLE_PAR
+// par causes abseil link error at startup on apple silicon
 #include "par/MakePartitionMgr.h"
+#endif
 #include "pdn/MakePdnGen.hh"
 #include "ppl/MakeIoplacer.h"
 #include "psm/MakePDNSim.hh"
@@ -103,51 +106,18 @@ extern const char* metrics_filename;
 
 namespace ord {
 
-using std::max;
-using std::min;
-
 using odb::dbBlock;
 using odb::dbChip;
 using odb::dbDatabase;
 using odb::dbLib;
 using odb::dbTech;
-using odb::Point;
 using odb::Rect;
 
-using sta::dbSta;
 using sta::evalTclInit;
-using sta::Resizer;
 
 using utl::ORD;
 
 OpenRoad::OpenRoad()
-    : tcl_interp_(nullptr),
-      logger_(nullptr),
-      db_(nullptr),
-      verilog_network_(nullptr),
-      sta_(nullptr),
-      resizer_(nullptr),
-      ioPlacer_(nullptr),
-      opendp_(nullptr),
-      optdp_(nullptr),
-      finale_(nullptr),
-      macro_placer_(nullptr),
-      macro_placer2_(nullptr),
-      global_router_(nullptr),
-      restructure_(nullptr),
-      tritonCts_(nullptr),
-      tapcell_(nullptr),
-      extractor_(nullptr),
-      detailed_router_(nullptr),
-      antenna_checker_(nullptr),
-      replace_(nullptr),
-      pdnsim_(nullptr),
-      partitionMgr_(nullptr),
-      pdngen_(nullptr),
-      distributer_(nullptr),
-      stt_builder_(nullptr),
-      dft_(nullptr),
-      threads_(1)
 {
   db_ = dbDatabase::create();
 }
@@ -155,7 +125,9 @@ OpenRoad::OpenRoad()
 OpenRoad::~OpenRoad()
 {
   deleteDbVerilogNetwork(verilog_network_);
-  deleteDbSta(sta_);
+  // Temporarily removed until a crash can be resolved
+  // deleteDbSta(sta_);
+  // sta::deleteAllMemory();
   deleteIoplacer(ioPlacer_);
   deleteResizer(resizer_);
   deleteOpendp(opendp_);
@@ -174,8 +146,11 @@ OpenRoad::~OpenRoad()
   deleteFinale(finale_);
   deleteAntennaChecker(antenna_checker_);
   odb::dbDatabase::destroy(db_);
+#ifdef ENABLE_PAR
   deletePartitionMgr(partitionMgr_);
+#endif
   deletePdnGen(pdngen_);
+  deleteICeWall(icewall_);
   deleteDistributed(distributer_);
   deleteSteinerTreeBuilder(stt_builder_);
   dft::deleteDft(dft_);
@@ -229,8 +204,11 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   replace_ = makeReplace();
   pdnsim_ = makePDNSim();
   antenna_checker_ = makeAntennaChecker();
+#ifdef ENABLE_PAR
   partitionMgr_ = makePartitionMgr();
+#endif
   pdngen_ = makePdnGen();
+  icewall_ = makeICeWall();
   distributer_ = makeDistributed();
   stt_builder_ = makeSteinerTreeBuilder();
   dft_ = dft::makeDft();
@@ -262,12 +240,14 @@ void OpenRoad::init(Tcl_Interp* tcl_interp)
   initMacroPlacer2(this);
 #endif
   initOpenRCX(this);
-  initPad(this);
+  initICeWall(this);
   initRestructure(this);
   initTritonRoute(this);
   initPDNSim(this);
   initAntennaChecker(this);
+#ifdef ENABLE_PAR
   initPartitionMgr(this);
+#endif
   initPdnGen(this);
   initDistributed(this);
   initSteinerTreeBuilder(this);
@@ -307,7 +287,7 @@ void OpenRoad::readLef(const char* filename,
 
   // both are null on parser failure
   if (lib != nullptr || tech != nullptr) {
-    for (Observer* observer : observers_) {
+    for (OpenRoadObserver* observer : observers_) {
       observer->postReadLef(tech, lib);
     }
   }
@@ -316,9 +296,10 @@ void OpenRoad::readLef(const char* filename,
 void OpenRoad::readDef(const char* filename,
                        bool continue_on_errors,
                        bool floorplan_init,
-                       bool incremental)
+                       bool incremental,
+                       bool child)
 {
-  if (!floorplan_init && !incremental && db_->getChip()
+  if (!floorplan_init && !incremental && !child && db_->getChip()
       && db_->getChip()->getBlock()) {
     logger_->error(
         ORD,
@@ -327,45 +308,60 @@ void OpenRoad::readDef(const char* filename,
   }
 
   odb::defin::MODE mode = odb::defin::DEFAULT;
-  if (floorplan_init)
+  if (floorplan_init) {
     mode = odb::defin::FLOORPLAN;
-  else if (incremental)
+  } else if (incremental) {
     mode = odb::defin::INCREMENTAL;
+  }
   odb::defin def_reader(db_, logger_, mode);
   std::vector<odb::dbLib*> search_libs;
-  for (odb::dbLib* lib : db_->getLibs())
+  for (odb::dbLib* lib : db_->getLibs()) {
     search_libs.push_back(lib);
+  }
   if (continue_on_errors) {
     def_reader.continueOnErrors();
   }
-  dbChip* chip = def_reader.createChip(search_libs, filename);
-  if (chip) {
-    dbBlock* block = chip->getBlock();
-    for (Observer* observer : observers_) {
+  dbBlock* block = nullptr;
+  if (child) {
+    auto parent = db_->getChip()->getBlock();
+    block = def_reader.createBlock(parent, search_libs, filename);
+  } else {
+    dbChip* chip = def_reader.createChip(search_libs, filename);
+    if (chip) {
+      block = chip->getBlock();
+    }
+  }
+  if (block) {
+    for (OpenRoadObserver* observer : observers_) {
       observer->postReadDef(block);
     }
   }
 }
 
-static odb::defout::Version stringToDefVersion(string version)
+static odb::defout::Version stringToDefVersion(const string& version)
 {
-  if (version == "5.8")
+  if (version == "5.8") {
     return odb::defout::Version::DEF_5_8;
-  else if (version == "5.7")
+  }
+  if (version == "5.7") {
     return odb::defout::Version::DEF_5_7;
-  else if (version == "5.6")
+  }
+  if (version == "5.6") {
     return odb::defout::Version::DEF_5_6;
-  else if (version == "5.5")
+  }
+  if (version == "5.5") {
     return odb::defout::Version::DEF_5_5;
-  else if (version == "5.4")
+  }
+  if (version == "5.4") {
     return odb::defout::Version::DEF_5_4;
-  else if (version == "5.3")
+  }
+  if (version == "5.3") {
     return odb::defout::Version::DEF_5_3;
-  else
-    return odb::defout::Version::DEF_5_8;
+  }
+  return odb::defout::Version::DEF_5_8;
 }
 
-void OpenRoad::writeDef(const char* filename, string version)
+void OpenRoad::writeDef(const char* filename, const string& version)
 {
   odb::dbChip* chip = db_->getChip();
   if (chip) {
@@ -426,15 +422,14 @@ void OpenRoad::readDb(const char* filename)
         ORD, 47, "You can't load a new db file as the db is already populated");
   }
 
-  FILE* stream = fopen(filename, "r");
-  if (stream == nullptr) {
-    return;
-  }
+  std::ifstream stream;
+  stream.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                    | std::ios::eofbit);
+  stream.open(filename, std::ios::binary);
 
   db_->read(stream);
-  fclose(stream);
 
-  for (Observer* observer : observers_) {
+  for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
 }
@@ -452,15 +447,15 @@ void OpenRoad::diffDbs(const char* filename1,
                        const char* filename2,
                        const char* diffs)
 {
-  FILE* stream1 = fopen(filename1, "r");
-  if (stream1 == nullptr) {
-    logger_->error(ORD, 103, "Can't open {}", filename1);
-  }
+  std::ifstream stream1;
+  stream1.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                     | std::ios::eofbit);
+  stream1.open(filename1, std::ios::binary);
 
-  FILE* stream2 = fopen(filename2, "r");
-  if (stream2 == nullptr) {
-    logger_->error(ORD, 104, "Can't open {}", filename1);
-  }
+  std::ifstream stream2;
+  stream2.exceptions(std::ifstream::failbit | std::ifstream::badbit
+                     | std::ios::eofbit);
+  stream2.open(filename2, std::ios::binary);
 
   FILE* out = fopen(diffs, "w");
   if (out == nullptr) {
@@ -475,8 +470,6 @@ void OpenRoad::diffDbs(const char* filename1,
 
   odb::dbDatabase::diff(db1, db2, out, 2);
 
-  fclose(stream1);
-  fclose(stream2);
   fclose(out);
 }
 
@@ -490,14 +483,14 @@ void OpenRoad::linkDesign(const char* design_name)
 
 {
   dbLinkDesign(design_name, verilog_network_, db_, logger_);
-  for (Observer* observer : observers_) {
+  for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
 }
 
 void OpenRoad::designCreated()
 {
-  for (Observer* observer : observers_) {
+  for (OpenRoadObserver* observer : observers_) {
     observer->postReadDb(db_);
   }
 }
@@ -513,25 +506,19 @@ odb::Rect OpenRoad::getCore()
   return db_->getChip()->getBlock()->getCoreArea();
 }
 
-void OpenRoad::addObserver(Observer* observer)
+void OpenRoad::addObserver(OpenRoadObserver* observer)
 {
-  assert(observer->owner_ == nullptr);
-  observer->owner_ = this;
+  observer->set_unregister_observer(
+      [this, observer] { removeObserver(observer); });
   observers_.insert(observer);
 }
 
-void OpenRoad::removeObserver(Observer* observer)
+void OpenRoad::removeObserver(OpenRoadObserver* observer)
 {
-  observer->owner_ = nullptr;
+  observer->set_unregister_observer(nullptr);
   observers_.erase(observer);
 }
 
-OpenRoad::Observer::~Observer()
-{
-  if (owner_) {
-    owner_->removeObserver(this);
-  }
-}
 void OpenRoad::setThreadCount(int threads, bool printInfo)
 {
   int max_threads = std::thread::hardware_concurrency();
@@ -549,8 +536,9 @@ void OpenRoad::setThreadCount(int threads, bool printInfo)
   }
   threads_ = threads;
 
-  if (printInfo)
+  if (printInfo) {
     logger_->info(ORD, 30, "Using {} thread(s).", threads_);
+  }
 
   // place limits on tools with threads
   sta_->setThreadCount(threads_);

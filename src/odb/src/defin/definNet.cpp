@@ -607,6 +607,11 @@ void definNet::pathRect(int deltaX1, int deltaY1, int deltaX2, int deltaY2)
       dbdist(deltaX1), dbdist(deltaY1), dbdist(deltaX2), dbdist(deltaY2));
 }
 
+void definNet::pathColor(int color)
+{
+  _wire_encoder.setColor(static_cast<uint8_t>(color));
+}
+
 void definNet::pathEnd()
 {
   _cur_layer = NULL;
@@ -672,22 +677,14 @@ void definNet::end()
 
   if (_wire) {
     if (_assembly_mode && !_found_new_routing) {
-      //          notice(0,"CANCEL wiring for net %s ID: %d\n",
-      //          _cur_net->getName().c_str(), _cur_net->getId());
       _wire_encoder.clear();
     } else {
-      //          notice(0,"Committing wiring for net %s ID: %d\n",
-      //          _cur_net->getName().c_str(), _cur_net->getId());
       _wire_encoder.end();
 
       if (_replace_wires)
         _cur_net->setWireAltered(true);
     }
-  } else {
-    //    notice(0,"NO WIRE for net %s ID: %d\n", _cur_net->getName().c_str(),
-    //    _cur_net->getId());
   }
-
   _cur_net = NULL;
 }
 

@@ -262,7 +262,7 @@ const std::vector<odb::dbInst*> Cluster::getLeafMacros() const
   return leaf_macros_;
 }
 
-const std::vector<HardMacro*> Cluster::getHardMacros() const
+std::vector<HardMacro*> Cluster::getHardMacros() const
 {
   return hard_macros_;
 }
@@ -581,7 +581,8 @@ bool Cluster::isSameConnSignature(const Cluster& cluster, float net_threshold)
 // For example, if a small cluster A is closely connected to a
 // well-formed cluster B, (there are also other well-formed clusters
 // C, D), A is only connected to B and A has no connection with C, D
-// candidate_clusters are small clusters,
+//
+// candidate_clusters are small clusters that need to be merged,
 // any cluster not in candidate_clusters is a well-formed cluster
 //
 int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
@@ -593,7 +594,7 @@ int Cluster::getCloseCluster(const std::vector<int>& candidate_clusters,
     debugPrint(logger_,
                MPL,
                "clustering",
-               1,
+               2,
                "cluster_id: {}, nets: {}",
                cluster_id,
                num_nets);
@@ -683,7 +684,7 @@ void Cluster::printBasicInformation(utl::Logger* logger) const
     line += "\n";
   }
 
-  logger->info(MPL, 2022, line);
+  logger->report(line);
 }
 
 // Macro Placement Support
@@ -741,11 +742,15 @@ HardMacro::HardMacro(float width, float height, const std::string& name)
   pin_y_ = height / 2.0;
 }
 
-HardMacro::HardMacro(odb::dbInst* inst, float dbu, float halo_width)
+HardMacro::HardMacro(odb::dbInst* inst,
+                     float dbu,
+                     int manufacturing_grid,
+                     float halo_width)
 {
   inst_ = inst;
   dbu_ = dbu;
   halo_width_ = halo_width;
+  manufacturing_grid_ = manufacturing_grid;
 
   // set name
   name_ = inst->getName();
@@ -920,9 +925,9 @@ float HardMacro::getRealHeight() const
 }
 
 // Orientation support
-std::string HardMacro::getOrientation() const
+odb::dbOrientType HardMacro::getOrientation() const
 {
-  return orientation_.getString();
+  return orientation_;
 }
 
 // We do not allow rotation of macros
@@ -972,14 +977,22 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
   ux = std::round(ux / pitch_x) * pitch_x;
   ly = std::round(ly / pitch_y) * pitch_y;
   uy = std::round(uy / pitch_y) * pitch_y;
+  int round_lx = std::round(float(micronToDbu(lx, dbu_)) / manufacturing_grid_)
+                 * manufacturing_grid_;
+  int round_ly = std::round(float(micronToDbu(ly, dbu_)) / manufacturing_grid_)
+                 * manufacturing_grid_;
+  int round_ux = std::round(float(micronToDbu(ux, dbu_)) / manufacturing_grid_)
+                 * manufacturing_grid_;
+  int round_uy = std::round(float(micronToDbu(uy, dbu_)) / manufacturing_grid_)
+                 * manufacturing_grid_;
   if (orientation_.getString() == std::string("MX")) {
-    inst_->setLocation(micronToDbu(lx, dbu_), micronToDbu(uy, dbu_));
+    inst_->setLocation(round_lx, round_uy);
   } else if (orientation_.getString() == std::string("MY")) {
-    inst_->setLocation(micronToDbu(ux, dbu_), micronToDbu(ly, dbu_));
+    inst_->setLocation(round_ux, round_ly);
   } else if (orientation_.getString() == std::string("R180")) {
-    inst_->setLocation(micronToDbu(ux, dbu_), micronToDbu(uy, dbu_));
+    inst_->setLocation(round_ux, round_uy);
   } else {
-    inst_->setLocation(micronToDbu(lx, dbu_), micronToDbu(ly, dbu_));
+    inst_->setLocation(round_lx, round_ly);
   }
   inst_->setOrient(orientation_);
   inst_->setPlacementStatus(odb::dbPlacementStatus::LOCKED);

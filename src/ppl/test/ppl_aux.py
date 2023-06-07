@@ -201,7 +201,7 @@ def place_pins(design, *,
                 else:
                     utl.warn(utl.PPL, 343, f"Pin {pin_name} not found in group {group_idx}.")
 
-            design.getIOPlacer().addPinGroup(pin_list)
+            design.getIOPlacer().addPinGroup(pin_list, False)
             group_idx += 1
 
     design.getIOPlacer().run(random)
@@ -283,7 +283,9 @@ def clear_io_pin_constraints(design):
 def set_io_pin_constraint(design, *,
                           direction=None,
                           pin_names=None,  # single string list of pins
-                          region=None):
+                          region=None,
+                          group=False,
+                          order=False):
     """Set the region constraints for pins according to the pin direction or the pin name
 
     keyword arguments:
@@ -294,11 +296,19 @@ def set_io_pin_constraint(design, *,
     region    -- region constraint, e.g. "top:*" or "left:1.2-3.4"
                  "up" takes an area spec, ie "up:10 10 300 300" or specify
                  entire area with "up:*"
+    group     -- places together on the die boundary the pin list defined
+                 in pin_names
+    order     -- places the pin group ordered in ascending x/y position
     """
     dbTech = design.getTech().getDB().getTech()
     dbBlock = design.getBlock()
     lef_units = dbTech.getLefUnits()
-    edge, interval = region.split(":")
+    edge = None
+    interval = None
+    if region != None:
+        edge, interval = region.split(":")
+    else:
+        region = ""
 
     if edge in ["top", "bottom", "left", "right"]:
         edge_ = parse_edge(design, edge)
@@ -357,6 +367,20 @@ def set_io_pin_constraint(design, *,
             # utl.info(utl.PPL, 399, "Restrict pins to ... on layer ...")
             rect = odb.Rect(llx, lly, urx, ury)
             design.getIOPlacer().addTopLayerConstraint(pin_list, rect)
+
+    elif group:
+        if pin_names != None:
+            utl.info(utl.PPL, 44, f"Pin group: [ {pin_names} ]")
+            names = pin_names.split()
+            pin_list = []
+            for pin_name in names:
+                db_bterm = dbBlock.findBTerm(pin_name)
+                if db_bterm != None:
+                    pin_list.append(db_bterm)
+                else:
+                    utl.warn(utl.PPL, 500, f"Group pin {pin_name} not found in the design.")
+
+            design.getIOPlacer().addPinGroup(pin_list, order)
 
     else:
         utl.warn(utl.PPL, 373, f"Constraint with region {region} has an invalid edge.")

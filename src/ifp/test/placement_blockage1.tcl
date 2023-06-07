@@ -8,8 +8,7 @@ link_design top
 odb::dbBlockage_create [ord::get_db_block] 0 0 1000000 208400
 odb::dbBlockage_create [ord::get_db_block] 0 508400 1000000 708400
 initialize_floorplan -die_area "0 0 1000 1000" \
-  -core_area "100 100 900 900" \
-  -site FreePDK45_38x28_10R_NP_162NW_34O
+  -core_area "100 100 900 900" 
 
 set def_file [make_result_file placement_blockage1.def]
 write_def $def_file

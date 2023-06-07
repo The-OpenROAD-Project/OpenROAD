@@ -30,8 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <wire.h>
-
 #include <limits>
 #include <map>
 #include <vector>
@@ -39,6 +37,7 @@
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
+#include "wire.h"
 
 namespace rcx {
 
@@ -117,38 +116,26 @@ void extMain::resetSumRCtable()
   _sumUpdated = 0;
   _tmpSumCapTable[0] = 0.0;
   _tmpSumResTable[0] = 0.0;
-  if (!_lefRC) {
-    for (uint ii = 1; ii < _metRCTable.getCnt(); ii++) {
-      _tmpSumCapTable[ii] = 0.0;
-      _tmpSumResTable[ii] = 0.0;
-    }
+  for (uint ii = 1; ii < _metRCTable.getCnt(); ii++) {
+    _tmpSumCapTable[ii] = 0.0;
+    _tmpSumResTable[ii] = 0.0;
   }
 }
 
 void extMain::addToSumRCtable()
 {
   _sumUpdated = 1;
-  if (_lefRC) {
-    _tmpSumCapTable[0] += _tmpCapTable[0];
-    _tmpSumResTable[0] += _tmpResTable[0];
-  } else {
-    for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
-      _tmpSumCapTable[ii] += _tmpCapTable[ii];
-      _tmpSumResTable[ii] += _tmpResTable[ii];
-    }
+  for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+    _tmpSumCapTable[ii] += _tmpCapTable[ii];
+    _tmpSumResTable[ii] += _tmpResTable[ii];
   }
 }
 
 void extMain::copyToSumRCtable()
 {
-  if (_lefRC) {
-    _tmpSumCapTable[0] = _tmpCapTable[0];
-    _tmpSumResTable[0] = _tmpResTable[0];
-  } else {
-    for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
-      _tmpSumCapTable[ii] = _tmpCapTable[ii];
-      _tmpSumResTable[ii] = _tmpResTable[ii];
-    }
+  for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+    _tmpSumCapTable[ii] = _tmpCapTable[ii];
+    _tmpSumResTable[ii] = _tmpResTable[ii];
   }
 }
 
@@ -341,15 +328,9 @@ void extMain::getShapeRC(dbNet* net,
       }
     }
     if (level > 0) {
-      if (_lefRC) {
-        _tmpCapTable[0] = width * 2 * getFringe(level, width, 0, areaCap);
-        _tmpCapTable[0] += 2 * areaCap * width * width;
-        _tmpResTable[0] = res;
-      } else {
-        getViaCapacitance(s, net);
-        for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
-          _tmpResTable[ii] = res;
-        }
+      getViaCapacitance(s, net);
+      for (uint ii = 0; ii < _metRCTable.getCnt(); ii++) {
+        _tmpResTable[ii] = res;
       }
     }
   } else {
@@ -365,17 +346,7 @@ void extMain::getShapeRC(dbNet* net,
         len += width;
     }
 
-    if (_lefRC) {
-      double res = getResistance(level, width, len, 0);
-      ;
-      double unitCap = getFringe(level, width, 0, areaCap);
-      double frTot = len * 2 * unitCap;
-
-      _tmpCapTable[0] = frTot;
-      _tmpCapTable[0] += 2 * areaCap * len * width;
-      _tmpResTable[0] = res;
-
-    } else if (_lef_res) {
+    if (_lef_res) {
       double res = getResistance(level, width, len, 0);
       _tmpResTable[0] = res;
     } else {
@@ -452,14 +423,6 @@ void extMain::setResAndCap(dbRSeg* rc, double* restbl, double* captbl)
 {
   int pcdbIdx, sci, scdbIdx;
   double res, cap;
-  if (_lefRC) {
-    res = _resModify ? restbl[0] * _resFactor : restbl[0];
-    rc->setResistance(res, 0);
-    cap = _gndcModify ? captbl[0] * _gndcFactor : captbl[0];
-    cap = _netGndcCalibration ? cap * _netGndcCalibFactor : cap;
-    rc->setCapacitance(cap, 0);
-    return;
-  }
   for (uint ii = 0; ii < _extDbCnt; ii++) {
     pcdbIdx = getProcessCornerDbIndex(ii);
     res = _resModify ? restbl[ii] * _resFactor : restbl[ii];
@@ -1087,12 +1050,6 @@ uint extMain::getExtBbox(int* x1, int* y1, int* x2, int* y2)
   return 0;
 }
 
-void extMain::removeCC(std::vector<dbNet*>& nets)
-{
-  for (uint ii = 0; ii < 15; ii++)
-    logger_->warn(RCX, 255, "Need to CODE removeCC.");
-}
-
 void extMain::removeExt(std::vector<dbNet*>& nets)
 {
   _block->destroyParasitics(nets);
@@ -1101,92 +1058,8 @@ void extMain::removeExt(std::vector<dbNet*>& nets)
     _spef->reinit();
 }
 
-void extMain::removeExt()
-{
-  std::vector<dbNet*> rnets;
-  dbSet<dbNet> bnets = _block->getNets();
-  dbSet<dbNet>::iterator net_itr;
-  dbNet* net;
-  for (net_itr = bnets.begin(); net_itr != bnets.end(); ++net_itr) {
-    net = *net_itr;
-    dbSigType type = net->getSigType();
-    if ((type == dbSigType::POWER) || (type == dbSigType::GROUND))
-      continue;
-    rnets.push_back(net);
-  }
-  removeExt(rnets);
-}
-
 void extCompute(CoupleOptions& inputTable, void* extModel);
 void extCompute1(CoupleOptions& inputTable, void* extModel);
-
-uint extMain::readCmpStats(const char* name,
-                           uint& tileSize,
-                           int& X1,
-                           int& Y1,
-                           int& X2,
-                           int& Y2)
-{
-  int x1 = X1;
-  int y1 = Y1;
-  int x2 = X2;
-  int y2 = Y2;
-  uint lcnt = 0;
-  Ath__parser parser;
-  FILE* fp = fopen(name, "r");
-  if (fp == NULL) {
-    logger_->warn(RCX, 373, "Can't open file {}.", name);
-    return 0;
-  }
-  bool simple_flavor = false;
-  uint nm = 1000;
-  parser.setInputFP(fp);
-  while (parser.parseNextLine() > 0) {
-    if (parser.isKeyword(0, "VERSION")) {
-      if (parser.isKeyword(1, "alpha"))
-        simple_flavor = true;
-
-      continue;
-    }
-    if (parser.isKeyword(0, "BLOCK")) {
-      continue;
-    }
-    if (parser.isKeyword(0, "TILE_SIZE")) {
-      tileSize = parser.getInt(1);
-      continue;
-    }
-    if (parser.isKeyword(0, "BEGIN") && parser.isKeyword(1, "LAYER_MAPPING")) {
-      while (parser.parseNextLine() > 0) {
-        if (!parser.isKeyword(0, "END")) {
-          continue;
-        }
-        break;
-      }
-      continue;
-    }
-    if (parser.isKeyword(0, "BEGIN")
-        && (simple_flavor || parser.isKeyword(2, "("))) {
-      lcnt++;
-      while (parser.parseNextLine() > 0) {
-        if (parser.isKeyword(0, "END"))
-          break;
-
-        int X = Ath__double2int(parser.getDouble(0) * nm);
-        int Y = Ath__double2int(parser.getDouble(1) * nm);
-        x1 = std::min(x1, X);
-        y1 = std::min(y1, Y);
-        x2 = std::max(x2, X);
-        y2 = std::max(y2, Y);
-      }
-      break;
-    }
-  }
-  X1 = x1;
-  Y1 = y1;
-  X2 = x2;
-  Y2 = y2;
-  return lcnt;
-}
 
 int extMain::setMinTypMax(bool min,
                           bool typ,
@@ -1244,7 +1117,7 @@ int extMain::setMinTypMax(bool min,
 
   if (_currentModel == NULL) {
     _currentModel = getRCmodel(0);
-    for (uint ii = 0; (!_lefRC) && ii < _modelMap.getCnt(); ii++) {
+    for (uint ii = 0; ii < _modelMap.getCnt(); ii++) {
       uint jj = _modelMap.get(ii);
       _metRCTable.add(_currentModel->getMetRCTable(jj));
     }
@@ -1274,7 +1147,7 @@ void extMain::getExtractedCorners()
   if (_processCornerTable != NULL)
     return;
 
-  Ath__parser parser;
+  Ath__parser parser(logger_);
   uint pCornerCnt
       = parser.mkWords(_prevControl->_extractedCornerList.c_str(), " ");
   if (pCornerCnt <= 0)
@@ -1357,7 +1230,7 @@ void extMain::makeCornerMapFromExtControl()
   if (_processCornerTable == NULL)
     return;
 
-  Ath__parser parser;
+  Ath__parser parser(logger_);
   uint wordCnt = parser.mkWords(_prevControl->_cornerIndexList.c_str(), " ");
   if (wordCnt <= 0)
     return;
@@ -1787,8 +1660,7 @@ bool extMain::setCorners(const char* rulesFileName)
     }
   }
   _currentModel = getRCmodel(0);
-  for (ii = 0; (_couplingFlag > 0) && (!_lefRC) && ii < _modelMap.getCnt();
-       ii++) {
+  for (ii = 0; (_couplingFlag > 0) && ii < _modelMap.getCnt(); ii++) {
     uint jj = _modelMap.get(ii);
     _metRCTable.add(_currentModel->getMetRCTable(jj));
   }
@@ -1816,7 +1688,6 @@ void extMain::updatePrevControl()
   _prevControl->_foreign = _foreign;
   _prevControl->_rsegCoord = _rsegCoord;
   _prevControl->_extracted = _extracted;
-  _prevControl->_lefRC = _lefRC;
   _prevControl->_cornerCnt = _cornerCnt;
   _prevControl->_ccUp = _ccUp;
   _prevControl->_couplingFlag = _couplingFlag;
@@ -1839,7 +1710,6 @@ void extMain::getPrevControl()
   _foreign = _prevControl->_foreign;
   _rsegCoord = _prevControl->_rsegCoord;
   _extracted = _prevControl->_extracted;
-  _lefRC = _prevControl->_lefRC;
   _cornerCnt = _prevControl->_cornerCnt;
   _ccUp = _prevControl->_ccUp;
   _couplingFlag = _prevControl->_couplingFlag;
@@ -1858,19 +1728,17 @@ uint extMain::makeBlockRCsegs(const char* netNames,
                               uint ccFlag,
                               double resBound,
                               bool mergeViaRes,
-                              bool gs,
                               double ccThres,
                               int contextDepth,
-                              const char* extRules,
-                              ZInterface* Interface)
+                              const char* extRules)
 {
   uint debugNetId = 0;
 
   _diagFlow = true;
 
   std::vector<dbNet*> inets;
-  if ((_prevControl->_ruleFileName.empty())
-      && (!_lefRC && (getRCmodel(0) == NULL) && (extRules == NULL))) {
+  if ((_prevControl->_ruleFileName.empty()) && (getRCmodel(0) == NULL)
+      && (extRules == NULL)) {
     logger_->warn(RCX,
                   127,
                   "No RC model was read with command <load_model>, "
@@ -1881,17 +1749,11 @@ uint extMain::makeBlockRCsegs(const char* netNames,
   _couplingFlag = ccFlag;
   _coupleThreshold = ccThres;
 
-  if (!_lefRC) {
-    _usingMetalPlanes = gs;
-    _ccUp = cc_up;
-    _couplingFlag = ccFlag;
-    _ccContextDepth = contextDepth;
-  } else {
-    _usingMetalPlanes = 0;
-    _ccUp = 0;
-    _couplingFlag = 0;
-    _ccContextDepth = 0;
-  }
+  _usingMetalPlanes = true;
+  _ccUp = cc_up;
+  _couplingFlag = ccFlag;
+  _ccContextDepth = contextDepth;
+
   _mergeViaRes = mergeViaRes;
   _mergeResBound = resBound;
   if ((_processCornerTable != NULL)
@@ -1910,15 +1772,13 @@ uint extMain::makeBlockRCsegs(const char* netNames,
 
   _allNet = !((dbBlock*) _block)->findSomeNet(netNames, inets);
 
-  if (!_lefRC) {
-    if (_ccContextDepth)
-      initContextArray();
-  }
+  if (_ccContextDepth)
+    initContextArray();
+
   initDgContextArray();
   _extRun++;
 
-  extMeasure m;
-  m.setLogger(logger_);
+  extMeasure m(logger_);
 
   _seqPool = m._seqPool;
   _useDbSdb = false;
@@ -1940,8 +1800,8 @@ uint extMain::makeBlockRCsegs(const char* netNames,
     _ccMaxX = -MAX_INT;
     _ccMaxY = -MAX_INT;
   }
-  if (_couplingFlag > 1 && !_lefRC) {
-    getResCapTable(true);
+  if (_couplingFlag > 1) {
+    getResCapTable();
   }
 
   logger_->info(RCX,
@@ -1986,10 +1846,6 @@ uint extMain::makeBlockRCsegs(const char* netNames,
     _totSegCnt = 0;
     _totSignalSegCnt = 0;
 
-    if (_usingMetalPlanes) {
-      makeIntersectPlanes(0);
-    }
-
     logger_->info(RCX,
                   440,
                   "Coupling threshhold is {:.4f} fF, coupling capacitance "
@@ -2026,13 +1882,12 @@ uint extMain::makeBlockRCsegs(const char* netNames,
 
     m._ccContextArray = _ccContextArray;
 
-    m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
     m._pixelTable = _geomSeq;
     m._minModelIndex = 0;  // couplimg threshold will be appled to this cap
     m._maxModelIndex = 0;
     m._currentModel = _currentModel;
     m._diagModel = _currentModel[0].getDiagModel();
-    for (uint ii = 0; !_lefRC && ii < _modelMap.getCnt(); ii++) {
+    for (uint ii = 0; ii < _modelMap.getCnt(); ii++) {
       uint jj = _modelMap.get(ii);
       m._metRCTable.add(_currentModel->getMetRCTable(jj));
     }
@@ -2253,7 +2108,7 @@ int extSpef::getWriteCorner(int corner, const char* names)
 
   _active_corner_cnt = 0;
   int cn = 0;
-  Ath__parser parser;
+  Ath__parser parser(logger_);
   parser.mkWords(names, NULL);
   for (int ii = 0; ii < parser.getWordCnt(); ii++) {
     cn = _block->getExtCornerIndex(parser.get(ii));
@@ -2302,7 +2157,6 @@ uint extMain::writeSPEF(char* filename,
     _spef = new extSpef(_tech, _block, logger_, this);
   }
   _spef->_termJxy = termJxy;
-  _spef->incr_wRun();
 
   _writeNameMap = noNameMap ? false : true;
   _spef->_writeNameMap = _writeNameMap;
@@ -2429,8 +2283,6 @@ uint extMain::readSPEF(char* filename,
       logger_->warn(
           RCX, 5, "Can't open SPEF file {} to write.", capNodeMapFile);
   }
-  if (log)
-    AthResourceLog("start readSpef", 0);
   std::vector<dbNet*> inets;
 
   if (_block != NULL)
@@ -2467,9 +2319,6 @@ uint extMain::readSPEF(char* filename,
 
   if (_spef->_capNodeFile)
     fclose(_spef->_capNodeFile);
-
-  if (log)
-    AthResourceLog("finish readSpef", 0);
 
   if (diff || cnt == 0) {
     delete _spef;

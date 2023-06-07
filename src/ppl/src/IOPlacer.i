@@ -45,8 +45,8 @@ ppl::IOPlacer* getIOPlacer();
 using ord::getIOPlacer;
 using ppl::Edge;
 using ppl::Direction;
+using ppl::PinSet;
 using ppl::PinList;
-using ppl::PinGroup;
 using std::vector;
 using std::set;
 
@@ -106,11 +106,11 @@ tclSetStdSeq(Tcl_Obj *const source,
 //
 ////////////////////////////////////////////////////////////////
 
-%typemap(in) PinGroup* {
+%typemap(in) PinList* {
   $1 = tclListStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
 }
 
-%typemap(in) PinList* {
+%typemap(in) PinSet* {
   $1 = tclSetStdSeq<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm, interp);
 }
 
@@ -132,6 +132,12 @@ set_slots_factor(float factor)
   getIOPlacer()->getParameters()->setSlotsFactor(factor);
 }
 
+void
+set_slots_per_section(int slots_per_section)
+{
+  getIOPlacer()->getParameters()->setSlotsPerSection(slots_per_section);
+}
+
 Edge
 get_edge(const char* edge)
 {
@@ -151,7 +157,7 @@ exclude_interval(Edge edge, int begin, int end)
 }
 
 void
-add_names_constraint(PinList *pin_list, Edge edge, int begin, int end)
+add_names_constraint(PinSet *pin_list, Edge edge, int begin, int end)
 {
   getIOPlacer()->addNamesConstraint(pin_list, edge, begin, end);
 }
@@ -163,7 +169,7 @@ void add_direction_constraint(Direction direction, Edge edge,
 }
 
 void
-add_top_layer_constraint(PinList *pin_list,
+add_top_layer_constraint(PinSet *pin_list,
                          int x1, int y1,
                          int x2, int y2)
 {
@@ -213,9 +219,9 @@ add_ver_layer(odb::dbTechLayer* layer)
 }
 
 void
-add_pin_group(PinGroup *pin_group)
+add_pin_group(PinList *pin_list, bool order)
 {
-  getIOPlacer()->addPinGroup(pin_group);
+  getIOPlacer()->addPinGroup(pin_list, order);
 }
 
 void

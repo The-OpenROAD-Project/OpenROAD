@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <iostream>
 #include <map>
 #include <memory>
 #include <random>
@@ -193,7 +194,7 @@ class Cluster
   const std::vector<odb::dbModule*> getDbModules() const;
   const std::vector<odb::dbInst*> getLeafStdCells() const;
   const std::vector<odb::dbInst*> getLeafMacros() const;
-  const std::vector<HardMacro*> getHardMacros() const;
+  std::vector<HardMacro*> getHardMacros() const;
   void clearDbModules();
   void clearLeafStdCells();
   void clearLeafMacros();
@@ -344,7 +345,10 @@ class HardMacro
   HardMacro(float width, float height, const std::string& name);
   // create a macro from dbInst
   // dbu is needed to convert the database unit to real size
-  HardMacro(odb::dbInst* inst, float dbu, float halo_width = 0.0);
+  HardMacro(odb::dbInst* inst,
+            float dbu,
+            int manufacturing_grid,
+            float halo_width = 0.0);
 
   // overload the comparison operators
   // based on area, width, height order
@@ -380,7 +384,7 @@ class HardMacro
   float getRealHeight() const;
 
   // Orientation support
-  std::string getOrientation() const;
+  odb::dbOrientType getOrientation() const;
   // We do not allow rotation of macros
   // This may violate the direction of metal layers
   // flip about X or Y axis
@@ -393,6 +397,33 @@ class HardMacro
   // update the location and orientation of the macro inst in OpenDB
   // The macro should be snaped to placement grids
   void updateDb(float pitch_x, float pitch_y);
+  int getXDBU() const { return micronToDbu(getX(), dbu_); }
+
+  int getYDBU() const { return micronToDbu(getY(), dbu_); }
+
+  int getRealXDBU() const { return micronToDbu(getRealX(), dbu_); }
+
+  int getRealYDBU() const { return micronToDbu(getRealY(), dbu_); }
+
+  int getWidthDBU() const { return micronToDbu(getWidth(), dbu_); }
+
+  int getHeightDBU() const { return micronToDbu(getHeight(), dbu_); }
+
+  int getRealWidthDBU() const { return micronToDbu(getRealWidth(), dbu_); }
+
+  int getRealHeightDBU() const { return micronToDbu(getRealHeight(), dbu_); }
+
+  int getUXDBU() const { return getXDBU() + getWidthDBU(); }
+
+  int getUYDBU() const { return getYDBU() + getHeightDBU(); }
+
+  int getRealUXDBU() const { return getRealXDBU() + getRealWidthDBU(); }
+
+  int getRealUYDBU() const { return getRealYDBU() + getRealHeightDBU(); }
+
+  void setXDBU(int x) { setX(dbuToMicron(x, dbu_)); }
+
+  void setYDBU(int y) { setY(dbuToMicron(y, dbu_)); }
 
  private:
   // We define x_, y_ and orientation_ here
@@ -416,6 +447,7 @@ class HardMacro
   // each HardMacro cooresponds to one macro
   odb::dbInst* inst_ = nullptr;
   float dbu_ = 0.0;  // DbuPerMicro
+  int manufacturing_grid_ = 10;
 };
 
 // We have three types of SoftMacros
@@ -593,8 +625,12 @@ struct BundledNet
 struct Rect
 {
   Rect() {}
-  Rect(const float lx, const float ly, const float ux, const float uy)
-      : lx(lx), ly(ly), ux(ux), uy(uy)
+  Rect(const float lx,
+       const float ly,
+       const float ux,
+       const float uy,
+       bool fixed_flag = false)
+      : lx(lx), ly(ly), ux(ux), uy(uy), fixed_flag(fixed_flag)
   {
   }
 
@@ -602,6 +638,147 @@ struct Rect
   float yMin() const { return ly; }
   float xMax() const { return ux; }
   float yMax() const { return uy; }
+
+  float getX() const { return (lx + ux) / 2.0; }
+
+  float getY() const { return (ly + uy) / 2.0; }
+
+  inline float getWidth() const { return ux - lx; }
+
+  inline float getHeight() const { return uy - ly; }
+
+  void setLoc(float x,
+              float y,
+              float core_lx,
+              float core_ly,
+              float core_ux,
+              float core_uy)
+  {
+    if (fixed_flag == true)
+      return;
+
+    const float width = ux - lx;
+    const float height = uy - ly;
+    lx = x - width / 2.0;
+    ly = y - height / 2.0;
+    ux = x + width / 2.0;
+    uy = y + height / 2.0;
+    if (lx < core_lx) {
+      lx = core_lx;
+      ux = lx + width;
+    }
+
+    if (ly < core_ly) {
+      ly = core_ly;
+      uy = ly + height;
+    }
+
+    if (ux > core_ux) {
+      lx = core_ux - width;
+      ux = core_ux;
+    }
+
+    if (uy > core_uy) {
+      ly = core_uy - height;
+      uy = core_uy;
+    }
+  }
+
+  inline void moveHor(float dist)
+  {
+    lx = lx + dist;
+    ux = ux + dist;
+  }
+
+  inline void moveVer(float dist)
+  {
+    ly = ly + dist;
+    uy = uy + dist;
+  }
+
+  inline void move(float x_dist,
+                   float y_dist,
+                   float core_lx,
+                   float core_ly,
+                   float core_ux,
+                   float core_uy)
+  {
+    if (fixed_flag == true)
+      return;
+    moveHor(x_dist);
+    moveVer(y_dist);
+    const float width = getWidth();
+    const float height = getHeight();
+    if (lx < core_lx) {
+      lx = core_lx;
+      ux = lx + width;
+    }
+
+    if (ly < core_ly) {
+      ly = core_ly;
+      uy = ly + height;
+    }
+
+    if (ux > core_ux) {
+      lx = core_ux - width;
+      ux = core_ux;
+    }
+
+    if (uy > core_uy) {
+      ly = core_uy - height;
+      uy = core_uy;
+    }
+
+    if (lx < core_lx - 1.0 || ly < core_ly - 1.0 || ux > core_ux + 1.0
+        || uy > core_uy + 1.0)
+      std::cout << "Error !!!\n"
+                << "core_lx =  " << core_lx << "  "
+                << "core_ly =  " << core_ly << "  "
+                << "core_ux =  " << core_ux << "  "
+                << "core_uy =  " << core_uy << std::endl;
+  }
+
+  inline void resetForce()
+  {
+    f_x_a = 0.0;
+    f_y_a = 0.0;
+    f_x_r = 0.0;
+    f_y_r = 0.0;
+    f_x = 0.0;
+    f_y = 0.0;
+  }
+
+  inline void makeSquare(float ar = 1.0)
+  {
+    if (fixed_flag == true)
+      return;
+    const float x = getX();
+    const float y = getY();
+    const float height = std::sqrt(getWidth() * getHeight() * ar);
+    const float width = getWidth() * getHeight() / height;
+    lx = x - width / 2.0;
+    ly = y - height / 2.0;
+    ux = x + width / 2.0;
+    uy = y + height / 2.0;
+  }
+
+  inline void addAttractiveForce(float f_x, float f_y)
+  {
+    f_x_a += f_x;
+    f_y_a += f_y;
+  }
+
+  inline void addRepulsiveForce(float f_x, float f_y)
+  {
+    f_x_r += f_x;
+    f_y_r += f_y;
+  }
+
+  inline void setForce(float f_x_, float f_y_)
+  {
+    f_x = f_x_;
+    f_y = f_y_;
+  }
 
   bool isValid() const
   {
@@ -641,6 +818,21 @@ struct Rect
   float ly = 0.0;
   float ux = 0.0;
   float uy = 0.0;
+
+  // for force-directed placement
+  // attractive force
+  float f_x_a = 0.0;
+  float f_y_a = 0.0;
+
+  // repulsive force
+  float f_x_r = 0.0;
+  float f_y_r = 0.0;
+
+  // total force
+  float f_x = 0.0;
+  float f_y = 0.0;
+
+  bool fixed_flag = false;
 };
 
 }  // namespace mpl2

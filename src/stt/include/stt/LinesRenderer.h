@@ -39,13 +39,15 @@
 
 namespace stt {
 
+class Tree;
+
 // Simple general purpose render for a group of lines.
 class LinesRenderer : public gui::Renderer
 {
  public:
   void highlight(std::vector<std::pair<odb::Point, odb::Point>>& lines,
-                 gui::Painter::Color color);
-  virtual void drawObjects(gui::Painter& /* painter */) override;
+                 const gui::Painter::Color& color);
+  void drawObjects(gui::Painter& /* painter */) override;
   // singleton for debug functions
   static LinesRenderer* lines_renderer;
 
@@ -53,5 +55,7 @@ class LinesRenderer : public gui::Renderer
   std::vector<std::pair<odb::Point, odb::Point>> lines_;
   gui::Painter::Color color_;
 };
+
+void highlightSteinerTree(const Tree& tree, gui::Gui* gui);
 
 }  // namespace stt

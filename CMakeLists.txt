@@ -33,37 +33,25 @@
 ##
 ###############################################################################
 
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 3.16)
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
 # Use standard target names
 cmake_policy(SET CMP0078 NEW)
-endif()
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14)
 # Allows SWIG_MODULE_NAME to be set
 cmake_policy(SET CMP0086 NEW)
-endif()
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.12)
 # Allows <PackageName>_ROOT to be used
 cmake_policy(SET CMP0074 NEW)
-endif()
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.10)
 # Allow AUTOUIC on generated source
 cmake_policy(SET CMP0071 NEW)
-endif()
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
 # option() behavior
 cmake_policy(SET CMP0077 NEW)
-endif()
 
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.10)
 # Let AUTOMOC and AUTOUIC process GENERATED files.
 cmake_policy(SET CMP0071 NEW)
-endif()
 
 # Interfers with Qt so off by default.
 option(LINK_TIME_OPTIMIZATION "Flag to control link time optimization: off by default" OFF)
@@ -80,6 +68,12 @@ option(USE_SYSTEM_OPENSTA "Use system shared OpenSTA library" OFF)
 
 # Allow to use external shared abc libraries
 option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
+
+# Allow disabling tests
+option(ENABLE_TESTS "Enable OpenROAD tests" ON)
+
+# Allow enabling address sanitizer
+option(ASAN "Enable Address Sanitizer" OFF)
 
 project(OpenROAD VERSION 1
   LANGUAGES CXX
@@ -134,6 +128,9 @@ message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "C++ Standard Required: ${CMAKE_CXX_STANDARD_REQUIRED}")
+message(STATUS "C++ Extensions: ${CMAKE_CXX_EXTENSIONS}")
 
 # configure a header file to pass some of the CMake settings
 configure_file(
@@ -146,5 +143,14 @@ configure_file(
 # Ask CMake to output a compile_commands.json file for use with things like clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+
+
 add_subdirectory(third-party)
+
+if(ENABLE_TESTS)
+  enable_testing()
+  add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
+  include(GoogleTest)
+endif()
+
 add_subdirectory(src)

@@ -58,7 +58,7 @@ class DetailedVerticalSwap : public DetailedGenerator
   void run(DetailedMgr* mgrPtr, const std::vector<std::string>& args);
 
   // Interface for move generation.
-  bool generate(DetailedMgr* mgr, std::vector<Node*>& candiates) override;
+  bool generate(DetailedMgr* mgr, std::vector<Node*>& candidates) override;
   void stats() override;
   void init(DetailedMgr* mgr) override;
 

@@ -47,5 +47,8 @@ using namespace cts;
 %include <std_string.i>
 %include <std_vector.i>
 
+%ignore cts::CtsOptions::setObserver;
+%ignore cts::CtsOptions::getObserver;
+
 %include "CtsOptions.h"
 %include "cts/TritonCTS.h"

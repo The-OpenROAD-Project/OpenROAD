@@ -53,8 +53,6 @@
 #include "sta/PathExpanded.hh"
 #include "sta/Fuzzy.hh"
 
-#include "gui/gui.h"
-
 namespace rsz {
 
 using std::abs;
@@ -71,29 +69,24 @@ using sta::NetIterator;
 using sta::Clock;
 using sta::INF;
 
-RepairDesign::RepairDesign(Resizer *resizer) :
-  StaState(),
-  logger_(nullptr),
-  sta_(nullptr),
-  db_network_(nullptr),
-  resizer_(resizer),
-  dbu_(0),
-  drvr_pin_(nullptr),
-  max_cap_(0),
-  max_length_(0),
-  corner_(nullptr),
-  resize_count_(0),
-  inserted_buffer_count_(0),
-  min_(MinMax::min()),
-  max_(MinMax::max()),
-  fanout_render_(new FanoutRender(this))
+RepairDesign::RepairDesign(Resizer* resizer)
+    : logger_(nullptr),
+      sta_(nullptr),
+      db_network_(nullptr),
+      resizer_(resizer),
+      dbu_(0),
+      drvr_pin_(nullptr),
+      max_cap_(0),
+      max_length_(0),
+      corner_(nullptr),
+      resize_count_(0),
+      inserted_buffer_count_(0),
+      min_(MinMax::min()),
+      max_(MinMax::max())
 {
 }
 
-RepairDesign::~RepairDesign()
-{
-  delete fanout_render_;
-}
+RepairDesign::~RepairDesign() = default;
 
 void
 RepairDesign::init()
@@ -280,7 +273,7 @@ RepairDesign::repairNet(Net *net,
   PinSet *drivers = network_->drivers(net);
   if (drivers && !drivers->empty()) {
     PinSet::Iterator drvr_iter(drivers);
-    Pin *drvr_pin = drvr_iter.next();
+    const Pin *drvr_pin = drvr_iter.next();
     Vertex *drvr = graph_->pinDrvrVertex(drvr_pin);
     repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
               repaired_net_count, slew_violations, cap_violations,
@@ -915,9 +908,9 @@ RepairDesign::repairNetJunc(BufferedNetPtr bnet,
   bnet->setMaxLoadSlew(min(max_load_slew_left, max_load_slew_right));
 
   // Union left/right load pins.
-  for (Pin *load_pin : loads_left)
+  for (const Pin *load_pin : loads_left)
     load_pins.push_back(load_pin);
-  for (Pin *load_pin : loads_right)
+  for (const Pin *load_pin : loads_right)
     load_pins.push_back(load_pin);
 }
 
@@ -932,7 +925,7 @@ RepairDesign::repairNetLoad(BufferedNetPtr bnet,
   debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}{}",
                  "", level,
              bnet->to_string(resizer_));
-  Pin *load_pin = bnet->loadPin();
+  const Pin *load_pin = bnet->loadPin();
   debugPrint(logger_, RSZ, "repair_net", 2, "{:{}s}load {}",
              "", level,
              sdc_network_->pathName(load_pin));
@@ -946,7 +939,7 @@ LoadRegion::LoadRegion()
 {
 }
 
-LoadRegion::LoadRegion(Vector<Pin*> &pins,
+LoadRegion::LoadRegion(PinSeq& pins,
            Rect &bbox) :
   pins_(pins),
   bbox_(bbox)
@@ -989,7 +982,7 @@ RepairDesign::subdivideRegion(LoadRegion &region,
       region.regions_[1].bbox_ = Rect(x_min, y_mid, x_max, y_max);
       horz_partition = false;
     }
-    for (Pin *pin : region.pins_) {
+    for (const Pin *pin : region.pins_) {
       Point loc = db_network_->location(pin);
       int x = loc.x();
       int y = loc.y();
@@ -1068,7 +1061,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
     else
       region.pins_ = repeater_loads;
 
-    for (Pin *pin : repeater_inputs)
+    for (const Pin *pin : repeater_inputs)
       region.pins_.push_back(pin);
   }
 }
@@ -1083,14 +1076,6 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
                                  int max_length,
                                  bool resize_drvr)
 {
-  if (false && gui::Gui::enabled()) {
-    fanout_render_->setRect(bbox);
-    fanout_render_->setPins(&repeater_loads);
-    fanout_render_->setDrvrLoc(loc);
-    gui::Gui *gui = gui::Gui::get();
-    gui->pause();
-  }
-
   float ignore2, ignore3, ignore4;
   Net *out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
@@ -1114,7 +1099,7 @@ RepairDesign::findBbox(PinSeq &pins)
 {
   Rect bbox;
   bbox.mergeInit();
-  for (Pin *pin : pins) {
+  for (const Pin *pin : pins) {
     Point loc = db_network_->location(pin);
     Rect r(loc.x(), loc.y(), loc.x(), loc.y());
     bbox.merge(r);
@@ -1128,7 +1113,7 @@ RepairDesign::findLoads(const Pin *drvr_pin)
   PinSeq loads;
   Pin *drvr_pin1 = const_cast<Pin*>(drvr_pin);
   PinSeq drvrs;
-  PinSet visited_drvrs;
+  PinSet visited_drvrs(db_network_);
   sta::FindNetDrvrLoads visitor(drvr_pin1, visited_drvrs, loads, drvrs, network_);
   network_->visitConnectedPins(drvr_pin1, visitor);
   return loads;
@@ -1141,7 +1126,7 @@ RepairDesign::findClosedPinLoc(const Pin *drvr_pin,
   Point drvr_loc = db_network_->location(drvr_pin);
   Point closest_pt = drvr_loc;
   int64_t closest_dist = std::numeric_limits<int64_t>::max();
-  for (Pin *pin : pins) {
+  for (const Pin *pin : pins) {
     Point loc = db_network_->location(pin);
     int64_t dist = Point::manhattanDistance(loc, drvr_loc);
     if (dist < closest_dist) {
@@ -1221,7 +1206,7 @@ RepairDesign::makeRepeater(const char *reason,
 
   Net *net = nullptr, *in_net;
   bool have_output_port_load = false;
-  for (Pin *pin : load_pins) {
+  for (const Pin *pin : load_pins) {
     if (network_->isTopLevelPort(pin)) {
       net = network_->net(network_->term(pin));
       if (network_->direction(pin)->isAnyOutput()) {
@@ -1246,10 +1231,10 @@ RepairDesign::makeRepeater(const char *reason,
     out_net_db->setSigType(in_net_db->getSigType());
 
     // Move load pins to out_net.
-    for (Pin *pin : load_pins) {
+    for (const Pin *pin : load_pins) {
       Port *port = network_->port(pin);
       Instance *inst = network_->instance(pin);
-      sta_->disconnectPin(pin);
+      sta_->disconnectPin(const_cast<Pin*>(pin));
       sta_->connectPin(inst, port, out_net);
     }
   }
@@ -1264,17 +1249,17 @@ RepairDesign::makeRepeater(const char *reason,
     in_net_db->setSigType(out_net_db->getSigType());
 
     // Move non-repeater load pins to in_net.
-    PinSet load_pins1;
-    for (Pin *pin : load_pins)
+    PinSet load_pins1(db_network_);
+    for (const Pin *pin : load_pins)
       load_pins1.insert(pin);
 
     NetPinIterator *pin_iter = network_->pinIterator(out_net);
     while (pin_iter->hasNext()) {
-      Pin *pin = pin_iter->next();
+      const Pin *pin = pin_iter->next();
       if (!load_pins1.hasKey(pin)) {
         Port *port = network_->port(pin);
         Instance *inst = network_->instance(pin);
-        sta_->disconnectPin(pin);
+        sta_->disconnectPin(const_cast<Pin*>(pin));
         sta_->connectPin(inst, port, in_net);
       }
     }
@@ -1316,7 +1301,7 @@ RepairDesign::hasInputPort(const Net *net)
   bool has_top_level_port = false;
   NetConnectedPinIterator *pin_iter = network_->connectedPinIterator(net);
   while (pin_iter->hasNext()) {
-    Pin *pin = pin_iter->next();
+    const Pin *pin = pin_iter->next();
     if (network_->isTopLevelPort(pin)
         && network_->direction(pin)->isAnyInput()) {
       has_top_level_port = true;
@@ -1394,55 +1379,4 @@ RepairDesign::metersToDbu(double dist) const
   return dist * dbu_ * 1e+6;
 }
 
-////////////////////////////////////////////////////////////////
-
-FanoutRender::FanoutRender(RepairDesign *repair) :
-  repair_(repair),
-  pins_(nullptr)
-{
-  const bool gui_enabled = gui::Gui::enabled();
-  if (gui_enabled) {
-    gui::Gui::get()->registerRenderer(this);
-  }
-}
-
-void
-FanoutRender::setPins(PinSeq *pins)
-{
-  pins_ = pins;
-}
-
-void
-FanoutRender::setRect(Rect &rect)
-{
-  rect_ = rect;
-}
-
-void
-FanoutRender::setDrvrLoc(Point loc)
-{
-  drvr_loc_ = loc;
-}
-
-void
-FanoutRender::drawObjects(gui::Painter &painter)
-{
-  if (pins_) {
-    auto color = gui::Painter::yellow;
-    painter.setPen(color, /* cosmetic */ true);
-    painter.setBrush(color, gui::Painter::SOLID);
-
-    painter.drawCircle(drvr_loc_.x(), drvr_loc_.y(), 5000);
-    painter.setBrush(color, gui::Painter::NONE);
-    painter.drawRect(rect_);
-
-    dbNetwork *network = repair_->db_network_;
-    for (Pin *pin : *pins_) {
-      dbInst *db_inst = network->staToDb(network->instance(pin));
-      Rect rect = db_inst->getBBox()->getBox();
-      painter.drawRect(rect);
-    }
-  }
-}
-
-} // namespace
+}  // namespace rsz

@@ -78,12 +78,15 @@ as the routing tracks occupied by these individual pins will be blocked, prevent
 
 The `set_io_pin_constraint` command sets region constraints for pins according
 to the pin direction or the pin name. This command can be called multiple
-times with different constraints. Only one condition should be used for
-each command call.
+times with different constraints.
 
 The `-direction` argument is the pin direction (input, output, inout, or
-feedthrough). The `-pin_names` argument is a list of names. The `-region`
-syntax is the same as that of the `-exclude` syntax.
+feedthrough). The `-pin_names` argument is a list of names. Only one of these
+arguments should be used in a single call for the `set_io_pin_constraint` command.
+
+The `-region` syntax is `-region edge:interval`. The `edge` values are
+(top|bottom|left|right). The `interval` can be the whole edge, with the
+`*` value, or a range of values.
 
 The `-mirrored_pins` argument is a list of pins that sets pairs of pins
 that will be symmetrically placed in the vertical or the horizontal edges.
@@ -92,21 +95,22 @@ The number of pins in this list must be even. For example, in
 the pins `pin1` and `pin2` will be placed symmetrically to each other.
 Same for `pin3` and `pin4`, and for `pin5` and `pin6`.
 
-Note that if you call `define_pin_shape_pattern` before
-`set_io_pin_constraint`, the `edge` values are (up, top,
-bottom, left, right). Where `up` relates to the layer created by
-`define_pin_shape_pattern`. To restrict pins to the pin placement grid
-defined with `define_pin_shape_pattern` use:
+The `-group` flag places together on the die boundary the pin list defined
+in `-pin_names`, similar to the `-group_pins` option on `place_pins` command.
+The `-order` flag places the pins ordered in ascending x/y position, and must
+be used only when `-group` is also used.
 
--   `-region up:{llx lly urx ury}` to restrict the pins into a specific
-    region in the grid. The region is defined in microns.
--   `-region up:*` to restrict the pins into the entire region of the grid.
-
+It is possible to use the `-region`, `-group` and `-order` arguments together
+per `set_io_pin_constraint` call, but the `-mirrored_pins` argument should be
+called alone.
 
 ```
 set_io_pin_constraint -direction <direction>
                       -pin_names <names>
                       -region <edge:interval>
+                      -mirrored_pins <names>
+                      -group
+                      -order
 ```
 
 #### Define Pin Shape Pattern
@@ -136,6 +140,19 @@ define_pin_shape_pattern [-layer <layer>]
 -   The `-pin_keepout` option defines the boundary (in microns) around
     existing routing obstructions that the pins should avoid; this defaults to the
     `layer` minimum spacing.
+
+You can use the `set_io_pin_constraint` command to restrict pins to the
+pin placement grid created with the `define_pin_shape_pattern` command.
+The `edge` values are (up, top, bottom, left, right), where `up` is
+the grid created by `define_pin_shape_pattern`. To restrict pins to the
+pin placement grid defined with `define_pin_shape_pattern` use:
+
+-   `-region up:{llx lly urx ury}` to restrict the pins into a specific
+    region in the grid. The region is defined in microns.
+-   `-region up:*` to restrict the pins into the entire region of the grid.
+
+The `up` option is only available when the pin placement grid is created with
+the `define_pin_shape_pattern` command.
 
 ##### Face-to-Face direct-bonding IOs
 

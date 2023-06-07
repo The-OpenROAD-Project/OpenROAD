@@ -1,8 +1,8 @@
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, The Regents of the University of California
+// Copyright (c) 2022, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,174 +32,184 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////
-
+// High-level description
+// This file includes the basic data structure for hypergraph,
+// vertex, hyperedge and timing paths. We also explain our basic
+// conventions.
+// Rule1 : num_vertices, num_hyperedges, vertex_dimensions,
+//         hyperedge_dimensions, placement_dimension,
+//         cluster_id (c), vertex_id (v), hyperedge_id (e)
+//         are all in int type.
+// Rule2 : Each hyperedge can include a vertex at most once.
+////////////////////////////////////////////////////////////////////////////////
 #pragma once
-
-#include <map>
-#include <string>
+#include <functional>
+#include <set>
 #include <vector>
 
-namespace utl {
-class Logger;
-}
-using utl::Logger;
+#include "Utilities.h"
+#include "utl/Logger.h"
+
+// The basic function related to hypergraph should be listed here
 
 namespace par {
 
-class Hypergraph
+struct Hypergraph;
+using HGraphPtr = std::shared_ptr<Hypergraph>;
+
+// The data structure for critical timing path
+// A timing path is a sequence of vertices, for example, a -> b -> c -> d
+// A timing path can also be viewed a sequence of hypereges,
+// for example, e1 -> e2 -> e3
+// In our formulation, we lay the timing graph over the hypergraph
+struct TimingPath
 {
- public:
-  Hypergraph() {}
-  virtual ~Hypergraph() = default;
-  int getEdgeWeight(int idx) const { return edgeWeightsNormalized_.at(idx); }
-  int getVertexWeight(int idx) const
-  {
-    return vertexWeightsNormalized_.at(idx);
-  }
-  int getColIdx(int idx) const { return colIdx_.at(idx); }
-  int getRowPtr(int idx) const { return rowPtr_.at(idx); }
-  int getMapping(const std::string& inst) const { return instToIdx_.at(inst); }
-  int getClusterMapping(int idx) const { return idxToClusterIdx_.at(idx); }
-  const std::vector<float>& getDefaultEdgeWeight() const
-  {
-    return edgeWeights_;
-  };
-  const std::vector<int>& getEdgeWeight() const
-  {
-    return edgeWeightsNormalized_;
-  };
-  const std::vector<int>& getVertexWeight() const
-  {
-    return vertexWeightsNormalized_;
-  };
-  const std::vector<int>& getColIdx() const { return colIdx_; };
-  const std::vector<int>& getRowPtr() const { return rowPtr_; };
+  std::vector<int> path;  // a list of vertex id -> path-based method
+  std::vector<int> arcs;  // a list of hyperedge id -> net-based method
+  float slack = 0.0;      // slack for this critical timing paths (normalized to
+                          // clock period)
 
-  void addEdgeWeight(float weight) { edgeWeights_.push_back(weight); }
-  void addEdgeWeightNormalized(int weight)
-  {
-    edgeWeightsNormalized_.push_back(weight);
-  }
-  void addVertexWeight(int64_t weight) { vertexWeights_.push_back(weight); }
-  void addVertexWeightNormalized(int64_t weight)
-  {
-    vertexWeightsNormalized_.push_back(weight);
-  }
-  void addColIdx(int idx) { colIdx_.push_back(idx); }
-  void addRowPtr(int idx) { rowPtr_.push_back(idx); }
-  void addMapping(std::string inst, int idx) { instToIdx_[inst] = idx; }
-  void addClusterMapping(int idx, int clusterIdx)
-  {
-    idxToClusterIdx_[idx] = clusterIdx;
-  }
-  const std::map<std::string, int>& getMap() { return instToIdx_; }
+  TimingPath() = default;
 
-  bool isInMap(std::string pinName) const
+  TimingPath(const std::vector<int>& path_arg,
+             const std::vector<int>& arcs_arg,
+             float slack_arg)
   {
-    return (instToIdx_.find(pinName) != instToIdx_.end());
+    path = path_arg;
+    arcs = arcs_arg;
+    slack = slack_arg;
   }
-
-  bool isInClusterMap(int idx) const
-  {
-    return (idxToClusterIdx_.find(idx) != idxToClusterIdx_.end());
-  }
-
-  void clearHypergraph()
-  {
-    edgeWeightsNormalized_.clear();
-    edgeWeights_.clear();
-    vertexWeightsNormalized_.clear();
-    colIdx_.clear();
-    rowPtr_.clear();
-    instToIdx_.clear();
-  }
-
-  void computeWeightRange(int maxEdgeWeight, int maxVertexWeight);
-  void computeVertexWeightRange(int maxVertexWeight, Logger* logger);
-  void computeEdgeWeightRange(int maxEdgeWeight, Logger* logger);
-  int computeNextVertexIdx(bool cluster = false) const
-  {
-    return cluster ? vertexWeightsNormalized_.size() : vertexWeights_.size();
-  }
-  int computeNextRowPtr() const { return colIdx_.size(); }
-  int getNumEdges() const { return edgeWeightsNormalized_.size(); }
-  int getNumVertex() const { return vertexWeightsNormalized_.size(); }
-  int getNumColIdx() const { return colIdx_.size(); }
-  int getNumRowPtr() const { return rowPtr_.size(); }
-  void assignVertexWeight(const std::vector<int>& vertex)
-  {
-    vertexWeightsNormalized_ = vertex;
-  }
-
- protected:
-  std::vector<float> edgeWeights_;
-  std::vector<int> edgeWeightsNormalized_;
-  std::vector<int64_t> vertexWeights_;
-  std::vector<int> vertexWeightsNormalized_;
-  std::vector<int> colIdx_;
-  std::vector<int> rowPtr_;
-  std::map<std::string, int> instToIdx_;
-  std::map<int, int> idxToClusterIdx_;
 };
 
-/*
-Although the "Graph" class does not add new functionalities
-to the "Hypergraph" class, edges and hyperedges are stored
-using different formats. Therefore, the different classes
-are important to indicate how to read the edges/hyperedges
-connections.
-
-Example:
-
-Adjacency matrix of a 3-node clique graph:
-
-                |0 1 1|
-                |1 0 1|
-                |1 1 0|
-
-colidx 1 2 0 2 0 1
-rowptr 0 2 4 6
-
-colidx lists all adjacent nodes for each node on the graph
-rowptr indicates where the list for each node starts/ends
-e.g.,
-the nodes adjacent to node 0 begin to be described at colidx[rowptr[0]]
-and end at colidx[rowptr[1] - 1]
-i.e., nodes 1 and 2
-
-------------------------------------------------------------------------
-
-The same 3 nodes, now represented as a hypergraph with a
-single hyperedge:
-
-colidx 0 1 2
-rowptr 0 3
-
-colidx lists the nodes connected to each hyperedge
-rowptr indicates where the list for each hyperedge starts/ends
-e.g.,
-the nodes connected to hyperedge 0 begin to be described at colidx[rowptr[0]]
-and end at colidx[rowptr[1] - 1]
-i.e., nodes 0, 1 and 2
-
-*/
-class Graph : public Hypergraph
+// Here we use Hypergraph class because the Hypegraph class
+// has been used by other programs.
+struct Hypergraph
 {
- public:
-  Graph() {}
-  void clearGraph()
-  {
-    edgeWeightsNormalized_.clear();
-    edgeWeights_.clear();
-    vertexWeightsNormalized_.clear();
-    colIdx_.clear();
-    rowPtr_.clear();
-    instToIdx_.clear();
-  }
-  void assignVertexWeight(const std::vector<int>& vertex)
-  {
-    vertexWeightsNormalized_ = vertex;
-  }
+  Hypergraph(
+      int vertex_dimensions,
+      int hyperedge_dimensions,
+      int placement_dimensions,
+      const std::vector<std::vector<int>>& hyperedges,
+      const std::vector<std::vector<float>>& vertex_weights,
+      const std::vector<std::vector<float>>& hyperedge_weights,
+      // fixed vertices
+      const std::vector<int>& fixed_attr,  // the block id of fixed vertices.
+      // community attribute
+      const std::vector<int>& community_attr,
+      // placement information
+      const std::vector<std::vector<float>>& placement_attr,
+      utl::Logger* logger);
+
+  Hypergraph(
+      int vertex_dimensions,
+      int hyperedge_dimensions,
+      int placement_dimensions,
+      const std::vector<std::vector<int>>& hyperedges,
+      const std::vector<std::vector<float>>& vertex_weights,
+      const std::vector<std::vector<float>>& hyperedge_weights,
+      // fixed vertices
+      const std::vector<int>& fixed_attr,  // the block id of fixed vertices.
+      // community attribute
+      const std::vector<int>& community_attr,
+      // placement information
+      const std::vector<std::vector<float>>& placement_attr,
+      // the type of each vertex
+      const std::vector<VertexType>&
+          vertex_types,  // except the original timing graph, users do not need
+                         // to specify this
+      // slack information
+      const std::vector<float>& hyperedges_slack,
+      const std::vector<std::set<int>>& hyperedges_arc_set,
+      const std::vector<TimingPath>& timing_paths,
+      utl::Logger* logger);
+
+  int GetNumVertices() const { return num_vertices_; }
+  int GetNumHyperedges() const { return num_hyperedges_; }
+  int GetNumTimingPaths() const { return num_timing_paths_; }
+
+  std::vector<float> GetTotalVertexWeights() const;
+
+  // get balance constraints
+  // TODO:  RePlace the Vertex Balance with UpperVertexBalance
+  std::vector<std::vector<float>> GetVertexBalance(int num_parts,
+                                                   float ub_factor) const;
+
+  std::vector<std::vector<float>> GetUpperVertexBalance(int num_parts,
+                                                        float ub_factor) const;
+
+  std::vector<std::vector<float>> GetLowerVertexBalance(int num_parts,
+                                                        float ub_factor) const;
+
+  // basic hypergraph
+  int num_vertices_ = 0;
+  int num_hyperedges_ = 0;
+  int vertex_dimensions_ = 1;
+  int hyperedge_dimensions_ = 1;
+  std::vector<std::vector<float>> vertex_weights_;
+  std::vector<std::vector<float>>
+      hyperedge_weights_;  // hyperedge weights can be negative
+  // slack for hyperedge
+  std::vector<float> hyperedge_timing_attr_;  // slack of each hyperedge
+  std::vector<float>
+      hyperedge_timing_cost_;  // translate the slack of hyperedge into cost
+  std::vector<std::set<int>>
+      hyperedge_arc_set_;  // map current hyperedge into arcs in timing graph
+                           // the slack of each hyperedge e is the
+                           // minimum_slack_hyperedge_arc_set_[e]
+  // hyperedges: each hyperedge is a set of vertices
+  std::vector<int> eind_;
+  std::vector<int> eptr_;
+  // vertices: each vertex is a set of hyperedges
+  std::vector<int> vind_;
+  std::vector<int> vptr_;
+
+  // Fill vertex_c_attr which maps the vertex to its corresponding cluster
+  // To simpify the implementation, the vertex_c_attr maps the original larger
+  // hypergraph vertex_c_attr has hgraph->num_vertices_ elements. This is used
+  // during coarsening phase similar to hyperedge_arc_set_
+  std::vector<std::vector<int>> vertex_c_attr_;
+
+  // fixed vertices.  If fixed_vertex_flag_ = false, fixed_attr_ is empty
+  bool fixed_vertex_flag_ = false;  // If there are fixed vertices
+  std::vector<int> fixed_attr_;     // the block id of fixed vertices
+
+  // vertex types
+  std::vector<VertexType> vertex_types_;  // the type of each vertex
+
+  // community structure. If community_flag_ = false, community_ is empty
+  // Note that fixed_attr_ and community_attr_ can be different
+  // For example, a is fixed to block 1 and a can belong to community 10
+  bool community_flag_ = false;      // If there is community structure
+  std::vector<int> community_attr_;  // the community id of vertices
+
+  // placement information.
+  // The embedding information for the hypergraph
+  // This embedding can be real placement from chip layout
+  // It can also be spectral embedding
+  // If placement_flag = false, placement_attr_ is empty
+  bool placement_flag_ = false;
+  int placement_dimensions_ = 0;
+  std::vector<std::vector<float>>
+      placement_attr_;  // the embedding for vertices
+
+  // Timing information
+  bool timing_flag_ = false;  // timing flag
+  int num_timing_paths_ = 0;
+  // All the timing paths connected to the vertex
+  std::vector<int> pind_v_;
+  std::vector<int> pptr_v_;
+  // view a timing path as a sequence of vertices
+  std::vector<int> vind_p_;
+  std::vector<int> vptr_p_;
+  // view a timing path as a sequence of arcs
+  std::vector<int> eind_p_;
+  std::vector<int> eptr_p_;
+  // slack for each timing paths
+  std::vector<float> path_timing_attr_;
+  std::vector<float>
+      path_timing_cost_;  // translate the slack of timing path into weight
+  // logger information
+  utl::Logger* logger_ = nullptr;
 };
 
 }  // namespace par

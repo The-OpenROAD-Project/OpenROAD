@@ -59,7 +59,7 @@ class STAGuiInterface;
 
 using TimingPathList = std::vector<std::unique_ptr<TimingPath>>;
 using TimingNodeList = std::vector<std::unique_ptr<TimingPathNode>>;
-using StaPins = std::set<sta::Pin*>;
+using StaPins = std::set<const sta::Pin*>;
 using ConeDepthMapPinSet = std::map<int, StaPins>;
 using ConeDepthMap = std::map<int, TimingNodeList>;
 
@@ -67,7 +67,7 @@ class TimingPathNode
 {
  public:
   TimingPathNode(odb::dbObject* pin,
-                 sta::Pin* stapin,
+                 const sta::Pin* stapin,
                  bool is_clock = false,
                  bool is_rising = false,
                  bool is_sink = false,
@@ -111,7 +111,7 @@ class TimingPathNode
   }
 
   odb::dbObject* getPin() const { return pin_; }
-  sta::Pin* getPinAsSTA() const { return stapin_; }
+  const sta::Pin* getPinAsSTA() const { return stapin_; }
   odb::dbITerm* getPinAsITerm() const;
   odb::dbBTerm* getPinAsBTerm() const;
   const odb::Rect getPinBBox() const;
@@ -148,7 +148,7 @@ class TimingPathNode
 
  private:
   odb::dbObject* pin_;
-  sta::Pin* stapin_;
+  const sta::Pin* stapin_;
   bool is_clock_;
   bool is_rising_;
   bool is_sink_;
@@ -230,7 +230,7 @@ class TimingPath
 class ClockTree
 {
  public:
-  using PinDelays = std::map<sta::Pin*, sta::Delay>;
+  using PinDelays = std::map<const sta::Pin*, sta::Delay>;
 
   ClockTree(ClockTree* parent, sta::Net* net);
   ClockTree(sta::Clock* clock, sta::dbNetwork* network);
@@ -243,8 +243,8 @@ class ClockTree
   int getLevel() const { return level_; }
   bool isRoot() const { return level_ == 0; }
 
-  std::set<sta::Pin*> getDrivers() const;
-  std::set<sta::Pin*> getLeaves() const;
+  std::set<const sta::Pin*> getDrivers() const;
+  std::set<const sta::Pin*> getLeaves() const;
 
   const std::vector<std::unique_ptr<ClockTree>>& getFanout() const
   {
@@ -257,7 +257,8 @@ class ClockTree
   const PinDelays& getChildSinkDelays() const { return child_sinks_; }
   const PinDelays& getLeavesDelays() const { return leaves_; }
 
-  std::pair<sta::Pin*, sta::Delay> getPairedSink(sta::Pin* paired_pin) const;
+  std::pair<const sta::Pin*, sta::Delay> getPairedSink(
+      const sta::Pin* paired_pin) const;
 
   int getTotalFanout() const;
   int getTotalLeaves() const;
@@ -271,7 +272,8 @@ class ClockTree
 
   void addPath(sta::PathExpanded& path, const sta::StaState* sta);
 
-  std::vector<std::pair<sta::Pin*, sta::Pin*>> findPathTo(sta::Pin* pin) const;
+  std::vector<std::pair<const sta::Pin*, const sta::Pin*>> findPathTo(
+      const sta::Pin* pin) const;
   ClockTree* findTree(odb::dbNet* net, bool include_children = true);
   ClockTree* findTree(sta::Net* net, bool include_children = true);
 
@@ -292,11 +294,11 @@ class ClockTree
 
   void addPath(sta::PathExpanded& path, int idx, const sta::StaState* sta);
   ClockTree* getTree(sta::Net* net);
-  bool isLeaf(sta::Pin* pin) const;
+  bool isLeaf(const sta::Pin* pin) const;
   bool addVertex(sta::Vertex* vertex, sta::Delay delay);
-  sta::Net* getNet(sta::Pin* pin) const;
+  sta::Net* getNet(const sta::Pin* pin) const;
 
-  std::map<sta::Pin*, std::set<sta::Pin*>> getPinMapping() const;
+  std::map<const sta::Pin*, std::set<const sta::Pin*>> getPinMapping() const;
 };
 
 class STAGuiInterface
@@ -333,18 +335,21 @@ class STAGuiInterface
   TimingPathList getTimingPaths(const StaPins& from,
                                 const std::vector<StaPins>& thrus,
                                 const StaPins& to) const;
-  TimingPathList getTimingPaths(sta::Pin* thru) const;
+  TimingPathList getTimingPaths(const sta::Pin* thru) const;
 
-  std::unique_ptr<TimingPathNode> getTimingNode(sta::Pin* pin) const;
+  std::unique_ptr<TimingPathNode> getTimingNode(const sta::Pin* pin) const;
 
-  ConeDepthMapPinSet getFaninCone(sta::Pin* pin) const;
-  ConeDepthMapPinSet getFanoutCone(sta::Pin* pin) const;
-  ConeDepthMap buildConeConnectivity(sta::Pin* pin,
+  ConeDepthMapPinSet getFaninCone(const sta::Pin* pin) const;
+  ConeDepthMapPinSet getFanoutCone(const sta::Pin* pin) const;
+  ConeDepthMap buildConeConnectivity(const sta::Pin* pin,
                                      ConeDepthMapPinSet& depth_map) const;
 
   std::vector<std::unique_ptr<ClockTree>> getClockTrees() const;
 
   int getEndPointCount() const;
+  StaPins getEndPoints() const;
+
+  float getPinSlack(const sta::Pin* pin) const;
 
  private:
   sta::dbSta* sta_;
@@ -357,10 +362,10 @@ class STAGuiInterface
   bool include_unconstrained_;
   bool include_capture_path_;
 
-  ConeDepthMapPinSet getCone(sta::Pin* pin,
-                             sta::PinSet* pin_set,
+  ConeDepthMapPinSet getCone(const sta::Pin* pin,
+                             sta::PinSet pin_set,
                              bool is_fanin) const;
-  void annotateConeTiming(sta::Pin* pin, ConeDepthMap& map) const;
+  void annotateConeTiming(const sta::Pin* pin, ConeDepthMap& map) const;
 
   void initSTA() const;
 };

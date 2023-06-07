@@ -29,4 +29,42 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+proc preview_dft { args } {
+  sta::parse_key_args "preview_dft" args \
+    keys {} \
+    flags {-verbose}
 
+  sta::check_argc_eq0 "preview_dft" $args
+
+  set verbose [info exists flags(-verbose)]
+
+  dft::preview_dft $verbose
+}
+
+proc insert_dft {} {
+  dft::insert_dft
+}
+
+proc set_dft_config { args } {
+  sta::parse_key_args "set_dft_config" args \
+    keys {-max_length -clock_mixing} \
+    flags {}
+
+  sta::check_argc_eq0 "set_dft_config" $args
+
+  if [info exists keys(-max_length)] {
+    set max_length $keys(-max_length)
+    sta::check_positive_integer "-max_length" $max_length
+    dft::set_dft_config_max_length $max_length
+  }
+
+  if [info exists keys(-clock_mixing)] {
+    set clock_mixing $keys(-clock_mixing)
+    puts $clock_mixing
+    dft::set_dft_config_clock_mixing $clock_mixing
+  }
+}
+
+proc report_dft_config {} {
+  dft::report_dft_config
+}

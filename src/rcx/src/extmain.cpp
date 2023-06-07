@@ -30,7 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "darr.h"
 #include "rcx/extRCap.h"
 #include "rcx/extSpef.h"
 #include "utl/Logger.h"
@@ -205,10 +204,8 @@ extMain::extMain()
   _CCnoPowerTarget = 0;
 
   _coupleThreshold = 0.1;  // fF
-  _lefRC = false;
 
   _singlePlaneLayerMap = NULL;
-  _overUnderPlaneLayerMap = NULL;
   _usingMetalPlanes = false;
   _geomSeq = NULL;
 
@@ -231,7 +228,6 @@ extMain::extMain()
   _rotatedGs = false;
 
   _getBandWire = false;
-  _searchFP = NULL;
   _search = NULL;
   _printBandInfo = false;
 
@@ -315,55 +311,6 @@ uint extMain::getExtLayerCnt(dbTech* tech)
   return n;
 }
 
-uint extMain::addExtModel(dbTech* tech)
-{
-  _lefRC = true;
-
-  if (tech == NULL)
-    tech = _tech;
-
-  _extDbCnt = 3;
-
-  uint layerCnt = getExtLayerCnt(tech);
-
-  extRCModel* m = NULL;
-  if (m == NULL) {
-    m = new extRCModel(layerCnt, "TYPICAL", logger_);
-    _modelTable->add(m);
-  }
-
-  dbSet<dbTechLayer> layers = tech->getLayers();
-  dbSet<dbTechLayer>::iterator itr;
-
-  uint n = 0;
-  for (itr = layers.begin(); itr != layers.end(); ++itr) {
-    dbTechLayer* layer = *itr;
-
-    if (layer->getRoutingLevel() == 0)
-      continue;
-
-    n = layer->getRoutingLevel();
-
-    uint w = layer->getWidth();  // nm
-
-    double cap = layer->getCapacitance();
-
-    double res = layer->getResistance();  // OHMS per square
-    cap *= 0.001 * 2;
-
-    m->addLefTotRC(n, 0, cap, res);
-
-    double c1 = m->getTotCapOverSub(n);
-    double r1 = m->getRes(n);
-
-    _minWidthTable[n] = w;
-
-    _resistanceTable[0][n] = r1;
-    _capacitanceTable[0][n] = c1;
-  }
-  return layerCnt;
-}
-
 extRCModel* extMain::getRCmodel(uint n)
 {
   if (_modelTable->getCnt() <= 0)
@@ -372,7 +319,7 @@ extRCModel* extMain::getRCmodel(uint n)
   return _modelTable->get(n);
 }
 
-uint extMain::getResCapTable(bool lefRC)
+uint extMain::getResCapTable()
 {
   calcMinMaxRC();
   _currentModel = getRCmodel(0);
@@ -380,7 +327,7 @@ uint extMain::getResCapTable(bool lefRC)
   dbSet<dbTechLayer> layers = _tech->getLayers();
   dbSet<dbTechLayer>::iterator itr;
 
-  extMeasure m;
+  extMeasure m(logger_);
   m._underMet = 0;
   m._overMet = 0;
 
@@ -447,17 +394,8 @@ uint extMain::getResCapTable(bool lefRC)
                    resTable[jj]);
       }
 
-      extDistRC* rc0 = rcModel->getOverFringeRC(&m, 0);
-
       if (!_lef_res) {
-        if (newResModel) {
-          _resistanceTable[jj][n] = resTable[jj];
-        } else {
-          if (rc0 != NULL) {
-            double r1 = rc->getRes();
-            _resistanceTable[jj][n] = r1;
-          }
-        }
+        _resistanceTable[jj][n] = resTable[jj];
       } else {
         debugPrint(logger_,
                    RCX,
@@ -514,7 +452,7 @@ double extMain::getLefResistance(uint level, uint width, uint len, uint model)
   double res = _resistanceTable[model][level];
   double n = 1.0 * len;
 
-  if (_lefRC || _lef_res)
+  if (_lef_res)
     n /= width;
 
   double r = n * res;
@@ -577,15 +515,12 @@ double extMain::getFringe(uint met,
   if (_noModelRC)
     return 0.0;
 
-  if (_lefRC)
-    return _capacitanceTable[0][met];
-
   if (width == _minWidthTable[met])
     return _capacitanceTable[modelIndex][met];
 
   // just in case
 
-  extMeasure m;
+  extMeasure m(logger_);
 
   m._met = met;
   m._width = width;
@@ -734,7 +669,7 @@ void extMain::measureRC(CoupleOptions& options)
   if ((rsegId1 < 0) && (rsegId2 < 0))  // power nets
     return;
 
-  extMeasure m;
+  extMeasure m(logger_);
   m.defineBox(options);
   m._ccContextArray = _ccContextArray;
   m._ccMergedContextArray = _ccMergedContextArray;
@@ -754,10 +689,7 @@ void extMain::measureRC(CoupleOptions& options)
     tgtNet = rseg2->getNet();
     printNet(tgtNet, _debug_net_id);
   }
-  if (_lefRC)
-    return;
 
-  m._ouPixelTableIndexMap = _overUnderPlaneLayerMap;
   m._pixelTable = _geomSeq;
 
   _totSignalSegCnt++;
