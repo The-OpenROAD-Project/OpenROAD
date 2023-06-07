@@ -506,24 +506,21 @@ Resizer::subtreeLoad(SteinerTree *tree, float cap_per_micron, SteinerPt pt) cons
   }
   SteinerPt left_pt = tree->left(pt);
   SteinerPt right_pt = tree->right(pt);
-  bool isLeaf = (left_pt == SteinerNull) && (right_pt == SteinerNull);
 
-  if (isLeaf) {
-    const Pin* pin = tree->pin(pt);
-    float capacitance = this->pinCapacitance(pin, tgt_slew_dcalc_ap_);
-    return capacitance;
+  if (left_pt == SteinerNull) && (right_pt == SteinerNull) {
+    return (this->pinCapacitance(tree->pin(pt), tgt_slew_dcalc_ap_));
   }
 
   float left_cap = 0;
   float right_cap = 0;
 
   if (left_pt != SteinerNull) {
-    float left_length = dbuToMeters(tree->distance(pt, left_pt));
+    const float left_length = dbuToMeters(tree->distance(pt, left_pt));
     left_cap = subtreeLoad(tree, cap_per_micron, left_pt)
       + (left_length * cap_per_micron);
   }
   if (right_pt != SteinerNull) {
-    float right_length = dbuToMeters(tree->distance(pt, right_pt));
+    const float right_length = dbuToMeters(tree->distance(pt, right_pt));
     right_cap = subtreeLoad(tree, cap_per_micron, right_pt)
       + (right_length * cap_per_micron);
   }

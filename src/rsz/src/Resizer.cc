@@ -483,6 +483,7 @@ Resizer::getPins(Net* net) const
     const Pin *pin = pin_iter->next();
     pins.push_back(pin);
   }
+  delete pin_iter;
   return pins;
 }
 

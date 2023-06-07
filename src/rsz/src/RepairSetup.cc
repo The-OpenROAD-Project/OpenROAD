@@ -378,12 +378,11 @@ RepairSetup::repairSetup(PathRef &path,
       }
 
       skip_gate_cloning = true;
-      //atoi(getenv("ENABLE_PIN_SWAP"))==1 &&
       if (!skip_gate_cloning && fanout > 1 && !resizer_->dontTouch(net)
           && !resizer_->isTristateDriver(drvr_pin)) {
         rsz::GateCloner cloner(resizer_);
-        int inserted_gates
-            = cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
+        const int inserted_gates
+	  = cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
         if (inserted_gates > 0) {
           changed = true;
           cloned_gate_count_ += inserted_gates;

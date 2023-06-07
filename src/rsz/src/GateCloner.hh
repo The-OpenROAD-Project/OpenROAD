@@ -59,7 +59,7 @@ class PathPoint
   explicit PathPoint(Pin* path_pin = nullptr, bool is_rise = false,
 		     float path_arrival = 0, float path_required = 0,
 		     float path_slack = 0, sta::PathAnalysisPt* pt = nullptr);
-  Pin*                pin() const;
+  Pin*                 pin() const;
   bool                 isRise() const;
   float                arrival() const;
   float                required() const;
@@ -78,6 +78,14 @@ class PathPoint
 
 class GateCloner
 {
+ public:
+  explicit GateCloner(Resizer *resizer);
+  int gateClone(const Pin *drvr_pin, PathRef* drvr_path, int drvr_index,
+                PathExpanded* expanded, float cap_factor,
+                bool clone_largest_only);
+  int run(const Pin* drvr_pin, PathRef* drvr_path, int drvr_index,
+          PathExpanded* expanded);
+  
  private:
   std::vector<Pin*> levelDriverPins(bool reverse = false,
                                     const std::unordered_set<Pin*> &filter_pins
@@ -133,13 +141,6 @@ class GateCloner
   bool capacitance_limits_initialized_;
   //const Corner *corner_;
 
- public:
-  explicit GateCloner(Resizer *resizer);
-  int gateClone(const Pin *drvr_pin, PathRef* drvr_path, int drvr_index,
-                PathExpanded* expanded, float cap_factor,
-                bool clone_largest_only);
-  int run(const Pin* drvr_pin, PathRef* drvr_path, int drvr_index,
-          PathExpanded* expanded);
 };
 
 }  // namespace rsz
