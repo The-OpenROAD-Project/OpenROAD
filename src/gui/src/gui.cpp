@@ -610,9 +610,9 @@ void Gui::saveImage(const std::string& filename,
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
   const bool is_offscreen
-      = main_window->testAttribute(
-            Qt::WA_DontShowOnScreen) /* if not interactive this will be set */
-        || !enabled();
+      = main_window == nullptr
+        || main_window->testAttribute(
+            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
   if (is_offscreen
       && use_die_area) {  // if gui is active and interactive the visible are of
                           // the layout viewer will be used.
@@ -1251,7 +1251,7 @@ int startGui(int& argc,
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();
 
-  if (!gui->isContinueAfterClose() || exit_requested) {
+  if (interactive && (!gui->isContinueAfterClose() || exit_requested)) {
     // if exiting, go ahead and exit with gui return code.
     exit(exit_code);
   }
