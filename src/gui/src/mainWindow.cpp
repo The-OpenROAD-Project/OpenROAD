@@ -1279,6 +1279,41 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
   }
 }
 
+void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
+                                                     int highlight_group)
+{
+  SelectionSet connected_objects;
+  for (auto& sel_obj : selected_) {
+    if (sel_obj.isInst()) {
+      auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
+      for (auto inst_term : inst_obj->getITerms()) {
+        auto inst_term_dir = inst_term->getIoType();
+        if (!inst_term->getSigType().isSupply()
+            && (inst_term_dir == odb::dbIoType::INPUT
+                || inst_term_dir == odb::dbIoType::OUTPUT
+                || inst_term_dir == odb::dbIoType::INOUT)) {
+          auto net_obj = inst_term->getNet();
+          if (net_obj == nullptr
+              || net_obj->getSigType() != odb::dbSigType::SIGNAL) {
+            continue;
+          }
+          connected_objects.insert(
+              Gui::get()->makeSelected(gui::BufferTree(net_obj)));
+        }
+      }
+    }
+  }
+
+  if (connected_objects.empty()) {
+    return;
+  }
+  if (select_flag) {
+    addSelected(connected_objects);
+  } else {
+    addHighlighted(connected_objects, highlight_group);
+  }
+}
+
 void MainWindow::saveSettings()
 {
   QSettings settings("OpenRoad Project", "openroad");
