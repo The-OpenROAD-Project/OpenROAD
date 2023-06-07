@@ -376,7 +376,7 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
     }
   }
   if (output_pin == nullptr || network_->direction(output_pin)->isInput()) {
-  return;
+    return;
   }
 
   Net* net = network_->net(output_pin);
