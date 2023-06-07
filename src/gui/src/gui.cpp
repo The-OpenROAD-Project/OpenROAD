@@ -353,6 +353,13 @@ void Gui::selectHighlightConnectedNets(bool select_flag,
       select_flag, output, input, highlight_group);
 }
 
+void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
+                                              int highlight_group)
+{
+  return main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                          highlight_group);
+}
+
 void Gui::addInstToHighlightSet(const char* name, int highlight_group)
 {
   auto block = getBlock(main_window->getDb());

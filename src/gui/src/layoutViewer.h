@@ -90,11 +90,20 @@ class LayoutViewer : public QWidget
     SELECT_OUTPUT_NETS_ACT,
     SELECT_INPUT_NETS_ACT,
     SELECT_ALL_NETS_ACT,
+    SELECT_ALL_BUFFER_TREES_ACT,
 
     HIGHLIGHT_CONNECTED_INST_ACT,
     HIGHLIGHT_OUTPUT_NETS_ACT,
     HIGHLIGHT_INPUT_NETS_ACT,
     HIGHLIGHT_ALL_NETS_ACT,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT_0,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT_1,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT_2,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT_3,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT_4,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT_5,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT_6,
+    HIGHLIGHT_ALL_BUFFER_TREES_ACT_7,
 
     VIEW_ZOOMIN_ACT,
     VIEW_ZOOMOUT_ACT,
@@ -243,6 +252,8 @@ class LayoutViewer : public QWidget
 
   void selectHighlightConnectedInst(bool select_flag);
   void selectHighlightConnectedNets(bool select_flag, bool output, bool input);
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group = 0);
 
   void updateContextMenuItems();
   void showLayoutCustomMenu(QPoint pos);
@@ -464,6 +475,7 @@ class LayoutViewer : public QWidget
   utl::Logger* logger_;
 
   QMenu* layout_context_menu_;
+  QMenu* highlight_color_menu;
   QMap<CONTEXT_MENU_ACTIONS, QAction*> menu_actions_;
 
   // shift required when drawing the layout to center the layout in the window

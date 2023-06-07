@@ -31,8 +31,8 @@ def extract_parasitics(*, ext_model_file=None,
                 no_merge_via_res)
 
 
-def write_spef(*, filename="", nets="", net_id=0):
-    rcx.write_spef(filename, nets, net_id)
+def write_spef(*, filename="", nets="", net_id=0, coordinates=False):
+    rcx.write_spef(filename, nets, net_id, coordinates)
 
 
 def bench_verilog(*, filename=""):
