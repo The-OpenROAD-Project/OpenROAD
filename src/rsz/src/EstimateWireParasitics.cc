@@ -507,7 +507,7 @@ Resizer::subtreeLoad(SteinerTree *tree, float cap_per_micron, SteinerPt pt) cons
   SteinerPt left_pt = tree->left(pt);
   SteinerPt right_pt = tree->right(pt);
 
-  if (left_pt == SteinerNull) && (right_pt == SteinerNull) {
+  if ((left_pt == SteinerNull) && (right_pt == SteinerNull)) {
     return (this->pinCapacitance(tree->pin(pt), tgt_slew_dcalc_ap_));
   }
 

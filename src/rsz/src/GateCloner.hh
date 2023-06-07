@@ -87,7 +87,7 @@ class GateCloner
           PathExpanded* expanded);
   
  private:
-  std::vector<Pin*> levelDriverPins(bool reverse = false,
+  std::vector<Pin*> levelDriverPins(const bool reverse = false,
                                     const std::unordered_set<Pin*> &filter_pins
                                     = std::unordered_set<Pin*>()) const;
   LibertyCell* largestLibraryCell(LibertyCell* cell);

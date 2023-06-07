@@ -81,7 +81,7 @@ GateCloner::GateCloner(Resizer *resizer)
 }
 
 std::vector<Pin *>
-GateCloner::levelDriverPins(bool reverse,
+GateCloner::levelDriverPins(const bool reverse,
                             const std::unordered_set<Pin *> &filter_pins) const
 {
   sta_->ensureGraph();
@@ -199,10 +199,6 @@ int GateCloner::gateClone(const Pin *drvr_pin, PathRef* drvr_path,
                           float cap_factor, bool clone_largest_only)
 {
   clone_count_ = 0;
-  logger_ = resizer_->logger_;
-  sta_ = resizer_->sta_;
-  db_network_ = resizer_->db_network_;
-
   debugPrint(logger_, RSZ, "gate_cloner", 1,
              "Gate cloning Cap Factor:{} Largest Only:{}",
              cap_factor, clone_largest_only);
