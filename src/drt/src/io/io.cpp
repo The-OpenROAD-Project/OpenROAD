@@ -147,7 +147,7 @@ void io::Parser::setInsts(odb::dbBlock* block)
     int numInstTerms = 0;
     tmpInst->setPinAccessIdx(inst->getPinAccessIdx());
     dbTransform xform = tmpInst->getUpdatedXform();
-    auto grid = tech_->getManufacturingGrid();
+    int grid = tech_->getManufacturingGrid();
     for (auto& uTerm : tmpInst->getMaster()->getTerms()) {
       for (auto& pin : uTerm->getPins()) {
         for (auto& uFig : pin->getFigs()) {
