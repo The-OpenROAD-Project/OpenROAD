@@ -77,7 +77,6 @@ void Opendp::importClear()
   cells_.clear();
   groups_.clear();
   db_inst_map_.clear();
-  deleteGrid();
   have_multi_row_cells_ = false;
 }
 
