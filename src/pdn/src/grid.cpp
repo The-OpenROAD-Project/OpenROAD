@@ -1291,11 +1291,11 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
     // add min spacing
     auto* layer = ob->getTechLayer();
     obs_rect.bloat(layer->getSpacing(), obs_rect);
+    obs_rect = applyHalo(obs_rect, halo, true, true, true);
 
     transform.apply(obs_rect);
     auto shape = std::make_shared<Shape>(layer, obs_rect, Shape::BLOCK_OBS);
 
-    shape->setObstruction(applyHalo(obs_rect, halo, true, true, true));
     obs[layer].insert({shape->getObstructionBox(), shape});
   }
 
@@ -1308,8 +1308,9 @@ ShapeTreeMap InstanceGrid::getInstanceObstructions(
     for (const auto& [box, pin_shape] : pin_shapes) {
       pin_shape->setShapeType(Shape::BLOCK_OBS);
       pin_shape->generateObstruction();
-      pin_shape->setObstruction(applyHalo(
+      pin_shape->setRect(applyHalo(
           pin_shape->getObstruction(), halo, true, is_horizontal, is_vertical));
+      pin_shape->setObstruction(pin_shape->getRect());
       obs[layer].insert({pin_shape->getObstructionBox(), pin_shape});
     }
   }
