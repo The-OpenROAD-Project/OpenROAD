@@ -128,7 +128,8 @@ sta::define_cmd_args "write_spef" {
 proc write_spef { args } {
   sta::parse_key_args "write_spef" args keys \
       { -net_id 
-        -nets }
+        -nets } \
+      flags { -coordinates }
   sta::check_argc_eq1 "write_spef" $args
 
   set spef_file $args
@@ -143,7 +144,9 @@ proc write_spef { args } {
     set net_id $keys(-net_id)
   }
 
-  rcx::write_spef $spef_file $nets $net_id
+  set coordinates [info exists flags(-coordinates)]
+
+  rcx::write_spef $spef_file $nets $net_id $coordinates
 }
 
 sta::define_cmd_args "adjust_rc" {
