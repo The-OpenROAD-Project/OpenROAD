@@ -74,8 +74,19 @@ void Opendp::checkPlacement(bool verbose)
     if (checkOverlap(cell)) {
       overlap_failures.push_back(&cell);
     }
+  }
+
+  for (Cell& cell : cells_) {
     // One site gap check
-    if (disallow_one_site_gaps_ && checkOneSiteGaps(cell)) {
+    if (checkOneSiteGaps(cell)) {
+      debugPrint(logger_,
+                 DPL,
+                 "detailed",
+                 1,
+                 "One site gap violation for {} at ({}, {})",
+                 cell.name(),
+                 cell.x_,
+                 cell.y_);
       one_site_gap_failures.push_back(&cell);
     }
   }
@@ -180,8 +191,6 @@ bool Opendp::checkInRows(const Cell& cell) const
 // Return the cell this cell overlaps.
 Cell* Opendp::checkOverlap(Cell& cell) const
 {
-  debugPrint(
-      logger_, DPL, "grid", 2, "checking overlap for cell {}", cell.name());
   Cell* overlap_cell = nullptr;
   visitCellPixels(cell, true, [&](Pixel* pixel) {
     Cell* pixel_cell = pixel->cell;
@@ -241,7 +250,8 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
           // check the abutting pixel
           Pixel* abut_pixel = gridPixel(index_in_grid, x + abut_x, y);
           bool abuttment_exists
-              = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell);
+              = ((abut_pixel != nullptr) && abut_pixel->cell != pixel_cell
+                 && abut_pixel->cell != nullptr);
           if (!abuttment_exists) {
             // check the 1 site gap pixel
             Pixel* gap_pixel = gridPixel(index_in_grid, x + 2 * abut_x, y);
