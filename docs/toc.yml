@@ -49,26 +49,6 @@ entries:
     title: GUI
   - file: main/src/pad/README
     title: Chip-level Connections
-    entries:
-    - file: main/src/pad/doc/README
-      title: Chip-level Connections Documentation
-      entries:
-      - file: main/src/pad/doc/add_pad
-        title: Add Pad
-      - file: main/src/pad/doc/define_pad_cell
-        title: Define Pad Cell
-      - file: main/src/pad/doc/initialize_padring
-        title: Initialize Padring
-      - file: main/src/pad/doc/place_cell
-        title: Place Cell
-      - file: main/src/pad/doc/set_bump
-        title: Set Bump
-      - file: main/src/pad/doc/set_bump_options
-        title: Set Bump Options
-      - file: main/src/pad/doc/set_padring_options
-        title: Set Padring Options
-      - file: main/src/pad/doc/TCL_Interface
-        title: TCL Interface
   - file: main/src/mpl/README
     title: Macro Placement
   - file: main/src/tap/README
