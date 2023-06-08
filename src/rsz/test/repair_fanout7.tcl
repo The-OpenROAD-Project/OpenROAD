@@ -11,6 +11,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 read_lef Nangate45/Nangate45.lef
 read_def $def_filename
 create_clock -period 0.1 clk1
+set_driving_cell -lib_cell BUF_X1 [all_inputs]
 # Make sure the fanout fixes are not applied so we can test
 # gate cloning fixes. 
 set_max_fanout 200 [current_design]
