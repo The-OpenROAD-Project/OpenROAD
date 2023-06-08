@@ -96,7 +96,7 @@ proc clock_tree_synthesis { args } {
   sta::check_argc_eq0 "clock_tree_synthesis" $args
 
   if { [info exists flags(-post_cts_disable)] } {
-    utl::warn GRT 115 "-post_cts_disable is obsolete."
+    utl::warn CTS 115 "-post_cts_disable is obsolete."
   }
   
   cts::set_sink_clustering [info exists flags(-sink_clustering_enable)]
