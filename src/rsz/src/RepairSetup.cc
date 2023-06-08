@@ -150,6 +150,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
+  swap_pin_inst_map_.clear(); // Make sure we do not swap the same pin twice.
   resizer_->incrementalParasiticsBegin();
   for (Vertex *end : violating_ends) {
     resizer_->updateParasitics();
@@ -303,6 +304,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
 /* This is the main routine for repairing setup violations. We have
  - upsize driver (step 1)
  - rebuffer (step 2)
+ - swap pin (step 3)
  - split loads
  And they are always done in the same order. Not clear whether
  this order is the best way at all times. Also need to worry about
@@ -465,8 +467,6 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
     PathRef *in_path = expanded->path(in_index);
     Pin *in_pin = in_path->pin(sta_);
 
-    // Very bad hack.
-    static std::unordered_map<const Instance *, int> instance_set;
 
     if (!resizer_->dontTouch(drvr)) {
         // We get the driver port and the cell for that port.
@@ -492,14 +492,14 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
 
         // Check if we have already dealt with this instance more than twice.
         // Skip if the answeris a yes.
-        if (instance_set.find(drvr) == instance_set.end()) {
-            instance_set.insert(std::make_pair(drvr,1));
+        if (swap_pin_inst_map_.find(drvr) == swap_pin_inst_map_.end()) {
+            swap_pin_inst_map_.insert(std::make_pair(drvr,1));
         }
         else {
             // If the candidate shows up twice then it is marginal and we should
             // just stop considering it.
-            if (instance_set[drvr] == 1) {
-                instance_set[drvr] = 2;
+            if (swap_pin_inst_map_[drvr] == 1) {
+                swap_pin_inst_map_[drvr] = 2;
                 --swap_pin_count_;
             }
             else
