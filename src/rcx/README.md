@@ -1,7 +1,7 @@
 # OpenRCX
 
 [![Standard](https://img.shields.io/badge/C%2B%2B-17-blue)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/license/bsd-3-clause/)
 
 OpenRCX is a Parasitic Extraction (PEX, or RCX) tool that works on OpenDB design APIs.
 It extracts routed designs based on the LEF/DEF layout model.

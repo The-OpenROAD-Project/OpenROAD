@@ -298,10 +298,10 @@ about this tool.
 -   [FastRoute 4.1 documentation](src/fastroute/README).  The FastRoute4.1
     version was received from <yuexu@iastate.edu> on June 15, 2019,
     with the BSD-3 open source license as given in the FastRoute
-    [website](http://home.eng.iastate.edu/~cnchu/FastRoute.html#License).
+    [website](https://home.engineering.iastate.edu/~cnchu/FastRoute.html#License).
 -   Min Pan, Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute: An Efficient and
     High-Quality Global Router. VLSI Design, Article ID 608362, 2012."
-    Available [here](http://home.eng.iastate.edu/~cnchu/pubs/j52.pdf).
+    Available [here](https://home.engineering.iastate.edu/~cnchu/pubs/j52.pdf).
 -   P-D paper is C. J. Alpert, T. C. Hu, J. H. Huang, A. B. Kahng and
     D. Karger, "Prim-Dijkstra Tradeoffs for Improved Performance-Driven
     Global Routing", IEEE Transactions on Computer-Aided Design of
