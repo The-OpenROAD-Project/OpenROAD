@@ -366,10 +366,10 @@ void SteinerTree::populateSides()
 }
 
 void
-SteinerTree::populateSides(SteinerPt from, SteinerPt to,
-                           std::vector<SteinerPt>& adj1,
-                           std::vector<SteinerPt>& adj2,
-                           std::vector<SteinerPt>& adj3)
+SteinerTree::populateSides(const SteinerPt from, SteinerPt to,
+                           const std::vector<SteinerPt>& adj1,
+                           const std::vector<SteinerPt>& adj2,
+                           const std::vector<SteinerPt>& adj3)
 {
   if (to >= (int) pins_.size()) {
     SteinerPt adj;
@@ -383,10 +383,10 @@ SteinerTree::populateSides(SteinerPt from, SteinerPt to,
 }
 
 void
-SteinerTree::populateSides(SteinerPt from, SteinerPt to, SteinerPt adj,
-                           std::vector<SteinerPt>& adj1,
-                           std::vector<SteinerPt>& adj2,
-                           std::vector<SteinerPt>& adj3)
+SteinerTree::populateSides(const SteinerPt from, SteinerPt to, SteinerPt adj,
+                           const std::vector<SteinerPt>& adj1,
+                           const std::vector<SteinerPt>& adj2,
+                           const std::vector<SteinerPt>& adj3)
 {
   if (adj != from && adj != SteinerNull) {
     if (adj == to) {

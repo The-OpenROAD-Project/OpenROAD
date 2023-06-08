@@ -119,14 +119,14 @@ public:
   void validatePoint(SteinerPt pt) const;
 
   void populateSides();
-  void populateSides(SteinerPt from, SteinerPt to,
-                     std::vector<SteinerPt>& adj1,
-                     std::vector<SteinerPt>& adj2,
-                     std::vector<SteinerPt>& adj3);
-  void populateSides(SteinerPt from, SteinerPt to, SteinerPt adj,
-                     std::vector<SteinerPt>& adj1,
-                     std::vector<SteinerPt>& adj2,
-                     std::vector<SteinerPt>& adj3);
+  void populateSides(const SteinerPt from, SteinerPt to,
+                     const std::vector<SteinerPt>& adj1,
+                     const std::vector<SteinerPt>& adj2,
+                     const std::vector<SteinerPt>& adj3);
+  void populateSides(const SteinerPt from, SteinerPt to, SteinerPt adj,
+                     const std::vector<SteinerPt>& adj1,
+                     const std::vector<SteinerPt>& adj2,
+                     const std::vector<SteinerPt>& adj3);
   int distance(SteinerPt& from, SteinerPt& to) const;
 
   // "Accessors" for SteinerPts.

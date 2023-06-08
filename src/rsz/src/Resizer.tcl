@@ -390,7 +390,8 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
                                         [-allow_setup_violations]\
-                                        [-skip_pin_swap]\
+					[-skip_pin_swap]\
+					[-skip_gate_cloning)]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util]}

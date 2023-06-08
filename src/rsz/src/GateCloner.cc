@@ -265,9 +265,8 @@ LibertyCell* GateCloner::closestDriver(LibertyCell* cell,
       !isSingleOutputCombinational(cell)) {
     return nullptr;
   }
-  auto output_pin = libraryOutputPins(cell)[0];
-
-  auto current_limit = scale * maxLoad(output_pin->libertyCell());
+  const auto output_pin = libraryOutputPins(cell)[0];
+  const auto current_limit = scale * maxLoad(output_pin->libertyCell());
   auto diff = sta::INF;
   for (auto& cand : *candidates) {
     auto limit = maxLoad(libraryOutputPins(cand)[0]->libertyCell());
@@ -422,26 +421,19 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
   if (clone_largest_only && drvr_cell != largestLibraryCell(drvr_cell)) {
     debugPrint(logger_, RSZ, "gate_cloner", 1,  "{} {} is not the largest cell",
                instName, cellName);
+    delete tree;
     return;
   }
   int fanout_count = fanoutPins(net).size();
-  // Don't bother cloning for < 10 fanout count
-  // TODO: Once we insert a cloned gate ... does the fanout go down ?
-  if (fanout_count <= 10) {
-    return;
+  if (fanout_count > 10) {
+    auto half_drvr = halfDrivingPowerCell(drvr_cell);
+    debugPrint(logger_, RSZ, "gate_cloner", 1,  "Cloning {} {}", instName,
+	       cellName);
+    output_target_load = (*(resizer_->target_load_map_))[half_drvr];
+    c_limit = cap_factor * output_target_load;
+    topDownClone(tree, tree->top(), tree->drvrPt(), c_limit, half_drvr);
   }
-
-  auto half_drvr = halfDrivingPowerCell(drvr_cell);
-  // TODO: Another questionable predicate. We can clone without half driver cells
-  //if (half_drvr == drvr_cell) {
-  //  return;
-  //}
-
-  debugPrint(logger_, RSZ, "gate_cloner", 1,  "Cloning {} {}", instName,
-             cellName);
-  output_target_load = (*(resizer_->target_load_map_))[half_drvr];
-  c_limit = cap_factor * output_target_load;
-  topDownClone(tree, tree->top(), tree->drvrPt(), c_limit, half_drvr);
+  delete tree;
 }
 
 /* bool
