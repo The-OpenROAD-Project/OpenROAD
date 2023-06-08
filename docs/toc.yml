@@ -55,29 +55,6 @@ entries:
     title: Tapcell Insertion
   - file: main/src/pdn/README
     title: PDN Analysis
-    entries:
-    - file: main/src/pdn/doc/README
-      title: PDN Analysis Documentation
-      entries:
-      - file: main/src/pdn/doc/PDN
-        title: PDN
-    - file: main/src/pdn/doc/TCL_Interface.md
-      title: Tcl Interface
-      entries:
-      - file: main/src/pdn/doc/add_global_connection.md
-        title: add_global_connection
-      - file: main/src/pdn/doc/add_pdn_connect.md
-        title: add_pdn_connect
-      - file: main/src/pdn/doc/add_pdn_ring.md
-        title: add_pdn_ring
-      - file: main/src/pdn/doc/add_pdn_stripe.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/define_pdn_grid.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/set_voltage_domain.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/pdngen.md
-        title: pdngen
   - file: main/src/psm/README
     title: IR Drop Analysis
     entries:
