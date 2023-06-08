@@ -159,8 +159,8 @@ protected:
   std::vector<const Pin*> point_pin_array_;
   Resizer *resizer_;
 
-
   friend class Resizer;
+  friend class GateCloner;
 };
 
 } // namespace

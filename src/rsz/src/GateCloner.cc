@@ -664,6 +664,8 @@ void GateCloner::cloneInstance(SteinerTree *tree, SteinerPt current, SteinerPt p
       Instance *cloned_inst =
           resizer_->makeInstance(driver_cell, instance_name.c_str(),
                                  network_->topInstance(), tree->location(prev));
+      resizer_->cloned_gates_.insert(network_->instance(tree->drvr_pin_),
+                                     cloned_inst);
       resizer_->cloned_gate_count_++;
       debugPrint(logger_, RSZ, "gate_cloner", 1,
                  "Gate cloning {}({}) {} {}", instance_name.c_str(),
