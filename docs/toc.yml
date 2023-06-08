@@ -86,8 +86,6 @@ entries:
     title: Metal Fill
   - file: main/src/stt/src/flt/README
     title: Flute
-  - file: main/src/stt/src/pdr/README
-    title: Prim-Dijkstra Revisited
   - file: main/src/par/README
     title: Partition Manager
 
