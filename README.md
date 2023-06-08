@@ -1,6 +1,9 @@
 # OpenROAD
 
-[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
+[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/)
+[![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad)
+[![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
 
 ## About OpenROAD
 
@@ -68,14 +71,14 @@ Here are the main steps for a physical design implementation
 using OpenROAD;
 
 - `Floorplanning`
-  - Floorplan initialization - define the chip area, utilization 
+  - Floorplan initialization - define the chip area, utilization
   - IO pin placement (for designs without pads)
-  - Tap cell and well tie insertion 
+  - Tap cell and well tie insertion
   - PDN- power distribution network creation
 - `Global Placement` - Minimize wirelengths
   - Macro placement (RAMs, embedded macros)
   - Standard cell placement
-  - Automatic placement optimization and repair for max slew, 
+  - Automatic placement optimization and repair for max slew,
     max capacitance, and max fanout violations and long wires
 - `Detailed Placement`
   - Legalize placement - align to grid, adhere to design rules
@@ -93,7 +96,7 @@ using OpenROAD;
 - `Chip Finishing`
   - Parasitic extraction using OpenRCX
   - Final timing verification
-  - Final physical verification 
+  - Final physical verification
   - Dummy metal fill for manufacturability
   - Use KLayout or Magic using generated GDS for DRC signoff
 
