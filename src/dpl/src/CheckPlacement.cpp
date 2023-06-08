@@ -75,18 +75,15 @@ void Opendp::checkPlacement(bool verbose)
       overlap_failures.push_back(&cell);
     }
   }
-
+  // This loop is separate because it needs to be done after the overlap check
+  // The overlap check assigns the overlap cell to its pixel
+  // Thus, the one site gap check needs to be done after the overlap check
+  // Otherwise, this check will miss the pixels that could have resulted in
+  // one-site gap violations as null
+  // Note: This will always result in duplicate 
   for (Cell& cell : cells_) {
     // One site gap check
     if (checkOneSiteGaps(cell)) {
-      debugPrint(logger_,
-                 DPL,
-                 "detailed",
-                 1,
-                 "One site gap violation for {} at ({}, {})",
-                 cell.name(),
-                 cell.x_,
-                 cell.y_);
       one_site_gap_failures.push_back(&cell);
     }
   }
@@ -191,6 +188,8 @@ bool Opendp::checkInRows(const Cell& cell) const
 // Return the cell this cell overlaps.
 Cell* Opendp::checkOverlap(Cell& cell) const
 {
+  debugPrint(
+      logger_, DPL, "grid", 2, "checking overlap for cell {}", cell.name());
   Cell* overlap_cell = nullptr;
   visitCellPixels(cell, true, [&](Pixel* pixel) {
     Cell* pixel_cell = pixel->cell;
