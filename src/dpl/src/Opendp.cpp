@@ -90,10 +90,7 @@ Opendp::Opendp()
   dummy_cell_.is_placed_ = true;
 }
 
-Opendp::~Opendp()
-{
-  deleteGrid();
-}
+Opendp::~Opendp() = default;
 
 void Opendp::init(dbDatabase* db, Logger* logger)
 {
