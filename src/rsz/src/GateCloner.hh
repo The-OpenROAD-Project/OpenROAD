@@ -138,7 +138,6 @@ class GateCloner
   sta::Graph *graph_;
   Resizer* resizer_;
   const sta::MinMax* min_max_;
-  bool capacitance_limits_initialized_;
   //const Corner *corner_;
 
 };

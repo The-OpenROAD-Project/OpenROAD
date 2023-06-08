@@ -179,9 +179,7 @@ SteinerTree::createSteinerPtToPinMap()
   for (unsigned int i = 0; i < pin_count; i++) {
     stt::Branch& branch_pt = tree_.branch[i];
     odb::Point pt(branch_pt.x, branch_pt.y);
-    std::vector<const Pin*> pin_locations = loc_pin_map_[pt];
-    auto pin = pin_locations.back();
-    pin_locations.pop_back();
+    auto pin = loc_pin_map_[pt].back();
     point_pin_array_[i] = pin;
   }
   populateSides();
@@ -366,7 +364,7 @@ void SteinerTree::populateSides()
 }
 
 void
-SteinerTree::populateSides(const SteinerPt from, SteinerPt to,
+SteinerTree::populateSides(const SteinerPt from, const SteinerPt to,
                            const std::vector<SteinerPt>& adj1,
                            const std::vector<SteinerPt>& adj2,
                            const std::vector<SteinerPt>& adj3)
@@ -383,7 +381,7 @@ SteinerTree::populateSides(const SteinerPt from, SteinerPt to,
 }
 
 void
-SteinerTree::populateSides(const SteinerPt from, SteinerPt to, SteinerPt adj,
+SteinerTree::populateSides(const SteinerPt from, const SteinerPt to, const SteinerPt adj,
                            const std::vector<SteinerPt>& adj1,
                            const std::vector<SteinerPt>& adj2,
                            const std::vector<SteinerPt>& adj3)

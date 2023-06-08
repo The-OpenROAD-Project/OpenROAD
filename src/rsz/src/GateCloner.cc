@@ -77,7 +77,6 @@ GateCloner::GateCloner(Resizer *resizer)
   network_ = resizer->network();
   min_max_ = sta::MinMax::max();
   sta_->checkCapacitanceLimitPreamble();
-  capacitance_limits_initialized_ = true;
 }
 
 std::vector<Pin *>
@@ -314,11 +313,6 @@ GateCloner::violatesMaximumCapacitance(Pin* term, float limit_scale_factor)
   const sta::Corner*   corner;
   const sta::RiseFall* rf;
   float                cap, limit, ignore;
-
-  if (!capacitance_limits_initialized_) {
-    sta_->checkCapacitanceLimitPreamble();
-    capacitance_limits_initialized_ = true;
-  }
 
   // Needed?:  float load_cap = network_->graphDelayCalc()->loadCap(term, resizer_->tgt_slew_dcalc_ap_);
   sta_->checkCapacitance(term, nullptr, sta::MinMax::max(), corner, rf,
