@@ -92,13 +92,13 @@ void Opendp::initGrid()
   }
 
   // Make pixel grid
-  if (grid_ == nullptr) {
-    grid_ = new Pixel**[grid_info_map_.size()];
+  if (grid_.empty()) {
+    grid_.resize(grid_info_map_.size());
 
     for (auto& [row_height, grid_info] : grid_info_map_) {
       int layer_row_count = grid_info.row_count;
       int index = grid_info.grid_index;
-      grid_[index] = new Pixel*[layer_row_count];
+      grid_[index].resize(layer_row_count);
     }
   }
 
@@ -106,9 +106,9 @@ void Opendp::initGrid()
     const int layer_row_count = grid_info.row_count;
     const int layer_row_site_count = grid_info.site_count;
     const int index = grid_info.grid_index;
-    grid_[index] = new Pixel*[layer_row_count];
+    grid_[index].resize(layer_row_count);
     for (int j = 0; j < layer_row_count; j++) {
-      grid_[index][j] = new Pixel[layer_row_site_count];
+      grid_[index][j].resize(layer_row_site_count);
       for (int k = 0; k < layer_row_site_count; k++) {
         Pixel& pixel = grid_[index][j][k];
         pixel.cell = nullptr;
@@ -183,7 +183,8 @@ void Opendp::initGrid()
     for (const auto& rect : rects) {
       for (int y = gtl::yl(rect); y < gtl::yh(rect); y++) {
         for (int x = gtl::xl(rect); x < gtl::xh(rect); x++) {
-          grid_[h_index][y][x].is_hopeless = true;
+          Pixel& pixel = grid_[h_index][y][x];
+          pixel.is_hopeless = true;
         }
       }
     }
@@ -192,19 +193,7 @@ void Opendp::initGrid()
 
 void Opendp::deleteGrid()
 {
-  if (grid_) {
-    int i = 0;
-    for (auto [row_height, grid_info] : grid_info_map_) {
-      int N = grid_info.row_count;
-      for (int j = 0; j < N; j++) {
-        delete[] grid_[i][j];
-      }
-      delete[] grid_[i];
-      i++;
-    }
-    delete[] grid_;
-  }
-  grid_ = nullptr;
+  grid_.clear();
 }
 
 Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
@@ -215,7 +204,7 @@ Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
   GridInfo* grid_info = grid_info_vector_[grid_idx];
   if (grid_x >= 0 && grid_x < grid_info->site_count && grid_y >= 0
       && grid_y < grid_info->row_count) {
-    return &grid_[grid_idx][grid_y][grid_x];
+    return const_cast<Pixel*>(&grid_[grid_idx][grid_y][grid_x]);
   }
   return nullptr;
 }

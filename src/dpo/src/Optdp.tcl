@@ -54,7 +54,7 @@ proc improve_placement { args } {
       sta::check_positive_integer "-max_displacement" $max_displacement_x
       sta::check_positive_integer "-max_displacement" $max_displacement_y
     } else {
-      sta::error DPL 31 "-max_displacement disp|{disp_x disp_y}"
+      sta::error DPO 31 "-max_displacement disp|{disp_x disp_y}"
     }
   } else {
     # use default displacement
