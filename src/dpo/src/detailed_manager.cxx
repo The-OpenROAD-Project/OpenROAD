@@ -2393,13 +2393,6 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
   auto it = std::find(cellsInSeg_[sj].begin(), cellsInSeg_[sj].end(), ndr);
   if (cellsInSeg_[sj].end() == it) {
     // Error.
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "shiftRightHelper: cell {} not found in segment {}",
-               ndr->getId(),
-               sj);
     return false;
   }
   int ix = (int) (it - cellsInSeg_[sj].begin());
@@ -2415,12 +2408,6 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
          && (ndr->getLeft()
              < xj + ndi->getWidth() + arch_->getCellSpacing(ndi, ndr))) {
     if (arch_->getCellHeightInRows(ndr) != 1) {
-      debugPrint(logger_,
-                 DPO,
-                 "detailed",
-                 1,
-                 "shiftRightHelper: cell {} is not single height",
-                 ndr->getId());
       return false;
     }
 
@@ -2451,41 +2438,17 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
                        xj,
                        ndr->getBottom(),
                        sj)) {
-      debugPrint(logger_,
-                 DPO,
-                 "detailed",
-                 1,
-                 "addToMoveList failed: cell {} from {} to {}",
-                 ndr->getId(),
-                 ndr->getLeft(),
-                 xj);
       return false;
     }
 
     // Fail if we shift off end of segment.
     if (xj + ndr->getWidth() + arch_->getCellSpacing(ndr, nullptr)
         > segments_[sj]->getMaxX()) {
-      debugPrint(
-          logger_,
-          DPO,
-          "detailed",
-          1,
-          "shiftRightHelper: cell {} shifted off end of segment {} at {}",
-          ndr->getId(),
-          sj,
-          segments_[sj]->getMaxX());
       return false;
     }
 
     if (ix == n) {
       // We shifted down to the last cell... Everything must be okay!
-      debugPrint(logger_,
-                 DPO,
-                 "detailed",
-                 1,
-                 "shiftRightHelper: cell {} shifted to end of segment {}",
-                 ndr->getId(),
-                 sj);
       break;
     }
     ndi = ndr;
@@ -3312,11 +3275,6 @@ bool DetailedMgr::addToMoveList(Node* ndi,
 {
   // Limit maximum number of cells that can move at once.
   if (nMoved_ >= moveLimit_) {
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "DetailedMgr::addToMoveList(): move limit reached.\n");
     return false;
   }
 
@@ -3327,11 +3285,6 @@ bool DetailedMgr::addToMoveList(Node* ndi,
   double dy = std::fabs(newBottom - ndi->getOrigBottom());
   double dx = std::fabs(newLeft - ndi->getOrigLeft());
   if ((int) std::ceil(dx) > maxDispX_ || (int) std::ceil(dy) > maxDispY_) {
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               1,
-               "DetailedMgr::addToMoveList(): displacement limit reached.\n");
     return false;
   }
 
