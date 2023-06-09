@@ -12,6 +12,6 @@ load DFF_X1 CK D 300000 metal3 1000
 [INFO ODB-0133]     Created 4 nets and 307 connections.
 worst slack -23.63
 [INFO RSZ-0043] Swapped pins on 1 instances.
-[INFO RSZ-0049] Cloned 3 instances.
+[INFO RSZ-0049] Cloned 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack -0.06
