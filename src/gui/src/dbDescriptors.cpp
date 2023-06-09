@@ -230,6 +230,39 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
 
 ////////
 
+DbBlockDescriptor::DbBlockDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
+
+std::string DbBlockDescriptor::getName(std::any object) const
+{
+  auto block = std::any_cast<odb::dbBlock*>(object);
+  return block->getName();
+}
+
+std::string DbBlockDescriptor::getTypeName() const
+{
+  return "Block";
+}
+
+bool DbBlockDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  /*Why this returns a bool?
+    Because the rect dimensions are being passed by reference*/
+  
+  auto block = std::any_cast<odb::dbBlock*>(object);
+  bbox = block->getBBox()->getBox();
+  return true;
+}
+
+// void DbBlockDescriptor::highlight(std::any object, Painter& painter) const
+// {
+
+// }
+
+///////////////////////////////////
+
 DbInstDescriptor::DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
     : db_(db), sta_(sta)
 {
