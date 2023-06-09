@@ -514,9 +514,8 @@ QString ClockGateNodeGraphicsViewItem::getType() const
 {
   if (is_clock_gate_) {
     return "Clock gate";
-  } else {
-    return "Assumed clock gate";
   }
+  return "Assumed clock gate";
 }
 
 ////////////////
@@ -572,7 +571,6 @@ ClockRegisterNodeGraphicsViewItem::ClockRegisterNodeGraphicsViewItem(
     odb::dbITerm* iterm,
     QGraphicsItem* parent)
     : ClockNodeGraphicsViewItem(parent),
-      menu_(),
       highlight_path_(new QAction("Highlight path", &menu_))
 {
   setName(iterm);

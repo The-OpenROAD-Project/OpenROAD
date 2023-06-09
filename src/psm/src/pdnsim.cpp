@@ -198,10 +198,10 @@ void PDNSim::analyze_power_grid()
                   irsolve_h->getWorstCaseVoltage());
   logger_->report(
       "Average IR drop  : {:3.2e} V",
-      abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage()));
-  logger_->report(
-      "Worstcase IR drop: {:3.2e} V",
-      abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getWorstCaseVoltage()));
+      std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage()));
+  logger_->report("Worstcase IR drop: {:3.2e} V",
+                  std::abs(irsolve_h->getSupplyVoltageSrc()
+                           - irsolve_h->getWorstCaseVoltage()));
   logger_->report("######################################");
   if (enable_em_) {
     logger_->report("########## EM analysis ###############");
@@ -226,7 +226,7 @@ void PDNSim::analyze_power_grid()
     // Absolute is needed for GND nets. In case of GND net voltage is higher
     // than supply.
     ir_drop[node_layer][point]
-        = abs(irsolve_h->getSupplyVoltageSrc() - voltage);
+        = std::abs(irsolve_h->getSupplyVoltageSrc() - voltage);
   }
   ir_drop_ = ir_drop;
   min_resolution_ = irsolve_h->getMinimumResolution();

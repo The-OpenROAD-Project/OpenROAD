@@ -4948,6 +4948,11 @@ class dbRow : public dbObject
   Rect getBBox();
 
   ///
+  /// Get the block this row belongs too.
+  ///
+  dbBlock* getBlock();
+
+  ///
   /// Create a new row.
   ///
   static dbRow* create(dbBlock* block,
@@ -5574,6 +5579,11 @@ class dbMaster : public dbObject
   /// Returns NULL if a master with this name already exists
   ///
   static dbMaster* create(dbLib* lib, const char* name);
+
+  ///
+  /// Destroy a dbMaster.
+  ///
+  static void destroy(dbMaster* master);
 
   ///
   /// Translate a database-id back to a pointer.

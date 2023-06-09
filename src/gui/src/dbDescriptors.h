@@ -110,7 +110,9 @@ class DbInstDescriptor : public Descriptor
                          std::vector<EditorOption>& options) const;
   void makePlacementStatusOptions(std::vector<EditorOption>& options) const;
   void makeOrientationOptions(std::vector<EditorOption>& options) const;
-  bool setNewLocation(odb::dbInst* inst, std::any value, bool is_x) const;
+  bool setNewLocation(odb::dbInst* inst,
+                      const std::any& value,
+                      bool is_x) const;
 
   odb::dbDatabase* db_;
   sta::dbSta* sta_;

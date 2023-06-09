@@ -286,12 +286,17 @@ sta::define_cmd_args "pin_access" {
     [-top_routing_layer layer]
     [-min_access_points count]
     [-verbose level]
+    [-distributed]
+    [-remote_host rhost]
+    [-remote_port rport]
+    [-shared_volume vol]
+    [-cloud_size sz]
 }
 proc pin_access { args } {
   sta::parse_key_args "pin_access" args \
       keys {-db_process_node -bottom_routing_layer -top_routing_layer -verbose \
-            -min_access_points } \
-      flags {}
+            -min_access_points -remote_host -remote_port -shared_volume -cloud_size } \
+      flags {-distributed}
   sta::check_argc_eq0 "detailed_route_debug" $args
   if [info exists keys(-db_process_node)] {
     set db_process_node $keys(-db_process_node)
@@ -319,6 +324,29 @@ proc pin_access { args } {
     set min_access_points $keys(-min_access_points)
   } else {
     set min_access_points -1
+  }
+  if { [info exists flags(-distributed)] } {
+    if { [info exists keys(-remote_host)] } {
+      set rhost $keys(-remote_host)
+    } else {
+      utl::error DRT 552 "-remote_host is required for distributed routing."
+    }
+    if { [info exists keys(-remote_port)] } {
+      set rport $keys(-remote_port)
+    } else {
+      utl::error DRT 553 "-remote_port is required for distributed routing."
+    }
+    if { [info exists keys(-shared_volume)] } {
+      set vol $keys(-shared_volume)
+    } else {
+      utl::error DRT 554 "-shared_volume is required for distributed routing."
+    }
+    if { [info exists keys(-cloud_size)] } {
+      set cloudsz $keys(-cloud_size)
+    } else {
+      utl::error DRT 555 "-cloud_size is required for distributed routing."
+    }
+    drt::detailed_route_distributed $rhost $rport $vol $cloudsz
   }
   drt::pin_access_cmd $db_process_node $bottom_routing_layer $top_routing_layer $verbose $min_access_points
 }

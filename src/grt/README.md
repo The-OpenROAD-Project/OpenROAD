@@ -12,7 +12,8 @@ global_route [-guide_file out_file]
              [-critical_nets_percentage percent]
              [-allow_congestion]
              [-verbose]
-
+             [-start_incremental]
+             [-end_incremental]
 ```
 
 Options description:
@@ -30,6 +31,8 @@ Options description:
 -   `critical_nets_percentage`: Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default percentage is 0%.
 -   `allow_congestion`: Allow global routing results to be generated with remaining congestion.
 -   `verbose`: This flag enables the full reporting of the global routing.
+-   `start_incremental`: This flag initializes the GRT listener to get the net modified.
+-   `end_incremental`: This flag run incremental GRT with the nets modified.
 
 ```
 set_routing_layers [-signal min-max]

@@ -589,12 +589,18 @@ void io::Parser::setNets(odb::dbBlock* block)
     string shape = "";
     bool hasBeginPoint = false;
     bool hasEndPoint = false;
+    bool beginInVia = false;
     frCoord beginX = -1;
     frCoord beginY = -1;
     frCoord beginExt = -1;
+    frCoord nextX = -1;
+    frCoord nextY = -1;
     frCoord endX = -1;
     frCoord endY = -1;
     frCoord endExt = -1;
+    odb::dbTechLayer* prevLayer = nullptr;
+    odb::dbTechLayer* lower_layer = nullptr;
+    odb::dbTechLayer* top_layer = nullptr;
     bool hasRect = false;
     frCoord left = -1;
     frCoord bottom = -1;
@@ -613,6 +619,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         shape = "";
         hasBeginPoint = false;
         hasEndPoint = false;
+        beginInVia = false;
         beginX = -1;
         beginY = -1;
         beginExt = -1;
@@ -632,7 +639,8 @@ void io::Parser::setNets(odb::dbBlock* block)
             case odb::dbWireDecoder::JUNCTION:
             case odb::dbWireDecoder::SHORT:
             case odb::dbWireDecoder::VWIRE:
-              layerName = decoder.getLayer()->getName();
+              prevLayer = decoder.getLayer();
+              layerName = prevLayer->getName();
               if (tech_->name2layer.find(layerName) == tech_->name2layer.end())
                 logger_->error(DRT, 107, "Unsupported layer {}.", layerName);
               break;
@@ -657,9 +665,29 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
             case odb::dbWireDecoder::VIA:
               viaName = string(decoder.getVia()->getName());
+              lower_layer = decoder.getVia()->getBottomLayer();
+              top_layer = decoder.getVia()->getTopLayer();
+              layerName = prevLayer == top_layer ? lower_layer->getName()
+                                                 : top_layer->getName();
+              if (!hasBeginPoint) {
+                beginX = nextX;
+                beginY = nextY;
+                hasBeginPoint = true;
+                beginInVia = true;
+              }
               break;
             case odb::dbWireDecoder::TECH_VIA:
               viaName = string(decoder.getTechVia()->getName());
+              lower_layer = decoder.getTechVia()->getBottomLayer();
+              top_layer = decoder.getTechVia()->getTopLayer();
+              layerName = prevLayer == top_layer ? lower_layer->getName()
+                                                 : top_layer->getName();
+              if (!hasBeginPoint) {
+                beginX = nextX;
+                beginY = nextY;
+                hasBeginPoint = true;
+                beginInVia = true;
+              }
               break;
             case odb::dbWireDecoder::RECT:
               decoder.getRect(left, bottom, right, top);
@@ -674,8 +702,18 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
           }
           pathId = decoder.next();
-          if ((int) pathId <= 3 || pathId == odb::dbWireDecoder::END_DECODE)
+          if ((int) pathId <= 3 || pathId == odb::dbWireDecoder::TECH_VIA
+              || pathId == odb::dbWireDecoder::VIA
+              || pathId == odb::dbWireDecoder::END_DECODE) {
+            if (hasEndPoint) {
+              nextX = endX;
+              nextY = endY;
+            } else {
+              nextX = beginX;
+              nextY = beginY;
+            }
             endpath = true;
+          }
         } while (!endpath);
         auto layerNum = tech_->name2layer[layerName]->getLayerNum();
         if (hasRect) {
@@ -732,7 +770,7 @@ void io::Parser::setNets(odb::dbBlock* block)
             logger_->error(DRT, 108, "Unsupported via in db.");
           } else {
             Point p;
-            if (hasEndPoint) {
+            if (hasEndPoint && !beginInVia) {
               p = {endX, endY};
             } else {
               p = {beginX, beginY};

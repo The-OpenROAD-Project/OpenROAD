@@ -455,7 +455,7 @@ Resizer::makeBufferedNetSteiner(const Pin *drvr_pin,
   BufferedNetPtr bnet = nullptr;
   SteinerTree *tree = makeSteinerTree(drvr_pin);
   if (tree) {
-    SteinerPt drvr_pt = tree->drvrPt(network_);
+    SteinerPt drvr_pt = tree->drvrPt();
     if (drvr_pt != SteinerTree::null_pt) {
       int branch_count = tree->branchCount();
       SteinerPtAdjacents adjacents(branch_count);

@@ -125,6 +125,7 @@ target_sources(drt
     src/rp/FlexRP_prep.cpp
     src/distributed/frArchive.cpp
     src/distributed/drUpdate.cpp
+    src/distributed/paUpdate.cpp
     src/TritonRoute.cpp
     src/MakeTritonRoute.cpp
     src/frBaseTypes.cpp

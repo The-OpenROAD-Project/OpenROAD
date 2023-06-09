@@ -1,5 +1,6 @@
 from openroad import Design, Tech
 import helpers
+import par_aux
 
 tech = Tech()
 tech.readLiberty("Nangate45/Nangate45_typ.lib")
@@ -16,12 +17,11 @@ graph_file = helpers.make_result_file("partition_gcd.graph")
 paths_file = helpers.make_result_file("partition_gcd.paths")
 v_file = helpers.make_result_file("partition_gcd.v")
 
-mgr = design.getPartitionMgr()
-mgr.tritonPartDesign(2, 1.0, 0, part_file, paths_file, graph_file)
+par_aux.tritonPartDesign(design, solution_file=part_file)
 
-mgr.writePartitionVerilog(v_file)
+design.getPartitionMgr().writePartitionVerilog(v_file)
 
-helpers.diff_files("partition_gcd.graphok", graph_file)
-helpers.diff_files("partition_gcd.pathsok", paths_file)
+#helpers.diff_files("partition_gcd.graphok", graph_file)
+#helpers.diff_files("partition_gcd.pathsok", paths_file)
 helpers.diff_files("partition_gcd.partok", part_file)
 helpers.diff_files("partition_gcd.vok", v_file)

@@ -13,11 +13,11 @@ Clock domain: No Mix
 
 Scan chain 'chain_0' has 5 cells (5 bits)
 
-  ff8_clk2_falling (clock2, falling)
-  ff6_clk2_falling
-  ff4_clk2_falling
-  ff2_clk2_falling
-  ff10_clk2_falling
+  ff9_clk1_falling (clock1, falling)
+  ff7_clk1_falling
+  ff5_clk1_falling
+  ff3_clk1_falling
+  ff1_clk1_falling
 
 Scan chain 'chain_1' has 5 cells (5 bits)
 
@@ -29,11 +29,11 @@ Scan chain 'chain_1' has 5 cells (5 bits)
 
 Scan chain 'chain_2' has 5 cells (5 bits)
 
-  ff9_clk1_falling (clock1, falling)
-  ff7_clk1_falling
-  ff5_clk1_falling
-  ff3_clk1_falling
-  ff1_clk1_falling
+  ff8_clk2_falling (clock2, falling)
+  ff6_clk2_falling
+  ff4_clk2_falling
+  ff2_clk2_falling
+  ff10_clk2_falling
 
 Scan chain 'chain_3' has 5 cells (5 bits)
 
