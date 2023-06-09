@@ -72,6 +72,9 @@ option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 # Allow disabling tests
 option(ENABLE_TESTS "Enable OpenROAD tests" ON)
 
+# Allow enabling address sanitizer
+option(ASAN "Enable Address Sanitizer" OFF)
+
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )

@@ -51,7 +51,7 @@ namespace gui {
 class BufferTree
 {
  public:
-  BufferTree(odb::dbNet* net);
+  explicit BufferTree(odb::dbNet* net);
 
   static void setSTA(sta::dbSta* sta) { sta_ = sta; }
   static bool isAggregate(odb::dbNet* net);
