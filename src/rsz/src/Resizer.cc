@@ -2497,6 +2497,7 @@ Resizer::journalBegin()
   debugPrint(logger_, RSZ, "journal", 1, "journal begin");
   resized_inst_map_.clear();
   inserted_buffers_.clear();
+  cloned_gates_.clear();
   swapped_pins_.clear();
 }
 
@@ -2506,6 +2507,7 @@ Resizer::journalEnd()
   debugPrint(logger_, RSZ, "journal", 1, "journal end");
   resized_inst_map_.clear();
   inserted_buffers_.clear();
+  cloned_gates_.clear();  
   swapped_pins_.clear();
 }
 
@@ -2577,7 +2579,6 @@ Resizer::journalRestore(int &resize_count,
 
 
   // Undo gate cloning
-  /* TODO
   for (auto element : cloned_gates_) {
     auto original_inst = element.first;
     auto cloned_inst = element.second;
@@ -2613,7 +2614,6 @@ Resizer::journalRestore(int &resize_count,
     --cloned_gate_count;
   }
   cloned_gates_.clear();
-  */
 }
 
 ////////////////////////////////////////////////////////////////
