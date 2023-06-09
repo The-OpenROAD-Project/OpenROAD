@@ -1499,13 +1499,14 @@ bool DetailedMgr::fixOneSiteGapViolations(Node* cell,
     acceptMove();
     clearMoveList();
     return true;
-  } else if (shiftRightHelper(
-                 cell,
-                 cell->getLeft()
-                     + (one_site_gap * 2),  // assume we will insert the cell
-                                            // before us at this location
-                 segment,
-                 violatingNode)) {
+  }
+  if (shiftRightHelper(
+          cell,
+          cell->getLeft()
+              + (one_site_gap * 2),  // assume we will insert the cell
+                                     // before us at this location
+          segment,
+          violatingNode)) {
     acceptMove();  // without this, the cells are not moved
     clearMoveList();
     return true;
