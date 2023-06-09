@@ -209,7 +209,7 @@ class Opendp
   int padRight(dbInst* inst) const;
   int padLeft(dbInst* inst) const;
   // Return error count.
-  void checkPlacement(bool verbose);
+  void checkPlacement(bool verbose, bool disallow_one_site_gaps = false);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   int64_t hpwl() const;
