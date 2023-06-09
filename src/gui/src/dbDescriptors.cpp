@@ -249,17 +249,83 @@ std::string DbBlockDescriptor::getTypeName() const
 bool DbBlockDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   /*Why this returns a bool?
-    Because the rect dimensions are being passed by reference*/
+    Because the rect dimensions are being passed by reference.
+    Ok, but why not void?*/
   
   auto block = std::any_cast<odb::dbBlock*>(object);
   bbox = block->getBBox()->getBox();
   return true;
 }
 
-// void DbBlockDescriptor::highlight(std::any object, Painter& painter) const
-// {
+/*Now highlighting only the nets and instances*/
+void DbBlockDescriptor::highlight(std::any object, Painter& painter) const
+{
+  auto block = std::any_cast<odb::dbBlock*>(object);
 
-// }
+  auto inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
+  for(auto inst : block->getInsts()) {
+    inst_descriptor->highlight(inst, painter);
+  }
+
+  auto net_descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
+  for(auto net : block->getNets()) {
+    net_descriptor->highlight(net, painter);
+  }
+}
+
+Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
+{
+  auto block = std::any_cast<odb::dbBlock*>(object);
+
+  auto gui = Gui::get();
+
+  Properties props;
+  SelectionSet modules;
+  for (auto module : block->getModules()) {
+    modules.insert(gui->makeSelected(module));
+  }
+  props.push_back({"Modules", modules});
+
+  SelectionSet insts;
+  for (auto inst : block->getInsts()) {
+    insts.insert(gui->makeSelected(inst));
+  }
+  props.push_back({"Instances", insts});
+
+  SelectionSet nets;
+  for (auto net : block->getNets()) {
+    nets.insert(gui->makeSelected(net));
+  }
+  props.push_back({"Nets", nets});
+  //populateODBProperties(props, block);
+  return props;
+}
+
+Selected DbBlockDescriptor::makeSelected(std::any object) const
+{
+  if (auto block = std::any_cast<odb::dbBlock*>(&object)) {
+    return Selected(*block, this);
+  }
+  return Selected();
+}
+
+bool DbBlockDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_layer = std::any_cast<odb::dbBlock*>(l);
+  auto r_layer = std::any_cast<odb::dbBlock*>(r);
+  return l_layer->getId() < r_layer->getId();
+}
+
+bool DbBlockDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto chip = db_->getChip();
+  if(chip == nullptr) {
+    return false;
+  }
+  auto block = chip->getBlock();
+  objects.insert(makeSelected(block));
+  return true;
+}
 
 ///////////////////////////////////
 
@@ -309,7 +375,7 @@ Descriptor::Properties DbInstDescriptor::getProperties(std::any object) const
   auto placed = inst->getPlacementStatus();
   auto* module = inst->getModule();
   Properties props;
-  props.push_back({"Block", inst->getBlock()->getName()});
+  props.push_back({"Block", gui->makeSelected(inst->getBlock())});
   if (module != nullptr) {
     props.push_back({"Module", gui->makeSelected(module)});
   }
