@@ -257,7 +257,7 @@ bool DbBlockDescriptor::getBBox(std::any object, odb::Rect& bbox) const
   return true;
 }
 
-/*Now highlighting only the nets and instances*/
+/*Now highlighting: nets, instances and modules*/
 void DbBlockDescriptor::highlight(std::any object, Painter& painter) const
 {
   auto block = std::any_cast<odb::dbBlock*>(object);
@@ -1419,14 +1419,14 @@ bool DbNetDescriptor::isNet(std::any object) const
 
 Descriptor::Properties DbNetDescriptor::getProperties(std::any object) const
 {
+  auto gui = Gui::get();
   auto net = getNet(object);
-  Properties props({{"Block", net->getBlock()->getName()},
+  Properties props({{"Block", gui->makeSelected(net->getBlock())},
                     {"Signal type", net->getSigType().getString()},
                     {"Source type", net->getSourceType().getString()},
                     {"Wire type", net->getWireType().getString()},
                     {"Special", net->isSpecial()},
                     {"Dont Touch", net->isDoNotTouch()}});
-  auto gui = Gui::get();
   int iterm_size = net->getITerms().size();
   std::any iterm_item;
   if (iterm_size > max_iterms_) {
