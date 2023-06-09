@@ -134,14 +134,6 @@ bool GateCloner::isSingleOutputCombinational(LibertyCell* cell) const
   return (output_pins.size() == 1 && isCombinational(cell));
 }
 
-bool GateCloner::isCombinational(Instance* inst) const
-{
-  if (inst == network_->topInstance()) {
-    return false;
-  }
-  return isCombinational(network_->libertyCell(inst));
-}
-
 bool GateCloner::isCombinational(LibertyCell* cell) const
 {
   if (!cell) {
@@ -340,18 +332,6 @@ Vertex* GateCloner::vertex(Pin* term) const
   return vertex;
 }
 
-float GateCloner::pin_slew(Pin* term) const
-{
-  return std::max(slew(term, true), slew(term, false));
-}
-
-float GateCloner::slew(Pin* term, bool is_rise) const
-{
-  return sta_->vertexSlew(vertex(term),
-      is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
-      sta::MinMax::max());
-}
-
 void GateCloner::cloneTree(Instance* inst, float cap_factor,
                            bool clone_largest_only)
 {
@@ -454,32 +434,6 @@ if (slack_limit_ratio < hold_slack_limit_ratio_max_)
   return false;
 return true;
 } */
-
-float
-GateCloner::worstSlack(Pin* term) const
-{
-  // sta_->findRequireds();
-  auto vert = vertex(term);
-  sta_->vertexRequired(vert, sta::MinMax::min());
-  sta::PathRef ref = sta_->vertexWorstSlackPath(vert, sta::MinMax::max());
-
-  if (!ref.tag(sta_)) {
-    return sta::INF;
-  }
-  return ref.slack(sta_);
-}
-
-float
-GateCloner::worstSlack() const
-{
-  // TODO: Why do we care about the worst slack for the design. Seems a bit
-  // idiotic to me.
-  float   ws;
-  Vertex* vert;
-  sta_->findRequireds();
-  sta_->worstSlack(min_max_, ws, vert);
-  return ws;
-}
 
 std::vector<const Pin*>
 GateCloner::filterPins(std::vector<const Pin*>& terms,

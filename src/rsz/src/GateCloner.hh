@@ -96,10 +96,6 @@ class GateCloner
   std::vector<const Pin*> fanoutPins(Net* net,
                                      bool include_top_level = false) const;
   Vertex* vertex(Pin* term) const;
-  float pin_slew(Pin* term) const;
-  float slew(Pin* term, bool is_rise) const;
-  float worstSlack() const;
-  float worstSlack(Pin* term) const;
   std::vector<PathPoint> expandPath(sta::Path* path, bool enumed) const;
   std::vector<PathPoint> worstSlackPath(const Pin* term,
                                         bool trim = false) const;
@@ -111,7 +107,6 @@ class GateCloner
                                      bool include_top_level) const;
   bool isSingleOutputCombinational(Instance* inst) const;
   bool isSingleOutputCombinational(LibertyCell* cell) const;
-  bool isCombinational(Instance* inst) const;
   bool isCombinational(LibertyCell* cell) const;
 
   std::vector<sta::LibertyPort *> libraryPins(Instance* inst) const;
