@@ -136,15 +136,16 @@ proc remove_fillers { args } {
   dpl::remove_fillers_cmd
 }
 
-sta::define_cmd_args "check_placement" {[-verbose]}
+sta::define_cmd_args "check_placement" {[-verbose] [-disallow_one_site_gaps]}
 
 proc check_placement { args } {
   sta::parse_key_args "check_placement" args \
-    keys {} flags {-verbose}
+    keys {} flags {-verbose -disallow_one_site_gaps}
 
   set verbose [info exists flags(-verbose)]
+  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   sta::check_argc_eq0 "check_placement" $args
-  dpl::check_placement_cmd $verbose
+  dpl::check_placement_cmd $verbose $disallow_one_site_gaps
 }
 
 sta::define_cmd_args "optimize_mirroring" {}
