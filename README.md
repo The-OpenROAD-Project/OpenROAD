@@ -1,6 +1,9 @@
 # OpenROAD
 
-[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/) [![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad) [![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/projects/5370)
+[![Build Status](https://jenkins.openroad.tools/buildStatus/icon?job=OpenROAD-Public%2Fmaster)](https://jenkins.openroad.tools/job/OpenROAD-Public/job/master/)
+[![Coverity Scan Status](https://scan.coverity.com/projects/the-openroad-project-openroad/badge.svg)](https://scan.coverity.com/projects/the-openroad-project-openroad)
+[![Documentation Status](https://readthedocs.org/projects/openroad/badge/?version=latest)](https://openroad.readthedocs.io/en/latest/?badge=latest)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5370/badge)](https://bestpractices.coreinfrastructure.org/en/projects/5370)
 
 ## About OpenROAD
 
@@ -21,7 +24,7 @@ open access to rapid, low-cost IC design software and expertise and
 system innovation. The OpenROAD application enables flexible flow
 control through an API with bindings in Tcl and Python.
 
-OpenROAD is used in reserach and commercial applications such as,
+OpenROAD is used in research and commercial applications such as,
 - [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
   from [OpenROAD](https://theopenroadproject.org/)
 - [OpenLane](https://github.com/The-OpenROAD-Project/OpenLane) from
@@ -68,14 +71,14 @@ Here are the main steps for a physical design implementation
 using OpenROAD;
 
 - `Floorplanning`
-  - Floorplan initialization - define the chip area, utilization 
+  - Floorplan initialization - define the chip area, utilization
   - IO pin placement (for designs without pads)
-  - Tap cell and well tie insertion 
+  - Tap cell and well tie insertion
   - PDN- power distribution network creation
 - `Global Placement` - Minimize wirelengths
   - Macro placement (RAMs, embedded macros)
   - Standard cell placement
-  - Automatic placement optimization and repair for max slew, 
+  - Automatic placement optimization and repair for max slew,
     max capacitance, and max fanout violations and long wires
 - `Detailed Placement`
   - Legalize placement - align to grid, adhere to design rules
@@ -93,7 +96,7 @@ using OpenROAD;
 - `Chip Finishing`
   - Parasitic extraction using OpenRCX
   - Final timing verification
-  - Final physical verification 
+  - Final physical verification
   - Dummy metal fill for manufacturability
   - Use KLayout or Magic using generated GDS for DRC signoff
 
@@ -176,7 +179,7 @@ transceivers, OpenPower-based Microwatt etc.
 ## Build OpenROAD
 
 To build OpenROAD tools locally in your machine, follow steps
-from [here](./docs/user/Build.md).
+from [here](docs/user/Build.md).
 
 ## Regression Tests
 
@@ -228,7 +231,7 @@ the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
-and there descriptions are available [here](./docs/contrib/Logger.md#openroad-tool-list).
+and there descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
 
 ## License
 
