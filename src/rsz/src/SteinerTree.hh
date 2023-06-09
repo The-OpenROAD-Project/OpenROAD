@@ -158,7 +158,7 @@ protected:
   std::vector<SteinerPt>  right_;
   std::vector<const Pin*> point_pin_array_;
   Resizer *resizer_;
-
+  Logger *logger_;
 
   friend class Resizer;
 };

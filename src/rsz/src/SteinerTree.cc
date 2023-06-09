@@ -166,7 +166,8 @@ SteinerTree::setTree(const stt::Tree& tree,
 SteinerTree::SteinerTree(const Pin *drvr_pin, Resizer *resizer) :
   drvr_pin_(drvr_pin),
   drvr_steiner_pt_(0),
-  resizer_(resizer)
+  resizer_(resizer),
+  logger_(resizer->logger())
 {
 }
 
@@ -319,7 +320,9 @@ void
 SteinerTree::validatePoint(SteinerPt pt) const
 {
   if (pt < 0 || pt >= branchCount()) {
-    printf("ERROR.... really should be an exception\n");
+    logger_->error(RSZ, 93,
+                   "Invalid Steiner point {} requested. 0 <= Valid values <  {}.",
+                   pt, branchCount());
   }
 }
 
@@ -388,8 +391,7 @@ SteinerTree::populateSides(const SteinerPt from, const SteinerPt to, const Stein
 {
   if (adj != from && adj != SteinerNull) {
     if (adj == to) {
-      exit(0);
-      // TODO throw SteinerException();
+      logger_->error(RSZ, 92, "Steiner tree creation error.");
     }
     if (left_[to] == SteinerNull) {
       left_[to] = adj;

@@ -635,6 +635,7 @@ protected:
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;
+  friend class SteinerTree;
 };
 
 } // namespace
