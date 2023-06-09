@@ -1390,7 +1390,8 @@ int DetailedMgr::checkEdgeSpacingInSegments()
 }
 
 void DetailedMgr::getOneSiteGapViolationsPerSegment(
-    std::vector<std::vector<int>>& violating_cells)
+    std::vector<std::vector<int>>& violating_cells,
+    bool fix_violations)
 {
   // the pair is the segment and the cell index in that segment
   violating_cells.resize(segments_.size() + 1);
@@ -1430,170 +1431,86 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
     std::vector<Node*> cellsAtLastX(1, temp[0]);
 
     for (int node_idx = 1; node_idx < temp.size(); node_idx++) {
+      Node* nd = temp[node_idx];
       if (temp[node_idx]->getRight() != lastNode->getRight()) {
         // we have a new X
-        // check if the difference between the last X and the current X is
-        // almost equal to 1-site
-        if (abs(temp[node_idx]->getLeft() - lastNode->getRight())
-            == one_site_gap) {
+        // check if the difference in x is equal to one-site
+
+        if (abs(nd->getLeft() - lastNode->getRight()) == one_site_gap) {
           // we might have a violation
           // check the ys
           for (auto cell : cellsAtLastX) {
             if (isOverlap(cell->getBottom(),
                           cell->getTop(),
-                          temp[node_idx]->getBottom(),
-                          temp[node_idx]->getTop())) {
-              // we have a violation
-
-              violating_cells[s].push_back(temp[node_idx]->getId());
-              debugPrint(
-                  logger_,
-                  DPO,
-                  "detailed",
-                  1,
-                  "Violation found between cells {} whose at left: {} and "
-                  "right {} and cell {} at left {} and right {} and one site "
-                  "width {}",
-                  temp[node_idx]->getId(),
-                  temp[node_idx]->getLeft(),
-                  temp[node_idx]->getRight(),
-                  cell->getId(),
-                  cell->getLeft(),
-                  cell->getRight(),
-                  one_site_gap);
-
-              // we can break here because we only need to find at most one
-              // violation for each cell
-              break;
-            }
-          }
-        }
-        // clear the list of cells at the last X
-        cellsAtLastX.clear();
-        lastNode = temp[node_idx];
-        cellsAtLastX.push_back(temp[node_idx]);
-      } else {
-        // we don't have a violation but we still need to add the current cell
-        // add the current cell to the list of cells at the last X
-        cellsAtLastX.push_back(temp[node_idx]);
-      }
-    }
-  }
-}
-
-void DetailedMgr::moveSegmentOneSiteGapViolators()
-{
-  std::vector<Node*> temp;
-  temp.reserve(network_->getNumNodes());
-  for (int s = 0; s < segments_.size(); s++) {
-    // To be safe, gather cells in each segment and re-sort them.
-    temp.clear();
-    if (cellsInSeg_[s].size() < 2) {
-      continue;
-    }
-    temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesX());
-    auto isInRange = [](int value, int min, int max) -> bool {
-      return min <= value && value <= max;
-    };
-    auto isOverlap
-        = [&isInRange](int bottom1, int top1, int bottom2, int top2) -> bool {
-      return isInRange(bottom1, bottom2, top2)
-             || isInRange(bottom2, bottom1, top1);
-    };
-
-    Node* lastNode = temp[0];
-    int one_site_gap = arch_->getRow(0)->getSiteWidth();
-    std::vector<Node*> cellsAtLastX(1, temp[0]);
-    {
-      debugPrint(logger_,
-                 DPO,
-                 "detailed",
-                 3,
-                 "Before moving - Printing cells in segment {}",
-                 s);
-      for (auto cell : cellsInSeg_[s]) {
-        debugPrint(logger_,
-                   DPO,
-                   "detailed",
-                   3,
-                   "shiftRightHelper: cell {} Left {} and Right {}",
-                   cell->getId(),
-                   cell->getLeft(),
-                   cell->getRight());
-      }
-      debugPrint(
-          logger_, DPO, "detailed", 3, "Done printing cells in segment {}", s);
-    }
-    for (int node_idx = 1; node_idx < temp.size(); node_idx++) {
-      if (temp[node_idx]->getRight() != lastNode->getRight()) {
-        if (abs(temp[node_idx]->getLeft() - lastNode->getRight())
-            == one_site_gap) {
-          // we might have a violation
-          // check the ys
-          for (auto cell : cellsAtLastX) {
-            if (isOverlap(cell->getBottom(),
-                          cell->getTop(),
-                          temp[node_idx]->getBottom(),
-                          temp[node_idx]->getTop())) {
-              // we have a violation
-              // node_idx is the index of the violating cell
-              debugPrint(logger_,
-                         DPO,
-                         "detailed",
-                         1,
-                         "Violation between cell {} left {} and cell {} "
-                         "right {} -> diff = {}",
-                         temp[node_idx]->getId(),
-                         temp[node_idx]->getLeft(),
-                         cell->getId(),
-                         cell->getRight(),
-                         temp[node_idx]->getLeft() - cell->getRight());
-              if (shiftRightHelper(
-                      cell,
-                      cell->getLeft()
-                          + (one_site_gap
-                             * 2),  // assume we will insert the cell
-                                    // before us at this location
-                      s,
-                      temp[node_idx])) {
-                acceptMove();  // without this, the cells are not moved
-                clearMoveList();
-              } else {
+                          nd->getBottom(),
+                          nd->getTop())) {
+              if (nd->isTerminal() || nd->isFixed()) {
                 logger_->warn(DPO,
-                              331,
-                              "Cannot move cell {} from {} to {}",
-                              temp[node_idx]->getId(),
-                              temp[node_idx]->getLeft(),
-                              temp[node_idx]->getLeft() + one_site_gap);
+                              339,
+                              "One-site gap violation detected with a "
+                              "Fixed/Terminal cell {}",
+                              nd->getId());
+                violating_cells[s].push_back(nd->getId());
+                continue;
+              }
+              if (arch_->isMultiHeightCell(nd)) {
+                // TODO: Can be done
+                logger_->warn(DPO,
+                              340,
+                              "One-site gap violation detected with a "
+                              "multi-height cell {}",
+                              nd->getId());
+                violating_cells[s].push_back(nd->getId());
+                continue;
+              }
+              if (fix_violations) {
+                if (!fixOneSiteGapViolations(cell, one_site_gap, 0, s, nd)) {
+                  violating_cells[s].push_back(nd->getId());
+                }
+              } else {
+                violating_cells[s].push_back(nd->getId());
               }
               break;
             }
           }
         }
         cellsAtLastX.clear();
-        lastNode = temp[node_idx];
       }
-      cellsAtLastX.push_back(temp[node_idx]);
-    }
-
-    debugPrint(logger_,
-               DPO,
-               "detailed",
-               3,
-               "After moving - Printing cells in segment {}",
-               s);
-    for (auto cell : cellsInSeg_[s]) {
-      debugPrint(logger_,
-                 DPO,
-                 "detailed",
-                 3,
-                 "shiftRightHelper: cell {} Left {} and Right {}",
-                 cell->getId(),
-                 cell->getLeft(),
-                 cell->getRight());
+      cellsAtLastX.push_back(nd);
+      lastNode = nd;
     }
   }
+}
+
+bool DetailedMgr::fixOneSiteGapViolations(Node* cell,
+                                          int one_site_gap,
+                                          int newX,
+                                          int segment,
+                                          Node* violatingNode)
+{
+  // we try shifting to the left first
+  if (shiftLeftHelper(
+          violatingNode,
+          violatingNode->getRight()
+              - one_site_gap,  // Imagine we insert a cell that is one-site away
+                               // from the right-end of the violating node
+          segment,
+          violatingNode)) {
+    acceptMove();
+    clearMoveList();
+    return true;
+  } else if (shiftRightHelper(
+                 cell,
+                 cell->getLeft()
+                     + (one_site_gap * 2),  // assume we will insert the cell
+                                            // before us at this location
+                 segment,
+                 violatingNode)) {
+    acceptMove();  // without this, the cells are not moved
+    clearMoveList();
+    return true;
+  }
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2886,7 +2803,6 @@ bool DetailedMgr::tryMove2(Node* ndi,
   int spanned = arch_->getCellHeightInRows(ndi);
   if (sj != si || sj == -1 || ndi->getRegionId() != segments_[sj]->getRegId()
       || spanned != 1) {
-    debugPrint(logger_, DPO, "detailed", 1, "here 1");
     return false;
   }
 
