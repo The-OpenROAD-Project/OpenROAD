@@ -80,7 +80,6 @@ void Opendp::checkPlacement(bool verbose)
   // Thus, the one site gap check needs to be done after the overlap check
   // Otherwise, this check will miss the pixels that could have resulted in
   // one-site gap violations as null
-  // Note: This will always result in duplicate 
   for (Cell& cell : cells_) {
     // One site gap check
     if (checkOneSiteGaps(cell)) {
