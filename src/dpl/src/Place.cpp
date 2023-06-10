@@ -1028,15 +1028,6 @@ bool Opendp::checkPixels(const Cell* cell,
       int y_begin_mapped
           = map_coordinates(y_begin, row_info.first, min_row_height);
 
-      debugPrint(
-          logger_,
-          DPL,
-          "gaps",
-          1,
-          "  Disallow one site gaps checkPixels y_begin {} y_begin_mapped {}",
-          y_begin,
-          y_begin_mapped);
-
       int offset = 0;
       for (int step = 0; step < steps; step++) {
         // left side
