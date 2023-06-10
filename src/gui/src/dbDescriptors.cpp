@@ -230,6 +230,80 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
 
 ////////
 
+DbTechDescriptor::DbTechDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
+
+std::string DbTechDescriptor::getName(std::any object) const
+{
+  return "No API available";
+  // auto tech = std::any_cast<odb::dbTech*>(object);
+  // return tech->getName();
+}
+
+std::string DbTechDescriptor::getTypeName() const
+{
+  return "Tech";
+}
+
+bool DbTechDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbTechDescriptor::highlight(std::any object, Painter& painter) const
+{
+}
+
+Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
+{
+  auto gui = Gui::get();
+  auto tech = std::any_cast<odb::dbTech*>(object);
+
+  Properties props;
+
+  SelectionSet tech_layers;
+  for (auto tech_layer : tech->getLayers()) {
+    tech_layers.insert(gui->makeSelected(tech_layer));
+  }
+  props.push_back({"Tech Layers", tech_layers});
+
+  SelectionSet tech_vias;  
+  for (auto tech_via : tech->getVias()) {
+    tech_vias.insert(gui->makeSelected(tech_via));
+  }
+  props.push_back({"Tech Vias", tech_vias});
+
+  return props;
+}
+
+Selected DbTechDescriptor::makeSelected(std::any object) const
+{
+  if(auto tech = std::any_cast<odb::dbTech*>(&object)) {
+    return Selected(*tech, this);
+  }
+  return Selected();
+}
+
+bool DbTechDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_tech = std::any_cast<odb::dbTech*>(l);
+  auto r_tech = std::any_cast<odb::dbTech*>(r);
+  return l_tech->getId() < r_tech->getId();
+}
+
+bool DbTechDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto tech = db_->getTech();
+  if (tech == nullptr) {
+    return false;
+  }
+  return true;
+}
+
+//////////////////////////////////////////////////
+
 DbBlockDescriptor::DbBlockDescriptor(odb::dbDatabase* db)
     : db_(db)
 {
@@ -297,7 +371,7 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
     nets.insert(gui->makeSelected(net));
   }
   props.push_back({"Nets", nets});
-  //populateODBProperties(props, block);
+  populateODBProperties(props, block);
   return props;
 }
 
@@ -311,6 +385,7 @@ Selected DbBlockDescriptor::makeSelected(std::any object) const
 
 bool DbBlockDescriptor::lessThan(std::any l, std::any r) const
 {
+  //What does this function does and where it's called?
   auto l_layer = std::any_cast<odb::dbBlock*>(l);
   auto r_layer = std::any_cast<odb::dbBlock*>(r);
   return l_layer->getId() < r_layer->getId();
@@ -318,6 +393,7 @@ bool DbBlockDescriptor::lessThan(std::any l, std::any r) const
 
 bool DbBlockDescriptor::getAllObjects(SelectionSet& objects) const
 {
+  //Where this function is called?
   auto chip = db_->getChip();
   if(chip == nullptr) {
     return false;
@@ -327,7 +403,7 @@ bool DbBlockDescriptor::getAllObjects(SelectionSet& objects) const
   return true;
 }
 
-///////////////////////////////////
+//////////////////////////////////////////////////
 
 DbInstDescriptor::DbInstDescriptor(odb::dbDatabase* db, sta::dbSta* sta)
     : db_(db), sta_(sta)
@@ -2107,8 +2183,10 @@ void DbTechLayerDescriptor::highlight(std::any object, Painter& painter) const
 Descriptor::Properties DbTechLayerDescriptor::getProperties(
     std::any object) const
 {
+  auto* gui = Gui::get();
   auto layer = std::any_cast<odb::dbTechLayer*>(object);
-  Properties props({{"Direction", layer->getDirection().getString()},
+  Properties props({{"Technology", gui->makeSelected(layer->getTech())},
+                    {"Direction", layer->getDirection().getString()},
                     {"Type", layer->getType().getString()}});
   if (layer->getLef58Type() != odb::dbTechLayer::NONE) {
     props.push_back({"LEF58 type", layer->getLef58TypeString()});
@@ -2297,7 +2375,6 @@ Descriptor::Properties DbTechLayerDescriptor::getProperties(
 
   if (layer->getType() == odb::dbTechLayerType::CUT) {
     auto* tech = layer->getTech();
-    auto* gui = Gui::get();
 
     SelectionSet generate_vias;
     for (auto* via : tech->getViaGenerateRules()) {
