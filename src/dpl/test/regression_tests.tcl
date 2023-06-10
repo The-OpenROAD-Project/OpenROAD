@@ -53,5 +53,5 @@ record_tests {
   ibex
   one_site_gap_disallow
   multi_height_rows
-  multi_height_one_site_gap
+  multi_height_one_site_gap_disallow
 }
