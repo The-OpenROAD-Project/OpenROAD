@@ -531,6 +531,15 @@ hold_buffer_count()
 }
 
 ////////////////////////////////////////////////////////////////
+void
+recover_power()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->recoverPower();
+}
+
+////////////////////////////////////////////////////////////////
 
 // Rebuffer one net (for testing).
 // resizerPreamble() required.

@@ -384,9 +384,10 @@ proc repair_tie_fanout { args } {
   }
 }
 
+
 # -max_passes is for developer debugging so intentionally not documented
 # in define_cmd_args
-sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
+sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
                                         [-allow_setup_violations]\
@@ -400,10 +401,11 @@ proc repair_timing { args } {
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
             -repair_tns -max_passes} \
-    flags {-setup -hold -allow_setup_violations -skip_pin_swap}
+    flags {-setup -hold -recover_power -allow_setup_violations -skip_pin_swap}
   
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
+  set recover_power [info exists flags(-recover_power)]
   if { !$setup && !$hold } {
     set setup 1
     set hold 1
@@ -453,6 +455,9 @@ proc repair_timing { args } {
   if { $hold } {
     rsz::repair_hold $setup_margin $hold_margin \
       $allow_setup_violations $max_buffer_percent $max_passes
+  }
+  if { $recover_power } {
+    rsz::recover_power	
   }
 }
 
