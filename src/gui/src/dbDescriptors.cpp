@@ -330,15 +330,9 @@ void DbBlockDescriptor::highlight(std::any object, Painter& painter) const
 {
   auto block = std::any_cast<odb::dbBlock*>(object);
 
-  auto inst_descriptor = Gui::get()->getDescriptor<odb::dbInst*>();
-  for(auto inst : block->getInsts()) {
-    inst_descriptor->highlight(inst, painter);
-  }
-
-  auto net_descriptor = Gui::get()->getDescriptor<odb::dbNet*>();
-  for(auto net : block->getNets()) {
-    net_descriptor->highlight(net, painter);
-  }
+  odb::dbBox* bbox = block->getBBox();
+  odb::Rect rect = bbox->getBox();
+  painter.drawRect(rect);
 }
 
 Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
