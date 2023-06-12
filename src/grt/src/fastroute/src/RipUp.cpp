@@ -339,7 +339,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
   if (treeedge->len == 0) {
     return false;
   }  // not ripup for degraded edge
-  
+
   bool needRipup = 0;
 
   if (treeedge->route.type == RouteType::MazeRoute) {
@@ -362,9 +362,9 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         }
       }
     }
-    if(!needRipup && update_slack_ && treeedge->last_len) {
-      const float delta = treeedge->route.routelen/treeedge->last_len;
-      if(nets_[netID]->getSlack() <= critical_slack && ( delta > 1.5)) {
+    if (!needRipup && update_slack_ && treeedge->last_len) {
+      const float delta = treeedge->route.routelen / treeedge->last_len;
+      if (nets_[netID]->getSlack() <= critical_slack && (delta > 1.5)) {
         nets_[netID]->setIsCritical(true);
         needRipup = true;
       }

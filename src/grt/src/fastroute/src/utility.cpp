@@ -1152,8 +1152,7 @@ float FastRouteCore::CalculatePartialSlack()
 
   // Find the slack threshold based on the percentage of critical nets
   // defined by the user
-  const int threshold_index
-      = std::ceil(slacks.size() * update_slack_ / 100);
+  const int threshold_index = std::ceil(slacks.size() * update_slack_ / 100);
   const float slack_th = slacks[threshold_index];
 
   return slack_th;

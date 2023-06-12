@@ -79,9 +79,8 @@ class MakeWireParasitics
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
                          GRoute& route) const;
-  void estimateParasitcs(odb::dbNet* net,
-                         GRoute& route) const;
-  
+  void estimateParasitcs(odb::dbNet* net, GRoute& route) const;
+
   void clearParasitics();
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
@@ -117,17 +116,17 @@ class MakeWireParasitics
                            sta::ParasiticAnalysisPt* analysis_point,
                            sta::Parasitic* parasitic) const;
   void makePartialParasiticsToPins(std::vector<Pin>& pins,
-                            NodeRoutePtMap& node_map,
-                            sta::Corner* corner,
-                            sta::ParasiticAnalysisPt* analysis_point,
-                            sta::Parasitic* parasitic,
-                            odb::dbNet* net) const;
+                                   NodeRoutePtMap& node_map,
+                                   sta::Corner* corner,
+                                   sta::ParasiticAnalysisPt* analysis_point,
+                                   sta::Parasitic* parasitic,
+                                   odb::dbNet* net) const;
   void makePartialParasiticsToPin(Pin& pin,
-                           NodeRoutePtMap& node_map,
-                           sta::Corner* corner,
-                           sta::ParasiticAnalysisPt* analysis_point,
-                           sta::Parasitic* parasitic,
-                           odb::dbNet* net) const;
+                                  NodeRoutePtMap& node_map,
+                                  sta::Corner* corner,
+                                  sta::ParasiticAnalysisPt* analysis_point,
+                                  sta::Parasitic* parasitic,
+                                  odb::dbNet* net) const;
   void layerRC(int wire_length_dbu,
                int layer,
                sta::Corner* corner,

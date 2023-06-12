@@ -709,8 +709,8 @@ NetRouteMap FastRouteCore::getPartialRoutes()
         int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
         int lastL_h;
         int lastL_v;
-        if(gridsL.empty()) {
-          if(is_vertical) {
+        if (gridsL.empty()) {
+          if (is_vertical) {
             lastL_h = 1;
             lastL_v = 2;
           } else {
@@ -727,41 +727,39 @@ NetRouteMap FastRouteCore::getPartialRoutes()
           const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
           GSegment segment;
-          if(gridsL.empty()) {
+          if (gridsL.empty()) {
             if (lastX == xreal) {
-
               // if change direction add a via to change the layer
-              if(last_dir == 2) {
-                segment
-                = GSegment(lastX, lastY, lastL_h + 1, lastX, lastY, lastL_v + 1);
+              if (last_dir == 2) {
+                segment = GSegment(
+                    lastX, lastY, lastL_h + 1, lastX, lastY, lastL_v + 1);
                 if (net_segs.find(segment) == net_segs.end()) {
                   net_segs.insert(segment);
                   route.push_back(segment);
                 }
               }
 
-              segment
-                = GSegment(lastX, lastY, lastL_v + 1, xreal, yreal, lastL_v + 1);
+              segment = GSegment(
+                  lastX, lastY, lastL_v + 1, xreal, yreal, lastL_v + 1);
               last_dir = 1;
             } else {
-
               // if change direction add a via to change the layer
-              if(last_dir == 1) {
-                segment
-                = GSegment(lastX, lastY, lastL_v + 1, lastX, lastY, lastL_h + 1);
+              if (last_dir == 1) {
+                segment = GSegment(
+                    lastX, lastY, lastL_v + 1, lastX, lastY, lastL_h + 1);
                 if (net_segs.find(segment) == net_segs.end()) {
                   net_segs.insert(segment);
                   route.push_back(segment);
                 }
               }
 
-              segment
-              = GSegment(lastX, lastY, lastL_h + 1, xreal, yreal, lastL_h + 1);
+              segment = GSegment(
+                  lastX, lastY, lastL_h + 1, xreal, yreal, lastL_h + 1);
               last_dir = 2;
             }
           } else {
-            segment
-              = GSegment(lastX, lastY, lastL_v + 1, xreal, yreal, gridsL[i] + 1);
+            segment = GSegment(
+                lastX, lastY, lastL_v + 1, xreal, yreal, gridsL[i] + 1);
             lastL_v = gridsL[i];
           }
           lastX = xreal;
@@ -1261,7 +1259,7 @@ void FastRouteCore::setUpdateSlack(int u)
   update_slack_ = u;
 }
 
-void FastRouteCore::setMakeWireParasiticsBuilder(MakeWireParasitics * builder)
+void FastRouteCore::setMakeWireParasiticsBuilder(MakeWireParasitics* builder)
 {
   parasitics_builder_ = builder;
 }
@@ -1433,7 +1431,7 @@ void FrNet::reset(odb::dbNet* db_net,
 {
   db_net_ = db_net;
   is_routed_ = false;
-  is_critical_= false;
+  is_critical_ = false;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
   edge_cost_ = edge_cost;

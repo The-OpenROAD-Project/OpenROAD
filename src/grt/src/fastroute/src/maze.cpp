@@ -1336,7 +1336,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const int maze_edge_threshold,
                                   const bool ordering,
                                   const int cost_type,
-                                  const float _logis_cof,
+                                  const float logis_cof,
                                   const int via,
                                   const int slope,
                                   const int L,
@@ -1344,8 +1344,6 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 {
   // maze routing for multi-source, multi-destination
   int tmpX, tmpY;
-
-  float logis_cof = _logis_cof;
 
   const int max_usage_multiplier = 40;
 
@@ -1418,12 +1416,19 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         continue;
       }
 
-      const bool enter = newRipupCheck(
-          treeedge, n1x, n1y, n2x, n2y, ripup_threshold, slack_th, netID, edgeID);
+      const bool enter = newRipupCheck(treeedge,
+                                       n1x,
+                                       n1y,
+                                       n2x,
+                                       n2y,
+                                       ripup_threshold,
+                                       slack_th,
+                                       netID,
+                                       edgeID);
 
       if (!enter) {
         continue;
-      }    
+      }
 
       // ripup the routing for the edge
       const int ymin = std::min(n1y, n2y);
@@ -1436,8 +1441,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
 
       int decrease = 0;
 
-      if(nets_[netID]->isCritical()) {
-        decrease = std::min((iter / 6) * 5, enlarge_/2);
+      if (nets_[netID]->isCritical()) {
+        decrease = std::min((iter / 6) * 5, enlarge_ / 2);
       }
       const int regionX1 = std::max(xmin - enlarge_ + decrease, 0);
       const int regionX2 = std::min(xmax + enlarge_ - decrease, x_grid_ - 1);
@@ -2476,7 +2481,7 @@ void FastRouteCore::InitLastUsage(const int upType)
 
 void FastRouteCore::SaveLastRouteLen()
 {
-  for(int netID = 0; netID < netCount(); netID++) {
+  for (int netID = 0; netID < netCount(); netID++) {
     auto& treeedges = sttrees_[netID].edges;
     // loop for all the tree edges
     const int num_edges = sttrees_[netID].num_edges();

@@ -45,9 +45,9 @@
 
 #include "DataType.h"
 #include "grt/GRoute.h"
+#include "grt/MakeWireParasitics.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
-#include "grt/MakeWireParasitics.h"
 
 namespace utl {
 class Logger;
@@ -165,7 +165,7 @@ class FastRouteCore
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setUpdateSlack(int u);
-  void setMakeWireParasiticsBuilder(MakeWireParasitics * builder);
+  void setMakeWireParasiticsBuilder(MakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -216,12 +216,12 @@ class FastRouteCore
   // Maze-routing in different orders
   void mazeRouteMSMD(const int iter,
                      const int expand,
-                     const float _cost_height,
+                     const float cost_height,
                      const int ripup_threshold,
                      const int maze_edge_threshold,
                      const bool ordering,
                      const int cost_type,
-                     const float _logis_cof,
+                     const float logis_cof,
                      const int via,
                      const int slope,
                      const int L,
@@ -577,7 +577,7 @@ class FastRouteCore
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
-  MakeWireParasitics * parasitics_builder_;
+  MakeWireParasitics* parasitics_builder_;
 
   std::unique_ptr<DebugSetting> debug_;
 

@@ -54,13 +54,13 @@
 #include "AbstractGrouteRenderer.h"
 #include "AbstractRoutingCongestionDataSource.h"
 #include "FastRoute.h"
-#include "grt/Grid.h"
-#include "grt/MakeWireParasitics.h"
 #include "RepairAntennas.h"
-#include "grt/RoutingTracks.h"
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
+#include "grt/Grid.h"
+#include "grt/MakeWireParasitics.h"
+#include "grt/RoutingTracks.h"
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/wOrder.h"
@@ -418,7 +418,6 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
-
     MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
     fastroute_->setMakeWireParasiticsBuilder(&builder);
     routes = fastroute_->run();

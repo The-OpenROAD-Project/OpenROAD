@@ -119,8 +119,7 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
   parasitics_->deleteParasiticNetworks(sta_net);
 }
 
-void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
-                                           GRoute& route) const
+void MakeWireParasitics::estimateParasitcs(odb::dbNet* net, GRoute& route) const
 {
   debugPrint(logger_, GRT, "est_rc", 1, "net {}", net->getConstName());
   if (logger_->debugCheck(GRT, "est_rc", 2)) {
@@ -154,7 +153,8 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
         = parasitics_->makeParasiticNetwork(sta_net, false, analysis_point);
     makeRouteParasitics(
         net, route, sta_net, corner, analysis_point, parasitic, node_map);
-    makePartialParasiticsToPins(grt_net->getPins(), node_map, corner, analysis_point, parasitic, net);
+    makePartialParasiticsToPins(
+        grt_net->getPins(), node_map, corner, analysis_point, parasitic, net);
 
     // Reduce
 
@@ -170,11 +170,12 @@ void MakeWireParasitics::estimateParasitcs(odb::dbNet* net,
   parasitics_->deleteParasiticNetworks(sta_net);
 }
 
-void MakeWireParasitics::clearParasitics() {
-  //Remove any existing parasitics.
+void MakeWireParasitics::clearParasitics()
+{
+  // Remove any existing parasitics.
   sta_->deleteParasitics();
 
-  //Make separate parasitics for each corner, same for min/max.
+  // Make separate parasitics for each corner, same for min/max.
   sta_->setParasiticAnalysisPts(true, false);
 }
 
@@ -375,7 +376,8 @@ void MakeWireParasitics::makePartialParasiticsToPins(
     odb::dbNet* net) const
 {
   for (Pin& pin : pins) {
-    makePartialParasiticsToPin(pin, node_map, corner, analysis_point, parasitic, net);
+    makePartialParasiticsToPin(
+        pin, node_map, corner, analysis_point, parasitic, net);
   }
 }
 
@@ -402,7 +404,7 @@ void MakeWireParasitics::makePartialParasiticsToPin(
     pt = ap_position.first;
     grid_pt = ap_position.second;
   }
-  if(pin.isConnectedToPadOrMacro() || pin.isPort()){
+  if (pin.isConnectedToPadOrMacro() || pin.isPort()) {
     grid_pt = grouter_->findFakePinPosition(pin, net);
   }
   // Use the route layer above the pin layer if there is a via
@@ -521,8 +523,8 @@ sta::ParasiticNode* MakeWireParasitics::ensureParasiticNode(
   return node;
 }
 
-
-sta::Slack MakeWireParasitics::getNetSlack(odb::dbNet* net) {
+sta::Slack MakeWireParasitics::getNetSlack(odb::dbNet* net)
+{
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Net* sta_net = network->dbToSta(net);
   sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
