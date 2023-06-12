@@ -2184,9 +2184,9 @@ void FastRouteCore::getCongestionGrid(
     std::vector<CongestionInformation>& congestionGridH)
 {
   NetsPerCongestedArea nets_in_congested_edges;
-  std::unordered_map<std::pair<int, int>,
+  std::map<std::pair<int, int>,
                      TileCongestion,
-                     boost::hash<std::pair<int, int>>>
+                     cmpPair>
       edge_to_congestion;
 
   for (int i = 0; i < y_grid_; i++) {
