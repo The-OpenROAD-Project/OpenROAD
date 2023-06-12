@@ -340,7 +340,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     return false;
   }  // not ripup for degraded edge
 
-  bool needRipup = 0;
+  bool needRipup = false;
 
   if (treeedge->route.type == RouteType::MazeRoute) {
     const std::vector<short>& gridsX = treeedge->route.gridsX;
