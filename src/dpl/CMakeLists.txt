@@ -37,7 +37,7 @@
 ###########################################################################
 
 include("openroad")
-
+find_package(TCL)
 
 add_library(dpl_lib
   src/Opendp.cpp
@@ -84,7 +84,7 @@ target_include_directories(dpl
 
 target_link_libraries(dpl
   PRIVATE
-    tcl
+    ${TCL_LIBRARY}
     odb
     dpl_lib
     OpenSTA

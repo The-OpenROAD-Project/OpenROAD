@@ -724,6 +724,11 @@ NetRouteMap FastRouteCore::run()
   int minoflrnd = 0;
   int bwcnt = 0;
 
+  // Init grid variables when debug mode is actived
+  if (debug_->isOn()) {
+    fastrouteRender()->setGridVariables(tile_size_, x_corner_, y_corner_);
+  }
+
   // TODO: check this size
   int max_degree2 = 2 * max_degree_;
   xcor_.resize(max_degree2);

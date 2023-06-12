@@ -240,6 +240,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group = 0);
 
   void timingCone(Gui::odbTerm term, bool fanin, bool fanout);
   void timingPathsThrough(const std::set<Gui::odbTerm>& terms);

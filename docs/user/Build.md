@@ -85,3 +85,11 @@ By default, OpenROAD is built with link time optimizations enabled.
 This adds about 1 minute to compile times and improves the runtime
 by about 11%. If you would like to disable LTO pass 
 `-DLINK_TIME_OPTIMIZATION=OFF` when generating a build.
+
+### Build with Address Sanitizer
+To enable building with Address Sanitizer, use the argument `-DASAN=ON`.
+Setting the `ASAN` variable to `ON` adds necessary compile and link options
+for using Address Sanitizer.
+
+> **Note:** Address Sanitizer adds instrumentation for detecting memory errors.
+>  Enabling this option will cause OpenROAD to run slower and consume more RAM.

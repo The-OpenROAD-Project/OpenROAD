@@ -39,7 +39,7 @@ linked [here](https://theopenroadproject.org/publications/).
 
 ## Code of conduct
 
-Please read our code of conduct [here](../CODE_OF_CONDUCT.md).
+Please read our code of conduct [here](main/CODE_OF_CONDUCT.md).
 
 ## Documentation
 
@@ -51,7 +51,7 @@ The application is a standalone binary capable of performing RTL-to-GDSII SoC de
 from logic synthesis and floorplanning through detailed routing with metal fill insertion,
 signoff parasitic extraction and timing analysis.
 
-See documentation for the application [here](../README.md).
+See documentation for the application [here](main/README.md).
 
 ### [Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 

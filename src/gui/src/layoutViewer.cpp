@@ -3367,6 +3367,12 @@ void LayoutViewer::selectHighlightConnectedNets(bool select_flag,
       select_flag, output, input, highlight_group);
 }
 
+void LayoutViewer::selectHighlightConnectedBufferTrees(bool select_flag,
+                                                       int highlight_group)
+{
+  Gui::get()->selectHighlightConnectedBufferTrees(select_flag, highlight_group);
+}
+
 void LayoutViewer::updateContextMenuItems()
 {
   if (Gui::get()->anyObjectInSet(true /*selection set*/, odb::dbInstObj)
@@ -3375,18 +3381,22 @@ void LayoutViewer::updateContextMenuItems()
     menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(true);
+    menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]->setDisabled(true);
 
     menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(true);
     menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(true);
+    highlight_color_menu->setDisabled(true);
   } else {
     menu_actions_[SELECT_OUTPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[SELECT_INPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[SELECT_ALL_NETS_ACT]->setDisabled(false);
+    menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]->setDisabled(false);
 
     menu_actions_[HIGHLIGHT_OUTPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[HIGHLIGHT_INPUT_NETS_ACT]->setDisabled(false);
     menu_actions_[HIGHLIGHT_ALL_NETS_ACT]->setDisabled(false);
+    highlight_color_menu->setDisabled(false);
   }
 
   if (Gui::get()->anyObjectInSet(true, odb::dbNetObj)
@@ -3520,6 +3530,8 @@ void LayoutViewer::addMenuAndActions()
   menu_actions_[SELECT_INPUT_NETS_ACT]
       = select_menu->addAction(tr("Input Nets"));
   menu_actions_[SELECT_ALL_NETS_ACT] = select_menu->addAction(tr("All Nets"));
+  menu_actions_[SELECT_ALL_BUFFER_TREES_ACT]
+      = select_menu->addAction(tr("All buffer trees"));
 
   // Highlight Actions
   menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT]
@@ -3530,6 +3542,29 @@ void LayoutViewer::addMenuAndActions()
       = highlight_menu->addAction(tr("Input Nets"));
   menu_actions_[HIGHLIGHT_ALL_NETS_ACT]
       = highlight_menu->addAction(tr("All Nets"));
+
+  highlight_color_menu = highlight_menu->addMenu(tr("All buffer trees"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_0]
+      = highlight_color_menu->addAction(tr("green"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_1]
+      = highlight_color_menu->addAction(tr("yellow"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_2]
+      = highlight_color_menu->addAction(tr("cyan"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_3]
+      = highlight_color_menu->addAction(tr("magenta"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_4]
+      = highlight_color_menu->addAction(tr("red"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_5]
+      = highlight_color_menu->addAction(tr("dark_green"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_6]
+      = highlight_color_menu->addAction(tr("dark_magenta"));
+  menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_7]
+      = highlight_color_menu->addAction(tr("blue"));
+
+  // for { highlightColor : Painter::highlightColors[highlight_group]} {
+  //   menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_7]
+  //       = highlight_color_menu->addAction(tr("blue"));
+  // }
 
   // View Actions
   menu_actions_[VIEW_ZOOMIN_ACT] = view_menu->addAction(tr("Zoom In"));
@@ -3568,6 +3603,10 @@ void LayoutViewer::addMenuAndActions()
       menu_actions_[SELECT_ALL_NETS_ACT], &QAction::triggered, this, [this]() {
         selectHighlightConnectedNets(true, true, true);
       });
+  connect(menu_actions_[SELECT_ALL_BUFFER_TREES_ACT],
+          &QAction::triggered,
+          this,
+          [this]() { selectHighlightConnectedBufferTrees(true); });
 
   connect(menu_actions_[HIGHLIGHT_CONNECTED_INST_ACT],
           &QAction::triggered,
@@ -3585,6 +3624,22 @@ void LayoutViewer::addMenuAndActions()
           &QAction::triggered,
           this,
           [this]() { selectHighlightConnectedNets(false, true, true); });
+  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_0],
+          &QAction::triggered,
+          this,
+          [this]() { selectHighlightConnectedBufferTrees(false, 0); });
+  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_1],
+          &QAction::triggered,
+          this,
+          [this]() { selectHighlightConnectedBufferTrees(false, 1); });
+  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_2],
+          &QAction::triggered,
+          this,
+          [this]() { selectHighlightConnectedBufferTrees(false, 2); });
+  connect(menu_actions_[HIGHLIGHT_ALL_BUFFER_TREES_ACT_3],
+          &QAction::triggered,
+          this,
+          [this]() { selectHighlightConnectedBufferTrees(false, 3); });
 
   connect(menu_actions_[VIEW_ZOOMIN_ACT], &QAction::triggered, this, [this]() {
     zoomIn();
