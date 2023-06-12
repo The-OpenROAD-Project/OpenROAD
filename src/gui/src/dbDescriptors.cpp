@@ -299,6 +299,7 @@ bool DbTechDescriptor::getAllObjects(SelectionSet& objects) const
   if (tech == nullptr) {
     return false;
   }
+  objects.insert(gui->makeSelected(tech));
   return true;
 }
 
@@ -354,23 +355,36 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
 
   Properties props;
-  SelectionSet modules;
-  for (auto module : block->getModules()) {
-    modules.insert(gui->makeSelected(module));
+  SelectionSet regions;
+  for (auto region : block->getRegions()) {
+    regions.insert(gui->makeSelected(region));
   }
-  props.push_back({"Modules", modules});
-
-  SelectionSet insts;
-  for (auto inst : block->getInsts()) {
-    insts.insert(gui->makeSelected(inst));
-  }
-  props.push_back({"Instances", insts});
+  props.push_back({"Regions", regions});
 
   SelectionSet nets;
   for (auto net : block->getNets()) {
     nets.insert(gui->makeSelected(net));
   }
   props.push_back({"Nets", nets});
+
+  SelectionSet bterms;
+  for (auto bterm : block->getBTerms()) {
+    bterms.insert(gui->makeSelected(bterm));
+  }
+  props.push_back({"BTerms", bterms});
+
+  SelectionSet obstructions;
+  for (auto obstruction : block->getObstructions()) {
+    obstructions.insert(gui->makeSelected(obstruction));
+  }
+  props.push_back({"Obstructions", obstructions});
+
+  SelectionSet rows;
+  for (auto row : block->getRows()) {
+    rows.insert(gui->makeSelected(row));
+  }
+  props.push_back({"Rows", rows});
+
   populateODBProperties(props, block);
   return props;
 }
