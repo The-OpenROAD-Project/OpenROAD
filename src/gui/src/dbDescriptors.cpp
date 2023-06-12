@@ -342,11 +342,11 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
 
   Properties props;
-  SelectionSet regions;
-  for (auto region : block->getRegions()) {
-    regions.insert(gui->makeSelected(region));
+  SelectionSet bterms;
+  for (auto bterm : block->getBTerms()) {
+    bterms.insert(gui->makeSelected(bterm));
   }
-  props.push_back({"Regions", regions});
+  props.push_back({"BTerms", bterms});
 
   SelectionSet nets;
   for (auto net : block->getNets()) {
@@ -354,11 +354,29 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Nets", nets});
 
-  SelectionSet bterms;
-  for (auto bterm : block->getBTerms()) {
-    bterms.insert(gui->makeSelected(bterm));
+  SelectionSet regions;
+  for (auto region : block->getRegions()) {
+    regions.insert(gui->makeSelected(region));
   }
-  props.push_back({"BTerms", bterms});
+  props.push_back({"Regions", regions});
+  
+  SelectionSet insts;
+  for (auto inst : block->getInsts()) {
+    insts.insert(gui->makeSelected(inst));
+  }
+  props.push_back({"Insts", insts});
+
+  SelectionSet iterms;
+  for (auto iterm : block->getITerms()) {
+    iterms.insert(gui->makeSelected(iterm));
+  }
+  props.push_back({"ITerms", iterms});
+
+  SelectionSet blockages;
+  for (auto blockage : block->getBlockages()) {
+    blockages.insert(gui->makeSelected(blockage));
+  }
+  props.push_back({"Blockages", blockages});
 
   SelectionSet obstructions;
   for (auto obstruction : block->getObstructions()) {
