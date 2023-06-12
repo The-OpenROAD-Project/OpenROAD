@@ -237,9 +237,7 @@ DbTechDescriptor::DbTechDescriptor(odb::dbDatabase* db)
 
 std::string DbTechDescriptor::getName(std::any object) const
 {
-  return "No API available";
-  // auto tech = std::any_cast<odb::dbTech*>(object);
-  // return tech->getName();
+  return "Default";
 }
 
 std::string DbTechDescriptor::getTypeName() const
@@ -299,7 +297,7 @@ bool DbTechDescriptor::getAllObjects(SelectionSet& objects) const
   if (tech == nullptr) {
     return false;
   }
-  objects.insert(gui->makeSelected(tech));
+  objects.insert(makeSelected(tech));
   return true;
 }
 
@@ -323,16 +321,11 @@ std::string DbBlockDescriptor::getTypeName() const
 
 bool DbBlockDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
-  /*Why this returns a bool?
-    Because the rect dimensions are being passed by reference.
-    Ok, but why not void?*/
-  
   auto block = std::any_cast<odb::dbBlock*>(object);
   bbox = block->getBBox()->getBox();
   return true;
 }
 
-/*Now highlighting: nets, instances and modules*/
 void DbBlockDescriptor::highlight(std::any object, Painter& painter) const
 {
   auto block = std::any_cast<odb::dbBlock*>(object);
@@ -399,7 +392,6 @@ Selected DbBlockDescriptor::makeSelected(std::any object) const
 
 bool DbBlockDescriptor::lessThan(std::any l, std::any r) const
 {
-  //What does this function does and where it's called?
   auto l_layer = std::any_cast<odb::dbBlock*>(l);
   auto r_layer = std::any_cast<odb::dbBlock*>(r);
   return l_layer->getId() < r_layer->getId();
@@ -407,7 +399,6 @@ bool DbBlockDescriptor::lessThan(std::any l, std::any r) const
 
 bool DbBlockDescriptor::getAllObjects(SelectionSet& objects) const
 {
-  //Where this function is called?
   auto chip = db_->getChip();
   if(chip == nullptr) {
     return false;
