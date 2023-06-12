@@ -222,9 +222,7 @@ void GlobalRouter::saveCongestion()
   std::ofstream out(congestion_file_name_);
 
   std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
-  auto nets_in_congested_edges = fastroute_->findCongestedEdgesNets();
-  fastroute_->getCongestionGrid(
-      congestionGridsV, congestionGridsH, nets_in_congested_edges);
+  fastroute_->getCongestionGrid(congestionGridsV, congestionGridsH);
   for (auto& it : congestionGridsH) {
     const auto& [seg, tile, srcs] = it;
     out << "violation type: Horizontal congestion\n";

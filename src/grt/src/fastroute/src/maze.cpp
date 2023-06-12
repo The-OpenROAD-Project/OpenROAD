@@ -2130,10 +2130,10 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   v_cost_table_.clear();
 }
 
-NetsPerCongestedArea FastRouteCore::findCongestedEdgesNets()
+void FastRouteCore::findCongestedEdgesNets(
+    NetsPerCongestedArea& nets_in_congested_edges,
+    bool vertical)
 {
-  NetsPerCongestedArea nets_in_congested_edges;
-  std::vector<std::string> nets;
   for (int netID = 0; netID < netCount(); netID++) {
     if (!nets_[netID]->isRouted()) {
       continue;
@@ -2155,60 +2155,84 @@ NetsPerCongestedArea FastRouteCore::findCongestedEdgesNets()
           const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
 
-          nets_in_congested_edges[{lastX, lastY}].insert(
-              nets_[netID]->getDbNet());
-          nets_in_congested_edges[{xreal, yreal}].insert(
-              nets_[netID]->getDbNet());
+          bool vertical_edge = xreal == lastX;
+
+          if (vertical_edge == vertical) {
+            if (nets_in_congested_edges.find({lastX, lastY})
+                != nets_in_congested_edges.end()) {
+              nets_in_congested_edges[{lastX, lastY}].insert(
+                  nets_[netID]->getDbNet());
+            }
+
+            if (nets_in_congested_edges.find({xreal, yreal})
+                != nets_in_congested_edges.end()) {
+              nets_in_congested_edges[{xreal, yreal}].insert(
+                  nets_[netID]->getDbNet());
+            }
+          }
+
           lastX = xreal;
           lastY = yreal;
         }
       }
     }
   }
-
-  return nets_in_congested_edges;
 }
 
 void FastRouteCore::getCongestionGrid(
     std::vector<CongestionInformation>& congestionGridV,
-    std::vector<CongestionInformation>& congestionGridH,
-    NetsPerCongestedArea& nets_in_congested_edges)
+    std::vector<CongestionInformation>& congestionGridH)
 {
+  NetsPerCongestedArea nets_in_congested_edges;
+  std::unordered_map<std::pair<int, int>,
+                     TileCongestion,
+                     boost::hash<std::pair<int, int>>>
+      edge_to_congestion;
+
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
-      std::unordered_set<odb::dbNet*> horizontal_srcs;
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
         const int yreal = tile_size_ * (i + 0.5) + y_corner_;
-        const GSegment segment = GSegment(xreal, yreal, 1, xreal, yreal, 1);
         const int usage = h_edges_[i][j].usage;
         const int capacity = h_edges_[i][j].cap;
-        if (usage > capacity) {
-          horizontal_srcs = nets_in_congested_edges[{xreal, yreal}];
-        }
-        congestionGridH.push_back(
-            {segment, {capacity, usage}, horizontal_srcs});
+        nets_in_congested_edges[{xreal, yreal}];
+        edge_to_congestion[{xreal, yreal}] = {capacity, usage};
       }
     }
   }
+  findCongestedEdgesNets(nets_in_congested_edges, false);
+  for (const auto& [edge, congestion] : edge_to_congestion) {
+    const auto& segment
+        = GSegment(edge.first, edge.second, 1, edge.first, edge.second, 1);
+    const auto& horizontal_srcs
+        = nets_in_congested_edges[{segment.init_x, segment.init_y}];
+    congestionGridH.push_back({segment, congestion, horizontal_srcs});
+  }
+  nets_in_congested_edges.clear();
+  edge_to_congestion.clear();
 
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
-      std::unordered_set<odb::dbNet*> vertical_srcs;
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
         const int xreal = tile_size_ * (j + 0.5) + x_corner_;
         const int yreal = tile_size_ * (i + 0.5) + y_corner_;
-        GSegment segment = GSegment(xreal, yreal, 1, xreal, yreal, 1);
         const int usage = v_edges_[i][j].usage;
         const int capacity = v_edges_[i][j].cap;
-        if (usage > capacity) {
-          vertical_srcs = nets_in_congested_edges[{xreal, yreal}];
-        }
-        congestionGridV.push_back({segment, {capacity, usage}, vertical_srcs});
+        nets_in_congested_edges[{xreal, yreal}];
+        edge_to_congestion[{xreal, yreal}] = {usage, capacity};
       }
     }
+  }
+  findCongestedEdgesNets(nets_in_congested_edges, true);
+  for (const auto& [edge, congestion] : edge_to_congestion) {
+    const auto& segment
+        = GSegment(edge.first, edge.second, 1, edge.first, edge.second, 1);
+    const auto& vertical_srcs
+        = nets_in_congested_edges[{segment.init_x, segment.init_y}];
+    congestionGridV.push_back({segment, congestion, vertical_srcs});
   }
 }
 
