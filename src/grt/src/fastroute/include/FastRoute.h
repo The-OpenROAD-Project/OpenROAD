@@ -90,9 +90,8 @@ struct DebugSetting
 using stt::Tree;
 
 using NetsPerCongestedArea
-    = std::unordered_map<std::pair<int, int>,
-                         std::set<odb::dbNet*, cmpById>,
-                         boost::hash<std::pair<int, int>>>;
+    = std::map<std::pair<int, int>,
+                         std::set<odb::dbNet*, cmpById>>;
 
 class FastRouteCore
 {
