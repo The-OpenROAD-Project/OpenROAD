@@ -91,7 +91,7 @@ using stt::Tree;
 
 using NetsPerCongestedArea
     = std::unordered_map<std::pair<int, int>,
-                         std::unordered_set<odb::dbNet*>,
+                         std::set<odb::dbNet*, cmpById>,
                          boost::hash<std::pair<int, int>>>;
 
 class FastRouteCore

@@ -100,7 +100,7 @@ struct CongestionInformation
 {
   GSegment segment;
   TileCongestion congestion;
-  std::unordered_set<odb::dbNet*> sources;
+  std::set<odb::dbNet*, cmpById> sources;
 };
 
 // class Route is defined in fastroute core.
