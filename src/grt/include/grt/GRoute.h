@@ -95,6 +95,12 @@ struct cmpById
   bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
 };
 
+struct cmpPair
+{
+  bool operator()(const std::pair<int, int>& pair1,
+                  const std::pair<int, int>& pair2) const;
+};
+
 using TileCongestion = std::pair<int, int>;
 
 struct CongestionInformation
