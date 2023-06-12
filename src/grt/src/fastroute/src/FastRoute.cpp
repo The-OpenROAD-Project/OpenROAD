@@ -82,6 +82,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       stt_builder_(stt_builder),
       debug_(new DebugSetting())
 {
+  parasitics_builder_ = nullptr;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -811,7 +812,7 @@ void FastRouteCore::updateDbCongestion()
   }
 }
 
-NetRouteMap FastRouteCore::run(MakeWireParasitics * builder)
+NetRouteMap FastRouteCore::run()
 {
   int tUsage;
   int cost_step;
@@ -830,7 +831,6 @@ NetRouteMap FastRouteCore::run(MakeWireParasitics * builder)
   ycor_.resize(max_degree2);
   dcor_.resize(max_degree2);
   net_eo_.reserve(max_degree2);
-  parasitics_builder_ = builder;
 
   int THRESH_M = 20;
   const int ENLARGE = 15;  // 5
@@ -1259,6 +1259,11 @@ void FastRouteCore::setVerbose(bool v)
 void FastRouteCore::setUpdateSlack(int u)
 {
   update_slack_ = u;
+}
+
+void FastRouteCore::setMakeWireParasiticsBuilder(MakeWireParasitics * builder)
+{
+  parasitics_builder_ = builder;
 }
 
 void FastRouteCore::setOverflowIterations(int iterations)

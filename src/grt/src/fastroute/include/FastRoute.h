@@ -148,7 +148,7 @@ class FastRouteCore
       const interval<int>::type& last_tile_reduce_interval);
   void initBlockedIntervals(std::vector<int>& track_space);
   void initAuxVar();
-  NetRouteMap run(MakeWireParasitics * builder);
+  NetRouteMap run();
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
@@ -165,6 +165,7 @@ class FastRouteCore
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setUpdateSlack(int u);
+  void setMakeWireParasiticsBuilder(MakeWireParasitics * builder);
   void setOverflowIterations(int iterations);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
