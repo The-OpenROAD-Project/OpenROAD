@@ -208,7 +208,7 @@ struct TreeEdge
 {
   bool assigned;
 
-  int len;  // the Manhanttan Distance for two end nodes
+  int len;       // the Manhanttan Distance for two end nodes
   int last_len;  // the last len before overflow itter
   int n1, n1a;
   int n2, n2a;
