@@ -1248,6 +1248,8 @@ int startGui(int& argc,
     }
   }
 
+  main_window->exit();
+
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
