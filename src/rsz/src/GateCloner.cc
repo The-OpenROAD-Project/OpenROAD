@@ -64,6 +64,8 @@ namespace rsz {
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::PathAnalysisPt;
+using sta::Sdc;
+
 using utl::RSZ;
 using sta::PathExpanded;
 
@@ -205,31 +207,17 @@ int GateCloner::gateClone(const Pin *drvr_pin, PathRef* drvr_path,
 float
 GateCloner::maxLoad(Cell* cell)
 {
-  LibertyCell* lib_cell = network_->libertyCell(cell);
-  sta::LibertyCellPortIterator itr(lib_cell);
-  while (itr.hasNext()) {
-    LibertyPort *port = itr.next();
-    if (port->direction()->isOutput()) {
-      float limit;
-      bool exists;
-      port->capacitanceLimit(min_max_, limit, exists);
-      if (exists) {
-        return limit;
-      }
-    }
-  }
-  /*
    LibertyCell *lib_cell = network_->libertyCell(cell);
    sta::LibertyCellPortIterator itr(lib_cell);
    while (itr.hasNext()) {
-     LibertyPort *port = itr.next();
-     if (port->direction()->isOutput()) {
+    LibertyPort* port = itr.next();
+    if (port->direction()->isOutput()) {
       float limit, limit1;
       bool exists, exists1;
       const sta::Corner* corner = sta_->cmdCorner();
-      Sdc *sdc = sta_->sdc();
+      Sdc* sdc = sta_->sdc();
       // Default to top ("design") limit.
-      Cell *top_cell = network_->cell(network_->topInstance());
+      Cell* top_cell = network_->cell(network_->topInstance());
       sdc->capacitanceLimit(top_cell, min_max_, limit, exists);
       sdc->capacitanceLimit(cell, min_max_, limit1, exists1);
 
@@ -237,16 +225,18 @@ GateCloner::maxLoad(Cell* cell)
         limit = limit1;
         exists = true;
       }
-      LibertyPort *corner_port = port->cornerPort(corner, min_max_);
+      LibertyPort* corner_port = port->cornerPort(corner, min_max_);
       corner_port->capacitanceLimit(min_max_, limit1, exists1);
-      if (!exists1
-          && port->direction()->isAnyOutput())
+      if (!exists1 && port->direction()->isAnyOutput())
         corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
       if (exists1 && (!exists || min_max_->compare(limit, limit1))) {
         limit = limit1;
         exists = true;
-
-   */
+      }
+      if (exists)
+        return limit;
+    }
+   }
   return 0;
 }
 
