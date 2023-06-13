@@ -227,14 +227,16 @@ GateCloner::maxLoad(Cell* cell)
       }
       LibertyPort* corner_port = port->cornerPort(corner, min_max_);
       corner_port->capacitanceLimit(min_max_, limit1, exists1);
-      if (!exists1 && port->direction()->isAnyOutput())
+      if (!exists1 && port->direction()->isAnyOutput()) {
         corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
+      }
       if (exists1 && (!exists || min_max_->compare(limit, limit1))) {
         limit = limit1;
         exists = true;
       }
-      if (exists)
+      if (exists) {
         return limit;
+      }
     }
    }
   return 0;
