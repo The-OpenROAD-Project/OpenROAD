@@ -2158,7 +2158,8 @@ void FastRouteCore::findCongestedEdgesNets(
           bool vertical_edge = xreal == lastX;
 
           if (vertical_edge == vertical) {
-            NetsPerCongestedArea::iterator it = nets_in_congested_edges.find({lastX, lastY});
+            NetsPerCongestedArea::iterator it
+                = nets_in_congested_edges.find({lastX, lastY});
             if (it != nets_in_congested_edges.end()) {
               it->second.nets.insert(nets_[netID]->getDbNet());
             }

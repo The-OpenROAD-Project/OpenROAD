@@ -228,7 +228,7 @@ void GlobalRouter::saveCongestion()
     out << "violation type: Horizontal congestion\n";
     const int capacity = tile.capacity;
     const int usage = tile.usage;
-    
+
     out << "\tsrcs: ";
     for (const auto& net : srcs) {
       out << "net:" << net->getName() << " ";
@@ -249,7 +249,7 @@ void GlobalRouter::saveCongestion()
     out << "violation type: Vertical congestion\n";
     const int capacity = tile.capacity;
     const int usage = tile.usage;
-    
+
     out << "\tsrcs: ";
     for (const auto& net : srcs) {
       out << "net:" << net->getName() << " ";

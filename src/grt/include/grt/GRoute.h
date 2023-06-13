@@ -106,8 +106,7 @@ struct TileInformation
   TileCongestion congestion;
 };
 
-using NetsPerCongestedArea
-    = std::map<std::pair<int, int>, TileInformation>;
+using NetsPerCongestedArea = std::map<std::pair<int, int>, TileInformation>;
 
 struct CongestionInformation
 {
