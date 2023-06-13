@@ -1395,18 +1395,13 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
 {
   // the pair is the segment and the cell index in that segment
   violating_cells.resize(segments_.size() + 1);
-
-  std::vector<Node*> temp;
-  temp.reserve(network_->getNumNodes());
-  for (int s = 0; s < segments_.size(); s++) {
+  for (auto segment : segments_) {
     // To be safe, gather cells in each segment and re-sort them.
-    temp.clear();
+    int s = segment->getSegId();
     if (cellsInSeg_[s].size() < 2) {
       continue;
     }
-    temp = cellsInSeg_[s];
-    std::sort(temp.begin(), temp.end(), compareNodesX());
-
+    resortSegment(segment);
     // The idea here is to get the last X before the current cell,
     // it doesn't have to be the one directly before the current cell as
     // there might be two cells on the same x but different y.
@@ -1426,13 +1421,13 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
              || isInRange(bottom2, bottom1, top1);
     };
 
-    Node* lastNode = temp[0];
+    Node* lastNode = cellsInSeg_[s][0];
     int one_site_gap = arch_->getRow(0)->getSiteWidth();
-    std::vector<Node*> cellsAtLastX(1, temp[0]);
+    std::vector<Node*> cellsAtLastX(1, cellsInSeg_[s][0]);
 
-    for (int node_idx = 1; node_idx < temp.size(); node_idx++) {
-      Node* nd = temp[node_idx];
-      if (temp[node_idx]->getRight() != lastNode->getRight()) {
+    for (int node_idx = 1; node_idx < cellsInSeg_[s].size(); node_idx++) {
+      Node* nd = cellsInSeg_[s][node_idx];
+      if (cellsInSeg_[s][node_idx]->getRight() != lastNode->getRight()) {
         // we have a new X
         // check if the difference in x is equal to one-site
 
