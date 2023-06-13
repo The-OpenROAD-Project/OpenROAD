@@ -100,7 +100,11 @@ struct cmpPair
                   const std::pair<int, int>& pair2) const;
 };
 
-using TileCongestion = std::pair<int, int>;
+struct TileCongestion
+{
+  int capacity;
+  int usage;
+};
 
 struct CongestionInformation
 {

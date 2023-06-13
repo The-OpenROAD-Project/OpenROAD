@@ -226,8 +226,8 @@ void GlobalRouter::saveCongestion()
   for (auto& it : congestionGridsH) {
     const auto& [seg, tile, srcs] = it;
     out << "violation type: Horizontal congestion\n";
-    const int capacity = tile.first;
-    const int usage = tile.second;
+    const int capacity = tile.capacity;
+    const int usage = tile.usage;
     if (!srcs.empty()) {
       out << "\tsrcs: ";
       for (const auto& net : srcs) {
@@ -248,8 +248,8 @@ void GlobalRouter::saveCongestion()
   for (auto& it : congestionGridsV) {
     const auto& [seg, tile, srcs] = it;
     out << "violation type: Vertical congestion\n";
-    const int capacity = tile.first;
-    const int usage = tile.second;
+    const int capacity = tile.capacity;
+    const int usage = tile.usage;
     if (!srcs.empty()) {
       out << "\tsrcs: ";
       for (const auto& net : srcs) {
