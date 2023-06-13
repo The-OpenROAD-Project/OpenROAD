@@ -90,8 +90,8 @@ class GateCloner
   std::vector<Pin*> levelDriverPins(const bool reverse = false,
                                     const std::unordered_set<Pin*> &filter_pins
                                     = std::unordered_set<Pin*>()) const;
-  LibertyCell* largestLibraryCell(LibertyCell* cell);
-  float maxLoad(LibertyCell* cell);
+  Cell* largestLibraryCell(Cell* cell);
+  float maxLoad(Cell* cell);
 
   std::vector<const Pin*> fanoutPins(Net* net,
                                      bool include_top_level = false) const;
