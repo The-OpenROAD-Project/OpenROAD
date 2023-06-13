@@ -124,7 +124,7 @@ class DetailedMgr
       std::vector<DetailedSeg*>& stack,
       std::vector<std::vector<DetailedSeg*>>& candidates);
   bool findClosestSpanOfSegments(Node* nd, std::vector<DetailedSeg*>& segments);
-
+  bool isInsideABlockage(Node* nd, double position);
   void assignCellsToSegments(const std::vector<Node*>& nodesToConsider);
   int checkOverlapInSegments();
   int checkEdgeSpacingInSegments();
@@ -262,6 +262,8 @@ class DetailedMgr
 
   // For help aligning cells to sites.
   bool alignPos(Node* ndi, int& xi, int xl, int xr);
+  int getMoveLimit() { return moveLimit_; }
+  void setMoveLimit(uint newMoveLimit) { moveLimit_ = newMoveLimit; }
 
   struct compareNodesX
   {

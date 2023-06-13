@@ -955,6 +955,28 @@ void DetailedMgr::assignCellsToSegments(
                 movementY);
 }
 
+bool DetailedMgr::isInsideABlockage(Node* nd, double position)
+{
+  for (int r = 0; r < numSingleHeightRows_;
+       r++) {  // TODO: this can be avoided by having a map for nodes to
+               // blockages. An idea is to binary search for the row using cell
+               // bottom
+    auto it = std::lower_bound(blockages_[r].begin(),
+                               blockages_[r].end(),
+                               std::make_pair(position, position),
+                               [](const std::pair<double, double>& block,
+                                  const std::pair<double, double>& target) {
+                                 return block.second < target.first;
+                               });
+
+    if (it != blockages_[r].end() && position >= it->first
+        && position <= it->second) {
+      return true;
+    }
+  }
+
+  return false;
+}
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::removeCellFromSegment(Node* nd, int seg)
@@ -1425,7 +1447,7 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
     int one_site_gap = arch_->getRow(0)->getSiteWidth();
     std::vector<Node*> cellsAtLastX(1, cellsInSeg_[s][0]);
 
-    for (int node_idx = 1; node_idx < cellsInSeg_[s].size(); node_idx++) {
+    for (int node_idx = 0; node_idx < cellsInSeg_[s].size(); node_idx++) {
       Node* nd = cellsInSeg_[s][node_idx];
       if (cellsInSeg_[s][node_idx]->getRight() != lastNode->getRight()) {
         // we have a new X
@@ -1470,6 +1492,23 @@ void DetailedMgr::getOneSiteGapViolationsPerSegment(
           }
         }
         cellsAtLastX.clear();
+      }
+      if ((isInsideABlockage(nd, nd->getLeft() - one_site_gap)
+           && !isInsideABlockage(nd, nd->getLeft()))
+          || (isInsideABlockage(nd, nd->getRight() + one_site_gap)
+              && !isInsideABlockage(nd, nd->getRight()))) {
+        if (fix_violations) {
+          if (!fixOneSiteGapViolations(nd,
+                                       one_site_gap,
+                                       0,
+                                       s,
+                                       nd)) {  // TODO: the first nd is wrong,
+            // it should be the blockage cell
+            violating_cells[s].push_back(nd->getId());
+          }
+        } else {
+          violating_cells[s].push_back(nd->getId());
+        }
       }
       cellsAtLastX.push_back(nd);
       lastNode = nd;

@@ -118,6 +118,8 @@ bool Detailed::improve(DetailedMgr& mgr)
 
   if (mgr.getDisallowOneSiteGaps()) {
     std::vector<std::vector<int>> oneSiteViolations;
+    int temp_move_limit = mgr.getMoveLimit();
+    mgr.setMoveLimit(10000);
     mgr.getOneSiteGapViolationsPerSegment(oneSiteViolations, true);
     for (int i = 0; i < oneSiteViolations.size(); i++) {
       if (!oneSiteViolations[i].empty()) {
@@ -134,6 +136,7 @@ bool Detailed::improve(DetailedMgr& mgr)
             violating_node_ids);
       }
     }
+    mgr.setMoveLimit(temp_move_limit);
   }
 
   return true;
@@ -190,8 +193,6 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
   } else if (strcmp(args[0].c_str(), "default") == 0) {
     DetailedRandom random(arch_, network_);
     random.run(mgr_, args);
-  } else if (strcmp(args[0].c_str(), "disallow_one_site_gaps") == 0) {
-    debugPrint(logger, DPO, "detailed", 1, "Disallowed one site gaps.");
   } else {
     return;
   }
