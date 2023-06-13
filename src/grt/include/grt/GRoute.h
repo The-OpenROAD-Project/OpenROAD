@@ -94,14 +94,20 @@ struct cmpById
   bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
 };
 
-using NetsPerCongestedArea
-    = std::map<std::pair<int, int>, std::set<odb::dbNet*, cmpById>>;
-
 struct TileCongestion
 {
   int capacity;
   int usage;
 };
+
+struct TileInformation
+{
+  std::set<odb::dbNet*, cmpById> nets;
+  TileCongestion congestion;
+};
+
+using NetsPerCongestedArea
+    = std::map<std::pair<int, int>, TileInformation>;
 
 struct CongestionInformation
 {

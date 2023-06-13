@@ -2160,12 +2160,12 @@ void FastRouteCore::findCongestedEdgesNets(
           if (vertical_edge == vertical) {
             NetsPerCongestedArea::iterator it = nets_in_congested_edges.find({lastX, lastY});
             if (it != nets_in_congested_edges.end()) {
-              it->second.insert(nets_[netID]->getDbNet());
+              it->second.nets.insert(nets_[netID]->getDbNet());
             }
 
             it = nets_in_congested_edges.find({xreal, yreal});
             if (it != nets_in_congested_edges.end()) {
-              it->second.insert(nets_[netID]->getDbNet());
+              it->second.nets.insert(nets_[netID]->getDbNet());
             }
           }
 
@@ -2182,7 +2182,6 @@ void FastRouteCore::getCongestionGrid(
     std::vector<CongestionInformation>& congestionGridH)
 {
   NetsPerCongestedArea nets_in_congested_edges;
-  std::map<std::pair<int, int>, TileCongestion> edge_to_congestion;
 
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
@@ -2192,21 +2191,20 @@ void FastRouteCore::getCongestionGrid(
         const int yreal = tile_size_ * (i + 0.5) + y_corner_;
         const int usage = h_edges_[i][j].usage;
         const int capacity = h_edges_[i][j].cap;
-        nets_in_congested_edges[{xreal, yreal}];
-        edge_to_congestion[{xreal, yreal}] = {capacity, usage};
+        nets_in_congested_edges[{xreal, yreal}].congestion = {capacity, usage};
       }
     }
   }
   findCongestedEdgesNets(nets_in_congested_edges, false);
-  for (const auto& [edge, congestion] : edge_to_congestion) {
+  for (const auto& [edge, tile_info] : nets_in_congested_edges) {
+    TileCongestion congestion = tile_info.congestion;
     const auto& segment
         = GSegment(edge.first, edge.second, 1, edge.first, edge.second, 1);
     const auto& horizontal_srcs
-        = nets_in_congested_edges[{segment.init_x, segment.init_y}];
+        = nets_in_congested_edges[{segment.init_x, segment.init_y}].nets;
     congestionGridH.push_back({segment, congestion, horizontal_srcs});
   }
   nets_in_congested_edges.clear();
-  edge_to_congestion.clear();
 
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
@@ -2216,17 +2214,17 @@ void FastRouteCore::getCongestionGrid(
         const int yreal = tile_size_ * (i + 0.5) + y_corner_;
         const int usage = v_edges_[i][j].usage;
         const int capacity = v_edges_[i][j].cap;
-        nets_in_congested_edges[{xreal, yreal}];
-        edge_to_congestion[{xreal, yreal}] = {usage, capacity};
+        nets_in_congested_edges[{xreal, yreal}].congestion = {capacity, usage};
       }
     }
   }
   findCongestedEdgesNets(nets_in_congested_edges, true);
-  for (const auto& [edge, congestion] : edge_to_congestion) {
+  for (const auto& [edge, tile_info] : nets_in_congested_edges) {
+    TileCongestion congestion = tile_info.congestion;
     const auto& segment
         = GSegment(edge.first, edge.second, 1, edge.first, edge.second, 1);
     const auto& vertical_srcs
-        = nets_in_congested_edges[{segment.init_x, segment.init_y}];
+        = nets_in_congested_edges[{segment.init_x, segment.init_y}].nets;
     congestionGridV.push_back({segment, congestion, vertical_srcs});
   }
 }
