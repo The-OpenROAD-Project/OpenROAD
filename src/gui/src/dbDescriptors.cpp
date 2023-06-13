@@ -1772,7 +1772,8 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
       aps.insert(gui->makeSelected(iap));
     }
   }
-  Properties props{{"Instance", gui->makeSelected(iterm->getInst())},
+  Properties props{{"Block", gui->makeSelected(iterm->getBlock())},
+                   {"Instance", gui->makeSelected(iterm->getInst())},
                    {"IO type", iterm->getIoType().getString()},
                    {"Net", net_value},
                    {"Special", iterm->isSpecial()},
@@ -1864,7 +1865,8 @@ Descriptor::Properties DbBTermDescriptor::getProperties(std::any object) const
 {
   auto gui = Gui::get();
   auto bterm = std::any_cast<odb::dbBTerm*>(object);
-  Properties props{{"Net", gui->makeSelected(bterm->getNet())},
+  Properties props{{"Block", gui->makeSelected(bterm->getBlock())},
+                   {"Net", gui->makeSelected(bterm->getNet())},
                    {"Signal type", bterm->getSigType().getString()},
                    {"IO type", bterm->getIoType().getString()}};
 
@@ -1968,6 +1970,7 @@ Descriptor::Properties DbBlockageDescriptor::getProperties(
   }
   odb::Rect rect = blockage->getBBox()->getBox();
   Properties props{
+      {"Block", gui->makeSelected(blockage->getBlock())},
       {"Instance", inst_value},
       {"X", Property::convert_dbu(rect.xMin(), true)},
       {"Y", Property::convert_dbu(rect.yMin(), true)},
@@ -2087,7 +2090,8 @@ Descriptor::Properties DbObstructionDescriptor::getProperties(
   }
   odb::Rect rect = obs->getBBox()->getBox();
   Properties props(
-      {{"Instance", inst_value},
+      {{"Block", gui->makeSelected(obs->getBlock())},
+       {"Instance", inst_value},
        {"Layer", gui->makeSelected(obs->getBBox()->getTechLayer())},
        {"X", Property::convert_dbu(rect.xMin(), true)},
        {"Y", Property::convert_dbu(rect.yMin(), true)},
@@ -2759,7 +2763,8 @@ Descriptor::Properties DbRegionDescriptor::getProperties(std::any object) const
 
   auto* gui = Gui::get();
 
-  Properties props({{"Region Type", region->getRegionType().getString()}});
+  Properties props({{"Block", gui->makeSelected(region->getBlock())},
+                    {"Region Type", region->getRegionType().getString()}});
   SelectionSet children;
   for (auto* child : region->getGroups()) {
     children.insert(gui->makeSelected(child));
@@ -3541,9 +3546,8 @@ Descriptor::Properties DbRowDescriptor::getProperties(std::any object) const
   auto* row = std::any_cast<odb::dbRow*>(object);
   auto* gui = Gui::get();
 
-  Properties props;
-
-  props.push_back({"Site", gui->makeSelected(row->getSite())});
+  Properties props({{"Block", gui->makeSelected(row->getBlock())},
+                    {"Site", gui->makeSelected(row->getSite())}});
   int x, y;
   row->getOrigin(x, y);
   PropertyList origin;
