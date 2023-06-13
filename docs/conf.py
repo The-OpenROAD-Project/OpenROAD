@@ -10,9 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import docutils
 import os
-import re
 
 # -- Project information -----------------------------------------------------
 
@@ -112,7 +110,8 @@ html_theme_options = {
     #   internal: Flag indicating to use pathto (bool)
     'nav_links': [
         {"title": "Home", "href": "index", "internal": True},
-        {"title": "The OpenROAD Project", "href": "https://theopenroadproject.org", "internal": False},
+        {"title": "The OpenROAD Project",
+            "href": "https://theopenroadproject.org", "internal": False},
     ],
 
     # Customize css colors.
@@ -125,13 +124,13 @@ html_theme_options = {
     # brown, grey, blue-grey, white
     # (Default: deep-purple)
     'color_primary': 'indigo',
-    # Values: Same as color_primary. 
-    #(Default: indigo)
+    # Values: Same as color_primary.
+    # (Default: indigo)
     'color_accent': 'blue',
 
     # Hide the symbiflow links
     'hide_symbiflow_links': True,
-    
+
     "html_minify": False,
     "html_prettify": True,
     "css_minify": True,
@@ -145,14 +144,18 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 # html_static_path = ['_static']
 
+
+def swap_prefix(file, old, new):
+    with open(file, 'r') as f:
+        lines = f.read()
+    lines = lines.replace(old, new)
+    with open(file, 'wt') as f:
+        f.write(lines)
+
+
 def setup(app):
     import os
-    if not os.path.exists('main'):
-        os.symlink('..', 'main')
-    prefix = '(../'
-    newPath = '(./main/'
-    with open('index.md', 'r') as f:
-        lines = f.read()
-    lines = lines.replace(prefix, newPath)
-    with open('index.md', 'wt') as f:
-        f.write(lines)
+
+    if not os.path.exists('./main'):
+        os.symlink('..', './main')
+    swap_prefix('../README.md', '(docs/', '(../')

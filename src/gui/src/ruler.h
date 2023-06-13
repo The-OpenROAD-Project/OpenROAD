@@ -83,6 +83,8 @@ class Ruler
   std::string label_;
 };
 
+using Rulers = std::vector<std::unique_ptr<Ruler>>;
+
 class RulerDescriptor : public Descriptor
 {
  public:
