@@ -230,8 +230,7 @@ static odb::dbTechLayer* getLayerSelection(odb::dbTech* tech,
 
 ////////
 
-DbTechDescriptor::DbTechDescriptor(odb::dbDatabase* db)
-    : db_(db)
+DbTechDescriptor::DbTechDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -259,7 +258,9 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
   auto tech = std::any_cast<odb::dbTech*>(object);
 
-  Properties props;
+  Properties props({{"DbUnits per Micron", tech->getDbUnitsPerMicron()},
+                    {"LEF Units", tech->getLefUnits()},
+                    {"LEF Version", tech->getLefVersionStr()}});
 
   SelectionSet tech_layers;
   for (auto tech_layer : tech->getLayers()) {
@@ -267,18 +268,26 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Tech Layers", tech_layers});
 
-  SelectionSet tech_vias;  
+  SelectionSet tech_vias;
   for (auto tech_via : tech->getVias()) {
     tech_vias.insert(gui->makeSelected(tech_via));
   }
   props.push_back({"Tech Vias", tech_vias});
+
+  std::vector<odb::dbTechSameNetRule*> rule_samenets;
+  tech->getSameNetRules(rule_samenets);
+  SelectionSet samenet_rules;
+  for (auto samenet : rule_samenets) {
+    samenet_rules.insert(gui->makeSelected(samenet));
+  }
+  props.push_back({"Same-Net Rules", samenet_rules});
 
   return props;
 }
 
 Selected DbTechDescriptor::makeSelected(std::any object) const
 {
-  if(auto tech = std::any_cast<odb::dbTech*>(&object)) {
+  if (auto tech = std::any_cast<odb::dbTech*>(&object)) {
     return Selected(*tech, this);
   }
   return Selected();
@@ -303,8 +312,7 @@ bool DbTechDescriptor::getAllObjects(SelectionSet& objects) const
 
 //////////////////////////////////////////////////
 
-DbBlockDescriptor::DbBlockDescriptor(odb::dbDatabase* db)
-    : db_(db)
+DbBlockDescriptor::DbBlockDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -359,7 +367,7 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
     regions.insert(gui->makeSelected(region));
   }
   props.push_back({"Regions", regions});
-  
+
   SelectionSet insts;
   for (auto inst : block->getInsts()) {
     insts.insert(gui->makeSelected(inst));
@@ -412,7 +420,7 @@ bool DbBlockDescriptor::lessThan(std::any l, std::any r) const
 bool DbBlockDescriptor::getAllObjects(SelectionSet& objects) const
 {
   auto chip = db_->getChip();
-  if(chip == nullptr) {
+  if (chip == nullptr) {
     return false;
   }
   auto block = chip->getBlock();

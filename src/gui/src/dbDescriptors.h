@@ -85,7 +85,7 @@ class DbBlockDescriptor : public Descriptor
 
   Properties getProperties(std::any object) const override;
   Selected makeSelected(std::any object) const override;
-  bool lessThan(std::any l, std::any r) const override;  
+  bool lessThan(std::any l, std::any r) const override;
 
   bool getAllObjects(SelectionSet& objects) const override;
 

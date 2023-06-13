@@ -6685,7 +6685,7 @@ class dbTechNonDefaultRule : public dbObject
   dbTechLayerRule* getLayerRule(dbTechLayer* layer);
 
   ///
-  /// Get the vias of this non-default rule.
+  /// Get the layer-rules of this non-default rule.
   ///
   void getLayerRules(std::vector<dbTechLayerRule*>& layer_rules);
 
