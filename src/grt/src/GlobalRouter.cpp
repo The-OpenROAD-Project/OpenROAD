@@ -4088,14 +4088,4 @@ bool cmpById::operator()(odb::dbNet* net1, odb::dbNet* net2) const
   return net1->getId() < net2->getId();
 }
 
-bool cmpPair::operator()(const std::pair<int, int>& pair1,
-                         const std::pair<int, int>& pair2) const
-{
-  if (pair1.first == pair2.first) {
-    return pair1.second < pair2.second;
-  }
-
-  return pair1.first < pair2.first;
-}
-
 }  // namespace grt
