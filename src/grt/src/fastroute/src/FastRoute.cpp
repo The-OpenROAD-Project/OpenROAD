@@ -774,6 +774,7 @@ NetRouteMap FastRouteCore::run()
   newrouteZAll(10);
   int past_cong = getOverflow2D(&maxOverflow);
 
+  verify2DEdgesUsage();
   convertToMazeroute();
 
   int enlarge_ = 10;
@@ -802,7 +803,7 @@ NetRouteMap FastRouteCore::run()
                enlarge_);
     routeLVAll(newTH, enlarge_, LOGIS_COF);
 
-    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage, false);
+    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
     enlarge_ += 5;
     newTH -= 5;
@@ -941,7 +942,7 @@ NetRouteMap FastRouteCore::run()
                   slope,
                   L);
     int last_cong = past_cong;
-    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage, false);
+    past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
     if (minofl > past_cong) {
       minofl = past_cong;
@@ -980,7 +981,7 @@ NetRouteMap FastRouteCore::run()
                       slope,
                       L);
         last_cong = past_cong;
-        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage, false);
+        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
         str_accu(12);
         L = 1;
@@ -1030,7 +1031,7 @@ NetRouteMap FastRouteCore::run()
                       slope,
                       L);
         last_cong = past_cong;
-        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage, false);
+        past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
         if (past_cong < last_cong) {
           copyRS();
           bmfl = past_cong;
@@ -1053,13 +1054,13 @@ NetRouteMap FastRouteCore::run()
         break;
       }
       if (i >= mazeRound) {
-        getOverflow2Dmaze(&maxOverflow, &tUsage, false);
+        getOverflow2Dmaze(&maxOverflow, &tUsage);
         break;
       }
     }
 
     if (i >= mazeRound) {
-      getOverflow2Dmaze(&maxOverflow, &tUsage, false);
+      getOverflow2Dmaze(&maxOverflow, &tUsage);
       break;
     }
 
@@ -1111,7 +1112,7 @@ NetRouteMap FastRouteCore::run()
 
   removeLoops();
 
-  getOverflow2Dmaze(&maxOverflow, &tUsage, true);
+  getOverflow2Dmaze(&maxOverflow, &tUsage);
 
   layerAssignment();
 
@@ -1145,6 +1146,7 @@ NetRouteMap FastRouteCore::run()
 
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
+  verifyEdgeUsage();
   return routes;
 }
 

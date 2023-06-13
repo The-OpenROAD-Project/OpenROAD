@@ -3941,7 +3941,6 @@ void GlobalRouter::updateDirtyRoutes()
     if (dirty_nets.empty()) {
       return;
     }
-
     initFastRouteIncr(dirty_nets);
 
     NetRouteMap new_route
@@ -3950,14 +3949,20 @@ void GlobalRouter::updateDirtyRoutes()
     dirty_nets_.clear();
 
     bool reroutingOverflow = true;
-    // the maximum number of times that the nets traversing the congestion area
-    // will be added
-    int add_max = 2;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
+      // the maximum number of times that the nets traversing the congestion area
+      // will be added
+      int add_max = 30;
+      std::set<odb::dbNet*> congestion_nets;
+      for (auto & it: dirty_nets) {
+        congestion_nets.insert(it->getDbNet());
+      }
       while (fastroute_->has2Doverflow() && reroutingOverflow && add_max > 0) {
-        // the nets that cross the congestion area are obtained and added to the
-        // vector of dirty nets
-        for (odb::dbNet* db_net : fastroute_->getCongestionNets()) {
+        // the nets that cross the congestion area are obtained and added to the set
+        fastroute_->getCongestionNets(congestion_nets);
+        // update vector of dirty nets
+        dirty_nets.clear();
+        for (odb::dbNet* db_net : congestion_nets) {
           dirty_nets.push_back(db_net_map_[db_net]);
         }
         // The dirty nets are initialized and then routed
