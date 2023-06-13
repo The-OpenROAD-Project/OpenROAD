@@ -2993,7 +2993,7 @@ Descriptor::Properties DbTechViaDescriptor::getProperties(std::any object) const
   auto* via = std::any_cast<odb::dbTechVia*>(object);
   auto* gui = Gui::get();
 
-  Properties props;
+  Properties props({{"Tech", gui->makeSelected(via->getTech())}});
 
   std::map<odb::dbTechLayer*, odb::Rect> shapes;
   odb::dbTechLayer* cut_layer = nullptr;
