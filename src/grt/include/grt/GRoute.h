@@ -36,7 +36,6 @@
 
 #include <map>
 #include <set>
-#include <unordered_set>
 #include <vector>
 
 namespace odb {

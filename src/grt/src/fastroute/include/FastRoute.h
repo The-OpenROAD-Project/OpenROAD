@@ -41,7 +41,6 @@
 #include <boost/icl/interval_set.hpp>
 #include <boost/multi_array.hpp>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "DataType.h"
