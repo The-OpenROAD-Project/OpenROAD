@@ -49,55 +49,12 @@ entries:
     title: GUI
   - file: main/src/pad/README
     title: Chip-level Connections
-    entries:
-    - file: main/src/pad/doc/README
-      title: Chip-level Connections Documentation
-      entries:
-      - file: main/src/pad/doc/add_pad
-        title: Add Pad
-      - file: main/src/pad/doc/define_pad_cell
-        title: Define Pad Cell
-      - file: main/src/pad/doc/initialize_padring
-        title: Initialize Padring
-      - file: main/src/pad/doc/place_cell
-        title: Place Cell
-      - file: main/src/pad/doc/set_bump
-        title: Set Bump
-      - file: main/src/pad/doc/set_bump_options
-        title: Set Bump Options
-      - file: main/src/pad/doc/set_padring_options
-        title: Set Padring Options
-      - file: main/src/pad/doc/TCL_Interface
-        title: TCL Interface
   - file: main/src/mpl/README
     title: Macro Placement
   - file: main/src/tap/README
     title: Tapcell Insertion
   - file: main/src/pdn/README
     title: PDN Analysis
-    entries:
-    - file: main/src/pdn/doc/README
-      title: PDN Analysis Documentation
-      entries:
-      - file: main/src/pdn/doc/PDN
-        title: PDN
-    - file: main/src/pdn/doc/TCL_Interface.md
-      title: Tcl Interface
-      entries:
-      - file: main/src/pdn/doc/add_global_connection.md
-        title: add_global_connection
-      - file: main/src/pdn/doc/add_pdn_connect.md
-        title: add_pdn_connect
-      - file: main/src/pdn/doc/add_pdn_ring.md
-        title: add_pdn_ring
-      - file: main/src/pdn/doc/add_pdn_stripe.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/define_pdn_grid.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/set_voltage_domain.md
-        title: add_pdn_stripe
-      - file: main/src/pdn/doc/pdngen.md
-        title: pdngen
   - file: main/src/psm/README
     title: IR Drop Analysis
     entries:
@@ -129,8 +86,6 @@ entries:
     title: Metal Fill
   - file: main/src/stt/src/flt/README
     title: Flute
-  - file: main/src/stt/src/pdr/README
-    title: Prim-Dijkstra Revisited
   - file: main/src/par/README
     title: Partition Manager
 
