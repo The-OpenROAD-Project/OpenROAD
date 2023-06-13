@@ -46,7 +46,7 @@ Importing netlist into detailed improver.
 [INFO DPO-0301] Pass   8 of matching; objective is 0.000000e+00.
 [INFO DPO-0301] Pass   9 of matching; objective is 0.000000e+00.
 [INFO DPO-0301] Pass  10 of matching; objective is 0.000000e+00.
-[INFO DPO-0302] End of matching; objective is 0.000000e+00, improvement is nan percent.
+[INFO DPO-0302] End of matching; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPO-0303] Running algorithm for global swaps.
 [INFO DPO-0306] Pass   1 of global swaps; hpwl is 0.000000e+00.
 [INFO DPO-0306] Pass   2 of global swaps; hpwl is 0.000000e+00.
@@ -58,7 +58,7 @@ Importing netlist into detailed improver.
 [INFO DPO-0306] Pass   8 of global swaps; hpwl is 0.000000e+00.
 [INFO DPO-0306] Pass   9 of global swaps; hpwl is 0.000000e+00.
 [INFO DPO-0306] Pass  10 of global swaps; hpwl is 0.000000e+00.
-[INFO DPO-0307] End of global swaps; objective is 0.000000e+00, improvement is nan percent.
+[INFO DPO-0307] End of global swaps; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPO-0303] Running algorithm for vertical swaps.
 [INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 0.000000e+00.
 [INFO DPO-0308] Pass   2 of vertical swaps; hpwl is 0.000000e+00.
@@ -70,7 +70,7 @@ Importing netlist into detailed improver.
 [INFO DPO-0308] Pass   8 of vertical swaps; hpwl is 0.000000e+00.
 [INFO DPO-0308] Pass   9 of vertical swaps; hpwl is 0.000000e+00.
 [INFO DPO-0308] Pass  10 of vertical swaps; hpwl is 0.000000e+00.
-[INFO DPO-0309] End of vertical swaps; objective is 0.000000e+00, improvement is nan percent.
+[INFO DPO-0309] End of vertical swaps; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPO-0303] Running algorithm for reordering.
 [INFO DPO-0304] Pass   1 of reordering; objective is 0.000000e+00.
 [INFO DPO-0304] Pass   2 of reordering; objective is 0.000000e+00.
@@ -82,7 +82,7 @@ Importing netlist into detailed improver.
 [INFO DPO-0304] Pass   8 of reordering; objective is 0.000000e+00.
 [INFO DPO-0304] Pass   9 of reordering; objective is 0.000000e+00.
 [INFO DPO-0304] Pass  10 of reordering; objective is 0.000000e+00.
-[INFO DPO-0305] End of reordering; objective is 0.000000e+00, improvement is nan percent.
+[INFO DPO-0305] End of reordering; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPO-0303] Running algorithm for random improvement.
 [INFO DPO-0324] Random improver is using displacement generator.
 [INFO DPO-0325] Random improver is using hpwl objective.
@@ -91,32 +91,32 @@ Importing netlist into detailed improver.
 [INFO DPO-0335] Generator displacement, Cumulative attempts 100, swaps 2, moves    39 since last reset.
 [INFO DPO-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPO-0338] End of pass, Total cost is 0.000000e+00.
-[INFO DPO-0327] Pass   1 of random improver; improvement in cost is nan percent.
+[INFO DPO-0327] Pass   1 of random improver; improvement in cost is -nan percent.
 [INFO DPO-0332] End of pass, Generator displacement called 100 times.
 [INFO DPO-0335] Generator displacement, Cumulative attempts 200, swaps 2, moves    85 since last reset.
 [INFO DPO-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPO-0338] End of pass, Total cost is 0.000000e+00.
-[INFO DPO-0327] Pass   2 of random improver; improvement in cost is nan percent.
+[INFO DPO-0327] Pass   2 of random improver; improvement in cost is -nan percent.
 [INFO DPO-0332] End of pass, Generator displacement called 100 times.
 [INFO DPO-0335] Generator displacement, Cumulative attempts 300, swaps 2, moves   114 since last reset.
 [INFO DPO-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPO-0338] End of pass, Total cost is 0.000000e+00.
-[INFO DPO-0327] Pass   3 of random improver; improvement in cost is nan percent.
+[INFO DPO-0327] Pass   3 of random improver; improvement in cost is -nan percent.
 [INFO DPO-0332] End of pass, Generator displacement called 100 times.
 [INFO DPO-0335] Generator displacement, Cumulative attempts 400, swaps 3, moves   153 since last reset.
 [INFO DPO-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPO-0338] End of pass, Total cost is 0.000000e+00.
-[INFO DPO-0327] Pass   4 of random improver; improvement in cost is nan percent.
+[INFO DPO-0327] Pass   4 of random improver; improvement in cost is -nan percent.
 [INFO DPO-0332] End of pass, Generator displacement called 100 times.
 [INFO DPO-0335] Generator displacement, Cumulative attempts 500, swaps 3, moves   195 since last reset.
 [INFO DPO-0333] End of pass, Objective hpwl, Initial cost 0.000000e+00, Scratch cost 0.000000e+00, Incremental cost 0.000000e+00, Mismatch? N
 [INFO DPO-0338] End of pass, Total cost is 0.000000e+00.
-[INFO DPO-0327] Pass   5 of random improver; improvement in cost is nan percent.
-[INFO DPO-0328] End of random improver; improvement is nan percent.
+[INFO DPO-0327] Pass   5 of random improver; improvement in cost is -nan percent.
+[INFO DPO-0328] End of random improver; improvement is -nan percent.
 [INFO DPO-0380] Cell flipping.
 [INFO DPO-0382] Changed 0 cell orientations for row compatibility.
 [INFO DPO-0383] Performed 0 cell flips.
-[INFO DPO-0384] End of flipping; objective is 0.000000e+00, improvement is nan percent.
+[INFO DPO-0384] End of flipping; objective is 0.000000e+00, improvement is -nan percent.
 [INFO DPO-0313] Found 0 cells in wrong regions.
 [INFO DPO-0315] Found 0 row alignment problems.
 [INFO DPO-0314] Found 0 site alignment problems.
