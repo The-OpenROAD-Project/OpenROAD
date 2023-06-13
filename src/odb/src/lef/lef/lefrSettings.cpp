@@ -432,6 +432,7 @@ void lefrSettings::init_symbol_table()
   Keyword_set["REAL"] = K_REAL;
   Keyword_set["RECOVERY"] = K_RECOVERY;
   Keyword_set["RECT"] = K_RECT;
+  Keyword_set["RESET"] = K_RESET;
   Keyword_set["RESISTANCE"] = K_RESISTANCE;
   Keyword_set["RESISTIVE"] = K_RESISTIVE;
   Keyword_set["RING"] = K_RING;
@@ -454,6 +455,7 @@ void lefrSettings::init_symbol_table()
   Keyword_set["RPERSQ"] = K_RPERSQ;
   Keyword_set["S"] = K_S;
   Keyword_set["SAMENET"] = K_SAMENET;
+  Keyword_set["SCAN"] = K_SCAN;
   Keyword_set["SCANUSE"] = K_SCANUSE;
   Keyword_set["SDFCOND"] = K_SDFCOND;
   Keyword_set["SDFCONDEND"] = K_SDFCONDEND;
@@ -495,6 +497,7 @@ void lefrSettings::init_symbol_table()
   Keyword_set["TIEHIGH"] = K_TIEHIGH;
   Keyword_set["TIELOW"] = K_TIELOW;
   Keyword_set["TIEOFFR"] = K_TIEOFFR;
+  Keyword_set["TIEOFF"] = K_TIEOFF;
   Keyword_set["TIME"] = K_TIME;
   Keyword_set["TIMING"] = K_TIMING;
   Keyword_set["TO"] = K_TO;

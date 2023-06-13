@@ -1732,6 +1732,9 @@ char* lef_kywd(int num)
     case K_RECT:
       a = lefaddr("RECT");
       break;
+    case K_RESET:
+      a = lefaddr("RESET");
+      break;
     case K_RESISTANCE:
       a = lefaddr("RESISTANCE");
       break;
@@ -1779,6 +1782,9 @@ char* lef_kywd(int num)
       break;
     case K_SAMENET:
       a = lefaddr("SAMENET");
+      break;
+    case K_SCAN:
+      a = lefaddr("SCAN");
       break;
     case K_SCANUSE:
       a = lefaddr("SCANUSE");
@@ -1842,6 +1848,9 @@ char* lef_kywd(int num)
       break;
     case K_TIEOFFR:
       a = lefaddr("TIEOFFR");
+      break;
+    case K_TIEOFF:
+      a = lefaddr("TIEOFF");
       break;
     case K_TIME:
       a = lefaddr("TIME");
