@@ -680,6 +680,13 @@ void Optdp::createArchitecture()
 
   odb::Rect dieRect = block->getDieArea();
 
+  odb::uint min_row_height = std::numeric_limits<odb::uint>::max();
+  for (dbRow* row : block->getRows()) {
+    min_row_height = std::min(min_row_height, row->getSite()->getHeight());
+  }
+
+  std::map<uint, std::vector<std::string>> skip_list;
+
   for (dbRow* row : block->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
@@ -689,6 +696,10 @@ void Optdp::createArchitecture()
       continue;
     }
     dbSite* site = row->getSite();
+    if (site->getHeight() > min_row_height) {
+      skip_list[site->getHeight()].push_back(row->getName());
+      continue;
+    }
     int originX;
     int originY;
     row->getOrigin(originX, originY);
@@ -723,7 +734,19 @@ void Optdp::createArchitecture()
     unsigned orient = dbToDpoOrient(row->getOrient());
     archRow->setOrient(orient);
   }
-
+  for (auto skip : skip_list) {
+    std::string skip_string = "[";
+    for (int i = 0; i < skip.second.size(); i++) {
+      skip_string += skip.second[i] + ",]"[i == skip.second.size() - 1];
+    }
+    logger_->warn(DPO,
+                  108,
+                  "Skipping the rows with height {} as the minimum row height "
+                  "is {}. Here is the skip list: {}",
+                  skip.first,
+                  min_row_height,
+                  skip_string);
+  }
   // Get surrounding box.
   {
     int xmin = std::numeric_limits<int>::max();
