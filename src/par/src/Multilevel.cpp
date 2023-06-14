@@ -164,12 +164,12 @@ std::vector<int> MultilevelPartitioner::SingleLevelPartition(
 
   // pick top num_best_initial_solutions_ solutions from
   // num_initial_random_solutions_ solutions
-  // here we reserve num_vertices_ for each top_solution
+  // here we reserve GetNumVertices() for each top_solution
   Matrix<int> top_solutions;
   for (int i = 0; i < num_best_initial_solutions_; i++) {
     std::vector<int> solution{};
     top_solutions.push_back(solution);
-    top_solutions.back().reserve(hgraph->num_vertices_);  // reserve the size
+    top_solutions.back().reserve(hgraph->GetNumVertices());  // reserve the size
   }
   int best_solution_id = -1;
   InitialPartition(coarsest_hgraph,
@@ -209,8 +209,7 @@ void MultilevelPartitioner::VcycleRefinement(
   candidate_solutions.push_back(best_solution);
   for (int num_cycles = 0; num_cycles < max_num_vcycle_; num_cycles++) {
     // use the initial solution as the community feature
-    hgraph->community_flag_ = true;
-    hgraph->community_attr_ = best_solution;
+    hgraph->SetCommunity(best_solution);
     best_solution = SingleCycleRefinement(
         hgraph, upper_block_balance, lower_block_balance);
     candidate_solutions.push_back(best_solution);
@@ -246,9 +245,10 @@ std::vector<int> MultilevelPartitioner::SingleCycleRefinement(
 
   // Step 2: run initial refinement
   HGraphPtr coarsest_hgraph = hierarchy.back();
-  Matrix<int> top_solutions{coarsest_hgraph->community_attr_};
+  Matrix<int> top_solutions(1);
+  coarsest_hgraph->CopyCommunity(top_solutions[0]);
   int best_solution_id = 0;  // only one solution
-  if (coarsest_hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
+  if (coarsest_hgraph->GetNumVertices() <= num_vertices_threshold_ilp_) {
     partitioner_->Partition(coarsest_hgraph,
                             upper_block_balance,
                             lower_block_balance,
@@ -286,7 +286,7 @@ void MultilevelPartitioner::InitialPartition(
   std::vector<bool>
       initial_solutions_flag;  // if the solutions statisfy balance constraint
   Matrix<int> initial_solutions;
-  if (hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
+  if (hgraph->GetNumVertices() <= num_vertices_threshold_ilp_) {
     // random partitioning + Vile + ILP
     initial_solutions.resize(num_initial_random_solutions_ * 2 + 2);
   } else {
@@ -294,7 +294,7 @@ void MultilevelPartitioner::InitialPartition(
     initial_solutions.resize(num_initial_random_solutions_ * 2 + 1);
   }
   // We need k_way_fm_refiner to generate a balanced partitioning
-  k_way_fm_refiner_->SetMaxMove(hgraph->num_vertices_);
+  k_way_fm_refiner_->SetMaxMove(hgraph->GetNumVertices());
   // generate random seed
   for (int i = 0; i < num_initial_random_solutions_; ++i) {
     const int seed = std::numeric_limits<int>::max() * dist(gen);
@@ -366,7 +366,7 @@ void MultilevelPartitioner::InitialPartition(
                   initial_solutions_cost.back(),
                   initial_solutions_flag.back());
   // ILP partitioning
-  if (hgraph->num_vertices_ <= num_vertices_threshold_ilp_) {
+  if (hgraph->GetNumVertices() <= num_vertices_threshold_ilp_) {
     auto& ilp_solution = initial_solutions.back();
     // Use previous best solution as a starting point
     int ilp_solution_id = 0;
@@ -474,11 +474,11 @@ void MultilevelPartitioner::RefinePartition(
     // convert the solution in coarse_hgraph to the solution of hgraph
     for (auto& top_solution : top_solutions) {
       std::vector<int> refined_solution;
-      refined_solution.resize(hgraph->num_vertices_);
-      for (int cluster_id = 0; cluster_id < coarse_hgraph->num_vertices_;
+      refined_solution.resize(hgraph->GetNumVertices());
+      for (int cluster_id = 0; cluster_id < coarse_hgraph->GetNumVertices();
            cluster_id++) {
         const int part_id = top_solution[cluster_id];
-        for (const auto& v : coarse_hgraph->vertex_c_attr_[cluster_id]) {
+        for (const auto& v : coarse_hgraph->GetVertexCAttr(cluster_id)) {
           refined_solution[v] = part_id;
         }
       }
@@ -515,8 +515,8 @@ void MultilevelPartitioner::RefinePartition(
         "[Refinement] Level {} :: num_vertices = {}, num_hyperedges = {},"
         " cutcost = {}, best_solution_id = {}",
         ++num_level,
-        hgraph->num_vertices_,
-        hgraph->num_hyperedges_,
+        hgraph->GetNumVertices(),
+        hgraph->GetNumHyperedges(),
         best_cost,
         best_solution_id);
   }
@@ -552,19 +552,20 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
     int best_solution_id) const
 {
   std::vector<int> optimal_solution = top_solutions[best_solution_id];
-  std::vector<int> vertex_cluster_vec(hgraph->num_vertices_, -1);
+  std::vector<int> vertex_cluster_vec(hgraph->GetNumVertices(), -1);
   // check if the hyperedge is cut by solutions
-  std::vector<bool> hyperedge_mask(hgraph->num_hyperedges_, false);
+  std::vector<bool> hyperedge_mask(hgraph->GetNumHyperedges(), false);
   for (const auto& solution : top_solutions) {
-    for (int e = 0; e < hgraph->num_hyperedges_; e++) {
+    for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
       if (hyperedge_mask[e] == true) {
         continue;  // This hyperedge has been cut
       }
-      const int start_idx = hgraph->eptr_[e];
-      const int end_idx = hgraph->eptr_[e + 1];
-      const int block_id = solution[hgraph->eind_[start_idx]];
-      for (int idx = start_idx + 1; idx < end_idx; idx++) {
-        if (solution[hgraph->eind_[idx]] != block_id) {
+
+      const auto range = hgraph->Vertices(e);
+      const int block_id = solution[*range.begin()];
+      for (const int vertex :
+           boost::make_iterator_range(range.begin() + 1, range.end())) {
+        if (solution[vertex] != block_id) {
           hyperedge_mask[e] = true;
           break;  // end this hyperedge
         }
@@ -579,16 +580,11 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
     while (wavefront.empty() == false) {
       const int u = wavefront.front();
       wavefront.pop();
-      const int start_idx = hgraph->vptr_[u];
-      const int end_idx = hgraph->vptr_[u + 1];
-      for (int idx = start_idx; idx < end_idx; idx++) {
-        const int e = hgraph->vind_[idx];
+      for (const int e : hgraph->Edges(u)) {
         if (hyperedge_mask[e] == true) {
           continue;  // this hyperedge has been cut
         }
-        for (auto v_idx = hgraph->eptr_[e]; v_idx < hgraph->eptr_[e + 1];
-             v_idx++) {
-          const int v_nbr = hgraph->eind_[v_idx];  // vertex v_nbr
+        for (const int v_nbr : hgraph->Vertices(e)) {
           if (vertex_cluster_vec[v_nbr] == -1) {
             vertex_cluster_vec[v_nbr] = cluster_id;
             wavefront.push(v_nbr);
@@ -603,7 +599,7 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
   int cluster_id = -1;
   // map the initial optimal solution to the solution of clustered hgraph
   std::vector<int> init_solution;
-  for (int v = 0; v < hgraph->num_vertices_; v++) {
+  for (int v = 0; v < hgraph->GetNumVertices(); v++) {
     if (vertex_cluster_vec[v] == -1) {
       vertex_cluster_vec[v] = ++cluster_id;
       init_solution.push_back(top_solutions[best_solution_id][v]);
@@ -618,7 +614,7 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
     std::vector<int> group_cluster{};
     cluster_attr.push_back(group_cluster);
   }
-  for (int v = 0; v < hgraph->num_vertices_; v++) {
+  for (int v = 0; v < hgraph->GetNumVertices(); v++) {
     cluster_attr[vertex_cluster_vec[v]].push_back(v);
   }
 
@@ -628,8 +624,8 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
       PAR,
       157,
       "Cut-Overlay Clustering : num_vertices = {}, num_hyperedges = {}",
-      clustered_hgraph->num_vertices_,
-      clustered_hgraph->num_hyperedges_);
+      clustered_hgraph->GetNumVertices(),
+      clustered_hgraph->GetNumHyperedges());
 
   if (num_clusters <= num_vertices_threshold_ilp_) {
     partitioner_->Partition(clustered_hgraph,
@@ -638,16 +634,15 @@ std::vector<int> MultilevelPartitioner::CutOverlayILPPart(
                             init_solution,
                             PartitionType::INIT_DIRECT_ILP);
   } else {
-    clustered_hgraph->community_flag_ = true;
-    clustered_hgraph->community_attr_ = init_solution;
+    clustered_hgraph->SetCommunity(init_solution);
     init_solution = SingleCycleRefinement(
         clustered_hgraph, upper_block_balance, lower_block_balance);
   }
 
   // map the solution back to the original hypergraph
-  for (int c_id = 0; c_id < clustered_hgraph->num_vertices_; c_id++) {
+  for (int c_id = 0; c_id < clustered_hgraph->GetNumVertices(); c_id++) {
     const int block_id = init_solution[c_id];
-    for (const auto& v : clustered_hgraph->vertex_c_attr_[c_id]) {
+    for (const auto& v : clustered_hgraph->GetVertexCAttr(c_id)) {
       optimal_solution[v] = block_id;
     }
   }

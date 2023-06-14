@@ -177,44 +177,46 @@ QVariant DisplayControlModel::data(const QModelIndex& index, int role) const
     QVariant data = item->data(user_data_item_idx_);
     if (data.isValid()) {
       dbTechLayer* layer = data.value<dbTechLayer*>();
-      auto selected = Gui::get()->makeSelected(layer);
-      if (selected) {
-        auto props = selected.getProperties();
+      if (layer != nullptr) {
+        auto selected = Gui::get()->makeSelected(layer);
+        if (selected) {
+          auto props = selected.getProperties();
 
-        // provide tooltip with layer information
-        QString information;
+          // provide tooltip with layer information
+          QString information;
 
-        auto add_prop
-            = [props](const std::string& prop, QString& info) -> bool {
-          auto prop_find
-              = std::find_if(props.begin(), props.end(), [prop](const auto& p) {
+          auto add_prop
+              = [props](const std::string& prop, QString& info) -> bool {
+            auto prop_find = std::find_if(
+                props.begin(), props.end(), [prop](const auto& p) {
                   return p.name == prop;
                 });
-          if (prop_find == props.end()) {
-            return false;
+            if (prop_find == props.end()) {
+              return false;
+            }
+            info += "\n" + QString::fromStdString(prop) + ": ";
+            info += QString::fromStdString(prop_find->toString());
+            return true;
+          };
+
+          // direction
+          add_prop("Direction", information);
+
+          // min path width
+          add_prop("Default width", information);
+
+          // min spacing
+          add_prop("Minimum spacing", information);
+
+          // resistance
+          add_prop("Resistance", information);
+
+          // capacitance
+          add_prop("Capacitance", information);
+
+          if (!information.isEmpty()) {
+            return information.remove(0, 1);
           }
-          info += "\n" + QString::fromStdString(prop) + ": ";
-          info += QString::fromStdString(prop_find->toString());
-          return true;
-        };
-
-        // direction
-        add_prop("Direction", information);
-
-        // min path width
-        add_prop("Default width", information);
-
-        // min spacing
-        add_prop("Minimum spacing", information);
-
-        // resistance
-        add_prop("Resistance", information);
-
-        // capacitance
-        add_prop("Capacitance", information);
-
-        if (!information.isEmpty()) {
-          return information.remove(0, 1);
         }
       }
     }
