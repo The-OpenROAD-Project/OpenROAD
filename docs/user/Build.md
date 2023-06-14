@@ -3,9 +3,9 @@
 ## Install dependencies
 
 To install dependencies to develop or build and run OpenROAD locally,
-follow [this procedure](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
+follow [this procedure](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html#clone-and-install-dependencies).
 
-> :warning: warning :warning:
+> **WARNING**
 >
 > `etc/DependencyInstaller.sh` defaults to installing system 
 > packages and requires sudo access. These packages can affect
