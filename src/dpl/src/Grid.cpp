@@ -100,22 +100,22 @@ void Opendp::initGrid()
       int index = grid_info.grid_index;
       grid_[index] = new Pixel*[layer_row_count];
     }
+  }
 
-    for (auto& [row_height, grid_info] : grid_info_map_) {
-      const int layer_row_count = grid_info.row_count;
-      const int layer_row_site_count = grid_info.site_count;
-      const int index = grid_info.grid_index;
-      grid_[index] = new Pixel*[layer_row_count];
-      for (int j = 0; j < layer_row_count; j++) {
-        grid_[index][j] = new Pixel[layer_row_site_count];
-        for (int k = 0; k < layer_row_site_count; k++) {
-          Pixel& pixel = grid_[index][j][k];
-          pixel.cell = nullptr;
-          pixel.group_ = nullptr;
-          pixel.util = 0.0;
-          pixel.is_valid = false;
-          pixel.is_hopeless = false;
-        }
+  for (auto& [row_height, grid_info] : grid_info_map_) {
+    const int layer_row_count = grid_info.row_count;
+    const int layer_row_site_count = grid_info.site_count;
+    const int index = grid_info.grid_index;
+    grid_[index] = new Pixel*[layer_row_count];
+    for (int j = 0; j < layer_row_count; j++) {
+      grid_[index][j] = new Pixel[layer_row_site_count];
+      for (int k = 0; k < layer_row_site_count; k++) {
+        Pixel& pixel = grid_[index][j][k];
+        pixel.cell = nullptr;
+        pixel.group_ = nullptr;
+        pixel.util = 0.0;
+        pixel.is_valid = false;
+        pixel.is_hopeless = false;
       }
     }
   }
