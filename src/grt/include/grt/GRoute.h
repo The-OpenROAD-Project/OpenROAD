@@ -35,6 +35,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <vector>
 
 namespace odb {
@@ -91,6 +92,27 @@ class Capacities
 struct cmpById
 {
   bool operator()(odb::dbNet* net1, odb::dbNet* net2) const;
+};
+
+struct TileCongestion
+{
+  int capacity;
+  int usage;
+};
+
+struct TileInformation
+{
+  std::set<odb::dbNet*, cmpById> nets;
+  TileCongestion congestion;
+};
+
+using NetsPerCongestedArea = std::map<std::pair<int, int>, TileInformation>;
+
+struct CongestionInformation
+{
+  GSegment segment;
+  TileCongestion congestion;
+  std::set<odb::dbNet*, cmpById> sources;
 };
 
 // class Route is defined in fastroute core.

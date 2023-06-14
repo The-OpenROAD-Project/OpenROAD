@@ -331,6 +331,11 @@ void dbStaReport::printLine(const char* line, size_t length)
     redirectStringPrint("\n", 1);
     return;
   }
+  if (redirect_stream_) {
+    fwrite(line, sizeof(char), length, redirect_stream_);
+    fwrite("\n", sizeof(char), 1, redirect_stream_);
+    return;
+  }
 
   logger_->report("{}", line);
 }
@@ -341,6 +346,10 @@ size_t dbStaReport::printString(const char* buffer, size_t length)
   if (redirect_to_string_) {
     redirectStringPrint(buffer, length);
     return length;
+  }
+  if (redirect_stream_) {
+    size_t ret = fwrite(buffer, sizeof(char), length, redirect_stream_);
+    return std::min(ret, length);
   }
 
   // prepend saved buffer
