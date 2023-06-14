@@ -261,7 +261,11 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   Properties props({{"DbUnits per Micron", tech->getDbUnitsPerMicron()},
                     {"LEF Units", tech->getLefUnits()},
                     {"LEF Version", tech->getLefVersionStr()}});
-
+  
+  if (tech->hasManufacturingGrid()) {
+    props.push_back({"Manufacturing Grids", tech->getManufacturingGrid()});
+  }
+  
   SelectionSet tech_layers;
   for (auto tech_layer : tech->getLayers()) {
     tech_layers.insert(gui->makeSelected(tech_layer));
