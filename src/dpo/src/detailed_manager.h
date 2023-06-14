@@ -89,6 +89,7 @@ class DetailedMgr
   void setSeed(int s);
 
   void setMaxDisplacement(int x, int y);
+  void setDisallowOneSiteGaps(bool disallowOneSiteGaps);
   void getMaxDisplacement(int& x, int& y) const
   {
     x = maxDispX_;
@@ -96,6 +97,7 @@ class DetailedMgr
   }
   int getMaxDisplacementX() const { return maxDispX_; }
   int getMaxDisplacementY() const { return maxDispY_; }
+  bool getDisallowOneSiteGaps() const { return disallowOneSiteGaps_; }
   double measureMaximumDisplacement(double& maxX,
                                     double& maxY,
                                     int& violatedX,
@@ -122,14 +124,21 @@ class DetailedMgr
       std::vector<DetailedSeg*>& stack,
       std::vector<std::vector<DetailedSeg*>>& candidates);
   bool findClosestSpanOfSegments(Node* nd, std::vector<DetailedSeg*>& segments);
-
+  bool isInsideABlockage(Node* nd, double position);
   void assignCellsToSegments(const std::vector<Node*>& nodesToConsider);
   int checkOverlapInSegments();
   int checkEdgeSpacingInSegments();
   int checkSiteAlignment();
   int checkRowAlignment();
   int checkRegionAssignment();
-
+  void getOneSiteGapViolationsPerSegment(
+      std::vector<std::vector<int>>& violating_cells,
+      bool fix_violations);
+  bool fixOneSiteGapViolations(Node* cell,
+                               int one_site_gap,
+                               int newX,
+                               int segment,
+                               Node* violatingNode);
   void removeCellFromSegment(Node* nd, int seg);
   void addCellToSegment(Node* nd, int seg);
   double getCellSpacing(Node* ndl, Node* ndr, bool checkPinsOnCells);
@@ -253,6 +262,8 @@ class DetailedMgr
 
   // For help aligning cells to sites.
   bool alignPos(Node* ndi, int& xi, int xl, int xr);
+  int getMoveLimit() { return moveLimit_; }
+  void setMoveLimit(uint newMoveLimit) { moveLimit_ = newMoveLimit; }
 
   struct compareNodesX
   {
@@ -347,7 +358,7 @@ class DetailedMgr
   // Target displacement limits.
   int maxDispX_;
   int maxDispY_;
-
+  bool disallowOneSiteGaps_;
   std::vector<Node*> fixedCells_;  // Fixed; filler, macros, temporary, etc.
 
   // Blockages and segments.

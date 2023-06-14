@@ -33,12 +33,14 @@
 sta::define_cmd_args "improve_placement" {\
     [-random_seed seed]\
     [-max_displacement disp|{disp_x disp_y}]\
+    [-disallow_one_site_gaps]\
 }
 
 proc improve_placement { args } {
   sta::parse_key_args "improve_placement" args \
-    keys {-random_seed -max_displacement} flags {}
-
+    keys {-random_seed -max_displacement} flags {-disallow_one_site_gaps}
+  
+  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   set seed 1
   if { [info exists keys(-random_seed)] } {
     set seed $keys(-random_seed)
@@ -61,9 +63,9 @@ proc improve_placement { args } {
     set max_displacement_x 0
     set max_displacement_y 0
   }
-
+  
   sta::check_argc_eq0 "improve_placement" $args
-  dpo::improve_placement_cmd $seed $max_displacement_x $max_displacement_y
+  dpo::improve_placement_cmd $seed $max_displacement_x $max_displacement_y $disallow_one_site_gaps
 }
 
 namespace eval dpo {
