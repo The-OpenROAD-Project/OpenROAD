@@ -1,0 +1,75 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 676 components and 2850 component-terminals.
+[INFO ODB-0133]     Created 579 nets and 1498 connections.
+[INFO GRT-0020] Min routing layer: metal2
+[INFO GRT-0021] Max routing layer: metal10
+[INFO GRT-0022] Global adjustment: 0%
+[INFO GRT-0023] Grid origin: (0, 0)
+[INFO GRT-0043] No OR_DEFAULT vias defined.
+[INFO GRT-0088] Layer metal1  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1350
+[INFO GRT-0088] Layer metal2  Track-Pitch = 0.1900  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal3  Track-Pitch = 0.1400  line-2-Via Pitch: 0.1400
+[INFO GRT-0088] Layer metal4  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal5  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal6  Track-Pitch = 0.2800  line-2-Via Pitch: 0.2800
+[INFO GRT-0088] Layer metal7  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal8  Track-Pitch = 0.8000  line-2-Via Pitch: 0.8000
+[INFO GRT-0088] Layer metal9  Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0088] Layer metal10 Track-Pitch = 1.6000  line-2-Via Pitch: 1.6000
+[INFO GRT-0019] Found 0 clock nets.
+[INFO GRT-0001] Minimum degree: 2
+[INFO GRT-0002] Maximum degree: 36
+[INFO GRT-0003] Macros: 0
+[INFO GRT-0004] Blockages: 0
+
+[INFO GRT-0053] Routing resources analysis:
+          Routing      Original      Derated      Resource
+Layer     Direction    Resources     Resources    Reduction (%)
+---------------------------------------------------------------
+metal1     Horizontal          0             0          0.00%
+metal2     Vertical        24816          3008          87.88%
+metal3     Horizontal      33840          2852          91.57%
+metal4     Vertical        15792           564          96.43%
+metal5     Horizontal      15792           322          97.96%
+metal6     Vertical        15792           562          96.44%
+metal7     Horizontal       4512            92          97.96%
+metal8     Vertical         4512           188          95.83%
+metal9     Horizontal       2256            46          97.96%
+metal10    Vertical         2256            94          95.83%
+---------------------------------------------------------------
+
+[INFO GRT-0101] Running extra iterations to remove overflow.
+[INFO GRT-0103] Extra Run for hard benchmark.
+[INFO GRT-0197] Via related to pin nodes: 1902
+[INFO GRT-0198] Via related Steiner nodes: 65
+[INFO GRT-0199] Via filling finished.
+[INFO GRT-0111] Final number of vias: 3023
+[INFO GRT-0112] Final usage 3D: 13876
+[WARNING GRT-0115] Global routing finished with overflow.
+
+[INFO GRT-0096] Final congestion report:
+Layer         Resource        Demand        Usage (%)    Max H / Max V / Total Overflow
+---------------------------------------------------------------------------------------
+metal1               0           475            0.00%             4 /  1 / 475
+metal2            3008          2410           80.12%             1 /  5 / 732
+metal3            2852          1922           67.39%             3 /  1 / 280
+metal4             564             0            0.00%             0 /  0 /  0
+metal5             322             0            0.00%             0 /  0 /  0
+metal6             562             0            0.00%             0 /  0 /  0
+metal7              92             0            0.00%             0 /  0 /  0
+metal8             188             0            0.00%             0 /  0 /  0
+metal9              46             0            0.00%             0 /  0 /  0
+metal10             94             0            0.00%             0 /  0 /  0
+---------------------------------------------------------------------------------------
+Total             7728          4807           62.20%             8 /  7 / 1487
+
+[INFO GRT-0018] Total wirelength: 15021 um
+[INFO GRT-0014] Routed nets: 563
+No differences found.
+No differences found.

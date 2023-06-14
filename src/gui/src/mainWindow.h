@@ -240,6 +240,8 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
                                     bool output,
                                     bool input,
                                     int highlight_group = 0);
+  void selectHighlightConnectedBufferTrees(bool select_flag,
+                                           int highlight_group = 0);
 
   void timingCone(Gui::odbTerm term, bool fanin, bool fanout);
   void timingPathsThrough(const std::set<Gui::odbTerm>& terms);
@@ -282,7 +284,7 @@ class MainWindow : public QMainWindow, public ord::OpenRoadObserver
   utl::Logger* logger_;
   SelectionSet selected_;
   HighlightSet highlighted_;
-  std::vector<std::unique_ptr<Ruler>> rulers_;
+  Rulers rulers_;
 
   // All but viewer_ are owned by this widget.  Qt will
   // handle destroying the children.

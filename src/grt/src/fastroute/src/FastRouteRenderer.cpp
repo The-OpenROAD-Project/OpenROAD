@@ -8,18 +8,24 @@
 
 namespace grt {
 
-FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech,
-                                     int tile_size,
-                                     int x_corner,
-                                     int y_corner)
+FastRouteRenderer::FastRouteRenderer(odb::dbTech* tech)
     : treeStructure_(TreeStructure::steinerTreeByStt),
       is3DVisualization_(false),
       tech_(tech),
-      tile_size_(tile_size),
-      x_corner_(x_corner),
-      y_corner_(y_corner)
+      tile_size_(0),
+      x_corner_(0),
+      y_corner_(0)
 {
   gui::Gui::get()->registerRenderer(this);
+}
+
+void FastRouteRenderer::setGridVariables(int tile_size,
+                                         int x_corner,
+                                         int y_corner)
+{
+  tile_size_ = tile_size;
+  x_corner_ = x_corner;
+  y_corner_ = y_corner;
 }
 
 void FastRouteRenderer::redrawAndPause()

@@ -87,7 +87,7 @@ class DplObserver;
 // multi-height cells. Each unique row height creates a new grid that is used in
 // legalization. The first index is the grid index (corresponding to row
 // height), second index is the row index, and third index is the site index.
-using Grid = Pixel***;
+using Grid = std::vector<std::vector<std::vector<Pixel>>>;
 using dbMasterSeq = vector<dbMaster*>;
 // gap -> sequence of masters to fill the gap
 using GapFillers = vector<dbMasterSeq>;
@@ -459,7 +459,7 @@ class Opendp
   vector<dbInst*> placement_failures_;
 
   // 3D pixel grid
-  Grid grid_ = nullptr;
+  Grid grid_;
   Cell dummy_cell_;
 
   // Filler placement.

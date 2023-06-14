@@ -1,0 +1,68 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0128] Design: gcd
+[INFO ODB-0130]     Created 54 pins.
+[INFO ODB-0131]     Created 549 components and 2166 component-terminals.
+[INFO ODB-0133]     Created 364 nets and 1068 connections.
+Detailed placement improvement.
+Importing netlist into detailed improver.
+[INFO DPO-0100] Creating network with 549 cells, 54 terminals, 364 edges and 1122 pins.
+[INFO DPO-0109] Network stats: inst 603, edges 364, pins 1122
+[INFO DPO-0110] Number of regions is 1
+[INFO DPO-0401] Setting random seed to 1.
+[INFO DPO-0402] Setting maximum displacement 0 0 to 479560 479560 units.
+[INFO DPO-0320] Collected 309 fixed cells (excluded terminal_NI).
+[INFO DPO-0318] Collected 294 single height cells.
+[INFO DPO-0321] Collected 0 wide cells.
+[INFO DPO-0322] Image (28000, 28000) - (267780, 266000)
+[INFO DPO-0310] Assigned 294 cells into segments.  Movement in X-direction is 0.000000, movement in Y-direction is 0.000000.
+[INFO DPO-0313] Found 0 cells in wrong regions.
+[INFO DPO-0315] Found 0 row alignment problems.
+[INFO DPO-0314] Found 0 site alignment problems.
+[INFO DPO-0311] Found 0 overlaps between adjacent cells.
+[INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
+[INFO DPO-0303] Running algorithm for independent set matching.
+[INFO DPO-0300] Set matching objective is wirelength.
+[INFO DPO-0301] Pass   1 of matching; objective is 1.547946e+07.
+[INFO DPO-0302] End of matching; objective is 1.538248e+07, improvement is 0.63 percent.
+[INFO DPO-0303] Running algorithm for global swaps.
+[INFO DPO-0306] Pass   1 of global swaps; hpwl is 1.522663e+07.
+[INFO DPO-0306] Pass   2 of global swaps; hpwl is 1.520112e+07.
+[INFO DPO-0307] End of global swaps; objective is 1.520112e+07, improvement is 1.18 percent.
+[INFO DPO-0303] Running algorithm for vertical swaps.
+[INFO DPO-0308] Pass   1 of vertical swaps; hpwl is 1.517182e+07.
+[INFO DPO-0309] End of vertical swaps; objective is 1.517182e+07, improvement is 0.19 percent.
+[INFO DPO-0303] Running algorithm for reordering.
+[INFO DPO-0304] Pass   1 of reordering; objective is 1.498416e+07.
+[INFO DPO-0304] Pass   2 of reordering; objective is 1.495820e+07.
+[INFO DPO-0305] End of reordering; objective is 1.495820e+07, improvement is 1.41 percent.
+[INFO DPO-0303] Running algorithm for random improvement.
+[INFO DPO-0324] Random improver is using displacement generator.
+[INFO DPO-0325] Random improver is using hpwl objective.
+[INFO DPO-0326] Random improver cost string is (a).
+[INFO DPO-0332] End of pass, Generator displacement called 5880 times.
+[INFO DPO-0335] Generator displacement, Cumulative attempts 5880, swaps 1651, moves  3992 since last reset.
+[INFO DPO-0333] End of pass, Objective hpwl, Initial cost 1.495820e+07, Scratch cost 1.482843e+07, Incremental cost 1.482843e+07, Mismatch? N
+[INFO DPO-0338] End of pass, Total cost is 1.482843e+07.
+[INFO DPO-0327] Pass   1 of random improver; improvement in cost is 0.87 percent.
+[INFO DPO-0328] End of random improver; improvement is 0.867584 percent.
+[INFO DPO-0303] Running algorithm for disallow_one_site_gaps.
+[INFO DPO-0380] Cell flipping.
+[INFO DPO-0382] Changed 151 cell orientations for row compatibility.
+[INFO DPO-0383] Performed 105 cell flips.
+[INFO DPO-0384] End of flipping; objective is 1.467974e+07, improvement is 1.00 percent.
+[INFO DPO-0313] Found 0 cells in wrong regions.
+[INFO DPO-0315] Found 0 row alignment problems.
+[INFO DPO-0314] Found 0 site alignment problems.
+[INFO DPO-0311] Found 0 overlaps between adjacent cells.
+[INFO DPO-0312] Found 0 edge spacing violations and 0 padding violations.
+Detailed Improvement Results
+------------------------------------------
+Original HPWL             7709.2 u
+Final HPWL                7326.7 u
+Delta HPWL                  -5.0 %
+
+No differences found.
