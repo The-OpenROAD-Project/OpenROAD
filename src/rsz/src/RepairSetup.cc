@@ -239,7 +239,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
                                    cloned_gate_count_);
           break;
         }
-        else if (cloned_gate_begin < cloned_gate_end) {
+        if (cloned_gate_begin < cloned_gate_end) {
           resizer_->journalRestore(resize_count_,
                                    inserted_buffer_count_,
                                    cloned_gate_count_);
