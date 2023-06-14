@@ -33,6 +33,7 @@
 #include "gui/gui.h"
 
 #include <QApplication>
+#include <QLoggingCategory>
 #include <boost/algorithm/string/predicate.hpp>
 #include <stdexcept>
 #include <string>
@@ -1127,6 +1128,8 @@ int startGui(int& argc,
   auto gui = gui::Gui::get();
   // ensure continue after close is false
   gui->clearContinueAfterClose();
+
+  QLoggingCategory::setFilterRules("qt.qpa.xcb.xcberror=false");
 
   QApplication app(argc, argv);
   application = &app;
