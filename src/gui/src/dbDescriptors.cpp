@@ -374,12 +374,6 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Insts", insts});
 
-  SelectionSet iterms;
-  for (auto iterm : block->getITerms()) {
-    iterms.insert(gui->makeSelected(iterm));
-  }
-  props.push_back({"ITerms", iterms});
-
   SelectionSet blockages;
   for (auto blockage : block->getBlockages()) {
     blockages.insert(gui->makeSelected(blockage));
