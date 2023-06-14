@@ -3030,13 +3030,17 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech)
   }
 }
 
-void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech)
+void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech, bool snapshot)
 {
   odb::dbWireEncoder _wire_encoder;
   for (auto net : block->getNets()) {
     if (connFigs_.find(net->getName()) != connFigs_.end()) {
       odb::dbWire* wire = net->getWire();
       if (wire == nullptr) {
+        wire = odb::dbWire::create(net);
+        _wire_encoder.begin(wire);
+      } else if (snapshot) {
+        odb::dbWire::destroy(wire);
         wire = odb::dbWire::create(net);
         _wire_encoder.begin(wire);
       } else {
@@ -3301,7 +3305,7 @@ void io::Writer::updateDbAccessPoints(odb::dbBlock* block, odb::dbTech* db_tech)
   }
 }
 
-void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access)
+void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access, bool snapshot)
 {
   if (db->getChip() == nullptr) {
     logger_->error(DRT, 3, "Load design first.");
@@ -3317,6 +3321,6 @@ void io::Writer::updateDb(odb::dbDatabase* db, bool pin_access)
   updateDbAccessPoints(block, db_tech);
   if (!pin_access) {
     fillConnFigs(false);
-    updateDbConn(block, db_tech);
+    updateDbConn(block, db_tech, snapshot);
   }
 }
