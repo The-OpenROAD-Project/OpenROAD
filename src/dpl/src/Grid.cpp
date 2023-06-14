@@ -251,11 +251,8 @@ void Opendp::visitCellPixels(
         int layer_y_start
             = map_coordinates(y_start, row_height, layer_row_height);
         int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
-        if (layer_y_start == layer_y_end) {
-          debugPrint(
-              logger_, DPL, "detailed", 1, "layer_y_start == layer_y_end");
+        if (layer_y_start == layer_y_end)
           ++layer_y_end;
-        }
         for (int x = x_start; x < x_end; x++) {
           for (int y = layer_y_start; y < layer_y_end; y++) {
             Pixel* pixel = gridPixel(grid_idx, x, y);
@@ -280,14 +277,11 @@ void Opendp::visitCellPixels(
       int layer_x_end = map_coordinates(x_end, site_width, site_width);
       int layer_y_start = map_coordinates(y_start, row_height, layer_it.first);
       int layer_y_end = map_coordinates(y_end, row_height, layer_it.first);
-      if (layer_y_end == layer_y_start) {
-        debugPrint(logger_, DPL, "detailed", 1, "layer_y_end == layer_y_start");
+      if (layer_y_end == layer_y_start)
         ++layer_y_end;
-      }
-      if (layer_x_end == layer_x_start) {
-        debugPrint(logger_, DPL, "detailed", 1, "layer_x_end == layer_x_start");
+      if (layer_x_end == layer_x_start)
         ++layer_x_end;
-      }
+
       for (int x = layer_x_start; x < layer_x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
           Pixel* pixel = gridPixel(layer_it.second.grid_index, x, y);
@@ -567,10 +561,9 @@ void Opendp::erasePixel(Cell* cell)
       int layer_y_start
           = map_coordinates(y_start, row_height, layer_row_height);
       int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
-      if (layer_y_end == layer_y_start) {
-        debugPrint(logger_, DPL, "detailed", 1, "layer_y_end == layer_y_start");
+
+      if (layer_y_end == layer_y_start)
         ++layer_y_end;
-      }
 
       for (int x = gridPaddedX(cell, site_width); x < x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
@@ -629,14 +622,12 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     int layer_x_end = map_coordinates(x_end, site_width, site_width);
     int layer_y = map_coordinates(grid_y, row_height, layer.first);
     int layer_y_end = map_coordinates(y_end, row_height, layer.first);
-    if (layer_x_end == layer_x) {
-      debugPrint(logger_, DPL, "detailed", 1, "layer_x_end == layer_x");
+    if (layer_x_end == layer_x)
       ++layer_x_end;
-    }
-    if (layer_y_end == layer_y) {
-      debugPrint(logger_, DPL, "detailed", 1, "layer_y_end == layer_y");
+
+    if (layer_y_end == layer_y)
       ++layer_y_end;
-    }
+
     for (int x = layer_x; x < layer_x_end; x++) {
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
