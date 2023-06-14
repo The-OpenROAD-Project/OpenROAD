@@ -130,6 +130,7 @@ private:
 
   int resize_count_;
   int inserted_buffer_count_;
+  int cloned_gate_count_;
   const MinMax *min_;
   const MinMax *max_;
   const int min_index_;

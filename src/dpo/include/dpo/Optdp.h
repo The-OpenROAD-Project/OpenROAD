@@ -78,7 +78,8 @@ class Optdp
 
   void improvePlacement(int seed,
                         int max_displacement_x,
-                        int max_displacement_y);
+                        int max_displacement_y,
+                        bool disallow_one_site_gaps = false);
 
  private:
   void import();

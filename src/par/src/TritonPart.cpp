@@ -1155,9 +1155,10 @@ void TritonPart::ReadHypergraph(const std::string& hypergraph_file,
 
   // show the status of hypergraph
   logger_->info(PAR, 171, "Hypergraph Information**");
-  logger_->info(PAR, 172, "Vertices = {}", original_hypergraph_->num_vertices_);
   logger_->info(
-      PAR, 173, "Hyperedges = {}", original_hypergraph_->num_hyperedges_);
+      PAR, 172, "Vertices = {}", original_hypergraph_->GetNumVertices());
+  logger_->info(
+      PAR, 173, "Hyperedges = {}", original_hypergraph_->GetNumHyperedges());
 }
 
 // for design partitioning
@@ -1465,9 +1466,10 @@ void TritonPart::ReadNetlist(const std::string& fixed_file,
                                                       logger_);
   // show the status of hypergraph
   logger_->info(PAR, 174, "Netlist Information**");
-  logger_->info(PAR, 175, "Vertices = {}", original_hypergraph_->num_vertices_);
   logger_->info(
-      PAR, 176, "Hyperedges = {}", original_hypergraph_->num_hyperedges_);
+      PAR, 175, "Vertices = {}", original_hypergraph_->GetNumVertices());
+  logger_->info(
+      PAR, 176, "Hyperedges = {}", original_hypergraph_->GetNumHyperedges());
   logger_->info(PAR, 177, "Number of timing paths = {}", timing_paths_.size());
 }
 
@@ -1893,12 +1895,12 @@ void TritonPart::MultiLevelPartition()
   // Translate the solution of hypergraph to original_hypergraph_
   // solution to solution_
   solution_.clear();
-  solution_.resize(original_hypergraph_->num_vertices_);
+  solution_.resize(original_hypergraph_->GetNumVertices());
   std::fill(solution_.begin(), solution_.end(), -1);
-  for (int cluster_id = 0; cluster_id < hypergraph_->num_vertices_;
+  for (int cluster_id = 0; cluster_id < hypergraph_->GetNumVertices();
        cluster_id++) {
     const int part_id = solution[cluster_id];
-    for (const auto& v : hypergraph_->vertex_c_attr_[cluster_id]) {
+    for (const auto& v : hypergraph_->GetVertexCAttr(cluster_id)) {
       solution_[v] = part_id;
     }
   }

@@ -55,7 +55,7 @@ float GreedyRefine::Pass(
 {
   float total_gain = 0.0;  // total gain improvement
   int num_move = 0;
-  for (int hyperedge_id = 0; hyperedge_id < hgraph->num_hyperedges_;
+  for (int hyperedge_id = 0; hyperedge_id < hgraph->GetNumHyperedges();
        hyperedge_id++) {
     // check if the hyperedge is a straddled_hyperedge
     std::set<int> block_set;

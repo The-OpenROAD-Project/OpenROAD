@@ -3,4 +3,5 @@ record_tests {
     gcd
     ibex
     multi_height1
+    gcd_no_one_site_gaps
 }

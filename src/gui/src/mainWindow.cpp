@@ -145,7 +145,14 @@ MainWindow::MainWindow(QWidget* parent)
 
   // Hook up all the signals/slots
   connect(script_, SIGNAL(exiting()), this, SIGNAL(exit()));
-  connect(script_, SIGNAL(commandExecuted(bool)), viewer_, SLOT(update()));
+  connect(script_,
+          SIGNAL(commandExecuted(bool)),
+          viewer_,
+          SLOT(commandFinishedExecuting()));
+  connect(script_,
+          SIGNAL(commandAboutToExecute()),
+          viewer_,
+          SLOT(commandAboutToExecute()));
   connect(this,
           SIGNAL(designLoaded(odb::dbBlock*)),
           viewer_,
@@ -161,6 +168,7 @@ MainWindow::MainWindow(QWidget* parent)
           SLOT(setBlock(odb::dbBlock*)));
 
   connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
+  connect(script_, SIGNAL(executionPaused()), viewer_, SLOT(executionPaused()));
   connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
   connect(controls_,
           SIGNAL(changed()),
@@ -186,9 +194,9 @@ MainWindow::MainWindow(QWidget* parent)
         addRuler(x0, y0, x1, y1, "", "", default_ruler_style_->isChecked());
       });
 
-  connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(update()));
-  connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(update()));
-  connect(this, SIGNAL(rulersChanged()), viewer_, SLOT(update()));
+  connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(fullRepaint()));
+  connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(fullRepaint()));
+  connect(this, SIGNAL(rulersChanged()), viewer_, SLOT(fullRepaint()));
 
   connect(controls_,
           SIGNAL(selected(const Selected&)),
@@ -218,7 +226,7 @@ MainWindow::MainWindow(QWidget* parent)
   connect(inspector_,
           SIGNAL(selectedItemChanged(const Selected&)),
           viewer_,
-          SLOT(update()));
+          SLOT(fullRepaint()));
   connect(inspector_,
           SIGNAL(selectedItemChanged(const Selected&)),
           this,
@@ -580,6 +588,7 @@ void MainWindow::createActions()
       this, &MainWindow::designLoaded, [this]() { open_->setEnabled(false); });
   connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
   connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
+  connect(this, SIGNAL(exit()), viewer_, SLOT(exit()));
   connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
   connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
   connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
@@ -1276,6 +1285,41 @@ void MainWindow::selectHighlightConnectedNets(bool select_flag,
     addSelected(connected_nets);
   } else {
     addHighlighted(connected_nets, highlight_group);
+  }
+}
+
+void MainWindow::selectHighlightConnectedBufferTrees(bool select_flag,
+                                                     int highlight_group)
+{
+  SelectionSet connected_objects;
+  for (auto& sel_obj : selected_) {
+    if (sel_obj.isInst()) {
+      auto inst_obj = std::any_cast<odb::dbInst*>(sel_obj.getObject());
+      for (auto inst_term : inst_obj->getITerms()) {
+        auto inst_term_dir = inst_term->getIoType();
+        if (!inst_term->getSigType().isSupply()
+            && (inst_term_dir == odb::dbIoType::INPUT
+                || inst_term_dir == odb::dbIoType::OUTPUT
+                || inst_term_dir == odb::dbIoType::INOUT)) {
+          auto net_obj = inst_term->getNet();
+          if (net_obj == nullptr
+              || net_obj->getSigType() != odb::dbSigType::SIGNAL) {
+            continue;
+          }
+          connected_objects.insert(
+              Gui::get()->makeSelected(gui::BufferTree(net_obj)));
+        }
+      }
+    }
+  }
+
+  if (connected_objects.empty()) {
+    return;
+  }
+  if (select_flag) {
+    addSelected(connected_objects);
+  } else {
+    addHighlighted(connected_objects, highlight_group);
   }
 }
 
