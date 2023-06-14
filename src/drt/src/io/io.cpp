@@ -2553,11 +2553,6 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
   USEMINSPACING_OBS = tech->getUseMinSpacingObs() == odb::dbOnOffType::ON;
   tech_->setManufacturingGrid(frUInt4(tech->getManufacturingGrid()));
   setLayers(tech);
-  setTechVias(db->getTech());
-  setTechViaRules(db->getTech());
-  setMasters(db);
-  setNDRs(db);
-  initDefaultVias();
 
   auto fr_tech = design_->getTech();
   if (!BOTTOM_ROUTING_LAYER_NAME.empty()) {
@@ -2583,6 +2578,13 @@ void io::Parser::readTechAndLibs(odb::dbDatabase* db)
                     TOP_ROUTING_LAYER_NAME);
     }
   }
+
+  setTechVias(db->getTech());
+  setTechViaRules(db->getTech());
+  setMasters(db);
+  setNDRs(db);
+  initDefaultVias();
+
   if (VERBOSE > 0) {
     logger_->report("");
     logger_->report("Units:                {}", tech_->getDBUPerUU());
