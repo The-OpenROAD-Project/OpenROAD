@@ -8,11 +8,11 @@
 
 #include <memory>
 
-#include "sky130_test_fixture.h"
 #include "gtest/gtest.h"
 #include "odb/db.h"
 #include "odb/dbWireCodec.h"
 #include "odb/lefin.h"
+#include "sky130_test_fixture.h"
 #include "utl/Logger.h"
 
 namespace odb {
