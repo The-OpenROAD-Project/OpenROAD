@@ -258,7 +258,9 @@ class Writer
   frTechObject* getTech() const { return tech_; }
   frDesign* getDesign() const { return design_; }
   // others
-  void updateDb(odb::dbDatabase* db, bool pin_access = false, bool snapshot = false);
+  void updateDb(odb::dbDatabase* db,
+                bool pin_access = false,
+                bool snapshot = false);
   void updateTrackAssignment(odb::dbBlock* block);
 
  private:

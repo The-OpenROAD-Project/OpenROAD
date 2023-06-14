@@ -40,8 +40,8 @@
 #include "odb/db.h"
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
-#include "utl/Logger.h"
 #include "triton_route/TritonRoute.h"
+#include "utl/Logger.h"
 
 using namespace std;
 using namespace fr;
@@ -3031,7 +3031,9 @@ void io::Writer::updateDbVias(odb::dbBlock* block, odb::dbTech* db_tech)
   }
 }
 
-void io::Writer::updateDbConn(odb::dbBlock* block, odb::dbTech* db_tech, bool snapshot)
+void io::Writer::updateDbConn(odb::dbBlock* block,
+                              odb::dbTech* db_tech,
+                              bool snapshot)
 {
   odb::dbWireEncoder _wire_encoder;
   for (auto net : block->getNets()) {
