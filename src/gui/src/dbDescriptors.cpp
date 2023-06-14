@@ -1778,8 +1778,7 @@ Descriptor::Properties DbITermDescriptor::getProperties(std::any object) const
       aps.insert(gui->makeSelected(iap));
     }
   }
-  Properties props{{"Block", gui->makeSelected(iterm->getBlock())},
-                   {"Instance", gui->makeSelected(iterm->getInst())},
+  Properties props{{"Instance", gui->makeSelected(iterm->getInst())},
                    {"IO type", iterm->getIoType().getString()},
                    {"Net", net_value},
                    {"Special", iterm->isSpecial()},
