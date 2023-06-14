@@ -165,6 +165,7 @@ Resizer::Resizer()
       unique_inst_index_(1),
       resize_count_(0),
       inserted_buffer_count_(0),
+      cloned_gate_count_(0),
       buffer_moved_into_core_(false),
       max_wire_length_(0),
       worst_slack_nets_percent_(10),
@@ -471,6 +472,19 @@ Resizer::hasPins(Net *net)
   bool has_pins = pin_iter->hasNext();
   delete pin_iter;
   return has_pins;
+}
+
+std::vector<const Pin*>
+Resizer::getPins(Net* net) const
+{
+  std::vector<const Pin*> pins;
+  auto pin_iter = network_->pinIterator(net);
+  while (pin_iter->hasNext()) {
+    const Pin *pin = pin_iter->next();
+    pins.push_back(pin);
+  }
+  delete pin_iter;
+  return pins;
 }
 
 Instance *
@@ -990,7 +1004,7 @@ Resizer::findResizeSlacks()
                                repaired_net_count, slew_violations, cap_violations,
                                fanout_violations, length_violations);
   findResizeSlacks1();
-  journalRestore(resize_count_, inserted_buffer_count_);
+  journalRestore(resize_count_, inserted_buffer_count_, cloned_gate_count_);
 }
   
 void
@@ -2398,14 +2412,15 @@ void
 Resizer::repairSetup(double setup_margin,
                      double repair_tns_end_percent,
                      int max_passes,
-                     bool skip_pin_swap)
+                     bool skip_pin_swap,
+                     bool skip_gate_cloning)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
   }
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
-                             max_passes, skip_pin_swap);
+                             max_passes, skip_pin_swap, skip_gate_cloning);
 }
 
 void
@@ -2514,7 +2529,8 @@ Resizer::journalMakeBuffer(Instance *buffer)
 
 void
 Resizer::journalRestore(int &resize_count,
-                        int &inserted_buffer_count)
+                        int &inserted_buffer_count,
+                        int &cloned_gate_count)
 {
   for (auto [inst, lib_cell] : resized_inst_map_) {
     if (!inserted_buffer_set_.hasKey(inst)) {
@@ -2536,6 +2552,7 @@ Resizer::journalRestore(int &resize_count,
     inserted_buffer_count--;
   }
 
+  // Undo pin swaps
   for (const auto& element : swapped_pins_) {
     Instance *inst = element.first;
     LibertyPort *port1 = std::get<0>(element.second);
@@ -2545,6 +2562,33 @@ Resizer::journalRestore(int &resize_count,
     swapPins(inst, port2, port1, false);
   }
   swapped_pins_.clear();
+
+  // Undo gate cloning
+  // TODO
+  /*
+  for (auto element : cloned_gates_) {
+
+
+    auto original_inst = element.first;
+    auto cloned_inst = element.second;
+    const Pin* clone_pin = nullptr; // TODO outputPins(cloned_inst)[0];
+    Net* clone_out_net = network_->net(clone_pin);
+    std::vector<const Pin*> clone_sinks; // TODO fanoutPins(clone_out_net, true);
+    // disconnect all the pins
+    for (auto& pin : clone_sinks) {
+      sta_->disconnectPin(const_cast<Pin*>(pin));
+    }
+    for (auto& pin : clone_sinks) {
+      Instance* inst = network_->instance(pin);
+      auto term_port = network_->port(pin);
+      sta_->connectPin(inst, term_port, output_net);
+    }
+    sta_->deleteNet(clone_out_net);
+    sta_->deleteInstance(cloned_inst);
+    sta_->graphDelayCalc()->delaysInvalid();
+  }
+   */
+  cloned_gates_.clear();
 }
 
 ////////////////////////////////////////////////////////////////
