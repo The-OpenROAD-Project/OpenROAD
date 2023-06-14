@@ -64,6 +64,8 @@ namespace rsz {
 using sta::Instance;
 using sta::InstancePinIterator;
 using sta::PathAnalysisPt;
+using sta::Sdc;
+
 using utl::RSZ;
 using sta::PathExpanded;
 
@@ -132,14 +134,6 @@ bool GateCloner::isSingleOutputCombinational(LibertyCell* cell) const
   }
   auto output_pins = libraryOutputPins(cell);
   return (output_pins.size() == 1 && isCombinational(cell));
-}
-
-bool GateCloner::isCombinational(Instance* inst) const
-{
-  if (inst == network_->topInstance()) {
-    return false;
-  }
-  return isCombinational(network_->libertyCell(inst));
 }
 
 bool GateCloner::isCombinational(LibertyCell* cell) const
@@ -211,39 +205,60 @@ int GateCloner::gateClone(const Pin *drvr_pin, PathRef* drvr_path,
 }
 
 float
-GateCloner::maxLoad(LibertyCell* cell)
+GateCloner::maxLoad(Cell* cell)
 {
-  sta::LibertyCellPortIterator itr(cell);
-  while (itr.hasNext()) {
-    LibertyPort *port = itr.next();
+   LibertyCell *lib_cell = network_->libertyCell(cell);
+   sta::LibertyCellPortIterator itr(lib_cell);
+   while (itr.hasNext()) {
+    LibertyPort* port = itr.next();
     if (port->direction()->isOutput()) {
-      float limit;
-      bool exists;
-      port->capacitanceLimit(min_max_, limit, exists);
+      float limit, limit1;
+      bool exists, exists1;
+      const sta::Corner* corner = sta_->cmdCorner();
+      Sdc* sdc = sta_->sdc();
+      // Default to top ("design") limit.
+      Cell* top_cell = network_->cell(network_->topInstance());
+      sdc->capacitanceLimit(top_cell, min_max_, limit, exists);
+      sdc->capacitanceLimit(cell, min_max_, limit1, exists1);
+
+      if (exists1 && (!exists || min_max_->compare(limit, limit1))) {
+        limit = limit1;
+        exists = true;
+      }
+      LibertyPort* corner_port = port->cornerPort(corner, min_max_);
+      corner_port->capacitanceLimit(min_max_, limit1, exists1);
+      if (!exists1 && port->direction()->isAnyOutput()) {
+        corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
+      }
+      if (exists1 && (!exists || min_max_->compare(limit, limit1))) {
+        limit = limit1;
+        exists = true;
+      }
       if (exists) {
         return limit;
       }
     }
-  }
+   }
   return 0;
 }
 
-LibertyCell*
-GateCloner::largestLibraryCell(LibertyCell* cell)
+Cell*
+GateCloner::largestLibraryCell(Cell* cell)
 {
-  auto equiv_cells = sta_->equivCells(cell);
-  auto largest = cell;
+  auto largest = network_->libertyCell(cell);
+
+  auto equiv_cells = sta_->equivCells(largest);
   float current_max = maxLoad(cell);
   if (equiv_cells) {
     for (auto e_cell : *equiv_cells) {
-      auto cell_load = maxLoad(e_cell);
+      auto cell_load = maxLoad(network_->cell(e_cell));
       if (cell_load > current_max) {
         current_max = cell_load;
         largest = e_cell;
       }
     }
   }
-  return largest;
+  return network_->cell(largest);
 }
 
 LibertyCell* GateCloner::halfDrivingPowerCell(Instance* inst)
@@ -265,10 +280,10 @@ LibertyCell* GateCloner::closestDriver(LibertyCell* cell,
     return nullptr;
   }
   const auto output_pin = libraryOutputPins(cell)[0];
-  const auto current_limit = scale * maxLoad(output_pin->libertyCell());
+  const auto current_limit = scale * maxLoad(output_pin->cell());
   auto diff = sta::INF;
   for (auto& cand : *candidates) {
-    auto limit = maxLoad(libraryOutputPins(cand)[0]->libertyCell());
+    auto limit = maxLoad(libraryOutputPins(cand)[0]->cell());
     if (limit == current_limit) {
       return cand;
     }
@@ -340,18 +355,6 @@ Vertex* GateCloner::vertex(Pin* term) const
   return vertex;
 }
 
-float GateCloner::pin_slew(Pin* term) const
-{
-  return std::max(slew(term, true), slew(term, false));
-}
-
-float GateCloner::slew(Pin* term, bool is_rise) const
-{
-  return sta_->vertexSlew(vertex(term),
-      is_rise ? sta::RiseFall::rise() : sta::RiseFall::fall(),
-      sta::MinMax::max());
-}
-
 void GateCloner::cloneTree(Instance* inst, float cap_factor,
                            bool clone_largest_only)
 {
@@ -378,9 +381,10 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
     return;
   }
   tree->populateSides(); // needed to build up the data structures
-  LibertyCell *drvr_cell = network_->libertyCell(inst);
+  Cell *drvr_cell = network_->cell(inst);
+  LibertyCell *drvr_lib_cell = network_->libertyCell(drvr_cell);
   float total_net_load = resizer_->totalLoad(tree);
-  float output_target_load = resizer_->findTargetLoad(drvr_cell);
+  float output_target_load = resizer_->findTargetLoad(drvr_lib_cell);
 
   // This means the net is a bad candidate for cloning
   if (total_net_load < output_target_load) {
@@ -402,7 +406,7 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
   sta_->findSlewLimit(output_port, sta_->cmdCorner(), MinMax::max(),
                       slew_limit, exists);
 
-  const char *cellName = drvr_cell->name();
+  const char *cellName = network_->name(drvr_cell);
   const char *instName = network_->name(inst);
   debugPrint(logger_, RSZ, "gate_cloner", 1, "{} {} output_target_load: {}",
              instName, cellName, output_target_load);
@@ -420,7 +424,7 @@ void GateCloner::cloneTree(Instance* inst, float cap_factor,
   }
   int fanout_count = fanoutPins(net).size();
   if (fanout_count > 10) {
-    auto half_drvr = halfDrivingPowerCell(drvr_cell);
+    auto half_drvr = halfDrivingPowerCell(drvr_lib_cell);
     debugPrint(logger_, RSZ, "gate_cloner", 1,  "Cloning {} {}", instName,
 	       cellName);
     output_target_load = (*(resizer_->target_load_map_))[half_drvr];
@@ -454,32 +458,6 @@ if (slack_limit_ratio < hold_slack_limit_ratio_max_)
   return false;
 return true;
 } */
-
-float
-GateCloner::worstSlack(Pin* term) const
-{
-  // sta_->findRequireds();
-  auto vert = vertex(term);
-  sta_->vertexRequired(vert, sta::MinMax::min());
-  sta::PathRef ref = sta_->vertexWorstSlackPath(vert, sta::MinMax::max());
-
-  if (!ref.tag(sta_)) {
-    return sta::INF;
-  }
-  return ref.slack(sta_);
-}
-
-float
-GateCloner::worstSlack() const
-{
-  // TODO: Why do we care about the worst slack for the design. Seems a bit
-  // idiotic to me.
-  float   ws;
-  Vertex* vert;
-  sta_->findRequireds();
-  sta_->worstSlack(min_max_, ws, vert);
-  return ws;
-}
 
 std::vector<const Pin*>
 GateCloner::filterPins(std::vector<const Pin*>& terms,
