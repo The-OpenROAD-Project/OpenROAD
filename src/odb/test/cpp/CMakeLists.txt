@@ -15,7 +15,9 @@ set(TEST_LIBS
         utl_lib
 )
 
-add_executable(TestDbWire TestDbWire.cc TestLefPinUse.cc)
+# Add new unit tests to this executable.
+add_executable(OdbGUnitTests TestDbWire.cc TestLefPinUse.cc)
+
 add_executable(TestCallBacks TestCallBacks.cpp)
 add_executable(TestGeom TestGeom.cpp)
 add_executable(TestModule TestModule.cpp)
@@ -28,7 +30,7 @@ add_executable(TestGuide TestGuide.cpp)
 add_executable(TestNetTrack TestNetTrack.cpp)
 add_executable(TestMaster TestMaster.cpp)
 
-target_link_libraries(TestDbWire odb gtest gtest_main)
+target_link_libraries(OdbGUnitTests odb gtest gtest_main)
 target_link_libraries(TestCallBacks ${TEST_LIBS})
 target_link_libraries(TestGeom ${TEST_LIBS})
 target_link_libraries(TestModule ${TEST_LIBS})
@@ -46,7 +48,7 @@ target_link_libraries(TestMaster ${TEST_LIBS})
 # add_test(NAME TestJournal COMMAND TestJournal)
 # add_test(NAME TestAccessPoint COMMAND TestAccessPoint)
 
-gtest_discover_tests(TestDbWire
+gtest_discover_tests(OdbGUnitTests
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 add_test(NAME odb.TestCallBacks COMMAND TestCallBacks)
@@ -67,5 +69,5 @@ add_dependencies(build_and_test
         TestGuide
         TestNetTrack
         TestMaster
-        TestDbWire
+        OdbGUnitTests
 )
