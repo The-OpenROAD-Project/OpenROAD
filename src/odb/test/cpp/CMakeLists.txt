@@ -15,7 +15,7 @@ set(TEST_LIBS
         utl_lib
 )
 
-add_executable(TestDbWire TestDbWire.cc)
+add_executable(TestDbWire TestDbWire.cc TestLefPinUse.cc)
 add_executable(TestCallBacks TestCallBacks.cpp)
 add_executable(TestGeom TestGeom.cpp)
 add_executable(TestModule TestModule.cpp)

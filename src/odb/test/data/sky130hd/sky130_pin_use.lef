@@ -1,0 +1,129 @@
+# Copyright 2020 The SkyWater PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+VERSION 5.7 ;
+# NAMESCASESENSITIVE ON ;
+BUSBITCHARS "[]" ;
+DIVIDERCHAR "/" ;
+MACRO tieoff_scan_reset_standard_cell
+  CLASS CORE ;
+  ORIGIN  0.000000  0.000000 ;
+  SIZE  4.140000 BY  2.720000 ;
+  SYMMETRY X Y R90 ;
+  SITE unithd ;
+  PIN A1
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 2.905000 0.995000 3.290000 1.325000 ;
+        RECT 2.985000 0.285000 3.540000 0.845000 ;
+        RECT 2.985000 0.845000 3.290000 0.995000 ;
+    END
+  END A1
+  PIN A2
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 3.510000 1.025000 4.010000 1.290000 ;
+    END
+  END A2
+  PIN B1
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SIGNAL ;
+    PORT
+      LAYER li1 ;
+        RECT 2.400000 0.995000 2.680000 2.465000 ;
+    END
+  END B1
+  PIN RESETPIN
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE RESET ;
+    PORT
+      LAYER li1 ;
+        RECT 1.890000 1.050000 2.220000 2.465000 ;
+    END
+  END RESETPIN
+  PIN SCANPIN
+    ANTENNAGATEAREA  0.247500 ;
+    DIRECTION INPUT ;
+    USE SCAN ;
+    PORT
+      LAYER li1 ;
+        RECT 1.290000 1.050000 1.720000 1.290000 ;
+        RECT 1.515000 1.290000 1.720000 2.465000 ;
+    END
+  END SCANPIN
+  PIN TIEOFFPIN
+    ANTENNADIFFAREA  0.504500 ;
+    DIRECTION OUTPUT ;
+    USE TIEOFF ;
+    PORT
+      LAYER li1 ;
+        RECT 0.135000 0.255000 0.465000 1.620000 ;
+        RECT 0.135000 1.620000 0.390000 2.460000 ;
+    END
+  END TIEOFFPIN
+  PIN VGND
+    DIRECTION INOUT ;
+    SHAPE ABUTMENT ;
+    USE GROUND ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000000 -0.085000 4.140000 0.085000 ;
+        RECT 0.635000  0.085000 1.310000 0.470000 ;
+        RECT 2.085000  0.085000 2.430000 0.485000 ;
+        RECT 3.715000  0.085000 3.955000 0.760000 ;
+    END
+    PORT
+      LAYER met1 ;
+        RECT 0.000000 -0.240000 4.140000 0.240000 ;
+    END
+  END VGND
+  PIN VPWR
+    DIRECTION INOUT ;
+    SHAPE ABUTMENT ;
+    USE POWER ;
+    PORT
+      LAYER li1 ;
+        RECT 0.000000 2.635000 4.140000 2.805000 ;
+        RECT 0.565000 1.815000 0.895000 2.635000 ;
+        RECT 3.325000 1.835000 3.540000 2.635000 ;
+    END
+    PORT
+      LAYER met1 ;
+        RECT 0.000000 2.480000 4.140000 2.960000 ;
+    END
+  END VPWR
+  OBS
+    LAYER li1 ;
+      RECT 0.695000 0.650000 1.915000 0.655000 ;
+      RECT 0.695000 0.655000 2.805000 0.825000 ;
+      RECT 0.695000 0.825000 0.915000 1.465000 ;
+      RECT 0.695000 1.465000 1.345000 1.645000 ;
+      RECT 1.135000 1.645000 1.345000 2.460000 ;
+      RECT 1.585000 0.260000 1.915000 0.650000 ;
+      RECT 2.600000 0.260000 2.805000 0.655000 ;
+      RECT 2.860000 1.495000 3.990000 1.665000 ;
+      RECT 2.860000 1.665000 3.145000 2.460000 ;
+      RECT 3.720000 1.665000 3.990000 2.460000 ;
+  END
+END sky130_fd_sc_hd__a2111o_1
