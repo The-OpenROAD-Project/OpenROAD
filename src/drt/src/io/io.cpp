@@ -41,6 +41,7 @@
 #include "odb/dbShape.h"
 #include "odb/dbWireCodec.h"
 #include "utl/Logger.h"
+#include "triton_route/TritonRoute.h"
 
 using namespace std;
 using namespace fr;
