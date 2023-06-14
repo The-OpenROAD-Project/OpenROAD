@@ -258,25 +258,25 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
   auto tech = std::any_cast<odb::dbTech*>(object);
 
-  Properties props({{"DbUnits per Micron", tech->getDbUnitsPerMicron()},
-                    {"LEF Units", tech->getLefUnits()},
-                    {"LEF Version", tech->getLefVersionStr()}});
+  Properties props({{"DbUnits per micron", tech->getDbUnitsPerMicron()},
+                    {"LEF units", tech->getLefUnits()},
+                    {"LEF version", tech->getLefVersionStr()}});
   
   if (tech->hasManufacturingGrid()) {
-    props.push_back({"Manufacturing Grids", tech->getManufacturingGrid()});
+    props.push_back({"Manufacturing grids", tech->getManufacturingGrid()});
   }
   
   SelectionSet tech_layers;
   for (auto tech_layer : tech->getLayers()) {
     tech_layers.insert(gui->makeSelected(tech_layer));
   }
-  props.push_back({"Tech Layers", tech_layers});
+  props.push_back({"Tech layers", tech_layers});
 
   SelectionSet tech_vias;
   for (auto tech_via : tech->getVias()) {
     tech_vias.insert(gui->makeSelected(tech_via));
   }
-  props.push_back({"Tech Vias", tech_vias});
+  props.push_back({"Tech vias", tech_vias});
 
   std::vector<odb::dbTechSameNetRule*> rule_samenets;
   tech->getSameNetRules(rule_samenets);
@@ -284,7 +284,13 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   for (auto samenet : rule_samenets) {
     samenet_rules.insert(gui->makeSelected(samenet));
   }
-  props.push_back({"Same-Net Rules", samenet_rules});
+  props.push_back({"Same net rules", samenet_rules});
+
+  SelectionSet nondefault_rules;
+  for (auto nondefault : tech->getNonDefaultRules()) {
+    nondefault_rules.insert(gui->makeSelected(nondefault));
+  }
+  props.push_back({"Non-default rules", nondefault_rules});
 
   return props;
 }
@@ -376,7 +382,7 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   for (auto inst : block->getInsts()) {
     insts.insert(gui->makeSelected(inst));
   }
-  props.push_back({"Insts", insts});
+  props.push_back({"Instances", insts});
 
   SelectionSet blockages;
   for (auto blockage : block->getBlockages()) {
@@ -3198,7 +3204,7 @@ Descriptor::Properties DbNonDefaultRuleDescriptor::getProperties(
   auto* rule = std::any_cast<odb::dbTechNonDefaultRule*>(object);
   auto* gui = Gui::get();
 
-  Properties props;
+  Properties props({{"Tech", gui->makeSelected(db_->getTech())}});
 
   std::vector<odb::dbTechLayerRule*> rule_layers;
   rule->getLayerRules(rule_layers);
@@ -3269,6 +3275,11 @@ bool DbNonDefaultRuleDescriptor::getAllObjects(SelectionSet& objects) const
 }
 
 //////////////////////////////////////////////////
+
+DbTechSameNetRuleDescriptor::DbTechSameNetRuleDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
 
 std::string DbTechLayerRuleDescriptor::getName(std::any object) const
 {
@@ -3362,7 +3373,7 @@ Descriptor::Properties DbTechSameNetRuleDescriptor::getProperties(
   auto* rule = std::any_cast<odb::dbTechSameNetRule*>(object);
   auto* gui = Gui::get();
 
-  Properties props;
+  Properties props({{"Tech", gui->makeSelected(db_->getTech())}});
 
   props.push_back({"Layer 1", gui->makeSelected(rule->getLayer1())});
   props.push_back({"Layer 2", gui->makeSelected(rule->getLayer2())});

@@ -486,7 +486,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTechLayerRule*>(
       new DbTechLayerRuleDescriptor());
   gui->registerDescriptor<odb::dbTechSameNetRule*>(
-      new DbTechSameNetRuleDescriptor());
+      new DbTechSameNetRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbSite*>(new DbSiteDescriptor(db_));
   gui->registerDescriptor<DbSiteDescriptor::SpecificSite>(
       new DbSiteDescriptor(db_));
