@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include "AbstractMakeWireParasitics.h"
 #include "FastRoute.h"
 #include "Grid.h"
 #include "Net.h"
@@ -68,7 +69,7 @@ class Resizer;
 
 namespace grt {
 
-class MakeWireParasitics
+class MakeWireParasitics : public AbstractMakeWireParasitics
 {
  public:
   MakeWireParasitics(utl::Logger* logger,
