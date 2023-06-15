@@ -459,6 +459,7 @@ protected:
   bool isFuncOneZero(const Pin *drvr_pin);
   bool hasPins(Net *net);
   std::vector<const Pin*> getPins(Net* net) const;
+  std::vector<const Pin*> getPins(Instance* inst) const;
   Point tieLocation(const Pin *load,
                     int separation);
   bool hasFanout(Vertex *drvr);

@@ -161,6 +161,7 @@ protected:
   Logger *logger_;
 
   friend class Resizer;
+  friend class GateCloner;
 };
 
 } // namespace
