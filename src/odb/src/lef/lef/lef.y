@@ -63,6 +63,11 @@
 #include "lefrCallBacks.hpp"
 #include "lefrSettings.hpp"
 
+#ifndef WIN32
+  // Only include this on non-Windows platforms
+  #include "lef_parser.hpp"
+#endif
+
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 #define LYPROP_ECAP "EDGE_CAPACITANCE"
