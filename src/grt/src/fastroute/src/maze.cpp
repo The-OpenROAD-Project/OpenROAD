@@ -2254,14 +2254,12 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets, in
         }
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          if (abs(ymin-posY) <= ratio && abs(gridsX[i]-posX) <= ratio && dir == 0) {
-          //if (ymin == posY && gridsX[i] == posX && dir == 0) {
+          if (abs(ymin - posY) <= ratio && abs(gridsX[i] - posX) <= ratio && dir == 0) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          if (abs(gridsY[i]-posY) <= ratio && abs(xmin-posX) <= ratio && dir == 1) {
-          //if (gridsY[i] == posY && xmin == posX && dir == 1) {
+          if (abs(gridsY[i] - posY) <= ratio && abs(xmin - posX) <= ratio && dir == 1) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         }
@@ -2270,11 +2268,12 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets, in
   }
 }
 
+// The function will add the new nets to the congestion_nets set
 void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets) {
 
   std::vector<int> xs,ys,dirs;
   int n = 0;
-  // find congestion grids
+  // Find horizontal ggrids with congestion
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
@@ -2286,6 +2285,7 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets) {
       }
     }
   }
+  // Find vertical ggrids with congestion
   for (int i = 0; i < y_grid_ - 1; i++) {
     for (int j = 0; j < x_grid_; j++) {
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
@@ -2301,11 +2301,10 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets) {
   int old_size = congestion_nets.size();
 
   for (int ratio = 0; ratio < 5 && old_size == congestion_nets.size(); ratio++) {
-    // find nets
+    // Find nets for each congestion ggrid
     for (int i = 0; i<n; i++) {
       setCongestionNets(congestion_nets, xs[i], ys[i], dirs[i], ratio);
     }
-    printf("Ratio : %d nets: %ld\n", ratio, congestion_nets.size());
   }
 }
 
