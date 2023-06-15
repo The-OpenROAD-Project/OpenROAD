@@ -417,7 +417,6 @@ RepairSetup::repairSetup(PathRef &path,
       }
 
       // Gate cloning
-      skip_gate_cloning = false;
       if (!skip_gate_cloning && fanout > split_load_min_fanout_ &&
           !tristate_drvr &&
           !resizer_->dontTouch(net)) {
