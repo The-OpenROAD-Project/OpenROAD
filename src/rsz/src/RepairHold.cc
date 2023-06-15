@@ -92,6 +92,7 @@ RepairHold::RepairHold(Resizer *resizer) :
   resizer_(resizer),
   resize_count_(0),
   inserted_buffer_count_(0),
+  cloned_gate_count_(0),
   min_(MinMax::min()),
   max_(MinMax::max()),
   min_index_(MinMax::minIndex()),
@@ -456,7 +457,8 @@ RepairHold::repairEndHold(Vertex *end_vertex,
               if (!allow_setup_violations
                   && fuzzyLess(setup_slack_after, setup_slack_before)
                   && setup_slack_after < setup_margin)
-                resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+                resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+                                         cloned_gate_count_);
               resizer_->journalEnd();
             }
           }
