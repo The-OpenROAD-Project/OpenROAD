@@ -740,10 +740,10 @@ void Optdp::createArchitecture()
     unsigned orient = dbToDpoOrient(row->getOrient());
     archRow->setOrient(orient);
   }
-  for (auto skip : skip_list) {
+  for (const auto& skip : skip_list) {
     std::string skip_string = "[";
     int i = 0;
-    for (auto skipped_site : skip.second) {
+    for (const auto& skipped_site : skip.second) {
       skip_string += skipped_site + ",]"[i == skip.second.size() - 1];
       ++i;
     }
