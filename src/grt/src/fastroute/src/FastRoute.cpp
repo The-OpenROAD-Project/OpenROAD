@@ -1259,7 +1259,7 @@ void FastRouteCore::setUpdateSlack(int u)
   update_slack_ = u;
 }
 
-void FastRouteCore::setMakeWireParasiticsBuilder(MakeWireParasitics* builder)
+void FastRouteCore::setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder)
 {
   parasitics_builder_ = builder;
 }

@@ -45,7 +45,7 @@
 
 #include "DataType.h"
 #include "grt/GRoute.h"
-#include "grt/MakeWireParasitics.h"
+#include "AbstractMakeWireParasitics.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 
@@ -165,7 +165,7 @@ class FastRouteCore
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setUpdateSlack(int u);
-  void setMakeWireParasiticsBuilder(MakeWireParasitics* builder);
+  void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
@@ -577,7 +577,7 @@ class FastRouteCore
 
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
-  MakeWireParasitics* parasitics_builder_;
+  AbstractMakeWireParasitics* parasitics_builder_;
 
   std::unique_ptr<DebugSetting> debug_;
 
