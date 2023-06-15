@@ -38,7 +38,6 @@
 #include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
 
-
 namespace grt {
 
 class AbstractMakeWireParasitics
@@ -53,4 +52,4 @@ class AbstractMakeWireParasitics
   virtual sta::Slack getNetSlack(odb::dbNet* net) = 0;
 };
 
-}
+}  // namespace grt
