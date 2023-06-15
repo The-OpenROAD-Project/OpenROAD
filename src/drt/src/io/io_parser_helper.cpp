@@ -58,8 +58,6 @@ void io::Parser::initDefaultVias()
     auto viaDef = tech_->getVia(userDefinedVia);
     tech_->getLayer(viaDef->getCutLayerNum())->setDefaultViaDef(viaDef);
   }
-  std::map<frLayerNum, std::map<int, std::map<viaRawPriorityTuple, frViaDef*>>>
-      layerNum2ViaDefs;
   for (auto layerNum = design_->getTech()->getBottomLayerNum();
        layerNum <= design_->getTech()->getTopLayerNum();
        ++layerNum) {
@@ -70,26 +68,32 @@ void io::Parser::initDefaultVias()
     if (layer->getDefaultViaDef() != nullptr) {
       continue;
     }
+    std::map<int, std::map<viaRawPriorityTuple, frViaDef*>> cuts2ViaDefs;
     for (auto& viaDef : layer->getViaDefs()) {
       int cutNum = int(viaDef->getCutFigs().size());
       viaRawPriorityTuple priority;
       getViaRawPriority(viaDef, priority);
-      layerNum2ViaDefs[layerNum][cutNum][priority] = viaDef;
+      cuts2ViaDefs[cutNum][priority] = viaDef;
     }
-    if (!layerNum2ViaDefs[layerNum][1].empty()) {
-      auto defaultSingleCutVia
-          = (layerNum2ViaDefs[layerNum][1].begin())->second;
+    auto iter_1cut = cuts2ViaDefs.find(1);
+    if (iter_1cut != cuts2ViaDefs.end() && !iter_1cut->second.empty()) {
+      auto defaultSingleCutVia = iter_1cut->second.begin()->second;
       tech_->getLayer(layerNum)->setDefaultViaDef(defaultSingleCutVia);
-    } else {
-      if (layerNum >= BOTTOM_ROUTING_LAYER) {
-        logger_->error(DRT,
-                       234,
-                       "{} does not have single-cut via.",
-                       tech_->getLayer(layerNum)->getName());
-      }
+    } else if (layerNum > TOP_ROUTING_LAYER) {
+      // We may need vias here to stack up to bumps.  However there
+      // may not be a single cut via.  Since we aren't routing, but
+      // just stacking, we'll use the best via we can find.
+      auto via_map = cuts2ViaDefs.begin()->second;
+      tech_->getLayer(layerNum)->setDefaultViaDef(via_map.begin()->second);
+    } else if (layerNum >= BOTTOM_ROUTING_LAYER) {
+      logger_->error(DRT,
+                     234,
+                     "{} does not have single-cut via.",
+                     tech_->getLayer(layerNum)->getName());
     }
     // generate via if default via enclosure is not along pref dir
-    if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER) {
+    if (ENABLE_VIA_GEN && layerNum >= BOTTOM_ROUTING_LAYER
+        && layerNum <= TOP_ROUTING_LAYER) {
       auto techDefautlViaDef = tech_->getLayer(layerNum)->getDefaultViaDef();
       frVia via(techDefautlViaDef);
       Rect layer1Box = via.getLayer1BBox();

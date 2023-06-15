@@ -181,6 +181,7 @@ class TritonRoute
   void checkDRC(const char* drc_file, int x0, int y0, int x1, int y1);
   bool initGuide();
   void prep();
+  void processBTermsAboveTopLayer(bool has_routing = false);
 
  private:
   std::unique_ptr<fr::frDesign> design_;
@@ -210,10 +211,10 @@ class TritonRoute
   void applyUpdates(const std::vector<std::vector<fr::drUpdate>>& updates);
   void getDRCMarkers(std::list<std::unique_ptr<fr::frMarker>>& markers,
                      const odb::Rect& requiredDrcBox);
-  void processBTermsAboveTopLayer();
   void stackVias(odb::dbBTerm* bterm,
                  int top_layer_idx,
-                 int bterm_bottom_layer_idx);
+                 int bterm_bottom_layer_idx,
+                 bool has_routing);
   int countNetBTermsAboveMaxLayer(odb::dbNet* net);
   friend class fr::FlexDR;
 };

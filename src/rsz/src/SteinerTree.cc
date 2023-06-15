@@ -73,8 +73,9 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
     : network_->net(drvr_pin);
   debugPrint(logger_, RSZ, "steiner", 1, "Net {}",
              sdc_network->pathName(net));
-  SteinerTree *tree = new SteinerTree(drvr_pin);
+  SteinerTree *tree = new SteinerTree(drvr_pin, this);
   PinSeq &pins = tree->pins();
+  // Find all the connected pins
   connectedPins(net, network_, pins);
   // Sort pins by location because connectedPins order is not deterministic.
   sort(pins, [=](const Pin *pin1, const Pin *pin2) {
@@ -86,23 +87,26 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
   });
   int pin_count = pins.size();
   bool is_placed = true;
+  // Warn if there are too many pins (>10000)
   if (pin_count > max_steiner_pin_count_)
     logger_->warn(RSZ, 69, "skipping net {} with {} pins.",
                   sdc_network->pathName(net),
                   pin_count);
   else if (pin_count >= 2) {
-    vector<int> x, y;
-    int drvr_idx = 0;
+    vector<int> x, y;  // Two separate vectors of coordinates needed by flute.
+    int drvr_idx = 0; // The "driver_pin" or the root of the Steiner tree.
     for (int i = 0; i < pin_count; i++) {
       const Pin *pin = pins[i];
-      if (pin == drvr_pin)
-        drvr_idx = i;
+      if (pin == drvr_pin) {
+        drvr_idx = i;  // drvr_index is needed by flute.
+      }
       Point loc = db_network_->location(pin);
       x.push_back(loc.x());
       y.push_back(loc.y());
       debugPrint(logger_, RSZ, "steiner", 3, " {} ({} {})",
                  sdc_network->pathName(pin),
                  loc.x(), loc.y());
+      // Track that all our pins are placed.
       is_placed &= db_network_->isPlaced(pin);
 
       // Flute may reorder the input points, so it takes some unravelling
@@ -115,6 +119,7 @@ Resizer::makeSteinerTree(const Pin *drvr_pin)
                                                       x, y, drvr_idx);
       
       tree->setTree(ftree, db_network_);
+      tree->createSteinerPtToPinMap();
       return tree;
     }
   }
@@ -158,10 +163,27 @@ SteinerTree::setTree(const stt::Tree& tree,
   }
 }
 
-SteinerTree::SteinerTree(const Pin *drvr_pin) :
+SteinerTree::SteinerTree(const Pin *drvr_pin, Resizer *resizer) :
   drvr_pin_(drvr_pin),
-  drvr_steiner_pt_(0)
+  drvr_steiner_pt_(0),
+  resizer_(resizer),
+  logger_(resizer->logger())
 {
+}
+
+void
+SteinerTree::createSteinerPtToPinMap()
+{
+  unsigned int pin_count = pins_.size();
+
+  point_pin_array_.resize(pin_count);
+  for (unsigned int i = 0; i < pin_count; i++) {
+    stt::Branch& branch_pt = tree_.branch[i];
+    odb::Point pt(branch_pt.x, branch_pt.y);
+    auto pin = loc_pin_map_[pt].back();
+    point_pin_array_[i] = pin;
+  }
+  populateSides();
 }
 
 int
@@ -263,6 +285,165 @@ SteinerTree::location(SteinerPt pt) const
 {
   stt::Branch branch_pt = tree_.branch[pt];
   return Point(branch_pt.x, branch_pt.y);
+}
+
+SteinerPt
+SteinerTree::top() const
+{
+  SteinerPt driver = drvrPt();
+  SteinerPt top    = left(driver);
+  if (top == SteinerNull) {
+    top = right(driver);
+  }
+  return top;
+}
+
+SteinerPt
+SteinerTree::left(SteinerPt pt) const
+{
+  if (pt >= (int) left_.size()) {
+    return SteinerNull;
+  }
+  return left_[pt];
+}
+
+SteinerPt
+SteinerTree::right(SteinerPt pt) const
+{
+  if (pt >= (int) right_.size()) {
+    return SteinerNull;
+  }
+  return right_[pt];
+}
+
+void
+SteinerTree::validatePoint(SteinerPt pt) const
+{
+  if (pt < 0 || pt >= branchCount()) {
+    logger_->error(RSZ, 93,
+                   "Invalid Steiner point {} requested. 0 <= Valid values <  {}.",
+                   pt, branchCount());
+  }
+}
+
+void SteinerTree::populateSides()
+{
+  int branch_count = branchCount();
+  left_.resize(branch_count, SteinerNull);
+  right_.resize(branch_count, SteinerNull);
+  std::vector<SteinerPt> adj1(branch_count, SteinerNull);
+  std::vector<SteinerPt> adj2(branch_count, SteinerNull);
+  std::vector<SteinerPt> adj3(branch_count, SteinerNull);
+  for (int i = 0; i < branch_count; i++) {
+    stt::Branch& branch_pt = tree_.branch[i];
+    SteinerPt j = branch_pt.n;
+    if (j != i) {
+      if (adj1[i] == SteinerNull) {
+        adj1[i] = j;
+      }
+      else if (adj2[i] == SteinerNull) {
+        adj2[i] = j;
+      }
+      else {
+        adj3[i] = j;
+      }
+
+      if (adj1[j] == SteinerNull) {
+        adj1[j] = i;
+      }
+      else if (adj2[j] == SteinerNull) {
+        adj2[j] = i;
+      }
+      else {
+        adj3[j] = i;
+      }
+    }
+  }
+
+  SteinerPt root = drvrPt();
+  SteinerPt root_adj = adj1[root];
+  left_[root] = root_adj;
+  populateSides(root, root_adj, adj1, adj2, adj3);
+}
+
+void
+SteinerTree::populateSides(const SteinerPt from, const SteinerPt to,
+                           const std::vector<SteinerPt>& adj1,
+                           const std::vector<SteinerPt>& adj2,
+                           const std::vector<SteinerPt>& adj3)
+{
+  if (to >= (int) pins_.size()) {
+    SteinerPt adj;
+    adj = adj1[to];
+    populateSides(from, to, adj, adj1, adj2, adj3);
+    adj = adj2[to];
+    populateSides(from, to, adj, adj1, adj2, adj3);
+    adj = adj3[to];
+    populateSides(from, to, adj, adj1, adj2, adj3);
+  }
+}
+
+void
+SteinerTree::populateSides(const SteinerPt from, const SteinerPt to, const SteinerPt adj,
+                           const std::vector<SteinerPt>& adj1,
+                           const std::vector<SteinerPt>& adj2,
+                           const std::vector<SteinerPt>& adj3)
+{
+  if (adj != from && adj != SteinerNull) {
+    if (adj == to) {
+      logger_->error(RSZ, 92, "Steiner tree creation error.");
+    }
+    if (left_[to] == SteinerNull) {
+      left_[to] = adj;
+      populateSides(to, adj, adj1, adj2, adj3);
+    } else if (right_[to] == SteinerNull) {
+      right_[to] = adj;
+      populateSides(to, adj, adj1, adj2, adj3);
+    }
+  }
+}
+
+int SteinerTree::distance(SteinerPt& from, SteinerPt& to) const
+{
+  int find_left, find_right;
+  if (from == SteinerNull || to == SteinerNull) {
+    return -1;
+  }
+  if (from == to) {
+    return 0;
+  }
+  Point from_pt = location(from);
+  Point to_pt = location(to);
+  SteinerPt left_from = left(from);
+  SteinerPt right_from = right(from);
+  if (left_from == to || right_from == to) {
+    return abs(from_pt.x() - to_pt.x()) + abs(from_pt.y() - to_pt.y());
+  }
+  if (left_from == SteinerNull && right_from == SteinerNull) {
+    return -1;
+  }
+
+  find_left = distance(left_from, to);
+  if (find_left >= 0) {
+    return find_left + abs(from_pt.x() - to_pt.x())
+           + abs(from_pt.y() - to_pt.y());
+  }
+
+  find_right = distance(right_from, to);
+  if (find_right >= 0) {
+    return find_left + abs(from_pt.x() - to_pt.x())
+           + abs(from_pt.y() - to_pt.y());
+  }
+  return -1;
+}
+
+const Pin *SteinerTree::pin(SteinerPt pt) const
+{
+  validatePoint(pt);
+  if (pt < (int)pins_.size()) {
+    return point_pin_array_[pt];
+  }
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////

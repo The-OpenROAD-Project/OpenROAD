@@ -1006,7 +1006,7 @@ void TritonRoute::checkDRC(const char* filename, int x1, int y1, int x2, int y2)
   reportDRC(filename, markers, requiredDrcBox);
 }
 
-void TritonRoute::processBTermsAboveTopLayer()
+void TritonRoute::processBTermsAboveTopLayer(bool has_routing)
 {
   odb::dbTech* tech = db_->getTech();
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -1028,7 +1028,7 @@ void TritonRoute::processBTermsAboveTopLayer()
       }
 
       if (bterm_bottom_layer_idx > top_layer_idx) {
-        stackVias(bterm, top_layer_idx, bterm_bottom_layer_idx);
+        stackVias(bterm, top_layer_idx, bterm_bottom_layer_idx, has_routing);
       }
     }
   }
@@ -1036,7 +1036,8 @@ void TritonRoute::processBTermsAboveTopLayer()
 
 void TritonRoute::stackVias(odb::dbBTerm* bterm,
                             int top_layer_idx,
-                            int bterm_bottom_layer_idx)
+                            int bterm_bottom_layer_idx,
+                            bool has_routing)
 {
   odb::dbTech* tech = db_->getTech();
   auto fr_tech = getDesign()->getTech();
@@ -1071,7 +1072,7 @@ void TritonRoute::stackVias(odb::dbBTerm* bterm,
   if (wire == nullptr) {
     wire = odb::dbWire::create(net);
     wire_encoder.begin(wire);
-  } else if (bterms_above_max_layer > 1) {
+  } else if (bterms_above_max_layer > 1 || has_routing) {
     // append wire when the net has other pins above the max routing layer
     wire_encoder.append(wire);
   } else {

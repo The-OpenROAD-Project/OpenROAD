@@ -224,13 +224,11 @@ public:
   float targetLoadCap(LibertyCell *cell);
 
   ////////////////////////////////////////////////////////////////
-
   void repairSetup(double setup_margin,
-                   // Percent of violating ends to repair to
-                   // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
                    int max_passes,
-                   bool skip_pin_swap);
+                   bool skip_pin_swap,
+                   bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
@@ -391,6 +389,7 @@ protected:
   float portFanoutLoad(LibertyPort *port) const;
   float portCapacitance(LibertyPort *input,
                         const Corner *corner) const;
+  float pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const;
   void swapPins(Instance *inst, LibertyPort *port1,
                 LibertyPort *port2, bool journal);
   void findSwapPinCandidate(LibertyPort *input_port, LibertyPort *drvr_port,
@@ -459,6 +458,8 @@ protected:
                  PinSeq &loads);
   bool isFuncOneZero(const Pin *drvr_pin);
   bool hasPins(Net *net);
+  std::vector<const Pin*> getPins(Net* net) const;
+  std::vector<const Pin*> getPins(Instance* inst) const;
   Point tieLocation(const Pin *load,
                     int separation);
   bool hasFanout(Vertex *drvr);
@@ -474,6 +475,9 @@ protected:
                            const Net *net);
   void estimateWireParasiticSteiner(const Pin *drvr_pin,
                                     const Net *net);
+  float totalLoad(SteinerTree *tree) const;
+  float subtreeLoad(SteinerTree *tree, float cap_per_micron,
+                    SteinerPt pt) const;
   void makePadParasitic(const Net *net);
   bool isPadNet(const Net *net) const;
   bool isPadPin(const Pin *pin) const;
@@ -532,7 +536,8 @@ protected:
   void journalBegin();
   void journalEnd();
   void journalRestore(int &resize_count,
-                      int &inserted_buffer_count);
+                      int &inserted_buffer_count,
+                      int &cloned_gate_count);
   void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
@@ -601,6 +606,7 @@ protected:
   int unique_inst_index_;
   int resize_count_;
   int inserted_buffer_count_;
+  int cloned_gate_count_;
   bool buffer_moved_into_core_;
   // Slack map variables.
   // This is the minimum length of wire that is worth while to split and
@@ -616,6 +622,7 @@ protected:
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
   Map<Instance *, std::tuple<LibertyPort *, LibertyPort *>> swapped_pins_;
+  Map<Instance *, Instance *> cloned_gates_;
 
   dpl::Opendp* opendp_;
 
@@ -625,9 +632,11 @@ protected:
   static constexpr int max_steiner_pin_count_ = 100000;
 
   friend class BufferedNet;
+  friend class GateCloner;
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;
+  friend class SteinerTree;
 };
 
 } // namespace

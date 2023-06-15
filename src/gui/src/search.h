@@ -246,7 +246,7 @@ class Search : public QObject, public odb::dbBlockCallBackObj
 
   void clear();
 
-  void announceModified(bool& flag);
+  void announceModified(std::atomic_bool& flag);
   BlockData& getData(odb::dbBlock* block);
 
   odb::dbBlock* top_block_{nullptr};
@@ -260,17 +260,23 @@ class Search : public QObject, public odb::dbBlockCallBackObj
     // particularly true when you have parallel straps like m1 & m2 in asap7.
     std::map<odb::dbTechLayer*, RtreeSBox<odb::dbNet*>> via_sbox_shapes_;
     std::map<odb::dbTechLayer*, RtreePolygon<odb::dbNet*>> polygon_shapes_;
-    bool shapes_init_{false};
+    std::atomic_bool shapes_init_{false};
+    std::mutex shapes_init_mutex_;
     std::map<odb::dbTechLayer*, RtreeBox<odb::dbFill*>> fills_;
-    bool fills_init_{false};
+    std::atomic_bool fills_init_{false};
+    std::mutex fills_init_mutex_;
     RtreeBox<odb::dbInst*> insts_;
-    bool insts_init_{false};
+    std::atomic_bool insts_init_{false};
+    std::mutex insts_init_mutex_;
     RtreeBox<odb::dbBlockage*> blockages_;
-    bool blockages_init_{false};
+    std::atomic_bool blockages_init_{false};
+    std::mutex blockages_init_mutex_;
     std::map<odb::dbTechLayer*, RtreeBox<odb::dbObstruction*>> obstructions_;
-    bool obstructions_init_{false};
+    std::atomic_bool obstructions_init_{false};
+    std::mutex obstructions_init_mutex_;
     RtreeBox<odb::dbRow*> rows_;
-    bool rows_init_{false};
+    std::atomic_bool rows_init_{false};
+    std::mutex rows_init_mutex_;
   };
   std::map<odb::dbBlock*, BlockData> child_block_data_;
   BlockData top_block_data_;
