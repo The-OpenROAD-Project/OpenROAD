@@ -1184,7 +1184,7 @@ void dbRtTree::copyNode(dbRtTree* G,
 
     if (other->_visited) {
       ++visited_cnt;
-      assert(visited_cnt <= 1);  // graph contains a cycle
+      ZASSERT(visited_cnt <= 1);  // graph contains a cycle
     }
 
     else {
