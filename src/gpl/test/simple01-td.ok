@@ -96,6 +96,4 @@
 [NesterovSolve] Iter: 380 overflow: 0.107724 HPWL: 5877406
 [NesterovSolve] Finished with Overflow: 0.099258
 worst slack 1.37
-Differences found at line 63.
-    - _276_ NOR2_X2 + PLACED ( 9753 50834 ) N ;
-    - _276_ NOR2_X2 + PLACED ( 9965 51825 ) N ;
+No differences found.
