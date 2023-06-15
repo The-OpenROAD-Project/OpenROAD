@@ -4743,8 +4743,8 @@ lefiMacroForeign::lefiMacroForeign(const char *name,
                                    int        orient)
 : cellName_(name),
   cellHasPts_(hasPts),
-  py_(y),
   px_(x),
+  py_(y),
   cellHasOrient_(hasOrient),
   cellOrient_(orient)
 {

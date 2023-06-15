@@ -570,9 +570,6 @@ lefuc_array(char    *source,
     *dest = 0;
 } 
 
-void lefError(int           msgNum,
-              const char    *s);
-
 void
 lefStoreAlias()
 {
@@ -690,7 +687,6 @@ lefsublex()
 {
 
     char    fc;
-    double  numVal;
     char    *outStr;
 
     strcpy(lefData->pv_token, lefData->current_token);   // save the previous token 
@@ -762,9 +758,9 @@ lefsublex()
     }
 
     if ((lefData->doneLib && lefData->versionNum < 5.6) || // END LIBRARY is passed for pre 5.6 
-        (lefData->ge56almostDone && 
+        ((lefData->ge56almostDone && 
          strcmp(lefData->current_token, "END") && 
-         strcmp(lefData->current_token, "BEGINEXT") || // after EXT, not follow by END 
+         strcmp(lefData->current_token, "BEGINEXT")) || // after EXT, not follow by END 
          lefData->ge56done)) {                     // END LIBRARY is passed for >= 5.6 
         fc = EOF;
         lefInfo(3000, "There are still data after the END LIBRARY");
@@ -782,7 +778,7 @@ lefsublex()
     lefData->lefNoNum--;
     if (isdigit(fc) || fc == '.' || (fc == '-' && lefData->current_token[1] != '\0')) {
         char *ch;
-        numVal = yylval.dval = strtod(lefData->current_token, &ch);
+        yylval.dval = strtod(lefData->current_token, &ch);
         if (lefData->lefNoNum < 0 && *ch == '\0') {    // did we use the whole string? 
                 return NUMBER;
         } else {  // failed integer conversion, try floating point 

@@ -94,7 +94,7 @@ lefiError(int           check,
     if (lefSettings->ErrorLogFunction)
         (*lefSettings->ErrorLogFunction)(str);
     else
-        fprintf(stderr, str);
+        fprintf(stderr, "%s", str);
 }
 
 static char lefiShift [] = {
@@ -385,9 +385,6 @@ lefUpperCase(const char *str)
 
     return lefData->shiftBuf;
 }
-
-// for auto upshifting names in case insensitive files 
-extern const char *lefUpperCase(const char *c);
 
 // Function is done from #define CASE, compatibility only
 const char *

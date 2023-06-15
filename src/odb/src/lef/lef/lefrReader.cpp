@@ -47,9 +47,6 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 
 static const char *init_call_func = NULL;
 
-extern double convert_name2num(const char *versionName);
-extern bool validateMaskNumber(int num);
-
 void
 lef_init(const char  *func)
 {
