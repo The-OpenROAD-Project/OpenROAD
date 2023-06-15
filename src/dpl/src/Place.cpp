@@ -986,12 +986,14 @@ bool Opendp::checkPixels(const Cell* cell,
       int x_begin = max(0, x - 1);
       int y_begin = max(0, y - 1);
       // inclusive search, so we don't add 1 to the end
-      int x_finish = min(x_end, row_site_count_ - 1);
-      int y_finish = min(y_end, row_count_ - 1);
+      int x_finish = min(x_end, row_info.second.site_count - 1);
+      int y_finish = min(y_end, row_info.second.row_count - 1);
+
       auto isAbutted = [this](int layer, int x, int y) {
         Pixel* pixel = gridPixel(layer, x, y);
         return (pixel == nullptr || pixel->cell);
       };
+
       auto cellAtSite = [this](int layer, int x, int y) {
         Pixel* pixel = gridPixel(layer, x, y);
         return (pixel != nullptr && pixel->cell);
@@ -1015,6 +1017,32 @@ bool Opendp::checkPixels(const Cell* cell,
       if (!isAbutted(layer, x_finish, y_finish)
           && cellAtSite(layer, x_finish + 1, y_finish)) {
         return false;
+      }
+
+      int min_row_height = grid_info_map_.begin()->first;
+      int steps = row_info.first / min_row_height;
+      // This is needed for the scenario where we are placing a triple height
+      // cell and we are not sure if there is a single height cell direcly in
+      // the middle that would be missed by the 4 corners check above.
+      // So, we loop with steps of min_row_height and check the left and right
+      int y_begin_mapped
+          = map_coordinates(y_begin, row_info.first, min_row_height);
+
+      int offset = 0;
+      for (int step = 0; step < steps; step++) {
+        // left side
+        // x_begin doesn't need to be mapped since we support only uniform site
+        // width in all grids for now
+        if (!isAbutted(0, x_begin, y_begin_mapped + offset)
+            && cellAtSite(0, x_begin - 1, y_begin_mapped + offset)) {
+          return false;
+        }
+        // right side
+        if (!isAbutted(0, x_finish, y_begin_mapped + offset)
+            && cellAtSite(0, x_finish + 1, y_begin_mapped + offset)) {
+          return false;
+        }
+        offset += min_row_height;
       }
     }
   }
@@ -1043,14 +1071,6 @@ Point Opendp::legalPt(const Cell* cell,
   }
   int core_x = min(max(0, pt.getX()),
                    grid_info.site_count * site_width - cell->width_);
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "core_x {} {} {}",
-             core_x,
-             grid_info.site_count,
-             site_width);
   int core_y = min(max(0, pt.getY()),
                    grid_info.row_count * row_height - cell->height_);
   debugPrint(logger_,
@@ -1067,7 +1087,6 @@ Point Opendp::legalPt(const Cell* cell,
 
   int legal_x = grid_x * site_width;
   int legal_y = grid_y * row_height;
-  debugPrint(logger_, DPL, "place", 1, "legalPt {} {}", legal_x, legal_y);
   return Point(legal_x, legal_y);
 }
 
@@ -1082,8 +1101,6 @@ Point Opendp::legalGridPt(const Cell* cell,
   if (row_height == -1) {
     row_height = getRowHeight(cell);
   }
-  debugPrint(
-      logger_, DPL, "place", 1, "legalGridPt {} {}", pt.getX(), pt.getY());
   Point legal = legalPt(cell, pt, row_height, site_width);
   return Point(gridX(legal.getX(), site_width),
                gridY(legal.getY(), row_height));
@@ -1101,17 +1118,6 @@ Point Opendp::nearestBlockEdge(const Cell* cell,
   const int x_max_dist = abs(block_bbox.xMax() - (legal_x + cell->width_));
   const int y_min_dist = abs(legal_y - block_bbox.yMin());
   const int y_max_dist = abs(block_bbox.yMax() - (legal_y + cell->height_));
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "nearestBlockEdge {} {} {} {} {} {}",
-             legal_x,
-             legal_y,
-             block_bbox.xMin(),
-             block_bbox.xMax(),
-             block_bbox.yMin(),
-             block_bbox.yMax());
   if (x_min_dist < x_max_dist && x_min_dist < y_min_dist
       && x_min_dist < y_max_dist) {
     // left of block
@@ -1321,13 +1327,6 @@ Point Opendp::legalPt(const Cell* cell,
   }
 
   Point init = initialLocation(cell, padded);
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "legalpt itself init {} {} ",
-             init.getX(),
-             init.getY());
   Point legal_pt = legalPt(cell, init, row_height, site_width);
   auto grid_info = getGridInfo(cell);
   int grid_x = gridX(legal_pt.getX(), site_width);
@@ -1337,25 +1336,9 @@ Point Opendp::legalPt(const Cell* cell,
   Pixel* pixel = gridPixel(grid_info.grid_index, grid_x, grid_y);
   if (pixel) {
     // Move std cells off of macros.  First try the is_hopeless strategy
-    debugPrint(logger_,
-               DPL,
-               "hopeless",
-               1,
-               "is pixel {} , {} , {} hopeless? {}",
-               grid_info.grid_index,
-               grid_x,
-               grid_y,
-               pixel->is_hopeless ? " true " : " false ");
     if (pixel->is_hopeless && moveHopeless(cell, grid_x, grid_y)) {
       legal_pt = Point(grid_x * site_width, grid_y * row_height);
       pixel = gridPixel(grid_info.grid_index, grid_x, grid_y);
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 2,
-                 "legalpt hopeless {} {} ",
-                 legal_pt.getX(),
-                 legal_pt.getY());
     }
 
     const Cell* block = pixel->cell;
@@ -1364,56 +1347,19 @@ Point Opendp::legalPt(const Cell* cell,
     // edge strategy.  This doesn't consider site availability at the
     // end used so it is secondary.
     if (block && isBlock(block)) {
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 2,
-                 "legalpt block {} {} {} ",
-                 block->x_,
-                 block->y_,
-                 block->width_);
       const Rect block_bbox(block->x_,
                             block->y_,
                             block->x_ + block->width_,
                             block->y_ + block->height_);
       const int legal_x = legal_pt.getX();
       const int legal_y = legal_pt.getY();
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 2,
-                 "legalpt blockbbox {} {} {} {} {} {} ",
-                 legal_x,
-                 legal_y,
-                 block_bbox.xMin(),
-                 block_bbox.xMax(),
-                 block_bbox.yMin(),
-                 block_bbox.yMax());
       if ((legal_x + cell->width_) >= block_bbox.xMin()
           && legal_x <= block_bbox.xMax()
           && (legal_y + cell->height_) >= block_bbox.yMin()
           && legal_y <= block_bbox.yMax()) {
         legal_pt = nearestBlockEdge(cell, legal_pt, block_bbox);
       }
-    } else {
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 2,
-                 "legalpt no block {} {} {} ",
-                 legal_pt.getX(),
-                 legal_pt.getY(),
-                 cell->width_);
     }
-  } else {
-    debugPrint(logger_,
-               DPL,
-               "place",
-               2,
-               "legalpt no pixel {} {} {} ",
-               legal_pt.getX(),
-               legal_pt.getY(),
-               cell->width_);
   }
 
   return legal_pt;
@@ -1430,29 +1376,7 @@ Point Opendp::legalGridPt(const Cell* cell,
   if (row_height == -1) {
     row_height = getRowHeight(cell);
   }
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "legalgridpt bef {} {} {} {} {} {}",
-             cell->name(),
-             cell->x_,
-             cell->y_,
-             cell->width_,
-             cell->height_,
-             cell->orient_);
   Point pt = legalPt(cell, padded, row_height, site_width);
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "legalpt 1 {} {} {} {} {} {}",
-             cell->name(),
-             pt.getX(),
-             pt.getY(),
-             cell->width_,
-             cell->height_,
-             cell->orient_);
   return Point(gridX(pt.getX(), site_width), gridY(pt.getY(), row_height));
 }
 

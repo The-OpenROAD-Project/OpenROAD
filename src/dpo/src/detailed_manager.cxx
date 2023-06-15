@@ -85,7 +85,7 @@ DetailedMgr::DetailedMgr(Architecture* arch,
   targetUt_ = 1.0;
 
   // For generating a move list...
-  moveLimit_ = 10;
+  moveLimit_ = 100;
   nMoved_ = 0;
   curLeft_.resize(moveLimit_);
   curBottom_.resize(moveLimit_);
@@ -157,6 +157,11 @@ void DetailedMgr::setMaxDisplacement(int x, int y)
                 y,
                 maxDispX_,
                 maxDispY_);
+}
+
+void DetailedMgr::setDisallowOneSiteGaps(bool disallowOneSiteGaps)
+{
+  disallowOneSiteGaps_ = disallowOneSiteGaps;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -950,6 +955,30 @@ void DetailedMgr::assignCellsToSegments(
                 movementY);
 }
 
+bool DetailedMgr::isInsideABlockage(Node* nd, double position)
+{
+  int single_height = arch_->getRow(0)->getHeight();
+  int start_row = nd->getBottom() / single_height;
+  int end_row = nd->getTop() / single_height;
+  start_row = std::max(start_row, 0);
+  end_row = std::min(end_row, numSingleHeightRows_ - 1);
+  for (int r = start_row; r <= end_row; r++) {
+    auto it = std::lower_bound(blockages_[r].begin(),
+                               blockages_[r].end(),
+                               std::make_pair(position, position),
+                               [](const std::pair<double, double>& block,
+                                  const std::pair<double, double>& target) {
+                                 return block.second < target.first;
+                               });
+
+    if (it != blockages_[r].end() && position >= it->first
+        && position <= it->second) {
+      return true;
+    }
+  }
+
+  return false;
+}
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 void DetailedMgr::removeCellFromSegment(Node* nd, int seg)
@@ -1382,6 +1411,143 @@ int DetailedMgr::checkEdgeSpacingInSegments()
       err_p);
 
   return err_n + err_p;
+}
+
+void DetailedMgr::getOneSiteGapViolationsPerSegment(
+    std::vector<std::vector<int>>& violating_cells,
+    bool fix_violations)
+{
+  // the pair is the segment and the cell index in that segment
+  violating_cells.resize(segments_.size() + 1);
+  for (auto segment : segments_) {
+    // To be safe, gather cells in each segment and re-sort them.
+    int s = segment->getSegId();
+    if (cellsInSeg_[s].size() < 2) {
+      continue;
+    }
+    resortSegment(segment);
+    // The idea here is to get the last X before the current cell,
+    // it doesn't have to be the one directly before the current cell as
+    // there might be two cells on the same x but different y.
+    // if the difference between the last X and the current cell's X is equal to
+    // 1-site then we might have a violation. we still need to check the
+    // overlaps in the ys
+    // to do this efficiently we can simply loop and check for overlaps in the
+    // ys
+
+    auto isInRange = [](int value, int min, int max) -> bool {
+      return min <= value && value <= max;
+    };
+
+    auto isOverlap
+        = [&isInRange](int bottom1, int top1, int bottom2, int top2) -> bool {
+      return isInRange(bottom1, bottom2, top2)
+             || isInRange(bottom2, bottom1, top1);
+    };
+
+    Node* lastNode = cellsInSeg_[s][0];
+    int one_site_gap = arch_->getRow(0)->getSiteWidth();
+    std::vector<Node*> cellsAtLastX(1, cellsInSeg_[s][0]);
+
+    for (int node_idx = 0; node_idx < cellsInSeg_[s].size(); node_idx++) {
+      Node* nd = cellsInSeg_[s][node_idx];
+      if (cellsInSeg_[s][node_idx]->getRight() != lastNode->getRight()) {
+        // we have a new X
+        // check if the difference in x is equal to one-site
+
+        if (abs(nd->getLeft() - lastNode->getRight()) == one_site_gap) {
+          // we might have a violation
+          // check the ys
+          for (auto cell : cellsAtLastX) {
+            if (isOverlap(cell->getBottom(),
+                          cell->getTop(),
+                          nd->getBottom(),
+                          nd->getTop())) {
+              if (nd->isTerminal() || nd->isFixed()) {
+                logger_->warn(DPO,
+                              339,
+                              "One-site gap violation detected with a "
+                              "Fixed/Terminal cell {}",
+                              nd->getId());
+                violating_cells[s].push_back(nd->getId());
+                continue;
+              }
+              if (arch_->isMultiHeightCell(nd)) {
+                // TODO: Can be done
+                logger_->warn(DPO,
+                              340,
+                              "One-site gap violation detected with a "
+                              "multi-height cell {}",
+                              nd->getId());
+                violating_cells[s].push_back(nd->getId());
+                continue;
+              }
+              if (fix_violations) {
+                if (!fixOneSiteGapViolations(cell, one_site_gap, 0, s, nd)) {
+                  violating_cells[s].push_back(nd->getId());
+                }
+              } else {
+                violating_cells[s].push_back(nd->getId());
+              }
+              break;
+            }
+          }
+        }
+        cellsAtLastX.clear();
+      }
+      if ((isInsideABlockage(nd, nd->getLeft() - one_site_gap)
+           && !isInsideABlockage(nd, nd->getLeft()))
+          || (isInsideABlockage(nd, nd->getRight() + one_site_gap)
+              && !isInsideABlockage(nd, nd->getRight()))) {
+        if (fix_violations) {
+          if (!fixOneSiteGapViolations(nd,
+                                       one_site_gap,
+                                       0,
+                                       s,
+                                       nd)) {  // TODO: the first nd is wrong,
+            // it should be the blockage cell
+            violating_cells[s].push_back(nd->getId());
+          }
+        } else {
+          violating_cells[s].push_back(nd->getId());
+        }
+      }
+      cellsAtLastX.push_back(nd);
+      lastNode = nd;
+    }
+  }
+}
+
+bool DetailedMgr::fixOneSiteGapViolations(Node* cell,
+                                          int one_site_gap,
+                                          int newX,
+                                          int segment,
+                                          Node* violatingNode)
+{
+  // we try shifting to the left first
+  if (shiftLeftHelper(
+          violatingNode,
+          violatingNode->getRight()
+              - one_site_gap,  // Imagine we insert a cell that is one-site away
+                               // from the right-end of the violating node
+          segment,
+          violatingNode)) {
+    acceptMove();
+    clearMoveList();
+    return true;
+  }
+  if (shiftRightHelper(
+          cell,
+          cell->getLeft()
+              + (one_site_gap * 2),  // assume we will insert the cell
+                                     // before us at this location
+          segment,
+          violatingNode)) {
+    acceptMove();  // without this, the cells are not moved
+    clearMoveList();
+    return true;
+  }
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2322,7 +2488,6 @@ bool DetailedMgr::shiftRightHelper(Node* ndi, int xj, int sj, Node* ndr)
       // We shifted down to the last cell... Everything must be okay!
       break;
     }
-
     ndi = ndr;
     ndr = cellsInSeg_[sj][++ix];
   }
@@ -2559,7 +2724,7 @@ bool DetailedMgr::tryMove1(Node* ndi,
   }
 
   if (ndl == nullptr && ndr != nullptr) {
-    // End of segment, cells to the left.
+    // left-end of segment, cells to the right.
     DetailedSeg* segPtr = segments_[sj];
 
     // Reject if not enough space.
@@ -2630,7 +2795,6 @@ bool DetailedMgr::tryMove2(Node* ndi,
                            int sj)
 {
   // Very simple move within the same segment.
-
   // Nothing to move.
   clearMoveList();
 
@@ -2707,6 +2871,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
   } else {
     rx = segPtr->getMaxX() - arch_->getCellSpacing(ndi, nullptr);
   }
+
   if (ndi->getWidth() <= rx - lx) {
     if (!alignPos(ndi, xj, lx, rx)) {
       return false;
@@ -2716,6 +2881,7 @@ bool DetailedMgr::tryMove2(Node* ndi,
     }
     return true;
   }
+
   return false;
 }
 
