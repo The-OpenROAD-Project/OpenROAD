@@ -44,13 +44,13 @@ namespace grt {
 class AbstractMakeWireParasitics
 {
  public:
-  ~AbstractMakeWireParasitics();
+  ~AbstractMakeWireParasitics() = default;
 
-  void estimateParasitcs(odb::dbNet* net, GRoute& route) const;
+  virtual void estimateParasitcs(odb::dbNet* net, GRoute& route) const = 0;
 
-  void clearParasitics();
+  virtual void clearParasitics() = 0;
 
-  sta::Slack getNetSlack(odb::dbNet* net);
+  virtual sta::Slack getNetSlack(odb::dbNet* net) = 0;
 };
 
 }

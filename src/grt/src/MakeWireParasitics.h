@@ -80,14 +80,14 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
                          GRoute& route) const;
-  void estimateParasitcs(odb::dbNet* net, GRoute& route) const;
+  void estimateParasitcs(odb::dbNet* net, GRoute& route) const override;
 
-  void clearParasitics();
+  void clearParasitics() override;
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net) const;
   // Return the Slack of a given net
-  sta::Slack getNetSlack(odb::dbNet* net);
+  sta::Slack getNetSlack(odb::dbNet* net) override;
 
  private:
   typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
