@@ -86,8 +86,7 @@ void Ath__grid::gridContextOn(int orig, int len, int base, int width)
       continue;
     track = NULL;
     while ((track = btrack->getNextSubTrack(track, tohi))) {
-      track->trackContextOn(
-          orig, end, base, width, firstContextTrack, context);
+      track->trackContextOn(orig, end, base, width, firstContextTrack, context);
       firstContextTrack = 0;
     }
   }
