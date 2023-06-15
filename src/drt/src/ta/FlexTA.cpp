@@ -322,7 +322,7 @@ void FlexTA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
   bool on = settings->debugTA;
   graphics_
       = on && FlexTAGraphics::guiActive()
-            ? std::make_unique<FlexTAGraphics>(settings, design_, db, logger_)
+            ? std::make_unique<FlexTAGraphics>(settings, design_, db)
             : nullptr;
 }
 
