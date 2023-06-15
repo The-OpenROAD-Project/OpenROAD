@@ -774,7 +774,6 @@ NetRouteMap FastRouteCore::run()
   newrouteZAll(10);
   int past_cong = getOverflow2D(&maxOverflow);
 
-  verify2DEdgesUsage();
   convertToMazeroute();
 
   int enlarge_ = 10;
@@ -1146,7 +1145,6 @@ NetRouteMap FastRouteCore::run()
 
   NetRouteMap routes = getRoutes();
   net_eo_.clear();
-  verifyEdgeUsage();
   return routes;
 }
 

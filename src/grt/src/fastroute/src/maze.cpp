@@ -2230,11 +2230,16 @@ void FastRouteCore::getCongestionGrid(
   }
 }
 
-void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets, int& posX, int& posY, int dir, int& ratio)
+void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
+                                      int& posX,
+                                      int& posY,
+                                      int dir,
+                                      int& ratio)
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
-    if (congestion_nets.find(nets_[netID]->getDbNet()) != congestion_nets.end()) {
+    if (congestion_nets.find(nets_[netID]->getDbNet())
+        != congestion_nets.end()) {
       continue;
     }
 
@@ -2254,12 +2259,14 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets, in
         }
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          if (abs(ymin - posY) <= ratio && abs(gridsX[i] - posX) <= ratio && dir == 0) {
+          if (abs(ymin - posY) <= ratio && abs(gridsX[i] - posX) <= ratio
+              && dir == 0) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          if (abs(gridsY[i] - posY) <= ratio && abs(xmin - posX) <= ratio && dir == 1) {
+          if (abs(gridsY[i] - posY) <= ratio && abs(xmin - posX) <= ratio
+              && dir == 1) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         }
@@ -2269,9 +2276,9 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets, in
 }
 
 // The function will add the new nets to the congestion_nets set
-void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets) {
-
-  std::vector<int> xs,ys,dirs;
+void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+{
+  std::vector<int> xs, ys, dirs;
   int n = 0;
   // Find horizontal ggrids with congestion
   for (int i = 0; i < y_grid_; i++) {
@@ -2300,16 +2307,16 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets) {
 
   int old_size = congestion_nets.size();
 
-  for (int ratio = 0; ratio < 5 && old_size == congestion_nets.size(); ratio++) {
+  for (int ratio = 0; ratio < 5 && old_size == congestion_nets.size();
+       ratio++) {
     // Find nets for each congestion ggrid
-    for (int i = 0; i<n; i++) {
+    for (int i = 0; i < n; i++) {
       setCongestionNets(congestion_nets, xs[i], ys[i], dirs[i], ratio);
     }
   }
 }
 
-int FastRouteCore::getOverflow2Dmaze(int* maxOverflow,
-                                     int* tUsage)
+int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 {
   int H_overflow = 0;
   int V_overflow = 0;

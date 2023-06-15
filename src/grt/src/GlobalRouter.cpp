@@ -3962,16 +3962,18 @@ void GlobalRouter::updateDirtyRoutes()
 
     bool reroutingOverflow = true;
     if (fastroute_->has2Doverflow() && !allow_congestion_) {
-      // The maximum number of times that the nets traversing the congestion area will be added
+      // The maximum number of times that the nets traversing the congestion
+      // area will be added
       int add_max = 30;
       // The set will contain the nets for routing
       std::set<odb::dbNet*> congestion_nets;
       // The dirty nets that could not be routed are added
-      for (auto & it: dirty_nets) {
+      for (auto& it : dirty_nets) {
         congestion_nets.insert(it->getDbNet());
       }
       while (fastroute_->has2Doverflow() && reroutingOverflow && add_max > 0) {
-        // The nets that cross the congestion area are obtained and added to the set
+        // The nets that cross the congestion area are obtained and added to the
+        // set
         fastroute_->getCongestionNets(congestion_nets);
         // Copy the nets from the set to the vector of dirty nets
         dirty_nets.clear();

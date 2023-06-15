@@ -224,7 +224,11 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void setCongestionNets(std::set<odb::dbNet*>& congestion_nets, int& posX, int& posY, int dir, int& ratio);
+  void setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
+                         int& posX,
+                         int& posY,
+                         int dir,
+                         int& ratio);
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
