@@ -691,7 +691,7 @@ void Optdp::createArchitecture()
     min_row_height = std::min(min_row_height, row->getSite()->getHeight());
   }
 
-  std::map<uint, std::vector<std::string>> skip_list;
+  std::map<uint, std::unordered_set<std::string>> skip_list;
 
   for (dbRow* row : block->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
@@ -703,7 +703,7 @@ void Optdp::createArchitecture()
     }
     dbSite* site = row->getSite();
     if (site->getHeight() > min_row_height) {
-      skip_list[site->getHeight()].push_back(row->getName());
+      skip_list[site->getHeight()].insert(site->getName());
       continue;
     }
     int originX;
@@ -742,16 +742,18 @@ void Optdp::createArchitecture()
   }
   for (auto skip : skip_list) {
     std::string skip_string = "[";
-    for (int i = 0; i < skip.second.size(); i++) {
-      skip_string += skip.second[i] + ",]"[i == skip.second.size() - 1];
+    int i = 0;
+    for (auto skipped_site : skip.second) {
+      skip_string += skipped_site + ",]"[i == skip.second.size() - 1];
+      ++i;
     }
     logger_->warn(DPO,
                   108,
-                  "Skipping the rows with height {} as the minimum row height "
-                  "is {}. Here is the skip list: {}",
+                  "Skipping all the rows with sites {} as their height is {} "
+                  "and the single-height is {}.",
+                  skip_string,
                   skip.first,
-                  min_row_height,
-                  skip_string);
+                  min_row_height);
   }
   // Get surrounding box.
   {

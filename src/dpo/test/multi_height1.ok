@@ -14,8 +14,8 @@ Detailed placement improvement.
 Importing netlist into detailed improver.
 [INFO DPO-0100] Creating network with 5 cells, 6 terminals, 6 edges and 6 pins.
 [INFO DPO-0109] Network stats: inst 11, edges 6, pins 6
-[WARNING DPO-0108] Skipping the rows with height 5600 as the minimum row height is 2800. Here is the skip list: [ROW_6,ROW_7,ROW_8]
-[WARNING DPO-0108] Skipping the rows with height 8400 as the minimum row height is 2800. Here is the skip list: [ROW_9,ROW_10]
+[WARNING DPO-0108] Skipping all the rows with sites [DoubleHeightSite] as their height is 5600 and the single-height is 2800.
+[WARNING DPO-0108] Skipping all the rows with sites [TripleHeightSite] as their height is 8400 and the single-height is 2800.
 [INFO DPO-0110] Number of regions is 1
 [INFO DPO-0401] Setting random seed to 1.
 [INFO DPO-0402] Setting maximum displacement 0 0 to 33600 33600 units.
