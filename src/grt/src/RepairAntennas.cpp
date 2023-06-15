@@ -42,9 +42,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "grt/GlobalRouter.h"
 #include "Net.h"
 #include "Pin.h"
+#include "grt/GlobalRouter.h"
 #include "utl/Logger.h"
 
 namespace grt {

@@ -43,9 +43,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "AbstractMakeWireParasitics.h"
 #include "DataType.h"
 #include "grt/GRoute.h"
-#include "AbstractMakeWireParasitics.h"
 #include "odb/geom.h"
 #include "stt/SteinerTreeBuilder.h"
 
