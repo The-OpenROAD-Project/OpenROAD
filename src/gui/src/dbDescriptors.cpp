@@ -261,11 +261,13 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   Properties props({{"DbUnits per Micron", tech->getDbUnitsPerMicron()},
                     {"LEF Units", tech->getLefUnits()},
                     {"LEF Version", tech->getLefVersionStr()}});
-  
+
   if (tech->hasManufacturingGrid()) {
-    props.push_back({"Manufacturing Grid", Property::convert_dbu(tech->getManufacturingGrid(), true)});
+    props.push_back(
+        {"Manufacturing Grid",
+         Property::convert_dbu(tech->getManufacturingGrid(), true)});
   }
-  
+
   SelectionSet tech_layers;
   for (auto tech_layer : tech->getLayers()) {
     tech_layers.insert(gui->makeSelected(tech_layer));
@@ -3103,24 +3105,32 @@ std::string DbMetalWidthViaMapDescriptor::getTypeName() const
   return "Metal Width Via Map Rule";
 }
 
-bool DbMetalWidthViaMapDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool DbMetalWidthViaMapDescriptor::getBBox(std::any object,
+                                           odb::Rect& bbox) const
 {
   return false;
 }
 
-void DbMetalWidthViaMapDescriptor::highlight(std::any object, Painter& painter) const
+void DbMetalWidthViaMapDescriptor::highlight(std::any object,
+                                             Painter& painter) const
 {
 }
 
-Descriptor::Properties DbMetalWidthViaMapDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbMetalWidthViaMapDescriptor::getProperties(
+    std::any object) const
 {
   auto via_map = std::any_cast<odb::dbMetalWidthViaMap*>(object);
 
-  Properties props({{"Is via cut class", via_map->isViaCutClass()},
-                    {"Below Layer Low Width", Property::convert_dbu(via_map->getBelowLayerWidthLow(), true)},
-                    {"Above Layer Low Width", Property::convert_dbu(via_map->getAboveLayerWidthLow(), true)},
-                    {"Below Layer High Width", Property::convert_dbu(via_map->getBelowLayerWidthHigh(),true)},
-                    {"Above Layer High Width", Property::convert_dbu(via_map->getAboveLayerWidthHigh(), true)}});
+  Properties props(
+      {{"Is via cut class", via_map->isViaCutClass()},
+       {"Below Layer Low Width",
+        Property::convert_dbu(via_map->getBelowLayerWidthLow(), true)},
+       {"Above Layer Low Width",
+        Property::convert_dbu(via_map->getAboveLayerWidthLow(), true)},
+       {"Below Layer High Width",
+        Property::convert_dbu(via_map->getBelowLayerWidthHigh(), true)},
+       {"Above Layer High Width",
+        Property::convert_dbu(via_map->getAboveLayerWidthHigh(), true)}});
 
   return props;
 }
@@ -3130,7 +3140,7 @@ Selected DbMetalWidthViaMapDescriptor::makeSelected(std::any object) const
   if (auto via_map = std::any_cast<odb::dbMetalWidthViaMap*>(&object)) {
     return Selected(*via_map, this);
   }
-  
+
   return Selected();
 }
 
