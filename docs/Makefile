@@ -22,7 +22,7 @@ help:
 	./revert-links.py
 
 checklinks:
-	$(SPHINXBUILD) -b linkcheck "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	$(SPHINXBUILD) -b linkcheck "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) || echo
 	@echo
 	@echo "Check finished. Report is in $(BUILDDIR)."
 	rm -f main

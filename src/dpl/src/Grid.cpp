@@ -92,13 +92,13 @@ void Opendp::initGrid()
   }
 
   // Make pixel grid
-  if (grid_ == nullptr) {
-    grid_ = new Pixel**[grid_info_map_.size()];
+  if (grid_.empty()) {
+    grid_.resize(grid_info_map_.size());
 
     for (auto& [row_height, grid_info] : grid_info_map_) {
       int layer_row_count = grid_info.row_count;
       int index = grid_info.grid_index;
-      grid_[index] = new Pixel*[layer_row_count];
+      grid_[index].resize(layer_row_count);
     }
   }
 
@@ -106,9 +106,9 @@ void Opendp::initGrid()
     const int layer_row_count = grid_info.row_count;
     const int layer_row_site_count = grid_info.site_count;
     const int index = grid_info.grid_index;
-    grid_[index] = new Pixel*[layer_row_count];
+    grid_[index].resize(layer_row_count);
     for (int j = 0; j < layer_row_count; j++) {
-      grid_[index][j] = new Pixel[layer_row_site_count];
+      grid_[index][j].resize(layer_row_site_count);
       for (int k = 0; k < layer_row_site_count; k++) {
         Pixel& pixel = grid_[index][j][k];
         pixel.cell = nullptr;
@@ -149,8 +149,7 @@ void Opendp::initGrid()
     const int x_end = x_start + current_row_site_count;
     const int y_row = (orig_y - core_.yMin()) / current_row_height;
     for (int x = x_start; x < x_end; x++) {
-      Pixel* pixel;
-      pixel = gridPixel(current_row_grid_index, x, y_row);
+      Pixel* pixel = gridPixel(current_row_grid_index, x, y_row);
       if (pixel == nullptr) {
         continue;
       }
@@ -183,7 +182,8 @@ void Opendp::initGrid()
     for (const auto& rect : rects) {
       for (int y = gtl::yl(rect); y < gtl::yh(rect); y++) {
         for (int x = gtl::xl(rect); x < gtl::xh(rect); x++) {
-          grid_[h_index][y][x].is_hopeless = true;
+          Pixel& pixel = grid_[h_index][y][x];
+          pixel.is_hopeless = true;
         }
       }
     }
@@ -192,19 +192,7 @@ void Opendp::initGrid()
 
 void Opendp::deleteGrid()
 {
-  if (grid_) {
-    int i = 0;
-    for (auto [row_height, grid_info] : grid_info_map_) {
-      int N = grid_info.row_count;
-      for (int j = 0; j < N; j++) {
-        delete[] grid_[i][j];
-      }
-      delete[] grid_[i];
-      i++;
-    }
-    delete[] grid_;
-  }
-  grid_ = nullptr;
+  grid_.clear();
 }
 
 Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
@@ -215,7 +203,7 @@ Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
   GridInfo* grid_info = grid_info_vector_[grid_idx];
   if (grid_x >= 0 && grid_x < grid_info->site_count && grid_y >= 0
       && grid_y < grid_info->row_count) {
-    return &grid_[grid_idx][grid_y][grid_x];
+    return const_cast<Pixel*>(&grid_[grid_idx][grid_y][grid_x]);
   }
   return nullptr;
 }
@@ -263,6 +251,9 @@ void Opendp::visitCellPixels(
         int layer_y_start
             = map_coordinates(y_start, row_height, layer_row_height);
         int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
+        if (layer_y_end == layer_y_start) {
+          ++layer_y_end;
+        }
         for (int x = x_start; x < x_end; x++) {
           for (int y = layer_y_start; y < layer_y_end; y++) {
             Pixel* pixel = gridPixel(grid_idx, x, y);
@@ -287,6 +278,12 @@ void Opendp::visitCellPixels(
       int layer_x_end = map_coordinates(x_end, site_width, site_width);
       int layer_y_start = map_coordinates(y_start, row_height, layer_it.first);
       int layer_y_end = map_coordinates(y_end, row_height, layer_it.first);
+      if (layer_y_end == layer_y_start) {
+        ++layer_y_end;
+      }
+      if (layer_x_end == layer_x_start) {
+        ++layer_x_end;
+      }
 
       for (int x = layer_x_start; x < layer_x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
@@ -329,7 +326,6 @@ void Opendp::visitCellBoundaryPixels(
       int x_end = gridEndX(rect.xMax() - core_.xMin(), site_width);
       int y_start = gridY(rect.yMin() - core_.yMin(), row_height);
       int y_end = gridEndY(rect.yMax() - core_.yMin(), row_height);
-
       for (int x = x_start; x < x_end; x++) {
         Pixel* pixel = gridPixel(index_in_grid, x, y_start);
         if (pixel) {
@@ -569,6 +565,10 @@ void Opendp::erasePixel(Cell* cell)
           = map_coordinates(y_start, row_height, layer_row_height);
       int layer_y_end = map_coordinates(y_end, row_height, layer_row_height);
 
+      if (layer_y_end == layer_y_start) {
+        ++layer_y_end;
+      }
+
       for (int x = gridPaddedX(cell, site_width); x < x_end; x++) {
         for (int y = layer_y_start; y < layer_y_end; y++) {
           Pixel* pixel = gridPixel(grid_info.grid_index, x, y);
@@ -626,6 +626,14 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     int layer_x_end = map_coordinates(x_end, site_width, site_width);
     int layer_y = map_coordinates(grid_y, row_height, layer.first);
     int layer_y_end = map_coordinates(y_end, row_height, layer.first);
+    if (layer_x_end == layer_x) {
+      ++layer_x_end;
+    }
+
+    if (layer_y_end == layer_y) {
+      ++layer_y_end;
+    }
+
     for (int x = layer_x; x < layer_x_end; x++) {
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);

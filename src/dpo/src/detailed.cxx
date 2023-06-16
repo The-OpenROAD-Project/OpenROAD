@@ -116,6 +116,29 @@ bool Detailed::improve(DetailedMgr& mgr)
   mgr.checkOverlapInSegments();
   mgr.checkEdgeSpacingInSegments();
 
+  if (mgr.getDisallowOneSiteGaps()) {
+    std::vector<std::vector<int>> oneSiteViolations;
+    int temp_move_limit = mgr.getMoveLimit();
+    mgr.setMoveLimit(10000);
+    mgr.getOneSiteGapViolationsPerSegment(oneSiteViolations, true);
+    for (int i = 0; i < oneSiteViolations.size(); i++) {
+      if (!oneSiteViolations[i].empty()) {
+        std::string violating_node_ids = "[";
+        for (int nodeId : oneSiteViolations[i]) {
+          violating_node_ids += std::to_string(nodeId)
+                                + ",]"[nodeId == oneSiteViolations[i].back()];
+        }
+        mgr_->getLogger()->warn(
+            DPO,
+            323,
+            "One site gap violation in segment {:d} nodes: {}",
+            i,
+            violating_node_ids);
+      }
+    }
+    mgr.setMoveLimit(temp_move_limit);
+  }
+
   return true;
 }
 
@@ -145,6 +168,8 @@ void Detailed::doDetailedCommand(std::vector<std::string>& args)
     command = "orienting";
   } else if (strcmp(args[0].c_str(), "default") == 0) {
     command = "random improvement";
+  } else if (strcmp(args[0].c_str(), "disallow_one_site_gaps") == 0) {
+    command = "disallow_one_site_gaps";
   } else {
     logger->error(DPO, 1, "Unknown algorithm {:s}.", args[0]);
   }
