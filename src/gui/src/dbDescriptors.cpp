@@ -300,6 +300,12 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Non-Default Rules", nondefault_rules});
 
+  SelectionSet generate_vias;
+  for (auto via : tech->getViaGenerateRules()) {
+    generate_vias.insert(gui->makeSelected(via));
+  }
+  props.push_back({"Via Generate Rules", generate_vias});
+
   return props;
 }
 
