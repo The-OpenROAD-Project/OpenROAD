@@ -33,10 +33,8 @@ namespace fr {
 
 FlexTAGraphics::FlexTAGraphics(frDebugSettings* settings,
                                frDesign* design,
-                               odb::dbDatabase* db,
-                               Logger* logger)
-    : logger_(logger),
-      settings_(settings),
+                               odb::dbDatabase* db)
+    : settings_(settings),
       gui_(gui::Gui::get()),
       top_block_(design->getTopBlock()),
       net_(nullptr)

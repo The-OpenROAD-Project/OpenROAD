@@ -39,7 +39,7 @@
 
 namespace stt {
 
-class Tree;
+struct Tree;
 
 // Simple general purpose render for a group of lines.
 class LinesRenderer : public gui::Renderer

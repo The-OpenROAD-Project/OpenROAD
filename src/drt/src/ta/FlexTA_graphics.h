@@ -51,8 +51,7 @@ class FlexTAGraphics : public gui::Renderer
   // Debug track allocation
   FlexTAGraphics(frDebugSettings* settings,
                  frDesign* design,
-                 odb::dbDatabase* db,
-                 Logger* logger);
+                 odb::dbDatabase* db);
 
   // Show a message in the status bar
   void status(const std::string& message);
@@ -73,7 +72,6 @@ class FlexTAGraphics : public gui::Renderer
   static bool guiActive();
 
  private:
-  Logger* logger_;
   frDebugSettings* settings_;
   gui::Gui* gui_;
   frBlock* top_block_;
