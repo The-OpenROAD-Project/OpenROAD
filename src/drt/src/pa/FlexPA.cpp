@@ -208,7 +208,7 @@ template <class Archive>
 void FlexPinAccessPattern::serialize(Archive& ar, const unsigned int version)
 {
   if (is_loading(ar)) {
-    int sz;
+    int sz = 0;
     (ar) & sz;
     while (sz--) {
       frBlockObject* obj;

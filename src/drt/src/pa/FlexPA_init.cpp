@@ -131,7 +131,6 @@ void FlexPA::initUniqueInstance_main(
 {
   vector<frInst*> ndrInsts;
   vector<frCoord> offset;
-  int cnt = 0;
   std::set<frInst*> target_frinsts;
   for (auto inst : target_insts_)
     target_frinsts.insert(design_->getTopBlock()->findInst(inst->getName()));
@@ -167,14 +166,11 @@ void FlexPA::initUniqueInstance_main(
       }
     }
     masterOT2Insts[inst->getMaster()][orient][offset].insert(inst.get());
-    cnt++;
   }
 
-  cnt = 0;
   frString orientName;
   for (auto& [master, orientMap] : masterOT2Insts) {
     for (auto& [orient, offsetMap] : orientMap) {
-      cnt += offsetMap.size();
       for (auto& [vec, insts] : offsetMap) {
         auto uniqueInst = *(insts.begin());
         uniqueInstances_.push_back(uniqueInst);
@@ -195,10 +191,6 @@ void FlexPA::initUniqueInstance_main(
   for (int i = 0; i < (int) uniqueInstances_.size(); i++) {
     unique2Idx_[uniqueInstances_[i]] = i;
   }
-
-  // if (VERBOSE > 0) {
-  //   cout <<"#unique instances = " <<cnt <<endl;
-  // }
 }
 
 bool FlexPA::isNDRInst(frInst& inst)
