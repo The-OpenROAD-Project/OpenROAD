@@ -119,7 +119,7 @@ lefrData::lefrData()
   inDefine(0),
   inoutAntennaWarnings(0),
   inputAntennaWarnings(0),
-  input_level(0),
+  input_level(-1),
   isGenerate(0),
   layerCut(0),
   layerDir(0),
