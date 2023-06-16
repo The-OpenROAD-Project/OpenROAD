@@ -94,8 +94,8 @@ RepairSetup::RepairSetup(Resizer* resizer)
       inserted_buffer_count_(0),
       split_load_buffer_count_(0),
       rebuffer_net_count_(0),
-      swap_pin_count_(0),
       cloned_gate_count_(0),
+      swap_pin_count_(0),
       min_(MinMax::min()),
       max_(MinMax::max())
 {
@@ -107,7 +107,6 @@ RepairSetup::init()
   logger_ = resizer_->logger_;
   sta_ = resizer_->sta_;
   db_network_ = resizer_->db_network_;
-
   copyState(sta_);
 }
 
@@ -129,7 +128,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
   VertexSeq violating_ends;
-
+  // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
   // vertex. This may be the place where we can do some round robin fun to
   // individually control each clock domain instead of just fixating on fixing one.
@@ -179,12 +178,15 @@ RepairSetup::repairSetup(float setup_slack_margin,
                    delayAsString(prev_end_slack, sta_, digits),
                    delayAsString(prev_worst_slack, sta_, digits));
         resizer_->journalRestore(resize_count_, inserted_buffer_count_,
-                                 cloned_gate_count_);
+				 cloned_gate_count_);
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
+      int cloned_gate_begin, cloned_gate_end;
+      cloned_gate_begin = cloned_gate_count_ ;//+ split_load_buffer_count_;
       bool changed = repairSetup(end_path, end_slack, skip_pin_swap,
                                  skip_gate_cloning);
+      cloned_gate_end = cloned_gate_count_ ;//+ split_load_buffer_count_;
       if (!changed) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
                    "No change after {} decreasing slack passes.",
@@ -222,7 +224,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
         // Allow slack to increase to get out of local minima.
         // Do not update prev_end_slack so it saves the high water mark.
         decreasing_slack_passes++;
-        if (decreasing_slack_passes > decreasing_slack_max_passes_) {
+        if (decreasing_slack_passes > decreasing_slack_max_passes_
+            && cloned_gate_begin == cloned_gate_end) {
           // Undo changes that reduced slack.
           debugPrint(logger_, RSZ, "repair_setup", 2,
                      "decreasing slack for {} passes.",
@@ -231,11 +234,19 @@ RepairSetup::repairSetup(float setup_slack_margin,
                      "Restoring best end slack {} worst slack {}",
                      delayAsString(prev_end_slack, sta_, digits),
                      delayAsString(prev_worst_slack, sta_, digits));
-          resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
+                                   cloned_gate_count_);
+          break;
+        }
+        if (cloned_gate_begin < cloned_gate_end) {
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
                                    cloned_gate_count_);
           break;
         }
       }
+
       if (resizer_->overMaxArea())
         break;
       if (end_index == 1)
@@ -379,19 +390,7 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
-      skip_gate_cloning = true;
-      if (!skip_gate_cloning && fanout > 1 && !resizer_->dontTouch(net)
-          && !resizer_->isTristateDriver(drvr_pin)) {
-        rsz::GateCloner cloner(resizer_);
-        const int inserted_gates
-	  = cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
-        if (inserted_gates > 0) {
-          changed = true;
-          cloned_gate_count_ += inserted_gates;
-          break;
-        }
-      }
-
+      // Pin swapping 
       if (!skip_pin_swap) {
         if (swapPins(drvr_path, drvr_index, &expanded)) {
           changed = true;
@@ -417,6 +416,20 @@ RepairSetup::repairSetup(PathRef &path,
         }
       }
 
+      // Gate cloning
+      if (!skip_gate_cloning && fanout > split_load_min_fanout_ &&
+          !tristate_drvr &&
+          !resizer_->dontTouch(net)) {
+        rsz::GateCloner cloner(resizer_);
+        const int inserted_gates
+            = cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
+        if (inserted_gates > 0) {
+          changed = true;
+          cloned_gate_count_ += inserted_gates;
+          break;
+        }
+      }
+      
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
