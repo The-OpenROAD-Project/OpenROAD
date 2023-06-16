@@ -374,6 +374,12 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
 
   Properties props;
+  SelectionSet modules;
+  for (auto module : block->getModules()) {
+    modules.insert(gui->makeSelected(module));
+  }
+  props.push_back({"Modules", modules});
+
   SelectionSet bterms;
   for (auto bterm : block->getBTerms()) {
     bterms.insert(gui->makeSelected(bterm));
