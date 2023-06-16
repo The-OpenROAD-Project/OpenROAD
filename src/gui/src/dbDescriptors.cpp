@@ -423,6 +423,10 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   props.push_back({"Rows", rows});
 
   populateODBProperties(props, block);
+
+  props.push_back({"Core Area", block->getCoreArea()});
+  props.push_back({"Die Area", block->getDieArea()});
+  
   return props;
 }
 
