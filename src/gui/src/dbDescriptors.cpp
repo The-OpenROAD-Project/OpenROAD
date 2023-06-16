@@ -258,25 +258,31 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
   auto tech = std::any_cast<odb::dbTech*>(object);
 
-  Properties props({{"DbUnits per micron", tech->getDbUnitsPerMicron()},
-                    {"LEF units", tech->getLefUnits()},
-                    {"LEF version", tech->getLefVersionStr()}});
+  Properties props({{"DbUnits per Micron", tech->getDbUnitsPerMicron()},
+                    {"LEF Units", tech->getLefUnits()},
+                    {"LEF Version", tech->getLefVersionStr()}});
   
   if (tech->hasManufacturingGrid()) {
-    props.push_back({"Manufacturing grids", tech->getManufacturingGrid()});
+    props.push_back({"Manufacturing Grid", Property::convert_dbu(tech->getManufacturingGrid(), true)});
   }
   
   SelectionSet tech_layers;
   for (auto tech_layer : tech->getLayers()) {
     tech_layers.insert(gui->makeSelected(tech_layer));
   }
-  props.push_back({"Tech layers", tech_layers});
+  props.push_back({"Tech Layers", tech_layers});
 
   SelectionSet tech_vias;
   for (auto tech_via : tech->getVias()) {
     tech_vias.insert(gui->makeSelected(tech_via));
   }
-  props.push_back({"Tech vias", tech_vias});
+  props.push_back({"Tech Vias", tech_vias});
+
+  SelectionSet via_maps;
+  for (auto map : tech->getMetalWidthViaMap()) {
+    via_maps.insert(gui->makeSelected(map));
+  }
+  props.push_back({"Metal Width Via Map Rules", via_maps});
 
   std::vector<odb::dbTechSameNetRule*> rule_samenets;
   tech->getSameNetRules(rule_samenets);
@@ -284,13 +290,13 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   for (auto samenet : rule_samenets) {
     samenet_rules.insert(gui->makeSelected(samenet));
   }
-  props.push_back({"Same net rules", samenet_rules});
+  props.push_back({"Same Net Rules", samenet_rules});
 
   SelectionSet nondefault_rules;
   for (auto nondefault : tech->getNonDefaultRules()) {
     nondefault_rules.insert(gui->makeSelected(nondefault));
   }
-  props.push_back({"Non-default rules", nondefault_rules});
+  props.push_back({"Non-Default Rules", nondefault_rules});
 
   return props;
 }
@@ -3074,6 +3080,73 @@ bool DbTechViaDescriptor::getAllObjects(SelectionSet& objects) const
 
   for (auto* via : tech->getVias()) {
     objects.insert(makeSelected(via));
+  }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+DbMetalWidthViaMapDescriptor::DbMetalWidthViaMapDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
+
+std::string DbMetalWidthViaMapDescriptor::getName(std::any object) const
+{
+  auto via_map = std::any_cast<odb::dbMetalWidthViaMap*>(object);
+  std::string map_name = via_map->getViaName() + "_width_map";
+  return map_name;
+}
+
+std::string DbMetalWidthViaMapDescriptor::getTypeName() const
+{
+  return "Metal Width Via Map Rule";
+}
+
+bool DbMetalWidthViaMapDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbMetalWidthViaMapDescriptor::highlight(std::any object, Painter& painter) const
+{
+}
+
+Descriptor::Properties DbMetalWidthViaMapDescriptor::getProperties(std::any object) const
+{
+  auto via_map = std::any_cast<odb::dbMetalWidthViaMap*>(object);
+
+  Properties props({{"Is via cut class", via_map->isViaCutClass()},
+                    {"Below Layer Low Width", Property::convert_dbu(via_map->getBelowLayerWidthLow(), true)},
+                    {"Above Layer Low Width", Property::convert_dbu(via_map->getAboveLayerWidthLow(), true)},
+                    {"Below Layer High Width", Property::convert_dbu(via_map->getBelowLayerWidthHigh(),true)},
+                    {"Above Layer High Width", Property::convert_dbu(via_map->getAboveLayerWidthHigh(), true)}});
+
+  return props;
+}
+
+Selected DbMetalWidthViaMapDescriptor::makeSelected(std::any object) const
+{
+  if (auto via_map = std::any_cast<odb::dbMetalWidthViaMap*>(&object)) {
+    return Selected(*via_map, this);
+  }
+  
+  return Selected();
+}
+
+bool DbMetalWidthViaMapDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_via_map = std::any_cast<odb::dbMetalWidthViaMap*>(l);
+  auto r_via_map = std::any_cast<odb::dbMetalWidthViaMap*>(r);
+  return l_via_map->getId() < r_via_map->getId();
+}
+
+bool DbMetalWidthViaMapDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto* tech = db_->getTech();
+
+  for (auto* map : tech->getMetalWidthViaMap()) {
+    objects.insert(makeSelected(map));
   }
 
   return true;
