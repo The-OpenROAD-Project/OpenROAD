@@ -48,7 +48,6 @@
 #include "Hypergraph.h"
 #include "Utilities.h"
 #include "utl/Logger.h"
-
 using utl::PAR;
 
 namespace par {
@@ -318,6 +317,7 @@ void Coarsener::VertexMatching(
     if (vertex_cluster_id_vec[v] > -1) {
       continue;  // this vertex has been mapped
     }
+
     // initialize the score for neighbors
     std::map<int, float> score_map;
     // traverse all its neighbors
@@ -362,6 +362,7 @@ void Coarsener::VertexMatching(
         score_map[nbr_v] = he_score;
       }
     }  // finish traversing all the neighbors
+
     // if there is no neighbor, map current vertex as a single-vertex cluster
     if (score_map.empty()) {
       num_visited_vertices++;
@@ -434,6 +435,23 @@ void Coarsener::VertexMatching(
       } else if (score == best_score && vertex_cluster_id_vec[u] == -1) {
         best_vertex = u;
       }
+    }
+
+    if (best_vertex == -1) {
+      num_visited_vertices += 1;
+      vertex_cluster_id_vec[v] = cluster_id;
+      cluster_id++;
+      vertex_weights_c.push_back(hgraph->GetVertexWeights(v));
+      if (hgraph->HasPlacement()) {
+        placement_attr_c.push_back(hgraph->GetPlacement(v));
+      }
+      if (hgraph->HasCommunity()) {
+        community_attr_c.push_back(hgraph->GetCommunity(v));
+      }
+      if (hgraph->HasFixedVertices()) {
+        fixed_attr_c.push_back(hgraph->GetFixedAttr(v));
+      }
+      continue;
     }
 
     // cluster best_vertex and v
