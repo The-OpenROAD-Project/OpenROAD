@@ -115,7 +115,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
                          double repair_tns_end_percent,
                          int max_passes,
                          bool skip_pin_swap,
-                         bool skip_gate_cloning)
+                         bool enable_gate_cloning)
 {
   init();
   constexpr int digits = 3;
@@ -185,7 +185,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
       int cloned_gate_begin, cloned_gate_end;
       cloned_gate_begin = cloned_gate_count_ ;//+ split_load_buffer_count_;
       bool changed = repairSetup(end_path, end_slack, skip_pin_swap,
-                                 skip_gate_cloning);
+                                 enable_gate_cloning);
       cloned_gate_end = cloned_gate_count_ ;//+ split_load_buffer_count_;
       if (!changed) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
@@ -332,7 +332,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
 bool
 RepairSetup::repairSetup(PathRef &path,
                          Slack path_slack,
-                         bool skip_pin_swap, bool skip_gate_cloning)
+                         bool skip_pin_swap, bool enable_gate_cloning)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -417,7 +417,7 @@ RepairSetup::repairSetup(PathRef &path,
       }
 
       // Gate cloning
-      if (!skip_gate_cloning && fanout > split_load_min_fanout_ &&
+      if (enable_gate_cloning && fanout > split_load_min_fanout_ &&
           !tristate_drvr &&
           !resizer_->dontTouch(net)) {
         rsz::GateCloner cloner(resizer_);
