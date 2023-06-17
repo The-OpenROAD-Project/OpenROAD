@@ -2196,7 +2196,7 @@ class dbNet : public dbObject
   bool isDoNotTouch();
 
   ///
-  /// Get the block of this block-terminal.
+  /// Get the block this net belongs to.
   ///
   dbBlock* getBlock();
 
@@ -4114,7 +4114,7 @@ class dbBlockage : public dbObject
 {
  public:
   ///
-  /// Get the bbox of this obstruction.
+  /// Get the bbox of this blockage.
   ///
   dbBox* getBBox();
 
@@ -4155,12 +4155,12 @@ class dbBlockage : public dbObject
   float getMaxDensity();
 
   ///
-  /// Get the block this obstruction belongs too.
+  /// Get the block this blockage belongs too.
   ///
   dbBlock* getBlock();
 
   ///
-  /// Create a placement obstruction.
+  /// Create a placement blockage.
   ///
   static dbBlockage* create(dbBlock* block,
                             int x1,
@@ -6685,7 +6685,7 @@ class dbTechNonDefaultRule : public dbObject
   dbTechLayerRule* getLayerRule(dbTechLayer* layer);
 
   ///
-  /// Get the vias of this non-default rule.
+  /// Get the layer-rules of this non-default rule.
   ///
   void getLayerRules(std::vector<dbTechLayerRule*>& layer_rules);
 
