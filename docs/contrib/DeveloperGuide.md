@@ -188,7 +188,7 @@ Instructions for building are available [here](../user/Build.md).
 
 ## Example of Adding a Tool to OpenROAD
 
-The patch file "add_tool.patch" illustrates how to add a tool to
+The patch file "AddTool.patch" illustrates how to add a tool to
 OpenROAD. Use
 
 ``` shell

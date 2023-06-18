@@ -179,7 +179,7 @@ transceivers, OpenPower-based Microwatt etc.
 ## Build OpenROAD
 
 To build OpenROAD tools locally in your machine, follow steps
-from [here](./docs/user/Build.md).
+from [here](docs/user/Build.md).
 
 ## Regression Tests
 
@@ -231,7 +231,7 @@ the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
-and their descriptions are available [here](./docs/contrib/Logger.md#openroad-tool-list).
+and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
 
 ## License
 
