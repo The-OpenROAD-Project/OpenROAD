@@ -261,7 +261,20 @@ void Opendp::makeGroups()
           box = box.intersect(core_);
           // offset region to core origin
           box.moveDelta(-core_.xMin(), -core_.yMin());
-
+          if (height == *(unique_heights.begin())) {
+            bgBox bbox(bgPoint(box.xMin(), box.yMin()),
+                       bgPoint(box.xMax(), box.yMax()));
+            debugPrint(logger_,
+                       DPL,
+                       "detailed",
+                       1,
+                       "bbox inserted to rtree [{} {}] [{} {}]",
+                       box.xMin(),
+                       box.yMin(),
+                       box.xMax(),
+                       box.yMax());
+            regions_rtree.insert(bbox);
+          }
           group.regions.push_back(box);
           group.boundary.merge(box);
         }

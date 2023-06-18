@@ -1,6 +1,7 @@
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def fence01.def
+set_debug_level DPL "detailed" 4
 detailed_placement
 check_placement
 

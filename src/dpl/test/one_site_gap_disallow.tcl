@@ -1,6 +1,7 @@
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def one_site_gap_disallow.def
+set_debug_level DPL detailed 1 
 detailed_placement -disallow_one_site_gaps
 check_placement
 

@@ -2,6 +2,7 @@
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_def aes_cipher_top_replace.def
+set_debug_level DPL detailed 1 
 detailed_placement
 check_placement
 

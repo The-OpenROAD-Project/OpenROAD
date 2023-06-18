@@ -39,6 +39,8 @@
 
 #pragma once
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/index/rtree.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -53,6 +55,8 @@ namespace utl {
 class Logger;
 }
 
+namespace bgi = boost::geometry::index;
+namespace bg = boost::geometry;
 namespace dpl {
 
 using std::map;
@@ -83,6 +87,10 @@ struct Pixel;
 struct Group;
 class DplObserver;
 
+using bgPoint = bg::model::d2::point_xy<int, bg::cs::cartesian>;
+using bgBox = bg::model::box<bgPoint>;
+
+using RtreeBox = bgi::rtree<bgBox, bgi::quadratic<16>>;
 // The "Grid" is now an array of 2D grids. The new dimension is to support
 // multi-height cells. Each unique row height creates a new grid that is used in
 // legalization. The first index is the grid index (corresponding to row
@@ -295,6 +303,8 @@ class Opendp
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
+
+  void findOverlapInRtree(bgBox queryBox, vector<bgBox>& overlaps) const;
   bool moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();
@@ -461,6 +471,7 @@ class Opendp
   // 3D pixel grid
   Grid grid_;
   Cell dummy_cell_;
+  RtreeBox regions_rtree;
 
   // Filler placement.
   // gap (in sites) -> seq of masters

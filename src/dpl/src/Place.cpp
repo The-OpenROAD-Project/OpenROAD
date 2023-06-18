@@ -938,6 +938,51 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
 
   if (x > bin_x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
+      Point p(bin_x + i, bin_y);
+      p.setX(p.getX() * site_width_);
+      p.setY(p.getY() * row_height);
+      if (cell->region_) {
+        debugPrint(logger_,
+                   DPL,
+                   "detailed",
+                   1,
+                   "Point {} {} Cell {} has region x[{} {}] and y[{} {}]",
+                   p.getX(),
+                   p.getY(),
+                   cell->name(),
+                   cell->region_->xMin(),
+                   cell->region_->xMax(),
+                   cell->region_->yMin(),
+                   cell->region_->yMax());
+        if (!cell->region_->intersects(p)) {
+          debugPrint(logger_,
+                     DPL,
+                     "detailed",
+                     2,
+                     "point and region doesn't interesect!");
+          // continue;
+        }
+      } else {
+        for (auto& group : groups_) {
+          for (auto& region : group.regions) {
+            if (region.intersects(p)) {
+              debugPrint(
+                  logger_,
+                  DPL,
+                  "detailed",
+                  1,
+                  "Point p[{},{}] intersects region x[{} {}] and y[{} {}]",
+                  p.getX(),
+                  p.getY(),
+                  region.xMin(),
+                  region.xMax(),
+                  region.yMin(),
+                  region.yMax());
+              return PixelPt();
+            }
+          }
+        }
+      }
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -946,6 +991,36 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     }
   } else {
     for (int i = 0; i < bin_search_width_; i++) {
+      Point p(bin_x + i, bin_y);
+      p.setX(p.getX() * site_width_);
+      p.setY(p.getY() * row_height);
+      if (cell->region_) {
+        debugPrint(logger_,
+                   DPL,
+                   "detailed",
+                   1,
+                   "Point {} {} Cell {} has region x[{} {}] and y[{} {}]",
+                   p.getX(),
+                   p.getY(),
+                   cell->name(),
+                   cell->region_->xMin(),
+                   cell->region_->xMax(),
+                   cell->region_->yMin(),
+                   cell->region_->yMax());
+        if (!cell->region_->intersects(p)) {
+          debugPrint(logger_,
+                     DPL,
+                     "detailed",
+                     2,
+                     "point and region doesn't interesect!");
+          // continue;
+        }
+
+      } else {
+        // make sure it is not inside ANY region
+        debugPrint(
+            logger_, DPL, "detailed", 1, "Cell {} has no region", cell->name());
+      }
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -965,6 +1040,41 @@ bool Opendp::checkPixels(const Cell* cell,
 {
   auto row_info = getRowInfo(cell);
   if (x_end > row_info.second.site_count) {
+    return false;
+  }
+  int min_row_height = grid_info_map_.begin()->first;
+  bgBox queryBox(
+      bgPoint(x * site_width_,
+              map_coordinates(y, row_info.first, min_row_height)),
+      bgPoint(x_end * site_width_,
+              map_coordinates(y_end, row_info.first, min_row_height)));
+
+  std::vector<bgBox> result;
+  findOverlapInRtree(queryBox, result);
+
+  if (cell->region_
+      && result.size()
+             != 1) {  // cell has a region, so the overlap should only be with
+                      // one box (for that region) in the rtree
+    debugPrint(
+        logger_,
+        DPL,
+        "detailed",
+        1,
+        "Cell had a region, but it didn't overlap with it!!. Overlap size {}",
+        result.size());
+    return false;
+  } else if (cell->region_ == nullptr
+             && result.size() != 0) {  // cell doesn't have a region, so it
+                                       // should be placed outside of all
+                                       // regions. So ther overalp must be zero
+    debugPrint(logger_,
+               DPL,
+               "detailed",
+               1,
+               "Cell didn't have a region, but it overlapped with something!!. "
+               "Overlap size {}",
+               result.size());
     return false;
   }
 
