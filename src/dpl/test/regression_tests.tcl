@@ -55,4 +55,5 @@ record_tests {
   multi_height_rows
   multi_height_one_site_gap_disallow
   regions1
+  regions2
 }
