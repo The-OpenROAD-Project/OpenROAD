@@ -2,7 +2,6 @@ source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_lef Nangate45/fake_macros.lef
 read_def multi_height_rows.def
-set_debug_level DPL detailed 1 
 detailed_placement
 filler_placement FILL*
 check_placement
