@@ -822,7 +822,7 @@ void TimingConeRenderer::drawObjects(gui::Painter& painter)
     const int color_count = color_generator_.getColorCount();
     auto* units = sta_->units()->timeUnit();
     const std::string text_units
-        = std::string(units->scaleAbreviation()) + units->suffix();
+        = std::string(units->scaleAbbreviation()) + units->suffix();
     std::vector<std::pair<int, std::string>> legend;
     for (int i = 0; i < legend_keys; i++) {
       const double scale = static_cast<double>(i) / (legend_keys - 1);

@@ -2425,14 +2425,14 @@ Resizer::repairSetup(double setup_margin,
                      double repair_tns_end_percent,
                      int max_passes,
                      bool skip_pin_swap,
-                     bool skip_gate_cloning)
+                     bool enable_gate_cloning)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->initMacrosAndGrid();
   }
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
-                             max_passes, skip_pin_swap, skip_gate_cloning);
+                             max_passes, skip_pin_swap, enable_gate_cloning);
 }
 
 void

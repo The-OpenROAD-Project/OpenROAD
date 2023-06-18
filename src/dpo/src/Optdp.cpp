@@ -686,6 +686,13 @@ void Optdp::createArchitecture()
 
   odb::Rect dieRect = block->getDieArea();
 
+  odb::uint min_row_height = std::numeric_limits<odb::uint>::max();
+  for (dbRow* row : block->getRows()) {
+    min_row_height = std::min(min_row_height, row->getSite()->getHeight());
+  }
+
+  std::map<uint, std::unordered_set<std::string>> skip_list;
+
   for (dbRow* row : block->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
@@ -695,6 +702,10 @@ void Optdp::createArchitecture()
       continue;
     }
     dbSite* site = row->getSite();
+    if (site->getHeight() > min_row_height) {
+      skip_list[site->getHeight()].insert(site->getName());
+      continue;
+    }
     int originX;
     int originY;
     row->getOrigin(originX, originY);
@@ -729,7 +740,21 @@ void Optdp::createArchitecture()
     unsigned orient = dbToDpoOrient(row->getOrient());
     archRow->setOrient(orient);
   }
-
+  for (const auto& skip : skip_list) {
+    std::string skip_string = "[";
+    int i = 0;
+    for (const auto& skipped_site : skip.second) {
+      skip_string += skipped_site + ",]"[i == skip.second.size() - 1];
+      ++i;
+    }
+    logger_->warn(DPO,
+                  108,
+                  "Skipping all the rows with sites {} as their height is {} "
+                  "and the single-height is {}.",
+                  skip_string,
+                  skip.first,
+                  min_row_height);
+  }
   // Get surrounding box.
   {
     int xmin = std::numeric_limits<int>::max();
