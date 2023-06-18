@@ -55,11 +55,11 @@ void frAccessPoint::serialize(Archive& ar, const unsigned int version)
   (ar) & typeH_;
   (ar) & pathSegs_;
   if (is_loading(ar)) {
-    int outSz;
+    int outSz = 0;
     (ar) & outSz;
     for (int i = 0; i < outSz; i++) {
       viaDefs_.push_back({});
-      int inSz;
+      int inSz = 0;
       (ar) & inSz;
       while (inSz--) {
         frViaDef* vd;

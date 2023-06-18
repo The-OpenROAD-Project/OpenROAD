@@ -2,7 +2,7 @@
 source "helpers.tcl"
 source "hi_fanout.tcl"
 
-set def_filename [make_result_file "repair_fanout7.def"]
+set def_filename [make_result_file "repair_fanout8.def"]
 # Gates we want to eventually NAND2_X4, NAND3_X4, NAND4_X4
 
 write_clone_test_def $def_filename NAND2_X4 150
@@ -30,8 +30,7 @@ set_dont_use $dont_use
 
 estimate_parasitics -placement
 
-# Repair the high fanout net hopefully with gate cloning code. 
 report_worst_slack -max
 #set ::env(TEST_GATE_CLONING) 1
-repair_timing -setup -repair_tns 100 -enable_gate_cloning
+repair_timing -setup -repair_tns 100
 report_worst_slack -max
