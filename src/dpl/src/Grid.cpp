@@ -211,23 +211,10 @@ Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
 
 ////////////////////////////////////////////////////////////////
 
-void Opendp::findOverlapInRtree(bgBox queryBox, vector<bgBox>& overlaps) const
+void Opendp::findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const
 {
+  overlaps.clear();
   regions_rtree.query(bgi::intersects(queryBox), std::back_inserter(overlaps));
-
-  // Print the overlapping boxes
-  for (const auto& box : overlaps) {
-    debugPrint(logger_,
-               utl::DPL,
-               "detailed",
-               1,
-               "Overlap found: "
-               "({} , {}) - ({}, {})",
-               box.min_corner().x(),
-               box.min_corner().y(),
-               box.max_corner().x(),
-               box.max_corner().y());
-  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -520,11 +507,11 @@ void Opendp::groupInitPixels()
                  DPL,
                  "detailed",
                  1,
-                 "Group {} region x[{} {}] y[{} {}]",
+                 "Group {} region [x{} y{}] [x{} y{}]",
                  group.name,
                  rect.xMin(),
-                 rect.xMax(),
                  rect.yMin(),
+                 rect.xMax(),
                  rect.yMax());
       int row_start = divCeil(rect.yMin(), row_height);
       int row_end = divFloor(rect.yMax(), row_height);

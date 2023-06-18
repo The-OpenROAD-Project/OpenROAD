@@ -276,6 +276,11 @@ class Opendp
                          PixelPt& best_pt,
                          int& best_dist) const;
   PixelPt binSearch(int x, const Cell* cell, int bin_x, int bin_y) const;
+  bool checkRegionOverlap(const Cell* cell,
+                          int x,
+                          int y,
+                          int x_end,
+                          int y_end) const;
   bool checkPixels(const Cell* cell, int x, int y, int x_end, int y_end) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
@@ -304,7 +309,7 @@ class Opendp
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
 
-  void findOverlapInRtree(bgBox queryBox, vector<bgBox>& overlaps) const;
+  void findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const;
   bool moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();

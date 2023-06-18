@@ -802,15 +802,6 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   y_max = min(grid_info.row_count, y_max);
   debugPrint(logger_,
              DPL,
-             "group",
-             1,
-             "x_min {} x_max {} y_min {} y_max {}",
-             x_min,
-             x_max,
-             y_min,
-             y_max);
-  debugPrint(logger_,
-             DPL,
              "place",
              1,
              "Diamond Search {} ({}, {}) bounds ({}-{}, {}-{})",
@@ -942,47 +933,37 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       p.setX(p.getX() * site_width_);
       p.setY(p.getY() * row_height);
       if (cell->region_) {
-        debugPrint(logger_,
-                   DPL,
-                   "detailed",
-                   1,
-                   "Point {} {} Cell {} has region x[{} {}] and y[{} {}]",
-                   p.getX(),
-                   p.getY(),
-                   cell->name(),
-                   cell->region_->xMin(),
-                   cell->region_->xMax(),
-                   cell->region_->yMin(),
-                   cell->region_->yMax());
+        // debugPrint(logger_,
+        //            DPL,
+        //            "detailed",
+        //            1,
+        //            "Point {} {} Cell {} has region x[{} {}] and y[{} {}]",
+        //            p.getX(),
+        //            p.getY(),
+        //            cell->name(),
+        //            cell->region_->xMin(),
+        //            cell->region_->xMax(),
+        //            cell->region_->yMin(),
+        //            cell->region_->yMax());
         if (!cell->region_->intersects(p)) {
           debugPrint(logger_,
                      DPL,
                      "detailed",
                      2,
                      "point and region doesn't interesect!");
-          // continue;
+          continue;
         }
-      } else {
-        for (auto& group : groups_) {
-          for (auto& region : group.regions) {
-            if (region.intersects(p)) {
-              debugPrint(
-                  logger_,
-                  DPL,
-                  "detailed",
-                  1,
-                  "Point p[{},{}] intersects region x[{} {}] and y[{} {}]",
-                  p.getX(),
-                  p.getY(),
-                  region.xMin(),
-                  region.xMax(),
-                  region.yMin(),
-                  region.yMax());
-              return PixelPt();
-            }
-          }
-        }
-      }
+      }  // the else case where a cell has no region will be checked using the
+         // rtree in checkPixels
+      debugPrint(logger_,
+                 DPL,
+                 "detailed",
+                 2,
+                 "greater than - checking pixels {} {} cell {}",
+                 bin_x + i,
+                 bin_y,
+                 cell->name());
+
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -995,32 +976,35 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       p.setX(p.getX() * site_width_);
       p.setY(p.getY() * row_height);
       if (cell->region_) {
-        debugPrint(logger_,
-                   DPL,
-                   "detailed",
-                   1,
-                   "Point {} {} Cell {} has region x[{} {}] and y[{} {}]",
-                   p.getX(),
-                   p.getY(),
-                   cell->name(),
-                   cell->region_->xMin(),
-                   cell->region_->xMax(),
-                   cell->region_->yMin(),
-                   cell->region_->yMax());
+        // debugPrint(logger_,
+        //            DPL,
+        //            "detailed",
+        //            1,
+        //            "Point {} {} Cell {} has region x[{} {}] and y[{} {}]",
+        //            p.getX(),
+        //            p.getY(),
+        //            cell->name(),
+        //            cell->region_->xMin(),
+        //            cell->region_->xMax(),
+        //            cell->region_->yMin(),
+        //            cell->region_->yMax());
         if (!cell->region_->intersects(p)) {
           debugPrint(logger_,
                      DPL,
                      "detailed",
                      2,
                      "point and region doesn't interesect!");
-          // continue;
+          continue;
         }
-
-      } else {
-        // make sure it is not inside ANY region
-        debugPrint(
-            logger_, DPL, "detailed", 1, "Cell {} has no region", cell->name());
       }
+      debugPrint(logger_,
+                 DPL,
+                 "detailed",
+                 2,
+                 "less than - checking pixels {} {} cell {}",
+                 bin_x + i,
+                 bin_y,
+                 cell->name());
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -1031,23 +1015,33 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
   return PixelPt();
 }
 
-// Check all pixels are empty.
-bool Opendp::checkPixels(const Cell* cell,
-                         int x,
-                         int y,
-                         int x_end,
-                         int y_end) const
+bool Opendp::checkRegionOverlap(const Cell* cell,
+                                int x,
+                                int y,
+                                int x_end,
+                                int y_end) const
 {
+  // TODO: Investigate the caching of this function
+  // it is called with the same cell and x,y,x_end,y_end multiple times
+  debugPrint(logger_,
+             DPL,
+             "detailed",
+             1,
+             "Checking region overlap for cell {} at x[{} {}] and y[{} {}]",
+             cell->name(),
+             x,
+             x_end,
+             y,
+             y_end);
   auto row_info = getRowInfo(cell);
-  if (x_end > row_info.second.site_count) {
-    return false;
-  }
-  int min_row_height = grid_info_map_.begin()->first;
-  bgBox queryBox(
-      bgPoint(x * site_width_,
-              map_coordinates(y, row_info.first, min_row_height)),
-      bgPoint(x_end * site_width_,
-              map_coordinates(y_end, row_info.first, min_row_height)));
+  int min_row_height = row_height_;
+  bgBox queryBox(bgPoint(x * site_width_,
+                         map_coordinates(y, row_info.first, min_row_height)
+                             * min_row_height),
+                 bgPoint(x_end * site_width_ - 1,
+                         map_coordinates(y_end, row_info.first, min_row_height)
+                                 * min_row_height
+                             - 1));
 
   std::vector<bgBox> result;
   findOverlapInRtree(queryBox, result);
@@ -1063,6 +1057,22 @@ bool Opendp::checkPixels(const Cell* cell,
         1,
         "Cell had a region, but it didn't overlap with it!!. Overlap size {}",
         result.size());
+    for (const auto& box : result) {
+      debugPrint(logger_,
+                 utl::DPL,
+                 "detailed",
+                 1,
+                 "Overlap found between queryBox ({} , {}) - ({} , {}) and bbox"
+                 "({} , {}) - ({}, {})",
+                 queryBox.min_corner().x(),
+                 queryBox.min_corner().y(),
+                 queryBox.max_corner().x(),
+                 queryBox.max_corner().y(),
+                 box.min_corner().x(),
+                 box.min_corner().y(),
+                 box.max_corner().x(),
+                 box.max_corner().y());
+    }
     return false;
   } else if (cell->region_ == nullptr
              && result.size() != 0) {  // cell doesn't have a region, so it
@@ -1075,6 +1085,39 @@ bool Opendp::checkPixels(const Cell* cell,
                "Cell didn't have a region, but it overlapped with something!!. "
                "Overlap size {}",
                result.size());
+    for (const auto& box : result) {
+      debugPrint(logger_,
+                 utl::DPL,
+                 "detailed",
+                 1,
+                 "Overlap found between queryBox ({} , {}) - ({} , {}) and bbox"
+                 "({} , {}) - ({}, {})",
+                 queryBox.min_corner().x(),
+                 queryBox.min_corner().y(),
+                 queryBox.max_corner().x(),
+                 queryBox.max_corner().y(),
+                 box.min_corner().x(),
+                 box.min_corner().y(),
+                 box.max_corner().x(),
+                 box.max_corner().y());
+    }
+    return false;
+  }
+  return true;
+}
+
+// Check all pixels are empty.
+bool Opendp::checkPixels(const Cell* cell,
+                         int x,
+                         int y,
+                         int x_end,
+                         int y_end) const
+{
+  auto row_info = getRowInfo(cell);
+  if (x_end > row_info.second.site_count) {
+    return false;
+  }
+  if (!checkRegionOverlap(cell, x, y, x_end, y_end)) {
     return false;
   }
 

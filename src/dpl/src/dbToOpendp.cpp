@@ -262,17 +262,13 @@ void Opendp::makeGroups()
           // offset region to core origin
           box.moveDelta(-core_.xMin(), -core_.yMin());
           if (height == *(unique_heights.begin())) {
-            bgBox bbox(bgPoint(box.xMin(), box.yMin()),
-                       bgPoint(box.xMax(), box.yMax()));
-            debugPrint(logger_,
-                       DPL,
-                       "detailed",
-                       1,
-                       "bbox inserted to rtree [{} {}] [{} {}]",
-                       box.xMin(),
-                       box.yMin(),
-                       box.xMax(),
-                       box.yMax());
+            bgBox bbox(
+                bgPoint(box.xMin(), box.yMin()),
+                bgPoint(
+                    box.xMax() - 1,
+                    box.yMax()
+                        - 1));  /// the -1 is to prevent imagianring overlaps
+                                /// where a region ends and another starts
             regions_rtree.insert(bbox);
           }
           group.regions.push_back(box);
