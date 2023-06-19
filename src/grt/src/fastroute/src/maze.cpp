@@ -2307,7 +2307,8 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
 
   int old_size = congestion_nets.size();
 
-  // The radius around the congested zone is increased when no new nets are obtained
+  // The radius around the congested zone is increased when no new nets are
+  // obtained
   for (int radius = 0; radius < 5 && old_size == congestion_nets.size();
        radius++) {
     // Find nets for each congestion ggrid
