@@ -32,5 +32,5 @@ estimate_parasitics -placement
 
 report_worst_slack -max
 #set ::env(TEST_GATE_CLONING) 1
-repair_timing -setup -repair_tns 100 -skip_gate_cloning
+repair_timing -setup -repair_tns 100
 report_worst_slack -max

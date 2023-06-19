@@ -79,6 +79,7 @@
 [INFO RCX-0439] Coupling Cap extraction top ...
 [INFO RCX-0440] Coupling threshhold is 0.1000 fF, coupling capacitance less than 0.1000 fF will be grounded.
 [INFO RCX-0043] 3 wires to be extracted
+[INFO RCX-0442] 33% completion -- 1 wires have been extracted
 [INFO RCX-0442] 100% completion -- 3 wires have been extracted
 [INFO RCX-0045] Extract -1 nets, 2 rsegs, 2 caps, 0 ccs
 [INFO RCX-0015] Finished extracting top.
