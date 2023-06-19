@@ -2234,7 +2234,7 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
                                       int& posX,
                                       int& posY,
                                       int dir,
-                                      int& ratio)
+                                      int& radius)
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
@@ -2259,13 +2259,13 @@ void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
         }
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          if (abs(ymin - posY) <= ratio && abs(gridsX[i] - posX) <= ratio
+          if (abs(ymin - posY) <= radius && abs(gridsX[i] - posX) <= radius
               && dir == 0) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          if (abs(gridsY[i] - posY) <= ratio && abs(xmin - posX) <= ratio
+          if (abs(gridsY[i] - posY) <= radius && abs(xmin - posX) <= radius
               && dir == 1) {
             congestion_nets.insert(nets_[netID]->getDbNet());
           }
@@ -2307,11 +2307,12 @@ void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
 
   int old_size = congestion_nets.size();
 
-  for (int ratio = 0; ratio < 5 && old_size == congestion_nets.size();
-       ratio++) {
+  // The radius around the congested zone is increased when no new nets are obtained
+  for (int radius = 0; radius < 5 && old_size == congestion_nets.size();
+       radius++) {
     // Find nets for each congestion ggrid
     for (int i = 0; i < n; i++) {
-      setCongestionNets(congestion_nets, xs[i], ys[i], dirs[i], ratio);
+      setCongestionNets(congestion_nets, xs[i], ys[i], dirs[i], radius);
     }
   }
 }

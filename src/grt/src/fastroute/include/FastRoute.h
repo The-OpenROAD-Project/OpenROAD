@@ -228,7 +228,7 @@ class FastRouteCore
                          int& posX,
                          int& posY,
                          int dir,
-                         int& ratio);
+                         int& radius);
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
