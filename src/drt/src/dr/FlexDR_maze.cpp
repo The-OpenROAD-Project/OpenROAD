@@ -3354,8 +3354,7 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
                         * getTech()->getManufacturingGrid();
 
   // always patch to pref dir
-  auto layer = getTech()->getLayer(layerNum);
-  if (layer->getDir() == dbTechLayerDir::HORIZONTAL) {
+  if (getTech()->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL) {
     isPatchHorz = true;
   } else {
     isPatchHorz = false;
@@ -3365,25 +3364,11 @@ void FlexDRWorker::routeNet_postAstarAddPatchMetal(drNet* net,
       bpIdx, isPatchHorz, bpPatchLeft, patchLength);
   auto costR = routeNet_postAstarAddPathMetal_isClean(
       epIdx, isPatchHorz, epPatchLeft, patchLength);
-  frCoord halfPatchLength
-      = frCoord(ceil(1.0 * patchLength / 2 / getTech()->getManufacturingGrid()))
-        * getTech()->getManufacturingGrid();
-  int costCenter = routeNet_postAstarAddPathMetal_isClean(
-                       bpIdx, isPatchHorz, bpPatchLeft, halfPatchLength)
-                   + routeNet_postAstarAddPathMetal_isClean(
-                       epIdx, isPatchHorz, epPatchLeft, halfPatchLength);
-  if (costCenter < costL && costCenter < costR) {
+  if (costL <= costR) {
     routeNet_postAstarAddPatchMetal_addPWire(
-        net, bpIdx, isPatchHorz, bpPatchLeft, halfPatchLength, patchWidth);
-    routeNet_postAstarAddPatchMetal_addPWire(
-        net, epIdx, isPatchHorz, epPatchLeft, halfPatchLength, patchWidth);
+        net, bpIdx, isPatchHorz, bpPatchLeft, patchLength, patchWidth);
   } else {
-    if (costL <= costR) {
-      routeNet_postAstarAddPatchMetal_addPWire(
-          net, bpIdx, isPatchHorz, bpPatchLeft, patchLength, patchWidth);
-    } else {
-      routeNet_postAstarAddPatchMetal_addPWire(
-          net, epIdx, isPatchHorz, epPatchLeft, patchLength, patchWidth);
-    }
+    routeNet_postAstarAddPatchMetal_addPWire(
+        net, epIdx, isPatchHorz, epPatchLeft, patchLength, patchWidth);
   }
 }

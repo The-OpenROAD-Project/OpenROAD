@@ -2307,8 +2307,8 @@ int LayoutViewer::coarseViewableResolution() const
 void LayoutViewer::exit()
 {
   viewer_thread_.exit();
-  while (!viewer_thread_.isFinished()) {
-    // wait for it to be done;
+  while (viewer_thread_.isRunning() && !viewer_thread_.isFinished()) {
+    // wait for it to be done
   }
 }
 
