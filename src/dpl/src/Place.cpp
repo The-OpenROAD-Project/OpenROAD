@@ -125,14 +125,6 @@ void Opendp::prePlace()
       if (group_rect) {
         Point nearest = nearestPt(&cell, group_rect);
         Point legal = legalGridPt(&cell, nearest);
-        debugPrint(logger_,
-                   DPL,
-                   "place",
-                   4,
-                   "preplace {} {} {}",
-                   cell.name(),
-                   legal.getX(),
-                   legal.getY());
         if (mapMove(&cell, legal)) {
           cell.hold_ = true;
         }
@@ -221,15 +213,6 @@ void Opendp::prePlaceGroups()
         if (!in_group) {
           Point nearest = nearestPt(cell, nearest_rect);
           Point legal = legalGridPt(cell, nearest);
-          debugPrint(logger_,
-                     DPL,
-                     "place",
-                     4,
-                     "preplace groups {} {} {}",
-                     cell->name(),
-                     legal.getX(),
-                     legal.getY());
-
           if (mapMove(cell, legal)) {
             cell->hold_ = true;
           }
@@ -341,26 +324,9 @@ void Opendp::place()
   }
   for (Cell* cell : sorted_cells) {
     if (!isMultiRow(cell) && cellFitsInCore(cell)) {
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 1,
-                 "place {} {} {}",
-                 cell->name(),
-                 cell->x_,
-                 cell->y_);
       if (!mapMove(cell)) {
         shiftMove(cell);
       }
-    } else if (!isMultiRow(cell)) {
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 1,
-                 "skip place {} {} {}",
-                 cell->name(),
-                 cell->x_,
-                 cell->y_);
     }
   }
   // This has negligible benefit -cherry
@@ -405,8 +371,6 @@ void Opendp::placeGroups2()
         if (!isFixed(cell) && !cell->is_placed_) {
           assert(cell->inGroup());
           if (!isMultiRow(cell)) {
-            debugPrint(
-                logger_, DPL, "place", 4, "place groups 2 {}", cell->name());
             single_pass = mapMove(cell);
             if (!single_pass) {
               break;
@@ -450,14 +414,6 @@ void Opendp::brickPlace1(const Group* group)
     // This looks for a site starting at the nearest corner in rect,
     // which seems broken. It should start looking at the nearest point
     // on the rect boundary. -cherry
-    debugPrint(logger_,
-               DPL,
-               "place",
-               4,
-               "brick place {} {} {}",
-               cell->name(),
-               legal.getX(),
-               legal.getY());
     if (!mapMove(cell, legal)) {
       logger_->error(DPL, 16, "cannot place instance {}.", cell->name());
     }
@@ -512,14 +468,6 @@ void Opendp::brickPlace2(const Group* group)
       // This looks for a site starting at the nearest corner in rect,
       // which seems broken. It should start looking at the nearest point
       // on the rect boundary. -cherry
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 4,
-                 "brickplace 2 {} {} {}",
-                 cell->name(),
-                 legal.getX(),
-                 legal.getY());
       if (!mapMove(cell, legal)) {
         logger_->error(DPL, 17, "cannot place instance {}.", cell->name());
       }
@@ -612,14 +560,6 @@ int Opendp::refine()
 bool Opendp::mapMove(Cell* cell)
 {
   Point init = legalGridPt(cell, true);
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "initial map move {} {} {}.",
-             cell->name(),
-             init.getX(),
-             init.getY());
   return mapMove(cell, init);
 }
 
@@ -627,14 +567,6 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 {
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "mapMove {} {} {}.",
-             cell->name(),
-             grid_x,
-             grid_y);
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
@@ -648,7 +580,6 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 
 void Opendp::shiftMove(Cell* cell)
 {
-  debugPrint(logger_, DPL, "place", 1, "shift move {}.", cell->name());
   Point grid_pt = legalGridPt(cell, true);
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
@@ -933,37 +864,11 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       p.setX(p.getX() * site_width_);
       p.setY(p.getY() * row_height);
       if (cell->region_) {
-        // debugPrint(logger_,
-        //            DPL,
-        //            "detailed",
-        //            1,
-        //            "Point {} {} Cell {} has region x[{} {}] and y[{} {}]",
-        //            p.getX(),
-        //            p.getY(),
-        //            cell->name(),
-        //            cell->region_->xMin(),
-        //            cell->region_->xMax(),
-        //            cell->region_->yMin(),
-        //            cell->region_->yMax());
         if (!cell->region_->intersects(p)) {
-          debugPrint(logger_,
-                     DPL,
-                     "detailed",
-                     2,
-                     "point and region doesn't interesect!");
           continue;
         }
       }  // the else case where a cell has no region will be checked using the
          // rtree in checkPixels
-      debugPrint(logger_,
-                 DPL,
-                 "detailed",
-                 2,
-                 "greater than - checking pixels {} {} cell {}",
-                 bin_x + i,
-                 bin_y,
-                 cell->name());
-
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -976,35 +881,10 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
       p.setX(p.getX() * site_width_);
       p.setY(p.getY() * row_height);
       if (cell->region_) {
-        // debugPrint(logger_,
-        //            DPL,
-        //            "detailed",
-        //            1,
-        //            "Point {} {} Cell {} has region x[{} {}] and y[{} {}]",
-        //            p.getX(),
-        //            p.getY(),
-        //            cell->name(),
-        //            cell->region_->xMin(),
-        //            cell->region_->xMax(),
-        //            cell->region_->yMin(),
-        //            cell->region_->yMax());
         if (!cell->region_->intersects(p)) {
-          debugPrint(logger_,
-                     DPL,
-                     "detailed",
-                     2,
-                     "point and region doesn't interesect!");
           continue;
         }
       }
-      debugPrint(logger_,
-                 DPL,
-                 "detailed",
-                 2,
-                 "less than - checking pixels {} {} cell {}",
-                 bin_x + i,
-                 bin_y,
-                 cell->name());
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
