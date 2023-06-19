@@ -318,11 +318,11 @@ public:
   void findResizeSlacks();
   // Return nets with worst slack.
   NetSeq &resizeWorstSlackNets();
-  // Return net slack.
-  Slack resizeNetSlack(const Net *net);
+  // Return net slack, if any (indicated by the bool).
+  std::pair<Slack, bool> resizeNetSlack(const Net *net);
   // db flavor
   vector<dbNet*> resizeWorstSlackDbNets();
-  Slack resizeNetSlack(const dbNet *db_net);
+  std::pair<Slack, bool> resizeNetSlack(const dbNet *db_net);
 
   ////////////////////////////////////////////////////////////////
   // API for logic resynthesis
