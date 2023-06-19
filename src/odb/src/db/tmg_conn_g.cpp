@@ -523,21 +523,17 @@ void tmg_conn::removeShortLoops()
   }
 
   // count components, and remaining loops
-  int compn = 0;
-  int loopn = 0;
   _graph->clearVisited();
   for (jstart = 0; jstart < _ptV.size(); jstart++) {
     e = _graph->getFirstEdge(jstart);
     if (!e)
       continue;
-    compn++;
     pgV[jstart].visited = 2;
     while (e) {
       e->visited = 1;
       e->reverse->visited = 1;
       pg = pgV + e->to;
       if (pg->visited) {
-        loopn++;
         e = _graph->getNextEdge(false);
       } else {
         pg->visited = 2 + _graph->_stackN;
@@ -651,21 +647,17 @@ void tmg_conn::removeWireLoops()
   }
 
   // report all remaining loops, and count components
-  int compn = 0;
-  int loopn = 0;
   _graph->clearVisited();
   for (jstart = 0; jstart < _ptV.size(); jstart++) {
     e = _graph->getFirstEdge(jstart);
     if (!e)
       continue;
-    compn++;
     pgV[jstart].visited = 2;
     while (e) {
       e->visited = 1;
       e->reverse->visited = 1;
       pg = pgV + e->to;
       if (pg->visited) {
-        loopn++;
         k = pg->visited - 2;
         if (k >= 0)
           for (; k < _graph->_stackN; k++) {

@@ -45,6 +45,9 @@
 #include "odb/geom.h"
 
 #include "stt/SteinerTreeBuilder.h"
+#include "stt/flute.h"
+
+const int   SteinerNull = -1;
 
 namespace rsz {
 
@@ -93,7 +96,7 @@ class SteinerTree;
 class SteinerTree
 {
 public:
-  SteinerTree(const Pin *drvr_pin);
+  SteinerTree(const Pin *drvr_pin, Resizer *resizer);
   PinSeq &pins() { return pins_; }
   int pinCount() const { return pins_.size(); }
   int branchCount() const;
@@ -109,16 +112,36 @@ public:
               const Network *network);
   // Return the steiner pt connected to the driver pin.
   SteinerPt drvrPt() const;
+  // new APIs for gate cloning
+  SteinerPt top() const;
+  SteinerPt left(SteinerPt pt) const;
+  SteinerPt right(SteinerPt pt) const;
+  void validatePoint(SteinerPt pt) const;
+
+  void populateSides();
+  void populateSides(const SteinerPt from,
+		     const SteinerPt to,
+                     const std::vector<SteinerPt>& adj1,
+                     const std::vector<SteinerPt>& adj2,
+                     const std::vector<SteinerPt>& adj3);
+  void populateSides(const SteinerPt from, const SteinerPt to,
+		     const SteinerPt adj,
+                     const std::vector<SteinerPt>& adj1,
+                     const std::vector<SteinerPt>& adj2,
+                     const std::vector<SteinerPt>& adj3);
+  int distance(SteinerPt& from, SteinerPt& to) const;
 
   // "Accessors" for SteinerPts.
   const char *name(SteinerPt pt,
                    const Network *network);
   const PinSeq *pins(SteinerPt pt) const;
+  const Pin *pin(SteinerPt pt) const;
   Point location(SteinerPt pt) const;
   void setTree(const stt::Tree& tree,
                const dbNetwork *network);
   void setHasInputPort(bool input_port);
   stt::Tree &fluteTree() { return tree_; }
+  void createSteinerPtToPinMap();
 
   static SteinerPt null_pt;
 
@@ -128,12 +151,17 @@ protected:
 
   stt::Tree tree_;
   const Pin *drvr_pin_;
-  int drvr_steiner_pt_;
-  PinSeq pins_;
-  // location -> pins
-  LocPinMap loc_pin_map_;
+  int drvr_steiner_pt_;            // index into tree_.branch
+  PinSeq pins_;                    // Initial input
+  LocPinMap loc_pin_map_;          // location -> pins map
+  std::vector<SteinerPt>  left_;
+  std::vector<SteinerPt>  right_;
+  std::vector<const Pin*> point_pin_array_;
+  Resizer *resizer_;
+  Logger *logger_;
 
   friend class Resizer;
+  friend class GateCloner;
 };
 
 } // namespace

@@ -2786,10 +2786,8 @@ bool FlexDRWorker::isInsideTaperBox(
 
 void FlexDRWorker::routeNet_postRouteAddPathCost(drNet* net)
 {
-  int cnt = 0;
   for (auto& connFig : net->getRouteConnFigs()) {
     addPathCost(connFig.get());
-    cnt++;
   }
 }
 

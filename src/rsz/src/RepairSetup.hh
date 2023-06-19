@@ -84,7 +84,8 @@ public:
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
                    int max_passes,
-                   bool skip_pin_swap);
+                   bool skip_pin_swap,
+                   bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
@@ -95,7 +96,8 @@ private:
   void init();
   bool repairSetup(PathRef &path,
                    Slack path_slack,
-                   bool skip_pin_swap);
+                   bool skip_pin_swap,
+                   bool skip_gate_cloning);
   void debugCheckMultipleBuffers(PathRef &path,
                                  PathExpanded *expanded);
 
@@ -104,7 +106,7 @@ private:
   void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
   void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);
   bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
-  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,                           bool match_size);
+  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv, bool match_size);
   bool upsizeDrvr(PathRef *drvr_path,
                   int drvr_index,
                   PathExpanded *expanded,
@@ -132,8 +134,6 @@ private:
   addWireAndBuffer(BufferedNetSeq Z,
                    BufferedNetPtr bnet_wire,
                    int level);
-  float pinCapacitance(const Pin *pin,
-                       const DcalcAnalysisPt *dcalc_ap);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
   Slack slackPenalized(BufferedNetPtr bnet);
@@ -149,9 +149,14 @@ private:
 
   int resize_count_;
   int inserted_buffer_count_;
+  int split_load_buffer_count_;
   int rebuffer_net_count_;
+  int cloned_gate_count_;  
   int swap_pin_count_;
+  // Map to block pins from being swapped more than twice for the
+  // same instance. 
   std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
+  
   const MinMax *min_;
   const MinMax *max_;
 

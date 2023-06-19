@@ -320,10 +320,9 @@ void FlexTA::searchRepair(int iter, int size, int offset)
 void FlexTA::setDebug(frDebugSettings* settings, odb::dbDatabase* db)
 {
   bool on = settings->debugTA;
-  graphics_
-      = on && FlexTAGraphics::guiActive()
-            ? std::make_unique<FlexTAGraphics>(settings, design_, db, logger_)
-            : nullptr;
+  graphics_ = on && FlexTAGraphics::guiActive()
+                  ? std::make_unique<FlexTAGraphics>(settings, design_, db)
+                  : nullptr;
 }
 
 int FlexTA::main()

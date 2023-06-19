@@ -2326,14 +2326,12 @@ void NesterovBase::updateNextIter(const int iter)
   std::swap(prevSLPSumGrads_, curSLPSumGrads_);
 
   // Prevent locked instances from moving
-  int total_locked = 0;
   for (size_t k = 0; k < gCells_.size(); ++k) {
     if (gCells_[k]->isInstance() && gCells_[k]->instance()->isLocked()) {
       nextSLPCoordi_[k] = curSLPCoordi_[k];
       nextSLPWireLengthGrads_[k] = curSLPWireLengthGrads_[k];
       nextSLPDensityGrads_[k] = curSLPDensityGrads_[k];
       nextSLPSumGrads_[k] = curSLPSumGrads_[k];
-      total_locked++;
       nextCoordi_[k] = curCoordi_[k];
     }
   }

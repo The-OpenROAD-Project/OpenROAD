@@ -423,7 +423,6 @@ class LayoutViewer : public QWidget
   std::unique_ptr<AnimatedSelected> animate_selection_;
 
   bool repaint_requested_;
-  int repaint_interval_;  // milliseconds
 
   utl::Logger* logger_;
 

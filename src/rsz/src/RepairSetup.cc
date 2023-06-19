@@ -34,26 +34,28 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
+#include "GateCloner.hh"
+
+#include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 
-#include "utl/Logger.h"
-#include "db_sta/dbNetwork.hh"
-
-#include "sta/Units.hh"
-#include "sta/Liberty.hh"
-#include "sta/TimingArc.hh"
-#include "sta/Graph.hh"
-#include "sta/DcalcAnalysisPt.hh"
-#include "sta/GraphDelayCalc.hh"
-#include "sta/Parasitics.hh"
-#include "sta/Sdc.hh"
-#include "sta/InputDrive.hh"
 #include "sta/Corner.hh"
-#include "sta/PathVertex.hh"
-#include "sta/PathRef.hh"
-#include "sta/PathExpanded.hh"
+#include "sta/DcalcAnalysisPt.hh"
 #include "sta/Fuzzy.hh"
+#include "sta/Graph.hh"
+#include "sta/GraphDelayCalc.hh"
+#include "sta/InputDrive.hh"
+#include "sta/Liberty.hh"
+#include "sta/Parasitics.hh"
+#include "sta/PathExpanded.hh"
+#include "sta/PathRef.hh"
+#include "sta/PathVertex.hh"
 #include "sta/PortDirection.hh"
+#include "sta/Sdc.hh"
+#include "sta/TimingArc.hh"
+#include "sta/Units.hh"
+
+#include "utl/Logger.h"
 
 namespace rsz {
 
@@ -90,7 +92,9 @@ RepairSetup::RepairSetup(Resizer* resizer)
       drvr_port_(nullptr),
       resize_count_(0),
       inserted_buffer_count_(0),
+      split_load_buffer_count_(0),
       rebuffer_net_count_(0),
+      cloned_gate_count_(0),
       swap_pin_count_(0),
       min_(MinMax::min()),
       max_(MinMax::max())
@@ -103,28 +107,28 @@ RepairSetup::init()
   logger_ = resizer_->logger_;
   sta_ = resizer_->sta_;
   db_network_ = resizer_->db_network_;
-
   copyState(sta_);
 }
 
 void
 RepairSetup::repairSetup(float setup_slack_margin,
-                         // Percent of violating ends to repair to
-                         // reduce tns (0.0-1.0).
                          double repair_tns_end_percent,
                          int max_passes,
-                         bool skip_pin_swap)
+                         bool skip_pin_swap,
+                         bool enable_gate_cloning)
 {
   init();
   constexpr int digits = 3;
   inserted_buffer_count_ = 0;
+  split_load_buffer_count_ = 0;
   resize_count_ = 0;
+  cloned_gate_count_ = 0;
   resizer_->buffer_moved_into_core_ = false;
 
   // Sort failing endpoints by slack.
   VertexSet *endpoints = sta_->endpoints();
   VertexSeq violating_ends;
-
+  // logger_->setDebugLevel(RSZ, "repair_setup", 2);
   // Should check here whether we can figure out the clock domain for each
   // vertex. This may be the place where we can do some round robin fun to
   // individually control each clock domain instead of just fixating on fixing one.
@@ -173,11 +177,16 @@ RepairSetup::repairSetup(float setup_slack_margin,
                    "Restoring best slack end slack {} worst slack {}",
                    delayAsString(prev_end_slack, sta_, digits),
                    delayAsString(prev_worst_slack, sta_, digits));
-        resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+        resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+				 cloned_gate_count_);
         break;
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
-      bool changed = repairSetup(end_path, end_slack, skip_pin_swap);
+      int cloned_gate_begin, cloned_gate_end;
+      cloned_gate_begin = cloned_gate_count_ ;//+ split_load_buffer_count_;
+      bool changed = repairSetup(end_path, end_slack, skip_pin_swap,
+                                 enable_gate_cloning);
+      cloned_gate_end = cloned_gate_count_ ;//+ split_load_buffer_count_;
       if (!changed) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
                    "No change after {} decreasing slack passes.",
@@ -186,7 +195,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
                    "Restoring best slack end slack {} worst slack {}",
                    delayAsString(prev_end_slack, sta_, digits),
                    delayAsString(prev_worst_slack, sta_, digits));
-        resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+        resizer_->journalRestore(resize_count_, inserted_buffer_count_,
+                                 cloned_gate_count_);
         break;
       }
       resizer_->updateParasitics();
@@ -214,7 +224,8 @@ RepairSetup::repairSetup(float setup_slack_margin,
         // Allow slack to increase to get out of local minima.
         // Do not update prev_end_slack so it saves the high water mark.
         decreasing_slack_passes++;
-        if (decreasing_slack_passes > decreasing_slack_max_passes_) {
+        if (decreasing_slack_passes > decreasing_slack_max_passes_
+            && cloned_gate_begin == cloned_gate_end) {
           // Undo changes that reduced slack.
           debugPrint(logger_, RSZ, "repair_setup", 2,
                      "decreasing slack for {} passes.",
@@ -223,10 +234,19 @@ RepairSetup::repairSetup(float setup_slack_margin,
                      "Restoring best end slack {} worst slack {}",
                      delayAsString(prev_end_slack, sta_, digits),
                      delayAsString(prev_worst_slack, sta_, digits));
-          resizer_->journalRestore(resize_count_, inserted_buffer_count_);
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
+                                   cloned_gate_count_);
+          break;
+        }
+        if (cloned_gate_begin < cloned_gate_end) {
+          resizer_->journalRestore(resize_count_,
+                                   inserted_buffer_count_,
+                                   cloned_gate_count_);
           break;
         }
       }
+
       if (resizer_->overMaxArea())
         break;
       if (end_index == 1)
@@ -238,8 +258,12 @@ RepairSetup::repairSetup(float setup_slack_margin,
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (inserted_buffer_count_ > 0) {
+  if (inserted_buffer_count_ > 0 && split_load_buffer_count_ == 0) {
     logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+  }
+  else if (inserted_buffer_count_ > 0 && split_load_buffer_count_ > 0) {
+        logger_->info(RSZ, 45, "Inserted {} buffers, {} to split loads.",
+                          inserted_buffer_count_, split_load_buffer_count_);
   }
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0) {
@@ -247,6 +271,9 @@ RepairSetup::repairSetup(float setup_slack_margin,
   }
   if (swap_pin_count_ > 0) {
     logger_->info(RSZ, 43, "Swapped pins on {} instances.", swap_pin_count_);
+  }
+  if (cloned_gate_count_ > 0) {
+    logger_->info(RSZ, 49, "Cloned {} instances.", cloned_gate_count_);
   }
   Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin)) {
@@ -265,12 +292,13 @@ RepairSetup::repairSetup(const Pin *end_pin)
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
   swap_pin_count_ = 0;
+  cloned_gate_count_ = 0;
 
   Vertex *vertex = graph_->pinLoadVertex(end_pin);
   Slack slack = sta_->vertexSlack(vertex, max_);
   PathRef path = sta_->vertexWorstSlackPath(vertex, max_);
   resizer_->incrementalParasiticsBegin();
-  repairSetup(path, slack, false);
+  repairSetup(path, slack, false, false);
   // Leave the parasitices up to date.
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
@@ -304,7 +332,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
 bool
 RepairSetup::repairSetup(PathRef &path,
                          Slack path_slack,
-                         bool skip_pin_swap)
+                         bool skip_pin_swap, bool enable_gate_cloning)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -362,6 +390,7 @@ RepairSetup::repairSetup(PathRef &path,
         break;
       }
 
+      // Pin swapping 
       if (!skip_pin_swap) {
         if (swapPins(drvr_path, drvr_index, &expanded)) {
           changed = true;
@@ -387,11 +416,27 @@ RepairSetup::repairSetup(PathRef &path,
         }
       }
 
+      // Gate cloning
+      if (enable_gate_cloning && fanout > split_load_min_fanout_ &&
+          !tristate_drvr &&
+          !resizer_->dontTouch(net)) {
+        rsz::GateCloner cloner(resizer_);
+        const int inserted_gates
+            = cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
+        if (inserted_gates > 0) {
+          changed = true;
+          cloned_gate_count_ += inserted_gates;
+          break;
+        }
+      }
+      
       // Don't split loads on low fanout nets.
       if (fanout > split_load_min_fanout_
           && !tristate_drvr
           && !resizer_->dontTouch(net)) {
+        int init_buffer_count = inserted_buffer_count_;
         splitLoads(drvr_path, drvr_index, path_slack, &expanded);
+        split_load_buffer_count_ = inserted_buffer_count_ - init_buffer_count;
         changed = true;
         break;
       }
@@ -456,7 +501,7 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
         }
         if (input_port_count > 2) {
             return false;
-}
+        }
 
         // Check if we have already dealt with this instance more than twice.
         // Skip if the answeris a yes.

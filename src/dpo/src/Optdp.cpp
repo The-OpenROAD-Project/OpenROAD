@@ -91,7 +91,8 @@ void Optdp::init(odb::dbDatabase* db, utl::Logger* logger, dpl::Opendp* opendp)
 ////////////////////////////////////////////////////////////////
 void Optdp::improvePlacement(int seed,
                              int max_displacement_x,
-                             int max_displacement_y)
+                             int max_displacement_y,
+                             bool disallow_one_site_gaps)
 {
   logger_->report("Detailed placement improvement.");
 
@@ -108,6 +109,7 @@ void Optdp::improvePlacement(int seed,
     // Various settings.
     mgr.setSeed(seed);
     mgr.setMaxDisplacement(max_displacement_x, max_displacement_y);
+    mgr.setDisallowOneSiteGaps(disallow_one_site_gaps);
 
     // Legalization.  Doesn't particularly do much.  It only
     // populates the data structures required for detailed
@@ -136,6 +138,10 @@ void Optdp::improvePlacement(int seed,
     // Random moves and swaps with hpwl as a cost function.  Use
     // random moves and hpwl objective right now.
     dtParams.script_ += "default -p 5 -f 20 -gen rng -obj hpwl -cost (hpwl);";
+
+    if (disallow_one_site_gaps) {
+      dtParams.script_ += "disallow_one_site_gaps;";
+    }
 
     // Run the script.
     dpo::Detailed dt(dtParams);
@@ -680,6 +686,13 @@ void Optdp::createArchitecture()
 
   odb::Rect dieRect = block->getDieArea();
 
+  odb::uint min_row_height = std::numeric_limits<odb::uint>::max();
+  for (dbRow* row : block->getRows()) {
+    min_row_height = std::min(min_row_height, row->getSite()->getHeight());
+  }
+
+  std::map<uint, std::unordered_set<std::string>> skip_list;
+
   for (dbRow* row : block->getRows()) {
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
@@ -689,6 +702,10 @@ void Optdp::createArchitecture()
       continue;
     }
     dbSite* site = row->getSite();
+    if (site->getHeight() > min_row_height) {
+      skip_list[site->getHeight()].insert(site->getName());
+      continue;
+    }
     int originX;
     int originY;
     row->getOrigin(originX, originY);
@@ -723,7 +740,21 @@ void Optdp::createArchitecture()
     unsigned orient = dbToDpoOrient(row->getOrient());
     archRow->setOrient(orient);
   }
-
+  for (const auto& skip : skip_list) {
+    std::string skip_string = "[";
+    int i = 0;
+    for (const auto& skipped_site : skip.second) {
+      skip_string += skipped_site + ",]"[i == skip.second.size() - 1];
+      ++i;
+    }
+    logger_->warn(DPO,
+                  108,
+                  "Skipping all the rows with sites {} as their height is {} "
+                  "and the single-height is {}.",
+                  skip_string,
+                  skip.first,
+                  min_row_height);
+  }
   // Get surrounding box.
   {
     int xmin = std::numeric_limits<int>::max();
