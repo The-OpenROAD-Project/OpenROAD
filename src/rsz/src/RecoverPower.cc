@@ -201,19 +201,19 @@ RecoverPower::recoverPower()
 
   /* TODO - need to fix this
   if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ, 40, "Inserted {} buffers.", inserted_buffer_count_);
+    logger_->info(RSZ, 140, "Inserted {} buffers.", inserted_buffer_count_);
   }
   logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0) {
-    logger_->info(RSZ, 41, "Resized {} instances.", resize_count_);
+    logger_->info(RSZ, 141, "Resized {} instances.", resize_count_);
   }
 
   Slack worst_slack = sta_->worstSlack(max_);
   if (fuzzyLess(worst_slack, setup_slack_margin)) {
-    logger_->warn(RSZ, 62, "Unable to repair all setup violations.");
+    logger_->warn(RSZ, 162, "Unable to repair all setup violations.");
   }
   if (resizer_->overMaxArea()) {
-    logger_->error(RSZ, 25, "max utilization reached.");
+    logger_->error(RSZ, 125, "max utilization reached.");
   }
    */
 }
