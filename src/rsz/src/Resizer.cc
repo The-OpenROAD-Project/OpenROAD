@@ -1273,6 +1273,10 @@ Resizer::setDontUse(LibertyCell *cell,
     dont_use_.insert(cell);
   else
     dont_use_.erase(cell);
+
+  // Reset buffer set to ensure it honors dont_use_
+  buffer_cells_.clear();
+  buffer_lowest_drive_ = nullptr;
 }
 
 bool
