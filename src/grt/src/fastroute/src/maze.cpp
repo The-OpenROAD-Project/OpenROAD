@@ -2230,11 +2230,16 @@ void FastRouteCore::getCongestionGrid(
   }
 }
 
-void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
+void FastRouteCore::setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
+                                      int& posX,
+                                      int& posY,
+                                      int dir,
+                                      int& radius)
 {
   // get Nets with overflow
   for (int netID = 0; netID < netCount(); netID++) {
-    if (!nets_[netID]->isRouted()) {
+    if (congestion_nets.find(nets_[netID]->getDbNet())
+        != congestion_nets.end()) {
       continue;
     }
 
@@ -2254,13 +2259,15 @@ void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
         }
         if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
           const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          if (ymin == posY && gridsX[i] == posX && dir == 0) {
-            congestion_nets_.insert(nets_[netID]->getDbNet());
+          if (abs(ymin - posY) <= radius && abs(gridsX[i] - posX) <= radius
+              && dir == 0) {
+            congestion_nets.insert(nets_[netID]->getDbNet());
           }
         } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
           const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          if (gridsY[i] == posY && xmin == posX && dir == 1) {
-            congestion_nets_.insert(nets_[netID]->getDbNet());
+          if (abs(gridsY[i] - posY) <= radius && abs(xmin - posX) <= radius
+              && dir == 1) {
+            congestion_nets.insert(nets_[netID]->getDbNet());
           }
         }
       }
@@ -2268,9 +2275,50 @@ void FastRouteCore::setCongestionNets(int& posX, int& posY, int dir)
   }
 }
 
-int FastRouteCore::getOverflow2Dmaze(int* maxOverflow,
-                                     int* tUsage,
-                                     bool fillNetsVector)
+// The function will add the new nets to the congestion_nets set
+void FastRouteCore::getCongestionNets(std::set<odb::dbNet*>& congestion_nets)
+{
+  std::vector<int> xs, ys, dirs;
+  int n = 0;
+  // Find horizontal ggrids with congestion
+  for (int i = 0; i < y_grid_; i++) {
+    for (int j = 0; j < x_grid_ - 1; j++) {
+      const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
+      if (overflow > 0) {
+        xs.push_back(j);
+        ys.push_back(i);
+        dirs.push_back(1);
+        n++;
+      }
+    }
+  }
+  // Find vertical ggrids with congestion
+  for (int i = 0; i < y_grid_ - 1; i++) {
+    for (int j = 0; j < x_grid_; j++) {
+      const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
+      if (overflow > 0) {
+        xs.push_back(j);
+        ys.push_back(i);
+        dirs.push_back(0);
+        n++;
+      }
+    }
+  }
+
+  int old_size = congestion_nets.size();
+
+  // The radius around the congested zone is increased when no new nets are
+  // obtained
+  for (int radius = 0; radius < 5 && old_size == congestion_nets.size();
+       radius++) {
+    // Find nets for each congestion ggrid
+    for (int i = 0; i < n; i++) {
+      setCongestionNets(congestion_nets, xs[i], ys[i], dirs[i], radius);
+    }
+  }
+}
+
+int FastRouteCore::getOverflow2Dmaze(int* maxOverflow, int* tUsage)
 {
   int H_overflow = 0;
   int V_overflow = 0;
@@ -2281,19 +2329,12 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow,
   // check 2D edges for invalid usage values
   check2DEdgesUsage();
 
-  if (fillNetsVector) {
-    congestion_nets_.clear();
-  }
-
   int total_usage = 0;
   for (int i = 0; i < y_grid_; i++) {
     for (int j = 0; j < x_grid_ - 1; j++) {
       total_usage += h_edges_[i][j].usage;
       const int overflow = h_edges_[i][j].usage - h_edges_[i][j].cap;
       if (overflow > 0) {
-        if (fillNetsVector) {
-          setCongestionNets(j, i, 1);
-        }
         H_overflow += overflow;
         max_H_overflow = std::max(max_H_overflow, overflow);
         numedges++;
@@ -2306,9 +2347,6 @@ int FastRouteCore::getOverflow2Dmaze(int* maxOverflow,
       total_usage += v_edges_[i][j].usage;
       const int overflow = v_edges_[i][j].usage - v_edges_[i][j].cap;
       if (overflow > 0) {
-        if (fillNetsVector) {
-          setCongestionNets(j, i, 0);
-        }
         V_overflow += overflow;
         max_V_overflow = std::max(max_V_overflow, overflow);
         numedges++;
