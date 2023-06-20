@@ -1442,7 +1442,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       int decrease = 0;
 
       if (nets_[netID]->isCritical()) {
-        decrease = std::min((iter / 6) * 5, enlarge_ / 2);
+        decrease = std::min((iter / 7) * 5, enlarge_ / 2);
       }
       const int regionX1 = std::max(xmin - enlarge_ + decrease, 0);
       const int regionX2 = std::min(xmax + enlarge_ - decrease, x_grid_ - 1);
