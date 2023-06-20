@@ -1068,17 +1068,21 @@ Resizer::resizeWorstSlackDbNets()
   return nets;
 }
 
-Slack
+std::pair<Slack, bool>
 Resizer::resizeNetSlack(const Net *net)
 {
-  return net_slack_map_[net];
+  auto it = net_slack_map_.find(net);
+  if (it == net_slack_map_.end()) {
+    return {0, false};
+  }
+  return {it->second, true};
 }
 
-Slack
+std::pair<Slack, bool>
 Resizer::resizeNetSlack(const dbNet *db_net)
 {
   const Net *net = db_network_->dbToSta(db_net);
-  return net_slack_map_[net];
+  return resizeNetSlack(net);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1269,6 +1273,10 @@ Resizer::setDontUse(LibertyCell *cell,
     dont_use_.insert(cell);
   else
     dont_use_.erase(cell);
+
+  // Reset buffer set to ensure it honors dont_use_
+  buffer_cells_.clear();
+  buffer_lowest_drive_ = nullptr;
 }
 
 bool
