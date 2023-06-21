@@ -269,6 +269,7 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
   size_t col = 0;
   int slot_index = 0;
   for (const auto& [pins, order] : pin_groups_) {
+    bool assigned = false;
     if ((only_mirrored && !groupHasMirroredPin(pins, mirrored_pins))
         || (!only_mirrored && groupHasMirroredPin(pins, mirrored_pins))) {
       continue;
@@ -302,9 +303,14 @@ void HungarianMatching::getAssignmentForGroups(std::vector<IOPin>& assignment,
           assignMirroredPins(io_pin, mirrored_pins, assignment);
         }
       }
+      assigned = true;
       break;
     }
     col++;
+    if (!assigned) {
+      logger_->error(
+          utl::PPL, 86, "Pin group of size {} was not assigned.", pins.size());
+    }
   }
 
   hungarian_matrix_.clear();
