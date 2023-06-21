@@ -1094,6 +1094,7 @@ int IOPlacer::assignGroupToSection(const std::vector<int>& io_group,
     }
     if (!group_assigned) {
       addGroupToFallback(io_group, order);
+      total_pins_assigned += io_group.size();
       logger_->warn(PPL, 42, "Unsuccessfully assigned I/O groups.");
     }
   }
@@ -1788,9 +1789,9 @@ void IOPlacer::run(bool random_mode)
                       "to fallback mode.",
                       io_group.first.size());
         addGroupToFallback(io_group.first, io_group.second);
+        constrained_pins_cnt += io_group.first.size();
       }
     }
-    constrained_pins_cnt += placeFallbackPins(false);
 
     for (bool mirrored_only : {true, false}) {
       for (Constraint& constraint : constraints_) {
@@ -1828,11 +1829,12 @@ void IOPlacer::run(bool random_mode)
         mirrored_pins_cnt = 0;
       }
     }
-    constrained_pins_cnt += placeFallbackPins(false);
 
     setupSections(constrained_pins_cnt);
     findPinAssignment(sections_, false);
   }
+
+  placeFallbackPins(false);
 
   for (auto& pin : assignment_) {
     updateOrientation(pin);
