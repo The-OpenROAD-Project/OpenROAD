@@ -199,8 +199,8 @@ class dbProperty : public dbObject
   static dbSet<dbProperty> getProperties(dbObject* object);
   static dbSet<dbProperty>::iterator destroy(dbSet<dbProperty>::iterator itr);
   // 5.8
-  static void writeProperties(dbObject* object, FILE* out);
-  static void writePropValue(dbProperty* prop, FILE* out);
+  static std::string writeProperties(dbObject* object);
+  static std::string writePropValue(dbProperty* prop);
 };
 
 ///
