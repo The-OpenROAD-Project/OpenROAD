@@ -739,9 +739,9 @@ void dbTechLayerSpacingRule::writeLef(lefout& writer) const
 
   if (getRange(rmin, rmax)) {
     fmt::print(writer.out(),
-            "RANGE {:g} {:g} ",
-            writer.lefdist(rmin),
-            writer.lefdist(rmax));
+               "RANGE {:g} {:g} ",
+               writer.lefdist(rmin),
+               writer.lefdist(rmax));
     if (hasUseLengthThreshold())
       fmt::print(writer.out(), "USELENGTHTHRESHOLD ");
     else if (getInfluence(length_or_influence)) {
@@ -749,24 +749,24 @@ void dbTechLayerSpacingRule::writeLef(lefout& writer) const
           writer.out(), "INFLUENCE {:g} ", writer.lefdist(length_or_influence));
       if (getInfluenceRange(rmin, rmax))
         fmt::print(writer.out(),
-                "RANGE {:g} {:g} ",
-                writer.lefdist(rmin),
-                writer.lefdist(rmax));
+                   "RANGE {:g} {:g} ",
+                   writer.lefdist(rmin),
+                   writer.lefdist(rmax));
     } else if (getRangeRange(rmin, rmax)) {
       fmt::print(writer.out(),
-              "RANGE {:g} {:g} ",
-              writer.lefdist(rmin),
-              writer.lefdist(rmax));
+                 "RANGE {:g} {:g} ",
+                 writer.lefdist(rmin),
+                 writer.lefdist(rmax));
     }
   } else if (getLengthThreshold(length_or_influence)) {
     fmt::print(writer.out(),
-            "_dbTechLayerSpacingRule::LENGTHTHRESHOLD {:g} ",
-            writer.lefdist(length_or_influence));
+               "_dbTechLayerSpacingRule::LENGTHTHRESHOLD {:g} ",
+               writer.lefdist(length_or_influence));
     if (getLengthThresholdRange(rmin, rmax))
       fmt::print(writer.out(),
-              "RANGE {:g} {:g} ",
-              writer.lefdist(rmin),
-              writer.lefdist(rmax));
+                 "RANGE {:g} {:g} ",
+                 writer.lefdist(rmin),
+                 writer.lefdist(rmax));
   } else if (getCutLayer4Spacing(rulely)) {
     fmt::print(writer.out(), "LAYER {} ", rulely->getName().c_str());
   } else if (getAdjacentCuts(numcuts,
@@ -774,9 +774,9 @@ void dbTechLayerSpacingRule::writeLef(lefout& writer) const
                              cut_spacing,
                              except_same_pgnet)) {
     fmt::print(writer.out(),
-            "ADJACENTCUTS {} WITHIN {:g} ",
-            numcuts,
-            writer.lefdist(length_or_influence));
+               "ADJACENTCUTS {} WITHIN {:g} ",
+               numcuts,
+               writer.lefdist(length_or_influence));
     if (except_same_pgnet) {
       fmt::print(writer.out(), "EXCEPTSAMEPGNET ");
     }
@@ -790,14 +790,14 @@ void dbTechLayerSpacingRule::writeLef(lefout& writer) const
                parallelWithin,
                twoEdges)) {
       fmt::print(writer.out(),
-              "ENDOFLINE {:g} WITHIN {:g} ",
-              writer.lefdist(width),
-              writer.lefdist(within));
+                 "ENDOFLINE {:g} WITHIN {:g} ",
+                 writer.lefdist(width),
+                 writer.lefdist(within));
       if (parallelEdge) {
         fmt::print(writer.out(),
-                "PARALLELEDGE {:g} WITHIN {:g} ",
-                writer.lefdist(parallelSpace),
-                writer.lefdist(parallelWithin));
+                   "PARALLELEDGE {:g} WITHIN {:g} ",
+                   writer.lefdist(parallelSpace),
+                   writer.lefdist(parallelWithin));
         if (twoEdges)
           fmt::print(writer.out(), " TWOEDGES ");
       }
@@ -839,10 +839,10 @@ void dbTechV55InfluenceEntry::writeLef(lefout& writer) const
 
   getV55InfluenceEntry(inf_width, inf_within, inf_spacing);
   fmt::print(writer.out(),
-          "\n   WIDTH {:g} WITHIN {:g} SPACING {:g}",
-          writer.lefdist(inf_width),
-          writer.lefdist(inf_within),
-          writer.lefdist(inf_spacing));
+             "\n   WIDTH {:g} WITHIN {:g} SPACING {:g}",
+             writer.lefdist(inf_width),
+             writer.lefdist(inf_within),
+             writer.lefdist(inf_spacing));
 }
 
 dbTechV55InfluenceEntry* dbTechV55InfluenceEntry::create(dbTechLayer* inly)

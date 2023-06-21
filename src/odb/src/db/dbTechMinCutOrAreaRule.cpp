@@ -293,9 +293,9 @@ void dbTechMinCutRule::writeLef(lefout& writer) const
   uint cut_width = 0;
   getMinimumCuts(numcuts, cut_width);
   fmt::print(writer.out(),
-          "    MINIMUMCUT {}  WIDTH {:g} ",
-          numcuts,
-          writer.lefdist(cut_width));
+             "    MINIMUMCUT {}  WIDTH {:g} ",
+             numcuts,
+             writer.lefdist(cut_width));
 
   uint cut_distance;
   if (getCutDistance(cut_distance)) {
@@ -305,14 +305,14 @@ void dbTechMinCutRule::writeLef(lefout& writer) const
   if (isAboveOnly())
     fmt::print(writer.out(), "{}", "FROMABOVE ");
   else if (isBelowOnly())
-    fmt::print(writer.out(), "{}",  "FROMBELOW ");
+    fmt::print(writer.out(), "{}", "FROMBELOW ");
 
   uint length, distance;
   if (getLengthForCuts(length, distance))
     fmt::print(writer.out(),
-            "LENGTH {:g}  WITHIN {:g} ",
-            writer.lefdist(length),
-            writer.lefdist(distance));
+               "LENGTH {:g}  WITHIN {:g} ",
+               writer.lefdist(length),
+               writer.lefdist(distance));
   fmt::print(writer.out(), ";\n");
 }
 
@@ -373,7 +373,8 @@ void dbTechMinEncRule::writeLef(lefout& writer) const
 {
   uint enc_area, enc_width;
   getEnclosure(enc_area);
-  fmt::print(writer.out(), "    MINENCLOSEDAREA {:g} ", writer.lefarea(enc_area));
+  fmt::print(
+      writer.out(), "    MINENCLOSEDAREA {:g} ", writer.lefarea(enc_area));
   if (getEnclosureWidth(enc_width))
     fmt::print(writer.out(), "WIDTH {:g} ", writer.lefdist(enc_width));
   fmt::print(writer.out(), "{}", ";\n");

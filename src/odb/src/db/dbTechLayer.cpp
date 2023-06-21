@@ -56,6 +56,8 @@
 #include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechLayerWidthTableRule.h"
 // User Code Begin Includes
+#include <spdlog/fmt/ostr.h>
+
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
@@ -63,7 +65,6 @@
 #include "dbTechMinCutOrAreaRule.h"
 #include "lefout.h"
 #include "utl/Logger.h"
-#include <spdlog/fmt/ostr.h>
 // User Code End Includes
 namespace odb {
 
@@ -1506,8 +1507,8 @@ void dbTechLayer::printV55SpacingRules(lefout& writer) const
     fmt::print(writer.out(), "  WIDTH {:.3f}\t", writer.lefdist(*v55_itr));
     for (lndx = 0; lndx < layer->_v55sp_spacing.numCols(); lndx++)
       fmt::print(writer.out(),
-              " {:.3f}",
-              writer.lefdist(layer->_v55sp_spacing(wddx, lndx)));
+                 " {:.3f}",
+                 writer.lefdist(layer->_v55sp_spacing(wddx, lndx)));
   }
 
   fmt::print(writer.out(), " ;\n");
@@ -1603,8 +1604,8 @@ void dbTechLayer::printTwoWidthsSpacingRules(lefout& writer) const
     fmt::print(writer.out(), "\n  WIDTH {:.3f}\t", writer.lefdist(*itr));
     for (lndx = 0; lndx < layer->_two_widths_sp_spacing.numCols(); lndx++)
       fmt::print(writer.out(),
-              " {:.3f}",
-              writer.lefdist(layer->_two_widths_sp_spacing(wddx, lndx)));
+                 " {:.3f}",
+                 writer.lefdist(layer->_two_widths_sp_spacing(wddx, lndx)));
   }
 
   fmt::print(writer.out(), " ;\n");

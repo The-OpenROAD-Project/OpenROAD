@@ -33,6 +33,7 @@
 #include "dbProperty.h"
 
 #include <spdlog/fmt/ostr.h>
+
 #include <sstream>
 
 #include "db.h"
