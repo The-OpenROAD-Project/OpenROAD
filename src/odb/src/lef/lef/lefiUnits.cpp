@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -66,54 +66,6 @@ lefiUnits::lefiUnits()
 void lefiUnits::Init()
 {
   clear();
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiUnits)
-{
-  LEF_COPY_FUNC(hasDatabase_);
-  LEF_COPY_FUNC(hasCapacitance_);
-  LEF_COPY_FUNC(hasResistance_);
-  LEF_COPY_FUNC(hasTime_);
-  LEF_COPY_FUNC(hasPower_);
-  LEF_COPY_FUNC(hasCurrent_);
-  LEF_COPY_FUNC(hasVoltage_);
-  LEF_COPY_FUNC(hasFrequency_);
-
-  LEF_MALLOC_FUNC(
-      databaseName_, char, sizeof(char) * (strlen(prev.databaseName_) + 1));
-  LEF_COPY_FUNC(databaseNumber_);
-  LEF_COPY_FUNC(capacitance_);
-  LEF_COPY_FUNC(resistance_);
-  LEF_COPY_FUNC(power_);
-  LEF_COPY_FUNC(time_);
-  LEF_COPY_FUNC(current_);
-  LEF_COPY_FUNC(voltage_);
-  LEF_COPY_FUNC(frequency_);
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiUnits)
-{
-  CHECK_SELF_ASSIGN
-  LEF_COPY_FUNC(hasDatabase_);
-  LEF_COPY_FUNC(hasCapacitance_);
-  LEF_COPY_FUNC(hasResistance_);
-  LEF_COPY_FUNC(hasTime_);
-  LEF_COPY_FUNC(hasPower_);
-  LEF_COPY_FUNC(hasCurrent_);
-  LEF_COPY_FUNC(hasVoltage_);
-  LEF_COPY_FUNC(hasFrequency_);
-
-  LEF_MALLOC_FUNC(
-      databaseName_, char, sizeof(char) * (strlen(prev.databaseName_) + 1));
-  LEF_COPY_FUNC(databaseNumber_);
-  LEF_COPY_FUNC(capacitance_);
-  LEF_COPY_FUNC(resistance_);
-  LEF_COPY_FUNC(power_);
-  LEF_COPY_FUNC(time_);
-  LEF_COPY_FUNC(current_);
-  LEF_COPY_FUNC(voltage_);
-  LEF_COPY_FUNC(frequency_);
-  return *this;
 }
 
 void lefiUnits::Destroy()

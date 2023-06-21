@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2012 - 2017, Cadence Design Systems
+// Copyright 2012 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -32,9 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <iostream>
 #include <set>
-#include <typeinfo>
 
 #include "lefiDebug.hpp"
 #include "lefrCallBacks.hpp"
@@ -78,14 +76,6 @@ void lefiAntennaPWL::Init()
   d_ = (double*) lefMalloc(sizeof(double) * 2);
   r_ = (double*) lefMalloc(sizeof(double) * 2);
   clear();
-}
-
-lefiAntennaPWL::lefiAntennaPWL(const lefiAntennaPWL& prev)
-{
-  LEF_COPY_FUNC(numAlloc_);
-  LEF_COPY_FUNC(numPWL_);
-  LEF_MALLOC_FUNC(d_, double, sizeof(double) * 2);
-  LEF_MALLOC_FUNC(r_, double, sizeof(double) * 2);
 }
 
 lefiAntennaPWL::~lefiAntennaPWL()
@@ -175,20 +165,6 @@ void lefiLayerDensity::Init(const char* type)
   tableEntries_ = 0;
   numCutareas_ = 0;
   cutareas_ = 0;
-}
-
-lefiLayerDensity::lefiLayerDensity(const lefiLayerDensity& prev)
-{
-  LEF_COPY_FUNC(oneEntry_);
-  LEF_COPY_FUNC(numFrequency_);
-  LEF_COPY_FUNC(numWidths_);
-  LEF_COPY_FUNC(numTableEntries_);
-  LEF_COPY_FUNC(numCutareas_);
-  LEF_MALLOC_FUNC(type_, char, strlen(prev.type_));
-  LEF_MALLOC_FUNC(frequency_, double, sizeof(double) * numFrequency_);
-  LEF_MALLOC_FUNC(widths_, double, sizeof(double) * numWidths_);
-  LEF_MALLOC_FUNC(tableEntries_, double, sizeof(double) * numTableEntries_);
-  LEF_MALLOC_FUNC(cutareas_, double, sizeof(double) * numCutareas_);
 }
 
 void lefiLayerDensity::Destroy()
@@ -321,41 +297,6 @@ void lefiParallel::Destroy()
   Init();
 }
 
-LEF_COPY_CONSTRUCTOR_C(lefiParallel)
-{
-  this->Init();
-  LEF_COPY_FUNC(numLength_);
-  LEF_COPY_FUNC(numWidth_);
-  LEF_COPY_FUNC(numWidthAllocated_);
-
-  LEF_MALLOC_FUNC(length_, double, sizeof(double) * numLength_);
-  LEF_MALLOC_FUNC(width_, double, sizeof(double) * numWidth_);
-  LEF_MALLOC_FUNC(widthSpacing_,
-                  double,
-                  sizeof(double)
-                      * ((numLength_ > 0) ? numWidthAllocated_ * numLength_
-                                          : numWidthAllocated_));
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiParallel)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  LEF_COPY_FUNC(numLength_);
-  LEF_COPY_FUNC(numWidth_);
-  LEF_COPY_FUNC(numWidthAllocated_);
-
-  LEF_MALLOC_FUNC(length_, double, sizeof(double) * numLength_);
-  LEF_MALLOC_FUNC(width_, double, sizeof(double) * numWidth_);
-  LEF_MALLOC_FUNC(widthSpacing_,
-                  double,
-                  sizeof(double)
-                      * ((numLength_ > 0) ? numWidthAllocated_ * numLength_
-                                          : numWidthAllocated_));
-
-  return *this;
-}
-
 lefiParallel::~lefiParallel()
 {
   Destroy();
@@ -450,32 +391,6 @@ void lefiInfluence::Init()
   numSpacing_ = 0;
 }
 
-LEF_COPY_CONSTRUCTOR_C(lefiInfluence)
-{
-  this->Init();
-  LEF_COPY_FUNC(numAllocated_);
-  LEF_COPY_FUNC(numWidth_);
-  LEF_COPY_FUNC(numDistance_);
-  LEF_COPY_FUNC(numSpacing_);
-  LEF_MALLOC_FUNC(width_, double, sizeof(double) * numAllocated_);
-  LEF_MALLOC_FUNC(distance_, double, sizeof(double) * numAllocated_);
-  LEF_MALLOC_FUNC(spacing_, double, sizeof(double) * numAllocated_);
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiInfluence)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  LEF_COPY_FUNC(numAllocated_);
-  LEF_COPY_FUNC(numWidth_);
-  LEF_COPY_FUNC(numDistance_);
-  LEF_COPY_FUNC(numSpacing_);
-  LEF_MALLOC_FUNC(width_, double, sizeof(double) * numAllocated_);
-  LEF_MALLOC_FUNC(distance_, double, sizeof(double) * numAllocated_);
-  LEF_MALLOC_FUNC(spacing_, double, sizeof(double) * numAllocated_);
-  return *this;
-}
-
 void lefiInfluence::Destroy()
 {
   if (numWidth_) {
@@ -559,18 +474,6 @@ void lefiTwoWidths::Init()
   numWidthAllocated_ = 0;
 }
 
-lefiTwoWidths::lefiTwoWidths(const lefiTwoWidths& prev)
-{
-  this->Init();
-  LEF_COPY_FUNC(numWidth_);
-  LEF_COPY_FUNC(numWidthAllocated_);
-  LEF_MALLOC_FUNC(width_, double, sizeof(double) * numWidthAllocated_);
-  LEF_MALLOC_FUNC(prl_, double, sizeof(double) * numWidthAllocated_);
-  LEF_MALLOC_FUNC(hasPRL_, int, sizeof(int) * numWidthAllocated_);
-  LEF_MALLOC_FUNC(numWidthSpacing_, int, sizeof(int) * numWidthAllocated_);
-  LEF_MALLOC_FUNC(widthSpacing_, double, sizeof(double) * numWidthAllocated_);
-  LEF_MALLOC_FUNC(atNsp_, int, sizeof(int) * (prev.atNsp_[numWidth_]));
-}
 void lefiTwoWidths::Destroy()
 {
   if (numWidth_) {
@@ -721,30 +624,6 @@ void lefiSpacingTable::Init()
   twoWidths_ = 0;  // 5.7
 }
 
-LEF_COPY_CONSTRUCTOR_C(lefiSpacingTable)
-{
-  this->Init();
-  LEF_COPY_FUNC(hasInfluence_);
-  LEF_MALLOC_FUNC_WITH_OPERATOR(
-      influence_, lefiInfluence, sizeof(lefiInfluence));
-  LEF_MALLOC_FUNC_WITH_OPERATOR(parallel_, lefiParallel, sizeof(lefiParallel));
-  LEF_MALLOC_FUNC_WITH_OPERATOR(
-      twoWidths_, lefiTwoWidths, sizeof(lefiTwoWidths));
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiSpacingTable)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  LEF_COPY_FUNC(hasInfluence_);
-  LEF_MALLOC_FUNC_WITH_OPERATOR(
-      influence_, lefiInfluence, sizeof(lefiInfluence));
-  LEF_MALLOC_FUNC_WITH_OPERATOR(parallel_, lefiParallel, sizeof(lefiParallel));
-  LEF_MALLOC_FUNC_WITH_OPERATOR(
-      twoWidths_, lefiTwoWidths, sizeof(lefiTwoWidths));
-  return *this;
-}
-
 void lefiSpacingTable::Destroy()
 {
   if ((hasInfluence_) && (influence_))
@@ -876,26 +755,6 @@ void lefiOrthogonal::Init()
   ortho_ = 0;
 }
 
-LEF_COPY_CONSTRUCTOR_C(lefiOrthogonal)
-{
-  this->Init();
-  LEF_COPY_FUNC(numAllocated_);
-  LEF_COPY_FUNC(numCutOrtho_);
-  LEF_MALLOC_FUNC(cutWithin_, double, sizeof(double) * numCutOrtho_);
-  LEF_MALLOC_FUNC(ortho_, double, sizeof(double) * numCutOrtho_);
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiOrthogonal)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  LEF_COPY_FUNC(numAllocated_);
-  LEF_COPY_FUNC(numCutOrtho_);
-  LEF_MALLOC_FUNC(cutWithin_, double, sizeof(double) * numCutOrtho_);
-  LEF_MALLOC_FUNC(ortho_, double, sizeof(double) * numCutOrtho_);
-  return *this;
-}
-
 lefiOrthogonal::~lefiOrthogonal()
 {
   Destroy();
@@ -998,57 +857,6 @@ void lefiAntennaModel::Init()
   oxide_ = 0;
 }
 
-lefiAntennaModel::lefiAntennaModel(const lefiAntennaModel& prev)
-{
-  LEF_COPY_FUNC(hasAntennaAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaDiffAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaDiffAreaRatioPWL_);
-  LEF_COPY_FUNC(hasAntennaCumAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaCumDiffAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaCumDiffAreaRatioPWL_);
-  LEF_COPY_FUNC(hasAntennaAreaFactor_);
-  LEF_COPY_FUNC(hasAntennaAreaFactorDUO_);
-  LEF_COPY_FUNC(hasAntennaSideAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaDiffSideAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaDiffSideAreaRatioPWL_);
-  LEF_COPY_FUNC(hasAntennaCumSideAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaCumDiffSideAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaCumDiffSideAreaRatioPWL_);
-  LEF_COPY_FUNC(hasAntennaSideAreaFactor_);
-  LEF_COPY_FUNC(hasAntennaSideAreaFactorDUO_);
-  LEF_COPY_FUNC(hasAntennaCumRoutingPlusCut_);
-  LEF_COPY_FUNC(hasAntennaGatePlusDiff_);
-  LEF_COPY_FUNC(hasAntennaAreaMinusDiff_);
-
-  LEF_MALLOC_FUNC(oxide_, char, sizeof(char) * 6);
-  LEF_COPY_FUNC(antennaAreaRatio_);
-  LEF_COPY_FUNC(antennaDiffAreaRatio_);
-  LEF_MALLOC_FUNC(
-      antennaDiffAreaRatioPWL_, lefiAntennaPWL, sizeof(lefiAntennaPWL));
-
-  LEF_COPY_FUNC(antennaCumAreaRatio_);
-  LEF_COPY_FUNC(antennaCumDiffAreaRatio_);
-  LEF_MALLOC_FUNC(
-      antennaCumDiffAreaRatioPWL_, lefiAntennaPWL, sizeof(lefiAntennaPWL));
-
-  LEF_COPY_FUNC(antennaAreaFactor_);
-  LEF_COPY_FUNC(antennaSideAreaRatio_);
-  LEF_COPY_FUNC(antennaDiffSideAreaRatio_);
-  LEF_MALLOC_FUNC(
-      antennaDiffSideAreaRatioPWL_, lefiAntennaPWL, sizeof(lefiAntennaPWL));
-
-  LEF_COPY_FUNC(antennaCumSideAreaRatio_);
-  LEF_COPY_FUNC(antennaCumDiffSideAreaRatio_);
-  LEF_MALLOC_FUNC(
-      antennaCumDiffSideAreaRatioPWL_, lefiAntennaPWL, sizeof(lefiAntennaPWL));
-
-  LEF_COPY_FUNC(antennaSideAreaFactor_);
-  LEF_COPY_FUNC(antennaGatePlusDiff_);
-  LEF_COPY_FUNC(antennaAreaMinusDiff_);
-  LEF_MALLOC_FUNC(
-      antennaAreaDiffReducePWL_, lefiAntennaPWL, sizeof(lefiAntennaPWL));
-}
-
 void lefiAntennaModel::Destroy()
 {
   if (oxide_) {
@@ -1084,8 +892,6 @@ void lefiAntennaModel::Destroy()
     lefFree((char*) (antennaAreaDiffReducePWL_));
     antennaAreaDiffReducePWL_ = 0;
   }
-
-  Init();
 }
 
 lefiAntennaModel::~lefiAntennaModel()
@@ -1096,22 +902,15 @@ lefiAntennaModel::~lefiAntennaModel()
 // 5.5
 void lefiAntennaModel::setAntennaModel(int aOxide)
 {
-  if (oxide_)
+  if (oxide_) {
     lefFree((char*) (oxide_));
-  switch (aOxide) {
-    case 2:
-      oxide_ = strdup("OXIDE2");
-      break;
-    case 3:
-      oxide_ = strdup("OXIDE3");
-      break;
-    case 4:
-      oxide_ = strdup("OXIDE4");
-      break;
-    default:
-      oxide_ = strdup("OXIDE1");
-      break;
   }
+
+  if (aOxide < 1 || aOxide > lefMaxOxides) {
+    aOxide = 1;
+  }
+
+  oxide_ = strdup(lefrSettings::lefOxides[aOxide - 1]);
 }
 
 // 3/23/2000 -- Wanda da Rosa.  The following are for 5.4 syntax
@@ -1549,7 +1348,6 @@ lefiLayer::lefiLayer()
       hasMinimumcutWithin_(NULL),
       minimumcutWithin_(NULL),
       hasMinimumcutConnection_(NULL),
-      minimumcutConnection_(NULL),
       hasMinimumcutNumCuts_(NULL),
       minimumcutLength_(NULL),
       minimumcutDistance_(NULL),
@@ -1565,7 +1363,6 @@ lefiLayer::lefiLayer()
       numMinstep_(0),
       numMinstepAlloc_(0),
       minstep_(NULL),
-      minstepType_(NULL),
       minstepLengthsum_(NULL),
       minstepMaxEdges_(NULL),
       minstepMinAdjLength_(NULL),
@@ -1659,7 +1456,6 @@ lefiLayer::lefiLayer()
       spacingTable_(NULL),
       numEnclosure_(0),
       enclosureAllocated_(0),
-      enclosureRules_(NULL),
       overhang1_(NULL),
       overhang2_(NULL),
       encminWidth_(NULL),
@@ -1667,7 +1463,6 @@ lefiLayer::lefiLayer()
       minLength_(NULL),
       numPreferEnclosure_(0),
       preferEnclosureAllocated_(0),
-      preferEnclosureRules_(NULL),
       preferOverhang1_(NULL),
       preferOverhang2_(NULL),
       preferMinWidth_(NULL),
@@ -1791,595 +1586,6 @@ void lefiLayer::Init()
   hasSpacingUseLengthThreshold_ = 0;
   hasSpacingLengthThreshold_ = 0;
   clear();
-}
-
-lefiLayer::lefiLayer(const lefiLayer& prev)
-    : name_(NULL),
-      nameSize_(0),
-      type_(NULL),
-      typeSize_(0),
-      layerType_(NULL),
-      hasPitch_(0),
-      hasMask_(0),
-      hasOffset_(0),
-      hasWidth_(0),
-      hasArea_(0),
-      hasSpacing_(0),
-      hasDiagPitch_(0),
-      hasDiagWidth_(0),
-      hasDiagSpacing_(0),
-      hasSpacingName_(NULL),
-      hasSpacingLayerStack_(NULL),
-      hasSpacingAdjacent_(NULL),
-      hasSpacingRange_(NULL),
-      hasSpacingUseLengthThreshold_(NULL),
-      hasSpacingLengthThreshold_(NULL),
-      hasSpacingCenterToCenter_(NULL),
-      hasSpacingParallelOverlap_(NULL),
-      hasSpacingCutArea_(NULL),
-      hasSpacingEndOfLine_(NULL),
-      hasSpacingParellelEdge_(NULL),
-      hasSpacingTwoEdges_(NULL),
-      hasSpacingAdjacentExcept_(NULL),
-      hasSpacingSamenet_(NULL),
-      hasSpacingSamenetPGonly_(NULL),
-      hasArraySpacing_(0),
-      hasDirection_(0),
-      hasResistance_(0),
-      hasCapacitance_(0),
-      hasHeight_(0),
-      hasWireExtension_(0),
-      hasThickness_(0),
-      hasShrinkage_(0),
-      hasCapMultiplier_(0),
-      hasEdgeCap_(0),
-      hasAntennaArea_(0),
-      hasAntennaLength_(0),
-      hasCurrentDensityPoint_(0),
-      currentDensity_(0.0),
-      pitchX_(0.0),
-      pitchY_(0.0),
-      offsetX_(0.0),
-      offsetY_(0.0),
-      diagPitchX_(0.0),
-      diagPitchY_(0.0),
-      diagWidth_(0.0),
-      diagSpacing_(0.0),
-      width_(0.0),
-      area_(0.0),
-      wireExtension_(0.0),
-      numSpacings_(0),
-      spacingsAllocated_(0),
-      maskNumber_(0),
-      spacing_(NULL),
-      spacingAdjacentCuts_(NULL),
-      spacingAdjacentWithin_(NULL),
-      spacingCutArea_(NULL),
-      rangeMin_(NULL),
-      rangeMax_(NULL),
-      rangeInfluence_(NULL),
-      rangeInfluenceRangeMin_(NULL),
-      rangeInfluenceRangeMax_(NULL),
-      rangeRangeMin_(NULL),
-      rangeRangeMax_(NULL),
-      lengthThreshold_(NULL),
-      lengthThresholdRangeMin_(NULL),
-      lengthThresholdRangeMax_(NULL),
-      numMinimumcut_(0),
-      minimumcutAllocated_(0),
-      minimumcut_(NULL),
-      minimumcutWidth_(NULL),
-      hasMinimumcutWithin_(NULL),
-      minimumcutWithin_(NULL),
-      hasMinimumcutConnection_(NULL),
-      minimumcutConnection_(NULL),
-      hasMinimumcutNumCuts_(NULL),
-      minimumcutLength_(NULL),
-      minimumcutDistance_(NULL),
-      maxwidth_(0.0),
-      minwidth_(0.0),
-      numMinenclosedarea_(0),
-      minenclosedareaAllocated_(0),
-      minenclosedarea_(NULL),
-      minenclosedareaWidth_(NULL),
-      protrusionWidth1_(0.0),
-      protrusionLength_(0.0),
-      protrusionWidth2_(0.0),
-      numMinstep_(0),
-      numMinstepAlloc_(0),
-      minstep_(NULL),
-      minstepType_(NULL),
-      minstepLengthsum_(NULL),
-      minstepMaxEdges_(NULL),
-      minstepMinAdjLength_(NULL),
-      minstepMinBetLength_(NULL),
-      minstepXSameCorners_(NULL),
-      direction_(NULL),
-      resistance_(0.0),
-      capacitance_(0.0),
-      height_(0.0),
-      thickness_(0.0),
-      shrinkage_(0.0),
-      capMultiplier_(0.0),
-      edgeCap_(0.0),
-      antennaArea_(0.0),
-      antennaLength_(0.0),
-      numCurrentPoints_(0),
-      currentPointsAllocated_(0),
-      currentWidths_(NULL),
-      current_(NULL),
-      numCapacitancePoints_(0),
-      capacitancePointsAllocated_(0),
-      capacitanceWidths_(NULL),
-      capacitances_(NULL),
-      numResistancePoints_(0),
-      resistancePointsAllocated_(0),
-      resistanceWidths_(NULL),
-      resistances_(NULL),
-      numProps_(0),
-      propsAllocated_(0),
-      dvalues_(NULL),
-      types_(NULL),
-      numAccurrents_(0),
-      accurrentAllocated_(0),
-      accurrents_(NULL),
-      numDccurrents_(0),
-      dccurrentAllocated_(0),
-      dccurrents_(NULL),
-      numNums_(0),
-      numAllocated_(0),
-      nums_(NULL),
-      hasAntennaAreaRatio_(0),
-      hasAntennaDiffAreaRatio_(0),
-      hasAntennaDiffAreaRatioPWL_(0),
-      hasAntennaCumAreaRatio_(0),
-      hasAntennaCumDiffAreaRatio_(0),
-      hasAntennaCumDiffAreaRatioPWL_(0),
-      hasAntennaAreaFactor_(0),
-      hasAntennaAreaFactorDUO_(0),
-      hasAntennaSideAreaRatio_(0),
-      hasAntennaDiffSideAreaRatio_(0),
-      hasAntennaDiffSideAreaRatioPWL_(0),
-      hasAntennaCumSideAreaRatio_(0),
-      hasAntennaCumDiffSideAreaRatio_(0),
-      hasAntennaCumDiffSideAreaRatioPWL_(0),
-      hasAntennaSideAreaFactor_(0),
-      hasAntennaSideAreaFactorDUO_(0),
-      currentAntennaModel_(0),
-      numAntennaModel_(0),
-      antennaModelAllocated_(0),
-      antennaModel_(NULL),
-      hasSlotWireWidth_(0),
-      hasSlotWireLength_(0),
-      hasSlotWidth_(0),
-      hasSlotLength_(0),
-      hasMaxAdjacentSlotSpacing_(0),
-      hasMaxCoaxialSlotSpacing_(0),
-      hasMaxEdgeSlotSpacing_(0),
-      hasSplitWireWidth_(0),
-      hasMinimumDensity_(0),
-      hasMaximumDensity_(0),
-      hasDensityCheckWindow_(0),
-      hasDensityCheckStep_(0),
-      hasFillActiveSpacing_(0),
-      hasTwoWidthPRL_(0),
-      slotWireWidth_(0.0),
-      slotWireLength_(0.0),
-      slotWidth_(0.0),
-      slotLength_(0.0),
-      maxAdjacentSlotSpacing_(0.0),
-      maxCoaxialSlotSpacing_(0.0),
-      maxEdgeSlotSpacing_(0.0),
-      splitWireWidth_(0.0),
-      minimumDensity_(0.0),
-      maximumDensity_(0.0),
-      densityCheckWindowLength_(0.0),
-      densityCheckWindowWidth_(0.0),
-      densityCheckStep_(0.0),
-      fillActiveSpacing_(0.0),
-      numSpacingTable_(0),
-      spacingTableAllocated_(0),
-      spacingTable_(NULL),
-      numEnclosure_(0),
-      enclosureAllocated_(0),
-      enclosureRules_(NULL),
-      overhang1_(NULL),
-      overhang2_(NULL),
-      encminWidth_(NULL),
-      cutWithin_(NULL),
-      minLength_(NULL),
-      numPreferEnclosure_(0),
-      preferEnclosureAllocated_(0),
-      preferEnclosureRules_(NULL),
-      preferOverhang1_(NULL),
-      preferOverhang2_(NULL),
-      preferMinWidth_(NULL),
-      resPerCut_(0.0),
-      diagMinEdgeLength_(0.0),
-      numMinSize_(0),
-      minSizeWidth_(NULL),
-      minSizeLength_(NULL),
-      eolWidth_(NULL),
-      eolWithin_(NULL),
-      parSpace_(NULL),
-      parWithin_(NULL),
-      maxArea_(0.0),
-      hasLongArray_(0),
-      viaWidth_(0.0),
-      cutSpacing_(0.0),
-      numArrayCuts_(0),
-      arrayCutsAllocated_(0),
-      arrayCuts_(NULL),
-      arraySpacings_(NULL),
-      hasSpacingTableOrtho_(0),
-      spacingTableOrtho_(NULL),
-      notchLength_(NULL),
-      endOfNotchWidth_(NULL),
-      minNotchSpacing_(NULL),
-      eonotchLength_(NULL)
-{
-  this->Init();
-
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * nameSize_);
-  //    printf("currentPrev : %s\n", prev.name_);
-  //    fflush(stdout);
-
-  LEF_COPY_FUNC(typeSize_);
-  LEF_MALLOC_FUNC(type_, char, sizeof(char) * typeSize_);
-
-  //    std::cout << prev.layerType_ << std:: endl;
-  LEF_MALLOC_FUNC(
-      layerType_, char, sizeof(char) * (strlen(prev.layerType_) + 1));
-
-  LEF_COPY_FUNC(hasPitch_);
-  LEF_COPY_FUNC(hasMask_);
-  LEF_COPY_FUNC(hasOffset_);
-  LEF_COPY_FUNC(hasWidth_);
-  LEF_COPY_FUNC(hasArea_);
-  LEF_COPY_FUNC(hasSpacing_);
-  LEF_COPY_FUNC(hasDiagPitch_);
-  LEF_COPY_FUNC(hasDiagWidth_);
-  LEF_COPY_FUNC(hasDiagSpacing_);
-
-  LEF_COPY_FUNC(spacingsAllocated_);
-  LEF_MALLOC_FUNC(hasSpacingName_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(hasSpacingLayerStack_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(hasSpacingAdjacent_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(hasSpacingRange_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      hasSpacingUseLengthThreshold_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      hasSpacingLengthThreshold_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      hasSpacingCenterToCenter_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      hasSpacingParallelOverlap_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(hasSpacingCutArea_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(hasSpacingEndOfLine_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      hasSpacingParellelEdge_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(hasSpacingTwoEdges_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      hasSpacingAdjacentExcept_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(hasSpacingSamenet_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      hasSpacingSamenetPGonly_, int, sizeof(int) * spacingsAllocated_);
-
-  LEF_COPY_FUNC(hasArraySpacing_);
-  LEF_COPY_FUNC(hasDirection_);
-  LEF_COPY_FUNC(hasResistance_);
-  LEF_COPY_FUNC(hasCapacitance_);
-  LEF_COPY_FUNC(hasHeight_);
-  LEF_COPY_FUNC(hasWireExtension_);
-  LEF_COPY_FUNC(hasThickness_);
-  LEF_COPY_FUNC(hasShrinkage_);
-  LEF_COPY_FUNC(hasCapMultiplier_);
-  LEF_COPY_FUNC(hasEdgeCap_);
-  LEF_COPY_FUNC(hasAntennaArea_);
-  LEF_COPY_FUNC(hasAntennaLength_);
-  LEF_COPY_FUNC(hasCurrentDensityPoint_);
-  LEF_COPY_FUNC(currentDensity_);
-  LEF_COPY_FUNC(pitchX_);
-  LEF_COPY_FUNC(pitchY_);
-  LEF_COPY_FUNC(offsetX_);
-  LEF_COPY_FUNC(offsetY_);
-  LEF_COPY_FUNC(diagPitchX_);
-  LEF_COPY_FUNC(diagPitchY_);
-  LEF_COPY_FUNC(diagWidth_);
-  LEF_COPY_FUNC(diagSpacing_);
-  LEF_COPY_FUNC(width_);
-  LEF_COPY_FUNC(area_);
-  LEF_COPY_FUNC(wireExtension_);
-  LEF_COPY_FUNC(numSpacings_);
-
-  LEF_COPY_FUNC(maskNumber_);
-  LEF_MALLOC_FUNC(spacing_, double, sizeof(double) * spacingsAllocated_);
-
-  //!!
-  LEF_MALLOC_FUNC_FOR_2D_STR(spacingName_, numSpacings_);
-  /*
-  if(prev.spacingName_) {
-      spacingName_ = (char**) lefMalloc( sizeof(char*) * spacingsAllocated_ );
-
-      for(int i=0; i<prev.spacingsAllocated_; i++) {
-          if( prev.spacingName_[i] ) {
-              int len = sizeof(char) * strlen( prev.spacingName_[i] );
-              spacingName_[i] = (char*) lefMalloc( len );
-              strcpy( spacingName_[i], prev.spacingName_[i] );
-          }
-          else {
-              spacingName_[i] = 0;
-          }
-      }
-  }
-  else {
-      spacingName_ = 0;
-  } */
-
-  LEF_MALLOC_FUNC(spacingAdjacentCuts_, int, sizeof(int) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      spacingAdjacentWithin_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(spacingCutArea_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(rangeMin_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(rangeMax_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(rangeInfluence_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      rangeInfluenceRangeMin_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      rangeInfluenceRangeMax_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(rangeRangeMin_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(rangeRangeMax_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      lengthThreshold_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      lengthThresholdRangeMin_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      lengthThresholdRangeMax_, double, sizeof(double) * spacingsAllocated_);
-
-  LEF_COPY_FUNC(numMinimumcut_);
-  LEF_COPY_FUNC(minimumcutAllocated_);
-  LEF_MALLOC_FUNC(minimumcut_, int, sizeof(int) * minimumcutAllocated_);
-  LEF_MALLOC_FUNC(
-      minimumcutWidth_, double, sizeof(double) * minimumcutAllocated_);
-  LEF_MALLOC_FUNC(
-      hasMinimumcutWithin_, int, sizeof(int) * minimumcutAllocated_);
-  LEF_MALLOC_FUNC(
-      minimumcutWithin_, double, sizeof(double) * minimumcutAllocated_);
-  LEF_MALLOC_FUNC(
-      hasMinimumcutConnection_, int, sizeof(int) * minimumcutAllocated_);
-
-  //!!
-  LEF_MALLOC_FUNC_FOR_2D_STR(minimumcutConnection_, numMinimumcut_);
-
-  /*
-   if(prev.minimumcutConnection_) {
-       minimumcutConnection_ = (char**) lefMalloc( sizeof(char*) *
-   numMinimumcut_ );
-
-       for(int i=0; i<prev.numMinimumcut_; i++) {
-           if( prev.minimumcutConnection_[i] ) {
-               int len = sizeof(char) * strlen( prev.minimumcutConnection_[i] );
-               minimumcutConnection_[i] = (char*) lefMalloc( len );
-               strcpy( minimumcutConnection_[i], prev.minimumcutConnection_[i]
-   );
-           }
-           else {
-               minimumcutConnection_[i] = 0;
-           }
-       }
-   }
-   else {
-       minimumcutConnection_ = 0;
-   }
-   */
-
-  LEF_MALLOC_FUNC(
-      hasMinimumcutNumCuts_, int, sizeof(int) * minimumcutAllocated_);
-  LEF_MALLOC_FUNC(
-      minimumcutLength_, double, sizeof(double) * minimumcutAllocated_);
-  LEF_MALLOC_FUNC(
-      minimumcutDistance_, double, sizeof(double) * minimumcutAllocated_);
-  LEF_COPY_FUNC(maxwidth_);
-  LEF_COPY_FUNC(minwidth_);
-  LEF_COPY_FUNC(numMinenclosedarea_);
-  LEF_COPY_FUNC(minenclosedareaAllocated_);
-  LEF_MALLOC_FUNC(
-      minenclosedarea_, double, sizeof(double) * minenclosedareaAllocated_);
-  LEF_MALLOC_FUNC(minenclosedareaWidth_,
-                  double,
-                  sizeof(double) * minenclosedareaAllocated_);
-  LEF_COPY_FUNC(protrusionWidth1_);
-  LEF_COPY_FUNC(protrusionLength_);
-  LEF_COPY_FUNC(protrusionWidth2_);
-  LEF_COPY_FUNC(numMinstep_);
-  LEF_COPY_FUNC(numMinstepAlloc_);
-  LEF_MALLOC_FUNC(minstep_, double, sizeof(double) * numMinstepAlloc_);
-
-  //!!
-  LEF_MALLOC_FUNC_FOR_2D_STR(minstepType_, numMinstep_);
-
-  LEF_MALLOC_FUNC(minstepLengthsum_, double, sizeof(double) * numMinstepAlloc_);
-  LEF_MALLOC_FUNC(minstepMaxEdges_, int, sizeof(int) * numMinstepAlloc_);
-  LEF_MALLOC_FUNC(
-      minstepMinAdjLength_, double, sizeof(double) * numMinstepAlloc_);
-  LEF_MALLOC_FUNC(
-      minstepMinBetLength_, double, sizeof(double) * numMinstepAlloc_);
-  LEF_MALLOC_FUNC(minstepXSameCorners_, int, sizeof(int) * numMinstepAlloc_);
-  LEF_MALLOC_FUNC(
-      direction_, char, sizeof(char) * (strlen(prev.direction_) + 1));
-  LEF_COPY_FUNC(resistance_);
-  LEF_COPY_FUNC(capacitance_);
-  LEF_COPY_FUNC(height_);
-  LEF_COPY_FUNC(thickness_);
-  LEF_COPY_FUNC(shrinkage_);
-  LEF_COPY_FUNC(capMultiplier_);
-  LEF_COPY_FUNC(edgeCap_);
-  LEF_COPY_FUNC(antennaArea_);
-  LEF_COPY_FUNC(antennaLength_);
-  LEF_COPY_FUNC(numCurrentPoints_);
-  LEF_COPY_FUNC(currentPointsAllocated_);
-  LEF_MALLOC_FUNC(
-      currentWidths_, double, sizeof(double) * currentPointsAllocated_);
-  LEF_MALLOC_FUNC(current_, double, sizeof(double) * currentPointsAllocated_);
-  LEF_COPY_FUNC(numCapacitancePoints_);
-  LEF_COPY_FUNC(capacitancePointsAllocated_);
-  LEF_MALLOC_FUNC(
-      capacitanceWidths_, double, sizeof(double) * capacitancePointsAllocated_);
-  LEF_MALLOC_FUNC(
-      capacitances_, double, sizeof(double) * capacitancePointsAllocated_);
-  LEF_COPY_FUNC(numResistancePoints_);
-  LEF_COPY_FUNC(resistancePointsAllocated_);
-  LEF_MALLOC_FUNC(
-      resistanceWidths_, double, sizeof(double) * resistancePointsAllocated_);
-  LEF_MALLOC_FUNC(
-      resistances_, double, sizeof(double) * resistancePointsAllocated_);
-  LEF_COPY_FUNC(numProps_);
-  LEF_COPY_FUNC(propsAllocated_);
-
-  //!!
-  LEF_MALLOC_FUNC_FOR_2D_STR(names_, numProps_);
-  //!!
-  LEF_MALLOC_FUNC_FOR_2D_STR(values_, numProps_);
-
-  LEF_MALLOC_FUNC(dvalues_, double, sizeof(double) * propsAllocated_);
-  LEF_MALLOC_FUNC(types_, char, sizeof(char));
-  //    printf("TYPES: %s\n", types_);
-  //    fflush(stdout);
-  LEF_COPY_FUNC(numAccurrents_);
-  LEF_COPY_FUNC(accurrentAllocated_);
-
-  // !!
-  LEF_MALLOC_FUNC(accurrents_,
-                  lefiLayerDensity*,
-                  sizeof(lefiLayerDensity*) * accurrentAllocated_);
-  LEF_COPY_FUNC(numDccurrents_);
-  LEF_COPY_FUNC(dccurrentAllocated_);
-
-  // !!
-  LEF_MALLOC_FUNC(dccurrents_,
-                  lefiLayerDensity*,
-                  sizeof(lefiLayerDensity*) * dccurrentAllocated_);
-  LEF_COPY_FUNC(numNums_);
-  LEF_COPY_FUNC(numAllocated_);
-  LEF_MALLOC_FUNC(nums_, double, sizeof(double) * numAllocated_);
-
-  LEF_COPY_FUNC(hasAntennaAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaDiffAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaDiffAreaRatioPWL_);
-  LEF_COPY_FUNC(hasAntennaCumAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaCumDiffAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaCumDiffAreaRatioPWL_);
-  LEF_COPY_FUNC(hasAntennaAreaFactor_);
-  LEF_COPY_FUNC(hasAntennaAreaFactorDUO_);
-  LEF_COPY_FUNC(hasAntennaSideAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaDiffSideAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaDiffSideAreaRatioPWL_);
-  LEF_COPY_FUNC(hasAntennaCumSideAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaCumDiffSideAreaRatio_);
-  LEF_COPY_FUNC(hasAntennaCumDiffSideAreaRatioPWL_);
-  LEF_COPY_FUNC(hasAntennaSideAreaFactor_);
-  LEF_COPY_FUNC(hasAntennaSideAreaFactorDUO_);
-
-  LEF_MALLOC_FUNC(
-      currentAntennaModel_, lefiAntennaModel, sizeof(lefiAntennaModel) * 1);
-  LEF_COPY_FUNC(numAntennaModel_);
-  LEF_COPY_FUNC(antennaModelAllocated_);
-
-  // !!
-  LEF_MALLOC_FUNC(antennaModel_,
-                  lefiAntennaModel*,
-                  sizeof(lefiAntennaModel*) * antennaModelAllocated_);
-  LEF_COPY_FUNC(hasSlotWireWidth_);
-  LEF_COPY_FUNC(hasSlotWireLength_);
-  LEF_COPY_FUNC(hasSlotWidth_);
-  LEF_COPY_FUNC(hasSlotLength_);
-  LEF_COPY_FUNC(hasMaxAdjacentSlotSpacing_);
-  LEF_COPY_FUNC(hasMaxCoaxialSlotSpacing_);
-  LEF_COPY_FUNC(hasMaxEdgeSlotSpacing_);
-  LEF_COPY_FUNC(hasSplitWireWidth_);
-  LEF_COPY_FUNC(hasMinimumDensity_);
-  LEF_COPY_FUNC(hasMaximumDensity_);
-  LEF_COPY_FUNC(hasDensityCheckWindow_);
-  LEF_COPY_FUNC(hasDensityCheckStep_);
-  LEF_COPY_FUNC(hasFillActiveSpacing_);
-  LEF_COPY_FUNC(hasTwoWidthPRL_);
-  LEF_COPY_FUNC(slotWireWidth_);
-  LEF_COPY_FUNC(slotWireLength_);
-  LEF_COPY_FUNC(slotWidth_);
-  LEF_COPY_FUNC(slotLength_);
-  LEF_COPY_FUNC(maxAdjacentSlotSpacing_);
-  LEF_COPY_FUNC(maxCoaxialSlotSpacing_);
-  LEF_COPY_FUNC(maxEdgeSlotSpacing_);
-  LEF_COPY_FUNC(splitWireWidth_);
-  LEF_COPY_FUNC(minimumDensity_);
-  LEF_COPY_FUNC(maximumDensity_);
-  LEF_COPY_FUNC(densityCheckWindowLength_);
-  LEF_COPY_FUNC(densityCheckWindowWidth_);
-  LEF_COPY_FUNC(densityCheckStep_);
-  LEF_COPY_FUNC(fillActiveSpacing_);
-  LEF_COPY_FUNC(numSpacingTable_);
-  LEF_COPY_FUNC(spacingTableAllocated_);
-
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D(spacingTable_, lefiSpacingTable, numSpacingTable_, 1);
-  LEF_COPY_FUNC(numEnclosure_);
-  LEF_COPY_FUNC(enclosureAllocated_);
-
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(enclosureRules_, numEnclosure_);
-
-  LEF_MALLOC_FUNC(overhang1_, double, sizeof(double) * enclosureAllocated_);
-  LEF_MALLOC_FUNC(overhang2_, double, sizeof(double) * enclosureAllocated_);
-  LEF_MALLOC_FUNC(encminWidth_, double, sizeof(double) * enclosureAllocated_);
-  LEF_MALLOC_FUNC(cutWithin_, double, sizeof(double) * enclosureAllocated_);
-  LEF_MALLOC_FUNC(minLength_, double, sizeof(double) * enclosureAllocated_);
-  LEF_COPY_FUNC(numPreferEnclosure_);
-  LEF_COPY_FUNC(preferEnclosureAllocated_);
-
-  //!!
-  LEF_MALLOC_FUNC_FOR_2D_STR(preferEnclosureRules_, numPreferEnclosure_);
-
-  LEF_MALLOC_FUNC(
-      preferOverhang1_, double, sizeof(double) * preferEnclosureAllocated_);
-  LEF_MALLOC_FUNC(
-      preferOverhang2_, double, sizeof(double) * preferEnclosureAllocated_);
-  LEF_MALLOC_FUNC(
-      preferMinWidth_, double, sizeof(double) * preferEnclosureAllocated_);
-  LEF_COPY_FUNC(resPerCut_);
-  LEF_COPY_FUNC(diagMinEdgeLength_);
-  LEF_COPY_FUNC(numMinSize_);
-  LEF_MALLOC_FUNC(minSizeWidth_, double, sizeof(double) * numMinSize_);
-  LEF_MALLOC_FUNC(minSizeLength_, double, sizeof(double) * numMinSize_);
-  LEF_MALLOC_FUNC(eolWidth_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(eolWithin_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(parSpace_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(parWithin_, double, sizeof(double) * spacingsAllocated_);
-  LEF_COPY_FUNC(maxArea_);
-  LEF_COPY_FUNC(hasLongArray_);
-  LEF_COPY_FUNC(viaWidth_);
-  LEF_COPY_FUNC(cutSpacing_);
-  LEF_COPY_FUNC(numArrayCuts_);
-  LEF_COPY_FUNC(arrayCutsAllocated_);
-  LEF_MALLOC_FUNC(arrayCuts_, int, sizeof(int) * arrayCutsAllocated_);
-  LEF_MALLOC_FUNC(arraySpacings_, double, sizeof(double) * arrayCutsAllocated_);
-  LEF_COPY_FUNC(hasSpacingTableOrtho_);
-
-  LEF_MALLOC_FUNC_WITH_OPERATOR(
-      spacingTableOrtho_, lefiOrthogonal, sizeof(lefiOrthogonal));
-
-  LEF_MALLOC_FUNC(notchLength_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      endOfNotchWidth_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(
-      minNotchSpacing_, double, sizeof(double) * spacingsAllocated_);
-  LEF_MALLOC_FUNC(eonotchLength_, double, sizeof(double) * spacingsAllocated_);
-  LEF_COPY_FUNC(lef58WidthTableOrthoValues_);
-  LEF_COPY_FUNC(lef58WidthTableWrongDirValues_);
-  //    printf("constructor finish\n");
-  //    fflush(stdout);
-  //    LEF_MALLOC_FUNC( lef58WidthTableOrtho_, double, sizeof(double) );
-  //    LEF_MALLOC_FUNC( lef58WidthTableWrongDir_, double, sizeof(double) );
 }
 
 void lefiLayer::Destroy()
@@ -2524,7 +1730,7 @@ void lefiLayer::Destroy()
 
 lefiLayer::~lefiLayer()
 {
-  //    Destroy();
+  Destroy();
 }
 
 void lefiLayer::clear()
@@ -2532,7 +1738,6 @@ void lefiLayer::clear()
   int i;
   lefiLayerDensity* p;
   lefiSpacingTable* sp;
-  lefiAntennaModel* aO;  // 5.5
 
   if (name_)
     *(name_) = 0;
@@ -2667,17 +1872,15 @@ void lefiLayer::clear()
   numSpacingTable_ = 0;
   spacingTableAllocated_ = 0;
 
-  for (i = 0; i < numAntennaModel_; i++) {  // 5.5
-    aO = antennaModel_[i];
-    aO->Destroy();
-  }
-  for (i = 0; i < antennaModelAllocated_; i++) {  // 5.5
-    lefFree((char*) antennaModel_[i]);
+  if (antennaModel_) {
+    for (i = 0; i < antennaModelAllocated_; i++) {  // 5.5
+      delete antennaModel_[i];
+    }
+
+    lefFree((char*) (antennaModel_));
+    antennaModel_ = 0;
   }
 
-  if (antennaModel_)  // 5.5
-    lefFree((char*) (antennaModel_));
-  antennaModel_ = 0;
   currentAntennaModel_ = 0;
   numAntennaModel_ = 0;
   antennaModelAllocated_ = 0;
@@ -2736,7 +1939,6 @@ void lefiLayer::clear()
   if (hasSpacingTableOrtho_) {
     spacingTableOrtho_->Destroy();
     lefFree((char*) (spacingTableOrtho_));
-    spacingTableOrtho_ = 0;
   }
   hasSpacingTableOrtho_ = 0;
 }
@@ -4807,7 +4009,7 @@ double lefiLayer::propNumber(int i) const
   return dvalues_[i];
 }
 
-char lefiLayer::propType(int i) const
+const char lefiLayer::propType(int i) const
 {
   char msg[160];
   if (i < 0 || i >= numProps_) {
@@ -5036,22 +4238,21 @@ lefiLayerDensity* lefiLayer::dccurrent(int index) const
 // 5.5
 void lefiLayer::addAntennaModel(int aOxide)
 {
-  // For version 5.5 only OXIDE1, OXIDE2, OXIDE3, & OXIDE4
+  // For version 5.5 only OXIDE1, OXIDE2, OXIDE3, & OXIDE4 ...
   // are defined within a macro pin
   lefiAntennaModel* amo;
   int i;
 
   if (numAntennaModel_ == 0) {  // does not have antennaModel
-    antennaModel_
-        = (lefiAntennaModel**) lefMalloc(sizeof(lefiAntennaModel*) * 4);
-    antennaModelAllocated_ = 4;
-    for (i = 0; i < 4; i++) {
-      antennaModel_[i]
-          = (lefiAntennaModel*) lefMalloc(sizeof(lefiAntennaModel));
-      antennaModel_[i]->Init();
-      // just initialize it first
+    antennaModel_ = (lefiAntennaModel**) lefMalloc(sizeof(lefiAntennaModel*)
+                                                   * lefMaxOxides);
+    antennaModelAllocated_ = lefMaxOxides;
+
+    for (i = 0; i < lefMaxOxides; i++) {
+      antennaModel_[i] = new lefiAntennaModel();
     }
-    antennaModelAllocated_ = 4;
+
+    antennaModelAllocated_ = lefMaxOxides;
     amo = antennaModel_[0];
   }
 
@@ -7018,7 +6219,13 @@ void lefiLayer::parseAntennaCumRouting(int index)
     return;
   }
 
-  setAntennaCumRoutingPlusCut();
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
+    addAntennaModel(1);
+  }
+
+  for (int idx = 0; idx < numAntennaModel_; idx++) {
+    antennaModel_[idx]->setAntennaCumRoutingPlusCut();
+  }
 
   free(wrkingStr);
   return;
@@ -7051,7 +6258,14 @@ void lefiLayer::parseAntennaGatePlus(int index)
 
   value = strtok(NULL, " ");
   pDiffFactor = atof(value);
-  setAntennaGatePlusDiff(pDiffFactor);
+
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
+    addAntennaModel(1);
+  }
+
+  for (int idx = 0; idx < numAntennaModel_; idx++) {
+    antennaModel_[idx]->setAntennaGatePlusDiff(pDiffFactor);
+  }
 
   free(wrkingStr);
   return;
@@ -7084,7 +6298,14 @@ void lefiLayer::parseAntennaAreaMinus(int index)
 
   value = strtok(NULL, " ");
   mDiffFactor = atof(value);
-  setAntennaAreaMinusDiff(mDiffFactor);
+
+  if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
+    addAntennaModel(1);
+  }
+
+  for (int idx = 0; idx < numAntennaModel_; idx++) {
+    antennaModel_[idx]->setAntennaAreaMinusDiff(mDiffFactor);
+  }
 
   free(wrkingStr);
   return;
@@ -7122,6 +6343,7 @@ void lefiLayer::parseAntennaAreaDiff(int index)
   value = strtok(NULL, " ");
   if (strcmp(value, "(") == 0) {  // beginning of ( ( d1 r1 ) ( d2 r2 ) ... )
     pwlPtr = lefiAntennaPWL::create();
+
     while (done == 0) {
       value = strtok(NULL, " ");
       if (strcmp(value, "(") == 0) {
@@ -7134,11 +6356,29 @@ void lefiLayer::parseAntennaAreaDiff(int index)
         if (strcmp(value, ")") != 0) {
           break;
         }
-      } else if (strcmp(value, ")") == 0)
+      } else if (strcmp(value, ")") == 0) {
         done = 1;
+      }
     }
+
     if (done) {
-      setAntennaPWL(lefiAntennaADR, pwlPtr);
+      if (numAntennaModel_ == 0) {  // haven't created any antannaModel yet
+        addAntennaModel(1);
+      }
+
+      antennaModel_[0]->setAntennaPWL(lefiAntennaADR, pwlPtr);
+
+      // In case when we have more than 1 model, we need to copy PWL data.
+      for (int idx = 1; idx < numAntennaModel_; idx++) {
+        lefiAntennaPWL* copyPwlPtr = lefiAntennaPWL::create();
+
+        for (int jdx = 0; jdx < pwlPtr->numPWL(); jdx++) {
+          copyPwlPtr->addAntennaPWL(pwlPtr->PWLdiffusion(jdx),
+                                    pwlPtr->PWLratio(jdx));
+        }
+
+        antennaModel_[idx]->setAntennaPWL(lefiAntennaADR, copyPwlPtr);
+      }
     } else {
       pwlPtr->Destroy();
       lefFree(pwlPtr);
