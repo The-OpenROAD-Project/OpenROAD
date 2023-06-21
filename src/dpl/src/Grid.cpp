@@ -213,7 +213,7 @@ Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
 void Opendp::findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const
 {
   overlaps.clear();
-  regions_rtree.query(bgi::intersects(queryBox), std::back_inserter(overlaps));
+  regions_rtree.query(boost::geometry::index::intersects(queryBox), std::back_inserter(overlaps));
 }
 
 ////////////////////////////////////////////////////////////////
