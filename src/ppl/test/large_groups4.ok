@@ -11,7 +11,6 @@
 [INFO PPL-0044] Pin group: [ pin300 pin301 pin302 pin303 pin304 pin305 pin306 pin307 pin308 pin309 pin310 pin311 pin312 pin313 pin314 pin315 pin316 pin317 pin318 pin319 pin320 pin321 pin322 pin323 pin324 pin325 pin326 pin327 pin328 pin329 pin330 pin331 pin332 pin333 pin334 pin335 pin336 pin337 pin338 pin339 pin340 pin341 pin342 pin343 pin344 pin345 pin346 pin347 pin348 pin349 pin350 pin351 pin352 pin353 pin354 pin355 pin356 pin357 pin358 pin359 pin360 pin361 pin362 pin363 pin364 pin365 pin366 pin367 pin368 pin369 pin370 ]
 Found 0 macro blocks.
 [WARNING PPL-0092] Pin group of size 300 does not fit any section. Adding to fallback mode.
-[INFO PPL-0100] Group of size 300 placed during fallback mode.
 [INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots          1754
 [INFO PPL-0002] Number of I/O            400
@@ -20,5 +19,6 @@ Found 0 macro blocks.
 [INFO PPL-0005] Slots per section        200
 [INFO PPL-0006] Slots increase factor    0.01
 [INFO PPL-0008] Successfully assigned pins to sections.
+[INFO PPL-0100] Group of size 300 placed during fallback mode.
 [INFO PPL-0012] I/O nets HPWL: 25867.56 um.
 No differences found.
