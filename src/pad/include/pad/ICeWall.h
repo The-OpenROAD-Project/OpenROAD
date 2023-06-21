@@ -97,7 +97,9 @@ class ICeWall
                  int north_offset,
                  int east_offset,
                  int south_offset,
-                 const odb::dbOrientType& rotation,
+                 const odb::dbOrientType& rotation_hor,
+                 const odb::dbOrientType& rotation_ver,
+                 const odb::dbOrientType& rotation_cor,
                  int ring_index);
   void removeIORows();
 

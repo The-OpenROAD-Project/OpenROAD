@@ -12,7 +12,9 @@ make_io_sites -horizontal_site site \
               -vertical_site site \
               -corner_site site \
               -offset offset \
-              [-rotation rotation] \
+              [-rotation_horizontal rotation] \
+              [-rotation_vertical rotation] \
+              [-rotation_corner rotation] \
               [-ring_index index]
 ```
 
@@ -24,13 +26,15 @@ make_io_sites -horizontal_site site \
 | `-vertical_site` | Name of the site for the vertical pads (north and south). |
 | `-corner_site` | Name of the site for the corner cells. |
 | `-offset` | Offset from the die edge to place the rows. |
-| `-rotation` | Rotation to apply to the sites to ensure pads are placed correctly (defaults to R0). |
+| `-rotation_horizontal` | Rotation to apply to the horizontal sites to ensure pads are placed correctly (defaults to R0). |
+| `-rotation_vertical` | Rotation to apply to the vertical sites to ensure pads are placed correctly (defaults to R0). |
+| `-rotation_corner` | Rotation to apply to the corner sites to ensure pads are placed correctly (defaults to R0). |
 | `-ring_index` | (Optional) Used to specify the index of the ring in case of multiple rings. |
 
 #### Examples
 ```
 make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE_C -offset 35
-make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE_C -offset 35 -rotation R180
+make_io_sites -horizontal_site IOSITE_H -vertical_site IOSITE_V -corner_site IOSITE_C -offset 35 -rotation_horizontal R180
 ```
 
 ### Creating False IO Sites
