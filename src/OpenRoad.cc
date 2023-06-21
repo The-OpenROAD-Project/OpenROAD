@@ -390,10 +390,16 @@ void OpenRoad::writeLef(const char* filename)
       if (cnt > 0) {
         name += "_" + std::to_string(cnt);
         std::ofstream os(name);
+        if (!os.is_open()) {
+          logger_->error(utl::ODB, 2001, "Cannot open LEF file {}\n", name);
+        }
         odb::lefout lef_writer(logger_, os);
         lef_writer.writeLib(lib);
       } else {
         std::ofstream os(name);
+        if (!os.is_open()) {
+          logger_->error(utl::ODB, 2002, "Cannot open LEF file {}\n", name);
+        }
         odb::lefout lef_writer(logger_, os);
         lef_writer.writeTechAndLib(lib);
       }
@@ -401,6 +407,9 @@ void OpenRoad::writeLef(const char* filename)
     }
   } else if (db_->getTech()) {
     std::ofstream os(filename);
+    if (!os.is_open()) {
+      logger_->error(utl::ODB, 2003, "Cannot open LEF file {}\n", filename);
+    }
     odb::lefout lef_writer(logger_, os);
     lef_writer.writeTech(db_->getTech());
   }

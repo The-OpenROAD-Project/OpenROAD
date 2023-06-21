@@ -3463,6 +3463,10 @@ void dbBlock::saveLef(char* filename,
                       bool bloat_occupied_layers)
 {
   std::ofstream os(filename);
+  if (!os.is_open()) {
+    getImpl()->getLogger()->error(
+        utl::ODB, 2004, "Cannot open LEF file {}\n", filename);
+  }
   lefout writer(getImpl()->getLogger(), os);
   writer.setBloatFactor(bloat_factor);
   writer.setBloatOccupiedLayers(bloat_occupied_layers);

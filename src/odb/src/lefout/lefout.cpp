@@ -914,20 +914,20 @@ void lefout::writeVia(dbTechVia* via)
     via->getViaParams(P);
 
     fmt::print(_out,
-               " + CUTSIZE {:.11g} {:.11g} ",
+               " + CUTSIZE {:.11g} {:.11g}\n",
                lefdist(P.getXCutSize()),
                lefdist(P.getYCutSize()));
     std::string top = P.getTopLayer()->getName();
     std::string bot = P.getBottomLayer()->getName();
     std::string cut = P.getCutLayer()->getName();
     fmt::print(
-        _out, " + LAYERS {} {} {} ", bot.c_str(), cut.c_str(), top.c_str());
+        _out, " + LAYERS {} {} {}\n", bot.c_str(), cut.c_str(), top.c_str());
     fmt::print(_out,
-               " + CUTSPACING {:.11g} {:.11g} ",
+               " + CUTSPACING {:.11g} {:.11g}\n",
                lefdist(P.getXCutSpacing()),
                lefdist(P.getYCutSpacing()));
     fmt::print(_out,
-               " + ENCLOSURE {:.11g} {:.11g} {:.11g} {:.11g} ",
+               " + ENCLOSURE {:.11g} {:.11g} {:.11g} {:.11g}\n",
                lefdist(P.getXBottomEnclosure()),
                lefdist(P.getYBottomEnclosure()),
                lefdist(P.getXTopEnclosure()),
@@ -935,18 +935,18 @@ void lefout::writeVia(dbTechVia* via)
 
     if ((P.getNumCutRows() != 1) || (P.getNumCutCols() != 1))
       fmt::print(
-          _out, " + ROWCOL {} {} ", P.getNumCutRows(), P.getNumCutCols());
+          _out, " + ROWCOL {} {}\n", P.getNumCutRows(), P.getNumCutCols());
 
     if ((P.getXOrigin() != 0) || (P.getYOrigin() != 0))
       fmt::print(_out,
-                 " + ORIGIN {:.11g} {:.11g} ",
+                 " + ORIGIN {:.11g} {:.11g}\n",
                  lefdist(P.getXOrigin()),
                  lefdist(P.getYOrigin()));
 
     if ((P.getXTopOffset() != 0) || (P.getYTopOffset() != 0)
         || (P.getXBottomOffset() != 0) || (P.getYBottomOffset() != 0))
       fmt::print(_out,
-                 " + OFFSET {:.11g} {:.11g} {:.11g} {:.11g} ",
+                 " + OFFSET {:.11g} {:.11g} {:.11g} {:.11g}\n",
                  lefdist(P.getXBottomOffset()),
                  lefdist(P.getYBottomOffset()),
                  lefdist(P.getXTopOffset()),
@@ -954,7 +954,7 @@ void lefout::writeVia(dbTechVia* via)
 
     std::string pname = via->getPattern();
     if (strcmp(pname.c_str(), "") != 0)
-      fmt::print(_out, " + PATTERNNAME {}", pname.c_str());
+      fmt::print(_out, " + PATTERNNAME {}\n", pname.c_str());
   }
 
   fmt::print(_out, "END {}\n", name.c_str());

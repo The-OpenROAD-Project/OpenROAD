@@ -671,9 +671,7 @@ std::string dbProperty::writeProperties(dbObject* object)
   for (itr = props.begin(); itr != props.end(); ++itr) {
     dbProperty* prop = *itr;
     std::string name = prop->getName();
-    fmt::print(out, "    PROPERTY {} ", name);
-    fmt::print(out, "{}", writePropValue(prop));
-    fmt::print(out, ";\n");
+    fmt::print(out, "    PROPERTY {} {};\n", name, writePropValue(prop));
   }
 
   return out.str();

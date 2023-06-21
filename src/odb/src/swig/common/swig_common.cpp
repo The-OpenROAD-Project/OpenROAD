@@ -127,8 +127,11 @@ int write_def(odb::dbBlock* block,
 
 int write_lef(odb::dbLib* lib, const char* path)
 {
-  std::ofstream os(path);
   utl::Logger* logger = new utl::Logger(NULL);
+  std::ofstream os(path);
+  if (!os.is_open()) {
+    logger->error(utl::ODB, 2005, "Cannot open LEF file {}\n", path);
+  }
   odb::lefout writer(logger, os);
   writer.writeTechAndLib(lib);
   return true;
@@ -136,16 +139,22 @@ int write_lef(odb::dbLib* lib, const char* path)
 
 int write_tech_lef(odb::dbTech* tech, const char* path)
 {
-  std::ofstream os(path);
   utl::Logger* logger = new utl::Logger(NULL);
+  std::ofstream os(path);
+  if (!os.is_open()) {
+    logger->error(utl::ODB, 2006, "Cannot open LEF file {}\n", path);
+  }
   odb::lefout writer(logger, os);
   writer.writeTech(tech);
   return true;
 }
 int write_macro_lef(odb::dbLib* lib, const char* path)
 {
-  std::ofstream os(path);
   utl::Logger* logger = new utl::Logger(NULL);
+  std::ofstream os(path);
+  if (!os.is_open()) {
+    logger->error(utl::ODB, 1072, "Cannot open LEF file {}\n", path);
+  }
   odb::lefout writer(logger, os);
   writer.writeLib(lib);
   return true;
