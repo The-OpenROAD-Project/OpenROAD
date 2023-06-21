@@ -61,6 +61,13 @@ using std::vector;
 
 using utl::DPL;
 
+std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox)
+{
+  return "(" + std::to_string(queryBox.min_corner().x()) + ", "
+         + std::to_string(queryBox.min_corner().y()) + ") - ("
+         + std::to_string(queryBox.max_corner().x()) + ", "
+         + std::to_string(queryBox.max_corner().y()) + ")";
+}
 void Opendp::detailedPlacement()
 {
   if (debug_observer_) {
@@ -939,19 +946,12 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
         result.size());
     for (const auto& box : result) {
       debugPrint(logger_,
-                 utl::DPL,
+                 DPL,
                  "detailed",
                  1,
-                 "Overlap found between queryBox ({} , {}) - ({} , {}) and bbox"
-                 "({} , {}) - ({}, {})",
-                 queryBox.min_corner().x(),
-                 queryBox.min_corner().y(),
-                 queryBox.max_corner().x(),
-                 queryBox.max_corner().y(),
-                 box.min_corner().x(),
-                 box.min_corner().y(),
-                 box.max_corner().x(),
-                 box.max_corner().y());
+                 "Overlap found between queryBox {} and bbox {}",
+                 printBgBox(queryBox),
+                 printBgBox(box));
     }
     return false;
   }

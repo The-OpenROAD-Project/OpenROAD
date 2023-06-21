@@ -220,6 +220,7 @@ static bool swapWidthHeight(const dbOrientType& orient)
 
 void Opendp::makeGroups()
 {
+  regions_rtree.clear(); 
   // preallocate groups so it does not grow when push_back is called
   // because region cells point to them.
   auto db_groups = block_->getGroups();

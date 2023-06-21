@@ -58,6 +58,8 @@ using odb::dbTransform;
 void Opendp::initGridLayersMap()
 {
   int grid_index = 0;
+  grid_info_map_.clear();
+  grid_info_vector_.clear();
   for (auto db_row : block_->getRows()) {
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
