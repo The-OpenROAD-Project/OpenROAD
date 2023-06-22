@@ -18,7 +18,6 @@ _installCommonDev() {
     boostChecksum="077f074743ea7b0cb49c6ed43953ae95"
     eigenVersion=3.4
     lemonVersion=1.3.1
-    lemonChecksum="e89f887559113b68657eca67cf3329b5"
     spdlogVersion=1.8.1
 
     # temp dir to download and compile
@@ -109,10 +108,8 @@ _installCommonDev() {
     lemonPrefix=${PREFIX:-"/usr/local"}
     if [[ -z $(grep "LEMON_VERSION \"${lemonVersion}\"" ${lemonPrefix}/include/lemon/config.h) ]]; then
         cd "${baseDir}"
-        wget http://lemon.cs.elte.hu/pub/sources/lemon-${lemonVersion}.tar.gz
-        md5sum -c <(echo "${lemonChecksum}  lemon-${lemonVersion}.tar.gz") || exit 1
-        tar -xf lemon-${lemonVersion}.tar.gz
-        cd lemon-${lemonVersion}
+        git clone -b ${lemonVersion} https://github.com/The-OpenROAD-Project/lemon-graph.git
+        cd lemon-graph
         ${cmakePrefix}/bin/cmake -DCMAKE_INSTALL_PREFIX="${lemonPrefix}" -B build .
         ${cmakePrefix}/bin/cmake --build build -j $(nproc) --target install
     else
@@ -191,7 +188,7 @@ _installUbuntuPackages() {
         libpcre3-dev \
         python3-dev \
         libreadline-dev \
-	libgtest-dev \
+        libgtest-dev \
         tcl-dev \
         tcllib \
         wget \
@@ -290,14 +287,14 @@ _installRHELPackages() {
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
-    	rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     fi
 
     yum -y install \
         qt5-qtbase-devel \
         qt5-qtimageformats \
         tcl-devel
-        
+
 }
 
 _installCentosCleanUp() {
