@@ -274,64 +274,6 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
                                   const int x2,
                                   const int y2,
                                   const int ripup_threshold,
-                                  const int netID,
-                                  const int edgeID)
-{
-  if (treeedge->len == 0) {
-    return false;
-  }  // not ripup for degraded edge
-
-  bool needRipup = false;
-
-  if (treeedge->route.type == RouteType::MazeRoute) {
-    const std::vector<short>& gridsX = treeedge->route.gridsX;
-    const std::vector<short>& gridsY = treeedge->route.gridsY;
-    for (int i = 0; i < treeedge->route.routelen; i++) {
-      if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
-        const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-        if (v_edges_[ymin][gridsX[i]].usage_red()
-            >= v_capacity_ - ripup_threshold) {
-          needRipup = true;
-          break;
-        }
-      } else if (gridsY[i] == gridsY[i + 1]) {  // a horizontal edge
-        const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-        if (h_edges_[gridsY[i]][xmin].usage_red()
-            >= h_capacity_ - ripup_threshold) {
-          needRipup = true;
-          break;
-        }
-      }
-    }
-
-    if (needRipup) {
-      const int edgeCost = nets_[netID]->getEdgeCost();
-
-      for (int i = 0; i < treeedge->route.routelen; i++) {
-        if (gridsX[i] == gridsX[i + 1]) {  // a vertical edge
-          const int ymin = std::min(gridsY[i], gridsY[i + 1]);
-          v_edges_[ymin][gridsX[i]].usage -= edgeCost;
-        } else {  /// if(gridsY[i]==gridsY[i+1])// a horizontal edge
-          const int xmin = std::min(gridsX[i], gridsX[i + 1]);
-          h_edges_[gridsY[i]][xmin].usage -= edgeCost;
-        }
-      }
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    printEdge(netID, edgeID);
-    logger_->error(GRT, 121, "Route type is not maze, netID {}.", netID);
-  }
-}
-
-bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
-                                  const int x1,
-                                  const int y1,
-                                  const int x2,
-                                  const int y2,
-                                  const int ripup_threshold,
                                   const float critical_slack,
                                   const int netID,
                                   const int edgeID)

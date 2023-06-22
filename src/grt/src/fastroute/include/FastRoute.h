@@ -416,15 +416,6 @@ class FastRouteCore
                      const int x2,
                      const int y2,
                      const int ripup_threshold,
-                     const int netID,
-                     const int edgeID);
-
-  bool newRipupCheck(const TreeEdge* treeedge,
-                     const int x1,
-                     const int y1,
-                     const int x2,
-                     const int y2,
-                     const int ripup_threshold,
                      const float critical_slack,
                      const int netID,
                      const int edgeID);
