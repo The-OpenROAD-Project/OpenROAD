@@ -1238,7 +1238,7 @@ RepairDesign::makeRepeater(const char *reason,
       // do not disconnect/reconnect don't touch instances
       if (resizer_->dontTouch(inst)) {
         continue;
-}
+      }
       sta_->disconnectPin(const_cast<Pin*>(pin));
       sta_->connectPin(inst, port, out_net);
     }
