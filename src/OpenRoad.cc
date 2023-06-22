@@ -378,7 +378,6 @@ void OpenRoad::writeLef(const char* filename)
 {
   auto libs = db_->getLibs();
   int num_libs = libs.size();
-  odb::lefout lef_writer(logger_);
   if (num_libs > 0) {
     if (num_libs > 1) {
       logger_->info(
@@ -390,14 +389,26 @@ void OpenRoad::writeLef(const char* filename)
       std::string name(filename);
       if (cnt > 0) {
         name += "_" + std::to_string(cnt);
-        lef_writer.writeLib(lib, name.c_str());
+        std::ofstream os;
+        os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+        os.open(name);
+        odb::lefout lef_writer(logger_, os);
+        lef_writer.writeLib(lib);
       } else {
-        lef_writer.writeTechAndLib(lib, name.c_str());
+        std::ofstream os;
+        os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+        os.open(name);
+        odb::lefout lef_writer(logger_, os);
+        lef_writer.writeTechAndLib(lib);
       }
       ++cnt;
     }
   } else if (db_->getTech()) {
-    lef_writer.writeTech(db_->getTech(), filename);
+    std::ofstream os;
+    os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+    os.open(filename);
+    odb::lefout lef_writer(logger_, os);
+    lef_writer.writeTech(db_->getTech());
   }
 }
 
