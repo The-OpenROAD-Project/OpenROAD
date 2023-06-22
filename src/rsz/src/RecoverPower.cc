@@ -128,7 +128,7 @@ RecoverPower::recoverPower()
     Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack > setup_slack_margin && end_slack < setup_slack_max_margin)  {
       ends_with_slack.push_back(end);
-      printf("XXXXXX the slack is %0.3g\n", end_slack);
+      // printf("XXXXXX the slack is %0.3g\n", end_slack);
     }
   }
 
@@ -306,7 +306,7 @@ RecoverPower::recoverPower(PathRef &path, Slack path_slack)
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
 
-      if (downsizeDrvr(drvr_path, drvr_index, &expanded, false)) {
+      if (downsizeDrvr(drvr_path, drvr_index, &expanded, false, path_slack)) {
         changed = true;
         break;
       }
@@ -320,7 +320,8 @@ bool
 RecoverPower::downsizeDrvr(PathRef *drvr_path,
                         int drvr_index,
                         PathExpanded *expanded,
-                        bool only_same_size_swap)
+                        bool only_same_size_swap,
+                        Slack path_slack)
 {
   Pin *drvr_pin = drvr_path->pin(this);
   Instance *drvr = network_->instance(drvr_pin);
@@ -330,7 +331,7 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
   PathRef *in_path = expanded->path(in_index);
   Pin *in_pin = in_path->pin(sta_);
   LibertyPort *in_port = network_->libertyPort(in_pin);
-  //printf("AAAAAAAAAAAAAAAAAAAAAA Trying %d\n", ++xxx);
+  // printf("AAAAAAAAAAAAAAAAAAAAAA Trying %d\n", ++xxx);
   if (!resizer_->dontTouch(drvr)) {
     float prev_drive;
     if (drvr_index >= 2) {
@@ -347,13 +348,14 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
       prev_drive = 0.0;
     LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
     LibertyCell *downsize = downsizeCell(in_port, drvr_port, load_cap,
-                                       prev_drive, dcalc_ap, only_same_size_swap);
-    if (downsize) {
+                                         prev_drive, dcalc_ap,
+                                         only_same_size_swap, path_slack);
+    if (downsize && !strstr(downsize->name(), "clk")) {
       debugPrint(logger_, RSZ, "recover_power", 3, "resize {} {} -> {}",
                  network_->pathName(drvr_pin),
                  drvr_port->libertyCell()->name(),
                  downsize->name());
-      printf("AAABBB resize %s %s ----> %s",network_->pathName(drvr_pin),
+      printf("AAABBB resize %s %s ----> %s\n",network_->pathName(drvr_pin),
              drvr_port->libertyCell()->name(),downsize->name());
       if (!resizer_->dontTouch(drvr)
           && resizer_->replaceCell(drvr, downsize, true)) {
@@ -382,11 +384,12 @@ RecoverPower::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
 
 LibertyCell *
 RecoverPower::downsizeCell(LibertyPort *in_port,
-                        LibertyPort *drvr_port,
-                        float load_cap,
-                        float prev_drive,
-                        const DcalcAnalysisPt *dcalc_ap,
-                        bool match_size)
+                           LibertyPort *drvr_port,
+                           float load_cap,
+                           float prev_drive,
+                           const DcalcAnalysisPt *dcalc_ap,
+                           bool match_size,
+                           Slack path_slack)
 {
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
@@ -413,20 +416,33 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
     float delay = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
       + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
 
+    float current_drive, best_drive = drive;
+    float current_delay, best_delay = delay;
+    LibertyCell *best_cell = nullptr;
     for (LibertyCell *equiv : *equiv_cells) {
       LibertyCell *equiv_corner = equiv->cornerCell(lib_ap);
       LibertyPort *equiv_drvr = equiv_corner->findLibertyPort(drvr_port_name);
       LibertyPort *equiv_input = equiv_corner->findLibertyPort(in_port_name);
-      float equiv_drive = equiv_drvr->driveResistance();
+      current_drive = equiv_drvr->driveResistance();
       // Include delay of previous driver into equiv gate.
-      float equiv_delay = resizer_->gateDelay(equiv_drvr, load_cap, dcalc_ap)
+      current_delay = resizer_->gateDelay(equiv_drvr, load_cap, dcalc_ap)
         + prev_drive * equiv_input->capacitance();
+
+      // 1e-9 was ok for margin for aes/sky130hd ... but we may need a more
+      // general rule. 5% of clock vs. 10% of clock or similar.
+      // TODO: Remove this hardcoding and make it a parameter.
       if (!resizer_->dontUse(equiv)
-          && equiv_drive > drive
-          && equiv_delay > delay
+          && current_drive > drive
+          && current_delay > delay
+          && (current_delay-best_delay) + 1-9 < path_slack // add margin
           && meetsSizeCriteria(cell, equiv, match_size)) {
-        return equiv;
+        best_delay = current_delay;
+        best_drive = current_drive;
+        best_cell = equiv;
       }
+    }
+    if (best_cell != nullptr) {
+      return best_cell;
     }
   }
   return nullptr;

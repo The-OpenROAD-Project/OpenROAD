@@ -91,17 +91,14 @@ private:
   bool recoverPower(PathRef &path,
                    Slack path_slack);
   bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,                           bool match_size);
-  bool downsizeDrvr(PathRef *drvr_path,
-                  int drvr_index,
-                  PathExpanded *expanded,
-                  bool only_same_size_swap);
+  bool downsizeDrvr(PathRef *drvr_path, int drvr_index,
+                    PathExpanded *expanded, bool only_same_size_swap,
+                    Slack path_slack);
 
-  LibertyCell *downsizeCell(LibertyPort *in_port,
-                          LibertyPort *drvr_port,
-                          float load_cap,
-                          float prev_drive,
+  LibertyCell *downsizeCell(LibertyPort *in_port, LibertyPort *drvr_port,
+                          float load_cap, float prev_drive,
                           const DcalcAnalysisPt *dcalc_ap,
-                          bool match_size);
+                          bool match_size,  Slack path_slack);
   int fanout(Vertex *vertex);
   bool hasTopLevelOutputPort(Net *net);
 
