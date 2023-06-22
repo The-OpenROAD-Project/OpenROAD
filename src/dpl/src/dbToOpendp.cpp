@@ -265,11 +265,10 @@ void Opendp::makeGroups()
           if (height == *(unique_heights.begin())) {
             bgBox bbox(
                 bgPoint(box.xMin(), box.yMin()),
-                bgPoint(
-                    box.xMax() - 1,
-                    box.yMax()
-                        - 1));  /// the -1 is to prevent imagianring overlaps
-                                /// where a region ends and another starts
+                bgPoint(box.xMax() - 1,
+                        box.yMax()
+                            - 1));  /// the -1 is to prevent imaginary overlaps
+                                    /// where a region ends and another starts
             regions_rtree.insert(bbox);
           }
           group.regions.push_back(box);
