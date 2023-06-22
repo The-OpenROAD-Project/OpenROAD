@@ -410,6 +410,7 @@ class FastRouteCore
                 const int x2,
                 const int y2,
                 const int netID);
+
   bool newRipupCheck(const TreeEdge* treeedge,
                      const int x1,
                      const int y1,

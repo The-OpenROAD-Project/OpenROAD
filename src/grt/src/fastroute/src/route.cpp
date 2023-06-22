@@ -1363,7 +1363,7 @@ void FastRouteCore::routeLVEnew(int netID,
   const int y2 = treenodes[n2].y;
 
   // ripup the original routing
-  if (!newRipupCheck(treeedge, x1, y1, x2, y2, threshold, std::numeric_limits<float>::min(), netID, edgeID)) {
+  if (!newRipupCheck(treeedge, x1, y1, x2, y2, threshold, 0, netID, edgeID)) {
     return;
   }
 
