@@ -401,6 +401,7 @@ void lefout::writeBlockTerms(dbBlock* db_block)
 
     std::string sig_type = "SIGNAL";
     switch (b_term->getSigType().getValue()) {
+      case odb::dbSigType::SIGNAL:
       case odb::dbSigType::SCAN:
       case odb::dbSigType::TIEOFF:
       case odb::dbSigType::RESET:
