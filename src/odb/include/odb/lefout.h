@@ -33,6 +33,8 @@
 #pragma once
 
 #include <boost/polygon/polygon.hpp>
+#include <ostream>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 
@@ -60,7 +62,6 @@ class dbProperty;
 
 class lefout
 {
-  FILE* _out;
   bool _use_master_ids;
   bool _use_alias;
   bool _write_marked_masters;
@@ -76,12 +77,12 @@ class lefout
   using ObstructionMap
       = std::map<dbTechLayer*, boost::polygon::polygon_90_set_data<int>>;
 
-  void writeTech(dbTech* tech);
+  void writeTechBody(dbTech* tech);
   void writeLayer(dbTechLayer* layer);
   void writeVia(dbTechVia* via);
   void writeHeader(dbLib* lib);
   void writeHeader(dbBlock* db_block);
-  void writeLib(dbLib* lib);
+  void writeLibBody(dbLib* lib);
   void writeMaster(dbMaster* master);
   void writeMTerm(dbMTerm* mterm);
   void writeSite(dbSite* site);
@@ -130,9 +131,8 @@ class lefout
 
   double lefarea(int value) { return ((double) value * _area_factor); }
 
-  lefout(utl::Logger* logger)
+  lefout(utl::Logger* logger, std::ostream& out) : _out(out)
   {
-    _out = nullptr;
     _write_marked_masters = _use_alias = _use_master_ids = false;
     _dist_factor = 0.001;
     _area_factor = 0.000001;
@@ -149,11 +149,14 @@ class lefout
   void setBloatFactor(int value) { bloat_factor_ = value; }
   void setBloatOccupiedLayers(bool value) { bloat_occupied_layers_ = value; }
 
-  bool writeTech(dbTech* tech, const char* lef_file);
-  bool writeLib(dbLib* lib, const char* lef_file);
-  bool writeTechAndLib(dbLib* lib, const char* lef_file);
-  bool writeAbstractLef(dbBlock* db_block, const char* lef_file);
+  void writeTech(dbTech* tech);
+  void writeLib(dbLib* lib);
+  void writeTechAndLib(dbLib* lib);
+  void writeAbstractLef(dbBlock* db_block);
 
-  FILE* out() { return _out; }
+  std::ostream& out() { return _out; }
+
+ protected:
+  std::ostream& _out;
 };
 }  // namespace odb
