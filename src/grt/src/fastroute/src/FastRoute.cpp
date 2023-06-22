@@ -687,7 +687,6 @@ NetRouteMap FastRouteCore::getRoutes()
 NetRouteMap FastRouteCore::getPartialRoutes()
 {
   NetRouteMap routes;
-  bool is_vertical = ((2 % 2) - layer_orientation_) != 0;
 
   for (int netID = 0; netID < netCount(); netID++) {
     auto fr_net = nets_[netID];
@@ -707,22 +706,25 @@ NetRouteMap FastRouteCore::getPartialRoutes()
         const std::vector<short>& gridsL = treeedge->route.gridsL;
         int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
         int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
-        int lastL_h;
-        int lastL_v;
+        int lastL;
+        // defines the layer used for vertical edges are still 2D
+        int layer_h = 0;
+        // defines the layer used for horizontal edges are still 2D
+        int layer_v = 0;
         if (gridsL.empty()) {
-          if (is_vertical) {
-            lastL_h = 1;
-            lastL_v = 2;
+          if (layer_orientation_ != 0) {
+            layer_h = 1;
+            layer_v = 2;
           } else {
-            lastL_h = 1;
-            lastL_v = 2;
+            layer_h = 1;
+            layer_v = 2;
           }
+          int second_x = tile_size_ * (gridsX[1] + 0.5) + x_corner_;
+          lastL = (lastX == second_x) ? layer_v : layer_h;
         } else {
-          lastL_h = gridsL[0];
-          lastL_v = gridsL[0];
+          lastL = gridsL[0];
         }
-        int second_x = tile_size_ * (gridsX[1] + 0.5) + x_corner_;
-        int last_dir = (lastX == second_x) ? 1 : 2;
+
         for (int i = 1; i <= routeLen; i++) {
           const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
           const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
@@ -730,37 +732,35 @@ NetRouteMap FastRouteCore::getPartialRoutes()
           if (gridsL.empty()) {
             if (lastX == xreal) {
               // if change direction add a via to change the layer
-              if (last_dir == 2) {
+              if (lastL == layer_h) {
                 segment = GSegment(
-                    lastX, lastY, lastL_h + 1, lastX, lastY, lastL_v + 1);
+                    lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
                 if (net_segs.find(segment) == net_segs.end()) {
                   net_segs.insert(segment);
                   route.push_back(segment);
                 }
               }
-
-              segment = GSegment(
-                  lastX, lastY, lastL_v + 1, xreal, yreal, lastL_v + 1);
-              last_dir = 1;
+              lastL = layer_v;
+              segment
+                  = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
             } else {
               // if change direction add a via to change the layer
-              if (last_dir == 1) {
+              if (lastL == layer_v) {
                 segment = GSegment(
-                    lastX, lastY, lastL_v + 1, lastX, lastY, lastL_h + 1);
+                    lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
                 if (net_segs.find(segment) == net_segs.end()) {
                   net_segs.insert(segment);
                   route.push_back(segment);
                 }
               }
-
-              segment = GSegment(
-                  lastX, lastY, lastL_h + 1, xreal, yreal, lastL_h + 1);
-              last_dir = 2;
+              lastL = layer_h;
+              segment
+                  = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
             }
           } else {
             segment = GSegment(
-                lastX, lastY, lastL_v + 1, xreal, yreal, gridsL[i] + 1);
-            lastL_v = gridsL[i];
+                lastX, lastY, lastL + 1, xreal, yreal, gridsL[i] + 1);
+            lastL = gridsL[i];
           }
           lastX = xreal;
           lastY = yreal;
