@@ -42,7 +42,7 @@ make_tracks
 make_fake_io_site -name IO_HSITE -width 1 -height 200
 make_fake_io_site -name IO_VSITE -width 1 -height 200
 make_fake_io_site -name IO_CSITE -width 200 -height 204
-make_io_sites -horizontal_site IO_HSITE -vertical_site IO_VSITE -corner_site IO_CSITE -offset 0 -rotation R180
+make_io_sites -horizontal_site IO_HSITE -vertical_site IO_VSITE -corner_site IO_CSITE -offset 0 -rotation_horizontal R180 -rotation_vertical R180 -rotation_corner R180
 
 ######## Place Pads ########
 place_pad -master sky130_ef_io__connect_vcchib_vccd_and_vswitch_vddio_slice_20um -row IO_SOUTH -location 257.0 {connect_0}

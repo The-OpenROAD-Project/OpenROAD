@@ -249,7 +249,9 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                         int north_offset,
                         int east_offset,
                         int south_offset,
-                        const odb::dbOrientType& rotation,
+                        const odb::dbOrientType& rotation_hor,
+                        const odb::dbOrientType& rotation_ver,
+                        const odb::dbOrientType& rotation_cor,
                         int ring_index)
 {
   auto* block = getBlock();
@@ -293,20 +295,18 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                                  outer_io.xMax() - cwidth,
                                  outer_io.yMax() - cheight);
 
-  const odb::dbTransform xform(rotation);
-
   // Create corners
   const int corner_sites
       = std::max(horizontal_site->getHeight(), corner_site->getWidth())
         / corner_site->getWidth();
   auto create_corner
-      = [this, block, corner_site, corner_sites, ring_index, &xform](
+      = [this, block, corner_site, corner_sites, ring_index, &rotation_cor](
             const std::string& name,
             const odb::Point& origin,
             const odb::dbOrientType& orient) -> odb::dbRow* {
     const std::string row_name = getRowName(name, ring_index);
     odb::dbTransform rotation(orient);
-    rotation.concat(xform);
+    rotation.concat(rotation_cor);
     return odb::dbRow::create(block,
                               row_name.c_str(),
                               corner_site,
@@ -327,15 +327,16 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
 
   // Create rows
   auto create_row
-      = [this, block, ring_index, &xform](const std::string& name,
-                                          odb::dbSite* site,
-                                          int sites,
-                                          const odb::Point& origin,
-                                          const odb::dbOrientType& orient,
-                                          const odb::dbRowDir& direction) {
+      = [this, block, ring_index](const std::string& name,
+                                  odb::dbSite* site,
+                                  int sites,
+                                  const odb::Point& origin,
+                                  const odb::dbOrientType& orient,
+                                  const odb::dbOrientType& row_rotation,
+                                  const odb::dbRowDir& direction) {
           const std::string row_name = getRowName(name, ring_index);
           odb::dbTransform rotation(orient);
-          rotation.concat(xform);
+          rotation.concat(row_rotation);
           odb::dbRow::create(block,
                              row_name.c_str(),
                              site,
@@ -352,6 +353,7 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
              {nw->getBBox().xMax(),
               outer_io.yMax() - static_cast<int>(vertical_site->getHeight())},
              odb::dbOrientType::MX,
+             rotation_ver,
              odb::dbRowDir::HORIZONTAL);
   create_row(row_east_,
              horizontal_site,
@@ -359,18 +361,21 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
              {outer_io.xMax() - static_cast<int>(horizontal_site->getHeight()),
               se->getBBox().yMax()},
              odb::dbOrientType::R90,
+             rotation_hor,
              odb::dbRowDir::VERTICAL);
   create_row(row_south_,
              vertical_site,
              x_sites,
              {sw->getBBox().xMax(), outer_io.yMin()},
              odb::dbOrientType::R0,
+             rotation_ver,
              odb::dbRowDir::HORIZONTAL);
   create_row(row_west_,
              horizontal_site,
              y_sites,
              {outer_io.xMin(), sw->getBBox().yMax()},
              odb::dbOrientType::MXR90,
+             rotation_hor,
              odb::dbRowDir::VERTICAL);
 }
 

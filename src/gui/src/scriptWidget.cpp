@@ -380,7 +380,11 @@ class ScriptWidget::GuiSink : public spdlog::sinks::base_sink<Mutex>
     // process widget event queue, if main thread will process new text,
     // otherwise there is nothing to process from this thread.
     if (QThread::currentThread() == widget_->thread()) {
-      QCoreApplication::sendPostedEvents(widget_);
+      if (!formatted_msg.contains("XcbConnection")) {
+        // there is a slim chance of a deadlock if we update the GUI
+        // from within a Qt error handler.
+        QCoreApplication::sendPostedEvents(widget_);
+      }
     }
   }
 

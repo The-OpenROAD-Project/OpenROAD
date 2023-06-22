@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2012 - 2017, Cadence Design Systems
+// Copyright 2012 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -35,30 +35,38 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
+const char* lefrSettings::lefOxides[] = {
+    "OXIDE1",  "OXIDE2",  "OXIDE3",  "OXIDE4",  "OXIDE5",  "OXIDE6",  "OXIDE7",
+    "OXIDE8",  "OXIDE9",  "OXIDE10", "OXIDE11", "OXIDE12", "OXIDE13", "OXIDE14",
+    "OXIDE15", "OXIDE16", "OXIDE17", "OXIDE18", "OXIDE19", "OXIDE20", "OXIDE21",
+    "OXIDE22", "OXIDE23", "OXIDE24", "OXIDE25", "OXIDE26", "OXIDE27", "OXIDE28",
+    "OXIDE29", "OXIDE30", "OXIDE31", "OXIDE32"};
+
 lefrSettings* lefSettings = NULL;
 
 lefrSettings::lefrSettings()
-    : CommentChar('#'),
-      VersionNum(0.0),
-      DisPropStrProcess(0),
-      CaseSensitive(FALSE),
-      CaseSensitiveSet(FALSE),
-      DeltaNumberLines(10000),
+    : LineNumberFunction(0),
+      ReadFunction(0),
       AntennaInoutWarnings(999),
       AntennaInputWarnings(999),
       AntennaOutputWarnings(999),
       ArrayWarnings(999),
+      CaseSensitive(FALSE),
+      CaseSensitiveSet(FALSE),
       CaseSensitiveWarnings(999),
+      CommentChar('#'),
       CorrectionTableWarnings(999),
+      DeltaNumberLines(10000),
       DielectricWarnings(999),
+      DisPropStrProcess(0),
       EdgeRateScaleFactorWarnings(999),
       EdgeRateThreshold1Warnings(999),
       EdgeRateThreshold2Warnings(999),
       IRDropWarnings(999),
       InoutAntennaWarnings(999),
       InputAntennaWarnings(999),
-      LineNumberFunction(0),
       LayerWarnings(999),
+      LogFileAppend(0),
       MacroWarnings(999),
       MaxStackViaWarnings(999),
       MinFeatureWarnings(999),
@@ -68,7 +76,6 @@ lefrSettings::lefrSettings()
       NonDefaultWarnings(999),
       OutputAntennaWarnings(999),
       PinWarnings(999),
-      ReadFunction(0),
       ReadEncrypted(0),
       RegisterUnused(0),
       RelaxMode(FALSE),
@@ -76,20 +83,20 @@ lefrSettings::lefrSettings()
       SiteWarnings(999),
       SpacingWarnings(999),
       TimingWarnings(999),
+      TotalMsgLimit(0),
       UnitsWarnings(999),
       UseMinSpacingWarnings(999),
       ViaRuleWarnings(999),
       ViaWarnings(999),
-      LogFileAppend(0),
-      TotalMsgLimit(0),
       UserData(NULL),
+      dAllMsgs(0),
+      VersionNum(0.0),
       MallocFunction(0),
       ReallocFunction(0),
       FreeFunction(0),
       ErrorLogFunction(0),
       SetLogFunction(0),
-      WarningLogFunction(0),
-      dAllMsgs(0)
+      WarningLogFunction(0)
 {
   memset(MsgLimit, 0, MAX_LEF_MSGS * sizeof(int));
   init_symbol_table();
@@ -97,17 +104,17 @@ lefrSettings::lefrSettings()
   // Define LEF58_TYPE values and dependences here:
 
   // Popular layer groups.
-  const char* polyroutingLayers[] = {"ROUTING", ""};
+  const char* routingOnly[] = {"ROUTING", ""};
   const char* mimcapLayers[] = {"ROUTING", "CUT", ""};
-  const char* tsvLayers[] = {"CUT", ""};
+  const char* cutOnly[] = {"CUT", ""};
   const char* mastersliceOnly[] = {"MASTERSLICE", ""};
   const char* wellLayers[] = {"MASTERSLICE", "OVERLAP", ""};
 
   // Register LEF58 types and allowed layer types pairs.
-  addLef58Type("POLYROUTING", polyroutingLayers);
+  addLef58Type("POLYROUTING", routingOnly);
   addLef58Type("MIMCAP", mimcapLayers);
-  addLef58Type("TSV", tsvLayers);
-  addLef58Type("PASSIVATION", tsvLayers);
+  addLef58Type("TSV", cutOnly);
+  addLef58Type("PASSIVATION", cutOnly);
   addLef58Type("TRIMPOLY", mastersliceOnly);
   addLef58Type("NWELL", wellLayers);
   addLef58Type("PWELL", wellLayers);
@@ -116,6 +123,15 @@ lefrSettings::lefrSettings()
   addLef58Type("DIFFUSION", wellLayers);
   addLef58Type("TRIMMETAL", wellLayers);
   addLef58Type("MEOL", mastersliceOnly);
+  addLef58Type("PADMETAL", routingOnly);
+  addLef58Type("TSVMETAL", routingOnly);
+  addLef58Type("STACKEDMIMCAP", routingOnly);
+  addLef58Type("SPECIALCUT", cutOnly);
+  addLef58Type("WELLDISTANCE", mastersliceOnly);
+  addLef58Type("CPODE", mastersliceOnly);
+  addLef58Type("RCBLOCKAGE", mastersliceOnly);
+  addLef58Type("ABUTFILLER", mastersliceOnly);
+  addLef58Type("ABUTLOGIC", mastersliceOnly);
 }
 
 void lefrSettings::reset()
@@ -398,6 +414,34 @@ void lefrSettings::init_symbol_table()
   Keyword_set["OXIDE2"] = K_OXIDE2;
   Keyword_set["OXIDE3"] = K_OXIDE3;
   Keyword_set["OXIDE4"] = K_OXIDE4;
+  Keyword_set["OXIDE5"] = K_OXIDE5;
+  Keyword_set["OXIDE6"] = K_OXIDE6;
+  Keyword_set["OXIDE7"] = K_OXIDE7;
+  Keyword_set["OXIDE8"] = K_OXIDE8;
+  Keyword_set["OXIDE9"] = K_OXIDE9;
+  Keyword_set["OXIDE10"] = K_OXIDE10;
+  Keyword_set["OXIDE11"] = K_OXIDE11;
+  Keyword_set["OXIDE12"] = K_OXIDE12;
+  Keyword_set["OXIDE13"] = K_OXIDE13;
+  Keyword_set["OXIDE14"] = K_OXIDE14;
+  Keyword_set["OXIDE15"] = K_OXIDE15;
+  Keyword_set["OXIDE16"] = K_OXIDE16;
+  Keyword_set["OXIDE17"] = K_OXIDE17;
+  Keyword_set["OXIDE18"] = K_OXIDE18;
+  Keyword_set["OXIDE19"] = K_OXIDE19;
+  Keyword_set["OXIDE20"] = K_OXIDE20;
+  Keyword_set["OXIDE21"] = K_OXIDE21;
+  Keyword_set["OXIDE22"] = K_OXIDE22;
+  Keyword_set["OXIDE23"] = K_OXIDE23;
+  Keyword_set["OXIDE24"] = K_OXIDE24;
+  Keyword_set["OXIDE25"] = K_OXIDE25;
+  Keyword_set["OXIDE26"] = K_OXIDE26;
+  Keyword_set["OXIDE27"] = K_OXIDE27;
+  Keyword_set["OXIDE28"] = K_OXIDE28;
+  Keyword_set["OXIDE29"] = K_OXIDE29;
+  Keyword_set["OXIDE30"] = K_OXIDE30;
+  Keyword_set["OXIDE31"] = K_OXIDE31;
+  Keyword_set["OXIDE32"] = K_OXIDE32;
   Keyword_set["PAD"] = K_PAD;
   Keyword_set["PARALLELEDGE"] = K_PARALLELEDGE;
   Keyword_set["PARALLELOVERLAP"] = K_PARALLELOVERLAP;

@@ -620,8 +620,8 @@ int arrayCB(lefrCallbackType_e c, lefiArray* a, lefiUserData ud)
                 chkNum(pattern->x()),
                 chkNum(pattern->y()),
                 lefiOrientStr(pattern->orient()),
-                pattern->xStart(),
-                pattern->yStart(),
+                (int) pattern->xStart(),
+                (int) pattern->yStart(),
                 chkNum(pattern->xStep()),
                 chkNum(pattern->yStep()));
       }

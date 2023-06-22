@@ -1,6 +1,6 @@
 // *****************************************************************************
 // *****************************************************************************
-// Copyright 2012 - 2017, Cadence Design Systems
+// Copyright 2012 - 2019, Cadence Design Systems
 //
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
 // Distribution,  Product Version 5.8.
@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -35,6 +35,7 @@
 #include "lefiDebug.hpp"
 #include "lefiMisc.hpp"
 #include "lefiUtil.hpp"
+#include "lefrSettings.hpp"
 #include "lex.h"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
@@ -53,18 +54,6 @@ void lefiObstruction::Init()
   geometries_ = 0;
 }
 
-LEF_COPY_CONSTRUCTOR_C(lefiObstruction) : geometries_(NULL)
-{
-  LEF_MALLOC_FUNC(geometries_, lefiGeometries, sizeof(lefiGeometries) * 1);
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiObstruction)
-{
-  CHECK_SELF_ASSIGN
-  LEF_MALLOC_FUNC(geometries_, lefiGeometries, sizeof(lefiGeometries) * 1);
-  return *this;
-}
-
 lefiObstruction::~lefiObstruction()
 {
   Destroy();
@@ -77,10 +66,10 @@ void lefiObstruction::Destroy()
 
 void lefiObstruction::clear()
 {
-  //    if (geometries_) {
-  //        geometries_->Destroy();
-  //        lefFree((char*) (geometries_));
-  //    }
+  if (geometries_) {
+    geometries_->Destroy();
+    lefFree((char*) (geometries_));
+  }
   geometries_ = 0;
 }
 
@@ -103,6 +92,204 @@ void lefiObstruction::print(FILE* f) const
 
   g = geometries_;
   g->print(f);
+}
+
+// *****************************************************************************
+// lefiDensity
+// *****************************************************************************
+
+lefiDensity::lefiDensity()
+    : numLayers_(0),
+      layersAllocated_(0),
+      layerName_(NULL),
+      numRects_(NULL),
+      rectsAllocated_(NULL),
+      rects_(NULL),
+      densityValue_(NULL)
+{
+  Init();
+}
+
+void lefiDensity::Init()
+{
+  numLayers_ = 0;
+  layersAllocated_ = 0;
+}
+
+lefiDensity::~lefiDensity()
+{
+  Destroy();
+}
+
+void lefiDensity::Destroy()
+{
+  clear();
+}
+
+void lefiDensity::clear()
+{
+  for (int i = 0; i < numLayers_; i++) {
+    lefFree(layerName_[i]);
+    lefFree((char*) rects_[i]);
+    lefFree((char*) densityValue_[i]);
+    numRects_[i] = 0;
+    rectsAllocated_[i] = 0;
+  }
+  lefFree(layerName_);
+  lefFree((char*) (rects_));
+  lefFree((char*) (densityValue_));
+  lefFree((char*) (numRects_));
+  lefFree((char*) (rectsAllocated_));
+  layerName_ = 0;
+  numLayers_ = 0;
+  layersAllocated_ = 0;
+  numRects_ = 0;
+  rects_ = 0;
+  densityValue_ = 0;
+  rectsAllocated_ = 0;
+}
+
+void lefiDensity::addLayer(const char* name)
+{
+  if (numLayers_ == layersAllocated_) {
+    int i;
+    char** ln;          // layerName
+    int* nr;            // number of rect within the layer
+    int* ra;            // number of rect allocated within the layer
+    lefiGeomRect** rs;  // rect value
+    double** dv;        // density value
+
+    layersAllocated_ = (layersAllocated_ == 0) ? 2 : layersAllocated_ * 2;
+    ln = (char**) lefMalloc(sizeof(char*) * layersAllocated_);
+    nr = (int*) lefMalloc(sizeof(int) * layersAllocated_);
+    ra = (int*) lefMalloc(sizeof(int) * layersAllocated_);
+    rs = (lefiGeomRect**) lefMalloc(sizeof(lefiGeomRect*) * layersAllocated_);
+    dv = (double**) lefMalloc(sizeof(double*) * layersAllocated_);
+    for (i = 0; i < numLayers_; i++) {
+      ln[i] = layerName_[i];
+      nr[i] = numRects_[i];
+      ra[i] = rectsAllocated_[i];
+      rs[i] = rects_[i];
+      dv[i] = densityValue_[i];
+    }
+
+    lefFree((char*) (layerName_));
+    lefFree((char*) (rects_));
+    lefFree((char*) (densityValue_));
+    lefFree((char*) (numRects_));
+    lefFree((char*) (rectsAllocated_));
+
+    layerName_ = ln;
+    numRects_ = nr;
+    rectsAllocated_ = ra;
+    rects_ = rs;
+    densityValue_ = dv;
+  }
+  layerName_[numLayers_] = strdup(name);
+  numRects_[numLayers_] = 0;
+  rectsAllocated_[numLayers_] = 0;
+  rects_[numLayers_] = 0;
+  densityValue_[numLayers_] = 0;
+  numLayers_ += 1;
+}
+
+void lefiDensity::addRect(double x1,
+                          double y1,
+                          double x2,
+                          double y2,
+                          double value)
+{
+  if (numRects_[numLayers_ - 1] == rectsAllocated_[numLayers_ - 1]) {
+    lefiGeomRect *rs, *ors;
+    double *dv, *odv;
+    int i;
+
+    rectsAllocated_[numLayers_ - 1] = (rectsAllocated_[numLayers_ - 1] == 0)
+                                          ? 2
+                                          : rectsAllocated_[numLayers_ - 1] * 2;
+
+    rs = (lefiGeomRect*) lefMalloc(sizeof(lefiGeomRect)
+                                   * rectsAllocated_[numLayers_ - 1]);
+    dv = (double*) lefMalloc(sizeof(double) * rectsAllocated_[numLayers_ - 1]);
+
+    if (numRects_[numLayers_ - 1] > 0) {
+      ors = rects_[numLayers_ - 1];
+      odv = densityValue_[numLayers_ - 1];
+      for (i = 0; i < numRects_[numLayers_ - 1]; i++) {
+        rs[i] = ors[i];  // assign data from old rect & density value to
+        dv[i] = odv[i];  // new, larger array
+      }
+
+      lefFree((char*) rects_[numLayers_ - 1]);
+      lefFree((char*) densityValue_[numLayers_ - 1]);
+    }
+
+    rects_[numLayers_ - 1] = rs;
+    densityValue_[numLayers_ - 1] = dv;
+  }
+
+  lefiGeomRect p;
+
+  p.xl = x1;
+  p.yl = y1;
+  p.xh = x2;
+  p.yh = y2;
+  p.colorMask = 0;
+
+  rects_[numLayers_ - 1][numRects_[numLayers_ - 1]] = p;
+  densityValue_[numLayers_ - 1][numRects_[numLayers_ - 1]] = value;
+  numRects_[numLayers_ - 1] += 1;
+}
+
+int lefiDensity::numLayer() const
+{
+  return numLayers_;
+}
+
+char* lefiDensity::layerName(int index) const
+{
+  return layerName_[index];
+}
+
+int lefiDensity::numRects(int index) const
+{
+  return numRects_[index];
+}
+
+lefiGeomRect lefiDensity::getRect(int index, int rectIndex) const
+{
+  lefiGeomRect* rs;
+
+  rs = rects_[index];
+  return rs[rectIndex];
+}
+
+double lefiDensity::densityValue(int index, int rectIndex) const
+{
+  double* dv;
+
+  dv = densityValue_[index];
+  return dv[rectIndex];
+}
+
+void lefiDensity::print(FILE* f) const
+{
+  int i, j;
+
+  // 11/8/2004 - Added feed back from users
+  fprintf(f, "  DENSITY\n");
+  for (i = 0; i < numLayers_; i++) {
+    fprintf(f, "    LAYER %s\n", layerName_[i]);
+    for (j = 0; j < numRects_[i]; j++) {
+      fprintf(f,
+              "      RECT %g %g %g %g ",
+              rects_[i][j].xl,
+              rects_[i][j].yl,
+              rects_[i][j].xh,
+              rects_[i][j].yh);
+      fprintf(f, "%g\n", densityValue_[i][j]);
+    }
+  }
 }
 
 // *****************************************************************************
@@ -134,6 +321,8 @@ lefiPinAntennaModel::lefiPinAntennaModel()
 
 void lefiPinAntennaModel::Init()
 {
+  clear();
+
   numAntennaGateArea_ = 0;
   antennaGateAreaAllocated_ = 1;
   antennaGateArea_ = (double*) lefMalloc(sizeof(double));
@@ -158,114 +347,7 @@ void lefiPinAntennaModel::Init()
   hasReturn_ = 0;
 }
 
-LEF_COPY_CONSTRUCTOR_C(lefiPinAntennaModel)
-    : oxide_(NULL),
-      hasReturn_(0),
-      numAntennaGateArea_(0),
-      antennaGateAreaAllocated_(0),
-      antennaGateArea_(NULL),
-      antennaGateAreaLayer_(NULL),
-      numAntennaMaxAreaCar_(0),
-      antennaMaxAreaCarAllocated_(0),
-      antennaMaxAreaCar_(NULL),
-      antennaMaxAreaCarLayer_(NULL),
-      numAntennaMaxSideAreaCar_(0),
-      antennaMaxSideAreaCarAllocated_(0),
-      antennaMaxSideAreaCar_(NULL),
-      antennaMaxSideAreaCarLayer_(NULL),
-      numAntennaMaxCutCar_(0),
-      antennaMaxCutCarAllocated_(0),
-      antennaMaxCutCar_(NULL),
-      antennaMaxCutCarLayer_(NULL)
-{
-  LEF_MALLOC_FUNC(oxide_, char, sizeof(char) * (strlen(prev.oxide_) + 1));
-  LEF_COPY_FUNC(hasReturn_);
-  LEF_COPY_FUNC(numAntennaGateArea_);
-  LEF_COPY_FUNC(antennaGateAreaAllocated_);
-  LEF_MALLOC_FUNC(
-      antennaGateArea_, double, sizeof(double) * numAntennaGateArea_);
-
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaGateAreaLayer_, antennaGateAreaAllocated_);
-
-  LEF_COPY_FUNC(numAntennaMaxAreaCar_);
-  LEF_COPY_FUNC(antennaMaxAreaCarAllocated_);
-  LEF_MALLOC_FUNC(
-      antennaMaxAreaCar_, double, sizeof(double) * numAntennaMaxAreaCar_);
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaMaxAreaCarLayer_, numAntennaMaxAreaCar_);
-
-  LEF_COPY_FUNC(numAntennaMaxSideAreaCar_);
-  LEF_COPY_FUNC(antennaMaxSideAreaCarAllocated_);
-  LEF_MALLOC_FUNC(antennaMaxSideAreaCar_,
-                  double,
-                  sizeof(double) * numAntennaMaxSideAreaCar_);
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaMaxSideAreaCarLayer_,
-                             numAntennaMaxSideAreaCar_);
-
-  LEF_COPY_FUNC(numAntennaMaxCutCar_);
-  LEF_COPY_FUNC(antennaMaxCutCarAllocated_);
-  LEF_MALLOC_FUNC(
-      antennaMaxCutCar_, double, sizeof(double) * numAntennaMaxCutCar_);
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaMaxCutCarLayer_, numAntennaMaxCutCar_);
-}
-
-LEF_ASSIGN_OPERATOR_C(lefiPinAntennaModel)
-{
-  CHECK_SELF_ASSIGN
-  oxide_ = 0;
-  antennaGateArea_ = 0;
-  antennaGateAreaLayer_ = 0;
-  antennaMaxAreaCar_ = 0;
-  antennaMaxAreaCarLayer_ = 0;
-  antennaMaxSideAreaCar_ = 0;
-  antennaMaxSideAreaCarLayer_ = 0;
-  antennaMaxCutCar_ = 0;
-  antennaMaxCutCarLayer_ = 0;
-
-  LEF_MALLOC_FUNC(oxide_, char, sizeof(char) * (strlen(prev.oxide_) + 1));
-  LEF_COPY_FUNC(hasReturn_);
-  LEF_COPY_FUNC(numAntennaGateArea_);
-  LEF_COPY_FUNC(antennaGateAreaAllocated_);
-  LEF_MALLOC_FUNC(
-      antennaGateArea_, double, sizeof(double) * numAntennaGateArea_);
-
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaGateAreaLayer_, numAntennaGateArea_);
-
-  LEF_COPY_FUNC(numAntennaMaxAreaCar_);
-  LEF_COPY_FUNC(antennaMaxAreaCarAllocated_);
-  LEF_MALLOC_FUNC(
-      antennaMaxAreaCar_, double, sizeof(double) * numAntennaMaxAreaCar_);
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaMaxAreaCarLayer_, numAntennaMaxAreaCar_);
-
-  LEF_COPY_FUNC(numAntennaMaxSideAreaCar_);
-  LEF_COPY_FUNC(antennaMaxSideAreaCarAllocated_);
-  LEF_MALLOC_FUNC(antennaMaxSideAreaCar_,
-                  double,
-                  sizeof(double) * numAntennaMaxSideAreaCar_);
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaMaxSideAreaCarLayer_,
-                             numAntennaMaxSideAreaCar_);
-
-  LEF_COPY_FUNC(numAntennaMaxCutCar_);
-  LEF_COPY_FUNC(antennaMaxCutCarAllocated_);
-  LEF_MALLOC_FUNC(
-      antennaMaxCutCar_, double, sizeof(double) * numAntennaMaxCutCar_);
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaMaxCutCarLayer_, numAntennaMaxCutCar_);
-  return *this;
-}
-
 lefiPinAntennaModel::~lefiPinAntennaModel()
-{
-  Destroy();
-}
-
-void lefiPinAntennaModel::Destroy()
 {
   clear();
 }
@@ -274,74 +356,77 @@ void lefiPinAntennaModel::clear()
 {
   int i;
 
-  if (oxide_)
+  if (oxide_) {
     lefFree((char*) (oxide_));
-  else  // did not declare
-    return;
-  oxide_ = 0;
-  hasReturn_ = 0;
-
-  for (i = 0; i < numAntennaGateArea_; i++) {
-    if (antennaGateAreaLayer_[i])
-      lefFree(antennaGateAreaLayer_[i]);
+    oxide_ = 0;
+    hasReturn_ = 0;
   }
-  numAntennaGateArea_ = 0;
 
-  for (i = 0; i < numAntennaMaxAreaCar_; i++) {
-    if (antennaMaxAreaCarLayer_[i])
-      lefFree(antennaMaxAreaCarLayer_[i]);
-  }
-  numAntennaMaxAreaCar_ = 0;
+  if (antennaGateAreaLayer_) {
+    for (i = 0; i < numAntennaGateArea_; i++) {
+      if (antennaGateAreaLayer_[i])
+        lefFree(antennaGateAreaLayer_[i]);
+    }
 
-  for (i = 0; i < numAntennaMaxSideAreaCar_; i++) {
-    if (antennaMaxSideAreaCarLayer_[i])
-      lefFree(antennaMaxSideAreaCarLayer_[i]);
+    numAntennaGateArea_ = 0;
+    lefFree((char*) (antennaGateAreaLayer_));
+    antennaGateAreaLayer_ = NULL;
   }
-  numAntennaMaxSideAreaCar_ = 0;
 
-  for (i = 0; i < numAntennaMaxCutCar_; i++) {
-    if (antennaMaxCutCarLayer_[i])
-      lefFree(antennaMaxCutCarLayer_[i]);
+  if (antennaMaxAreaCarLayer_) {
+    for (i = 0; i < numAntennaMaxAreaCar_; i++) {
+      if (antennaMaxAreaCarLayer_[i])
+        lefFree(antennaMaxAreaCarLayer_[i]);
+    }
+    numAntennaMaxAreaCar_ = 0;
+    lefFree((char*) (antennaMaxAreaCarLayer_));
+    antennaMaxAreaCarLayer_ = NULL;
   }
-  numAntennaMaxCutCar_ = 0;
+
+  if (antennaMaxSideAreaCarLayer_) {
+    for (i = 0; i < numAntennaMaxSideAreaCar_; i++) {
+      if (antennaMaxSideAreaCarLayer_[i])
+        lefFree(antennaMaxSideAreaCarLayer_[i]);
+    }
+    numAntennaMaxSideAreaCar_ = 0;
+    lefFree((char*) (antennaMaxSideAreaCarLayer_));
+    antennaMaxSideAreaCarLayer_ = NULL;
+  }
+
+  if (antennaMaxCutCarLayer_) {
+    for (i = 0; i < numAntennaMaxCutCar_; i++) {
+      if (antennaMaxCutCarLayer_[i])
+        lefFree(antennaMaxCutCarLayer_[i]);
+    }
+    numAntennaMaxCutCar_ = 0;
+    lefFree((char*) (antennaMaxCutCarLayer_));
+    antennaMaxCutCarLayer_ = NULL;
+  }
+
   lefFree((char*) (antennaGateArea_));
-  lefFree((char*) (antennaGateAreaLayer_));
-  lefFree((char*) (antennaMaxAreaCar_));
-  lefFree((char*) (antennaMaxAreaCarLayer_));
-  lefFree((char*) (antennaMaxSideAreaCar_));
-  lefFree((char*) (antennaMaxSideAreaCarLayer_));
-  lefFree((char*) (antennaMaxCutCar_));
-  lefFree((char*) (antennaMaxCutCarLayer_));
+  antennaGateArea_ = NULL;
 
-  antennaGateArea_ = 0;
-  antennaGateAreaLayer_ = 0;
-  antennaMaxAreaCar_ = 0;
-  antennaMaxAreaCarLayer_ = 0;
-  antennaMaxSideAreaCar_ = 0;
-  antennaMaxSideAreaCarLayer_ = 0;
-  antennaMaxCutCar_ = 0;
-  antennaMaxCutCarLayer_ = 0;
+  lefFree((char*) (antennaMaxAreaCar_));
+  antennaMaxAreaCar_ = NULL;
+
+  lefFree((char*) (antennaMaxSideAreaCar_));
+  antennaMaxSideAreaCar_ = NULL;
+
+  lefFree((char*) (antennaMaxCutCar_));
+  antennaMaxCutCar_ = NULL;
 }
 
 // 5.5
 void lefiPinAntennaModel::setAntennaModel(int aOxide)
 {
-  switch (aOxide) {
-    case 1:
-      oxide_ = strdup("OXIDE1");
-      break;
-    case 2:
-      oxide_ = strdup("OXIDE2");
-      break;
-    case 3:
-      oxide_ = strdup("OXIDE3");
-      break;
-    case 4:
-      oxide_ = strdup("OXIDE4");
-      break;
-    default:
-      oxide_ = NULL;
-      break;
+  if (oxide_) {
+    free(oxide_);
+  }
+
+  if (aOxide < 1 || aOxide > lefMaxOxides) {
+    oxide_ = NULL;
+  } else {
+    oxide_ = strdup(lefrSettings::lefOxides[aOxide - 1]);
   }
 }
 
@@ -663,7 +748,7 @@ lefiPin::lefiPin()
       numAntennaModel_(0),
       antennaModelAllocated_(0),
       curAntennaModelIndex_(0),
-      antennaModel_(NULL),
+      pinAntennaModel_(NULL),
       numAntennaSize_(0),
       antennaSizeAllocated_(0),
       antennaSize_(NULL),
@@ -727,7 +812,7 @@ void lefiPin::Init()
   lowTable_ = 0;
   highTable_ = 0;
   taperRule_ = 0;
-  antennaModel_ = 0;
+  pinAntennaModel_ = 0;
   numAntennaModel_ = 0;
   netEpxr_ = 0;
   ssPinName_ = 0;
@@ -772,305 +857,6 @@ void lefiPin::Init()
   antennaDiffAreaAllocated_ = 1;
   antennaDiffArea_ = (double*) lefMalloc(sizeof(double));
   antennaDiffAreaLayer_ = (char**) lefMalloc(sizeof(char*));
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiPin)
-    : nameSize_(0),
-      name_(NULL),
-      hasLEQ_(0),
-      hasDirection_(0),
-      hasUse_(0),
-      hasShape_(0),
-      hasMustjoin_(0),
-      hasOutMargin_(0),
-      hasOutResistance_(0),
-      hasInMargin_(0),
-      hasPower_(0),
-      hasLeakage_(0),
-      hasMaxload_(0),
-      hasMaxdelay_(0),
-      hasCapacitance_(0),
-      hasResistance_(0),
-      hasPulldownres_(0),
-      hasTieoffr_(0),
-      hasVHI_(0),
-      hasVLO_(0),
-      hasRiseVoltage_(0),
-      hasFallVoltage_(0),
-      hasRiseThresh_(0),
-      hasFallThresh_(0),
-      hasRiseSatcur_(0),
-      hasFallSatcur_(0),
-      hasCurrentSource_(0),
-      hasTables_(0),
-      hasAntennasize_(0),
-      hasRiseSlewLimit_(0),
-      hasFallSlewLimit_(0),
-      numForeigns_(0),
-      foreignAllocated_(0),
-      hasForeignOrient_(NULL),
-      hasForeignPoint_(NULL),
-      foreignOrient_(NULL),
-      foreignX_(NULL),
-      foreignY_(NULL),
-      foreign_(NULL),
-      LEQSize_(0),
-      LEQ_(NULL),
-      mustjoinSize_(0),
-      mustjoin_(NULL),
-      outMarginH_(0.0),
-      outMarginL_(0.0),
-      outResistanceH_(0.0),
-      outResistanceL_(0.0),
-      inMarginH_(0.0),
-      inMarginL_(0.0),
-      power_(0.0),
-      leakage_(0.0),
-      maxload_(0.0),
-      maxdelay_(0.0),
-      capacitance_(0.0),
-      resistance_(0.0),
-      pulldownres_(0.0),
-      tieoffr_(0.0),
-      VHI_(0.0),
-      VLO_(0.0),
-      riseVoltage_(0.0),
-      fallVoltage_(0.0),
-      riseThresh_(0.0),
-      fallThresh_(0.0),
-      riseSatcur_(0.0),
-      fallSatcur_(0.0),
-      lowTableSize_(0),
-      lowTable_(NULL),
-      highTableSize_(0),
-      highTable_(NULL),
-      riseSlewLimit_(0.0),
-      fallSlewLimit_(0.0),
-      numAntennaModel_(0),
-      antennaModelAllocated_(0),
-      curAntennaModelIndex_(0),
-      antennaModel_(NULL),
-      numAntennaSize_(0),
-      antennaSizeAllocated_(0),
-      antennaSize_(NULL),
-      antennaSizeLayer_(NULL),
-      numAntennaMetalArea_(0),
-      antennaMetalAreaAllocated_(0),
-      antennaMetalArea_(NULL),
-      antennaMetalAreaLayer_(NULL),
-      numAntennaMetalLength_(0),
-      antennaMetalLengthAllocated_(0),
-      antennaMetalLength_(NULL),
-      antennaMetalLengthLayer_(NULL),
-      numAntennaPartialMetalArea_(0),
-      antennaPartialMetalAreaAllocated_(0),
-      antennaPartialMetalArea_(NULL),
-      antennaPartialMetalAreaLayer_(NULL),
-      numAntennaPartialMetalSideArea_(0),
-      antennaPartialMetalSideAreaAllocated_(0),
-      antennaPartialMetalSideArea_(NULL),
-      antennaPartialMetalSideAreaLayer_(NULL),
-      numAntennaPartialCutArea_(0),
-      antennaPartialCutAreaAllocated_(0),
-      antennaPartialCutArea_(NULL),
-      antennaPartialCutAreaLayer_(NULL),
-      numAntennaDiffArea_(0),
-      antennaDiffAreaAllocated_(0),
-      antennaDiffArea_(NULL),
-      antennaDiffAreaLayer_(NULL),
-      taperRule_(NULL),
-      netEpxr_(NULL),
-      ssPinName_(NULL),
-      gsPinName_(NULL),
-      numProperties_(0),
-      propertiesAllocated_(0),
-      propNames_(NULL),
-      propValues_(NULL),
-      propNums_(NULL),
-      propTypes_(NULL),
-      numPorts_(0),
-      portsAllocated_(0),
-      ports_(NULL)
-{
-  //    printf("COPY CONSTRUCTOR STARTED\n");
-  //    fflush(stdout);
-  this->Init();
-  //    printf("COPY CONSTRUCTOR INIT\n");
-  //    fflush(stdout);
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * nameSize_);
-  LEF_COPY_FUNC(hasLEQ_);
-  LEF_COPY_FUNC(hasDirection_);
-  LEF_COPY_FUNC(hasUse_);
-  LEF_COPY_FUNC(hasShape_);
-  LEF_COPY_FUNC(hasMustjoin_);
-  LEF_COPY_FUNC(hasOutMargin_);
-  LEF_COPY_FUNC(hasOutResistance_);
-  LEF_COPY_FUNC(hasInMargin_);
-  LEF_COPY_FUNC(hasPower_);
-  LEF_COPY_FUNC(hasLeakage_);
-  LEF_COPY_FUNC(hasMaxload_);
-  LEF_COPY_FUNC(hasMaxdelay_);
-  LEF_COPY_FUNC(hasCapacitance_);
-  LEF_COPY_FUNC(hasResistance_);
-  LEF_COPY_FUNC(hasPulldownres_);
-  LEF_COPY_FUNC(hasTieoffr_);
-  LEF_COPY_FUNC(hasVHI_);
-  LEF_COPY_FUNC(hasVLO_);
-  LEF_COPY_FUNC(hasRiseVoltage_);
-  LEF_COPY_FUNC(hasFallVoltage_);
-  LEF_COPY_FUNC(hasRiseThresh_);
-  LEF_COPY_FUNC(hasFallThresh_);
-  LEF_COPY_FUNC(hasRiseSatcur_);
-  LEF_COPY_FUNC(hasFallSatcur_);
-  LEF_COPY_FUNC(hasCurrentSource_);
-  LEF_COPY_FUNC(hasTables_);
-  LEF_COPY_FUNC(hasAntennasize_);
-  LEF_COPY_FUNC(hasRiseSlewLimit_);
-  LEF_COPY_FUNC(hasFallSlewLimit_);
-  LEF_COPY_FUNC(numForeigns_);
-  LEF_COPY_FUNC(foreignAllocated_);
-  LEF_MALLOC_FUNC(hasForeignOrient_, int, sizeof(int) * foreignAllocated_);
-  LEF_MALLOC_FUNC(hasForeignPoint_, int, sizeof(int) * foreignAllocated_);
-  LEF_MALLOC_FUNC(foreignOrient_, int, sizeof(int) * foreignAllocated_);
-  LEF_MALLOC_FUNC(foreignX_, double, sizeof(double) * foreignAllocated_);
-  LEF_MALLOC_FUNC(foreignY_, double, sizeof(double) * foreignAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D_STR(foreign_, numForeigns_);
-  LEF_COPY_FUNC(LEQSize_);
-  LEF_MALLOC_FUNC(LEQ_, char, sizeof(char) * LEQSize_);
-  LEF_COPY_FUNC(mustjoinSize_);
-  LEF_MALLOC_FUNC(mustjoin_, char, sizeof(char) * mustjoinSize_);
-  LEF_COPY_FUNC(outMarginH_);
-  LEF_COPY_FUNC(outMarginL_);
-  LEF_COPY_FUNC(outResistanceH_);
-  LEF_COPY_FUNC(outResistanceL_);
-  LEF_COPY_FUNC(inMarginH_);
-  LEF_COPY_FUNC(inMarginL_);
-  LEF_COPY_FUNC(power_);
-  LEF_COPY_FUNC(leakage_);
-  LEF_COPY_FUNC(maxload_);
-  LEF_COPY_FUNC(maxdelay_);
-  LEF_COPY_FUNC(capacitance_);
-  LEF_COPY_FUNC(resistance_);
-  LEF_COPY_FUNC(pulldownres_);
-  LEF_COPY_FUNC(tieoffr_);
-  LEF_COPY_FUNC(VHI_);
-  LEF_COPY_FUNC(VLO_);
-  LEF_COPY_FUNC(riseVoltage_);
-  LEF_COPY_FUNC(fallVoltage_);
-  LEF_COPY_FUNC(riseThresh_);
-  LEF_COPY_FUNC(fallThresh_);
-  LEF_COPY_FUNC(riseSatcur_);
-  LEF_COPY_FUNC(fallSatcur_);
-  LEF_COPY_FUNC(lowTableSize_);
-  LEF_MALLOC_FUNC(lowTable_, char, sizeof(char) * lowTableSize_);
-  LEF_COPY_FUNC(highTableSize_);
-  LEF_MALLOC_FUNC(highTable_, char, sizeof(char) * highTableSize_);
-  LEF_COPY_FUNC(riseSlewLimit_);
-  LEF_COPY_FUNC(fallSlewLimit_);
-  LEF_COPY_FUNC(numAntennaModel_);
-  LEF_COPY_FUNC(antennaModelAllocated_);
-  LEF_COPY_FUNC(curAntennaModelIndex_);
-
-  // printf("antennaModel_ %x\n", antennaModel_);
-  // printf("prev.antennaModel_ %x\n", prev.antennaModel_);
-  // printf("numAntennaModel_ %d\n", numAntennaModel_);
-  // fflush(stdout);
-
-  // if( prev.antennaModel_ ) {
-  //     for(int i=0; i<numAntennaModel_; i++) {
-  //         printf("%d %x\n", i, prev.antennaModel_[i]);
-  //         fflush(stdout);
-  //     }
-  // }
-
-  LEF_MALLOC_FUNC_FOR_2D(
-      antennaModel_, lefiPinAntennaModel, numAntennaModel_, 1);
-
-  LEF_COPY_FUNC(numAntennaSize_);
-  LEF_COPY_FUNC(antennaSizeAllocated_);
-  LEF_MALLOC_FUNC(antennaSize_, double, sizeof(double) * antennaSizeAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaSizeLayer_, numAntennaSize_);
-
-  LEF_COPY_FUNC(numAntennaMetalArea_);
-  LEF_COPY_FUNC(antennaMetalAreaAllocated_);
-  LEF_MALLOC_FUNC(
-      antennaMetalArea_, double, sizeof(double) * antennaMetalAreaAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaMetalAreaLayer_, numAntennaMetalArea_);
-
-  LEF_COPY_FUNC(numAntennaMetalLength_);
-  LEF_COPY_FUNC(antennaMetalLengthAllocated_);
-  LEF_MALLOC_FUNC(antennaMetalLength_,
-                  double,
-                  sizeof(double) * antennaMetalLengthAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaMetalLengthLayer_, numAntennaMetalLength_);
-
-  LEF_COPY_FUNC(numAntennaPartialMetalArea_);
-  LEF_COPY_FUNC(antennaPartialMetalAreaAllocated_);
-  LEF_MALLOC_FUNC(antennaPartialMetalArea_,
-                  double,
-                  sizeof(double) * antennaPartialMetalAreaAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaPartialMetalAreaLayer_,
-                             numAntennaPartialMetalArea_);
-
-  LEF_COPY_FUNC(numAntennaPartialMetalSideArea_);
-  LEF_COPY_FUNC(antennaPartialMetalSideAreaAllocated_);
-  LEF_MALLOC_FUNC(antennaPartialMetalSideArea_,
-                  double,
-                  sizeof(double) * antennaPartialMetalSideAreaAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaPartialMetalSideAreaLayer_,
-                             numAntennaPartialMetalSideArea_);
-
-  LEF_COPY_FUNC(numAntennaPartialCutArea_);
-  LEF_COPY_FUNC(antennaPartialCutAreaAllocated_);
-  LEF_MALLOC_FUNC(antennaPartialCutArea_,
-                  double,
-                  sizeof(double) * antennaPartialCutAreaAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaPartialCutAreaLayer_,
-                             numAntennaPartialCutArea_);
-
-  LEF_COPY_FUNC(numAntennaDiffArea_);
-  LEF_COPY_FUNC(antennaDiffAreaAllocated_);
-  LEF_MALLOC_FUNC(
-      antennaDiffArea_, double, sizeof(double) * antennaDiffAreaAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(antennaDiffAreaLayer_, numAntennaDiffArea_);
-
-  LEF_MALLOC_FUNC(
-      taperRule_, char, sizeof(char) * (strlen(prev.taperRule_) + 1));
-  LEF_MALLOC_FUNC(netEpxr_, char, sizeof(char) * (strlen(prev.netEpxr_) + 1));
-  LEF_MALLOC_FUNC(
-      ssPinName_, char, sizeof(char) * (strlen(prev.ssPinName_) + 1));
-  LEF_MALLOC_FUNC(
-      gsPinName_, char, sizeof(char) * (strlen(prev.gsPinName_) + 1));
-
-  memcpy(direction_, prev.direction_, sizeof(char) * 32);
-  memcpy(use_, prev.use_, sizeof(char) * 12);
-  memcpy(shape_, prev.shape_, sizeof(char) * 12);
-  memcpy(currentSource_, prev.currentSource_, sizeof(char) * 12);
-
-  LEF_COPY_FUNC(numProperties_);
-  LEF_COPY_FUNC(propertiesAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D_STR(propNames_, numProperties_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(propValues_, numProperties_);
-  LEF_MALLOC_FUNC(propNums_, double, sizeof(double) * propertiesAllocated_);
-  LEF_MALLOC_FUNC(propTypes_, char, sizeof(char) * propertiesAllocated_);
-
-  LEF_COPY_FUNC(numPorts_);
-  LEF_COPY_FUNC(portsAllocated_);
-  //    printf("PORTS BEFORE CONSTRUCTOR\n");
-  //    fflush(stdout);
-  LEF_MALLOC_FUNC_FOR_2D(ports_, lefiGeometries, numPorts_, 1);
-  //    printf("PORTS AFTER CONSTRUCTOR\n");
-  //    printf("prev_ports_Adder : %x\n", prev.ports_);
-  //    printf("ports_Adder : %x\n", ports_);
-  //    printf("prev num_items: %d\n",
-  //    prev.ports_[0]->lefiGeometries::numItems()); printf("curr num_items:
-  //    %d\n", ports_[0]->lefiGeometries::numItems()); printf("PREV LAYER %d\n",
-  //    prev.ports_[0]->lefiGeometries::getLayer(0)); printf("CURRENT LAYER
-  //    %d\n", ports_[0]->lefiGeometries::getLayer(0));
-  fflush(stdout);
 }
 
 lefiPin::~lefiPin()
@@ -1127,12 +913,12 @@ void lefiPin::Destroy()
 void lefiPin::clear()
 {
   int i;
-  lefiPinAntennaModel* aModel;
+  lefiGeometries* g;
 
   for (i = 0; i < numPorts_; i++) {
-    auto g = ports_[i];
+    g = ports_[i];
     g->Destroy();
-    lefFree(g);
+    lefFree((char*) g);
   }
   numPorts_ = 0;
   portsAllocated_ = 0;
@@ -1217,18 +1003,15 @@ void lefiPin::clear()
   }
   numAntennaDiffArea_ = 0;
 
-  if (numAntennaModel_ > 0) {
-    for (i = 0; i < numAntennaModel_; i++) {  // 5.5
-      aModel = antennaModel_[i];
-      aModel->Destroy();
+  if (pinAntennaModel_) {
+    for (i = 0; i < antennaModelAllocated_; i++) {  // 5.5
+      delete pinAntennaModel_[i];
     }
+    // 5.5
+    lefFree((char*) pinAntennaModel_);
   }
-  for (i = 0; i < numAntennaModel_; i++) {  // 5.5
-    lefFree((char*) antennaModel_[i]);
-  }
-  if (antennaModel_)  // 5.5
-    lefFree((char*) antennaModel_);
-  antennaModel_ = 0;           // 5.5
+
+  pinAntennaModel_ = 0;        // 5.5
   numAntennaModel_ = 0;        // 5.5
   curAntennaModelIndex_ = 0;   // 5.5
   antennaModelAllocated_ = 0;  // 5.5
@@ -1839,7 +1622,7 @@ int lefiPin::hasAntennaDiffArea() const
 
 int lefiPin::hasAntennaModel() const
 {
-  return antennaModel_ ? 1 : 0;
+  return pinAntennaModel_ ? 1 : 0;
 }
 
 int lefiPin::hasTaperRule() const
@@ -2246,35 +2029,31 @@ void lefiPin::addAntennaModel(int oxide)
   int i;
 
   if (numAntennaModel_ == 0) {  // does not have antennaModel
-    antennaModel_
-        = (lefiPinAntennaModel**) lefMalloc(sizeof(lefiPinAntennaModel*) * 4);
-    antennaModelAllocated_ = 4;
-    for (i = 0; i < 4; i++) {
-      antennaModel_[i]
-          = (lefiPinAntennaModel*) lefMalloc(sizeof(lefiPinAntennaModel));
-      antennaModel_[i]->setAntennaModel(0);
+    pinAntennaModel_ = (lefiPinAntennaModel**) lefMalloc(
+        sizeof(lefiPinAntennaModel*) * lefMaxOxides);
+    antennaModelAllocated_ = lefMaxOxides;
+    for (i = 0; i < lefMaxOxides; i++) {
+      pinAntennaModel_[i] = new lefiPinAntennaModel();
+      pinAntennaModel_[i]->setAntennaModel(0);
       // just initialize it first
     }
-    antennaModelAllocated_ = 4;
-    amo = antennaModel_[0];
+    antennaModelAllocated_ = lefMaxOxides;
+    amo = pinAntennaModel_[0];
     curAntennaModelIndex_ = 0;
   }
 
   // First can go any oxide, so fill pref oxides models.
   for (int idx = 0; idx < oxide - 1; idx++) {
-    amo = antennaModel_[idx];
+    amo = pinAntennaModel_[idx];
+
     if (!amo->antennaOxide()) {
       amo->Init();
       amo->setAntennaModel(idx + 1);
     }
   }
 
-  amo = antennaModel_[oxide - 1];
+  amo = pinAntennaModel_[oxide - 1];
   curAntennaModelIndex_ = oxide - 1;
-  // Oxide has not defined yet
-  if (amo->antennaOxide()) {
-    amo->clear();
-  }
 
   if (oxide > numAntennaModel_) {
     numAntennaModel_ = oxide;
@@ -2282,6 +2061,7 @@ void lefiPin::addAntennaModel(int oxide)
 
   amo->Init();
   amo->setAntennaModel(oxide);
+
   return;
 }
 
@@ -2299,27 +2079,24 @@ lefiPinAntennaModel* lefiPin::antennaModel(int index) const
 
   if (index == 0) {  // reset all the return flags to 0, beginning of the loop
     int i;
-    for (i = 0; i < 4; i++)
-      antennaModel_[i]->setAntennaReturnFlag(0);
-  }
-  while (j < 4) {
-    amo = antennaModel_[j];
-    if (!(amo->antennaOxide()) && (amo->hasReturn() == 0))
-      j++;
-    else
-      break;
-    if (j == 4) {  // something very wrong, normally this can't happen
-      lefiError(0,
-                1351,
-                "ERROR (LEFPARS-1351): There is an unexpected lef parser bug "
-                "which cause it unable to retrieve ANTENNAMODEL data with the "
-                "given index.");
-      return 0;
+    for (i = 0; i < lefMaxOxides; i++) {
+      pinAntennaModel_[i]->setAntennaReturnFlag(0);
     }
   }
+
+  while (j < lefMaxOxides) {
+    amo = pinAntennaModel_[j];
+
+    if (!(amo->antennaOxide()) && (amo->hasReturn() == 0)) {
+      j++;
+    } else {
+      break;
+    }
+  }
+
   // If it arrived here, it is saved, mark the antennaModel has returned
-  antennaModel_[j]->setAntennaReturnFlag(1);
-  return antennaModel_[j];
+  pinAntennaModel_[j]->setAntennaReturnFlag(1);
+  return pinAntennaModel_[j];
 }
 
 void lefiPin::addAntennaSize(double val, const char* layer)
@@ -2541,28 +2318,28 @@ void lefiPin::addAntennaGateArea(double val, const char* layer)
 {
   if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
     addAntennaModel(1);
-  antennaModel_[curAntennaModelIndex_]->addAntennaGateArea(val, layer);
+  pinAntennaModel_[curAntennaModelIndex_]->addAntennaGateArea(val, layer);
 }
 
 void lefiPin::addAntennaMaxAreaCar(double val, const char* layer)
 {
   if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
     addAntennaModel(1);
-  antennaModel_[curAntennaModelIndex_]->addAntennaMaxAreaCar(val, layer);
+  pinAntennaModel_[curAntennaModelIndex_]->addAntennaMaxAreaCar(val, layer);
 }
 
 void lefiPin::addAntennaMaxSideAreaCar(double val, const char* layer)
 {
   if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
     addAntennaModel(1);
-  antennaModel_[curAntennaModelIndex_]->addAntennaMaxSideAreaCar(val, layer);
+  pinAntennaModel_[curAntennaModelIndex_]->addAntennaMaxSideAreaCar(val, layer);
 }
 
 void lefiPin::addAntennaMaxCutCar(double val, const char* layer)
 {
   if (numAntennaModel_ == 0)  // haven't created any antennaModel yet
     addAntennaModel(1);
-  antennaModel_[curAntennaModelIndex_]->addAntennaMaxCutCar(val, layer);
+  pinAntennaModel_[curAntennaModelIndex_]->addAntennaMaxCutCar(val, layer);
 }
 
 int lefiPin::numProperties() const
@@ -2615,7 +2392,7 @@ double lefiPin::propNum(int index) const
   return propNums_[index];
 }
 
-char lefiPin::propType(int index) const
+const char lefiPin::propType(int index) const
 {
   char msg[160];
   if (index < 0 || index >= numProperties_) {
@@ -2671,230 +2448,6 @@ void lefiPin::print(FILE* f) const
     fprintf(f, "    Port %d ", i);
     g = port(i);
     g->print(f);
-  }
-}
-
-// *****************************************************************************
-// lefiDensity
-// *****************************************************************************
-
-lefiDensity::lefiDensity()
-    : numLayers_(0),
-      layersAllocated_(0),
-      layerName_(NULL),
-      numRects_(NULL),
-      rectsAllocated_(NULL),
-      rects_(NULL),
-      densityValue_(NULL)
-{
-  Init();
-}
-
-void lefiDensity::Init()
-{
-  numLayers_ = 0;
-  layersAllocated_ = 0;
-}
-
-LEF_COPY_CONSTRUCTOR_C(lefiDensity)
-    : numLayers_(0),
-      layersAllocated_(0),
-      layerName_(NULL),
-      numRects_(NULL),
-      rectsAllocated_(NULL),
-      rects_(NULL),
-      densityValue_(NULL)
-{
-  LEF_COPY_FUNC(numLayers_);
-  LEF_COPY_FUNC(layersAllocated_);
-
-  //!!
-  LEF_MALLOC_FUNC_FOR_2D_STR(layerName_, layersAllocated_);
-  LEF_MALLOC_FUNC(numRects_, int, sizeof(int) * layersAllocated_);
-  LEF_MALLOC_FUNC(rectsAllocated_, int, sizeof(int) * layersAllocated_);
-
-  // !!
-  LEF_MALLOC_FUNC_FOR_2D(
-      rects_, lefiGeomRect, layersAllocated_, rectsAllocated_[i]);
-
-  //!!
-  LEF_MALLOC_FUNC_FOR_2D(
-      densityValue_, double, layersAllocated_, rectsAllocated_[i]);
-}
-
-lefiDensity::~lefiDensity()
-{
-  Destroy();
-}
-
-void lefiDensity::Destroy()
-{
-  clear();
-}
-
-void lefiDensity::clear()
-{
-  for (int i = 0; i < numLayers_; i++) {
-    lefFree(layerName_[i]);
-    lefFree((char*) rects_[i]);
-    lefFree((char*) densityValue_[i]);
-    numRects_[i] = 0;
-    rectsAllocated_[i] = 0;
-  }
-  lefFree(layerName_);
-  lefFree((char*) (rects_));
-  lefFree((char*) (densityValue_));
-  lefFree((char*) (numRects_));
-  lefFree((char*) (rectsAllocated_));
-  layerName_ = 0;
-  numLayers_ = 0;
-  layersAllocated_ = 0;
-  numRects_ = 0;
-  rects_ = 0;
-  densityValue_ = 0;
-  rectsAllocated_ = 0;
-}
-
-void lefiDensity::addLayer(const char* name)
-{
-  if (numLayers_ == layersAllocated_) {
-    int i;
-    char** ln;          // layerName
-    int* nr;            // number of rect within the layer
-    int* ra;            // number of rect allocated within the layer
-    lefiGeomRect** rs;  // rect value
-    double** dv;        // density value
-
-    layersAllocated_ = (layersAllocated_ == 0) ? 2 : layersAllocated_ * 2;
-    ln = (char**) lefMalloc(sizeof(char*) * layersAllocated_);
-    nr = (int*) lefMalloc(sizeof(int) * layersAllocated_);
-    ra = (int*) lefMalloc(sizeof(int) * layersAllocated_);
-    rs = (lefiGeomRect**) lefMalloc(sizeof(lefiGeomRect*) * layersAllocated_);
-    dv = (double**) lefMalloc(sizeof(double*) * layersAllocated_);
-    for (i = 0; i < numLayers_; i++) {
-      ln[i] = layerName_[i];
-      nr[i] = numRects_[i];
-      ra[i] = rectsAllocated_[i];
-      rs[i] = rects_[i];
-      dv[i] = densityValue_[i];
-    }
-
-    lefFree((char*) (layerName_));
-    lefFree((char*) (rects_));
-    lefFree((char*) (densityValue_));
-    lefFree((char*) (numRects_));
-    lefFree((char*) (rectsAllocated_));
-
-    layerName_ = ln;
-    numRects_ = nr;
-    rectsAllocated_ = ra;
-    rects_ = rs;
-    densityValue_ = dv;
-  }
-  layerName_[numLayers_] = strdup(name);
-  numRects_[numLayers_] = 0;
-  rectsAllocated_[numLayers_] = 0;
-  rects_[numLayers_] = 0;
-  densityValue_[numLayers_] = 0;
-  numLayers_ += 1;
-}
-
-void lefiDensity::addRect(double x1,
-                          double y1,
-                          double x2,
-                          double y2,
-                          double value)
-{
-  if (numRects_[numLayers_ - 1] == rectsAllocated_[numLayers_ - 1]) {
-    lefiGeomRect *rs, *ors;
-    double *dv, *odv;
-    int i;
-
-    rectsAllocated_[numLayers_ - 1] = (rectsAllocated_[numLayers_ - 1] == 0)
-                                          ? 2
-                                          : rectsAllocated_[numLayers_ - 1] * 2;
-
-    rs = (lefiGeomRect*) lefMalloc(sizeof(lefiGeomRect)
-                                   * rectsAllocated_[numLayers_ - 1]);
-    dv = (double*) lefMalloc(sizeof(double) * rectsAllocated_[numLayers_ - 1]);
-
-    if (numRects_[numLayers_ - 1] > 0) {
-      ors = rects_[numLayers_ - 1];
-      odv = densityValue_[numLayers_ - 1];
-      for (i = 0; i < numRects_[numLayers_ - 1]; i++) {
-        rs[i] = ors[i];  // assign data from old rect & density value to
-        dv[i] = odv[i];  // new, larger array
-      }
-
-      lefFree((char*) rects_[numLayers_ - 1]);
-      lefFree((char*) densityValue_[numLayers_ - 1]);
-    }
-
-    rects_[numLayers_ - 1] = rs;
-    densityValue_[numLayers_ - 1] = dv;
-  }
-
-  lefiGeomRect p;
-
-  p.xl = x1;
-  p.yl = y1;
-  p.xh = x2;
-  p.yh = y2;
-  p.colorMask = 0;
-
-  rects_[numLayers_ - 1][numRects_[numLayers_ - 1]] = p;
-  densityValue_[numLayers_ - 1][numRects_[numLayers_ - 1]] = value;
-  numRects_[numLayers_ - 1] += 1;
-}
-
-int lefiDensity::numLayer() const
-{
-  return numLayers_;
-}
-
-char* lefiDensity::layerName(int index) const
-{
-  return layerName_[index];
-}
-
-int lefiDensity::numRects(int index) const
-{
-  return numRects_[index];
-}
-
-lefiGeomRect lefiDensity::getRect(int index, int rectIndex) const
-{
-  lefiGeomRect* rs;
-
-  rs = rects_[index];
-  return rs[rectIndex];
-}
-
-double lefiDensity::densityValue(int index, int rectIndex) const
-{
-  double* dv;
-
-  dv = densityValue_[index];
-  return dv[rectIndex];
-}
-
-void lefiDensity::print(FILE* f) const
-{
-  int i, j;
-
-  // 11/8/2004 - Added feed back from users
-  fprintf(f, "  DENSITY\n");
-  for (i = 0; i < numLayers_; i++) {
-    fprintf(f, "    LAYER %s\n", layerName_[i]);
-    for (j = 0; j < numRects_[i]; j++) {
-      fprintf(f,
-              "      RECT %g %g %g %g ",
-              rects_[i][j].xl,
-              rects_[i][j].yl,
-              rects_[i][j].xh,
-              rects_[i][j].yh);
-      fprintf(f, "%g\n", densityValue_[i][j]);
-    }
   }
 }
 
@@ -3001,123 +2554,6 @@ void lefiMacro::Init()
   clear();
 }
 
-LEF_COPY_CONSTRUCTOR_C(lefiMacro)
-    : nameSize_(0),
-      name_(NULL),
-      generatorSize_(0),
-      generator_(NULL),
-      hasClass_(0),
-      hasGenerator_(0),
-      hasGenerate_(0),
-      hasPower_(0),
-      hasOrigin_(0),
-      hasSource_(0),
-      hasEEQ_(0),
-      hasLEQ_(0),
-      hasSymmetry_(0),
-      hasSiteName_(0),
-      hasSize_(0),
-      hasClockType_(0),
-      isBuffer_(0),
-      isInverter_(0),
-      EEQ_(NULL),
-      EEQSize_(0),
-      LEQ_(NULL),
-      LEQSize_(0),
-      gen1_(NULL),
-      gen1Size_(0),
-      gen2_(NULL),
-      gen2Size_(0),
-      power_(0.0),
-      originX_(0.0),
-      originY_(0.0),
-      sizeX_(0.0),
-      sizeY_(0.0),
-      numSites_(0),
-      sitesAllocated_(0),
-      pattern_(NULL),
-      numForeigns_(0),
-      foreignAllocated_(0),
-      hasForeignOrigin_(NULL),
-      hasForeignPoint_(NULL),
-      foreignOrient_(NULL),
-      foreignX_(NULL),
-      foreignY_(NULL),
-      foreign_(NULL),
-      siteNameSize_(0),
-      siteName_(NULL),
-      clockType_(NULL),
-      clockTypeSize_(0),
-      numProperties_(0),
-      propertiesAllocated_(0),
-      propNames_(NULL),
-      propValues_(NULL),
-      propNums_(NULL),
-      propTypes_(NULL),
-      isFixedMask_(0)
-{
-  this->Init();
-  LEF_COPY_FUNC(nameSize_);
-  LEF_MALLOC_FUNC(name_, char, sizeof(char) * nameSize_);
-
-  memcpy(macroClass_, prev.macroClass_, sizeof(char) * 32);
-  memcpy(source_, prev.source_, sizeof(char) * 12);
-  LEF_COPY_FUNC(generatorSize_);
-  LEF_MALLOC_FUNC(generator_, char, sizeof(char) * generatorSize_);
-  LEF_COPY_FUNC(hasClass_);
-  LEF_COPY_FUNC(hasGenerator_);
-  LEF_COPY_FUNC(hasGenerate_);
-  LEF_COPY_FUNC(hasPower_);
-  LEF_COPY_FUNC(hasOrigin_);
-  LEF_COPY_FUNC(hasSource_);
-  LEF_COPY_FUNC(hasEEQ_);
-  LEF_COPY_FUNC(hasLEQ_);
-  LEF_COPY_FUNC(hasSymmetry_);
-  LEF_COPY_FUNC(hasSiteName_);
-  LEF_COPY_FUNC(hasSize_);
-  LEF_COPY_FUNC(hasClockType_);
-  LEF_COPY_FUNC(isBuffer_);
-  LEF_COPY_FUNC(isInverter_);
-  LEF_COPY_FUNC(EEQSize_);
-  LEF_MALLOC_FUNC(EEQ_, char, sizeof(char) * EEQSize_);
-  LEF_COPY_FUNC(LEQSize_);
-  LEF_MALLOC_FUNC(LEQ_, char, sizeof(char) * LEQSize_);
-  LEF_COPY_FUNC(gen1Size_);
-  LEF_MALLOC_FUNC(gen1_, char, sizeof(char) * gen1Size_);
-  LEF_COPY_FUNC(gen2Size_);
-  LEF_MALLOC_FUNC(gen2_, char, sizeof(char) * gen2Size_);
-  LEF_COPY_FUNC(power_);
-  LEF_COPY_FUNC(originX_);
-  LEF_COPY_FUNC(originY_);
-  LEF_COPY_FUNC(sizeX_);
-  LEF_COPY_FUNC(sizeY_);
-  LEF_COPY_FUNC(numSites_);
-  LEF_COPY_FUNC(sitesAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D(pattern_, lefiSitePattern, numSites_, 1);
-
-  LEF_COPY_FUNC(numForeigns_);
-  LEF_COPY_FUNC(foreignAllocated_);
-  LEF_MALLOC_FUNC(hasForeignOrigin_, int, sizeof(int) * foreignAllocated_);
-  LEF_MALLOC_FUNC(hasForeignPoint_, int, sizeof(int) * foreignAllocated_);
-  LEF_MALLOC_FUNC(foreignOrient_, int, sizeof(int) * foreignAllocated_);
-  LEF_MALLOC_FUNC(foreignX_, double, sizeof(double) * foreignAllocated_);
-  LEF_MALLOC_FUNC(foreignY_, double, sizeof(double) * foreignAllocated_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(foreign_, numForeigns_);
-
-  LEF_COPY_FUNC(siteNameSize_);
-  LEF_MALLOC_FUNC(siteName_, char, sizeof(char) * siteNameSize_);
-  LEF_COPY_FUNC(clockTypeSize_);
-  LEF_MALLOC_FUNC(clockType_, char, sizeof(char) * clockTypeSize_);
-  LEF_COPY_FUNC(numProperties_);
-  LEF_COPY_FUNC(propertiesAllocated_);
-
-  LEF_MALLOC_FUNC_FOR_2D_STR(propNames_, numProperties_);
-  LEF_MALLOC_FUNC_FOR_2D_STR(propValues_, numProperties_);
-  LEF_MALLOC_FUNC(propNums_, double, sizeof(double) * propertiesAllocated_);
-  LEF_MALLOC_FUNC(propTypes_, char, sizeof(char) * propertiesAllocated_);
-  LEF_COPY_FUNC(isFixedMask_);
-}
 void lefiMacro::Destroy()
 {
   clear();
@@ -3178,7 +2614,7 @@ void lefiMacro::clear()
 
   if (pattern_) {
     for (i = 0; i < numSites_; i++) {
-      //            pattern_[i]->Destroy();
+      pattern_[i]->Destroy();
       lefFree((char*) (pattern_[i]));
     }
     numSites_ = 0;
@@ -3649,7 +3085,7 @@ double lefiMacro::propNum(int index) const
   return propNums_[index];
 }
 
-char lefiMacro::propType(int index) const
+const char lefiMacro::propType(int index) const
 {
   char msg[160];
   if (index < 0 || index >= numProperties_) {

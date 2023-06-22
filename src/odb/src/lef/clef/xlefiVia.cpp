@@ -26,7 +26,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -35,6 +35,12 @@
 
 #include "lefiVia.h"
 #include "lefiVia.hpp"
+
+union ulefiGeomPolygon
+{
+  LefDefParser::lefiGeomPolygon cpp;
+  ::lefiGeomPolygon c;
+};
 
 // Wrappers definitions.
 struct ::lefiGeomPolygon* lefiViaLayer_getPolygon(const ::lefiViaLayer* obj,
@@ -138,9 +144,9 @@ int lefiVia_numPolygons(const ::lefiVia* obj, int layerNum)
                                      int layerNum,
                                      int polyNum)
 {
-  LefDefParser::lefiGeomPolygon tmp;
-  tmp = ((LefDefParser::lefiVia*) obj)->getPolygon(layerNum, polyNum);
-  return *((::lefiGeomPolygon*) &tmp);
+  ulefiGeomPolygon tmp;
+  tmp.cpp = ((LefDefParser::lefiVia*) obj)->getPolygon(layerNum, polyNum);
+  return tmp.c;
 }
 
 char* lefiVia_name(const ::lefiVia* obj)
