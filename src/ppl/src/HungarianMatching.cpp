@@ -202,32 +202,33 @@ void HungarianMatching::createMatrixForGroups()
   if (!group_sizes.empty()) {
     valid_starting_slots_.clear();
     int i = begin_slot_;
-    int size_idx = 0;
-    // end the loop to avoid access invalid positions of slots_.
-    const int end_i = (end_slot_ - group_sizes[size_idx] + 1);
-    while (i <= end_i) {
-      bool blocked = false;
-      for (int pin_cnt = 0; pin_cnt < group_sizes[size_idx]; pin_cnt++) {
-        if (slots_[i + pin_cnt].blocked) {
-          blocked = true;
-          // Find the next unblocked slot, if any, to try again
-          while (++i <= end_i) {
-            if (!slots_[i + pin_cnt].blocked) {
-              break;
+    int new_begin = i;
+    for (const int group_size : group_sizes) {
+      i = new_begin;
+      // end the loop to avoid access invalid positions of slots_.
+      const int end_i = (end_slot_ - group_size + 1);
+      while (i <= end_i) {
+        bool blocked = false;
+        for (int pin_cnt = 0; pin_cnt < group_size; pin_cnt++) {
+          if (slots_[i + pin_cnt].blocked) {
+            blocked = true;
+            // Find the next unblocked slot, if any, to try again
+            while (++i <= end_i) {
+              if (!slots_[i + pin_cnt].blocked) {
+                break;
+              }
             }
+            break;
           }
-          break;
         }
-      }
-      if (!blocked) {
-        group_slots_++;
-        valid_starting_slots_.push_back(i);
-        // We have a legal position so jump ahead to limit the
-        // number of times we run the hungarian code.
-        i += group_sizes[size_idx];
-        group_slot_capacity.push_back(group_sizes[size_idx]);
-        if (i + group_sizes[size_idx] >= end_i && size_idx + 1 < group_sizes.size()) {
-          size_idx++;
+        if (!blocked) {
+          group_slots_++;
+          valid_starting_slots_.push_back(i);
+          group_slot_capacity.push_back(group_size);
+          // We have a legal position so jump ahead to limit the
+          // number of times we run the hungarian code.
+          i += group_size;
+          new_begin = i;
         }
       }
     }
