@@ -1,25 +1,25 @@
 // *****************************************************************************
 // *****************************************************************************
 // Copyright 2012 - 2016, Cadence Design Systems
-// 
+//
 // This  file  is  part  of  the  Cadence  LEF/DEF  Open   Source
-// Distribution,  Product Version 5.8. 
-// 
+// Distribution,  Product Version 5.8.
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
 //    You may obtain a copy of the License at
-// 
+//
 //        http://www.apache.org/licenses/LICENSE-2.0
-// 
+//
 //    Unless required by applicable law or agreed to in writing, software
 //    distributed under the License is distributed on an "AS IS" BASIS,
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 //    implied. See the License for the specific language governing
 //    permissions and limitations under the License.
-// 
+//
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
-// 
+//
 //  $Author$
 //  $Revision$
 //  $Date$
@@ -27,29 +27,30 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifndef WIN32
-#   include <unistd.h>
+#include <unistd.h>
 #endif /* not WIN32 */
 #include "defwWriter.hpp"
- 
+
 char defaultOut[128];
- 
+
 // Global variables
 FILE* fout;
- 
+
 #define CHECK_STATUS(status) \
   if (status) {              \
-     defwPrintError(status); \
-     return(status);         \
+    defwPrintError(status);  \
+    return (status);         \
   }
- 
-int main(int argc, char** argv) {
+
+int main(int argc, char** argv)
+{
   char* outfile;
-  int   status;    // return code, if none 0 means error
-  int   lineNumber = 0;
+  int status;  // return code, if none 0 means error
+  int lineNumber = 0;
 
   const char** layers;
   const char** foreigns;
@@ -57,78 +58,87 @@ int main(int argc, char** argv) {
   int *foreignX, *foreignY, *foreignOrient;
   const char** foreignOrientStr;
   double *coorX, *coorY;
-  double *coorValue;
-  const char **groupExpr;
+  double* coorValue;
+  const char** groupExpr;
   int *xPoints, *yPoints;
   double *xP, *yP;
-  const char** coorXSN, **coorYSN;
+  const char **coorXSN, **coorYSN;
   bool groupInit = false;
- 
 
 #if (defined WIN32 && _MSC_VER < 1800)
-    // Enable two-digit exponent format
-    _set_output_format(_TWO_DIGIT_EXPONENT);
+  // Enable two-digit exponent format
+  _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 
   // assign the default
   strcpy(defaultOut, "def.in");
   outfile = defaultOut;
   fout = stdout;
- 
+
   argc--;
   argv++;
   while (argc--) {
-     if (strcmp(*argv, "-o") == 0) {   // output filename
-        argv++;
-        argc--;
-        outfile = *argv;
-        if ((fout = fopen(outfile, "w")) == 0) {
-           fprintf(stderr, "ERROR: could not open output file\n");
-           return 2;
-        }
-     } else if (strncmp(*argv,  "-h", 2) == 0) {  // compare with -h[elp]
-        fprintf(stderr, "Usage: defwrite [-o <filename>] [-help]\n");
-        return 1;
-     } else if (strncmp(*argv,  "-g", 2) == 0) {  // test of group init function.
-            groupInit = 1;
-     } else {
-        fprintf(stderr, "ERROR: Illegal command line option: '%s'\n", *argv);
+    if (strcmp(*argv, "-o") == 0) {  // output filename
+      argv++;
+      argc--;
+      outfile = *argv;
+      if ((fout = fopen(outfile, "w")) == 0) {
+        fprintf(stderr, "ERROR: could not open output file\n");
         return 2;
-     }
-     argv++;
+      }
+    } else if (strncmp(*argv, "-h", 2) == 0) {  // compare with -h[elp]
+      fprintf(stderr, "Usage: defwrite [-o <filename>] [-help]\n");
+      return 1;
+    } else if (strncmp(*argv, "-g", 2) == 0) {  // test of group init function.
+      groupInit = 1;
+    } else {
+      fprintf(stderr, "ERROR: Illegal command line option: '%s'\n", *argv);
+      return 2;
+    }
+    argv++;
   }
 
   if (!groupInit) {
-      status = defwInitCbk(fout);
-      CHECK_STATUS(status);
-      status = defwVersion (5, 8);
-      CHECK_STATUS(status);
-      status = defwDividerChar(":");
-      CHECK_STATUS(status);
-      status = defwBusBitChars("[]");
-      CHECK_STATUS(status);
-      status = defwDesignName("muk");
-      CHECK_STATUS(status);
-      status = defwTechnology("muk");
-      CHECK_STATUS(status);
-      status = defwArray("core_array");
-      CHECK_STATUS(status);
-      status = defwFloorplan("DEFAULT");
-      CHECK_STATUS(status);
-      status = defwUnits(100);
-      CHECK_STATUS(status);
+    status = defwInitCbk(fout);
+    CHECK_STATUS(status);
+    status = defwVersion(5, 8);
+    CHECK_STATUS(status);
+    status = defwDividerChar(":");
+    CHECK_STATUS(status);
+    status = defwBusBitChars("[]");
+    CHECK_STATUS(status);
+    status = defwDesignName("muk");
+    CHECK_STATUS(status);
+    status = defwTechnology("muk");
+    CHECK_STATUS(status);
+    status = defwArray("core_array");
+    CHECK_STATUS(status);
+    status = defwFloorplan("DEFAULT");
+    CHECK_STATUS(status);
+    status = defwUnits(100);
+    CHECK_STATUS(status);
   } else {
-      // initalize
-      status = defwInit(fout, 5, 8, "ON", ":", "[]", "muk", "muk", "core_array",
-                        "DEFAULT", 100);
-      CHECK_STATUS(status);
+    // initalize
+    status = defwInit(fout,
+                      5,
+                      8,
+                      "ON",
+                      ":",
+                      "[]",
+                      "muk",
+                      "muk",
+                      "core_array",
+                      "DEFAULT",
+                      100);
+    CHECK_STATUS(status);
   }
 
   status = defwNewLine();
   CHECK_STATUS(status);
 
   // history
-  status = defwHistory("Corrected STEP for ROW_9 and added ROW_10 of SITE CORE1 (def)");
+  status = defwHistory(
+      "Corrected STEP for ROW_9 and added ROW_10 of SITE CORE1 (def)");
   CHECK_STATUS(status);
   status = defwHistory("Removed NONDEFAULTRULE from the net XX100 (def)");
   CHECK_STATUS(status);
@@ -138,8 +148,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
 
   // FILLS (add another FILLS is here for CCR 746462
-  xP = (double*)malloc(sizeof(double)*7);
-  yP = (double*)malloc(sizeof(double)*7);
+  xP = (double*) malloc(sizeof(double) * 7);
+  yP = (double*) malloc(sizeof(double) * 7);
   xP[0] = 2.1;
   yP[0] = 2.1;
   xP[1] = 3.1;
@@ -208,15 +218,15 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNewLine();
   CHECK_STATUS(status);
-  free((char*)xP);
-  free((char*)yP);
+  free((char*) xP);
+  free((char*) yP);
 
   // PROPERTYDEFINITIONS
   status = defwStartPropDef();
   CHECK_STATUS(status);
   defwAddComment("defwPropDef is broken into 3 routines, defwStringPropDef");
   defwAddComment("defwIntPropDef, and defwRealPropDef");
-  status = defwStringPropDef("REGION", "scum", 0, 0, 0 );
+  status = defwStringPropDef("REGION", "scum", 0, 0, 0);
   CHECK_STATUS(status);
   status = defwIntPropDef("REGION", "center", 0, 0, 0);
   CHECK_STATUS(status);
@@ -284,12 +294,12 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
 
   // DIEAREA
-/*
-  status = defwDieArea(-190000, -120000, 190000, 70000);
-  CHECK_STATUS(status);
-*/
-  xPoints = (int*)malloc(sizeof(int)*6);
-  yPoints = (int*)malloc(sizeof(int)*6);
+  /*
+    status = defwDieArea(-190000, -120000, 190000, 70000);
+    CHECK_STATUS(status);
+  */
+  xPoints = (int*) malloc(sizeof(int) * 6);
+  yPoints = (int*) malloc(sizeof(int) * 6);
   xPoints[0] = 2000;
   yPoints[0] = 2000;
   xPoints[1] = 3000;
@@ -304,8 +314,8 @@ int main(int argc, char** argv) {
   yPoints[5] = 7000;
   status = defwDieAreaList(6, xPoints, yPoints);
   CHECK_STATUS(status);
-  free((char*)xPoints);
-  free((char*)yPoints);
+  free((char*) xPoints);
+  free((char*) yPoints);
 
   status = defwNewLine();
   CHECK_STATUS(status);
@@ -329,19 +339,19 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
 
   // TRACKS
-  layers = (const char**)malloc(sizeof(char*)*1);
+  layers = (const char**) malloc(sizeof(char*) * 1);
   layers[0] = strdup("M1");
   status = defwTracks("X", 3000, 40, 120, 1, layers, 2, 1);
   CHECK_STATUS(status);
-  free((char*)layers[0]);
+  free((char*) layers[0]);
   layers[0] = strdup("M2");
-  status = defwTracks("Y", 5000, 10, 20, 1,layers);
+  status = defwTracks("Y", 5000, 10, 20, 1, layers);
   CHECK_STATUS(status);
-  free((char*)layers[0]);
-  free((char*)layers);
+  free((char*) layers[0]);
+  free((char*) layers);
   status = defwNewLine();
   CHECK_STATUS(status);
-  
+
   // GCELLGRID
   status = defwGcellGrid("X", 0, 100, 600);
   CHECK_STATUS(status);
@@ -404,8 +414,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwViaName("myUnshiftedVia");
   CHECK_STATUS(status);
-  status = defwViaViarule("myViaRule", 20, 20, "metal1", "cut12", "metal2",
-                          5, 5, 0, 4, 0, 1);
+  status = defwViaViarule(
+      "myViaRule", 20, 20, "metal1", "cut12", "metal2", 5, 5, 0, 4, 0, 1);
   CHECK_STATUS(status);
   status = defwViaViaruleRowCol(2, 3);
   CHECK_STATUS(status);
@@ -413,8 +423,18 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwViaName("via2");
   CHECK_STATUS(status);
-  status = defwViaViarule("viaRule2", 5, 6, "botLayer2", "cutLayer2",
-                          "topLayer2", 6, 6, 1, 4, 1, 4);
+  status = defwViaViarule("viaRule2",
+                          5,
+                          6,
+                          "botLayer2",
+                          "cutLayer2",
+                          "topLayer2",
+                          6,
+                          6,
+                          1,
+                          4,
+                          1,
+                          4);
   CHECK_STATUS(status);
   status = defwViaViaruleOrigin(10, -10);
   CHECK_STATUS(status);
@@ -434,8 +454,8 @@ int main(int argc, char** argv) {
   status = defwOneViaEnd();
   CHECK_STATUS(status);
 
-  xP = (double*)malloc(sizeof(double)*6);
-  yP = (double*)malloc(sizeof(double)*6);
+  xP = (double*) malloc(sizeof(double) * 6);
+  yP = (double*) malloc(sizeof(double) * 6);
   xP[0] = -2.1;
   yP[0] = -1.0;
   xP[1] = -2;
@@ -446,7 +466,7 @@ int main(int argc, char** argv) {
   yP[3] = -1.0;
   status = defwViaName("via4");
   CHECK_STATUS(status);
-  status = defwViaPolygon("M3", 4, xP, yP, 2); 
+  status = defwViaPolygon("M3", 4, xP, yP, 2);
   CHECK_STATUS(status);
   status = defwViaRect("M4", -40, -40, 40, 40);
   CHECK_STATUS(status);
@@ -462,7 +482,7 @@ int main(int argc, char** argv) {
   yP[4] = 500;
   xP[5] = 600;
   yP[5] = 600;
-  status = defwViaPolygon("M5", 6, xP, yP, 3); 
+  status = defwViaPolygon("M5", 6, xP, yP, 3);
   CHECK_STATUS(status);
   status = defwOneViaEnd();
   CHECK_STATUS(status);
@@ -479,12 +499,12 @@ int main(int argc, char** argv) {
   yP[4] = 200;
   status = defwViaName("via5");
   CHECK_STATUS(status);
-  status = defwViaPolygon("M6", 5, xP, yP); 
+  status = defwViaPolygon("M6", 5, xP, yP);
   CHECK_STATUS(status);
   status = defwOneViaEnd();
   CHECK_STATUS(status);
-  free((char*)xP);
-  free((char*)yP);
+  free((char*) xP);
+  free((char*) yP);
   status = defwEndVias();
   CHECK_STATUS(status);
 
@@ -493,9 +513,9 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwRegionName("region1");
   CHECK_STATUS(status);
-  status = defwRegionPoints(-500, -500, 300, 100); 
+  status = defwRegionPoints(-500, -500, 300, 100);
   CHECK_STATUS(status);
-  status = defwRegionPoints(500, 500, 1000, 1000); 
+  status = defwRegionPoints(500, 500, 1000, 1000);
   CHECK_STATUS(status);
   status = defwRegionType("FENCE");
   CHECK_STATUS(status);
@@ -515,72 +535,231 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
 
   // COMPONENTMASKSHIFTLAYER
-  shiftLayers = (const char**)malloc(sizeof(char*)*2);
+  shiftLayers = (const char**) malloc(sizeof(char*) * 2);
   shiftLayers[0] = strdup("M3");
   shiftLayers[1] = strdup("M2");
 
   status = defwComponentMaskShiftLayers(shiftLayers, 2);
 
-  free((char*)shiftLayers[0]);
-  free((char*)shiftLayers[1]);
-  free((char*)shiftLayers);
+  free((char*) shiftLayers[0]);
+  free((char*) shiftLayers[1]);
+  free((char*) shiftLayers);
 
   // COMPONENTS
-  foreigns = (const char**)malloc(sizeof(char*)*2);
-  foreignX = (int*)malloc(sizeof(int)*2);
-  foreignY = (int*)malloc(sizeof(int)*2);
-  foreignOrient = (int*)malloc(sizeof(int)*2);
-  foreignOrientStr = (const char**)malloc(sizeof(char*)*2);
+  foreigns = (const char**) malloc(sizeof(char*) * 2);
+  foreignX = (int*) malloc(sizeof(int) * 2);
+  foreignY = (int*) malloc(sizeof(int) * 2);
+  foreignOrient = (int*) malloc(sizeof(int) * 2);
+  foreignOrientStr = (const char**) malloc(sizeof(char*) * 2);
   status = defwStartComponents(11);
   CHECK_STATUS(status);
-  status = defwComponent("Z38A01", "DFF3", 0, NULL, NULL, NULL, NULL, NULL,
-                         0, NULL, NULL, NULL, NULL, "PLACED", 18592, 5400, 6, 0,
-                         NULL, 0, 0, 0, 0);
+  status = defwComponent("Z38A01",
+                         "DFF3",
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "PLACED",
+                         18592,
+                         5400,
+                         6,
+                         0,
+                         NULL,
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
   status = defwComponentMaskShift(123);
   CHECK_STATUS(status);
   status = defwComponentHalo(100, 0, 50, 200);
   CHECK_STATUS(status);
-  status = defwComponentStr("Z38A03", "DFF3", 0, NULL, NULL, NULL, NULL, NULL,
-                         0, NULL, NULL, NULL, NULL, "PLACED", 16576, 45600,
-                         "FS", 0, NULL, 0, 0, 0, 0);
+  status = defwComponentStr("Z38A03",
+                            "DFF3",
+                            0,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            0,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            "PLACED",
+                            16576,
+                            45600,
+                            "FS",
+                            0,
+                            NULL,
+                            0,
+                            0,
+                            0,
+                            0);
   CHECK_STATUS(status);
   status = defwComponentHalo(200, 2, 60, 300);
   CHECK_STATUS(status);
-  status = defwComponent("Z38A05", "DFF3", 0, NULL, NULL, NULL, NULL, NULL,
-                         0, NULL, NULL, NULL, NULL, "PLACED", 51520, 9600, 6, 0,
-                         NULL, 0, 0, 0, 0);
+  status = defwComponent("Z38A05",
+                         "DFF3",
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "PLACED",
+                         51520,
+                         9600,
+                         6,
+                         0,
+                         NULL,
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
-  status = defwComponent("|i0", "INV_B", 0, NULL, "INV", NULL, NULL, NULL,
-                         0, NULL, NULL, NULL, NULL, NULL, 0, 0, -1, 0,
-                         "region1", 0, 0, 0, 0);
+  status = defwComponent("|i0",
+                         "INV_B",
+                         0,
+                         NULL,
+                         "INV",
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         0,
+                         -1,
+                         0,
+                         "region1",
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
   status = defwComponentHaloSoft(100, 0, 50, 200);
   CHECK_STATUS(status);
-  status = defwComponent("|i1", "INV_B", 0, NULL, "INV", NULL, NULL, NULL,
-                         0, NULL, NULL, NULL, NULL, "UNPLACED", 1000, 1000, 0,
-                         0, NULL, 0, 0, 0, 0);
+  status = defwComponent("|i1",
+                         "INV_B",
+                         0,
+                         NULL,
+                         "INV",
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "UNPLACED",
+                         1000,
+                         1000,
+                         0,
+                         0,
+                         NULL,
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
-  status = defwComponent("cell1", "CHM6A", 0, NULL, NULL, "generator", NULL,
-                         "USER", 0, NULL, NULL, NULL, NULL, "FIXED", 0, 10, 0,
-                         100.4534535, NULL, 0, 0, 0, 0);
+  status = defwComponent("cell1",
+                         "CHM6A",
+                         0,
+                         NULL,
+                         NULL,
+                         "generator",
+                         NULL,
+                         "USER",
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "FIXED",
+                         0,
+                         10,
+                         0,
+                         100.4534535,
+                         NULL,
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
-  status = defwComponent("cell2", "CHM6A", 0, NULL, NULL, NULL, NULL,
-                         "NETLIST", 0, NULL, NULL, NULL, NULL, "COVER", 120,
-                         10, 4, 2, NULL, 0, 0, 0, 0);
+  status = defwComponent("cell2",
+                         "CHM6A",
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "NETLIST",
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "COVER",
+                         120,
+                         10,
+                         4,
+                         2,
+                         NULL,
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
   foreigns[0] = strdup("gds2name");
   foreignX[0] = -500;
   foreignY[0] = -500;
   foreignOrient[0] = 3;
-  status = defwComponent("cell3", "CHM6A", 0, NULL, NULL, NULL, NULL,
-                         "TIMING", 1, foreigns, foreignX, foreignY,
-                         foreignOrient, "PLACED", 240,
-                         10, 0, 0, "region1", 0, 0, 0, 0);
+  status = defwComponent("cell3",
+                         "CHM6A",
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "TIMING",
+                         1,
+                         foreigns,
+                         foreignX,
+                         foreignY,
+                         foreignOrient,
+                         "PLACED",
+                         240,
+                         10,
+                         0,
+                         0,
+                         "region1",
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
   status = defwComponentRouteHalo(100, "metal1", "metal3");
   CHECK_STATUS(status);
-  free((char*)foreigns[0]);
+  free((char*) foreigns[0]);
   foreigns[0] = strdup("gds3name");
   foreignX[0] = -500;
   foreignY[0] = -500;
@@ -589,10 +768,29 @@ int main(int argc, char** argv) {
   foreignX[1] = -300;
   foreignY[1] = -300;
   foreignOrientStr[1] = strdup("FS");
-  status = defwComponentStr("cell4", "CHM3A", 0, NULL, "CHM6A", NULL, NULL,
-                         "DIST", 2, foreigns, foreignX, foreignY, 
-                         foreignOrientStr, "PLACED", 360,
-                         10, "W", 0, "region2", 0, 0, 0, 0);
+  status = defwComponentStr("cell4",
+                            "CHM3A",
+                            0,
+                            NULL,
+                            "CHM6A",
+                            NULL,
+                            NULL,
+                            "DIST",
+                            2,
+                            foreigns,
+                            foreignX,
+                            foreignY,
+                            foreignOrientStr,
+                            "PLACED",
+                            360,
+                            10,
+                            "W",
+                            0,
+                            "region2",
+                            0,
+                            0,
+                            0,
+                            0);
   CHECK_STATUS(status);
   status = defwComponentHaloSoft(100, 0, 50, 200);
   CHECK_STATUS(status);
@@ -602,28 +800,68 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwRealProperty("size", 7.8);
   CHECK_STATUS(status);
-  status = defwComponent("scancell1", "CHK3A", 0, NULL, NULL, NULL, NULL,
-                         NULL, 0, NULL, NULL, NULL, NULL, "PLACED", 500,
-                         10, 7, 0, NULL, 0, 0, 0, 0);
+  status = defwComponent("scancell1",
+                         "CHK3A",
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "PLACED",
+                         500,
+                         10,
+                         7,
+                         0,
+                         NULL,
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
-  status = defwComponent("scancell2", "CHK3A", 0, NULL, NULL, NULL, NULL,
-                         NULL, 0, NULL, NULL, NULL, NULL, "PLACED", 700,
-                         10, 6, 0, NULL, 0, 0, 0, 0);
+  status = defwComponent("scancell2",
+                         "CHK3A",
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         NULL,
+                         NULL,
+                         NULL,
+                         NULL,
+                         "PLACED",
+                         700,
+                         10,
+                         6,
+                         0,
+                         NULL,
+                         0,
+                         0,
+                         0,
+                         0);
   CHECK_STATUS(status);
   status = defwEndComponents();
   CHECK_STATUS(status);
-  free((char*)foreigns[0]);
-  free((char*)foreigns[1]);
-  free((char*)foreigns);
-  free((char*)foreignX);
-  free((char*)foreignY);
-  free((char*)foreignOrient);
-  free((char*)foreignOrientStr[0]);
-  free((char*)foreignOrientStr[1]);
-  free((char*)foreignOrientStr);
+  free((char*) foreigns[0]);
+  free((char*) foreigns[1]);
+  free((char*) foreigns);
+  free((char*) foreignX);
+  free((char*) foreignY);
+  free((char*) foreignOrient);
+  free((char*) foreignOrientStr[0]);
+  free((char*) foreignOrientStr[1]);
+  free((char*) foreignOrientStr);
 
-  xP = (double*)malloc(sizeof(double)*6);
-  yP = (double*)malloc(sizeof(double)*6);
+  xP = (double*) malloc(sizeof(double) * 6);
+  yP = (double*) malloc(sizeof(double) * 6);
   xP[0] = 2.1;
   yP[0] = 2.1;
   xP[1] = 3.1;
@@ -640,25 +878,49 @@ int main(int argc, char** argv) {
   // PINS
   status = defwStartPins(11);
   CHECK_STATUS(status);
-  status = defwPin("scanpin", "net1", 0, "INPUT", NULL, NULL, 0, 0, -1, NULL,
-                   0, 0, 0, 0);
+  status = defwPin(
+      "scanpin", "net1", 0, "INPUT", NULL, NULL, 0, 0, -1, NULL, 0, 0, 0, 0);
   CHECK_STATUS(status);
   status = defwPinPolygon("metal1", 0, 1000, 6, xP, yP);
   CHECK_STATUS(status);
   status = defwPinNetExpr("power1 VDD1");
   CHECK_STATUS(status);
-  status = defwPin("pin0", "net1", 0, "INPUT", "SCAN", NULL, 0, 0, -1, NULL,
-                   0, 0, 0, 0);
+  status = defwPin(
+      "pin0", "net1", 0, "INPUT", "SCAN", NULL, 0, 0, -1, NULL, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwPinStr("pin0.5", "net1", 0, "INPUT", "RESET", "FIXED", 0, 0, "S",
-                      NULL, 0, 0, 0, 0);
+  status = defwPinStr("pin0.5",
+                      "net1",
+                      0,
+                      "INPUT",
+                      "RESET",
+                      "FIXED",
+                      0,
+                      0,
+                      "S",
+                      NULL,
+                      0,
+                      0,
+                      0,
+                      0);
   CHECK_STATUS(status);
   status = defwPinPolygon("metal2", 0, 0, 4, xP, yP);
   CHECK_STATUS(status);
   status = defwPinLayer("metal3", 500, 0, -5000, -100, -4950, -90);
   CHECK_STATUS(status);
-  status = defwPin("pin1", "net1", 1, NULL, "POWER", NULL, 0, 0, -1, "M1",
-                   -5000, -100, -4950, -90);
+  status = defwPin("pin1",
+                   "net1",
+                   1,
+                   NULL,
+                   "POWER",
+                   NULL,
+                   0,
+                   0,
+                   -1,
+                   "M1",
+                   -5000,
+                   -100,
+                   -4950,
+                   -90);
   CHECK_STATUS(status);
   status = defwPinAntennaPinPartialMetalArea(4580, "M1");
   CHECK_STATUS(status);
@@ -680,8 +942,20 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwPinAntennaPinMaxCutCar(5000, "L1");
   CHECK_STATUS(status);
-  status = defwPin("pin2", "net2", 0, "INPUT", "SIGNAL", NULL, 0, 0, -1, "M1",
-                   -5000, 0, -4950, 10);
+  status = defwPin("pin2",
+                   "net2",
+                   0,
+                   "INPUT",
+                   "SIGNAL",
+                   NULL,
+                   0,
+                   0,
+                   -1,
+                   "M1",
+                   -5000,
+                   0,
+                   -4950,
+                   10);
   CHECK_STATUS(status);
   status = defwPinLayer("M1", 500, 0, -5000, 0, -4950, 10);
   CHECK_STATUS(status);
@@ -703,8 +977,20 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwPinAntennaPinPartialCutArea(5000, NULL);
   CHECK_STATUS(status);
-  status = defwPin("INBUS[1]", "|INBUS[1]", 0, "INPUT", "SIGNAL", "FIXED",
-                   45, -2160, 0, "M2", 0, 0, 30, 135);
+  status = defwPin("INBUS[1]",
+                   "|INBUS[1]",
+                   0,
+                   "INPUT",
+                   "SIGNAL",
+                   "FIXED",
+                   45,
+                   -2160,
+                   0,
+                   "M2",
+                   0,
+                   0,
+                   30,
+                   135);
   CHECK_STATUS(status);
   status = defwPinLayer("M2", 0, 0, 0, 0, 30, 135);
   CHECK_STATUS(status);
@@ -736,23 +1022,59 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwPinAntennaPinMaxCutCar(80, "V1");
   CHECK_STATUS(status);
-  status = defwPin("INBUS<0>", "|INBUS<0>", 0, "INPUT", "SIGNAL", "PLACED",
-                   -45, 2160, 1, "M2", 0, 0, 30, 134);
+  status = defwPin("INBUS<0>",
+                   "|INBUS<0>",
+                   0,
+                   "INPUT",
+                   "SIGNAL",
+                   "PLACED",
+                   -45,
+                   2160,
+                   1,
+                   "M2",
+                   0,
+                   0,
+                   30,
+                   134);
   CHECK_STATUS(status);
   status = defwPinLayer("M2", 0, 1000, 0, 0, 30, 134);
   CHECK_STATUS(status);
-  status = defwPin("OUTBUS<1>", "|OUTBUS<1>", 0, "OUTPUT", "SIGNAL", "COVER",
-                   2160, 645, 2, "M1", 0, 0, 30, 135);
+  status = defwPin("OUTBUS<1>",
+                   "|OUTBUS<1>",
+                   0,
+                   "OUTPUT",
+                   "SIGNAL",
+                   "COVER",
+                   2160,
+                   645,
+                   2,
+                   "M1",
+                   0,
+                   0,
+                   30,
+                   135);
   CHECK_STATUS(status);
   status = defwPinLayer("M1", 0, 0, 0, 0, 30, 134);
   CHECK_STATUS(status);
   status = defwPinNetExpr("gnd1 GND");
   CHECK_STATUS(status);
-  status = defwPin("VDD", "VDD", 1, "INOUT", "POWER", NULL, 0, 0, -1, NULL,
-                   0, 0, 0, 0);
+  status = defwPin(
+      "VDD", "VDD", 1, "INOUT", "POWER", NULL, 0, 0, -1, NULL, 0, 0, 0, 0);
   CHECK_STATUS(status);
-  status = defwPin("BUSA[0]", "BUSA[0]", 0, "INPUT", "SIGNAL", "PLACED",
-                   0, 2500, 1, NULL, 0, 0, 0, 0);
+  status = defwPin("BUSA[0]",
+                   "BUSA[0]",
+                   0,
+                   "INPUT",
+                   "SIGNAL",
+                   "PLACED",
+                   0,
+                   2500,
+                   1,
+                   NULL,
+                   0,
+                   0,
+                   0,
+                   0);
   CHECK_STATUS(status);
   status = defwPinLayer("M1", 0, 0, -25, 0, 25, 50);
   CHECK_STATUS(status);
@@ -760,8 +1082,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwPinVia("via12", 0, 25);
   CHECK_STATUS(status);
-  status = defwPin("VDD", "VDD", 1, "INOUT", "POWER", NULL,
-                   0, 0, -1, NULL, 0, 0, 0, 0);
+  status = defwPin(
+      "VDD", "VDD", 1, "INOUT", "POWER", NULL, 0, 0, -1, NULL, 0, 0, 0, 0);
   CHECK_STATUS(status);
   status = defwPinPort();
   CHECK_STATUS(status);
@@ -791,8 +1113,8 @@ int main(int argc, char** argv) {
   status = defwEndPins();
   CHECK_STATUS(status);
 
-  free((char*)xP);
-  free((char*)yP);
+  free((char*) xP);
+  free((char*) yP);
 
   // PINPROPERTIES
   status = defwStartPinProperties(2);
@@ -867,9 +1189,9 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwSpecialNetPathShape("IOWIRE");
   CHECK_STATUS(status);
-  coorX = (double*)malloc(sizeof(double)*6);
-  coorY = (double*)malloc(sizeof(double)*6);
-  coorValue = (double*)malloc(sizeof(double)*6);
+  coorX = (double*) malloc(sizeof(double) * 6);
+  coorY = (double*) malloc(sizeof(double) * 6);
+  coorValue = (double*) malloc(sizeof(double) * 6);
   coorX[0] = 5.0;
   coorY[0] = 15.0;
   coorValue[0] = 0;
@@ -1031,9 +1353,9 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwSpecialNet("VCC");
   CHECK_STATUS(status);
-/*
-  status = defwSpecialNetShieldNetName("ShieldName");
-*/
+  /*
+    status = defwSpecialNetShieldNetName("ShieldName");
+  */
   status = defwSpecialNetPathStart("ROUTED");
   CHECK_STATUS(status);
   status = defwSpecialNetPathLayer("M2");
@@ -1100,16 +1422,16 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwSpecialNetEndOneNet();
   CHECK_STATUS(status);
-  free((char*)coorX);
-  free((char*)coorY);
-  free((char*)coorValue);
+  free((char*) coorX);
+  free((char*) coorY);
+  free((char*) coorValue);
 
   status = defwSpecialNet("VSS1");
   CHECK_STATUS(status);
   status = defwSpecialNetUse("POWER");
   CHECK_STATUS(status);
-  xP = (double*)malloc(sizeof(double)*6);
-  yP = (double*)malloc(sizeof(double)*6);
+  xP = (double*) malloc(sizeof(double) * 6);
+  yP = (double*) malloc(sizeof(double) * 6);
   xP[0] = 2.1;
   yP[0] = 2.1;
   xP[1] = 3.1;
@@ -1138,11 +1460,11 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwSpecialNetEndOneNet();
   CHECK_STATUS(status);
-  free((char*)xP);
-  free((char*)yP);
+  free((char*) xP);
+  free((char*) yP);
   status = defwEndSpecialNets();
   CHECK_STATUS(status);
-  
+
   // NETS
   status = defwStartNets(13);
   CHECK_STATUS(status);
@@ -1200,11 +1522,11 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNetVpinStr("P2", "L1", 45, 54, 3, 46, "FIXED", 23, 12, "FN");
   CHECK_STATUS(status);
-  status = defwNetEndOneNet(); 
+  status = defwNetEndOneNet();
   CHECK_STATUS(status);
 
-  coorX = (double*)malloc(sizeof(double)*3);
-  coorY = (double*)malloc(sizeof(double)*3);
+  coorX = (double*) malloc(sizeof(double) * 3);
+  coorY = (double*) malloc(sizeof(double) * 3);
   status = defwNet("my_net");
   CHECK_STATUS(status);
   status = defwNetConnection("I1", "A", 0);
@@ -1221,7 +1543,7 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNetPathStart("ROUTED");
   CHECK_STATUS(status);
-  status = defwNetPathLayer("M2", 0, NULL); 
+  status = defwNetPathLayer("M2", 0, NULL);
   CHECK_STATUS(status);
   status = defwNetPathStyle(2);
   CHECK_STATUS(status);
@@ -1251,14 +1573,14 @@ int main(int argc, char** argv) {
   coorY[1] = 282400.0;
   status = defwNetPathPoint(2, coorX, coorY);
   CHECK_STATUS(status);
-  free((char*)coorX);
-  free((char*)coorY);
+  free((char*) coorX);
+  free((char*) coorY);
   status = defwNetPathEnd();
   CHECK_STATUS(status);
   status = defwNetNoshieldStart("M2");
   CHECK_STATUS(status);
-  coorXSN = (const char**)malloc(sizeof(char*)*2);
-  coorYSN = (const char**)malloc(sizeof(char*)*2);
+  coorXSN = (const char**) malloc(sizeof(char*) * 2);
+  coorYSN = (const char**) malloc(sizeof(char*) * 2);
   coorXSN[0] = strdup("14100");
   coorYSN[0] = strdup("341440");
   coorXSN[1] = strdup("14000");
@@ -1269,35 +1591,35 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNetNoshieldEnd();
   CHECK_STATUS(status);
-  status = defwNetEndOneNet(); 
+  status = defwNetEndOneNet();
   CHECK_STATUS(status);
 
   status = defwNet("|INBUS[1]");
   CHECK_STATUS(status);
   status = defwNetConnection("|i1", "A", 0);
   CHECK_STATUS(status);
-  status = defwNetEndOneNet(); 
+  status = defwNetEndOneNet();
   CHECK_STATUS(status);
 
   status = defwNet("|INBUS<0>");
   CHECK_STATUS(status);
   status = defwNetConnection("|i0", "A", 0);
   CHECK_STATUS(status);
-  status = defwNetEndOneNet(); 
+  status = defwNetEndOneNet();
   CHECK_STATUS(status);
 
   status = defwNet("|OUTBUS<1>");
   CHECK_STATUS(status);
   status = defwNetConnection("|i0", "Z", 0);
   CHECK_STATUS(status);
-  status = defwNetEndOneNet(); 
+  status = defwNetEndOneNet();
   CHECK_STATUS(status);
 
   status = defwNet("MUSTJOIN");
   CHECK_STATUS(status);
   status = defwNetConnection("cell4", "PA1", 0);
   CHECK_STATUS(status);
-  status = defwNetEndOneNet(); 
+  status = defwNetEndOneNet();
   CHECK_STATUS(status);
 
   status = defwNet("XX100");
@@ -1308,14 +1630,14 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNetConnection("Z38A01", "G", 0);
   CHECK_STATUS(status);
-  status = defwNetVpin("V_SUB3_XX100", NULL, -333, -333, 333, 333, "PLACED",
-                       189560, 27300, 0);
+  status = defwNetVpin(
+      "V_SUB3_XX100", NULL, -333, -333, 333, 333, "PLACED", 189560, 27300, 0);
   CHECK_STATUS(status);
-  status = defwNetVpin("V_SUB2_XX100", NULL, -333, -333, 333, 333, "PLACED",
-                       169400, 64500, 0);
+  status = defwNetVpin(
+      "V_SUB2_XX100", NULL, -333, -333, 333, 333, "PLACED", 169400, 64500, 0);
   CHECK_STATUS(status);
-  status = defwNetVpin("V_SUB1_XX100", NULL, -333, -333, 333, 333, "PLACED",
-                       55160, 31500, 0);
+  status = defwNetVpin(
+      "V_SUB1_XX100", NULL, -333, -333, 333, 333, "PLACED", 55160, 31500, 0);
   CHECK_STATUS(status);
   status = defwNetSubnetStart("SUB1_XX100");
   CHECK_STATUS(status);
@@ -1327,15 +1649,15 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNetPathLayer("M1", 0, "RULE1");
   CHECK_STATUS(status);
-  free((char*)coorXSN[0]);
-  free((char*)coorYSN[0]);
-  free((char*)coorXSN[1]);
-  free((char*)coorYSN[1]);
-  free((char*)coorXSN);
-  free((char*)coorYSN);
-  coorX = (double*)malloc(sizeof(double)*5);
-  coorY = (double*)malloc(sizeof(double)*5);
-  coorValue = (double*)malloc(sizeof(double)*5);
+  free((char*) coorXSN[0]);
+  free((char*) coorYSN[0]);
+  free((char*) coorXSN[1]);
+  free((char*) coorYSN[1]);
+  free((char*) coorXSN);
+  free((char*) coorYSN);
+  coorX = (double*) malloc(sizeof(double) * 5);
+  coorY = (double*) malloc(sizeof(double) * 5);
+  coorValue = (double*) malloc(sizeof(double) * 5);
   coorX[0] = 54040.0;
   coorY[0] = 30300.0;
   coorX[1] = 54040.0;
@@ -1486,7 +1808,8 @@ int main(int argc, char** argv) {
   status = defwNetPathVia("nd1VIA23");
   CHECK_STATUS(status);
   coorX[0] = 189560.0;
-  coorY[0] = 30300.0;;
+  coorY[0] = 30300.0;
+  ;
   coorValue[0] = 8.0;
   status = defwNetPathPointWithExt(1, coorX, coorY, coorValue);
   CHECK_STATUS(status);
@@ -1527,7 +1850,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   coorX[0] = 149800.0;
   coorY[0] = 37500.0;
-  coorValue[0] = 8.0;;
+  coorValue[0] = 8.0;
+  ;
   coorX[1] = 170520.0;
   coorY[1] = 37500.0;
   coorValue[1] = 0.0;
@@ -1653,9 +1977,9 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNetEndOneNet();
   CHECK_STATUS(status);
-  free((char*)coorX);
-  free((char*)coorY);
-  free((char*)coorValue);
+  free((char*) coorX);
+  free((char*) coorY);
+  free((char*) coorValue);
 
   status = defwNet("n1");
   CHECK_STATUS(status);
@@ -1667,7 +1991,7 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNetFixedbump();
   CHECK_STATUS(status);
-  status = defwNetEndOneNet(); 
+  status = defwNetEndOneNet();
   CHECK_STATUS(status);
 
   status = defwNetMustjoinConnection("PIN2", "n2");
@@ -1723,8 +2047,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwScanchainStop("cell4", "PA2");
   CHECK_STATUS(status);
-  status = defwScanchainOrdered("cell2", "IN", "PA0", NULL, NULL,
-                                "cell1", "OUT", "P10", NULL, NULL);
+  status = defwScanchainOrdered(
+      "cell2", "IN", "PA0", NULL, NULL, "cell1", "OUT", "P10", NULL, NULL);
   CHECK_STATUS(status);
   status = defwScanchainFloating("scancell1", "IN", "PA0", NULL, NULL);
   CHECK_STATUS(status);
@@ -1736,9 +2060,11 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwScanchainStart("block1/current_state_reg_0_QZ", NULL);
   CHECK_STATUS(status);
-  status = defwScanchainFloating("block1/pgm_cgm_en_reg", "IN", "SD", "OUT", "QZ");
+  status
+      = defwScanchainFloating("block1/pgm_cgm_en_reg", "IN", "SD", "OUT", "QZ");
   CHECK_STATUS(status);
-  status = defwScanchainFloating("block1/start_reset_dd_reg", "IN", "SD", "OUT", "QZ");
+  status = defwScanchainFloating(
+      "block1/start_reset_dd_reg", "IN", "SD", "OUT", "QZ");
   CHECK_STATUS(status);
   status = defwScanchainStop("block1/start_reset_d_reg", NULL);
   CHECK_STATUS(status);
@@ -1748,14 +2074,27 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwScanchainStart("block1/current_state_reg_0_QZ", NULL);
   CHECK_STATUS(status);
-  status = defwScanchainFloating("block1/port2_phy_addr_reg_0_", "IN", "SD", "OUT", "QZ ");
+  status = defwScanchainFloating(
+      "block1/port2_phy_addr_reg_0_", "IN", "SD", "OUT", "QZ ");
   CHECK_STATUS(status);
-  status = defwScanchainFloating("block1/port2_phy_addr_reg_4_", "IN", "SD", "OUT", "QZ");
+  status = defwScanchainFloating(
+      "block1/port2_phy_addr_reg_4_", "IN", "SD", "OUT", "QZ");
   CHECK_STATUS(status);
-  status = defwScanchainFloatingBits("block1/port3_intfc", "IN", "SD", "OUT", "QZ", 4);
+  status = defwScanchainFloatingBits(
+      "block1/port3_intfc", "IN", "SD", "OUT", "QZ", 4);
   CHECK_STATUS(status);
-  status = defwScanchainOrderedBits("block1/mux1", "IN", "A", "OUT", "X", 0,
-                                    "block1/ff2", "IN", "SD", "OUT", "Q", -1);
+  status = defwScanchainOrderedBits("block1/mux1",
+                                    "IN",
+                                    "A",
+                                    "OUT",
+                                    "X",
+                                    0,
+                                    "block1/ff2",
+                                    "IN",
+                                    "SD",
+                                    "OUT",
+                                    "Q",
+                                    -1);
   CHECK_STATUS(status);
   status = defwScanchain("chain4_clock3");
   CHECK_STATUS(status);
@@ -1767,11 +2106,31 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwScanchainFloatingBits("block1/bus8", NULL, NULL, NULL, NULL, 8);
   CHECK_STATUS(status);
-  status = defwScanchainOrderedBits("block1/dsl/ffl", "IN", "SD", "OUT", "Q",
-                               -1, "block1/dsl/mux1", "IN", "B", "OUT", "Y", 0);
+  status = defwScanchainOrderedBits("block1/dsl/ffl",
+                                    "IN",
+                                    "SD",
+                                    "OUT",
+                                    "Q",
+                                    -1,
+                                    "block1/dsl/mux1",
+                                    "IN",
+                                    "B",
+                                    "OUT",
+                                    "Y",
+                                    0);
   CHECK_STATUS(status);
-  status = defwScanchainOrderedBits("block1/dsl/ff2", "IN", "SD", "OUT", "Q",
-                               -1, "block1/dsl/mux2", "IN", "B", "OUT", "Y", 0);
+  status = defwScanchainOrderedBits("block1/dsl/ff2",
+                                    "IN",
+                                    "SD",
+                                    "OUT",
+                                    "Q",
+                                    -1,
+                                    "block1/dsl/mux2",
+                                    "IN",
+                                    "B",
+                                    "OUT",
+                                    "Y",
+                                    0);
   CHECK_STATUS(status);
   status = defwScanchainStop("block1/start_reset_d_reg", NULL);
   CHECK_STATUS(status);
@@ -1816,15 +2175,15 @@ int main(int argc, char** argv) {
   */
 
   // GROUPS
-  groupExpr = (const char**)malloc(sizeof(char*)*2);
+  groupExpr = (const char**) malloc(sizeof(char*) * 2);
   status = defwStartGroups(2);
   CHECK_STATUS(status);
-  groupExpr[0] = strdup("cell2"); 
-  groupExpr[1] = strdup("cell3"); 
+  groupExpr[0] = strdup("cell2");
+  groupExpr[1] = strdup("cell3");
   status = defwGroup("group1", 2, groupExpr);
   CHECK_STATUS(status);
-  free((char*)groupExpr[0]);
-  free((char*)groupExpr[1]);
+  free((char*) groupExpr[0]);
+  free((char*) groupExpr[1]);
   status = defwGroupRegion(0, 0, 0, 0, "region1");
   CHECK_STATUS(status);
   status = defwStringProperty("ggrp", "xx");
@@ -1833,10 +2192,10 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwRealProperty("maxarea", 5.6);
   CHECK_STATUS(status);
-  groupExpr[0] = strdup("cell1"); 
+  groupExpr[0] = strdup("cell1");
   status = defwGroup("group2", 1, groupExpr);
   CHECK_STATUS(status);
-  free((char*)groupExpr[0]);
+  free((char*) groupExpr[0]);
   status = defwGroupRegion(0, 10, 1000, 1010, NULL);
   CHECK_STATUS(status);
   status = defwStringProperty("ggrp", "after the fall");
@@ -1845,14 +2204,14 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwEndGroups();
   CHECK_STATUS(status);
-  free((char*)groupExpr);
+  free((char*) groupExpr);
   status = defwNewLine();
   CHECK_STATUS(status);
 
   // BLOCKAGES
   int *xPB, *yPB;
-  xPB = (int*)malloc(sizeof(int)*7);
-  yPB = (int*)malloc(sizeof(int)*7);
+  xPB = (int*) malloc(sizeof(int) * 7);
+  yPB = (int*) malloc(sizeof(int) * 7);
   xPB[0] = 2;
   yPB[0] = 2;
   xPB[1] = 3;
@@ -1970,7 +2329,7 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwBlockagesLayer("metal1");
   CHECK_STATUS(status);
-  status =  defwBlockagesLayerExceptpgnet();
+  status = defwBlockagesLayerExceptpgnet();
   CHECK_STATUS(status);
   status = defwBlockagesLayerSpacing(4);
   CHECK_STATUS(status);
@@ -1980,12 +2339,12 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNewLine();
   CHECK_STATUS(status);
-  free((char*)xPB);
-  free((char*)yPB);
+  free((char*) xPB);
+  free((char*) yPB);
 
   // SLOTS
-  xP = (double*)malloc(sizeof(double)*7);
-  yP = (double*)malloc(sizeof(double)*7);
+  xP = (double*) malloc(sizeof(double) * 7);
+  yP = (double*) malloc(sizeof(double) * 7);
   xP[0] = 2.1;
   yP[0] = 2.1;
   xP[1] = 3.1;
@@ -2024,12 +2383,12 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNewLine();
   CHECK_STATUS(status);
-  free((char*)xP);
-  free((char*)yP);
+  free((char*) xP);
+  free((char*) yP);
 
   // FILLS
-  xP = (double*)malloc(sizeof(double)*7);
-  yP = (double*)malloc(sizeof(double)*7);
+  xP = (double*) malloc(sizeof(double) * 7);
+  yP = (double*) malloc(sizeof(double) * 7);
   xP[0] = 2.1;
   yP[0] = 2.1;
   xP[1] = 3.1;
@@ -2094,12 +2453,12 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNewLine();
   CHECK_STATUS(status);
-  free((char*)xP);
-  free((char*)yP);
+  free((char*) xP);
+  free((char*) yP);
 
   // SLOTS
-  xP = (double*)malloc(sizeof(double)*7);
-  yP = (double*)malloc(sizeof(double)*7);
+  xP = (double*) malloc(sizeof(double) * 7);
+  yP = (double*) malloc(sizeof(double) * 7);
   xP[0] = 2.1;
   yP[0] = 2.1;
   xP[1] = 3.1;
@@ -2146,8 +2505,8 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwNewLine();
   CHECK_STATUS(status);
-  free((char*)xP);
-  free((char*)yP);
+  free((char*) xP);
+  free((char*) yP);
 
   // NONDEFAULTRULES
   status = defwStartNonDefaultRules(4);
@@ -2214,8 +2573,8 @@ int main(int argc, char** argv) {
   // STYLES
   status = defwStartStyles(3);
   CHECK_STATUS(status);
-  xP = (double*)malloc(sizeof(double)*6);
-  yP = (double*)malloc(sizeof(double)*6);
+  xP = (double*) malloc(sizeof(double) * 6);
+  yP = (double*) malloc(sizeof(double) * 6);
   xP[0] = 30;
   yP[0] = 10;
   xP[1] = 10;
@@ -2232,10 +2591,10 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwStyles(2, 5, xP, yP);
   CHECK_STATUS(status);
-  free((char*)xP);
-  free((char*)yP);
-  xP = (double*)malloc(sizeof(double)*8);
-  yP = (double*)malloc(sizeof(double)*8);
+  free((char*) xP);
+  free((char*) yP);
+  xP = (double*) malloc(sizeof(double) * 8);
+  yP = (double*) malloc(sizeof(double) * 8);
   xP[0] = 30;
   yP[0] = 10;
   xP[1] = 10;
@@ -2256,15 +2615,15 @@ int main(int argc, char** argv) {
   CHECK_STATUS(status);
   status = defwEndStyles();
   CHECK_STATUS(status);
-  free((char*)xP);
-  free((char*)yP);
+  free((char*) xP);
+  free((char*) yP);
   status = defwNewLine();
   CHECK_STATUS(status);
 
   // BEGINEXT
   status = defwStartBeginext("tag");
   CHECK_STATUS(status);
-   defwAddIndent();
+  defwAddIndent();
   status = defwBeginextCreator("CADENCE");
   CHECK_STATUS(status);
   // since the date is different each time,
@@ -2282,13 +2641,12 @@ int main(int argc, char** argv) {
   status = defwEndBeginext();
   CHECK_STATUS(status);
 
-
   status = defwEnd();
   CHECK_STATUS(status);
 
   lineNumber = defwCurrentLineNumber();
   if (lineNumber == 0)
-     fprintf(stderr, "ERROR: nothing has been read.\n");
+    fprintf(stderr, "ERROR: nothing has been read.\n");
 
   fclose(fout);
 
