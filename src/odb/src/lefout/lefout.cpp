@@ -398,6 +398,8 @@ void lefout::writeBlockTerms(dbBlock* db_block)
   for (dbBTerm* b_term : db_block->getBTerms()) {
     fmt::print(_out, "  PIN {}\n", b_term->getName().c_str());
     fmt::print(_out, "    DIRECTION {} ;\n", b_term->getIoType().getString());
+
+    std::string sig_type = "SIGNAL";
     switch (b_term->getSigType().getValue()) {
       case odb::dbSigType::SCAN:
       case odb::dbSigType::TIEOFF:
@@ -406,11 +408,23 @@ void lefout::writeBlockTerms(dbBlock* db_block)
         // CLOCK } ;] whereas nets can be net: [+ USE {ANALOG | CLOCK | GROUND |
         // POWER | RESET | SCAN | SIGNAL | TIEOFF}] BTerms get their sigType
         // from the net. So we map other sigtypes to SIGNAL in exported LEFs
-        fmt::print(_out, "    USE SIGNAL ;\n");
+        sig_type = "SIGNAL";
         break;
-      default:
-        fmt::print(_out, "    USE {} ;\n", b_term->getSigType().getString());
+      case odb::dbSigType::ANALOG:
+        sig_type = "ANALOG";
+        break;
+      case odb::dbSigType::POWER:
+        sig_type = "POWER";
+        break;
+      case odb::dbSigType::GROUND:
+        sig_type = "GROUND";
+        break;
+      case odb::dbSigType::CLOCK:
+        sig_type = "CLOCK";
+        break;
     }
+    fmt::print(_out, "    USE {} ;\n", sig_type);
+
     for (dbBPin* db_b_pin : b_term->getBPins()) {
       fmt::print(_out, "{}", "    PORT\n");
       dbSet<dbBox> term_pins = db_b_pin->getBoxes();
