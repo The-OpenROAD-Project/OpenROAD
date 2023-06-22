@@ -38,7 +38,7 @@
 
 include("openroad")
 find_package(TCL)
-find_package(Boost REQUIRED COMPONENTS serialization)
+find_package(Boost)
 
 add_library(dpl_lib
   src/Opendp.cpp
