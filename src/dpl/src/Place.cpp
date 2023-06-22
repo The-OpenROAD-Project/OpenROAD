@@ -972,16 +972,9 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
                  utl::DPL,
                  "detailed",
                  1,
-                 "Overlap found between queryBox ({} , {}) - ({} , {}) and bbox"
-                 "({} , {}) - ({}, {})",
-                 queryBox.min_corner().x(),
-                 queryBox.min_corner().y(),
-                 queryBox.max_corner().x(),
-                 queryBox.max_corner().y(),
-                 box.min_corner().x(),
-                 box.min_corner().y(),
-                 box.max_corner().x(),
-                 box.max_corner().y());
+                 "Overlap found between queryBox {} and bbox {}",
+                 printBgBox(queryBox),
+                 printBgBox(box));
     }
     return false;
   }
