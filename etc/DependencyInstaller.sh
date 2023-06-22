@@ -191,7 +191,7 @@ _installUbuntuPackages() {
         libpcre3-dev \
         python3-dev \
         libreadline-dev \
-	libgtest-dev \
+        libgtest-dev \
         tcl-dev \
         tcllib \
         wget \
@@ -290,14 +290,14 @@ _installRHELPackages() {
     if [[ $(yum repolist | egrep -c "rhel-8-for-x86_64-appstream-rpms") -eq 0 ]]; then
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-gpg-keys-8-6.el8.noarch.rpm
         yum -y install http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/centos-stream-repos-8-6.el8.noarch.rpm
-    	rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
+        rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-centosofficial
     fi
 
     yum -y install \
         qt5-qtbase-devel \
         qt5-qtimageformats \
         tcl-devel
-        
+
 }
 
 _installCentosCleanUp() {
