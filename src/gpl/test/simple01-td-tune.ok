@@ -45,56 +45,54 @@
 [INFO GPL-0030] NumBins: 256
 [NesterovSolve] Iter: 1 overflow: 0.832414 HPWL: 3651238
 [INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 10 overflow: 0.750853 HPWL: 4574193
-[NesterovSolve] Iter: 20 overflow: 0.749505 HPWL: 4684741
-[NesterovSolve] Iter: 30 overflow: 0.760247 HPWL: 4598854
-[NesterovSolve] Iter: 40 overflow: 0.769359 HPWL: 4534115
-[NesterovSolve] Iter: 50 overflow: 0.772084 HPWL: 4483976
-[NesterovSolve] Iter: 60 overflow: 0.771588 HPWL: 4466888
-[NesterovSolve] Iter: 70 overflow: 0.773152 HPWL: 4463238
-[NesterovSolve] Iter: 80 overflow: 0.773052 HPWL: 4471440
-[NesterovSolve] Iter: 90 overflow: 0.77219 HPWL: 4482320
-[NesterovSolve] Iter: 100 overflow: 0.77132 HPWL: 4493360
-[NesterovSolve] Iter: 110 overflow: 0.77065 HPWL: 4497373
-[NesterovSolve] Iter: 120 overflow: 0.770225 HPWL: 4496787
-[NesterovSolve] Iter: 130 overflow: 0.769597 HPWL: 4497480
-[NesterovSolve] Iter: 140 overflow: 0.768658 HPWL: 4504236
-[NesterovSolve] Iter: 150 overflow: 0.766595 HPWL: 4520183
-[NesterovSolve] Iter: 160 overflow: 0.76114 HPWL: 4549205
-[NesterovSolve] Iter: 170 overflow: 0.753233 HPWL: 4593144
-[NesterovSolve] Iter: 180 overflow: 0.744614 HPWL: 4660141
-[NesterovSolve] Iter: 190 overflow: 0.734109 HPWL: 4752213
-[NesterovSolve] Iter: 200 overflow: 0.714951 HPWL: 4869057
-[NesterovSolve] Iter: 210 overflow: 0.692853 HPWL: 5005958
+[INFO GPL-0103] Weighted 35 nets.
+[NesterovSolve] Iter: 10 overflow: 0.727093 HPWL: 4009566
+[NesterovSolve] Iter: 20 overflow: 0.731459 HPWL: 3997075
+[NesterovSolve] Iter: 30 overflow: 0.732006 HPWL: 3995056
+[NesterovSolve] Iter: 40 overflow: 0.731695 HPWL: 3995516
+[NesterovSolve] Iter: 50 overflow: 0.731791 HPWL: 3995898
+[NesterovSolve] Iter: 60 overflow: 0.731862 HPWL: 3995863
+[NesterovSolve] Iter: 70 overflow: 0.731688 HPWL: 3996174
+[NesterovSolve] Iter: 80 overflow: 0.731537 HPWL: 3996462
+[NesterovSolve] Iter: 90 overflow: 0.731355 HPWL: 3997232
+[NesterovSolve] Iter: 100 overflow: 0.731041 HPWL: 3998530
+[NesterovSolve] Iter: 110 overflow: 0.730514 HPWL: 4000464
+[NesterovSolve] Iter: 120 overflow: 0.729617 HPWL: 4003700
+[NesterovSolve] Iter: 130 overflow: 0.72809 HPWL: 4008511
+[NesterovSolve] Iter: 140 overflow: 0.725588 HPWL: 4015477
+[NesterovSolve] Iter: 150 overflow: 0.721533 HPWL: 4025180
+[NesterovSolve] Iter: 160 overflow: 0.714382 HPWL: 4039961
+[NesterovSolve] Iter: 170 overflow: 0.702981 HPWL: 4061078
 [INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 220 overflow: 0.636994 HPWL: 4789589
-[NesterovSolve] Iter: 230 overflow: 0.598799 HPWL: 4945517
+[INFO GPL-0103] Weighted 35 nets.
+[NesterovSolve] Iter: 180 overflow: 0.676438 HPWL: 4127222
+[NesterovSolve] Iter: 190 overflow: 0.663619 HPWL: 4152369
+[NesterovSolve] Iter: 200 overflow: 0.640366 HPWL: 4202580
+[NesterovSolve] Iter: 210 overflow: 0.61037 HPWL: 4259845
 [INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 240 overflow: 0.564015 HPWL: 5078602
-[NesterovSolve] Iter: 250 overflow: 0.52245 HPWL: 5253598
+[INFO GPL-0103] Weighted 35 nets.
+[NesterovSolve] Iter: 220 overflow: 0.574161 HPWL: 4317164
+[NesterovSolve] Iter: 230 overflow: 0.534896 HPWL: 4384951
 [INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 260 overflow: 0.477898 HPWL: 5388807
-[NesterovSolve] Iter: 270 overflow: 0.429694 HPWL: 5538249
+[INFO GPL-0103] Weighted 35 nets.
+[NesterovSolve] Iter: 240 overflow: 0.48536 HPWL: 4422745
+[NesterovSolve] Iter: 250 overflow: 0.432855 HPWL: 4433249
 [INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 280 overflow: 0.367903 HPWL: 5653700
-[NesterovSolve] Iter: 290 overflow: 0.31844 HPWL: 5678398
+[INFO GPL-0103] Weighted 35 nets.
+[NesterovSolve] Iter: 260 overflow: 0.377164 HPWL: 4431527
+[NesterovSolve] Iter: 270 overflow: 0.325573 HPWL: 4434944
+[NesterovSolve] Iter: 280 overflow: 0.294104 HPWL: 4464298
 [INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 300 overflow: 0.296604 HPWL: 5701373
-[NesterovSolve] Iter: 310 overflow: 0.264513 HPWL: 5694185
-[NesterovSolve] Iter: 320 overflow: 0.233433 HPWL: 5703660
-[NesterovSolve] Iter: 330 overflow: 0.206372 HPWL: 5731016
+[INFO GPL-0103] Weighted 35 nets.
+[NesterovSolve] Iter: 290 overflow: 0.268675 HPWL: 4501840
+[NesterovSolve] Iter: 300 overflow: 0.235442 HPWL: 4535815
+[NesterovSolve] Iter: 310 overflow: 0.201322 HPWL: 4566067
 [INFO GPL-0100] worst slack 1.39e-09
-[INFO GPL-0103] Weighted 36 nets.
-[NesterovSolve] Iter: 340 overflow: 0.180172 HPWL: 5747118
-[NesterovSolve] Iter: 350 overflow: 0.156019 HPWL: 5741397
-[NesterovSolve] Iter: 360 overflow: 0.132409 HPWL: 5754790
-[NesterovSolve] Iter: 370 overflow: 0.112619 HPWL: 5768903
-[NesterovSolve] Finished with Overflow: 0.099853
+[INFO GPL-0103] Weighted 35 nets.
+[NesterovSolve] Iter: 320 overflow: 0.176272 HPWL: 4600687
+[NesterovSolve] Iter: 330 overflow: 0.145822 HPWL: 4618401
+[NesterovSolve] Iter: 340 overflow: 0.119995 HPWL: 4632702
+[NesterovSolve] Iter: 350 overflow: 0.0996707 HPWL: 4657189
+[NesterovSolve] Finished with Overflow: 0.099671
 worst slack 1.37
 No differences found.

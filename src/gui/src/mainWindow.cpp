@@ -429,14 +429,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::setDatabase(odb::dbDatabase* db)
 {
-  // set database and pass along
   db_ = db;
   controls_->setDb(db_);
-
-  auto* chip = db->getChip();
-  if (chip != nullptr) {
-    viewer_->designLoaded(chip->getBlock());
-  }
 }
 
 void MainWindow::setBlock(odb::dbBlock* block)

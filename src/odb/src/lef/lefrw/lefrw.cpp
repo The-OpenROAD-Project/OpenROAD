@@ -129,11 +129,11 @@ void lefVia(lefiVia* via)
       if (via->lefiVia::propIsString(i))
         fprintf(fout, "%s ", via->lefiVia::propValue(i));
       /*
-         if (i+1 == via->lefiVia::numProperties())  // end of properties
-         fprintf(fout, ";\n");
-         else      // just add new line
-         fprintf(fout, "\n");
-         */
+      if (i+1 == via->lefiVia::numProperties())  // end of properties
+      fprintf(fout, ";\n");
+      else      // just add new line
+      fprintf(fout, "\n");
+      */
       switch (via->lefiVia::propType(i)) {
         case 'R':
           fprintf(fout, "REAL ");
@@ -170,7 +170,7 @@ void lefVia(lefiVia* via)
                   via->lefiVia::yh(i, j));
         } else {
           fprintf(fout,
-                  "    RECT  %f %f  %f %f  ;\n",
+                  "    RECT ( %f %f ) ( %f %f ) ;\n",
                   via->lefiVia::xl(i, j),
                   via->lefiVia::yl(i, j),
                   via->lefiVia::xh(i, j),
@@ -286,7 +286,7 @@ void lefViaRuleLayer(lefiViaRuleLayer* vLayer)
             vLayer->lefiViaRuleLayer::spacingStepY());
   if (vLayer->lefiViaRuleLayer::hasRect())
     fprintf(fout,
-            "    RECT  %f %f %f %f ;\n",
+            "    RECT ( %f %f ) ( %f %f ) ;\n",
             vLayer->lefiViaRuleLayer::xl(),
             vLayer->lefiViaRuleLayer::yl(),
             vLayer->lefiViaRuleLayer::xh(),
@@ -375,7 +375,7 @@ void prtGeometry(lefiGeometries* geometry)
                   rect->yh);
         } else {
           fprintf(fout,
-                  "      RECT %f %f %f %f ;\n",
+                  "      RECT ( %f %f ) ( %f %f ) ;\n",
                   rect->xl,
                   rect->yl,
                   rect->xh,
@@ -416,9 +416,9 @@ void prtGeometry(lefiGeometries* geometry)
         }
         for (j = 0; j < polygon->numPoints; j++) {
           if (j + 1 == polygon->numPoints)  // last one on the list
-            fprintf(fout, "      %g %g ;\n", polygon->x[j], polygon->y[j]);
+            fprintf(fout, "      ( %g %g ) ;\n", polygon->x[j], polygon->y[j]);
           else
-            fprintf(fout, "      %g %g \n", polygon->x[j], polygon->y[j]);
+            fprintf(fout, "      ( %g %g )\n", polygon->x[j], polygon->y[j]);
         }
         break;
       case lefiGeomPolygonIterE:
@@ -431,7 +431,7 @@ void prtGeometry(lefiGeometries* geometry)
         }
         for (j = 0; j < polygonIter->numPoints; j++)
           fprintf(
-              fout, "       %g %g \n", polygonIter->x[j], polygonIter->y[j]);
+              fout, "      ( %g %g )\n", polygonIter->x[j], polygonIter->y[j]);
         fprintf(fout,
                 "      DO %g BY %g STEP %g %g ;\n",
                 polygonIter->xStart,
@@ -1490,7 +1490,7 @@ int macroClassTypeCB(lefrCallbackType_e c,
 {
   checkType(c);
   // if ((long)ud != userData) dataError();
-  //    fprintf(fout, "  CLASS %s ;\n",  macroClassType);
+  fprintf(fout, "MACRO CLASS %s\n", macroClassType);
   return 0;
 }
 
@@ -1597,7 +1597,7 @@ int macroCB(lefrCallbackType_e c, lefiMacro* macro, lefiUserData)
   }
   if (macro->lefiMacro::hasOrigin())
     fprintf(fout,
-            "  ORIGIN %g %g ;\n",
+            "  ORIGIN ( %g %g ) ;\n",
             macro->lefiMacro::originX(),
             macro->lefiMacro::originY());
   if (macro->lefiMacro::hasPower())
@@ -2492,12 +2492,12 @@ int doneCB(lefrCallbackType_e c, void*, lefiUserData)
 
 void errorCB(const char* msg)
 {
-  printf("%s : %s\n", lefrGetUserData(), msg);
+  printf("%s : %s\n", (const char*) lefrGetUserData(), msg);
 }
 
 void warningCB(const char* msg)
 {
-  printf("%s : %s\n", lefrGetUserData(), msg);
+  printf("%s : %s\n", (const char*) lefrGetUserData(), msg);
 }
 
 void* mallocCB(int size)
@@ -2562,7 +2562,7 @@ int main(int argc, char** argv)
   fout = stdout;
   //  userData = 0x01020304;
 
-#ifdef WIN32
+#if (defined WIN32 && _MSC_VER < 1800)
   // Enable two-digit exponent format
   _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
@@ -2719,8 +2719,8 @@ int main(int argc, char** argv)
     lefrSetReallocFunction(reallocCB);
     lefrSetFreeFunction(freeCB);
 
-    //        lefrSetLineNumberFunction(lineNumberCB);
-    //        lefrSetDeltaNumberLines(50);
+    lefrSetLineNumberFunction(lineNumberCB);
+    lefrSetDeltaNumberLines(50);
 
     lefrSetRegisterUnusedCallbacks();
 
@@ -2763,7 +2763,7 @@ int main(int argc, char** argv)
   }
 
   (void) lefrSetShiftCase();  // will shift name to uppercase if caseinsensitive
-  // is set to off or not set
+                              // is set to off or not set
   if (!isSessionles) {
     lefrSetOpenLogFileAppend();
   }
@@ -2790,14 +2790,14 @@ int main(int argc, char** argv)
       (void) lefrEnableReadEncrypted();
 
       status = lefwInit(fout);  // initialize the lef writer,
-      // need to be called 1st
+                                // need to be called 1st
       if (status != LEFW_OK)
         return 1;
 
       res = lefrRead(f, inFile[fileCt], (void*) userData);
 
       if (res)
-        fprintf(stderr, "Reader returns bad status.\n", inFile[fileCt]);
+        fprintf(stderr, "Reader returns bad status.\n");
 
       (void) lefrPrintUnusedCallbacks(fout);
       (void) lefrReleaseNResetMemory();
@@ -2851,14 +2851,14 @@ int main(int argc, char** argv)
       (void) lefrEnableReadEncrypted();
 
       status = lefwInit(fout);  // initialize the lef writer,
-      // need to be called 1st
+                                // need to be called 1st
       if (status != LEFW_OK)
         return 1;
 
       res = lefrRead(f, inFile[fileCt], (void*) userData);
 
       if (res)
-        fprintf(stderr, "Reader returns bad status.\n", inFile[fileCt]);
+        fprintf(stderr, "Reader returns bad status.\n");
 
       (void) lefrPrintUnusedCallbacks(fout);
       (void) lefrReleaseNResetMemory();
@@ -2879,7 +2879,7 @@ int main(int argc, char** argv)
       (void) lefrEnableReadEncrypted();
 
       status = lefwInit(fout);  // initialize the lef writer,
-      // need to be called 1st
+                                // need to be called 1st
       if (status != LEFW_OK)
         return 1;
 
@@ -2898,7 +2898,7 @@ int main(int argc, char** argv)
       }
 
       if (res)
-        fprintf(stderr, "Reader returns bad status.\n", inFile[fileCt]);
+        fprintf(stderr, "Reader returns bad status.\n");
 
       (void) lefrPrintUnusedCallbacks(fout);
       (void) lefrReleaseNResetMemory();

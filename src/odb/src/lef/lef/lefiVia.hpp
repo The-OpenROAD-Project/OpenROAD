@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -42,9 +42,6 @@ class lefiViaLayer
  public:
   lefiViaLayer();
   void Init();
-
-  LEF_COPY_CONSTRUCTOR_H(lefiViaLayer);
-  LEF_ASSIGN_OPERATOR_H(lefiViaLayer);
 
   void Destroy();
   ~lefiViaLayer();
@@ -89,7 +86,6 @@ class lefiVia
   lefiVia();
   void Init();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiVia);
   void Destroy();
   ~lefiVia();
 

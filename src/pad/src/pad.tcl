@@ -114,12 +114,14 @@ sta::define_cmd_args "make_io_sites" {-horizontal_site site \
                                       -vertical_site site \
                                       -corner_site site \
                                       -offset offset \
-                                      [-rotation rotation] \
+                                      [-rotation_horizontal rotation] \
+                                      [-rotation_vertical rotation] \
+                                      [-rotation_corner rotation] \
                                       [-ring_index index]}
 
 proc make_io_sites {args} {
   sta::parse_key_args "make_io_sites" args \
-    keys {-horizontal_site -vertical_site -corner_site -offset -rotation -ring_index} \
+    keys {-horizontal_site -vertical_site -corner_site -offset -rotation -rotation_horizontal -rotation_vertical -rotation_corner -ring_index} \
     flags {}
 
   sta::check_argc_eq0 "make_io_sites" $args
@@ -127,9 +129,23 @@ proc make_io_sites {args} {
   if {[info exists keys(-ring_index)]} {
     set index $keys(-ring_index)
   }
-  set rotation "R0"
+  set rotation_hor "R0"
+  set rotation_ver "R0"
+  set rotation_cor "R0"
   if {[info exists keys(-rotation)]} {
-    set rotation $keys(-rotation)
+    utl::warn PAD 112 "Use of -rotation is deprecated"
+    set rotation_hor $keys(-rotation)
+    set rotation_ver $keys(-rotation)
+    set rotation_cor $keys(-rotation)
+  }
+  if {[info exists keys(-rotation_horizontal)]} {
+    set rotation_hor $keys(-rotation_horizontal)
+  }
+  if {[info exists keys(-rotation_vertical)]} {
+    set rotation_ver $keys(-rotation_vertical)
+  }
+  if {[info exists keys(-rotation_corner)]} {
+    set rotation_cor $keys(-rotation_corner)
   }
 
   pad::assert_required make_io_sites -horizontal_site
@@ -144,7 +160,9 @@ proc make_io_sites {args} {
                    $offset \
                    $offset \
                    $offset \
-                   $rotation \
+                   $rotation_hor \
+                   $rotation_ver \
+                   $rotation_cor \
                    $index
 }
 
