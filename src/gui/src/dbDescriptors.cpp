@@ -355,7 +355,7 @@ bool DbBlockDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto block = std::any_cast<odb::dbBlock*>(object);
   bbox = block->getBBox()->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbBlockDescriptor::highlight(std::any object, Painter& painter) const
@@ -364,7 +364,9 @@ void DbBlockDescriptor::highlight(std::any object, Painter& painter) const
 
   odb::dbBox* bbox = block->getBBox();
   odb::Rect rect = bbox->getBox();
-  painter.drawRect(rect);
+  if (!rect.isInverted()) {
+    painter.drawRect(rect);
+  }
 }
 
 Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
@@ -477,7 +479,7 @@ bool DbInstDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto inst = std::any_cast<odb::dbInst*>(object);
   bbox = inst->getBBox()->getBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbInstDescriptor::highlight(std::any object, Painter& painter) const
@@ -1882,7 +1884,7 @@ bool DbBTermDescriptor::getBBox(std::any object, odb::Rect& bbox) const
 {
   auto* bterm = std::any_cast<odb::dbBTerm*>(object);
   bbox = bterm->getBBox();
-  return true;
+  return !bbox.isInverted();
 }
 
 void DbBTermDescriptor::highlight(std::any object, Painter& painter) const
