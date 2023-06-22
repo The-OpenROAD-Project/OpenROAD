@@ -56,6 +56,8 @@
 #include "dbTechLayerSpacingTablePrlRule.h"
 #include "dbTechLayerWidthTableRule.h"
 // User Code Begin Includes
+#include <spdlog/fmt/ostr.h>
+
 #include "dbHashTable.hpp"
 #include "dbTech.h"
 #include "dbTechLayerAntennaRule.h"
@@ -1488,28 +1490,28 @@ void dbTechLayer::printV55SpacingRules(lefout& writer) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  fprintf(writer.out(), "SPACINGTABLE\n");
-  fprintf(writer.out(), "  PARALLELRUNLENGTH");
+  fmt::print(writer.out(), "SPACINGTABLE\n");
+  fmt::print(writer.out(), "  PARALLELRUNLENGTH");
   dbVector<uint>::const_iterator v55_itr;
   uint wddx, lndx;
 
   for (v55_itr = layer->_v55sp_length_idx.begin();
        v55_itr != layer->_v55sp_length_idx.end();
        v55_itr++)
-    fprintf(writer.out(), " %.3f", writer.lefdist(*v55_itr));
+    fmt::print(writer.out(), " {:.3f}", writer.lefdist(*v55_itr));
 
   for (wddx = 0, v55_itr = layer->_v55sp_width_idx.begin();
        v55_itr != layer->_v55sp_width_idx.end();
        wddx++, v55_itr++) {
-    fprintf(writer.out(), "\n");
-    fprintf(writer.out(), "  WIDTH %.3f\t", writer.lefdist(*v55_itr));
+    fmt::print(writer.out(), "\n");
+    fmt::print(writer.out(), "  WIDTH {:.3f}\t", writer.lefdist(*v55_itr));
     for (lndx = 0; lndx < layer->_v55sp_spacing.numCols(); lndx++)
-      fprintf(writer.out(),
-              " %.3f",
-              writer.lefdist(layer->_v55sp_spacing(wddx, lndx)));
+      fmt::print(writer.out(),
+                 " {:.3f}",
+                 writer.lefdist(layer->_v55sp_spacing(wddx, lndx)));
   }
 
-  fprintf(writer.out(), " ;\n");
+  fmt::print(writer.out(), " ;\n");
 }
 
 bool dbTechLayer::getV55SpacingTable(
@@ -1592,21 +1594,21 @@ void dbTechLayer::printTwoWidthsSpacingRules(lefout& writer) const
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  fprintf(writer.out(), "SPACINGTABLE TWOWIDTHS");
+  fmt::print(writer.out(), "SPACINGTABLE TWOWIDTHS");
   dbVector<uint>::const_iterator itr;
   uint wddx, lndx;
 
   for (wddx = 0, itr = layer->_two_widths_sp_idx.begin();
        itr != layer->_two_widths_sp_idx.end();
        wddx++, itr++) {
-    fprintf(writer.out(), "\n  WIDTH %.3f\t", writer.lefdist(*itr));
+    fmt::print(writer.out(), "\n  WIDTH {:.3f}\t", writer.lefdist(*itr));
     for (lndx = 0; lndx < layer->_two_widths_sp_spacing.numCols(); lndx++)
-      fprintf(writer.out(),
-              " %.3f",
-              writer.lefdist(layer->_two_widths_sp_spacing(wddx, lndx)));
+      fmt::print(writer.out(),
+                 " {:.3f}",
+                 writer.lefdist(layer->_two_widths_sp_spacing(wddx, lndx)));
   }
 
-  fprintf(writer.out(), " ;\n");
+  fmt::print(writer.out(), " ;\n");
 }
 
 uint dbTechLayer::getTwoWidthsSpacingTableEntry(uint row, uint col) const
@@ -1836,12 +1838,12 @@ void dbTechLayer::writeAntennaRulesLef(lefout& writer) const
   bool prt_model = (hasDefaultAntennaRule() && hasOxide2AntennaRule());
 
   if (prt_model)
-    fprintf(writer.out(), "    ANTENNAMODEL OXIDE1 ;\n");
+    fmt::print(writer.out(), "    ANTENNAMODEL OXIDE1 ;\n");
   if (hasDefaultAntennaRule())
     getDefaultAntennaRule()->writeLef(writer);
 
   if (prt_model)
-    fprintf(writer.out(), "    ANTENNAMODEL OXIDE2 ;\n");
+    fmt::print(writer.out(), "    ANTENNAMODEL OXIDE2 ;\n");
   if (hasOxide2AntennaRule())
     getOxide2AntennaRule()->writeLef(writer);
 }
