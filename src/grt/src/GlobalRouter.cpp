@@ -432,6 +432,7 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
     MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
     fastroute_->setMakeWireParasiticsBuilder(&builder);
     routes = fastroute_->run();
+    fastroute_->setMakeWireParasiticsBuilder(nullptr);
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
     for (auto& net_route : routes) {
