@@ -59,7 +59,6 @@ HungarianMatching::HungarianMatching(const Section& section,
   num_slots_ = end_slot_ - begin_slot_;
   non_blocked_slots_ = section.num_slots;
   group_slots_ = 0;
-  group_size_ = -1;
   edge_ = section.edge;
   logger_ = logger;
 }
@@ -192,18 +191,23 @@ void HungarianMatching::findAssignmentForGroups()
 
 void HungarianMatching::createMatrixForGroups()
 {
+  std::vector<int> group_sizes;
+  std::vector<int> group_slot_capacity;
   for (const auto& [pins, order] : pin_groups_) {
-    group_size_ = std::max(static_cast<int>(pins.size()), group_size_);
+    group_sizes.push_back(pins.size());
   }
 
-  if (group_size_ > 0) {
+  std::sort(group_sizes.begin(), group_sizes.end(), std::greater<int>());
+
+  if (!group_sizes.empty()) {
     valid_starting_slots_.clear();
     int i = begin_slot_;
+    int size_idx = 0;
     // end the loop to avoid access invalid positions of slots_.
-    const int end_i = (end_slot_ - group_size_ + 1);
+    const int end_i = (end_slot_ - group_sizes[size_idx] + 1);
     while (i <= end_i) {
       bool blocked = false;
-      for (int pin_cnt = 0; pin_cnt < group_size_; pin_cnt++) {
+      for (int pin_cnt = 0; pin_cnt < group_sizes[size_idx]; pin_cnt++) {
         if (slots_[i + pin_cnt].blocked) {
           blocked = true;
           // Find the next unblocked slot, if any, to try again
@@ -220,7 +224,11 @@ void HungarianMatching::createMatrixForGroups()
         valid_starting_slots_.push_back(i);
         // We have a legal position so jump ahead to limit the
         // number of times we run the hungarian code.
-        i += group_size_;
+        i += group_sizes[size_idx];
+        group_slot_capacity.push_back(group_sizes[size_idx]);
+        if (i + group_sizes[size_idx] >= end_i && size_idx + 1 < group_sizes.size()) {
+          size_idx++;
+        }
       }
     }
 
@@ -241,6 +249,9 @@ void HungarianMatching::createMatrixForGroups()
             break;
           }
           group_hpwl += pin_hpwl;
+        }
+        if (pins.size() > group_slot_capacity[slot_index]) {
+          group_hpwl = std::numeric_limits<int>::max();
         }
         hungarian_matrix_[slot_index][groupIndex] = group_hpwl;
         groupIndex++;
