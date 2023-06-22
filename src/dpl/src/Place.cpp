@@ -63,10 +63,11 @@ using utl::DPL;
 
 std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox)
 {
-  return "(" + std::to_string(queryBox.min_corner().x()) + ", "
-         + std::to_string(queryBox.min_corner().y()) + ") - ("
-         + std::to_string(queryBox.max_corner().x()) + ", "
-         + std::to_string(queryBox.max_corner().y()) + ")";
+  return fmt::format("({0}, {1}) - ({2}, {3})",
+                     queryBox.min_corner().x(),
+                     queryBox.min_corner().y(),
+                     queryBox.max_corner().x(),
+                     queryBox.max_corner().y());
 }
 void Opendp::detailedPlacement()
 {
