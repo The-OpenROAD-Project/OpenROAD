@@ -87,9 +87,15 @@ void make_fake_site(const char* name, int width, int height)
   ord::getICeWall()->makeFakeSite(name, width, height);
 }
 
-void make_io_row(odb::dbSite* hsite, odb::dbSite* vsite, odb::dbSite* csite, int west_offset, int north_offset, int east_offset, int south_offset, odb::dbOrientType rotation, int ring_index)
+void make_io_row(odb::dbSite* hsite, odb::dbSite* vsite, odb::dbSite* csite,
+                 int west_offset, int north_offset, int east_offset, int south_offset,
+                 odb::dbOrientType rotation_hor, odb::dbOrientType rotation_ver, odb::dbOrientType rotation_cor,
+                 int ring_index)
 {
-  ord::getICeWall()->makeIORow(hsite, vsite, csite, west_offset, north_offset, east_offset, south_offset, rotation, ring_index);
+  ord::getICeWall()->makeIORow(hsite, vsite, csite,
+                               west_offset, north_offset, east_offset, south_offset,
+                               rotation_hor, rotation_ver, rotation_cor,
+                               ring_index);
 }
 
 void remove_io_rows()
