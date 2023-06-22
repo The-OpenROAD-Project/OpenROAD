@@ -50,6 +50,8 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
+extern int defyyparse(defrData *data);
+
 extern defrContext defContext;
 
 void
