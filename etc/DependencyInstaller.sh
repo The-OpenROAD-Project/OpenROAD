@@ -188,7 +188,6 @@ _installUbuntuPackages() {
         libpcre3-dev \
         python3-dev \
         libreadline-dev \
-        libgtest-dev \
         tcl-dev \
         tcllib \
         wget \
