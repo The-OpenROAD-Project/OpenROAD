@@ -33,7 +33,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "Graphics.h"
+#include "CtsGraphics.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -43,7 +43,7 @@
 
 namespace cts {
 
-void Graphics::initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock)
+void CtsGraphics::initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock)
 {
   clock_ = &clock;
   h_tree_builder_ = h_tree_builder;
@@ -54,7 +54,7 @@ void Graphics::initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock)
   }
 }
 
-void Graphics::initializeWithPoints(SinkClustering* SinkClustering,
+void CtsGraphics::initializeWithPoints(SinkClustering* SinkClustering,
                                     const std::vector<Point<double>>& points)
 {
   clock_ = nullptr;
@@ -67,7 +67,7 @@ void Graphics::initializeWithPoints(SinkClustering* SinkClustering,
   }
 }
 
-void Graphics::drawCluster(gui::Painter& painter)
+void CtsGraphics::drawCluster(gui::Painter& painter)
 {
   std::vector<gui::Painter::Color> colors{gui::Painter::red,
                                           gui::Painter::yellow,
@@ -119,7 +119,7 @@ void Graphics::drawCluster(gui::Painter& painter)
   }
 }
 
-void Graphics::drawHTree(gui::Painter& painter)
+void CtsGraphics::drawHTree(gui::Painter& painter)
 {
   auto color = gui::Painter::red;
   color.a = 180;
@@ -169,7 +169,7 @@ void Graphics::drawHTree(gui::Painter& painter)
   }
 }
 
-void Graphics::drawObjects(gui::Painter& painter)
+void CtsGraphics::drawObjects(gui::Painter& painter)
 {
   if (clock_) {
     drawHTree(painter);
@@ -180,7 +180,7 @@ void Graphics::drawObjects(gui::Painter& painter)
   }
 }
 
-void Graphics::clockPlot(bool pause)
+void CtsGraphics::clockPlot(bool pause)
 {
   gui::Gui::get()->redraw();
   if (pause) {
@@ -188,13 +188,13 @@ void Graphics::clockPlot(bool pause)
   }
 }
 
-void Graphics::status(const std::string& message)
+void CtsGraphics::status(const std::string& message)
 {
   gui::Gui::get()->status(message);
 }
 
 /* static */
-bool Graphics::guiActive()
+bool CtsGraphics::guiActive()
 {
   return gui::Gui::enabled();
 }
