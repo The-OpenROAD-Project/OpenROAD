@@ -588,7 +588,7 @@ float
 resize_net_slack(Net *net)
 {
   Resizer *resizer = getResizer();
-  return resizer->resizeNetSlack(net).first;
+  return resizer->resizeNetSlack(net).value();
 }
 
 ////////////////////////////////////////////////////////////////
