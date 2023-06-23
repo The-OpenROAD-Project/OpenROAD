@@ -620,8 +620,8 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
     if (master->isPad() || master->isCover()) {
       continue;
     }
-
-    float inst_area = liberty_cell->area();
+    float inst_area = dbuToMicron(master->getWidth(), dbu_) 
+                    * dbuToMicron(master->getHeight(), dbu_);
     if (master->isBlock()) {  // a macro
       num_macro += 1;
       macro_area += inst_area;
@@ -5006,10 +5006,6 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
 // place macros within the HardMacroCluster
 void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 {
-  // Check if the cluster is a HardMacroCluster
-  //if (cluster->getClusterType() != StdCellCluster) {
-  //  return;
-  //}
   logger_->report(
       "\n[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: "
       "{}",
