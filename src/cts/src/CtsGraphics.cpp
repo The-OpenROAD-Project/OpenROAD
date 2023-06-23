@@ -43,7 +43,8 @@
 
 namespace cts {
 
-void CtsGraphics::initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock)
+void CtsGraphics::initializeWithClock(HTreeBuilder* h_tree_builder,
+                                      Clock& clock)
 {
   clock_ = &clock;
   h_tree_builder_ = h_tree_builder;
@@ -55,7 +56,7 @@ void CtsGraphics::initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock
 }
 
 void CtsGraphics::initializeWithPoints(SinkClustering* SinkClustering,
-                                    const std::vector<Point<double>>& points)
+                                       const std::vector<Point<double>>& points)
 {
   clock_ = nullptr;
   h_tree_builder_ = nullptr;
