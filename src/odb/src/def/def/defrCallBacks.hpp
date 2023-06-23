@@ -59,7 +59,6 @@ class defrCallbacks
   defrIntegerCbkFnType ComponentStartCbk;
   defrVoidCbkFnType ComponentEndCbk;
   defrComponentCbkFnType ComponentCbk;
-  defrComponentMaskShiftLayerCbkFnType ComponentMaskShiftLayerCbk;
   defrIntegerCbkFnType NetStartCbk;
   defrVoidCbkFnType NetEndCbk;
   defrNetCbkFnType NetCbk;
@@ -146,6 +145,7 @@ class defrCallbacks
   defrVoidCbkFnType StylesEndCbk;
   defrStylesCbkFnType StylesCbk;
   defrStringCbkFnType ExtensionCbk;
+  defrComponentMaskShiftLayerCbkFnType ComponentMaskShiftLayerCbk;
 };
 
 END_LEFDEF_PARSER_NAMESPACE

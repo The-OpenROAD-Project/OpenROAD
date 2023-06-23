@@ -93,7 +93,6 @@ defrCallbacks::defrCallbacks()
       GroupsEndCbk(NULL),
       GroupNameCbk(NULL),
       GroupMemberCbk(NULL),
-      ComponentMaskShiftLayerCbk(NULL),
       GroupCbk(NULL),
       AssertionsStartCbk(NULL),
       AssertionsEndCbk(NULL),
@@ -135,7 +134,8 @@ defrCallbacks::defrCallbacks()
       StylesStartCbk(NULL),
       StylesEndCbk(NULL),
       StylesCbk(NULL),
-      ExtensionCbk(NULL)
+      ExtensionCbk(NULL),
+      ComponentMaskShiftLayerCbk(NULL)
 {
 }
 

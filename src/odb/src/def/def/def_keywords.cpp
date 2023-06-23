@@ -782,10 +782,8 @@ int defrData::sublex(YYSTYPE* pYylval)
 
     if (defGetKeyword(uc_token, &result)) {
       if (K_HISTORY == result) { /* history - get up to ';' */
-        int n;
         int c;
         int prev;
-        n = 0;
         prev = ' ';
         while (1) {
           c = GETC();
@@ -805,12 +803,10 @@ int defrData::sublex(YYSTYPE* pYylval)
         }
         History_text.push_back('\0');
       } else if (K_BEGINEXT == result) { /* extension, get up to end */
-        int nn;
         int cc;
         int foundTag = 0;
         int notEmpTag = 0;
         int begQuote = 0;
-        nn = 0;
         /* First make sure there is a name after BEGINEXT within quote */
         /* BEGINEXT "name" */
         while (1) {

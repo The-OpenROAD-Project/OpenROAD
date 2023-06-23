@@ -3270,10 +3270,11 @@ snet_other_option: '+' net_type
         | '+' K_ESTCAP NUMBER
             { 
               // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
-              if (defData->VersionNum < 5.5)
+              if (defData->VersionNum < 5.5) {
                  if (defData->callbacks->SNetCbk) defData->Net.setCap($3);
-              else
+              } else {
                  defData->defWarning(7024, "The ESTCAP statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+              }
             }
  
         | '+' K_USE use_type
@@ -3373,10 +3374,11 @@ shield_layer: // PCR 902306
 snet_width: '+' K_WIDTH { defData->dumb_mode = 1; } T_STRING NUMBER
             {
               // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
-              if (defData->VersionNum < 5.5)
+              if (defData->VersionNum < 5.5) {
                  if (defData->callbacks->SNetCbk) defData->Net.setWidth($4, $5);
-              else
+              } else {
                  defData->defWarning(7026, "The WIDTH statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+              }
             }
 
 snet_voltage: '+' K_VOLTAGE  { defData->dumb_mode = 1; defData->no_num = 1; } T_STRING
@@ -3648,26 +3650,29 @@ group_soft_options: // empty
 group_soft_option: K_MAXX NUMBER
       {
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
-        if (defData->VersionNum < 5.5)
+        if (defData->VersionNum < 5.5) {
           if (defData->callbacks->GroupCbk) defData->Group.setMaxX(ROUND($2));
-        else
+        } else {
           defData->defWarning(7028, "The GROUP SOFT MAXX statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+        }
       }
       | K_MAXY NUMBER
       { 
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
-        if (defData->VersionNum < 5.5)
+        if (defData->VersionNum < 5.5) {
           if (defData->callbacks->GroupCbk) defData->Group.setMaxY(ROUND($2));
-        else
+        } else {
           defData->defWarning(7029, "The GROUP SOFT MAXY statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+        }
       }
       | K_MAXHALFPERIMETER NUMBER
       { 
         // 11/12/2002 - this is obsolete in 5.5, & will be ignored 
-        if (defData->VersionNum < 5.5)
+        if (defData->VersionNum < 5.5) {
           if (defData->callbacks->GroupCbk) defData->Group.setPerim(ROUND($2));
-        else
+        } else { 
           defData->defWarning(7030, "The GROUP SOFT MAXHALFPERIMETER statement is obsolete in version 5.5 and later.\nThe DEF parser will ignore this statement.");
+        }
       }
 
 groups_end: K_END K_GROUPS 

@@ -52,8 +52,8 @@ class defiAlias_itr
   int Marked();
 
  protected:
-  defAliasIterator* iterator;
   int first;
+  defAliasIterator* iterator;
   defrData* defData;
 };
 

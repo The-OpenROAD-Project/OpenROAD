@@ -39,19 +39,19 @@
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
 defiPath::defiPath(defrData* data)
-    : defData(data),
-      keys_(NULL),
+    : keys_(NULL),
       data_(NULL),
-      pointer_(NULL),
       numUsed_(0),
       numAllocated_(0),
+      pointer_(NULL),
       numX_(0),
       numY_(0),
       stepX_(0),
       stepY_(0),
       deltaX_(0),
       deltaY_(0),
-      mask_(0)
+      mask_(0),
+      defData(data)
 {
 }
 

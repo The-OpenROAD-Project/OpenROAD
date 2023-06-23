@@ -31,12 +31,25 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sstream>
 
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
 #include "lex.h"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
+
+namespace {
+
+void defiError6140(int index, int numProps, defrData* defData) {
+  std::stringstream msg;
+  msg << "ERROR (DEFPARS-6140): The index number " << index << " specified for the VIA ";
+  msg << "LAYER RECTANGLE is invalide.\nValid index number is from 0 to " << numProps << ". ";
+  msg << "Specify a valid index number and then try again.";
+  defiError(0, 6140, msg.str().c_str(), defData);
+}
+
+} // namespace
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -245,15 +258,8 @@ int defiRow::numProps() const
 
 const char* defiRow::propName(int index) const
 {
-  char msg[160];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propNames_[index];
@@ -261,15 +267,8 @@ const char* defiRow::propName(int index) const
 
 const char* defiRow::propValue(int index) const
 {
-  char msg[160];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propValues_[index];
@@ -277,15 +276,8 @@ const char* defiRow::propValue(int index) const
 
 double defiRow::propNumber(int index) const
 {
-  char msg[160];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index];
@@ -293,15 +285,8 @@ double defiRow::propNumber(int index) const
 
 const char defiRow::propType(int index) const
 {
-  char msg[160];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propTypes_[index];
@@ -309,15 +294,8 @@ const char defiRow::propType(int index) const
 
 int defiRow::propIsNumber(int index) const
 {
-  char msg[160];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index] ? 1 : 0;
@@ -325,15 +303,8 @@ int defiRow::propIsNumber(int index) const
 
 int defiRow::propIsString(int index) const
 {
-  char msg[160];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index] ? 0 : 1;
