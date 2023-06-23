@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+
 #include <sstream>
 
 #include "defiDebug.hpp"
@@ -40,24 +41,29 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 
 namespace {
 
-void defiError6090(int index, int numLayers, defrData* defData) {
+void defiError6090(int index, int numLayers, defrData* defData)
+{
   std::stringstream msg;
-  msg << "ERROR (DEFPARS-6090): The index number " << index << " specified for the ";
-  msg << "NONDEFAULT LAYER is invalid.\nValid index is from 0 to " << numLayers << ". ";
+  msg << "ERROR (DEFPARS-6090): The index number " << index
+      << " specified for the ";
+  msg << "NONDEFAULT LAYER is invalid.\nValid index is from 0 to " << numLayers
+      << ". ";
   msg << "Specify a valid index number and then try again.";
   defiError(0, 6090, msg.str().c_str(), defData);
 }
 
-
-void defiError6091(int index, int numProps, defrData* defData) {
+void defiError6091(int index, int numProps, defrData* defData)
+{
   std::stringstream msg;
-  msg << "ERROR (DEFPARS-6091): The index number " << index << " specified for the ";
-  msg << "NONDEFAULT PROPERTY is invalid.\nValid index is from 0 to " << numProps << ". ";
+  msg << "ERROR (DEFPARS-6091): The index number " << index
+      << " specified for the ";
+  msg << "NONDEFAULT PROPERTY is invalid.\nValid index is from 0 to "
+      << numProps << ". ";
   msg << "Specify a valid index number and then try again.";
   defiError(0, 6091, msg.str().c_str(), defData);
 }
 
-} // namespace
+}  // namespace
 
 /////////////////////////////////////////
 /////////////////////////////////////////

@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+
 #include <sstream>
 
 #include "defiDebug.hpp"
@@ -40,40 +41,42 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-
 namespace {
 
-void defiError6084(int index, int numPins, defrData* defData) {
+void defiError6084(int index, int numPins, defrData* defData)
+{
   std::stringstream errMsg;
-  errMsg << "ERROR (DEFPARS-6084): The index number " << index << " specified for the NET ";
+  errMsg << "ERROR (DEFPARS-6084): The index number " << index
+         << " specified for the NET ";
   errMsg << "PIN is invalid." << std::endl;
   errMsg << "Valid index is from 0 to " << numPins << ". Specify a valid ";
   errMsg << "index number and then try again.";
   defiError(0, 6084, errMsg.str().c_str(), defData);
 }
 
-
-void defiError6085(int index, int numPolys, defrData* defData) {
+void defiError6085(int index, int numPolys, defrData* defData)
+{
   std::stringstream errMsg;
-  errMsg << "ERROR (DEFPARS-6085): The index number " << index << " specified for the NET ";
+  errMsg << "ERROR (DEFPARS-6085): The index number " << index
+         << " specified for the NET ";
   errMsg << "POLYGON is invalid." << std::endl;
   errMsg << "Valid index is from 0 to " << numPolys << ". Specify a valid ";
   errMsg << "index number and then try again.";
   defiError(0, 6085, errMsg.str().c_str(), defData);
 }
 
-
-void defiError6086(int index, int numRects, defrData* defData) {
+void defiError6086(int index, int numRects, defrData* defData)
+{
   std::stringstream errMsg;
-  errMsg << "ERROR (DEFPARS-6086): The index number " << index << " specified for the NET ";
-  errMsg << "RECTANGLE is invalid." << std::endl << "Valid index is from 0 to " << numRects << ". Specify a ";
+  errMsg << "ERROR (DEFPARS-6086): The index number " << index
+         << " specified for the NET ";
+  errMsg << "RECTANGLE is invalid." << std::endl
+         << "Valid index is from 0 to " << numRects << ". Specify a ";
   errMsg << "valid index number and then try again.";
   defiError(0, 6086, errMsg.str().c_str(), defData);
 }
 
-
-} // namespace
-
+}  // namespace
 
 #define maxLimit 65536
 

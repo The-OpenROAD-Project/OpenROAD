@@ -31,6 +31,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+
 #include <sstream>
 
 #include "defiDebug.hpp"
@@ -41,15 +42,18 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 
 namespace {
 
-void defiError6140(int index, int numProps, defrData* defData) {
+void defiError6140(int index, int numProps, defrData* defData)
+{
   std::stringstream msg;
-  msg << "ERROR (DEFPARS-6140): The index number " << index << " specified for the VIA ";
-  msg << "LAYER RECTANGLE is invalide.\nValid index number is from 0 to " << numProps << ". ";
+  msg << "ERROR (DEFPARS-6140): The index number " << index
+      << " specified for the VIA ";
+  msg << "LAYER RECTANGLE is invalide.\nValid index number is from 0 to "
+      << numProps << ". ";
   msg << "Specify a valid index number and then try again.";
   defiError(0, 6140, msg.str().c_str(), defData);
 }
 
-} // namespace
+}  // namespace
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////

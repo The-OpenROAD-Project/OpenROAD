@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <sstream>
 
 #include "defiDebug.hpp"
@@ -39,19 +40,20 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-
 namespace {
 
-void defiError6160(int index, int numRectangles, defrData* defData) {
+void defiError6160(int index, int numRectangles, defrData* defData)
+{
   std::stringstream msg;
-  msg << "ERROR (DEFPARS-6160): The index number " << index << " specified for the SLOT ";
-  msg << "RECTANGLE is invalid.\nValid index number is from 0 to " << numRectangles << ". ";
+  msg << "ERROR (DEFPARS-6160): The index number " << index
+      << " specified for the SLOT ";
+  msg << "RECTANGLE is invalid.\nValid index number is from 0 to "
+      << numRectangles << ". ";
   msg << "Specify a valid index number and then try again.";
   defiError(0, 6160, msg.str().c_str(), defData);
 }
 
-} // namespace
-
+}  // namespace
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////

@@ -225,7 +225,6 @@ class defrData
   defiStyles Styles;
   defiGeometries Geometries;
 
-
   int msgLimit[DEF_MSGS];
   char buffer[IN_BUF_SIZE];
   char* ring[RING_SIZE];
@@ -251,14 +250,14 @@ class defrData
   char* last;
   int new_is_keyword;
   long long nlines;
-  char* rowName;     // to hold the rowName for message
+  char* rowName;  // to hold the rowName for message
   int iOTimingWarnings;
   char* magic;
   int netWarnings;
   double save_x;
   double save_y;
   int sNetWarnings;
-  int netOsnet;              // net = 1 & snet = 2
+  int netOsnet;  // net = 1 & snet = 2
   char* next;
   int rowWarnings;
   char* shieldName;  // to hold the shieldNetName

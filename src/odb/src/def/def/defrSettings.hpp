@@ -98,7 +98,6 @@ class defrSettings
   int AllowComponentNets;
   char CommentChar;
 
-
   DEFI_READ_FUNCTION ReadFunction;
   DEFI_LOG_FUNCTION ErrorLogFunction;
   DEFI_WARNING_LOG_FUNCTION WarningLogFunction;
