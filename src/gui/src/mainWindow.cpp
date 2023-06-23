@@ -498,6 +498,7 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaRule*>(new DbTechViaRuleDescriptor(db_));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
