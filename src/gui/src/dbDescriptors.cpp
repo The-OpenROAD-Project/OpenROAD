@@ -3142,7 +3142,7 @@ Descriptor::Properties DbTechViaRuleDescriptor::getProperties(std::any object) c
   auto via_rule = std::any_cast<odb::dbTechViaRule*>(object);
   auto gui = Gui::get();
 
-  Properties props({{"Dummy", 1000}});
+  Properties props;
 
   SelectionSet vias;
   for (int via_index = 0; via_index < via_rule->getViaCount(); via_index++) {
@@ -3154,7 +3154,7 @@ Descriptor::Properties DbTechViaRuleDescriptor::getProperties(std::any object) c
   for (int rule_index = 0; rule_index < via_rule->getViaLayerRuleCount(); rule_index++) {
     layer_rules.insert(gui->makeSelected(via_rule->getViaLayerRule(rule_index)));
   }
-  props.push_back({"Layer Rules", layer_rules});
+  props.push_back({"Via-Layer Rules", layer_rules});
 
   return props;
 }
@@ -3181,6 +3181,132 @@ bool DbTechViaRuleDescriptor::getAllObjects(SelectionSet& objects) const
 
   for (auto via_rule : tech->getViaRules()) {
     objects.insert(makeSelected(via_rule));
+  }
+
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbTechViaLayerRuleDescriptor::DbTechViaLayerRuleDescriptor(odb::dbDatabase* db)
+    : db_(db)
+{
+}
+
+std::string DbTechViaLayerRuleDescriptor::getName(std::any object) const
+{
+  auto via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(object);
+  std::string rule_name = via_layer_rule->getLayer()->getName() + "_via_layer";
+  return rule_name;
+}
+
+std::string DbTechViaLayerRuleDescriptor::getTypeName() const
+{
+  return "Tech Via-Layer Rule";
+}
+
+bool DbTechViaLayerRuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbTechViaLayerRuleDescriptor::highlight(std::any object, Painter& painter) const
+{
+}
+
+Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any object) const
+{
+  auto via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(object);
+  auto gui = Gui::get();
+
+  Properties props({{"Layer", gui->makeSelected(via_layer_rule->getLayer())},
+                    {"Direction", via_layer_rule->getDirection().getString()}});
+
+  if (via_layer_rule->hasWidth()) {
+    int minWidth = 0;
+    int maxWidth =  0;
+
+    via_layer_rule->getWidth(minWidth, maxWidth);
+
+    std::string width_range;
+
+    width_range = fmt::format("{} to {}",
+                              Property::convert_dbu(minWidth, true),
+                              Property::convert_dbu(maxWidth, true));
+    props.push_back({"Width", width_range});
+  }        
+
+  if (via_layer_rule->hasEnclosure()) {
+    int overhang_1 = 0;
+    int overhang_2 = 0;
+
+    via_layer_rule->getEnclosure(overhang_1, overhang_2);
+
+    PropertyList enclosure;
+    enclosure.push_back({"Overhang 1", Property::convert_dbu(overhang_1, true)});
+    enclosure.push_back({"Overhang 2", Property::convert_dbu(overhang_2, true)});
+    props.push_back({"Enclosure Rule", enclosure});
+  }
+
+  if (via_layer_rule->hasOverhang()) {
+    props.push_back({"Overhang Rule", Property::convert_dbu(via_layer_rule->getOverhang(), true)});
+  }
+
+  if (via_layer_rule->hasMetalOverhang()) {
+    props.push_back({"Metal Overhang Rule", Property::convert_dbu(via_layer_rule->getMetalOverhang(), true)});
+  }
+
+  if (via_layer_rule->hasRect()) {
+    odb::Rect rect_rule;
+    via_layer_rule->getRect(rect_rule);
+
+    props.push_back({"Rectangle Rule", rect_rule});
+  }
+
+  if (via_layer_rule->hasSpacing()) {
+    int x_spacing = 0;
+    int y_spacing = 0;
+
+    via_layer_rule->getSpacing(x_spacing, y_spacing);
+
+    PropertyList spacing_rule;
+    spacing_rule.push_back({"X", Property::convert_dbu(x_spacing, true)});
+    spacing_rule.push_back({"Y", Property::convert_dbu(y_spacing, true)});
+    props.push_back({"Spacing Rule", spacing_rule});
+  }
+
+  if (via_layer_rule->hasResistance()) {
+    props.push_back({"Resistance Rule", convertUnits(via_layer_rule->getResistance()) + "\u03A9/sq"}); // ohm/sq
+  }
+
+  return props;
+}
+
+Selected DbTechViaLayerRuleDescriptor::makeSelected(std::any object) const
+{
+  if (auto via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(&object)) {
+    return Selected(*via_layer_rule, this);
+  }
+
+  return Selected();
+}
+
+bool DbTechViaLayerRuleDescriptor::lessThan(std::any l, std::any r) const 
+{
+  auto l_via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(l);
+  auto r_via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(r);
+
+  return l_via_layer_rule->getId() < r_via_layer_rule->getId();
+}
+
+bool DbTechViaLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto tech = db_->getTech();
+
+  int index = 0;
+  for (auto via_rule : tech->getViaRules()) {
+    objects.insert(makeSelected(via_rule->getViaLayerRule(index)));
+    index++;
   }
 
   return true;

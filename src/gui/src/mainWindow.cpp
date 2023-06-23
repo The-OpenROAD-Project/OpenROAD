@@ -481,6 +481,8 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaRule*>(new DbTechViaRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaLayerRule*>(new DbTechViaLayerRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechViaGenerateRule*>(
       new DbGenerateViaDescriptor(db_));
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
@@ -498,7 +500,6 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbTech*>(new DbTechDescriptor(db_));
   gui->registerDescriptor<odb::dbMetalWidthViaMap*>(
       new DbMetalWidthViaMapDescriptor(db_));
-  gui->registerDescriptor<odb::dbTechViaRule*>(new DbTechViaRuleDescriptor(db_));
 
   gui->registerDescriptor<BufferTree>(
       new BufferTreeDescriptor(db_,
