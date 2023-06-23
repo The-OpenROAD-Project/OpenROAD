@@ -535,20 +535,33 @@ void HierRTLMP::hierRTLMacroPlacer()
   // Step 2: In a bottom-up approach (Post-Order DFS), determine the macro
   // tilings within each cluster.
   //
-  logger_->report(
-      "Determine shaping function for clusters -- Macro Tilings.\n");
-  calClusterMacroTilings(root_cluster_);
-
-  // create pin blockage for IO pins
-  createPinBlockage();
-  //
-  // Perform macro placement in a top-down manner (pre-order DFS)
-  //
-  logger_->report("Perform Multilevel macro placement...");
-  if (bus_planning_flag_ == true) {
-    multiLevelMacroPlacement(root_cluster_);
+  // Check if the root cluster has other children clusters
+  bool macro_only_flag = true;
+  for (auto& cluster : root_cluster_->getChildren()) {
+    if (cluster->getIOClusterFlag() == false) {
+      macro_only_flag = false;
+      break;
+    }
+  }
+  if (macro_only_flag == true) {
+    logger_->report("The design only has macros.\n");
+    hardMacroClusterMacroPlacement(root_cluster_);
   } else {
-    multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
+    logger_->report(
+        "Determine shaping function for clusters -- Macro Tilings.\n");
+    calClusterMacroTilings(root_cluster_);
+
+    // create pin blockage for IO pins
+    createPinBlockage();
+    //
+    // Perform macro placement in a top-down manner (pre-order DFS)
+    //
+    logger_->report("Perform Multilevel macro placement...");
+    if (bus_planning_flag_ == true) {
+      multiLevelMacroPlacement(root_cluster_);
+    } else {
+      multiLevelMacroPlacementWithoutBusPlanning(root_cluster_);
+    }
   }
 
   for (auto& [inst, hard_macro] : hard_macro_map_) {
@@ -948,8 +961,8 @@ void HierRTLMP::multiLevelCluster(Cluster* parent)
   min_num_macro_ = min_num_macro_ * (1 - tolerance_);
   if (min_num_macro_ <= 0) {
     min_num_macro_ = 1;
-    // max_num_macro_ = min_num_macro_ * coarsening_ratio_ / 2.0;
-    max_num_macro_ = min_num_macro_;
+    max_num_macro_ = min_num_macro_ * coarsening_ratio_ / 2.0;
+    // max_num_macro_ = min_num_macro_;
   }
 
   if (min_num_inst_ <= 0) {
@@ -4994,9 +5007,9 @@ void HierRTLMP::callBusPlanning(std::vector<SoftMacro>& shaped_macros,
 void HierRTLMP::hardMacroClusterMacroPlacement(Cluster* cluster)
 {
   // Check if the cluster is a HardMacroCluster
-  if (cluster->getClusterType() != HardMacroCluster) {
-    return;
-  }
+  //if (cluster->getClusterType() != StdCellCluster) {
+  //  return;
+  //}
   logger_->report(
       "\n[Hier-RTLMP::HardMacroClusterMacroPlacement] Place macros in cluster: "
       "{}",
