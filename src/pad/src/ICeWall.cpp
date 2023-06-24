@@ -596,6 +596,14 @@ void ICeWall::placeFiller(
     logger_->error(utl::PAD, 20, "Row must be specified to place IO filler");
   }
 
+  bool use_height = false;
+  if (getRowEdge(row) == odb::Direction2D::West
+      || getRowEdge(row) == odb::Direction2D::East) {
+    use_height = true;
+  }
+
+  const odb::dbTransform row_xform(row->getOrient());
+
   const double dbus = block->getDbUnitsPerMicron();
 
   std::vector<odb::dbMaster*> fillers = masters;
@@ -603,12 +611,23 @@ void ICeWall::placeFiller(
   fillers.erase(std::remove(fillers.begin(), fillers.end(), nullptr),
                 fillers.end());
   // sort by width
-  std::stable_sort(fillers.begin(),
-                   fillers.end(),
-                   [](odb::dbMaster* r, odb::dbMaster* l) -> bool {
-                     // sort biggest to smallest
-                     return r->getWidth() > l->getWidth();
-                   });
+  std::stable_sort(
+      fillers.begin(),
+      fillers.end(),
+      [use_height, row_xform](odb::dbMaster* r, odb::dbMaster* l) -> bool {
+        odb::Rect r_bbox;
+        r->getPlacementBoundary(r_bbox);
+        odb::Rect l_bbox;
+        r->getPlacementBoundary(l_bbox);
+        row_xform.apply(r_bbox);
+        row_xform.apply(l_bbox);
+        // sort biggest to smallest
+        if (use_height) {
+          return r_bbox.dy() > l_bbox.dy();
+        } else {
+          return r_bbox.dx() > l_bbox.dx();
+        }
+      });
 
   const odb::Rect rowbbox = row->getBBox();
 
@@ -688,7 +707,16 @@ void ICeWall::placeFiller(
           = std::find(
                 overlapping_masters.begin(), overlapping_masters.end(), filler)
             != overlapping_masters.end();
-      const int fill_width = filler->getWidth() / site_width;
+      odb::Rect filler_bbox;
+      filler->getPlacementBoundary(filler_bbox);
+      row_xform.apply(filler_bbox);
+      int filler_width;
+      if (use_height) {
+        filler_width = filler_bbox.dy();
+      } else {
+        filler_width = filler_bbox.dx();
+      }
+      const int fill_width = filler_width / site_width;
       while (fill_width <= sites || allow_overlap) {
         debugPrint(logger_,
                    utl::PAD,
