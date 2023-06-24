@@ -1,5 +1,6 @@
-git+https://github.com/f4pga/sphinx_f4pga_theme.git
 git+https://github.com/executablebooks/sphinx-external-toc
 sphinx
 sphinx-autobuild
 myst-parser
+sphinx-book-theme
+sphinx-copybutton

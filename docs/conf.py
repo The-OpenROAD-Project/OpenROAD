@@ -31,6 +31,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.todo',
     'sphinx_external_toc',
+    'sphinx_copybutton',
     'myst_parser',
 ]
 
@@ -89,54 +90,54 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_symbiflow_theme"
+html_theme = "sphinx_book_theme"
 
 html_theme_options = {
     # Repository integration
     # Set the repo url for the link to appear
     'github_url': 'https://github.com/The-OpenROAD-Project/OpenROAD',
-    # The name of the repo. If must be set if github_url is set
-    'repo_name': 'OpenROAD',
-    # Must be one of github, gitlab or bitbucket
-    'repo_type': 'github',
+    ## The name of the repo. If must be set if github_url is set
+    #'repo_name': 'OpenROAD',
+    ## Must be one of github, gitlab or bitbucket
+    #'repo_type': 'github',
 
-    # Set the name to appear in the left sidebar/header. If not provided, uses
-    # html_short_title if defined, or html_title
-    'nav_title': "OpenROAD",
+    ## Set the name to appear in the left sidebar/header. If not provided, uses
+    ## html_short_title if defined, or html_title
+    #'nav_title': "OpenROAD",
 
-    # A list of dictionaries where each has three keys:
-    #   href: The URL or pagename (str)
-    #   title: The title to appear (str)
-    #   internal: Flag indicating to use pathto (bool)
-    'nav_links': [
-        {"title": "Home", "href": "index", "internal": True},
-        {"title": "The OpenROAD Project",
-            "href": "https://theopenroadproject.org", "internal": False},
-    ],
+    ## A list of dictionaries where each has three keys:
+    ##   href: The URL or pagename (str)
+    ##   title: The title to appear (str)
+    ##   internal: Flag indicating to use pathto (bool)
+    #'nav_links': [
+    #    {"title": "Home", "href": "index", "internal": True},
+    #    {"title": "The OpenROAD Project",
+    #        "href": "https://theopenroadproject.org", "internal": False},
+    #],
 
-    # Customize css colors.
-    # For details see link.
-    # https://getmdl.io/customize/index.html
-    #
-    # Primary colors:
-    # red, pink, purple, deep-purple, indigo, blue, light-blue, cyan,
-    # teal, green, light-green, lime, yellow, amber, orange, deep-orange,
-    # brown, grey, blue-grey, white
-    # (Default: deep-purple)
-    'color_primary': 'indigo',
-    # Values: Same as color_primary.
-    # (Default: indigo)
-    'color_accent': 'blue',
+    ## Customize css colors.
+    ## For details see link.
+    ## https://getmdl.io/customize/index.html
+    ##
+    ## Primary colors:
+    ## red, pink, purple, deep-purple, indigo, blue, light-blue, cyan,
+    ## teal, green, light-green, lime, yellow, amber, orange, deep-orange,
+    ## brown, grey, blue-grey, white
+    ## (Default: deep-purple)
+    #'color_primary': 'indigo',
+    ## Values: Same as color_primary.
+    ## (Default: indigo)
+    #'color_accent': 'blue',
 
-    # Hide the symbiflow links
-    'hide_symbiflow_links': True,
+    ## Hide the symbiflow links
+    #'hide_symbiflow_links': True,
 
-    "html_minify": False,
-    "html_prettify": True,
-    "css_minify": True,
-    "globaltoc_depth": 2,
-    "table_classes": ["plain"],
-    "master_doc": False,
+    #"html_minify": False,
+    #"html_prettify": True,
+    #"css_minify": True,
+    #"globaltoc_depth": 2,
+    #"table_classes": ["plain"],
+    #"master_doc": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
