@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -46,9 +46,6 @@ class defiBlockage
 
   void Destroy();
   ~defiBlockage();
-
-  DEF_COPY_CONSTRUCTOR_H(defiBlockage);
-  DEF_ASSIGN_OPERATOR_H(defiBlockage);
 
   void clear();
   void clearPoly();

@@ -20,9 +20,9 @@
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
 //
-//  $Author: icftcm $
-//  $Revision: #2 $
-//  $Date: 2017/06/19 $
+//  $Author: dell $
+//  $Revision: #1 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -32,6 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sstream>
+
 #include "defiDebug.hpp"
 #include "defiPath.hpp"
 #include "defiUtil.hpp"
@@ -39,223 +41,44 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
+namespace {
+
+void defiError6084(int index, int numPins, defrData* defData)
+{
+  std::stringstream errMsg;
+  errMsg << "ERROR (DEFPARS-6084): The index number " << index
+         << " specified for the NET ";
+  errMsg << "PIN is invalid." << std::endl;
+  errMsg << "Valid index is from 0 to " << numPins << ". Specify a valid ";
+  errMsg << "index number and then try again.";
+  defiError(0, 6084, errMsg.str().c_str(), defData);
+}
+
+void defiError6085(int index, int numPolys, defrData* defData)
+{
+  std::stringstream errMsg;
+  errMsg << "ERROR (DEFPARS-6085): The index number " << index
+         << " specified for the NET ";
+  errMsg << "POLYGON is invalid." << std::endl;
+  errMsg << "Valid index is from 0 to " << numPolys << ". Specify a valid ";
+  errMsg << "index number and then try again.";
+  defiError(0, 6085, errMsg.str().c_str(), defData);
+}
+
+void defiError6086(int index, int numRects, defrData* defData)
+{
+  std::stringstream errMsg;
+  errMsg << "ERROR (DEFPARS-6086): The index number " << index
+         << " specified for the NET ";
+  errMsg << "RECTANGLE is invalid." << std::endl
+         << "Valid index is from 0 to " << numRects << ". Specify a ";
+  errMsg << "valid index number and then try again.";
+  defiError(0, 6086, errMsg.str().c_str(), defData);
+}
+
+}  // namespace
+
 #define maxLimit 65536
-
-////////////////////////////////////////////////////
-////////////////////////////////////////////////////
-//
-//    defiWire
-//
-////////////////////////////////////////////////////
-////////////////////////////////////////////////////
-
-defiWire::defiWire(defrData* data) : defData(data)
-{
-  wireShieldName_ = 0;
-  type_ = 0;
-  numPaths_ = 0;
-  pathsAllocated_ = 0;
-  paths_ = 0;
-}
-
-void defiWire::Init(const char* type, const char* wireShieldName)
-{
-  int len = strlen(type) + 1;
-  type_ = (char*) malloc(len);
-  strcpy(type_, defData->DEFCASE(type));
-  if (wireShieldName) {
-    wireShieldName_ = (char*) malloc(strlen(wireShieldName) + 1);
-    strcpy(wireShieldName_, wireShieldName);
-  } else
-    wireShieldName_ = 0;
-  numPaths_ = 0;
-  pathsAllocated_ = 0;
-  paths_ = 0;
-}
-
-void defiWire::Destroy()
-{
-  clear();
-}
-
-defiWire::~defiWire()
-{
-  Destroy();
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiWire)
-{
-  type_ = 0;
-  wireShieldName_ = 0;
-
-  //    defData = NULL;
-  DEF_COPY_FUNC(defData);
-  DEF_MALLOC_FUNC(type_, char, sizeof(char) * (strlen(prev.type_) + 1));
-  DEF_MALLOC_FUNC(
-      wireShieldName_, char, sizeof(char) * (strlen(prev.wireShieldName_) + 1));
-  DEF_COPY_FUNC(numPaths_);
-  DEF_COPY_FUNC(pathsAllocated_);
-
-  //    DEF_MALLOC_FUNC_FOR_2D( paths_, defiPath, numPaths_, 1 );
-  if (prev.paths_) {
-    paths_ = new defiPath*[numPaths_];
-
-    for (int i = 0; i < numPaths_; i++) {
-      if (prev.paths_[i]) {
-        //                paths_[i] = new defiPath(defData);
-        paths_[i] = new defiPath(*prev.paths_[i]);
-        //                paths_[i] = prev.paths_[i];
-      } else {
-        paths_[i] = 0;
-      }
-    }
-  } else {
-    paths_ = 0;
-  }
-}
-
-DEF_ASSIGN_OPERATOR_C(defiWire)
-{
-  CHECK_SELF_ASSIGN
-  type_ = 0;
-  wireShieldName_ = 0;
-
-  //    defData = NULL;
-  DEF_COPY_FUNC(defData);
-  DEF_MALLOC_FUNC(type_, char, sizeof(char) * (strlen(prev.type_) + 1));
-  DEF_MALLOC_FUNC(
-      wireShieldName_, char, sizeof(char) * (strlen(prev.wireShieldName_) + 1));
-  DEF_COPY_FUNC(numPaths_);
-  DEF_COPY_FUNC(pathsAllocated_);
-
-  //    DEF_MALLOC_FUNC_FOR_2D( paths_, defiPath, numPaths_, 1 );
-
-  if (prev.paths_) {
-    paths_ = new defiPath*[numPaths_];
-
-    for (int i = 0; i < numPaths_; i++) {
-      if (prev.paths_[i]) {
-        //                paths_[i] = new defiPath(defData);
-        paths_[i] = new defiPath(*prev.paths_[i]);
-        //                paths_[i] = prev.paths_[i];
-      } else {
-        paths_[i] = 0;
-      }
-    }
-  } else {
-    paths_ = 0;
-  }
-
-  return *this;
-}
-
-void defiWire::addPath(defiPath* p, int reset, int netOsnet, int* needCbk)
-{
-  int i;
-  size_t incNumber;
-
-  if (reset) {
-    for (i = 0; i < numPaths_; i++) {
-      delete paths_[i];
-    }
-    numPaths_ = 0;
-  }
-  if (numPaths_ >= pathsAllocated_) {
-    // 6/17/2003 - don't want to allocate too large memory just in case
-    // a net has many wires with only 1 or 2 paths
-
-    if (pathsAllocated_ <= maxLimit) {
-      incNumber = pathsAllocated_ * 2;
-      if (incNumber > maxLimit) {
-        incNumber = pathsAllocated_ + maxLimit;
-      }
-    } else {
-      incNumber = pathsAllocated_ + maxLimit;
-    }
-
-    switch (netOsnet) {
-      case 2:
-        bumpPaths(pathsAllocated_ ? incNumber : 1000);
-        break;
-      default:
-        bumpPaths(pathsAllocated_ ? incNumber : 8);
-        break;
-    }
-  }
-
-  paths_[numPaths_++] = new defiPath(p);
-
-  if (numPaths_ == pathsAllocated_)
-    *needCbk = 1;  // pre-warn the parser it needs to realloc next time
-}
-
-void defiWire::clear()
-{
-  int i;
-
-  if (type_) {
-    free(type_);
-    type_ = 0;
-  }
-
-  if (wireShieldName_) {
-    free(wireShieldName_);
-    wireShieldName_ = 0;
-  }
-
-  if (paths_) {
-    for (i = 0; i < numPaths_; i++) {
-      delete paths_[i];
-    }
-
-    delete[] paths_;
-    paths_ = 0;
-    numPaths_ = 0;
-    pathsAllocated_ = 0;
-  }
-}
-
-void defiWire::bumpPaths(long long size)
-{
-  long long i;
-  defiPath** newPaths = new defiPath*[size];
-
-  for (i = 0; i < numPaths_; i++)
-    newPaths[i] = paths_[i];
-
-  pathsAllocated_ = size;
-  delete[] paths_;
-  paths_ = newPaths;
-}
-
-int defiWire::numPaths() const
-{
-  return numPaths_;
-}
-
-const char* defiWire::wireType() const
-{
-  return type_;
-}
-
-const char* defiWire::wireShieldNetName() const
-{
-  return wireShieldName_;
-}
-
-defiPath* defiWire::path(int index)
-{
-  if (index >= 0 && index < numPaths_)
-    return paths_[index];
-  return 0;
-}
-
-const defiPath* defiWire::path(int index) const
-{
-  if (index >= 0 && index < numPaths_)
-    return paths_[index];
-  return 0;
-}
 
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
@@ -293,67 +116,6 @@ void defiSubnet::Init()
   nonDefaultRule_ = 0;
 
   clear();
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiSubnet)
-{
-  defData = NULL;
-  this->Init();
-
-  DEF_COPY_FUNC(nameSize_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_COPY_FUNC(pinsAllocated_);
-  DEF_COPY_FUNC(numPins_);
-
-  DEF_MALLOC_FUNC_FOR_2D_STR(instances_, numPins_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(pins_, numPins_);
-
-  DEF_MALLOC_FUNC(synthesized_, char, sizeof(char) * numPins_);
-  DEF_MALLOC_FUNC(musts_, char, sizeof(char) * numPins_);
-  DEF_COPY_FUNC(isFixed_);
-  DEF_COPY_FUNC(isRouted_);
-  DEF_COPY_FUNC(isCover_);
-  DEF_COPY_FUNC(numPaths_);
-  DEF_COPY_FUNC(pathsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(paths_, defiPath, numPaths_, 1);
-
-  DEF_COPY_FUNC(numWires_);
-  DEF_COPY_FUNC(wiresAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(wires_, defiWire, numWires_, 1);
-  DEF_MALLOC_FUNC(
-      nonDefaultRule_, char, sizeof(char) * (strlen(prev.nonDefaultRule_) + 1));
-}
-
-DEF_ASSIGN_OPERATOR_C(defiSubnet)
-{
-  CHECK_SELF_ASSIGN
-  defData = NULL;
-  this->Init();
-
-  DEF_COPY_FUNC(nameSize_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_COPY_FUNC(pinsAllocated_);
-  DEF_COPY_FUNC(numPins_);
-
-  DEF_MALLOC_FUNC_FOR_2D_STR(instances_, numPins_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(pins_, numPins_);
-
-  DEF_MALLOC_FUNC(
-      synthesized_, char, sizeof(char) * (strlen(prev.synthesized_) + 1));
-  DEF_MALLOC_FUNC(musts_, char, sizeof(char) * (strlen(prev.musts_) + 1));
-  DEF_COPY_FUNC(isFixed_);
-  DEF_COPY_FUNC(isRouted_);
-  DEF_COPY_FUNC(isCover_);
-  DEF_COPY_FUNC(numPaths_);
-  DEF_COPY_FUNC(pathsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(paths_, defiPath, numPaths_, 1);
-
-  DEF_COPY_FUNC(numWires_);
-  DEF_COPY_FUNC(wiresAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(wires_, defiWire, numWires_, 1);
-  DEF_MALLOC_FUNC(
-      nonDefaultRule_, char, sizeof(char) * (strlen(prev.nonDefaultRule_) + 1));
-  return *this;
 }
 
 void defiSubnet::Destroy()
@@ -408,8 +170,6 @@ void defiSubnet::addPin(const char* instance, const char* pin, int syn)
   strcpy(pins_[numPins_], defData->DEFCASE(pin));
 
   musts_[numPins_] = 0;
-  //  fflush(stdout);
-  //  printf("numPin : %d, innerSynCont : %d\n", numPins_, syn);
   synthesized_[numPins_] = syn;
 
   (numPins_)++;
@@ -486,8 +246,6 @@ void defiSubnet::addWire(const char* type)
     wires_ = array;
   }
   wire = wires_[numWires_] = new defiWire(defData);
-  //  wire = wires_[numWires_] = (defiWire*)malloc(sizeof(defiWire));
-  //  wire->defData = defData;
   numWires_ += 1;
   wire->Init(type, NULL);
 }
@@ -777,40 +535,6 @@ defiVpin::~defiVpin()
   Destroy();
 }
 
-DEF_COPY_CONSTRUCTOR_C(defiVpin)
-{
-  defData = NULL;
-
-  DEF_COPY_FUNC(xl_);
-  DEF_COPY_FUNC(yl_);
-  DEF_COPY_FUNC(xh_);
-  DEF_COPY_FUNC(yh_);
-  DEF_COPY_FUNC(orient_);
-  DEF_COPY_FUNC(status_);
-  DEF_COPY_FUNC(xLoc_);
-  DEF_COPY_FUNC(yLoc_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_MALLOC_FUNC(layer_, char, sizeof(char) * (strlen(prev.layer_) + 1));
-}
-
-DEF_ASSIGN_OPERATOR_C(defiVpin)
-{
-  CHECK_SELF_ASSIGN
-  defData = NULL;
-
-  DEF_COPY_FUNC(xl_);
-  DEF_COPY_FUNC(yl_);
-  DEF_COPY_FUNC(xh_);
-  DEF_COPY_FUNC(yh_);
-  DEF_COPY_FUNC(orient_);
-  DEF_COPY_FUNC(status_);
-  DEF_COPY_FUNC(xLoc_);
-  DEF_COPY_FUNC(yLoc_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_MALLOC_FUNC(layer_, char, sizeof(char) * (strlen(prev.layer_) + 1));
-  return *this;
-}
-
 void defiVpin::Destroy()
 {
   free(name_);
@@ -926,28 +650,6 @@ void defiShield::Init(const char* name)
   paths_ = NULL;
 }
 
-DEF_COPY_CONSTRUCTOR_C(defiShield)
-{
-  defData = NULL;
-
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_COPY_FUNC(numPaths_);
-  DEF_COPY_FUNC(pathsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(paths_, defiPath, numPaths_, 1);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiShield)
-{
-  CHECK_SELF_ASSIGN
-  defData = NULL;
-
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_COPY_FUNC(numPaths_);
-  DEF_COPY_FUNC(pathsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(paths_, defiPath, numPaths_, 1);
-  return *this;
-}
-
 void defiShield::Destroy()
 {
   clear();
@@ -1061,6 +763,151 @@ const defiPath* defiShield::path(int index) const
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 //
+//    defiWire
+//
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+
+defiWire::defiWire(defrData* data) : defData(data)
+{
+}
+
+void defiWire::Init(const char* type, const char* wireShieldName)
+{
+  int len = strlen(type) + 1;
+  type_ = (char*) malloc(len);
+  strcpy(type_, defData->DEFCASE(type));
+  if (wireShieldName) {
+    wireShieldName_ = (char*) malloc(strlen(wireShieldName) + 1);
+    strcpy(wireShieldName_, wireShieldName);
+  } else
+    wireShieldName_ = 0;
+  numPaths_ = 0;
+  pathsAllocated_ = 0;
+  paths_ = 0;
+}
+
+void defiWire::Destroy()
+{
+  clear();
+}
+
+defiWire::~defiWire()
+{
+  Destroy();
+}
+
+void defiWire::addPath(defiPath* p, int reset, int netOsnet, int* needCbk)
+{
+  int i;
+  size_t incNumber;
+
+  if (reset) {
+    for (i = 0; i < numPaths_; i++) {
+      delete paths_[i];
+    }
+    numPaths_ = 0;
+  }
+  if (numPaths_ >= pathsAllocated_) {
+    // 6/17/2003 - don't want to allocate too large memory just in case
+    // a net has many wires with only 1 or 2 paths
+
+    if (pathsAllocated_ <= maxLimit) {
+      incNumber = pathsAllocated_ * 2;
+      if (incNumber > maxLimit) {
+        incNumber = pathsAllocated_ + maxLimit;
+      }
+    } else {
+      incNumber = pathsAllocated_ + maxLimit;
+    }
+
+    switch (netOsnet) {
+      case 2:
+        bumpPaths(pathsAllocated_ ? incNumber : 1000);
+        break;
+      default:
+        bumpPaths(pathsAllocated_ ? incNumber : 8);
+        break;
+    }
+  }
+
+  paths_[numPaths_++] = new defiPath(p);
+
+  if (numPaths_ == pathsAllocated_)
+    *needCbk = 1;  // pre-warn the parser it needs to realloc next time
+}
+
+void defiWire::clear()
+{
+  int i;
+
+  if (type_) {
+    free(type_);
+    type_ = 0;
+  }
+
+  if (wireShieldName_) {
+    free(wireShieldName_);
+    wireShieldName_ = 0;
+  }
+
+  if (paths_) {
+    for (i = 0; i < numPaths_; i++) {
+      delete paths_[i];
+    }
+
+    delete[] paths_;
+    paths_ = 0;
+    numPaths_ = 0;
+    pathsAllocated_ = 0;
+  }
+}
+
+void defiWire::bumpPaths(long long size)
+{
+  long long i;
+  defiPath** newPaths = new defiPath*[size];
+
+  for (i = 0; i < numPaths_; i++)
+    newPaths[i] = paths_[i];
+
+  pathsAllocated_ = size;
+  delete[] paths_;
+  paths_ = newPaths;
+}
+
+int defiWire::numPaths() const
+{
+  return numPaths_;
+}
+
+const char* defiWire::wireType() const
+{
+  return type_;
+}
+
+const char* defiWire::wireShieldNetName() const
+{
+  return wireShieldName_;
+}
+
+defiPath* defiWire::path(int index)
+{
+  if (index >= 0 && index < numPaths_)
+    return paths_[index];
+  return 0;
+}
+
+const defiPath* defiWire::path(int index) const
+{
+  if (index >= 0 && index < numPaths_)
+    return paths_[index];
+  return 0;
+}
+
+////////////////////////////////////////////////////
+////////////////////////////////////////////////////
+//
 //    defiNet
 //
 ////////////////////////////////////////////////////
@@ -1146,281 +993,7 @@ void defiNet::Init()
   viaShapeTypes_ = 0;
   viaRouteStatusShieldNames_ = 0;
 
-  //  propTypes_ = 0;
-
-  //  synthesized_ = 0;
-  //  musts_ = 0;
-
-  //  pins_ = 0;
   clear();
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiNet)
-{
-  DEF_COPY_FUNC(defData);
-  this->Init();
-
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_COPY_FUNC(nameSize_);
-
-  DEF_COPY_FUNC(numPins_);
-  DEF_COPY_FUNC(pinsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(instances_, numPins_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(pins_, numPins_);
-
-  DEF_MALLOC_FUNC(musts_, char, sizeof(char) * numPins_);
-  DEF_MALLOC_FUNC(synthesized_, char, sizeof(char) * numPins_);
-  DEF_COPY_FUNC(weight_);
-  DEF_COPY_FUNC(hasWeight_);
-  DEF_COPY_FUNC(isFixed_);
-  DEF_COPY_FUNC(isRouted_);
-  DEF_COPY_FUNC(isCover_);
-  DEF_COPY_FUNC(hasCap_);
-  DEF_COPY_FUNC(hasFrequency_);
-  DEF_COPY_FUNC(hasVoltage_);
-  DEF_COPY_FUNC(numProps_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(propNames_, numProps_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(propValues_, numProps_);
-
-  DEF_MALLOC_FUNC(propDValues_, double, sizeof(double) * numProps_);
-  DEF_MALLOC_FUNC(propTypes_, char, sizeof(char) * numProps_);
-  DEF_COPY_FUNC(propsAllocated_);
-  DEF_COPY_FUNC(numSubnets_);
-  DEF_MALLOC_FUNC_FOR_2D(subnets_, defiSubnet, numSubnets_, 1);
-
-  DEF_COPY_FUNC(subnetsAllocated_);
-  DEF_COPY_FUNC(cap_);
-  DEF_MALLOC_FUNC(source_, char, sizeof(char) * (strlen(prev.source_) + 1));
-  DEF_COPY_FUNC(fixedbump_);
-  DEF_COPY_FUNC(frequency_);
-  DEF_MALLOC_FUNC(pattern_, char, sizeof(char) * (strlen(prev.pattern_) + 1));
-  DEF_MALLOC_FUNC(original_, char, sizeof(char) * (strlen(prev.original_) + 1));
-  DEF_MALLOC_FUNC(use_, char, sizeof(char) * (strlen(prev.use_) + 1));
-  DEF_MALLOC_FUNC(
-      nonDefaultRule_, char, sizeof(char) * (strlen(prev.nonDefaultRule_) + 1));
-  DEF_COPY_FUNC(style_);
-
-  DEF_COPY_FUNC(numPaths_);
-  DEF_COPY_FUNC(pathsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(paths_, defiPath, numPaths_, 1);
-
-  DEF_COPY_FUNC(voltage_);
-  DEF_COPY_FUNC(numWires_);
-  DEF_COPY_FUNC(wiresAllocated_);
-  //    DEF_MALLOC_FUNC_FOR_2D( wires_, defiWire, numWires_, 1 );
-
-  // wire_ : outer array : malloc/free
-  //         inner array : new/delete
-  if (prev.wires_) {
-    wires_ = (defiWire**) malloc(sizeof(defiWire*) * numWires_);
-
-    for (int i = 0; i < numWires_; i++) {
-      if (prev.wires_[i]) {
-        //                wires_[i] = new defiWire(defData);
-        wires_[i] = new defiWire(*prev.wires_[i]);
-      } else {
-        wires_[i] = 0;
-      }
-    }
-  } else {
-    wires_ = 0;
-  }
-
-  DEF_COPY_FUNC(widthsAllocated_);
-  DEF_COPY_FUNC(numWidths_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(wlayers_, numWidths_);
-  DEF_MALLOC_FUNC(wdist_, double, sizeof(double) * numWidths_);
-
-  DEF_COPY_FUNC(spacingAllocated_);
-  DEF_COPY_FUNC(numSpacing_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(slayers_, numSpacing_);
-  DEF_MALLOC_FUNC(sdist_, double, sizeof(double) * numSpacing_);
-  DEF_MALLOC_FUNC(sleft_, double, sizeof(double) * numSpacing_);
-  DEF_MALLOC_FUNC(sright_, double, sizeof(double) * numSpacing_);
-  DEF_COPY_FUNC(xTalk_);
-  DEF_COPY_FUNC(numVpins_);
-  DEF_COPY_FUNC(vpinsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(vpins_, defiVpin, numVpins_, 1);
-
-  DEF_COPY_FUNC(numShields_);
-  DEF_COPY_FUNC(shieldsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(shields_, defiShield, numShields_, 1);
-
-  DEF_COPY_FUNC(numNoShields_);
-
-  DEF_COPY_FUNC(numShieldNet_);
-  DEF_COPY_FUNC(shieldNetsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(shieldNet_, numShieldNet_);
-
-  DEF_COPY_FUNC(numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_MALLOC_FUNC(polyMasks_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polyRouteStatus_, numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polyShapeTypes_, numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polyRouteStatusShieldNames_, numPolys_);
-
-  DEF_COPY_FUNC(numRects_);
-  DEF_COPY_FUNC(rectsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(rectNames_, numRects_);
-
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC(rectMasks_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(rectRouteStatus_, numRects_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(rectRouteStatusShieldNames_, numRects_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(rectShapeTypes_, numRects_);
-
-  DEF_COPY_FUNC(numPts_);
-  DEF_COPY_FUNC(ptsAllocated_);
-
-  DEF_MALLOC_FUNC_FOR_2D_POINT(viaPts_, numPts_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numPts_);
-
-  DEF_MALLOC_FUNC(viaOrients_, int, sizeof(int) * numPts_);
-  DEF_MALLOC_FUNC(viaMasks_, int, sizeof(int) * numPts_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaRouteStatus_, numPts_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaRouteStatusShieldNames_, numPts_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaShapeTypes_, numPts_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiNet)
-{
-  CHECK_SELF_ASSIGN
-  DEF_COPY_FUNC(defData);
-  this->Init();
-
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_COPY_FUNC(nameSize_);
-
-  DEF_COPY_FUNC(numPins_);
-  DEF_COPY_FUNC(pinsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(instances_, numPins_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(pins_, numPins_);
-
-  DEF_MALLOC_FUNC(musts_, char, sizeof(char) * numPins_);
-  DEF_MALLOC_FUNC(synthesized_, char, sizeof(char) * numPins_);
-  DEF_COPY_FUNC(weight_);
-  DEF_COPY_FUNC(hasWeight_);
-  DEF_COPY_FUNC(isFixed_);
-  DEF_COPY_FUNC(isRouted_);
-  DEF_COPY_FUNC(isCover_);
-  DEF_COPY_FUNC(hasCap_);
-  DEF_COPY_FUNC(hasFrequency_);
-  DEF_COPY_FUNC(hasVoltage_);
-  DEF_COPY_FUNC(numProps_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(propNames_, numProps_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(propValues_, numProps_);
-
-  DEF_MALLOC_FUNC(propDValues_, double, sizeof(double) * numProps_);
-  DEF_MALLOC_FUNC(propTypes_, char, sizeof(char) * numProps_);
-  DEF_COPY_FUNC(propsAllocated_);
-  DEF_COPY_FUNC(numSubnets_);
-  DEF_MALLOC_FUNC_FOR_2D(subnets_, defiSubnet, numSubnets_, 1);
-
-  DEF_COPY_FUNC(subnetsAllocated_);
-  DEF_COPY_FUNC(cap_);
-  DEF_MALLOC_FUNC(source_, char, sizeof(char) * (strlen(prev.source_) + 1));
-  DEF_COPY_FUNC(fixedbump_);
-  DEF_COPY_FUNC(frequency_);
-  DEF_MALLOC_FUNC(pattern_, char, sizeof(char) * (strlen(prev.pattern_) + 1));
-  DEF_MALLOC_FUNC(original_, char, sizeof(char) * (strlen(prev.original_) + 1));
-  DEF_MALLOC_FUNC(use_, char, sizeof(char) * (strlen(prev.use_) + 1));
-  DEF_MALLOC_FUNC(
-      nonDefaultRule_, char, sizeof(char) * (strlen(prev.nonDefaultRule_) + 1));
-  DEF_COPY_FUNC(style_);
-
-  DEF_COPY_FUNC(numPaths_);
-  DEF_COPY_FUNC(pathsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(paths_, defiPath, numPaths_, 1);
-
-  DEF_COPY_FUNC(voltage_);
-  DEF_COPY_FUNC(numWires_);
-  DEF_COPY_FUNC(wiresAllocated_);
-  //    DEF_MALLOC_FUNC_FOR_2D( wires_, defiWire, numWires_, 1 );
-
-  // wire_ : outer array : malloc/free
-  //         inner array : new/delete
-  if (prev.wires_) {
-    wires_ = (defiWire**) malloc(sizeof(defiWire*) * numWires_);
-
-    for (int i = 0; i < numWires_; i++) {
-      if (prev.wires_[i]) {
-        //                wires_[i] = new defiWire(defData);
-        wires_[i] = new defiWire(*prev.wires_[i]);
-      } else {
-        wires_[i] = 0;
-      }
-    }
-  } else {
-    wires_ = 0;
-  }
-
-  DEF_COPY_FUNC(widthsAllocated_);
-  DEF_COPY_FUNC(numWidths_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(wlayers_, numWidths_);
-  DEF_MALLOC_FUNC(wdist_, double, sizeof(double) * numWidths_);
-
-  DEF_COPY_FUNC(spacingAllocated_);
-  DEF_COPY_FUNC(numSpacing_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(slayers_, numSpacing_);
-  DEF_MALLOC_FUNC(sdist_, double, sizeof(double) * numSpacing_);
-  DEF_MALLOC_FUNC(sleft_, double, sizeof(double) * numSpacing_);
-  DEF_MALLOC_FUNC(sright_, double, sizeof(double) * numSpacing_);
-  DEF_COPY_FUNC(xTalk_);
-  DEF_COPY_FUNC(numVpins_);
-  DEF_COPY_FUNC(vpinsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(vpins_, defiVpin, numVpins_, 1);
-
-  DEF_COPY_FUNC(numShields_);
-  DEF_COPY_FUNC(shieldsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D(shields_, defiShield, numShields_, 1);
-
-  DEF_COPY_FUNC(numNoShields_);
-
-  DEF_COPY_FUNC(numShieldNet_);
-  DEF_COPY_FUNC(shieldNetsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(shieldNet_, numShieldNet_);
-
-  DEF_COPY_FUNC(numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_MALLOC_FUNC(polyMasks_, int, sizeof(int) * numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polyRouteStatus_, numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polyShapeTypes_, numPolys_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(polyRouteStatusShieldNames_, numPolys_);
-
-  DEF_COPY_FUNC(numRects_);
-  DEF_COPY_FUNC(rectsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(rectNames_, numRects_);
-
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC(rectMasks_, int, sizeof(int) * numRects_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(rectRouteStatus_, numRects_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(rectRouteStatusShieldNames_, numRects_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(rectShapeTypes_, numRects_);
-
-  DEF_COPY_FUNC(numPts_);
-  DEF_COPY_FUNC(ptsAllocated_);
-
-  DEF_MALLOC_FUNC_FOR_2D_POINT(viaPts_, numPts_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaNames_, numPts_);
-
-  DEF_MALLOC_FUNC(viaOrients_, int, sizeof(int) * numPts_);
-  DEF_MALLOC_FUNC(viaMasks_, int, sizeof(int) * numPts_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaRouteStatus_, numPts_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaRouteStatusShieldNames_, numPts_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(viaShapeTypes_, numPts_);
-  return *this;
 }
 
 void defiNet::Destroy()
@@ -1495,10 +1068,6 @@ void defiNet::addPin(const char* instance, const char* pin, int syn)
   strcpy(instances_[numPins_], defData->DEFCASE(instance));
 
   len = strlen(pin) + 1;
-  //  printf("len: %d\n", len);
-  //  printf("numPins_: %d\n", numPins_);
-  //  printf("pins_ address: %x\n", pins_);
-  //  fflush(stdout);
   pins_[numPins_] = (char*) malloc(len);
   strcpy(pins_[numPins_], defData->DEFCASE(pin));
 
@@ -1706,16 +1275,14 @@ void defiNet::changeNetName(const char* name)
 void defiNet::changeInstance(const char* instance, int index)
 {
   int len;
-  char errMsg[256];
 
   if ((index < 0) || (index > numPins_)) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6083): The index number %d specified for the NET "
-            "INSTANCE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numPins_);
-    defiError(0, 6083, errMsg, defData);
+    std::stringstream errMsg;
+    errMsg << "ERROR (DEFPARS-6083): The index number " << index;
+    errMsg << "specified for the NET INSTANCE is invalid." << std::endl;
+    errMsg << "Valid index is from 0 to " << numPins_ << ".";
+    errMsg << "Specify a valid index number and then try again.";
+    defiError(0, 6083, errMsg.str().c_str(), defData);
   }
 
   len = strlen(instance) + 1;
@@ -1729,16 +1296,9 @@ void defiNet::changeInstance(const char* instance, int index)
 void defiNet::changePin(const char* pin, int index)
 {
   int len;
-  char errMsg[256];
 
   if ((index < 0) || (index > numPins_)) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6084): The index number %d specified for the NET "
-            "PIN is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPins_);
-    defiError(0, 6084, errMsg, defData);
+    defiError6084(index, numPins_, defData);
   }
 
   len = strlen(pin) + 1;
@@ -1795,7 +1355,7 @@ double defiNet::propNumber(int index) const
   return 0;
 }
 
-char defiNet::propType(int index) const
+const char defiNet::propType(int index) const
 {
   if (index >= 0 && index < numProps_)
     return propTypes_[index];
@@ -1849,13 +1409,8 @@ int defiNet::pinIsMustJoin(int index) const
 
 int defiNet::pinIsSynthesized(int index) const
 {
-  if (index >= 0 && index < numPins_) {
-    //    printf("curidx: %d\n", index);
-    //    printf("numPins_ : %d\n", numPins_);
-    //    printf("synthesized_ addr: %x\n", synthesized_);
-    //    fflush(stdout);
+  if (index >= 0 && index < numPins_)
     return (int) (synthesized_[index]);
-  }
   return 0;
 }
 
@@ -1907,7 +1462,7 @@ void defiNet::freeWire()
   if (numWires_) {
     for (i = 0; i < numWires_; i++) {
       wires_[i]->Destroy();
-      free((char*) (wires_[i]));
+      delete wires_[i];
       wires_[i] = 0;
     }
     free((char*) (wires_));
@@ -3063,15 +2618,8 @@ int defiNet::numPolygons() const
 // 5.6
 const char* defiNet::polygonName(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPolys_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPolys_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return polygonNames_[index];
@@ -3079,15 +2627,8 @@ const char* defiNet::polygonName(int index) const
 
 const char* defiNet::polyRouteStatus(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPolys_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPolys_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return polyRouteStatus_[index];
@@ -3095,15 +2636,8 @@ const char* defiNet::polyRouteStatus(int index) const
 
 const char* defiNet::polyRouteStatusShieldName(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPolys_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPolys_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return polyRouteStatusShieldNames_[index];
@@ -3111,15 +2645,8 @@ const char* defiNet::polyRouteStatusShieldName(int index) const
 
 const char* defiNet::polyShapeType(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPolys_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPolys_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return polyShapeTypes_[index];
@@ -3127,15 +2654,8 @@ const char* defiNet::polyShapeType(int index) const
 
 int defiNet::polyMask(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPolys_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPolys_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return polyMasks_[index];
@@ -3244,15 +2764,7 @@ int defiNet::numRectangles() const
 // 5.6
 const char* defiNet::rectName(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
     return 0;
   }
   return rectNames_[index];
@@ -3260,15 +2772,8 @@ const char* defiNet::rectName(int index) const
 
 const char* defiNet::rectRouteStatus(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
+    defiError6086(index, numRects_, defData);
     return 0;
   }
   return rectRouteStatus_[index];
@@ -3276,15 +2781,8 @@ const char* defiNet::rectRouteStatus(int index) const
 
 const char* defiNet::rectRouteStatusShieldName(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
+    defiError6086(index, numRects_, defData);
     return 0;
   }
   return rectRouteStatusShieldNames_[index];
@@ -3292,15 +2790,8 @@ const char* defiNet::rectRouteStatusShieldName(int index) const
 
 const char* defiNet::rectShapeType(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
+    defiError6086(index, numRects_, defData);
     return 0;
   }
   return rectShapeTypes_[index];
@@ -3309,15 +2800,8 @@ const char* defiNet::rectShapeType(int index) const
 // 5.6
 int defiNet::xl(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index >= numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
+    defiError6086(index, numRects_, defData);
     return 0;
   }
   return xl_[index];
@@ -3326,15 +2810,8 @@ int defiNet::xl(int index) const
 // 5.6
 int defiNet::yl(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index >= numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
+    defiError6086(index, numRects_, defData);
     return 0;
   }
   return yl_[index];
@@ -3343,15 +2820,8 @@ int defiNet::yl(int index) const
 // 5.6
 int defiNet::xh(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index >= numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
+    defiError6086(index, numRects_, defData);
     return 0;
   }
   return xh_[index];
@@ -3360,15 +2830,8 @@ int defiNet::xh(int index) const
 // 5.6
 int defiNet::yh(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index >= numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
+    defiError6086(index, numRects_, defData);
     return 0;
   }
   return yh_[index];
@@ -3376,15 +2839,8 @@ int defiNet::yh(int index) const
 
 int defiNet::rectMask(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index >= numRects_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6086): The index number %d specified for the NET "
-            "RECTANGLE is invalid.\nValid index is from 0 to %d. Specify a "
-            "valid index number and then try again.",
-            index,
-            numRects_);
-    defiError(0, 6086, errMsg, defData);
+    defiError6086(index, numRects_, defData);
     return 0;
   }
   return rectMasks_[index];
@@ -3482,15 +2938,8 @@ int defiNet::numViaSpecs() const
 
 const char* defiNet::viaName(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return viaNames_[index];
@@ -3498,15 +2947,8 @@ const char* defiNet::viaName(int index) const
 
 const char* defiNet::viaRouteStatus(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return viaRouteStatus_[index];
@@ -3514,15 +2956,8 @@ const char* defiNet::viaRouteStatus(int index) const
 
 const char* defiNet::viaRouteStatusShieldName(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return viaRouteStatusShieldNames_[index];
@@ -3530,31 +2965,17 @@ const char* defiNet::viaRouteStatusShieldName(int index) const
 
 const char* defiNet::viaShapeType(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return viaShapeTypes_[index];
 }
 
-int defiNet::viaOrient(int index) const
+const int defiNet::viaOrient(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return viaOrients_[index];
@@ -3562,66 +2983,37 @@ int defiNet::viaOrient(int index) const
 
 const char* defiNet::viaOrientStr(int index) const
 {
-  char errMsg[256];
-
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
   return (defiOrientStr(viaOrients_[index]));
 }
 
-int defiNet::topMaskNum(int index) const
+const int defiNet::topMaskNum(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
 
   return viaMasks_[index] / 100;
 }
 
-int defiNet::cutMaskNum(int index) const
+const int defiNet::cutMaskNum(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
 
   return viaMasks_[index] / 10 % 10;
 }
 
-int defiNet::bottomMaskNum(int index) const
+const int defiNet::bottomMaskNum(int index) const
 {
-  char errMsg[256];
   if (index < 0 || index > numPts_) {
-    sprintf(errMsg,
-            "ERROR (DEFPARS-6085): The index number %d specified for the NET "
-            "POLYGON is invalid.\nValid index is from 0 to %d. Specify a valid "
-            "index number and then try again.",
-            index,
-            numPts_);
-    defiError(0, 6085, errMsg, defData);
+    defiError6085(index, numPolys_, defData);
     return 0;
   }
 

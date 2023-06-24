@@ -36,6 +36,12 @@
 #include "defiPinCap.h"
 #include "defiPinCap.hpp"
 
+union udefiPoints
+{
+  LefDefParser::defiPoints cpp;
+  ::defiPoints c;
+};
+
 // Wrappers definitions.
 int defiPinCap_pin(const ::defiPinCap* obj)
 {
@@ -239,9 +245,9 @@ const char* defiPinPort_polygonName(const ::defiPinPort* obj, int index)
 
 ::defiPoints defiPinPort_getPolygon(const ::defiPinPort* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiPinPort*) obj)->getPolygon(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiPinPort*) obj)->getPolygon(index);
+  return tmp.c;
 }
 
 int defiPinPort_hasPolygonSpacing(const ::defiPinPort* obj, int index)
@@ -471,9 +477,9 @@ const char* defiPin_polygonName(const ::defiPin* obj, int index)
 
 ::defiPoints defiPin_getPolygon(const ::defiPin* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiPin*) obj)->getPolygon(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiPin*) obj)->getPolygon(index);
+  return tmp.c;
 }
 
 int defiPin_polygonMask(const ::defiPin* obj, int index)

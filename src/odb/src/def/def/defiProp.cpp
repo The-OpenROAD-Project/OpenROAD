@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -37,8 +37,7 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-defiProp::defiProp(defrData* data)
-    : propType_(0), propName_(0), stringData_(0), defData(data)
+defiProp::defiProp(defrData* data) : defData(data)
 {
   Init();
 }
@@ -50,42 +49,6 @@ void defiProp::Init()
   nameSize_ = 16;
   propName_ = (char*) malloc(16);
   clear();
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiProp)
-{
-  DEF_MALLOC_FUNC(propType_, char, sizeof(char) * (strlen(prev.propType_) + 1));
-  DEF_MALLOC_FUNC(propName_, char, sizeof(char) * (strlen(prev.propName_) + 1));
-  DEF_COPY_FUNC(nameSize_);
-  DEF_COPY_FUNC(hasRange_);
-  DEF_COPY_FUNC(hasNumber_);
-  DEF_COPY_FUNC(hasNameMapString_);
-  DEF_COPY_FUNC(dataType_);
-  DEF_MALLOC_FUNC(
-      stringData_, char, sizeof(char) * (strlen(prev.stringData_) + 1));
-  DEF_COPY_FUNC(stringLength_);
-  DEF_COPY_FUNC(left_);
-  DEF_COPY_FUNC(right_);
-  DEF_COPY_FUNC(d_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiProp)
-{
-  CHECK_SELF_ASSIGN
-  DEF_MALLOC_FUNC(propType_, char, sizeof(char) * (strlen(prev.propType_) + 1));
-  DEF_MALLOC_FUNC(propName_, char, sizeof(char) * (strlen(prev.propName_) + 1));
-  DEF_COPY_FUNC(nameSize_);
-  DEF_COPY_FUNC(hasRange_);
-  DEF_COPY_FUNC(hasNumber_);
-  DEF_COPY_FUNC(hasNameMapString_);
-  DEF_COPY_FUNC(dataType_);
-  DEF_MALLOC_FUNC(
-      stringData_, char, sizeof(char) * (strlen(prev.stringData_) + 1));
-  DEF_COPY_FUNC(stringLength_);
-  DEF_COPY_FUNC(left_);
-  DEF_COPY_FUNC(right_);
-  DEF_COPY_FUNC(d_);
-  return *this;
 }
 
 void defiProp::Destroy()

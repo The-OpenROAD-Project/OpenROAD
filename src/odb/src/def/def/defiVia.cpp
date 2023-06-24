@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -48,126 +48,6 @@ BEGIN_LEFDEF_PARSER_NAMESPACE
 defiVia::defiVia(defrData* data) : defData(data)
 {
   Init();
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiVia)
-{
-  DEF_COPY_FUNC(defData);
-  Init();
-
-  DEF_COPY_FUNC(nameLength_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_MALLOC_FUNC(pattern_, char, sizeof(char) * (strlen(prev.pattern_) + 1));
-  DEF_COPY_FUNC(patternLength_);
-
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-
-  DEF_COPY_FUNC(hasPattern_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_COPY_FUNC(layersLength_);
-  DEF_COPY_FUNC(numPolys_);
-
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_MALLOC_FUNC(viaRule_, char, sizeof(char) * (strlen(prev.viaRule_) + 1));
-  DEF_COPY_FUNC(viaRuleLength_);
-  DEF_COPY_FUNC(hasViaRule_);
-  DEF_COPY_FUNC(xSize_);
-  DEF_COPY_FUNC(ySize_);
-  DEF_MALLOC_FUNC(botLayer_, char, sizeof(char) * (strlen(prev.botLayer_) + 1));
-  DEF_MALLOC_FUNC(cutLayer_, char, sizeof(char) * (strlen(prev.cutLayer_) + 1));
-  DEF_MALLOC_FUNC(topLayer_, char, sizeof(char) * (strlen(prev.topLayer_) + 1));
-  DEF_COPY_FUNC(botLayerLength_);
-  DEF_COPY_FUNC(cutLayerLength_);
-  DEF_COPY_FUNC(topLayerLength_);
-  DEF_COPY_FUNC(xCutSpacing_);
-  DEF_COPY_FUNC(yCutSpacing_);
-  DEF_COPY_FUNC(xBotEnc_);
-  DEF_COPY_FUNC(yBotEnc_);
-  DEF_COPY_FUNC(xTopEnc_);
-  DEF_COPY_FUNC(yTopEnc_);
-  DEF_COPY_FUNC(rows_);
-  DEF_COPY_FUNC(cols_);
-  DEF_COPY_FUNC(xOffset_);
-  DEF_COPY_FUNC(yOffset_);
-  DEF_COPY_FUNC(xBotOffset_);
-  DEF_COPY_FUNC(yBotOffset_);
-  DEF_COPY_FUNC(xTopOffset_);
-  DEF_COPY_FUNC(yTopOffset_);
-  DEF_MALLOC_FUNC(
-      cutPattern_, char, sizeof(char) * (strlen(prev.cutPattern_) + 1));
-  DEF_COPY_FUNC(cutPatternLength_);
-  DEF_COPY_FUNC(hasCutPattern_);
-  DEF_MALLOC_FUNC(rectMask_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numLayers_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiVia)
-{
-  CHECK_SELF_ASSIGN
-  DEF_COPY_FUNC(defData);
-  Init();
-
-  DEF_COPY_FUNC(nameLength_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_MALLOC_FUNC(pattern_, char, sizeof(char) * (strlen(prev.pattern_) + 1));
-  DEF_COPY_FUNC(patternLength_);
-
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-
-  DEF_COPY_FUNC(hasPattern_);
-  DEF_MALLOC_FUNC(xl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yl_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(xh_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(yh_, int, sizeof(int) * numLayers_);
-  DEF_COPY_FUNC(layersLength_);
-  DEF_COPY_FUNC(numPolys_);
-
-  DEF_MALLOC_FUNC_FOR_2D_STR(polygonNames_, numPolys_);
-  DEF_COPY_FUNC(polysAllocated_);
-
-  DEF_MALLOC_FUNC_FOR_2D_POINT(polygons_, numPolys_);
-
-  DEF_MALLOC_FUNC(viaRule_, char, sizeof(char) * (strlen(prev.viaRule_) + 1));
-  DEF_COPY_FUNC(viaRuleLength_);
-  DEF_COPY_FUNC(hasViaRule_);
-  DEF_COPY_FUNC(xSize_);
-  DEF_COPY_FUNC(ySize_);
-  DEF_MALLOC_FUNC(botLayer_, char, sizeof(char) * (strlen(prev.botLayer_) + 1));
-  DEF_MALLOC_FUNC(cutLayer_, char, sizeof(char) * (strlen(prev.cutLayer_) + 1));
-  DEF_MALLOC_FUNC(topLayer_, char, sizeof(char) * (strlen(prev.topLayer_) + 1));
-  DEF_COPY_FUNC(botLayerLength_);
-  DEF_COPY_FUNC(cutLayerLength_);
-  DEF_COPY_FUNC(topLayerLength_);
-  DEF_COPY_FUNC(xCutSpacing_);
-  DEF_COPY_FUNC(yCutSpacing_);
-  DEF_COPY_FUNC(xBotEnc_);
-  DEF_COPY_FUNC(yBotEnc_);
-  DEF_COPY_FUNC(xTopEnc_);
-  DEF_COPY_FUNC(yTopEnc_);
-  DEF_COPY_FUNC(rows_);
-  DEF_COPY_FUNC(cols_);
-  DEF_COPY_FUNC(xOffset_);
-  DEF_COPY_FUNC(yOffset_);
-  DEF_COPY_FUNC(xBotOffset_);
-  DEF_COPY_FUNC(yBotOffset_);
-  DEF_COPY_FUNC(xTopOffset_);
-  DEF_COPY_FUNC(yTopOffset_);
-  DEF_MALLOC_FUNC(
-      cutPattern_, char, sizeof(char) * (strlen(prev.cutPattern_) + 1));
-  DEF_COPY_FUNC(cutPatternLength_);
-  DEF_COPY_FUNC(hasCutPattern_);
-  DEF_MALLOC_FUNC(rectMask_, int, sizeof(int) * numLayers_);
-  DEF_MALLOC_FUNC(polyMask_, int, sizeof(int) * numLayers_);
-  return *this;
 }
 
 void defiVia::Init()
