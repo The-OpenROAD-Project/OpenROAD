@@ -355,12 +355,16 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
              odb::dbOrientType::MX,
              rotation_ver,
              odb::dbRowDir::HORIZONTAL);
+  odb::dbOrientType east_rotation_hor = odb::dbOrientType::R90;
+  if (vertical_site != horizontal_site) {
+    east_rotation_hor = odb::dbOrientType::R0;
+  }
   create_row(row_east_,
              horizontal_site,
              y_sites,
              {outer_io.xMax() - static_cast<int>(horizontal_site->getHeight()),
               se->getBBox().yMax()},
-             odb::dbOrientType::R90,
+             east_rotation_hor,
              rotation_hor,
              odb::dbRowDir::VERTICAL);
   create_row(row_south_,
@@ -370,11 +374,12 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
              odb::dbOrientType::R0,
              rotation_ver,
              odb::dbRowDir::HORIZONTAL);
+  const odb::dbOrientType west_rotation_hor = east_rotation_hor.flipY();
   create_row(row_west_,
              horizontal_site,
              y_sites,
              {outer_io.xMin(), sw->getBBox().yMax()},
-             odb::dbOrientType::MXR90,
+             west_rotation_hor,
              rotation_hor,
              odb::dbRowDir::VERTICAL);
 }
