@@ -56,7 +56,6 @@
       "parent": "dbTechLayer"
     }
   ],
-  "constructors": [],
   "enums": [
   ],
   "cpp_includes": [

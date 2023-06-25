@@ -31,6 +31,5 @@
       "parent":"dbBlock"
     }
   ],
-  "constructors":[],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp"]
 }

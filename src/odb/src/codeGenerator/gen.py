@@ -63,7 +63,6 @@ for i, klass in enumerate(schema["classes"]):
         [
             "classes",
             "fields",
-            "constructors",
             "enums",
             "structs",
             "h_includes",

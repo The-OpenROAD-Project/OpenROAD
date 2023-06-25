@@ -18,7 +18,6 @@
       "flags":["no-set"]  
     }
   ],
-  "constructors":[],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
   "h_includes": [
     "dbVector.h"
