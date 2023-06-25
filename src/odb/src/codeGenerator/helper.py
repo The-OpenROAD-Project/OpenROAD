@@ -37,7 +37,7 @@ std = [
     "unint_32t",
 ]
 
-_removable = ["unsigned", "static", "const"]
+_removable = ["const", "static", "unsigned"]
 
 
 def _stem(s):

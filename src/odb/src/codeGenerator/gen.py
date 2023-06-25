@@ -9,18 +9,18 @@ from parser import Parser
 from jinja2 import Environment, FileSystemLoader
 from helper import (
     add_once_to_dict,
-    get_class_index,
-    get_table_name,
-    is_bit_fields,
-    get_struct,
-    is_ref,
-    get_ref_type,
-    is_hash_table,
-    get_hash_table_type,
-    get_template_type,
     components,
+    get_class_index,
     get_functional_name,
+    get_hash_table_type,
+    get_ref_type,
+    get_struct,
+    get_table_name,
+    get_template_type,
+    is_bit_fields,
+    is_hash_table,
     is_pass_by_ref,
+    is_ref,
     std,
 )
 
