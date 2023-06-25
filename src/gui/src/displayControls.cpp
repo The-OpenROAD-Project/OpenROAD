@@ -448,6 +448,12 @@ DisplayControls::DisplayControls(QWidget* parent)
                false,
                instance_name_color_);
   makeLeafItem(instance_shapes_.pins, "Pins", instance_shape, Qt::Checked);
+  makeLeafItem(instance_shapes_.iterm_labels,
+               "Iterm Labels",
+               instance_shape,
+               Qt::Unchecked,
+               false,
+               instance_name_color_);
   makeLeafItem(
       instance_shapes_.blockages, "Blockages", instance_shape, Qt::Checked);
   toggleParent(misc_.instances);
@@ -1503,6 +1509,11 @@ bool DisplayControls::areInstanceNamesVisible()
 bool DisplayControls::areInstancePinsVisible()
 {
   return isModelRowVisible(&instance_shapes_.pins);
+}
+
+bool DisplayControls::areInstanceItermsVisible()
+{
+  return isModelRowVisible(&instance_shapes_.iterm_labels);
 }
 
 bool DisplayControls::areInstanceBlockagesVisible()

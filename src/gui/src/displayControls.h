@@ -212,6 +212,7 @@ class DisplayControls : public QDockWidget,
   bool isInstanceSelectable(odb::dbInst* inst) override;
   bool areInstanceNamesVisible() override;
   bool areInstancePinsVisible() override;
+  bool areInstanceItermsVisible() override;
   bool areInstanceBlockagesVisible() override;
   bool areFillsVisible() override;
   bool areBlockagesVisible() override;
@@ -383,6 +384,7 @@ class DisplayControls : public QDockWidget,
   {
     ModelRow names;
     ModelRow pins;
+    ModelRow iterm_labels;
     ModelRow blockages;
   };
 

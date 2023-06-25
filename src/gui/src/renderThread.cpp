@@ -638,6 +638,112 @@ void RenderThread::drawInstanceNames(QPainter* painter,
   painter->setFont(initial_font);
 }
 
+// Draw the instances' names
+void RenderThread::drawItermLabels(QPainter* painter,
+                                     const std::vector<odb::dbInst*>& insts)
+{
+  if (!viewer_->options_->areInstanceItermsVisible()) {
+    return;
+  }
+
+  const int minimum_size = viewer_->coarseViewableResolution();
+  const QTransform initial_xfm = painter->transform();
+
+  const QColor text_color = viewer_->options_->instanceNameColor();
+  painter->setPen(QPen(text_color, 0));
+  painter->setBrush(QBrush(text_color));
+
+  const QFont initial_font = painter->font();
+  const QFont text_font = viewer_->options_->instanceNameFont();
+  const QFontMetricsF font_metrics(text_font);
+
+  // minimum pixel height for text (10px)
+  if (font_metrics.ascent() < 10) {
+    // text is too small
+    return;
+  }
+
+  // text should not fill more than 90% of the instance height or width
+  static const float size_limit = 0.9;
+  static const float rotation_limit
+      = 0.85;  // slightly lower to prevent oscillating rotations when zooming
+
+  // limit non-core text to 1/2.0 (50%) of cell height or width
+  static const float non_core_scale_limit = 2.0;
+
+  const qreal scale_adjust = 1.0 / viewer_->pixels_per_dbu_;
+
+  painter->setFont(text_font);
+  for (auto inst : insts) {
+    if (restart_) {
+      break;
+    }
+    dbMaster* master = inst->getMaster();
+    int master_height = master->getHeight();
+    int master_width = master->getHeight();
+
+    if (master_height < minimum_size) {
+      continue;
+    }
+    if (!inst->getMaster()->isCore() && master_width < minimum_size) {
+      // if core cell, just check master height
+      continue;
+    }
+
+    Rect instance_box = inst->getBBox()->getBox();
+
+    QString name = inst->getName().c_str();
+    QRectF instance_bbox_in_px = viewer_->dbuToScreen(instance_box);
+
+    QRectF text_bounding_box = font_metrics.boundingRect(name);
+
+    bool do_rotate = false;
+    if (text_bounding_box.width()
+        > rotation_limit * instance_bbox_in_px.width()) {
+      // non-rotated text will not fit without elide
+      if (instance_bbox_in_px.height() > instance_bbox_in_px.width()) {
+        // check if more text will fit if rotated
+        do_rotate = true;
+      }
+    }
+
+    qreal text_height_check = non_core_scale_limit * text_bounding_box.height();
+    // don't show text if it's more than "non_core_scale_limit" of cell
+    // height/width this keeps text from dominating the cell size
+    if (!do_rotate && text_height_check > instance_bbox_in_px.height()) {
+      continue;
+    }
+    if (do_rotate && text_height_check > instance_bbox_in_px.width()) {
+      continue;
+    }
+
+    if (do_rotate) {
+      name = font_metrics.elidedText(
+          name, Qt::ElideLeft, size_limit * instance_bbox_in_px.height());
+    } else {
+      name = font_metrics.elidedText(
+          name, Qt::ElideLeft, size_limit * instance_bbox_in_px.width());
+    }
+
+    painter->translate(instance_box.xMin(), instance_box.yMin());
+    painter->scale(scale_adjust, -scale_adjust);
+    if (do_rotate) {
+      text_bounding_box = font_metrics.boundingRect(name);
+      painter->rotate(90);
+      painter->translate(-text_bounding_box.width(), 0);
+      // account for descent of font
+      painter->translate(-font_metrics.descent(), 0);
+    } else {
+      // account for descent of font
+      painter->translate(font_metrics.descent(), 0);
+    }
+    painter->drawText(0, 0, name);
+
+    painter->setTransform(initial_xfm);
+  }
+  painter->setFont(initial_font);
+}
+
 void RenderThread::drawBlockages(QPainter* painter,
                                  odb::dbBlock* block,
                                  const Rect& bounds)
