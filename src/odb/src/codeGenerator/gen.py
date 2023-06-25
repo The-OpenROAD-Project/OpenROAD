@@ -53,7 +53,7 @@ toBeMerged = []
 
 
 print("###################Code Generation Begin###################")
-addOnceToDict(["classes", "iterators"], schema)
+addOnceToDict(["classes", "iterators", "relations"], schema)
 
 for i, klass in enumerate(schema["classes"]):
     if "src" in klass:
@@ -73,71 +73,64 @@ for i, klass in enumerate(schema["classes"]):
     )
     schema["classes"][i] = klass
 
-if "relations" in schema:
-    for relation in schema["relations"]:
-        if relation["type"] == "n_1":
-            relation["first"], relation["second"] = (
-                relation["second"],
-                relation["first"],
-            )
-            relation["type"] = "1_n"
-        if relation["type"] != "1_n":
-            raise KeyError(
-                'relation type is not supported, " \
-            "use either 1_n or n_1'
-            )
-        parent = getClassIndex(schema, relation["first"])
-        child = getClassIndex(schema, relation["second"])
-        if parent == -1:
-            raise NameError(
-                "Class {} in relations is not found".format(relation["first"])
-            )
-        if child == -1:
-            raise NameError(
-                "Class {} in relations is not found".format(relation["second"])
-            )
-        inParentField = {}
-        if "tbl_name" in relation:
-            inParentField["name"] = relation["tbl_name"]
-        else:
-            inParentField["name"] = relation["tbl_name"] = getTableName(
-                relation["second"]
-            )
-        inParentField["type"] = relation["second"]
-        inParentField["table"] = True
-        inParentField["dbSetGetter"] = True
-        inParentField["components"] = [inParentField["name"]]
-        inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
-        if "schema" in relation:
-            inParentField["schema"] = relation["schema"]
-
-        schema["classes"][parent]["fields"].append(inParentField)
-        schema["classes"][parent]["cpp_includes"].extend(
-            ["{}.h".format(relation["second"]), "dbSet.h"]
+for relation in schema["relations"]:
+    if relation["type"] == "n_1":
+        relation["first"], relation["second"] = (
+            relation["second"],
+            relation["first"],
         )
+        relation["type"] = "1_n"
+    if relation["type"] != "1_n":
+        raise KeyError(
+            'relation type is not supported, " \
+        "use either 1_n or n_1'
+        )
+    parent = getClassIndex(schema, relation["first"])
+    child = getClassIndex(schema, relation["second"])
+    if parent == -1:
+        raise NameError("Class {} in relations is not found".format(relation["first"]))
+    if child == -1:
+        raise NameError("Class {} in relations is not found".format(relation["second"]))
+    inParentField = {}
+    if "tbl_name" in relation:
+        inParentField["name"] = relation["tbl_name"]
+    else:
+        inParentField["name"] = relation["tbl_name"] = getTableName(relation["second"])
+    inParentField["type"] = relation["second"]
+    inParentField["table"] = True
+    inParentField["dbSetGetter"] = True
+    inParentField["components"] = [inParentField["name"]]
+    inParentField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
+    if "schema" in relation:
+        inParentField["schema"] = relation["schema"]
 
-        childTypeName = "_{}".format(relation["second"])
+    schema["classes"][parent]["fields"].append(inParentField)
+    schema["classes"][parent]["cpp_includes"].extend(
+        ["{}.h".format(relation["second"]), "dbSet.h"]
+    )
 
-        if childTypeName not in schema["classes"][parent]["classes"]:
-            schema["classes"][parent]["classes"].append(childTypeName)
+    childTypeName = "_{}".format(relation["second"])
 
-        if "dbTable" not in schema["classes"][parent]["classes"]:
-            schema["classes"][parent]["classes"].append("dbTable")
-        if relation.get("hash", False):
-            inParentHashField = {}
+    if childTypeName not in schema["classes"][parent]["classes"]:
+        schema["classes"][parent]["classes"].append(childTypeName)
 
-            inParentHashField["name"] = inParentField["name"][:-4] + "hash_"
-            inParentHashField["type"] = "dbHashTable<_" + relation["second"] + ">"
-            inParentHashField["components"] = [inParentHashField["name"]]
-            inParentHashField["table_name"] = inParentField["name"]
-            inParentHashField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
-            schema["classes"][parent]["fields"].append(inParentHashField)
-            if "dbHashTable.h" not in schema["classes"][parent]["h_includes"]:
-                schema["classes"][parent]["h_includes"].append("dbHashTable.h")
-            inChildNextEntry = {"name": "_next_entry"}
-            inChildNextEntry["type"] = "dbId<_" + relation["second"] + ">"
-            inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
-            schema["classes"][child]["fields"].append(inChildNextEntry)
+    if "dbTable" not in schema["classes"][parent]["classes"]:
+        schema["classes"][parent]["classes"].append("dbTable")
+    if relation.get("hash", False):
+        inParentHashField = {}
+
+        inParentHashField["name"] = inParentField["name"][:-4] + "hash_"
+        inParentHashField["type"] = "dbHashTable<_" + relation["second"] + ">"
+        inParentHashField["components"] = [inParentHashField["name"]]
+        inParentHashField["table_name"] = inParentField["name"]
+        inParentHashField["flags"] = ["cmp", "serial", "diff", "no-set", "get"]
+        schema["classes"][parent]["fields"].append(inParentHashField)
+        if "dbHashTable.h" not in schema["classes"][parent]["h_includes"]:
+            schema["classes"][parent]["h_includes"].append("dbHashTable.h")
+        inChildNextEntry = {"name": "_next_entry"}
+        inChildNextEntry["type"] = "dbId<_" + relation["second"] + ">"
+        inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
+        schema["classes"][child]["fields"].append(inChildNextEntry)
 
 
 for klass in schema["classes"]:
