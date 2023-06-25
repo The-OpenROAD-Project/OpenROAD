@@ -5,24 +5,24 @@ import argparse
 import os
 import shutil
 import json
+from parser import Parser
 from jinja2 import Environment, FileSystemLoader
 from helper import (
-    addOnceToDict,
-    getClassIndex,
-    getTableName,
-    isBitFields,
-    getStruct,
-    isRef,
-    getRefType,
-    isHashTable,
-    getHashTableType,
-    getTemplateType,
+    add_once_to_dict,
+    get_class_index,
+    get_table_name,
+    is_bit_fields,
+    get_struct,
+    is_ref,
+    get_ref_type,
+    is_hash_table,
+    get_hash_table_type,
+    get_template_type,
     components,
-    getFunctionalName,
-    isPassByRef,
+    get_functional_name,
+    is_pass_by_ref,
     std,
 )
-from parser import Parser
 
 parser = argparse.ArgumentParser(description="Code generator")
 parser.add_argument("--json", action="store", required=True)
@@ -37,7 +37,7 @@ srcDir = args.src_dir
 includeDir = args.include_dir
 impl = args.impl
 
-with open(src) as file:
+with open(src, encoding="ascii") as file:
     schema = json.load(file)
     file.close()
 
@@ -53,13 +53,13 @@ toBeMerged = []
 
 
 print("###################Code Generation Begin###################")
-addOnceToDict(["classes", "iterators", "relations"], schema)
+add_once_to_dict(["classes", "iterators", "relations"], schema)
 
 for i, klass in enumerate(schema["classes"]):
     if "src" in klass:
-        with open(klass["src"]) as file:
+        with open(klass["src"], encoding="ascii") as file:
             klass = json.load(file)
-    addOnceToDict(
+    add_once_to_dict(
         [
             "classes",
             "fields",
@@ -85,17 +85,19 @@ for relation in schema["relations"]:
             'relation type is not supported, " \
         "use either 1_n or n_1'
         )
-    parent = getClassIndex(schema, relation["first"])
-    child = getClassIndex(schema, relation["second"])
+    parent = get_class_index(schema, relation["first"])
+    child = get_class_index(schema, relation["second"])
     if parent == -1:
-        raise NameError("Class {} in relations is not found".format(relation["first"]))
+        raise NameError(f"Class {relation['first']} in relations is not found")
     if child == -1:
-        raise NameError("Class {} in relations is not found".format(relation["second"]))
+        raise NameError(f"Class {relation['second']} in relations is not found")
     inParentField = {}
     if "tbl_name" in relation:
         inParentField["name"] = relation["tbl_name"]
     else:
-        inParentField["name"] = relation["tbl_name"] = getTableName(relation["second"])
+        inParentField["name"] = relation["tbl_name"] = get_table_name(
+            relation["second"]
+        )
     inParentField["type"] = relation["second"]
     inParentField["table"] = True
     inParentField["dbSetGetter"] = True
@@ -106,13 +108,13 @@ for relation in schema["relations"]:
 
     schema["classes"][parent]["fields"].append(inParentField)
     schema["classes"][parent]["cpp_includes"].extend(
-        ["{}.h".format(relation["second"]), "dbSet.h"]
+        [f"{relation['second']}.h", "dbSet.h"]
     )
 
-    childTypeName = "_{}".format(relation["second"])
+    child_type_name = f"_{relation['second']}"
 
-    if childTypeName not in schema["classes"][parent]["classes"]:
-        schema["classes"][parent]["classes"].append(childTypeName)
+    if child_type_name not in schema["classes"][parent]["classes"]:
+        schema["classes"][parent]["classes"].append(child_type_name)
 
     if "dbTable" not in schema["classes"][parent]["classes"]:
         schema["classes"][parent]["classes"].append("dbTable")
@@ -136,7 +138,7 @@ for relation in schema["relations"]:
 for klass in schema["classes"]:
 
     # Adding functional name to fields and extracting field components
-    struct = {"name": "{}Flags".format(klass["name"]), "fields": []}
+    struct = {"name": f"{klass['name']}Flags", "fields": []}
     klass["hasTables"] = False
     flag_num_bits = 0
     for field in klass["fields"]:
@@ -146,25 +148,25 @@ for klass in schema["classes"]:
         if "bits" in field:
             struct["fields"].append(field)
             flag_num_bits += int(field["bits"])
-        field["bitFields"] = isBitFields(field, klass["structs"])
-        field["isStruct"] = getStruct(field["type"], klass["structs"]) is not None
+        field["bitFields"] = is_bit_fields(field, klass["structs"])
+        field["isStruct"] = get_struct(field["type"], klass["structs"]) is not None
 
         field["isRef"] = (
-            isRef(field["type"]) if field.get("parent") is not None else False
+            is_ref(field["type"]) if field.get("parent") is not None else False
         )
-        field["refType"] = getRefType(field["type"])
+        field["refType"] = get_ref_type(field["type"])
         # refTable is the table name from which the getter extracts the pointer to dbObject
         if field["isRef"]:
-            field["refTable"] = getTableName(field["refType"].replace("*", ""))
+            field["refTable"] = get_table_name(field["refType"].replace("*", ""))
             # checking if there is a defined relation between parent and refType for extracting table name
             for relation in schema["relations"]:
                 if relation["first"] == field["parent"] and relation["second"] == field[
                     "refType"
                 ].replace("*", ""):
                     field["refTable"] = relation["tbl_name"]
-        field["isHashTable"] = isHashTable(field["type"])
-        field["hashTableType"] = getHashTableType(field["type"])
-        field["isPassByRef"] = isPassByRef(field["type"])
+        field["isHashTable"] = is_hash_table(field["type"])
+        field["hashTableType"] = get_hash_table_type(field["type"])
+        field["isPassByRef"] = is_pass_by_ref(field["type"])
         if "argument" not in field:
             field["argument"] = field["name"].strip("_")
         field.setdefault("flags", [])
@@ -177,34 +179,34 @@ for klass in schema["classes"]:
         #
         # This needs documentation
         #
-        templateClassName = None
-        tmp = getTemplateType(field["type"])
+        template_class_name = None
+        tmp = get_template_type(field["type"])
         while tmp is not None:
-            templateClassName = tmp
-            tmp = getTemplateType(tmp)
+            template_class_name = tmp
+            tmp = get_template_type(tmp)
 
-        if templateClassName is not None:
+        if template_class_name is not None:
             if (
-                templateClassName not in klass["classes"]
-                and templateClassName not in std
+                template_class_name not in klass["classes"]
+                and template_class_name not in std
                 and "no-template" not in field["flags"]
-                and klass["name"] != templateClassName[1:]
+                and klass["name"] != template_class_name[1:]
             ):
-                klass["classes"].append(templateClassName)
+                klass["classes"].append(template_class_name)
         ####
         ####
         ####
         if field.get("table", False):
             klass["hasTables"] = True
             if field["type"].startswith("db"):
-                field["functional_name"] = "{}s".format(field["type"][2:])
+                field["functional_name"] = f"{field['type'][2:]}s"
             else:
-                field["functional_name"] = "{}s".format(field["type"])
+                field["functional_name"] = f"{field['type']}s"
             field["components"] = [field["name"]]
         elif field["isHashTable"]:
-            field["functional_name"] = "{}s".format(field["type"][2:])
+            field["functional_name"] = f"{field['type'][2:]}s"
         else:
-            field["functional_name"] = getFunctionalName(field["name"])
+            field["functional_name"] = get_functional_name(field["name"])
             field["components"] = components(
                 klass["structs"], field["name"], field["type"]
             )
@@ -276,10 +278,10 @@ for klass in schema["classes"]:
         # for field in klass['fields']:
         #     if field['isHashTable']:
         #         print(field)
-        out_file = "{}.{}".format(klass["name"], template_file.split(".")[1])
+        out_file = f"{klass['name']}.{template_file.split('.')[1]}"
         toBeMerged.append(out_file)
         out_file = os.path.join("generated", out_file)
-        with open(out_file, "w") as file:
+        with open(out_file, "w", encoding="ascii") as file:
             file.write(text)
 
 includes = ["db.h", "dbObject.h"]
@@ -288,7 +290,7 @@ for template_file in ["db.h", "dbObject.h", "CMakeLists.txt", "dbObject.cpp"]:
     text = template.render(schema=schema)
     out_file = os.path.join("generated", template_file)
     toBeMerged.append(template_file)
-    with open(out_file, "w") as file:
+    with open(out_file, "w", encoding="ascii") as file:
         file.write(text)
 
 
@@ -297,10 +299,10 @@ for itr in schema["iterators"]:
     for template_file in ["itr.h", "itr.cpp"]:
         template = env.get_template(template_file)
         text = template.render(itr=itr, schema=schema)
-        out_file = "{}.{}".format(itr["name"], template_file.split(".")[1])
+        out_file = f"{itr['name']}.{template_file.split('.')[1]}"
         toBeMerged.append(out_file)
         out_file = os.path.join("generated", out_file)
-        with open(out_file, "w") as file:
+        with open(out_file, "w", encoding="ascii") as file:
             file.write(text)
 
 
@@ -313,14 +315,14 @@ for item in toBeMerged:
     if os.path.exists(os.path.join(dr, item)):
         p = Parser(os.path.join(dr, item))
         if item == "CMakeLists.txt":
-            p.setCommentStr("#")
-        assert p.parseUserCode()
-        assert p.cleanCode()
-        assert p.parseSourceCode(os.path.join("generated", item))
-        assert p.writeInFile(os.path.join(dr, item))
+            p.set_comment_str("#")
+        assert p.parse_user_code()
+        assert p.clean_code()
+        assert p.parse_source_code(os.path.join("generated", item))
+        assert p.write_in_file(os.path.join(dr, item))
     else:
-        with open(os.path.join("generated", item), "r") as read, open(
-            os.path.join(dr, item), "w"
+        with open(os.path.join("generated", item), "r", encoding="ascii") as read, open(
+            os.path.join(dr, item), "w", encoding="ascii"
         ) as out:
             text = read.read()
             out.write(text)
@@ -328,7 +330,7 @@ for item in toBeMerged:
         cf = ["clang-format", "-i", os.path.join(dr, item)]
         retcode = call(cf)
         if retcode != 0:
-            print("Failed to format {}".format(os.path.join(dr, item)))
+            print(f"Failed to format {os.path.join(dr, item)}")
     print("Generated: ", os.path.join(dr, item))
 shutil.rmtree("generated")
 print("###################Code Generation End###################")
