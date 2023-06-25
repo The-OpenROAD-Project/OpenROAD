@@ -49,7 +49,6 @@
       "parent":"dbBlock"
     }
   ],
-  "constructors":[],
   "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbPowerDomain.h", "dbNet.h", "dbMaster.h"],
   "h_includes": [
     "dbVector.h"

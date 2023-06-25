@@ -138,7 +138,6 @@
       ]
     }
   ],
-  "constructors": [],
   "enums": [
     {
       "name": "LEF58_TYPE",
@@ -171,6 +170,5 @@
     "dbMatrix.h",
     "dbTypes.h",
     "dbVector.h"
-  ],
-  "cpp_includes": []
+  ]
 }

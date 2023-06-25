@@ -43,6 +43,5 @@
       "parent":"dbBlock"
     }
   ],
-  "constructors":[],
   "cpp_includes":["dbBlock.h","dbModule.h","dbHashTable.hpp"]
 }
