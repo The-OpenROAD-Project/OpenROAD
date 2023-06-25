@@ -18,8 +18,6 @@
       "flags" : ["private", "no-template"]
     }
   ],
-  "enums": [
-  ],
   "cpp_includes": [
     "dbTechLayer.h"
   ],

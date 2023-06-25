@@ -170,6 +170,5 @@
     "dbMatrix.h",
     "dbTypes.h",
     "dbVector.h"
-  ],
-  "cpp_includes": []
+  ]
 }

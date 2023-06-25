@@ -12,7 +12,6 @@
       "comment": "//{cutWithin, orthoSpacing}"
     }
   ],
-  "enums": [],
   "h_includes": [
     "dbVector.h"
   ],

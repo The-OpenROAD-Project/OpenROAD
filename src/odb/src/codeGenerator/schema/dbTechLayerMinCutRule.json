@@ -88,8 +88,6 @@
       "bits": 1
     }
   ],
-  "enums": [
-  ],
   "cpp_includes": [
     "dbTechLayer.h"
   ]
