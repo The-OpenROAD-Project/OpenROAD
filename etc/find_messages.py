@@ -115,7 +115,10 @@ def scan_file(path, file_name, msgs):
         # Count the newlines before the match starts
         line_num = lines[0:match.start()].count('\n') + 1
         position = '{}:{}'.format(file_name, line_num)
-        value = '{:25} {}'.format(position, message)
+        file_link = os.path.join(path, file_name).strip('../').replace('\\','/')
+        file_link = 'https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/{}#L{}'.format(
+                file_link, line_num)
+        value = '{:25} {} {}'.format(position, message, file_link)
 
         msgs[key].add(value)
 

@@ -15,8 +15,11 @@ echo "| Tool | Code | Message                                             |" >> 
 echo "| ---- | ---- | --------------------------------------------------- |" >> "$output_file"
 
 awk '{
-  ant=$1;
+  ant="["$1"]("$NF")";
   num=$2;
-  message=substr($0, index($0,$4));
+  message="";
+  for (i=4; i<NF; i++){
+    message=message $i " ";
+  }
   printf("| %s | %s | %s |\n", ant, num, message);
 }' "$input_file" >> "$output_file"

@@ -61,11 +61,11 @@ project like OpenROAD with many application subcomponents, the software
 architecture can quickly get out of control. Changes with lots of new
 dependencies which are not necessary are less likely to be integrated.
 
-If you want to add Tcl code to define a new tool command, look at pdngen
+If you want to add Tcl code to define a new tool command, look at [pdngen](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/pdn)
 as an example of how to do so. Take a look at the
 [cmake file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/CMakeLists.txt)
 which automatically sources the Tcl code and the
-[Tcl file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn/src/PdnGen.tcl)
+[Tcl file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn/src/pdn.tcl)
 itself.
 
 To accept contributions, we require each commit to be made with a DCO (Developer
