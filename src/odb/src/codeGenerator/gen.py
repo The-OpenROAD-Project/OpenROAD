@@ -39,7 +39,6 @@ impl = args.impl
 
 with open(src, encoding="ascii") as file:
     schema = json.load(file)
-    file.close()
 
 env = Environment(loader=FileSystemLoader(impl), trim_blocks=True)
 
