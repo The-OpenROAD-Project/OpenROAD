@@ -57,7 +57,7 @@ void SimulatedAnnealing::init()
   pin_assignment_.resize(num_pins_);
   slot_indices_.resize(num_slots_);
   std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
-  logger_->report("Num pins: {};\nNum slots: {}", num_pins_, num_slots_);
+  
 }
 
 void SimulatedAnnealing::randomAssignment()

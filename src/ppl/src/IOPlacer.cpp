@@ -1869,7 +1869,6 @@ void IOPlacer::runAnnealing()
 
   initIOLists();
   defineSlots();
-  logger_->report("Slots size: {}", slots_.size());
 
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), slots_, logger_, db_);
