@@ -60,8 +60,9 @@ class SimulatedAnnealing
   virtual ~SimulatedAnnealing() = default;
   void init();
   void randomAssignment();
-  int getAssignmentCost();
+  int getAssignmentCost(const std::vector<int>& assignment);
   void getAssignment(std::vector<IOPin>& assignment);
+  std::vector<int> perturbAssignment();
   void run();
 
  private:
@@ -74,6 +75,12 @@ class SimulatedAnnealing
   std::vector<Slot>& slots_;
   int num_slots_;
   int num_pins_;
+  float init_temperature_ = 1.0;
+  int max_iterations_ = 1000;
+  int perturb_per_iter_ = 200;
+  float alpha_ = 0.985;
+  std::mt19937 generator_;
+  std::uniform_real_distribution<float> distribution_;
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
   const int fail_cost_ = std::numeric_limits<int>::max();

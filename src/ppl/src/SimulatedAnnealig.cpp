@@ -57,7 +57,11 @@ void SimulatedAnnealing::init()
   pin_assignment_.resize(num_pins_);
   slot_indices_.resize(num_slots_);
   std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
-  
+
+  std::mt19937 rand_gen(seed_);
+  generator_ = rand_gen;
+  std::uniform_real_distribution<float> distribution(0.0, 1.0);
+  distribution_ = distribution;
 }
 
 void SimulatedAnnealing::randomAssignment()
@@ -70,12 +74,12 @@ void SimulatedAnnealing::randomAssignment()
   }
 }
 
-int SimulatedAnnealing::getAssignmentCost()
+int SimulatedAnnealing::getAssignmentCost(const std::vector<int>& assignment)
 {
   int cost = 0;
 
-  for (int i = 0; i < pin_assignment_.size(); i++) {
-    int slot_idx = pin_assignment_[i];
+  for (int i = 0; i < assignment.size(); i++) {
+    int slot_idx = assignment[i];
     const odb::Point& position = slots_[slot_idx].pos;
     cost += netlist_->computeIONetHPWL(i, position);
   }
@@ -99,13 +103,35 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
   }
 }
 
+std::vector<int> SimulatedAnnealing::perturbAssignment()
+{
+  std::vector<int> assignment;
+
+  return assignment;
+}
+
 void SimulatedAnnealing::run()
 {
   init();
   randomAssignment();
-  int cost = getAssignmentCost();
+  int pre_cost = getAssignmentCost(pin_assignment_);
+  std::vector<int> assignment;
+  float temperature = init_temperature_;
 
-  logger_->report("Random assignment cost: {}", dbuToMicrons(cost));
+  for (int iter = 0; iter < max_iterations_; iter++) {
+    for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
+      assignment = perturbAssignment();
+      int cost = getAssignmentCost(assignment);
+      int delta_cost = cost - pre_cost;
+      const float rand_float = distribution_(generator_);
+      const float accept_prob = std::exp((-1) * delta_cost / temperature);
+      if (delta_cost <= 0 || accept_prob > rand_float) {
+        pin_assignment_ = assignment;
+      }
+    }
+
+    temperature *= alpha_;
+  }
 }
 
 double SimulatedAnnealing::dbuToMicrons(int64_t dbu)
