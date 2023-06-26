@@ -110,3 +110,7 @@ add_subdirectory(src/utils)
 if(ENABLE_TESTS)
   add_subdirectory(test/cpp)
 endif()
+
+messages(
+  TARGET dft
+)
