@@ -60,6 +60,7 @@ class Core;
 class Interval;
 class IOPin;
 class Netlist;
+class SimulatedAnnealing;
 struct Constraint;
 struct Section;
 struct Slot;
@@ -122,6 +123,7 @@ class IOPlacer
   void clear();
   void clearConstraints();
   void run(bool random_mode);
+  void runAnnealing();
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();

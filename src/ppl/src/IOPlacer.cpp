@@ -42,6 +42,7 @@
 #include "Core.h"
 #include "HungarianMatching.h"
 #include "Netlist.h"
+#include "SimulatedAnnealing.h"
 #include "Slots.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
@@ -1855,6 +1856,30 @@ void IOPlacer::run(bool random_mode)
                   static_cast<float>(dbuToMicrons(total_hpwl)));
   }
 
+  commitIOPlacementToDB(assignment_);
+  clear();
+}
+
+void IOPlacer::runAnnealing()
+{
+  initParms();
+
+  initNetlistAndCore(hor_layers_, ver_layers_);
+  getBlockedRegionsFromMacros();
+
+  initIOLists();
+  defineSlots();
+  logger_->report("Slots size: {}", slots_.size());
+
+  ppl::SimulatedAnnealing annealing(
+      netlist_io_pins_.get(), slots_, logger_, db_);
+  annealing.run();
+  annealing.getAssignment(assignment_);
+
+  for (auto& pin : assignment_) {
+    updateOrientation(pin);
+    updatePinArea(pin);
+  }
   commitIOPlacementToDB(assignment_);
   clear();
 }
