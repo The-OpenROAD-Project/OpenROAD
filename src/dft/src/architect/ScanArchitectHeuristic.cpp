@@ -35,6 +35,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "ClockDomain.hh"
 #include "ScanArchitect.hh"
 
 namespace dft {
@@ -55,9 +56,9 @@ void ScanArchitectHeuristic::architect()
           = hash_domain_to_limits_.find(hash_domain)->second.max_length;
       while (current_chain->getBits() < max_length
              && scan_cells_bucket_->numberOfCells(hash_domain)) {
-        std::shared_ptr<ScanCell> scan_cell
+        std::unique_ptr<ScanCell> scan_cell
             = scan_cells_bucket_->pop(hash_domain);
-        current_chain->add(scan_cell);
+        current_chain->add(std::move(scan_cell));
       }
     }
   }

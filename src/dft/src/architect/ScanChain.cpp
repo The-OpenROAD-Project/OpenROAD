@@ -40,17 +40,17 @@ ScanChain::ScanChain(const std::string& name) : name_(name), bits_(0)
 {
 }
 
-void ScanChain::add(const std::shared_ptr<ScanCell>& scan_cell)
+void ScanChain::add(std::unique_ptr<ScanCell> scan_cell)
 {
+  bits_ += scan_cell->getBits();
   switch (scan_cell->getClockDomain().getClockEdge()) {
     case ClockEdge::Rising:
-      rising_edge_scan_cells_.push_back(scan_cell);
+      rising_edge_scan_cells_.push_back(std::move(scan_cell));
       break;
     case ClockEdge::Falling:
-      falling_edge_scan_cells_.push_back(scan_cell);
+      falling_edge_scan_cells_.push_back(std::move(scan_cell));
       break;
   }
-  bits_ += scan_cell->getBits();
 }
 
 bool ScanChain::empty() const
@@ -63,13 +63,13 @@ uint64_t ScanChain::getBits() const
   return bits_;
 }
 
-const std::vector<std::shared_ptr<ScanCell>>&
+const std::vector<std::unique_ptr<ScanCell>>&
 ScanChain::getRisingEdgeScanCells() const
 {
   return rising_edge_scan_cells_;
 }
 
-const std::vector<std::shared_ptr<ScanCell>>&
+const std::vector<std::unique_ptr<ScanCell>>&
 ScanChain::getFallingEdgeScanCells() const
 {
   return falling_edge_scan_cells_;

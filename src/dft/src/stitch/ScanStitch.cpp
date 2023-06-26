@@ -47,11 +47,12 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   ScanDriver scan_in_port = FindOrCreateScanIn(block);
 
   // We need fast pop for front and back
-  std::deque<std::shared_ptr<ScanCell>> scan_cells;
+  std::deque<std::reference_wrapper<const std::unique_ptr<ScanCell>>>
+      scan_cells;
 
-  const std::vector<std::shared_ptr<ScanCell>>& falling_edge
+  const std::vector<std::unique_ptr<ScanCell>>& falling_edge
       = scan_chain.getFallingEdgeScanCells();
-  const std::vector<std::shared_ptr<ScanCell>>& rising_edge
+  const std::vector<std::unique_ptr<ScanCell>>& rising_edge
       = scan_chain.getRisingEdgeScanCells();
 
   // Falling edge first
@@ -61,13 +62,13 @@ void ScanStitch::Stitch(odb::dbBlock* block,
       rising_edge.begin(), rising_edge.end(), std::back_inserter(scan_cells));
 
   // All the cells in the scan chain are controlled by the same scan enable
-  for (const auto& scan_cell : scan_cells) {
+  for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {
     scan_cell->connectScanEnable(scan_enable);
   }
 
   // Lets get the first and last cell
-  const std::shared_ptr<ScanCell>& first_scan_cell = *scan_cells.begin();
-  const std::shared_ptr<ScanCell>& last_scan_cell = *(scan_cells.end() - 1);
+  const std::unique_ptr<ScanCell>& first_scan_cell = *scan_cells.begin();
+  const std::unique_ptr<ScanCell>& last_scan_cell = *(scan_cells.end() - 1);
 
   if (!scan_cells.empty()) {
     scan_cells.pop_front();
@@ -77,11 +78,11 @@ void ScanStitch::Stitch(odb::dbBlock* block,
     scan_cells.pop_back();
   }
 
-  for (auto current = scan_cells.begin(); current != scan_cells.end();
-       ++current) {
-    auto next = current + 1;
+  for (auto it = scan_cells.begin(); it != scan_cells.end(); ++it) {
+    const std::unique_ptr<ScanCell>& current = *it;
+    const std::unique_ptr<ScanCell>& next = *(it + 1);
     // Connects current cell scan out to next cell scan in
-    (*next)->connectScanIn((*current)->getScanOut());
+    next->connectScanIn(current->getScanOut());
   }
 
   // Let's connect the first cell
@@ -89,7 +90,7 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   first_scan_cell->connectScanIn(scan_in_port);
 
   if (!scan_cells.empty()) {
-    (*scan_cells.begin())->connectScanIn(first_scan_cell->getScanOut());
+    scan_cells.begin()->get()->connectScanIn(first_scan_cell->getScanOut());
   } else {
     // If last_scan_cell == first_scan_cell, then scan in was already connected
     if (last_scan_cell != first_scan_cell) {
