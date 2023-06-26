@@ -1,6 +1,5 @@
 {
     "name": "dbAccessPoint",
-    "parent": "dbObject",
     "fields": [
       {
         "name": "point_",
