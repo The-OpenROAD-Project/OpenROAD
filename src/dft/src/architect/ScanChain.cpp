@@ -55,7 +55,7 @@ void ScanChain::add(std::unique_ptr<ScanCell> scan_cell)
 
 bool ScanChain::empty() const
 {
-  return rising_edge_scan_cells_.empty() && falling_edge_scan_cells_.empty();
+  return scan_cells_.empty();
 }
 
 uint64_t ScanChain::getBits() const
@@ -63,25 +63,29 @@ uint64_t ScanChain::getBits() const
   return bits_;
 }
 
-const std::vector<std::unique_ptr<ScanCell>>&
-ScanChain::getRisingEdgeScanCells() const
+void ScanChain::sortScanCells(SortFn fn)
 {
-  return rising_edge_scan_cells_;
+  fn(falling_edge_scan_cells_, rising_edge_scan_cells_, scan_cells_);
+  // At this point, falling_edge_scan_cells_ and rising_edge_scan_cells_ will be
+  // with just null, we clear and reduce the memory of the vectors
+
+  falling_edge_scan_cells_.clear();
+  rising_edge_scan_cells_.clear();
+
+  falling_edge_scan_cells_.shrink_to_fit();
+  rising_edge_scan_cells_.shrink_to_fit();
 }
 
-const std::vector<std::unique_ptr<ScanCell>>&
-ScanChain::getFallingEdgeScanCells() const
+const std::vector<std::unique_ptr<ScanCell>>& ScanChain::getScanCells() const
 {
-  return falling_edge_scan_cells_;
+  return scan_cells_;
 }
 
 void ScanChain::report(utl::Logger* logger, bool verbose) const
 {
-  const size_t total_cells
-      = falling_edge_scan_cells_.size() + rising_edge_scan_cells_.size();
   logger->report("Scan chain '{:s}' has {:d} cells ({:d} bits)\n",
                  name_,
-                 total_cells,
+                 scan_cells_.size(),
                  bits_);
 
   if (!verbose) {
@@ -91,25 +95,14 @@ void ScanChain::report(utl::Logger* logger, bool verbose) const
   std::string current_clock_name;
 
   // First negative triggered cells
-  for (const auto& scan_cell : falling_edge_scan_cells_) {
+  for (const auto& scan_cell : scan_cells_) {
     if (current_clock_name != scan_cell->getClockDomain().getClockName()) {
+      const ClockDomain& clock_domain = scan_cell->getClockDomain();
       // Change of clock domain, show the clock
-      logger->report("  {:s} ({:s}, falling)",
+      logger->report("  {:s} ({:s}, {:s})",
                      scan_cell->getName(),
-                     scan_cell->getClockDomain().getClockName());
-      current_clock_name = scan_cell->getClockDomain().getClockName();
-    } else {
-      logger->report("  {:s}", scan_cell->getName());
-    }
-  }
-
-  // Then positive edge cells
-  for (const auto& scan_cell : rising_edge_scan_cells_) {
-    if (current_clock_name != scan_cell->getClockDomain().getClockName()) {
-      // Change of clock domain, show the clock
-      logger->report("  {:s} ({:s}, rising)",
-                     scan_cell->getName(),
-                     scan_cell->getClockDomain().getClockName());
+                     clock_domain.getClockName(),
+                     clock_domain.getClockEdgeName());
       current_clock_name = scan_cell->getClockDomain().getClockName();
     } else {
       logger->report("  {:s}", scan_cell->getName());

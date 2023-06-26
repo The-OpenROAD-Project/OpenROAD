@@ -42,7 +42,7 @@ std::function<size_t(const ClockDomain&)> GetClockDomainHashFn(
     // For NoMix, every clock domain is different
     case ScanArchitectConfig::ClockMixing::NoMix:
       return [](const ClockDomain& clock_domain) {
-        return std::hash<std::string>{}(clock_domain.getClockName())
+        return std::hash<std::string_view>{}(clock_domain.getClockName())
                ^ std::hash<ClockEdge>{}(clock_domain.getClockEdge());
       };
     case ScanArchitectConfig::ClockMixing::ClockMix:
@@ -58,7 +58,7 @@ ClockDomain::ClockDomain(const std::string& clock_name, ClockEdge clock_edge)
 {
 }
 
-const std::string& ClockDomain::getClockName() const
+std::string_view ClockDomain::getClockName() const
 {
   return clock_name_;
 }
@@ -66,6 +66,22 @@ const std::string& ClockDomain::getClockName() const
 ClockEdge ClockDomain::getClockEdge() const
 {
   return clock_edge_;
+}
+
+std::string_view ClockDomain::getClockEdgeName() const
+{
+  switch (clock_edge_) {
+    case ClockEdge::Rising:
+      return "rising";
+      break;
+    case ClockEdge::Falling:
+      return "falling";
+      break;
+    default:
+      // TODO replace with std::unreachable() once we reach c++23
+      return "";
+      break;
+  }
 }
 
 }  // namespace dft

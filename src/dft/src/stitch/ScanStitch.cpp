@@ -50,16 +50,12 @@ void ScanStitch::Stitch(odb::dbBlock* block,
   std::deque<std::reference_wrapper<const std::unique_ptr<ScanCell>>>
       scan_cells;
 
-  const std::vector<std::unique_ptr<ScanCell>>& falling_edge
-      = scan_chain.getFallingEdgeScanCells();
-  const std::vector<std::unique_ptr<ScanCell>>& rising_edge
-      = scan_chain.getRisingEdgeScanCells();
+  const std::vector<std::unique_ptr<ScanCell>>& original_scan_cells
+      = scan_chain.getScanCells();
 
-  // Falling edge first
-  std::copy(
-      falling_edge.begin(), falling_edge.end(), std::back_inserter(scan_cells));
-  std::copy(
-      rising_edge.begin(), rising_edge.end(), std::back_inserter(scan_cells));
+  std::copy(original_scan_cells.cbegin(),
+            original_scan_cells.cend(),
+            std::back_inserter(scan_cells));
 
   // All the cells in the scan chain are controlled by the same scan enable
   for (const std::unique_ptr<ScanCell>& scan_cell : scan_cells) {

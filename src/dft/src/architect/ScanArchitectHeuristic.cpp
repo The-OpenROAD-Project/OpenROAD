@@ -60,6 +60,17 @@ void ScanArchitectHeuristic::architect()
             = scan_cells_bucket_->pop(hash_domain);
         current_chain->add(std::move(scan_cell));
       }
+
+      // TODO: Perform an actual sorting to reduce the wire length
+      current_chain->sortScanCells(
+          [](std::vector<std::unique_ptr<ScanCell>>& falling,
+             std::vector<std::unique_ptr<ScanCell>>& rising,
+             std::vector<std::unique_ptr<ScanCell>>& sorted) {
+            // Falling edge first
+            std::move(
+                falling.begin(), falling.end(), std::back_inserter(sorted));
+            std::move(rising.begin(), rising.end(), std::back_inserter(sorted));
+          });
     }
   }
 }

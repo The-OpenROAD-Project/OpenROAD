@@ -55,8 +55,9 @@ class ClockDomain
   ClockDomain(ClockDomain&& other) = default;
   ClockDomain& operator=(ClockDomain&& other) = default;
 
-  const std::string& getClockName() const;
+  std::string_view getClockName() const;
   ClockEdge getClockEdge() const;
+  std::string_view getClockEdgeName() const;
 
  private:
   std::string clock_name_;
