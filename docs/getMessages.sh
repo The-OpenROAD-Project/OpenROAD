@@ -7,7 +7,7 @@ output_file="user/MessagesFinal.md"
 
 # Create file header
 echo "# OpenROAD Messages Glossary" > "$output_file"
-echo "Listed below are the OpenROAD warning/error codes you may encounter during running." >> "$output_file"
+echo "Listed below are the OpenROAD warning/error codes you may encounter while using the application." >> "$output_file"
 echo "" >> "$output_file"
 
 # Create the Markdown table header

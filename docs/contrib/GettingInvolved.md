@@ -63,7 +63,7 @@ dependencies which are not necessary are less likely to be integrated.
 
 If you want to add Tcl code to define a new tool command, look at [pdngen](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/pdn)
 as an example of how to do so. Take a look at the
-[cmake file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/CMakeLists.txt)
+[CMake file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/CMakeLists.txt)
 which automatically sources the Tcl code and the
 [Tcl file](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn/src/pdn.tcl)
 itself.
