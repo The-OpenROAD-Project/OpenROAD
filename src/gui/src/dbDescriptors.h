@@ -596,7 +596,7 @@ class DbNonDefaultRuleDescriptor : public Descriptor
 };
 
 class DbTechLayerRuleDescriptor : public Descriptor
-{ 
+{
  public:
   std::string getName(std::any object) const override;
   std::string getTypeName() const override;

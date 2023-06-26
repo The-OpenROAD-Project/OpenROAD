@@ -3228,11 +3228,10 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any obje
 
     via_layer_rule->getWidth(minWidth, maxWidth);
 
-    std::string width_range;
-
-    width_range = fmt::format("{} to {}",
+    std::string width_range = fmt::format("{} to {}",
                               Property::convert_dbu(minWidth, true),
                               Property::convert_dbu(maxWidth, true));
+
     props.push_back({"Width", width_range});
   }        
 
@@ -3242,25 +3241,26 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any obje
 
     via_layer_rule->getEnclosure(overhang_1, overhang_2);
 
-    PropertyList enclosure;
-    enclosure.push_back({"Overhang 1", Property::convert_dbu(overhang_1, true)});
-    enclosure.push_back({"Overhang 2", Property::convert_dbu(overhang_2, true)});
-    props.push_back({"Enclosure Rule", enclosure});
+    std::string enclosure_rule = fmt::format("{} x {}",
+                                             Property::convert_dbu(overhang_1, true),
+                                             Property::convert_dbu(overhang_2, true));
+
+    props.push_back({"Enclosure", enclosure_rule});
   }
 
   if (via_layer_rule->hasOverhang()) {
-    props.push_back({"Overhang Rule", Property::convert_dbu(via_layer_rule->getOverhang(), true)});
+    props.push_back({"Overhang", Property::convert_dbu(via_layer_rule->getOverhang(), true)});
   }
 
   if (via_layer_rule->hasMetalOverhang()) {
-    props.push_back({"Metal Overhang Rule", Property::convert_dbu(via_layer_rule->getMetalOverhang(), true)});
+    props.push_back({"Metal Overhang", Property::convert_dbu(via_layer_rule->getMetalOverhang(), true)});
   }
 
   if (via_layer_rule->hasRect()) {
     odb::Rect rect_rule;
     via_layer_rule->getRect(rect_rule);
 
-    props.push_back({"Rectangle Rule", rect_rule});
+    props.push_back({"Rectangle", rect_rule});
   }
 
   if (via_layer_rule->hasSpacing()) {
@@ -3272,11 +3272,12 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any obje
     PropertyList spacing_rule;
     spacing_rule.push_back({"X", Property::convert_dbu(x_spacing, true)});
     spacing_rule.push_back({"Y", Property::convert_dbu(y_spacing, true)});
-    props.push_back({"Spacing Rule", spacing_rule});
+    props.push_back({"Spacing", spacing_rule});
   }
 
   if (via_layer_rule->hasResistance()) {
-    props.push_back({"Resistance Rule", convertUnits(via_layer_rule->getResistance()) + "\u03A9/sq"}); // ohm/sq
+    props.push_back({"Resistance",
+                     convertUnits(via_layer_rule->getResistance()) + "\u03A9/sq"}); // ohm/sq
   }
 
   return props;
