@@ -3145,13 +3145,13 @@ Descriptor::Properties DbTechViaRuleDescriptor::getProperties(std::any object) c
   Properties props;
 
   SelectionSet vias;
-  for (int via_index = 0; via_index < via_rule->getViaCount(); via_index++) {
+  for (uint via_index = 0; via_index < via_rule->getViaCount(); via_index++) {
     vias.insert(gui->makeSelected(via_rule->getVia(via_index)));
   }
   props.push_back({"Vias", vias});
 
   SelectionSet layer_rules;
-  for (int rule_index = 0; rule_index < via_rule->getViaLayerRuleCount(); rule_index++) {
+  for (uint rule_index = 0; rule_index < via_rule->getViaLayerRuleCount(); rule_index++) {
     layer_rules.insert(gui->makeSelected(via_rule->getViaLayerRule(rule_index)));
   }
   props.push_back({"Via-Layer Rules", layer_rules});
@@ -3304,11 +3304,11 @@ bool DbTechViaLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
 {
   auto tech = db_->getTech();
 
-  int index = 0;
   for (auto via_rule : tech->getViaRules()) {
-    objects.insert(makeSelected(via_rule->getViaLayerRule(index)));
-    index++;
-  }
+    for (uint via_layer_index = 0; via_layer_index < via_rule->getViaLayerRuleCount(); via_layer_index++) {
+      objects.insert(makeSelected(via_rule->getViaLayerRule(via_layer_index)));
+    }
+  } 
 
   return true;
 }
