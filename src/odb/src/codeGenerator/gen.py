@@ -28,19 +28,19 @@ parser = argparse.ArgumentParser(description="Code generator")
 parser.add_argument("--json", action="store", required=True)
 parser.add_argument("--src_dir", action="store", required=True)
 parser.add_argument("--include_dir", action="store", required=True)
-parser.add_argument("--impl", action="store", required=True)
+parser.add_argument("--templates", action="store", required=True)
 
 args = parser.parse_args()
 
 src = args.json
 srcDir = args.src_dir
 includeDir = args.include_dir
-impl = args.impl
+templates = args.templates
 
 with open(src, encoding="ascii") as file:
     schema = json.load(file)
 
-env = Environment(loader=FileSystemLoader(impl), trim_blocks=True)
+env = Environment(loader=FileSystemLoader(templates), trim_blocks=True)
 
 # Creating Directory for generated files
 
