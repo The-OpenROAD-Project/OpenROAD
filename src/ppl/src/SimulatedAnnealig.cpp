@@ -33,9 +33,6 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
-#include <random>
-
 #include "SimulatedAnnealing.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
@@ -64,6 +61,44 @@ void SimulatedAnnealing::init()
   distribution_ = distribution;
 }
 
+void SimulatedAnnealing::run()
+{
+  init();
+  randomAssignment();
+  int pre_cost = getAssignmentCost(pin_assignment_);
+  std::vector<int> assignment;
+  float temperature = init_temperature_;
+
+  for (int iter = 0; iter < max_iterations_; iter++) {
+    for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
+      assignment = perturbAssignment();
+      int cost = getAssignmentCost(assignment);
+      int delta_cost = cost - pre_cost;
+      const float rand_float = distribution_(generator_);
+      const float accept_prob = std::exp((-1) * delta_cost / temperature);
+      if (delta_cost <= 0 || accept_prob > rand_float) {
+        pin_assignment_ = assignment;
+      }
+    }
+
+    temperature *= alpha_;
+  }
+}
+
+void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
+{
+  for (int i = 0; i < pin_assignment_.size(); i++) {
+    IOPin& io_pin = netlist_->getIoPin(i);
+    Slot& slot = slots_[pin_assignment_[i]];
+
+    io_pin.setPos(slot.pos);
+    io_pin.setLayer(slot.layer);
+    io_pin.setPlaced();
+    assignment.push_back(io_pin);
+    slot.used = true;
+  }
+}
+
 void SimulatedAnnealing::randomAssignment()
 {
   std::mt19937 g;
@@ -89,49 +124,34 @@ int SimulatedAnnealing::getAssignmentCost(const std::vector<int>& assignment)
   return cost;
 }
 
-void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
+std::vector<int> SimulatedAnnealing::perturbAssignment()
 {
-  for (int i = 0; i < pin_assignment_.size(); i++) {
-    IOPin& io_pin = netlist_->getIoPin(i);
-    Slot& slot = slots_[pin_assignment_[i]];
+  std::vector<int> assignment;
+  const float move = distribution_(generator_);
 
-    io_pin.setPos(slot.pos);
-    io_pin.setLayer(slot.layer);
-    io_pin.setPlaced();
-    assignment.push_back(io_pin);
-    slot.used = true;
+  if (move < swap_pins_) {
+    assignment = swapPins(pin_assignment_);
+  } else {
+    assignment = placeSubsetOfPins(pin_assignment_, pins_subset_percent_);
   }
+
+  return assignment;
 }
 
-std::vector<int> SimulatedAnnealing::perturbAssignment()
+std::vector<int> SimulatedAnnealing::swapPins(
+    const std::vector<int>& pin_assignment)
 {
   std::vector<int> assignment;
 
   return assignment;
 }
-
-void SimulatedAnnealing::run()
+std::vector<int> SimulatedAnnealing::placeSubsetOfPins(
+    const std::vector<int>& pin_assignment,
+    float subset_percent)
 {
-  init();
-  randomAssignment();
-  int pre_cost = getAssignmentCost(pin_assignment_);
   std::vector<int> assignment;
-  float temperature = init_temperature_;
 
-  for (int iter = 0; iter < max_iterations_; iter++) {
-    for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
-      assignment = perturbAssignment();
-      int cost = getAssignmentCost(assignment);
-      int delta_cost = cost - pre_cost;
-      const float rand_float = distribution_(generator_);
-      const float accept_prob = std::exp((-1) * delta_cost / temperature);
-      if (delta_cost <= 0 || accept_prob > rand_float) {
-        pin_assignment_ = assignment;
-      }
-    }
-
-    temperature *= alpha_;
-  }
+  return assignment;
 }
 
 double SimulatedAnnealing::dbuToMicrons(int64_t dbu)

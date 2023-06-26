@@ -35,6 +35,9 @@
 
 #pragma once
 
+#include <algorithm>
+#include <random>
+
 #include "Netlist.h"
 #include "Slots.h"
 #include "odb/geom.h"
@@ -59,13 +62,16 @@ class SimulatedAnnealing
                      odb::dbDatabase* db);
   virtual ~SimulatedAnnealing() = default;
   void init();
-  void randomAssignment();
-  int getAssignmentCost(const std::vector<int>& assignment);
-  void getAssignment(std::vector<IOPin>& assignment);
-  std::vector<int> perturbAssignment();
   void run();
+  void getAssignment(std::vector<IOPin>& assignment);
 
  private:
+  void randomAssignment();
+  int getAssignmentCost(const std::vector<int>& assignment);
+  std::vector<int> perturbAssignment();
+  std::vector<int> swapPins(const std::vector<int>& pin_assignment);
+  std::vector<int> placeSubsetOfPins(const std::vector<int>& pin_assignment,
+                                     float subset_percent);
   double dbuToMicrons(int64_t dbu);
 
   // [pin] -> slot
@@ -75,12 +81,19 @@ class SimulatedAnnealing
   std::vector<Slot>& slots_;
   int num_slots_;
   int num_pins_;
+
+  // annealing variables
   float init_temperature_ = 1.0;
   int max_iterations_ = 1000;
   int perturb_per_iter_ = 200;
   float alpha_ = 0.985;
   std::mt19937 generator_;
   std::uniform_real_distribution<float> distribution_;
+
+  // perturbation variables
+  const float swap_pins_ = 0.5;
+  const float pins_subset_percent_ = 0.25;
+
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
   const int fail_cost_ = std::numeric_limits<int>::max();
