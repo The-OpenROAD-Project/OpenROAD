@@ -103,7 +103,7 @@ class RenderThread : public QThread
   void drawInstanceNames(QPainter* painter,
                          const std::vector<odb::dbInst*>& insts);
   void drawItermLabels(QPainter* painter,
-                         const std::vector<odb::dbInst*>& insts)
+                         const std::vector<odb::dbInst*>& insts);
   void drawBlockages(QPainter* painter,
                      odb::dbBlock* block,
                      const odb::Rect& bounds);
