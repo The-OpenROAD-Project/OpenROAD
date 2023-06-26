@@ -638,14 +638,27 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
         if (pixel->cell) {
-          logger_->error(
-              DPL,
-              41,
-              "Cannot paint grid because another layer is already occupied.");
-        } else {
-          pixel->cell = cell;
-          pixel->util = 1.0;
+          // Checks that the row heights of the found cell match the row height
+          // of this layer. If they don't, it means that this pixel is partially
+          // filled by a single-height or shorter cell, which is allowed.
+          // However, if they do match, it means that we are trying to overwrite
+          // a double-height cell placement, which is an error.
+
+          GridInfo grid_info_candidate = getGridInfo(pixel->cell);
+          if (grid_info_candidate.grid_index == layer.second.grid_index) {
+            // Occupied by a multi-height cell this should not happen.
+            logger_->error(
+                DPL,
+                41,
+                "Cannot paint grid because another layer is already occupied.");
+          } else {
+            // We might not want to overwrite the cell that's already here.
+            continue;
+          }
         }
+
+        pixel->cell = cell;
+        pixel->util = 1.0;
       }
     }
   }
