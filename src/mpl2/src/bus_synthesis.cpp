@@ -33,14 +33,7 @@
 
 #include "bus_synthesis.h"
 
-#include <absl/flags/flag.h>
-#include <absl/strings/match.h>
-#include <absl/strings/string_view.h>
-#include <ortools/base/commandlineflags.h>
-#include <ortools/base/init_google.h>
-#include <ortools/base/logging.h>
 #include <ortools/linear_solver/linear_solver.h>
-#include <ortools/linear_solver/linear_solver.pb.h>
 
 #include <algorithm>
 #include <iostream>

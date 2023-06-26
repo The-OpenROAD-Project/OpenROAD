@@ -944,12 +944,6 @@ Resizer::replaceCell(Instance *inst,
   const char *replacement_name = replacement->name();
   dbMaster *replacement_master = db_->findMaster(replacement_name);
 
-  // Legalize the position of the instance in case it leaves the die
-  if (parasitics_src_ == ParasiticsSrc::global_routing) {
-    opendp_->legalCellPos(db_network_->staToDb(inst));
-  } else if (parasitics_src_ == ParasiticsSrc::global_routing) {
-    logger_->error(RSZ, 91, "Opendp was not initialized before resized an instance");
-  }
   if (replacement_master) {
     dbInst *dinst = db_network_->staToDb(inst);
     dbMaster *master = dinst->getMaster();
@@ -960,6 +954,10 @@ Resizer::replaceCell(Instance *inst,
     sta_->replaceCell(inst, replacement_cell1);
     designAreaIncr(area(replacement_master));
 
+    // Legalize the position of the instance in case it leaves the die
+    if (parasitics_src_ == ParasiticsSrc::global_routing) {
+      opendp_->legalCellPos(db_network_->staToDb(inst));
+    }
     if (haveEstimatedParasitics()) {
       InstancePinIterator *pin_iter = network_->pinIterator(inst);
       while (pin_iter->hasNext()) {
@@ -1068,17 +1066,17 @@ Resizer::resizeWorstSlackDbNets()
   return nets;
 }
 
-std::pair<Slack, bool>
+std::optional<Slack>
 Resizer::resizeNetSlack(const Net *net)
 {
   auto it = net_slack_map_.find(net);
   if (it == net_slack_map_.end()) {
-    return {0, false};
+    return {};
   }
-  return {it->second, true};
+  return it->second;
 }
 
-std::pair<Slack, bool>
+std::optional<Slack>
 Resizer::resizeNetSlack(const dbNet *db_net)
 {
   const Net *net = db_network_->dbToSta(db_net);
@@ -2650,8 +2648,6 @@ Resizer::makeInstance(LibertyCell *cell,
   // Legalize the position of the instance in case it leaves the die
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
     opendp_->legalCellPos(db_inst);
-  } else if (parasitics_src_ == ParasiticsSrc::global_routing) {
-    logger_->error(RSZ, 90, "Opendp was not initialized before inserting a new instance");
   }
   designAreaIncr(area(db_inst->getMaster()));
   return inst;

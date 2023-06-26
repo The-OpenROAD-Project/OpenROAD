@@ -94,7 +94,6 @@ class HungarianMatching
   int num_pin_groups_;
   int non_blocked_slots_;
   int group_slots_;
-  int group_size_;
   Edge edge_;
   const int hungarian_fail = std::numeric_limits<int>::max();
   Logger* logger_;

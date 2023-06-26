@@ -1,371 +1,94 @@
 {
   "classes": [
     {
-      "src":"dbTechLayer.json"
+      "src": "schema/dbTechLayer.json"
     },
     {
-      "src": "dbTechLayerSpacingEolRule.json"
+      "src": "schema/dbTechLayerSpacingEolRule.json"
     },
     {
-      "src":"dbTechLayerMinStepRule.json"
+      "src": "schema/dbTechLayerMinStepRule.json"
     },
     {
-      "src":"dbTechLayerCornerSpacingRule.json"
+      "src": "schema/dbTechLayerCornerSpacingRule.json"
     },
     {
-      "src": "dbTechLayerSpacingTablePrlRule.json"
+      "src": "schema/dbTechLayerSpacingTablePrlRule.json"
     },
     {
-      "src": "dbTechLayerEolKeepOutRule.json"
+      "src": "schema/dbTechLayerEolKeepOutRule.json"
     },
     {
-      "src":"dbTechLayerCutClassRule.json"
+      "src": "schema/dbTechLayerCutClassRule.json"
     },
     {
-      "src":"dbTechLayerCutSpacingRule.json"
+      "src": "schema/dbTechLayerCutSpacingRule.json"
     },
     {
-      "src":"dbTechLayerCutSpacingTableOrthRule.json"
+      "src": "schema/dbTechLayerCutSpacingTableOrthRule.json"
     },
     {
-      "src":"dbTechLayerCutSpacingTableDefRule.json"
+      "src": "schema/dbTechLayerCutSpacingTableDefRule.json"
     },
     {
-      "src":"dbTechLayerCutEnclosureRule.json"
+      "src": "schema/dbTechLayerCutEnclosureRule.json"
     },
     {
-      "src":"dbTechLayerEolExtensionRule.json"
+      "src": "schema/dbTechLayerEolExtensionRule.json"
     },
     {
-      "src":"dbTechLayerArraySpacingRule.json"
+      "src": "schema/dbTechLayerArraySpacingRule.json"
     },
     {
-      "src":"dbTechLayerWidthTableRule.json"
+      "src": "schema/dbTechLayerWidthTableRule.json"
     },
     {
-      "src":"dbTechLayerMinCutRule.json"
+      "src": "schema/dbTechLayerMinCutRule.json"
     },
     {
-      "src":"dbGuide.json"
+      "src": "schema/dbGuide.json"
     },
     {
-      "src":"dbNetTrack.json"
+      "src": "schema/dbNetTrack.json"
     },
     {
-      "src":"dbMetalWidthViaMap.json"
+      "src": "schema/dbMetalWidthViaMap.json"
     },
     {
-      "src":"dbTechLayerAreaRule.json"
+      "src": "schema/dbTechLayerAreaRule.json"
     },
     {
-      "src":"dbTechLayerKeepOutZoneRule.json"
+      "src": "schema/dbTechLayerKeepOutZoneRule.json"
     },
     {
-      "name":"dbModule",
-      "type":"dbObject",
-      "fields":[
-        {
-          "name":"_name",
-          "type":"char *",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_next_entry",
-          "type":"dbId<_dbModule>",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_insts",
-          "type":"dbId<_dbInst>",
-          "flags":["no-set","no-get"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_modinsts",
-          "type":"dbId<_dbModInst>",
-          "flags":["no-set","no-get"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_mod_inst",
-          "type":"dbId<_dbModInst>",
-          "flags":["no-set"],
-          "parent":"dbBlock"
-        }
-      ],
-      "constructors":[],
-      "cpp_includes":["dbBlock.h","dbHashTable.hpp"]
+      "src": "schema/dbModule.json"
     },
     {
-      "name":"dbModInst",
-      "type":"dbObject",
-      "fields":[
-        {
-          "name":"_name",
-          "type":"char *",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_next_entry",
-          "type":"dbId<_dbModInst>",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_parent",
-          "type":"dbId<_dbModule>",
-          "flags":["no-set"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_module_next",
-          "type":"dbId<_dbModInst>",
-          "flags":["no-get","no-set"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_master",
-          "type":"dbId<_dbModule>",
-          "flags":["no-set"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_group_next",
-          "type":"dbId<_dbModInst>",
-          "flags":["no-get","no-set"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_group",
-          "type":"dbId<_dbGroup>",
-          "flags":["no-set"],
-          "parent":"dbBlock"
-        }
-      ],
-      "constructors":[],
-      "cpp_includes":["dbBlock.h","dbModule.h","dbHashTable.hpp"]
+      "src": "schema/dbModInst.json"
     },
     {
-      "src":"dbGroup.json"
+      "src": "schema/dbGroup.json"
     },
     {
-      "src":"dbGCellGrid.json"
+      "src": "schema/dbGCellGrid.json"
     },
     {
-      "src":"dbAccessPoint.json"
+      "src": "schema/dbAccessPoint.json"
     },
     {
-      "src":"dbGlobalConnect.json"
+      "src": "schema/dbGlobalConnect.json"
     },
     {
-      "name":"dbPowerDomain",
-      "type":"dbObject",
-      "fields":[
-        {
-          "name":"_name",
-          "type":"char *",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_next_entry",
-          "type":"dbId<_dbPowerDomain>",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_elements",
-          "type":"dbVector<std::string>",
-          "flags":["no-set","no-get"]  
-        },
-        {
-          "name":"_power_switch",
-          "type":"dbVector<dbId<_dbPowerSwitch>>",
-          "flags":["no-set","no-get"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_isolation",
-          "type":"dbVector<dbId<_dbIsolation>>",
-          "flags":["no-set","no-get"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_group",
-          "type":"dbId<_dbGroup>",
-          "flags":["no-set"],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_top",
-          "type":"bool",
-          "flags":[]
-        },
-        {
-          "name": "_parent",
-          "type": "dbId<_dbPowerDomain>",
-          "parent":"dbBlock"
-        },
-        {
-          "name": "_x1",
-          "type": "int",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name": "_x2",
-          "type": "int",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name": "_y1",
-          "type": "int",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name": "_y2",
-          "type": "int",
-          "flags":["no-set","no-get"]
-        } 
-      ],
-      "constructors":[],
-      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
-      "h_includes": [
-        "dbVector.h"
-      ]
+      "src": "schema/dbPowerDomain.json"
     },
     {
-      "name":"dbLogicPort",
-      "type":"dbObject",
-      "fields":[
-        {
-          "name":"_name",
-          "type":"char *",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_next_entry",
-          "type":"dbId<_dbLogicPort>",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"direction",
-          "type":"std::string",
-          "flags":["no-set"]  
-        }
-      ],
-      "constructors":[],
-      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
-      "h_includes": [
-        "dbVector.h"
-      ]
+      "src": "schema/dbLogicPort.json"
     },
     {
-      "name":"dbPowerSwitch",
-      "type":"dbObject",
-      "fields":[
-        {
-          "name":"_name",
-          "type":"char *",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_next_entry",
-          "type":"dbId<_dbPowerSwitch>",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_in_supply_port",
-          "type":"std::string",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_out_supply_port",
-          "type":"std::string",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_control_port",
-          "type":"dbVector<std::string>",
-          "flags":["no-set", "no-get"]
-        },
-        {
-          "name":"_on_state",
-          "type":"dbVector<std::string>",
-          "flags":["no-set", "no-get"]
-        },
-        {
-          "name":"_control_net",
-          "type":"dbId<_dbNet>",
-          "flags":[],
-          "parent":"dbBlock"
-        },
-        {
-          "name":"_power_domain",
-          "type":"dbId<_dbPowerDomain>",
-          "flags":[],
-          "parent":"dbBlock"
-        }
-      ],
-      "constructors":[],
-      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbNet.h", "dbPowerDomain.h"],
-      "h_includes": [
-        "dbVector.h",
-        "dbSet.h"
-      ]
+      "src": "schema/dbPowerSwitch.json"
     },
     {
-      "name":"dbIsolation",
-      "type":"dbObject",
-      "fields":[
-        {
-          "name":"_name",
-          "type":"char *",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_next_entry",
-          "type":"dbId<_dbIsolation>",
-          "flags":["no-set","no-get"]
-        },
-        {
-          "name":"_applies_to",
-          "type":"std::string",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_clamp_value",
-          "type":"std::string",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_isolation_signal",
-          "type":"std::string",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_isolation_sense",
-          "type":"std::string",
-          "flags":["no-set"]
-        },
-        {
-          "name":"_location",
-          "type":"std::string",
-          "flags":["no-set"]
-        },
-        {
-          "name": "_isolation_cells", 
-          "type": "dbVector<std::string>",
-          "flags": ["no-get", "no-set"]
-        },
-        {
-          "name":"_power_domain",
-          "type":"dbId<_dbPowerDomain>",
-          "flags":[],
-          "parent":"dbBlock"
-        }
-      ],
-      "constructors":[],
-      "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbPowerDomain.h", "dbNet.h", "dbMaster.h"],
-      "h_includes": [
-        "dbVector.h"
-      ]
+      "src": "schema/dbIsolation.json"
     }
   ],
   "iterators":[

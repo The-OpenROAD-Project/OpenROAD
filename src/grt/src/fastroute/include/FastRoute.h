@@ -166,6 +166,7 @@ class FastRouteCore
   void setUpdateSlack(int u);
   void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
+  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
   const std::vector<int>& getTotalCapacityPerLayer() { return cap_per_layer_; }
@@ -179,7 +180,6 @@ class FastRouteCore
     return max_h_overflow_;
   }
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
-  std::set<odb::dbNet*> getCongestionNets() { return congestion_nets_; }
 
   // debug mode functions
   void setDebugOn(std::unique_ptr<AbstractFastRouteRenderer> renderer);
@@ -228,9 +228,13 @@ class FastRouteCore
   void convertToMazeroute();
   void updateCongestionHistory(const int upType, bool stopDEC, int& max_adj);
   int getOverflow2D(int* maxOverflow);
-  int getOverflow2Dmaze(int* maxOverflow, int* tUsage, bool fillNetsVector);
+  int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
-  void setCongestionNets(int& posX, int& posY, int dir);
+  void setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
+                         int& posX,
+                         int& posY,
+                         int dir,
+                         int& radius);
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
@@ -576,7 +580,6 @@ class FastRouteCore
       vertical_blocked_intervals_;
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>
       horizontal_blocked_intervals_;
-  std::set<odb::dbNet*> congestion_nets_;
 };
 
 }  // namespace grt

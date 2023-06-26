@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -50,7 +50,7 @@ class lefiPropType
   void setPropType(const char* name, const char type);
   void Clear();
 
-  char propType(char* name) const;
+  const char propType(char* name) const;
   void bumpProps();
 
  protected:

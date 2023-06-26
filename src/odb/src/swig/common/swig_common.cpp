@@ -128,21 +128,33 @@ int write_def(odb::dbBlock* block,
 int write_lef(odb::dbLib* lib, const char* path)
 {
   utl::Logger* logger = new utl::Logger(NULL);
-  odb::lefout writer(logger);
-  return writer.writeTechAndLib(lib, path);
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(path);
+  odb::lefout writer(logger, os);
+  writer.writeTechAndLib(lib);
+  return true;
 }
 
 int write_tech_lef(odb::dbTech* tech, const char* path)
 {
   utl::Logger* logger = new utl::Logger(NULL);
-  odb::lefout writer(logger);
-  return writer.writeTech(tech, path);
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(path);
+  odb::lefout writer(logger, os);
+  writer.writeTech(tech);
+  return true;
 }
 int write_macro_lef(odb::dbLib* lib, const char* path)
 {
   utl::Logger* logger = new utl::Logger(NULL);
-  odb::lefout writer(logger);
-  return writer.writeLib(lib, path);
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(path);
+  odb::lefout writer(logger, os);
+  writer.writeLib(lib);
+  return true;
 }
 
 odb::dbDatabase* read_db(odb::dbDatabase* db, const char* db_path)

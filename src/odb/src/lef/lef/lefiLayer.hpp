@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -59,7 +59,6 @@ class lefiAntennaPWL
   lefiAntennaPWL();
   ~lefiAntennaPWL();
 
-  lefiAntennaPWL(const lefiAntennaPWL& prev);
   static lefiAntennaPWL* create();
   void Init();
   void clear();
@@ -84,7 +83,6 @@ class lefiLayerDensity
   lefiLayerDensity();
   ~lefiLayerDensity();
 
-  lefiLayerDensity(const lefiLayerDensity& prev);
   void Init(const char* type);
   void Destroy();
   void clear();
@@ -127,8 +125,6 @@ class lefiParallel
   lefiParallel();
   ~lefiParallel();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiParallel);
-  LEF_ASSIGN_OPERATOR_H(lefiParallel);
   void Init();
   void clear();
   void Destroy();
@@ -159,8 +155,6 @@ class lefiInfluence
   lefiInfluence();
   ~lefiInfluence();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiInfluence);
-  LEF_ASSIGN_OPERATOR_H(lefiInfluence);
   void Init();
   void clear();
   void Destroy();
@@ -189,7 +183,6 @@ class lefiTwoWidths
   lefiTwoWidths();
   ~lefiTwoWidths();
 
-  lefiTwoWidths(const lefiTwoWidths& prev);
   void Init();
   void clear();
   void Destroy();
@@ -225,8 +218,6 @@ class lefiSpacingTable
   lefiSpacingTable();
   ~lefiSpacingTable();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiSpacingTable);
-  LEF_ASSIGN_OPERATOR_H(lefiSpacingTable);
   void Init();
   void clear();
   void Destroy();
@@ -262,8 +253,6 @@ class lefiOrthogonal
   lefiOrthogonal();
   ~lefiOrthogonal();
 
-  LEF_COPY_CONSTRUCTOR_H(lefiOrthogonal);
-  LEF_ASSIGN_OPERATOR_H(lefiOrthogonal);
   void Init();
   void Destroy();
 
@@ -287,7 +276,6 @@ class lefiAntennaModel
   lefiAntennaModel();
   ~lefiAntennaModel();
 
-  lefiAntennaModel(const lefiAntennaModel& prev);
   void Init();
   void Destroy();
 
@@ -392,7 +380,6 @@ class lefiLayer
   lefiLayer();
   void Init();
 
-  lefiLayer(const lefiLayer& prev);
   void Destroy();
   ~lefiLayer();
 
@@ -583,7 +570,7 @@ class lefiLayer
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  char propType(int index) const;
+  const char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
 

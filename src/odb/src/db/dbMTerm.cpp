@@ -32,6 +32,8 @@
 
 #include "dbMTerm.h"
 
+#include <spdlog/fmt/ostr.h>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
@@ -521,7 +523,7 @@ void dbMTerm::writeAntennaLef(lefout& writer) const
     getDefaultAntennaModel()->writeLef(tech, writer);
 
   if (hasOxide2AntennaModel()) {
-    fprintf(writer.out(), "        ANTENNAMODEL OXIDE2 ;\n");
+    fmt::print(writer.out(), "        ANTENNAMODEL OXIDE2 ;\n");
     getOxide2AntennaModel()->writeLef(tech, writer);
   }
 }

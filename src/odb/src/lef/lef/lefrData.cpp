@@ -51,7 +51,7 @@ lefrData::lefrData()
       last(NULL),
       layerName(NULL),
       lefch(NULL),
-      lefrFileName(0),
+      lefrFileName(NULL),
       macroName(NULL),
       ndName(0),
       next(NULL),
@@ -66,7 +66,7 @@ lefrData::lefrData()
       lef_save_x(0.0),
       lef_save_y(0.0),
       leflVal(0.0),
-      lefrVal(0.0),
+      lefrVal(0.),
       versionNum(CURRENT_VERSION),
       antennaInoutWarnings(0),
       antennaInputWarnings(0),
@@ -224,7 +224,6 @@ lefrData::lefrData()
       lefrUseMinSpacing(),
       lefrVia(),
       lefrViaRule(),
-
       tokenSize(TOKEN_SIZE),
       current_token((char*) malloc(TOKEN_SIZE)),
       pv_token((char*) malloc(TOKEN_SIZE)),
@@ -260,6 +259,7 @@ lefrData::lefrData()
   }
 
   lef_nlines = 1;
+  last = current_buffer - 1;
   next = current_buffer;
   encrypted = 0;
   first_buffer = 1;

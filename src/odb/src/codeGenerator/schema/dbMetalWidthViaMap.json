@@ -42,11 +42,7 @@
       "default": "false"
     }
   ],
-  "constructors": [],
-  "enums": [
-  ],
   "cpp_includes": [
     "dbTechLayer.h"
-  ],
-  "h_includes": []
+  ]
   }

@@ -1085,7 +1085,7 @@ int lefwLayerCutSpacingAdjacent(int viaCuts,  // either 2, 3 or 4, optional
     return LEFW_BAD_ORDER;  // has to be after
   // lefwLayerCutSpacing is called
   if (lefwWriteEncrypt) {
-    if (viaCuts < 2 || viaCuts > 4)
+    if (viaCuts < 2 && viaCuts > 4)
       return LEFW_BAD_DATA;
     encPrint(lefwFile,
              (char*) "\n     ADJACENTCUTS %d WITHIN %.11g",
@@ -1095,7 +1095,7 @@ int lefwLayerCutSpacingAdjacent(int viaCuts,  // either 2, 3 or 4, optional
       encPrint(lefwFile, (char*) " EXCEPTSAMEPGNET");
 
   } else {
-    if (viaCuts < 2 || viaCuts > 4)
+    if (viaCuts < 2 && viaCuts > 4)
       return LEFW_BAD_DATA;
     fprintf(lefwFile, "\n     ADJACENTCUTS %d WITHIN %.11g", viaCuts, distance);
     if (except)
@@ -2007,12 +2007,10 @@ int lefwLayerRoutingMinimumcutLengthWithin(double length, double distance)
   // lefwLayerRoutingMinimumcut has not being called or
   // lefwLayerRoutingMinimumcutLengthWithin has already called
   if (lefwWriteEncrypt)
-    encPrint(lefwFile,
-             (char*) "\n     LENGTH %.11g WITHIN %.11g ",
-             length,
-             distance);
+    encPrint(
+        lefwFile, (char*) "     LENGTH %.11g WITHIN %.11g ", length, distance);
   else
-    fprintf(lefwFile, "\n     LEGNTH %.11g WITHIN %.11g ", length, distance);
+    fprintf(lefwFile, "     LENGTH %.11g WITHIN %.11g ", length, distance);
   lefwLines++;
   prtSemiColon = 1;
   lefwIsRoutingMinCutLen = 1;

@@ -36,6 +36,12 @@
 #include "defiSite.h"
 #include "defiSite.hpp"
 
+union udefiPoints
+{
+  LefDefParser::defiPoints cpp;
+  ::defiPoints c;
+};
+
 // Wrappers definitions.
 double defiSite_x_num(const ::defiSite* obj)
 {
@@ -109,9 +115,9 @@ int defiBox_yh(const ::defiBox* obj)
 
 ::defiPoints defiBox_getPoint(const ::defiBox* obj)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiBox*) obj)->getPoint();
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiBox*) obj)->getPoint();
+  return tmp.c;
 }
 
 void defiBox_print(const ::defiBox* obj, FILE* f)

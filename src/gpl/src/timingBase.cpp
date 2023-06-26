@@ -158,9 +158,10 @@ bool TimingBase::updateGNetWeights(float overflow)
   }
 
   // min/max slack for worst nets
-  auto [slack_min, exists1] = rs_->resizeNetSlack(worst_slack_nets[0]);
-  auto [slack_max, exists2]
-      = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1]);
+  auto slack_min = rs_->resizeNetSlack(worst_slack_nets[0]).value();
+  auto slack_max
+      = rs_->resizeNetSlack(worst_slack_nets[worst_slack_nets.size() - 1])
+            .value();
 
   log_->info(GPL, 100, "worst slack {:.3g}", slack_min);
 
@@ -174,10 +175,11 @@ bool TimingBase::updateGNetWeights(float overflow)
     // default weight
     gNet->setTimingWeight(1.0);
     if (gNet->gPins().size() > 1) {
-      auto [net_slack, exists] = rs_->resizeNetSlack(gNet->net()->dbNet());
-      if (!exists) {
+      auto net_slack_opt = rs_->resizeNetSlack(gNet->net()->dbNet());
+      if (!net_slack_opt) {
         continue;
       }
+      auto net_slack = net_slack_opt.value();
       if (net_slack < slack_max) {
         if (slack_max == slack_min) {
           gNet->setTimingWeight(1.0);

@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -1021,6 +1021,11 @@ extern int defwSpecialNetPolygon(const char* layerName,
                                  int num_polys,
                                  double* xl,
                                  double* yl);
+
+/* This is a 5.8 syntax. Mask should be greater than zero */
+/* The function can be called only before defwSpecialNetRect */
+/* defwSpecialNetPolygon, defwSpecialNetVia functions */
+extern int defwSpecialNetMask(int maskNum);
 
 /* This is a 5.6 syntax
  * This routine can be called multiple times. */
