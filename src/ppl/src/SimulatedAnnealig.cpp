@@ -79,6 +79,7 @@ void SimulatedAnnealing::run()
       const float accept_prob = std::exp((-1) * delta_cost / temperature);
       if (delta_cost <= 0 || accept_prob > rand_float) {
         pin_assignment_ = assignment;
+        pre_cost = cost;
       }
     }
 
