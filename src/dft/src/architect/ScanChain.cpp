@@ -92,18 +92,18 @@ void ScanChain::report(utl::Logger* logger, bool verbose) const
     return;
   }
 
-  std::string current_clock_name;
-
+  size_t current_clock_domain_id = 0;
   // First negative triggered cells
   for (const auto& scan_cell : scan_cells_) {
-    if (current_clock_name != scan_cell->getClockDomain().getClockName()) {
+    if (current_clock_domain_id
+        != scan_cell->getClockDomain().getClockDomainId()) {
       const ClockDomain& clock_domain = scan_cell->getClockDomain();
       // Change of clock domain, show the clock
       logger->report("  {:s} ({:s}, {:s})",
                      scan_cell->getName(),
                      clock_domain.getClockName(),
                      clock_domain.getClockEdgeName());
-      current_clock_name = scan_cell->getClockDomain().getClockName();
+      current_clock_domain_id = scan_cell->getClockDomain().getClockDomainId();
     } else {
       logger->report("  {:s}", scan_cell->getName());
     }

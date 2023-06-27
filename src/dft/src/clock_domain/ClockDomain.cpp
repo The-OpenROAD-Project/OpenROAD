@@ -84,4 +84,10 @@ std::string_view ClockDomain::getClockEdgeName() const
   }
 }
 
+size_t ClockDomain::getClockDomainId() const
+{
+  return std::hash<std::string_view>{}(clock_name_)
+         ^ std::hash<ClockEdge>{}(clock_edge_);
+}
+
 }  // namespace dft
