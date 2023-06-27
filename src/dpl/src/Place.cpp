@@ -869,15 +869,12 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
 
   if (x > bin_x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
-      Point p(bin_x + i, bin_y);
-      p.setX(p.getX() * site_width_);
-      p.setY(p.getY() * row_height);
-      if (cell->region_) {
-        if (!cell->region_->intersects(p)) {
-          continue;
-        }
-      }  // the else case where a cell has no region will be checked using the
-         // rtree in checkPixels
+      Point p((bin_x + i) * site_width_, bin_y * row_height);
+      if (cell->region_ && !cell->region_->intersects(p)) {
+        continue;
+      }
+      // the else case where a cell has no region will be checked using the
+      // rtree in checkPixels
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -886,9 +883,7 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     }
   } else {
     for (int i = 0; i < bin_search_width_; i++) {
-      Point p(bin_x + i, bin_y);
-      p.setX(p.getX() * site_width_);
-      p.setY(p.getY() * row_height);
+      Point p((bin_x + i) * site_width_, bin_y * row_height);
       if (cell->region_) {
         if (!cell->region_->intersects(p)) {
           continue;
@@ -937,26 +932,17 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
 
   if (cell->region_) {
     if (result.size() == 1) {
-      if (boost::geometry::covered_by(queryBox, result[0])) {
-        // the queryBox must be fully contained in the region or else there
-        // might be a part of the cell outside of any region
-        return true;
-      }
-      // if we are here, then the queryBox is not fully contained in the
-      // region.
-      return false;
+      // the queryBox must be fully contained in the region or else there
+      // might be a part of the cell outside of any region
+      return boost::geometry::covered_by(queryBox, result[0]);
     }
     // if we are here, then the overlap size is either 0 or > 1
     // both are invalid. The overlap size should be 1
     return false;
   }
-  if (!result.empty()) {  // cell doesn't have a region, so it
-                          // should be placed outside of all
-                          // regions. So ther overalp must be zero
-
-    return false;
-  }
-  return true;
+  // If the cell has a region, then the region's bounding box must
+  // be fully contained by the cell's bounding box.
+  return result.empty();
 }
 
 // Check all pixels are empty.
