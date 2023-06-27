@@ -934,48 +934,24 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
   std::vector<bgBox> result;
   findOverlapInRtree(queryBox, result);
 
-  if (cell->region_
-      && result.size()
-             != 1) {  // cell has a region, so the overlap should only be with
-                      // one box (for that region) in the rtree
-    debugPrint(
-        logger_,
-        DPL,
-        "detailed",
-        1,
-        "Cell had a region, but it didn't overlap with it!!. Overlap size {}",
-        result.size());
-    for (const auto& box : result) {
-      debugPrint(logger_,
-                 DPL,
-                 "detailed",
-                 1,
-                 "Overlap found between queryBox {} and bbox {}",
-                 printBgBox(queryBox),
-                 printBgBox(box));
+  if (cell->region_) {
+    if (result.size() == 1) {
+      if (boost::geometry::covered_by(queryBox, result[0])) {
+        // the queryBox must be fully contained in the region or else there
+        // might be a part of the cell outside of any region
+        return true;
+      }
+      // if we are here, then the queryBox is not fully contained in the
+      // region.
+      return false;
     }
+    // if we are here, then the overlap size is either 0 or > 1
+    // both are invalid. The overlap size should be 1
     return false;
-  }
-  if (cell->region_ == nullptr
-      && !result.empty()) {  // cell doesn't have a region, so it
-                             // should be placed outside of all
-                             // regions. So ther overalp must be zero
-    debugPrint(logger_,
-               DPL,
-               "detailed",
-               1,
-               "Cell didn't have a region, but it overlapped with something!!. "
-               "Overlap size {}",
-               result.size());
-    for (const auto& box : result) {
-      debugPrint(logger_,
-                 utl::DPL,
-                 "detailed",
-                 1,
-                 "Overlap found between queryBox {} and bbox {}",
-                 printBgBox(queryBox),
-                 printBgBox(box));
-    }
+  } else if (!result.empty()) {  // cell doesn't have a region, so it
+                                 // should be placed outside of all
+                                 // regions. So ther overalp must be zero
+
     return false;
   }
   return true;
