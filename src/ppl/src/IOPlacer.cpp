@@ -1849,11 +1849,7 @@ void IOPlacer::run(bool random_mode)
   }
 
   if (!random_mode) {
-    int64 total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
-    logger_->info(PPL,
-                  12,
-                  "I/O nets HPWL: {:.2f} um.",
-                  static_cast<float>(dbuToMicrons(total_hpwl)));
+    reportHPWL();
   }
 
   commitIOPlacementToDB(assignment_);
@@ -1879,8 +1875,20 @@ void IOPlacer::runAnnealing()
     updateOrientation(pin);
     updatePinArea(pin);
   }
+
+  reportHPWL();
+
   commitIOPlacementToDB(assignment_);
   clear();
+}
+
+void IOPlacer::reportHPWL()
+{
+  int64 total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
+  logger_->info(PPL,
+                12,
+                "I/O nets HPWL: {:.2f} um.",
+                static_cast<float>(dbuToMicrons(total_hpwl)));
 }
 
 void IOPlacer::placePin(odb::dbBTerm* bterm,

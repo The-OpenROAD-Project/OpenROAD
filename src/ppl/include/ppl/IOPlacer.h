@@ -124,6 +124,7 @@ class IOPlacer
   void clearConstraints();
   void run(bool random_mode);
   void runAnnealing();
+  void reportHPWL();
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
