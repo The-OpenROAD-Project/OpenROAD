@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -344,7 +344,7 @@ double defiGroup::propNumber(int index) const
   return propDValues_[index];
 }
 
-char defiGroup::propType(int index) const
+const char defiGroup::propType(int index) const
 {
   char msg[160];
   if (index < 0 || index >= numProps_) {

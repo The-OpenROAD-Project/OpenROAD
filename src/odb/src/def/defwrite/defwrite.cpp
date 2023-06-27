@@ -65,7 +65,7 @@ int main(int argc, char** argv)
   const char **coorXSN, **coorYSN;
   bool groupInit = false;
 
-#ifdef WIN32
+#if (defined WIN32 && _MSC_VER < 1800)
   // Enable two-digit exponent format
   _set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
@@ -295,9 +295,9 @@ int main(int argc, char** argv)
 
   // DIEAREA
   /*
-     status = defwDieArea(-190000, -120000, 190000, 70000);
-     CHECK_STATUS(status);
-     */
+    status = defwDieArea(-190000, -120000, 190000, 70000);
+    CHECK_STATUS(status);
+  */
   xPoints = (int*) malloc(sizeof(int) * 6);
   yPoints = (int*) malloc(sizeof(int) * 6);
   xPoints[0] = 2000;
@@ -362,19 +362,19 @@ int main(int argc, char** argv)
 
   // DEFAULTCAP
   /* obsolete in 5.4
-     status = defwStartDefaultCap(4);
-     CHECK_STATUS(status);
-     status = defwDefaultCap(2, 3);
-     CHECK_STATUS(status);
-     status = defwDefaultCap(4, 6);
-     CHECK_STATUS(status);
-     status = defwDefaultCap(8, 9);
-     CHECK_STATUS(status);
-     status = defwDefaultCap(10, 12);
-     CHECK_STATUS(status);
-     status = defwEndDefaultCap();
-     CHECK_STATUS(status);
-     */
+  status = defwStartDefaultCap(4);
+  CHECK_STATUS(status);
+  status = defwDefaultCap(2, 3);
+  CHECK_STATUS(status);
+  status = defwDefaultCap(4, 6);
+  CHECK_STATUS(status);
+  status = defwDefaultCap(8, 9);
+  CHECK_STATUS(status);
+  status = defwDefaultCap(10, 12);
+  CHECK_STATUS(status);
+  status = defwEndDefaultCap();
+  CHECK_STATUS(status);
+  */
 
   // CANPLACE
   status = defwCanPlaceStr("dp", 45, 64, "N", 35, 1, 39, 1);
@@ -1354,8 +1354,8 @@ int main(int argc, char** argv)
   status = defwSpecialNet("VCC");
   CHECK_STATUS(status);
   /*
-     status = defwSpecialNetShieldNetName("ShieldName");
-     */
+    status = defwSpecialNetShieldNetName("ShieldName");
+  */
   status = defwSpecialNetPathStart("ROUTED");
   CHECK_STATUS(status);
   status = defwSpecialNetPathLayer("M2");
@@ -1449,6 +1449,8 @@ int main(int argc, char** argv)
   status = defwSpecialNetPolygon("metal1", 6, xP, yP);
   CHECK_STATUS(status);
   status = defwSpecialNetRect("metal1", 0, 0, 100, 200);
+  CHECK_STATUS(status);
+  status = defwSpecialNetMask(2);
   CHECK_STATUS(status);
   status = defwSpecialNetRect("metal2", 1, 1, 100, 200);
   CHECK_STATUS(status);
@@ -2002,37 +2004,37 @@ int main(int argc, char** argv)
 
   // IOTIMINGS
   /* obsolete in 5.4
-     status = defwStartIOTimings(3);
-     CHECK_STATUS(status);
-     status = defwIOTiming("PIN", "INBUS<0>");
-     CHECK_STATUS(status);
-     status = defwIOTimingVariable("RISE", 6100000, 7100000);
-     CHECK_STATUS(status);
-     status = defwIOTimingVariable("FALL", 3100000, 3100000);
-     CHECK_STATUS(status);
-     status = defwIOTimingSlewrate("RISE", 110, 110);
-     CHECK_STATUS(status);
-     status = defwIOTimingSlewrate("FALL", 290, 290);
-     CHECK_STATUS(status);
-     status = defwIOTimingCapacitance(0);
-     CHECK_STATUS(status);
-     status = defwIOTiming("PIN", "INBUS[1]");
-     CHECK_STATUS(status);
-     status = defwIOTimingDrivecell("INV", "A", "Z", 2);
-     CHECK_STATUS(status);
-     status = defwIOTimingSlewrate("RISE", 110, 110);
-     CHECK_STATUS(status);
-     status = defwIOTimingSlewrate("FALL", 290, 290);
-     CHECK_STATUS(status);
-     status = defwIOTimingCapacitance(0);
-     CHECK_STATUS(status);
-     status = defwIOTiming("PIN", "OUTPUS<1>");
-     CHECK_STATUS(status);
-     status = defwIOTimingCapacitance(120000);
-     CHECK_STATUS(status);
-     status = defwEndIOTimings();
-     CHECK_STATUS(status);
-     */
+  status = defwStartIOTimings(3);
+  CHECK_STATUS(status);
+  status = defwIOTiming("PIN", "INBUS<0>");
+  CHECK_STATUS(status);
+  status = defwIOTimingVariable("RISE", 6100000, 7100000);
+  CHECK_STATUS(status);
+  status = defwIOTimingVariable("FALL", 3100000, 3100000);
+  CHECK_STATUS(status);
+  status = defwIOTimingSlewrate("RISE", 110, 110);
+  CHECK_STATUS(status);
+  status = defwIOTimingSlewrate("FALL", 290, 290);
+  CHECK_STATUS(status);
+  status = defwIOTimingCapacitance(0);
+  CHECK_STATUS(status);
+  status = defwIOTiming("PIN", "INBUS[1]");
+  CHECK_STATUS(status);
+  status = defwIOTimingDrivecell("INV", "A", "Z", 2);
+  CHECK_STATUS(status);
+  status = defwIOTimingSlewrate("RISE", 110, 110);
+  CHECK_STATUS(status);
+  status = defwIOTimingSlewrate("FALL", 290, 290);
+  CHECK_STATUS(status);
+  status = defwIOTimingCapacitance(0);
+  CHECK_STATUS(status);
+  status = defwIOTiming("PIN", "OUTPUS<1>");
+  CHECK_STATUS(status);
+  status = defwIOTimingCapacitance(120000);
+  CHECK_STATUS(status);
+  status = defwEndIOTimings();
+  CHECK_STATUS(status);
+  */
 
   // SCANCHAIN
   status = defwStartScanchains(4);
@@ -2138,39 +2140,39 @@ int main(int argc, char** argv)
 
   // CONSTRAINTS
   /* obsolete in 5.4
-     status = defwStartConstraints(3);
-     CHECK_STATUS(status);
-     status = defwConstraintOperand();  // the following are operand
-     CHECK_STATUS(status);
-     status = defwConstraintOperandPath("cell1", "VDD", "cell2", "VDD");
-     CHECK_STATUS(status);
-     status = defwConstraintOperandTime("RISEMAX", 6000);
-     CHECK_STATUS(status);
-     status = defwConstraintOperandTime("FALLMIN", 9000);
-     CHECK_STATUS(status);
-     status = defwConstraintOperandEnd();
-     CHECK_STATUS(status);
-     status = defwConstraintOperand();
-     CHECK_STATUS(status);
-     status = defwConstraintOperandSum();
-     CHECK_STATUS(status);
-     status = defwConstraintOperandNet("net2");
-     CHECK_STATUS(status);
-     status = defwConstraintOperandNet("net3");
-     CHECK_STATUS(status);
-     status = defwConstraintOperandSumEnd();
-     CHECK_STATUS(status);
-     status = defwConstraintOperandTime("RISEMAX", 2000);
-     CHECK_STATUS(status);
-     status = defwConstraintOperandTime("FALLMIN", 5000);
-     CHECK_STATUS(status);
-     status = defwConstraintOperandEnd();
-     CHECK_STATUS(status);
-     status = defwConstraintWiredlogic("net1", 1000);
-     CHECK_STATUS(status);
-     status = defwEndConstraints();
-     CHECK_STATUS(status);
-     */
+  status = defwStartConstraints(3);
+  CHECK_STATUS(status);
+  status = defwConstraintOperand();  // the following are operand
+  CHECK_STATUS(status);
+  status = defwConstraintOperandPath("cell1", "VDD", "cell2", "VDD");
+  CHECK_STATUS(status);
+  status = defwConstraintOperandTime("RISEMAX", 6000);
+  CHECK_STATUS(status);
+  status = defwConstraintOperandTime("FALLMIN", 9000);
+  CHECK_STATUS(status);
+  status = defwConstraintOperandEnd();
+  CHECK_STATUS(status);
+  status = defwConstraintOperand();
+  CHECK_STATUS(status);
+  status = defwConstraintOperandSum();
+  CHECK_STATUS(status);
+  status = defwConstraintOperandNet("net2");
+  CHECK_STATUS(status);
+  status = defwConstraintOperandNet("net3");
+  CHECK_STATUS(status);
+  status = defwConstraintOperandSumEnd();
+  CHECK_STATUS(status);
+  status = defwConstraintOperandTime("RISEMAX", 2000);
+  CHECK_STATUS(status);
+  status = defwConstraintOperandTime("FALLMIN", 5000);
+  CHECK_STATUS(status);
+  status = defwConstraintOperandEnd();
+  CHECK_STATUS(status);
+  status = defwConstraintWiredlogic("net1", 1000);
+  CHECK_STATUS(status);
+  status = defwEndConstraints();
+  CHECK_STATUS(status);
+  */
 
   // GROUPS
   groupExpr = (const char**) malloc(sizeof(char*) * 2);

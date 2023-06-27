@@ -1,94 +1,92 @@
 import re
 
 
-def _findIndex(_list, _object, startIndex=0):
-    index = startIndex
+def _find_index(_list, _object, start_index=0):
+    index = start_index
     while index < len(_list):
         line = _list[index].strip()
-        line = line.replace(' ', '')
+        line = line.replace(" ", "")
         if line == _object:
             return index
         index += 1
     return -1
 
 
-def _getSections(lines, tag, sections=None, remove=False):
+def _get_sections(lines, tag, sections=None, remove=False):
     if sections is None:
         sections = {}
     i = 0
     while i < len(lines):
         line = lines[i].strip()
-        line = line.replace(' ', '')
+        line = line.replace(" ", "")
         if re.match(tag, line):
-            name = line[len(tag):]
+            name = line[len(tag) :]
 
             if name in sections:
-                raise Exception("Duplicate Tag: {}".format(name))
+                raise Exception(f"Duplicate Tag: {name}")
 
-            end = _findIndex(lines, line.replace('Begin', 'End', 1), i)
+            end = _find_index(lines, line.replace("Begin", "End", 1), i)
             if end == -1:
-                print('Could not find an End for tag {}\n'.format(name))
+                print(f"Could not find an End for tag {name}\n")
                 return False
             if remove:
-                del lines[i+1:end]
+                del lines[i + 1 : end]
             else:
                 sections.setdefault(name, [])
-                if end > i+1:
-                    sections[name].extend(lines[i+1:end])
+                if end > i + 1:
+                    sections[name].extend(lines[i + 1 : end])
         i += 1
     return True
 
 
 class Parser:
-
-    def __init__(self, fileName):
-        with open(fileName, 'r') as file:
+    def __init__(self, file_name):
+        with open(file_name, "r", encoding="ascii") as file:
             self.lines = file.readlines()
-        self.generatorCode = {}
-        self.userCodeTag = '//UserCodeBegin'
-        self.generatorCodeTag = '//GeneratorCodeBegin'
+        self.generator_code = {}
+        self.user_code = {}
+        self.user_code_tag = "//UserCodeBegin"
+        self.generator_code_tag = "//GeneratorCodeBegin"
 
-    def setCommentStr(self, comment):
-        self.userCodeTag = '{}UserCodeBegin'.format(comment)
-        self.generatorCodeTag = '{}GeneratorCodeBegin'.format(comment)
+    def set_comment_str(self, comment):
+        self.user_code_tag = f"{comment}UserCodeBegin"
+        self.generator_code_tag = f"{comment}GeneratorCodeBegin"
 
-    def parseUserCode(self):
-        self.userCode = {}
-        status = _getSections(self.lines, self.userCodeTag, self.userCode)
+    def parse_user_code(self):
+        status = _get_sections(self.lines, self.user_code_tag, self.user_code)
         return status
 
-    def parseSourceCode(self, fileName):
-        with open(fileName, 'r') as sourceFile:
-            db_lines = sourceFile.readlines()
-        status = _getSections(db_lines, self.generatorCodeTag,
-                              self.generatorCode)
+    def parse_source_code(self, file_name):
+        with open(file_name, "r", encoding="ascii") as source_file:
+            db_lines = source_file.readlines()
+        status = _get_sections(db_lines, self.generator_code_tag, self.generator_code)
         return status
 
-    def cleanCode(self):
-        status = _getSections(self.lines, self.generatorCodeTag, remove=True)
+    def clean_code(self):
+        status = _get_sections(self.lines, self.generator_code_tag, remove=True)
         return status
 
-    def writeInFile(self, fileName):
-        for section in self.generatorCode:
-            db_lines = self.generatorCode[section]
+    def write_in_file(self, file_name):
+        for section in self.generator_code:
+            db_lines = self.generator_code[section]
             j = 0
             while j < len(db_lines):
-                line = db_lines[j].strip().replace(' ', '')
-                if re.match(self.userCodeTag, line):
-                    name = line[len(self.userCodeTag):]
-                    if name in self.userCode:
-                        db_lines[j+1:j+1] = self.userCode[name]
+                line = db_lines[j].strip().replace(" ", "")
+                if re.match(self.user_code_tag, line):
+                    name = line[len(self.user_code_tag) :]
+                    if name in self.user_code:
+                        db_lines[j + 1 : j + 1] = self.user_code[name]
                 j += 1
-            self.generatorCode[section] = db_lines
+            self.generator_code[section] = db_lines
         i = 0
         while i < len(self.lines):
             line = self.lines[i].strip()
-            line = line.replace(' ', '')
-            if re.match(self.generatorCodeTag, line):
-                name = line[len(self.generatorCodeTag):]
-                self.generatorCode.setdefault(name, [])
-                self.lines[i+1:i+1] = self.generatorCode[name]
+            line = line.replace(" ", "")
+            if re.match(self.generator_code_tag, line):
+                name = line[len(self.generator_code_tag) :]
+                self.generator_code.setdefault(name, [])
+                self.lines[i + 1 : i + 1] = self.generator_code[name]
             i += 1
-        with open(fileName, 'w') as out:
-            out.write(''.join(self.lines))
+        with open(file_name, "w", encoding="ascii") as out:
+            out.write("".join(self.lines))
         return True

@@ -2038,7 +2038,6 @@ void lefiPin::addAntennaModel(int oxide)
       // just initialize it first
     }
     antennaModelAllocated_ = lefMaxOxides;
-    amo = pinAntennaModel_[0];
     curAntennaModelIndex_ = 0;
   }
 

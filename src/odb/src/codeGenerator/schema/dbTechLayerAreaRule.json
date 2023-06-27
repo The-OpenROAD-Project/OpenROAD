@@ -60,8 +60,6 @@
       "name": "rect_width_"
     }
   ],
-  "constructors": [],
-  "enums": [],
   "cpp_includes": [
     "dbTechLayer.h"
   ]

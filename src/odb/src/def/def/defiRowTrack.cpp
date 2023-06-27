@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -32,11 +32,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sstream>
+
 #include "defiDebug.hpp"
 #include "defiUtil.hpp"
 #include "lex.h"
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
+
+namespace {
+
+void defiError6140(int index, int numProps, defrData* defData)
+{
+  std::stringstream msg;
+  msg << "ERROR (DEFPARS-6140): The index number " << index
+      << " specified for the VIA ";
+  msg << "LAYER RECTANGLE is invalide.\nValid index number is from 0 to "
+      << numProps << ". ";
+  msg << "Specify a valid index number and then try again.";
+  defiError(0, 6140, msg.str().c_str(), defData);
+}
+
+}  // namespace
 
 //////////////////////////////////////////////
 //////////////////////////////////////////////
@@ -72,56 +89,6 @@ void defiRow::Init()
   propValues_ = (char**) malloc(sizeof(char*) * 2);
   propDValues_ = (double*) malloc(sizeof(double) * 2);
   propTypes_ = (char*) malloc(sizeof(char) * 2);
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiRow)
-{
-  this->Init();
-  DEF_COPY_FUNC(nameLength_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_COPY_FUNC(macroLength_);
-  DEF_MALLOC_FUNC(macro_, char, sizeof(char) * (strlen(prev.macro_) + 1));
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(xNum_);
-  DEF_COPY_FUNC(yNum_);
-  DEF_COPY_FUNC(orient_);
-  DEF_COPY_FUNC(xStep_);
-  DEF_COPY_FUNC(yStep_);
-  DEF_COPY_FUNC(hasDo_);
-  DEF_COPY_FUNC(hasDoStep_);
-  DEF_COPY_FUNC(numProps_);
-  DEF_COPY_FUNC(propsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(propNames_, numProps_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(propValues_, numProps_);
-  DEF_MALLOC_FUNC(propDValues_, double, sizeof(double) * numProps_);
-  DEF_MALLOC_FUNC(propTypes_, char, sizeof(char) * numProps_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiRow)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  DEF_COPY_FUNC(nameLength_);
-  DEF_MALLOC_FUNC(name_, char, sizeof(char) * (strlen(prev.name_) + 1));
-  DEF_COPY_FUNC(macroLength_);
-  DEF_MALLOC_FUNC(macro_, char, sizeof(char) * (strlen(prev.macro_) + 1));
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(y_);
-  DEF_COPY_FUNC(xNum_);
-  DEF_COPY_FUNC(yNum_);
-  DEF_COPY_FUNC(orient_);
-  DEF_COPY_FUNC(xStep_);
-  DEF_COPY_FUNC(yStep_);
-  DEF_COPY_FUNC(hasDo_);
-  DEF_COPY_FUNC(hasDoStep_);
-  DEF_COPY_FUNC(numProps_);
-  DEF_COPY_FUNC(propsAllocated_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(propNames_, numProps_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(propValues_, numProps_);
-  DEF_MALLOC_FUNC(propDValues_, double, sizeof(double) * numProps_);
-  DEF_MALLOC_FUNC(propTypes_, char, sizeof(char) * numProps_);
-  return *this;
 }
 
 defiRow::~defiRow()
@@ -295,15 +262,8 @@ int defiRow::numProps() const
 
 const char* defiRow::propName(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propNames_[index];
@@ -311,15 +271,8 @@ const char* defiRow::propName(int index) const
 
 const char* defiRow::propValue(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propValues_[index];
@@ -327,31 +280,17 @@ const char* defiRow::propValue(int index) const
 
 double defiRow::propNumber(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index];
 }
 
-char defiRow::propType(int index) const
+const char defiRow::propType(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propTypes_[index];
@@ -359,15 +298,8 @@ char defiRow::propType(int index) const
 
 int defiRow::propIsNumber(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index] ? 1 : 0;
@@ -375,15 +307,8 @@ int defiRow::propIsNumber(int index) const
 
 int defiRow::propIsString(int index) const
 {
-  char msg[256];
   if (index < 0 || index >= numProps_) {
-    sprintf(msg,
-            "ERROR (DEFPARS-6140): The index number %d specified for the VIA "
-            "LAYER RECTANGLE is invalide.\nValid index number is from 0 to %d. "
-            "Specify a valid index number and then try again.",
-            index,
-            numProps_);
-    defiError(0, 6140, msg, defData);
+    defiError6140(index, numProps_, defData);
     return 0;
   }
   return propDValues_[index] ? 0 : 1;
@@ -487,38 +412,6 @@ void defiTrack::Init()
   layers_ = 0;
   firstTrackMask_ = 0;
   samemask_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiTrack)
-{
-  this->Init();
-  DEF_COPY_FUNC(macroLength_);
-  DEF_MALLOC_FUNC(macro_, char, sizeof(char) * (strlen(prev.macro_) + 1));
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(xNum_);
-  DEF_COPY_FUNC(xStep_);
-  DEF_COPY_FUNC(layersLength_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-  DEF_COPY_FUNC(firstTrackMask_);
-  DEF_COPY_FUNC(samemask_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiTrack)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  DEF_COPY_FUNC(macroLength_);
-  DEF_MALLOC_FUNC(macro_, char, sizeof(char) * (strlen(prev.macro_) + 1));
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(xNum_);
-  DEF_COPY_FUNC(xStep_);
-  DEF_COPY_FUNC(layersLength_);
-  DEF_COPY_FUNC(numLayers_);
-  DEF_MALLOC_FUNC_FOR_2D_STR(layers_, numLayers_);
-  DEF_COPY_FUNC(firstTrackMask_);
-  DEF_COPY_FUNC(samemask_);
-  return *this;
 }
 
 defiTrack::~defiTrack()
@@ -683,28 +576,6 @@ void defiGcellGrid::Init()
   x_ = 0;
   xNum_ = 0;
   xStep_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiGcellGrid)
-{
-  this->Init();
-  DEF_COPY_FUNC(macroLength_);
-  DEF_MALLOC_FUNC(macro_, char, sizeof(char) * (strlen(prev.macro_) + 1));
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(xNum_);
-  DEF_COPY_FUNC(xStep_);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiGcellGrid)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-  DEF_COPY_FUNC(macroLength_);
-  DEF_MALLOC_FUNC(macro_, char, sizeof(char) * (strlen(prev.macro_) + 1));
-  DEF_COPY_FUNC(x_);
-  DEF_COPY_FUNC(xNum_);
-  DEF_COPY_FUNC(xStep_);
-  return *this;
 }
 
 defiGcellGrid::~defiGcellGrid()

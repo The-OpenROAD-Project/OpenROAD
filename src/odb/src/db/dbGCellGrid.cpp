@@ -145,8 +145,6 @@ _dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
 
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
 {
-  _dbDatabase* db = obj.getDatabase();
-
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
   stream >> *flags__bit_field;
   stream >> obj.x_origin_;
@@ -158,6 +156,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   stream >> obj.x_grid_;
   stream >> obj.y_grid_;
   // User Code Begin >>
+  _dbDatabase* db = obj.getDatabase();
   if (db->isSchema(db_schema_gcell_grid_matrix)) {
     stream >> obj.congestion_map_;
   } else {

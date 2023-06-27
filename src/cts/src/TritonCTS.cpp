@@ -470,7 +470,9 @@ void TritonCTS::populateTritonCTS()
         }
         // Initializes the net in TritonCTS. If the number of sinks is less than
         // 2, the net is discarded.
-        initOneClockTree(net, clkName, nullptr);
+        if (visitedClockNets_.find(net) == visitedClockNets_.end()) {
+          initOneClockTree(net, clkName, nullptr);
+        }
       } else {
         logger_->warn(
             CTS,

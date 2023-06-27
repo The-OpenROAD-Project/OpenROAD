@@ -25,7 +25,7 @@
 /*                                                                            */
 /*  $Author: dell $ */
 /*  $Revision: #1 $ */
-/*  $Date: 2017/06/06 $ */
+/*  $Date: 2020/09/29 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -40,6 +40,6 @@
 /* Struct holds the data type for one property, if the property is            */
 /* either REAL or INTEGER.                                                    */
 
-EXTERN char defiPropType_propType(const defiPropType* obj, char* name);
+EXTERN const char defiPropType_propType(const defiPropType* obj, char* name);
 
 #endif

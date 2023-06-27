@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -190,32 +190,6 @@ void defiBox::Init()
   xh_ = 0;
   yh_ = 0;
   points_ = 0;
-}
-
-DEF_COPY_CONSTRUCTOR_C(defiBox)
-{
-  this->Init();
-
-  DEF_COPY_FUNC(xl_);
-  DEF_COPY_FUNC(yl_);
-  DEF_COPY_FUNC(xh_);
-  DEF_COPY_FUNC(yh_);
-
-  DEF_MALLOC_FUNC_WITH_OPERATOR(points_, defiPoints, sizeof(defiPoints) * 1);
-}
-
-DEF_ASSIGN_OPERATOR_C(defiBox)
-{
-  CHECK_SELF_ASSIGN
-  this->Init();
-
-  DEF_COPY_FUNC(xl_);
-  DEF_COPY_FUNC(yl_);
-  DEF_COPY_FUNC(xh_);
-  DEF_COPY_FUNC(yh_);
-
-  DEF_MALLOC_FUNC_WITH_OPERATOR(points_, defiPoints, sizeof(defiPoints) * 1);
-  return *this;
 }
 
 defiBox::~defiBox()

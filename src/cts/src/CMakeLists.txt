@@ -57,7 +57,7 @@ swig_lib(NAME      cts
 target_sources(cts
   PRIVATE
     MakeTritoncts.cpp
-    Graphics.cpp
+    CtsGraphics.cpp
 )
 
 target_include_directories(cts_lib
