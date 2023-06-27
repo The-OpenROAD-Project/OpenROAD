@@ -38,8 +38,6 @@
 #include "painter.h"
 #include "utl/timer.h"
 
-#include <iostream>
-
 namespace gui {
 
 using odb::dbBlock;
@@ -641,10 +639,10 @@ void RenderThread::drawInstanceNames(QPainter* painter,
 }
 
 // Draw the instances ITerm names
-void RenderThread::drawItermLabels(QPainter* painter,
+void RenderThread::drawITermLabels(QPainter* painter,
                                      const std::vector<odb::dbInst*>& insts)
 {
-  if (!viewer_->options_->areInstanceItermsVisible()) {
+  if (!viewer_->options_->areInstanceITermsVisible()) {
     return;
   }
 
@@ -1066,7 +1064,7 @@ void RenderThread::drawBlock(QPainter* painter,
   debugPrint(logger_, GUI, "draw", 1, "instance names {}", inst_names);
 
   utl::Timer inst_iterms;
-  drawItermLabels(painter, insts);
+  drawITermLabels(painter, insts);
   debugPrint(logger_, GUI, "draw", 1, "instance iterms {}", inst_iterms);
 
   utl::Timer inst_rows;
