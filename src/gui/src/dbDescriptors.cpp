@@ -382,17 +382,31 @@ Descriptor::Properties DbBlockDescriptor::getProperties(std::any object) const
   auto gui = Gui::get();
 
   Properties props;
+  SelectionSet children;
+  for (auto child : block->getChildren()) {
+    children.insert(gui->makeSelected(child));
+  }
+  props.push_back({"Child Blocks", children});
+
   SelectionSet modules;
   for (auto module : block->getModules()) {
     modules.insert(gui->makeSelected(module));
   }
   props.push_back({"Modules", modules});
 
+  props.push_back({"Top Module", gui->makeSelected(block->getTopModule())});
+
   SelectionSet bterms;
   for (auto bterm : block->getBTerms()) {
     bterms.insert(gui->makeSelected(bterm));
   }
   props.push_back({"BTerms", bterms});
+
+  SelectionSet vias;
+  for (auto via : block->getVias()) {
+    vias.insert(gui->makeSelected(via));
+  }
+  props.push_back({"Block Vias", vias});
 
   SelectionSet nets;
   for (auto net : block->getNets()) {
@@ -1965,6 +1979,148 @@ bool DbBTermDescriptor::getAllObjects(SelectionSet& objects) const
   for (auto* term : block->getBTerms()) {
     objects.insert(makeSelected(term));
   }
+  return true;
+}
+
+//////////////////////////////////////////////////
+
+DbViaDescriptor::DbViaDescriptor(odb::dbDatabase* db) : db_(db)
+{
+}
+
+std::string DbViaDescriptor::getName(std::any object) const
+{
+  auto via = std::any_cast<odb::dbVia*>(object);
+  return via->getName();
+}
+
+std::string DbViaDescriptor::getTypeName() const
+{
+  return "Block Via";
+}
+
+bool DbViaDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+{
+  return false;
+}
+
+void DbViaDescriptor::highlight(std::any object, Painter& painter) const
+{
+}
+
+Descriptor::Properties DbViaDescriptor::getProperties(std::any object) const
+{
+  auto via = std::any_cast<odb::dbVia*>(object);
+  auto gui = Gui::get();
+
+  Properties props({{"Block", gui->makeSelected(via->getBlock())}});
+
+  if (via->getPattern() != "") {
+    props.push_back({"Pattern", via->getPattern()});
+  }
+
+  props.push_back({"Tech Via Generate Rule", gui->makeSelected(via->getViaGenerateRule())});
+
+  if (via->hasParams()) {
+    odb::dbViaParams via_params;
+    via->getViaParams(via_params);
+
+    props.push_back({"Cut Size",
+                     fmt::format(" X={}, Y={}",
+                                 Property::convert_dbu(via_params.getXCutSize(), true),
+                                 Property::convert_dbu(via_params.getYCutSize(), true))});
+
+    props.push_back({"Cut Spacing",
+                     fmt::format(" X={}, Y={}",
+                                 Property::convert_dbu(via_params.getXCutSpacing(), true),
+                                 Property::convert_dbu(via_params.getYCutSpacing(), true))});    
+
+    props.push_back({"Top Enclosure",
+                     fmt::format(" X={}, Y={}",
+                                 Property::convert_dbu(via_params.getXTopEnclosure(), true),
+                                 Property::convert_dbu(via_params.getYTopEnclosure(), true))}); 
+
+    props.push_back({"Bottom Enclosure",
+                     fmt::format(" X={}, Y={}",
+                                 Property::convert_dbu(via_params.getXBottomEnclosure(), true),
+                                 Property::convert_dbu(via_params.getYBottomEnclosure(), true))});
+
+    props.push_back({"Number of Cut Rows", via_params.getNumCutRows()});
+    props.push_back({"Number of Cut Columns", via_params.getNumCutCols()});
+
+    props.push_back({"Origin",
+                     fmt::format(" X={}, Y={}",
+                                 Property::convert_dbu(via_params.getXOrigin(), true),
+                                 Property::convert_dbu(via_params.getYOrigin(), true))});    
+
+    props.push_back({"Top Offset",
+                     fmt::format(" X={}, Y={}",
+                                 Property::convert_dbu(via_params.getXTopOffset(), true),
+                                 Property::convert_dbu(via_params.getYTopOffset(), true))});
+
+    props.push_back({"Bottom Offset",
+                     fmt::format(" X={}, Y={}",
+                                 Property::convert_dbu(via_params.getXBottomOffset(), true),
+                                 Property::convert_dbu(via_params.getYBottomOffset(), true))});     
+
+    PropertyList layers({{"Top", gui->makeSelected(via_params.getTopLayer())},
+                         {"Cut", gui->makeSelected(via_params.getCutLayer())},
+                         {"Bottom", gui->makeSelected(via_params.getBottomLayer())}});
+    props.push_back({"Layers", layers});
+  } else {
+    props.push_back({"Top Layer", gui->makeSelected(via->getTopLayer())});
+    props.push_back({"Bottom Layer", gui->makeSelected(via->getBottomLayer())});    
+  }
+
+  std::cout << "++++++++++++++++++++++++++" << std::endl;
+  std::cout << "Número de boxes no set:" << via->getBoxes().size() << std::endl;
+  std::cout << "++++++++++++++++++++++++++" << std::endl;
+  //getBoxes???
+
+  props.push_back({"Is Rotated", via->isViaRotated()});
+
+  if (via->isViaRotated()) {
+    props.push_back({"Orientation", via->getOrient().getString()});
+    props.push_back({"Tech Via", gui->makeSelected(via->getTechVia())});
+    props.push_back({"Block Via", gui->makeSelected(via->getBlockVia())});
+  }
+
+  props.push_back({"Is Default", via->isDefault()});
+
+  return props;
+}
+
+Selected DbViaDescriptor::makeSelected(std::any object) const
+{
+  if (auto via = std::any_cast<odb::dbVia*>(&object)) {
+    return Selected(*via, this);
+  }
+  return Selected();
+}
+
+bool DbViaDescriptor::lessThan(std::any l, std::any r) const
+{
+  auto l_via = std::any_cast<odb::dbVia*>(l);
+  auto r_via = std::any_cast<odb::dbVia*>(r);
+  return l_via->getId() < r_via->getId();
+}
+
+bool DbViaDescriptor::getAllObjects(SelectionSet& objects) const
+{
+  auto chip = db_->getChip();
+  if (chip == nullptr) {
+    return false;
+  }
+  
+  auto block = chip->getBlock();
+  if (block == nullptr) {
+    return false;
+  }
+
+  for (auto via : block->getVias()) {
+    objects.insert(makeSelected(via));
+  }
+
   return true;
 }
 
