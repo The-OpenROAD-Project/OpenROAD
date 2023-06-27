@@ -155,7 +155,7 @@ class DisplayControlModel : public QStandardItemModel
 
 // This class shows the user the set of layers & objects that
 // they can control the visibility and selectablity of.  The
-// controls are show in a tree view to provide grouping of
+// controls are shown in a tree view to provide grouping of
 // related options.
 //
 // It also implements the Options interface so that other clients can
