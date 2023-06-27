@@ -69,6 +69,20 @@ If you are a **developer** with EDA background, learn more about how you
 can use OpenROAD as the infrastructure for your tools in the
 [Developer Guide](contrib/DeveloperGuide.md) section.
 
+## How to get in touch
+
+We maintain the following channels for communication:
+
+-   Project homepage and news: <https://theopenroadproject.org>
+-   Twitter: <https://twitter.com/OpenROAD_EDA>
+-   Issues and bugs:
+    -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/issues>
+-   Discussions:
+    -   OpenROAD: <https://github.com/The-OpenROAD-Project/OpenROAD/discussions>
+-   Inquiries: openroad@eng.ucsd.edu
+
+See also our [FAQs](user/FAQS.md).
+
 ## Site Map
 
 ```{tableofcontents}
