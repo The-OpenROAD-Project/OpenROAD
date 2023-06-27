@@ -58,6 +58,8 @@ using odb::dbTransform;
 void Opendp::initGridLayersMap()
 {
   int grid_index = 0;
+  grid_info_map_.clear();
+  grid_info_vector_.clear();
   for (auto db_row : block_->getRows()) {
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
@@ -206,6 +208,15 @@ Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
     return const_cast<Pixel*>(&grid_[grid_idx][grid_y][grid_x]);
   }
   return nullptr;
+}
+
+////////////////////////////////////////////////////////////////
+
+void Opendp::findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const
+{
+  overlaps.clear();
+  regions_rtree.query(boost::geometry::index::intersects(queryBox),
+                      std::back_inserter(overlaps));
 }
 
 ////////////////////////////////////////////////////////////////
@@ -502,6 +513,16 @@ void Opendp::groupInitPixels()
     GridInfo& grid_info = grid_info_map_[row_height];
     int grid_index = grid_info.grid_index;
     for (Rect& rect : group.regions) {
+      debugPrint(logger_,
+                 DPL,
+                 "detailed",
+                 1,
+                 "Group {} region [x{} y{}] [x{} y{}]",
+                 group.name,
+                 rect.xMin(),
+                 rect.yMin(),
+                 rect.xMax(),
+                 rect.yMax());
       int row_start = divCeil(rect.yMin(), row_height);
       int row_end = divFloor(rect.yMax(), row_height);
 
@@ -644,8 +665,8 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
           // However, if they do match, it means that we are trying to overwrite
           // a double-height cell placement, which is an error.
 
-          GridInfo grid_info_candidate = getGridInfo(pixel->cell);
-          if (grid_info_candidate.grid_index == layer.second.grid_index) {
+          pair<int, GridInfo> grid_info_candidate = getRowInfo(pixel->cell);
+          if (grid_info_candidate.first == layer.first) {
             // Occupied by a multi-height cell this should not happen.
             logger_->error(
                 DPL,
