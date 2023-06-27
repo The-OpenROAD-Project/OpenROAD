@@ -17,6 +17,11 @@ pipeline {
                 sh './etc/Build.sh -no-warnings';
               }
             }
+            stage('Check message IDs') {
+              steps {
+                sh 'cd src && ../etc/find_messages.py > messages.txt';
+              }
+            }
             stage('Test centos7 gcc8') {
               steps {
                 script {

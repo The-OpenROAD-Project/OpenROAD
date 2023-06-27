@@ -102,9 +102,6 @@ namespace odb {
     // User Code End Fields
     _{{klass.name}}(_dbDatabase*, const _{{klass.name}}& r);
     _{{klass.name}}(_dbDatabase*);
-    {% for constructor in klass.constructors %}
-      _{{klass.name}}(_dbDatabase*{% for arg in constructor.args %},{{arg.type}}{% endfor %});
-    {% endfor %}
     ~_{{klass.name}}();
     bool operator==(const _{{klass.name}}& rhs) const;
     bool operator!=(const _{{klass.name}}& rhs) const { return !operator==(rhs); }

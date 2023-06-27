@@ -32,6 +32,8 @@
 
 #include "dbTechLayerSpacingRule.h"
 
+#include <spdlog/fmt/ostr.h>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbTable.h"
@@ -717,66 +719,66 @@ void dbTechLayerSpacingRule::writeLef(lefout& writer) const
   bool except_same_pgnet;
   dbTechLayer* rulely;
 
-  fprintf(writer.out(), "    SPACING %g ", writer.lefdist(getSpacing()));
+  fmt::print(writer.out(), "    SPACING {:g} ", writer.lefdist(getSpacing()));
 
   if (getCutCenterToCenter()) {
-    fprintf(writer.out(), "    CENTERTOCENTER ");
+    fmt::print(writer.out(), "    CENTERTOCENTER ");
   }
 
   if (getCutSameNet()) {
-    fprintf(writer.out(), "    SAMENET ");
+    fmt::print(writer.out(), "    SAMENET ");
   }
 
   if (getCutParallelOverlap()) {
-    fprintf(writer.out(), "    PARALLELOVERLAP ");
+    fmt::print(writer.out(), "    PARALLELOVERLAP ");
   }
 
   if (getCutArea() > 0) {
-    fprintf(writer.out(), "    AREA %g ", writer.lefdist(getCutArea()));
+    fmt::print(writer.out(), "    AREA {:g} ", writer.lefdist(getCutArea()));
   }
 
   if (getRange(rmin, rmax)) {
-    fprintf(writer.out(),
-            "RANGE %g %g ",
-            writer.lefdist(rmin),
-            writer.lefdist(rmax));
+    fmt::print(writer.out(),
+               "RANGE {:g} {:g} ",
+               writer.lefdist(rmin),
+               writer.lefdist(rmax));
     if (hasUseLengthThreshold())
-      fprintf(writer.out(), "USELENGTHTHRESHOLD ");
+      fmt::print(writer.out(), "USELENGTHTHRESHOLD ");
     else if (getInfluence(length_or_influence)) {
-      fprintf(
-          writer.out(), "INFLUENCE %g ", writer.lefdist(length_or_influence));
+      fmt::print(
+          writer.out(), "INFLUENCE {:g} ", writer.lefdist(length_or_influence));
       if (getInfluenceRange(rmin, rmax))
-        fprintf(writer.out(),
-                "RANGE %g %g ",
-                writer.lefdist(rmin),
-                writer.lefdist(rmax));
+        fmt::print(writer.out(),
+                   "RANGE {:g} {:g} ",
+                   writer.lefdist(rmin),
+                   writer.lefdist(rmax));
     } else if (getRangeRange(rmin, rmax)) {
-      fprintf(writer.out(),
-              "RANGE %g %g ",
-              writer.lefdist(rmin),
-              writer.lefdist(rmax));
+      fmt::print(writer.out(),
+                 "RANGE {:g} {:g} ",
+                 writer.lefdist(rmin),
+                 writer.lefdist(rmax));
     }
   } else if (getLengthThreshold(length_or_influence)) {
-    fprintf(writer.out(),
-            "_dbTechLayerSpacingRule::LENGTHTHRESHOLD %g ",
-            writer.lefdist(length_or_influence));
+    fmt::print(writer.out(),
+               "_dbTechLayerSpacingRule::LENGTHTHRESHOLD {:g} ",
+               writer.lefdist(length_or_influence));
     if (getLengthThresholdRange(rmin, rmax))
-      fprintf(writer.out(),
-              "RANGE %g %g ",
-              writer.lefdist(rmin),
-              writer.lefdist(rmax));
+      fmt::print(writer.out(),
+                 "RANGE {:g} {:g} ",
+                 writer.lefdist(rmin),
+                 writer.lefdist(rmax));
   } else if (getCutLayer4Spacing(rulely)) {
-    fprintf(writer.out(), "LAYER %s ", rulely->getName().c_str());
+    fmt::print(writer.out(), "LAYER {} ", rulely->getName().c_str());
   } else if (getAdjacentCuts(numcuts,
                              length_or_influence,
                              cut_spacing,
                              except_same_pgnet)) {
-    fprintf(writer.out(),
-            "ADJACENTCUTS %d WITHIN %g ",
-            numcuts,
-            writer.lefdist(length_or_influence));
+    fmt::print(writer.out(),
+               "ADJACENTCUTS {} WITHIN {:g} ",
+               numcuts,
+               writer.lefdist(length_or_influence));
     if (except_same_pgnet) {
-      fprintf(writer.out(), "EXCEPTSAMEPGNET ");
+      fmt::print(writer.out(), "EXCEPTSAMEPGNET ");
     }
   } else {
     uint width, within, parallelSpace, parallelWithin;
@@ -787,21 +789,21 @@ void dbTechLayerSpacingRule::writeLef(lefout& writer) const
                parallelSpace,
                parallelWithin,
                twoEdges)) {
-      fprintf(writer.out(),
-              "ENDOFLINE %g WITHIN %g ",
-              writer.lefdist(width),
-              writer.lefdist(within));
+      fmt::print(writer.out(),
+                 "ENDOFLINE {:g} WITHIN {:g} ",
+                 writer.lefdist(width),
+                 writer.lefdist(within));
       if (parallelEdge) {
-        fprintf(writer.out(),
-                "PARALLELEDGE %g WITHIN %g ",
-                writer.lefdist(parallelSpace),
-                writer.lefdist(parallelWithin));
+        fmt::print(writer.out(),
+                   "PARALLELEDGE {:g} WITHIN {:g} ",
+                   writer.lefdist(parallelSpace),
+                   writer.lefdist(parallelWithin));
         if (twoEdges)
-          fprintf(writer.out(), " TWOEDGES ");
+          fmt::print(writer.out(), " TWOEDGES ");
       }
     }
   }
-  fprintf(writer.out(), " ;\n");
+  fmt::print(writer.out(), " ;\n");
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -836,11 +838,11 @@ void dbTechV55InfluenceEntry::writeLef(lefout& writer) const
   uint inf_width, inf_within, inf_spacing;
 
   getV55InfluenceEntry(inf_width, inf_within, inf_spacing);
-  fprintf(writer.out(),
-          "\n   WIDTH %g WITHIN %g SPACING %g",
-          writer.lefdist(inf_width),
-          writer.lefdist(inf_within),
-          writer.lefdist(inf_spacing));
+  fmt::print(writer.out(),
+             "\n   WIDTH {:g} WITHIN {:g} SPACING {:g}",
+             writer.lefdist(inf_width),
+             writer.lefdist(inf_within),
+             writer.lefdist(inf_spacing));
 }
 
 dbTechV55InfluenceEntry* dbTechV55InfluenceEntry::create(dbTechLayer* inly)

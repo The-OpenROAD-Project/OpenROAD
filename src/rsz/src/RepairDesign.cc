@@ -1234,6 +1234,11 @@ RepairDesign::makeRepeater(const char *reason,
     for (const Pin *pin : load_pins) {
       Port *port = network_->port(pin);
       Instance *inst = network_->instance(pin);
+
+      // do not disconnect/reconnect don't touch instances
+      if (resizer_->dontTouch(inst)) {
+        continue;
+      }
       sta_->disconnectPin(const_cast<Pin*>(pin));
       sta_->connectPin(inst, port, out_net);
     }

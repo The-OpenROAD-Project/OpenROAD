@@ -1,0 +1,73 @@
+{
+  "name":"dbPowerDomain",
+  "type":"dbObject",
+  "fields":[
+    {
+      "name":"_name",
+      "type":"char *",
+      "flags":["no-set"]
+    },
+    {
+      "name":"_next_entry",
+      "type":"dbId<_dbPowerDomain>",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name":"_elements",
+      "type":"dbVector<std::string>",
+      "flags":["no-set","no-get"]  
+    },
+    {
+      "name":"_power_switch",
+      "type":"dbVector<dbId<_dbPowerSwitch>>",
+      "flags":["no-set","no-get"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_isolation",
+      "type":"dbVector<dbId<_dbIsolation>>",
+      "flags":["no-set","no-get"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_group",
+      "type":"dbId<_dbGroup>",
+      "flags":["no-set"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_top",
+      "type":"bool",
+      "flags":[]
+    },
+    {
+      "name": "_parent",
+      "type": "dbId<_dbPowerDomain>",
+      "parent":"dbBlock"
+    },
+    {
+      "name": "_x1",
+      "type": "int",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name": "_x2",
+      "type": "int",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name": "_y1",
+      "type": "int",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name": "_y2",
+      "type": "int",
+      "flags":["no-set","no-get"]
+    } 
+  ],
+  "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbVector.h", "dbIsolation.h", "dbPowerSwitch.h", "dbModInst.h"],
+  "h_includes": [
+    "dbVector.h"
+  ]
+}

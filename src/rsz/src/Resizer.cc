@@ -1066,17 +1066,17 @@ Resizer::resizeWorstSlackDbNets()
   return nets;
 }
 
-std::pair<Slack, bool>
+std::optional<Slack>
 Resizer::resizeNetSlack(const Net *net)
 {
   auto it = net_slack_map_.find(net);
   if (it == net_slack_map_.end()) {
-    return {0, false};
+    return {};
   }
-  return {it->second, true};
+  return it->second;
 }
 
-std::pair<Slack, bool>
+std::optional<Slack>
 Resizer::resizeNetSlack(const dbNet *db_net)
 {
   const Net *net = db_network_->dbToSta(db_net);
