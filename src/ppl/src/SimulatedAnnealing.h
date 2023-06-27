@@ -84,8 +84,8 @@ class SimulatedAnnealing
 
   // annealing variables
   float init_temperature_ = 1.0;
-  int max_iterations_ = 1000;
-  int perturb_per_iter_ = 200;
+  int max_iterations_ = 2000;
+  int perturb_per_iter_ = 0;
   float alpha_ = 0.985;
   std::mt19937 generator_;
   std::uniform_real_distribution<float> distribution_;

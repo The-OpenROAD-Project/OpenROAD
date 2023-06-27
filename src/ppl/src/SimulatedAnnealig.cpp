@@ -47,6 +47,7 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
 {
   num_slots_ = slots.size();
   num_pins_ = netlist->numIOPins();
+  perturb_per_iter_ = static_cast<int>(num_pins_ * 0.8);
 }
 
 void SimulatedAnnealing::init()
