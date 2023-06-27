@@ -590,7 +590,7 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     QRectF instance_bbox_in_px = viewer_->dbuToScreen(instance_box);
 
     QRectF text_bounding_box = font_metrics.boundingRect(name);
-    
+
     bool do_rotate = false;
     if (text_bounding_box.width()
         > rotation_limit * instance_bbox_in_px.width()) {
@@ -692,10 +692,10 @@ void RenderThread::drawITermLabels(QPainter* painter,
 
     for (auto inst_iterm : inst->getITerms()) {
       Rect iterm_box = inst_iterm->getBBox();
-      
+
       QString name = inst_iterm->getMTerm()->getConstName();
       QRectF iterm_bbox_in_px = viewer_->dbuToScreen(iterm_box);
-      
+
       QRectF text_bounding_box = font_metrics.boundingRect(name);
 
       bool do_rotate = false;
@@ -708,7 +708,8 @@ void RenderThread::drawITermLabels(QPainter* painter,
         }
       }
 
-      qreal text_height_check = non_core_scale_limit * text_bounding_box.height();
+      qreal text_height_check
+          = non_core_scale_limit * text_bounding_box.height();
       // don't show text if it's more than "non_core_scale_limit" of cell
       // height/width this keeps text from dominating the cell size
       if (!do_rotate && text_height_check > iterm_bbox_in_px.height()) {
@@ -717,7 +718,7 @@ void RenderThread::drawITermLabels(QPainter* painter,
       if (do_rotate && text_height_check > iterm_bbox_in_px.width()) {
         continue;
       }
-      
+
       if (do_rotate) {
         name = font_metrics.elidedText(
             name, Qt::ElideLeft, size_limit * iterm_bbox_in_px.height());
