@@ -142,7 +142,11 @@ std::vector<int> SimulatedAnnealing::perturbAssignment()
 std::vector<int> SimulatedAnnealing::swapPins(
     const std::vector<int>& pin_assignment)
 {
-  std::vector<int> assignment;
+  std::vector<int> assignment = pin_assignment;
+
+  const int idx1 = (int) (std::floor(distribution_(generator_) * num_pins_));
+  const int idx2 = (int) (std::floor(distribution_(generator_) * num_pins_));
+  std::swap(assignment[idx1], assignment[idx2]);
 
   return assignment;
 }
