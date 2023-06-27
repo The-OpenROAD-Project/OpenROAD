@@ -25,6 +25,14 @@ from helper import (
     std,
 )
 
+def get_json_files(directory):
+    json_files = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith('.json'):
+                json_files.append(os.path.join(root, file))
+    return json_files
+
 parser = argparse.ArgumentParser(description="Code generator")
 parser.add_argument("--json", action="store", required=True)
 parser.add_argument("--src_dir", action="store", required=True)
@@ -63,6 +71,11 @@ toBeMerged = []
 
 print("###################Code Generation Begin###################")
 add_once_to_dict(["classes", "iterators", "relations"], schema)
+
+for file_path in get_json_files(schema['classes_dir']):
+    with open(file_path, encoding="ascii") as file:
+        klass = json.load(file)
+    schema["classes"].append(klass)
 
 for i, klass in enumerate(schema["classes"]):
     if "src" in klass:
