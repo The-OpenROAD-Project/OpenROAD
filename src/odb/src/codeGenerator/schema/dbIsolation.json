@@ -1,0 +1,56 @@
+{
+  "name":"dbIsolation",
+  "type":"dbObject",
+  "fields":[
+    {
+      "name":"_name",
+      "type":"char *",
+      "flags":["no-set"]
+    },
+    {
+      "name":"_next_entry",
+      "type":"dbId<_dbIsolation>",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name":"_applies_to",
+      "type":"std::string",
+      "flags":["no-set"]
+    },
+    {
+      "name":"_clamp_value",
+      "type":"std::string",
+      "flags":["no-set"]
+    },
+    {
+      "name":"_isolation_signal",
+      "type":"std::string",
+      "flags":["no-set"]
+    },
+    {
+      "name":"_isolation_sense",
+      "type":"std::string",
+      "flags":["no-set"]
+    },
+    {
+      "name":"_location",
+      "type":"std::string",
+      "flags":["no-set"]
+    },
+    {
+      "name": "_isolation_cells", 
+      "type": "dbVector<std::string>",
+      "flags": ["no-get", "no-set"]
+    },
+    {
+      "name":"_power_domain",
+      "type":"dbId<_dbPowerDomain>",
+      "flags":[],
+      "parent":"dbBlock"
+    }
+  ],
+  "cpp_includes":["dbBlock.h","dbHashTable.hpp", "dbPowerDomain.h", "dbNet.h", "dbMaster.h"],
+  "h_includes": [
+    "dbVector.h"
+  ]
+}

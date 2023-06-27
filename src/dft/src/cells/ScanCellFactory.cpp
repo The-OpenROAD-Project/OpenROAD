@@ -135,7 +135,7 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
 
   if (!clock_domain) {
     logger->warn(utl::DFT,
-                 4,
+                 5,
                  "Cell '{:s}' doesn't have a valid clock connected. Can't "
                  "create a scan cell",
                  inst->getName());
@@ -145,7 +145,7 @@ std::unique_ptr<OneBitScanCell> CreateOneBitCell(odb::dbInst* inst,
   if (!test_cell) {
     logger->warn(
         utl::DFT,
-        5,
+        7,
         "Cell '{:s}' is not a scan cell. Can't use it for scan architect",
         inst->getName());
     return nullptr;

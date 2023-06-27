@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -43,10 +43,6 @@ struct defiPoints
   int numPoints;
   int* x;
   int* y;
-
-  defiPoints();
-  DEF_COPY_CONSTRUCTOR_H(defiPoints);
-  DEF_ASSIGN_OPERATOR_H(defiPoints);
 };
 
 class defiGeometries

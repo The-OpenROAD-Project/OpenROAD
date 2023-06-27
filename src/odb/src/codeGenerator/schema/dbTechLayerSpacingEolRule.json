@@ -368,7 +368,5 @@
       "name": "notch_length_",
       "default": 0
     }
-  ],
-  "constructors": [],
-  "enums": []
+  ]
 }

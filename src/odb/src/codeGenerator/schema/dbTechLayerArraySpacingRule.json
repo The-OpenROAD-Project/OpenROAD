@@ -56,12 +56,8 @@
       "parent": "dbTechLayer"
     }
   ],
-  "constructors": [],
-  "enums": [
-  ],
   "cpp_includes": [
     "dbTechLayer.h",
     "dbTechLayerCutClassRule.h"
-  ],
-  "h_includes": []
+  ]
 }

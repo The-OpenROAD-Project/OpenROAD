@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -338,8 +338,7 @@ static int defwUnusedCount[100];
 int defwCountFunc(defwCallbackType_e e, defiUserData d)
 {
   int i = (int) e;
-  if (defiDebug(23))
-    printf("count %d 0x%p\n", (int) e, d);
+
   if (i >= 0 && i < 100) {
     defwUnusedCount[i] += 1;
     return 0;
