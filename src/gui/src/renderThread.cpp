@@ -640,7 +640,7 @@ void RenderThread::drawInstanceNames(QPainter* painter,
 
 // Draw the instances ITerm names
 void RenderThread::drawITermLabels(QPainter* painter,
-                                     const std::vector<odb::dbInst*>& insts)
+                                   const std::vector<odb::dbInst*>& insts)
 {
   if (!viewer_->options_->areInstanceITermsVisible()) {
     return;
