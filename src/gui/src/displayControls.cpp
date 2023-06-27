@@ -985,9 +985,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       item_color = &region_color_;
       item_pattern = &region_pattern_;
     } else if (color_item == instance_shapes_.names.swatch) {
-      item_color = &instance_name_color_; 
+      item_color = &instance_name_color_;
     } else if (color_item == instance_shapes_.iterm_labels.swatch) {
-      item_color = &iterm_label_color_; 
+      item_color = &iterm_label_color_;
     } else if (color_item == rulers_.swatch) {
       item_color = &ruler_color_;
     } else {

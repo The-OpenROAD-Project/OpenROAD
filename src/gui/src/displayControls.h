@@ -533,7 +533,6 @@ class DisplayControls : public QDockWidget,
   QColor iterm_label_color_;
   QFont iterm_label_font_;
 
-
   QColor ruler_color_;
   QFont ruler_font_;
 
