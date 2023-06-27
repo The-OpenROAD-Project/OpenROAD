@@ -253,6 +253,7 @@ class Opendp
 
   void initGrid();
   void initGridLayersMap();
+  std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
   Point nearestPt(const Cell* cell, const Rect* rect) const;
   int distToRect(const Cell* cell, const Rect* rect) const;
@@ -350,6 +351,7 @@ class Opendp
   Cell* checkOverlap(Cell& cell) const;
   Cell* checkOneSiteGaps(Cell& cell) const;
   bool overlap(const Cell* cell1, const Cell* cell2) const;
+  bool checkRegionPlacement(const Cell* cell) const;
   bool isOverlapPadded(const Cell* cell1, const Cell* cell2) const;
   bool isCrWtBlClass(const Cell* cell) const;
   bool isWtClass(const Cell* cell) const;

@@ -61,7 +61,8 @@ using std::vector;
 
 using utl::DPL;
 
-std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox)
+std::string Opendp::printBgBox(
+    const boost::geometry::model::box<bgPoint>& queryBox)
 {
   return fmt::format("({0}, {1}) - ({2}, {3})",
                      queryBox.min_corner().x(),
