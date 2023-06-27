@@ -439,6 +439,9 @@ DisplayControls::DisplayControls(QWidget* parent)
   instance_name_font_ = QApplication::font();  // use default font
   instance_name_color_ = Qt::yellow;
 
+  iterm_label_font_ = QApplication::font();  // use default font
+  iterm_label_color_ = Qt::yellow;
+
   auto instance_shape
       = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked);
   makeLeafItem(instance_shapes_.names,
@@ -453,13 +456,17 @@ DisplayControls::DisplayControls(QWidget* parent)
                instance_shape,
                Qt::Unchecked,
                false,
-               instance_name_color_);
+               iterm_label_color_);
   makeLeafItem(
       instance_shapes_.blockages, "Blockages", instance_shape, Qt::Checked);
   toggleParent(misc_.instances);
   setNameItemDoubleClickAction(instance_shapes_.names, [this]() {
     instance_name_font_ = QFontDialog::getFont(
         nullptr, instance_name_font_, this, "Instance name font");
+  });
+  setNameItemDoubleClickAction(instance_shapes_.iterm_labels, [this]() {
+    iterm_label_font_ = QFontDialog::getFont(
+        nullptr, iterm_label_font_, this, "Instance ITerm name font");
   });
 
   region_color_ = QColor(0x70, 0x70, 0x70, 0x70);  // semi-transparent mid-gray
@@ -657,6 +664,7 @@ void DisplayControls::readSettings(QSettings* settings)
       blockages_.blockages, placement_blockage_color_, "blockages_placement");
   getColor(rulers_, ruler_color_, "ruler");
   getColor(instance_shapes_.names, instance_name_color_, "instance_name");
+  getColor(instance_shapes_.iterm_labels, iterm_label_color_, "iterm_label");
   getColor(misc_.regions, region_color_, "region");
   settings->endGroup();
   settings->beginGroup("pattern");
@@ -667,6 +675,7 @@ void DisplayControls::readSettings(QSettings* settings)
   getFont(pin_markers_font_, "pin_markers");
   getFont(ruler_font_, "ruler");
   getFont(instance_name_font_, "instance_name");
+  getFont(iterm_label_font_, "iterm_label");
   settings->endGroup();
   settings->endGroup();
 
@@ -727,6 +736,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("blockages_placement", placement_blockage_color_);
   settings->setValue("ruler", ruler_color_);
   settings->setValue("instance_name", instance_name_color_);
+  settings->setValue("iterm_label", iterm_label_color_);
   settings->setValue("region", region_color_);
   settings->endGroup();
   settings->beginGroup("pattern");
@@ -739,6 +749,7 @@ void DisplayControls::writeSettings(QSettings* settings)
   settings->setValue("pin_markers", pin_markers_font_);
   settings->setValue("ruler", ruler_font_);
   settings->setValue("instance_name", instance_name_font_);
+  settings->setValue("iterm_label", iterm_label_font_);
   settings->endGroup();
   settings->endGroup();
 
@@ -974,7 +985,9 @@ void DisplayControls::displayItemDblClicked(const QModelIndex& index)
       item_color = &region_color_;
       item_pattern = &region_pattern_;
     } else if (color_item == instance_shapes_.names.swatch) {
-      item_color = &instance_name_color_;
+      item_color = &instance_name_color_; 
+    } else if (color_item == instance_shapes_.iterm_labels.swatch) {
+      item_color = &iterm_label_color_; 
     } else if (color_item == rulers_.swatch) {
       item_color = &ruler_color_;
     } else {
@@ -1345,6 +1358,16 @@ QFont DisplayControls::instanceNameFont()
   return instance_name_font_;
 }
 
+QColor DisplayControls::itermLabelColor()
+{
+  return iterm_label_color_;
+}
+
+QFont DisplayControls::itermLabelFont()
+{
+  return iterm_label_font_;
+}
+
 bool DisplayControls::isModelRowVisible(
     const DisplayControls::ModelRow* row) const
 {
@@ -1511,7 +1534,7 @@ bool DisplayControls::areInstancePinsVisible()
   return isModelRowVisible(&instance_shapes_.pins);
 }
 
-bool DisplayControls::areInstanceItermsVisible()
+bool DisplayControls::areInstanceITermsVisible()
 {
   return isModelRowVisible(&instance_shapes_.iterm_labels);
 }

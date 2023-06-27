@@ -58,6 +58,8 @@ class Options
   virtual Qt::BrushStyle regionPattern() = 0;
   virtual QColor instanceNameColor() = 0;
   virtual QFont instanceNameFont() = 0;
+  virtual QColor itermLabelColor() = 0;
+  virtual QFont itermLabelFont() = 0;
   virtual QColor siteColor(odb::dbSite* site) = 0;
   virtual bool isVisible(const odb::dbTechLayer* layer) = 0;
   virtual bool isSelectable(const odb::dbTechLayer* layer) = 0;

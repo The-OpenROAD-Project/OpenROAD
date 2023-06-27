@@ -649,12 +649,12 @@ void RenderThread::drawITermLabels(QPainter* painter,
   const int minimum_size = viewer_->coarseViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
-  const QColor text_color = viewer_->options_->instanceNameColor();
+  const QColor text_color = viewer_->options_->itermLabelColor();
   painter->setPen(QPen(text_color, 0));
   painter->setBrush(QBrush(text_color));
 
   const QFont initial_font = painter->font();
-  const QFont text_font = viewer_->options_->instanceNameFont();
+  const QFont text_font = viewer_->options_->itermLabelFont();
   const QFontMetricsF font_metrics(text_font);
 
   // minimum pixel height for text (10px)

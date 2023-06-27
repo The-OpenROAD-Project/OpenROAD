@@ -203,6 +203,8 @@ class DisplayControls : public QDockWidget,
   Qt::BrushStyle regionPattern() override;
   QColor instanceNameColor() override;
   QFont instanceNameFont() override;
+  QColor itermLabelColor() override;
+  QFont itermLabelFont() override;
   QColor siteColor(odb::dbSite* site) override;
   bool isVisible(const odb::dbTechLayer* layer) override;
   bool isSelectable(const odb::dbTechLayer* layer) override;
@@ -528,6 +530,9 @@ class DisplayControls : public QDockWidget,
 
   QColor instance_name_color_;
   QFont instance_name_font_;
+  QColor iterm_label_color_;
+  QFont iterm_label_font_;
+
 
   QColor ruler_color_;
   QFont ruler_font_;
