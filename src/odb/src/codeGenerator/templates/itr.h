@@ -39,31 +39,34 @@
 // User Code End Includes
 
 namespace odb {
-
   class _{{itr.parentObject}};
+
   template <class T>
   class dbTable;
+
   //User Code Begin classes
   //User Code End classes
+
   class {{itr.name}} : public dbIterator
   {
-    dbTable<_{{itr.parentObject}}>* _{{itr.tableName}};
-    // User Code Begin Fields
-    // User Code End Fields
   public:
     {{itr.name}}(dbTable<_{{itr.parentObject}}>* {{itr.tableName}}) { _{{itr.tableName}} = {{itr.tableName}}; }
 
-    bool      reversible();
-    bool      orderReversed();
-    void      reverse(dbObject* parent);
-    uint      sequential();
-    uint      size(dbObject* parent);
-    uint      begin(dbObject* parent);
-    uint      end(dbObject* parent);
-    uint      next(uint id, ...);
-    dbObject* getObject(uint id, ...);
+    bool      reversible() override;
+    bool      orderReversed() override;
+    void      reverse(dbObject* parent) override;
+    uint      sequential() override;
+    uint      size(dbObject* parent) override;
+    uint      begin(dbObject* parent) override;
+    uint      end(dbObject* parent) override;
+    uint      next(uint id, ...) override;
+    dbObject* getObject(uint id, ...) override;
     // User Code Begin Methods
     // User Code End Methods
+  private:
+    dbTable<_{{itr.parentObject}}>* _{{itr.tableName}};
+    // User Code Begin Fields
+    // User Code End Fields
   };
 
   

@@ -61,10 +61,8 @@ bool {{itr.name}}::orderReversed()
 
 void {{itr.name}}::reverse(dbObject* parent)
 {
-
   //User Code Begin reverse
   //User Code End reverse
-
 }
 
 uint {{itr.name}}::sequential()
@@ -86,11 +84,8 @@ uint {{itr.name}}::size(dbObject* parent)
 
 uint {{itr.name}}::begin(dbObject* parent)
 {
-
-
   //User Code Begin begin
   //User Code End begin
-
 }
 
 uint {{itr.name}}::end(dbObject* /* unused: parent */)
@@ -100,7 +95,6 @@ uint {{itr.name}}::end(dbObject* /* unused: parent */)
 
 uint {{itr.name}}::next(uint id, ...)
 {
-
   //User Code Begin next
   //User Code End next
 }

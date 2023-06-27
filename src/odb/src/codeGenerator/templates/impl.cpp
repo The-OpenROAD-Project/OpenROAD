@@ -44,7 +44,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
   template class dbTable<_{{klass.name}}>; 
     
   bool _{{klass.name}}::operator==(const _{{klass.name}}& rhs) const
@@ -64,11 +63,7 @@ namespace odb {
             {% endif %}
           {% endfor %}
         {% endfor %}
-
-
-
       {% else %}
-
         {% for component in field.components %}
           {% if 'no-cmp' not in field.flags %}
             {% if field.table %}
@@ -82,34 +77,24 @@ namespace odb {
       {% endif %}
     {% endfor %}
 
-
-
-
     //User Code Begin ==
     //User Code End ==
     return true;
   }
+
   bool _{{klass.name}}::operator<(const _{{klass.name}}& rhs) const
   {
-
-
-
-
     {% for field in klass.fields %}
       {% if field.bitFields %}
         {% for innerField in klass.structs[0].fields %}
           {% for component in innerField.components %}
             {% if 'cmpgt' in innerField.flags %}
-            
               if({{field.name}}.{{component}}>=rhs.{{field.name}}.{{component}})
                 return false;
-              
             {% endif %}
           {% endfor %}
         {% endfor %}
-        
       {% else %}
-        
         {% for component in field.components %}
           {% if 'cmpgt' in field.flags %}
             if({{component}}>=rhs.{{component}})
@@ -123,11 +108,10 @@ namespace odb {
     //User Code End <
     return true;
   }
+
   void _{{klass.name}}::differences(dbDiff& diff, const char* field, const _{{klass.name}}& rhs) const
   {
-
-    DIFF_BEGIN
-    
+    DIFF_BEGIN   
     {% for field in klass.fields %}
       {% if field.bitFields %}
         {% for innerField in klass.structs[0].fields %}
@@ -155,6 +139,7 @@ namespace odb {
     // User Code End Differences
     DIFF_END
   }
+
   void _{{klass.name}}::out(dbDiff& diff, char side, const char* field) const
   {
     DIFF_OUT_BEGIN
@@ -186,6 +171,7 @@ namespace odb {
     // User Code End Out
     DIFF_END
   }
+
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db)
   {
     {% for field in klass.fields %}
@@ -207,6 +193,7 @@ namespace odb {
     // User Code Begin Constructor
     // User Code End Constructor
   }
+
   _{{klass.name}}::_{{klass.name}}(_dbDatabase* db, const _{{klass.name}}& r)
   {
     {% for field in klass.fields %}
@@ -247,6 +234,7 @@ namespace odb {
     //User Code End >>
     return stream;
   }
+
   dbOStream& operator<<(dbOStream& stream, const _{{klass.name}}& obj)
   {
     {% for field in klass.fields %}
@@ -289,6 +277,7 @@ namespace odb {
     return getTable()->getObjectTable(type);
   }
   {% endif %}
+
   _{{klass.name}}::~_{{klass.name}}()
   {
     {% for field in klass.fields %}
@@ -369,10 +358,7 @@ namespace odb {
     {% endif %}
   {% endfor %}
 
-
-
   {% for _struct in klass.structs %}
-  
     {%  if  _struct.in_class %}
       {% for field in _struct.fields %}
       
@@ -400,7 +386,6 @@ namespace odb {
       {% endfor %}
     {% endif %}
   {% endfor %}
-
 
   //User Code Begin {{klass.name}}PublicMethods
   //User Code End {{klass.name}}PublicMethods
