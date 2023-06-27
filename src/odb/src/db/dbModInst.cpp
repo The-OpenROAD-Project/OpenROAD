@@ -45,29 +45,22 @@
 #include "dbGroup.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbModInst>;
 
 bool _dbModInst::operator==(const _dbModInst& rhs) const
 {
   if (_name != rhs._name)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
-
   if (_parent != rhs._parent)
     return false;
-
   if (_module_next != rhs._module_next)
     return false;
-
   if (_master != rhs._master)
     return false;
-
   if (_group_next != rhs._group_next)
     return false;
-
   if (_group != rhs._group)
     return false;
 
@@ -75,6 +68,7 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbModInst::operator<(const _dbModInst& rhs) const
 {
   // User Code Begin <
@@ -83,12 +77,12 @@ bool _dbModInst::operator<(const _dbModInst& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbModInst::differences(dbDiff& diff,
                              const char* field,
                              const _dbModInst& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_parent);
@@ -100,6 +94,7 @@ void _dbModInst::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbModInst::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -115,6 +110,7 @@ void _dbModInst::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbModInst::_dbModInst(_dbDatabase* db)
 {
   // User Code Begin Constructor
@@ -126,6 +122,7 @@ _dbModInst::_dbModInst(_dbDatabase* db)
   _group_next = 0;
   // User Code End Constructor
 }
+
 _dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
 {
   _name = r._name;
@@ -152,6 +149,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
 {
   stream << obj._name;

@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -62,16 +61,11 @@ class _dbTechLayerEolExtensionRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerEolExtensionRuleFlags flags_;
-  int spacing_;
-  dbVector<std::pair<int, int>> extension_tbl_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerEolExtensionRule(_dbDatabase*,
                                const _dbTechLayerEolExtensionRule& r);
   _dbTechLayerEolExtensionRule(_dbDatabase*);
   ~_dbTechLayerEolExtensionRule();
+
   bool operator==(const _dbTechLayerEolExtensionRule& rhs) const;
   bool operator!=(const _dbTechLayerEolExtensionRule& rhs) const
   {
@@ -84,6 +78,13 @@ class _dbTechLayerEolExtensionRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  dbTechLayerEolExtensionRuleFlags flags_;
+  int spacing_;
+  dbVector<std::pair<int, int>> extension_tbl_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolExtensionRule& obj);
 dbOStream& operator<<(dbOStream& stream,

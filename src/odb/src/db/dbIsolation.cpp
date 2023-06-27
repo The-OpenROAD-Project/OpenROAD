@@ -46,32 +46,24 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbIsolation>;
 
 bool _dbIsolation::operator==(const _dbIsolation& rhs) const
 {
   if (_name != rhs._name)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
-
   if (_applies_to != rhs._applies_to)
     return false;
-
   if (_clamp_value != rhs._clamp_value)
     return false;
-
   if (_isolation_signal != rhs._isolation_signal)
     return false;
-
   if (_isolation_sense != rhs._isolation_sense)
     return false;
-
   if (_location != rhs._location)
     return false;
-
   if (_power_domain != rhs._power_domain)
     return false;
 
@@ -79,18 +71,19 @@ bool _dbIsolation::operator==(const _dbIsolation& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbIsolation::operator<(const _dbIsolation& rhs) const
 {
   // User Code Begin <
   // User Code End <
   return true;
 }
+
 void _dbIsolation::differences(dbDiff& diff,
                                const char* field,
                                const _dbIsolation& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_applies_to);
@@ -103,6 +96,7 @@ void _dbIsolation::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -119,11 +113,13 @@ void _dbIsolation::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbIsolation::_dbIsolation(_dbDatabase* db)
 {
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbIsolation::_dbIsolation(_dbDatabase* db, const _dbIsolation& r)
 {
   _name = r._name;
@@ -153,6 +149,7 @@ dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj)
 {
   stream << obj._name;

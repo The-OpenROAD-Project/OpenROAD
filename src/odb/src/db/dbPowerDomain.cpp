@@ -50,35 +50,26 @@
 #include "dbGroup.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbPowerDomain>;
 
 bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
 {
   if (_name != rhs._name)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
-
   if (_group != rhs._group)
     return false;
-
   if (_top != rhs._top)
     return false;
-
   if (_parent != rhs._parent)
     return false;
-
   if (_x1 != rhs._x1)
     return false;
-
   if (_x2 != rhs._x2)
     return false;
-
   if (_y1 != rhs._y1)
     return false;
-
   if (_y2 != rhs._y2)
     return false;
 
@@ -86,18 +77,19 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbPowerDomain::operator<(const _dbPowerDomain& rhs) const
 {
   // User Code Begin <
   // User Code End <
   return true;
 }
+
 void _dbPowerDomain::differences(dbDiff& diff,
                                  const char* field,
                                  const _dbPowerDomain& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_group);
@@ -111,6 +103,7 @@ void _dbPowerDomain::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -128,11 +121,13 @@ void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)
 {
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
 {
   _name = r._name;
@@ -166,6 +161,7 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
 {
   stream << obj._name;

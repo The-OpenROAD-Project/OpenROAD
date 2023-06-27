@@ -53,7 +53,6 @@
 #include "dbRegion.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbGroup>;
 
 bool _dbGroup::operator==(const _dbGroup& rhs) const
@@ -63,31 +62,22 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
 
   if (_name != rhs._name)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
-
   if (_group_next != rhs._group_next)
     return false;
-
   if (_parent_group != rhs._parent_group)
     return false;
-
   if (_insts != rhs._insts)
     return false;
-
   if (_modinsts != rhs._modinsts)
     return false;
-
   if (_groups != rhs._groups)
     return false;
-
   if (region_next_ != rhs.region_next_)
     return false;
-
   if (region_prev_ != rhs.region_prev_)
     return false;
-
   if (region_ != rhs.region_)
     return false;
 
@@ -100,6 +90,7 @@ bool _dbGroup::operator==(const _dbGroup& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbGroup::operator<(const _dbGroup& rhs) const
 {
   // User Code Begin <
@@ -110,12 +101,12 @@ bool _dbGroup::operator<(const _dbGroup& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbGroup::differences(dbDiff& diff,
                            const char* field,
                            const _dbGroup& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_._type);
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
@@ -133,6 +124,7 @@ void _dbGroup::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbGroup::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -154,6 +146,7 @@ void _dbGroup::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbGroup::_dbGroup(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -161,6 +154,7 @@ _dbGroup::_dbGroup(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbGroup::_dbGroup(_dbDatabase* db, const _dbGroup& r)
 {
   flags_._type = r.flags_._type;
@@ -201,6 +195,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGroup& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
