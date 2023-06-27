@@ -17,14 +17,14 @@ help:
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
-	./getMessages.sh
+	./getMessages.py
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	rm -f main
 	./revert-links.py
 	
 
 checklinks:
-	./getMessages.sh
+	./getMessages.py
 	$(SPHINXBUILD) -b linkcheck "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) || echo
 	@echo
 	@echo "Check finished. Report is in $(BUILDDIR)."

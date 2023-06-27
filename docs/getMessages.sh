@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 python ../etc/find_messages.py -d ../src > user/Messages.md
 
 input_file="user/Messages.md"
