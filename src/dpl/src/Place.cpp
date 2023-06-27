@@ -948,7 +948,7 @@ bool Opendp::checkRegionOverlap(const Cell* cell,
     // if we are here, then the overlap size is either 0 or > 1
     // both are invalid. The overlap size should be 1
     return false;
-  } else if (!result.empty()) {  // cell doesn't have a region, so it
+  } if (!result.empty()) {  // cell doesn't have a region, so it
                                  // should be placed outside of all
                                  // regions. So ther overalp must be zero
 
