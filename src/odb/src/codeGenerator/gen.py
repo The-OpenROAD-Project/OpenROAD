@@ -5,6 +5,7 @@ import argparse
 import os
 import shutil
 import json
+import logging
 from parser import Parser
 from jinja2 import Environment, FileSystemLoader
 from helper import (
@@ -29,6 +30,8 @@ parser.add_argument("--json", action="store", required=True)
 parser.add_argument("--src_dir", action="store", required=True)
 parser.add_argument("--include_dir", action="store", required=True)
 parser.add_argument("--templates", action="store", required=True)
+parser.add_argument("--log", action="store", default="INFO")
+parser.add_argument("--keep", action="store_true")
 
 args = parser.parse_args()
 
@@ -36,6 +39,13 @@ src = args.json
 srcDir = args.src_dir
 includeDir = args.include_dir
 templates = args.templates
+loglevel = args.log
+keep_generated = args.keep
+
+numeric_level = getattr(logging, loglevel.upper(), None)
+if not isinstance(numeric_level, int):
+    raise ValueError('Invalid log level: %s' % loglevel)
+logging.basicConfig(level=numeric_level)
 
 with open(src, encoding="ascii") as file:
     schema = json.load(file)
@@ -108,6 +118,7 @@ for relation in schema["relations"]:
     schema["classes"][parent]["cpp_includes"].extend(
         [f"{relation['second']}.h", "dbSet.h"]
     )
+    logging.debug(f"Add relation field {inParentField['name']} to {relation['first']}")
 
     child_type_name = f"_{relation['second']}"
 
@@ -131,6 +142,8 @@ for relation in schema["relations"]:
         inChildNextEntry["type"] = "dbId<_" + relation["second"] + ">"
         inChildNextEntry["flags"] = ["cmp", "serial", "diff", "private", "no-deep"]
         schema["classes"][child]["fields"].append(inChildNextEntry)
+        logging.debug(f"Add hash field {inParentHashField['name']} to {relation['first']}")
+        logging.debug(f"Add hash field {inChildNextEntry['name']} to {relation['second']}")
 
 
 for klass in schema["classes"]:
@@ -237,8 +250,6 @@ for klass in schema["classes"]:
             field["setterArgumentType"] = field["getterReturnType"] = field["type"]
 
     klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
-
-    klass["fields"] = [field for field in klass["fields"] if "bits" not in field]
     total_num_bits = flag_num_bits
     if flag_num_bits > 0 and flag_num_bits % 32 != 0:
         spare_bits_field = {
@@ -330,5 +341,10 @@ for item in toBeMerged:
         if retcode != 0:
             print(f"Failed to format {os.path.join(dr, item)}")
     print("Generated: ", os.path.join(dr, item))
-shutil.rmtree("generated")
+
+with open("generated/final.json", "w") as outfile:
+    outfile.write(json.dumps(schema, indent=2))
+
+if not keep_generated:
+    shutil.rmtree("generated")
 print("###################Code Generation End###################")
