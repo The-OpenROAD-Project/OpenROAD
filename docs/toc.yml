@@ -1,5 +1,7 @@
 root: index
 entries:
+- file: main/README
+  title: Getting Started with OpenROAD App
 
 - file: main/CODE_OF_CONDUCT
   title: Code of Conduct
@@ -17,10 +19,6 @@ entries:
     title: Logger
   - file: contrib/CI
     title: CI
-
-
-- file: main/README
-  title: Getting Started with OpenROAD App
 
 - file: main/src/README
   title: OpenROAD Tools and Tcl Commands
