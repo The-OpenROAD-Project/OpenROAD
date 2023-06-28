@@ -95,6 +95,7 @@ html_theme = "sphinx_book_theme"
 html_theme_options = {
     "repository_url": "https://github.com/The-OpenROAD-Project/OpenROAD",
     "repository_branch": "master",
+    "show_navbar_depth": 2,
     "use_edit_page_button": True,
     "use_source_button": True,
     "use_issues_button": True,
