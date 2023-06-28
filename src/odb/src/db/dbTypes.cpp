@@ -33,7 +33,7 @@
 #include "dbTypes.h"
 
 #include <ctype.h>
-#include <string.h>
+#include <cstring>
 
 #include "dbId.h"
 

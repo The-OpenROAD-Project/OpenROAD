@@ -32,7 +32,7 @@
 
 #pragma once
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include <stdexcept>
 

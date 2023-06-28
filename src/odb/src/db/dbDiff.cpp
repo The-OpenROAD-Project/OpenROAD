@@ -32,7 +32,7 @@
 
 #include "dbDiff.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 
 namespace odb {
 
