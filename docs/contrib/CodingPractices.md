@@ -2,14 +2,10 @@
 
 List of coding practices.
 
----
-**NOTE**
-
-This is a compilation of many idioms in OpenROAD code that I consider
-undesirable. Obviously other programmers have different opinions or they
-would not be so pervasive. James Cherry 04/2020
-
----
+:::{Note}
+This is a compilation of many idioms in OpenROAD code that is considered undesirable. Obviously other programmers have different opinions or they
+would not be so pervasive. 
+:::
 
 ## C++
 

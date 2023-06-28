@@ -224,25 +224,33 @@ toolize [-key1 key1] [-flag1] positional_argument1
 Tool commands should be documented in the top-level OpenROAD `README.md`
 file. Detailed documentation should be the `tool/README.md` file.
 
-## Tool Flow
+## Tool Flow Namespace
 
-- Verilog to DB (dbSTA)
-- Floorplan initialization (OpenROAD)
-- I/O placement (ioPlacer)
-- PDN generation (pdngen)
-- I/O placement (ioPlacer)
-- Tapcell and welltie insertion (tapcell)
-- Macro placement (TritonMacroPlace)
-- Global placement (RePlAce)
-- Gate resizing and buffering (Resizer)
-- Detailed placement (OpenDP)
-- Clock tree synthesis (TritonCTS)
-- Repair hold violations (Resizer)
-- Global route (FastRoute)
-- Antenna check (OpenROAD)
-- Detailed route (TritonRoute)
-- Metal fill insertion (OpenROAD)
-- Final timing/power report (OpenSTA)
+Tool namespaces are usually three-lettered lowercase letters. 
+
+- Verilog to DB ([dbSTA](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dbSta))
+- OpenDB ([odb](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/odb))
+- TritonPart: constraints-driven paritioner ([par](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/par))
+- Floorplan Initialization ([ifp](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ifp))
+- I/O Padding ([pad](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pad))
+- I/O Placement ([ppl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ppl))
+- PDN Generation ([pdn](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn))
+- Tapcell and Welltie Insertion ([tap](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/tap))
+- Triton Macro Placer ([mpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/mpl))
+- Hierarchical Automatic Macro Placer ([mpl2](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/mpl2))
+- RePlAce Global Placer ([gpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl))
+- Gate resizing and buffering ([rsz](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/rsz))
+- Detailed placement ([dpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dpl))
+- Clock tree synthesis ([cts](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/cts))
+- Global route ([grt](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/grt))
+- Antenna check ([ant](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/amt))
+- Detailed route ([drt](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/drt))
+- Metal fill insertion ([fin](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/fin))
+- Design for Test ([dst](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dst))
+- Parasitic Extraction ([rcx](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/rcx)
+- Final timing/power report with OpenSTA ([sta](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/sta))
+- Graphical User Interface ([gui](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gui))
+- Static IR analyser ([psm](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/psm))
 
 ## Tool Checklist
 
@@ -273,5 +281,3 @@ dependencies make this vastly more complicated.
 1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
-
-James Cherry, Dec 2019
