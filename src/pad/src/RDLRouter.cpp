@@ -58,18 +58,55 @@ class RDLRouterDistanceHeuristic
  public:
   RDLRouterDistanceHeuristic(
       const std::map<RDLRouter::grid_vertex, odb::Point>& vertex_map,
-      const odb::Point& goal)
-      : vertex_map_(vertex_map), goal_(goal)
+      const std::vector<RDLRouter::grid_vertex>& predecessor,
+      const RDLRouter::grid_vertex& start_vertex,
+      const odb::Point& goal,
+      float turn_penalty = 2.0)
+      : vertex_map_(vertex_map),
+        predecessor_(predecessor),
+        start_vertex_(start_vertex),
+        goal_(goal),
+        turn_penalty_(turn_penalty)
   {
   }
-  int64_t operator()(RDLRouter::grid_vertex other)
+  int64_t operator()(RDLRouter::grid_vertex vt_next)
   {
-    return RDLRouter::distance(goal_, vertex_map_.at(other));
+    const auto& pt_next = vertex_map_.at(vt_next);
+
+    const int64_t distance = RDLRouter::distance(goal_, pt_next);
+
+    const auto& vt_curr = predecessor_[vt_next];
+    if (start_vertex_ == vt_curr) {
+      return distance;
+    }
+
+    const auto& vt_prev = predecessor_[vt_curr];
+    if (start_vertex_ == vt_prev) {
+      return distance;
+    }
+
+    const auto& pt_curr = vertex_map_.at(vt_curr);
+    const auto& pt_prev = vertex_map_.at(vt_prev);
+
+    const odb::Point incoming_vec(pt_curr.x() - pt_prev.x(),
+                                  pt_curr.y() - pt_prev.y());
+    const odb::Point outgoing_vec(pt_next.x() - pt_curr.x(),
+                                  pt_next.y() - pt_curr.y());
+
+    int64_t penalty = 0;
+    if (incoming_vec != outgoing_vec) {
+      penalty = turn_penalty_ * RDLRouter::distance(pt_prev, pt_curr);
+    }
+
+    return distance + penalty;
   }
 
  private:
   const std::map<RDLRouter::grid_vertex, odb::Point>& vertex_map_;
+  const std::vector<RDLRouter::grid_vertex>& predecessor_;
+  const RDLRouter::grid_vertex& start_vertex_;
   odb::Point goal_;
+  const float turn_penalty_;
 };
 
 struct RDLRouterGoalFound
@@ -545,7 +582,7 @@ std::vector<RDLRouter::grid_vertex> RDLRouter::run(const odb::Point& source,
     boost::astar_search_tree(
         graph_,
         start,
-        RDLRouterDistanceHeuristic(vertex_point_map_, dest),
+        RDLRouterDistanceHeuristic(vertex_point_map_, p, start, dest),
         boost::predecessor_map(
             boost::make_iterator_property_map(
                 p.begin(), boost::get(boost::vertex_index, graph_)))
