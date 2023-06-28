@@ -51,7 +51,7 @@ class Point
   Point(const Point& p);
   Point(int x, int y);
   ~Point() = default;
-  Point& operator=(const Point& p);
+  Point& operator=(const Point& p) = default;
   bool operator==(const Point& p) const;
   bool operator!=(const Point& p) const;
   bool operator<(const Point& p) const;
@@ -331,13 +331,6 @@ inline Point::Point(int x, int y)
 {
   x_ = x;
   y_ = y;
-}
-
-inline Point& Point::operator=(const Point& p)
-{
-  x_ = p.x_;
-  y_ = p.y_;
-  return *this;
 }
 
 inline bool Point::operator==(const Point& p) const

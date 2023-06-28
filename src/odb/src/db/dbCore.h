@@ -101,7 +101,7 @@ class dbObjectTable
   // PERSISTANT DATA
   dbAttrTable<dbId<_dbProperty>> _prop_list;
 
-  virtual ~dbObjectTable(){};
+  virtual ~dbObjectTable() = default;
   dbObjectTable();
   dbObjectTable(_dbDatabase* db,
                 dbObject* owner,

@@ -143,7 +143,7 @@ class Direction2D
   };
 
   constexpr Direction2D() : value_(West) {}
-  constexpr Direction2D(const Direction2D& other) : value_(other.value_) {}
+  constexpr Direction2D(const Direction2D& other) = default;
   constexpr Direction2D(const Value value) : value_(value) {}
 
   bool operator==(const Direction2D& d) const { return value_ == d.value_; }
@@ -191,7 +191,7 @@ class Orientation3D
   };
 
   constexpr Orientation3D() : value_(Orientation2D::Horizontal) {}
-  constexpr Orientation3D(const Orientation3D& ori) : value_(ori.value_) {}
+  constexpr Orientation3D(const Orientation3D& ori) = default;
   constexpr Orientation3D(const Orientation2D& ori) : value_(ori) {}
   constexpr Orientation3D(const Value value) : value_(value) {}
   constexpr explicit Orientation3D(const Direction2D& other);
@@ -227,7 +227,7 @@ class Direction3D
 
   constexpr Direction3D() : value_(Direction2D::West) {}
   constexpr Direction3D(Direction2D other) : value_(other) {}
-  constexpr Direction3D(const Direction3D& other) : value_(other.value_) {}
+  constexpr Direction3D(const Direction3D& other) = default;
   constexpr Direction3D(const Direction2D::Value value) : value_(value) {}
   constexpr Direction3D(const Value value) : value_(value) {}
 

@@ -87,7 +87,6 @@ class _dbBox : public _dbObject
   {
     Rect _rect;
     Oct _oct;
-    ~dbBoxShape(){};
   };
 
   // PERSISTANT-MEMBERS
@@ -100,7 +99,7 @@ class _dbBox : public _dbObject
 
   _dbBox(_dbDatabase*);
   _dbBox(_dbDatabase*, const _dbBox& b);
-  ~_dbBox();
+
   bool operator==(const _dbBox& rhs) const;
   bool operator!=(const _dbBox& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBox& rhs) const;
@@ -153,10 +152,6 @@ inline _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
     new (&_shape._rect) Rect();
     _shape._rect = b._shape._rect;
   }
-}
-
-inline _dbBox::~_dbBox()
-{
 }
 
 inline dbOStream& operator<<(dbOStream& stream, const _dbBox& box)

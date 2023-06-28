@@ -141,8 +141,6 @@ class lefout
     bloat_occupied_layers_ = false;
   }
 
-  ~lefout() {}
-
   void setWriteMarkedMasters(bool value) { _write_marked_masters = value; }
   void setUseLayerAlias(bool value) { _use_alias = value; }
   void setUseMasterIds(bool value) { _use_master_ids = value; }

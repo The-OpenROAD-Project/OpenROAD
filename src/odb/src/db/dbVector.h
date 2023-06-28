@@ -56,11 +56,9 @@ class dbVector : public std::vector<T>
     return *this;
   }
 
-  dbVector() {}
+  dbVector() = default;
 
   dbVector(const dbVector<T>& v) : std::vector<T>(v) {}
-
-  ~dbVector() {}
 
   iterator begin() { return _base::begin(); }
   iterator end() { return _base::end(); }
@@ -88,11 +86,9 @@ class dbVector<T*> : public std::vector<T*>
     return *this;
   }
 
-  dbVector() {}
+  dbVector() = default;
 
   dbVector(const dbVector<T*>& v) : std::vector<T*>(v) {}
-
-  ~dbVector() {}
 
   iterator begin() { return _base::begin(); }
   iterator end() { return _base::end(); }
