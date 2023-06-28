@@ -523,11 +523,11 @@ sta::ParasiticNode* MakeWireParasitics::ensureParasiticNode(
   return node;
 }
 
-sta::Slack MakeWireParasitics::getNetSlack(odb::dbNet* net)
+float MakeWireParasitics::getNetSlack(odb::dbNet* net)
 {
   sta::dbNetwork* network = sta_->getDbNetwork();
   sta::Net* sta_net = network->dbToSta(net);
-  sta::Slack slack = sta_->netSlack(sta_net, sta::MinMax::max());
+  float slack = sta_->netSlack(sta_net, sta::MinMax::max());
   return slack;
 }
 ////////////////////////////////////////////////////////////////

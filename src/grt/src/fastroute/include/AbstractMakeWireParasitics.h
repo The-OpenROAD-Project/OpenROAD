@@ -35,7 +35,6 @@
 
 #pragma once
 
-#include "db_sta/dbSta.hh"
 #include "grt/GRoute.h"
 
 namespace grt {
@@ -49,7 +48,7 @@ class AbstractMakeWireParasitics
 
   virtual void clearParasitics() = 0;
 
-  virtual sta::Slack getNetSlack(odb::dbNet* net) = 0;
+  virtual float getNetSlack(odb::dbNet* net) = 0;
 };
 
 }  // namespace grt
