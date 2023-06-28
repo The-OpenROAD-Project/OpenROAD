@@ -170,8 +170,8 @@ class dbObject
   const _dbObject* getImpl() const;
 
  protected:
-  dbObject() {}
-  ~dbObject() {}
+  dbObject() = default;
+  ~dbObject() = default;
 };
 
 }  // namespace odb

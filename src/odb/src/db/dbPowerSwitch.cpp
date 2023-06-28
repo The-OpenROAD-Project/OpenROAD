@@ -199,7 +199,7 @@ dbNet* dbPowerSwitch::getControlNet() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   if (obj->_control_net == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbNet*) par->_net_tbl->getPtr(obj->_control_net);
 }
@@ -215,7 +215,7 @@ dbPowerDomain* dbPowerSwitch::getPowerDomain() const
 {
   _dbPowerSwitch* obj = (_dbPowerSwitch*) this;
   if (obj->_power_domain == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
 }

@@ -244,7 +244,7 @@ dbGroup* dbGroup::getParentGroup() const
 {
   _dbGroup* obj = (_dbGroup*) this;
   if (obj->_parent_group == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_parent_group);
 }
@@ -253,7 +253,7 @@ dbRegion* dbGroup::getRegion() const
 {
   _dbGroup* obj = (_dbGroup*) this;
   if (obj->region_ == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbRegion*) par->_region_tbl->getPtr(obj->region_);
 }
@@ -292,12 +292,12 @@ void dbGroup::removeModInst(dbModInst* modinst)
     return;
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
   uint id = _modinst->getOID();
-  _dbModInst* prev = NULL;
+  _dbModInst* prev = nullptr;
   uint cur = _group->_modinsts;
   while (cur) {
     _dbModInst* c = _block->_modinst_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == NULL)
+      if (prev == nullptr)
         _group->_modinsts = _modinst->_group_next;
       else
         prev->_group_next = _modinst->_group_next;
@@ -336,12 +336,12 @@ void dbGroup::removeInst(dbInst* inst)
     return;
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
   uint id = _inst->getOID();
-  _dbInst* prev = NULL;
+  _dbInst* prev = nullptr;
   uint cur = _group->_insts;
   while (cur) {
     _dbInst* c = _block->_inst_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == NULL)
+      if (prev == nullptr)
         _group->_insts = _inst->_group_next;
       else
         prev->_group_next = _inst->_group_next;
@@ -380,12 +380,12 @@ void dbGroup::removeGroup(dbGroup* child)
     return;
   _dbBlock* _block = (_dbBlock*) _group->getOwner();
   uint id = _child->getOID();
-  _dbGroup* prev = NULL;
+  _dbGroup* prev = nullptr;
   uint cur = _group->_groups;
   while (cur) {
     _dbGroup* c = _block->_group_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == NULL)
+      if (prev == nullptr)
         _group->_groups = _child->_group_next;
       else
         prev->_group_next = _child->_group_next;

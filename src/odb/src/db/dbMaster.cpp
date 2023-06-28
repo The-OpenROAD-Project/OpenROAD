@@ -259,7 +259,7 @@ _dbMaster::_dbMaster(_dbDatabase* db, const _dbMaster& m)
       _width(m._width),
       _mterm_cnt(m._mterm_cnt),
       _id(m._id),
-      _name(NULL),
+      _name(nullptr),
       _next_entry(m._next_entry),
       _leq(m._leq),
       _eeq(m._eeq),
@@ -463,7 +463,7 @@ dbMaster* dbMaster::getLEQ()
   _dbMaster* master = (_dbMaster*) this;
 
   if (master->_leq == 0)
-    return NULL;
+    return nullptr;
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_leq);
@@ -480,7 +480,7 @@ dbMaster* dbMaster::getEEQ()
   _dbMaster* master = (_dbMaster*) this;
 
   if (master->_eeq == 0)
-    return NULL;
+    return nullptr;
 
   _dbLib* lib = (_dbLib*) master->getOwner();
   return (dbMaster*) lib->_master_tbl->getPtr(master->_eeq);
@@ -569,7 +569,7 @@ dbSite* dbMaster::getSite()
   _dbLib* lib = (_dbLib*) master->getOwner();
 
   if (master->_site == 0)
-    return NULL;
+    return nullptr;
 
   return (dbSite*) lib->_site_tbl->getPtr(master->_site);
 }
@@ -716,7 +716,7 @@ int dbMaster::getMasterId()
 dbMaster* dbMaster::create(dbLib* lib_, const char* name_)
 {
   if (lib_->findMaster(name_))
-    return NULL;
+    return nullptr;
 
   _dbLib* lib = (_dbLib*) lib_;
   _dbDatabase* db = lib->getDatabase();

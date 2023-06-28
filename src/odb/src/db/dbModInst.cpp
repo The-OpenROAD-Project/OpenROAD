@@ -185,7 +185,7 @@ dbModule* dbModInst::getParent() const
 {
   _dbModInst* obj = (_dbModInst*) this;
   if (obj->_parent == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbModule*) par->_module_tbl->getPtr(obj->_parent);
 }
@@ -194,7 +194,7 @@ dbModule* dbModInst::getMaster() const
 {
   _dbModInst* obj = (_dbModInst*) this;
   if (obj->_master == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbModule*) par->_module_tbl->getPtr(obj->_master);
 }
@@ -203,7 +203,7 @@ dbGroup* dbModInst::getGroup() const
 {
   _dbModInst* obj = (_dbModInst*) this;
   if (obj->_group == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_group);
 }
@@ -245,12 +245,12 @@ void dbModInst::destroy(dbModInst* modinst)
 
   // unlink from parent start
   uint id = _modinst->getOID();
-  _dbModInst* prev = NULL;
+  _dbModInst* prev = nullptr;
   uint cur = module->_modinsts;
   while (cur) {
     _dbModInst* c = block->_modinst_tbl->getPtr(cur);
     if (cur == id) {
-      if (prev == NULL)
+      if (prev == nullptr)
         module->_modinsts = _modinst->_module_next;
       else
         prev->_module_next = _modinst->_module_next;

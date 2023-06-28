@@ -50,9 +50,9 @@ namespace odb {
 //////////////////////////////////////////////////////////////////////////////////
 dbWireShapeItr::dbWireShapeItr()
 {
-  _wire = NULL;
-  _block = NULL;
-  _tech = NULL;
+  _wire = nullptr;
+  _block = nullptr;
+  _tech = nullptr;
 }
 
 dbWireShapeItr::~dbWireShapeItr()
@@ -82,8 +82,8 @@ void dbWireShapeItr::begin(dbWire* wire)
   _prev_y = 0;
   _prev_ext = 0;
   _has_prev_ext = false;
-  _layer = NULL;
-  _via = NULL;
+  _layer = nullptr;
+  _via = nullptr;
   _dw = 0;
   _point_cnt = 0;
   _has_width = false;
@@ -282,7 +282,7 @@ nextOpCode:
 
       dbBox* box = via->getBBox();
 
-      if (box == NULL)
+      if (box == nullptr)
         goto nextOpCode;
 
       Rect b = box->getBox();
@@ -311,7 +311,7 @@ nextOpCode:
 
       dbBox* box = via->getBBox();
 
-      if (box == NULL)
+      if (box == nullptr)
         goto nextOpCode;
 
       Rect b = box->getBox();

@@ -345,7 +345,7 @@ namespace odb {
           _{{klass.name}}* obj = (_{{klass.name}}*)this;
           {% if field.isRef %}
             if(obj->{{field.name}} == 0)
-              return NULL;
+              return nullptr;
             _{{field.parent}}* par = (_{{field.parent}}*) obj->getOwner();
             return ({{field.refType}}) par->{{field.refTable}}->getPtr(obj->{{field.name}});
           {% elif field.isHashTable %}

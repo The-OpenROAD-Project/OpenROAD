@@ -180,7 +180,7 @@ dbModInst* dbModule::getModInst() const
 {
   _dbModule* obj = (_dbModule*) this;
   if (obj->_mod_inst == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbModInst*) par->_modinst_tbl->getPtr(obj->_mod_inst);
 }

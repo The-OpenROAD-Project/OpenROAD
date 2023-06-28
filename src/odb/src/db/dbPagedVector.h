@@ -76,8 +76,9 @@ class dbPagedVector
   {
     uint id = _next_idx;
     uint i;
-    for (i = 0; i < cnt; ++i)
+    for (i = 0; i < cnt; ++i) {
       push_back(item);
+    }
     return id;
   }
 
@@ -120,14 +121,14 @@ unsigned int dbPagedVector<T, P, S>::getIdx(uint chunkSize, const T& ival)
     idx = _next_idx;
     _next_idx += chunkSize;
     unsigned int page = ((_next_idx - 1) & ~(P - 1)) >> S;
-    if (page == _page_cnt)
+    if (page == _page_cnt) {
       newPage();
-    // return idx;
+    }
   } else {
     idx = (uint) _freedIdxHead;
-    if (idx == (uint) _freedIdxTail)
+    if (idx == (uint) _freedIdxTail) {
       _freedIdxHead = -1;
-    else {
+    } else {
       unsigned int page = (idx & ~(P - 1)) >> S;
       unsigned int offset = idx & (P - 1);
       uint* fidxp = (uint*) (&_pages[page][offset]);
@@ -162,7 +163,7 @@ void dbPagedVector<T, P, S>::freeIdx(uint idx)
 template <class T, const uint P, const uint S>
 dbPagedVector<T, P, S>::dbPagedVector()
 {
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -172,7 +173,7 @@ dbPagedVector<T, P, S>::dbPagedVector()
 template <class T, const uint P, const uint S>
 dbPagedVector<T, P, S>::dbPagedVector(const dbPagedVector<T, P, S>& V)
 {
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -191,13 +192,14 @@ void dbPagedVector<T, P, S>::clear()
   if (_pages) {
     unsigned int i;
 
-    for (i = 0; i < _page_cnt; ++i)
+    for (i = 0; i < _page_cnt; ++i) {
       delete[] _pages[i];
+    }
 
     delete[] _pages;
   }
 
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -216,20 +218,23 @@ void dbPagedVector<T, P, S>::resizePageTbl()
   T** old_tbl = _pages;
   unsigned int old_tbl_size = _page_tbl_size;
 
-  if (_page_tbl_size == 1)
+  if (_page_tbl_size == 1) {
     ++_page_tbl_size;
-  else
+  } else {
     _page_tbl_size += (unsigned int) ((float) _page_tbl_size * (0.5));
+  }
 
   _pages = new T*[_page_tbl_size];
 
   unsigned int i;
 
-  for (i = 0; i < old_tbl_size; ++i)
+  for (i = 0; i < old_tbl_size; ++i) {
     _pages[i] = old_tbl[i];
+  }
 
-  for (; i < _page_tbl_size; ++i)
-    _pages[i] = NULL;
+  for (; i < _page_tbl_size; ++i) {
+    _pages[i] = nullptr;
+  }
 
   delete[] old_tbl;
 }
@@ -255,8 +260,9 @@ void dbPagedVector<T, P, S>::push_back(const T& item)
 {
   unsigned int page = (_next_idx & ~(P - 1)) >> S;
 
-  if (page == _page_cnt)
+  if (page == _page_cnt) {
     newPage();
+  }
 
   unsigned int offset = _next_idx & (P - 1);
   ++_next_idx;
@@ -271,16 +277,18 @@ inline bool dbPagedVector<T, P, S>::operator==(
 {
   uint sz = size();
 
-  if (sz != rhs.size())
+  if (sz != rhs.size()) {
     return false;
+  }
 
   uint i;
   for (i = 0; i < sz; ++i) {
     const T& l = (*this)[i];
     const T& r = rhs[i];
 
-    if (l != r)
+    if (l != r) {
       return false;
+    }
   }
 
   return true;

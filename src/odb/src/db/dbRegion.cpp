@@ -54,12 +54,12 @@ _dbRegion::_dbRegion(_dbDatabase*)
 {
   _flags._type = dbRegionType::INCLUSIVE;
   _flags._invalid = false;
-  _name = NULL;
+  _name = nullptr;
 }
 
 _dbRegion::_dbRegion(_dbDatabase*, const _dbRegion& r)
     : _flags(r._flags),
-      _name(NULL),
+      _name(nullptr),
       _insts(r._insts),
       _boxes(r._boxes),
       groups_(r.groups_)
@@ -341,7 +341,7 @@ dbRegion* dbRegion::create(dbBlock* block_, const char* name)
   _dbBlock* block = (_dbBlock*) block_;
 
   if (block_->findRegion(name))
-    return NULL;
+    return nullptr;
 
   _dbRegion* region = block->_region_tbl->create();
   region->_name = strdup(name);

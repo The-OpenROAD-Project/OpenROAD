@@ -46,7 +46,7 @@ int adsCreateComponent(const ZContext& context,
                        void** result)
 {
   ZFactory* factory = _factories[cid];
-  assert(factory != NULL);
+  assert(factory != nullptr);
   return factory->create(context, iid, result);
 }
 

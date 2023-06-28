@@ -86,7 +86,7 @@ class dbTable : public dbObjectTable, public dbIterator
   // dbTable(_dbDatabase * db, dbObject * owner, const dbTable<T> & T );
   dbTable(_dbDatabase* db, dbObject* owner, const dbTable<T>&);
 
-  virtual ~dbTable();
+  ~dbTable() override;
 
   // returns the number of instances of "T" allocated
   uint size() const { return _alloc_cnt; }
@@ -95,7 +95,7 @@ class dbTable : public dbObjectTable, public dbIterator
   T* create();
 
   // Duplicate a "T", calls T( _dbDatabase *, const T & )
-  T* duplicate(T* t);
+  T* duplicate(T* c);
 
   // Destroy instance of "T", calls destructor
   void destroy(T*);
@@ -154,21 +154,21 @@ class dbTable : public dbObjectTable, public dbIterator
   void readPage(dbIStream& stream, dbTablePage* page);
   void writePage(dbOStream& stream, const dbTablePage* page) const;
 
-  bool operator==(const dbTable<T>& table) const;
+  bool operator==(const dbTable<T>& rhs) const;
   bool operator!=(const dbTable<T>& table) const;
   void differences(dbDiff& diff, const dbTable<T>& rhs) const;
   void out(dbDiff& diff, char side) const;
 
   // dbIterator interface methods
-  bool reversible();
-  bool orderReversed();
-  void reverse(dbObject* parent);
-  uint sequential();
-  uint size(dbObject* parent);
-  uint begin(dbObject* parent);
-  uint end(dbObject* parent);
-  uint next(uint cur, ...);
-  dbObject* getObject(uint cur, ...);
+  bool reversible() override;
+  bool orderReversed() override;
+  void reverse(dbObject* parent) override;
+  uint sequential() override;
+  uint size(dbObject* parent) override;
+  uint begin(dbObject* parent) override;
+  uint end(dbObject* parent) override;
+  uint next(uint id, ...) override;
+  dbObject* getObject(uint id, ...) override;
   void getObjects(std::vector<T*>& objects);
 
  private:

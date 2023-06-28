@@ -91,7 +91,7 @@ void _dbTechViaRule::out(dbDiff& diff, char side, const char* field) const
 
 _dbTechViaRule::_dbTechViaRule(_dbDatabase*, const _dbTechViaRule& v)
     : _flags(v._flags),
-      _name(NULL),
+      _name(nullptr),
       _layer_rules(v._layer_rules),
       _vias(v._vias)
 {
@@ -163,7 +163,7 @@ dbTechVia* dbTechViaRule::getVia(uint idx)
   dbTech* tech = (dbTech*) rule->getOwner();
 
   if (idx >= rule->_vias.size())
-    return NULL;
+    return nullptr;
 
   dbId<dbTechVia> id = rule->_vias[idx];
   return dbTechVia::getTechVia(tech, id);
@@ -181,7 +181,7 @@ dbTechViaLayerRule* dbTechViaRule::getViaLayerRule(uint idx)
   dbTech* tech = (dbTech*) rule->getOwner();
 
   if (idx >= rule->_layer_rules.size())
-    return NULL;
+    return nullptr;
 
   dbId<dbTechViaLayerRule> id = rule->_layer_rules[idx];
   return dbTechViaLayerRule::getTechViaLayerRule(tech, id);
@@ -190,7 +190,7 @@ dbTechViaLayerRule* dbTechViaRule::getViaLayerRule(uint idx)
 dbTechViaRule* dbTechViaRule::create(dbTech* tech_, const char* name)
 {
   if (tech_->findViaRule(name))
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaRule* rule = tech->_via_rule_tbl->create();
