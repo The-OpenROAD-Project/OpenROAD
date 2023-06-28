@@ -2063,19 +2063,22 @@ Descriptor::Properties DbViaDescriptor::getProperties(std::any object) const
                                  Property::convert_dbu(via_params.getXBottomOffset(), true),
                                  Property::convert_dbu(via_params.getYBottomOffset(), true))});     
 
-    PropertyList layers({{"Top", gui->makeSelected(via_params.getTopLayer())},
-                         {"Cut", gui->makeSelected(via_params.getCutLayer())},
-                         {"Bottom", gui->makeSelected(via_params.getBottomLayer())}});
-    props.push_back({"Layers", layers});
+    PropertyList shapes;
+    for (auto box : via->getBoxes()) {
+      auto layer = box->getTechLayer();
+      auto rect = box->getBox();
+      shapes.push_back({gui->makeSelected(layer), rect});
+    }
+    props.push_back({"Shapes", shapes});
   } else {
-    props.push_back({"Top Layer", gui->makeSelected(via->getTopLayer())});
-    props.push_back({"Bottom Layer", gui->makeSelected(via->getBottomLayer())});    
+    PropertyList shapes;
+    for (auto box : via->getBoxes()) {
+      auto layer = box->getTechLayer();
+      auto rect = box->getBox();
+      shapes.push_back({gui->makeSelected(layer), rect});
+    }    
+    props.push_back({"Shapes", shapes});  
   }
-
-  std::cout << "++++++++++++++++++++++++++" << std::endl;
-  std::cout << "Número de boxes no set:" << via->getBoxes().size() << std::endl;
-  std::cout << "++++++++++++++++++++++++++" << std::endl;
-  //getBoxes???
 
   props.push_back({"Is Rotated", via->isViaRotated()});
 
