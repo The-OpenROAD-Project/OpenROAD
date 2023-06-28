@@ -72,7 +72,9 @@ void SimulatedAnnealing::run()
 
   for (int iter = 0; iter < max_iterations_; iter++) {
     for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
-      assignment = perturbAssignment();
+      int prev_slot = -1;
+      int new_slot = -1;
+      assignment = perturbAssignment(prev_slot, new_slot);
       int cost = getAssignmentCost(assignment);
       int delta_cost = cost - pre_cost;
       debugPrint(logger_,
@@ -85,11 +87,16 @@ void SimulatedAnnealing::run()
                  temperature,
                  dbuToMicrons(cost),
                  dbuToMicrons(delta_cost));
+
       const float rand_float = distribution_(generator_);
       const float accept_prob = std::exp((-1) * delta_cost / temperature);
       if (delta_cost <= 0 || accept_prob > rand_float) {
         pin_assignment_ = assignment;
         pre_cost = cost;
+        if (prev_slot != -1 && new_slot != -1) {
+          slots_[prev_slot].used = false;
+          slots_[new_slot].used = true;
+        }
       }
     }
 
@@ -133,12 +140,11 @@ int SimulatedAnnealing::getAssignmentCost(const std::vector<int>& assignment)
     cost += netlist_->computeIONetHPWL(i, position);
   }
 
-  debugPrint(logger_, utl::PPL, "annealing", 1, "assignment cost: {}", cost);
-
   return cost;
 }
 
-std::vector<int> SimulatedAnnealing::perturbAssignment()
+std::vector<int> SimulatedAnnealing::perturbAssignment(int& prev_slot,
+                                                       int& new_slot)
 {
   std::vector<int> assignment;
   const float move = distribution_(generator_);
@@ -146,7 +152,7 @@ std::vector<int> SimulatedAnnealing::perturbAssignment()
   if (move < swap_pins_) {
     assignment = swapPins(pin_assignment_);
   } else {
-    assignment = placeSubsetOfPins(pin_assignment_, pins_subset_percent_);
+    assignment = movePinToFreeSlot(pin_assignment_, prev_slot, new_slot);
   }
 
   return assignment;
