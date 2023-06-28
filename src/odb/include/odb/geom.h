@@ -181,8 +181,8 @@ class Oct
  private:
   Point center_high_;  // the center of the higher octagon
   Point center_low_;   // the center of the lower octagon
-  int A_
-      = 0;  // A=W/2 (the x distance from the center to the right or left edge)
+  // A=W/2 (the x distance from the center to the right or left edge)
+  int A_ = 0;
 };
 
 class Rect
@@ -378,7 +378,9 @@ inline int64 Point::squaredDistance(Point p0, Point p1)
 
 inline int64 Point::manhattanDistance(Point p0, Point p1)
 {
-  return std::abs(p1.x_ - p0.x_) + std::abs(p1.y_ - p0.y_);
+  const int64 dx = std::abs(p1.x_ - p0.x_);
+  const int64 dy = std::abs(p1.y_ - p0.y_);
+  return dx + dy;
 }
 
 inline bool Point::operator<(const Point& rhs) const
@@ -663,7 +665,7 @@ inline Rect Rect::intersect(const Rect& r) const
 
 inline int64 Rect::area() const
 {
-  return dx() * dy();
+  return dx() * static_cast<int64>(dy());
 }
 
 inline int64 Rect::margin() const
