@@ -211,7 +211,7 @@ struct TreeEdge
 {
   bool assigned;
 
-  int len;       // the Manhanttan Distance for two end nodes
+  int len;  // the Manhanttan Distance for two end nodes
   int n1, n1a;
   int n2, n2a;
   Route route;
