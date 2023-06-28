@@ -35,6 +35,7 @@
 #include <QObject>
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <mutex>
 
 #include "odb/db.h"
 #include "odb/dbBlockCallBackObj.h"
