@@ -2592,7 +2592,7 @@ void FastRouteCore::SaveLastRouteLen()
     const int num_edges = sttrees_[netID].num_edges();
     for (int edgeID = 0; edgeID < num_edges; edgeID++) {
       auto& edge = treeedges[edgeID];
-      edge.last_len = edge.route.routelen;
+      edge.route.last_routelen = edge.route.routelen;
     }
   }
 }
