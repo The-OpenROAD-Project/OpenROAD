@@ -117,7 +117,9 @@ void SimulatedAnnealing::randomAssignment()
   g.seed(seed_);
   utl::shuffle(slot_indices_.begin(), slot_indices_.end(), g);
   for (int i = 0; i < pin_assignment_.size(); i++) {
-    pin_assignment_[i] = slot_indices_[i];
+    int slot_idx = slot_indices_[i];
+    pin_assignment_[i] = slot_idx;
+    slots_[slot_idx].used = true;
   }
 }
 
