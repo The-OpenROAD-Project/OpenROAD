@@ -284,7 +284,7 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   for (auto via_rule : tech->getViaRules()) {
     via_rules.insert(gui->makeSelected(via_rule));
   }
-  props.push_back({"Via Rules", via_rules});
+  props.push_back({"Tech Via Rules", via_rules});
 
   SelectionSet via_maps;
   for (auto map : tech->getMetalWidthViaMap()) {
@@ -3307,13 +3307,13 @@ Descriptor::Properties DbTechViaRuleDescriptor::getProperties(std::any object) c
   for (uint via_index = 0; via_index < via_rule->getViaCount(); via_index++) {
     vias.insert(gui->makeSelected(via_rule->getVia(via_index)));
   }
-  props.push_back({"Vias", vias});
+  props.push_back({"Tech Vias", vias});
 
   SelectionSet layer_rules;
   for (uint rule_index = 0; rule_index < via_rule->getViaLayerRuleCount(); rule_index++) {
     layer_rules.insert(gui->makeSelected(via_rule->getViaLayerRule(rule_index)));
   }
-  props.push_back({"Via-Layer Rules", layer_rules});
+  props.push_back({"Tech Via-Layer Rules", layer_rules});
 
   return props;
 }
