@@ -1159,14 +1159,22 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                        const std::vector<odb::dbNet*>& nets,
                        int width,
                        int spacing,
-                       bool allow45)
+                       bool allow45,
+                       float turn_penalty)
 {
   if (layer == nullptr) {
     logger_->error(utl::PAD, 22, "Layer must be specified to perform routing.");
   }
 
-  router_ = std::make_unique<RDLRouter>(
-      logger_, getBlock(), layer, bump_via, pad_via, width, spacing, allow45);
+  router_ = std::make_unique<RDLRouter>(logger_,
+                                        getBlock(),
+                                        layer,
+                                        bump_via,
+                                        pad_via,
+                                        width,
+                                        spacing,
+                                        allow45,
+                                        turn_penalty);
   if (router_gui_ != nullptr) {
     router_gui_->setRouter(router_.get());
   }

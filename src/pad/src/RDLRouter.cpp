@@ -61,7 +61,7 @@ class RDLRouterDistanceHeuristic
       const std::vector<RDLRouter::grid_vertex>& predecessor,
       const RDLRouter::grid_vertex& start_vertex,
       const odb::Point& goal,
-      float turn_penalty = 2.0)
+      float turn_penalty)
       : vertex_map_(vertex_map),
         predecessor_(predecessor),
         start_vertex_(start_vertex),
@@ -138,7 +138,8 @@ RDLRouter::RDLRouter(utl::Logger* logger,
                      odb::dbTechVia* pad_via,
                      int width,
                      int spacing,
-                     bool allow45)
+                     bool allow45,
+                     float turn_penalty)
     : logger_(logger),
       block_(block),
       layer_(layer),
@@ -146,7 +147,8 @@ RDLRouter::RDLRouter(utl::Logger* logger,
       pad_accessvia_(pad_via),
       width_(width),
       spacing_(spacing),
-      allow45_(allow45)
+      allow45_(allow45),
+      turn_penalty_(turn_penalty)
 {
   if (width_ == 0) {
     width_ = layer_->getWidth();
@@ -582,7 +584,8 @@ std::vector<RDLRouter::grid_vertex> RDLRouter::run(const odb::Point& source,
     boost::astar_search_tree(
         graph_,
         start,
-        RDLRouterDistanceHeuristic(vertex_point_map_, p, start, dest),
+        RDLRouterDistanceHeuristic(
+            vertex_point_map_, p, start, dest, turn_penalty_),
         boost::predecessor_map(
             boost::make_iterator_property_map(
                 p.begin(), boost::get(boost::vertex_index, graph_)))
