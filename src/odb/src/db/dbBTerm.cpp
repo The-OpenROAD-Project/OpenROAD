@@ -751,10 +751,10 @@ dbSet<dbBTerm>::iterator dbBTerm::destroy(dbSet<dbBTerm>::iterator& itr)
   return next;
 }
 
-dbBTerm* dbBTerm::getBTerm(dbBlock* block_, uint dbid_)
+dbBTerm* dbBTerm::getBTerm(dbBlock* block_, uint oid)
 {
   _dbBlock* block = (_dbBlock*) block_;
-  return (dbBTerm*) block->_bterm_tbl->getPtr(dbid_);
+  return (dbBTerm*) block->_bterm_tbl->getPtr(oid);
 }
 
 uint32_t dbBTerm::staVertexId()

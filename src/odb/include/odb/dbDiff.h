@@ -77,12 +77,12 @@ class dbDiff : public dbObject
 
   // begin comparison of object
   void begin(const char* field, const char* objname, uint oid);
-  void begin(const char side, const char* field, const char* objname, uint oid);
+  void begin(char side, const char* field, const char* objname, uint oid);
   void begin(const char* field,
              const char* objname,
              uint oid,
              const char* name);
-  void begin(const char side,
+  void begin(char side,
              const char* field,
              const char* objname,
              uint oid,

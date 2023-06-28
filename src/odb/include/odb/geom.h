@@ -154,13 +154,13 @@ class Oct
   };
   Oct();
   Oct(const Oct& r) = default;
-  Oct(const Point p1, const Point p2, int width);
+  Oct(const Point& p1, const Point& p2, int width);
   Oct(int x1, int y1, int x2, int y2, int width);
   ~Oct() = default;
   Oct& operator=(const Oct& r) = default;
   bool operator==(const Oct& r) const;
   bool operator!=(const Oct& r) const { return !(r == *this); };
-  void init(const Point p1, const Point p2, int width);
+  void init(const Point& p1, const Point& p2, int width);
   OCT_DIR getDir() const;
   Point getCenterHigh() const;
   Point getCenterLow() const;
@@ -188,7 +188,7 @@ class Rect
  public:
   Rect();
   Rect(const Rect& r) = default;
-  Rect(const Point p1, const Point p2);
+  Rect(const Point& p1, const Point& p2);
   Rect(int x1, int y1, int x2, int y2);
   ~Rect() = default;
 
@@ -477,7 +477,7 @@ inline Rect::Rect(int x1, int y1, int x2, int y2)
   }
 }
 
-inline Rect::Rect(const Point p1, const Point p2)
+inline Rect::Rect(const Point& p1, const Point& p2)
 {
   int x1 = p1.getX();
   int y1 = p1.getY();
@@ -829,7 +829,7 @@ inline Oct::Oct()
   A_ = 0;
 }
 
-inline Oct::Oct(const Point p1, const Point p2, int width)
+inline Oct::Oct(const Point& p1, const Point& p2, int width)
 {
   init(p1, p2, width);
 }
@@ -852,7 +852,7 @@ inline bool Oct::operator==(const Oct& r) const
   return true;
 }
 
-inline void Oct::init(const Point p1, const Point p2, int width)
+inline void Oct::init(const Point& p1, const Point& p2, int width)
 {
   if (p1.getY() > p2.getY()) {
     center_high_ = p1;

@@ -7077,9 +7077,9 @@ class dbTechLayer : public dbObject
   bool isRectOnlyExceptNonCorePins() const;
 
   // User Code Begin dbTechLayer
-  int findV55Spacing(const int width, const int prl) const;
+  int findV55Spacing( int width,  int prl) const;
 
-  int findTwSpacing(const int width1, const int width2, const int prl) const;
+  int findTwSpacing( int width1,  int width2,  int prl) const;
 
   void setLef58Type(LEF58_TYPE type);
 
@@ -8989,7 +8989,7 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
   void setSpacingTableInfluence(
       std::vector<std::tuple<int, int, int>> influence_tbl);
 
-  int getSpacing(const int width, const int length) const;
+  int getSpacing( int width,  int length) const;
 
   bool hasExceptWithin(int width) const;
 
