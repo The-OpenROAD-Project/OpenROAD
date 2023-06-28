@@ -44,9 +44,9 @@ template <class T>
 class dbVector : public std::vector<T>
 {
  public:
-  typedef typename std::vector<T>::iterator iterator;
-  typedef typename std::vector<T>::const_iterator const_iterator;
-  typedef std::vector<T> _base;
+  using iterator = typename std::vector<T>::iterator;
+  using const_iterator = typename std::vector<T>::const_iterator;
+  using _base = std::vector<T>;
 
   dbVector<T>& operator=(const std::vector<T>& v)
   {
@@ -76,9 +76,9 @@ template <class T>
 class dbVector<T*> : public std::vector<T*>
 {
  public:
-  typedef typename std::vector<T*>::iterator iterator;
-  typedef typename std::vector<T*>::const_iterator const_iterator;
-  typedef std::vector<T*> _base;
+  using iterator = typename std::vector<T*>::iterator;
+  using const_iterator = typename std::vector<T*>::const_iterator;
+  using _base = std::vector<T*>;
 
   dbVector<T*>& operator=(const std::vector<T*>& v)
   {

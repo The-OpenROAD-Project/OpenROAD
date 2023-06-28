@@ -50,11 +50,11 @@ class dbSetIterator
   dbSetIterator(dbIterator* itr, uint id);
 
  public:
-  typedef T* value_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef T** pointer;
-  typedef T*& reference;
-  typedef std::input_iterator_tag iterator_category;
+  using value_type = T*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = T**;
+  using reference = T*&;
+  using iterator_category = std::input_iterator_tag;
 
   dbSetIterator();
   dbSetIterator(const dbSetIterator& it) = default;
@@ -97,7 +97,7 @@ class dbSet
   dbObject* _parent;
 
  public:
-  typedef dbSetIterator<T> iterator;
+  using iterator = dbSetIterator<T>;
 
   dbSet()
   {

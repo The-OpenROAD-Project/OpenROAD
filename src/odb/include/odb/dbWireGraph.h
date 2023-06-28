@@ -174,7 +174,7 @@ class dbWireGraph
   class Node
   {
    public:
-    typedef DList<Edge, &Edge::outEdgeEntry>::iterator edge_iterator;
+    using edge_iterator = DList<Edge, &Edge::outEdgeEntry>::iterator;
 
     Node(int x, int y, dbTechLayer* layer)
         : _x(x),
@@ -368,12 +368,12 @@ class dbWireGraph
                      dbTechLayerRule* rule = nullptr);
 
   // Edge iterator
-  typedef DList<Node, &Node::nodeEntry>::iterator node_iterator;
+  using node_iterator = DList<Node, &Node::nodeEntry>::iterator;
   node_iterator begin_nodes() { return _nodes.begin(); }
   node_iterator end_nodes() { return _nodes.end(); }
 
   // Node iterator
-  typedef DList<Edge, &Edge::edgeEntry>::iterator edge_iterator;
+  using edge_iterator = DList<Edge, &Edge::edgeEntry>::iterator;
   edge_iterator begin_edges() { return _edges.begin(); }
   edge_iterator end_edges() { return _edges.end(); }
 

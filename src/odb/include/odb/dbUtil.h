@@ -66,7 +66,7 @@ class dbBox;
 //
 class dbCreateNetUtil
 {
-  typedef std::map<int, dbTechLayerRule*> RuleMap;
+  using RuleMap = std::map<int, dbTechLayerRule*>;
   dbTech* _tech;
   dbBlock* _block;
   std::vector<RuleMap> _rules;

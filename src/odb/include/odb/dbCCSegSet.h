@@ -55,11 +55,11 @@ class dbSetIterator<dbCCSeg>
   }
 
  public:
-  typedef dbCCSeg* value_type;
-  typedef std::ptrdiff_t difference_type;
-  typedef dbCCSeg** pointer;
-  typedef dbCCSeg*& reference;
-  typedef std::input_iterator_tag iterator_category;
+  using value_type = dbCCSeg*;
+  using difference_type = std::ptrdiff_t;
+  using pointer = dbCCSeg**;
+  using reference = dbCCSeg*&;
+  using iterator_category = std::input_iterator_tag;
 
   dbSetIterator()
   {
@@ -111,7 +111,7 @@ class dbSet<dbCCSeg>
   uint _pid;
 
  public:
-  typedef dbSetIterator<dbCCSeg> iterator;
+  using iterator = dbSetIterator<dbCCSeg>;
 
   dbSet()
   {

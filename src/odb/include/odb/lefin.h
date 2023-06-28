@@ -44,7 +44,7 @@ class lefiArray;
 struct lefiNoiseMargin;
 class lefiNoiseTable;
 struct lefiPoints;
-typedef lefiPoints lefiNum;
+using lefiNum = lefiPoints;
 class lefiCorrectionTable;
 class lefiIRDrop;
 class lefiLayer;

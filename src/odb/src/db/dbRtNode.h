@@ -147,8 +147,8 @@ class dbRtNode
   }
 
  public:
-  typedef dbRtNodeEdgeIterator edge_iterator;
-  typedef std::vector<dbObject*>::iterator object_iterator;
+  using edge_iterator = dbRtNodeEdgeIterator;
+  using object_iterator = std::vector<dbObject*>::iterator;
 
   dbRtNode(int x, int y, dbTechLayer* layer)
       : _x(x),

@@ -146,13 +146,13 @@ class dbRtTree
                          dbTechLayerRule* rule = nullptr);
 
   // Node iterator
-  typedef DList<dbRtNode, &dbRtNode::rtNode>::iterator node_iterator;
+  using node_iterator = DList<dbRtNode, &dbRtNode::rtNode>::iterator;
 
   node_iterator begin_nodes() { return _nodes.begin(); }
   node_iterator end_nodes() { return _nodes.end(); }
 
   // Edge iterator
-  typedef DList<dbRtEdge, &dbRtEdge::rtEdge>::iterator edge_iterator;
+  using edge_iterator = DList<dbRtEdge, &dbRtEdge::rtEdge>::iterator;
   edge_iterator begin_edges() { return _edges.begin(); }
   edge_iterator end_edges() { return _edges.end(); }
 

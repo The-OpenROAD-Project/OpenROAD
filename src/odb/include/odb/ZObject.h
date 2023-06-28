@@ -121,7 +121,7 @@ inline int adsNewComponent(const ZContext& context,
 class ZObject
 {
  public:
-  typedef ZObject _zobject_traits;
+  using _zobject_traits = ZObject;
   enum
   {
     ZIID = 0

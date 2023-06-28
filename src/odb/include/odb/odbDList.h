@@ -95,7 +95,7 @@ class DList
 {
   /*
     public:
-      typedef DListIterator<T,ENTRY> iterator;
+      using iterator = DListIterator<T,ENTRY>;
   */
  private:
   T* _head;
@@ -108,7 +108,7 @@ class DList
   T*& PREV(T* n) { return ENTRY(n)->_prev; }
 
  public:
-  typedef DListIterator<T, ENTRY> iterator;
+  using iterator = DListIterator<T, ENTRY>;
 
   DList()
   {
