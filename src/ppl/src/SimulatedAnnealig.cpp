@@ -75,6 +75,16 @@ void SimulatedAnnealing::run()
       assignment = perturbAssignment();
       int cost = getAssignmentCost(assignment);
       int delta_cost = cost - pre_cost;
+      debugPrint(logger_,
+                 utl::PPL,
+                 "annealing",
+                 1,
+                 "iteration: {}; temperature: {}; assignment cost: {}um; delta "
+                 "cost: {}um",
+                 iter,
+                 temperature,
+                 dbuToMicrons(cost),
+                 dbuToMicrons(delta_cost));
       const float rand_float = distribution_(generator_);
       const float accept_prob = std::exp((-1) * delta_cost / temperature);
       if (delta_cost <= 0 || accept_prob > rand_float) {
