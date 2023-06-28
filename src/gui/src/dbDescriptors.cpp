@@ -286,6 +286,12 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
   }
   props.push_back({"Tech Via Rules", via_rules});
 
+  SelectionSet generate_vias;
+  for (auto via : tech->getViaGenerateRules()) {
+    generate_vias.insert(gui->makeSelected(via));
+  }
+  props.push_back({"Tech Via Generate Rules", generate_vias});
+
   SelectionSet via_maps;
   for (auto map : tech->getMetalWidthViaMap()) {
     via_maps.insert(gui->makeSelected(map));
@@ -305,12 +311,6 @@ Descriptor::Properties DbTechDescriptor::getProperties(std::any object) const
     nondefault_rules.insert(gui->makeSelected(nondefault));
   }
   props.push_back({"Non-Default Rules", nondefault_rules});
-
-  SelectionSet generate_vias;
-  for (auto via : tech->getViaGenerateRules()) {
-    generate_vias.insert(gui->makeSelected(via));
-  }
-  props.push_back({"Via Generate Rules", generate_vias});
 
   return props;
 }
@@ -3355,7 +3355,7 @@ DbTechViaLayerRuleDescriptor::DbTechViaLayerRuleDescriptor(odb::dbDatabase* db)
 std::string DbTechViaLayerRuleDescriptor::getName(std::any object) const
 {
   auto via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(object);
-  std::string rule_name = via_layer_rule->getLayer()->getName() + "_via_layer";
+  std::string rule_name = via_layer_rule->getLayer()->getName() + "_rule";
   return rule_name;
 }
 
@@ -3428,10 +3428,9 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any obje
 
     via_layer_rule->getSpacing(x_spacing, y_spacing);
 
-    PropertyList spacing_rule;
-    spacing_rule.push_back({"X", Property::convert_dbu(x_spacing, true)});
-    spacing_rule.push_back({"Y", Property::convert_dbu(y_spacing, true)});
-    props.push_back({"Spacing", spacing_rule});
+    props.push_back({"Spacing", fmt::format("{} x {}",
+                                            Property::convert_dbu(x_spacing, true),
+                                            Property::convert_dbu(y_spacing, true))});
   }
 
   if (via_layer_rule->hasResistance()) {
