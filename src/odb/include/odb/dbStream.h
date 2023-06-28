@@ -88,7 +88,7 @@ class dbOStream
     return *this;
   }
 
-  dbOStream& operator<<(short c)
+  dbOStream& operator<<(int16_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
     if (n != 1)
@@ -96,7 +96,7 @@ class dbOStream
     return *this;
   }
 
-  dbOStream& operator<<(unsigned short c)
+  dbOStream& operator<<(uint16_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
     if (n != 1)
@@ -268,13 +268,13 @@ class dbIStream
     return *this;
   }
 
-  dbIStream& operator>>(short& c)
+  dbIStream& operator>>(int16_t& c)
   {
     _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;
   }
 
-  dbIStream& operator>>(unsigned short& c)
+  dbIStream& operator>>(uint16_t& c)
   {
     _f.read(reinterpret_cast<char*>(&c), sizeof(c));
     return *this;

@@ -118,7 +118,7 @@ class lefout
 
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
-      std::unordered_map<std::string, short>& propertiesMap);
+      std::unordered_map<std::string, int16_t>& propertiesMap);
 
   int determineBloat(dbTechLayer* layer) const;
   void insertObstruction(dbTechLayer* layer,

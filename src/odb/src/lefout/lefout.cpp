@@ -1230,7 +1230,7 @@ void lefout::writePropertyDefinition(dbProperty* prop)
 
 inline void lefout::writeObjectPropertyDefinitions(
     dbObject* obj,
-    std::unordered_map<std::string, short>& propertiesMap)
+    std::unordered_map<std::string, int16_t>& propertiesMap)
 {
   int bitNumber;
   switch (obj->getObjectType()) {
@@ -1271,7 +1271,7 @@ inline void lefout::writeObjectPropertyDefinitions(
 
 void lefout::writePropertyDefinitions(dbLib* lib)
 {
-  std::unordered_map<std::string, short> propertiesMap;
+  std::unordered_map<std::string, int16_t> propertiesMap;
   dbTech* tech = lib->getDb()->getTech();
 
   fmt::print(_out, "{}", "\nPROPERTYDEFINITIONS\n");
