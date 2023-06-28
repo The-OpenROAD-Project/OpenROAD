@@ -235,7 +235,7 @@ class dbOStream
     return *this;
   }
 
-  dbOStream& operator<<(std::string s)
+  dbOStream& operator<<(const std::string& s)
   {
     char* tmp = strdup(s.c_str());
     *this << tmp;

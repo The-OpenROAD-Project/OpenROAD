@@ -111,7 +111,7 @@ class dbObjectTable
 
   dbId<_dbProperty> getPropList(uint oid) { return _prop_list.getAttr(oid); }
 
-  void setPropList(uint oid, dbId<_dbProperty> propList)
+  void setPropList(uint oid, const dbId<_dbProperty>& propList)
   {
     _prop_list.setAttr(oid, propList);
   }

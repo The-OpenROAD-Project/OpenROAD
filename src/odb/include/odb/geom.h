@@ -52,11 +52,11 @@ class Point
   Point(const Point& p);
   Point(int x, int y);
   ~Point() = default;
-  Point& operator=(const Point& p) = default;
-  bool operator==(const Point& p) const;
-  bool operator!=(const Point& p) const { return !(*this == p); };
-  bool operator<(const Point& p) const;
-  bool operator>=(const Point& p) const { return !(*this < p); }
+  Point& operator=(const Point& rhs) = default;
+  bool operator==(const Point& rhs) const;
+  bool operator!=(const Point& rhs) const { return !(*this == rhs); };
+  bool operator<(const Point& rhs) const;
+  bool operator>=(const Point& rhs) const { return !(*this < rhs); }
 
   int get(Orientation2D orient) const;
   int getX() const { return x_; }
@@ -223,10 +223,10 @@ class Rect
   int maxDXDY() const;
   int getDir() const;
 
-  void set_xlo(int x1);
-  void set_xhi(int x1);
-  void set_ylo(int x1);
-  void set_yhi(int x1);
+  void set_xlo(int x);
+  void set_xhi(int x);
+  void set_ylo(int y);
+  void set_yhi(int y);
 
   int xMin() const { return xlo_; }
   int yMin() const { return ylo_; }
@@ -270,13 +270,13 @@ class Rect
   bool inside(const Rect& r) const;
 
   // Return the point inside rect that is closest to pt.
-  Point closestPtInside(Point pt) const;
+  Point closestPtInside(const Point& pt) const;
 
   // Compute the union of these two rectangles.
   void merge(const Rect& r, Rect& result);
 
   // Compute the union of this rectangle and an octagon.
-  void merge(const Oct& s, Rect& result);
+  void merge(const Oct& o, Rect& result);
 
   // Compute the union of these two rectangles. The result is stored in this
   // rectangle.
@@ -284,7 +284,7 @@ class Rect
 
   // Compute the union of this rectangle an an octagon.
   // The result is stored in this rectangle.
-  void merge(const Oct& s);
+  void merge(const Oct& o);
 
   // Bloat each side of the rectangle by the margin.
   void bloat(int margin, Rect& result) const;
@@ -326,9 +326,9 @@ inline Point::Point(int x, int y)
   y_ = y;
 }
 
-inline bool Point::operator==(const Point& p) const
+inline bool Point::operator==(const Point& rhs) const
 {
-  return std::tie(x_, y_) == std::tie(p.x_, p.y_);
+  return std::tie(x_, y_) == std::tie(rhs.x_, rhs.y_);
 }
 
 inline int Point::get(Orientation2D orient) const
@@ -402,21 +402,21 @@ inline Rect::Rect(const Point& p1, const Point& p2)
 {
 }
 
-inline void Rect::set_xlo(int x1)
+inline void Rect::set_xlo(int x)
 {
-  xlo_ = x1;
+  xlo_ = x;
 }
-inline void Rect::set_xhi(int x2)
+inline void Rect::set_xhi(int x)
 {
-  xhi_ = x2;
+  xhi_ = x;
 }
-inline void Rect::set_ylo(int y1)
+inline void Rect::set_ylo(int y)
 {
-  ylo_ = y1;
+  ylo_ = y;
 }
-inline void Rect::set_yhi(int y2)
+inline void Rect::set_yhi(int y)
 {
-  yhi_ = y2;
+  yhi_ = y;
 }
 inline void Rect::reset(int x1, int y1, int x2, int y2)
 {
@@ -567,7 +567,7 @@ inline bool Rect::inside(const Rect& r) const
          && (yhi_ > r.yhi_);
 }
 
-inline Point Rect::closestPtInside(Point pt) const
+inline Point Rect::closestPtInside(const Point& pt) const
 {
   return Point(std::min(std::max(pt.getX(), xMin()), xMax()),
                std::min(std::max(pt.getY(), yMin()), yMax()));

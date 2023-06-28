@@ -50,8 +50,9 @@ class dbVector : public std::vector<T>
 
   dbVector<T>& operator=(const std::vector<T>& v)
   {
-    if (this != &v)
+    if (this != &v) {
       *(std::vector<T>*) this = v;
+    }
 
     return *this;
   }
@@ -80,8 +81,9 @@ class dbVector<T*> : public std::vector<T*>
 
   dbVector<T*>& operator=(const std::vector<T*>& v)
   {
-    if (this != &v)
+    if (this != &v) {
       *(std::vector<T>*) this = v;
+    }
 
     return *this;
   }
@@ -97,15 +99,18 @@ class dbVector<T*> : public std::vector<T*>
 
   bool operator==(const dbVector<T*>& rhs) const
   {
-    if (_base::size() != rhs.size())
+    if (_base::size() != rhs.size()) {
       return false;
+    }
 
     typename dbVector<T*>::const_iterator i1 = begin();
     typename dbVector<T*>::const_iterator i2 = rhs.begin();
 
-    for (; i1 != end(); ++i1, ++i2)
-      if (**i1 != **i2)
+    for (; i1 != end(); ++i1, ++i2) {
+      if (**i1 != **i2) {
         return false;
+      }
+    }
 
     return true;
   }
