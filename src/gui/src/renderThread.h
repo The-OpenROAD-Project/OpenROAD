@@ -36,6 +36,7 @@
 #include <QPainter>
 #include <QThread>
 #include <QWaitCondition>
+#include <mutex>
 
 #include "gui/gui.h"
 #include "odb/db.h"

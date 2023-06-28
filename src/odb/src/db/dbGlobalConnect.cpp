@@ -47,20 +47,16 @@
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbGlobalConnect>;
 
 bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
 {
   if (region_ != rhs.region_)
     return false;
-
   if (net_ != rhs.net_)
     return false;
-
   if (inst_pattern_ != rhs.inst_pattern_)
     return false;
-
   if (pin_pattern_ != rhs.pin_pattern_)
     return false;
 
@@ -68,17 +64,15 @@ bool _dbGlobalConnect::operator==(const _dbGlobalConnect& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const
 {
   if (region_ >= rhs.region_)
     return false;
-
   if (net_ >= rhs.net_)
     return false;
-
   if (inst_pattern_ >= rhs.inst_pattern_)
     return false;
-
   if (pin_pattern_ >= rhs.pin_pattern_)
     return false;
 
@@ -86,12 +80,12 @@ bool _dbGlobalConnect::operator<(const _dbGlobalConnect& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbGlobalConnect::differences(dbDiff& diff,
                                    const char* field,
                                    const _dbGlobalConnect& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(region_);
   DIFF_FIELD(net_);
   DIFF_FIELD(inst_pattern_);
@@ -100,6 +94,7 @@ void _dbGlobalConnect::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbGlobalConnect::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -112,11 +107,13 @@ void _dbGlobalConnect::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db)
 {
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbGlobalConnect::_dbGlobalConnect(_dbDatabase* db, const _dbGlobalConnect& r)
 {
   region_ = r.region_;
@@ -139,6 +136,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGlobalConnect& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbGlobalConnect& obj)
 {
   stream << obj.region_;

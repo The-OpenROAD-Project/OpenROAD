@@ -36,6 +36,7 @@
 #include <boost/bind/bind.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/thread/thread.hpp>
+#include <mutex>
 #include <thread>
 
 #include "LoadBalancer.h"

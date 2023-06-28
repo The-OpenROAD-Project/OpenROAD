@@ -41,7 +41,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -60,6 +59,20 @@ class _dbPowerSwitch : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbPowerSwitch(_dbDatabase*, const _dbPowerSwitch& r);
+  _dbPowerSwitch(_dbDatabase*);
+  ~_dbPowerSwitch();
+
+  bool operator==(const _dbPowerSwitch& rhs) const;
+  bool operator!=(const _dbPowerSwitch& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbPowerSwitch& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbPowerSwitch& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   char* _name;
   dbId<_dbPowerSwitch> _next_entry;
   std::string _in_supply_port;
@@ -71,18 +84,6 @@ class _dbPowerSwitch : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbPowerSwitch(_dbDatabase*, const _dbPowerSwitch& r);
-  _dbPowerSwitch(_dbDatabase*);
-  ~_dbPowerSwitch();
-  bool operator==(const _dbPowerSwitch& rhs) const;
-  bool operator!=(const _dbPowerSwitch& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbPowerSwitch& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbPowerSwitch& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerSwitch& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerSwitch& obj);

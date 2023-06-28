@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -63,14 +62,10 @@ class _dbTechLayerWidthTableRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerWidthTableRuleFlags flags_;
-  dbVector<int> width_tbl_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerWidthTableRule(_dbDatabase*, const _dbTechLayerWidthTableRule& r);
   _dbTechLayerWidthTableRule(_dbDatabase*);
   ~_dbTechLayerWidthTableRule();
+
   bool operator==(const _dbTechLayerWidthTableRule& rhs) const;
   bool operator!=(const _dbTechLayerWidthTableRule& rhs) const
   {
@@ -83,6 +78,12 @@ class _dbTechLayerWidthTableRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  dbTechLayerWidthTableRuleFlags flags_;
+  dbVector<int> width_tbl_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerWidthTableRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerWidthTableRule& obj);

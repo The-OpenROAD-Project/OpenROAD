@@ -43,7 +43,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerCutEnclosureRule>;
 
 bool _dbTechLayerCutEnclosureRule::operator==(
@@ -123,55 +122,38 @@ bool _dbTechLayerCutEnclosureRule::operator==(
 
   if (cut_class_ != rhs.cut_class_)
     return false;
-
   if (eol_width_ != rhs.eol_width_)
     return false;
-
   if (eol_min_length_ != rhs.eol_min_length_)
     return false;
-
   if (first_overhang_ != rhs.first_overhang_)
     return false;
-
   if (second_overhang_ != rhs.second_overhang_)
     return false;
-
   if (spacing_ != rhs.spacing_)
     return false;
-
   if (extension_ != rhs.extension_)
     return false;
-
   if (forward_extension_ != rhs.forward_extension_)
     return false;
-
   if (backward_extension_ != rhs.backward_extension_)
     return false;
-
   if (min_width_ != rhs.min_width_)
     return false;
-
   if (cut_within_ != rhs.cut_within_)
     return false;
-
   if (min_length_ != rhs.min_length_)
     return false;
-
   if (par_length_ != rhs.par_length_)
     return false;
-
   if (second_par_length_ != rhs.second_par_length_)
     return false;
-
   if (par_within_ != rhs.par_within_)
     return false;
-
   if (second_par_within_ != rhs.second_par_within_)
     return false;
-
   if (below_enclosure_ != rhs.below_enclosure_)
     return false;
-
   if (num_corners_ != rhs.num_corners_)
     return false;
 
@@ -179,6 +161,7 @@ bool _dbTechLayerCutEnclosureRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerCutEnclosureRule::operator<(
     const _dbTechLayerCutEnclosureRule& rhs) const
 {
@@ -186,13 +169,13 @@ bool _dbTechLayerCutEnclosureRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerCutEnclosureRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerCutEnclosureRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.type_);
   DIFF_FIELD(flags_.cut_class_valid_);
   DIFF_FIELD(flags_.above_);
@@ -239,6 +222,7 @@ void _dbTechLayerCutEnclosureRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerCutEnclosureRule::out(dbDiff& diff,
                                        char side,
                                        const char* field) const
@@ -291,6 +275,7 @@ void _dbTechLayerCutEnclosureRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -315,6 +300,7 @@ _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(
     _dbDatabase* db,
     const _dbTechLayerCutEnclosureRule& r)
@@ -392,6 +378,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutEnclosureRule& obj)
 {

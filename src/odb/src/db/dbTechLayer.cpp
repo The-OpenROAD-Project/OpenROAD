@@ -67,7 +67,6 @@
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayer>;
 
 bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
@@ -115,55 +114,38 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
 
   if (wrong_way_width_ != rhs.wrong_way_width_)
     return false;
-
   if (*cut_class_rules_tbl_ != *rhs.cut_class_rules_tbl_)
     return false;
-
   if (cut_class_rules_hash_ != rhs.cut_class_rules_hash_)
     return false;
-
   if (*spacing_eol_rules_tbl_ != *rhs.spacing_eol_rules_tbl_)
     return false;
-
   if (*cut_spacing_rules_tbl_ != *rhs.cut_spacing_rules_tbl_)
     return false;
-
   if (*minstep_rules_tbl_ != *rhs.minstep_rules_tbl_)
     return false;
-
   if (*corner_spacing_rules_tbl_ != *rhs.corner_spacing_rules_tbl_)
     return false;
-
   if (*spacing_table_prl_rules_tbl_ != *rhs.spacing_table_prl_rules_tbl_)
     return false;
-
   if (*cut_spacing_table_orth_tbl_ != *rhs.cut_spacing_table_orth_tbl_)
     return false;
-
   if (*cut_spacing_table_def_tbl_ != *rhs.cut_spacing_table_def_tbl_)
     return false;
-
   if (*cut_enc_rules_tbl_ != *rhs.cut_enc_rules_tbl_)
     return false;
-
   if (*eol_ext_rules_tbl_ != *rhs.eol_ext_rules_tbl_)
     return false;
-
   if (*array_spacing_rules_tbl_ != *rhs.array_spacing_rules_tbl_)
     return false;
-
   if (*eol_keep_out_rules_tbl_ != *rhs.eol_keep_out_rules_tbl_)
     return false;
-
   if (*width_table_rules_tbl_ != *rhs.width_table_rules_tbl_)
     return false;
-
   if (*min_cuts_rules_tbl_ != *rhs.min_cuts_rules_tbl_)
     return false;
-
   if (*area_rules_tbl_ != *rhs.area_rules_tbl_)
     return false;
-
   if (*keepout_zone_rules_tbl_ != *rhs.keepout_zone_rules_tbl_)
     return false;
 
@@ -302,6 +284,7 @@ bool _dbTechLayer::operator==(const _dbTechLayer& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const
 {
   // User Code Begin <
@@ -310,12 +293,12 @@ bool _dbTechLayer::operator<(const _dbTechLayer& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbTechLayer::differences(dbDiff& diff,
                                const char* field,
                                const _dbTechLayer& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.num_masks_);
   DIFF_FIELD(flags_.has_max_width_);
   DIFF_FIELD(flags_.has_thickness_);
@@ -392,6 +375,7 @@ void _dbTechLayer::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -472,6 +456,7 @@ void _dbTechLayer::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayer::_dbTechLayer(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -623,6 +608,7 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db)
       3);
   // User Code End Constructor
 }
+
 _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
 {
   flags_.num_masks_ = r.flags_.num_masks_;
@@ -812,6 +798,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayer& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayer& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;
@@ -935,6 +922,7 @@ dbObjectTable* _dbTechLayer::getObjectTable(dbObjectType type)
   }
   return getTable()->getObjectTable(type);
 }
+
 _dbTechLayer::~_dbTechLayer()
 {
   delete cut_class_rules_tbl_;
