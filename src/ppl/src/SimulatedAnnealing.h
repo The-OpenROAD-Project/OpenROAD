@@ -95,7 +95,6 @@ class SimulatedAnnealing
 
   // perturbation variables
   const float swap_pins_ = 0.5;
-  const float pins_subset_percent_ = 0.25;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
