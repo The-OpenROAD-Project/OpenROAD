@@ -315,7 +315,7 @@ bool dbBTerm::rename(const char* name)
   return true;
 }
 
-void dbBTerm::setSigType(const dbSigType& type)
+void dbBTerm::setSigType(dbSigType type)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbBlock* block = (_dbBlock*) getBlock();
@@ -341,7 +341,7 @@ dbSigType dbBTerm::getSigType()
   return dbSigType(bterm->_flags._sig_type);
 }
 
-void dbBTerm::setIoType(const dbIoType& type)
+void dbBTerm::setIoType(dbIoType type)
 {
   _dbBTerm* bterm = (_dbBTerm*) this;
   _dbBlock* block = (_dbBlock*) getBlock();

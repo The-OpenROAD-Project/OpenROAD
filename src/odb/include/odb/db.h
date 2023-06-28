@@ -1686,7 +1686,7 @@ class dbBTerm : public dbObject
   ///
   /// Set the signal type of this block-terminal.
   ///
-  void setSigType(const dbSigType& type);
+  void setSigType(dbSigType type);
 
   ///
   /// Get the signal type of this block-terminal.
@@ -1696,7 +1696,7 @@ class dbBTerm : public dbObject
   ///
   /// Set the IO direction of this block-terminal.
   ///
-  void setIoType(const dbIoType& type);
+  void setIoType(dbIoType type);
 
   ///
   /// Get the IO direction of this block-terminal.
