@@ -32,9 +32,8 @@
 
 #pragma once
 
-#include <cstring>
-
 #include <array>
+#include <cstring>
 #include <fstream>
 #include <string>
 
@@ -75,88 +74,99 @@ class dbOStream
   dbOStream& operator<<(char c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(unsigned char c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(int16_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(uint16_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(int c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(uint64_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(unsigned int c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(int8_t c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(float c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(double c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
   dbOStream& operator<<(long double c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
@@ -168,8 +178,9 @@ class dbOStream
       int l = strlen(c) + 1;
       *this << l;
       int n = fwrite(c, l, 1, _f);
-      if (n != 1)
+      if (n != 1) {
         write_error();
+      }
     }
 
     return *this;
@@ -178,8 +189,9 @@ class dbOStream
   dbOStream& operator<<(dbObjectType c)
   {
     int n = fwrite(&c, sizeof(c), 1, _f);
-    if (n != 1)
+    if (n != 1) {
       write_error();
+    }
     return *this;
   }
 
@@ -327,9 +339,9 @@ class dbIStream
     int l;
     *this >> l;
 
-    if (l == 0)
+    if (l == 0) {
       c = nullptr;
-    else {
+    } else {
       c = (char*) malloc(l);
       _f.read(reinterpret_cast<char*>(c), l);
     }

@@ -572,16 +572,18 @@ inline dbShape::Type dbShape::getType() const
 
 inline dbTechVia* dbShape::getTechVia() const
 {
-  if ((_type != TECH_VIA) && (_type != TECH_VIA_BOX))
+  if ((_type != TECH_VIA) && (_type != TECH_VIA_BOX)) {
     return nullptr;
+  }
 
   return (dbTechVia*) _via;
 }
 
 inline dbVia* dbShape::getVia() const
 {
-  if ((_type != VIA) && (_type != VIA_BOX))
+  if ((_type != VIA) && (_type != VIA_BOX)) {
     return nullptr;
+  }
 
   return (dbVia*) _via;
 }
@@ -630,25 +632,29 @@ inline void dbShape::setSegment(int prev_x,
     x2 = cur_x + dw;
 
     if (cur_y > prev_y) {
-      if (has_prev_ext)
+      if (has_prev_ext) {
         y1 = prev_y - prev_ext;
-      else
+      } else {
         y1 = prev_y - default_ext;
+      }
 
-      if (has_cur_ext)
+      if (has_cur_ext) {
         y2 = cur_y + cur_ext;
-      else
+      } else {
         y2 = cur_y + default_ext;
+      }
     } else if (cur_y < prev_y) {
-      if (has_cur_ext)
+      if (has_cur_ext) {
         y1 = cur_y - cur_ext;
-      else
+      } else {
         y1 = cur_y - default_ext;
+      }
 
-      if (has_prev_ext)
+      if (has_prev_ext) {
         y2 = prev_y + prev_ext;
-      else
+      } else {
         y2 = prev_y + default_ext;
+      }
     } else {
       y1 = cur_y - dw;
       y2 = cur_y + dw;
@@ -659,25 +665,29 @@ inline void dbShape::setSegment(int prev_x,
     y2 = cur_y + dw;
 
     if (cur_x > prev_x) {
-      if (has_prev_ext)
+      if (has_prev_ext) {
         x1 = prev_x - prev_ext;
-      else
+      } else {
         x1 = prev_x - default_ext;
+      }
 
-      if (has_cur_ext)
+      if (has_cur_ext) {
         x2 = cur_x + cur_ext;
-      else
+      } else {
         x2 = cur_x + default_ext;
+      }
     } else if (cur_x < prev_x) {
-      if (has_cur_ext)
+      if (has_cur_ext) {
         x1 = cur_x - cur_ext;
-      else
+      } else {
         x1 = cur_x - default_ext;
+      }
 
-      if (has_prev_ext)
+      if (has_prev_ext) {
         x2 = prev_x + prev_ext;
-      else
+      } else {
         x2 = prev_x + default_ext;
+      }
     } else {
       x1 = cur_x - dw;
       x2 = cur_x + dw;
