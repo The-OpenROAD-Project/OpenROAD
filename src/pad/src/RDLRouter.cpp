@@ -192,7 +192,14 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
   // build graph
   makeGraph();
 
-  std::set<odb::dbNet*> failed;
+  struct map_net_ordering
+  {
+    bool operator()(odb::dbNet* lhs, odb::dbNet* rhs) const
+    {
+      return lhs->getId() < rhs->getId();
+    }
+  };
+  std::map<odb::dbNet*, std::vector<TargetPair>, map_net_ordering> failed;
   struct NetRoute
   {
     std::vector<grid_vertex> route;
@@ -261,15 +268,22 @@ void RDLRouter::route(const std::vector<odb::dbNet*>& nets)
             point_vertex_map_[p0], point_vertex_map_[p1], graph_);
       }
     } else {
-      failed.insert(net);
+      failed[net].push_back(points);
     }
   }
 
   if (!failed.empty()) {
     logger_->warn(
         utl::PAD, 6, "Failed to route the following {} nets:", failed.size());
-    for (auto* net : failed) {
+    for (const auto& [net, segments] : failed) {
       logger_->report("  {}", net->getName());
+      for (const auto& segment : segments) {
+        logger_->report("    {}/{} -> {}/{}",
+                        segment.target0.terminal->getInst()->getName(),
+                        segment.target0.terminal->getMTerm()->getName(),
+                        segment.target1.terminal->getInst()->getName(),
+                        segment.target1.terminal->getMTerm()->getName());
+      }
     }
   }
 
