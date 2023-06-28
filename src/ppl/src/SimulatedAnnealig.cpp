@@ -151,6 +151,28 @@ std::vector<int> SimulatedAnnealing::swapPins(
 
   return assignment;
 }
+
+std::vector<int> SimulatedAnnealing::movePinToFreeSlot(
+    const std::vector<int>& pin_assignment,
+    int& prev_slot,
+    int& new_slot)
+{
+  std::vector<int> assignment = pin_assignment;
+
+  const int idx = (int) (std::floor(distribution_(generator_) * num_pins_));
+  prev_slot = assignment[idx];
+
+  bool free_slot = false;
+  while (!free_slot) {
+    new_slot = (int) (std::floor(distribution_(generator_) * num_slots_));
+    free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
+  }
+
+  assignment[idx] = new_slot;
+
+  return assignment;
+}
+
 std::vector<int> SimulatedAnnealing::placeSubsetOfPins(
     const std::vector<int>& pin_assignment,
     float subset_percent)
