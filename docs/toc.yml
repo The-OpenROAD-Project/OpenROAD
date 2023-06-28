@@ -1,6 +1,24 @@
 root: index
 entries:
 
+- file: main/CODE_OF_CONDUCT
+  title: Code of Conduct
+- file: contrib/GettingInvolved
+  title: Getting Involved
+
+- file: contrib/DeveloperGuide
+  title: Developer Guide
+  entries:
+  - file: contrib/CodingPractices
+    title: Coding Practices
+  - file: contrib/DatabaseMath
+    title: Database Math
+  - file: contrib/Logger
+    title: Logger
+  - file: contrib/CI
+    title: CI
+
+
 - file: main/README
   title: Getting Started with OpenROAD App
 
@@ -71,23 +89,8 @@ entries:
   - file: main/src/par/README
     title: Partition Manager
 
-- file: contrib/GettingInvolved
-  title: Getting Involved
-
-- file: contrib/DeveloperGuide
-  title: Developer's Guide
-  entries:
-  - file: contrib/CodingPractices
-    title: Coding Practices
-  - file: contrib/DatabaseMath
-    title: Database Math
-  - file: contrib/Logger
-    title: Logger
-  - file: contrib/CI
-    title: CI
-
-- file: main/CODE_OF_CONDUCT
-  title: Code of Conduct
+- file: tutorials/index
+  title: Tutorials
 
 - file: user/FAQS
   title: FAQs
