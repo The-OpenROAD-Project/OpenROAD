@@ -48,18 +48,18 @@ class dbDiff;
 class dbTransform
 {
   friend class _dbBlock;
-  dbOrientType::Value _orient;
+  dbOrientType::Value _orient = dbOrientType::R0;
   Point _offset;
 
  public:
   // T = <R0, (0,0)>
-  dbTransform() : _orient(dbOrientType::R0), _offset(0, 0) {}
+  dbTransform() = default;
 
   //  T = <R0, offset>
-  dbTransform(Point offset) : _orient(dbOrientType::R0), _offset(offset) {}
+  dbTransform(Point offset) : _offset(offset) {}
 
   //  T = <orient, (0,0)>
-  dbTransform(dbOrientType orient) : _orient(orient), _offset(0, 0) {}
+  dbTransform(dbOrientType orient) : _orient(orient) {}
 
   //  T = <orient, offset>
   dbTransform(dbOrientType orient, Point offset)

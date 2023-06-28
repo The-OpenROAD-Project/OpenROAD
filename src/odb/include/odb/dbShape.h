@@ -79,26 +79,26 @@ class dbShape
   };
 
  private:
-  Type _type;
+  Type _type = SEGMENT;
   Rect _rect;
-  dbTechLayer* _layer;
-  dbObject* _via;
+  dbTechLayer* _layer = nullptr;
+  dbObject* _via = nullptr;
 
  public:
-  dbShape() : _type(SEGMENT), _layer(nullptr), _via(nullptr) {}
+  dbShape() = default;
 
   dbShape(dbVia* via, const Rect& r)
-      : _type(VIA), _rect(r), _layer(nullptr), _via((dbObject*) via)
+      : _type(VIA), _rect(r), _via((dbObject*) via)
   {
   }
 
   dbShape(dbTechVia* via, const Rect& r)
-      : _type(TECH_VIA), _rect(r), _layer(nullptr), _via((dbObject*) via)
+      : _type(TECH_VIA), _rect(r), _via((dbObject*) via)
   {
   }
 
   dbShape(dbTechLayer* layer, const Rect& r)
-      : _type(SEGMENT), _rect(r), _layer(layer), _via(nullptr)
+      : _rect(r), _layer(layer)
   {
   }
 
