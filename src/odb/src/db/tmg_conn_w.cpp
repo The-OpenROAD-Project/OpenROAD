@@ -44,8 +44,8 @@ namespace odb {
 
 void tmg_conn::checkConnOrdered()
 {
-  dbITerm* drv_iterm = NULL;
-  dbBTerm* drv_bterm = NULL;
+  dbITerm* drv_iterm = nullptr;
+  dbBTerm* drv_bterm = nullptr;
   dbITerm* itermV[1024];
   dbBTerm* btermV[1024];
   int itermN = 0;

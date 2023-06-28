@@ -162,7 +162,7 @@ class dbOStream
 
   dbOStream& operator<<(const char* c)
   {
-    if (c == NULL) {
+    if (c == nullptr) {
       *this << 0;
     } else {
       int l = strlen(c) + 1;
@@ -328,7 +328,7 @@ class dbIStream
     *this >> l;
 
     if (l == 0)
-      c = NULL;
+      c = nullptr;
     else {
       c = (char*) malloc(l);
       _f.read(reinterpret_cast<char*>(c), l);

@@ -125,7 +125,7 @@ void dbTable<T>::clear()
   _page_tbl_size = 0;
   _alloc_cnt = 0;
   _free_list = 0;
-  _pages = NULL;
+  _pages = nullptr;
 }
 
 template <class T>
@@ -145,7 +145,7 @@ dbTable<T>::dbTable(_dbDatabase* db,
   _page_tbl_size = 0;
   _alloc_cnt = 0;
   _free_list = 0;
-  _pages = NULL;
+  _pages = nullptr;
 }
 
 template <class T>
@@ -159,7 +159,7 @@ dbTable<T>::dbTable(_dbDatabase* db, dbObject* owner, const dbTable<T>& t)
       _page_tbl_size(t._page_tbl_size),
       _alloc_cnt(t._alloc_cnt),
       _free_list(t._free_list),
-      _pages(NULL)
+      _pages(nullptr)
 {
   copy_pages(t);
 }
@@ -184,7 +184,7 @@ void dbTable<T>::resizePageTbl()
     _pages[i] = old_tbl[i];
 
   for (; i < _page_tbl_size; ++i)
-    _pages[i] = NULL;
+    _pages[i] = nullptr;
 
   delete[] old_tbl;
 }
@@ -573,7 +573,7 @@ void dbTable<T>::copy_pages(const dbTable<T>& t)
   uint i;
 
   for (i = 0; i < _page_tbl_size; ++i)
-    _pages[i] = NULL;
+    _pages[i] = nullptr;
 
   for (i = 0; i < _page_cnt; ++i) {
     dbTablePage* page = t._pages[i];
@@ -644,7 +644,7 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
   stream >> table._free_list;
 
   if (table._page_tbl_size == 0)
-    table._pages = NULL;
+    table._pages = nullptr;
   else {
     table._pages = new dbTablePage*[table._page_tbl_size];
   }
@@ -662,7 +662,7 @@ dbIStream& operator>>(dbIStream& stream, dbTable<T>& table)
   }
 
   for (; i < table._page_tbl_size; ++i)
-    table._pages[i] = NULL;
+    table._pages[i] = nullptr;
 
   stream >> table._prop_list;
 
@@ -749,15 +749,15 @@ void dbTable<T>::differences(dbDiff& diff, const dbTable<T>& rhs) const
     if (lhs_valid_o && rhs_valid_o) {
       T* l = lhs.getPtr(i);
       T* r = rhs.getPtr(i);
-      l->differences(diff, NULL, *r);
+      l->differences(diff, nullptr, *r);
     } else if (lhs_valid_o) {
       T* l = lhs.getPtr(i);
-      l->out(diff, dbDiff::LEFT, NULL);
+      l->out(diff, dbDiff::LEFT, nullptr);
       diff.report("> %s [%u] FREE\n", name, i);
     } else if (rhs_valid_o) {
       T* r = rhs.getPtr(i);
       diff.report("< %s [%u] FREE\n", name, i);
-      r->out(diff, dbDiff::RIGHT, NULL);
+      r->out(diff, dbDiff::RIGHT, nullptr);
     }
   }
 
@@ -767,7 +767,7 @@ void dbTable<T>::differences(dbDiff& diff, const dbTable<T>& rhs) const
 
       if (lhs_valid_o) {
         T* l = lhs.getPtr(i);
-        l->out(diff, dbDiff::LEFT, NULL);
+        l->out(diff, dbDiff::LEFT, nullptr);
       } else {
         diff.report("< %s [%u] FREE\n", name, i);
       }
@@ -778,7 +778,7 @@ void dbTable<T>::differences(dbDiff& diff, const dbTable<T>& rhs) const
 
       if (rhs_valid_o) {
         T* r = rhs.getPtr(i);
-        r->out(diff, dbDiff::RIGHT, NULL);
+        r->out(diff, dbDiff::RIGHT, nullptr);
       } else {
         diff.report("> %s [%u] FREE\n", name, i);
       }
@@ -794,7 +794,7 @@ void dbTable<T>::out(dbDiff& diff, char side) const
   for (i = _bottom_idx; i <= _top_idx; ++i) {
     if (validId(i)) {
       T* o = getPtr(i);
-      o->out(diff, side, NULL);
+      o->out(diff, side, nullptr);
     }
   }
 }

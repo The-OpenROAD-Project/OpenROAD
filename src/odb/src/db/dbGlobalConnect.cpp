@@ -167,7 +167,7 @@ dbRegion* dbGlobalConnect::getRegion() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   if (obj->region_ == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbRegion*) par->_region_tbl->getPtr(obj->region_);
 }
@@ -176,7 +176,7 @@ dbNet* dbGlobalConnect::getNet() const
 {
   _dbGlobalConnect* obj = (_dbGlobalConnect*) this;
   if (obj->net_ == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbNet*) par->_net_tbl->getPtr(obj->net_);
 }

@@ -101,8 +101,8 @@ class dbSet
 
   dbSet()
   {
-    _itr = NULL;
-    _parent = NULL;
+    _itr = nullptr;
+    _parent = nullptr;
   }
 
   dbSet(dbObject* parent, dbIterator* itr)
@@ -168,7 +168,7 @@ class dbSet
 template <class T>
 inline dbSetIterator<T>::dbSetIterator()
 {
-  _itr = NULL;
+  _itr = nullptr;
   _cur = 0;
 }
 

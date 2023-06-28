@@ -176,7 +176,7 @@ inline void diff_out_set(dbDiff& diff,
     dbSet<T> oset(owner, set_itr);
 
     for (itr = oset.begin(); itr != oset.end(); ++itr)
-      (*itr)->out(diff, side, NULL);
+      (*itr)->out(diff, side, nullptr);
 
     diff.end_object();
   }
@@ -249,17 +249,17 @@ inline void set_symmetric_diff(dbDiff& diff,
     T* o2 = *i2;
 
     if (o1 == *sd) {
-      o1->out(diff, dbDiff::LEFT, NULL);
+      o1->out(diff, dbDiff::LEFT, nullptr);
       ++i1;
       ++sd;
     } else if (o2 == *sd) {
-      o2->out(diff, dbDiff::RIGHT, NULL);
+      o2->out(diff, dbDiff::RIGHT, nullptr);
       ++i2;
       ++sd;
     } else  // equal keys
     {
       // compare internals
-      o1->differences(diff, NULL, *o2);
+      o1->differences(diff, nullptr, *o2);
       ++i1;
       ++i2;
     }
@@ -267,12 +267,12 @@ inline void set_symmetric_diff(dbDiff& diff,
 
   for (; i1 != lhs.end(); ++i1) {
     T* o1 = *i1;
-    o1->out(diff, dbDiff::LEFT, NULL);
+    o1->out(diff, dbDiff::LEFT, nullptr);
   }
 
   for (; i2 != rhs.end(); ++i2) {
     T* o2 = *i2;
-    o2->out(diff, dbDiff::RIGHT, NULL);
+    o2->out(diff, dbDiff::RIGHT, nullptr);
   }
 
   diff.end_object();

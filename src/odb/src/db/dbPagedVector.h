@@ -162,7 +162,7 @@ void dbPagedVector<T, P, S>::freeIdx(uint idx)
 template <class T, const uint P, const uint S>
 dbPagedVector<T, P, S>::dbPagedVector()
 {
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -172,7 +172,7 @@ dbPagedVector<T, P, S>::dbPagedVector()
 template <class T, const uint P, const uint S>
 dbPagedVector<T, P, S>::dbPagedVector(const dbPagedVector<T, P, S>& V)
 {
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -197,7 +197,7 @@ void dbPagedVector<T, P, S>::clear()
     delete[] _pages;
   }
 
-  _pages = NULL;
+  _pages = nullptr;
   _page_cnt = 0;
   _page_tbl_size = 0;
   _next_idx = 0;
@@ -229,7 +229,7 @@ void dbPagedVector<T, P, S>::resizePageTbl()
     _pages[i] = old_tbl[i];
 
   for (; i < _page_tbl_size; ++i)
-    _pages[i] = NULL;
+    _pages[i] = nullptr;
 
   delete[] old_tbl;
 }

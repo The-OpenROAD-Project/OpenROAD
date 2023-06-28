@@ -70,7 +70,7 @@ namespace odb {
 
 template class dbTable<_dbDatabase>;
 
-static dbTable<_dbDatabase>* db_tbl = NULL;
+static dbTable<_dbDatabase>* db_tbl = nullptr;
 static uint db_unique_id = 0;
 
 bool _dbDatabase::operator==(const _dbDatabase& rhs) const
@@ -159,7 +159,7 @@ dbObjectTable* _dbDatabase::getObjectTable(dbObjectType type)
       break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -175,7 +175,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
-  _file = NULL;
+  _file = nullptr;
   _logger = nullptr;
   _unique_id = db_unique_id++;
 
@@ -208,7 +208,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
-  _file = NULL;
+  _file = nullptr;
   _logger = nullptr;
   _unique_id = id;
 
@@ -239,7 +239,7 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
       _chip(d._chip),
       _tech(d._tech),
       _unique_id(db_unique_id++),
-      _file(NULL),
+      _file(nullptr),
       _logger(nullptr)
 {
   if (d._file) {
@@ -363,7 +363,7 @@ dbLib* dbDatabase::findLib(const char* name)
       return (dbLib*) lib;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbMaster* dbDatabase::findMaster(const char* name)
@@ -376,7 +376,7 @@ dbMaster* dbDatabase::findMaster(const char* name)
     if (master)
       return master;
   }
-  return NULL;
+  return nullptr;
 }
 
 dbSet<dbChip> dbDatabase::getChips()
@@ -396,7 +396,7 @@ dbChip* dbDatabase::getChip()
   _dbDatabase* db = (_dbDatabase*) this;
 
   if (db->_chip == 0)
-    return NULL;
+    return nullptr;
 
   return (dbChip*) db->_chip_tbl->getPtr(db->_chip);
 }
@@ -406,7 +406,7 @@ dbTech* dbDatabase::getTech()
   _dbDatabase* db = (_dbDatabase*) this;
 
   if (db->_tech == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTech*) db->_tech_tbl->getPtr(db->_tech);
 }
@@ -423,7 +423,7 @@ void dbDatabase::readTech(std::ifstream& file)
   _dbDatabase* db = (_dbDatabase*) this;
   _dbTech* tech = (_dbTech*) getTech();
 
-  if (tech == NULL)
+  if (tech == nullptr)
     tech = (_dbTech*) dbTech::create(this);
   else {
     tech->~_dbTech();
@@ -525,7 +525,7 @@ void dbDatabase::writeTech(FILE* file)
   _dbDatabase* db = (_dbDatabase*) this;
   _dbTech* tech = (_dbTech*) getTech();
 
-  if (tech == NULL)
+  if (tech == nullptr)
     throw ZException("No technology");
 
   dbOStream stream(db, file);
@@ -613,7 +613,7 @@ void dbDatabase::endEco(dbBlock* block_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   dbJournal* eco = block->_journal;
-  block->_journal = NULL;
+  block->_journal = nullptr;
 
   if (block->_journal_pending)
     delete block->_journal_pending;
@@ -692,7 +692,7 @@ void dbDatabase::commitEco(dbBlock* block_)
   if (block->_journal_pending) {
     block->_journal_pending->redo();
     delete block->_journal_pending;
-    block->_journal_pending = NULL;
+    block->_journal_pending = nullptr;
   }
 }
 
@@ -704,9 +704,9 @@ void dbDatabase::setLogger(utl::Logger* logger)
 
 dbDatabase* dbDatabase::create()
 {
-  if (db_tbl == NULL) {
+  if (db_tbl == nullptr) {
     db_tbl = new dbTable<_dbDatabase>(
-        NULL, NULL, (GetObjTbl_t) NULL, dbDatabaseObj);
+        nullptr, nullptr, (GetObjTbl_t) nullptr, dbDatabaseObj);
   }
 
   _dbDatabase* db = db_tbl->create();
@@ -758,7 +758,7 @@ bool dbDatabase::diff(dbDatabase* db0_,
   _dbDatabase* db1 = (_dbDatabase*) db1_;
   dbDiff diff(file);
   diff.setIndentPerLevel(indent);
-  db0->differences(diff, NULL, *db1);
+  db0->differences(diff, nullptr, *db1);
   return diff.hasDifferences();
 }
 

@@ -685,8 +685,8 @@ _dbTechLayer::_dbTechLayer(_dbDatabase* db, const _dbTechLayer& r)
   _min_step_max_edges = r._min_step_max_edges;
   _first_last_pitch = r._first_last_pitch;
   _pt = r._pt;
-  _name = NULL;
-  _alias = NULL;
+  _name = nullptr;
+  _alias = nullptr;
   _upper = r._upper;
   _lower = r._lower;
   _v55sp_length_idx = r._v55sp_length_idx;
@@ -1275,7 +1275,7 @@ std::string dbTechLayer::getAlias()
 {
   _dbTechLayer* layer = (_dbTechLayer*) this;
 
-  if (layer->_alias == NULL) {
+  if (layer->_alias == nullptr) {
     return "";
   }
 
@@ -1750,7 +1750,7 @@ dbTechLayerAntennaRule* dbTechLayer::createDefaultAntennaRule()
       = (_dbTechLayerAntennaRule*) getDefaultAntennaRule();
 
   // Reinitialize the object to its default state...
-  if (r != NULL) {
+  if (r != nullptr) {
     r->~_dbTechLayerAntennaRule();
     new (r) _dbTechLayerAntennaRule(layer->getDatabase());
     r->_layer = getImpl()->getOID();
@@ -1771,7 +1771,7 @@ dbTechLayerAntennaRule* dbTechLayer::createOxide2AntennaRule()
       = (_dbTechLayerAntennaRule*) getOxide2AntennaRule();
 
   // Reinitialize the object to its default state...
-  if (r != NULL) {
+  if (r != nullptr) {
     r->~_dbTechLayerAntennaRule();
     new (r) _dbTechLayerAntennaRule(layer->getDatabase());
     r->_layer = getImpl()->getOID();
@@ -1803,7 +1803,7 @@ dbTechLayerAntennaRule* dbTechLayer::getDefaultAntennaRule() const
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_oxide1 == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechLayerAntennaRule*) tech->_antenna_rule_tbl->getPtr(
       layer->_oxide1);
@@ -1815,7 +1815,7 @@ dbTechLayerAntennaRule* dbTechLayer::getOxide2AntennaRule() const
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_oxide2 == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechLayerAntennaRule*) tech->_antenna_rule_tbl->getPtr(
       layer->_oxide2);
@@ -2192,7 +2192,7 @@ dbTechLayer* dbTechLayer::getLowerLayer()
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_lower == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechLayer*) tech->_layer_tbl->getPtr(layer->_lower);
 }
@@ -2203,7 +2203,7 @@ dbTechLayer* dbTechLayer::getUpperLayer()
   _dbTech* tech = (_dbTech*) layer->getOwner();
 
   if (layer->_upper == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechLayer*) tech->_layer_tbl->getPtr(layer->_upper);
 }
@@ -2218,10 +2218,10 @@ dbTechLayer* dbTechLayer::create(dbTech* tech_,
                                  dbTechLayerType type)
 {
   if (type.getValue() == dbTechLayerType::NONE)
-    return NULL;
+    return nullptr;
 
   if (tech_->findLayer(name_))
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechLayer* layer = tech->_layer_tbl->create();

@@ -217,18 +217,18 @@ inline void dbVector<T*>::differences(dbDiff& diff,
   for (; i1 != end() && i2 != rhs.end(); ++i1, ++i2, ++i) {
     if (*i1 != *i2) {
       diff.report("<> %s[%d]:\n", field, i);
-      (*i1)->differences(diff, NULL, *(*i2));
+      (*i1)->differences(diff, nullptr, *(*i2));
     }
   }
 
   for (; i1 != end(); ++i1, ++i) {
     diff.report("< %s[%d]:\n", field, i);
-    (*i1)->out(diff, dbDiff::LEFT, NULL);
+    (*i1)->out(diff, dbDiff::LEFT, nullptr);
   }
 
   for (; i2 != rhs.end(); ++i2, ++i) {
     diff.report("> %s[%d]:\n", field, i);
-    (*i2)->out(diff, dbDiff::RIGHT, NULL);
+    (*i2)->out(diff, dbDiff::RIGHT, nullptr);
   }
 }
 
@@ -240,7 +240,7 @@ inline void dbVector<T*>::out(dbDiff& diff, char side, const char* field) const
 
   for (; i1 != end(); ++i1, ++i) {
     diff.report("%c %s[%d]:\n", side, field, i);
-    (*i1)->out(diff, side, NULL);
+    (*i1)->out(diff, side, nullptr);
   }
 }
 

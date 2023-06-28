@@ -205,7 +205,7 @@ class dbCreateNetUtil
                         bool debug);
   dbNet* copyNet(dbNet* net,
                  bool copyVias = true,
-                 char* name = NULL,
+                 char* name = nullptr,
                  bool removeITermsBTerms = true);
   dbNet* getCurrentNet();
   // OpenRCX 7/27/20

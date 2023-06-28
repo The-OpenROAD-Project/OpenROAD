@@ -64,7 +64,7 @@ void definRegion::begin(const char* name)
   if (_cur_region) {
     _logger->warn(utl::ODB, 152, "Region \"{}\" already exists", name);
     ++_errors;
-    _cur_region = NULL;
+    _cur_region = nullptr;
     return;
   }
 
@@ -90,7 +90,7 @@ void definRegion::type(defRegionType type)
 
 void definRegion::property(const char* name, const char* value)
 {
-  if (_cur_region == NULL)
+  if (_cur_region == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_region, name);
@@ -102,7 +102,7 @@ void definRegion::property(const char* name, const char* value)
 
 void definRegion::property(const char* name, int value)
 {
-  if (_cur_region == NULL)
+  if (_cur_region == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_region, name);
@@ -114,7 +114,7 @@ void definRegion::property(const char* name, int value)
 
 void definRegion::property(const char* name, double value)
 {
-  if (_cur_region == NULL)
+  if (_cur_region == nullptr)
     return;
 
   dbProperty* p = dbProperty::find(_cur_region, name);

@@ -196,7 +196,7 @@ class lefin
   void units(lefiUnits* unit);
   void useMinSpacing(lefiUseMinSpacing* spacing);
   void version(double num);
-  void via(lefiVia* via, dbTechNonDefaultRule* rule = NULL);
+  void via(lefiVia* via, dbTechNonDefaultRule* rule = nullptr);
   void viaRule(lefiViaRule* viaRule);
   void viaGenerateRule(lefiViaRule* viaRule);
   void done(void* ptr);

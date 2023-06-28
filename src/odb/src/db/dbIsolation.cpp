@@ -230,7 +230,7 @@ dbPowerDomain* dbIsolation::getPowerDomain() const
 {
   _dbIsolation* obj = (_dbIsolation*) this;
   if (obj->_power_domain == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_power_domain);
 }

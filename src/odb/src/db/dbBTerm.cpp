@@ -75,7 +75,7 @@ _dbBTerm::_dbBTerm(_dbDatabase*)
 _dbBTerm::_dbBTerm(_dbDatabase*, const _dbBTerm& b)
     : _flags(b._flags),
       _ext_id(b._ext_id),
-      _name(NULL),
+      _name(nullptr),
       _next_entry(b._next_entry),
       _net(b._net),
       _next_bterm(b._next_bterm),
@@ -484,7 +484,7 @@ dbITerm* dbBTerm::getITerm()
   _dbBlock* block = (_dbBlock*) getBlock();
 
   if (bterm->_parent_block == 0)
-    return NULL;
+    return nullptr;
 
   _dbChip* chip = (_dbChip*) block->getOwner();
   _dbBlock* parent = chip->_block_tbl->getPtr(bterm->_parent_block);
@@ -516,7 +516,7 @@ bool dbBTerm::getFirstPin(dbShape& shape)
     for (dbBox* box : bpin->getBoxes()) {
       if (bpin->getPlacementStatus() == dbPlacementStatus::UNPLACED
           || bpin->getPlacementStatus() == dbPlacementStatus::NONE
-          || box == NULL)
+          || box == nullptr)
         continue;
 
       if (box->isVia())  // This is not possible...
@@ -557,7 +557,7 @@ bool dbBTerm::getFirstPinLocation(int& x, int& y)
       dbBox* box = *boxItr;
       if (bpin->getPlacementStatus() == dbPlacementStatus::UNPLACED
           || bpin->getPlacementStatus() == dbPlacementStatus::NONE
-          || box == NULL)
+          || box == nullptr)
         continue;
 
       if (box->isVia())  // This is not possible...
@@ -581,7 +581,7 @@ dbBTerm* dbBTerm::getGroundPin()
   _dbBlock* block = (_dbBlock*) getBlock();
 
   if (bterm->_ground_pin == 0)
-    return NULL;
+    return nullptr;
 
   _dbBTerm* ground = block->_bterm_tbl->getPtr(bterm->_ground_pin);
   return (dbBTerm*) ground;
@@ -599,7 +599,7 @@ dbBTerm* dbBTerm::getSupplyPin()
   _dbBlock* block = (_dbBlock*) getBlock();
 
   if (bterm->_supply_pin == 0)
-    return NULL;
+    return nullptr;
 
   _dbBTerm* supply = block->_bterm_tbl->getPtr(bterm->_supply_pin);
   return (dbBTerm*) supply;
@@ -617,7 +617,7 @@ dbBTerm* dbBTerm::create(dbNet* net_, const char* name)
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   if (block->_bterm_hash.hasMember(name))
-    return NULL;
+    return nullptr;
 
   if (net->_flags._dont_touch) {
     net->getLogger()->error(utl::ODB,

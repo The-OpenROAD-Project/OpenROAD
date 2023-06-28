@@ -402,7 +402,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
   ++name;
   int c;
   uint oid;
-  dbObject* obj = NULL;
+  dbObject* obj = nullptr;
 
   while ((c = *name++) != '\0') {
     switch (c) {
@@ -695,7 +695,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
     }
   }
 
-  ZASSERT(obj != NULL);
+  ZASSERT(obj != nullptr);
   return obj;
 }
 

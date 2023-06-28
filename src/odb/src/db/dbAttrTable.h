@@ -55,13 +55,13 @@ class dbAttrTable
 
   dbAttrTable()
   {
-    _pages = NULL;
+    _pages = nullptr;
     _page_cnt = 0;
   }
 
   dbAttrTable(const dbAttrTable<T>& V)
   {
-    _pages = NULL;
+    _pages = nullptr;
     _page_cnt = 0;
   }
 
@@ -77,7 +77,7 @@ class dbAttrTable
     if (page >= _page_cnt)  // Page not present...
       return T();
 
-    if (_pages[page] == NULL)  // Page not present
+    if (_pages[page] == nullptr)  // Page not present
       return T();
 
     unsigned int offset = id & (page_size - 1);
@@ -103,7 +103,7 @@ class dbAttrTable
       delete[] _pages;
     }
 
-    _pages = NULL;
+    _pages = nullptr;
     _page_cnt = 0;
   }
 
@@ -119,7 +119,7 @@ class dbAttrTable
     if (page >= _page_cnt)
       resizePageTable(page);
 
-    if (_pages[page] == NULL) {
+    if (_pages[page] == nullptr) {
       _pages[page] = new T[page_size];
 
       uint i;
@@ -150,7 +150,7 @@ class dbAttrTable
       _pages[i] = old_pages[i];
 
     for (; i < _page_cnt; ++i)
-      _pages[i] = NULL;
+      _pages[i] = nullptr;
 
     delete[] old_pages;
   }
@@ -242,7 +242,7 @@ inline dbOStream& operator<<(dbOStream& stream, const dbAttrTable<T>& t)
 
   uint i;
   for (i = 0; i < t._page_cnt; ++i) {
-    if (t._pages[i] == NULL)
+    if (t._pages[i] == nullptr)
       stream << 0U;
     else {
       stream << (i + 1);
@@ -276,7 +276,7 @@ inline dbIStream& operator>>(dbIStream& stream, dbAttrTable<T>& t)
     stream >> p;
 
     if (p == 0U)
-      t._pages[i] = NULL;
+      t._pages[i] = nullptr;
     else {
       t._pages[i] = new T[dbAttrTable<T>::page_size];
       uint j;

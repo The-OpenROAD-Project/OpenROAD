@@ -434,7 +434,7 @@ dbTechLayerCutClassRule* dbTechLayerCutEnclosureRule::getCutClass() const
 {
   _dbTechLayerCutEnclosureRule* obj = (_dbTechLayerCutEnclosureRule*) this;
   if (obj->cut_class_ == 0)
-    return NULL;
+    return nullptr;
   _dbTechLayer* par = (_dbTechLayer*) obj->getOwner();
   return (dbTechLayerCutClassRule*) par->cut_class_rules_tbl_->getPtr(
       obj->cut_class_);

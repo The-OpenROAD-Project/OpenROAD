@@ -38,11 +38,11 @@ namespace odb {
 
 dbITermShapeItr::dbITermShapeItr(bool expand_vias)
 {
-  _mterm = NULL;
+  _mterm = nullptr;
   _state = 0;
-  _iterm = NULL;
-  _mpin = NULL;
-  _via = NULL;
+  _iterm = nullptr;
+  _mpin = nullptr;
+  _via = nullptr;
   _via_x = 0;
   _via_y = 0;
   _expand_vias = expand_vias;

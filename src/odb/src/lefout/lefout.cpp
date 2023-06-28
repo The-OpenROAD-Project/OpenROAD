@@ -86,7 +86,7 @@ void lefout::writeVersion(const char* version)
 template <typename GenericBox>
 void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
 {
-  dbTechLayer* cur_layer = NULL;
+  dbTechLayer* cur_layer = nullptr;
 
   for (GenericBox* generic_box : boxes) {
     if (generic_box == nullptr) {
@@ -114,7 +114,7 @@ void lefout::writeBoxes(dbSet<GenericBox>& boxes, const char* indent)
                  lefdist(x),
                  lefdist(y),
                  via_name.c_str());
-      cur_layer = NULL;
+      cur_layer = nullptr;
     } else {
       std::string layer_name;
       if (_use_alias && layer->hasAlias())
@@ -504,8 +504,8 @@ void lefout::writeTechBody(dbTech* tech)
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
     dbTechVia* via = *vitr;
 
-    if (via->getNonDefaultRule() == NULL)
-      if (via->getViaGenerateRule() == NULL)
+    if (via->getNonDefaultRule() == nullptr)
+      if (via->getViaGenerateRule() == nullptr)
         writeVia(via);
   }
 
@@ -532,8 +532,8 @@ void lefout::writeTechBody(dbTech* tech)
   for (vitr = vias.begin(); vitr != vias.end(); ++vitr) {
     dbTechVia* via = *vitr;
 
-    if (via->getNonDefaultRule() == NULL)
-      if (via->getViaGenerateRule() != NULL)
+    if (via->getNonDefaultRule() == nullptr)
+      if (via->getViaGenerateRule() != nullptr)
         writeVia(via);
   }
 
@@ -930,7 +930,7 @@ void lefout::writeVia(dbTechVia* via)
 
   dbTechViaGenerateRule* rule = via->getViaGenerateRule();
 
-  if (rule == NULL) {
+  if (rule == nullptr) {
     dbSet<dbBox> boxes = via->getBoxes();
     writeBoxes(boxes, "    ");
   } else {

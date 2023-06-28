@@ -208,7 +208,7 @@ dbGroup* dbPowerDomain::getGroup() const
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
   if (obj->_group == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbGroup*) par->_group_tbl->getPtr(obj->_group);
 }
@@ -237,7 +237,7 @@ dbPowerDomain* dbPowerDomain::getParent() const
 {
   _dbPowerDomain* obj = (_dbPowerDomain*) this;
   if (obj->_parent == 0)
-    return NULL;
+    return nullptr;
   _dbBlock* par = (_dbBlock*) obj->getOwner();
   return (dbPowerDomain*) par->_powerdomain_tbl->getPtr(obj->_parent);
 }

@@ -154,8 +154,8 @@ class dbObjectPage
 ///////////////////////////////////////////////////////////////
 inline dbObjectTable::dbObjectTable()
 {
-  _db = NULL;
-  _owner = NULL;
+  _db = nullptr;
+  _owner = nullptr;
 }
 
 inline dbObjectTable::dbObjectTable(_dbDatabase* db,

@@ -410,7 +410,7 @@ dbGCellGrid* dbGCellGrid::create(dbBlock* block_)
   _dbBlock* block = (_dbBlock*) block_;
 
   if (block->_gcell_grid != 0)
-    return NULL;
+    return nullptr;
 
   _dbGCellGrid* grid = block->_gcell_grid_tbl->create();
   block->_gcell_grid = grid->getOID();

@@ -263,7 +263,7 @@ dbDiff& dbDiff::operator<<(long double c)
 
 dbDiff& dbDiff::operator<<(const char* s)
 {
-  if (s == NULL) {
+  if (s == nullptr) {
     if (_f)
       fprintf(_f, "\"\"");
   } else {

@@ -63,7 +63,7 @@ class dbSetIterator<dbCCSeg>
 
   dbSetIterator()
   {
-    _itr = NULL;
+    _itr = nullptr;
     _cur = 0;
     _pid = 0;
   }
@@ -115,8 +115,8 @@ class dbSet<dbCCSeg>
 
   dbSet()
   {
-    _itr = NULL;
-    _parent = NULL;
+    _itr = nullptr;
+    _parent = nullptr;
     _pid = 0;
   }
 

@@ -185,10 +185,10 @@ class dbProperty : public dbObject
   /// Get the owner of this property
   dbObject* getPropOwner();
 
-  /// Find the named property. Returns NULL if the property does not exist.
+  /// Find the named property. Returns nullptr if the property does not exist.
   static dbProperty* find(dbObject* object, const char* name);
 
-  /// Find the named property of the specified type. Returns NULL if the
+  /// Find the named property of the specified type. Returns nullptr if the
   /// property does not exist.
   static dbProperty* find(dbObject* object, const char* name, Type type);
 
@@ -215,11 +215,11 @@ class dbBoolProperty : public dbProperty
   /// Set the value of this property.
   void setValue(bool value);
 
-  /// Create a bool property. Returns NULL if a property with the same name
+  /// Create a bool property. Returns nullptr if a property with the same name
   /// already exists.
   static dbBoolProperty* create(dbObject* object, const char* name, bool value);
 
-  /// Find the named property of type bool. Returns NULL if the property does
+  /// Find the named property of type bool. Returns nullptr if the property does
   /// not exist.
   static dbBoolProperty* find(dbObject* object, const char* name);
 };
@@ -236,13 +236,13 @@ class dbStringProperty : public dbProperty
   /// Set the value of this property.
   void setValue(const char* value);
 
-  /// Create a string property. Returns NULL if a property with the same name
+  /// Create a string property. Returns nullptr if a property with the same name
   /// already exists.
   static dbStringProperty* create(dbObject* object,
                                   const char* name,
                                   const char* value);
 
-  /// Find the named property of type string. Returns NULL if the property does
+  /// Find the named property of type string. Returns nullptr if the property does
   /// not exist.
   static dbStringProperty* find(dbObject* object, const char* name);
 };
@@ -259,11 +259,11 @@ class dbIntProperty : public dbProperty
   /// Set the value of this property.
   void setValue(int value);
 
-  /// Create a int property. Returns NULL if a property with the same name
+  /// Create a int property. Returns nullptr if a property with the same name
   /// already exists.
   static dbIntProperty* create(dbObject* object, const char* name, int value);
 
-  /// Find the named property of type int. Returns NULL if the property does not
+  /// Find the named property of type int. Returns nullptr if the property does not
   /// exist.
   static dbIntProperty* find(dbObject* object, const char* name);
 };
@@ -280,13 +280,13 @@ class dbDoubleProperty : public dbProperty
   /// Set the value of this property.
   void setValue(double value);
 
-  /// Create a double property. Returns NULL if a property with the same name
+  /// Create a double property. Returns nullptr if a property with the same name
   /// already exists.
   static dbDoubleProperty* create(dbObject* object,
                                   const char* name,
                                   double value);
 
-  /// Find the named property of type double. Returns NULL if the property does
+  /// Find the named property of type double. Returns nullptr if the property does
   /// not exist.
   static dbDoubleProperty* find(dbObject* object, const char* name);
 };
@@ -310,25 +310,25 @@ class dbDatabase : public dbObject
 
   ///
   /// Find a specific lib.
-  /// Returns NULL if no lib was found.
+  /// Returns nullptr if no lib was found.
   ///
   dbLib* findLib(const char* name);
 
   ///
   /// Find a specific master
-  /// Returns NULL if no master is found.
+  /// Returns nullptr if no master is found.
   ///
   dbMaster* findMaster(const char* name);
 
   ///
   /// Get the chip of this database.
-  /// Returns NULL if no chip has been created.
+  /// Returns nullptr if no chip has been created.
   ///
   dbChip* getChip();
 
   ///
   /// Get the technology of this database
-  /// Returns NULL if no chip has been created.
+  /// Returns nullptr if no chip has been created.
   ///
   dbTech* getTech();
 
@@ -505,13 +505,13 @@ class dbBox : public dbObject
 
   ///
   /// Get tech-via this box represents.
-  /// returns NULL if this box does not represent a tech-via
+  /// returns nullptr if this box does not represent a tech-via
   ///
   dbTechVia* getTechVia();
 
   ///
   /// Get block-via this box represents.
-  /// returns NULL if this box does not represent a block-via
+  /// returns nullptr if this box does not represent a block-via
   ///
   dbVia* getBlockVia();
 
@@ -579,7 +579,7 @@ class dbBox : public dbObject
 
   ///
   /// Get the layer of this box.
-  /// Returns NULL if this shape is an object bbox.
+  /// Returns nullptr if this shape is an object bbox.
   /// These bboxes have no layer.
   ///     dbBlock    - bbox has no layer
   ///     dbInst     - bbox has no layer
@@ -593,7 +593,7 @@ class dbBox : public dbObject
 
   ///
   /// Add a physical pin to a dbBPin.
-  /// Returns NULL if this dbBPin already has a pin.
+  /// Returns nullptr if this dbBPin already has a pin.
   ///
   static dbBox* create(dbBPin* bpin,
                        dbTechLayer* layer,
@@ -624,7 +624,7 @@ class dbBox : public dbObject
 
   ///
   /// Add a via obstrction to a master.
-  /// This function may fail and return NULL if this via has no shapes.
+  /// This function may fail and return nullptr if this via has no shapes.
   ///
   static dbBox* create(dbMaster* master, dbTechVia* via, int x, int y);
 
@@ -640,7 +640,7 @@ class dbBox : public dbObject
 
   ///
   /// Add a via obstrction to a master-pin.
-  /// This function may fail and return NULL if this via has no shapes.
+  /// This function may fail and return nullptr if this via has no shapes.
   ///
   static dbBox* create(dbMPin* pin, dbTechVia* via, int x, int y);
 
@@ -731,7 +731,7 @@ class dbSBox : public dbBox
   /// If direction == VERTICAL
   ///    |(x2-x1)| must be an even number
   ///
-  /// If the direction sementics are not met, this function will return NULL.
+  /// If the direction sementics are not met, this function will return nullptr.
   ///
   /// These requirements are a result that the current DEF semantics (5.5) use
   /// PATH statements to output these rectangles, the paths must have even
@@ -748,7 +748,7 @@ class dbSBox : public dbBox
 
   ///
   /// Add a block-via to a dbSWire
-  /// This function may fail and return NULL if this via has no shapes.
+  /// This function may fail and return nullptr if this via has no shapes.
   ///
   static dbSBox* create(dbSWire* swire,
                         dbVia* via,
@@ -758,7 +758,7 @@ class dbSBox : public dbBox
 
   ///
   /// Add a tech-via to a dbSWire.
-  /// This function may fail and return NULL if this via has no shapes.
+  /// This function may fail and return nullptr if this via has no shapes.
   ///
   static dbSBox* create(dbSWire* swire,
                         dbTechVia* via,
@@ -788,14 +788,14 @@ class dbChip : public dbObject
  public:
   ///
   /// Get the top-block of this chip.
-  /// Returns NULL if a top-block has NOT been created.
+  /// Returns nullptr if a top-block has NOT been created.
   ///
   dbBlock* getBlock();
 
   ///
   /// Create a new chip.
-  /// Returns NULL if a chip already exists.
-  /// Returns NULL if there is no database technology.
+  /// Returns nullptr if a chip already exists.
+  /// Returns nullptr if there is no database technology.
   ///
   static dbChip* create(dbDatabase* db);
 
@@ -846,7 +846,7 @@ class dbBlock : public dbObject
   dbDatabase* getDataBase();
 
   ///
-  /// Get the parent block this block. Returns NULL if this block is the
+  /// Get the parent block this block. Returns nullptr if this block is the
   /// top-block of the chip.
   ///
   dbBlock* getParent();
@@ -868,7 +868,7 @@ class dbBlock : public dbObject
 
   ///
   /// Find a specific child-block of this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbBlock* findChild(const char* name);
 
@@ -879,7 +879,7 @@ class dbBlock : public dbObject
 
   ///
   /// Find a specific bterm of this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbBTerm* findBTerm(const char* name);
 
@@ -955,49 +955,49 @@ class dbBlock : public dbObject
 
   ///
   /// Find a specific instance of this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbInst* findInst(const char* name);
 
   ///
   /// Find a specific module in this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbModule* findModule(const char* name);
 
   ///
   /// Find a specific modinst in this block. path is
-  /// master_module_name/modinst_name Returns NULL if the object was not found.
+  /// master_module_name/modinst_name Returns nullptr if the object was not found.
   ///
   dbModInst* findModInst(const char* path);
 
   ///
   /// Find a specific PowerDomain in this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbPowerDomain* findPowerDomain(const char* name);
 
   ///
   /// Find a specific LogicPort in this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbLogicPort* findLogicPort(const char* name);
 
   ///
   /// Find a specific PowerSwitch in this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbPowerSwitch* findPowerSwitch(const char* name);
 
   ///
   /// Find a specific Isolation in this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbIsolation* findIsolation(const char* name);
 
   ///
   /// Find a specific group in this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbGroup* findGroup(const char* name);
 
@@ -1050,7 +1050,7 @@ class dbBlock : public dbObject
 
   ///
   /// Find a specific net of this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbNet* findNet(const char* name);
 
@@ -1084,7 +1084,7 @@ class dbBlock : public dbObject
 
   ///
   /// Find a specific via of this block.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbVia* findVia(const char* name);
 
@@ -1095,7 +1095,7 @@ class dbBlock : public dbObject
 
   ///
   /// Get the GCell grid of this block
-  /// Returns NULL if no grid exists.
+  /// Returns nullptr if no grid exists.
   ///
   dbGCellGrid* getGCellGrid();
 
@@ -1258,7 +1258,7 @@ class dbBlock : public dbObject
 
   ///
   /// Find a specific track-grid.
-  /// Returns NULL if a track-grid has not be defined for this layer.
+  /// Returns nullptr if a track-grid has not be defined for this layer.
   ///
   dbTrackGrid* findTrackGrid(dbTechLayer* layer);
 
@@ -1486,7 +1486,7 @@ class dbBlock : public dbObject
   dbSet<dbRegion> getRegions();
 
   ///
-  /// Find a specific region. Returns NULL if the region was not found.
+  /// Find a specific region. Returns nullptr if the region was not found.
   ///
   dbRegion* findRegion(const char* name);
 
@@ -1593,7 +1593,7 @@ class dbBlock : public dbObject
   // TODO ZPtr<ISdb_r> getSearchDbInsts_r();
 
   ///
-  /// Create a chip's top-block. Returns NULL of a top-block already
+  /// Create a chip's top-block. Returns nullptr of a top-block already
   /// exists.
   ///
   static dbBlock* create(dbChip* chip,
@@ -1602,7 +1602,7 @@ class dbBlock : public dbObject
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
-  /// Returns NULL if a block with the same name exists.
+  /// Returns nullptr if a block with the same name exists.
   ///
   static dbBlock* create(dbBlock* block,
                          const char* name,
@@ -1610,14 +1610,14 @@ class dbBlock : public dbObject
 
   ///
   /// duplicate - Make a duplicate of the specified "child" block. If name ==
-  /// NULL, the name of the block is also duplicated. If the duplicated block
+  /// nullptr, the name of the block is also duplicated. If the duplicated block
   /// does not have a unique name, then "findChild" may return an incorrect
   /// block. UNIQUE child-block-names are not enforced! (This should be fixed)!
   ///
-  /// A top-block can not be duplicated. This methods returns NULL if the
+  /// A top-block can not be duplicated. This methods returns nullptr if the
   /// specified block has not parent.
   ///
-  static dbBlock* duplicate(dbBlock* block, const char* name = NULL);
+  static dbBlock* duplicate(dbBlock* block, const char* name = nullptr);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -1763,7 +1763,7 @@ class dbBTerm : public dbObject
   ///
   /// Get the hierarchical parent iterm of this bterm.
   ///
-  /// Returns NULL if this bterm has no parent iterm.
+  /// Returns nullptr if this bterm has no parent iterm.
   ///
   ///
   ///     (top-block)
@@ -1839,7 +1839,7 @@ class dbBTerm : public dbObject
 
   ///
   /// Create a new block-terminal.
-  /// Returns NULL if a bterm with this name already exists
+  /// Returns nullptr if a bterm with this name already exists
   ///
   static dbBTerm* create(dbNet* net, const char* name);
 
@@ -2237,13 +2237,13 @@ class dbNet : public dbObject
 
   ///
   /// Get the wire of this net.
-  /// Returns NULL if this net has no wire.
+  /// Returns nullptr if this net has no wire.
   ///
   dbWire* getWire();
 
   ///
   /// Get the first swire of this net.
-  /// Returns NULL if this net has no swires.
+  /// Returns nullptr if this net has no swires.
   ///
   dbSWire* getFirstSWire();
   ///
@@ -2253,7 +2253,7 @@ class dbNet : public dbObject
 
   ///
   /// Get the global wire of thie net.
-  /// Returns NULL if this net has no global wire.
+  /// Returns nullptr if this net has no global wire.
   ///
   dbWire* getGlobalWire();
 
@@ -2634,7 +2634,7 @@ class dbNet : public dbObject
 
   ///
   /// Get the nondefault rule applied to this net for wiring.
-  /// Returns NULLS if there is no nondefault rule.
+  /// Returns nullptr if there is no nondefault rule.
   ///
   dbTechNonDefaultRule* getNonDefaultRule();
 
@@ -2689,7 +2689,7 @@ class dbNet : public dbObject
 
   ///
   /// Create a new net.
-  /// Returns NULL if a net with this name already exists
+  /// Returns nullptr if a net with this name already exists
   ///
   static dbNet* create(dbBlock* block,
                        const char* name,
@@ -3065,20 +3065,20 @@ class dbInst : public dbObject
   dbITerm* getFirstOutput();
 
   ///
-  /// Get the region this instance belongs to. Returns NULL if instance has no
+  /// Get the region this instance belongs to. Returns nullptr if instance has no
   /// assigned region.
   ///
   dbRegion* getRegion();
 
   ///
-  /// Get the module this instance belongs to. Returns NULL if instance has no
+  /// Get the module this instance belongs to. Returns nullptr if instance has no
   /// assigned module.
   ///
   dbModule* getModule();
 
   ///
   /// Find the iterm of the given terminal name.
-  /// Returns NULL if no terminal was found.
+  /// Returns nullptr if no terminal was found.
   ///
   dbITerm* findITerm(const char* terminal_name);
 
@@ -3145,13 +3145,13 @@ class dbInst : public dbObject
   bool resetHierarchy(bool verbose);
   ///
   /// Get the hierarchical (child) block bound to this instance.
-  /// Returns NULL if this instance has no child.
+  /// Returns nullptr if this instance has no child.
   ///
   dbBlock* getChild();
 
   ///
   /// Get the parent instance of this instance.
-  /// Returns NULL if this instance has no parent.
+  /// Returns nullptr if this instance has no parent.
   ///
   dbInst* getParent();
 
@@ -3167,7 +3167,7 @@ class dbInst : public dbObject
 
   ///
   /// Returns a halo assigned to this instance.
-  /// Returns NULL if this instance has no halo.
+  /// Returns nullptr if this instance has no halo.
   ///
   dbBox* getHalo();
 
@@ -3248,8 +3248,8 @@ class dbInst : public dbObject
   /// Create a new instance.
   /// If physical_only is true the instance can't bee added to a dbModule.
   /// If false, it will be added to the top module.
-  /// Returns NULL if an instance with this name already exists.
-  /// Returns NULL if the master is not FROZEN.
+  /// Returns nullptr if an instance with this name already exists.
+  /// Returns nullptr if the master is not FROZEN.
   ///
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
@@ -3260,8 +3260,8 @@ class dbInst : public dbObject
   /// Create a new instance within the specified region.
   /// If physicalOnly is true the instance can't bee added to a dbModule.
   /// If false, it will be added to the top module.
-  /// Returns NULL if an instance with this name already exists.
-  /// Returns NULL if the master is not FROZEN.
+  /// Returns nullptr if an instance with this name already exists.
+  /// Returns nullptr if the master is not FROZEN.
   ///
   static dbInst* create(dbBlock* block,
                         dbMaster* master,
@@ -3306,7 +3306,7 @@ class dbITerm : public dbObject
 
   ///
   /// Get the net of this instance-terminal.
-  /// Returns NULL if this instance-terminal has NOT been connected
+  /// Returns nullptr if this instance-terminal has NOT been connected
   /// to a net.
   ///
   dbNet* getNet();
@@ -3421,7 +3421,7 @@ class dbITerm : public dbObject
 
   ///
   /// Get the hierarchical child bterm of this iterm.
-  /// Returns NULL if there is no child bterm.
+  /// Returns nullptr if there is no child bterm.
   ///
   ///
   ///     (top-block)
@@ -3558,7 +3558,7 @@ class dbVia : public dbObject
 
   ///
   /// Get the bbox of this via
-  /// Returns NULL if this via has no shapes.
+  /// Returns nullptr if this via has no shapes.
   ///
   dbBox* getBBox();
 
@@ -3569,13 +3569,13 @@ class dbVia : public dbObject
 
   ///
   /// Get the upper-most layer of this via reaches
-  /// Returns NULL if this via has no shapes.
+  /// Returns nullptr if this via has no shapes.
   ///
   dbTechLayer* getTopLayer();
 
   ///
   /// Get the lower-most layer of this via reaches
-  /// Returns NULL if this via has no shapes.
+  /// Returns nullptr if this via has no shapes.
   ///
   dbTechLayer* getBottomLayer();
 
@@ -3593,13 +3593,13 @@ class dbVia : public dbObject
 
   //
   // Get the tech-via that this roated via represents.
-  /// Returns NULL if this via does not represent a tech via
+  /// Returns nullptr if this via does not represent a tech via
   //
   dbTechVia* getTechVia();
 
   //
   // Get the block-via that this roated via represents.
-  /// Returns NULL if this via does not represent a block via
+  /// Returns nullptr if this via does not represent a block via
   //
   dbVia* getBlockVia();
 
@@ -3609,13 +3609,13 @@ class dbVia : public dbObject
 
   ///
   /// Create a block specific via.
-  /// Returns NULL if a via with this name already exists.
+  /// Returns nullptr if a via with this name already exists.
   ///
   static dbVia* create(dbBlock* block, const char* name);
 
   ///
   /// Created a rotated version of the specified block-via.
-  /// Returns NULL if a via with this name already exists.
+  /// Returns nullptr if a via with this name already exists.
   ///
   static dbVia* create(dbBlock* block,
                        const char* name,
@@ -3624,7 +3624,7 @@ class dbVia : public dbObject
 
   ///
   /// Created a rotated version of the specified tech-via.
-  /// Returns NULL if a via with this name already exists.
+  /// Returns nullptr if a via with this name already exists.
   ///
   static dbVia* create(dbBlock* block,
                        const char* name,
@@ -3663,7 +3663,7 @@ class dbWire : public dbObject
 
   ///
   /// Get the net this wire is attached too.
-  /// Returns NULL if this wire is not attached to a net.
+  /// Returns nullptr if this wire is not attached to a net.
   ///
   dbNet* getNet();
 
@@ -3833,7 +3833,7 @@ class dbWire : public dbObject
 
   ///
   /// Create a wire.
-  /// Returns NULL if this net already has the specified wire dbWire.
+  /// Returns nullptr if this net already has the specified wire dbWire.
   ///
   static dbWire* create(dbNet* net, bool global_wire = false);
 
@@ -3900,7 +3900,7 @@ class dbSWire : public dbObject
   ///
   /// Create a new special-wire.
   ///
-  static dbSWire* create(dbNet* net, dbWireType type, dbNet* shield = NULL);
+  static dbSWire* create(dbNet* net, dbWireType type, dbNet* shield = nullptr);
 
   ///
   /// Delete this wire
@@ -3984,7 +3984,7 @@ class dbTrackGrid : public dbObject
   void getGridPatternY(int i, int& origin_y, int& line_count, int& step);
   ///
   /// Create an empty Track grid.
-  /// Returns NULL if a the grid for this layer already exists.
+  /// Returns nullptr if a the grid for this layer already exists.
   ///
   static dbTrackGrid* create(dbBlock* block, dbTechLayer* layer);
 
@@ -4015,7 +4015,7 @@ class dbObstruction : public dbObject
 
   ///
   /// Get the instance associated with this obstruction.
-  /// Returns NULL of no instance was associated with this obstruction
+  /// Returns nullptr of no instance was associated with this obstruction
   ///
   dbInst* getInstance();
 
@@ -4097,7 +4097,7 @@ class dbObstruction : public dbObject
                                int y1,
                                int x2,
                                int y2,
-                               dbInst* inst = NULL);
+                               dbInst* inst = nullptr);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4120,7 +4120,7 @@ class dbBlockage : public dbObject
 
   ///
   /// Get the instance associated with this blockage.
-  /// Returns NULL of no instance was associated with this blockage
+  /// Returns nullptr of no instance was associated with this blockage
   ///
   dbInst* getInstance();
 
@@ -4167,7 +4167,7 @@ class dbBlockage : public dbObject
                             int y1,
                             int x2,
                             int y2,
-                            dbInst* inst = NULL);
+                            dbInst* inst = nullptr);
 
   ///
   /// Translate a database-id back to a pointer.
@@ -4308,8 +4308,8 @@ class dbCapNode : public dbObject
   bool isForeign();
   bool isTreeNode();  // bterm, iterm, branch
   // bool isSourceNodeBterm();
-  bool isSourceTerm(dbBlock* mblock = NULL);
-  bool isInoutTerm(dbBlock* mblock = NULL);
+  bool isSourceTerm(dbBlock* mblock = nullptr);
+  bool isInoutTerm(dbBlock* mblock = nullptr);
 
   ///
   /// Returns the select flag value. This flag specified that the
@@ -4362,17 +4362,17 @@ class dbCapNode : public dbObject
   ///
   /// Get the coordinates of this node if iterm or bterm
   ///
-  bool getTermCoords(int& x, int& y, dbBlock* mblock = NULL);
+  bool getTermCoords(int& x, int& y, dbBlock* mblock = nullptr);
 
   ///
   /// Get the iterm of this node
   ///
-  dbITerm* getITerm(dbBlock* mblock = NULL);
+  dbITerm* getITerm(dbBlock* mblock = nullptr);
 
   ///
   /// Get the bterm of this node
   ///
-  dbBTerm* getBTerm(dbBlock* mblock = NULL);
+  dbBTerm* getBTerm(dbBlock* mblock = nullptr);
 
   ///
   /// Set the _ycoord of this node
@@ -4850,7 +4850,7 @@ class dbCCSeg : public dbObject
   // src_cap_node, uint tgt_cap_node);
 
   ///
-  /// Returns NULL if not found
+  /// Returns nullptr if not found
   ///
   static dbCCSeg* findCC(dbCapNode* nodeA, dbCapNode* nodeB);
 
@@ -5116,7 +5116,7 @@ class dbRegion : public dbObject
   dbBlock* getBlock();
 
   ///
-  /// Create a new region. Returns NULL if a region with this name already
+  /// Create a new region. Returns nullptr if a region with this name already
   /// exists in the block.
   ///
   static dbRegion* create(dbBlock* block, const char* name);
@@ -5173,7 +5173,7 @@ class dbLib : public dbObject
 
   ///
   /// Finds a specific master-cell in the library
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbMaster* findMaster(const char* name);
 
@@ -5184,7 +5184,7 @@ class dbLib : public dbObject
 
   ///
   /// Finds a specific site in the library
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbSite* findSite(const char* name);
 
@@ -5322,7 +5322,7 @@ class dbSite : public dbObject
 
   ///
   /// Create a new site.
-  /// Returns NULL if a site with this name already exists
+  /// Returns nullptr if a site with this name already exists
   ///
   static dbSite* create(dbLib* lib, const char* name);
 
@@ -5428,7 +5428,7 @@ class dbMaster : public dbObject
 
   ///
   /// Get the Logical equivalent of this master
-  /// Returns NULL if no equivalent was set.
+  /// Returns nullptr if no equivalent was set.
   ///
   dbMaster* getLEQ();
 
@@ -5443,7 +5443,7 @@ class dbMaster : public dbObject
 
   ///
   /// Get the Electical equivalent of this master
-  /// Returns NULL if no equivalent was set.
+  /// Returns nullptr if no equivalent was set.
   ///
   dbMaster* getEEQ();
 
@@ -5493,7 +5493,7 @@ class dbMaster : public dbObject
 
   ///
   /// Find a specific master-terminal
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbMTerm* findMTerm(const char* name);
   dbMTerm* findMTerm(dbBlock* block, const char* name);
@@ -5565,7 +5565,7 @@ class dbMaster : public dbObject
 
   ///
   /// Set the site of this master.
-  /// Returns NULL if no site has been set.
+  /// Returns nullptr if no site has been set.
   ///
   dbSite* getSite();
 
@@ -5576,7 +5576,7 @@ class dbMaster : public dbObject
 
   ///
   /// Create a new master.
-  /// Returns NULL if a master with this name already exists
+  /// Returns nullptr if a master with this name already exists
   ///
   static dbMaster* create(dbLib* lib, const char* name);
 
@@ -5666,10 +5666,10 @@ class dbMTerm : public dbObject
   ///
   /// Add antenna info that is not specific to an oxide model.
   ///
-  void addPartialMetalAreaEntry(double inval, dbTechLayer* refly = NULL);
-  void addPartialMetalSideAreaEntry(double inval, dbTechLayer* refly = NULL);
-  void addPartialCutAreaEntry(double inval, dbTechLayer* refly = NULL);
-  void addDiffAreaEntry(double inval, dbTechLayer* refly = NULL);
+  void addPartialMetalAreaEntry(double inval, dbTechLayer* refly = nullptr);
+  void addPartialMetalSideAreaEntry(double inval, dbTechLayer* refly = nullptr);
+  void addPartialCutAreaEntry(double inval, dbTechLayer* refly = nullptr);
+  void addDiffAreaEntry(double inval, dbTechLayer* refly = nullptr);
 
   ///
   /// Antenna info that is specific to an oxide model.
@@ -5678,7 +5678,7 @@ class dbMTerm : public dbObject
   dbTechAntennaPinModel* createOxide2AntennaModel();
 
   ///
-  /// Access and write antenna rule models -- get functions will return NULL
+  /// Access and write antenna rule models -- get functions will return nullptr
   /// if model not created.
   ///
   bool hasDefaultAntennaModel() const;
@@ -5701,7 +5701,7 @@ class dbMTerm : public dbObject
 
   ///
   /// Create a new master terminal.
-  /// Returns NULL if a master terminal with this name already exists
+  /// Returns nullptr if a master terminal with this name already exists
   ///
   static dbMTerm* create(dbMaster* master,
                          const char* name,
@@ -5786,7 +5786,7 @@ class dbTarget : public dbObject
 
   ///
   /// Create a new master terminal.
-  /// Returns NULL if a master terminal with this name already exists
+  /// Returns nullptr if a master terminal with this name already exists
   ///
   static dbTarget* create(dbMTerm* mterm, dbTechLayer* layer, Point point);
 
@@ -5834,19 +5834,19 @@ class dbTech : public dbObject
 
   ///
   /// Find the technology layer.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbTechLayer* findLayer(const char* name);
 
   ///
   /// Find the technology layer.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbTechLayer* findLayer(int layer_number);
 
   ///
   /// Find the technology routing layer.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbTechLayer* findRoutingLayer(int level_number);
 
@@ -5857,7 +5857,7 @@ class dbTech : public dbObject
 
   ///
   /// Find the technology via.
-  /// Returns NULL if the object was not found.
+  /// Returns nullptr if the object was not found.
   ///
   dbTechVia* findVia(const char* name);
 
@@ -5949,7 +5949,7 @@ class dbTech : public dbObject
 
   ///
   /// Find a specific rule
-  /// Returns NULL if no rule exists.
+  /// Returns nullptr if no rule exists.
   ///
   dbTechSameNetRule* findSameNetRule(dbTechLayer* l1, dbTechLayer* l2);
 
@@ -5990,7 +5990,7 @@ class dbTech : public dbObject
 
   ///
   /// Create a new technology.
-  /// Returns NULL if a database technology already exists
+  /// Returns nullptr if a database technology already exists
   ///
   static dbTech* create(dbDatabase* db, int dbu_per_micron = 1000);
 
@@ -6100,7 +6100,7 @@ class dbTechVia : public dbObject
 
   ///
   /// Get the bbox of this via.
-  /// Returns NULL if this via has no shapes.
+  /// Returns nullptr if this via has no shapes.
   ///
   dbBox* getBBox();
 
@@ -6111,37 +6111,37 @@ class dbTechVia : public dbObject
 
   ///
   /// Get the upper-most layer of this via reaches
-  /// Returns NULL if this via has no shapes.
+  /// Returns nullptr if this via has no shapes.
   ///
   dbTechLayer* getTopLayer();
 
   ///
   /// Get the lower-most layer of this via reaches
-  /// Returns NULL if this via has no shapes.
+  /// Returns nullptr if this via has no shapes.
   ///
   dbTechLayer* getBottomLayer();
 
   ///
   /// Returns the non-default rule this via belongs too.
-  /// Returns NULL if this via is not part of a non-default rule.
+  /// Returns nullptr if this via is not part of a non-default rule.
   ///
   dbTechNonDefaultRule* getNonDefaultRule();
 
   ///
   /// Create a new via.
-  /// Returns NULL if a via with this name already exists.
+  /// Returns nullptr if a via with this name already exists.
   ///
   static dbTechVia* create(dbTech* tech, const char* name);
 
   ///
   /// Create a new non-default-rule via.
-  /// Returns NULL if a via with this name already exists.
+  /// Returns nullptr if a via with this name already exists.
   ///
   static dbTechVia* create(dbTechNonDefaultRule* rule, const char* name);
   ///
   /// Create a new non-default-rule via by cloning an existing via (not
   /// necessarily from the same non-default rule
-  /// Returns NULL if a via with this name already exists.
+  /// Returns nullptr if a via with this name already exists.
   ///
   static dbTechVia* clone(dbTechNonDefaultRule* rule,
                           dbTechVia* invia_,
@@ -6194,7 +6194,7 @@ class dbTechViaRule : public dbObject
 
   ///
   /// Create a new via.
-  /// Returns NULL if a via-rule with this name already exists.
+  /// Returns nullptr if a via-rule with this name already exists.
   ///
   static dbTechViaRule* create(dbTech* tech, const char* name);
 
@@ -6383,7 +6383,7 @@ class dbTechViaGenerateRule : public dbObject
 
   ///
   /// Create a new via.
-  /// Returns NULL if a via-rule with this name already exists.
+  /// Returns nullptr if a via-rule with this name already exists.
   ///
   static dbTechViaGenerateRule* create(dbTech* tech,
                                        const char* name,
@@ -6639,10 +6639,10 @@ class dbTechLayerAntennaRule : public dbObject
 class dbTechAntennaPinModel : public dbObject
 {
  public:
-  void addGateAreaEntry(double inval, dbTechLayer* refly = NULL);
-  void addMaxAreaCAREntry(double inval, dbTechLayer* refly = NULL);
-  void addMaxSideAreaCAREntry(double inval, dbTechLayer* refly = NULL);
-  void addMaxCutCAREntry(double inval, dbTechLayer* refly = NULL);
+  void addGateAreaEntry(double inval, dbTechLayer* refly = nullptr);
+  void addMaxAreaCAREntry(double inval, dbTechLayer* refly = nullptr);
+  void addMaxSideAreaCAREntry(double inval, dbTechLayer* refly = nullptr);
+  void addMaxCutCAREntry(double inval, dbTechLayer* refly = nullptr);
 
   void getGateArea(std::vector<std::pair<double, dbTechLayer*>>& data);
   void getMaxAreaCAR(std::vector<std::pair<double, dbTechLayer*>>& data);
@@ -6680,7 +6680,7 @@ class dbTechNonDefaultRule : public dbObject
 
   ///
   /// Find a specific layer-rule.
-  /// Returns NULL if there is no layer-rule.
+  /// Returns nullptr if there is no layer-rule.
   ///
   dbTechLayerRule* getLayerRule(dbTechLayer* layer);
 
@@ -6696,7 +6696,7 @@ class dbTechNonDefaultRule : public dbObject
 
   ///
   /// Find a specific rule
-  /// Returns NULL if no rule exists.
+  /// Returns nullptr if no rule exists.
   ///
   dbTechSameNetRule* findSameNetRule(dbTechLayer* l1, dbTechLayer* l2);
 
@@ -6753,13 +6753,13 @@ class dbTechNonDefaultRule : public dbObject
 
   ///
   /// Create a new non-default-rule.
-  /// Returns NULL if a non-default-rule with this name already exists
+  /// Returns nullptr if a non-default-rule with this name already exists
   ///
   static dbTechNonDefaultRule* create(dbTech* tech, const char* name);
 
   ///
   /// Create a new non-default-rule.
-  /// Returns NULL if a non-default-rule with this name already exists
+  /// Returns nullptr if a non-default-rule with this name already exists
   ///
   static dbTechNonDefaultRule* create(dbBlock* block, const char* name);
 
@@ -6860,7 +6860,7 @@ class dbTechLayerRule : public dbObject
 
   ///
   /// Create a new layer-rule.
-  /// Returns NULL if a layer-rule for this layer already exists.
+  /// Returns nullptr if a layer-rule for this layer already exists.
   ///
   static dbTechLayerRule* create(dbTechNonDefaultRule* rule,
                                  dbTechLayer* layer);
@@ -6916,12 +6916,12 @@ class dbTechSameNetRule : public dbObject
 
   ///
   /// Create a new default samenet rule.
-  /// Returns NULL if a rule already exists between these layers.
+  /// Returns nullptr if a rule already exists between these layers.
   ///
   static dbTechSameNetRule* create(dbTechLayer* layer1, dbTechLayer* layer2);
   ///
   /// Create a new non-default samenet rule.
-  /// Returns NULL if a rule already exists between these layers.
+  /// Returns nullptr if a rule already exists between these layers.
   ///
   static dbTechSameNetRule* create(dbTechNonDefaultRule* rule,
                                    dbTechLayer* layer1,
@@ -7192,7 +7192,7 @@ class dbTechLayer : public dbObject
   dbTechLayerAntennaRule* createOxide2AntennaRule();
 
   ///
-  /// Access and write antenna rule models -- get functions will return NULL
+  /// Access and write antenna rule models -- get functions will return nullptr
   /// if model not created.
   ///
   bool hasDefaultAntennaRule() const;
@@ -7342,13 +7342,13 @@ class dbTechLayer : public dbObject
 
   ///
   /// Get the layer below this layer.
-  /// Returns NULL if at bottom of layer stack.
+  /// Returns nullptr if at bottom of layer stack.
   ///
   dbTechLayer* getLowerLayer();
 
   ///
   /// Get the layer above this layer.
-  /// Returns NULL if at top of layer stack.
+  /// Returns nullptr if at top of layer stack.
   ///
   dbTechLayer* getUpperLayer();
 
@@ -7359,7 +7359,7 @@ class dbTechLayer : public dbObject
 
   ///
   /// Create a new layer. The mask order is implicit in the create order.
-  /// Returns NULL if a layer with this name already exists
+  /// Returns nullptr if a layer with this name already exists
   ///
   static dbTechLayer* create(dbTech* tech,
                              const char* name,
@@ -9153,7 +9153,7 @@ class dbGCellGrid : public dbObject
   void getGridPatternY(int i, int& origin_y, int& line_count, int& step);
   ///
   /// Create an empty GCell grid.
-  /// Returns NULL if a grid already exists.
+  /// Returns nullptr if a grid already exists.
   ///
   static dbGCellGrid* create(dbBlock* block);
 

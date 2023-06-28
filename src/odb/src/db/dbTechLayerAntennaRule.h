@@ -180,7 +180,7 @@ class _dbTechAntennaAreaElement
   static void create(dbVector<_dbTechAntennaAreaElement*>& incon,
                      double inarea,
                      dbTechLayer* inly
-                     = NULL);  // Allocate a new element and add to container.
+                     = nullptr);  // Allocate a new element and add to container.
   void writeLef(const char* header, dbTech* tech, lefout& writer) const;
 
   friend dbOStream& operator<<(dbOStream& stream,
