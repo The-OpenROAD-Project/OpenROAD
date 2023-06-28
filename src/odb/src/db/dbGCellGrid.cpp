@@ -47,7 +47,6 @@
 #include "dbSet.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbGCellGrid>;
 
 bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
@@ -79,6 +78,7 @@ bool _dbGCellGrid::operator==(const _dbGCellGrid& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbGCellGrid::operator<(const _dbGCellGrid& rhs) const
 {
   // User Code Begin <
@@ -87,12 +87,12 @@ bool _dbGCellGrid::operator<(const _dbGCellGrid& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbGCellGrid::differences(dbDiff& diff,
                                const char* field,
                                const _dbGCellGrid& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.x_grid_valid_);
   DIFF_FIELD(flags_.y_grid_valid_);
   // User Code Begin Differences
@@ -105,6 +105,7 @@ void _dbGCellGrid::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbGCellGrid::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -121,6 +122,7 @@ void _dbGCellGrid::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbGCellGrid::_dbGCellGrid(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -128,6 +130,7 @@ _dbGCellGrid::_dbGCellGrid(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbGCellGrid::_dbGCellGrid(_dbDatabase* db, const _dbGCellGrid& r)
 {
   flags_.x_grid_valid_ = r.flags_.x_grid_valid_;
@@ -173,6 +176,7 @@ dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;

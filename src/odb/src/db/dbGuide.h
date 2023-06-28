@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -59,16 +58,10 @@ class _dbGuide : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbId<_dbNet> net_;
-  Rect box_;
-  dbId<_dbTechLayer> layer_;
-  dbId<_dbGuide> guide_next_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbGuide(_dbDatabase*, const _dbGuide& r);
   _dbGuide(_dbDatabase*);
   ~_dbGuide();
+
   bool operator==(const _dbGuide& rhs) const;
   bool operator!=(const _dbGuide& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbGuide& rhs) const;
@@ -76,6 +69,14 @@ class _dbGuide : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  dbId<_dbNet> net_;
+  Rect box_;
+  dbId<_dbTechLayer> layer_;
+  dbId<_dbGuide> guide_next_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbGuide& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGuide& obj);

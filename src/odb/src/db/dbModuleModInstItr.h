@@ -39,34 +39,37 @@
 // User Code End Includes
 
 namespace odb {
-
 class _dbModInst;
+
 template <class T>
 class dbTable;
+
 // User Code Begin classes
 // User Code End classes
+
 class dbModuleModInstItr : public dbIterator
 {
-  dbTable<_dbModInst>* _modinst_tbl;
-  // User Code Begin Fields
-  // User Code End Fields
  public:
   dbModuleModInstItr(dbTable<_dbModInst>* modinst_tbl)
   {
     _modinst_tbl = modinst_tbl;
   }
 
-  bool reversible();
-  bool orderReversed();
-  void reverse(dbObject* parent);
-  uint sequential();
-  uint size(dbObject* parent);
-  uint begin(dbObject* parent);
-  uint end(dbObject* parent);
-  uint next(uint id, ...);
-  dbObject* getObject(uint id, ...);
+  bool reversible() override;
+  bool orderReversed() override;
+  void reverse(dbObject* parent) override;
+  uint sequential() override;
+  uint size(dbObject* parent) override;
+  uint begin(dbObject* parent) override;
+  uint end(dbObject* parent) override;
+  uint next(uint id, ...) override;
+  dbObject* getObject(uint id, ...) override;
   // User Code Begin Methods
   // User Code End Methods
+ private:
+  dbTable<_dbModInst>* _modinst_tbl;
+  // User Code Begin Fields
+  // User Code End Fields
 };
 
 }  // namespace odb

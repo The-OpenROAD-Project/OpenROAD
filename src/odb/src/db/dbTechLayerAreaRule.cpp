@@ -42,7 +42,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerAreaRule>;
 
 bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
@@ -55,19 +54,14 @@ bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
 
   if (area_ != rhs.area_)
     return false;
-
   if (except_min_width_ != rhs.except_min_width_)
     return false;
-
   if (except_edge_length_ != rhs.except_edge_length_)
     return false;
-
   if (trim_layer_ != rhs.trim_layer_)
     return false;
-
   if (mask_ != rhs.mask_)
     return false;
-
   if (rect_width_ != rhs.rect_width_)
     return false;
 
@@ -75,18 +69,19 @@ bool _dbTechLayerAreaRule::operator==(const _dbTechLayerAreaRule& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerAreaRule::operator<(const _dbTechLayerAreaRule& rhs) const
 {
   // User Code Begin <
   // User Code End <
   return true;
 }
+
 void _dbTechLayerAreaRule::differences(dbDiff& diff,
                                        const char* field,
                                        const _dbTechLayerAreaRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.except_rectangle_);
   DIFF_FIELD(flags_.overlap_);
   DIFF_FIELD(area_);
@@ -99,6 +94,7 @@ void _dbTechLayerAreaRule::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -115,6 +111,7 @@ void _dbTechLayerAreaRule::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -122,6 +119,7 @@ _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerAreaRule::_dbTechLayerAreaRule(_dbDatabase* db,
                                            const _dbTechLayerAreaRule& r)
 {
@@ -155,6 +153,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;

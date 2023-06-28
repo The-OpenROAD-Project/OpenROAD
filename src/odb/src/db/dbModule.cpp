@@ -50,23 +50,18 @@
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbModule>;
 
 bool _dbModule::operator==(const _dbModule& rhs) const
 {
   if (_name != rhs._name)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
-
   if (_insts != rhs._insts)
     return false;
-
   if (_modinsts != rhs._modinsts)
     return false;
-
   if (_mod_inst != rhs._mod_inst)
     return false;
 
@@ -74,6 +69,7 @@ bool _dbModule::operator==(const _dbModule& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbModule::operator<(const _dbModule& rhs) const
 {
   // User Code Begin <
@@ -82,12 +78,12 @@ bool _dbModule::operator<(const _dbModule& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbModule::differences(dbDiff& diff,
                             const char* field,
                             const _dbModule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(_insts);
@@ -97,6 +93,7 @@ void _dbModule::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbModule::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -110,6 +107,7 @@ void _dbModule::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbModule::_dbModule(_dbDatabase* db)
 {
   // User Code Begin Constructor
@@ -119,6 +117,7 @@ _dbModule::_dbModule(_dbDatabase* db)
   _mod_inst = 0;
   // User Code End Constructor
 }
+
 _dbModule::_dbModule(_dbDatabase* db, const _dbModule& r)
 {
   _name = r._name;
@@ -141,6 +140,7 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
 {
   stream << obj._name;
