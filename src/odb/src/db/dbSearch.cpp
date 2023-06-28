@@ -1405,8 +1405,12 @@ uint dbBlockSearch::getWiresAndVias_all(dbNet* targetNet, bool ignoreFlag)
   }
 
   if (signal_vias)
-    getViasFromWires(
-        _netSdb, _signalMenuId, _signal_via_id, _signal_wire_id, nullptr, false);
+    getViasFromWires(_netSdb,
+                     _signalMenuId,
+                     _signal_via_id,
+                     _signal_wire_id,
+                     nullptr,
+                     false);
 
   return cnt;
 }

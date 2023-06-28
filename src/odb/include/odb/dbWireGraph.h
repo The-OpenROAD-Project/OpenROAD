@@ -313,8 +313,8 @@ class dbWireGraph
 
   // Create a via edge.
   //    Returns nullptr, if the "tgt" node already has an in-edge.
-  //    Returns nullptr, if the src and tgt layers are not the respective upper and
-  //    lower layers of this via.
+  //    Returns nullptr, if the src and tgt layers are not the respective upper
+  //    and lower layers of this via.
   Via* createVia(Node* src,
                  Node* tgt,
                  dbVia* via,
@@ -323,8 +323,8 @@ class dbWireGraph
 
   // Create a tech-via edge.
   //    Returns nullptr, if the "tgt" node already has an in-edge.
-  //    Returns nullptr, if the src and tgt layers are not the respective upper and
-  //    lower layers of this via.
+  //    Returns nullptr, if the src and tgt layers are not the respective upper
+  //    and lower layers of this via.
   TechVia* createTechVia(Node* src,
                          Node* tgt,
                          dbTechVia* via,

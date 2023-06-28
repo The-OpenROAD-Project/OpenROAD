@@ -60,7 +60,7 @@ class dbObjectTable;
 #define DB_ALLOC_BIT 0x80000000
 #define DB_OFFSET_MASK (~DB_ALLOC_BIT)
 
-using GetObjTbl_t = dbObjectTable* (dbObject::*)(dbObjectType);
+using GetObjTbl_t = dbObjectTable* (dbObject::*) (dbObjectType);
 
 ///////////////////////////////////////////////////////////////
 /// _dbObject definition

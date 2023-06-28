@@ -1019,7 +1019,8 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   if ((netName == nullptr) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
     if (netName == nullptr)
-      logger_->warn(ODB, 400, "Cannot create wire, because net name is nullptr\n");
+      logger_->warn(
+          ODB, 400, "Cannot create wire, because net name is nullptr\n");
     else
       logger_->warn(ODB,
                     401,
@@ -1329,7 +1330,8 @@ dbNet* dbCreateNetUtil::createNetSingleWire(const char* netName,
   if ((netName == nullptr) || (routingLayer < 1)
       || (routingLayer > _tech->getRoutingLayerCount())) {
     if (netName == nullptr)
-      logger_->warn(ODB, 404, "Cannot create wire, because net name is nullptr");
+      logger_->warn(
+          ODB, 404, "Cannot create wire, because net name is nullptr");
     else
       logger_->warn(ODB,
                     405,

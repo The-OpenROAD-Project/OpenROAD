@@ -33,7 +33,6 @@
 #pragma once
 
 #include <cstring>
-
 #include <new>
 
 #include "ZException.h"

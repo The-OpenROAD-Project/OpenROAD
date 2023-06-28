@@ -242,8 +242,8 @@ class dbStringProperty : public dbProperty
                                   const char* name,
                                   const char* value);
 
-  /// Find the named property of type string. Returns nullptr if the property does
-  /// not exist.
+  /// Find the named property of type string. Returns nullptr if the property
+  /// does not exist.
   static dbStringProperty* find(dbObject* object, const char* name);
 };
 
@@ -263,8 +263,8 @@ class dbIntProperty : public dbProperty
   /// already exists.
   static dbIntProperty* create(dbObject* object, const char* name, int value);
 
-  /// Find the named property of type int. Returns nullptr if the property does not
-  /// exist.
+  /// Find the named property of type int. Returns nullptr if the property does
+  /// not exist.
   static dbIntProperty* find(dbObject* object, const char* name);
 };
 
@@ -286,8 +286,8 @@ class dbDoubleProperty : public dbProperty
                                   const char* name,
                                   double value);
 
-  /// Find the named property of type double. Returns nullptr if the property does
-  /// not exist.
+  /// Find the named property of type double. Returns nullptr if the property
+  /// does not exist.
   static dbDoubleProperty* find(dbObject* object, const char* name);
 };
 
@@ -967,7 +967,8 @@ class dbBlock : public dbObject
 
   ///
   /// Find a specific modinst in this block. path is
-  /// master_module_name/modinst_name Returns nullptr if the object was not found.
+  /// master_module_name/modinst_name Returns nullptr if the object was not
+  /// found.
   ///
   dbModInst* findModInst(const char* path);
 
@@ -3065,14 +3066,14 @@ class dbInst : public dbObject
   dbITerm* getFirstOutput();
 
   ///
-  /// Get the region this instance belongs to. Returns nullptr if instance has no
-  /// assigned region.
+  /// Get the region this instance belongs to. Returns nullptr if instance has
+  /// no assigned region.
   ///
   dbRegion* getRegion();
 
   ///
-  /// Get the module this instance belongs to. Returns nullptr if instance has no
-  /// assigned module.
+  /// Get the module this instance belongs to. Returns nullptr if instance has
+  /// no assigned module.
   ///
   dbModule* getModule();
 
@@ -7077,9 +7078,9 @@ class dbTechLayer : public dbObject
   bool isRectOnlyExceptNonCorePins() const;
 
   // User Code Begin dbTechLayer
-  int findV55Spacing( int width,  int prl) const;
+  int findV55Spacing(int width, int prl) const;
 
-  int findTwSpacing( int width1,  int width2,  int prl) const;
+  int findTwSpacing(int width1, int width2, int prl) const;
 
   void setLef58Type(LEF58_TYPE type);
 
@@ -8989,7 +8990,7 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
   void setSpacingTableInfluence(
       std::vector<std::tuple<int, int, int>> influence_tbl);
 
-  int getSpacing( int width,  int length) const;
+  int getSpacing(int width, int length) const;
 
   bool hasExceptWithin(int width) const;
 

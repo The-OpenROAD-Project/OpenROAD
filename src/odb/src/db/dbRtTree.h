@@ -91,8 +91,8 @@ class dbRtTree
 
   // Create a via edge.
   //    Returns nullptr, if the "tgt" node already has an in-edge.
-  //    Returns nullptr, if the src and tgt layers are not the respective upper and
-  //    lower layers of this via.
+  //    Returns nullptr, if the src and tgt layers are not the respective upper
+  //    and lower layers of this via.
   dbRtVia* createVia(dbRtNode* src,
                      dbRtNode* tgt,
                      dbVia* via,
@@ -101,8 +101,8 @@ class dbRtTree
 
   // Create a tech-via edge.
   //    Returns nullptr, if the "tgt" node already has an in-edge.
-  //    Returns nullptr, if the src and tgt layers are not the respective upper and
-  //    lower layers of this via.
+  //    Returns nullptr, if the src and tgt layers are not the respective upper
+  //    and lower layers of this via.
   dbRtTechVia* createTechVia(dbRtNode* src,
                              dbRtNode* tgt,
                              dbTechVia* via,

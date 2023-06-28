@@ -33,7 +33,6 @@
 #pragma once
 
 #include <cstring>
-
 #include <new>
 
 #include "ZException.h"
@@ -183,7 +182,7 @@ void dbTable<T>::resizePageTbl()
   for (i = 0; i < old_tbl_size; ++i) {
     _pages[i] = old_tbl[i];
   }
-    
+
   for (; i < _page_tbl_size; ++i) {
     _pages[i] = nullptr;
   }

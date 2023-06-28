@@ -97,10 +97,7 @@ class dbShape
   {
   }
 
-  dbShape(dbTechLayer* layer, const Rect& r)
-      : _rect(r), _layer(layer)
-  {
-  }
+  dbShape(dbTechLayer* layer, const Rect& r) : _rect(r), _layer(layer) {}
 
   dbShape(dbTechVia* via, dbTechLayer* layer, const Rect& r)
       : _type(TECH_VIA_BOX), _rect(r), _layer(layer), _via((dbObject*) via)

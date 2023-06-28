@@ -274,7 +274,8 @@ dbViaParams::dbViaParams(const dbViaParams& p) : _dbViaParams(p), _tech(p._tech)
 {
 }
 
-dbViaParams::dbViaParams(const _dbViaParams& p) : _dbViaParams(p), _tech(nullptr)
+dbViaParams::dbViaParams(const _dbViaParams& p)
+    : _dbViaParams(p), _tech(nullptr)
 {
 }
 
