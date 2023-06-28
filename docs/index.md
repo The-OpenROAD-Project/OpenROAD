@@ -41,8 +41,8 @@ linked [here](https://theopenroadproject.org/publications/).
 
 The OpenROAD Project has two releases:
 
-- Application ([github](https://github.com/The-OpenROAD-Project/OpenROAD)) ([docs](main/README.md)): The application is a standalone binary capable of performing RTL-to-GDSII SoC design.
-- Flow ([github](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)) ([docs](https://openroad-flow-scripts.readthedocs.io/en/latest/)): The flow is a set of integrated scripts that allow for RTL-to-GDSII flow using open-source tools.
+- Application ([github](https://github.com/The-OpenROAD-Project/OpenROAD)) ([docs](main/README.md)): The application is a standalone binary for digital place and route that can be used by any other RTL-GDSII flow controller.
+- Flow ([github](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)) ([docs](https://openroad-flow-scripts.readthedocs.io/en/latest/)): This is the native OpenROAD flow that consists of a set of integrated scripts for an autonomous RTL-GDSII flow using OpenROAD and other open-source tools.
 
 ## Code of conduct
 
