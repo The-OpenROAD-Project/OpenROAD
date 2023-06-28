@@ -3582,6 +3582,7 @@ Descriptor::Properties DbGenerateViaDescriptor::getProperties(
 
   Properties props;
 
+  SelectionSet via_layer_rules;
   PropertyList layers;
   for (uint l = 0; l < via->getViaLayerRuleCount(); l++) {
     auto* rule = via->getViaLayerRule(l);
@@ -3603,7 +3604,9 @@ Descriptor::Properties DbGenerateViaDescriptor::getProperties(
                                Property::convert_dbu(enc1, true));
     }
     layers.push_back({gui->makeSelected(layer), shape_text});
+    via_layer_rules.insert(gui->makeSelected(rule));
   }
+  props.push_back({"Tech Via-Layer Rules", via_layer_rules});
   props.push_back({"Layers", layers});
 
   props.push_back({"Is default", via->isDefault()});
