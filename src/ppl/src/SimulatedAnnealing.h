@@ -67,12 +67,10 @@ class SimulatedAnnealing
 
  private:
   void randomAssignment();
-  int getAssignmentCost(const std::vector<int>& assignment);
-  std::vector<int> perturbAssignment(int& prev_slot, int& new_slot);
-  std::vector<int> swapPins(const std::vector<int>& pin_assignment);
-  std::vector<int> movePinToFreeSlot(const std::vector<int>& pin_assignment,
-                                     int& prev_slot,
-                                     int& new_slot);
+  int getAssignmentCost();
+  void perturbAssignment(int& prev_slot, int& new_slot, int& pin1, int& pin2);
+  void swapPins(int& pin1, int& pin2);
+  void movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
   std::vector<int> placeSubsetOfPins(const std::vector<int>& pin_assignment,
                                      float subset_percent);
   double dbuToMicrons(int64_t dbu);
