@@ -104,22 +104,28 @@ using OpenROAD;
 
 The OpenROAD GUI is a powerful visualization, analysis, and debugging
 tool with a customizable Tcl interface. The below figures show GUI views for
-various flow stages including post-routed timing, placement congestion, and
-CTS.
+various flow stages including floorplanning, placement congestion,
+CTS and post-routed design.
 
-![ibexGui.webp](./docs/images/ibexGui.webp)
+#### Floorplan
 
-### Automatic Hierarchical Macro Placement
+![ibex_floorplan.webp](./docs/images/ibex_floorplan.webp)
+
+#### Automatic Hierarchical Macro Placement
 
 ![Ariane133](./docs/images/ariane133_mpl2.webp)
 
-### Placement Congestion Visualization
+#### Placement Congestion Visualization
 
 ![pl_congestion.webp](./docs/images/pl_congestion.webp)
 
-### CTS
+#### CTS
 
 ![clk_routing.webp](./docs/images/clk_routing.webp)
+
+#### Routing
+
+![ibex_routing.webp](./docs/images/ibex_routing.webp)
 
 ### PDK Support
 
