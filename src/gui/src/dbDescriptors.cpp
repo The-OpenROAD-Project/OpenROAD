@@ -2015,7 +2015,7 @@ Descriptor::Properties DbViaDescriptor::getProperties(std::any object) const
 
   Properties props({{"Block", gui->makeSelected(via->getBlock())}});
 
-  if (via->getPattern() != "") {
+  if (via->getPattern().empty()) {
     props.push_back({"Pattern", via->getPattern()});
   }
 

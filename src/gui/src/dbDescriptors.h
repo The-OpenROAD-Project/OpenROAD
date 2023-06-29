@@ -547,7 +547,7 @@ class DbTechViaLayerRuleDescriptor : public Descriptor
   bool getAllObjects(SelectionSet& objects) const override;
 
  private:
-  odb::dbDatabase* db_;  
+  odb::dbDatabase* db_;
 };
 
 class DbMetalWidthViaMapDescriptor : public Descriptor
