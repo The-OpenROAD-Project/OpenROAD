@@ -1566,8 +1566,14 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
   return pin_indices;
 }
 
-void IOPlacer::initMirroredPins()
+void IOPlacer::initMirroredPins(bool annealing)
 {
+  if (annealing && !mirrored_pins_.empty()) {
+    logger_->error(PPL,
+                   102,
+                   "Mirrored pins not supported during pin placement with "
+                   "Simulated Annealing");
+  }
   for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
     if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
       io_pin.setMirrored();
@@ -1579,8 +1585,14 @@ void IOPlacer::initMirroredPins()
   }
 }
 
-void IOPlacer::initConstraints()
+void IOPlacer::initConstraints(bool annealing)
 {
+  if (annealing && !constraints_.empty()) {
+    logger_->error(PPL,
+                   103,
+                   "Pin constraints not supported during pin placement with "
+                   "Simulated Annealing");
+  }
   std::reverse(constraints_.begin(), constraints_.end());
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
@@ -1865,6 +1877,13 @@ void IOPlacer::runAnnealing()
 
   initIOLists();
   defineSlots();
+
+  initMirroredPins(true);
+  initConstraints(true);
+
+  if (!pin_groups_.empty()) {
+    logger_->error(PPL, 104, "Pin groups not supported during pin placement with Simulated Annealing");
+  }
 
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), slots_, logger_, db_);

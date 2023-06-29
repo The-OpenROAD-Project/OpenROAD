@@ -195,8 +195,8 @@ class IOPlacer
                     std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
-  void initMirroredPins();
-  void initConstraints();
+  void initMirroredPins(bool annealing = false);
+  void initConstraints(bool annealing = false);
   void sortConstraints();
   void checkPinsInMultipleConstraints();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
