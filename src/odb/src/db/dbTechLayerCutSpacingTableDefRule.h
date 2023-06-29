@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -86,6 +85,25 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbTechLayerCutSpacingTableDefRule(
+      _dbDatabase*,
+      const _dbTechLayerCutSpacingTableDefRule& r);
+  _dbTechLayerCutSpacingTableDefRule(_dbDatabase*);
+  ~_dbTechLayerCutSpacingTableDefRule();
+
+  bool operator==(const _dbTechLayerCutSpacingTableDefRule& rhs) const;
+  bool operator!=(const _dbTechLayerCutSpacingTableDefRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerCutSpacingTableDefRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerCutSpacingTableDefRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   dbTechLayerCutSpacingTableDefRuleFlags flags_;
   int default_;
   dbId<_dbTechLayer> second_layer_;
@@ -106,23 +124,6 @@ class _dbTechLayerCutSpacingTableDefRule : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbTechLayerCutSpacingTableDefRule(
-      _dbDatabase*,
-      const _dbTechLayerCutSpacingTableDefRule& r);
-  _dbTechLayerCutSpacingTableDefRule(_dbDatabase*);
-  ~_dbTechLayerCutSpacingTableDefRule();
-  bool operator==(const _dbTechLayerCutSpacingTableDefRule& rhs) const;
-  bool operator!=(const _dbTechLayerCutSpacingTableDefRule& rhs) const
-  {
-    return !operator==(rhs);
-  }
-  bool operator<(const _dbTechLayerCutSpacingTableDefRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerCutSpacingTableDefRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableDefRule& obj);

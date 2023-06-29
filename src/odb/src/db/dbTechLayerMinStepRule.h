@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -68,19 +67,10 @@ class _dbTechLayerMinStepRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerMinStepRuleFlags flags_;
-  int min_step_length_;
-  uint max_edges_;
-  int min_adj_length1_;
-  int min_adj_length2_;
-  int eol_width_;
-  int min_between_length_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerMinStepRule(_dbDatabase*, const _dbTechLayerMinStepRule& r);
   _dbTechLayerMinStepRule(_dbDatabase*);
   ~_dbTechLayerMinStepRule();
+
   bool operator==(const _dbTechLayerMinStepRule& rhs) const;
   bool operator!=(const _dbTechLayerMinStepRule& rhs) const
   {
@@ -93,6 +83,17 @@ class _dbTechLayerMinStepRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  dbTechLayerMinStepRuleFlags flags_;
+  int min_step_length_;
+  uint max_edges_;
+  int min_adj_length1_;
+  int min_adj_length2_;
+  int eol_width_;
+  int min_between_length_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj);

@@ -1,4 +1,4 @@
-# Developer Guide
+# Developer's Guide
 
 ## Tool Philosophy
 
@@ -184,11 +184,11 @@ read_liberty Nangate45/Nangate45_typ.lib
 
 ## Building
 
-Instructions for building are available [here](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
+Instructions for building are available [here](../user/Build.md).
 
 ## Example of Adding a Tool to OpenROAD
 
-The patch file "add_tool.patch" illustrates how to add a tool to
+The patch file "AddTool.patch" illustrates how to add a tool to
 OpenROAD. Use
 
 ``` shell

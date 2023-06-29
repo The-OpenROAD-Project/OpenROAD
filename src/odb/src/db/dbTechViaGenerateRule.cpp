@@ -94,7 +94,7 @@ void _dbTechViaGenerateRule::out(dbDiff& diff,
 
 _dbTechViaGenerateRule::_dbTechViaGenerateRule(_dbDatabase*,
                                                const _dbTechViaGenerateRule& v)
-    : _flags(v._flags), _name(NULL), _layer_rules(v._layer_rules)
+    : _flags(v._flags), _name(nullptr), _layer_rules(v._layer_rules)
 {
   if (v._name) {
     _name = strdup(v._name);
@@ -163,7 +163,7 @@ dbTechViaLayerRule* dbTechViaGenerateRule::getViaLayerRule(uint idx)
   dbTech* tech = (dbTech*) rule->getOwner();
 
   if (idx >= rule->_layer_rules.size())
-    return NULL;
+    return nullptr;
 
   dbId<dbTechViaLayerRule> id = rule->_layer_rules[idx];
   return dbTechViaLayerRule::getTechViaLayerRule(tech, id);
@@ -174,7 +174,7 @@ dbTechViaGenerateRule* dbTechViaGenerateRule::create(dbTech* tech_,
                                                      bool is_default)
 {
   if (tech_->findViaGenerateRule(name))
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = (_dbTech*) tech_;
   _dbTechViaGenerateRule* rule = tech->_via_generate_rule_tbl->create();

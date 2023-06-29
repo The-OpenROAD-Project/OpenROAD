@@ -42,7 +42,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerMinCutRule>;
 
 bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
@@ -76,22 +75,16 @@ bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
 
   if (num_cuts_ != rhs.num_cuts_)
     return false;
-
   if (width_ != rhs.width_)
     return false;
-
   if (within_cut_dist != rhs.within_cut_dist)
     return false;
-
   if (length_ != rhs.length_)
     return false;
-
   if (length_within_dist_ != rhs.length_within_dist_)
     return false;
-
   if (area_ != rhs.area_)
     return false;
-
   if (area_within_dist_ != rhs.area_within_dist_)
     return false;
 
@@ -99,19 +92,20 @@ bool _dbTechLayerMinCutRule::operator==(const _dbTechLayerMinCutRule& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerMinCutRule::operator<(const _dbTechLayerMinCutRule& rhs) const
 {
   // User Code Begin <
   // User Code End <
   return true;
 }
+
 void _dbTechLayerMinCutRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerMinCutRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.per_cut_class_);
   DIFF_FIELD(flags_.within_cut_dist_valid);
   DIFF_FIELD(flags_.from_above_);
@@ -132,6 +126,7 @@ void _dbTechLayerMinCutRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerMinCutRule::out(dbDiff& diff,
                                  char side,
                                  const char* field) const
@@ -158,6 +153,7 @@ void _dbTechLayerMinCutRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -172,6 +168,7 @@ _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerMinCutRule::_dbTechLayerMinCutRule(_dbDatabase* db,
                                                const _dbTechLayerMinCutRule& r)
 {
@@ -212,6 +209,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinCutRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinCutRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;

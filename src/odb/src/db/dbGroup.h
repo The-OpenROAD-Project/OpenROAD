@@ -41,7 +41,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -67,6 +66,18 @@ class _dbGroup : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbGroup(_dbDatabase*, const _dbGroup& r);
+  _dbGroup(_dbDatabase*);
+  ~_dbGroup();
+
+  bool operator==(const _dbGroup& rhs) const;
+  bool operator!=(const _dbGroup& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbGroup& rhs) const;
+  void differences(dbDiff& diff, const char* field, const _dbGroup& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   dbGroupFlags flags_;
   char* _name;
   dbId<_dbGroup> _next_entry;
@@ -83,16 +94,6 @@ class _dbGroup : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbGroup(_dbDatabase*, const _dbGroup& r);
-  _dbGroup(_dbDatabase*);
-  ~_dbGroup();
-  bool operator==(const _dbGroup& rhs) const;
-  bool operator!=(const _dbGroup& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbGroup& rhs) const;
-  void differences(dbDiff& diff, const char* field, const _dbGroup& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbGroup& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGroup& obj);

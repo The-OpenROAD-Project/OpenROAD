@@ -32,7 +32,7 @@
 
 #include "dbCCSegItr.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include "dbBlock.h"
 #include "dbCCSeg.h"

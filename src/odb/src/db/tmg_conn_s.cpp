@@ -30,8 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include "db.h"
 #include "dbShape.h"
@@ -112,7 +112,7 @@ tmg_conn_search_internal::tmg_conn_search_internal()
   _shV = (tcs_shape**) malloc(_shJmax * sizeof(tcs_shape*));
   int j;
   for (j = 0; j < _shJmax; j++)
-    _shV[j] = NULL;
+    _shV[j] = nullptr;
   _shV[0] = (tcs_shape*) malloc(32768 * sizeof(tcs_shape));
   _sxlo = 0;
   _sylo = 0;
@@ -142,11 +142,11 @@ void tmg_conn_search_internal::clear()
   int j;
   for (j = 0; j < 32; j++) {
     _levV[j] = _levAllV + _levAllN++;
-    _levV[j]->shape_list = NULL;
-    _levV[j]->last_shape = NULL;
-    _levV[j]->left = NULL;
-    _levV[j]->right = NULL;
-    _levV[j]->parent = NULL;
+    _levV[j]->shape_list = nullptr;
+    _levV[j]->last_shape = nullptr;
+    _levV[j]->left = nullptr;
+    _levV[j]->right = nullptr;
+    _levV[j]->parent = nullptr;
     _levV[j]->n = 0;
     _levV[j]->xlo = 0;
     _levV[j]->ylo = 0;
@@ -196,7 +196,7 @@ void tmg_conn_search_internal::addShape(int lev,
       _shJmax *= 2;
       _shV = (tcs_shape**) realloc(_shV, _shJmax * sizeof(tcs_shape*));
       for (; j < _shJmax; j++)
-        _shV[j] = NULL;
+        _shV[j] = nullptr;
     }
     _shJ++;
     if (!_shV[_shJ])
@@ -211,9 +211,9 @@ void tmg_conn_search_internal::addShape(int lev,
   s->yhi = yhi;
   s->isVia = isVia;
   s->id = id;
-  s->next = NULL;
+  s->next = nullptr;
   tcs_lev* slev = _levV[lev];
-  if (slev->shape_list == NULL) {
+  if (slev->shape_list == nullptr) {
     slev->shape_list = s;
     slev->xlo = xlo;
     slev->ylo = ylo;
@@ -265,7 +265,7 @@ void tmg_conn_search_internal::searchStart(int lev,
   }
   _bin = _levV[lev];
   _cur = _bin->shape_list;
-  _pcur = NULL;
+  _pcur = nullptr;
   _sxlo = xlo;
   _sylo = ylo;
   _sxhi = xhi;
@@ -343,7 +343,7 @@ bool tmg_conn_search_internal::searchNext(int* id)
     if (_bin->left) {
       _bin = _bin->left;
       _cur = _bin->shape_list;
-      _pcur = NULL;
+      _pcur = nullptr;
     } else {
       while (_bin->parent && _bin == _bin->parent->right)
         _bin = _bin->parent;
@@ -351,7 +351,7 @@ bool tmg_conn_search_internal::searchNext(int* id)
       if (_bin) {
         _bin = _bin->right;
         _cur = _bin->shape_list;
-        _pcur = NULL;
+        _pcur = nullptr;
       }
     }
   }
@@ -369,17 +369,17 @@ void tmg_conn_search_internal::sort()
 
 static void tcs_lev_init(tcs_lev* bin)
 {
-  bin->shape_list = NULL;
-  bin->last_shape = NULL;
-  bin->left = NULL;
-  bin->right = NULL;
-  bin->parent = NULL;
+  bin->shape_list = nullptr;
+  bin->last_shape = nullptr;
+  bin->left = nullptr;
+  bin->right = nullptr;
+  bin->parent = nullptr;
   bin->n = 0;
 }
 
 static void tcs_lev_add(tcs_lev* bin, tcs_shape* s)
 {
-  if (bin->shape_list == NULL) {
+  if (bin->shape_list == nullptr) {
     bin->shape_list = s;
     bin->xlo = s->xlo;
     bin->ylo = s->ylo;
@@ -402,7 +402,7 @@ static void tcs_lev_add(tcs_lev* bin, tcs_shape* s)
 
 static void tcs_lev_add_no_bb(tcs_lev* bin, tcs_shape* s)
 {
-  if (bin->shape_list == NULL) {
+  if (bin->shape_list == nullptr) {
     bin->shape_list = s;
   } else {
     bin->last_shape->next = s;
@@ -414,7 +414,7 @@ static void tcs_lev_add_no_bb(tcs_lev* bin, tcs_shape* s)
 static void tcs_lev_wrap(tcs_lev* bin)
 {
   if (bin->last_shape)
-    bin->last_shape->next = NULL;
+    bin->last_shape->next = nullptr;
 }
 
 void tmg_conn_search_internal::sort1(tcs_lev* bin)
@@ -468,8 +468,8 @@ void tmg_conn_search_internal::merge(tcs_lev* bin,
                                      tcs_lev* left,
                                      tcs_lev* right)
 {
-  tcs_shape* shapeList = NULL;
-  tcs_shape* lastShape = NULL;
+  tcs_shape* shapeList = nullptr;
+  tcs_shape* lastShape = nullptr;
   if (left->shape_list) {
     shapeList = left->shape_list;
     lastShape = left->last_shape;
@@ -502,7 +502,7 @@ tmg_conn_search::tmg_conn_search()
 tmg_conn_search::~tmg_conn_search()
 {
   delete _d;
-  _d = NULL;
+  _d = nullptr;
 }
 
 void tmg_conn_search::clear()

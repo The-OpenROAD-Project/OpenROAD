@@ -319,7 +319,7 @@ void dbCapNode::addGndCap(double* gndcap, double* totalcap)
 
 void dbCapNode::accAllCcCap(double* totalcap, double MillerMult)
 {
-  if (totalcap == NULL || MillerMult == 0)
+  if (totalcap == nullptr || MillerMult == 0)
     return;
   dbSet<dbCCSeg> ccSegs = getCCSegs();
   dbSet<dbCCSeg>::iterator ccitr;
@@ -491,7 +491,7 @@ dbITerm* dbCapNode::getITerm(dbBlock* mblock)
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
   if (!seg->_flags._iterm)
-    return NULL;
+    return nullptr;
   return dbITerm::getITerm(block, seg->_node_num);
 }
 dbBTerm* dbCapNode::getBTerm(dbBlock* mblock)
@@ -499,7 +499,7 @@ dbBTerm* dbCapNode::getBTerm(dbBlock* mblock)
   _dbCapNode* seg = (_dbCapNode*) this;
   dbBlock* block = mblock ? mblock : (dbBlock*) seg->getOwner();
   if (!seg->_flags._bterm)
-    return NULL;
+    return nullptr;
   return dbBTerm::getBTerm(block, seg->_node_num);
 }
 bool dbCapNode::isSourceTerm(dbBlock* mblock)
@@ -965,7 +965,7 @@ dbCapNode::getNext(dbBlock *block_)
 {
     _dbCapNode * seg = (_dbCapNode *) this;
     if (seg->_next==0)
-        return NULL;
+        return nullptr;
 
     _dbBlock * block = (_dbBlock *) block_;
     return (dbCapNode *) block->_cap_node_tbl->getPtr( seg->_next );
@@ -1041,13 +1041,13 @@ void dbCapNode::destroy(dbCapNode* seg_, bool destroyCC)
 
   // unlink the cap-node from the net cap-node list
   dbId<_dbCapNode> c = net->_cap_nodes;
-  _dbCapNode* p = NULL;
+  _dbCapNode* p = nullptr;
 
   while (c != 0) {
     _dbCapNode* s = block->_cap_node_tbl->getPtr(c);
 
     if (s == seg) {
-      if (p == NULL)
+      if (p == nullptr)
         net->_cap_nodes = s->_next;
       else
         p->_next = s->_next;

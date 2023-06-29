@@ -43,8 +43,6 @@
 // User Code End Includes
 
 namespace odb {
-  
-  
   class dbIStream;
   class dbOStream;
   class dbDiff;
@@ -63,15 +61,16 @@ namespace odb {
     struct {{ _struct.name }}
     {
       {% for field in _struct.fields %}
-        {{field.type}} {{field.name}}{% if "bits" in field %} : {{field.bits}}{% endif %}{% if "default" in field %} = {{field.default}}{% endif %};{% if "comment" in field %} {{field.comment}}{% endif %}
-      
+        {{field.type}} {{field.name}}
+          {% if "bits" in field %} : {{field.bits}}{% endif %}
+          {% if "default" in field %} = {{field.default}}{% endif %};
+          {% if "comment" in field %} {{field.comment}}{% endif %}
       {% endfor %}
     };
     {% endif %}
   {% endfor %}
   // User Code Begin Structs
   // User Code End Structs
-
 
   class _{{klass.name}} : public _dbObject
   {
@@ -89,20 +88,10 @@ namespace odb {
     // User Code Begin Enums
     // User Code End Enums
         
-    {% for field in klass.fields %}
-      {% if field.table %} 
-        dbTable<_{{field.type}}>* {{field.name}}; 
-      {% else %}
-      {{field.type}} {{field.name}};{% if "comment" in field %} {{field.comment}}{% endif %}
-
-      {% endif %}
-    {% endfor %}
-
-    // User Code Begin Fields
-    // User Code End Fields
     _{{klass.name}}(_dbDatabase*, const _{{klass.name}}& r);
     _{{klass.name}}(_dbDatabase*);
     ~_{{klass.name}}();
+
     bool operator==(const _{{klass.name}}& rhs) const;
     bool operator!=(const _{{klass.name}}& rhs) const { return !operator==(rhs); }
     bool operator<(const _{{klass.name}}& rhs) const;
@@ -113,6 +102,20 @@ namespace odb {
     {% endif %}
     // User Code Begin Methods
     // User Code End Methods
+
+    {% for field in klass.fields %}
+      {% if field.table %} 
+        dbTable<_{{field.type}}>* {{field.name}}; 
+      {% else %}
+        {% if "comment" in field %}
+          {{field.comment}}
+        {% endif %}
+        {{field.type}} {{field.name}};
+      {% endif %}
+    {% endfor %}
+
+    // User Code Begin Fields
+    // User Code End Fields
   };
 dbIStream& operator>>(dbIStream& stream, _{{klass.name}}& obj);
 dbOStream& operator<<(dbOStream& stream, const _{{klass.name}}& obj);

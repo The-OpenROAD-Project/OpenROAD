@@ -149,13 +149,13 @@ dbTechLayer* create_via_array(dbSWire* wire,
                               int stepY,
                               utl::Logger* logger)
 {
-  if (via->getBBox() == NULL) {
+  if (via->getBBox() == nullptr) {
     std::string n = via->getName();
     logger->warn(utl::ODB,
                  241,
                  "error: Cannot create a via instance, via ({}) has no shapes",
                  n.c_str());
-    return NULL;
+    return nullptr;
   }
 
   int i, j;
@@ -189,7 +189,7 @@ dbTechLayer* create_via_array(dbSWire* wire,
         "       via ({}) spans above and below the current layer ({}).",
         vname.c_str(),
         lname.c_str());
-    return NULL;
+    return nullptr;
   }
 
   if (top != layer)
@@ -213,13 +213,13 @@ dbTechLayer* create_via_array(dbSWire* wire,
                               int stepY,
                               utl::Logger* logger)
 {
-  if (via->getBBox() == NULL) {
+  if (via->getBBox() == nullptr) {
     std::string vname = via->getName();
     logger->warn(utl::ODB,
                  244,
                  "error: Cannot create a via instance, via ({}) has no shapes",
                  vname.c_str());
-    return NULL;
+    return nullptr;
   }
 
   int i, j;
@@ -255,7 +255,7 @@ dbTechLayer* create_via_array(dbSWire* wire,
         "       via ({}) spans above and below the current layer ({}).",
         vname.c_str(),
         lname.c_str());
-    return NULL;
+    return nullptr;
   }
 
   if (top != layer)

@@ -137,7 +137,7 @@ void dbJournalLog::push(double value)
 void dbJournalLog::push(const char* value)
 {
   SET_TYPE(LOG_STRING);
-  if (value == NULL)
+  if (value == nullptr)
     push(-1);
   else {
     int len = strlen(value);
@@ -217,7 +217,7 @@ void dbJournalLog::pop(char*& value)
   pop(len);
 
   if (len == -1) {
-    value = NULL;
+    value = nullptr;
     return;
   }
 

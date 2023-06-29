@@ -118,7 +118,7 @@ class lefout
 
   inline void writeObjectPropertyDefinitions(
       dbObject* obj,
-      std::unordered_map<std::string, short>& propertiesMap);
+      std::unordered_map<std::string, int16_t>& propertiesMap);
 
   int determineBloat(dbTechLayer* layer) const;
   void insertObstruction(dbTechLayer* layer,
@@ -140,8 +140,6 @@ class lefout
     bloat_factor_ = 10;
     bloat_occupied_layers_ = false;
   }
-
-  ~lefout() {}
 
   void setWriteMarkedMasters(bool value) { _write_marked_masters = value; }
   void setUseLayerAlias(bool value) { _use_alias = value; }
