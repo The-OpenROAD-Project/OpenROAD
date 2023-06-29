@@ -50,13 +50,7 @@ namespace dft {
 //  - Find the scan enable of the chain
 class ScanChain
 {
- private:
-  using ScanCells = std::vector<std::unique_ptr<ScanCell>>;
-
  public:
-  // Function to sort the scan cells. (falling, rising, output vector)
-  using SortFn = const std::function<void(ScanCells&, ScanCells&, ScanCells&)>&;
-
   explicit ScanChain(const std::string& name);
   // Not copyable or movable
   ScanChain(const ScanChain&) = delete;
@@ -73,8 +67,11 @@ class ScanChain
   // we update every time we add a scan cell
   uint64_t getBits() const;
 
-  // Sorts the scan cells of this chain
-  void sortScanCells(SortFn sort_fn);
+  // Sorts the scan cells of this chain.  This function has 3 arguments: falling
+  // cells, rising cells and the output vector with the sorted cells
+  void sortScanCells(const std::function<void(std::vector<std::unique_ptr<ScanCell>>&,
+                                              std::vector<std::unique_ptr<ScanCell>>&,
+                                              std::vector<std::unique_ptr<ScanCell>>&)>& sort_fn);
 
   // Returns a reference to a vector containing all the scan cells of the chain
   const std::vector<std::unique_ptr<ScanCell>>& getScanCells() const;
