@@ -613,7 +613,7 @@ void RenderThread::drawITermLabels(QPainter* painter,
   painter->setFont(initial_font);
 }
 
-void RenderThread::drawTextInBBox(QColor text_color,
+void RenderThread::drawTextInBBox(const QColor& text_color,
                                   QFont text_font,
                                   Rect bbox,
                                   QString name,
