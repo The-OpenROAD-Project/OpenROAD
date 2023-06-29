@@ -52,9 +52,6 @@ source $tracks_file
 # remove buffers inserted by synthesis 
 remove_buffers
 
-preview_dft
-insert_dft
-link_design $top_module
 ################################################################
 # IO Placement (random)
 place_pins -random -hor_layers $io_placer_hor_layer -ver_layers $io_placer_ver_layer
