@@ -41,7 +41,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -65,20 +64,10 @@ class _dbTechLayerEolKeepOutRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerEolKeepOutRuleFlags flags_;
-  int eol_width_;
-  int backward_ext_;
-  int forward_ext_;
-  int side_ext_;
-  int within_low_;
-  int within_high_;
-  std::string class_name_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerEolKeepOutRule(_dbDatabase*, const _dbTechLayerEolKeepOutRule& r);
   _dbTechLayerEolKeepOutRule(_dbDatabase*);
   ~_dbTechLayerEolKeepOutRule();
+
   bool operator==(const _dbTechLayerEolKeepOutRule& rhs) const;
   bool operator!=(const _dbTechLayerEolKeepOutRule& rhs) const
   {
@@ -91,6 +80,18 @@ class _dbTechLayerEolKeepOutRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  dbTechLayerEolKeepOutRuleFlags flags_;
+  int eol_width_;
+  int backward_ext_;
+  int forward_ext_;
+  int side_ext_;
+  int within_low_;
+  int within_high_;
+  std::string class_name_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj);

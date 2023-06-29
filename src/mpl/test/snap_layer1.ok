@@ -10,11 +10,11 @@
 [INFO ODB-0130]     Created 15 pins.
 [INFO ODB-0131]     Created 2 components and 64 component-terminals.
 [INFO ODB-0133]     Created 15 nets and 16 connections.
-[INFO MPL-0005] Found 2 macros.
-[INFO MPL-0009] West pins 7.
-[INFO MPL-0009] East pins 5.
-[INFO MPL-0009] North pins 1.
-[INFO MPL-0009] South pins 2.
+[INFO MPL-0101] Found 2 macros.
+[INFO MPL-0102] West pins 7.
+[INFO MPL-0102] East pins 5.
+[INFO MPL-0102] North pins 1.
+[INFO MPL-0102] South pins 2.
 [INFO MPL-0069] Initial weighted wire length 1023.28.
 Begin one level partition.
 [INFO MPL-0076] Partition 2 macros.

@@ -44,6 +44,7 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <mutex>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"
@@ -572,6 +573,8 @@ void dbStaCbk::inDbBTermPreDisconnect(dbBTerm* bterm)
 void dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
 {
   sta_->getDbNetwork()->makeTopPort(bterm);
+  Pin* pin = network_->dbToSta(bterm);
+  sta_->makePortPinAfter(pin);
 }
 
 void dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)

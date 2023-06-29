@@ -130,8 +130,8 @@ template <class T>
 inline Allocator<T>::Allocator(int block_size)
 {
   _block_size = block_size;
-  _free_list = NULL;
-  _block_list = NULL;
+  _free_list = nullptr;
+  _block_list = nullptr;
   _size = 0;
   _vm_size = 0;
 }
@@ -152,7 +152,7 @@ template <class T>
 inline void Allocator<T>::clear()
 {
   block* b = _block_list;
-  block* next = NULL;
+  block* next = nullptr;
 
   for (; b; b = next) {
     next = b->_next;
@@ -160,8 +160,8 @@ inline void Allocator<T>::clear()
     ::free((void*) b);
   }
 
-  _free_list = NULL;
-  _block_list = NULL;
+  _free_list = nullptr;
+  _block_list = nullptr;
 }
 
 template <class T>
@@ -171,7 +171,7 @@ inline T* Allocator<T>::malloc()
   _size += sizeof(T);
   return (T*) ::malloc(sizeof(T));
 #else
-  if (_free_list == NULL)
+  if (_free_list == nullptr)
     new_block();
 
   chunk* c = _free_list;

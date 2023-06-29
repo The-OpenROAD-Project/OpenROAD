@@ -72,13 +72,12 @@ class defiWire
   void bumpPaths(long long size);
 
  protected:
+  defrData* defData;
+  defiPath** paths_;
   char* type_;
   char* wireShieldName_;  // It only set from specialnet SHIELD, 5.4
   int numPaths_;
   long long pathsAllocated_;
-  defiPath** paths_;
-
-  defrData* defData;
 };
 
 class defiSubnet

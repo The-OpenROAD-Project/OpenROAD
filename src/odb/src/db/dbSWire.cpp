@@ -216,7 +216,7 @@ dbNet* dbSWire::getShield()
   _dbSWire* wire = (_dbSWire*) this;
 
   if (wire->_shield == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   return (dbNet*) block->_net_tbl->getPtr(wire->_shield);
@@ -272,7 +272,7 @@ void dbSWire::destroy(dbSWire* wire_)
   _dbSWire* wire = (_dbSWire*) wire_;
   _dbBlock* block = (_dbBlock*) wire->getOwner();
   _dbNet* net = block->_net_tbl->getPtr(wire->_net);
-  _dbSWire* prev = NULL;
+  _dbSWire* prev = nullptr;
   dbId<_dbSWire> id;
   // destroy the sboxes
   destroySBoxes(wire);
@@ -282,7 +282,7 @@ void dbSWire::destroy(dbSWire* wire_)
   for (id = net->_swires; id != 0; id = prev->_next_swire) {
     _dbSWire* w = block->_swire_tbl->getPtr(id);
     if (w == wire) {
-      if (prev == NULL)
+      if (prev == nullptr)
         net->_swires = w->_next_swire;
       else
         prev->_next_swire = w->_next_swire;

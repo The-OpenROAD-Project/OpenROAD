@@ -266,7 +266,7 @@ dbIStream& operator>>(dbIStream& stream, _dbViaParams& v)
 //
 ////////////////////////////////////////////////////////////////////
 
-dbViaParams::dbViaParams() : _tech(NULL)
+dbViaParams::dbViaParams() : _tech(nullptr)
 {
 }
 
@@ -274,7 +274,8 @@ dbViaParams::dbViaParams(const dbViaParams& p) : _dbViaParams(p), _tech(p._tech)
 {
 }
 
-dbViaParams::dbViaParams(const _dbViaParams& p) : _dbViaParams(p), _tech(NULL)
+dbViaParams::dbViaParams(const _dbViaParams& p)
+    : _dbViaParams(p), _tech(nullptr)
 {
 }
 
@@ -364,24 +365,24 @@ int dbViaParams::getYBottomOffset() const
 
 dbTechLayer* dbViaParams::getTopLayer() const
 {
-  if (_tech == NULL)
-    return NULL;
+  if (_tech == nullptr)
+    return nullptr;
 
   return dbTechLayer::getTechLayer(_tech, _top_layer);
 }
 
 dbTechLayer* dbViaParams::getCutLayer() const
 {
-  if (_tech == NULL)
-    return NULL;
+  if (_tech == nullptr)
+    return nullptr;
 
   return dbTechLayer::getTechLayer(_tech, _cut_layer);
 }
 
 dbTechLayer* dbViaParams::getBottomLayer() const
 {
-  if (_tech == NULL)
-    return NULL;
+  if (_tech == nullptr)
+    return nullptr;
 
   return dbTechLayer::getTechLayer(_tech, _bot_layer);
 }
@@ -468,7 +469,7 @@ void dbViaParams::setYBottomOffset(int value)
 
 void dbViaParams::setTopLayer(dbTechLayer* layer)
 {
-  if (_tech == NULL)
+  if (_tech == nullptr)
     _tech = layer->getTech();
 
   assert(_tech == layer->getTech());
@@ -477,7 +478,7 @@ void dbViaParams::setTopLayer(dbTechLayer* layer)
 
 void dbViaParams::setCutLayer(dbTechLayer* layer)
 {
-  if (_tech == NULL)
+  if (_tech == nullptr)
     _tech = layer->getTech();
 
   assert(_tech == layer->getTech());
@@ -486,7 +487,7 @@ void dbViaParams::setCutLayer(dbTechLayer* layer)
 
 void dbViaParams::setBottomLayer(dbTechLayer* layer)
 {
-  if (_tech == NULL)
+  if (_tech == nullptr)
     _tech = layer->getTech();
 
   assert(_tech == layer->getTech());

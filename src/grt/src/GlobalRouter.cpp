@@ -1655,15 +1655,14 @@ void GlobalRouter::updateDbCongestionFromGuides()
 {
   auto block = db_->getChip()->getBlock();
   auto db_gcell = block->getGCellGrid();
-  if (db_gcell)
-    db_gcell->resetGrid();
-  else
+  if (db_gcell == nullptr) {
     db_gcell = odb::dbGCellGrid::create(block);
+    db_gcell->addGridPatternX(
+        grid_->getXMin(), grid_->getXGrids(), grid_->getTileSize());
+    db_gcell->addGridPatternY(
+        grid_->getYMin(), grid_->getYGrids(), grid_->getTileSize());
+  }
 
-  db_gcell->addGridPatternX(
-      grid_->getXMin(), grid_->getXGrids(), grid_->getTileSize());
-  db_gcell->addGridPatternY(
-      grid_->getYMin(), grid_->getYGrids(), grid_->getTileSize());
   auto db_tech = db_->getTech();
   for (int k = 0; k < grid_->getNumLayers(); k++) {
     auto layer = db_tech->findRoutingLayer(k + 1);

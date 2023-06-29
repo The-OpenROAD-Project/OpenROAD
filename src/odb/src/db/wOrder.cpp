@@ -37,11 +37,11 @@
 
 namespace odb {
 
-static tmg_conn* conn = NULL;
+static tmg_conn* conn = nullptr;
 
 void orderWires(utl::Logger* logger, dbBlock* block)
 {
-  if (conn == NULL) {
+  if (conn == nullptr) {
     conn = new tmg_conn(logger);
   }
   conn->resetSplitCnt();
@@ -55,7 +55,7 @@ void orderWires(utl::Logger* logger, dbBlock* block)
 
 void orderWires(utl::Logger* logger, dbNet* net)
 {
-  if (conn == NULL) {
+  if (conn == nullptr) {
     conn = new tmg_conn(logger);
   }
   if (net->getSigType().isSupply()) {

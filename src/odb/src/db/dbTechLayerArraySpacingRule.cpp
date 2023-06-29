@@ -43,7 +43,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerArraySpacingRule>;
 
 bool _dbTechLayerArraySpacingRule::operator==(
@@ -63,16 +62,12 @@ bool _dbTechLayerArraySpacingRule::operator==(
 
   if (via_width_ != rhs.via_width_)
     return false;
-
   if (cut_spacing_ != rhs.cut_spacing_)
     return false;
-
   if (within_ != rhs.within_)
     return false;
-
   if (array_width_ != rhs.array_width_)
     return false;
-
   if (cut_class_ != rhs.cut_class_)
     return false;
 
@@ -80,6 +75,7 @@ bool _dbTechLayerArraySpacingRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerArraySpacingRule::operator<(
     const _dbTechLayerArraySpacingRule& rhs) const
 {
@@ -87,13 +83,13 @@ bool _dbTechLayerArraySpacingRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerArraySpacingRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerArraySpacingRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.parallel_overlap_);
   DIFF_FIELD(flags_.long_array_);
   DIFF_FIELD(flags_.via_width_valid_);
@@ -107,6 +103,7 @@ void _dbTechLayerArraySpacingRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerArraySpacingRule::out(dbDiff& diff,
                                        char side,
                                        const char* field) const
@@ -126,6 +123,7 @@ void _dbTechLayerArraySpacingRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -137,6 +135,7 @@ _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerArraySpacingRule::_dbTechLayerArraySpacingRule(
     _dbDatabase* db,
     const _dbTechLayerArraySpacingRule& r)
@@ -169,6 +168,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerArraySpacingRule& obj)
 {

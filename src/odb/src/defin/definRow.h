@@ -56,7 +56,7 @@ class definRow : public definBase
     }
   };
 
-  typedef std::map<const char*, dbSite*, ltstr> SiteMap;
+  using SiteMap = std::map<const char*, dbSite*, ltstr>;
   SiteMap _sites;
   std::vector<dbLib*> _libs;
   dbRow* _cur_row;

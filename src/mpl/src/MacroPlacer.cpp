@@ -162,7 +162,7 @@ bool MacroPlacer::init()
     findAdjacencies();
   } else {
     logger_->warn(MPL,
-                  2,
+                  98,
                   "Some instances do not have Liberty models. TritonMP will "
                   "place macros without connection information.");
   }
@@ -193,7 +193,7 @@ void MacroPlacer::reportEdgePinCounts()
   }
   for (int i = 0; i < core_edge_count; i++) {
     CoreEdge edge = coreEdgeFromIndex(i);
-    logger_->info(MPL, 9, "{} pins {}.", coreEdgeString(edge), counts[i]);
+    logger_->info(MPL, 102, "{} pins {}.", coreEdgeString(edge), counts[i]);
   }
 }
 
@@ -806,7 +806,7 @@ bool MacroPlacer::findMacros()
       if (dps == dbPlacementStatus::NONE
           || dps == dbPlacementStatus::UNPLACED) {
         logger_->error(MPL,
-                       3,
+                       99,
                        "Macro {} is unplaced, use global_placement to get an "
                        "initial placement before macro placement.",
                        inst->getConstName());
@@ -826,11 +826,11 @@ bool MacroPlacer::findMacros()
   }
 
   if (macros_.empty()) {
-    logger_->warn(MPL, 4, "No macros found.");
+    logger_->warn(MPL, 100, "No macros found.");
     return false;
   }
 
-  logger_->info(MPL, 5, "Found {} macros.", macros_.size());
+  logger_->info(MPL, 101, "Found {} macros.", macros_.size());
   logger_->metric("floorplan__design__instance__count__macros", macros_.size());
   return true;
 }

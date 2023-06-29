@@ -33,6 +33,8 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#include <sstream>
+
 #include "defiDebug.hpp"
 #include "defiMisc.hpp"
 #include "defiProp.hpp"
@@ -2134,27 +2136,18 @@ void defrSetCaseSensitivity(int caseSense)
   }
 }
 
-void defrAddAlias(const char* key, const char* value, int marked)
+void defrAddAlias(std::string_view key, std::string_view value, int marked)
 {
   // Since the alias data is stored in the hash table, the hash table
   // only takes the key and the data, the marked data will be stored
   // at the end of the value data
 
-  defrData* defData = defContext.data;
-
-  char* k1;
-  char* v1;
-  int len = strlen(key) + 1;
-  k1 = (char*) malloc(len);
-  strcpy(k1, key);
-  len = strlen(value) + 1 + 1;  // 1 for the marked
-  v1 = (char*) malloc(len);
-  // strcpy(v1, value);
-  if (marked != 0)
+  if (marked != 0) {
     marked = 1;  // make sure only 1 digit
-  sprintf(v1, "%d%s", marked, value);
-
-  defData->def_alias_set[k1] = v1;
+  }
+  std::stringstream concated_value;
+  concated_value << marked << value;
+  defContext.data->def_alias_set[std::string(key)] = concated_value.str();
 }
 
 void defrSetOpenLogFileAppend()
