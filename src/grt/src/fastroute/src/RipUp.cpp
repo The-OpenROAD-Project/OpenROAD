@@ -306,8 +306,8 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     }
     if (!needRipup && update_slack_ && treeedge->route.last_routelen
         && critical_slack) {
-      const float delta
-          = (float)treeedge->route.routelen / (float)treeedge->route.last_routelen;
+      const float delta = (float) treeedge->route.routelen
+                          / (float) treeedge->route.last_routelen;
       if (nets_[netID]->getSlack() <= critical_slack && (delta >= 2)) {
         nets_[netID]->setIsCritical(true);
         needRipup = true;
