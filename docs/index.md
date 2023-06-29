@@ -37,28 +37,16 @@ The paper is also available from [ACM Digital Library](https://dl.acm.org/doi/10
 Other publications and presentations are
 linked [here](https://theopenroadproject.org/publications/).
 
-## Code of conduct
-
-Please read our code of conduct [here](main/CODE_OF_CONDUCT.md).
-
 ## Documentation
 
 The OpenROAD Project has two releases:
 
-### [Application](https://github.com/The-OpenROAD-Project/OpenROAD)
+- Application ([github](https://github.com/The-OpenROAD-Project/OpenROAD)) ([docs](main/README.md)): The application is a standalone binary for digital place and route that can be used by any other RTL-GDSII flow controller.
+- Flow ([github](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)) ([docs](https://openroad-flow-scripts.readthedocs.io/en/latest/)): This is the native OpenROAD flow that consists of a set of integrated scripts for an autonomous RTL-GDSII flow using OpenROAD and other open-source tools.
 
-The application is a standalone binary capable of performing RTL-to-GDSII SoC design,
-from logic synthesis and floorplanning through detailed routing with metal fill insertion,
-signoff parasitic extraction and timing analysis.
+## Code of conduct
 
-See documentation for the application [here](main/README.md).
-
-### [Flow](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
-
-The flow is a set of integrated scripts that allow for RTL-to-GDSII flow
-using open-source tools.
-
-See documentation for the flow [here](https://openroad-flow-scripts.readthedocs.io/en/latest/).
+Please read our code of conduct [here](main/CODE_OF_CONDUCT.md).
 
 ## How to contribute
 
