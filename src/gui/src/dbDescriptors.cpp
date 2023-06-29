@@ -2019,49 +2019,61 @@ Descriptor::Properties DbViaDescriptor::getProperties(std::any object) const
     props.push_back({"Pattern", via->getPattern()});
   }
 
-  props.push_back({"Tech Via Generate Rule", gui->makeSelected(via->getViaGenerateRule())});
+  props.push_back(
+      {"Tech Via Generate Rule", gui->makeSelected(via->getViaGenerateRule())});
 
   if (via->hasParams()) {
     odb::dbViaParams via_params;
     via->getViaParams(via_params);
 
-    props.push_back({"Cut Size",
-                     fmt::format(" X={}, Y={}",
-                                 Property::convert_dbu(via_params.getXCutSize(), true),
-                                 Property::convert_dbu(via_params.getYCutSize(), true))});
+    props.push_back(
+        {"Cut Size",
+         fmt::format("X={}, Y={}",
+                     Property::convert_dbu(via_params.getXCutSize(), true),
+                     Property::convert_dbu(via_params.getYCutSize(), true))});
 
-    props.push_back({"Cut Spacing",
-                     fmt::format(" X={}, Y={}",
-                                 Property::convert_dbu(via_params.getXCutSpacing(), true),
-                                 Property::convert_dbu(via_params.getYCutSpacing(), true))});    
+    props.push_back(
+        {"Cut Spacing",
+         fmt::format(
+             "X={}, Y={}",
+             Property::convert_dbu(via_params.getXCutSpacing(), true),
+             Property::convert_dbu(via_params.getYCutSpacing(), true))});
 
-    props.push_back({"Top Enclosure",
-                     fmt::format(" X={}, Y={}",
-                                 Property::convert_dbu(via_params.getXTopEnclosure(), true),
-                                 Property::convert_dbu(via_params.getYTopEnclosure(), true))}); 
+    props.push_back(
+        {"Top Enclosure",
+         fmt::format(
+             "X={}, Y={}",
+             Property::convert_dbu(via_params.getXTopEnclosure(), true),
+             Property::convert_dbu(via_params.getYTopEnclosure(), true))});
 
-    props.push_back({"Bottom Enclosure",
-                     fmt::format(" X={}, Y={}",
-                                 Property::convert_dbu(via_params.getXBottomEnclosure(), true),
-                                 Property::convert_dbu(via_params.getYBottomEnclosure(), true))});
+    props.push_back(
+        {"Bottom Enclosure",
+         fmt::format(
+             "X={}, Y={}",
+             Property::convert_dbu(via_params.getXBottomEnclosure(), true),
+             Property::convert_dbu(via_params.getYBottomEnclosure(), true))});
 
     props.push_back({"Number of Cut Rows", via_params.getNumCutRows()});
     props.push_back({"Number of Cut Columns", via_params.getNumCutCols()});
 
-    props.push_back({"Origin",
-                     fmt::format(" X={}, Y={}",
-                                 Property::convert_dbu(via_params.getXOrigin(), true),
-                                 Property::convert_dbu(via_params.getYOrigin(), true))});    
+    props.push_back(
+        {"Origin",
+         fmt::format("X={}, Y={}",
+                     Property::convert_dbu(via_params.getXOrigin(), true),
+                     Property::convert_dbu(via_params.getYOrigin(), true))});
 
-    props.push_back({"Top Offset",
-                     fmt::format(" X={}, Y={}",
-                                 Property::convert_dbu(via_params.getXTopOffset(), true),
-                                 Property::convert_dbu(via_params.getYTopOffset(), true))});
+    props.push_back(
+        {"Top Offset",
+         fmt::format("X={}, Y={}",
+                     Property::convert_dbu(via_params.getXTopOffset(), true),
+                     Property::convert_dbu(via_params.getYTopOffset(), true))});
 
-    props.push_back({"Bottom Offset",
-                     fmt::format(" X={}, Y={}",
-                                 Property::convert_dbu(via_params.getXBottomOffset(), true),
-                                 Property::convert_dbu(via_params.getYBottomOffset(), true))});     
+    props.push_back(
+        {"Bottom Offset",
+         fmt::format(
+             "X={}, Y={}",
+             Property::convert_dbu(via_params.getXBottomOffset(), true),
+             Property::convert_dbu(via_params.getYBottomOffset(), true))});
 
     PropertyList shapes;
     for (auto box : via->getBoxes()) {
@@ -2076,8 +2088,8 @@ Descriptor::Properties DbViaDescriptor::getProperties(std::any object) const
       auto layer = box->getTechLayer();
       auto rect = box->getBox();
       shapes.push_back({gui->makeSelected(layer), rect});
-    }    
-    props.push_back({"Shapes", shapes});  
+    }
+    props.push_back({"Shapes", shapes});
   }
 
   props.push_back({"Is Rotated", via->isViaRotated()});
@@ -2114,7 +2126,7 @@ bool DbViaDescriptor::getAllObjects(SelectionSet& objects) const
   if (chip == nullptr) {
     return false;
   }
-  
+
   auto block = chip->getBlock();
   if (block == nullptr) {
     return false;
@@ -3271,8 +3283,7 @@ bool DbTechViaDescriptor::getAllObjects(SelectionSet& objects) const
 }
 //////////////////////////////////////////////////
 
-DbTechViaRuleDescriptor::DbTechViaRuleDescriptor(odb::dbDatabase* db)
-    : db_(db)
+DbTechViaRuleDescriptor::DbTechViaRuleDescriptor(odb::dbDatabase* db) : db_(db)
 {
 }
 
@@ -3296,7 +3307,8 @@ void DbTechViaRuleDescriptor::highlight(std::any object, Painter& painter) const
 {
 }
 
-Descriptor::Properties DbTechViaRuleDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbTechViaRuleDescriptor::getProperties(
+    std::any object) const
 {
   auto via_rule = std::any_cast<odb::dbTechViaRule*>(object);
   auto gui = Gui::get();
@@ -3310,21 +3322,23 @@ Descriptor::Properties DbTechViaRuleDescriptor::getProperties(std::any object) c
   props.push_back({"Tech Vias", vias});
 
   SelectionSet layer_rules;
-  for (uint rule_index = 0; rule_index < via_rule->getViaLayerRuleCount(); rule_index++) {
-    layer_rules.insert(gui->makeSelected(via_rule->getViaLayerRule(rule_index)));
+  for (uint rule_index = 0; rule_index < via_rule->getViaLayerRuleCount();
+       rule_index++) {
+    layer_rules.insert(
+        gui->makeSelected(via_rule->getViaLayerRule(rule_index)));
   }
   props.push_back({"Tech Via-Layer Rules", layer_rules});
 
   return props;
 }
-    
+
 Selected DbTechViaRuleDescriptor::makeSelected(std::any object) const
 {
- if(auto via_rule = std::any_cast<odb::dbTechViaRule*>(&object)) {
-  return Selected(*via_rule, this);
- }
+  if (auto via_rule = std::any_cast<odb::dbTechViaRule*>(&object)) {
+    return Selected(*via_rule, this);
+  }
 
- return Selected();
+  return Selected();
 }
 
 bool DbTechViaRuleDescriptor::lessThan(std::any l, std::any r) const
@@ -3364,16 +3378,19 @@ std::string DbTechViaLayerRuleDescriptor::getTypeName() const
   return "Tech Via-Layer Rule";
 }
 
-bool DbTechViaLayerRuleDescriptor::getBBox(std::any object, odb::Rect& bbox) const
+bool DbTechViaLayerRuleDescriptor::getBBox(std::any object,
+                                           odb::Rect& bbox) const
 {
   return false;
 }
 
-void DbTechViaLayerRuleDescriptor::highlight(std::any object, Painter& painter) const
+void DbTechViaLayerRuleDescriptor::highlight(std::any object,
+                                             Painter& painter) const
 {
 }
 
-Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any object) const
+Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(
+    std::any object) const
 {
   auto via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(object);
   auto gui = Gui::get();
@@ -3383,16 +3400,17 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any obje
 
   if (via_layer_rule->hasWidth()) {
     int minWidth = 0;
-    int maxWidth =  0;
+    int maxWidth = 0;
 
     via_layer_rule->getWidth(minWidth, maxWidth);
 
-    std::string width_range = fmt::format("{} to {}",
-                              Property::convert_dbu(minWidth, true),
-                              Property::convert_dbu(maxWidth, true));
+    std::string width_range
+        = fmt::format("{} to {}",
+                      Property::convert_dbu(minWidth, true),
+                      Property::convert_dbu(maxWidth, true));
 
     props.push_back({"Width", width_range});
-  }        
+  }
 
   if (via_layer_rule->hasEnclosure()) {
     int overhang_1 = 0;
@@ -3400,19 +3418,24 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any obje
 
     via_layer_rule->getEnclosure(overhang_1, overhang_2);
 
-    std::string enclosure_rule = fmt::format("{} x {}",
-                                             Property::convert_dbu(overhang_1, true),
-                                             Property::convert_dbu(overhang_2, true));
+    std::string enclosure_rule
+        = fmt::format("{} x {}",
+                      Property::convert_dbu(overhang_1, true),
+                      Property::convert_dbu(overhang_2, true));
 
     props.push_back({"Enclosure", enclosure_rule});
   }
 
   if (via_layer_rule->hasOverhang()) {
-    props.push_back({"Overhang", Property::convert_dbu(via_layer_rule->getOverhang(), true)});
+    props.push_back(
+        {"Overhang",
+         Property::convert_dbu(via_layer_rule->getOverhang(), true)});
   }
 
   if (via_layer_rule->hasMetalOverhang()) {
-    props.push_back({"Metal Overhang", Property::convert_dbu(via_layer_rule->getMetalOverhang(), true)});
+    props.push_back(
+        {"Metal Overhang",
+         Property::convert_dbu(via_layer_rule->getMetalOverhang(), true)});
   }
 
   if (via_layer_rule->hasRect()) {
@@ -3428,14 +3451,16 @@ Descriptor::Properties DbTechViaLayerRuleDescriptor::getProperties(std::any obje
 
     via_layer_rule->getSpacing(x_spacing, y_spacing);
 
-    props.push_back({"Spacing", fmt::format("{} x {}",
-                                            Property::convert_dbu(x_spacing, true),
-                                            Property::convert_dbu(y_spacing, true))});
+    props.push_back({"Spacing",
+                     fmt::format("{} x {}",
+                                 Property::convert_dbu(x_spacing, true),
+                                 Property::convert_dbu(y_spacing, true))});
   }
 
   if (via_layer_rule->hasResistance()) {
     props.push_back({"Resistance",
-                     convertUnits(via_layer_rule->getResistance()) + "\u03A9/sq"}); // ohm/sq
+                     convertUnits(via_layer_rule->getResistance())
+                         + "\u03A9/sq"});  // ohm/sq
   }
 
   return props;
@@ -3450,7 +3475,7 @@ Selected DbTechViaLayerRuleDescriptor::makeSelected(std::any object) const
   return Selected();
 }
 
-bool DbTechViaLayerRuleDescriptor::lessThan(std::any l, std::any r) const 
+bool DbTechViaLayerRuleDescriptor::lessThan(std::any l, std::any r) const
 {
   auto l_via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(l);
   auto r_via_layer_rule = std::any_cast<odb::dbTechViaLayerRule*>(r);
@@ -3463,10 +3488,12 @@ bool DbTechViaLayerRuleDescriptor::getAllObjects(SelectionSet& objects) const
   auto tech = db_->getTech();
 
   for (auto via_rule : tech->getViaRules()) {
-    for (uint via_layer_index = 0; via_layer_index < via_rule->getViaLayerRuleCount(); via_layer_index++) {
+    for (uint via_layer_index = 0;
+         via_layer_index < via_rule->getViaLayerRuleCount();
+         via_layer_index++) {
       objects.insert(makeSelected(via_rule->getViaLayerRule(via_layer_index)));
     }
-  } 
+  }
 
   return true;
 }
