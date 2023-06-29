@@ -969,14 +969,40 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
   if ((inst_ == nullptr) || (dbu_ <= 0.0)) {
     return;
   }
+
+  float offset_x = 0.0;
+  float offset_y = 0.0;
+
+  // get the offset and pitch of related routing layers
+  odb::dbMaster* master = inst_->getMaster();
+  for (odb::dbMTerm* mterm : master->getMTerms()) {
+    if (mterm->getSigType() == odb::dbSigType::SIGNAL) {
+      for (odb::dbMPin* mpin : mterm->getMPins()) {
+        for (odb::dbBox* box : mpin->getGeometry()) {
+          odb::dbTechLayer* layer = box->getTechLayer();
+          // check the routing direction
+          if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
+            pitch_y = dbuToMicron(static_cast<float>(layer->getPitchY()), dbu_);
+            offset_y
+                = dbuToMicron(static_cast<float>(layer->getOffsetY()), dbu_);
+          } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
+            pitch_x = dbuToMicron(static_cast<float>(layer->getPitchX()), dbu_);
+            offset_x
+                = dbuToMicron(static_cast<float>(layer->getOffsetX()), dbu_);
+          }
+        }
+      }
+    }
+  }
+
   float lx = getRealX();
   float ly = getRealY();
   float ux = lx + getRealWidth();
   float uy = ly + getRealHeight();
-  lx = std::round(lx / pitch_x) * pitch_x;
-  ux = std::round(ux / pitch_x) * pitch_x;
-  ly = std::round(ly / pitch_y) * pitch_y;
-  uy = std::round(uy / pitch_y) * pitch_y;
+  lx = std::round((lx - offset_x) / pitch_x) * pitch_x + offset_x;
+  ux = std::round((ux - offset_x) / pitch_x) * pitch_x + offset_x;
+  ly = std::round((ly - offset_y) / pitch_y) * pitch_y + offset_y;
+  uy = std::round((uy - offset_y) / pitch_y) * pitch_y + offset_y;
   int round_lx = std::round(float(micronToDbu(lx, dbu_)) / manufacturing_grid_)
                  * manufacturing_grid_;
   int round_ly = std::round(float(micronToDbu(ly, dbu_)) / manufacturing_grid_)
