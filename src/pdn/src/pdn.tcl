@@ -337,7 +337,7 @@ proc add_pdn_stripe {args} {
     foreach net_name $keys(-nets) {
       set net [[ord::get_db_block] findNet $net_name]
       if {$net == "NULL"} {
-        utl::error PDN 225 "Unable to find net $net_name."
+        utl::error PAD 225 "Unable to find net $net_name."
       }
       lappend nets $net
     }
@@ -460,7 +460,7 @@ proc add_pdn_ring {args} {
     foreach net_name $keys(-nets) {
       set net [[ord::get_db_block] findNet $net_name]
       if {$net == "NULL"} {
-        utl::error PDN 230 "Unable to find net $net_name."
+        utl::error PAD 226 "Unable to find net $net_name."
       }
       lappend nets $net
     }
@@ -634,6 +634,177 @@ proc add_pdn_connect {args} {
                     $split_cuts_pitches \
                     $dont_use
 }
+
+
+sta::define_cmd_args "add_sroute_connect" {
+                                        [-net net] \
+                                        [-outerNet outerNet]
+                                        [-grid grid_name] \
+                                        -layers list_of_2_layers \
+                                        [-cut_pitch pitch_value] \
+                                        [-fixed_vias list_of_vias] \
+                                        [-dont_use_vias list_of_vias]
+                                        [-max_rows rows] \
+                                        [-max_columns columns] \
+                                        [-hDX hDX] \
+                                        [-hDY hDY] \
+                                        [-vDX vDX] \
+                                        [-vDY vDY] \
+                                        [-stripDY stripDY]
+                                        [-metalWidths metalWidths]
+                                        [-metalspaces metalspaces]
+                                        [-ongrid ongrid_layers] \
+                                        [-split_cuts split_cuts_mapping]
+}
+
+proc add_sroute_connect {args} {
+  sta::parse_key_args "add_sroute_connect" args \
+    keys {-net -outerNet -grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -hDX -hDY -vDX -vDY -stripDY -metalWidths -metalspaces -ongrid -split_cuts -dont_use_vias} \
+    flags {}
+
+  sta::check_argc_eq0 "add_sroute_connect" $args
+
+  pdn::check_design_state "add_sroute_connect"
+
+  if {![info exists keys(-layers)]} {
+  } elseif {[llength $keys(-layers)] != 2} {
+  }
+
+  set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
+  set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
+
+  set cut_pitch "0 0"
+  if {[info exists keys(-cut_pitch)]} {
+    set cut_pitch [pdn::get_one_to_two "-cut_pitch" $keys(-cut_pitch)]
+  }
+  set cut_pitch [list \
+    [ord::microns_to_dbu [lindex $cut_pitch 0]]\
+    [ord::microns_to_dbu [lindex $cut_pitch 1]]
+  ]
+
+  set net ""
+  if {[info exists keys(-net)]} {
+    set net $keys(-net)
+  }
+
+  set outerNet ""
+  if {[info exists keys(-outerNet)]} {
+    set outerNet $keys(-outerNet)
+  }
+
+  set grid ""
+  if {[info exists keys(-grid)]} {
+    set grid $keys(-grid)
+  }
+
+  set max_rows 0
+  if {[info exists keys(-max_rows)]} {
+    set max_rows $keys(-max_rows)
+  }
+  set max_columns 0
+  if {[info exists keys(-max_columns)]} {
+    set max_columns $keys(-max_columns)
+  }
+
+  set hDX 0
+  if {[info exists keys(-hDX)]} {
+    set hDX $keys(-hDX)
+  }
+  set hDY 0
+  if {[info exists keys(-hDY)]} {
+    set hDY $keys(-hDY)
+  }
+
+  set vDX 0
+  if {[info exists keys(-vDX)]} {
+    set vDX $keys(-vDX)
+  }
+
+  set vDY 0
+  if {[info exists keys(-vDY)]} {
+    set vDY $keys(-vDY)
+  }
+
+  set stripDY 0
+  if {[info exists keys(-stripDY)]} {
+    set stripDY $keys(-stripDY)
+  }
+
+  set fixed_generate_vias {}
+  set fixed_tech_vias {}
+  if {[info exists keys(-fixed_vias)]} {
+    foreach via $keys(-fixed_vias) {
+      set tech_via [[ord::get_db_tech] findVia $via]
+      set generate_via [[ord::get_db_tech] findViaGenerateRule $via]
+      if {$tech_via == "NULL" && $generate_via == "NULL"} {
+      }
+      if {$tech_via != "NULL"} {
+        lappend fixed_tech_vias $tech_via
+      }
+      if {$generate_via != "NULL"} {
+        lappend fixed_generate_vias $generate_via
+      }
+    }
+  }
+
+  set ongrid {}
+  if {[info exists keys(-ongrid)]} {
+    foreach l $keys(-ongrid) {
+      lappend ongrid [pdn::get_layer $l]
+    }
+  }
+
+  set metalWidths {}
+  if {[info exists keys(-metalWidths)]} {
+    foreach l $keys(-metalWidths) {
+      lappend metalWidths $l
+    }
+  }
+
+  set metalspaces {}
+  if {[info exists keys(-metalspaces)]} {
+    foreach l $keys(-metalspaces) {
+      lappend metalspaces $l
+    }
+  }
+
+  set split_cuts_layers {}
+  set split_cuts_pitches {}
+  if {[info exists keys(-split_cuts)]} {
+    foreach {l pitch} $keys(-split_cuts) {
+      lappend split_cuts_layers [pdn::get_layer $l]
+      lappend split_cuts_pitches [ord::microns_to_dbu $pitch]
+    }
+  }
+
+  set dont_use ""
+  if {[info exists keys(-dont_use_vias)]} {
+    set dont_use $keys(-dont_use_vias)
+  }
+
+  pdn::createSrouteWires $net \
+                    $outerNet \
+                    $grid \
+                    $l0 \
+                    $l1 \
+                    {*}$cut_pitch \
+                    $fixed_generate_vias \
+                    $fixed_tech_vias \
+                    $max_rows \
+                    $max_columns \
+                    $ongrid \
+                    $split_cuts_layers \
+                    $split_cuts_pitches \
+                    $dont_use \
+                    $hDX \
+                    $hDY \
+                    $vDX \
+                    $vDY \
+                    $stripDY \ 
+                    $metalWidths \
+                    $metalspaces
+}
+
 
 sta::define_cmd_args  "repair_pdn_vias" {[-net net_name] \
                                          -all

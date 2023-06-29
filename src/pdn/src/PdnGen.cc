@@ -48,7 +48,6 @@
 #include "renderer.h"
 #include "rings.h"
 #include "straps.h"
-#include "techlayer.h"
 #include "utl/Logger.h"
 #include "via_repair.h"
 
@@ -57,7 +56,9 @@ namespace pdn {
 using utl::Logger;
 
 using odb::dbBlock;
+using odb::dbBox;
 using odb::dbInst;
+using odb::dbITerm;
 using odb::dbMaster;
 using odb::dbMTerm;
 using odb::dbNet;
@@ -109,9 +110,6 @@ void PdnGen::buildGrids(bool trim)
 
   ShapeTreeMap block_obs;
   Grid::makeInitialObstructions(block, block_obs, insts_in_grids, logger_);
-  for (auto* grid : grids) {
-    grid->getGridLevelObstructions(block_obs);
-  }
 
   ShapeTreeMap all_shapes;
 
@@ -127,14 +125,20 @@ void PdnGen::buildGrids(bool trim)
   for (auto* grid : grids) {
     debugPrint(
         logger_, utl::PDN, "Make", 2, "Build start grid - {}", grid->getName());
-    grid->makeShapes(all_shapes, block_obs);
+    ShapeTreeMap obs_local = block_obs;
+    for (auto* grid_other : grids) {
+      if (grid != grid_other) {
+        grid_other->getGridLevelObstructions(obs_local);
+        grid_other->getObstructions(obs_local);
+      }
+    }
+    grid->makeShapes(all_shapes, obs_local);
     for (const auto& [layer, shapes] : grid->getShapes()) {
       auto& all_shapes_layer = all_shapes[layer];
       for (auto& shape : shapes) {
         all_shapes_layer.insert(shape);
       }
     }
-    grid->getObstructions(block_obs);
     debugPrint(
         logger_, utl::PDN, "Make", 2, "Build end grid - {}", grid->getName());
   }
@@ -620,6 +624,443 @@ void PdnGen::updateRenderer() const
   if (debug_renderer_ != nullptr) {
     debug_renderer_->update();
   }
+}
+
+void PdnGen::createSrouteWires(const char* net,
+                               const char* outerNet,
+                                Grid* grid,
+                              odb::dbTechLayer* layer0,
+                              odb::dbTechLayer* layer1,
+                              int cut_pitch_x,
+                              int cut_pitch_y,
+                              const std::vector<odb::dbTechViaGenerateRule*>& vias,
+                              const std::vector<odb::dbTechVia*>& techvias,
+                              int max_rows,
+                              int max_columns,
+                              const std::vector<odb::dbTechLayer*>& ongrid,
+                              const std::map<odb::dbTechLayer*, int>& split_cuts,
+                              const std::string& dont_use_vias,
+                              int hDX, int hDY, int vDX, int vDY, int stripDY, std::vector<int> metalWidths, std::vector<int> metalspaces)
+{
+  auto* block = db_->getChip()->getBlock();
+
+  odb::dbNet* net_ = block->findNet(net);
+  odb::dbNet* outerNet_ = block->findNet(outerNet);
+  //find all 4 strips for VIN
+  std::vector<odb::dbSBox*> rings;
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if(((wire->getDY() == hDY) & (wire->getDX() == hDX)) | ((wire->getDX() == vDX) & (wire->getDY() == vDY)))
+      {
+        rings.push_back(wire);
+      }
+    }
+  }
+
+  int index = 0;
+  int x;
+  int y;
+  int xx;
+  int yy;
+  int highy;
+  int lowy;
+  int count;
+  for (auto sroute_iterms : sroute_itermss) {
+    x = 0;
+    y = 0;
+    xx = 0;
+    yy = 0;
+    highy = 0;
+    lowy = INT_MAX;
+    count = 0;
+    for (auto* iterm : sroute_iterms) {
+      count += 1;
+      iterm->getAvgXY(&x, &y);
+      xx += x;
+      yy += y;
+      odb::Rect bbox = iterm->getBBox();
+      if (bbox.yMin() < lowy) {
+        lowy = bbox.yMin();
+      }
+      if (bbox.yMax() > highy) {
+        highy = bbox.yMax();
+      }
+    }
+    if(count != 0)
+    {
+      xx /= count;
+      yy /= count;
+
+      odb::dbTechLayer* metal_layer = db_->getTech()->findLayer("layer0");
+      odb::dbTechLayer* metal_layer_1 = db_->getTech()->findLayer("layer1");
+      odb::dbTechLayer* stripe_metal_layer;
+
+      odb::dbSBox* pdn_wire = nullptr;
+      odb::dbSWire* nwsw = odb::dbSWire::create(net_, odb::dbWireType::ROUTED);
+
+      bool first = true;
+      int direction;
+      // find closest metal stripe vertical
+      // for vertical power ring connection
+      if(rings[index]->getDir() == 0) {
+        for (auto* swire : net_->getSWires()) {
+          for (auto* wire : swire->getWires()) {
+            stripe_metal_layer = wire->getTechLayer();
+            direction = wire->getDir();
+            if (first) {
+              if ((direction == 1) & (stripe_metal_layer == metal_layer)
+                  & (wire->getDY() == stripDY)) {
+                first = false;
+                pdn_wire = wire;
+              }
+            } else {
+              if ((direction == 1) & (stripe_metal_layer == metal_layer)
+                  & (wire->getDY() == stripDY) & (std::abs(wire->yMin()-yy) < std::abs(pdn_wire->yMin()-yy))) {
+                pdn_wire = wire;
+              }
+            }
+          }
+        }
+
+        odb::dbSBox* right_pdn_wire = nullptr;
+        first = true;
+        //find closest wire to right of the center point
+        for (auto* swire : outerNet_->getSWires()) {
+          for (auto* wire : swire->getWires()) {
+            direction = wire->getDir();
+            if (first) {
+              if ((direction == 0) & (wire->xMax() > xx)) {
+                first = false;
+                right_pdn_wire = wire;
+              }
+            } else {
+              if ((direction == 0) & (wire->xMax() < pdn_wire->xMax()) & (wire->xMax() > xx)) {
+                right_pdn_wire = wire;
+              }
+            }
+          }
+        }
+
+        //find closest wire to left of the center point
+        odb::dbSBox* left_pdn_wire = nullptr;
+        first = true;
+        for (auto* swire : outerNet_->getSWires()) {
+          for (auto* wire : swire->getWires()) {
+            direction = wire->getDir();
+            if (first) {
+              if ((direction == 0) & (wire->xMin() < xx)) {
+                first = false;
+                right_pdn_wire = wire;
+              }
+            } else {
+              if ((direction == 0) & (wire->xMin() > pdn_wire->xMin()) & (wire->xMin() < xx)) {
+                right_pdn_wire = wire;
+              }
+            }
+          }
+        }
+
+        //if center point is in the middle of two wire
+        if((left_pdn_wire->xMax < xx) & (right_pdn_wire->xMmin > xx))
+        {
+          if((left_pdn_wire->xMax + metalspaces[0] + metalWidths[0]/2) > xx)
+          {
+            xx = left_pdn_wire->xMax + metalspaces[0] + metalWidths[0]/2;
+          }
+          else if((right_pdn_wire->xMin - metalspaces[0] - metalWidths[0]/2) < xx)
+          {
+            xx = right_pdn_wire->xMin - metalspaces[0] - metalWidths[0]/2;
+          }
+        }
+        //if center point is on the rightwire
+        else if(right_pdn_wire->xMmin < xx)
+        {
+          xx = right_pdn_wire->xMin - metalspaces[0] - metalWidths[0]/2;
+        }
+        //if center point is on the leftwire
+        else if(left_pdn_wire->xMax > xx)
+        {
+          xx = left_pdn_wire->xMax + metalspaces[0] + metalWidths[0]/2;
+        }
+
+        odb::dbSBox* nwsbx = odb::dbSBox::create(
+            nwsw, ongrid[ongrid.size() - 1], pdn_wire->xMin(), pdn_wire->yMin()-metalWidths[metalWidths.size()-1]/2, xx, pdn_wire->yMax()+metalWidths[metalWidths.size()-1]/2, odb::dbWireShapeType::NONE);
+
+        odb::Rect horizontal_rect(pdn_wire->xMin(), pdn_wire->yMin(), xx, pdn_wire->yMax());
+        odb::Rect vertical_rect(0, 0, 0, 0);
+
+        if((pdn_wire->yMax() > highy) & (pdn_wire->yMax() > lowy)) {
+          odb::dbSBox* nwsbx1 = odb::dbSBox::create(
+              nwsw, ongrid[0], xx-1000, lowy, xx, pdn_wire->yMax()+550, odb::dbWireShapeType::NONE);
+          vertical_rect.reset(xx-1000, lowy, xx, pdn_wire->yMax());
+        }
+        //middle
+        else if((pdn_wire->yMax() < highy) & (pdn_wire->yMin() > lowy)) {
+          odb::dbSBox* nwsbx1 = odb::dbSBox::create(
+              nwsw, ongrid[0], xx-1000, lowy, xx, highy, odb::dbWireShapeType::NONE);
+          vertical_rect.reset(xx-1000, lowy, xx, highy);
+        }
+        /*
+        else if((pdn_wire->yMin() < highy) & (pdn_wire->yMin() < lowy)) {
+          odb::dbSBox* nwsbx1 = odb::dbSBox::create(
+              nwsw, metal_layer_1, xx-1000, pdn_wire->yMin(), xx, highy, odb::dbWireShapeType::NONE);
+          odb::Rect vertical_rect(xx-1000, pdn_wire->yMin(), xx, highy);
+        }
+        */
+        else{
+          odb::dbSBox* nwsbx1 = odb::dbSBox::create(
+              nwsw, ongrid[0], xx-1000, pdn_wire->yMin(), xx, highy, odb::dbWireShapeType::NONE);
+          vertical_rect.reset(xx-1000, pdn_wire->yMin(), xx, highy);
+        }
+
+        for(int i = 1; i < 3; i++)
+        {
+          odb::dbSBox* nwsbx1 = odb::dbSBox::create(
+              nwsw, ongrid[i], xx-1000, pdn_wire->yMin()-550, xx, pdn_wire->yMax()+550, odb::dbWireShapeType::NONE);
+        }
+        Shape hShape(metal_layer, net_, horizontal_rect, odb::dbWireShapeType::NONE);
+        Shape vShape(metal_layer_1, net_, vertical_rect, odb::dbWireShapeType::NONE);
+        DbVia::ViaLayerShape shapes;
+        auto* tech = layer0->getTech();
+        
+        //con->makeSrouteVia(nwsw, hShape, vShape, odb::dbWireShapeType::NONE, shapes);
+
+        for(int i = 0; i < 2; i++)
+        {
+          odb::dbTechVia* via_ = techvias[i];
+          odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
+          odb::dbBox* box = *boxes.begin();
+          int via_width = box->getDX();
+
+          int rows_ = 1;
+          int cols_ = 3;
+          odb::Rect via_rect(0, 0, (cols_ - 1) * 200, (rows_ - 1) * 200);
+          int via_center_Y = via_rect.yMin() + via_rect.dy() / 2;
+          int via_center_X = via_rect.xMin() + via_rect.dx() / 2;
+          via_rect.moveTo(xx-500 - via_rect.dx() / 2, ((pdn_wire->yMin() + pdn_wire->yMax())/2) - via_rect.dy() / 2);
+
+          int row = via_rect.yMin() - via_center_Y;
+          for (int r = 0; r < rows_; r++) {
+            int col = via_rect.xMin() - via_center_X;
+            for (int c = 0; c < cols_; c++) {
+              auto* via = odb::dbSBox::create(nwsw, via_, col, row, odb::dbWireShapeType::NONE);
+              col += 200 + via_width;
+            }
+            row += 200 + via_width;
+          }
+        }
+
+        odb::dbTechVia* via_ = techvias[2];
+          odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
+          odb::dbBox* box = *boxes.begin();
+          int via_width = box->getDX();
+
+          int rows_ = 1;
+          int cols_ = 1;
+          odb::Rect via_rect(0, 0, (cols_ - 1) * 200, (rows_ - 1) * 200);
+          int via_center_Y = via_rect.yMin() + via_rect.dy() / 2;
+          int via_center_X = via_rect.xMin() + via_rect.dx() / 2;
+          via_rect.moveTo(xx-1000 - via_rect.dx() / 2, ((pdn_wire->yMin() + pdn_wire->yMax())/2) - via_rect.dy() / 2);
+
+          int row = via_rect.yMin() - via_center_Y;
+          for (int r = 0; r < rows_; r++) {
+            int col = via_rect.xMin() - via_center_X;
+            for (int c = 0; c < cols_; c++) {
+              auto* via = odb::dbSBox::create(nwsw, via_, col, row, odb::dbWireShapeType::NONE);
+              col += 200 + via_width;
+            }
+            row += 200 + via_width;
+          }
+
+        via_ = techvias[2];
+        boxes = via_->getBoxes();
+        box = *boxes.begin();
+        via_width = box->getDX();
+
+        rows_ = 1;
+        cols_ = 3;
+        odb::Rect via_rect_(0, 0, (cols_ - 1) * 200, (rows_ - 1) * 200);
+        via_center_Y = via_rect_.yMin() + via_rect_.dy() / 2;
+        via_center_X = via_rect_.xMin() + via_rect_.dx() / 2;
+        via_rect_.moveTo((pdn_wire->xMin()+pdn_wire->xMax())/2 - via_rect_.dx() / 2, ((pdn_wire->yMin() + pdn_wire->yMax())/2) - via_rect.dy() / 2);
+
+        row = via_rect_.yMin() - via_center_Y;
+        for (int r = 0; r < rows_; r++) {
+          int col = via_rect_.xMin() - via_center_X;
+          for (int c = 0; c < cols_; c++) {
+            auto* via = odb::dbSBox::create(nwsw, via_, col, row, odb::dbWireShapeType::NONE);
+            col += 200 + via_width;
+          }
+          row += 200 + via_width;
+        }
+
+        
+        for (auto* iterm : sroute_iterms) {
+          odb::Rect bbox = iterm->getBBox();
+          if (bbox.xMin() > xx-1000) {
+            odb::dbSBox::create(nwsw, metal_layer, xx-1000, bbox.yMin(), bbox.xMin(), bbox.yMax(), odb::dbWireShapeType::NONE);
+          }
+          else if (bbox.xMax() < xx) {
+            odb::dbSBox::create(nwsw, metal_layer, bbox.xMax(), bbox.yMin(), xx, bbox.yMax(), odb::dbWireShapeType::NONE);
+          }
+          else {
+            odb::dbSBox::create(nwsw, metal_layer, xx-1000, bbox.yMin(), xx, bbox.yMax(), odb::dbWireShapeType::NONE);
+          }
+
+        ////
+          via_ = techvias[0];
+          boxes = via_->getBoxes();
+          box = *boxes.begin();
+          via_width = box->getDX();
+
+          rows_ = 1;
+          cols_ = 1;
+          odb::Rect via_rect_(0, 0, (cols_ - 1) * 200, (rows_ - 1) * 200);
+          via_center_Y = via_rect_.yMin() + via_rect_.dy() / 2;
+          via_center_X = via_rect_.xMin() + via_rect_.dx() / 2;
+          via_rect_.moveTo(xx-1000 - via_rect_.dx() / 2, ((bbox.yMax() + bbox.yMin())/2) - via_rect.dy() / 2);
+
+          row = via_rect_.yMin() - via_center_Y;
+          for (int r = 0; r < rows_; r++) {
+            int col = via_rect_.xMin() - via_center_X;
+            for (int c = 0; c < cols_; c++) {
+              auto* via = odb::dbSBox::create(nwsw, via_, col, row, odb::dbWireShapeType::NONE);
+              col += 200 + via_width;
+            }
+            row += 200 + via_width;
+          }
+          /////
+        }
+        
+      }
+      else {
+        pdn_wire = rings[index];
+
+        //check to see if center point is too far
+        if ((pdn_wire->xMax()-1000) < xx)
+        {
+          /*
+          if((pdn_wire->yMax() > highy) & (pdn_wire->yMax() > lowy)) {
+          odb::dbSBox* nwsbx1 = odb::dbSBox::create(
+              nwsw, ongrid[0], xx-1000, lowy, xx, pdn_wire->yMax()+550, odb::dbWireShapeType::NONE);
+          vertical_rect.reset(xx-1000, lowy, xx, pdn_wire->yMax());
+          }
+          //middle
+          else if((pdn_wire->yMax() < highy) & (pdn_wire->yMin() > lowy)) {
+            odb::dbSBox* nwsbx1 = odb::dbSBox::create(
+                nwsw, ongrid[0], xx-1000, lowy, xx, highy, odb::dbWireShapeType::NONE);
+            vertical_rect.reset(xx-1000, lowy, xx, highy);
+          }
+          else{
+            odb::dbSBox* nwsbx1 = odb::dbSBox::create(
+                nwsw, ongrid[0], xx-1000, pdn_wire->yMin(), xx, highy, odb::dbWireShapeType::NONE);
+            vertical_rect.reset(xx-1000, pdn_wire->yMin(), xx, highy);
+          }
+          */
+          std::cout << "xmax is "<< pdn_wire->xMax()<<std::endl;
+          odb::dbSBox* nwsbx = odb::dbSBox::create(
+            nwsw, ongrid[0], pdn_wire->xMax()-1000, pdn_wire->yMin(), pdn_wire->xMax(), highy, odb::dbWireShapeType::NONE);
+          xx = pdn_wire->xMax()-1000;
+        }
+        else if ((pdn_wire->xMin()+1000) > xx)
+        {
+          odb::dbSBox* nwsbx = odb::dbSBox::create(
+            nwsw, ongrid[0], pdn_wire->xMin(), pdn_wire->yMin(), pdn_wire->xMin()+1000, highy, odb::dbWireShapeType::NONE);
+          xx = pdn_wire->xMin()+1000;
+        }
+        else
+        {
+          odb::dbSBox* nwsbx = odb::dbSBox::create(
+            nwsw, ongrid[0], xx-1000, pdn_wire->yMin(), xx+1000, highy, odb::dbWireShapeType::NONE);
+        }
+
+        for (auto* iterm : sroute_iterms) {
+          odb::Rect bbox = iterm->getBBox();
+          if (bbox.xMin() > xx+1000) {
+            odb::dbSBox::create(nwsw, metal_layer, xx-1000, bbox.yMin(), bbox.xMin(), bbox.yMax(), odb::dbWireShapeType::NONE);
+          }
+          else if (bbox.xMax() < xx-1000) {
+            odb::dbSBox::create(nwsw, metal_layer, bbox.xMax(), bbox.yMin(), xx+1000, bbox.yMax(), odb::dbWireShapeType::NONE);
+          }
+          else {
+            odb::dbSBox::create(nwsw, metal_layer, xx-1000, bbox.yMin(), xx+1000, bbox.yMax(), odb::dbWireShapeType::NONE);
+          }
+        }
+      }
+      std::map<odb::dbNet*, odb::dbSWire*> net_map;
+
+      net_map[net_] = nwsw;
+      auto domains = getDomains();
+
+      // collect the the SWires from the block
+      ShapeTreeMap obstructions;
+      ShapeTreeMap net_shapes;
+      Shape::populateMapFromDb(net_, net_shapes);
+      for (const auto& [layer, net_obs_layer] : net_shapes) {
+        auto& obs_layer = obstructions[layer];
+        for (const auto& [box, shape] : net_obs_layer) {
+          obs_layer.insert({shape->getObstructionBox(), shape});
+        }
+      }
+
+      for (auto* domain : domains) {
+        for (const auto& grid : domain->getGrids()) {
+          grid->writeToDb(net_map, false, obstructions);
+          grid->makeRoutingObstructions(db_->getChip()->getBlock());
+        }
+      }
+    }
+    index++;
+  }
+}
+
+void PdnGen::addSrouteInst(const char* inst, const char* iterm, int hDX, int hDY, int vDX, int vDY)
+{
+  auto* block = db_->getChip()->getBlock();
+  odb::dbInst* inst_ = block->findInst(inst);
+  odb::dbITerm* iterm_ = inst_->findITerm(iterm);
+
+  if(sroute_itermss.empty())
+  {
+    std::vector<odb::dbITerm*> sroute_items_1;
+    sroute_itermss.push_back(sroute_items_1);
+    std::vector<odb::dbITerm*> sroute_items_2;
+    sroute_itermss.push_back(sroute_items_2);
+    std::vector<odb::dbITerm*> sroute_items_3;
+    sroute_itermss.push_back(sroute_items_3);
+    std::vector<odb::dbITerm*> sroute_items_4;
+    sroute_itermss.push_back(sroute_items_4);
+  }
+
+  odb::dbNet* net_ = block->findNet("VIN");
+  //find all 4 strips for VIN
+  std::vector<odb::dbSBox*> rings;
+  for (auto* swire : net_->getSWires()) {
+    for (auto* wire : swire->getWires()) {
+      if(((wire->getDY() == hDY) & (wire->getDX() == hDX)) | ((wire->getDX() == vDX) & (wire->getDY() == vDY)))
+      {
+        rings.push_back(wire);
+      }
+    }
+  }
+
+  int i = 0;
+  int actuali = 0;
+  int x = 0;
+  int y = 0;
+  iterm_->getAvgXY(&x, &y);
+  int low = INT_MAX;
+  for (auto* wire : rings) {
+    int xx = (wire->xMin() + wire->xMax())/2;
+    int yy = (wire->yMin() + wire->yMax())/2;
+    if((std::abs(xx-x) + std::abs(yy-y)) < low)
+    {
+      actuali = i;
+      low = (std::abs(xx-x) + std::abs(yy-y));
+    }
+    i++;
+  }
+  sroute_itermss[actuali].push_back(iterm_);
 }
 
 void PdnGen::writeToDb(bool add_pins, const std::string& report_file) const
