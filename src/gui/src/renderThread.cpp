@@ -614,7 +614,7 @@ void RenderThread::drawITermLabels(QPainter* painter,
 }
 
 void RenderThread::drawTextInBBox(const QColor& text_color,
-                                  QFont text_font,
+                                  const QFont& text_font,
                                   Rect bbox,
                                   QString name,
                                   QPainter* painter)
