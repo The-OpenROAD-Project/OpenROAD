@@ -85,7 +85,9 @@ class GateCloner
                 bool clone_largest_only);
   int run(const Pin* drvr_pin, PathRef* drvr_path, int drvr_index,
           PathExpanded* expanded);
-  
+  LibertyCell* halfDrivingPowerCell(Instance* inst);
+  LibertyCell* halfDrivingPowerCell(LibertyCell* cell);
+
  private:
   std::vector<Pin*> levelDriverPins(const bool reverse = false,
                                     const std::unordered_set<Pin*> &filter_pins
@@ -114,8 +116,6 @@ class GateCloner
   std::vector<sta::LibertyPort *> libraryInputPins(LibertyCell* cell) const;
   std::vector<sta::LibertyPort *> libraryOutputPins(LibertyCell* cell) const;
 
-  LibertyCell* halfDrivingPowerCell(Instance* inst);
-  LibertyCell* halfDrivingPowerCell(LibertyCell* cell);
   LibertyCell* closestDriver(LibertyCell* cell, LibertyCellSeq *candidates,
                              float scale);
   void cloneTree(Instance* inst, float cap_factor, bool clone_largest_only);
