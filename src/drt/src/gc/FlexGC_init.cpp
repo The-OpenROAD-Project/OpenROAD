@@ -85,9 +85,9 @@ gcNet* FlexGCWorker::Impl::getNet(frBlockObject* obj)
     case drcPathSeg:
     case drcVia:
     case drcPatchWire: {
-      auto shape = static_cast<drShape*>(obj);
-      if (shape->hasNet()) {
-        owner = shape->getNet()->getFrNet();
+      auto fig = static_cast<drConnFig*>(obj);
+      if (fig->hasNet()) {
+        owner = fig->getNet()->getFrNet();
       } else {
         logger_->error(
             DRT, 38, "init_design_helper shape does not have dr net.");

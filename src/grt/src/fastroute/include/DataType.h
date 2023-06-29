@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -39,6 +40,8 @@
 namespace odb {
 class dbNet;
 }
+
+using int64 = std::int64_t;
 
 namespace grt {
 

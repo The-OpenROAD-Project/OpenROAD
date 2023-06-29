@@ -1,0 +1,77 @@
+{
+  "name": "dbTechLayerKeepOutZoneRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "std::string",
+      "name": "first_cut_class_"
+    },
+    {
+      "type": "std::string",
+      "name": "second_cut_class_"
+    },
+    {
+      "type": "bit",
+      "name": "same_mask_"
+    },
+    {
+      "type": "bit",
+      "name": "same_metal_"
+    },
+    {
+      "type": "bit",
+      "name": "diff_metal_"
+    },
+    {
+      "type": "bit",
+      "name": "except_aligned_side_"
+    },
+    {
+      "type": "bit",
+      "name": "except_aligned_end_"
+    },
+    {
+      "type": "int",
+      "name": "aligned_spacing_",
+      "default": -1
+    },
+    {
+      "type": "int",
+      "name": "side_extension_",
+      "default": -1
+    },
+    {
+      "type": "int",
+      "name": "forward_extension_",
+      "default": -1
+    },
+    {
+      "type": "int",
+      "name": "end_side_extension_",
+      "default": -1
+    },
+    {
+      "type": "int",
+      "name": "end_forward_extension_",
+      "default": -1
+    },
+    {
+      "type": "int",
+      "name": "side_side_extension_",
+      "default": -1
+    },
+    {
+      "type": "int",
+      "name": "side_forward_extension_",
+      "default": -1
+    },
+    {
+      "type": "int",
+      "name": "spiral_extension_",
+      "default": -1
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

@@ -223,9 +223,12 @@ class dbSigType
   bool isSupply() const;
 
   ///
-  /// Cast operator
+  /// Comparison operators for type safe dbSigType
   ///
-  operator Value() const { return _value; }
+  bool operator==(const dbSigType& v) const { return _value == v._value; };
+  bool operator!=(const dbSigType& v) const { return _value != v._value; };
+  bool operator==(const Value v) const { return _value == v; };
+  bool operator!=(const Value v) const { return _value != v; };
 
  private:
   Value _value;
@@ -278,9 +281,12 @@ class dbIoType
   const char* getString() const;
 
   ///
-  /// Cast operator
+  /// Comparison operators for type safe dbIoType
   ///
-  operator Value() const { return _value; }
+  bool operator==(const dbIoType& v) const { return _value == v._value; };
+  bool operator!=(const dbIoType& v) const { return _value != v._value; };
+  bool operator==(const Value v) const { return _value == v; };
+  bool operator!=(const Value v) const { return _value != v; };
 
  private:
   Value _value;
@@ -1178,27 +1184,15 @@ class dbSourceType
   Value _value;
 };
 
-const uint64 MAX_UINT64 = 0xffffffffffffffffLL;
-const uint64 MIN_UINT64 = 0;
-const uint MAX_UINT = 0xffffffff;
-const uint MIN_UINT = 0;
+constexpr uint64 MAX_UINT64 = 0xffffffffffffffffLL;
+constexpr uint64 MIN_UINT64 = 0;
+constexpr uint MAX_UINT = 0xffffffff;
+constexpr uint MIN_UINT = 0;
 
-const int64 MAX_INT64 = 0x7fffffffffffffffLL;
-const int64 MIN_INT64 = 0x8000000000000000LL;
-const int MAX_INT = 0x7fffffff;
-const int MIN_INT = 0x80000000;
-
-//
-// Adding this to the inheritance list of your class causes your class (and
-// its descendants) to be non-copy.
-//
-class Ads_NoCopy
-{
- public:
-  Ads_NoCopy() {}
-  Ads_NoCopy(const Ads_NoCopy& q);
-  Ads_NoCopy& operator=(const Ads_NoCopy& q);
-};
+constexpr int64 MAX_INT64 = 0x7fffffffffffffffLL;
+constexpr int64 MIN_INT64 = 0x8000000000000000LL;
+constexpr int MAX_INT = 0x7fffffff;
+constexpr int MIN_INT = 0x80000000;
 
 ///
 /// Defines the type of shapes.

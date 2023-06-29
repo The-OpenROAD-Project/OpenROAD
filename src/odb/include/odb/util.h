@@ -52,8 +52,6 @@ class dbBlock;
 class dbBox;
 using uint = unsigned int;
 
-int Ath__double2int(double v);
-
 // Simple list
 template <class T>
 class AthList
@@ -67,7 +65,7 @@ class AthList
   t_elem* m_start;
 
  public:
-  AthList(void) { m_start = NULL; };
+  AthList(void) { m_start = nullptr; };
   ~AthList(void)
   {
     t_elem* i;
@@ -144,7 +142,7 @@ class AthArray
     m_ptr = (T**) malloc(sizeof(T*) * m_num_mallocated_first_level);
     unsigned int i;
     for (i = 0; i < m_num_mallocated_first_level; i++) {
-      m_ptr[i] = NULL;
+      m_ptr[i] = nullptr;
     }
     m_num_allocated_elem = 0;
     m_num_mallocated_elem = 0;
@@ -171,11 +169,11 @@ class AthArray
       for (unsigned int i = orig_first_level_size;
            i < m_num_mallocated_first_level;
            i++) {
-        m_ptr[i] = NULL;
+        m_ptr[i] = nullptr;
       }
     }
     // Allocate more elements if needed
-    if (m_ptr[first_level_idx] == NULL) {
+    if (m_ptr[first_level_idx] == nullptr) {
       unsigned int size = sizeof(T);
       m_ptr[first_level_idx] = (T*) malloc(size * m_alloc_size);
       m_num_mallocated_elem = m_num_mallocated_first_level * m_alloc_size;
@@ -248,7 +246,7 @@ class AthPool
     _freeTable = new Ath__array1D<T*>(freeAllocSize);
 
     _memDbg = false;
-    _dbgTable = NULL;
+    _dbgTable = nullptr;
     if (dbgMem) {
       _dbgTable = new AthArray<T*>(alloc_size);
       _memDbg = true;
@@ -259,29 +257,29 @@ class AthPool
     delete m_heap;
     delete _freeTable;
 
-    if (_dbgTable != NULL)
+    if (_dbgTable != nullptr)
       delete _dbgTable;
   }
 
-  T* alloc(uint* freeTableFlag = NULL, uint* id = NULL)
+  T* alloc(uint* freeTableFlag = nullptr, uint* id = nullptr)
   {
-    T* a = NULL;
+    T* a = nullptr;
 
     if (!_memDbg) {
       if (_freeTable->notEmpty()) {
         a = _freeTable->pop();
 
-        if (freeTableFlag != NULL)
+        if (freeTableFlag != nullptr)
           *freeTableFlag = 1;
       } else {
         m_heap->add();
         uint n = m_heap->getLast() - 1;
         a = &(*m_heap)[n];
 
-        if (id != NULL)
+        if (id != nullptr)
           *id = n;
 
-        if (freeTableFlag != NULL)
+        if (freeTableFlag != nullptr)
           *freeTableFlag = 0;
       }
     } else {
@@ -292,19 +290,19 @@ class AthPool
 
       uint n = _dbgTable->add(a);
 
-      if (id != NULL)
+      if (id != nullptr)
         *id = n;
-      if (freeTableFlag != NULL)
+      if (freeTableFlag != nullptr)
         *freeTableFlag = 1;
     }
     return a;
   }
   void free(T* a)
   {
-    assert(a);  // should not free NULL
+    assert(a);  // should not free nullptr
     if (_memDbg) {
       delete a;
-    } else if (_freeTable != NULL) {
+    } else if (_freeTable != nullptr) {
       _freeTable->add(a);
     }
   }

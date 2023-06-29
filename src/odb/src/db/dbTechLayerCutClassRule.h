@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -63,18 +62,10 @@ class _dbTechLayerCutClassRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerCutClassRuleFlags flags_;
-  char* _name;
-  int width_;
-  int length_;
-  int num_cuts_;
-  dbId<_dbTechLayerCutClassRule> _next_entry;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerCutClassRule(_dbDatabase*, const _dbTechLayerCutClassRule& r);
   _dbTechLayerCutClassRule(_dbDatabase*);
   ~_dbTechLayerCutClassRule();
+
   bool operator==(const _dbTechLayerCutClassRule& rhs) const;
   bool operator!=(const _dbTechLayerCutClassRule& rhs) const
   {
@@ -87,6 +78,16 @@ class _dbTechLayerCutClassRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  dbTechLayerCutClassRuleFlags flags_;
+  char* _name;
+  int width_;
+  int length_;
+  int num_cuts_;
+  dbId<_dbTechLayerCutClassRule> _next_entry;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj);

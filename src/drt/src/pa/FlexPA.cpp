@@ -28,21 +28,33 @@
 
 #include "FlexPA.h"
 
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/io/ios_state.hpp>
+#include <boost/serialization/export.hpp>
 #include <chrono>
 #include <iostream>
 #include <sstream>
 
 #include "FlexPA_graphics.h"
 #include "db/infra/frTime.h"
+#include "distributed/PinAccessJobDescription.h"
+#include "distributed/frArchive.h"
+#include "distributed/paUpdate.h"
+#include "dst/Distributed.h"
+#include "dst/JobMessage.h"
 #include "frProfileTask.h"
 #include "gc/FlexGC.h"
+#include "serialization.h"
 
 using namespace std;
 using namespace fr;
+BOOST_CLASS_EXPORT(PinAccessJobDescription)
 
-FlexPA::FlexPA(frDesign* in, Logger* logger)
+FlexPA::FlexPA(frDesign* in, Logger* logger, dst::Distributed* dist)
     : design_(in),
       logger_(logger),
+      dist_(dist),
       stdCellPinGenApCnt_(0),
       stdCellPinValidPlanarApCnt_(0),
       stdCellPinValidViaApCnt_(0),
@@ -85,11 +97,60 @@ void FlexPA::init()
   initPinAccess();
 }
 
+void FlexPA::applyPatternsFile(const char* file_path)
+{
+  uniqueInstPatterns_.clear();
+  std::ifstream file(file_path);
+  frIArchive ar(file);
+  ar.setDesign(design_);
+  registerTypes(ar);
+  ar >> uniqueInstPatterns_;
+  file.close();
+}
+
 void FlexPA::prep()
 {
   ProfileTask profile("PA:prep");
   prepPoint();
   revertAccessPoints();
+  if (isDistributed()) {
+    std::vector<paUpdate> updates;
+    paUpdate update;
+    for (const auto& master : design_->getMasters()) {
+      for (const auto& term : master->getTerms()) {
+        for (const auto& pin : term->getPins()) {
+          std::vector<std::unique_ptr<frPinAccess>> pa;
+          for (int i = 0; i < pin->getNumPinAccess(); i++) {
+            pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
+          }
+          update.addPinAccess(pin.get(), std::move(pa));
+        }
+      }
+    }
+    for (const auto& term : design_->getTopBlock()->getTerms()) {
+      for (const auto& pin : term->getPins()) {
+        std::vector<std::unique_ptr<frPinAccess>> pa;
+        for (int i = 0; i < pin->getNumPinAccess(); i++) {
+          pa.push_back(std::make_unique<frPinAccess>(*pin->getPinAccess(i)));
+        }
+        update.addPinAccess(pin.get(), std::move(pa));
+      }
+    }
+
+    dst::JobMessage msg(dst::JobMessage::PIN_ACCESS,
+                        dst::JobMessage::BROADCAST),
+        result;
+    std::unique_ptr<PinAccessJobDescription> uDesc
+        = std::make_unique<PinAccessJobDescription>();
+    std::string updates_file = fmt::format("{}/updates.bin", shared_vol_);
+    paUpdate::serialize(update, updates_file);
+    uDesc->setPath(updates_file);
+    uDesc->setType(PinAccessJobDescription::UPDATE_PA);
+    msg.setJobDescription(std::move(uDesc));
+    bool ok = dist_->sendJob(msg, remote_host_.c_str(), remote_port_, result);
+    if (!ok)
+      logger_->error(utl::DRT, 331, "Error sending UPDATE_PA Job to cloud");
+  }
   prepPattern();
 }
 
@@ -142,3 +203,39 @@ int FlexPA::main()
   }
   return 0;
 }
+
+template <class Archive>
+void FlexPinAccessPattern::serialize(Archive& ar, const unsigned int version)
+{
+  if (is_loading(ar)) {
+    int sz = 0;
+    (ar) & sz;
+    while (sz--) {
+      frBlockObject* obj;
+      serializeBlockObject(ar, obj);
+      pattern_.push_back((frAccessPoint*) obj);
+    }
+  } else {
+    int sz = pattern_.size();
+    (ar) & sz;
+    for (auto ap : pattern_) {
+      frBlockObject* obj = (frBlockObject*) ap;
+      serializeBlockObject(ar, obj);
+    }
+  }
+  frBlockObject* obj = (frBlockObject*) right_;
+  serializeBlockObject(ar, obj);
+  right_ = (frAccessPoint*) obj;
+  obj = (frBlockObject*) left_;
+  serializeBlockObject(ar, obj);
+  left_ = (frAccessPoint*) obj;
+  (ar) & cost_;
+}
+
+template void FlexPinAccessPattern::serialize<frIArchive>(
+    frIArchive& ar,
+    const unsigned int file_version);
+
+template void FlexPinAccessPattern::serialize<frOArchive>(
+    frOArchive& ar,
+    const unsigned int file_version);

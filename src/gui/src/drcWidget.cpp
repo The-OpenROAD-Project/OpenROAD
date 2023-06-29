@@ -576,7 +576,7 @@ void DRCWidget::loadTRReport(const QString& filename)
 
     line_number++;
     std::getline(report, line);
-    std::string congestion_information = "";
+    std::string congestion_information;
 
     // congestion information (optional)
     if (std::regex_match(line, base_match, congestion_line)) {
@@ -640,7 +640,7 @@ void DRCWidget::loadTRReport(const QString& filename)
     std::vector<std::any> srcs_list;
     std::stringstream srcs_stream(sources);
     std::string single_source;
-    std::string comment = "";
+    std::string comment;
 
     // split sources list
     while (getline(srcs_stream, single_source, ' ')) {
@@ -648,7 +648,7 @@ void DRCWidget::loadTRReport(const QString& filename)
         continue;
       }
 
-      auto ident = single_source.find(":");
+      auto ident = single_source.find(':');
       std::string item_type = single_source.substr(0, ident);
       std::string item_name = single_source.substr(ident + 1);
 
@@ -706,7 +706,7 @@ void DRCWidget::loadTRReport(const QString& filename)
             if (obs_bbox->getTechLayer() == layer) {
               odb::Rect obs_rect = obs_bbox->getBox();
               if (obs_rect.intersects(rect)) {
-                srcs_list.push_back(obs);
+                srcs_list.emplace_back(obs);
                 found = true;
               }
             }
@@ -779,21 +779,21 @@ void DRCWidget::loadJSONReport(const QString& filename)
       std::vector<odb::Point> shape_points;
       for (const auto& shape_pt : shape.get_child("shape")) {
         auto& pt = shape_pt.second;
-        shape_points.push_back(
-            odb::Point(pt.get<double>("x") * block_->getDbUnitsPerMicron(),
-                       pt.get<double>("y") * block_->getDbUnitsPerMicron()));
+        shape_points.emplace_back(
+            pt.get<double>("x") * block_->getDbUnitsPerMicron(),
+            pt.get<double>("y") * block_->getDbUnitsPerMicron());
       }
 
       std::vector<DRCViolation::DRCShape> shapes;
       const std::string shape_type = shape.get<std::string>("type");
       if (shape_type == "box") {
-        shapes.push_back(
+        shapes.emplace_back(
             DRCViolation::DRCRect(shape_points[0], shape_points[1]));
       } else if (shape_type == "edge") {
-        shapes.push_back(
+        shapes.emplace_back(
             DRCViolation::DRCLine(shape_points[0], shape_points[1]));
       } else if (shape_type == "polygon") {
-        shapes.push_back(DRCViolation::DRCPoly(shape_points));
+        shapes.emplace_back(DRCViolation::DRCPoly(shape_points));
       } else {
         logger_->error(
             utl::GUI, 56, "Unable to parse violation shape: {}", shape_type);

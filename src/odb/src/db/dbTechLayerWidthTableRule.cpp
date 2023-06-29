@@ -42,7 +42,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerWidthTableRule>;
 
 bool _dbTechLayerWidthTableRule::operator==(
@@ -58,6 +57,7 @@ bool _dbTechLayerWidthTableRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerWidthTableRule::operator<(
     const _dbTechLayerWidthTableRule& rhs) const
 {
@@ -65,19 +65,20 @@ bool _dbTechLayerWidthTableRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerWidthTableRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerWidthTableRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.wrong_direction_);
   DIFF_FIELD(flags_.orthogonal_);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerWidthTableRule::out(dbDiff& diff,
                                      char side,
                                      const char* field) const
@@ -90,6 +91,7 @@ void _dbTechLayerWidthTableRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerWidthTableRule::_dbTechLayerWidthTableRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -97,6 +99,7 @@ _dbTechLayerWidthTableRule::_dbTechLayerWidthTableRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerWidthTableRule::_dbTechLayerWidthTableRule(
     _dbDatabase* db,
     const _dbTechLayerWidthTableRule& r)
@@ -117,6 +120,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerWidthTableRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerWidthTableRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;

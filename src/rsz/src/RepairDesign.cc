@@ -53,8 +53,6 @@
 #include "sta/PathExpanded.hh"
 #include "sta/Fuzzy.hh"
 
-#include "gui/gui.h"
-
 namespace rsz {
 
 using std::abs;
@@ -71,29 +69,24 @@ using sta::NetIterator;
 using sta::Clock;
 using sta::INF;
 
-RepairDesign::RepairDesign(Resizer *resizer) :
-  StaState(),
-  logger_(nullptr),
-  sta_(nullptr),
-  db_network_(nullptr),
-  resizer_(resizer),
-  dbu_(0),
-  drvr_pin_(nullptr),
-  max_cap_(0),
-  max_length_(0),
-  corner_(nullptr),
-  resize_count_(0),
-  inserted_buffer_count_(0),
-  min_(MinMax::min()),
-  max_(MinMax::max()),
-  fanout_render_(new FanoutRender(this))
+RepairDesign::RepairDesign(Resizer* resizer)
+    : logger_(nullptr),
+      sta_(nullptr),
+      db_network_(nullptr),
+      resizer_(resizer),
+      dbu_(0),
+      drvr_pin_(nullptr),
+      max_cap_(0),
+      max_length_(0),
+      corner_(nullptr),
+      resize_count_(0),
+      inserted_buffer_count_(0),
+      min_(MinMax::min()),
+      max_(MinMax::max())
 {
 }
 
-RepairDesign::~RepairDesign()
-{
-  delete fanout_render_;
-}
+RepairDesign::~RepairDesign() = default;
 
 void
 RepairDesign::init()
@@ -1083,14 +1076,6 @@ RepairDesign::makeFanoutRepeater(PinSeq &repeater_loads,
                                  int max_length,
                                  bool resize_drvr)
 {
-  if (false && gui::Gui::enabled()) {
-    fanout_render_->setRect(bbox);
-    fanout_render_->setPins(&repeater_loads);
-    fanout_render_->setDrvrLoc(loc);
-    gui::Gui *gui = gui::Gui::get();
-    gui->pause();
-  }
-
   float ignore2, ignore3, ignore4;
   Net *out_net;
   Pin *repeater_in_pin, *repeater_out_pin;
@@ -1249,6 +1234,11 @@ RepairDesign::makeRepeater(const char *reason,
     for (const Pin *pin : load_pins) {
       Port *port = network_->port(pin);
       Instance *inst = network_->instance(pin);
+
+      // do not disconnect/reconnect don't touch instances
+      if (resizer_->dontTouch(inst)) {
+        continue;
+      }
       sta_->disconnectPin(const_cast<Pin*>(pin));
       sta_->connectPin(inst, port, out_net);
     }
@@ -1394,55 +1384,4 @@ RepairDesign::metersToDbu(double dist) const
   return dist * dbu_ * 1e+6;
 }
 
-////////////////////////////////////////////////////////////////
-
-FanoutRender::FanoutRender(RepairDesign *repair) :
-  repair_(repair),
-  pins_(nullptr)
-{
-  const bool gui_enabled = gui::Gui::enabled();
-  if (gui_enabled) {
-    gui::Gui::get()->registerRenderer(this);
-  }
-}
-
-void
-FanoutRender::setPins(PinSeq *pins)
-{
-  pins_ = pins;
-}
-
-void
-FanoutRender::setRect(Rect &rect)
-{
-  rect_ = rect;
-}
-
-void
-FanoutRender::setDrvrLoc(Point loc)
-{
-  drvr_loc_ = loc;
-}
-
-void
-FanoutRender::drawObjects(gui::Painter &painter)
-{
-  if (pins_) {
-    auto color = gui::Painter::yellow;
-    painter.setPen(color, /* cosmetic */ true);
-    painter.setBrush(color, gui::Painter::SOLID);
-
-    painter.drawCircle(drvr_loc_.x(), drvr_loc_.y(), 5000);
-    painter.setBrush(color, gui::Painter::NONE);
-    painter.drawRect(rect_);
-
-    dbNetwork *network = repair_->db_network_;
-    for (const Pin *pin : *pins_) {
-      dbInst *db_inst = network->staToDb(network->instance(pin));
-      Rect rect = db_inst->getBBox()->getBox();
-      painter.drawRect(rect);
-    }
-  }
-}
-
-} // namespace
+}  // namespace rsz

@@ -460,7 +460,7 @@ tgt_cap_node)
     if (pseg && src_cap_node==0 && tgt_cap_node==0)
     {
         tnet->_cc_tgt_segs = pseg->getOID();
-        return NULL;
+        return nullptr;
     }
     dbTable<_dbCCSeg> *cct = ((_dbBlock *)tnet->getOwner())->_cc_seg_tbl;
     _dbCCSeg *seg;
@@ -475,7 +475,7 @@ tgt_cap_node)
         psid = tsid;
     }
     if (!tsid)
-        return NULL;
+        return nullptr;
     if (psid)
         cct->getPtr(psid)->_next_target = seg->_next_target;
     else
@@ -494,8 +494,8 @@ static _dbCCSeg* findParallelCCSeg(_dbBlock* block,
 {
   uint src_id = src->getOID();
   uint tgt_id = tgt->getOID();
-  _dbCCSeg* pccs = NULL;
-  _dbCCSeg* ccs = NULL;
+  _dbCCSeg* pccs = nullptr;
+  _dbCCSeg* ccs = nullptr;
   uint seg;
 
   for (seg = tgt->_cc_segs; seg;) {
@@ -511,7 +511,7 @@ static _dbCCSeg* findParallelCCSeg(_dbBlock* block,
     seg = ccs->next(tgt_id);
   }
   if (!seg)
-    return NULL;
+    return nullptr;
   if (!pccs || !reInsert)
     return ccs;
   pccs->_next[pccs->idx(tgt_id)] = ccs->next(tgt_id);

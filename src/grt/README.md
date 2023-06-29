@@ -12,7 +12,8 @@ global_route [-guide_file out_file]
              [-critical_nets_percentage percent]
              [-allow_congestion]
              [-verbose]
-
+             [-start_incremental]
+             [-end_incremental]
 ```
 
 Options description:
@@ -30,6 +31,8 @@ Options description:
 -   `critical_nets_percentage`: Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). The default percentage is 0%.
 -   `allow_congestion`: Allow global routing results to be generated with remaining congestion.
 -   `verbose`: This flag enables the full reporting of the global routing.
+-   `start_incremental`: This flag initializes the GRT listener to get the net modified.
+-   `end_incremental`: This flag run incremental GRT with the nets modified.
 
 ```
 set_routing_layers [-signal min-max]
@@ -298,10 +301,10 @@ about this tool.
 -   [FastRoute 4.1 documentation](src/fastroute/README).  The FastRoute4.1
     version was received from <yuexu@iastate.edu> on June 15, 2019,
     with the BSD-3 open source license as given in the FastRoute
-    [website](http://home.eng.iastate.edu/~cnchu/FastRoute.html#License).
+    [website](https://home.engineering.iastate.edu/~cnchu/FastRoute.html#License).
 -   Min Pan, Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute: An Efficient and
     High-Quality Global Router. VLSI Design, Article ID 608362, 2012."
-    Available [here](http://home.eng.iastate.edu/~cnchu/pubs/j52.pdf).
+    Available [here](https://home.engineering.iastate.edu/~cnchu/pubs/j52.pdf).
 -   P-D paper is C. J. Alpert, T. C. Hu, J. H. Huang, A. B. Kahng and
     D. Karger, "Prim-Dijkstra Tradeoffs for Improved Performance-Driven
     Global Routing", IEEE Transactions on Computer-Aided Design of

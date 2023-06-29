@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -60,6 +59,20 @@ class _dbPowerDomain : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbPowerDomain(_dbDatabase*, const _dbPowerDomain& r);
+  _dbPowerDomain(_dbDatabase*);
+  ~_dbPowerDomain();
+
+  bool operator==(const _dbPowerDomain& rhs) const;
+  bool operator!=(const _dbPowerDomain& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbPowerDomain& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbPowerDomain& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   char* _name;
   dbId<_dbPowerDomain> _next_entry;
   dbVector<std::string> _elements;
@@ -75,18 +88,6 @@ class _dbPowerDomain : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbPowerDomain(_dbDatabase*, const _dbPowerDomain& r);
-  _dbPowerDomain(_dbDatabase*);
-  ~_dbPowerDomain();
-  bool operator==(const _dbPowerDomain& rhs) const;
-  bool operator!=(const _dbPowerDomain& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbPowerDomain& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbPowerDomain& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj);

@@ -134,15 +134,15 @@ The NOWIREEXTENSIONATPIN statement will be ignored. See file skywater130_io_ef/l
 [INFO ODB-0222] Reading LEF file: skywater130_io_ef/lef/sky130_fd_io__top_xres4v2.lef
 [INFO ODB-0225]     Created 1 library cells
 [INFO ODB-0226] Finished LEF file:  skywater130_io_ef/lef/sky130_fd_io__top_xres4v2.lef
-[WARNING ORD-1011] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
-[WARNING ORD-1011] LEF master sky130_ef_io__corner_pad has no liberty cell.
-[WARNING ORD-1011] LEF master sky130_ef_io__vccd_lvc_pad has no liberty cell.
-[WARNING ORD-1011] LEF master sky130_ef_io__vdda_hvc_pad has no liberty cell.
-[WARNING ORD-1011] LEF master sky130_ef_io__vddio_hvc_pad has no liberty cell.
-[WARNING ORD-1011] LEF master sky130_ef_io__vssa_hvc_pad has no liberty cell.
-[WARNING ORD-1011] LEF master sky130_ef_io__vssd_lvc_pad has no liberty cell.
-[WARNING ORD-1011] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
-[WARNING ORD-1011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__gpiov2_pad_wrapped has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__corner_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vccd_lvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vdda_hvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vddio_hvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vssa_hvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vssd_lvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_ef_io__vssio_hvc_pad has no liberty cell.
+[WARNING ORD-2011] LEF master sky130_fd_io__top_xres4v2 has no liberty cell.
 [WARNING IFP-0028] Core area lower left (250.000, 250.000) snapped to (250.240, 250.240).
 [INFO IFP-0001] Added 1723 rows of 6712 site unithd with height 1.
 No differences found.

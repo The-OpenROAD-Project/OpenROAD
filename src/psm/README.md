@@ -1,6 +1,6 @@
 # PDNSim
 
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/license/bsd-3-clause/)
 
 PDNSim is an open-source static IR analyzer.
 
@@ -59,6 +59,9 @@ with a description specified [here](doc/Vsrc_description.md).
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+psm+in%3Atitle)
 about this tool.
 
+## Detailed paper
+
+See [here](doc/PDNSim-documentation.pdf).
 
 ## Cite this Work
 

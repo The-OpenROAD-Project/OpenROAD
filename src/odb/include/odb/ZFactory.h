@@ -73,7 +73,7 @@ class ZFactoryImpl : public ZFactory
       return Z_OK;
 
     delete o;
-    *p = NULL;
+    *p = nullptr;
     return Z_ERROR_NO_INTERFACE;
   }
 };

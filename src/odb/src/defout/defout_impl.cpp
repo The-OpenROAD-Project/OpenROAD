@@ -33,8 +33,11 @@
 #include "defout_impl.h"
 
 #include <stdio.h>
+#include <sys/stat.h>
 
+#include <cstdint>
 #include <limits>
+#include <optional>
 #include <set>
 #include <string>
 
@@ -144,11 +147,22 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
       = (double) block->getDefUnits() / (double) block->getDbUnitsPerMicron();
   _out = fopen(def_file, "w");
 
-  if (_out == NULL) {
+  if (_out == nullptr) {
     _logger->warn(
         utl::ODB, 172, "Cannot open DEF file ({}) for writing", def_file);
     return false;
   }
+
+  // By default C File*'s are line buffered which means they get dumped on every
+  // newline, which is nominally pretty expensive. This makes it so that the
+  // writes are buffered according to the block size which on modern systems can
+  // be as much as 16kb. DEF's have a lot of newlines, and are large in size
+  // which makes writing them really slow with line buffering.
+  //
+  // The following lines enable IO buffering based on disk block size.
+  struct stat stats;
+  fstat(fileno(_out), &stats);
+  setvbuf(_out, nullptr, _IOFBF, stats.st_blksize);
 
   if (_version == defout::DEF_5_3) {
     fprintf(_out, "VERSION 5.3 ;\n");
@@ -304,7 +318,7 @@ void defout_impl::writeGCells(dbBlock* block)
 {
   dbGCellGrid* grid = block->getGCellGrid();
 
-  if (grid == NULL)
+  if (grid == nullptr)
     return;
 
   int i;
@@ -369,7 +383,7 @@ void defout_impl::writeVia(dbVia* via)
   fprintf(_out, "    - %s", vname.c_str());
   dbTechViaGenerateRule* rule = via->getViaGenerateRule();
 
-  if ((_version >= defout::DEF_5_6) && via->hasParams() && (rule != NULL)) {
+  if ((_version >= defout::DEF_5_6) && via->hasParams() && (rule != nullptr)) {
     std::string rname = rule->getName();
     fprintf(_out, " + VIARULE %s", rname.c_str());
 
@@ -1347,7 +1361,7 @@ void defout_impl::writeSNet(dbNet* net)
   const char* sig_type = defSigType(net->getSigType());
   fprintf(_out, " + USE %s", sig_type);
 
-  _non_default_rule = NULL;
+  _non_default_rule = nullptr;
   dbSet<dbSWire> swires = net->getSWires();
   dbSet<dbSWire>::iterator itr;
 
@@ -1406,6 +1420,7 @@ void defout_impl::writeWire(dbWire* wire)
 
   for (decode.begin(wire);;) {
     dbWireDecoder::OpCode opcode = decode.next();
+    std::optional<uint8_t> color = decode.getColor();
 
     switch (opcode) {
       case dbWireDecoder::PATH:
@@ -1445,22 +1460,21 @@ void defout_impl::writeWire(dbWire* wire)
         x = defdist(x);
         y = defdist(y);
 
-        if ((++point_cnt & 7) == 0)
+        if ((++point_cnt & 7) == 0) {
           fprintf(_out, "\n    ");
+        }
+
+        std::string mask_statement = "";
+        if (point_cnt % 2 == 0 && color) {
+          mask_statement = fmt::format("MASK {}", color.value());
+        }
 
         if (point_cnt == 1) {
           fprintf(_out, " ( %d %d )", x, y);
-        }
-        /*
-                        else if ( (x == prev_x) && (y == prev_y) )
-                        {
-                            fprintf(_out, " ( * * )");
-                        }
-        */
-        else if (x == prev_x) {
-          fprintf(_out, " ( * %d )", y);
+        } else if (x == prev_x) {
+          fprintf(_out, "%s ( * %d )", mask_statement.c_str(), y);
         } else if (y == prev_y) {
-          fprintf(_out, " ( %d * )", x);
+          fprintf(_out, "%s ( %d * )", mask_statement.c_str(), x);
         }
 
         prev_x = x;
@@ -1534,7 +1548,7 @@ void defout_impl::writeWire(dbWire* wire)
           dbTechLayerRule* rule = decode.getRule();
           dbTechNonDefaultRule* taper_rule = rule->getNonDefaultRule();
 
-          if (_non_default_rule == NULL) {
+          if (_non_default_rule == nullptr) {
             std::string name = taper_rule->getName();
             fprintf(_out, " TAPERRULE %s ", name.c_str());
           } else if (_non_default_rule != taper_rule) {
@@ -1558,8 +1572,23 @@ void defout_impl::writeWire(dbWire* wire)
         deltaY1 = defdist(deltaY1);
         deltaX2 = defdist(deltaX2);
         deltaY2 = defdist(deltaY2);
-        fprintf(
-            _out, " RECT ( %d %d %d %d ) ", deltaX1, deltaY1, deltaX2, deltaY2);
+        if (color.has_value()) {
+          fprintf(_out,
+                  " RECT MASK %d ( %d %d %d %d ) ",
+                  color.value(),
+                  deltaX1,
+                  deltaY1,
+                  deltaX2,
+                  deltaY2);
+
+        } else {
+          fprintf(_out,
+                  " RECT ( %d %d %d %d ) ",
+                  deltaX1,
+                  deltaY1,
+                  deltaX2,
+                  deltaY2);
+        }
         break;
       }
 
@@ -1894,7 +1923,7 @@ void defout_impl::writePropertyDefinitions(dbBlock* block)
   dbProperty* defs
       = dbProperty::find(block, "__ADS_DEF_PROPERTY_DEFINITIONS__");
 
-  if (defs == NULL)
+  if (defs == nullptr)
     return;
 
   fprintf(_out, "PROPERTYDEFINITIONS\n");

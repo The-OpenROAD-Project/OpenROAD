@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <string.h>
+#include <cstring>
 
 #include "db.h"
 #include "dbCore.h"
@@ -332,8 +332,14 @@ void dbObject::getDbName(char name[max_name_length]) const
         break;
       case dbAccessPointObj:
         *cptr++ = 'h';
+        id = impl->getOID();
+        break;
       case dbGuideObj:
         *cptr++ = ';';
+        id = impl->getOID();
+        break;
+      case dbNetTrackObj:
+        *cptr++ = '~';
         id = impl->getOID();
         break;
       case dbMetalWidthViaMapObj:
@@ -353,6 +359,7 @@ void dbObject::getDbName(char name[max_name_length]) const
       case dbTechLayerArraySpacingRuleObj:
       case dbTechLayerWidthTableRuleObj:
       case dbTechLayerAreaRuleObj:
+      case dbTechLayerKeepOutZoneRuleObj:
       case dbTechLayerMinCutRuleObj:
         *cptr++ = 'J';
         id = impl->getOID();
@@ -395,7 +402,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
   ++name;
   int c;
   uint oid;
-  dbObject* obj = NULL;
+  dbObject* obj = nullptr;
 
   while ((c = *name++) != '\0') {
     switch (c) {
@@ -668,6 +675,10 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
         oid = getOid(name);
         obj = dbGuide::getGuide((dbBlock*) obj, oid);
         break;
+      case '~':
+        oid = getOid(name);
+        obj = dbNetTrack::getNetTrack((dbBlock*) obj, oid);
+        break;
       case '^':
         oid = getOid(name);
         obj = dbMetalWidthViaMap::getMetalWidthViaMap((dbTech*) obj, oid);
@@ -684,7 +695,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
     }
   }
 
-  ZASSERT(obj != NULL);
+  ZASSERT(obj != nullptr);
   return obj;
 }
 
@@ -724,33 +735,35 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbBPin",
                                  // Generator Code Begin ObjectNames
                                  "dbTechLayer",
-                                 "dbTechLayerSpacingEolRule",
-                                 "dbTechLayerMinStepRule",
-                                 "dbTechLayerCornerSpacingRule",
-                                 "dbTechLayerSpacingTablePrlRule",
-                                 "dbTechLayerEolKeepOutRule",
-                                 "dbTechLayerCutClassRule",
-                                 "dbTechLayerCutSpacingRule",
-                                 "dbTechLayerCutSpacingTableOrthRule",
-                                 "dbTechLayerCutSpacingTableDefRule",
-                                 "dbTechLayerCutEnclosureRule",
-                                 "dbTechLayerEolExtensionRule",
-                                 "dbTechLayerArraySpacingRule",
-                                 "dbTechLayerWidthTableRule",
-                                 "dbTechLayerMinCutRule",
-                                 "dbGuide",
-                                 "dbMetalWidthViaMap",
                                  "dbTechLayerAreaRule",
-                                 "dbModule",
-                                 "dbModInst",
-                                 "dbGroup",
-                                 "dbGCellGrid",
+                                 "dbTechLayerArraySpacingRule",
+                                 "dbTechLayerCornerSpacingRule",
+                                 "dbTechLayerCutClassRule",
+                                 "dbTechLayerCutEnclosureRule",
+                                 "dbTechLayerCutSpacingRule",
+                                 "dbTechLayerCutSpacingTableDefRule",
+                                 "dbTechLayerCutSpacingTableOrthRule",
+                                 "dbTechLayerEolExtensionRule",
+                                 "dbTechLayerEolKeepOutRule",
+                                 "dbTechLayerKeepOutZoneRule",
+                                 "dbTechLayerMinCutRule",
+                                 "dbTechLayerMinStepRule",
+                                 "dbTechLayerSpacingEolRule",
+                                 "dbTechLayerSpacingTablePrlRule",
+                                 "dbTechLayerWidthTableRule",
                                  "dbAccessPoint",
+                                 "dbGCellGrid",
                                  "dbGlobalConnect",
-                                 "dbPowerDomain",
-                                 "dbLogicPort",
-                                 "dbPowerSwitch",
+                                 "dbGroup",
+                                 "dbGuide",
                                  "dbIsolation",
+                                 "dbLogicPort",
+                                 "dbMetalWidthViaMap",
+                                 "dbModInst",
+                                 "dbModule",
+                                 "dbNetTrack",
+                                 "dbPowerDomain",
+                                 "dbPowerSwitch",
                                  // Generator Code End ObjectNames
 
                                  // Lib Objects

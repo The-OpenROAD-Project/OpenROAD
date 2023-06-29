@@ -477,11 +477,13 @@ repair_net_cmd(Net *net,
 void
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
-             int max_passes)
+             int max_passes,
+             bool skip_pin_swap, bool enable_gate_cloning)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
-  resizer->repairSetup(setup_margin, repair_tns_end_percent, max_passes);
+  resizer->repairSetup(setup_margin, repair_tns_end_percent,
+                       max_passes, skip_pin_swap, enable_gate_cloning);
 }
 
 void
@@ -577,7 +579,7 @@ float
 resize_net_slack(Net *net)
 {
   Resizer *resizer = getResizer();
-  return resizer->resizeNetSlack(net);
+  return resizer->resizeNetSlack(net).value();
 }
 
 ////////////////////////////////////////////////////////////////

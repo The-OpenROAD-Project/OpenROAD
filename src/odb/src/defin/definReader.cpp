@@ -74,7 +74,7 @@ namespace odb {
 definReader::definReader(dbDatabase* db, utl::Logger* logger, defin::MODE mode)
 {
   _db = db;
-  _block_name = NULL;
+  _block_name = nullptr;
   parent_ = nullptr;
   _continue_on_errors = false;
   version_ = nullptr;
@@ -838,8 +838,10 @@ int definReader::netCallback(defrCallbackType_e /* unused: type */,
             break;
 
           case DEFIPATH_MASK:
+            netR->pathColor(path->getMask());
+            break;
           case DEFIPATH_VIAMASK:
-            UNSUPPORTED("MASK in net's routing is unsupported");
+            UNSUPPORTED("MASK in VIA net's routing is unsupported");
             break;
 
           default:
@@ -1630,7 +1632,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
       _logger->error(utl::ODB, 250, "Chip does not exist");
   } else if (chip != nullptr) {
     fprintf(stderr, "Error: Chip already exists\n");
-    return NULL;
+    return nullptr;
   } else
     chip = dbChip::create(_db);
 
@@ -1641,7 +1643,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
   if (!createBlock(file)) {
     dbChip::destroy(chip);
     _logger->warn(utl::ODB, 129, "Error: Failed to read DEF file");
-    return NULL;
+    return nullptr;
   }
 
   if (_pinR->_bterm_cnt)
@@ -1699,7 +1701,7 @@ dbBlock* definReader::createBlock(dbBlock* parent,
   if (!createBlock(def_file)) {
     dbBlock::destroy(_block);
     _logger->warn(utl::ODB, 137, "Error: Failed to read DEF file");
-    return NULL;
+    return nullptr;
   }
 
   if (_pinR->_bterm_cnt)
@@ -1788,6 +1790,7 @@ bool definReader::createBlock(const char* file)
     defrSetSNetCbk(specialNetCallback);
     defrSetViaCbk(viaCallback);
     defrSetBlockageCbk(blockageCallback);
+    defrSetNonDefaultCbk(nonDefaultRuleCallback);
 
     defrSetAddPathToNet();
   }
@@ -1806,7 +1809,6 @@ bool definReader::createBlock(const char* file)
     defrSetGroupNameCbk(groupNameCallback);
     defrSetHistoryCbk(historyCallback);
 
-    defrSetNonDefaultCbk(nonDefaultRuleCallback);
     defrSetRegionCbk(regionCallback);
 
     defrSetScanchainsStartCbk(scanchainsCallback);
@@ -1821,7 +1823,7 @@ bool definReader::createBlock(const char* file)
   int res;
   if (!isZipped) {
     FILE* f = fopen(file, "r");
-    if (f == NULL) {
+    if (f == nullptr) {
       _logger->warn(utl::ODB, 148, "error: Cannot open DEF file {}", file);
       return false;
     }
@@ -1830,7 +1832,7 @@ bool definReader::createBlock(const char* file)
   } else {
     defrSetGZipReadFunction();
     defGZFile f = defrGZipOpen(file, "r");
-    if (f == NULL) {
+    if (f == nullptr) {
       _logger->warn(
           utl::ODB, 271, "error: Cannot open zipped DEF file {}", file);
       return false;
@@ -1857,7 +1859,7 @@ bool definReader::replaceWires(const char* file)
 {
   FILE* f = fopen(file, "r");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     _logger->warn(utl::ODB, 150, "error: Cannot open DEF file {}", file);
     return false;
   }

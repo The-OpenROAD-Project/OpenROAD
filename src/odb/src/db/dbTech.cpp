@@ -614,7 +614,7 @@ dbTechLayer* dbTech::findLayer(const char* name)
       return (dbTechLayer*) layer;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbTechLayer* dbTech::findLayer(int layer_number)
@@ -629,7 +629,7 @@ dbTechLayer* dbTech::findLayer(int layer_number)
       return (dbTechLayer*) layer;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbTechLayer* dbTech::findRoutingLayer(int level_number)
@@ -644,7 +644,7 @@ dbTechLayer* dbTech::findRoutingLayer(int level_number)
       return (dbTechLayer*) layer;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void dbTech::setDbUnitsPerMicron(int value)
@@ -850,7 +850,7 @@ dbTechNonDefaultRule* dbTech::findNonDefaultRule(const char* name)
       return (dbTechNonDefaultRule*) r;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbTechSameNetRule* dbTech::findSameNetRule(dbTechLayer* l1_, dbTechLayer* l2_)
@@ -862,7 +862,7 @@ dbTechSameNetRule* dbTech::findSameNetRule(dbTechLayer* l1_, dbTechLayer* l2_)
       = tech->_samenet_matrix(l1->_number, l2->_number);
 
   if (rule == 0)
-    return NULL;
+    return nullptr;
 
   return (dbTechSameNetRule*) tech->_samenet_rule_tbl->getPtr(rule);
 }
@@ -910,7 +910,7 @@ dbTechViaRule* dbTech::findViaRule(const char* name)
       return (dbTechViaRule*) rule;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbTechViaGenerateRule* dbTech::findViaGenerateRule(const char* name)
@@ -925,7 +925,7 @@ dbTechViaGenerateRule* dbTech::findViaGenerateRule(const char* name)
       return (dbTechViaGenerateRule*) rule;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void dbTech::checkLayer(bool typeChk,
@@ -995,7 +995,7 @@ dbTech* dbTech::create(dbDatabase* db_, int dbu_per_micron)
   _dbDatabase* db = (_dbDatabase*) db_;
 
   if (db->_tech != 0)
-    return NULL;
+    return nullptr;
 
   _dbTech* tech = db->_tech_tbl->create();
   db->_tech = tech->getOID();

@@ -459,6 +459,74 @@ Resizer::estimateWireParasiticSteiner(const Pin *drvr_pin,
   }
 }
 
+float
+Resizer::pinCapacitance(const Pin *pin, const DcalcAnalysisPt *dcalc_ap) const
+{
+  LibertyPort *port = network_->libertyPort(pin);
+  if (port) {
+    int lib_ap = dcalc_ap->libertyIndex();
+    LibertyPort *corner_port = port->cornerPort(lib_ap);
+    return corner_port->capacitance();
+  }
+  return 0.0;
+}
+
+float
+Resizer::totalLoad(SteinerTree *tree) const
+{
+  if (!tree) {
+    return 0;
+}
+
+  SteinerPt top_pt = tree->top();
+  SteinerPt drvr_pt = tree->drvrPt();
+  float load = 0.0, max_load = 0.0;
+
+  if (top_pt == SteinerNull) {
+    return 0;
+  }
+
+  debugPrint(logger_, RSZ, "resizer_parasitics", 1, "Steiner totalLoad ");
+  // For now we will just look at the worst corner for totalLoad
+  for (Corner* corner : *sta_->corners()) {
+    double wire_cap = wireSignalCapacitance(corner);
+    float top_length = dbuToMeters(tree->distance(drvr_pt, top_pt));
+    float subtree_load = subtreeLoad(tree, wire_cap, top_pt);
+    load = top_length * wire_cap + subtree_load;
+    max_load = std::max(max_load, load);
+  }
+  return max_load;
+}
+
+float
+Resizer::subtreeLoad(SteinerTree *tree, float cap_per_micron, SteinerPt pt) const
+{
+  if (pt == SteinerNull) {
+    return 0;
+  }
+  SteinerPt left_pt = tree->left(pt);
+  SteinerPt right_pt = tree->right(pt);
+
+  if ((left_pt == SteinerNull) && (right_pt == SteinerNull)) {
+    return (this->pinCapacitance(tree->pin(pt), tgt_slew_dcalc_ap_));
+  }
+
+  float left_cap = 0;
+  float right_cap = 0;
+
+  if (left_pt != SteinerNull) {
+    const float left_length = dbuToMeters(tree->distance(pt, left_pt));
+    left_cap = subtreeLoad(tree, cap_per_micron, left_pt)
+      + (left_length * cap_per_micron);
+  }
+  if (right_pt != SteinerNull) {
+    const float right_length = dbuToMeters(tree->distance(pt, right_pt));
+    right_cap = subtreeLoad(tree, cap_per_micron, right_pt)
+      + (right_length * cap_per_micron);
+  }
+  return left_cap + right_cap;
+}
+
 void
 Resizer::parasiticNodeConnectPins(Parasitic *parasitic,
                                   ParasiticNode *node,

@@ -115,13 +115,12 @@ void HeatMapDataSource::onHide()
 {
 }
 
-const std::string HeatMapDataSource::formatValue(double value,
-                                                 bool legend) const
+std::string HeatMapDataSource::formatValue(double value, bool legend) const
 {
   return "";
 }
 
-const Renderer::Settings HeatMapDataSource::getSettings() const
+Renderer::Settings HeatMapDataSource::getSettings() const
 {
   return {};
 }
@@ -152,8 +151,8 @@ RealValueHeatMapDataSource::RealValueHeatMapDataSource(
 {
 }
 
-const std::string RealValueHeatMapDataSource::formatValue(double value,
-                                                          bool legend) const
+std::string RealValueHeatMapDataSource::formatValue(double value,
+                                                    bool legend) const
 {
   return "";
 }
@@ -163,7 +162,7 @@ double RealValueHeatMapDataSource::getDisplayRangeIncrement() const
   return HeatMapDataSource::getDisplayRangeIncrement();
 }
 
-const std::string RealValueHeatMapDataSource::getValueUnits() const
+std::string RealValueHeatMapDataSource::getValueUnits() const
 {
   return units_;
 }

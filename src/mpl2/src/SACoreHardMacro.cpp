@@ -33,7 +33,7 @@
 
 #include "SACoreHardMacro.h"
 
-#include "graphics.h"
+#include "Mpl2Observer.h"
 #include "utl/Logger.h"
 
 namespace mpl2 {
@@ -65,7 +65,7 @@ SACoreHardMacro::SACoreHardMacro(
     int k,
     int c,
     unsigned seed,
-    Graphics* graphics,
+    Mpl2Observer* graphics,
     utl::Logger* logger)
     : SimulatedAnnealingCore<HardMacro>(outline_width,
                                         outline_height,
@@ -294,7 +294,7 @@ void SACoreHardMacro::printResults()
              1,
              "number of macros : {}",
              macros_.size());
-  for (auto macro : macros_) {
+  for (const auto& macro : macros_) {
     debugPrint(logger_,
                MPL,
                "macro_placement",

@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -42,7 +42,7 @@ class defAliasIterator
 };
 
 defiAlias_itr::defiAlias_itr(defrData* data)
-    : iterator(NULL), first(1), defData(data ? data : defContext.data)
+    : first(1), iterator(NULL), defData(data ? data : defContext.data)
 {
   defiAlias_itr::Init();
 }

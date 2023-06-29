@@ -38,6 +38,8 @@ record_tests {
   repair_fanout4
   repair_fanout5
   repair_fanout6
+  repair_fanout7
+  repair_fanout8
   repair_hold1
   repair_hold2
   repair_hold3
@@ -51,6 +53,7 @@ record_tests {
   repair_hold11
   repair_hold12
   repair_hold13
+  repair_hold14
   repair_setup1
   repair_setup2
   repair_setup3

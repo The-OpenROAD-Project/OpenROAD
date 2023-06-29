@@ -38,6 +38,16 @@ include("openroad")
 # https://github.com/The-OpenROAD-Project/OpenROAD/issues/1186
 find_package(LEMON NAMES LEMON lemon REQUIRED)
 
+add_library(cts_lib
+    Clock.cpp
+    HTreeBuilder.cpp
+    SinkClustering.cpp
+    TechChar.cpp
+    TritonCTS.cpp
+    Clustering.cpp
+    LevelBalancer.cpp
+)
+
 swig_lib(NAME      cts
          NAMESPACE cts
          I_FILE    TritonCTS.i
@@ -46,18 +56,11 @@ swig_lib(NAME      cts
 
 target_sources(cts
   PRIVATE
-    Clock.cpp
-    HTreeBuilder.cpp
     MakeTritoncts.cpp
-    SinkClustering.cpp
-    TechChar.cpp
-    TritonCTS.cpp
-    Clustering.cpp
-    LevelBalancer.cpp
-    Graphics.cpp
+    CtsGraphics.cpp
 )
 
-target_include_directories(cts
+target_include_directories(cts_lib
   PUBLIC
     ../include
   PRIVATE
@@ -65,14 +68,32 @@ target_include_directories(cts
     ${LEMON_INCLUDE_DIRS}
  )
 
+target_include_directories(cts
+  PUBLIC
+    ../include
+  PRIVATE
+    .
+ )
+
+target_link_libraries(cts_lib
+  PUBLIC
+    rsz_lib
+  PRIVATE
+    odb
+    dbSta_lib
+    OpenSTA
+    stt_lib
+    utl_lib
+)
+
 target_link_libraries(cts
   PRIVATE
     odb
-    dbSta
+    cts_lib
+    dbSta_lib
+    rsz_lib
     OpenSTA
-    rsz
-    stt
-    utl
+    gui
  )
 
 messages(
@@ -101,6 +122,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       dbSta
       OpenSTA
       odb
+      rsz
   )
 
 endif()

@@ -44,7 +44,6 @@
 #include "dbTechLayerCutClassRule.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerCutSpacingTableDefRule>;
 
 bool _dbTechLayerCutSpacingTableDefRule::operator==(
@@ -124,13 +123,10 @@ bool _dbTechLayerCutSpacingTableDefRule::operator==(
 
   if (default_ != rhs.default_)
     return false;
-
   if (second_layer_ != rhs.second_layer_)
     return false;
-
   if (prl_ != rhs.prl_)
     return false;
-
   if (extension_ != rhs.extension_)
     return false;
 
@@ -138,6 +134,7 @@ bool _dbTechLayerCutSpacingTableDefRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerCutSpacingTableDefRule::operator<(
     const _dbTechLayerCutSpacingTableDefRule& rhs) const
 {
@@ -145,13 +142,13 @@ bool _dbTechLayerCutSpacingTableDefRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerCutSpacingTableDefRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerCutSpacingTableDefRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.default_valid_);
   DIFF_FIELD(flags_.same_mask_);
   DIFF_FIELD(flags_.same_net_);
@@ -183,6 +180,7 @@ void _dbTechLayerCutSpacingTableDefRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
                                              char side,
                                              const char* field) const
@@ -220,6 +218,7 @@ void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db)
 {
@@ -231,6 +230,7 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
     _dbDatabase* db,
     const _dbTechLayerCutSpacingTableDefRule& r)
@@ -294,6 +294,7 @@ dbIStream& operator>>(dbIStream& stream,
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableDefRule& obj)
 {

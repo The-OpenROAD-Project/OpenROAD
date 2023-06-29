@@ -90,14 +90,16 @@ class ICeWall
 
   void makeFakeSite(const std::string& name, int width, int height);
   odb::dbRow* findRow(const std::string& name) const;
-  void makeIORow(odb::dbSite* hsite,
-                 odb::dbSite* vsite,
-                 odb::dbSite* csite,
+  void makeIORow(odb::dbSite* horizontal_site,
+                 odb::dbSite* vertical_site,
+                 odb::dbSite* corner_site,
                  int west_offset,
                  int north_offset,
                  int east_offset,
                  int south_offset,
-                 odb::dbOrientType rotation,
+                 const odb::dbOrientType& rotation_hor,
+                 const odb::dbOrientType& rotation_ver,
+                 const odb::dbOrientType& rotation_cor,
                  int ring_index);
   void removeIORows();
 
@@ -109,12 +111,12 @@ class ICeWall
   void placeCorner(odb::dbMaster* master, int ring_index);
   void placeFiller(const std::vector<odb::dbMaster*>& masters,
                    odb::dbRow* row,
-                   const std::vector<odb::dbMaster*>& overlap_permitted = {});
+                   const std::vector<odb::dbMaster*>& overlapping_masters = {});
   void removeFiller(odb::dbRow* row);
 
   void placeBondPads(odb::dbMaster* bond,
                      const std::vector<odb::dbInst*>& pads,
-                     odb::dbOrientType rotation = odb::dbOrientType::R0,
+                     const odb::dbOrientType& rotation = odb::dbOrientType::R0,
                      const odb::Point& offset = {0, 0},
                      const std::string& prefix = "IO_BOND_");
   void routeRDL(odb::dbTechLayer* layer,
@@ -139,7 +141,7 @@ class ICeWall
   void placeInstance(odb::dbRow* row,
                      int index,
                      odb::dbInst* inst,
-                     odb::dbOrientType base_orient,
+                     const odb::dbOrientType& base_orient,
                      bool allow_overlap = false) const;
 
   std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>> getTouchingIterms(
@@ -154,15 +156,16 @@ class ICeWall
       const std::vector<std::pair<odb::dbITerm*, odb::dbITerm*>>& connections)
       const;
 
-  void assertMasterType(odb::dbMaster* master, odb::dbMasterType type) const;
-  void assertMasterType(odb::dbInst* inst, odb::dbMasterType type) const;
+  void assertMasterType(odb::dbMaster* master,
+                        const odb::dbMasterType& type) const;
+  void assertMasterType(odb::dbInst* inst, const odb::dbMasterType& type) const;
 
-  std::string getRowName(const std::string& prefix, int row_index) const;
+  std::string getRowName(const std::string& name, int ring_index) const;
   odb::Direction2D::Value getRowEdge(odb::dbRow* row) const;
 
   // Data members
-  odb::dbDatabase* db_;
-  utl::Logger* logger_;
+  odb::dbDatabase* db_ = nullptr;
+  utl::Logger* logger_ = nullptr;
 
   std::unique_ptr<RDLRouter> router_;
   std::unique_ptr<RDLGui> router_gui_;

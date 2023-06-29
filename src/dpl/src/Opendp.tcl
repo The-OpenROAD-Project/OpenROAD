@@ -136,15 +136,16 @@ proc remove_fillers { args } {
   dpl::remove_fillers_cmd
 }
 
-sta::define_cmd_args "check_placement" {[-verbose]}
+sta::define_cmd_args "check_placement" {[-verbose] [-disallow_one_site_gaps]}
 
 proc check_placement { args } {
   sta::parse_key_args "check_placement" args \
-    keys {} flags {-verbose}
+    keys {} flags {-verbose -disallow_one_site_gaps}
 
   set verbose [info exists flags(-verbose)]
+  set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   sta::check_argc_eq0 "check_placement" $args
-  dpl::check_placement_cmd $verbose
+  dpl::check_placement_cmd $verbose $disallow_one_site_gaps
 }
 
 sta::define_cmd_args "optimize_mirroring" {}
@@ -184,23 +185,27 @@ proc detailed_placement_debug { args } {
 }
 
 proc get_masters_arg { arg_name arg } {
-  set matched 0
   set masters {}
   # Expand master name regexps
   set db [ord::get_db]
   foreach name $arg {
+    set matched 0
     foreach lib [$db getLibs] {
       foreach master [$lib getMasters] {
         set master_name [$master getConstName]
-        if { [regexp $name $master_name] } {
+        if { [string match $name $master_name] } {
           lappend masters $master
           set matched 1
         }
       }
     }
+    if { !$matched } {
+      utl::warn "DPL" 28 "$name did not match any masters."
+    }
   }
-  if { !$matched } {
-    utl::warn "DPL" 28 "$name did not match any masters."
+  if { [llength $arg] > 0 && [llength $masters] == 0 } {
+    utl::error "DPL" 39 "\"$arg\" did not match any masters.
+This could be due to a change from using regex to glob to search for cell masters. https://github.com/The-OpenROAD-Project/OpenROAD/pull/3210"
   }
   return $masters
 }

@@ -281,7 +281,7 @@ bool dbHierInstShapeItr::drawNet(unsigned filter,
   draw_via = false;
   draw_segment = false;
 
-  switch (type) {
+  switch (type.getValue()) {
     case dbSigType::SCAN:
     case dbSigType::ANALOG:
     case dbSigType::TIEOFF:
@@ -413,7 +413,7 @@ bool dbHierInstShapeItr::iterate_wire(unsigned filter,
 {
   dbWire* wire = net->getWire();
 
-  if (wire == NULL)
+  if (wire == nullptr)
     return true;
 
   _callback->beginWire(wire);

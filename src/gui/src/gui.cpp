@@ -73,7 +73,7 @@ static void message_handler(QtMsgType type,
   // suppress messages when built as a release, but preserve them in debug
   // builds
   if (application != nullptr) {
-    if (application->platformName() == "offscreen"
+    if (QApplication::platformName() == "offscreen"
         && msg.contains("This plugin does not support")) {
       suppress = true;
     }
@@ -277,7 +277,7 @@ void Gui::pause(int timeout)
   main_window->pause(timeout);
 }
 
-Selected Gui::makeSelected(std::any object)
+Selected Gui::makeSelected(const std::any& object)
 {
   if (!object.has_value()) {
     return Selected();
@@ -286,16 +286,15 @@ Selected Gui::makeSelected(std::any object)
   auto it = descriptors_.find(object.type());
   if (it != descriptors_.end()) {
     return it->second->makeSelected(object);
-  } else {
-    logger_->warn(utl::GUI,
-                  33,
-                  "No descriptor is registered for {}.",
-                  object.type().name());
-    return Selected();  // FIXME: null descriptor
   }
+  logger_->warn(utl::GUI,
+                33,
+                "No descriptor is registered for {}.",
+                object.type().name());
+  return Selected();  // FIXME: null descriptor
 }
 
-void Gui::setSelected(Selected selection)
+void Gui::setSelected(const Selected& selection)
 {
   main_window->setSelected(selection);
 }
@@ -352,6 +351,13 @@ void Gui::selectHighlightConnectedNets(bool select_flag,
 {
   return main_window->selectHighlightConnectedNets(
       select_flag, output, input, highlight_group);
+}
+
+void Gui::selectHighlightConnectedBufferTrees(bool select_flag,
+                                              int highlight_group)
+{
+  return main_window->selectHighlightConnectedBufferTrees(select_flag,
+                                                          highlight_group);
 }
 
 void Gui::addInstToHighlightSet(const char* name, int highlight_group)
@@ -485,10 +491,10 @@ void Gui::clearRulers()
   main_window->clearRulers();
 }
 
-const std::string Gui::addToolbarButton(const std::string& name,
-                                        const std::string& text,
-                                        const std::string& script,
-                                        bool echo)
+std::string Gui::addToolbarButton(const std::string& name,
+                                  const std::string& text,
+                                  const std::string& script,
+                                  bool echo)
 {
   return main_window->addToolbarButton(
       name, QString::fromStdString(text), QString::fromStdString(script), echo);
@@ -499,12 +505,12 @@ void Gui::removeToolbarButton(const std::string& name)
   main_window->removeToolbarButton(name);
 }
 
-const std::string Gui::addMenuItem(const std::string& name,
-                                   const std::string& path,
-                                   const std::string& text,
-                                   const std::string& script,
-                                   const std::string& shortcut,
-                                   bool echo)
+std::string Gui::addMenuItem(const std::string& name,
+                             const std::string& path,
+                             const std::string& text,
+                             const std::string& script,
+                             const std::string& shortcut,
+                             bool echo)
 {
   return main_window->addMenuItem(name,
                                   QString::fromStdString(path),
@@ -519,8 +525,8 @@ void Gui::removeMenuItem(const std::string& name)
   main_window->removeMenuItem(name);
 }
 
-const std::string Gui::requestUserInput(const std::string& title,
-                                        const std::string& question)
+std::string Gui::requestUserInput(const std::string& title,
+                                  const std::string& question)
 {
   return main_window->requestUserInput(QString::fromStdString(title),
                                        QString::fromStdString(question));
@@ -611,9 +617,9 @@ void Gui::saveImage(const std::string& filename,
   odb::Rect save_region = region;
   const bool use_die_area = region.dx() == 0 || region.dy() == 0;
   const bool is_offscreen
-      = main_window->testAttribute(
-            Qt::WA_DontShowOnScreen) /* if not interactive this will be set */
-        || !enabled();
+      = main_window == nullptr
+        || main_window->testAttribute(
+            Qt::WA_DontShowOnScreen); /* if not interactive this will be set */
   if (is_offscreen
       && use_die_area) {  // if gui is active and interactive the visible are of
                           // the layout viewer will be used.
@@ -847,9 +853,8 @@ bool Renderer::checkDisplayControl(const std::string& name)
 
   if (group_name.empty()) {
     return Gui::get()->checkDisplayControlsVisible(name);
-  } else {
-    return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
   }
+  return Gui::get()->checkDisplayControlsVisible(group_name + "/" + name);
 }
 
 void Renderer::setDisplayControl(const std::string& name, bool value)
@@ -858,10 +863,8 @@ void Renderer::setDisplayControl(const std::string& name, bool value)
 
   if (group_name.empty()) {
     return Gui::get()->setDisplayControlsVisible(name, value);
-  } else {
-    return Gui::get()->setDisplayControlsVisible(group_name + "/" + name,
-                                                 value);
   }
+  return Gui::get()->setDisplayControlsVisible(group_name + "/" + name, value);
 }
 
 void Renderer::addDisplayControl(
@@ -878,7 +881,7 @@ void Renderer::addDisplayControl(
                                     mutual_exclusivity.end());
 }
 
-const Renderer::Settings Renderer::getSettings()
+Renderer::Settings Renderer::getSettings()
 {
   Settings settings;
   for (const auto& [key, init_value] : controls_) {
@@ -1034,6 +1037,16 @@ void Gui::removeRouteGuides(odb::dbNet* net)
   main_window->getLayoutViewer()->removeRouteGuides(net);
 }
 
+void Gui::addNetTracks(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->addNetTracks(net);
+}
+
+void Gui::removeNetTracks(odb::dbNet* net)
+{
+  main_window->getLayoutViewer()->removeNetTracks(net);
+}
+
 void Gui::removeFocusNet(odb::dbNet* net)
 {
   main_window->getLayoutViewer()->removeFocusNet(net);
@@ -1047,6 +1060,11 @@ void Gui::clearFocusNets()
 void Gui::clearRouteGuides()
 {
   main_window->getLayoutViewer()->clearRouteGuides();
+}
+
+void Gui::clearNetTracks()
+{
+  main_window->getLayoutViewer()->clearNetTracks();
 }
 
 void Gui::setLogger(utl::Logger* logger)
@@ -1215,7 +1233,7 @@ int startGui(int& argc,
   }
 
   if (do_exec) {
-    exit_code = app.exec();
+    exit_code = QApplication::exec();
   }
 
   // cleanup
@@ -1230,6 +1248,8 @@ int startGui(int& argc,
     }
   }
 
+  main_window->exit();
+
   // delete main window and set to nullptr
   delete main_window;
   main_window = nullptr;
@@ -1240,7 +1260,7 @@ int startGui(int& argc,
   // rethow exception, if one happened after cleanup of main_window
   exception.rethrow();
 
-  if (!gui->isContinueAfterClose() || exit_requested) {
+  if (interactive && (!gui->isContinueAfterClose() || exit_requested)) {
     // if exiting, go ahead and exit with gui return code.
     exit(exit_code);
   }

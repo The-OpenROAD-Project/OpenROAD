@@ -30,8 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 
 #include "gseq.h"
 
@@ -41,7 +41,7 @@ static constexpr long long PIXFILL = 0xffffffffffffffffLL;
 static constexpr long long PIXMAX = 0x8000000000000000LL;
 static constexpr int PIXADJUST = 2;
 
-/* Values for the member variable _init
+/* Values for the member variable init_
  * INIT = created,
  * CONFIGURED = has reasonable values for width, height, slices, etc
  * ALLOCATED = memory has been allocated

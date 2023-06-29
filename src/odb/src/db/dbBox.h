@@ -33,6 +33,7 @@
 #pragma once
 
 #include "dbCore.h"
+#include "dbDatabase.h"
 #include "dbId.h"
 #include "dbTypes.h"
 #include "geom.h"
@@ -48,7 +49,7 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 
-struct _dbBoxFlags
+struct _dbBoxFlagsBackwardCompatability
 {
   dbBoxOwner::Value _owner_type : 4;
   uint _visited : 1;
@@ -57,6 +58,17 @@ struct _dbBoxFlags
   uint _is_tech_via : 1;
   uint _is_block_via : 1;
   uint _layer_id : 8;
+  uint _via_id : 15;
+};
+
+struct _dbBoxFlags
+{
+  dbBoxOwner::Value _owner_type : 4;
+  uint _visited : 1;
+  uint _octilinear : 1;
+  uint _is_tech_via : 1;
+  uint _is_block_via : 1;
+  uint _layer_id : 9;
   uint _via_id : 15;
 };
 
@@ -75,7 +87,6 @@ class _dbBox : public _dbObject
   {
     Rect _rect;
     Oct _oct;
-    ~dbBoxShape(){};
   };
 
   // PERSISTANT-MEMBERS
@@ -88,7 +99,7 @@ class _dbBox : public _dbObject
 
   _dbBox(_dbDatabase*);
   _dbBox(_dbDatabase*, const _dbBox& b);
-  ~_dbBox();
+
   bool operator==(const _dbBox& rhs) const;
   bool operator!=(const _dbBox& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbBox& rhs) const;
@@ -105,11 +116,13 @@ class _dbBox : public _dbObject
 
   Type getType() const
   {
-    if (_flags._is_tech_via)
+    if (_flags._is_tech_via) {
       return TECH_VIA;
+    }
 
-    if (_flags._is_block_via)
+    if (_flags._is_block_via) {
       return BLOCK_VIA;
+    }
 
     return BOX;
   }
@@ -123,7 +136,6 @@ inline _dbBox::_dbBox(_dbDatabase*)
   _flags._layer_id = 0;
   _flags._via_id = 0;
   _flags._visited = 0;
-  _flags._mark = 0;
   _flags._octilinear = false;
   _owner = 0;
   design_rule_width_ = -1;
@@ -144,18 +156,15 @@ inline _dbBox::_dbBox(_dbDatabase*, const _dbBox& b)
   }
 }
 
-inline _dbBox::~_dbBox()
-{
-}
-
 inline dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 {
   uint* bit_field = (uint*) &box._flags;
   stream << *bit_field;
-  if (box.isOct())
+  if (box.isOct()) {
     stream << box._shape._oct;
-  else
+  } else {
     stream << box._shape._rect;
+  }
   stream << box._owner;
   stream << box._next_box;
   stream << box.design_rule_width_;
@@ -164,13 +173,28 @@ inline dbOStream& operator<<(dbOStream& stream, const _dbBox& box)
 
 inline dbIStream& operator>>(dbIStream& stream, _dbBox& box)
 {
-  uint* bit_field = (uint*) &box._flags;
-  stream >> *bit_field;
+  if (box.getDatabase()->isSchema(db_schema_box_layer_bits)) {
+    uint* bit_field = (uint*) &box._flags;
+    stream >> *bit_field;
+  } else {
+    _dbBoxFlagsBackwardCompatability old;
+    uint* bit_field = (uint*) &old;
+    stream >> *bit_field;
+    box._flags._owner_type = old._owner_type;
+    box._flags._visited = old._visited;
+    box._flags._octilinear = old._octilinear;
+    box._flags._is_tech_via = old._is_tech_via;
+    box._flags._is_block_via = old._is_block_via;
+    box._flags._layer_id = old._layer_id;
+    box._flags._via_id = old._via_id;
+  }
+
   if (box.isOct()) {
     new (&box._shape._oct) Oct();
     stream >> box._shape._oct;
-  } else
+  } else {
     stream >> box._shape._rect;
+  }
   stream >> box._owner;
   stream >> box._next_box;
   stream >> box.design_rule_width_;

@@ -20,9 +20,9 @@
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
 //
-//  $Author: icftcm $
-//  $Revision: #2 $
-//  $Date: 2017/08/28 $
+//  $Author: dell $
+//  $Revision: #1 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -247,7 +247,12 @@ void defrData::print_lines(long long lines)
 
 const char* defrData::lines2str(long long lines)
 {
+#ifdef _WIN32
+  sprintf(lineBuffer, "%I64d", lines);
+#else
   sprintf(lineBuffer, "%lld", lines);
+#endif
+
   return lineBuffer;
 }
 
@@ -714,7 +719,7 @@ int defrData::sublex(YYSTYPE* pYylval)
     }
     if (routed_is_keyword
         && ((strcmp(deftoken, "ROUTED") == 0)
-            || (strcmp(deftoken, "rounted") == 0))) {
+            || (strcmp(deftoken, "routed") == 0))) {
       return K_ROUTED; /* even in dumb mode, we must see the */
                        /* ROUTED deftoken */
     }
@@ -1649,6 +1654,7 @@ void defrData::pathIsDone(int sh, int reset, int osNet, int* needCbk)
     // defrPath->reverseOrder();
     (*callbacks->PathCbk)(defrPathCbkType, &PathObj, session->UserData);
     PathObj.Destroy();
+    free((char*) &PathObj);
   }
 
   PathObj.Init();

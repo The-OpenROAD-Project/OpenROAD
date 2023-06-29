@@ -69,13 +69,18 @@ option(USE_SYSTEM_OPENSTA "Use system shared OpenSTA library" OFF)
 # Allow to use external shared abc libraries
 option(USE_SYSTEM_ABC "Use system shared ABC library" OFF)
 
+# Allow disabling tests
+option(ENABLE_TESTS "Enable OpenROAD tests" ON)
+
+# Allow enabling address sanitizer
+option(ASAN "Enable Address Sanitizer" OFF)
+
 project(OpenROAD VERSION 1
   LANGUAGES CXX
 )
 
 set(OPENROAD_HOME ${PROJECT_SOURCE_DIR})
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
 # Default c++ standard used unless otherwise specified in target_compile_features.
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "the C++ standard to use for this project")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -141,8 +146,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 add_subdirectory(third-party)
 
-enable_testing()
-add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
-include(GoogleTest)
+if(ENABLE_TESTS)
+  enable_testing()
+  add_custom_target(build_and_test ${CMAKE_CTEST_COMMAND} --parallel --output-on-failure)
+  include(GoogleTest)
+endif()
 
 add_subdirectory(src)

@@ -56,26 +56,20 @@
 #include "utl/Logger.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbAccessPoint>;
 
 bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
 {
   if (point_ != rhs.point_)
     return false;
-
   if (layer_ != rhs.layer_)
     return false;
-
   if (lib_ != rhs.lib_)
     return false;
-
   if (master_ != rhs.master_)
     return false;
-
   if (mpin_ != rhs.mpin_)
     return false;
-
   if (bpin_ != rhs.bpin_)
     return false;
 
@@ -83,23 +77,19 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
 {
   if (point_ >= rhs.point_)
     return false;
-
   if (layer_ >= rhs.layer_)
     return false;
-
   if (lib_ >= rhs.lib_)
     return false;
-
   if (master_ >= rhs.master_)
     return false;
-
   if (mpin_ >= rhs.mpin_)
     return false;
-
   if (bpin_ >= rhs.bpin_)
     return false;
 
@@ -107,12 +97,12 @@ bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
   // User Code End <
   return true;
 }
+
 void _dbAccessPoint::differences(dbDiff& diff,
                                  const char* field,
                                  const _dbAccessPoint& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(point_);
   DIFF_FIELD(layer_);
   DIFF_FIELD(lib_);
@@ -123,6 +113,7 @@ void _dbAccessPoint::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -137,12 +128,14 @@ void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db)
 {
   // User Code Begin Constructor
   accesses_.fill(false);
   // User Code End Constructor
 }
+
 _dbAccessPoint::_dbAccessPoint(_dbDatabase* db, const _dbAccessPoint& r)
 {
   point_ = r.point_;
@@ -179,6 +172,7 @@ dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
 {
   stream << obj.point_;

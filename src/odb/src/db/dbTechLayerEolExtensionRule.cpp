@@ -42,7 +42,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerEolExtensionRule>;
 
 bool _dbTechLayerEolExtensionRule::operator==(
@@ -58,6 +57,7 @@ bool _dbTechLayerEolExtensionRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerEolExtensionRule::operator<(
     const _dbTechLayerEolExtensionRule& rhs) const
 {
@@ -67,19 +67,20 @@ bool _dbTechLayerEolExtensionRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerEolExtensionRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerEolExtensionRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.parallel_only_);
   DIFF_FIELD(spacing_);
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerEolExtensionRule::out(dbDiff& diff,
                                        char side,
                                        const char* field) const
@@ -92,6 +93,7 @@ void _dbTechLayerEolExtensionRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -100,6 +102,7 @@ _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerEolExtensionRule::_dbTechLayerEolExtensionRule(
     _dbDatabase* db,
     const _dbTechLayerEolExtensionRule& r)
@@ -121,6 +124,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolExtensionRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerEolExtensionRule& obj)
 {

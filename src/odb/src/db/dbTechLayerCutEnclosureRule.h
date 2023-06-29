@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -86,6 +85,24 @@ class _dbTechLayerCutEnclosureRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbTechLayerCutEnclosureRule(_dbDatabase*,
+                               const _dbTechLayerCutEnclosureRule& r);
+  _dbTechLayerCutEnclosureRule(_dbDatabase*);
+  ~_dbTechLayerCutEnclosureRule();
+
+  bool operator==(const _dbTechLayerCutEnclosureRule& rhs) const;
+  bool operator!=(const _dbTechLayerCutEnclosureRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerCutEnclosureRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerCutEnclosureRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   dbTechLayerCutEnclosureRuleFlags flags_;
   dbId<_dbTechLayerCutClassRule> cut_class_;
   int eol_width_;
@@ -108,22 +125,6 @@ class _dbTechLayerCutEnclosureRule : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbTechLayerCutEnclosureRule(_dbDatabase*,
-                               const _dbTechLayerCutEnclosureRule& r);
-  _dbTechLayerCutEnclosureRule(_dbDatabase*);
-  ~_dbTechLayerCutEnclosureRule();
-  bool operator==(const _dbTechLayerCutEnclosureRule& rhs) const;
-  bool operator!=(const _dbTechLayerCutEnclosureRule& rhs) const
-  {
-    return !operator==(rhs);
-  }
-  bool operator<(const _dbTechLayerCutEnclosureRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerCutEnclosureRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj);
 dbOStream& operator<<(dbOStream& stream,

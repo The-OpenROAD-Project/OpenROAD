@@ -124,7 +124,7 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
 
   // bterms do not map 1-to-1 to mterms.
   if (mterms.size() != bterms.size())
-    return NULL;
+    return nullptr;
 
   // initialize the hier structure
   _dbHier* hier = parent->_hier_tbl->create();
@@ -140,9 +140,9 @@ _dbHier* _dbHier::create(dbInst* inst_, dbBlock* child_)
     _dbMTerm* mterm = master->_mterm_hash.find(bterm->_name);
 
     // bterms do not map 1-to-1 to mterms.
-    if (mterm == NULL) {
+    if (mterm == nullptr) {
       parent->_hier_tbl->destroy(hier);
-      return NULL;
+      return nullptr;
     }
 
     hier->_child_bterms[mterm->_order_id] = bterm->getOID();

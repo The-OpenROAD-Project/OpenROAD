@@ -66,7 +66,7 @@ class dbBox;
 //
 class dbCreateNetUtil
 {
-  typedef std::map<int, dbTechLayerRule*> RuleMap;
+  using RuleMap = std::map<int, dbTechLayerRule*>;
   dbTech* _tech;
   dbBlock* _block;
   std::vector<RuleMap> _rules;
@@ -107,7 +107,8 @@ class dbCreateNetUtil
                              int y2,
                              int rlevel,
                              bool skipBterms = false,
-                             bool skipNetExists = false);
+                             bool skipNetExists = false,
+                             uint8_t color = 0);
   dbNet* createNetSingleWire(const char* name,
                              int x1,
                              int y1,
@@ -204,7 +205,7 @@ class dbCreateNetUtil
                         bool debug);
   dbNet* copyNet(dbNet* net,
                  bool copyVias = true,
-                 char* name = NULL,
+                 char* name = nullptr,
                  bool removeITermsBTerms = true);
   dbNet* getCurrentNet();
   // OpenRCX 7/27/20

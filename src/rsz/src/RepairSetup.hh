@@ -40,6 +40,7 @@
 
 #include "sta/StaState.hh"
 #include "sta/MinMax.hh"
+#include "sta/FuncExpr.hh"
 
 namespace sta {
 class PathExpanded;
@@ -82,7 +83,9 @@ public:
                    // Percent of violating ends to repair to
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
-                   int max_passes);
+                   int max_passes,
+                   bool skip_pin_swap,
+                   bool enable_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
@@ -92,10 +95,22 @@ public:
 private:
   void init();
   bool repairSetup(PathRef &path,
-                   Slack path_slack);
+                   Slack path_slack,
+                   bool skip_pin_swap,
+                   bool enable_gate_cloning);
+  void debugCheckMultipleBuffers(PathRef &path,
+                                 PathExpanded *expanded);
+
+  void getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
+                         sta::FuncExpr::Operator &status);
+  void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
+  void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);
+  bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
+  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv, bool match_size);
   bool upsizeDrvr(PathRef *drvr_path,
                   int drvr_index,
-                  PathExpanded *expanded);
+                  PathExpanded *expanded,
+                  bool only_same_size_swap);
   void splitLoads(PathRef *drvr_path,
                   int drvr_index,
                   Slack drvr_slack,
@@ -104,7 +119,8 @@ private:
                           LibertyPort *drvr_port,
                           float load_cap,
                           float prev_drive,
-                          const DcalcAnalysisPt *dcalc_ap);
+                          const DcalcAnalysisPt *dcalc_ap,
+                          bool match_size);
   int fanout(Vertex *vertex);
   bool hasTopLevelOutputPort(Net *net);
 
@@ -118,8 +134,6 @@ private:
   addWireAndBuffer(BufferedNetSeq Z,
                    BufferedNetPtr bnet_wire,
                    int level);
-  float pinCapacitance(const Pin *pin,
-                       const DcalcAnalysisPt *dcalc_ap);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
   Slack slackPenalized(BufferedNetPtr bnet);
@@ -135,9 +149,18 @@ private:
 
   int resize_count_;
   int inserted_buffer_count_;
+  int split_load_buffer_count_;
   int rebuffer_net_count_;
+  int cloned_gate_count_;  
+  int swap_pin_count_;
+  // Map to block pins from being swapped more than twice for the
+  // same instance. 
+  std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
+  
   const MinMax *min_;
   const MinMax *max_;
+
+  sta::UnorderedMap<LibertyCell *, sta::LibertyPortSet> equiv_pin_map_;
 
   static constexpr int decreasing_slack_max_passes_ = 50;
   static constexpr int rebuffer_max_fanout_ = 20;

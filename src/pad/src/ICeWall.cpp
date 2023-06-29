@@ -46,13 +46,9 @@
 
 namespace pad {
 
-ICeWall::ICeWall() : db_(nullptr), logger_(nullptr), router_(nullptr)
-{
-}
+ICeWall::ICeWall() = default;
 
-ICeWall::~ICeWall()
-{
-}
+ICeWall::~ICeWall() = default;
 
 void ICeWall::init(odb::dbDatabase* db, utl::Logger* logger)
 {
@@ -71,7 +67,7 @@ odb::dbBlock* ICeWall::getBlock() const
 }
 
 void ICeWall::assertMasterType(odb::dbMaster* master,
-                               odb::dbMasterType type) const
+                               const odb::dbMasterType& type) const
 {
   if (master == nullptr) {
     logger_->error(utl::PAD, 23, "Master must be specified.");
@@ -86,7 +82,8 @@ void ICeWall::assertMasterType(odb::dbMaster* master,
   }
 }
 
-void ICeWall::assertMasterType(odb::dbInst* inst, odb::dbMasterType type) const
+void ICeWall::assertMasterType(odb::dbInst* inst,
+                               const odb::dbMasterType& type) const
 {
   auto* master = inst->getMaster();
   if (master->getType() != type) {
@@ -241,9 +238,8 @@ std::string ICeWall::getRowName(const std::string& name, int ring_index) const
 {
   if (ring_index < 0) {
     return name;
-  } else {
-    return fmt::format("{}_{}", name, ring_index);
   }
+  return fmt::format("{}_{}", name, ring_index);
 }
 
 void ICeWall::makeIORow(odb::dbSite* horizontal_site,
@@ -253,7 +249,9 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                         int north_offset,
                         int east_offset,
                         int south_offset,
-                        odb::dbOrientType rotation,
+                        const odb::dbOrientType& rotation_hor,
+                        const odb::dbOrientType& rotation_ver,
+                        const odb::dbOrientType& rotation_cor,
                         int ring_index)
 {
   auto* block = getBlock();
@@ -280,7 +278,7 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
 
   const int cheight = corner_site->getHeight();
   const int cwidth
-      = std::max(vertical_site->getHeight(), corner_site->getWidth());
+      = std::max(horizontal_site->getHeight(), corner_site->getWidth());
 
   const int x_sites = std::floor(static_cast<double>(outer_io.dx() - 2 * cwidth)
                                  / vertical_site->getWidth());
@@ -297,20 +295,18 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
                                  outer_io.xMax() - cwidth,
                                  outer_io.yMax() - cheight);
 
-  const odb::dbTransform xform(rotation);
-
   // Create corners
   const int corner_sites
       = std::max(horizontal_site->getHeight(), corner_site->getWidth())
         / corner_site->getWidth();
   auto create_corner
-      = [this, block, corner_site, corner_sites, ring_index, &xform](
+      = [this, block, corner_site, corner_sites, ring_index, &rotation_cor](
             const std::string& name,
             const odb::Point& origin,
-            odb::dbOrientType orient) -> odb::dbRow* {
+            const odb::dbOrientType& orient) -> odb::dbRow* {
     const std::string row_name = getRowName(name, ring_index);
     odb::dbTransform rotation(orient);
-    rotation.concat(xform);
+    rotation.concat(rotation_cor);
     return odb::dbRow::create(block,
                               row_name.c_str(),
                               corner_site,
@@ -330,50 +326,61 @@ void ICeWall::makeIORow(odb::dbSite* horizontal_site,
       = create_corner(corner_sw_, corner_origins.ll(), odb::dbOrientType::R0);
 
   // Create rows
-  auto create_row = [this, block, ring_index, &xform](const std::string& name,
-                                                      odb::dbSite* site,
-                                                      int sites,
-                                                      const odb::Point& origin,
-                                                      odb::dbOrientType orient,
-                                                      odb::dbRowDir direction) {
-    const std::string row_name = getRowName(name, ring_index);
-    odb::dbTransform rotation(orient);
-    rotation.concat(xform);
-    odb::dbRow::create(block,
-                       row_name.c_str(),
-                       site,
-                       origin.x(),
-                       origin.y(),
-                       rotation.getOrient(),
-                       direction,
-                       sites,
-                       site->getWidth());
-  };
+  auto create_row
+      = [this, block, ring_index](const std::string& name,
+                                  odb::dbSite* site,
+                                  int sites,
+                                  const odb::Point& origin,
+                                  const odb::dbOrientType& orient,
+                                  const odb::dbOrientType& row_rotation,
+                                  const odb::dbRowDir& direction) {
+          const std::string row_name = getRowName(name, ring_index);
+          odb::dbTransform rotation(orient);
+          rotation.concat(row_rotation);
+          odb::dbRow::create(block,
+                             row_name.c_str(),
+                             site,
+                             origin.x(),
+                             origin.y(),
+                             rotation.getOrient(),
+                             direction,
+                             sites,
+                             site->getWidth());
+        };
   create_row(row_north_,
              vertical_site,
              x_sites,
              {nw->getBBox().xMax(),
               outer_io.yMax() - static_cast<int>(vertical_site->getHeight())},
              odb::dbOrientType::MX,
+             rotation_ver,
              odb::dbRowDir::HORIZONTAL);
+  odb::dbOrientType east_rotation_hor = odb::dbOrientType::R90;
+  if (vertical_site != horizontal_site) {
+    east_rotation_hor = odb::dbOrientType::R0;
+  }
   create_row(row_east_,
              horizontal_site,
              y_sites,
              {outer_io.xMax() - static_cast<int>(horizontal_site->getHeight()),
               se->getBBox().yMax()},
-             odb::dbOrientType::R90,
+             east_rotation_hor,
+             rotation_hor,
              odb::dbRowDir::VERTICAL);
   create_row(row_south_,
              vertical_site,
              x_sites,
              {sw->getBBox().xMax(), outer_io.yMin()},
              odb::dbOrientType::R0,
+             rotation_ver,
              odb::dbRowDir::HORIZONTAL);
+  const odb::dbOrientType west_rotation_hor = east_rotation_hor.flipY();
   create_row(row_west_,
              horizontal_site,
              y_sites,
              {outer_io.xMin(), sw->getBBox().yMax()},
-             odb::dbOrientType::MXR90,
+             west_rotation_hor,
+             rotation_hor,
              odb::dbRowDir::VERTICAL);
 }
 
@@ -491,30 +498,28 @@ odb::dbRow* ICeWall::findRow(const std::string& name) const
 odb::Direction2D::Value ICeWall::getRowEdge(odb::dbRow* row) const
 {
   const std::string row_name = row->getName();
-  auto check_name = [&row_name](const std::string check) -> bool {
+  auto check_name = [&row_name](const std::string& check) -> bool {
     return row_name.substr(0, check.length()) == check;
   };
   if (check_name(row_north_)) {
     return odb::Direction2D::North;
-  } else if (check_name(row_south_)) {
-    return odb::Direction2D::South;
-  } else if (check_name(row_east_)) {
-    return odb::Direction2D::East;
-  } else if (check_name(row_west_)) {
-    return odb::Direction2D::West;
-  } else {
-    logger_->error(utl::PAD, 29, "{} is not a recognized IO row.", row_name);
   }
-
-  // Return north by default, but error would have been generated before
-  // reaching this
-  return odb::Direction2D::North;
+  if (check_name(row_south_)) {
+    return odb::Direction2D::South;
+  }
+  if (check_name(row_east_)) {
+    return odb::Direction2D::East;
+  }
+  if (check_name(row_west_)) {
+    return odb::Direction2D::West;
+  }
+  logger_->error(utl::PAD, 29, "{} is not a recognized IO row.", row_name);
 }
 
 void ICeWall::placeInstance(odb::dbRow* row,
                             int index,
                             odb::dbInst* inst,
-                            odb::dbOrientType base_orient,
+                            const odb::dbOrientType& base_orient,
                             bool allow_overlap) const
 {
   const int origin_offset = index * row->getSpacing();
@@ -591,6 +596,14 @@ void ICeWall::placeFiller(
     logger_->error(utl::PAD, 20, "Row must be specified to place IO filler");
   }
 
+  bool use_height = false;
+  if (getRowEdge(row) == odb::Direction2D::West
+      || getRowEdge(row) == odb::Direction2D::East) {
+    use_height = true;
+  }
+
+  const odb::dbTransform row_xform(row->getOrient());
+
   const double dbus = block->getDbUnitsPerMicron();
 
   std::vector<odb::dbMaster*> fillers = masters;
@@ -598,12 +611,23 @@ void ICeWall::placeFiller(
   fillers.erase(std::remove(fillers.begin(), fillers.end(), nullptr),
                 fillers.end());
   // sort by width
-  std::stable_sort(fillers.begin(),
-                   fillers.end(),
-                   [](odb::dbMaster* r, odb::dbMaster* l) -> bool {
-                     // sort biggest to smallest
-                     return r->getWidth() > l->getWidth();
-                   });
+  std::stable_sort(
+      fillers.begin(),
+      fillers.end(),
+      [use_height, row_xform](odb::dbMaster* r, odb::dbMaster* l) -> bool {
+        odb::Rect r_bbox;
+        r->getPlacementBoundary(r_bbox);
+        odb::Rect l_bbox;
+        r->getPlacementBoundary(l_bbox);
+        row_xform.apply(r_bbox);
+        row_xform.apply(l_bbox);
+        // sort biggest to smallest
+        if (use_height) {
+          return r_bbox.dy() > l_bbox.dy();
+        } else {
+          return r_bbox.dx() > l_bbox.dx();
+        }
+      });
 
   const odb::Rect rowbbox = row->getBBox();
 
@@ -683,7 +707,16 @@ void ICeWall::placeFiller(
           = std::find(
                 overlapping_masters.begin(), overlapping_masters.end(), filler)
             != overlapping_masters.end();
-      const int fill_width = filler->getWidth() / site_width;
+      odb::Rect filler_bbox;
+      filler->getPlacementBoundary(filler_bbox);
+      row_xform.apply(filler_bbox);
+      int filler_width;
+      if (use_height) {
+        filler_width = filler_bbox.dy();
+      } else {
+        filler_width = filler_bbox.dx();
+      }
+      const int fill_width = filler_width / site_width;
       while (fill_width <= sites || allow_overlap) {
         debugPrint(logger_,
                    utl::PAD,
@@ -718,11 +751,13 @@ void ICeWall::placeFiller(
     }
 
     if (sites > 0) {
-      logger_->error(utl::PAD,
-                     30,
-                     "Unable to fill gap completely {:.3f}um -> {:.3f}um",
-                     it->lower() / dbus,
-                     it->upper() / dbus);
+      logger_->error(
+          utl::PAD,
+          30,
+          "Unable to fill gap completely {:.3f}um -> {:.3f}um in row {}",
+          it->lower() / dbus,
+          it->upper() / dbus,
+          row->getName());
     }
     fill_group++;
   }
@@ -751,7 +786,7 @@ void ICeWall::removeFiller(odb::dbRow* row)
 
 void ICeWall::placeBondPads(odb::dbMaster* bond,
                             const std::vector<odb::dbInst*>& pads,
-                            odb::dbOrientType rotation,
+                            const odb::dbOrientType& rotation,
                             const odb::Point& offset,
                             const std::string& prefix)
 {

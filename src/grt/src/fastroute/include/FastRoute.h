@@ -70,41 +70,30 @@ using boost::icl::interval_set;
 
 namespace grt {
 
-class FastRouteRenderer;
+class AbstractFastRouteRenderer;
 
 // Debug mode settings
 struct DebugSetting
 {
-  const odb::dbNet* net_;
-  bool steinerTree_;
-  bool rectilinearSTree_;
-  bool tree2D_;
-  bool tree3D_;
-  bool isOn_;
+  const odb::dbNet* net_ = nullptr;
+  bool steinerTree_ = false;
+  bool rectilinearSTree_ = false;
+  bool tree2D_ = false;
+  bool tree3D_ = false;
+  std::unique_ptr<AbstractFastRouteRenderer> renderer_;
   std::string sttInputFileName_;
-  DebugSetting()
-      : net_(nullptr),
-        steinerTree_(false),
-        rectilinearSTree_(false),
-        tree2D_(false),
-        tree3D_(false),
-        isOn_(false),
-        sttInputFileName_("")
-  {
-  }
+
+  bool isOn() const { return renderer_ != nullptr; }
 };
 
 using stt::Tree;
-
-typedef std::pair<int, int> TileCongestion;
 
 class FastRouteCore
 {
  public:
   FastRouteCore(odb::dbDatabase* db,
                 utl::Logger* log,
-                stt::SteinerTreeBuilder* stt_builder,
-                gui::Gui* gui);
+                stt::SteinerTreeBuilder* stt_builder);
   ~FastRouteCore();
 
   void clear();
@@ -159,9 +148,10 @@ class FastRouteCore
   int totalOverflow() const { return total_overflow_; }
   bool has2Doverflow() const { return has_2D_overflow_; }
   void updateDbCongestion();
-  void getCongestionGrid(
-      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridV,
-      std::vector<std::pair<GSegment, TileCongestion>>& congestionGridH);
+  void findCongestedEdgesNets(NetsPerCongestedArea& nets_in_congested_edges,
+                              bool vertical);
+  void getCongestionGrid(std::vector<CongestionInformation>& congestionGridV,
+                         std::vector<CongestionInformation>& congestionGridH);
 
   const std::vector<short>& getVerticalCapacities() { return v_capacity_3D_; }
   const std::vector<short>& getHorizontalCapacities() { return h_capacity_3D_; }
@@ -172,6 +162,7 @@ class FastRouteCore
   void setMaxNetDegree(int);
   void setVerbose(bool v);
   void setOverflowIterations(int iterations);
+  void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
   void computeCongestionInformation();
   std::vector<int> getOriginalResources();
   const std::vector<int>& getTotalCapacityPerLayer() { return cap_per_layer_; }
@@ -187,7 +178,7 @@ class FastRouteCore
   const std::vector<int>& getMaxVerticalOverflows() { return max_v_overflow_; }
 
   // debug mode functions
-  void setDebugOn(bool isOn);
+  void setDebugOn(std::unique_ptr<AbstractFastRouteRenderer> renderer);
   void setDebugNet(const odb::dbNet* net);
   void setDebugSteinerTree(bool steinerTree);
   void setDebugRectilinearSTree(bool rectiliniarSTree);
@@ -197,6 +188,15 @@ class FastRouteCore
   std::string getSttInputFileName();
   const odb::dbNet* getDebugNet();
   bool hasSaveSttInput();
+
+  int x_corner() const { return x_corner_; }
+  int y_corner() const { return y_corner_; }
+  int tile_size() const { return tile_size_; }
+
+  AbstractFastRouteRenderer* fastrouteRender()
+  {
+    return debug_->renderer_.get();
+  }
 
  private:
   int getEdgeCapacity(FrNet* net, int x1, int y1, EdgeDirection direction);
@@ -224,6 +224,11 @@ class FastRouteCore
   int getOverflow2D(int* maxOverflow);
   int getOverflow2Dmaze(int* maxOverflow, int* tUsage);
   int getOverflow3D();
+  void setCongestionNets(std::set<odb::dbNet*>& congestion_nets,
+                         int& posX,
+                         int& posY,
+                         int dir,
+                         int& radius);
   void str_accu(const int rnd);
   void InitLastUsage(const int upType);
   void InitEstUsage();
@@ -451,6 +456,7 @@ class FastRouteCore
   void printTree3D(int netID);
   void check2DEdgesUsage();
   void verify2DEdgesUsage();
+  void verifyEdgeUsage();
   void layerAssignment();
   void copyBR(void);
   void copyRS(void);
@@ -557,7 +563,6 @@ class FastRouteCore
   utl::Logger* logger_;
   stt::SteinerTreeBuilder* stt_builder_;
 
-  FastRouteRenderer* fastrouteRender_;
   std::unique_ptr<DebugSetting> debug_;
 
   std::unordered_map<Tile, interval_set<int>, boost::hash<Tile>>

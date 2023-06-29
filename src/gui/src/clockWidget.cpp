@@ -514,9 +514,8 @@ QString ClockGateNodeGraphicsViewItem::getType() const
 {
   if (is_clock_gate_) {
     return "Clock gate";
-  } else {
-    return "Assumed clock gate";
   }
+  return "Assumed clock gate";
 }
 
 ////////////////
@@ -572,8 +571,6 @@ ClockRegisterNodeGraphicsViewItem::ClockRegisterNodeGraphicsViewItem(
     odb::dbITerm* iterm,
     QGraphicsItem* parent)
     : ClockNodeGraphicsViewItem(parent),
-      term_(iterm),
-      menu_(),
       highlight_path_(new QAction("Highlight path", &menu_))
 {
   setName(iterm);
@@ -744,7 +741,7 @@ ClockTreeView::ClockTreeView(ClockTree* tree,
 
   sta::Unit* unit = sta->getSTA()->units()->timeUnit();
   unit_scale_ = unit->scale();
-  unit_suffix_ = unit->scaleAbreviation();
+  unit_suffix_ = unit->scaleAbbreviation();
   unit_suffix_ += unit->suffix();
 
   const int tree_width = tree_->getTotalFanout();
@@ -1009,7 +1006,7 @@ QString ClockTreeView::convertDelayToString(sta::Delay delay) const
   const sta::Unit* unit = tree_->getNetwork()->units()->timeUnit();
   std::string sdelay = unit->asString(delay, 3);
   sdelay += " ";
-  sdelay += unit->scaleAbreviation();
+  sdelay += unit->scaleAbbreviation();
   sdelay += unit->suffix();
   return QString::fromStdString(sdelay);
 }

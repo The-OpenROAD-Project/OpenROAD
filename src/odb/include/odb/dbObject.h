@@ -90,33 +90,35 @@ enum dbObjectType
   dbBPinObj,
   // Generator Code Begin DbObjectType
   dbTechLayerObj,
-  dbTechLayerSpacingEolRuleObj,
-  dbTechLayerMinStepRuleObj,
-  dbTechLayerCornerSpacingRuleObj,
-  dbTechLayerSpacingTablePrlRuleObj,
-  dbTechLayerEolKeepOutRuleObj,
-  dbTechLayerCutClassRuleObj,
-  dbTechLayerCutSpacingRuleObj,
-  dbTechLayerCutSpacingTableOrthRuleObj,
-  dbTechLayerCutSpacingTableDefRuleObj,
-  dbTechLayerCutEnclosureRuleObj,
-  dbTechLayerEolExtensionRuleObj,
-  dbTechLayerArraySpacingRuleObj,
-  dbTechLayerWidthTableRuleObj,
-  dbTechLayerMinCutRuleObj,
-  dbGuideObj,
-  dbMetalWidthViaMapObj,
   dbTechLayerAreaRuleObj,
-  dbModuleObj,
-  dbModInstObj,
-  dbGroupObj,
-  dbGCellGridObj,
+  dbTechLayerArraySpacingRuleObj,
+  dbTechLayerCornerSpacingRuleObj,
+  dbTechLayerCutClassRuleObj,
+  dbTechLayerCutEnclosureRuleObj,
+  dbTechLayerCutSpacingRuleObj,
+  dbTechLayerCutSpacingTableDefRuleObj,
+  dbTechLayerCutSpacingTableOrthRuleObj,
+  dbTechLayerEolExtensionRuleObj,
+  dbTechLayerEolKeepOutRuleObj,
+  dbTechLayerKeepOutZoneRuleObj,
+  dbTechLayerMinCutRuleObj,
+  dbTechLayerMinStepRuleObj,
+  dbTechLayerSpacingEolRuleObj,
+  dbTechLayerSpacingTablePrlRuleObj,
+  dbTechLayerWidthTableRuleObj,
   dbAccessPointObj,
+  dbGCellGridObj,
   dbGlobalConnectObj,
-  dbPowerDomainObj,
-  dbLogicPortObj,
-  dbPowerSwitchObj,
+  dbGroupObj,
+  dbGuideObj,
   dbIsolationObj,
+  dbLogicPortObj,
+  dbMetalWidthViaMapObj,
+  dbModInstObj,
+  dbModuleObj,
+  dbNetTrackObj,
+  dbPowerDomainObj,
+  dbPowerSwitchObj,
   // Generator Code End DbObjectType
 
   // Lib Objects
@@ -168,8 +170,8 @@ class dbObject
   const _dbObject* getImpl() const;
 
  protected:
-  dbObject() {}
-  ~dbObject() {}
+  dbObject() = default;
+  ~dbObject() = default;
 };
 
 }  // namespace odb

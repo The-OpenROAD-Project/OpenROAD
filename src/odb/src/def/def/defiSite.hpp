@@ -22,7 +22,7 @@
 //
 //  $Author: dell $
 //  $Revision: #1 $
-//  $Date: 2017/06/06 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -93,10 +93,6 @@ class defiBox
 
   defiBox();
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiBox);
-  DEF_ASSIGN_OPERATOR_H(defiBox);
-
   void Destroy();
   ~defiBox();
 
