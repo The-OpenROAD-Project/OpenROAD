@@ -140,7 +140,7 @@ class IZdcr : public ZObject
                       int x2,
                       int y2,
                       uint ownId,
-                      const char* boxType = NULL)
+                      const char* boxType = nullptr)
       = 0;
   virtual uint addBoxAndMsg(uint id,
                             uint subMenuId,

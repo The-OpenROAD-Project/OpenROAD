@@ -79,28 +79,25 @@ class dbShape
   };
 
  private:
-  Type _type;
+  Type _type = SEGMENT;
   Rect _rect;
-  dbTechLayer* _layer;
-  dbObject* _via;
+  dbTechLayer* _layer = nullptr;
+  dbObject* _via = nullptr;
 
  public:
-  dbShape() : _type(SEGMENT), _layer(NULL), _via(NULL) {}
+  dbShape() = default;
 
   dbShape(dbVia* via, const Rect& r)
-      : _type(VIA), _rect(r), _layer(NULL), _via((dbObject*) via)
+      : _type(VIA), _rect(r), _via((dbObject*) via)
   {
   }
 
   dbShape(dbTechVia* via, const Rect& r)
-      : _type(TECH_VIA), _rect(r), _layer(NULL), _via((dbObject*) via)
+      : _type(TECH_VIA), _rect(r), _via((dbObject*) via)
   {
   }
 
-  dbShape(dbTechLayer* layer, const Rect& r)
-      : _type(SEGMENT), _rect(r), _layer(layer), _via(NULL)
-  {
-  }
+  dbShape(dbTechLayer* layer, const Rect& r) : _rect(r), _layer(layer) {}
 
   dbShape(dbTechVia* via, dbTechLayer* layer, const Rect& r)
       : _type(TECH_VIA_BOX), _rect(r), _layer(layer), _via((dbObject*) via)
@@ -130,7 +127,7 @@ class dbShape
   {
     _type = VIA;
     _rect = r;
-    _layer = NULL;
+    _layer = nullptr;
     _via = (dbObject*) via;
   }
 
@@ -138,7 +135,7 @@ class dbShape
   {
     _type = TECH_VIA;
     _rect = r;
-    _layer = NULL;
+    _layer = nullptr;
     _via = (dbObject*) via;
   }
 
@@ -147,7 +144,7 @@ class dbShape
     _type = SEGMENT;
     _rect = r;
     _layer = layer;
-    _via = NULL;
+    _via = nullptr;
   }
 
   void setViaBox(dbTechVia* via, dbTechLayer* layer, const Rect& r)
@@ -223,19 +220,19 @@ class dbShape
 
   ///
   /// Get tech-via of this TECH_VIA.
-  /// Returns NULL if this shape does not represent a tech-via
+  /// Returns nullptr if this shape does not represent a tech-via
   ///
   dbTechVia* getTechVia() const;
 
   ///
   /// Get via of this VIA.
-  /// Returns NULL if this shape does not represent a via
+  /// Returns nullptr if this shape does not represent a via
   ///
   dbVia* getVia() const;
 
   ///
   /// Get layer of this SEGMENT.
-  /// Returns NULL if this shape does not represent a segment
+  /// Returns nullptr if this shape does not represent a segment
   ///
   dbTechLayer* getTechLayer() const;
 
@@ -317,8 +314,8 @@ struct dbWirePath
   int junction_id;     // junction id of this point
   Point point;         // starting point of path
   dbTechLayer* layer;  // starting layer of path
-  dbBTerm* bterm;      // dbBTerm connected at this point, otherwise NULL
-  dbITerm* iterm;      // dbITerm connected at this point, otherwise NULL
+  dbBTerm* bterm;      // dbBTerm connected at this point, otherwise nullptr
+  dbITerm* iterm;      // dbITerm connected at this point, otherwise nullptr
   bool is_branch;      // true if this path is a branch from the current tree
   bool is_short;  // true if this path is a virtual short to a previous junction
   int short_junction;          // junction id of the virtual short.
@@ -331,8 +328,8 @@ struct dbWirePathShape
   int junction_id;     // junction id of this point
   Point point;         // starting point of path
   dbTechLayer* layer;  // layer of shape, or exit layer of via
-  dbBTerm* bterm;      // dbBTerm connected at this point, otherwise NULL
-  dbITerm* iterm;      // dbITerm connected at this point, otherwise NULL
+  dbBTerm* bterm;      // dbBTerm connected at this point, otherwise nullptr
+  dbITerm* iterm;      // dbITerm connected at this point, otherwise nullptr
   dbShape shape;       // shape at this point
 
   void dump(utl::Logger* logger, const char* group, int level) const;
@@ -572,16 +569,18 @@ inline dbShape::Type dbShape::getType() const
 
 inline dbTechVia* dbShape::getTechVia() const
 {
-  if ((_type != TECH_VIA) && (_type != TECH_VIA_BOX))
-    return NULL;
+  if ((_type != TECH_VIA) && (_type != TECH_VIA_BOX)) {
+    return nullptr;
+  }
 
   return (dbTechVia*) _via;
 }
 
 inline dbVia* dbShape::getVia() const
 {
-  if ((_type != VIA) && (_type != VIA_BOX))
-    return NULL;
+  if ((_type != VIA) && (_type != VIA_BOX)) {
+    return nullptr;
+  }
 
   return (dbVia*) _via;
 }
@@ -630,25 +629,29 @@ inline void dbShape::setSegment(int prev_x,
     x2 = cur_x + dw;
 
     if (cur_y > prev_y) {
-      if (has_prev_ext)
+      if (has_prev_ext) {
         y1 = prev_y - prev_ext;
-      else
+      } else {
         y1 = prev_y - default_ext;
+      }
 
-      if (has_cur_ext)
+      if (has_cur_ext) {
         y2 = cur_y + cur_ext;
-      else
+      } else {
         y2 = cur_y + default_ext;
+      }
     } else if (cur_y < prev_y) {
-      if (has_cur_ext)
+      if (has_cur_ext) {
         y1 = cur_y - cur_ext;
-      else
+      } else {
         y1 = cur_y - default_ext;
+      }
 
-      if (has_prev_ext)
+      if (has_prev_ext) {
         y2 = prev_y + prev_ext;
-      else
+      } else {
         y2 = prev_y + default_ext;
+      }
     } else {
       y1 = cur_y - dw;
       y2 = cur_y + dw;
@@ -659,25 +662,29 @@ inline void dbShape::setSegment(int prev_x,
     y2 = cur_y + dw;
 
     if (cur_x > prev_x) {
-      if (has_prev_ext)
+      if (has_prev_ext) {
         x1 = prev_x - prev_ext;
-      else
+      } else {
         x1 = prev_x - default_ext;
+      }
 
-      if (has_cur_ext)
+      if (has_cur_ext) {
         x2 = cur_x + cur_ext;
-      else
+      } else {
         x2 = cur_x + default_ext;
+      }
     } else if (cur_x < prev_x) {
-      if (has_cur_ext)
+      if (has_cur_ext) {
         x1 = cur_x - cur_ext;
-      else
+      } else {
         x1 = cur_x - default_ext;
+      }
 
-      if (has_prev_ext)
+      if (has_prev_ext) {
         x2 = prev_x + prev_ext;
-      else
+      } else {
         x2 = prev_x + default_ext;
+      }
     } else {
       x1 = cur_x - dw;
       x2 = cur_x + dw;
@@ -694,7 +701,7 @@ inline void dbShape::setSegment(int prev_x,
   _type = dbShape::SEGMENT;
   _rect.reset(x1, y1, x2, y2);
   _layer = layer;
-  _via = NULL;
+  _via = nullptr;
 }
 
 inline void dbShape::setSegmentFromRect(int x1,

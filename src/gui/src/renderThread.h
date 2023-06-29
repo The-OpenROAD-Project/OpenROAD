@@ -36,6 +36,7 @@
 #include <QPainter>
 #include <QThread>
 #include <QWaitCondition>
+#include <mutex>
 
 #include "gui/gui.h"
 #include "odb/db.h"
@@ -102,6 +103,8 @@ class RenderThread : public QThread
                           GuiPainter& gui_painter);
   void drawInstanceNames(QPainter* painter,
                          const std::vector<odb::dbInst*>& insts);
+  void drawITermLabels(QPainter* painter,
+                       const std::vector<odb::dbInst*>& insts);
   void drawBlockages(QPainter* painter,
                      odb::dbBlock* block,
                      const odb::Rect& bounds);
@@ -132,6 +135,8 @@ class RenderThread : public QThread
   void drawModuleView(QPainter* painter,
                       const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter, const Rulers& rulers);
+
+  bool instanceBelowMinSize(odb::dbInst* inst);
 
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);

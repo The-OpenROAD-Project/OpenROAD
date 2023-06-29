@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -57,15 +56,12 @@ class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbVector<std::pair<int, int>> spacing_tbl_;  //{cutWithin, orthoSpacing}
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerCutSpacingTableOrthRule(
       _dbDatabase*,
       const _dbTechLayerCutSpacingTableOrthRule& r);
   _dbTechLayerCutSpacingTableOrthRule(_dbDatabase*);
   ~_dbTechLayerCutSpacingTableOrthRule();
+
   bool operator==(const _dbTechLayerCutSpacingTableOrthRule& rhs) const;
   bool operator!=(const _dbTechLayerCutSpacingTableOrthRule& rhs) const
   {
@@ -78,6 +74,12 @@ class _dbTechLayerCutSpacingTableOrthRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  //{cutWithin, orthoSpacing}
+  dbVector<std::pair<int, int>> spacing_tbl_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableOrthRule& obj);

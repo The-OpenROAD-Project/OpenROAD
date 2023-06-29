@@ -50,12 +50,12 @@ includes GlobalFoundries shuttles, design contests and IC design
 workshops. The OpenROAD flow has been successfully used to date
 in over 600 silicon-ready tapeouts for technologies up to 12nm.
 
-## OpenROAD Flow Stages
+## Getting Started with OpenROAD-flow-scripts
 
 OpenROAD provides [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 as a native, ready-to-use prototyping and tapeout flow. However,
 it also enables the creation of any custom flow controllers based
-on the underlying tools, database and analysis engines.
+on the underlying tools, database and analysis engines. Please refer to the flow documentation [here](https://openroad-flow-scripts.readthedocs.io/en/latest/).
 
 OpenROAD-flow-scripts (ORFS) is a fully autonomous, RTL-GDSII flow
 for rapid architecture and design space exploration, early prediction
@@ -231,7 +231,7 @@ the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
-and there descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
+and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
 
 ## License
 

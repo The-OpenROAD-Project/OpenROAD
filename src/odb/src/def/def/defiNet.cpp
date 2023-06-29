@@ -768,7 +768,7 @@ const defiPath* defiShield::path(int index) const
 ////////////////////////////////////////////////////
 ////////////////////////////////////////////////////
 
-defiWire::defiWire(defrData* data) : defData(data)
+defiWire::defiWire(defrData* data) : defData(data), paths_(nullptr)
 {
 }
 

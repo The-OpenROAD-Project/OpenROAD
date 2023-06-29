@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <string.h>
+#include <cstring>
 
 #include "db.h"
 #include "dbCore.h"
@@ -402,7 +402,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
   ++name;
   int c;
   uint oid;
-  dbObject* obj = NULL;
+  dbObject* obj = nullptr;
 
   while ((c = *name++) != '\0') {
     switch (c) {
@@ -695,7 +695,7 @@ dbObject* dbObject::resolveDbName(dbDatabase* db_, const char* name)
     }
   }
 
-  ZASSERT(obj != NULL);
+  ZASSERT(obj != nullptr);
   return obj;
 }
 
@@ -735,35 +735,35 @@ static const char* name_tbl[] = {"dbDatabase",
                                  "dbBPin",
                                  // Generator Code Begin ObjectNames
                                  "dbTechLayer",
-                                 "dbTechLayerSpacingEolRule",
-                                 "dbTechLayerMinStepRule",
-                                 "dbTechLayerCornerSpacingRule",
-                                 "dbTechLayerSpacingTablePrlRule",
-                                 "dbTechLayerEolKeepOutRule",
-                                 "dbTechLayerCutClassRule",
-                                 "dbTechLayerCutSpacingRule",
-                                 "dbTechLayerCutSpacingTableOrthRule",
-                                 "dbTechLayerCutSpacingTableDefRule",
-                                 "dbTechLayerCutEnclosureRule",
-                                 "dbTechLayerEolExtensionRule",
-                                 "dbTechLayerArraySpacingRule",
-                                 "dbTechLayerWidthTableRule",
-                                 "dbTechLayerMinCutRule",
-                                 "dbGuide",
-                                 "dbNetTrack",
-                                 "dbMetalWidthViaMap",
                                  "dbTechLayerAreaRule",
+                                 "dbTechLayerArraySpacingRule",
+                                 "dbTechLayerCornerSpacingRule",
+                                 "dbTechLayerCutClassRule",
+                                 "dbTechLayerCutEnclosureRule",
+                                 "dbTechLayerCutSpacingRule",
+                                 "dbTechLayerCutSpacingTableDefRule",
+                                 "dbTechLayerCutSpacingTableOrthRule",
+                                 "dbTechLayerEolExtensionRule",
+                                 "dbTechLayerEolKeepOutRule",
                                  "dbTechLayerKeepOutZoneRule",
-                                 "dbModule",
-                                 "dbModInst",
-                                 "dbGroup",
-                                 "dbGCellGrid",
+                                 "dbTechLayerMinCutRule",
+                                 "dbTechLayerMinStepRule",
+                                 "dbTechLayerSpacingEolRule",
+                                 "dbTechLayerSpacingTablePrlRule",
+                                 "dbTechLayerWidthTableRule",
                                  "dbAccessPoint",
+                                 "dbGCellGrid",
                                  "dbGlobalConnect",
-                                 "dbPowerDomain",
-                                 "dbLogicPort",
-                                 "dbPowerSwitch",
+                                 "dbGroup",
+                                 "dbGuide",
                                  "dbIsolation",
+                                 "dbLogicPort",
+                                 "dbMetalWidthViaMap",
+                                 "dbModInst",
+                                 "dbModule",
+                                 "dbNetTrack",
+                                 "dbPowerDomain",
+                                 "dbPowerSwitch",
                                  // Generator Code End ObjectNames
 
                                  // Lib Objects

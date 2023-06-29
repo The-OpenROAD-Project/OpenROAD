@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -66,20 +65,11 @@ class _dbTechLayerArraySpacingRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerArraySpacingRuleFlags flags_;
-  int via_width_;
-  int cut_spacing_;
-  int within_;
-  int array_width_;
-  std::map<int, int> array_spacing_map_;
-  dbId<_dbTechLayerCutClassRule> cut_class_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbTechLayerArraySpacingRule(_dbDatabase*,
                                const _dbTechLayerArraySpacingRule& r);
   _dbTechLayerArraySpacingRule(_dbDatabase*);
   ~_dbTechLayerArraySpacingRule();
+
   bool operator==(const _dbTechLayerArraySpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerArraySpacingRule& rhs) const
   {
@@ -92,6 +82,17 @@ class _dbTechLayerArraySpacingRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  dbTechLayerArraySpacingRuleFlags flags_;
+  int via_width_;
+  int cut_spacing_;
+  int within_;
+  int array_width_;
+  std::map<int, int> array_spacing_map_;
+  dbId<_dbTechLayerCutClassRule> cut_class_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerArraySpacingRule& obj);
 dbOStream& operator<<(dbOStream& stream,
