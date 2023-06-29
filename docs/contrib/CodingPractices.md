@@ -3,8 +3,7 @@
 List of coding practices.
 
 :::{Note}
-This is a compilation of many idioms in OpenROAD code that is considered undesirable. Obviously other programmers have different opinions or they
-would not be so pervasive. 
+This is a compilation of many idioms in OpenROAD code that is considered undesirable. 
 :::
 
 ## C++
