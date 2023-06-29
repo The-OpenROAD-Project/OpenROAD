@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -64,6 +63,23 @@ class _dbTechLayerAreaRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbTechLayerAreaRule(_dbDatabase*, const _dbTechLayerAreaRule& r);
+  _dbTechLayerAreaRule(_dbDatabase*);
+  ~_dbTechLayerAreaRule();
+
+  bool operator==(const _dbTechLayerAreaRule& rhs) const;
+  bool operator!=(const _dbTechLayerAreaRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerAreaRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerAreaRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   dbTechLayerAreaRuleFlags flags_;
   int area_;
   int except_min_width_;
@@ -77,21 +93,6 @@ class _dbTechLayerAreaRule : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbTechLayerAreaRule(_dbDatabase*, const _dbTechLayerAreaRule& r);
-  _dbTechLayerAreaRule(_dbDatabase*);
-  ~_dbTechLayerAreaRule();
-  bool operator==(const _dbTechLayerAreaRule& rhs) const;
-  bool operator!=(const _dbTechLayerAreaRule& rhs) const
-  {
-    return !operator==(rhs);
-  }
-  bool operator<(const _dbTechLayerAreaRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerAreaRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerAreaRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerAreaRule& obj);

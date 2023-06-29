@@ -1,0 +1,47 @@
+{
+  "name":"dbModInst",
+  "type":"dbObject",
+  "fields":[
+    {
+      "name":"_name",
+      "type":"char *",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name":"_next_entry",
+      "type":"dbId<_dbModInst>",
+      "flags":["no-set","no-get"]
+    },
+    {
+      "name":"_parent",
+      "type":"dbId<_dbModule>",
+      "flags":["no-set"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_module_next",
+      "type":"dbId<_dbModInst>",
+      "flags":["no-get","no-set"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_master",
+      "type":"dbId<_dbModule>",
+      "flags":["no-set"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_group_next",
+      "type":"dbId<_dbModInst>",
+      "flags":["no-get","no-set"],
+      "parent":"dbBlock"
+    },
+    {
+      "name":"_group",
+      "type":"dbId<_dbGroup>",
+      "flags":["no-set"],
+      "parent":"dbBlock"
+    }
+  ],
+  "cpp_includes":["dbBlock.h","dbModule.h","dbHashTable.hpp"]
+}

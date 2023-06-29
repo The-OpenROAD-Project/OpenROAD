@@ -44,6 +44,7 @@
 #include <tcl.h>
 
 #include <algorithm>  // min
+#include <mutex>
 
 #include "AbstractPathRenderer.h"
 #include "AbstractPowerDensityDataSource.h"

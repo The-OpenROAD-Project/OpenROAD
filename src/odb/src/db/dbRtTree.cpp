@@ -145,7 +145,7 @@ void dbRtVia::getBBox(Rect& bbox)
   int y = _src->_y;
   dbBox* box = _via->getBBox();
 
-  if (box == NULL) {
+  if (box == nullptr) {
     bbox.reset(0, 0, 0, 0);
     return;
   }
@@ -164,7 +164,7 @@ void dbRtTechVia::getBBox(Rect& bbox)
   int y = _src->_y;
   dbBox* box = _via->getBBox();
 
-  if (box == NULL) {
+  if (box == nullptr) {
     bbox.reset(0, 0, 0, 0);
     return;
   }
@@ -462,12 +462,12 @@ void dbRtTree::deleteEdge(dbRtEdge* e, bool destroy_orphan_nodes)
   remove_edge(e);
 
   if (destroy_orphan_nodes) {
-    if (e->_src->_head == NULL) {
+    if (e->_src->_head == nullptr) {
       remove_node(e->_src);
       g_node_alloc.destroy(e->_src);
     }
 
-    if (e->_tgt->_head == NULL) {
+    if (e->_tgt->_head == nullptr) {
       remove_node(e->_tgt);
       g_node_alloc.destroy(e->_tgt);
     }
@@ -489,13 +489,13 @@ void dbRtTree::decode(dbWire* wire, bool decode_bterms_iterms)
   _dbWire* w = (_dbWire*) wire;
 
   std::vector<dbRtNode*> junction_map;
-  junction_map.resize(w->_opcodes.size(), NULL);
-  _edge_map.resize(w->_opcodes.size(), NULL);
+  junction_map.resize(w->_opcodes.size(), nullptr);
+  _edge_map.resize(w->_opcodes.size(), nullptr);
 
-  dbTechLayer* cur_layer = NULL;
-  dbTechLayerRule* cur_rule = NULL;
+  dbTechLayer* cur_layer = nullptr;
+  dbTechLayerRule* cur_rule = nullptr;
   dbWireType::Value cur_type = dbWireType::NONE;
-  dbRtNode* prev = NULL;
+  dbRtNode* prev = nullptr;
   dbRtEndStyle prev_style;
   int jct_id = -1;
   int short_id = -1;
@@ -510,7 +510,7 @@ void dbRtTree::decode(dbWire* wire, bool decode_bterms_iterms)
       case dbWireDecoder::PATH: {
         cur_layer = decoder.getLayer();
         cur_type = decoder.getWireType();
-        prev = NULL;
+        prev = nullptr;
         prev_style.setExtended();
         break;
       }
@@ -519,7 +519,7 @@ void dbRtTree::decode(dbWire* wire, bool decode_bterms_iterms)
         cur_layer = decoder.getLayer();
         cur_type = decoder.getWireType();
         jct_id = decoder.getJunctionValue();
-        prev = NULL;
+        prev = nullptr;
         prev_style.setExtended();
         break;
       }
@@ -528,7 +528,7 @@ void dbRtTree::decode(dbWire* wire, bool decode_bterms_iterms)
         cur_layer = decoder.getLayer();
         cur_type = decoder.getWireType();
         short_id = decoder.getJunctionValue();
-        prev = NULL;
+        prev = nullptr;
         prev_style.setExtended();
         break;
       }
@@ -537,7 +537,7 @@ void dbRtTree::decode(dbWire* wire, bool decode_bterms_iterms)
         cur_layer = decoder.getLayer();
         cur_type = decoder.getWireType();
         vwire_id = decoder.getJunctionValue();
-        prev = NULL;
+        prev = nullptr;
         prev_style.setExtended();
         break;
       }
@@ -553,7 +553,7 @@ void dbRtTree::decode(dbWire* wire, bool decode_bterms_iterms)
           jct_id = -1;
         }
 
-        else if (prev == NULL) {
+        else if (prev == nullptr) {
           prev_style.setExtended();
           prev = createNode(x, y, cur_layer);
           junction_map[decoder.getJunctionId()] = prev;
@@ -613,7 +613,7 @@ void dbRtTree::decode(dbWire* wire, bool decode_bterms_iterms)
           jct_id = -1;
         }
 
-        else if (prev == NULL) {
+        else if (prev == nullptr) {
           prev_style.setVariable(ext);
           prev = createNode(x, y, cur_layer);
           junction_map[decoder.getJunctionId()] = prev;
@@ -747,7 +747,7 @@ void dbRtTree::encode(dbWire* wire, bool encode_bterms_iterms)
     if (n->isLeaf()) {
       path.clear();
       encodePath(
-          encoder, path, n, dbWireType::NONE, NULL, encode_bterms_iterms);
+          encoder, path, n, dbWireType::NONE, nullptr, encode_bterms_iterms);
     }
   }
 
@@ -853,7 +853,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
       dbRtSegment* s = (dbRtSegment*) e;
 
       if (e->_src->_jct_id == -1) {
-        if (e->_non_default_rule == NULL)
+        if (e->_non_default_rule == nullptr)
           encoder.newPath(e->_src->_layer, e->_wire_type);
         else
           encoder.newPath(e->_src->_layer, e->_wire_type, e->_non_default_rule);
@@ -867,7 +867,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
         if (encode_bterms_iterms)
           addObjects(encoder, e->_src);
       } else {
-        if (e->_non_default_rule == NULL) {
+        if (e->_non_default_rule == nullptr) {
           if (s->_src_style._type == dbRtEndStyle::EXTENDED)
             encoder.newPath(e->_src->_jct_id, e->_wire_type);
           else
@@ -903,7 +903,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
 
     case dbRtEdge::TECH_VIA: {
       if (e->_src->_jct_id == -1) {
-        if (e->_non_default_rule == NULL)
+        if (e->_non_default_rule == nullptr)
           encoder.newPath(e->_src->_layer, e->_wire_type);
         else
           encoder.newPath(e->_src->_layer, e->_wire_type, e->_non_default_rule);
@@ -913,7 +913,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
         if (encode_bterms_iterms)
           addObjects(encoder, e->_src);
       } else {
-        if (e->_non_default_rule == NULL)
+        if (e->_non_default_rule == nullptr)
           encoder.newPath(e->_src->_jct_id, e->_wire_type);
         else
           encoder.newPath(
@@ -932,7 +932,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
 
     case dbRtEdge::VIA: {
       if (e->_src->_jct_id == -1) {
-        if (e->_non_default_rule == NULL)
+        if (e->_non_default_rule == nullptr)
           encoder.newPath(e->_src->_layer, e->_wire_type);
         else
           encoder.newPath(e->_src->_layer, e->_wire_type, e->_non_default_rule);
@@ -942,7 +942,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
         if (encode_bterms_iterms)
           addObjects(encoder, e->_src);
       } else {
-        if (e->_non_default_rule == NULL)
+        if (e->_non_default_rule == nullptr)
           encoder.newPath(e->_src->_jct_id, e->_wire_type);
         else
           encoder.newPath(
@@ -962,7 +962,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
     case dbRtEdge::SHORT: {
       assert(e->_src->_jct_id != -1);
 
-      if (e->_non_default_rule == NULL)
+      if (e->_non_default_rule == nullptr)
         encoder.newPathShort(e->_src->_jct_id, e->_src->_layer, e->_wire_type);
       else
         encoder.newPathShort(e->_src->_jct_id,
@@ -977,7 +977,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
     case dbRtEdge::VWIRE: {
       assert(e->_src->_jct_id != -1);
 
-      if (e->_non_default_rule == NULL)
+      if (e->_non_default_rule == nullptr)
         encoder.newPathVirtualWire(
             e->_src->_jct_id, e->_src->_layer, e->_wire_type);
       else
@@ -1091,7 +1091,7 @@ void dbRtTree::encodePath(dbWireEncoder& encoder,
 dbRtTree* dbRtTree::duplicate()
 {
   dbRtTree* G = new dbRtTree();
-  G->_edge_map.resize(_edge_map.size(), NULL);
+  G->_edge_map.resize(_edge_map.size(), nullptr);
 
   node_iterator itr;
 
@@ -1126,7 +1126,7 @@ dbRtEdge* dbRtTree::duplicate(dbRtTree* G,
                               dbRtNode* src,
                               dbRtNode* tgt)
 {
-  dbRtEdge* e = NULL;
+  dbRtEdge* e = nullptr;
 
   switch (edge->_type) {
     case dbRtEdge::SEGMENT: {

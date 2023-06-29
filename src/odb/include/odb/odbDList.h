@@ -63,7 +63,7 @@ class DListIterator
   T*& NEXT(T* n) { return ENTRY(n)->_next; }
 
  public:
-  DListIterator() { _cur = NULL; }
+  DListIterator() { _cur = nullptr; }
   DListIterator(T* cur) { _cur = cur; }
   DListIterator(const DListIterator& i) { _cur = i._cur; }
   DListIterator& operator=(const DListIterator& i)
@@ -95,7 +95,7 @@ class DList
 {
   /*
     public:
-      typedef DListIterator<T,ENTRY> iterator;
+      using iterator = DListIterator<T,ENTRY>;
   */
  private:
   T* _head;
@@ -108,12 +108,12 @@ class DList
   T*& PREV(T* n) { return ENTRY(n)->_prev; }
 
  public:
-  typedef DListIterator<T, ENTRY> iterator;
+  using iterator = DListIterator<T, ENTRY>;
 
   DList()
   {
-    _head = NULL;
-    _tail = NULL;
+    _head = nullptr;
+    _tail = nullptr;
   }
 
   T* front() { return _head; }
@@ -121,38 +121,38 @@ class DList
 
   void push_front(T* p)
   {
-    if (_head == NULL) {
+    if (_head == nullptr) {
       _head = p;
       _tail = p;
-      NEXT(p) = NULL;
-      PREV(p) = NULL;
+      NEXT(p) = nullptr;
+      PREV(p) = nullptr;
     } else {
       PREV(_head) = p;
       NEXT(p) = _head;
-      PREV(p) = NULL;
+      PREV(p) = nullptr;
       _head = p;
     }
   }
 
   void push_back(T* p)
   {
-    if (_head == NULL) {
+    if (_head == nullptr) {
       _head = p;
       _tail = p;
-      NEXT(p) = NULL;
-      PREV(p) = NULL;
+      NEXT(p) = nullptr;
+      PREV(p) = nullptr;
     } else {
       NEXT(_tail) = p;
       PREV(p) = _tail;
-      NEXT(p) = NULL;
+      NEXT(p) = nullptr;
       _tail = p;
     }
   }
 
-  void clear() { _head = _tail = NULL; }
-  bool empty() const { return _head == NULL; }
+  void clear() { _head = _tail = nullptr; }
+  bool empty() const { return _head == nullptr; }
   iterator begin() { return iterator(_head); }
-  iterator end() { return iterator(NULL); }
+  iterator end() { return iterator(nullptr); }
 
   void swap(DList& l)
   {
@@ -170,15 +170,15 @@ class DList
             typename DList<T, ENTRY>::iterator itr2)
   {
     if (*itr1 == _head) {
-      if (_head == NULL) {
+      if (_head == nullptr) {
         _head = *itr2;
         _tail = *itr2;
-        NEXT(*itr2) = NULL;
-        PREV(*itr2) = NULL;
+        NEXT(*itr2) = nullptr;
+        PREV(*itr2) = nullptr;
       } else {
         PREV(_head) = *itr2;
         NEXT(*itr2) = _head;
-        PREV(*itr2) = NULL;
+        PREV(*itr2) = nullptr;
         _head = *itr2;
       }
     } else {
@@ -193,19 +193,19 @@ class DList
   {
     if (*cur == _head) {
       if (*cur == _tail) {
-        _head = NULL;
-        _tail = NULL;
+        _head = nullptr;
+        _tail = nullptr;
       }
 
       else {
         _head = NEXT(*cur);
-        PREV(_head) = NULL;
+        PREV(_head) = nullptr;
       }
     }
 
     else if (*cur == _tail) {
       _tail = PREV(*cur);
-      NEXT(_tail) = NULL;
+      NEXT(_tail) = nullptr;
     }
 
     else {
@@ -236,15 +236,15 @@ class DList
     _head = _tail;
     _tail = tmp;
 
-    PREV(_head) = NULL;
-    NEXT(_tail) = NULL;
+    PREV(_head) = nullptr;
+    NEXT(_tail) = nullptr;
   }
 
   int size()
   {
     T* c;
     int i = 0;
-    for (c = _head; c != NULL; c = NEXT(c))
+    for (c = _head; c != nullptr; c = NEXT(c))
       ++i;
     return i;
   }
@@ -268,7 +268,7 @@ class DList
     }
 
     if (first2 != last2) {
-      if (_head == NULL) {
+      if (_head == nullptr) {
         _head = *first2;
         _tail = l._tail;
       } else {
@@ -278,8 +278,8 @@ class DList
       }
     }
 
-    l._head = NULL;
-    l._tail = NULL;
+    l._head = nullptr;
+    l._tail = nullptr;
   }
 
   template <class CMP>
@@ -302,7 +302,7 @@ class DList
     }
 
     if (first2 != last2) {
-      if (_head == NULL) {
+      if (_head == nullptr) {
         _head = *first2;
         _tail = l._tail;
       } else {
@@ -312,13 +312,13 @@ class DList
       }
     }
 
-    l._head = NULL;
-    l._tail = NULL;
+    l._head = nullptr;
+    l._tail = nullptr;
   }
 
   void sort()
   {
-    if ((_head != NULL) && (NEXT(_head) != NULL)) {
+    if ((_head != nullptr) && (NEXT(_head) != nullptr)) {
       DList<T, ENTRY> carry;
       DList<T, ENTRY> counter[64];
       int fill = 0;
@@ -348,7 +348,7 @@ class DList
   template <class CMP>
   void sort(CMP cmp)
   {
-    if ((_head != NULL) && (NEXT(_head) != NULL)) {
+    if ((_head != nullptr) && (NEXT(_head) != nullptr)) {
       DList<T, ENTRY> carry;
       DList<T, ENTRY> counter[64];
       int fill = 0;
@@ -395,7 +395,7 @@ struct elem
     elem(int n )
     {
         a = n;
-        next = NULL;
+        next = nullptr;
     }
 
     bool operator<( const elem & e ) { return a < e.a; }

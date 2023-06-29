@@ -6,8 +6,8 @@
 [INFO ODB-0222] Reading LEF file: Nangate45/fake_macros.lef
 [INFO ODB-0225]     Created 5 library cells
 [INFO ODB-0226] Finished LEF file:  Nangate45/fake_macros.lef
-[WARNING ORD-1011] LEF master MOCK_SINGLE has no liberty cell.
-[WARNING ORD-1011] LEF master MOCK_DOUBLE has no liberty cell.
+[WARNING ORD-2011] LEF master MOCK_SINGLE has no liberty cell.
+[WARNING ORD-2011] LEF master MOCK_DOUBLE has no liberty cell.
 [INFO IFP-0001] Added 1 rows of 34 site DoubleHeightSite with height 2.
 [INFO IFP-0001] Added 2 rows of 34 site SingleHeightSite with height 1.
 No differences found.

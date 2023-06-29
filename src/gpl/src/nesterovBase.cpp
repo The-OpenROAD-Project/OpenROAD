@@ -2343,7 +2343,7 @@ void NesterovBase::updateNextIter(const int iter)
 
   std::swap(curCoordi_, nextCoordi_);
 
-  // In a macro dominated design like mock-array-big you may be placing
+  // In a macro dominated design like mock-array you may be placing
   // very few std cells in a sea of fixed macros.  The overflow denominator
   // may be quite small and prevent convergence.  This is mostly due
   // to our limited ability to move instances off macros cleanly.  As that

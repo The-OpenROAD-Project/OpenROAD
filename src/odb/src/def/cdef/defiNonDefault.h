@@ -25,7 +25,7 @@
 /*                                                                            */
 /*  $Author: dell $ */
 /*  $Revision: #1 $ */
-/*  $Date: 2017/06/06 $ */
+/*  $Date: 2020/09/29 $ */
 /*  $State:  $                                                                */
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -46,7 +46,7 @@ EXTERN const char* defiNonDefault_propName(const defiNonDefault* obj,
 EXTERN const char* defiNonDefault_propValue(const defiNonDefault* obj,
                                             int index);
 EXTERN double defiNonDefault_propNumber(const defiNonDefault* obj, int index);
-EXTERN char defiNonDefault_propType(const defiNonDefault* obj, int index);
+EXTERN const char defiNonDefault_propType(const defiNonDefault* obj, int index);
 EXTERN int defiNonDefault_propIsNumber(const defiNonDefault* obj, int index);
 EXTERN int defiNonDefault_propIsString(const defiNonDefault* obj, int index);
 

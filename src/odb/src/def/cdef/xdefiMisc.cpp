@@ -36,6 +36,12 @@
 #include "defiMisc.h"
 #include "defiMisc.hpp"
 
+union udefiPoints
+{
+  LefDefParser::defiPoints cpp;
+  ::defiPoints c;
+};
+
 // Wrappers definitions.
 int defiGeometries_numPoints(const ::defiGeometries* obj)
 {
@@ -57,7 +63,7 @@ int defiStyles_style(const ::defiStyles* obj)
 
 ::defiPoints defiStyles_getPolygon(const ::defiStyles* obj)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiStyles*) obj)->getPolygon();
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiStyles*) obj)->getPolygon();
+  return tmp.c;
 }

@@ -36,6 +36,12 @@
 #include "defiBlockage.h"
 #include "defiBlockage.hpp"
 
+union udefiPoints
+{
+  LefDefParser::defiPoints cpp;
+  ::defiPoints c;
+};
+
 // Wrappers definitions.
 int defiBlockage_hasLayer(const ::defiBlockage* obj)
 {
@@ -164,9 +170,9 @@ int defiBlockage_numPolygons(const ::defiBlockage* obj)
 
 ::defiPoints defiBlockage_getPolygon(const ::defiBlockage* obj, int index)
 {
-  LefDefParser::defiPoints tmp;
-  tmp = ((LefDefParser::defiBlockage*) obj)->getPolygon(index);
-  return *((::defiPoints*) &tmp);
+  udefiPoints tmp;
+  tmp.cpp = ((LefDefParser::defiBlockage*) obj)->getPolygon(index);
+  return tmp.c;
 }
 
 void defiBlockage_print(const ::defiBlockage* obj, FILE* f)

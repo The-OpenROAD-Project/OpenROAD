@@ -374,11 +374,11 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
   _num_ext_dbs = 1;
-  _searchDb = NULL;
-  _extmi = NULL;
-  _ptFile = NULL;
-  _journal = NULL;
-  _journal_pending = NULL;
+  _searchDb = nullptr;
+  _extmi = nullptr;
+  _ptFile = nullptr;
+  _journal = nullptr;
+  _journal_pending = nullptr;
 
   _bterm_pins = nullptr;
 }
@@ -393,7 +393,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _num_ext_corners(block._num_ext_corners),
       _corners_per_block(block._corners_per_block),
       _corner_name_list(block._corner_name_list),
-      _name(NULL),
+      _name(nullptr),
       _die_area(block._die_area),
       _chip(block._chip),
       _bbox(block._bbox),
@@ -576,15 +576,15 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _bterm_pins = nullptr;
 
   // ??? Initialize search-db on copy?
-  _searchDb = NULL;
+  _searchDb = nullptr;
 
   // ??? callbacks
   // _callbacks = ???
 
   // ??? _ext?
   _extmi = block._extmi;
-  _journal = NULL;
-  _journal_pending = NULL;
+  _journal = nullptr;
+  _journal_pending = nullptr;
 }
 
 _dbBlock::~_dbBlock()
@@ -711,12 +711,12 @@ void dbBlock::clear()
 
   if (block->_journal) {
     delete block->_journal;
-    block->_journal = NULL;
+    block->_journal = nullptr;
   }
 
   if (block->_journal_pending) {
     delete block->_journal_pending;
-    block->_journal_pending = NULL;
+    block->_journal_pending = nullptr;
   }
 }
 
@@ -1660,7 +1660,7 @@ dbInst* dbBlock::getParentInst()
   _dbBlock* block = (_dbBlock*) this;
 
   if (block->_parent_block == 0)
-    return NULL;
+    return nullptr;
 
   _dbChip* chip = (_dbChip*) block->getOwner();
   _dbBlock* parent_block = chip->_block_tbl->getPtr(block->_parent_block);
@@ -1693,7 +1693,7 @@ dbBlock* dbBlock::findChild(const char* name_)
       return (dbBlock*) child;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbSet<dbBTerm> dbBlock::getBTerms()
@@ -1816,12 +1816,12 @@ dbModInst* dbBlock::findModInst(const char* path)
   dbModule* cur_mod = getTopModule();
   dbModInst* cur_inst = nullptr;
   char* token = strtok(_path, "/");
-  while (token != NULL) {
+  while (token != nullptr) {
     cur_inst = cur_mod->findModInst(token);
     if (cur_inst == nullptr)
       break;
     cur_mod = cur_inst->getMaster();
-    token = strtok(NULL, "/");
+    token = strtok(nullptr, "/");
   }
   free((void*) _path);
   return cur_inst;
@@ -1842,15 +1842,15 @@ dbITerm* dbBlock::findITerm(const char* name)
   std::string::size_type idx = s.rfind(block->_hier_delimeter);
 
   if (idx == std::string::npos)  // no delimeter
-    return NULL;
+    return nullptr;
 
   std::string instName = s.substr(0, idx);
   std::string termName = s.substr(idx + 1, s.size());
 
   dbInst* inst = findInst(instName.c_str());
 
-  if (inst == NULL)
-    return NULL;
+  if (inst == nullptr)
+    return nullptr;
 
   return inst->findITerm(termName.c_str());
 }
@@ -1893,7 +1893,7 @@ bool dbBlock::findSomeMaster(const char* names, std::vector<dbMaster*>& masters)
   dbLib* lib = getChip()->getDb()->findLib("lib");
   dbMaster* master;
   auto parser = std::make_unique<Ath__parser>(getImpl()->getLogger());
-  parser->mkWords(names, NULL);
+  parser->mkWords(names, nullptr);
   // uint noid;
   char* masterName;
   for (int ii = 0; ii < parser->getWordCnt(); ii++) {
@@ -1922,7 +1922,7 @@ bool dbBlock::findSomeNet(const char* names, std::vector<dbNet*>& nets)
   _dbBlock* block = (_dbBlock*) this;
   dbNet* net;
   auto parser = std::make_unique<Ath__parser>(getImpl()->getLogger());
-  parser->mkWords(names, NULL);
+  parser->mkWords(names, nullptr);
   uint noid;
   char* netName;
   for (int ii = 0; ii < parser->getWordCnt(); ii++) {
@@ -1947,7 +1947,7 @@ bool dbBlock::findSomeInst(const char* names, std::vector<dbInst*>& insts)
   _dbBlock* block = (_dbBlock*) this;
   dbInst* inst;
   auto parser = std::make_unique<Ath__parser>(getImpl()->getLogger());
-  parser->mkWords(names, NULL);
+  parser->mkWords(names, nullptr);
   uint ioid;
   char* instName;
   for (int ii = 0; ii < parser->getWordCnt(); ii++) {
@@ -1978,7 +1978,7 @@ dbVia* dbBlock::findVia(const char* name)
       return (dbVia*) via;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbSet<dbVia> dbBlock::getVias()
@@ -2004,7 +2004,7 @@ dbGCellGrid* dbBlock::getGCellGrid()
   _dbBlock* block = (_dbBlock*) this;
 
   if (block->_gcell_grid == 0)
-    return NULL;
+    return nullptr;
 
   return (dbGCellGrid*) block->_gcell_grid_tbl->getPtr(block->_gcell_grid);
 }
@@ -2027,7 +2027,7 @@ dbRegion* dbBlock::findRegion(const char* name)
       return (dbRegion*) r;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 int dbBlock::getDefUnits()
@@ -2087,7 +2087,7 @@ dbTrackGrid* dbBlock::findTrackGrid(dbTechLayer* layer)
       return g;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void dbBlock::getMasters(std::vector<dbMaster*>& masters)
@@ -2205,7 +2205,7 @@ dbTechNonDefaultRule* dbBlock::findNonDefaultRule(const char* name)
       return (dbTechNonDefaultRule*) r;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbSet<dbTechNonDefaultRule> dbBlock::getNonDefaultRules()
@@ -2510,7 +2510,7 @@ void dbBlock::setCornerCount(int cornersStoredCnt,
   block->_num_ext_corners = cornersStoredCnt;
   block->_corners_per_block = cornersStoredCnt;
   block->_num_ext_dbs = extDbCnt;
-  if (name_list != NULL) {
+  if (name_list != nullptr) {
     if (block->_corner_name_list)
       free(block->_corner_name_list);
     block->_corner_name_list = strdup((char*) name_list);
@@ -2545,7 +2545,7 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
     net = *nitr;
     sprintf(name, "%d", net->getId());
     dbNet* xnet = dbNet::create(extBlk, name, true);
-    if (xnet == NULL) {
+    if (xnet == nullptr) {
       getImpl()->getLogger()->error(
           utl::ODB, 8, "Cannot duplicate net {}", net->getConstName());
     }
@@ -2577,7 +2577,7 @@ void dbBlock::setCornerNameList(const char* name_list)
 {
   _dbBlock* block = (_dbBlock*) this;
 
-  if (block->_corner_name_list != NULL)
+  if (block->_corner_name_list != nullptr)
     free(block->_corner_name_list);
 
   block->_corner_name_list = strdup(name_list);
@@ -2590,7 +2590,7 @@ void dbBlock::getExtCornerName(int corner, char* cName)
     return;
   ZASSERT((corner >= 0) && (corner < block->_num_ext_corners));
 
-  if (block->_corner_name_list == NULL)
+  if (block->_corner_name_list == nullptr)
     return;
 
   char buff[1024];
@@ -2598,13 +2598,13 @@ void dbBlock::getExtCornerName(int corner, char* cName)
 
   int ii = 0;
   char* word = strtok(buff, " ");
-  while (word != NULL) {
+  while (word != nullptr) {
     if (ii == corner) {
       strcpy(cName, word);
       return;
     }
 
-    word = strtok(NULL, " ");
+    word = strtok(nullptr, " ");
     ii++;
   }
   return;
@@ -2613,7 +2613,7 @@ int dbBlock::getExtCornerIndex(const char* cornerName)
 {
   _dbBlock* block = (_dbBlock*) this;
 
-  if (block->_corner_name_list == NULL)
+  if (block->_corner_name_list == nullptr)
     return -1;
 
   char buff[1024];
@@ -2621,18 +2621,18 @@ int dbBlock::getExtCornerIndex(const char* cornerName)
 
   uint ii = 0;
   char* word = strtok(buff, " ");
-  while (word != NULL) {
+  while (word != nullptr) {
     if (strcmp(cornerName, word) == 0)
       return ii;
 
-    word = strtok(NULL, " ");
+    word = strtok(nullptr, " ");
     ii++;
   }
   return -1;
 }
 void dbBlock::setCornerCount(int cnt)
 {
-  setCornerCount(cnt, cnt, NULL);
+  setCornerCount(cnt, cnt, nullptr);
 }
 
 void dbBlock::copyViaTable(dbBlock* dst_, dbBlock* src_)
@@ -2648,10 +2648,10 @@ dbBlock* dbBlock::create(dbChip* chip_, const char* name_, char hier_delimeter_)
   _dbChip* chip = (_dbChip*) chip_;
 
   if (chip->_top != 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* top = chip->_block_tbl->create();
-  top->initialize(chip, NULL, name_, hier_delimeter_);
+  top->initialize(chip, nullptr, name_, hier_delimeter_);
   chip->_top = top->getOID();
   _dbTech* tech = (_dbTech*) chip->getDb()->getTech();
   top->_dbu_per_micron = tech->_dbu_per_micron;
@@ -2663,7 +2663,7 @@ dbBlock* dbBlock::create(dbBlock* parent_,
                          char hier_delimeter)
 {
   if (parent_->findChild(name_))
-    return NULL;
+    return nullptr;
 
   _dbBlock* parent = (_dbBlock*) parent_;
   _dbChip* chip = (_dbChip*) parent->getOwner();
@@ -2680,7 +2680,7 @@ dbBlock* dbBlock::duplicate(dbBlock* child_, const char* name_)
 
   // must be a child block
   if (child->_parent == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* parent = (_dbBlock*) child_->getParent();
   _dbChip* chip = (_dbChip*) child->getOwner();
@@ -2783,10 +2783,10 @@ dbBlockSearch* dbBlock::getSearchDb()
 ZPtr<ISdb> dbBlock::getSignalNetSdb(ZContext& context, dbTech* tech)
 {
   _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == NULL)
+  if (block->_searchDb == nullptr)
     block->_searchDb = new dbBlockSearch(this, tech);
-  if (block->_searchDb == NULL)
-    return NULL;
+  if (block->_searchDb == nullptr)
+    return nullptr;
   return block->_searchDb->getSignalNetSdb(context);
 }
 dbBlockSearch* dbBlock::getSearchDb()
@@ -2797,30 +2797,30 @@ dbBlockSearch* dbBlock::getSearchDb()
 ZPtr<ISdb> dbBlock::getNetSdb(ZContext& context, dbTech* tech)
 {
   _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == NULL)
+  if (block->_searchDb == nullptr)
     block->_searchDb = new dbBlockSearch(this, tech);
-  if (block->_searchDb == NULL)
-    return NULL;
+  if (block->_searchDb == nullptr)
+    return nullptr;
   return block->_searchDb->getNetSdb(context);
 }
 ZPtr<ISdb> dbBlock::getNetSdb()
 {
   _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == NULL)
-    return NULL;
+  if (block->_searchDb == nullptr)
+    return nullptr;
   return block->_searchDb->getNetSdb();
 }
 void dbBlock::resetNetSdb()
 {
   _dbBlock* block = (_dbBlock*) this;
-  if (block->_searchDb == NULL)
+  if (block->_searchDb == nullptr)
     return;
   block->_searchDb->resetNetSdb();
 }
 void dbBlock::removeSdb(std::vector<dbNet*>& nets)
 {
   ZPtr<ISdb> netSdb = getNetSdb();
-  if (netSdb == NULL || netSdb->getSearchPtr() == NULL)
+  if (netSdb == nullptr || netSdb->getSearchPtr() == nullptr)
     return;
   dbNet::markNets(nets, this, true);
   netSdb->removeMarkedNetWires();
@@ -2836,7 +2836,7 @@ dbBlockSearch* dbBlock::initSearchBlock(dbTech* tech,
   _dbBlock* block = (_dbBlock*) this;
 
   /* TODO: TEMPORARY FIX
-      if (block->_searchDb!=NULL)
+      if (block->_searchDb!=nullptr)
               delete block->_searchDb;
   */
 
@@ -3148,7 +3148,7 @@ void dbBlock::replaceOldParasitics(std::vector<dbNet*>& nets,
   uint jj;
 
   dbJournal* tmpj = block->_journal;
-  block->_journal = NULL;
+  block->_journal = nullptr;
   for (jj = 0; jj < nets.size(); jj++) {
     net = nets[jj];
     capnn.push_back(net->get1stCapNodeId());
@@ -3169,7 +3169,7 @@ void dbBlock::restoreOldParasitics(std::vector<dbNet*>& nets,
   _dbBlock* block = (_dbBlock*) this;
 
   dbJournal* tmpj = block->_journal;
-  block->_journal = NULL;
+  block->_journal = nullptr;
   destroyParasitics(nets);
   for (jj = 0; jj < nets.size(); jj++) {
     net = nets[jj];
@@ -3263,18 +3263,18 @@ void dbBlock::keepOldParasitics(std::vector<dbNet*>& nets,
 #if 0
 //
 // Utility to create a net comprising a single SWire and two BTerms
-// Returns pointer to net (NULL iff not successful)
+// Returns pointer to net (nullptr iff not successful)
 //
 dbNet *
 dbBlock::createNetSingleSWire(const char *innm, int x1, int y1, int x2, int y2, uint rlevel)
 {
   if (!innm)
-    return NULL;
+    return nullptr;
 
   dbTech *intech = ((dbDatabase *) (getChip())->getOwner())->getTech();
-  dbTechLayer *inly = NULL;
-  if (!intech || ((inly = intech->findRoutingLayer(rlevel)) == NULL))
-    return NULL;
+  dbTechLayer *inly = nullptr;
+  if (!intech || ((inly = intech->findRoutingLayer(rlevel)) == nullptr))
+    return nullptr;
   
   if (x2 < x1)
     std::swap(x1,x2);
@@ -3283,20 +3283,20 @@ dbBlock::createNetSingleSWire(const char *innm, int x1, int y1, int x2, int y2, 
 
   dbNet *nwnet = dbNet::create(this,innm);
   if (!nwnet)
-    return NULL;
+    return nullptr;
 
   nwnet->setSigType(dbSigType::SIGNAL);
 
   dbSWire *nwsw = dbSWire::create(nwnet, dbWireType::ROUTED);
   if (!nwsw)
-    return NULL;
+    return nullptr;
   dbSBox  *nwsbx = dbSBox::create(nwsw, inly, x1, y1, x2, y2, dbWireShapeType::NONE);
   if (!nwsbx)
-    return NULL;
+    return nullptr;
 
   std::pair<dbBTerm *, dbBTerm *> cktrms = nwnet->createTerms4SingleNet(x1, y1, x2, y2, inly);
-  if ((cktrms.first == NULL) || (cktrms.second == NULL))
-    return NULL;
+  if ((cktrms.first == nullptr) || (cktrms.second == nullptr))
+    return nullptr;
 
   return nwnet;
 }
@@ -3304,7 +3304,7 @@ dbBlock::createNetSingleSWire(const char *innm, int x1, int y1, int x2, int y2, 
 //
 // Utility to create a net comprising a single Wire and two BTerms
 // Requires creating a suitable non-default rule for the wire if none exists.
-// Returns pointer to net (NULL iff not successful)
+// Returns pointer to net (nullptr iff not successful)
 //
 dbNet *
 dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, uint rlevel, bool skipBterms, dbTechLayerDir indir)
@@ -3312,12 +3312,12 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
         static int opendx = -1;
 
 	if (!innm)
-		return NULL;
+		return nullptr;
 	
 	dbTech *intech = ((dbDatabase *) (getChip())->getOwner())->getTech();
-	dbTechLayer *inly = NULL;
-	if (!intech || ((inly = intech->findRoutingLayer(rlevel)) == NULL))
-		return NULL;
+	dbTechLayer *inly = nullptr;
+	if (!intech || ((inly = intech->findRoutingLayer(rlevel)) == nullptr))
+		return nullptr;
 	
 	if (x2 < x1)
 		std::swap(x1,x2);
@@ -3326,7 +3326,7 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 	
 	dbNet *nwnet = dbNet::create(this,innm);
 	if (!nwnet)
-		return NULL;
+		return nullptr;
 	
 	nwnet->setSigType(dbSigType::SIGNAL);
 
@@ -3334,8 +3334,8 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 	if (! skipBterms ) {
 		blutrms = nwnet->createTerms4SingleNet(x1, y1, x2, y2, inly);
 		
-		if ((blutrms.first == NULL) || (blutrms.second == NULL))
-			return NULL;
+		if ((blutrms.first == nullptr) || (blutrms.second == nullptr))
+			return nullptr;
 	}
 
 	dbWireEncoder ncdr;
@@ -3356,7 +3356,7 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 		dbSet<dbTechNonDefaultRule> nd_rules = intech->getNonDefaultRules();
 		dbSet<dbTechNonDefaultRule>::iterator nditr;
 		dbTechLayerRule *tst_rule;
-		dbTechNonDefaultRule  *wdth_rule = NULL;
+		dbTechNonDefaultRule  *wdth_rule = nullptr;
 		for (nditr = nd_rules.begin(); nditr != nd_rules.end(); ++nditr)
 		{
 			tst_rule = (*nditr)->getLayerRule(inly);
@@ -3377,7 +3377,7 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 				for (opendx = 1; opendx <= 300000; ++opendx)
 				{
 					snprintf(rule_name, 14, "ADS_ND_%d", opendx);
-					if ((wdth_rule = dbTechNonDefaultRule::create(intech, rule_name)) != NULL)
+					if ((wdth_rule = dbTechNonDefaultRule::create(intech, rule_name)) != nullptr)
 						break;
 				}
 			}
@@ -3391,14 +3391,14 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 			{
         
 				getImpl()->getLogger()->warn(utl::ODB, 14, "Failed to generate non-default rule for single wire net {}", innm);
-				return NULL;
+				return nullptr;
 			}
 			
 			dbTechLayerRule *curly_rule;
 			int i;
 			for (i = 1; i <= 12; i++)   // Twelve routing layers??
 			{
-				if ((curly = intech->findRoutingLayer(i)) != NULL)
+				if ((curly = intech->findRoutingLayer(i)) != nullptr)
 				{
 					curly_rule = dbTechLayerRule::create(wdth_rule, curly);
 					curly_rule->setWidth(MAX(fwidth,curly->getWidth()));
@@ -3412,7 +3412,7 @@ dbBlock::createNetSingleWire(const char *innm, int x1, int y1, int x2, int y2, u
 			std::string  nd_via_name("");
 			for (viter = all_vias.begin(); viter != all_vias.end(); ++viter)
 			{
-				if (((*viter)->getNonDefaultRule() == NULL) && ((*viter)->isDefault()))
+				if (((*viter)->getNonDefaultRule() == nullptr) && ((*viter)->isDefault()))
 				{
 					nd_via_name = std::string(rule_name) + std::string("_") + std::string((*viter)->getName().c_str());
 					curly_via = dbTechVia::clone(wdth_rule, (*viter), nd_via_name.c_str());
@@ -3462,10 +3462,13 @@ void dbBlock::saveLef(char* filename,
                       int bloat_factor,
                       bool bloat_occupied_layers)
 {
-  lefout writer(getImpl()->getLogger());
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(filename);
+  lefout writer(getImpl()->getLogger(), os);
   writer.setBloatFactor(bloat_factor);
   writer.setBloatOccupiedLayers(bloat_occupied_layers);
-  writer.writeAbstractLef(this, filename);
+  writer.writeAbstractLef(this);
 }
 
 //
@@ -3511,7 +3514,7 @@ void dbBlock::writeDb(char* filename, int allNode)
   }
   int io_bufsize = 65536;
   char* buffer = (char*) malloc(io_bufsize);
-  if (buffer == NULL) {
+  if (buffer == nullptr) {
     getImpl()->getLogger()->warn(
         utl::ODB, 20, "Memory allocation failed for io buffer");
     fclose(file);
@@ -3581,7 +3584,7 @@ bool dbBlock::differences(dbBlock* block1,
   dbDiff diff(out);
   diff.setDeepDiff(true);
   diff.setIndentPerLevel(indent);
-  b1->differences(diff, NULL, *b2);
+  b1->differences(diff, nullptr, *b2);
   return diff.hasDifferences();
 }
 
@@ -3615,7 +3618,7 @@ uint dbBlock::levelize(std::vector<dbInst*>& startingInsts,
         continue;
 
       dbNet* net = iterm->getNet();
-      if (net != NULL) {
+      if (net != nullptr) {
         net->setLevelAtFanout(level + 1, false, instsToBeLeveled);
       }
     }
@@ -3635,7 +3638,7 @@ uint dbBlock::levelizeFromPrimaryInputs()
 
     dbNet* net = bterm->getNet();
 
-    if (net != NULL) {
+    if (net != nullptr) {
       if ((net->getSigType() == dbSigType::GROUND)
           || (net->getSigType() == dbSigType::POWER))
         continue;
@@ -3689,7 +3692,7 @@ int dbBlock::markBackwardsUser2(dbInst* firstInst,
 {
   std::vector<dbInst*> instsToBeMarked;
 
-  if (firstInst == NULL) {
+  if (firstInst == nullptr) {
     dbSet<dbInst> insts = getInsts();
     dbSet<dbInst>::iterator iitr;
 
@@ -3749,7 +3752,7 @@ resultTable)
 
                         dbNet *inputNet= iterm->getNet();
 
-                        if (inputNet==NULL)
+                        if (inputNet==nullptr)
                                 continue;
 
                         if ((inputNet->getSigType()==dbSigType::GROUND)||
@@ -3757,7 +3760,7 @@ resultTable)
 
                         dbITerm* out= inputNet->getFirstOutput();
 
-                        if (out==NULL)
+                        if (out==nullptr)
                                 continue;
 
                         dbInst *faninInst= out->getInst();
@@ -3819,7 +3822,7 @@ int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
 
       dbNet* inputNet = iterm->getNet();
 
-      if (inputNet == NULL)
+      if (inputNet == nullptr)
         continue;
 
       if ((inputNet->getSigType() == dbSigType::GROUND)
@@ -3828,7 +3831,7 @@ int dbBlock::markBackwardsUser2(std::vector<dbInst*>& startingInsts,
 
       dbITerm* out = inputNet->getFirstOutput();
 
-      if (out == NULL)
+      if (out == nullptr)
         continue;
 
       dbInst* faninInst = out->getInst();
@@ -3884,11 +3887,11 @@ int dbBlock::markBackwardsUser2(dbNet* net,
                                 bool mark,
                                 std::vector<dbInst*>& resultTable)
 {
-  if (net == NULL)
+  if (net == nullptr)
     return 0;
 
   dbITerm* out = net->getFirstOutput();
-  if (out == NULL)
+  if (out == nullptr)
     return 0;
 
   dbInst* faninInst = out->getInst();

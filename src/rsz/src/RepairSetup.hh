@@ -85,7 +85,7 @@ public:
                    double repair_tns_end_percent,
                    int max_passes,
                    bool skip_pin_swap,
-                   bool skip_gate_cloning);
+                   bool enable_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
@@ -97,7 +97,7 @@ private:
   bool repairSetup(PathRef &path,
                    Slack path_slack,
                    bool skip_pin_swap,
-                   bool skip_gate_cloning);
+                   bool enable_gate_cloning);
   void debugCheckMultipleBuffers(PathRef &path,
                                  PathExpanded *expanded);
 

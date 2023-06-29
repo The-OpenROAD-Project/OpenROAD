@@ -48,7 +48,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -70,17 +69,10 @@ class _dbGlobalConnect : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbId<_dbRegion> region_;
-  dbId<_dbNet> net_;
-  std::string inst_pattern_;
-  std::string pin_pattern_;
-  std::regex inst_regex_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbGlobalConnect(_dbDatabase*, const _dbGlobalConnect& r);
   _dbGlobalConnect(_dbDatabase*);
   ~_dbGlobalConnect();
+
   bool operator==(const _dbGlobalConnect& rhs) const;
   bool operator!=(const _dbGlobalConnect& rhs) const
   {
@@ -100,6 +92,15 @@ class _dbGlobalConnect : public _dbObject
   std::set<dbITerm*> connect(const std::vector<dbInst*>& insts);
   bool appliesTo(dbInst* inst) const;
   // User Code End Methods
+
+  dbId<_dbRegion> region_;
+  dbId<_dbNet> net_;
+  std::string inst_pattern_;
+  std::string pin_pattern_;
+  std::regex inst_regex_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbGlobalConnect& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGlobalConnect& obj);

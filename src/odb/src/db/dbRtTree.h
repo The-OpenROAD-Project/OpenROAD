@@ -90,69 +90,69 @@ class dbRtTree
   dbRtNode* createNode(int x, int y, dbTechLayer* l);
 
   // Create a via edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
-  //    Returns NULL, if the src and tgt layers are not the respective upper and
-  //    lower layers of this via.
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the src and tgt layers are not the respective upper
+  //    and lower layers of this via.
   dbRtVia* createVia(dbRtNode* src,
                      dbRtNode* tgt,
                      dbVia* via,
                      dbWireType::Value type = dbWireType::NONE,
-                     dbTechLayerRule* rule = NULL);
+                     dbTechLayerRule* rule = nullptr);
 
   // Create a tech-via edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
-  //    Returns NULL, if the src and tgt layers are not the respective upper and
-  //    lower layers of this via.
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the src and tgt layers are not the respective upper
+  //    and lower layers of this via.
   dbRtTechVia* createTechVia(dbRtNode* src,
                              dbRtNode* tgt,
                              dbTechVia* via,
                              dbWireType::Value type = dbWireType::NONE,
-                             dbTechLayerRule* rule = NULL);
+                             dbTechLayerRule* rule = nullptr);
 
   // Create a segment edge with the default (EXTENDED) end style.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
-  //    Returns NULL, if the src and tgt layer are not the same.
-  //    Returns NULL, if the src and tgt point do not form an orthogonal
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the src and tgt layer are not the same.
+  //    Returns nullptr, if the src and tgt point do not form an orthogonal
   //    segment.
   dbRtSegment* createSegment(dbRtNode* src,
                              dbRtNode* tgt,
                              dbWireType::Value type = dbWireType::NONE,
-                             dbTechLayerRule* rule = NULL);
+                             dbTechLayerRule* rule = nullptr);
 
   // Create a segment edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
-  //    Returns NULL, if the src and tgt layer are not the same.
-  //    Returns NULL, if the src and tgt point do not form an orthogonal
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the src and tgt layer are not the same.
+  //    Returns nullptr, if the src and tgt point do not form an orthogonal
   //    segment.
   dbRtSegment* createSegment(dbRtNode* src,
                              dbRtNode* tgt,
                              dbRtEndStyle src_style,
                              dbRtEndStyle tgt_style,
                              dbWireType::Value type = dbWireType::NONE,
-                             dbTechLayerRule* rule = NULL);
+                             dbTechLayerRule* rule = nullptr);
 
   // Create a short edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
   dbRtShort* createShort(dbRtNode* src,
                          dbRtNode* tgt,
                          dbWireType::Value type = dbWireType::NONE,
-                         dbTechLayerRule* rule = NULL);
+                         dbTechLayerRule* rule = nullptr);
 
   // Create a vwire edge.
-  //    Returns NULL, if the "tgt" node already has an in-edge.
+  //    Returns nullptr, if the "tgt" node already has an in-edge.
   dbRtVWire* createVWire(dbRtNode* src,
                          dbRtNode* tgt,
                          dbWireType::Value type = dbWireType::NONE,
-                         dbTechLayerRule* rule = NULL);
+                         dbTechLayerRule* rule = nullptr);
 
   // Node iterator
-  typedef DList<dbRtNode, &dbRtNode::rtNode>::iterator node_iterator;
+  using node_iterator = DList<dbRtNode, &dbRtNode::rtNode>::iterator;
 
   node_iterator begin_nodes() { return _nodes.begin(); }
   node_iterator end_nodes() { return _nodes.end(); }
 
   // Edge iterator
-  typedef DList<dbRtEdge, &dbRtEdge::rtEdge>::iterator edge_iterator;
+  using edge_iterator = DList<dbRtEdge, &dbRtEdge::rtEdge>::iterator;
   edge_iterator begin_edges() { return _edges.begin(); }
   edge_iterator end_edges() { return _edges.end(); }
 

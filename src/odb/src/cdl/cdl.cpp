@@ -76,7 +76,7 @@ std::string getUnconnectedNet(dbBlock* block, int& unconnectedNets)
   while (block->findNet(
              std::string("_unconnected_" + std::to_string(unconnectedNets++))
                  .c_str())
-         != NULL)
+         != nullptr)
     ;
   return "_unconnected_" + std::to_string(unconnectedNets - 1);
 }
@@ -185,7 +185,7 @@ bool cdl::writeCdl(utl::Logger* logger,
   int unconnectedNets = 0;
   FILE* f = fopen(outFileName, "w");
 
-  if (f == NULL) {
+  if (f == nullptr) {
     logger->error(utl::ODB, 358, "cannot open file {}", outFileName);
     return false;
   }

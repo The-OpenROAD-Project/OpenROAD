@@ -178,7 +178,7 @@ _dbLib::_dbLib(_dbDatabase* db, const _dbLib& l)
       _left_bus_delimeter(l._left_bus_delimeter),
       _right_bus_delimeter(l._right_bus_delimeter),
       _spare(l._spare),
-      _name(NULL),
+      _name(nullptr),
       _master_hash(l._master_hash),
       _site_hash(l._site_hash)
 {
@@ -355,7 +355,7 @@ void dbLib::getBusDelimeters(char& left, char& right)
 dbLib* dbLib::create(dbDatabase* db_, const char* name, char hier_delimeter)
 {
   if (db_->findLib(name))
-    return NULL;
+    return nullptr;
 
   _dbDatabase* db = (_dbDatabase*) db_;
   _dbLib* lib = db->_lib_tbl->create();

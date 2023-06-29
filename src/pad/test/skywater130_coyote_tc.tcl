@@ -40,10 +40,9 @@ initialize_floorplan \
 
 make_tracks
 
-make_fake_io_site -name IO_HSITE -width 1 -height 200
-make_fake_io_site -name IO_VSITE -width 1 -height 200
+make_fake_io_site -name IO_SITE -width 1 -height 200
 make_fake_io_site -name IO_CSITE -width 200 -height 203.665
-make_io_sites -horizontal_site IO_HSITE -vertical_site IO_VSITE -corner_site IO_CSITE -offset 0 -rotation_horizontal R180 -rotation_vertical R180 -rotation_corner R180
+make_io_sites -horizontal_site IO_SITE -vertical_site IO_SITE -corner_site IO_CSITE -offset 0 -rotation_horizontal R180 -rotation_vertical R180 -rotation_corner R180
 
 ######## Place Pads ########
 place_pad -master sky130_fd_io__top_gpiov2 -row IO_SOUTH -location 280.0 {u_clk.u_in}

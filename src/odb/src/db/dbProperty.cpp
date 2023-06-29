@@ -32,6 +32,10 @@
 
 #include "dbProperty.h"
 
+#include <spdlog/fmt/ostr.h>
+
+#include <sstream>
+
 #include "db.h"
 #include "dbBlock.h"
 #include "dbChip.h"
@@ -240,7 +244,7 @@ next_object:
   }
 
   assert(0);
-  return NULL;
+  return nullptr;
 }
 
 _dbNameCache* _dbProperty::getNameCache(dbObject* object)
@@ -278,7 +282,7 @@ next_object:
   }
 
   assert(0);
-  return NULL;
+  return nullptr;
 }
 
 dbTable<_dbProperty>* _dbProperty::getPropTable(dbObject* object)
@@ -316,7 +320,7 @@ next_object:
   }
 
   assert(0);
-  return NULL;
+  return nullptr;
 }
 
 _dbProperty* _dbProperty::createProperty(dbObject* object_,
@@ -380,7 +384,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
   uint name_id = cache->findName(name);
 
   if (name_id == 0)
-    return NULL;
+    return nullptr;
 
   dbSet<dbProperty> props = getProperties(object);
 
@@ -393,7 +397,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
       return (dbProperty*) p;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
@@ -403,7 +407,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
   uint name_id = cache->findName(name);
 
   if (name_id == 0)
-    return NULL;
+    return nullptr;
 
   dbSet<dbProperty> props = getProperties(object);
 
@@ -416,7 +420,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
       return (dbProperty*) p;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbSet<dbProperty> dbProperty::getProperties(dbObject* object)
@@ -515,7 +519,7 @@ dbBoolProperty* dbBoolProperty::create(dbObject* object,
                                        bool value)
 {
   if (find(object, name))
-    return NULL;
+    return nullptr;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_BOOL_PROP);
   prop->_value = value;
@@ -587,7 +591,7 @@ dbIntProperty* dbIntProperty::create(dbObject* object,
                                      int value)
 {
   if (find(object, name))
-    return NULL;
+    return nullptr;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_INT_PROP);
   prop->_value = value;
@@ -620,7 +624,7 @@ dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
                                            double value)
 {
   if (find(object, name))
-    return NULL;
+    return nullptr;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_DOUBLE_PROP);
   prop->_value = value;
@@ -633,46 +637,44 @@ dbDoubleProperty* dbDoubleProperty::find(dbObject* object, const char* name)
       object, name, dbProperty::DOUBLE_PROP);
 }
 
-void dbProperty::writePropValue(dbProperty* prop, FILE* out)
+std::string dbProperty::writePropValue(dbProperty* prop)
 {
   switch (prop->getType()) {
     case dbProperty::STRING_PROP: {
       dbStringProperty* p = (dbStringProperty*) prop;
       std::string v = p->getValue();
-      fprintf(out, "\"%s\" ", v.c_str());
-      break;
+      return fmt::format("\"{}\" ", v);
     }
 
     case dbProperty::INT_PROP: {
       dbIntProperty* p = (dbIntProperty*) prop;
       int v = p->getValue();
-      fprintf(out, "%d ", v);
-      break;
+      return fmt::format("{} ", v);
     }
 
     case dbProperty::DOUBLE_PROP: {
       dbDoubleProperty* p = (dbDoubleProperty*) prop;
       double v = p->getValue();
-      fprintf(out, "%G ", v);
+      return fmt::format("{:G} ", v);
     }
-
     default:
-      break;
+      return "";
   }
 }
 
-void dbProperty::writeProperties(dbObject* object, FILE* out)
+std::string dbProperty::writeProperties(dbObject* object)
 {
   dbSet<dbProperty> props = dbProperty::getProperties(object);
   dbSet<dbProperty>::iterator itr;
+  std::ostringstream out;
 
   for (itr = props.begin(); itr != props.end(); ++itr) {
     dbProperty* prop = *itr;
     std::string name = prop->getName();
-    fprintf(out, "    PROPERTY %s ", name.c_str());
-    writePropValue(prop, out);
-    fprintf(out, ";\n");
+    fmt::print(out, "    PROPERTY {} {};\n", name, writePropValue(prop));
   }
+
+  return out.str();
 }
 
 /* Sample Code to access dbTechLayer properties

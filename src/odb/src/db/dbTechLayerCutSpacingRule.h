@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -102,6 +101,23 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbTechLayerCutSpacingRule(_dbDatabase*, const _dbTechLayerCutSpacingRule& r);
+  _dbTechLayerCutSpacingRule(_dbDatabase*);
+  ~_dbTechLayerCutSpacingRule();
+
+  bool operator==(const _dbTechLayerCutSpacingRule& rhs) const;
+  bool operator!=(const _dbTechLayerCutSpacingRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerCutSpacingRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerCutSpacingRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   dbTechLayerCutSpacingRuleFlags flags_;
   int cut_spacing_;
   dbId<_dbTechLayer> second_layer_;
@@ -118,10 +134,12 @@ class _dbTechLayerCutSpacingRule : public _dbObject
   int min_length_;
   int extension_;
   int eol_width_;
-  uint num_cuts_;      // EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts
-  int within_;         // WITHIN cutWithin | PARALLELWITHIN within |
-                       // SAMEMETALSHAREDEDGE parwithin
-  int second_within_;  // WITHIN cutWithin cutWithin2
+  // EXACTALIGNED exactAlignedCut | EXCEPTSAMEVIA numCuts
+  uint num_cuts_;
+  // WITHIN cutWithin | PARALLELWITHIN within | SAMEMETALSHAREDEDGE parwithin
+  int within_;
+  // WITHIN cutWithin cutWithin2
+  int second_within_;
   dbId<_dbTechLayerCutClassRule> cut_class_;
   uint two_cuts_;
   uint prl_;
@@ -130,21 +148,6 @@ class _dbTechLayerCutSpacingRule : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbTechLayerCutSpacingRule(_dbDatabase*, const _dbTechLayerCutSpacingRule& r);
-  _dbTechLayerCutSpacingRule(_dbDatabase*);
-  ~_dbTechLayerCutSpacingRule();
-  bool operator==(const _dbTechLayerCutSpacingRule& rhs) const;
-  bool operator!=(const _dbTechLayerCutSpacingRule& rhs) const
-  {
-    return !operator==(rhs);
-  }
-  bool operator<(const _dbTechLayerCutSpacingRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerCutSpacingRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutSpacingRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutSpacingRule& obj);

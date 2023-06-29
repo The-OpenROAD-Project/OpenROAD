@@ -42,7 +42,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -66,20 +65,11 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerSpacingTablePrlRuleFlags flags_;
-  int eol_width_;
-  dbVector<int> length_tbl_;
-  dbVector<int> width_tbl_;
-  dbVector<dbVector<int>> spacing_tbl_;
-  dbVector<std::tuple<int, int, int>> influence_tbl_;
-
-  // User Code Begin Fields
-  std::map<uint, std::pair<int, int>> _within_tbl;
-  // User Code End Fields
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*,
                                   const _dbTechLayerSpacingTablePrlRule& r);
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
   ~_dbTechLayerSpacingTablePrlRule();
+
   bool operator==(const _dbTechLayerSpacingTablePrlRule& rhs) const;
   bool operator!=(const _dbTechLayerSpacingTablePrlRule& rhs) const
   {
@@ -97,6 +87,17 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
   uint getLengthIdx(const int length) const;
 
   // User Code End Methods
+
+  dbTechLayerSpacingTablePrlRuleFlags flags_;
+  int eol_width_;
+  dbVector<int> length_tbl_;
+  dbVector<int> width_tbl_;
+  dbVector<dbVector<int>> spacing_tbl_;
+  dbVector<std::tuple<int, int, int>> influence_tbl_;
+
+  // User Code Begin Fields
+  std::map<uint, std::pair<int, int>> _within_tbl;
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);
 dbOStream& operator<<(dbOStream& stream,
