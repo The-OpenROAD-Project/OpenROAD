@@ -155,13 +155,13 @@ class Oct
   };
   Oct() = default;
   Oct(const Oct& r) = default;
-  Oct(const Point& p1, const Point& p2, int width);
+  Oct(const Point p1, const Point p2, int width);
   Oct(int x1, int y1, int x2, int y2, int width);
   ~Oct() = default;
   Oct& operator=(const Oct& r) = default;
   bool operator==(const Oct& r) const;
   bool operator!=(const Oct& r) const { return !(*this == r); };
-  void init(const Point& p1, const Point& p2, int width);
+  void init(const Point p1, const Point p2, int width);
   OCT_DIR getDir() const;
   Point getCenterHigh() const;
   Point getCenterLow() const;
@@ -190,7 +190,7 @@ class Rect
  public:
   Rect() = default;
   Rect(const Rect& r) = default;
-  Rect(const Point& p1, const Point& p2);
+  Rect(const Point p1, const Point p2);
   Rect(int x1, int y1, int x2, int y2);
 
   Rect& operator=(const Rect& r) = default;
@@ -270,7 +270,7 @@ class Rect
   bool inside(const Rect& r) const;
 
   // Return the point inside rect that is closest to pt.
-  Point closestPtInside(const Point& pt) const;
+  Point closestPtInside(const Point pt) const;
 
   // Compute the union of these two rectangles.
   void merge(const Rect& r, Rect& result);
@@ -399,7 +399,7 @@ inline Rect::Rect(const int x1, const int y1, const int x2, const int y2)
   init(x1, y1, x2, y2);
 }
 
-inline Rect::Rect(const Point& p1, const Point& p2)
+inline Rect::Rect(const Point p1, const Point p2)
     : Rect(p1.getX(), p1.getY(), p2.getX(), p2.getY())
 {
 }
@@ -569,7 +569,7 @@ inline bool Rect::inside(const Rect& r) const
          && (yhi_ > r.yhi_);
 }
 
-inline Point Rect::closestPtInside(const Point& pt) const
+inline Point Rect::closestPtInside(const Point pt) const
 {
   return Point(std::min(std::max(pt.getX(), xMin()), xMax()),
                std::min(std::max(pt.getY(), yMin()), yMax()));
@@ -703,7 +703,7 @@ inline std::vector<Point> Rect::getPoints() const
   return {ll(), lr(), ur(), ul(), ll()};
 }
 
-inline Oct::Oct(const Point& p1, const Point& p2, int width)
+inline Oct::Oct(const Point p1, const Point p2, int width)
 {
   init(p1, p2, width);
 }
@@ -721,7 +721,7 @@ inline bool Oct::operator==(const Oct& r) const
          == std::tie(r.center_low_, r.center_high_, r.A_);
 }
 
-inline void Oct::init(const Point& p1, const Point& p2, int width)
+inline void Oct::init(const Point p1, const Point p2, int width)
 {
   if (p1.getY() > p2.getY()) {
     center_high_ = p1;
