@@ -135,6 +135,8 @@ class RenderThread : public QThread
                       const std::vector<odb::dbInst*>& insts);
   void drawRulers(Painter& painter, const Rulers& rulers);
 
+  bool instanceBelowMinSize(odb::dbInst* inst);
+
   void addInstTransform(QTransform& xfm, const odb::dbTransform& inst_xfm);
   QColor getColor(odb::dbTechLayer* layer);
   Qt::BrushStyle getPattern(odb::dbTechLayer* layer);

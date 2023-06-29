@@ -227,6 +227,23 @@ void RenderThread::addInstTransform(QTransform& xfm,
   }
 }
 
+bool RenderThread::instanceBelowMinSize(dbInst* inst)
+{
+  dbMaster* master = inst->getMaster();
+  int master_height = master->getHeight();
+  int master_width = master->getHeight();
+  const int minimum_size = viewer_->coarseViewableResolution();
+
+  if (master_height < minimum_size) {
+    return true;
+  }
+  if (!inst->getMaster()->isCore() && master_width < minimum_size) {
+    // if core cell, just check master height
+    return true;
+  }
+  return false;
+}
+
 void RenderThread::drawTracks(dbTechLayer* layer,
                               QPainter* painter,
                               const Rect& bounds)
@@ -540,7 +557,6 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     return;
   }
 
-  const int minimum_size = viewer_->coarseViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   const QColor text_color = viewer_->options_->instanceNameColor();
@@ -572,15 +588,8 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     if (restart_) {
       break;
     }
-    dbMaster* master = inst->getMaster();
-    int master_height = master->getHeight();
-    int master_width = master->getHeight();
 
-    if (master_height < minimum_size) {
-      continue;
-    }
-    if (!inst->getMaster()->isCore() && master_width < minimum_size) {
-      // if core cell, just check master height
+    if (instanceBelowMinSize(inst)) {
       continue;
     }
 
@@ -646,7 +655,6 @@ void RenderThread::drawITermLabels(QPainter* painter,
     return;
   }
 
-  const int minimum_size = viewer_->coarseViewableResolution();
   const QTransform initial_xfm = painter->transform();
 
   const QColor text_color = viewer_->options_->itermLabelColor();
@@ -678,15 +686,8 @@ void RenderThread::drawITermLabels(QPainter* painter,
     if (restart_) {
       break;
     }
-    dbMaster* master = inst->getMaster();
-    int master_height = master->getHeight();
-    int master_width = master->getHeight();
 
-    if (master_height < minimum_size) {
-      continue;
-    }
-    if (!inst->getMaster()->isCore() && master_width < minimum_size) {
-      // if core cell, just check master height
+    if (instanceBelowMinSize(inst)) {
       continue;
     }
 
