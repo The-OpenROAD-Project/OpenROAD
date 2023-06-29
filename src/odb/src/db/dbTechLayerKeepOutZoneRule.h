@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -66,6 +65,24 @@ class _dbTechLayerKeepOutZoneRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbTechLayerKeepOutZoneRule(_dbDatabase*,
+                              const _dbTechLayerKeepOutZoneRule& r);
+  _dbTechLayerKeepOutZoneRule(_dbDatabase*);
+  ~_dbTechLayerKeepOutZoneRule();
+
+  bool operator==(const _dbTechLayerKeepOutZoneRule& rhs) const;
+  bool operator!=(const _dbTechLayerKeepOutZoneRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerKeepOutZoneRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerKeepOutZoneRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   dbTechLayerKeepOutZoneRuleFlags flags_;
   std::string first_cut_class_;
   std::string second_cut_class_;
@@ -80,22 +97,6 @@ class _dbTechLayerKeepOutZoneRule : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbTechLayerKeepOutZoneRule(_dbDatabase*,
-                              const _dbTechLayerKeepOutZoneRule& r);
-  _dbTechLayerKeepOutZoneRule(_dbDatabase*);
-  ~_dbTechLayerKeepOutZoneRule();
-  bool operator==(const _dbTechLayerKeepOutZoneRule& rhs) const;
-  bool operator!=(const _dbTechLayerKeepOutZoneRule& rhs) const
-  {
-    return !operator==(rhs);
-  }
-  bool operator<(const _dbTechLayerKeepOutZoneRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerKeepOutZoneRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj);
 dbOStream& operator<<(dbOStream& stream,

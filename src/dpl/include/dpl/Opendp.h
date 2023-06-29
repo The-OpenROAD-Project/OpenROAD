@@ -39,6 +39,8 @@
 
 #pragma once
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/index/rtree.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -83,6 +85,13 @@ struct Pixel;
 struct Group;
 class DplObserver;
 
+using bgPoint
+    = boost::geometry::model::d2::point_xy<int, boost::geometry::cs::cartesian>;
+using bgBox = boost::geometry::model::box<bgPoint>;
+
+using RtreeBox
+    = boost::geometry::index::rtree<bgBox,
+                                    boost::geometry::index::quadratic<16>>;
 // The "Grid" is now an array of 2D grids. The new dimension is to support
 // multi-height cells. Each unique row height creates a new grid that is used in
 // legalization. The first index is the grid index (corresponding to row
@@ -244,6 +253,7 @@ class Opendp
 
   void initGrid();
   void initGridLayersMap();
+  std::string printBgBox(const boost::geometry::model::box<bgPoint>& queryBox);
   void detailedPlacement();
   Point nearestPt(const Cell* cell, const Rect* rect) const;
   int distToRect(const Cell* cell, const Rect* rect) const;
@@ -268,6 +278,11 @@ class Opendp
                          PixelPt& best_pt,
                          int& best_dist) const;
   PixelPt binSearch(int x, const Cell* cell, int bin_x, int bin_y) const;
+  bool checkRegionOverlap(const Cell* cell,
+                          int x,
+                          int y,
+                          int x_end,
+                          int y_end) const;
   bool checkPixels(const Cell* cell, int x, int y, int x_end, int y_end) const;
   void shiftMove(Cell* cell);
   bool mapMove(Cell* cell);
@@ -295,6 +310,8 @@ class Opendp
   Point nearestBlockEdge(const Cell* cell,
                          const Point& legal_pt,
                          const Rect& block_bbox) const;
+
+  void findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const;
   bool moveHopeless(const Cell* cell, int& grid_x, int& grid_y) const;
   void placeGroups();
   void prePlace();
@@ -334,6 +351,7 @@ class Opendp
   Cell* checkOverlap(Cell& cell) const;
   Cell* checkOneSiteGaps(Cell& cell) const;
   bool overlap(const Cell* cell1, const Cell* cell2) const;
+  bool checkRegionPlacement(const Cell* cell) const;
   bool isOverlapPadded(const Cell* cell1, const Cell* cell2) const;
   bool isCrWtBlClass(const Cell* cell) const;
   bool isWtClass(const Cell* cell) const;
@@ -461,6 +479,7 @@ class Opendp
   // 3D pixel grid
   Grid grid_;
   Cell dummy_cell_;
+  RtreeBox regions_rtree;
 
   // Filler placement.
   // gap (in sites) -> seq of masters

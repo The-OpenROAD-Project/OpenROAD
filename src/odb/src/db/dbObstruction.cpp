@@ -183,7 +183,7 @@ void _dbObstruction::out(dbDiff& diff, char side, const char* field) const
       _dbInst* inst = blk->_inst_tbl->getPtr(_inst);
       diff.out(side, "_inst", inst->_name);
     } else {
-      diff.out(side, "_inst", "(NULL)");
+      diff.out(side, "_inst", "(nullptr)");
     }
   }
 
@@ -284,7 +284,7 @@ dbInst* dbObstruction::getInstance()
   _dbObstruction* obs = (_dbObstruction*) this;
 
   if (obs->_inst == 0)
-    return NULL;
+    return nullptr;
 
   _dbBlock* block = (_dbBlock*) obs->getOwner();
   return (dbInst*) block->_inst_tbl->getPtr(obs->_inst);

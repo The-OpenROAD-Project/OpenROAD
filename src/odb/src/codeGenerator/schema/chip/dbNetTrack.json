@@ -1,6 +1,5 @@
 {
   "name": "dbNetTrack",
-  "parent": "dbObject",
   "fields": [
     {
       "name": "net_",

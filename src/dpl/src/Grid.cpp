@@ -58,6 +58,8 @@ using odb::dbTransform;
 void Opendp::initGridLayersMap()
 {
   int grid_index = 0;
+  grid_info_map_.clear();
+  grid_info_vector_.clear();
   for (auto db_row : block_->getRows()) {
     if (db_row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
@@ -206,6 +208,15 @@ Pixel* Opendp::gridPixel(int grid_idx, int grid_x, int grid_y) const
     return const_cast<Pixel*>(&grid_[grid_idx][grid_y][grid_x]);
   }
   return nullptr;
+}
+
+////////////////////////////////////////////////////////////////
+
+void Opendp::findOverlapInRtree(bgBox& queryBox, vector<bgBox>& overlaps) const
+{
+  overlaps.clear();
+  regions_rtree.query(boost::geometry::index::intersects(queryBox),
+                      std::back_inserter(overlaps));
 }
 
 ////////////////////////////////////////////////////////////////
@@ -502,6 +513,16 @@ void Opendp::groupInitPixels()
     GridInfo& grid_info = grid_info_map_[row_height];
     int grid_index = grid_info.grid_index;
     for (Rect& rect : group.regions) {
+      debugPrint(logger_,
+                 DPL,
+                 "detailed",
+                 1,
+                 "Group {} region [x{} y{}] [x{} y{}]",
+                 group.name,
+                 rect.xMin(),
+                 rect.yMin(),
+                 rect.xMax(),
+                 rect.yMax());
       int row_start = divCeil(rect.yMin(), row_height);
       int row_end = divFloor(rect.yMax(), row_height);
 
@@ -638,14 +659,27 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
       for (int y = layer_y; y < layer_y_end; y++) {
         Pixel* pixel = gridPixel(layer.second.grid_index, x, y);
         if (pixel->cell) {
-          logger_->error(
-              DPL,
-              41,
-              "Cannot paint grid because another layer is already occupied.");
-        } else {
-          pixel->cell = cell;
-          pixel->util = 1.0;
+          // Checks that the row heights of the found cell match the row height
+          // of this layer. If they don't, it means that this pixel is partially
+          // filled by a single-height or shorter cell, which is allowed.
+          // However, if they do match, it means that we are trying to overwrite
+          // a double-height cell placement, which is an error.
+
+          pair<int, GridInfo> grid_info_candidate = getRowInfo(pixel->cell);
+          if (grid_info_candidate.first == layer.first) {
+            // Occupied by a multi-height cell this should not happen.
+            logger_->error(
+                DPL,
+                41,
+                "Cannot paint grid because another layer is already occupied.");
+          } else {
+            // We might not want to overwrite the cell that's already here.
+            continue;
+          }
         }
+
+        pixel->cell = cell;
+        pixel->util = 1.0;
       }
     }
   }

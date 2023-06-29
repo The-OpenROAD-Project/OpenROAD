@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2020, The Regents of the University of California
+// Copyright (c) 2019, Nefelus Inc
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,42 +30,80 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//Generator Code Begin Header
-#pragma once
-
-#include "dbIterator.h"
-#include "odb.h"
+// Generator Code Begin Cpp
+#include "{{itr.name}}.h"
+#include "{{itr.parentObject}}.h"
+#include "dbTable.h"
+{% for include in itr.includes %}
+  #include "{{include}}"
+{% endfor %}
 // User Code Begin Includes
 // User Code End Includes
 
 namespace odb {
 
-  class _{{itr.parentObject}};
-  template <class T>
-  class dbTable;
-  //User Code Begin classes
-  //User Code End classes
-  class {{itr.name}} : public dbIterator
-  {
-    dbTable<_{{itr.parentObject}}>* _{{itr.tableName}};
-    // User Code Begin Fields
-    // User Code End Fields
-  public:
-    {{itr.name}}(dbTable<_{{itr.parentObject}}>* {{itr.tableName}}) { _{{itr.tableName}} = {{itr.tableName}}; }
+////////////////////////////////////////////////////////////////////
+//
+// {{itr.name}} - Methods
+//
+////////////////////////////////////////////////////////////////////
 
-    bool      reversible();
-    bool      orderReversed();
-    void      reverse(dbObject* parent);
-    uint      sequential();
-    uint      size(dbObject* parent);
-    uint      begin(dbObject* parent);
-    uint      end(dbObject* parent);
-    uint      next(uint id, ...);
-    dbObject* getObject(uint id, ...);
-    // User Code Begin Methods
-    // User Code End Methods
-  };
 
-  
+bool {{itr.name}}::reversible()
+{
+  return {{itr.reversible}};
 }
-//Generator Code End Header
+
+bool {{itr.name}}::orderReversed()
+{
+  return {{itr.orderReversed}};
+}
+
+void {{itr.name}}::reverse(dbObject* parent)
+{
+  //User Code Begin reverse
+  //User Code End reverse
+}
+
+uint {{itr.name}}::sequential()
+{
+  return {{itr.sequential}};
+}
+
+uint {{itr.name}}::size(dbObject* parent)
+{
+  uint id;
+  uint cnt = 0;
+
+  for (id = {{itr.name}}::begin(parent); id != {{itr.name}}::end(parent);
+       id = {{itr.name}}::next(id))
+    ++cnt;
+
+  return cnt;
+}
+
+uint {{itr.name}}::begin(dbObject* parent)
+{
+  //User Code Begin begin
+  //User Code End begin
+}
+
+uint {{itr.name}}::end(dbObject* /* unused: parent */)
+{
+  return 0;
+}
+
+uint {{itr.name}}::next(uint id, ...)
+{
+  //User Code Begin next
+  //User Code End next
+}
+
+dbObject* {{itr.name}}::getObject(uint id, ...)
+{
+  return _{{itr.tableName}}->getPtr(id);
+}
+// User Code Begin Methods
+// User Code End Methods
+}  // namespace odb
+// Generator Code End Cpp
