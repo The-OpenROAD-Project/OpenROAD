@@ -1882,7 +1882,10 @@ void IOPlacer::runAnnealing()
   initConstraints(true);
 
   if (!pin_groups_.empty()) {
-    logger_->error(PPL, 104, "Pin groups not supported during pin placement with Simulated Annealing");
+    logger_->error(PPL,
+                   104,
+                   "Pin groups not supported during pin placement with "
+                   "Simulated Annealing");
   }
 
   ppl::SimulatedAnnealing annealing(
