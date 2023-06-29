@@ -20,9 +20,9 @@
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
 //
-//  $Author: icftcm $
-//  $Revision: #2 $
-//  $Date: 2017/06/19 $
+//  $Author: dell $
+//  $Revision: #1 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -56,8 +56,6 @@ class defiWire
  public:
   defiWire(defrData* data);
   ~defiWire();
-  DEF_COPY_CONSTRUCTOR_H(defiWire);
-  DEF_ASSIGN_OPERATOR_H(defiWire);
 
   void Init(const char* type, const char* wireShieldName);
   void Destroy();
@@ -88,9 +86,6 @@ class defiSubnet
  public:
   defiSubnet(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiSubnet);
-  DEF_ASSIGN_OPERATOR_H(defiSubnet);
 
   void Destroy();
   ~defiSubnet();
@@ -173,9 +168,6 @@ class defiVpin
   defiVpin(defrData* data);
   ~defiVpin();
 
-  DEF_COPY_CONSTRUCTOR_H(defiVpin);
-  DEF_ASSIGN_OPERATOR_H(defiVpin);
-
   void Init(const char* name);
   void Destroy();
   void setLayer(const char* name);
@@ -218,9 +210,6 @@ class defiShield
   defiShield(defrData* data);
   ~defiShield();
 
-  DEF_COPY_CONSTRUCTOR_H(defiShield);
-  DEF_ASSIGN_OPERATOR_H(defiShield);
-
   void Init(const char* name);
   void Destroy();
   void clear();
@@ -249,9 +238,6 @@ class defiNet
  public:
   defiNet(defrData* data);
   void Init();
-
-  DEF_COPY_CONSTRUCTOR_H(defiNet);
-  DEF_ASSIGN_OPERATOR_H(defiNet);
 
   void Destroy();
   ~defiNet();
@@ -338,7 +324,7 @@ class defiNet
   const char* propName(int index) const;
   const char* propValue(int index) const;
   double propNumber(int index) const;
-  char propType(int index) const;
+  const char propType(int index) const;
   int propIsNumber(int index) const;
   int propIsString(int index) const;
   int numConnections() const;
@@ -447,11 +433,11 @@ class defiNet
   int numViaSpecs() const;
   struct defiPoints getViaPts(int index) const;
   const char* viaName(int index) const;
-  int viaOrient(int index) const;
+  const int viaOrient(int index) const;
   const char* viaOrientStr(int index) const;
-  int topMaskNum(int index) const;
-  int cutMaskNum(int index) const;
-  int bottomMaskNum(int index) const;
+  const int topMaskNum(int index) const;
+  const int cutMaskNum(int index) const;
+  const int bottomMaskNum(int index) const;
   const char* viaRouteStatus(int index) const;
   const char* viaRouteStatusShieldName(int index) const;
   const char* viaShapeType(int index) const;

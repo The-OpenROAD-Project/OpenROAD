@@ -61,8 +61,6 @@
       "name": "except_same_corners_"
     }
   ],
-  "constructors": [],
-  "enums": [],
   "cpp_includes": [
     "dbTechLayer.h"
   ]

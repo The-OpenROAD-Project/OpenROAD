@@ -50,8 +50,6 @@
       "default": "\"\""
     }
   ],
-  "constructors": [],
-  "enums": [],
   "cpp_includes": [
     "dbTechLayer.h"
   ]

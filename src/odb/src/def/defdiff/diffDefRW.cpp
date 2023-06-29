@@ -202,8 +202,8 @@ int compf(defrCallbackType_e c, defiComponent* co, defiUserData ud)
   if (co->maskShiftSize()) {
     fprintf(fout, "MASKSHIFT ");
 
-    for (int i = co->maskShiftSize() - 1; i >= 0; i--) {
-      fprintf(fout, "%d", co->maskShift(i));
+    for (int ii = co->maskShiftSize() - 1; ii >= 0; ii--) {
+      fprintf(fout, "%d", co->maskShift(ii));
     }
     fprintf(fout, "\n");
   }
@@ -243,7 +243,10 @@ int compf(defrCallbackType_e c, defiComponent* co, defiUserData ud)
 int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
 {
   // For net and special net.
-  int i, j, k, w, x, y, z, px, py, pz;
+  int i, j, k, w, x, y, z;
+  int px = 0;
+  int py = 0;
+  int pz = 0;
   defiPath* p;
   defiSubnet* s;
   int path;
@@ -675,7 +678,7 @@ int netf(defrCallbackType_e c, defiNet* net, defiUserData ud)
                   // fprintf(fout, "NET %s FLUSHPOINT %d %d %d\n",
                   // s->name(), i1[l], i2[l], ext[l]);
                   // l++;
-                  // }
+                  //}
                   // break;
                 case DEFIPATH_TAPERRULE:
                   fprintf(fout, " TAPERRULE %s", p->getTaperRule());
@@ -735,7 +738,7 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
   int path;
   defiShield* shield;
   defiWire* wire;
-  int nline;
+  int nline = 0;
   const char* sNLayerName = "N/A";
   int numX, numY, stepX, stepY;
 
@@ -758,18 +761,17 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
   if (net->numRectangles()) {  // 5.6
 
     for (i = 0; i < net->numRectangles(); i++) {
-      if (curVer >= 5.8) {
-        fprintf(fout, "\nSNET %s ", net->name());
-        if (strcmp(net->rectRouteStatus(i), "") != 0) {
-          fprintf(fout, "%s ", net->rectRouteStatus(i));
-          if (strcmp(net->rectRouteStatus(i), "SHIELD") == 0) {
-            fprintf(fout, "%s ", net->rectRouteStatusShieldName(i));
-          }
-        }
-        if (strcmp(net->rectShapeType(i), "") != 0) {
-          fprintf(fout, "SHAPE %s ", net->rectShapeType(i));
+      fprintf(fout, "\nSNET %s ", net->name());
+      if (strcmp(net->rectRouteStatus(i), "") != 0) {
+        fprintf(fout, "%s ", net->rectRouteStatus(i));
+        if (strcmp(net->rectRouteStatus(i), "SHIELD") == 0) {
+          fprintf(fout, "%s ", net->rectRouteStatusShieldName(i));
         }
       }
+      if (strcmp(net->rectShapeType(i), "") != 0) {
+        fprintf(fout, "SHAPE %s ", net->rectShapeType(i));
+      }
+
       if (net->rectMask(i)) {
         fprintf(fout,
                 "MASK %d RECT %s %d %d %d %d",
@@ -792,8 +794,6 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
   }
 
   if (net->numPolygons()) {
-    struct defiPoints points;
-
     for (i = 0; i < net->numPolygons(); i++) {
       fprintf(fout, "\nSNET %s ", net->name());
       if (curVer >= 5.8) {
@@ -816,7 +816,7 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
         fprintf(fout, "POLYGON %s", net->polygonName(i));
       }
 
-      points = net->getPolygon(i);
+      defiPoints points = net->getPolygon(i);
       for (j = 0; j < points.numPoints; j++)
         fprintf(fout, " %d %d", points.x[j], points.y[j]);
     }
@@ -848,8 +848,8 @@ int snetf(defrCallbackType_e c, defiNet* net, defiUserData ud)
 
       defiPoints points = net->getViaPts(i);
 
-      for (int j = 0; j < points.numPoints; j++) {
-        fprintf(fout, " %d %d", points.x[j], points.y[j]);
+      for (int jj = 0; jj < points.numPoints; jj++) {
+        fprintf(fout, " %d %d", points.x[jj], points.y[jj]);
       }
       fprintf(fout, ";\n");
     }
@@ -1391,9 +1391,9 @@ int casesens(defrCallbackType_e c, int d, defiUserData ud)
   if (ud != userData)
     dataError();
   if (d == 1)
-    fprintf(fout, "NAMESCASESENSITIVE OFF\n", d);
+    fprintf(fout, "NAMESCASESENSITIVE OFF\n");
   else
-    fprintf(fout, "NAMESCASESENSITIVE ON\n", d);
+    fprintf(fout, "NAMESCASESENSITIVE ON\n");
   return 0;
 }
 
@@ -1437,7 +1437,6 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
   char* extraPinName = NULL;
   char* pName = NULL;
   char* tmpName = NULL;
-  struct defiPoints points;
 
   checkType(c);
   if (ud != userData)
@@ -1491,10 +1490,12 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
     case defrDieAreaCbkType:
       box = (defiBox*) cl;
       fprintf(fout, "DIEAREA");
-      points = box->getPoint();
-      for (i = 0; i < points.numPoints; i++)
-        fprintf(fout, " %d %d", points.x[i], points.y[i]);
-      fprintf(fout, "\n");
+      {
+        defiPoints points = box->getPoint();
+        for (i = 0; i < points.numPoints; i++)
+          fprintf(fout, " %d %d", points.x[i], points.y[i]);
+        fprintf(fout, "\n");
+      }
       break;
     case defrPinCapCbkType:
       pc = (defiPinCap*) cl;
@@ -1564,7 +1565,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
           if (pin->hasPolygonDesignRuleWidth(i))
             fprintf(
                 fout, "DESIGNRULEWIDTH %d ", pin->polygonDesignRuleWidth(i));
-          points = pin->getPolygon(i);
+          defiPoints points = pin->getPolygon(i);
           for (k = 0; k < points.numPoints; k++)
             fprintf(fout, " %d %d", points.x[k], points.y[k]);
         }
@@ -1606,7 +1607,6 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       fprintf(fout, "\n");
 
       if (pin->hasPort()) {
-        struct defiPoints points;
         defiPinPort* port;
         for (j = 0; j < pin->numPorts(); j++) {
           fprintf(fout, "PIN %s", tmpPinName);
@@ -1633,9 +1633,10 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
             if (port->hasPolygonDesignRuleWidth(i))
               fprintf(
                   fout, " DESIGNRULEWIDTH %d", port->polygonDesignRuleWidth(i));
-            points = port->getPolygon(i);
-            for (k = 0; k < points.numPoints; k++)
-              fprintf(fout, " %d %d", points.x[k], points.y[k]);
+
+            defiPoints pts = port->getPolygon(i);
+            for (k = 0; k < pts.numPoints; k++)
+              fprintf(fout, " %d %d", pts.x[k], pts.y[k]);
           }
           for (i = 0; i < port->numVias(); i++) {
             if (port->viaTopMask(i) || port->viaCutMask(i)
@@ -1788,7 +1789,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       --numObjs;
       break;
     case defrDefaultCapCbkType:
-      i = (long) cl;
+      i = (unsigned long long) cl;
       fprintf(fout, "DEFAULTCAP %d\n", i);
       numObjs = i;
       break;
@@ -1839,22 +1840,22 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
     case defrTrackCbkType:
       track = (defiTrack*) cl;
       /*if (track->firstTrackMask()) {
-        if (track->sameMask()) {
-        fprintf(fout, "TRACKS %s %g DO %g STEP %g MASK %d SAMEMASK LAYER ",
-        track->macro(), track->x(),
-        track->xNum(), track->xStep(),
-        track->firstTrackMask());
-        } else {
-        fprintf(fout, "TRACKS %s %g DO %g STEP %g MASK %d LAYER ",
-        track->macro(), track->x(),
-        track->xNum(), track->xStep(),
-        track->firstTrackMask());
-        }
-        } else {
-        fprintf(fout, "TRACKS %s %g DO %g STEP %g LAYER ",
-        track->macro(), track->x(),
-        track->xNum(), track->xStep());
-        } */
+         if (track->sameMask()) {
+         fprintf(fout, "TRACKS %s %g DO %g STEP %g MASK %d SAMEMASK LAYER ",
+                  track->macro(), track->x(),
+                  track->xNum(), track->xStep(),
+              track->firstTrackMask());
+         } else {
+         fprintf(fout, "TRACKS %s %g DO %g STEP %g MASK %d LAYER ",
+                  track->macro(), track->x(),
+                  track->xNum(), track->xStep(),
+              track->firstTrackMask());
+         }
+      } else {
+         fprintf(fout, "TRACKS %s %g DO %g STEP %g LAYER ",
+                  track->macro(), track->x(),
+                  track->xNum(), track->xStep());
+      } */
       for (i = 0; i < track->numLayers(); i++) {
         if (track->firstTrackMask()) {
           if (track->sameMask()) {
@@ -1930,7 +1931,6 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       }
       // POLYGON
       if (via->numPolygons()) {
-        struct defiPoints points;
         for (i = 0; i < via->numPolygons(); i++) {
           int polyMask = via->polyMask(i);
 
@@ -1940,19 +1940,19 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
           } else {
             fprintf(fout, "\n  POLYGON %s ", via->polygonName(i));
           }
-          points = via->getPolygon(i);
-          for (j = 0; j < points.numPoints; j++)
-            fprintf(fout, "%d %d ", points.x[j], points.y[j]);
+          defiPoints pts = via->getPolygon(i);
+          for (j = 0; j < pts.numPoints; j++)
+            fprintf(fout, "%d %d ", pts.x[j], pts.y[j]);
         }
         fprintf(fout, " \n");
       }
 
       if (via->hasViaRule()) {
-        char *vrn, *bl, *cl, *tl;
+        char *vrn, *bl, *cll, *tl;
         int xs, ys, xcs, ycs, xbe, ybe, xte, yte;
         int cr, cc, xo, yo, xbo, ybo, xto, yto;
         (void) via->viaRule(
-            &vrn, &xs, &ys, &bl, &cl, &tl, &xcs, &ycs, &xbe, &ybe, &xte, &yte);
+            &vrn, &xs, &ys, &bl, &cll, &tl, &xcs, &ycs, &xbe, &ybe, &xte, &yte);
         fprintf(fout,
                 "VIA %s VIARULE %s CUTSIZE %d %d LAYERS %s %s %s",
                 via->name(),
@@ -1960,7 +1960,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
                 xs,
                 ys,
                 bl,
-                cl,
+                cll,
                 tl);
         fprintf(fout,
                 " CUTSPACING %d %d ENCLOSURE %d %d %d %d",
@@ -2018,9 +2018,9 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
         fprintf(fout, "REGION %s ", group->regionName());
       if (group->hasRegionBox()) {
         int *gxl, *gyl, *gxh, *gyh;
-        int size;
-        group->regionRects(&size, &gxl, &gyl, &gxh, &gyh);
-        for (i = 0; i < size; i++)
+        int sz;
+        group->regionRects(&sz, &gxl, &gyl, &gxh, &gyh);
+        for (i = 0; i < sz; i++)
           fprintf(
               fout, "REGION (%d %d) (%d %d) ", gxl[i], gyl[i], gxh[i], gyh[i]);
       }
@@ -2040,18 +2040,18 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       fprintf(fout, "SCANCHAINS %s", sc->name());
       if (sc->hasStart()) {
         sc->start(&a1, &b1);
-        fprintf(fout, " START %s %s", sc->name(), a1, b1);
+        fprintf(fout, " START %s %s", sc->name(), a1);
       }
       if (sc->hasStop()) {
         sc->stop(&a1, &b1);
-        fprintf(fout, " STOP %s %s", sc->name(), a1, b1);
+        fprintf(fout, " STOP %s %s", sc->name(), a1);
       }
       if (sc->hasCommonInPin() || sc->hasCommonOutPin()) {
-        fprintf(fout, " COMMONSCANPINS ", sc->name());
+        fprintf(fout, " COMMONSCANPINS ");
         if (sc->hasCommonInPin())
-          fprintf(fout, " ( IN %s )", sc->commonInPin());
+          fprintf(fout, " ( IN  )");
         if (sc->hasCommonOutPin())
-          fprintf(fout, " ( OUT %s )", sc->commonOutPin());
+          fprintf(fout, " ( OUT  )");
       }
       fprintf(fout, "\n");
       if (sc->hasFloating()) {
@@ -2175,9 +2175,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
         fprintf(fout,
                 "TIMINGDISABLE FROMPIN %s %s ",
                 td->fromInst(),
-                td->fromPin(),
-                td->toInst(),
-                td->toPin());
+                td->fromPin());
       if (td->hasThru())
         fprintf(fout, " THRUPIN %s %s ", td->thruInst(), td->thruPin());
       if (td->hasMacroFromTo())
@@ -2187,8 +2185,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
                 td->fromPin(),
                 td->toPin());
       if (td->hasMacroThru())
-        fprintf(
-            fout, " MACRO %s THRUPIN %s %s ", td->macroName(), td->fromPin());
+        fprintf(fout, " MACRO %s THRUPIN %s  ", td->macroName(), td->fromPin());
       fprintf(fout, "\n");
       break;
     case defrPartitionCbkType:
@@ -2296,9 +2293,9 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
         }
         for (i = 0; i < block->numPolygons(); i++) {
           fprintf(fout, "BLOCKAGE LAYER %s POLYGON", block->layerName());
-          points = block->getPolygon(i);
-          for (j = 0; j < points.numPoints; j++)
-            fprintf(fout, "%d %d ", points.x[j], points.y[j]);
+          defiPoints pts = block->getPolygon(i);
+          for (j = 0; j < pts.numPoints; j++)
+            fprintf(fout, "%d %d ", pts.x[j], pts.y[j]);
           fprintf(fout, "\n");
         }
       } else if (block->hasPlacement()) {
@@ -2336,8 +2333,8 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
                 slot->yh(i));
       }
       for (i = 0; i < slot->numPolygons(); i++) {
-        fprintf(fout, "SLOT LAYER %s POLYGON");
-        points = slot->getPolygon(i);
+        fprintf(fout, "SLOT LAYER  POLYGON");
+        defiPoints points = slot->getPolygon(i);
         for (j = 0; j < points.numPoints; j++)
           fprintf(fout, " %d %d", points.x[j], points.y[j]);
         fprintf(fout, "\n");
@@ -2363,7 +2360,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
       }
       for (i = 0; i < fill->numPolygons(); i++) {
         fprintf(fout, "FILL LAYER %s POLYGON", fill->layerName());
-        points = fill->getPolygon(i);
+        defiPoints points = fill->getPolygon(i);
         for (j = 0; j < points.numPoints; j++)
           fprintf(fout, " %d %d", points.x[j], points.y[j]);
         fprintf(fout, "\n");
@@ -2380,7 +2377,7 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
         if (fill->hasViaOpc())
           fprintf(fout, " OPC\n");
         for (i = 0; i < fill->numViaPts(); i++) {
-          points = fill->getViaPts(i);
+          defiPoints points = fill->getViaPts(i);
           for (j = 0; j < points.numPoints; j++)
             fprintf(fout, " %d %d", points.x[j], points.y[j]);
         }
@@ -2392,11 +2389,13 @@ int cls(defrCallbackType_e c, void* cl, defiUserData ud)
     case defrStylesCbkType:
       styles = (defiStyles*) cl;
       fprintf(fout, "STYLE %d", styles->style());
-      points = styles->getPolygon();
-      for (j = 0; j < points.numPoints; j++)
-        fprintf(fout, " %d %d", points.x[j], points.y[j]);
-      fprintf(fout, "\n");
-      --numObjs;
+      {
+        defiPoints points = styles->getPolygon();
+        for (j = 0; j < points.numPoints; j++)
+          fprintf(fout, " %d %d", points.x[j], points.y[j]);
+        fprintf(fout, "\n");
+        --numObjs;
+      }
       break;
 
     default:
