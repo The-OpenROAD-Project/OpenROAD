@@ -8,6 +8,16 @@ This is a compilation of many idioms in OpenROAD code that is considered undesir
 
 ## C++
 
+### Linting and Formatting
+OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands: 
+
+```shell
+cmake . -B build  //generate build files
+//typically only run these commands on files you changed.
+clang-tidy -p ./build source_file.cpp
+clang-format -i -style=file:.clang-format source_file.cpp 
+```
+
 ### Practice #1
 
 Don't comment out code. `git` provides a complete history of
@@ -446,7 +456,7 @@ for (odb::dbNet* currNet : nets) {
 }
 ```
 
-### Practice #34
+### Practice #31
 
 Don't use end of line comments unless they are very short. 
 
@@ -456,7 +466,7 @@ for (int x = firstTile._x; x <= lastTile._x; x++) { // Setting capacities of edg
 }
 ```
 
-### Practice #35
+### Practice #32
 
 Don't `std::pow` for powers of 2 or for decimal constants.
 
@@ -474,17 +484,17 @@ unsigned numberOfTopologies = 1 << numberOfNodes;
 
 ## Git
 
-### Practice #31
+### Practice #33
 
 Don't put /'s in `.gitignore` directory names.
 `test/`
 
-### Practice #32
+### Practice #34
 
 Don't put file names in `.gitignore` ignored directories.
 `test/results` `test/results/diffs`
 
-### Practice #33
+### Practice #35
 
 Don't list compile artifacts in `.gitignore`. They all end
 up in the build directory so each file type does not have to appear in
