@@ -63,9 +63,10 @@ uint64_t ScanChain::getBits() const
   return bits_;
 }
 
-void ScanChain::sortScanCells(const std::function<void(std::vector<std::unique_ptr<ScanCell>>&,
-                                                       std::vector<std::unique_ptr<ScanCell>>&,
-                                                       std::vector<std::unique_ptr<ScanCell>>&)>& sort_fn)
+void ScanChain::sortScanCells(
+    const std::function<void(std::vector<std::unique_ptr<ScanCell>>&,
+                             std::vector<std::unique_ptr<ScanCell>>&,
+                             std::vector<std::unique_ptr<ScanCell>>&)>& sort_fn)
 {
   sort_fn(falling_edge_scan_cells_, rising_edge_scan_cells_, scan_cells_);
   // At this point, falling_edge_scan_cells_ and rising_edge_scan_cells_ will be
