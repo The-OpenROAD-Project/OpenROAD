@@ -48,9 +48,6 @@ class Logger;
 }  // namespace utl
 
 namespace ppl {
-using odb::Point;
-using odb::Rect;
-
 using utl::Logger;
 
 class SimulatedAnnealing
@@ -71,10 +68,10 @@ class SimulatedAnnealing
   void perturbAssignment(int& prev_slot, int& new_slot, int& pin1, int& pin2);
   void swapPins(int& pin1, int& pin2);
   void movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
-  void restorePreviousAssignment(const int prev_slot,
-                                 const int new_slot,
-                                 const int pin1,
-                                 const int pin2);
+  void restorePreviousAssignment(int prev_slot,
+                                 int new_slot,
+                                 int pin1,
+                                 int pin2);
   double dbuToMicrons(int64_t dbu);
 
   // [pin] -> slot
