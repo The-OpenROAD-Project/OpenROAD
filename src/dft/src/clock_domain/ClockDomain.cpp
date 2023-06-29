@@ -77,11 +77,9 @@ std::string_view ClockDomain::getClockEdgeName() const
     case ClockEdge::Falling:
       return "falling";
       break;
-    default:
-      // TODO replace with std::unreachable() once we reach c++23
-      return "";
-      break;
   }
+  // TODO replace with std::unreachable() once we reach c++23
+  return "Unknown clock edge";
 }
 
 size_t ClockDomain::getClockDomainId() const
