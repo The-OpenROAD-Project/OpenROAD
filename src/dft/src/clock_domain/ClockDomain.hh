@@ -55,8 +55,12 @@ class ClockDomain
   ClockDomain(ClockDomain&& other) = default;
   ClockDomain& operator=(ClockDomain&& other) = default;
 
-  const std::string& getClockName() const;
+  std::string_view getClockName() const;
   ClockEdge getClockEdge() const;
+  std::string_view getClockEdgeName() const;
+
+  // Returns a unique id that can be use to identify a particular clock domain
+  size_t getClockDomainId() const;
 
  private:
   std::string clock_name_;
