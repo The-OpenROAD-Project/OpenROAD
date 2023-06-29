@@ -66,6 +66,7 @@ void ScanArchitectHeuristic::architect()
           [](std::vector<std::unique_ptr<ScanCell>>& falling,
              std::vector<std::unique_ptr<ScanCell>>& rising,
              std::vector<std::unique_ptr<ScanCell>>& sorted) {
+            sorted.reserve(falling.size() + rising.size());
             // Falling edge first
             std::move(
                 falling.begin(), falling.end(), std::back_inserter(sorted));
