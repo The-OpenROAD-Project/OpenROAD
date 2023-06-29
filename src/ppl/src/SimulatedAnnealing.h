@@ -71,8 +71,6 @@ class SimulatedAnnealing
   void perturbAssignment(int& prev_slot, int& new_slot, int& pin1, int& pin2);
   void swapPins(int& pin1, int& pin2);
   void movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
-  std::vector<int> placeSubsetOfPins(const std::vector<int>& pin_assignment,
-                                     float subset_percent);
   double dbuToMicrons(int64_t dbu);
 
   // [pin] -> slot

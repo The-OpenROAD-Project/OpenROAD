@@ -191,15 +191,6 @@ void SimulatedAnnealing::movePinToFreeSlot(int& prev_slot,
   pin_assignment_[pin] = new_slot;
 }
 
-std::vector<int> SimulatedAnnealing::placeSubsetOfPins(
-    const std::vector<int>& pin_assignment,
-    float subset_percent)
-{
-  std::vector<int> assignment;
-
-  return assignment;
-}
-
 double SimulatedAnnealing::dbuToMicrons(int64_t dbu)
 {
   return (double) dbu / (db_->getChip()->getBlock()->getDbUnitsPerMicron());
