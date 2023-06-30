@@ -11,8 +11,8 @@ load DFF_X1 CK D 300000 metal3 1000
 [INFO ODB-0132]     Created 2 special nets and 306 connections.
 [INFO ODB-0133]     Created 4 nets and 307 connections.
 worst slack -23.63
-[INFO RSZ-0040] Inserted 44 buffers.
-[INFO RSZ-0041] Resized 287 instances.
-[INFO RSZ-0049] Cloned 9 instances.
+[INFO RSZ-0040] Inserted 34 buffers.
+[INFO RSZ-0041] Resized 139 instances.
+[INFO RSZ-0049] Cloned 6 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
-worst slack -3.89
+worst slack -3.23
