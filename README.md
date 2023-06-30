@@ -65,7 +65,67 @@ flow stages through Tcl commands and Python APIs.
 
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
-![ORFS_Flow.webp](./docs/images/ORFS_Flow.svg)
+```mermaid
+flowchart LR
+
+    A[RTL-GDSII\n Using\n OpenROAD-flow-scripts] --> SYNTHESIS 
+    SYNTHESIS --> FLOORPLAN; FLOORPLAN --> PLACEMENT; PLACEMENT --> CTS
+    CTS --> ROUTING; ROUTING -->FINISH
+
+    subgraph SYNTHESIS
+    style SYNTHESIS fill:#f8cecc
+    direction LR
+    B1(Tool:Yosys);  B2(Input files);  B3(Output files)
+    B2 --> RTL & SDC & .lib & B4(Mapping files, etc..)
+    B3 --> Netlist & B5(SDC)
+    end
+
+    subgraph FLOORPLAN
+    style FLOORPLAN fill:#fff2cc
+    C1("Import all necessary files\n (Netlist, SDC, etc...) and 
+            check initial timing report")
+    C1 --> C2("Translate .v to .odb/\n Floorplan Initialization")
+    C2 --> C3("IO placement (random)")
+    C3 --> C4("Automatic partitioning")
+    C4 --> C5("Timing-driven mixed-size placement")
+    C5 --> C6("Macro placement/Hier-RTLMP")
+    C6 --> C7("Tapcell and well tie insertion")
+    C7 --> C8("PDN generation")
+    C8 --> C9("Floorplan .odb and .sdc file generation")
+    end
+
+    subgraph PLACEMENT
+    style PLACEMENT fill:#cce5ff
+    D1("Global placement without placed IOs
+                (Timing and routability-driven)")
+    D1 --> D2("IO placement (non-random)")
+    D2 --> D3("Global placement with placed IOs
+                (Timing and routability-driven)")
+    D3 --> D4("Resizing and buffering")
+    D4 --> D5("Detailed placement")
+    end
+
+    subgraph CTS
+    style CTS fill:#67ab9f
+    E1("Clock Tree synthesis")
+    E1 --> E2("Timing optimization")
+    E2 --> E3("Filler cell insertion")
+    end
+
+    subgraph ROUTING
+    style ROUTING fill:#fa6800
+    F1("Global routing")
+    F1 --> F2("Detailed routing")
+    end
+
+    subgraph FINISH
+    style FINISH fill:#ff6666
+    G1("Generate GDSII Tool:\n KLayout")
+    G1 --> G2("Metal Fill Insertion")
+    G2 --> G3("Signoff timing report")
+    G3 --> G4("DRC/LVS check\n Tool: Klayout")
+    end
+```
 
 Here are the main steps for a physical design implementation
 using OpenROAD;
