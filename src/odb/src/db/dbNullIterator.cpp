@@ -77,7 +77,7 @@ uint dbNullIterator::next(uint, ...)
 
 dbObject* dbNullIterator::getObject(uint, ...)
 {
-  return NULL;
+  return nullptr;
 }
 
 }  // namespace odb

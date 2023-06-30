@@ -1,6 +1,5 @@
 {
   "name": "dbGCellGrid",
-  "parent": "dbObject",
   "fields": [
     {
       "name": "x_origin_",

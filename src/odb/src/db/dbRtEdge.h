@@ -130,21 +130,21 @@ class dbRtEdge
 
   dbRtEdge(Type type, dbWireType::Value wire_type, dbTechLayerRule* rule)
       : _type(type),
-        _src(NULL),
-        _tgt(NULL),
+        _src(nullptr),
+        _tgt(nullptr),
         _wire_type(wire_type),
         _non_default_rule(rule),
         _r(0.0),
         _c(0.0),
-        _rt_tree(NULL),
+        _rt_tree(nullptr),
         _shape_id(-1),
         _property(0),
         _visited(false)
   {
-    _next[0] = NULL;
-    _next[1] = NULL;
-    _prev[0] = NULL;
-    _prev[1] = NULL;
+    _next[0] = nullptr;
+    _next[1] = nullptr;
+    _prev[0] = nullptr;
+    _prev[1] = nullptr;
   }
 
   dbRtNode* opposite(dbRtNode* n) const { return n == _src ? _tgt : _src; }
@@ -175,11 +175,11 @@ class dbRtEdge
   // Get the wire-type of this edge.
   dbWireType::Value getWireType() const { return _wire_type; }
 
-  // Get the NonDefaultRule of this edge (returns NULL is there is no
+  // Get the NonDefaultRule of this edge (returns nullptr is there is no
   // non-default-rule);
   void setNonDefaultRule(dbTechLayerRule* rule) { _non_default_rule = rule; }
 
-  // Get the NonDefaultRule of this edge (returns NULL is there is no
+  // Get the NonDefaultRule of this edge (returns nullptr is there is no
   // non-default-rule);
   dbTechLayerRule* getNonDefaultRule() const { return _non_default_rule; }
 

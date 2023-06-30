@@ -43,32 +43,24 @@
 #include "dbTech.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbMetalWidthViaMap>;
 
 bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
 {
   if (via_cut_class_ != rhs.via_cut_class_)
     return false;
-
   if (cut_layer_ != rhs.cut_layer_)
     return false;
-
   if (below_layer_width_low_ != rhs.below_layer_width_low_)
     return false;
-
   if (below_layer_width_high_ != rhs.below_layer_width_high_)
     return false;
-
   if (above_layer_width_low_ != rhs.above_layer_width_low_)
     return false;
-
   if (above_layer_width_high_ != rhs.above_layer_width_high_)
     return false;
-
   if (via_name_ != rhs.via_name_)
     return false;
-
   if (pg_via_ != rhs.pg_via_)
     return false;
 
@@ -76,18 +68,19 @@ bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbMetalWidthViaMap::operator<(const _dbMetalWidthViaMap& rhs) const
 {
   // User Code Begin <
   // User Code End <
   return true;
 }
+
 void _dbMetalWidthViaMap::differences(dbDiff& diff,
                                       const char* field,
                                       const _dbMetalWidthViaMap& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(via_cut_class_);
   DIFF_FIELD(cut_layer_);
   DIFF_FIELD(below_layer_width_low_);
@@ -100,6 +93,7 @@ void _dbMetalWidthViaMap::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -116,6 +110,7 @@ void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
 {
   below_layer_width_low_ = 0;
@@ -126,6 +121,7 @@ _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db,
                                          const _dbMetalWidthViaMap& r)
 {
@@ -155,6 +151,7 @@ dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
 {
   stream << obj.via_cut_class_;

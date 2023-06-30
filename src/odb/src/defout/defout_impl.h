@@ -120,8 +120,8 @@ class defout_impl
     _use_net_inst_ids = false;
     _use_master_ids = false;
     _use_alias = false;
-    _select_net_map = NULL;
-    _select_inst_map = NULL;
+    _select_net_map = nullptr;
+    _select_inst_map = nullptr;
     _version = defout::DEF_5_8;
     _logger = logger;
   }

@@ -184,10 +184,10 @@ dbInstHdr* dbInstHdr::create(dbBlock* block_, dbMaster* master_)
   _dbLib* lib = (_dbLib*) master->getOwner();
 
   if (!master->_flags._frozen)
-    return NULL;
+    return nullptr;
 
   if (block->_inst_hdr_hash.hasMember(master->_id))
-    return NULL;
+    return nullptr;
 
   _dbInstHdr* inst_hdr;
   // initialize the inst_hdr structure

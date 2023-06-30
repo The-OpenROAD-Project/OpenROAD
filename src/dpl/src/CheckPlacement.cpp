@@ -54,8 +54,10 @@ void Opendp::checkPlacement(bool verbose, bool disallow_one_site_gaps)
   vector<Cell*> overlap_failures;
   vector<Cell*> one_site_gap_failures;
   vector<Cell*> site_align_failures;
+  vector<Cell*> region_placement_failures;
 
   initGrid();
+  groupAssignCellRegions();
   for (Cell& cell : cells_) {
     if (isStdCell(&cell)) {
       // Site alignment check
@@ -64,6 +66,9 @@ void Opendp::checkPlacement(bool verbose, bool disallow_one_site_gaps)
       }
       if (!checkInRows(cell)) {
         in_rows_failures.push_back(&cell);
+      }
+      if (!checkRegionPlacement(&cell)) {
+        region_placement_failures.push_back(&cell);
       }
     }
     // Placed check
@@ -97,12 +102,15 @@ void Opendp::checkPlacement(bool verbose, bool disallow_one_site_gaps)
       });
   reportFailures(site_align_failures, 6, "Site aligned", verbose);
   reportFailures(one_site_gap_failures, 7, "One site gap", verbose);
+  reportFailures(region_placement_failures, 8, "Region placement", verbose);
 
   logger_->metric("design__violations",
                   placed_failures.size() + in_rows_failures.size()
                       + overlap_failures.size() + site_align_failures.size());
   if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
           + site_align_failures.size()
+          + (disallow_one_site_gaps ? one_site_gap_failures.size() : 0)
+          + region_placement_failures.size()
       > 0) {
     logger_->error(DPL, 33, "detailed placement checks failed.");
   }
@@ -262,6 +270,24 @@ Cell* Opendp::checkOneSiteGaps(Cell& cell) const
         }
       });
   return gap_cell;
+}
+
+bool Opendp::checkRegionPlacement(const Cell* cell) const
+{
+  int x_begin = cell->x_;
+  int x_end = x_begin + cell->width_;
+  int y_begin = cell->y_;
+  int y_end = y_begin + cell->height_;
+
+  if (cell->region_) {
+    return cell->region_->contains(odb::Rect(x_begin, y_begin, x_end, y_end))
+           && checkRegionOverlap(cell,
+                                 x_begin / site_width_,
+                                 y_begin / cell->height_,
+                                 x_end / site_width_,
+                                 y_end / cell->height_);
+  }
+  return true;
 }
 
 bool Opendp::isOverlapPadded(const Cell* cell1, const Cell* cell2) const

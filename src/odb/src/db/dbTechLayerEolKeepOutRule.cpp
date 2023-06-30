@@ -42,7 +42,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerEolKeepOutRule>;
 
 bool _dbTechLayerEolKeepOutRule::operator==(
@@ -59,22 +58,16 @@ bool _dbTechLayerEolKeepOutRule::operator==(
 
   if (eol_width_ != rhs.eol_width_)
     return false;
-
   if (backward_ext_ != rhs.backward_ext_)
     return false;
-
   if (forward_ext_ != rhs.forward_ext_)
     return false;
-
   if (side_ext_ != rhs.side_ext_)
     return false;
-
   if (within_low_ != rhs.within_low_)
     return false;
-
   if (within_high_ != rhs.within_high_)
     return false;
-
   if (class_name_ != rhs.class_name_)
     return false;
 
@@ -82,6 +75,7 @@ bool _dbTechLayerEolKeepOutRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerEolKeepOutRule::operator<(
     const _dbTechLayerEolKeepOutRule& rhs) const
 {
@@ -89,13 +83,13 @@ bool _dbTechLayerEolKeepOutRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerEolKeepOutRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerEolKeepOutRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.class_valid_);
   DIFF_FIELD(flags_.corner_only_);
   DIFF_FIELD(flags_.except_within_);
@@ -110,6 +104,7 @@ void _dbTechLayerEolKeepOutRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
                                      char side,
                                      const char* field) const
@@ -130,6 +125,7 @@ void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -144,6 +140,7 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
     _dbDatabase* db,
     const _dbTechLayerEolKeepOutRule& r)
@@ -178,6 +175,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;

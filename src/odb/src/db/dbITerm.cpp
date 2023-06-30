@@ -234,7 +234,7 @@ dbNet* dbITerm::getNet()
   _dbBlock* block = (_dbBlock*) iterm->getOwner();
 
   if (iterm->_net == 0)
-    return NULL;
+    return nullptr;
 
   _dbNet* net = block->_net_tbl->getPtr(iterm->_net);
   return (dbNet*) net;
@@ -260,7 +260,7 @@ dbBTerm* dbITerm::getBTerm()
   _dbInst* inst = block->_inst_tbl->getPtr(iterm->_inst);
 
   if (inst->_hierarchy == 0)
-    return NULL;
+    return nullptr;
 
   _dbHier* hier = block->_hier_tbl->getPtr(inst->_hierarchy);
 

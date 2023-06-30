@@ -86,7 +86,7 @@ class ZObject;
 /// Returns: Z_OK, Z_ERROR_NO_COMPONENT, Z_ERROR_NO_INTERFACE
 ///
 /// result is set to the interface pointer on success, otherwise it is set to
-/// NULL.
+/// nullptr.
 ///
 int adsCreateComponent(const ZContext& context,
                        ZComponentID cid,
@@ -121,7 +121,7 @@ inline int adsNewComponent(const ZContext& context,
 class ZObject
 {
  public:
-  typedef ZObject _zobject_traits;
+  using _zobject_traits = ZObject;
   enum
   {
     ZIID = 0
@@ -152,12 +152,12 @@ class ZPtr
   T& operator*();  // Do not allow derefencing.
 
  public:
-  ZPtr() { _p = NULL; }
+  ZPtr() { _p = nullptr; }
 
   ZPtr(ZObject* p)
   {
-    if (p == NULL)
-      _p = NULL;
+    if (p == nullptr)
+      _p = nullptr;
     else {
       void* v;
       int r = p->QueryInterface((ZInterfaceID) T::ZIID, &v);
@@ -187,8 +187,8 @@ class ZPtr
 
   ZPtr<T>& operator=(ZObject* p)
   {
-    if (p == NULL)
-      setPtr(NULL);
+    if (p == nullptr)
+      setPtr(nullptr);
     else {
       void* v;
       int r = p->QueryInterface((ZInterfaceID) T::ZIID, &v);

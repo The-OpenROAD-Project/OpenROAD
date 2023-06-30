@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -103,6 +102,23 @@ class _dbTechLayerSpacingEolRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbTechLayerSpacingEolRule(_dbDatabase*, const _dbTechLayerSpacingEolRule& r);
+  _dbTechLayerSpacingEolRule(_dbDatabase*);
+  ~_dbTechLayerSpacingEolRule();
+
+  bool operator==(const _dbTechLayerSpacingEolRule& rhs) const;
+  bool operator!=(const _dbTechLayerSpacingEolRule& rhs) const
+  {
+    return !operator==(rhs);
+  }
+  bool operator<(const _dbTechLayerSpacingEolRule& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbTechLayerSpacingEolRule& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   dbTechLayerSpacingEolRuleFlags flags_;
   int eol_space_;
   int eol_width_;
@@ -141,21 +157,6 @@ class _dbTechLayerSpacingEolRule : public _dbObject
   // User Code Begin Fields
   dbId<_dbTechLayer> _layer;
   // User Code End Fields
-  _dbTechLayerSpacingEolRule(_dbDatabase*, const _dbTechLayerSpacingEolRule& r);
-  _dbTechLayerSpacingEolRule(_dbDatabase*);
-  ~_dbTechLayerSpacingEolRule();
-  bool operator==(const _dbTechLayerSpacingEolRule& rhs) const;
-  bool operator!=(const _dbTechLayerSpacingEolRule& rhs) const
-  {
-    return !operator==(rhs);
-  }
-  bool operator<(const _dbTechLayerSpacingEolRule& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbTechLayerSpacingEolRule& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj);
