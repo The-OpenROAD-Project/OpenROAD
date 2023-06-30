@@ -57,9 +57,8 @@ void SimulatedAnnealing::init()
   slot_indices_.resize(num_slots_);
   std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
 
-  std::mt19937 rand_gen(seed_);
-  generator_ = rand_gen;
-  std::uniform_real_distribution<float> distribution(0.0, 1.0);
+  generator_.seed(seed_);
+  std::uniform_real_distribution<float> distribution;
   distribution_ = distribution;
 }
 
