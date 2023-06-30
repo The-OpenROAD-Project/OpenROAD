@@ -65,9 +65,15 @@ class SimulatedAnnealing
   void init();
   void randomAssignment();
   int64 getAssignmentCost();
-  void perturbAssignment(int& prev_slot, int& new_slot, int& pin1, int& pin2);
-  void swapPins(int& pin1, int& pin2);
-  void movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
+  int getDeltaCost(int prev_cost, int pin1, int pin2);
+  int getPinCost(int pin_idx);
+  void perturbAssignment(int& prev_slot,
+                         int& new_slot,
+                         int& pin1,
+                         int& pin2,
+                         int& prev_cost);
+  int swapPins(int& pin1, int& pin2);
+  int movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
   void restorePreviousAssignment(int prev_slot,
                                  int new_slot,
                                  int pin1,

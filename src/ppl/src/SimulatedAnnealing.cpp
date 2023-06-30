@@ -55,7 +55,8 @@ void SimulatedAnnealing::run()
 {
   init();
   randomAssignment();
-  int64 pre_cost = getAssignmentCost();
+  int64 pre_cost = 0;
+  pre_cost = getAssignmentCost();
   float temperature = init_temperature_;
 
   for (int iter = 0; iter < max_iterations_; iter++) {
@@ -64,8 +65,9 @@ void SimulatedAnnealing::run()
       int new_slot = -1;
       int pin1 = -1;
       int pin2 = -1;
-      perturbAssignment(prev_slot, new_slot, pin1, pin2);
-      const int64 cost = getAssignmentCost();
+      int prev_cost;
+      perturbAssignment(prev_slot, new_slot, pin1, pin2, prev_cost);
+      const int64 cost = pre_cost + getDeltaCost(prev_cost, pin1, pin2);
       const int delta_cost = cost - pre_cost;
       debugPrint(logger_,
                  utl::PPL,
@@ -138,41 +140,64 @@ int64 SimulatedAnnealing::getAssignmentCost()
   int64 cost = 0;
 
   for (int i = 0; i < pin_assignment_.size(); i++) {
-    int slot_idx = pin_assignment_[i];
-    const odb::Point& position = slots_[slot_idx].pos;
-    cost += netlist_->computeIONetHPWL(i, position);
+    cost += getPinCost(i);
   }
 
   return cost;
 }
 
+int SimulatedAnnealing::getDeltaCost(const int prev_cost, int pin1, int pin2)
+{
+  int new_cost = getPinCost(pin1);
+  if (pin2 != -1) {
+    new_cost += getPinCost(pin2);
+  }
+
+  return new_cost - prev_cost;
+}
+
+int SimulatedAnnealing::getPinCost(int pin_idx)
+{
+  int slot_idx = pin_assignment_[pin_idx];
+  const odb::Point& position = slots_[slot_idx].pos;
+  return netlist_->computeIONetHPWL(pin_idx, position);
+}
+
 void SimulatedAnnealing::perturbAssignment(int& prev_slot,
                                            int& new_slot,
                                            int& pin1,
-                                           int& pin2)
+                                           int& pin2,
+                                           int& prev_cost)
 {
   const float move = distribution_(generator_);
 
   if (move < swap_pins_) {
-    swapPins(pin1, pin2);
+    prev_cost = swapPins(pin1, pin2);
   } else {
-    movePinToFreeSlot(prev_slot, new_slot, pin1);
+    prev_cost = movePinToFreeSlot(prev_slot, new_slot, pin1);
   }
 }
 
-void SimulatedAnnealing::swapPins(int& pin1, int& pin2)
+int SimulatedAnnealing::swapPins(int& pin1, int& pin2)
 {
   pin1 = (int) (std::floor(distribution_(generator_) * num_pins_));
   pin2 = (int) (std::floor(distribution_(generator_) * num_pins_));
+
+  int prev_cost = getPinCost(pin1) + getPinCost(pin2);
+
   std::swap(pin_assignment_[pin1], pin_assignment_[pin2]);
+
+  return prev_cost;
 }
 
-void SimulatedAnnealing::movePinToFreeSlot(int& prev_slot,
-                                           int& new_slot,
-                                           int& pin)
+int SimulatedAnnealing::movePinToFreeSlot(int& prev_slot,
+                                          int& new_slot,
+                                          int& pin)
 {
   pin = (int) (std::floor(distribution_(generator_) * num_pins_));
   prev_slot = pin_assignment_[pin];
+
+  int prev_cost = getPinCost(pin);
 
   bool free_slot = false;
   while (!free_slot) {
@@ -181,6 +206,8 @@ void SimulatedAnnealing::movePinToFreeSlot(int& prev_slot,
   }
 
   pin_assignment_[pin] = new_slot;
+
+  return prev_cost;
 }
 
 void SimulatedAnnealing::restorePreviousAssignment(const int prev_slot,
