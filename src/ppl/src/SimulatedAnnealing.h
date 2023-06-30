@@ -58,11 +58,11 @@ class SimulatedAnnealing
                      Logger* logger,
                      odb::dbDatabase* db);
   ~SimulatedAnnealing() = default;
-  void init();
   void run();
   void getAssignment(std::vector<IOPin>& assignment);
 
  private:
+ void init();
   void randomAssignment();
   int getAssignmentCost();
   void perturbAssignment(int& prev_slot, int& new_slot, int& pin1, int& pin2);

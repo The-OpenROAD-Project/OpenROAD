@@ -51,17 +51,6 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
   perturb_per_iter_ = static_cast<int>(num_pins_ * 0.8);
 }
 
-void SimulatedAnnealing::init()
-{
-  pin_assignment_.resize(num_pins_);
-  slot_indices_.resize(num_slots_);
-  std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
-
-  generator_.seed(seed_);
-  std::uniform_real_distribution<float> distribution;
-  distribution_ = distribution;
-}
-
 void SimulatedAnnealing::run()
 {
   init();
@@ -119,6 +108,17 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
     assignment.push_back(io_pin);
     slot.used = true;
   }
+}
+
+void SimulatedAnnealing::init()
+{
+  pin_assignment_.resize(num_pins_);
+  slot_indices_.resize(num_slots_);
+  std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
+
+  generator_.seed(seed_);
+  std::uniform_real_distribution<float> distribution;
+  distribution_ = distribution;
 }
 
 void SimulatedAnnealing::randomAssignment()
