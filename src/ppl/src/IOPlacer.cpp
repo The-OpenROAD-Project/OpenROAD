@@ -1881,13 +1881,6 @@ void IOPlacer::runAnnealing()
   initMirroredPins(true);
   initConstraints(true);
 
-  if (!pin_groups_.empty()) {
-    logger_->error(PPL,
-                   104,
-                   "Pin groups not supported during pin placement with "
-                   "Simulated Annealing");
-  }
-
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), slots_, logger_, db_);
   annealing.run();
