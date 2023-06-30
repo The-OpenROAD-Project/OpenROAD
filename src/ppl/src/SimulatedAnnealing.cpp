@@ -132,10 +132,23 @@ void SimulatedAnnealing::randomAssignment()
   std::mt19937 g;
   g.seed(seed_);
   utl::shuffle(slot_indices_.begin(), slot_indices_.end(), g);
+  
+  std::set<int> placed_pins;
+  int slot_idx = randomAssignmentForGroups(placed_pins);
+
   for (int i = 0; i < pin_assignment_.size(); i++) {
-    const int slot_idx = slot_indices_[i];
-    pin_assignment_[i] = slot_idx;
-    slots_[slot_idx].used = true;
+    if (placed_pins.find(i) != placed_pins.end()) {
+      continue;
+    }
+
+    int slot = slot_indices_[slot_idx];
+    while (slots_[slot].used) {
+      slot_idx++;
+      slot = slot_indices_[slot_idx];
+    }
+    pin_assignment_[i] = slot;
+    slots_[slot].used = true;
+    slot_idx++;
   }
 }
 
