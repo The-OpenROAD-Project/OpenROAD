@@ -75,14 +75,11 @@ class SimulatedAnnealing
                          int& prev_cost);
   int swapPins(int& pin1, int& pin2);
   int movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
-  void restorePreviousAssignment(int prev_slot,
-                                 int new_slot,
-                                 int pin1,
-                                 int pin2);
   double dbuToMicrons(int64_t dbu);
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
+  std::vector<int> prev_pin_assignment_;
   std::vector<int> slot_indices_;
   Netlist* netlist_;
   std::vector<Slot>& slots_;

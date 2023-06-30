@@ -94,7 +94,7 @@ void SimulatedAnnealing::run()
           slots_[new_slot].used = true;
         }
       } else {
-        restorePreviousAssignment(prev_slot, new_slot, pin1, pin2);
+        pin_assignment_ = prev_pin_assignment_;
       }
     }
 
@@ -206,6 +206,7 @@ void SimulatedAnnealing::perturbAssignment(int& prev_slot,
                                            int& prev_cost)
 {
   const float move = distribution_(generator_);
+  prev_pin_assignment_ = pin_assignment_;
 
   if (move < swap_pins_) {
     prev_cost = swapPins(pin1, pin2);
@@ -244,20 +245,6 @@ int SimulatedAnnealing::movePinToFreeSlot(int& prev_slot,
   pin_assignment_[pin] = new_slot;
 
   return prev_cost;
-}
-
-void SimulatedAnnealing::restorePreviousAssignment(const int prev_slot,
-                                                   const int new_slot,
-                                                   const int pin1,
-                                                   const int pin2)
-{
-  if (prev_slot != -1 && new_slot != -1) {
-    // restore single pin to previous slot
-    pin_assignment_[pin1] = prev_slot;
-  } else if (pin1 != -1 && pin2 != -1) {
-    // undo pin swapping
-    std::swap(pin_assignment_[pin1], pin_assignment_[pin2]);
-  }
 }
 
 double SimulatedAnnealing::dbuToMicrons(int64_t dbu)
