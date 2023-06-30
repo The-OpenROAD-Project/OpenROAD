@@ -20,8 +20,6 @@
       ]
     }
   ],
-  "constructors": [],
-  "enums": [],
   "h_includes": [
     "dbVector.h"
   ],

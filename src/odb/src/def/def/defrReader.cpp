@@ -20,9 +20,9 @@
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
 //
-//  $Author: icftcm $
-//  $Revision: #2 $
-//  $Date: 2017/06/07 $
+//  $Author: dell $
+//  $Revision: #1 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -49,7 +49,7 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-#include "def_parser.hpp"
+extern int defyyparse(defrData* data);
 
 extern defrContext defContext;
 
@@ -2098,6 +2098,19 @@ void defrSetLongLineNumberFunction(DEFI_LONG_LINE_NUMBER_FUNCTION f)
   defContext.settings->LongLineNumberFunction = f;
 }
 
+void defrSetContextLineNumberFunction(DEFI_CONTEXT_LINE_NUMBER_FUNCTION f)
+{
+  DEF_INIT;
+  defContext.settings->ContextLineNumberFunction = f;
+}
+
+void defrSetContextLongLineNumberFunction(
+    DEFI_CONTEXT_LONG_LINE_NUMBER_FUNCTION f)
+{
+  DEF_INIT;
+  defContext.settings->ContextLongLineNumberFunction = f;
+}
+
 void defrSetDeltaNumberLines(int numLines)
 {
   DEF_INIT;
@@ -2142,8 +2155,6 @@ void defrAddAlias(const char* key, const char* value, int marked)
   sprintf(v1, "%d%s", marked, value);
 
   defData->def_alias_set[k1] = v1;
-  free(k1);
-  free(v1);
 }
 
 void defrSetOpenLogFileAppend()

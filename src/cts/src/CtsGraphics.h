@@ -53,7 +53,7 @@ class HTreeBuilder;
 class SinkClustering;
 
 // This class draws debugging graphics on the layout
-class Graphics : public gui::Renderer, public CtsObserver
+class CtsGraphics : public gui::Renderer, public CtsObserver
 {
  public:
   void initializeWithClock(HTreeBuilder* h_tree_builder, Clock& clock) override;

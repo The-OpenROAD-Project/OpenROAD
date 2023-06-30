@@ -101,7 +101,6 @@
       "bits": 1
     }
   ],
-  "constructors": [],
   "enums": [
     {
       "name": "CornerType",

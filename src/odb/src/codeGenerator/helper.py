@@ -1,82 +1,78 @@
 _comparable = [
-    'int',
-    'uint',
-    'unint_32t',
-    'int8_t',
-    'bool',
-    'string',
-    'std::string',
-    'float',
-    'short',
-    'double',
-    'long',
-    'long long',
-    'long double',
-    'char *',
-    'char*',
-    'char',
-    'Rect',
-    'Point'
+    "Point",
+    "Rect",
+    "bool",
+    "char *",
+    "char",
+    "char*",
+    "double",
+    "float",
+    "int",
+    "int8_t",
+    "long double",
+    "long long",
+    "long",
+    "short",
+    "std::string",
+    "string",
+    "uint",
+    "unint_32t",
 ]
 std = [
-    'int',
-    'uint',
-    'unint_32t',
-    'int8_t',
-    'bool',
-    'string',
-    'std::string',
-    'float',
-    'short',
-    'double',
-    'long',
-    'long long',
-    'long double',
-    'char *',
-    'char*',
-    'char',
+    "bool",
+    "char *",
+    "char",
+    "char*",
+    "double",
+    "float",
+    "int",
+    "int8_t",
+    "long double",
+    "long long",
+    "long",
+    "short",
+    "std::string",
+    "string",
+    "uint",
+    "unint_32t",
 ]
 
-_removable = [
-    'unsigned',
-    'static',
-    'const'
-]
+_removable = ["const", "static", "unsigned"]
 
 
 def _stem(s):
-    src = s.split(' ')
+    src = s.split(" ")
     target = []
     for item in src:
         if item not in _removable:
             target.append(item)
-    return ' '.join([str(elem) for elem in target])
+    return " ".join([str(elem) for elem in target])
 
 
-def getStruct(name, structs):
+def get_struct(name, structs):
     for struct in structs:
-        if struct['name'] == name:
+        if struct["name"] == name:
             return struct
     return None
 
 
 def components(structs, name, _type):
-    if(_stem(_type) in _comparable or isRef(_type)):
+    if _stem(_type) in _comparable or is_ref(_type):
         return [name]
-    struct = getStruct(_type.rstrip(' *'), structs)
+    struct = get_struct(_type.rstrip(" *"), structs)
     if struct is not None:
         ret = []
-        for field in struct['fields']:
-            target = components(structs, field['name'], field['type'])
-            if _type.find('*') == -1:
-                ret.extend([name + '.' + str(elem) for elem in target])
+        for field in struct["fields"]:
+            target = components(structs, field["name"], field["type"])
+            if _type.find("*") == -1:
+                ret.extend([name + "." + str(elem) for elem in target])
             else:
-                ret.extend([name + '->' + str(elem) for elem in target])
+                ret.extend([name + "->" + str(elem) for elem in target])
         return ret
     return []
 
 
-def addOnceToDict(src, target):
+def add_once_to_dict(src, target):
     if isinstance(src, list):
         for obj in src:
             target.setdefault(obj, [])
@@ -85,95 +81,88 @@ def addOnceToDict(src, target):
     return target
 
 
-def isBitFields(field, structs):
-    if 'bits' in field:
+def is_bit_fields(field, structs):
+    if "bits" in field:
         return True
-    struct = getStruct(field['type'], structs)
+    struct = get_struct(field["type"], structs)
     if struct is None:
         return False
-    for struct_field in struct['fields']:
-        if isBitFields(struct_field, structs):
+    for struct_field in struct["fields"]:
+        if is_bit_fields(struct_field, structs):
             return True
     return False
 
 
-def getFunctionalName(name):
+def get_functional_name(name):
     if name.islower():
-        return ''.join([n.capitalize()
-                        for n in name.replace("tbl", "table").split('_')])
+        return "".join(
+            [n.capitalize() for n in name.replace("tbl", "table").split("_")]
+        )
     return name
 
 
-def getClassIndex(schema, name):
-    for i in range(len(schema['classes'])):
-        if schema['classes'][i]['name'] == name:
+def get_class_index(schema, name):
+    for i in range(len(schema["classes"])):
+        if schema["classes"][i]["name"] == name:
             return i
     return -1
 
 
-def getTableName(name):
-    if len(name) > 2 and name[:2] == 'db':
+def get_table_name(name):
+    if len(name) > 2 and name[:2] == "db":
         name = name[2:]
-    return '_{}_tbl'.format(name.lower())
+    return f"_{name.lower()}_tbl"
 
 
-def isRef(type_name):
-    return type_name.startswith("dbId<") and type_name[-1] == '>'
+def is_ref(type_name):
+    return type_name.startswith("dbId<") and type_name[-1] == ">"
 
 
-def isHashTable(type_name):
-    return type_name.startswith("dbHashTable<") and \
-        type_name[-1] == '>'
+def is_hash_table(type_name):
+    return type_name.startswith("dbHashTable<") and type_name[-1] == ">"
 
 
-def getHashTableType(type_name):
-    if not isHashTable(type_name) or len(type_name) < 13:
+def get_hash_table_type(type_name):
+    if not is_hash_table(type_name) or len(type_name) < 13:
         return None
 
     return type_name[12:-1] + "*"
 
 
-def isPassByRef(type_name):
+def is_pass_by_ref(type_name):
     return type_name.find("dbVector") == 0
 
-def _isTemplateType(type_name):
-    openBracket = type_name.find("<")
-    if openBracket == -1:
+
+def _is_template_type(type_name):
+    open_bracket = type_name.find("<")
+    if open_bracket == -1:
         return False
 
-    closedBracket = type_name.find(">")
+    closed_bracket = type_name.find(">")
 
-    return closedBracket != -1 and closedBracket > openBracket
+    return closed_bracket >= open_bracket
 
-def _isTemplateType(type_name):
-    openBracket = type_name.find("<")
-    if openBracket == -1:
-        return False
 
-    closedBracket = type_name.find(">")
-
-    return closedBracket >= openBracket
-
-def getTemplateType(type_name):
-    if not _isTemplateType(type_name):
+def get_template_type(type_name):
+    if not _is_template_type(type_name):
         return None
-    numBrackets = 1
+    num_brackets = 1
 
-    openBracket = type_name.find("<")
-    for i in range(openBracket + 1, len(type_name)):
+    open_bracket = type_name.find("<")
+    for i in range(open_bracket + 1, len(type_name)):
 
         if type_name[i] == "<":
-            numBrackets += 1
+            num_brackets += 1
         elif type_name[i] == ">":
-            numBrackets -= 1
-            if numBrackets == 0:
-                closedBracket = i
+            num_brackets -= 1
+            if num_brackets == 0:
+                closed_bracket = i
 
-    return type_name[openBracket + 1:closedBracket]
+    return type_name[open_bracket + 1 : closed_bracket]
 
 
-def getRefType(type_name):
-    if not isRef(type_name) or len(type_name) < 7:
+def get_ref_type(type_name):
+    if not is_ref(type_name) or len(type_name) < 7:
         return None
 
     return type_name[6:-1] + "*"
