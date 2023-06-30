@@ -410,9 +410,9 @@ RepairSetup::repairSetup(PathRef &path,
       if (enable_gate_cloning && fanout > split_load_min_fanout_ &&
           !tristate_drvr &&
           !resizer_->dontTouch(net)) {
-        cloneDriver(drvr_path, drvr_index, path_slack, &expanded);
-        changed = true;
-        break;
+          cloneDriver(drvr_path, drvr_index, path_slack, &expanded);
+          changed = true;
+          break;
         // Old gate cloner code
         /*
         rsz::GateCloner cloner(resizer_);
@@ -703,12 +703,17 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   LibertyCell *original_cell = network_->libertyCell(drvr_inst);
   LibertyCell *clone_cell = cloner.halfDrivingPowerCell(original_cell);
 
+  if (clone_cell == nullptr) {
+    clone_cell = original_cell; // no clone available use original
+  }
   // TODO This location can be optimized as the centroid of all the pins we
   // are connecting to the output of the buffer and the input pins of the gate
   Point drvr_loc = db_network_->location(drvr_pin);
 
   Instance *clone_inst = resizer_->makeInstance(clone_cell, buffer_name.c_str(),
                                                 parent, drvr_loc);
+  resizer_->cloned_gates_.insert(network_->instance(drvr_pin),
+                                 clone_inst);
   cloned_gate_count_++;
 
   // inserted_buffer_count_++;
