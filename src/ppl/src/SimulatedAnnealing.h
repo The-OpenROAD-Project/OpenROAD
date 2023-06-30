@@ -62,9 +62,9 @@ class SimulatedAnnealing
   void getAssignment(std::vector<IOPin>& assignment);
 
  private:
- void init();
+  void init();
   void randomAssignment();
-  int getAssignmentCost();
+  int64 getAssignmentCost();
   void perturbAssignment(int& prev_slot, int& new_slot, int& pin1, int& pin2);
   void swapPins(int& pin1, int& pin2);
   void movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);

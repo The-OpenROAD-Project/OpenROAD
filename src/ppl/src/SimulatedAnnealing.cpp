@@ -55,7 +55,7 @@ void SimulatedAnnealing::run()
 {
   init();
   randomAssignment();
-  int pre_cost = getAssignmentCost();
+  int64 pre_cost = getAssignmentCost();
   float temperature = init_temperature_;
 
   for (int iter = 0; iter < max_iterations_; iter++) {
@@ -65,8 +65,8 @@ void SimulatedAnnealing::run()
       int pin1 = -1;
       int pin2 = -1;
       perturbAssignment(prev_slot, new_slot, pin1, pin2);
-      int cost = getAssignmentCost();
-      int delta_cost = cost - pre_cost;
+      const int64 cost = getAssignmentCost();
+      const int delta_cost = cost - pre_cost;
       debugPrint(logger_,
                  utl::PPL,
                  "annealing",
@@ -127,15 +127,15 @@ void SimulatedAnnealing::randomAssignment()
   g.seed(seed_);
   utl::shuffle(slot_indices_.begin(), slot_indices_.end(), g);
   for (int i = 0; i < pin_assignment_.size(); i++) {
-    int slot_idx = slot_indices_[i];
+    const int slot_idx = slot_indices_[i];
     pin_assignment_[i] = slot_idx;
     slots_[slot_idx].used = true;
   }
 }
 
-int SimulatedAnnealing::getAssignmentCost()
+int64 SimulatedAnnealing::getAssignmentCost()
 {
-  int cost = 0;
+  int64 cost = 0;
 
   for (int i = 0; i < pin_assignment_.size(); i++) {
     int slot_idx = pin_assignment_[i];
