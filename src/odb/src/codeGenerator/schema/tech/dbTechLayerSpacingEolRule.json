@@ -1,0 +1,372 @@
+{
+  "name": "dbTechLayerSpacingEolRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "int",
+      "name": "eol_space_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "eol_width_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "exact_width_valid_"
+    },
+    {
+      "type": "bit",
+      "name": "wrong_dir_spacing_valid_"
+    },
+    {
+      "type": "int",
+      "name": "wrong_dir_space_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "opposite_width_valid_"
+    },
+    {
+      "type": "int",
+      "name": "opposite_width_",
+      "default": 0
+    },
+    {
+      "type": "bit",
+      "name": "within_valid_"
+    },
+    {
+      "type": "int",
+      "name": "eol_within_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "wrong_dir_within_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "wrong_dir_within_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "same_mask_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "except_exact_width_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "exact_width_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "other_width_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "fill_concave_corner_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "fill_triangle_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "withcut_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "cut_class_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "cut_class_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "with_cut_above_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "with_cut_space_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "enclosure_end_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "enclosure_end_width_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "enclosure_end_within_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "enclosure_end_within_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "end_prl_spacing_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "end_prl_space_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "prl_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "end_prl_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "end_to_end_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "end_to_end_space_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "cut_spaces_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "one_cut_space_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "two_cut_space_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "extension_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "extension_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "wrong_dir_extension_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "wrong_dir_extension_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "other_end_width_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "other_end_width_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "max_length_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "max_length_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "min_length_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "min_length_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "two_sides_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "equal_rect_width_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "parallel_edge_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "subtract_eol_width_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "par_space_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "par_within_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "par_prl_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "par_prl_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "par_min_length_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "par_min_length_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "two_edges_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "same_metal_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "non_eol_corner_only_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "parallel_same_mask_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "enclose_cut_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "below_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "above_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "enclose_dist_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "cut_spacing_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "cut_to_metal_space_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "all_cuts_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "to_concave_corner_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "min_adjacent_length_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "bool",
+      "name": "two_min_adj_length_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "min_adj_length_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "min_adj_length1_",
+      "default": 0
+    },
+    {
+      "type": "int",
+      "name": "min_adj_length2_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "to_notch_length_valid_",
+      "bits": "1"
+    },
+    {
+      "type": "int",
+      "name": "notch_length_",
+      "default": 0
+    }
+  ]
+}

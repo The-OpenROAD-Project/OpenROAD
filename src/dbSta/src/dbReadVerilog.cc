@@ -273,7 +273,7 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
         = dbModInst::create(parent, module, network_->name(inst));
     if (modinst == nullptr) {
       logger_->warn(ORD,
-                    1014,
+                    2014,
                     "hierachical instance creation failed for {} of {}",
                     network_->name(inst),
                     network_->name(cell));
@@ -291,7 +291,7 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
       dbMaster* master = getMaster(cell);
       if (master == nullptr) {
         logger_->warn(ORD,
-                      1013,
+                      2013,
                       "instance {} LEF master {} not found.",
                       child_name,
                       network_->name(cell));
@@ -300,7 +300,7 @@ void Verilog2db::makeDbModule(Instance* inst, dbModule* parent)
       auto db_inst = dbInst::create(block_, master, child_name);
       if (db_inst == nullptr) {
         logger_->warn(ORD,
-                      1015,
+                      2015,
                       "leaf instance creation failed for {} of {}",
                       network_->name(child),
                       module->getName());
@@ -422,13 +422,13 @@ dbMaster* Verilog2db::getMaster(Cell* cell)
     // Check for corresponding liberty cell.
     LibertyCell* lib_cell = network_->libertyCell(cell);
     if (lib_cell == nullptr) {
-      logger_->warn(ORD, 1011, "LEF master {} has no liberty cell.", cell_name);
+      logger_->warn(ORD, 2011, "LEF master {} has no liberty cell.", cell_name);
     }
     return master;
   }
   LibertyCell* lib_cell = network_->libertyCell(cell);
   if (lib_cell) {
-    logger_->warn(ORD, 1012, "Liberty cell {} has no LEF master.", cell_name);
+    logger_->warn(ORD, 2012, "Liberty cell {} has no LEF master.", cell_name);
   }
   // OpenSTA read_verilog warns about missing cells.
   master_map_[cell] = nullptr;

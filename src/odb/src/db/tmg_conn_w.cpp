@@ -30,8 +30,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include "db.h"
 #include "dbMap.h"
@@ -44,8 +44,8 @@ namespace odb {
 
 void tmg_conn::checkConnOrdered()
 {
-  dbITerm* drv_iterm = NULL;
-  dbBTerm* drv_bterm = NULL;
+  dbITerm* drv_iterm = nullptr;
+  dbBTerm* drv_bterm = nullptr;
   dbITerm* itermV[1024];
   dbBTerm* btermV[1024];
   int itermN = 0;

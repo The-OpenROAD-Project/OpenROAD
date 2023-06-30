@@ -251,7 +251,7 @@ dbTrackGrid* dbTrackGrid::create(dbBlock* block_, dbTechLayer* layer_)
   _dbBlock* block = (_dbBlock*) block_;
 
   if (block_->findTrackGrid(layer_))
-    return NULL;
+    return nullptr;
 
   _dbTrackGrid* grid = block->_track_grid_tbl->create();
   grid->_layer = layer_->getImpl()->getOID();

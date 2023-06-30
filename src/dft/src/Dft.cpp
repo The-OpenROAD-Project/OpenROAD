@@ -137,16 +137,10 @@ std::vector<std::unique_ptr<ScanChain>> Dft::replaceAndArchitect()
   std::vector<std::unique_ptr<ScanCell>> scan_cells
       = CollectScanCells(db_, sta_, logger_);
 
-  std::vector<std::shared_ptr<ScanCell>> shared_scan_cells;
-  std::move(scan_cells.begin(),
-            scan_cells.end(),
-            std::back_inserter(shared_scan_cells));
-
   // Scan Architect
   std::unique_ptr<ScanCellsBucket> scan_cells_bucket
       = std::make_unique<ScanCellsBucket>(logger_);
-  scan_cells_bucket->init(dft_config_->getScanArchitectConfig(),
-                          shared_scan_cells);
+  scan_cells_bucket->init(dft_config_->getScanArchitectConfig(), scan_cells);
 
   std::unique_ptr<ScanArchitect> scan_architect
       = ScanArchitect::ConstructScanScanArchitect(

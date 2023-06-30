@@ -48,21 +48,21 @@ class dbDiff;
 class dbTransform
 {
   friend class _dbBlock;
-  dbOrientType::Value _orient;
+  dbOrientType::Value _orient = dbOrientType::R0;
   Point _offset;
 
  public:
   // T = <R0, (0,0)>
-  dbTransform() : _orient(dbOrientType::R0), _offset(0, 0) {}
+  dbTransform() = default;
 
   //  T = <R0, offset>
-  dbTransform(Point offset) : _orient(dbOrientType::R0), _offset(offset) {}
+  dbTransform(const Point offset) : _offset(offset) {}
 
   //  T = <orient, (0,0)>
-  dbTransform(dbOrientType orient) : _orient(orient), _offset(0, 0) {}
+  dbTransform(const dbOrientType orient) : _orient(orient) {}
 
   //  T = <orient, offset>
-  dbTransform(dbOrientType orient, Point offset)
+  dbTransform(const dbOrientType orient, const Point& offset)
       : _orient(orient), _offset(offset)
   {
   }
@@ -74,11 +74,11 @@ class dbTransform
 
   bool operator!=(const dbTransform& t) const { return !operator==(t); }
 
-  void setOrient(dbOrientType orient) { _orient = orient; }
+  void setOrient(const dbOrientType orient) { _orient = orient; }
 
-  void setOffset(Point offset) { _offset = offset; }
+  void setOffset(const Point offset) { _offset = offset; }
 
-  void setTransform(dbOrientType orient, Point offset)
+  void setTransform(const dbOrientType orient, const Point& offset)
   {
     _orient = orient;
     _offset = offset;

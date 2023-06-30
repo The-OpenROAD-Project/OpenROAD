@@ -20,9 +20,9 @@
 // For updates, support, or to become part of the LEF/DEF Community,
 // check www.openeda.org for details.
 //
-//  $Author: icftcm $
-//  $Revision: #2 $
-//  $Date: 2017/06/07 $
+//  $Author: dell $
+//  $Revision: #1 $
+//  $Date: 2020/09/29 $
 //  $State:  $
 // *****************************************************************************
 // *****************************************************************************
@@ -32,6 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+
+#include <sstream>
 
 #include "defiDebug.hpp"
 #include "defiMisc.hpp"
@@ -49,7 +51,7 @@
 
 BEGIN_LEFDEF_PARSER_NAMESPACE
 
-#include "def_parser.hpp"
+extern int defyyparse(defrData* data);
 
 extern defrContext defContext;
 
@@ -2098,6 +2100,19 @@ void defrSetLongLineNumberFunction(DEFI_LONG_LINE_NUMBER_FUNCTION f)
   defContext.settings->LongLineNumberFunction = f;
 }
 
+void defrSetContextLineNumberFunction(DEFI_CONTEXT_LINE_NUMBER_FUNCTION f)
+{
+  DEF_INIT;
+  defContext.settings->ContextLineNumberFunction = f;
+}
+
+void defrSetContextLongLineNumberFunction(
+    DEFI_CONTEXT_LONG_LINE_NUMBER_FUNCTION f)
+{
+  DEF_INIT;
+  defContext.settings->ContextLongLineNumberFunction = f;
+}
+
 void defrSetDeltaNumberLines(int numLines)
 {
   DEF_INIT;
@@ -2121,29 +2136,18 @@ void defrSetCaseSensitivity(int caseSense)
   }
 }
 
-void defrAddAlias(const char* key, const char* value, int marked)
+void defrAddAlias(std::string_view key, std::string_view value, int marked)
 {
   // Since the alias data is stored in the hash table, the hash table
   // only takes the key and the data, the marked data will be stored
   // at the end of the value data
 
-  defrData* defData = defContext.data;
-
-  char* k1;
-  char* v1;
-  int len = strlen(key) + 1;
-  k1 = (char*) malloc(len);
-  strcpy(k1, key);
-  len = strlen(value) + 1 + 1;  // 1 for the marked
-  v1 = (char*) malloc(len);
-  // strcpy(v1, value);
-  if (marked != 0)
+  if (marked != 0) {
     marked = 1;  // make sure only 1 digit
-  sprintf(v1, "%d%s", marked, value);
-
-  defData->def_alias_set[k1] = v1;
-  free(k1);
-  free(v1);
+  }
+  std::stringstream concated_value;
+  concated_value << marked << value;
+  defContext.data->def_alias_set[std::string(key)] = concated_value.str();
 }
 
 void defrSetOpenLogFileAppend()

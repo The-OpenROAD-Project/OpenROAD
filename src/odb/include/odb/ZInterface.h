@@ -49,7 +49,7 @@ class ZContext
 class ZInterface
 {
  public:
-  virtual ~ZInterface() {}
+  virtual ~ZInterface() = default;
 };
 
 }  // namespace odb

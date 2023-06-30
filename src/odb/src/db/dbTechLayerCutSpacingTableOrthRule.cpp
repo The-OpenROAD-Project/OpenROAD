@@ -43,7 +43,6 @@
 #include "dbTechLayer.h"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerCutSpacingTableOrthRule>;
 
 bool _dbTechLayerCutSpacingTableOrthRule::operator==(
@@ -53,6 +52,7 @@ bool _dbTechLayerCutSpacingTableOrthRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerCutSpacingTableOrthRule::operator<(
     const _dbTechLayerCutSpacingTableOrthRule& rhs) const
 {
@@ -60,17 +60,18 @@ bool _dbTechLayerCutSpacingTableOrthRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerCutSpacingTableOrthRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerCutSpacingTableOrthRule& rhs) const
 {
   DIFF_BEGIN
-
   // User Code Begin Differences
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff& diff,
                                               char side,
                                               const char* field) const {
@@ -78,12 +79,15 @@ void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff& diff,
 
         // User Code Begin Out
         // User Code End Out
-        DIFF_END} _dbTechLayerCutSpacingTableOrthRule::
-    _dbTechLayerCutSpacingTableOrthRule(_dbDatabase* db)
+        DIFF_END}
+
+_dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
+    _dbDatabase* db)
 {
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
     _dbDatabase* db,
     const _dbTechLayerCutSpacingTableOrthRule& r)
@@ -100,6 +104,7 @@ dbIStream& operator>>(dbIStream& stream,
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableOrthRule& obj)
 {

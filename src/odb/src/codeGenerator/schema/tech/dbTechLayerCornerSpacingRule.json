@@ -1,0 +1,117 @@
+{
+  "name": "dbTechLayerCornerSpacingRule",
+  "type": "dbObject",
+  "fields": [
+    {
+      "type": "uint",
+      "name": "corner_type_",
+      "flags": [
+        "private"
+      ],
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "same_mask_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "corner_only_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "within_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "except_eol_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "eol_width_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "except_jog_length_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "jog_length_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "edge_length_valid_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "edge_length_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "include_shape_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "min_length_valid_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "min_length_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "except_notch_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "except_notch_length_valid_",
+      "bits": 1
+    },
+    {
+      "type": "int",
+      "name": "except_notch_length_",
+      "default": 0
+    },
+    {
+      "type": "bool",
+      "name": "except_same_net_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "except_same_metal_",
+      "bits": 1
+    },
+    {
+      "type": "bool",
+      "name": "corner_to_corner_",
+      "bits": 1
+    }
+  ],
+  "enums": [
+    {
+      "name": "CornerType",
+      "values": [
+        "CONVEXCORNER",
+        "CONCAVECORNER"
+      ],
+      "public": true
+    }
+  ],
+  "cpp_includes": [
+    "dbTechLayer.h"
+  ]
+}

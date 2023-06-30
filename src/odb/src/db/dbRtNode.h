@@ -57,8 +57,8 @@ class dbRtNodeEdgeIterator
  public:
   dbRtNodeEdgeIterator()
   {
-    _node = NULL;
-    _cur = NULL;
+    _node = nullptr;
+    _cur = nullptr;
   }
   dbRtNodeEdgeIterator(dbRtNode* node, dbRtEdge* cur)
   {
@@ -118,14 +118,14 @@ class dbRtNode
   {
     assert(edge->_src == this || edge->_tgt == this);
 
-    if (_head == NULL) {
+    if (_head == nullptr) {
       _head = _tail = edge;
-      edge->next(this) = NULL;
-      edge->prev(this) = NULL;
+      edge->next(this) = nullptr;
+      edge->prev(this) = nullptr;
     } else {
       edge->prev(this) = _tail;
       _tail->next(this) = edge;
-      edge->next(this) = NULL;
+      edge->next(this) = nullptr;
       _tail = edge;
     }
   }
@@ -147,17 +147,17 @@ class dbRtNode
   }
 
  public:
-  typedef dbRtNodeEdgeIterator edge_iterator;
-  typedef std::vector<dbObject*>::iterator object_iterator;
+  using edge_iterator = dbRtNodeEdgeIterator;
+  using object_iterator = std::vector<dbObject*>::iterator;
 
   dbRtNode(int x, int y, dbTechLayer* layer)
       : _x(x),
         _y(y),
         _jct_id(-1),
         _layer(layer),
-        _rt_tree(NULL),
-        _head(NULL),
-        _tail(NULL),
+        _rt_tree(nullptr),
+        _head(nullptr),
+        _tail(nullptr),
         _visited(false)
   {
   }
@@ -202,7 +202,7 @@ class dbRtNode
   edge_iterator begin() { return edge_iterator(this, _head); }
 
   // end iterating edges of this node
-  edge_iterator end() { return edge_iterator(this, NULL); }
+  edge_iterator end() { return edge_iterator(this, nullptr); }
 
   // Add database object to this node
   void addObject(dbObject* object) { _objects.push_back(object); }
@@ -217,10 +217,10 @@ class dbRtNode
   void setVisited(bool value) { _visited = value; }
 
   // returns true if this node has no edges
-  bool isOrphan() const { return _head == NULL; }
+  bool isOrphan() const { return _head == nullptr; }
 
   // returns true if this node is not an orphan and has a single edge
-  bool isLeaf() const { return (_head != NULL) && (_head == _tail); }
+  bool isLeaf() const { return (_head != nullptr) && (_head == _tail); }
 
   object_iterator begin_objects() { return _objects.begin(); }
   object_iterator end_objects() { return _objects.end(); }

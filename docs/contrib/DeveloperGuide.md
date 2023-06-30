@@ -1,4 +1,4 @@
-# Developer Guide
+# Developer's Guide
 
 ## Tool Philosophy
 
@@ -18,38 +18,34 @@ minimizes the overhead of invoking each tool in the flow.
 Every tool follows the following file structure, grouping sources, tests
 and headers together.
 
-- `src/`
-   This folder contains the source files for individual tools.
- 
-| `src`           | Purpose |
-|-----------------|--------------|
-| `CMakeLists.txt`  | `add_subdirectory` for each tool|
-| `tool/src`       | sources and private headers |
-| `tool/src/CMakeLists.txt` | tool specific CMake file |
-| `tool/include/tool` | exported headers |
-| `tool/test`       | tool tests |
-| `tool/regression` | tool unit tests|
+```
+    src/CMakelists.txt - add_subdirectory's src/CMakelists.txt
+    src/tool/src/ - sources and private headers
+    src/tool/src/CMakelists.txt
+    src/tool/include/tool/ - exported headers
+    src/tool/test/
+    src/tool/test/regression
+```
 
-- OpenROAD repository:
-  This folder contains the top-level files for overall compilation. OpenROAD uses [swig](https://swig.org/) that acts as a wrapper for C/C++ programs to be callable in higher-level languages, such as Python and Tcl.
+OpenROAD repository:
 
-| `OpenROAD`      | Purpose |
-|-----------------|--------------|
-| `CMakeLists.txt` | top-level CMake file |
-| `src/Main.cc`   | main file  |
-| `src/OpenROAD.cc` | OpenROAD class functions |
-| `src/OpenROAD.i`  | top-level swig, includes, tool swig files |
-| `src/OpenROAD.tcl` | basic read/write lef/def/db commands |
-| `include/ord/OpenROAD.hh` | OpenROAD top-level class, has instances of tools |
+```
+    CMakeLists.txt - top-level CMake file
+    src/Main.cc
+    src/OpenRoad.cc - OpenROAD class functions
+    src/OpenRoad.i - top-level swig, %includes tool swig files
+    src/OpenRoad.tcl - basic read/write lef/def/db commands
+    include/ord/OpenRoad.hh - OpenROAD top-level class, has instances of tools
+```
 
 Some tools such as OpenSTA are submodules, which are simply
 subdirectories in `src/` that are pointers to the git submodule. They are
-intentionally not segregated into a separate module.
+intentionally not segregated into a separate /module.
 
 The use of submodules for new code integrated into OpenROAD is strongly
 discouraged. Submodules make changes to the underlying infrastructure
 (e.g., OpenSTA) difficult to propagate across the dependent submodule
-repositories.
+repositories. Submodules: just say no.
 
 Where external/third-party code that a tool depends on should be placed
 depends on the nature of the dependency.
@@ -81,7 +77,7 @@ None of the tools have commands to read or write LEF, DEF, Verilog or
 database files. For consistency, these functions are all provided by the OpenROAD
 framework.
 
-Tools should package all of their state in a single class. An instance of each
+Tools should package all state in a single class. An instance of each
 tool class resides in the top-level OpenROAD object. This allows
 multiple tools to exist at the same time. If any tool keeps state in
 global variables (even static), then only one tool can exist at a time. Many
@@ -92,7 +88,7 @@ Each tool should use a unique namespace for all of its code. The same
 namespace should be used for Tcl functions, including those defined by a
 swig interface file. Internal Tcl commands stay inside the namespace,
 and user visible Tcl commands should be defined in the global namespace.
-User commands should be simple Tcl commands such as `global_placement`
+User commands should be simple Tcl commands such as 'global_placement'
 that do not create tool instances that must be based to the commands.
 Defining Tcl commands for a tool class is fine for internal commands, but not
 for user visible commands. Commands have an implicit argument of the
@@ -132,7 +128,7 @@ OpenSTA has Tcl utilities to parse keyword arguments
 examples. Use swig to define internal functions to C++ functionality.
 
 Tcl files can be included by encoding them in CMake into a string that
-is evaluated at run time (See [`Resizer::init()`](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/rsz/src/Resizer.cc)).
+is evaluated at run time (See `Resizer::init()`).
 
 ## Errors
 
@@ -148,7 +144,7 @@ variables.
 
 ## Test
 
-Each "tool" has a `/test` directory containing a script named
+Each "tool" has a /test directory containing a script named
 `regression` to run "unit" tests. With no arguments it should run
 default unit tests.
 
@@ -188,12 +184,12 @@ read_liberty Nangate45/Nangate45_typ.lib
 
 ## Building
 
-Instructions for building are available [here](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
+Instructions for building are available [here](../user/Build.md).
 
 ## Example of Adding a Tool to OpenROAD
 
 The patch file "AddTool.patch" illustrates how to add a tool to
-OpenROAD. Use the following commands to add a sample tool:
+OpenROAD. Use
 
 ``` shell
 patch -p < docs/misc/AddTool.patch
@@ -201,25 +197,25 @@ cd src/tool/test
 ln -s ../../../test/regression.tcl regression.tcl
 ```
 
-This adds a directory `OpenRoad/src/tool` that
+to add the sample tool. This adds a directory `OpenRoad/src/tool` that
 illustrates a tool named "Tool" that uses the file structure described above
 and defines a command to run the tool with keyword and flag arguments as
 illustrated below:
 
-```tcl
-> toolize foo
+``` tcl
+% toolize foo
 Helping 23/6
 Gotta positional_argument1 foo
 Gotta param1 0.000000
 Gotta flag1 false
 
-> toolize -flag1 -key1 2.0 bar
+% toolize -flag1 -key1 2.0 bar
 Helping 23/6
 Gotta positional_argument2 bar
 Gotta param1 2.000000
 Gotta flag1 true
 
-> help toolize
+% help toolize
 toolize [-key1 key1] [-flag1] positional_argument1
 ```
 
@@ -228,33 +224,25 @@ toolize [-key1 key1] [-flag1] positional_argument1
 Tool commands should be documented in the top-level OpenROAD `README.md`
 file. Detailed documentation should be the `tool/README.md` file.
 
-## Tool Flow Namespace
+## Tool Flow
 
-Tool namespaces are usually three-lettered lowercase letters. 
-
-- Verilog to DB ([dbSTA](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dbSta))
-- OpenDB: Open Database ([odb](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/odb))
-- TritonPart: constraints-driven paritioner ([par](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/par))
-- Floorplan Initialization ([ifp](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ifp))
-- ICeWall chip-level connections ([pad](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pad))
-- I/O Placement ([ppl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ppl))
-- PDN Generation ([pdn](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn))
-- Tapcell and Welltie Insertion ([tap](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/tap))
-- Triton Macro Placer ([mpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/mpl))
-- Hierarchical Automatic Macro Placer ([mpl2](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/mpl2))
-- RePlAce Global Placer ([gpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl))
-- Gate resizing and buffering ([rsz](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/rsz))
-- Detailed placement ([dpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dpl))
-- Clock tree synthesis ([cts](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/cts))
-- FastRoute Global routing ([grt](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/grt))
-- Antenna check and diode insertion ([ant](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/amt))
-- TritonRoute Detailed routing ([drt](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/drt))
-- Metal fill insertion ([fin](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/fin))
-- Design for Test ([dst](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dst))
-- OpenRCX Parasitic Extraction ([rcx](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/rcx))
-- OpenSTA timing/power report ([sta](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/sta))
-- Graphical User Interface ([gui](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gui))
-- Static IR analyser ([psm](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/psm))
+- Verilog to DB (dbSTA)
+- Floorplan initialization (OpenROAD)
+- I/O placement (ioPlacer)
+- PDN generation (pdngen)
+- I/O placement (ioPlacer)
+- Tapcell and welltie insertion (tapcell)
+- Macro placement (TritonMacroPlace)
+- Global placement (RePlAce)
+- Gate resizing and buffering (Resizer)
+- Detailed placement (OpenDP)
+- Clock tree synthesis (TritonCTS)
+- Repair hold violations (Resizer)
+- Global route (FastRoute)
+- Antenna check (OpenROAD)
+- Detailed route (TritonRoute)
+- Metal fill insertion (OpenROAD)
+- Final timing/power report (OpenSTA)
 
 ## Tool Checklist
 
@@ -266,7 +254,7 @@ dependencies make this vastly more complicated.
 
 1. OpenROAD submodules reference tool `openroad` branch head. No git `develop`, `openroad_app`, or `openroad_build` branches.
 1. Submodules used by more than one tool belong in `src/`, not duplicated in each tool repo.
-1. `CMakeLists.txt` does not use add_compile_options include_directories link_directories link_libraries. Use target\_ versions instead. See tips [here](https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1).
+1. `CMakeLists.txt` does not use add_compile_options include_directories link_directories link_libraries. Use target\_ versions instead. See <https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1>
 1. `CMakeLists.txt` does not use glob. Use explicit lists of source files and headers instead.
 1. `CMakeLists.txt` does not define `CFLAGS` `CMAKE_CXX_FLAGS` `CMAKE_CXX_FLAGS_DEBUG` `CMAKE_CXX_FLAGS_RELEASE`. Let the top level and defaults control these.
 1. No `main.cpp` or main procedure.
@@ -285,3 +273,5 @@ dependencies make this vastly more complicated.
 1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
+
+James Cherry, Dec 2019

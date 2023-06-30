@@ -172,10 +172,10 @@ class dbBlockCallBackObj
 
   // Manipulate _callback list of owner -- in journal.cpp
   void addOwner(dbBlock* new_owner);
-  bool hasOwner() const { return (_owner != NULL); }
+  bool hasOwner() const { return (_owner != nullptr); }
   void removeOwner();
 
-  dbBlockCallBackObj() { _owner = NULL; }
+  dbBlockCallBackObj() { _owner = nullptr; }
   virtual ~dbBlockCallBackObj() { removeOwner(); }
 
  private:

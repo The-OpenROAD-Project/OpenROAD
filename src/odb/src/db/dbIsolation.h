@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -58,6 +57,20 @@ class _dbIsolation : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
+  _dbIsolation(_dbDatabase*, const _dbIsolation& r);
+  _dbIsolation(_dbDatabase*);
+  ~_dbIsolation();
+
+  bool operator==(const _dbIsolation& rhs) const;
+  bool operator!=(const _dbIsolation& rhs) const { return !operator==(rhs); }
+  bool operator<(const _dbIsolation& rhs) const;
+  void differences(dbDiff& diff,
+                   const char* field,
+                   const _dbIsolation& rhs) const;
+  void out(dbDiff& diff, char side, const char* field) const;
+  // User Code Begin Methods
+  // User Code End Methods
+
   char* _name;
   dbId<_dbIsolation> _next_entry;
   std::string _applies_to;
@@ -70,18 +83,6 @@ class _dbIsolation : public _dbObject
 
   // User Code Begin Fields
   // User Code End Fields
-  _dbIsolation(_dbDatabase*, const _dbIsolation& r);
-  _dbIsolation(_dbDatabase*);
-  ~_dbIsolation();
-  bool operator==(const _dbIsolation& rhs) const;
-  bool operator!=(const _dbIsolation& rhs) const { return !operator==(rhs); }
-  bool operator<(const _dbIsolation& rhs) const;
-  void differences(dbDiff& diff,
-                   const char* field,
-                   const _dbIsolation& rhs) const;
-  void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 };
 dbIStream& operator>>(dbIStream& stream, _dbIsolation& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbIsolation& obj);
