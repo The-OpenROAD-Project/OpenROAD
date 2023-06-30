@@ -22,14 +22,14 @@ BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
   config.setMaxLength(10);
-  std::vector<std::shared_ptr<ScanCell>> scan_cells;
+  std::vector<std::unique_ptr<ScanCell>> scan_cells;
   std::vector<std::string> scan_cell_names;
 
   for (uint64_t i = 0; i < 20; ++i) {
     std::stringstream ss;
     ss << "scan_cell" << i;
     scan_cell_names.push_back(ss.str());
-    scan_cells.push_back(std::make_shared<ScanCellMock>(
+    scan_cells.push_back(std::make_unique<ScanCellMock>(
         ss.str(),
         std::make_unique<ClockDomain>("clk1", ClockEdge::Rising),
         logger));
@@ -51,10 +51,10 @@ BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
   BOOST_TEST(scan_chains.size() == 2);
 
   // All the scan cells should be in the chains
-  std::unordered_set<std::string> scan_cells_in_chains_names;
+  std::unordered_set<std::string_view> scan_cells_in_chains_names;
   for (const std::unique_ptr<ScanChain>& scan_chain : scan_chains) {
-    BOOST_TEST(!scan_chain->empty());  // All the cells should have cells
-    for (const auto& scan_cell : scan_chain->getRisingEdgeScanCells()) {
+    BOOST_TEST(!scan_chain->empty());  // All the chains should have cells
+    for (const auto& scan_cell : scan_chain->getScanCells()) {
       scan_cells_in_chains_names.insert(scan_cell->getName());
     }
   }
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
   config.setMaxLength(10);
-  std::vector<std::shared_ptr<ScanCell>> scan_cells;
+  std::vector<std::unique_ptr<ScanCell>> scan_cells;
   std::vector<std::string> scan_cell_names;
 
   uint64_t name_number = 0;
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
     ss << "scan_cell" << name_number;
     ++name_number;
     scan_cell_names.push_back(ss.str());
-    scan_cells.push_back(std::make_shared<ScanCellMock>(
+    scan_cells.push_back(std::make_unique<ScanCellMock>(
         ss.str(),
         std::make_unique<ClockDomain>("clk1", ClockEdge::Rising),
         logger));
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
     ss << "scan_cell" << name_number;
     ++name_number;
     scan_cell_names.push_back(ss.str());
-    scan_cells.push_back(std::make_shared<ScanCellMock>(
+    scan_cells.push_back(std::make_unique<ScanCellMock>(
         ss.str(),
         std::make_unique<ClockDomain>("clk2", ClockEdge::Rising),
         logger));
@@ -118,10 +118,9 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
 
   uint64_t total_bits = 0;
   for (const auto& scan_chain : scan_chains) {
-    for (const auto& scan_cell : scan_chain->getRisingEdgeScanCells()) {
+    for (const auto& scan_cell : scan_chain->getScanCells()) {
       total_bits += scan_cell->getBits();
     }
-    BOOST_TEST(scan_chain->getFallingEdgeScanCells().empty());
   }
   BOOST_TEST(total_bits == 20 + 15);
 }
@@ -135,7 +134,7 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
   ScanArchitectConfig config;
   config.setClockMixing(ScanArchitectConfig::ClockMixing::NoMix);
   config.setMaxLength(10);
-  std::vector<std::shared_ptr<ScanCell>> scan_cells;
+  std::vector<std::unique_ptr<ScanCell>> scan_cells;
   std::vector<std::string> scan_cell_names;
 
   uint64_t name_number = 0;
@@ -144,7 +143,7 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
     ss << "scan_cell" << name_number;
     ++name_number;
     scan_cell_names.push_back(ss.str());
-    scan_cells.push_back(std::make_shared<ScanCellMock>(
+    scan_cells.push_back(std::make_unique<ScanCellMock>(
         ss.str(),
         std::make_unique<ClockDomain>("clk1", ClockEdge::Rising),
         logger));
@@ -155,7 +154,7 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
     ss << "scan_cell" << name_number;
     ++name_number;
     scan_cell_names.push_back(ss.str());
-    scan_cells.push_back(std::make_shared<ScanCellMock>(
+    scan_cells.push_back(std::make_unique<ScanCellMock>(
         ss.str(),
         std::make_unique<ClockDomain>("clk1", ClockEdge::Falling),
         logger));
@@ -179,11 +178,15 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
   uint64_t total_bits_rising = 0;
   uint64_t total_bits_falling = 0;
   for (const auto& scan_chain : scan_chains) {
-    for (const auto& scan_cell : scan_chain->getRisingEdgeScanCells()) {
-      total_bits_rising += scan_cell->getBits();
-    }
-    for (const auto& scan_cell : scan_chain->getFallingEdgeScanCells()) {
-      total_bits_falling += scan_cell->getBits();
+    for (const auto& scan_cell : scan_chain->getScanCells()) {
+      switch (scan_cell->getClockDomain().getClockEdge()) {
+        case ClockEdge::Falling:
+          total_bits_falling += scan_cell->getBits();
+          break;
+        case ClockEdge::Rising:
+          total_bits_rising += scan_cell->getBits();
+          break;
+      }
     }
   }
   BOOST_TEST(total_bits_rising == 20);
