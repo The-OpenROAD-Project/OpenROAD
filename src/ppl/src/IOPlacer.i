@@ -313,6 +313,12 @@ clear_constraints()
   getIOPlacer()->clearConstraints();
 }
 
+void
+run_annealing()
+{
+  getIOPlacer()->runAnnealing();
+}
+
 } // namespace
 
 %} // inline
