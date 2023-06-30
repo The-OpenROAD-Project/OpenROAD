@@ -57,7 +57,7 @@ class SimulatedAnnealing
                      std::vector<Slot>& slots,
                      Logger* logger,
                      odb::dbDatabase* db);
-  virtual ~SimulatedAnnealing() = default;
+  ~SimulatedAnnealing() = default;
   void init();
   void run();
   void getAssignment(std::vector<IOPin>& assignment);
