@@ -85,6 +85,7 @@ class SimulatedAnnealing
   std::vector<int> slot_indices_;
   Netlist* netlist_;
   std::vector<Slot>& slots_;
+  const std::vector<PinGroupByIndex>& pin_groups_;
   int num_slots_;
   int num_pins_;
 

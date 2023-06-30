@@ -44,7 +44,11 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
                                        std::vector<Slot>& slots,
                                        Logger* logger,
                                        odb::dbDatabase* db)
-    : netlist_(netlist), slots_(slots), logger_(logger), db_(db)
+    : netlist_(netlist),
+      slots_(slots),
+      pin_groups_(netlist->getIOGroups()),
+      logger_(logger),
+      db_(db)
 {
   num_slots_ = slots.size();
   num_pins_ = netlist->numIOPins();
