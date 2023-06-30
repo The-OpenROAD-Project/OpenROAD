@@ -678,7 +678,7 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
     debugPrint(logger_, RSZ, "repair_setup", 4, " fanin {} slack_margin = {}",
                network_->pathName(fanout_vertex->pin()),
                delayAsString(slack_margin, sta_, 3));
-    fanout_slacks.push_back(pair<Vertex*, Slack>(fanout_vertex, slack_margin));
+    fanout_slacks.emplace_back(fanout_vertex, slack_margin);
   }
 
   sort(fanout_slacks.begin(), fanout_slacks.end(),
