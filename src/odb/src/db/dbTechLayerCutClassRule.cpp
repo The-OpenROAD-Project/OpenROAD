@@ -44,7 +44,6 @@
 #include "dbHashTable.hpp"
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerCutClassRule>;
 
 bool _dbTechLayerCutClassRule::operator==(
@@ -58,16 +57,12 @@ bool _dbTechLayerCutClassRule::operator==(
 
   if (_name != rhs._name)
     return false;
-
   if (width_ != rhs.width_)
     return false;
-
   if (length_ != rhs.length_)
     return false;
-
   if (num_cuts_ != rhs.num_cuts_)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
 
@@ -75,6 +70,7 @@ bool _dbTechLayerCutClassRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerCutClassRule::operator<(
     const _dbTechLayerCutClassRule& rhs) const
 {
@@ -82,13 +78,13 @@ bool _dbTechLayerCutClassRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerCutClassRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerCutClassRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.length_valid_);
   DIFF_FIELD(flags_.cuts_valid_);
   DIFF_FIELD(_name);
@@ -100,6 +96,7 @@ void _dbTechLayerCutClassRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerCutClassRule::out(dbDiff& diff,
                                    char side,
                                    const char* field) const
@@ -117,6 +114,7 @@ void _dbTechLayerCutClassRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -127,6 +125,7 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
     _dbDatabase* db,
     const _dbTechLayerCutClassRule& r)
@@ -156,6 +155,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;

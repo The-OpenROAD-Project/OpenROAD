@@ -47,17 +47,14 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbLogicPort>;
 
 bool _dbLogicPort::operator==(const _dbLogicPort& rhs) const
 {
   if (_name != rhs._name)
     return false;
-
   if (_next_entry != rhs._next_entry)
     return false;
-
   if (direction != rhs.direction)
     return false;
 
@@ -65,18 +62,19 @@ bool _dbLogicPort::operator==(const _dbLogicPort& rhs) const
   // User Code End ==
   return true;
 }
+
 bool _dbLogicPort::operator<(const _dbLogicPort& rhs) const
 {
   // User Code Begin <
   // User Code End <
   return true;
 }
+
 void _dbLogicPort::differences(dbDiff& diff,
                                const char* field,
                                const _dbLogicPort& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(direction);
@@ -84,6 +82,7 @@ void _dbLogicPort::differences(dbDiff& diff,
   // User Code End Differences
   DIFF_END
 }
+
 void _dbLogicPort::out(dbDiff& diff, char side, const char* field) const
 {
   DIFF_OUT_BEGIN
@@ -95,11 +94,13 @@ void _dbLogicPort::out(dbDiff& diff, char side, const char* field) const
   // User Code End Out
   DIFF_END
 }
+
 _dbLogicPort::_dbLogicPort(_dbDatabase* db)
 {
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbLogicPort::_dbLogicPort(_dbDatabase* db, const _dbLogicPort& r)
 {
   _name = r._name;
@@ -118,6 +119,7 @@ dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj)
 {
   stream << obj._name;

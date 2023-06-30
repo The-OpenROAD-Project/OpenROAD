@@ -32,8 +32,7 @@
 
 #pragma once
 
-#include <stdarg.h>
-
+#include <cstdarg>
 #include <stdexcept>
 
 #include "odb.h"
@@ -70,7 +69,7 @@ inline std::runtime_error ZException(const char* fmt,
 
 #define ZALLOCATED(expr)                         \
   do {                                           \
-    if ((expr) == NULL)                          \
+    if ((expr) == nullptr)                       \
       throw std::runtime_error("Out of memory"); \
   } while (0);
 

@@ -180,12 +180,12 @@ void dbWireEncoder::begin(dbWire* wire)
 
 void dbWireEncoder::clear()
 {
-  _wire = NULL;
-  _block = NULL;
-  _tech = NULL;
+  _wire = nullptr;
+  _block = nullptr;
+  _tech = nullptr;
   _data.clear();
   _opcodes.clear();
-  _layer = NULL;
+  _layer = nullptr;
   _idx = 0;
   _x = 0;
   _y = 0;
@@ -203,7 +203,7 @@ void dbWireEncoder::append(dbWire* wire)
   _tech = _block->getDb()->getTech();
   _data = _wire->_data;
   _opcodes = _wire->_opcodes;
-  _layer = NULL;
+  _layer = nullptr;
   _idx = _data.size();
   _x = 0;
   _y = 0;
@@ -654,9 +654,9 @@ void dbWireEncoder::clearColor()
 
 dbWireDecoder::dbWireDecoder()
 {
-  _wire = NULL;
-  _block = NULL;
-  _tech = NULL;
+  _wire = nullptr;
+  _block = nullptr;
+  _tech = nullptr;
 }
 
 dbWireDecoder::~dbWireDecoder()
@@ -671,7 +671,7 @@ void dbWireDecoder::begin(dbWire* wire)
   _x = 0;
   _y = 0;
   _default_width = true;
-  _layer = NULL;
+  _layer = nullptr;
   _idx = 0;
   _jct_id = -1;
   _opcode = END_DECODE;
@@ -1227,7 +1227,7 @@ void dumpDecoder4Net(dbNet* innet)
 
       case dbWireDecoder::JUNCTION: {
         uint jct = decoder.getJunctionValue();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
@@ -1293,7 +1293,7 @@ void dumpDecoder4Net(dbNet* innet)
         uint jval = decoder.getJunctionValue();
         layer = decoder.getLayer();
         wtype = decoder.getWireType();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
@@ -1315,7 +1315,7 @@ void dumpDecoder4Net(dbNet* innet)
         uint jval = decoder.getJunctionValue();
         layer = decoder.getLayer();
         wtype = decoder.getWireType();
-        lyr_rule = NULL;
+        lyr_rule = nullptr;
         opcode = decoder.peek();
         if (opcode == dbWireDecoder::RULE) {
           opcode = decoder.next();
@@ -1426,7 +1426,7 @@ void dumpDecoder(dbBlock* inblk, const char* net_name_or_id)
     return;
   }
 
-  dbNet* innet = NULL;
+  dbNet* innet = nullptr;
   const char* ckdigit;
   for (ckdigit = net_name_or_id; *ckdigit; ckdigit++)
     if (!isdigit(*ckdigit))

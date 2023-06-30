@@ -40,7 +40,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -57,15 +56,10 @@ class _dbLogicPort : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  char* _name;
-  dbId<_dbLogicPort> _next_entry;
-  std::string direction;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbLogicPort(_dbDatabase*, const _dbLogicPort& r);
   _dbLogicPort(_dbDatabase*);
   ~_dbLogicPort();
+
   bool operator==(const _dbLogicPort& rhs) const;
   bool operator!=(const _dbLogicPort& rhs) const { return !operator==(rhs); }
   bool operator<(const _dbLogicPort& rhs) const;
@@ -75,6 +69,13 @@ class _dbLogicPort : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  char* _name;
+  dbId<_dbLogicPort> _next_entry;
+  std::string direction;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj);

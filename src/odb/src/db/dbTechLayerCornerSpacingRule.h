@@ -41,7 +41,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -75,22 +74,11 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  dbTechLayerCornerSpacingRuleFlags flags_;
-  int within_;
-  int eol_width_;
-  int jog_length_;
-  int edge_length_;
-  int min_length_;
-  int except_notch_length_;
-
-  // User Code Begin Fields
-  dbVector<int> _width_tbl;
-  dbVector<std::pair<int, int>> _spacing_tbl;
-  // User Code End Fields
   _dbTechLayerCornerSpacingRule(_dbDatabase*,
                                 const _dbTechLayerCornerSpacingRule& r);
   _dbTechLayerCornerSpacingRule(_dbDatabase*);
   ~_dbTechLayerCornerSpacingRule();
+
   bool operator==(const _dbTechLayerCornerSpacingRule& rhs) const;
   bool operator!=(const _dbTechLayerCornerSpacingRule& rhs) const
   {
@@ -103,6 +91,19 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  dbTechLayerCornerSpacingRuleFlags flags_;
+  int within_;
+  int eol_width_;
+  int jog_length_;
+  int edge_length_;
+  int min_length_;
+  int except_notch_length_;
+
+  // User Code Begin Fields
+  dbVector<int> _width_tbl;
+  dbVector<std::pair<int, int>> _spacing_tbl;
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj);
 dbOStream& operator<<(dbOStream& stream,

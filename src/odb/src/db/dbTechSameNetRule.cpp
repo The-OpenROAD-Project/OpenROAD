@@ -144,7 +144,7 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechLayer* layer1_,
     tech->_samenet_matrix.resize(tech->_layer_cnt, tech->_layer_cnt);
 
   else if (tech_->findSameNetRule(layer1_, layer2_))
-    return NULL;
+    return nullptr;
 
   _dbTechSameNetRule* rule = tech->_samenet_rule_tbl->create();
   rule->_layer_1 = layer1->getOID();
@@ -171,7 +171,7 @@ dbTechSameNetRule* dbTechSameNetRule::create(dbTechNonDefaultRule* ndrule_,
     ndrule->_samenet_matrix.resize(tech->_layer_cnt, tech->_layer_cnt);
 
   else if (ndrule_->findSameNetRule(layer1_, layer2_))
-    return NULL;
+    return nullptr;
 
   _dbTechSameNetRule* rule = tech->_samenet_rule_tbl->create();
   rule->_layer_1 = layer1->getOID();

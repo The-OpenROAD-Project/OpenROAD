@@ -82,7 +82,7 @@ static void set_symmetric_diff(dbDiff& diff,
 
 _dbNet::_dbNet(_dbDatabase* db, const _dbNet& n)
     : _flags(n._flags),
-      _name(NULL),
+      _name(nullptr),
       _next_entry(n._next_entry),
       _iterms(n._iterms),
       _bterms(n._bterms),
@@ -918,7 +918,7 @@ bool dbNet::anchoredRSeg()
 {
   dbSet<dbRSeg> rSet = getRSegs();
   dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rc = NULL;
+  dbRSeg* rc = nullptr;
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     rc = *rc_itr;
     if (rc->getShapeId() != 0)
@@ -1122,7 +1122,7 @@ void dbNet::adjustNetRes(float factor, uint corner)
     return;
   dbSet<dbRSeg> rSet = getRSegs();
   dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rc = NULL;
+  dbRSeg* rc = nullptr;
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     rc = *rc_itr;
     rc->adjustResistance(factor, corner);
@@ -1134,7 +1134,7 @@ void dbNet::adjustNetRes(float factor)
     return;
   dbSet<dbRSeg> rSet = getRSegs();
   dbSet<dbRSeg>::iterator rc_itr;
-  dbRSeg* rc = NULL;
+  dbRSeg* rc = nullptr;
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     rc = *rc_itr;
     rc->adjustResistance(factor);
@@ -1278,9 +1278,9 @@ uint dbNet::wireEqual(dbNet* target)
 {
   dbWire* srcw = getWire();
   dbWire* tgtw = target->getWire();
-  if (srcw == NULL && tgtw == NULL)
+  if (srcw == nullptr && tgtw == nullptr)
     return 0;
-  if (srcw == NULL || tgtw == NULL)
+  if (srcw == nullptr || tgtw == nullptr)
     return 3;
   if (!isWireOrdered() || !target->isWireOrdered())
     return 4;
@@ -1291,9 +1291,9 @@ void dbNet::wireMatch(dbNet* target)
 {
   dbWire* srcw = getWire();
   dbWire* tgtw = target->getWire();
-  if (srcw == NULL && tgtw == NULL)
+  if (srcw == nullptr && tgtw == nullptr)
     return;
-  if (srcw == NULL || tgtw == NULL)
+  if (srcw == nullptr || tgtw == nullptr)
     return;
   if (!isWireOrdered() || !target->isWireOrdered())
     return;
@@ -1344,7 +1344,7 @@ void dbNet::printWire(int fid, int tid, char* type)
 
 void dbNet::printWire()
 {
-  printWire(0, 0, NULL);
+  printWire(0, 0, nullptr);
 }
 
 void dbNet::printWire(char* type)
@@ -1621,7 +1621,7 @@ dbITerm* dbNet::getFirstOutput()
     return tr;
   }
   // warning(0, "instance %s has no output pin\n", getConstName());
-  return NULL;
+  return nullptr;
 }
 dbITerm* dbNet::get1stSignalInput(bool io)
 {
@@ -1644,7 +1644,7 @@ dbITerm* dbNet::get1stSignalInput(bool io)
     return tr;
   }
   // warning(0, "instance %s has no output pin\n", getConstName());
-  return NULL;
+  return nullptr;
 }
 
 dbSet<dbSWire> dbNet::getSWires()
@@ -1660,7 +1660,7 @@ dbNet::getFirstSWire()
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   if (net->_swires == 0)
-    return NULL;
+    return nullptr;
 
   return (dbSWire*) block->_swire_tbl->getPtr(net->_swires);
 }
@@ -1671,7 +1671,7 @@ dbWire* dbNet::getWire()
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   if (net->_wire == 0)
-    return NULL;
+    return nullptr;
 
   return (dbWire*) block->_wire_tbl->getPtr(net->_wire);
 }
@@ -1682,7 +1682,7 @@ dbWire* dbNet::getGlobalWire()
   _dbBlock* block = (_dbBlock*) net->getOwner();
 
   if (net->_global_wire == 0)
-    return NULL;
+    return nullptr;
 
   return (dbWire*) block->_wire_tbl->getPtr(net->_global_wire);
 }
@@ -1922,7 +1922,7 @@ dbRSeg* dbNet::findRSeg(uint srcn, uint tgtn)
     if (rseg->getSourceNode() == srcn && rseg->getTargetNode() == tgtn)
       return rseg;
   }
-  return NULL;
+  return nullptr;
 }
 
 int ttttsv = 0;
@@ -1985,7 +1985,7 @@ dbRSeg* dbNet::getZeroRSeg()
 {
   _dbNet* net = (_dbNet*) this;
   if (net->_r_segs == 0)
-    return NULL;
+    return nullptr;
   dbRSeg* zrc = dbRSeg::getRSeg((dbBlock*) net->getOwner(), net->_r_segs);
   return zrc;
 }
@@ -2002,7 +2002,7 @@ dbCapNode* dbNet::findCapNode(uint nodeId)
       return n;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void dbNet::printCapN(char* type)
@@ -2065,21 +2065,21 @@ void dbNet::donateRC(dbITerm* donorterm,
                      std::vector<dbCCSeg*>* gndcc,
                      dbRSeg*& bridgeRseg)
 {
-  rtrseg = NULL;
-  lastrcapnd = NULL;
+  rtrseg = nullptr;
+  lastrcapnd = nullptr;
   ricapndMax = 0;
-  fstdrseg = NULL;
-  dtrseg = NULL;
-  fstdcapnd = NULL;
-  bridgeRseg = NULL;
+  fstdrseg = nullptr;
+  dtrseg = nullptr;
+  fstdcapnd = nullptr;
+  bridgeRseg = nullptr;
 
   dbBlock* block = (dbBlock*) getImpl()->getOwner();
   dbBlock* pblock = block;  // needed in case of independent spef corner
   dbNet* rcvnet = rcvterm->getNet();
 
   // donor rsegs
-  dtrseg = NULL;
-  dbRSeg* drseg = NULL;
+  dtrseg = nullptr;
+  dbRSeg* drseg = nullptr;
   dbSet<dbRSeg> drSet = getRSegs();
   dbSet<dbRSeg>::iterator rc_itr;
   for (rc_itr = drSet.begin(); rc_itr != drSet.end(); ++rc_itr) {
@@ -2110,8 +2110,8 @@ void dbNet::donateRC(dbITerm* donorterm,
   fstdrseg = getZeroRSeg();
 
   // receiver rsegs
-  rtrseg = NULL;
-  dbRSeg* rrseg = NULL;
+  rtrseg = nullptr;
+  dbRSeg* rrseg = nullptr;
   dbSet<dbRSeg> rSet = rcvnet->getRSegs();
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     rrseg = *rc_itr;
@@ -2133,7 +2133,7 @@ void dbNet::donateRC(dbITerm* donorterm,
         rcvterm->getMTerm()->getConstName());
 
   // receiver capnodes
-  dbCapNode* rcapnd = NULL;
+  dbCapNode* rcapnd = nullptr;
   dbSet<dbCapNode> rnodeSet = rcvnet->getCapNodes();
   dbSet<dbCapNode>::iterator capn_itr;
   for (capn_itr = rnodeSet.begin(); capn_itr != rnodeSet.end(); ++capn_itr) {
@@ -2149,8 +2149,8 @@ void dbNet::donateRC(dbITerm* donorterm,
   uint rcvnid = rcvnet->getId();
 
   // donor capnodes
-  dbCapNode* other = NULL;
-  dbCapNode* capnd = NULL;
+  dbCapNode* other = nullptr;
+  dbCapNode* capnd = nullptr;
   uint cCnt = ((dbBlock*) getImpl()->getOwner())->getCornersPerBlock();
   dbSet<dbCapNode> nodeSet = getCapNodes();
   uint cid;
@@ -2595,15 +2595,15 @@ void dbNet::preExttreeMergeRC(double max_cap, uint corner)
   dbRSeg* rc;
   bool firstRC = true;
   uint cnt = 1;
-  prc->getGndTotalCap(NULL, &totalcap[0], 1 /*mcf*/);
+  prc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
   dbSet<dbRSeg>::iterator rc_itr;
   for (rc_itr = rSet.begin(); rc_itr != rSet.end(); ++rc_itr) {
     rc = *rc_itr;
     mrsegs.push_back(rc);
     if (firstRC && cnt != 1)
-      rc->getGndTotalCap(NULL, &totalcap[0], 1 /*mcf*/);
+      rc->getGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
     else
-      rc->addGndTotalCap(NULL, &totalcap[0], 1 /*mcf*/);
+      rc->addGndTotalCap(nullptr, &totalcap[0], 1 /*mcf*/);
     cnt++;
     firstRC = false;
     tgtNode = dbCapNode::getCapNode(block, rc->getTargetNode());
@@ -2701,7 +2701,7 @@ void dbNet::setNonDefaultRule(dbTechNonDefaultRule* rule)
   uint prev_rule = net->_non_default_rule;
   bool prev_block_rule = net->_flags._block_rule;
 
-  if (rule == NULL) {
+  if (rule == nullptr) {
     net->_non_default_rule = 0U;
     net->_flags._block_rule = 0;
   } else {
@@ -2736,7 +2736,7 @@ dbTechNonDefaultRule* dbNet::getNonDefaultRule()
   _dbNet* net = (_dbNet*) this;
 
   if (net->_non_default_rule == 0)
-    return NULL;
+    return nullptr;
 
   dbDatabase* db = (dbDatabase*) net->getDatabase();
 
@@ -2756,7 +2756,7 @@ void dbNet::getSignalWireCount(uint& wireCnt, uint& viaCnt)
   dbWirePath path;
   dbWirePathShape pshape;
   dbWire* wire = getWire();
-  if (wire == NULL)
+  if (wire == nullptr)
     return;
   dbWirePathItr pitr;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
@@ -2781,7 +2781,7 @@ void dbNet::getNetStats(uint& wireCnt,
   dbWirePath path;
   dbWirePathShape pshape;
   dbWire* wire = getWire();
-  if (wire == NULL)
+  if (wire == nullptr)
     return;
   dbWirePathItr pitr;
   for (pitr.begin(wire); pitr.getNextPath(path);) {
@@ -2907,7 +2907,7 @@ dbNet* dbNet::create(dbBlock* block_, const char* name_, bool skipExistingCheck)
   _dbBlock* block = (_dbBlock*) block_;
 
   if (!skipExistingCheck && block->_net_hash.hasMember(name_))
-    return NULL;
+    return nullptr;
 
   if (block->_journal) {
     debugPrint(block->getImpl()->getLogger(),
@@ -3022,7 +3022,7 @@ dbNet* dbNet::getValidNet(dbBlock* block_, uint dbid_)
 {
   _dbBlock* block = (_dbBlock*) block_;
   if (!block->_net_tbl->validId(dbid_))
-    return NULL;
+    return nullptr;
   return (dbNet*) block->_net_tbl->getPtr(dbid_);
 }
 
@@ -3117,8 +3117,8 @@ dbNet::createTerms4SingleNet(int x1, int y1, int x2, int y2, dbTechLayer *inly)
   uint hwidth = fwidth/2;
 
   std::pair<dbBTerm *,dbBTerm *> retpr;
-  retpr.first  = NULL;
-  retpr.second = NULL;
+  retpr.first  = nullptr;
+  retpr.second = nullptr;
 
   std::string term_str(this->getName());
   term_str = term_str + "_BL";

@@ -42,7 +42,6 @@
 // User Code End Includes
 
 namespace odb {
-
 class dbIStream;
 class dbOStream;
 class dbDiff;
@@ -60,20 +59,10 @@ class _dbMetalWidthViaMap : public _dbObject
   // User Code Begin Enums
   // User Code End Enums
 
-  bool via_cut_class_;
-  dbId<_dbTechLayer> cut_layer_;
-  int below_layer_width_low_;
-  int below_layer_width_high_;
-  int above_layer_width_low_;
-  int above_layer_width_high_;
-  std::string via_name_;
-  bool pg_via_;
-
-  // User Code Begin Fields
-  // User Code End Fields
   _dbMetalWidthViaMap(_dbDatabase*, const _dbMetalWidthViaMap& r);
   _dbMetalWidthViaMap(_dbDatabase*);
   ~_dbMetalWidthViaMap();
+
   bool operator==(const _dbMetalWidthViaMap& rhs) const;
   bool operator!=(const _dbMetalWidthViaMap& rhs) const
   {
@@ -86,6 +75,18 @@ class _dbMetalWidthViaMap : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
   // User Code Begin Methods
   // User Code End Methods
+
+  bool via_cut_class_;
+  dbId<_dbTechLayer> cut_layer_;
+  int below_layer_width_low_;
+  int below_layer_width_high_;
+  int above_layer_width_low_;
+  int above_layer_width_high_;
+  std::string via_name_;
+  bool pg_via_;
+
+  // User Code Begin Fields
+  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj);

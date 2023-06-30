@@ -1,18 +1,5 @@
 # Build OpenROAD
 
-## Install dependencies
-
-To install dependencies to develop or build and run OpenROAD locally,
-follow [this procedure](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
-
-> :warning: warning :warning:
->
-> `etc/DependencyInstaller.sh` defaults to installing system 
-> packages and requires sudo access. These packages can affect
-> your environment. We recommend users install dependencies
-> locally using [setup.sh](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/setup.sh)
-> from OpenROAD-flow-scripts.
-
 ## Build
 
 The first step, independent of the build method, is to download the repository:
@@ -43,13 +30,28 @@ with every build in the build directory. In case of filing issues,
 it can be uploaded in the "Relevant log output" section of OpenROAD
 [issue forms](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/issues/new/choose).
 
+## Install dependencies
+
+You may follow our helper script to install dependencies as follows:
+``` shell
+sudo ./etc/DependencyInstaller.sh
+```
+
+> **WARNING**
+>
+> `etc/DependencyInstaller.sh` defaults to installing system 
+> packages and requires sudo access. These packages can affect
+> your environment. We recommend users install dependencies
+> locally using [setup.sh](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts/blob/master/setup.sh)
+> from OpenROAD-flow-scripts.
+
 ### Build Manually
 
 ``` shell
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
 make
+make install 
 ```
 
 The default install directory is `/usr/local`.
