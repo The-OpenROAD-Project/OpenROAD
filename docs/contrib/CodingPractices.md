@@ -3,7 +3,7 @@
 List of coding practices.
 
 :::{Note}
-This is a compilation of many idioms in OpenROAD code that is considered undesirable. 
+This is a compilation of many idioms in OpenROAD code that are considered undesirable. 
 :::
 
 ## C++
@@ -12,8 +12,8 @@ This is a compilation of many idioms in OpenROAD code that is considered undesir
 OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands: 
 
 ```shell
-cmake . -B build  //generate build files
-//typically only run these commands on files you changed.
+cmake . -B build  # generate build files
+# typically only run these commands on files you changed.
 clang-tidy -p ./build source_file.cpp
 clang-format -i -style=file:.clang-format source_file.cpp 
 ```
@@ -315,8 +315,8 @@ value.
 
 ### Practice #22
 
-Don't use `<>'s` to include anything but system headers. Your
-project's headers should NEVER be in `<>'s`. 
+Don't use `<>` to include anything but system headers. Your
+project's headers should NEVER be in `<>`. 
 1. [GCC Include Syntax](https://gcc.gnu.org/onlinedocs/cpp/Include-Syntax.html)
 1. [StackOverflow discussion on "filename" vs \<filename\>](https://stackoverflow.com/questions/21593/what-is-the-difference-between-include-filename-and-include-filename)
 

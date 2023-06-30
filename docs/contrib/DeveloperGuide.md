@@ -81,7 +81,7 @@ None of the tools have commands to read or write LEF, DEF, Verilog or
 database files. For consistency, these functions are all provided by the OpenROAD
 framework.
 
-Tools should package all states in a single class. An instance of each
+Tools should package all of their state in a single class. An instance of each
 tool class resides in the top-level OpenROAD object. This allows
 multiple tools to exist at the same time. If any tool keeps state in
 global variables (even static), then only one tool can exist at a time. Many
@@ -132,7 +132,7 @@ OpenSTA has Tcl utilities to parse keyword arguments
 examples. Use swig to define internal functions to C++ functionality.
 
 Tcl files can be included by encoding them in CMake into a string that
-is evaluated at run time (See `Resizer::init()` [here](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/rsz/src/Resizer.cc)).
+is evaluated at run time (See [`Resizer::init()`](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/rsz/src/Resizer.cc)).
 
 ## Errors
 
