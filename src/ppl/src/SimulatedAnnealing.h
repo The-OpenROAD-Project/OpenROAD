@@ -75,6 +75,7 @@ class SimulatedAnnealing
                          int& prev_cost);
   int swapPins(int& pin1, int& pin2);
   int movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
+  void moveGroupToFreeSlots(int group_idx, std::vector<int>& new_slots);
   double dbuToMicrons(int64_t dbu);
 
   // [pin] -> slot

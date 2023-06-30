@@ -247,6 +247,26 @@ int SimulatedAnnealing::movePinToFreeSlot(int& prev_slot,
   return prev_cost;
 }
 
+void SimulatedAnnealing::moveGroupToFreeSlots(int group_idx, std::vector<int>& new_slots)
+{
+  const PinGroupByIndex& group = pin_groups_[group_idx];
+  bool free_slot = false;
+  int new_slot;
+  while (!free_slot) {
+    new_slot = (int) (std::floor(distribution_(generator_) * num_slots_));
+    for (int i = 0; i < group.pin_indices.size(); i++) {
+      free_slot = free_slot && slots_[new_slot].isAvailable();
+      new_slot++;
+    }
+  }
+
+  for (int pin_idx : group.pin_indices) {
+    pin_assignment_[pin_idx] = new_slot;
+    new_slots.push_back(new_slot);
+    new_slot++;
+  }
+}
+
 double SimulatedAnnealing::dbuToMicrons(int64_t dbu)
 {
   return (double) dbu / (db_->getChip()->getBlock()->getDbUnitsPerMicron());
