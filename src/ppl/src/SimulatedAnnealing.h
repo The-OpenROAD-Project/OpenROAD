@@ -64,6 +64,7 @@ class SimulatedAnnealing
  private:
   void init();
   void randomAssignment();
+  int randomAssignmentForGroups(std::set<int>& placed_pins);
   int64 getAssignmentCost();
   int getDeltaCost(int prev_cost, int pin1, int pin2);
   int getPinCost(int pin_idx);

@@ -139,6 +139,25 @@ void SimulatedAnnealing::randomAssignment()
   }
 }
 
+int SimulatedAnnealing::randomAssignmentForGroups(std::set<int>& placed_pins)
+{
+  int slot_idx = 0;
+
+  for (const auto& group : pin_groups_) {
+    const auto pin_list = group.pin_indices;
+    int group_slot = slot_indices_[slot_idx];
+    for (const auto& pin_idx : pin_list) {
+      pin_assignment_[pin_idx] = group_slot;
+      slots_[group_slot].used = true;
+      group_slot++;
+      slot_idx++;
+      placed_pins.insert(pin_idx);
+    }
+  }
+
+  return slot_idx;
+}
+
 int64 SimulatedAnnealing::getAssignmentCost()
 {
   int64 cost = 0;
