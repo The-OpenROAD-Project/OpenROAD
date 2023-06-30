@@ -964,7 +964,7 @@ const std::string HardMacro::getMasterName() const
 }
 
 // update the location and orientation of the macro inst in OpenDB
-void HardMacro::updateDb(float pitch_x, float pitch_y)
+void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
 {
   if ((inst_ == nullptr) || (dbu_ <= 0.0)) {
     return;
@@ -982,13 +982,36 @@ void HardMacro::updateDb(float pitch_x, float pitch_y)
           odb::dbTechLayer* layer = box->getTechLayer();
           // check the routing direction
           if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
-            pitch_y = dbuToMicron(static_cast<float>(layer->getPitchY()), dbu_);
-            offset_y
-                = dbuToMicron(static_cast<float>(layer->getOffsetY()), dbu_);
+            // check the grid first
+            odb::dbTrackGrid* grid = block->findTrackGrid(layer);
+            if (grid == nullptr) {
+              std::vector<int> y_grid;
+              grid->getGridY(y_grid);
+              // use the origin as the offset and the step as the pitch
+              offset_y = dbuToMicron(static_cast<float>(y_grid[0]), dbu_);
+              pitch_y = dbuToMicron(static_cast<float>(y_grid[1] - y_grid[0]),
+                                    dbu_);
+            } else {
+              pitch_y
+                  = dbuToMicron(static_cast<float>(layer->getPitchY()), dbu_);
+              offset_y
+                  = dbuToMicron(static_cast<float>(layer->getOffsetY()), dbu_);
+            }
           } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
-            pitch_x = dbuToMicron(static_cast<float>(layer->getPitchX()), dbu_);
-            offset_x
-                = dbuToMicron(static_cast<float>(layer->getOffsetX()), dbu_);
+            odb::dbTrackGrid* grid = block->findTrackGrid(layer);
+            if (grid == nullptr) {
+              std::vector<int> x_grid;
+              grid->getGridX(x_grid);
+              // use the origin as the offset and the step as the pitch
+              offset_x = dbuToMicron(static_cast<float>(x_grid[0]), dbu_);
+              pitch_x = dbuToMicron(static_cast<float>(x_grid[1] - x_grid[0]),
+                                    dbu_);
+            } else {
+              pitch_x
+                  = dbuToMicron(static_cast<float>(layer->getPitchX()), dbu_);
+              offset_x
+                  = dbuToMicron(static_cast<float>(layer->getOffsetX()), dbu_);
+            }
           }
         }
       }

@@ -43,11 +43,15 @@
 #include <string>
 #include <vector>
 
+#include "odb.h"
 #include "odb/dbTypes.h"
 
 namespace odb {
 class dbInst;
 class dbModule;
+class dbBlock;
+class dbDatabase;
+class dbITerm;
 }  // namespace odb
 
 namespace utl {
@@ -396,7 +400,7 @@ class HardMacro
   const std::string getMasterName() const;
   // update the location and orientation of the macro inst in OpenDB
   // The macro should be snaped to placement grids
-  void updateDb(float pitch_x, float pitch_y);
+  void updateDb(float pitch_x, float pitch_y, odb::dbBlock* block);
   int getXDBU() const { return micronToDbu(getX(), dbu_); }
 
   int getYDBU() const { return micronToDbu(getY(), dbu_); }

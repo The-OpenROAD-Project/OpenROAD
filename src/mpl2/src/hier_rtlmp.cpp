@@ -565,7 +565,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   }
 
   for (auto& [inst, hard_macro] : hard_macro_map_) {
-    hard_macro->updateDb(pitch_x_, pitch_y_);
+    hard_macro->updateDb(pitch_x_, pitch_y_, block_);
   }
 
   // Clear the memory to avoid memory leakage
