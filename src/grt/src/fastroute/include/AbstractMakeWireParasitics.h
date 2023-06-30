@@ -35,6 +35,8 @@
 
 #pragma once
 
+#include <cmath>
+
 #include "grt/GRoute.h"
 
 namespace grt {
