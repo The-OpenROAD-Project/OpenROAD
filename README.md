@@ -66,14 +66,26 @@ flow stages through Tcl commands and Python APIs.
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
 ```mermaid
+%%{
+  init: {
+    'theme': 'neutral',
+    'themeVariables': {
+      'textColor': '#000000',
+      'noteTextColor' : '#000000',
+      'fontSize': '20px'
+    }
+  }
+}%%
+
 flowchart LR
 
     A[RTL-GDSII\n Using\n OpenROAD-flow-scripts] --> SYNTHESIS 
+    style A stroke:#000000,stroke-width:4px
     SYNTHESIS --> FLOORPLAN; FLOORPLAN --> PLACEMENT; PLACEMENT --> CTS
     CTS --> ROUTING; ROUTING -->FINISH
 
     subgraph SYNTHESIS
-    style SYNTHESIS fill:#f8cecc
+    style SYNTHESIS fill:#f8cecc,stroke:#000,stroke-width:4px
     direction LR
     B1(Tool:Yosys);  B2(Input files);  B3(Output files)
     B2 --> RTL & SDC & .lib & B4(Mapping files, etc..)
@@ -81,7 +93,7 @@ flowchart LR
     end
 
     subgraph FLOORPLAN
-    style FLOORPLAN fill:#fff2cc
+    style FLOORPLAN fill:#fff2cc,stroke:#000000,stroke-width:4px
     C1("Import all necessary files\n (Netlist, SDC, etc...) and 
             check initial timing report")
     C1 --> C2("Translate .v to .odb/\n Floorplan Initialization")
@@ -95,7 +107,7 @@ flowchart LR
     end
 
     subgraph PLACEMENT
-    style PLACEMENT fill:#cce5ff
+    style PLACEMENT fill:#cce5ff,stroke:#000000,stroke-width:4px
     D1("Global placement without placed IOs
                 (Timing and routability-driven)")
     D1 --> D2("IO placement (non-random)")
@@ -106,20 +118,20 @@ flowchart LR
     end
 
     subgraph CTS
-    style CTS fill:#67ab9f
+    style CTS fill:#67ab9f,stroke:#000000,stroke-width:4px
     E1("Clock Tree synthesis")
     E1 --> E2("Timing optimization")
     E2 --> E3("Filler cell insertion")
     end
 
     subgraph ROUTING
-    style ROUTING fill:#fa6800
+    style ROUTING fill:#fa6800,stroke:#000000,stroke-width:4px
     F1("Global routing")
     F1 --> F2("Detailed routing")
     end
 
     subgraph FINISH
-    style FINISH fill:#ff6666
+    style FINISH fill:#ff6666,stroke:#000000,stroke-width:4px
     G1("Generate GDSII Tool:\n KLayout")
     G1 --> G2("Metal Fill Insertion")
     G2 --> G3("Signoff timing report")
