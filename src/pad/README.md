@@ -239,6 +239,7 @@ To assign a net to a bump
 ```
 assign_io_bump -net net \
                [-terminal iterm] \
+               [-dont_route] \
                instance
 ```
 
@@ -248,6 +249,7 @@ assign_io_bump -net net \
 | ----- | ----- |
 | `-net` | Net to connect to |
 | `-terminal` | Instance terminal to route to |
+| `-dont_route` | Flag to indicate that this bump should not be routed, only perform assignment |
 | `instance` | Name of the bump |
 
 #### Examples

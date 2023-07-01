@@ -1234,6 +1234,12 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       auto check_routing_map = routing_map_.find(iterm0.first);
       if (check_routing_map != routing_map_.end()) {
         find_terminal = check_routing_map->second;
+
+        if (find_terminal == nullptr) {
+          // do not route this bump
+          used.insert(shape0);
+          continue;
+        }
       }
 
       int64_t dist = std::numeric_limits<int64_t>::max();
