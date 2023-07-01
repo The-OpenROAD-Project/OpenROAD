@@ -107,12 +107,7 @@ proc assign_io_bump {args} {
 
   set terminal NULL
   if { [info exists keys(-terminal)] } {
-    set terms [split $keys(-terminal) {/}]
-    set iterm [lindex $terms end]
-    set inst [join [lrange $terms 0 end-1] {/}]
-
-    set inst [pad::find_instance $inst]
-    set terminal [$inst findITerm $iterm]
+    set terminal [[ord::get_db_block] findITerm $keys(-terminal)]
 
     if { $terminal == "NULL" } {
       utl::error PAD 113 "Unable to find $keys(-terminal)"
