@@ -1268,7 +1268,12 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       }
 
       if (pt0 == point) {
-        continue;
+        logger_->error(utl::PAD,
+                       37,
+                       "Unable to find routing pair for {}/{} ({})",
+                       iterm0.first->getInst()->getName(),
+                       iterm0.first->getMTerm()->getName(),
+                       iterm0.first->getNet()->getName());
       }
 
       used.insert(shape0);
