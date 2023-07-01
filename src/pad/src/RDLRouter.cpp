@@ -136,6 +136,7 @@ RDLRouter::RDLRouter(utl::Logger* logger,
                      odb::dbTechLayer* layer,
                      odb::dbTechVia* bump_via,
                      odb::dbTechVia* pad_via,
+                     const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map,
                      int width,
                      int spacing,
                      bool allow45,
@@ -148,7 +149,8 @@ RDLRouter::RDLRouter(utl::Logger* logger,
       width_(width),
       spacing_(spacing),
       allow45_(allow45),
-      turn_penalty_(turn_penalty)
+      turn_penalty_(turn_penalty),
+      routing_map_(routing_map)
 {
   if (width_ == 0) {
     width_ = layer_->getWidth();
@@ -1228,6 +1230,12 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
         continue;
       }
 
+      odb::dbITerm* find_terminal = nullptr;
+      auto check_routing_map = routing_map_.find(iterm0.first);
+      if (check_routing_map != routing_map_.end()) {
+        find_terminal = check_routing_map->second;
+      }
+
       int64_t dist = std::numeric_limits<int64_t>::max();
       const odb::Point pt0(shape0.xCenter(), shape0.yCenter());
       odb::Rect shape = shape0;
@@ -1239,8 +1247,12 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
           continue;
         }
 
-        // only pick non covers
-        if (iterm1.first->getMTerm()->getMaster()->getType().isCover()) {
+        if (find_terminal != nullptr) {
+          if (find_terminal != iterm1.first) {
+            continue;
+          }
+        } else if (iterm1.first->getMTerm()->getMaster()->getType().isCover()) {
+          // only pick non covers
           continue;
         }
 
@@ -1260,7 +1272,9 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       }
 
       used.insert(shape0);
-      used.insert(shape);
+      if (!find_terminal) {
+        used.insert(shape);
+      }
       pairs.push_back({{pt0, shape0, iterm0.first, iterm0.second},
                        {point, shape, term, layer}});
     }

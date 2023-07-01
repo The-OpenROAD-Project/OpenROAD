@@ -95,17 +95,35 @@ proc remove_io_bump {args} {
 }
 
 sta::define_cmd_args "assign_io_bump" {-net net \
+                                       [-terminal terminal] \
                                        inst}
 
 proc assign_io_bump {args} {
   sta::parse_key_args "assign_io_bump" args \
-    keys {-net} \
+    keys {-net -terminal} \
     flags {}
   
   sta::check_argc_eq1 "assign_io_bump" $args
 
+  set terminal NULL
+  if { [info exists keys(-terminal)] } {
+    set terms [split $keys(-terminal) {/}]
+    set iterm [lindex $terms end]
+    set inst [join [lrange $terms 0 end-1] {/}]
+
+    set inst [pad::find_instance $inst]
+    set terminal [$inst findITerm $iterm]
+
+    if { $terminal == "NULL" } {
+      utl::error PAD 113 "Unable to find $keys(-terminal)"
+    }
+  }
+
   pad::assert_required assign_io_bump -net
-  pad::assign_net_to_bump [pad::find_instance [lindex $args 0]] [pad::find_net $keys(-net)]
+  pad::assign_net_to_bump \
+    [pad::find_instance [lindex $args 0]] \
+    [pad::find_net $keys(-net)] \
+    $terminal
 }
 
 #####
