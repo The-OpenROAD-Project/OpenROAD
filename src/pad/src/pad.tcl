@@ -328,12 +328,13 @@ sta::define_cmd_args "rdl_route" {-layer layer \
                                   [-pad_via access_via] \
                                   [-width width] \
                                   [-spacing spacing] \
+                                  [-turn_penalty penalty] \
                                   [-allow45] \
                                   nets}
 
 proc rdl_route {args} {
   sta::parse_key_args "rdl_route" args \
-    keys {-layer -width -spacing -bump_via -pad_via} \
+    keys {-layer -width -spacing -bump_via -pad_via -turn_penalty} \
     flags {-allow45}
 
   set nets []
@@ -363,14 +364,27 @@ proc rdl_route {args} {
 
   set width 0
   if {[info exists keys(-width)]} {
+    sta::check_positive_float "-width" $keys(-width)
     set width [ord::microns_to_dbu $keys(-width)]
   }
   set spacing 0
   if {[info exists keys(-spacing)]} {
+    sta::check_positive_float "-spacing" $keys(-spacing)
     set spacing [ord::microns_to_dbu $keys(-spacing)]
   }
 
-  pad::route_rdl $layer $bump_via $pad_via $nets $width $spacing [info exists flags(-allow45)]
+  set penalty 2.0
+  if {[info exists keys(-turn_penalty)]} {
+    set penalty $keys(-turn_penalty)
+  }
+  sta::check_positive_float "-turn_penalty" $penalty
+
+  pad::route_rdl $layer \
+    $bump_via $pad_via \
+    $nets \
+    $width $spacing \
+    [info exists flags(-allow45)] \
+    $penalty
 }
 
 namespace eval pad {

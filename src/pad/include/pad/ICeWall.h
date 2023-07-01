@@ -125,7 +125,8 @@ class ICeWall
                 const std::vector<odb::dbNet*>& nets,
                 int width = 0,
                 int spacing = 0,
-                bool allow45 = false);
+                bool allow45 = false,
+                float turn_penalty = 2.0);
   void routeRDLDebugGUI(bool enable);
 
   void connectByAbutment();
