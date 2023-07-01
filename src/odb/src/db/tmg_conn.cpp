@@ -32,8 +32,8 @@
 
 #include "tmg_conn.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include "db.h"
 #include "dbShape.h"
@@ -63,12 +63,12 @@ tmg_rcpt::tmg_rcpt()
 
 static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
 {
-  *iterm = NULL;
-  *bterm = NULL;
+  *iterm = nullptr;
+  *bterm = nullptr;
   dbSet<dbITerm> iterms = net->getITerms();
   dbSet<dbITerm>::iterator iterm_itr;
   dbITerm* it;
-  dbITerm* it_inout = NULL;
+  dbITerm* it_inout = nullptr;
   for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
     it = *iterm_itr;
     if (it->getIoType() == dbIoType::OUTPUT) {
@@ -81,7 +81,7 @@ static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
   dbSet<dbBTerm> bterms = net->getBTerms();
   dbSet<dbBTerm>::iterator bterm_itr;
   dbBTerm* bt;
-  dbBTerm* bt_inout = NULL;
+  dbBTerm* bt_inout = nullptr;
   for (bterm_itr = bterms.begin(); bterm_itr != bterms.end(); ++bterm_itr) {
     bt = *bterm_itr;
     if (bt->getIoType() == dbIoType::INPUT) {
@@ -119,13 +119,13 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _csNV = (int*) malloc(_termNmax * sizeof(int));
   _shortNmax = 1024;
   _shortV = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
-  _search = NULL;
-  _graph = NULL;
+  _search = nullptr;
+  _graph = nullptr;
   _max_length = 0;
   _cut_length = 0;
   _cut_end_extMin = 1;
   _need_short_wire_id = 0;
-  _first_for_clear = NULL;
+  _first_for_clear = nullptr;
   _preserveSWire = false;
   _swireNetCnt = 0;
 }
@@ -150,7 +150,7 @@ void tmg_conn::addRc(dbShape& s, int ifr, int ito)
   x._shape._layer = s.getTechLayer();
   x._shape._tech_via = s.getTechVia();
   x._shape._block_via = s.getVia();
-  x._shape._rule = NULL;
+  x._shape._rule = nullptr;
   if (x._shape._tech_via || x._shape._block_via) {
     x._vert = 0;
     x._width = 0;
@@ -199,14 +199,14 @@ tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
   dbTechLayer* layer = _ptV[ifr]._layer;
   if (!layer || layer != _ptV[ito]._layer
       || (_ptV[ifr]._x != _ptV[ito]._x && _ptV[ifr]._y != _ptV[ito]._y)) {
-    return NULL;
+    return nullptr;
   }
   tmg_rc x;
   x._ifr = ifr;
   x._ito = ito;
   x._shape._layer = layer;
-  x._shape._tech_via = NULL;
-  x._shape._block_via = NULL;
+  x._shape._tech_via = nullptr;
+  x._shape._block_via = nullptr;
   x._width = layer->getWidth();  // trouble for nondefault
   x._vert = (_ptV[ifr]._y != _ptV[ito]._y);
   int xlo, ylo, xhi, yhi;
@@ -249,9 +249,9 @@ void tmg_conn::addITerm(dbITerm* iterm)
   }
   tmg_rcterm* x = _termV + _termN++;
   x->_iterm = iterm;
-  x->_bterm = NULL;
-  x->_pt = NULL;
-  x->_first_pt = NULL;
+  x->_bterm = nullptr;
+  x->_pt = nullptr;
+  x->_first_pt = nullptr;
 }
 
 void tmg_conn::addBTerm(dbBTerm* bterm)
@@ -265,10 +265,10 @@ void tmg_conn::addBTerm(dbBTerm* bterm)
     _csNV = (int*) realloc(_csNV, _termNmax * sizeof(int));
   }
   tmg_rcterm* x = _termV + _termN++;
-  x->_iterm = NULL;
+  x->_iterm = nullptr;
   x->_bterm = bterm;
-  x->_pt = NULL;
-  x->_first_pt = NULL;
+  x->_pt = nullptr;
+  x->_first_pt = nullptr;
 }
 
 void tmg_conn::addShort(int i0, int i1)
@@ -298,7 +298,7 @@ void tmg_conn::loadNet(dbNet* net)
   _ptV.clear();
   _termN = 0;
   _shortN = 0;
-  _first_for_clear = NULL;
+  _first_for_clear = nullptr;
 
   for (dbITerm* iterm : net->getITerms()) {
     addITerm(iterm);
@@ -319,8 +319,8 @@ void tmg_conn::loadSWire(dbNet* net)
   _hasSWire = true;
   dbShape shape;
   int x1, y1, x2, y2;
-  dbTechLayer* layer1 = NULL;
-  dbTechLayer* layer2 = NULL;
+  dbTechLayer* layer1 = nullptr;
+  dbTechLayer* layer2 = nullptr;
   tmg_rcpt* pt;
   for (dbSWire* sw : swires) {
     for (dbSBox* sbox : sw->getWires()) {
@@ -371,7 +371,7 @@ void tmg_conn::loadSWire(dbNet* net)
       pt->_y = y2;
       pt->_layer = layer2;
       addRc(shape, _ptV.size() - 2, _ptV.size() - 1);
-      _rcV.back()._shape._rule = NULL;
+      _rcV.back()._shape._rule = nullptr;
     }
   }
 }
@@ -472,12 +472,12 @@ void tmg_conn::splitBySj(int j,
       pt->_y = y;
       pt->_layer = tlayer;
       pt->_tindex = -1;
-      pt->_t_alt = NULL;
-      pt->_next_for_term = NULL;
+      pt->_t_alt = nullptr;
+      pt->_next_for_term = nullptr;
       pt->_pinpt = 0;
       pt->_c2pinpt = 0;
-      pt->_next_for_clear = NULL;
-      pt->_sring = NULL;
+      pt->_next_for_clear = nullptr;
+      pt->_sring = nullptr;
       endTo = _rcV[k]._ito;
       _rcV[k]._ito = _ptV.size() - 1;
       // create new tmg_rc
@@ -506,8 +506,8 @@ void tmg_conn::splitTtop()
     if (sj->isVia()) {
       via_x = _ptV[_rcV[j]._ifr]._x;
       via_y = _ptV[_rcV[j]._ifr]._y;
-      layb = NULL;
-      layt = NULL;
+      layb = nullptr;
+      layt = nullptr;
       dbTechVia* tv = sj->getTechVia();
       if (tv) {
         layb = tv->getBottomLayer();
@@ -704,10 +704,10 @@ void tmg_conn::findConnections()
     _ptV[j]._jct = 0;
     _ptV[j]._pinpt = 0;
     _ptV[j]._c2pinpt = 0;
-    _ptV[j]._next_for_clear = NULL;
-    _ptV[j]._sring = NULL;
+    _ptV[j]._next_for_clear = nullptr;
+    _ptV[j]._sring = nullptr;
   }
-  _first_for_clear = NULL;
+  _first_for_clear = nullptr;
   for (unsigned long j = 0; j < _rcV.size() - 1; j++)
     if (_rcV[j]._ito == _rcV[j + 1]._ifr)
       _ptV[_rcV[j]._ito]._fre = 0;
@@ -719,8 +719,8 @@ void tmg_conn::findConnections()
       via_x = _ptV[_rcV[j]._ifr]._x;
       via_y = _ptV[_rcV[j]._ifr]._y;
 
-      layb = NULL;
-      layt = NULL;
+      layb = nullptr;
+      layt = nullptr;
       tv = s->getTechVia();
       if (tv) {
         layb = tv->getBottomLayer();
@@ -775,8 +775,8 @@ void tmg_conn::findConnections()
       via_x = _ptV[_rcV[j]._ifr]._x;
       via_y = _ptV[_rcV[j]._ifr]._y;
 
-      layb = NULL;
-      layt = NULL;
+      layb = nullptr;
+      layt = nullptr;
       dbTechVia* tv = s->getTechVia();
       if (tv) {
         layb = tv->getBottomLayer();
@@ -976,8 +976,8 @@ void tmg_conn::findConnections()
     tmg_rcpt* pc = &_ptV[j];
     pc->_pinpt = 0;
     pc->_c2pinpt = 0;
-    pc->_next_for_clear = NULL;
-    pc->_sring = NULL;
+    pc->_next_for_clear = nullptr;
+    pc->_sring = nullptr;
   }
   setSring();
 
@@ -1091,7 +1091,7 @@ void tmg_conn::connectShapes(int j, int k)
 static void addPointToTerm(tmg_rcpt* pt, tmg_rcterm* x)
 {
   tmg_rcpt* tpt = x->_pt;
-  tmg_rcpt* ptpt = NULL;
+  tmg_rcpt* ptpt = nullptr;
   while (tpt && (pt->_x > tpt->_x || (pt->_x == tpt->_x && pt->_y > tpt->_y))) {
     ptpt = tpt;
     tpt = tpt->_next_for_term;
@@ -1107,10 +1107,10 @@ static void removePointFromTerm(tmg_rcpt* pt, tmg_rcterm* x)
 {
   if (x->_pt == pt) {
     x->_pt = pt->_next_for_term;
-    pt->_next_for_term = NULL;
+    pt->_next_for_term = nullptr;
     return;
   }
-  tmg_rcpt *ptpt = NULL, *tpt;
+  tmg_rcpt *ptpt = nullptr, *tpt;
   for (tpt = x->_pt; tpt; tpt = tpt->_next_for_term) {
     if (tpt == pt)
       break;
@@ -1119,7 +1119,7 @@ static void removePointFromTerm(tmg_rcpt* pt, tmg_rcterm* x)
   if (!tpt)
     return;  // error, not found
   ptpt->_next_for_term = tpt->_next_for_term;
-  pt->_next_for_term = NULL;
+  pt->_next_for_term = nullptr;
 }
 
 void tmg_conn::connectTerm(int j, bool soft)
@@ -1135,7 +1135,7 @@ void tmg_conn::connectTerm(int j, bool soft)
     pc->_pinpt = 0;
     pc->_c2pinpt = 0;
   }
-  _first_for_clear = NULL;
+  _first_for_clear = nullptr;
 
   for (ii = 0; ii < _csN; ii++) {
     int k = (*_csV)[ii].k;
@@ -1346,7 +1346,7 @@ void tmg_conn::connectTerm(int j, bool soft)
     pc->_pinpt = 0;
     pc->_c2pinpt = 0;
   }
-  _first_for_clear = NULL;
+  _first_for_clear = nullptr;
 }
 
 void tmg_conn::connectTermSoft(int j, int rt, Rect& rect, int k)
@@ -1492,14 +1492,14 @@ bool tmg_conn::checkConnected()
   tmg_rcterm *x, *xstart;
   for (j = 0; j < _termN; j++) {
     x = _termV + j;
-    if (x->_pt == NULL)
+    if (x->_pt == nullptr)
       return false;
   }
   if (_termN == 0)
     return true;
   int jstart = getStartNode();
-  x = NULL;
-  xstart = NULL;
+  x = nullptr;
+  xstart = nullptr;
   if (_ptV[jstart]._tindex >= 0) {
     x = _termV + _ptV[jstart]._tindex;
     xstart = x;
@@ -1518,14 +1518,14 @@ bool tmg_conn::checkConnected()
   while (1) {
     // do a physically-connected subtree
     while (dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
-      x = NULL;
+      x = nullptr;
       if (_ptV[jto]._tindex >= 0) {
         x = _termV + _ptV[jto]._tindex;
         if (x == xstart && !is_short) {
           // removing multi-connection at driver
           removePointFromTerm(&_ptV[jto], _termV + _ptV[jto]._tindex);
           _ptV[jto]._tindex = -1;
-          _ptV[jto]._t_alt = NULL;
+          _ptV[jto]._t_alt = nullptr;
         } else if (x->_pt && x->_pt->_next_for_term) {
           // add potential short-from points to stack
           tstackV[tstackN++] = x;
@@ -1535,19 +1535,19 @@ bool tmg_conn::checkConnected()
         // the part of addToWire needed in no_convert case
         if (_ptV[jfr]._tindex >= 0) {
           x = _termV + _ptV[jfr]._tindex;
-          if (x->_first_pt == NULL)
+          if (x->_first_pt == nullptr)
             x->_first_pt = &_ptV[jfr];
         }
         if (_ptV[jto]._tindex >= 0) {
           x = _termV + _ptV[jto]._tindex;
-          if (x->_first_pt == NULL)
+          if (x->_first_pt == nullptr)
             x->_first_pt = &_ptV[jto];
         }
       }
     }
     // finished physically-connected subtree,
     // find an unvisited short-from point
-    tmg_rcpt* pt = NULL;
+    tmg_rcpt* pt = nullptr;
     while (tstack0 < tstackN && !pt) {
       x = tstackV[tstack0++];
       for (pt = x->_pt; pt; pt = pt->_next_for_term)
@@ -1570,7 +1570,7 @@ bool tmg_conn::checkConnected()
     x = _termV + j;
     if (!x->_first_pt)
       con = false;
-    x->_first_pt = NULL;  // cleanup
+    x->_first_pt = nullptr;  // cleanup
   }
   return con;  // all terms connected, may be floating pieces of wire
 }
@@ -1581,7 +1581,7 @@ void tmg_conn::treeReorder(bool no_convert)
   _need_short_wire_id = 0;
   if (_ptV.empty())
     return;
-  _newWire = NULL;
+  _newWire = nullptr;
   _last_id = -1;
   int j;
   if (!no_convert) {
@@ -1595,8 +1595,8 @@ void tmg_conn::treeReorder(bool no_convert)
   tmg_rcterm *x, *xstart;
   for (j = 0; j < _termN; j++) {
     x = _termV + j;
-    x->_first_pt = NULL;
-    if (x->_pt == NULL) {
+    x->_first_pt = nullptr;
+    if (x->_pt == nullptr) {
       _connected = false;
     }
   }
@@ -1608,8 +1608,8 @@ void tmg_conn::treeReorder(bool no_convert)
   _path_rule = _net_rule;
 
   int jstart = getStartNode();
-  x = NULL;
-  xstart = NULL;
+  x = nullptr;
+  xstart = nullptr;
   if (_ptV[jstart]._tindex >= 0) {
     x = _termV + _ptV[jstart]._tindex;
     xstart = x;
@@ -1630,14 +1630,14 @@ void tmg_conn::treeReorder(bool no_convert)
   while (1) {
     // do a physically-connected subtree
     while (dfsNext(&jfr, &jto, &k, &is_short, &is_loop)) {
-      x = NULL;
+      x = nullptr;
       if (_ptV[jto]._tindex >= 0) {
         x = _termV + _ptV[jto]._tindex;
         if (x == xstart && !is_short) {
           // removing multi-connection at driver
           removePointFromTerm(&_ptV[jto], _termV + _ptV[jto]._tindex);
           _ptV[jto]._tindex = -1;
-          _ptV[jto]._t_alt = NULL;
+          _ptV[jto]._t_alt = nullptr;
         } else if (x->_pt && x->_pt->_next_for_term) {
           // add potential short-from points to stack
           tstackV[tstackN++] = x;
@@ -1649,19 +1649,19 @@ void tmg_conn::treeReorder(bool no_convert)
         // the part of addToWire needed in no_convert case
         if (_ptV[jfr]._tindex >= 0) {
           x = _termV + _ptV[jfr]._tindex;
-          if (x->_first_pt == NULL)
+          if (x->_first_pt == nullptr)
             x->_first_pt = &_ptV[jfr];
         }
         if (_ptV[jto]._tindex >= 0) {
           x = _termV + _ptV[jto]._tindex;
-          if (x->_first_pt == NULL)
+          if (x->_first_pt == nullptr)
             x->_first_pt = &_ptV[jto];
         }
       }
     }
     // finished physically-connected subtree,
     // find an unvisited short-from point
-    tmg_rcpt* pt = NULL;
+    tmg_rcpt* pt = nullptr;
     while (tstack0 < tstackN && !pt) {
       x = tstackV[tstack0++];
       for (pt = x->_pt; pt; pt = pt->_next_for_term)
@@ -1876,7 +1876,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
 
   int ext;
   int fr_id = _ptV[fr]._dbwire_id;
-  dbTechLayerRule* lyr_rule = NULL;
+  dbTechLayerRule* lyr_rule = nullptr;
   if (rc->_shape._rule)
     lyr_rule = rc->_shape._rule->getLayerRule(_ptV[fr]._layer);
   if (fr_id < 0) {
@@ -1903,7 +1903,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     _ptV[fr]._dbwire_id = fr_id;
     if (_ptV[fr]._tindex >= 0) {
       x = _termV + _ptV[fr]._tindex;
-      if (x->_first_pt == NULL)
+      if (x->_first_pt == nullptr)
         x->_first_pt = &_ptV[fr];
       if (x->_iterm)
         _encoder.addITerm(x->_iterm);
@@ -1934,7 +1934,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     }
     if (_ptV[fr]._tindex >= 0) {
       x = _termV + _ptV[fr]._tindex;
-      if (x->_first_pt == NULL)
+      if (x->_first_pt == nullptr)
         x->_first_pt = &_ptV[fr];
       if (x->_iterm)
         _encoder.addITerm(x->_iterm);
@@ -1967,7 +1967,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
     }
     if (_ptV[fr]._tindex >= 0) {
       x = _termV + _ptV[fr]._tindex;
-      if (x->_first_pt == NULL)
+      if (x->_first_pt == nullptr)
         x->_first_pt = &_ptV[fr];
       if (x->_iterm)
         _encoder.addITerm(x->_iterm);
@@ -2009,7 +2009,7 @@ void tmg_conn::addToWire(int fr, int to, int k, bool is_short, bool is_loop)
 
   if (_ptV[to]._tindex >= 0) {
     x = _termV + _ptV[to]._tindex;
-    if (x->_first_pt == NULL)
+    if (x->_first_pt == nullptr)
       x->_first_pt = &_ptV[to];
     if (x->_iterm)
       _encoder.addITerm(x->_iterm);

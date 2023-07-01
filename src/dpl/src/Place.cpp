@@ -61,6 +61,15 @@ using std::vector;
 
 using utl::DPL;
 
+std::string Opendp::printBgBox(
+    const boost::geometry::model::box<bgPoint>& queryBox)
+{
+  return fmt::format("({0}, {1}) - ({2}, {3})",
+                     queryBox.min_corner().x(),
+                     queryBox.min_corner().y(),
+                     queryBox.max_corner().x(),
+                     queryBox.max_corner().y());
+}
 void Opendp::detailedPlacement()
 {
   if (debug_observer_) {
@@ -125,14 +134,6 @@ void Opendp::prePlace()
       if (group_rect) {
         Point nearest = nearestPt(&cell, group_rect);
         Point legal = legalGridPt(&cell, nearest);
-        debugPrint(logger_,
-                   DPL,
-                   "place",
-                   4,
-                   "preplace {} {} {}",
-                   cell.name(),
-                   legal.getX(),
-                   legal.getY());
         if (mapMove(&cell, legal)) {
           cell.hold_ = true;
         }
@@ -221,15 +222,6 @@ void Opendp::prePlaceGroups()
         if (!in_group) {
           Point nearest = nearestPt(cell, nearest_rect);
           Point legal = legalGridPt(cell, nearest);
-          debugPrint(logger_,
-                     DPL,
-                     "place",
-                     4,
-                     "preplace groups {} {} {}",
-                     cell->name(),
-                     legal.getX(),
-                     legal.getY());
-
           if (mapMove(cell, legal)) {
             cell->hold_ = true;
           }
@@ -341,26 +333,9 @@ void Opendp::place()
   }
   for (Cell* cell : sorted_cells) {
     if (!isMultiRow(cell) && cellFitsInCore(cell)) {
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 1,
-                 "place {} {} {}",
-                 cell->name(),
-                 cell->x_,
-                 cell->y_);
       if (!mapMove(cell)) {
         shiftMove(cell);
       }
-    } else if (!isMultiRow(cell)) {
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 1,
-                 "skip place {} {} {}",
-                 cell->name(),
-                 cell->x_,
-                 cell->y_);
     }
   }
   // This has negligible benefit -cherry
@@ -405,8 +380,6 @@ void Opendp::placeGroups2()
         if (!isFixed(cell) && !cell->is_placed_) {
           assert(cell->inGroup());
           if (!isMultiRow(cell)) {
-            debugPrint(
-                logger_, DPL, "place", 4, "place groups 2 {}", cell->name());
             single_pass = mapMove(cell);
             if (!single_pass) {
               break;
@@ -450,14 +423,6 @@ void Opendp::brickPlace1(const Group* group)
     // This looks for a site starting at the nearest corner in rect,
     // which seems broken. It should start looking at the nearest point
     // on the rect boundary. -cherry
-    debugPrint(logger_,
-               DPL,
-               "place",
-               4,
-               "brick place {} {} {}",
-               cell->name(),
-               legal.getX(),
-               legal.getY());
     if (!mapMove(cell, legal)) {
       logger_->error(DPL, 16, "cannot place instance {}.", cell->name());
     }
@@ -512,14 +477,6 @@ void Opendp::brickPlace2(const Group* group)
       // This looks for a site starting at the nearest corner in rect,
       // which seems broken. It should start looking at the nearest point
       // on the rect boundary. -cherry
-      debugPrint(logger_,
-                 DPL,
-                 "place",
-                 4,
-                 "brickplace 2 {} {} {}",
-                 cell->name(),
-                 legal.getX(),
-                 legal.getY());
       if (!mapMove(cell, legal)) {
         logger_->error(DPL, 17, "cannot place instance {}.", cell->name());
       }
@@ -612,14 +569,6 @@ int Opendp::refine()
 bool Opendp::mapMove(Cell* cell)
 {
   Point init = legalGridPt(cell, true);
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "initial map move {} {} {}.",
-             cell->name(),
-             init.getX(),
-             init.getY());
   return mapMove(cell, init);
 }
 
@@ -627,14 +576,6 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 {
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
-  debugPrint(logger_,
-             DPL,
-             "place",
-             1,
-             "mapMove {} {} {}.",
-             cell->name(),
-             grid_x,
-             grid_y);
   PixelPt pixel_pt = diamondSearch(cell, grid_x, grid_y);
   if (pixel_pt.pixel) {
     paintPixel(cell, pixel_pt.pt.getX(), pixel_pt.pt.getY());
@@ -648,7 +589,6 @@ bool Opendp::mapMove(Cell* cell, const Point& grid_pt)
 
 void Opendp::shiftMove(Cell* cell)
 {
-  debugPrint(logger_, DPL, "place", 1, "shift move {}.", cell->name());
   Point grid_pt = legalGridPt(cell, true);
   int grid_x = grid_pt.getX();
   int grid_y = grid_pt.getY();
@@ -802,15 +742,6 @@ PixelPt Opendp::diamondSearch(const Cell* cell,
   y_max = min(grid_info.row_count, y_max);
   debugPrint(logger_,
              DPL,
-             "group",
-             1,
-             "x_min {} x_max {} y_min {} y_max {}",
-             x_min,
-             x_max,
-             y_min,
-             y_max);
-  debugPrint(logger_,
-             DPL,
              "place",
              1,
              "Diamond Search {} ({}, {}) bounds ({}-{}, {}-{})",
@@ -938,6 +869,12 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
 
   if (x > bin_x) {
     for (int i = bin_search_width_ - 1; i >= 0; i--) {
+      Point p((bin_x + i) * site_width_, bin_y * row_height);
+      if (cell->region_ && !cell->region_->intersects(p)) {
+        continue;
+      }
+      // the else case where a cell has no region will be checked using the
+      // rtree in checkPixels
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -946,6 +883,12 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     }
   } else {
     for (int i = 0; i < bin_search_width_; i++) {
+      Point p((bin_x + i) * site_width_, bin_y * row_height);
+      if (cell->region_) {
+        if (!cell->region_->intersects(p)) {
+          continue;
+        }
+      }
       if (checkPixels(cell, bin_x + i, bin_y, x_end + i, y_end)) {
         return PixelPt(gridPixel(grid_info.grid_index, bin_x + i, bin_y),
                        bin_x + i,
@@ -954,6 +897,52 @@ PixelPt Opendp::binSearch(int x, const Cell* cell, int bin_x, int bin_y) const
     }
   }
   return PixelPt();
+}
+
+bool Opendp::checkRegionOverlap(const Cell* cell,
+                                int x,
+                                int y,
+                                int x_end,
+                                int y_end) const
+{
+  // TODO: Investigate the caching of this function
+  // it is called with the same cell and x,y,x_end,y_end multiple times
+  debugPrint(logger_,
+             DPL,
+             "detailed",
+             1,
+             "Checking region overlap for cell {} at x[{} {}] and y[{} {}]",
+             cell->name(),
+             x,
+             x_end,
+             y,
+             y_end);
+  auto row_info = getRowInfo(cell);
+  int min_row_height = row_height_;
+  bgBox queryBox(bgPoint(x * site_width_,
+                         map_coordinates(y, row_info.first, min_row_height)
+                             * min_row_height),
+                 bgPoint(x_end * site_width_ - 1,
+                         map_coordinates(y_end, row_info.first, min_row_height)
+                                 * min_row_height
+                             - 1));
+
+  std::vector<bgBox> result;
+  findOverlapInRtree(queryBox, result);
+
+  if (cell->region_) {
+    if (result.size() == 1) {
+      // the queryBox must be fully contained in the region or else there
+      // might be a part of the cell outside of any region
+      return boost::geometry::covered_by(queryBox, result[0]);
+    }
+    // if we are here, then the overlap size is either 0 or > 1
+    // both are invalid. The overlap size should be 1
+    return false;
+  }
+  // If the cell has a region, then the region's bounding box must
+  // be fully contained by the cell's bounding box.
+  return result.empty();
 }
 
 // Check all pixels are empty.
@@ -965,6 +954,9 @@ bool Opendp::checkPixels(const Cell* cell,
 {
   auto row_info = getRowInfo(cell);
   if (x_end > row_info.second.site_count) {
+    return false;
+  }
+  if (!checkRegionOverlap(cell, x, y, x_end, y_end)) {
     return false;
   }
 

@@ -42,7 +42,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerMinStepRule>;
 
 bool _dbTechLayerMinStepRule::operator==(
@@ -71,19 +70,14 @@ bool _dbTechLayerMinStepRule::operator==(
 
   if (min_step_length_ != rhs.min_step_length_)
     return false;
-
   if (max_edges_ != rhs.max_edges_)
     return false;
-
   if (min_adj_length1_ != rhs.min_adj_length1_)
     return false;
-
   if (min_adj_length2_ != rhs.min_adj_length2_)
     return false;
-
   if (eol_width_ != rhs.eol_width_)
     return false;
-
   if (min_between_length_ != rhs.min_between_length_)
     return false;
 
@@ -91,6 +85,7 @@ bool _dbTechLayerMinStepRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerMinStepRule::operator<(
     const _dbTechLayerMinStepRule& rhs) const
 {
@@ -98,13 +93,13 @@ bool _dbTechLayerMinStepRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerMinStepRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerMinStepRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.max_edges_valid_);
   DIFF_FIELD(flags_.min_adj_length1_valid_);
   DIFF_FIELD(flags_.no_between_eol_);
@@ -122,6 +117,7 @@ void _dbTechLayerMinStepRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerMinStepRule::out(dbDiff& diff,
                                   char side,
                                   const char* field) const
@@ -145,6 +141,7 @@ void _dbTechLayerMinStepRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -158,6 +155,7 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
     _dbDatabase* db,
     const _dbTechLayerMinStepRule& r)
@@ -194,6 +192,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;

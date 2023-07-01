@@ -42,7 +42,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerSpacingTablePrlRule>;
 
 bool _dbTechLayerSpacingTablePrlRule::operator==(
@@ -64,6 +63,7 @@ bool _dbTechLayerSpacingTablePrlRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerSpacingTablePrlRule::operator<(
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
@@ -71,13 +71,13 @@ bool _dbTechLayerSpacingTablePrlRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerSpacingTablePrlRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerSpacingTablePrlRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.wrong_direction_);
   DIFF_FIELD(flags_.same_mask_);
   DIFF_FIELD(flags_.exceept_eol_);
@@ -86,6 +86,7 @@ void _dbTechLayerSpacingTablePrlRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerSpacingTablePrlRule::out(dbDiff& diff,
                                           char side,
                                           const char* field) const
@@ -100,6 +101,7 @@ void _dbTechLayerSpacingTablePrlRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db)
 {
@@ -109,6 +111,7 @@ _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerSpacingTablePrlRule::_dbTechLayerSpacingTablePrlRule(
     _dbDatabase* db,
     const _dbTechLayerSpacingTablePrlRule& r)
@@ -136,6 +139,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerSpacingTablePrlRule& obj)
 {

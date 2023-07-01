@@ -22,7 +22,7 @@ Scan chain 'chain_1' has 3 cells (3 bits)
 
   ff10_clk2_falling (clock2, falling)
   ff4_clk2_falling
-  ff10_clk2_rising
+  ff10_clk2_rising (clock2, rising)
 
 Scan chain 'chain_2' has 3 cells (3 bits)
 

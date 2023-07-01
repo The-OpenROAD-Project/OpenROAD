@@ -50,7 +50,7 @@ template class dbTable<_dbName>;
 // _dbName
 /////////////////
 _dbName::_dbName(_dbDatabase*, const _dbName& n)
-    : _name(NULL), _next_entry(n._next_entry), _ref_cnt(n._ref_cnt)
+    : _name(nullptr), _next_entry(n._next_entry), _ref_cnt(n._ref_cnt)
 {
   if (n._name) {
     _name = strdup(n._name);
@@ -60,7 +60,7 @@ _dbName::_dbName(_dbDatabase*, const _dbName& n)
 
 _dbName::_dbName(_dbDatabase*)
 {
-  _name = NULL;
+  _name = nullptr;
   _ref_cnt = 0;
 }
 
@@ -204,7 +204,7 @@ uint _dbNameCache::addName(const char* name)
 {
   _dbName* n = _name_hash.find(name);
 
-  if (n == NULL) {
+  if (n == nullptr) {
     n = _name_tbl->create();
     n->_name = strdup(name);
     ZALLOCATED(n->_name);

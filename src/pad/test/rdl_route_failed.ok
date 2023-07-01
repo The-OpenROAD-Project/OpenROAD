@@ -1,0 +1,77 @@
+[INFO ODB-0222] Reading LEF file: Nangate45/Nangate45.lef
+[INFO ODB-0223]     Created 22 technology layers
+[INFO ODB-0224]     Created 27 technology vias
+[INFO ODB-0225]     Created 135 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45.lef
+[INFO ODB-0222] Reading LEF file: Nangate45_io/dummy_pads.lef
+[INFO ODB-0225]     Created 24 library cells
+[INFO ODB-0226] Finished LEF file:  Nangate45_io/dummy_pads.lef
+[INFO ODB-0128] Design: soc_bsg_black_parrot
+[INFO ODB-0130]     Created 139 pins.
+[INFO ODB-0131]     Created 1452 components and 8011 component-terminals.
+[INFO ODB-0132]     Created 4 special nets and 4706 connections.
+[INFO ODB-0133]     Created 354 nets and 627 connections.
+[INFO PAD-0005] Routing 139 nets
+[WARNING PAD-0006] Failed to route the following 24 nets:
+  DVDD
+    BUMP_14_12/PAD -> u_v18_16/DVDD
+    BUMP_2_12/PAD -> u_v18_27/DVDD
+    BUMP_11_3/PAD -> u_v18_6/DVDD
+    BUMP_4_11/PAD -> u_v18_28/DVDD
+    BUMP_9_4/PAD -> u_v18_5/DVDD
+  DVSS
+    BUMP_4_13/PAD -> u_vzz_24/DVSS
+    BUMP_13_10/PAD -> u_vzz_14/DVSS
+    BUMP_4_3/PAD -> u_vzz_1/DVSS
+    BUMP_12_3/PAD -> u_vzz_7/DVSS
+    BUMP_6_12/PAD -> u_vzz_23/DVSS
+    BUMP_12_12/PAD -> u_vzz_19/DVSS
+    BUMP_10_4/PAD -> u_vzz_6/DVSS
+  VDD
+    BUMP_4_14/PAD -> u_vdd_11/VDD
+    BUMP_9_3/PAD -> u_vdd_2/VDD
+    BUMP_9_12/PAD -> u_vdd_pll/VDD
+  VSS
+    BUMP_14_9/PAD -> u_vss_6/VSS
+  p_bsg_tag_clk_o
+    u_bsg_tag_clk_o/PAD -> BUMP_3_10/PAD
+  p_bsg_tag_data_i
+    BUMP_12_8/PAD -> u_bsg_tag_data_i/PAD
+  p_ci_3_i
+    BUMP_13_12/PAD -> u_ci_3_i/PAD
+  p_ci_4_i
+    BUMP_12_11/PAD -> u_ci_4_i/PAD
+  p_ci_7_i
+    BUMP_12_9/PAD -> u_ci_7_i/PAD
+  p_ci_tkn_o
+    BUMP_13_11/PAD -> u_ci_tkn_o/PAD
+  p_ci_v_i
+    BUMP_12_10/PAD -> u_ci_v_i/PAD
+  p_co2_2_o
+    u_co2_2_o/PAD -> BUMP_3_11/PAD
+  p_co2_3_o
+    u_co2_3_o/PAD -> BUMP_4_12/PAD
+  p_co2_clk_o
+    u_co2_clk_o/PAD -> BUMP_3_12/PAD
+  p_co_4_i
+    u_co_4_i/PAD -> BUMP_5_12/PAD
+  p_ddr_addr_12_o
+    u_ddr_addr_12_o/PAD -> BUMP_5_3/PAD
+  p_ddr_addr_13_o
+    BUMP_4_4/PAD -> u_ddr_addr_13_o/PAD
+  p_ddr_addr_14_o
+    BUMP_4_2/PAD -> u_ddr_addr_14_o/PAD
+  p_ddr_addr_1_o
+    BUMP_8_4/PAD -> u_ddr_addr_1_o/PAD
+  p_ddr_ck_n_o
+    BUMP_11_4/PAD -> u_ddr_ck_n_o/PAD
+  p_ddr_dq_11_io
+    u_ddr_dq_11_io/PAD -> BUMP_4_5/PAD
+  p_ddr_dq_14_io
+    u_ddr_dq_14_io/PAD -> BUMP_4_6/PAD
+  p_ddr_dqs_n_0_io
+    u_ddr_dqs_n_0_io/PAD -> BUMP_4_7/PAD
+  p_ddr_odt_o
+    u_ddr_odt_o/PAD -> BUMP_10_3/PAD
+[ERROR PAD-0007] Failed to route 24 nets.
+PAD-0007

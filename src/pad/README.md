@@ -267,6 +267,7 @@ route_rdl -layer layer \
           [-pad_via via] \
           [-width width] \
           [-spacing spacing] \
+          [-turn_penalty penalty] \
           [-allow45] \
           nets
 ```
@@ -280,6 +281,7 @@ route_rdl -layer layer \
 | `-pad_via` | Via to use to to connect the pad cell to the routing layer |
 | `-width` | Width of the routing (defaults to minimum width) |
 | `-spacing` | Spacing of the routing (defaults to minimum spacing) |
+| `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes (defaults to 2.0) |
 | `-allow45` | Specifies that 45 degree routing is permitted |
 | `nets` | Nets to route |
 

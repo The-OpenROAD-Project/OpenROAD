@@ -44,7 +44,7 @@ class lefiArray;
 struct lefiNoiseMargin;
 class lefiNoiseTable;
 struct lefiPoints;
-typedef lefiPoints lefiNum;
+using lefiNum = lefiPoints;
 class lefiCorrectionTable;
 class lefiIRDrop;
 class lefiLayer;
@@ -196,7 +196,7 @@ class lefin
   void units(lefiUnits* unit);
   void useMinSpacing(lefiUseMinSpacing* spacing);
   void version(double num);
-  void via(lefiVia* via, dbTechNonDefaultRule* rule = NULL);
+  void via(lefiVia* via, dbTechNonDefaultRule* rule = nullptr);
   void viaRule(lefiViaRule* viaRule);
   void viaGenerateRule(lefiViaRule* viaRule);
   void done(void* ptr);

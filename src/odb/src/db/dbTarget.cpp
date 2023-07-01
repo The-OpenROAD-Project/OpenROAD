@@ -147,7 +147,7 @@ void dbTarget::destroy(dbTarget* target_)
     _dbTarget* t = master->_target_tbl->getPtr(id);
 
     if (id == tid) {
-      if (p == NULL)
+      if (p == nullptr)
         mterm->_targets = t->_next;
       else
         p->_next = t->_next;

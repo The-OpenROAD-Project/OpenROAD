@@ -52,7 +52,7 @@ inline uint hash_int(uint id)
 template <class T>
 dbIntHashTable<T>::dbIntHashTable()
 {
-  _obj_tbl = NULL;
+  _obj_tbl = nullptr;
   _num_entries = 0;
 }
 
@@ -210,7 +210,7 @@ T* dbIntHashTable<T>::find(uint id)
     cur = entry->_next_entry;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 template <class T>

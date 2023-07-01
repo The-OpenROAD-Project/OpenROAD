@@ -45,7 +45,7 @@ namespace odb {
 definPin::definPin()
     : _bterm_cnt(0),
       _update_cnt(0),
-      _cur_bterm(NULL),
+      _cur_bterm(nullptr),
       _status(dbPlacementStatus::NONE),
       _orient(dbOrientType::R0),
       _orig_x(0),
@@ -84,12 +84,12 @@ void definPin::pinBegin(const char* name, const char* net_name)
 {
   dbNet* net = _block->findNet(net_name);
 
-  if (net == NULL)
+  if (net == nullptr)
     net = dbNet::create(_block, net_name);
 
   const char* s = strstr(name, ".extra");
 
-  if (s == NULL) {
+  if (s == nullptr) {
     if (_mode != defin::DEFAULT) {
       _cur_bterm = _block->findBTerm(name);
       if (_cur_bterm != nullptr)
@@ -102,7 +102,7 @@ void definPin::pinBegin(const char* name, const char* net_name)
   {
     const char* busleft = strchr(s, _left_bus);
     const char* busright = strchr(s, _right_bus);
-    char* bname = NULL;
+    char* bname = nullptr;
 
     // DEF 5.6
     if (busleft && busright) {
@@ -133,7 +133,7 @@ void definPin::pinBegin(const char* name, const char* net_name)
 
     _cur_bterm = _block->findBTerm(bname);
 
-    if (_cur_bterm == NULL) {
+    if (_cur_bterm == nullptr) {
       _cur_bterm = dbBTerm::create(net, name);
       _bterm_cnt++;
     }
@@ -144,7 +144,7 @@ void definPin::pinBegin(const char* name, const char* net_name)
 
 void definPin::pinSpecial()
 {
-  if (_cur_bterm == NULL)
+  if (_cur_bterm == nullptr)
     return;
 
   _cur_bterm->setSpecial();
@@ -152,7 +152,7 @@ void definPin::pinSpecial()
 
 void definPin::pinUse(dbSigType type)
 {
-  if (_cur_bterm == NULL)
+  if (_cur_bterm == nullptr)
     return;
 
   _cur_bterm->setSigType(type);
@@ -160,7 +160,7 @@ void definPin::pinUse(dbSigType type)
 
 void definPin::pinDirection(dbIoType type)
 {
-  if (_cur_bterm == NULL)
+  if (_cur_bterm == nullptr)
     return;
 
   _cur_bterm->setIoType(type);
@@ -171,7 +171,7 @@ void definPin::pinPlacement(defPlacement status,
                             int y,
                             dbOrientType orient)
 {
-  if (_cur_bterm == NULL)
+  if (_cur_bterm == nullptr)
     return;
 
   _orig_x = dbdist(x);
@@ -228,12 +228,12 @@ void definPin::pinEffectiveWidth(int width)
 
 void definPin::pinRect(const char* layer_name, int x1, int y1, int x2, int y2)
 {
-  if (_cur_bterm == NULL)
+  if (_cur_bterm == nullptr)
     return;
 
   _layer = _tech->findLayer(layer_name);
 
-  if (_layer == NULL) {
+  if (_layer == nullptr) {
     _logger->warn(
         utl::ODB, 121, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
@@ -253,7 +253,7 @@ void definPin::pinPolygon(std::vector<defPoint>& points)
 
 void definPin::pinGroundPin(const char* groundPin)
 {
-  if (_cur_bterm == NULL)
+  if (_cur_bterm == nullptr)
     return;
 
   _ground_pins.push_back(Pin(_cur_bterm, std::string(groundPin)));
@@ -261,7 +261,7 @@ void definPin::pinGroundPin(const char* groundPin)
 
 void definPin::pinSupplyPin(const char* supplyPin)
 {
-  if (_cur_bterm == NULL)
+  if (_cur_bterm == nullptr)
     return;
 
   _supply_pins.push_back(Pin(_cur_bterm, std::string(supplyPin)));
@@ -310,7 +310,7 @@ void definPin::portEnd()
 
 void definPin::pinEnd()
 {
-  _cur_bterm = NULL;
+  _cur_bterm = nullptr;
 }
 
 void definPin::addRect(PinRect& r, dbBPin* pin)
@@ -365,7 +365,7 @@ void definPin::pinsEnd()
 
     dbBTerm* ground = _block->findBTerm(p._pin.c_str());
 
-    if (ground != NULL) {
+    if (ground != nullptr) {
       p._bterm->setGroundPin(ground);
     } else {
       ++_errors;
@@ -378,7 +378,7 @@ void definPin::pinsEnd()
 
     dbBTerm* supply = _block->findBTerm(p._pin.c_str());
 
-    if (supply != NULL) {
+    if (supply != nullptr) {
       p._bterm->setSupplyPin(supply);
     } else {
       ++_errors;

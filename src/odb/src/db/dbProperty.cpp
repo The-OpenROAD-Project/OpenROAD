@@ -244,7 +244,7 @@ next_object:
   }
 
   assert(0);
-  return NULL;
+  return nullptr;
 }
 
 _dbNameCache* _dbProperty::getNameCache(dbObject* object)
@@ -282,7 +282,7 @@ next_object:
   }
 
   assert(0);
-  return NULL;
+  return nullptr;
 }
 
 dbTable<_dbProperty>* _dbProperty::getPropTable(dbObject* object)
@@ -320,7 +320,7 @@ next_object:
   }
 
   assert(0);
-  return NULL;
+  return nullptr;
 }
 
 _dbProperty* _dbProperty::createProperty(dbObject* object_,
@@ -384,7 +384,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
   uint name_id = cache->findName(name);
 
   if (name_id == 0)
-    return NULL;
+    return nullptr;
 
   dbSet<dbProperty> props = getProperties(object);
 
@@ -397,7 +397,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name)
       return (dbProperty*) p;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
@@ -407,7 +407,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
   uint name_id = cache->findName(name);
 
   if (name_id == 0)
-    return NULL;
+    return nullptr;
 
   dbSet<dbProperty> props = getProperties(object);
 
@@ -420,7 +420,7 @@ dbProperty* dbProperty::find(dbObject* object, const char* name, Type type)
       return (dbProperty*) p;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 dbSet<dbProperty> dbProperty::getProperties(dbObject* object)
@@ -519,7 +519,7 @@ dbBoolProperty* dbBoolProperty::create(dbObject* object,
                                        bool value)
 {
   if (find(object, name))
-    return NULL;
+    return nullptr;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_BOOL_PROP);
   prop->_value = value;
@@ -591,7 +591,7 @@ dbIntProperty* dbIntProperty::create(dbObject* object,
                                      int value)
 {
   if (find(object, name))
-    return NULL;
+    return nullptr;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_INT_PROP);
   prop->_value = value;
@@ -624,7 +624,7 @@ dbDoubleProperty* dbDoubleProperty::create(dbObject* object,
                                            double value)
 {
   if (find(object, name))
-    return NULL;
+    return nullptr;
 
   _dbProperty* prop = _dbProperty::createProperty(object, name, DB_DOUBLE_PROP);
   prop->_value = value;
