@@ -78,7 +78,7 @@ Figure below shows the main stages of the OpenROAD-flow-scripts:
 }%%
 
 flowchart LR
-    % these are invisible boxes used to align boxes properly
+    %% these are invisible boxes used to align boxes properly
     classDef invisible_1 fill:#fff2cc,stroke-width:0px
     classDef invisible_2 fill:#cce5ff,stroke-width:0px
     classDef invisible_3 fill:#67ab9f,stroke-width:0px
@@ -105,7 +105,7 @@ flowchart LR
     end
 
     subgraph FLOORPLAN
-    % use --- instead of --> to avoid arrowheads, which cant be made invisible
+    %% use --- instead of --> to avoid arrowheads, which cant be made invisible
     c11[ ] --- c12[ ] --- c13[ ] --- c14[ ] --- c15[ ]
     c15 --- c16[ ] --- c17[ ] --- c18[ ] --- c19[ ] --- c20[ ]
     class c11,c12,c13,c14,c15,c16,c17,c18,c19,c20 invisible_1
