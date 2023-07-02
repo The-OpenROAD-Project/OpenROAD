@@ -8,16 +8,6 @@ This is a compilation of many idioms in OpenROAD code that are considered undesi
 
 ## C++
 
-### Linting and Formatting
-OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands: 
-
-```shell
-cmake . -B build  # generate build files
-# typically only run these commands on files you changed.
-clang-tidy -p ./build source_file.cpp
-clang-format -i -style=file:.clang-format source_file.cpp 
-```
-
 ### Practice #1
 
 Don't comment out code. `git` provides a complete history of

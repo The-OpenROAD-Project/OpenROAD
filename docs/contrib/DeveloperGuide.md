@@ -285,3 +285,16 @@ dependencies make this vastly more complicated.
 1. `regression` script should only write files in a directory that is in the tool's `.gitignore` so the hierarchy does not have modified files in it as a result or running the regressions.
 1. Regressions report no memory errors with `valgrind` (stretch goal).
 1. Regressions report no memory leaks with `valgrind` (difficult).
+
+## Code Linting and Formatting
+OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands:
+
+```shell
+cmake . -B build  # generate build files
+# typically only run these commands on files you changed.
+clang-tidy -p ./build source_file.cpp
+clang-format -i -style=file:.clang-format source_file.cpp
+```
+
+## Git Quickstart
+OpenROAD uses GitHub for version control and contributions. Get familiarised with a quickstart tutorial to contribution [here](GitGuide.md).

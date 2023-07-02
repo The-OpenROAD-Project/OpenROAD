@@ -77,7 +77,7 @@ entries:
   title: Getting Involved
   entries:
   - file: contrib/DeveloperGuide
-    title: Developer Guide
+    title: Developer's Guide
   - file: contrib/CodingPractices
     title: Coding Practices
   - file: contrib/DatabaseMath
@@ -86,6 +86,8 @@ entries:
     title: Logger
   - file: contrib/CI
     title: CI
+  - file: contrib/GitGuide
+    title: Git Quickstart
 
 - file: main/CODE_OF_CONDUCT
   title: Code of Conduct   
