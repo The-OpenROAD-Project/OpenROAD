@@ -1,4 +1,4 @@
-# Test for assigning bumps
+# Test for assigning bumps and routing rdl
 source "helpers.tcl"
 read_lef Nangate45/Nangate45.lef
 read_lef Nangate45_io/dummy_pads.lef
@@ -385,7 +385,6 @@ assign_io_bump -net VDD BUMP_16_9
 assign_io_bump -net VSS BUMP_14_9
 assign_io_bump -net p_ci_7_i -terminal u_ci_7_i/PAD BUMP_12_9
 assign_io_bump -net DVSS BUMP_13_10
-assign_io_bump -net DVDD BUMP_15_10
 assign_io_bump -net p_ci_6_i -terminal u_ci_6_i/PAD BUMP_16_10
 assign_io_bump -net p_ci_5_i -terminal u_ci_5_i/PAD BUMP_14_10
 assign_io_bump -net p_ci_v_i -terminal u_ci_v_i/PAD BUMP_12_10
@@ -397,7 +396,6 @@ assign_io_bump -net p_ci_4_i -terminal u_ci_4_i/PAD BUMP_12_11
 assign_io_bump -net p_ci_3_i -terminal u_ci_3_i/PAD BUMP_13_12
 assign_io_bump -net p_ci_2_i -terminal u_ci_2_i/PAD BUMP_15_12
 assign_io_bump -net DVSS BUMP_16_12
-assign_io_bump -net DVDD BUMP_14_12
 assign_io_bump -net p_ci_1_i -terminal u_ci_1_i/PAD BUMP_15_13
 assign_io_bump -net VDD BUMP_16_13
 assign_io_bump -net VSS BUMP_14_13
@@ -528,6 +526,12 @@ assign_io_bump -net VDD BUMP_12_0
 assign_io_bump -net VDD BUMP_12_0
 assign_io_bump -net DVSS BUMP_16_16
 
-set def_file [make_result_file "assign_bumps.def"]
+# Make two assignments rdl_route would not natually want to connect
+assign_io_bump -net DVDD BUMP_15_10 -terminal u_v18_16/DVDD
+assign_io_bump -net DVDD BUMP_14_12 -terminal u_v18_14/DVDD
+
+rdl_route -layer metal10 -width 4 -spacing 4 "DVDD"
+
+set def_file [make_result_file "rdl_route_assignments.def"]
 write_def $def_file
-diff_files $def_file "assign_bumps.defok"
+diff_files $def_file "rdl_route_assignments.defok"

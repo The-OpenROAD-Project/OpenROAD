@@ -52,6 +52,7 @@ target_sources(ppl
     src/IOPlacer.cpp
     src/MakeIoplacer.cpp
     src/Netlist.cpp
+    src/SimulatedAnnealing.cpp
     src/Slots.cpp
 )
 

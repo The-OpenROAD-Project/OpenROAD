@@ -42,6 +42,7 @@
 #include "Core.h"
 #include "HungarianMatching.h"
 #include "Netlist.h"
+#include "SimulatedAnnealing.h"
 #include "Slots.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
@@ -1565,8 +1566,14 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
   return pin_indices;
 }
 
-void IOPlacer::initMirroredPins()
+void IOPlacer::initMirroredPins(bool annealing)
 {
+  if (annealing && !mirrored_pins_.empty()) {
+    logger_->error(PPL,
+                   102,
+                   "Mirrored pins not supported during pin placement with "
+                   "Simulated Annealing");
+  }
   for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
     if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
       io_pin.setMirrored();
@@ -1578,8 +1585,14 @@ void IOPlacer::initMirroredPins()
   }
 }
 
-void IOPlacer::initConstraints()
+void IOPlacer::initConstraints(bool annealing)
 {
+  if (annealing && !constraints_.empty()) {
+    logger_->error(PPL,
+                   103,
+                   "Pin constraints not supported during pin placement with "
+                   "Simulated Annealing");
+  }
   std::reverse(constraints_.begin(), constraints_.end());
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
@@ -1848,15 +1861,56 @@ void IOPlacer::run(bool random_mode)
   }
 
   if (!random_mode) {
-    int64 total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
-    logger_->info(PPL,
-                  12,
-                  "I/O nets HPWL: {:.2f} um.",
-                  static_cast<float>(dbuToMicrons(total_hpwl)));
+    reportHPWL();
   }
 
   commitIOPlacementToDB(assignment_);
   clear();
+}
+
+void IOPlacer::runAnnealing()
+{
+  initParms();
+
+  initNetlistAndCore(hor_layers_, ver_layers_);
+  getBlockedRegionsFromMacros();
+
+  initIOLists();
+  defineSlots();
+
+  initMirroredPins(true);
+  initConstraints(true);
+
+  if (!pin_groups_.empty()) {
+    logger_->error(PPL,
+                   104,
+                   "Pin groups not supported during pin placement with "
+                   "Simulated Annealing");
+  }
+
+  ppl::SimulatedAnnealing annealing(
+      netlist_io_pins_.get(), slots_, logger_, db_);
+  annealing.run();
+  annealing.getAssignment(assignment_);
+
+  for (auto& pin : assignment_) {
+    updateOrientation(pin);
+    updatePinArea(pin);
+  }
+
+  reportHPWL();
+
+  commitIOPlacementToDB(assignment_);
+  clear();
+}
+
+void IOPlacer::reportHPWL()
+{
+  int64 total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
+  logger_->info(PPL,
+                12,
+                "I/O nets HPWL: {:.2f} um.",
+                static_cast<float>(dbuToMicrons(total_hpwl)));
 }
 
 void IOPlacer::placePin(odb::dbBTerm* bterm,

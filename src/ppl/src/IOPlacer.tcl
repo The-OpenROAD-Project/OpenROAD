@@ -376,7 +376,8 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-min_distance min_dist]\
                                   [-min_distance_in_tracks]\
                                   [-exclude region]\
-                                  [-group_pins pin_list]
+                                  [-group_pins pin_list]\
+                                  [-annealing]
                                  }
 
 proc place_pins { args } {
@@ -385,7 +386,7 @@ proc place_pins { args } {
   sta::parse_key_args "place_pins" args \
   keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
         -min_distance -exclude -group_pins} \
-  flags {-random -min_distance_in_tracks}
+  flags {-random -min_distance_in_tracks -annealing}
 
   sta::check_argc_eq0 "place_pins" $args
 
@@ -554,7 +555,11 @@ proc place_pins { args } {
     }
   }
 
-  ppl::run_io_placement [info exists flags(-random)]
+  if { [info exists flags(-annealing)] } {
+    ppl::run_annealing
+  } else {
+    ppl::run_io_placement [info exists flags(-random)]
+  }
 }
 
 namespace eval ppl {

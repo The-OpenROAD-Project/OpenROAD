@@ -471,6 +471,7 @@ void MainWindow::init(sta::dbSta* sta)
                           viewer_->getNetTracks()));
   gui->registerDescriptor<odb::dbITerm*>(new DbITermDescriptor(db_));
   gui->registerDescriptor<odb::dbBTerm*>(new DbBTermDescriptor(db_));
+  gui->registerDescriptor<odb::dbVia*>(new DbViaDescriptor(db_));
   gui->registerDescriptor<odb::dbBlockage*>(new DbBlockageDescriptor(db_));
   gui->registerDescriptor<odb::dbObstruction*>(
       new DbObstructionDescriptor(db_));
@@ -481,6 +482,10 @@ void MainWindow::init(sta::dbSta* sta)
   gui->registerDescriptor<odb::dbRegion*>(new DbRegionDescriptor(db_));
   gui->registerDescriptor<odb::dbModule*>(new DbModuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechVia*>(new DbTechViaDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaRule*>(
+      new DbTechViaRuleDescriptor(db_));
+  gui->registerDescriptor<odb::dbTechViaLayerRule*>(
+      new DbTechViaLayerRuleDescriptor(db_));
   gui->registerDescriptor<odb::dbTechViaGenerateRule*>(
       new DbGenerateViaDescriptor(db_));
   gui->registerDescriptor<odb::dbTechNonDefaultRule*>(
