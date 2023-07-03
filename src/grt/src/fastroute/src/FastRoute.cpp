@@ -705,7 +705,6 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
         int routeLen = treeedge->route.routelen;
         const std::vector<short>& gridsX = treeedge->route.gridsX;
         const std::vector<short>& gridsY = treeedge->route.gridsY;
-        const std::vector<short>& gridsL = treeedge->route.gridsL;
         int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
         int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
 
