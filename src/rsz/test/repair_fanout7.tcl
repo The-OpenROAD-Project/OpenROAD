@@ -34,8 +34,3 @@ estimate_parasitics -placement
 report_worst_slack -max
 repair_timing -setup -repair_tns 100 -enable_gate_cloning
 report_worst_slack -max
-
-#write_def 22.def
-# This works if we do not run cloning. Does not work when we do.
-#set v [get_pins nand_inst_0/ZN]
-#rsz::highlight_steiner_tree $v
