@@ -182,6 +182,9 @@ int SimulatedAnnealing::swapPins(int& pin1, int& pin2)
 {
   pin1 = (int) (std::floor(distribution_(generator_) * num_pins_));
   pin2 = (int) (std::floor(distribution_(generator_) * num_pins_));
+  while (pin1 == pin2) {
+    pin2 = (int) (std::floor(distribution_(generator_) * num_pins_));
+  }
 
   int prev_cost = getPinCost(pin1) + getPinCost(pin2);
 
