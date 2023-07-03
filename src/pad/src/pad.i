@@ -77,9 +77,9 @@ void remove_bump(odb::dbInst* inst)
   ord::getICeWall()->removeBump(inst);
 }
 
-void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net)
+void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net, odb::dbITerm* terminal)
 {
-  ord::getICeWall()->assignBump(inst, net);
+  ord::getICeWall()->assignBump(inst, net, terminal);
 }
 
 void make_fake_site(const char* name, int width, int height)
@@ -133,9 +133,14 @@ void connect_by_abutment()
   ord::getICeWall()->connectByAbutment();
 }
 
-void route_rdl(odb::dbTechLayer* layer, odb::dbTechVia* bump_via, odb::dbTechVia* pad_via, const std::vector<odb::dbNet*>& nets, int width = 0, int spacing = 0, bool allow45 = false)
+void route_rdl(odb::dbTechLayer* layer, 
+               odb::dbTechVia* bump_via,
+               odb::dbTechVia* pad_via,
+               const std::vector<odb::dbNet*>& nets,
+               int width = 0, int spacing = 0, bool allow45 = false,
+               float penalty = 2.0)
 {
-  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45);
+  ord::getICeWall()->routeRDL(layer, bump_via, pad_via, nets, width, spacing, allow45, penalty);
 }
 
 void route_rdl_gui(bool enable)
