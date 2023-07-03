@@ -34,7 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
-#include "GateCloner.hh"
 
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -79,6 +78,7 @@ using sta::fuzzyLess;
 using sta::fuzzyLessEqual;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
+using sta::InstancePinIterator;
 using sta::Unit;
 using sta::Corners;
 using sta::InputDrive;
@@ -413,16 +413,6 @@ RepairSetup::repairSetup(PathRef &path,
           cloneDriver(drvr_path, drvr_index, path_slack, &expanded);
           changed = true;
           break;
-        // Old gate cloner code
-        /*
-        rsz::GateCloner cloner(resizer_);
-        const int inserted_gates
-            = cloner.run(drvr_pin, drvr_path, drvr_index, &expanded);
-        if (inserted_gates > 0) {
-          changed = true;
-          cloned_gate_count_ += inserted_gates;
-          break;
-        } */
       }
       
       // Don't split loads on low fanout nets.
@@ -698,10 +688,9 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   // We need to downsize the current driver AND we need to insert another drive
   // that splits the load
   // For now we will defer the downsize to a later juncture.
-  rsz::GateCloner cloner(resizer_);
   Instance *drvr_inst = db_network_->instance(drvr_pin);
   LibertyCell *original_cell = network_->libertyCell(drvr_inst);
-  LibertyCell *clone_cell = cloner.halfDrivingPowerCell(original_cell);
+  LibertyCell *clone_cell = resizer_->halfDrivingPowerCell(original_cell);
 
   if (clone_cell == nullptr) {
     clone_cell = original_cell; // no clone available use original
