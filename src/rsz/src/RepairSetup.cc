@@ -34,7 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
-#include "GateCloner.hh"
 
 #include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
@@ -79,6 +78,7 @@ using sta::fuzzyLess;
 using sta::fuzzyLessEqual;
 using sta::fuzzyGreater;
 using sta::fuzzyGreaterEqual;
+using sta::InstancePinIterator;
 using sta::Unit;
 using sta::Corners;
 using sta::InputDrive;
