@@ -117,6 +117,7 @@ using sta::BfsFwdIterator;
 using sta::BfsIndex;
 using sta::Clock;
 using sta::PathExpanded;
+using sta::Sdc;
 using sta::INF;
 using sta::fuzzyEqual;
 using sta::fuzzyLess;
@@ -822,6 +823,7 @@ float
 Resizer::maxLoad(Cell* cell)
 {
   LibertyCell *lib_cell = network_->libertyCell(cell);
+  auto  min_max = sta::MinMax::max();
   sta::LibertyCellPortIterator itr(lib_cell);
   while (itr.hasNext()) {
     LibertyPort* port = itr.next();
@@ -829,30 +831,28 @@ Resizer::maxLoad(Cell* cell)
       float limit, limit1;
       bool exists, exists1;
       const sta::Corner* corner = sta_->cmdCorner();
-      /* TODO TODO
       Sdc* sdc = sta_->sdc();
       // Default to top ("design") limit.
       Cell* top_cell = network_->cell(network_->topInstance());
-      sdc->capacitanceLimit(top_cell, min_max_, limit, exists);
-      sdc->capacitanceLimit(cell, min_max_, limit1, exists1);
+      sdc->capacitanceLimit(top_cell, min_max, limit, exists);
+      sdc->capacitanceLimit(cell, min_max, limit1, exists1);
 
-      if (exists1 && (!exists || min_max_->compare(limit, limit1))) {
+      if (exists1 && (!exists || min_max->compare(limit, limit1))) {
         limit = limit1;
         exists = true;
       }
-      LibertyPort* corner_port = port->cornerPort(corner, min_max_);
-      corner_port->capacitanceLimit(min_max_, limit1, exists1);
+      LibertyPort* corner_port = port->cornerPort(corner, min_max);
+      corner_port->capacitanceLimit(min_max, limit1, exists1);
       if (!exists1 && port->direction()->isAnyOutput()) {
         corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
       }
-      if (exists1 && (!exists || min_max_->compare(limit, limit1))) {
+      if (exists1 && (!exists || min_max->compare(limit, limit1))) {
         limit = limit1;
         exists = true;
       }
       if (exists) {
         return limit;
       }
-       */
     }
   }
   return 0;
