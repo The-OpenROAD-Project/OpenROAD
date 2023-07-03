@@ -1130,7 +1130,7 @@ void FastRouteCore::StNetOrder()
 float FastRouteCore::CalculatePartialSlack()
 {
   parasitics_builder_->clearParasitics();
-  auto partial_routes = getPartialRoutes();
+  auto partial_routes = getPlanarRoutes();
 
   std::vector<float> slacks;
   for (auto& net_route : partial_routes) {

@@ -209,7 +209,7 @@ class FastRouteCore
   void initNetAuxVars();
   void clearNets();
   NetRouteMap getRoutes();
-  NetRouteMap getPartialRoutes();
+  NetRouteMap getPlanarRoutes();
 
   // maze functions
   // Maze-routing in different orders
