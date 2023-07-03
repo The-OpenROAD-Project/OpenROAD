@@ -5,7 +5,7 @@ set server1 [exec $OR server1.tcl > results/server1.log &]
 set server2 [exec $OR server2.tcl > results/server2.log &]
 set balancer [exec $OR balancer.tcl > results/balancer.log &]
 set base [exec $OR -exit gcd_nangate45.tcl > results/base.log &]
-
+exec sleep 3
 read_lef Nangate45/Nangate45_tech.lef
 read_lef Nangate45/Nangate45_stdcell.lef
 read_def gcd_nangate45_preroute.def

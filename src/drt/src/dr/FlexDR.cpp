@@ -1236,18 +1236,20 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & workerMarkerCost_;
   (ar) & workerFixedShapeCost_;
   (ar) & workerMarkerDecay_;
-  (ar) & pinCnt_;
+  // (ar) & pinCnt_;
   (ar) & initNumMarkers_;
-  (ar) & apSVia_;
-  (ar) & planarHistoryMarkers_;
-  (ar) & viaHistoryMarkers_;
-  (ar) & historyMarkers_;
+  // (ar) & apSVia_;
+  // (ar) & planarHistoryMarkers_;
+  // (ar) & viaHistoryMarkers_;
+  // (ar) & historyMarkers_;
   (ar) & nets_;
-  (ar) & gridGraph_;
+  // (ar) & gridGraph_;
   (ar) & markers_;
   (ar) & bestMarkers_;
   (ar) & isCongested_;
   if (is_loading(ar)) {
+    gridGraph_.setTech(design_->getTech());
+    gridGraph_.setWorker(this);
     // boundaryPin_
     int sz = 0;
     (ar) & sz;
@@ -1286,6 +1288,7 @@ std::unique_ptr<FlexDRWorker> FlexDRWorker::load(const std::string& workerStr,
   // We need to fix up the fields we want from the current run rather
   // than the stored ones.
   worker->setLogger(logger);
+  // worker->getGridGraph().setLogger(logger);
   worker->setGraphics(graphics);
 
   return worker;
