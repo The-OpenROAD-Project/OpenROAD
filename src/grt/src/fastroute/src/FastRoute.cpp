@@ -718,8 +718,8 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
           layer_h = 1;
           layer_v = 2;
         } else {
-          layer_h = 1;
-          layer_v = 2;
+          layer_h = 2;
+          layer_v = 1;
         }
         int second_x = tile_size_ * (gridsX[1] + 0.5) + x_corner_;
         int lastL = (lastX == second_x) ? layer_v : layer_h;
