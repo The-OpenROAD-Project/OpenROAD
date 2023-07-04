@@ -141,7 +141,9 @@ std::string FlexDRWorker::reloadedMain()
              1,
              "Init number of markers {}",
              getInitNumMarkers());
-  route_queue();
+  if (!skipRouting_) {
+    route_queue();
+  }
   setGCWorker(nullptr);
   cleanup();
   std::string workerStr;
