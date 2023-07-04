@@ -112,7 +112,6 @@ RecoverPower::recoverPower()
   init();
   float setup_slack_margin = 1e-11;
   float setup_slack_max_margin = 1e-4; // 100us
-  int max_passes = 100;
   constexpr int digits = 3;
   inserted_buffer_count_ = 0;
   resize_count_ = 0;
@@ -298,7 +297,6 @@ RecoverPower::recoverPower(PathRef &path, Slack path_slack)
   return changed;
 }
 
-static int downsize_count;
 bool
 RecoverPower::downsizeDrvr(PathRef *drvr_path,
                         int drvr_index,
@@ -332,12 +330,11 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
     LibertyCell *downsize = downsizeCell(in_port, drvr_port, load_cap,
                                          prev_drive, dcalc_ap,
                                          only_same_size_swap, path_slack);
-    if (downsize && downsize_count < 100 && !strstr(downsize->name(), "clk")) {
+    if (downsize != nullptr) {
       debugPrint(logger_, RSZ, "recover_power", 3, "resize {} {} -> {}",
                  network_->pathName(drvr_pin),
                  drvr_port->libertyCell()->name(),
                  downsize->name());
-      downsize_count++;
       //printf("resize %s %s ----> %s\n",network_->pathName(drvr_pin),
       //       drvr_port->libertyCell()->name(),downsize->name());
       if (resizer_->replaceCell(drvr, downsize, true)) {
@@ -376,6 +373,7 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
+  constexpr double delay_margin = 1.3; // Prevent overly aggressive downsizing
 
   if (equiv_cells) {
     const char *in_port_name = in_port->name();
@@ -412,15 +410,10 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
       current_delay = resizer_->gateDelay(equiv_drvr, load_cap, dcalc_ap)
         + prev_drive * equiv_input->capacitance();
 
-      // 1e-9 was ok for margin for aes/sky130hd ... but we may need a more
-      // general rule. 5% of clock vs. 10% of clock or similar.
-      // TODO: Remove this hardcoding for margin below and make it a parameter.
-      // There is a drive and a delay .... the delay part is pretty clear but
-      // the drive is not. Need to look at this in more detail.
       if (!resizer_->dontUse(equiv)
           && current_drive > drive
           && current_delay > delay
-          && (current_delay-delay)*1.40 < path_slack // add margin
+          && (current_delay-delay)* delay_margin < path_slack // add margin
           && meetsSizeCriteria(cell, equiv, match_size)) {
         best_delay = current_delay;
         best_drive = current_drive;
