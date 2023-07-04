@@ -137,4 +137,4 @@ private:
   static constexpr double rebuffer_buffer_penalty_ = .01;
 };
 
-} // namespace
+}  // namespace rsz
