@@ -73,7 +73,7 @@ using sta::Corner;
 class BufferedNet;
 enum class BufferedNetType;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
-typedef vector<BufferedNetPtr> BufferedNetSeq;
+using BufferedNetSeq = vector<BufferedNetPtr>;
 
 class RecoverPower : StaState
 {
