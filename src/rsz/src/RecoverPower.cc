@@ -324,8 +324,9 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
         prev_drive = prev_drvr_port->driveResistance();
       }
     }
-    else
+    else {
       prev_drive = 0.0;
+}
     LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
     LibertyCell *downsize = downsizeCell(in_port, drvr_port, load_cap,
                                          prev_drive, dcalc_ap,
