@@ -207,10 +207,18 @@ int SimulatedAnnealing::getPinCost(int pin_idx)
   return netlist_->computeIONetHPWL(pin_idx, position);
 }
 
-void SimulatedAnnealing::perturbAssignment(int& prev_slot,
-                                           int& new_slot,
-                                           int& pin1,
-                                           int& pin2,
+int64 SimulatedAnnealing::getGroupCost(int group_idx)
+{
+  int64 cost = 0;
+  for (int pin_idx : pin_groups_[group_idx].pin_indices) {
+    int slot_idx = pin_assignment_[pin_idx];
+    const odb::Point& position = slots_[slot_idx].pos;
+    cost += netlist_->computeIONetHPWL(pin_idx, position);
+  }
+
+  return cost;
+}
+
 void SimulatedAnnealing::perturbAssignment(std::vector<int>& prev_slots,
                                            std::vector<int>& new_slots,
                                            std::vector<int>& pins,

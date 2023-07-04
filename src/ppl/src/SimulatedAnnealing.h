@@ -91,6 +91,7 @@ class SimulatedAnnealing
   const std::vector<PinGroupByIndex>& pin_groups_;
   int num_slots_;
   int num_pins_;
+  int num_groups_;
 
   // annealing variables
   float init_temperature_ = 1.0;
@@ -102,6 +103,7 @@ class SimulatedAnnealing
 
   // perturbation variables
   const float swap_pins_ = 0.5;
+  const float move_groups_ = 0.2;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
