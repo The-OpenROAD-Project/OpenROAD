@@ -229,8 +229,9 @@ RecoverPower::recoverPower(const Pin *end_pin)
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  if (resize_count_ > 0)
+  if (resize_count_ > 0) {
     logger_->info(RSZ, 3111, "Resized {} instances.", resize_count_);
+}
 }
 
 // This is the main routine for recovering power.
