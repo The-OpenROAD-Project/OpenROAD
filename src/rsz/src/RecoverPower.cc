@@ -260,7 +260,7 @@ RecoverPower::recoverPower(PathRef &path, Slack path_slack)
         Delay load_delay = graph_->arcDelay(prev_edge, prev_arc, dcalc_ap->index())
           // Remove intrinsic delay to find load dependent delay.
           - corner_arc->intrinsicDelay();
-        load_delays.push_back(pair(i, load_delay));
+        load_delays.emplace_back(i, load_delay);
         debugPrint(logger_, RSZ, "recover_power", 3, "{} load_delay = {}",
                    path_vertex->name(network_),
                    delayAsString(load_delay, sta_, 3));
