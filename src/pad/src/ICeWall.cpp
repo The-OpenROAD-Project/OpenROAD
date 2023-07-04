@@ -175,7 +175,9 @@ void ICeWall::makeBTerm(odb::dbNet* net,
   Utilities::makeSpecial(net);
 }
 
-void ICeWall::assignBump(odb::dbInst* inst, odb::dbNet* net)
+void ICeWall::assignBump(odb::dbInst* inst,
+                         odb::dbNet* net,
+                         odb::dbITerm* terminal)
 {
   if (inst == nullptr) {
     logger_->error(
@@ -197,6 +199,32 @@ void ICeWall::assignBump(odb::dbInst* inst, odb::dbNet* net)
   for (auto* iterm : inst->getITerms()) {
     if (iterm->getNet() != net) {
       iterm->connect(net);
+    }
+    if (terminal) {
+      auto already_assigned = std::find_if(
+          routing_map_.begin(),
+          routing_map_.end(),
+          [terminal](const auto& other) { return other.second == terminal; });
+      if (already_assigned != routing_map_.end()) {
+        logger_->error(utl::PAD,
+                       35,
+                       "{}/{} has already been assigned.",
+                       terminal->getInst()->getName(),
+                       terminal->getMTerm()->getName());
+      }
+      if (terminal->getNet() == nullptr) {
+        terminal->connect(net);
+      } else if (terminal->getNet() != net) {
+        logger_->error(utl::PAD,
+                       36,
+                       "{}/{} is not connected to {}, but connected to {}.",
+                       terminal->getInst()->getName(),
+                       terminal->getMTerm()->getName(),
+                       net->getName(),
+                       terminal->getNet()->getName());
+      }
+      routing_map_[iterm] = terminal;
+      terminal = nullptr;
     }
 
     for (auto* mpin : iterm->getMTerm()->getMPins()) {
@@ -1159,14 +1187,23 @@ void ICeWall::routeRDL(odb::dbTechLayer* layer,
                        const std::vector<odb::dbNet*>& nets,
                        int width,
                        int spacing,
-                       bool allow45)
+                       bool allow45,
+                       float turn_penalty)
 {
   if (layer == nullptr) {
     logger_->error(utl::PAD, 22, "Layer must be specified to perform routing.");
   }
 
-  router_ = std::make_unique<RDLRouter>(
-      logger_, getBlock(), layer, bump_via, pad_via, width, spacing, allow45);
+  router_ = std::make_unique<RDLRouter>(logger_,
+                                        getBlock(),
+                                        layer,
+                                        bump_via,
+                                        pad_via,
+                                        routing_map_,
+                                        width,
+                                        spacing,
+                                        allow45,
+                                        turn_penalty);
   if (router_gui_ != nullptr) {
     router_gui_->setRouter(router_.get());
   }

@@ -95,17 +95,30 @@ proc remove_io_bump {args} {
 }
 
 sta::define_cmd_args "assign_io_bump" {-net net \
+                                       [-terminal terminal] \
                                        inst}
 
 proc assign_io_bump {args} {
   sta::parse_key_args "assign_io_bump" args \
-    keys {-net} \
+    keys {-net -terminal} \
     flags {}
   
   sta::check_argc_eq1 "assign_io_bump" $args
 
+  set terminal NULL
+  if { [info exists keys(-terminal)] } {
+    set terminal [[ord::get_db_block] findITerm $keys(-terminal)]
+
+    if { $terminal == "NULL" } {
+      utl::error PAD 113 "Unable to find $keys(-terminal)"
+    }
+  }
+
   pad::assert_required assign_io_bump -net
-  pad::assign_net_to_bump [pad::find_instance [lindex $args 0]] [pad::find_net $keys(-net)]
+  pad::assign_net_to_bump \
+    [pad::find_instance [lindex $args 0]] \
+    [pad::find_net $keys(-net)] \
+    $terminal
 }
 
 #####
@@ -328,12 +341,13 @@ sta::define_cmd_args "rdl_route" {-layer layer \
                                   [-pad_via access_via] \
                                   [-width width] \
                                   [-spacing spacing] \
+                                  [-turn_penalty penalty] \
                                   [-allow45] \
                                   nets}
 
 proc rdl_route {args} {
   sta::parse_key_args "rdl_route" args \
-    keys {-layer -width -spacing -bump_via -pad_via} \
+    keys {-layer -width -spacing -bump_via -pad_via -turn_penalty} \
     flags {-allow45}
 
   set nets []
@@ -363,14 +377,27 @@ proc rdl_route {args} {
 
   set width 0
   if {[info exists keys(-width)]} {
+    sta::check_positive_float "-width" $keys(-width)
     set width [ord::microns_to_dbu $keys(-width)]
   }
   set spacing 0
   if {[info exists keys(-spacing)]} {
+    sta::check_positive_float "-spacing" $keys(-spacing)
     set spacing [ord::microns_to_dbu $keys(-spacing)]
   }
 
-  pad::route_rdl $layer $bump_via $pad_via $nets $width $spacing [info exists flags(-allow45)]
+  set penalty 2.0
+  if {[info exists keys(-turn_penalty)]} {
+    set penalty $keys(-turn_penalty)
+  }
+  sta::check_positive_float "-turn_penalty" $penalty
+
+  pad::route_rdl $layer \
+    $bump_via $pad_via \
+    $nets \
+    $width $spacing \
+    [info exists flags(-allow45)] \
+    $penalty
 }
 
 namespace eval pad {
