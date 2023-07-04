@@ -1868,6 +1868,17 @@ void IOPlacer::run(bool random_mode)
   clear();
 }
 
+void IOPlacer::setAnnealingConfig(float temperature,
+                                  int max_iterations,
+                                  int perturb_per_iter,
+                                  float alpha)
+{
+  init_temperature_ = temperature;
+  max_iterations_ = max_iterations;
+  perturb_per_iter_ = perturb_per_iter;
+  alpha_ = alpha;
+}
+
 void IOPlacer::runAnnealing()
 {
   initParms();
@@ -1890,7 +1901,7 @@ void IOPlacer::runAnnealing()
 
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), slots_, logger_, db_);
-  annealing.run();
+  annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
   annealing.getAssignment(assignment_);
 
   for (auto& pin : assignment_) {
