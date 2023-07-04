@@ -64,7 +64,8 @@ class SimulatedAnnealing
  private:
   void init();
   void randomAssignment();
-  int randomAssignmentForGroups(std::set<int>& placed_pins, const std::vector<int>& slot_indices);
+  int randomAssignmentForGroups(std::set<int>& placed_pins,
+                                const std::vector<int>& slot_indices);
   int64 getAssignmentCost();
   int getDeltaCost(int prev_cost, const std::vector<int>& pins);
   int getPinCost(int pin_idx);
@@ -80,11 +81,12 @@ class SimulatedAnnealing
   int moveGroupToFreeSlots(std::vector<int>& prev_slots,
                            std::vector<int>& new_slots,
                            std::vector<int>& pins);
+  void restorePreviousAssignment(const std::vector<int>& prev_slots,
+                                 const std::vector<int>& pins);
   double dbuToMicrons(int64_t dbu);
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
-  std::vector<int> prev_pin_assignment_;
   std::vector<int> slot_indices_;
   Netlist* netlist_;
   std::vector<Slot>& slots_;
