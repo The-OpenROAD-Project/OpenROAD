@@ -53,17 +53,17 @@ definVia::~definVia()
 void definVia::init()
 {
   definBase::init();
-  _cur_via = NULL;
-  _params = NULL;
+  _cur_via = nullptr;
+  _params = nullptr;
 }
 
 void definVia::viaBegin(const char* name)
 {
-  assert(_cur_via == NULL);
+  assert(_cur_via == nullptr);
 
   _cur_via = dbVia::create(_block, name);
 
-  if (_cur_via == NULL) {
+  if (_cur_via == nullptr) {
     _logger->warn(utl::ODB, 166, "error: duplicate via ({})", name);
     ++_errors;
   }
@@ -71,12 +71,12 @@ void definVia::viaBegin(const char* name)
 
 void definVia::viaRule(const char* rule)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
   dbTechViaGenerateRule* viarule = _tech->findViaGenerateRule(rule);
 
-  if (viarule == NULL) {
+  if (viarule == nullptr) {
     _logger->warn(utl::ODB,
                   167,
                   "error: cannot file VIA GENERATE rule in technology ({}).",
@@ -90,10 +90,10 @@ void definVia::viaRule(const char* rule)
 
 void definVia::viaCutSize(int xSize, int ySize)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
-  if (_params == NULL)
+  if (_params == nullptr)
     _params = new dbViaParams();
 
   _params->setXCutSize(dbdist(xSize));
@@ -104,15 +104,15 @@ bool definVia::viaLayers(const char* botName,
                          const char* cutName,
                          const char* topName)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return false;
 
-  if (_params == NULL)
+  if (_params == nullptr)
     _params = new dbViaParams();
 
   dbTechLayer* bot = _tech->findLayer(botName);
 
-  if (bot == NULL) {
+  if (bot == nullptr) {
     _logger->warn(
         utl::ODB, 168, "error: undefined layer ({}) referenced", botName);
     ++_errors;
@@ -121,7 +121,7 @@ bool definVia::viaLayers(const char* botName,
 
   dbTechLayer* cut = _tech->findLayer(cutName);
 
-  if (cut == NULL) {
+  if (cut == nullptr) {
     _logger->warn(
         utl::ODB, 169, "error: undefined layer ({}) referenced", cutName);
     ++_errors;
@@ -130,7 +130,7 @@ bool definVia::viaLayers(const char* botName,
 
   dbTechLayer* top = _tech->findLayer(topName);
 
-  if (top == NULL) {
+  if (top == nullptr) {
     _logger->warn(
         utl::ODB, 170, "error: undefined layer ({}) referenced", topName);
     ++_errors;
@@ -145,10 +145,10 @@ bool definVia::viaLayers(const char* botName,
 
 void definVia::viaCutSpacing(int xSpacing, int ySpacing)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
-  if (_params == NULL)
+  if (_params == nullptr)
     _params = new dbViaParams();
 
   _params->setXCutSpacing(dbdist(xSpacing));
@@ -157,10 +157,10 @@ void definVia::viaCutSpacing(int xSpacing, int ySpacing)
 
 void definVia::viaEnclosure(int xBot, int yBot, int xTop, int yTop)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
-  if (_params == NULL)
+  if (_params == nullptr)
     _params = new dbViaParams();
 
   _params->setXBottomEnclosure(dbdist(xBot));
@@ -171,10 +171,10 @@ void definVia::viaEnclosure(int xBot, int yBot, int xTop, int yTop)
 
 void definVia::viaRowCol(int numCutRows, int numCutCols)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
-  if (_params == NULL)
+  if (_params == nullptr)
     _params = new dbViaParams();
 
   _params->setNumCutRows(numCutRows);
@@ -183,10 +183,10 @@ void definVia::viaRowCol(int numCutRows, int numCutCols)
 
 void definVia::viaOrigin(int x, int y)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
-  if (_params == NULL)
+  if (_params == nullptr)
     _params = new dbViaParams();
 
   _params->setXOrigin(dbdist(x));
@@ -195,10 +195,10 @@ void definVia::viaOrigin(int x, int y)
 
 void definVia::viaOffset(int xBot, int yBot, int xTop, int yTop)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
-  if (_params == NULL)
+  if (_params == nullptr)
     _params = new dbViaParams();
 
   _params->setXBottomOffset(dbdist(xBot));
@@ -209,7 +209,7 @@ void definVia::viaOffset(int xBot, int yBot, int xTop, int yTop)
 
 void definVia::viaPattern(const char* pattern)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
   _cur_via->setPattern(pattern);
@@ -217,7 +217,7 @@ void definVia::viaPattern(const char* pattern)
 
 void definVia::viaRect(const char* layer_name, int x1, int y1, int x2, int y2)
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
   x1 = dbdist(x1);
@@ -227,7 +227,7 @@ void definVia::viaRect(const char* layer_name, int x1, int y1, int x2, int y2)
 
   dbTechLayer* layer = _tech->findLayer(layer_name);
 
-  if (layer == NULL) {
+  if (layer == nullptr) {
     _logger->warn(
         utl::ODB, 171, "error: undefined layer ({}) referenced", layer_name);
     ++_errors;
@@ -239,13 +239,13 @@ void definVia::viaRect(const char* layer_name, int x1, int y1, int x2, int y2)
 
 void definVia::viaEnd()
 {
-  if (_cur_via == NULL)
+  if (_cur_via == nullptr)
     return;
 
   if (_params) {
     _cur_via->setViaParams(*_params);
     delete _params;
-    _params = NULL;
+    _params = nullptr;
   }
 
   dbSet<dbBox> boxes = _cur_via->getBoxes();
@@ -294,7 +294,7 @@ void definVia::viaEnd()
         utl::ODB, 302, "Via {} has no cut shapes.", _cur_via->getName());
   }
 
-  _cur_via = NULL;
+  _cur_via = nullptr;
 }
 
 }  // namespace odb

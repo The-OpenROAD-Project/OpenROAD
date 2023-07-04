@@ -42,7 +42,6 @@
 // User Code Begin Includes
 // User Code End Includes
 namespace odb {
-
 template class dbTable<_dbTechLayerKeepOutZoneRule>;
 
 bool _dbTechLayerKeepOutZoneRule::operator==(
@@ -65,31 +64,22 @@ bool _dbTechLayerKeepOutZoneRule::operator==(
 
   if (first_cut_class_ != rhs.first_cut_class_)
     return false;
-
   if (second_cut_class_ != rhs.second_cut_class_)
     return false;
-
   if (aligned_spacing_ != rhs.aligned_spacing_)
     return false;
-
   if (side_extension_ != rhs.side_extension_)
     return false;
-
   if (forward_extension_ != rhs.forward_extension_)
     return false;
-
   if (end_side_extension_ != rhs.end_side_extension_)
     return false;
-
   if (end_forward_extension_ != rhs.end_forward_extension_)
     return false;
-
   if (side_side_extension_ != rhs.side_side_extension_)
     return false;
-
   if (side_forward_extension_ != rhs.side_forward_extension_)
     return false;
-
   if (spiral_extension_ != rhs.spiral_extension_)
     return false;
 
@@ -97,6 +87,7 @@ bool _dbTechLayerKeepOutZoneRule::operator==(
   // User Code End ==
   return true;
 }
+
 bool _dbTechLayerKeepOutZoneRule::operator<(
     const _dbTechLayerKeepOutZoneRule& rhs) const
 {
@@ -104,13 +95,13 @@ bool _dbTechLayerKeepOutZoneRule::operator<(
   // User Code End <
   return true;
 }
+
 void _dbTechLayerKeepOutZoneRule::differences(
     dbDiff& diff,
     const char* field,
     const _dbTechLayerKeepOutZoneRule& rhs) const
 {
   DIFF_BEGIN
-
   DIFF_FIELD(flags_.same_mask_);
   DIFF_FIELD(flags_.same_metal_);
   DIFF_FIELD(flags_.diff_metal_);
@@ -130,6 +121,7 @@ void _dbTechLayerKeepOutZoneRule::differences(
   // User Code End Differences
   DIFF_END
 }
+
 void _dbTechLayerKeepOutZoneRule::out(dbDiff& diff,
                                       char side,
                                       const char* field) const
@@ -155,6 +147,7 @@ void _dbTechLayerKeepOutZoneRule::out(dbDiff& diff,
   // User Code End Out
   DIFF_END
 }
+
 _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(_dbDatabase* db)
 {
   uint32_t* flags__bit_field = (uint32_t*) &flags_;
@@ -170,6 +163,7 @@ _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(_dbDatabase* db)
   // User Code Begin Constructor
   // User Code End Constructor
 }
+
 _dbTechLayerKeepOutZoneRule::_dbTechLayerKeepOutZoneRule(
     _dbDatabase* db,
     const _dbTechLayerKeepOutZoneRule& r)
@@ -212,6 +206,7 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerKeepOutZoneRule& obj)
   // User Code End >>
   return stream;
 }
+
 dbOStream& operator<<(dbOStream& stream, const _dbTechLayerKeepOutZoneRule& obj)
 {
   uint32_t* flags__bit_field = (uint32_t*) &obj.flags_;

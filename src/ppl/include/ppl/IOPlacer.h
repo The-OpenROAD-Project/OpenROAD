@@ -60,6 +60,7 @@ class Core;
 class Interval;
 class IOPin;
 class Netlist;
+class SimulatedAnnealing;
 struct Constraint;
 struct Section;
 struct Slot;
@@ -122,6 +123,8 @@ class IOPlacer
   void clear();
   void clearConstraints();
   void run(bool random_mode);
+  void runAnnealing();
+  void reportHPWL();
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
@@ -192,8 +195,8 @@ class IOPlacer
                     std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
   void getPinsFromDirectionConstraint(Constraint& constraint);
-  void initMirroredPins();
-  void initConstraints();
+  void initMirroredPins(bool annealing = false);
+  void initConstraints(bool annealing = false);
   void sortConstraints();
   void checkPinsInMultipleConstraints();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);

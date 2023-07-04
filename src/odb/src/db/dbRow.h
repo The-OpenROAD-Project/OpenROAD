@@ -82,7 +82,7 @@ class _dbRow : public _dbObject
 
 inline _dbRow::_dbRow(_dbDatabase*, const _dbRow& r)
     : _flags(r._flags),
-      _name(NULL),
+      _name(nullptr),
       _lib(r._lib),
       _site(r._site),
       _x(r._x),
@@ -101,7 +101,7 @@ inline _dbRow::_dbRow(_dbDatabase*)
   _flags._orient = dbOrientType::R0;
   _flags._dir = dbRowDir::HORIZONTAL;
   _flags._spare_bits = 0;
-  _name = NULL;
+  _name = nullptr;
   _x = 0;
   _y = 0;
   _site_cnt = 0;

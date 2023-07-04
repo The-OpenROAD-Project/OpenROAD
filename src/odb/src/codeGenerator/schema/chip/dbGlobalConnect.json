@@ -1,6 +1,5 @@
 {
     "name": "dbGlobalConnect",
-    "parent": "dbObject",
     "fields": [
       {
         "name": "region_",

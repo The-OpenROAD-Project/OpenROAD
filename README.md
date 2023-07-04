@@ -50,12 +50,12 @@ includes GlobalFoundries shuttles, design contests and IC design
 workshops. The OpenROAD flow has been successfully used to date
 in over 600 silicon-ready tapeouts for technologies up to 12nm.
 
-## OpenROAD Flow Stages
+## Getting Started with OpenROAD-flow-scripts
 
 OpenROAD provides [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 as a native, ready-to-use prototyping and tapeout flow. However,
 it also enables the creation of any custom flow controllers based
-on the underlying tools, database and analysis engines.
+on the underlying tools, database and analysis engines. Please refer to the flow documentation [here](https://openroad-flow-scripts.readthedocs.io/en/latest/).
 
 OpenROAD-flow-scripts (ORFS) is a fully autonomous, RTL-GDSII flow
 for rapid architecture and design space exploration, early prediction
@@ -104,22 +104,28 @@ using OpenROAD;
 
 The OpenROAD GUI is a powerful visualization, analysis, and debugging
 tool with a customizable Tcl interface. The below figures show GUI views for
-various flow stages including post-routed timing, placement congestion, and
-CTS.
+various flow stages including floorplanning, placement congestion,
+CTS and post-routed design.
 
-![ibexGui.webp](./docs/images/ibexGui.webp)
+#### Floorplan
 
-### Automatic Hierarchical Macro Placement
+![ibex_floorplan.webp](./docs/images/ibex_floorplan.webp)
+
+#### Automatic Hierarchical Macro Placement
 
 ![Ariane133](./docs/images/ariane133_mpl2.webp)
 
-### Placement Congestion Visualization
+#### Placement Congestion Visualization
 
 ![pl_congestion.webp](./docs/images/pl_congestion.webp)
 
-### CTS
+#### CTS
 
 ![clk_routing.webp](./docs/images/clk_routing.webp)
+
+#### Routing
+
+![ibex_routing.webp](./docs/images/ibex_routing.webp)
 
 ### PDK Support
 
@@ -231,7 +237,7 @@ the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
-and there descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
+and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
 
 ## License
 
