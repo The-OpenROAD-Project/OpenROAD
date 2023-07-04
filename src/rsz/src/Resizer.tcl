@@ -450,15 +450,16 @@ proc repair_timing { args } {
   }
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
-  if { $setup } {
-    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes $skip_pin_swap $enable_gate_cloning
-  }
-  if { $hold } {
-    rsz::repair_hold $setup_margin $hold_margin \
-      $allow_setup_violations $max_buffer_percent $max_passes
-  }
   if { $recover_power } {
     rsz::recover_power	
+  } else {
+    if { $setup } {
+	  rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes $skip_pin_swap $enable_gate_cloning
+    }
+    if { $hold } {
+	  rsz::repair_hold $setup_margin $hold_margin \
+	      $allow_setup_violations $max_buffer_percent $max_passes
+    }
   }
 }
 

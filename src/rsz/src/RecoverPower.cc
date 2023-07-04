@@ -110,8 +110,8 @@ void
 RecoverPower::recoverPower()
 {
   init();
-  float setup_slack_margin = 0;
-  float setup_slack_max_margin = 1e-7; // 10ms
+  float setup_slack_margin = 1e-11;
+  float setup_slack_max_margin = 1e-4; // 100us
   int max_passes = 100;
   constexpr int digits = 3;
   inserted_buffer_count_ = 0;
@@ -128,13 +128,13 @@ RecoverPower::recoverPower()
     Slack end_slack = sta_->vertexSlack(end, max_);
     if (end_slack > setup_slack_margin && end_slack < setup_slack_max_margin)  {
       ends_with_slack.push_back(end);
-      // printf("XXXXXX the slack is %0.3g\n", end_slack);
     }
   }
 
   sort(ends_with_slack, [=](Vertex *end1, Vertex *end2) {
     return sta_->vertexSlack(end1, max_) > sta_->vertexSlack(end2, max_);
   });
+
   debugPrint(logger_, RSZ, "recover_power", 1, "Candidate paths {}/{} {}%",
              ends_with_slack.size(),
              endpoints->size(),
@@ -143,7 +143,7 @@ RecoverPower::recoverPower()
   // TODO We should add tns_end_percent call here or some option on how to limit
   // running this forever.
   int end_index = 0;
-  int max_end_count = ends_with_slack.size();
+  int max_end_count = 1000;//ends_with_slack.size();
   resizer_->incrementalParasiticsBegin();
 
   for (Vertex *end : ends_with_slack) {
@@ -151,14 +151,16 @@ RecoverPower::recoverPower()
     sta_->findRequireds();
     Slack end_slack = sta_->vertexSlack(end, max_);
     Slack worst_slack;
-    Vertex *worst_vertex;
+    Vertex* worst_vertex;
+
     sta_->worstSlack(max_, worst_slack, worst_vertex);
-    debugPrint(logger_, RSZ, "recover_power", 1, "{} slack = {} worst_slack = {}",
-               end->name(network_),
+    debugPrint(logger_, RSZ, "recover_power", 1,
+               "{} slack = {} worst_slack = {}", end->name(network_),
                delayAsString(end_slack, sta_, digits),
                delayAsString(worst_slack, sta_, digits));
     end_index++;
-    debugPrint(logger_, RSZ, "recover_power", 1, "Doing {} /{}", end_index, max_end_count);
+    debugPrint(logger_, RSZ, "recover_power", 1, "Doing {} /{}", end_index,
+               max_end_count);
     if (end_index > max_end_count)
       break;
     Slack prev_end_slack = end_slack;
@@ -172,50 +174,42 @@ RecoverPower::recoverPower()
       sta_->findRequireds();
       end_slack = sta_->vertexSlack(end, max_);
       sta_->worstSlack(max_, worst_slack, worst_vertex);
-      /*
-      bool better = (fuzzyGreater(worst_slack, prev_worst_slack)
-                     || (end_index != 1
-                         && fuzzyEqual(worst_slack, prev_worst_slack)
-                         && fuzzyGreater(end_slack, prev_end_slack)));
-      debugPrint(logger_, RSZ,
-                 "recover_power", 2, "pass {} slack = {} worst_slack = {} {}",
-                 pass,
+
+      bool better
+          = (fuzzyGreater(worst_slack, prev_worst_slack)
+             || (end_index != 1 && fuzzyEqual(worst_slack, prev_worst_slack)
+                 && fuzzyGreater(end_slack, prev_end_slack)));
+      debugPrint(logger_, RSZ, "recover_power", 2,
+                 "pass {} slack = {} worst_slack = {} {}",
+                 0,  // TODO pass,
                  delayAsString(end_slack, sta_, digits),
                  delayAsString(worst_slack, sta_, digits),
                  better ? "save" : "");
       if (better) {
         prev_end_slack = end_slack;
         prev_worst_slack = worst_slack;
-        decreasing_slack_passes = 0;
+        // decreasing_slack_passes = 0;
         // Progress, Save checkpoint so we can back up to here.
         resizer_->journalBegin();
-        */
+      }
+      if (resizer_->overMaxArea()) {
+        break;
+      }
     }
-    if (resizer_->overMaxArea()) {
-      break;
-    }
+    // Leave the parasitics up to date.
+    resizer_->updateParasitics();
+    resizer_->incrementalParasiticsEnd();
   }
-  // Leave the parasitics up to date.
-  resizer_->updateParasitics();
-  resizer_->incrementalParasiticsEnd();
 
-  /* TODO - need to fix this
-  if (inserted_buffer_count_ > 0) {
-    logger_->info(RSZ, 140, "Inserted {} buffers.", inserted_buffer_count_);
-  }
-  logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
+  // TODO: Add the appropriate metric here
+  // logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0) {
     logger_->info(RSZ, 141, "Resized {} instances.", resize_count_);
-  }
-
-  Slack worst_slack = sta_->worstSlack(max_);
-  if (fuzzyLess(worst_slack, setup_slack_margin)) {
-    logger_->warn(RSZ, 162, "Unable to repair all setup violations.");
   }
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 125, "max utilization reached.");
   }
-   */
+
 }
 
 // For testing.
@@ -236,20 +230,11 @@ RecoverPower::recoverPower(const Pin *end_pin)
   resizer_->updateParasitics();
   resizer_->incrementalParasiticsEnd();
 
-  /*
-  if (inserted_buffer_count_ > 0)
-    logger_->info(RSZ, 3011, "Inserted {} buffers.", inserted_buffer_count_);
   if (resize_count_ > 0)
     logger_->info(RSZ, 3111, "Resized {} instances.", resize_count_);
-  if (swap_pin_count_ > 0) {
-    logger_->info(RSZ, 4411, "Swapped pins on {} instances.", swap_pin_count_);
-  }
-   */
 }
 
-/* This is the main routine for recovering power. We have
- - downsizesize driver (step 1)
- */
+// This is the main routine for recovering power.
 bool
 RecoverPower::recoverPower(PathRef &path, Slack path_slack)
 {
@@ -267,9 +252,8 @@ RecoverPower::recoverPower(PathRef &path, Slack path_slack)
       PathRef *path = expanded.path(i);
       Vertex *path_vertex = path->vertex(sta_);
       const Pin *path_pin = path->pin(sta_);
-      if (i > 0
-          && network_->isDriver(path_pin)
-          && !network_->isTopLevelPort(path_pin)) {
+      if (i > 0 && network_->isDriver(path_pin) &&
+          !network_->isTopLevelPort(path_pin)) {
         TimingArc *prev_arc = expanded.prevArc(i);
         const TimingArc *corner_arc = prev_arc->cornerArc(lib_ap);
         Edge *prev_edge = path->prevEdge(prev_arc, sta_);
@@ -305,8 +289,7 @@ RecoverPower::recoverPower(PathRef &path, Slack path_slack)
                  network_->pathName(drvr_pin),
                  drvr_cell ? drvr_cell->name() : "none",
                  fanout);
-
-      if (downsizeDrvr(drvr_path, drvr_index, &expanded, false, path_slack)) {
+      if (downsizeDrvr(drvr_path, drvr_index, &expanded, true, path_slack)) {
         changed = true;
         break;
       }
@@ -315,7 +298,7 @@ RecoverPower::recoverPower(PathRef &path, Slack path_slack)
   return changed;
 }
 
-static int xxx= 0;
+static int downsize_count;
 bool
 RecoverPower::downsizeDrvr(PathRef *drvr_path,
                         int drvr_index,
@@ -331,7 +314,6 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
   PathRef *in_path = expanded->path(in_index);
   Pin *in_pin = in_path->pin(sta_);
   LibertyPort *in_port = network_->libertyPort(in_pin);
-  // printf("AAAAAAAAAAAAAAAAAAAAAA Trying %d\n", ++xxx);
   if (!resizer_->dontTouch(drvr)) {
     float prev_drive;
     if (drvr_index >= 2) {
@@ -350,15 +332,15 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
     LibertyCell *downsize = downsizeCell(in_port, drvr_port, load_cap,
                                          prev_drive, dcalc_ap,
                                          only_same_size_swap, path_slack);
-    if (downsize && !strstr(downsize->name(), "clk")) {
+    if (downsize && downsize_count < 100 && !strstr(downsize->name(), "clk")) {
       debugPrint(logger_, RSZ, "recover_power", 3, "resize {} {} -> {}",
                  network_->pathName(drvr_pin),
                  drvr_port->libertyCell()->name(),
                  downsize->name());
-      printf("AAABBB resize %s %s ----> %s\n",network_->pathName(drvr_pin),
-             drvr_port->libertyCell()->name(),downsize->name());
-      if (!resizer_->dontTouch(drvr)
-          && resizer_->replaceCell(drvr, downsize, true)) {
+      downsize_count++;
+      //printf("resize %s %s ----> %s\n",network_->pathName(drvr_pin),
+      //       drvr_port->libertyCell()->name(),downsize->name());
+      if (resizer_->replaceCell(drvr, downsize, true)) {
         resize_count_++;
         return true;
       }
@@ -376,7 +358,7 @@ RecoverPower::meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,
     }
     dbMaster* lef_cell1 = db_network_->staToDb(cell);
     dbMaster* lef_cell2 = db_network_->staToDb(equiv);
-    if (lef_cell1->getWidth() == lef_cell2->getWidth()) {
+    if (lef_cell1->getWidth() <= lef_cell2->getWidth()) {
         return true;
     }
     return false;
@@ -394,6 +376,7 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
   int lib_ap = dcalc_ap->libertyIndex();
   LibertyCell *cell = drvr_port->libertyCell();
   LibertyCellSeq *equiv_cells = sta_->equivCells(cell);
+
   if (equiv_cells) {
     const char *in_port_name = in_port->name();
     const char *drvr_port_name = drvr_port->name();
@@ -410,7 +393,8 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
              || ((drive1 == drive2
                   && intrinsic1 > intrinsic2)
                  || (intrinsic1 == intrinsic2
-                     && port1->capacitance() > port2->capacitance()));
+                 || (intrinsic1 == intrinsic2
+                     && port1->capacitance() > port2->capacitance())));
          });
     float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     float delay = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
@@ -430,11 +414,13 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
 
       // 1e-9 was ok for margin for aes/sky130hd ... but we may need a more
       // general rule. 5% of clock vs. 10% of clock or similar.
-      // TODO: Remove this hardcoding and make it a parameter.
+      // TODO: Remove this hardcoding for margin below and make it a parameter.
+      // There is a drive and a delay .... the delay part is pretty clear but
+      // the drive is not. Need to look at this in more detail.
       if (!resizer_->dontUse(equiv)
           && current_drive > drive
           && current_delay > delay
-          && (current_delay-best_delay) + 1-9 < path_slack // add margin
+          && (current_delay-delay)*1.40 < path_slack // add margin
           && meetsSizeCriteria(cell, equiv, match_size)) {
         best_delay = current_delay;
         best_drive = current_drive;
@@ -442,6 +428,7 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
       }
     }
     if (best_cell != nullptr) {
+      //printf("Best cell found:  %s\n", best_cell->name());
       return best_cell;
     }
   }
