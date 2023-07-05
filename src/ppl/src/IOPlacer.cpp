@@ -170,7 +170,7 @@ void IOPlacer::randomPlacement()
     bool top_layer = constraint.interval.getEdge() == Edge::invalid;
     for (auto& io_group : netlist_io_pins_->getIOGroups()) {
       const PinSet& pin_list = constraint.pin_list;
-      IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.first[0]);
+      IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.pin_indices[0]);
       if (io_pin.isPlaced() || io_pin.inFallback()) {
         continue;
       }
@@ -179,7 +179,7 @@ void IOPlacer::randomPlacement()
           != pin_list.end()) {
         std::vector<int> valid_slots
             = getValidSlots(first_slot, last_slot, top_layer);
-        randomPlacement(io_group.first, valid_slots, top_layer, true);
+        randomPlacement(io_group.pin_indices, valid_slots, top_layer, true);
       }
     }
 
@@ -195,13 +195,13 @@ void IOPlacer::randomPlacement()
   }
 
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
-    IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.first[0]);
+    IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.pin_indices[0]);
     if (io_pin.isPlaced() || io_pin.inFallback()) {
       continue;
     }
     std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
 
-    randomPlacement(io_group.first, valid_slots, false, true);
+    randomPlacement(io_group.pin_indices, valid_slots, false, true);
   }
 
   std::vector<int> valid_slots = getValidSlots(0, slots_.size() - 1, false);
@@ -961,21 +961,21 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
 {
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
     const PinSet& pin_list = constraint.pin_list;
-    IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.first[0]);
+    IOPin& io_pin = netlist_io_pins_->getIoPin(io_group.pin_indices[0]);
 
     if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
         != pin_list.end()) {
-      if (mirrored_only && !groupHasMirroredPin(io_group.first)) {
+      if (mirrored_only && !groupHasMirroredPin(io_group.pin_indices)) {
         continue;
       }
-      for (int pin_idx : io_group.first) {
+      for (int pin_idx : io_group.pin_indices) {
         IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
         if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()
             && mirrored_only) {
           mirrored_pins_cnt++;
         }
       }
-      assignGroupToSection(io_group.first, sections, io_group.second);
+      assignGroupToSection(io_group.pin_indices, sections, io_group.order);
     }
   }
 }
@@ -998,12 +998,12 @@ int IOPlacer::assignGroupsToSections(int& mirrored_pins_cnt)
 
   for (auto& io_group : netlist_io_pins_->getIOGroups()) {
     int before_assignment = total_pins_assigned;
-    total_pins_assigned
-        += assignGroupToSection(io_group.first, sections_, io_group.second);
+    total_pins_assigned += assignGroupToSection(
+        io_group.pin_indices, sections_, io_group.order);
 
     // check if group was assigned here, and not during constrained groups
     if (total_pins_assigned > before_assignment) {
-      for (int pin_idx : io_group.first) {
+      for (int pin_idx : io_group.pin_indices) {
         IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
         if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
           mirrored_pins_cnt++;
@@ -1794,13 +1794,13 @@ void IOPlacer::run(bool random_mode)
 
     // add groups to fallback
     for (const auto& io_group : netlist_io_pins_->getIOGroups()) {
-      if (io_group.first.size() > slots_per_section_) {
+      if (io_group.pin_indices.size() > slots_per_section_) {
         logger_->warn(PPL,
                       92,
                       "Pin group of size {} does not fit any section. Adding "
                       "to fallback mode.",
-                      io_group.first.size());
-        addGroupToFallback(io_group.first, io_group.second);
+                      io_group.pin_indices.size());
+        addGroupToFallback(io_group.pin_indices, io_group.order);
       }
     }
     constrained_pins_cnt += placeFallbackPins(false);
@@ -1880,13 +1880,6 @@ void IOPlacer::runAnnealing()
 
   initMirroredPins(true);
   initConstraints(true);
-
-  if (!pin_groups_.empty()) {
-    logger_->error(PPL,
-                   104,
-                   "Pin groups not supported during pin placement with "
-                   "Simulated Annealing");
-  }
 
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), slots_, logger_, db_);

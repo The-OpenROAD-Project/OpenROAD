@@ -64,20 +64,25 @@ class SimulatedAnnealing
  private:
   void init();
   void randomAssignment();
+  int randomAssignmentForGroups(std::set<int>& placed_pins,
+                                const std::vector<int>& slot_indices);
   int64 getAssignmentCost();
-  int getDeltaCost(int prev_cost, int pin1, int pin2);
+  int getDeltaCost(int prev_cost, const std::vector<int>& pins);
   int getPinCost(int pin_idx);
-  void perturbAssignment(int& prev_slot,
-                         int& new_slot,
-                         int& pin1,
-                         int& pin2,
+  int64 getGroupCost(int group_idx);
+  void perturbAssignment(std::vector<int>& prev_slots,
+                         std::vector<int>& new_slots,
+                         std::vector<int>& pins,
                          int& prev_cost);
-  int swapPins(int& pin1, int& pin2);
-  int movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
-  void restorePreviousAssignment(int prev_slot,
-                                 int new_slot,
-                                 int pin1,
-                                 int pin2);
+  int swapPins(std::vector<int>& pins);
+  int movePinToFreeSlot(std::vector<int>& prev_slot,
+                        std::vector<int>& new_slot,
+                        std::vector<int>& pin);
+  int moveGroupToFreeSlots(std::vector<int>& prev_slots,
+                           std::vector<int>& new_slots,
+                           std::vector<int>& pins);
+  void restorePreviousAssignment(const std::vector<int>& prev_slots,
+                                 const std::vector<int>& pins);
   double dbuToMicrons(int64_t dbu);
 
   // [pin] -> slot
@@ -85,8 +90,10 @@ class SimulatedAnnealing
   std::vector<int> slot_indices_;
   Netlist* netlist_;
   std::vector<Slot>& slots_;
+  const std::vector<PinGroupByIndex>& pin_groups_;
   int num_slots_;
   int num_pins_;
+  int num_groups_;
 
   // annealing variables
   float init_temperature_ = 1.0;
@@ -98,6 +105,7 @@ class SimulatedAnnealing
 
   // perturbation variables
   const float swap_pins_ = 0.5;
+  const float move_groups_ = 0.2;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
