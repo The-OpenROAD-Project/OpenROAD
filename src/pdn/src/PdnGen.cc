@@ -472,6 +472,14 @@ void PdnGen::makeInstanceGrid(
 
   grid->setReplaceable(default_grid);
 
+  if (grid->getNets(starts_with == POWER).empty()) {
+    logger_->warn(utl::PDN,
+                  231,
+                  "{} is not connected to any power/ground nets.",
+                  inst->getName());
+    return;
+  }
+
   domain->addGrid(std::move(grid));
 }
 
