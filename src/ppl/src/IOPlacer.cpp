@@ -1611,6 +1611,7 @@ void IOPlacer::initConstraints(bool annealing)
   }
   sortConstraints();
   checkPinsInMultipleConstraints();
+  checkPinsInMultipleGroups();
 }
 
 void IOPlacer::sortConstraints()
@@ -1649,6 +1650,33 @@ void IOPlacer::checkPinsInMultipleConstraints()
                    98,
                    "Pins {} are assigned to multiple constraints.",
                    pins_in_mult_constraints);
+  }
+}
+
+void IOPlacer::checkPinsInMultipleGroups()
+{
+  std::string pins_in_mult_groups;
+  for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+    int group_cnt = 0;
+    for (PinGroup& group : pin_groups_) {
+      const PinList& pin_list = group.pins;
+      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
+          != pin_list.end()) {
+        group_cnt++;
+      }
+
+      if (group_cnt > 1) {
+        pins_in_mult_groups.append(" " + io_pin.getName());
+        break;
+      }
+    }
+  }
+
+  if (!pins_in_mult_groups.empty()) {
+    logger_->error(PPL,
+                   104,
+                   "Pins {} are assigned to multiple groups.",
+                   pins_in_mult_groups);
   }
 }
 
