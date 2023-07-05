@@ -1648,9 +1648,9 @@ void IOPlacer::checkPinsInMultipleConstraints()
 
     if (!pins_in_mult_constraints.empty()) {
       logger_->error(PPL,
-                    98,
-                    "Pins {} are assigned to multiple constraints.",
-                    pins_in_mult_constraints);
+                     98,
+                     "Pins {} are assigned to multiple constraints.",
+                     pins_in_mult_constraints);
     }
   }
 }
@@ -1677,9 +1677,9 @@ void IOPlacer::checkPinsInMultipleGroups()
 
     if (!pins_in_mult_groups.empty()) {
       logger_->error(PPL,
-                    104,
-                    "Pins {} are assigned to multiple groups.",
-                    pins_in_mult_groups);
+                     104,
+                     "Pins {} are assigned to multiple groups.",
+                     pins_in_mult_groups);
     }
   }
 }
