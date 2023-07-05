@@ -168,6 +168,12 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
+
+    if (net == nullptr) {
+      // no net connected to the top level port.
+      continue;
+    }
+
     if (net
         && !resizer_->dontTouch(net)
         && !sta_->isClock(drvr_pin)
@@ -1044,25 +1050,25 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
     while (!region.pins_.empty()) {
       repeater_loads.push_back(region.pins_.back());
       region.pins_.pop_back();
-      if (repeater_loads.size() == max_fanout)
-        makeFanoutRepeater(repeater_loads, repeater_inputs,
-                           region.bbox_,
+      if (repeater_loads.size() == max_fanout) {
+        makeFanoutRepeater(repeater_loads, repeater_inputs, region.bbox_,
                            findClosedPinLoc(drvr_pin, repeater_loads),
-                           check_slew, check_cap, max_length,
-                           resize_drvr);
+                           check_slew, check_cap, max_length, resize_drvr);
+      }
 
     }
-    if (repeater_loads.size() >= max_fanout / 2)
-      makeFanoutRepeater(repeater_loads, repeater_inputs,
-                         region.bbox_,
+    if (repeater_loads.size() >= max_fanout / 2) {
+      makeFanoutRepeater(repeater_loads, repeater_inputs, region.bbox_,
                          findClosedPinLoc(drvr_pin, repeater_loads),
-                         check_slew, check_cap, max_length,
-                         resize_drvr);
-    else
+                         check_slew, check_cap, max_length, resize_drvr);
+    }
+    else {
       region.pins_ = repeater_loads;
+    }
 
-    for (const Pin *pin : repeater_inputs)
+    for (const Pin *pin : repeater_inputs) {
       region.pins_.push_back(pin);
+    }
   }
 }
 
