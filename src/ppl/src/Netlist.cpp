@@ -71,13 +71,13 @@ int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
     pin_cnt++;
   }
 
-  io_groups_.emplace_back(pin_indices, order);
+  io_groups_.push_back({pin_indices, order});
   return pin_indices.size();
 }
 
 void Netlist::addIOGroup(const std::vector<int>& pin_group, bool order)
 {
-  io_groups_.emplace_back(pin_group, order);
+  io_groups_.push_back({pin_group, order});
 }
 
 void Netlist::getSinksOfIO(int idx, std::vector<InstancePin>& sinks)
