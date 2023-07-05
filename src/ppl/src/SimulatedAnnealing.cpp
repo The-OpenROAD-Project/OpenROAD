@@ -54,6 +54,11 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
   num_pins_ = netlist->numIOPins();
   num_groups_ = pin_groups_.size();
   perturb_per_iter_ = static_cast<int>(num_pins_ * 0.8);
+  int pins_in_groups = 0;
+  for (const auto& group : pin_groups_) {
+    pins_in_groups += group.pin_indices.size();
+  }
+  lone_pins_ = num_pins_ - pins_in_groups;
 }
 
 void SimulatedAnnealing::run()
@@ -228,7 +233,9 @@ void SimulatedAnnealing::perturbAssignment(std::vector<int>& prev_slots,
 {
   const float move = distribution_(generator_);
 
-  if (move < swap_pins_) {
+  // to perform pin swapping, at least two pins that are not inside a group are
+  // necessary
+  if (move < swap_pins_ && lone_pins_ > 1) {
     prev_cost = swapPins(pins);
   } else {
     if (!pin_groups_.empty()) {

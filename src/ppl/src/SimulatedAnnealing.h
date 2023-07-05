@@ -94,6 +94,7 @@ class SimulatedAnnealing
   int num_slots_;
   int num_pins_;
   int num_groups_;
+  int lone_pins_;
 
   // annealing variables
   float init_temperature_ = 1.0;
