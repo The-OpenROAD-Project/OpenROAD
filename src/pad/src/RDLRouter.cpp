@@ -1152,6 +1152,8 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
   odb::dbTechLayer* bump_pin_layer = get_other_layer(bump_accessvia_);
   odb::dbTechLayer* pad_pin_layer = get_other_layer(pad_accessvia_);
 
+  const double dbus = block_->getDbUnitsPerMicron();
+
   for (auto* iterm : net->getITerms()) {
     if (!iterm->getInst()->isPlaced()) {
       continue;
@@ -1210,6 +1212,14 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
                    layer_->getName());
   }
 
+  debugPrint(logger_,
+             utl::PAD,
+             "Router",
+             1,
+             "{} has {} terminals",
+             net->getName(),
+             terms.size());
+
   std::vector<TargetPair> pairs;
   if (terms.size() == 2) {
     const auto& [shape0, term0] = *terms.begin();
@@ -1229,6 +1239,15 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       if (!iterm0.first->getMTerm()->getMaster()->getType().isCover()) {
         continue;
       }
+
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Router",
+                 2,
+                 "Finding routing pair for {}/{} ({})",
+                 iterm0.first->getInst()->getName(),
+                 iterm0.first->getMTerm()->getName(),
+                 iterm0.first->getNet()->getName());
 
       odb::dbITerm* find_terminal = nullptr;
       auto check_routing_map = routing_map_.find(iterm0.first);
@@ -1264,6 +1283,17 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
 
         const odb::Point pt1(shape1.xCenter(), shape1.yCenter());
         const int64_t new_dist = distance(pt0, pt1);
+
+        debugPrint(logger_,
+                   utl::PAD,
+                   "Router",
+                   2,
+                   "  {}/{} ({}): {:.4f}um",
+                   iterm1.first->getInst()->getName(),
+                   iterm1.first->getMTerm()->getName(),
+                   iterm1.first->getNet()->getName(),
+                   new_dist / dbus);
+
         if (new_dist < dist) {
           dist = new_dist;
           shape = shape1;
