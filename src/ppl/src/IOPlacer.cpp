@@ -1932,6 +1932,7 @@ void IOPlacer::runAnnealing()
 void IOPlacer::reportHPWL()
 {
   int64 total_hpwl = computeIONetsHPWL(netlist_io_pins_.get());
+  logger_->metric("ioplacement__design__hpwl", total_hpwl);
   logger_->info(PPL,
                 12,
                 "I/O nets HPWL: {:.2f} um.",
