@@ -1629,54 +1629,58 @@ void IOPlacer::sortConstraints()
 void IOPlacer::checkPinsInMultipleConstraints()
 {
   std::string pins_in_mult_constraints;
-  for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
-    int constraint_cnt = 0;
-    for (Constraint& constraint : constraints_) {
-      const PinSet& pin_list = constraint.pin_list;
-      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
-          != pin_list.end()) {
-        constraint_cnt++;
-      }
+  if (!constraints_.empty()) {
+    for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+      int constraint_cnt = 0;
+      for (Constraint& constraint : constraints_) {
+        const PinSet& pin_list = constraint.pin_list;
+        if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
+            != pin_list.end()) {
+          constraint_cnt++;
+        }
 
-      if (constraint_cnt > 1) {
-        pins_in_mult_constraints.append(" " + io_pin.getName());
-        break;
+        if (constraint_cnt > 1) {
+          pins_in_mult_constraints.append(" " + io_pin.getName());
+          break;
+        }
       }
     }
-  }
 
-  if (!pins_in_mult_constraints.empty()) {
-    logger_->error(PPL,
-                   98,
-                   "Pins {} are assigned to multiple constraints.",
-                   pins_in_mult_constraints);
+    if (!pins_in_mult_constraints.empty()) {
+      logger_->error(PPL,
+                    98,
+                    "Pins {} are assigned to multiple constraints.",
+                    pins_in_mult_constraints);
+    }
   }
 }
 
 void IOPlacer::checkPinsInMultipleGroups()
 {
   std::string pins_in_mult_groups;
-  for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
-    int group_cnt = 0;
-    for (PinGroup& group : pin_groups_) {
-      const PinList& pin_list = group.pins;
-      if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
-          != pin_list.end()) {
-        group_cnt++;
-      }
+  if (!pin_groups_.empty()) {
+    for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+      int group_cnt = 0;
+      for (PinGroup& group : pin_groups_) {
+        const PinList& pin_list = group.pins;
+        if (std::find(pin_list.begin(), pin_list.end(), io_pin.getBTerm())
+            != pin_list.end()) {
+          group_cnt++;
+        }
 
-      if (group_cnt > 1) {
-        pins_in_mult_groups.append(" " + io_pin.getName());
-        break;
+        if (group_cnt > 1) {
+          pins_in_mult_groups.append(" " + io_pin.getName());
+          break;
+        }
       }
     }
-  }
 
-  if (!pins_in_mult_groups.empty()) {
-    logger_->error(PPL,
-                   104,
-                   "Pins {} are assigned to multiple groups.",
-                   pins_in_mult_groups);
+    if (!pins_in_mult_groups.empty()) {
+      logger_->error(PPL,
+                    104,
+                    "Pins {} are assigned to multiple groups.",
+                    pins_in_mult_groups);
+    }
   }
 }
 
