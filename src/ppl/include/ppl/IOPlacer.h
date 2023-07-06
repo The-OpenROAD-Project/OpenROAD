@@ -158,6 +158,11 @@ class IOPlacer
   static Direction getDirection(const std::string& direction);
   static Edge getEdge(const std::string& edge);
 
+  void setAnnealingConfig(float temperature,
+                          int max_iterations,
+                          int perturb_per_iter,
+                          float alpha);
+
  private:
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
@@ -284,6 +289,12 @@ class IOPlacer
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
   std::unique_ptr<TopLayerGrid> top_grid_;
+
+  // simulated annealing variables
+  float init_temperature_ = 0;
+  int max_iterations_ = 0;
+  int perturb_per_iter_ = 0;
+  float alpha_ = 0;
 
   // db variables
   odb::dbDatabase* db_ = nullptr;

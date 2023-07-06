@@ -23,6 +23,7 @@ record_tests {
   add_constraint_error6
   annealing1
   annealing2
+  annealing3
   blocked_region
   cells_not_placed
   exclude1

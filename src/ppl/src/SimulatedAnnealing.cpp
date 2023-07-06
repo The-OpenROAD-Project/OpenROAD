@@ -61,9 +61,12 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
   lone_pins_ = num_pins_ - pins_in_groups;
 }
 
-void SimulatedAnnealing::run()
+void SimulatedAnnealing::run(float init_temperature,
+                             int max_iterations,
+                             int perturb_per_iter,
+                             float alpha)
 {
-  init();
+  init(init_temperature, max_iterations, perturb_per_iter, alpha);
   randomAssignment();
   int64 pre_cost = 0;
   pre_cost = getAssignmentCost();
@@ -126,8 +129,18 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
   }
 }
 
-void SimulatedAnnealing::init()
+void SimulatedAnnealing::init(float init_temperature,
+                              int max_iterations,
+                              int perturb_per_iter,
+                              float alpha)
 {
+  init_temperature_
+      = init_temperature != 0 ? init_temperature : init_temperature_;
+  max_iterations_ = max_iterations != 0 ? max_iterations : max_iterations_;
+  perturb_per_iter_
+      = perturb_per_iter != 0 ? perturb_per_iter : perturb_per_iter_;
+  alpha_ = alpha != 0 ? alpha : alpha_;
+
   pin_assignment_.resize(num_pins_);
   slot_indices_.resize(num_slots_);
   std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
