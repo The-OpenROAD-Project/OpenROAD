@@ -12,7 +12,7 @@ This is a compilation of many idioms in OpenROAD code that are considered undesi
 
 Don't comment out code. `git` provides a complete history of
 the code if you want to look backwards. Huge chunks of commented-out
-code that make it difficult to read.
+code make it difficult to read.
 
 ### Practice #2
 
@@ -213,7 +213,7 @@ Don't use `malloc`. Use `new`. We are writing C++, not C.
 
 Don't use C style arrays. There is no bounds checks for them so they
 invite subtle memory errors to unwitting programmers who fail to use
-valgrind. Use std::vector or std::array.
+`valgrind`. Use `std::vector` or `std::array`.
 
 ### Practice #15
 
@@ -222,7 +222,7 @@ screen.
 
 ### Practice #16
 
-Don't reinvent functions like round, floor, abs, min, max. Use the std
+Don't reinvent functions like `round`, `floor`, `abs`, `min`, `max`. Use the std
 versions.
 
 ``` cpp
@@ -306,7 +306,7 @@ value.
 ### Practice #22
 
 Don't use `<>` to include anything but system headers. Your
-project's headers should NEVER be in `<>`. 
+project's headers should never be in `<>`. 
 1. [GCC Include Syntax](https://gcc.gnu.org/onlinedocs/cpp/Include-Syntax.html)
 1. [StackOverflow discussion on "filename" vs \<filename\>](https://stackoverflow.com/questions/21593/what-is-the-difference-between-include-filename-and-include-filename)
 
@@ -410,10 +410,9 @@ Don't nest namespaces.
 
 ### Practice #28
 
-Don't use `using namespace`. It is just asking for conflicts
+Avoid `using namespace`. It is just asking for conflicts
 and doesn't explicity declare what in the namespace is being used. Use
-`using namespace::symbol;` instead. And especially NEVER
-EVER EVER `using namespace std`. 
+`using namespace::symbol;` instead. And especially not `using namespace std`. 
 
 The following is especially confused because it is trying to "use" the
 symbols in code that are already in the MacroPlace namespace.
@@ -490,8 +489,7 @@ Don't list compile artifacts in `.gitignore`. They all end
 up in the build directory so each file type does not have to appear in
 `.gitignore`.
 
-All of the following is nonsense that has propagated faster than COVID
-in student code:
+All of the following are to be avoided:
 
 #### Compiled Object files
 
@@ -536,7 +534,7 @@ target_include_directories( ABKCommon PUBLIC ${ABKCOMMON_HOME} src/ )
 
 ### Practice #37
 
-Don't use glob. Explictly list the files in a group.
+Don't use `glob`. Explictly list the files in a group.
 
 ``` cmake
 # Instead of
