@@ -295,6 +295,3 @@ cmake . -B build  # generate build files
 clang-tidy -p ./build source_file.cpp
 clang-format -i -style=file:.clang-format source_file.cpp
 ```
-
-## Git Quickstart
-OpenROAD uses GitHub for version control and contributions. Get familiarised with a quickstart tutorial to contribution [here](GitGuide.md).
