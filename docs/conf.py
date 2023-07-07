@@ -159,3 +159,5 @@ def setup(app):
     if not os.path.exists('./main'):
         os.symlink('..', './main')
     swap_prefix('../README.md', '(docs/', '(../')
+    command = "python getMessages.py"
+    _ = os.popen(command).read()
