@@ -58,11 +58,17 @@ class SimulatedAnnealing
                      Logger* logger,
                      odb::dbDatabase* db);
   ~SimulatedAnnealing() = default;
-  void run();
+  void run(float init_temperature,
+           int max_iterations,
+           int perturb_per_iter,
+           float alpha);
   void getAssignment(std::vector<IOPin>& assignment);
 
  private:
-  void init();
+  void init(float init_temperature,
+            int max_iterations,
+            int perturb_per_iter,
+            float alpha);
   void randomAssignment();
   int randomAssignmentForGroups(std::set<int>& placed_pins,
                                 const std::vector<int>& slot_indices);
