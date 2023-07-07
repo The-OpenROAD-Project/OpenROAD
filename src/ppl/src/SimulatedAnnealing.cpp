@@ -334,7 +334,9 @@ int SimulatedAnnealing::moveGroupToFreeSlots(std::vector<int>& prev_slots,
   bool free_slot = false;
   bool same_edge_slot = false;
   int new_slot;
-  while (!free_slot || !same_edge_slot) {
+  int iter = 0;
+  int max_iters = num_slots_ * 10;
+  while ((!free_slot || !same_edge_slot) && iter < max_iters) {
     new_slot = (int) (std::floor(distribution_(generator_) * num_slots_));
     if ((new_slot + pins.size() >= num_slots_ - 1)) {
       continue;
@@ -351,12 +353,15 @@ int SimulatedAnnealing::moveGroupToFreeSlots(std::vector<int>& prev_slots,
 
       slot++;
     }
+    iter++;
   }
 
-  for (int pin_idx : group.pin_indices) {
-    pin_assignment_[pin_idx] = new_slot;
-    new_slots.push_back(new_slot);
-    new_slot++;
+  if (free_slot && same_edge_slot) {
+    for (int pin_idx : group.pin_indices) {
+      pin_assignment_[pin_idx] = new_slot;
+      new_slots.push_back(new_slot);
+      new_slot++;
+    }
   }
 
   return prev_cost;
