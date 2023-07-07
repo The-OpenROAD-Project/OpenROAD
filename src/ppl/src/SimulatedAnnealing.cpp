@@ -255,6 +255,7 @@ void SimulatedAnnealing::perturbAssignment(std::vector<int>& prev_slots,
       const float pin_or_group = distribution_(generator_);
       if (pin_or_group <= move_groups_) {
         prev_cost = moveGroupToFreeSlots(prev_slots, new_slots, pins);
+        // move single pin when moving a group is not possible
         if (prev_cost == move_fail_) {
           prev_cost = movePinToFreeSlot(prev_slots, new_slots, pins);
         }
@@ -337,6 +338,8 @@ int SimulatedAnnealing::moveGroupToFreeSlots(std::vector<int>& prev_slots,
   bool free_slot = false;
   bool same_edge_slot = false;
   int new_slot;
+  // add max number of iterations to find available slots for group to avoid
+  // infinite loop in cases where there are not available contiguous slots
   int iter = 0;
   int max_iters = num_slots_ * 10;
   while ((!free_slot || !same_edge_slot) && iter < max_iters) {
