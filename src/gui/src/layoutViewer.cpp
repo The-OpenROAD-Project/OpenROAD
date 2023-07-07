@@ -247,7 +247,9 @@ Rect LayoutViewer::getBounds() const
 
   Rect die = block_->getDieArea();
 
-  bbox.merge(die);
+  Rect visible(0, 0, die.xMax(), die.yMax());
+
+  bbox.merge(visible);
 
   return bbox;
 }
