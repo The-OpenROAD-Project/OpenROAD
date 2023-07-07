@@ -113,6 +113,7 @@ class SimulatedAnnealing
   // perturbation variables
   const float swap_pins_ = 0.5;
   const float move_groups_ = 0.2;
+  const int move_fail_ = -1;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
