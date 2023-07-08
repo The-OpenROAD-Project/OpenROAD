@@ -964,6 +964,15 @@ void FlexDRConnectivityChecker::splitPathSegs_commit(
       newPs->setLayerNum(highestPs->getLayerNum());
       frPathSeg* ptr = newPs.get();
       netRouteObjs.push_back(ptr);
+#pragma omp critical
+      {
+        if (save_updates_) {
+          drUpdate update(drUpdate::ADD_SHAPE);
+          update.setNet(highestPs->getNet());
+          update.setPathSeg(*newPs.get());
+          design_->addUpdate(update);
+        }
+      }
       highestPs->getNet()->addShape(std::move(newPs));
 #pragma omp critical
       getRegionQuery()->addDRObj(ptr);
