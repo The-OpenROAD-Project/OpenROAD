@@ -310,9 +310,7 @@ class InstanceGrid : public Grid
 class BumpGrid : public InstanceGrid
 {
  public:
-  BumpGrid(VoltageDomain* domain,
-           const std::string& name,
-           odb::dbInst* inst);
+  BumpGrid(VoltageDomain* domain, const std::string& name, odb::dbInst* inst);
 
   virtual bool isValid() const override;
 
