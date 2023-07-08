@@ -680,6 +680,12 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
                                                pair2.first->pin())));
        });
 
+  Instance *drvr_inst = db_network_->instance(drvr_pin);
+
+  if (!resizer_->isSingleOutputCombinational(drvr_inst)) {
+    return;
+  }
+
   Net *net = network_->net(drvr_pin);
   string buffer_name = resizer_->makeUniqueInstName("clone");
   Instance *parent = db_network_->topInstance();
@@ -688,7 +694,7 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   // We need to downsize the current driver AND we need to insert another drive
   // that splits the load
   // For now we will defer the downsize to a later juncture.
-  Instance *drvr_inst = db_network_->instance(drvr_pin);
+
   LibertyCell *original_cell = network_->libertyCell(drvr_inst);
   LibertyCell *clone_cell = resizer_->halfDrivingPowerCell(original_cell);
 
@@ -705,16 +711,7 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
                                  clone_inst);
   cloned_gate_count_++;
 
-  // inserted_buffer_count_++;
   Net *out_net = resizer_->makeUniqueNet();
-  // Split the loads with extra slack to an inserted buffer.
-  // before
-  // drvr_pin -> net -> load_pins
-  // after
-  // drvr_pin -> net -> load_pins with low slack
-  // clone_pin-> net2 -> rest of loads
-  // We can also downsize the driver (maybe).
-
   std::unique_ptr<InstancePinIterator> inst_pin_iter{network_->pinIterator(drvr_inst)};
   while (inst_pin_iter->hasNext()) {
     Pin *pin = inst_pin_iter->next();
