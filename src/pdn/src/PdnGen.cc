@@ -432,7 +432,8 @@ void PdnGen::makeInstanceGrid(
     const std::array<int, 4>& halo,
     bool pg_pins_to_boundary,
     bool default_grid,
-    const std::vector<odb::dbTechLayer*>& generate_obstructions)
+    const std::vector<odb::dbTechLayer*>& generate_obstructions,
+    bool is_bump)
 {
   auto* check_grid = instanceGrid(inst);
   if (check_grid != nullptr) {
@@ -463,8 +464,13 @@ void PdnGen::makeInstanceGrid(
     }
   }
 
-  auto grid = std::make_unique<InstanceGrid>(
-      domain, name, starts_with == POWER, inst, generate_obstructions);
+  std::unique_ptr<InstanceGrid> grid = nullptr;
+  if (is_bump) {
+    grid = std::make_unique<BumpGrid>(domain, name, inst);
+  } else {
+    grid = std::make_unique<InstanceGrid>(
+        domain, name, starts_with == POWER, inst, generate_obstructions);
+  }
   if (!std::all_of(halo.begin(), halo.end(), [](int v) { return v == 0; })) {
     grid->addHalo(halo);
   }
@@ -472,11 +478,7 @@ void PdnGen::makeInstanceGrid(
 
   grid->setReplaceable(default_grid);
 
-  if (grid->getNets(starts_with == POWER).empty()) {
-    logger_->warn(utl::PDN,
-                  231,
-                  "{} is not connected to any power/ground nets.",
-                  inst->getName());
+  if (!grid->isValid()) {
     return;
   }
 
