@@ -1514,7 +1514,6 @@ bool BumpGrid::isRouted() const
             return true;
           }
         }
-        continue;
       } else {
         auto* layer = sbox->getTechLayer();
 

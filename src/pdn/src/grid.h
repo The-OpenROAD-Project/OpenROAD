@@ -312,7 +312,7 @@ class BumpGrid : public InstanceGrid
  public:
   BumpGrid(VoltageDomain* domain, const std::string& name, odb::dbInst* inst);
 
-  virtual bool isValid() const override;
+  bool isValid() const override;
 
  private:
   bool isRouted() const;

@@ -1152,8 +1152,6 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
   odb::dbTechLayer* bump_pin_layer = get_other_layer(bump_accessvia_);
   odb::dbTechLayer* pad_pin_layer = get_other_layer(pad_accessvia_);
 
-  const double dbus = block_->getDbUnitsPerMicron();
-
   for (auto* iterm : net->getITerms()) {
     if (!iterm->getInst()->isPlaced()) {
       continue;
@@ -1220,6 +1218,7 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
              net->getName(),
              terms.size());
 
+  const double dbus = block_->getDbUnitsPerMicron();
   std::vector<TargetPair> pairs;
   if (terms.size() == 2) {
     const auto& [shape0, term0] = *terms.begin();
