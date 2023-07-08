@@ -47,7 +47,8 @@ pdn_aux.add_pdn_connect(design, layers=["metal5", "metal6"])
 pdn_aux.add_pdn_connect(design, layers=["metal6", "metal7"])
 
 pdn_aux.define_pdn_grid_macro(design, name="sram2",
-                              instances=["frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem"])
+                              instances=["frontend.icache.data_arrays_0.data_arrays_0_0_ext.mem"],
+                              is_bump=False)
 
 pdn_aux.add_pdn_stripe(design, layer="metal5", width=0.93, pitch=10.0, offset=2.0)
 pdn_aux.add_pdn_stripe(design, layer="metal6", width=0.93, pitch=10.0, offset=2.0)

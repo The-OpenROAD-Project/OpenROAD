@@ -37,6 +37,7 @@
 #include "connect.h"
 #include "domain.h"
 #include "odb/db.h"
+#include "odb/dbShape.h"
 #include "odb/dbTransform.h"
 #include "power_cells.h"
 #include "rings.h"
@@ -1444,6 +1445,94 @@ void InstanceGrid::report() const
   logger->report("  Bottom: {:.4f}", halos_[1] / units);
   logger->report("  Right: {:.4f}", halos_[2] / units);
   logger->report("  Top: {:.4f}", halos_[3] / units);
+}
+
+bool InstanceGrid::isValid() const
+{
+  if (getNets(startsWithPower()).empty()) {
+    getLogger()->warn(utl::PDN,
+                      231,
+                      "{} is not connected to any power/ground nets.",
+                      inst_->getName());
+    return false;
+  }
+  return true;
+}
+
+////////
+
+BumpGrid::BumpGrid(VoltageDomain* domain,
+                   const std::string& name,
+                   odb::dbInst* inst)
+    : InstanceGrid(domain, name, true, inst, {})
+{
+}
+
+bool BumpGrid::isValid() const
+{
+  if (!InstanceGrid::isValid()) {
+    return false;
+  }
+
+  const auto nets = getNets(startsWithPower());
+  const int net_count = nets.size();
+  if (net_count > 1) {
+    getLogger()->warn(utl::PAD,
+                      232,
+                      "Bump grid for {} is connected to {} power nets",
+                      getInstance()->getName(),
+                      net_count);
+    return false;
+  }
+
+  return !isRouted();
+}
+
+bool BumpGrid::isRouted() const
+{
+  odb::dbNet* net = *getNets(startsWithPower()).begin();
+
+  const auto pins = InstanceGrid::getInstancePins(getInstance());
+
+  for (auto* swire : net->getSWires()) {
+    for (auto* sbox : swire->getWires()) {
+      if (sbox->isVia()) {
+        std::vector<odb::dbShape> shapes;
+        sbox->getViaBoxes(shapes);
+        for (const auto& shape : shapes) {
+          auto* layer = shape.getTechLayer();
+
+          auto find_layer = pins.find(layer);
+          if (find_layer == pins.end()) {
+            continue;
+          }
+
+          const odb::Rect rect = shape.getBox();
+          const auto& layer_pins = find_layer->second;
+          if (layer_pins.qbegin(bgi::intersects(Shape::rectToBox(rect)))
+              != layer_pins.qend()) {
+            return true;
+          }
+        }
+      } else {
+        auto* layer = sbox->getTechLayer();
+
+        auto find_layer = pins.find(layer);
+        if (find_layer == pins.end()) {
+          continue;
+        }
+
+        const odb::Rect rect = sbox->getBox();
+        const auto& layer_pins = find_layer->second;
+        if (layer_pins.qbegin(bgi::intersects(Shape::rectToBox(rect)))
+            != layer_pins.qend()) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 ////////
