@@ -30,6 +30,7 @@
 
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "db/obj/frMarker.h"
