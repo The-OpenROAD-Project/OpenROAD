@@ -43,7 +43,7 @@ using namespace fr;
 
 string OUT_MAZE_FILE;
 string DRC_RPT_FILE;
-int DRC_RPT_ITER_STEP = 0;
+std::optional<int> DRC_RPT_ITER_STEP;
 string CMAP_FILE;
 string GUIDE_REPORT_FILE;
 

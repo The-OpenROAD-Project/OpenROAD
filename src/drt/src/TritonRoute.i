@@ -98,9 +98,13 @@ void detailed_route_cmd(const char* outputMazeFile,
                         int drcReportIterStep)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  std::optional<int> drcReportIterStepOpt;
+  if (drcReportIterStep > 0) {
+    drcReportIterStepOpt = drcReportIterStep;
+  }
   router->setParams({outputMazeFile,
                     outputDrcFile,
-                    drcReportIterStep,
+                    drcReportIterStepOpt,
                     outputCmapFile,
                     outputGuideCoverageFile,
                     dbProcessNode,

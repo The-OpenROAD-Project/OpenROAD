@@ -38,7 +38,7 @@
 extern std::string DBPROCESSNODE;
 extern std::string OUT_MAZE_FILE;
 extern std::string DRC_RPT_FILE;
-extern int DRC_RPT_ITER_STEP;
+extern std::optional<int> DRC_RPT_ITER_STEP;
 extern std::string CMAP_FILE;
 extern std::string GUIDE_REPORT_FILE;
 // to be removed
