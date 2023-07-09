@@ -75,6 +75,7 @@ struct ParamStruct
 {
   std::string outputMazeFile;
   std::string outputDrcFile;
+  int drcReportIterStep;
   std::string outputCmapFile;
   std::string outputGuideCoverageFile;
   std::string dbProcessNode;

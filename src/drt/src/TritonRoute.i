@@ -94,11 +94,13 @@ void detailed_route_cmd(const char* outputMazeFile,
                         bool singleStepDR,
                         int minAccessPoints,
                         bool saveGuideUpdates,
-                        const char* repairPDNLayerName)
+                        const char* repairPDNLayerName,
+                        int drcReportIterStep)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
   router->setParams({outputMazeFile,
                     outputDrcFile,
+                    drcReportIterStep,
                     outputCmapFile,
                     outputGuideCoverageFile,
                     dbProcessNode,
