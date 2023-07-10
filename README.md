@@ -12,7 +12,42 @@ semiconductor digital design. The OpenROAD flow delivers an
 Autonomous, No-Human-In-Loop (NHIL) flow, 24 hour turnaround from
 RTL-GDSII for rapid design exploration and physical design implementation.
 
-![rtl2gds.svg](./docs/images/rtl2gds.svg)
+```mermaid
+:align: center
+%%{
+  init: {
+    'theme': 'neutral',
+    'themeVariables': {
+      'textColor': '#000000',
+      'noteTextColor' : '#000000',
+      'fontSize': '20px'
+    }
+  }
+}%%
+flowchart TB
+    A[Verilog\n+ libraries\n + constraints] --> FLOW
+    style A fill:#74c2b5
+    subgraph FLOW
+    style FLOW fill:#FFFFFF00,stroke-width:4px
+
+    direction TB
+        B[Logic Synthesis]
+        B --> C[Floorplanning] 
+        C --> D[Placement & Optimization]
+        D --> E[CTS & Optimization]
+        E --> F[Global & Detailed Routing]
+        F --> G[Layout Finishing]
+        style B fill:#f8cecc,stroke:#000000,stroke-width:4px
+        style C fill:#fff2cc,stroke:#000000,stroke-width:4px
+        style D fill:#cce5ff,stroke:#000000,stroke-width:4px
+        style E fill:#67ab9f,stroke:#000000,stroke-width:4px
+        style F fill:#fa6800,stroke:#000000,stroke-width:4px
+        style G fill:#ff6666,stroke:#000000,stroke-width:4px
+    end
+
+    FLOW --> H[GDSII\n Final Layout]
+    style H fill:#ff0000,stroke:#000000,stroke-width:4px
+```
 
 Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
@@ -66,49 +101,35 @@ flow stages through Tcl commands and Python APIs.
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
 ```mermaid
+:align: center
 %%{
   init: {
     'theme': 'neutral',
     'themeVariables': {
       'textColor': '#000000',
       'noteTextColor' : '#000000',
-      'fontSize': '70px'
+      'fontSize': '20px'
     }
   }
 }%%
 
-flowchart LR
-    %% these are invisible boxes used to align boxes properly
-    classDef invisible_1 fill:#fff2cc,stroke-width:0px
-    classDef invisible_2 fill:#cce5ff,stroke-width:0px
-    classDef invisible_3 fill:#67ab9f,stroke-width:0px
-    classDef invisible_4 fill:#fa6800,stroke-width:0px
-    classDef invisible_5 fill:#ff6666,stroke-width:0px
-
+flowchart TB
     A[RTL-GDSII\n Using\n OpenROAD-flow-scripts] --> SYNTHESIS
     style A stroke:#000000,stroke-width:4px
-    SYNTHESIS --> FLOORPLAN; FLOORPLAN --> PLACEMENT; PLACEMENT --> CTS
-    CTS --> ROUTING; ROUTING -->FINISH
-
-    %% the basic idea for alignment is to add one column of empty boxes/
-    %% links with one extra level so that it allows for space for the 
-    %% main subgraph text
-
+    SYNTHESIS --> FLOORPLAN; 
+    %% FLOORPLAN --> PLACEMENT; PLACEMENT --> CTS
+    %%CTS --> ROUTING; ROUTING -->FINISH
     subgraph SYNTHESIS
     style SYNTHESIS fill:#f8cecc,stroke:#000,stroke-width:4px
-    direction LR
-    b11[ ];
-    style b11 fill:#f8c3cc,stroke-width:0px
-    B1(Tool:Yosys);  B2(Input files);  B3(Output files)
-    B2 --> RTL & SDC & .lib & B4(Mapping files, etc..)
-    B3 --> Netlist & B5(SDC)
+    direction TB
+    RTL & SDC & .lib & SYNTHESIS_2(Mapping files, etc..) --> SYNTHESIS_1(Yosys)
+    SYNTHESIS_1 --> Netlist & SYNTHESIS_5(SDC)
+    %%B1(Tool:Yosys);  B2(Input files);  B3(Output files)
+    %%B2 --> RTL & SDC & .lib & B4(Mapping files, etc..)
+    %%B3 --> Netlist & B5(SDC)
     end
-
     subgraph FLOORPLAN
-    %% use --- instead of --> to avoid arrowheads, which cant be made invisible
-    c11[ ] --- c12[ ] --- c13[ ] --- c14[ ] --- c15[ ]
-    c15 --- c16[ ] --- c17[ ] --- c18[ ] --- c19[ ] --- c20[ ]
-    class c11,c12,c13,c14,c15,c16,c17,c18,c19,c20 invisible_1
+    direction TB
     style FLOORPLAN fill:#fff2cc,stroke:#000000,stroke-width:4px
     C1("Import all necessary files\n (Netlist, SDC, etc...) and
             check initial timing report")
@@ -120,18 +141,12 @@ flowchart LR
     C6 --> C7("Tapcell and well tie insertion")
     C7 --> C8("PDN generation")
     C8 --> C9("Floorplan .odb and .sdc file generation")
-    c112[ ] --- c122[ ] --- c132[ ] --- c142[ ] --- c152[ ]
-    c152 --- c162[ ] --- c172[ ] --- c182[ ] --- c192[ ] --- c202[ ]
-    class c112,c122,c132,c142,c152,c162,c172,c182,c192,c202 invisible_1
-    %% change link color to be invisible
-    linkStyle 12,13,14,15,16,17,18,19,20 stroke-width:0px
-    linkStyle 29,30,31,32,33,34,35,36,37 stroke-width:0px
     end
 
+    FLOORPLAN--> PLACEMENT; PLACEMENT --> CTS; CTS --> ROUTING; ROUTING -->FINISH
     subgraph PLACEMENT
+    direction TB
     style PLACEMENT fill:#cce5ff,stroke:#000000,stroke-width:4px
-    d11[ ] --- d12[ ] --- d13[ ] --- d14[ ] --- d15[ ] --- d16[ ]
-    class d11,d12,d13,d14,d15,d16 invisible_2
     D1("Global placement without placed IOs
                 (Timing and routability-driven)")
     D1 --> D2("IO placement (non-random)")
@@ -139,51 +154,28 @@ flowchart LR
                 (Timing and routability-driven)")
     D3 --> D4("Resizing and buffering")
     D4 --> D5("Detailed placement")
-    d112[ ] --- d122[ ] --- d132[ ] --- d142[ ] --- d152[ ] --- d162[ ]
-    class d112,d122,d132,d142,d152,d162 invisible_2
-    linkStyle 38,39,40,41,42 stroke-width:0px
-    linkStyle 47,48,49,50,51 stroke-width:0px
     end
-
     subgraph CTS
+    direction TB
     style CTS fill:#67ab9f,stroke:#000000,stroke-width:4px
-    e11[ ] --- e12[ ] --- e13[ ] --- e14[ ]
-    class e11,e12,e13,e14 invisible_3
     E1("Clock Tree synthesis")
     E1 --> E2("Timing optimization")
     E2 --> E3("Filler cell insertion")
-    e112[ ] --- e122[ ] --- e132[ ] --- e142[ ]
-    class e112,e122,e132,e142 invisible_3
-    linkStyle 52,53,54 stroke-width:0px
-    linkStyle 57,58,59 stroke-width:0px
     end
-
     subgraph ROUTING
+    direction TB
     style ROUTING fill:#fa6800,stroke:#000000,stroke-width:4px
-    f11[ ] --- f12[ ] --- f13[ ]
-    class f11,f12,f13 invisible_4
     F1("Global routing")
     F1 --> F2("Detailed routing")
-    f112[ ] --- f122[ ] --- f132[ ]
-    class f112,f122,f132 invisible_4
-    linkStyle 60,61 stroke-width:0px
-    linkStyle 63,64 stroke-width:0px
     end
-
     subgraph FINISH
+    direction TB
     style FINISH fill:#ff6666,stroke:#000000,stroke-width:4px
-    g11[ ] --- g12[ ] --- g13[ ] --- g14[ ] --- g15[ ]
-    class g11,g12,g13,g14,g15 invisible_5
     G1("Generate GDSII Tool:\n KLayout")
     G1 --> G2("Metal Fill Insertion")
     G2 --> G3("Signoff timing report")
     G3 --> G4("DRC/LVS check\n Tool: Klayout")
-    g112[ ] --- g122[ ] --- g132[ ] --- g142[ ] --- g152[ ]
-    class g112,g122,g132,g142,g152 invisible_5
-    linkStyle 65,66,67,68 stroke-width:0px
-    linkStyle 72,73,74,75 stroke-width:0px
     end
-
 ```
 
 Here are the main steps for a physical design implementation
