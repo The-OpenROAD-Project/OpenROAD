@@ -168,19 +168,15 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
     bool debug = (drvr_pin == resizer_->debug_pin_);
     if (debug)
       logger_->setDebugLevel(RSZ, "repair_net", 3);
-
-    if (net != nullptr) {
-      // skip if there is no net
-      if (net && !resizer_->dontTouch(net) && !sta_->isClock(drvr_pin)
-	  // Exclude tie hi/low cells and supply nets.
-	  && !drvr->isConstant()) {
-	repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
-		  repaired_net_count, slew_violations, cap_violations,
-		  fanout_violations, length_violations);
-      }
-      if (debug) {
-	logger_->setDebugLevel(RSZ, "repair_net", 0);
-      }
+    if (net && !resizer_->dontTouch(net) && !sta_->isClock(drvr_pin)
+        // Exclude tie hi/low cells and supply nets.
+        && !drvr->isConstant()) {
+      repairNet(net, drvr_pin, drvr, true, true, true, max_length, true,
+                repaired_net_count, slew_violations, cap_violations,
+                fanout_violations, length_violations);
+    }
+    if (debug) {
+      logger_->setDebugLevel(RSZ, "repair_net", 0);
     }
   }
   resizer_->updateParasitics();
@@ -1056,7 +1052,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
       }
 
     }
-    if (repeater_loads.size() >= max_fanout / 2) {
+    if (repeater_loads.size() > 0 && repeater_loads.size() >= max_fanout / 2) {
       makeFanoutRepeater(repeater_loads, repeater_inputs, region.bbox_,
                          findClosedPinLoc(drvr_pin, repeater_loads),
                          check_slew, check_cap, max_length, resize_drvr);
