@@ -34,8 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
-
-#include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 
 #include "sta/Corner.hh"
@@ -65,7 +63,6 @@ using std::string;
 using std::vector;
 using std::map;
 using std::pair;
-
 using utl::RSZ;
 
 using sta::VertexOutEdgeIterator;
@@ -641,6 +638,27 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
   return nullptr;
 }
 
+Point RepairSetup::computeCloneGateLocation(const Pin *drvr_pin,
+                              const vector<pair<Vertex*, Slack>> &fanout_slacks)
+{
+  int count(1); // driver_pin counts as one
+  int centroid_x(0), centroid_y(0); // (0, 0)
+
+  centroid_x += db_network_->location(drvr_pin).getX();
+  centroid_y += db_network_->location(drvr_pin).getY();
+
+  int split_index = fanout_slacks.size() / 2;
+  for (int i = 0; i < split_index; i++) {
+    pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
+    Vertex *load_vertex = fanout_slack.first;
+    Pin *load_pin = load_vertex->pin();
+    centroid_x += db_network_->location(load_pin).getX();
+    centroid_y += db_network_->location(load_pin).getY();
+    ++count;
+  }
+  return (Point(centroid_x/count, centroid_y/count));
+}
+
 void
 RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
                          Slack drvr_slack, PathExpanded *expanded)
@@ -701,10 +719,8 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   if (clone_cell == nullptr) {
     clone_cell = original_cell; // no clone available use original
   }
-  // TODO This location can be optimized as the centroid of all the pins we
-  // are connecting to the output of the buffer and the input pins of the gate
-  Point drvr_loc = db_network_->location(drvr_pin);
 
+  Point drvr_loc = computeCloneGateLocation(drvr_pin, fanout_slacks);
   Instance *clone_inst = resizer_->makeInstance(clone_cell, buffer_name.c_str(),
                                                 parent, drvr_loc);
   resizer_->cloned_gates_.insert(network_->instance(drvr_pin),

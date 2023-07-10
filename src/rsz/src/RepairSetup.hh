@@ -34,13 +34,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-
-#include "utl/Logger.h"
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-
-#include "sta/StaState.hh"
-#include "sta/MinMax.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/MinMax.hh"
+#include "sta/StaState.hh"
+#include "utl/Logger.h"
 
 namespace sta {
 class PathExpanded;
@@ -51,7 +50,8 @@ namespace rsz {
 class Resizer;
 
 using std::vector;
-
+using std::pair;
+using odb::Point;
 using utl::Logger;
 
 using sta::StaState;
@@ -111,6 +111,8 @@ private:
                   int drvr_index,
                   PathExpanded *expanded,
                   bool only_same_size_swap);
+  Point computeCloneGateLocation(const Pin *drvr_pin,
+                                 const vector<pair<Vertex*, Slack>> &fanout_slacks);
   void cloneDriver(PathRef* drvr_path, int drvr_index,
                    Slack drvr_slack, PathExpanded *expanded);
   void splitLoads(PathRef *drvr_path,
