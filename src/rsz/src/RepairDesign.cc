@@ -1052,7 +1052,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
       }
 
     }
-    if (repeater_loads.size() > 0 && repeater_loads.size() >= max_fanout / 2) {
+    if (!repeater_loads.empty() && repeater_loads.size() >= max_fanout / 2) {
       makeFanoutRepeater(repeater_loads, repeater_inputs, region.bbox_,
                          findClosedPinLoc(drvr_pin, repeater_loads),
                          check_slew, check_cap, max_length, resize_drvr);
