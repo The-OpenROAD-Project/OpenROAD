@@ -307,7 +307,7 @@ int SimulatedAnnealing::movePinToFreeSlot(std::vector<int>& prev_slots,
 
   bool free_slot = false;
   int new_slot;
-  distribution = std::uniform_int_distribution<int> (0, num_slots_ - 1);
+  distribution = std::uniform_int_distribution<int>(0, num_slots_ - 1);
   while (!free_slot) {
     new_slot = distribution(generator_);
     free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
