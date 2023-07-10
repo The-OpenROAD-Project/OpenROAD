@@ -1210,6 +1210,15 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
                    layer_->getName());
   }
 
+  debugPrint(logger_,
+             utl::PAD,
+             "Router",
+             1,
+             "{} has {} terminals",
+             net->getName(),
+             terms.size());
+
+  const double dbus = block_->getDbUnitsPerMicron();
   std::vector<TargetPair> pairs;
   if (terms.size() == 2) {
     const auto& [shape0, term0] = *terms.begin();
@@ -1230,10 +1239,25 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
         continue;
       }
 
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Router",
+                 2,
+                 "Finding routing pair for {}/{} ({})",
+                 iterm0.first->getInst()->getName(),
+                 iterm0.first->getMTerm()->getName(),
+                 iterm0.first->getNet()->getName());
+
       odb::dbITerm* find_terminal = nullptr;
       auto check_routing_map = routing_map_.find(iterm0.first);
       if (check_routing_map != routing_map_.end()) {
         find_terminal = check_routing_map->second;
+
+        if (find_terminal == nullptr) {
+          // do not route this bump
+          used.insert(shape0);
+          continue;
+        }
       }
 
       int64_t dist = std::numeric_limits<int64_t>::max();
@@ -1258,6 +1282,17 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
 
         const odb::Point pt1(shape1.xCenter(), shape1.yCenter());
         const int64_t new_dist = distance(pt0, pt1);
+
+        debugPrint(logger_,
+                   utl::PAD,
+                   "Router",
+                   2,
+                   "  {}/{} ({}): {:.4f}um",
+                   iterm1.first->getInst()->getName(),
+                   iterm1.first->getMTerm()->getName(),
+                   iterm1.first->getNet()->getName(),
+                   new_dist / dbus);
+
         if (new_dist < dist) {
           dist = new_dist;
           shape = shape1;

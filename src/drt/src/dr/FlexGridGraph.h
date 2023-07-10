@@ -372,6 +372,9 @@ class FlexGridGraph
     return sol;
   }
   // setters
+  void setTech(frTechObject* techIn) { tech_ = techIn; }
+  void setLogger(Logger* loggerIn) { logger_ = loggerIn; }
+  void setWorker(FlexDRWorker* workerIn) { drWorker_ = workerIn; }
   bool addEdge(frMIdx x,
                frMIdx y,
                frMIdx z,

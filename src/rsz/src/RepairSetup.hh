@@ -111,6 +111,8 @@ private:
                   int drvr_index,
                   PathExpanded *expanded,
                   bool only_same_size_swap);
+  void cloneDriver(PathRef* drvr_path, int drvr_index,
+                   Slack drvr_slack, PathExpanded *expanded);
   void splitLoads(PathRef *drvr_path,
                   int drvr_index,
                   Slack drvr_slack,

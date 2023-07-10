@@ -528,6 +528,46 @@ assign_io_bump -net VDD BUMP_12_0
 assign_io_bump -net VDD BUMP_12_0
 assign_io_bump -net DVSS BUMP_16_16
 
+assign_io_bump -net DVSS BUMP_5_5 -dont_route
+assign_io_bump -net DVSS BUMP_5_6 -dont_route
+assign_io_bump -net DVSS BUMP_5_7 -dont_route
+assign_io_bump -net DVSS BUMP_6_5 -dont_route
+assign_io_bump -net DVSS BUMP_6_6 -dont_route
+assign_io_bump -net DVSS BUMP_6_7 -dont_route
+assign_io_bump -net DVSS BUMP_7_5 -dont_route
+assign_io_bump -net DVSS BUMP_7_6 -dont_route
+assign_io_bump -net DVSS BUMP_7_7 -dont_route
+
+assign_io_bump -net DVDD BUMP_5_9 -dont_route
+assign_io_bump -net DVDD BUMP_5_10 -dont_route
+assign_io_bump -net DVDD BUMP_5_11 -dont_route
+assign_io_bump -net DVDD BUMP_6_9 -dont_route
+assign_io_bump -net DVDD BUMP_6_10 -dont_route
+assign_io_bump -net DVDD BUMP_6_11 -dont_route
+assign_io_bump -net DVDD BUMP_7_9 -dont_route
+assign_io_bump -net DVDD BUMP_7_10 -dont_route
+assign_io_bump -net DVDD BUMP_7_11 -dont_route
+
+assign_io_bump -net VSS BUMP_9_5 -dont_route
+assign_io_bump -net VSS BUMP_9_6 -dont_route
+assign_io_bump -net VSS BUMP_9_7 -dont_route
+assign_io_bump -net VSS BUMP_10_5 -dont_route
+assign_io_bump -net VSS BUMP_10_6 -dont_route
+assign_io_bump -net VSS BUMP_10_7 -dont_route
+assign_io_bump -net VSS BUMP_11_5 -dont_route
+assign_io_bump -net VSS BUMP_11_6 -dont_route
+assign_io_bump -net VSS BUMP_11_7 -dont_route
+
+assign_io_bump -net VDD BUMP_9_9 -dont_route
+assign_io_bump -net VDD BUMP_9_10 -dont_route
+assign_io_bump -net VDD BUMP_9_11 -dont_route
+assign_io_bump -net VDD BUMP_10_9 -dont_route
+assign_io_bump -net VDD BUMP_10_10 -dont_route
+assign_io_bump -net VDD BUMP_10_11 -dont_route
+assign_io_bump -net VDD BUMP_11_9 -dont_route
+assign_io_bump -net VDD BUMP_11_10 -dont_route
+assign_io_bump -net VDD BUMP_11_11 -dont_route
+
 set def_file [make_result_file "assign_bumps.def"]
 write_def $def_file
 diff_files $def_file "assign_bumps.defok"

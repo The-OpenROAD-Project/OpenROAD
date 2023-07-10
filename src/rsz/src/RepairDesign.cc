@@ -1022,8 +1022,8 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
                                   int max_length,
                                   bool resize_drvr)
 {
-  // Leaf regionrants have less than max_fanout pins and are buffered
-  // by the enclosing regionrant.
+  // Leaf regions have less than max_fanout pins and are buffered
+  // by the enclosing region.
   if (!region.regions_.empty()) {
     // Buffer from the bottom up.
     for (LoadRegion &sub : region.regions_)
