@@ -10,7 +10,8 @@ This is a compilation of many idioms in OpenROAD code that are considered undesi
 
 ### Practice #1
 
-Don't comment out code. `git` provides a complete history of
+Don't comment out code, instead remove it.
+`git` provides a complete history of
 the code if you want to look backwards. Huge chunks of commented-out
 code make it difficult to read.
 
@@ -410,9 +411,9 @@ Don't nest namespaces.
 
 ### Practice #28
 
-Avoid `using namespace`. It is just asking for conflicts
+Avoid `using namespace`. It increases the likelihood of conflicts
 and doesn't explicity declare what in the namespace is being used. Use
-`using namespace::symbol;` instead. And especially not `using namespace std`. 
+`using namespace::symbol;` instead. And especially do not use `using namespace std`. 
 
 The following is especially confused because it is trying to "use" the
 symbols in code that are already in the MacroPlace namespace.

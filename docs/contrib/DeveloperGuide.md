@@ -106,7 +106,7 @@ tool. Each tool has (at a minimum) a function to make an instance of the
 tool class, an initialization function that is called after all of
 the tools have been made, and a function to delete the tool. This small
 header does **not** include the class definition for the tool so that
-OAOAOAthe OpenROAD framework does not have to know anything about the tool
+the OpenROAD framework does not have to know anything about the tool
 internals or include a gigantic header file.
 
 `MakeTool.hh` defines the following:
@@ -132,7 +132,7 @@ OpenSTA has Tcl utilities to parse keyword arguments
 examples. Use swig to define internal functions to C++ functionality.
 
 Tcl files can be included by encoding them in CMake into a string that
-is evaluated at run time (See [`Resizer::init()`](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/rsz/src/Resizer.cc)).
+is evaluated at run time (See [`Resizer::init()`](../main/src/rsz/src/Resizer.cc)).
 
 ## Errors
 
@@ -188,7 +188,7 @@ read_liberty Nangate45/Nangate45_typ.lib
 
 ## Building
 
-Instructions for building are available [here](https://openroad-flow-scripts.readthedocs.io/en/latest/user/BuildLocally.html).
+Instructions for building are available [here](../user/Build.md).
 
 ## Example of Adding a Tool to OpenROAD
 
@@ -211,7 +211,7 @@ illustrated below:
 Helping 23/6
 Gotta positional_argument1 foo
 Gotta param1 0.000000
-[OGotta flag1 false
+Gotta flag1 false
 
 > toolize -flag1 -key1 2.0 bar
 Helping 23/6
@@ -232,29 +232,29 @@ file. Detailed documentation should be the `tool/README.md` file.
 
 Tool namespaces are usually three-lettered lowercase letters. 
 
-- Verilog to DB ([dbSTA](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dbSta))
-- OpenDB: Open Database ([odb](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/odb))
-- TritonPart: constraints-driven paritioner ([par](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/par))
-- Floorplan Initialization ([ifp](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ifp))
-- ICeWall chip-level connections ([pad](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pad))
-- I/O Placement ([ppl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/ppl))
-- PDN Generation ([pdn](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/pdn))
-- Tapcell and Welltie Insertion ([tap](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/tap))
-- Triton Macro Placer ([mpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/mpl))
-- Hierarchical Automatic Macro Placer ([mpl2](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/mpl2))
-- RePlAce Global Placer ([gpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gpl))
-- Gate resizing and buffering ([rsz](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/rsz))
-- Detailed placement ([dpl](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dpl))
-- Clock tree synthesis ([cts](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/cts))
-- FastRoute Global routing ([grt](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/grt))
-- Antenna check and diode insertion ([ant](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/amt))
-- TritonRoute Detailed routing ([drt](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/drt))
-- Metal fill insertion ([fin](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/fin))
-- Design for Test ([dst](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/dst))
-- OpenRCX Parasitic Extraction ([rcx](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/rcx))
-- OpenSTA timing/power report ([sta](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/sta))
-- Graphical User Interface ([gui](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/gui))
-- Static IR analyser ([psm](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/psm))
+- Verilog to DB ([dbSTA](../main/src/dbSta/README.md))
+- OpenDB: Open Database ([odb](../main/src/odb/README.md))
+- TritonPart: constraints-driven paritioner ([par](../main/src/par/README.md))
+- Floorplan Initialization ([ifp](../main/src/ifp/README.md))
+- ICeWall chip-level connections ([pad](../main/src/pad/README.md))
+- I/O Placement ([ppl](../main/src/ppl/README.md))
+- PDN Generation ([pdn](../main/src/pdn/README.md))
+- Tapcell and Welltie Insertion ([tap](../main/src/tap/README.md))
+- Triton Macro Placer ([mpl](../main/src/mpl/README.md))
+- Hierarchical Automatic Macro Placer ([mpl2](../main/src/mpl2/README.md))
+- RePlAce Global Placer ([gpl](../main/src/gpl/README.md))
+- Gate resizing and buffering ([rsz](../main/src/rsz/README.md))
+- Detailed placement ([dpl](../main/src/dpl/README.md))
+- Clock tree synthesis ([cts](../main/src/cts/README.md))
+- FastRoute Global routing ([grt](../main/src/grt/README.md))
+- Antenna check and diode insertion ([ant](../main/src/ant/README.md))
+- TritonRoute Detailed routing ([drt](../main/src/drt/README.md))
+- Metal fill insertion ([fin](../main/src/fin/README.md))
+- Design for Test ([dst](../main/src/dst/README.md))
+- OpenRCX Parasitic Extraction ([rcx](../main/src/rcx/README.md))
+- OpenSTA timing/power report ([sta](../main/src/sta/README.md))
+- Graphical User Interface ([gui](../main/src/gui/README.md))
+- Static IR analyser ([psm](../main/src/psm/README.md))
 
 ## Tool Checklist
 
