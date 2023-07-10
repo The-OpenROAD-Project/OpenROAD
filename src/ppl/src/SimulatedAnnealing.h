@@ -61,7 +61,9 @@ class SimulatedAnnealing
   void run(float init_temperature,
            int max_iterations,
            int perturb_per_iter,
-           float alpha);
+           float alpha,
+           bool debug_mode,
+           int stop_after);
   void getAssignment(std::vector<IOPin>& assignment);
 
  private:

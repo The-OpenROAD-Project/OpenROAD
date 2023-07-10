@@ -161,7 +161,8 @@ class IOPlacer
   void setAnnealingConfig(float temperature,
                           int max_iterations,
                           int perturb_per_iter,
-                          float alpha);
+                          float alpha);                    
+  void setAnnealingDebugConfig(int iters_between_paintings);
 
  private:
   void createTopLayerPinPattern();
@@ -294,6 +295,10 @@ class IOPlacer
   int max_iterations_ = 0;
   int perturb_per_iter_ = 0;
   float alpha_ = 0;
+
+  // simulated annealing debugger variables
+  bool debug_mode_ = false;
+  int iters_between_paintings_ = 0;
 
   // db variables
   odb::dbDatabase* db_ = nullptr;

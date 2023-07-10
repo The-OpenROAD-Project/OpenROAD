@@ -1879,6 +1879,12 @@ void IOPlacer::setAnnealingConfig(float temperature,
   alpha_ = alpha;
 }
 
+void IOPlacer::setAnnealingDebugConfig(int iters_between_paintings)
+{
+  debug_mode_ = true;
+  iters_between_paintings_ = iters_between_paintings;
+}
+
 void IOPlacer::runAnnealing()
 {
   initParms();
@@ -1894,7 +1900,7 @@ void IOPlacer::runAnnealing()
 
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), slots_, logger_, db_);
-  annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
+  annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_, debug_mode_, iters_between_paintings_);
   annealing.getAssignment(assignment_);
 
   for (auto& pin : assignment_) {

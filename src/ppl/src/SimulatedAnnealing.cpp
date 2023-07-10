@@ -59,8 +59,11 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
 void SimulatedAnnealing::run(float init_temperature,
                              int max_iterations,
                              int perturb_per_iter,
-                             float alpha)
+                             float alpha,
+                             bool debug_mode,
+                             int iters_between_paintings)
 {
+  std::cout << "Print annealing state each " << iters_between_paintings << " iterations \n";
   init(init_temperature, max_iterations, perturb_per_iter, alpha);
   randomAssignment();
   int64 pre_cost = 0;
@@ -105,8 +108,21 @@ void SimulatedAnnealing::run(float init_temperature,
         restorePreviousAssignment(prev_slots, pins);
       }
     }
-
+    
     temperature *= alpha_;
+
+    if (debug_mode == true) {
+      if (iter % iters_between_paintings == 0) {
+      std::cout << "Number of Iterations: " << iter << "\n";
+      std::vector<ppl::IOPin> pins;
+      getAssignment(pins);
+      for (auto pin : pins) {
+        odb::Point pin_position = pin.getPosition();
+        std::cout << "#" << count << " X = " << pin_position.getX() << " Y = " << pin_position.getY() << "\n";
+        count++;
+      }
+      }
+    }
   }
 }
 

@@ -323,6 +323,12 @@ set_simulated_annealing(float temperature,
 }
 
 void
+set_simulated_annealing_debugger(int iters_between_paintings)
+{
+  getIOPlacer()->setAnnealingDebugConfig(iters_between_paintings);
+}
+
+void
 run_annealing()
 {
   getIOPlacer()->runAnnealing();
