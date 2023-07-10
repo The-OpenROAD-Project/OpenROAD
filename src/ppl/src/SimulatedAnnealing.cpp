@@ -187,8 +187,10 @@ int SimulatedAnnealing::randomAssignmentForGroups(
       pin_assignment_[pin_idx] = group_slot;
       slots_[group_slot].used = true;
       group_slot++;
-      slot_idx++;
       placed_pins.insert(pin_idx);
+    }
+    while (slots_[slot_idx].used) {
+      slot_idx++;
     }
   }
 
