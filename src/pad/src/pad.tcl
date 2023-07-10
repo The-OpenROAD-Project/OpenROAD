@@ -96,12 +96,13 @@ proc remove_io_bump {args} {
 
 sta::define_cmd_args "assign_io_bump" {-net net \
                                        [-terminal terminal] \
+                                       [-dont_route] \
                                        inst}
 
 proc assign_io_bump {args} {
   sta::parse_key_args "assign_io_bump" args \
     keys {-net -terminal} \
-    flags {}
+    flags {-dont_route}
   
   sta::check_argc_eq1 "assign_io_bump" $args
 
@@ -114,11 +115,17 @@ proc assign_io_bump {args} {
     }
   }
 
+  set dont_route [info exists flags(-dont_route)]
+  if { $dont_route && $terminal != "NULL" } {
+    utl::error PAD 114 "-dont_route and -terminal cannot be used together"
+  }
+
   pad::assert_required assign_io_bump -net
   pad::assign_net_to_bump \
     [pad::find_instance [lindex $args 0]] \
     [pad::find_net $keys(-net)] \
-    $terminal
+    $terminal \
+    $dont_route
 }
 
 #####

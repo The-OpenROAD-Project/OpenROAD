@@ -177,7 +177,8 @@ void ICeWall::makeBTerm(odb::dbNet* net,
 
 void ICeWall::assignBump(odb::dbInst* inst,
                          odb::dbNet* net,
-                         odb::dbITerm* terminal)
+                         odb::dbITerm* terminal,
+                         bool dont_route)
 {
   if (inst == nullptr) {
     logger_->error(
@@ -225,6 +226,9 @@ void ICeWall::assignBump(odb::dbInst* inst,
       }
       routing_map_[iterm] = terminal;
       terminal = nullptr;
+    }
+    if (dont_route) {
+      routing_map_[iterm] = nullptr;
     }
 
     for (auto* mpin : iterm->getMTerm()->getMPins()) {

@@ -277,6 +277,8 @@ class InstanceGrid : public Grid
   void setReplaceable(bool replaceable) { replaceable_ = replaceable; }
   bool isReplaceable() const override { return replaceable_; }
 
+  virtual bool isValid() const;
+
   static ShapeTreeMap getInstanceObstructions(odb::dbInst* inst,
                                               const Halo& halo = {0, 0, 0, 0});
   static ShapeTreeMap getInstancePins(odb::dbInst* inst);
@@ -303,6 +305,17 @@ class InstanceGrid : public Grid
                              bool rect_is_min,
                              bool apply_horizontal,
                              bool apply_vertical);
+};
+
+class BumpGrid : public InstanceGrid
+{
+ public:
+  BumpGrid(VoltageDomain* domain, const std::string& name, odb::dbInst* inst);
+
+  bool isValid() const override;
+
+ private:
+  bool isRouted() const;
 };
 
 class ExistingGrid : public Grid

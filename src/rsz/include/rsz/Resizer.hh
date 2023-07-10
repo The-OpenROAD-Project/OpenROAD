@@ -352,6 +352,21 @@ protected:
   void findBuffers();
   bool isLinkCell(LibertyCell *cell);
   void findTargetLoads();
+
+  //==============================
+  // APIs for gate cloning
+  LibertyCell* halfDrivingPowerCell(Instance* inst);
+  LibertyCell* halfDrivingPowerCell(LibertyCell* cell);
+  LibertyCell* closestDriver(LibertyCell* cell, LibertyCellSeq *candidates,
+                             float scale);
+  std::vector<sta::LibertyPort*> libraryPins(Instance* inst) const;
+  std::vector<sta::LibertyPort*> libraryPins(LibertyCell* cell) const;
+  bool isSingleOutputCombinational(Instance* inst) const;
+  bool isSingleOutputCombinational(LibertyCell* cell) const;
+  bool isCombinational(LibertyCell* cell) const;
+  std::vector<sta::LibertyPort *> libraryOutputPins(LibertyCell* cell) const;
+  float maxLoad(Cell* cell);
+  //==============================
   float findTargetLoad(LibertyCell *cell);
   float findTargetLoad(LibertyCell *cell,
                        TimingArc *arc,
