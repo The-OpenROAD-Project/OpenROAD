@@ -67,11 +67,11 @@ void SimulatedAnnealing::run(float init_temperature,
   pre_cost = getAssignmentCost();
   float temperature = init_temperature_;
 
+  std::vector<int> prev_slots;
+  std::vector<int> new_slots;
+  std::vector<int> pins;
   for (int iter = 0; iter < max_iterations_; iter++) {
     for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
-      std::vector<int> prev_slots;
-      std::vector<int> new_slots;
-      std::vector<int> pins;
       int prev_cost;
       perturbAssignment(prev_slots, new_slots, pins, prev_cost);
 
@@ -104,6 +104,9 @@ void SimulatedAnnealing::run(float init_temperature,
       } else {
         restorePreviousAssignment(prev_slots, pins);
       }
+      prev_slots.clear();
+      new_slots.clear();
+      pins.clear();
     }
 
     temperature *= alpha_;
