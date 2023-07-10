@@ -107,7 +107,6 @@ class SimulatedAnnealing
   int perturb_per_iter_ = 0;
   float alpha_ = 0.985;
   std::mt19937 generator_;
-  std::uniform_real_distribution<float> distribution_;
 
   // perturbation variables
   const float swap_pins_ = 0.5;
