@@ -980,7 +980,7 @@ void IOPlacer::assignConstrainedGroupsToSections(Constraint& constraint,
   }
 }
 
-bool IOPlacer::groupHasMirroredPin(std::vector<int>& group)
+bool IOPlacer::groupHasMirroredPin(const std::vector<int>& group)
 {
   for (int pin_idx : group) {
     IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
