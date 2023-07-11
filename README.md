@@ -13,7 +13,6 @@ Autonomous, No-Human-In-Loop (NHIL) flow, 24 hour turnaround from
 RTL-GDSII for rapid design exploration and physical design implementation.
 
 ```mermaid
-:align: center
 %%{
   init: {
     'theme': 'neutral',
@@ -101,7 +100,6 @@ flow stages through Tcl commands and Python APIs.
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
 ```mermaid
-:align: center
 %%{
   init: {
     'theme': 'neutral',
