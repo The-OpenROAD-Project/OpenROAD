@@ -36,6 +36,8 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <random>
 
 #include "Netlist.h"
@@ -90,6 +92,7 @@ class SimulatedAnnealing
   void restorePreviousAssignment(const std::vector<int>& prev_slots,
                                  const std::vector<int>& pins);
   double dbuToMicrons(int64_t dbu);
+  bool isFreeForGroup(int slot_idx, int group_size);
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
@@ -107,8 +110,7 @@ class SimulatedAnnealing
   int max_iterations_ = 2000;
   int perturb_per_iter_ = 0;
   float alpha_ = 0.985;
-  std::mt19937 generator_;
-  std::uniform_real_distribution<float> distribution_;
+  boost::random::mt19937 generator_;
 
   // perturbation variables
   const float swap_pins_ = 0.5;
