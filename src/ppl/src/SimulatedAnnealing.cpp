@@ -184,7 +184,7 @@ int SimulatedAnnealing::randomAssignmentForGroups(
     const std::vector<int>& slot_indices)
 {
   int slot_idx = 0;
-  for (const auto& group : pin_groups_) {    
+  for (const auto& group : pin_groups_) {
     while (!isFreeForGroup(slot_indices[slot_idx], group.pin_indices.size())) {
       slot_idx++;
     }
@@ -197,6 +197,7 @@ int SimulatedAnnealing::randomAssignmentForGroups(
       group_slot++;
       placed_pins.insert(pin_idx);
     }
+    slot_idx++;
   }
 
   return slot_idx;
