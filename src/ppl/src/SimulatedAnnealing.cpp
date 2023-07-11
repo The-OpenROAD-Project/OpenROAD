@@ -319,7 +319,8 @@ int SimulatedAnnealing::movePinToFreeSlot(std::vector<int>& prev_slots,
 
   bool free_slot = false;
   int new_slot;
-  distribution = boost::random::uniform_int_distribution<int>(0, num_slots_ - 1);
+  distribution
+      = boost::random::uniform_int_distribution<int>(0, num_slots_ - 1);
   while (!free_slot) {
     new_slot = distribution(generator_);
     free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
@@ -352,7 +353,8 @@ int SimulatedAnnealing::moveGroupToFreeSlots(std::vector<int>& prev_slots,
   // infinite loop in cases where there are not available contiguous slots
   int iter = 0;
   int max_iters = num_slots_ * 10;
-  distribution = boost::random::uniform_int_distribution<int>(0, num_slots_ - 1);
+  distribution
+      = boost::random::uniform_int_distribution<int>(0, num_slots_ - 1);
   while ((!free_slot || !same_edge_slot) && iter < max_iters) {
     new_slot = distribution(generator_);
     if ((new_slot + pins.size() >= num_slots_ - 1)) {
