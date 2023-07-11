@@ -189,7 +189,7 @@ class PdnGen
 
   void repairVias(const std::set<odb::dbNet*>& nets);
 
-  void PdnGen::createSrouteWires(const char* net,
+  void createSrouteWires(const char* net,
                                const char* outerNet,
                                 Grid* grid,
                               odb::dbTechLayer* layer0,
@@ -205,7 +205,7 @@ class PdnGen
                               const std::string& dont_use_vias,
                               int hDX, int hDY, int vDX, int vDY, int stripDY, std::vector<int> metalWidths, std::vector<int> metalspaces);
 
-  void PdnGen::addSrouteInst(const char* inst, const char* iterm, int hDX, int hDY, int vDX, int vDY);
+  void addSrouteInst(const char* inst, const char* iterm, int hDX, int hDY, int vDX, int vDY);
 
  private:
   void trimShapes();
