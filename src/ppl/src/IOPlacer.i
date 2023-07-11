@@ -36,6 +36,7 @@
 %{
 #include "ppl/IOPlacer.h"
 #include "ord/OpenRoad.hh"
+#include "IOPlacerRenderer.h"
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -323,8 +324,11 @@ set_simulated_annealing(float temperature,
 }
 
 void
-set_simulated_annealing_debugger(int iters_between_paintings)
+simulated_annealing_debug(int iters_between_paintings)
 {
+  if (!gui::Gui::enabled()) {
+    return;
+  }
   getIOPlacer()->setAnnealingDebugConfig(iters_between_paintings);
 }
 

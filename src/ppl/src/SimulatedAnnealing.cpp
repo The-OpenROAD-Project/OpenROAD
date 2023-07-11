@@ -112,15 +112,19 @@ void SimulatedAnnealing::run(float init_temperature,
     temperature *= alpha_;
 
     if (debug_mode == true) {
-      if (iter % iters_between_paintings == 0) {
-      std::cout << "Number of Iterations: " << iter << "\n";
+      if ((iter+1) % iters_between_paintings == 0) {
+      std::cout << "Number of Iterations: " << iter+1 << "\n";
       std::vector<ppl::IOPin> pins;
       getAssignment(pins);
+      int count = 1;
       for (auto pin : pins) {
         odb::Point pin_position = pin.getPosition();
-        std::cout << "#" << count << " X = " << pin_position.getX() << " Y = " << pin_position.getY() << "\n";
+        std::cout << "#" << count
+                  << " X = " << pin_position.getX() 
+                  << " Y = " << pin_position.getY() 
+                  << "\n";
         count++;
-      }
+        }
       }
     }
   }

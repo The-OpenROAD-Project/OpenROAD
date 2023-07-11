@@ -336,11 +336,11 @@ proc set_simulated_annealing { args } {
   ppl::set_simulated_annealing $temperature $max_iterations $perturb_per_iter $alpha
 }
 
-sta::define_cmd_args "set_simulated_annealing_debugger" {[-iters_between_paintings iters]
+sta::define_cmd_args "simulated_annealing_debug" {[-iters_between_paintings iters]
 }
 
-proc set_simulated_annealing_debugger { args } {
-  sta::parse_key_args "set_simulated_annealing_debugger" args \
+proc simulated_annealing_debug { args } {
+  sta::parse_key_args "simulated_annealing_debug" args \
   keys {-iters_between_paintings}
 
   if [info exists keys(-iters_between_paintings)] {
@@ -348,7 +348,7 @@ proc set_simulated_annealing_debugger { args } {
     sta::check_positive_int "-iters_between_paintings" $iters
   }
 
-  ppl::set_simulated_annealing_debugger $iters
+  ppl::simulated_annealing_debug $iters
 }
 
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\

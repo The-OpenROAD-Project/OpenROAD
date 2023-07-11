@@ -70,6 +70,7 @@ target_link_libraries(ppl
     OpenSTA
     odb
     utl
+    gui
 )
                       
 messages(

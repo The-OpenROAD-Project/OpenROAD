@@ -63,7 +63,7 @@ class SimulatedAnnealing
            int perturb_per_iter,
            float alpha,
            bool debug_mode,
-           int stop_after);
+           int iters_between_paintings);
   void getAssignment(std::vector<IOPin>& assignment);
 
  private:
