@@ -113,7 +113,7 @@ private:
                   bool only_same_size_swap);
   Point computeCloneGateLocation(const Pin *drvr_pin,
                                  const vector<pair<Vertex*, Slack>> &fanout_slacks);
-  void cloneDriver(PathRef* drvr_path, int drvr_index,
+  bool cloneDriver(PathRef* drvr_path, int drvr_index,
                    Slack drvr_slack, PathExpanded *expanded);
   void splitLoads(PathRef *drvr_path,
                   int drvr_index,
