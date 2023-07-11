@@ -104,7 +104,7 @@ proc detailed_route { args } {
     if { [info exists keys(-drc_report_iter_step)] } {
       set drc_report_iter_step $keys(-drc_report_iter_step)
     } else {
-      set drc_report_iter_step 1
+      set drc_report_iter_step 0
     }
     if { [info exists keys(-output_cmap)] } {
       set output_cmap $keys(-output_cmap)
