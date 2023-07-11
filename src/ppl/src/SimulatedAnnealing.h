@@ -41,6 +41,8 @@
 #include "Netlist.h"
 #include "Slots.h"
 #include "odb/geom.h"
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include "ppl/IOPlacer.h"
 
 namespace utl {
@@ -108,7 +110,7 @@ class SimulatedAnnealing
   int max_iterations_ = 2000;
   int perturb_per_iter_ = 0;
   float alpha_ = 0.985;
-  std::mt19937 generator_;
+  boost::random::mt19937 generator_;
 
   // perturbation variables
   const float swap_pins_ = 0.5;
