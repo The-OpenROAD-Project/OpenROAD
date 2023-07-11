@@ -205,7 +205,7 @@ void make_ring(const char* grid_name,
 void add_sroute_inst(const char* inst, const char* iterm, int hDX, int hDY, int vDX, int vDY)
   {
     PdnGen* pdngen = ord::getPdnGen();
-    pdngen->addSrouteInst(inst, iterm);
+    pdngen->addSrouteInst(inst, iterm, hDX, hDY, vDX, vDY);
   }
 
   void createSrouteWires(
