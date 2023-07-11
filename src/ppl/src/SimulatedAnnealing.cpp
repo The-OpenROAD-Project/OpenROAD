@@ -75,7 +75,7 @@ void SimulatedAnnealing::run(float init_temperature,
   std::vector<int> prev_slots;
   std::vector<int> new_slots;
   std::vector<int> pins;
-  std::uniform_real_distribution<float> distribution;
+  boost::random::uniform_real_distribution<float> distribution;
   for (int iter = 0; iter < max_iterations_; iter++) {
     for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
       int prev_cost;
@@ -249,7 +249,7 @@ void SimulatedAnnealing::perturbAssignment(std::vector<int>& prev_slots,
                                            std::vector<int>& pins,
                                            int& prev_cost)
 {
-  std::uniform_real_distribution<float> distribution;
+  boost::random::uniform_real_distribution<float> distribution;
   const float move = distribution(generator_);
 
   // to perform pin swapping, at least two pins that are not inside a group are
