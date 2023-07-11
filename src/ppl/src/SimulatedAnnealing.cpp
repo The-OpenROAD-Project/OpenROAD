@@ -54,6 +54,11 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
   num_pins_ = netlist->numIOPins();
   num_groups_ = pin_groups_.size();
   perturb_per_iter_ = static_cast<int>(num_pins_ * 0.8);
+  int pins_in_groups = 0;
+  for (const auto& group : pin_groups_) {
+    pins_in_groups += group.pin_indices.size();
+  }
+  lone_pins_ = num_pins_ - pins_in_groups;
 }
 
 void SimulatedAnnealing::run(float init_temperature,
@@ -246,13 +251,19 @@ void SimulatedAnnealing::perturbAssignment(std::vector<int>& prev_slots,
   std::uniform_real_distribution<float> distribution;
   const float move = distribution(generator_);
 
-  if (move < swap_pins_) {
+  // to perform pin swapping, at least two pins that are not inside a group are
+  // necessary
+  if (move < swap_pins_ && lone_pins_ > 1) {
     prev_cost = swapPins(pins);
   } else {
     if (!pin_groups_.empty()) {
       const float pin_or_group = distribution(generator_);
       if (pin_or_group <= move_groups_) {
         prev_cost = moveGroupToFreeSlots(prev_slots, new_slots, pins);
+        // move single pin when moving a group is not possible
+        if (prev_cost == move_fail_) {
+          prev_cost = movePinToFreeSlot(prev_slots, new_slots, pins);
+        }
       } else {
         prev_cost = movePinToFreeSlot(prev_slots, new_slots, pins);
       }
@@ -333,16 +344,45 @@ int SimulatedAnnealing::moveGroupToFreeSlots(std::vector<int>& prev_slots,
   }
   pins = group.pin_indices;
 
+  bool free_slot = false;
+  bool same_edge_slot = false;
+  int new_slot;
+  // add max number of iterations to find available slots for group to avoid
+  // infinite loop in cases where there are not available contiguous slots
+  int iter = 0;
+  int max_iters = num_slots_ * 10;
   distribution = std::uniform_int_distribution<int>(0, num_slots_ - 1);
-  int new_slot = distribution(generator_);
-  while (!isFreeForGroup(new_slot, pins.size())) {  
+  while ((!free_slot || !same_edge_slot) && iter < max_iters) {
     new_slot = distribution(generator_);
+    if ((new_slot + pins.size() >= num_slots_ - 1)) {
+      continue;
+    }
+
+    int slot = new_slot;
+    const Edge& edge = slots_[slot].edge;
+    for (int i = 0; i < group.pin_indices.size(); i++) {
+      free_slot = slots_[slot].isAvailable();
+      same_edge_slot = slots_[slot].edge == edge;
+      if (!free_slot || !same_edge_slot) {
+        break;
+      }
+
+      slot++;
+    }
+    iter++;
   }
 
-  for (int pin_idx : group.pin_indices) {
-    pin_assignment_[pin_idx] = new_slot;
-    new_slots.push_back(new_slot);
-    new_slot++;
+  if (free_slot && same_edge_slot) {
+    for (int pin_idx : group.pin_indices) {
+      pin_assignment_[pin_idx] = new_slot;
+      new_slots.push_back(new_slot);
+      new_slot++;
+    }
+  } else {
+    prev_slots.clear();
+    new_slots.clear();
+    pins.clear();
+    return move_fail_;
   }
 
   return prev_cost;

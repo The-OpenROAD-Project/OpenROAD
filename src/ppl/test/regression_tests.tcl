@@ -40,6 +40,7 @@ record_tests {
   group_pins8
   group_pins9
   group_pins10
+  group_pins_error1
   group_pins_warn1
   invalid_layer
   large_groups1
