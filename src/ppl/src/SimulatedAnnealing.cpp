@@ -179,8 +179,11 @@ int SimulatedAnnealing::randomAssignmentForGroups(
     const std::vector<int>& slot_indices)
 {
   int slot_idx = 0;
+  for (const auto& group : pin_groups_) {    
+    while (!isFreeForGroup(slot_indices[slot_idx], group.pin_indices.size())) {
+      slot_idx++;
+    }
 
-  for (const auto& group : pin_groups_) {
     const auto pin_list = group.pin_indices;
     int group_slot = slot_indices[slot_idx];
     for (const auto& pin_idx : pin_list) {
@@ -188,9 +191,6 @@ int SimulatedAnnealing::randomAssignmentForGroups(
       slots_[group_slot].used = true;
       group_slot++;
       placed_pins.insert(pin_idx);
-    }
-    while (slots_[slot_idx].used) {
-      slot_idx++;
     }
   }
 
@@ -333,24 +333,10 @@ int SimulatedAnnealing::moveGroupToFreeSlots(std::vector<int>& prev_slots,
   }
   pins = group.pin_indices;
 
-  bool free_slot = false;
-  int new_slot;
   distribution = std::uniform_int_distribution<int>(0, num_slots_ - 1);
-  while (!free_slot) {
+  int new_slot = distribution(generator_);
+  while (!isFreeForGroup(new_slot, pins.size())) {  
     new_slot = distribution(generator_);
-    if ((new_slot + pins.size() >= num_slots_ - 1)) {
-      continue;
-    }
-
-    int slot = new_slot;
-    for (int i = 0; i < group.pin_indices.size(); i++) {
-      free_slot = slots_[slot].isAvailable();
-      if (!free_slot) {
-        break;
-      }
-
-      slot++;
-    }
   }
 
   for (int pin_idx : group.pin_indices) {
@@ -384,6 +370,28 @@ void SimulatedAnnealing::restorePreviousAssignment(
 double SimulatedAnnealing::dbuToMicrons(int64_t dbu)
 {
   return (double) dbu / (db_->getChip()->getBlock()->getDbUnitsPerMicron());
+}
+
+bool SimulatedAnnealing::isFreeForGroup(int slot_idx, int group_size)
+{
+  bool free_slot = false;
+  while (!free_slot) {
+    if ((slot_idx + group_size >= num_slots_ - 1)) {
+      break;
+    }
+
+    int slot = slot_idx;
+    for (int i = 0; i < group_size; i++) {
+      free_slot = slots_[slot].isAvailable();
+      if (!free_slot) {
+        break;
+      }
+
+      slot++;
+    }
+  }
+
+  return free_slot;
 }
 
 }  // namespace ppl

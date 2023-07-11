@@ -90,6 +90,7 @@ class SimulatedAnnealing
   void restorePreviousAssignment(const std::vector<int>& prev_slots,
                                  const std::vector<int>& pins);
   double dbuToMicrons(int64_t dbu);
+  bool isFreeForGroup(int slot_idx, int group_size);
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
