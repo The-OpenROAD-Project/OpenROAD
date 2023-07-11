@@ -573,8 +573,10 @@ void IOPlacer::initIOLists()
     idx++;
   }
 
+  int group_idx = 0;
   for (const auto& [pins, order] : pin_groups_) {
-    netlist_io_pins_->createIOGroup(pins, order);
+    netlist_io_pins_->createIOGroup(pins, order, group_idx);
+    group_idx++;
   }
 }
 
@@ -2463,11 +2465,13 @@ void IOPlacer::initNetlist()
     netlist_->addIONet(io_pin, inst_pins);
   }
 
+  int group_idx = 0;
   for (const auto& [pins, order] : pin_groups_) {
-    int group_created = netlist_->createIOGroup(pins, order);
+    int group_created = netlist_->createIOGroup(pins, order, group_idx);
     if (group_created != pins.size()) {
       logger_->error(PPL, 94, "Cannot create group of size {}.", pins.size());
     }
+    group_idx++;
   }
 }
 

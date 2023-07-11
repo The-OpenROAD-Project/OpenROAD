@@ -96,6 +96,7 @@ class IOPin
         upper_bound_(upper_bound),
         placement_status_(placement_status),
         layer_(-1),
+        group_idx_(-1),
         is_placed_(false),
         in_group_(false),
         assigned_to_section_(false),
@@ -119,6 +120,7 @@ class IOPin
     upper_bound_ = odb::Point(x, y);
   };
   void setLayer(const int layer) { layer_ = layer; }
+  void setGroupIdx(const int group_idx) { group_idx_ = group_idx; }
   std::string getName() const { return bterm_->getName(); }
   odb::Point getPos() const { return pos_; }
   int getX() const { return pos_.getX(); }
@@ -134,6 +136,7 @@ class IOPin
   };
   odb::dbBTerm* getBTerm() const { return bterm_; }
   int getLayer() const { return layer_; }
+  int getGroupIdx() const { return group_idx_; }
   bool isPlaced() const { return is_placed_; }
   void setPlaced() { is_placed_ = true; }
   bool isInGroup() const { return in_group_; }
@@ -154,6 +157,7 @@ class IOPin
   odb::Point upper_bound_;
   odb::dbPlacementStatus placement_status_;
   int layer_;
+  int group_idx_;
   bool is_placed_;
   bool in_group_;
   bool assigned_to_section_;
@@ -167,7 +171,9 @@ class Netlist
   Netlist();
 
   void addIONet(const IOPin& io_pin, const std::vector<InstancePin>& inst_pins);
-  int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list, bool order);
+  int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
+                    bool order,
+                    const int group_idx);
   void addIOGroup(const std::vector<int>& pin_group, bool order);
   const std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<PinGroupByIndex>& io_groups)
