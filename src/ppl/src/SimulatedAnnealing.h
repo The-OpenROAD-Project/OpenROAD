@@ -86,7 +86,8 @@ class SimulatedAnnealing
   int movePinToFreeSlot(std::vector<int>& prev_slot,
                         std::vector<int>& new_slot,
                         std::vector<int>& pin);
-  int moveGroupToFreeSlots(std::vector<int>& prev_slots,
+  int moveGroupToFreeSlots(const int group_idx,
+                           std::vector<int>& prev_slots,
                            std::vector<int>& new_slots,
                            std::vector<int>& pins);
   void restorePreviousAssignment(const std::vector<int>& prev_slots,
@@ -114,7 +115,6 @@ class SimulatedAnnealing
 
   // perturbation variables
   const float swap_pins_ = 0.5;
-  const float move_groups_ = 0.2;
   const int move_fail_ = -1;
 
   Logger* logger_ = nullptr;
