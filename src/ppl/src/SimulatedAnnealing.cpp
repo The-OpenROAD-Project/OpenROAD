@@ -281,6 +281,12 @@ int SimulatedAnnealing::swapPins(std::vector<int>& pins)
   pins.push_back(pin1);
   pins.push_back(pin2);
 
+  int prev_slot1 = pin_assignment_[pin1];
+  prev_slots_.push_back(prev_slot1);
+  
+  int prev_slot2 = pin_assignment_[pin2];
+  prev_slots_.push_back(prev_slot2);
+
   int prev_cost = getPinCost(pin1) + getPinCost(pin2);
 
   std::swap(pin_assignment_[pin1], pin_assignment_[pin2]);
@@ -383,11 +389,6 @@ void SimulatedAnnealing::restorePreviousAssignment(const std::vector<int>& pins)
       pin_assignment_[pin] = prev_slots_[cnt];
       cnt++;
     }
-  } else if (pins.size() == 2) {
-    // undo pin swapping
-    int pin1 = pins[0];
-    int pin2 = pins[1];
-    std::swap(pin_assignment_[pin1], pin_assignment_[pin2]);
   }
 }
 
