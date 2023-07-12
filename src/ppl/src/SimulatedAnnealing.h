@@ -36,6 +36,8 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <random>
 
 #include "Netlist.h"
@@ -90,6 +92,7 @@ class SimulatedAnnealing
   void restorePreviousAssignment(const std::vector<int>& prev_slots,
                                  const std::vector<int>& pins);
   double dbuToMicrons(int64_t dbu);
+  bool isFreeForGroup(int slot_idx, int group_size);
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
@@ -100,18 +103,19 @@ class SimulatedAnnealing
   int num_slots_;
   int num_pins_;
   int num_groups_;
+  int lone_pins_;
 
   // annealing variables
   float init_temperature_ = 1.0;
   int max_iterations_ = 2000;
   int perturb_per_iter_ = 0;
   float alpha_ = 0.985;
-  std::mt19937 generator_;
-  std::uniform_real_distribution<float> distribution_;
+  boost::random::mt19937 generator_;
 
   // perturbation variables
   const float swap_pins_ = 0.5;
   const float move_groups_ = 0.2;
+  const int move_fail_ = -1;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;

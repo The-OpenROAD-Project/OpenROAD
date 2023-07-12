@@ -204,6 +204,7 @@ class IOPlacer
   void initConstraints(bool annealing = false);
   void sortConstraints();
   void checkPinsInMultipleConstraints();
+  void checkPinsInMultipleGroups();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
@@ -221,7 +222,7 @@ class IOPlacer
                                          std::vector<Section>& sections,
                                          int& mirrored_pins_cnt,
                                          bool mirrored_only);
-  bool groupHasMirroredPin(std::vector<int>& group);
+  bool groupHasMirroredPin(const std::vector<int>& group);
   int assignGroupToSection(const std::vector<int>& io_group,
                            std::vector<Section>& sections,
                            bool order);
