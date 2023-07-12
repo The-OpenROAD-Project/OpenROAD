@@ -169,7 +169,7 @@ class Netlist
   void addIONet(const IOPin& io_pin, const std::vector<InstancePin>& inst_pins);
   int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list, bool order);
   void addIOGroup(const std::vector<int>& pin_group, bool order);
-  std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
+  const std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<PinGroupByIndex>& io_groups)
   {
     io_groups_ = io_groups;

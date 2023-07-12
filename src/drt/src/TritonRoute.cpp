@@ -1221,6 +1221,7 @@ void TritonRoute::setParams(const ParamStruct& params)
 {
   OUT_MAZE_FILE = params.outputMazeFile;
   DRC_RPT_FILE = params.outputDrcFile;
+  DRC_RPT_ITER_STEP = params.drcReportIterStep;
   CMAP_FILE = params.outputCmapFile;
   GUIDE_REPORT_FILE = params.outputGuideCoverageFile;
   VERBOSE = params.verbose;
