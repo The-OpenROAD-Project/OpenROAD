@@ -384,6 +384,10 @@ class LayoutViewer : public QWidget
   // dbu)
   qreal pixels_per_dbu_;
 
+  // holds a value in dbu added to the block bounds to ensure pin markers'
+  // texts don't leave the scroll area
+  const int marker_text_offset_ = 15000;
+
   // holds the resolution for drawing the layout where the whole layout fits in
   // the window (units are pixels / dbu)
   qreal fit_pixels_per_dbu_;

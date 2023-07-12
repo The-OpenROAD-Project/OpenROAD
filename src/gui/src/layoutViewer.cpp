@@ -247,7 +247,10 @@ Rect LayoutViewer::getBounds() const
 
   Rect die = block_->getDieArea();
 
-  Rect visible(0, 0, die.xMax(), die.yMax());
+  Rect visible(-marker_text_offset_,
+               -marker_text_offset_,
+               die.xMax() + marker_text_offset_,
+               die.yMax() + marker_text_offset_);
 
   bbox.merge(visible);
 
@@ -1212,9 +1215,13 @@ void LayoutViewer::updateScaleAndCentering(const QSize& new_size)
     // the offset necessary to center the block in the viewport.
     // expand area to fill whole scroller window
     const QSize new_area = new_size.expandedTo(scroller_->size());
-    centering_shift_
-        = QPoint((new_area.width() - block_bounds.dx() * pixels_per_dbu_) / 2,
-                 (new_area.height() + block_bounds.dy() * pixels_per_dbu_) / 2);
+    centering_shift_ = QPoint(
+        (new_area.width()
+         - (block_bounds.dx() - marker_text_offset_ * 2) * pixels_per_dbu_)
+            / 2,
+        (new_area.height()
+         + (block_bounds.dy() - marker_text_offset_ * 2) * pixels_per_dbu_)
+            / 2);
 
     fullRepaint();
   }
