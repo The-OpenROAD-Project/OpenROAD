@@ -1898,6 +1898,7 @@ void IOPlacer::run(bool random_mode)
     reportHPWL();
   }
 
+  checkPinPlacement();
   commitIOPlacementToDB(assignment_);
   clear();
 }
@@ -1938,8 +1939,43 @@ void IOPlacer::runAnnealing()
 
   reportHPWL();
 
+  checkPinPlacement();
   commitIOPlacementToDB(assignment_);
   clear();
+}
+
+void IOPlacer::checkPinPlacement()
+{
+  bool invalid = false;
+  std::map<int, std::vector<odb::Point>> layer_positions_map;
+
+  for (const IOPin& pin : netlist_io_pins_->getIOPins()) {
+    int layer = pin.getLayer();
+
+    if (layer_positions_map[layer].empty()) {
+      layer_positions_map[layer].push_back(pin.getPosition());
+    } else {
+      odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+      for (odb::Point& pos : layer_positions_map[layer]) {
+        if (pos == pin.getPosition()) {
+          logger_->warn(
+              PPL,
+              106,
+              "At least 2 pins in position ({}, {}), layer {}, port {}.",
+              pos.x(),
+              pos.y(),
+              tech_layer->getName(),
+              pin.getName().c_str());
+          invalid = true;
+        }
+      }
+      layer_positions_map[layer].push_back(pin.getPosition());
+    }
+  }
+
+  if (invalid) {
+    logger_->error(PPL, 107, "Invalid pin placement.");
+  }
 }
 
 void IOPlacer::reportHPWL()
