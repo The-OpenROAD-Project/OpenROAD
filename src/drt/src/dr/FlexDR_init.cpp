@@ -3297,6 +3297,10 @@ void FlexDRWorker::initMarkers(const frDesign* design)
 void FlexDRWorker::init(const frDesign* design)
 {
   initNets(design);
+  if (nets_.empty() && getRipupMode() == 1) {
+    skipRouting_ = true;
+    return;
+  }
   initGridGraph(design);
   initMazeIdx();
   std::unique_ptr<FlexGCWorker> gcWorker

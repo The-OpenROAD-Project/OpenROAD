@@ -445,7 +445,11 @@ class FlexDRWorker
   bool end(frDesign* design);
 
   Logger* getLogger() { return logger_; }
-  void setLogger(Logger* logger) { logger_ = logger; }
+  void setLogger(Logger* logger)
+  {
+    logger_ = logger;
+    gridGraph_.setLogger(logger);
+  }
 
   static std::unique_ptr<FlexDRWorker> load(const std::string& file_name,
                                             utl::Logger* logger,

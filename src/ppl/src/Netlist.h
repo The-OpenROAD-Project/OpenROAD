@@ -169,12 +169,8 @@ class Netlist
   void addIONet(const IOPin& io_pin, const std::vector<InstancePin>& inst_pins);
   int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list, bool order);
   void addIOGroup(const std::vector<int>& pin_group, bool order);
-  std::vector<std::pair<std::vector<int>, bool>>& getIOGroups()
-  {
-    return io_groups_;
-  }
-  void setIOGroups(
-      const std::vector<std::pair<std::vector<int>, bool>>& io_groups)
+  const std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
+  void setIOGroups(const std::vector<PinGroupByIndex>& io_groups)
   {
     io_groups_ = io_groups;
   }
@@ -195,7 +191,7 @@ class Netlist
   std::vector<InstancePin> inst_pins_;
   std::vector<int> net_pointer_;
   std::vector<IOPin> io_pins_;
-  std::vector<std::pair<std::vector<int>, bool>> io_groups_;
+  std::vector<PinGroupByIndex> io_groups_;
   std::map<odb::dbBTerm*, int> _db_pin_idx_map;
 };
 

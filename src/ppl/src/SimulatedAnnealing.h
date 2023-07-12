@@ -36,6 +36,8 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <random>
 
 #include "Netlist.h"
@@ -58,46 +60,62 @@ class SimulatedAnnealing
                      Logger* logger,
                      odb::dbDatabase* db);
   ~SimulatedAnnealing() = default;
-  void run();
+  void run(float init_temperature,
+           int max_iterations,
+           int perturb_per_iter,
+           float alpha);
   void getAssignment(std::vector<IOPin>& assignment);
 
  private:
-  void init();
+  void init(float init_temperature,
+            int max_iterations,
+            int perturb_per_iter,
+            float alpha);
   void randomAssignment();
+  int randomAssignmentForGroups(std::set<int>& placed_pins,
+                                const std::vector<int>& slot_indices);
   int64 getAssignmentCost();
-  int getDeltaCost(int prev_cost, int pin1, int pin2);
+  int getDeltaCost(int prev_cost, const std::vector<int>& pins);
   int getPinCost(int pin_idx);
-  void perturbAssignment(int& prev_slot,
-                         int& new_slot,
-                         int& pin1,
-                         int& pin2,
+  int64 getGroupCost(int group_idx);
+  void perturbAssignment(std::vector<int>& prev_slots,
+                         std::vector<int>& new_slots,
+                         std::vector<int>& pins,
                          int& prev_cost);
-  int swapPins(int& pin1, int& pin2);
-  int movePinToFreeSlot(int& prev_slot, int& new_slot, int& pin);
-  void restorePreviousAssignment(int prev_slot,
-                                 int new_slot,
-                                 int pin1,
-                                 int pin2);
+  int swapPins(std::vector<int>& pins);
+  int movePinToFreeSlot(std::vector<int>& prev_slot,
+                        std::vector<int>& new_slot,
+                        std::vector<int>& pin);
+  int moveGroupToFreeSlots(std::vector<int>& prev_slots,
+                           std::vector<int>& new_slots,
+                           std::vector<int>& pins);
+  void restorePreviousAssignment(const std::vector<int>& prev_slots,
+                                 const std::vector<int>& pins);
   double dbuToMicrons(int64_t dbu);
+  bool isFreeForGroup(int slot_idx, int group_size);
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
   std::vector<int> slot_indices_;
   Netlist* netlist_;
   std::vector<Slot>& slots_;
+  const std::vector<PinGroupByIndex>& pin_groups_;
   int num_slots_;
   int num_pins_;
+  int num_groups_;
+  int lone_pins_;
 
   // annealing variables
   float init_temperature_ = 1.0;
   int max_iterations_ = 2000;
   int perturb_per_iter_ = 0;
   float alpha_ = 0.985;
-  std::mt19937 generator_;
-  std::uniform_real_distribution<float> distribution_;
+  boost::random::mt19937 generator_;
 
   // perturbation variables
   const float swap_pins_ = 0.5;
+  const float move_groups_ = 0.2;
+  const int move_fail_ = -1;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
