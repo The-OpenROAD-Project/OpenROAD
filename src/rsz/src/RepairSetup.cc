@@ -34,8 +34,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "RepairSetup.hh"
-
-#include "db_sta/dbNetwork.hh"
 #include "rsz/Resizer.hh"
 
 #include "sta/Corner.hh"
@@ -65,7 +63,6 @@ using std::string;
 using std::vector;
 using std::map;
 using std::pair;
-
 using utl::RSZ;
 
 using sta::VertexOutEdgeIterator;
@@ -409,8 +406,8 @@ RepairSetup::repairSetup(PathRef &path,
       // Gate cloning
       if (enable_gate_cloning && fanout > split_load_min_fanout_ &&
           !tristate_drvr &&
-          !resizer_->dontTouch(net)) {
-          cloneDriver(drvr_path, drvr_index, path_slack, &expanded);
+          !resizer_->dontTouch(net) &&
+          cloneDriver(drvr_path, drvr_index, path_slack, &expanded)) {
           changed = true;
           break;
       }
@@ -641,7 +638,28 @@ RepairSetup::upsizeCell(LibertyPort *in_port,
   return nullptr;
 }
 
-void
+Point RepairSetup::computeCloneGateLocation(const Pin *drvr_pin,
+                              const vector<pair<Vertex*, Slack>> &fanout_slacks)
+{
+  int count(1); // driver_pin counts as one
+  int centroid_x(0), centroid_y(0); // (0, 0)
+
+  centroid_x += db_network_->location(drvr_pin).getX();
+  centroid_y += db_network_->location(drvr_pin).getY();
+
+  int split_index = fanout_slacks.size() / 2;
+  for (int i = 0; i < split_index; i++) {
+    pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
+    Vertex *load_vertex = fanout_slack.first;
+    Pin *load_pin = load_vertex->pin();
+    centroid_x += db_network_->location(load_pin).getX();
+    centroid_y += db_network_->location(load_pin).getY();
+    ++count;
+  }
+  return (Point(centroid_x/count, centroid_y/count));
+}
+
+bool
 RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
                          Slack drvr_slack, PathExpanded *expanded)
 {
@@ -683,10 +701,9 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   Instance *drvr_inst = db_network_->instance(drvr_pin);
 
   if (!resizer_->isSingleOutputCombinational(drvr_inst)) {
-    return;
+    return false;
   }
 
-  Net *net = network_->net(drvr_pin);
   string buffer_name = resizer_->makeUniqueInstName("clone");
   Instance *parent = db_network_->topInstance();
 
@@ -699,49 +716,45 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   LibertyCell *clone_cell = resizer_->halfDrivingPowerCell(original_cell);
 
   if (clone_cell == nullptr) {
-    clone_cell = original_cell; // no clone available use original
+    clone_cell = original_cell;  // no clone available use original
   }
-  // TODO This location can be optimized as the centroid of all the pins we
-  // are connecting to the output of the buffer and the input pins of the gate
-  Point drvr_loc = db_network_->location(drvr_pin);
 
+  Point drvr_loc = computeCloneGateLocation(drvr_pin, fanout_slacks);
   Instance *clone_inst = resizer_->makeInstance(clone_cell, buffer_name.c_str(),
                                                 parent, drvr_loc);
-  resizer_->cloned_gates_.insert(network_->instance(drvr_pin),
-                                 clone_inst);
-  cloned_gate_count_++;
 
+  resizer_->cloned_gates_.insert(network_->instance(drvr_pin), clone_inst);
+  cloned_gate_count_++;
   Net *out_net = resizer_->makeUniqueNet();
   std::unique_ptr<InstancePinIterator> inst_pin_iter{network_->pinIterator(drvr_inst)};
   while (inst_pin_iter->hasNext()) {
     Pin *pin = inst_pin_iter->next();
     if (network_->direction(pin)->isInput()) {
       // Connect to all the inputs of the original cell.
-      auto port = network_->port(pin);
+      auto libPort = network_->libertyPort(pin); // get the liberty port of the original inst/pin
       auto net = network_->net(pin);
-      sta_->connectPin(clone_inst, port, net);
+      sta_->connectPin(clone_inst, libPort, net); // connect the same liberty port of the new instance
       resizer_->parasiticsInvalid(net);
     }
   }
-  // Connect to the new output net we just created
-  auto *clone_output_port = network_->port(drvr_pin);
-  sta_->connectPin(clone_inst, clone_output_port, out_net);
 
   // Get the output pin
-  Pin *clone_output_pin = nullptr;
+  Pin* clone_output_pin = nullptr;
   std::unique_ptr<InstancePinIterator> clone_pin_iter{network_->pinIterator(clone_inst)};
   while (clone_pin_iter->hasNext()) {
-    Pin *pin = clone_pin_iter->next();
+    Pin* pin = clone_pin_iter->next();
     // If output pin then cache for later use.
     if (network_->direction(pin)->isOutput()) {
       clone_output_pin = pin;
-        break;
+      break;
     }
   }
+  // Connect to the new output net we just created
+  auto *clone_output_port = network_->port(clone_output_pin);
+  sta_->connectPin(clone_inst, clone_output_port, out_net);
 
   // Divide the list of pins in half and connect them to the new net we
-  // created as part of gate cloning. Skip ports connected to the original
-  // net
+  // created as part of gate cloning. Skip ports connected to the original net
   int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
@@ -749,17 +762,18 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
     Pin *load_pin = load_vertex->pin();
     // Leave ports connected to original net so verilog port names are preserved.
     if (!network_->isTopLevelPort(load_pin)) {
-      LibertyPort *load_port = network_->libertyPort(load_pin);
+      auto *load_port = network_->port(load_pin);
       Instance *load = network_->instance(load_pin);
       sta_->disconnectPin(load_pin);
       sta_->connectPin(load, load_port, out_net);
     }
   }
+ 
   // here we can resize both the original driver and the clone
   resize_count_ += resizer_->resizeToTargetSlew(clone_output_pin);
   resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
-  resizer_->parasiticsInvalid(net);
   resizer_->parasiticsInvalid(out_net);
+  return true;
 }
 
 void
