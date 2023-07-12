@@ -72,14 +72,12 @@ void SimulatedAnnealing::run(float init_temperature,
   pre_cost = getAssignmentCost();
   float temperature = init_temperature_;
 
-  std::vector<int> prev_slots;
-  std::vector<int> new_slots;
   std::vector<int> pins;
   boost::random::uniform_real_distribution<float> distribution;
   for (int iter = 0; iter < max_iterations_; iter++) {
     for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
       int prev_cost;
-      perturbAssignment(prev_slots, new_slots, pins, prev_cost);
+      perturbAssignment(pins, prev_cost);
 
       const int64 cost = pre_cost + getDeltaCost(prev_cost, pins);
       const int delta_cost = cost - pre_cost;
@@ -99,19 +97,19 @@ void SimulatedAnnealing::run(float init_temperature,
       if (delta_cost <= 0 || accept_prob > rand_float) {
         // accept new solution, update cost and slots
         pre_cost = cost;
-        if (!prev_slots.empty() && !new_slots.empty()) {
-          for (int i = 0; i < prev_slots.size(); i++) {
-            int prev_slot = prev_slots[i];
-            int new_slot = new_slots[i];
+        if (!prev_slots_.empty() && !new_slots_.empty()) {
+          for (int i = 0; i < prev_slots_.size(); i++) {
+            int prev_slot = prev_slots_[i];
+            int new_slot = new_slots_[i];
             slots_[prev_slot].used = false;
             slots_[new_slot].used = true;
           }
         }
       } else {
-        restorePreviousAssignment(prev_slots, pins);
+        restorePreviousAssignment(pins);
       }
-      prev_slots.clear();
-      new_slots.clear();
+      prev_slots_.clear();
+      new_slots_.clear();
       pins.clear();
     }
 
@@ -244,9 +242,7 @@ int64 SimulatedAnnealing::getGroupCost(int group_idx)
   return cost;
 }
 
-void SimulatedAnnealing::perturbAssignment(std::vector<int>& prev_slots,
-                                           std::vector<int>& new_slots,
-                                           std::vector<int>& pins,
+void SimulatedAnnealing::perturbAssignment(std::vector<int>& pins,
                                            int& prev_cost)
 {
   boost::random::uniform_real_distribution<float> distribution;
@@ -257,10 +253,10 @@ void SimulatedAnnealing::perturbAssignment(std::vector<int>& prev_slots,
   if (move < swap_pins_ && lone_pins_ > 1) {
     prev_cost = swapPins(pins);
   } else {
-    prev_cost = movePinToFreeSlot(prev_slots, new_slots, pins);
+    prev_cost = movePinToFreeSlot(pins);
     // move single pin when moving a group is not possible
     if (prev_cost == move_fail_) {
-      prev_cost = movePinToFreeSlot(prev_slots, new_slots, pins);
+      prev_cost = movePinToFreeSlot(pins);
     }
   }
 }
@@ -292,23 +288,20 @@ int SimulatedAnnealing::swapPins(std::vector<int>& pins)
   return prev_cost;
 }
 
-int SimulatedAnnealing::movePinToFreeSlot(std::vector<int>& prev_slots,
-                                          std::vector<int>& new_slots,
-                                          std::vector<int>& pins)
+int SimulatedAnnealing::movePinToFreeSlot(std::vector<int>& pins)
 {
   boost::random::uniform_int_distribution<int> distribution(0, num_pins_ - 1);
   int pin = distribution(generator_);
   const IOPin& io_pin = netlist_->getIoPin(pin);
   if (io_pin.isInGroup()) {
-    int prev_cost = moveGroupToFreeSlots(
-        io_pin.getGroupIdx(), prev_slots, new_slots, pins);
+    int prev_cost = moveGroupToFreeSlots(io_pin.getGroupIdx(), pins);
     return prev_cost;
   }
 
   pins.push_back(pin);
 
   int prev_slot = pin_assignment_[pin];
-  prev_slots.push_back(prev_slot);
+  prev_slots_.push_back(prev_slot);
 
   int prev_cost = getPinCost(pin);
 
@@ -320,7 +313,7 @@ int SimulatedAnnealing::movePinToFreeSlot(std::vector<int>& prev_slots,
     new_slot = distribution(generator_);
     free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
   }
-  new_slots.push_back(new_slot);
+  new_slots_.push_back(new_slot);
 
   pin_assignment_[pin] = new_slot;
 
@@ -328,14 +321,12 @@ int SimulatedAnnealing::movePinToFreeSlot(std::vector<int>& prev_slots,
 }
 
 int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx,
-                                             std::vector<int>& prev_slots,
-                                             std::vector<int>& new_slots,
                                              std::vector<int>& pins)
 {
   const PinGroupByIndex& group = pin_groups_[group_idx];
   int prev_cost = getGroupCost(group_idx);
   for (int pin_idx : group.pin_indices) {
-    prev_slots.push_back(pin_assignment_[pin_idx]);
+    prev_slots_.push_back(pin_assignment_[pin_idx]);
   }
   pins = group.pin_indices;
 
@@ -370,12 +361,12 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx,
   if (free_slot && same_edge_slot) {
     for (int pin_idx : group.pin_indices) {
       pin_assignment_[pin_idx] = new_slot;
-      new_slots.push_back(new_slot);
+      new_slots_.push_back(new_slot);
       new_slot++;
     }
   } else {
-    prev_slots.clear();
-    new_slots.clear();
+    prev_slots_.clear();
+    new_slots_.clear();
     pins.clear();
     return move_fail_;
   }
@@ -383,15 +374,13 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx,
   return prev_cost;
 }
 
-void SimulatedAnnealing::restorePreviousAssignment(
-    const std::vector<int>& prev_slots,
-    const std::vector<int>& pins)
+void SimulatedAnnealing::restorePreviousAssignment(const std::vector<int>& pins)
 {
-  if (!prev_slots.empty()) {
+  if (!prev_slots_.empty()) {
     // restore single pin to previous slot
     int cnt = 0;
     for (int pin : pins) {
-      pin_assignment_[pin] = prev_slots[cnt];
+      pin_assignment_[pin] = prev_slots_[cnt];
       cnt++;
     }
   } else if (pins.size() == 2) {
