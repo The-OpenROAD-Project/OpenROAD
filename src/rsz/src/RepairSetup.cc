@@ -704,7 +704,6 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
     return false;
   }
 
-  Net *net = network_->net(drvr_pin);
   string buffer_name = resizer_->makeUniqueInstName("clone");
   Instance *parent = db_network_->topInstance();
 
@@ -755,8 +754,7 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   sta_->connectPin(clone_inst, clone_output_port, out_net);
 
   // Divide the list of pins in half and connect them to the new net we
-  // created as part of gate cloning. Skip ports connected to the original
-  // net
+  // created as part of gate cloning. Skip ports connected to the original net
   int split_index = fanout_slacks.size() / 2;
   for (int i = 0; i < split_index; i++) {
     pair<Vertex*, Slack> fanout_slack = fanout_slacks[i];
