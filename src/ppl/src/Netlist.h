@@ -95,11 +95,11 @@ class IOPin
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
         placement_status_(placement_status),
-        layer_(-1),
-        is_placed_(false),
-        in_group_(false),
-        assigned_to_section_(false),
-        is_mirrored_(false)
+        layer_,
+        is_placed_,
+        in_group_,
+        assigned_to_section_,
+        is_mirrored_
   {
   }
 
@@ -155,12 +155,12 @@ class IOPin
   odb::Point lower_bound_;
   odb::Point upper_bound_;
   odb::dbPlacementStatus placement_status_;
-  int layer_;
+  int layer_{-1};
   int group_idx_{-1};
-  bool is_placed_;
-  bool in_group_;
-  bool assigned_to_section_;
-  bool is_mirrored_;
+  bool is_placed_{false};
+  bool in_group_{false};
+  bool assigned_to_section_{false};
+  bool is_mirrored_{false};
   bool in_fallback_{false};
 };
 
