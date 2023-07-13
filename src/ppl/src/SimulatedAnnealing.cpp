@@ -283,7 +283,7 @@ int SimulatedAnnealing::swapPins(std::vector<int>& pins)
 
   int prev_slot1 = pin_assignment_[pin1];
   prev_slots_.push_back(prev_slot1);
-  
+
   int prev_slot2 = pin_assignment_[pin2];
   prev_slots_.push_back(prev_slot2);
 
