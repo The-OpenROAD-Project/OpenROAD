@@ -57,7 +57,8 @@ void Netlist::addIONet(const IOPin& io_pin,
 }
 
 int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
-                           bool order)
+                           bool order,
+                           const int group_idx)
 {
   int pin_cnt = 0;
   std::vector<int> pin_indices;
@@ -67,6 +68,7 @@ int Netlist::createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
       return pin_cnt;
     }
     io_pins_[pin_idx].setInGroup();
+    io_pins_[pin_idx].setGroupIdx(group_idx);
     pin_indices.push_back(pin_idx);
     pin_cnt++;
   }
