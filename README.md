@@ -239,6 +239,10 @@ enters an interactive Tcl command interpreter.
 A list of the available tools/modules included in the OpenROAD app
 and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
 
+## Understanding Warning and Error Messages
+Seeing OpenROAD warnings or errors you do not understand? We have compiled a table of all messages 
+and you may potentially find your answer in [here](docs/user/MessagesFinal.md). 
+
 ## License
 
 BSD 3-Clause License. See [LICENSE](LICENSE) file.
