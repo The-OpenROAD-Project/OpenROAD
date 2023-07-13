@@ -94,12 +94,7 @@ class IOPin
         direction_(dir),
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
-        placement_status_(placement_status),
-        layer_,
-        is_placed_,
-        in_group_,
-        assigned_to_section_,
-        is_mirrored_
+        placement_status_(placement_status)
   {
   }
 
