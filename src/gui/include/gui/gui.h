@@ -644,6 +644,9 @@ class Gui
   // show/hide widgets
   void showWidget(const std::string& name, bool show);
 
+  // trigger actions in the GUI
+  void triggerAction(const std::string& name);
+
   // adding custom buttons to toolbar
   std::string addToolbarButton(const std::string& name,
                                const std::string& text,

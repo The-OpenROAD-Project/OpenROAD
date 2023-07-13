@@ -696,18 +696,63 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
   main_window->getClockViewer()->saveImage(clock_name, filename);
 }
 
-void Gui::showWidget(const std::string& name, bool show)
+static QWidget* findWidget(const std::string& name)
 {
+  if (name == "main_window" || name == "OpenROAD") {
+    return main_window;
+  }
+
   const QString find_name = QString::fromStdString(name);
   for (const auto& widget : main_window->findChildren<QDockWidget*>()) {
     if (widget->objectName() == find_name
         || widget->windowTitle() == find_name) {
-      if (show) {
-        widget->show();
-        widget->raise();
-      } else {
-        widget->hide();
-      }
+      return widget;
+    }
+  }
+  return nullptr;
+}
+
+void Gui::showWidget(const std::string& name, bool show)
+{
+  auto* widget = findWidget(name);
+  if (widget == nullptr) {
+    return;
+  }
+
+  if (show) {
+    widget->show();
+    widget->raise();
+  } else {
+    widget->hide();
+  }
+}
+
+void Gui::triggerAction(const std::string& name)
+{
+  const size_t dot_idx = name.find_last_of('.');
+  auto* widget = findWidget(name.substr(0, dot_idx));
+  if (widget == nullptr) {
+    return;
+  }
+
+  const QString find_name = QString::fromStdString(name.substr(dot_idx + 1));
+
+  // Find QAction
+  for (QAction* action : widget->findChildren<QAction*>()) {
+    logger_->report("{} {}",
+                    action->objectName().toStdString(),
+                    action->text().toStdString());
+    if (action->objectName() == find_name || action->text() == find_name) {
+      action->trigger();
+      return;
+    }
+  }
+
+  // Find QPushButton
+  for (QPushButton* button : widget->findChildren<QPushButton*>()) {
+    if (button->objectName() == find_name || button->text() == find_name) {
+      button->click();
+      return;
     }
   }
 }
