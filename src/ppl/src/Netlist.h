@@ -96,7 +96,6 @@ class IOPin
         upper_bound_(upper_bound),
         placement_status_(placement_status),
         layer_(-1),
-        group_idx_(-1),
         is_placed_(false),
         in_group_(false),
         assigned_to_section_(false),
@@ -157,7 +156,7 @@ class IOPin
   odb::Point upper_bound_;
   odb::dbPlacementStatus placement_status_;
   int layer_;
-  int group_idx_;
+  int group_idx_{-1};
   bool is_placed_;
   bool in_group_;
   bool assigned_to_section_;
@@ -173,7 +172,7 @@ class Netlist
   void addIONet(const IOPin& io_pin, const std::vector<InstancePin>& inst_pins);
   int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
                     bool order,
-                    const int group_idx);
+                    int group_idx);
   void addIOGroup(const std::vector<int>& pin_group, bool order);
   const std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<PinGroupByIndex>& io_groups)

@@ -81,7 +81,7 @@ class SimulatedAnnealing
   void perturbAssignment(int& prev_cost);
   int swapPins();
   int movePinToFreeSlot();
-  int moveGroupToFreeSlots(const int group_idx);
+  int moveGroupToFreeSlots(int group_idx);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
   bool isFreeForGroup(int slot_idx, int group_size);
