@@ -196,19 +196,28 @@ void PDNSim::analyze_power_grid()
   logger_->report("########## IR report #################");
   logger_->report("Worstcase voltage: {:3.2e} V",
                   irsolve_h->getWorstCaseVoltage());
-  logger_->report(
-      "Average IR drop  : {:3.2e} V",
-      std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage()));
-  logger_->report("Worstcase IR drop: {:3.2e} V",
-                  std::abs(irsolve_h->getSupplyVoltageSrc()
-                           - irsolve_h->getWorstCaseVoltage()));
+  const double avg_drop
+      = std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage());
+  const double worst_drop = std::abs(irsolve_h->getSupplyVoltageSrc()
+                                     - irsolve_h->getWorstCaseVoltage());
+  logger_->report("Average IR drop  : {:3.2e} V", avg_drop);
+  logger_->report("Worstcase IR drop: {:3.2e} V", worst_drop);
   logger_->report("######################################");
+
+  logger_->metric("powergrid__worst__voltage",
+                  irsolve_h->getWorstCaseVoltage());
+  logger_->metric("powergrid__average__drop", avg_drop);
+  logger_->metric("powergrid__worst__drop", worst_drop);
+
   if (enable_em_) {
     logger_->report("########## EM analysis ###############");
     logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
     logger_->report("Average current: {:3.2e} A", irsolve_h->getAvgCurrent());
     logger_->report("Number of resistors: {}", irsolve_h->getNumResistors());
     logger_->report("######################################");
+
+    logger_->metric("powergrid__average__current", irsolve_h->getAvgCurrent());
+    logger_->metric("powergrid__max__current", irsolve_h->getMaxCurrent());
   }
 
   IRDropByLayer ir_drop;
