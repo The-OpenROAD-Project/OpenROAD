@@ -26,7 +26,7 @@ RTL-GDSII for rapid design exploration and physical design implementation.
 
 flowchart TB
     A[Verilog\n+ libraries\n + constraints] --> FLOW
-    style A fill:#74c2b5
+    style A fill:#74c2b5,stroke:#000000,stroke-width:4px
     subgraph FLOW
     style FLOW fill:#FFFFFF00,stroke-width:4px
 
@@ -106,19 +106,19 @@ Figure below shows the main stages of the OpenROAD-flow-scripts:
 timeline
   title RTL-GDSII Using OpenROAD-flow-scripts
   Synthesis
-    : Inputs<br>[RTL, SDC, .lib, .lef]
-    : Logic Synthesis<br>(Yosys)
-    : Output files<br>[Netlist, SDC]
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
   Floorplan
     : Floorplan Initialization
-    : IO placement<br>(random)
+    : IO placement  (random)
     : Timing-driven mixed-size placement
     : Macro placement
     : Tapcell and welltie insertion
     : PDN generation
   Placement
     : Global placement without placed IOs
-    : IO placement<br>(optimized)
+    : IO placement  (optimized)
     : Global placement with placed IOs
     : Resizing and buffering
     : Detailed placement
@@ -131,8 +131,8 @@ timeline
   Finishing
     : Metal Fill insertion
     : Signoff timing report
-    : Generate GDSII<br>(KLayout)
-    : DRC/LVS check<br>(KLayout)
+    : Generate GDSII  (KLayout)
+    : DRC/LVS check (KLayout)
 ```
 
 Here are the main steps for a physical design implementation
