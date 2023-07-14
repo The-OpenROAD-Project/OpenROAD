@@ -43,7 +43,6 @@ swig_lib(NAME      rsz
 
 add_library(rsz_lib
     BufferedNet.cc
-    GateCloner.cc
     RecoverPower.cc    
     RepairDesign.cc
     RepairHold.cc

@@ -141,7 +141,9 @@ std::string FlexDRWorker::reloadedMain()
              1,
              "Init number of markers {}",
              getInitNumMarkers());
-  route_queue();
+  if (!skipRouting_) {
+    route_queue();
+  }
   setGCWorker(nullptr);
   cleanup();
   std::string workerStr;
@@ -744,7 +746,8 @@ void FlexDR::searchRepair(const SearchRepairArgs& args)
     cout << flush;
   }
   end();
-  if (logger_->debugCheck(DRT, "autotuner", 1)
+  if ((DRC_RPT_ITER_STEP && iter % DRC_RPT_ITER_STEP.value() == 0)
+      || logger_->debugCheck(DRT, "autotuner", 1)
       || logger_->debugCheck(DRT, "report", 1)) {
     router_->reportDRC(DRC_RPT_FILE + '-' + std::to_string(iter) + ".rpt",
                        design_->getTopBlock()->getMarkers());
@@ -1236,18 +1239,14 @@ void FlexDRWorker::serialize(Archive& ar, const unsigned int version)
   (ar) & workerMarkerCost_;
   (ar) & workerFixedShapeCost_;
   (ar) & workerMarkerDecay_;
-  (ar) & pinCnt_;
   (ar) & initNumMarkers_;
-  (ar) & apSVia_;
-  (ar) & planarHistoryMarkers_;
-  (ar) & viaHistoryMarkers_;
-  (ar) & historyMarkers_;
   (ar) & nets_;
-  (ar) & gridGraph_;
   (ar) & markers_;
   (ar) & bestMarkers_;
   (ar) & isCongested_;
   if (is_loading(ar)) {
+    gridGraph_.setTech(design_->getTech());
+    gridGraph_.setWorker(this);
     // boundaryPin_
     int sz = 0;
     (ar) & sz;

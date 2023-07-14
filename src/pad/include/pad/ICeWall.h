@@ -88,7 +88,8 @@ class ICeWall
 
   void assignBump(odb::dbInst* inst,
                   odb::dbNet* net,
-                  odb::dbITerm* terminal = nullptr);
+                  odb::dbITerm* terminal = nullptr,
+                  bool dont_route = false);
 
   void makeFakeSite(const std::string& name, int width, int height);
   odb::dbRow* findRow(const std::string& name) const;

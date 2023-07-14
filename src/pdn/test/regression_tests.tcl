@@ -62,6 +62,7 @@ record_tests {
   macros_narrow_channel_jog
   macros_different_nets
   macros_grid_through
+  macros_grid_through_without_middle
   macros_cells_dont_touch
   macros_cells_overlapping_ports
 
@@ -74,6 +75,7 @@ record_tests {
   pads_black_parrot_no_connect
   pads_black_parrot_limit_connect
   pads_black_parrot_flipchip
+  pads_black_parrot_flipchip_connect_bumps
   pads_black_parrot_flipchip_connect_overpads
   pads_black_parrot_max_width
 

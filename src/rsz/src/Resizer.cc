@@ -118,6 +118,7 @@ using sta::BfsFwdIterator;
 using sta::BfsIndex;
 using sta::Clock;
 using sta::PathExpanded;
+using sta::Sdc;
 using sta::INF;
 using sta::fuzzyEqual;
 using sta::fuzzyLess;
@@ -724,6 +725,139 @@ Resizer::bufferDriveResistance(const LibertyCell *buffer) const
   LibertyPort *input, *output;
   buffer->bufferPorts(input, output);
   return output->driveResistance();
+}
+
+LibertyCell*
+Resizer::halfDrivingPowerCell(Instance* inst)
+{
+  return halfDrivingPowerCell(network_->libertyCell(inst));
+}
+LibertyCell*
+Resizer::halfDrivingPowerCell(LibertyCell* cell)
+{
+  return  closestDriver(cell, sta_->equivCells(cell), 0.5);
+}
+
+bool
+Resizer::isSingleOutputCombinational(Instance* inst) const
+{
+  if (inst == network_->topInstance()) {
+    return false;
+  }
+  return isSingleOutputCombinational(network_->libertyCell(inst));
+}
+
+bool Resizer::isSingleOutputCombinational(LibertyCell* cell) const
+{
+  if (!cell) {
+    return false;
+  }
+  auto output_pins = libraryOutputPins(cell);
+  return (output_pins.size() == 1 && isCombinational(cell));
+}
+
+bool Resizer::isCombinational(LibertyCell* cell) const
+{
+  if (!cell) {
+    return false;
+  }
+  return (!cell->isClockGate() && !cell->isPad() && !cell->isMacro()
+          && !cell->hasSequentials());
+}
+
+std::vector<sta::LibertyPort*>
+Resizer::libraryOutputPins(LibertyCell* cell) const
+{
+  auto pins = libraryPins(cell);
+  for (auto it = pins.begin(); it != pins.end(); it++) {
+    if (!((*it)->direction()->isAnyOutput())) {
+      it = pins.erase(it);
+      it--;
+    }
+  }
+  return pins;
+}
+
+std::vector<sta::LibertyPort*>
+Resizer::libraryPins(Instance* inst) const
+{
+  return libraryPins(network_->libertyCell(inst));
+}
+
+std::vector<sta::LibertyPort*>
+Resizer::libraryPins(LibertyCell* cell) const
+{
+  std::vector<sta::LibertyPort*> pins;
+  sta::LibertyCellPortIterator itr(cell);
+  while (itr.hasNext()) {
+    auto port = itr.next();
+    pins.push_back(port);
+  }
+  return pins;
+}
+
+LibertyCell*
+Resizer::closestDriver(LibertyCell* cell, LibertyCellSeq *candidates, float scale)
+{
+  LibertyCell* closest = nullptr;
+  if (candidates == nullptr || candidates->empty()  ||
+      !isSingleOutputCombinational(cell)) {
+    return nullptr;
+  }
+  const auto output_pin = libraryOutputPins(cell)[0];
+  const auto current_limit = scale * maxLoad(output_pin->cell());
+  auto diff = sta::INF;
+  for (auto& cand : *candidates) {
+    auto limit = maxLoad(libraryOutputPins(cand)[0]->cell());
+    if (limit == current_limit) {
+      return cand;
+    }
+    auto new_diff = std::fabs(limit - current_limit);
+    if (new_diff < diff) {
+      diff = new_diff;
+      closest = cand;
+    }
+  }
+  return closest;
+}
+
+float
+Resizer::maxLoad(Cell* cell)
+{
+  LibertyCell *lib_cell = network_->libertyCell(cell);
+  auto  min_max = sta::MinMax::max();
+  sta::LibertyCellPortIterator itr(lib_cell);
+  while (itr.hasNext()) {
+    LibertyPort* port = itr.next();
+    if (port->direction()->isOutput()) {
+      float limit, limit1;
+      bool exists, exists1;
+      const sta::Corner* corner = sta_->cmdCorner();
+      Sdc* sdc = sta_->sdc();
+      // Default to top ("design") limit.
+      Cell* top_cell = network_->cell(network_->topInstance());
+      sdc->capacitanceLimit(top_cell, min_max, limit, exists);
+      sdc->capacitanceLimit(cell, min_max, limit1, exists1);
+
+      if (exists1 && (!exists || min_max->compare(limit, limit1))) {
+        limit = limit1;
+        exists = true;
+      }
+      LibertyPort* corner_port = port->cornerPort(corner, min_max);
+      corner_port->capacitanceLimit(min_max, limit1, exists1);
+      if (!exists1 && port->direction()->isAnyOutput()) {
+        corner_port->libertyLibrary()->defaultMaxCapacitance(limit1, exists1);
+      }
+      if (exists1 && (!exists || min_max->compare(limit, limit1))) {
+        limit = limit1;
+        exists = true;
+      }
+      if (exists) {
+        return limit;
+      }
+    }
+  }
+  return 0;
 }
 
 ////////////////////////////////////////////////////////////////

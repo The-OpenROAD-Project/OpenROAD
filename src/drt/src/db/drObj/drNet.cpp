@@ -49,9 +49,6 @@ template <class Archive>
 void drNet::serialize(Archive& ar, const unsigned int version)
 {
   (ar) & boost::serialization::base_object<drBlockObject>(*this);
-  (ar) & pins_;
-  (ar) & extConnFigs_;
-  (ar) & routeConnFigs_;
   (ar) & bestRouteConnFigs_;
   (ar) & modified_;
   (ar) & numMarkers_;
@@ -65,26 +62,13 @@ void drNet::serialize(Archive& ar, const unsigned int version)
   (ar) & maxRipupAvoids_;
   (ar) & inQueue_;
   (ar) & routed_;
-  (ar) & origGuides_;
   if (is_loading(ar)) {
     frBlockObject* obj;
     serializeBlockObject(ar, obj);
     fNet_ = (frNet*) obj;
-    int terms_sz = 0;
-    (ar) & terms_sz;
-    while (terms_sz--) {
-      serializeBlockObject(ar, obj);
-      fNetTerms_.insert(obj);
-    }
   } else {
     frBlockObject* obj = (frBlockObject*) fNet_;
     serializeBlockObject(ar, obj);
-    int terms_sz = fNetTerms_.size();
-    (ar) & terms_sz;
-    for (auto fNetTerm : fNetTerms_) {
-      obj = (frBlockObject*) fNetTerm;
-      serializeBlockObject(ar, obj);
-    }
   }
 }
 
