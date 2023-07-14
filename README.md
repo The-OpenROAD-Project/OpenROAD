@@ -23,6 +23,7 @@ RTL-GDSII for rapid design exploration and physical design implementation.
     }
   }
 }%%
+
 flowchart TB
     A[Verilog\n+ libraries\n + constraints] --> FLOW
     style A fill:#74c2b5
@@ -30,12 +31,12 @@ flowchart TB
     style FLOW fill:#FFFFFF00,stroke-width:4px
 
     direction TB
-        B[Logic Synthesis]
-        B --> C[Floorplanning] 
-        C --> D[Placement & Optimization]
-        D --> E[CTS & Optimization]
-        E --> F[Global & Detailed Routing]
-        F --> G[Layout Finishing]
+        B[Synthesis]
+        B --> C[Floorplan] 
+        C --> D[Placement]
+        D --> E[Clock Tree Synthesis]
+        E --> F[Routing]
+        F --> G[Finishing]
         style B fill:#f8cecc,stroke:#000000,stroke-width:4px
         style C fill:#fff2cc,stroke:#000000,stroke-width:4px
         style D fill:#cce5ff,stroke:#000000,stroke-width:4px
@@ -100,80 +101,38 @@ flow stages through Tcl commands and Python APIs.
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
 ```mermaid
-%%{
-  init: {
-    'theme': 'neutral',
-    'themeVariables': {
-      'textColor': '#000000',
-      'noteTextColor' : '#000000',
-      'fontSize': '20px'
-    }
-  }
-}%%
-
-flowchart TB
-    A[RTL-GDSII\n Using\n OpenROAD-flow-scripts] --> SYNTHESIS
-    style A stroke:#000000,stroke-width:4px
-    SYNTHESIS --> FLOORPLAN; 
-    %% FLOORPLAN --> PLACEMENT; PLACEMENT --> CTS
-    %%CTS --> ROUTING; ROUTING -->FINISH
-    subgraph SYNTHESIS
-    style SYNTHESIS fill:#f8cecc,stroke:#000,stroke-width:4px
-    direction TB
-    RTL & SDC & .lib & SYNTHESIS_2(Mapping files, etc..) --> SYNTHESIS_1(Yosys)
-    SYNTHESIS_1 --> Netlist & SYNTHESIS_5(SDC)
-    %%B1(Tool:Yosys);  B2(Input files);  B3(Output files)
-    %%B2 --> RTL & SDC & .lib & B4(Mapping files, etc..)
-    %%B3 --> Netlist & B5(SDC)
-    end
-    subgraph FLOORPLAN
-    direction TB
-    style FLOORPLAN fill:#fff2cc,stroke:#000000,stroke-width:4px
-    C1("Import all necessary files\n (Netlist, SDC, etc...) and
-            check initial timing report")
-    C1 --> C2("Translate .v to .odb/\n Floorplan Initialization")
-    C2 --> C3("IO placement (random)")
-    C3 --> C4("Automatic partitioning")
-    C4 --> C5("Timing-driven mixed-size placement")
-    C5 --> C6("Macro placement/Hier-RTLMP")
-    C6 --> C7("Tapcell and well tie insertion")
-    C7 --> C8("PDN generation")
-    C8 --> C9("Floorplan .odb and .sdc file generation")
-    end
-
-    FLOORPLAN--> PLACEMENT; PLACEMENT --> CTS; CTS --> ROUTING; ROUTING -->FINISH
-    subgraph PLACEMENT
-    direction TB
-    style PLACEMENT fill:#cce5ff,stroke:#000000,stroke-width:4px
-    D1("Global placement without placed IOs
-                (Timing and routability-driven)")
-    D1 --> D2("IO placement (non-random)")
-    D2 --> D3("Global placement with placed IOs
-                (Timing and routability-driven)")
-    D3 --> D4("Resizing and buffering")
-    D4 --> D5("Detailed placement")
-    end
-    subgraph CTS
-    direction TB
-    style CTS fill:#67ab9f,stroke:#000000,stroke-width:4px
-    E1("Clock Tree synthesis")
-    E1 --> E2("Timing optimization")
-    E2 --> E3("Filler cell insertion")
-    end
-    subgraph ROUTING
-    direction TB
-    style ROUTING fill:#fa6800,stroke:#000000,stroke-width:4px
-    F1("Global routing")
-    F1 --> F2("Detailed routing")
-    end
-    subgraph FINISH
-    direction TB
-    style FINISH fill:#ff6666,stroke:#000000,stroke-width:4px
-    G1("Generate GDSII Tool:\n KLayout")
-    G1 --> G2("Metal Fill Insertion")
-    G2 --> G3("Signoff timing report")
-    G3 --> G4("DRC/LVS check\n Tool: Klayout")
-    end
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  title RTL-GDSII Using OpenROAD-flow-scripts
+  Synthesis
+    : Inputs<br>[RTL, SDC, .lib, .lef]
+    : Logic Synthesis<br>(Yosys)
+    : Output files<br>[Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement<br>(random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement<br>(optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+  CTS : Clock Tree Synthesis
+    : Timing optimization
+    : Filler cell insertion
+  Routing
+    : Global Routing
+    : Detailed Routing
+  Finishing
+    : Metal Fill insertion
+    : Signoff timing report
+    : Generate GDSII<br>(KLayout)
+    : DRC/LVS check<br>(KLayout)
 ```
 
 Here are the main steps for a physical design implementation
