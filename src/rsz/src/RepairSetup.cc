@@ -142,6 +142,11 @@ RepairSetup::repairSetup(float setup_slack_margin,
              endpoints->size(),
              int(violating_ends.size() / double(endpoints->size()) * 100));
 
+  if (!violating_ends.empty()) {
+    logger_->info(RSZ, 94, "Found {} endpoints with setup violations.",
+                  violating_ends.size());
+  }
+
   int end_index = 0;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
