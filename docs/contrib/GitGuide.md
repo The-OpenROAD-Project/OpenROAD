@@ -20,11 +20,11 @@ git fetch upstream
 ```
 
 This creates the directory `OpenROAD` and connects your repository to
-the upstream (main project) *OpenROAD* repository.
+the upstream (master project) *OpenROAD* repository.
 
 ## Creating a branch
 
-You want your main branch to reflect only production-ready code, so create a
+You want your master branch to reflect only production-ready code, so create a
 feature branch for making your changes. For example:
 
 ```shell
@@ -39,8 +39,8 @@ changes in this branch specific to one bug or feature so it is clear
 what the branch brings to OpenROAD. You can have many shiny-new-features
 and switch in between them using the git checkout command.
 
-When creating this branch, make sure your main branch is up to date with
-the latest upstream main version. To update your local main branch, you
+When creating this branch, make sure your master branch is up to date with
+the latest upstream master version. To update your local master branch, you
 can do:
 
 ```shell
@@ -48,7 +48,7 @@ git checkout master
 git pull upstream master
 ```
 
-When you want to update the feature branch with changes in main after
+When you want to update the feature branch with changes in master after
 you created the branch, check the section on 
 [updating a PR](#updating-your-pull-request).
 
@@ -124,8 +124,8 @@ double check your branch changes against the branch it was based on:
 
 If everything looks good, you are ready to make a pull request. A pull request is how
 code from a local repository becomes available to the GitHub community and can be looked
-at and eventually merged into the main version. This pull request and its associated
-changes will eventually be committed to the main branch and available in the next
+at and eventually merged into the master version. This pull request and its associated
+changes will eventually be committed to the master branch and available in the next
 release. To submit a pull request:
 
 1. Navigate to your repository on GitHub
@@ -153,15 +153,15 @@ This will automatically update your pull request with the latest code and restar
 [Continuous Integration](./CI.md) tests.
 
 Another reason you might need to update your pull request is to solve conflicts
-with changes that have been merged into the main branch since you opened your
+with changes that have been merged into the master branch since you opened your
 pull request.
 
-To do this, you need to `merge upstream main` in your branch:
+To do this, you need to `merge upstream master` in your branch:
 
 ```shell
 git checkout shiny-new-feature
 git fetch upstream
-git merge upstream/main
+git merge upstream/master
 ```
 
 If there are no conflicts (or they could be fixed automatically), a file with a
@@ -174,7 +174,7 @@ Once the conflicts are merged and the files where the conflicts were solved are
 added, you can run ``git commit`` to save those fixes.
 
 If you have uncommitted changes at the moment you want to update the branch with
-main, you will need to ``stash`` them prior to updating. 
+master, you will need to ``stash`` them prior to updating. 
 
 ```{seealso}
 See the stash [docs](https://git-scm.com/book/en/v2/Git-Tools-Stashing-and-Cleaning).
