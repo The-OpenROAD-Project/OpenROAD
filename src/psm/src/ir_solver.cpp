@@ -457,6 +457,8 @@ bool IRSolver::createJ()
   const int num_nodes = Gmat_->getNumNodes();
   J_.resize(num_nodes, 0);
 
+  odb::dbTech* tech = db_->getTech();
+
   for (auto [inst, power] : getPower()) {
     if (!inst->getPlacementStatus().isPlaced()) {
       logger_->warn(utl::PSM,
@@ -522,8 +524,8 @@ bool IRSolver::createJ()
                 "No nodes found in macro or pad bounding box for Instance {} "
                 "for the pin layer at routing level {}. Using layer {}.",
                 inst->getName(),
-                max_l,
-                pl);
+                tech->findRoutingLayer(max_l)->getName(),
+                tech->findRoutingLayer(pl)->getName());
             break;
           }
         }
@@ -544,7 +546,7 @@ bool IRSolver::createJ()
                 inst->getName(),
                 node_loc.getX(),
                 node_loc.getY(),
-                max_l);
+                tech->findRoutingLayer(max_l)->getName());
           } else {
             logger_->error(utl::PSM,
                            42,
@@ -899,6 +901,8 @@ NodeEnclosure IRSolver::getViaEnclosure(int layer, dbSet<dbBox> via_boxes)
 void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
                                      bool connection_only)
 {
+  odb::dbTech* tech = db_->getTech();
+
   for (auto curWire : power_wires) {
     // For vias we make 3 connections
     // 1) From the top node to the bottom node
@@ -974,7 +978,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
                         "Node at ({}, {}) and layer {} moved from ({}, {}).",
                         bot_node_loc.getX(),
                         bot_node_loc.getY(),
-                        bot_l,
+                        tech->findRoutingLayer(bot_l)->getName(),
                         cut_loc.getX(),
                         cut_loc.getY());
         }
@@ -985,7 +989,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
                         "Node at ({}, {}) and layer {} moved from ({}, {}).",
                         top_node_loc.getX(),
                         top_node_loc.getY(),
-                        top_l,
+                        tech->findRoutingLayer(top_l)->getName(),
                         cut_loc.getX(),
                         cut_loc.getY());
         }
@@ -1180,7 +1184,7 @@ bool IRSolver::createGmat(bool connection_only)
     node_density_ = siteHeight * node_density_factor_;
   }
 
-  Gmat_ = std::make_unique<GMat>(num_routing_layers, logger_);
+  Gmat_ = std::make_unique<GMat>(num_routing_layers, logger_, db_->getTech());
   const auto macro_boundaries = getMacroBoundaries();
   dbNet* power_net = block->findNet(power_net_.data());
   if (power_net == nullptr) {
@@ -1300,7 +1304,7 @@ bool IRSolver::checkConnectivity(bool connection_only)
                     power_net_,
                     loc_x,
                     loc_y,
-                    node->getLayerNum());
+                    tech->findRoutingLayer(node->getLayerNum())->getName());
       if (!error_file_.empty()) {
         error_report << "violation type: Unconnected PDN node\n";
         error_report << "  srcs: \n";
@@ -1321,7 +1325,7 @@ bool IRSolver::checkConnectivity(bool connection_only)
                         inst->getName(),
                         loc_x,
                         loc_y,
-                        node->getLayerNum());
+                        tech->findRoutingLayer(node->getLayerNum())->getName());
         }
       }
     }
