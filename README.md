@@ -307,6 +307,10 @@ enters an interactive Tcl command interpreter.
 A list of the available tools/modules included in the OpenROAD app
 and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
 
+## Git Quickstart
+OpenROAD uses Git for version control and contributions. 
+Get familiarised with a quickstart tutorial to contribution [here](GitGuide.md).
+
 ## License
 
 BSD 3-Clause License. See [LICENSE](LICENSE) file.
