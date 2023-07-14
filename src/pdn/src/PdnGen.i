@@ -140,7 +140,8 @@ void make_instance_grid(pdn::VoltageDomain* domain,
                         int y1,
                         bool pg_pins_to_boundary,
                         bool default_grid, 
-                        const std::vector<odb::dbTechLayer*>& generate_obstructions)
+                        const std::vector<odb::dbTechLayer*>& generate_obstructions,
+                        bool is_bump)
 {
   PdnGen* pdngen = ord::getPdnGen();
   StartsWith starts_with = POWER;
@@ -149,7 +150,7 @@ void make_instance_grid(pdn::VoltageDomain* domain,
   }
   
   std::array<int, 4> halo{x0, y0, x1, y1};
-  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions);
+  pdngen->makeInstanceGrid(domain, name, starts_with, inst, halo, pg_pins_to_boundary, default_grid, generate_obstructions, is_bump);
 }
 
 void make_existing_grid(const char* name, 

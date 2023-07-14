@@ -226,7 +226,8 @@ def define_pdn_grid_macro(design, *,
                           obstructions=[],            # string list of layers
                           grid_over_pg_pins=False,
                           grid_over_boundary=False,
-                          default_grid=False):
+                          default_grid=False,
+                          is_bump=False):
     pdngen = design.getPdnGen()
     pg_pins_to_boundary = True
     if grid_over_pg_pins and grid_over_boundary:
@@ -292,7 +293,8 @@ def define_pdn_grid_macro(design, *,
                                             halo,
                                             pg_pins_to_boundary,
                                             default_grid,
-                                            obst_list)
+                                            obst_list,
+                                            is_bump)
 
     else:
         cells = []
@@ -317,7 +319,8 @@ def define_pdn_grid_macro(design, *,
                                                    halo,
                                                    pg_pins_to_boundary,
                                                    default_grid,
-                                                   obst_list)
+                                                   obst_list,
+                                                   is_bump)
 
 
 def add_pdn_stripe(design, *,

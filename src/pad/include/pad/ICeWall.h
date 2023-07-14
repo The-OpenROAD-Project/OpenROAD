@@ -86,7 +86,10 @@ class ICeWall
   void removeBump(odb::dbInst* inst);
   void removeBumpArray(odb::dbMaster* master);
 
-  void assignBump(odb::dbInst* inst, odb::dbNet* net);
+  void assignBump(odb::dbInst* inst,
+                  odb::dbNet* net,
+                  odb::dbITerm* terminal = nullptr,
+                  bool dont_route = false);
 
   void makeFakeSite(const std::string& name, int width, int height);
   odb::dbRow* findRow(const std::string& name) const;
@@ -125,7 +128,8 @@ class ICeWall
                 const std::vector<odb::dbNet*>& nets,
                 int width = 0,
                 int spacing = 0,
-                bool allow45 = false);
+                bool allow45 = false,
+                float turn_penalty = 2.0);
   void routeRDLDebugGUI(bool enable);
 
   void connectByAbutment();
@@ -166,6 +170,8 @@ class ICeWall
   // Data members
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
+
+  std::map<odb::dbITerm*, odb::dbITerm*> routing_map_;
 
   std::unique_ptr<RDLRouter> router_;
   std::unique_ptr<RDLGui> router_gui_;

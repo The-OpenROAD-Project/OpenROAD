@@ -33,6 +33,7 @@ extensions = [
     'sphinx_external_toc',
     'sphinx_copybutton',
     'myst_parser',
+    'sphinxcontrib.mermaid'
 ]
 
 myst_enable_extensions = [
@@ -153,3 +154,4 @@ def setup(app):
     if not os.path.exists('./main'):
         os.symlink('..', './main')
     swap_prefix('../README.md', '(docs/', '(../')
+    swap_prefix('../README.md', '```mermaid', '```{mermaid}\n:align: center\n')
