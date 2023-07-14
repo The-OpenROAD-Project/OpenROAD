@@ -2564,6 +2564,7 @@ void
 Resizer::repairSetup(double setup_margin,
                      double repair_tns_end_percent,
                      int max_passes,
+                     bool verbose,
                      bool skip_pin_swap,
                      bool enable_gate_cloning)
 {
@@ -2572,7 +2573,8 @@ Resizer::repairSetup(double setup_margin,
     opendp_->initMacrosAndGrid();
   }
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
-                             max_passes, skip_pin_swap, enable_gate_cloning);
+                             max_passes, verbose,
+                             skip_pin_swap, enable_gate_cloning);
 }
 
 void
@@ -2597,7 +2599,8 @@ Resizer::repairHold(double setup_margin,
                     bool allow_setup_violations,
                     // Max buffer count as percent of design instance count.
                     float max_buffer_percent,
-                    int max_passes)
+                    int max_passes,
+                    bool verbose)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2605,7 +2608,8 @@ Resizer::repairHold(double setup_margin,
   }
   repair_hold_->repairHold(setup_margin, hold_margin,
                            allow_setup_violations,
-                           max_buffer_percent, max_passes);
+                           max_buffer_percent, max_passes,
+                           verbose);
 }
 
 void
