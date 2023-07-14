@@ -4,3 +4,5 @@ sphinx
 sphinx-autobuild
 myst-parser
 sphinxcontrib-mermaid
+sphinx-book-theme
+sphinx-copybutton
