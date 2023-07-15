@@ -139,12 +139,10 @@ RecoverPower::recoverPower()
              endpoints->size(),
              int(ends_with_slack.size() / double(endpoints->size()) * 100));
 
-  // TODO We should add tns_end_percent call here or some option on how to limit
-  // running this forever.
   int end_index = 0;
-  int max_end_count = 1000;//ends_with_slack.size();
-  resizer_->incrementalParasiticsBegin();
+  int max_end_count = ends_with_slack.size()/5; // 20%
 
+  resizer_->incrementalParasiticsBegin();
   for (Vertex *end : ends_with_slack) {
     resizer_->updateParasitics();
     sta_->findRequireds();
