@@ -208,9 +208,11 @@ void dbSta::postReadLef(dbTech* tech, dbLib* library)
 
 void dbSta::postReadDef(dbBlock* block)
 {
-  db_network_->readDefAfter(block);
-  db_cbk_->addOwner(block);
-  db_cbk_->setNetwork(db_network_);
+  if (!block->getParent()) {
+    db_network_->readDefAfter(block);
+    db_cbk_->addOwner(block);
+    db_cbk_->setNetwork(db_network_);
+  }
 }
 
 void dbSta::postReadDb(dbDatabase* db)
@@ -573,6 +575,8 @@ void dbStaCbk::inDbBTermPreDisconnect(dbBTerm* bterm)
 void dbStaCbk::inDbBTermCreate(dbBTerm* bterm)
 {
   sta_->getDbNetwork()->makeTopPort(bterm);
+  Pin* pin = network_->dbToSta(bterm);
+  sta_->makePortPinAfter(pin);
 }
 
 void dbStaCbk::inDbBTermDestroy(dbBTerm* bterm)

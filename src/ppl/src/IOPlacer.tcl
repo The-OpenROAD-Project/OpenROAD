@@ -306,6 +306,36 @@ proc set_pin_thick_multiplier { args } {
   }
 }
 
+sta::define_cmd_args "set_simulated_annealing" {[-temperature temperature]\
+                                                [-max_iterations iters]\
+                                                [-perturb_per_iter perturbs]\
+                                                [-alpha alpha]
+}
+
+proc set_simulated_annealing { args } {
+  sta::parse_key_args "set_simulated_annealing" args \
+  keys {-temperature -max_iterations -perturb_per_iter -alpha}
+
+  if [info exists keys(-temperature)] {
+    set temperature $keys(-temperature)
+    sta::check_positive_float "-temperature" $temperature
+  }
+  if [info exists keys(-max_iterations)] {
+    set max_iterations $keys(-max_iterations)
+    sta::check_positive_int "-max_iterations" $max_iterations
+  }
+  if [info exists keys(-perturb_per_iter)] {
+    set perturb_per_iter $keys(-perturb_per_iter)
+    sta::check_positive_int "-perturb_per_iter" $perturb_per_iter
+  }
+  if [info exists keys(-alpha)] {
+    set alpha $keys(-alpha)
+    sta::check_positive_float "-alpha" $alpha
+  }
+
+  ppl::set_simulated_annealing $temperature $max_iterations $perturb_per_iter $alpha
+}
+
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\
                                   [-layer layer]\
                                   [-location location]\
@@ -376,7 +406,8 @@ sta::define_cmd_args "place_pins" {[-hor_layers h_layers]\
                                   [-min_distance min_dist]\
                                   [-min_distance_in_tracks]\
                                   [-exclude region]\
-                                  [-group_pins pin_list]
+                                  [-group_pins pin_list]\
+                                  [-annealing]
                                  }
 
 proc place_pins { args } {
@@ -385,7 +416,7 @@ proc place_pins { args } {
   sta::parse_key_args "place_pins" args \
   keys {-hor_layers -ver_layers -random_seed -corner_avoidance \
         -min_distance -exclude -group_pins} \
-  flags {-random -min_distance_in_tracks}
+  flags {-random -min_distance_in_tracks -annealing}
 
   sta::check_argc_eq0 "place_pins" $args
 
@@ -554,7 +585,11 @@ proc place_pins { args } {
     }
   }
 
-  ppl::run_io_placement [info exists flags(-random)]
+  if { [info exists flags(-annealing)] } {
+    ppl::run_annealing
+  } else {
+    ppl::run_io_placement [info exists flags(-random)]
+  }
 }
 
 namespace eval ppl {

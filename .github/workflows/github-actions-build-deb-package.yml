@@ -1,51 +1,35 @@
-name: Build debian package
+name: Build deb packages
 
 on:
   workflow_dispatch:
-
-  #pull_request:
-  #  paths:
-  #    - 'debian/changelog'
-  #    - 'etc/DependencyInstaller.sh'
-  #    - 'docker/*'
-  #    - '.github/workflows/github-actions-build-deb-package.yml'
+  push:
+  pull_request:
 
 jobs:
   builder:
-    name: 'Build debian package'
-    runs-on: ubuntu-latest
+    name: 'Build .deb package'
     strategy:
       fail-fast: false
       matrix:
-        os: ['debian10', 'debian11', 'ubuntu20', 'ubuntu22.04', 'ubuntu22.10']
+        os: ['debian10', 'debian11', 'ubuntu20.04', 'ubuntu22.04']
+    runs-on: ubuntu-latest
+    container:
+      image: openroad/${{ matrix.os }}-dev
 
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
           submodules: true
-
-      - name: Create docker image
-        run: |
-          ./etc/DockerHelper.sh create -target=dev -os=${{ matrix.os }}
 
       - name: Build package
         run: |
-          set -ex
           mkdir artifacts
-          docker run \
-          -v `realpath ./artifacts`:/artifacts \
-          -v `pwd`:/OpenROAD \
-          openroad/${{ matrix.os }}-dev:latest \
-          bash -c "set -ex
-            cd OpenROAD
-            debuild --preserve-env --preserve-envvar=PATH -B
-            mv ../openroad_* artifacts"
+          debuild --preserve-env --preserve-envvar=PATH -B
+          mv ../openroad_* artifacts
 
       - name: Rename artifact
         id: artifact
         run: |
-          set -ex
           cd artifacts
           file=$(realpath openroad_*.deb)
           artifact=$(echo $file | sed 's/\.\([^.]*\)$/-${{ matrix.os }}.\1/')

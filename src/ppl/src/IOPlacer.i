@@ -313,6 +313,21 @@ clear_constraints()
   getIOPlacer()->clearConstraints();
 }
 
+void
+set_simulated_annealing(float temperature,
+                        int max_iterations,
+                        int perturb_per_iter,
+                        float alpha)
+{
+  getIOPlacer()->setAnnealingConfig(temperature, max_iterations, perturb_per_iter, alpha);
+}
+
+void
+run_annealing()
+{
+  getIOPlacer()->runAnnealing();
+}
+
 } // namespace
 
 %} // inline

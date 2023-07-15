@@ -12,7 +12,42 @@ semiconductor digital design. The OpenROAD flow delivers an
 Autonomous, No-Human-In-Loop (NHIL) flow, 24 hour turnaround from
 RTL-GDSII for rapid design exploration and physical design implementation.
 
-![rtl2gds.svg](./docs/images/rtl2gds.svg)
+```mermaid
+%%{
+  init: {
+    'theme': 'neutral',
+    'themeVariables': {
+      'textColor': '#000000',
+      'noteTextColor' : '#000000',
+      'fontSize': '20px'
+    }
+  }
+}%%
+
+flowchart TB
+    A[Verilog\n+ libraries\n + constraints] --> FLOW
+    style A fill:#74c2b5,stroke:#000000,stroke-width:4px
+    subgraph FLOW
+    style FLOW fill:#FFFFFF00,stroke-width:4px
+
+    direction TB
+        B[Synthesis]
+        B --> C[Floorplan] 
+        C --> D[Placement]
+        D --> E[Clock Tree Synthesis]
+        E --> F[Routing]
+        F --> G[Finishing]
+        style B fill:#f8cecc,stroke:#000000,stroke-width:4px
+        style C fill:#fff2cc,stroke:#000000,stroke-width:4px
+        style D fill:#cce5ff,stroke:#000000,stroke-width:4px
+        style E fill:#67ab9f,stroke:#000000,stroke-width:4px
+        style F fill:#fa6800,stroke:#000000,stroke-width:4px
+        style G fill:#ff6666,stroke:#000000,stroke-width:4px
+    end
+
+    FLOW --> H[GDSII\n Final Layout]
+    style H fill:#ff0000,stroke:#000000,stroke-width:4px
+```
 
 Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
@@ -50,12 +85,12 @@ includes GlobalFoundries shuttles, design contests and IC design
 workshops. The OpenROAD flow has been successfully used to date
 in over 600 silicon-ready tapeouts for technologies up to 12nm.
 
-## OpenROAD Flow Stages
+## Getting Started with OpenROAD-flow-scripts
 
 OpenROAD provides [OpenROAD-flow-scripts](https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts)
 as a native, ready-to-use prototyping and tapeout flow. However,
 it also enables the creation of any custom flow controllers based
-on the underlying tools, database and analysis engines.
+on the underlying tools, database and analysis engines. Please refer to the flow documentation [here](https://openroad-flow-scripts.readthedocs.io/en/latest/).
 
 OpenROAD-flow-scripts (ORFS) is a fully autonomous, RTL-GDSII flow
 for rapid architecture and design space exploration, early prediction
@@ -65,7 +100,40 @@ flow stages through Tcl commands and Python APIs.
 
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
-![ORFS_Flow.webp](./docs/images/ORFS_Flow.svg)
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  title RTL-GDSII Using OpenROAD-flow-scripts
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement  (optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+  CTS : Clock Tree Synthesis
+    : Timing optimization
+    : Filler cell insertion
+  Routing
+    : Global Routing
+    : Detailed Routing
+  Finishing
+    : Metal Fill insertion
+    : Signoff timing report
+    : Generate GDSII  (KLayout)
+    : DRC/LVS check (KLayout)
+```
 
 Here are the main steps for a physical design implementation
 using OpenROAD;
@@ -104,22 +172,28 @@ using OpenROAD;
 
 The OpenROAD GUI is a powerful visualization, analysis, and debugging
 tool with a customizable Tcl interface. The below figures show GUI views for
-various flow stages including post-routed timing, placement congestion, and
-CTS.
+various flow stages including floorplanning, placement congestion,
+CTS and post-routed design.
 
-![ibexGui.webp](./docs/images/ibexGui.webp)
+#### Floorplan
 
-### Automatic Hierarchical Macro Placement
+![ibex_floorplan.webp](./docs/images/ibex_floorplan.webp)
+
+#### Automatic Hierarchical Macro Placement
 
 ![Ariane133](./docs/images/ariane133_mpl2.webp)
 
-### Placement Congestion Visualization
+#### Placement Congestion Visualization
 
 ![pl_congestion.webp](./docs/images/pl_congestion.webp)
 
-### CTS
+#### CTS
 
 ![clk_routing.webp](./docs/images/clk_routing.webp)
+
+#### Routing
+
+![ibex_routing.webp](./docs/images/ibex_routing.webp)
 
 ### PDK Support
 
@@ -231,7 +305,11 @@ the command line. Unless the `-exit` command line flag is specified, it
 enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
-and there descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
+and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
+
+## Git Quickstart
+OpenROAD uses Git for version control and contributions. 
+Get familiarised with a quickstart tutorial to contribution [here](GitGuide.md).
 
 ## License
 

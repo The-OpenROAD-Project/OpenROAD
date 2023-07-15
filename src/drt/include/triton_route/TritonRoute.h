@@ -34,6 +34,7 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <string>
 #include <vector>
@@ -75,6 +76,7 @@ struct ParamStruct
 {
   std::string outputMazeFile;
   std::string outputDrcFile;
+  std::optional<int> drcReportIterStep;
   std::string outputCmapFile;
   std::string outputGuideCoverageFile;
   std::string dbProcessNode;
