@@ -895,10 +895,10 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
       }
       for (auto iterm : inst->getITerms()) {
         Rect iterm_bbox = iterm->getBBox();
-        if ((region.xMin() > iterm_bbox.xMax()
-             || region.xMax() < iterm_bbox.xMin())
-            || (region.yMin() > iterm_bbox.yMax()
-                || region.yMax() < iterm_bbox.yMin())) {
+        if (region.xMin() > iterm_bbox.xMax()
+            || region.xMax() < iterm_bbox.xMin()
+            || region.yMin() > iterm_bbox.yMax()
+            || region.yMax() < iterm_bbox.yMin()) {
           selections.push_back(gui_->makeSelected(iterm));
         }
       }
