@@ -263,6 +263,25 @@ class deltaDebugger:
         if os.path.exists(self.base_db_file):
             os.rename(self.base_db_file, self.temp_base_db_file)
 
+    def filter_dont_touch_insts(self, elms):
+        filtered = []
+        for inst in elms:
+            if inst.isDoNotTouch():
+                continue
+            if not any([iterm.getNet() and iterm.getNet().isDoNotTouch()
+                        for iterm in inst.getITerms()]):
+                filtered.append(inst)
+        return filtered
+
+    def filter_dont_touch_nets(self, elms):
+        filtered = []
+        for net in elms:
+            if net.isDoNotTouch():
+                continue
+            if not any([iterm.getInst() and iterm.getInst().isDoNotTouch()
+                        for iterm in net.getITerms()]):
+                filtered.append(net)
+        return filtered
         
     # A function that cuts the block according to the given direction
     # and ratio. It also uses the class cut level  to identify
@@ -271,10 +290,12 @@ class deltaDebugger:
         block = self.base_db.getChip().getBlock()
         if(self.cut_level == cutLevel.Insts): # Insts cut level
             elms = block.getInsts()
+            elms = self.filter_dont_touch_insts(elms)
             print("Insts level debugging")
 
         elif(self.cut_level == cutLevel.Nets): # Nets cut level 
             elms = block.getNets()
+            elms = self.filter_dont_touch_nets(elms)
             print("Nets level debugging")
                     
         print(f"Number of Insts {len(block.getInsts())}\nNumber of Nets {len(block.getNets())}")
