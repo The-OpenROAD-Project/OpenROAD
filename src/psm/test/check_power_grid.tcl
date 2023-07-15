@@ -2,6 +2,6 @@
 # or the voltage on the net being set
 source helpers.tcl
 
-read_lef  Nangate45.lef
+read_lef Nangate45/Nangate45.lef
 read_def gcd.def
 check_power_grid -net VDD
