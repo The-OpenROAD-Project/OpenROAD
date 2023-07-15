@@ -356,7 +356,8 @@ Resizer::estimateWireParasitic(const Pin *drvr_pin,
 {
   if (!network_->isPower(net)
       && !network_->isGround(net)
-      && !sta_->isIdealClock(drvr_pin)) {
+      && !sta_->isIdealClock(drvr_pin)
+      && !db_network_->staToDb(net)->isSpecial()) {
     if (isPadNet(net))
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero

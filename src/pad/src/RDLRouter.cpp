@@ -136,6 +136,7 @@ RDLRouter::RDLRouter(utl::Logger* logger,
                      odb::dbTechLayer* layer,
                      odb::dbTechVia* bump_via,
                      odb::dbTechVia* pad_via,
+                     const std::map<odb::dbITerm*, odb::dbITerm*>& routing_map,
                      int width,
                      int spacing,
                      bool allow45,
@@ -148,7 +149,8 @@ RDLRouter::RDLRouter(utl::Logger* logger,
       width_(width),
       spacing_(spacing),
       allow45_(allow45),
-      turn_penalty_(turn_penalty)
+      turn_penalty_(turn_penalty),
+      routing_map_(routing_map)
 {
   if (width_ == 0) {
     width_ = layer_->getWidth();
@@ -1208,6 +1210,15 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
                    layer_->getName());
   }
 
+  debugPrint(logger_,
+             utl::PAD,
+             "Router",
+             1,
+             "{} has {} terminals",
+             net->getName(),
+             terms.size());
+
+  const double dbus = block_->getDbUnitsPerMicron();
   std::vector<TargetPair> pairs;
   if (terms.size() == 2) {
     const auto& [shape0, term0] = *terms.begin();
@@ -1228,6 +1239,27 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
         continue;
       }
 
+      debugPrint(logger_,
+                 utl::PAD,
+                 "Router",
+                 2,
+                 "Finding routing pair for {}/{} ({})",
+                 iterm0.first->getInst()->getName(),
+                 iterm0.first->getMTerm()->getName(),
+                 iterm0.first->getNet()->getName());
+
+      odb::dbITerm* find_terminal = nullptr;
+      auto check_routing_map = routing_map_.find(iterm0.first);
+      if (check_routing_map != routing_map_.end()) {
+        find_terminal = check_routing_map->second;
+
+        if (find_terminal == nullptr) {
+          // do not route this bump
+          used.insert(shape0);
+          continue;
+        }
+      }
+
       int64_t dist = std::numeric_limits<int64_t>::max();
       const odb::Point pt0(shape0.xCenter(), shape0.yCenter());
       odb::Rect shape = shape0;
@@ -1239,13 +1271,28 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
           continue;
         }
 
-        // only pick non covers
-        if (iterm1.first->getMTerm()->getMaster()->getType().isCover()) {
+        if (find_terminal != nullptr) {
+          if (find_terminal != iterm1.first) {
+            continue;
+          }
+        } else if (iterm1.first->getMTerm()->getMaster()->getType().isCover()) {
+          // only pick non covers
           continue;
         }
 
         const odb::Point pt1(shape1.xCenter(), shape1.yCenter());
         const int64_t new_dist = distance(pt0, pt1);
+
+        debugPrint(logger_,
+                   utl::PAD,
+                   "Router",
+                   2,
+                   "  {}/{} ({}): {:.4f}um",
+                   iterm1.first->getInst()->getName(),
+                   iterm1.first->getMTerm()->getName(),
+                   iterm1.first->getNet()->getName(),
+                   new_dist / dbus);
+
         if (new_dist < dist) {
           dist = new_dist;
           shape = shape1;
@@ -1256,11 +1303,18 @@ std::vector<RDLRouter::TargetPair> RDLRouter::generateRoutingPairs(
       }
 
       if (pt0 == point) {
-        continue;
+        logger_->error(utl::PAD,
+                       37,
+                       "Unable to find routing pair for {}/{} ({})",
+                       iterm0.first->getInst()->getName(),
+                       iterm0.first->getMTerm()->getName(),
+                       iterm0.first->getNet()->getName());
       }
 
       used.insert(shape0);
-      used.insert(shape);
+      if (!find_terminal) {
+        used.insert(shape);
+      }
       pairs.push_back({{pt0, shape0, iterm0.first, iterm0.second},
                        {point, shape, term, layer}});
     }

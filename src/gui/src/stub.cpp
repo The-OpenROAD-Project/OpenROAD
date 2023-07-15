@@ -99,6 +99,10 @@ void Gui::status(const std::string& /* message */)
 {
 }
 
+void Gui::triggerAction(const std::string& /* action */)
+{
+}
+
 void Renderer::redraw()
 {
 }

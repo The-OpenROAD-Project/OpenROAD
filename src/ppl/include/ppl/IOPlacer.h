@@ -158,6 +158,12 @@ class IOPlacer
   static Direction getDirection(const std::string& direction);
   static Edge getEdge(const std::string& edge);
 
+  void setAnnealingConfig(float temperature,
+                          int max_iterations,
+                          int perturb_per_iter,
+                          float alpha);
+  void checkPinPlacement();
+
  private:
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
@@ -199,6 +205,7 @@ class IOPlacer
   void initConstraints(bool annealing = false);
   void sortConstraints();
   void checkPinsInMultipleConstraints();
+  void checkPinsInMultipleGroups();
   bool overlappingConstraints(const Constraint& c1, const Constraint& c2);
   void createSectionsPerEdge(Edge edge, const std::set<int>& layers);
   void createSections();
@@ -216,7 +223,7 @@ class IOPlacer
                                          std::vector<Section>& sections,
                                          int& mirrored_pins_cnt,
                                          bool mirrored_only);
-  bool groupHasMirroredPin(std::vector<int>& group);
+  bool groupHasMirroredPin(const std::vector<int>& group);
   int assignGroupToSection(const std::vector<int>& io_group,
                            std::vector<Section>& sections,
                            bool order);
@@ -283,6 +290,12 @@ class IOPlacer
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
   std::unique_ptr<TopLayerGrid> top_grid_;
+
+  // simulated annealing variables
+  float init_temperature_ = 0;
+  int max_iterations_ = 0;
+  int perturb_per_iter_ = 0;
+  float alpha_ = 0;
 
   // db variables
   odb::dbDatabase* db_ = nullptr;

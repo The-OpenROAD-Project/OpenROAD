@@ -13,6 +13,7 @@ record_tests {
 
   rdl_route
   rdl_route_failed
+  rdl_route_assignments
   rdl_route_45
   rdl_route_45_cost
   rdl_route_via

@@ -238,6 +238,8 @@ remove_io_bump instance_name
 To assign a net to a bump
 ```
 assign_io_bump -net net \
+               [-terminal iterm] \
+               [-dont_route] \
                instance
 ```
 
@@ -246,6 +248,8 @@ assign_io_bump -net net \
 | Switch Name | Description |
 | ----- | ----- |
 | `-net` | Net to connect to |
+| `-terminal` | Instance terminal to route to |
+| `-dont_route` | Flag to indicate that this bump should not be routed, only perform assignment |
 | `instance` | Name of the bump |
 
 #### Examples
@@ -254,6 +258,7 @@ assign_io_bump -net p_ddr_addr_9_o BUMP_6_0
 assign_io_bump -net p_ddr_addr_8_o BUMP_6_2
 assign_io_bump -net DVSS BUMP_6_4
 assign_io_bump -net DVDD BUMP_7_3
+assign_io_bump -net DVDD -terminal u_dvdd/DVDD BUMP_8_3
 assign_io_bump -net p_ddr_addr_7_o BUMP_7_1
 assign_io_bump -net p_ddr_addr_6_o BUMP_7_0
 ```

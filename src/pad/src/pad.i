@@ -77,9 +77,9 @@ void remove_bump(odb::dbInst* inst)
   ord::getICeWall()->removeBump(inst);
 }
 
-void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net)
+void assign_net_to_bump(odb::dbInst* inst, odb::dbNet* net, odb::dbITerm* terminal, bool dont_route)
 {
-  ord::getICeWall()->assignBump(inst, net);
+  ord::getICeWall()->assignBump(inst, net, terminal, dont_route);
 }
 
 void make_fake_site(const char* name, int width, int height)

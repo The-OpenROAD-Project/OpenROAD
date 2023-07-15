@@ -30,8 +30,7 @@ set_dont_use $dont_use
 
 estimate_parasitics -placement
 
-# Repair the high fanout net hopefully with gate cloning code. 
+# Repair the high fanout net hopefully with gate cloning code.
 report_worst_slack -max
-#set ::env(TEST_GATE_CLONING) 1
 repair_timing -setup -repair_tns 100 -enable_gate_cloning
 report_worst_slack -max
