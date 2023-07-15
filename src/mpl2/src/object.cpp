@@ -972,6 +972,8 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
 
   float offset_x = 0.0;
   float offset_y = 0.0;
+  float pin_offset_x = 0.0;
+  float pin_offset_y = 0.0;
 
   // get the offset and pitch of related routing layers
   odb::dbMaster* master = inst_->getMaster();
@@ -984,7 +986,7 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
           if (layer->getDirection() == odb::dbTechLayerDir::HORIZONTAL) {
             // check the grid first
             odb::dbTrackGrid* grid = block->findTrackGrid(layer);
-            if (grid == nullptr) {
+            if (grid != nullptr) {
               std::vector<int> y_grid;
               grid->getGridY(y_grid);
               // use the origin as the offset and the step as the pitch
@@ -997,9 +999,11 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
               offset_y
                   = dbuToMicron(static_cast<float>(layer->getOffsetY()), dbu_);
             }
+            pin_offset_y
+                = dbuToMicron(static_cast<float>(box->getDY()), dbu_) / 2.0;
           } else if (layer->getDirection() == odb::dbTechLayerDir::VERTICAL) {
             odb::dbTrackGrid* grid = block->findTrackGrid(layer);
-            if (grid == nullptr) {
+            if (grid != nullptr) {
               std::vector<int> x_grid;
               grid->getGridX(x_grid);
               // use the origin as the offset and the step as the pitch
@@ -1012,6 +1016,8 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
               offset_x
                   = dbuToMicron(static_cast<float>(layer->getOffsetX()), dbu_);
             }
+            pin_offset_x
+                = dbuToMicron(static_cast<float>(box->getDX()), dbu_) / 2.0;
           }
         }
       }
@@ -1022,10 +1028,15 @@ void HardMacro::updateDb(float pitch_x, float pitch_y, odb::dbBlock* block)
   float ly = getRealY();
   float ux = lx + getRealWidth();
   float uy = ly + getRealHeight();
-  lx = std::round((lx - offset_x) / pitch_x) * pitch_x + offset_x;
-  ux = std::round((ux - offset_x) / pitch_x) * pitch_x + offset_x;
-  ly = std::round((ly - offset_y) / pitch_y) * pitch_y + offset_y;
-  uy = std::round((uy - offset_y) / pitch_y) * pitch_y + offset_y;
+  lx = std::round((lx - offset_x) / pitch_x) * pitch_x + offset_x
+       - pin_offset_x;
+  ux = std::round((ux - offset_x) / pitch_x) * pitch_x + offset_x
+       - pin_offset_x;
+  ly = std::round((ly - offset_y) / pitch_y) * pitch_y + offset_y
+       - pin_offset_y;
+  uy = std::round((uy - offset_y) / pitch_y) * pitch_y + offset_y
+       - pin_offset_y;
+
   int round_lx = std::round(float(micronToDbu(lx, dbu_)) / manufacturing_grid_)
                  * manufacturing_grid_;
   int round_ly = std::round(float(micronToDbu(ly, dbu_)) / manufacturing_grid_)
