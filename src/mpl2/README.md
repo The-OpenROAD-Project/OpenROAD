@@ -1,10 +1,11 @@
-# Macro Placement
+# Hierarchical Macro Placement
 
 A Hierarchical Automatic Macro Placer for Large-scale Complex IP Blocks, "Hier-RTLMP".
 This tool builds on the existing RTLMP (*mpl*) framework, adopting a multilevel physical 
 planning approach that exploits the hierarchy and dataflow inherent in the design RTL.
 
 ## Commands
+
 ```
 rtl_macro_placer [-halo_width   halo_width]
                  [-min_num_macro    min_num_macro]
@@ -38,7 +39,9 @@ rtl_macro_placer [-halo_width   halo_width]
                  [-report_directory report_directory]
 
 ```
+
 ### Generic Parameters 
+
 -   `-max_num_macro`, `min_num_macro` maximum/minimum number of macros in a cluster.
 -   `-max_num_inst`, `min_num_inst` maximum/minimum number of standard cells in a cluster.
 -   `-tolerance` a factor of $(1 + tol)$ is multiplied to the max, $(1 - tol)$ to the min number of 
@@ -59,8 +62,8 @@ macros/std cells in a cluster respectively. This is to improve robustness of hie
 -   `report_directory` save reports to this directory. 
 
 
-
 ### Simulated Annealing Weight parameters
+
 Do note that while action probabilities are normalized to 1.0, the weights are not necessarily normalized. 
 -   `area_weight` weight for area of current floorplan. (default 0.1)
 -   `outline_weight` weight for violating the fixed outline constraint, meaning that all clusters should be placed within the shape of its parent cluster. (default 1.0)
@@ -71,6 +74,18 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 -   `notch_weight` weight for notch, or the existence of dead space that cannot be used for placement & routing. Note that this cost applies only to hard macro clusters. (default 1.0)
 -   `macro_blockage_weight` weight for macro blockage, or the overlapping instances of macro. (default 1.0)
 
+## Example scripts
+
+## Regression tests
+
+There is a set of regression tests in `/test`.
+
+```shell
+./test/regression
+```
+
+## Limitations
+
 ## References
 A. B. Kahng, R. Varadarajan and Z. Wang, 
 "RTL-MP: Toward Practical, Human-Quality Chip Planning and Macro Placement",
@@ -79,6 +94,9 @@ A. B. Kahng, R. Varadarajan and Z. Wang,
 "Hier-RTLMP: A hierarchical automatic macro placer for large-scale complex IP blocks.",
 [(.pdf)](https://arxiv.org/pdf/2304.11761.pdf), arXiv preprint arXiv:2304.11761, 2023.
 
+## FAQs
+
+Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+hier-rtlmp+OR+hier+OR+mpl2) about this tool.
 
 ## License
 
