@@ -879,7 +879,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
   }
 
-  // Look for an instance since no shape was found
+  // Look for instances and ITerms
   auto insts = search_.searchInsts(block_,
                                    region.xMin(),
                                    region.yMin(),
