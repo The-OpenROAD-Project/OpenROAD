@@ -229,7 +229,7 @@ RecoverPower::recoverPower(const Pin *end_pin)
 
   if (resize_count_ > 0) {
     logger_->info(RSZ, 3111, "Resized {} instances.", resize_count_);
-}
+  }
 }
 
 // This is the main routine for recovering power.
@@ -279,7 +279,6 @@ RecoverPower::recoverPower(PathRef &path, Slack path_slack)
       PathRef *drvr_path = expanded.path(drvr_index);
       Vertex *drvr_vertex = drvr_path->vertex(sta_);
       const Pin *drvr_pin = drvr_vertex->pin();
-      const Net *net = network_->net(drvr_pin);
       LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
       LibertyCell *drvr_cell = drvr_port ? drvr_port->libertyCell() : nullptr;
       int fanout = this->fanout(drvr_vertex);
@@ -325,7 +324,7 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
     }
     else {
       prev_drive = 0.0;
-}
+    }
     LibertyPort *drvr_port = network_->libertyPort(drvr_pin);
     LibertyCell *downsize = downsizeCell(in_port, drvr_port, load_cap,
                                          prev_drive, dcalc_ap,
@@ -335,8 +334,6 @@ RecoverPower::downsizeDrvr(PathRef *drvr_path,
                  network_->pathName(drvr_pin),
                  drvr_port->libertyCell()->name(),
                  downsize->name());
-      //printf("resize %s %s ----> %s\n",network_->pathName(drvr_pin),
-      //       drvr_port->libertyCell()->name(),downsize->name());
       if (resizer_->replaceCell(drvr, downsize, true)) {
         resize_count_++;
         return true;
@@ -398,8 +395,7 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
     float delay = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
       + prev_drive * in_port->cornerPort(lib_ap)->capacitance();
 
-    float current_drive, best_drive = drive;
-    float current_delay, best_delay = delay;
+    float current_drive, current_delay;
     LibertyCell *best_cell = nullptr;
     for (LibertyCell *equiv : *equiv_cells) {
       LibertyCell *equiv_corner = equiv->cornerCell(lib_ap);
@@ -415,13 +411,10 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
           && current_delay > delay
           && (current_delay-delay)* delay_margin < path_slack // add margin
           && meetsSizeCriteria(cell, equiv, match_size)) {
-        best_delay = current_delay;
-        best_drive = current_drive;
         best_cell = equiv;
       }
     }
     if (best_cell != nullptr) {
-      //printf("Best cell found:  %s\n", best_cell->name());
       return best_cell;
     }
   }
