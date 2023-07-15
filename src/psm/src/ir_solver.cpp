@@ -317,7 +317,7 @@ bool IRSolver::addC4Bump()
 }
 
 //! Function that parses the Vsrc file
-void IRSolver::readC4Data()
+void IRSolver::readC4Data(bool require_voltage)
 {
   const int unit_micron = (db_->getTech())->getDbUnitsPerMicron();
   if (!vsrc_file_.empty()) {
@@ -382,7 +382,7 @@ void IRSolver::readC4Data()
     }
     if (!net_voltage_map_.empty() && net_voltage_map_.count(power_net_) > 0) {
       supply_voltage_src = net_voltage_map_.at(power_net_);
-    } else {
+    } else if (require_voltage) {
       logger_->warn(
           utl::PSM, 19, "Voltage on net {} is not explicitly set.", power_net_);
       const pair<double, double> supply_voltages = getSupplyVoltage();
@@ -1453,7 +1453,7 @@ int IRSolver::getMinimumResolution()
 
 bool IRSolver::build()
 {
-  readC4Data();
+  readC4Data(true);
 
   bool res = createGmat();
   if (Gmat_->getNumNodes() == 0) {
@@ -1483,7 +1483,7 @@ bool IRSolver::build()
 
 bool IRSolver::buildConnection()
 {
-  readC4Data();
+  readC4Data(false);
 
   bool res = createGmat(true);
   if (Gmat_->getNumNodes() == 0) {
