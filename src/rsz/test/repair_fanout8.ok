@@ -13,5 +13,6 @@ load DFF_X1 CK D 300000 metal3 1000
 worst slack -23.63
 [INFO RSZ-0045] Inserted 37 buffers, 1 to split loads.
 [INFO RSZ-0041] Resized 22 instances.
+[INFO RSZ-0043] Swapped pins on 1 instances.
 [WARNING RSZ-0062] Unable to repair all setup violations.
 worst slack -5.17
