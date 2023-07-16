@@ -188,8 +188,6 @@ class DRCWidget : public QDockWidget
  private:
   void loadTRReport(const QString& filename);
   void loadJSONReport(const QString& filename);
-  void convertRptToJson(const std::string& rptFile,
-                        const std::string& jsonFile);
   void updateModel();
 
   utl::Logger* logger_;
