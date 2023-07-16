@@ -231,6 +231,14 @@ proc suppress_message {args} {
   utl::suppress_message $tool $id
 }
 
+sta::define_cmd_args "unsuppress_message" { tool id }
+proc unsuppress_message {args} {
+  sta::check_argc_eq2 "unsuppress_message" $args
+  lassign $args tool id
+  sta::check_integer "unsuppress_message_level" $id
+  utl::unsuppress_message $tool $id
+}
+
 proc set_thread_count { count } {
   ord::set_thread_count $count
 }
