@@ -161,7 +161,7 @@ public:
                // Return values.
                double &res,
                double &cap) const;
-  void layerRC(int routing_level,
+  void layerRC(int layer_level,
                const Corner *corner,
                // Return values.
                double &res,

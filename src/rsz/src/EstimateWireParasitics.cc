@@ -81,8 +81,8 @@ Resizer::setLayerRC(dbTechLayer *layer,
     }
   }
 
-  layer_res_[layer->getRoutingLevel()][corner->index()] = res;
-  layer_cap_[layer->getRoutingLevel()][corner->index()] = cap;
+  layer_res_[layer->getNumber()][corner->index()] = res;
+  layer_cap_[layer->getNumber()][corner->index()] = cap;
 }
 
 void
@@ -92,11 +92,11 @@ Resizer::layerRC(dbTechLayer *layer,
                  double &res,
                  double &cap) const
 {
-  layerRC(layer->getRoutingLevel(), corner, res, cap);
+  layerRC(layer->getNumber(), corner, res, cap);
 }
 
 void
-Resizer::layerRC(int routing_level,
+Resizer::layerRC(int layer_level,
                  const Corner *corner,
                  // Return values.
                  double &res,
@@ -107,8 +107,8 @@ Resizer::layerRC(int routing_level,
     cap = 0.0;
   }
   else {
-    res = layer_res_[routing_level][corner->index()];
-    cap = layer_cap_[routing_level][corner->index()];
+    res = layer_res_[layer_level][corner->index()];
+    cap = layer_cap_[layer_level][corner->index()];
   }
 }
 
