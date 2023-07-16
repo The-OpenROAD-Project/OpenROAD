@@ -215,7 +215,6 @@ class DisplayControls : public QDockWidget,
   bool areInstanceNamesVisible() override;
   bool areInstancePinsVisible() override;
   bool areITermsVisible() override;
-  bool areITermsSelectable() override;
   bool areInstanceBlockagesVisible() override;
   bool areFillsVisible() override;
   bool areBlockagesVisible() override;

@@ -70,7 +70,6 @@ class Options
   virtual bool areInstanceNamesVisible() = 0;
   virtual bool areInstancePinsVisible() = 0;
   virtual bool areITermsVisible() = 0;
-  virtual bool areITermsSelectable() = 0;
   virtual bool areInstanceBlockagesVisible() = 0;
   virtual bool areFillsVisible() = 0;
   virtual bool areBlockagesVisible() = 0;

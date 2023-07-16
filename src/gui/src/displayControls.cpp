@@ -455,7 +455,7 @@ DisplayControls::DisplayControls(QWidget* parent)
                "Iterm Labels",
                instance_shape,
                Qt::Unchecked,
-               true,
+               false,
                iterm_label_color_);
   makeLeafItem(
       instance_shapes_.blockages, "Blockages", instance_shape, Qt::Checked);
@@ -1537,11 +1537,6 @@ bool DisplayControls::areInstancePinsVisible()
 bool DisplayControls::areITermsVisible()
 {
   return isModelRowVisible(&instance_shapes_.iterm_labels);
-}
-
-bool DisplayControls::areITermsSelectable()
-{
-  return isModelRowSelectable(&instance_shapes_.iterm_labels);
 }
 
 bool DisplayControls::areInstanceBlockagesVisible()

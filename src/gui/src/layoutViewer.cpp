@@ -887,19 +887,19 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                    region.yMax(),
                                    instanceSizeLimit());
 
-  if (options_->areITermsVisible() && options_->areITermsSelectable()) {
+  if (options_->areITermsVisible()) {
     for (auto& [box, inst] : insts) {
       if (options_->isInstanceVisible(inst)
           && options_->isInstanceSelectable(inst)) {
-        selections.push_back(gui_->makeSelected(inst));
-      }
-      for (auto iterm : inst->getITerms()) {
-        Rect iterm_bbox = iterm->getBBox();
-        if (region.xMin() > iterm_bbox.xMax()
-            || region.xMax() < iterm_bbox.xMin()
-            || region.yMin() > iterm_bbox.yMax()
-            || region.yMax() < iterm_bbox.yMin()) {
-          selections.push_back(gui_->makeSelected(iterm));
+        for (auto iterm : inst->getITerms()) {
+          Rect iterm_bbox = iterm->getBBox();
+          if (region.xMin() <= iterm_bbox.xMax()
+              && region.xMax() >= iterm_bbox.xMin()
+              && region.yMin() <= iterm_bbox.yMax()
+              && region.yMax() >= iterm_bbox.yMin()) {
+            selections.push_back(gui_->makeSelected(iterm));
+          }
+          selections.push_back(gui_->makeSelected(inst));
         }
       }
     }
