@@ -207,6 +207,7 @@ class Opendp
                          bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
+  void writeJsonReport(std::string filename);
   void setPadding(dbMaster* master, int left, int right);
   void setPadding(dbInst* inst, int left, int right);
   void setDebug(std::unique_ptr<dpl::DplObserver>& observer);

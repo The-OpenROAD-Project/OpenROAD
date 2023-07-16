@@ -98,6 +98,11 @@ void Opendp::init(dbDatabase* db, Logger* logger)
   logger_ = logger;
 }
 
+
+void Opendp::writeJsonReport(std::string report_file_name){
+
+}
+
 void Opendp::initBlock()
 {
   block_ = db_->getChip()->getBlock();

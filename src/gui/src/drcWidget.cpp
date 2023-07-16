@@ -753,6 +753,78 @@ void DRCWidget::loadTRReport(const QString& filename)
   report.close();
 }
 
+void DRCWidget::convertRptToJson(const std::string& rptFile,
+                                 const std::string& jsonFile)
+{
+  // std::ifstream rpt_stream(rptFile);
+  // if (!rpt_stream.is_open()) {
+  //   logger_->error(utl::GUI, 56, "Unable to open DRC report file: {}",
+  //   rptFile); return;
+  // }
+
+  // boost::property_tree::ptree report;
+  // boost::property_tree::ptree drc_list;
+
+  // int violation_count = 0;
+  // std::string line;
+  // while (std::getline(rpt_stream, line)) {
+  //   if (line.find("violation type:") == 0) {
+  //     boost::property_tree::ptree drc;
+  //     drc.put("name",
+  //             line.substr(16));        // 16 is the length of "violation
+  //             type: "
+  //     std::getline(rpt_stream, line);  // Read the next line with "srcs:"
+  //     drc.put("description", line.substr(7));  // 7 is the length of "srcs: "
+
+  //     std::getline(rpt_stream,
+  //                  line);  // Read the next line with "congestion
+  //                  information:"
+  //     if (line.find("congestion information:") == 0) {
+  //       drc.put(
+  //           "congestion_info",
+  //           line.substr(26));  // 26 is the length of "congestion
+  //           information: "
+  //       std::getline(rpt_stream, line);  // Read the next line with "bbox"
+  //     }
+
+  //     if (line.find("bbox = (") == 0) {
+  //       boost::property_tree::ptree violation;
+  //       violation.put("type", "box");
+
+  //       std::string bbox_str = line.substr(8);  // 8 is the length of "bbox =
+  //       (" size_t pos = bbox_str.find(") - ("); std::string p1_str =
+  //       bbox_str.substr(0, pos); std::string p2_str = bbox_str.substr(pos +
+  //       5); size_t comma_pos = p1_str.find(", "); std::string x1_str =
+  //       p1_str.substr(0, comma_pos); std::string y1_str =
+  //       p1_str.substr(comma_pos + 2); comma_pos = p2_str.find(", ");
+  //       std::string x2_str = p2_str.substr(0, comma_pos);
+  //       std::string y2_str = p2_str.substr(comma_pos + 2);
+
+  //       boost::property_tree::ptree shape;
+  //       boost::property_tree::ptree pt1, pt2;
+  //       pt1.put("x", std::stod(x1_str));
+  //       pt1.put("y", std::stod(y1_str));
+  //       pt2.put("x", std::stod(x2_str));
+  //       pt2.put("y", std::stod(y2_str));
+  //       shape.push_back(std::make_pair("", pt1));
+  //       shape.push_back(std::make_pair("", pt2));
+
+  //       violation.add_child("shape", shape);
+  //       drc_list.push_back(std::make_pair("", drc));
+  //       drc.put("violations", violation);
+  //       violation_count++;
+  //     }
+  //   }
+  // }
+
+  // rpt_stream.close();
+  // report.add_child("DRC", drc_list);
+
+  // std::ofstream json_stream(jsonFile);
+  // write_json(json_stream, report);
+  // json_stream.close();
+}
+
 void DRCWidget::loadJSONReport(const QString& filename)
 {
   boost::property_tree::ptree tree;
@@ -765,7 +837,8 @@ void DRCWidget::loadJSONReport(const QString& filename)
                    filename.toStdString(),
                    e1.what());
   }
-
+  auto tech = block_->getDataBase()->getTech();
+  int dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
   for (const auto& rule : tree.get_child("DRC")) {
     auto& drc_rule = rule.second;
 
@@ -773,19 +846,27 @@ void DRCWidget::loadJSONReport(const QString& filename)
     const std::string violation_text = drc_rule.get<std::string>("description");
 
     int i = 0;
-    for (const auto& violation_shape : drc_rule.get_child("violations")) {
-      auto& shape = violation_shape.second;
+    for (const auto& [_, violation] : drc_rule.get_child("violations")) {
+      std::string layer_str = violation.get<std::string>("layer");
+      const std::string shape_type = violation.get<std::string>("type");
+
+      odb::dbTechLayer* layer = nullptr;
+      if (!layer_str.empty()) {
+        layer = tech->findLayer(layer_str.c_str());
+        if (layer == nullptr) {
+          logger_->warn(
+              utl::GUI, 79, "Unable to find tech layer: {}", layer_str);
+        }
+      }
 
       std::vector<odb::Point> shape_points;
-      for (const auto& shape_pt : shape.get_child("shape")) {
-        auto& pt = shape_pt.second;
-        shape_points.emplace_back(
-            pt.get<double>("x") * block_->getDbUnitsPerMicron(),
-            pt.get<double>("y") * block_->getDbUnitsPerMicron());
+      for (const auto& [_, pt] : violation.get_child("shape")) {
+        double x = pt.get<double>("x", 0.0);
+        double y = pt.get<double>("y", 0.0);
+        shape_points.emplace_back(x * dbUnits, y * dbUnits);
       }
 
       std::vector<DRCViolation::DRCShape> shapes;
-      const std::string shape_type = shape.get<std::string>("type");
       if (shape_type == "box") {
         shapes.emplace_back(
             DRCViolation::DRCRect(shape_points[0], shape_points[1]));
@@ -796,7 +877,66 @@ void DRCWidget::loadJSONReport(const QString& filename)
         shapes.emplace_back(DRCViolation::DRCPoly(shape_points));
       } else {
         logger_->error(
-            utl::GUI, 56, "Unable to parse violation shape: {}", shape_type);
+            utl::GUI, 58, "Unable to parse violation shape: {}", shape_type);
+      }
+      std::vector<odb::dbObject*> srcs_list;
+      for (const auto& [_, src] : violation.get_child("sources")) {
+        std::string src_type = src.get<std::string>("type");
+        std::string src_name = src.get<std::string>("name");
+
+        odb::dbObject* item = nullptr;
+        if (src_type == "net") {
+          odb::dbNet* net = block_->findNet(src_name.c_str());
+          if (net != nullptr) {
+            item = net;
+          } else {
+            logger_->warn(utl::GUI, 85, "Unable to find net: {}", src_name);
+          }
+        } else if (src_type == "inst") {
+          odb::dbInst* inst = block_->findInst(src_name.c_str());
+          if (inst != nullptr) {
+            item = inst;
+          } else {
+            logger_->warn(
+                utl::GUI, 84, "Unable to find instance: {}", src_name);
+          }
+        } else if (src_type == "iterm") {
+          odb::dbITerm* iterm = block_->findITerm(src_name.c_str());
+          if (iterm != nullptr) {
+            item = iterm;
+          } else {
+            logger_->warn(utl::GUI, 83, "Unable to find iterm: {}", src_name);
+          }
+        } else if (src_type == "bterm") {
+          odb::dbBTerm* bterm = block_->findBTerm(src_name.c_str());
+          if (bterm != nullptr) {
+            item = bterm;
+          } else {
+            logger_->warn(utl::GUI, 82, "Unable to find bterm: {}", src_name);
+          }
+        } else if (src_type == "obstruction") {
+          if (layer != nullptr) {
+            for (const auto obs : block_->getObstructions()) {
+              auto obs_bbox = obs->getBBox();
+              if (obs_bbox->getTechLayer() == layer) {
+                odb::Rect obs_rect = obs_bbox->getBox();
+                // TODO: check if obs_rect is inside shape
+                srcs_list.emplace_back(obs);
+              }
+            }
+          }
+        } else {
+          logger_->warn(utl::GUI, 81, "Unknown source type: {}", src_type);
+        }
+
+        if (item != nullptr) {
+          srcs_list.push_back(item);
+        } else {
+          if (!src_name.empty()) {
+            logger_->warn(
+                utl::GUI, 80, "Failed to add source item: {}", src_name);
+          }
+        }
       }
 
       std::string name = violation_type + " - " + std::to_string(++i);
