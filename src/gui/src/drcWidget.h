@@ -64,7 +64,7 @@ class DRCViolation
 
   DRCViolation(const std::string& name,
                const std::string& type,
-               const std::vector<std::any>& srcs,
+               const std::vector<odb::dbObject*>& srcs,
                const std::vector<DRCShape>& shapes,
                odb::dbTechLayer* layer,
                const std::string& comment,
@@ -78,7 +78,7 @@ class DRCViolation
 
   const std::string& getName() { return name_; }
   const std::string& getType() { return type_; }
-  const std::vector<std::any>& getSources() { return srcs_; }
+  const std::vector<odb::dbObject*>& getSources() { return srcs_; }
   const std::vector<DRCShape>& getShapes() { return shapes_; }
   const odb::Rect& getBBox() { return bbox_; }
   const std::string getComment() { return comment_; }
@@ -99,7 +99,7 @@ class DRCViolation
 
   std::string name_;
   std::string type_;
-  std::vector<std::any> srcs_;
+  std::vector<odb::dbObject*> srcs_;
   std::vector<DRCShape> shapes_;
   odb::dbTechLayer* layer_;
   std::string comment_;

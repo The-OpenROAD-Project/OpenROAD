@@ -57,7 +57,7 @@ namespace gui {
 
 DRCViolation::DRCViolation(const std::string& name,
                            const std::string& type,
-                           const std::vector<std::any>& srcs,
+                           const std::vector<odb::dbObject*>& srcs,
                            const std::vector<DRCShape>& shapes,
                            odb::dbTechLayer* layer,
                            const std::string& comment,
@@ -637,7 +637,7 @@ void DRCWidget::loadTRReport(const QString& filename)
                      bbox);
     }
 
-    std::vector<std::any> srcs_list;
+    std::vector<odb::dbObject*> srcs_list;
     std::stringstream srcs_stream(sources);
     std::string single_source;
     std::string comment;
@@ -652,7 +652,7 @@ void DRCWidget::loadTRReport(const QString& filename)
       std::string item_type = single_source.substr(0, ident);
       std::string item_name = single_source.substr(ident + 1);
 
-      std::any item;
+      odb::dbObject* item = nullptr;
 
       if (item_type == "net") {
         odb::dbNet* net = block_->findNet(item_name.c_str());
@@ -726,7 +726,7 @@ void DRCWidget::loadTRReport(const QString& filename)
                       item_type);
       }
 
-      if (item.has_value()) {
+      if (item != nullptr) {
         srcs_list.push_back(item);
       } else {
         if (!item_name.empty()) {
@@ -844,11 +844,24 @@ void DRCWidget::loadJSONReport(const QString& filename)
 
     const std::string violation_type = drc_rule.get<std::string>("name");
     const std::string violation_text = drc_rule.get<std::string>("description");
-
+    debugPrint(logger_,
+               utl::GUI,
+               "detailed",
+               1,
+               "DRC violation name: {} type: {}",
+               violation_text,
+               violation_type);
     int i = 0;
     for (const auto& [_, violation] : drc_rule.get_child("violations")) {
       std::string layer_str = violation.get<std::string>("layer");
       const std::string shape_type = violation.get<std::string>("type");
+      debugPrint(logger_,
+                 utl::GUI,
+                 "detailed",
+                 1,
+                 "DRC violation layer: {} type: {}",
+                 layer_str,
+                 shape_type);
 
       odb::dbTechLayer* layer = nullptr;
       if (!layer_str.empty()) {
@@ -856,6 +869,14 @@ void DRCWidget::loadJSONReport(const QString& filename)
         if (layer == nullptr) {
           logger_->warn(
               utl::GUI, 79, "Unable to find tech layer: {}", layer_str);
+        } else {
+          debugPrint(logger_,
+                     utl::GUI,
+                     "detailed",
+                     1,
+                     "DRC violation layer: {} type: {}",
+                     layer->getName(),
+                     shape_type);
         }
       }
 
@@ -864,17 +885,48 @@ void DRCWidget::loadJSONReport(const QString& filename)
         double x = pt.get<double>("x", 0.0);
         double y = pt.get<double>("y", 0.0);
         shape_points.emplace_back(x * dbUnits, y * dbUnits);
+        debugPrint(logger_,
+                   utl::GUI,
+                   "detailed",
+                   1,
+                   "DRC violation point: ({}, {})",
+                   x,
+                   y);
       }
 
       std::vector<DRCViolation::DRCShape> shapes;
       if (shape_type == "box") {
         shapes.emplace_back(
             DRCViolation::DRCRect(shape_points[0], shape_points[1]));
+        debugPrint(logger_,
+                   utl::GUI,
+                   "detailed",
+                   1,
+                   "DRC violation box: ({}, {}), ({}, {})",
+                   shape_points[0].getX(),
+                   shape_points[0].getY(),
+                   shape_points[1].getX(),
+                   shape_points[1].getY());
       } else if (shape_type == "edge") {
         shapes.emplace_back(
             DRCViolation::DRCLine(shape_points[0], shape_points[1]));
+        debugPrint(logger_,
+                   utl::GUI,
+                   "detailed",
+                   1,
+                   "DRC violation edge: ({}, {}), ({}, {})",
+                   shape_points[0].getX(),
+                   shape_points[0].getY(),
+                   shape_points[1].getX(),
+                   shape_points[1].getY());
       } else if (shape_type == "polygon") {
         shapes.emplace_back(DRCViolation::DRCPoly(shape_points));
+        debugPrint(logger_,
+                   utl::GUI,
+                   "detailed",
+                   1,
+                   "DRC violation polygon: {} points",
+                   shape_points.size());
       } else {
         logger_->error(
             utl::GUI, 58, "Unable to parse violation shape: {}", shape_type);
@@ -883,12 +935,26 @@ void DRCWidget::loadJSONReport(const QString& filename)
       for (const auto& [_, src] : violation.get_child("sources")) {
         std::string src_type = src.get<std::string>("type");
         std::string src_name = src.get<std::string>("name");
+        debugPrint(logger_,
+                   utl::GUI,
+                   "detailed",
+                   1,
+                   "DRC violation source: {} {}",
+                   src_type,
+                   src_name);
 
         odb::dbObject* item = nullptr;
         if (src_type == "net") {
           odb::dbNet* net = block_->findNet(src_name.c_str());
           if (net != nullptr) {
             item = net;
+            debugPrint(logger_,
+                       utl::GUI,
+                       "detailed",
+                       1,
+                       "DRC violation source: {} {}",
+                       src_type,
+                       net->getConstName());
           } else {
             logger_->warn(utl::GUI, 85, "Unable to find net: {}", src_name);
           }
@@ -896,6 +962,13 @@ void DRCWidget::loadJSONReport(const QString& filename)
           odb::dbInst* inst = block_->findInst(src_name.c_str());
           if (inst != nullptr) {
             item = inst;
+            debugPrint(logger_,
+                       utl::GUI,
+                       "detailed",
+                       1,
+                       "DRC violation source: {} {}",
+                       src_type,
+                       inst->getConstName());
           } else {
             logger_->warn(
                 utl::GUI, 84, "Unable to find instance: {}", src_name);
@@ -904,6 +977,13 @@ void DRCWidget::loadJSONReport(const QString& filename)
           odb::dbITerm* iterm = block_->findITerm(src_name.c_str());
           if (iterm != nullptr) {
             item = iterm;
+            debugPrint(logger_,
+                       utl::GUI,
+                       "detailed",
+                       1,
+                       "DRC violation source: {} {}",
+                       src_type,
+                       iterm->getObjName());
           } else {
             logger_->warn(utl::GUI, 83, "Unable to find iterm: {}", src_name);
           }
@@ -911,6 +991,13 @@ void DRCWidget::loadJSONReport(const QString& filename)
           odb::dbBTerm* bterm = block_->findBTerm(src_name.c_str());
           if (bterm != nullptr) {
             item = bterm;
+            debugPrint(logger_,
+                       utl::GUI,
+                       "detailed",
+                       1,
+                       "DRC violation source: {} {}",
+                       src_type,
+                       bterm->getConstName());
           } else {
             logger_->warn(utl::GUI, 82, "Unable to find bterm: {}", src_name);
           }
@@ -931,6 +1018,13 @@ void DRCWidget::loadJSONReport(const QString& filename)
 
         if (item != nullptr) {
           srcs_list.push_back(item);
+          debugPrint(logger_,
+                     utl::GUI,
+                     "detailed",
+                     1,
+                     "DRC violation source: {} {}",
+                     src_type,
+                     item->getObjName());
         } else {
           if (!src_name.empty()) {
             logger_->warn(
@@ -940,8 +1034,9 @@ void DRCWidget::loadJSONReport(const QString& filename)
       }
 
       std::string name = violation_type + " - " + std::to_string(++i);
+
       violations_.push_back(std::make_unique<DRCViolation>(
-          name, violation_type, shapes, violation_text, 0));
+          name, violation_type, srcs_list, shapes, layer, violation_text, 0));
     }
   }
 }
