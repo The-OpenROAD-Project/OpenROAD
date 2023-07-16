@@ -17,14 +17,157 @@ guide format.
 
 ## Commands
 
-## Report wire length
+### Detailed Route
 
-Check the [global router README](https://github.com/The-OpenROAD-Project/OpenROAD/blob/master/src/grt/README.md)
-file for the full description of the `report_wire_length` command.
+```
+detailed_route 
+    [-output_maze filename]
+    [-output_drc filename]
+    [-output_cmap filename]
+    [-output_guide_coverage filename]
+    [-drc_report_iter_step step]
+    [-db_process_node name]
+    [-disable_via_gen]
+    [-droute_end_iter iter]
+    [-via_in_pin_bottom_layer layer]
+    [-via_in_pin_top_layer layer]
+    [-or_seed seed]
+    [-or_k_ k]
+    [-bottom_routing_layer layer]
+    [-top_routing_layer layer]
+    [-verbose level]
+    [-param filename]
+    [-distributed]
+    [-remote_host rhost]
+    [-remote_port rport]
+    [-shared_volume vol]
+    [-cloud_size sz]
+    [-clean_patches]
+    [-no_pin_access]
+    [-min_access_points count]
+    [-save_guide_updates]
+    [-repair_pdn_vias layer]
+```
+
+- `-output_maze` output maze log filename
+- `-output_drc` output drc report filename
+- `-output_cmap` output congestion map file file
+- `-output_guide_coverage` output guide coverage filename
+- `-drc_report_iter_step` report drc on each iteration which is a multiple of this step
+- `-db_process_node` specify the process node (optional)
+- `-disable_via_gen` option to diable via generation with bottom and top routing layer
+- `-droute_end_iter` number of detailed routing iterations
+- `-via_in_pin_bottom_layer` via-in pin bottom layer name  
+- `-via_in_pin_top_layer` via-in pin top layer name
+- `-or_seed` random seed
+- `-or_k` number of swaps is given by $k * sizeof(rerouteNets)$
+- `-bottom_routing_layer` bottommost routing layer name 
+- `-top_routing_layer` topmost routing layer name
+- `-verbose` set verbose if value is greater than 0. 
+- `-param` you may set parameters in this argument using a file. note that `-param` may not be used
+with other keyword arguments. (deprecated)
+- `-distributed` enable distributed mode with Kubernetes and Google Cloud, [guide](./doc/Distributed.md).
+- `-remote_host` the host IP 
+- `-remote_port` the value of the port to access from 
+- `-shared_volume` the mount path of the nfs shared folder
+- `-cloud_size` the number of workers 
+- `-clean_patches` clean unneeded patches during detailed routing. 
+- `-min_access_points` minimum access points for standard cell and macro cell pins. 
+- `-save_guide_updates` save guides updates 
+
+### Detailed Route debugging
+
+```
+detailed_route_debug 
+    [-pa]
+    [-ta]
+    [-dr]
+    [-maze]
+    [-net name]
+    [-pin name]
+    [-worker x y]
+    [-iter iter]
+    [-pa_markers]
+    [-dump_dr]
+    [-dump_dir dir]
+    [-pa_edge]
+    [-pa_commit]
+    [-write_net_tracks]
+```
+
+- `-pa` enable debug for pin access
+- `-ta` enable debug for track assignment
+- `-dr` enable debug for detailed routing
+- `-maze` enable debug for maze routing 
+- `-net` enable debug for net name
+- `-pin` enable debug for pin name
+- `-worker` debugs routes that pass through the point `{x, y}`
+- `-iter` debug iterations
+- `-pa_markers` enable pin access markers
+- `-dump_dr` dump detailed routing filename
+- `-dump_dir dir` dump detailed routing directory
+- `-pa_edge` visibility of pin access edges
+- `-pa_commit` visibility of pin access commits
+- `-write_net_tracks` enable writing of net track assigments
+
+### Check Pin access 
+
+```
+pin_access
+    [-db_process_node name]
+    [-bottom_routing_layer layer]
+    [-top_routing_layer layer]
+    [-min_access_points count]
+    [-verbose level]
+    [-distributed]
+    [-remote_host rhost]
+    [-remote_port rport]
+    [-shared_volume vol]
+    [-cloud_size sz]
+```
+
+- `-db_process_node` specify for process node (optional) 
+- `-bottom_routing_layer` bottommost routing layer
+- `-top_routing_layer` topmost routing layer
+- `-min_access_points` minimum number of access points per pin
+- `-verbose` set verbose if the value is greater than 0
+- `-distributed` enable distributed pin access algorithm
+- `-remote_host` the host IP 
+- `-remote_port` the value of the port to access from 
+- `-shared_volume` the mount path of the nfs shared folder
+- `-cloud_size` the number of workers 
+
+### Other functions
+
+```
+    detailed_route_set_default_via [-via]   # set default via 
+    detailed_route_set_unidirectional_layer [-layer] # set unidirectional layer
+```
+
+### Undocumented functions (coming soon!)
+
+```
+    step_dr
+    check_drc
+```
 
 ## Example scripts
 
+Example script demonstrating how to run TritonRoute on a sample design of `gcd`
+in the Nangate45 technology node.
+
+```
+./test/gcd_nangate45.tcl    # single machine example
+./test/gcd_nangate45_distributed.tcl    # distributed example
+```
+
 ## Regression tests
+
+There is a set of regression tests in `/test`.
+
+```shell
+./test/regression
+```
 
 ## Limitations
 
