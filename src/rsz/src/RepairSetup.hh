@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <unordered_set>
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"
@@ -159,7 +160,7 @@ private:
   int swap_pin_count_;
   // Map to block pins from being swapped more than twice for the
   // same instance. 
-  std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
+  std::unordered_set<const sta::Instance *> swap_pin_inst_set_;
   
   const MinMax *min_;
   const MinMax *max_;
