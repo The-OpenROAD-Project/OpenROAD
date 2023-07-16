@@ -38,6 +38,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace sta {
 class dbSta;
+class Corner;
+}  // namespace sta
+
+namespace rsz {
+class Resizer;
 }
 
 namespace psm {
@@ -72,6 +77,7 @@ class IRSolver
    */
   IRSolver(odb::dbDatabase* db,
            sta::dbSta* sta,
+           rsz::Resizer* resizer,
            utl::Logger* logger,
            const std::string& vsrc_loc,
            const std::string& power_net,
@@ -84,7 +90,8 @@ class IRSolver
            int bump_pitch_y,
            float node_density_um,
            int node_density_factor_user,
-           const std::map<std::string, float>& net_voltage_map);
+           const std::map<std::string, float>& net_voltage_map,
+           sta::Corner* corner);
   //! IRSolver destructor
   ~IRSolver();
   //! Returns the created G matrix for the design
@@ -155,6 +162,8 @@ class IRSolver
   bool checkValidR(double R);
   bool getResult();
 
+  double getResistance(odb::dbTechLayer* layer) const;
+
   float supply_voltage_src{0};
   //! Worst case voltage at the lowest layer nodes
   double wc_voltage{0};
@@ -172,6 +181,8 @@ class IRSolver
   odb::dbDatabase* db_;
   //! Pointer to STA
   sta::dbSta* sta_;
+  //! Pointer to Resizer for parastics
+  rsz::Resizer* resizer_;
   //! Pointer to Logger
   utl::Logger* logger_;
   //! Voltage source file
@@ -201,6 +212,8 @@ class IRSolver
 
   bool result_{false};
   bool connection_{false};
+
+  sta::Corner* corner_;
 
   odb::dbSigType power_net_type_;
   std::map<std::string, float> net_voltage_map_;
