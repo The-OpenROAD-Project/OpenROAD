@@ -92,21 +92,12 @@ Resizer::layerRC(dbTechLayer *layer,
                  double &res,
                  double &cap) const
 {
-  layerRC(layer->getNumber(), corner, res, cap);
-}
-
-void
-Resizer::layerRC(int layer_level,
-                 const Corner *corner,
-                 // Return values.
-                 double &res,
-                 double &cap) const
-{
   if (layer_res_.empty()) {
     res = 0.0;
     cap = 0.0;
   }
   else {
+    const int layer_level = layer->getNumber();
     res = layer_res_[layer_level][corner->index()];
     cap = layer_cap_[layer_level][corner->index()];
   }
