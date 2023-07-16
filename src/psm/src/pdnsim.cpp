@@ -204,10 +204,10 @@ void PDNSim::analyze_power_grid()
   logger_->report("Worstcase IR drop: {:3.2e} V", worst_drop);
   logger_->report("######################################");
 
-  logger_->metric("powergrid__worst__voltage",
+  logger_->metric("design_powergrid__voltage__worst",
                   irsolve_h->getWorstCaseVoltage());
-  logger_->metric("powergrid__average__drop", avg_drop);
-  logger_->metric("powergrid__worst__drop", worst_drop);
+  logger_->metric("design_powergrid__drop__average", avg_drop);
+  logger_->metric("design_powergrid__drop__worst", worst_drop);
 
   if (enable_em_) {
     logger_->report("########## EM analysis ###############");
@@ -216,8 +216,10 @@ void PDNSim::analyze_power_grid()
     logger_->report("Number of resistors: {}", irsolve_h->getNumResistors());
     logger_->report("######################################");
 
-    logger_->metric("powergrid__average__current", irsolve_h->getAvgCurrent());
-    logger_->metric("powergrid__max__current", irsolve_h->getMaxCurrent());
+    logger_->metric("design_powergrid__current__average",
+                    irsolve_h->getAvgCurrent());
+    logger_->metric("design_powergrid__current__max",
+                    irsolve_h->getMaxCurrent());
   }
 
   IRDropByLayer ir_drop;
