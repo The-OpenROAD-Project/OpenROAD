@@ -45,7 +45,8 @@ class dbTechLayer;
 
 namespace sta {
 class dbSta;
-}
+class Corner;
+}  // namespace sta
 namespace utl {
 class Logger;
 }
@@ -91,6 +92,8 @@ class PDNSim
   bool check_connectivity();
   void setDebugGui();
 
+  void setCorner(sta::Corner* corner);
+
  private:
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
@@ -105,6 +108,7 @@ class PDNSim
   int bump_pitch_y_ = 0;
   std::string spice_out_file_;
   std::string power_net_;
+  sta::Corner* corner_;
   std::map<std::string, float> net_voltage_map_;
   IRDropByLayer ir_drop_;
   float node_density_ = -1;

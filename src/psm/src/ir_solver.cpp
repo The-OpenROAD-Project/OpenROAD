@@ -128,7 +128,7 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   net_voltage_map_ = net_voltage_map;
 
   if (corner == nullptr) {
-    logger_->error(utl::PSM, 84, "A valid corner is required.");
+    corner = sta_->cmdCorner();
   }
   corner_ = corner;
 }

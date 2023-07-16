@@ -161,7 +161,7 @@ void PDNSim::write_pg_spice()
                                               node_density_,
                                               node_density_factor_,
                                               net_voltage_map_,
-                                              sta_->cmdCorner());
+                                              corner_);
 
   if (irsolve_h->build()) {
     int check_spice = irsolve_h->printSpice();
@@ -194,7 +194,7 @@ void PDNSim::analyze_power_grid()
                                               node_density_,
                                               node_density_factor_,
                                               net_voltage_map_,
-                                              sta_->cmdCorner());
+                                              corner_);
 
   if (!irsolve_h->build()) {
     logger_->error(
@@ -264,7 +264,7 @@ bool PDNSim::check_connectivity()
                                               node_density_,
                                               node_density_factor_,
                                               net_voltage_map_,
-                                              sta_->cmdCorner());
+                                              corner_);
   if (!irsolve_h->buildConnection()) {
     return false;
   }
@@ -296,6 +296,11 @@ int PDNSim::getMinimumResolution()
         "Minimum resolution not set. Please run analyze_power_grid first.");
   }
   return min_resolution_;
+}
+
+void PDNSim::setCorner(sta::Corner* corner)
+{
+  corner_ = corner;
 }
 
 }  // namespace psm
