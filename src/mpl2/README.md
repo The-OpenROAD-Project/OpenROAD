@@ -76,6 +76,12 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 
 ## Example scripts
 
+Examples scripts demonstrating how to run Hier-RTLMP on a sample design of `bp_fe_top` as follows:
+
+```
+./test/bp_fe_top.tcl
+```
+
 ## Regression tests
 
 There is a set of regression tests in `/test`.
