@@ -41,12 +41,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
+#include "db_sta/dbSta.hh"
 #include "debug_gui.h"
 #include "gmat.h"
 #include "heatMap.h"
 #include "ir_solver.h"
 #include "node.h"
 #include "odb/db.h"
+#include "sta/Corner.hh"
 #include "utl/Logger.h"
 
 namespace psm {
@@ -55,10 +57,14 @@ PDNSim::PDNSim() = default;
 
 PDNSim::~PDNSim() = default;
 
-void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
+void PDNSim::init(utl::Logger* logger,
+                  odb::dbDatabase* db,
+                  sta::dbSta* sta,
+                  rsz::Resizer* resizer)
 {
   db_ = db;
   sta_ = sta;
+  resizer_ = resizer;
   logger_ = logger;
   heatmap_ = std::make_unique<IRDropDataSource>(this, logger_);
   heatmap_->registerHeatMap();
@@ -142,6 +148,7 @@ void PDNSim::write_pg_spice()
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
+                                              resizer_,
                                               logger_,
                                               vsrc_loc_,
                                               power_net_,
@@ -154,7 +161,8 @@ void PDNSim::write_pg_spice()
                                               bump_pitch_y_,
                                               node_density_,
                                               node_density_factor_,
-                                              net_voltage_map_);
+                                              net_voltage_map_,
+                                              corner_);
 
   if (irsolve_h->build()) {
     int check_spice = irsolve_h->printSpice();
@@ -173,6 +181,7 @@ void PDNSim::analyze_power_grid()
   GMat* gmat_obj;
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
+                                              resizer_,
                                               logger_,
                                               vsrc_loc_,
                                               power_net_,
@@ -185,7 +194,8 @@ void PDNSim::analyze_power_grid()
                                               bump_pitch_y_,
                                               node_density_,
                                               node_density_factor_,
-                                              net_voltage_map_);
+                                              net_voltage_map_,
+                                              corner_);
 
   if (!irsolve_h->build()) {
     logger_->error(
@@ -194,6 +204,8 @@ void PDNSim::analyze_power_grid()
   gmat_obj = irsolve_h->getGMat();
   irsolve_h->solveIR();
   logger_->report("########## IR report #################");
+  logger_->report("Corner: {}",
+                  corner_ != nullptr ? corner_->name() : "default");
   logger_->report("Worstcase voltage: {:3.2e} V",
                   irsolve_h->getWorstCaseVoltage());
   logger_->report(
@@ -241,6 +253,7 @@ bool PDNSim::check_connectivity()
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
+                                              resizer_,
                                               logger_,
                                               vsrc_loc_,
                                               power_net_,
@@ -253,7 +266,8 @@ bool PDNSim::check_connectivity()
                                               bump_pitch_y_,
                                               node_density_,
                                               node_density_factor_,
-                                              net_voltage_map_);
+                                              net_voltage_map_,
+                                              corner_);
   if (!irsolve_h->buildConnection()) {
     return false;
   }
@@ -285,6 +299,11 @@ int PDNSim::getMinimumResolution()
         "Minimum resolution not set. Please run analyze_power_grid first.");
   }
   return min_resolution_;
+}
+
+void PDNSim::setCorner(sta::Corner* corner)
+{
+  corner_ = corner;
 }
 
 }  // namespace psm

@@ -18,6 +18,7 @@
 [INFO PSM-0064] Number of voltage sources = 4.
 [INFO PSM-0040] All PDN stripes on net VDD are connected.
 ########## IR report #################
+Corner: default
 Worstcase voltage: 1.05e+00 V
 Average IR drop  : 1.71e-02 V
 Worstcase IR drop: 4.78e-02 V
