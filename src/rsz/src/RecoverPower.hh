@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -34,12 +34,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-#include "db_sta/dbNetwork.hh"
-#include "db_sta/dbSta.hh"
-#include "sta/FuncExpr.hh"
-#include "sta/MinMax.hh"
-#include "sta/StaState.hh"
+
 #include "utl/Logger.h"
+#include "db_sta/dbSta.hh"
+
+#include "sta/StaState.hh"
+#include "sta/MinMax.hh"
+#include "sta/FuncExpr.hh"
 
 namespace sta {
 class PathExpanded;
@@ -50,8 +51,7 @@ namespace rsz {
 class Resizer;
 
 using std::vector;
-using std::pair;
-using odb::Point;
+
 using utl::Logger;
 
 using sta::StaState;
@@ -73,79 +73,46 @@ using sta::Corner;
 class BufferedNet;
 enum class BufferedNetType;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
-typedef vector<BufferedNetPtr> BufferedNetSeq;
+using BufferedNetSeq = vector<BufferedNetPtr>;
 
-class RepairSetup : StaState
+class RecoverPower : StaState
 {
 public:
-  RepairSetup(Resizer *resizer);
-  void repairSetup(float setup_slack_margin,
-                   // Percent of violating ends to repair to
-                   // reduce tns (0.0-1.0).
-                   double repair_tns_end_percent,
-                   int max_passes,
-                   bool verbose,
-                   bool skip_pin_swap,
-                   bool enable_gate_cloning);
+  RecoverPower(Resizer *resizer);
+  void recoverPower();
   // For testing.
-  void repairSetup(const Pin *end_pin);
+  void recoverPower(const Pin *end_pin);
   // Rebuffer one net (for testing).
   // resizerPreamble() required.
   void rebufferNet(const Pin *drvr_pin);
 
 private:
   void init();
-  bool repairSetup(PathRef &path,
-                   Slack path_slack,
-                   bool skip_pin_swap,
-                   bool enable_gate_cloning);
-  void debugCheckMultipleBuffers(PathRef &path,
-                                 PathExpanded *expanded);
+  bool recoverPower(PathRef &path,
+                   Slack path_slack);
+  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv,                           bool match_size);
+  bool downsizeDrvr(PathRef *drvr_path, int drvr_index,
+                    PathExpanded *expanded, bool only_same_size_swap,
+                    Slack path_slack);
 
-  void getEquivPortList2(sta::FuncExpr *expr, sta::LibertyPortSet &ports,
-                         sta::FuncExpr::Operator &status);
-  void getEquivPortList(sta::FuncExpr *expr, sta::LibertyPortSet &ports);
-  void equivCellPins(const LibertyCell *cell, sta::LibertyPortSet &ports);
-  bool swapPins(PathRef *drvr_path, int drvr_index, PathExpanded *expanded);
-  bool meetsSizeCriteria(LibertyCell *cell, LibertyCell *equiv, bool match_size);
-  bool upsizeDrvr(PathRef *drvr_path,
-                  int drvr_index,
-                  PathExpanded *expanded,
-                  bool only_same_size_swap);
-  Point computeCloneGateLocation(const Pin *drvr_pin,
-                                 const vector<pair<Vertex*, Slack>> &fanout_slacks);
-  bool cloneDriver(PathRef* drvr_path, int drvr_index,
-                   Slack drvr_slack, PathExpanded *expanded);
-  void splitLoads(PathRef *drvr_path,
-                  int drvr_index,
-                  Slack drvr_slack,
-                  PathExpanded *expanded);
-  LibertyCell *upsizeCell(LibertyPort *in_port,
-                          LibertyPort *drvr_port,
-                          float load_cap,
-                          float prev_drive,
+  LibertyCell *downsizeCell(LibertyPort *in_port, LibertyPort *drvr_port,
+                          float load_cap, float prev_drive,
                           const DcalcAnalysisPt *dcalc_ap,
-                          bool match_size);
+                          bool match_size,  Slack path_slack);
   int fanout(Vertex *vertex);
   bool hasTopLevelOutputPort(Net *net);
 
-  int rebuffer(const Pin *drvr_pin);
-  BufferedNetSeq rebufferBottomUp(BufferedNetPtr bnet,
-                                  int level);
-  int rebufferTopDown(BufferedNetPtr choice,
-                      Net *net,
-                      int level);
   BufferedNetSeq
   addWireAndBuffer(BufferedNetSeq Z,
                    BufferedNetPtr bnet_wire,
                    int level);
+  float pinCapacitance(const Pin *pin,
+                       const DcalcAnalysisPt *dcalc_ap);
   float bufferInputCapacitance(LibertyCell *buffer_cell,
                                const DcalcAnalysisPt *dcalc_ap);
   Slack slackPenalized(BufferedNetPtr bnet);
   Slack slackPenalized(BufferedNetPtr bnet,
                        int index);
-
-  void printProgress(int iteration, bool force, bool end) const;
 
   Logger *logger_;
   dbSta *sta_;
@@ -156,14 +123,9 @@ private:
 
   int resize_count_;
   int inserted_buffer_count_;
-  int split_load_buffer_count_;
   int rebuffer_net_count_;
-  int cloned_gate_count_;  
   int swap_pin_count_;
-  // Map to block pins from being swapped more than twice for the
-  // same instance. 
   std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
-  
   const MinMax *min_;
   const MinMax *max_;
 
@@ -173,7 +135,6 @@ private:
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
-  static constexpr int print_interval_ = 10;
 };
 
-} // namespace
+} // namespace rsz

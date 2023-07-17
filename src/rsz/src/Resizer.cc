@@ -41,6 +41,7 @@
 
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
+#include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
@@ -133,7 +134,8 @@ using sta::InputDrive;
 using sta::PinConnectedPinIterator;
 
 Resizer::Resizer()
-    : repair_design_(new RepairDesign(this)),
+    : recover_power_(new RecoverPower(this)),
+      repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
       wire_signal_res_(0.0),
@@ -2564,6 +2566,7 @@ void
 Resizer::repairSetup(double setup_margin,
                      double repair_tns_end_percent,
                      int max_passes,
+                     bool verbose,
                      bool skip_pin_swap,
                      bool enable_gate_cloning)
 {
@@ -2572,7 +2575,8 @@ Resizer::repairSetup(double setup_margin,
     opendp_->initMacrosAndGrid();
   }
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
-                             max_passes, skip_pin_swap, enable_gate_cloning);
+                             max_passes, verbose,
+                             skip_pin_swap, enable_gate_cloning);
 }
 
 void
@@ -2597,7 +2601,8 @@ Resizer::repairHold(double setup_margin,
                     bool allow_setup_violations,
                     // Max buffer count as percent of design instance count.
                     float max_buffer_percent,
-                    int max_passes)
+                    int max_passes,
+                    bool verbose)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2605,7 +2610,8 @@ Resizer::repairHold(double setup_margin,
   }
   repair_hold_->repairHold(setup_margin, hold_margin,
                            allow_setup_violations,
-                           max_buffer_percent, max_passes);
+                           max_buffer_percent, max_passes,
+                           verbose);
 }
 
 void
@@ -2629,7 +2635,16 @@ Resizer::holdBufferCount() const
 }
 
 ////////////////////////////////////////////////////////////////
-
+void
+Resizer::recoverPower()
+{
+  resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_->initMacrosAndGrid();
+  }
+  recover_power_->recoverPower();
+}
+////////////////////////////////////////////////////////////////
 // Journal to roll back changes (OpenDB not up to the task).
 void
 Resizer::journalBegin()

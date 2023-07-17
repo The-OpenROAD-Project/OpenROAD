@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gmat.h"
 #include "node.h"
 #include "odb/db.h"
+#include "rsz/Resizer.hh"
 
 namespace psm {
 using odb::dbBlock;
@@ -93,6 +94,7 @@ using Eigen::VectorXd;
 
 IRSolver::IRSolver(odb::dbDatabase* db,
                    sta::dbSta* sta,
+                   rsz::Resizer* resizer,
                    utl::Logger* logger,
                    const std::string& vsrc_loc,
                    const std::string& power_net,
@@ -105,10 +107,12 @@ IRSolver::IRSolver(odb::dbDatabase* db,
                    int bump_pitch_y,
                    float node_density_um,
                    int node_density_factor_user,
-                   const std::map<std::string, float>& net_voltage_map)
+                   const std::map<std::string, float>& net_voltage_map,
+                   sta::Corner* corner)
 {
   db_ = db;
   sta_ = sta;
+  resizer_ = resizer;
   logger_ = logger;
   vsrc_file_ = vsrc_loc;
   power_net_ = power_net;
@@ -122,6 +126,11 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   node_density_um_ = node_density_um;
   node_density_factor_user_ = node_density_factor_user;
   net_voltage_map_ = net_voltage_map;
+
+  if (corner == nullptr) {
+    corner = sta_->cmdCorner();
+  }
+  corner_ = corner;
 }
 
 IRSolver::~IRSolver() = default;
@@ -950,7 +959,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
           = getViaCuts(loc, via_boxes, bot_l, top_l, has_params, params);
 
       // Find the resistance of each via cut
-      const double R = via_bottom_layer->getUpperLayer()->getResistance()
+      const double R = getResistance(via_bottom_layer->getUpperLayer())
                        * via_cuts.size() / (num_via_rows * num_via_cols);
       if (!checkValidR(R) && !connection_only) {
         logger_->error(utl::PSM,
@@ -1004,7 +1013,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
       const auto bot_layer_dir = via_bottom_layer->getDirection();
       // The bottom layer must be connected by a rail and not by the enclosure.
       if (bot_l != bottom_layer_) {
-        const double rho = via_bottom_layer->getResistance();
+        const double rho = getResistance(via_bottom_layer);
         if (!checkValidR(rho) && !connection_only) {
           logger_->error(utl::PSM,
                          36,
@@ -1025,7 +1034,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
       }
       // Create the connections in the top enclosure
       const auto top_layer_dir = via_top_layer->getDirection();
-      const double rho = via_top_layer->getResistance();
+      const double rho = getResistance(via_top_layer);
       if (!checkValidR(rho) && !connection_only) {
         logger_->error(utl::PSM,
                        37,
@@ -1048,7 +1057,7 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
       // stripe
       dbTechLayer* wire_layer = curWire->getTechLayer();
       int l = wire_layer->getRoutingLevel();
-      double rho = wire_layer->getResistance();
+      double rho = getResistance(wire_layer);
       if (!checkValidR(rho) && !connection_only) {
         logger_->error(utl::PSM,
                        66,
@@ -1351,12 +1360,12 @@ vector<pair<odb::dbInst*, double>> IRSolver::getPower()
 {
   debugPrint(
       logger_, utl::PSM, "IR Solver", 1, "Executing STA for power calculation");
-  return PowerInst().executePowerPerInst(sta_, logger_);
+  return PowerInst().executePowerPerInst(sta_, logger_, corner_);
 }
 
 pair<double, double> IRSolver::getSupplyVoltage()
 {
-  return SupplyVoltage().getSupplyVoltage(sta_, logger_);
+  return SupplyVoltage().getSupplyVoltage(sta_, logger_, corner_);
 }
 
 bool IRSolver::getResult()
@@ -1508,4 +1517,30 @@ bool IRSolver::buildConnection()
   result_ = res;
   return result_;
 }
+
+double IRSolver::getResistance(odb::dbTechLayer* layer) const
+{
+  double res;
+
+  if (layer->getRoutingLevel() == 0) {
+    double cap;
+    resizer_->layerRC(layer, corner_, res, cap);
+  } else {
+    double r_per_meter, cap_per_meter;
+    resizer_->layerRC(layer, corner_, r_per_meter, cap_per_meter);
+
+    const double width_meter = static_cast<double>(layer->getWidth())
+                               / layer->getTech()->getLefUnits() * 1e-6;
+
+    res = r_per_meter * width_meter;
+  }
+
+  if (res == 0.0) {
+    // Get database resistance
+    res = layer->getResistance();
+  }
+
+  return res;
+}
+
 }  // namespace psm
