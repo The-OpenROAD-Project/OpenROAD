@@ -554,6 +554,7 @@ protected:
   void journalRestore(int &resize_count,
                       int &inserted_buffer_count,
                       int &cloned_gate_count);
+  void journalUndoGateCloning(int &cloned_gate_count);
   void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
@@ -638,7 +639,8 @@ protected:
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
   Map<Instance *, std::tuple<LibertyPort *, LibertyPort *>> swapped_pins_;
-  Map<Instance *, Instance *> cloned_gates_;
+  std::stack<std::tuple<Instance *, Instance *>> cloned_gates_;
+  std::unordered_set<Instance *> cloned_inst_set_;
 
   dpl::Opendp* opendp_;
 
