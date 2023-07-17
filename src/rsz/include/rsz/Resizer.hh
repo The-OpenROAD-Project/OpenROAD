@@ -125,6 +125,7 @@ typedef int SteinerPt;
 class BufferedNet;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
 
+class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
@@ -157,11 +158,6 @@ public:
                   double res,
                   double cap);
   void layerRC(dbTechLayer *layer,
-               const Corner *corner,
-               // Return values.
-               double &res,
-               double &cap) const;
-  void layerRC(int routing_level,
                const Corner *corner,
                // Return values.
                double &res,
@@ -228,6 +224,7 @@ public:
   void repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
+                   bool verbose,
                    bool skip_pin_swap,
                    bool skip_gate_cloning);
   // For testing.
@@ -243,7 +240,8 @@ public:
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
-                  int max_passes);
+                  int max_passes,
+                  bool verbose);
   void repairHold(const Pin *end_pin,
                   double setup_margin,
                   double hold_margin,
@@ -253,7 +251,9 @@ public:
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
+  void recoverPower();
 
+  ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -571,6 +571,7 @@ protected:
   Logger *logger() const { return logger_; }
 
   // Components
+  RecoverPower *recover_power_;
   RepairDesign *repair_design_;
   RepairSetup *repair_setup_;
   RepairHold *repair_hold_;
@@ -651,6 +652,7 @@ protected:
 
   friend class BufferedNet;
   friend class GateCloner;
+  friend class RecoverPower;
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;

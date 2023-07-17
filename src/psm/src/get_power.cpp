@@ -52,22 +52,12 @@ using std::vector;
 //! Function for power per instance calculation
 vector<pair<odb::dbInst*, double>> PowerInst::executePowerPerInst(
     sta::dbSta* sta,
-    utl::Logger* logger)
+    utl::Logger* logger,
+    sta::Corner* corner)
 {
   // STA object create
   sta_ = sta;
   logger_ = logger;
-  // environment settings
-  string cornerName = "wst";
-  // string cornerNameFF="bst";
-
-  //  StringSet cornerNameSet;
-  //  cornerNameSet.insert(cornerName.c_str());
-  //
-  //  // define_corners
-  //  _sta->makeCorners(&cornerNameSet);
-  //  Corner* corner = _sta->findCorner(cornerName.c_str());
-  Corner* corner = sta_->cmdCorner();
 
   vector<pair<odb::dbInst*, double>> power_report;
   dbNetwork* network = sta_->getDbNetwork();

@@ -478,12 +478,14 @@ void
 repair_setup(double setup_margin,
              double repair_tns_end_percent,
              int max_passes,
+             bool verbose,
              bool skip_pin_swap, bool enable_gate_cloning)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairSetup(setup_margin, repair_tns_end_percent,
-                       max_passes, skip_pin_swap, enable_gate_cloning);
+                       max_passes, verbose,
+                       skip_pin_swap, enable_gate_cloning);
 }
 
 void
@@ -499,13 +501,15 @@ repair_hold(double setup_margin,
             double hold_margin,
             bool allow_setup_violations,
             float max_buffer_percent,
-            int max_passes)
+            int max_passes,
+            bool verbose)
 {
   ensureLinked();
   Resizer *resizer = getResizer();
   resizer->repairHold(setup_margin, hold_margin,
                       allow_setup_violations,
-                      max_buffer_percent, max_passes);
+                      max_buffer_percent, max_passes,
+                      verbose);
 }
 
 void
@@ -528,6 +532,15 @@ hold_buffer_count()
 {
   Resizer *resizer = getResizer();
   return resizer->holdBufferCount();
+}
+
+////////////////////////////////////////////////////////////////
+void
+recover_power()
+{
+  ensureLinked();
+  Resizer *resizer = getResizer();
+  resizer->recoverPower();
 }
 
 ////////////////////////////////////////////////////////////////

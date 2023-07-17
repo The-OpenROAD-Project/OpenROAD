@@ -162,6 +162,7 @@ class IOPlacer
                           int max_iterations,
                           int perturb_per_iter,
                           float alpha);
+  void checkPinPlacement();
 
  private:
   void createTopLayerPinPattern();

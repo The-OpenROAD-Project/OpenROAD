@@ -62,6 +62,7 @@ record_tests {
   macros_narrow_channel_jog
   macros_different_nets
   macros_grid_through
+  macros_grid_through_without_middle
   macros_cells_dont_touch
   macros_cells_overlapping_ports
 

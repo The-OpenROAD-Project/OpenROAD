@@ -44,11 +44,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace psm {
 std::pair<double, double> SupplyVoltage::getSupplyVoltage(sta::dbSta* sta,
-                                                          utl::Logger* logger)
+                                                          utl::Logger* logger,
+                                                          sta::Corner* corner)
 {
   std::pair<double, double> supply_voltage;
   sta::dbNetwork* network = sta->getDbNetwork();
-  sta::Corner* corner = sta->cmdCorner();
   sta::MinMax* mm = sta::MinMax::max();
   const sta::DcalcAnalysisPt* dcalc_ap = corner->findDcalcAnalysisPt(mm);
   float power_voltage;

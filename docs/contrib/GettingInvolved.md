@@ -27,7 +27,7 @@ If you find code in our project that does *not* follow this guide, then within e
 you edit, follow the style in that file.
 
 Please pay careful attention to the
-[tool checklist](DeveloperGuide.md#Tool Checklist) for all code. If you want
+[tool checklist](DeveloperGuide.md#tool-checklist) for all code. If you want
 to add or improve functionality in OpenROAD, please start with the
 top-level [app](https://github.com/The-OpenROAD-Project/OpenROAD/) repo. You
 can see in the `src` directory that submodules exist pointing to tested

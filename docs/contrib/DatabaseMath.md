@@ -85,5 +85,3 @@ The **only** place that the database distance units should appear in any
 program should be in the user interface, because humans like microns
 more than DBUs. Internally, code should use `int` for all database units
 and `int64_t` for all area calculations.
-
-James Cherry, 2019
