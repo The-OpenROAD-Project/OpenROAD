@@ -161,11 +161,6 @@ public:
                // Return values.
                double &res,
                double &cap) const;
-  void layerRC(int routing_level,
-               const Corner *corner,
-               // Return values.
-               double &res,
-               double &cap) const;
   // Set the resistance and capacitance used for parasitics on signal nets.
   void setWireSignalRC(const Corner *corner,
                        double res, // ohms/meter
