@@ -361,41 +361,15 @@ void IRSolver::readC4Data(bool require_voltage)
     }
     file.close();
   } else {
-    logger_->warn(utl::PSM,
-                  16,
-                  "Voltage pad location (VSRC) file not specified, defaulting "
-                  "pad location to checkerboard pattern on core area.");
     dbChip* chip = db_->getChip();
     dbBlock* block = chip->getBlock();
-    odb::Rect coreRect = block->getCoreArea();
-    const int coreW = coreRect.xMax() - coreRect.xMin();
-    const int coreL = coreRect.yMax() - coreRect.yMin();
-    const odb::Rect dieRect = block->getDieArea();
-    const int offset_x = coreRect.xMin() - dieRect.xMin();
-    const int offset_y = coreRect.yMin() - dieRect.yMin();
-    if (bump_pitch_x_ == 0) {
-      bump_pitch_x_ = bump_pitch_default_ * unit_micron;
-      logger_->warn(
-          utl::PSM,
-          17,
-          "X direction bump pitch is not specified, defaulting to {}um.",
-          bump_pitch_default_);
-    }
-    if (bump_pitch_y_ == 0) {
-      bump_pitch_y_ = bump_pitch_default_ * unit_micron;
-      logger_->warn(
-          utl::PSM,
-          18,
-          "Y direction bump pitch is not specified, defaulting to {}um.",
-          bump_pitch_default_);
-    }
+    dbNet* power_net = block->findNet(power_net_.data());
     if (!net_voltage_map_.empty() && net_voltage_map_.count(power_net_) > 0) {
       supply_voltage_src = net_voltage_map_.at(power_net_);
     } else if (require_voltage) {
       logger_->warn(
           utl::PSM, 19, "Voltage on net {} is not explicitly set.", power_net_);
       const pair<double, double> supply_voltages = getSupplyVoltage();
-      dbNet* power_net = block->findNet(power_net_.data());
       if (power_net == nullptr) {
         logger_->error(utl::PSM,
                        20,
@@ -417,6 +391,36 @@ void IRSolver::readC4Data(bool require_voltage)
                       "Using voltage {:4.3f}V for VDD network.",
                       supply_voltage_src);
       }
+    }
+    if (createBTerms(power_net, supply_voltage_src)) {
+      return;
+    }
+
+    logger_->warn(utl::PSM,
+                  16,
+                  "Voltage pad location (VSRC) file not specified, defaulting "
+                  "pad location to checkerboard pattern on core area.");
+    odb::Rect coreRect = block->getCoreArea();
+    const int coreW = coreRect.xMax() - coreRect.xMin();
+    const int coreL = coreRect.yMax() - coreRect.yMin();
+    const odb::Rect dieRect = block->getDieArea();
+    const int offset_x = coreRect.xMin() - dieRect.xMin();
+    const int offset_y = coreRect.yMin() - dieRect.yMin();
+    if (bump_pitch_x_ == 0) {
+      bump_pitch_x_ = bump_pitch_default_ * unit_micron;
+      logger_->warn(
+          utl::PSM,
+          17,
+          "X direction bump pitch is not specified, defaulting to {}um.",
+          bump_pitch_default_);
+    }
+    if (bump_pitch_y_ == 0) {
+      bump_pitch_y_ = bump_pitch_default_ * unit_micron;
+      logger_->warn(
+          utl::PSM,
+          18,
+          "Y direction bump pitch is not specified, defaulting to {}um.",
+          bump_pitch_default_);
     }
     if (coreW < bump_pitch_x_ || coreL < bump_pitch_y_) {
       float to_micron = 1.0f / unit_micron;
@@ -458,6 +462,63 @@ void IRSolver::readC4Data(bool require_voltage)
       }
     }
   }
+}
+
+bool IRSolver::createBTerms(dbNet* net, double voltage)
+{
+  const int pitch_multiplier = 10;
+
+  bool added = false;
+  for (auto* bterm : net->getBTerms()) {
+    for (auto* bpin : bterm->getBPins()) {
+      if (!bpin->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+
+      for (auto* box : bpin->getBoxes()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        const auto rect = box->getBox();
+
+        const int src_size = rect.minDXDY();
+
+        int pitch = 0;
+        auto* next_layer
+            = db_->getTech()->findRoutingLayer(layer->getRoutingLevel() + 1);
+        if (next_layer != nullptr) {
+          pitch = pitch_multiplier * next_layer->getPitch();
+        }
+        if (pitch == 0) {
+          pitch = pitch_multiplier * src_size;
+        }
+
+        odb::Point src;
+        int dx = 0;
+        int dy = 0;
+        if (rect.dx() < rect.dy()) {
+          dy = pitch;
+          src = odb::Point(rect.xCenter(), rect.yMin() + dy / 2);
+        } else if (rect.dy() < rect.dx()) {
+          dx = pitch;
+          src = odb::Point(rect.xMin() + dx / 2, rect.yCenter());
+        } else {
+          C4Bumps_.push_back(
+              {rect.xCenter(), rect.yCenter(), src_size, voltage});
+          continue;
+        }
+
+        for (; rect.intersects(src);) {
+          C4Bumps_.push_back({src.x(), src.y(), src_size, voltage});
+          src.addX(dx);
+          src.addY(dy);
+        }
+        added = true;
+      }
+    }
+  }
+  return added;
 }
 
 //! Function to create a J vector from the current map
@@ -1115,18 +1176,21 @@ int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
     const NodeIdx k = node->getGLoc();
     const auto ret = C4Nodes_.insert({k, v});
     if (ret.second == false) {
-      // key already exists and voltage value is different occurs when a user
-      // specifies two different voltage supply values by mistake in two
-      // nearby nodes
-      logger_->warn(utl::PSM,
-                    67,
-                    "Multiple voltage supply values mapped"
-                    "at the same node ({:4.3f}um, {:4.3f}um)."
-                    "If you provided a vsrc file. Check for duplicate entries."
-                    "Choosing voltage value {:4.3f}.",
-                    new_loc1,
-                    new_loc2,
-                    ret.first->second);
+      if (ret.first->second != v) {
+        // key already exists and voltage value is different occurs when a user
+        // specifies two different voltage supply values by mistake in two
+        // nearby nodes
+        logger_->warn(
+            utl::PSM,
+            67,
+            "Multiple voltage supply values mapped "
+            "at the same node ({:4.3f}um, {:4.3f}um). "
+            "If you provided a vsrc file. Check for duplicate entries. "
+            "Choosing voltage value {:4.3f}.",
+            new_loc1,
+            new_loc2,
+            ret.first->second);
+      }
     } else {
       num_C4++;
     }
