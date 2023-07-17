@@ -48,8 +48,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ir_solver.h"
 #include "node.h"
 #include "odb/db.h"
-#include "utl/Logger.h"
 #include "sta/Corner.hh"
+#include "utl/Logger.h"
 
 namespace psm {
 
@@ -204,7 +204,8 @@ void PDNSim::analyze_power_grid()
   gmat_obj = irsolve_h->getGMat();
   irsolve_h->solveIR();
   logger_->report("########## IR report #################");
-  logger_->report("Corner: {}", corner_ != nullptr ? corner_->name() : "default");
+  logger_->report("Corner: {}",
+                  corner_ != nullptr ? corner_->name() : "default");
   logger_->report("Worstcase voltage: {:3.2e} V",
                   irsolve_h->getWorstCaseVoltage());
   logger_->report(
