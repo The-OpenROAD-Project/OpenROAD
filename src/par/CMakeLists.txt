@@ -35,6 +35,12 @@
 
 include("openroad")
 
+# The location used by etc/DependencyInstaller.sh
+list(APPEND CMAKE_PREFIX_PATH
+  "/opt/or-tools/lib64/cmake"
+  "/opt/or-tools/lib/cmake"
+)
+
 option(LOAD_CPLEX "Load CPLEX" OFF)
 if (LOAD_CPLEX)
   set(CMAKE_CXX_STANDARD 17)
@@ -72,12 +78,13 @@ target_include_directories(par_lib
 )
 
 target_link_libraries(par_lib
+  PUBLIC
+    ortools::ortools
   PRIVATE
     odb
     OpenSTA
     utl_lib
     dbSta_lib
-    ortools::ortools
 )
 
 if (LOAD_CPLEX)
