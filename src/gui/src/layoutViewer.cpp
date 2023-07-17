@@ -890,12 +890,12 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
   for (auto& [box, inst] : insts) {
     if (options_->isInstanceVisible(inst)
         && options_->isInstanceSelectable(inst)) {
+      selections.push_back(gui_->makeSelected(inst));
       for (auto iterm : inst->getITerms()) {
         Rect iterm_bbox = iterm->getBBox();
         if (region.intersects(iterm_bbox)) {
           selections.push_back(gui_->makeSelected(iterm));
         }
-        selections.push_back(gui_->makeSelected(inst));
       }
     }
   }
