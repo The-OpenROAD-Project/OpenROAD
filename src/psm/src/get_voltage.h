@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 namespace sta {
 class dbSta;
+class Corner;
 }  // namespace sta
 
 namespace utl {
@@ -54,7 +55,8 @@ class SupplyVoltage
  public:
   //! Function for power per instance calculation
   std::pair<double, double> getSupplyVoltage(sta::dbSta* sta,
-                                             utl::Logger* logger);
+                                             utl::Logger* logger,
+                                             sta::Corner* corner);
 };
 
 }  // namespace psm

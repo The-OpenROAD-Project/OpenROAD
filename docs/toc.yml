@@ -2,6 +2,9 @@ root: index
 entries:
 - file: main/README
   title: Getting Started with OpenROAD App
+  entries:
+  - file: user/Build.md
+    title: How to Build OpenROAD
 
 - file: tutorials/index
   title: Tutorials

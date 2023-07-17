@@ -1,10 +1,10 @@
-[INFO ODB-0222] Reading LEF file: sky130_data/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
 [INFO ODB-0223]     Created 13 technology layers
 [INFO ODB-0224]     Created 25 technology vias
-[INFO ODB-0226] Finished LEF file:  sky130_data/sky130hd.tlef
-[INFO ODB-0222] Reading LEF file: sky130_data/sky130hd_std_cell.lef
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
 [INFO ODB-0225]     Created 437 library cells
-[INFO ODB-0226] Finished LEF file:  sky130_data/sky130hd_std_cell.lef
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 1143 components and 3273 component-terminals.
@@ -13,8 +13,6 @@
 [WARNING PSM-0016] Voltage pad location (VSRC) file not specified, defaulting pad location to checkerboard pattern on core area.
 [WARNING PSM-0017] X direction bump pitch is not specified, defaulting to 140um.
 [WARNING PSM-0018] Y direction bump pitch is not specified, defaulting to 140um.
-[WARNING PSM-0019] Voltage on net VDD is not explicitly set.
-[WARNING PSM-0022] Using voltage 1.800V for VDD network.
 [WARNING PSM-0065] VSRC location not specified, using default checkerboard pattern with one VDD every size bumps in x-direction and one in two bumps in the y-direction
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [WARNING PSM-0030] VSRC location at (139.840um, 140.080um) and size 10.000um, is not located on an existing power stripe node. Moving to closest node at (132.250um, 133.040um).

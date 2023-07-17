@@ -1,7 +1,5 @@
 # PDNSim
 
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/license/bsd-3-clause/)
-
 PDNSim is an open-source static IR analyzer.
 
 Features:
@@ -31,6 +29,7 @@ analyze_power_grid -vsrc <voltage_source_location_file> \
                    [-em_outfile <filename>]
                    [-node_density <node_pitch>]
                    [-node_density_factor <factor>]
+                   [-corner corner]
 write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <net_name>
 ```
 
@@ -44,6 +43,7 @@ Options description:
 - ``voltage``: (optional) Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the liberty.
 - ``node_density``: (optional)  This value can be specfied by the user in um to determine the node density on the std. cell rails. Cannot be used together with node_density_factor.
 - ``node_density_factor``: (optional) Integer value factor which is multiplied by standard cell height to determine the node density on the std. cell rails. Cannot be used together with node_density. Default value is 5.
+- ``corner``: (optional) Corner to use for analysis.
 
 ## Example scripts
 

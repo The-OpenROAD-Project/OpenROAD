@@ -168,6 +168,7 @@ repair_timing [-setup]
               [-repair_tns tns_end_percent]
               [-max_utilization util]
               [-max_buffer_percent buffer_percent]
+              [-verbose]
 ```
 
 The `repair_timing` command repairs setup and hold violations.  It
@@ -175,8 +176,10 @@ should be run after clock tree synthesis with propagated clocks.
 Setup repair is done before hold repair so that hold repair does not
 cause setup checks to fail. While repairing hold violations buffers
 are not inserted that will cause setup violations unless
-'-allow_setup_violations' is specified.
+`-allow_setup_violations` is specified.
 Use `-setup_margin/-hold_margin` to add additional slack margin.
+Use `-verbose` to print more information about the progress of the
+repair.
 
 The worst setup path is always repaired.  Next, violating paths to
 endpoints are repaired to reduced the total negative slack.  The
