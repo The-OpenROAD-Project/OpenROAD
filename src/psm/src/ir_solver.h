@@ -62,7 +62,7 @@ struct ViaCut
 class IRSolver
 {
  public:
-  struct BumpData
+  struct SourceData
   {
     int x;
     int y;
@@ -114,7 +114,7 @@ class IRSolver
   bool build();
   bool buildConnection();
 
-  const std::vector<BumpData>& getBumps() const { return C4Bumps_; }
+  const std::vector<SourceData>& getSources() const { return sources_; }
   int getTopLayer() const { return top_layer_; }
 
   double getWorstCaseVoltage() const { return wc_voltage; }
@@ -125,10 +125,10 @@ class IRSolver
   float getSupplyVoltageSrc() const { return supply_voltage_src; }
 
  private:
-  //! Function to add C4 bumps to the G matrix
-  bool addC4Bump();
+  //! Function to add sources to the G matrix
+  bool addSources();
   //! Function that parses the Vsrc file
-  void readC4Data(bool require_voltage);
+  void readSourceData(bool require_voltage);
   bool createBTerms(odb::dbNet* net, double voltage);
   //! Function to create a J vector from the current map
   bool createJ();
@@ -155,8 +155,8 @@ class IRSolver
                                      bool has_params,
                                      const odb::dbViaParams& params);
 
-  //! Function to create the nodes for the c4 bumps
-  int createC4Nodes(bool connection_only, int unit_micron);
+  //! Function to create the nodes for the sources
+  int createSourceNodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
   void createGmatConnections(const std::vector<odb::dbSBox*>& power_wires,
                              bool connection_only);
@@ -221,11 +221,11 @@ class IRSolver
   std::map<std::string, float> net_voltage_map_;
   //! Current vector 1D
   std::vector<double> J_;
-  //! C4 bump locations and values
-  std::vector<BumpData> C4Bumps_;
+  //! source locations and values
+  std::vector<SourceData> sources_;
   //! Per unit R and via R for each routing layer
   std::vector<std::tuple<int, double, double>> layer_res_;
-  //! Locations of the C4 bumps in the G matrix
-  std::map<NodeIdx, double> C4Nodes_;
+  //! Locations of the source in the G matrix
+  std::map<NodeIdx, double> source_nodes_;
 };
 }  // namespace psm

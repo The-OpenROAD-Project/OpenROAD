@@ -309,24 +309,24 @@ void IRSolver::solveIR()
   }  // enable em
 }
 
-//! Function to add C4 bumps to the G matrix
-bool IRSolver::addC4Bump()
+//! Function to add sources to the G matrix
+bool IRSolver::addSources()
 {
-  if (C4Bumps_.empty()) {
+  if (sources_.empty()) {
     logger_->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
   logger_->info(
-      utl::PSM, 64, "Number of voltage sources = {}.", C4Bumps_.size());
+      utl::PSM, 64, "Number of voltage sources = {}.", sources_.size());
   size_t it = 0;
-  for (auto [node_loc, voltage_value] : C4Nodes_) {
-    Gmat_->addC4Bump(node_loc, it++);  // add the  bump
+  for (auto [node_loc, voltage_value] : source_nodes_) {
+    Gmat_->addSource(node_loc, it++);  // add the  bump
     J_.push_back(voltage_value);       // push back  vdd
   }
   return true;
 }
 
 //! Function that parses the Vsrc file
-void IRSolver::readC4Data(bool require_voltage)
+void IRSolver::readSourceData(bool require_voltage)
 {
   const int unit_micron = (db_->getTech())->getDbUnitsPerMicron();
   if (!vsrc_file_.empty()) {
@@ -356,7 +356,7 @@ void IRSolver::readC4Data(bool require_voltage)
       if (x == -1 || y == -1 || size == -1) {
         logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
       } else {
-        C4Bumps_.push_back({x, y, size, supply_voltage_src, true});
+        sources_.push_back({x, y, size, supply_voltage_src, true});
       }
     }
     file.close();
@@ -438,7 +438,7 @@ void IRSolver::readC4Data(bool require_voltage)
                     coreL * to_micron,
                     x_cor * to_micron,
                     y_cor * to_micron);
-      C4Bumps_.push_back(
+      sources_.push_back(
           {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src, true});
     }
     const int num_b_x = coreW / bump_pitch_x_;
@@ -456,7 +456,7 @@ void IRSolver::readC4Data(bool require_voltage)
                           + offset_x + centering_offset_x;
         const int y_cor = (bump_pitch_y_ * i) + offset_y + centering_offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
-          C4Bumps_.push_back({x_cor,
+          sources_.push_back({x_cor,
                               y_cor,
                               bump_size_ * unit_micron,
                               supply_voltage_src,
@@ -507,13 +507,13 @@ bool IRSolver::createBTerms(dbNet* net, double voltage)
           dx = pitch;
           src = odb::Point(rect.xMin() + dx / 2, rect.yCenter());
         } else {
-          C4Bumps_.push_back(
+          sources_.push_back(
               {rect.xCenter(), rect.yCenter(), src_size, voltage, false});
           continue;
         }
 
         for (; rect.intersects(src);) {
-          C4Bumps_.push_back({src.x(), src.y(), src_size, voltage, false});
+          sources_.push_back({src.x(), src.y(), src_size, voltage, false});
           src.addX(dx);
           src.addY(dy);
         }
@@ -1146,15 +1146,15 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
   }
 }
 
-//! Function to create the nodes for the c4 bumps
-int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
+//! Function to create the nodes for the sources
+int IRSolver::createSourceNodes(bool connection_only, int unit_micron)
 {
-  int num_C4 = 0;
-  for (const auto& bump : C4Bumps_) {
-    const int x = bump.x;
-    const int y = bump.y;
-    const int size = bump.size;
-    const double v = bump.voltage;
+  int num = 0;
+  for (const auto& source : sources_) {
+    const int x = source.x;
+    const int y = source.y;
+    const int size = source.size;
+    const double v = source.voltage;
     const Node* node = Gmat_->getNode(x, y, top_layer_, true);
     const Point node_loc = node->getLoc();
     const double new_loc1 = node_loc.getX() / ((double) unit_micron);
@@ -1164,7 +1164,7 @@ int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
       const double old_loc1 = x / ((double) unit_micron);
       const double old_loc2 = y / ((double) unit_micron);
       const double old_size = size / ((double) unit_micron);
-      if (bump.user_specified) {
+      if (source.user_specified) {
         logger_->warn(utl::PSM,
                       30,
                       "VSRC location at ({:4.3f}um, {:4.3f}um) and "
@@ -1179,7 +1179,7 @@ int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
       }
     }
     const NodeIdx k = node->getGLoc();
-    const auto ret = C4Nodes_.insert({k, v});
+    const auto ret = source_nodes_.insert({k, v});
     if (ret.second == false) {
       if (ret.first->second != v) {
         // key already exists and voltage value is different occurs when a user
@@ -1197,10 +1197,10 @@ int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
             ret.first->second);
       }
     } else {
-      num_C4++;
+      num++;
     }
   }
-  return num_C4;
+  return num;
 }
 
 //! Function to find and store the macro boundaries
@@ -1289,8 +1289,8 @@ bool IRSolver::createGmat(bool connection_only)
     return true;
   }
 
-  // insert c4 bumps as nodes
-  const int num_C4 = createC4Nodes(connection_only, unit_micron);
+  // insert source as nodes
+  const int num_sources = createSourceNodes(connection_only, unit_micron);
 
   // All new nodes must be inserted by this point
   // initialize G Matrix
@@ -1299,7 +1299,7 @@ bool IRSolver::createGmat(bool connection_only)
                 "Number of PDN nodes on net {} = {}.",
                 power_net_,
                 Gmat_->getNumNodes());
-  Gmat_->initializeGmatDok(num_C4);
+  Gmat_->initializeGmatDok(num_sources);
 
   // Iterate through all the wires to populate conductance matrix
   createGmatConnections(power_wires, connection_only);
@@ -1324,14 +1324,14 @@ bool IRSolver::checkConnectivity(bool connection_only)
   // If we want to test the connectivity of the grid we just start from a single
   // point
   if (connection_only) {
-    Node* c4_node = Gmat_->getNode(C4Nodes_.begin()->first);
-    node_q.push(c4_node);
+    Node* node = Gmat_->getNode(source_nodes_.begin()->first);
+    node_q.push(node);
   } else {
     // If we do IR analysis, we assume the grid can be connected by different
     // bumps
-    for (auto [node_loc, voltage] : C4Nodes_) {
-      Node* c4_node = Gmat_->getNode(node_loc);
-      node_q.push(c4_node);
+    for (auto [node_loc, voltage] : source_nodes_) {
+      Node* node = Gmat_->getNode(node_loc);
+      node_q.push(node);
     }
   }
   while (!node_q.empty()) {
@@ -1531,7 +1531,7 @@ int IRSolver::getMinimumResolution()
 
 bool IRSolver::build()
 {
-  readC4Data(true);
+  readSourceData(true);
 
   bool res = createGmat();
   if (Gmat_->getNumNodes() == 0) {
@@ -1543,7 +1543,7 @@ bool IRSolver::build()
     res = createJ();
   }
   if (res) {
-    res = addC4Bump();
+    res = addSources();
   }
   if (res) {
     res = Gmat_->generateCSCMatrix();
@@ -1561,7 +1561,7 @@ bool IRSolver::build()
 
 bool IRSolver::buildConnection()
 {
-  readC4Data(false);
+  readSourceData(false);
 
   bool res = createGmat(true);
   if (Gmat_->getNumNodes() == 0) {
@@ -1570,7 +1570,7 @@ bool IRSolver::buildConnection()
   }
 
   if (res) {
-    res = addC4Bump();
+    res = addSources();
   }
   if (res) {
     res = Gmat_->generateACSCMatrix();

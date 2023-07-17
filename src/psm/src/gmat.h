@@ -108,7 +108,7 @@ class GMat
   //! Function to add the conductance value between two nodes
   void setConductance(const Node* node1, const Node* node2, double cond);
   //! Function to initialize the sparse dok matrix
-  void initializeGmatDok(int numC4);
+  void initializeGmatDok(int num);
   //! Function that returns the number of nodes in the G matrix
   NodeIdx getNumNodes();
   //! Function to return a pointer to the G matrix
@@ -130,8 +130,8 @@ class GMat
                                  int x_max,
                                  int y_min,
                                  int y_max);
-  //! Function to add the voltage source based on C4 bump location
-  void addC4Bump(int loc, int C4Num);
+  //! Function to add the voltage source based on source location
+  void addSource(int loc, int source_number);
   //! Function which generates the compressed sparse column matrix
   bool generateCSCMatrix();
   //! Function which generates the compressed sparse column matrix for A
