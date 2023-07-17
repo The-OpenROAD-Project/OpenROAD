@@ -1507,11 +1507,12 @@ void IOPlacer::addVerLayer(odb::dbTechLayer* layer)
   ver_layers_.insert(layer->getRoutingLevel());
 }
 
-void IOPlacer::getPinsFromDirectionConstraint(Constraint& constraint)
+void IOPlacer::getPinsFromDirectionConstraint(Constraint& constraint, int constraint_idx)
 {
   if (constraint.direction != Direction::invalid
       && constraint.pin_list.empty()) {
-    for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+    for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+      io_pin.setConstraintIdx(constraint_idx);
       if (io_pin.getDirection() == constraint.direction) {
         constraint.pin_list.insert(io_pin.getBTerm());
       }
@@ -1589,15 +1590,10 @@ void IOPlacer::initMirroredPins(bool annealing)
 
 void IOPlacer::initConstraints(bool annealing)
 {
-  if (annealing && !constraints_.empty()) {
-    logger_->error(PPL,
-                   103,
-                   "Pin constraints not supported during pin placement with "
-                   "Simulated Annealing");
-  }
   std::reverse(constraints_.begin(), constraints_.end());
+  int constraint_idx = 0;
   for (Constraint& constraint : constraints_) {
-    getPinsFromDirectionConstraint(constraint);
+    getPinsFromDirectionConstraint(constraint, constraint_idx);
     constraint.sections = createSectionsPerConstraint(constraint);
     int num_slots = 0;
     for (const Section& sec : constraint.sections) {
@@ -1610,6 +1606,7 @@ void IOPlacer::initConstraints(bool annealing)
       logger_->error(
           PPL, 76, "Constraint does not have available slots for its pins.");
     }
+    constraint_idx++;
   }
   sortConstraints();
   checkPinsInMultipleConstraints();
