@@ -35,15 +35,21 @@
 
 #pragma once
 
+#include "ppl/IOPlacer.h"
 #include "gui/gui.h"
 
 namespace ppl {
     
 class IOPlacerRenderer : public gui::Renderer
 {
-public:
-  IOPlacerRenderer();
+ public:
+  IOPlacerRenderer(IOPlacer* ioplacer);
 
+  void drawAnnealingState(gui::Painter& painter);
+
+ private:
+  IOPlacer* ioplacer_;
+  
 };
 
 }

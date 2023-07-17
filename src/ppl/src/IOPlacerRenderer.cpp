@@ -37,8 +37,15 @@
 
 namespace ppl {
 
-IOPlacerRenderer::IOPlacerRenderer()
+IOPlacerRenderer::IOPlacerRenderer(IOPlacer* ioplacer)
+    : ioplacer_(ioplacer)
 {
+  gui::Gui::get()->registerRenderer(this);
+}
+
+void IOPlacerRenderer::drawAnnealingState(gui::Painter& painter)
+{
+  
 }
 
 }
