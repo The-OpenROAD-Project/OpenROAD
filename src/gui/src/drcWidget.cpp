@@ -767,16 +767,30 @@ void DRCWidget::loadJSONReport(const QString& filename)
   }
   auto tech = block_->getDataBase()->getTech();
   int dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
+  // check if DRC key exists
+  if (tree.find("DRC") == tree.not_found()) {
+    logger_->error(utl::GUI,
+                   87,
+                   "Unable to find the DRC key in JSON file {}",
+                   filename.toStdString());
+  }
   for (const auto& rule : tree.get_child("DRC")) {
     auto& drc_rule = rule.second;
 
-    const std::string violation_type = drc_rule.get<std::string>("name");
-    const std::string violation_text = drc_rule.get<std::string>("description");
+    const std::string violation_type = drc_rule.get<std::string>("name", "");
+    const std::string violation_text
+        = drc_rule.get<std::string>("description", "");
     int i = 0;
-    for (const auto& [_, violation] : drc_rule.get_child("violations")) {
-      std::string layer_str = violation.get<std::string>("layer");
-      const std::string shape_type = violation.get<std::string>("type");
-
+    auto violations_arr = drc_rule.get_child_optional("violations");
+    if (!violations_arr) {
+      logger_->error(utl::GUI,
+                     86,
+                     "Unable to find the violations key in JSON file {}",
+                     filename.toStdString());
+    }
+    for (const auto& [_, violation] : violations_arr.value()) {
+      std::string layer_str = violation.get<std::string>("layer", "-");
+      const std::string shape_type = violation.get<std::string>("type", "-");
       odb::dbTechLayer* layer = nullptr;
       if (!layer_str.empty()) {
         layer = tech->findLayer(layer_str.c_str());
@@ -787,10 +801,15 @@ void DRCWidget::loadJSONReport(const QString& filename)
       }
 
       std::vector<odb::Point> shape_points;
-      for (const auto& [_, pt] : violation.get_child("shape")) {
-        double x = pt.get<double>("x", 0.0);
-        double y = pt.get<double>("y", 0.0);
-        shape_points.emplace_back(x * dbUnits, y * dbUnits);
+      auto shape = violation.get_child_optional("shape");
+      if (shape) {
+        for (const auto& [_, pt] : shape.value()) {
+          double x = pt.get<double>("x", 0.0);
+          double y = pt.get<double>("y", 0.0);
+          shape_points.emplace_back(x * dbUnits, y * dbUnits);
+        }
+      } else {
+        logger_->warn(utl::GUI, 99, "Unable to find shape of violation");
       }
 
       std::vector<DRCViolation::DRCShape> shapes;
@@ -807,66 +826,69 @@ void DRCWidget::loadJSONReport(const QString& filename)
             utl::GUI, 58, "Unable to parse violation shape: {}", shape_type);
       }
       std::vector<odb::dbObject*> srcs_list;
-      for (const auto& [_, src] : violation.get_child("sources")) {
-        std::string src_type = src.get<std::string>("type");
-        std::string src_name = src.get<std::string>("name");
-        odb::dbObject* item = nullptr;
-        if (src_type == "net") {
-          odb::dbNet* net = block_->findNet(src_name.c_str());
-          if (net != nullptr) {
-            item = net;
-          } else {
-            logger_->warn(utl::GUI, 85, "Unable to find net: {}", src_name);
-          }
-        } else if (src_type == "inst") {
-          odb::dbInst* inst = block_->findInst(src_name.c_str());
-          if (inst != nullptr) {
-            item = inst;
-          } else {
-            logger_->warn(
-                utl::GUI, 84, "Unable to find instance: {}", src_name);
-          }
-        } else if (src_type == "iterm") {
-          odb::dbITerm* iterm = block_->findITerm(src_name.c_str());
-          if (iterm != nullptr) {
-            item = iterm;
-          } else {
-            logger_->warn(utl::GUI, 83, "Unable to find iterm: {}", src_name);
-          }
-        } else if (src_type == "bterm") {
-          odb::dbBTerm* bterm = block_->findBTerm(src_name.c_str());
-          if (bterm != nullptr) {
-            item = bterm;
-          } else {
-            logger_->warn(utl::GUI, 82, "Unable to find bterm: {}", src_name);
-          }
-        } else if (src_type == "obstruction") {
-          if (layer != nullptr) {
-            for (const auto obs : block_->getObstructions()) {
-              auto obs_bbox = obs->getBBox();
-              if (obs_bbox->getTechLayer() == layer) {
-                odb::Rect obs_rect = obs_bbox->getBox();
-                // TODO: check if obs_rect is inside shape
-                srcs_list.emplace_back(obs);
+      auto sources_arr = violation.get_child_optional("sources");
+      if (sources_arr) {
+        for (const auto& [_, src] : sources_arr.value()) {
+          std::string src_type = src.get<std::string>("type", "-");
+          std::string src_name = src.get<std::string>("name", "-");
+
+          odb::dbObject* item = nullptr;
+          if (src_type == "net") {
+            odb::dbNet* net = block_->findNet(src_name.c_str());
+            if (net != nullptr) {
+              item = net;
+            } else {
+              logger_->warn(utl::GUI, 85, "Unable to find net: {}", src_name);
+            }
+          } else if (src_type == "inst") {
+            odb::dbInst* inst = block_->findInst(src_name.c_str());
+            if (inst != nullptr) {
+              item = inst;
+            } else {
+              logger_->warn(
+                  utl::GUI, 84, "Unable to find instance: {}", src_name);
+            }
+          } else if (src_type == "iterm") {
+            odb::dbITerm* iterm = block_->findITerm(src_name.c_str());
+            if (iterm != nullptr) {
+              item = iterm;
+            } else {
+              logger_->warn(utl::GUI, 83, "Unable to find iterm: {}", src_name);
+            }
+          } else if (src_type == "bterm") {
+            odb::dbBTerm* bterm = block_->findBTerm(src_name.c_str());
+            if (bterm != nullptr) {
+              item = bterm;
+            } else {
+              logger_->warn(utl::GUI, 82, "Unable to find bterm: {}", src_name);
+            }
+          } else if (src_type == "obstruction") {
+            if (layer != nullptr) {
+              for (const auto obs : block_->getObstructions()) {
+                auto obs_bbox = obs->getBBox();
+                if (obs_bbox->getTechLayer() == layer) {
+                  odb::Rect obs_rect = obs_bbox->getBox();
+                  // TODO: check if obs_rect is inside shape
+                  srcs_list.emplace_back(obs);
+                }
               }
             }
+          } else {
+            logger_->warn(utl::GUI, 81, "Unknown source type: {}", src_type);
           }
-        } else {
-          logger_->warn(utl::GUI, 81, "Unknown source type: {}", src_type);
-        }
 
-        if (item != nullptr) {
-          srcs_list.push_back(item);
-        } else {
-          if (!src_name.empty()) {
-            logger_->warn(
-                utl::GUI, 80, "Failed to add source item: {}", src_name);
+          if (item != nullptr) {
+            srcs_list.push_back(item);
+          } else {
+            if (!src_name.empty()) {
+              logger_->warn(
+                  utl::GUI, 80, "Failed to add source item: {}", src_name);
+            }
           }
         }
       }
 
       std::string name = violation_type + " - " + std::to_string(++i);
-
       violations_.push_back(std::make_unique<DRCViolation>(
           name, violation_type, srcs_list, shapes, layer, violation_text, 0));
     }
