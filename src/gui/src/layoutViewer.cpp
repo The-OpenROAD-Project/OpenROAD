@@ -892,17 +892,13 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
         && options_->isInstanceSelectable(inst)) {
       for (auto iterm : inst->getITerms()) {
         Rect iterm_bbox = iterm->getBBox();
-        if (region.xMin() <= iterm_bbox.xMax()
-              && region.xMax() >= iterm_bbox.xMin()
-              && region.yMin() <= iterm_bbox.yMax()
-              && region.yMax() >= iterm_bbox.yMin()) {
+        if (region.intersects(iterm_bbox)) {
           selections.push_back(gui_->makeSelected(iterm));
         }
         selections.push_back(gui_->makeSelected(inst));
       }
     }
   }
-
 
   if (options_->areRulersVisible() && options_->areRulersSelectable()) {
     // Look for rulers
