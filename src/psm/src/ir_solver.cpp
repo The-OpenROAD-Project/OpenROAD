@@ -356,7 +356,7 @@ void IRSolver::readC4Data(bool require_voltage)
       if (x == -1 || y == -1 || size == -1) {
         logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
       } else {
-        C4Bumps_.push_back({x, y, size, supply_voltage_src});
+        C4Bumps_.push_back({x, y, size, supply_voltage_src, true});
       }
     }
     file.close();
@@ -439,7 +439,7 @@ void IRSolver::readC4Data(bool require_voltage)
                     x_cor * to_micron,
                     y_cor * to_micron);
       C4Bumps_.push_back(
-          {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src});
+          {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src, true});
     }
     const int num_b_x = coreW / bump_pitch_x_;
     const int centering_offset_x = (coreW - (num_b_x - 1) * bump_pitch_x_) / 2;
@@ -456,8 +456,11 @@ void IRSolver::readC4Data(bool require_voltage)
                           + offset_x + centering_offset_x;
         const int y_cor = (bump_pitch_y_ * i) + offset_y + centering_offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
-          C4Bumps_.push_back(
-              {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src});
+          C4Bumps_.push_back({x_cor,
+                              y_cor,
+                              bump_size_ * unit_micron,
+                              supply_voltage_src,
+                              true});
         }
       }
     }
@@ -505,12 +508,12 @@ bool IRSolver::createBTerms(dbNet* net, double voltage)
           src = odb::Point(rect.xMin() + dx / 2, rect.yCenter());
         } else {
           C4Bumps_.push_back(
-              {rect.xCenter(), rect.yCenter(), src_size, voltage});
+              {rect.xCenter(), rect.yCenter(), src_size, voltage, false});
           continue;
         }
 
         for (; rect.intersects(src);) {
-          C4Bumps_.push_back({src.x(), src.y(), src_size, voltage});
+          C4Bumps_.push_back({src.x(), src.y(), src_size, voltage, false});
           src.addX(dx);
           src.addY(dy);
         }
@@ -1161,17 +1164,19 @@ int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
       const double old_loc1 = x / ((double) unit_micron);
       const double old_loc2 = y / ((double) unit_micron);
       const double old_size = size / ((double) unit_micron);
-      logger_->warn(utl::PSM,
-                    30,
-                    "VSRC location at ({:4.3f}um, {:4.3f}um) and "
-                    "size {:4.3f}um, is not located on an existing "
-                    "power stripe node. Moving to closest node at "
-                    "({:4.3f}um, {:4.3f}um).",
-                    old_loc1,
-                    old_loc2,
-                    old_size,
-                    new_loc1,
-                    new_loc2);
+      if (bump.user_specified) {
+        logger_->warn(utl::PSM,
+                      30,
+                      "VSRC location at ({:4.3f}um, {:4.3f}um) and "
+                      "size {:4.3f}um, is not located on an existing "
+                      "power stripe node. Moving to closest node at "
+                      "({:4.3f}um, {:4.3f}um).",
+                      old_loc1,
+                      old_loc2,
+                      old_size,
+                      new_loc1,
+                      new_loc2);
+      }
     }
     const NodeIdx k = node->getGLoc();
     const auto ret = C4Nodes_.insert({k, v});

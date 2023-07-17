@@ -68,6 +68,7 @@ class IRSolver
     int y;
     int size;
     double voltage;
+    bool user_specified;
   };
 
   //! Constructor for IRSolver class
