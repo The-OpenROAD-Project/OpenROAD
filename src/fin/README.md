@@ -7,10 +7,14 @@ configuration file.
 ## Commands
 
 ```
-% density_fill -rules <json_file> [-area <list of lx ly ux uy>]
+density_fill
+    [-rules rules_file]
+    [-area {lx ly ux uy}]
 ```
 
-If `-area` is not specified, the core area will be used.
+Argument description:
+- `-rules` specify json rule file
+- `-area` is optional. If not specified, the core area will be used.
 
 ## Example scripts
 
@@ -57,6 +61,12 @@ This all started out in `klayout` so there are some obsolete fields that the
 parser accepts but ignores (e.g., `space_to_outline`).
 
 ## Regression tests
+
+There is a set of regression tests in `/test`.
+
+```shell
+./test/regression
+```
 
 ## Limitations
 
