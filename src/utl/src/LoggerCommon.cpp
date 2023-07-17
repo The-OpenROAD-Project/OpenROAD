@@ -124,10 +124,10 @@ void push_metrics_stage(const char* fmt)
   logger->pushMetricsStage(fmt);
 }
 
-void pop_metrics_stage()
+std::string pop_metrics_stage()
 {
   Logger* logger = getLogger();
-  logger->popMetricsStage();
+  return logger->popMetricsStage();
 }
 
 void suppress_message(utl::ToolId tool, int id)

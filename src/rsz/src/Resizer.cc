@@ -41,6 +41,7 @@
 
 #include "AbstractSteinerRenderer.h"
 #include "BufferedNet.hh"
+#include "RecoverPower.hh"
 #include "RepairDesign.hh"
 #include "RepairHold.hh"
 #include "RepairSetup.hh"
@@ -133,7 +134,8 @@ using sta::InputDrive;
 using sta::PinConnectedPinIterator;
 
 Resizer::Resizer()
-    : repair_design_(new RepairDesign(this)),
+    : recover_power_(new RecoverPower(this)),
+      repair_design_(new RepairDesign(this)),
       repair_setup_(new RepairSetup(this)),
       repair_hold_(new RepairHold(this)),
       wire_signal_res_(0.0),
@@ -2633,7 +2635,16 @@ Resizer::holdBufferCount() const
 }
 
 ////////////////////////////////////////////////////////////////
-
+void
+Resizer::recoverPower()
+{
+  resizePreamble();
+  if (parasitics_src_ == ParasiticsSrc::global_routing) {
+    opendp_->initMacrosAndGrid();
+  }
+  recover_power_->recoverPower();
+}
+////////////////////////////////////////////////////////////////
 // Journal to roll back changes (OpenDB not up to the task).
 void
 Resizer::journalBegin()
