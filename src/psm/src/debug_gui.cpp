@@ -33,8 +33,8 @@ namespace psm {
 
 DebugGui::DebugGui(PDNSim* pdnsim) : pdnsim_(pdnsim), source_layer_(-1)
 {
-  addDisplayControl("nodes", true);
-  addDisplayControl("bumps", true);
+  addDisplayControl(nodes_text_, true);
+  addDisplayControl(source_text_, true);
   gui::Gui::get()->registerRenderer(this);
 }
 
@@ -44,7 +44,7 @@ void DebugGui::drawObjects(gui::Painter& painter)
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
     painter.setBrush(gui::Painter::transparent);
     for (auto& source : sources_) {
-      painter.drawCircle(source.x, source.y, source.size);
+      painter.drawCircle(source.x, source.y, 10 * source.size);
     }
   }
 }

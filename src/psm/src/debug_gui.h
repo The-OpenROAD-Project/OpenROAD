@@ -45,6 +45,8 @@ class DebugGui : public gui::Renderer
   void setSources(const std::vector<IRSolver::SourceData>& sources,
                   int source_layer);
 
+  const char* getDisplayControlGroupName() override { return "PSM"; }
+
  private:
   PDNSim* pdnsim_;
   std::vector<IRSolver::SourceData> sources_;
