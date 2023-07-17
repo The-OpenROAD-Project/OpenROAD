@@ -105,25 +105,28 @@ class deltaDebugger:
         self.perform_step()
 
         while(True):
-            err = None
             self.n = 2 # Initial Number of cuts
 
             for i in range(self.persistence):
+                errors = [] # Initial empty list to store errors
                 for j in range(self.n):
                     err = self.perform_step(cut_index = j)
                     if(err == "NOCUT"):
                         break
-                    elif(err != None): # Found the target error with the cut DB
+                    elif(err is not None): # Found the target error with the cut DB
+                        # we have the right level of granularity to find errors,
+                        # exhaust this level before restarting.
+                        errors.append(err)
+                        if self.n == 2:
+                            # start from top with bisection, complete lower level of details
+                            break
                         self.prepare_new_step()
-                        break
                 
-                if(err == None):
-                    # Increase the granularity of the cut in case target error not found
+                # Increase the granularity of the cut in case target error not found
+                if not errors or err == "NOCUT":
                     self.n *= 2
-                else:
-                    break
 
-            if(err == None or err == "NOCUT"):
+            if not errors: # No errors found
                 if(self.cut_level == cutLevel.Insts):
                     # Reduce cut level from inst to nets
                     self.cut_level = cutLevel.Nets
