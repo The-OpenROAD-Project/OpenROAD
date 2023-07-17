@@ -42,11 +42,13 @@ namespace ppl {
 
 SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
                                        std::vector<Slot>& slots,
+                                       const std::vector<Constraint>& constraints,
                                        Logger* logger,
                                        odb::dbDatabase* db)
     : netlist_(netlist),
       slots_(slots),
       pin_groups_(netlist->getIOGroups()),
+      constraints_(constraints),
       logger_(logger),
       db_(db)
 {

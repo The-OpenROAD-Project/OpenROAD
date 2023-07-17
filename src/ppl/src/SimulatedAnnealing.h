@@ -52,11 +52,14 @@ class Logger;
 namespace ppl {
 using utl::Logger;
 
+struct Constraint;
+
 class SimulatedAnnealing
 {
  public:
   SimulatedAnnealing(Netlist* netlist,
                      std::vector<Slot>& slots,
+                     const std::vector<Constraint>& constraints,
                      Logger* logger,
                      odb::dbDatabase* db);
   ~SimulatedAnnealing() = default;
@@ -92,6 +95,7 @@ class SimulatedAnnealing
   Netlist* netlist_;
   std::vector<Slot>& slots_;
   const std::vector<PinGroupByIndex>& pin_groups_;
+  const std::vector<Constraint>& constraints_;
   int num_slots_;
   int num_pins_;
   int num_groups_;

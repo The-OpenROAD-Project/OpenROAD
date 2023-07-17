@@ -1925,7 +1925,7 @@ void IOPlacer::runAnnealing()
   initConstraints(true);
 
   ppl::SimulatedAnnealing annealing(
-      netlist_io_pins_.get(), slots_, logger_, db_);
+      netlist_io_pins_.get(), slots_, constraints_, logger_, db_);
   annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
   annealing.getAssignment(assignment_);
 
