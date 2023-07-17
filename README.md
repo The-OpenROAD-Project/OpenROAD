@@ -309,7 +309,7 @@ and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool
 
 ## Git Quickstart
 OpenROAD uses Git for version control and contributions. 
-Get familiarised with a quickstart tutorial to contribution [here](GitGuide.md).
+Get familiarised with a quickstart tutorial to contribution [here](docs/contrib/GitGuide.md).
 
 ## License
 

@@ -58,7 +58,7 @@ can use OpenROAD as the infrastructure for your tools in the
 [Developer Guide](contrib/DeveloperGuide.md) section.
 
 OpenROAD uses Git for version control and contributions. 
-Get familiarised with a quickstart tutorial to contribution [here](GitGuide.md).
+Get familiarised with a quickstart tutorial to contribution [here](contrib/GitGuide.md).
 
 ## How to get in touch
 

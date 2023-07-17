@@ -52,5 +52,6 @@ void clear_metrics_stage();
 void push_metrics_stage(const char* fmt);
 void pop_metrics_stage();
 void suppress_message(utl::ToolId tool, int id);
+void unsuppress_message(utl::ToolId tool, int id);
 
 }  // namespace utl
