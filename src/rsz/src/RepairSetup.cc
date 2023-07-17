@@ -773,10 +773,6 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
       sta_->connectPin(load, load_port, out_net);
     }
   }
- 
-  // here we can resize both the original driver and the clone
-  // resize_count_ += resizer_->resizeToTargetSlew(clone_output_pin);
-  // resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
   resizer_->parasiticsInvalid(out_net);
   return true;
 }
