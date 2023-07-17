@@ -59,21 +59,24 @@ detailed_route
 - `-droute_end_iter` number of detailed routing iterations
 - `-via_in_pin_bottom_layer` via-in pin bottom layer name  
 - `-via_in_pin_top_layer` via-in pin top layer name
-- `-or_seed` random seed
+- `-or_seed` random seed for the order of nets to reroute. 
 - `-or_k` number of swaps is given by $k * sizeof(rerouteNets)$
 - `-bottom_routing_layer` bottommost routing layer name 
 - `-top_routing_layer` topmost routing layer name
 - `-verbose` set verbose if value is greater than 0. 
-- `-param` you may set parameters in this argument using a file. note that `-param` may not be used
-with other keyword arguments. (deprecated)
+- `-param` you may set parameters in this argument using a file. 
+**note that `-param` may not be used with other keyword arguments.
+(deprecated)**
 - `-distributed` enable distributed mode with Kubernetes and Google Cloud, [guide](./doc/Distributed.md).
 - `-remote_host` the host IP 
 - `-remote_port` the value of the port to access from 
 - `-shared_volume` the mount path of the nfs shared folder
 - `-cloud_size` the number of workers 
 - `-clean_patches` clean unneeded patches during detailed routing. 
+- `-no_pin_access` disables pin access for routing
 - `-min_access_points` minimum access points for standard cell and macro cell pins. 
 - `-save_guide_updates` save guides updates 
+- `-repair_pdn_vias` this option is used for some PDKs which have M1 and M2 layers that run in parallel. 
 
 ### Detailed Route debugging
 
@@ -105,7 +108,7 @@ detailed_route_debug
 - `-iter` debug iterations
 - `-pa_markers` enable pin access markers
 - `-dump_dr` dump detailed routing filename
-- `-dump_dir dir` dump detailed routing directory
+- `-dump_dir` dump detailed routing directory
 - `-pa_edge` visibility of pin access edges
 - `-pa_commit` visibility of pin access commits
 - `-write_net_tracks` enable writing of net track assigments
@@ -137,18 +140,15 @@ pin_access
 - `-shared_volume` the mount path of the nfs shared folder
 - `-cloud_size` the number of workers 
 
-### Other functions
+### Useful developer functions
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonRoute.cpp) or the [swig file](./src/TritonRoute.i).
 
 ```
-    detailed_route_set_default_via [-via]   # set default via 
-    detailed_route_set_unidirectional_layer [-layer] # set unidirectional layer
-```
-
-### Undocumented functions (coming soon!)
-
-```
-    step_dr
-    check_drc
+detailed_route_set_default_via [-via]   # set default via 
+detailed_route_set_unidirectional_layer [-layer] # set unidirectional layer
+step_dr # refer to function detailed_route_step_drt
+check_drc   # refer to function check_drc_cmd 
 ```
 
 ## Example scripts
