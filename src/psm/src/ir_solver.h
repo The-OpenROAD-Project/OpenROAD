@@ -120,7 +120,7 @@ class IRSolver
   //! Function to add C4 bumps to the G matrix
   bool addC4Bump();
   //! Function that parses the Vsrc file
-  void readC4Data();
+  void readC4Data(bool require_voltage);
   //! Function to create a J vector from the current map
   bool createJ();
   //! Function to create a G matrix using the nodes

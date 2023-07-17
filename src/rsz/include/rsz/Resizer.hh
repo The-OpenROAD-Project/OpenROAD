@@ -162,11 +162,6 @@ public:
                // Return values.
                double &res,
                double &cap) const;
-  void layerRC(int routing_level,
-               const Corner *corner,
-               // Return values.
-               double &res,
-               double &cap) const;
   // Set the resistance and capacitance used for parasitics on signal nets.
   void setWireSignalRC(const Corner *corner,
                        double res, // ohms/meter
@@ -229,6 +224,7 @@ public:
   void repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
+                   bool verbose,
                    bool skip_pin_swap,
                    bool skip_gate_cloning);
   // For testing.
@@ -244,7 +240,8 @@ public:
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
-                  int max_passes);
+                  int max_passes,
+                  bool verbose);
   void repairHold(const Pin *end_pin,
                   double setup_margin,
                   double hold_margin,

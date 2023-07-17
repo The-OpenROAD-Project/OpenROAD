@@ -136,4 +136,10 @@ void suppress_message(utl::ToolId tool, int id)
   logger->suppressMessage(tool, id);
 }
 
+void unsuppress_message(utl::ToolId tool, int id)
+{
+  Logger* logger = getLogger();
+  logger->unsuppressMessage(tool, id);
+}
+
 }  // namespace utl
