@@ -53,6 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "odb/db.h"
 #include "rsz/Resizer.hh"
+#include "sta/Corner.hh"
 
 namespace psm {
 using odb::dbBlock;
@@ -126,11 +127,17 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   node_density_um_ = node_density_um;
   node_density_factor_user_ = node_density_factor_user;
   net_voltage_map_ = net_voltage_map;
-
-  if (corner == nullptr) {
-    corner = sta_->cmdCorner();
-  }
   corner_ = corner;
+
+  if (corner_ == nullptr) {
+    corner_ = sta_->cmdCorner();
+  }
+  if (corner_ == nullptr) {
+    corner_ = sta_->corners()->findCorner(0);
+  }
+  if (corner_ == nullptr) {
+    logger_->error(utl::PSM, 84, "Unable to proceed without a valid corner");
+  }
 }
 
 IRSolver::~IRSolver() = default;
