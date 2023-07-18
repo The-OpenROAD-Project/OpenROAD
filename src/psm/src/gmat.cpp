@@ -45,11 +45,12 @@ using std::pair;
 using std::vector;
 
 //! Constructor for creating the G matrix
-GMat::GMat(int num_layers, utl::Logger* logger)
+GMat::GMat(int num_layers, utl::Logger* logger, odb::dbTech* tech)
     : layer_maps_(num_layers + 1, NodeMap())
 {
   // as it start from 0 and everywhere we use layer
   logger_ = logger;
+  tech_ = tech;
 }
 
 //! Destructor of the G matrix
@@ -188,7 +189,10 @@ bool GMat::findLayer(int layer)
 Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
 {
   if (!findLayer(layer)) {
-    logger_->error(utl::PSM, 45, "Layer {} contains no grid nodes.", layer);
+    logger_->error(utl::PSM,
+                   45,
+                   "Layer {} contains no grid nodes.",
+                   tech_->findRoutingLayer(layer)->getName());
   }
   const NodeMap& layer_map = layer_maps_[layer];
   if (nearest == false) {

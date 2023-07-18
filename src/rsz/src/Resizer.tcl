@@ -395,14 +395,16 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power]\
                                         [-enable_gate_cloning)]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_buffer_percent buffer_percent]\
-                                        [-max_utilization util]}
+                                        [-max_utilization util] \
+                                        [-verbose]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
             -repair_tns -max_passes} \
-    flags {-setup -hold -recover_power -allow_setup_violations -skip_pin_swap -enable_gate_cloning}
+    flags {-setup -hold -recover_power -allow_setup_violations -skip_pin_swap -enable_gate_cloning -verbose}
+
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
   set recover_power [info exists flags(-recover_power)]
@@ -444,6 +446,11 @@ proc repair_timing { args } {
     set repair_tns_end_percent [expr $repair_tns_end_percent / 100.0]
   }
 
+  set verbose 0
+  if { [info exists flags(-verbose)] } {
+    set verbose 1
+  }
+
   set max_passes 10000
   if { [info exists keys(-max_passes)] } {
     set max_passes $keys(-max_passes)
@@ -453,12 +460,15 @@ proc repair_timing { args } {
   if { $recover_power } {
     rsz::recover_power	
   } else {
-    if { $setup } {
-	  rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes $skip_pin_swap $enable_gate_cloning
+      if { $setup } {
+    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
+      $verbose \
+      $skip_pin_swap $enable_gate_cloning
     }
-    if { $hold } {
-	  rsz::repair_hold $setup_margin $hold_margin \
-	      $allow_setup_violations $max_buffer_percent $max_passes
+      if { $hold } {
+    rsz::repair_hold $setup_margin $hold_margin \
+      $allow_setup_violations $max_buffer_percent $max_passes \
+      $verbose	  
     }
   }
 }
