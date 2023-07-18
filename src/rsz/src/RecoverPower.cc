@@ -384,12 +384,10 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
            float drive2 = port2->driveResistance();
            ArcDelay intrinsic1 = port1->intrinsicDelay(this);
            ArcDelay intrinsic2 = port2->intrinsicDelay(this);
-           return drive1 < drive2
-             || ((drive1 == drive2
-                  && intrinsic1 > intrinsic2)
-                 || (intrinsic1 == intrinsic2
-                 || (intrinsic1 == intrinsic2
-                     && port1->capacitance() > port2->capacitance())));
+
+           return ( drive1 < drive2 || 
+		    (drive1 == drive2 && intrinsic1 > intrinsic2) ||
+		    (intrinsic1 == intrinsic2 && port1->capacitance() > port2->capacitance()));
          });
     float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     float delay = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)
