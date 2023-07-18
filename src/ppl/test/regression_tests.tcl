@@ -28,6 +28,11 @@ record_tests {
   annealing_constraint2
   annealing_constraint3
   annealing_constraint4
+  annealing_constraint5
+  annealing_constraint6
+  annealing_constraint7
+  annealing_large_groups1
+  annealing_large_groups2
   blocked_region
   cells_not_placed
   exclude1
