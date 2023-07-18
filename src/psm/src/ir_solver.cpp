@@ -328,6 +328,10 @@ bool IRSolver::addSources()
 //! Function that parses the Vsrc file
 void IRSolver::readSourceData(bool require_voltage)
 {
+  dbChip* chip = db_->getChip();
+  dbBlock* block = chip->getBlock();
+  findPdnWires(block->findNet(power_net_.c_str()));
+
   const int unit_micron = (db_->getTech())->getDbUnitsPerMicron();
   if (!vsrc_file_.empty()) {
     logger_->info(utl::PSM,
@@ -438,8 +442,12 @@ void IRSolver::readSourceData(bool require_voltage)
                     coreL * to_micron,
                     x_cor * to_micron,
                     y_cor * to_micron);
-      sources_.push_back(
-          {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src, top_layer_, true});
+      sources_.push_back({x_cor,
+                          y_cor,
+                          bump_size_ * unit_micron,
+                          supply_voltage_src,
+                          top_layer_,
+                          true});
     }
     const int num_b_x = coreW / bump_pitch_x_;
     const int centering_offset_x = (coreW - (num_b_x - 1) * bump_pitch_x_) / 2;
@@ -508,13 +516,22 @@ bool IRSolver::createSourcesFromBTerms(dbNet* net, double voltage)
           dx = pitch;
           src = odb::Point(rect.xMin() + dx / 2, rect.yCenter());
         } else {
-          sources_.push_back(
-              {rect.xCenter(), rect.yCenter(), src_size, voltage, layer->getRoutingLevel(), false});
+          sources_.push_back({rect.xCenter(),
+                              rect.yCenter(),
+                              src_size,
+                              voltage,
+                              layer->getRoutingLevel(),
+                              false});
           continue;
         }
 
         for (; rect.intersects(src);) {
-          sources_.push_back({src.x(), src.y(), src_size, voltage, layer->getRoutingLevel(), false});
+          sources_.push_back({src.x(),
+                              src.y(),
+                              src_size,
+                              voltage,
+                              layer->getRoutingLevel(),
+                              false});
           src.addX(dx);
           src.addY(dy);
         }
@@ -670,14 +687,14 @@ bool IRSolver::createJ()
 
 //! Function to find and store the upper and lower PDN layers and return a list
 // of wires for all PDN tasks
-vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
+void IRSolver::findPdnWires(dbNet* power_net)
 {
-  vector<dbSBox*> power_wires;
+  power_wires_.clear();
   // Iterate through all wires till we reach the lowest abstraction level
   for (dbSWire* curSWire : power_net->getSWires()) {
     for (dbSBox* curWire : curSWire->getWires()) {
       // Store wires in an easy to access format as we reuse it multiple times
-      power_wires.push_back(curWire);
+      power_wires_.push_back(curWire);
       int l;
       // If the wire is a via get extract the top layer
       // We assume the bottom most layer must have power stripes.
@@ -702,8 +719,6 @@ vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
       }
     }
   }
-  // return the list of wires to be used in all subsequent loops
-  return power_wires;
 }
 
 map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
@@ -796,9 +811,9 @@ map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
 }
 
 //! Function to create the nodes of the G matrix
-void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
+void IRSolver::createGmatViaNodes()
 {
-  for (auto curWire : power_wires) {
+  for (auto curWire : power_wires_) {
     // For a Via we create the nodes at the top and bottom ends of the via
     if (!(curWire->isVia())) {
       continue;
@@ -837,10 +852,9 @@ void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
   }
 }
 
-void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
-                                   const vector<odb::Rect>& macros)
+void IRSolver::createGmatWireNodes(const vector<odb::Rect>& macros)
 {
-  for (auto curWire : power_wires) {
+  for (auto curWire : power_wires_) {
     // For a stripe we create nodes at the ends of the stripes and at a fixed
     // frequency in the lowermost layer.
     if (curWire->isVia()) {
@@ -970,10 +984,9 @@ NodeEnclosure IRSolver::getViaEnclosure(int layer, dbSet<dbBox> via_boxes)
 }
 
 //! Function to create the connections of the G matrix
-void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
-                                     bool connection_only)
+void IRSolver::createGmatConnections(bool connection_only)
 {
-  for (auto curWire : power_wires) {
+  for (auto curWire : power_wires_) {
     // For vias we make 3 connections
     // 1) From the top node to the bottom node
     // 2) Nodes within the top enclosure
@@ -1277,12 +1290,9 @@ bool IRSolver::createGmat(bool connection_only)
              "Extracting power stripes on net {}",
              power_net->getName());
 
-  // Extract all power wires for the net and store the upper and lower layers
-  const vector<dbSBox*> power_wires = findPdnWires(power_net);
-
   // Create all the nodes for the G matrix
-  createGmatViaNodes(power_wires);
-  createGmatWireNodes(power_wires, macro_boundaries);
+  createGmatViaNodes();
+  createGmatWireNodes(macro_boundaries);
 
   if (Gmat_->getNumNodes() == 0) {
     logger_->warn(
@@ -1303,7 +1313,7 @@ bool IRSolver::createGmat(bool connection_only)
   Gmat_->initializeGmatDok(num_sources);
 
   // Iterate through all the wires to populate conductance matrix
-  createGmatConnections(power_wires, connection_only);
+  createGmatConnections(connection_only);
 
   debugPrint(
       logger_, utl::PSM, "G Matrix", 1, "G matrix created successfully.");

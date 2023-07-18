@@ -137,12 +137,11 @@ class IRSolver
   //! Function to find and store the upper and lower PDN layers and return a
   //! list
   // of wires for all PDN tasks
-  std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
+  void findPdnWires(odb::dbNet* power_net);
   //! Function to create the nodes of vias in the G matrix
-  void createGmatViaNodes(const std::vector<odb::dbSBox*>& power_wires);
+  void createGmatViaNodes();
   //! Function to create the nodes of wires in the G matrix
-  void createGmatWireNodes(const std::vector<odb::dbSBox*>& power_wires,
-                           const std::vector<odb::Rect>& macros);
+  void createGmatWireNodes(const std::vector<odb::Rect>& macros);
   //! Function to find and store the macro boundaries
   std::vector<odb::Rect> getMacroBoundaries();
 
@@ -158,8 +157,7 @@ class IRSolver
   //! Function to create the nodes for the sources
   int createSourceNodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
-  void createGmatConnections(const std::vector<odb::dbSBox*>& power_wires,
-                             bool connection_only);
+  void createGmatConnections(bool connection_only);
   bool checkConnectivity(bool connection_only = false);
   bool checkValidR(double R);
   bool getResult();
@@ -227,5 +225,7 @@ class IRSolver
   std::vector<std::tuple<int, double, double>> layer_res_;
   //! Locations of the source in the G matrix
   std::map<NodeIdx, double> source_nodes_;
+
+  std::vector<odb::dbSBox*> power_wires_;
 };
 }  // namespace psm
