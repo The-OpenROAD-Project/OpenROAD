@@ -76,7 +76,7 @@ class GMat
 {
  public:
   //! Constructor for creating the G matrix
-  GMat(int num_layers, utl::Logger* logger);
+  GMat(int num_layers, utl::Logger* logger, odb::dbTech* tech);
   //! Destructor of the G matrix
   ~GMat();
   //! Function to return a pointer to the node with a index
@@ -154,6 +154,8 @@ class GMat
 
   //! Pointer to the logger
   utl::Logger* logger_{nullptr};
+  //! Pointer to the logger
+  odb::dbTech* tech_{nullptr};
   //! Number of nodes in G matrix
   NodeIdx n_nodes_{0};
   //! Dictionary of keys for G matrix
