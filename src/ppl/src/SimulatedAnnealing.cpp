@@ -201,12 +201,28 @@ int SimulatedAnnealing::randomAssignmentForGroups(
 {
   int slot_idx = 0;
   for (const auto& group : pin_groups_) {
-    while (!isFreeForGroup(slot_indices[slot_idx], group.pin_indices.size())) {
-      slot_idx++;
+    int group_slot;
+    const IOPin& io_pin = netlist_->getIoPin(group.pin_indices[0]);
+    if (io_pin.getConstraintIdx() != -1) {
+      int first_slot = 0;
+      int last_slot = num_slots_ - 1;
+      getSlotsRange(io_pin, first_slot, last_slot);
+      boost::random::uniform_int_distribution<int> distribution(first_slot,
+                                                                last_slot);
+
+      int slot = distribution(generator_);
+      while (!isFreeForGroup(slot, group.pin_indices.size())) {
+        slot = distribution(generator_);
+      }
+      group_slot = slot;
+    } else {
+      while (!isFreeForGroup(slot_indices[slot_idx], group.pin_indices.size())) {
+        slot_idx++;
+      }
+      group_slot = slot_indices[slot_idx];
     }
 
     const auto pin_list = group.pin_indices;
-    int group_slot = slot_indices[slot_idx];
     for (const auto& pin_idx : pin_list) {
       pin_assignment_[pin_idx] = group_slot;
       slots_[group_slot].used = true;
