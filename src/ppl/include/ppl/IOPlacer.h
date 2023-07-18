@@ -200,8 +200,7 @@ class IOPlacer
                     Edge edge,
                     std::vector<Section>& sections);
   std::vector<Section> createSectionsPerConstraint(Constraint& constraint);
-  void getPinsFromDirectionConstraint(Constraint& constraint,
-                                      int constraint_idx);
+  void getPinsFromDirectionConstraint(Constraint& constraint);
   void initMirroredPins(bool annealing = false);
   void initConstraints(bool annealing = false);
   void sortConstraints();

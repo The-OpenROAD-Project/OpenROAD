@@ -1507,12 +1507,11 @@ void IOPlacer::addVerLayer(odb::dbTechLayer* layer)
   ver_layers_.insert(layer->getRoutingLevel());
 }
 
-void IOPlacer::getPinsFromDirectionConstraint(Constraint& constraint,
-                                              int constraint_idx)
+void IOPlacer::getPinsFromDirectionConstraint(Constraint& constraint)
 {
   if (constraint.direction != Direction::invalid
       && constraint.pin_list.empty()) {
-    for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
+    for (const IOPin& io_pin : netlist_io_pins_->getIOPins()) {
       if (io_pin.getDirection() == constraint.direction) {
         constraint.pin_list.insert(io_pin.getBTerm());
       }
@@ -1593,7 +1592,7 @@ void IOPlacer::initConstraints(bool annealing)
   std::reverse(constraints_.begin(), constraints_.end());
   int constraint_idx = 0;
   for (Constraint& constraint : constraints_) {
-    getPinsFromDirectionConstraint(constraint, constraint_idx);
+    getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
     int num_slots = 0;
     for (const Section& sec : constraint.sections) {
