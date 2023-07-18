@@ -32,7 +32,6 @@ rtl_macro_placer [-halo_width   halo_width]
                  [-boundary_weight  boundary_weight]
                  [-notch_weight notch_weight]
                  [-macro_blockage_weight    macro_blockage_weight]
-                 [-pin_access_th    pin_access_th]
                  [-target_util  target_util]
                  [-target_dead_space    target_dead_space]
                  [-min_ar   min_ar]
@@ -98,10 +97,10 @@ There is a set of regression tests in `/test`.
 ## Limitations
 
 ## References
-A. B. Kahng, R. Varadarajan and Z. Wang, 
+1. A. B. Kahng, R. Varadarajan and Z. Wang, 
 "RTL-MP: Toward Practical, Human-Quality Chip Planning and Macro Placement",
 [(.pdf)](https://vlsicad.ucsd.edu/Publications/Conferences/389/c389.pdf), Proc. ACM/IEEE Intl. Symp. on Physical Design, 2022, pp. 3-11.
-A. B. Kahng, R. Varadarajan and Z. Wang,
+1. A. B. Kahng, R. Varadarajan and Z. Wang,
 "Hier-RTLMP: A hierarchical automatic macro placer for large-scale complex IP blocks.",
 [(.pdf)](https://arxiv.org/pdf/2304.11761.pdf), arXiv preprint arXiv:2304.11761, 2023.
 
