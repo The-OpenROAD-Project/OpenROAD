@@ -40,11 +40,12 @@
 
 namespace ppl {
 
-SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
-                                       std::vector<Slot>& slots,
-                                       const std::vector<Constraint>& constraints,
-                                       Logger* logger,
-                                       odb::dbDatabase* db)
+SimulatedAnnealing::SimulatedAnnealing(
+    Netlist* netlist,
+    std::vector<Slot>& slots,
+    const std::vector<Constraint>& constraints,
+    Logger* logger,
+    odb::dbDatabase* db)
     : netlist_(netlist),
       slots_(slots),
       pin_groups_(netlist->getIOGroups()),
@@ -167,14 +168,30 @@ void SimulatedAnnealing::randomAssignment()
       continue;
     }
 
-    int slot = slot_indices[slot_idx];
-    while (slots_[slot].used) {
+    const IOPin& io_pin = netlist_->getIoPin(i);
+    if (io_pin.getConstraintIdx() != -1) {
+      int first_slot = 0;
+      int last_slot = num_slots_ - 1;
+      getSlotsRange(io_pin, first_slot, last_slot);
+      boost::random::uniform_int_distribution<int> distribution(first_slot,
+                                                                last_slot);
+
+      int slot = distribution(generator_);
+      while (slots_[slot].used) {
+        slot = distribution(generator_);
+      }
+      pin_assignment_[i] = slot;
+      slots_[slot].used = true;
+    } else {
+      int slot = slot_indices[slot_idx];
+      while (slots_[slot].used) {
+        slot_idx++;
+        slot = slot_indices[slot_idx];
+      }
+      pin_assignment_[i] = slot;
+      slots_[slot].used = true;
       slot_idx++;
-      slot = slot_indices[slot_idx];
     }
-    pin_assignment_[i] = slot;
-    slots_[slot].used = true;
-    slot_idx++;
   }
 }
 
