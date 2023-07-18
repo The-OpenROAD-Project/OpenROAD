@@ -281,13 +281,27 @@ int SimulatedAnnealing::swapPins()
 {
   boost::random::uniform_int_distribution<int> distribution(0, num_pins_ - 1);
   int pin1 = distribution(generator_);
+  int pin2;
   while (netlist_->getIoPin(pin1).isInGroup()) {
     pin1 = distribution(generator_);
   }
 
-  int pin2 = distribution(generator_);
-  while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()) {
+  int constraint_idx = netlist_->getIoPin(pin1).getConstraintIdx();
+  if (constraint_idx != -1) {
+    const std::vector<int>& pin_indices = constraints_[constraint_idx].pin_indices;
+    distribution = boost::random::uniform_int_distribution<int>(0, pin_indices.size() - 1);
+    
+    int pin_idx = distribution(generator_);
+    pin2 = pin_indices[pin_idx];
+    while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()) {
+      pin_idx = distribution(generator_);
+      pin2 = pin_indices[pin_idx];
+    } 
+  } else {
     pin2 = distribution(generator_);
+    while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()) {
+      pin2 = distribution(generator_);
+    }
   }
 
   pins_.push_back(pin1);
