@@ -45,11 +45,12 @@ using std::pair;
 using std::vector;
 
 //! Constructor for creating the G matrix
-GMat::GMat(int num_layers, utl::Logger* logger)
+GMat::GMat(int num_layers, utl::Logger* logger, odb::dbTech* tech)
     : layer_maps_(num_layers + 1, NodeMap())
 {
   // as it start from 0 and everywhere we use layer
   logger_ = logger;
+  tech_ = tech;
 }
 
 //! Destructor of the G matrix
@@ -188,7 +189,10 @@ bool GMat::findLayer(int layer)
 Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
 {
   if (!findLayer(layer)) {
-    logger_->error(utl::PSM, 45, "Layer {} contains no grid nodes.", layer);
+    logger_->error(utl::PSM,
+                   45,
+                   "Layer {} contains no grid nodes.",
+                   tech_->findRoutingLayer(layer)->getName());
   }
   const NodeMap& layer_map = layer_maps_[layer];
   if (nearest == false) {
@@ -331,15 +335,15 @@ void GMat::setConductance(const Node* node1,
 /*! Based on the size of the G matrix
  * initialize the number of rows and columns
  */
-void GMat::initializeGmatDok(int numC4)
+void GMat::initializeGmatDok(int num)
 {
   if (n_nodes_ <= 0) {
     logger_->error(utl::PSM, 49, "No nodes in object, initialization stopped.");
   } else {
-    G_mat_dok_.num_cols = n_nodes_ + numC4;
-    G_mat_dok_.num_rows = n_nodes_ + numC4;
-    A_mat_dok_.num_cols = n_nodes_ + numC4;
-    A_mat_dok_.num_rows = n_nodes_ + numC4;
+    G_mat_dok_.num_cols = n_nodes_ + num;
+    G_mat_dok_.num_rows = n_nodes_ + num;
+    A_mat_dok_.num_cols = n_nodes_ + num;
+    A_mat_dok_.num_rows = n_nodes_ + num;
   }
 }
 
@@ -494,14 +498,14 @@ vector<Node*> GMat::getRDLNodes(int layer,
 // voltage sources in MNA
 /*!
  * Directly updates the G matrix
-     \param loc Location of the C4 bump
-     \param C4Num  C4 bump number
+     \param loc Location of the source
+     \param source_number  source number
      \return nothing
 */
-void GMat::addC4Bump(int loc, int C4Num)
+void GMat::addSource(int loc, int source_number)
 {
-  updateConductance(loc, C4Num + n_nodes_, 1);
-  updateConductance(C4Num + n_nodes_, loc, 1);
+  updateConductance(loc, source_number + n_nodes_, 1);
+  updateConductance(source_number + n_nodes_, loc, 1);
 }
 
 //! Function which converts the DOK matrix into CSC format in a sparse method

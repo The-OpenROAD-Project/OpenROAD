@@ -1589,13 +1589,8 @@ void IOPlacer::initMirroredPins(bool annealing)
 
 void IOPlacer::initConstraints(bool annealing)
 {
-  if (annealing && !constraints_.empty()) {
-    logger_->error(PPL,
-                   103,
-                   "Pin constraints not supported during pin placement with "
-                   "Simulated Annealing");
-  }
   std::reverse(constraints_.begin(), constraints_.end());
+  int constraint_idx = 0;
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
@@ -1610,8 +1605,20 @@ void IOPlacer::initConstraints(bool annealing)
       logger_->error(
           PPL, 76, "Constraint does not have available slots for its pins.");
     }
+
+    for (odb::dbBTerm* term : constraint.pin_list) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(term);
+      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+      io_pin.setConstraintIdx(constraint_idx);
+      constraint.pin_indices.push_back(pin_idx);
+    }
+    constraint_idx++;
   }
-  sortConstraints();
+
+  if (!annealing) {
+    sortConstraints();
+  }
+
   checkPinsInMultipleConstraints();
   checkPinsInMultipleGroups();
 }
@@ -1928,7 +1935,7 @@ void IOPlacer::runAnnealing()
   initConstraints(true);
 
   ppl::SimulatedAnnealing annealing(
-      netlist_io_pins_.get(), slots_, logger_, db_);
+      netlist_io_pins_.get(), slots_, constraints_, logger_, db_);
   annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
   annealing.getAssignment(assignment_);
 
