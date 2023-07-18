@@ -1512,7 +1512,6 @@ void IOPlacer::getPinsFromDirectionConstraint(Constraint& constraint, int constr
   if (constraint.direction != Direction::invalid
       && constraint.pin_list.empty()) {
     for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
-      io_pin.setConstraintIdx(constraint_idx);
       if (io_pin.getDirection() == constraint.direction) {
         constraint.pin_list.insert(io_pin.getBTerm());
       }
@@ -1606,9 +1605,19 @@ void IOPlacer::initConstraints(bool annealing)
       logger_->error(
           PPL, 76, "Constraint does not have available slots for its pins.");
     }
+
+    for (odb::dbBTerm* term : constraint.pin_list) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(term);
+      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+      io_pin.setConstraintIdx(constraint_idx);
+    }
     constraint_idx++;
   }
-  sortConstraints();
+
+  if (!annealing) {
+    sortConstraints();
+  }
+
   checkPinsInMultipleConstraints();
   checkPinsInMultipleGroups();
 }
