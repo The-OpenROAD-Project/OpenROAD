@@ -216,7 +216,8 @@ int SimulatedAnnealing::randomAssignmentForGroups(
       }
       group_slot = slot;
     } else {
-      while (!isFreeForGroup(slot_indices[slot_idx], group.pin_indices.size())) {
+      while (
+          !isFreeForGroup(slot_indices[slot_idx], group.pin_indices.size())) {
         slot_idx++;
       }
       group_slot = slot_indices[slot_idx];
