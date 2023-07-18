@@ -42,6 +42,10 @@ psm::PDNSim*
 getPDNSim();
 }
 
+namespace odb {
+class dbNet;
+}
+
 using ord::getPDNSim;
 using psm::PDNSim;
 using sta::Corner;
@@ -57,7 +61,7 @@ import_vsrc_cfg_cmd(const char* vsrc)
 }
 
 void 
-set_power_net_cmd(const char* net)
+set_power_net_cmd(odb::dbNet* net)
 {
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setNet(net);
@@ -92,17 +96,10 @@ set_node_density_factor(int node_density_factor)
 }
 
 void 
-set_net_voltage_cmd(const char* net_name, float voltage)
+set_net_voltage_cmd(odb::dbNet* net, float voltage)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->setNetVoltage(net_name, voltage);
-}
-
-void 
-import_em_enable(int enable_em)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->setEnableEM(enable_em);
+  pdnsim->setNetVoltage(net, voltage);
 }
 
 void 
@@ -120,24 +117,10 @@ import_error_file_cmd(const char* error_file)
 }
 
 void 
-import_em_out_file_cmd(const char* out_file)
+analyze_power_grid_cmd(bool enable_em, const char* em_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->setEMOutFile(out_file);
-}
-
-void 
-import_spice_out_file_cmd(const char* out_file)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->setSpiceOutFile(out_file);
-}
-
-void 
-analyze_power_grid_cmd()
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->analyzePowerGrid();
+  pdnsim->analyzePowerGrid(enable_em, em_file);
 }
 
 int
@@ -148,13 +131,13 @@ check_connectivity_cmd()
 }
 
 void
-write_pg_spice_cmd()
+write_pg_spice_cmd(const char* file)
 {
   PDNSim* pdnsim = getPDNSim();
-  return pdnsim->writeSpice();
+  return pdnsim->writeSpice(file);
 }
 
-void set_debug_gui_cmd()
+void set_debug_gui()
 {
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setDebugGui();

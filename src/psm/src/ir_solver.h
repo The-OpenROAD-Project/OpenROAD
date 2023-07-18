@@ -81,8 +81,8 @@ class IRSolver
            sta::dbSta* sta,
            rsz::Resizer* resizer,
            utl::Logger* logger,
+           odb::dbNet* net,
            const std::string& vsrc_loc,
-           const std::string& power_net,
            const std::string& out_file,
            const std::string& error_file,
            const std::string& em_out_file,
@@ -92,7 +92,7 @@ class IRSolver
            int bump_pitch_y,
            float node_density_um,
            int node_density_factor_user,
-           const std::map<std::string, float>& net_voltage_map,
+           const std::map<odb::dbNet*, float>& net_voltage_map,
            sta::Corner* corner);
   //! IRSolver destructor
   ~IRSolver();
@@ -117,12 +117,12 @@ class IRSolver
 
   const std::vector<SourceData>& getSources() const { return sources_; }
 
-  double getWorstCaseVoltage() const { return wc_voltage; }
-  double getMaxCurrent() const { return max_cur; }
-  double getAvgCurrent() const { return avg_cur; }
-  int getNumResistors() const { return num_res; }
-  double getAvgVoltage() const { return avg_voltage; }
-  float getSupplyVoltageSrc() const { return supply_voltage_src; }
+  double getWorstCaseVoltage() const { return wc_voltage_; }
+  double getMaxCurrent() const { return max_cur_; }
+  double getAvgCurrent() const { return avg_cur_; }
+  int getNumResistors() const { return num_res_; }
+  double getAvgVoltage() const { return avg_voltage_; }
+  float getSupplyVoltageSrc() const { return supply_voltage_src_; }
 
  private:
   //! Function to add sources to the G matrix
@@ -165,19 +165,17 @@ class IRSolver
 
   double getResistance(odb::dbTechLayer* layer) const;
 
-  float supply_voltage_src{0};
+  float supply_voltage_src_{0};
   //! Worst case voltage at the lowest layer nodes
-  double wc_voltage{0};
+  double wc_voltage_{0};
   //! Worst case current at the lowest layer nodes
-  double max_cur{0};
+  double max_cur_{0};
   //! Average current at the lowest layer nodes
-  double avg_cur{0};
+  double avg_cur_{0};
   //! number of resistances
-  int num_res{0};
+  int num_res_{0};
   //! Average voltage at lowest layer nodes
-  double avg_voltage{0};
-  //! Vector of worstcase voltages in the lowest layers
-  std::vector<double> wc_volt_layer;
+  double avg_voltage_{0};
   //! Pointer to the Db
   odb::dbDatabase* db_;
   //! Pointer to STA
@@ -186,9 +184,11 @@ class IRSolver
   rsz::Resizer* resizer_;
   //! Pointer to Logger
   utl::Logger* logger_;
+
+  odb::dbNet* net_;
+
   //! Voltage source file
   std::string vsrc_file_;
-  std::string power_net_;
   //! Resistance configuration file
   std::string out_file_;
   std::string error_file_;
@@ -215,9 +215,7 @@ class IRSolver
   bool connection_{false};
 
   sta::Corner* corner_;
-
-  odb::dbSigType power_net_type_;
-  std::map<std::string, float> net_voltage_map_;
+  std::map<odb::dbNet*, float> net_voltage_map_;
   //! Current vector 1D
   std::vector<double> J_;
   //! source locations and values

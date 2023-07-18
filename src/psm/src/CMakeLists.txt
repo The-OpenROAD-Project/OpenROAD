@@ -79,6 +79,9 @@ if (Python3_FOUND AND BUILD_PYTHON)
            LANGUAGE      python
            I_FILE        pdnsim-py.i
            SWIG_INCLUDES ${PROJECT_SOURCE_DIR}/../include
+                         ${ODB_HOME}/src/swig/common
+                         ${ODB_HOME}/src/swig/python
+                         ${ODB_HOME}/include
            SCRIPTS       ${CMAKE_CURRENT_BINARY_DIR}/psm_py.py
   )
 
@@ -89,6 +92,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
 
   target_link_libraries(psm_py
     PUBLIC
+      odb
       psm
   )
 

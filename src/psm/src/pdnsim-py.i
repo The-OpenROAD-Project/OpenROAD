@@ -30,14 +30,19 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+%module psm_py
+
 %{
 #include "ord/OpenRoad.hh"
 #include "psm/pdnsim.h"
+#include "odb/db.h"
 
 %}
 
 %include <std_string.i>
 
+%import "odb.i"
 %include "../../Exception-py.i"
 
 %include "psm/pdnsim.h"

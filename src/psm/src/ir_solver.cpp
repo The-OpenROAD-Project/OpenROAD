@@ -98,8 +98,8 @@ IRSolver::IRSolver(odb::dbDatabase* db,
                    sta::dbSta* sta,
                    rsz::Resizer* resizer,
                    utl::Logger* logger,
+                   odb::dbNet* net,
                    const std::string& vsrc_loc,
-                   const std::string& power_net,
                    const std::string& out_file,
                    const std::string& error_file,
                    const std::string& em_out_file,
@@ -109,15 +109,15 @@ IRSolver::IRSolver(odb::dbDatabase* db,
                    int bump_pitch_y,
                    float node_density_um,
                    int node_density_factor_user,
-                   const std::map<std::string, float>& net_voltage_map,
+                   const std::map<odb::dbNet*, float>& net_voltage_map,
                    sta::Corner* corner)
 {
   db_ = db;
   sta_ = sta;
   resizer_ = resizer;
   logger_ = logger;
+  net_ = net;
   vsrc_file_ = vsrc_loc;
-  power_net_ = power_net;
   out_file_ = out_file;
   error_file_ = error_file;
   em_out_file_ = em_out_file;
@@ -129,6 +129,13 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   node_density_factor_user_ = node_density_factor_user;
   net_voltage_map_ = net_voltage_map;
   corner_ = corner;
+
+  if (net_ == nullptr) {
+    logger_->error(utl::PSM, 88, "Invalid net specified");
+  }
+  if (!net_->getSigType().isSupply()) {
+    logger_->error(utl::PSM, 87, "{} is not a supply net.", net_->getName());
+  }
 
   if (corner_ == nullptr) {
     corner_ = sta_->cmdCorner();
@@ -222,18 +229,18 @@ void IRSolver::solveIR()
   const int num_nodes = Gmat_->getNumNodes();
   int node_num = 0;
   double sum_volt = 0;
-  wc_voltage = supply_voltage_src;
+  wc_voltage_ = supply_voltage_src_;
   while (node_num < num_nodes) {
     Node* node = Gmat_->getNode(node_num);
     const double volt = x(node_num);
     sum_volt = sum_volt + volt;
-    if (power_net_type_ == dbSigType::POWER) {
-      if (volt < wc_voltage) {
-        wc_voltage = volt;
+    if (net_->getSigType() == dbSigType::POWER) {
+      if (volt < wc_voltage_) {
+        wc_voltage_ = volt;
       }
     } else {
-      if (volt > wc_voltage) {
-        wc_voltage = volt;
+      if (volt > wc_voltage_) {
+        wc_voltage_ = volt;
       }
     }
     node->setVoltage(volt);
@@ -252,11 +259,11 @@ void IRSolver::solveIR()
   }
   ir_report << endl;
   ir_report.close();
-  avg_voltage = sum_volt / num_nodes;
+  avg_voltage_ = sum_volt / num_nodes;
   if (em_flag_) {
     DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
     int resistance_number = 0;
-    max_cur = 0;
+    max_cur_ = 0;
     double sum_cur = 0;
     ofstream em_report;
     if (!em_out_file_.empty()) {
@@ -278,7 +285,7 @@ void IRSolver::solveIR()
       if (abs(cond) < 1e-15) {    // ignore if an empty cell
         continue;
       }
-      const string net_name = power_net_;
+      const string net_name = net_->getName();
       if (col < num_nodes) {  // resistances
         const double resistance = -1 / cond;
 
@@ -309,14 +316,14 @@ void IRSolver::solveIR()
                     << ", " << node1_name << ", " << node2_name << endl;
         }
         seg_cur = abs(seg_cur);
-        if (seg_cur > max_cur) {
-          max_cur = seg_cur;
+        if (seg_cur > max_cur_) {
+          max_cur_ = seg_cur;
         }
         resistance_number++;
       }
     }  // for gmat values
-    avg_cur = sum_cur / resistance_number;
-    num_res = resistance_number;
+    avg_cur_ = sum_cur / resistance_number;
+    num_res_ = resistance_number;
 
   }  // enable em
 }
@@ -340,9 +347,7 @@ bool IRSolver::addSources()
 //! Function that parses the Vsrc file
 void IRSolver::readSourceData(bool require_voltage)
 {
-  dbChip* chip = db_->getChip();
-  dbBlock* block = chip->getBlock();
-  findPdnWires(block->findNet(power_net_.c_str()));
+  findPdnWires(net_);
 
   const int unit_micron = (db_->getTech())->getDbUnitsPerMicron();
   if (!vsrc_file_.empty()) {
@@ -366,52 +371,43 @@ void IRSolver::readSourceData(bool require_voltage)
         } else if (i == 2) {
           size = (int) (unit_micron * stod(val));
         } else {
-          supply_voltage_src = stod(val);
+          supply_voltage_src_ = stod(val);
         }
       }
       if (x == -1 || y == -1 || size == -1) {
         logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
       } else {
-        sources_.push_back({x, y, size, supply_voltage_src, top_layer_, true});
+        sources_.push_back({x, y, size, supply_voltage_src_, top_layer_, true});
       }
     }
     file.close();
   } else {
     dbChip* chip = db_->getChip();
     dbBlock* block = chip->getBlock();
-    dbNet* power_net = block->findNet(power_net_.data());
-    if (!net_voltage_map_.empty() && net_voltage_map_.count(power_net_) > 0) {
-      supply_voltage_src = net_voltage_map_.at(power_net_);
+    if (!net_voltage_map_.empty() && net_voltage_map_.count(net_) > 0) {
+      supply_voltage_src_ = net_voltage_map_.at(net_);
     } else if (require_voltage) {
       logger_->warn(
-          utl::PSM, 19, "Voltage on net {} is not explicitly set.", power_net_);
+          utl::PSM, 19, "Voltage on net {} is not explicitly set.", net_->getName());
       const pair<double, double> supply_voltages = getSupplyVoltage();
-      if (power_net == nullptr) {
-        logger_->error(utl::PSM,
-                       20,
-                       "Cannot find net {} in the design. Please provide a "
-                       "valid VDD/VSS net.",
-                       power_net_);
-      }
-      power_net_type_ = power_net->getSigType();
-      if (power_net_type_ == dbSigType::GROUND) {
-        supply_voltage_src = supply_voltages.second;
+      if (net_->getSigType() == dbSigType::GROUND) {
+        supply_voltage_src_ = supply_voltages.second;
         logger_->warn(utl::PSM,
                       21,
                       "Using voltage {:4.3f}V for ground network.",
-                      supply_voltage_src);
+                      supply_voltage_src_);
       } else {
-        supply_voltage_src = supply_voltages.first;
+        supply_voltage_src_ = supply_voltages.first;
         logger_->warn(utl::PSM,
                       22,
                       "Using voltage {:4.3f}V for VDD network.",
-                      supply_voltage_src);
+                      supply_voltage_src_);
       }
     }
     const bool added_from_pads
-        = createSourcesFromPads(power_net, supply_voltage_src);
+        = createSourcesFromPads(net_, supply_voltage_src_);
     const bool added_from_bterms
-        = createSourcesFromBTerms(power_net, supply_voltage_src);
+        = createSourcesFromBTerms(net_, supply_voltage_src_);
     if (added_from_pads || added_from_bterms) {
       return;
     }
@@ -461,7 +457,7 @@ void IRSolver::readSourceData(bool require_voltage)
       sources_.push_back({x_cor,
                           y_cor,
                           bump_size_ * unit_micron,
-                          supply_voltage_src,
+                          supply_voltage_src_,
                           top_layer_,
                           true});
     }
@@ -483,7 +479,7 @@ void IRSolver::readSourceData(bool require_voltage)
           sources_.push_back({x_cor,
                               y_cor,
                               bump_size_ * unit_micron,
-                              supply_voltage_src,
+                              supply_voltage_src_,
                               top_layer_,
                               true});
         }
@@ -629,7 +625,7 @@ bool IRSolver::createJ()
       auto iterms = inst->getITerms();
       // Find the pin layers for the macro
       for (auto&& iterm : iterms) {
-        if (iterm->getSigType() == power_net_type_) {
+        if (iterm->getSigType() == net_->getSigType()) {
           auto mterm = iterm->getMTerm();
           for (auto mpin : mterm->getMPins()) {
             for (auto box : mpin->getGeometry()) {
@@ -735,7 +731,7 @@ bool IRSolver::createJ()
   // Creating the J matrix
   for (int i = 0; i < num_nodes; ++i) {
     const Node* node_J = Gmat_->getNode(i);
-    if (power_net_type_ == dbSigType::GROUND) {
+    if (net_->getSigType() == dbSigType::GROUND) {
       J_[i] = (node_J->getCurrent());
     } else {
       J_[i] = -1 * (node_J->getCurrent());
@@ -1336,21 +1332,12 @@ bool IRSolver::createGmat(bool connection_only)
 
   Gmat_ = std::make_unique<GMat>(num_routing_layers, logger_, db_->getTech());
   const auto macro_boundaries = getMacroBoundaries();
-  dbNet* power_net = block->findNet(power_net_.data());
-  if (power_net == nullptr) {
-    logger_->error(utl::PSM,
-                   27,
-                   "Cannot find net {} in the design. Please provide a valid "
-                   "VDD/VSS net.",
-                   power_net_);
-  }
-  power_net_type_ = power_net->getSigType();
   debugPrint(logger_,
              utl::PSM,
              "G Matrix",
              1,
              "Extracting power stripes on net {}",
-             power_net->getName());
+             net_->getName());
 
   // Create all the nodes for the G matrix
   createGmatViaNodes();
@@ -1358,7 +1345,7 @@ bool IRSolver::createGmat(bool connection_only)
 
   if (Gmat_->getNumNodes() == 0) {
     logger_->warn(
-        utl::PSM, 70, "Net {} has no nodes and will be skipped", power_net_);
+        utl::PSM, 70, "Net {} has no nodes and will be skipped", net_->getName());
     return true;
   }
 
@@ -1370,7 +1357,7 @@ bool IRSolver::createGmat(bool connection_only)
   logger_->info(utl::PSM,
                 31,
                 "Number of PDN nodes on net {} = {}.",
-                power_net_,
+                net_->getName(),
                 Gmat_->getNumNodes());
   Gmat_->initializeGmatDok(num_sources);
 
@@ -1448,7 +1435,7 @@ bool IRSolver::checkConnectivity(bool connection_only)
                     38,
                     "Unconnected PDN node on net {} at location ({:4.3f}um, "
                     "{:4.3f}um), layer: {}.",
-                    power_net_,
+                    net_->getName(),
                     loc_x,
                     loc_y,
                     tech->findRoutingLayer(node->getLayerNum())->getName());
@@ -1479,7 +1466,7 @@ bool IRSolver::checkConnectivity(bool connection_only)
   }
   if (unconnected_node == false) {
     logger_->info(
-        utl::PSM, 40, "All PDN stripes on net {} are connected.", power_net_);
+        utl::PSM, 40, "All PDN stripes on net {} are connected.", net_->getName());
   }
   return !unconnected_node;
 }
@@ -1540,7 +1527,7 @@ int IRSolver::printSpice()
       continue;
     }
 
-    const string net_name = power_net_;
+    const string net_name = net_->getName();
     if (col < num_nodes) {  // resistances
       const double resistance = -1 / cond;
 

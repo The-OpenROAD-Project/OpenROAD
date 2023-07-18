@@ -40,6 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace odb {
 class dbDatabase;
 class Point;
+class dbNet;
 class dbTechLayer;
 }  // namespace odb
 
@@ -75,24 +76,24 @@ class PDNSim
   void setVsrcCfg(const std::string& vsrc);
   void setOutFile(const std::string& out_file);
   void setErrorFile(const std::string& error_file);
-  void setEMOutFile(const std::string& em_out_file);
-  void setEnableEM(bool enable_em);
-  void setSpiceOutFile(const std::string& out_file);
-  void setNet(const std::string& net);
-  void setBumpPitchX(float bump_pitch);
-  void setBumpPitchY(float bump_pitch);
-  void setNodeDensity(float node_density);
-  void setNodeDensityFactor(int node_density_factor);
-  void setNetVoltage(std::string net, float voltage);
-  void analyzePowerGrid();
-  void writeSpice();
+  void setNet(odb::dbNet* net) { net_ = net; }
+  void setBumpPitchX(float bump_pitch) { bump_pitch_x_ = bump_pitch; }
+  void setBumpPitchY(float bump_pitch) { bump_pitch_y_ = bump_pitch; }
+  void setNodeDensity(float node_density) { node_density_ = node_density; }
+  void setNodeDensityFactor(int node_density_factor)
+  {
+    node_density_factor_ = node_density_factor;
+  }
+  void setCorner(sta::Corner* corner) { corner_ = corner; }
+
+  void setNetVoltage(odb::dbNet* net, float voltage);
+  void analyzePowerGrid(bool enable_em, const std::string& em_file);
+  void writeSpice(const std::string& file);
   void getIRDropMap(IRDropByLayer& ir_drop);
   void getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop);
   int getMinimumResolution();
   bool checkConnectivity();
   void setDebugGui();
-
-  void setCorner(sta::Corner* corner);
 
  private:
   odb::dbDatabase* db_ = nullptr;
@@ -102,14 +103,11 @@ class PDNSim
   std::string vsrc_loc_;
   std::string out_file_;
   std::string error_file_;
-  std::string em_out_file_;
-  bool enable_em_ = false;
   int bump_pitch_x_ = 0;
   int bump_pitch_y_ = 0;
-  std::string spice_out_file_;
-  std::string power_net_;
+  odb::dbNet* net_ = nullptr;
   sta::Corner* corner_ = nullptr;
-  std::map<std::string, float> net_voltage_map_;
+  std::map<odb::dbNet*, float> net_voltage_map_;
   IRDropByLayer ir_drop_;
   float node_density_ = -1;
   int node_density_factor_ = 0;

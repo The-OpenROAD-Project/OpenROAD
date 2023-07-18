@@ -75,34 +75,9 @@ void PDNSim::setDebugGui()
   debug_gui_ = std::make_unique<DebugGui>(this);
 }
 
-void PDNSim::setNet(const std::string& net)
+void PDNSim::setNetVoltage(odb::dbNet* net, float voltage)
 {
-  power_net_ = net;
-}
-
-void PDNSim::setBumpPitchX(float bump_pitch)
-{
-  bump_pitch_x_ = bump_pitch;
-}
-
-void PDNSim::setBumpPitchY(float bump_pitch)
-{
-  bump_pitch_y_ = bump_pitch;
-}
-
-void PDNSim::setNodeDensity(float node_density)
-{
-  node_density_ = node_density;
-}
-
-void PDNSim::setNodeDensityFactor(int node_density_factor)
-{
-  node_density_factor_ = node_density_factor;
-}
-
-void PDNSim::setNetVoltage(std::string net, float voltage)
-{
-  net_voltage_map_.insert(std::pair<std::string, float>(net, voltage));
+  net_voltage_map_[net] = voltage;
 }
 
 void PDNSim::setVsrcCfg(const std::string& vsrc)
@@ -124,39 +99,19 @@ void PDNSim::setErrorFile(const std::string& error_file)
   logger_->info(utl::PSM, 83, "Error file is specified as: {}.", error_file_);
 }
 
-void PDNSim::setEMOutFile(const std::string& em_out_file)
-{
-  em_out_file_ = em_out_file;
-  logger_->info(utl::PSM, 3, "Output current file specified {}.", em_out_file_);
-}
-void PDNSim::setEnableEM(bool enable_em)
-{
-  enable_em_ = enable_em;
-  if (enable_em_) {
-    logger_->info(utl::PSM, 4, "EM calculation is enabled.");
-  }
-}
-
-void PDNSim::setSpiceOutFile(const std::string& out_file)
-{
-  spice_out_file_ = out_file;
-  logger_->info(
-      utl::PSM, 5, "Output spice file is specified as: {}.", spice_out_file_);
-}
-
-void PDNSim::writeSpice()
+void PDNSim::writeSpice(const std::string& file)
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
                                               resizer_,
                                               logger_,
+                                              net_,
                                               vsrc_loc_,
-                                              power_net_,
                                               out_file_,
                                               error_file_,
-                                              em_out_file_,
-                                              spice_out_file_,
-                                              enable_em_,
+                                              "",
+                                              file,
+                                              false,
                                               bump_pitch_x_,
                                               bump_pitch_y_,
                                               node_density_,
@@ -167,29 +122,26 @@ void PDNSim::writeSpice()
   if (irsolve_h->build()) {
     int check_spice = irsolve_h->printSpice();
     if (check_spice) {
-      logger_->info(
-          utl::PSM, 6, "SPICE file is written at: {}.", spice_out_file_);
+      logger_->info(utl::PSM, 6, "SPICE file is written at: {}.", file);
     } else {
-      logger_->error(
-          utl::PSM, 7, "Failed to write out spice file: {}.", spice_out_file_);
+      logger_->error(utl::PSM, 7, "Failed to write out spice file: {}.", file);
     }
   }
 }
 
-void PDNSim::analyzePowerGrid()
+void PDNSim::analyzePowerGrid(bool enable_em, const std::string& em_file)
 {
-  GMat* gmat_obj;
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
                                               resizer_,
                                               logger_,
+                                              net_,
                                               vsrc_loc_,
-                                              power_net_,
                                               out_file_,
                                               error_file_,
-                                              em_out_file_,
-                                              spice_out_file_,
-                                              enable_em_,
+                                              em_file,
+                                              "",
+                                              enable_em,
                                               bump_pitch_x_,
                                               bump_pitch_y_,
                                               node_density_,
@@ -201,11 +153,11 @@ void PDNSim::analyzePowerGrid()
     logger_->error(
         utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
-  gmat_obj = irsolve_h->getGMat();
+  GMat* gmat_obj = irsolve_h->getGMat();
   const std::string corner_name
       = corner_ != nullptr ? corner_->name() : "default";
   const std::string metric_suffix
-      = fmt::format("__net:{}__corner:{}", power_net_, corner_name);
+      = fmt::format("__net:{}__corner:{}", net_->getName(), corner_name);
   irsolve_h->solveIR();
   logger_->report("########## IR report #################");
   logger_->report("Corner: {}", corner_name);
@@ -228,7 +180,7 @@ void PDNSim::analyzePowerGrid()
   logger_->metric(fmt::format("design_powergrid__drop__worst{}", metric_suffix),
                   worst_drop);
 
-  if (enable_em_) {
+  if (enable_em) {
     logger_->report("########## EM analysis ###############");
     logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
     logger_->report("Average current: {:3.2e} A", irsolve_h->getAvgCurrent());
@@ -275,13 +227,13 @@ bool PDNSim::checkConnectivity()
                                               sta_,
                                               resizer_,
                                               logger_,
+                                              net_,
                                               vsrc_loc_,
-                                              power_net_,
                                               out_file_,
                                               error_file_,
-                                              em_out_file_,
-                                              spice_out_file_,
-                                              enable_em_,
+                                              "",
+                                              "",
+                                              false,
                                               bump_pitch_x_,
                                               bump_pitch_y_,
                                               node_density_,

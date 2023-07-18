@@ -59,8 +59,7 @@ proc analyze_power_grid { args } {
     }
   }
   if { [info exists keys(-net)] } {
-    set net $keys(-net)
-    psm::set_power_net $net
+    psm::set_power_net [psm::find_net $keys(-net)]
   } else {
     utl::error PSM 54 "Argument -net not specified."
   }
@@ -96,17 +95,15 @@ proc analyze_power_grid { args } {
     psm::import_error_file_cmd $error_file
   }
   set enable_em [info exists flags(-enable_em)]
-  psm::import_em_enable $enable_em
+  set em_file ""
   if { [info exists keys(-em_outfile)]} {
-    set em_out_file $keys(-em_outfile)
-    if { $enable_em } {
-      psm::import_em_out_file_cmd $em_out_file
-    } else {
+    set em_file $keys(-em_outfile)
+    if { !$enable_em } {
       utl::error PSM 55 "EM outfile defined without EM enable flag. Add -enable_em."
     }
   }
   if { [ord::db_has_rows] } {
-    psm::analyze_power_grid_cmd
+    psm::analyze_power_grid_cmd $enable_em $em_file
   } else {
     utl::error PSM 56 "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows."
   }
@@ -119,8 +116,7 @@ proc check_power_grid { args } {
   sta::parse_key_args "check_power_grid" args \
     keys {-net} flags {}
   if { [info exists keys(-net)] } {
-     set net $keys(-net)
-     psm::set_power_net $net
+    psm::set_power_net [psm::find_net $keys(-net)]
   } else {
      utl::error PSM 57 "Argument -net not specified."
   }
@@ -155,13 +151,11 @@ proc write_pg_spice { args } {
       utl::error PSM 59 "Cannot read $vsrc_file."
     }
   }
-  if { [info exists keys(-outfile)] } {
-    set out_file $keys(-outfile)
-     psm::import_spice_out_file_cmd $out_file
+  if { ![info exists keys(-outfile)] } {
+    utl::error PSM 85 "Argument -outfile not specified."
   }
   if { [info exists keys(-net)] } {
-    set net $keys(-net)
-    psm::set_power_net $net
+    psm::set_power_net [psm::find_net $keys(-net)]
   } else {
     utl::error PSM 60 "Argument -net not specified."
   }
@@ -177,7 +171,7 @@ proc write_pg_spice { args } {
   psm::set_corner [sta::parse_corner_or_default keys]
 
   if { [ord::db_has_rows] } {
-    psm::write_pg_spice_cmd
+    psm::write_pg_spice_cmd $keys(-outfile)
   } else {
     utl::error PSM 61 "No rows defined in design. Use initialize_floorplan to add rows and construct PDN."
   }
@@ -191,7 +185,7 @@ proc set_pdnsim_net_voltage { args } {
   sta::parse_key_args "set_pdnsim_net_voltage" args \
     keys {-net -voltage} flags {}
   if { [info exists keys(-net)] && [info exists keys(-voltage)] } {
-    set net $keys(-net)
+    set net [psm::find_net $keys(-net)]
     set voltage $keys(-voltage)
     psm::set_net_voltage_cmd $net $voltage
   } else {
@@ -200,11 +194,11 @@ proc set_pdnsim_net_voltage { args } {
 }
 
 namespace eval psm {
-proc debug_gui { args } {
-  sta::parse_key_args "debug" args \
-      keys {} \
-      flags {}
-
-  set_debug_gui_cmd
+proc find_net {net_name} {
+  set net [[ord::get_db_block] findNet $net_name]
+  if { $net == "NULL" } {
+    utl::error PSM 28 "Cannot find net $net_name in the design."
+  }
+  return $net
 }
 }
