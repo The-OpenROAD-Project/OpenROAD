@@ -113,8 +113,6 @@ class IOPin
   {
     upper_bound_ = odb::Point(x, y);
   };
-  void setLayer(const int layer) { layer_ = layer; }
-  void setGroupIdx(const int group_idx) { group_idx_ = group_idx; }
   std::string getName() const { return bterm_->getName(); }
   odb::Point getPos() const { return pos_; }
   int getX() const { return pos_.getX(); }
@@ -130,11 +128,20 @@ class IOPin
   };
   odb::dbBTerm* getBTerm() const { return bterm_; }
   int getLayer() const { return layer_; }
+  void setLayer(const int layer) { layer_ = layer; }
   int getGroupIdx() const { return group_idx_; }
+  void setGroupIdx(const int group_idx) { group_idx_ = group_idx; }
+  int getConstraintIdx() const { return constraint_idx_; }
+  void setConstraintIdx(const int constraint_idx)
+  {
+    constraint_idx_ = constraint_idx;
+  }
   bool isPlaced() const { return is_placed_; }
   void setPlaced() { is_placed_ = true; }
   bool isInGroup() const { return in_group_; }
   void setInGroup() { in_group_ = true; }
+  bool isInConstraint() const { return in_constraint_; }
+  void setInConstraint() { in_constraint_ = true; }
   void assignToSection() { assigned_to_section_ = true; }
   bool isAssignedToSection() { return assigned_to_section_; }
   void setMirrored() { is_mirrored_ = true; }
@@ -152,8 +159,10 @@ class IOPin
   odb::dbPlacementStatus placement_status_;
   int layer_{-1};
   int group_idx_{-1};
+  int constraint_idx_{-1};
   bool is_placed_{false};
   bool in_group_{false};
+  bool in_constraint_{false};
   bool assigned_to_section_{false};
   bool is_mirrored_{false};
   bool in_fallback_{false};

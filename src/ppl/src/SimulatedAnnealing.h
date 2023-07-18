@@ -52,11 +52,14 @@ class Logger;
 namespace ppl {
 using utl::Logger;
 
+struct Constraint;
+
 class SimulatedAnnealing
 {
  public:
   SimulatedAnnealing(Netlist* netlist,
                      std::vector<Slot>& slots,
+                     const std::vector<Constraint>& constraints,
                      Logger* logger,
                      odb::dbDatabase* db);
   ~SimulatedAnnealing() = default;
@@ -84,7 +87,8 @@ class SimulatedAnnealing
   int moveGroupToFreeSlots(int group_idx);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
-  bool isFreeForGroup(int slot_idx, int group_size);
+  bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
+  void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
@@ -92,6 +96,7 @@ class SimulatedAnnealing
   Netlist* netlist_;
   std::vector<Slot>& slots_;
   const std::vector<PinGroupByIndex>& pin_groups_;
+  const std::vector<Constraint>& constraints_;
   int num_slots_;
   int num_pins_;
   int num_groups_;
