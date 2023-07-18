@@ -125,6 +125,7 @@ typedef int SteinerPt;
 class BufferedNet;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
 
+class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
@@ -250,7 +251,9 @@ public:
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
+  void recoverPower();
 
+  ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -567,6 +570,7 @@ protected:
   Logger *logger() const { return logger_; }
 
   // Components
+  RecoverPower *recover_power_;
   RepairDesign *repair_design_;
   RepairSetup *repair_setup_;
   RepairHold *repair_hold_;
@@ -646,6 +650,7 @@ protected:
 
   friend class BufferedNet;
   friend class GateCloner;
+  friend class RecoverPower;
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;

@@ -45,7 +45,8 @@ def analyze_power_grid(design, *,
                        dx=None,
                        dy=None,
                        node_density=None,
-                       node_density_factor=None):
+                       node_density_factor=None,
+                       corner=None):
     pdnsim = design.getPDNSim()
     if bool(vsrc):
         if isfile(vsrc):
@@ -82,6 +83,8 @@ def analyze_power_grid(design, *,
 
     pdnsim.import_enable_em(enable_em)
     
+    _set_corner(design, corner)
+
     if bool(em_outfile):
         if enable_em:
             pdnsim.import_em_out_file(em_outfile)
@@ -118,7 +121,8 @@ def write_pg_spice(design, *,
                    outfile=None,
                    net=None,
                    dx=None,
-                   dy=None):
+                   dy=None,
+                   corner=None):
     pdnsim = design.getPDNSim()
 
     if bool(vsrc):
@@ -141,6 +145,8 @@ def write_pg_spice(design, *,
     if bool(dy):
         pdnsim.set_bump_pitch_y(dy)
 
+    _set_corner(design, corner)
+
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
         pdnsim.write_pg_spice()
     else:
@@ -155,3 +161,10 @@ def set_pdnsim_net_voltage(design, *, net=None, voltage=None):
     else:
         utl.error(utl.PSM, 162, "Argument -net or -voltage not specified. " +
                   "Please specify both -net and -voltage arguments.")
+
+
+def _set_corner(design, corner):
+    if corner:
+        design.evalTclString(f"psm::set_corner [sta::find_corner {corner}]")
+    else:
+        design.evalTclString(f"psm::set_corner [sta::cmd_corner]")
