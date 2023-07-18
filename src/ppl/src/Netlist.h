@@ -132,7 +132,10 @@ class IOPin
   int getGroupIdx() const { return group_idx_; }
   void setGroupIdx(const int group_idx) { group_idx_ = group_idx; }
   int getConstraintIdx() const { return constraint_idx_; }
-  void setConstraintIdx(const int constraint_idx) { constraint_idx_ = constraint_idx; }
+  void setConstraintIdx(const int constraint_idx)
+  {
+    constraint_idx_ = constraint_idx;
+  }
   bool isPlaced() const { return is_placed_; }
   void setPlaced() { is_placed_ = true; }
   bool isInGroup() const { return in_group_; }

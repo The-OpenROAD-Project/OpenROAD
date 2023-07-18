@@ -1507,7 +1507,8 @@ void IOPlacer::addVerLayer(odb::dbTechLayer* layer)
   ver_layers_.insert(layer->getRoutingLevel());
 }
 
-void IOPlacer::getPinsFromDirectionConstraint(Constraint& constraint, int constraint_idx)
+void IOPlacer::getPinsFromDirectionConstraint(Constraint& constraint,
+                                              int constraint_idx)
 {
   if (constraint.direction != Direction::invalid
       && constraint.pin_list.empty()) {
