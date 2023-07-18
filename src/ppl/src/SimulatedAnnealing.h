@@ -87,7 +87,7 @@ class SimulatedAnnealing
   int moveGroupToFreeSlots(int group_idx);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
-  bool isFreeForGroup(int slot_idx, int group_size);
+  bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
   void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
 
   // [pin] -> slot
