@@ -1607,15 +1607,11 @@ void IOPlacer::initConstraints(bool annealing)
           PPL, 76, "Constraint does not have available slots for its pins.");
     }
 
-    for (odb::dbBTerm* bterm : constraint.pin_list) {
-      int pin_idx = netlist_io_pins_->getIoPinIdx(bterm);
-      constraint.pin_indices.push_back(pin_idx);
-    }
-
     for (odb::dbBTerm* term : constraint.pin_list) {
       int pin_idx = netlist_io_pins_->getIoPinIdx(term);
       IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
       io_pin.setConstraintIdx(constraint_idx);
+      constraint.pin_indices.push_back(pin_idx);
     }
     constraint_idx++;
   }

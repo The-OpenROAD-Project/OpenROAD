@@ -301,7 +301,8 @@ int SimulatedAnnealing::swapPins()
     }
   } else {
     pin2 = distribution(generator_);
-    while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()) {
+    while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()
+           || netlist_->getIoPin(pin2).getConstraintIdx() != -1) {
       pin2 = distribution(generator_);
     }
   }
