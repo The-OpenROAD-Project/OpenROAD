@@ -285,6 +285,10 @@ void SimulatedAnnealing::perturbAssignment(int& prev_cost)
   // necessary
   if (move < swap_pins_ && lone_pins_ > 1) {
     prev_cost = swapPins();
+    // move single pin when swapping a single constrained pin is not possible
+    if (prev_cost == move_fail_) {
+      prev_cost = movePinToFreeSlot();
+    }
   } else {
     prev_cost = movePinToFreeSlot();
     // move single pin when moving a group is not possible
@@ -307,6 +311,11 @@ int SimulatedAnnealing::swapPins()
   if (constraint_idx != -1) {
     const std::vector<int>& pin_indices
         = constraints_[constraint_idx].pin_indices;
+    // if there is only one pin in the constraint, do not swap and fallback to
+    // move a pin to a free slot
+    if (pin_indices.size() == 1) {
+      return move_fail_;
+    }
     distribution = boost::random::uniform_int_distribution<int>(
         0, pin_indices.size() - 1);
 

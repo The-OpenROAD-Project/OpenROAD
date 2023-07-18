@@ -31,6 +31,7 @@ record_tests {
   annealing_constraint5
   annealing_constraint6
   annealing_constraint7
+  annealing_constraint8
   annealing_large_groups1
   annealing_large_groups2
   blocked_region
