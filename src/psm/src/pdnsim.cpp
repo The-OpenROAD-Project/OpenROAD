@@ -75,61 +75,61 @@ void PDNSim::setDebugGui()
   debug_gui_ = std::make_unique<DebugGui>(this);
 }
 
-void PDNSim::set_power_net(const std::string& net)
+void PDNSim::setNet(const std::string& net)
 {
   power_net_ = net;
 }
 
-void PDNSim::set_bump_pitch_x(float bump_pitch)
+void PDNSim::setBumpPitchX(float bump_pitch)
 {
   bump_pitch_x_ = bump_pitch;
 }
 
-void PDNSim::set_bump_pitch_y(float bump_pitch)
+void PDNSim::setBumpPitchY(float bump_pitch)
 {
   bump_pitch_y_ = bump_pitch;
 }
 
-void PDNSim::set_node_density(float node_density)
+void PDNSim::setNodeDensity(float node_density)
 {
   node_density_ = node_density;
 }
 
-void PDNSim::set_node_density_factor(int node_density_factor)
+void PDNSim::setNodeDensityFactor(int node_density_factor)
 {
   node_density_factor_ = node_density_factor;
 }
 
-void PDNSim::set_pdnsim_net_voltage(std::string net, float voltage)
+void PDNSim::setNetVoltage(std::string net, float voltage)
 {
   net_voltage_map_.insert(std::pair<std::string, float>(net, voltage));
 }
 
-void PDNSim::import_vsrc_cfg(const std::string& vsrc)
+void PDNSim::setVsrcCfg(const std::string& vsrc)
 {
   vsrc_loc_ = vsrc;
   logger_->info(utl::PSM, 1, "Reading voltage source file: {}.", vsrc_loc_);
 }
 
-void PDNSim::import_out_file(const std::string& out_file)
+void PDNSim::setOutFile(const std::string& out_file)
 {
   out_file_ = out_file;
   logger_->info(
       utl::PSM, 2, "Output voltage file is specified as: {}.", out_file_);
 }
 
-void PDNSim::import_error_file(const std::string& error_file)
+void PDNSim::setErrorFile(const std::string& error_file)
 {
   error_file_ = error_file;
   logger_->info(utl::PSM, 83, "Error file is specified as: {}.", error_file_);
 }
 
-void PDNSim::import_em_out_file(const std::string& em_out_file)
+void PDNSim::setEMOutFile(const std::string& em_out_file)
 {
   em_out_file_ = em_out_file;
   logger_->info(utl::PSM, 3, "Output current file specified {}.", em_out_file_);
 }
-void PDNSim::import_enable_em(bool enable_em)
+void PDNSim::setEnableEM(bool enable_em)
 {
   enable_em_ = enable_em;
   if (enable_em_) {
@@ -137,14 +137,14 @@ void PDNSim::import_enable_em(bool enable_em)
   }
 }
 
-void PDNSim::import_spice_out_file(const std::string& out_file)
+void PDNSim::setSpiceOutFile(const std::string& out_file)
 {
   spice_out_file_ = out_file;
   logger_->info(
       utl::PSM, 5, "Output spice file is specified as: {}.", spice_out_file_);
 }
 
-void PDNSim::write_pg_spice()
+void PDNSim::writeSpice()
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
@@ -176,7 +176,7 @@ void PDNSim::write_pg_spice()
   }
 }
 
-void PDNSim::analyze_power_grid()
+void PDNSim::analyzePowerGrid()
 {
   GMat* gmat_obj;
   auto irsolve_h = std::make_unique<IRSolver>(db_,
@@ -269,7 +269,7 @@ void PDNSim::analyze_power_grid()
   }
 }
 
-bool PDNSim::check_connectivity()
+bool PDNSim::checkConnectivity()
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,

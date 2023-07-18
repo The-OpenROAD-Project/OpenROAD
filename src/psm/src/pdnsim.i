@@ -53,111 +53,105 @@ void
 import_vsrc_cfg_cmd(const char* vsrc)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_vsrc_cfg(vsrc);
+  pdnsim->setVsrcCfg(vsrc);
 }
 
 void 
 set_power_net_cmd(const char* net)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_power_net(net);
+  pdnsim->setNet(net);
 }
 
 void 
 set_bump_pitch_x_cmd(float bump_pitch)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_bump_pitch_x(bump_pitch);
+  pdnsim->setBumpPitchX(bump_pitch);
 }
 
 void 
 set_bump_pitch_y_cmd(float bump_pitch)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_bump_pitch_y(bump_pitch);
+  pdnsim->setBumpPitchY(bump_pitch);
 }
 
 void
 set_node_density(float node_density)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_node_density(node_density);
+  pdnsim->setNodeDensity(node_density);
 }
 
 void
 set_node_density_factor(int node_density_factor)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_node_density_factor(node_density_factor);
+  pdnsim->setNodeDensityFactor(node_density_factor);
 }
-
-
 
 void 
 set_net_voltage_cmd(const char* net_name, float voltage)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_pdnsim_net_voltage(net_name, voltage);
+  pdnsim->setNetVoltage(net_name, voltage);
 }
-
-
 
 void 
 import_em_enable(int enable_em)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_enable_em(enable_em);
+  pdnsim->setEnableEM(enable_em);
 }
-
 
 void 
 import_out_file_cmd(const char* out_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_out_file(out_file);
+  pdnsim->setOutFile(out_file);
 }
 
 void
 import_error_file_cmd(const char* error_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_error_file(error_file);
+  pdnsim->setErrorFile(error_file);
 }
 
 void 
 import_em_out_file_cmd(const char* out_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_em_out_file(out_file);
+  pdnsim->setEMOutFile(out_file);
 }
-
 
 void 
 import_spice_out_file_cmd(const char* out_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_spice_out_file(out_file);
+  pdnsim->setSpiceOutFile(out_file);
 }
 
 void 
 analyze_power_grid_cmd()
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->analyze_power_grid();
+  pdnsim->analyzePowerGrid();
 }
 
 int
 check_connectivity_cmd()
 {
   PDNSim* pdnsim = getPDNSim();
-  return pdnsim->check_connectivity();
+  return pdnsim->checkConnectivity();
 }
 
 void
 write_pg_spice_cmd()
 {
   PDNSim* pdnsim = getPDNSim();
-  return pdnsim->write_pg_spice();
+  return pdnsim->writeSpice();
 }
 
 void set_debug_gui_cmd()

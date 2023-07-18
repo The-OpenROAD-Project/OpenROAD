@@ -72,24 +72,24 @@ class PDNSim
             sta::dbSta* sta,
             rsz::Resizer* resizer);
 
-  void import_vsrc_cfg(const std::string& vsrc);
-  void import_out_file(const std::string& out_file);
-  void import_error_file(const std::string& error_file);
-  void import_em_out_file(const std::string& em_out_file);
-  void import_enable_em(bool enable_em);
-  void import_spice_out_file(const std::string& out_file);
-  void set_power_net(const std::string& net);
-  void set_bump_pitch_x(float bump_pitch);
-  void set_bump_pitch_y(float bump_pitch);
-  void set_node_density(float node_density);
-  void set_node_density_factor(int node_density_factor);
-  void set_pdnsim_net_voltage(std::string net, float voltage);
-  void analyze_power_grid();
-  void write_pg_spice();
+  void setVsrcCfg(const std::string& vsrc);
+  void setOutFile(const std::string& out_file);
+  void setErrorFile(const std::string& error_file);
+  void setEMOutFile(const std::string& em_out_file);
+  void setEnableEM(bool enable_em);
+  void setSpiceOutFile(const std::string& out_file);
+  void setNet(const std::string& net);
+  void setBumpPitchX(float bump_pitch);
+  void setBumpPitchY(float bump_pitch);
+  void setNodeDensity(float node_density);
+  void setNodeDensityFactor(int node_density_factor);
+  void setNetVoltage(std::string net, float voltage);
+  void analyzePowerGrid();
+  void writeSpice();
   void getIRDropMap(IRDropByLayer& ir_drop);
   void getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop);
   int getMinimumResolution();
-  bool check_connectivity();
+  bool checkConnectivity();
   void setDebugGui();
 
   void setCorner(sta::Corner* corner);
