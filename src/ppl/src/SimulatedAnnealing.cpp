@@ -281,16 +281,12 @@ int SimulatedAnnealing::swapPins()
 {
   boost::random::uniform_int_distribution<int> distribution(0, num_pins_ - 1);
   int pin1 = distribution(generator_);
-  int pin2 = distribution(generator_);
-  while (pin1 == pin2) {
-    pin2 = distribution(generator_);
-  }
-
   while (netlist_->getIoPin(pin1).isInGroup()) {
     pin1 = distribution(generator_);
   }
 
-  while (netlist_->getIoPin(pin2).isInGroup()) {
+  int pin2 = distribution(generator_);
+  while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()) {
     pin2 = distribution(generator_);
   }
 
