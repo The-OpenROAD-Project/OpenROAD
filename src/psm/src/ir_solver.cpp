@@ -392,7 +392,7 @@ void IRSolver::readSourceData(bool require_voltage)
                       supply_voltage_src);
       }
     }
-    if (createBTerms(power_net, supply_voltage_src)) {
+    if (createSourcesFromBTerms(power_net, supply_voltage_src)) {
       return;
     }
 
@@ -467,7 +467,7 @@ void IRSolver::readSourceData(bool require_voltage)
   }
 }
 
-bool IRSolver::createBTerms(dbNet* net, double voltage)
+bool IRSolver::createSourcesFromBTerms(dbNet* net, double voltage)
 {
   const int pitch_multiplier = 10;
 

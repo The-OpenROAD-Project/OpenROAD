@@ -129,7 +129,7 @@ class IRSolver
   bool addSources();
   //! Function that parses the Vsrc file
   void readSourceData(bool require_voltage);
-  bool createBTerms(odb::dbNet* net, double voltage);
+  bool createSourcesFromBTerms(odb::dbNet* net, double voltage);
   //! Function to create a J vector from the current map
   bool createJ();
   //! Function to create a G matrix using the nodes
