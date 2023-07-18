@@ -49,34 +49,36 @@ detailed_route
     [-repair_pdn_vias layer]
 ```
 
-- `-output_maze` output maze log filename
-- `-output_drc` output drc report filename
-- `-output_cmap` output congestion map file file
-- `-output_guide_coverage` output guide coverage filename
-- `-drc_report_iter_step` report drc on each iteration which is a multiple of this step
-- `-db_process_node` specify the process node (optional)
-- `-disable_via_gen` option to diable via generation with bottom and top routing layer
-- `-droute_end_iter` number of detailed routing iterations
-- `-via_in_pin_bottom_layer` via-in pin bottom layer name  
-- `-via_in_pin_top_layer` via-in pin top layer name
-- `-or_seed` random seed for the order of nets to reroute. 
-- `-or_k` number of swaps is given by $k * sizeof(rerouteNets)$
-- `-bottom_routing_layer` bottommost routing layer name 
-- `-top_routing_layer` topmost routing layer name
-- `-verbose` set verbose if value is greater than 0. 
-- `-param` you may set parameters in this argument using a file. 
-**note that `-param` may not be used with other keyword arguments.
-(deprecated)**
-- `-distributed` enable distributed mode with Kubernetes and Google Cloud, [guide](./doc/Distributed.md).
-- `-remote_host` the host IP 
-- `-remote_port` the value of the port to access from 
-- `-shared_volume` the mount path of the nfs shared folder
-- `-cloud_size` the number of workers 
-- `-clean_patches` clean unneeded patches during detailed routing. 
-- `-no_pin_access` disables pin access for routing
-- `-min_access_points` minimum access points for standard cell and macro cell pins. 
-- `-save_guide_updates` save guides updates 
-- `-repair_pdn_vias` this option is used for some PDKs which have M1 and M2 layers that run in parallel. 
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-output_maze` | output maze log filename |
+| `-output_drc` | output drc report filename |
+| `-output_cmap` | output congestion map file |
+| `-output_guide_coverage` | output guide coverage filename |
+| `-drc_report_iter_step` | report drc on each iteration which is a multiple of this step |
+| `-db_process_node` | specify the process node (optional) |
+| `-disable_via_gen` | option to diable via generation with bottom and top routing layer |
+| `-droute_end_iter` | number of detailed routing iterations |
+| `-via_in_pin_bottom_layer` | via-in pin bottom layer name |
+| `-via_in_pin_top_layer` | via-in pin top layer name |
+| `-or_seed` | random seed for the order of nets to reroute | 
+| `-or_k` | number of swaps is given by $k * sizeof(rerouteNets)$ |
+| `-bottom_routing_layer` | bottommost routing layer name |
+| `-top_routing_layer` | topmost routing layer name |
+| `-verbose` | set verbose if value is greater than 0. |
+| `-param` | you may set parameters in this argument using a file.  **note that `-param` may not be used with other keyword arguments. (deprecated)** |
+| `-distributed` | enable distributed mode with Kubernetes and Google Cloud, [guide](./doc/Distributed.md). |
+| `-remote_host` | the host IP |
+| `-remote_port` | the value of the port to access from |
+| `-shared_volume` | the mount path of the nfs shared folder |
+| `-cloud_size` | the number of workers |
+| `-clean_patches` | clean unneeded patches during detailed routing. | 
+| `-no_pin_access` | disables pin access for routing |
+| `-min_access_points` | minimum access points for standard cell and macro cell pins. | 
+| `-save_guide_updates` | save guides updates |
+| `-repair_pdn_vias` | this option is used for some PDKs which have M1 and M2 layers that run in parallel. |
 
 ### Detailed Route debugging
 
@@ -98,20 +100,24 @@ detailed_route_debug
     [-write_net_tracks]
 ```
 
-- `-pa` enable debug for pin access
-- `-ta` enable debug for track assignment
-- `-dr` enable debug for detailed routing
-- `-maze` enable debug for maze routing 
-- `-net` enable debug for net name
-- `-pin` enable debug for pin name
-- `-worker` debugs routes that pass through the point `{x, y}`
-- `-iter` debug iterations
-- `-pa_markers` enable pin access markers
-- `-dump_dr` dump detailed routing filename
-- `-dump_dir` dump detailed routing directory
-- `-pa_edge` visibility of pin access edges
-- `-pa_commit` visibility of pin access commits
-- `-write_net_tracks` enable writing of net track assigments
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-pa` | enable debug for pin access |
+| `-ta` | enable debug for track assignment |
+| `-dr` | enable debug for detailed routing |
+| `-maze` | enable debug for maze routing | 
+| `-net` | enable debug for net name |
+| `-pin` | enable debug for pin name |
+| `-worker` | debugs routes that pass through the point `{x, y}` |
+| `-iter` | debug iterations |
+| `-pa_markers` | enable pin access markers |
+| `-dump_dr` | dump detailed routing filename |
+| `-dump_dir` | dump detailed routing directory |
+| `-pa_edge` | visibility of pin access edges |
+| `-pa_commit` | visibility of pin access commits |
+| `-write_net_tracks` | enable writing of net track assigments |
 
 ### Check Pin access 
 
@@ -129,16 +135,20 @@ pin_access
     [-cloud_size sz]
 ```
 
-- `-db_process_node` specify for process node (optional) 
-- `-bottom_routing_layer` bottommost routing layer
-- `-top_routing_layer` topmost routing layer
-- `-min_access_points` minimum number of access points per pin
-- `-verbose` set verbose if the value is greater than 0
-- `-distributed` enable distributed pin access algorithm
-- `-remote_host` the host IP 
-- `-remote_port` the value of the port to access from 
-- `-shared_volume` the mount path of the nfs shared folder
-- `-cloud_size` the number of workers 
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-db_process_node` | specify for process node (optional) |
+| `-bottom_routing_layer` | bottommost routing layer |
+| `-top_routing_layer` | topmost routing layer |
+| `-min_access_points` | minimum number of access points per pin |
+| `-verbose` | set verbose if the value is greater than 0 |
+| `-distributed` | enable distributed pin access algorithm |
+| `-remote_host` | the host IP |
+| `-remote_port` | the value of the port to access from |
+| `-shared_volume` | the mount path of the nfs shared folder |
+| `-cloud_size` | the number of workers |
 
 ### Useful developer functions
 
