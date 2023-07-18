@@ -67,7 +67,7 @@ void lefout::insertObstruction(dbTechLayer* layer,
                                const Rect& rect,
                                ObstructionMap& obstructions) const
 {
-  if (layer->getType() == odb::dbTechLayerType::CUT) {
+  if (!layer || layer->getType() == odb::dbTechLayerType::CUT) {
     return;
   }
 
