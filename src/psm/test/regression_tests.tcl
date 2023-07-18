@@ -11,4 +11,7 @@ record_tests {
   gcd_vss_no_vsrc
   gcd_sky130_vdd
   aes_asap7_vdd
+  check_power_grid
+  check_power_grid_disconnected
+  corners
 }
