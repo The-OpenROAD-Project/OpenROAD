@@ -202,25 +202,45 @@ void PDNSim::analyze_power_grid()
         utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
   gmat_obj = irsolve_h->getGMat();
+  const std::string corner_name
+      = corner_ != nullptr ? corner_->name() : "default";
+  const std::string metric_suffix
+      = fmt::format("__net:{}__corner:{}", power_net_, corner_name);
   irsolve_h->solveIR();
   logger_->report("########## IR report #################");
-  logger_->report("Corner: {}",
-                  corner_ != nullptr ? corner_->name() : "default");
+  logger_->report("Corner: {}", corner_name);
   logger_->report("Worstcase voltage: {:3.2e} V",
                   irsolve_h->getWorstCaseVoltage());
-  logger_->report(
-      "Average IR drop  : {:3.2e} V",
-      std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage()));
-  logger_->report("Worstcase IR drop: {:3.2e} V",
-                  std::abs(irsolve_h->getSupplyVoltageSrc()
-                           - irsolve_h->getWorstCaseVoltage()));
+  const double avg_drop
+      = std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage());
+  const double worst_drop = std::abs(irsolve_h->getSupplyVoltageSrc()
+                                     - irsolve_h->getWorstCaseVoltage());
+  logger_->report("Average IR drop  : {:3.2e} V", avg_drop);
+  logger_->report("Worstcase IR drop: {:3.2e} V", worst_drop);
   logger_->report("######################################");
+
+  logger_->metric(
+      fmt::format("design_powergrid__voltage__worst{}", metric_suffix),
+      irsolve_h->getWorstCaseVoltage());
+  logger_->metric(
+      fmt::format("design_powergrid__drop__average{}", metric_suffix),
+      avg_drop);
+  logger_->metric(fmt::format("design_powergrid__drop__worst{}", metric_suffix),
+                  worst_drop);
+
   if (enable_em_) {
     logger_->report("########## EM analysis ###############");
     logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
     logger_->report("Average current: {:3.2e} A", irsolve_h->getAvgCurrent());
     logger_->report("Number of resistors: {}", irsolve_h->getNumResistors());
     logger_->report("######################################");
+
+    logger_->metric(
+        fmt::format("design_powergrid__current__average{}", metric_suffix),
+        irsolve_h->getAvgCurrent());
+    logger_->metric(
+        fmt::format("design_powergrid__current__max{}", metric_suffix),
+        irsolve_h->getMaxCurrent());
   }
 
   IRDropByLayer ir_drop;
