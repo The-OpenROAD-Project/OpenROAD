@@ -6,15 +6,20 @@ configuration file.
 
 ## Commands
 
+### Density Fill
+
 ```
 density_fill
     [-rules rules_file]
     [-area {lx ly ux uy}]
 ```
 
-Argument description:
-- `-rules` specify json rule file
-- `-area` is optional. If not specified, the core area will be used.
+#### Options
+
+| Switch Name | Description | 
+| ----- | ----- |
+| `-rules` | specify json rule file |
+| `-area` | optional. If not specified, the core area will be used. |
 
 ## Example scripts
 
