@@ -316,25 +316,29 @@ void IRSolver::solveIR()
   }  // enable em
 }
 
-//! Function to add C4 bumps to the G matrix
-bool IRSolver::addC4Bump()
+//! Function to add sources to the G matrix
+bool IRSolver::addSources()
 {
-  if (C4Bumps_.empty()) {
+  if (sources_.empty()) {
     logger_->error(utl::PSM, 14, "Number of voltage sources cannot be 0.");
   }
   logger_->info(
-      utl::PSM, 64, "Number of voltage sources = {}.", C4Bumps_.size());
+      utl::PSM, 64, "Number of voltage sources = {}.", sources_.size());
   size_t it = 0;
-  for (auto [node_loc, voltage_value] : C4Nodes_) {
-    Gmat_->addC4Bump(node_loc, it++);  // add the  bump
+  for (auto [node_loc, voltage_value] : source_nodes_) {
+    Gmat_->addSource(node_loc, it++);  // add the  bump
     J_.push_back(voltage_value);       // push back  vdd
   }
   return true;
 }
 
 //! Function that parses the Vsrc file
-void IRSolver::readC4Data(bool require_voltage)
+void IRSolver::readSourceData(bool require_voltage)
 {
+  dbChip* chip = db_->getChip();
+  dbBlock* block = chip->getBlock();
+  findPdnWires(block->findNet(power_net_.c_str()));
+
   const int unit_micron = (db_->getTech())->getDbUnitsPerMicron();
   if (!vsrc_file_.empty()) {
     logger_->info(utl::PSM,
@@ -363,46 +367,20 @@ void IRSolver::readC4Data(bool require_voltage)
       if (x == -1 || y == -1 || size == -1) {
         logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
       } else {
-        C4Bumps_.push_back({x, y, size, supply_voltage_src});
+        sources_.push_back({x, y, size, supply_voltage_src, top_layer_, true});
       }
     }
     file.close();
   } else {
-    logger_->warn(utl::PSM,
-                  16,
-                  "Voltage pad location (VSRC) file not specified, defaulting "
-                  "pad location to checkerboard pattern on core area.");
     dbChip* chip = db_->getChip();
     dbBlock* block = chip->getBlock();
-    odb::Rect coreRect = block->getCoreArea();
-    const int coreW = coreRect.xMax() - coreRect.xMin();
-    const int coreL = coreRect.yMax() - coreRect.yMin();
-    const odb::Rect dieRect = block->getDieArea();
-    const int offset_x = coreRect.xMin() - dieRect.xMin();
-    const int offset_y = coreRect.yMin() - dieRect.yMin();
-    if (bump_pitch_x_ == 0) {
-      bump_pitch_x_ = bump_pitch_default_ * unit_micron;
-      logger_->warn(
-          utl::PSM,
-          17,
-          "X direction bump pitch is not specified, defaulting to {}um.",
-          bump_pitch_default_);
-    }
-    if (bump_pitch_y_ == 0) {
-      bump_pitch_y_ = bump_pitch_default_ * unit_micron;
-      logger_->warn(
-          utl::PSM,
-          18,
-          "Y direction bump pitch is not specified, defaulting to {}um.",
-          bump_pitch_default_);
-    }
+    dbNet* power_net = block->findNet(power_net_.data());
     if (!net_voltage_map_.empty() && net_voltage_map_.count(power_net_) > 0) {
       supply_voltage_src = net_voltage_map_.at(power_net_);
     } else if (require_voltage) {
       logger_->warn(
           utl::PSM, 19, "Voltage on net {} is not explicitly set.", power_net_);
       const pair<double, double> supply_voltages = getSupplyVoltage();
-      dbNet* power_net = block->findNet(power_net_.data());
       if (power_net == nullptr) {
         logger_->error(utl::PSM,
                        20,
@@ -425,6 +403,36 @@ void IRSolver::readC4Data(bool require_voltage)
                       supply_voltage_src);
       }
     }
+    if (createSourcesFromBTerms(power_net, supply_voltage_src)) {
+      return;
+    }
+
+    logger_->warn(utl::PSM,
+                  16,
+                  "Voltage pad location (VSRC) file not specified, defaulting "
+                  "pad location to checkerboard pattern on core area.");
+    odb::Rect coreRect = block->getCoreArea();
+    const int coreW = coreRect.xMax() - coreRect.xMin();
+    const int coreL = coreRect.yMax() - coreRect.yMin();
+    const odb::Rect dieRect = block->getDieArea();
+    const int offset_x = coreRect.xMin() - dieRect.xMin();
+    const int offset_y = coreRect.yMin() - dieRect.yMin();
+    if (bump_pitch_x_ == 0) {
+      bump_pitch_x_ = bump_pitch_default_ * unit_micron;
+      logger_->warn(
+          utl::PSM,
+          17,
+          "X direction bump pitch is not specified, defaulting to {}um.",
+          bump_pitch_default_);
+    }
+    if (bump_pitch_y_ == 0) {
+      bump_pitch_y_ = bump_pitch_default_ * unit_micron;
+      logger_->warn(
+          utl::PSM,
+          18,
+          "Y direction bump pitch is not specified, defaulting to {}um.",
+          bump_pitch_default_);
+    }
     if (coreW < bump_pitch_x_ || coreL < bump_pitch_y_) {
       float to_micron = 1.0f / unit_micron;
       const int x_cor = coreW / 2 + offset_x;
@@ -441,8 +449,12 @@ void IRSolver::readC4Data(bool require_voltage)
                     coreL * to_micron,
                     x_cor * to_micron,
                     y_cor * to_micron);
-      C4Bumps_.push_back(
-          {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src});
+      sources_.push_back({x_cor,
+                          y_cor,
+                          bump_size_ * unit_micron,
+                          supply_voltage_src,
+                          top_layer_,
+                          true});
     }
     const int num_b_x = coreW / bump_pitch_x_;
     const int centering_offset_x = (coreW - (num_b_x - 1) * bump_pitch_x_) / 2;
@@ -459,12 +471,82 @@ void IRSolver::readC4Data(bool require_voltage)
                           + offset_x + centering_offset_x;
         const int y_cor = (bump_pitch_y_ * i) + offset_y + centering_offset_y;
         if (x_cor <= coreW && y_cor <= coreL) {
-          C4Bumps_.push_back(
-              {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src});
+          sources_.push_back({x_cor,
+                              y_cor,
+                              bump_size_ * unit_micron,
+                              supply_voltage_src,
+                              top_layer_,
+                              true});
         }
       }
     }
   }
+}
+
+bool IRSolver::createSourcesFromBTerms(dbNet* net, double voltage)
+{
+  const int pitch_multiplier = 10;
+
+  bool added = false;
+  for (auto* bterm : net->getBTerms()) {
+    for (auto* bpin : bterm->getBPins()) {
+      if (!bpin->getPlacementStatus().isPlaced()) {
+        continue;
+      }
+
+      for (auto* box : bpin->getBoxes()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        const auto rect = box->getBox();
+
+        const int src_size = rect.minDXDY();
+
+        int pitch = 0;
+        auto* next_layer
+            = db_->getTech()->findRoutingLayer(layer->getRoutingLevel() + 1);
+        if (next_layer != nullptr) {
+          pitch = pitch_multiplier * next_layer->getPitch();
+        }
+        if (pitch == 0) {
+          pitch = pitch_multiplier * src_size;
+        }
+
+        odb::Point src;
+        int dx = 0;
+        int dy = 0;
+        if (rect.dx() < rect.dy()) {
+          dy = pitch;
+          src = odb::Point(rect.xCenter(), rect.yMin() + dy / 2);
+        } else if (rect.dy() < rect.dx()) {
+          dx = pitch;
+          src = odb::Point(rect.xMin() + dx / 2, rect.yCenter());
+        } else {
+          sources_.push_back({rect.xCenter(),
+                              rect.yCenter(),
+                              src_size,
+                              voltage,
+                              layer->getRoutingLevel(),
+                              false});
+          continue;
+        }
+
+        for (; rect.intersects(src);) {
+          sources_.push_back({src.x(),
+                              src.y(),
+                              src_size,
+                              voltage,
+                              layer->getRoutingLevel(),
+                              false});
+          src.addX(dx);
+          src.addY(dy);
+        }
+        added = true;
+      }
+    }
+  }
+  return added;
 }
 
 //! Function to create a J vector from the current map
@@ -614,14 +696,14 @@ bool IRSolver::createJ()
 
 //! Function to find and store the upper and lower PDN layers and return a list
 // of wires for all PDN tasks
-vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
+void IRSolver::findPdnWires(dbNet* power_net)
 {
-  vector<dbSBox*> power_wires;
+  power_wires_.clear();
   // Iterate through all wires till we reach the lowest abstraction level
   for (dbSWire* curSWire : power_net->getSWires()) {
     for (dbSBox* curWire : curSWire->getWires()) {
       // Store wires in an easy to access format as we reuse it multiple times
-      power_wires.push_back(curWire);
+      power_wires_.push_back(curWire);
       int l;
       // If the wire is a via get extract the top layer
       // We assume the bottom most layer must have power stripes.
@@ -646,8 +728,6 @@ vector<dbSBox*> IRSolver::findPdnWires(dbNet* power_net)
       }
     }
   }
-  // return the list of wires to be used in all subsequent loops
-  return power_wires;
 }
 
 map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
@@ -740,9 +820,9 @@ map<Point, ViaCut> IRSolver::getViaCuts(Point loc,
 }
 
 //! Function to create the nodes of the G matrix
-void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
+void IRSolver::createGmatViaNodes()
 {
-  for (auto curWire : power_wires) {
+  for (auto curWire : power_wires_) {
     // For a Via we create the nodes at the top and bottom ends of the via
     if (!(curWire->isVia())) {
       continue;
@@ -781,10 +861,9 @@ void IRSolver::createGmatViaNodes(const vector<dbSBox*>& power_wires)
   }
 }
 
-void IRSolver::createGmatWireNodes(const vector<dbSBox*>& power_wires,
-                                   const vector<odb::Rect>& macros)
+void IRSolver::createGmatWireNodes(const vector<odb::Rect>& macros)
 {
-  for (auto curWire : power_wires) {
+  for (auto curWire : power_wires_) {
     // For a stripe we create nodes at the ends of the stripes and at a fixed
     // frequency in the lowermost layer.
     if (curWire->isVia()) {
@@ -914,12 +993,11 @@ NodeEnclosure IRSolver::getViaEnclosure(int layer, dbSet<dbBox> via_boxes)
 }
 
 //! Function to create the connections of the G matrix
-void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
-                                     bool connection_only)
+void IRSolver::createGmatConnections(bool connection_only)
 {
   odb::dbTech* tech = db_->getTech();
 
-  for (auto curWire : power_wires) {
+  for (auto curWire : power_wires_) {
     // For vias we make 3 connections
     // 1) From the top node to the bottom node
     // 2) Nodes within the top enclosure
@@ -1093,16 +1171,16 @@ void IRSolver::createGmatConnections(const vector<dbSBox*>& power_wires,
   }
 }
 
-//! Function to create the nodes for the c4 bumps
-int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
+//! Function to create the nodes for the sources
+int IRSolver::createSourceNodes(bool connection_only, int unit_micron)
 {
-  int num_C4 = 0;
-  for (const auto& bump : C4Bumps_) {
-    const int x = bump.x;
-    const int y = bump.y;
-    const int size = bump.size;
-    const double v = bump.voltage;
-    const Node* node = Gmat_->getNode(x, y, top_layer_, true);
+  int num = 0;
+  for (const auto& source : sources_) {
+    const int x = source.x;
+    const int y = source.y;
+    const int size = source.size;
+    const double v = source.voltage;
+    const Node* node = Gmat_->getNode(x, y, source.layer, true);
     const Point node_loc = node->getLoc();
     const double new_loc1 = node_loc.getX() / ((double) unit_micron);
     const double new_loc2 = node_loc.getY() / ((double) unit_micron);
@@ -1111,38 +1189,43 @@ int IRSolver::createC4Nodes(bool connection_only, int unit_micron)
       const double old_loc1 = x / ((double) unit_micron);
       const double old_loc2 = y / ((double) unit_micron);
       const double old_size = size / ((double) unit_micron);
-      logger_->warn(utl::PSM,
-                    30,
-                    "VSRC location at ({:4.3f}um, {:4.3f}um) and "
-                    "size {:4.3f}um, is not located on an existing "
-                    "power stripe node. Moving to closest node at "
-                    "({:4.3f}um, {:4.3f}um).",
-                    old_loc1,
-                    old_loc2,
-                    old_size,
-                    new_loc1,
-                    new_loc2);
+      if (source.user_specified) {
+        logger_->warn(utl::PSM,
+                      30,
+                      "VSRC location at ({:4.3f}um, {:4.3f}um) and "
+                      "size {:4.3f}um, is not located on an existing "
+                      "power stripe node. Moving to closest node at "
+                      "({:4.3f}um, {:4.3f}um).",
+                      old_loc1,
+                      old_loc2,
+                      old_size,
+                      new_loc1,
+                      new_loc2);
+      }
     }
     const NodeIdx k = node->getGLoc();
-    const auto ret = C4Nodes_.insert({k, v});
+    const auto ret = source_nodes_.insert({k, v});
     if (ret.second == false) {
-      // key already exists and voltage value is different occurs when a user
-      // specifies two different voltage supply values by mistake in two
-      // nearby nodes
-      logger_->warn(utl::PSM,
-                    67,
-                    "Multiple voltage supply values mapped"
-                    "at the same node ({:4.3f}um, {:4.3f}um)."
-                    "If you provided a vsrc file. Check for duplicate entries."
-                    "Choosing voltage value {:4.3f}.",
-                    new_loc1,
-                    new_loc2,
-                    ret.first->second);
+      if (ret.first->second != v) {
+        // key already exists and voltage value is different occurs when a user
+        // specifies two different voltage supply values by mistake in two
+        // nearby nodes
+        logger_->warn(
+            utl::PSM,
+            67,
+            "Multiple voltage supply values mapped "
+            "at the same node ({:4.3f}um, {:4.3f}um). "
+            "If you provided a vsrc file. Check for duplicate entries. "
+            "Choosing voltage value {:4.3f}.",
+            new_loc1,
+            new_loc2,
+            ret.first->second);
+      }
     } else {
-      num_C4++;
+      num++;
     }
   }
-  return num_C4;
+  return num;
 }
 
 //! Function to find and store the macro boundaries
@@ -1218,12 +1301,9 @@ bool IRSolver::createGmat(bool connection_only)
              "Extracting power stripes on net {}",
              power_net->getName());
 
-  // Extract all power wires for the net and store the upper and lower layers
-  const vector<dbSBox*> power_wires = findPdnWires(power_net);
-
   // Create all the nodes for the G matrix
-  createGmatViaNodes(power_wires);
-  createGmatWireNodes(power_wires, macro_boundaries);
+  createGmatViaNodes();
+  createGmatWireNodes(macro_boundaries);
 
   if (Gmat_->getNumNodes() == 0) {
     logger_->warn(
@@ -1231,8 +1311,8 @@ bool IRSolver::createGmat(bool connection_only)
     return true;
   }
 
-  // insert c4 bumps as nodes
-  const int num_C4 = createC4Nodes(connection_only, unit_micron);
+  // insert source as nodes
+  const int num_sources = createSourceNodes(connection_only, unit_micron);
 
   // All new nodes must be inserted by this point
   // initialize G Matrix
@@ -1241,10 +1321,10 @@ bool IRSolver::createGmat(bool connection_only)
                 "Number of PDN nodes on net {} = {}.",
                 power_net_,
                 Gmat_->getNumNodes());
-  Gmat_->initializeGmatDok(num_C4);
+  Gmat_->initializeGmatDok(num_sources);
 
   // Iterate through all the wires to populate conductance matrix
-  createGmatConnections(power_wires, connection_only);
+  createGmatConnections(connection_only);
 
   debugPrint(
       logger_, utl::PSM, "G Matrix", 1, "G matrix created successfully.");
@@ -1266,14 +1346,14 @@ bool IRSolver::checkConnectivity(bool connection_only)
   // If we want to test the connectivity of the grid we just start from a single
   // point
   if (connection_only) {
-    Node* c4_node = Gmat_->getNode(C4Nodes_.begin()->first);
-    node_q.push(c4_node);
+    Node* node = Gmat_->getNode(source_nodes_.begin()->first);
+    node_q.push(node);
   } else {
     // If we do IR analysis, we assume the grid can be connected by different
     // bumps
-    for (auto [node_loc, voltage] : C4Nodes_) {
-      Node* c4_node = Gmat_->getNode(node_loc);
-      node_q.push(c4_node);
+    for (auto [node_loc, voltage] : source_nodes_) {
+      Node* node = Gmat_->getNode(node_loc);
+      node_q.push(node);
     }
   }
   while (!node_q.empty()) {
@@ -1473,7 +1553,7 @@ int IRSolver::getMinimumResolution()
 
 bool IRSolver::build()
 {
-  readC4Data(true);
+  readSourceData(true);
 
   bool res = createGmat();
   if (Gmat_->getNumNodes() == 0) {
@@ -1485,7 +1565,7 @@ bool IRSolver::build()
     res = createJ();
   }
   if (res) {
-    res = addC4Bump();
+    res = addSources();
   }
   if (res) {
     res = Gmat_->generateCSCMatrix();
@@ -1503,7 +1583,7 @@ bool IRSolver::build()
 
 bool IRSolver::buildConnection()
 {
-  readC4Data(false);
+  readSourceData(false);
 
   bool res = createGmat(true);
   if (Gmat_->getNumNodes() == 0) {
@@ -1512,7 +1592,7 @@ bool IRSolver::buildConnection()
   }
 
   if (res) {
-    res = addC4Bump();
+    res = addSources();
   }
   if (res) {
     res = Gmat_->generateACSCMatrix();

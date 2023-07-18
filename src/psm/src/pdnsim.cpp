@@ -265,7 +265,7 @@ void PDNSim::analyze_power_grid()
 
   heatmap_->update();
   if (debug_gui_) {
-    debug_gui_->setBumps(irsolve_h->getBumps(), irsolve_h->getTopLayer());
+    debug_gui_->setSources(irsolve_h->getSources());
   }
 }
 
