@@ -36,7 +36,6 @@ detailed_route
     [-bottom_routing_layer layer]
     [-top_routing_layer layer]
     [-verbose level]
-    [-param filename]
     [-distributed]
     [-remote_host rhost]
     [-remote_port rport]
@@ -68,7 +67,6 @@ detailed_route
 | `-bottom_routing_layer` | bottommost routing layer name |
 | `-top_routing_layer` | topmost routing layer name |
 | `-verbose` | set verbose if value is greater than 0. |
-| `-param` | you may set parameters in this argument using a file.  **note that `-param` may not be used with other keyword arguments. (deprecated)** |
 | `-distributed` | enable distributed mode with Kubernetes and Google Cloud, [guide](./doc/Distributed.md). |
 | `-remote_host` | the host IP |
 | `-remote_port` | the value of the port to access from |
