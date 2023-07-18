@@ -44,11 +44,12 @@ sta::define_cmd_args "analyze_power_grid" {
   [-dy bump_pitch_y]
   [-node_density val_node_density]
   [-node_density_factor val_node_density_factor]
+  [-corner corner]
   }
 
 proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
-    keys {-vsrc -outfile -error_file -em_outfile -net -dx -dy -node_density -node_density_factor} flags {-enable_em}
+    keys {-vsrc -outfile -error_file -em_outfile -net -dx -dy -node_density -node_density_factor -corner} flags {-enable_em}
   if { [info exists keys(-vsrc)] } {
     set vsrc_file $keys(-vsrc)
     if { [file readable $vsrc_file] } {
@@ -71,6 +72,8 @@ proc analyze_power_grid { args } {
     set bump_pitch_y $keys(-dy)
     psm::set_bump_pitch_y $bump_pitch_y
   }
+
+  psm::set_corner [sta::parse_corner_or_default keys]
 
   if { [info exists keys(-node_density)] && [info exists keys(-node_density_factor)] } {
     utl::error PSM 77 "Cannot use both node_density and node_density_factor together. Use any one argument"
@@ -138,11 +141,12 @@ sta::define_cmd_args "write_pg_spice" {
   [-net net_name]
   [-dx bump_pitch_x]
   [-dy bump_pitch_y]
+  [-corner corner]
   }
 
 proc write_pg_spice { args } {
   sta::parse_key_args "write_pg_spice" args \
-    keys {-vsrc -outfile -net -dx -dy} flags {}
+    keys {-vsrc -outfile -net -dx -dy -corner} flags {}
   if { [info exists keys(-vsrc)] } {
     set vsrc_file $keys(-vsrc)
     if { [file readable $vsrc_file] } {
@@ -169,6 +173,8 @@ proc write_pg_spice { args } {
     set bump_pitch_y $keys(-dy)
     psm::set_bump_pitch_y $bump_pitch_y
   }
+
+  psm::set_corner [sta::parse_corner_or_default keys]
 
   if { [ord::db_has_rows] } {
     psm::write_pg_spice_cmd

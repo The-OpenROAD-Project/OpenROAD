@@ -183,10 +183,6 @@ RecoverPower::recoverPower()
                  delayAsString(worst_slack, sta_, digits),
                  better ? "save" : "");
       if (better) {
-        prev_end_slack = end_slack;
-        prev_worst_slack = worst_slack;
-        // decreasing_slack_passes = 0;
-        // Progress, Save checkpoint so we can back up to here.
         resizer_->journalBegin();
       }
       if (resizer_->overMaxArea()) {
