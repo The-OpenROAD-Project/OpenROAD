@@ -404,8 +404,10 @@ void IRSolver::readSourceData(bool require_voltage)
                       supply_voltage_src);
       }
     }
-    const bool added_from_pads = createSourcesFromPads(power_net, supply_voltage_src);
-    const bool added_from_bterms = createSourcesFromBTerms(power_net, supply_voltage_src);
+    const bool added_from_pads
+        = createSourcesFromPads(power_net, supply_voltage_src);
+    const bool added_from_bterms
+        = createSourcesFromBTerms(power_net, supply_voltage_src);
     if (added_from_pads || added_from_bterms) {
       return;
     }
@@ -578,8 +580,12 @@ bool IRSolver::createSourcesFromPads(dbNet* net, double voltage)
         xform.apply(rect);
         const int src_size = rect.minDXDY();
 
-        sources_.push_back(
-            {rect.xCenter(), rect.yCenter(), src_size, voltage, layer->getRoutingLevel(), false});
+        sources_.push_back({rect.xCenter(),
+                            rect.yCenter(),
+                            src_size,
+                            voltage,
+                            layer->getRoutingLevel(),
+                            false});
 
         added = true;
       }
