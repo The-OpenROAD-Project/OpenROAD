@@ -8,8 +8,8 @@ set_io_pin_constraint -region right:* -group -order -pin_names {resp_msg[0] resp
 
 place_pins -hor_layers metal3 -ver_layers metal2 -corner_avoidance 0 -min_distance 0.36 -annealing
 
-set def_file [make_result_file add_constraint16.def]
+set def_file [make_result_file annealing_constraint7.def]
 
 write_def $def_file
 
-diff_file add_constraint16.defok $def_file
+diff_file annealing_constraint7.defok $def_file
