@@ -2653,8 +2653,7 @@ Resizer::journalBegin()
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
-  while(!cloned_gates_.empty())
-    cloned_gates_.pop();
+  cloned_gates_ = {};
   cloned_inst_set_.clear();
   swapped_pins_.clear();
 }
@@ -2666,8 +2665,7 @@ Resizer::journalEnd()
   resized_inst_map_.clear();
   inserted_buffers_.clear();
   inserted_buffer_set_.clear();
-  while(!cloned_gates_.empty())
-    cloned_gates_.pop();
+  cloned_gates_ = {};
   cloned_inst_set_.clear();
   swapped_pins_.clear();
 }
