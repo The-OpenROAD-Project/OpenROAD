@@ -329,8 +329,13 @@ int SimulatedAnnealing::movePinToFreeSlot()
 
   bool free_slot = false;
   int new_slot;
+
+  int first_slot = 0;
+  int last_slot = num_slots_ - 1;
+  getSlotsRange(io_pin, first_slot, last_slot);
+
   distribution
-      = boost::random::uniform_int_distribution<int>(0, num_slots_ - 1);
+      = boost::random::uniform_int_distribution<int>(first_slot, last_slot);
   while (!free_slot) {
     new_slot = distribution(generator_);
     free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
@@ -350,15 +355,22 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
     prev_slots_.push_back(pin_assignment_[pin_idx]);
   }
   pins_ = group.pin_indices;
+  const IOPin& io_pin = netlist_->getIoPin(pins_[0]);
 
   bool free_slot = false;
   bool same_edge_slot = false;
   int new_slot;
+
+  int first_slot = 0;
+  int last_slot = num_slots_ - 1;
+  getSlotsRange(io_pin, first_slot, last_slot);
+  boost::random::uniform_int_distribution<int> distribution(first_slot,
+                                                            last_slot);
+
   // add max number of iterations to find available slots for group to avoid
   // infinite loop in cases where there are not available contiguous slots
   int iter = 0;
   int max_iters = num_slots_ * 10;
-  boost::random::uniform_int_distribution<int> distribution(0, num_slots_ - 1);
   while ((!free_slot || !same_edge_slot) && iter < max_iters) {
     new_slot = distribution(generator_);
     if ((new_slot + pins_.size() >= num_slots_ - 1)) {
@@ -432,6 +444,18 @@ bool SimulatedAnnealing::isFreeForGroup(int slot_idx, int group_size)
   }
 
   return free_slot;
+}
+
+void SimulatedAnnealing::getSlotsRange(const IOPin& io_pin,
+                                       int& first_slot,
+                                       int& last_slot)
+{
+  const int pin_constraint_idx = io_pin.getConstraintIdx();
+  if (pin_constraint_idx != -1) {
+    const Constraint& constraint = constraints_[pin_constraint_idx];
+    first_slot = constraint.first_slot;
+    last_slot = constraint.last_slot;
+  }
 }
 
 }  // namespace ppl
