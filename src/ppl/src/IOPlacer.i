@@ -35,8 +35,9 @@
 
 %{
 #include "ppl/IOPlacer.h"
+#include "ppl/IOPlacerRenderer.h"
 #include "ord/OpenRoad.hh"
-#include "IOPlacerRenderer.h"
+
 
 namespace ord {
 // Defined in OpenRoad.i

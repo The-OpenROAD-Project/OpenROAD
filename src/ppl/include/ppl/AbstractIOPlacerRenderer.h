@@ -33,18 +33,14 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "ppl/IOPlacerRenderer.h"
+#pragma once
 
 namespace ppl {
 
-IOPlacerRenderer::IOPlacerRenderer(IOPlacer* ioplacer)
-    : ioplacer_(ioplacer)
+class AbstractIOPlacerRenderer
 {
-  gui::Gui::get()->registerRenderer(this);
-}
-
-void IOPlacerRenderer::drawPoint(std::string point, gui::Painter& painter)
-{
-}
+ public:
+  virtual ~AbstractIOPlacerRenderer() = default;
+};
 
 }
