@@ -68,6 +68,7 @@ class IRSolver
     int y;
     int size;
     double voltage;
+    int layer;
     bool user_specified;
   };
 
@@ -115,7 +116,6 @@ class IRSolver
   bool buildConnection();
 
   const std::vector<SourceData>& getSources() const { return sources_; }
-  int getTopLayer() const { return top_layer_; }
 
   double getWorstCaseVoltage() const { return wc_voltage; }
   double getMaxCurrent() const { return max_cur; }

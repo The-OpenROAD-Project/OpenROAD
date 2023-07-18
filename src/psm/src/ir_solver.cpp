@@ -356,7 +356,7 @@ void IRSolver::readSourceData(bool require_voltage)
       if (x == -1 || y == -1 || size == -1) {
         logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
       } else {
-        sources_.push_back({x, y, size, supply_voltage_src, true});
+        sources_.push_back({x, y, size, supply_voltage_src, top_layer_, true});
       }
     }
     file.close();
@@ -439,7 +439,7 @@ void IRSolver::readSourceData(bool require_voltage)
                     x_cor * to_micron,
                     y_cor * to_micron);
       sources_.push_back(
-          {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src, true});
+          {x_cor, y_cor, bump_size_ * unit_micron, supply_voltage_src, top_layer_, true});
     }
     const int num_b_x = coreW / bump_pitch_x_;
     const int centering_offset_x = (coreW - (num_b_x - 1) * bump_pitch_x_) / 2;
@@ -460,6 +460,7 @@ void IRSolver::readSourceData(bool require_voltage)
                               y_cor,
                               bump_size_ * unit_micron,
                               supply_voltage_src,
+                              top_layer_,
                               true});
         }
       }
@@ -508,12 +509,12 @@ bool IRSolver::createSourcesFromBTerms(dbNet* net, double voltage)
           src = odb::Point(rect.xMin() + dx / 2, rect.yCenter());
         } else {
           sources_.push_back(
-              {rect.xCenter(), rect.yCenter(), src_size, voltage, false});
+              {rect.xCenter(), rect.yCenter(), src_size, voltage, layer->getRoutingLevel(), false});
           continue;
         }
 
         for (; rect.intersects(src);) {
-          sources_.push_back({src.x(), src.y(), src_size, voltage, false});
+          sources_.push_back({src.x(), src.y(), src_size, voltage, layer->getRoutingLevel(), false});
           src.addX(dx);
           src.addY(dy);
         }
@@ -1155,7 +1156,7 @@ int IRSolver::createSourceNodes(bool connection_only, int unit_micron)
     const int y = source.y;
     const int size = source.size;
     const double v = source.voltage;
-    const Node* node = Gmat_->getNode(x, y, top_layer_, true);
+    const Node* node = Gmat_->getNode(x, y, source.layer, true);
     const Point node_loc = node->getLoc();
     const double new_loc1 = node_loc.getX() / ((double) unit_micron);
     const double new_loc2 = node_loc.getY() / ((double) unit_micron);

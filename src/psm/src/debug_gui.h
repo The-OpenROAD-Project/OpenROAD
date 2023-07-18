@@ -42,15 +42,13 @@ class DebugGui : public gui::Renderer
 
   void drawObjects(gui::Painter& painter) override;
 
-  void setSources(const std::vector<IRSolver::SourceData>& sources,
-                  int source_layer);
+  void setSources(const std::vector<IRSolver::SourceData>& sources);
 
   const char* getDisplayControlGroupName() override { return "PSM"; }
 
  private:
   PDNSim* pdnsim_;
   std::vector<IRSolver::SourceData> sources_;
-  int source_layer_;
 
   static constexpr const char* source_text_ = "Sources";
   static constexpr const char* nodes_text_ = "Nodes";

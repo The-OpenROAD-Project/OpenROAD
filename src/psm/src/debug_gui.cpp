@@ -31,7 +31,7 @@
 
 namespace psm {
 
-DebugGui::DebugGui(PDNSim* pdnsim) : pdnsim_(pdnsim), source_layer_(-1)
+DebugGui::DebugGui(PDNSim* pdnsim) : pdnsim_(pdnsim)
 {
   addDisplayControl(nodes_text_, true);
   addDisplayControl(source_text_, true);
@@ -74,19 +74,18 @@ void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
     }
   }
 
-  if (checkDisplayControl(source_text_)
-      && layer->getRoutingLevel() == source_layer_) {
+  if (checkDisplayControl(source_text_)) {
     for (auto& source : sources_) {
-      painter.drawCircle(source.x, source.y, source.size);
+      if (layer->getRoutingLevel() == source.layer) {
+        painter.drawCircle(source.x, source.y, source.size);
+      }
     }
   }
 }
 
-void DebugGui::setSources(const std::vector<IRSolver::SourceData>& sources,
-                          int source_layer)
+void DebugGui::setSources(const std::vector<IRSolver::SourceData>& sources)
 {
   sources_ = sources;
-  source_layer_ = source_layer;
 }
 
 }  // namespace psm
