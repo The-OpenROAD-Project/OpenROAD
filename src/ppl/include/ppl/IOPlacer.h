@@ -56,6 +56,7 @@ class dbTechLayer;
 }  // namespace odb
 
 namespace ppl {
+class AbstractIOPlacerRenderer;
 class Core;
 class Interval;
 class IOPin;
@@ -163,6 +164,9 @@ class IOPlacer
                           int perturb_per_iter,
                           float alpha);                    
   void setAnnealingDebugConfig(int iters_between_paintings);
+
+  void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
+  AbstractIOPlacerRenderer* getRenderer();
 
  private:
   void createTopLayerPinPattern();
@@ -289,6 +293,8 @@ class IOPlacer
   std::set<int> hor_layers_;
   std::set<int> ver_layers_;
   std::unique_ptr<TopLayerGrid> top_grid_;
+
+  std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer_;
 
   // simulated annealing variables
   float init_temperature_ = 0;

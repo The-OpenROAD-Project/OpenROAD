@@ -42,6 +42,7 @@
 #include "Core.h"
 #include "HungarianMatching.h"
 #include "Netlist.h"
+#include "ppl/AbstractIOPlacerRenderer.h"
 #include "SimulatedAnnealing.h"
 #include "Slots.h"
 #include "odb/db.h"
@@ -54,6 +55,7 @@ namespace ppl {
 using utl::PPL;
 
 IOPlacer::IOPlacer()
+    : ioplacer_renderer_(nullptr)
 {
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
@@ -1877,6 +1879,17 @@ void IOPlacer::setAnnealingConfig(float temperature,
   max_iterations_ = max_iterations;
   perturb_per_iter_ = perturb_per_iter;
   alpha_ = alpha;
+}
+
+void IOPlacer::setRenderer(
+    std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer)
+{
+  ioplacer_renderer_ = std::move(ioplacer_renderer);
+}
+
+AbstractIOPlacerRenderer* IOPlacer::getRenderer()
+{
+  return ioplacer_renderer_.get();
 }
 
 void IOPlacer::setAnnealingDebugConfig(int iters_between_paintings)

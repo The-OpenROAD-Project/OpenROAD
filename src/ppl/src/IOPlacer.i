@@ -118,6 +118,9 @@ tclSetStdSeq(Tcl_Obj *const source,
 
 %include "../../Exception.i"
 
+%ignore ppl::IOPlacer::getRenderer;
+%ignore ppl::IOPlacer::setRenderer;
+
 %inline %{
 
 namespace ppl {
@@ -330,6 +333,12 @@ simulated_annealing_debug(int iters_between_paintings)
   if (!gui::Gui::enabled()) {
     return;
   }
+
+  IOPlacer* ioplacer = getIOPlacer();
+  if(ioplacer->getRenderer() == nullptr) {
+    ioplacer->setRenderer(std::make_unique<IOPlacerRenderer>(ioplacer));
+  }
+
   getIOPlacer()->setAnnealingDebugConfig(iters_between_paintings);
 }
 
