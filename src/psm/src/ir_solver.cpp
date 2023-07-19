@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gmat.h"
 #include "node.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 
@@ -403,7 +404,11 @@ void IRSolver::readSourceData(bool require_voltage)
                       supply_voltage_src);
       }
     }
-    if (createSourcesFromBTerms(power_net, supply_voltage_src)) {
+    const bool added_from_pads
+        = createSourcesFromPads(power_net, supply_voltage_src);
+    const bool added_from_bterms
+        = createSourcesFromBTerms(power_net, supply_voltage_src);
+    if (added_from_pads || added_from_bterms) {
       return;
     }
 
@@ -542,6 +547,46 @@ bool IRSolver::createSourcesFromBTerms(dbNet* net, double voltage)
           src.addX(dx);
           src.addY(dy);
         }
+        added = true;
+      }
+    }
+  }
+  return added;
+}
+
+bool IRSolver::createSourcesFromPads(dbNet* net, double voltage)
+{
+  bool added = false;
+  for (auto* iterm : net->getITerms()) {
+    auto* inst = iterm->getInst();
+    if (!inst->isPlaced()) {
+      continue;
+    }
+    if (!inst->isPad()) {
+      continue;
+    }
+
+    odb::dbTransform xform;
+    inst->getTransform(xform);
+
+    auto* mterm = iterm->getMTerm();
+    for (auto* mpin : mterm->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        auto rect = box->getBox();
+        xform.apply(rect);
+        const int src_size = rect.minDXDY();
+
+        sources_.push_back({rect.xCenter(),
+                            rect.yCenter(),
+                            src_size,
+                            voltage,
+                            layer->getRoutingLevel(),
+                            false});
+
         added = true;
       }
     }
