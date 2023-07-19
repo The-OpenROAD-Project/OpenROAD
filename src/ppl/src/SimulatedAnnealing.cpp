@@ -352,7 +352,7 @@ int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
 {
   boost::random::uniform_int_distribution<int> distribution(0, num_pins_ - 1);
   int pin = distribution(generator_);
-  
+
   if (lone_pin) {
     while (netlist_->getIoPin(pin).isInGroup()) {
       pin = distribution(generator_);
