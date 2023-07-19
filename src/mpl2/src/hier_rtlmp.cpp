@@ -134,6 +134,11 @@ void HierRTLMP::setHaloWidth(float halo_width)
   halo_width_ = halo_width;
 }
 
+void HierRTLMP::setHaloHeight(float halo_height)
+{
+  halo_height_ = halo_height;
+}
+
 // Options related to clustering
 void HierRTLMP::setNumBundledIOsPerBoundary(int num_bundled_ios)
 {
@@ -392,6 +397,7 @@ void HierRTLMP::hierRTLMacroPlacer()
   logger_->report("notch_weight_ = {}", notch_weight_);
   logger_->report("macro_blockage_weight_ = {}", macro_blockage_weight_);
   logger_->report("halo_width_ = {}", halo_width_);
+  logger_->report("halo_height_ = {}", halo_height_);
   logger_->report("bus_planning_flag_ = {}", bus_planning_flag_);
 
   //
@@ -626,8 +632,8 @@ Metrics* HierRTLMP::computeMetrics(odb::dbModule* module)
       num_macro += 1;
       macro_area += inst_area;
       // add hard macro to corresponding map
-      HardMacro* macro
-          = new HardMacro(inst, dbu_, manufacturing_grid_, halo_width_);
+      HardMacro* macro = new HardMacro(
+          inst, dbu_, manufacturing_grid_, halo_width_, halo_height_);
       hard_macro_map_[inst] = macro;
     } else {
       num_std_cell += 1;

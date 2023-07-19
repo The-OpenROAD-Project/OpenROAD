@@ -745,11 +745,13 @@ HardMacro::HardMacro(float width, float height, const std::string& name)
 HardMacro::HardMacro(odb::dbInst* inst,
                      float dbu,
                      int manufacturing_grid,
-                     float halo_width)
+                     float halo_width,
+                     float halo_height)
 {
   inst_ = inst;
   dbu_ = dbu;
   halo_width_ = halo_width;
+  halo_height_ = halo_height;
   manufacturing_grid_ = manufacturing_grid;
 
   // set name
@@ -757,7 +759,7 @@ HardMacro::HardMacro(odb::dbInst* inst,
   odb::dbMaster* master = inst->getMaster();
   // set the width and height
   width_ = dbuToMicron(master->getWidth(), dbu) + 2 * halo_width;
-  height_ = dbuToMicron(master->getHeight(), dbu) + 2 * halo_width;
+  height_ = dbuToMicron(master->getHeight(), dbu) + 2 * halo_height;
   // Set the position of virtual pins
   // Here we only consider signal pins
   odb::Rect bbox;
@@ -773,7 +775,7 @@ HardMacro::HardMacro(odb::dbInst* inst,
     }
   }
   pin_x_ = dbuToMicron((bbox.xMin() + bbox.xMax()) / 2.0, dbu) + halo_width_;
-  pin_y_ = dbuToMicron((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_width_;
+  pin_y_ = dbuToMicron((bbox.yMin() + bbox.yMax()) / 2.0, dbu) + halo_height_;
 }
 
 // overload the comparison operators
@@ -878,7 +880,7 @@ void HardMacro::setRealLocation(const std::pair<float, float>& location)
   }
 
   x_ = location.first - halo_width_;
-  y_ = location.second - halo_width_;
+  y_ = location.second - halo_height_;
 }
 
 void HardMacro::setRealX(float x)
@@ -896,12 +898,12 @@ void HardMacro::setRealY(float y)
     return;
   }
 
-  y_ = y - halo_width_;
+  y_ = y - halo_height_;
 }
 
 const std::pair<float, float> HardMacro::getRealLocation() const
 {
-  return std::pair<float, float>(x_ + halo_width_, y_ + halo_width_);
+  return std::pair<float, float>(x_ + halo_width_, y_ + halo_height_);
 }
 
 float HardMacro::getRealX() const
@@ -911,7 +913,7 @@ float HardMacro::getRealX() const
 
 float HardMacro::getRealY() const
 {
-  return y_ + halo_width_;
+  return y_ + halo_height_;
 }
 
 float HardMacro::getRealWidth() const
@@ -921,7 +923,7 @@ float HardMacro::getRealWidth() const
 
 float HardMacro::getRealHeight() const
 {
-  return height_ - 2 * halo_width_;
+  return height_ - 2 * halo_height_;
 }
 
 // Orientation support
