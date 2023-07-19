@@ -921,6 +921,65 @@ void ICeWall::placeBondPads(odb::dbMaster* bond,
   }
 }
 
+void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
+{
+  auto* block = getBlock();
+  if (block == nullptr) {
+    return;
+  }
+
+  auto* tech = block->getDataBase()->getTech();
+  auto* top_layer = tech->findRoutingLayer(tech->getRoutingLayerCount());
+
+  for (auto* iterm : iterms) {
+    if (iterm == nullptr) {
+      continue;
+    }
+    auto* net = iterm->getNet();
+    if (net == nullptr) {
+      continue;
+    }
+    auto* inst = iterm->getInst();
+    if (!inst->isFixed()) {
+      continue;
+    }
+
+    odb::dbTransform pad_transform;
+    inst->getTransform(pad_transform);
+
+    auto* mterm = iterm->getMTerm();
+    odb::dbBox* pin_shape = nullptr;
+    for (auto* mpin : mterm->getMPins()) {
+      for (auto* geom : mpin->getGeometry()) {
+        auto* layer = geom->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        if (layer != top_layer) {
+          continue;
+        }
+
+        pin_shape = geom;
+        break;
+      }
+    }
+
+    if (pin_shape == nullptr) {
+      logger_->error(utl::PAD,
+                     115,
+                     "Unable to place a terminal on {} for {}/{}",
+                     top_layer->getName(),
+                     inst->getName(),
+                     mterm->getName());
+    }
+
+    odb::Rect shape = pin_shape->getBox();
+    pad_transform.apply(shape);
+
+    makeBTerm(net, top_layer, shape);
+  }
+}
+
 void ICeWall::connectByAbutment()
 {
   const std::vector<odb::dbInst*> io_insts = getPadInsts();
