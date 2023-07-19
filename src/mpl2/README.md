@@ -1,6 +1,6 @@
 # Hierarchical Macro Placement
 
-A Hierarchical Automatic Macro Placer for Large-scale Complex IP Blocks, "Hier-RTLMP".
+A hierarchical automatic macro placer for large-scale complex IP blocks, "Hier-RTLMP".
 This tool builds on the existing RTLMP (*mpl*) framework, adopting a multilevel physical 
 planning approach that exploits the hierarchy and dataflow inherent in the design RTL.
 
@@ -59,7 +59,7 @@ rtl_macro_placer [-halo_width   halo_width]
 | `target_dead_space` | target deadspace percentage, which influences the utilisation of StandardCellCluster(default 0.05) |
 | `min_ar` | defines the minimum aspect ratio $a$, or the ratio of its width to height of a StandardCellCluster from $[a, \frac{1}{a}]$ (default 0.3) |
 | `snap_layer` | snap macro origins to this routing layer track. (default 4) | 
-| `bus_planning_flag` | flag to enable bus planning, recommendation is to turn off bus planning for better results.  (default false) |
+| `bus_planning_flag` | flag to enable bus planning, recommendation is to turn on bus planning for SKY130, off for NanGate45/ASAP7.  (default false) |
 | `report_directory` | save reports to this directory. |
 
 
