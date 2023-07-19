@@ -392,7 +392,7 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power]\
                                         [-hold_margin hold_margin]\
                                         [-allow_setup_violations]\
                                         [-skip_pin_swap]\
-                                        [-enable_gate_cloning)]\
+                                        [-skip_gate_cloning)]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_buffer_percent buffer_percent]\
                                         [-max_utilization util] \
@@ -403,7 +403,7 @@ proc repair_timing { args } {
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
             -repair_tns -max_passes} \
-    flags {-setup -hold -recover_power -allow_setup_violations -skip_pin_swap -enable_gate_cloning -verbose}
+    flags {-setup -hold -recover_power -allow_setup_violations -skip_pin_swap -skip_gate_cloning -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
@@ -429,7 +429,7 @@ proc repair_timing { args } {
 
   set allow_setup_violations [info exists flags(-allow_setup_violations)]
   set skip_pin_swap [info exists flags(-skip_pin_swap)]
-  set enable_gate_cloning [info exists flags(-enable_gate_cloning)]
+  set skip_gate_cloning [info exists flags(-skip_gate_cloning)]
   rsz::set_max_utilization [rsz::parse_max_util keys]
 
   set max_buffer_percent 20
@@ -463,7 +463,7 @@ proc repair_timing { args } {
       if { $setup } {
     rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
       $verbose \
-      $skip_pin_swap $enable_gate_cloning
+      $skip_pin_swap $skip_gate_cloning
     }
       if { $hold } {
     rsz::repair_hold $setup_margin $hold_margin \
