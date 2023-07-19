@@ -152,7 +152,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
-  swap_pin_inst_map_.clear(); // Make sure we do not swap the same pin twice.
+  swap_pin_inst_set_.clear(); // Make sure we do not swap the same pin twice.
   resizer_->incrementalParasiticsBegin();
   int print_iteration = 0;
   if (verbose) {
@@ -506,20 +506,13 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
             return false;
         }
 
-        // Check if we have already dealt with this instance more than twice.
-        // Skip if the answeris a yes.
-        if (swap_pin_inst_map_.find(drvr) == swap_pin_inst_map_.end()) {
-            swap_pin_inst_map_.insert(std::make_pair(drvr,1));
+        // Check if we have already dealt with this instance
+        // and prevent any further swaps.
+        if (swap_pin_inst_set_.find(drvr) == swap_pin_inst_set_.end()) {
+            swap_pin_inst_set_.insert(drvr);
         }
         else {
-            // If the candidate shows up twice then it is marginal and we should
-            // just stop considering it.
-            if (swap_pin_inst_map_[drvr] == 1) {
-                swap_pin_inst_map_[drvr] = 2;
-                --swap_pin_count_;
-            }
-            else
-                return false;
+            return false;
         }
 
         // Find the equivalent pins for a cell (simple implementation for now)
