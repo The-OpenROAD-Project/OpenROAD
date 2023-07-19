@@ -431,7 +431,13 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
   }
 
   if (free_slot && same_edge_slot) {
-    for (int pin_idx : group.pin_indices) {
+    std::vector<int> pin_indices = group.pin_indices;
+    if (group.order
+        && (slots_[new_slot].edge == Edge::top
+            || slots_[new_slot].edge == Edge::left)) {
+      std::reverse(pin_indices.begin(), pin_indices.end());
+    }
+    for (int pin_idx : pin_indices) {
       pin_assignment_[pin_idx] = new_slot;
       new_slots_.push_back(new_slot);
       new_slot++;

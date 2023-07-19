@@ -118,6 +118,9 @@ using sta::ParasiticNode;
 using sta::PinSeq;
 using sta::Slack;
 
+typedef std::tuple<LibertyPort *, LibertyPort *> LibertyPortTuple;
+typedef std::tuple<Instance *, Instance *>  InstanceTuple;
+
 class AbstractSteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
@@ -554,6 +557,7 @@ protected:
   void journalRestore(int &resize_count,
                       int &inserted_buffer_count,
                       int &cloned_gate_count);
+  void journalUndoGateCloning(int &cloned_gate_count);
   void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
@@ -638,8 +642,9 @@ protected:
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
-  Map<Instance *, std::tuple<LibertyPort *, LibertyPort *>> swapped_pins_;
-  Map<Instance *, Instance *> cloned_gates_;
+  Map<Instance *, LibertyPortTuple> swapped_pins_;
+  std::stack<InstanceTuple> cloned_gates_;
+  std::unordered_set<Instance *> cloned_inst_set_;
 
   dpl::Opendp* opendp_;
 
