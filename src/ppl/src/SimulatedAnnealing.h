@@ -83,7 +83,7 @@ class SimulatedAnnealing
   int64 getGroupCost(int group_idx);
   void perturbAssignment(int& prev_cost);
   int swapPins();
-  int movePinToFreeSlot();
+  int movePinToFreeSlot(bool lone_pin = false);
   int moveGroupToFreeSlots(int group_idx);
   void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
