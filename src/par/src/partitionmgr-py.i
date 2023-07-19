@@ -44,8 +44,8 @@
 
 namespace std
 {
-  % template(vector_int) std::vector<int>;
-  % template(vector_float) std::vector<float>;
+  %template(vector_int) std::vector<int>;
+  %template(vector_float) std::vector<float>;
 }
 
-% include "par/PartitionMgr.h"
+%include "par/PartitionMgr.h"
