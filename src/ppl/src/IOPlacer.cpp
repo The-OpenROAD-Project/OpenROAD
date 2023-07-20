@@ -1899,7 +1899,7 @@ void IOPlacer::setAnnealingDebugOn()
      iters_between_paintings_ = iters_between_paintings; */
 }
 
-bool IOPlacer::isAnnealingDebugOn()
+bool IOPlacer::isAnnealingDebugOn() const
 {
   return annealing_debug_mode_;
 }

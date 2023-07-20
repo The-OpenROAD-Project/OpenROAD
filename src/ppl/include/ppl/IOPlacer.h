@@ -169,7 +169,9 @@ class IOPlacer
 
   // annealing debug functions       
   void setAnnealingDebugOn();
-  bool isAnnealingDebugOn();
+  bool isAnnealingDebugOn() const;
+
+  //void setAnnealingDebugPaintInterval(const int )
 
  private:
   void createTopLayerPinPattern();
