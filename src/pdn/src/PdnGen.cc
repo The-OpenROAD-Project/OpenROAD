@@ -680,7 +680,7 @@ void PdnGen::createSrouteWires(
     count = 0;
     for (auto* iterm : sroute_iterms) {
       count += 1;
-      iterm->getAvgXY(&&x, &&y);
+      iterm->getAvgXY(&x, &y);
       xx += x;
       yy += y;
       odb::Rect bbox = iterm->getBBox();
@@ -1145,7 +1145,7 @@ void PdnGen::addSrouteInst(const char* inst,
   int actuali = 0;
   int x = 0;
   int y = 0;
-  iterm_->getAvgXY(&&x, &&y);
+  iterm_->getAvgXY(&x, &y);
   int low = INT_MAX;
   for (auto* wire : rings) {
     int xx = (wire->xMin() + wire->xMax()) / 2;
