@@ -147,7 +147,6 @@ proc check_placement { args } {
   set file_name "failures_report.json"
   if { [info exists keys(-report_file_name) ] } {
     set file_name $keys(-report_file_name)
-    puts "report file name is $file_name"
   }
   dpl::check_placement_cmd $verbose $disallow_one_site_gaps $file_name
 }
