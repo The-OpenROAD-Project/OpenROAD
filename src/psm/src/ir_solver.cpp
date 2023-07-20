@@ -640,12 +640,12 @@ bool IRSolver::createJ()
       // Search for all nodes within the macro boundary
       vector<Node*> nodes_J;
       for (auto ll : pin_layers) {
-        vector<Node*> nodes_J_l = Gmat_->getNodes(ll,
-                                                  inst_bBox->xMin(),
-                                                  inst_bBox->xMax(),
-                                                  inst_bBox->yMin(),
-                                                  inst_bBox->yMax());
-        nodes_J.insert(nodes_J.end(), nodes_J_l.begin(), nodes_J_l.end());
+        Gmat_->foreachNode(ll,
+                           inst_bBox->xMin(),
+                           inst_bBox->xMax(),
+                           inst_bBox->yMin(),
+                           inst_bBox->yMax(),
+                           [&](Node* node) { nodes_J.push_back(node); });
       }
       double num_nodes = nodes_J.size();
       // If nodes are not found on the pin layers we search for the lowest
@@ -654,11 +654,13 @@ bool IRSolver::createJ()
         const int max_l
             = *std::max_element(pin_layers.begin(), pin_layers.end());
         for (int pl = bottom_layer_ + 1; pl <= top_layer_; pl++) {
-          nodes_J = Gmat_->getNodes(pl,
-                                    inst_bBox->xMin(),
-                                    inst_bBox->xMax(),
-                                    inst_bBox->yMin(),
-                                    inst_bBox->yMax());
+          Gmat_->foreachNode(pl,
+                             inst_bBox->xMin(),
+                             inst_bBox->xMax(),
+                             inst_bBox->yMin(),
+                             inst_bBox->yMax(),
+                             [&](Node* node) { nodes_J.push_back(node); });
+
           num_nodes = nodes_J.size();
           if (num_nodes > 0) {
             logger_->warn(
