@@ -172,6 +172,18 @@ void ICeWall::makeBTerm(odb::dbNet* net,
   odb::dbBox::create(
       pin, layer, shape.xMin(), shape.yMin(), shape.xMax(), shape.yMax());
   pin->setPlacementStatus(odb::dbPlacementStatus::FIRM);
+
+  const double dbus = getBlock()->getDbUnitsPerMicron();
+  logger_->info(utl::PAD,
+                116,
+                "Creating terminal for {} on {} at ({:.3f}um, {:.3f}um) - "
+                "({:.3f}um, {:.3f}um)",
+                net->getName(),
+                layer->getName(),
+                shape.xMin() / dbus,
+                shape.yMin() / dbus,
+                shape.xMax() / dbus,
+                shape.yMax() / dbus);
   Utilities::makeSpecial(net);
 }
 
@@ -941,6 +953,9 @@ void ICeWall::placeTerminals(const std::vector<odb::dbITerm*>& iterms)
     }
     auto* inst = iterm->getInst();
     if (!inst->isFixed()) {
+      continue;
+    }
+    if (!inst->isPad()) {
       continue;
     }
 
