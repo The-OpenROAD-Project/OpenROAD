@@ -110,10 +110,10 @@ report_legalization_stats()
 }
 
 void
-check_placement_cmd(bool verbose, bool disallow_one_site_gaps, std::string report_file_name)
+check_placement_cmd(bool verbose, bool disallow_one_site_gaps, const char* report_file_name)
 {
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->checkPlacement(verbose, disallow_one_site_gaps, report_file_name);
+  opendp->checkPlacement(verbose, disallow_one_site_gaps, std::string(report_file_name));
 }
 
 

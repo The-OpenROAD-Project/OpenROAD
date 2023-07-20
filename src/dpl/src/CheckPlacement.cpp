@@ -132,15 +132,17 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
 {
   using boost::property_tree::ptree;
   ptree violations;
+  double dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
+  Rect core = getCore();
   for (auto failure : failures) {
     ptree shape, violation, shapes, source, sources;
 
-    shape.put("x", failure->x_);
-    shape.put("y", failure->y_);
+    shape.put("x", (failure->x_ + core.xMin()) / dbUnits);
+    shape.put("y", (failure->y_ + core.yMin()) / dbUnits);
     shapes.push_back(std::make_pair("", shape));
     shape.clear();
-    shape.put("x", failure->x_ + failure->width_);
-    shape.put("y", failure->y_ + failure->height_);
+    shape.put("x", (failure->x_ + failure->width_ + core.xMin()) / dbUnits);
+    shape.put("y", (failure->y_ + failure->height_ + core.yMin()) / dbUnits);
     shapes.push_back(std::make_pair("", shape));
 
     source.put("type", "inst");
@@ -222,7 +224,7 @@ void Opendp::writeJsonReport(const string& filename,
       drcArray.push_back(std::make_pair("", entry));
     }
     root.add_child("DRC", drcArray);
-
+    boost::property_tree::write_json(json_file, root);
   } catch (std::exception& ex) {
     logger_->warn(
         DPL, 45, "Failed to write JSON report. Exception: {}", ex.what());
