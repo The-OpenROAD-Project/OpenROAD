@@ -468,6 +468,11 @@ void TritonCTS::populateTritonCTS()
                         net->getName(),
                         clkName);
         }
+        if (net->isSpecial()) {
+          logger_->info(
+              CTS, 116, "Special net \"{}\" skipped.", net->getName());
+          continue;
+        }
         // Initializes the net in TritonCTS. If the number of sinks is less than
         // 2, the net is discarded.
         if (visitedClockNets_.find(net) == visitedClockNets_.end()) {
