@@ -678,9 +678,9 @@ void PdnGen::createSrouteWires(
     highy = 0;
     lowy = INT_MAX;
     count = 0;
-    for (auto* iterm : sroute_iterms) {
+    for (const auto* iterm : sroute_iterms) {
       count += 1;
-  for (const auto& sroute_iterms : sroute_itermss) {
+      iterm->getAvgXY(&x, &y);
       xx += x;
       yy += y;
       odb::Rect bbox = iterm->getBBox();
