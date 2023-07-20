@@ -505,4 +505,32 @@ void SimulatedAnnealing::getSlotsRange(const IOPin& io_pin,
   }
 }
 
+int SimulatedAnnealing::getSlotIdxByPosition(const odb::Point& position,
+                                             int layer) const
+{
+  int slot_idx = -1;
+  for (int i = 0; i < slots_.size(); i++) {
+    if (slots_[i].pos == position && slots_[i].layer == layer) {
+      slot_idx = i;
+      break;
+    }
+  }
+
+  return slot_idx;
+}
+
+bool SimulatedAnnealing::isFreeForMirrored(const int slot_idx,
+                                           int& mirrored_idx) const
+{
+  const Slot& slot = slots_[slot_idx];
+  const int layer = slot.layer;
+  const odb::Point& position = slot.pos;
+  odb::Point mirrored_pos = core_->getMirroredPosition(position);
+  mirrored_idx = getSlotIdxByPosition(mirrored_pos, layer);
+
+  const Slot& mirrored_slot = slots_[mirrored_idx];
+
+  return slot.isAvailable() && mirrored_slot.isAvailable();
+}
+
 }  // namespace ppl
