@@ -902,7 +902,7 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
 
   design_->getTopBlock()->setGCellPatterns({xgp, ygp});
 
-  for (int layerNum = 0; layerNum <= (int) tech_->getLayers().size();
+  for (int layerNum = 0; layerNum < (int) tech_->getLayers().size();
        layerNum += 2) {
     for (int i = 0; i < (int) xgp.getCount(); i++) {
       for (int j = 0; j < (int) ygp.getCount(); j++) {
