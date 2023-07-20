@@ -13,7 +13,7 @@ planning approach that exploits the hierarchy and dataflow inherent in the desig
 
 ### Hier-RTLMP algorithm
 
-```
+```tcl
 rtl_macro_placer [-halo_width   halo_width]
                  [-min_num_macro    min_num_macro]
                  [-max_num_inst max_num_inst]  
@@ -87,7 +87,7 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 
 Examples scripts demonstrating how to run Hier-RTLMP on a sample design of `bp_fe_top` as follows:
 
-```
+```shell
 ./test/bp_fe_top.tcl
 ```
 
