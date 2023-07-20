@@ -902,20 +902,21 @@ void io::Parser::buildGCellPatterns(odb::dbDatabase* db)
 
   design_->getTopBlock()->setGCellPatterns({xgp, ygp});
 
-  for (int layerNum = 0; layerNum < (int) tech_->getLayers().size();
-       layerNum += 2) {
+  for (const auto& layer : tech_->getLayers()) {
+    if (layer->getType() != odb::dbTechLayerType::ROUTING) {
+      continue;
+    }
     for (int i = 0; i < (int) xgp.getCount(); i++) {
       for (int j = 0; j < (int) ygp.getCount(); j++) {
         Rect gcellBox = design_->getTopBlock()->getGCellBox(Point(i, j));
-        bool isH = (tech_->getLayers().at(layerNum)->getDir()
-                    == dbTechLayerDir::HORIZONTAL);
+        bool isH = layer->getDir() == dbTechLayerDir::HORIZONTAL;
         frCoord gcLow = isH ? gcellBox.yMin() : gcellBox.xMax();
         frCoord gcHigh = isH ? gcellBox.yMax() : gcellBox.xMin();
-        for (auto& tp : design_->getTopBlock()->getTrackPatterns(layerNum)) {
-          if ((tech_->getLayer(layerNum)->getDir() == dbTechLayerDir::HORIZONTAL
+        for (auto& tp :
+             design_->getTopBlock()->getTrackPatterns(layer->getLayerNum())) {
+          if ((layer->getDir() == dbTechLayerDir::HORIZONTAL
                && tp->isHorizontal() == false)
-              || (tech_->getLayer(layerNum)->getDir()
-                      == dbTechLayerDir::VERTICAL
+              || (layer->getDir() == dbTechLayerDir::VERTICAL
                   && tp->isHorizontal() == true)) {
             int trackNum
                 = (gcLow - tp->getStartCoord()) / (int) tp->getTrackSpacing();

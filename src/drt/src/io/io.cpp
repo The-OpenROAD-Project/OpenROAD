@@ -1742,6 +1742,11 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     addDefaultMasterSliceLayer();
     addDefaultCutLayer();
   }
+
+  if (layer->getRoutingLevel() == 1) {
+    VIA_ACCESS_LAYERNUM = readLayerCnt_;
+  }
+
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
@@ -2632,14 +2637,16 @@ bool io::Parser::readGuide()
                        155,
                        "Guide in net {} uses layer {} ({})"
                        " that is outside the allowed routing range "
-                       "[{} ({}), ({})].",
+                       "[{} ({}), {} ({})] with via access on [{} ({})].",
                        net->getName(),
                        layer->getName(),
                        layerNum,
                        tech_->getLayer(BOTTOM_ROUTING_LAYER)->getName(),
                        BOTTOM_ROUTING_LAYER,
                        tech_->getLayer(TOP_ROUTING_LAYER)->getName(),
-                       TOP_ROUTING_LAYER);
+                       TOP_ROUTING_LAYER,
+                       tech_->getLayer(VIA_ACCESS_LAYERNUM)->getName(),
+                       VIA_ACCESS_LAYERNUM);
       }
 
       frRect rect;
