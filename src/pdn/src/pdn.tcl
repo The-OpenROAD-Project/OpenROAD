@@ -337,7 +337,7 @@ proc add_pdn_stripe {args} {
     foreach net_name $keys(-nets) {
       set net [[ord::get_db_block] findNet $net_name]
       if {$net == "NULL"} {
-        utl::error PAD 225 "Unable to find net $net_name."
+        utl::error PDN 225 "Unable to find net $net_name."
       }
       lappend nets $net
     }
@@ -460,7 +460,7 @@ proc add_pdn_ring {args} {
     foreach net_name $keys(-nets) {
       set net [[ord::get_db_block] findNet $net_name]
       if {$net == "NULL"} {
-        utl::error PAD 226 "Unable to find net $net_name."
+        utl::error PDN 230 "Unable to find net $net_name."
       }
       lappend nets $net
     }
