@@ -1570,19 +1570,16 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
 
 void IOPlacer::initMirroredPins(bool annealing)
 {
-  if (annealing && !mirrored_pins_.empty()) {
-    logger_->error(PPL,
-                   102,
-                   "Mirrored pins not supported during pin placement with "
-                   "Simulated Annealing");
-  }
   for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
     if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(io_pin.getBTerm());
       io_pin.setMirrored();
       odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
       int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
       IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
       mirrored_pin.setMirrored();
+      io_pin.setMirrorPinIdx(mirrored_pin_idx);
+      mirrored_pin.setMirrorPinIdx(pin_idx);
     }
   }
 }
