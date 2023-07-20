@@ -6,9 +6,14 @@ configuration file.
 
 ## Commands
 
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
+
 ### Density Fill
 
-```
+```tcl
 density_fill
     [-rules rules_file]
     [-area {lx ly ux uy}]
@@ -28,7 +33,7 @@ The rules `json` file controls fill and you can see an example
 
 The schema for the `json` is:
 
-``` json
+```json
 {
   "layers": {
     "<group_name>": {
