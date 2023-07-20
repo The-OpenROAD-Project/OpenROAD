@@ -299,6 +299,10 @@ RepairHold::repairHold(VertexSeq &ends,
       sta_->findRequireds();
       findHoldViolations(ends, hold_margin, worst_slack, hold_failures);
       pass++;
+      logger_->info(RSZ, 46, "Hold fixing progress: {} worst slack {}, pass {}, max_passes {}, setup_slack {}",
+                    inserted_buffer_count_,
+                    delayAsString(worst_slack, sta_, 3),
+                    pass, max_passes, delayAsString(sta_->worstSlack(max_), sta_, 3));
       progress = inserted_buffer_count_ > hold_buffer_count_before;
     }
     if (verbose) {
