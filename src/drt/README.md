@@ -17,9 +17,14 @@ guide format.
 
 ## Commands
 
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
+
 ### Detailed Route
 
-```
+```tcl
 detailed_route 
     [-output_maze filename]
     [-output_drc filename]
@@ -56,17 +61,17 @@ detailed_route
 | `-output_drc` | output drc report filename |
 | `-output_cmap` | output congestion map file |
 | `-output_guide_coverage` | output guide coverage filename |
-| `-drc_report_iter_step` | report drc on each iteration which is a multiple of this step |
-| `-db_process_node` | specify the process node (optional) |
-| `-disable_via_gen` | option to diable via generation with bottom and top routing layer |
-| `-droute_end_iter` | number of detailed routing iterations |
+| `-drc_report_iter_step` | report drc on each iteration which is a multiple of this step (default 0) |
+| `-db_process_node` | specify the process node |
+| `-disable_via_gen` | option to diable via generation with bottom and top routing layer | 
+| `-droute_end_iter` | number of detailed routing iterations, must be a positive integer <= 64 |
 | `-via_in_pin_bottom_layer` | via-in pin bottom layer name |
 | `-via_in_pin_top_layer` | via-in pin top layer name |
-| `-or_seed` | random seed for the order of nets to reroute | 
-| `-or_k` | number of swaps is given by $k * sizeof(rerouteNets)$ |
+| `-or_seed` | random seed for the order of nets to reroute (default -1) | 
+| `-or_k` | number of swaps is given by $k * sizeof(rerouteNets)$ (default 0) |
 | `-bottom_routing_layer` | bottommost routing layer name |
 | `-top_routing_layer` | topmost routing layer name |
-| `-verbose` | set verbose if value is greater than 0. |
+| `-verbose` | set verbose if value is greater than 0 |
 | `-distributed` | enable distributed mode with Kubernetes and Google Cloud, [guide](./doc/Distributed.md). |
 | `-remote_host` | the host IP |
 | `-remote_port` | the value of the port to access from |
@@ -80,7 +85,7 @@ detailed_route
 
 ### Detailed Route debugging
 
-```
+```tcl
 detailed_route_debug 
     [-pa]
     [-ta]
@@ -119,7 +124,7 @@ detailed_route_debug
 
 ### Check Pin access 
 
-```
+```tcl
 pin_access
     [-db_process_node name]
     [-bottom_routing_layer layer]
@@ -137,7 +142,7 @@ pin_access
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-db_process_node` | specify for process node (optional) |
+| `-db_process_node` | specify for process node | 
 | `-bottom_routing_layer` | bottommost routing layer |
 | `-top_routing_layer` | topmost routing layer |
 | `-min_access_points` | minimum number of access points per pin |
@@ -164,7 +169,7 @@ check_drc   # refer to function check_drc_cmd
 Example script demonstrating how to run TritonRoute on a sample design of `gcd`
 in the Nangate45 technology node.
 
-```
+```shell
 ./test/gcd_nangate45.tcl    # single machine example
 ./test/gcd_nangate45_distributed.tcl    # distributed example
 ```
