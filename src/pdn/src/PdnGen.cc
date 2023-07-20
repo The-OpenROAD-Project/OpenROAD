@@ -1089,15 +1089,15 @@ void PdnGen::createSrouteWires(
       ShapeTreeMap obstructions;
       ShapeTreeMap net_shapes;
       Shape::populateMapFromDb(net_, net_shapes);
-      for (const auto&& [layer, net_obs_layer] : net_shapes) {
-        auto&& obs_layer = obstructions[layer];
-        for (const auto&& [box, shape] : net_obs_layer) {
+      for (const auto& [layer, net_obs_layer] : net_shapes) {
+        auto& obs_layer = obstructions[layer];
+        for (const auto& [box, shape] : net_obs_layer) {
           obs_layer.insert({shape->getObstructionBox(), shape});
         }
       }
 
       for (auto* domain : domains) {
-        for (const auto&& grid : domain->getGrids()) {
+        for (const auto& grid : domain->getGrids()) {
           grid->writeToDb(net_map, false, obstructions);
           grid->makeRoutingObstructions(db_->getChip()->getBlock());
         }
