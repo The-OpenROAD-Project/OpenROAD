@@ -257,7 +257,7 @@ class frTechObject
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers) {
       if (layer->getType() == dbTechLayerType::CUT
-          && layer->getLayerNum() >= BOTTOM_ROUTING_LAYER) {
+          && layer->getLayerNum() >= 2 /* BOTTOM_ROUTING_LAYER */) {
         logger->report("  Layer {}", layer->getName());
         if (layer->getDefaultViaDef() != nullptr) {
           logger->report("    default via: {}",
