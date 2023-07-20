@@ -1001,23 +1001,6 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     viainpin = true;
   }
 
-  int maxNumViaTrial = 2;
-  // use std:pair to ensure deterministic behavior
-  vector<pair<int, frViaDef*>> viaDefs;
-  getViasFromMetalWidthMap(bp, layerNum, polyset, viaDefs);
-
-  if (viaDefs.empty()) {  // no via map entry
-    // hardcode first two single vias
-    int cnt = 0;
-    for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
-      viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
-      cnt++;
-      if (cnt >= maxNumViaTrial) {
-        break;
-      }
-    }
-  }
-
   // check if ap is on the left/right boundary of the cell
   Rect boundaryBBox;
   bool isLRBound = false;
@@ -1030,6 +1013,18 @@ void FlexPA::prepPoint_pin_checkPoint_via(
     }
   }
 
+  // use std:pair to ensure deterministic behavior
+  vector<pair<int, frViaDef*>> viaDefs;
+  getViasFromMetalWidthMap(bp, layerNum, polyset, viaDefs);
+
+  if (viaDefs.empty()) {  // no via map entry
+    // hardcode first two single vias
+    for (auto& [tup, viaDef] : layerNum2ViaDefs_[layerNum + 1][1]) {
+      viaDefs.push_back(make_pair(viaDefs.size(), viaDef));
+    }
+  }
+
+  const int minValidVias = 2;
   set<tuple<frCoord, int, frViaDef*>> validViaDefs;
   for (auto& [idx, viaDef] : viaDefs) {
     auto via = make_unique<frVia>(viaDef);
@@ -1072,6 +1067,9 @@ void FlexPA::prepPoint_pin_checkPoint_via(
       continue;
     if (prepPoint_pin_checkPoint_via_helper(ap, via.get(), pin, instTerm)) {
       validViaDefs.insert(make_tuple(maxExt, idx, viaDef));
+      if (validViaDefs.size() >= minValidVias) {
+        break;
+      }
     }
   }
   if (validViaDefs.empty()) {
