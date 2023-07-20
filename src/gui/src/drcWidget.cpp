@@ -57,7 +57,7 @@ namespace gui {
 
 DRCViolation::DRCViolation(const std::string& name,
                            const std::string& type,
-                           const std::vector<odb::dbObject*>& srcs,
+                           const std::vector<std::any>& srcs,
                            const std::vector<DRCShape>& shapes,
                            odb::dbTechLayer* layer,
                            const std::string& comment,
@@ -637,7 +637,7 @@ void DRCWidget::loadTRReport(const QString& filename)
                      bbox);
     }
 
-    std::vector<odb::dbObject*> srcs_list;
+    std::vector<std::any> srcs_list;
     std::stringstream srcs_stream(sources);
     std::string single_source;
     std::string comment;
@@ -652,7 +652,7 @@ void DRCWidget::loadTRReport(const QString& filename)
       std::string item_type = single_source.substr(0, ident);
       std::string item_name = single_source.substr(ident + 1);
 
-      odb::dbObject* item = nullptr;
+      std::any item = nullptr;
 
       if (item_type == "net") {
         odb::dbNet* net = block_->findNet(item_name.c_str());
@@ -726,7 +726,7 @@ void DRCWidget::loadTRReport(const QString& filename)
                       item_type);
       }
 
-      if (item != nullptr) {
+      if (item.has_value()) {
         srcs_list.push_back(item);
       } else {
         if (!item_name.empty()) {
@@ -825,14 +825,14 @@ void DRCWidget::loadJSONReport(const QString& filename)
         logger_->error(
             utl::GUI, 58, "Unable to parse violation shape: {}", shape_type);
       }
-      std::vector<odb::dbObject*> srcs_list;
+      std::vector<std::any> srcs_list;
       auto sources_arr = violation.get_child_optional("sources");
       if (sources_arr) {
         for (const auto& [_, src] : sources_arr.value()) {
           std::string src_type = src.get<std::string>("type", "-");
           std::string src_name = src.get<std::string>("name", "-");
 
-          odb::dbObject* item = nullptr;
+          std::any item = nullptr;
           if (src_type == "net") {
             odb::dbNet* net = block_->findNet(src_name.c_str());
             if (net != nullptr) {
@@ -877,7 +877,7 @@ void DRCWidget::loadJSONReport(const QString& filename)
             logger_->warn(utl::GUI, 81, "Unknown source type: {}", src_type);
           }
 
-          if (item != nullptr) {
+          if (item.has_value()) {
             srcs_list.push_back(item);
           } else {
             if (!src_name.empty()) {

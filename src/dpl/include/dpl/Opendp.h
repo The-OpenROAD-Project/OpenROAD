@@ -41,6 +41,8 @@
 
 #include <boost/geometry.hpp>
 #include <boost/geometry/index/rtree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -218,7 +220,18 @@ class Opendp
   int padRight(dbInst* inst) const;
   int padLeft(dbInst* inst) const;
   // Return error count.
-  void checkPlacement(bool verbose, bool disallow_one_site_gaps = false);
+  void processViolationsPtree(boost::property_tree::ptree& entry,
+                              std::vector<Cell*>& failures);
+  void checkPlacement(bool verbose,
+                      bool disallow_one_site_gaps = false,
+                      string report_file_name = "report.json");
+  void writeJsonReport(const string& filename,
+                       vector<Cell*> placed_failures,
+                       vector<Cell*> in_rows_failures,
+                       vector<Cell*> overlap_failures,
+                       vector<Cell*> one_site_gap_failures,
+                       vector<Cell*> site_align_failures,
+                       vector<Cell*> region_placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   int64_t hpwl() const;
