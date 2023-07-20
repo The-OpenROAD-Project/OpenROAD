@@ -982,7 +982,7 @@ RepairSetup::printProgress(int iteration, bool force, bool end) const
 {
   const bool start = iteration == 0;
 
-  if (start) {
+  if (start && !end) {
     logger_->report("Iteration | Resized | Buffers | Cloned Gates | Pin Swaps |   WNS   |   TNS   | Endpoint");
     logger_->report("---------------------------------------------------------------------------------------");
   }
