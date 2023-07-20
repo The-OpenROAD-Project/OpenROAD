@@ -299,6 +299,9 @@ proc place_bondpad {args} {
   foreach inst [get_cells {*}$args] {
     lappend insts [sta::sta_to_db_inst $inst]
   }
+  if { [llength $insts] == 0} {
+    utl::error PAD 117 "No instances matched $args"
+  }
   pad::assert_required place_bondpad -bond
   set master [pad::find_master $keys(-bond)]
 
