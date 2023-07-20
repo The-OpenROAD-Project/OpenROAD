@@ -867,7 +867,6 @@ void DRCWidget::loadJSONReport(const QString& filename)
               for (const auto obs : block_->getObstructions()) {
                 auto obs_bbox = obs->getBBox();
                 if (obs_bbox->getTechLayer() == layer) {
-                  odb::Rect obs_rect = obs_bbox->getBox();
                   // TODO: check if obs_rect is inside shape
                   srcs_list.emplace_back(obs);
                 }
