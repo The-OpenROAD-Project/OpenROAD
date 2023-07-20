@@ -340,7 +340,7 @@ simulated_annealing_debug(int iters_between_paintings)
   }
 
   getIOPlacer()->setAnnealingDebugOn();
-  //getIOPlacer()->setAnnealingDebugPaintInterval(iters_between_paintings);
+  getIOPlacer()->setAnnealingDebugPaintInterval(iters_between_paintings);
 }
 
 void

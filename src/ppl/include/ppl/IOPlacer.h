@@ -171,7 +171,8 @@ class IOPlacer
   void setAnnealingDebugOn();
   bool isAnnealingDebugOn() const;
 
-  //void setAnnealingDebugPaintInterval(const int )
+  void setAnnealingDebugPaintInterval(const int iters_between_paintings);
+  int getAnnealingDebugPaintInterval() const;
 
  private:
   void createTopLayerPinPattern();

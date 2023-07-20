@@ -52,6 +52,7 @@ namespace ppl {
 struct DebugSettings
 {
   std::unique_ptr<AbstractIOPlacerRenderer> renderer_;
+  int painting_interval_ = 0;
 
   bool isOn() const { return renderer_ != nullptr; }
 };
@@ -74,6 +75,7 @@ class SimulatedAnnealing
 
   // debug functions
   void setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer);
+  void setDebugPaintingInterval(int iters_between_paintings);
 
  private:
   void init(float init_temperature,

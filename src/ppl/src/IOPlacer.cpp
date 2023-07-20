@@ -1895,13 +1895,21 @@ AbstractIOPlacerRenderer* IOPlacer::getRenderer()
 void IOPlacer::setAnnealingDebugOn()
 {
   annealing_debug_mode_ = true;
-  /* to do: setAnnealingDebugPaintInterval
-     iters_between_paintings_ = iters_between_paintings; */
 }
 
 bool IOPlacer::isAnnealingDebugOn() const
 {
   return annealing_debug_mode_;
+}
+
+void IOPlacer::setAnnealingDebugPaintInterval(const int iters_between_paintings)
+{
+  iters_between_paintings_ = iters_between_paintings;
+}
+
+int IOPlacer::getAnnealingDebugPaintInterval() const
+{
+  return iters_between_paintings_;
 }
 
 void IOPlacer::runAnnealing()
@@ -1922,6 +1930,7 @@ void IOPlacer::runAnnealing()
   
   if (isAnnealingDebugOn()) {
     annealing.setDebugOn(std::move(ioplacer_renderer_));
+    annealing.setDebugPaintingInterval(iters_between_paintings_);
   }
 
   annealing.run(init_temperature_,

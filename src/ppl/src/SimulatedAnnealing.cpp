@@ -50,7 +50,8 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
       slots_(slots),
       pin_groups_(netlist->getIOGroups()),
       logger_(logger),
-      db_(db)
+      db_(db),
+      debug_(std::make_unique<DebugSettings>())
 {
   num_slots_ = slots.size();
   num_pins_ = netlist->numIOPins();
@@ -110,30 +111,22 @@ void SimulatedAnnealing::run(float init_temperature,
     
     temperature *= alpha_;
 
-    // if (debug_->isOn()) {
-    //   if ((iter + 1) % iters_between_paintings == 0) {
-    //     std::vector<ppl::IOPin> pins;
-    //     getAssignment(pins);
-    //     currentStateVisualization(pins);
-    //   }
-    // }
-
-    // if (debug_mode == true) {
-    //   if ((iter+1) % iters_between_paintings == 0) {
-    //   std::cout << "Number of Iterations: " << iter+1 << "\n";
-    //   std::vector<ppl::IOPin> pins;
-    //   getAssignment(pins);
-    //   int count = 1;
-    //   for (auto pin : pins) {
-    //     odb::Point pin_position = pin.getPosition();
-    //     std::cout << "#" << count
-    //               << " X = " << pin_position.getX() 
-    //               << " Y = " << pin_position.getY() 
-    //               << "\n";
-    //     count++;
-    //     }
-    //  }
-    // }
+    if (debug_->isOn()) {
+      if ((iter + 1) % debug_->painting_interval_ == 0) {
+       std::cout << "Number of Iterations: " << iter+1 << "\n";
+        std::vector<ppl::IOPin> pins;
+        getAssignment(pins);
+        int count = 1;
+        for (auto pin : pins) {
+          odb::Point pin_position = pin.getPosition();
+          std::cout << "#" << count
+                    << " X = " << pin_position.getX() 
+                    << " Y = " << pin_position.getY() 
+                    << "\n";
+          count++;                
+        }
+      }
+    }
   }
 }
 
@@ -154,6 +147,11 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
 void SimulatedAnnealing::setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer)
 {
   debug_->renderer_ = std::move(renderer);
+}
+
+void SimulatedAnnealing::setDebugPaintingInterval(int iters_between_paintings)
+{
+  debug_->painting_interval_ = iters_between_paintings;
 }
 
 void SimulatedAnnealing::init(float init_temperature,
