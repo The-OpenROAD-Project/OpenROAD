@@ -42,11 +42,13 @@ namespace ppl {
 
 SimulatedAnnealing::SimulatedAnnealing(
     Netlist* netlist,
+    Core* core,
     std::vector<Slot>& slots,
     const std::vector<Constraint>& constraints,
     Logger* logger,
     odb::dbDatabase* db)
     : netlist_(netlist),
+      core_(core),
       slots_(slots),
       pin_groups_(netlist->getIOGroups()),
       constraints_(constraints),
@@ -67,55 +69,58 @@ SimulatedAnnealing::SimulatedAnnealing(
 void SimulatedAnnealing::run(float init_temperature,
                              int max_iterations,
                              int perturb_per_iter,
-                             float alpha)
+                             float alpha,
+                             bool random)
 {
   init(init_temperature, max_iterations, perturb_per_iter, alpha);
   randomAssignment();
-  int64 pre_cost = 0;
-  pre_cost = getAssignmentCost();
-  float temperature = init_temperature_;
+  if (!random) {
+    int64 pre_cost = 0;
+    pre_cost = getAssignmentCost();
+    float temperature = init_temperature_;
 
-  boost::random::uniform_real_distribution<float> distribution;
-  for (int iter = 0; iter < max_iterations_; iter++) {
-    for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
-      int prev_cost;
-      perturbAssignment(prev_cost);
+    boost::random::uniform_real_distribution<float> distribution;
+    for (int iter = 0; iter < max_iterations_; iter++) {
+      for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
+        int prev_cost;
+        perturbAssignment(prev_cost);
 
-      const int64 cost = pre_cost + getDeltaCost(prev_cost);
-      const int delta_cost = cost - pre_cost;
-      debugPrint(logger_,
-                 utl::PPL,
-                 "annealing",
-                 1,
-                 "iteration: {}; temperature: {}; assignment cost: {}um; delta "
-                 "cost: {}um",
-                 iter,
-                 temperature,
-                 dbuToMicrons(cost),
-                 dbuToMicrons(delta_cost));
+        const int64 cost = pre_cost + getDeltaCost(prev_cost);
+        const int delta_cost = cost - pre_cost;
+        debugPrint(logger_,
+                  utl::PPL,
+                  "annealing",
+                  1,
+                  "iteration: {}; temperature: {}; assignment cost: {}um; delta "
+                  "cost: {}um",
+                  iter,
+                  temperature,
+                  dbuToMicrons(cost),
+                  dbuToMicrons(delta_cost));
 
-      const float rand_float = distribution(generator_);
-      const float accept_prob = std::exp((-1) * delta_cost / temperature);
-      if (delta_cost <= 0 || accept_prob > rand_float) {
-        // accept new solution, update cost and slots
-        pre_cost = cost;
-        if (!prev_slots_.empty() && !new_slots_.empty()) {
-          for (int i = 0; i < prev_slots_.size(); i++) {
-            int prev_slot = prev_slots_[i];
-            int new_slot = new_slots_[i];
-            slots_[prev_slot].used = false;
-            slots_[new_slot].used = true;
+        const float rand_float = distribution(generator_);
+        const float accept_prob = std::exp((-1) * delta_cost / temperature);
+        if (delta_cost <= 0 || accept_prob > rand_float) {
+          // accept new solution, update cost and slots
+          pre_cost = cost;
+          if (!prev_slots_.empty() && !new_slots_.empty()) {
+            for (int i = 0; i < prev_slots_.size(); i++) {
+              int prev_slot = prev_slots_[i];
+              int new_slot = new_slots_[i];
+              slots_[prev_slot].used = false;
+              slots_[new_slot].used = true;
+            }
           }
+        } else {
+          restorePreviousAssignment();
         }
-      } else {
-        restorePreviousAssignment();
+        prev_slots_.clear();
+        new_slots_.clear();
+        pins_.clear();
       }
-      prev_slots_.clear();
-      new_slots_.clear();
-      pins_.clear();
-    }
 
-    temperature *= alpha_;
+      temperature *= alpha_;
+    }
   }
 }
 
