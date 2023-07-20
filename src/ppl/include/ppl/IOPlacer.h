@@ -162,11 +162,14 @@ class IOPlacer
   void setAnnealingConfig(float temperature,
                           int max_iterations,
                           int perturb_per_iter,
-                          float alpha);                    
-  void setAnnealingDebugConfig(int iters_between_paintings);
+                          float alpha);
 
   void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
   AbstractIOPlacerRenderer* getRenderer();
+
+  // annealing debug functions       
+  void setAnnealingDebugOn();
+  bool isAnnealingDebugOn();
 
  private:
   void createTopLayerPinPattern();
@@ -303,7 +306,7 @@ class IOPlacer
   float alpha_ = 0;
 
   // simulated annealing debugger variables
-  bool debug_mode_ = false;
+  bool annealing_debug_mode_ = false;
   int iters_between_paintings_ = 0;
 
   // db variables

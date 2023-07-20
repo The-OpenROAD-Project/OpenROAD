@@ -339,7 +339,9 @@ simulated_annealing_debug(int iters_between_paintings)
     ioplacer->setRenderer(std::make_unique<IOPlacerRenderer>(ioplacer));
   }
 
-  getIOPlacer()->setAnnealingDebugConfig(iters_between_paintings);
+  getIOPlacer()->setAnnealingDebugOn();
+
+  //to do: add setAnnealingDebugPaintInterval
 }
 
 void

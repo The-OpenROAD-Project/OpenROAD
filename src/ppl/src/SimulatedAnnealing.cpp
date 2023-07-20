@@ -35,8 +35,10 @@
 
 #include "SimulatedAnnealing.h"
 
+#include "ppl/AbstractIOPlacerRenderer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
+
 
 namespace ppl {
 
@@ -59,11 +61,8 @@ SimulatedAnnealing::SimulatedAnnealing(Netlist* netlist,
 void SimulatedAnnealing::run(float init_temperature,
                              int max_iterations,
                              int perturb_per_iter,
-                             float alpha,
-                             bool debug_mode,
-                             int iters_between_paintings)
+                             float alpha)
 {
-  std::cout << "Print annealing state each " << iters_between_paintings << " iterations \n";
   init(init_temperature, max_iterations, perturb_per_iter, alpha);
   randomAssignment();
   int64 pre_cost = 0;
@@ -111,22 +110,30 @@ void SimulatedAnnealing::run(float init_temperature,
     
     temperature *= alpha_;
 
-    if (debug_mode == true) {
-      if ((iter+1) % iters_between_paintings == 0) {
-      std::cout << "Number of Iterations: " << iter+1 << "\n";
-      std::vector<ppl::IOPin> pins;
-      getAssignment(pins);
-      int count = 1;
-      for (auto pin : pins) {
-        odb::Point pin_position = pin.getPosition();
-        std::cout << "#" << count
-                  << " X = " << pin_position.getX() 
-                  << " Y = " << pin_position.getY() 
-                  << "\n";
-        count++;
-        }
-      }
-    }
+    // if (debug_->isOn()) {
+    //   if ((iter + 1) % iters_between_paintings == 0) {
+    //     std::vector<ppl::IOPin> pins;
+    //     getAssignment(pins);
+    //     currentStateVisualization(pins);
+    //   }
+    // }
+
+    // if (debug_mode == true) {
+    //   if ((iter+1) % iters_between_paintings == 0) {
+    //   std::cout << "Number of Iterations: " << iter+1 << "\n";
+    //   std::vector<ppl::IOPin> pins;
+    //   getAssignment(pins);
+    //   int count = 1;
+    //   for (auto pin : pins) {
+    //     odb::Point pin_position = pin.getPosition();
+    //     std::cout << "#" << count
+    //               << " X = " << pin_position.getX() 
+    //               << " Y = " << pin_position.getY() 
+    //               << "\n";
+    //     count++;
+    //     }
+    //  }
+    // }
   }
 }
 
@@ -142,6 +149,11 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
     assignment.push_back(io_pin);
     slot.used = true;
   }
+}
+
+void SimulatedAnnealing::setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer)
+{
+  debug_->renderer_ = std::move(renderer);
 }
 
 void SimulatedAnnealing::init(float init_temperature,

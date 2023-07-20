@@ -1892,10 +1892,16 @@ AbstractIOPlacerRenderer* IOPlacer::getRenderer()
   return ioplacer_renderer_.get();
 }
 
-void IOPlacer::setAnnealingDebugConfig(int iters_between_paintings)
+void IOPlacer::setAnnealingDebugOn()
 {
-  debug_mode_ = true;
-  iters_between_paintings_ = iters_between_paintings;
+  annealing_debug_mode_ = true;
+  /* to do: setAnnealingDebugPaintInterval
+     iters_between_paintings_ = iters_between_paintings; */
+}
+
+bool IOPlacer::isAnnealingDebugOn()
+{
+  return annealing_debug_mode_;
 }
 
 void IOPlacer::runAnnealing()
@@ -1913,7 +1919,16 @@ void IOPlacer::runAnnealing()
 
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), slots_, logger_, db_);
-  annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_, debug_mode_, iters_between_paintings_);
+  
+  if (isAnnealingDebugOn()) {
+    annealing.setDebugOn(std::move(ioplacer_renderer_));
+  }
+
+  annealing.run(init_temperature_,
+                max_iterations_,
+                perturb_per_iter_,
+                alpha_);
+
   annealing.getAssignment(assignment_);
 
   for (auto& pin : assignment_) {
