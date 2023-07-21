@@ -146,6 +146,9 @@ RepairSetup::repairSetup(float setup_slack_margin,
   if (!violating_ends.empty()) {
     logger_->info(RSZ, 94, "Found {} endpoints with setup violations.",
                   violating_ends.size());
+  } else {
+    // nothing to repair
+    return;
   }
 
   int end_index = 0;
@@ -978,7 +981,7 @@ RepairSetup::printProgress(int iteration, bool force, bool end) const
 {
   const bool start = iteration == 0;
 
-  if (start) {
+  if (start && !end) {
     logger_->report("Iteration | Resized | Buffers | Cloned Gates | Pin Swaps |   WNS   |   TNS   | Endpoint");
     logger_->report("---------------------------------------------------------------------------------------");
   }
@@ -1002,7 +1005,7 @@ RepairSetup::printProgress(int iteration, bool force, bool end) const
                     swap_pin_count_,
                     delayAsString(wns, sta_, 3),
                     delayAsString(tns, sta_, 3),
-                    worst_vertex->name(network_));
+                    worst_vertex != nullptr ? worst_vertex->name(network_) : "");
   }
 
   if (end) {
