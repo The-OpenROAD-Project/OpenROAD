@@ -1410,8 +1410,8 @@ RepairDesign::printProgress(int iteration, bool force, bool end, int repaired_ne
   const bool start = iteration == 0;
 
   if (start && !end) {
-    logger_->report("Iteration | Resized | Buffers | Nets repaired | Left to check");
-    logger_->report("-------------------------------------------------------------");
+    logger_->report("Iteration | Resized | Buffers | Nets repaired | Remaining");
+    logger_->report("---------------------------------------------------------");
   }
 
   if (iteration % print_interval_ == 0 || force || end) {
@@ -1422,7 +1422,7 @@ RepairDesign::printProgress(int iteration, bool force, bool end, int repaired_ne
       itr_field = "final";
     }
 
-    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >13d} | {: >13d}",
+    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >13d} | {: >9d}",
                     itr_field,
                     resize_count_,
                     inserted_buffer_count_,
@@ -1431,7 +1431,7 @@ RepairDesign::printProgress(int iteration, bool force, bool end, int repaired_ne
   }
 
   if (end) {
-    logger_->report("-------------------------------------------------------------");
+    logger_->report("---------------------------------------------------------");
   }
 }
 
