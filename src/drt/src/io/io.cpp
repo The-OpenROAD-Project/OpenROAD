@@ -2075,6 +2075,10 @@ void io::Parser::addCutLayer(odb::dbTechLayer* layer)
     return;
   if (readLayerCnt_ == 0)
     addDefaultMasterSliceLayer();
+  auto* lowerlayer = layer->getLowerLayer();
+  if (lowerlayer != nullptr
+      && lowerlayer->getType() == odb::dbTechLayerType::CUT)
+    return;
 
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
