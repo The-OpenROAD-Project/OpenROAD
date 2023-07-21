@@ -1422,7 +1422,7 @@ RepairDesign::printProgress(int iteration, bool force, bool end, int repaired_ne
       itr_field = "final";
     }
 
-    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >13d} | {}",
+    logger_->report("{: >9s} | {: >7d} | {: >7d} | {: >13d} | {: >13d}",
                     itr_field,
                     resize_count_,
                     inserted_buffer_count_,
