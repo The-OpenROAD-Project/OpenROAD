@@ -37,19 +37,23 @@
 
 #include "ppl/AbstractIOPlacerRenderer.h"
 #include "ppl/IOPlacer.h"
+#include "SimulatedAnnealing.h"
 #include "gui/gui.h"
 
 namespace ppl {
-    
+
 class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
 {
  public:
-  IOPlacerRenderer(IOPlacer* ioplacer);
+  IOPlacerRenderer();
+  void setPinAssignment(const std::vector<IOPin>& assignment) override;
 
   void redrawAndPause() override;
 
+  void drawObjects(gui::Painter& /* painter */) override;
+
  private:
-  IOPlacer* ioplacer_;
+  std::vector<ppl::IOPin> pin_assignment_;
   
 };
 

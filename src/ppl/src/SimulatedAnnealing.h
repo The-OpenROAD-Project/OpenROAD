@@ -82,6 +82,8 @@ class SimulatedAnnealing
   void setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer);
   void setDebugPaintingInterval(int iters_between_paintings);
 
+  void annealingStateVisualization(const std::vector<IOPin>& assignment);
+
   AbstractIOPlacerRenderer* getDebugRenderer();
 
  private:

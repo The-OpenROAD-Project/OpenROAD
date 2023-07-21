@@ -122,18 +122,9 @@ void SimulatedAnnealing::run(float init_temperature,
 
     if (debug_->isOn()) {
       if ((iter + 1) % debug_->painting_interval_ == 0) {
-       std::cout << "Number of Iterations: " << iter+1 << "\n";
         std::vector<ppl::IOPin> pins;
         getAssignment(pins);
-        int count = 1;
-        for (auto pin : pins) {
-          odb::Point pin_position = pin.getPosition();
-          std::cout << "#" << count
-                    << " X = " << pin_position.getX() 
-                    << " Y = " << pin_position.getY() 
-                    << "\n";
-          count++;                
-        }
+        annealingStateVisualization(pins);
       }
     }
   }
@@ -166,6 +157,15 @@ void SimulatedAnnealing::setDebugPaintingInterval(int iters_between_paintings)
 AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
 {
   return debug_->renderer_.get();
+}
+
+void SimulatedAnnealing::annealingStateVisualization(const std::vector<IOPin>& assignment)
+{
+  if (!debug_->isOn()) {
+    return;
+  }
+  getDebugRenderer()->setPinAssignment(assignment);
+  getDebugRenderer()->redrawAndPause();
 }
 
 void SimulatedAnnealing::init(float init_temperature,

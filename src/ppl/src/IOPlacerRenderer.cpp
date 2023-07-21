@@ -37,10 +37,30 @@
 
 namespace ppl {
 
-IOPlacerRenderer::IOPlacerRenderer(IOPlacer* ioplacer)
-    : ioplacer_(ioplacer)
+IOPlacerRenderer::IOPlacerRenderer()
 {
   gui::Gui::get()->registerRenderer(this);
+}
+
+void IOPlacerRenderer::setPinAssignment(const std::vector<IOPin>& assignment)
+{
+  pin_assignment_ = assignment;
+}
+
+void IOPlacerRenderer::drawObjects(gui::Painter& painter)
+{
+  painter.setPen(gui::Painter::yellow);
+  painter.setBrush(gui::Painter::yellow);
+  painter.setPenWidth(100);
+
+  for(auto pin : pin_assignment_) {
+    odb::Point position = pin.getPosition();
+    const int x_pin = position.getX();
+    const int y_pin = position.getY();
+    const int radius = 1000;
+    painter.drawCircle(x_pin, y_pin, radius); 
+  }
+
 }
 
 void IOPlacerRenderer::redrawAndPause()

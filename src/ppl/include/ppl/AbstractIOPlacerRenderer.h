@@ -35,12 +35,16 @@
 
 #pragma once
 
+#include "Netlist.h"
+
 namespace ppl {
 
 class AbstractIOPlacerRenderer
 {
  public:
   virtual ~AbstractIOPlacerRenderer() = default;
+
+  virtual void setPinAssignment(const std::vector<IOPin>& assignment) = 0;
 
   virtual void redrawAndPause() = 0;
 };
