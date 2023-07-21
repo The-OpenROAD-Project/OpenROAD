@@ -15,7 +15,13 @@ TritonPart (or K-SpecPart) is an open-source constraints-driven partitioner.  It
   - Embedding-aware partitioning
   
 ## Dependency
+
 We use Google OR-Tools as our ILP solver.  Please install Google OR-Tools following the [instructions](https://developers.google.com/optimization/install).
+
+```{warning}
+Due to a build issue, TritonPart is not supported for MacOS. Stay tuned to this page for updates!
+```
+
 
 ## Commands
 
@@ -187,23 +193,23 @@ triton_part_design
 | `-balance_constraint` | allowed imbalance between blocks (default 1.0) |
 | `-seed` | random seed (default 1) |
 | `-timing_aware_flag` | enable timing-driven mode (default true) |
-| `-top_n` | (default 1000) |
-| `-placement_flag` | (default false) |
-| `-fence_flag ` | (default false) |
-| `-fence_lx ` | (default 0.0) |
-| `-fence_ly ` | (default 0.0) |
-| `-fence_ux ` | (default 0.0) |
-| `-fence_uy ` | (default 0.0) | 
+| `-top_n` | extract the top n critical timing paths (default 1000) |
+| `-placement_flag` | enable placement-information driven partitioning (default false) |
+| `-fence_flag ` | consider fences in the partitioning (default false) |
+| `-fence_lx ` | fence lower left x (default 0.0) |
+| `-fence_ly ` | fence lower left y (default 0.0) |
+| `-fence_ux ` | fence upper right x (default 0.0) |
+| `-fence_uy ` | fence upper right y (default 0.0) | 
 | `-fixed_file` | path to fixed vertices constraint file |
 | `-community_file` | path to `community` attributes file to guide the partitioning process |
 | `-group_file` | path to `stay together` attributes file |
 | `-solution_file` | path to solution file |
-| `-net_timing_factor` |  (default 1.0)|
-| `-path_timing_factor` |  (default 1.0)|
-| `-path_snaking_factor` |  (default 1.0)|
-| `-timing_exp_factor` |  (default 1.0)|
-| `-extra_delay` |  (default 1e-9)|
-| `-guardband_flag` |  (default false)|
+| `-net_timing_factor` | hyperedge timing weight factor (default 1.0)|
+| `-path_timing_factor` | cutting critical timing path weight factor (default 1.0)|
+| `-path_snaking_factor` | snaking a critical path weight factor (default 1.0)|
+| `-timing_exp_factor` | timing exponential factor for normalized slack (default 1.0)|
+| `-extra_delay` | extra delay introduced by a cut (default 1e-9)|
+| `-guardband_flag` | enable timing guardband option (default false)|
 | `-e_wt_factors` | hyperedge weight factor |
 | `-v_wt_factors` | vertex weight factor |
 | `-placement_wt_factors` | placement weight factor |
@@ -260,29 +266,29 @@ evaluate_part_design_solution
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-num_parts` |  |
-| `-balance_constraint` |  |
-| `-timing_aware_flag` |  |
-| `-top_n` |  |
-| `-fence_flag ` |  |
-| `-fence_lx ` |  |
-| `-fence_ly ` |  |
-| `-fence_ux ` |  |
-| `-fence_uy ` |  |
-| `-fixed_file` |  |
-| `-community_file` |  |
-| `-group_file` |  |
-| `-hypergraph_file` |  |
-| `-hypergraph_int_weight_file` |  |
-| `-solution_file` |  |
-| `-net_timing_factor` |  |
-| `-path_timing_factor` |  |
-| `-path_snaking_factor` |  |
-| `-timing_exp_factor` |  |
-| `-extra_delay` |  |
-| `-guardband_flag` |  |
-| `-e_wt_factors` |  |
-| `-v_wt_factors` |  |
+| `-num_parts` | number of partitions (default 2) |
+| `-balance_constraint` | allowed imbalance between blocks (default 1.0) |
+| `-timing_aware_flag` | enable timing-driven mode (default true) |
+| `-top_n` | extract the top n critical timing paths (default 1000) |
+| `-fence_flag ` | consider fences in the partitioning (default false) |
+| `-fence_lx ` | fence lower left x (default 0.0) |
+| `-fence_ly ` | fence lower left y (default 0.0) |
+| `-fence_ux ` | fence upper right x (default 0.0) |
+| `-fence_uy ` | fence upper right y (default 0.0) | 
+| `-fixed_file` | path to fixed vertices constraint file |
+| `-community_file` | path to `community` attributes file to guide the partitioning process |
+| `-group_file` | path to `stay together` attributes file |
+| `-hypergraph_file` | path to hypergraph file |
+| `-hypergraph_int_weight_file` | hMETIS format integer weights |
+| `-solution_file` | path to solution file |
+| `-net_timing_factor` | hyperedge timing weight factor (default 1.0)|
+| `-path_timing_factor` | cutting critical timing path weight factor (default 1.0)|
+| `-path_snaking_factor` | snaking a critical path weight factor (default 1.0)|
+| `-timing_exp_factor` | timing exponential factor for normalized slack (default 1.0)|
+| `-extra_delay` | extra delay introduced by a cut (default 1e-9)|
+| `-guardband_flag` | enable timing guardband option (default false)|
+| `-e_wt_factors` | hyperedge weight factors |
+| `-v_wt_factors` | vertex weight factors |
 
 ### Write Partition to Verilog
 
@@ -297,8 +303,8 @@ write_partition_verilog
 
 | Switch Name | Description |
 | ----- | ----- |
-| `port_prefix` |  |
-| `module_suffix` |  |
+| `port_prefix` | port name prefix|
+| `module_suffix` | module name suffix  |
 
 ### Read Partition file
 
@@ -312,8 +318,8 @@ read_partitioning
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-read_file` |  |
-| `-instance_map_file` |  |
+| `-read_file` | read partitioning file (.part) |
+| `-instance_map_file` | instance mapping file |
 
 
 ## Example Scripts
