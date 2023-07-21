@@ -32,8 +32,10 @@
 
 #include <algorithm>
 #include <queue>
+#include <fstream>
 
 #include "DataType.h"
+#include "odb/db.h"
 #include "FastRoute.h"
 #include "utl/Logger.h"
 
@@ -2300,6 +2302,107 @@ int FastRouteCore::edgeShiftNew(Tree& t, int net)
   }  // while
 
   return (numShift);
+}
+
+odb::Rect FastRouteCore::globalRoutingToBox(const GSegment& route)
+{
+  int init_x, init_y;
+  int final_x, final_y;
+
+  if (route.init_x < route.final_x) {
+    init_x = route.init_x;
+    final_x = route.final_x;
+  } else {
+    init_x = route.final_x;
+    final_x = route.init_x;
+  }
+
+  if (route.init_y < route.final_y) {
+    init_y = route.init_y;
+    final_y = route.final_y;
+  } else {
+    init_y = route.final_y;
+    final_y = route.init_y;
+  }
+
+  int llX = init_x - (tile_size_ / 2);
+  int llY = init_y - (tile_size_ / 2);
+
+  int urX = final_x + (tile_size_ / 2);
+  int urY = final_y + (tile_size_ / 2);
+
+  if ((x_grid_max_ - urX) / tile_size_ < 1) {
+    urX = x_grid_max_;
+  }
+  if ((y_grid_max_ - urY) / tile_size_ < 1) {
+    urY = y_grid_max_;
+  }
+
+  odb::Point lower_left = odb::Point(llX, llY);
+  odb::Point upper_right = odb::Point(urX, urY);
+
+  odb::Rect route_bds = odb::Rect(lower_left, upper_right);
+  return route_bds;
+}
+
+double FastRouteCore::dbuToMicrons(int64_t dbu)
+{
+  auto block = db_->getChip()->getBlock();
+  return (double) dbu / (block->getDbUnitsPerMicron());
+}
+
+void FastRouteCore::saveCongestion()
+{
+  if (congestion_file_name_.empty()) {
+    return;
+  }
+
+  std::ofstream out(congestion_file_name_.c_str());
+
+  std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
+  getCongestionGrid(congestionGridsV, congestionGridsH);
+
+  for (auto& it : congestionGridsH) {
+    const auto& [seg, tile, srcs] = it;
+    out << "violation type: Horizontal congestion\n";
+    const int capacity = tile.capacity;
+    const int usage = tile.usage;
+
+    out << "\tsrcs: ";
+    for (const auto& net : srcs) {
+      out << "net:" << net->getName() << " ";
+    }
+    out << "\n";
+    out << "\tcongestion information: capacity:" << capacity
+        << " usage:" << usage << " overflow:" << usage - capacity << "\n";
+    odb::Rect rect = globalRoutingToBox(seg);
+    out << "\tbbox = ";
+    out << "( " << dbuToMicrons(rect.xMin()) << ", "
+        << dbuToMicrons(rect.yMin()) << " ) - ";
+    out << "( " << dbuToMicrons(rect.xMax()) << ", "
+        << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
+  }
+
+  for (auto& it : congestionGridsV) {
+    const auto& [seg, tile, srcs] = it;
+    out << "violation type: Vertical congestion\n";
+    const int capacity = tile.capacity;
+    const int usage = tile.usage;
+
+    out << "\tsrcs: ";
+    for (const auto& net : srcs) {
+      out << "net:" << net->getName() << " ";
+    }
+    out << "\n";
+    out << "\tcongestion information: capacity:" << capacity
+        << " usage:" << usage << " overflow:" << usage - capacity << "\n";
+    odb::Rect rect = globalRoutingToBox(seg);
+    out << "\tbbox = ";
+    out << "( " << dbuToMicrons(rect.xMin()) << ", "
+        << dbuToMicrons(rect.yMin()) << " ) - ";
+    out << "( " << dbuToMicrons(rect.xMax()) << ", "
+        << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
+  }
 }
 
 std::ostream& operator<<(std::ostream& os, RouteType type)

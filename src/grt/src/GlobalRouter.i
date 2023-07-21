@@ -119,6 +119,12 @@ set_overflow_iterations(int iterations)
   getGlobalRouter()->setOverflowIterations(iterations);
 }
 
+void
+set_drc_report_iter_step(int drc_report_iter_step)
+{
+  getGlobalRouter()->setDRCReportIterStep(drc_report_iter_step);
+}
+
 void set_congestion_report_file (const char * file_name)
 {
   getGlobalRouter()->setCongestionReportFile(file_name);
