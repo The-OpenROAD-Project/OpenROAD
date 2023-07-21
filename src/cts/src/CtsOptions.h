@@ -155,7 +155,10 @@ class CtsOptions
   void setBufferDistance(double distance) { bufDistance_ = distance; }
 
   // VertexBufferDistance is set in microns, but returned in DBU
-  uint32_t getVertexBufferDistance() const { return vertexBufDistance_ * getDbUnits(); }
+  uint32_t getVertexBufferDistance() const
+  {
+    return vertexBufDistance_ * getDbUnits();
+  }
   void setVertexBufferDistance(double distance)
   {
     vertexBufDistance_ = distance;
