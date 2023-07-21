@@ -41,6 +41,8 @@ class AbstractIOPlacerRenderer
 {
  public:
   virtual ~AbstractIOPlacerRenderer() = default;
+
+  virtual void redrawAndPause() = 0;
 };
 
 }

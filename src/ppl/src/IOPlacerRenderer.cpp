@@ -43,8 +43,11 @@ IOPlacerRenderer::IOPlacerRenderer(IOPlacer* ioplacer)
   gui::Gui::get()->registerRenderer(this);
 }
 
-void IOPlacerRenderer::drawPoint(std::string point, gui::Painter& painter)
+void IOPlacerRenderer::redrawAndPause()
 {
+  auto* gui = gui::Gui::get();
+  gui->redraw();
+  gui->pause();
 }
 
 }

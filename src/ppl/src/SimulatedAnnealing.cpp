@@ -163,6 +163,11 @@ void SimulatedAnnealing::setDebugPaintingInterval(int iters_between_paintings)
   debug_->painting_interval_ = iters_between_paintings;
 }
 
+AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
+{
+  return debug_->renderer_.get();
+}
+
 void SimulatedAnnealing::init(float init_temperature,
                               int max_iterations,
                               int perturb_per_iter,

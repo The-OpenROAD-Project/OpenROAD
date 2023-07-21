@@ -46,7 +46,7 @@ class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
  public:
   IOPlacerRenderer(IOPlacer* ioplacer);
 
-  void drawPoint(std::string point, gui::Painter& painter);
+  void redrawAndPause() override;
 
  private:
   IOPlacer* ioplacer_;

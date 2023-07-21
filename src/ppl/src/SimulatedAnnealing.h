@@ -82,6 +82,8 @@ class SimulatedAnnealing
   void setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer);
   void setDebugPaintingInterval(int iters_between_paintings);
 
+  AbstractIOPlacerRenderer* getDebugRenderer();
+
  private:
   void init(float init_temperature,
             int max_iterations,
