@@ -151,11 +151,11 @@ static void initPython()
   FOREACH_TOOL(X)
 #undef X
 #if PY_VERSION_HEX >= 0x03080000
-  bool exit = findCmdLineFlag(argc, argv, "-exit");
+  bool inspect = !findCmdLineFlag(argc, argv, "-exit");
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
   PyConfig_SetBytesArgv(&config, argc, argv);
-  config.inspect = !exit;
+  config.inspect = inspect;
   Py_InitializeFromConfig(&config);
   PyConfig_Clear(&config);
 #else
