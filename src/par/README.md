@@ -85,7 +85,7 @@ triton_part_hypergraph
 | `-thr_coarsen_hyperedges` | number of vertices of coarsest hypergraph (default 50) |
 | `-coarsening_ratio` | coarsening ratio of two adjacent hypergraphs (default 1.6) |
 | `-max_coarsen_iters` | number of iterations (default 30) |
-| `-adj_diff_ratio` | minimum difference of two adjacent hypegraphs (default 0.0001) |
+| `-adj_diff_ratio` | minimum difference of two adjacent hypergraphs (default 0.0001) |
 | `-min_num_vertices_each_part` | minimum number of vertices in each partition (default 4) |
 | `-num_initial_solutions` | number of initial solutions (default 50) |
 | `-num_best_initial_solutions` | number of top initial solutions to filter out (default 10) |
@@ -119,16 +119,16 @@ evaluate_hypergraph_solution
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-num_parts` |  |
-| `-balance_constraint` |  |
-| `-vertex_dimension` |  |
-| `-hyperedge_dimension` |  |
-| `-hypergraph_file` |  |
-| `-solution_file` |  |
-| `-fixed_file` |  |
-| `-group_file` |  |
-| `-e_wt_factors` |  |
-| `-v_wt_factors` |  |
+| `-num_parts` | number of partitions (default 2) |
+| `-balance_constraint` | allowed imbalance between blocks (default 1.0) |
+| `-vertex_dimension` | number of vertices in the hypergraph (default 1) |
+| `-hyperedge_dimension` | number of hyperedges in hypergraph (default 1) |
+| `-hypergraph_file` | path to hypergraph file |
+| `-solution_file` | path to solution file|
+| `-fixed_file` | path to fixed vertices constraint file |
+| `-group_file` | path to `stay together` attributes file |
+| `-e_wt_factors` | hyperedge weight factor |
+| `-v_wt_factors` | vertex weight factor |
 
 
 ### Partition Netlist 
@@ -183,48 +183,48 @@ triton_part_design
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-num_parts` |  |
-| `-balance_constraint` |  |
-| `-seed` |  |
-| `-timing_aware_flag` |  |
-| `-top_n` |  |
-| `-placement_flag` |  |
-| `-fence_flag ` |  |
-| `-fence_lx ` |  |
-| `-fence_ly ` |  |
-| `-fence_ux ` |  |
-| `-fence_uy ` |  |
-| `-fixed_file` |  |
-| `-community_file` |  |
-| `-group_file` |  |
-| `-solution_file` |  |
-| `-net_timing_factor` |  |
-| `-path_timing_factor` |  |
-| `-path_snaking_factor` |  |
-| `-timing_exp_factor` |  |
-| `-extra_delay` |  |
-| `-guardband_flag` |  |
-| `-e_wt_factors` |  |
-| `-v_wt_factors` |  |
-| `-placement_wt_factors` |  |
-| `-thr_coarsen_hyperedge_size_skip` |  |
-| `-thr_coarsen_vertices` |  |
-| `-thr_coarsen_hyperedges` |  |
-| `-coarsening_ratio` |  |
-| `-max_coarsen_iters` |  |
-| `-adj_diff_ratio` |  |
-| `-min_num_vertices_each_part` |  |
-| `-num_initial_solutions` |  |
-| `-num_best_initial_solutions` |  |
-| `-refiner_iters` |  |
-| `-max_moves` |  |
-| `-early_stop_ratio` |  |
-| `-total_corking_passes` |  |
-| `-v_cycle_flag` |  |
-| `-max_num_vcycle` |  |
-| `-num_coarsen_solutions` |  |
-| `-num_vertices_threshold_ilp` |  |
-| `-global_net_threshold` |  |
+| `-num_parts` | number of partitions (default 2) |
+| `-balance_constraint` | allowed imbalance between blocks (default 1.0) |
+| `-seed` | random seed (default 1) |
+| `-timing_aware_flag` | enable timing-driven mode (default true) |
+| `-top_n` | (default 1000) |
+| `-placement_flag` | (default false) |
+| `-fence_flag ` | (default false) |
+| `-fence_lx ` | (default 0.0) |
+| `-fence_ly ` | (default 0.0) |
+| `-fence_ux ` | (default 0.0) |
+| `-fence_uy ` | (default 0.0) | 
+| `-fixed_file` | path to fixed vertices constraint file |
+| `-community_file` | path to `community` attributes file to guide the partitioning process |
+| `-group_file` | path to `stay together` attributes file |
+| `-solution_file` | path to solution file |
+| `-net_timing_factor` |  (default 1.0)|
+| `-path_timing_factor` |  (default 1.0)|
+| `-path_snaking_factor` |  (default 1.0)|
+| `-timing_exp_factor` |  (default 1.0)|
+| `-extra_delay` |  (default 1e-9)|
+| `-guardband_flag` |  (default false)|
+| `-e_wt_factors` | hyperedge weight factor |
+| `-v_wt_factors` | vertex weight factor |
+| `-placement_wt_factors` | placement weight factor |
+| `-thr_coarsen_hyperedge_size_skip` | threshold for ignoring large hyperedge (default 1000) |
+| `-thr_coarsen_vertices` | number of vertices of coarsest hypergrpah (default 10) |
+| `-thr_coarsen_hyperedges` | number of vertices of coarsest hypergraph (default 50) |
+| `-coarsening_ratio` | coarsening ratio of two adjacent hypergraphs (default 1.5) |
+| `-max_coarsen_iters` | number of iterations (default 30) |
+| `-adj_diff_ratio` | minimum difference of two adjacent hypergraphs (default 0.0001) |
+| `-min_num_vertices_each_part` | minimum number of vertices in each partition (default 4) |
+| `-num_initial_solutions` | number of initial solutions (default 100) |
+| `-num_best_initial_solutions` | number of top initial solution to filter out (default 10) |
+| `-refiner_iters` | refinment iterations (default 10) |
+| `-max_moves` | the allowed moves for each pass of Fiduccia-Mattheyes (FM) algorithm or greedy refinement (default 100) |
+| `-early_stop_ratio` | describes ratio $e$ where if the $n_{moved vertices} > n_{vertices} * e$, exit current FM pass. the intution behind this being most of the gains are achieved by the first few FM moves. (default 0.5) |
+| `-total_corking_passes` | maximum level of traversing the buckets to solve the "corking effect" (default 25) |
+| `-v_cycle_flag` | disables v-cycle is used to refine partitions (default true) |
+| `-max_num_vcycle` | maximum number of vcycles (default 1) |
+| `-num_coarsen_solutions` | number of coarsening solutions with different randoms seed (default 4) |
+| `-num_vertices_threshold_ilp` | describes threshold $t$, number of vertices used for integer linear programming (ILP) partitioning. if $n_{vertices} > t$, do not use ILP-based partitioning. (default 50) |
+| `-global_net_threshold` | if the net is larger than this, it will be ignored by TritonPart (default 1000) |
 
 
 ### Evaluation Netlist Partition
