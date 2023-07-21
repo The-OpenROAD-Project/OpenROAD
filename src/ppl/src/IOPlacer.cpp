@@ -55,7 +55,8 @@ namespace ppl {
 using utl::PPL;
 
 IOPlacer::IOPlacer()
-    : ioplacer_renderer_(nullptr)
+    : ioplacer_renderer_(nullptr),
+      annealing_(nullptr)
 {
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
@@ -64,7 +65,10 @@ IOPlacer::IOPlacer()
   top_grid_ = std::make_unique<TopLayerGrid>();
 }
 
-IOPlacer::~IOPlacer() = default;
+IOPlacer::~IOPlacer()
+{
+  delete annealing_;
+}
 
 void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
 {
@@ -1967,16 +1971,16 @@ void IOPlacer::runAnnealing()
   initMirroredPins(true);
   initConstraints(true);
 
-  ppl::SimulatedAnnealing annealing(
+  annealing_ = new ppl::SimulatedAnnealing(
       netlist_io_pins_.get(), slots_, constraints_, logger_, db_);
   
   if (isAnnealingDebugOn()) {
-    annealing.setDebugOn(std::move(ioplacer_renderer_));
-    annealing.setDebugPaintingInterval(iters_between_paintings_);
+    annealing_->setDebugOn(std::move(ioplacer_renderer_));
+    annealing_->setDebugPaintingInterval(iters_between_paintings_);
   }
 
-  annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
-  annealing.getAssignment(assignment_);
+  annealing_->run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
+  annealing_->getAssignment(assignment_);
 
   for (auto& pin : assignment_) {
     updateOrientation(pin);

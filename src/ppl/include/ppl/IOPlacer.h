@@ -305,6 +305,8 @@ class IOPlacer
   std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer_;
 
   // simulated annealing variables
+  ppl::SimulatedAnnealing* annealing_;
+
   float init_temperature_ = 0;
   int max_iterations_ = 0;
   int perturb_per_iter_ = 0;
