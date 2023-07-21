@@ -35,6 +35,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -148,9 +149,13 @@ class CtsOptions
   {
     clusteringCapacity_ = capacity;
   }
-  int getBufferDistance() const { return bufDistance_ * getDbUnits(); }
+
+  // BufferDistance is set in microns, but returned in DBU
+  uint32_t getBufferDistance() const { return bufDistance_ * getDbUnits(); }
   void setBufferDistance(double distance) { bufDistance_ = distance; }
-  int getVertexBufferDistance() const { return vertexBufDistance_ * getDbUnits(); }
+
+  // VertexBufferDistance is set in microns, but returned in DBU
+  uint32_t getVertexBufferDistance() const { return vertexBufDistance_ * getDbUnits(); }
   void setVertexBufferDistance(double distance)
   {
     vertexBufDistance_ = distance;
