@@ -399,15 +399,20 @@ int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
     }
   }
 
+  const IOPin& io_pin = netlist_->getIoPin(pin);
   pins_.push_back(pin);
 
   int prev_slot = pin_assignment_[pin];
   prev_slots_.push_back(prev_slot);
 
   int prev_cost = getPinCost(pin);
+  if (io_pin.isMirrored()) {
+    prev_cost += getPinCost(io_pin.getMirrorPinIdx());
+  }
 
   bool free_slot = false;
   int new_slot;
+  int mirrored_slot;
 
   int first_slot = 0;
   int last_slot = num_slots_ - 1;
@@ -417,11 +422,23 @@ int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
       = boost::random::uniform_int_distribution<int>(first_slot, last_slot);
   while (!free_slot) {
     new_slot = distribution(generator_);
-    free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
+    if (io_pin.isMirrored()) {
+      free_slot = isFreeForMirrored(new_slot, mirrored_slot);
+    } else {
+      free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
+    }
   }
-  new_slots_.push_back(new_slot);
 
+  new_slots_.push_back(new_slot);
   pin_assignment_[pin] = new_slot;
+
+  if (io_pin.isMirrored()) {
+    pins_.push_back(io_pin.getMirrorPinIdx());
+    int prev_mirrored_slot = pin_assignment_[io_pin.getMirrorPinIdx()];
+    prev_slots_.push_back(prev_mirrored_slot);
+    new_slots_.push_back(mirrored_slot);
+    pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+  }
 
   return prev_cost;
 }
