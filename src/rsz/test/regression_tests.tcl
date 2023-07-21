@@ -98,6 +98,7 @@ record_tests {
   repair_wire10
   repair_wire11
   gcd_resize
+  repair_design3_verbose
   repair_setup4_verbose
   repair_hold9_verbose
   set_dont_touch1
