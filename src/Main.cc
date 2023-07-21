@@ -288,7 +288,11 @@ int main(int argc, char* argv[])
     for (int i = 1; i < cmd_argc; i++) {
       args.push_back(Py_DecodeLocale(cmd_argv[i], nullptr));
     }
+    #if PY_VERSION_HEX >= 0x03080000
+    return Py_RunMain(args.size(), args.data());    
+    #else
     return Py_Main(args.size(), args.data());
+    #endif
   }
 #endif  // ENABLE_PYTHON3
 
