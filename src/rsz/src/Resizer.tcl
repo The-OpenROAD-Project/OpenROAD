@@ -252,7 +252,7 @@ proc unset_dont_use { args } {
 
 proc set_dont_use_cmd { cmd cmd_args dont_use } {
   sta::check_argc_eq1 $cmd $cmd_args
-  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] utl::warn] {
+  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] sta::sta_warn_error] {
     rsz::set_dont_use $lib_cell $dont_use
   }
 }
@@ -384,9 +384,10 @@ proc repair_tie_fanout { args } {
   }
 }
 
+
 # -max_passes is for developer debugging so intentionally not documented
 # in define_cmd_args
-sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
+sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
                                         [-allow_setup_violations]\
@@ -394,17 +395,19 @@ sta::define_cmd_args "repair_timing" {[-setup] [-hold]\
                                         [-enable_gate_cloning)]\
                                         [-repair_tns tns_end_percent]\
                                         [-max_buffer_percent buffer_percent]\
-                                        [-max_utilization util]}
+                                        [-max_utilization util] \
+                                        [-verbose]}
 
 proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
             -repair_tns -max_passes} \
-    flags {-setup -hold -allow_setup_violations -skip_pin_swap -enable_gate_cloning}
+    flags {-setup -hold -recover_power -allow_setup_violations -skip_pin_swap -enable_gate_cloning -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
+  set recover_power [info exists flags(-recover_power)]
   if { !$setup && !$hold } {
     set setup 1
     set hold 1
@@ -443,18 +446,30 @@ proc repair_timing { args } {
     set repair_tns_end_percent [expr $repair_tns_end_percent / 100.0]
   }
 
+  set verbose 0
+  if { [info exists flags(-verbose)] } {
+    set verbose 1
+  }
+
   set max_passes 10000
   if { [info exists keys(-max_passes)] } {
     set max_passes $keys(-max_passes)
   }
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
-  if { $setup } {
-    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes $skip_pin_swap $enable_gate_cloning
-  }
-  if { $hold } {
+  if { $recover_power } {
+    rsz::recover_power	
+  } else {
+      if { $setup } {
+    rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
+      $verbose \
+      $skip_pin_swap $enable_gate_cloning
+    }
+      if { $hold } {
     rsz::repair_hold $setup_margin $hold_margin \
-      $allow_setup_violations $max_buffer_percent $max_passes
+      $allow_setup_violations $max_buffer_percent $max_passes \
+      $verbose	  
+    }
   }
 }
 

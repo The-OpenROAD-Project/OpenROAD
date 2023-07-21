@@ -45,9 +45,13 @@ class dbTechLayer;
 
 namespace sta {
 class dbSta;
-}
+class Corner;
+}  // namespace sta
 namespace utl {
 class Logger;
+}
+namespace rsz {
+class Resizer;
 }
 
 namespace psm {
@@ -63,7 +67,10 @@ class PDNSim
   PDNSim();
   ~PDNSim();
 
-  void init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta);
+  void init(utl::Logger* logger,
+            odb::dbDatabase* db,
+            sta::dbSta* sta,
+            rsz::Resizer* resizer);
 
   void import_vsrc_cfg(const std::string& vsrc);
   void import_out_file(const std::string& out_file);
@@ -85,9 +92,12 @@ class PDNSim
   bool check_connectivity();
   void setDebugGui();
 
+  void setCorner(sta::Corner* corner);
+
  private:
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
+  rsz::Resizer* resizer_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::string vsrc_loc_;
   std::string out_file_;
@@ -98,6 +108,7 @@ class PDNSim
   int bump_pitch_y_ = 0;
   std::string spice_out_file_;
   std::string power_net_;
+  sta::Corner* corner_ = nullptr;
   std::map<std::string, float> net_voltage_map_;
   IRDropByLayer ir_drop_;
   float node_density_ = -1;

@@ -38,6 +38,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace sta {
 class dbSta;
+class Corner;
+}  // namespace sta
+
+namespace rsz {
+class Resizer;
 }
 
 namespace psm {
@@ -57,12 +62,14 @@ struct ViaCut
 class IRSolver
 {
  public:
-  struct BumpData
+  struct SourceData
   {
     int x;
     int y;
     int size;
     double voltage;
+    int layer;
+    bool user_specified;
   };
 
   //! Constructor for IRSolver class
@@ -72,6 +79,7 @@ class IRSolver
    */
   IRSolver(odb::dbDatabase* db,
            sta::dbSta* sta,
+           rsz::Resizer* resizer,
            utl::Logger* logger,
            const std::string& vsrc_loc,
            const std::string& power_net,
@@ -84,7 +92,8 @@ class IRSolver
            int bump_pitch_y,
            float node_density_um,
            int node_density_factor_user,
-           const std::map<std::string, float>& net_voltage_map);
+           const std::map<std::string, float>& net_voltage_map,
+           sta::Corner* corner);
   //! IRSolver destructor
   ~IRSolver();
   //! Returns the created G matrix for the design
@@ -106,8 +115,7 @@ class IRSolver
   bool build();
   bool buildConnection();
 
-  const std::vector<BumpData>& getBumps() const { return C4Bumps_; }
-  int getTopLayer() const { return top_layer_; }
+  const std::vector<SourceData>& getSources() const { return sources_; }
 
   double getWorstCaseVoltage() const { return wc_voltage; }
   double getMaxCurrent() const { return max_cur; }
@@ -117,10 +125,12 @@ class IRSolver
   float getSupplyVoltageSrc() const { return supply_voltage_src; }
 
  private:
-  //! Function to add C4 bumps to the G matrix
-  bool addC4Bump();
+  //! Function to add sources to the G matrix
+  bool addSources();
   //! Function that parses the Vsrc file
-  void readC4Data();
+  void readSourceData(bool require_voltage);
+  bool createSourcesFromBTerms(odb::dbNet* net, double voltage);
+  bool createSourcesFromPads(odb::dbNet* net, double voltage);
   //! Function to create a J vector from the current map
   bool createJ();
   //! Function to create a G matrix using the nodes
@@ -128,12 +138,11 @@ class IRSolver
   //! Function to find and store the upper and lower PDN layers and return a
   //! list
   // of wires for all PDN tasks
-  std::vector<odb::dbSBox*> findPdnWires(odb::dbNet* power_net);
+  void findPdnWires(odb::dbNet* power_net);
   //! Function to create the nodes of vias in the G matrix
-  void createGmatViaNodes(const std::vector<odb::dbSBox*>& power_wires);
+  void createGmatViaNodes();
   //! Function to create the nodes of wires in the G matrix
-  void createGmatWireNodes(const std::vector<odb::dbSBox*>& power_wires,
-                           const std::vector<odb::Rect>& macros);
+  void createGmatWireNodes(const std::vector<odb::Rect>& macros);
   //! Function to find and store the macro boundaries
   std::vector<odb::Rect> getMacroBoundaries();
 
@@ -146,14 +155,15 @@ class IRSolver
                                      bool has_params,
                                      const odb::dbViaParams& params);
 
-  //! Function to create the nodes for the c4 bumps
-  int createC4Nodes(bool connection_only, int unit_micron);
+  //! Function to create the nodes for the sources
+  int createSourceNodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
-  void createGmatConnections(const std::vector<odb::dbSBox*>& power_wires,
-                             bool connection_only);
+  void createGmatConnections(bool connection_only);
   bool checkConnectivity(bool connection_only = false);
   bool checkValidR(double R);
   bool getResult();
+
+  double getResistance(odb::dbTechLayer* layer) const;
 
   float supply_voltage_src{0};
   //! Worst case voltage at the lowest layer nodes
@@ -172,6 +182,8 @@ class IRSolver
   odb::dbDatabase* db_;
   //! Pointer to STA
   sta::dbSta* sta_;
+  //! Pointer to Resizer for parastics
+  rsz::Resizer* resizer_;
   //! Pointer to Logger
   utl::Logger* logger_;
   //! Voltage source file
@@ -202,15 +214,19 @@ class IRSolver
   bool result_{false};
   bool connection_{false};
 
+  sta::Corner* corner_;
+
   odb::dbSigType power_net_type_;
   std::map<std::string, float> net_voltage_map_;
   //! Current vector 1D
   std::vector<double> J_;
-  //! C4 bump locations and values
-  std::vector<BumpData> C4Bumps_;
+  //! source locations and values
+  std::vector<SourceData> sources_;
   //! Per unit R and via R for each routing layer
   std::vector<std::tuple<int, double, double>> layer_res_;
-  //! Locations of the C4 bumps in the G matrix
-  std::map<NodeIdx, double> C4Nodes_;
+  //! Locations of the source in the G matrix
+  std::map<NodeIdx, double> source_nodes_;
+
+  std::vector<odb::dbSBox*> power_wires_;
 };
 }  // namespace psm

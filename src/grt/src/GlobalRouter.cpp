@@ -429,7 +429,10 @@ NetRouteMap GlobalRouter::findRouting(std::vector<Net*>& nets,
 {
   NetRouteMap routes;
   if (!nets.empty()) {
+    MakeWireParasitics builder(logger_, resizer_, sta_, db_->getTech(), this);
+    fastroute_->setMakeWireParasiticsBuilder(&builder);
     routes = fastroute_->run();
+    fastroute_->setMakeWireParasiticsBuilder(nullptr);
     addRemainingGuides(routes, nets, min_routing_layer, max_routing_layer);
     connectPadPins(routes);
     for (auto& net_route : routes) {
@@ -818,6 +821,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   }
 
   if (critical_nets_percentage_ != 0) {
+    fastroute_->setUpdateSlack(critical_nets_percentage_);
     computeNetSlacks();
   }
 

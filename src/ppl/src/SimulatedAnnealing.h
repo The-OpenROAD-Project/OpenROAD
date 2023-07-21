@@ -36,6 +36,8 @@
 #pragma once
 
 #include <algorithm>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <random>
 
 #include "Netlist.h"
@@ -59,11 +61,14 @@ struct DebugSettings
 
 using utl::Logger;
 
+struct Constraint;
+
 class SimulatedAnnealing
 {
  public:
   SimulatedAnnealing(Netlist* netlist,
                      std::vector<Slot>& slots,
+                     const std::vector<Constraint>& constraints,
                      Logger* logger,
                      odb::dbDatabase* db);
   ~SimulatedAnnealing() = default;
@@ -86,23 +91,17 @@ class SimulatedAnnealing
   int randomAssignmentForGroups(std::set<int>& placed_pins,
                                 const std::vector<int>& slot_indices);
   int64 getAssignmentCost();
-  int getDeltaCost(int prev_cost, const std::vector<int>& pins);
+  int getDeltaCost(int prev_cost);
   int getPinCost(int pin_idx);
   int64 getGroupCost(int group_idx);
-  void perturbAssignment(std::vector<int>& prev_slots,
-                         std::vector<int>& new_slots,
-                         std::vector<int>& pins,
-                         int& prev_cost);
-  int swapPins(std::vector<int>& pins);
-  int movePinToFreeSlot(std::vector<int>& prev_slot,
-                        std::vector<int>& new_slot,
-                        std::vector<int>& pin);
-  int moveGroupToFreeSlots(std::vector<int>& prev_slots,
-                           std::vector<int>& new_slots,
-                           std::vector<int>& pins);
-  void restorePreviousAssignment(const std::vector<int>& prev_slots,
-                                 const std::vector<int>& pins);
+  void perturbAssignment(int& prev_cost);
+  int swapPins();
+  int movePinToFreeSlot(bool lone_pin = false);
+  int moveGroupToFreeSlots(int group_idx);
+  void restorePreviousAssignment();
   double dbuToMicrons(int64_t dbu);
+  bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
+  void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
 
   //void currentStateVisualization(const );
 
@@ -112,21 +111,26 @@ class SimulatedAnnealing
   Netlist* netlist_;
   std::vector<Slot>& slots_;
   const std::vector<PinGroupByIndex>& pin_groups_;
+  const std::vector<Constraint>& constraints_;
   int num_slots_;
   int num_pins_;
   int num_groups_;
+  int lone_pins_;
+
+  std::vector<int> prev_slots_;
+  std::vector<int> new_slots_;
+  std::vector<int> pins_;
 
   // annealing variables
   float init_temperature_ = 1.0;
   int max_iterations_ = 2000;
   int perturb_per_iter_ = 0;
   float alpha_ = 0.985;
-  std::mt19937 generator_;
-  std::uniform_real_distribution<float> distribution_;
+  boost::random::mt19937 generator_;
 
   // perturbation variables
   const float swap_pins_ = 0.5;
-  const float move_groups_ = 0.2;
+  const int move_fail_ = -1;
 
   Logger* logger_ = nullptr;
   odb::dbDatabase* db_;
