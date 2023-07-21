@@ -148,9 +148,9 @@ class CtsOptions
   {
     clusteringCapacity_ = capacity;
   }
-  double getBufferDistance() const { return bufDistance_; }
+  int getBufferDistance() const { return bufDistance_ * getDbUnits(); }
   void setBufferDistance(double distance) { bufDistance_ = distance; }
-  double getVertexBufferDistance() const { return vertexBufDistance_; }
+  int getVertexBufferDistance() const { return vertexBufDistance_ * getDbUnits(); }
   void setVertexBufferDistance(double distance)
   {
     vertexBufDistance_ = distance;
