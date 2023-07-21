@@ -303,7 +303,7 @@ Resizer::removeBuffers()
   for (dbInst *db_inst : block_->getInsts()) {
     int progress = (int)(100.0F * ((float)i++ / (float)num_insts));
     if (progress > previous_progress) {
-      logger_->info(RSZ, 1236, "Checked: {}%", progress);
+      logger_->info(RSZ, 29, "Checked: {}%", progress);
       previous_progress = progress;
     }
     LibertyCell *lib_cell = db_network_->libertyCell(db_inst);
