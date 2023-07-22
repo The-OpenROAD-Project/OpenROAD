@@ -69,6 +69,18 @@ set_macro_extension extension
 
 Example: `set_macro_extension 2`
 
+### Set Pin Offset
+
+```tcl
+set_pin_offset offset 
+```
+
+#### Options
+
+| Argument Name | Description | 
+| ----- | ----- |
+| `offset` | pin offset in microns (must be positive AND integer) | 
+
 ### Set Global Routing Layer Adjustment
 
 The `set_global_routing_layer_adjustment` command sets routing resource
@@ -87,7 +99,6 @@ set_global_routing_layer_adjustment layer adjustment
 | `layer` | integer for the layer number (e.g. for M1 you would use 1) |
 | `adjustment` | float indicating the percentage reduction of each edge in the specified layer. |
 
-#### put these in examples scripts. 
 You can set adjustment for a
 specific layer, e.g., `set_global_routing_layer_adjustment Metal4 0.5` reduces
 the routing resources of routing layer `Metal4` by 50%.  You can also set adjustment
@@ -173,7 +184,7 @@ Example:
 
 ### Repair Antennas
 
-The repair_antenna command checks the global routing for antenna
+The `repair_antennas` command checks the global routing for antenna
 violations and repairs the violations by inserting diodes near the
 gates of the violating nets.  By default the command runs only one
 iteration to repair antennas. Filler instances added by the
@@ -199,10 +210,7 @@ See LEF/DEF 5.8 Language Reference, Appendix C, "Calculating and
 Fixing Process Antenna Violations" for a [description](coriolis.lip6.fr/doc/lefdef/lefdefref/lefdefref.pdf) 
 of antenna violations.
 
-Example: `repair_antennas`
-
-If no `diode_cell` argument is specified the LEF cell with
-class CORE ANTENNACELL will be used.
+If no `diode_cell` argument is specified the LEF cell with class CORE, ANTENNACELL will be used.
 If any repairs are made the filler instances are remove and must be
 placed with the `filler_placement` command.
 
@@ -255,7 +263,7 @@ draw_route_guides
 | `net_names` | Tcl list of set of nets |
 | `-show_pin_locations` | draw circles for the pin positions on the routing grid |
 
-## Report wire length
+### Report Wirelength
 
 The `report_wire_length` command reports the wire length of the nets. Use the `-global_route`
 and the `-detailed_route` flags to report the wire length from global and detailed routing,
@@ -283,7 +291,7 @@ report_wire_length
 
 Example: `report_wire_length -net {clk net60} -global_route -detailed_route -verbose -file out.csv`
 
-## Debug Mode
+### Debug Mode
 
 The `global_route_debug` command allows you to start a debug mode to view the status of the Steiner Trees.
 It also allows you to dump the input positions for the Steiner tree creation of a net.
@@ -291,14 +299,14 @@ This must be used before calling the `global_route` command.
 Set the name of the net and the trees that you want to visualize.
 
 
-```
-global_route_debug [-st]
-                   [-rst]
-                   [-tree2D]
-                   [-tree3D]
-                   [-saveSttInput file_name]
-                   [-net net_name]
-
+```tcl
+global_route_debug 
+    [-st]
+    [-rst]
+    [-tree2D]
+    [-tree3D]
+    [-saveSttInput file_name]
+    [-net net_name]
 ```
 
 #### Options
@@ -314,10 +322,37 @@ global_route_debug [-st]
 
 ## Example scripts
 
-### Set global routing parameters
+Examples scripts demonstrating how to run FastRoute on a sample design of `gcd` as follows:
+
+```shell
+./test/gcd.tcl
+```
+
+### Read Global Routing Guides
 
 ```tcl
+read_guides file_name 
+```
 
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `file_name` | path to global routing guide | 
+
+### Useful developer functions
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/GlobalRouter.cpp) or the [swig file](./src/GlobalRouter.i).
+
+```tcl 
+check_routing_layer layer  # check if the layer is within the min/max routing layer specified.
+parse_layer_name layer_name # get routing layer number from layer name
+parse_layer_range cmd layer_range # parses a range from layer_range argument of format (%s-%s). cmd argument
+                                        is not used. 
+check_region lower_x lower_y upper_x upper_y # checks the defined region if its within the die area.
+define_layer_range layers # provide a Tcl list of layers and automatically generate the min and max layers for signal routing.
+define_clock_layer_range layers # provide a Tcl list of layers and automatically generate the min and max layers for clock routing.
+have_detailed_route block # checks if block has detailed route already.
 ```
 
 ## Regression tests
@@ -409,7 +444,6 @@ about this tool.
 -   Database comes from [OpenDB](https://github.com/The-OpenROAD-Project/OpenDB)
 -   [FastRoute 4.1 documentation](src/fastroute/README).  The FastRoute4.1
     version was received from [Yue Xu](mailto:yuexu@iastate.edu) on June 15, 2019.
-    [website](https://home.engineering.iastate.edu/~cnchu/FastRoute.html#License).
 -   Min Pan, Yue Xu, Yanheng Zhang and Chris Chu. "FastRoute: An Efficient and
     High-Quality Global Router. VLSI Design, Article ID 608362, 2012."
     Available [here](https://home.engineering.iastate.edu/~cnchu/pubs/j52.pdf).
