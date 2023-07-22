@@ -22,6 +22,11 @@ Antenna violations can be repaired after global routing with the `repair_design`
 
 ## Commands
 
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
+
 ### Check Antennas
 
 ```
