@@ -273,9 +273,4 @@ int PDNSim::getMinimumResolution()
   return min_resolution_;
 }
 
-void PDNSim::setCorner(sta::Corner* corner)
-{
-  corner_ = corner;
-}
-
 }  // namespace psm

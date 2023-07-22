@@ -347,153 +347,173 @@ bool IRSolver::addSources()
 //! Function that parses the Vsrc file
 void IRSolver::readSourceData(bool require_voltage)
 {
-  findPdnWires(net_);
+  findPdnWires();
 
-  const int unit_micron = (db_->getTech())->getDbUnitsPerMicron();
   if (!vsrc_file_.empty()) {
-    logger_->info(utl::PSM,
+    createSourcesFromVsrc(vsrc_file_);
+    return;
+  }
+
+  if (!net_voltage_map_.empty() && net_voltage_map_.count(net_) > 0) {
+    supply_voltage_src_ = net_voltage_map_.at(net_);
+  } else if (require_voltage) {
+    logger_->warn(
+        utl::PSM, 19, "Voltage on net {} is not explicitly set.", net_->getName());
+    const pair<double, double> supply_voltages = getSupplyVoltage();
+    if (net_->getSigType() == dbSigType::GROUND) {
+      supply_voltage_src_ = supply_voltages.second;
+      logger_->warn(utl::PSM,
+                    21,
+                    "Using voltage {:4.3f}V for ground network.",
+                    supply_voltage_src_);
+    } else {
+      supply_voltage_src_ = supply_voltages.first;
+      logger_->warn(utl::PSM,
+                    22,
+                    "Using voltage {:4.3f}V for VDD network.",
+                    supply_voltage_src_);
+    }
+  }
+  const bool added_from_pads
+      = createSourcesFromPads(supply_voltage_src_);
+  const bool added_from_bterms
+      = createSourcesFromBTerms(supply_voltage_src_);
+  if (added_from_pads || added_from_bterms) {
+    return;
+  }
+
+  createDefaultSources(supply_voltage_src_);
+}
+
+void IRSolver::createSourcesFromVsrc(const std::string& vsrc_file)
+{
+  ifstream file(vsrc_file);
+  if (!file) {
+    logger_->error(utl::PSM,
+                    89,
+                    "Unable to open {}.",
+                    vsrc_file);
+  }
+
+  logger_->info(utl::PSM,
                   15,
                   "Reading location of VDD and VSS sources from {}.",
-                  vsrc_file_);
-    ifstream file(vsrc_file_);
-    string line;
-    // Iterate through each line and split the content using delimiter
-    while (getline(file, line)) {
-      int x = -1, y = -1, size = -1;
-      stringstream X(line);
-      string val;
-      for (int i = 0; i < 4; ++i) {
-        getline(X, val, ',');
-        if (i == 0) {
-          x = (int) (unit_micron * stod(val));
-        } else if (i == 1) {
-          y = (int) (unit_micron * stod(val));
-        } else if (i == 2) {
-          size = (int) (unit_micron * stod(val));
-        } else {
-          supply_voltage_src_ = stod(val);
-        }
-      }
-      if (x == -1 || y == -1 || size == -1) {
-        logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
-      } else {
-        sources_.push_back({x, y, size, supply_voltage_src_, top_layer_, true});
-      }
-    }
-    file.close();
-  } else {
-    dbChip* chip = db_->getChip();
-    dbBlock* block = chip->getBlock();
-    if (!net_voltage_map_.empty() && net_voltage_map_.count(net_) > 0) {
-      supply_voltage_src_ = net_voltage_map_.at(net_);
-    } else if (require_voltage) {
-      logger_->warn(
-          utl::PSM, 19, "Voltage on net {} is not explicitly set.", net_->getName());
-      const pair<double, double> supply_voltages = getSupplyVoltage();
-      if (net_->getSigType() == dbSigType::GROUND) {
-        supply_voltage_src_ = supply_voltages.second;
-        logger_->warn(utl::PSM,
-                      21,
-                      "Using voltage {:4.3f}V for ground network.",
-                      supply_voltage_src_);
-      } else {
-        supply_voltage_src_ = supply_voltages.first;
-        logger_->warn(utl::PSM,
-                      22,
-                      "Using voltage {:4.3f}V for VDD network.",
-                      supply_voltage_src_);
-      }
-    }
-    const bool added_from_pads
-        = createSourcesFromPads(net_, supply_voltage_src_);
-    const bool added_from_bterms
-        = createSourcesFromBTerms(net_, supply_voltage_src_);
-    if (added_from_pads || added_from_bterms) {
-      return;
-    }
+                  vsrc_file);
 
+  const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
+  string line;
+  // Iterate through each line and split the content using delimiter
+  while (getline(file, line)) {
+    int x = -1, y = -1, size = -1;
+    stringstream X(line);
+    string val;
+    for (int i = 0; i < 4; ++i) {
+      getline(X, val, ',');
+      if (i == 0) {
+        x = (int) (unit_micron * stod(val));
+      } else if (i == 1) {
+        y = (int) (unit_micron * stod(val));
+      } else if (i == 2) {
+        size = (int) (unit_micron * stod(val));
+      } else {
+        supply_voltage_src_ = stod(val);
+      }
+    }
+    if (x == -1 || y == -1 || size == -1) {
+      logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
+    } else {
+      sources_.push_back({x, y, size, supply_voltage_src_, top_layer_, true});
+    }
+  }
+  file.close();
+}
+
+void IRSolver::createDefaultSources(double voltage)
+{
+  logger_->warn(utl::PSM,
+                16,
+                "Voltage pad location (VSRC) file not specified, defaulting "
+                "pad location to checkerboard pattern on core area.");
+  dbChip* chip = db_->getChip();
+  dbBlock* block = chip->getBlock();
+  odb::Rect coreRect = block->getCoreArea();
+  const int coreW = coreRect.xMax() - coreRect.xMin();
+  const int coreL = coreRect.yMax() - coreRect.yMin();
+  const odb::Rect dieRect = block->getDieArea();
+  const int offset_x = coreRect.xMin() - dieRect.xMin();
+  const int offset_y = coreRect.yMin() - dieRect.yMin();
+  const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
+  if (bump_pitch_x_ == 0) {
+    bump_pitch_x_ = bump_pitch_default_ * unit_micron;
+    logger_->warn(
+        utl::PSM,
+        17,
+        "X direction bump pitch is not specified, defaulting to {}um.",
+        bump_pitch_default_);
+  }
+  if (bump_pitch_y_ == 0) {
+    bump_pitch_y_ = bump_pitch_default_ * unit_micron;
+    logger_->warn(
+        utl::PSM,
+        18,
+        "Y direction bump pitch is not specified, defaulting to {}um.",
+        bump_pitch_default_);
+  }
+  if (coreW < bump_pitch_x_ || coreL < bump_pitch_y_) {
+    float to_micron = 1.0f / unit_micron;
+    const int x_cor = coreW / 2 + offset_x;
+    const int y_cor = coreL / 2 + offset_y;
     logger_->warn(utl::PSM,
-                  16,
-                  "Voltage pad location (VSRC) file not specified, defaulting "
-                  "pad location to checkerboard pattern on core area.");
-    odb::Rect coreRect = block->getCoreArea();
-    const int coreW = coreRect.xMax() - coreRect.xMin();
-    const int coreL = coreRect.yMax() - coreRect.yMin();
-    const odb::Rect dieRect = block->getDieArea();
-    const int offset_x = coreRect.xMin() - dieRect.xMin();
-    const int offset_y = coreRect.yMin() - dieRect.yMin();
-    if (bump_pitch_x_ == 0) {
-      bump_pitch_x_ = bump_pitch_default_ * unit_micron;
-      logger_->warn(
-          utl::PSM,
-          17,
-          "X direction bump pitch is not specified, defaulting to {}um.",
-          bump_pitch_default_);
-    }
-    if (bump_pitch_y_ == 0) {
-      bump_pitch_y_ = bump_pitch_default_ * unit_micron;
-      logger_->warn(
-          utl::PSM,
-          18,
-          "Y direction bump pitch is not specified, defaulting to {}um.",
-          bump_pitch_default_);
-    }
-    if (coreW < bump_pitch_x_ || coreL < bump_pitch_y_) {
-      float to_micron = 1.0f / unit_micron;
-      const int x_cor = coreW / 2 + offset_x;
-      const int y_cor = coreL / 2 + offset_y;
-      logger_->warn(utl::PSM,
-                    63,
-                    "Specified bump pitches of {:4.3f} and {:4.3f} are less "
-                    "than core width of {:4.3f} or core height of {:4.3f}. "
-                    "Changing bump location to the center of the die at "
-                    "({:4.3f}, {:4.3f}).",
-                    bump_pitch_x_ * to_micron,
-                    bump_pitch_y_ * to_micron,
-                    coreW * to_micron,
-                    coreL * to_micron,
-                    x_cor * to_micron,
-                    y_cor * to_micron);
-      sources_.push_back({x_cor,
-                          y_cor,
-                          bump_size_ * unit_micron,
-                          supply_voltage_src_,
-                          top_layer_,
-                          true});
-    }
-    const int num_b_x = coreW / bump_pitch_x_;
-    const int centering_offset_x = (coreW - (num_b_x - 1) * bump_pitch_x_) / 2;
-    const int num_b_y = coreL / bump_pitch_y_;
-    const int centering_offset_y = (coreL - (num_b_y - 1) * bump_pitch_y_) / 2;
-    logger_->warn(utl::PSM,
-                  65,
-                  "VSRC location not specified, using default checkerboard "
-                  "pattern with one VDD every size bumps in x-direction and "
-                  "one in two bumps in the y-direction");
-    for (int i = 0; i < num_b_y; i++) {
-      for (int j = 0; j < num_b_x; j = j + 6) {
-        const int x_cor = (bump_pitch_x_ * j) + (((2 * i) % 6) * bump_pitch_x_)
-                          + offset_x + centering_offset_x;
-        const int y_cor = (bump_pitch_y_ * i) + offset_y + centering_offset_y;
-        if (x_cor <= coreW && y_cor <= coreL) {
-          sources_.push_back({x_cor,
-                              y_cor,
-                              bump_size_ * unit_micron,
-                              supply_voltage_src_,
-                              top_layer_,
-                              true});
-        }
+                  63,
+                  "Specified bump pitches of {:4.3f} and {:4.3f} are less "
+                  "than core width of {:4.3f} or core height of {:4.3f}. "
+                  "Changing bump location to the center of the die at "
+                  "({:4.3f}, {:4.3f}).",
+                  bump_pitch_x_ * to_micron,
+                  bump_pitch_y_ * to_micron,
+                  coreW * to_micron,
+                  coreL * to_micron,
+                  x_cor * to_micron,
+                  y_cor * to_micron);
+    sources_.push_back({x_cor,
+                        y_cor,
+                        bump_size_ * unit_micron,
+                        voltage,
+                        top_layer_,
+                        true});
+  }
+  const int num_b_x = coreW / bump_pitch_x_;
+  const int centering_offset_x = (coreW - (num_b_x - 1) * bump_pitch_x_) / 2;
+  const int num_b_y = coreL / bump_pitch_y_;
+  const int centering_offset_y = (coreL - (num_b_y - 1) * bump_pitch_y_) / 2;
+  logger_->warn(utl::PSM,
+                65,
+                "VSRC location not specified, using default checkerboard "
+                "pattern with one VDD every size bumps in x-direction and "
+                "one in two bumps in the y-direction");
+  for (int i = 0; i < num_b_y; i++) {
+    for (int j = 0; j < num_b_x; j = j + 6) {
+      const int x_cor = (bump_pitch_x_ * j) + (((2 * i) % 6) * bump_pitch_x_)
+                        + offset_x + centering_offset_x;
+      const int y_cor = (bump_pitch_y_ * i) + offset_y + centering_offset_y;
+      if (x_cor <= coreW && y_cor <= coreL) {
+        sources_.push_back({x_cor,
+                            y_cor,
+                            bump_size_ * unit_micron,
+                            voltage,
+                            top_layer_,
+                            true});
       }
     }
   }
 }
 
-bool IRSolver::createSourcesFromBTerms(dbNet* net, double voltage)
+bool IRSolver::createSourcesFromBTerms(double voltage)
 {
   const int pitch_multiplier = 10;
 
   bool added = false;
-  for (auto* bterm : net->getBTerms()) {
+  for (auto* bterm : net_->getBTerms()) {
     for (auto* bpin : bterm->getBPins()) {
       if (!bpin->getPlacementStatus().isPlaced()) {
         continue;
@@ -554,10 +574,10 @@ bool IRSolver::createSourcesFromBTerms(dbNet* net, double voltage)
   return added;
 }
 
-bool IRSolver::createSourcesFromPads(dbNet* net, double voltage)
+bool IRSolver::createSourcesFromPads(double voltage)
 {
   bool added = false;
-  for (auto* iterm : net->getITerms()) {
+  for (auto* iterm : net_->getITerms()) {
     auto* inst = iterm->getInst();
     if (!inst->isPlaced()) {
       continue;
@@ -743,11 +763,11 @@ bool IRSolver::createJ()
 
 //! Function to find and store the upper and lower PDN layers and return a list
 // of wires for all PDN tasks
-void IRSolver::findPdnWires(dbNet* power_net)
+void IRSolver::findPdnWires()
 {
   power_wires_.clear();
   // Iterate through all wires till we reach the lowest abstraction level
-  for (dbSWire* curSWire : power_net->getSWires()) {
+  for (dbSWire* curSWire : net_->getSWires()) {
     for (dbSBox* curWire : curSWire->getWires()) {
       // Store wires in an easy to access format as we reuse it multiple times
       power_wires_.push_back(curWire);

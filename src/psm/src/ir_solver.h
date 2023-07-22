@@ -129,8 +129,10 @@ class IRSolver
   bool addSources();
   //! Function that parses the Vsrc file
   void readSourceData(bool require_voltage);
-  bool createSourcesFromBTerms(odb::dbNet* net, double voltage);
-  bool createSourcesFromPads(odb::dbNet* net, double voltage);
+  void createSourcesFromVsrc(const std::string& file);
+  bool createSourcesFromBTerms(double voltage);
+  bool createSourcesFromPads(double voltage);
+  void createDefaultSources(double voltage);
   //! Function to create a J vector from the current map
   bool createJ();
   //! Function to create a G matrix using the nodes
@@ -138,7 +140,7 @@ class IRSolver
   //! Function to find and store the upper and lower PDN layers and return a
   //! list
   // of wires for all PDN tasks
-  void findPdnWires(odb::dbNet* power_net);
+  void findPdnWires();
   //! Function to create the nodes of vias in the G matrix
   void createGmatViaNodes();
   //! Function to create the nodes of wires in the G matrix
