@@ -85,10 +85,12 @@ public:
  ~RepairDesign() override;
  void repairDesign(double max_wire_length,
                    double slew_margin,
-                   double cap_margin);
+                   double cap_margin,
+                   bool verbose);
  void repairDesign(double max_wire_length,  // zero for none (meters)
                    double slew_margin,
                    double cap_margin,
+                   bool verbose,
                    int& repaired_net_count,
                    int& slew_violations,
                    int& cap_violations,
@@ -221,6 +223,8 @@ protected:
   int metersToDbu(double dist) const;
   double dbuToMicrons(int dist) const;
 
+  void printProgress(int iteration, bool force, bool end, int repaired_net_count) const;
+
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
@@ -240,8 +244,12 @@ protected:
   const MinMax *min_;
   const MinMax *max_;
 
+  int print_interval_;
+
   // Elmore factor for 20-80% slew thresholds.
   static constexpr float elmore_skew_factor_ = 1.39;
+  static constexpr int min_print_interval_ = 10;
+  static constexpr int max_print_interval_ = 100;
 };
 
 }  // namespace rsz

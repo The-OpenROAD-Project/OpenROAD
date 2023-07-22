@@ -148,6 +148,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
                   violating_ends.size());
   } else {
     // nothing to repair
+    logger_->metric("design__instance__count__setup_buffer", 0);
     return;
   }
 
