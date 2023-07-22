@@ -2,8 +2,8 @@
 
 This tool checks antenna violations and generates a report to indicate
 violated nets. See LEF/DEF 5.8 Language Reference, Appendix C,
-"Calculating and Fixing Process Antenna Violations" for a description of
-antenna violations.
+"Calculating and Fixing Process Antenna Violations" (p.389) 
+for a [description](http://coriolis.lip6.fr/doc/lefdef/lefdefref/lefdefref.pdf) of antenna violations.
 
 This is an example of the detailed and simple reports of the antenna checker:
 
@@ -22,16 +22,28 @@ Antenna violations can be repaired after global routing with the `repair_design`
 
 ## Commands
 
-### `check_antennas`
-
-Check nets for antenna violations.
+### Check Antennas
 
 ```
 check_antennas [-net net] [-verbose]
 ```
 
-- `-verbose` report all antenna calculations for violating nets
-- 'net' check antennas on one net
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `-verbose` | report all antenna calculations for violating nets |
+| `-net` | check antennas on said net |
+
+## Regression tests
+
+There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+
+Simply run the following script:
+
+```shell
+./test/regression
+```
 
 ## Limitations
 
@@ -56,4 +68,4 @@ about this tool.
 
 ## License
 
-BSD 3-Clause License. See [LICENSE](LICENSE) file.
+BSD 3-Clause License. See [LICENSE](../../LICENSE) file.
