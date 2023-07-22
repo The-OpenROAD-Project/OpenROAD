@@ -564,6 +564,19 @@ void SimulatedAnnealing::getSlotsRange(const IOPin& io_pin,
     first_slot = constraint.first_slot;
     last_slot = constraint.last_slot;
   }
+
+  if (io_pin.isMirrored()) {
+    const IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
+    const int mirrored_constraint_idx = mirrored_pin.getConstraintIdx();
+    if (mirrored_constraint_idx != -1) {
+      const Constraint& constraint = constraints_[mirrored_constraint_idx];
+      first_slot = getMirroredSlotIdx(constraint.first_slot);
+      last_slot = getMirroredSlotIdx(constraint.last_slot);
+      if (first_slot > last_slot) {
+        std::swap(first_slot, last_slot);
+      }
+    }
+  }
 }
 
 int SimulatedAnnealing::getSlotIdxByPosition(const odb::Point& position,
@@ -583,15 +596,21 @@ int SimulatedAnnealing::getSlotIdxByPosition(const odb::Point& position,
 bool SimulatedAnnealing::isFreeForMirrored(const int slot_idx,
                                            int& mirrored_idx) const
 {
+  mirrored_idx = getMirroredSlotIdx(slot_idx);
+  const Slot& slot = slots_[slot_idx];
+  const Slot& mirrored_slot = slots_[mirrored_idx];
+
+  return slot.isAvailable() && mirrored_slot.isAvailable();
+}
+
+int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
+{
   const Slot& slot = slots_[slot_idx];
   const int layer = slot.layer;
   const odb::Point& position = slot.pos;
   odb::Point mirrored_pos = core_->getMirroredPosition(position);
-  mirrored_idx = getSlotIdxByPosition(mirrored_pos, layer);
 
-  const Slot& mirrored_slot = slots_[mirrored_idx];
-
-  return slot.isAvailable() && mirrored_slot.isAvailable();
+  return getSlotIdxByPosition(mirrored_pos, layer);
 }
 
 }  // namespace ppl
