@@ -1933,7 +1933,8 @@ void IOPlacer::runAnnealing(bool random)
 
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), core_.get(), slots_, constraints_, logger_, db_);
-  annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_, random);
+  annealing.run(
+      init_temperature_, max_iterations_, perturb_per_iter_, alpha_, random);
   annealing.getAssignment(assignment_);
 
   for (auto& pin : assignment_) {

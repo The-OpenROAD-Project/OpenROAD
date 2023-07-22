@@ -87,16 +87,17 @@ void SimulatedAnnealing::run(float init_temperature,
 
         const int64 cost = pre_cost + getDeltaCost(prev_cost);
         const int delta_cost = cost - pre_cost;
-        debugPrint(logger_,
-                  utl::PPL,
-                  "annealing",
-                  1,
-                  "iteration: {}; temperature: {}; assignment cost: {}um; delta "
-                  "cost: {}um",
-                  iter,
-                  temperature,
-                  dbuToMicrons(cost),
-                  dbuToMicrons(delta_cost));
+        debugPrint(
+            logger_,
+            utl::PPL,
+            "annealing",
+            1,
+            "iteration: {}; temperature: {}; assignment cost: {}um; delta "
+            "cost: {}um",
+            iter,
+            temperature,
+            dbuToMicrons(cost),
+            dbuToMicrons(delta_cost));
 
         const float rand_float = distribution(generator_);
         const float accept_prob = std::exp((-1) * delta_cost / temperature);
@@ -336,7 +337,8 @@ int SimulatedAnnealing::swapPins()
   boost::random::uniform_int_distribution<int> distribution(0, num_pins_ - 1);
   int pin1 = distribution(generator_);
   int pin2;
-  while (netlist_->getIoPin(pin1).isInGroup()) {
+  while (netlist_->getIoPin(pin1).isInGroup()
+         || netlist_->getIoPin(pin1).isMirrored()) {
     pin1 = distribution(generator_);
   }
 
@@ -354,13 +356,15 @@ int SimulatedAnnealing::swapPins()
 
     int pin_idx = distribution(generator_);
     pin2 = pin_indices[pin_idx];
-    while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()) {
+    while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()
+           || netlist_->getIoPin(pin2).isMirrored()) {
       pin_idx = distribution(generator_);
       pin2 = pin_indices[pin_idx];
     }
   } else {
     pin2 = distribution(generator_);
     while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()
+           || netlist_->getIoPin(pin2).isMirrored()
            || netlist_->getIoPin(pin2).getConstraintIdx() != -1) {
       pin2 = distribution(generator_);
     }
