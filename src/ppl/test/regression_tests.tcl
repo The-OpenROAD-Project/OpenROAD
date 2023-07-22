@@ -37,6 +37,8 @@ record_tests {
   annealing_mirrored1
   annealing_mirrored2
   annealing_mirrored3
+  annealing_mirrored4
+  annealing_mirrored5
   blocked_region
   cells_not_placed
   exclude1
