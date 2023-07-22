@@ -176,7 +176,9 @@ in the Nangate45 technology node.
 
 ## Regression tests
 
-There is a set of regression tests in `/test`.
+There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests). 
+
+Simply run the following script: 
 
 ```shell
 ./test/regression
