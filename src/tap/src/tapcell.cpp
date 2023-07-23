@@ -150,7 +150,7 @@ int Tapcell::insertTapcells(odb::dbMaster* tapcell_master,
   if (row->getOrient() == odb::dbOrientType::R0) {
     offset = 0;
   } else {
-    offset = dist;
+    offset = pitch / 2;
   }
 
   const odb::Rect row_bb = row->getBBox();
