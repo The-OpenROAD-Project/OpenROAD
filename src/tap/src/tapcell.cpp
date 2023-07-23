@@ -391,6 +391,15 @@ odb::dbInst* Tapcell::makeInstance(odb::dbBlock* block,
                                           master,
                                           name.c_str(),
                                           /* physical_only */ true);
+  debugPrint(logger_,
+             utl::TAP,
+             "Instance",
+             1,
+             "Creating instance {} at ({}, {} / {})",
+             name,
+             x,
+             y,
+             orientation.getString());
   if (inst == nullptr) {
     logger_->error(utl::TAP,
                    33,
@@ -1056,6 +1065,19 @@ Tapcell::CornerMap Tapcell::insertBoundaryCorner(
       break;
   }
 
+  debugPrint(
+      logger_,
+      utl::TAP,
+      "Boundary",
+      2,
+      "Generating corner cell {} at ({}, {}) with master {} in row {} with {}",
+      toString(corner.type),
+      corner.pt.getX(),
+      corner.pt.getY(),
+      master != nullptr ? master->getName() : "none",
+      row->getName(),
+      row_orient.getString());
+
   if (master == nullptr) {
     return {};
   }
@@ -1070,12 +1092,16 @@ Tapcell::CornerMap Tapcell::insertBoundaryCorner(
       break;
     case CornerType::OuterBottomRight:
       ll.addX(-width);
-      orient = orient.flipY();
+      if (master->getSymmetryY()) {
+        orient = orient.flipY();
+      }
       break;
     case CornerType::OuterTopRight:
       ll.addX(-width);
       ll.addY(-height);
-      orient = orient.flipY();
+      if (master->getSymmetryY()) {
+        orient = orient.flipY();
+      }
       break;
     case CornerType::OuterTopLeft:
       ll.addY(-height);
@@ -1086,13 +1112,17 @@ Tapcell::CornerMap Tapcell::insertBoundaryCorner(
       break;
     case CornerType::InnerBottomRight:
       ll.addY(-height);
-      orient = orient.flipY();
+      if (master->getSymmetryY()) {
+        orient = orient.flipY();
+      }
       break;
     case CornerType::InnerTopLeft:
       ll.addX(-width);
       break;
     case CornerType::InnerTopRight:
-      orient = orient.flipY();
+      if (master->getSymmetryY()) {
+        orient = orient.flipY();
+      }
       break;
     case CornerType::Unknown:
       break;
@@ -1406,7 +1436,7 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
   bopts.bottom_r0 = bopts.top_r0;
   bopts.bottom_mx = bopts.top_mx;
 
-  bopts.outer_corner_bottom_right_r0 = options.cnrcap_nwout_master;
+  bopts.outer_corner_bottom_left_r0 = options.cnrcap_nwout_master;
   bopts.outer_corner_bottom_left_mx = options.cnrcap_nwin_master;
   bopts.outer_corner_bottom_right_r0 = options.cnrcap_nwout_master;
   bopts.outer_corner_bottom_right_mx = options.cnrcap_nwin_master;
@@ -1415,7 +1445,7 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
   bopts.outer_corner_top_right_r0 = options.cnrcap_nwout_master;
   bopts.outer_corner_top_right_mx = options.cnrcap_nwin_master;
 
-  bopts.inner_corner_bottom_right_r0 = options.incnrcap_nwout_master;
+  bopts.inner_corner_bottom_left_r0 = options.incnrcap_nwout_master;
   bopts.inner_corner_bottom_left_mx = options.incnrcap_nwin_master;
   bopts.inner_corner_bottom_right_r0 = options.incnrcap_nwout_master;
   bopts.inner_corner_bottom_right_mx = options.incnrcap_nwin_master;
