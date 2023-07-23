@@ -57,6 +57,7 @@ target_link_libraries(tap
     utl
     odb
     OpenSTA
+    Boost::boost
 )
 
 messages(

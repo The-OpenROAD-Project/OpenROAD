@@ -33,6 +33,8 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <boost/polygon/polygon.hpp>
+
 #include "odb/db.h"
 
 namespace ord {
@@ -84,6 +86,50 @@ struct Options
   }
 };
 
+struct BoundaryCellOptions
+{
+  // External facing boundary cells
+  odb::dbMaster* outer_corner_top_left_r0 = nullptr;
+  odb::dbMaster* outer_corner_top_left_mx = nullptr;
+
+  odb::dbMaster* outer_corner_top_right_r0 = nullptr;
+  odb::dbMaster* outer_corner_top_right_mx = nullptr;
+
+  odb::dbMaster* outer_corner_bottom_left_r0 = nullptr;
+  odb::dbMaster* outer_corner_bottom_left_mx = nullptr;
+
+  odb::dbMaster* outer_corner_bottom_right_r0 = nullptr;
+  odb::dbMaster* outer_corner_bottom_right_mx = nullptr;
+
+  // Internal facing boundary cells
+  odb::dbMaster* inner_corner_top_left_r0 = nullptr;
+  odb::dbMaster* inner_corner_top_left_mx = nullptr;
+
+  odb::dbMaster* inner_corner_top_right_r0 = nullptr;
+  odb::dbMaster* inner_corner_top_right_mx = nullptr;
+
+  odb::dbMaster* inner_corner_bottom_left_r0 = nullptr;
+  odb::dbMaster* inner_corner_bottom_left_mx = nullptr;
+
+  odb::dbMaster* inner_corner_bottom_right_r0 = nullptr;
+  odb::dbMaster* inner_corner_bottom_right_mx = nullptr;
+
+  // endcaps
+  std::set<odb::dbMaster*> top_r0;
+  std::set<odb::dbMaster*> top_mx;
+
+  std::set<odb::dbMaster*> bottom_r0;
+  std::set<odb::dbMaster*> bottom_mx;
+
+  odb::dbMaster* left_r0;
+  odb::dbMaster* left_mx;
+
+  odb::dbMaster* right_r0;
+  odb::dbMaster* right_mx;
+
+  std::string prefix = "PHY_";
+};
+
 class Tapcell
 {
  public:
@@ -96,6 +142,8 @@ class Tapcell
   void cutRows(const Options& options);
   void reset();
   int removeCells(const std::string& prefix);
+
+  void insertBoundaryCells();
 
  private:
   struct FilledSites
@@ -125,12 +173,12 @@ class Tapcell
   LocationType getLocationType(int x,
                                const std::vector<odb::dbRow*>& rows_above,
                                const std::vector<odb::dbRow*>& rows_below);
-  void makeInstance(odb::dbBlock* block,
-                    odb::dbMaster* master,
-                    const odb::dbOrientType& orientation,
-                    int x,
-                    int y,
-                    const std::string& prefix);
+  odb::dbInst* makeInstance(odb::dbBlock* block,
+                            odb::dbMaster* master,
+                            const odb::dbOrientType& orientation,
+                            int x,
+                            int y,
+                            const std::string& prefix);
   bool isXInRow(int x, const std::vector<odb::dbRow*>& subrow);
   bool checkIfFilled(int x,
                      int width,
@@ -171,6 +219,73 @@ class Tapcell
                      int dist);
 
   int defaultDistance() const;
+
+  using Polygon = boost::polygon::polygon_90_data<int>;
+  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
+  std::vector<Polygon90> getBoundaryAreas() const;
+  enum class EdgeType
+  {
+    Left,
+    Top,
+    Right,
+    Bottom,
+    Unknown
+  };
+  struct Edge
+  {
+    EdgeType type;
+    odb::Point pt0;
+    odb::Point pt1;
+  };
+  std::vector<Edge> getBoundaryEdges(const Polygon90& area, bool outer) const;
+  enum class CornerType
+  {
+    OuterBottomLeft,
+    OuterTopLeft,
+    OuterTopRight,
+    OuterBottomRight,
+    InnerBottomLeft,
+    InnerTopLeft,
+    InnerTopRight,
+    InnerBottomRight,
+    Unknown
+  };
+  struct Corner
+  {
+    CornerType type;
+    odb::Point pt;
+  };
+  std::vector<Corner> getBoundaryCorners(const Polygon90& area,
+                                         bool outer) const;
+
+  std::string toString(EdgeType type) const;
+  std::string toString(CornerType type) const;
+
+  odb::dbRow* getRow(const Corner& corner) const;
+  std::vector<odb::dbRow*> getRows(const Edge& edge) const;
+
+  void insertBoundaryCells(const Polygon& area,
+                           bool outer,
+                           const BoundaryCellOptions& options);
+  void insertBoundaryCells(const Polygon90& area,
+                           bool outer,
+                           const BoundaryCellOptions& options);
+
+  using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
+  CornerMap insertBoundaryCorner(const Corner& corner,
+                                 const BoundaryCellOptions& options);
+  void insertBoundaryEdge(const Edge& edge,
+                          const CornerMap& corners,
+                          const BoundaryCellOptions& options);
+  void insertBoundaryEdgeHorizontal(const Edge& edge,
+                                    const CornerMap& corners,
+                                    const BoundaryCellOptions& options);
+  void insertBoundaryEdgeVertical(const Edge& edge,
+                                  const CornerMap& corners,
+                                  const BoundaryCellOptions& options);
+
+  BoundaryCellOptions correctBoundaryOptions(
+      const BoundaryCellOptions& options) const;
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;

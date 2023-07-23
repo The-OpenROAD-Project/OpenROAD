@@ -135,6 +135,11 @@
     return getTapcell()->removeCells(prefix);
   }
 
+  void insert_boundary_cells()
+  {
+    getTapcell()->insertBoundaryCells();
+  }
+
   }  // namespace tap
 
   %}

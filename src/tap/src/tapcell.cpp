@@ -903,15 +903,15 @@ vector<odb::dbBox*> Tapcell::findBlockages()
   return blockages;
 }
 
-void Tapcell::makeInstance(odb::dbBlock* block,
-                           odb::dbMaster* master,
-                           const odb::dbOrientType& orientation,
-                           const int x,
-                           const int y,
-                           const string& prefix)
+odb::dbInst* Tapcell::makeInstance(odb::dbBlock* block,
+                                   odb::dbMaster* master,
+                                   const odb::dbOrientType& orientation,
+                                   int x,
+                                   int y,
+                                   const string& prefix)
 {
   if (x < 0 || y < 0) {
-    return;
+    return nullptr;
   }
   const string name = prefix + std::to_string(phy_idx_);
   odb::dbInst* inst = odb::dbInst::create(block,
@@ -938,6 +938,8 @@ void Tapcell::makeInstance(odb::dbBlock* block,
   filled_sites_.push_back(filled);
 
   phy_idx_++;
+
+  return inst;
 }
 
 // Return rows vector organized according to yMin value,
@@ -1013,5 +1015,808 @@ bool Tapcell::checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori)
   }
 }
 
-// namespace end
+std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
+{
+  using namespace boost::polygon::operators;
+  using Polygon90Set = boost::polygon::polygon_90_set_data<int>;
+
+  auto rect_to_poly = [](const odb::Rect& rect) -> Polygon90 {
+    using Pt = Polygon90::point_type;
+    std::array<Pt, 4> pts = {Pt(rect.xMin(), rect.yMin()),
+                             Pt(rect.xMax(), rect.yMin()),
+                             Pt(rect.xMax(), rect.yMax()),
+                             Pt(rect.xMin(), rect.yMax())};
+
+    Polygon90 poly;
+    poly.set(pts.begin(), pts.end());
+    return poly;
+  };
+
+  const Polygon90 core_area
+      = rect_to_poly(db_->getChip()->getBlock()->getCoreArea());
+
+  // Generate mask of areas without rows
+  Polygon90Set core_mask;
+  core_mask += core_area;
+
+  for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
+    if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
+      continue;
+    }
+    core_mask -= rect_to_poly(row->getBBox());
+  }
+
+  // Generate set of core areas as polygons
+  Polygon90Set core_area_set;
+  core_area_set += core_area;
+  core_area_set -= core_mask;
+
+  std::vector<Polygon90> core_areas;
+  core_area_set.get_polygons(core_areas);
+
+  // build list of core outlines
+  std::vector<Polygon90> core_outlines;
+  for (const auto& core : core_areas) {
+    std::vector<Polygon90::point_type> outline;
+
+    for (const auto& pt : core) {
+      auto check = std::find(outline.begin(), outline.end(), pt);
+      if (check == outline.end()) {
+        outline.push_back(pt);
+      } else {
+        // delete everything from the found point on
+        outline.erase(check, outline.end());
+      }
+    }
+
+    Polygon90 core_p;
+    core_p.set(outline.begin(), outline.end());
+    core_outlines.push_back(core_p);
+  }
+
+  for (auto& core : core_outlines) {
+    const Polygon90Set core_holes = core_mask & core;
+    std::vector<Polygon90> holes;
+    core_holes.get_polygons(holes);
+
+    core.set_holes(holes.begin(), holes.end());
+
+    if (logger_->debugCheck(utl::TAP, "Boundary", 1)) {
+      logger_->report("Core");
+      logger_->report(" All pts");
+      for (const auto& pt : core) {
+        logger_->report("  Pt {} {}", pt.x(), pt.y());
+      }
+      logger_->report(" Holes");
+      for (auto itr = core.begin_holes(); itr != core.end_holes(); itr++) {
+        logger_->report("  Hole");
+        for (const auto& pt : *itr) {
+          logger_->report("   Pt {} {}", pt.x(), pt.y());
+        }
+      }
+    }
+  }
+
+  return core_outlines;
+}
+
+void Tapcell::insertBoundaryCells()
+{
+  BoundaryCellOptions options;
+
+  options.outer_corner_bottom_left_r0 = db_->findMaster("TAPCELL_X1");
+  options.outer_corner_bottom_left_mx = db_->findMaster("TAPCELL_X1");
+  options.outer_corner_bottom_right_r0 = db_->findMaster("TAPCELL_X1");
+  options.outer_corner_bottom_right_mx = db_->findMaster("TAPCELL_X1");
+  options.outer_corner_top_left_r0 = db_->findMaster("TAPCELL_X1");
+  options.outer_corner_top_left_mx = db_->findMaster("TAPCELL_X1");
+  options.outer_corner_top_right_r0 = db_->findMaster("TAPCELL_X1");
+  options.outer_corner_top_right_mx = db_->findMaster("TAPCELL_X1");
+  options.inner_corner_bottom_left_r0 = db_->findMaster("TAPCELL_X1");
+  options.inner_corner_bottom_left_mx = db_->findMaster("TAPCELL_X1");
+  options.inner_corner_bottom_right_r0 = db_->findMaster("TAPCELL_X1");
+  options.inner_corner_bottom_right_mx = db_->findMaster("TAPCELL_X1");
+  options.inner_corner_top_left_r0 = db_->findMaster("TAPCELL_X1");
+  options.inner_corner_top_left_mx = db_->findMaster("TAPCELL_X1");
+  options.inner_corner_top_right_r0 = db_->findMaster("TAPCELL_X1");
+  options.inner_corner_top_right_mx = db_->findMaster("TAPCELL_X1");
+
+  options.left_r0 = db_->findMaster("TAPCELL_X1");
+  options.left_mx = db_->findMaster("TAPCELL_X1");
+  options.right_r0 = db_->findMaster("TAPCELL_X1");
+  options.right_mx = db_->findMaster("TAPCELL_X1");
+
+  options.top_r0 = {db_->findMaster("TAPCELL_X1"),
+                    db_->findMaster("FILLCELL_X2"),
+                    db_->findMaster("FILLCELL_X16")};
+  options.top_mx = {db_->findMaster("TAPCELL_X1"),
+                    db_->findMaster("FILLCELL_X2"),
+                    db_->findMaster("FILLCELL_X16")};
+  options.bottom_r0 = {db_->findMaster("TAPCELL_X1"),
+                       db_->findMaster("FILLCELL_X2"),
+                       db_->findMaster("FILLCELL_X8")};
+  options.bottom_mx = {db_->findMaster("TAPCELL_X1"),
+                       db_->findMaster("FILLCELL_X2"),
+                       db_->findMaster("FILLCELL_X8")};
+
+  const auto filled_options = correctBoundaryOptions(options);
+
+  const auto areas = getBoundaryAreas();
+
+  for (const auto& area : areas) {
+    insertBoundaryCells(area, true, options);
+
+    for (auto itr = area.begin_holes(); itr != area.end_holes(); itr++) {
+      insertBoundaryCells(*itr, false, filled_options);
+    }
+  }
+}
+
+std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon90& area,
+                                                     bool outer) const
+{
+  std::vector<Edge> edges;
+
+  Polygon90::point_type prev_pt = *area.begin();
+  auto itr = area.begin();
+  itr++;
+  for (; itr != area.end(); itr++) {
+    const Polygon90::point_type pt = *itr;
+
+    const odb::Point pt0(prev_pt.x(), prev_pt.y());
+    const odb::Point pt1(pt.x(), pt.y());
+
+    prev_pt = pt;
+
+    edges.push_back(Edge{EdgeType::Unknown, pt0, pt1});
+  }
+
+  // complete the polygon
+  const odb::Point pt0(prev_pt.x(), prev_pt.y());
+  const odb::Point pt1((*area.begin()).x(), (*area.begin()).y());
+  edges.push_back(Edge{EdgeType::Unknown, pt0, pt1});
+
+  // Assign edge types
+  for (size_t i = 0; i < edges.size(); i++) {
+    Edge* prev;
+    Edge* curr = &edges[i];
+    if (i == 0) {
+      prev = &edges[edges.size() - 1];
+    } else {
+      prev = &edges[i - 1];
+    }
+
+    const int in_delta_x = prev->pt1.getX() - prev->pt0.getX();
+    const int in_delta_y = prev->pt1.getY() - prev->pt0.getY();
+    const int out_delta_x = curr->pt1.getX() - curr->pt0.getX();
+    const int out_delta_y = curr->pt1.getY() - curr->pt0.getY();
+
+    if (in_delta_y < 0 && out_delta_x > 0) {
+      curr->type = EdgeType::Bottom;
+    } else if (in_delta_x > 0 && out_delta_y > 0) {
+      curr->type = EdgeType::Right;
+    } else if (in_delta_y > 0 && out_delta_x < 0) {
+      curr->type = EdgeType::Top;
+    } else if (in_delta_x < 0 && out_delta_y < 0) {
+      curr->type = EdgeType::Left;
+    } else if (in_delta_x < 0 && out_delta_y > 0) {
+      curr->type = EdgeType::Right;
+    } else if (in_delta_y < 0 && out_delta_x < 0) {
+      curr->type = EdgeType::Top;
+    } else if (in_delta_x > 0 && out_delta_y < 0) {
+      curr->type = EdgeType::Left;
+    } else {
+      curr->type = EdgeType::Bottom;
+    }
+
+    if (!outer) {
+      switch (curr->type) {
+        case EdgeType::Bottom:
+          curr->type = EdgeType::Top;
+          break;
+        case EdgeType::Right:
+          curr->type = EdgeType::Left;
+          break;
+        case EdgeType::Top:
+          curr->type = EdgeType::Bottom;
+          break;
+        case EdgeType::Left:
+          curr->type = EdgeType::Right;
+          break;
+        case EdgeType::Unknown:
+          break;
+      }
+    }
+    debugPrint(logger_,
+               utl::TAP,
+               "Boundary",
+               2,
+               "Edge ({}, {}) - ({}, {}) : {}",
+               curr->pt0.getX(),
+               curr->pt0.getY(),
+               curr->pt1.getX(),
+               curr->pt1.getY(),
+               toString(curr->type));
+  }
+
+  return edges;
+}
+
+std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(const Polygon90& area,
+                                                         bool outer) const
+{
+  std::vector<Corner> corners;
+
+  for (auto itr = area.begin(); itr != area.end(); itr++) {
+    const Polygon90::point_type pt = *itr;
+    const odb::Point corner(pt.x(), pt.y());
+    corners.push_back(Corner{CornerType::Unknown, corner});
+  }
+
+  // Assign corner types
+  for (size_t i = 0; i < corners.size(); i++) {
+    Corner* prev;
+    Corner* curr = &corners[i];
+    Corner* next;
+    if (i == 0) {
+      prev = &corners[corners.size() - 1];
+    } else {
+      prev = &corners[i - 1];
+    }
+    if (i == corners.size() - 1) {
+      next = &corners[0];
+    } else {
+      next = &corners[i + 1];
+    }
+
+    const int in_delta_x = curr->pt.getX() - prev->pt.getX();
+    const int in_delta_y = curr->pt.getY() - prev->pt.getY();
+    const int out_delta_x = next->pt.getX() - curr->pt.getX();
+    const int out_delta_y = next->pt.getY() - curr->pt.getY();
+
+    if (in_delta_y < 0 && out_delta_x > 0) {
+      curr->type = CornerType::OuterBottomLeft;
+    } else if (in_delta_x > 0 && out_delta_y > 0) {
+      curr->type = CornerType::OuterBottomRight;
+    } else if (in_delta_y > 0 && out_delta_x < 0) {
+      curr->type = CornerType::OuterTopRight;
+    } else if (in_delta_x < 0 && out_delta_y < 0) {
+      curr->type = CornerType::OuterTopLeft;
+    } else if (in_delta_x < 0 && out_delta_y > 0) {
+      curr->type = CornerType::InnerBottomLeft;
+    } else if (in_delta_y < 0 && out_delta_x < 0) {
+      curr->type = CornerType::InnerBottomRight;
+    } else if (in_delta_x > 0 && out_delta_y < 0) {
+      curr->type = CornerType::InnerTopRight;
+    } else {
+      curr->type = CornerType::InnerTopLeft;
+    }
+
+    if (!outer) {
+      switch (curr->type) {
+        case CornerType::InnerBottomLeft:
+          curr->type = CornerType::OuterBottomLeft;
+          break;
+        case CornerType::InnerBottomRight:
+          curr->type = CornerType::OuterBottomRight;
+          break;
+        case CornerType::InnerTopLeft:
+          curr->type = CornerType::OuterTopLeft;
+          break;
+        case CornerType::InnerTopRight:
+          curr->type = CornerType::OuterTopRight;
+          break;
+        case CornerType::OuterBottomLeft:
+          curr->type = CornerType::InnerBottomLeft;
+          break;
+        case CornerType::OuterBottomRight:
+          curr->type = CornerType::InnerBottomRight;
+          break;
+        case CornerType::OuterTopLeft:
+          curr->type = CornerType::InnerTopLeft;
+          break;
+        case CornerType::OuterTopRight:
+          curr->type = CornerType::InnerTopRight;
+          break;
+        case CornerType::Unknown:
+          break;
+      }
+    }
+
+    debugPrint(logger_,
+               utl::TAP,
+               "Boundary",
+               2,
+               "Corner ({}, {}) : {}",
+               curr->pt.getX(),
+               curr->pt.getY(),
+               toString(curr->type));
+  }
+
+  return corners;
+}
+
+std::string Tapcell::toString(Tapcell::EdgeType type) const
+{
+  switch (type) {
+    case EdgeType::Bottom:
+      return "Bottom";
+    case EdgeType::Right:
+      return "Right";
+    case EdgeType::Top:
+      return "Top";
+    case EdgeType::Left:
+      return "Left";
+    case EdgeType::Unknown:
+      return "Unknown";
+  }
+
+  return "";
+}
+
+std::string Tapcell::toString(Tapcell::CornerType type) const
+{
+  switch (type) {
+    case CornerType::InnerBottomLeft:
+      return "InnerBottomLeft";
+    case CornerType::InnerBottomRight:
+      return "InnerBottomRight";
+    case CornerType::InnerTopLeft:
+      return "InnerTopLeft";
+    case CornerType::InnerTopRight:
+      return "InnerTopRight";
+    case CornerType::OuterBottomLeft:
+      return "OuterBottomLeft";
+    case CornerType::OuterBottomRight:
+      return "OuterBottomRight";
+    case CornerType::OuterTopLeft:
+      return "OuterTopLeft";
+    case CornerType::OuterTopRight:
+      return "OuterTopRight";
+    case CornerType::Unknown:
+      return "Unknown";
+  }
+
+  return "";
+}
+
+std::vector<odb::dbRow*> Tapcell::getRows(const Tapcell::Edge& edge) const
+{
+  std::vector<odb::dbRow*> rows;
+
+  const odb::Rect search(edge.pt0, edge.pt1);
+
+  for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
+    const auto row_bbox = row->getBBox();
+    if (row_bbox.intersects(search)) {
+      const odb::Rect intersect = row_bbox.intersect(search);
+      if (intersect.maxDXDY() == 0) {
+        // no on the edge
+        continue;
+      }
+      rows.push_back(row);
+
+      debugPrint(logger_,
+                 utl::TAP,
+                 "Boundary",
+                 3,
+                 "Edge row: {} {} -> {} {}: {}",
+                 edge.pt0.x(),
+                 edge.pt0.y(),
+                 edge.pt1.x(),
+                 edge.pt1.y(),
+                 row->getName());
+    }
+  }
+
+  return rows;
+}
+
+odb::dbRow* Tapcell::getRow(const Tapcell::Corner& corner) const
+{
+  const odb::Rect search(corner.pt, corner.pt);
+
+  for (odb::dbRow* row : db_->getChip()->getBlock()->getRows()) {
+    const auto row_bbox = row->getBBox();
+    bool accept = false;
+    if (row_bbox.intersects(search)) {
+      switch (corner.type) {
+        case CornerType::OuterBottomLeft:
+        case CornerType::OuterBottomRight:
+        case CornerType::OuterTopLeft:
+        case CornerType::OuterTopRight:
+          accept = true;
+          break;
+        case CornerType::InnerBottomLeft:
+        case CornerType::InnerBottomRight:
+          if (row_bbox.yMin() < corner.pt.y()) {
+            accept = true;
+          }
+          break;
+        case CornerType::InnerTopLeft:
+        case CornerType::InnerTopRight:
+          if (row_bbox.yMax() > corner.pt.y()) {
+            accept = true;
+          }
+          break;
+        case CornerType::Unknown:
+          break;
+      }
+
+      if (accept) {
+        debugPrint(logger_,
+                   utl::TAP,
+                   "Boundary",
+                   3,
+                   "Corner row: {} {}: {}",
+                   corner.pt.x(),
+                   corner.pt.y(),
+                   row->getName());
+        return row;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
+void Tapcell::insertBoundaryCells(const Tapcell::Polygon& area,
+                                  bool outer,
+                                  const BoundaryCellOptions& options)
+{
+  Polygon90 area90;
+  area90.set(area.begin(), area.end());
+  return insertBoundaryCells(area90, outer, options);
+}
+
+void Tapcell::insertBoundaryCells(const Tapcell::Polygon90& area,
+                                  bool outer,
+                                  const BoundaryCellOptions& options)
+{
+  CornerMap corners;
+  // insert corners first
+  for (const auto& corner : getBoundaryCorners(area, outer)) {
+    for (const auto& [row, insts] : insertBoundaryCorner(corner, options)) {
+      corners[row].insert(insts.begin(), insts.end());
+    }
+  }
+
+  for (const auto& edge : getBoundaryEdges(area, outer)) {
+    insertBoundaryEdge(edge, corners, options);
+  }
+}
+
+Tapcell::CornerMap Tapcell::insertBoundaryCorner(
+    const Tapcell::Corner& corner,
+    const BoundaryCellOptions& options)
+{
+  odb::dbRow* row = getRow(corner);
+  if (row == nullptr) {
+    return {};
+  }
+
+  odb::dbMaster* master = nullptr;
+  const auto row_orient = row->getOrient();
+  switch (corner.type) {
+    case CornerType::OuterBottomLeft:
+      if (row_orient == odb::dbOrientType::R0) {
+        master = options.outer_corner_bottom_left_r0;
+      } else {
+        master = options.outer_corner_bottom_left_mx;
+      }
+      break;
+    case CornerType::OuterBottomRight:
+      if (row_orient == odb::dbOrientType::R0) {
+        master = options.outer_corner_bottom_right_r0;
+      } else {
+        master = options.outer_corner_bottom_right_mx;
+      }
+      break;
+    case CornerType::OuterTopLeft:
+      if (row_orient == odb::dbOrientType::R0) {
+        master = options.outer_corner_top_left_r0;
+      } else {
+        master = options.outer_corner_top_left_mx;
+      }
+      break;
+    case CornerType::OuterTopRight:
+      if (row_orient == odb::dbOrientType::R0) {
+        master = options.outer_corner_top_right_r0;
+      } else {
+        master = options.outer_corner_top_right_mx;
+      }
+      break;
+    case CornerType::InnerBottomLeft:
+      if (row_orient == odb::dbOrientType::R0) {
+        master = options.inner_corner_bottom_left_r0;
+      } else {
+        master = options.inner_corner_bottom_left_mx;
+      }
+      break;
+    case CornerType::InnerBottomRight:
+      if (row_orient == odb::dbOrientType::R0) {
+        master = options.inner_corner_bottom_right_r0;
+      } else {
+        master = options.inner_corner_bottom_right_mx;
+      }
+      break;
+    case CornerType::InnerTopLeft:
+      if (row_orient == odb::dbOrientType::R0) {
+        master = options.inner_corner_top_left_r0;
+      } else {
+        master = options.inner_corner_top_left_mx;
+      }
+      break;
+    case CornerType::InnerTopRight:
+      if (row_orient == odb::dbOrientType::R0) {
+        master = options.inner_corner_top_right_r0;
+      } else {
+        master = options.inner_corner_top_right_mx;
+      }
+      break;
+    case CornerType::Unknown:
+      break;
+  }
+
+  if (master == nullptr) {
+    return {};
+  }
+
+  const int width = master->getWidth();
+  const int height = master->getHeight();
+
+  odb::dbOrientType orient = row_orient;
+  odb::Point ll = corner.pt;
+  switch (corner.type) {
+    case CornerType::OuterBottomLeft:
+      break;
+    case CornerType::OuterBottomRight:
+      ll.addX(-width);
+      orient = orient.flipY();
+      break;
+    case CornerType::OuterTopRight:
+      ll.addX(-width);
+      ll.addY(-height);
+      orient = orient.flipY();
+      break;
+    case CornerType::OuterTopLeft:
+      ll.addY(-height);
+      break;
+    case CornerType::InnerBottomLeft:
+      ll.addX(-width);
+      ll.addY(-height);
+      break;
+    case CornerType::InnerBottomRight:
+      ll.addY(-height);
+      orient = orient.flipY();
+      break;
+    case CornerType::InnerTopLeft:
+      ll.addX(-width);
+      break;
+    case CornerType::InnerTopRight:
+      orient = orient.flipY();
+      break;
+    case CornerType::Unknown:
+      break;
+  }
+
+  auto inst = makeInstance(
+      db_->getChip()->getBlock(),
+      master,
+      orient,
+      ll.getX(),
+      ll.getY(),
+      fmt::format(
+          "{}CORNER_{}_{}_", options.prefix, row->getName(), toString(corner.type)));
+
+  CornerMap map;
+  map[row].insert(inst);
+
+  return map;
+}
+
+void Tapcell::insertBoundaryEdge(const Tapcell::Edge& edge,
+                                 const Tapcell::CornerMap& corners,
+                                 const BoundaryCellOptions& options)
+{
+  switch (edge.type) {
+    case EdgeType::Bottom:
+    case EdgeType::Top:
+      insertBoundaryEdgeHorizontal(edge, corners, options);
+      break;
+    case EdgeType::Left:
+    case EdgeType::Right:
+      insertBoundaryEdgeVertical(edge, corners, options);
+      break;
+    case EdgeType::Unknown:
+      break;
+  }
+}
+
+void Tapcell::insertBoundaryEdgeHorizontal(const Tapcell::Edge& edge,
+                                           const Tapcell::CornerMap& corners,
+                                           const BoundaryCellOptions& options)
+{
+  auto rows = getRows(edge);
+  if (rows.empty()) {
+    return;
+  }
+
+  // there should only be one row
+  odb::dbRow* row = rows[0];
+
+  std::vector<odb::dbMaster*> masters;
+  switch (edge.type) {
+    case EdgeType::Top:
+      if (row->getOrient() == odb::dbOrientType::R0) {
+        masters.insert(
+            masters.end(), options.top_r0.begin(), options.top_r0.end());
+      } else {
+        masters.insert(
+            masters.end(), options.top_mx.begin(), options.top_mx.end());
+      }
+      break;
+    case EdgeType::Bottom:
+      if (row->getOrient() == odb::dbOrientType::R0) {
+        masters.insert(
+            masters.end(), options.bottom_r0.begin(), options.bottom_r0.end());
+      } else {
+        masters.insert(
+            masters.end(), options.bottom_mx.begin(), options.bottom_mx.end());
+      }
+      break;
+    case EdgeType::Left:
+    case EdgeType::Right:
+    case EdgeType::Unknown:
+      break;
+  }
+
+  if (masters.empty()) {
+    return;
+  }
+
+  std::sort(masters.begin(), masters.end(), [](auto* rhs, auto* lhs) {
+    return rhs->getWidth() > lhs->getWidth();
+  });
+
+  odb::Point e0 = edge.pt0;
+  odb::Point e1 = edge.pt1;
+  if (e0.getX() > e1.getX()) {
+    std::swap(e0, e1);
+  }
+
+  // adjust for corners
+  auto check_row = corners.find(row);
+  if (check_row != corners.end()) {
+    for (auto* inst : check_row->second) {
+      const auto bbox = inst->getBBox()->getBox();
+
+      if (bbox.xMin() == e0.getX()) {
+        e0.setX(bbox.xMax());
+      }
+      if (bbox.xMax() == e1.getX()) {
+        e1.setX(bbox.xMin());
+      }
+    }
+  }
+
+  odb::Point ll = row->getBBox().ll();
+  ll.setX(e0.getX());
+
+  auto pick_next_master
+      = [&e1, &masters](const odb::Point& ll) -> odb::dbMaster* {
+    int remaining = e1.getX() - ll.getX();
+    for (auto* master : masters) {
+      if (remaining % master->getWidth() == 0) {
+        return master;
+      }
+    }
+    // pick smallest if none will divide evenly
+    return masters[masters.size() - 1];
+  };
+
+  while (ll.getX() < e1.getX()) {
+    auto* master = pick_next_master(ll);
+
+    debugPrint(logger_,
+               utl::TAP,
+               "Boundary",
+               3,
+               "From {} -> {}: picked {}",
+               ll.getX(),
+               e1.getX(),
+               master->getName());
+
+    makeInstance(
+        db_->getChip()->getBlock(),
+        master,
+        row->getOrient(),
+        ll.getX(),
+        ll.getY(),
+        fmt::format(
+            "{}EDGE_{}_{}_", options.prefix, row->getName(), toString(edge.type)));
+    ll.addX(master->getWidth());
+  }
+}
+
+void Tapcell::insertBoundaryEdgeVertical(const Tapcell::Edge& edge,
+                                         const Tapcell::CornerMap& corners,
+                                         const BoundaryCellOptions& options)
+{
+  auto rows = getRows(edge);
+  if (rows.empty()) {
+    return;
+  }
+
+  odb::dbMaster* edge_master_r0 = nullptr;
+  odb::dbMaster* edge_master_mx = nullptr;
+
+  switch (edge.type) {
+    case EdgeType::Left:
+      edge_master_r0 = options.left_r0;
+      edge_master_mx = options.left_mx;
+      break;
+    case EdgeType::Right:
+      edge_master_r0 = options.right_r0;
+      edge_master_mx = options.right_mx;
+      break;
+    case EdgeType::Top:
+    case EdgeType::Bottom:
+    case EdgeType::Unknown:
+      break;
+  }
+
+  for (auto* row : rows) {
+    auto check_row = corners.find(row);
+    if (check_row != corners.end()) {
+      // corner is already placed in this row
+      continue;
+    }
+
+    odb::dbMaster* master = nullptr;
+    if (row->getOrient() == odb::dbOrientType::R0) {
+      master = edge_master_r0;
+    } else {
+      master = edge_master_mx;
+    }
+
+    if (master == nullptr) {
+      continue;
+    }
+
+    const int width = master->getWidth();
+
+    odb::dbOrientType orient = row->getOrient();
+    odb::Point ll;
+    switch (edge.type) {
+      case EdgeType::Right:
+        ll = row->getBBox().lr();
+        ll.addX(-width);
+        break;
+      case EdgeType::Left:
+        ll = row->getBBox().ll();
+        break;
+      case EdgeType::Top:
+      case EdgeType::Bottom:
+      case EdgeType::Unknown:
+        break;
+    }
+
+    makeInstance(
+        db_->getChip()->getBlock(),
+        master,
+        orient,
+        ll.getX(),
+        ll.getY(),
+        fmt::format(
+            "{}EDGE_{}_{}_", options.prefix, row->getName(), toString(edge.type)));
+  }
+}
+
+BoundaryCellOptions Tapcell::correctBoundaryOptions(
+    const BoundaryCellOptions& options) const
+{
+  return options;
+}
+
 }  // namespace tap

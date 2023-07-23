@@ -250,3 +250,35 @@ proc tapcell_ripup { args } {
   # Reset global parameters 
   tap::reset
 }
+
+sta::define_cmd_args "place_boundary_cells" {
+  [-outer_corner_top_left_mx master]\
+  [-outer_corner_top_left_r0 master]\
+  [-outer_corner_top_right_mx master]\
+  [-outer_corner_top_right_r0 master]\
+  [-outer_corner_bottom_left_mx master]\
+  [-outer_corner_bottom_left_r0 master]\
+  [-outer_corner_bottom_right_mx master]\
+  [-outer_corner_bottom_right_r0 master]\
+
+  [-inner_corner_top_left_mx master]\
+  [-inner_corner_top_left_r0 master]\
+  [-inner_corner_top_right_mx master]\
+  [-inner_corner_top_right_r0 master]\
+  [-inner_corner_bottom_left_mx master]\
+  [-inner_corner_bottom_left_r0 master]\
+  [-inner_corner_bottom_right_mx master]\
+  [-inner_corner_bottom_right_r0 master]\
+
+  [-endcap_left_r0 master] \
+  [-endcap_left_mx master] \
+  [-endcap_right_r0 master] \
+  [-endcap_right_mx master] \
+
+  [-endcap_top_r0 master] \
+  [-endcap_top_mx master] \
+  [-endcap_bottom_r0 master] \
+  [-endcap_bottom_mx master] \
+
+  [-prefix prefix]
+}
