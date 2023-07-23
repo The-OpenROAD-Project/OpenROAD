@@ -120,11 +120,11 @@ void Tapcell::run(const Options& options)
   insertTapcells(options);
 }
 
-int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
-                            odb::dbMaster* tapcell_master,
-                            const int dist)
+int Tapcell::insertTapcells(odb::dbMaster* tapcell_master, const int dist)
 {
   initFilledSites();
+
+  const vector<vector<odb::dbRow*>> rows = organizeRows();
 
   const int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
@@ -1435,8 +1435,7 @@ void Tapcell::insertTapcells(const Options& options)
 
   const int dist = options.dist >= 0 ? options.dist : defaultDistance();
 
-  const vector<vector<odb::dbRow*>> rows = organizeRows();
-  insertTapcells(rows, options.tapcell_master, dist);
+  insertTapcells(options.tapcell_master, dist);
 }
 
 void Tapcell::initFilledSites()

@@ -146,7 +146,41 @@ class Tapcell
     int xMin = 0;
     int xMax = 0;
   };
+  enum class EdgeType
+  {
+    Left,
+    Top,
+    Right,
+    Bottom,
+    Unknown
+  };
+  struct Edge
+  {
+    EdgeType type;
+    odb::Point pt0;
+    odb::Point pt1;
+  };
+  enum class CornerType
+  {
+    OuterBottomLeft,
+    OuterTopLeft,
+    OuterTopRight,
+    OuterBottomRight,
+    InnerBottomLeft,
+    InnerTopLeft,
+    InnerTopRight,
+    InnerBottomRight,
+    Unknown
+  };
+  struct Corner
+  {
+    CornerType type;
+    odb::Point pt;
+  };
+  using Polygon = boost::polygon::polygon_90_data<int>;
+  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   using RowFills = std::map<int, std::vector<std::vector<int>>>;
+  using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
 
   std::vector<odb::dbBox*> findBlockages();
   const std::pair<int, int> getMinMaxX(
@@ -166,47 +200,12 @@ class Tapcell
   std::map<std::pair<int, int>, std::vector<int>> getMacroOutlines(
       const std::vector<std::vector<odb::dbRow*>>& rows);
   std::vector<std::vector<odb::dbRow*>> organizeRows();
-  int insertTapcells(const std::vector<std::vector<odb::dbRow*>>& rows,
-                     odb::dbMaster* tapcell_master,
-                     int dist);
+  int insertTapcells(odb::dbMaster* tapcell_master, int dist);
 
   int defaultDistance() const;
 
-  using Polygon = boost::polygon::polygon_90_data<int>;
-  using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
   std::vector<Polygon90> getBoundaryAreas() const;
-  enum class EdgeType
-  {
-    Left,
-    Top,
-    Right,
-    Bottom,
-    Unknown
-  };
-  struct Edge
-  {
-    EdgeType type;
-    odb::Point pt0;
-    odb::Point pt1;
-  };
   std::vector<Edge> getBoundaryEdges(const Polygon90& area, bool outer) const;
-  enum class CornerType
-  {
-    OuterBottomLeft,
-    OuterTopLeft,
-    OuterTopRight,
-    OuterBottomRight,
-    InnerBottomLeft,
-    InnerTopLeft,
-    InnerTopRight,
-    InnerBottomRight,
-    Unknown
-  };
-  struct Corner
-  {
-    CornerType type;
-    odb::Point pt;
-  };
   std::vector<Corner> getBoundaryCorners(const Polygon90& area,
                                          bool outer) const;
 
@@ -223,7 +222,6 @@ class Tapcell
                                           bool outer,
                                           const BoundaryCellOptions& options);
 
-  using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
   CornerMap insertBoundaryCorner(const Corner& corner,
                                  const BoundaryCellOptions& options);
   int insertBoundaryEdge(const Edge& edge,
