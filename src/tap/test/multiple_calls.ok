@@ -12,14 +12,14 @@
 [INFO ODB-0303] The initial 30 rows (6960 sites) were cut with 1 shapes for a total of 30 rows (4935 sites).
 [INFO TAP-0002] Added 0 corner cells
 [INFO TAP-0003] Added 60 boundary cells
-[INFO TAP-0005] Inserted 16 tapcells.
-Differences found at line 44.
-COMPONENTS 77 ;
-COMPONENTS 80 ;
+[INFO TAP-0005] Inserted 19 tapcells.
+Differences found at line 105.
+    - TAP_TAPCELL_CORE_ROW_0_60 TAPCELL_X1 + SOURCE DIST + FIXED ( 39900 0 ) FS ;
+    - TAP_60 TAPCELL_X1 + SOURCE DIST + FIXED ( 39900 0 ) FS ;
 [INFO ODB-0303] The initial 30 rows (4935 sites) were cut with 1 shapes for a total of 30 rows (4935 sites).
 [INFO TAP-0002] Added 0 corner cells
 [INFO TAP-0003] Added 60 boundary cells
-[INFO TAP-0005] Inserted 33 tapcells.
-Differences found at line 44.
-COMPONENTS 94 ;
-COMPONENTS 99 ;
+[INFO TAP-0005] Inserted 38 tapcells.
+Differences found at line 105.
+    - TAP_TAPCELL_CORE_ROW_0_60 TAPCELL_X1 + SOURCE DIST + FIXED ( 19760 0 ) FS ;
+    - TAP_60 TAPCELL_X1 + SOURCE DIST + FIXED ( 19760 0 ) FS ;

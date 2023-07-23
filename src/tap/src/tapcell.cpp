@@ -121,9 +121,45 @@ void Tapcell::run(const Options& options)
 
 int Tapcell::insertTapcells(odb::dbMaster* tapcell_master, const int dist)
 {
+  std::vector<Edge> edges;
+
+  // Collect edges
+  const auto areas = getBoundaryAreas();
+  auto add_edge = [&edges](const Edge& edge) {
+    switch (edge.type) {
+      case EdgeType::Top:
+      case EdgeType::Bottom:
+        edges.push_back(edge);
+        break;
+      case EdgeType::Left:
+      case EdgeType::Right:
+      case EdgeType::Unknown:
+        break;
+    }
+  };
+
+  for (const auto& area : areas) {
+    for (const auto& edge : getBoundaryEdges(area, true)) {
+      add_edge(edge);
+    }
+
+    for (auto itr = area.begin_holes(); itr != area.end_holes(); itr++) {
+      for (const auto& edge : getBoundaryEdges(*itr, false)) {
+        add_edge(edge);
+      }
+    }
+  }
+
+  std::set<odb::dbRow*> edge_rows;
+  for (const auto& edge : edges) {
+    const auto rows = getRows(edge, tapcell_master->getSite());
+    edge_rows.insert(rows.begin(), rows.end());
+  }
+
   int inst = 0;
   for (auto* row : db_->getChip()->getBlock()->getRows()) {
-    inst += insertTapcells(tapcell_master, dist, row);
+    const bool is_edge = edge_rows.find(row) != edge_rows.end();
+    inst += insertTapcells(tapcell_master, dist, row, is_edge);
   }
   logger_->info(utl::TAP, 5, "Inserted {} tapcells.", inst);
   return inst;
@@ -131,7 +167,8 @@ int Tapcell::insertTapcells(odb::dbMaster* tapcell_master, const int dist)
 
 int Tapcell::insertTapcells(odb::dbMaster* tapcell_master,
                             int dist,
-                            odb::dbRow* row)
+                            odb::dbRow* row,
+                            bool is_edge)
 {
   if (row->getSite()->getName() != tapcell_master->getSite()->getName()) {
     return 0;
@@ -144,10 +181,14 @@ int Tapcell::insertTapcells(odb::dbMaster* tapcell_master,
   int insts = 0;
 
   int offset = 0;
-  const int pitch
-      = tap_width * std::floor(2 * dist / static_cast<double>(tap_width));
+  int pitch_mult = 2;
+  if (is_edge) {
+    pitch_mult = 1;
+  }
+  int pitch = tap_width
+              * std::floor(pitch_mult * dist / static_cast<double>(tap_width));
 
-  if (row->getOrient() == odb::dbOrientType::R0) {
+  if (row->getOrient() == odb::dbOrientType::R0 || is_edge) {
     offset = 0;
   } else {
     offset = pitch / 2;
@@ -421,6 +462,14 @@ void Tapcell::insertBoundaryCells(const BoundaryCellOptions& options)
 
   logger_->info(utl::TAP, 2, "Added {} corner cells", corners);
   logger_->info(utl::TAP, 3, "Added {} boundary cells", boundary);
+}
+
+std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon& area,
+                                                     bool outer) const
+{
+  Polygon90 area90;
+  area90.set(area.begin(), area.end());
+  return getBoundaryEdges(area90, outer);
 }
 
 std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon90& area,

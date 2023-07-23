@@ -188,11 +188,15 @@ class Tapcell
                      const odb::dbOrientType& orient,
                      const std::set<odb::dbInst*>& row_insts);
   int insertTapcells(odb::dbMaster* tapcell_master, int dist);
-  int insertTapcells(odb::dbMaster* tapcell_master, int dist, odb::dbRow* row);
+  int insertTapcells(odb::dbMaster* tapcell_master,
+                     int dist,
+                     odb::dbRow* row,
+                     bool is_edge);
 
   int defaultDistance() const;
 
   std::vector<Polygon90> getBoundaryAreas() const;
+  std::vector<Edge> getBoundaryEdges(const Polygon& area, bool outer) const;
   std::vector<Edge> getBoundaryEdges(const Polygon90& area, bool outer) const;
   std::vector<Corner> getBoundaryCorners(const Polygon90& area,
                                          bool outer) const;
