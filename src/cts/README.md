@@ -87,6 +87,14 @@ report_cts [-out_file <file>]
 | ----- | ----- |
 | `-out_file` | the file containing the TritonCTS reports. If this parameter is omitted, the metrics are shown onto `stdout` and not saved. |
 
+### Useful developer functions
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonCTS.cpp) or the [swig file](./src/TritonCTS.i).
+
+```
+clock_tree_synthesis_debug -plot # choose to plot the CTS to GUI
+```
+
 ## Example scripts
 
 ```tcl
