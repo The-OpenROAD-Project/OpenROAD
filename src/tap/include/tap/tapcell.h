@@ -140,12 +140,6 @@ class Tapcell
   void insertTapcells(const Options& options);
 
  private:
-  struct FilledSites
-  {
-    int yMin = 0;
-    int xMin = 0;
-    int xMax = 0;
-  };
   enum class EdgeType
   {
     Left,
@@ -179,13 +173,9 @@ class Tapcell
   };
   using Polygon = boost::polygon::polygon_90_data<int>;
   using Polygon90 = boost::polygon::polygon_90_with_holes_data<int>;
-  using RowFills = std::map<int, std::vector<std::vector<int>>>;
   using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
 
   std::vector<odb::dbBox*> findBlockages();
-  const std::pair<int, int> getMinMaxX(
-      const std::vector<std::vector<odb::dbRow*>>& rows);
-  RowFills findRowFills();
   bool checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori);
   odb::dbInst* makeInstance(odb::dbBlock* block,
                             odb::dbMaster* master,
@@ -196,11 +186,9 @@ class Tapcell
   bool checkIfFilled(int x,
                      int width,
                      const odb::dbOrientType& orient,
-                     const std::vector<std::vector<int>>& row_insts);
-  std::map<std::pair<int, int>, std::vector<int>> getMacroOutlines(
-      const std::vector<std::vector<odb::dbRow*>>& rows);
-  std::vector<std::vector<odb::dbRow*>> organizeRows();
+                     const std::set<odb::dbInst*>& row_insts);
   int insertTapcells(odb::dbMaster* tapcell_master, int dist);
+  int insertTapcells(odb::dbMaster* tapcell_master, int dist, odb::dbRow* row);
 
   int defaultDistance() const;
 
@@ -239,12 +227,9 @@ class Tapcell
 
   BoundaryCellOptions correctBoundaryOptions(const Options& options) const;
 
-  void initFilledSites();
-
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
   int phy_idx_ = 0;
-  std::vector<FilledSites> filled_sites_;
   std::string tap_prefix_;
   std::string endcap_prefix_;
 };
