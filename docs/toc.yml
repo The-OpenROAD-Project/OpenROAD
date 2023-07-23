@@ -49,9 +49,6 @@ entries:
       title: VSRC description
   - file: main/src/gpl/README
     title: Global Placement
-    entries:
-    - file: main/src/gpl/doc/TclCommands
-      title: Tclcommands
   - file: main/src/sta/README
     title: Static Timing Analyzer (external)
   - file: main/src/rsz/README

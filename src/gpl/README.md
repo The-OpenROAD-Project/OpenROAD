@@ -18,6 +18,21 @@ Features:
 
 ## Commands
 
+```{note}
+- Parameters in square brackets `[-param param]` are optional.
+- Parameters without square brackets `-param2 param2` are required.
+```
+
+### Global Placement
+
+`-timing_driven` does a virtual `repair_design` to find slacks and
+weight nets with low slack. It adjusts the worst slacks (modified with 
+`-timing_driven_nets_percentage`) using a multiplier (modified with 
+`-timing_driven_net_weight_max`). The multiplier
+is scaled from the full value for the worst slack, to 1.0 at the
+`timing_driven_nets_percentage` point. Use the `set_wire_rc` command to set
+resistance and capacitance of estimated wires used for timing.
+
 ```
 global_placement
     [-timing_driven]
@@ -51,87 +66,111 @@ global_placement
     [-force_cpu]
 ```
 
-### Tuning Parameters
+#### Options
 
-- `-timing_driven`: Enable timing-driven mode
-- `-routability_driven`: Enable routability-driven mode
-- `-skip_initial_place` : Skip the initial placement (BiCGSTAB solving) before Nesterov placement. IP improves HPWL by ~5% on large designs. Equal to '-initial_place_max_iter 0'
-- `-incremental` : Enable the incremental global placement. Users would need to tune other parameters (e.g., init_density_penalty) with pre-placed solutions.
-- `-bin_grid_count`: set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`.
-- `-density`: set target density. Default value is 0.70. Allowed values are `[0-1, float]`.
-- `-init_density_penalty`: set initial density penalty. Default value is 8e-5. Allowed values are `[1e-6 - 1e6, float]`.
-- `-init_wirelength_coef`: set initial wirelength coefficient. Default value is 0.25. Allowed values are `[unlimited, float]`.
-- `-min_phi_coef`: set `pcof_min(µ_k Lower Bound)`. Default value is 0.95. Allowed values are `[0.95-1.05, float]`.
-- `-max_phi_coef`: set `pcof_max(µ_k Upper Bound)`. Default value is 1.05. Allowed values are `[1.00-1.20, float]`.
-- `-overflow`: set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`.
-- `-initial_place_max_iter`: set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`.
-- `-initial_place_max_fanout`: set net escape condition in initial place when 'fanout >= initial_place_max_fanout'. Default value is 200. Allowed values are `[1-MAX_INT, int]`.
-- `-timing_driven_net_reweight_overflow`: set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`.
-- `-timing_driven_net_weight_max`: Set the multiplier for the most timing critical nets. Default value is 1.9.
-- `-timing_driven_nets_percentage`: Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`
-- `-verbose_level`: set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`.
-- `-force_cpu`: Force to use the CPU solver even if the GPU is available.
+| Switch Name | Description |
+| ----- | ----- |
+| `-timing_driven` | Enable timing-driven mode |
+| `-routability_driven` | Enable routability-driven mode |
+| `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0` | 
+| `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
+| `-bin_grid_count` | set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`. |
+| `-density` | set target density. Default value is 0.70. Allowed values are `[0-1, float]`. |
+| `-init_density_penalty` | set initial density penalty. Default value is 8e-5. Allowed values are `[1e-6 - 1e6, float]`. |
+| `-init_wirelength_coef` | set initial wirelength coefficient. Default value is 0.25. Allowed values are `[unlimited, float]`. |
+| `-min_phi_coef` | set `pcof_min` ($\mu_k$ Lower Bound). Default value is 0.95. Allowed values are `[0.95-1.05, float]`. |
+| `-max_phi_coef` | set `pcof_max` ($\mu_k$ Upper Bound). Default value is 1.05. Allowed values are `[1.00-1.20, float]`. |
+| `-overflow` | set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`. |
+| `-initial_place_max_iter` | set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`. |
+| `-initial_place_max_fanout` | set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. Default value is 200. Allowed values are `[1-MAX_INT, int]`. |
+| `-timing_driven_net_reweight_overflow` | set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`. |
+| `-timing_driven_net_weight_max` | Set the multiplier for the most timing critical nets. Default value is 1.9. |
+| `-timing_driven_nets_percentage` | Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`. |
+| `-verbose_level` | set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`. |
+| `-force_cpu` | Force to use the CPU solver even if the GPU is available | 
 
 
-`-timing_driven` does a virtual `repair_design` to find slacks and
-weight nets with low slack. It adjusts the worst slacks (10% by default,
-modified with -timing_driven_nets_percentage) using a multiplier (1.9 by
-default, modified with `-timing_driven_net_weight_max`). The multiplier
-is scaled from the full value for the worst slack, to 1.0 at the
-timing_driven_nets_percentage point. Use the `set_wire_rc` command to set
-resistance and capacitance of estimated wires used for timing.
+### Useful developer functions
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/replace.cpp) or the [swig file](./src/replace.i).
+
+```tcl
+# debugging global placement 
+global_placement_debug -pause -update -inst -draw_bins -initial
+
+# adds padding and gets global placement uniform target density
+get_global_placement_uniform_density -pad_left -pad_right 
+```
 
 ## Example scripts
 
+Example scripts demonstrating how to run RePlAce on a sample design on `core01` as follows:
+
+```shell
+./test/core01.tcl
+```
+
 ## Regression tests
+
+There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
+
+Simply run the following script:
+
+```shell
+./test/regression
+```
 
 ## Limitations
 
 ## Using the Python interface to gpl
 
-This api tries to stay close to the api defined in C++ class `Replace`
-that is located in gpl/include/gpl/Replace.h
+This API tries to stay close to the API defined in `C++` class `Replace`
+that is located [here](include/gpl/Replace.h).
 
 When initializing a design, a sequence of Python commands might look like
 the following:
 
-    from openroad import Design, Tech
-    tech = Tech()
-    tech.readLef(...)
-    design = Design(tech)
-    design.readDef(...)
-    gpl = design.getReplace()
-    
-Here is an example of some options / configurations to the global placer.
-(See Replace.h for a complete list)
+```python
+from openroad import Design, Tech
+tech = Tech()
+tech.readLef(...)
+design = Design(tech)
+design.readDef(...)
+gpl = design.getReplace()
+```    
 
-    gpl.setInitialPlaceMaxIter(iter)
-    gpl.setSkipIoMode(skip_io)
-    gpl.setTimingDrivenMode(timing_driven)
-    gpl.setTimingNetWeightMax(weight)
+Here is an example of some options / configurations to the global placer.
+(See [Replace.h](include/gpl/Replace.h) for a complete list)
+
+```python
+gpl.setInitialPlaceMaxIter(iter)
+gpl.setSkipIoMode(skip_io)
+gpl.setTimingDrivenMode(timing_driven)
+gpl.setTimingNetWeightMax(weight)
+```
 
 There are some useful Python functions located in the file
-grt/test/grt_aux.py but these are not considered a part of the (final)
-api and they may change.
+[grt_aux.py](test/grt_aux.py) but these are not considered a part of the *final*
+API and they may change.
 
 ## FAQs
 
 Check out [GitHub discussion](https://github.com/The-OpenROAD-Project/OpenROAD/discussions/categories/q-a?discussions_q=category%3AQ%26A+replace+in%3Atitle)
 about this tool.
 
-## External references
+## References
 
 -   C.-K. Cheng, A. B. Kahng, I. Kang and L. Wang, "RePlAce: Advancing
     Solution Quality and Routability Validation in Global Placement", IEEE
     Transactions on Computer-Aided Design of Integrated Circuits and Systems,
-    38(9) (2019), pp. 1717-1730.
+    38(9) (2019), pp. 1717-1730. [(.pdf)](https://vlsicad.ucsd.edu/Publications/Journals/j126.pdf)
 -   J. Lu, P. Chen, C.-C. Chang, L. Sha, D. J.-H. Huang, C.-C. Teng and
     C.-K. Cheng, "ePlace: Electrostatics based Placement using Fast Fourier
-    Transform and Nesterov's Method", ACM TODAES 20(2) (2015), article 17.
+    Transform and Nesterov's Method", ACM TODAES 20(2) (2015), article 17. [(.pdf)](https://cseweb.ucsd.edu/~jlu/papers/eplace-todaes14/paper.pdf)
 -   J. Lu, H. Zhuang, P. Chen, H. Chang, C.-C. Chang, Y.-C. Wong, L. Sha,
     D. J.-H. Huang, Y. Luo, C.-C. Teng and C.-K. Cheng, "ePlace-MS:
     Electrostatics based Placement for Mixed-Size Circuits", IEEE TCAD 34(5)
-    (2015), pp. 685-698.
+    (2015), pp. 685-698. [(.pdf)](https://cseweb.ucsd.edu/~jlu/papers/eplace-ms-tcad14/paper.pdf)
 
 -   The timing-driven mode has been implemented by
     Mingyu Woo (only available in [legacy repo in standalone
