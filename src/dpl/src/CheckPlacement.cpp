@@ -128,12 +128,12 @@ void Opendp::checkPlacement(bool verbose,
   }
 }
 void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
-                                    std::vector<Cell*>& failures)
+                                    const std::vector<Cell*>& failures) const
 {
   using boost::property_tree::ptree;
   ptree violations;
   double dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
-  Rect core = getCore();
+  const Rect core = getCore();
   for (auto failure : failures) {
     ptree shape, violation, shapes, source, sources;
 
@@ -149,9 +149,6 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
     source.put("name", failure->name());
     sources.push_back(std::make_pair("", source));
 
-    // violation.put("layer", "-");
-    // TODO: How to get the layer from the dbInst?
-
     violation.put("type", "box");
     violation.add_child("shape", shapes);
     violation.add_child("sources", sources);
@@ -162,16 +159,16 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
 }
 
 void Opendp::writeJsonReport(const string& filename,
-                             vector<Cell*> placed_failures,
-                             vector<Cell*> in_rows_failures,
-                             vector<Cell*> overlap_failures,
-                             vector<Cell*> one_site_gap_failures,
-                             vector<Cell*> site_align_failures,
-                             vector<Cell*> region_placement_failures)
+                             const vector<Cell*>& placed_failures,
+                             const vector<Cell*>& in_rows_failures,
+                             const vector<Cell*>& overlap_failures,
+                             const vector<Cell*>& one_site_gap_failures,
+                             const vector<Cell*>& site_align_failures,
+                             const vector<Cell*>& region_placement_failures)
 {
   std::ofstream json_file(filename);
   if (!json_file.is_open()) {
-    logger_->warn(DPL, 40, "Failed to open file {} for writing.", filename);
+    logger_->error(DPL, 40, "Failed to open file {} for writing.", filename);
   }
   try {
     using boost::property_tree::ptree;
@@ -226,9 +223,8 @@ void Opendp::writeJsonReport(const string& filename,
     root.add_child("DRC", drcArray);
     boost::property_tree::write_json(json_file, root);
   } catch (std::exception& ex) {
-    logger_->warn(
+    logger_->error(
         DPL, 45, "Failed to write JSON report. Exception: {}", ex.what());
-    return;
   }
 }
 

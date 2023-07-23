@@ -221,7 +221,7 @@ class Opendp
   int padLeft(dbInst* inst) const;
   // Return error count.
   void processViolationsPtree(boost::property_tree::ptree& entry,
-                              std::vector<Cell*>& failures);
+                              const std::vector<Cell*>& failures) const;
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       string report_file_name = "report.json");
