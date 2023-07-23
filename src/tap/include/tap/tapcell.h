@@ -53,13 +53,6 @@ class dbBlock;
 
 namespace tap {
 
-enum LocationType
-{
-  AboveMacro,
-  BelowMacro,
-  NoMacro,
-};
-
 struct Options
 {
   odb::dbMaster* endcap_master = nullptr;
@@ -115,17 +108,17 @@ struct BoundaryCellOptions
   odb::dbMaster* inner_corner_bottom_right_mx = nullptr;
 
   // endcaps
-  std::set<odb::dbMaster*> top_r0;
-  std::set<odb::dbMaster*> top_mx;
+  std::vector<odb::dbMaster*> top_r0;
+  std::vector<odb::dbMaster*> top_mx;
 
-  std::set<odb::dbMaster*> bottom_r0;
-  std::set<odb::dbMaster*> bottom_mx;
+  std::vector<odb::dbMaster*> bottom_r0;
+  std::vector<odb::dbMaster*> bottom_mx;
 
-  odb::dbMaster* left_r0;
-  odb::dbMaster* left_mx;
+  odb::dbMaster* left_r0 = nullptr;
+  odb::dbMaster* left_mx = nullptr;
 
-  odb::dbMaster* right_r0;
-  odb::dbMaster* right_mx;
+  odb::dbMaster* right_r0 = nullptr;
+  odb::dbMaster* right_mx = nullptr;
 
   std::string prefix = "PHY_";
 };
@@ -143,7 +136,8 @@ class Tapcell
   void reset();
   int removeCells(const std::string& prefix);
 
-  void insertBoundaryCells();
+  void insertBoundaryCells(const BoundaryCellOptions& options);
+  void insertTapcells(const Options& options);
 
  private:
   struct FilledSites
@@ -152,67 +146,25 @@ class Tapcell
     int xMin = 0;
     int xMax = 0;
   };
-  // Cells placed at corners of macros & corners of core area
-  struct CornercapMasters
-  {
-    odb::dbMaster* nwin_master;
-    odb::dbMaster* nwout_master;
-  };
   using RowFills = std::map<int, std::vector<std::vector<int>>>;
 
   std::vector<odb::dbBox*> findBlockages();
   const std::pair<int, int> getMinMaxX(
       const std::vector<std::vector<odb::dbRow*>>& rows);
   RowFills findRowFills();
-  odb::dbMaster* pickCornerMaster(const LocationType top_bottom,
-                                  const odb::dbOrientType& ori,
-                                  odb::dbMaster* cnrcap_nwin_master,
-                                  odb::dbMaster* cnrcap_nwout_master,
-                                  odb::dbMaster* endcap_master);
   bool checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori);
-  LocationType getLocationType(int x,
-                               const std::vector<odb::dbRow*>& rows_above,
-                               const std::vector<odb::dbRow*>& rows_below);
   odb::dbInst* makeInstance(odb::dbBlock* block,
                             odb::dbMaster* master,
                             const odb::dbOrientType& orientation,
                             int x,
                             int y,
                             const std::string& prefix);
-  bool isXInRow(int x, const std::vector<odb::dbRow*>& subrow);
   bool checkIfFilled(int x,
                      int width,
                      const odb::dbOrientType& orient,
                      const std::vector<std::vector<int>>& row_insts);
-  int insertAtTopBottom(const std::vector<std::vector<odb::dbRow*>>& rows,
-                        const std::vector<odb::dbMaster*>& masters,
-                        odb::dbMaster* endcap_master,
-                        const std::string& prefix);
-  void insertAtTopBottomHelper(
-      odb::dbBlock* block,
-      int top_bottom,
-      bool is_macro,
-      const odb::dbOrientType& ori,
-      int x_start,
-      int x_end,
-      int lly,
-      odb::dbMaster* tap_nwintie_master,
-      odb::dbMaster* tap_nwin2_master,
-      odb::dbMaster* tap_nwin3_master,
-      odb::dbMaster* tap_nwouttie_master,
-      odb::dbMaster* tap_nwout2_master,
-      odb::dbMaster* tap_nwout3_master,
-      const std::vector<std::vector<int>>& row_fill_check,
-      const std::string& prefix);
-  int insertAroundMacros(const std::vector<std::vector<odb::dbRow*>>& rows,
-                         const std::vector<odb::dbMaster*>& masters,
-                         odb::dbMaster* corner_master,
-                         const std::string& prefix);
   std::map<std::pair<int, int>, std::vector<int>> getMacroOutlines(
       const std::vector<std::vector<odb::dbRow*>>& rows);
-  int insertEndcaps(const std::vector<std::vector<odb::dbRow*>>& rows,
-                    odb::dbMaster* endcap_master,
-                    const CornercapMasters& masters);
   std::vector<std::vector<odb::dbRow*>> organizeRows();
   int insertTapcells(const std::vector<std::vector<odb::dbRow*>>& rows,
                      odb::dbMaster* tapcell_master,
@@ -261,31 +213,35 @@ class Tapcell
   std::string toString(EdgeType type) const;
   std::string toString(CornerType type) const;
 
-  odb::dbRow* getRow(const Corner& corner) const;
-  std::vector<odb::dbRow*> getRows(const Edge& edge) const;
+  odb::dbRow* getRow(const Corner& corner, odb::dbSite* site) const;
+  std::vector<odb::dbRow*> getRows(const Edge& edge, odb::dbSite* site) const;
 
-  void insertBoundaryCells(const Polygon& area,
-                           bool outer,
-                           const BoundaryCellOptions& options);
-  void insertBoundaryCells(const Polygon90& area,
-                           bool outer,
-                           const BoundaryCellOptions& options);
+  std::pair<int, int> insertBoundaryCells(const Polygon& area,
+                                          bool outer,
+                                          const BoundaryCellOptions& options);
+  std::pair<int, int> insertBoundaryCells(const Polygon90& area,
+                                          bool outer,
+                                          const BoundaryCellOptions& options);
 
   using CornerMap = std::map<odb::dbRow*, std::set<odb::dbInst*>>;
   CornerMap insertBoundaryCorner(const Corner& corner,
                                  const BoundaryCellOptions& options);
-  void insertBoundaryEdge(const Edge& edge,
-                          const CornerMap& corners,
-                          const BoundaryCellOptions& options);
-  void insertBoundaryEdgeHorizontal(const Edge& edge,
-                                    const CornerMap& corners,
-                                    const BoundaryCellOptions& options);
-  void insertBoundaryEdgeVertical(const Edge& edge,
-                                  const CornerMap& corners,
-                                  const BoundaryCellOptions& options);
+  int insertBoundaryEdge(const Edge& edge,
+                         const CornerMap& corners,
+                         const BoundaryCellOptions& options);
+  int insertBoundaryEdgeHorizontal(const Edge& edge,
+                                   const CornerMap& corners,
+                                   const BoundaryCellOptions& options);
+  int insertBoundaryEdgeVertical(const Edge& edge,
+                                 const CornerMap& corners,
+                                 const BoundaryCellOptions& options);
 
   BoundaryCellOptions correctBoundaryOptions(
       const BoundaryCellOptions& options) const;
+
+  BoundaryCellOptions correctBoundaryOptions(const Options& options) const;
+
+  void initFilledSites();
 
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;

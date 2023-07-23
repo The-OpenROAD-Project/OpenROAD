@@ -252,6 +252,26 @@ proc tapcell_ripup { args } {
 }
 
 sta::define_cmd_args "place_boundary_cells" {
+  # Simplified
+  [-outer_corner master]\
+  [-inner_corner master]\
+
+  [-endcap masters] \
+
+  # Simplified with orient
+  [-outer_corner_mx master]\
+  [-outer_corner_r0 master]\
+  [-inner_corner_mx master]\
+  [-inner_corner_r0 master]\
+
+  [-endcap_horizontal_r0 masters] \
+  [-endcap_horizontal_mx masters] \
+  [-endcap_vertical_r0 master] \
+  [-endcap_vertical_mx master] \
+
+  [-prefix prefix]
+
+  # Full options
   [-outer_corner_top_left_mx master]\
   [-outer_corner_top_left_r0 master]\
   [-outer_corner_top_right_mx master]\
@@ -275,10 +295,152 @@ sta::define_cmd_args "place_boundary_cells" {
   [-endcap_right_r0 master] \
   [-endcap_right_mx master] \
 
-  [-endcap_top_r0 master] \
-  [-endcap_top_mx master] \
-  [-endcap_bottom_r0 master] \
-  [-endcap_bottom_mx master] \
+  [-endcap_top_r0 masters] \
+  [-endcap_top_mx masters] \
+  [-endcap_bottom_r0 masters] \
+  [-endcap_bottom_mx masters]
+}
 
-  [-prefix prefix]
+proc place_boundary_cells { args } {
+  sta::parse_key_args "place_boundary_cells" args \
+    keys {
+      -outer_corner -inner_corner
+      -endcap
+      -outer_corner_mx -outer_corner_r0 -inner_corner_mx -inner_corner_r0
+      -endcap_horizontal_r0 -endcap_horizontal_mx -endcap_vertical_r0 -endcap_vertical_mx
+      -prefix
+      -outer_corner_top_left_mx -outer_corner_top_left_r0 -outer_corner_top_right_mx -outer_corner_top_right_r0 -outer_corner_bottom_left_mx -outer_corner_bottom_left_r0 -outer_corner_bottom_right_mx -outer_corner_bottom_right_r0
+      -inner_corner_top_left_mx -inner_corner_top_left_r0 -inner_corner_top_right_mx -inner_corner_top_right_r0 -inner_corner_bottom_left_mx -inner_corner_bottom_left_r0 -inner_corner_bottom_right_mx -inner_corner_bottom_right_r0
+      -endcap_left_r0 -endcap_left_mx -endcap_right_r0 -endcap_right_mx
+      -endcap_top_r0 -endcap_top_mx -endcap_bottom_r0 -endcap_bottom_mx} \
+    flags {}
+  
+  sta::check_argc_eq0 "place_boundary_cells" $args
+
+  set prefix "PHY_"
+  if { [info exists keys(-prefix)]} {
+    set prefix $keys(-prefix)
+  }
+
+  set outer_corner_top_left_mx [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_left_mx -outer_corner_mx -outer_corner]]
+  set outer_corner_top_left_r0 [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_left_r0 -outer_corner_r0 -outer_corner]]
+  set outer_corner_top_right_mx [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_right_mx -outer_corner_mx -outer_corner]]
+  set outer_corner_top_right_r0 [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_right_r0 -outer_corner_r0 -outer_corner]]
+  set outer_corner_bottom_left_mx [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_left_mx -outer_corner_mx -outer_corner]]
+  set outer_corner_bottom_left_r0 [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_left_r0 -outer_corner_r0 -outer_corner]]
+  set outer_corner_bottom_right_mx [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_right_mx -outer_corner_mx -outer_corner]]
+  set outer_corner_bottom_right_r0 [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_right_r0 -outer_corner_r0 -outer_corner]]
+
+  set inner_corner_top_left_mx [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_left_mx -inner_corner_mx -inner_corner]]
+  set inner_corner_top_left_r0 [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_left_r0 -inner_corner_r0 -inner_corner]]
+  set inner_corner_top_right_mx [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_right_mx -inner_corner_mx -inner_corner]]
+  set inner_corner_top_right_r0 [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_right_r0 -inner_corner_r0 -inner_corner]]
+  set inner_corner_bottom_left_mx [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_left_mx -inner_corner_mx -inner_corner]]
+  set inner_corner_bottom_left_r0 [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_left_r0 -inner_corner_r0 -inner_corner]]
+  set inner_corner_bottom_right_mx [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_right_mx -inner_corner_mx -inner_corner]]
+  set inner_corner_bottom_right_r0 [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_right_r0 -inner_corner_r0 -inner_corner]]
+
+  set endcap_left_r0 [tap::find_master [tap::parse_boundary_key keys -endcap_left_r0 -endcap_vertical_r0 -endcap]]
+  set endcap_left_mx [tap::find_master [tap::parse_boundary_key keys -endcap_left_mx -endcap_vertical_mx -endcap]]
+  set endcap_right_r0 [tap::find_master [tap::parse_boundary_key keys -endcap_right_r0 -endcap_vertical_r0 -endcap]]
+  set endcap_right_mx [tap::find_master [tap::parse_boundary_key keys -endcap_right_mx -endcap_vertical_mx -endcap]]
+
+  set endcap_top_r0 [tap::find_masters [tap::parse_boundary_key keys -endcap_top_r0 -endcap_horizontal_r0 -endcap]]
+  set endcap_top_mx [tap::find_masters [tap::parse_boundary_key keys -endcap_top_mx -endcap_horizontal_mx -endcap]]
+  set endcap_bottom_r0 [tap::find_masters [tap::parse_boundary_key keys -endcap_bottom_r0 -endcap_horizontal_r0 -endcap]]
+  set endcap_bottom_mx [tap::find_masters [tap::parse_boundary_key keys -endcap_bottom_mx -endcap_horizontal_mx -endcap]]
+
+  tap::insert_boundary_cells \
+    $outer_corner_top_left_r0\
+    $outer_corner_top_left_mx\
+    $outer_corner_top_right_r0\
+    $outer_corner_top_right_mx\
+    $outer_corner_bottom_left_r0\
+    $outer_corner_bottom_left_mx\
+    $outer_corner_bottom_right_r0\
+    $outer_corner_bottom_right_mx\
+    $inner_corner_top_left_r0\
+    $inner_corner_top_left_mx\
+    $inner_corner_top_right_r0\
+    $inner_corner_top_right_mx\
+    $inner_corner_bottom_left_r0\
+    $inner_corner_bottom_left_mx\
+    $inner_corner_bottom_right_r0\
+    $inner_corner_bottom_right_mx\
+    $endcap_top_r0\
+    $endcap_top_mx\
+    $endcap_bottom_r0\
+    $endcap_bottom_mx\
+    $endcap_left_r0\
+    $endcap_left_mx\
+    $endcap_right_r0\
+    $endcap_right_mx\
+    $prefix
+}
+
+sta::define_cmd_args "place_tapcells" {
+  -master tapcell_master \
+  -distance dist
+}
+
+proc place_tapcells {args } {
+  
+  sta::parse_key_args "place_boundary_cells" args \
+    keys {-master -distance} \
+    flags {}
+  
+  sta::check_argc_eq0 "place_boundary_cells" $args
+
+  set dist -1
+  if { [info exists keys(-distance)] } {
+    set dist [ord::microns_to_dbu $keys(-distance)]
+  }
+  set master "NULL"
+  if { [info exists keys(-master)] } {
+    set master [tap::find_master $keys(-master)]
+  }
+
+  tap::insert_tapcells $master $dist
+}
+
+namespace eval tap {
+
+  proc find_master { master } {
+    if { $master == "" } {
+      return "NULL"
+    }
+    set m [[ord::get_db] findMaster $master]
+    if {$m == "NULL"} {
+      utl::error TAP 102 "Unable to find $master"
+    }
+    return $m
+  }
+
+  proc find_masters { masters } {
+    set ms []
+    foreach m $masters {
+      lappend ms [find_master $m]
+    }
+    return $ms
+  }
+
+  proc parse_boundary_key { cmdargs key0 key1 key2 {optional true} } {
+    upvar keys $cmdargs
+
+    if { [info exists keys($key0) ]} {
+      return $keys($key0)
+    }
+    if { [info exists keys($key1) ]} {
+      return $keys($key1)
+    }
+    if { [info exists keys($key2) ]} {
+      return $keys($key2)
+    }
+
+    if { !$optional } {
+      utl::error TAP 103 "$key0, $key1, or $key2 is required."
+    }
+
+    return ""
+  }
 }

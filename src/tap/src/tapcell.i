@@ -66,6 +66,9 @@
   
 %}
 
+%import <std_vector.i>
+%import "dbtypes.i"
+
 %include "../../Exception.i"
 
 %inline %{
@@ -135,9 +138,77 @@
     return getTapcell()->removeCells(prefix);
   }
 
-  void insert_boundary_cells()
+  void insert_boundary_cells(
+    odb::dbMaster* outer_corner_top_left_r0,
+    odb::dbMaster* outer_corner_top_left_mx,
+    odb::dbMaster* outer_corner_top_right_r0,
+    odb::dbMaster* outer_corner_top_right_mx,
+    odb::dbMaster* outer_corner_bottom_left_r0,
+    odb::dbMaster* outer_corner_bottom_left_mx,
+    odb::dbMaster* outer_corner_bottom_right_r0,
+    odb::dbMaster* outer_corner_bottom_right_mx,
+    odb::dbMaster* inner_corner_top_left_r0,
+    odb::dbMaster* inner_corner_top_left_mx,
+    odb::dbMaster* inner_corner_top_right_r0,
+    odb::dbMaster* inner_corner_top_right_mx,
+    odb::dbMaster* inner_corner_bottom_left_r0,
+    odb::dbMaster* inner_corner_bottom_left_mx,
+    odb::dbMaster* inner_corner_bottom_right_r0,
+    odb::dbMaster* inner_corner_bottom_right_mx,
+
+    const std::vector<odb::dbMaster*>& top_r0,
+    const std::vector<odb::dbMaster*>& top_mx,
+    const std::vector<odb::dbMaster*>& bottom_r0,
+    const std::vector<odb::dbMaster*>& bottom_mx,
+
+    odb::dbMaster* left_r0,
+    odb::dbMaster* left_mx,
+    odb::dbMaster* right_r0,
+    odb::dbMaster* right_mx,
+    const char* prefix)
   {
-    getTapcell()->insertBoundaryCells();
+    BoundaryCellOptions options;
+
+    options.outer_corner_top_left_r0 = outer_corner_top_left_r0;
+    options.outer_corner_top_left_mx = outer_corner_top_left_mx;
+    options.outer_corner_top_right_r0 = outer_corner_top_right_r0;
+    options.outer_corner_top_right_mx = outer_corner_top_right_mx;
+    options.outer_corner_bottom_left_r0 = outer_corner_bottom_left_r0;
+    options.outer_corner_bottom_left_mx = outer_corner_bottom_left_mx;
+    options.outer_corner_bottom_right_r0 = outer_corner_bottom_right_r0;
+    options.outer_corner_bottom_right_mx = outer_corner_bottom_right_mx;
+    options.inner_corner_top_left_r0 = inner_corner_top_left_r0;
+    options.inner_corner_top_left_mx = inner_corner_top_left_mx;
+    options.inner_corner_top_right_r0 = inner_corner_top_right_r0;
+    options.inner_corner_top_right_mx = inner_corner_top_right_mx;
+    options.inner_corner_bottom_left_r0 = inner_corner_bottom_left_r0;
+    options.inner_corner_bottom_left_mx = inner_corner_bottom_left_mx;
+    options.inner_corner_bottom_right_r0 = inner_corner_bottom_right_r0;
+    options.inner_corner_bottom_right_mx = inner_corner_bottom_right_mx;
+
+    options.top_r0 = top_r0;
+    options.top_mx = top_mx;
+    options.bottom_r0 = bottom_r0;
+    options.bottom_mx = bottom_mx;
+
+    options.left_r0 = left_r0;
+    options.left_mx = left_mx;
+    options.right_r0 = right_r0;
+    options.right_mx = right_mx;
+    options.prefix = prefix;
+
+    getTapcell()->insertBoundaryCells(options);
+  }
+
+  void insert_tapcells(
+    odb::dbMaster* master,
+    int distance)
+  {
+    Options options;
+    options.dist = distance;
+    options.tapcell_master = master;
+  
+    getTapcell()->insertTapcells(options);
   }
 
   }  // namespace tap
