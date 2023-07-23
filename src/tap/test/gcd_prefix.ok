@@ -7,6 +7,7 @@
 [INFO ODB-0226] Finished LEF file:  Nangate45/Nangate45_stdcell.lef
 [INFO ODB-0128] Design: gcd
 [INFO ODB-0130]     Created 54 pins.
-[INFO TAP-0004] Inserted 114 endcaps.
+[INFO TAP-0002] Added 0 corner cells
+[INFO TAP-0003] Added 114 boundary cells
 [INFO TAP-0005] Inserted 118 tapcells.
 No differences found.
