@@ -113,6 +113,32 @@ optimize_mirroring
 
 No arguments are needed for this function. 
 
+### Useful developer functions
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/Opendp.cpp) or the [swig file](./src/Opendp.i).
+
+```tcl
+# debug detailed placement
+detailed_placement_debug 
+    -min_displacement disp
+    -instance inst
+
+# get masters from a design
+get_masters_arg
+
+# get bounding box of an instance
+get_inst_bbox inst_name
+
+# get grid bounding box of an instance
+get_inst_grid_bbox inst_name
+
+# format grid (takes in length x and site width w)
+format_grid x w
+
+# get row site name
+get_row_site
+```
+
 ## Example scripts
 
 Examples scripts demonstrating how to run OpenDP on a sample design of `aes` as follows:
