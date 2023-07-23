@@ -225,13 +225,13 @@ class Opendp
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       string report_file_name = "report.json");
-void writeJsonReport(const string& filename,
-                             const vector<Cell*>& placed_failures,
-                             const vector<Cell*>& in_rows_failures,
-                             const vector<Cell*>& overlap_failures,
-                             const vector<Cell*>& one_site_gap_failures,
-                             const vector<Cell*>& site_align_failures,
-                             const vector<Cell*>& region_placement_failures);
+  void writeJsonReport(const string& filename,
+                       const vector<Cell*>& placed_failures,
+                       const vector<Cell*>& in_rows_failures,
+                       const vector<Cell*>& overlap_failures,
+                       const vector<Cell*>& one_site_gap_failures,
+                       const vector<Cell*>& site_align_failures,
+                       const vector<Cell*>& region_placement_failures);
   void fillerPlacement(dbMasterSeq* filler_masters, const char* prefix);
   void removeFillers();
   int64_t hpwl() const;
