@@ -140,10 +140,12 @@ int Tapcell::insertTapcells(odb::dbMaster* tapcell_master,
     return 0;
   }
 
+  const int tap_width = tapcell_master->getWidth();
   int insts = 0;
 
   int offset = 0;
-  const int pitch = 2 * dist;
+  const int pitch
+      = tap_width * std::floor(2 * dist / static_cast<double>(tap_width));
 
   if (row->getOrient() == odb::dbOrientType::R0) {
     offset = 0;
@@ -167,7 +169,6 @@ int Tapcell::insertTapcells(odb::dbMaster* tapcell_master,
   const int llx = row_bb.xMin();
   const int urx = row_bb.xMax();
 
-  const int tap_width = tapcell_master->getWidth();
   const int site_width = row->getSite()->getWidth();
   for (int x = llx + offset; x < urx; x += pitch) {
     x = odb::makeSiteLoc(x, site_width, true, llx);
@@ -177,7 +178,12 @@ int Tapcell::insertTapcells(odb::dbMaster* tapcell_master,
     if (!overlap) {
       const int lly = row_bb.yMin();
       auto* inst = makeInstance(
-          db_->getChip()->getBlock(), tapcell_master, ori, x, lly, tap_prefix_);
+          db_->getChip()->getBlock(),
+          tapcell_master,
+          ori,
+          x,
+          lly,
+          fmt::format("{}TAPCELL_{}_", tap_prefix_, row->getName()));
       row_insts.insert(inst);
       insts++;
     }
