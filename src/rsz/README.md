@@ -65,16 +65,6 @@ set_layer_rc
 | `-resistance` | resistance per unit length, same convention as `set_wire-rc` |
 | `-corner` | process corner to use |
 
-### Remove Buffers
-
-Use the `remove_buffers` command to remove buffers inserted by synthesis. This
-step is recommended before using `repair_design` so that there is more flexibility
-in buffering nets.
-
-```tcl
-remove_buffers
-```
-
 ### Estimate Parasitics
 
 Estimate RC parasitics based on placed component pin locations. If there are
@@ -91,7 +81,7 @@ flag.
 
 ```tcl
 estimate_parasitics
--placement|-global_routing
+    -placement|-global_routing
 ```
 
 #### Options
@@ -135,6 +125,16 @@ buffer_ports
     [-inputs] 
     [-outputs] 
     [-max_utilization util]
+```
+
+### Remove Buffers
+
+Use the `remove_buffers` command to remove buffers inserted by synthesis. This
+step is recommended before using `repair_design` so that there is more flexibility
+in buffering nets.
+
+```tcl
+remove_buffers
 ```
 
 #### Options
@@ -248,6 +248,12 @@ repair_clock_nets
 | ----- | ----- |
 | `-max_wire_length` | maximum wirelength to use in clock nets |
 
+### Repair Clock Inverters
+
+```tcl
+repair_clock_inverters
+```
+
 ### Report Design Area
 
 The `report_design_area` command reports the area of the design's components
@@ -271,6 +277,41 @@ report_floating_nets
 | Switch Name | Description |
 | ----- | ----- |
 | `-verbose` | print the net names |
+
+### Useful developer functions
+
+If you are a developer, you might find these useful. More details can be found in the [source file](./src/Resizer.cc) or the [swig file](./src/Resizer.i).
+
+```tcl
+# repair setup pin 
+repair_setup_pin end_pin 
+
+# check if estimate_parasitics command has been called
+check_parsitics
+
+# parse timing margins
+parse_time_margin_arg key keys_var
+parse_percent_margin_arg key keys_var
+parse_margin_arg key keys_var
+
+# check max utilisation
+parse_max_util keys_var
+
+# get max wirelength
+parse_max_wire_length keys_var
+
+# check wire capacitance for corner
+check_corner_wire_caps
+
+# check if wirelength is allowed by rsz for minimum delay
+check_max_wire_length
+
+# get layer RC values
+dblayer_wire_rc layer
+
+# set layer RC values
+set_dblayer_wire_rc layer res cap
+```
 
 ## Example scripts
 
