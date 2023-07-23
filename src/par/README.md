@@ -58,7 +58,7 @@ by (i) performing cut-overlay clustering and ILP-based partitioning on candidate
 with the FM algorithm. 
 
 
-![TritonPart overview](./doc/kspecpart.png)
+![TritonPart overview](./doc/kspecpart.svg)
 <center>TritonPart algorithm at a glance</center>
 
 ## Commands
