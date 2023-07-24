@@ -10,7 +10,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       # Downloads the artifact uploaded by the lint action
       - name: 'Download artifact'
@@ -35,5 +34,4 @@ jobs:
             fs.writeFileSync('${{github.workspace}}/clang-tidy-review.zip', Buffer.from(download.data));
       - name: 'Unzip artifact'
         run: unzip clang-tidy-review.zip
-
-      - uses: The-OpenROAD-Project/clang-tidy-review/post@v0.10.3
+      - uses: The-OpenROAD-Project/clang-tidy-review/post@master
