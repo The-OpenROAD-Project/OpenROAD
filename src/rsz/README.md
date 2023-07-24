@@ -39,6 +39,8 @@ set_wire_rc
 | `-signal` | enable setting of RC for signal nets | 
 | `-layer` | if used, the LEF default RC values are used. |
 | `-resistance` | resistance per unit length, units are from the first Liberty file read, usually in the form of $\frac{resistanceUnit}{distanceUnit}$. Usually kΩ/µm. |
+| `-capacitance` | capacitance per unit length, units are from the first Liberty file read, usually in the form of $\frac{capacitanceUnit}{distanceUnit}$. Usually pF/µm. |
+
 
 ### Set Layer RC
 
@@ -50,8 +52,8 @@ or to override the values in the LEF.
 set_layer_rc 
     [-layer layer]
     [-via via_layer]
-    [-capacitance cap]
     [-resistance res]
+    [-capacitance cap]
     [-corner corner]
 ```
 
@@ -61,8 +63,8 @@ set_layer_rc
 | ----- | ----- |
 | `-layer` | select layer name |
 | `-via` | select via layer name. note that via resistance is per cut/via, not area based |
+| `-resistance` | resistance per unit length, same convention as `set_wire_rc` |
 | `-capacitance` | capacitance per unit length, same convention as `set_wire_rc` |
-| `-resistance` | resistance per unit length, same convention as `set_wire-rc` |
 | `-corner` | process corner to use |
 
 ### Estimate Parasitics
