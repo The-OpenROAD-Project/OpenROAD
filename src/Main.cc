@@ -36,6 +36,8 @@
 #include <libgen.h>
 #include <tcl.h>
 
+#include <stdlib.h>
+
 #include <array>
 #include <boost/stacktrace.hpp>
 #include <climits>
