@@ -42,6 +42,11 @@ IOPlacerRenderer::IOPlacerRenderer()
   gui::Gui::get()->registerRenderer(this);
 }
 
+void IOPlacerRenderer::setSinks(const std::vector<std::vector<InstancePin>>& sinks)
+{
+  sinks_ = sinks;
+}
+
 void IOPlacerRenderer::setPinAssignment(const std::vector<IOPin>& assignment)
 {
   pin_assignment_ = assignment;
@@ -53,12 +58,12 @@ void IOPlacerRenderer::drawObjects(gui::Painter& painter)
   painter.setBrush(gui::Painter::yellow);
   painter.setPenWidth(100);
 
-  for(auto pin : pin_assignment_) {
-    odb::Point position = pin.getPosition();
-    const int x_pin = position.getX();
-    const int y_pin = position.getY();
-    const int radius = 1000;
-    painter.drawCircle(x_pin, y_pin, radius); 
+  for(int pin_idx = 0; pin_idx < sinks_.size(); pin_idx++) {
+    for(int sink_idx = 0; sink_idx < sinks_[pin_idx].size(); sink_idx++) {
+      odb::Point pin_position = pin_assignment_[pin_idx].getPosition();
+      odb::Point sink_position = sinks_[pin_idx][sink_idx].getPos();
+      painter.drawLine(pin_position, sink_position);
+    }
   }
 
 }

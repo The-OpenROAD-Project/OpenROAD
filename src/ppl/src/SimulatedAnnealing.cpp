@@ -121,10 +121,19 @@ void SimulatedAnnealing::run(float init_temperature,
     temperature *= alpha_;
 
     if (debug_->isOn()) {
-      if ((iter + 1) % debug_->painting_interval_ == 0) {
+      if (iter % debug_->painting_interval_ == 0) {
         std::vector<ppl::IOPin> pins;
         getAssignment(pins);
-        annealingStateVisualization(pins);
+
+        std::vector<std::vector<ppl::InstancePin>> all_sinks;
+
+        for(int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
+          std::vector<ppl::InstancePin> pin_sinks;
+          netlist_->getSinksOfIO(pin_idx, pin_sinks);
+          all_sinks.push_back(pin_sinks);
+        }
+
+        annealingStateVisualization(pins, all_sinks);
       }
     }
   }
@@ -159,11 +168,13 @@ AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
   return debug_->renderer_.get();
 }
 
-void SimulatedAnnealing::annealingStateVisualization(const std::vector<IOPin>& assignment)
+void SimulatedAnnealing::annealingStateVisualization(const std::vector<IOPin>& assignment,
+                                                     const std::vector<std::vector<InstancePin>>& sinks)
 {
   if (!debug_->isOn()) {
     return;
   }
+  getDebugRenderer()->setSinks(sinks);
   getDebugRenderer()->setPinAssignment(assignment);
   getDebugRenderer()->redrawAndPause();
 }

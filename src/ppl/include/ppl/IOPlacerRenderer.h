@@ -47,6 +47,7 @@ class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
  public:
   IOPlacerRenderer();
   void setPinAssignment(const std::vector<IOPin>& assignment) override;
+  void setSinks(const std::vector<std::vector<InstancePin>>& sinks) override;
 
   void redrawAndPause() override;
 
@@ -54,6 +55,7 @@ class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
 
  private:
   std::vector<ppl::IOPin> pin_assignment_;
+  std::vector<std::vector<InstancePin>> sinks_;
   
 };
 
