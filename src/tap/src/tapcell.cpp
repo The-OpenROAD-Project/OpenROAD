@@ -567,8 +567,7 @@ std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(const Polygon90& area,
 {
   std::vector<Corner> corners;
 
-  for (auto itr = area.begin(); itr != area.end(); itr++) {
-    const Polygon90::point_type pt = *itr;
+  for (const auto& pt : area) {
     const odb::Point corner(pt.x(), pt.y());
     corners.push_back(Corner{CornerType::Unknown, corner});
   }
@@ -584,7 +583,7 @@ std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(const Polygon90& area,
       prev = &corners[i - 1];
     }
     if (i == corners.size() - 1) {
-      next = &corners[0];
+      next = corners.data();
     } else {
       next = &corners[i + 1];
     }
