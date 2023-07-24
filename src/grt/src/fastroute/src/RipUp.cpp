@@ -304,7 +304,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         }
       }
     }
-    /*if (!needRipup && update_slack_ && treeedge->route.last_routelen
+    if (!needRipup && update_slack_ && treeedge->route.last_routelen
         && critical_slack) {
       const float delta = (float) treeedge->route.routelen
                           / (float) treeedge->route.last_routelen;
@@ -312,7 +312,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         nets_[netID]->setIsCritical(true);
         needRipup = true;
       }
-    }*/
+    }
     if (needRipup) {
       const int edgeCost = nets_[netID]->getEdgeCost();
 
