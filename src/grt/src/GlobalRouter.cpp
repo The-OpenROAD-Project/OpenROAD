@@ -1920,7 +1920,8 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       int max_routing_layer)
 {
   for (Net* net : nets) {
-    if (net->getNumPins() > 1 && !net->hasWires()) {
+    if (net->getNumPins() > 1 && !net->hasWires()
+        && !net->isZeroLengthRouting()) {
       odb::dbNet* db_net = net->getDbNet();
       GRoute& route = routes[db_net];
       if (route.empty()) {
@@ -1940,7 +1941,7 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
     GRoute& route = net_route.second;
     Net* net = getNet(db_net);
     if (pad_pins_connections_.find(db_net) != pad_pins_connections_.end()
-        || net->getNumPins() > 1) {
+        || (net->getNumPins() > 1 && !net->isZeroLengthRouting())) {
       for (GSegment& segment : pad_pins_connections_[db_net]) {
         route.push_back(segment);
       }
