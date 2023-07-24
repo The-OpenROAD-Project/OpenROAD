@@ -93,7 +93,7 @@ class SimulatedAnnealing
   bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
   void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
   int getSlotIdxByPosition(const odb::Point& position, int layer) const;
-  bool isFreeForMirrored(const int slot_idx, int& mirrored_idx) const;
+  bool isFreeForMirrored(int slot_idx, int& mirrored_idx) const;
   int getMirroredSlotIdx(int slot_idx) const;
 
   // [pin] -> slot
