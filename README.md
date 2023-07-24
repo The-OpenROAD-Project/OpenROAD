@@ -314,7 +314,7 @@ Get familiarised with a quickstart tutorial to contribution [here](docs/contrib/
 
 ## Understanding Warning and Error Messages
 Seeing OpenROAD warnings or errors you do not understand? We have compiled a table of all messages
-and you may potentially find your answer [here](docs/user/MessagesFinal.md).
+and you may potentially find your answer [here](https://openroad.readthedocs.io/en/latest/user/MessagesFinal.html).
 
 ## License
 
