@@ -285,15 +285,14 @@ void SimulatedAnnealing::perturbAssignment(int& prev_cost)
   // necessary
   if (move < swap_pins_ && lone_pins_ > 1) {
     prev_cost = swapPins();
-    // move single pin when swapping a single constrained pin is not possible
-    if (prev_cost == move_fail_) {
-      prev_cost = movePinToFreeSlot();
-    }
-  } else {
+  }
+
+  // move single pin when swapping a single constrained pin is not possible
+  if (move >= swap_pins_ || lone_pins_ <= 1 || prev_cost == move_fail_) {
     prev_cost = movePinToFreeSlot();
     // move single pin when moving a group is not possible
     if (prev_cost == move_fail_) {
-      prev_cost = movePinToFreeSlot();
+      prev_cost = movePinToFreeSlot(true);
     }
   }
 }
@@ -349,14 +348,21 @@ int SimulatedAnnealing::swapPins()
   return prev_cost;
 }
 
-int SimulatedAnnealing::movePinToFreeSlot()
+int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
 {
   boost::random::uniform_int_distribution<int> distribution(0, num_pins_ - 1);
   int pin = distribution(generator_);
-  const IOPin& io_pin = netlist_->getIoPin(pin);
-  if (io_pin.isInGroup()) {
-    int prev_cost = moveGroupToFreeSlots(io_pin.getGroupIdx());
-    return prev_cost;
+
+  if (lone_pin) {
+    while (netlist_->getIoPin(pin).isInGroup()) {
+      pin = distribution(generator_);
+    }
+  } else {
+    const IOPin& io_pin = netlist_->getIoPin(pin);
+    if (io_pin.isInGroup()) {
+      int prev_cost = moveGroupToFreeSlots(io_pin.getGroupIdx());
+      return prev_cost;
+    }
   }
 
   pins_.push_back(pin);
@@ -371,7 +377,7 @@ int SimulatedAnnealing::movePinToFreeSlot()
 
   int first_slot = 0;
   int last_slot = num_slots_ - 1;
-  getSlotsRange(io_pin, first_slot, last_slot);
+  getSlotsRange(netlist_->getIoPin(pin), first_slot, last_slot);
 
   distribution
       = boost::random::uniform_int_distribution<int>(first_slot, last_slot);
@@ -431,7 +437,13 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
   }
 
   if (free_slot && same_edge_slot) {
-    for (int pin_idx : group.pin_indices) {
+    std::vector<int> pin_indices = group.pin_indices;
+    if (group.order
+        && (slots_[new_slot].edge == Edge::top
+            || slots_[new_slot].edge == Edge::left)) {
+      std::reverse(pin_indices.begin(), pin_indices.end());
+    }
+    for (int pin_idx : pin_indices) {
       pin_assignment_[pin_idx] = new_slot;
       new_slots_.push_back(new_slot);
       new_slot++;

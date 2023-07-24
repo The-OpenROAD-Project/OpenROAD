@@ -32,12 +32,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <cmath>
+#include <fstream>
 #include <limits>
 
 #include "dpl/Opendp.h"
 #include "utl/Logger.h"
-
 namespace dpl {
 
 using odb::Direction2D;
@@ -45,7 +47,9 @@ using std::vector;
 
 using utl::DPL;
 
-void Opendp::checkPlacement(bool verbose, bool disallow_one_site_gaps)
+void Opendp::checkPlacement(bool verbose,
+                            bool disallow_one_site_gaps,
+                            string report_file_name)
 {
   importDb();
 
@@ -94,6 +98,13 @@ void Opendp::checkPlacement(bool verbose, bool disallow_one_site_gaps)
     }
   }
 
+  writeJsonReport(report_file_name,
+                  placed_failures,
+                  in_rows_failures,
+                  overlap_failures,
+                  one_site_gap_failures,
+                  site_align_failures,
+                  region_placement_failures);
   reportFailures(placed_failures, 3, "Placed", verbose);
   reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
   reportFailures(
@@ -107,12 +118,113 @@ void Opendp::checkPlacement(bool verbose, bool disallow_one_site_gaps)
   logger_->metric("design__violations",
                   placed_failures.size() + in_rows_failures.size()
                       + overlap_failures.size() + site_align_failures.size());
+
   if (placed_failures.size() + in_rows_failures.size() + overlap_failures.size()
           + site_align_failures.size()
           + (disallow_one_site_gaps ? one_site_gap_failures.size() : 0)
           + region_placement_failures.size()
       > 0) {
     logger_->error(DPL, 33, "detailed placement checks failed.");
+  }
+}
+void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
+                                    const std::vector<Cell*>& failures) const
+{
+  using boost::property_tree::ptree;
+  ptree violations;
+  double dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
+  const Rect core = getCore();
+  for (auto failure : failures) {
+    ptree shape, violation, shapes, source, sources;
+
+    shape.put("x", (failure->x_ + core.xMin()) / dbUnits);
+    shape.put("y", (failure->y_ + core.yMin()) / dbUnits);
+    shapes.push_back(std::make_pair("", shape));
+    shape.clear();
+    shape.put("x", (failure->x_ + failure->width_ + core.xMin()) / dbUnits);
+    shape.put("y", (failure->y_ + failure->height_ + core.yMin()) / dbUnits);
+    shapes.push_back(std::make_pair("", shape));
+
+    source.put("type", "inst");
+    source.put("name", failure->name());
+    sources.push_back(std::make_pair("", source));
+
+    violation.put("type", "box");
+    violation.add_child("shape", shapes);
+    violation.add_child("sources", sources);
+
+    violations.push_back(std::make_pair("", violation));
+  }
+  entry.add_child("violations", violations);
+}
+
+void Opendp::writeJsonReport(const string& filename,
+                             const vector<Cell*>& placed_failures,
+                             const vector<Cell*>& in_rows_failures,
+                             const vector<Cell*>& overlap_failures,
+                             const vector<Cell*>& one_site_gap_failures,
+                             const vector<Cell*>& site_align_failures,
+                             const vector<Cell*>& region_placement_failures)
+{
+  std::ofstream json_file(filename);
+  if (!json_file.is_open()) {
+    logger_->error(DPL, 40, "Failed to open file {} for writing.", filename);
+  }
+  try {
+    using boost::property_tree::ptree;
+    ptree root, drcArray;
+
+    if (!placed_failures.empty()) {
+      ptree entry;
+      entry.put("name", "Placement_failures");
+      entry.put("description", "Cells that were not placed.");
+      processViolationsPtree(entry, placed_failures);
+      drcArray.push_back(std::make_pair("", entry));
+    }
+    if (!in_rows_failures.empty()) {
+      ptree entry;
+      entry.put("name", "In_rows_failures");
+      entry.put("description",
+                "Cells that were not assigned to rows in the grid.");
+      processViolationsPtree(entry, in_rows_failures);
+      drcArray.push_back(std::make_pair("", entry));
+    }
+    if (!overlap_failures.empty()) {
+      ptree entry;
+      entry.put("name", "Overlap_failures");
+      entry.put("description", "Cells that are overlapping with other cells.");
+      processViolationsPtree(entry, overlap_failures);
+      drcArray.push_back(std::make_pair("", entry));
+    }
+    if (!one_site_gap_failures.empty()) {
+      ptree entry;
+      entry.put("name", "One_site_gap_failures");
+      entry.put("description",
+                "Cells that violate the one site gap spacing rules.");
+      processViolationsPtree(entry, one_site_gap_failures);
+      drcArray.push_back(std::make_pair("", entry));
+    }
+    if (!site_align_failures.empty()) {
+      ptree entry;
+      entry.put("name", "Site_alignment_failures");
+      entry.put("description",
+                "Cells that are not aligned with placement sites.");
+      processViolationsPtree(entry, site_align_failures);
+      drcArray.push_back(std::make_pair("", entry));
+    }
+    if (!region_placement_failures.empty()) {
+      ptree entry;
+      entry.put("name", "Region_placement_failures");
+      entry.put("description",
+                "Cells that violate the region placement constraints.");
+      processViolationsPtree(entry, region_placement_failures);
+      drcArray.push_back(std::make_pair("", entry));
+    }
+    root.add_child("DRC", drcArray);
+    boost::property_tree::write_json(json_file, root);
+  } catch (std::exception& ex) {
+    logger_->error(
+        DPL, 45, "Failed to write JSON report. Exception: {}", ex.what());
   }
 }
 
