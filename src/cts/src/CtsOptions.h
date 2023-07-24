@@ -37,6 +37,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -55,7 +56,7 @@ class CtsOptions
 {
  public:
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
-      : logger_(logger), sttBuilder_(sttBuildder)
+      : logger_(logger), sttBuilder_(sttBuildder) 
   {
   }
 
@@ -150,18 +151,36 @@ class CtsOptions
     clusteringCapacity_ = capacity;
   }
 
-  // BufferDistance is set in microns, but returned in DBU
-  uint32_t getBufferDistance() const { return bufDistance_ * getDbUnits(); }
-  void setBufferDistance(double distance) { bufDistance_ = distance; }
+  // BufferDistance is in DBU
+  int32_t getBufferDistance() const {
+    if (bufDistance_) {
+      return *bufDistance_;
+    }
 
-  // VertexBufferDistance is set in microns, but returned in DBU
-  uint32_t getVertexBufferDistance() const
-  {
-    return vertexBufDistance_ * getDbUnits();
+    if (dbUnits_ == -1) {
+      logger_->error(utl::CTS, 542, "Must provide a dbUnit conversion though setDbUnits.");
+    }
+
+    return 100/*um*/ * dbUnits_;
   }
-  void setVertexBufferDistance(double distance)
+  void setBufferDistance(int32_t distance_dbu) { bufDistance_ = distance_dbu; }
+
+  // VertexBufferDistance is in DBU
+  int32_t getVertexBufferDistance() const
   {
-    vertexBufDistance_ = distance;
+    if (vertexBufDistance_) {
+      return *vertexBufDistance_;
+    }
+
+    if (dbUnits_ == -1) {
+      logger_->error(utl::CTS, 543, "Must provide a dbUnit conversion though setDbUnits.");
+    }
+
+    return 240/*um*/ * dbUnits_;
+  }
+  void setVertexBufferDistance(int32_t distance_dbu)
+  {
+    vertexBufDistance_ = distance_dbu;
   }
   bool isVertexBuffersEnabled() const { return vertexBuffersEnable_; }
   void setVertexBuffersEnabled(bool enable) { vertexBuffersEnable_ = enable; }
@@ -209,8 +228,8 @@ class CtsOptions
   bool simpleSegmentsEnable_ = false;
   bool vertexBuffersEnable_ = false;
   std::unique_ptr<CtsObserver> observer_;
-  double vertexBufDistance_ = 240;
-  double bufDistance_ = 100;
+  std::optional<int> vertexBufDistance_;
+  std::optional<int> bufDistance_;
   double clusteringCapacity_ = 0.6;
   unsigned clusteringPower_ = 4;
   unsigned numMaxLeafSinks_ = 15;

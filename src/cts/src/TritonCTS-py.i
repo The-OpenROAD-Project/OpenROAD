@@ -42,6 +42,8 @@
 using namespace cts;
 %}
 
+%include "stdint.i"
+
 %include "../../Exception-py.i"
 
 %include <std_string.i>

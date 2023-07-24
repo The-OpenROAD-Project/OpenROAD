@@ -125,12 +125,12 @@ proc clock_tree_synthesis { args } {
 
   if { [info exists keys(-distance_between_buffers)] } {
     set distance $keys(-distance_between_buffers)
-    cts::set_distance_between_buffers $distance
+    cts::set_distance_between_buffers [ord::microns_to_dbu $distance]
   }
 
   if { [info exists keys(-branching_point_buffers_distance)] } {
     set distance $keys(-branching_point_buffers_distance)
-    cts::set_branching_point_buffers_distance $distance
+    cts::set_branching_point_buffers_distance [ord::microns_to_dbu $distance]
   }
 
   if { [info exists keys(-clustering_exponent)] } {
