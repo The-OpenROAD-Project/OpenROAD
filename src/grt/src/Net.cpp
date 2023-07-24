@@ -84,7 +84,11 @@ bool Net::isZeroLengthRouting()
 {
   bool is_zero_length = false;
   const Pin& pin0 = getPins()[0];
-  const auto& pin0_boxes = pin0.getBoxes();
+  auto pin0_boxes = pin0.getBoxes();
+
+  if (getPins().size() <= 1) {
+    return false;
+  }
 
   for (const Pin& pin : getPins()) {
     bool touch_pin0 = false;
@@ -97,6 +101,7 @@ bool Net::isZeroLengthRouting()
           for (const odb::Rect& pin_box : pin_boxes.at(l)) {
             touch_pin0 = pin_box.intersects(pin0_box);
             if (touch_pin0) {
+              pin0_boxes = pin_boxes;
               break;
             }
           }
