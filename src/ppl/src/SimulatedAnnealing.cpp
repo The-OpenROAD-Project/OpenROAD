@@ -186,13 +186,13 @@ void SimulatedAnnealing::randomAssignment()
       int mirrored_slot;
       bool free = !slots_[slot].used;
       if (io_pin.isMirrored()) {
-        free = isFreeForMirrored(slot, mirrored_slot);
+        free = free && isFreeForMirrored(slot, mirrored_slot);
       }
       while (!free) {
         slot = distribution(generator_);
         free = !slots_[slot].used;
         if (io_pin.isMirrored()) {
-          free = isFreeForMirrored(slot, mirrored_slot);
+          free = free && isFreeForMirrored(slot, mirrored_slot);
         }
       }
       pin_assignment_[i] = slot;
@@ -207,14 +207,14 @@ void SimulatedAnnealing::randomAssignment()
       int mirrored_slot;
       bool free = !slots_[slot].used;
       if (io_pin.isMirrored()) {
-        free = isFreeForMirrored(slot, mirrored_slot);
+        free = free && isFreeForMirrored(slot, mirrored_slot);
       }
       while (!free) {
         slot_idx++;
         slot = slot_indices[slot_idx];
         free = !slots_[slot].used;
         if (io_pin.isMirrored()) {
-          free = isFreeForMirrored(slot, mirrored_slot);
+          free = free && isFreeForMirrored(slot, mirrored_slot);
         }
       }
       pin_assignment_[i] = slot;
@@ -505,7 +505,7 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
     for (int i = 0; i < group.pin_indices.size(); i++) {
       free_slot = slots_[slot].isAvailable();
       if (io_pin.isMirrored()) {
-        free_slot = isFreeForMirrored(slot, mirrored_slot);
+        free_slot = free_slot && isFreeForMirrored(slot, mirrored_slot);
       }
       same_edge_slot = slots_[slot].edge == edge;
       if (!free_slot || !same_edge_slot) {
