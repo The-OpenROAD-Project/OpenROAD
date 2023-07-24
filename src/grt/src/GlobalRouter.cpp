@@ -827,7 +827,8 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
-    if (pin_count > 1 && !net->isLocal() && !net->hasWires()) {
+    if (pin_count > 1 && !net->isLocal() && !net->hasWires()
+        && !net->isZeroLengthRouting()) {
       if (pin_count < min_degree) {
         min_degree = pin_count;
       }
