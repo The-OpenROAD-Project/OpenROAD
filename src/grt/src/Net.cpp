@@ -80,4 +80,44 @@ void Net::destroyPins()
   pins_.clear();
 }
 
+bool Net::isZeroLengthRouting()
+{
+  bool is_zero_length = false;
+  const Pin& pin0 = getPins()[0];
+  const auto& pin0_boxes = pin0.getBoxes();
+
+  for (const Pin& pin : getPins()) {
+    bool touch_pin0 = false;
+    const auto& pin_boxes = pin.getBoxes();
+    const std::vector<int>& pin_layers = pin.getLayers();
+
+    for (int l : pin_layers) {
+      if (pin0_boxes.find(l) != pin0_boxes.end()) {
+        for (const odb::Rect& pin0_box : pin0_boxes.at(l)) {
+          for (const odb::Rect& pin_box : pin_boxes.at(l)) {
+            touch_pin0 = pin_box.intersects(pin0_box);
+            if (touch_pin0) {
+              break;
+            }
+          }
+          if (touch_pin0) {
+            break;
+          }
+        }
+      }
+      if (touch_pin0) {
+        break;
+      }
+    }
+
+    if (!touch_pin0) {
+      return false;
+    } else {
+      is_zero_length = true;
+    }
+  }
+
+  return is_zero_length;
+}
+
 }  // namespace grt
