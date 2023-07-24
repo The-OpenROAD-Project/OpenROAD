@@ -455,7 +455,8 @@ void GlobalRouter::initCoreGrid(int max_routing_layer)
   fastroute_->setTileSize(grid_->getTileSize());
   fastroute_->setGridsAndLayers(
       grid_->getXGrids(), grid_->getYGrids(), grid_->getNumLayers());
-  fastroute_->setGridMax(grid_->getGridArea().xMax(), grid_->getGridArea().yMax());
+  fastroute_->setGridMax(grid_->getGridArea().xMax(),
+                         grid_->getGridArea().yMax());
 }
 
 void GlobalRouter::initRoutingLayers()
