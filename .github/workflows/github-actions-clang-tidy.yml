@@ -17,10 +17,4 @@ jobs:
           cmake_command: cmake . -B build
           config_file: '.clang-tidy'
           split_workflow: true
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: clang-tidy-review
-          path: |
-            clang-tidy-review-output.json
-            clang-tidy-review-metadata.json
+      - uses: The-OpenROAD-Project/clang-tidy-review/upload@master
