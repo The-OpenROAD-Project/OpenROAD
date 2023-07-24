@@ -12,4 +12,6 @@ record_tests {
   symmetry
   cut_rows
   cut_rows_with_endcaps
+  boundary_macros_separate
+  gcd_sky130_separate
 }

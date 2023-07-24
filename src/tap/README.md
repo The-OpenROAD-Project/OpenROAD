@@ -77,6 +77,95 @@ cut_rows [-endcap_master endcap_master]
 - `-halo_width_x`. Specify the horizontal halo size (in microns) around macros during cut rows.
 - `-halo_width_y`. Specify the vertical halo size (in microns) around macros during cut rows.
 
+### Only adding boundary cells
+
+```
+place_boundary_cells
+  [-outer_corner master]
+  [-inner_corner master]
+  [-endcap masters]
+  [-outer_corner_mx master]
+  [-outer_corner_r0 master]
+  [-inner_corner_mx master]
+  [-inner_corner_r0 master]
+  [-endcap_horizontal_r0 masters]
+  [-endcap_horizontal_mx masters]
+  [-endcap_vertical_r0 master]
+  [-endcap_vertical_mx master]
+  [-prefix prefix]
+  [-outer_corner_top_left_mx master]
+  [-outer_corner_top_left_r0 master]
+  [-outer_corner_top_right_mx master]
+  [-outer_corner_top_right_r0 master]
+  [-outer_corner_bottom_left_mx master]
+  [-outer_corner_bottom_left_r0 master]
+  [-outer_corner_bottom_right_mx master]
+  [-outer_corner_bottom_right_r0 master]
+  [-inner_corner_top_left_mx master]
+  [-inner_corner_top_left_r0 master]
+  [-inner_corner_top_right_mx master]
+  [-inner_corner_top_right_r0 master]
+  [-inner_corner_bottom_left_mx master]
+  [-inner_corner_bottom_left_r0 master]
+  [-inner_corner_bottom_right_mx master]
+  [-inner_corner_bottom_right_r0 master]
+  [-endcap_left_r0 master]
+  [-endcap_left_mx master]
+  [-endcap_right_r0 master]
+  [-endcap_right_mx master]
+  [-endcap_top_r0 masters]
+  [-endcap_top_mx masters]
+  [-endcap_bottom_r0 masters]
+  [-endcap_bottom_mx masters]
+```
+
+- `-prefix`. Specifies the prefix to use for the boundary cells. Defaults to "PHY_"
+- `-outer_corner`. Specify the master for the corner cells on the outer corners.
+- `-inner_corner`. Specify the master for the corner cells on the inner corners.
+- `-endcap`. Specify the master used as an endcap.
+- `-outer_corner_r0`. Specify the master for the corner cells on the outer corners with rows in R0 orientation. (overrides `-outer_corner`)
+- `-inner_corner_r0`. Specify the master for the corner cells on the inner corners with rows in R0 orientation. (overrides `-inner_corner`)
+- `-outer_corner_mx`. Specify the master for the corner cells on the outer corners with rows in MX orientation. (overrides `-outer_corner`)
+- `-inner_corner_mx`. Specify the master for the corner cells on the inner corners with rows in MX orientation. (overrides `-inner_corner`)
+- `-endcap_horizontal_r0`. Specify the list of masters for the top and bottom row endcaps where the row orientation is R0. (overrides `-endcap`)
+- `-endcap_horizontal_mx`. Specify the list of masters for the top and bottom row endcaps where the row orientation is MX. (overrides `-endcap`)
+- `-endcap_vertical_r0`. Specify the master for the left and right row endcaps where the row orientation is R0. (overrides `-endcap`)
+- `-endcap_vertical_mx`. Specify the master for the left and right row endcaps where the row orientation is MX. (overrides `-endcap`)
+- `-outer_corner_top_left_mx`. Specify the master for the corner cells on the outer top left corner with rows in MX orientation. (overrides `-outer_corner_mx`)
+- `-outer_corner_top_left_r0`. Specify the master for the corner cells on the outer top left corner with rows in R0 orientation. (overrides `-outer_corner_r0`)
+- `-outer_corner_top_right_mx`. Specify the master for the corner cells on the outer top right corner with rows in MX orientation. (overrides `-outer_corner_mx`)
+- `-outer_corner_top_right_r0`. Specify the master for the corner cells on the outer top right corner with rows in R0 orientation. (overrides `-outer_corner_r0`)
+- `-outer_corner_bottom_left_mx`. Specify the master for the corner cells on the outer bottom left corner with rows in MX orientation. (overrides `-outer_corner_mx`)
+- `-outer_corner_bottom_left_r0`. Specify the master for the corner cells on the outer bottom left corner with rows in R0 orientation. (overrides `-outer_corner_r0`)
+- `-outer_corner_bottom_right_mx`. Specify the master for the corner cells on the outer bottom right corner with rows in MX orientation. (overrides `-outer_corner_mx`)
+- `-outer_corner_bottom_right_r0`. Specify the master for the corner cells on the outer bottom right corner with rows in R0 orientation. (overrides `-outer_corner_r0`)
+- `-inner_corner_top_left_mx`. Specify the master for the corner cells on the inner top left corner with rows in MX orientation. (overrides `-inner_corner_mx`)
+- `-inner_corner_top_left_r0`. Specify the master for the corner cells on the inner top left corner with rows in R0 orientation. (overrides `-inner_corner_r0`)
+- `-inner_corner_top_right_mx`. Specify the master for the corner cells on the inner top right corner with rows in MX orientation. (overrides `-inner_corner_mx`)
+- `-inner_corner_top_right_r0`. Specify the master for the corner cells on the inner top right corner with rows in R0 orientation. (overrides `-inner_corner_r0`)
+- `-inner_corner_bottom_left_mx`. Specify the master for the corner cells on the inner bottom left corner with rows in MX orientation. (overrides `-inner_corner_mx`)
+- `-inner_corner_bottom_left_r0`. Specify the master for the corner cells on the inner bottom left corner with rows in R0 orientation. (overrides `-inner_corner_r0`)
+- `-inner_corner_bottom_right_mx`. Specify the master for the corner cells on the inner bottom right corner with rows in MX orientation. (overrides `-inner_corner_mx`)
+- `-inner_corner_bottom_right_r0`. Specify the master for the corner cells on the inner bottom right corner with rows in R0 orientation. (overrides `-inner_corner_r0`)
+- `-endcap_left_r0`. Specify the master for the left row endcaps where the row orientation is R0. (overrides `-endcap_vertical_r0`)
+- `-endcap_left_mx`. Specify the master for the left row endcaps where the row orientation is MX. (overrides `-endcap_vertical_mx`)
+- `-endcap_right_r0`. Specify the master for the right row endcaps where the row orientation is R0. (overrides `-endcap_vertical_r0`)
+- `-endcap_right_mx`. Specify the master for the right row endcaps where the row orientation is MX. (overrides `-endcap_vertical_mx`)
+- `-endcap_top_r0`. Specify the list of masters for the top row endcaps where the row orientation is R0. (overrides `-endcap_horizontal_r0`)
+- `-endcap_top_mx`. Specify the list of masters for the top row endcaps where the row orientation is MX. (overrides `-endcap_horizontal_mx`)
+- `-endcap_bottom_r0`. Specify the list of masters for the bottom row endcaps where the row orientation is R0. (overrides `-endcap_horizontal_r0`)
+- `-endcap_bottom_mx`. Specify the list of masters for the bottom row endcaps where the row orientation is MX. (overrides `-endcap_horizontal_mx`)
+
+### Only adding tapcells cells
+
+```
+place_tapcells
+  -master tapcell_master
+  -distance dist
+```
+
+- `-master`. Specifies the master to use for the tapcells.
+- `-distance`. Distance between tapcells.
 
 ## Example scripts
 
