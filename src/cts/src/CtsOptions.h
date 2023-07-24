@@ -56,7 +56,7 @@ class CtsOptions
 {
  public:
   CtsOptions(utl::Logger* logger, stt::SteinerTreeBuilder* sttBuildder)
-      : logger_(logger), sttBuilder_(sttBuildder) 
+      : logger_(logger), sttBuilder_(sttBuildder)
   {
   }
 
@@ -152,16 +152,18 @@ class CtsOptions
   }
 
   // BufferDistance is in DBU
-  int32_t getBufferDistance() const {
+  int32_t getBufferDistance() const
+  {
     if (bufDistance_) {
       return *bufDistance_;
     }
 
     if (dbUnits_ == -1) {
-      logger_->error(utl::CTS, 542, "Must provide a dbUnit conversion though setDbUnits.");
+      logger_->error(
+          utl::CTS, 542, "Must provide a dbUnit conversion though setDbUnits.");
     }
 
-    return 100/*um*/ * dbUnits_;
+    return 100 /*um*/ * dbUnits_;
   }
   void setBufferDistance(int32_t distance_dbu) { bufDistance_ = distance_dbu; }
 
@@ -173,10 +175,11 @@ class CtsOptions
     }
 
     if (dbUnits_ == -1) {
-      logger_->error(utl::CTS, 543, "Must provide a dbUnit conversion though setDbUnits.");
+      logger_->error(
+          utl::CTS, 543, "Must provide a dbUnit conversion though setDbUnits.");
     }
 
-    return 240/*um*/ * dbUnits_;
+    return 240 /*um*/ * dbUnits_;
   }
   void setVertexBufferDistance(int32_t distance_dbu)
   {
