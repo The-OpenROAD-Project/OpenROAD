@@ -11,7 +11,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: ClangTidy Gen
-        uses: The-OpenROAD-Project/clang-tidy-review@v0.10.3
+        uses: The-OpenROAD-Project/clang-tidy-review@master
         with:
           build_dir: './build'
           cmake_command: cmake . -B build
