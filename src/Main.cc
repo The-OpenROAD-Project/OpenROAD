@@ -131,7 +131,8 @@ static void showUsage(const char* prog, const char* init_filename);
 static void showSplash();
 
 #ifdef ENABLE_PYTHON3
-namespace sta {
+namespace sta
+{
 #define X(name) extern const char* name##_py_python_inits[];
 FOREACH_TOOL(X)
 #undef X
