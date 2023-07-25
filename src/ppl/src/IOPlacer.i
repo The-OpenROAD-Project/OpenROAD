@@ -323,9 +323,9 @@ set_simulated_annealing(float temperature,
 }
 
 void
-run_annealing()
+run_annealing(bool random)
 {
-  getIOPlacer()->runAnnealing();
+  getIOPlacer()->runAnnealing(random);
 }
 
 } // namespace
