@@ -51,12 +51,7 @@ proc analyze_power_grid { args } {
   sta::parse_key_args "analyze_power_grid" args \
     keys {-vsrc -outfile -error_file -em_outfile -net -dx -dy -node_density -node_density_factor -corner} flags {-enable_em}
   if { [info exists keys(-vsrc)] } {
-    set vsrc_file $keys(-vsrc)
-    if { [file readable $vsrc_file] } {
-      psm::import_vsrc_cfg_cmd $vsrc_file
-    } else {
-      utl::error PSM 53 "Cannot read $vsrc_file."
-    }
+    psm::import_vsrc_cfg_cmd $keys(-vsrc)
   }
   if { [info exists keys(-net)] } {
     psm::set_power_net [psm::find_net $keys(-net)]
@@ -86,13 +81,13 @@ proc analyze_power_grid { args } {
     set val_node_density $keys(-node_density_factor)
     psm::set_node_density_factor $val_node_density
   }
+  set voltage_file ""
   if { [info exists keys(-outfile)] } {
-    set out_file $keys(-outfile)
-    psm::import_out_file_cmd $out_file
+    set voltage_file $keys(-outfile)
   }
+  set error_file ""
   if { [info exists keys(-error_file)] } {
     set error_file $keys(-error_file)
-    psm::import_error_file_cmd $error_file
   }
   set enable_em [info exists flags(-enable_em)]
   set em_file ""
@@ -103,29 +98,33 @@ proc analyze_power_grid { args } {
     }
   }
   if { [ord::db_has_rows] } {
-    psm::analyze_power_grid_cmd $enable_em $em_file
+    psm::analyze_power_grid_cmd $voltage_file $enable_em $em_file $error_file
   } else {
     utl::error PSM 56 "No rows defined in design. Floorplan not defined. Use initialize_floorplan to add rows."
   }
 }
 
 sta::define_cmd_args "check_power_grid" {
+  [-error_file error_file]
   [-net power_net]}
 
 proc check_power_grid { args } {
   sta::parse_key_args "check_power_grid" args \
-    keys {-net} flags {}
+    keys {-net -error_file} flags {}
   if { [info exists keys(-net)] } {
     psm::set_power_net [psm::find_net $keys(-net)]
   } else {
-     utl::error PSM 57 "Argument -net not specified."
+    utl::error PSM 57 "Argument -net not specified."
+  }
+  set error_file ""
+  if { [info exists keys(-error_file)] } {
+    set error_file $keys(-error_file)
   }
   if { [ord::db_has_rows] } {
-    set res [psm::check_connectivity_cmd]
-    if {$res == 0} {
-        utl::error PSM 69 "Check connectivity failed."
+    if { ![psm::check_connectivity_cmd $error_file] } {
+      utl::error PSM 69 "Check connectivity failed."
     }
-    return $res
+    return true
   } else {
     utl::error PSM 58 "No rows defined in design. Use initialize_floorplan to add rows."
   }

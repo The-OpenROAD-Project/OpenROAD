@@ -75,11 +75,11 @@ def analyze_power_grid(design, *,
     if bool(node_density_factor):
         pdnsim.setNodeDensityFactor(node_density_factor)
 
-    if bool(outfile):
-        pdnsim.setOutFile(outfile)
+    if not outfile:
+        outfile = ""
 
-    if bool(error_file):
-        pdnsim.setErrorFile(error_file)
+    if not error_file:
+        error_file = ""
 
     _set_corner(design, corner)
 
@@ -91,21 +91,24 @@ def analyze_power_grid(design, *,
         em_outfile = ""
 
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
-        pdnsim.analyzePowerGrid(enable_em, em_outfile)
+        pdnsim.analyzePowerGrid(outfile, enable_em, em_outfile, error_file)
     else:
         utl.error(utl.PSM, 156, "No rows defined in design. "+
                   "Floorplan not defined. Use initialize_floorplan to add rows.");
 
 
-def check_power_grid(design, *, net=None):
+def check_power_grid(design, *, net=None, error_file=None):
     pdnsim = design.getPDNSim()
     if bool(net):
         pdnsim.setNet(design.getBlock().findNet(net))
     else:
      utl.error(utl.PSM, 157, "Argument 'net' not specified to check_power_grid.")
 
+    if not error_file:
+        error_file = ""
+
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
-        res = pdnsim.checkConnectivity()
+        res = pdnsim.checkConnectivity(error_file)
         if res == 0:
             utl.error(utl.PSM, 169, "Check connectivity failed.")
         return res

@@ -83,10 +83,6 @@ class IRSolver
            utl::Logger* logger,
            odb::dbNet* net,
            const std::string& vsrc_loc,
-           const std::string& out_file,
-           const std::string& error_file,
-           const std::string& em_out_file,
-           const std::string& spice_out_file,
            bool em_analyze,
            int bump_pitch_x,
            int bump_pitch_y,
@@ -99,21 +95,22 @@ class IRSolver
   //! Returns the created G matrix for the design
   GMat* getGMat();
   //! Returns current map represented as a 1D vector
-  std::vector<double> getJ();
+  const std::vector<double>& getJ() const;
   //! Function to solve for IR drop
   void solveIR();
   //! Function to get the power value from OpenSTA
   std::vector<std::pair<odb::dbInst*, double>> getPower();
   std::pair<double, double> getSupplyVoltage();
 
-  bool getConnectionTest();
+  bool getConnectionTest() const;
+  int getMinimumResolution() const;
 
-  int getMinimumResolution();
+  void writeSpiceFile(const std::string& file) const;
+  void writeVoltageFile(const std::string& file) const;
+  void writeEMFile(const std::string& file) const;
+  void writeErrorFile(const std::string& file) const;
 
-  int printSpice();
-
-  bool build();
-  bool buildConnection();
+  bool build(const std::string& error_file = "", bool connectivity_only = false);
 
   const std::vector<SourceData>& getSources() const { return sources_; }
 
@@ -161,9 +158,8 @@ class IRSolver
   int createSourceNodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
   void createGmatConnections(bool connection_only);
-  bool checkConnectivity(bool connection_only = false);
-  bool checkValidR(double R);
-  bool getResult();
+  bool checkConnectivity(const std::string& error_file = "", bool connection_only = false);
+  bool checkValidR(double R) const;
 
   double getResistance(odb::dbTechLayer* layer) const;
 
@@ -191,12 +187,7 @@ class IRSolver
 
   //! Voltage source file
   std::string vsrc_file_;
-  //! Resistance configuration file
-  std::string out_file_;
-  std::string error_file_;
-  std::string em_out_file_;
   bool em_flag_;
-  std::string spice_out_file_;
   //! G matrix for voltage
   std::unique_ptr<GMat> Gmat_;
   //! Node density in the lower most layer to append the current sources
@@ -213,7 +204,6 @@ class IRSolver
 
   int bottom_layer_{10};
 
-  bool result_{false};
   bool connection_{false};
 
   sta::Corner* corner_;

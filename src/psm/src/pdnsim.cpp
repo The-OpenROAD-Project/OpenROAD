@@ -86,19 +86,6 @@ void PDNSim::setVsrcCfg(const std::string& vsrc)
   logger_->info(utl::PSM, 1, "Reading voltage source file: {}.", vsrc_loc_);
 }
 
-void PDNSim::setOutFile(const std::string& out_file)
-{
-  out_file_ = out_file;
-  logger_->info(
-      utl::PSM, 2, "Output voltage file is specified as: {}.", out_file_);
-}
-
-void PDNSim::setErrorFile(const std::string& error_file)
-{
-  error_file_ = error_file;
-  logger_->info(utl::PSM, 83, "Error file is specified as: {}.", error_file_);
-}
-
 void PDNSim::writeSpice(const std::string& file)
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
@@ -107,10 +94,6 @@ void PDNSim::writeSpice(const std::string& file)
                                               logger_,
                                               net_,
                                               vsrc_loc_,
-                                              out_file_,
-                                              error_file_,
-                                              "",
-                                              file,
                                               false,
                                               bump_pitch_x_,
                                               bump_pitch_y_,
@@ -120,16 +103,11 @@ void PDNSim::writeSpice(const std::string& file)
                                               corner_);
 
   if (irsolve_h->build()) {
-    int check_spice = irsolve_h->printSpice();
-    if (check_spice) {
-      logger_->info(utl::PSM, 6, "SPICE file is written at: {}.", file);
-    } else {
-      logger_->error(utl::PSM, 7, "Failed to write out spice file: {}.", file);
-    }
+    irsolve_h->writeSpiceFile(file);
   }
 }
 
-void PDNSim::analyzePowerGrid(bool enable_em, const std::string& em_file)
+void PDNSim::analyzePowerGrid(const std::string& voltage_file, bool enable_em, const std::string& em_file, const std::string& error_file)
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
@@ -137,10 +115,6 @@ void PDNSim::analyzePowerGrid(bool enable_em, const std::string& em_file)
                                               logger_,
                                               net_,
                                               vsrc_loc_,
-                                              out_file_,
-                                              error_file_,
-                                              em_file,
-                                              "",
                                               enable_em,
                                               bump_pitch_x_,
                                               bump_pitch_y_,
@@ -149,7 +123,7 @@ void PDNSim::analyzePowerGrid(bool enable_em, const std::string& em_file)
                                               net_voltage_map_,
                                               corner_);
 
-  if (!irsolve_h->build()) {
+  if (!irsolve_h->build(error_file)) {
     logger_->error(
         utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
@@ -180,6 +154,10 @@ void PDNSim::analyzePowerGrid(bool enable_em, const std::string& em_file)
   logger_->metric(fmt::format("design_powergrid__drop__worst{}", metric_suffix),
                   worst_drop);
 
+  if (!voltage_file.empty()) {
+    irsolve_h->writeVoltageFile(voltage_file);
+  }
+
   if (enable_em) {
     logger_->report("########## EM analysis ###############");
     logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
@@ -193,6 +171,10 @@ void PDNSim::analyzePowerGrid(bool enable_em, const std::string& em_file)
     logger_->metric(
         fmt::format("design_powergrid__current__max{}", metric_suffix),
         irsolve_h->getMaxCurrent());
+
+    if (!em_file.empty()) {
+      irsolve_h->writeEMFile(em_file);
+    }
   }
 
   IRDropByLayer ir_drop;
@@ -221,7 +203,7 @@ void PDNSim::analyzePowerGrid(bool enable_em, const std::string& em_file)
   }
 }
 
-bool PDNSim::checkConnectivity()
+bool PDNSim::checkConnectivity(const std::string& error_file)
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
@@ -229,10 +211,6 @@ bool PDNSim::checkConnectivity()
                                               logger_,
                                               net_,
                                               vsrc_loc_,
-                                              out_file_,
-                                              error_file_,
-                                              "",
-                                              "",
                                               false,
                                               bump_pitch_x_,
                                               bump_pitch_y_,
@@ -240,8 +218,11 @@ bool PDNSim::checkConnectivity()
                                               node_density_factor_,
                                               net_voltage_map_,
                                               corner_);
-  if (!irsolve_h->buildConnection()) {
+  if (!irsolve_h->build(error_file, true)) {
     return false;
+  }
+  if (debug_gui_) {
+    debug_gui_->setSources(irsolve_h->getSources());
   }
   return irsolve_h->getConnectionTest();
 }

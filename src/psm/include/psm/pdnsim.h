@@ -74,8 +74,6 @@ class PDNSim
             rsz::Resizer* resizer);
 
   void setVsrcCfg(const std::string& vsrc);
-  void setOutFile(const std::string& out_file);
-  void setErrorFile(const std::string& error_file);
   void setNet(odb::dbNet* net) { net_ = net; }
   void setBumpPitchX(float bump_pitch) { bump_pitch_x_ = bump_pitch; }
   void setBumpPitchY(float bump_pitch) { bump_pitch_y_ = bump_pitch; }
@@ -87,12 +85,12 @@ class PDNSim
   void setCorner(sta::Corner* corner) { corner_ = corner; }
 
   void setNetVoltage(odb::dbNet* net, float voltage);
-  void analyzePowerGrid(bool enable_em, const std::string& em_file);
+  void analyzePowerGrid(const std::string& voltage_file, bool enable_em, const std::string& em_file, const std::string& error_file);
   void writeSpice(const std::string& file);
   void getIRDropMap(IRDropByLayer& ir_drop);
   void getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop);
   int getMinimumResolution();
-  bool checkConnectivity();
+  bool checkConnectivity(const std::string& error_file);
   void setDebugGui();
 
  private:
@@ -101,8 +99,6 @@ class PDNSim
   rsz::Resizer* resizer_ = nullptr;
   utl::Logger* logger_ = nullptr;
   std::string vsrc_loc_;
-  std::string out_file_;
-  std::string error_file_;
   int bump_pitch_x_ = 0;
   int bump_pitch_y_ = 0;
   odb::dbNet* net_ = nullptr;

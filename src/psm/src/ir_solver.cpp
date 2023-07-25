@@ -100,10 +100,6 @@ IRSolver::IRSolver(odb::dbDatabase* db,
                    utl::Logger* logger,
                    odb::dbNet* net,
                    const std::string& vsrc_loc,
-                   const std::string& out_file,
-                   const std::string& error_file,
-                   const std::string& em_out_file,
-                   const std::string& spice_out_file,
                    bool em_analyze,
                    int bump_pitch_x,
                    int bump_pitch_y,
@@ -118,11 +114,7 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   logger_ = logger;
   net_ = net;
   vsrc_file_ = vsrc_loc;
-  out_file_ = out_file;
-  error_file_ = error_file;
-  em_out_file_ = em_out_file;
   em_flag_ = em_analyze;
-  spice_out_file_ = spice_out_file;
   bump_pitch_x_ = bump_pitch_x;
   bump_pitch_y_ = bump_pitch_y;
   node_density_um_ = node_density_um;
@@ -167,7 +159,7 @@ GMat* IRSolver::getGMat()
 /*
  * \return J vector
  */
-vector<double> IRSolver::getJ()
+const vector<double>& IRSolver::getJ() const
 {
   return J_;
 }
@@ -181,7 +173,6 @@ void IRSolver::solveIR()
                   "Powergrid is not connected to all instances, therefore the "
                   "IR Solver may not be accurate. LVS may also fail.");
   }
-  const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
   CscMatrix* Gmat = Gmat_->getGMat();
   // fill A
   double* values = &(Gmat->values[0]);
@@ -219,13 +210,7 @@ void IRSolver::solveIR()
                1,
                "Solving system of equations GV=J complete");
   }
-  ofstream ir_report;
-  ir_report.open(out_file_);
-  ir_report << "Instance name, "
-            << " X location, "
-            << " Y location, "
-            << " Voltage "
-            << "\n";
+
   const int num_nodes = Gmat_->getNumNodes();
   int node_num = 0;
   double sum_volt = 0;
@@ -245,35 +230,14 @@ void IRSolver::solveIR()
     }
     node->setVoltage(volt);
     node_num++;
-    if (node->hasInstances()) {
-      const Point node_loc = node->getLoc();
-      const float loc_x = node_loc.getX() / ((float) unit_micron);
-      const float loc_y = node_loc.getY() / ((float) unit_micron);
-      if (!out_file_.empty()) {
-        for (dbInst* inst : node->getInstances()) {
-          ir_report << inst->getName() << ", " << loc_x << ", " << loc_y << ", "
-                    << setprecision(6) << volt << "\n";
-        }
-      }
-    }
   }
-  ir_report << endl;
-  ir_report.close();
   avg_voltage_ = sum_volt / num_nodes;
+
   if (em_flag_) {
     DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
     int resistance_number = 0;
     max_cur_ = 0;
     double sum_cur = 0;
-    ofstream em_report;
-    if (!em_out_file_.empty()) {
-      em_report.open(em_out_file_);
-      em_report << "Segment name, "
-                << " Current, "
-                << " Node 1, "
-                << " Node 2 "
-                << "\n";
-    }
     Point node_loc;
     for (auto [loc, value] : Gmat_dok->values) {
       const NodeIdx col = loc.first;
@@ -311,10 +275,6 @@ void IRSolver::solveIR()
         const double v2 = node2->getVoltage();
         double seg_cur = (v1 - v2) / resistance;
         sum_cur += abs(seg_cur);
-        if (!em_out_file_.empty()) {
-          em_report << segment_name << ", " << setprecision(3) << seg_cur
-                    << ", " << node1_name << ", " << node2_name << endl;
-        }
         seg_cur = abs(seg_cur);
         if (seg_cur > max_cur_) {
           max_cur_ = seg_cur;
@@ -326,6 +286,101 @@ void IRSolver::solveIR()
     num_res_ = resistance_number;
 
   }  // enable em
+}
+
+void IRSolver::writeVoltageFile(const std::string& file) const
+{
+  ofstream ir_report;
+  ir_report.open(file);
+  if (!ir_report) {
+    logger_->error(utl::PSM, 90, "Unable to open {}", file);
+  }
+
+  ir_report << "Instance name, "
+            << "X location, "
+            << "Y location, "
+            << "Voltage"
+            << endl;
+
+  const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
+  const int num_nodes = Gmat_->getNumNodes();
+  int node_num = 0;
+  while (node_num < num_nodes) {
+    Node* node = Gmat_->getNode(node_num);
+    node_num++;
+    if (node->hasInstances()) {
+      const Point node_loc = node->getLoc();
+      const float loc_x = node_loc.getX() / ((float) unit_micron);
+      const float loc_y = node_loc.getY() / ((float) unit_micron);
+      for (dbInst* inst : node->getInstances()) {
+        ir_report << inst->getName() << ", " << loc_x << ", " << loc_y << ", "
+                  << setprecision(6) << node->getVoltage() << endl;
+      }
+    }
+  }
+  ir_report << endl;
+  ir_report.close();
+}
+
+void IRSolver::writeEMFile(const std::string& file) const
+{
+    DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
+    int resistance_number = 0;
+    double sum_cur = 0;
+    ofstream em_report;
+    em_report.open(file);
+    if (!em_report) {
+      logger_->error(utl::PSM, 91, "Unable to open {}", file);
+    }
+    em_report << "Segment name, "
+              << "Current, "
+              << "Node 1, "
+              << "Node 2"
+              << endl;
+
+  const int num_nodes = Gmat_->getNumNodes();
+    Point node_loc;
+    for (auto [loc, value] : Gmat_dok->values) {
+      const NodeIdx col = loc.first;
+      const NodeIdx row = loc.second;
+      if (col <= row) {
+        continue;  // ignore lower half and diagonal as matrix is symmetric
+      }
+      const double cond = value;  // get cond value
+      if (abs(cond) < 1e-15) {    // ignore if an empty cell
+        continue;
+      }
+      const string net_name = net_->getName();
+      if (col < num_nodes) {  // resistances
+        const double resistance = -1 / cond;
+
+        const Node* node1 = Gmat_->getNode(col);
+        const Node* node2 = Gmat_->getNode(row);
+        node_loc = node1->getLoc();
+        const int x1 = node_loc.getX();
+        const int y1 = node_loc.getY();
+        const int l1 = node1->getLayerNum();
+        const string node1_name = net_name + "_" + to_string(x1) + "_"
+                                  + to_string(y1) + "_" + to_string(l1);
+
+        node_loc = node2->getLoc();
+        int x2 = node_loc.getX();
+        int y2 = node_loc.getY();
+        int l2 = node2->getLayerNum();
+        string node2_name = net_name + "_" + to_string(x2) + "_" + to_string(y2)
+                            + "_" + to_string(l2);
+
+        const string segment_name = "seg_" + to_string(resistance_number);
+
+        const double v1 = node1->getVoltage();
+        const double v2 = node2->getVoltage();
+        double seg_cur = (v1 - v2) / resistance;
+        sum_cur += abs(seg_cur);
+        em_report << segment_name << ", " << setprecision(3) << seg_cur
+                    << ", " << node1_name << ", " << node2_name << endl;
+        resistance_number++;
+      }
+    }
 }
 
 //! Function to add sources to the G matrix
@@ -1389,12 +1444,12 @@ bool IRSolver::createGmat(bool connection_only)
   return true;
 }
 
-bool IRSolver::checkValidR(double R)
+bool IRSolver::checkValidR(double R) const
 {
   return R >= 1e-12;
 }
 
-bool IRSolver::checkConnectivity(bool connection_only)
+bool IRSolver::checkConnectivity(const std::string& error_file, bool connection_only)
 {
   const CscMatrix* Amat = Gmat_->getAMat();
   const int num_nodes = Gmat_->getNumNodes();
@@ -1438,12 +1493,8 @@ bool IRSolver::checkConnectivity(bool connection_only)
       }
     }
   }
+
   bool unconnected_node = false;
-  ofstream error_report;
-  if (!error_file_.empty()) {
-    error_report.exceptions(~std::ios_base::goodbit);
-    error_report.open(error_file_);
-  }
   auto tech = db_->getTech();
   for (Node* node : Gmat_->getAllNodes()) {
     if (!node->getConnected()) {
@@ -1459,17 +1510,6 @@ bool IRSolver::checkConnectivity(bool connection_only)
                     loc_x,
                     loc_y,
                     tech->findRoutingLayer(node->getLayerNum())->getName());
-      if (!error_file_.empty()) {
-        error_report << "violation type: Unconnected PDN node\n";
-        error_report << "  srcs: \n";
-        error_report << fmt::format(
-            "    bbox = ({}, {}) - ({}, {}) on Layer {}\n",
-            loc_x - 0.05,
-            loc_y - 0.05,
-            loc_x + 0.05,
-            loc_y + 0.05,
-            tech->findRoutingLayer(node->getLayerNum())->getName());
-      }
       if (node->hasInstances()) {
         for (dbInst* inst : node->getInstances()) {
           logger_->warn(utl::PSM,
@@ -1484,14 +1524,47 @@ bool IRSolver::checkConnectivity(bool connection_only)
       }
     }
   }
-  if (unconnected_node == false) {
+  if (!unconnected_node) {
     logger_->info(
         utl::PSM, 40, "All PDN stripes on net {} are connected.", net_->getName());
   }
+
+  if (!error_file.empty()) {
+    writeErrorFile(error_file);
+  }
+
   return !unconnected_node;
 }
 
-bool IRSolver::getConnectionTest()
+void IRSolver::writeErrorFile(const std::string& file) const
+{
+  ofstream error_report;
+  error_report.open(file);
+  if (!error_report) {
+    logger_->error(utl::PSM, 92, "Unable to open {}", file);
+  }
+
+  auto* tech = db_->getTech();
+  const float unit_micron = tech->getDbUnitsPerMicron();
+  for (Node* node : Gmat_->getAllNodes()) {
+    if (!node->getConnected()) {
+      const Point node_loc = node->getLoc();
+      const float loc_x = node_loc.getX() / unit_micron;
+      const float loc_y = node_loc.getY() / unit_micron;
+      error_report << "violation type: Unconnected PDN node" << endl;
+      error_report << "  srcs: " << endl;
+      error_report << fmt::format(
+          "    bbox = ({}, {}) - ({}, {}) on Layer {}",
+          loc_x - 0.05,
+          loc_y - 0.05,
+          loc_x + 0.05,
+          loc_y + 0.05,
+          tech->findRoutingLayer(node->getLayerNum())->getName()) << endl;
+    }
+  }
+}
+
+bool IRSolver::getConnectionTest() const
 {
   return connection_;
 }
@@ -1513,25 +1586,20 @@ pair<double, double> IRSolver::getSupplyVoltage()
   return SupplyVoltage().getSupplyVoltage(sta_, logger_, corner_);
 }
 
-bool IRSolver::getResult()
-{
-  return result_;
-}
-
-int IRSolver::printSpice()
+void IRSolver::writeSpiceFile(const std::string& file) const
 {
   DokMatrix* Gmat = Gmat_->getGMatDOK();
 
   ofstream pdnsim_spice_file;
-  pdnsim_spice_file.open(spice_out_file_);
+  pdnsim_spice_file.open(file);
   if (!pdnsim_spice_file.is_open()) {
     logger_->error(
         utl::PSM,
         41,
         "Could not open SPICE file {}. Please check if it is a valid path.",
-        spice_out_file_);
+        file);
   }
-  const vector<double> J = getJ();
+  const vector<double>& J = getJ();
   const int num_nodes = Gmat_->getNumNodes();
   int resistance_number = 0;
   int voltage_number = 0;
@@ -1601,66 +1669,44 @@ int IRSolver::printSpice()
   pdnsim_spice_file << ".END" << endl;
   pdnsim_spice_file << endl;
   pdnsim_spice_file.close();
-  return 1;
 }
 
-int IRSolver::getMinimumResolution()
+int IRSolver::getMinimumResolution() const
 {
   return node_density_;
 }
 
-bool IRSolver::build()
+bool IRSolver::build(const std::string& error_file, bool connectivity_only)
 {
-  readSourceData(true);
+  connection_ = false;
 
-  bool res = createGmat();
+  readSourceData(!connectivity_only);
+
+  bool res = createGmat(connectivity_only);
   if (Gmat_->getNumNodes() == 0) {
     connection_ = true;
     return false;
   }
 
-  if (res) {
+  if (res && !connectivity_only) {
     res = createJ();
   }
   if (res) {
     res = addSources();
   }
-  if (res) {
+  if (res && !connectivity_only) {
     res = Gmat_->generateCSCMatrix();
   }
   if (res) {
     res = Gmat_->generateACSCMatrix();
   }
   if (res) {
-    connection_ = checkConnectivity();
-    res = connection_;
+    connection_ = checkConnectivity(error_file, connectivity_only);
+    if (!connectivity_only) {
+      res = connection_;
+    }
   }
-  result_ = res;
-  return result_;
-}
-
-bool IRSolver::buildConnection()
-{
-  readSourceData(false);
-
-  bool res = createGmat(true);
-  if (Gmat_->getNumNodes() == 0) {
-    connection_ = true;
-    return true;
-  }
-
-  if (res) {
-    res = addSources();
-  }
-  if (res) {
-    res = Gmat_->generateACSCMatrix();
-  }
-  if (res) {
-    connection_ = checkConnectivity(true);
-    res = connection_;
-  }
-  result_ = res;
-  return result_;
+  return res;
 }
 
 double IRSolver::getResistance(odb::dbTechLayer* layer) const

@@ -103,31 +103,17 @@ set_net_voltage_cmd(odb::dbNet* net, float voltage)
 }
 
 void 
-import_out_file_cmd(const char* out_file)
+analyze_power_grid_cmd(const char* voltage_file, bool enable_em, const char* em_file, const char* error_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->setOutFile(out_file);
+  pdnsim->analyzePowerGrid(voltage_file, enable_em, em_file, error_file);
 }
 
-void
-import_error_file_cmd(const char* error_file)
+bool
+check_connectivity_cmd(const char* error_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->setErrorFile(error_file);
-}
-
-void 
-analyze_power_grid_cmd(bool enable_em, const char* em_file)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->analyzePowerGrid(enable_em, em_file);
-}
-
-int
-check_connectivity_cmd()
-{
-  PDNSim* pdnsim = getPDNSim();
-  return pdnsim->checkConnectivity();
+  return pdnsim->checkConnectivity(error_file);
 }
 
 void
