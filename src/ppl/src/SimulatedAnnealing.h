@@ -112,8 +112,6 @@ class SimulatedAnnealing
   bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
   void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
 
-  // void currentStateVisualization(const );
-
   // [pin] -> slot
   std::vector<int> pin_assignment_;
   std::vector<int> slot_indices_;
