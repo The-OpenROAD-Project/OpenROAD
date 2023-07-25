@@ -436,5 +436,21 @@ target_link_libraries(<library_target>
 )
 ```
 
+## Useful Information
+As tool developers, we can also choose to include useful information to the end user - 
+be it in the form on debugging tips, or solutions to fix the errors/warnings. We compile
+a list of such errors in this [table](../user/MessagesFinal.md). The good thing about
+this page is the ability to encode rich formatting using Markdown, enabling you
+to convey more information than what can be said from the limited messages in code.
+
+To format the information, refer to this [sample GRT information file](../main/src/grt/doc/messages/0118.md).
+In addition, make sure you create the corresponding `docs/messages` folder under the `tool` folder, 
+before creating your Markdown file with the corresponding `NUM`. 
+
+```shell
+cd src/<tool> && mkdir -p doc/messages
+cd doc/messages && touch <NUM>.md
+```
+
 ### OpenROAD Tool List
 A full list of tool namespaces can be found [here](DeveloperGuide.md#tool-flow-namespace).

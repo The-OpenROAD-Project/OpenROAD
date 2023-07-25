@@ -311,6 +311,11 @@ and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool
 OpenROAD uses Git for version control and contributions. 
 Get familiarised with a quickstart tutorial to contribution [here](docs/contrib/GitGuide.md).
 
+
+## Understanding Warning and Error Messages
+Seeing OpenROAD warnings or errors you do not understand? We have compiled a table of all messages
+and you may potentially find your answer [here](https://openroad.readthedocs.io/en/latest/user/MessagesFinal.html).
+
 ## License
 
 BSD 3-Clause License. See [LICENSE](LICENSE) file.

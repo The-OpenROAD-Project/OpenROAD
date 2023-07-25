@@ -1,6 +1,7 @@
 name: clang-tidy-review
 
-on: [pull_request]
+on:
+  pull_request:
 
 jobs:
   build:
@@ -11,7 +12,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: ClangTidy Gen
-        uses: The-OpenROAD-Project/clang-tidy-review@v0.10.3
+        uses: The-OpenROAD-Project/clang-tidy-review@master
         with:
           build_dir: './build'
           cmake_command: cmake . -B build
@@ -24,3 +25,5 @@ jobs:
           path: |
             clang-tidy-review-output.json
             clang-tidy-review-metadata.json
+
+      - uses: The-OpenROAD-Project/clang-tidy-review/upload@master

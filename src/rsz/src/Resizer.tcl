@@ -252,7 +252,7 @@ proc unset_dont_use { args } {
 
 proc set_dont_use_cmd { cmd cmd_args dont_use } {
   sta::check_argc_eq1 $cmd $cmd_args
-  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] utl::warn] {
+  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] sta::sta_warn_error] {
     rsz::set_dont_use $lib_cell $dont_use
   }
 }
@@ -315,12 +315,13 @@ proc remove_buffers { args } {
 sta::define_cmd_args "repair_design" {[-max_wire_length max_wire_length] \
                                       [-max_utilization util] \
                                       [-slew_margin slack_margin] \
-                                      [-cap_margin cap_margin]}
+                                      [-cap_margin cap_margin] \
+                                      [-verbose]}
 
 proc repair_design { args } {
   sta::parse_key_args "repair_design" args \
     keys {-max_wire_length -max_utilization -slew_margin -cap_margin} \
-    flags {}
+    flags {-verbose}
 
   set max_wire_length [rsz::parse_max_wire_length keys]
   set slew_margin [rsz::parse_percent_margin_arg "-slew_margin" keys]
@@ -330,7 +331,8 @@ proc repair_design { args } {
   sta::check_argc_eq0 "repair_design" $args
   rsz::check_parasitics
   set max_wire_length [rsz::check_max_wire_length $max_wire_length]
-  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin
+  set verbose [info exists flags(-verbose)]
+  rsz::repair_design_cmd $max_wire_length $slew_margin $cap_margin $verbose
 }
 
 sta::define_cmd_args "repair_clock_nets" {[-max_wire_length max_wire_length]}

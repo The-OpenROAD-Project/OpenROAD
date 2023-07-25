@@ -16,4 +16,5 @@ record_tests {
   corners
   aes_test_bterms
   aes_test_multiple_bterms
+  zerosoc_pads
 }

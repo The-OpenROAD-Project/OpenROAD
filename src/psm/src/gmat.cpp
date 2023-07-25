@@ -76,13 +76,13 @@ Node* GMat::getNode(NodeIdx node)
 }
 
 //! Function to return a vector of nodes in an area
-vector<Node*> GMat::getNodes(int layer,
-                             int x_min,
-                             int x_max,
-                             int y_min,
-                             int y_max)
+void GMat::foreachNode(int layer,
+                       int x_min,
+                       int x_max,
+                       int y_min,
+                       int y_max,
+                       const std::function<void(Node*)>& func)
 {
-  vector<Node*> block_nodes;
   NodeMap& layer_map = layer_maps_[layer];
 
   for (auto x_itr = layer_map.lower_bound(x_min);
@@ -92,10 +92,9 @@ vector<Node*> GMat::getNodes(int layer,
     for (auto y_map_itr = y_itr_map.lower_bound(y_min);
          y_map_itr != y_itr_map.end() && y_map_itr->first <= y_max;
          ++y_map_itr) {
-      block_nodes.push_back(y_map_itr->second);
+      func(y_map_itr->second);
     }
   }
-  return block_nodes;
 }
 
 //! Function to return a vector of pointers to the nodes within an area sorted
@@ -218,19 +217,20 @@ Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
     int dist = abs(node_loc.getX() - x) + abs(node_loc.getY() - y);
     // Searching a bounding box of all nodes nearby to see if a closer one
     // exists.
-    vector<Node*> contender_nodes = getNodes(layer,
-                                             x - dist,   // xmin
-                                             x + dist,   // xmax
-                                             y - dist,   // ymin
-                                             y + dist);  // ymax
-    for (auto new_node : contender_nodes) {
-      node_loc = new_node->getLoc();
+    auto keep_nearest = [&](Node* new_node) {
+      const Point node_loc = new_node->getLoc();
       const int new_dist = abs(node_loc.getX() - x) + abs(node_loc.getY() - y);
       if (new_dist < dist) {
         dist = new_dist;
         node = new_node;
       }
-    }
+    };
+    foreachNode(layer,
+                x - dist,  // xmin
+                x + dist,  // xmax
+                y - dist,  // ymin
+                y + dist,
+                keep_nearest);  // ymax
     return node;
   }
 }

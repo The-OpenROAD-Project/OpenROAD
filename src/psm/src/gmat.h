@@ -84,12 +84,14 @@ class GMat
   bool findLayer(int layer);
   //! Function to return a pointer to the node with the x, y, and layer number
   Node* getNode(int x, int y, int layer, bool nearest);
-  //! Function to return a vector to all nodes in the region defined
-  std::vector<Node*> getNodes(int layer,
-                              int x_min,
-                              int x_max,
-                              int y_min,
-                              int y_max);
+  //! Call func on all nodes in the region defined
+  void foreachNode(int layer,
+                   int x_min,
+                   int x_max,
+                   int y_min,
+                   int y_max,
+                   const std::function<void(Node*)>& func);
+
   //! Function to return a vector of pointers to the nodes within an area sorted
   // by direction
   std::map<std::pair<int, int>, Node*> getNodes(

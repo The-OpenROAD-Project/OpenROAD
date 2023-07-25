@@ -52,6 +52,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "gmat.h"
 #include "node.h"
 #include "odb/db.h"
+#include "odb/dbTransform.h"
 #include "rsz/Resizer.hh"
 #include "sta/Corner.hh"
 
@@ -403,7 +404,11 @@ void IRSolver::readSourceData(bool require_voltage)
                       supply_voltage_src);
       }
     }
-    if (createSourcesFromBTerms(power_net, supply_voltage_src)) {
+    const bool added_from_pads
+        = createSourcesFromPads(power_net, supply_voltage_src);
+    const bool added_from_bterms
+        = createSourcesFromBTerms(power_net, supply_voltage_src);
+    if (added_from_pads || added_from_bterms) {
       return;
     }
 
@@ -549,6 +554,46 @@ bool IRSolver::createSourcesFromBTerms(dbNet* net, double voltage)
   return added;
 }
 
+bool IRSolver::createSourcesFromPads(dbNet* net, double voltage)
+{
+  bool added = false;
+  for (auto* iterm : net->getITerms()) {
+    auto* inst = iterm->getInst();
+    if (!inst->isPlaced()) {
+      continue;
+    }
+    if (!inst->isPad()) {
+      continue;
+    }
+
+    odb::dbTransform xform;
+    inst->getTransform(xform);
+
+    auto* mterm = iterm->getMTerm();
+    for (auto* mpin : mterm->getMPins()) {
+      for (auto* box : mpin->getGeometry()) {
+        auto* layer = box->getTechLayer();
+        if (layer == nullptr) {
+          continue;
+        }
+        auto rect = box->getBox();
+        xform.apply(rect);
+        const int src_size = rect.minDXDY();
+
+        sources_.push_back({rect.xCenter(),
+                            rect.yCenter(),
+                            src_size,
+                            voltage,
+                            layer->getRoutingLevel(),
+                            false});
+
+        added = true;
+      }
+    }
+  }
+  return added;
+}
+
 //! Function to create a J vector from the current map
 bool IRSolver::createJ()
 {  // take current_map as an input?
@@ -595,12 +640,12 @@ bool IRSolver::createJ()
       // Search for all nodes within the macro boundary
       vector<Node*> nodes_J;
       for (auto ll : pin_layers) {
-        vector<Node*> nodes_J_l = Gmat_->getNodes(ll,
-                                                  inst_bBox->xMin(),
-                                                  inst_bBox->xMax(),
-                                                  inst_bBox->yMin(),
-                                                  inst_bBox->yMax());
-        nodes_J.insert(nodes_J.end(), nodes_J_l.begin(), nodes_J_l.end());
+        Gmat_->foreachNode(ll,
+                           inst_bBox->xMin(),
+                           inst_bBox->xMax(),
+                           inst_bBox->yMin(),
+                           inst_bBox->yMax(),
+                           [&](Node* node) { nodes_J.push_back(node); });
       }
       double num_nodes = nodes_J.size();
       // If nodes are not found on the pin layers we search for the lowest
@@ -609,11 +654,13 @@ bool IRSolver::createJ()
         const int max_l
             = *std::max_element(pin_layers.begin(), pin_layers.end());
         for (int pl = bottom_layer_ + 1; pl <= top_layer_; pl++) {
-          nodes_J = Gmat_->getNodes(pl,
-                                    inst_bBox->xMin(),
-                                    inst_bBox->xMax(),
-                                    inst_bBox->yMin(),
-                                    inst_bBox->yMax());
+          Gmat_->foreachNode(pl,
+                             inst_bBox->xMin(),
+                             inst_bBox->xMax(),
+                             inst_bBox->yMin(),
+                             inst_bBox->yMax(),
+                             [&](Node* node) { nodes_J.push_back(node); });
+
           num_nodes = nodes_J.size();
           if (num_nodes > 0) {
             logger_->warn(
