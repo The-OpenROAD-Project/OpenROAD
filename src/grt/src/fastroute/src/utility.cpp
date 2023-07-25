@@ -31,12 +31,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
-#include <queue>
 #include <fstream>
+#include <queue>
 
 #include "DataType.h"
-#include "odb/db.h"
 #include "FastRoute.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace grt {
