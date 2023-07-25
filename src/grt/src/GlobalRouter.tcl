@@ -193,7 +193,7 @@ proc set_global_routing_random { args } {
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
                                   [-congestion_report_file file_name] \
-                                  [-drc_report_iter_step] \
+                                  [-drc_report_iter_step steps] \
                                   [-grid_origin origin] \
                                   [-overflow_iterations iterations] \
                                   [-critical_nets_percentage percent] \
@@ -249,8 +249,8 @@ proc global_route { args } {
   }
 
   if { [info exists keys(-drc_report_iter_step) ] } {
-    set drc_report_iter_step $keys(-drc_report_iter_step)
-    grt::set_drc_report_iter_step $drc_report_iter_step
+    set steps $keys(-drc_report_iter_step)
+    grt::set_drc_report_iter_step $steps
   } else {
     grt::set_drc_report_iter_step 0
   }
