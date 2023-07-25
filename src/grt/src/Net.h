@@ -59,7 +59,6 @@ class Net
   bool isLocal();
   void destroyPins();
   bool hasWires() const { return has_wires_; }
-  bool isZeroLengthRouting();
 
  private:
   odb::dbNet* net_;
