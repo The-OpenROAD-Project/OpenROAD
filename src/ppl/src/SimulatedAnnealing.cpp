@@ -126,7 +126,7 @@ void SimulatedAnnealing::run(float init_temperature,
         isNoPauseMode = true;
       }
 
-      if (iter % debug_->painting_interval_ == 0) {
+      if (iter == 0 || (iter + 1) % debug_->painting_interval_ == 0) {
         std::vector<ppl::IOPin> pins;
         getAssignment(pins);
 
