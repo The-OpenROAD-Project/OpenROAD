@@ -310,11 +310,23 @@ class Hypergraph
   std::vector<std::vector<float>> GetVertexBalance(int num_parts,
                                                    float ub_factor) const;
 
-  std::vector<std::vector<float>> GetUpperVertexBalance(int num_parts,
-                                                        float ub_factor) const;
+  // std::vector<std::vector<float>> GetUpperVertexBalance(int num_parts,
+  //                                                      float ub_factor)
+  //                                                      const;
 
-  std::vector<std::vector<float>> GetLowerVertexBalance(int num_parts,
-                                                        float ub_factor) const;
+  // std::vector<std::vector<float>> GetLowerVertexBalance(int num_parts,
+  //                                                      float ub_factor)
+  //                                                      const;
+
+  std::vector<std::vector<float>> GetUpperVertexBalance(
+      int num_parts,
+      float ub_factor,
+      std::vector<float> base_balance) const;
+
+  std::vector<std::vector<float>> GetLowerVertexBalance(
+      int num_parts,
+      float ub_factor,
+      std::vector<float> base_balance) const;
 
  private:
   // basic hypergraph
