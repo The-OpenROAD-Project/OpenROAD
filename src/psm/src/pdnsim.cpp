@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "debug_gui.h"
 #include "gmat.h"
@@ -49,6 +50,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "node.h"
 #include "odb/db.h"
 #include "sta/Corner.hh"
+#include "sta/DcalcAnalysisPt.hh"
+#include "sta/Liberty.hh"
 #include "utl/Logger.h"
 
 namespace psm {
@@ -86,42 +89,38 @@ void PDNSim::setVsrcCfg(const std::string& vsrc)
   logger_->info(utl::PSM, 1, "Reading voltage source file: {}.", vsrc_loc_);
 }
 
+std::unique_ptr<IRSolver> PDNSim::getIRSolver(bool require_voltage)
+{
+  return std::make_unique<IRSolver>(db_,
+                                    sta_,
+                                    resizer_,
+                                    logger_,
+                                    net_,
+                                    getNetVoltage(net_),
+                                    vsrc_loc_,
+                                    require_voltage,
+                                    bump_pitch_x_,
+                                    bump_pitch_y_,
+                                    node_density_,
+                                    node_density_factor_,
+                                    corner_);
+}
+
 void PDNSim::writeSpice(const std::string& file)
 {
-  auto irsolve_h = std::make_unique<IRSolver>(db_,
-                                              sta_,
-                                              resizer_,
-                                              logger_,
-                                              net_,
-                                              vsrc_loc_,
-                                              false,
-                                              bump_pitch_x_,
-                                              bump_pitch_y_,
-                                              node_density_,
-                                              node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
+  auto irsolve_h = getIRSolver(false);
 
   if (irsolve_h->build()) {
     irsolve_h->writeSpiceFile(file);
   }
 }
 
-void PDNSim::analyzePowerGrid(const std::string& voltage_file, bool enable_em, const std::string& em_file, const std::string& error_file)
+void PDNSim::analyzePowerGrid(const std::string& voltage_file,
+                              bool enable_em,
+                              const std::string& em_file,
+                              const std::string& error_file)
 {
-  auto irsolve_h = std::make_unique<IRSolver>(db_,
-                                              sta_,
-                                              resizer_,
-                                              logger_,
-                                              net_,
-                                              vsrc_loc_,
-                                              enable_em,
-                                              bump_pitch_x_,
-                                              bump_pitch_y_,
-                                              node_density_,
-                                              node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
+  auto irsolve_h = getIRSolver(enable_em);
 
   if (!irsolve_h->build(error_file)) {
     logger_->error(
@@ -137,9 +136,9 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file, bool enable_em, c
   logger_->report("Corner: {}", corner_name);
   logger_->report("Worstcase voltage: {:3.2e} V",
                   irsolve_h->getWorstCaseVoltage());
-  const double avg_drop
-      = std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage());
-  const double worst_drop = std::abs(irsolve_h->getSupplyVoltageSrc()
+  const double avg_drop = std::abs(irsolve_h->getSupplyVoltageSrc().value()
+                                   - irsolve_h->getAvgVoltage());
+  const double worst_drop = std::abs(irsolve_h->getSupplyVoltageSrc().value()
                                      - irsolve_h->getWorstCaseVoltage());
   logger_->report("Average IR drop  : {:3.2e} V", avg_drop);
   logger_->report("Worstcase IR drop: {:3.2e} V", worst_drop);
@@ -192,7 +191,7 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file, bool enable_em, c
     // Absolute is needed for GND nets. In case of GND net voltage is higher
     // than supply.
     ir_drop[node_layer][point]
-        = std::abs(irsolve_h->getSupplyVoltageSrc() - voltage);
+        = std::abs(irsolve_h->getSupplyVoltageSrc().value() - voltage);
   }
   ir_drop_ = ir_drop;
   min_resolution_ = irsolve_h->getMinimumResolution();
@@ -205,19 +204,7 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file, bool enable_em, c
 
 bool PDNSim::checkConnectivity(const std::string& error_file)
 {
-  auto irsolve_h = std::make_unique<IRSolver>(db_,
-                                              sta_,
-                                              resizer_,
-                                              logger_,
-                                              net_,
-                                              vsrc_loc_,
-                                              false,
-                                              bump_pitch_x_,
-                                              bump_pitch_y_,
-                                              node_density_,
-                                              node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
+  auto irsolve_h = getIRSolver(false);
   if (!irsolve_h->build(error_file, true)) {
     return false;
   }
@@ -252,6 +239,43 @@ int PDNSim::getMinimumResolution()
         "Minimum resolution not set. Please run analyze_power_grid first.");
   }
   return min_resolution_;
+}
+
+std::optional<float> PDNSim::getNetVoltage(odb::dbNet* net) const
+{
+  if (net == nullptr) {
+    return {};
+  }
+
+  auto find_net = net_voltage_map_.find(net);
+  if (find_net != net_voltage_map_.end()) {
+    return find_net->second;
+  }
+
+  if (net->getSigType() == odb::dbSigType::GROUND) {
+    return 0.0;
+  }
+
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  const sta::MinMax* mm = sta::MinMax::max();
+  const sta::DcalcAnalysisPt* dcalc_ap = corner_->findDcalcAnalysisPt(mm);
+  sta::LibertyLibrary* default_library = network->defaultLibertyLibrary();
+  if (!default_library) {
+    logger_->error(
+        utl::PSM,
+        79,
+        "Can't determine the supply voltage as no Liberty is loaded.");
+  }
+
+  const sta::Pvt* pvt = dcalc_ap->operatingConditions();
+  if (pvt == nullptr) {
+    pvt = default_library->defaultOperatingConditions();
+  }
+  if (pvt) {
+    return pvt->voltage();
+  }
+
+  return {};
 }
 
 }  // namespace psm

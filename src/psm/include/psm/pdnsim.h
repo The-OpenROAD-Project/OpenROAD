@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace odb {
@@ -56,6 +57,7 @@ class Resizer;
 }
 
 namespace psm {
+class IRSolver;
 class IRDropDataSource;
 class DebugGui;
 
@@ -85,7 +87,10 @@ class PDNSim
   void setCorner(sta::Corner* corner) { corner_ = corner; }
 
   void setNetVoltage(odb::dbNet* net, float voltage);
-  void analyzePowerGrid(const std::string& voltage_file, bool enable_em, const std::string& em_file, const std::string& error_file);
+  void analyzePowerGrid(const std::string& voltage_file,
+                        bool enable_em,
+                        const std::string& em_file,
+                        const std::string& error_file);
   void writeSpice(const std::string& file);
   void getIRDropMap(IRDropByLayer& ir_drop);
   void getIRDropForLayer(odb::dbTechLayer* layer, IRDropByPoint& ir_drop);
@@ -94,6 +99,9 @@ class PDNSim
   void setDebugGui();
 
  private:
+  std::optional<float> getNetVoltage(odb::dbNet* net) const;
+  std::unique_ptr<IRSolver> getIRSolver(bool require_voltage);
+
   odb::dbDatabase* db_ = nullptr;
   sta::dbSta* sta_ = nullptr;
   rsz::Resizer* resizer_ = nullptr;

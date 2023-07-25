@@ -48,7 +48,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "get_power.h"
-#include "get_voltage.h"
 #include "gmat.h"
 #include "node.h"
 #include "odb/db.h"
@@ -99,13 +98,13 @@ IRSolver::IRSolver(odb::dbDatabase* db,
                    rsz::Resizer* resizer,
                    utl::Logger* logger,
                    odb::dbNet* net,
+                   const std::optional<float>& voltage,
                    const std::string& vsrc_loc,
                    bool em_analyze,
                    int bump_pitch_x,
                    int bump_pitch_y,
                    float node_density_um,
                    int node_density_factor_user,
-                   const std::map<odb::dbNet*, float>& net_voltage_map,
                    sta::Corner* corner)
 {
   db_ = db;
@@ -113,13 +112,13 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   resizer_ = resizer;
   logger_ = logger;
   net_ = net;
+  supply_voltage_src_ = voltage;
   vsrc_file_ = vsrc_loc;
   em_flag_ = em_analyze;
   bump_pitch_x_ = bump_pitch_x;
   bump_pitch_y_ = bump_pitch_y;
   node_density_um_ = node_density_um;
   node_density_factor_user_ = node_density_factor_user;
-  net_voltage_map_ = net_voltage_map;
   corner_ = corner;
 
   if (net_ == nullptr) {
@@ -214,7 +213,7 @@ void IRSolver::solveIR()
   const int num_nodes = Gmat_->getNumNodes();
   int node_num = 0;
   double sum_volt = 0;
-  wc_voltage_ = supply_voltage_src_;
+  wc_voltage_ = supply_voltage_src_.value();
   while (node_num < num_nodes) {
     Node* node = Gmat_->getNode(node_num);
     const double volt = x(node_num);
@@ -299,8 +298,7 @@ void IRSolver::writeVoltageFile(const std::string& file) const
   ir_report << "Instance name, "
             << "X location, "
             << "Y location, "
-            << "Voltage"
-            << endl;
+            << "Voltage" << endl;
 
   const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
   const int num_nodes = Gmat_->getNumNodes();
@@ -324,63 +322,62 @@ void IRSolver::writeVoltageFile(const std::string& file) const
 
 void IRSolver::writeEMFile(const std::string& file) const
 {
-    DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
-    int resistance_number = 0;
-    double sum_cur = 0;
-    ofstream em_report;
-    em_report.open(file);
-    if (!em_report) {
-      logger_->error(utl::PSM, 91, "Unable to open {}", file);
-    }
-    em_report << "Segment name, "
-              << "Current, "
-              << "Node 1, "
-              << "Node 2"
-              << endl;
+  DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
+  int resistance_number = 0;
+  double sum_cur = 0;
+  ofstream em_report;
+  em_report.open(file);
+  if (!em_report) {
+    logger_->error(utl::PSM, 91, "Unable to open {}", file);
+  }
+  em_report << "Segment name, "
+            << "Current, "
+            << "Node 1, "
+            << "Node 2" << endl;
 
   const int num_nodes = Gmat_->getNumNodes();
-    Point node_loc;
-    for (auto [loc, value] : Gmat_dok->values) {
-      const NodeIdx col = loc.first;
-      const NodeIdx row = loc.second;
-      if (col <= row) {
-        continue;  // ignore lower half and diagonal as matrix is symmetric
-      }
-      const double cond = value;  // get cond value
-      if (abs(cond) < 1e-15) {    // ignore if an empty cell
-        continue;
-      }
-      const string net_name = net_->getName();
-      if (col < num_nodes) {  // resistances
-        const double resistance = -1 / cond;
-
-        const Node* node1 = Gmat_->getNode(col);
-        const Node* node2 = Gmat_->getNode(row);
-        node_loc = node1->getLoc();
-        const int x1 = node_loc.getX();
-        const int y1 = node_loc.getY();
-        const int l1 = node1->getLayerNum();
-        const string node1_name = net_name + "_" + to_string(x1) + "_"
-                                  + to_string(y1) + "_" + to_string(l1);
-
-        node_loc = node2->getLoc();
-        int x2 = node_loc.getX();
-        int y2 = node_loc.getY();
-        int l2 = node2->getLayerNum();
-        string node2_name = net_name + "_" + to_string(x2) + "_" + to_string(y2)
-                            + "_" + to_string(l2);
-
-        const string segment_name = "seg_" + to_string(resistance_number);
-
-        const double v1 = node1->getVoltage();
-        const double v2 = node2->getVoltage();
-        double seg_cur = (v1 - v2) / resistance;
-        sum_cur += abs(seg_cur);
-        em_report << segment_name << ", " << setprecision(3) << seg_cur
-                    << ", " << node1_name << ", " << node2_name << endl;
-        resistance_number++;
-      }
+  Point node_loc;
+  for (auto [loc, value] : Gmat_dok->values) {
+    const NodeIdx col = loc.first;
+    const NodeIdx row = loc.second;
+    if (col <= row) {
+      continue;  // ignore lower half and diagonal as matrix is symmetric
     }
+    const double cond = value;  // get cond value
+    if (abs(cond) < 1e-15) {    // ignore if an empty cell
+      continue;
+    }
+    const string net_name = net_->getName();
+    if (col < num_nodes) {  // resistances
+      const double resistance = -1 / cond;
+
+      const Node* node1 = Gmat_->getNode(col);
+      const Node* node2 = Gmat_->getNode(row);
+      node_loc = node1->getLoc();
+      const int x1 = node_loc.getX();
+      const int y1 = node_loc.getY();
+      const int l1 = node1->getLayerNum();
+      const string node1_name = net_name + "_" + to_string(x1) + "_"
+                                + to_string(y1) + "_" + to_string(l1);
+
+      node_loc = node2->getLoc();
+      int x2 = node_loc.getX();
+      int y2 = node_loc.getY();
+      int l2 = node2->getLayerNum();
+      string node2_name = net_name + "_" + to_string(x2) + "_" + to_string(y2)
+                          + "_" + to_string(l2);
+
+      const string segment_name = "seg_" + to_string(resistance_number);
+
+      const double v1 = node1->getVoltage();
+      const double v2 = node2->getVoltage();
+      double seg_cur = (v1 - v2) / resistance;
+      sum_cur += abs(seg_cur);
+      em_report << segment_name << ", " << setprecision(3) << seg_cur << ", "
+                << node1_name << ", " << node2_name << endl;
+      resistance_number++;
+    }
+  }
 }
 
 //! Function to add sources to the G matrix
@@ -409,51 +406,31 @@ void IRSolver::readSourceData(bool require_voltage)
     return;
   }
 
-  if (!net_voltage_map_.empty() && net_voltage_map_.count(net_) > 0) {
-    supply_voltage_src_ = net_voltage_map_.at(net_);
-  } else if (require_voltage) {
+  if (require_voltage && !supply_voltage_src_.has_value()) {
     logger_->warn(
-        utl::PSM, 19, "Voltage on net {} is not explicitly set.", net_->getName());
-    const pair<double, double> supply_voltages = getSupplyVoltage();
-    if (net_->getSigType() == dbSigType::GROUND) {
-      supply_voltage_src_ = supply_voltages.second;
-      logger_->warn(utl::PSM,
-                    21,
-                    "Using voltage {:4.3f}V for ground network.",
-                    supply_voltage_src_);
-    } else {
-      supply_voltage_src_ = supply_voltages.first;
-      logger_->warn(utl::PSM,
-                    22,
-                    "Using voltage {:4.3f}V for VDD network.",
-                    supply_voltage_src_);
-    }
+        utl::PSM, 93, "Voltage on net {} is not set.", net_->getName());
   }
-  const bool added_from_pads
-      = createSourcesFromPads(supply_voltage_src_);
-  const bool added_from_bterms
-      = createSourcesFromBTerms(supply_voltage_src_);
+
+  const bool added_from_pads = createSourcesFromPads();
+  const bool added_from_bterms = createSourcesFromBTerms();
   if (added_from_pads || added_from_bterms) {
     return;
   }
 
-  createDefaultSources(supply_voltage_src_);
+  createDefaultSources();
 }
 
 void IRSolver::createSourcesFromVsrc(const std::string& vsrc_file)
 {
   ifstream file(vsrc_file);
   if (!file) {
-    logger_->error(utl::PSM,
-                    89,
-                    "Unable to open {}.",
-                    vsrc_file);
+    logger_->error(utl::PSM, 89, "Unable to open {}.", vsrc_file);
   }
 
   logger_->info(utl::PSM,
-                  15,
-                  "Reading location of VDD and VSS sources from {}.",
-                  vsrc_file);
+                15,
+                "Reading location of VDD and VSS sources from {}.",
+                vsrc_file);
 
   const int unit_micron = db_->getTech()->getDbUnitsPerMicron();
   string line;
@@ -477,13 +454,14 @@ void IRSolver::createSourcesFromVsrc(const std::string& vsrc_file)
     if (x == -1 || y == -1 || size == -1) {
       logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
     } else {
-      sources_.push_back({x, y, size, supply_voltage_src_, top_layer_, true});
+      sources_.push_back(
+          {x, y, size, supply_voltage_src_.value(), top_layer_, true});
     }
   }
   file.close();
 }
 
-void IRSolver::createDefaultSources(double voltage)
+void IRSolver::createDefaultSources()
 {
   logger_->warn(utl::PSM,
                 16,
@@ -533,7 +511,7 @@ void IRSolver::createDefaultSources(double voltage)
     sources_.push_back({x_cor,
                         y_cor,
                         bump_size_ * unit_micron,
-                        voltage,
+                        supply_voltage_src_.value(),
                         top_layer_,
                         true});
   }
@@ -555,7 +533,7 @@ void IRSolver::createDefaultSources(double voltage)
         sources_.push_back({x_cor,
                             y_cor,
                             bump_size_ * unit_micron,
-                            voltage,
+                            supply_voltage_src_.value(),
                             top_layer_,
                             true});
       }
@@ -563,7 +541,7 @@ void IRSolver::createDefaultSources(double voltage)
   }
 }
 
-bool IRSolver::createSourcesFromBTerms(double voltage)
+bool IRSolver::createSourcesFromBTerms()
 {
   const int pitch_multiplier = 10;
 
@@ -606,7 +584,7 @@ bool IRSolver::createSourcesFromBTerms(double voltage)
           sources_.push_back({rect.xCenter(),
                               rect.yCenter(),
                               src_size,
-                              voltage,
+                              supply_voltage_src_.value(),
                               layer->getRoutingLevel(),
                               false});
           continue;
@@ -616,7 +594,7 @@ bool IRSolver::createSourcesFromBTerms(double voltage)
           sources_.push_back({src.x(),
                               src.y(),
                               src_size,
-                              voltage,
+                              supply_voltage_src_.value(),
                               layer->getRoutingLevel(),
                               false});
           src.addX(dx);
@@ -629,7 +607,7 @@ bool IRSolver::createSourcesFromBTerms(double voltage)
   return added;
 }
 
-bool IRSolver::createSourcesFromPads(double voltage)
+bool IRSolver::createSourcesFromPads()
 {
   bool added = false;
   for (auto* iterm : net_->getITerms()) {
@@ -658,7 +636,7 @@ bool IRSolver::createSourcesFromPads(double voltage)
         sources_.push_back({rect.xCenter(),
                             rect.yCenter(),
                             src_size,
-                            voltage,
+                            supply_voltage_src_.value(),
                             layer->getRoutingLevel(),
                             false});
 
@@ -1419,8 +1397,10 @@ bool IRSolver::createGmat(bool connection_only)
   createGmatWireNodes(macro_boundaries);
 
   if (Gmat_->getNumNodes() == 0) {
-    logger_->warn(
-        utl::PSM, 70, "Net {} has no nodes and will be skipped", net_->getName());
+    logger_->warn(utl::PSM,
+                  70,
+                  "Net {} has no nodes and will be skipped",
+                  net_->getName());
     return true;
   }
 
@@ -1449,7 +1429,8 @@ bool IRSolver::checkValidR(double R) const
   return R >= 1e-12;
 }
 
-bool IRSolver::checkConnectivity(const std::string& error_file, bool connection_only)
+bool IRSolver::checkConnectivity(const std::string& error_file,
+                                 bool connection_only)
 {
   const CscMatrix* Amat = Gmat_->getAMat();
   const int num_nodes = Gmat_->getNumNodes();
@@ -1525,8 +1506,10 @@ bool IRSolver::checkConnectivity(const std::string& error_file, bool connection_
     }
   }
   if (!unconnected_node) {
-    logger_->info(
-        utl::PSM, 40, "All PDN stripes on net {} are connected.", net_->getName());
+    logger_->info(utl::PSM,
+                  40,
+                  "All PDN stripes on net {} are connected.",
+                  net_->getName());
   }
 
   if (!error_file.empty()) {
@@ -1559,7 +1542,8 @@ void IRSolver::writeErrorFile(const std::string& file) const
           loc_y - 0.05,
           loc_x + 0.05,
           loc_y + 0.05,
-          tech->findRoutingLayer(node->getLayerNum())->getName()) << endl;
+          tech->findRoutingLayer(node->getLayerNum())->getName())
+                   << endl;
     }
   }
 }
@@ -1579,11 +1563,6 @@ vector<pair<odb::dbInst*, double>> IRSolver::getPower()
   debugPrint(
       logger_, utl::PSM, "IR Solver", 1, "Executing STA for power calculation");
   return PowerInst().executePowerPerInst(sta_, logger_, corner_);
-}
-
-pair<double, double> IRSolver::getSupplyVoltage()
-{
-  return SupplyVoltage().getSupplyVoltage(sta_, logger_, corner_);
 }
 
 void IRSolver::writeSpiceFile(const std::string& file) const

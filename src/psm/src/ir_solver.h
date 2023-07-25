@@ -32,6 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
+#include <optional>
+
 #include "gmat.h"
 #include "odb/db.h"
 #include "utl/Logger.h"
@@ -82,13 +84,13 @@ class IRSolver
            rsz::Resizer* resizer,
            utl::Logger* logger,
            odb::dbNet* net,
+           const std::optional<float>& voltage,
            const std::string& vsrc_loc,
            bool em_analyze,
            int bump_pitch_x,
            int bump_pitch_y,
            float node_density_um,
            int node_density_factor_user,
-           const std::map<odb::dbNet*, float>& net_voltage_map,
            sta::Corner* corner);
   //! IRSolver destructor
   ~IRSolver();
@@ -100,7 +102,6 @@ class IRSolver
   void solveIR();
   //! Function to get the power value from OpenSTA
   std::vector<std::pair<odb::dbInst*, double>> getPower();
-  std::pair<double, double> getSupplyVoltage();
 
   bool getConnectionTest() const;
   int getMinimumResolution() const;
@@ -110,7 +111,8 @@ class IRSolver
   void writeEMFile(const std::string& file) const;
   void writeErrorFile(const std::string& file) const;
 
-  bool build(const std::string& error_file = "", bool connectivity_only = false);
+  bool build(const std::string& error_file = "",
+             bool connectivity_only = false);
 
   const std::vector<SourceData>& getSources() const { return sources_; }
 
@@ -119,7 +121,10 @@ class IRSolver
   double getAvgCurrent() const { return avg_cur_; }
   int getNumResistors() const { return num_res_; }
   double getAvgVoltage() const { return avg_voltage_; }
-  float getSupplyVoltageSrc() const { return supply_voltage_src_; }
+  const std::optional<float>& getSupplyVoltageSrc() const
+  {
+    return supply_voltage_src_;
+  }
 
  private:
   //! Function to add sources to the G matrix
@@ -127,9 +132,9 @@ class IRSolver
   //! Function that parses the Vsrc file
   void readSourceData(bool require_voltage);
   void createSourcesFromVsrc(const std::string& file);
-  bool createSourcesFromBTerms(double voltage);
-  bool createSourcesFromPads(double voltage);
-  void createDefaultSources(double voltage);
+  bool createSourcesFromBTerms();
+  bool createSourcesFromPads();
+  void createDefaultSources();
   //! Function to create a J vector from the current map
   bool createJ();
   //! Function to create a G matrix using the nodes
@@ -158,12 +163,13 @@ class IRSolver
   int createSourceNodes(bool connection_only, int unit_micron);
   //! Function to create the connections of the G matrix
   void createGmatConnections(bool connection_only);
-  bool checkConnectivity(const std::string& error_file = "", bool connection_only = false);
+  bool checkConnectivity(const std::string& error_file = "",
+                         bool connection_only = false);
   bool checkValidR(double R) const;
 
   double getResistance(odb::dbTechLayer* layer) const;
 
-  float supply_voltage_src_{0};
+  std::optional<float> supply_voltage_src_;
   //! Worst case voltage at the lowest layer nodes
   double wc_voltage_{0};
   //! Worst case current at the lowest layer nodes
@@ -207,13 +213,10 @@ class IRSolver
   bool connection_{false};
 
   sta::Corner* corner_;
-  std::map<odb::dbNet*, float> net_voltage_map_;
   //! Current vector 1D
   std::vector<double> J_;
   //! source locations and values
   std::vector<SourceData> sources_;
-  //! Per unit R and via R for each routing layer
-  std::vector<std::tuple<int, double, double>> layer_res_;
   //! Locations of the source in the G matrix
   std::map<NodeIdx, double> source_nodes_;
 
