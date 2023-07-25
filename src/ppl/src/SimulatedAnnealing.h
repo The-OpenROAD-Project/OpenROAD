@@ -40,6 +40,7 @@
 #include <boost/random/uniform_int_distribution.hpp>
 #include <random>
 
+#include "Core.h"
 #include "Netlist.h"
 #include "Slots.h"
 #include "odb/geom.h"
@@ -58,6 +59,7 @@ class SimulatedAnnealing
 {
  public:
   SimulatedAnnealing(Netlist* netlist,
+                     Core* core,
                      std::vector<Slot>& slots,
                      const std::vector<Constraint>& constraints,
                      Logger* logger,
@@ -66,7 +68,8 @@ class SimulatedAnnealing
   void run(float init_temperature,
            int max_iterations,
            int perturb_per_iter,
-           float alpha);
+           float alpha,
+           bool random);
   void getAssignment(std::vector<IOPin>& assignment);
 
  private:
@@ -89,11 +92,15 @@ class SimulatedAnnealing
   double dbuToMicrons(int64_t dbu);
   bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
   void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
+  int getSlotIdxByPosition(const odb::Point& position, int layer) const;
+  bool isFreeForMirrored(int slot_idx, int& mirrored_idx) const;
+  int getMirroredSlotIdx(int slot_idx) const;
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;
   std::vector<int> slot_indices_;
   Netlist* netlist_;
+  Core* core_;
   std::vector<Slot>& slots_;
   const std::vector<PinGroupByIndex>& pin_groups_;
   const std::vector<Constraint>& constraints_;

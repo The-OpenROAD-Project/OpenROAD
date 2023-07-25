@@ -23,6 +23,7 @@ place_pins [-hor_layers <h_layers>]
            [-corner_avoidance <length>]
            [-min_distance <distance>]
            [-min_distance_in_tracks]
+           [-annealing]
 ```
 
 -   `-hor_layers` (mandatory). Specify the layers to create the metal shapes
@@ -45,6 +46,8 @@ place_pins [-hor_layers <h_layers>]
     between each pin.
 -   `-min_distance_in_tracks`. Flag that allows setting the min distance in
     number of tracks instead of microns.
+-   `-annealing`. Flag that enables the Simulated Annealing solver to perform
+    the pin placement.
 
 The `exclude` option syntax is `-exclude edge:interval`. The `edge` values are
 (top|bottom|left|right). The `interval` can be the whole edge, with the `*`
@@ -216,6 +219,23 @@ set_pin_thick_multiplier [-hor_multiplier h_mult]
 
 -   The `-hor_multiplier` option defines the thickness multiplier for the horizontal pins.
 -   The `-ver_multiplier` option defines the thickness multiplier for the vertical pins.
+
+#### Configure Simulated Annealing Solver
+
+The `set_simulated_annealing` command defines the parameters of the Simulated Annealing
+solver.
+
+```
+set_simulated_annealing [-temperature temperature]
+                        [-max_iterations iters]
+                        [-perturb_per_iter perturbs]
+                        [-alpha alpha]
+```
+
+- The `-temperature` sets the initial temperature of the Simulated Annealing solver.
+- The `-max_iterations` sets the number of iterations performed by the Simulated Annealing solver.
+- The `-perturb_per_iter` sets the number of perturbations performed at each iteration.
+- The `-alpha` sets the reduction factor of the temperature at each iteration.
 
 ## Example scripts
 

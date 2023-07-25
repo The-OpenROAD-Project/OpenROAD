@@ -123,7 +123,7 @@ class IOPlacer
   void clear();
   void clearConstraints();
   void run(bool random_mode);
-  void runAnnealing();
+  void runAnnealing(bool random);
   void reportHPWL();
   void printConfig();
   Parameters* getParameters() { return parms_.get(); }
