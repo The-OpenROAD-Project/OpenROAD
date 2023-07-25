@@ -36,6 +36,7 @@
 %{
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "utl/Logger.h"
 #include "tap/tapcell.h"
 
   namespace ord {
@@ -49,6 +50,20 @@
   using std::string;
   using std::vector;
 
+  static odb::dbMaster* findMaster(const char* name)
+  {
+    if (name[0] == '\0') {
+      return nullptr;
+    }
+    auto db = ord::OpenRoad::openRoad()->getDb();
+    auto master = db->findMaster(name);
+    if (!master) {
+      auto logger = ord::OpenRoad::openRoad()->getLogger();
+      logger->error(utl::TAP, 35, "Master {} not found.", name);
+    }
+    return master;
+  }
+  
 %}
 
 %include "../../Exception.i"
@@ -86,16 +101,16 @@
     options.dist = dist;
     options.halo_x = halo_x;
     options.halo_y = halo_y;
-    options.cnrcap_nwin_master = cnrcap_nwin_master;
-    options.cnrcap_nwout_master = cnrcap_nwout_master;
-    options.tap_nwintie_master = tap_nwintie_master;
-    options.tap_nwin2_master = tap_nwin2_master;
-    options.tap_nwin3_master = tap_nwin3_master;
-    options.tap_nwouttie_master = tap_nwouttie_master;
-    options.tap_nwout2_master = tap_nwout2_master;
-    options.tap_nwout3_master = tap_nwout3_master;
-    options.incnrcap_nwin_master = incnrcap_nwin_master;
-    options.incnrcap_nwout_master = incnrcap_nwout_master;
+    options.cnrcap_nwin_master = findMaster(cnrcap_nwin_master);
+    options.cnrcap_nwout_master = findMaster(cnrcap_nwout_master);
+    options.tap_nwintie_master = findMaster(tap_nwintie_master);
+    options.tap_nwin2_master = findMaster(tap_nwin2_master);
+    options.tap_nwin3_master = findMaster(tap_nwin3_master);
+    options.tap_nwouttie_master = findMaster(tap_nwouttie_master);
+    options.tap_nwout2_master = findMaster(tap_nwout2_master);
+    options.tap_nwout3_master = findMaster(tap_nwout3_master);
+    options.incnrcap_nwin_master = findMaster(incnrcap_nwin_master);
+    options.incnrcap_nwout_master = findMaster(incnrcap_nwout_master);
     getTapcell()->run(options);
   }
 
