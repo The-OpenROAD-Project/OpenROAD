@@ -174,7 +174,10 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(overflow_iterations_);
   fastroute_->setDRCReportIterStep(drc_report_iter_step_);
-  fastroute_->setCongestionReportFile(congestion_file_name_);
+
+  if(congestion_file_name_ != nullptr) {
+    fastroute_->setCongestionReportFile(congestion_file_name_);
+  }
 
   initRoutingLayers();
   reportLayerSettings(min_routing_layer, max_routing_layer);
