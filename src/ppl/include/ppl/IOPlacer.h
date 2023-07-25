@@ -175,6 +175,9 @@ class IOPlacer
   void setAnnealingDebugPaintInterval(const int iters_between_paintings);
   int getAnnealingDebugPaintInterval() const;
 
+  void setAnnealingDebugNoPauseMode(const bool no_pause);
+  bool isAnnealingDebugNoPauseMode() const;
+
  private:
   void createTopLayerPinPattern();
   void initNetlistAndCore(const std::set<int>& hor_layer_idx,
@@ -314,6 +317,7 @@ class IOPlacer
 
   // simulated annealing debugger variables
   bool annealing_debug_mode_ = false;
+  bool no_pause_mode_ = false;
   int iters_between_paintings_ = 0;
 
   // db variables

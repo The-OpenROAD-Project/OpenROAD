@@ -336,19 +336,25 @@ proc set_simulated_annealing { args } {
   ppl::set_simulated_annealing $temperature $max_iterations $perturb_per_iter $alpha
 }
 
-sta::define_cmd_args "simulated_annealing_debug" {[-iters_between_paintings iters]
+sta::define_cmd_args "simulated_annealing_debug" {
+  [-iters_between_paintings iters]
+  [-no_pause_mode no_pause_mode] # Print solver state every second based on iters_between_paintings
 }
 
 proc simulated_annealing_debug { args } {
   sta::parse_key_args "simulated_annealing_debug" args \
-  keys {-iters_between_paintings}
+  keys {-iters_between_paintings} \
+  flags {-no_pause_mode}
+
+  set no_pause_mode [info exists flags(-no_pause_mode)]
 
   if [info exists keys(-iters_between_paintings)] {
     set iters $keys(-iters_between_paintings)
     sta::check_positive_int "-iters_between_paintings" $iters
+    ppl::simulated_annealing_debug $iters $no_pause_mode
+  } else {
+    utl::error PPL "Invalid number of iterations."
   }
-
-  ppl::simulated_annealing_debug $iters
 }
 
 sta::define_cmd_args "place_pin" {[-pin_name pin_name]\

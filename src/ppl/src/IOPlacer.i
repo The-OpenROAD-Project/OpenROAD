@@ -328,7 +328,8 @@ set_simulated_annealing(float temperature,
 }
 
 void
-simulated_annealing_debug(int iters_between_paintings)
+simulated_annealing_debug(int iters_between_paintings,
+                          bool no_pause_mode)
 {
   if (!gui::Gui::enabled()) {
     return;
@@ -340,6 +341,7 @@ simulated_annealing_debug(int iters_between_paintings)
   }
 
   getIOPlacer()->setAnnealingDebugOn();
+  getIOPlacer()->setAnnealingDebugNoPauseMode(no_pause_mode);
   getIOPlacer()->setAnnealingDebugPaintInterval(iters_between_paintings);
 }
 

@@ -46,6 +46,7 @@ class AbstractIOPlacerRenderer
 
   virtual void setPinAssignment(const std::vector<IOPin>& assignment) = 0;
   virtual void setSinks(const std::vector<std::vector<InstancePin>>& sinks) = 0;
+  virtual void setIsNoPauseMode(const bool& isNoPauseMode) = 0;
 
   virtual void redrawAndPause() = 0;
 };

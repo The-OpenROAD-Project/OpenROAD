@@ -121,6 +121,12 @@ void SimulatedAnnealing::run(float init_temperature,
     temperature *= alpha_;
 
     if (debug_->isOn()) {
+      bool isNoPauseMode = false;
+
+      if(debug_->isNoPauseMode_) {
+        isNoPauseMode = true;
+      }
+
       if (iter % debug_->painting_interval_ == 0) {
         std::vector<ppl::IOPin> pins;
         getAssignment(pins);
@@ -133,7 +139,7 @@ void SimulatedAnnealing::run(float init_temperature,
           all_sinks.push_back(pin_sinks);
         }
 
-        annealingStateVisualization(pins, all_sinks);
+        annealingStateVisualization(pins, all_sinks, isNoPauseMode);
       }
     }
   }
@@ -158,9 +164,14 @@ void SimulatedAnnealing::setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> re
   debug_->renderer_ = std::move(renderer);
 }
 
-void SimulatedAnnealing::setDebugPaintingInterval(int iters_between_paintings)
+void SimulatedAnnealing::setDebugPaintingInterval(const int iters_between_paintings)
 {
   debug_->painting_interval_ = iters_between_paintings;
+}
+
+void SimulatedAnnealing::setDebugNoPauseMode(const bool no_pause_mode)
+{
+  debug_->isNoPauseMode_ = no_pause_mode;
 }
 
 AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
@@ -169,11 +180,13 @@ AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
 }
 
 void SimulatedAnnealing::annealingStateVisualization(const std::vector<IOPin>& assignment,
-                                                     const std::vector<std::vector<InstancePin>>& sinks)
+                                                     const std::vector<std::vector<InstancePin>>& sinks,
+                                                     const bool& isNoPauseMode)
 {
   if (!debug_->isOn()) {
     return;
   }
+  getDebugRenderer()->setIsNoPauseMode(isNoPauseMode);
   getDebugRenderer()->setSinks(sinks);
   getDebugRenderer()->setPinAssignment(assignment);
   getDebugRenderer()->redrawAndPause();

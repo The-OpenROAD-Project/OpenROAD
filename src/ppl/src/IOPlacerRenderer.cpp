@@ -38,8 +38,14 @@
 namespace ppl {
 
 IOPlacerRenderer::IOPlacerRenderer()
+    : isNoPauseMode_(false)
 {
   gui::Gui::get()->registerRenderer(this);
+}
+
+void IOPlacerRenderer::setIsNoPauseMode(const bool& isNoPauseMode)
+{
+  isNoPauseMode_ = isNoPauseMode;
 }
 
 void IOPlacerRenderer::setSinks(const std::vector<std::vector<InstancePin>>& sinks)
@@ -56,7 +62,7 @@ void IOPlacerRenderer::drawObjects(gui::Painter& painter)
 {
   painter.setPen(gui::Painter::yellow);
   painter.setBrush(gui::Painter::yellow);
-  painter.setPenWidth(100);
+  painter.setPenWidth(200);
 
   for(int pin_idx = 0; pin_idx < sinks_.size(); pin_idx++) {
     for(int sink_idx = 0; sink_idx < sinks_[pin_idx].size(); sink_idx++) {
@@ -72,7 +78,14 @@ void IOPlacerRenderer::redrawAndPause()
 {
   auto* gui = gui::Gui::get();
   gui->redraw();
-  gui->pause();
+
+  int wait_time = 0;
+
+  if(isNoPauseMode_) {
+    wait_time = 1000; // in milliseconds
+  }
+
+  gui->pause(wait_time);
 }
 
 }

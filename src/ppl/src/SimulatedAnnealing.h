@@ -55,6 +55,7 @@ struct DebugSettings
 {
   std::unique_ptr<AbstractIOPlacerRenderer> renderer_;
   int painting_interval_ = 0;
+  bool isNoPauseMode_ = false;
 
   bool isOn() const { return renderer_ != nullptr; }
 };
@@ -80,10 +81,12 @@ class SimulatedAnnealing
 
   // debug functions
   void setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer);
-  void setDebugPaintingInterval(int iters_between_paintings);
+  void setDebugNoPauseMode(const bool no_pause_mode);
+  void setDebugPaintingInterval(const int iters_between_paintings);
 
   void annealingStateVisualization(const std::vector<IOPin>& assignment,
-                                   const std::vector<std::vector<InstancePin>>& sinks);
+                                   const std::vector<std::vector<InstancePin>>& sinks,
+                                   const bool& no_pause_mode);
 
   AbstractIOPlacerRenderer* getDebugRenderer();
 
