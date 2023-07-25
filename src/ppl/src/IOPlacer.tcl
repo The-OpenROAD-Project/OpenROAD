@@ -352,8 +352,6 @@ proc simulated_annealing_debug { args } {
     set iters $keys(-iters_between_paintings)
     sta::check_positive_int "-iters_between_paintings" $iters
     ppl::simulated_annealing_debug $iters $no_pause_mode
-  } else {
-    utl::error PPL "Invalid number of iterations."
   }
 }
 
