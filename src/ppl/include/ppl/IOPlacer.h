@@ -168,7 +168,7 @@ class IOPlacer
   void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
   AbstractIOPlacerRenderer* getRenderer();
 
-  // annealing debug functions       
+  // annealing debug functions
   void setAnnealingDebugOn();
   bool isAnnealingDebugOn() const;
 

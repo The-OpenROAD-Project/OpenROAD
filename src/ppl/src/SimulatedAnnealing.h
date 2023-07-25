@@ -84,9 +84,10 @@ class SimulatedAnnealing
   void setDebugNoPauseMode(const bool no_pause_mode);
   void setDebugPaintingInterval(const int iters_between_paintings);
 
-  void annealingStateVisualization(const std::vector<IOPin>& assignment,
-                                   const std::vector<std::vector<InstancePin>>& sinks,
-                                   const bool& no_pause_mode);
+  void annealingStateVisualization(
+      const std::vector<IOPin>& assignment,
+      const std::vector<std::vector<InstancePin>>& sinks,
+      const bool& no_pause_mode);
 
   AbstractIOPlacerRenderer* getDebugRenderer();
 
@@ -111,7 +112,7 @@ class SimulatedAnnealing
   bool isFreeForGroup(int slot_idx, int group_size, int last_slot);
   void getSlotsRange(const IOPin& io_pin, int& first_slot, int& last_slot);
 
-  //void currentStateVisualization(const );
+  // void currentStateVisualization(const );
 
   // [pin] -> slot
   std::vector<int> pin_assignment_;

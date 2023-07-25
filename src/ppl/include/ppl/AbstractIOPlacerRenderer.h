@@ -51,4 +51,4 @@ class AbstractIOPlacerRenderer
   virtual void redrawAndPause() = 0;
 };
 
-}
+}  // namespace ppl

@@ -39,7 +39,6 @@
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
-
 namespace ppl {
 
 SimulatedAnnealing::SimulatedAnnealing(
@@ -117,13 +116,13 @@ void SimulatedAnnealing::run(float init_temperature,
       new_slots_.clear();
       pins_.clear();
     }
-    
+
     temperature *= alpha_;
 
     if (debug_->isOn()) {
       bool isNoPauseMode = false;
 
-      if(debug_->isNoPauseMode_) {
+      if (debug_->isNoPauseMode_) {
         isNoPauseMode = true;
       }
 
@@ -133,7 +132,7 @@ void SimulatedAnnealing::run(float init_temperature,
 
         std::vector<std::vector<ppl::InstancePin>> all_sinks;
 
-        for(int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
+        for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
           std::vector<ppl::InstancePin> pin_sinks;
           netlist_->getSinksOfIO(pin_idx, pin_sinks);
           all_sinks.push_back(pin_sinks);
@@ -159,12 +158,14 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
   }
 }
 
-void SimulatedAnnealing::setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer)
+void SimulatedAnnealing::setDebugOn(
+    std::unique_ptr<AbstractIOPlacerRenderer> renderer)
 {
   debug_->renderer_ = std::move(renderer);
 }
 
-void SimulatedAnnealing::setDebugPaintingInterval(const int iters_between_paintings)
+void SimulatedAnnealing::setDebugPaintingInterval(
+    const int iters_between_paintings)
 {
   debug_->painting_interval_ = iters_between_paintings;
 }
@@ -179,9 +180,10 @@ AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
   return debug_->renderer_.get();
 }
 
-void SimulatedAnnealing::annealingStateVisualization(const std::vector<IOPin>& assignment,
-                                                     const std::vector<std::vector<InstancePin>>& sinks,
-                                                     const bool& isNoPauseMode)
+void SimulatedAnnealing::annealingStateVisualization(
+    const std::vector<IOPin>& assignment,
+    const std::vector<std::vector<InstancePin>>& sinks,
+    const bool& isNoPauseMode)
 {
   if (!debug_->isOn()) {
     return;

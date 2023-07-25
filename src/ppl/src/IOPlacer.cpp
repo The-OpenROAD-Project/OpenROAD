@@ -42,11 +42,11 @@
 #include "Core.h"
 #include "HungarianMatching.h"
 #include "Netlist.h"
-#include "ppl/AbstractIOPlacerRenderer.h"
 #include "SimulatedAnnealing.h"
 #include "Slots.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "ppl/AbstractIOPlacerRenderer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -54,9 +54,7 @@ namespace ppl {
 
 using utl::PPL;
 
-IOPlacer::IOPlacer()
-    : ioplacer_renderer_(nullptr),
-      annealing_(nullptr)
+IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr), annealing_(nullptr)
 {
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
@@ -1983,14 +1981,15 @@ void IOPlacer::runAnnealing()
 
   annealing_ = new ppl::SimulatedAnnealing(
       netlist_io_pins_.get(), slots_, constraints_, logger_, db_);
-  
+
   if (isAnnealingDebugOn()) {
     annealing_->setDebugOn(std::move(ioplacer_renderer_));
     annealing_->setDebugNoPauseMode(no_pause_mode_);
     annealing_->setDebugPaintingInterval(iters_between_paintings_);
   }
 
-  annealing_->run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
+  annealing_->run(
+      init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
   annealing_->getAssignment(assignment_);
 
   for (auto& pin : assignment_) {

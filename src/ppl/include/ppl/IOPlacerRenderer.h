@@ -35,10 +35,10 @@
 
 #pragma once
 
-#include "ppl/AbstractIOPlacerRenderer.h"
-#include "ppl/IOPlacer.h"
 #include "SimulatedAnnealing.h"
 #include "gui/gui.h"
+#include "ppl/AbstractIOPlacerRenderer.h"
+#include "ppl/IOPlacer.h"
 
 namespace ppl {
 
@@ -61,4 +61,4 @@ class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
   bool isNoPauseMode_;
 };
 
-}
+}  // namespace ppl
