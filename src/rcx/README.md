@@ -65,7 +65,7 @@ extract_parasitics
 | `-max_res` | combines resistors in series up to the threshold value. |
 | `-coupling_threshold` | coupling below this threshold is grounded (units: fF) |
 | `-lef_res` | override LEF resistance per unit |
-| `cc_model` | specify the maximum number of tracks of lateral context that the tool considers on the same routing level (default 10). |
+| `-cc_model` | specify the maximum number of tracks of lateral context that the tool considers on the same routing level (default 10). |
 | `-context_depth` | specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation (default 5). |
 | `-no_merge_via_res` | separates the via resistance from the wire resistance.|
 
