@@ -827,8 +827,7 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
 
   for (Net* net : nets) {
     int pin_count = net->getNumPins();
-    if (pin_count > 1 && !net->isLocal() && !net->hasWires()
-        && !net->isZeroLengthRouting()) {
+    if (pin_count > 1 && !net->isLocal() && !net->hasWires()) {
       if (pin_count < min_degree) {
         min_degree = pin_count;
       }
@@ -1920,8 +1919,7 @@ void GlobalRouter::addRemainingGuides(NetRouteMap& routes,
                                       int max_routing_layer)
 {
   for (Net* net : nets) {
-    if (net->getNumPins() > 1 && !net->hasWires()
-        && !net->isZeroLengthRouting()) {
+    if (net->getNumPins() > 1 && !net->hasWires()) {
       odb::dbNet* db_net = net->getDbNet();
       GRoute& route = routes[db_net];
       if (route.empty()) {
@@ -1941,7 +1939,7 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
     GRoute& route = net_route.second;
     Net* net = getNet(db_net);
     if (pad_pins_connections_.find(db_net) != pad_pins_connections_.end()
-        || (net->getNumPins() > 1 && !net->isZeroLengthRouting())) {
+        || (net->getNumPins() > 1)) {
       for (GSegment& segment : pad_pins_connections_[db_net]) {
         route.push_back(segment);
       }
@@ -2804,7 +2802,7 @@ std::vector<Net*> GlobalRouter::initNetlist()
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
   if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
-      && db_net->getSWires().empty()) {
+      && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
     Net* net = new Net(db_net, db_net->getWire() != nullptr);
     db_net_map_[db_net] = net;
     makeItermPins(net, db_net, grid_->getGridArea());
