@@ -122,6 +122,7 @@ class ICeWall
                      const odb::dbOrientType& rotation = odb::dbOrientType::R0,
                      const odb::Point& offset = {0, 0},
                      const std::string& prefix = "IO_BOND_");
+  void placeTerminals(const std::vector<odb::dbITerm*>& iterms);
   void routeRDL(odb::dbTechLayer* layer,
                 odb::dbTechVia* bump_via,
                 odb::dbTechVia* pad_via,
