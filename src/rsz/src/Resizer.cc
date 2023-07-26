@@ -2290,7 +2290,10 @@ Resizer::cellWireDelay(LibertyPort *drvr_port,
                        Slew &slew)
 {
   // Make a (hierarchical) block to use as a scratchpad.
-  dbBlock *block = dbBlock::create(block_, "wire_delay", '/');
+  dbBlock *block = dbBlock::create(block_,
+                                   "wire_delay",
+                                   block_->getTech(),
+                                   '/');
   std::unique_ptr<dbSta> sta = sta_->makeBlockSta(block);
   Parasitics *parasitics = sta->parasitics();
   Network *network = sta->network();
