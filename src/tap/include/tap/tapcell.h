@@ -210,6 +210,9 @@ class Tapcell
 
   BoundaryCellOptions correctBoundaryOptions(const Options& options) const;
 
+  odb::dbMaster* getMasterByType(odb::dbMasterType type) const;
+  std::set<odb::dbMaster*> findMasterByType(odb::dbMasterType type) const;
+
   odb::dbDatabase* db_ = nullptr;
   utl::Logger* logger_ = nullptr;
   int phy_idx_ = 0;

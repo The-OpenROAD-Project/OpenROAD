@@ -448,7 +448,7 @@ void Tapcell::insertBoundaryCells(const BoundaryCellOptions& options)
   int boundary = 0;
   for (const auto& area : areas) {
     const auto& [added_corners, added_boundaries]
-        = insertBoundaryCells(area, true, options);
+        = insertBoundaryCells(area, true, filled_options);
     corners += added_corners;
     boundary += added_boundaries;
 
@@ -1226,7 +1226,121 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
 {
   BoundaryCellOptions bopts = options;
 
+  auto set_single_master
+      = [this](odb::dbMaster*& master, odb::dbMasterType type) {
+          if (master == nullptr) {
+            master = getMasterByType(type);
+          }
+        };
+
+  auto set_multiple_master
+      = [this](std::vector<odb::dbMaster*>& masters, odb::dbMasterType type) {
+          if (masters.empty()) {
+            const auto found = findMasterByType(type);
+            masters.insert(masters.begin(), found.begin(), found.end());
+          }
+        };
+  auto set_corner_master = [this](odb::dbMaster*& master_ur,
+                                  odb::dbMaster*& master_ul,
+                                  odb::dbMaster*& master_lr,
+                                  odb::dbMaster*& master_ll) {
+    odb::dbMaster* pref_l = master_ul == nullptr ? master_ll : master_ul;
+    odb::dbMaster* pref_r = master_ur == nullptr ? master_lr : master_ur;
+    if (pref_r == nullptr) {
+      pref_r = pref_l;
+    }
+    if (pref_l == nullptr) {
+      pref_l = pref_r;
+    }
+    if (master_ur == nullptr) {
+      master_ur = pref_r;
+    }
+    if (master_ul == nullptr) {
+      master_ul = pref_l;
+    }
+    if (master_lr == nullptr) {
+      master_lr = pref_r;
+    }
+    if (master_ll == nullptr) {
+      master_ll = pref_l;
+    }
+  };
+
+  set_single_master(bopts.outer_corner_top_right,
+                    odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPCORNER);
+  set_single_master(bopts.outer_corner_top_left,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTTOPCORNER);
+  set_single_master(bopts.outer_corner_bottom_right,
+                    odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMCORNER);
+  set_single_master(bopts.outer_corner_bottom_left,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMCORNER);
+  set_single_master(bopts.inner_corner_top_right,
+                    odb::dbMasterType::ENDCAP_LEF58_RIGHTTOPEDGE);
+  set_single_master(bopts.inner_corner_top_left,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTTOPEDGE);
+  set_single_master(bopts.inner_corner_bottom_right,
+                    odb::dbMasterType::ENDCAP_LEF58_RIGHTBOTTOMEDGE);
+  set_single_master(bopts.inner_corner_bottom_left,
+                    odb::dbMasterType::ENDCAP_LEF58_LEFTBOTTOMEDGE);
+  set_single_master(bopts.left, odb::dbMasterType::ENDCAP_LEF58_LEFTEDGE);
+  set_single_master(bopts.right, odb::dbMasterType::ENDCAP_LEF58_RIGHTEDGE);
+  set_multiple_master(bopts.top, odb::dbMasterType::ENDCAP_LEF58_TOPEDGE);
+  set_multiple_master(bopts.bottom, odb::dbMasterType::ENDCAP_LEF58_BOTTOMEDGE);
+
+  set_corner_master(bopts.outer_corner_top_right,
+                    bopts.outer_corner_top_left,
+                    bopts.outer_corner_bottom_right,
+                    bopts.outer_corner_bottom_left);
+  set_corner_master(bopts.inner_corner_top_right,
+                    bopts.inner_corner_top_left,
+                    bopts.inner_corner_bottom_right,
+                    bopts.inner_corner_bottom_left);
+
+  if (bopts.right == nullptr) {
+    bopts.right = bopts.left;
+  }
+  if (bopts.left == nullptr) {
+    bopts.left = bopts.right;
+  }
+  if (bopts.bottom.empty()) {
+    bopts.top = bopts.bottom;
+  }
+  if (bopts.top.empty()) {
+    bopts.bottom = bopts.top;
+  }
+
   return bopts;
+}
+
+odb::dbMaster* Tapcell::getMasterByType(odb::dbMasterType type) const
+{
+  const std::set<odb::dbMaster*> masters = findMasterByType(type);
+
+  if (masters.size() > 1) {
+    logger_->error(utl::TAP,
+                   104,
+                   "Unable to find a single master for {}",
+                   type.getString());
+  }
+  if (masters.empty()) {
+    return nullptr;
+  }
+
+  return *masters.begin();
+}
+
+std::set<odb::dbMaster*> Tapcell::findMasterByType(odb::dbMasterType type) const
+{
+  std::set<odb::dbMaster*> masters;
+  for (auto* lib : db_->getLibs()) {
+    for (auto* master : lib->getMasters()) {
+      if (master->getType() == type) {
+        masters.insert(master);
+      }
+    }
+  }
+
+  return masters;
 }
 
 BoundaryCellOptions Tapcell::correctBoundaryOptions(
@@ -1238,7 +1352,6 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
 
   // Boundaries
   bopts.left = options.endcap_master;
-  bopts.right = options.endcap_master;
 
   if (options.tap_nwin3_master) {
     bopts.top.push_back(options.tap_nwin3_master);
@@ -1249,17 +1362,18 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
   if (options.tap_nwintie_master) {
     bopts.top.push_back(options.tap_nwintie_master);
   }
-  bopts.bottom = bopts.top;
+  if (options.tap_nwout3_master) {
+    bopts.bottom.push_back(options.tap_nwout3_master);
+  }
+  if (options.tap_nwout2_master) {
+    bopts.bottom.push_back(options.tap_nwout2_master);
+  }
+  if (options.tap_nwouttie_master) {
+    bopts.bottom.push_back(options.tap_nwouttie_master);
+  }
 
-  bopts.outer_corner_bottom_left = options.cnrcap_nwout_master;
-  bopts.outer_corner_bottom_right = options.cnrcap_nwout_master;
   bopts.outer_corner_top_left = options.cnrcap_nwout_master;
-  bopts.outer_corner_top_right = options.cnrcap_nwout_master;
-
-  bopts.inner_corner_bottom_left = options.incnrcap_nwout_master;
-  bopts.inner_corner_bottom_right = options.incnrcap_nwout_master;
   bopts.inner_corner_top_left = options.incnrcap_nwout_master;
-  bopts.inner_corner_top_right = options.incnrcap_nwout_master;
 
   return bopts;
 }

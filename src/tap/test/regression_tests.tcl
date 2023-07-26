@@ -13,5 +13,6 @@ record_tests {
   cut_rows
   cut_rows_with_endcaps
   boundary_macros_separate
+  boundary_macros_auto_select
   gcd_sky130_separate
 }
