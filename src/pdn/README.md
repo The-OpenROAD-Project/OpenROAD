@@ -6,6 +6,10 @@ applied to the design, such as layers to use, stripe width and spacing,
 then have the utility generate the actual metal straps. Grid policies can
 be defined over the stdcell area, and over areas occupied by macros.
 
+```{seealso}
+To work with UPF files, refer to [Read UPF Utility](../upf/README.md).
+```
+
 ## Commands
 
 ### Define Power Switch Cell
