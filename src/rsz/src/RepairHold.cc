@@ -470,7 +470,6 @@ RepairHold::repairEndHold(Vertex *end_vertex,
               Slew slew_after = sta_->vertexSlew(path_vertex, max_);
               Slack setup_slack_after = sta_->worstSlack(max_);
               float slew_factor = (slew_before> 0)?slew_after/slew_before:1.0;
-              Pin  *drvr_pin = path_vertex->pin();
 
               if (slew_factor > 1.20 ||
                   (!allow_setup_violations
