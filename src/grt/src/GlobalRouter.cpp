@@ -1941,7 +1941,7 @@ void GlobalRouter::connectPadPins(NetRouteMap& routes)
     GRoute& route = net_route.second;
     Net* net = getNet(db_net);
     if (pad_pins_connections_.find(db_net) != pad_pins_connections_.end()
-        || (net->getNumPins() > 1)) {
+        || net->getNumPins() > 1) {
       for (GSegment& segment : pad_pins_connections_[db_net]) {
         route.push_back(segment);
       }

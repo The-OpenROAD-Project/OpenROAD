@@ -1817,7 +1817,7 @@ bool dbNet::isConnectedByAbutment()
     }
 
     dbInst* inst = iterm->getInst();
-    if (inst->isPlaced()) {
+    if (inst->isPlaced() || inst->isFixed()) {
       dbTransform transform;
       inst->getTransform(transform);
 
