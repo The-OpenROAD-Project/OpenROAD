@@ -841,6 +841,8 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   fastroute_->setMaxNetDegree(max_degree);
 
   if (verbose_) {
+    min_degree = nets.empty() ? 0 : min_degree;
+    max_degree = nets.empty() ? 0 : max_degree;
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }
@@ -2802,7 +2804,7 @@ std::vector<Net*> GlobalRouter::initNetlist()
 Net* GlobalRouter::addNet(odb::dbNet* db_net)
 {
   if (!db_net->getSigType().isSupply() && !db_net->isSpecial()
-      && db_net->getSWires().empty()) {
+      && db_net->getSWires().empty() && !db_net->isConnectedByAbutment()) {
     Net* net = new Net(db_net, db_net->getWire() != nullptr);
     db_net_map_[db_net] = net;
     makeItermPins(net, db_net, grid_->getGridArea());

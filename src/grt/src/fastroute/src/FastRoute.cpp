@@ -805,6 +805,10 @@ void FastRouteCore::updateDbCongestion()
 
 NetRouteMap FastRouteCore::run()
 {
+  if (netCount() == 0) {
+    return getRoutes();
+  }
+
   int tUsage;
   int cost_step;
   int maxOverflow = 0;
