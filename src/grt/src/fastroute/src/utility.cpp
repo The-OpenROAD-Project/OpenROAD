@@ -2335,7 +2335,7 @@ double FastRouteCore::dbuToMicrons(int64_t dbu)
   return (double) dbu / (block->getDbUnitsPerMicron());
 }
 
-void FastRouteCore::saveCongestion(const int &iter)
+void FastRouteCore::saveCongestion(const int& iter)
 {
   // check if the file name is defined
   if (congestion_file_name_.empty()) {
@@ -2354,7 +2354,6 @@ void FastRouteCore::saveCongestion(const int &iter)
   std::ofstream out(file_name);
 
   if (out.is_open()) {
-
     std::vector<CongestionInformation> congestionGridsV, congestionGridsH;
     getCongestionGrid(congestionGridsV, congestionGridsH);
 
@@ -2400,7 +2399,8 @@ void FastRouteCore::saveCongestion(const int &iter)
           << dbuToMicrons(rect.yMax()) << ") on Layer -\n";
     }
   } else {
-    logger_->error(GRT, 600, "Error: Fail to open DRC report file {}", file_name);
+    logger_->error(
+        GRT, 600, "Error: Fail to open DRC report file {}", file_name);
   }
 }
 
