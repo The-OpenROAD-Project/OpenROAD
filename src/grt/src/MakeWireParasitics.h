@@ -35,7 +35,6 @@
 
 #pragma once
 
-#include "AbstractMakeWireParasitics.h"
 #include "FastRoute.h"
 #include "Grid.h"
 #include "Net.h"
@@ -69,7 +68,7 @@ class Resizer;
 
 namespace grt {
 
-class MakeWireParasitics : public AbstractMakeWireParasitics
+class MakeWireParasitics
 {
  public:
   MakeWireParasitics(utl::Logger* logger,
@@ -80,14 +79,9 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
   void estimateParasitcs(odb::dbNet* net,
                          std::vector<Pin>& pins,
                          GRoute& route) const;
-  void estimateParasitcs(odb::dbNet* net, GRoute& route) const override;
-
-  void clearParasitics() override;
   // Return GRT layer lengths in dbu's for db_net's route indexed by routing
   // layer.
   std::vector<int> routeLayerLengths(odb::dbNet* db_net) const;
-  // Return the Slack of a given net
-  float getNetSlack(odb::dbNet* net) override;
 
  private:
   typedef std::map<RoutePt, sta::ParasiticNode*> NodeRoutePtMap;
@@ -116,18 +110,6 @@ class MakeWireParasitics : public AbstractMakeWireParasitics
                            sta::Corner* corner,
                            sta::ParasiticAnalysisPt* analysis_point,
                            sta::Parasitic* parasitic) const;
-  void makePartialParasiticsToPins(std::vector<Pin>& pins,
-                                   NodeRoutePtMap& node_map,
-                                   sta::Corner* corner,
-                                   sta::ParasiticAnalysisPt* analysis_point,
-                                   sta::Parasitic* parasitic,
-                                   odb::dbNet* net) const;
-  void makePartialParasiticsToPin(Pin& pin,
-                                  NodeRoutePtMap& node_map,
-                                  sta::Corner* corner,
-                                  sta::ParasiticAnalysisPt* analysis_point,
-                                  sta::Parasitic* parasitic,
-                                  odb::dbNet* net) const;
   void layerRC(int wire_length_dbu,
                int layer,
                sta::Corner* corner,

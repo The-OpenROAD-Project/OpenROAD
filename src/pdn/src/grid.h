@@ -202,8 +202,6 @@ class Grid
   virtual void getIntersections(std::vector<ViaPtr>& intersections,
                                 const ShapeTreeMap& shapes) const;
 
-  virtual void cleanupShapes() {}
-
  private:
   VoltageDomain* domain_;
   std::string name_;
@@ -244,9 +242,6 @@ class CoreGrid : public Grid
       const std::vector<odb::dbTechLayer*>& connect_pad_layers);
 
   void getGridLevelObstructions(ShapeTreeMap& obstructions) const override;
-
- protected:
-  void cleanupShapes() override;
 };
 
 class InstanceGrid : public Grid

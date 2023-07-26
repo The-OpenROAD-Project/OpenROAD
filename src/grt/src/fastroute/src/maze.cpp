@@ -1339,8 +1339,7 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
                                   const float logis_cof,
                                   const int via,
                                   const int slope,
-                                  const int L,
-                                  float& slack_th)
+                                  const int L)
 {
   // maze routing for multi-source, multi-destination
   int tmpX, tmpY;
@@ -1366,9 +1365,6 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
   }
 
   if (ordering) {
-    if (update_slack_) {
-      slack_th = CalculatePartialSlack();
-    }
     StNetOrder();
   }
 
@@ -1416,15 +1412,8 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
         continue;
       }
 
-      const bool enter = newRipupCheck(treeedge,
-                                       n1x,
-                                       n1y,
-                                       n2x,
-                                       n2y,
-                                       ripup_threshold,
-                                       slack_th,
-                                       netID,
-                                       edgeID);
+      const bool enter = newRipupCheck(
+          treeedge, n1x, n1y, n2x, n2y, ripup_threshold, netID, edgeID);
 
       if (!enter) {
         continue;
@@ -1438,16 +1427,10 @@ void FastRouteCore::mazeRouteMSMD(const int iter,
       const int xmax = std::max(n1x, n2x);
 
       enlarge_ = std::min(origENG, (iter / 6 + 3) * treeedge->route.routelen);
-
-      int decrease = 0;
-
-      if (nets_[netID]->isCritical()) {
-        decrease = std::min((iter / 7) * 5, enlarge_ / 2);
-      }
-      const int regionX1 = std::max(xmin - enlarge_ + decrease, 0);
-      const int regionX2 = std::min(xmax + enlarge_ - decrease, x_grid_ - 1);
-      const int regionY1 = std::max(ymin - enlarge_ + decrease, 0);
-      const int regionY2 = std::min(ymax + enlarge_ - decrease, y_grid_ - 1);
+      const int regionX1 = std::max(xmin - enlarge_, 0);
+      const int regionX2 = std::min(xmax + enlarge_, x_grid_ - 1);
+      const int regionY1 = std::max(ymin - enlarge_, 0);
+      const int regionY2 = std::min(ymax + enlarge_, y_grid_ - 1);
 
       // initialize d1[][] and d2[][] as BIG_INT
       for (int i = regionY1; i <= regionY2; i++) {
@@ -2580,19 +2563,6 @@ void FastRouteCore::InitLastUsage(const int upType)
       for (int j = 0; j < x_grid_; j++) {
         v_edges_[i][j].last_usage = v_edges_[i][j].last_usage * 0.2;
       }
-    }
-  }
-}
-
-void FastRouteCore::SaveLastRouteLen()
-{
-  for (int netID = 0; netID < netCount(); netID++) {
-    auto& treeedges = sttrees_[netID].edges;
-    // loop for all the tree edges
-    const int num_edges = sttrees_[netID].num_edges();
-    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
-      auto& edge = treeedges[edgeID];
-      edge.route.last_routelen = edge.route.routelen;
     }
   }
 }

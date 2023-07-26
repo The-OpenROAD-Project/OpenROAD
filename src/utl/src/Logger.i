@@ -58,7 +58,6 @@ using ord::getLogger;
 
 // Catch exceptions in inline functions.
 %include "../../Exception.i"
-%import <std_string.i>
 
 %include "LoggerCommon.h"
 

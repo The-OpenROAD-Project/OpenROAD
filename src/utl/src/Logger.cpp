@@ -205,9 +205,4 @@ void Logger::suppressMessage(ToolId tool, int id)
   message_counters_[tool][id] = max_message_print + 1;
 }
 
-void Logger::unsuppressMessage(ToolId tool, int id)
-{
-  message_counters_[tool][id] = 0;
-}
-
 }  // namespace utl

@@ -57,9 +57,6 @@ If you are a **developer** with EDA background, learn more about how you
 can use OpenROAD as the infrastructure for your tools in the
 [Developer Guide](contrib/DeveloperGuide.md) section.
 
-OpenROAD uses Git for version control and contributions. 
-Get familiarised with a quickstart tutorial to contribution [here](contrib/GitGuide.md).
-
 ## How to get in touch
 
 We maintain the following channels for communication:

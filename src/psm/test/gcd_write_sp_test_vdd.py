@@ -3,12 +3,12 @@ import helpers
 import pdnsim_aux
 
 tech = Tech()
-tech.readLef("Nangate45/Nangate45.lef")
-tech.readLiberty("Nangate45/Nangate45_typ.lib")
+tech.readLef("Nangate45.lef")
+tech.readLiberty("NangateOpenCellLibrary_typical.lib")
 
 design = Design(tech)
-design.readDef("Nangate45_data/gcd.def")
-design.evalTclString("read_sdc Nangate45_data/gcd.sdc")
+design.readDef("gcd.def")
+design.evalTclString("read_sdc gcd.sdc")
 
 spice_file = helpers.make_result_file("gcd_spice_vdd.sp")
 

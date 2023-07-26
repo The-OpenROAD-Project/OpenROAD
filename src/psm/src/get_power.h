@@ -39,7 +39,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace sta {
 class dbSta;
-class Corner;
 }  // namespace sta
 
 namespace odb {
@@ -58,8 +57,7 @@ class PowerInst
   //! Function for power per instance calculation
   std::vector<std::pair<odb::dbInst*, double>> executePowerPerInst(
       sta::dbSta* sta,
-      utl::Logger* logger,
-      sta::Corner* corner);
+      utl::Logger* logger);
 
  private:
   //! Instance to OpenSTA object.

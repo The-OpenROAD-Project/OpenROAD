@@ -274,7 +274,6 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
                                   const int x2,
                                   const int y2,
                                   const int ripup_threshold,
-                                  const float critical_slack,
                                   const int netID,
                                   const int edgeID)
 {
@@ -304,15 +303,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
         }
       }
     }
-    if (!needRipup && update_slack_ && treeedge->route.last_routelen
-        && critical_slack) {
-      const float delta = (float) treeedge->route.routelen
-                          / (float) treeedge->route.last_routelen;
-      if (nets_[netID]->getSlack() <= critical_slack && (delta >= 2)) {
-        nets_[netID]->setIsCritical(true);
-        needRipup = true;
-      }
-    }
+
     if (needRipup) {
       const int edgeCost = nets_[netID]->getEdgeCost();
 
@@ -331,7 +322,7 @@ bool FastRouteCore::newRipupCheck(const TreeEdge* treeedge,
     }
   } else {
     printEdge(netID, edgeID);
-    logger_->error(GRT, 500, "Route type is not maze, netID {}.", netID);
+    logger_->error(GRT, 121, "Route type is not maze, netID {}.", netID);
   }
 }
 

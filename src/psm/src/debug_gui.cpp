@@ -31,61 +31,51 @@
 
 namespace psm {
 
-DebugGui::DebugGui(PDNSim* pdnsim) : pdnsim_(pdnsim)
+DebugGui::DebugGui(PDNSim* pdnsim) : pdnsim_(pdnsim), bump_layer_(-1)
 {
-  addDisplayControl(nodes_text_, true);
-  addDisplayControl(source_text_, true);
+  addDisplayControl("nodes", true);
+  addDisplayControl("bumps", true);
   gui::Gui::get()->registerRenderer(this);
 }
 
 void DebugGui::drawObjects(gui::Painter& painter)
 {
-  if (checkDisplayControl(source_text_)) {
+  const bool bumps = checkDisplayControl("bumps");
+  if (bumps) {
     painter.setPen(gui::Painter::white, /* cosmetic */ true);
     painter.setBrush(gui::Painter::transparent);
-    for (auto& source : sources_) {
-      painter.drawCircle(source.x, source.y, 10 * source.size);
+    for (auto& bump : bumps_) {
+      painter.drawCircle(bump.x, bump.y, 50000);
     }
   }
 }
 
 void DebugGui::drawLayer(odb::dbTechLayer* layer, gui::Painter& painter)
 {
-  const int nodesize = 1000;
-
   painter.setPen(gui::Painter::white, /* cosmetic */ true);
 
-  const odb::Rect test_box = painter.stringBoundaries(
-      0, 0, gui::Painter::Anchor::BOTTOM_LEFT, "1.000V");
-  const bool add_text = test_box.minDXDY() < nodesize;
-
-  const bool nodes = checkDisplayControl(nodes_text_);
+  const bool nodes = checkDisplayControl("nodes");
   if (nodes) {
     PDNSim::IRDropByPoint ir_drop;
     pdnsim_->getIRDropForLayer(layer, ir_drop);
     for (auto& [pt, v] : ir_drop) {
-      painter.drawCircle(pt.getX(), pt.getY(), nodesize);
-      if (add_text) {
-        painter.drawString(pt.getX(),
-                           pt.getY(),
-                           gui::Painter::Anchor::CENTER,
-                           fmt::format("{:.3f}V", v));
-      }
+      painter.drawCircle(pt.getX(), pt.getY(), 1000);
     }
   }
 
-  if (checkDisplayControl(source_text_)) {
-    for (auto& source : sources_) {
-      if (layer->getRoutingLevel() == source.layer) {
-        painter.drawCircle(source.x, source.y, source.size);
-      }
+  const bool bumps = checkDisplayControl("bumps");
+  if (bumps && layer->getRoutingLevel() == bump_layer_) {
+    for (auto& bump : bumps_) {
+      painter.drawCircle(bump.x, bump.y, 5000);
     }
   }
 }
 
-void DebugGui::setSources(const std::vector<IRSolver::SourceData>& sources)
+void DebugGui::setBumps(const std::vector<IRSolver::BumpData>& bumps,
+                        int bump_layer)
 {
-  sources_ = sources;
+  bumps_ = bumps;
+  bump_layer_ = bump_layer;
 }
 
 }  // namespace psm

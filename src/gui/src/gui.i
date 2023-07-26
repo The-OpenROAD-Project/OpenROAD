@@ -637,14 +637,5 @@ void clear_focus_nets()
   gui->clearFocusNets();
 }
 
-void trigger_action(const std::string& name)
-{
-  if (!check_gui("trigger_action")) {
-    return;
-  }
-  auto gui = gui::Gui::get();
-  gui->triggerAction(name);
-}
-
 %} // inline
 

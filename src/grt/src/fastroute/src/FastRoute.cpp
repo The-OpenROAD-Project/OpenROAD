@@ -73,7 +73,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       has_2D_overflow_(false),
       grid_hv_(0),
       verbose_(false),
-      update_slack_(0),
       via_cost_(0),
       mazeedge_threshold_(0),
       v_capacity_lb_(0),
@@ -82,7 +81,6 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
       stt_builder_(stt_builder),
       debug_(new DebugSetting())
 {
-  parasitics_builder_ = nullptr;
 }
 
 FastRouteCore::~FastRouteCore()
@@ -684,91 +682,6 @@ NetRouteMap FastRouteCore::getRoutes()
   return routes;
 }
 
-NetRouteMap FastRouteCore::getPlanarRoutes()
-{
-  NetRouteMap routes;
-
-  // Get routes before layer assignment
-
-  for (int netID = 0; netID < netCount(); netID++) {
-    auto fr_net = nets_[netID];
-    odb::dbNet* db_net = fr_net->getDbNet();
-    GRoute& route = routes[db_net];
-    std::unordered_set<GSegment, GSegmentHash> net_segs;
-
-    const auto& treeedges = sttrees_[netID].edges;
-    const int num_edges = sttrees_[netID].num_edges();
-
-    for (int edgeID = 0; edgeID < num_edges; edgeID++) {
-      const TreeEdge* treeedge = &(treeedges[edgeID]);
-      if (treeedge->len > 0) {
-        int routeLen = treeedge->route.routelen;
-        const std::vector<short>& gridsX = treeedge->route.gridsX;
-        const std::vector<short>& gridsY = treeedge->route.gridsY;
-        int lastX = tile_size_ * (gridsX[0] + 0.5) + x_corner_;
-        int lastY = tile_size_ * (gridsY[0] + 0.5) + y_corner_;
-
-        // defines the layer used for vertical edges are still 2D
-        int layer_h = 0;
-
-        // defines the layer used for horizontal edges are still 2D
-        int layer_v = 0;
-
-        if (layer_orientation_ != 0) {
-          layer_h = 1;
-          layer_v = 2;
-        } else {
-          layer_h = 2;
-          layer_v = 1;
-        }
-        int second_x = tile_size_ * (gridsX[1] + 0.5) + x_corner_;
-        int lastL = (lastX == second_x) ? layer_v : layer_h;
-
-        for (int i = 1; i <= routeLen; i++) {
-          const int xreal = tile_size_ * (gridsX[i] + 0.5) + x_corner_;
-          const int yreal = tile_size_ * (gridsY[i] + 0.5) + y_corner_;
-          GSegment segment;
-          if (lastX == xreal) {
-            // if change direction add a via to change the layer
-            if (lastL == layer_h) {
-              segment = GSegment(
-                  lastX, lastY, lastL + 1, lastX, lastY, layer_v + 1);
-              if (net_segs.find(segment) == net_segs.end()) {
-                net_segs.insert(segment);
-                route.push_back(segment);
-              }
-            }
-            lastL = layer_v;
-            segment
-                = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
-          } else {
-            // if change direction add a via to change the layer
-            if (lastL == layer_v) {
-              segment = GSegment(
-                  lastX, lastY, lastL + 1, lastX, lastY, layer_h + 1);
-              if (net_segs.find(segment) == net_segs.end()) {
-                net_segs.insert(segment);
-                route.push_back(segment);
-              }
-            }
-            lastL = layer_h;
-            segment
-                = GSegment(lastX, lastY, lastL + 1, xreal, yreal, lastL + 1);
-          }
-          lastX = xreal;
-          lastY = yreal;
-          if (net_segs.find(segment) == net_segs.end()) {
-            net_segs.insert(segment);
-            route.push_back(segment);
-          }
-        }
-      }
-    }
-  }
-
-  return routes;
-}
-
 void FastRouteCore::updateDbCongestion()
 {
   auto block = db_->getChip()->getBlock();
@@ -932,11 +845,7 @@ NetRouteMap FastRouteCore::run()
     }
   }
 
-  SaveLastRouteLen();
-
   const int max_overflow_increases = 25;
-
-  float slack_th = std::numeric_limits<float>::min();
 
   // set overflow_increases as -1 since the first iteration always sum 1
   int overflow_increases = -1;
@@ -1030,8 +939,7 @@ NetRouteMap FastRouteCore::run()
                   LOGIS_COF,
                   VIA,
                   slope,
-                  L,
-                  slack_th);
+                  L);
     int last_cong = past_cong;
     past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1070,8 +978,7 @@ NetRouteMap FastRouteCore::run()
                       LOGIS_COF,
                       VIA,
                       slope,
-                      L,
-                      slack_th);
+                      L);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
 
@@ -1121,8 +1028,7 @@ NetRouteMap FastRouteCore::run()
                       LOGIS_COF,
                       VIA,
                       slope,
-                      L,
-                      slack_th);
+                      L);
         last_cong = past_cong;
         past_cong = getOverflow2Dmaze(&maxOverflow, &tUsage);
         if (past_cong < last_cong) {
@@ -1245,17 +1151,6 @@ NetRouteMap FastRouteCore::run()
 void FastRouteCore::setVerbose(bool v)
 {
   verbose_ = v;
-}
-
-void FastRouteCore::setUpdateSlack(int u)
-{
-  update_slack_ = u;
-}
-
-void FastRouteCore::setMakeWireParasiticsBuilder(
-    AbstractMakeWireParasitics* builder)
-{
-  parasitics_builder_ = builder;
 }
 
 void FastRouteCore::setOverflowIterations(int iterations)
@@ -1425,7 +1320,6 @@ void FrNet::reset(odb::dbNet* db_net,
 {
   db_net_ = db_net;
   is_routed_ = false;
-  is_critical_ = false;
   is_clock_ = is_clock;
   driver_idx_ = driver_idx;
   edge_cost_ = edge_cost;

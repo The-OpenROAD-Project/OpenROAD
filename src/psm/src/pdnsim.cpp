@@ -41,14 +41,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-#include "db_sta/dbSta.hh"
 #include "debug_gui.h"
 #include "gmat.h"
 #include "heatMap.h"
 #include "ir_solver.h"
 #include "node.h"
 #include "odb/db.h"
-#include "sta/Corner.hh"
 #include "utl/Logger.h"
 
 namespace psm {
@@ -57,14 +55,10 @@ PDNSim::PDNSim() = default;
 
 PDNSim::~PDNSim() = default;
 
-void PDNSim::init(utl::Logger* logger,
-                  odb::dbDatabase* db,
-                  sta::dbSta* sta,
-                  rsz::Resizer* resizer)
+void PDNSim::init(utl::Logger* logger, odb::dbDatabase* db, sta::dbSta* sta)
 {
   db_ = db;
   sta_ = sta;
-  resizer_ = resizer;
   logger_ = logger;
   heatmap_ = std::make_unique<IRDropDataSource>(this, logger_);
   heatmap_->registerHeatMap();
@@ -148,7 +142,6 @@ void PDNSim::write_pg_spice()
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
-                                              resizer_,
                                               logger_,
                                               vsrc_loc_,
                                               power_net_,
@@ -161,8 +154,7 @@ void PDNSim::write_pg_spice()
                                               bump_pitch_y_,
                                               node_density_,
                                               node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
+                                              net_voltage_map_);
 
   if (irsolve_h->build()) {
     int check_spice = irsolve_h->printSpice();
@@ -181,7 +173,6 @@ void PDNSim::analyze_power_grid()
   GMat* gmat_obj;
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
-                                              resizer_,
                                               logger_,
                                               vsrc_loc_,
                                               power_net_,
@@ -194,53 +185,30 @@ void PDNSim::analyze_power_grid()
                                               bump_pitch_y_,
                                               node_density_,
                                               node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
+                                              net_voltage_map_);
 
   if (!irsolve_h->build()) {
     logger_->error(
         utl::PSM, 78, "IR drop setup failed.  Analysis can't proceed.");
   }
   gmat_obj = irsolve_h->getGMat();
-  const std::string corner_name
-      = corner_ != nullptr ? corner_->name() : "default";
-  const std::string metric_suffix
-      = fmt::format("__net:{}__corner:{}", power_net_, corner_name);
   irsolve_h->solveIR();
   logger_->report("########## IR report #################");
-  logger_->report("Corner: {}", corner_name);
   logger_->report("Worstcase voltage: {:3.2e} V",
                   irsolve_h->getWorstCaseVoltage());
-  const double avg_drop
-      = std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage());
-  const double worst_drop = std::abs(irsolve_h->getSupplyVoltageSrc()
-                                     - irsolve_h->getWorstCaseVoltage());
-  logger_->report("Average IR drop  : {:3.2e} V", avg_drop);
-  logger_->report("Worstcase IR drop: {:3.2e} V", worst_drop);
+  logger_->report(
+      "Average IR drop  : {:3.2e} V",
+      std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage()));
+  logger_->report("Worstcase IR drop: {:3.2e} V",
+                  std::abs(irsolve_h->getSupplyVoltageSrc()
+                           - irsolve_h->getWorstCaseVoltage()));
   logger_->report("######################################");
-
-  logger_->metric(
-      fmt::format("design_powergrid__voltage__worst{}", metric_suffix),
-      irsolve_h->getWorstCaseVoltage());
-  logger_->metric(
-      fmt::format("design_powergrid__drop__average{}", metric_suffix),
-      avg_drop);
-  logger_->metric(fmt::format("design_powergrid__drop__worst{}", metric_suffix),
-                  worst_drop);
-
   if (enable_em_) {
     logger_->report("########## EM analysis ###############");
     logger_->report("Maximum current: {:3.2e} A", irsolve_h->getMaxCurrent());
     logger_->report("Average current: {:3.2e} A", irsolve_h->getAvgCurrent());
     logger_->report("Number of resistors: {}", irsolve_h->getNumResistors());
     logger_->report("######################################");
-
-    logger_->metric(
-        fmt::format("design_powergrid__current__average{}", metric_suffix),
-        irsolve_h->getAvgCurrent());
-    logger_->metric(
-        fmt::format("design_powergrid__current__max{}", metric_suffix),
-        irsolve_h->getMaxCurrent());
   }
 
   IRDropByLayer ir_drop;
@@ -265,7 +233,7 @@ void PDNSim::analyze_power_grid()
 
   heatmap_->update();
   if (debug_gui_) {
-    debug_gui_->setSources(irsolve_h->getSources());
+    debug_gui_->setBumps(irsolve_h->getBumps(), irsolve_h->getTopLayer());
   }
 }
 
@@ -273,7 +241,6 @@ bool PDNSim::check_connectivity()
 {
   auto irsolve_h = std::make_unique<IRSolver>(db_,
                                               sta_,
-                                              resizer_,
                                               logger_,
                                               vsrc_loc_,
                                               power_net_,
@@ -286,8 +253,7 @@ bool PDNSim::check_connectivity()
                                               bump_pitch_y_,
                                               node_density_,
                                               node_density_factor_,
-                                              net_voltage_map_,
-                                              corner_);
+                                              net_voltage_map_);
   if (!irsolve_h->buildConnection()) {
     return false;
   }
@@ -319,11 +285,6 @@ int PDNSim::getMinimumResolution()
         "Minimum resolution not set. Please run analyze_power_grid first.");
   }
   return min_resolution_;
-}
-
-void PDNSim::setCorner(sta::Corner* corner)
-{
-  corner_ = corner;
 }
 
 }  // namespace psm

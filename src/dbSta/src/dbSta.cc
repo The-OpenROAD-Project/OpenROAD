@@ -208,11 +208,9 @@ void dbSta::postReadLef(dbTech* tech, dbLib* library)
 
 void dbSta::postReadDef(dbBlock* block)
 {
-  if (!block->getParent()) {
-    db_network_->readDefAfter(block);
-    db_cbk_->addOwner(block);
-    db_cbk_->setNetwork(db_network_);
-  }
+  db_network_->readDefAfter(block);
+  db_cbk_->addOwner(block);
+  db_cbk_->setNetwork(db_network_);
 }
 
 void dbSta::postReadDb(dbDatabase* db)

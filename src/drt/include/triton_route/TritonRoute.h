@@ -34,7 +34,6 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include <optional>
 #include <queue>
 #include <string>
 #include <vector>
@@ -76,7 +75,6 @@ struct ParamStruct
 {
   std::string outputMazeFile;
   std::string outputDrcFile;
-  std::optional<int> drcReportIterStep;
   std::string outputCmapFile;
   std::string outputGuideCoverageFile;
   std::string dbProcessNode;
@@ -153,6 +151,7 @@ class TritonRoute
   void setDebugPaCommit(bool on = true);
   void reportConstraints();
 
+  void readParams(const std::string& fileName);
   void setParams(const ParamStruct& params);
   void addUserSelectedVia(const std::string& viaName);
   void setUnidirectionalLayer(const std::string& layerName);

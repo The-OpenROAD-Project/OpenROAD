@@ -73,8 +73,7 @@ public:
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
-                  int max_passes,
-                  bool verbose);
+                  int max_passes);
   void repairHold(const Pin *end_pin,
                   double setup_margin,
                   double hold_margin,
@@ -101,8 +100,7 @@ private:
                   double hold_margin,
                   bool allow_setup_violations,
                   int max_buffer_count,
-                  int max_passes,
-                  bool verbose);
+                  int max_passes);
   void repairHoldPass(VertexSeq &ends,
                       LibertyCell *buffer_cell,
                       double setup_margin,
@@ -125,8 +123,6 @@ private:
   void mergeInto(Slacks &slacks,
                  Slacks &result);
 
-  void printProgress(int iteration, bool force, bool end) const;
-
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
@@ -143,7 +139,6 @@ private:
   const int fall_index_;
 
   static constexpr float hold_slack_limit_ratio_max_ = 0.2;
-  static constexpr int print_interval_ = 10;
 };
 
 } // namespace

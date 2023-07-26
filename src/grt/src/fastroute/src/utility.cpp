@@ -1127,37 +1127,6 @@ void FastRouteCore::StNetOrder()
       tree_order_cong_.begin(), tree_order_cong_.end(), compareSlack);
 }
 
-float FastRouteCore::CalculatePartialSlack()
-{
-  parasitics_builder_->clearParasitics();
-  auto partial_routes = getPlanarRoutes();
-
-  std::vector<float> slacks;
-  for (auto& net_route : partial_routes) {
-    odb::dbNet* db_net = net_route.first;
-    GRoute& route = net_route.second;
-    if (!route.empty()) {
-      parasitics_builder_->estimateParasitcs(db_net, route);
-    }
-  }
-  for (int netID = 0; netID < netCount(); netID++) {
-    auto fr_net = nets_[netID];
-    odb::dbNet* db_net = fr_net->getDbNet();
-    float slack = parasitics_builder_->getNetSlack(db_net);
-    slacks.push_back(slack);
-    fr_net->setSlack(slack);
-  }
-
-  std::stable_sort(slacks.begin(), slacks.end());
-
-  // Find the slack threshold based on the percentage of critical nets
-  // defined by the user
-  const int threshold_index = std::ceil(slacks.size() * update_slack_ / 100);
-  const float slack_th = slacks[threshold_index];
-
-  return slack_th;
-}
-
 void FastRouteCore::recoverEdge(int netID, int edgeID)
 {
   int i, ymin, xmin, n1a, n2a;

@@ -448,23 +448,13 @@ get_db_core()
 double
 dbu_to_microns(int dbu)
 {
-  auto tech = getDb()->getTech();
-  if (!tech) {
-    auto logger = getLogger();
-    logger->error(utl::ORD, 49, "No tech is loaded");
-  }
-  return static_cast<double>(dbu) / tech->getLefUnits();
+  return static_cast<double>(dbu) / getDb()->getTech()->getLefUnits();
 }
 
 int
 microns_to_dbu(double microns)
 {
-  auto tech = getDb()->getTech();
-  if (!tech) {
-    auto logger = getLogger();
-    logger->error(utl::ORD, 50, "No tech is loaded");
-  }
-  return std::round(microns * tech->getLefUnits());
+  return std::round(microns * getDb()->getTech()->getLefUnits());
 }
 
 // Common check for placement tools.

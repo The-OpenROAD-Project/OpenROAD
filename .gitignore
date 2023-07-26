@@ -27,13 +27,11 @@ test/results
 flow
 
 docs/main
-messages.txt
-Messages.md
-MessagesFinal.md
 
 .idea/
 cmake-build-debug/
 debug/
 
 coverage-output
+messages.txt
 .metals/

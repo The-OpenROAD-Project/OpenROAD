@@ -220,7 +220,6 @@ class Logger
   }
 
   void suppressMessage(ToolId tool, int id);
-  void unsuppressMessage(ToolId tool, int id);
 
   void addSink(spdlog::sink_ptr sink);
   void removeSink(spdlog::sink_ptr sink);

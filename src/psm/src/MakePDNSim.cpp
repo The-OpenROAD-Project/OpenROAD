@@ -59,10 +59,8 @@ void initPDNSim(OpenRoad* openroad)
   Tcl_Interp* tcl_interp = openroad->tclInterp();
   Psm_Init(tcl_interp);
   sta::evalTclInit(tcl_interp, sta::psm_tcl_inits);
-  openroad->getPDNSim()->init(openroad->getLogger(),
-                              openroad->getDb(),
-                              openroad->getSta(),
-                              openroad->getResizer());
+  openroad->getPDNSim()->init(
+      openroad->getLogger(), openroad->getDb(), openroad->getSta());
 }
 
 void deletePDNSim(psm::PDNSim* pdnsim)

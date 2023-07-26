@@ -9,4 +9,3 @@ def swap_prefix(file, old, new):
 
 
 swap_prefix('../README.md', '(../', '(docs/')
-swap_prefix('../README.md', '```{mermaid}\n:align: center\n', '```mermaid')

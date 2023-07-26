@@ -1534,7 +1534,7 @@ bool DisplayControls::areInstancePinsVisible()
   return isModelRowVisible(&instance_shapes_.pins);
 }
 
-bool DisplayControls::areITermsVisible()
+bool DisplayControls::areInstanceITermsVisible()
 {
   return isModelRowVisible(&instance_shapes_.iterm_labels);
 }

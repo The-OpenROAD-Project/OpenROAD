@@ -159,9 +159,6 @@ void Grid::makeShapes(const ShapeTreeMap& global_shapes,
     }
   }
 
-  // Remove any poorly formed shapes
-  cleanupShapes();
-
   // make vias
   makeVias(all_shapes, obstructions, local_obstructions);
 
@@ -1162,46 +1159,6 @@ void CoreGrid::getGridLevelObstructions(ShapeTreeMap& obstructions) const
   if (getDomain()->hasRegion()) {
     // core grids only have grid level obstructions if they have a region
     Grid::getGridLevelObstructions(obstructions);
-  }
-}
-
-void CoreGrid::cleanupShapes()
-{
-  // remove shapes that are wholly contained inside a macro
-  ShapeTreeMap macros;
-  for (auto* inst : getBlock()->getInsts()) {
-    if (!inst->isFixed()) {
-      continue;
-    }
-
-    const odb::Rect outline = inst->getBBox()->getBox();
-
-    for (auto* obs : inst->getMaster()->getObstructions()) {
-      macros[obs->getTechLayer()].insert({Shape::rectToBox(outline), nullptr});
-    }
-    for (auto* term : inst->getMaster()->getMTerms()) {
-      for (auto* pin : term->getMPins()) {
-        for (auto* geom : pin->getGeometry()) {
-          macros[geom->getTechLayer()].insert(
-              {Shape::rectToBox(outline), nullptr});
-        }
-      }
-    }
-  }
-
-  std::set<Shape*> remove;
-  for (const auto& [layer, shapes] : getShapes()) {
-    const auto& layer_avoid = macros[layer];
-    for (const auto& [shape_box, shape] : shapes) {
-      if (layer_avoid.qbegin(bgi::contains(shape_box)) != layer_avoid.qend()) {
-        remove.insert(shape.get());
-      }
-    }
-  }
-
-  for (auto* shape : remove) {
-    auto* grid_comp = shape->getGridComponent();
-    grid_comp->removeShape(shape);
   }
 }
 

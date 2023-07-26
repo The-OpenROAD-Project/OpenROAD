@@ -94,7 +94,12 @@ class IOPin
         direction_(dir),
         lower_bound_(lower_bound),
         upper_bound_(upper_bound),
-        placement_status_(placement_status)
+        placement_status_(placement_status),
+        layer_(-1),
+        is_placed_(false),
+        in_group_(false),
+        assigned_to_section_(false),
+        is_mirrored_(false)
   {
   }
 
@@ -113,6 +118,7 @@ class IOPin
   {
     upper_bound_ = odb::Point(x, y);
   };
+  void setLayer(const int layer) { layer_ = layer; }
   std::string getName() const { return bterm_->getName(); }
   odb::Point getPos() const { return pos_; }
   int getX() const { return pos_.getX(); }
@@ -128,20 +134,10 @@ class IOPin
   };
   odb::dbBTerm* getBTerm() const { return bterm_; }
   int getLayer() const { return layer_; }
-  void setLayer(const int layer) { layer_ = layer; }
-  int getGroupIdx() const { return group_idx_; }
-  void setGroupIdx(const int group_idx) { group_idx_ = group_idx; }
-  int getConstraintIdx() const { return constraint_idx_; }
-  void setConstraintIdx(const int constraint_idx)
-  {
-    constraint_idx_ = constraint_idx;
-  }
   bool isPlaced() const { return is_placed_; }
   void setPlaced() { is_placed_ = true; }
   bool isInGroup() const { return in_group_; }
   void setInGroup() { in_group_ = true; }
-  bool isInConstraint() const { return in_constraint_; }
-  void setInConstraint() { in_constraint_ = true; }
   void assignToSection() { assigned_to_section_ = true; }
   bool isAssignedToSection() { return assigned_to_section_; }
   void setMirrored() { is_mirrored_ = true; }
@@ -157,14 +153,11 @@ class IOPin
   odb::Point lower_bound_;
   odb::Point upper_bound_;
   odb::dbPlacementStatus placement_status_;
-  int layer_{-1};
-  int group_idx_{-1};
-  int constraint_idx_{-1};
-  bool is_placed_{false};
-  bool in_group_{false};
-  bool in_constraint_{false};
-  bool assigned_to_section_{false};
-  bool is_mirrored_{false};
+  int layer_;
+  bool is_placed_;
+  bool in_group_;
+  bool assigned_to_section_;
+  bool is_mirrored_;
   bool in_fallback_{false};
 };
 
@@ -174,11 +167,9 @@ class Netlist
   Netlist();
 
   void addIONet(const IOPin& io_pin, const std::vector<InstancePin>& inst_pins);
-  int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list,
-                    bool order,
-                    int group_idx);
+  int createIOGroup(const std::vector<odb::dbBTerm*>& pin_list, bool order);
   void addIOGroup(const std::vector<int>& pin_group, bool order);
-  const std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
+  std::vector<PinGroupByIndex>& getIOGroups() { return io_groups_; }
   void setIOGroups(const std::vector<PinGroupByIndex>& io_groups)
   {
     io_groups_ = io_groups;

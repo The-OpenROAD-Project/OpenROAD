@@ -124,22 +124,16 @@ void push_metrics_stage(const char* fmt)
   logger->pushMetricsStage(fmt);
 }
 
-std::string pop_metrics_stage()
+void pop_metrics_stage()
 {
   Logger* logger = getLogger();
-  return logger->popMetricsStage();
+  logger->popMetricsStage();
 }
 
 void suppress_message(utl::ToolId tool, int id)
 {
   Logger* logger = getLogger();
   logger->suppressMessage(tool, id);
-}
-
-void unsuppress_message(utl::ToolId tool, int id)
-{
-  Logger* logger = getLogger();
-  logger->unsuppressMessage(tool, id);
 }
 
 }  // namespace utl

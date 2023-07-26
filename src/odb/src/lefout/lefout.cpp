@@ -256,7 +256,7 @@ void lefout::findInstsObstructions(ObstructionMap& obstructions,
     // Add inst Iterms to obstructions
     for (auto* iterm : inst->getITerms()) {
       dbShape shape;
-      dbITermShapeItr iterm_shape_itr(/* expand_vias */ true);
+      dbITermShapeItr iterm_shape_itr;
       for (iterm_shape_itr.begin(iterm); iterm_shape_itr.next(shape);) {
         insertObstruction(shape.getTechLayer(), shape.getBox(), obstructions);
       }

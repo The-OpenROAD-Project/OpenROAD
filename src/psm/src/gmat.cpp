@@ -45,12 +45,11 @@ using std::pair;
 using std::vector;
 
 //! Constructor for creating the G matrix
-GMat::GMat(int num_layers, utl::Logger* logger, odb::dbTech* tech)
+GMat::GMat(int num_layers, utl::Logger* logger)
     : layer_maps_(num_layers + 1, NodeMap())
 {
   // as it start from 0 and everywhere we use layer
   logger_ = logger;
-  tech_ = tech;
 }
 
 //! Destructor of the G matrix
@@ -76,13 +75,13 @@ Node* GMat::getNode(NodeIdx node)
 }
 
 //! Function to return a vector of nodes in an area
-void GMat::foreachNode(int layer,
-                       int x_min,
-                       int x_max,
-                       int y_min,
-                       int y_max,
-                       const std::function<void(Node*)>& func)
+vector<Node*> GMat::getNodes(int layer,
+                             int x_min,
+                             int x_max,
+                             int y_min,
+                             int y_max)
 {
+  vector<Node*> block_nodes;
   NodeMap& layer_map = layer_maps_[layer];
 
   for (auto x_itr = layer_map.lower_bound(x_min);
@@ -92,9 +91,10 @@ void GMat::foreachNode(int layer,
     for (auto y_map_itr = y_itr_map.lower_bound(y_min);
          y_map_itr != y_itr_map.end() && y_map_itr->first <= y_max;
          ++y_map_itr) {
-      func(y_map_itr->second);
+      block_nodes.push_back(y_map_itr->second);
     }
   }
+  return block_nodes;
 }
 
 //! Function to return a vector of pointers to the nodes within an area sorted
@@ -188,10 +188,7 @@ bool GMat::findLayer(int layer)
 Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
 {
   if (!findLayer(layer)) {
-    logger_->error(utl::PSM,
-                   45,
-                   "Layer {} contains no grid nodes.",
-                   tech_->findRoutingLayer(layer)->getName());
+    logger_->error(utl::PSM, 45, "Layer {} contains no grid nodes.", layer);
   }
   const NodeMap& layer_map = layer_maps_[layer];
   if (nearest == false) {
@@ -217,20 +214,19 @@ Node* GMat::getNode(int x, int y, int layer, bool nearest /*=false*/)
     int dist = abs(node_loc.getX() - x) + abs(node_loc.getY() - y);
     // Searching a bounding box of all nodes nearby to see if a closer one
     // exists.
-    auto keep_nearest = [&](Node* new_node) {
-      const Point node_loc = new_node->getLoc();
+    vector<Node*> contender_nodes = getNodes(layer,
+                                             x - dist,   // xmin
+                                             x + dist,   // xmax
+                                             y - dist,   // ymin
+                                             y + dist);  // ymax
+    for (auto new_node : contender_nodes) {
+      node_loc = new_node->getLoc();
       const int new_dist = abs(node_loc.getX() - x) + abs(node_loc.getY() - y);
       if (new_dist < dist) {
         dist = new_dist;
         node = new_node;
       }
-    };
-    foreachNode(layer,
-                x - dist,  // xmin
-                x + dist,  // xmax
-                y - dist,  // ymin
-                y + dist,
-                keep_nearest);  // ymax
+    }
     return node;
   }
 }
@@ -335,15 +331,15 @@ void GMat::setConductance(const Node* node1,
 /*! Based on the size of the G matrix
  * initialize the number of rows and columns
  */
-void GMat::initializeGmatDok(int num)
+void GMat::initializeGmatDok(int numC4)
 {
   if (n_nodes_ <= 0) {
     logger_->error(utl::PSM, 49, "No nodes in object, initialization stopped.");
   } else {
-    G_mat_dok_.num_cols = n_nodes_ + num;
-    G_mat_dok_.num_rows = n_nodes_ + num;
-    A_mat_dok_.num_cols = n_nodes_ + num;
-    A_mat_dok_.num_rows = n_nodes_ + num;
+    G_mat_dok_.num_cols = n_nodes_ + numC4;
+    G_mat_dok_.num_rows = n_nodes_ + numC4;
+    A_mat_dok_.num_cols = n_nodes_ + numC4;
+    A_mat_dok_.num_rows = n_nodes_ + numC4;
   }
 }
 
@@ -498,14 +494,14 @@ vector<Node*> GMat::getRDLNodes(int layer,
 // voltage sources in MNA
 /*!
  * Directly updates the G matrix
-     \param loc Location of the source
-     \param source_number  source number
+     \param loc Location of the C4 bump
+     \param C4Num  C4 bump number
      \return nothing
 */
-void GMat::addSource(int loc, int source_number)
+void GMat::addC4Bump(int loc, int C4Num)
 {
-  updateConductance(loc, source_number + n_nodes_, 1);
-  updateConductance(source_number + n_nodes_, loc, 1);
+  updateConductance(loc, C4Num + n_nodes_, 1);
+  updateConductance(C4Num + n_nodes_, loc, 1);
 }
 
 //! Function which converts the DOK matrix into CSC format in a sparse method

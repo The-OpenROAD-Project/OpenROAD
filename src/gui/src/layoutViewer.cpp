@@ -879,7 +879,7 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     }
   }
 
-  // Look for instances and ITerms
+  // Look for an instance since no shape was found
   auto insts = search_.searchInsts(block_,
                                    region.xMin(),
                                    region.yMin(),
@@ -891,12 +891,6 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
     if (options_->isInstanceVisible(inst)
         && options_->isInstanceSelectable(inst)) {
       selections.push_back(gui_->makeSelected(inst));
-      for (auto iterm : inst->getITerms()) {
-        Rect iterm_bbox = iterm->getBBox();
-        if (region.intersects(iterm_bbox)) {
-          selections.push_back(gui_->makeSelected(iterm));
-        }
-      }
     }
   }
 

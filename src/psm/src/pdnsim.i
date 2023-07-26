@@ -35,7 +35,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 %{
 #include "ord/OpenRoad.hh"
 #include "psm/pdnsim.h"
-#include "sta/Corner.hh"
 
 namespace ord {
 psm::PDNSim*
@@ -44,7 +43,6 @@ getPDNSim();
 
 using ord::getPDNSim;
 using psm::PDNSim;
-using sta::Corner;
 %}
 
 %inline %{
@@ -164,12 +162,6 @@ void set_debug_gui_cmd()
 {
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setDebugGui();
-}
-
-void set_corner(Corner* corner)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->setCorner(corner);
 }
 
 %} // inline

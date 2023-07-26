@@ -49,9 +49,11 @@ void initDbSta(OpenRoad* openroad)
   sta->initVars(openroad->tclInterp(), openroad->getDb(), logger);
   sta::Sta::setSta(sta);
 
-  sta->setPathRenderer(std::make_unique<sta::PathRenderer>(sta));
-  sta->setPowerDensityDataSource(
-      std::make_unique<sta::PowerDensityDataSource>(sta, logger));
+  if (gui::Gui::enabled()) {
+    sta->setPathRenderer(std::make_unique<sta::PathRenderer>(sta));
+    sta->setPowerDensityDataSource(
+        std::make_unique<sta::PowerDensityDataSource>(sta, logger));
+  }
 
   Tcl_Interp* tcl_interp = openroad->tclInterp();
 

@@ -94,17 +94,11 @@ void detailed_route_cmd(const char* outputMazeFile,
                         bool singleStepDR,
                         int minAccessPoints,
                         bool saveGuideUpdates,
-                        const char* repairPDNLayerName,
-                        int drcReportIterStep)
+                        const char* repairPDNLayerName)
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  std::optional<int> drcReportIterStepOpt;
-  if (drcReportIterStep > 0) {
-    drcReportIterStepOpt = drcReportIterStep;
-  }
   router->setParams({outputMazeFile,
                     outputDrcFile,
-                    drcReportIterStepOpt,
                     outputCmapFile,
                     outputGuideCoverageFile,
                     dbProcessNode,
@@ -143,6 +137,13 @@ void pin_access_cmd(const char* dbProcessNode,
   router->setParams(params);
   router->pinAccess();
   router->setDistributed(false);
+}
+
+void detailed_route_cmd(const char* param_file)
+{
+  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
+  router->readParams(param_file);
+  router->main();
 }
 
 void report_constraints()

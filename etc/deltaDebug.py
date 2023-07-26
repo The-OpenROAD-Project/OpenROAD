@@ -263,17 +263,6 @@ class deltaDebugger:
         if os.path.exists(self.base_db_file):
             os.rename(self.base_db_file, self.temp_base_db_file)
 
-    def clear_dont_touch_inst(self, inst):
-        inst.setDoNotTouch(False)
-        for iterm in inst.getITerms():
-            net = iterm.getNet()
-            if net:
-                net.setDoNotTouch(False)
-
-    def clear_dont_touch_net(self, net):
-        net.setDoNotTouch(False)
-        for iterm in net.getITerms():
-            iterm.getInst().setDoNotTouch(False)
         
     # A function that cuts the block according to the given direction
     # and ratio. It also uses the class cut level  to identify
@@ -305,10 +294,6 @@ class deltaDebugger:
 
         for i in range (start, end):
             elm = elms[i]
-            if self.cut_level == cutLevel.Insts: 
-                self.clear_dont_touch_inst(elm)
-            elif self.cut_level == cutLevel.Nets:
-                self.clear_dont_touch_net(elm)
             elm.destroy(elm)
 
         print("Done cutting design.")
