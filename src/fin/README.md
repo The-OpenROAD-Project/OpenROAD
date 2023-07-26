@@ -23,8 +23,8 @@ density_fill
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-rules` | specify json rule file |
-| `-area` | optional. If not specified, the core area will be used. |
+| `-rules` | Specify `json` rule file. |
+| `-area` | Optional. If not specified, the core area will be used. |
 
 ## Example scripts
 
