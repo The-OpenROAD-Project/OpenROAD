@@ -1817,7 +1817,7 @@ bool dbNet::isConnectedByAbutment()
     }
 
     dbInst* inst = iterm->getInst();
-    if (inst->isPlaced() || inst->isFixed()) {
+    if (inst->isPlaced()) {
       dbTransform transform;
       inst->getTransform(transform);
 
@@ -1831,7 +1831,6 @@ bool dbNet::isConnectedByAbutment()
           transform.apply(rect);
           if (first_mterm) {
             first_pin_boxes.push_back(rect);
-            first_mterm = false;
           } else {
             for (const Rect& first_pin_box : first_pin_boxes) {
               if (rect.intersects(first_pin_box)) {
@@ -1842,6 +1841,7 @@ bool dbNet::isConnectedByAbutment()
         }
       }
     }
+    first_mterm = false;
   }
 
   return false;
