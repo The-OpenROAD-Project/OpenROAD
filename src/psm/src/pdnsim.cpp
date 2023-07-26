@@ -91,12 +91,24 @@ void PDNSim::setVsrcCfg(const std::string& vsrc)
 
 std::unique_ptr<IRSolver> PDNSim::getIRSolver(bool require_voltage)
 {
+  if (corner_ == nullptr) {
+    corner_ = sta_->cmdCorner();
+  }
+  if (corner_ == nullptr) {
+    corner_ = sta_->corners()->findCorner(0);
+  }
+  if (corner_ == nullptr) {
+    logger_->error(utl::PSM, 84, "Unable to proceed without a valid corner");
+  }
+
+  std::optional<float> voltage = getNetVoltage(net_, require_voltage);
+
   return std::make_unique<IRSolver>(db_,
                                     sta_,
                                     resizer_,
                                     logger_,
                                     net_,
-                                    getNetVoltage(net_),
+                                    voltage,
                                     vsrc_loc_,
                                     require_voltage,
                                     bump_pitch_x_,
@@ -241,7 +253,8 @@ int PDNSim::getMinimumResolution()
   return min_resolution_;
 }
 
-std::optional<float> PDNSim::getNetVoltage(odb::dbNet* net) const
+std::optional<float> PDNSim::getNetVoltage(odb::dbNet* net,
+                                           bool require_voltage) const
 {
   if (net == nullptr) {
     return {};
@@ -257,16 +270,20 @@ std::optional<float> PDNSim::getNetVoltage(odb::dbNet* net) const
   }
 
   sta::dbNetwork* network = sta_->getDbNetwork();
-  const sta::MinMax* mm = sta::MinMax::max();
-  const sta::DcalcAnalysisPt* dcalc_ap = corner_->findDcalcAnalysisPt(mm);
   sta::LibertyLibrary* default_library = network->defaultLibertyLibrary();
-  if (!default_library) {
+  if (default_library == nullptr) {
+    if (!require_voltage) {
+      return {};
+    }
+
     logger_->error(
         utl::PSM,
         79,
         "Can't determine the supply voltage as no Liberty is loaded.");
   }
 
+  const sta::DcalcAnalysisPt* dcalc_ap
+      = corner_->findDcalcAnalysisPt(sta::MinMax::max());
   const sta::Pvt* pvt = dcalc_ap->operatingConditions();
   if (pvt == nullptr) {
     pvt = default_library->defaultOperatingConditions();

@@ -99,7 +99,8 @@ class PDNSim
   void setDebugGui();
 
  private:
-  std::optional<float> getNetVoltage(odb::dbNet* net) const;
+  std::optional<float> getNetVoltage(odb::dbNet* net,
+                                     bool require_voltage) const;
   std::unique_ptr<IRSolver> getIRSolver(bool require_voltage);
 
   odb::dbDatabase* db_ = nullptr;

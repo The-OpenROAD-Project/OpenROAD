@@ -137,10 +137,6 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   if (corner_ == nullptr) {
     logger_->error(utl::PSM, 84, "Unable to proceed without a valid corner");
   }
-
-  if (db_->getChip()->getBlock()->findNet(power_net_.c_str()) == nullptr) {
-    logger_->error(utl::PSM, 85, "Unable to find {}", power_net_);
-  }
 }
 
 IRSolver::~IRSolver() = default;
@@ -407,8 +403,12 @@ void IRSolver::readSourceData(bool require_voltage)
   }
 
   if (require_voltage && !supply_voltage_src_.has_value()) {
-    logger_->warn(
+    logger_->error(
         utl::PSM, 93, "Voltage on net {} is not set.", net_->getName());
+  }
+  if (!supply_voltage_src_.has_value()) {
+    // default to 0 if voltage is not required
+    supply_voltage_src_ = 0;
   }
 
   const bool added_from_pads = createSourcesFromPads();
