@@ -841,7 +841,8 @@ void GlobalRouter::initNets(std::vector<Net*>& nets)
   fastroute_->setMaxNetDegree(max_degree);
 
   if (verbose_) {
-    min_degree = min_degree == std::numeric_limits<int>::max() ? 0 : 1;
+    min_degree = nets.empty() ? 0 : min_degree;
+    max_degree = nets.empty() ? 0 : max_degree;
     logger_->info(GRT, 1, "Minimum degree: {}", min_degree);
     logger_->info(GRT, 2, "Maximum degree: {}", max_degree);
   }

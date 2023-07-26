@@ -1807,7 +1807,7 @@ bool dbNet::isConnectedByAbutment()
     return false;
   }
 
-  int pin_cnt = 0;
+  bool first_mterm = true;
   std::vector<Rect> first_pin_boxes;
   for (dbITerm* iterm : getITerms()) {
     dbMTerm* mterm = iterm->getMTerm();
@@ -1817,29 +1817,31 @@ bool dbNet::isConnectedByAbutment()
     }
 
     dbInst* inst = iterm->getInst();
-    dbTransform transform;
-    inst->getTransform(transform);
+    if (inst->isPlaced()) {
+      dbTransform transform;
+      inst->getTransform(transform);
 
-    for (dbMPin* mpin : mterm->getMPins()) {
-      for (dbBox* box : mpin->getGeometry()) {
-        dbTechLayer* tech_layer = box->getTechLayer();
-        if (tech_layer->getType() != dbTechLayerType::ROUTING) {
-          continue;
-        }
-        odb::Rect rect = box->getBox();
-        transform.apply(rect);
-        if (pin_cnt == 0) {
-          first_pin_boxes.push_back(rect);
-        } else {
-          for (const Rect& first_pin_box : first_pin_boxes) {
-            if (rect.intersects(first_pin_box)) {
-              return true;
+      for (dbMPin* mpin : mterm->getMPins()) {
+        for (dbBox* box : mpin->getGeometry()) {
+          dbTechLayer* tech_layer = box->getTechLayer();
+          if (tech_layer->getType() != dbTechLayerType::ROUTING) {
+            continue;
+          }
+          odb::Rect rect = box->getBox();
+          transform.apply(rect);
+          if (first_mterm == 0) {
+            first_pin_boxes.push_back(rect);
+            first_mterm = false;
+          } else {
+            for (const Rect& first_pin_box : first_pin_boxes) {
+              if (rect.intersects(first_pin_box)) {
+                return true;
+              }
             }
           }
         }
       }
     }
-    pin_cnt++;
   }
 
   return false;
