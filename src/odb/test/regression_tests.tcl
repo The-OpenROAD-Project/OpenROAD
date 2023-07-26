@@ -1,4 +1,5 @@
 record_tests {
+  multi_tech
   transform
   rounding
   sky130hd_multi_patterned
