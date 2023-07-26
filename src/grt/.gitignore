@@ -11,5 +11,6 @@ test/src/*/out.guide
 test/src/*/out2.guide
 test/src/*/route.guide
 test/results
+test/failures_report.json
 *~
 TAGS
