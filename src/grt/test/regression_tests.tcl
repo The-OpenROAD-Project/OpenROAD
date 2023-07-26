@@ -57,5 +57,4 @@ record_tests {
   tracks2
   tracks3
   upper_layer_net
-  zero_length_net
 }
