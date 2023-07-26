@@ -3,7 +3,7 @@
 This tool checks antenna violations and generates a report to indicate
 violated nets. See LEF/DEF 5.8 Language Reference, Appendix C,
 "Calculating and Fixing Process Antenna Violations" (p.389) 
-for a [description](http://coriolis.lip6.fr/doc/lefdef/lefdefref/lefdefref.pdf) of antenna violations.
+for a [description](https://coriolis.lip6.fr/doc/lefdef/lefdefref/lefdefref.pdf) of antenna violations.
 
 This is an example of the detailed and simple reports of the antenna checker:
 
