@@ -99,7 +99,7 @@ class FastRouteCore
   ~FastRouteCore();
 
   void clear();
-  void saveCongestion();
+  void saveCongestion(const int &iter = -1);
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(short verticalCapacity, int layer);
   void addHCapacity(short horizontalCapacity, int layer);

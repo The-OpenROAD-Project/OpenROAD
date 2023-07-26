@@ -1171,7 +1171,7 @@ NetRouteMap FastRouteCore::run()
 
     // generate DRC report each interval
     if (drc_report_iter_step_ && i % drc_report_iter_step_ == 0) {
-      saveCongestion();
+      saveCongestion(i);
     }
   }  // end overflow iterations
 
