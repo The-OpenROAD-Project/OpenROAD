@@ -834,38 +834,22 @@ Tapcell::CornerMap Tapcell::insertBoundaryCorner(
     const BoundaryCellOptions& options)
 {
   odb::dbSite* site = nullptr;
-  if (options.outer_corner_bottom_left_r0 != nullptr) {
-    site = options.outer_corner_bottom_left_r0->getSite();
-  } else if (options.outer_corner_bottom_left_mx != nullptr) {
-    site = options.outer_corner_bottom_left_mx->getSite();
-  } else if (options.outer_corner_bottom_right_mx != nullptr) {
-    site = options.outer_corner_bottom_right_mx->getSite();
-  } else if (options.outer_corner_bottom_right_r0 != nullptr) {
-    site = options.outer_corner_bottom_right_r0->getSite();
-  } else if (options.outer_corner_top_left_mx != nullptr) {
-    site = options.outer_corner_top_left_mx->getSite();
-  } else if (options.outer_corner_top_left_r0 != nullptr) {
-    site = options.outer_corner_top_left_r0->getSite();
-  } else if (options.outer_corner_top_right_mx != nullptr) {
-    site = options.outer_corner_top_right_mx->getSite();
-  } else if (options.outer_corner_top_right_r0 != nullptr) {
-    site = options.outer_corner_top_right_r0->getSite();
-  } else if (options.inner_corner_bottom_left_r0 != nullptr) {
-    site = options.inner_corner_bottom_left_r0->getSite();
-  } else if (options.inner_corner_bottom_left_mx != nullptr) {
-    site = options.inner_corner_bottom_left_mx->getSite();
-  } else if (options.inner_corner_bottom_right_mx != nullptr) {
-    site = options.inner_corner_bottom_right_mx->getSite();
-  } else if (options.inner_corner_bottom_right_r0 != nullptr) {
-    site = options.inner_corner_bottom_right_r0->getSite();
-  } else if (options.inner_corner_top_left_mx != nullptr) {
-    site = options.inner_corner_top_left_mx->getSite();
-  } else if (options.inner_corner_top_left_r0 != nullptr) {
-    site = options.inner_corner_top_left_r0->getSite();
-  } else if (options.inner_corner_top_right_mx != nullptr) {
-    site = options.inner_corner_top_right_mx->getSite();
-  } else if (options.inner_corner_top_right_r0 != nullptr) {
-    site = options.inner_corner_top_right_r0->getSite();
+  if (options.outer_corner_bottom_left != nullptr) {
+    site = options.outer_corner_bottom_left->getSite();
+  } else if (options.outer_corner_bottom_right != nullptr) {
+    site = options.outer_corner_bottom_right->getSite();
+  } else if (options.outer_corner_top_left != nullptr) {
+    site = options.outer_corner_top_left->getSite();
+  } else if (options.outer_corner_top_right != nullptr) {
+    site = options.outer_corner_top_right->getSite();
+  } else if (options.inner_corner_bottom_left != nullptr) {
+    site = options.inner_corner_bottom_left->getSite();
+  } else if (options.inner_corner_bottom_right != nullptr) {
+    site = options.inner_corner_bottom_right->getSite();
+  } else if (options.inner_corner_top_left != nullptr) {
+    site = options.inner_corner_top_left->getSite();
+  } else if (options.inner_corner_top_right != nullptr) {
+    site = options.inner_corner_top_right->getSite();
   }
   odb::dbRow* row = getRow(corner, site);
   if (row == nullptr) {
@@ -877,58 +861,58 @@ Tapcell::CornerMap Tapcell::insertBoundaryCorner(
   switch (corner.type) {
     case CornerType::OuterBottomLeft:
       if (row_orient == odb::dbOrientType::R0) {
-        master = options.outer_corner_bottom_left_r0;
+        master = options.outer_corner_bottom_left;
       } else {
-        master = options.outer_corner_bottom_left_mx;
+        master = options.outer_corner_top_left;
       }
       break;
     case CornerType::OuterBottomRight:
       if (row_orient == odb::dbOrientType::R0) {
-        master = options.outer_corner_bottom_right_r0;
+        master = options.outer_corner_bottom_right;
       } else {
-        master = options.outer_corner_bottom_right_mx;
+        master = options.outer_corner_top_right;
       }
       break;
     case CornerType::OuterTopLeft:
       if (row_orient == odb::dbOrientType::R0) {
-        master = options.outer_corner_top_left_r0;
+        master = options.outer_corner_top_left;
       } else {
-        master = options.outer_corner_top_left_mx;
+        master = options.outer_corner_bottom_left;
       }
       break;
     case CornerType::OuterTopRight:
       if (row_orient == odb::dbOrientType::R0) {
-        master = options.outer_corner_top_right_r0;
+        master = options.outer_corner_top_right;
       } else {
-        master = options.outer_corner_top_right_mx;
+        master = options.outer_corner_bottom_right;
       }
       break;
     case CornerType::InnerBottomLeft:
       if (row_orient == odb::dbOrientType::R0) {
-        master = options.inner_corner_bottom_left_r0;
+        master = options.inner_corner_bottom_left;
       } else {
-        master = options.inner_corner_bottom_left_mx;
+        master = options.inner_corner_top_left;
       }
       break;
     case CornerType::InnerBottomRight:
       if (row_orient == odb::dbOrientType::R0) {
-        master = options.inner_corner_bottom_right_r0;
+        master = options.inner_corner_bottom_right;
       } else {
-        master = options.inner_corner_bottom_right_mx;
+        master = options.inner_corner_top_right;
       }
       break;
     case CornerType::InnerTopLeft:
       if (row_orient == odb::dbOrientType::R0) {
-        master = options.inner_corner_top_left_r0;
+        master = options.inner_corner_top_left;
       } else {
-        master = options.inner_corner_top_left_mx;
+        master = options.inner_corner_bottom_left;
       }
       break;
     case CornerType::InnerTopRight:
       if (row_orient == odb::dbOrientType::R0) {
-        master = options.inner_corner_top_right_r0;
+        master = options.inner_corner_top_right;
       } else {
-        master = options.inner_corner_top_right_mx;
+        master = options.inner_corner_bottom_left;
       }
       break;
     case CornerType::Unknown:
@@ -1046,22 +1030,12 @@ int Tapcell::insertBoundaryEdgeHorizontal(const Tapcell::Edge& edge,
 
   odb::dbSite* site = nullptr;
   if (site == nullptr) {
-    for (auto* master : options.top_r0) {
+    for (auto* master : options.top) {
       site = master->getSite();
     }
   }
   if (site == nullptr) {
-    for (auto* master : options.bottom_r0) {
-      site = master->getSite();
-    }
-  }
-  if (site == nullptr) {
-    for (auto* master : options.top_mx) {
-      site = master->getSite();
-    }
-  }
-  if (site == nullptr) {
-    for (auto* master : options.bottom_mx) {
+    for (auto* master : options.bottom) {
       site = master->getSite();
     }
   }
@@ -1077,20 +1051,18 @@ int Tapcell::insertBoundaryEdgeHorizontal(const Tapcell::Edge& edge,
   switch (edge.type) {
     case EdgeType::Top:
       if (row->getOrient() == odb::dbOrientType::R0) {
-        masters.insert(
-            masters.end(), options.top_r0.begin(), options.top_r0.end());
+        masters.insert(masters.end(), options.top.begin(), options.top.end());
       } else {
         masters.insert(
-            masters.end(), options.top_mx.begin(), options.top_mx.end());
+            masters.end(), options.bottom.begin(), options.bottom.end());
       }
       break;
     case EdgeType::Bottom:
       if (row->getOrient() == odb::dbOrientType::R0) {
         masters.insert(
-            masters.end(), options.bottom_r0.begin(), options.bottom_r0.end());
+            masters.end(), options.bottom.begin(), options.bottom.end());
       } else {
-        masters.insert(
-            masters.end(), options.bottom_mx.begin(), options.bottom_mx.end());
+        masters.insert(masters.end(), options.top.begin(), options.top.end());
       }
       break;
     case EdgeType::Left:
@@ -1181,17 +1153,14 @@ int Tapcell::insertBoundaryEdgeVertical(const Tapcell::Edge& edge,
 {
   int insts = 0;
 
-  odb::dbMaster* edge_master_r0 = nullptr;
-  odb::dbMaster* edge_master_mx = nullptr;
+  odb::dbMaster* edge_master = nullptr;
 
   switch (edge.type) {
     case EdgeType::Left:
-      edge_master_r0 = options.left_r0;
-      edge_master_mx = options.left_mx;
+      edge_master = options.left;
       break;
     case EdgeType::Right:
-      edge_master_r0 = options.right_r0;
-      edge_master_mx = options.right_mx;
+      edge_master = options.right;
       break;
     case EdgeType::Top:
     case EdgeType::Bottom:
@@ -1199,14 +1168,11 @@ int Tapcell::insertBoundaryEdgeVertical(const Tapcell::Edge& edge,
       break;
   }
 
-  odb::dbSite* site = nullptr;
-  if (edge_master_r0 != nullptr) {
-    site = edge_master_r0->getSite();
-  } else if (edge_master_mx != nullptr) {
-    site = edge_master_mx->getSite();
+  if (edge_master == nullptr) {
+    return 0;
   }
 
-  auto rows = getRows(edge, site);
+  auto rows = getRows(edge, edge_master->getSite());
   if (rows.empty()) {
     return 0;
   }
@@ -1218,18 +1184,7 @@ int Tapcell::insertBoundaryEdgeVertical(const Tapcell::Edge& edge,
       continue;
     }
 
-    odb::dbMaster* master = nullptr;
-    if (row->getOrient() == odb::dbOrientType::R0) {
-      master = edge_master_r0;
-    } else {
-      master = edge_master_mx;
-    }
-
-    if (master == nullptr) {
-      continue;
-    }
-
-    const int width = master->getWidth();
+    const int width = edge_master->getWidth();
 
     odb::dbOrientType orient = row->getOrient();
     odb::Point ll;
@@ -1247,12 +1202,12 @@ int Tapcell::insertBoundaryEdgeVertical(const Tapcell::Edge& edge,
         break;
     }
 
-    if (!checkSymmetry(master, orient)) {
+    if (!checkSymmetry(edge_master, orient)) {
       continue;
     }
 
     makeInstance(db_->getChip()->getBlock(),
-                 master,
+                 edge_master,
                  orient,
                  ll.getX(),
                  ll.getY(),
@@ -1269,7 +1224,9 @@ int Tapcell::insertBoundaryEdgeVertical(const Tapcell::Edge& edge,
 BoundaryCellOptions Tapcell::correctBoundaryOptions(
     const BoundaryCellOptions& options) const
 {
-  return options;
+  BoundaryCellOptions bopts = options;
+
+  return bopts;
 }
 
 BoundaryCellOptions Tapcell::correctBoundaryOptions(
@@ -1280,49 +1237,29 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
   bopts.prefix = endcap_prefix_;
 
   // Boundaries
-  bopts.left_r0 = options.endcap_master;
-  bopts.left_mx = options.endcap_master;
-  bopts.right_r0 = options.endcap_master;
-  bopts.right_mx = options.endcap_master;
+  bopts.left = options.endcap_master;
+  bopts.right = options.endcap_master;
 
   if (options.tap_nwin3_master) {
-    bopts.top_r0.push_back(options.tap_nwin3_master);
+    bopts.top.push_back(options.tap_nwin3_master);
   }
   if (options.tap_nwin2_master) {
-    bopts.top_r0.push_back(options.tap_nwin2_master);
+    bopts.top.push_back(options.tap_nwin2_master);
   }
   if (options.tap_nwintie_master) {
-    bopts.top_r0.push_back(options.tap_nwintie_master);
+    bopts.top.push_back(options.tap_nwintie_master);
   }
-  if (options.tap_nwout3_master) {
-    bopts.top_mx.push_back(options.tap_nwout3_master);
-  }
-  if (options.tap_nwout2_master) {
-    bopts.top_mx.push_back(options.tap_nwout2_master);
-  }
-  if (options.tap_nwouttie_master) {
-    bopts.top_mx.push_back(options.tap_nwouttie_master);
-  }
-  bopts.bottom_r0 = bopts.top_r0;
-  bopts.bottom_mx = bopts.top_mx;
+  bopts.bottom = bopts.top;
 
-  bopts.outer_corner_bottom_left_r0 = options.cnrcap_nwout_master;
-  bopts.outer_corner_bottom_left_mx = options.cnrcap_nwin_master;
-  bopts.outer_corner_bottom_right_r0 = options.cnrcap_nwout_master;
-  bopts.outer_corner_bottom_right_mx = options.cnrcap_nwin_master;
-  bopts.outer_corner_top_left_r0 = options.cnrcap_nwout_master;
-  bopts.outer_corner_top_left_mx = options.cnrcap_nwin_master;
-  bopts.outer_corner_top_right_r0 = options.cnrcap_nwout_master;
-  bopts.outer_corner_top_right_mx = options.cnrcap_nwin_master;
+  bopts.outer_corner_bottom_left = options.cnrcap_nwout_master;
+  bopts.outer_corner_bottom_right = options.cnrcap_nwout_master;
+  bopts.outer_corner_top_left = options.cnrcap_nwout_master;
+  bopts.outer_corner_top_right = options.cnrcap_nwout_master;
 
-  bopts.inner_corner_bottom_left_r0 = options.incnrcap_nwout_master;
-  bopts.inner_corner_bottom_left_mx = options.incnrcap_nwin_master;
-  bopts.inner_corner_bottom_right_r0 = options.incnrcap_nwout_master;
-  bopts.inner_corner_bottom_right_mx = options.incnrcap_nwin_master;
-  bopts.inner_corner_top_left_r0 = options.incnrcap_nwout_master;
-  bopts.inner_corner_top_left_mx = options.incnrcap_nwin_master;
-  bopts.inner_corner_top_right_r0 = options.incnrcap_nwout_master;
-  bopts.inner_corner_top_right_mx = options.incnrcap_nwin_master;
+  bopts.inner_corner_bottom_left = options.incnrcap_nwout_master;
+  bopts.inner_corner_bottom_right = options.incnrcap_nwout_master;
+  bopts.inner_corner_top_left = options.incnrcap_nwout_master;
+  bopts.inner_corner_top_right = options.incnrcap_nwout_master;
 
   return bopts;
 }

@@ -82,43 +82,22 @@ struct Options
 struct BoundaryCellOptions
 {
   // External facing boundary cells
-  odb::dbMaster* outer_corner_top_left_r0 = nullptr;
-  odb::dbMaster* outer_corner_top_left_mx = nullptr;
-
-  odb::dbMaster* outer_corner_top_right_r0 = nullptr;
-  odb::dbMaster* outer_corner_top_right_mx = nullptr;
-
-  odb::dbMaster* outer_corner_bottom_left_r0 = nullptr;
-  odb::dbMaster* outer_corner_bottom_left_mx = nullptr;
-
-  odb::dbMaster* outer_corner_bottom_right_r0 = nullptr;
-  odb::dbMaster* outer_corner_bottom_right_mx = nullptr;
+  odb::dbMaster* outer_corner_top_left = nullptr;
+  odb::dbMaster* outer_corner_top_right = nullptr;
+  odb::dbMaster* outer_corner_bottom_left = nullptr;
+  odb::dbMaster* outer_corner_bottom_right = nullptr;
 
   // Internal facing boundary cells
-  odb::dbMaster* inner_corner_top_left_r0 = nullptr;
-  odb::dbMaster* inner_corner_top_left_mx = nullptr;
-
-  odb::dbMaster* inner_corner_top_right_r0 = nullptr;
-  odb::dbMaster* inner_corner_top_right_mx = nullptr;
-
-  odb::dbMaster* inner_corner_bottom_left_r0 = nullptr;
-  odb::dbMaster* inner_corner_bottom_left_mx = nullptr;
-
-  odb::dbMaster* inner_corner_bottom_right_r0 = nullptr;
-  odb::dbMaster* inner_corner_bottom_right_mx = nullptr;
+  odb::dbMaster* inner_corner_top_left = nullptr;
+  odb::dbMaster* inner_corner_top_right = nullptr;
+  odb::dbMaster* inner_corner_bottom_left = nullptr;
+  odb::dbMaster* inner_corner_bottom_right = nullptr;
 
   // endcaps
-  std::vector<odb::dbMaster*> top_r0;
-  std::vector<odb::dbMaster*> top_mx;
-
-  std::vector<odb::dbMaster*> bottom_r0;
-  std::vector<odb::dbMaster*> bottom_mx;
-
-  odb::dbMaster* left_r0 = nullptr;
-  odb::dbMaster* left_mx = nullptr;
-
-  odb::dbMaster* right_r0 = nullptr;
-  odb::dbMaster* right_mx = nullptr;
+  std::vector<odb::dbMaster*> top;
+  std::vector<odb::dbMaster*> bottom;
+  odb::dbMaster* left = nullptr;
+  odb::dbMaster* right = nullptr;
 
   std::string prefix = "PHY_";
 };

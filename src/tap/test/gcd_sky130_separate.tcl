@@ -7,7 +7,7 @@ set def_file [make_result_file gcd_sky130_seperate.def]
 
 cut_rows -endcap_master sky130_fd_sc_hs__decap_4
 
-place_boundary_cells -endcap_vertical_r0 sky130_fd_sc_hs__decap_4 -endcap_vertical_mx sky130_fd_sc_hs__decap_4
+place_boundary_cells -endcap_vertical sky130_fd_sc_hs__decap_4
 
 place_tapcells -distance 15 -master sky130_fd_sc_hs__tap_1
 

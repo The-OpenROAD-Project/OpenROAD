@@ -259,46 +259,30 @@ sta::define_cmd_args "place_boundary_cells" {
   [-endcap masters] \
 
   # Simplified with orient
-  [-outer_corner_mx master]\
-  [-outer_corner_r0 master]\
-  [-inner_corner_mx master]\
-  [-inner_corner_r0 master]\
+  [-outer_corner master]\
+  [-inner_corner master]\
 
-  [-endcap_horizontal_r0 masters] \
-  [-endcap_horizontal_mx masters] \
-  [-endcap_vertical_r0 master] \
-  [-endcap_vertical_mx master] \
+  [-endcap_horizontal masters] \
+  [-endcap_vertical master] \
 
   [-prefix prefix]
 
   # Full options
-  [-outer_corner_top_left_mx master]\
-  [-outer_corner_top_left_r0 master]\
-  [-outer_corner_top_right_mx master]\
-  [-outer_corner_top_right_r0 master]\
-  [-outer_corner_bottom_left_mx master]\
-  [-outer_corner_bottom_left_r0 master]\
-  [-outer_corner_bottom_right_mx master]\
-  [-outer_corner_bottom_right_r0 master]\
+  [-outer_corner_top_left master]\
+  [-outer_corner_top_right master]\
+  [-outer_corner_bottom_left master]\
+  [-outer_corner_bottom_right master]\
 
-  [-inner_corner_top_left_mx master]\
-  [-inner_corner_top_left_r0 master]\
-  [-inner_corner_top_right_mx master]\
-  [-inner_corner_top_right_r0 master]\
-  [-inner_corner_bottom_left_mx master]\
-  [-inner_corner_bottom_left_r0 master]\
-  [-inner_corner_bottom_right_mx master]\
-  [-inner_corner_bottom_right_r0 master]\
+  [-inner_corner_top_left master]\
+  [-inner_corner_top_right master]\
+  [-inner_corner_bottom_left master]\
+  [-inner_corner_bottom_right master]\
 
-  [-endcap_left_r0 master] \
-  [-endcap_left_mx master] \
-  [-endcap_right_r0 master] \
-  [-endcap_right_mx master] \
+  [-endcap_left master] \
+  [-endcap_right master] \
 
-  [-endcap_top_r0 masters] \
-  [-endcap_top_mx masters] \
-  [-endcap_bottom_r0 masters] \
-  [-endcap_bottom_mx masters]
+  [-endcap_top masters] \
+  [-endcap_bottom masters]
 }
 
 proc place_boundary_cells { args } {
@@ -306,13 +290,13 @@ proc place_boundary_cells { args } {
     keys {
       -outer_corner -inner_corner
       -endcap
-      -outer_corner_mx -outer_corner_r0 -inner_corner_mx -inner_corner_r0
-      -endcap_horizontal_r0 -endcap_horizontal_mx -endcap_vertical_r0 -endcap_vertical_mx
+      -outer_corner -inner_corner
+      -endcap_horizontal -endcap_vertical
       -prefix
-      -outer_corner_top_left_mx -outer_corner_top_left_r0 -outer_corner_top_right_mx -outer_corner_top_right_r0 -outer_corner_bottom_left_mx -outer_corner_bottom_left_r0 -outer_corner_bottom_right_mx -outer_corner_bottom_right_r0
-      -inner_corner_top_left_mx -inner_corner_top_left_r0 -inner_corner_top_right_mx -inner_corner_top_right_r0 -inner_corner_bottom_left_mx -inner_corner_bottom_left_r0 -inner_corner_bottom_right_mx -inner_corner_bottom_right_r0
-      -endcap_left_r0 -endcap_left_mx -endcap_right_r0 -endcap_right_mx
-      -endcap_top_r0 -endcap_top_mx -endcap_bottom_r0 -endcap_bottom_mx} \
+      -outer_corner_top_left -outer_corner_top_right -outer_corner_bottom_left -outer_corner_bottom_right
+      -inner_corner_top_left -inner_corner_top_right -inner_corner_bottom_left -inner_corner_bottom_right
+      -endcap_left -endcap_right
+      -endcap_top -endcap_bottom} \
     flags {}
   
   sta::check_argc_eq0 "place_boundary_cells" $args
@@ -322,59 +306,35 @@ proc place_boundary_cells { args } {
     set prefix $keys(-prefix)
   }
 
-  set outer_corner_top_left_mx [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_left_mx -outer_corner_mx -outer_corner]]
-  set outer_corner_top_left_r0 [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_left_r0 -outer_corner_r0 -outer_corner]]
-  set outer_corner_top_right_mx [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_right_mx -outer_corner_mx -outer_corner]]
-  set outer_corner_top_right_r0 [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_right_r0 -outer_corner_r0 -outer_corner]]
-  set outer_corner_bottom_left_mx [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_left_mx -outer_corner_mx -outer_corner]]
-  set outer_corner_bottom_left_r0 [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_left_r0 -outer_corner_r0 -outer_corner]]
-  set outer_corner_bottom_right_mx [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_right_mx -outer_corner_mx -outer_corner]]
-  set outer_corner_bottom_right_r0 [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_right_r0 -outer_corner_r0 -outer_corner]]
+  set outer_corner_top_left [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_left -outer_corner -outer_corner]]
+  set outer_corner_top_right [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_right -outer_corner -outer_corner]]
+  set outer_corner_bottom_left [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_left -outer_corner -outer_corner]]
+  set outer_corner_bottom_right [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_right -outer_corner -outer_corner]]
 
-  set inner_corner_top_left_mx [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_left_mx -inner_corner_mx -inner_corner]]
-  set inner_corner_top_left_r0 [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_left_r0 -inner_corner_r0 -inner_corner]]
-  set inner_corner_top_right_mx [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_right_mx -inner_corner_mx -inner_corner]]
-  set inner_corner_top_right_r0 [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_right_r0 -inner_corner_r0 -inner_corner]]
-  set inner_corner_bottom_left_mx [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_left_mx -inner_corner_mx -inner_corner]]
-  set inner_corner_bottom_left_r0 [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_left_r0 -inner_corner_r0 -inner_corner]]
-  set inner_corner_bottom_right_mx [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_right_mx -inner_corner_mx -inner_corner]]
-  set inner_corner_bottom_right_r0 [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_right_r0 -inner_corner_r0 -inner_corner]]
+  set inner_corner_top_left [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_left -inner_corner -inner_corner]]
+  set inner_corner_top_right [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_right -inner_corner -inner_corner]]
+  set inner_corner_bottom_left [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_left -inner_corner -inner_corner]]
+  set inner_corner_bottom_right [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_right -inner_corner -inner_corner]]
 
-  set endcap_left_r0 [tap::find_master [tap::parse_boundary_key keys -endcap_left_r0 -endcap_vertical_r0 -endcap]]
-  set endcap_left_mx [tap::find_master [tap::parse_boundary_key keys -endcap_left_mx -endcap_vertical_mx -endcap]]
-  set endcap_right_r0 [tap::find_master [tap::parse_boundary_key keys -endcap_right_r0 -endcap_vertical_r0 -endcap]]
-  set endcap_right_mx [tap::find_master [tap::parse_boundary_key keys -endcap_right_mx -endcap_vertical_mx -endcap]]
+  set endcap_left [tap::find_master [tap::parse_boundary_key keys -endcap_left -endcap_vertical -endcap]]
+  set endcap_right [tap::find_master [tap::parse_boundary_key keys -endcap_right -endcap_vertical -endcap]]
 
-  set endcap_top_r0 [tap::find_masters [tap::parse_boundary_key keys -endcap_top_r0 -endcap_horizontal_r0 -endcap]]
-  set endcap_top_mx [tap::find_masters [tap::parse_boundary_key keys -endcap_top_mx -endcap_horizontal_mx -endcap]]
-  set endcap_bottom_r0 [tap::find_masters [tap::parse_boundary_key keys -endcap_bottom_r0 -endcap_horizontal_r0 -endcap]]
-  set endcap_bottom_mx [tap::find_masters [tap::parse_boundary_key keys -endcap_bottom_mx -endcap_horizontal_mx -endcap]]
+  set endcap_top [tap::find_masters [tap::parse_boundary_key keys -endcap_top -endcap_horizontal -endcap]]
+  set endcap_bottom [tap::find_masters [tap::parse_boundary_key keys -endcap_bottom -endcap_horizontal -endcap]]
 
   tap::insert_boundary_cells \
-    $outer_corner_top_left_r0\
-    $outer_corner_top_left_mx\
-    $outer_corner_top_right_r0\
-    $outer_corner_top_right_mx\
-    $outer_corner_bottom_left_r0\
-    $outer_corner_bottom_left_mx\
-    $outer_corner_bottom_right_r0\
-    $outer_corner_bottom_right_mx\
-    $inner_corner_top_left_r0\
-    $inner_corner_top_left_mx\
-    $inner_corner_top_right_r0\
-    $inner_corner_top_right_mx\
-    $inner_corner_bottom_left_r0\
-    $inner_corner_bottom_left_mx\
-    $inner_corner_bottom_right_r0\
-    $inner_corner_bottom_right_mx\
-    $endcap_top_r0\
-    $endcap_top_mx\
-    $endcap_bottom_r0\
-    $endcap_bottom_mx\
-    $endcap_left_r0\
-    $endcap_left_mx\
-    $endcap_right_r0\
-    $endcap_right_mx\
+    $outer_corner_top_left\
+    $outer_corner_top_right\
+    $outer_corner_bottom_left\
+    $outer_corner_bottom_right\
+    $inner_corner_top_left\
+    $inner_corner_top_right\
+    $inner_corner_bottom_left\
+    $inner_corner_bottom_right\
+    $endcap_top\
+    $endcap_bottom\
+    $endcap_left\
+    $endcap_right\
     $prefix
 }
 

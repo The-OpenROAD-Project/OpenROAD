@@ -139,62 +139,38 @@
   }
 
   void insert_boundary_cells(
-    odb::dbMaster* outer_corner_top_left_r0,
-    odb::dbMaster* outer_corner_top_left_mx,
-    odb::dbMaster* outer_corner_top_right_r0,
-    odb::dbMaster* outer_corner_top_right_mx,
-    odb::dbMaster* outer_corner_bottom_left_r0,
-    odb::dbMaster* outer_corner_bottom_left_mx,
-    odb::dbMaster* outer_corner_bottom_right_r0,
-    odb::dbMaster* outer_corner_bottom_right_mx,
-    odb::dbMaster* inner_corner_top_left_r0,
-    odb::dbMaster* inner_corner_top_left_mx,
-    odb::dbMaster* inner_corner_top_right_r0,
-    odb::dbMaster* inner_corner_top_right_mx,
-    odb::dbMaster* inner_corner_bottom_left_r0,
-    odb::dbMaster* inner_corner_bottom_left_mx,
-    odb::dbMaster* inner_corner_bottom_right_r0,
-    odb::dbMaster* inner_corner_bottom_right_mx,
+    odb::dbMaster* outer_corner_top_left,
+    odb::dbMaster* outer_corner_top_right,
+    odb::dbMaster* outer_corner_bottom_left,
+    odb::dbMaster* outer_corner_bottom_right,
+    odb::dbMaster* inner_corner_top_left,
+    odb::dbMaster* inner_corner_top_right,
+    odb::dbMaster* inner_corner_bottom_left,
+    odb::dbMaster* inner_corner_bottom_right,
 
-    const std::vector<odb::dbMaster*>& top_r0,
-    const std::vector<odb::dbMaster*>& top_mx,
-    const std::vector<odb::dbMaster*>& bottom_r0,
-    const std::vector<odb::dbMaster*>& bottom_mx,
+    const std::vector<odb::dbMaster*>& top,
+    const std::vector<odb::dbMaster*>& bottom,
 
-    odb::dbMaster* left_r0,
-    odb::dbMaster* left_mx,
-    odb::dbMaster* right_r0,
-    odb::dbMaster* right_mx,
+    odb::dbMaster* left,
+    odb::dbMaster* right,
     const char* prefix)
   {
     BoundaryCellOptions options;
 
-    options.outer_corner_top_left_r0 = outer_corner_top_left_r0;
-    options.outer_corner_top_left_mx = outer_corner_top_left_mx;
-    options.outer_corner_top_right_r0 = outer_corner_top_right_r0;
-    options.outer_corner_top_right_mx = outer_corner_top_right_mx;
-    options.outer_corner_bottom_left_r0 = outer_corner_bottom_left_r0;
-    options.outer_corner_bottom_left_mx = outer_corner_bottom_left_mx;
-    options.outer_corner_bottom_right_r0 = outer_corner_bottom_right_r0;
-    options.outer_corner_bottom_right_mx = outer_corner_bottom_right_mx;
-    options.inner_corner_top_left_r0 = inner_corner_top_left_r0;
-    options.inner_corner_top_left_mx = inner_corner_top_left_mx;
-    options.inner_corner_top_right_r0 = inner_corner_top_right_r0;
-    options.inner_corner_top_right_mx = inner_corner_top_right_mx;
-    options.inner_corner_bottom_left_r0 = inner_corner_bottom_left_r0;
-    options.inner_corner_bottom_left_mx = inner_corner_bottom_left_mx;
-    options.inner_corner_bottom_right_r0 = inner_corner_bottom_right_r0;
-    options.inner_corner_bottom_right_mx = inner_corner_bottom_right_mx;
+    options.outer_corner_top_left = outer_corner_top_left;
+    options.outer_corner_top_right = outer_corner_top_right;
+    options.outer_corner_bottom_left = outer_corner_bottom_left;
+    options.outer_corner_bottom_right = outer_corner_bottom_right;
+    options.inner_corner_top_left = inner_corner_top_left;
+    options.inner_corner_top_right = inner_corner_top_right;
+    options.inner_corner_bottom_left = inner_corner_bottom_left;
+    options.inner_corner_bottom_right = inner_corner_bottom_right;
 
-    options.top_r0 = top_r0;
-    options.top_mx = top_mx;
-    options.bottom_r0 = bottom_r0;
-    options.bottom_mx = bottom_mx;
+    options.top = top;
+    options.bottom = bottom;
 
-    options.left_r0 = left_r0;
-    options.left_mx = left_mx;
-    options.right_r0 = right_r0;
-    options.right_mx = right_mx;
+    options.left = left;
+    options.right = right;
     options.prefix = prefix;
 
     getTapcell()->insertBoundaryCells(options);
