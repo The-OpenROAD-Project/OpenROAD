@@ -155,7 +155,7 @@ pin_access
 
 ### Useful developer functions
 
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/TritonRoute.cpp) or the [swig file](./src/TritonRoute.i).
+If you are a developer, you might find these useful. More details can be found in the [source file](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/drt/src/TritonRoute.cpp) or the [swig file](https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/src/drt/src/TritonRoute.i).
 
 ```
 detailed_route_set_default_via [-via]   # set default via 
@@ -176,7 +176,7 @@ in the Nangate45 technology node.
 
 ## Regression tests
 
-There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests). 
+There are a set of regression tests in `./test`. For more information, refer to this [section](../../README.md#regression-tests). 
 
 Simply run the following script: 
 
@@ -195,12 +195,12 @@ about this tool.
 
 Please cite the following paper(s) for publication:
 
--   A. B. Kahng, L. Wang and B. Xu, "TritonRoute: The Open Source Detailed
+1.   A. B. Kahng, L. Wang and B. Xu, "TritonRoute: The Open Source Detailed
     Router", IEEE Transactions on Computer-Aided Design of Integrated Circuits
-    and Systems (2020), doi:10.1109/TCAD.2020.3003234.
--   A. B. Kahng, L. Wang and B. Xu, "The Tao of PAO: Anatomy of a Pin Access
+    and Systems (2020), doi:10.1109/TCAD.2020.3003234. [(.pdf)](https://ieeexplore.ieee.org/ielaam/43/9358030/9120211-aam.pdf)
+1.   A. B. Kahng, L. Wang and B. Xu, "The Tao of PAO: Anatomy of a Pin Access
     Oracle for Detailed Routing", Proc. ACM/IEEE Design Automation Conf., 2020,
-    pp. 1-6.
+    pp. 1-6. [(.pdf)](https://vlsicad.ucsd.edu/Publications/Conferences/377/c377.pdf)
 
 ## Authors
 
