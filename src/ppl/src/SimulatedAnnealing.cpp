@@ -122,7 +122,6 @@ void SimulatedAnnealing::run(float init_temperature,
         pins_.clear();
       }
 
-
       temperature *= alpha_;
 
       if (debug_->isOn()) {
