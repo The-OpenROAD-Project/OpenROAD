@@ -1742,11 +1742,6 @@ void io::Parser::addRoutingLayer(odb::dbTechLayer* layer)
     addDefaultMasterSliceLayer();
     addDefaultCutLayer();
   }
-
-  if (layer->getRoutingLevel() == 1) {
-    VIA_ACCESS_LAYERNUM = readLayerCnt_;
-  }
-
   unique_ptr<frLayer> uLayer = make_unique<frLayer>();
   auto tmpLayer = uLayer.get();
   tmpLayer->setDbLayer(layer);
