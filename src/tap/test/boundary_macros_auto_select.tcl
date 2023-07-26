@@ -9,7 +9,7 @@ set def_file [make_result_file boundary_macros_auto_select.def]
 
 cut_rows -endcap_master TAPCELL_X1
 
-place_boundary_cells
+place_endcaps
 
 place_tapcells -master TAPCELL_X1 -distance "5"
 

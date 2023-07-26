@@ -77,10 +77,10 @@ cut_rows [-endcap_master endcap_master]
 - `-halo_width_x`. Specify the horizontal halo size (in microns) around macros during cut rows.
 - `-halo_width_y`. Specify the vertical halo size (in microns) around macros during cut rows.
 
-### Only adding boundary cells
+### Only adding boundary/endcap cells
 
 ```
-place_boundary_cells
+place_endcaps
   [-outer_corner master]
   [-inner_corner master]
   [-endcap masters]

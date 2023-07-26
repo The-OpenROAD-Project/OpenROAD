@@ -251,7 +251,7 @@ proc tapcell_ripup { args } {
   tap::reset
 }
 
-sta::define_cmd_args "place_boundary_cells" {
+sta::define_cmd_args "place_endcaps" {
   # Simplified
   [-outer_corner master]\
   [-inner_corner master]\
@@ -285,8 +285,8 @@ sta::define_cmd_args "place_boundary_cells" {
   [-endcap_bottom masters]
 }
 
-proc place_boundary_cells { args } {
-  sta::parse_key_args "place_boundary_cells" args \
+proc place_endcaps { args } {
+  sta::parse_key_args "place_endcaps" args \
     keys {
       -outer_corner -inner_corner
       -endcap
@@ -299,7 +299,7 @@ proc place_boundary_cells { args } {
       -endcap_top -endcap_bottom} \
     flags {}
   
-  sta::check_argc_eq0 "place_boundary_cells" $args
+  sta::check_argc_eq0 "place_endcaps" $args
 
   set prefix "PHY_"
   if { [info exists keys(-prefix)]} {
