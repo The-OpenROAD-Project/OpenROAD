@@ -2275,6 +2275,11 @@ class dbNet : public dbObject
   void clearSpecial();
 
   ///
+  /// Returns true if this dbNet have its pins connected by abutment
+  ///
+  bool isConnectedByAbutment();
+
+  ///
   /// Set the IO flag if there are any BTerms on net
   bool setIOflag();
 
