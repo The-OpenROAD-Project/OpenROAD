@@ -34,13 +34,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
-
-#include "utl/Logger.h"
+#include <unordered_set>
+#include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
-
-#include "sta/StaState.hh"
-#include "sta/MinMax.hh"
 #include "sta/FuncExpr.hh"
+#include "sta/MinMax.hh"
+#include "sta/StaState.hh"
+#include "utl/Logger.h"
 
 namespace sta {
 class PathExpanded;
@@ -51,7 +51,8 @@ namespace rsz {
 class Resizer;
 
 using std::vector;
-
+using std::pair;
+using odb::Point;
 using utl::Logger;
 
 using sta::StaState;
@@ -84,6 +85,7 @@ public:
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
                    int max_passes,
+                   bool verbose,
                    bool skip_pin_swap,
                    bool enable_gate_cloning);
   // For testing.
@@ -111,7 +113,9 @@ private:
                   int drvr_index,
                   PathExpanded *expanded,
                   bool only_same_size_swap);
-  void cloneDriver(PathRef* drvr_path, int drvr_index,
+  Point computeCloneGateLocation(const Pin *drvr_pin,
+                                 const vector<pair<Vertex*, Slack>> &fanout_slacks);
+  bool cloneDriver(PathRef* drvr_path, int drvr_index,
                    Slack drvr_slack, PathExpanded *expanded);
   void splitLoads(PathRef *drvr_path,
                   int drvr_index,
@@ -142,6 +146,8 @@ private:
   Slack slackPenalized(BufferedNetPtr bnet,
                        int index);
 
+  void printProgress(int iteration, bool force, bool end) const;
+
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
@@ -157,7 +163,7 @@ private:
   int swap_pin_count_;
   // Map to block pins from being swapped more than twice for the
   // same instance. 
-  std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
+  std::unordered_set<const sta::Instance *> swap_pin_inst_set_;
   
   const MinMax *min_;
   const MinMax *max_;
@@ -168,6 +174,7 @@ private:
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
+  static constexpr int print_interval_ = 10;
 };
 
 } // namespace

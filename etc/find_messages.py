@@ -74,7 +74,7 @@ def parse_args():
 warn_regexp_c = \
     re.compile(r'''
       (?:->|\.)                                        # deref
-      (?:info|warn|fileWarn|error|fileError|critical)  # type
+      (?P<type>info|warn|fileWarn|error|fileError|critical)  # type
       \s*\(\s*                                         # (
       (?:utl::)?(?P<tool>[A-Z]{3})                     # tool
       \s*,\s*                                          # ,
@@ -85,7 +85,7 @@ warn_regexp_c = \
 
 warn_regexp_tcl = \
     re.compile(r'''
-      (?:info|warn|error|critical)     # type
+      (?P<type>info|warn|error|critical)     # type
       \s+                              # white-space
       (?P<tool>[A-Z]{3}|"[A-Z]{3}")    # tool
       \s+                              # white-space
@@ -111,11 +111,15 @@ def scan_file(path, file_name, msgs):
         message = match.group('message')
         message = message.rstrip()[1:-1]
         message = re.sub(r'"\s*"', '', message)
+        message_type = match.group('type').upper()
 
         # Count the newlines before the match starts
         line_num = lines[0:match.start()].count('\n') + 1
         position = '{}:{}'.format(file_name, line_num)
-        value = '{:25} {}'.format(position, message)
+        file_link = os.path.join(path, file_name).strip('../').replace('\\','/')
+        file_link = 'https://github.com/The-OpenROAD-Project/OpenROAD/tree/master/{}#L{}'.format(
+                file_link, line_num)
+        value = '{:25} {} {} {}'.format(position, message, message_type, file_link)
 
         msgs[key].add(value)
 

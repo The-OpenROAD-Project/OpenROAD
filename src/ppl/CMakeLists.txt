@@ -72,6 +72,7 @@ target_link_libraries(ppl
     odb
     utl
     gui
+    Boost::boost
 )
                       
 messages(
@@ -94,6 +95,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
       ppl
       OpenSTA
       odb
+      Boost::boost
   )
 
 endif()

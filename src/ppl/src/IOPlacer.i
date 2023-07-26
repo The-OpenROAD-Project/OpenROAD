@@ -346,9 +346,9 @@ simulated_annealing_debug(int iters_between_paintings,
 }
 
 void
-run_annealing()
+run_annealing(bool random)
 {
-  getIOPlacer()->runAnnealing();
+  getIOPlacer()->runAnnealing(random);
 }
 
 } // namespace

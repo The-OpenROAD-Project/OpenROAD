@@ -81,22 +81,12 @@ Resizer::setLayerRC(dbTechLayer *layer,
     }
   }
 
-  layer_res_[layer->getRoutingLevel()][corner->index()] = res;
-  layer_cap_[layer->getRoutingLevel()][corner->index()] = cap;
+  layer_res_[layer->getNumber()][corner->index()] = res;
+  layer_cap_[layer->getNumber()][corner->index()] = cap;
 }
 
 void
 Resizer::layerRC(dbTechLayer *layer,
-                 const Corner *corner,
-                 // Return values.
-                 double &res,
-                 double &cap) const
-{
-  layerRC(layer->getRoutingLevel(), corner, res, cap);
-}
-
-void
-Resizer::layerRC(int routing_level,
                  const Corner *corner,
                  // Return values.
                  double &res,
@@ -107,8 +97,9 @@ Resizer::layerRC(int routing_level,
     cap = 0.0;
   }
   else {
-    res = layer_res_[routing_level][corner->index()];
-    cap = layer_cap_[routing_level][corner->index()];
+    const int layer_level = layer->getNumber();
+    res = layer_res_[layer_level][corner->index()];
+    cap = layer_cap_[layer_level][corner->index()];
   }
 }
 
@@ -356,7 +347,8 @@ Resizer::estimateWireParasitic(const Pin *drvr_pin,
 {
   if (!network_->isPower(net)
       && !network_->isGround(net)
-      && !sta_->isIdealClock(drvr_pin)) {
+      && !sta_->isIdealClock(drvr_pin)
+      && !db_network_->staToDb(net)->isSpecial()) {
     if (isPadNet(net))
       // When an input port drives a pad instance with huge input
       // cap the elmore delay is gigantic. Annotate with zero
