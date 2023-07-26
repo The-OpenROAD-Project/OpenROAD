@@ -1829,7 +1829,7 @@ bool dbNet::isConnectedByAbutment()
           }
           odb::Rect rect = box->getBox();
           transform.apply(rect);
-          if (first_mterm == 0) {
+          if (first_mterm) {
             first_pin_boxes.push_back(rect);
             first_mterm = false;
           } else {
