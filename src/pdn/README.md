@@ -411,21 +411,6 @@ add_pdn_connect -layers {metal9 metal10}
 pdngen
 ```
 
-### Useful developer functions
-
-If you are a developer, you might find these useful. More details can be found in the [source file](./src/PdnGen.cc) or the [swig file](./src/PdnGen.i).
-
-```tcl
-# source config file
-source_config config
-
-# get power nets
-get_pdn_power_nets
-
-# get ground nets
-get_pdn_ground_nets
-```
-
 ## Regression tests
 
 There are a set of regression tests in `/test`. For more information, refer to this [section](../../README.md#regression-tests).
