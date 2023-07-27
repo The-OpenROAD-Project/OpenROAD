@@ -74,7 +74,6 @@ class tmg_conn_search::Impl
   Impl();
   ~Impl();
   void clear();
-  void printShape(dbNet* net, int lev, char* filenm);
   void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
   void searchStart(int lev, int xlo, int ylo, int xhi, int yhi, int isVia);
   bool searchNext(int* id);
@@ -154,32 +153,6 @@ void tmg_conn_search::Impl::clear()
     _levV[j]->yhi = 0;
   }
   _sorted = false;
-}
-
-void tmg_conn_search::Impl::printShape(dbNet* net, int lev, char* filenm)
-{
-  FILE* fp;
-  if (filenm && filenm[0] != '\0')
-    fp = fopen(filenm, "w");
-  else
-    fp = stdout;
-  fprintf(fp,
-          "Shapes of net %d %s level %d in tmg_conn_search:\n",
-          net->getId(),
-          net->getConstName(),
-          lev);
-  tcs_shape* shape = _levV[lev]->shape_list;
-  while (shape) {
-    fprintf(fp,
-            "   %d %d    %d %d\n",
-            shape->xlo,
-            shape->ylo,
-            shape->xhi,
-            shape->yhi);
-    shape = shape->next;
-  }
-  if (fp != stdout)
-    fclose(fp);
 }
 
 void tmg_conn_search::Impl::addShape(int lev,
@@ -514,11 +487,6 @@ void tmg_conn_search::resetSorted()
 void tmg_conn_search::sort()
 {
   impl_->sort();
-}
-
-void tmg_conn_search::printShape(dbNet* net, int lev, char* filenm)
-{
-  impl_->printShape(net, lev, filenm);
 }
 
 void tmg_conn_search::addShape(int lev,
