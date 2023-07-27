@@ -496,33 +496,29 @@ void tmg_conn_search::Impl::merge(tcs_lev* bin,
 
 tmg_conn_search::tmg_conn_search()
 {
-  _d = new Impl;
+  impl_ = std::make_unique<Impl>();
 }
 
-tmg_conn_search::~tmg_conn_search()
-{
-  delete _d;
-  _d = nullptr;
-}
+tmg_conn_search::~tmg_conn_search() = default;
 
 void tmg_conn_search::clear()
 {
-  _d->clear();
+  impl_->clear();
 }
 
 void tmg_conn_search::resetSorted()
 {
-  _d->resetSorted();
+  impl_->resetSorted();
 }
 
 void tmg_conn_search::sort()
 {
-  _d->sort();
+  impl_->sort();
 }
 
 void tmg_conn_search::printShape(dbNet* net, int lev, char* filenm)
 {
-  _d->printShape(net, lev, filenm);
+  impl_->printShape(net, lev, filenm);
 }
 
 void tmg_conn_search::addShape(int lev,
@@ -533,27 +529,27 @@ void tmg_conn_search::addShape(int lev,
                                int isVia,
                                int id)
 {
-  _d->addShape(lev, xlo, ylo, xhi, yhi, isVia, id);
+  impl_->addShape(lev, xlo, ylo, xhi, yhi, isVia, id);
 }
 
 void tmg_conn_search::setXmin(int xmin)
 {
-  _d->setXmin(xmin);
+  impl_->setXmin(xmin);
 }
 
 void tmg_conn_search::setXmax(int xmax)
 {
-  _d->setXmax(xmax);
+  impl_->setXmax(xmax);
 }
 
 void tmg_conn_search::setYmin(int ymin)
 {
-  _d->setYmin(ymin);
+  impl_->setYmin(ymin);
 }
 
 void tmg_conn_search::setYmax(int ymax)
 {
-  _d->setYmax(ymax);
+  impl_->setYmax(ymax);
 }
 
 void tmg_conn_search::searchStart(int lev,
@@ -563,12 +559,12 @@ void tmg_conn_search::searchStart(int lev,
                                   int yhi,
                                   int isVia)
 {
-  _d->searchStart(lev, xlo, ylo, xhi, yhi, isVia);
+  impl_->searchStart(lev, xlo, ylo, xhi, yhi, isVia);
 }
 
 bool tmg_conn_search::searchNext(int* id)
 {
-  bool ret = _d->searchNext(id);
+  bool ret = impl_->searchNext(id);
   return ret;
 }
 

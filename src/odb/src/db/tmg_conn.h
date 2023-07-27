@@ -33,6 +33,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <vector>
 
 #include "db.h"
@@ -262,7 +263,7 @@ class tmg_conn_search
 
  private:
   class Impl;
-  Impl* _d;
+  std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace odb
