@@ -125,12 +125,6 @@ void SimulatedAnnealing::run(float init_temperature,
       temperature *= alpha_;
 
       if (debug_->isOn()) {
-        bool is_no_pause_mode = false;
-
-        if (debug_->is_no_pause_mode) {
-          is_no_pause_mode = true;
-        }
-
         if (iter == 0 || (iter + 1) % debug_->painting_interval == 0) {
           std::vector<ppl::IOPin> pins;
           getAssignment(pins);
@@ -143,7 +137,7 @@ void SimulatedAnnealing::run(float init_temperature,
             all_sinks.push_back(pin_sinks);
           }
 
-          annealingStateVisualization(pins, all_sinks, is_no_pause_mode);
+          annealingStateVisualization(pins, all_sinks, debug_->is_no_pause_mode);
         }
       }
     }
