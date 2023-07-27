@@ -189,9 +189,9 @@ int Tapcell::insertTapcells(odb::dbMaster* tapcell_master,
               * std::floor(pitch_mult * dist / static_cast<double>(tap_width));
 
   if (row->getOrient() == odb::dbOrientType::R0 || is_edge) {
-    offset = 0;
+    offset = pitch / pitch_mult;
   } else {
-    offset = pitch / 2;
+    offset = pitch;
   }
 
   const odb::Rect row_bb = row->getBBox();
