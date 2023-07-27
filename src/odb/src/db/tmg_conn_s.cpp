@@ -93,6 +93,8 @@ class tmg_conn_search::Impl
   tcs_shape* _cur;
   tcs_shape* _pcur;
   bool _sorted;
+
+  static constexpr int sort_threshold = 1024;
 };
 
 tmg_conn_search::Impl::Impl()
@@ -101,9 +103,9 @@ tmg_conn_search::Impl::Impl()
   _shJ = 0;
   _shJmax = 256;
   _shV = (tcs_shape**) malloc(_shJmax * sizeof(tcs_shape*));
-  int j;
-  for (j = 0; j < _shJmax; j++)
+  for (int j = 0; j < _shJmax; j++) {
     _shV[j] = nullptr;
+  }
   _shV[0] = (tcs_shape*) malloc(32768 * sizeof(tcs_shape));
   _sxlo = 0;
   _sylo = 0;
@@ -168,28 +170,21 @@ void tmg_conn_search::Impl::addShape(int lev,
       _shV[_shJ] = (tcs_shape*) malloc(32768 * sizeof(tcs_shape));
     _shN = 0;
   }
-  tcs_shape* s = _shV[_shJ] + _shN++;
-  s->lev = lev;
-  s->bounds = {xlo, ylo, xhi, yhi};
-  s->isVia = isVia;
-  s->id = id;
-  s->next = nullptr;
+  tcs_shape* shape = _shV[_shJ] + _shN++;
+  shape->lev = lev;
+  shape->bounds = {xlo, ylo, xhi, yhi};
+  shape->isVia = isVia;
+  shape->id = id;
+  shape->next = nullptr;
   tcs_lev* slev = _levV[lev];
   if (slev->shape_list == nullptr) {
-    slev->shape_list = s;
-    slev->bounds = {xlo, ylo, xhi, yhi};
+    slev->shape_list = shape;
+    slev->bounds = shape->bounds;
   } else {
-    slev->last_shape->next = s;
-    if (xlo < slev->xMin())
-      slev->bounds.set_xlo(xlo);
-    if (ylo < slev->yMin())
-      slev->bounds.set_ylo(ylo);
-    if (xhi > slev->xMax())
-      slev->bounds.set_xhi(xhi);
-    if (yhi > slev->yMax())
-      slev->bounds.set_yhi(yhi);
+    slev->last_shape->next = shape;
+    slev->bounds.merge(shape->bounds);
   }
-  slev->last_shape = s;
+  slev->last_shape = shape;
   slev->n++;
 }
 
@@ -305,7 +300,7 @@ void tmg_conn_search::Impl::sort()
 {
   _sorted = true;
   for (int j = 0; j < 32; j++) {
-    if (_levV[j]->n > 1024) {
+    if (_levV[j]->n > sort_threshold) {
       sort1(_levV[j]);
     }
   }
@@ -368,7 +363,7 @@ void tmg_conn_search::Impl::sort1(tcs_lev* bin)
   if (_levAllN >= 32767) {
     return;
   }
-  if (bin->n < 1024) {
+  if (bin->n < sort_threshold) {
     return;
   }
   tcs_lev* left = _levAllV + _levAllN++;
