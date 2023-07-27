@@ -54,11 +54,11 @@ namespace ppl {
 
 struct DebugSettings
 {
-  std::unique_ptr<AbstractIOPlacerRenderer> renderer_;
-  int painting_interval_ = 0;
-  bool isNoPauseMode_ = false;
+  std::unique_ptr<AbstractIOPlacerRenderer> renderer;
+  int painting_interval = 0;
+  bool is_no_pause_mode = false;
 
-  bool isOn() const { return renderer_ != nullptr; }
+  bool isOn() const { return renderer != nullptr; }
 };
 
 using utl::Logger;
