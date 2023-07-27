@@ -77,7 +77,7 @@ class tmg_conn_search::Impl
 
  private:
   void sort();
-  void sort1(tcs_lev*);
+  void sort1(tcs_lev* bin);
   void merge(tcs_lev* bin, tcs_lev* left, tcs_lev* right);
 
   tcs_shape** _shV;
@@ -119,9 +119,11 @@ tmg_conn_search::Impl::Impl()
 tmg_conn_search::Impl::~Impl()
 {
   int j;
-  for (j = 0; j < _shJmax; j++)
-    if (_shV[j])
+  for (j = 0; j < _shJmax; j++) {
+    if (_shV[j]) {
       free(_shV[j]);
+    }
+  }
   free(_shV);
 }
 
@@ -157,8 +159,9 @@ void tmg_conn_search::Impl::addShape(int lev,
       int j = _shJmax;
       _shJmax *= 2;
       _shV = (tcs_shape**) realloc(_shV, _shJmax * sizeof(tcs_shape*));
-      for (; j < _shJmax; j++)
+      for (; j < _shJmax; j++) {
         _shV[j] = nullptr;
+      }
     }
     _shJ++;
     if (!_shV[_shJ])
@@ -216,9 +219,9 @@ void tmg_conn_search::Impl::searchStart(int lev,
 bool tmg_conn_search::Impl::searchNext(int* id)
 {
   *id = -1;
-#if 1
-  if (!_bin)
+  if (!_bin) {
     return false;
+  }
   // this is for speed for ordinary small nets
   if (_srcVia == 1 && !_bin->parent && !_bin->left && !_bin->right) {
     while (_cur) {
@@ -234,28 +237,29 @@ bool tmg_conn_search::Impl::searchNext(int* id)
     }
     return false;
   }
-#endif
 
   while (_bin) {
     bool not_here = false;
     if (_bin->xMax() < _sxlo || _bin->xMin() > _sxhi || _bin->yMax() < _sylo
-        || _bin->yMin() > _syhi)
+        || _bin->yMin() > _syhi) {
       not_here = true;
-    if (!not_here)
+    }
+    if (!not_here) {
       while (_cur) {
         if (_srcVia == 1 || _cur->isVia == 1) {
-          if (_cur->xMin() >= _sxhi || _sxlo >= _cur->xMax() || _cur->yMin() >= _syhi
-              || _sylo >= _cur->yMax()) {
+          if (_cur->xMin() >= _sxhi || _sxlo >= _cur->xMax()
+              || _cur->yMin() >= _syhi || _sylo >= _cur->yMax()) {
             _cur = _cur->next;
             continue;
           }
         } else {
-          if (_cur->xMin() > _sxhi || _sxlo > _cur->xMax() || _cur->yMin() > _syhi
-              || _sylo > _cur->yMax()) {
+          if (_cur->xMin() > _sxhi || _sxlo > _cur->xMax()
+              || _cur->yMin() > _syhi || _sylo > _cur->yMax()) {
             _cur = _cur->next;
             continue;
           }
-          if (_srcVia == 0 && (_cur->xMin() == _sxhi || _sxlo == _cur->xMax())) {
+          if (_srcVia == 0
+              && (_cur->xMin() == _sxhi || _sxlo == _cur->xMax())) {
             if (_cur->yMax() < _sylo || _cur->yMin() > _syhi
                 || (_cur->yMax() < _syhi && _cur->yMin() < _sylo)
                 || (_cur->yMax() > _syhi && _cur->yMin() > _sylo)) {
@@ -277,13 +281,15 @@ bool tmg_conn_search::Impl::searchNext(int* id)
         _cur = _cur->next;
         return true;
       }
+    }
     if (_bin->left) {
       _bin = _bin->left;
       _cur = _bin->shape_list;
       _pcur = nullptr;
     } else {
-      while (_bin->parent && _bin == _bin->parent->right)
+      while (_bin->parent && _bin == _bin->parent->right) {
         _bin = _bin->parent;
+      }
       _bin = _bin->parent;
       if (_bin) {
         _bin = _bin->right;
@@ -298,10 +304,11 @@ bool tmg_conn_search::Impl::searchNext(int* id)
 void tmg_conn_search::Impl::sort()
 {
   _sorted = true;
-  int j;
-  for (j = 0; j < 32; j++)
-    if (_levV[j]->n > 1024)
+  for (int j = 0; j < 32; j++) {
+    if (_levV[j]->n > 1024) {
       sort1(_levV[j]);
+    }
+  }
 }
 
 static void tcs_lev_init(tcs_lev* bin)
@@ -321,14 +328,18 @@ static void tcs_lev_add(tcs_lev* bin, tcs_shape* s)
     bin->bounds = s->bounds;
   } else {
     bin->last_shape->next = s;
-    if (s->xMin() < bin->xMin())
+    if (s->xMin() < bin->xMin()) {
       bin->bounds.set_xlo(s->xMin());
-    if (s->yMin() < bin->yMin())
+    }
+    if (s->yMin() < bin->yMin()) {
       bin->bounds.set_ylo(s->yMin());
-    if (s->xMax() > bin->xMax())
+    }
+    if (s->xMax() > bin->xMax()) {
       bin->bounds.set_xhi(s->xMax());
-    if (s->yMax() > bin->yMax())
+    }
+    if (s->yMax() > bin->yMax()) {
       bin->bounds.set_yhi(s->yMax());
+    }
   }
   bin->last_shape = s;
   bin->n++;
@@ -347,16 +358,19 @@ static void tcs_lev_add_no_bb(tcs_lev* bin, tcs_shape* s)
 
 static void tcs_lev_wrap(tcs_lev* bin)
 {
-  if (bin->last_shape)
+  if (bin->last_shape) {
     bin->last_shape->next = nullptr;
+  }
 }
 
 void tmg_conn_search::Impl::sort1(tcs_lev* bin)
 {
-  if (_levAllN >= 32767)
+  if (_levAllN >= 32767) {
     return;
-  if (bin->n < 1024)
+  }
+  if (bin->n < 1024) {
     return;
+  }
   tcs_lev* left = _levAllV + _levAllN++;
   tcs_lev_init(left);
   left->parent = bin;
@@ -372,22 +386,24 @@ void tmg_conn_search::Impl::sort1(tcs_lev* bin)
   if (bin->bounds.dx() >= bin->bounds.dy()) {
     const int xmid = bin->bounds.xCenter();
     for (; s; s = s->next) {
-      if (s->xMax() < xmid)
+      if (s->xMax() < xmid) {
         tcs_lev_add(left, s);
-      else if (s->xMin() > xmid)
+      } else if (s->xMin() > xmid) {
         tcs_lev_add(right, s);
-      else
+      } else {
         tcs_lev_add_no_bb(bin, s);
+      }
     }
   } else {
     const int ymid = bin->bounds.yCenter();
     for (; s; s = s->next) {
-      if (s->yMax() < ymid)
+      if (s->yMax() < ymid) {
         tcs_lev_add(left, s);
-      else if (s->yMin() > ymid)
+      } else if (s->yMin() > ymid) {
         tcs_lev_add(right, s);
-      else
+      } else {
         tcs_lev_add_no_bb(bin, s);
+      }
     }
   }
   tcs_lev_wrap(bin);
@@ -407,17 +423,19 @@ void tmg_conn_search::Impl::merge(tcs_lev* bin, tcs_lev* left, tcs_lev* right)
     lastShape = left->last_shape;
   }
   if (bin->shape_list) {
-    if (shapeList)
+    if (shapeList) {
       lastShape->next = bin->shape_list;
-    else
+    } else {
       shapeList = bin->shape_list;
+    }
     lastShape = bin->last_shape;
   }
   if (right->shape_list) {
-    if (shapeList)
+    if (shapeList) {
       lastShape->next = right->shape_list;
-    else
+    } else {
       shapeList = right->shape_list;
+    }
     lastShape = right->last_shape;
   }
   bin->shape_list = shapeList;
