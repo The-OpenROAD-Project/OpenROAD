@@ -346,12 +346,12 @@ proc simulated_annealing_debug { args } {
   keys {-iters_between_paintings} \
   flags {-no_pause_mode}
 
-  set no_pause_mode [info exists flags(-no_pause_mode)]
-
   if [info exists keys(-iters_between_paintings)] {
     set iters $keys(-iters_between_paintings)
     sta::check_positive_int "-iters_between_paintings" $iters
-    ppl::simulated_annealing_debug $iters $no_pause_mode
+    ppl::simulated_annealing_debug $iters [info exists flags(-no_pause_mode)]
+  } else {
+    utl::error PPL 108 "The -iters_between_paintings argument is required when using debug."
   }
 }
 
