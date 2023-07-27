@@ -269,7 +269,7 @@ void ICeWall::makeFakeSite(const std::string& name, int width, int height)
 {
   auto* lib = db_->findLib(fake_library_name_);
   if (lib == nullptr) {
-    lib = odb::dbLib::create(db_, fake_library_name_);
+    lib = odb::dbLib::create(db_, fake_library_name_, db_->getTech());
   }
 
   auto* site = odb::dbSite::create(lib, name.c_str());
