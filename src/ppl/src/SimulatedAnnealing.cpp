@@ -189,12 +189,12 @@ AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
 void SimulatedAnnealing::annealingStateVisualization(
     const std::vector<IOPin>& assignment,
     const std::vector<std::vector<InstancePin>>& sinks,
-    const bool& isNoPauseMode)
+    const bool& is_no_pause_mode)
 {
   if (!debug_->isOn()) {
     return;
   }
-  getDebugRenderer()->setIsNoPauseMode(isNoPauseMode);
+  getDebugRenderer()->setIsNoPauseMode(is_no_pause_mode);
   getDebugRenderer()->setSinks(sinks);
   getDebugRenderer()->setPinAssignment(assignment);
   getDebugRenderer()->redrawAndPause();

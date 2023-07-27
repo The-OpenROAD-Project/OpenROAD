@@ -90,7 +90,7 @@ class SimulatedAnnealing
   void annealingStateVisualization(
       const std::vector<IOPin>& assignment,
       const std::vector<std::vector<InstancePin>>& sinks,
-      const bool& no_pause_mode);
+      const bool& is_no_pause_mode);
 
   AbstractIOPlacerRenderer* getDebugRenderer();
 
