@@ -81,7 +81,6 @@ class tmg_conn_search::Impl
   void setXmax(int xmax);
   void setYmin(int ymin);
   void setYmax(int ymax);
-  void resetSorted() { _sorted = false; }
   void sort();
 
  private:
@@ -475,11 +474,6 @@ tmg_conn_search::~tmg_conn_search() = default;
 void tmg_conn_search::clear()
 {
   impl_->clear();
-}
-
-void tmg_conn_search::resetSorted()
-{
-  impl_->resetSorted();
 }
 
 void tmg_conn_search::sort()

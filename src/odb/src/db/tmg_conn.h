@@ -250,7 +250,6 @@ class tmg_conn_search
   tmg_conn_search();
   ~tmg_conn_search();
   void clear();
-  void resetSorted();
   void sort();
   void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
   void searchStart(int lyr, int xlo, int ylo, int xhi, int yhi, int isVia);
