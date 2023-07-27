@@ -254,10 +254,6 @@ class tmg_conn_search
   void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
   void searchStart(int lyr, int xlo, int ylo, int xhi, int yhi, int isVia);
   bool searchNext(int* id);
-  void setXmin(int xmin);
-  void setXmax(int xmax);
-  void setYmin(int ymin);
-  void setYmax(int ymax);
 
  private:
   class Impl;

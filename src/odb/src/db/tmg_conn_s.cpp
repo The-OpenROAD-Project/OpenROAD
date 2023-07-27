@@ -77,10 +77,6 @@ class tmg_conn_search::Impl
   void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
   void searchStart(int lev, int xlo, int ylo, int xhi, int yhi, int isVia);
   bool searchNext(int* id);
-  void setXmin(int xmin);
-  void setXmax(int xmax);
-  void setYmin(int ymin);
-  void setYmax(int ymax);
   void sort();
 
  private:
@@ -206,25 +202,6 @@ void tmg_conn_search::Impl::addShape(int lev,
   slev->n++;
 }
 
-void tmg_conn_search::Impl::setXmin(int xmin)
-{
-  _pcur->xlo = xmin;
-}
-
-void tmg_conn_search::Impl::setXmax(int xmax)
-{
-  _pcur->xhi = xmax;
-}
-
-void tmg_conn_search::Impl::setYmin(int ymin)
-{
-  _pcur->ylo = ymin;
-}
-
-void tmg_conn_search::Impl::setYmax(int ymax)
-{
-  _pcur->yhi = ymax;
-}
 void tmg_conn_search::Impl::searchStart(int lev,
                                         int xlo,
                                         int ylo,
@@ -492,26 +469,6 @@ void tmg_conn_search::addShape(int lev,
   impl_->addShape(lev, xlo, ylo, xhi, yhi, isVia, id);
 }
 
-void tmg_conn_search::setXmin(int xmin)
-{
-  impl_->setXmin(xmin);
-}
-
-void tmg_conn_search::setXmax(int xmax)
-{
-  impl_->setXmax(xmax);
-}
-
-void tmg_conn_search::setYmin(int ymin)
-{
-  impl_->setYmin(ymin);
-}
-
-void tmg_conn_search::setYmax(int ymax)
-{
-  impl_->setYmax(ymax);
-}
-
 void tmg_conn_search::searchStart(int lev,
                                   int xlo,
                                   int ylo,
@@ -524,8 +481,7 @@ void tmg_conn_search::searchStart(int lev,
 
 bool tmg_conn_search::searchNext(int* id)
 {
-  bool ret = impl_->searchNext(id);
-  return ret;
+  return impl_->searchNext(id);
 }
 
 }  // namespace odb
