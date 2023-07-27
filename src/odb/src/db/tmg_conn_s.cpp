@@ -30,17 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <cstdio>
-#include <cstdlib>
-
 #include "db.h"
-#include "dbShape.h"
-#include "dbWireCodec.h"
 #include "tmg_conn.h"
 
 namespace odb {
-
-// very simple slow implementation for testing
 
 struct tcs_shape
 {
