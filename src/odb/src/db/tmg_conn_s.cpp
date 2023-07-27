@@ -316,38 +316,27 @@ static void tcs_lev_init(tcs_lev* bin)
   bin->n = 0;
 }
 
-static void tcs_lev_add(tcs_lev* bin, tcs_shape* s)
+static void tcs_lev_add(tcs_lev* bin, tcs_shape* shape)
 {
   if (bin->shape_list == nullptr) {
-    bin->shape_list = s;
-    bin->bounds = s->bounds;
+    bin->shape_list = shape;
+    bin->bounds = shape->bounds;
   } else {
-    bin->last_shape->next = s;
-    if (s->xMin() < bin->xMin()) {
-      bin->bounds.set_xlo(s->xMin());
-    }
-    if (s->yMin() < bin->yMin()) {
-      bin->bounds.set_ylo(s->yMin());
-    }
-    if (s->xMax() > bin->xMax()) {
-      bin->bounds.set_xhi(s->xMax());
-    }
-    if (s->yMax() > bin->yMax()) {
-      bin->bounds.set_yhi(s->yMax());
-    }
+    bin->last_shape->next = shape;
+    bin->bounds.merge(shape->bounds);
   }
-  bin->last_shape = s;
+  bin->last_shape = shape;
   bin->n++;
 }
 
-static void tcs_lev_add_no_bb(tcs_lev* bin, tcs_shape* s)
+static void tcs_lev_add_no_bb(tcs_lev* bin, tcs_shape* shape)
 {
   if (bin->shape_list == nullptr) {
-    bin->shape_list = s;
+    bin->shape_list = shape;
   } else {
-    bin->last_shape->next = s;
+    bin->last_shape->next = shape;
   }
-  bin->last_shape = s;
+  bin->last_shape = shape;
   bin->n++;
 }
 
