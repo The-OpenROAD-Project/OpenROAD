@@ -35,7 +35,7 @@
 
 %{
 #include "ppl/IOPlacer.h"
-#include "ppl/IOPlacerRenderer.h"
+#include "IOPlacerRenderer.h"
 #include "ord/OpenRoad.hh"
 
 
