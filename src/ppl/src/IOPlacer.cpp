@@ -63,10 +63,7 @@ IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr), annealing_(nullptr)
   top_grid_ = std::make_unique<TopLayerGrid>();
 }
 
-IOPlacer::~IOPlacer()
-{
-  delete annealing_;
-}
+IOPlacer::~IOPlacer() = default;
 
 void IOPlacer::init(odb::dbDatabase* db, Logger* logger)
 {
@@ -1966,7 +1963,7 @@ void IOPlacer::runAnnealing(bool random)
   initMirroredPins(true);
   initConstraints(true);
 
-  annealing_ = new ppl::SimulatedAnnealing(
+  annealing_ = make_unique<ppl::SimulatedAnnealing>(
       netlist_io_pins_.get(), core_.get(), slots_, constraints_, logger_, db_);
 
   if (isAnnealingDebugOn()) {
