@@ -1948,19 +1948,9 @@ void IOPlacer::setAnnealingDebugPaintInterval(const int iters_between_paintings)
   iters_between_paintings_ = iters_between_paintings;
 }
 
-int IOPlacer::getAnnealingDebugPaintInterval() const
-{
-  return iters_between_paintings_;
-}
-
 void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
 {
   no_pause_mode_ = no_pause_mode;
-}
-
-bool IOPlacer::isAnnealingDebugNoPauseMode() const
-{
-  return no_pause_mode_;
 }
 
 void IOPlacer::runAnnealing(bool random)
