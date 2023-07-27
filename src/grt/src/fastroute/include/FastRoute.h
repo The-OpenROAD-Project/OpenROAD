@@ -99,7 +99,7 @@ class FastRouteCore
   ~FastRouteCore();
 
   void clear();
-  void saveCongestion(const int& iter = -1);
+  void saveCongestion(const int iter = -1);
   void setGridsAndLayers(int x, int y, int nLayers);
   void addVCapacity(short verticalCapacity, int layer);
   void addHCapacity(short horizontalCapacity, int layer);
@@ -167,7 +167,7 @@ class FastRouteCore
   void setUpdateSlack(int u);
   void setMakeWireParasiticsBuilder(AbstractMakeWireParasitics* builder);
   void setOverflowIterations(int iterations);
-  void setDRCReportIterStep(int drc_report_iter_step);
+  void setCongestionReportIterStep(int congestion_report_iter_step);
   void setCongestionReportFile(const char* congestion_file_name);
   void setGridMax(int x_max, int y_max);
   void getCongestionNets(std::set<odb::dbNet*>& congestion_nets);
@@ -500,7 +500,7 @@ class FastRouteCore
   std::vector<int> max_v_overflow_;
   odb::dbDatabase* db_;
   int overflow_iterations_;
-  int drc_report_iter_step_;
+  int congestion_report_iter_step_;
   std::string congestion_file_name_;
   int layer_orientation_;
   int x_range_;

@@ -193,7 +193,7 @@ proc set_global_routing_random { args } {
 sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
                                   [-congestion_report_file file_name] \
-                                  [-drc_report_iter_step steps] \
+                                  [-congestion_report_iter_step steps] \
                                   [-grid_origin origin] \
                                   [-overflow_iterations iterations] \
                                   [-critical_nets_percentage percent] \
@@ -207,7 +207,7 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
 proc global_route { args } {
   sta::parse_key_args "global_route" args \
     keys {-guide_file -congestion_iterations -congestion_report_file \
-          -overflow_iterations -grid_origin -critical_nets_percentage -drc_report_iter_step
+          -overflow_iterations -grid_origin -critical_nets_percentage -congestion_report_iter_step
          } \
     flags {-allow_congestion -allow_overflow -verbose -start_incremental -end_incremental}
 
@@ -248,11 +248,11 @@ proc global_route { args } {
     grt::set_congestion_report_file $file_name
   }
 
-  if { [info exists keys(-drc_report_iter_step) ] } {
-    set steps $keys(-drc_report_iter_step)
-    grt::set_drc_report_iter_step $steps
+  if { [info exists keys(-congestion_report_iter_step) ] } {
+    set steps $keys(-congestion_report_iter_step)
+    grt::set_congestion_report_iter_step $steps
   } else {
-    grt::set_drc_report_iter_step 0
+    grt::set_congestion_report_iter_step 0
   }
 
   if { [info exists keys(-overflow_iterations)] } {

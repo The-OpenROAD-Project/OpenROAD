@@ -93,7 +93,7 @@ GlobalRouter::GlobalRouter()
       layer_for_guide_dimension_(3),
       gcells_offset_(2),
       overflow_iterations_(50),
-      drc_report_iter_step_(0),
+      congestion_report_iter_step_(0),
       allow_congestion_(false),
       macro_extension_(0),
       verbose_(false),
@@ -173,7 +173,7 @@ std::vector<Net*> GlobalRouter::initFastRoute(int min_routing_layer,
 
   fastroute_->setVerbose(verbose_);
   fastroute_->setOverflowIterations(overflow_iterations_);
-  fastroute_->setDRCReportIterStep(drc_report_iter_step_);
+  fastroute_->setCongestionReportIterStep(congestion_report_iter_step_);
 
   if (congestion_file_name_ != nullptr) {
     fastroute_->setCongestionReportFile(congestion_file_name_);
@@ -1360,9 +1360,9 @@ void GlobalRouter::setOverflowIterations(int iterations)
   overflow_iterations_ = iterations;
 }
 
-void GlobalRouter::setDRCReportIterStep(int drc_report_iter_step)
+void GlobalRouter::setCongestionReportIterStep(int congestion_report_iter_step)
 {
-  drc_report_iter_step_ = drc_report_iter_step;
+  congestion_report_iter_step_ = congestion_report_iter_step;
 }
 
 void GlobalRouter::setCongestionReportFile(const char* file_name)

@@ -54,7 +54,7 @@ FastRouteCore::FastRouteCore(odb::dbDatabase* db,
     : max_degree_(0),
       db_(db),
       overflow_iterations_(0),
-      drc_report_iter_step_(0),
+      congestion_report_iter_step_(0),
       layer_orientation_(0),
       x_range_(0),
       y_range_(0),
@@ -1170,7 +1170,7 @@ NetRouteMap FastRouteCore::run()
     last_total_overflow = total_overflow_;
 
     // generate DRC report each interval
-    if (drc_report_iter_step_ && i % drc_report_iter_step_ == 0) {
+    if (congestion_report_iter_step_ && i % congestion_report_iter_step_ == 0) {
       saveCongestion(i);
     }
   }  // end overflow iterations
@@ -1269,9 +1269,9 @@ void FastRouteCore::setOverflowIterations(int iterations)
   overflow_iterations_ = iterations;
 }
 
-void FastRouteCore::setDRCReportIterStep(int drc_report_iter_step)
+void FastRouteCore::setCongestionReportIterStep(int congestion_report_iter_step)
 {
-  drc_report_iter_step_ = drc_report_iter_step;
+  congestion_report_iter_step_ = congestion_report_iter_step;
 }
 
 void FastRouteCore::setCongestionReportFile(const char* congestion_file_name)
