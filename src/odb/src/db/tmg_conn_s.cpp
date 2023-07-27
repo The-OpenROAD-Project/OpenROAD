@@ -42,30 +42,30 @@ namespace odb {
 
 // very simple slow implementation for testing
 
-struct tcs_shape;
-struct tcs_lev;
-
 struct tcs_shape
 {
-  tcs_shape* next;
-  int lev;
-  int xlo, ylo, xhi, yhi;
-  int isVia;
-  int id;
+  tcs_shape* next = nullptr;
+  int lev = 0;
+  int xlo = 0;
+  int ylo = 0;
+  int xhi = 0;
+  int yhi = 0;
+  int isVia = 0;
+  int id = 0;
 };
 
 struct tcs_lev
 {
   tcs_shape* shape_list = nullptr;
   tcs_shape* last_shape = nullptr;
+  tcs_lev* left = nullptr;
+  tcs_lev* right = nullptr;
+  tcs_lev* parent = nullptr;
   int xlo = 0;
   int ylo = 0;
   int xhi = 0;
   int yhi = 0;
   int n = 0;
-  tcs_lev* left = nullptr;
-  tcs_lev* right = nullptr;
-  tcs_lev* parent = nullptr;
 };
 
 class tmg_conn_search::Impl
@@ -156,12 +156,12 @@ void tmg_conn_search::Impl::clear()
 }
 
 void tmg_conn_search::Impl::addShape(int lev,
-                                        int xlo,
-                                        int ylo,
-                                        int xhi,
-                                        int yhi,
-                                        int isVia,
-                                        int id)
+                                     int xlo,
+                                     int ylo,
+                                     int xhi,
+                                     int yhi,
+                                     int isVia,
+                                     int id)
 {
   if (_shN == 32768) {
     if (_shJ == _shJmax) {
@@ -227,11 +227,11 @@ void tmg_conn_search::Impl::setYmax(int ymax)
   _pcur->yhi = ymax;
 }
 void tmg_conn_search::Impl::searchStart(int lev,
-                                           int xlo,
-                                           int ylo,
-                                           int xhi,
-                                           int yhi,
-                                           int isVia)
+                                        int xlo,
+                                        int ylo,
+                                        int xhi,
+                                        int yhi,
+                                        int isVia)
 {
   if (!_sorted) {
     sort();
@@ -437,9 +437,7 @@ void tmg_conn_search::Impl::sort1(tcs_lev* bin)
   // merge(bin, left, right);
 }
 
-void tmg_conn_search::Impl::merge(tcs_lev* bin,
-                                     tcs_lev* left,
-                                     tcs_lev* right)
+void tmg_conn_search::Impl::merge(tcs_lev* bin, tcs_lev* left, tcs_lev* right)
 {
   tcs_shape* shapeList = nullptr;
   tcs_shape* lastShape = nullptr;
