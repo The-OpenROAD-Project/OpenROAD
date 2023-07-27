@@ -172,10 +172,10 @@ class IOPlacer
   void setAnnealingDebugOn();
   bool isAnnealingDebugOn() const;
 
-  void setAnnealingDebugPaintInterval(const int iters_between_paintings);
+  void setAnnealingDebugPaintInterval(int iters_between_paintings);
   int getAnnealingDebugPaintInterval() const;
 
-  void setAnnealingDebugNoPauseMode(const bool no_pause);
+  void setAnnealingDebugNoPauseMode(bool no_pause);
   bool isAnnealingDebugNoPauseMode() const;
 
  private:

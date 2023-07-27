@@ -84,8 +84,8 @@ class SimulatedAnnealing
 
   // debug functions
   void setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer);
-  void setDebugNoPauseMode(const bool no_pause_mode);
-  void setDebugPaintingInterval(const int iters_between_paintings);
+  void setDebugNoPauseMode(bool no_pause_mode);
+  void setDebugPaintingInterval(int iters_between_paintings);
 
   void annealingStateVisualization(
       const std::vector<IOPin>& assignment,
