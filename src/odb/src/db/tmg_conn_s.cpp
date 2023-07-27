@@ -77,9 +77,9 @@ class tmg_conn_search::Impl
   void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
   void searchStart(int lev, int xlo, int ylo, int xhi, int yhi, int isVia);
   bool searchNext(int* id);
-  void sort();
 
  private:
+  void sort();
   void sort1(tcs_lev*);
   void merge(tcs_lev* bin, tcs_lev* left, tcs_lev* right);
 
@@ -451,11 +451,6 @@ tmg_conn_search::~tmg_conn_search() = default;
 void tmg_conn_search::clear()
 {
   impl_->clear();
-}
-
-void tmg_conn_search::sort()
-{
-  impl_->sort();
 }
 
 void tmg_conn_search::addShape(int lev,
