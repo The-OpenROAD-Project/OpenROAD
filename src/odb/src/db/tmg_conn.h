@@ -156,7 +156,6 @@ class tmg_conn
   bool _preserveSWire;
   int _swireNetCnt;
   bool _connected;
-  bool _isTree;
   dbWireEncoder _encoder;
   dbWire* _newWire;
   dbTechNonDefaultRule* _net_rule;
@@ -177,8 +176,6 @@ class tmg_conn
   int _shortNmax;
   int _last_id;
   int _firstSegmentAfterVia;
-  int _vertSplitCnt;
-  int _horzSplitCnt;
   utl::Logger* logger_;
 
  public:
@@ -188,16 +185,9 @@ class tmg_conn
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
   bool isConnected() { return _connected; }
-  bool isTree() { return _isTree; }
   int ptDist(int fr, int to);
 
   void checkConnOrdered();
-  void resetSplitCnt()
-  {
-    _vertSplitCnt = 0;
-    _horzSplitCnt = 0;
-  }
-  int getSplitCnt() { return (_vertSplitCnt + _horzSplitCnt); }
 
  private:
   void splitTtop();

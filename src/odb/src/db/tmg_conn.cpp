@@ -439,8 +439,6 @@ void tmg_conn::splitBySj(int j,
           continue;
         if (sk->yMax() - sjyMax < _rcV[k]._width)
           continue;
-        _vertSplitCnt++;
-        ;
         if (_ptV[_rcV[k]._ifr]._y > _ptV[_rcV[k]._ito]._y) {
           _rcV[k]._shape.setYmin(_ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2);
           nymax = _ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2;
@@ -455,7 +453,6 @@ void tmg_conn::splitBySj(int j,
           continue;
         if (sk->xMax() - sjxMax < _rcV[k]._width)
           continue;
-        _horzSplitCnt++;
         if (_ptV[_rcV[k]._ifr]._x > _ptV[_rcV[k]._ito]._x) {
           _rcV[k]._shape.setXmin(_ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2);
           nxmax = _ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2;
