@@ -243,13 +243,8 @@ class tmg_conn
   void copyWireIdToVisitedShorts(int j);
 };
 
-class tmg_conn_search_internal;
-
 class tmg_conn_search
 {
- private:
-  tmg_conn_search_internal* _d;
-
  public:
   tmg_conn_search();
   ~tmg_conn_search();
@@ -264,6 +259,10 @@ class tmg_conn_search
   void setXmax(int xmax);
   void setYmin(int ymin);
   void setYmax(int ymax);
+
+ private:
+  class Impl;
+  Impl* _d;
 };
 
 }  // namespace odb

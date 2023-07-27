@@ -68,11 +68,11 @@ struct tcs_lev
   tcs_lev* parent = nullptr;
 };
 
-class tmg_conn_search_internal
+class tmg_conn_search::Impl
 {
  public:
-  tmg_conn_search_internal();
-  ~tmg_conn_search_internal();
+  Impl();
+  ~Impl();
   void clear();
   void printShape(dbNet* net, int lev, char* filenm);
   void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
@@ -104,7 +104,7 @@ class tmg_conn_search_internal
   bool _sorted;
 };
 
-tmg_conn_search_internal::tmg_conn_search_internal()
+tmg_conn_search::Impl::Impl()
 {
   _shN = 0;
   _shJ = 0;
@@ -125,7 +125,7 @@ tmg_conn_search_internal::tmg_conn_search_internal()
   clear();
 }
 
-tmg_conn_search_internal::~tmg_conn_search_internal()
+tmg_conn_search::Impl::~Impl()
 {
   int j;
   for (j = 0; j < _shJmax; j++)
@@ -134,7 +134,7 @@ tmg_conn_search_internal::~tmg_conn_search_internal()
   free(_shV);
 }
 
-void tmg_conn_search_internal::clear()
+void tmg_conn_search::Impl::clear()
 {
   _shN = 0;
   _shJ = 0;
@@ -156,7 +156,7 @@ void tmg_conn_search_internal::clear()
   _sorted = false;
 }
 
-void tmg_conn_search_internal::printShape(dbNet* net, int lev, char* filenm)
+void tmg_conn_search::Impl::printShape(dbNet* net, int lev, char* filenm)
 {
   FILE* fp;
   if (filenm && filenm[0] != '\0')
@@ -182,7 +182,7 @@ void tmg_conn_search_internal::printShape(dbNet* net, int lev, char* filenm)
     fclose(fp);
 }
 
-void tmg_conn_search_internal::addShape(int lev,
+void tmg_conn_search::Impl::addShape(int lev,
                                         int xlo,
                                         int ylo,
                                         int xhi,
@@ -234,26 +234,26 @@ void tmg_conn_search_internal::addShape(int lev,
   slev->n++;
 }
 
-void tmg_conn_search_internal::setXmin(int xmin)
+void tmg_conn_search::Impl::setXmin(int xmin)
 {
   _pcur->xlo = xmin;
 }
 
-void tmg_conn_search_internal::setXmax(int xmax)
+void tmg_conn_search::Impl::setXmax(int xmax)
 {
   _pcur->xhi = xmax;
 }
 
-void tmg_conn_search_internal::setYmin(int ymin)
+void tmg_conn_search::Impl::setYmin(int ymin)
 {
   _pcur->ylo = ymin;
 }
 
-void tmg_conn_search_internal::setYmax(int ymax)
+void tmg_conn_search::Impl::setYmax(int ymax)
 {
   _pcur->yhi = ymax;
 }
-void tmg_conn_search_internal::searchStart(int lev,
+void tmg_conn_search::Impl::searchStart(int lev,
                                            int xlo,
                                            int ylo,
                                            int xhi,
@@ -276,7 +276,7 @@ void tmg_conn_search_internal::searchStart(int lev,
 // _srcVia = 0 ==> wire
 //         = 1 ==> via
 //         = 2 ==> pin
-bool tmg_conn_search_internal::searchNext(int* id)
+bool tmg_conn_search::Impl::searchNext(int* id)
 {
   *id = -1;
 #if 1
@@ -358,7 +358,7 @@ bool tmg_conn_search_internal::searchNext(int* id)
   return false;
 }
 
-void tmg_conn_search_internal::sort()
+void tmg_conn_search::Impl::sort()
 {
   _sorted = true;
   int j;
@@ -417,7 +417,7 @@ static void tcs_lev_wrap(tcs_lev* bin)
     bin->last_shape->next = nullptr;
 }
 
-void tmg_conn_search_internal::sort1(tcs_lev* bin)
+void tmg_conn_search::Impl::sort1(tcs_lev* bin)
 {
   if (_levAllN >= 32767)
     return;
@@ -464,7 +464,7 @@ void tmg_conn_search_internal::sort1(tcs_lev* bin)
   // merge(bin, left, right);
 }
 
-void tmg_conn_search_internal::merge(tcs_lev* bin,
+void tmg_conn_search::Impl::merge(tcs_lev* bin,
                                      tcs_lev* left,
                                      tcs_lev* right)
 {
@@ -496,7 +496,7 @@ void tmg_conn_search_internal::merge(tcs_lev* bin,
 
 tmg_conn_search::tmg_conn_search()
 {
-  _d = new tmg_conn_search_internal();
+  _d = new Impl;
 }
 
 tmg_conn_search::~tmg_conn_search()
