@@ -52,7 +52,7 @@ class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
 
   void redrawAndPause() override;
 
-  void drawObjects(gui::Painter& /* painter */) override;
+  void drawObjects(gui::Painter& painter) override;
 
  private:
   std::vector<ppl::IOPin> pin_assignment_;
