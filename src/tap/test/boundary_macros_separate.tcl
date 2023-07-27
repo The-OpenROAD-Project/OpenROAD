@@ -9,8 +9,8 @@ set def_file [make_result_file boundary_macros_separate.def]
 cut_rows -endcap_master TAPCELL_X1
 
 place_endcaps \
-  -outer_corner TAPCELL_X1 \
-  -inner_corner TAPCELL_X1 \
+  -corner TAPCELL_X1 \
+  -edge_corner TAPCELL_X1 \
   -endcap TAPCELL_X1
 
 place_tapcells -master TAPCELL_X1 -distance "5"

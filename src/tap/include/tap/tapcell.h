@@ -82,22 +82,22 @@ struct Options
 struct BoundaryCellOptions
 {
   // External facing boundary cells
-  odb::dbMaster* outer_corner_top_left = nullptr;
-  odb::dbMaster* outer_corner_top_right = nullptr;
-  odb::dbMaster* outer_corner_bottom_left = nullptr;
-  odb::dbMaster* outer_corner_bottom_right = nullptr;
+  odb::dbMaster* left_top_corner = nullptr;
+  odb::dbMaster* right_top_corner = nullptr;
+  odb::dbMaster* left_bottom_corner = nullptr;
+  odb::dbMaster* right_bottom_corner = nullptr;
 
   // Internal facing boundary cells
-  odb::dbMaster* inner_corner_top_left = nullptr;
-  odb::dbMaster* inner_corner_top_right = nullptr;
-  odb::dbMaster* inner_corner_bottom_left = nullptr;
-  odb::dbMaster* inner_corner_bottom_right = nullptr;
+  odb::dbMaster* left_top_edge = nullptr;
+  odb::dbMaster* right_top_edge = nullptr;
+  odb::dbMaster* left_bottom_edge = nullptr;
+  odb::dbMaster* right_bottom_edge = nullptr;
 
   // endcaps
-  std::vector<odb::dbMaster*> top;
-  std::vector<odb::dbMaster*> bottom;
-  odb::dbMaster* left = nullptr;
-  odb::dbMaster* right = nullptr;
+  std::vector<odb::dbMaster*> top_edge;
+  std::vector<odb::dbMaster*> bottom_edge;
+  odb::dbMaster* left_edge = nullptr;
+  odb::dbMaster* right_edge = nullptr;
 
   std::string prefix = "PHY_";
 };

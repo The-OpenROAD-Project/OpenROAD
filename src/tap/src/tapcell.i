@@ -139,38 +139,38 @@
   }
 
   void insert_boundary_cells(
-    odb::dbMaster* outer_corner_top_left,
-    odb::dbMaster* outer_corner_top_right,
-    odb::dbMaster* outer_corner_bottom_left,
-    odb::dbMaster* outer_corner_bottom_right,
-    odb::dbMaster* inner_corner_top_left,
-    odb::dbMaster* inner_corner_top_right,
-    odb::dbMaster* inner_corner_bottom_left,
-    odb::dbMaster* inner_corner_bottom_right,
+    odb::dbMaster* left_top_corner,
+    odb::dbMaster* right_top_corner,
+    odb::dbMaster* left_bottom_corner,
+    odb::dbMaster* right_bottom_corner,
+    odb::dbMaster* left_top_edge,
+    odb::dbMaster* right_top_edge,
+    odb::dbMaster* left_bottom_edge,
+    odb::dbMaster* right_bottom_edge,
 
-    const std::vector<odb::dbMaster*>& top,
-    const std::vector<odb::dbMaster*>& bottom,
+    const std::vector<odb::dbMaster*>& top_edge,
+    const std::vector<odb::dbMaster*>& bottom_edge,
 
-    odb::dbMaster* left,
-    odb::dbMaster* right,
+    odb::dbMaster* left_edge,
+    odb::dbMaster* right_edge,
     const char* prefix)
   {
     BoundaryCellOptions options;
 
-    options.outer_corner_top_left = outer_corner_top_left;
-    options.outer_corner_top_right = outer_corner_top_right;
-    options.outer_corner_bottom_left = outer_corner_bottom_left;
-    options.outer_corner_bottom_right = outer_corner_bottom_right;
-    options.inner_corner_top_left = inner_corner_top_left;
-    options.inner_corner_top_right = inner_corner_top_right;
-    options.inner_corner_bottom_left = inner_corner_bottom_left;
-    options.inner_corner_bottom_right = inner_corner_bottom_right;
+    options.left_top_corner = left_top_corner;
+    options.right_top_corner = right_top_corner;
+    options.left_bottom_corner = left_bottom_corner;
+    options.right_bottom_corner = right_bottom_corner;
+    options.left_top_edge = left_top_edge;
+    options.right_top_edge = right_top_edge;
+    options.left_bottom_edge = left_bottom_edge;
+    options.right_bottom_edge = right_bottom_edge;
 
-    options.top = top;
-    options.bottom = bottom;
+    options.top_edge = top_edge;
+    options.bottom_edge = bottom_edge;
 
-    options.left = left;
-    options.right = right;
+    options.left_edge = left_edge;
+    options.right_edge = right_edge;
     options.prefix = prefix;
 
     getTapcell()->insertBoundaryCells(options);

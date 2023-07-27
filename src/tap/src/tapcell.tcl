@@ -253,14 +253,10 @@ proc tapcell_ripup { args } {
 
 sta::define_cmd_args "place_endcaps" {
   # Simplified
-  [-outer_corner master]\
-  [-inner_corner master]\
+  [-corner master]\
+  [-edge_corner master]\
 
   [-endcap masters] \
-
-  # Simplified with orient
-  [-outer_corner master]\
-  [-inner_corner master]\
 
   [-endcap_horizontal masters] \
   [-endcap_vertical master] \
@@ -268,35 +264,34 @@ sta::define_cmd_args "place_endcaps" {
   [-prefix prefix]
 
   # Full options
-  [-outer_corner_top_left master]\
-  [-outer_corner_top_right master]\
-  [-outer_corner_bottom_left master]\
-  [-outer_corner_bottom_right master]\
+  [-left_top_corner master]\
+  [-right_top_corner master]\
+  [-left_bottom_corner master]\
+  [-right_bottom_corner master]\
 
-  [-inner_corner_top_left master]\
-  [-inner_corner_top_right master]\
-  [-inner_corner_bottom_left master]\
-  [-inner_corner_bottom_right master]\
+  [-left_top_edge master]\
+  [-right_top_edge master]\
+  [-left_bottom_edge master]\
+  [-right_bottom_edge master]\
 
-  [-endcap_left master] \
-  [-endcap_right master] \
+  [-left_edge master] \
+  [-right_edge master] \
 
-  [-endcap_top masters] \
-  [-endcap_bottom masters]
+  [-top_edge masters] \
+  [-bottom_edge masters]
 }
 
 proc place_endcaps { args } {
   sta::parse_key_args "place_endcaps" args \
     keys {
-      -outer_corner -inner_corner
+      -corner -edge_corner
       -endcap
-      -outer_corner -inner_corner
       -endcap_horizontal -endcap_vertical
       -prefix
-      -outer_corner_top_left -outer_corner_top_right -outer_corner_bottom_left -outer_corner_bottom_right
-      -inner_corner_top_left -inner_corner_top_right -inner_corner_bottom_left -inner_corner_bottom_right
-      -endcap_left -endcap_right
-      -endcap_top -endcap_bottom} \
+      -left_top_corner -right_top_corner -left_bottom_corner -right_bottom_corner
+      -left_top_edge -right_top_edge -left_bottom_edge -right_bottom_edge
+      -left_edge -right_edge
+      -top_edge -bottom_edge} \
     flags {}
   
   sta::check_argc_eq0 "place_endcaps" $args
@@ -306,35 +301,35 @@ proc place_endcaps { args } {
     set prefix $keys(-prefix)
   }
 
-  set outer_corner_top_left [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_left -outer_corner -outer_corner]]
-  set outer_corner_top_right [tap::find_master [tap::parse_boundary_key keys -outer_corner_top_right -outer_corner -outer_corner]]
-  set outer_corner_bottom_left [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_left -outer_corner -outer_corner]]
-  set outer_corner_bottom_right [tap::find_master [tap::parse_boundary_key keys -outer_corner_bottom_right -outer_corner -outer_corner]]
+  set left_top_corner [tap::find_master [tap::parse_boundary_key keys -left_top_corner -corner -corner]]
+  set right_top_corner [tap::find_master [tap::parse_boundary_key keys -right_top_corner -corner -corner]]
+  set left_bottom_corner [tap::find_master [tap::parse_boundary_key keys -left_bottom_corner -corner -corner]]
+  set right_bottom_corner [tap::find_master [tap::parse_boundary_key keys -right_bottom_corner -corner -corner]]
 
-  set inner_corner_top_left [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_left -inner_corner -inner_corner]]
-  set inner_corner_top_right [tap::find_master [tap::parse_boundary_key keys -inner_corner_top_right -inner_corner -inner_corner]]
-  set inner_corner_bottom_left [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_left -inner_corner -inner_corner]]
-  set inner_corner_bottom_right [tap::find_master [tap::parse_boundary_key keys -inner_corner_bottom_right -inner_corner -inner_corner]]
+  set left_top_edge [tap::find_master [tap::parse_boundary_key keys -left_top_edge -edge_corner -edge_corner]]
+  set right_top_edge [tap::find_master [tap::parse_boundary_key keys -right_top_edge -edge_corner -edge_corner]]
+  set left_bottom_edge [tap::find_master [tap::parse_boundary_key keys -left_bottom_edge -edge_corner -edge_corner]]
+  set right_bottom_edge [tap::find_master [tap::parse_boundary_key keys -right_bottom_edge -edge_corner -edge_corner]]
 
-  set endcap_left [tap::find_master [tap::parse_boundary_key keys -endcap_left -endcap_vertical -endcap]]
-  set endcap_right [tap::find_master [tap::parse_boundary_key keys -endcap_right -endcap_vertical -endcap]]
+  set left_edge [tap::find_master [tap::parse_boundary_key keys -left_edge -endcap_vertical -endcap]]
+  set right_edge [tap::find_master [tap::parse_boundary_key keys -right_edge -endcap_vertical -endcap]]
 
-  set endcap_top [tap::find_masters [tap::parse_boundary_key keys -endcap_top -endcap_horizontal -endcap]]
-  set endcap_bottom [tap::find_masters [tap::parse_boundary_key keys -endcap_bottom -endcap_horizontal -endcap]]
+  set top_edge [tap::find_masters [tap::parse_boundary_key keys -top_edge -endcap_horizontal -endcap]]
+  set bottom_edge [tap::find_masters [tap::parse_boundary_key keys -bottom_edge -endcap_horizontal -endcap]]
 
   tap::insert_boundary_cells \
-    $outer_corner_top_left\
-    $outer_corner_top_right\
-    $outer_corner_bottom_left\
-    $outer_corner_bottom_right\
-    $inner_corner_top_left\
-    $inner_corner_top_right\
-    $inner_corner_bottom_left\
-    $inner_corner_bottom_right\
-    $endcap_top\
-    $endcap_bottom\
-    $endcap_left\
-    $endcap_right\
+    $left_top_corner\
+    $right_top_corner\
+    $left_bottom_corner\
+    $right_bottom_corner\
+    $left_top_edge\
+    $right_top_edge\
+    $left_bottom_edge\
+    $right_bottom_edge\
+    $top_edge\
+    $bottom_edge\
+    $left_edge\
+    $right_edge\
     $prefix
 }
 

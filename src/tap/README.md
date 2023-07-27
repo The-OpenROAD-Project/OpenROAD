@@ -81,48 +81,44 @@ cut_rows [-endcap_master endcap_master]
 
 ```
 place_endcaps
-  [-outer_corner master]
-  [-inner_corner master]
+  [-corner master]
+  [-edge_corner master]
   [-endcap masters]
-  [-outer_corner master]
-  [-inner_corner master]
   [-endcap_horizontal masters]
   [-endcap_vertical master]
   [-prefix prefix]
-  [-outer_corner_top_left master]
-  [-outer_corner_top_right master]
-  [-outer_corner_bottom_left master]
-  [-outer_corner_bottom_right master]
-  [-inner_corner_top_left master]
-  [-inner_corner_top_right master]
-  [-inner_corner_bottom_left master]
-  [-inner_corner_bottom_right master]
-  [-endcap_left master]
-  [-endcap_right master]
-  [-endcap_top masters]
-  [-endcap_bottom masters]
+  [-left_top_corner master]
+  [-right_top_corner master]
+  [-left_bottom_corner master]
+  [-right_bottom_corner master]
+  [-left_top_edge master]
+  [-right_top_edge master]
+  [-left_bottom_edge master]
+  [-right_bottom_edge master]
+  [-left_edge master]
+  [-right_edge master]
+  [-top_edge masters]
+  [-bottom_edge masters]
 ```
 
 - `-prefix`. Specifies the prefix to use for the boundary cells. Defaults to "PHY_"
-- `-outer_corner`. Specify the master for the corner cells on the outer corners.
-- `-inner_corner`. Specify the master for the corner cells on the inner corners.
+- `-corner`. Specify the master for the corner cells on the outer corners.
+- `-edge_corner`. Specify the master for the corner cells on the inner corners.
 - `-endcap`. Specify the master used as an endcap.
-- `-outer_corner`. Specify the master for the corner cells on the outer corners. (overrides `-outer_corner`)
-- `-inner_corner`. Specify the master for the corner cells on the inner corners. (overrides `-inner_corner`)
 - `-endcap_horizontal`. Specify the list of masters for the top and bottom row endcaps where the. (overrides `-endcap`)
 - `-endcap_vertical`. Specify the master for the left and right row endcaps where the. (overrides `-endcap`)
-- `-outer_corner_top_left`. Specify the master for the corner cells on the outer top left corner. (overrides `-outer_corner`)
-- `-outer_corner_top_right`. Specify the master for the corner cells on the outer top right corner. (overrides `-outer_corner`)
-- `-outer_corner_bottom_left`. Specify the master for the corner cells on the outer bottom left corner. (overrides `-outer_corner`)
-- `-outer_corner_bottom_right`. Specify the master for the corner cells on the outer bottom right corner. (overrides `-outer_corner`)
-- `-inner_corner_top_left`. Specify the master for the corner cells on the inner top left corner. (overrides `-inner_corner`)
-- `-inner_corner_top_right`. Specify the master for the corner cells on the inner top right corner. (overrides `-inner_corner`)
-- `-inner_corner_bottom_left`. Specify the master for the corner cells on the inner bottom left corner. (overrides `-inner_corner`)
-- `-inner_corner_bottom_right`. Specify the master for the corner cells on the inner bottom right corner. (overrides `-inner_corner`)
-- `-endcap_left`. Specify the master for the left row endcaps where the. (overrides `-endcap_vertical`)
-- `-endcap_right`. Specify the master for the right row endcaps where the. (overrides `-endcap_vertical`)
-- `-endcap_top`. Specify the list of masters for the top row endcaps where the. (overrides `-endcap_horizontal`)
-- `-endcap_bottom`. Specify the list of masters for the bottom row endcaps where the. (overrides `-endcap_horizontal`)
+- `-left_top_corner`. Specify the master for the corner cells on the outer top left corner. (overrides `-corner`)
+- `-right_top_corner`. Specify the master for the corner cells on the outer top right corner. (overrides `-corner`)
+- `-left_bottom_corner`. Specify the master for the corner cells on the outer bottom left corner. (overrides `-corner`)
+- `-right_bottom_corner`. Specify the master for the corner cells on the outer bottom right corner. (overrides `-corner`)
+- `-left_top_edge`. Specify the master for the corner cells on the inner top left corner. (overrides `-edge_corner`)
+- `-right_top_edge`. Specify the master for the corner cells on the inner top right corner. (overrides `-edge_corner`)
+- `-left_bottom_edge`. Specify the master for the corner cells on the inner bottom left corner. (overrides `-edge_corner`)
+- `-right_bottom_edge`. Specify the master for the corner cells on the inner bottom right corner. (overrides `-edge_corner`)
+- `-left_edge`. Specify the master for the left row endcaps where the. (overrides `-endcap_vertical`)
+- `-right_edge`. Specify the master for the right row endcaps where the. (overrides `-endcap_vertical`)
+- `-top_edge`. Specify the list of masters for the top row endcaps where the. (overrides `-endcap_horizontal`)
+- `-bottom_edge`. Specify the list of masters for the bottom row endcaps where the. (overrides `-endcap_horizontal`)
 
 ### Only adding tapcells cells
 
