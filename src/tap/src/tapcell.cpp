@@ -1227,23 +1227,23 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
   BoundaryCellOptions bopts = options;
 
   auto set_single_master
-      = [this](odb::dbMaster*& master, odb::dbMasterType type) {
+      = [this](odb::dbMaster*& master, const odb::dbMasterType& type) {
           if (master == nullptr) {
             master = getMasterByType(type);
           }
         };
 
-  auto set_multiple_master
-      = [this](std::vector<odb::dbMaster*>& masters, odb::dbMasterType type) {
-          if (masters.empty()) {
-            const auto found = findMasterByType(type);
-            masters.insert(masters.begin(), found.begin(), found.end());
-          }
-        };
-  auto set_corner_master = [this](odb::dbMaster*& master_ur,
-                                  odb::dbMaster*& master_ul,
-                                  odb::dbMaster*& master_lr,
-                                  odb::dbMaster*& master_ll) {
+  auto set_multiple_master = [this](std::vector<odb::dbMaster*>& masters,
+                                    const odb::dbMasterType& type) {
+    if (masters.empty()) {
+      const auto found = findMasterByType(type);
+      masters.insert(masters.begin(), found.begin(), found.end());
+    }
+  };
+  auto set_corner_master = [](odb::dbMaster*& master_ur,
+                              odb::dbMaster*& master_ul,
+                              odb::dbMaster*& master_lr,
+                              odb::dbMaster*& master_ll) {
     odb::dbMaster* pref_l = master_ul == nullptr ? master_ll : master_ul;
     odb::dbMaster* pref_r = master_ur == nullptr ? master_lr : master_ur;
     if (pref_r == nullptr) {
@@ -1312,7 +1312,7 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
   return bopts;
 }
 
-odb::dbMaster* Tapcell::getMasterByType(odb::dbMasterType type) const
+odb::dbMaster* Tapcell::getMasterByType(const odb::dbMasterType& type) const
 {
   const std::set<odb::dbMaster*> masters = findMasterByType(type);
 
@@ -1329,7 +1329,8 @@ odb::dbMaster* Tapcell::getMasterByType(odb::dbMasterType type) const
   return *masters.begin();
 }
 
-std::set<odb::dbMaster*> Tapcell::findMasterByType(odb::dbMasterType type) const
+std::set<odb::dbMaster*> Tapcell::findMasterByType(
+    const odb::dbMasterType& type) const
 {
   std::set<odb::dbMaster*> masters;
   for (auto* lib : db_->getLibs()) {
