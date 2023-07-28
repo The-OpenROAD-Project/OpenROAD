@@ -37,14 +37,32 @@
 
 namespace ppl {
 
-IOPlacerRenderer::IOPlacerRenderer() : isNoPauseMode_(false)
+IOPlacerRenderer::IOPlacerRenderer()
+     : painting_interval_(0),
+       current_iteration_(0),
+       is_no_pause_mode_(false)
 {
   gui::Gui::get()->registerRenderer(this);
 }
 
-void IOPlacerRenderer::setIsNoPauseMode(const bool& isNoPauseMode)
+bool IOPlacerRenderer::isDrawingNeeded() const
 {
-  isNoPauseMode_ = isNoPauseMode;
+  return (current_iteration_ == 0 || (current_iteration_ + 1) % painting_interval_ == 0);
+}
+
+void IOPlacerRenderer::setCurrentIteration(const int& current_iteration)
+{
+  current_iteration_ = current_iteration;
+}
+
+void IOPlacerRenderer::setPaintingInterval(const int& painting_interval)
+{
+  painting_interval_ = painting_interval;
+}
+
+void IOPlacerRenderer::setIsNoPauseMode(const bool& is_no_pause_mode)
+{
+  is_no_pause_mode_ = is_no_pause_mode;
 }
 
 void IOPlacerRenderer::setSinks(
@@ -62,27 +80,29 @@ void IOPlacerRenderer::drawObjects(gui::Painter& painter)
 {
   painter.setPen(gui::Painter::yellow, true);
 
-  for (int pin_idx = 0; pin_idx < sinks_.size(); pin_idx++) {
-    for (int sink_idx = 0; sink_idx < sinks_[pin_idx].size(); sink_idx++) {
-      odb::Point pin_position = pin_assignment_[pin_idx].getPosition();
-      odb::Point sink_position = sinks_[pin_idx][sink_idx].getPos();
-      painter.drawLine(pin_position, sink_position);
+  if(isDrawingNeeded()) {
+    for (int pin_idx = 0; pin_idx < sinks_.size(); pin_idx++) {
+      for (int sink_idx = 0; sink_idx < sinks_[pin_idx].size(); sink_idx++) {
+        odb::Point pin_position = pin_assignment_[pin_idx].getPosition();
+        odb::Point sink_position = sinks_[pin_idx][sink_idx].getPos();
+        painter.drawLine(pin_position, sink_position);
+      }
     }
   }
 }
 
 void IOPlacerRenderer::redrawAndPause()
 {
-  auto* gui = gui::Gui::get();
-  gui->redraw();
+  if(isDrawingNeeded()) {
+    auto* gui = gui::Gui::get();
+    gui->redraw();
 
-  int wait_time = 0;
+    int wait_time = is_no_pause_mode_ ? 1000 : 0; // in milliseconds
 
-  if (isNoPauseMode_) {
-    wait_time = 1000;  // in milliseconds
+    gui->pause(wait_time);  
   }
-
-  gui->pause(wait_time);
 }
+
+
 
 }  // namespace ppl

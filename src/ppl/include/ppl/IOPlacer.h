@@ -314,8 +314,6 @@ class IOPlacer
 
   // simulated annealing debugger variables
   bool annealing_debug_mode_ = false;
-  bool no_pause_mode_ = false;
-  int iters_between_paintings_ = 0;
 
   // db variables
   odb::dbDatabase* db_ = nullptr;

@@ -125,20 +125,18 @@ void SimulatedAnnealing::run(float init_temperature,
       temperature *= alpha_;
 
       if (debug_->isOn()) {
-        if (iter == 0 || (iter + 1) % debug_->painting_interval == 0) {
-          std::vector<ppl::IOPin> pins;
-          getAssignment(pins);
+        std::vector<ppl::IOPin> pins;
+        getAssignment(pins);
 
-          std::vector<std::vector<ppl::InstancePin>> all_sinks;
+        std::vector<std::vector<ppl::InstancePin>> all_sinks;
 
-          for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
-            std::vector<ppl::InstancePin> pin_sinks;
-            netlist_->getSinksOfIO(pin_idx, pin_sinks);
-            all_sinks.push_back(pin_sinks);
-          }
-
-          annealingStateVisualization(pins, all_sinks, debug_->is_no_pause_mode);
+        for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
+          std::vector<ppl::InstancePin> pin_sinks;
+          netlist_->getSinksOfIO(pin_idx, pin_sinks);
+          all_sinks.push_back(pin_sinks);
         }
+
+        annealingStateVisualization(pins, all_sinks, iter);
       }
     }
   }
@@ -164,17 +162,6 @@ void SimulatedAnnealing::setDebugOn(
   debug_->renderer = std::move(renderer);
 }
 
-void SimulatedAnnealing::setDebugPaintingInterval(
-    const int iters_between_paintings)
-{
-  debug_->painting_interval = iters_between_paintings;
-}
-
-void SimulatedAnnealing::setDebugNoPauseMode(const bool no_pause_mode)
-{
-  debug_->is_no_pause_mode = no_pause_mode;
-}
-
 AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
 {
   return debug_->renderer.get();
@@ -183,12 +170,12 @@ AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
 void SimulatedAnnealing::annealingStateVisualization(
     const std::vector<IOPin>& assignment,
     const std::vector<std::vector<InstancePin>>& sinks,
-    const bool& is_no_pause_mode)
+    const int& current_iteration)
 {
   if (!debug_->isOn()) {
     return;
   }
-  getDebugRenderer()->setIsNoPauseMode(is_no_pause_mode);
+  getDebugRenderer()->setCurrentIteration(current_iteration);
   getDebugRenderer()->setSinks(sinks);
   getDebugRenderer()->setPinAssignment(assignment);
   getDebugRenderer()->redrawAndPause();

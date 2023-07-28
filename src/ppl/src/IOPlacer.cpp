@@ -1942,12 +1942,12 @@ bool IOPlacer::isAnnealingDebugOn() const
 
 void IOPlacer::setAnnealingDebugPaintInterval(const int iters_between_paintings)
 {
-  iters_between_paintings_ = iters_between_paintings;
+  ioplacer_renderer_->setPaintingInterval(iters_between_paintings);
 }
 
 void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
 {
-  no_pause_mode_ = no_pause_mode;
+  ioplacer_renderer_->setIsNoPauseMode(no_pause_mode);
 }
 
 void IOPlacer::runAnnealing(bool random)
@@ -1968,8 +1968,6 @@ void IOPlacer::runAnnealing(bool random)
 
   if (isAnnealingDebugOn()) {
     annealing_->setDebugOn(std::move(ioplacer_renderer_));
-    annealing_->setDebugNoPauseMode(no_pause_mode_);
-    annealing_->setDebugPaintingInterval(iters_between_paintings_);
   }
 
   annealing_->run(
