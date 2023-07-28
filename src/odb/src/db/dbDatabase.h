@@ -69,7 +69,11 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 65;  // Current revision number
+const uint db_schema_minor = 66;  // Current revision number
+
+// Revision where _tech moved to _dbBlock & _dbLib from _dbDatabase.
+// Added name to dbTech.
+const uint db_schema_block_tech = 66;
 
 // Revision where _dbGCellGrid switch to using dbMatrix
 const uint db_schema_gcell_grid_matrix = 65;
@@ -114,7 +118,6 @@ class _dbDatabase : public _dbObject
   uint _schema_minor;
   uint _master_id;  // for a unique id across all libraries
   dbId<_dbChip> _chip;
-  dbId<_dbTech> _tech;
 
   // NON_PERSISTANT_MEMBERS
   dbTable<_dbTech>* _tech_tbl;

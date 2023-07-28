@@ -203,10 +203,12 @@ class OpenRoad
 
   void readLef(const char* filename,
                const char* lib_name,
+               const char* tech_name,
                bool make_tech,
                bool make_library);
 
   void readDef(const char* filename,
+               odb::dbTech* tech,
                bool continue_on_errors,
                bool floorplan_init,
                bool incremental,

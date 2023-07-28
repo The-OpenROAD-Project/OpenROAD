@@ -64,6 +64,7 @@ class _dbLib : public _dbObject
   char* _name;
   dbHashTable<_dbMaster> _master_hash;
   dbHashTable<_dbSite> _site_hash;
+  dbId<_dbTech> _tech;
 
   // NON-PERSISTANT-MEMBERS
   dbTable<_dbMaster>* _master_tbl;
@@ -81,6 +82,7 @@ class _dbLib : public _dbObject
   void differences(dbDiff& diff, const char* field, const _dbLib& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
   dbObjectTable* getObjectTable(dbObjectType type);
+  _dbTech* getTech();
 };
 
 dbOStream& operator<<(dbOStream& stream, const _dbLib& lib);
