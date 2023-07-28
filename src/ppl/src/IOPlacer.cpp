@@ -54,7 +54,7 @@ namespace ppl {
 
 using utl::PPL;
 
-IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr), annealing_(nullptr)
+IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr)
 {
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
@@ -1963,16 +1963,16 @@ void IOPlacer::runAnnealing(bool random)
   initMirroredPins(true);
   initConstraints(true);
 
-  annealing_ = make_unique<ppl::SimulatedAnnealing>(
+  ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), core_.get(), slots_, constraints_, logger_, db_);
 
   if (isAnnealingDebugOn()) {
-    annealing_->setDebugOn(std::move(ioplacer_renderer_));
+    annealing.setDebugOn(std::move(ioplacer_renderer_));
   }
 
-  annealing_->run(
+  annealing.run(
       init_temperature_, max_iterations_, perturb_per_iter_, alpha_, random);
-  annealing_->getAssignment(assignment_);
+  annealing.getAssignment(assignment_);
 
   for (auto& pin : assignment_) {
     updateOrientation(pin);

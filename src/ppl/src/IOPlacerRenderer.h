@@ -46,6 +46,7 @@ class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
 {
  public:
   IOPlacerRenderer();
+  ~IOPlacerRenderer();
   void setCurrentIteration(const int& current_iteration);
   void setPaintingInterval(const int& painting_interval);
   void setPinAssignment(const std::vector<IOPin>& assignment) override;

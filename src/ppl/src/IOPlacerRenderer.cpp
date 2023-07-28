@@ -45,6 +45,11 @@ IOPlacerRenderer::IOPlacerRenderer()
   gui::Gui::get()->registerRenderer(this);
 }
 
+IOPlacerRenderer::~IOPlacerRenderer()
+{
+  gui::Gui::get()->unregisterRenderer(this);
+}
+
 bool IOPlacerRenderer::isDrawingNeeded() const
 {
   return (current_iteration_ == 0 || (current_iteration_ + 1) % painting_interval_ == 0);
