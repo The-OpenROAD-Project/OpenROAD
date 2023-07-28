@@ -1318,15 +1318,18 @@ void RenderThread::drawPinMarkers(Painter& painter,
 
   const int available_space
       = gap - std::ceil(max_dim * viewer_->pixels_per_dbu_);
-  std::vector<int> text_lengths;
+
+  std::string text_longest;
 
   for (auto pin : block->getBTerms()) {
-    text_lengths.push_back(pin->getName().size());
+    if (pin->getName().length() > text_longest.length()) {
+      text_longest = pin->getName();
+    }
   }
 
-  auto longest_text_length
-      = std::max_element(text_lengths.begin(), text_lengths.end());
-  int font_size = gap / (*longest_text_length);  // in pixels
+  QString longest_text = QString::fromStdString(text_longest);
+
+  int font_size = gap / longest_text.length();  // pixels
 
   if (font_size <= 0) {
     font_size = 1;  // to avoid run-time warning when font_size is  <= 0
@@ -1334,36 +1337,21 @@ void RenderThread::drawPinMarkers(Painter& painter,
 
   marker_font.setPixelSize(font_size);
   const QFontMetrics font_metrics(marker_font);
-  std::vector<int> text_widths;
+  int longest_text_size = font_metrics.width(longest_text);
 
-  for (auto pin : block->getBTerms()) {
-    QString pin_text = QString::fromStdString(pin->getName());
-    text_widths.push_back(font_metrics.width(pin_text));
-  }
-
-  auto longest_text_size
-      = std::max_element(text_widths.begin(), text_widths.end());  // pixels
-
-  while (*longest_text_size < available_space) {
+  while (longest_text_size < available_space) {
+    if ((font_size - 1) > 20) {  // so texts don't overlap when zooming deeply
+      break;
+    }
     font_size++;
     marker_font.setPixelSize(font_size);
     QFontMetrics font_metrics(marker_font);
-    text_widths.clear();
-    for (auto pin : block->getBTerms()) {
-      QString pin_text = QString::fromStdString(pin->getName());
-      text_widths.push_back(font_metrics.width(pin_text));
-    }
-
-    longest_text_size
-        = std::max_element(text_widths.begin(), text_widths.end());
+    longest_text_size = font_metrics.width(longest_text);
   }
 
   int corrected_font_size = font_size - 1;
 
-  if (corrected_font_size > 20) {
-    corrected_font_size
-        = 20;  // so that texts won't overlap while zooming deeply
-  } else if (corrected_font_size <= 0) {
+  if (corrected_font_size <= 0) {
     corrected_font_size
         = 1;  // to avoid run-time warning when font_size is  <= 0
   }
