@@ -130,7 +130,6 @@ odb::dbWire* RepairAntennas::makeNetWire(
         int l1 = seg.init_layer;
         int l2 = seg.final_layer;
 
-
         int jct_id = -1;
         if (seg.isVia()) {
           int bottom_layer = std::min(l1, l2);
