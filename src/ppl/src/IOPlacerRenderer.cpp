@@ -38,9 +38,7 @@
 namespace ppl {
 
 IOPlacerRenderer::IOPlacerRenderer()
-     : painting_interval_(0),
-       current_iteration_(0),
-       is_no_pause_mode_(false)
+    : painting_interval_(0), current_iteration_(0), is_no_pause_mode_(false)
 {
   gui::Gui::get()->registerRenderer(this);
 }
@@ -52,7 +50,8 @@ IOPlacerRenderer::~IOPlacerRenderer()
 
 bool IOPlacerRenderer::isDrawingNeeded() const
 {
-  return (current_iteration_ == 0 || (current_iteration_ + 1) % painting_interval_ == 0);
+  return (current_iteration_ == 0
+          || (current_iteration_ + 1) % painting_interval_ == 0);
 }
 
 void IOPlacerRenderer::setCurrentIteration(const int& current_iteration)
@@ -85,7 +84,7 @@ void IOPlacerRenderer::drawObjects(gui::Painter& painter)
 {
   painter.setPen(gui::Painter::yellow, true);
 
-  if(isDrawingNeeded()) {
+  if (isDrawingNeeded()) {
     for (int pin_idx = 0; pin_idx < sinks_.size(); pin_idx++) {
       for (int sink_idx = 0; sink_idx < sinks_[pin_idx].size(); sink_idx++) {
         odb::Point pin_position = pin_assignment_[pin_idx].getPosition();
@@ -98,16 +97,14 @@ void IOPlacerRenderer::drawObjects(gui::Painter& painter)
 
 void IOPlacerRenderer::redrawAndPause()
 {
-  if(isDrawingNeeded()) {
+  if (isDrawingNeeded()) {
     auto* gui = gui::Gui::get();
     gui->redraw();
 
-    int wait_time = is_no_pause_mode_ ? 1000 : 0; // in milliseconds
+    int wait_time = is_no_pause_mode_ ? 1000 : 0;  // in milliseconds
 
-    gui->pause(wait_time);  
+    gui->pause(wait_time);
   }
 }
-
-
 
 }  // namespace ppl
