@@ -12,7 +12,42 @@ semiconductor digital design. The OpenROAD flow delivers an
 Autonomous, No-Human-In-Loop (NHIL) flow, 24 hour turnaround from
 RTL-GDSII for rapid design exploration and physical design implementation.
 
-![rtl2gds.svg](./docs/images/rtl2gds.svg)
+```mermaid
+%%{
+  init: {
+    'theme': 'neutral',
+    'themeVariables': {
+      'textColor': '#000000',
+      'noteTextColor' : '#000000',
+      'fontSize': '20px'
+    }
+  }
+}%%
+
+flowchart TB
+    A[Verilog\n+ libraries\n + constraints] --> FLOW
+    style A fill:#74c2b5,stroke:#000000,stroke-width:4px
+    subgraph FLOW
+    style FLOW fill:#FFFFFF00,stroke-width:4px
+
+    direction TB
+        B[Synthesis]
+        B --> C[Floorplan] 
+        C --> D[Placement]
+        D --> E[Clock Tree Synthesis]
+        E --> F[Routing]
+        F --> G[Finishing]
+        style B fill:#f8cecc,stroke:#000000,stroke-width:4px
+        style C fill:#fff2cc,stroke:#000000,stroke-width:4px
+        style D fill:#cce5ff,stroke:#000000,stroke-width:4px
+        style E fill:#67ab9f,stroke:#000000,stroke-width:4px
+        style F fill:#fa6800,stroke:#000000,stroke-width:4px
+        style G fill:#ff6666,stroke:#000000,stroke-width:4px
+    end
+
+    FLOW --> H[GDSII\n Final Layout]
+    style H fill:#ff0000,stroke:#000000,stroke-width:4px
+```
 
 Documentation is also available [here](https://openroad.readthedocs.io/en/latest/main/README.html).
 
@@ -65,7 +100,40 @@ flow stages through Tcl commands and Python APIs.
 
 Figure below shows the main stages of the OpenROAD-flow-scripts:
 
-![ORFS_Flow.webp](./docs/images/ORFS_Flow.svg)
+```mermaid
+%%{init: { 'logLevel': 'debug', 'theme': 'dark'
+  } }%%
+timeline
+  title RTL-GDSII Using OpenROAD-flow-scripts
+  Synthesis
+    : Inputs  [RTL, SDC, .lib, .lef]
+    : Logic Synthesis  (Yosys)
+    : Output files  [Netlist, SDC]
+  Floorplan
+    : Floorplan Initialization
+    : IO placement  (random)
+    : Timing-driven mixed-size placement
+    : Macro placement
+    : Tapcell and welltie insertion
+    : PDN generation
+  Placement
+    : Global placement without placed IOs
+    : IO placement  (optimized)
+    : Global placement with placed IOs
+    : Resizing and buffering
+    : Detailed placement
+  CTS : Clock Tree Synthesis
+    : Timing optimization
+    : Filler cell insertion
+  Routing
+    : Global Routing
+    : Detailed Routing
+  Finishing
+    : Metal Fill insertion
+    : Signoff timing report
+    : Generate GDSII  (KLayout)
+    : DRC/LVS check (KLayout)
+```
 
 Here are the main steps for a physical design implementation
 using OpenROAD;
@@ -238,6 +306,15 @@ enters an interactive Tcl command interpreter.
 
 A list of the available tools/modules included in the OpenROAD app
 and their descriptions are available [here](docs/contrib/Logger.md#openroad-tool-list).
+
+## Git Quickstart
+OpenROAD uses Git for version control and contributions. 
+Get familiarised with a quickstart tutorial to contribution [here](docs/contrib/GitGuide.md).
+
+
+## Understanding Warning and Error Messages
+Seeing OpenROAD warnings or errors you do not understand? We have compiled a table of all messages
+and you may potentially find your answer [here](https://openroad.readthedocs.io/en/latest/user/MessagesFinal.html).
 
 ## License
 

@@ -573,8 +573,10 @@ void IOPlacer::initIOLists()
     idx++;
   }
 
+  int group_idx = 0;
   for (const auto& [pins, order] : pin_groups_) {
-    netlist_io_pins_->createIOGroup(pins, order);
+    netlist_io_pins_->createIOGroup(pins, order, group_idx);
+    group_idx++;
   }
 }
 
@@ -1568,32 +1570,24 @@ std::vector<int> IOPlacer::findPinsForConstraint(const Constraint& constraint,
 
 void IOPlacer::initMirroredPins(bool annealing)
 {
-  if (annealing && !mirrored_pins_.empty()) {
-    logger_->error(PPL,
-                   102,
-                   "Mirrored pins not supported during pin placement with "
-                   "Simulated Annealing");
-  }
   for (IOPin& io_pin : netlist_io_pins_->getIOPins()) {
     if (mirrored_pins_.find(io_pin.getBTerm()) != mirrored_pins_.end()) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(io_pin.getBTerm());
       io_pin.setMirrored();
       odb::dbBTerm* mirrored_term = mirrored_pins_[io_pin.getBTerm()];
       int mirrored_pin_idx = netlist_io_pins_->getIoPinIdx(mirrored_term);
       IOPin& mirrored_pin = netlist_io_pins_->getIoPin(mirrored_pin_idx);
       mirrored_pin.setMirrored();
+      io_pin.setMirrorPinIdx(mirrored_pin_idx);
+      mirrored_pin.setMirrorPinIdx(pin_idx);
     }
   }
 }
 
 void IOPlacer::initConstraints(bool annealing)
 {
-  if (annealing && !constraints_.empty()) {
-    logger_->error(PPL,
-                   103,
-                   "Pin constraints not supported during pin placement with "
-                   "Simulated Annealing");
-  }
   std::reverse(constraints_.begin(), constraints_.end());
+  int constraint_idx = 0;
   for (Constraint& constraint : constraints_) {
     getPinsFromDirectionConstraint(constraint);
     constraint.sections = createSectionsPerConstraint(constraint);
@@ -1608,8 +1602,20 @@ void IOPlacer::initConstraints(bool annealing)
       logger_->error(
           PPL, 76, "Constraint does not have available slots for its pins.");
     }
+
+    for (odb::dbBTerm* term : constraint.pin_list) {
+      int pin_idx = netlist_io_pins_->getIoPinIdx(term);
+      IOPin& io_pin = netlist_io_pins_->getIoPin(pin_idx);
+      io_pin.setConstraintIdx(constraint_idx);
+      constraint.pin_indices.push_back(pin_idx);
+    }
+    constraint_idx++;
   }
-  sortConstraints();
+
+  if (!annealing) {
+    sortConstraints();
+  }
+
   checkPinsInMultipleConstraints();
   checkPinsInMultipleGroups();
 }
@@ -1896,6 +1902,7 @@ void IOPlacer::run(bool random_mode)
     reportHPWL();
   }
 
+  checkPinPlacement();
   commitIOPlacementToDB(assignment_);
   clear();
 }
@@ -1911,7 +1918,7 @@ void IOPlacer::setAnnealingConfig(float temperature,
   alpha_ = alpha;
 }
 
-void IOPlacer::runAnnealing()
+void IOPlacer::runAnnealing(bool random)
 {
   initParms();
 
@@ -1925,8 +1932,9 @@ void IOPlacer::runAnnealing()
   initConstraints(true);
 
   ppl::SimulatedAnnealing annealing(
-      netlist_io_pins_.get(), slots_, logger_, db_);
-  annealing.run(init_temperature_, max_iterations_, perturb_per_iter_, alpha_);
+      netlist_io_pins_.get(), core_.get(), slots_, constraints_, logger_, db_);
+  annealing.run(
+      init_temperature_, max_iterations_, perturb_per_iter_, alpha_, random);
   annealing.getAssignment(assignment_);
 
   for (auto& pin : assignment_) {
@@ -1936,8 +1944,43 @@ void IOPlacer::runAnnealing()
 
   reportHPWL();
 
+  checkPinPlacement();
   commitIOPlacementToDB(assignment_);
   clear();
+}
+
+void IOPlacer::checkPinPlacement()
+{
+  bool invalid = false;
+  std::map<int, std::vector<odb::Point>> layer_positions_map;
+
+  for (const IOPin& pin : netlist_io_pins_->getIOPins()) {
+    int layer = pin.getLayer();
+
+    if (layer_positions_map[layer].empty()) {
+      layer_positions_map[layer].push_back(pin.getPosition());
+    } else {
+      odb::dbTechLayer* tech_layer = getTech()->findRoutingLayer(layer);
+      for (odb::Point& pos : layer_positions_map[layer]) {
+        if (pos == pin.getPosition()) {
+          logger_->warn(
+              PPL,
+              106,
+              "At least 2 pins in position ({}, {}), layer {}, port {}.",
+              pos.x(),
+              pos.y(),
+              tech_layer->getName(),
+              pin.getName().c_str());
+          invalid = true;
+        }
+      }
+      layer_positions_map[layer].push_back(pin.getPosition());
+    }
+  }
+
+  if (invalid) {
+    logger_->error(PPL, 107, "Invalid pin placement.");
+  }
 }
 
 void IOPlacer::reportHPWL()
@@ -2463,11 +2506,13 @@ void IOPlacer::initNetlist()
     netlist_->addIONet(io_pin, inst_pins);
   }
 
+  int group_idx = 0;
   for (const auto& [pins, order] : pin_groups_) {
-    int group_created = netlist_->createIOGroup(pins, order);
+    int group_created = netlist_->createIOGroup(pins, order, group_idx);
     if (group_created != pins.size()) {
       logger_->error(PPL, 94, "Cannot create group of size {}.", pins.size());
     }
+    group_idx++;
   }
 }
 

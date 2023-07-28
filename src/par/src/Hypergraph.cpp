@@ -203,6 +203,7 @@ std::vector<std::vector<float>> Hypergraph::GetVertexBalance(
 }
 
 // Get the vertex balance constraint (upper bound)
+/*
 std::vector<std::vector<float>> Hypergraph::GetUpperVertexBalance(
     int num_parts,
     float ub_factor) const
@@ -212,8 +213,27 @@ std::vector<std::vector<float>> Hypergraph::GetUpperVertexBalance(
       vertex_balance, ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts));
   return std::vector<std::vector<float>>(num_parts, vertex_balance);
 }
+*/
+std::vector<std::vector<float>> Hypergraph::GetUpperVertexBalance(
+    int num_parts,
+    float ub_factor,
+    std::vector<float> base_balance) const
+{
+  std::vector<float> vertex_balance = GetTotalVertexWeights();
+  for (auto& value : base_balance) {
+    value += ub_factor * 0.01;
+  }
+  std::vector<std::vector<float>> upper_block_balance(num_parts,
+                                                      vertex_balance);
+  for (int i = 0; i < num_parts; i++) {
+    upper_block_balance[i]
+        = MultiplyFactor(upper_block_balance[i], base_balance[i]);
+  }
+  return upper_block_balance;
+}
 
 // Get the vertex balance constraint (lower bound)
+/*
 std::vector<std::vector<float>> Hypergraph::GetLowerVertexBalance(
     int num_parts,
     float ub_factor) const
@@ -223,6 +243,28 @@ std::vector<std::vector<float>> Hypergraph::GetLowerVertexBalance(
       -1.0 * ub_factor * 0.01 + 1.0 / static_cast<float>(num_parts), 0.0);
   vertex_balance = MultiplyFactor(vertex_balance, ub_factor);
   return std::vector<std::vector<float>>(num_parts, vertex_balance);
+}
+*/
+
+std::vector<std::vector<float>> Hypergraph::GetLowerVertexBalance(
+    int num_parts,
+    float ub_factor,
+    std::vector<float> base_balance) const
+{
+  std::vector<float> vertex_balance = GetTotalVertexWeights();
+  for (auto& value : base_balance) {
+    value -= ub_factor * 0.01;
+    if (value <= 0.0) {
+      value = 0.0;
+    }
+  }
+  std::vector<std::vector<float>> lower_block_balance(num_parts,
+                                                      vertex_balance);
+  for (int i = 0; i < num_parts; i++) {
+    lower_block_balance[i]
+        = MultiplyFactor(lower_block_balance[i], base_balance[i]);
+  }
+  return lower_block_balance;
 }
 
 void Hypergraph::ResetVertexCAttr()

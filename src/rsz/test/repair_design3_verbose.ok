@@ -1,0 +1,29 @@
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd.tlef
+[INFO ODB-0223]     Created 13 technology layers
+[INFO ODB-0224]     Created 25 technology vias
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd.tlef
+[INFO ODB-0222] Reading LEF file: sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0225]     Created 437 library cells
+[INFO ODB-0226] Finished LEF file:  sky130hd/sky130hd_std_cell.lef
+[INFO ODB-0128] Design: hi_fanout
+[INFO ODB-0130]     Created 1 pins.
+[INFO ODB-0131]     Created 1001 components and 5004 component-terminals.
+[INFO ODB-0132]     Created 2 special nets and 0 connections.
+[INFO ODB-0133]     Created 2 nets and 1001 connections.
+[INFO RSZ-0058] Using max wire length 2393um.
+Iteration | Resized | Buffers | Nets repaired | Remaining
+---------------------------------------------------------
+        0 |       0 |       0 |             0 |      1002
+      100 |      98 |       0 |             0 |       902
+      200 |     198 |       0 |             0 |       802
+      300 |     298 |       0 |             0 |       702
+      400 |     398 |       0 |             0 |       602
+      500 |     498 |       0 |             0 |       502
+      600 |     598 |       0 |             0 |       402
+      700 |     698 |       0 |             0 |       302
+      800 |     798 |       0 |             0 |       202
+      900 |     898 |       0 |             0 |       102
+     1000 |     998 |       0 |             0 |         2
+    final |    1000 |       0 |             0 |         0
+---------------------------------------------------------
+[INFO RSZ-0039] Resized 1000 instances.

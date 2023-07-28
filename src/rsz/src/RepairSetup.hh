@@ -34,6 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <unordered_set>
 #include "db_sta/dbNetwork.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/FuncExpr.hh"
@@ -84,6 +85,7 @@ public:
                    // reduce tns (0.0-1.0).
                    double repair_tns_end_percent,
                    int max_passes,
+                   bool verbose,
                    bool skip_pin_swap,
                    bool enable_gate_cloning);
   // For testing.
@@ -144,6 +146,8 @@ private:
   Slack slackPenalized(BufferedNetPtr bnet,
                        int index);
 
+  void printProgress(int iteration, bool force, bool end) const;
+
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
@@ -159,7 +163,7 @@ private:
   int swap_pin_count_;
   // Map to block pins from being swapped more than twice for the
   // same instance. 
-  std::unordered_map<const sta::Instance *, int> swap_pin_inst_map_;
+  std::unordered_set<const sta::Instance *> swap_pin_inst_set_;
   
   const MinMax *min_;
   const MinMax *max_;
@@ -170,6 +174,7 @@ private:
   static constexpr int rebuffer_max_fanout_ = 20;
   static constexpr int split_load_min_fanout_ = 8;
   static constexpr double rebuffer_buffer_penalty_ = .01;
+  static constexpr int print_interval_ = 10;
 };
 
 } // namespace

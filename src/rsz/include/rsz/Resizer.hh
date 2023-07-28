@@ -118,6 +118,9 @@ using sta::ParasiticNode;
 using sta::PinSeq;
 using sta::Slack;
 
+typedef std::tuple<LibertyPort *, LibertyPort *> LibertyPortTuple;
+typedef std::tuple<Instance *, Instance *>  InstanceTuple;
+
 class AbstractSteinerRenderer;
 class SteinerTree;
 typedef int SteinerPt;
@@ -125,6 +128,7 @@ typedef int SteinerPt;
 class BufferedNet;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
 
+class RecoverPower;
 class RepairDesign;
 class RepairSetup;
 class RepairHold;
@@ -157,11 +161,6 @@ public:
                   double res,
                   double cap);
   void layerRC(dbTechLayer *layer,
-               const Corner *corner,
-               // Return values.
-               double &res,
-               double &cap) const;
-  void layerRC(int routing_level,
                const Corner *corner,
                // Return values.
                double &res,
@@ -228,6 +227,7 @@ public:
   void repairSetup(double setup_margin,
                    double repair_tns_end_percent,
                    int max_passes,
+                   bool verbose,
                    bool skip_pin_swap,
                    bool skip_gate_cloning);
   // For testing.
@@ -243,7 +243,8 @@ public:
                   bool allow_setup_violations,
                   // Max buffer count as percent of design instance count.
                   float max_buffer_percent,
-                  int max_passes);
+                  int max_passes,
+                  bool verbose);
   void repairHold(const Pin *end_pin,
                   double setup_margin,
                   double hold_margin,
@@ -253,7 +254,9 @@ public:
   int holdBufferCount() const;
 
   ////////////////////////////////////////////////////////////////
+  void recoverPower();
 
+  ////////////////////////////////////////////////////////////////
   // Area of the design in meter^2.
   double designArea();
   // Increment design_area
@@ -275,7 +278,8 @@ public:
   // Repair long wires, max fanout violations.
   void repairDesign(double max_wire_length, // max_wire_length zero for none (meters)
                     double slew_margin, // 0.0-1.0
-                    double cap_margin); // 0.0-1.0
+                    double cap_margin, // 0.0-1.0
+                    bool verbose);
   int repairDesignBufferCount() const;
   // for debugging
   void repairNet(Net *net,
@@ -554,6 +558,7 @@ protected:
   void journalRestore(int &resize_count,
                       int &inserted_buffer_count,
                       int &cloned_gate_count);
+  void journalUndoGateCloning(int &cloned_gate_count);
   void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
@@ -570,6 +575,7 @@ protected:
   Logger *logger() const { return logger_; }
 
   // Components
+  RecoverPower *recover_power_;
   RepairDesign *repair_design_;
   RepairSetup *repair_setup_;
   RepairHold *repair_hold_;
@@ -637,8 +643,9 @@ protected:
   Map<Instance*, LibertyCell*> resized_inst_map_;
   InstanceSeq inserted_buffers_;
   InstanceSet inserted_buffer_set_;
-  Map<Instance *, std::tuple<LibertyPort *, LibertyPort *>> swapped_pins_;
-  Map<Instance *, Instance *> cloned_gates_;
+  Map<Instance *, LibertyPortTuple> swapped_pins_;
+  std::stack<InstanceTuple> cloned_gates_;
+  std::unordered_set<Instance *> cloned_inst_set_;
 
   dpl::Opendp* opendp_;
 
@@ -649,6 +656,7 @@ protected:
 
   friend class BufferedNet;
   friend class GateCloner;
+  friend class RecoverPower;
   friend class RepairDesign;
   friend class RepairSetup;
   friend class RepairHold;

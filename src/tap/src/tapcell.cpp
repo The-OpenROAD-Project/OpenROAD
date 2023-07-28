@@ -126,7 +126,7 @@ void Tapcell::run(const Options& options)
     insertEndcaps(rows, options.endcap_master, masters);
   }
   if (options.addBoundaryCells()) {
-    vector<string> tap_nw_masters;
+    vector<odb::dbMaster*> tap_nw_masters;
     tap_nw_masters.push_back(options.tap_nwintie_master);
     tap_nw_masters.push_back(options.tap_nwin2_master);
     tap_nw_masters.push_back(options.tap_nwin3_master);
@@ -134,7 +134,7 @@ void Tapcell::run(const Options& options)
     tap_nw_masters.push_back(options.tap_nwout2_master);
     tap_nw_masters.push_back(options.tap_nwout3_master);
 
-    vector<string> tap_macro_masters;
+    vector<odb::dbMaster*> tap_macro_masters;
     tap_macro_masters.push_back(options.incnrcap_nwin_master);
     tap_macro_masters.push_back(options.tap_nwin2_master);
     tap_macro_masters.push_back(options.tap_nwin3_master);
@@ -144,14 +144,10 @@ void Tapcell::run(const Options& options)
     tap_macro_masters.push_back(options.tap_nwout3_master);
     tap_macro_masters.push_back(options.tap_nwouttie_master);
 
-    insertAtTopBottom(rows,
-                      tap_nw_masters,
-                      db_->findMaster(options.cnrcap_nwin_master.c_str()),
-                      endcap_prefix_);
-    insertAroundMacros(rows,
-                       tap_macro_masters,
-                       db_->findMaster(options.cnrcap_nwin_master.c_str()),
-                       endcap_prefix_);
+    insertAtTopBottom(
+        rows, tap_nw_masters, options.cnrcap_nwin_master, endcap_prefix_);
+    insertAroundMacros(
+        rows, tap_macro_masters, options.cnrcap_nwin_master, endcap_prefix_);
   }
 
   if (options.tapcell_master != nullptr) {
@@ -164,32 +160,15 @@ int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
                            odb::dbMaster* endcap_master,
                            const CornercapMasters& masters)
 {
-  int start_phy_idx = phy_idx_;
+  const int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
   odb::dbMaster* cnrcap_nwin_master = nullptr;
   odb::dbMaster* cnrcap_nwout_master = nullptr;
 
-  bool do_corners;
-  if (!masters.nwin_master.empty() && !masters.nwout_master.empty()) {
-    if (masters.nwin_master.empty() || masters.nwout_master.empty()) {
-      do_corners = false;
-    } else {
-      do_corners = true;
-
-      cnrcap_nwin_master = db_->findMaster(masters.nwin_master.c_str());
-      if (cnrcap_nwin_master == nullptr) {
-        logger_->error(
-            utl::TAP, 12, "Master {} not found.", masters.nwin_master);
-      }
-      cnrcap_nwout_master = db_->findMaster(masters.nwout_master.c_str());
-
-      if (cnrcap_nwout_master == nullptr) {
-        logger_->error(
-            utl::TAP, 13, "Master {} not found.", masters.nwout_master);
-      }
-    }
-  } else {
-    do_corners = false;
+  bool do_corners = masters.nwin_master && masters.nwout_master;
+  if (do_corners) {
+    cnrcap_nwin_master = masters.nwin_master;
+    cnrcap_nwout_master = masters.nwout_master;
   }
 
   const int bottom_row = 0;
@@ -197,7 +176,7 @@ int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
 
   for (int cur_row = bottom_row; cur_row <= top_row; cur_row++) {
     for (odb::dbRow* subrow : rows[cur_row]) {
-      if (!(checkSymmetry(endcap_master, subrow->getOrient()))) {
+      if (!checkSymmetry(endcap_master, subrow->getOrient())) {
         continue;
       }
       odb::Rect row_bb = subrow->getBBox();
@@ -277,7 +256,7 @@ int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
     }
   }
 
-  int endcap_count = phy_idx_ - start_phy_idx;
+  const int endcap_count = phy_idx_ - start_phy_idx;
   logger_->info(utl::TAP, 4, "Inserted {} endcaps.", endcap_count);
   return endcap_count;
 }
@@ -285,7 +264,7 @@ int Tapcell::insertEndcaps(const vector<vector<odb::dbRow*>>& rows,
 bool Tapcell::isXInRow(const int x, const vector<odb::dbRow*>& subrow)
 {
   for (odb::dbRow* row : subrow) {
-    odb::Rect row_bb = row->getBBox();
+    const odb::Rect row_bb = row->getBBox();
     if (x >= row_bb.xMin() && x <= row_bb.xMax()) {
       return true;
     }
@@ -310,7 +289,7 @@ LocationType Tapcell::getLocationType(const int x,
   return NoMacro;
 }
 
-odb::dbMaster* Tapcell::pickCornerMaster(LocationType top_bottom,
+odb::dbMaster* Tapcell::pickCornerMaster(const LocationType top_bottom,
                                          const odb::dbOrientType& ori,
                                          odb::dbMaster* cnrcap_nwin_master,
                                          odb::dbMaster* cnrcap_nwout_master,
@@ -333,9 +312,9 @@ odb::dbMaster* Tapcell::pickCornerMaster(LocationType top_bottom,
 
 int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
                             odb::dbMaster* tapcell_master,
-                            int dist)
+                            const int dist)
 {
-  int start_phy_idx = phy_idx_;
+  const int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
 
   RowFills row_fills = findRowFills();
@@ -360,13 +339,11 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
 
   for (int row_idx = 0; row_idx < rows.size(); row_idx++) {
     vector<odb::dbRow*> subrows = rows[row_idx];
-    odb::Rect rowbb = subrows[0]->getBBox();
+    const odb::Rect rowbb = subrows[0]->getBBox();
     const int row_y = rowbb.yMin();
     vector<vector<int>> row_fill_check;
     if (row_fills.find(row_y) != row_fills.end()) {
       row_fill_check = row_fills[row_y];
-    } else {
-      row_fill_check.clear();
     }
 
     bool gaps_above_below = false;
@@ -398,7 +375,7 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
         pitch = dist2;
       }
 
-      odb::Rect row_bb = row->getBBox();
+      const odb::Rect row_bb = row->getBBox();
       const int llx = row_bb.xMin();
       const int urx = row_bb.xMax();
 
@@ -416,14 +393,14 @@ int Tapcell::insertTapcells(const vector<vector<odb::dbRow*>>& rows,
       }
     }
   }
-  int tapcell_count = phy_idx_ - start_phy_idx;
+  const int tapcell_count = phy_idx_ - start_phy_idx;
   logger_->info(utl::TAP, 5, "Inserted {} tapcells.", tapcell_count);
   return tapcell_count;
 }
 
-bool Tapcell::checkIfFilled(int x,
-                            int width,
-                            odb::dbOrientType& orient,
+bool Tapcell::checkIfFilled(const int x,
+                            const int width,
+                            const odb::dbOrientType& orient,
                             const vector<vector<int>>& row_insts)
 {
   int x_start;
@@ -438,8 +415,8 @@ bool Tapcell::checkIfFilled(int x,
 
   for (const auto& placement : row_insts) {
     if (x_end > placement[0] && x_start < placement[1]) {
-      int left_x = placement[0] - width;
-      int right_x = placement[1];
+      const int left_x = placement[0] - width;
+      const int right_x = placement[1];
       return left_x + right_x > 0;
     }
   }
@@ -447,62 +424,20 @@ bool Tapcell::checkIfFilled(int x,
 }
 
 int Tapcell::insertAtTopBottom(const vector<vector<odb::dbRow*>>& rows,
-                               const vector<string>& masters,
+                               const vector<odb::dbMaster*>& masters,
                                odb::dbMaster* endcap_master,
                                const string& prefix)
 {
-  int start_phy_idx = phy_idx_;
+  const int start_phy_idx = phy_idx_;
 
   odb::dbBlock* block = db_->getChip()->getBlock();
-  string tap_nwintie_master_name;
-  string tap_nwin2_master_name;
-  string tap_nwin3_master_name;
-  string tap_nwouttie_master_name;
-  string tap_nwout2_master_name;
-  string tap_nwout3_master_name;
 
-  if (masters.size() == 6) {
-    tap_nwintie_master_name = masters[0];
-    tap_nwin2_master_name = masters[1];
-    tap_nwin3_master_name = masters[2];
-    tap_nwouttie_master_name = masters[3];
-    tap_nwout2_master_name = masters[4];
-    tap_nwout3_master_name = masters[5];
-  }
-
-  odb::dbMaster* tap_nwintie_master
-      = db_->findMaster(tap_nwintie_master_name.c_str());
-  if (tap_nwintie_master == nullptr) {
-    logger_->error(
-        utl::TAP, 18, "Master {} not found.", tap_nwintie_master_name);
-  }
-  odb::dbMaster* tap_nwin2_master
-      = db_->findMaster(tap_nwin2_master_name.c_str());
-  if (tap_nwin2_master == nullptr) {
-    logger_->error(utl::TAP, 19, "Master {} not found.", tap_nwin2_master_name);
-  }
-  odb::dbMaster* tap_nwin3_master
-      = db_->findMaster(tap_nwin3_master_name.c_str());
-  if (tap_nwin3_master == nullptr) {
-    logger_->error(utl::TAP, 20, "Master {} not found.", tap_nwin3_master_name);
-  }
-  odb::dbMaster* tap_nwouttie_master
-      = db_->findMaster(tap_nwouttie_master_name.c_str());
-  if (tap_nwouttie_master == nullptr) {
-    logger_->error(utl::TAP, 21, "Master $tap_nwouttie_master_name not found.");
-  }
-  odb::dbMaster* tap_nwout2_master
-      = db_->findMaster(tap_nwout2_master_name.c_str());
-  if (tap_nwout2_master == nullptr) {
-    logger_->error(
-        utl::TAP, 22, "Master {} not found.", tap_nwout2_master_name);
-  }
-  odb::dbMaster* tap_nwout3_master
-      = db_->findMaster(tap_nwout3_master_name.c_str());
-  if (tap_nwout3_master == nullptr) {
-    logger_->error(
-        utl::TAP, 23, "Master {} not found.", tap_nwout3_master_name);
-  }
+  odb::dbMaster* tap_nwintie_master = masters[0];
+  odb::dbMaster* tap_nwin2_master = masters[1];
+  odb::dbMaster* tap_nwin3_master = masters[2];
+  odb::dbMaster* tap_nwouttie_master = masters[3];
+  odb::dbMaster* tap_nwout2_master = masters[4];
+  odb::dbMaster* tap_nwout3_master = masters[5];
 
   vector<vector<odb::dbRow*>> new_rows;
   // Grab bottom
@@ -548,19 +483,19 @@ int Tapcell::insertAtTopBottom(const vector<vector<odb::dbRow*>>& rows,
                               prefix);
     }
   }
-  int topbottom_cnt = phy_idx_ - start_phy_idx;
+  const int topbottom_cnt = phy_idx_ - start_phy_idx;
   logger_->info(utl::TAP, 6, "Inserted {} top/bottom cells.", topbottom_cnt);
   return topbottom_cnt;
 }
 
 void Tapcell::insertAtTopBottomHelper(
     odb::dbBlock* block,
-    int top_bottom,
-    bool is_macro,
-    odb::dbOrientType ori,
-    int x_start,
-    int x_end,
-    int lly,
+    const int top_bottom,
+    const bool is_macro,
+    const odb::dbOrientType& ori,
+    const int x_start,
+    const int x_end,
+    const int lly,
     odb::dbMaster* tap_nwintie_master,
     odb::dbMaster* tap_nwin2_master,
     odb::dbMaster* tap_nwin3_master,
@@ -646,81 +581,23 @@ void Tapcell::insertAtTopBottomHelper(
 }
 
 int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
-                                const vector<string>& masters,
+                                const vector<odb::dbMaster*>& masters,
                                 odb::dbMaster* corner_master,
                                 const string& prefix)
 {
-  int start_phy_idx = phy_idx_;
+  const int start_phy_idx = phy_idx_;
   odb::dbBlock* block = db_->getChip()->getBlock();
-  string incnrcap_nwin_master_name;
-  string tap_nwin2_master_name;
-  string tap_nwin3_master_name;
-  string tap_nwintie_master_name;
-  string incnrcap_nwout_master_name;
-  string tap_nwout2_master_name;
-  string tap_nwout3_master_name;
-  string tap_nwouttie_master_name;
 
-  if (masters.size() == 8) {
-    incnrcap_nwin_master_name.assign(masters[0]);
-    tap_nwin2_master_name.assign(masters[1]);
-    tap_nwin3_master_name.assign(masters[2]);
-    tap_nwintie_master_name.assign(masters[3]);
-    incnrcap_nwout_master_name.assign(masters[4]);
-    tap_nwout2_master_name.assign(masters[5]);
-    tap_nwout3_master_name.assign(masters[6]);
-    tap_nwouttie_master_name.assign(masters[7]);
-  }
+  odb::dbMaster* tap_nwintie_master = masters[3];
+  odb::dbMaster* tap_nwin2_master = masters[1];
+  odb::dbMaster* tap_nwin3_master = masters[2];
+  odb::dbMaster* tap_nwouttie_master = masters[7];
+  odb::dbMaster* tap_nwout2_master = masters[5];
+  odb::dbMaster* tap_nwout3_master = masters[6];
+  odb::dbMaster* incnrcap_nwin_master = masters[0];
+  odb::dbMaster* incnrcap_nwout_master = masters[4];
 
-  odb::dbMaster* tap_nwintie_master
-      = db_->findMaster(tap_nwintie_master_name.c_str());
-  if (tap_nwintie_master == nullptr) {
-    logger_->error(
-        utl::TAP, 24, "Master {} not found.", tap_nwintie_master_name);
-  }
-  odb::dbMaster* tap_nwin2_master
-      = db_->findMaster(tap_nwin2_master_name.c_str());
-  if (tap_nwin2_master == nullptr) {
-    logger_->error(utl::TAP, 25, "Master {} not found.", tap_nwin2_master_name);
-  }
-  odb::dbMaster* tap_nwin3_master
-      = db_->findMaster(tap_nwin3_master_name.c_str());
-  if (tap_nwin3_master == nullptr) {
-    logger_->error(utl::TAP, 26, "Master {} not found.", tap_nwin3_master_name);
-  }
-  odb::dbMaster* tap_nwouttie_master
-      = db_->findMaster(tap_nwouttie_master_name.c_str());
-  if (tap_nwouttie_master == nullptr) {
-    logger_->error(
-        utl::TAP, 27, "Master {} not found.", tap_nwouttie_master_name);
-  }
-  odb::dbMaster* tap_nwout2_master
-      = db_->findMaster(tap_nwout2_master_name.c_str());
-  if (tap_nwout2_master == nullptr) {
-    logger_->error(
-        utl::TAP, 28, "Master {} not found.", tap_nwout2_master_name);
-  }
-  odb::dbMaster* tap_nwout3_master
-      = db_->findMaster(tap_nwout3_master_name.c_str());
-  if (tap_nwout3_master == nullptr) {
-    logger_->error(
-        utl::TAP, 29, "Master {} not found.", tap_nwout3_master_name);
-  }
-  odb::dbMaster* incnrcap_nwin_master
-      = db_->findMaster(incnrcap_nwin_master_name.c_str());
-  if (incnrcap_nwin_master == nullptr) {
-    logger_->error(
-        utl::TAP, 30, "Master {} not found.", incnrcap_nwin_master_name);
-  }
-  odb::dbMaster* incnrcap_nwout_master
-      = db_->findMaster(incnrcap_nwout_master_name.c_str());
-  if (incnrcap_nwout_master == nullptr) {
-    logger_->error(
-        utl::TAP, 31, "Master {} not found.", incnrcap_nwout_master_name);
-  }
-
-  std::map<std::pair<int, int>, vector<int>> macro_outlines
-      = getMacroOutlines(rows);
+  const auto macro_outlines = getMacroOutlines(rows);
 
   for (auto& [x_start_end, outline] : macro_outlines) {
     for (int i = 0; i < outline.size(); i += 2) {
@@ -740,7 +617,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
       if (top_row < total_rows - 1) {
         odb::dbRow* top_row_inst = rows[top_row].front();
         odb::dbOrientType top_row_ori = top_row_inst->getOrient();
-        odb::Rect row_bb = top_row_inst->getBBox();
+        const odb::Rect row_bb = top_row_inst->getBBox();
         const int top_row_y = row_bb.yMin();
 
         vector<vector<int>> row_fill_check;
@@ -757,8 +634,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
           row_start = row_start + corner_cell_width;
         }
         if (row_end == -1) {
-          odb::Rect rowbb_ = rows[top_row].back()->getBBox();
-          row_end = rowbb_.xMax();
+          row_end = rows[top_row].back()->getBBox().xMax();
           row_end = row_end - corner_cell_width;
         }
         // Do top row
@@ -829,8 +705,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
           row_start = row_start + corner_cell_width;
         }
         if (row_end == -1) {
-          odb::Rect rowbb3 = rows[bot_row].back()->getBBox();
-          row_end = rowbb3.xMax();
+          row_end = rows[bot_row].back()->getBBox().xMax();
           row_end = row_end - corner_cell_width;
         }
 
@@ -883,7 +758,7 @@ int Tapcell::insertAroundMacros(const vector<vector<odb::dbRow*>>& rows,
       }
     }
   }
-  int blkgs_cnt = phy_idx_ - start_phy_idx;
+  const int blkgs_cnt = phy_idx_ - start_phy_idx;
   logger_->info(utl::TAP, 7, "Inserted {} cells near blockages.", blkgs_cnt);
   return blkgs_cnt;
 }
@@ -894,12 +769,10 @@ const std::pair<int, int> Tapcell::getMinMaxX(
   int min_x = std::numeric_limits<int>::min();
   int max_x = std::numeric_limits<int>::max();
   for (const vector<odb::dbRow*>& subrow : rows) {
-    int new_min_x;
-    int new_max_x;
     for (odb::dbRow* row : subrow) {
       odb::Rect row_bb = row->getBBox();
-      new_min_x = row_bb.xMin();
-      new_max_x = row_bb.xMax();
+      const int new_min_x = row_bb.xMin();
+      const int new_max_x = row_bb.xMax();
       if (min_x == std::numeric_limits<int>::min()) {
         min_x = new_min_x;
       } else {
@@ -918,12 +791,11 @@ const std::pair<int, int> Tapcell::getMinMaxX(
 
 Tapcell::RowFills Tapcell::findRowFills()
 {
-  int y;
   std::map<int, vector<vector<int>>> row_fills;
-  for (FilledSites& placement : filled_sites_) {
-    y = placement.yMin;
-    int x_start = placement.xMin;
-    int x_end = placement.xMax;
+  for (const FilledSites& placement : filled_sites_) {
+    const int y = placement.yMin;
+    const int x_start = placement.xMin;
+    const int x_end = placement.xMax;
     vector<int> x_start_end;
     x_start_end.push_back(x_start);
     x_start_end.push_back(x_end);
@@ -1034,14 +906,14 @@ vector<odb::dbBox*> Tapcell::findBlockages()
 void Tapcell::makeInstance(odb::dbBlock* block,
                            odb::dbMaster* master,
                            const odb::dbOrientType& orientation,
-                           int x,
-                           int y,
+                           const int x,
+                           const int y,
                            const string& prefix)
 {
   if (x < 0 || y < 0) {
     return;
   }
-  string name = prefix + std::to_string(phy_idx_);
+  const string name = prefix + std::to_string(phy_idx_);
   odb::dbInst* inst = odb::dbInst::create(block,
                                           master,
                                           name.c_str(),
@@ -1078,7 +950,7 @@ vector<vector<odb::dbRow*>> Tapcell::organizeRows()
     if (row->getSite()->getClass() == odb::dbSiteClass::PAD) {
       continue;
     }
-    odb::Rect rowBB = row->getBBox();
+    const odb::Rect rowBB = row->getBBox();
     rows_dict[rowBB.yMin()].push_back(row);
   }
 
@@ -1124,8 +996,8 @@ int Tapcell::removeCells(const std::string& prefix)
 
 bool Tapcell::checkSymmetry(odb::dbMaster* master, const odb::dbOrientType& ori)
 {
-  bool symmetry_x = master->getSymmetryX();
-  bool symmetry_y = master->getSymmetryY();
+  const bool symmetry_x = master->getSymmetryX();
+  const bool symmetry_y = master->getSymmetryY();
 
   switch (ori) {
     case odb::dbOrientType::R0:

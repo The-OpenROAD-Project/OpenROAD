@@ -136,6 +136,7 @@ struct Constraint
   Interval interval;
   odb::Rect box;
   std::vector<Section> sections;
+  std::vector<int> pin_indices;
   float pins_per_slots;
   int first_slot = 0;
   int last_slot = 0;

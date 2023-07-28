@@ -63,6 +63,7 @@ target_link_libraries(psm
     odb
     OpenSTA
     dbSta
+    rsz_lib
     Eigen3::Eigen
     gui
 )
