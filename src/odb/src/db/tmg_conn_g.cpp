@@ -43,7 +43,6 @@ namespace odb {
 
 using utl::ODB;
 
-struct tcg_edge;
 struct tcg_edge
 {
   tcg_edge* next;
@@ -82,62 +81,8 @@ class tmg_conn_graph
  public:
   tmg_conn_graph();
   void init(int ptN, int shortN);
-  tcg_edge* newEdge(tmg_conn* conn, int fr, int to)
-  {
-    tcg_edge* e = _eV + _eN++;
-    e->k = -1;
-    e->skip = false;
-    int ndx = conn->_ptV[to]._x;
-    int ndy = conn->_ptV[to]._y;
-    tcg_edge* ppe = nullptr;
-    tcg_edge* pe = _ptV[fr].edges;
-    while (pe && !pe->s && ndx > conn->_ptV[pe->to]._x) {
-      ppe = pe;
-      pe = pe->next;
-    }
-    while (pe && !pe->s && ndx == conn->_ptV[pe->to]._x
-           && ndy > conn->_ptV[pe->to]._y) {
-      ppe = pe;
-      pe = pe->next;
-    }
-    e->next = pe;
-    if (ppe)
-      ppe->next = e;
-    else
-      _ptV[fr].edges = e;
-    return e;
-  }
-  tcg_edge* newShortEdge(tmg_conn* conn, int fr, int to)
-  {
-    tcg_edge* e = _eV + _eN++;
-    e->k = -1;
-    e->skip = false;
-    int ned = conn->ptDist(fr, to);
-    int ndx = conn->_ptV[to]._x;
-    int ndy = conn->_ptV[to]._y;
-    tcg_edge* ppe = nullptr;
-    tcg_edge* pe = _ptV[fr].edges;
-    while (pe && ned > conn->ptDist(pe->fr, pe->to)) {
-      ppe = pe;
-      pe = pe->next;
-    }
-    while (pe && ned == conn->ptDist(pe->fr, pe->to)
-           && ndx > conn->_ptV[pe->to]._x) {
-      ppe = pe;
-      pe = pe->next;
-    }
-    while (pe && ned == conn->ptDist(pe->fr, pe->to)
-           && ndx == conn->_ptV[pe->to]._x && ndy > conn->_ptV[pe->to]._y) {
-      ppe = pe;
-      pe = pe->next;
-    }
-    e->next = pe;
-    if (ppe)
-      ppe->next = e;
-    else
-      _ptV[fr].edges = e;
-    return e;
-  }
+  tcg_edge* newEdge(tmg_conn* conn, int fr, int to);
+  tcg_edge* newShortEdge(tmg_conn* conn, int fr, int to);
   tcg_edge* getNextEdge(bool ok_to_descend);
   tcg_edge* getFirstEdge(int jstart);
   tcg_edge* getFirstNonShortEdge(int& jstart);
@@ -186,6 +131,64 @@ void tmg_conn_graph::init(int ptN, int shortN)
     _ptV[j].edges = nullptr;
   _ptN = ptN;
 }
+
+  tcg_edge* tmg_conn_graph::newEdge(tmg_conn* conn, int fr, int to)
+  {
+    tcg_edge* e = _eV + _eN++;
+    e->k = -1;
+    e->skip = false;
+    int ndx = conn->_ptV[to]._x;
+    int ndy = conn->_ptV[to]._y;
+    tcg_edge* ppe = nullptr;
+    tcg_edge* pe = _ptV[fr].edges;
+    while (pe && !pe->s && ndx > conn->_ptV[pe->to]._x) {
+      ppe = pe;
+      pe = pe->next;
+    }
+    while (pe && !pe->s && ndx == conn->_ptV[pe->to]._x
+           && ndy > conn->_ptV[pe->to]._y) {
+      ppe = pe;
+      pe = pe->next;
+    }
+    e->next = pe;
+    if (ppe)
+      ppe->next = e;
+    else
+      _ptV[fr].edges = e;
+    return e;
+  }
+
+  tcg_edge* tmg_conn_graph::newShortEdge(tmg_conn* conn, int fr, int to)
+  {
+    tcg_edge* e = _eV + _eN++;
+    e->k = -1;
+    e->skip = false;
+    int ned = conn->ptDist(fr, to);
+    int ndx = conn->_ptV[to]._x;
+    int ndy = conn->_ptV[to]._y;
+    tcg_edge* ppe = nullptr;
+    tcg_edge* pe = _ptV[fr].edges;
+    while (pe && ned > conn->ptDist(pe->fr, pe->to)) {
+      ppe = pe;
+      pe = pe->next;
+    }
+    while (pe && ned == conn->ptDist(pe->fr, pe->to)
+           && ndx > conn->_ptV[pe->to]._x) {
+      ppe = pe;
+      pe = pe->next;
+    }
+    while (pe && ned == conn->ptDist(pe->fr, pe->to)
+           && ndx == conn->_ptV[pe->to]._x && ndy > conn->_ptV[pe->to]._y) {
+      ppe = pe;
+      pe = pe->next;
+    }
+    e->next = pe;
+    if (ppe)
+      ppe->next = e;
+    else
+      _ptV[fr].edges = e;
+    return e;
+  }
 
 void tmg_conn_graph::clearVisited()
 {
