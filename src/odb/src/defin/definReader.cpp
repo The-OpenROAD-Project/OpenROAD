@@ -333,19 +333,23 @@ int definReader::designCallback(defrCallbackType_e /* unused: type */,
             "Block with name \"{}\" already exists, renaming too \"{}\"",
             block_name.c_str(),
             new_name.c_str());
-        reader->_block = dbBlock::create(
-            reader->parent_, new_name.c_str(), reader->hier_delimeter_);
+        reader->_block = dbBlock::create(reader->parent_,
+                                         new_name.c_str(),
+                                         reader->_tech,
+                                         reader->hier_delimeter_);
       }
     } else
-      reader->_block = dbBlock::create(
-          reader->parent_, block_name.c_str(), reader->hier_delimeter_);
+      reader->_block = dbBlock::create(reader->parent_,
+                                       block_name.c_str(),
+                                       reader->_tech,
+                                       reader->hier_delimeter_);
   } else {
     dbChip* chip = reader->_db->getChip();
     if (reader->_mode != defin::DEFAULT)
       reader->_block = chip->getBlock();
     else
-      reader->_block
-          = dbBlock::create(chip, block_name.c_str(), reader->hier_delimeter_);
+      reader->_block = dbBlock::create(
+          chip, block_name.c_str(), reader->_tech, reader->hier_delimeter_);
   }
   if (reader->_mode == defin::DEFAULT)
     reader->_block->setBusDelimeters(reader->left_bus_delimeter_,
@@ -1622,7 +1626,9 @@ void definReader::setLibs(std::vector<dbLib*>& libs)
   _rowR->setLibs(libs);
 }
 
-dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
+dbChip* definReader::createChip(std::vector<dbLib*>& libs,
+                                const char* file,
+                                odb::dbTech* tech)
 {
   init();
   setLibs(libs);
@@ -1637,7 +1643,7 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
     chip = dbChip::create(_db);
 
   assert(chip);
-  setTech(_db->getTech());
+  setTech(tech);
   _logger->info(utl::ODB, 127, "Reading DEF file: {}", file);
 
   if (!createBlock(file)) {
@@ -1690,12 +1696,13 @@ dbChip* definReader::createChip(std::vector<dbLib*>& libs, const char* file)
 
 dbBlock* definReader::createBlock(dbBlock* parent,
                                   std::vector<dbLib*>& libs,
-                                  const char* def_file)
+                                  const char* def_file,
+                                  odb::dbTech* tech)
 {
   init();
   setLibs(libs);
   parent_ = parent;
-  setTech(_db->getTech());
+  setTech(tech);
   _logger->info(utl::ODB, 135, "Reading DEF file: {}", def_file);
 
   if (!createBlock(def_file)) {

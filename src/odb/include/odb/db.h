@@ -315,6 +315,18 @@ class dbDatabase : public dbObject
   dbLib* findLib(const char* name);
 
   ///
+  /// Return the techs contained in the database. A database can contain
+  /// multiple techs.
+  ///
+  dbSet<dbTech> getTechs();
+
+  ///
+  /// Find a specific tech.
+  /// Returns nullptr if no tech was found.
+  ///
+  dbTech* findTech(const char* name);
+
+  ///
   /// Find a specific master
   /// Returns nullptr if no master is found.
   ///
@@ -326,14 +338,19 @@ class dbDatabase : public dbObject
   ///
   dbChip* getChip();
 
+  ////////////////////////
+  /// DEPRECATED
+  ////////////////////////
   ///
-  /// Get the technology of this database
-  /// Returns nullptr if no chip has been created.
+  /// This is replaced by dbBlock::getTech() or dbLib::getTech().
+  /// This is temporarily kept for legacy migration.
+  /// Get the technology of this database if there is exactly one dbTech.
+  /// Returns nullptr if no tech has been created.
   ///
   dbTech* getTech();
 
   ////////////////////////
-  /// DEPRECIATED
+  /// DEPRECATED
   ////////////////////////
   /// Return the chips contained in the database. A database can contain
   /// multiple chips.
@@ -844,6 +861,11 @@ class dbBlock : public dbObject
   /// Get the database this block belongs too.
   ///
   dbDatabase* getDataBase();
+
+  ///
+  /// Get the technology of this block
+  ///
+  dbTech* getTech();
 
   ///
   /// Get the parent block this block. Returns nullptr if this block is the
@@ -1596,17 +1618,21 @@ class dbBlock : public dbObject
   ///
   /// Create a chip's top-block. Returns nullptr of a top-block already
   /// exists.
+  /// If tech is null then the db must contain only one dbTech.
   ///
   static dbBlock* create(dbChip* chip,
                          const char* name,
+                         dbTech* tech = nullptr,
                          char hier_delimeter = 0);
 
   ///
   /// Create a hierachical/child block. This block has no connectivity.
+  /// If tech is null then the tech will be taken from 'block'
   /// Returns nullptr if a block with the same name exists.
   ///
   static dbBlock* create(dbBlock* block,
                          const char* name,
+                         dbTech* tech = nullptr,
                          char hier_delimeter = 0);
 
   ///
@@ -2273,6 +2299,11 @@ class dbNet : public dbObject
   /// Unmark this dbNet as special.
   ///
   void clearSpecial();
+
+  ///
+  /// Returns true if this dbNet have its pins connected by abutment
+  ///
+  bool isConnectedByAbutment();
 
   ///
   /// Set the IO flag if there are any BTerms on net
@@ -5224,6 +5255,7 @@ class dbLib : public dbObject
   ///
   static dbLib* create(dbDatabase* db,
                        const char* name,
+                       dbTech* tech,
                        char hierarchy_delimeter = 0);
 
   ///
@@ -5816,6 +5848,11 @@ class dbTech : public dbObject
 {
  public:
   ///
+  /// Get the tech name.
+  ///
+  std::string getName();
+
+  ///
   /// Set the Database distance units per micron.
   ///
   /// Legal values are 100, 200, 1000, 2000, 10000, 20000
@@ -5993,7 +6030,9 @@ class dbTech : public dbObject
   /// Create a new technology.
   /// Returns nullptr if a database technology already exists
   ///
-  static dbTech* create(dbDatabase* db, int dbu_per_micron = 1000);
+  static dbTech* create(dbDatabase* db,
+                        const char* name,
+                        int dbu_per_micron = 1000);
 
   ///
   /// Translate a database-id back to a pointer.

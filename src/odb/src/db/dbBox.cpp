@@ -323,15 +323,16 @@ _dbTechLayer* _dbBox::getTechLayer() const
     case dbBoxOwner::VIA:
     case dbBoxOwner::OBSTRUCTION:
     case dbBoxOwner::SWIRE: {
-      _dbDatabase* db = (_dbDatabase*) getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbBlock* block = (_dbBlock*) getOwner();
+      _dbTech* tech = block->getTech();
       return tech->_layer_tbl->getPtr(_flags._layer_id);
     }
 
     case dbBoxOwner::MASTER:
     case dbBoxOwner::MPIN: {
-      _dbDatabase* db = (_dbDatabase*) getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbMaster* master = (_dbMaster*) getOwner();
+      _dbLib* lib = (_dbLib*) master->getOwner();
+      _dbTech* tech = lib->getTech();
       return tech->_layer_tbl->getPtr(_flags._layer_id);
     }
 
@@ -364,16 +365,16 @@ _dbTechVia* _dbBox::getTechVia() const
     case dbBoxOwner::VIA:
     case dbBoxOwner::SWIRE: {
       _dbBlock* block = (_dbBlock*) getOwner();
-      _dbDatabase* db = (_dbDatabase*) block->getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbTech* tech = block->getTech();
       return tech->_via_tbl->getPtr(_flags._via_id);
     }
 
     case dbBoxOwner::MASTER:
     case dbBoxOwner::MPIN: {
       _dbMaster* master = (_dbMaster*) getOwner();
+      _dbLib* lib = (_dbLib*) master->getOwner();
       _dbDatabase* db = (_dbDatabase*) master->getDatabase();
-      _dbTech* tech = db->_tech_tbl->getPtr(db->_tech);
+      _dbTech* tech = db->_tech_tbl->getPtr(lib->_tech);
       return tech->_via_tbl->getPtr(_flags._via_id);
     }
 

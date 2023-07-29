@@ -121,6 +121,7 @@ repair_design [-max_wire_length max_length]
               [-slew_margin slew_margin]
               [-cap_margin cap_margin]
               [-max_utilization util]
+              [-verbose]
 ```
 
 The `repair_design` command inserts buffers on nets to repair max slew, max
@@ -134,6 +135,8 @@ to compensate. Use `-slew_margin` to add a margin to the slews, and
 to specify the maximum length of wires.  The maximum wirelength defaults to
 a value that minimizes the wire delay for the wire resistance/capacitance
 values specified by `set_wire_rc`.
+Use `-verbose` to print more information about the progress of the
+repair.
 
 ### Set Max Fanout
 
