@@ -174,6 +174,26 @@ place_bondpad -bond master
 place_bondpad -bond PAD IO_*
 ```
 
+### Placing Terminals
+
+In the case where the bond pads are integrated into the padcell, the IO terminals need to be placed.
+To place a terminals on the padring
+```
+place_io_terminals inst_pins
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `inst_pins` | Instance pins to place the terminals on |
+
+#### Examples
+```
+place_io_terminals u_*/PAD
+place_io_terminals u_*/VDD
+```
+
 ### Defining a Bump Array
 
 To define a bump array

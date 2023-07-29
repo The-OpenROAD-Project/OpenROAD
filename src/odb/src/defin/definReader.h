@@ -257,10 +257,13 @@ class definReader : public definBase
   void namesAreDBIDs();
   void setAssemblyMode();
 
-  dbChip* createChip(std::vector<dbLib*>& search_libs, const char* def_file);
+  dbChip* createChip(std::vector<dbLib*>& search_libs,
+                     const char* def_file,
+                     dbTech* tech);
   dbBlock* createBlock(dbBlock* parent,
                        std::vector<dbLib*>& search_libs,
-                       const char* def_file);
+                       const char* def_file,
+                       dbTech* tech);
   bool replaceWires(dbBlock* block, const char* def_file);
 };
 

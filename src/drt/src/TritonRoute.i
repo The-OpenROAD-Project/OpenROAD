@@ -145,13 +145,6 @@ void pin_access_cmd(const char* dbProcessNode,
   router->setDistributed(false);
 }
 
-void detailed_route_cmd(const char* param_file)
-{
-  auto* router = ord::OpenRoad::openRoad()->getTritonRoute();
-  router->readParams(param_file);
-  router->main();
-}
-
 void report_constraints()
 {
   auto* router = ord::OpenRoad::openRoad()->getTritonRoute();

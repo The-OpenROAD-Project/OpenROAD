@@ -86,6 +86,7 @@ void Design::readDef(const std::string& file_name,
     getLogger()->error(utl::ORD, 102, "No technology has been read.");
   }
   app->readDef(file_name.c_str(),
+               tech_->getDB()->getTech(),
                continue_on_errors,
                floorplan_init,
                incremental,
