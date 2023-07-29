@@ -77,7 +77,7 @@ class tmg_conn_search::Impl
 
  private:
   void sort();
-  void sort1(tcs_lev* bin);
+  void sort_level(tcs_lev* bin);
 
   tcs_shape** _shV;
   int _shJ;
@@ -322,7 +322,7 @@ static void tcs_lev_wrap(tcs_lev* bin)
   }
 }
 
-void tmg_conn_search::Impl::sort1(tcs_lev* bin)
+void tmg_conn_search::Impl::sort_level(tcs_lev* bin)
 {
   if (_levAllN >= 32767) {
     return;
@@ -371,8 +371,8 @@ void tmg_conn_search::Impl::sort1(tcs_lev* bin)
   tcs_lev_wrap(bin);
   tcs_lev_wrap(left);
   tcs_lev_wrap(right);
-  sort1(left);
-  sort1(right);
+  sort_level(left);
+  sort_level(right);
 }
 
 void tmg_conn_search::Impl::sort()
@@ -380,7 +380,7 @@ void tmg_conn_search::Impl::sort()
   _sorted = true;
   for (int j = 0; j < 32; j++) {
     if (_levV[j]->n > sort_threshold) {
-      sort1(_levV[j]);
+      sort_level(_levV[j]);
     }
   }
 }
