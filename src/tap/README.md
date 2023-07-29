@@ -79,6 +79,8 @@ cut_rows [-endcap_master endcap_master]
 
 ### Only adding boundary/endcap cells
 
+Place endcaps into the design, the naming for of the arguments to `place_endcaps` is based on the LEF58 CLASS specifications for endcaps.
+
 ```
 place_endcaps
   [-corner master]
@@ -105,8 +107,8 @@ place_endcaps
 - `-corner`. Specify the master for the corner cells on the outer corners.
 - `-edge_corner`. Specify the master for the corner cells on the inner corners.
 - `-endcap`. Specify the master used as an endcap.
-- `-endcap_horizontal`. Specify the list of masters for the top and bottom row endcaps where the. (overrides `-endcap`)
-- `-endcap_vertical`. Specify the master for the left and right row endcaps where the. (overrides `-endcap`)
+- `-endcap_horizontal`. Specify the list of masters for the top and bottom row endcaps. (overrides `-endcap`)
+- `-endcap_vertical`. Specify the master for the left and right row endcaps. (overrides `-endcap`)
 - `-left_top_corner`. Specify the master for the corner cells on the outer top left corner. (overrides `-corner`)
 - `-right_top_corner`. Specify the master for the corner cells on the outer top right corner. (overrides `-corner`)
 - `-left_bottom_corner`. Specify the master for the corner cells on the outer bottom left corner. (overrides `-corner`)
@@ -115,10 +117,10 @@ place_endcaps
 - `-right_top_edge`. Specify the master for the corner cells on the inner top right corner. (overrides `-edge_corner`)
 - `-left_bottom_edge`. Specify the master for the corner cells on the inner bottom left corner. (overrides `-edge_corner`)
 - `-right_bottom_edge`. Specify the master for the corner cells on the inner bottom right corner. (overrides `-edge_corner`)
-- `-left_edge`. Specify the master for the left row endcaps where the. (overrides `-endcap_vertical`)
-- `-right_edge`. Specify the master for the right row endcaps where the. (overrides `-endcap_vertical`)
-- `-top_edge`. Specify the list of masters for the top row endcaps where the. (overrides `-endcap_horizontal`)
-- `-bottom_edge`. Specify the list of masters for the bottom row endcaps where the. (overrides `-endcap_horizontal`)
+- `-left_edge`. Specify the master for the left row endcaps. (overrides `-endcap_vertical`)
+- `-right_edge`. Specify the master for the right row endcaps. (overrides `-endcap_vertical`)
+- `-top_edge`. Specify the list of masters for the top row endcaps. (overrides `-endcap_horizontal`)
+- `-bottom_edge`. Specify the list of masters for the bottom row endcaps. (overrides `-endcap_horizontal`)
 
 ### Only adding tapcells cells
 
