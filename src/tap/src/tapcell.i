@@ -138,7 +138,7 @@
     return getTapcell()->removeCells(prefix);
   }
 
-  void insert_boundary_cells(
+  void place_endcaps(
     odb::dbMaster* left_top_corner,
     odb::dbMaster* right_top_corner,
     odb::dbMaster* left_bottom_corner,
@@ -155,7 +155,7 @@
     odb::dbMaster* right_edge,
     const char* prefix)
   {
-    BoundaryCellOptions options;
+    EndcapCellOptions options;
 
     options.left_top_corner = left_top_corner;
     options.right_top_corner = right_top_corner;
@@ -173,7 +173,7 @@
     options.right_edge = right_edge;
     options.prefix = prefix;
 
-    getTapcell()->insertBoundaryCells(options);
+    getTapcell()->placeEndcaps(options);
   }
 
   void insert_tapcells(
@@ -184,7 +184,7 @@
     options.dist = distance;
     options.tapcell_master = master;
   
-    getTapcell()->insertTapcells(options);
+    getTapcell()->placeTapcells(options);
   }
 
   }  // namespace tap

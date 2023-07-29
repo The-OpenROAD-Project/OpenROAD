@@ -79,21 +79,21 @@ struct Options
   }
 };
 
-struct BoundaryCellOptions
+struct EndcapCellOptions
 {
-  // External facing boundary cells
+  // External facing endcap cells
   odb::dbMaster* left_top_corner = nullptr;
   odb::dbMaster* right_top_corner = nullptr;
   odb::dbMaster* left_bottom_corner = nullptr;
   odb::dbMaster* right_bottom_corner = nullptr;
 
-  // Internal facing boundary cells
+  // Internal facing endcap cells
   odb::dbMaster* left_top_edge = nullptr;
   odb::dbMaster* right_top_edge = nullptr;
   odb::dbMaster* left_bottom_edge = nullptr;
   odb::dbMaster* right_bottom_edge = nullptr;
 
-  // endcaps
+  // row/column endcaps
   std::vector<odb::dbMaster*> top_edge;
   std::vector<odb::dbMaster*> bottom_edge;
   odb::dbMaster* left_edge = nullptr;
@@ -115,8 +115,8 @@ class Tapcell
   void reset();
   int removeCells(const std::string& prefix);
 
-  void insertBoundaryCells(const BoundaryCellOptions& options);
-  void insertTapcells(const Options& options);
+  void placeEndcaps(const EndcapCellOptions& options);
+  void placeTapcells(const Options& options);
 
  private:
   enum class EdgeType
@@ -166,11 +166,11 @@ class Tapcell
                      int width,
                      const odb::dbOrientType& orient,
                      const std::set<odb::dbInst*>& row_insts);
-  int insertTapcells(odb::dbMaster* tapcell_master, int dist);
-  int insertTapcells(odb::dbMaster* tapcell_master,
-                     int dist,
-                     odb::dbRow* row,
-                     bool is_edge);
+  int placeTapcells(odb::dbMaster* tapcell_master, int dist);
+  int placeTapcells(odb::dbMaster* tapcell_master,
+                    int dist,
+                    odb::dbRow* row,
+                    bool is_edge);
 
   int defaultDistance() const;
 
@@ -186,29 +186,29 @@ class Tapcell
   odb::dbRow* getRow(const Corner& corner, odb::dbSite* site) const;
   std::vector<odb::dbRow*> getRows(const Edge& edge, odb::dbSite* site) const;
 
-  std::pair<int, int> insertBoundaryCells(const Polygon& area,
-                                          bool outer,
-                                          const BoundaryCellOptions& options);
-  std::pair<int, int> insertBoundaryCells(const Polygon90& area,
-                                          bool outer,
-                                          const BoundaryCellOptions& options);
+  std::pair<int, int> placeEndcaps(const Polygon& area,
+                                   bool outer,
+                                   const EndcapCellOptions& options);
+  std::pair<int, int> placeEndcaps(const Polygon90& area,
+                                   bool outer,
+                                   const EndcapCellOptions& options);
 
-  CornerMap insertBoundaryCorner(const Corner& corner,
-                                 const BoundaryCellOptions& options);
-  int insertBoundaryEdge(const Edge& edge,
-                         const CornerMap& corners,
-                         const BoundaryCellOptions& options);
-  int insertBoundaryEdgeHorizontal(const Edge& edge,
-                                   const CornerMap& corners,
-                                   const BoundaryCellOptions& options);
-  int insertBoundaryEdgeVertical(const Edge& edge,
-                                 const CornerMap& corners,
-                                 const BoundaryCellOptions& options);
+  CornerMap placeEndcapCorner(const Corner& corner,
+                              const EndcapCellOptions& options);
+  int placeEndcapEdge(const Edge& edge,
+                      const CornerMap& corners,
+                      const EndcapCellOptions& options);
+  int placeEndcapEdgeHorizontal(const Edge& edge,
+                                const CornerMap& corners,
+                                const EndcapCellOptions& options);
+  int placeEndcapEdgeVertical(const Edge& edge,
+                              const CornerMap& corners,
+                              const EndcapCellOptions& options);
 
-  BoundaryCellOptions correctBoundaryOptions(
-      const BoundaryCellOptions& options) const;
+  EndcapCellOptions correctEndcapOptions(
+      const EndcapCellOptions& options) const;
 
-  BoundaryCellOptions correctBoundaryOptions(const Options& options) const;
+  EndcapCellOptions correctEndcapOptions(const Options& options) const;
 
   odb::dbMaster* getMasterByType(const odb::dbMasterType& type) const;
   std::set<odb::dbMaster*> findMasterByType(

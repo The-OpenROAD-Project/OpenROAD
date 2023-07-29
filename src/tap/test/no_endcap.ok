@@ -9,7 +9,5 @@
 [INFO ODB-0130]     Created 54 pins.
 [INFO ODB-0131]     Created 366 components and 2656 component-terminals.
 [INFO ODB-0133]     Created 402 nets and 1192 connections.
-[INFO TAP-0002] Added 0 corner cells
-[INFO TAP-0003] Added 0 boundary cells
 [INFO TAP-0005] Inserted 774 tapcells.
 No differences found.

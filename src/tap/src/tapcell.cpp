@@ -114,12 +114,12 @@ void Tapcell::run(const Options& options)
 {
   cutRows(options);
 
-  insertBoundaryCells(correctBoundaryOptions(options));
+  placeEndcaps(correctEndcapOptions(options));
 
-  insertTapcells(options);
+  placeTapcells(options);
 }
 
-int Tapcell::insertTapcells(odb::dbMaster* tapcell_master, const int dist)
+int Tapcell::placeTapcells(odb::dbMaster* tapcell_master, const int dist)
 {
   std::vector<Edge> edges;
 
@@ -159,16 +159,16 @@ int Tapcell::insertTapcells(odb::dbMaster* tapcell_master, const int dist)
   int inst = 0;
   for (auto* row : db_->getChip()->getBlock()->getRows()) {
     const bool is_edge = edge_rows.find(row) != edge_rows.end();
-    inst += insertTapcells(tapcell_master, dist, row, is_edge);
+    inst += placeTapcells(tapcell_master, dist, row, is_edge);
   }
   logger_->info(utl::TAP, 5, "Inserted {} tapcells.", inst);
   return inst;
 }
 
-int Tapcell::insertTapcells(odb::dbMaster* tapcell_master,
-                            int dist,
-                            odb::dbRow* row,
-                            bool is_edge)
+int Tapcell::placeTapcells(odb::dbMaster* tapcell_master,
+                           int dist,
+                           odb::dbRow* row,
+                           bool is_edge)
 {
   if (row->getSite()->getName() != tapcell_master->getSite()->getName()) {
     return 0;
@@ -419,7 +419,7 @@ std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
 
     core.set_holes(holes.begin(), holes.end());
 
-    if (logger_->debugCheck(utl::TAP, "Boundary", 1)) {
+    if (logger_->debugCheck(utl::TAP, "Endcap", 1)) {
       logger_->report("Core");
       logger_->report(" All pts");
       for (const auto& pt : core) {
@@ -438,30 +438,33 @@ std::vector<Tapcell::Polygon90> Tapcell::getBoundaryAreas() const
   return core_outlines;
 }
 
-void Tapcell::insertBoundaryCells(const BoundaryCellOptions& options)
+void Tapcell::placeEndcaps(const EndcapCellOptions& options)
 {
-  const auto filled_options = correctBoundaryOptions(options);
+  const auto filled_options = correctEndcapOptions(options);
 
   const auto areas = getBoundaryAreas();
 
   int corners = 0;
-  int boundary = 0;
+  int endcaps = 0;
   for (const auto& area : areas) {
-    const auto& [added_corners, added_boundaries]
-        = insertBoundaryCells(area, true, filled_options);
+    const auto& [added_corners, added_endcaps]
+        = placeEndcaps(area, true, filled_options);
     corners += added_corners;
-    boundary += added_boundaries;
+    endcaps += added_endcaps;
 
     for (auto itr = area.begin_holes(); itr != area.end_holes(); itr++) {
-      const auto& [added_corners, added_boundaries]
-          = insertBoundaryCells(*itr, false, filled_options);
+      const auto& [added_corners, added_endcaps]
+          = placeEndcaps(*itr, false, filled_options);
       corners += added_corners;
-      boundary += added_boundaries;
     }
   }
 
-  logger_->info(utl::TAP, 2, "Added {} corner cells", corners);
-  logger_->info(utl::TAP, 3, "Added {} boundary cells", boundary);
+  if (corners > 0) {
+    logger_->info(utl::TAP, 3, "Inserted {} endcap corners.", corners);
+  }
+  if (endcaps > 0) {
+    logger_->info(utl::TAP, 4, "Inserted {} endcaps.", endcaps);
+  }
 }
 
 std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon& area,
@@ -549,7 +552,7 @@ std::vector<Tapcell::Edge> Tapcell::getBoundaryEdges(const Polygon90& area,
     }
     debugPrint(logger_,
                utl::TAP,
-               "Boundary",
+               "Endcap",
                2,
                "Edge ({}, {}) - ({}, {}) : {}",
                curr->pt0.getX(),
@@ -644,7 +647,7 @@ std::vector<Tapcell::Corner> Tapcell::getBoundaryCorners(const Polygon90& area,
 
     debugPrint(logger_,
                utl::TAP,
-               "Boundary",
+               "Endcap",
                2,
                "Corner ({}, {}) : {}",
                curr->pt.getX(),
@@ -725,7 +728,7 @@ std::vector<odb::dbRow*> Tapcell::getRows(const Tapcell::Edge& edge,
 
       debugPrint(logger_,
                  utl::TAP,
-                 "Boundary",
+                 "Endcap",
                  3,
                  "Edge row: {} {} -> {} {}: {}",
                  edge.pt0.x(),
@@ -781,7 +784,7 @@ odb::dbRow* Tapcell::getRow(const Tapcell::Corner& corner,
       if (accept) {
         debugPrint(logger_,
                    utl::TAP,
-                   "Boundary",
+                   "Endcap",
                    3,
                    "Corner row: {} {}: {}",
                    corner.pt.x(),
@@ -795,43 +798,40 @@ odb::dbRow* Tapcell::getRow(const Tapcell::Corner& corner,
   return nullptr;
 }
 
-std::pair<int, int> Tapcell::insertBoundaryCells(
-    const Tapcell::Polygon& area,
-    bool outer,
-    const BoundaryCellOptions& options)
+std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon& area,
+                                          bool outer,
+                                          const EndcapCellOptions& options)
 {
   Polygon90 area90;
   area90.set(area.begin(), area.end());
-  return insertBoundaryCells(area90, outer, options);
+  return placeEndcaps(area90, outer, options);
 }
 
-std::pair<int, int> Tapcell::insertBoundaryCells(
-    const Tapcell::Polygon90& area,
-    bool outer,
-    const BoundaryCellOptions& options)
+std::pair<int, int> Tapcell::placeEndcaps(const Tapcell::Polygon90& area,
+                                          bool outer,
+                                          const EndcapCellOptions& options)
 {
   int corner_count = 0;
-  int boundary = 0;
+  int endcaps = 0;
 
   CornerMap corners;
   // insert corners first
   for (const auto& corner : getBoundaryCorners(area, outer)) {
-    for (const auto& [row, insts] : insertBoundaryCorner(corner, options)) {
+    for (const auto& [row, insts] : placeEndcapCorner(corner, options)) {
       corners[row].insert(insts.begin(), insts.end());
       corner_count += insts.size();
     }
   }
 
   for (const auto& edge : getBoundaryEdges(area, outer)) {
-    boundary += insertBoundaryEdge(edge, corners, options);
+    endcaps += placeEndcapEdge(edge, corners, options);
   }
 
-  return {corner_count, boundary};
+  return {corner_count, endcaps};
 }
 
-Tapcell::CornerMap Tapcell::insertBoundaryCorner(
-    const Tapcell::Corner& corner,
-    const BoundaryCellOptions& options)
+Tapcell::CornerMap Tapcell::placeEndcapCorner(const Tapcell::Corner& corner,
+                                              const EndcapCellOptions& options)
 {
   odb::dbSite* site = nullptr;
   if (options.left_bottom_corner != nullptr) {
@@ -922,7 +922,7 @@ Tapcell::CornerMap Tapcell::insertBoundaryCorner(
   debugPrint(
       logger_,
       utl::TAP,
-      "Boundary",
+      "Endcap",
       2,
       "Generating corner cell {} at ({}, {}) with master {} in row {} with {}",
       toString(corner.type),
@@ -1002,18 +1002,18 @@ Tapcell::CornerMap Tapcell::insertBoundaryCorner(
   return map;
 }
 
-int Tapcell::insertBoundaryEdge(const Tapcell::Edge& edge,
-                                const Tapcell::CornerMap& corners,
-                                const BoundaryCellOptions& options)
+int Tapcell::placeEndcapEdge(const Tapcell::Edge& edge,
+                             const Tapcell::CornerMap& corners,
+                             const EndcapCellOptions& options)
 {
   switch (edge.type) {
     case EdgeType::Bottom:
     case EdgeType::Top:
-      return insertBoundaryEdgeHorizontal(edge, corners, options);
+      return placeEndcapEdgeHorizontal(edge, corners, options);
       break;
     case EdgeType::Left:
     case EdgeType::Right:
-      return insertBoundaryEdgeVertical(edge, corners, options);
+      return placeEndcapEdgeVertical(edge, corners, options);
       break;
     case EdgeType::Unknown:
       break;
@@ -1022,9 +1022,9 @@ int Tapcell::insertBoundaryEdge(const Tapcell::Edge& edge,
   return 0;
 }
 
-int Tapcell::insertBoundaryEdgeHorizontal(const Tapcell::Edge& edge,
-                                          const Tapcell::CornerMap& corners,
-                                          const BoundaryCellOptions& options)
+int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
+                                       const Tapcell::CornerMap& corners,
+                                       const EndcapCellOptions& options)
 {
   int insts = 0;
 
@@ -1124,7 +1124,7 @@ int Tapcell::insertBoundaryEdgeHorizontal(const Tapcell::Edge& edge,
 
     debugPrint(logger_,
                utl::TAP,
-               "Boundary",
+               "Endcap",
                3,
                "From {} -> {}: picked {}",
                ll.getX(),
@@ -1151,9 +1151,9 @@ int Tapcell::insertBoundaryEdgeHorizontal(const Tapcell::Edge& edge,
   return insts;
 }
 
-int Tapcell::insertBoundaryEdgeVertical(const Tapcell::Edge& edge,
-                                        const Tapcell::CornerMap& corners,
-                                        const BoundaryCellOptions& options)
+int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
+                                     const Tapcell::CornerMap& corners,
+                                     const EndcapCellOptions& options)
 {
   int insts = 0;
 
@@ -1225,10 +1225,10 @@ int Tapcell::insertBoundaryEdgeVertical(const Tapcell::Edge& edge,
   return insts;
 }
 
-BoundaryCellOptions Tapcell::correctBoundaryOptions(
-    const BoundaryCellOptions& options) const
+EndcapCellOptions Tapcell::correctEndcapOptions(
+    const EndcapCellOptions& options) const
 {
-  BoundaryCellOptions bopts = options;
+  EndcapCellOptions bopts = options;
 
   auto set_single_master
       = [this](odb::dbMaster*& master, const odb::dbMasterType& type) {
@@ -1350,14 +1350,13 @@ std::set<odb::dbMaster*> Tapcell::findMasterByType(
   return masters;
 }
 
-BoundaryCellOptions Tapcell::correctBoundaryOptions(
-    const Options& options) const
+EndcapCellOptions Tapcell::correctEndcapOptions(const Options& options) const
 {
-  BoundaryCellOptions bopts;
+  EndcapCellOptions bopts;
 
   bopts.prefix = endcap_prefix_;
 
-  // Boundaries
+  // Endcaps
   bopts.left_edge = options.endcap_master;
 
   if (options.tap_nwin3_master) {
@@ -1385,7 +1384,7 @@ BoundaryCellOptions Tapcell::correctBoundaryOptions(
   return bopts;
 }
 
-void Tapcell::insertTapcells(const Options& options)
+void Tapcell::placeTapcells(const Options& options)
 {
   if (options.tapcell_master == nullptr) {
     return;
@@ -1393,7 +1392,7 @@ void Tapcell::insertTapcells(const Options& options)
 
   const int dist = options.dist >= 0 ? options.dist : defaultDistance();
 
-  insertTapcells(options.tapcell_master, dist);
+  placeTapcells(options.tapcell_master, dist);
 }
 
 }  // namespace tap

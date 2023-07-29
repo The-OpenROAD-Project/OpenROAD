@@ -301,23 +301,23 @@ proc place_endcaps { args } {
     set prefix $keys(-prefix)
   }
 
-  set left_top_corner [tap::find_master [tap::parse_boundary_key keys -left_top_corner -corner -corner]]
-  set right_top_corner [tap::find_master [tap::parse_boundary_key keys -right_top_corner -corner -corner]]
-  set left_bottom_corner [tap::find_master [tap::parse_boundary_key keys -left_bottom_corner -corner -corner]]
-  set right_bottom_corner [tap::find_master [tap::parse_boundary_key keys -right_bottom_corner -corner -corner]]
+  set left_top_corner [tap::find_master [tap::parse_endcap_key keys -left_top_corner -corner -corner]]
+  set right_top_corner [tap::find_master [tap::parse_endcap_key keys -right_top_corner -corner -corner]]
+  set left_bottom_corner [tap::find_master [tap::parse_endcap_key keys -left_bottom_corner -corner -corner]]
+  set right_bottom_corner [tap::find_master [tap::parse_endcap_key keys -right_bottom_corner -corner -corner]]
 
-  set left_top_edge [tap::find_master [tap::parse_boundary_key keys -left_top_edge -edge_corner -edge_corner]]
-  set right_top_edge [tap::find_master [tap::parse_boundary_key keys -right_top_edge -edge_corner -edge_corner]]
-  set left_bottom_edge [tap::find_master [tap::parse_boundary_key keys -left_bottom_edge -edge_corner -edge_corner]]
-  set right_bottom_edge [tap::find_master [tap::parse_boundary_key keys -right_bottom_edge -edge_corner -edge_corner]]
+  set left_top_edge [tap::find_master [tap::parse_endcap_key keys -left_top_edge -edge_corner -edge_corner]]
+  set right_top_edge [tap::find_master [tap::parse_endcap_key keys -right_top_edge -edge_corner -edge_corner]]
+  set left_bottom_edge [tap::find_master [tap::parse_endcap_key keys -left_bottom_edge -edge_corner -edge_corner]]
+  set right_bottom_edge [tap::find_master [tap::parse_endcap_key keys -right_bottom_edge -edge_corner -edge_corner]]
 
-  set left_edge [tap::find_master [tap::parse_boundary_key keys -left_edge -endcap_vertical -endcap]]
-  set right_edge [tap::find_master [tap::parse_boundary_key keys -right_edge -endcap_vertical -endcap]]
+  set left_edge [tap::find_master [tap::parse_endcap_key keys -left_edge -endcap_vertical -endcap]]
+  set right_edge [tap::find_master [tap::parse_endcap_key keys -right_edge -endcap_vertical -endcap]]
 
-  set top_edge [tap::find_masters [tap::parse_boundary_key keys -top_edge -endcap_horizontal -endcap]]
-  set bottom_edge [tap::find_masters [tap::parse_boundary_key keys -bottom_edge -endcap_horizontal -endcap]]
+  set top_edge [tap::find_masters [tap::parse_endcap_key keys -top_edge -endcap_horizontal -endcap]]
+  set bottom_edge [tap::find_masters [tap::parse_endcap_key keys -bottom_edge -endcap_horizontal -endcap]]
 
-  tap::insert_boundary_cells \
+  tap::place_endcaps \
     $left_top_corner\
     $right_top_corner\
     $left_bottom_corner\
@@ -379,7 +379,7 @@ namespace eval tap {
     return $ms
   }
 
-  proc parse_boundary_key { cmdargs key0 key1 key2 {optional true} } {
+  proc parse_endcap_key { cmdargs key0 key1 key2 {optional true} } {
     upvar keys $cmdargs
 
     if { [info exists keys($key0) ]} {
