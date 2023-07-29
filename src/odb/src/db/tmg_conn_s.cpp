@@ -71,8 +71,8 @@ class tmg_conn_search::Impl
   Impl();
   ~Impl();
   void clear();
-  void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
-  void searchStart(int lev, int xlo, int ylo, int xhi, int yhi, int isVia);
+  void addShape(int lev, const Rect& bounds, int isVia, int id);
+  void searchStart(int lev, const Rect& bounds, int isVia);
   bool searchNext(int* id);
 
  private:
@@ -115,8 +115,7 @@ tmg_conn_search::Impl::Impl()
 
 tmg_conn_search::Impl::~Impl()
 {
-  int j;
-  for (j = 0; j < _shJmax; j++) {
+  for (int j = 0; j < _shJmax; j++) {
     if (_shV[j]) {
       free(_shV[j]);
     }
@@ -129,8 +128,7 @@ void tmg_conn_search::Impl::clear()
   _shN = 0;
   _shJ = 0;
   _levAllN = 0;
-  int j;
-  for (j = 0; j < 32; j++) {
+  for (int j = 0; j < 32; j++) {
     _levV[j] = _levAllV + _levAllN++;
     _levV[j]->shape_list = nullptr;
     _levV[j]->last_shape = nullptr;
@@ -144,10 +142,7 @@ void tmg_conn_search::Impl::clear()
 }
 
 void tmg_conn_search::Impl::addShape(int lev,
-                                     int xlo,
-                                     int ylo,
-                                     int xhi,
-                                     int yhi,
+                                     const Rect& bounds,
                                      int isVia,
                                      int id)
 {
@@ -167,7 +162,7 @@ void tmg_conn_search::Impl::addShape(int lev,
   }
   tcs_shape* shape = _shV[_shJ] + _shN++;
   shape->lev = lev;
-  shape->bounds = {xlo, ylo, xhi, yhi};
+  shape->bounds = bounds;
   shape->isVia = isVia;
   shape->id = id;
   shape->next = nullptr;
@@ -183,12 +178,7 @@ void tmg_conn_search::Impl::addShape(int lev,
   slev->n++;
 }
 
-void tmg_conn_search::Impl::searchStart(int lev,
-                                        int xlo,
-                                        int ylo,
-                                        int xhi,
-                                        int yhi,
-                                        int isVia)
+void tmg_conn_search::Impl::searchStart(int lev, const Rect& bounds, int isVia)
 {
   if (!_sorted) {
     sort();
@@ -196,7 +186,7 @@ void tmg_conn_search::Impl::searchStart(int lev,
   _bin = _levV[lev];
   _cur = _bin->shape_list;
   _pcur = nullptr;
-  _search_box = {xlo, ylo, xhi, yhi};
+  _search_box = bounds;
   _srcVia = isVia;
 }
 
@@ -399,25 +389,14 @@ void tmg_conn_search::clear()
   impl_->clear();
 }
 
-void tmg_conn_search::addShape(int lev,
-                               int xlo,
-                               int ylo,
-                               int xhi,
-                               int yhi,
-                               int isVia,
-                               int id)
+void tmg_conn_search::addShape(int lev, const Rect& bounds, int isVia, int id)
 {
-  impl_->addShape(lev, xlo, ylo, xhi, yhi, isVia, id);
+  impl_->addShape(lev, bounds, isVia, id);
 }
 
-void tmg_conn_search::searchStart(int lev,
-                                  int xlo,
-                                  int ylo,
-                                  int xhi,
-                                  int yhi,
-                                  int isVia)
+void tmg_conn_search::searchStart(int lev, const Rect& bounds, int isVia)
 {
-  impl_->searchStart(lev, xlo, ylo, xhi, yhi, isVia);
+  impl_->searchStart(lev, bounds, isVia);
 }
 
 bool tmg_conn_search::searchNext(int* id)

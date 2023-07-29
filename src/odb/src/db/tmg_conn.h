@@ -54,6 +54,7 @@ class tmg_rc_sh
   Rect _via_upper_rect;
 
  public:
+  const Rect& rect() { return _rect; }
   int xMin() { return _rect.xMin(); }
   int xMax() { return _rect.xMax(); }
   int yMin() { return _rect.yMin(); }
@@ -250,8 +251,8 @@ class tmg_conn_search
   tmg_conn_search();
   ~tmg_conn_search();
   void clear();
-  void addShape(int lev, int xlo, int ylo, int xhi, int yhi, int isVia, int id);
-  void searchStart(int lyr, int xlo, int ylo, int xhi, int yhi, int isVia);
+  void addShape(int lev, const Rect& bounds, int isVia, int id);
+  void searchStart(int lyr, const Rect& bounds, int isVia);
   bool searchNext(int* id);
 
  private:

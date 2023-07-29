@@ -416,7 +416,7 @@ void tmg_conn::splitBySj(int j,
   int k, klast, nxmin, nymin, nxmax, nymax, endTo;
   tmg_rcpt* pt;
   int isVia = sj->isVia() ? 1 : 0;
-  _search->searchStart(rt, sjxMin, sjyMin, sjxMax, sjyMax, isVia);
+  _search->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
   klast = -1;
   while (_search->searchNext(&k))
     if (k != klast && k != j) {
@@ -486,7 +486,7 @@ void tmg_conn::splitBySj(int j,
             nymin,
             nxmax,
             nymax);
-      _search->addShape(rt, nxmin, nymin, nxmax, nymax, 0, _rcV.size() - 1);
+      _search->addShape(rt, {nxmin, nymin, nxmax, nymax}, 0, _rcV.size() - 1);
     }
 }
 
@@ -738,18 +738,18 @@ void tmg_conn::findConnections()
         b = *bitr;
         if (b->getTechLayer() == layb) {
           _search->addShape(rt_b,
-                            via_x + b->xMin(),
-                            via_y + b->yMin(),
-                            via_x + b->xMax(),
-                            via_y + b->yMax(),
+                            {via_x + b->xMin(),
+                             via_y + b->yMin(),
+                             via_x + b->xMax(),
+                             via_y + b->yMax()},
                             1,
                             j);
         } else if (b->getTechLayer() == layt) {
           _search->addShape(rt_t,
-                            via_x + b->xMin(),
-                            via_y + b->yMin(),
-                            via_x + b->xMax(),
-                            via_y + b->yMax(),
+                            {via_x + b->xMin(),
+                             via_y + b->yMin(),
+                             via_x + b->xMax(),
+                             via_y + b->yMax()},
                             1,
                             j);
         }
@@ -757,7 +757,7 @@ void tmg_conn::findConnections()
 
     } else {
       rt = s->getTechLayer()->getRoutingLevel();
-      _search->addShape(rt, s->xMin(), s->yMin(), s->xMax(), s->yMax(), 0, j);
+      _search->addShape(rt, s->rect(), 0, j);
     }
   }
 
@@ -794,17 +794,17 @@ void tmg_conn::findConnections()
         b = *bitr;
         if (b->getTechLayer() == layb) {
           _search->searchStart(rt_b,
-                               via_x + b->xMin(),
-                               via_y + b->yMin(),
-                               via_x + b->xMax(),
-                               via_y + b->yMax(),
+                               {via_x + b->xMin(),
+                                via_y + b->yMin(),
+                                via_x + b->xMax(),
+                                via_y + b->yMax()},
                                1);
         } else if (b->getTechLayer() == layt) {
           _search->searchStart(rt_t,
-                               via_x + b->xMin(),
-                               via_y + b->yMin(),
-                               via_x + b->xMax(),
-                               via_y + b->yMax(),
+                               {via_x + b->xMin(),
+                                via_y + b->yMin(),
+                                via_x + b->xMax(),
+                                via_y + b->yMax()},
                                1);
         } else {
           continue;  // cut layer
@@ -821,7 +821,7 @@ void tmg_conn::findConnections()
 
     } else {
       rt = s->getTechLayer()->getRoutingLevel();
-      _search->searchStart(rt, s->xMin(), s->yMin(), s->xMax(), s->yMax(), 0);
+      _search->searchStart(rt, s->rect(), 0);
       klast = -1;
       while (_search->searchNext(&k))
         if (k != klast && k > j) {
@@ -867,8 +867,7 @@ void tmg_conn::findConnections()
                 continue;  // skipping V01
               Rect rect = box->getBox();
               transform.apply(rect);
-              _search->searchStart(
-                  rt_t, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), 2);
+              _search->searchStart(rt_t, rect, 2);
               klast = -1;
               while (_search->searchNext(&k))
                 if (k != klast) {
@@ -889,8 +888,7 @@ void tmg_conn::findConnections()
               rt_b = tv->getBottomLayer()->getRoutingLevel();
               if (rt_b == 0)
                 continue;
-              _search->searchStart(
-                  rt_b, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), 2);
+              _search->searchStart(rt_b, rect, 2);
               klast = -1;
               while (_search->searchNext(&k))
                 if (k != klast) {
@@ -912,8 +910,7 @@ void tmg_conn::findConnections()
               rt = box->getTechLayer()->getRoutingLevel();
               Rect rect = box->getBox();
               transform.apply(rect);
-              _search->searchStart(
-                  rt, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), 2);
+              _search->searchStart(rt, rect, 2);
               klast = -1;
               while (_search->searchNext(&k))
                 if (k != klast) {
@@ -944,8 +941,7 @@ void tmg_conn::findConnections()
           rt = pin.getTechLayer()->getRoutingLevel();
           Rect rect;
           getBTermSearchBox(x->_bterm, pin, rect);
-          _search->searchStart(
-              rt, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax(), 2);
+          _search->searchStart(rt, rect, 2);
           klast = -1;
           while (_search->searchNext(&k))
             if (k != klast) {
