@@ -12,7 +12,7 @@ build:
     nodejs: "16"
   jobs:
     pre_create_environment:
-      - sudo apt-get update && sudo apt-get install libasound2
+      - apt-get update && apt-get install libasound2
     post_install:
       - npm install -g @mermaid-js/mermaid-cli
 
