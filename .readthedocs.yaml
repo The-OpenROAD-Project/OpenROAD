@@ -9,6 +9,10 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.7"
+    nodejs: "16"
+  jobs:
+    post_install:
+      - npm install -g @mermaid-js/mermaid-cli
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
