@@ -19,7 +19,7 @@ RTL-GDSII for rapid design exploration and physical design implementation.
     'themeVariables': {
       'textColor': '#000000',
       'noteTextColor' : '#000000',
-      'fontSize': '5px'
+      'fontSize': '20px'
     }
   }
 }%%
