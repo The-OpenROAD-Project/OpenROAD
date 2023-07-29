@@ -87,8 +87,6 @@ pygments_style = None
 
 # Mermaid related args
 mermaid_output_format = 'svg'
-mermaid_params = ['-p' 'puppeteer-config.json']
-
 
 # -- Options for HTML output -------------------------------------------------
 
