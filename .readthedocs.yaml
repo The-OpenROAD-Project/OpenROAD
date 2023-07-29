@@ -7,13 +7,12 @@ version: 2
 # Set the OS, Python version and other tools you might need
 build:
   os: ubuntu-22.04
+  apt_packages:
+    - libasound2
   tools:
     python: "3.7"
     nodejs: "16"
   jobs:
-    pre_create_environment:
-      - apt install sudo
-      - sudo apt-get install libasound2
     post_install:
       - npm install -g @mermaid-js/mermaid-cli
 
