@@ -120,7 +120,6 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _shortV = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
   _search = nullptr;
   _graph = nullptr;
-  _cut_length = 0;
   _cut_end_extMin = 1;
   _need_short_wire_id = 0;
   _first_for_clear = nullptr;
@@ -1495,7 +1494,6 @@ int tmg_conn::getStartNode()
 
 void tmg_conn::analyzeNet(dbNet* net)
 {
-  _cut_length = 0;
   if (net->isWireOrdered()) {
     _net = net;
     checkConnOrdered();
@@ -1809,56 +1807,6 @@ int tmg_conn::addPoint(int ifr, int ipt, tmg_rc* rc)
   int wire_id, ext;
   tmg_rcpt* p = &_ptV[ipt];
   ext = getExtension(ipt, rc);
-  if (_cut_length) {
-    int fx = _ptV[ifr]._x;
-    int fy = _ptV[ifr]._y;
-    int tx = _ptV[ipt]._x;
-    int ty = _ptV[ipt]._y;
-    int delt = ext * _cut_end_extMin;
-    int dx = 0;
-    int dy = 0;
-    int sx, sy;
-    bool onseg;
-    if (fx < tx) {
-      dx = _cut_length;
-      sx = fx < 0 ? (fx / _cut_length) * _cut_length
-                  : (fx / _cut_length + 1) * _cut_length;
-    } else if (fx > tx) {
-      dx = -_cut_length;
-      sx = fx <= 0 ? (fx / _cut_length - 1) * _cut_length
-                   : (fx / _cut_length) * _cut_length;
-    } else if (fy < ty) {
-      dy = _cut_length;
-      sy = fy < 0 ? (fy / _cut_length) * _cut_length
-                  : (fy / _cut_length + 1) * _cut_length;
-    } else if (fy > ty) {
-      dy = -_cut_length;
-      sy = fy <= 0 ? (fy / _cut_length - 1) * _cut_length
-                   : (fy / _cut_length) * _cut_length;
-    }
-    if (dx) {
-      if (abs(sx - fx) < delt) {
-        sx += dx;
-      }
-      onseg = (fx < sx && sx < tx) || (fx > sx && sx > tx);
-      while (onseg && abs(sx - tx) >= delt) {
-        _encoder.addPoint(sx, ty);
-        sx += dx;
-        onseg = (fx < sx && sx < tx) || (fx > sx && sx > tx);
-      }
-    }
-    if (dy) {
-      if (abs(sy - fy) < delt) {
-        sy += dy;
-      }
-      onseg = (fy < sy && sy < ty) || (fy > sy && sy > ty);
-      while (onseg && abs(sy - ty) >= delt) {
-        _encoder.addPoint(tx, sy);
-        sy += dy;
-        onseg = (fy < sy && sy < ty) || (fy > sy && sy > ty);
-      }
-    }
-  }
   if (ext == rc->_default_ext) {
     wire_id = _encoder.addPoint(p->_x, p->_y);
   } else {
