@@ -221,10 +221,10 @@ class tmg_conn
   bool dfsNext(int* from, int* to, int* k, bool* is_short, bool* is_loop);
   int isVisited(int j);
   void addToWire(int fr, int to, int k, bool is_short, bool is_loop);
-  int getExtension(int ipt, tmg_rc* rc);
-  int addPoint(int ipt, tmg_rc* rc);
-  int addPoint(int ifr, int ipt, tmg_rc* rc);
-  int addPointIfExt(int ipt, tmg_rc* rc);
+  int getExtension(int ipt, const tmg_rc* rc);
+  int addPoint(int ipt, const tmg_rc* rc);
+  int addPoint(int ifr, int ipt, const tmg_rc* rc);
+  int addPointIfExt(int ipt, const tmg_rc* rc);
   void adjustCommit(tmg_rcpt* p, tmg_rc** rV, tmg_rcpt** spV, int sN);
   tmg_rc* addRcPatch(int ifr, int ito);
   int getDisconnectedStart();
