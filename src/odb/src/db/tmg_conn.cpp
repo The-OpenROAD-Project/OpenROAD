@@ -117,7 +117,7 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _swireNetCnt = 0;
 }
 
-int tmg_conn::ptDist(int fr, int to)
+int tmg_conn::ptDist(const int fr, const int to)
 {
   return abs(_ptV[fr]._x - _ptV[to]._x) + abs(_ptV[fr]._y - _ptV[to]._y);
 }
