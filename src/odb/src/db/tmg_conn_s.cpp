@@ -156,8 +156,9 @@ void tmg_conn_search::Impl::addShape(int lev,
       }
     }
     _shJ++;
-    if (!_shV[_shJ])
+    if (!_shV[_shJ]) {
       _shV[_shJ] = (tcs_shape*) malloc(32768 * sizeof(tcs_shape));
+    }
     _shN = 0;
   }
   tcs_shape* shape = _shV[_shJ] + _shN++;
