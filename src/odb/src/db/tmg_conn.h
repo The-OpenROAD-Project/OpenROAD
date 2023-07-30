@@ -163,7 +163,6 @@ class tmg_conn
   dbTechNonDefaultRule* _net_rule;
   dbTechNonDefaultRule* _path_rule;
   int _misc_cnt;
-  int _max_length;
   int _cut_length;
   int _cut_end_extMin;
   int _need_short_wire_id;

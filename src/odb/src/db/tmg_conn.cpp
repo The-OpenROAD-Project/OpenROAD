@@ -120,7 +120,6 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _shortV = (tmg_rcshort*) malloc(_shortNmax * sizeof(tmg_rcshort));
   _search = nullptr;
   _graph = nullptr;
-  _max_length = 0;
   _cut_length = 0;
   _cut_end_extMin = 1;
   _need_short_wire_id = 0;
@@ -1496,7 +1495,6 @@ int tmg_conn::getStartNode()
 
 void tmg_conn::analyzeNet(dbNet* net)
 {
-  _max_length = 0;
   _cut_length = 0;
   if (net->isWireOrdered()) {
     _net = net;
@@ -1811,32 +1809,6 @@ int tmg_conn::addPoint(int ifr, int ipt, tmg_rc* rc)
   int wire_id, ext;
   tmg_rcpt* p = &_ptV[ipt];
   ext = getExtension(ipt, rc);
-  if (_max_length) {
-    int fx = _ptV[ifr]._x;
-    int fy = _ptV[ifr]._y;
-    int delt = ext * 2 + _max_length;
-    if (fx < p->_x) {
-      while (p->_x - fx > delt) {
-        fx += _max_length;
-        _encoder.addPoint(fx, p->_y);
-      }
-    } else if (fx > p->_x) {
-      while (p->_x + delt < fx) {
-        fx -= _max_length;
-        _encoder.addPoint(fx, p->_y);
-      }
-    } else if (fy < p->_y) {
-      while (p->_y - fy > delt) {
-        fy += _max_length;
-        _encoder.addPoint(p->_x, fy);
-      }
-    } else if (fy > p->_y) {
-      while (p->_y + delt < fy) {
-        fy -= _max_length;
-        _encoder.addPoint(p->_x, fy);
-      }
-    }
-  }
   if (_cut_length) {
     int fx = _ptV[ifr]._x;
     int fy = _ptV[ifr]._y;
