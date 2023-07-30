@@ -66,11 +66,8 @@ static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
   *iterm = nullptr;
   *bterm = nullptr;
   dbSet<dbITerm> iterms = net->getITerms();
-  dbSet<dbITerm>::iterator iterm_itr;
-  dbITerm* it;
   dbITerm* it_inout = nullptr;
-  for (iterm_itr = iterms.begin(); iterm_itr != iterms.end(); ++iterm_itr) {
-    it = *iterm_itr;
+  for (dbITerm* it : iterms) {
     if (it->getIoType() == dbIoType::OUTPUT) {
       *iterm = it;
       return;
@@ -92,19 +89,12 @@ static void tmg_getDriveTerm(dbNet* net, dbITerm** iterm, dbBTerm** bterm)
   }
   if (bt_inout) {
     *bterm = bt_inout;
-    return;
-  }
-  if (it_inout) {
+  } else if (it_inout) {
     *iterm = it_inout;
-    return;
-  }
-  if (bterms.begin() != bterms.end()) {
+  } else if (!bterms.empty()) {
     *bterm = *bterms.begin();
-    return;
-  }
-  if (iterms.begin() != iterms.end()) {
+  } else if (!iterms.empty()) {
     *iterm = *iterms.begin();
-    return;
   }
 }
 
@@ -138,7 +128,7 @@ tmg_rcpt* tmg_conn::allocPt()
   return &_ptV.back();
 }
 
-void tmg_conn::addRc(dbShape& s, int ifr, int ito)
+void tmg_conn::addRc(const dbShape& s, const int ifr, const int ito)
 {
   tmg_rc x;
   x._ifr = ifr;
@@ -168,14 +158,14 @@ void tmg_conn::addRc(dbShape& s, int ifr, int ito)
   _rcV.push_back(x);
 }
 
-void tmg_conn::addRc(int k,
-                     tmg_rc_sh& s,
-                     int ifr,
-                     int ito,
-                     int xmin,
-                     int ymin,
-                     int xmax,
-                     int ymax)
+void tmg_conn::addRc(const int k,
+                     const tmg_rc_sh& s,
+                     const int ifr,
+                     const int ito,
+                     const int xmin,
+                     const int ymin,
+                     const int xmax,
+                     const int ymax)
 {
   tmg_rc x;
   x._ifr = ifr;
@@ -191,7 +181,7 @@ void tmg_conn::addRc(int k,
   _rcV.push_back(x);
 }
 
-tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
+tmg_rc* tmg_conn::addRcPatch(const int ifr, const int ito)
 {
   dbTechLayer* layer = _ptV[ifr]._layer;
   if (!layer || layer != _ptV[ito]._layer
@@ -210,25 +200,13 @@ tmg_rc* tmg_conn::addRcPatch(int ifr, int ito)
   if (x._vert) {
     xlo = _ptV[ifr]._x;
     xhi = xlo;
-    if (_ptV[ifr]._y < _ptV[ito]._y) {
-      ylo = _ptV[ifr]._y;
-      yhi = _ptV[ito]._y;
-    } else {
-      ylo = _ptV[ito]._y;
-      yhi = _ptV[ifr]._y;
-    }
+    std::tie(ylo, yhi) = std::minmax(_ptV[ifr]._y, _ptV[ito]._y);
   } else {
     ylo = _ptV[ifr]._y;
     yhi = ylo;
-    if (_ptV[ifr]._x < _ptV[ito]._x) {
-      xlo = _ptV[ifr]._x;
-      xhi = _ptV[ito]._x;
-    } else {
-      xlo = _ptV[ito]._x;
-      xhi = _ptV[ifr]._x;
-    }
+    std::tie(xlo, xhi) = std::minmax(_ptV[ifr]._x, _ptV[ito]._x);
   }
-  int hw = x._width / 2;
+  const int hw = x._width / 2;
   x._default_ext = hw;
   x._shape._rect.reset(xlo - hw, ylo - hw, xhi + hw, yhi + hw);
   _rcV.push_back(x);
@@ -312,19 +290,18 @@ void tmg_conn::loadSWire(dbNet* net)
 {
   _hasSWire = false;
   dbSet<dbSWire> swires = net->getSWires();
-  if (swires.size() == 0) {
+  if (swires.empty()) {
     return;
   }
 
   _hasSWire = true;
-  dbShape shape;
-  int x1, y1, x2, y2;
-  dbTechLayer* layer1 = nullptr;
-  dbTechLayer* layer2 = nullptr;
-  tmg_rcpt* pt;
   for (dbSWire* sw : swires) {
     for (dbSBox* sbox : sw->getWires()) {
-      Rect rect = sbox->getBox();
+      const Rect rect = sbox->getBox();
+      dbTechLayer* layer1 = nullptr;
+      dbTechLayer* layer2 = nullptr;
+      int x1, y1, x2, y2;
+      dbShape shape;
       if (sbox->isVia()) {
         x1 = (rect.xMin() + rect.xMax()) / 2;
         x2 = x1;
@@ -336,19 +313,19 @@ void tmg_conn::loadSWire(dbNet* net)
           layer1 = tech_via->getTopLayer();
           layer2 = tech_via->getBottomLayer();
           shape.setVia(tech_via, rect);
-        } else if (via) {
+        } else {
           layer1 = via->getTopLayer();
           layer2 = via->getBottomLayer();
           shape.setVia(via, rect);
         }
       } else {
-        if (rect.xMax() - rect.xMin() > rect.yMax() - rect.yMin()) {
-          y1 = (rect.yMin() + rect.yMax()) / 2;
+        if (rect.getDir() == 1) {
+          y1 = rect.yCenter();
           y2 = y1;
           x1 = rect.xMin() + (rect.yMax() - y1);
           x2 = rect.xMax() - (rect.yMax() - y1);
         } else {
-          x1 = (rect.xMin() + rect.xMax()) / 2;
+          x1 = rect.xCenter();
           x2 = x1;
           y1 = rect.yMin() + (rect.xMax() - x1);
           y2 = rect.yMax() - (rect.xMax() - x1);
@@ -360,13 +337,13 @@ void tmg_conn::loadSWire(dbNet* net)
 
       if (_ptV.empty() || layer1 != _ptV.back()._layer || x1 != _ptV.back()._x
           || y1 != _ptV.back()._y) {
-        pt = allocPt();
+        tmg_rcpt* pt = allocPt();
         pt->_x = x1;
         pt->_y = y1;
         pt->_layer = layer1;
       }
 
-      pt = allocPt();
+      tmg_rcpt* pt = allocPt();
       pt->_x = x2;
       pt->_y = y2;
       pt->_layer = layer2;
@@ -378,10 +355,9 @@ void tmg_conn::loadSWire(dbNet* net)
 
 void tmg_conn::loadWire(dbWire* wire)
 {
+  _ptV.clear();
   dbWirePathItr pitr;
   dbWirePath path;
-  dbWirePathShape pathShape;
-  _ptV.clear();
   pitr.begin(wire);
   while (pitr.getNextPath(path)) {
     if (_ptV.empty() || path.layer != _ptV.back()._layer
@@ -392,6 +368,7 @@ void tmg_conn::loadWire(dbWire* wire)
       pt->_y = path.point.getY();
       pt->_layer = path.layer;
     }
+    dbWirePathShape pathShape;
     while (pitr.getNextShape(pathShape)) {
       auto pt = allocPt();
       pt->_x = pathShape.point.getX();
@@ -405,116 +382,103 @@ void tmg_conn::loadWire(dbWire* wire)
   loadSWire(wire->getNet());
 }
 
-void tmg_conn::splitBySj(int j,
-                         tmg_rc_sh* sj,
-                         int rt,
-                         int sjxMin,
-                         int sjyMin,
-                         int sjxMax,
-                         int sjyMax)
+void tmg_conn::splitBySj(const int j,
+                         const tmg_rc_sh* sj,
+                         const int rt,
+                         const int sjxMin,
+                         const int sjyMin,
+                         const int sjxMax,
+                         const int sjyMax)
 {
-  int k, klast, nxmin, nymin, nxmax, nymax, endTo;
-  tmg_rcpt* pt;
-  int isVia = sj->isVia() ? 1 : 0;
+  const int isVia = sj->isVia() ? 1 : 0;
   _search->searchStart(rt, {sjxMin, sjyMin, sjxMax, sjyMax}, isVia);
-  klast = -1;
+  int klast = -1;
+  int k;
   while (_search->searchNext(&k)) {
-    if (k != klast && k != j) {
-      if (_rcV[j]._ito == _rcV[k]._ifr || _rcV[j]._ifr == _rcV[k]._ito) {
-        continue;
-      }
-      if (!sj->isVia() && _rcV[j]._vert == _rcV[k]._vert) {
-        continue;
-      }
-      tmg_rc_sh* sk = &(_rcV[k]._shape);
-      if (sk->isVia()) {
-        continue;
-      }
-      dbTechLayer* tlayer = _ptV[_rcV[k]._ifr]._layer;
-      nxmin = sk->xMin();
-      nxmax = sk->xMax();
-      nymin = sk->yMin();
-      nymax = sk->yMax();
-      int x;
-      int y;
-      if (_rcV[k]._vert) {
-        if (sjyMin - sk->yMin() < _rcV[k]._width) {
-          continue;
-        }
-        if (sk->yMax() - sjyMax < _rcV[k]._width) {
-          continue;
-        }
-        if (_ptV[_rcV[k]._ifr]._y > _ptV[_rcV[k]._ito]._y) {
-          _rcV[k]._shape.setYmin(_ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2);
-          nymax = _ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2;
-        } else {
-          _rcV[k]._shape.setYmax(_ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2);
-          nymin = _ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2;
-        }
-        x = _ptV[_rcV[k]._ifr]._x;
-        y = _ptV[_rcV[j]._ifr]._y;
-      } else {
-        if (sjxMin - sk->xMin() < _rcV[k]._width) {
-          continue;
-        }
-        if (sk->xMax() - sjxMax < _rcV[k]._width) {
-          continue;
-        }
-        if (_ptV[_rcV[k]._ifr]._x > _ptV[_rcV[k]._ito]._x) {
-          _rcV[k]._shape.setXmin(_ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2);
-          nxmax = _ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2;
-        } else {
-          _rcV[k]._shape.setXmax(_ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2);
-          nxmin = _ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2;
-        }
-        x = _ptV[_rcV[j]._ifr]._x;
-        y = _ptV[_rcV[k]._ifr]._y;
-      }
-      klast = k;
-      pt = allocPt();
-      pt->_x = x;
-      pt->_y = y;
-      pt->_layer = tlayer;
-      pt->_tindex = -1;
-      pt->_t_alt = nullptr;
-      pt->_next_for_term = nullptr;
-      pt->_pinpt = 0;
-      pt->_c2pinpt = 0;
-      pt->_next_for_clear = nullptr;
-      pt->_sring = nullptr;
-      endTo = _rcV[k]._ito;
-      _rcV[k]._ito = _ptV.size() - 1;
-      // create new tmg_rc
-      addRc(k,
-            _rcV[k]._shape,
-            _ptV.size() - 1,
-            endTo,
-            nxmin,
-            nymin,
-            nxmax,
-            nymax);
-      _search->addShape(rt, {nxmin, nymin, nxmax, nymax}, 0, _rcV.size() - 1);
+    if (k == klast || k == j) {
+      continue;
     }
+    if (_rcV[j]._ito == _rcV[k]._ifr || _rcV[j]._ifr == _rcV[k]._ito) {
+      continue;
+    }
+    if (!sj->isVia() && _rcV[j]._vert == _rcV[k]._vert) {
+      continue;
+    }
+    tmg_rc_sh* sk = &(_rcV[k]._shape);
+    if (sk->isVia()) {
+      continue;
+    }
+    dbTechLayer* tlayer = _ptV[_rcV[k]._ifr]._layer;
+    int nxmin = sk->xMin();
+    int nxmax = sk->xMax();
+    int nymin = sk->yMin();
+    int nymax = sk->yMax();
+    int x;
+    int y;
+    if (_rcV[k]._vert) {
+      if (sjyMin - sk->yMin() < _rcV[k]._width) {
+        continue;
+      }
+      if (sk->yMax() - sjyMax < _rcV[k]._width) {
+        continue;
+      }
+      if (_ptV[_rcV[k]._ifr]._y > _ptV[_rcV[k]._ito]._y) {
+        _rcV[k]._shape.setYmin(_ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2);
+        nymax = _ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2;
+      } else {
+        _rcV[k]._shape.setYmax(_ptV[_rcV[j]._ifr]._y + _rcV[k]._width / 2);
+        nymin = _ptV[_rcV[j]._ifr]._y - _rcV[k]._width / 2;
+      }
+      x = _ptV[_rcV[k]._ifr]._x;
+      y = _ptV[_rcV[j]._ifr]._y;
+    } else {
+      if (sjxMin - sk->xMin() < _rcV[k]._width) {
+        continue;
+      }
+      if (sk->xMax() - sjxMax < _rcV[k]._width) {
+        continue;
+      }
+      if (_ptV[_rcV[k]._ifr]._x > _ptV[_rcV[k]._ito]._x) {
+        _rcV[k]._shape.setXmin(_ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2);
+        nxmax = _ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2;
+      } else {
+        _rcV[k]._shape.setXmax(_ptV[_rcV[j]._ifr]._x + _rcV[k]._width / 2);
+        nxmin = _ptV[_rcV[j]._ifr]._x - _rcV[k]._width / 2;
+      }
+      x = _ptV[_rcV[j]._ifr]._x;
+      y = _ptV[_rcV[k]._ifr]._y;
+    }
+    klast = k;
+    tmg_rcpt* pt = allocPt();
+    pt->_x = x;
+    pt->_y = y;
+    pt->_layer = tlayer;
+    pt->_tindex = -1;
+    pt->_t_alt = nullptr;
+    pt->_next_for_term = nullptr;
+    pt->_pinpt = 0;
+    pt->_c2pinpt = 0;
+    pt->_next_for_clear = nullptr;
+    pt->_sring = nullptr;
+    const int endTo = _rcV[k]._ito;
+    _rcV[k]._ito = _ptV.size() - 1;
+    // create new tmg_rc
+    addRc(
+        k, _rcV[k]._shape, _ptV.size() - 1, endTo, nxmin, nymin, nxmax, nymax);
+    _search->addShape(rt, {nxmin, nymin, nxmax, nymax}, 0, _rcV.size() - 1);
   }
 }
 
+// split top of T shapes
 void tmg_conn::splitTtop()
 {
-  // split top of T shapes (for GALET created def file)
-  dbTechLayer *layb, *layt;
-  int rt, rt_b, rt_t;
-  int via_x, via_y;
-  dbSet<dbBox> boxes;
-
   for (size_t j = 0; j < _rcV.size(); j++) {
     tmg_rc_sh* sj = &(_rcV[j]._shape);
     if (sj->isVia()) {
-      via_x = _ptV[_rcV[j]._ifr]._x;
-      via_y = _ptV[_rcV[j]._ifr]._y;
-      layb = nullptr;
-      layt = nullptr;
-      dbTechVia* tv = sj->getTechVia();
-      if (tv) {
+      dbTechLayer* layb = nullptr;
+      dbTechLayer* layt = nullptr;
+      dbSet<dbBox> boxes;
+      if (dbTechVia* tv = sj->getTechVia()) {
         layb = tv->getBottomLayer();
         layt = tv->getTopLayer();
         boxes = tv->getBoxes();
@@ -524,16 +488,13 @@ void tmg_conn::splitTtop()
         layt = vv->getTopLayer();
         boxes = vv->getBoxes();
       }
-      rt_b = layb->getRoutingLevel();
-      rt_t = layt->getRoutingLevel();
-      dbSet<dbBox>::iterator bitr;
-      dbBox* b;
-      for (bitr = boxes.begin(); bitr != boxes.end(); ++bitr) {
-        b = *bitr;
+      const int via_x = _ptV[_rcV[j]._ifr]._x;
+      const int via_y = _ptV[_rcV[j]._ifr]._y;
+      for (dbBox* b : boxes) {
         if (b->getTechLayer() == layb) {
           splitBySj(j,
                     sj,
-                    rt_b,
+                    layb->getRoutingLevel(),
                     via_x + b->xMin(),
                     via_y + b->yMin(),
                     via_x + b->xMax(),
@@ -541,7 +502,7 @@ void tmg_conn::splitTtop()
         } else if (b->getTechLayer() == layt) {
           splitBySj(j,
                     sj,
-                    rt_t,
+                    layt->getRoutingLevel(),
                     via_x + b->xMin(),
                     via_y + b->yMin(),
                     via_x + b->xMax(),
@@ -549,7 +510,7 @@ void tmg_conn::splitTtop()
         }
       }
     } else {
-      rt = sj->getTechLayer()->getRoutingLevel();
+      const int rt = sj->getTechLayer()->getRoutingLevel();
       splitBySj(j, sj, rt, sj->xMin(), sj->yMin(), sj->xMax(), sj->yMax());
     }
   }
@@ -557,66 +518,60 @@ void tmg_conn::splitTtop()
 
 void tmg_conn::setSring()
 {
-  int ii;
-  for (ii = 0; ii < _shortN; ii++) {
-    if (!_shortV[ii]._skip) {
-      tmg_rcpt* pfr = &_ptV[_shortV[ii]._i0];
-      tmg_rcpt* pto = &_ptV[_shortV[ii]._i1];
-      tmg_rcpt* x;
-      if (pfr == pto) {
+  for (int ii = 0; ii < _shortN; ii++) {
+    if (_shortV[ii]._skip) {
+      continue;
+    }
+    tmg_rcpt* pfr = &_ptV[_shortV[ii]._i0];
+    tmg_rcpt* pto = &_ptV[_shortV[ii]._i1];
+    if (pfr == pto) {
+      continue;
+    }
+    if (pfr->_sring && !pto->_sring) {
+      pto->_sring = pfr->_sring;
+      pfr->_sring = pto;
+    } else if (pto->_sring && !pfr->_sring) {
+      pfr->_sring = pto->_sring;
+      pto->_sring = pfr;
+    } else if (!pfr->_sring && !pto->_sring) {
+      pfr->_sring = pto;
+      pto->_sring = pfr;
+    } else {
+      tmg_rcpt* x = pfr->_sring;
+      while (x->_sring != pfr && x != pto) {
+        x = x->_sring;
+      }
+      if (x == pto) {
         continue;
       }
-      if (pfr->_sring && !pto->_sring) {
-        pto->_sring = pfr->_sring;
-        pfr->_sring = pto;
-      } else if (pto->_sring && !pfr->_sring) {
-        pfr->_sring = pto->_sring;
-        pto->_sring = pfr;
-      } else if (!pfr->_sring && !pto->_sring) {
-        pfr->_sring = pto;
-        pto->_sring = pfr;
-      } else {
-        x = pfr->_sring;
-        while (x->_sring != pfr && x != pto) {
-          x = x->_sring;
-        }
-        if (x == pto) {
-          continue;
-        }
-        x->_sring = pto;
-        x = pto;
-        while (x->_sring != pto) {
-          x = x->_sring;
-        }
-        x->_sring = pfr;
+      x->_sring = pto;
+      x = pto;
+      while (x->_sring != pto) {
+        x = x->_sring;
       }
+      x->_sring = pfr;
     }
   }
 }
 
 void tmg_conn::detachTilePins()
 {
-  int j, k, rtlb, rtli;
-  int x1, y1, x2, y2;
-  tmg_rcterm* tx;
-  dbBTerm* bterm;
-  dbShape pin;
-  dbTechVia* tv;
+
   _slicedTilePinCnt = 0;
-  bool sliceDone;
-  for (j = 0; j < _termN; j++) {
-    tx = _termV + j;
+  for (int j = 0; j < _termN; j++) {
+    tmg_rcterm* tx = _termV + j;
     if (tx->_iterm) {
       continue;
     }
-    bterm = tx->_bterm;
+    dbBTerm* bterm = tx->_bterm;
+    dbShape pin;
     if (!bterm->getFirstPin(pin) || pin.isVia()) {
       continue;
     }
-    Rect rectb = pin.getBox();
-    rtlb = pin.getTechLayer()->getRoutingLevel();
-    sliceDone = false;
-    for (k = 0; !sliceDone && k < _termN; k++) {
+    const Rect rectb = pin.getBox();
+    const int rtlb = pin.getTechLayer()->getRoutingLevel();
+    bool sliceDone = false;
+    for (int k = 0; !sliceDone && k < _termN; k++) {
       tx = _termV + k;
       if (tx->_bterm) {
         continue;
@@ -624,24 +579,16 @@ void tmg_conn::detachTilePins()
       dbMTerm* mterm = tx->_iterm->getMTerm();
       int px, py;
       tx->_iterm->getInst()->getOrigin(px, py);
-      Point origin = Point(px, py);
-      dbOrientType orient = tx->_iterm->getInst()->getOrient();
-      dbTransform transform(orient, origin);
-      dbSet<dbMPin> mpins = mterm->getMPins();
-      dbSet<dbMPin>::iterator mpin_itr;
-      for (mpin_itr = mpins.begin(); !sliceDone && mpin_itr != mpins.end();
-           mpin_itr++) {
-        dbMPin* mpin = *mpin_itr;
-        dbSet<dbBox> boxes = mpin->getGeometry();
-        dbSet<dbBox>::iterator box_itr;
-        for (box_itr = boxes.begin(); !sliceDone && box_itr != boxes.end();
-             box_itr++) {
-          dbBox* box = *box_itr;
+      const Point origin = Point(px, py);
+      const dbOrientType orient = tx->_iterm->getInst()->getOrient();
+      const dbTransform transform(orient, origin);
+      for (dbMPin* mpin : mterm->getMPins()) {
+        for (dbBox* box : mpin->getGeometry()) {
           Rect recti = box->getBox();
           transform.apply(recti);
           if (box->isVia()) {
-            tv = box->getTechVia();
-            rtli = tv->getTopLayer()->getRoutingLevel();
+            dbTechVia* tv = box->getTechVia();
+            int rtli = tv->getTopLayer()->getRoutingLevel();
             if (rtli <= 1) {
               continue;
             }
@@ -652,7 +599,7 @@ void tmg_conn::detachTilePins()
               }
             }
           } else {
-            rtli = box->getTechLayer()->getRoutingLevel();
+            const int rtli = box->getTechLayer()->getRoutingLevel();
             if (rtli != rtlb) {
               continue;
             }
@@ -665,10 +612,10 @@ void tmg_conn::detachTilePins()
           if (!recti.overlaps(rectb)) {
             continue;
           }
-          x1 = rectb.xMin();
-          y1 = rectb.yMin();
-          x2 = rectb.xMax();
-          y2 = rectb.yMax();
+          int x1 = rectb.xMin();
+          int y1 = rectb.yMin();
+          int x2 = rectb.xMax();
+          int y2 = rectb.yMax();
           if (x2 > recti.xMax() && x1 > recti.xMin()) {
             x1 = recti.xMax();
           } else if (x1 < recti.xMin() && x2 < recti.xMax()) {
@@ -692,8 +639,7 @@ void tmg_conn::detachTilePins()
 
 void tmg_conn::getBTermSearchBox(dbBTerm* bterm, dbShape& pin, Rect& rect)
 {
-  int ii;
-  for (ii = 0; ii < _slicedTilePinCnt; ii++) {
+  for (int ii = 0; ii < _slicedTilePinCnt; ii++) {
     if (_slicedTileBTerm[ii] == bterm) {
       rect.reset(_stbtx1[ii], _stbty1[ii], _stbtx2[ii], _stbty2[ii]);
       return;

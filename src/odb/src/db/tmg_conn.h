@@ -54,33 +54,21 @@ class tmg_rc_sh
   Rect _via_upper_rect;
 
  public:
-  const Rect& rect() { return _rect; }
-  int xMin() { return _rect.xMin(); }
-  int xMax() { return _rect.xMax(); }
-  int yMin() { return _rect.yMin(); }
-  int yMax() { return _rect.yMax(); }
-  bool isVia() { return (_tech_via || _block_via); }
-  dbTechVia* getTechVia() { return _tech_via; }
-  dbVia* getVia() { return _block_via; }
-  dbTechLayer* getTechLayer() { return _layer; }
-  uint getDX() { return (_rect.xMax() - _rect.xMin()); }
-  uint getDY() { return (_rect.yMax() - _rect.yMin()); }
-  void setXmin(int x)
-  {
-    _rect.reset(x, _rect.yMin(), _rect.xMax(), _rect.yMax());
-  }
-  void setXmax(int x)
-  {
-    _rect.reset(_rect.xMin(), _rect.yMin(), x, _rect.yMax());
-  }
-  void setYmin(int y)
-  {
-    _rect.reset(_rect.xMin(), y, _rect.xMax(), _rect.yMax());
-  }
-  void setYmax(int y)
-  {
-    _rect.reset(_rect.xMin(), _rect.yMin(), _rect.xMax(), y);
-  }
+  const Rect& rect() const { return _rect; }
+  int xMin() const { return _rect.xMin(); }
+  int xMax() const { return _rect.xMax(); }
+  int yMin() const { return _rect.yMin(); }
+  int yMax() const { return _rect.yMax(); }
+  bool isVia() const { return (_tech_via || _block_via); }
+  dbTechVia* getTechVia() const { return _tech_via; }
+  dbVia* getVia() const { return _block_via; }
+  dbTechLayer* getTechLayer() const { return _layer; }
+  uint getDX() const { return (_rect.xMax() - _rect.xMin()); }
+  uint getDY() const { return (_rect.yMax() - _rect.yMin()); }
+  void setXmin(int x) { _rect.set_xlo(x); }
+  void setXmax(int x) { _rect.set_xhi(x); }
+  void setYmin(int y) { _rect.set_ylo(y); }
+  void setYmax(int y) { _rect.set_yhi(y); }
 };
 
 struct tmg_rc
@@ -192,7 +180,7 @@ class tmg_conn
  private:
   void splitTtop();
   void splitBySj(int j,
-                 tmg_rc_sh* sj,
+                 const tmg_rc_sh* sj,
                  int rt,
                  int sjxMin,
                  int sjyMin,
@@ -206,9 +194,9 @@ class tmg_conn
   void checkVisited();
   void printDisconnect();
   tmg_rcpt* allocPt();
-  void addRc(dbShape& s, int ifr, int ito);
+  void addRc(const dbShape& s, int ifr, int ito);
   void addRc(int k,
-             tmg_rc_sh& s,
+             const tmg_rc_sh& s,
              int ifr,
              int ito,
              int xmin,
