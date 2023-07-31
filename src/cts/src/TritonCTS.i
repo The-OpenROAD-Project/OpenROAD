@@ -34,6 +34,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
+#include <cstdint>
+
 #include "cts/TritonCTS.h"
 #include "CtsOptions.h"
 #include "TechChar.h"
@@ -51,6 +53,7 @@ using ord::getTritonCts;
 %}
 
 %include "../../Exception.i"
+%include "stdint.i"
 
 %ignore cts::CtsOptions::setObserver;
 %ignore cts::CtsOptions::getObserver;
@@ -136,14 +139,14 @@ set_tree_buf(const char* buffer)
 }
 
 void
-set_distance_between_buffers(double distance)
+set_distance_between_buffers(int distance)
 {
   getTritonCts()->getParms()->setSimpleSegmentsEnabled(true);
   getTritonCts()->getParms()->setBufferDistance(distance);
 }
 
 void
-set_branching_point_buffers_distance(double distance)
+set_branching_point_buffers_distance(int distance)
 {
   getTritonCts()->getParms()->setVertexBuffersEnabled(true);
   getTritonCts()->getParms()->setVertexBufferDistance(distance);
