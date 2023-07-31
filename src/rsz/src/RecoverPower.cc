@@ -194,7 +194,6 @@ RecoverPower::recoverPower()
   }
 
   resizer_->incrementalParasiticsEnd();
-
   // TODO: Add the appropriate metric here
   // logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
   if (resize_count_ > 0) {
@@ -203,7 +202,6 @@ RecoverPower::recoverPower()
   if (resizer_->overMaxArea()) {
     logger_->error(RSZ, 125, "max utilization reached.");
   }
-
 }
 
 // For testing.
