@@ -50,6 +50,7 @@ target_sources(ppl
     src/Core.cpp
     src/HungarianMatching.cpp
     src/IOPlacer.cpp
+    src/IOPlacerRenderer.cpp
     src/MakeIoplacer.cpp
     src/Netlist.cpp
     src/SimulatedAnnealing.cpp
@@ -70,6 +71,7 @@ target_link_libraries(ppl
     OpenSTA
     odb
     utl
+    gui
     Boost::boost
 )
                       

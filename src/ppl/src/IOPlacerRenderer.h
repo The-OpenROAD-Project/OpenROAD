@@ -2,7 +2,7 @@
 //
 // BSD 3-Clause License
 //
-// Copyright (c) 2022, The Regents of the University of California
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,48 +33,39 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-%{
+#pragma once
+
+#include "SimulatedAnnealing.h"
+#include "gui/gui.h"
+#include "ppl/AbstractIOPlacerRenderer.h"
 #include "ppl/IOPlacer.h"
-#include "ord/OpenRoad.hh"
-#include "odb/odb.h"
-#include "odb/db.h"
 
-using std::set;
-using ppl::PinSet;    
-using namespace ppl;
+namespace ppl {
 
-template <class TYPE>
-set<TYPE> *
-PyListSet(PyObject *const source,
-          swig_type_info *swig_type)
+class IOPlacerRenderer : public gui::Renderer, public AbstractIOPlacerRenderer
 {
-  int sz;
-  if (PyList_Check(source) && PyList_Size(source) > 0) {
-    sz = PyList_Size(source);
-    set<TYPE> *seq = new set<TYPE>;
-    for (int i = 0; i < sz; i++) {
-      void *obj;
-      SWIG_ConvertPtr(PyList_GetItem(source, i), &obj, swig_type, false);
-      seq->insert(reinterpret_cast<TYPE>(obj));
-    }
-    return seq;
-  }
-  else
-    return nullptr;
-}
+ public:
+  IOPlacerRenderer();
+  ~IOPlacerRenderer() override;
+  void setCurrentIteration(const int& current_iteration) override;
+  void setPaintingInterval(const int& painting_interval) override;
+  void setPinAssignment(const std::vector<IOPin>& assignment) override;
+  void setSinks(const std::vector<std::vector<InstancePin>>& sinks) override;
+  void setIsNoPauseMode(const bool& is_no_pause_mode) override;
 
-%}
+  void redrawAndPause() override;
 
-%typemap(in) ppl::PinSet* {
-  $1 = PyListSet<odb::dbBTerm*>($input, SWIGTYPE_p_odb__dbBTerm);
-}
+  void drawObjects(gui::Painter& painter) override;
 
-%include "../../Exception-py.i"
+ private:
+  bool isDrawingNeeded() const;
 
-%import "odb.i"
+  std::vector<ppl::IOPin> pin_assignment_;
+  std::vector<std::vector<InstancePin>> sinks_;
 
-%ignore ppl::IOPlacer::getRenderer;
-%ignore ppl::IOPlacer::setRenderer;
+  int painting_interval_;
+  int current_iteration_;
+  bool is_no_pause_mode_;
+};
 
-%include "ppl/Parameters.h"
-%include "ppl/IOPlacer.h"
+}  // namespace ppl
