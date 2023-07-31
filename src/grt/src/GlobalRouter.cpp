@@ -868,7 +868,7 @@ bool GlobalRouter::makeFastrouteNet(Net* net)
     // set layer restriction only to clock nets that are not connected to
     // leaf iterms
     int min_layer, max_layer;
-    getNetLayerRange(net, min_layer, max_layer);
+    getNetLayerRange(net->getDbNet(), min_layer, max_layer);
 
     FrNet* fr_net = fastroute_->addNet(net->getDbNet(),
                                        is_clock,
@@ -913,8 +913,9 @@ void GlobalRouter::saveSttInputFile(Net* net)
   out.close();
 }
 
-void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
+void GlobalRouter::getNetLayerRange(odb::dbNet* db_net, int& min_layer, int& max_layer)
 {
+  Net* net = db_net_map_[db_net];
   int port_min_layer = std::numeric_limits<int>::max();
   for (const Pin& pin : net->getPins()) {
     if (pin.isPort() || pin.isConnectedToPadOrMacro()) {
@@ -922,7 +923,7 @@ void GlobalRouter::getNetLayerRange(Net* net, int& min_layer, int& max_layer)
     }
   }
 
-  bool is_non_leaf_clock = isNonLeafClock(net->getDbNet());
+  bool is_non_leaf_clock = isNonLeafClock(db_net);
   min_layer = (is_non_leaf_clock && min_layer_for_clock_ > 0)
                   ? min_layer_for_clock_
                   : min_routing_layer_;

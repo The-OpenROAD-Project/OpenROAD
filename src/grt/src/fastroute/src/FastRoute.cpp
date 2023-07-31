@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <unordered_set>
+#include <iostream>
 
 #include "AbstractFastRouteRenderer.h"
 #include "DataType.h"
@@ -726,13 +727,16 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
 
         // defines the layer used for horizontal edges are still 2D
         int layer_v = 0;
-
-        if (layer_orientation_ != 0) {
-          layer_h = 1;
-          layer_v = 2;
+        if (nets_[netID]->getMinLayer() != 1) {
+          std::cout<<"Net name: "<< nets_[netID]->getName() <<"\n";
+          std::cout<<"Min layer: "<< nets_[netID]->getMinLayer() <<"\n";
+        }
+        if (((nets_[netID]->getMinLayer() % 2) - layer_orientation_) != 0) {
+          layer_h = nets_[netID]->getMinLayer() + 1;
+          layer_v = nets_[netID]->getMinLayer();
         } else {
-          layer_h = 2;
-          layer_v = 1;
+          layer_h = nets_[netID]->getMinLayer();
+          layer_v = nets_[netID]->getMinLayer() + 1;
         }
         int second_x = tile_size_ * (gridsX[1] + 0.5) + x_corner_;
         int lastL = (lastX == second_x) ? layer_v : layer_h;
