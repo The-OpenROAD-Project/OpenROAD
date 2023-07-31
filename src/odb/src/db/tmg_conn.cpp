@@ -117,7 +117,7 @@ tmg_conn::tmg_conn(utl::Logger* logger) : logger_(logger)
   _swireNetCnt = 0;
 }
 
-int tmg_conn::ptDist(const int fr, const int to)
+int tmg_conn::ptDist(const int fr, const int to) const
 {
   return abs(_ptV[fr]._x - _ptV[to]._x) + abs(_ptV[fr]._y - _ptV[to]._y);
 }
@@ -303,17 +303,16 @@ void tmg_conn::loadSWire(dbNet* net)
       int x1, y1, x2, y2;
       dbShape shape;
       if (sbox->isVia()) {
-        x1 = (rect.xMin() + rect.xMax()) / 2;
+        x1 = rect.xCenter();
         x2 = x1;
-        y1 = (rect.yMin() + rect.yMax()) / 2;
+        y1 = rect.yCenter();
         y2 = y1;
-        dbTechVia* tech_via = sbox->getTechVia();
-        dbVia* via = sbox->getBlockVia();
-        if (tech_via) {
+        if (dbTechVia* tech_via = sbox->getTechVia()) {
           layer1 = tech_via->getTopLayer();
           layer2 = tech_via->getBottomLayer();
           shape.setVia(tech_via, rect);
         } else {
+          dbVia* via = sbox->getBlockVia();
           layer1 = via->getTopLayer();
           layer2 = via->getBottomLayer();
           shape.setVia(via, rect);

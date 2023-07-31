@@ -65,12 +65,12 @@ class tmg_conn_graph
  public:
   tmg_conn_graph();
   void init(int ptN, int shortN);
-  tcg_edge* newEdge(tmg_conn* conn, int fr, int to);
-  tcg_edge* newShortEdge(tmg_conn* conn, int fr, int to);
+  tcg_edge* newEdge(const tmg_conn* conn, int fr, int to);
+  tcg_edge* newShortEdge(const tmg_conn* conn, int fr, int to);
   tcg_edge* getNextEdge(bool ok_to_descend);
   tcg_edge* getFirstEdge(int jstart);
   tcg_edge* getFirstNonShortEdge(int& jstart);
-  void addEdges(tmg_conn* conn, int i0, int i1, int k);
+  void addEdges(const tmg_conn* conn, int i0, int i1, int k);
   void clearVisited();
   void relocateShorts(tmg_conn* conn);
   void getEdgeRefCoord(tmg_conn* conn, tcg_edge* pe, int& rx, int& ry);
@@ -134,7 +134,9 @@ void tmg_conn_graph::init(const int ptN, const int shortN)
   _ptN = ptN;
 }
 
-tcg_edge* tmg_conn_graph::newEdge(tmg_conn* conn, const int fr, const int to)
+tcg_edge* tmg_conn_graph::newEdge(const tmg_conn* conn,
+                                  const int fr,
+                                  const int to)
 {
   tcg_edge* e = _eV + _eN++;
   e->k = -1;
@@ -161,7 +163,7 @@ tcg_edge* tmg_conn_graph::newEdge(tmg_conn* conn, const int fr, const int to)
   return e;
 }
 
-tcg_edge* tmg_conn_graph::newShortEdge(tmg_conn* conn,
+tcg_edge* tmg_conn_graph::newShortEdge(const tmg_conn* conn,
                                        const int fr,
                                        const int to)
 {
@@ -232,31 +234,25 @@ bool tmg_conn_graph::isBadShort(tcg_edge* pe, tmg_conn* conn)
   if (pe->s == nullptr) {
     return false;
   }
-  if (conn->_ptV[pe->fr]._x != conn->_ptV[pe->to]._x) {
-    return true;
-  }
-  if (conn->_ptV[pe->fr]._y != conn->_ptV[pe->to]._y) {
-    return true;
-  }
-  return false;
+  const tmg_rcpt& from = conn->_ptV[pe->fr];
+  const tmg_rcpt& to = conn->_ptV[pe->to];
+  return from._x != to._x || from._y != to._y;
 }
 
 void tmg_conn_graph::relocateShorts(tmg_conn* conn)
 {
-  tcg_edge *pe, *ppe, *pppe, *skipe, *last;
-  int r1x, r1y, r2x, r2y;
-  bool needAdjust, firstCheck;
   for (int jp = 0; jp < _ptN; jp++) {
-    pe = _ptV[jp].edges;
+    tcg_edge* pe = _ptV[jp].edges;
     if (pe == nullptr || pe->next == nullptr) {
       continue;
     }
-    needAdjust = true;
+    bool needAdjust = true;
     while (needAdjust) {
       needAdjust = false;
-      firstCheck = true;
-      pppe = nullptr;
-      ppe = nullptr;
+      int r1x, r1y;
+      bool firstCheck = true;
+      tcg_edge* pppe = nullptr;
+      tcg_edge* ppe = nullptr;
       for (pe = _ptV[jp].edges; pe != nullptr; pe = pe->next) {
         if (ppe == nullptr) {
           ppe = pe;
@@ -266,6 +262,8 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
           getEdgeRefCoord(conn, ppe, r1x, r1y);
         }
         firstCheck = false;
+        int r2x;
+        int r2y;
         getEdgeRefCoord(conn, pe, r2x, r2y);
         if ((pe->s == nullptr && ppe->s == nullptr) || isBadShort(pe, conn)
             || isBadShort(ppe, conn)) {
@@ -277,7 +275,7 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
         }
         if (r1x > r2x || (r1x == r2x && r1y > r2y)) {
           needAdjust = true;
-          last = pe->next;
+          tcg_edge* last = pe->next;
           if (pppe) {
             pppe->next = pe;
           } else {
@@ -297,16 +295,13 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
     }
   }
   // re-assign "skip".
-  int noshortn, shortn, skipn;
-  tcg_edge *plast, *nse;
   for (int jp = 0; jp < _ptN; jp++) {
-    skipe = nullptr;
-    noshortn = 0;
-    shortn = 0;
-    skipn = 0;
-    plast = nullptr;
-    last = nullptr;
-    for (pe = _ptV[jp].edges; pe != nullptr; pe = pe->next) {
+    tcg_edge* skipe = nullptr;
+    int noshortn = 0;
+    int shortn = 0;
+    tcg_edge* plast = nullptr;
+    tcg_edge* last = nullptr;
+    for (tcg_edge* pe = _ptV[jp].edges; pe != nullptr; pe = pe->next) {
       if (!pe->s) {
         noshortn++;
         continue;
@@ -319,7 +314,6 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
         if (!skipe) {
           skipe = pe;
         }
-        skipn++;
       }
       plast = last;
       last = pe;
@@ -338,9 +332,9 @@ void tmg_conn_graph::relocateShorts(tmg_conn* conn)
     }
     // plast->to and last->to is the short pair to skip
     // do skip new pair;
-    for (nse = _ptV[plast->to].edges; nse != nullptr && nse->to != last->to;
-         nse = nse->next) {
-      ;
+    tcg_edge* nse = _ptV[plast->to].edges;
+    while (nse != nullptr && nse->to != last->to) {
+      nse = nse->next;
     }
     if (nse && nse->s) {
       nse->s->_skip = true;
@@ -515,19 +509,18 @@ void tmg_conn::removeShortLoops()
     e2->visited = false;
   }
 
-  tcg_pt* pg;
-  int* path_vis = _graph->_path_vis;
-  int jstart;
   for (int j = 0; j < _ptV.size(); j++) {
     pgV[j].visited = 0;
   }
 
   // remove all short loops
+  int* path_vis = _graph->_path_vis;
   _graph->clearVisited();
   for (int j = 0; j < npath; j++) {
     path_vis[j] = 0;
   }
-  for (jstart = 0; jstart < _ptV.size(); jstart++) {
+
+  for (int jstart = 0; jstart < _ptV.size(); jstart++) {
     tcg_edge* e = _graph->getFirstEdge(jstart);
     if (!e) {
       continue;
@@ -536,7 +529,7 @@ void tmg_conn::removeShortLoops()
     while (e) {
       e->visited = true;
       e->reverse->visited = true;
-      pg = pgV + e->to;
+      tcg_pt* pg = pgV + e->to;
       if (pg->visited) {
         e->skip = true;
         e->reverse->skip = true;
@@ -551,7 +544,7 @@ void tmg_conn::removeShortLoops()
 
   // count components, and remaining loops
   _graph->clearVisited();
-  for (jstart = 0; jstart < _ptV.size(); jstart++) {
+  for (int jstart = 0; jstart < _ptV.size(); jstart++) {
     tcg_edge* e = _graph->getFirstEdge(jstart);
     if (!e) {
       continue;
@@ -560,7 +553,7 @@ void tmg_conn::removeShortLoops()
     while (e) {
       e->visited = true;
       e->reverse->visited = true;
-      pg = pgV + e->to;
+      tcg_pt* pg = pgV + e->to;
       if (pg->visited) {
         e = _graph->getNextEdge(false);
       } else {
@@ -571,7 +564,7 @@ void tmg_conn::removeShortLoops()
   }
 }
 
-void tmg_conn_graph::addEdges(tmg_conn* conn,
+void tmg_conn_graph::addEdges(const tmg_conn* conn,
                               const int i0,
                               const int i1,
                               const int k)
@@ -614,17 +607,15 @@ void tmg_conn::removeWireLoops()
   // if no shorts, allow the loop to stay;
   // we do not expect any router to have a pure path loop
 
+  tcg_pt* pgV = _graph->_ptV;
+
   bool done = false;
-  int jstart, k;
-  tcg_pt *pg, *pgV = _graph->_ptV;
-  tcg_edge *e, *eloop, *emax;
-  int dist, max_dist, max_k;
   while (!done) {
     int loop_removed = 0;
     done = true;
     _graph->clearVisited();
-    for (jstart = 0; jstart < _ptV.size(); jstart++) {
-      e = _graph->getFirstEdge(jstart);
+    for (int jstart = 0; jstart < _ptV.size(); jstart++) {
+      tcg_edge* e = _graph->getFirstEdge(jstart);
       if (!e) {
         continue;
       }
@@ -632,21 +623,21 @@ void tmg_conn::removeWireLoops()
       while (e) {
         e->visited = true;
         e->reverse->visited = true;
-        pg = pgV + e->to;
+        tcg_pt* pg = pgV + e->to;
         if (pg->visited == 1) {
           done = false;
         } else if (pg->visited) {
-          k = pg->visited - 2;
-          max_dist = 0;
-          max_k = 0;
-          emax = nullptr;
+          int k = pg->visited - 2;
+          int max_dist = 0;
+          int max_k = 0;
+          tcg_edge* emax = nullptr;
           for (; k < _graph->_stackN; k++) {
-            eloop = _graph->_stackV[k];
+            tcg_edge* eloop = _graph->_stackV[k];
             if (!eloop->s) {
               continue;
             }
-            dist = abs(_ptV[eloop->fr]._x - _ptV[eloop->to]._x)
-                   + abs(_ptV[eloop->fr]._y - _ptV[eloop->to]._y);
+            const int dist = abs(_ptV[eloop->fr]._x - _ptV[eloop->to]._x)
+                             + abs(_ptV[eloop->fr]._y - _ptV[eloop->to]._y);
             if (dist >= max_dist) {
               max_dist = dist;
               max_k = k;
@@ -685,8 +676,8 @@ void tmg_conn::removeWireLoops()
 
   // report all remaining loops, and count components
   _graph->clearVisited();
-  for (jstart = 0; jstart < _ptV.size(); jstart++) {
-    e = _graph->getFirstEdge(jstart);
+  for (int jstart = 0; jstart < _ptV.size(); jstart++) {
+    tcg_edge* e = _graph->getFirstEdge(jstart);
     if (!e) {
       continue;
     }
@@ -694,14 +685,8 @@ void tmg_conn::removeWireLoops()
     while (e) {
       e->visited = true;
       e->reverse->visited = true;
-      pg = pgV + e->to;
+      tcg_pt* pg = pgV + e->to;
       if (pg->visited) {
-        k = pg->visited - 2;
-        if (k >= 0) {
-          for (; k < _graph->_stackN; k++) {
-            eloop = _graph->_stackV[k];
-          }
-        }
         e = _graph->getNextEdge(false);
       } else {
         pg->visited = 2 + _graph->_stackN;
@@ -775,9 +760,8 @@ int tmg_conn::isVisited(int j)
 
 void tmg_conn::checkVisited()
 {
-  int j;
   tcg_pt* pgV = _graph->_ptV;
-  for (j = 0; j < _ptV.size(); j++) {
+  for (int j = 0; j < _ptV.size(); j++) {
     if (!pgV[j].visited) {
       _connected = false;
       break;
@@ -785,549 +769,16 @@ void tmg_conn::checkVisited()
   }
 }
 
-void tmg_conn::printDisconnect()
-{
-  int j, n, jsmall = 0;
-  int compn = 0;
-  int nsmall = 0;
-  int tstack0 = 0;
-  int tstackN = 0;
-  tmg_rcterm *x, **tstackV = _tstackV;
-  tcg_pt* pgV = _graph->_ptV;
-  tcg_edge* e;
-  _graph->clearVisited();
-  for (j = 0; j < _ptV.size(); j++) {
-    e = _graph->getFirstEdge(j);
-    if (!e) {
-      continue;
-    }
-    if (_ptV[j]._tindex >= 0) {
-      tstackV[tstackN++] = _termV + _ptV[j]._tindex;
-    }
-    compn++;
-    pgV[j].visited = 1;
-    n = 0;
-    while (true) {
-      // do a physically-connected subtree
-      while (e) {
-        n++;
-        e->visited = true;
-        e->reverse->visited = true;
-        if (_ptV[e->to]._tindex >= 0) {
-          x = _termV + _ptV[e->to]._tindex;
-          if (x->_pt && x->_pt->_next_for_term) {
-            tstackV[tstackN++] = x;
-          }
-        }
-        if (pgV[e->to].visited) {
-          e = _graph->getNextEdge(false);
-        } else {
-          pgV[e->to].visited = 1;
-          e = _graph->getNextEdge(true);
-        }
-      }
-      // finished physically-connected subtree,
-      // find an unvisited short-from term point
-      tmg_rcpt* pt = nullptr;
-      while (tstack0 < tstackN && !pt) {
-        x = tstackV[tstack0++];
-        for (pt = x->_pt; pt; pt = pt->_next_for_term) {
-          if (!pgV[pt - &_ptV[0]].visited) {
-            break;
-          }
-        }
-      }
-      if (!pt) {
-        break;
-      }
-      tstack0--;
-      e = _graph->getFirstEdge(pt - &_ptV[0]);
-      pgV[pt - &_ptV[0]].visited = 1;
-    }
-    if (nsmall == 0 || n < nsmall) {
-      nsmall = n;
-      jsmall = j;
-    }
-  }
-  if (compn < 2 || nsmall == 0) {
-    return;
-  }
-  _graph->clearVisited();
-  e = _graph->getFirstEdge(jsmall);
-  pgV[jsmall].visited = 1;
-  while (e) {
-    e->visited = true;
-    e->reverse->visited = true;
-    if (pgV[e->to].visited) {
-      e = _graph->getNextEdge(false);
-    } else {
-      pgV[e->to].visited = 1;
-      e = _graph->getNextEdge(true);
-    }
-  }
-}
-
-void tmg_conn::adjustShapes()
-{
-  int j, k;
-  tcg_pt *p, *q, *pgV = _graph->_ptV;
-  tcg_edge* e;
-  int pS[256], p0, pN;
-  tmg_rc_sh *s, *sV[256];
-  tmg_rc* rV[256];
-  // since the dbShape for a via does not carry a ref point,
-  // we keep this in an auxiliary array
-  tmg_rcpt* spV[256];
-  int is_h[256], is_v[256];
-  int sN;
-
-  // find shorts that are not to the same xy
-  _graph->clearVisited();
-  for (j = 0; j < _ptV.size(); j++) {
-    p = pgV + j;
-    if (p->visited) {
-      continue;
-    }
-    p->visited = 1;
-    pS[0] = j;
-    pN = 1;
-    for (e = p->edges; e; e = e->next) {
-      if (!e->skip && e->s) {
-        pS[pN++] = e->to;
-        pgV[e->to].visited = 1;
-      }
-    }
-    if (pN == 1) {
-      continue;
-    }
-    p0 = 1;
-    while (p0 < pN) {
-      q = pgV + pS[p0++];
-      for (e = q->edges; e; e = e->next) {
-        if (!e->skip && e->s) {
-          for (k = 0; k < pN; k++) {
-            if (e->to == pS[k]) {
-              break;
-            }
-          }
-          if (k == pN) {
-            pS[pN++] = e->to;
-            pgV[e->to].visited = 1;
-          }
-        }
-      }
-    }
-    for (k = 1; k < pN; k++) {
-      if (_ptV[pS[k]]._x != _ptV[j]._x || _ptV[pS[k]]._y != _ptV[j]._y) {
-        break;
-      }
-    }
-    if (k == pN) {
-      continue;
-    }
-
-    // we have pN points
-    // now get all sN>=pN shapes connected to them
-    sN = 0;
-    int nvia = 0;
-    int first_seg = 1;
-    int ok_hor = 1;
-    int ok_ver = 1;
-    int xlo = 0;
-    int xhi = 0;
-    int ylo = 0;
-    int yhi = 0;
-    int w = 0;
-    for (k = 0; k < pN; k++) {
-      for (e = pgV[pS[k]].edges; e; e = e->next) {
-        if (!e->s) {
-          spV[sN] = &_ptV[pS[k]];
-          rV[sN] = &_rcV[e->k];
-          s = &(_rcV[e->k]._shape);
-          sV[sN] = s;
-          sN++;
-          if (s->isVia()) {
-            nvia++;
-          } else if (first_seg) {
-            if (s->getDX() < s->getDY()) {
-              w = s->getDX();
-            } else {
-              w = s->getDY();
-            }
-            first_seg = 0;
-            xlo = s->xMin();
-            xhi = s->xMax();
-            ylo = s->yMin();
-            yhi = s->yMax();
-          } else {
-            if (s->getDX() < s->getDY()) {
-              if ((uint) w != s->getDX()) {
-                w = 0;
-              }
-            } else {
-              if ((uint) w != s->getDY()) {
-                w = 0;
-              }
-            }
-            if (s->xMin() != xlo || s->xMax() != xhi) {
-              ok_ver = 0;
-              if (s->xMin() < xlo) {
-                xlo = s->xMin();
-              }
-              if (s->xMax() > xhi) {
-                xhi = s->xMax();
-              }
-            }
-            if (s->yMin() != ylo || s->yMax() != yhi) {
-              ok_hor = 0;
-              if (s->yMin() < ylo) {
-                ylo = s->yMin();
-              }
-              if (s->yMax() > yhi) {
-                yhi = s->yMax();
-              }
-            }
-          }
-        }
-      }
-    }
-
-    for (k = 0; k < sN; k++) {
-      if (sV[k]->isVia()) {
-        is_h[k] = 0;
-        is_v[k] = 0;
-      } else {
-        is_h[k]
-            = (sV[k]->xMax() - sV[k]->xMin() > sV[k]->yMax() - sV[k]->yMin());
-        is_v[k]
-            = (sV[k]->xMax() - sV[k]->xMin() < sV[k]->yMax() - sV[k]->yMin());
-      }
-    }
-
-    int ok = 1;
-    int ii = 0;
-    int tx = 0;
-    int ty = 0;
-    int via_x;
-    int via_y;
-
-    if (nvia) {
-      // move to via point, check that this does not contract shapes
-      for (k = 0; k < sN; k++) {
-        if (sV[k]->isVia()) {
-          break;
-        }
-      }
-      tx = spV[k]->_x;
-      ty = spV[k]->_y;
-      // check all vias at same point
-      for (++k; k < sN; k++) {
-        if (sV[k]->isVia()) {
-          via_x = spV[k]->_x;
-          via_y = spV[k]->_y;
-          if (via_x != tx || via_y != ty) {
-            ok = 0;
-          }
-        }
-      }
-      if (ok) {
-        for (ii = 0; ii < pN; ii++) {
-          if (_ptV[pS[ii]]._x == tx && _ptV[pS[ii]]._y == ty) {
-            break;
-          }
-        }
-        if (ii == pN) {
-          ok = 0;
-        }
-      }
-      // check all wires collinear with via point
-      for (k = 0; ok && k < sN; k++) {
-        if (is_h[k]) {
-          if (ty + ty != sV[k]->yMin() + sV[k]->yMax()) {
-            ok = 0;
-          }
-        } else {
-          if (tx + tx != sV[k]->xMin() + sV[k]->xMax()) {
-            ok = 0;
-          }
-        }
-      }
-      // check that no wire extends beyond the via point in both dirs
-      for (k = 0; ok && k < sN; k++) {
-        if (!sV[k]->isVia()) {
-          if (sV[k]->xMin() < tx - w / 2 && tx + w / 2 < sV[k]->xMax()) {
-            ok = 0;
-          }
-          if (sV[k]->yMin() < ty - w / 2 && ty + w / 2 < sV[k]->yMax()) {
-            ok = 0;
-          }
-        }
-      }
-      if (ok) {
-        adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
-        continue;
-      }
-    }
-
-    if (w && (ok_ver || ok_hor) && nvia <= 1) {
-      // we will move all points to pS[ii],
-      // choosing ii as the via point,
-      // or to avoid moving a pt that matches lo or hi
-      // or default to 0
-      ii = -1;
-      if (nvia == 1) {
-        for (k = 0; k < sN; k++) {
-          if (sV[k]->isVia()) {
-            break;
-          }
-        }
-        via_x = spV[k]->_x;
-        via_y = spV[k]->_y;
-        for (ii = 0; ii < pN; ii++) {
-          if (_ptV[pS[ii]]._x == via_x && _ptV[pS[ii]]._y == via_y) {
-            break;
-          }
-        }
-      }
-      if (ii == pN) {
-      } else if (ok_ver) {
-        // w = xhi-xlo;
-        if (ii < 0) {
-          for (ii = 0; ii < pN; ii++) {
-            if (_ptV[pS[ii]]._y - w / 2 == ylo
-                || _ptV[pS[ii]]._y + w / 2 == yhi) {
-              break;
-            }
-          }
-          if (ii == pN) {
-            ii = 0;
-          }
-        }
-        for (k = 0; k < pN; k++) {
-          if (k != ii) {
-            if (_ptV[pS[k]]._y - w / 2 == ylo
-                || _ptV[pS[k]]._y + w / 2 == yhi) {
-              break;
-            }
-            if (_ptV[pS[k]]._x != _ptV[pS[ii]]._x) {
-              break;  // not expected
-            }
-          }
-        }
-        if (k >= pN) {
-          adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
-          continue;
-        }
-      } else {
-        // w = yhi-ylo;
-        if (ii < 0) {
-          for (ii = 0; ii < pN; ii++) {
-            if (_ptV[pS[ii]]._x - w / 2 == xlo
-                || _ptV[pS[ii]]._x + w / 2 == xhi) {
-              break;
-            }
-          }
-          if (ii == pN) {
-            ii = 0;
-          }
-        }
-        for (k = 0; k < pN; k++) {
-          if (k != ii) {
-            if (_ptV[pS[k]]._x - w / 2 == xlo
-                || _ptV[pS[k]]._x + w / 2 == xhi) {
-              break;
-            }
-            if (_ptV[pS[k]]._y != _ptV[pS[ii]]._y) {
-              break;  // not expected
-            }
-          }
-        }
-        if (k >= pN) {
-          adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
-          continue;
-        }
-      }
-    }
-
-    if (w && !ok_ver && !ok_hor) {
-      // we will move all points to pS[ii],
-      // choosing ii as a point that:
-      //   matches y of hor wires
-      //   matches x of vert wires
-      //   matches x,y of all vias
-      // need to check that an endcap does not get contracted
-      if (nvia) {
-        for (k = 0; k < sN; k++) {
-          if (sV[k]->isVia()) {
-            break;
-          }
-        }
-        tx = spV[k]->_x;
-        ty = spV[k]->_y;
-        for (++k; k < sN; k++) {
-          if (sV[k]->isVia()) {
-            via_x = spV[k]->_x;
-            via_y = spV[k]->_y;
-            if (via_x != tx || via_y != ty) {
-              ok = 0;
-            }
-          }
-        }
-      } else {
-        for (k = 0; k < sN; k++) {
-          if (is_h[k]) {
-            break;
-          }
-        }
-        if (k == sN) {
-          ok = 0;
-        } else {
-          ty = (sV[k]->yMin() + sV[k]->yMax()) / 2;
-        }
-        for (k = 0; k < sN; k++) {
-          if (is_v[k]) {
-            break;
-          }
-        }
-        if (k == sN) {
-          ok = 0;
-        } else {
-          tx = (sV[k]->xMin() + sV[k]->xMax()) / 2;
-        }
-      }
-      if (ok) {
-        for (ii = 0; ii < pN; ii++) {
-          if (_ptV[pS[ii]]._x == tx && _ptV[pS[ii]]._y == ty) {
-            break;
-          }
-        }
-        if (ii == pN) {
-          ok = 0;
-        }
-      }
-      for (k = 0; ok && k < sN; k++) {
-        if (is_h[k] && ty + ty != sV[k]->yMin() + sV[k]->yMax()) {
-          ok = 0;
-        }
-        if (is_v[k] && tx + tx != sV[k]->xMin() + sV[k]->xMax()) {
-          ok = 0;
-        }
-      }
-      // check that no shape extends beyond the t point
-      for (k = 0; ok && k < sN; k++) {
-        if (sV[k]->xMin() < tx - w / 2 && tx + w / 2 < sV[k]->xMax()) {
-          ok = 0;
-        }
-        if (sV[k]->yMin() < ty - w / 2 && ty + w / 2 < sV[k]->yMax()) {
-          ok = 0;
-        }
-      }
-      if (ok) {
-        adjustCommit(&_ptV[pS[ii]], rV, spV, sN);
-        continue;
-      }
-    }
-
-    if (_ptV[pS[0]]._tindex >= 0) {
-      // failed to adjust the shapes so far
-      // Now check to see if all the points are term-shorted
-      // If so, just remove the shorts.
-      for (k = 1; k < pN; k++) {
-        if (_ptV[pS[k]]._tindex != _ptV[pS[0]]._tindex) {
-          break;
-        }
-      }
-      if (k == pN) {
-        for (k = 0; k < pN; k++) {
-          pgV[pS[k]].visited = 2;
-        }
-        for (k = 0; k < pN; k++) {
-          for (e = pgV[pS[k]].edges; e; e = e->next) {
-            if (!e->skip && e->s && pgV[e->to].visited == 2) {
-              e->skip = true;
-              e->reverse->skip = true;
-              e->s->_skip = true;
-            }
-          }
-        }
-        for (k = 0; k < pN; k++) {
-          pgV[pS[k]].visited = 1;
-        }
-        continue;
-      }
-    }
-
-    // cannot collapse to one point
-    // try to patch two points
-    for (k = 1; k < pN; k++) {
-      if (_ptV[pS[k]]._x != _ptV[pS[0]]._x
-          || _ptV[pS[k]]._y != _ptV[pS[0]]._y) {
-        break;
-      }
-    }
-    int kother = k;
-    for (k = kother + 1; k < pN; k++) {
-      if (_ptV[pS[k]]._x == _ptV[pS[0]]._x
-          && _ptV[pS[k]]._y == _ptV[pS[0]]._y) {
-        continue;
-      }
-      if (_ptV[pS[k]]._x == _ptV[pS[kother]]._x
-          && _ptV[pS[k]]._y == _ptV[pS[kother]]._y) {
-        continue;
-      }
-      break;
-    }
-    k = 0;
-  }
-}
-
-void tmg_conn::adjustCommit(tmg_rcpt* p, tmg_rc** rV, tmg_rcpt** spV, int sN)
-{
-  int k;
-  for (k = 0; k < sN; k++) {
-    if (spV[k] != p) {
-      int dx = p->_x - spV[k]->_x;
-      int dy = p->_y - spV[k]->_y;
-      tmg_rcpt* p2;
-      if (&_ptV[rV[k]->_ifr] == spV[k]) {
-        p2 = &_ptV[rV[k]->_ito];
-      } else {
-        p2 = &_ptV[rV[k]->_ifr];
-      }
-      if (dx) {
-        if (p->_x < p2->_x) {
-          rV[k]->_shape.setXmin(rV[k]->_shape.xMin() + dx);
-        } else if (p->_x > p2->_x) {
-          rV[k]->_shape.setXmax(rV[k]->_shape.xMax() + dx);
-        }
-      } else if (dy) {
-        if (p->_y < p2->_y) {
-          rV[k]->_shape.setYmin(rV[k]->_shape.yMin() + dy);
-        } else if (p->_y > p2->_y) {
-          rV[k]->_shape.setYmax(rV[k]->_shape.yMax() + dy);
-        }
-      }
-    }
-  }
-  for (k = 0; k < sN; k++) {
-    if (spV[k] != p) {
-      spV[k]->_x = p->_x;
-      spV[k]->_y = p->_y;
-    }
-  }
-}
-
 int tmg_conn::getDisconnectedStart()
 {
-  int j;
-  for (j = 0; j < _ptV.size(); j++) {
+  for (int j = 0; j < _ptV.size(); j++) {
     if (!_graph->_ptV[j].visited) {
       if (_graph->_ptV[j].edges && !_graph->_ptV[j].edges->next) {
         return j;
       }
     }
   }
-  for (j = 0; j < _ptV.size(); j++) {
+  for (int j = 0; j < _ptV.size(); j++) {
     if (!_graph->_ptV[j].visited) {
       if (_graph->_ptV[j].edges) {
         return j;
@@ -1337,13 +788,12 @@ int tmg_conn::getDisconnectedStart()
   return -1;
 }
 
-void tmg_conn::copyWireIdToVisitedShorts(int j)
+void tmg_conn::copyWireIdToVisitedShorts(const int j)
 {
   // copy _ptV[j]._dbwire_id to visited points shorted to j
-  int wire_id = _ptV[j]._dbwire_id;
+  const int wire_id = _ptV[j]._dbwire_id;
   tmg_rcpt* x0 = &_ptV[j];
-  tmg_rcpt* x;
-  for (x = x0->_sring; x && x != x0; x = x->_sring) {
+  for (tmg_rcpt* x = x0->_sring; x && x != x0; x = x->_sring) {
     if (x->_dbwire_id < 0 && _graph->_ptV[x - &_ptV[0]].visited) {
       x->_dbwire_id = wire_id;
     }

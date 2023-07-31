@@ -173,7 +173,7 @@ class tmg_conn
   void loadWire(dbWire* wire);
   void loadSWire(dbNet* net);
   bool isConnected() { return _connected; }
-  int ptDist(int fr, int to);
+  int ptDist(int fr, int to) const;
 
   void checkConnOrdered();
 
@@ -192,7 +192,6 @@ class tmg_conn
   void treeReorder(bool no_convert);
   bool checkConnected();
   void checkVisited();
-  void printDisconnect();
   tmg_rcpt* allocPt();
   void addRc(const dbShape& s, int ifr, int ito);
   void addRc(int k,
@@ -209,7 +208,6 @@ class tmg_conn
   void connectTerm(int j, bool soft);
   void connectTermSoft(int j, int rt, Rect& rect, int k);
   void addShort(int i0, int i1);
-  void adjustShapes();
   void relocateShorts();
   void setSring();
   void detachTilePins();
@@ -225,7 +223,6 @@ class tmg_conn
   int addPoint(int ipt, const tmg_rc* rc);
   int addPoint(int ifr, int ipt, const tmg_rc* rc);
   int addPointIfExt(int ipt, const tmg_rc* rc);
-  void adjustCommit(tmg_rcpt* p, tmg_rc** rV, tmg_rcpt** spV, int sN);
   tmg_rc* addRcPatch(int ifr, int ito);
   int getDisconnectedStart();
   void copyWireIdToVisitedShorts(int j);
