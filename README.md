@@ -257,10 +257,10 @@ from [here](docs/user/Build.md).
 
 ## Regression Tests
 
-There are a set of executable regression test scripts in `test/`. 
+There are a set of executable regression test scripts in `./test/`. 
 
 ``` shell
-# run all tests
+# run tests for all tools
 ./test/regression
 
 # run all flow tests
@@ -269,7 +269,7 @@ There are a set of executable regression test scripts in `test/`.
 # run <tool> tests
 ./test/regression <tool>
 
-# run <tool>-specific unit tests
+# run all <tool>-specific unit tests
 cd src/<tool>
 ./test/regression
 ```
@@ -286,7 +286,7 @@ gcd_nangate45            368     564  8.8     0.112    -0.015     -0.1    0.004 
 To update a failing regression, follow the instructions below:
 
 ```tcl
-# update log files (i.e. *.ok)
+# update log files (i.e. *ok)
 save_ok <TEST_NAME>
 
 # update "*.metrics" for tests that use flow test
