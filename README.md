@@ -257,7 +257,7 @@ from [here](docs/user/Build.md).
 
 ## Regression Tests
 
-There are a set of executable regression test scripts in `./test/`. 
+There are a set of executable regression test scripts in `./test/`.
 
 ``` shell
 # run tests for all tools
