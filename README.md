@@ -272,6 +272,10 @@ There are a set of executable regression test scripts in `./test/`.
 # run all <tool>-specific unit tests
 cd src/<tool>
 ./test/regression
+
+# run only <TEST_NAME> for <tool>
+cd src/<tool>
+./test/regression <TEST_NAME>
 ```
 
 The flow tests check results such as worst slack against reference values.
