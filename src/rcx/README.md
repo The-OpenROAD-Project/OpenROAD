@@ -219,15 +219,15 @@ for OpenRCX. It processes the parasitics data from the layout patterns that are
 generated using the `bench_wires` command, and writes the Extraction Rules file
 with `<filename>` as the output file.
 
-The `db` option instructs OpenRCX to write the Extraction Rules file from the
-parasitics stored in the database. This option is required.
-
 This command is specifically intended for the purpose of Extraction Rules file
 generation.
 
 ```tcl
 write_rules
   [-file filename]           
+  [-dir dir]
+  [-name name]
+  [-pattern pattern]
 ```
 
 #### Options
@@ -235,6 +235,9 @@ write_rules
 | Switch Name | Description |
 | ----- | ----- |
 | `-file` | output file name |
+| `-dir` | output file directory |
+| `-name` | name of rule |
+| `-pattern` | flag to write the pattern to rulefile (0/1) | 
 
 ## Example scripts
 
