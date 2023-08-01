@@ -44,6 +44,7 @@
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QSpinBox>
+#include <QTableView>
 #include <map>
 #include <memory>
 #include <set>
@@ -434,6 +435,18 @@ class TimingControlsDialog : public QDialog
 
   void addThruRow(const std::set<const sta::Pin*>& pins);
   void setupPinRow(const QString& label, PinSetWidget* row, int row_index = -1);
+};
+
+class TimingPathsTableView : public QTableView
+{
+  Q_OBJECT
+ public:
+  TimingPathsTableView(QWidget* parent = nullptr);
+
+  void mousePressEvent(QMouseEvent* event) override;
+
+ signals:
+  void rightClicked();
 };
 
 }  // namespace gui

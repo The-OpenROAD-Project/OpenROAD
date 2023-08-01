@@ -59,6 +59,7 @@ class TimingConeRenderer;
 class TimingControlsDialog;
 class TimingPathDetailModel;
 class TimingPathsModel;
+class TimingPathsTableView;
 class GuiDBChangeListener;
 
 class TimingWidget : public QDockWidget
@@ -109,6 +110,8 @@ class TimingWidget : public QDockWidget
 
   void showSettings();
 
+  void writePathReportCommand();
+
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;
   void showEvent(QShowEvent* event) override;
@@ -117,7 +120,7 @@ class TimingWidget : public QDockWidget
  private:
   void copy();
 
-  QTableView* setup_timing_table_view_;
+  TimingPathsTableView* setup_timing_table_view_;
   QTableView* hold_timing_table_view_;
   QTableView* path_details_table_view_;
   QTableView* capture_details_table_view_;

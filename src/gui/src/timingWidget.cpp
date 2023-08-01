@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "timingWidget.h"
-
+#include <iostream>
 #include <QApplication>
 #include <QClipboard>
 #include <QFrame>
@@ -49,7 +49,7 @@ namespace gui {
 
 TimingWidget::TimingWidget(QWidget* parent)
     : QDockWidget("Timing Report", parent),
-      setup_timing_table_view_(new QTableView(this)),
+      setup_timing_table_view_(new TimingPathsTableView(this)),
       hold_timing_table_view_(new QTableView(this)),
       path_details_table_view_(new QTableView(this)),
       capture_details_table_view_(new QTableView(this)),
@@ -180,6 +180,12 @@ void TimingWidget::init(sta::dbSta* sta)
       SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
 
   connect(
+      setup_timing_table_view_,
+      SIGNAL(rightClicked()),
+      this,
+      SLOT(writePathReportCommand()));
+
+  connect(
       hold_timing_table_view_->selectionModel(),
       SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
       this,
@@ -242,6 +248,11 @@ void TimingWidget::keyPressEvent(QKeyEvent* key_event)
     copy();
     key_event->accept();
   }
+}
+
+void TimingWidget::writePathReportCommand()
+{
+  std::cout << "Só quero ver se funcionou essa merda \n";
 }
 
 void TimingWidget::clearPathDetails()
