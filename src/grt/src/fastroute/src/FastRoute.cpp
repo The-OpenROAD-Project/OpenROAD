@@ -727,10 +727,7 @@ NetRouteMap FastRouteCore::getPlanarRoutes()
 
         // defines the layer used for horizontal edges are still 2D
         int layer_v = 0;
-        if (nets_[netID]->getMinLayer() != 1) {
-          std::cout<<"Net name: "<< nets_[netID]->getName() <<"\n";
-          std::cout<<"Min layer: "<< nets_[netID]->getMinLayer() <<"\n";
-        }
+
         if (((nets_[netID]->getMinLayer() % 2) - layer_orientation_) != 0) {
           layer_h = nets_[netID]->getMinLayer() + 1;
           layer_v = nets_[netID]->getMinLayer();
