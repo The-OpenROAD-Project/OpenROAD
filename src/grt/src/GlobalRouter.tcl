@@ -194,10 +194,8 @@ sta::define_cmd_args "global_route" {[-guide_file out_file] \
                                   [-congestion_iterations iterations] \
                                   [-congestion_report_file file_name] \
                                   [-grid_origin origin] \
-                                  [-overflow_iterations iterations] \
                                   [-critical_nets_percentage percent] \
                                   [-allow_congestion] \
-                                  [-allow_overflow] \
                                   [-verbose] \
                                   [-start_incremental] \
                                   [-end_incremental]
