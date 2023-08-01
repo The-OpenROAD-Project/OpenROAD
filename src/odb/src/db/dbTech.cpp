@@ -93,6 +93,9 @@ bool _dbTech::operator==(const _dbTech& rhs) const
   if (strcmp(_version_buf, rhs._version_buf) != 0)
     return false;
 
+  if (_name != rhs._name)
+    return false;
+
   if (_via_cnt != rhs._via_cnt)
     return false;
 
@@ -187,6 +190,7 @@ void _dbTech::differences(dbDiff& diff,
   DIFF_FIELD(_flags._minsppin);
   DIFF_FIELD(_version);
   DIFF_FIELD(_version_buf);
+  DIFF_FIELD(_name);
   DIFF_FIELD(_via_cnt);
   DIFF_FIELD(_layer_cnt);
   DIFF_FIELD(_rlayer_cnt);
@@ -231,6 +235,7 @@ void _dbTech::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_flags._minsppin);
   DIFF_OUT_FIELD(_version);
   DIFF_OUT_FIELD(_version_buf);
+  DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_via_cnt);
   DIFF_OUT_FIELD(_layer_cnt);
   DIFF_OUT_FIELD(_rlayer_cnt);
@@ -373,6 +378,7 @@ _dbTech::_dbTech(_dbDatabase* db)
 
 _dbTech::_dbTech(_dbDatabase* db, const _dbTech& t)
     : _version(t._version),
+      _name(t._name),
       _via_cnt(t._via_cnt),
       _layer_cnt(t._layer_cnt),
       _rlayer_cnt(t._rlayer_cnt),
@@ -452,6 +458,7 @@ _dbTech::~_dbTech()
 
 dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 {
+  stream << tech._name;
   stream << tech._via_cnt;
   stream << tech._layer_cnt;
   stream << tech._rlayer_cnt;
@@ -487,6 +494,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTech& tech)
 
 dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
 {
+  _dbDatabase* db = tech.getImpl()->getDatabase();
+  if (db->isSchema(db_schema_block_tech)) {
+    stream >> tech._name;
+  } else {
+    tech._name = "";
+  }
   stream >> tech._via_cnt;
   stream >> tech._layer_cnt;
   stream >> tech._rlayer_cnt;
@@ -522,6 +535,12 @@ dbIStream& operator>>(dbIStream& stream, _dbTech& tech)
   stream >> tech._via_hash;
 
   return stream;
+}
+
+std::string dbTech::getName()
+{
+  auto tech = (_dbTech*) this;
+  return tech->_name;
 }
 
 double _dbTech::_getLefVersion() const
@@ -990,16 +1009,13 @@ void dbTech::checkLayer(bool typeChk,
 
   return;
 }
-dbTech* dbTech::create(dbDatabase* db_, int dbu_per_micron)
+dbTech* dbTech::create(dbDatabase* db_, const char* name, int dbu_per_micron)
 {
   _dbDatabase* db = (_dbDatabase*) db_;
 
-  if (db->_tech != 0)
-    return nullptr;
-
   _dbTech* tech = db->_tech_tbl->create();
-  db->_tech = tech->getOID();
   tech->_dbu_per_micron = dbu_per_micron;
+  tech->_name = name;
   return (dbTech*) tech;
 }
 
@@ -1015,7 +1031,6 @@ void dbTech::destroy(dbTech* tech_)
   _dbDatabase* db = tech->getDatabase();
   dbProperty::destroyProperties(tech);
   db->_tech_tbl->destroy(tech);
-  db->_tech = 0;
 }
 
 }  // namespace odb

@@ -23,7 +23,8 @@ class OpendpTest : public ::testing::Test
     odb::lefin lef_reader(
         db_.get(), &logger_, /*ignore_non_routing_layers=*/false);
     lib_ = OdbUniquePtr<odb::dbLib>(
-        lef_reader.createTechAndLib("isPlacedTestLibName",
+        lef_reader.createTechAndLib("tech",
+                                    "isPlacedTestLibName",
                                     "sky130hd/sky130_fd_sc_hd_merged.lef"),
         &odb::dbLib::destroy);
 

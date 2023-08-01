@@ -119,6 +119,7 @@ odb::dbWire* RepairAntennas::makeNetWire(
     wire_encoder.begin(wire);
     RoutePtPins route_pt_pins = findRoutePtPins(net);
     std::unordered_set<GSegment, GSegmentHash> wire_segments;
+    int prev_conn_layer = -1;
     for (GSegment& seg : route) {
       if (std::abs(seg.init_layer - seg.final_layer) > 1) {
         logger_->error(GRT, 68, "Global route segment not valid.");
@@ -129,14 +130,18 @@ odb::dbWire* RepairAntennas::makeNetWire(
         int l1 = seg.init_layer;
         int l2 = seg.final_layer;
 
+        int jct_id = -1;
         if (seg.isVia()) {
           int bottom_layer = std::min(l1, l2);
           odb::dbTechLayer* bottom_tech_layer
               = tech->findRoutingLayer(bottom_layer);
           if (bottom_layer >= grouter_->getMinRoutingLayer()) {
-            wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
-            wire_encoder.addPoint(x1, y1);
-            int jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
+            if (bottom_layer == prev_conn_layer) {
+              wire_encoder.newPath(bottom_tech_layer, odb::dbWireType::ROUTED);
+              wire_encoder.addPoint(x1, y1);
+              jct_id = wire_encoder.addTechVia(default_vias[bottom_layer]);
+              prev_conn_layer = std::max(l1, l2);
+            }
             addWireTerms(net,
                          route,
                          x1,
@@ -179,6 +184,7 @@ odb::dbWire* RepairAntennas::makeNetWire(
                          wire_encoder,
                          default_vias);
             wire_segments.insert(seg);
+            prev_conn_layer = l1;
           }
         }
       }
@@ -243,8 +249,12 @@ void RepairAntennas::addWireTerms(Net* net,
       }
 
       if (conn_layer >= grouter_->getMinRoutingLayer()) {
-        wire_encoder.newPathVirtualWire(
-            jct_id, tech_layer, odb::dbWireType::ROUTED);
+        if (jct_id != -1) {
+          wire_encoder.newPathVirtualWire(
+              jct_id, tech_layer, odb::dbWireType::ROUTED);
+        } else {
+          wire_encoder.newPath(tech_layer, odb::dbWireType::ROUTED);
+        }
         wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
