@@ -1332,7 +1332,7 @@ void RenderThread::drawPinMarkers(Painter& painter,
 
   const int drawing_font_size = 8;  // in points
 
-  // When the size is minimum the text won't be drawn
+  // when the size is minimum the text won't be drawn
   const int minimum_font_size = drawing_font_size - 1;
 
   while (largest_text_width > available_space) {
