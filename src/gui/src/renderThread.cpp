@@ -1351,7 +1351,6 @@ void RenderThread::drawPinMarkers(Painter& painter,
   // draw names of pins when text height is at least 8 pts
   const bool draw_names = font_size >= drawing_font_size;
   const int text_margin = 2.0 / viewer_->pixels_per_dbu_;
-  ;
 
   // templates of pin markers (block top)
   const std::vector<Point> in_marker{// arrow head pointing in to block
