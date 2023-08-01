@@ -272,16 +272,24 @@ void RepairAntennas::addWireTerms(Net* net,
             = layer1->getDirection() == odb::dbTechLayerDir::VERTICAL ? layer1
                                                                       : layer2;
         // create horizontal wire to connect to the pin
-        wire_encoder.newPathVirtualWire(
-            jct_id, h_layer, odb::dbWireType::ROUTED);
+        if (jct_id != -1) {
+          wire_encoder.newPathVirtualWire(
+              jct_id, h_layer, odb::dbWireType::ROUTED);
+        } else {
+          wire_encoder.newPath(h_layer, odb::dbWireType::ROUTED);
+        }
         wire_encoder.addPoint(grid_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
         jct_id = wire_encoder.addTechVia(
             default_vias[grouter_->getMinRoutingLayer()]);
 
         // create vertical wire to connect to the pin
-        wire_encoder.newPathVirtualWire(
-            jct_id, v_layer, odb::dbWireType::ROUTED);
+        if (jct_id != -1) {
+          wire_encoder.newPathVirtualWire(
+              jct_id, v_layer, odb::dbWireType::ROUTED);
+        } else {
+          wire_encoder.newPath(v_layer, odb::dbWireType::ROUTED);
+        }
         wire_encoder.addPoint(pin_pt.x(), grid_pt.y());
         wire_encoder.addPoint(pin_pt.x(), pin_pt.y());
 
