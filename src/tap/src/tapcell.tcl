@@ -37,7 +37,6 @@
 sta::define_cmd_args "tapcell" {[-tapcell_master tapcell_master]\
                                 [-tap_prefix tap_prefix]\
                                 [-endcap_master endcap_master]\
-                                [-endcap_cpp endcap_cpp]\
                                 [-endcap_prefix endcap_prefix]\
                                 [-distance dist]\
                                 [-halo_width_x halo_x]\
