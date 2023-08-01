@@ -11,11 +11,19 @@ This tool initializes floorplan constraints, die/core area, and makes tracks.
 
 ### Initialize Floorplan
 
+Do note that there are two ways of setting the floorplan dimensions.
+The user can either specify manually die/core area, or
+specify the utilization/aspect ratio.
+
 ```tcl
+# Method 1: Automatical die size calculation
 initialize_floorplan
   [-utilization util]
   [-aspect_ratio ratio]
   [-core_space space | {bottom top left right}]
+  [-sites site_name]
+# Method 2: Set die/core area
+initialize_floorplan
   [-die_area {lx ly ux uy}]
   [-core_area {lx ly ux uy}]
   [-sites site_name]
