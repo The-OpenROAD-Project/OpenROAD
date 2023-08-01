@@ -1306,8 +1306,16 @@ void RenderThread::drawPinMarkers(Painter& painter,
   QPainter* qpainter = static_cast<GuiPainter&>(painter).getPainter();
   const QFont initial_font = qpainter->font();
   QFont marker_font = viewer_->options_->pinMarkersFont();
+  const QFontMetrics font_metrics(marker_font);
 
-  const int text_margin = 2.0 / viewer_->pixels_per_dbu_;
+  QString largest_text;
+  for (auto pin : block->getBTerms()) {
+    QString current_text = QString::fromStdString(pin->getName());
+    if (font_metrics.boundingRect(current_text).width()
+        > font_metrics.boundingRect(largest_text).width()) {
+      largest_text = current_text;
+    }
+  }
 
   const int viewer_width = viewer_->geometry().width();
   const int viewer_height = viewer_->geometry().height();
@@ -1319,50 +1327,31 @@ void RenderThread::drawPinMarkers(Painter& painter,
   const int available_space
       = gap - std::ceil(max_dim * viewer_->pixels_per_dbu_);
 
-  std::string text_longest;
+  int font_size = marker_font.pointSize();
+  int largest_text_width = font_metrics.boundingRect(largest_text).width();
 
-  for (auto pin : block->getBTerms()) {
-    if (pin->getName().length() > text_longest.length()) {
-      text_longest = pin->getName();
-    }
-  }
+  const int drawing_font_size = 8;  // in points
 
-  QString longest_text = QString::fromStdString(text_longest);
+  // When the size is minimum the text won't be drawn
+  const int minimum_font_size = drawing_font_size - 1;
 
-  int font_size = gap / longest_text.length();  // pixels
-
-  if (font_size <= 0) {
-    font_size = 1;  // to avoid run-time warning when font_size is  <= 0
-  }
-
-  marker_font.setPixelSize(font_size);
-  const QFontMetrics font_metrics(marker_font);
-  int longest_text_size = font_metrics.width(longest_text);
-
-  while (longest_text_size < available_space) {
-    if ((font_size - 1) > 20) {  // so texts don't overlap when zooming deeply
+  while (largest_text_width > available_space) {
+    if (font_size == minimum_font_size) {
       break;
     }
-    font_size++;
-    marker_font.setPixelSize(font_size);
-    QFontMetrics font_metrics(marker_font);
-    longest_text_size = font_metrics.width(longest_text);
+    font_size -= 1;
+    marker_font.setPointSize(font_size);
+    QFontMetrics current_font_metrics(marker_font);
+    largest_text_width
+        = current_font_metrics.boundingRect(largest_text).width();
   }
 
-  int corrected_font_size = font_size - 1;
-
-  if (corrected_font_size <= 0) {
-    corrected_font_size
-        = 1;  // to avoid run-time warning when font_size is  <= 0
-  }
-
-  // set font size to be the largest possible without making the text
-  // escape the layout viewer
-  marker_font.setPixelSize(corrected_font_size);
   qpainter->setFont(marker_font);
 
-  // draw names of pins when text height is at least 8 pixels
-  const bool draw_names = corrected_font_size > 8;
+  // draw names of pins when text height is at least 8 pts
+  const bool draw_names = font_size >= drawing_font_size;
+  const int text_margin = 2.0 / viewer_->pixels_per_dbu_;
+  ;
 
   // templates of pin markers (block top)
   const std::vector<Point> in_marker{// arrow head pointing in to block
