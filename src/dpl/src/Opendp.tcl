@@ -144,7 +144,7 @@ proc check_placement { args } {
   set verbose [info exists flags(-verbose)]
   set disallow_one_site_gaps [info exists flags(-disallow_one_site_gaps)]
   sta::check_argc_eq0 "check_placement" $args 
-  set file_name "failures_report.json"
+  set file_name ""
   if { [info exists keys(-report_file_name) ] } {
     set file_name $keys(-report_file_name)
   }

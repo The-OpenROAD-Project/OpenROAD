@@ -56,6 +56,7 @@ class dbTechLayer;
 }  // namespace odb
 
 namespace ppl {
+class AbstractIOPlacerRenderer;
 class Core;
 class Interval;
 class IOPin;
@@ -163,6 +164,16 @@ class IOPlacer
                           int perturb_per_iter,
                           float alpha);
   void checkPinPlacement();
+
+  void setRenderer(std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer);
+  AbstractIOPlacerRenderer* getRenderer();
+
+  // annealing debug functions
+  void setAnnealingDebugOn();
+  bool isAnnealingDebugOn() const;
+
+  void setAnnealingDebugPaintInterval(int iters_between_paintings);
+  void setAnnealingDebugNoPauseMode(bool no_pause_mode);
 
  private:
   void createTopLayerPinPattern();
@@ -291,11 +302,16 @@ class IOPlacer
   std::set<int> ver_layers_;
   std::unique_ptr<TopLayerGrid> top_grid_;
 
+  std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer_;
+
   // simulated annealing variables
   float init_temperature_ = 0;
   int max_iterations_ = 0;
   int perturb_per_iter_ = 0;
   float alpha_ = 0;
+
+  // simulated annealing debugger variables
+  bool annealing_debug_mode_ = false;
 
   // db variables
   odb::dbDatabase* db_ = nullptr;
