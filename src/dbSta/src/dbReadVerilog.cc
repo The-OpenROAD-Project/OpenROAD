@@ -206,7 +206,8 @@ void Verilog2db::makeBlock()
   } else {
     const char* design
         = network_->name(network_->cell(network_->topInstance()));
-    block_ = dbBlock::create(chip, design, network_->pathDivider());
+    block_ = dbBlock::create(
+        chip, design, db_->getTech(), network_->pathDivider());
   }
   dbTech* tech = db_->getTech();
   block_->setDefUnits(tech->getLefUnits());

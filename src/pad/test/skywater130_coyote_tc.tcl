@@ -269,6 +269,8 @@ place_io_fill -row IO_EAST s8iom0s8_com_bus_slice_1um
 
 connect_by_abutment
 
+place_io_terminals u_*/PAD
+
 set def_file [make_result_file "skywater130_coyote_tc.def"]
 write_def $def_file
 diff_files $def_file "skywater130_coyote_tc.defok"

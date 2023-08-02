@@ -35,7 +35,9 @@
 
 %{
 #include "ppl/IOPlacer.h"
+#include "IOPlacerRenderer.h"
 #include "ord/OpenRoad.hh"
+
 
 namespace ord {
 // Defined in OpenRoad.i
@@ -115,6 +117,9 @@ tclSetStdSeq(Tcl_Obj *const source,
 }
 
 %include "../../Exception.i"
+
+%ignore ppl::IOPlacer::getRenderer;
+%ignore ppl::IOPlacer::setRenderer;
 
 %inline %{
 
@@ -323,9 +328,27 @@ set_simulated_annealing(float temperature,
 }
 
 void
-run_annealing()
+simulated_annealing_debug(int iters_between_paintings,
+                          bool no_pause_mode)
 {
-  getIOPlacer()->runAnnealing();
+  if (!gui::Gui::enabled()) {
+    return;
+  }
+
+  IOPlacer* ioplacer = getIOPlacer();
+  if(ioplacer->getRenderer() == nullptr) {
+    ioplacer->setRenderer(std::make_unique<IOPlacerRenderer>());
+  }
+
+  getIOPlacer()->setAnnealingDebugOn();
+  getIOPlacer()->setAnnealingDebugNoPauseMode(no_pause_mode);
+  getIOPlacer()->setAnnealingDebugPaintInterval(iters_between_paintings);
+}
+
+void
+run_annealing(bool random)
+{
+  getIOPlacer()->runAnnealing(random);
 }
 
 } // namespace

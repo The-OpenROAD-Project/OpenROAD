@@ -35,6 +35,7 @@
 
 #include "SimulatedAnnealing.h"
 
+#include "ppl/AbstractIOPlacerRenderer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -42,16 +43,19 @@ namespace ppl {
 
 SimulatedAnnealing::SimulatedAnnealing(
     Netlist* netlist,
+    Core* core,
     std::vector<Slot>& slots,
     const std::vector<Constraint>& constraints,
     Logger* logger,
     odb::dbDatabase* db)
     : netlist_(netlist),
+      core_(core),
       slots_(slots),
       pin_groups_(netlist->getIOGroups()),
       constraints_(constraints),
       logger_(logger),
-      db_(db)
+      db_(db),
+      debug_(std::make_unique<DebugSettings>())
 {
   num_slots_ = slots.size();
   num_pins_ = netlist->numIOPins();
@@ -67,55 +71,74 @@ SimulatedAnnealing::SimulatedAnnealing(
 void SimulatedAnnealing::run(float init_temperature,
                              int max_iterations,
                              int perturb_per_iter,
-                             float alpha)
+                             float alpha,
+                             bool random)
 {
   init(init_temperature, max_iterations, perturb_per_iter, alpha);
   randomAssignment();
-  int64 pre_cost = 0;
-  pre_cost = getAssignmentCost();
-  float temperature = init_temperature_;
+  if (!random) {
+    int64 pre_cost = 0;
+    pre_cost = getAssignmentCost();
+    float temperature = init_temperature_;
 
-  boost::random::uniform_real_distribution<float> distribution;
-  for (int iter = 0; iter < max_iterations_; iter++) {
-    for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
-      int prev_cost;
-      perturbAssignment(prev_cost);
+    boost::random::uniform_real_distribution<float> distribution;
+    for (int iter = 0; iter < max_iterations_; iter++) {
+      for (int perturb = 0; perturb < perturb_per_iter_; perturb++) {
+        int prev_cost;
+        perturbAssignment(prev_cost);
 
-      const int64 cost = pre_cost + getDeltaCost(prev_cost);
-      const int delta_cost = cost - pre_cost;
-      debugPrint(logger_,
-                 utl::PPL,
-                 "annealing",
-                 1,
-                 "iteration: {}; temperature: {}; assignment cost: {}um; delta "
-                 "cost: {}um",
-                 iter,
-                 temperature,
-                 dbuToMicrons(cost),
-                 dbuToMicrons(delta_cost));
+        const int64 cost = pre_cost + getDeltaCost(prev_cost);
+        const int delta_cost = cost - pre_cost;
+        debugPrint(
+            logger_,
+            utl::PPL,
+            "annealing",
+            1,
+            "iteration: {}; temperature: {}; assignment cost: {}um; delta "
+            "cost: {}um",
+            iter,
+            temperature,
+            dbuToMicrons(cost),
+            dbuToMicrons(delta_cost));
 
-      const float rand_float = distribution(generator_);
-      const float accept_prob = std::exp((-1) * delta_cost / temperature);
-      if (delta_cost <= 0 || accept_prob > rand_float) {
-        // accept new solution, update cost and slots
-        pre_cost = cost;
-        if (!prev_slots_.empty() && !new_slots_.empty()) {
-          for (int i = 0; i < prev_slots_.size(); i++) {
-            int prev_slot = prev_slots_[i];
-            int new_slot = new_slots_[i];
-            slots_[prev_slot].used = false;
-            slots_[new_slot].used = true;
+        const float rand_float = distribution(generator_);
+        const float accept_prob = std::exp((-1) * delta_cost / temperature);
+        if (delta_cost <= 0 || accept_prob > rand_float) {
+          // accept new solution, update cost and slots
+          pre_cost = cost;
+          if (!prev_slots_.empty() && !new_slots_.empty()) {
+            for (int i = 0; i < prev_slots_.size(); i++) {
+              int prev_slot = prev_slots_[i];
+              int new_slot = new_slots_[i];
+              slots_[prev_slot].used = false;
+              slots_[new_slot].used = true;
+            }
           }
+        } else {
+          restorePreviousAssignment();
         }
-      } else {
-        restorePreviousAssignment();
+        prev_slots_.clear();
+        new_slots_.clear();
+        pins_.clear();
       }
-      prev_slots_.clear();
-      new_slots_.clear();
-      pins_.clear();
-    }
 
-    temperature *= alpha_;
+      temperature *= alpha_;
+
+      if (debug_->isOn()) {
+        std::vector<ppl::IOPin> pins;
+        getAssignment(pins);
+
+        std::vector<std::vector<ppl::InstancePin>> all_sinks;
+
+        for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
+          std::vector<ppl::InstancePin> pin_sinks;
+          netlist_->getSinksOfIO(pin_idx, pin_sinks);
+          all_sinks.push_back(pin_sinks);
+        }
+
+        annealingStateVisualization(pins, all_sinks, iter);
+      }
+    }
   }
 }
 
@@ -131,6 +154,31 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
     assignment.push_back(io_pin);
     slot.used = true;
   }
+}
+
+void SimulatedAnnealing::setDebugOn(
+    std::unique_ptr<AbstractIOPlacerRenderer> renderer)
+{
+  debug_->renderer = std::move(renderer);
+}
+
+AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
+{
+  return debug_->renderer.get();
+}
+
+void SimulatedAnnealing::annealingStateVisualization(
+    const std::vector<IOPin>& assignment,
+    const std::vector<std::vector<InstancePin>>& sinks,
+    const int& current_iteration)
+{
+  if (!debug_->isOn()) {
+    return;
+  }
+  getDebugRenderer()->setCurrentIteration(current_iteration);
+  getDebugRenderer()->setSinks(sinks);
+  getDebugRenderer()->setPinAssignment(assignment);
+  getDebugRenderer()->redrawAndPause();
 }
 
 void SimulatedAnnealing::init(float init_temperature,
@@ -177,19 +225,48 @@ void SimulatedAnnealing::randomAssignment()
                                                                 last_slot);
 
       int slot = distribution(generator_);
-      while (slots_[slot].used) {
+      int mirrored_slot;
+      bool free = !slots_[slot].used;
+      if (io_pin.isMirrored()) {
+        free = free && isFreeForMirrored(slot, mirrored_slot);
+      }
+      while (!free) {
         slot = distribution(generator_);
+        free = !slots_[slot].used;
+        if (io_pin.isMirrored()) {
+          free = free && isFreeForMirrored(slot, mirrored_slot);
+        }
       }
       pin_assignment_[i] = slot;
       slots_[slot].used = true;
+      if (io_pin.isMirrored()) {
+        pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+        slots_[mirrored_slot].used = true;
+      }
+      placed_pins.insert(io_pin.getMirrorPinIdx());
     } else {
       int slot = slot_indices[slot_idx];
-      while (slots_[slot].used) {
+      int mirrored_slot;
+      bool free = !slots_[slot].used;
+      if (io_pin.isMirrored()) {
+        free = free && isFreeForMirrored(slot, mirrored_slot);
+      }
+      while (!free) {
         slot_idx++;
         slot = slot_indices[slot_idx];
+        free = !slots_[slot].used;
+        if (io_pin.isMirrored()) {
+          free = free && isFreeForMirrored(slot, mirrored_slot);
+        }
       }
       pin_assignment_[i] = slot;
       slots_[slot].used = true;
+      if (io_pin.isMirrored()) {
+        pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+        slots_[mirrored_slot].used = true;
+      }
+      placed_pins.insert(io_pin.getMirrorPinIdx());
+
       slot_idx++;
     }
   }
@@ -225,8 +302,15 @@ int SimulatedAnnealing::randomAssignmentForGroups(
 
     const auto pin_list = group.pin_indices;
     for (const auto& pin_idx : pin_list) {
+      const IOPin& io_pin = netlist_->getIoPin(pin_idx);
       pin_assignment_[pin_idx] = group_slot;
       slots_[group_slot].used = true;
+      if (io_pin.isMirrored()) {
+        int mirrored_slot = getMirroredSlotIdx(group_slot);
+        pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+        slots_[mirrored_slot].used = true;
+        placed_pins.insert(io_pin.getMirrorPinIdx());
+      }
       group_slot++;
       placed_pins.insert(pin_idx);
     }
@@ -285,15 +369,14 @@ void SimulatedAnnealing::perturbAssignment(int& prev_cost)
   // necessary
   if (move < swap_pins_ && lone_pins_ > 1) {
     prev_cost = swapPins();
-    // move single pin when swapping a single constrained pin is not possible
-    if (prev_cost == move_fail_) {
-      prev_cost = movePinToFreeSlot();
-    }
-  } else {
+  }
+
+  // move single pin when swapping a single constrained pin is not possible
+  if (move >= swap_pins_ || lone_pins_ <= 1 || prev_cost == move_fail_) {
     prev_cost = movePinToFreeSlot();
     // move single pin when moving a group is not possible
     if (prev_cost == move_fail_) {
-      prev_cost = movePinToFreeSlot();
+      prev_cost = movePinToFreeSlot(true);
     }
   }
 }
@@ -303,7 +386,8 @@ int SimulatedAnnealing::swapPins()
   boost::random::uniform_int_distribution<int> distribution(0, num_pins_ - 1);
   int pin1 = distribution(generator_);
   int pin2;
-  while (netlist_->getIoPin(pin1).isInGroup()) {
+  while (netlist_->getIoPin(pin1).isInGroup()
+         || netlist_->getIoPin(pin1).isMirrored()) {
     pin1 = distribution(generator_);
   }
 
@@ -321,13 +405,15 @@ int SimulatedAnnealing::swapPins()
 
     int pin_idx = distribution(generator_);
     pin2 = pin_indices[pin_idx];
-    while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()) {
+    while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()
+           || netlist_->getIoPin(pin2).isMirrored()) {
       pin_idx = distribution(generator_);
       pin2 = pin_indices[pin_idx];
     }
   } else {
     pin2 = distribution(generator_);
     while (pin1 == pin2 || netlist_->getIoPin(pin2).isInGroup()
+           || netlist_->getIoPin(pin2).isMirrored()
            || netlist_->getIoPin(pin2).getConstraintIdx() != -1) {
       pin2 = distribution(generator_);
     }
@@ -349,39 +435,72 @@ int SimulatedAnnealing::swapPins()
   return prev_cost;
 }
 
-int SimulatedAnnealing::movePinToFreeSlot()
+int SimulatedAnnealing::movePinToFreeSlot(bool lone_pin)
 {
   boost::random::uniform_int_distribution<int> distribution(0, num_pins_ - 1);
   int pin = distribution(generator_);
-  const IOPin& io_pin = netlist_->getIoPin(pin);
-  if (io_pin.isInGroup()) {
-    int prev_cost = moveGroupToFreeSlots(io_pin.getGroupIdx());
-    return prev_cost;
+
+  if (lone_pin) {
+    while (netlist_->getIoPin(pin).isInGroup()
+           || netlist_->getIoPin(pin).isMirrored()) {
+      pin = distribution(generator_);
+    }
+  } else {
+    const IOPin& io_pin = netlist_->getIoPin(pin);
+    if (io_pin.isInGroup()) {
+      int prev_cost = moveGroupToFreeSlots(io_pin.getGroupIdx());
+      return prev_cost;
+    }
+
+    if (io_pin.isMirrored()) {
+      const IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
+      if (mirrored_pin.isInGroup()) {
+        int prev_cost = moveGroupToFreeSlots(mirrored_pin.getGroupIdx());
+        return prev_cost;
+      }
+    }
   }
 
+  const IOPin& io_pin = netlist_->getIoPin(pin);
   pins_.push_back(pin);
 
   int prev_slot = pin_assignment_[pin];
   prev_slots_.push_back(prev_slot);
 
   int prev_cost = getPinCost(pin);
+  if (io_pin.isMirrored()) {
+    prev_cost += getPinCost(io_pin.getMirrorPinIdx());
+  }
 
   bool free_slot = false;
   int new_slot;
+  int mirrored_slot;
 
   int first_slot = 0;
   int last_slot = num_slots_ - 1;
-  getSlotsRange(io_pin, first_slot, last_slot);
+  getSlotsRange(netlist_->getIoPin(pin), first_slot, last_slot);
 
   distribution
       = boost::random::uniform_int_distribution<int>(first_slot, last_slot);
   while (!free_slot) {
     new_slot = distribution(generator_);
-    free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
+    if (io_pin.isMirrored()) {
+      free_slot = isFreeForMirrored(new_slot, mirrored_slot);
+    } else {
+      free_slot = slots_[new_slot].isAvailable() && new_slot != prev_slot;
+    }
   }
-  new_slots_.push_back(new_slot);
 
+  new_slots_.push_back(new_slot);
   pin_assignment_[pin] = new_slot;
+
+  if (io_pin.isMirrored()) {
+    pins_.push_back(io_pin.getMirrorPinIdx());
+    int prev_mirrored_slot = pin_assignment_[io_pin.getMirrorPinIdx()];
+    prev_slots_.push_back(prev_mirrored_slot);
+    new_slots_.push_back(mirrored_slot);
+    pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+  }
 
   return prev_cost;
 }
@@ -392,8 +511,14 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
   int prev_cost = getGroupCost(group_idx);
   for (int pin_idx : group.pin_indices) {
     prev_slots_.push_back(pin_assignment_[pin_idx]);
+    pins_.push_back(pin_idx);
+    if (netlist_->getIoPin(pin_idx).isMirrored()) {
+      int mirrored_idx = netlist_->getIoPin(pin_idx).getMirrorPinIdx();
+      prev_slots_.push_back(pin_assignment_[mirrored_idx]);
+      pins_.push_back(mirrored_idx);
+      prev_cost += getPinCost(mirrored_idx);
+    }
   }
-  pins_ = group.pin_indices;
   const IOPin& io_pin = netlist_->getIoPin(pins_[0]);
 
   bool free_slot = false;
@@ -417,9 +542,13 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
     }
 
     int slot = new_slot;
+    int mirrored_slot;
     const Edge& edge = slots_[slot].edge;
     for (int i = 0; i < group.pin_indices.size(); i++) {
       free_slot = slots_[slot].isAvailable();
+      if (io_pin.isMirrored()) {
+        free_slot = free_slot && isFreeForMirrored(slot, mirrored_slot);
+      }
       same_edge_slot = slots_[slot].edge == edge;
       if (!free_slot || !same_edge_slot) {
         break;
@@ -438,8 +567,14 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
       std::reverse(pin_indices.begin(), pin_indices.end());
     }
     for (int pin_idx : pin_indices) {
+      const IOPin& io_pin = netlist_->getIoPin(pin_idx);
       pin_assignment_[pin_idx] = new_slot;
       new_slots_.push_back(new_slot);
+      if (io_pin.isMirrored()) {
+        int mirrored_slot = getMirroredSlotIdx(new_slot);
+        pin_assignment_[io_pin.getMirrorPinIdx()] = mirrored_slot;
+        new_slots_.push_back(mirrored_slot);
+      }
       new_slot++;
     }
   } else {
@@ -480,8 +615,10 @@ bool SimulatedAnnealing::isFreeForGroup(int slot_idx,
     }
 
     int slot = slot_idx;
+    int mirrored_slot = getMirroredSlotIdx(slot);
     for (int i = 0; i < group_size; i++) {
-      free_slot = slots_[slot].isAvailable();
+      free_slot
+          = slots_[slot].isAvailable() && slots_[mirrored_slot].isAvailable();
       if (!free_slot) {
         break;
       }
@@ -503,6 +640,53 @@ void SimulatedAnnealing::getSlotsRange(const IOPin& io_pin,
     first_slot = constraint.first_slot;
     last_slot = constraint.last_slot;
   }
+
+  if (io_pin.isMirrored()) {
+    const IOPin& mirrored_pin = netlist_->getIoPin(io_pin.getMirrorPinIdx());
+    const int mirrored_constraint_idx = mirrored_pin.getConstraintIdx();
+    if (mirrored_constraint_idx != -1) {
+      const Constraint& constraint = constraints_[mirrored_constraint_idx];
+      first_slot = getMirroredSlotIdx(constraint.first_slot);
+      last_slot = getMirroredSlotIdx(constraint.last_slot);
+      if (first_slot > last_slot) {
+        std::swap(first_slot, last_slot);
+      }
+    }
+  }
+}
+
+int SimulatedAnnealing::getSlotIdxByPosition(const odb::Point& position,
+                                             int layer) const
+{
+  int slot_idx = -1;
+  for (int i = 0; i < slots_.size(); i++) {
+    if (slots_[i].pos == position && slots_[i].layer == layer) {
+      slot_idx = i;
+      break;
+    }
+  }
+
+  return slot_idx;
+}
+
+bool SimulatedAnnealing::isFreeForMirrored(const int slot_idx,
+                                           int& mirrored_idx) const
+{
+  mirrored_idx = getMirroredSlotIdx(slot_idx);
+  const Slot& slot = slots_[slot_idx];
+  const Slot& mirrored_slot = slots_[mirrored_idx];
+
+  return slot.isAvailable() && mirrored_slot.isAvailable();
+}
+
+int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
+{
+  const Slot& slot = slots_[slot_idx];
+  const int layer = slot.layer;
+  const odb::Point& position = slot.pos;
+  odb::Point mirrored_pos = core_->getMirroredPosition(position);
+
+  return getSlotIdxByPosition(mirrored_pos, layer);
 }
 
 }  // namespace ppl
