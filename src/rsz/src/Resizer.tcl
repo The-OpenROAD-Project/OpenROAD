@@ -252,7 +252,7 @@ proc unset_dont_use { args } {
 
 proc set_dont_use_cmd { cmd cmd_args dont_use } {
   sta::check_argc_eq1 $cmd $cmd_args
-  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] sta::sta_warn_error] {
+  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] rsz::warn_proc] {
     rsz::set_dont_use $lib_cell $dont_use
   }
 }
@@ -639,6 +639,11 @@ proc set_dblayer_wire_rc { layer res cap } {
 
 proc set_dbvia_wire_r { layer res } {
   $layer setResistance $res
+}
+
+proc warn_proc { msg_id msg } {
+  # use STA since its an STA warning
+  utl::warn STA $msg_id $msg
 }
 
 # namespace
