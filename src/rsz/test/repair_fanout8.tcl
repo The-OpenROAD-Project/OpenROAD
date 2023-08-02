@@ -33,3 +33,5 @@ estimate_parasitics -placement
 report_worst_slack -max
 repair_timing -setup -repair_tns 100
 report_worst_slack -max
+repair_timing -recover_power
+report_worst_slack -max
