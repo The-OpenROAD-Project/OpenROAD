@@ -1801,6 +1801,52 @@ void dbNet::clearSpecial()
   }
 }
 
+bool dbNet::isConnectedByAbutment()
+{
+  if (getITermCount() > 2 || getBTermCount() > 0) {
+    return false;
+  }
+
+  bool first_mterm = true;
+  std::vector<Rect> first_pin_boxes;
+  for (dbITerm* iterm : getITerms()) {
+    dbMTerm* mterm = iterm->getMTerm();
+    dbMaster* master = mterm->getMaster();
+    if (!master->isBlock()) {
+      return false;
+    }
+
+    dbInst* inst = iterm->getInst();
+    if (inst->isPlaced()) {
+      dbTransform transform;
+      inst->getTransform(transform);
+
+      for (dbMPin* mpin : mterm->getMPins()) {
+        for (dbBox* box : mpin->getGeometry()) {
+          dbTechLayer* tech_layer = box->getTechLayer();
+          if (tech_layer->getType() != dbTechLayerType::ROUTING) {
+            continue;
+          }
+          odb::Rect rect = box->getBox();
+          transform.apply(rect);
+          if (first_mterm) {
+            first_pin_boxes.push_back(rect);
+          } else {
+            for (const Rect& first_pin_box : first_pin_boxes) {
+              if (rect.intersects(first_pin_box)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+    first_mterm = false;
+  }
+
+  return false;
+}
+
 bool dbNet::isWildConnected()
 {
   _dbNet* net = (_dbNet*) this;

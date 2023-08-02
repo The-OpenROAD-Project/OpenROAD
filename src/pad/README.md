@@ -9,6 +9,26 @@ Place an IO ring around the boundary of the a chip and connect with either wireb
 - Parameters without square brackets `-param2 param2` are required.
 ```
 
+### Placing Terminals
+
+In the case where the bond pads are integrated into the padcell, the IO terminals need to be placed.
+To place a terminals on the padring
+```
+place_io_terminals inst_pins
+```
+
+#### Options
+
+| Switch Name | Description |
+| ----- | ----- |
+| `inst_pins` | Instance pins to place the terminals on |
+
+#### Examples
+```
+place_io_terminals u_*/PAD
+place_io_terminals u_*/VDD
+```
+
 ### Defining a Bump Array
 
 To define a bump array.

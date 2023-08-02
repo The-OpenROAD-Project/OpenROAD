@@ -250,3 +250,152 @@ proc tapcell_ripup { args } {
   # Reset global parameters 
   tap::reset
 }
+
+sta::define_cmd_args "place_endcaps" {
+  # Simplified
+  [-corner master]\
+  [-edge_corner master]\
+
+  [-endcap masters] \
+
+  [-endcap_horizontal masters] \
+  [-endcap_vertical master] \
+
+  [-prefix prefix]
+
+  # Full options
+  [-left_top_corner master]\
+  [-right_top_corner master]\
+  [-left_bottom_corner master]\
+  [-right_bottom_corner master]\
+
+  [-left_top_edge master]\
+  [-right_top_edge master]\
+  [-left_bottom_edge master]\
+  [-right_bottom_edge master]\
+
+  [-left_edge master] \
+  [-right_edge master] \
+
+  [-top_edge masters] \
+  [-bottom_edge masters]
+}
+
+proc place_endcaps { args } {
+  sta::parse_key_args "place_endcaps" args \
+    keys {
+      -corner -edge_corner
+      -endcap
+      -endcap_horizontal -endcap_vertical
+      -prefix
+      -left_top_corner -right_top_corner -left_bottom_corner -right_bottom_corner
+      -left_top_edge -right_top_edge -left_bottom_edge -right_bottom_edge
+      -left_edge -right_edge
+      -top_edge -bottom_edge} \
+    flags {}
+  
+  sta::check_argc_eq0 "place_endcaps" $args
+
+  set prefix "PHY_"
+  if { [info exists keys(-prefix)]} {
+    set prefix $keys(-prefix)
+  }
+
+  set left_top_corner [tap::find_master [tap::parse_endcap_key keys -left_top_corner -corner -corner]]
+  set right_top_corner [tap::find_master [tap::parse_endcap_key keys -right_top_corner -corner -corner]]
+  set left_bottom_corner [tap::find_master [tap::parse_endcap_key keys -left_bottom_corner -corner -corner]]
+  set right_bottom_corner [tap::find_master [tap::parse_endcap_key keys -right_bottom_corner -corner -corner]]
+
+  set left_top_edge [tap::find_master [tap::parse_endcap_key keys -left_top_edge -edge_corner -edge_corner]]
+  set right_top_edge [tap::find_master [tap::parse_endcap_key keys -right_top_edge -edge_corner -edge_corner]]
+  set left_bottom_edge [tap::find_master [tap::parse_endcap_key keys -left_bottom_edge -edge_corner -edge_corner]]
+  set right_bottom_edge [tap::find_master [tap::parse_endcap_key keys -right_bottom_edge -edge_corner -edge_corner]]
+
+  set left_edge [tap::find_master [tap::parse_endcap_key keys -left_edge -endcap_vertical -endcap]]
+  set right_edge [tap::find_master [tap::parse_endcap_key keys -right_edge -endcap_vertical -endcap]]
+
+  set top_edge [tap::find_masters [tap::parse_endcap_key keys -top_edge -endcap_horizontal -endcap]]
+  set bottom_edge [tap::find_masters [tap::parse_endcap_key keys -bottom_edge -endcap_horizontal -endcap]]
+
+  tap::place_endcaps \
+    $left_top_corner\
+    $right_top_corner\
+    $left_bottom_corner\
+    $right_bottom_corner\
+    $left_top_edge\
+    $right_top_edge\
+    $left_bottom_edge\
+    $right_bottom_edge\
+    $top_edge\
+    $bottom_edge\
+    $left_edge\
+    $right_edge\
+    $prefix
+}
+
+sta::define_cmd_args "place_tapcells" {
+  -master tapcell_master \
+  -distance dist
+}
+
+proc place_tapcells {args } {
+  
+  sta::parse_key_args "place_boundary_cells" args \
+    keys {-master -distance} \
+    flags {}
+  
+  sta::check_argc_eq0 "place_boundary_cells" $args
+
+  set dist -1
+  if { [info exists keys(-distance)] } {
+    set dist [ord::microns_to_dbu $keys(-distance)]
+  }
+  set master "NULL"
+  if { [info exists keys(-master)] } {
+    set master [tap::find_master $keys(-master)]
+  }
+
+  tap::insert_tapcells $master $dist
+}
+
+namespace eval tap {
+
+  proc find_master { master } {
+    if { $master == "" } {
+      return "NULL"
+    }
+    set m [[ord::get_db] findMaster $master]
+    if {$m == "NULL"} {
+      utl::error TAP 102 "Unable to find $master"
+    }
+    return $m
+  }
+
+  proc find_masters { masters } {
+    set ms []
+    foreach m $masters {
+      lappend ms [find_master $m]
+    }
+    return $ms
+  }
+
+  proc parse_endcap_key { cmdargs key0 key1 key2 {optional true} } {
+    upvar keys $cmdargs
+
+    if { [info exists keys($key0) ]} {
+      return $keys($key0)
+    }
+    if { [info exists keys($key1) ]} {
+      return $keys($key1)
+    }
+    if { [info exists keys($key2) ]} {
+      return $keys($key2)
+    }
+
+    if { !$optional } {
+      utl::error TAP 103 "$key0, $key1, or $key2 is required."
+    }
+
+    return ""
+  }
+}

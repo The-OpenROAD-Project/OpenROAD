@@ -44,7 +44,6 @@ void orderWires(utl::Logger* logger, dbBlock* block)
   if (conn == nullptr) {
     conn = new tmg_conn(logger);
   }
-  conn->resetSplitCnt();
   for (auto net : block->getNets()) {
     if (net->getSigType().isSupply() || net->isWireOrdered()) {
       continue;
@@ -61,7 +60,6 @@ void orderWires(utl::Logger* logger, dbNet* net)
   if (net->getSigType().isSupply()) {
     return;
   }
-  conn->resetSplitCnt();
   conn->analyzeNet(net);
 }
 
