@@ -1299,7 +1299,10 @@ TimingPathsTableView::TimingPathsTableView(QWidget* parent)
 void TimingPathsTableView::mousePressEvent(QMouseEvent* event)
 {
   if (event->button() == Qt::RightButton) {
-    emit rightClicked();
+    QModelIndex index = indexAt(event->pos());
+    if (index.isValid() && selectionModel()->isSelected(index)) {
+      emit selectedRowRightClicked();
+    }    
   } else {
     QAbstractItemView::mousePressEvent(event);
   }

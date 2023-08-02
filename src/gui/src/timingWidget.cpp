@@ -181,7 +181,7 @@ void TimingWidget::init(sta::dbSta* sta)
 
   connect(
       setup_timing_table_view_,
-      SIGNAL(rightClicked()),
+      SIGNAL(selectedRowRightClicked()),
       this,
       SLOT(writePathReportCommand()));
 
@@ -252,7 +252,7 @@ void TimingWidget::keyPressEvent(QKeyEvent* key_event)
 
 void TimingWidget::writePathReportCommand()
 {
-  std::cout << "Só quero ver se funcionou essa merda \n";
+  std::cout << "Must write timing path cmd in script \n";
 }
 
 void TimingWidget::clearPathDetails()
