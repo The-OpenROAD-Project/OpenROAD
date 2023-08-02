@@ -1311,23 +1311,26 @@ void RenderThread::drawPinMarkers(Painter& painter,
   QString largest_text;
   for (auto pin : block->getBTerms()) {
     QString current_text = QString::fromStdString(pin->getName());
-    if (font_metrics.width(current_text) > font_metrics.width(largest_text)) {
+    if (font_metrics.boundingRect(current_text).width()
+        > font_metrics.boundingRect(largest_text).width()) {
       largest_text = current_text;
     }
   }
 
-  const int horizontal_gap
-      = (viewer_->geometry().width() - die_width * viewer_->pixels_per_dbu_)
-        / 2;
-  const int vertical_gap
-      = (viewer_->geometry().height() - die_height * viewer_->pixels_per_dbu_)
-        / 2;
-  const int available_space = std::min(horizontal_gap, vertical_gap)
-                              - std::ceil(max_dim * viewer_->pixels_per_dbu_);
+  const int vertical_gap = (viewer_->geometry().height()
+                            - viewer_->getBounds().dy() * viewer_->pixels_per_dbu_)
+                           / 2;
+  const int horizontal_gap = (viewer_->geometry().width()
+                              - viewer_->getBounds().dx() * viewer_->pixels_per_dbu_)
+                             / 2;
+
+  const int available_space
+      = std::min(vertical_gap, horizontal_gap)
+        - std::ceil(max_dim) * viewer_->pixels_per_dbu_;  // in pixels
 
   int font_size = marker_font.pointSize();
-  int largest_text_width = font_metrics.width(largest_text);
-  const int drawing_font_size = 8;  // in points
+  int largest_text_width = font_metrics.boundingRect(largest_text).width();
+  const int drawing_font_size = 6;  // in points
 
   // when the size is minimum the text won't be drawn
   const int minimum_font_size = drawing_font_size - 1;
@@ -1339,12 +1342,13 @@ void RenderThread::drawPinMarkers(Painter& painter,
     font_size -= 1;
     marker_font.setPointSize(font_size);
     QFontMetrics current_font_metrics(marker_font);
-    largest_text_width = current_font_metrics.width(largest_text);
+    largest_text_width
+        = current_font_metrics.boundingRect(largest_text).width();
   }
 
   qpainter->setFont(marker_font);
 
-  // draw names of pins when text height is at least 8 pts
+  // draw names of pins when text height is at least 6 pts
   const bool draw_names = font_size >= drawing_font_size;
   const int text_margin = 2.0 / viewer_->pixels_per_dbu_;
 
