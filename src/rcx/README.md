@@ -35,8 +35,8 @@ define_process_corner
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-ext_model_index` | extraction model index |
-| `filename` | filename containing process corner |
+| `-ext_model_index` | Extraction model index. Expects 2 inputs (an index, and corner name). |
+| `filename` | Path to process corner file `rcx_patterns.rules`. |
 
 ### Extract Parasitics
 
@@ -50,6 +50,7 @@ extract_parasitics
     [-corner_cnt count]            
     [-max_res ohms]               
     [-coupling_threshold fF]        
+    [-debug_net_id id]
     [-lef_res]                     
     [-cc_model track]             
     [-context_depth depth]      
@@ -60,14 +61,15 @@ extract_parasitics
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-ext_model_file` | specify the Extraction Rules file used for the extraction. |
-| `-corner_cnt` | defines the number of corners used during the parasitic extraction. |
-| `-max_res` | combines resistors in series up to the threshold value. |
-| `-coupling_threshold` | coupling below this threshold is grounded (units: fF) |
-| `-lef_res` | override LEF resistance per unit |
-| `-cc_model` | specify the maximum number of tracks of lateral context that the tool considers on the same routing level (default 10). |
-| `-context_depth` | specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation (default 5). |
-| `-no_merge_via_res` | separates the via resistance from the wire resistance.|
+| `-ext_model_file` | Specify the Extraction Rules file used for the extraction. |
+| `-corner_cnt` | Defines the number of corners used during the parasitic extraction. |
+| `-max_res` | Combines resistors in series up to the threshold value. |
+| `-coupling_threshold` | Coupling below this threshold is grounded (default 0.1, units: fF) |
+| `-debug_net_id` | *Developer Option*: Net ID to evaluate |
+| `-lef_res` | Override LEF resistance per unit |
+| `-cc_model` | Specify the maximum number of tracks of lateral context that the tool considers on the same routing level (default 10). |
+| `-context_depth` | Specify the number of levels of vertical context that OpenRCX needs to consider for the over/under context overlap for capacitance calculation (default 5). |
+| `-no_merge_via_res` | Separates the via resistance from the wire resistance.|
 
 ### Write SPEF
 
@@ -85,9 +87,9 @@ write_spef
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-net_id` | output the parasitics info for specific net IDs |
-| `-nets` | net name |
-| `filename` | the output filename |
+| `-net_id` | Output the parasitics info for specific net IDs. |
+| `-nets` | Net name. |
+| `filename` | Output filename. |
 
 ### Scale RC
 
@@ -105,9 +107,9 @@ adjust_rc
 
 | Switch Name | Description |
 | ----- | ----- |
-| `res_factor` | specifies the scale factor for resistance. |
-| `cc_factor` | specifies the scale factor for coupling capacitance. |
-| `gndc_factor` | specifies the scale factor for ground capacitance. |
+| `-res_factor` | Specifies the scale factor for resistance. |
+| `-cc_factor` | Specifies the scale factor for coupling capacitance. |
+| `-gndc_factor` | Specifies the scale factor for ground capacitance. |
 
 ### Comparing SPEF files
 
@@ -129,11 +131,11 @@ diff_spef
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-file` | specifies the input `.spef` filename |
-| `-r_res` | read resistance |
-| `-r_cap` | read capacitance |
-| `-r_cc_cap` | read coupled capacitance |
-| `r_conn` | read connections |
+| `-file` | Path to the input `.spef` filename. |
+| `-r_res` | Read resistance. |
+| `-r_cap` | Read capacitance. |
+| `-r_cc_cap` | Read coupled capacitance. |
+| `r_conn` | Read connections. |
 
 ### Extraction Rules File Generation
 
@@ -164,15 +166,15 @@ bench_wires
 
 | Switch Name | Description |
 | ----- | ----- |
-| `met_cnt` | specifies the number of layers used in each pattern (default -1). |
-| `cnt` | specifies the number of wires in each pattern (default 5). |
-| `len` | specify the wire length in the pattern (default 100 microns). | 
-| `all` | specify all different pattern geometries (over, under, over_under, and diagonal). |
-| `-db_only` | run with db values only. all parameters in `bench_wires` are ignored. |
-| `-under_met` | under metal layer |
-| `w_list` | specifies the lists of wire width multipliers from the minimum spacing defined in the LEF. |
-| `s_list` | specifies the lists of wire spacing multipliers from the minimum spacing defined in the LEF. The list will be the input index on the OpenRCX RC table (Extraction Rules file). |
-| `over_dist`, `under_dist` | over and under metal distance respectively |
+| `-met_cnt` | Specifies the number of layers used in each pattern (default -1). |
+| `-cnt` | Specifies the number of wires in each pattern (default 5). |
+| `-len` | Specify the wire length in the pattern (default 100 microns). | 
+| `-all` | Specify all different pattern geometries (over, under, over_under, and diagonal). |
+| `-db_only` | Run with db values only. All parameters in `bench_wires` are ignored. |
+| `-under_met` | Under metal layer. |
+| `-w_list` | Specifies the lists of wire width multipliers from the minimum spacing defined in the LEF. |
+| `-s_list` | Specifies the lists of wire spacing multipliers from the minimum spacing defined in the LEF. The list will be the input index on the OpenRCX RC table (Extraction Rules file). |
+| `-over_dist`, `-under_dist` | Over and under metal distance respectively. |
 
 ### Generate verilog netlist
 
@@ -194,7 +196,7 @@ bench_verilog
 
 | Switch Name | Description |
 | ----- | ----- |
-| `filename` | output `.v` filename |
+| `filename` | Name for the Verilog output file `.v`. |
 
 ### Read SPEF
 
@@ -210,7 +212,7 @@ bench_read_spef
 
 | Switch Name | Description |
 | ----- | ----- |
-| `filename` | input `.spef` filename |
+| `filename` | Path to the input `.spef` file. |
 
 ### Write Rule File
 
@@ -234,10 +236,10 @@ write_rules
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-file` | output file name |
-| `-dir` | output file directory |
-| `-name` | name of rule |
-| `-pattern` | flag to write the pattern to rulefile (0/1) | 
+| `-file` | Output file name. |
+| `-dir` | Output file directory. |
+| `-name` | Name of rule. |
+| `-pattern` | Flag to write the pattern to rulefile (0/1). | 
 
 ## Example scripts
 
