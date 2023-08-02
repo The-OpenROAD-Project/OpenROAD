@@ -743,9 +743,20 @@ void io::Parser::setNets(odb::dbBlock* block)
               break;
           }
           pathId = decoder.next();
+
+          bool non_orthogonal_conn = false;
+          if (pathId == odb::dbWireDecoder::POINT && hasEndPoint) {
+            frCoord x, y;
+            decoder.getPoint(x, y);
+            bool curr_conn_vertical = beginX == endX;
+            bool next_conn_vertical = endX == x;
+            non_orthogonal_conn = curr_conn_vertical != next_conn_vertical;
+          }
+
           if ((int) pathId <= 3 || pathId == odb::dbWireDecoder::TECH_VIA
               || pathId == odb::dbWireDecoder::VIA
-              || pathId == odb::dbWireDecoder::END_DECODE) {
+              || pathId == odb::dbWireDecoder::END_DECODE
+              || non_orthogonal_conn) {
             if (hasEndPoint) {
               nextX = endX;
               nextY = endY;
@@ -753,6 +764,8 @@ void io::Parser::setNets(odb::dbBlock* block)
               nextX = beginX;
               nextY = beginY;
             }
+            prevLayer = decoder.getLayer();
+            layerName = prevLayer->getName();
             endpath = true;
           }
         } while (!endpath);
