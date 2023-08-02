@@ -299,6 +299,9 @@ proc place_bondpad {args} {
   foreach inst [get_cells {*}$args] {
     lappend insts [sta::sta_to_db_inst $inst]
   }
+  if { [llength $insts] == 0} {
+    utl::error PAD 117 "No instances matched $args"
+  }
   pad::assert_required place_bondpad -bond
   set master [pad::find_master $keys(-bond)]
 
@@ -320,6 +323,21 @@ proc place_bondpad {args} {
                       $rotation \
                       $offset_x \
                       $offset_y
+}
+
+sta::define_cmd_args "place_io_terminals" {inst_terms}
+
+proc place_io_terminals {args} {
+  sta::parse_key_args "place_bondpad" args \
+    keys {} \
+    flags {}
+
+  set iterms []
+  foreach pin [get_pins {*}$args] {
+    lappend iterms [ sta::sta_to_db_pin $pin]
+  }
+
+  pad::place_terminals $iterms
 }
 
 sta::define_hidden_cmd_args "make_fake_io_site" {-name name \

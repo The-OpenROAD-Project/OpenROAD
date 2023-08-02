@@ -238,17 +238,15 @@ class lefin
   }
 
   // Create a technology from the tech-data of this LEF file.
-  dbTech* createTech(const char* lef_file);
+  dbTech* createTech(const char* name, const char* lef_file);
 
   // Create a library from the library-data of this LEF file.
-  dbLib* createLib(const char* name, const char* lef_file);
+  dbLib* createLib(dbTech* tech, const char* name, const char* lef_file);
 
   // Create a technology and library from the MACRO's in this LEF file.
-  dbLib* createTechAndLib(const char* lib_name, const char* lef_file);
-
-  // Create a technology and library from the MACRO's in this LEF file.
-  dbLib* createTechAndLib(const char* lib_name,
-                          std::list<std::string>& lef_file_list);
+  dbLib* createTechAndLib(const char* tech_name,
+                          const char* lib_name,
+                          const char* lef_file);
 
   // Add macros to this library
   bool updateLib(dbLib* lib, const char* lef_file);

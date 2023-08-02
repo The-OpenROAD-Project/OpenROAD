@@ -38,7 +38,9 @@
 #include "db/tech/frLayer.h"
 #include "db/tech/frViaRuleGenerate.h"
 #include "frBaseTypes.h"
+#include "global.h"
 #include "utl/Logger.h"
+
 namespace odb {
 class dbTechLayer;
 }
@@ -257,10 +259,14 @@ class frTechObject
     logger->info(DRT, 167, "List of default vias:");
     for (auto& layer : layers) {
       if (layer->getType() == dbTechLayerType::CUT
-          && layer->getLayerNum() >= 2 /*BOTTOM_ROUTING_LAYER*/) {
+          && layer->getLayerNum() >= BOTTOM_ROUTING_LAYER) {
         logger->report("  Layer {}", layer->getName());
-        logger->report("    default via: {}",
-                       layer->getDefaultViaDef()->getName());
+        if (layer->getDefaultViaDef() != nullptr) {
+          logger->report("    default via: {}",
+                         layer->getDefaultViaDef()->getName());
+        } else {
+          logger->report("    default via: none");
+        }
       }
     }
   }

@@ -168,7 +168,13 @@ void TritonCTS::initOneClockTree(odb::dbNet* driverNet,
                                  const std::string& sdcClockName,
                                  TreeBuilder* parent)
 {
-  TreeBuilder* clockBuilder = initClock(driverNet, sdcClockName, parent);
+  TreeBuilder* clockBuilder = nullptr;
+  if (driverNet->isSpecial()) {
+    logger_->info(
+        CTS, 116, "Special net \"{}\" skipped.", driverNet->getName());
+  } else {
+    clockBuilder = initClock(driverNet, sdcClockName, parent);
+  }
   visitedClockNets_.insert(driverNet);
   odb::dbITerm* driver = driverNet->getFirstOutput();
   odb::dbSet<odb::dbITerm> iterms = driverNet->getITerms();

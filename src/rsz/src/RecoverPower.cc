@@ -191,8 +191,9 @@ RecoverPower::recoverPower()
     }
     // Leave the parasitics up to date.
     resizer_->updateParasitics();
-    resizer_->incrementalParasiticsEnd();
   }
+
+  resizer_->incrementalParasiticsEnd();
 
   // TODO: Add the appropriate metric here
   // logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);
@@ -380,12 +381,8 @@ RecoverPower::downsizeCell(LibertyPort *in_port,
            float drive2 = port2->driveResistance();
            ArcDelay intrinsic1 = port1->intrinsicDelay(this);
            ArcDelay intrinsic2 = port2->intrinsicDelay(this);
-           return drive1 < drive2
-             || ((drive1 == drive2
-                  && intrinsic1 > intrinsic2)
-                 || (intrinsic1 == intrinsic2
-                 || (intrinsic1 == intrinsic2
-                     && port1->capacitance() > port2->capacitance())));
+           return (std::tie(drive1, intrinsic2) <
+		   std::tie(drive2, intrinsic1));
          });
     float drive = drvr_port->cornerPort(lib_ap)->driveResistance();
     float delay = resizer_->gateDelay(drvr_port, load_cap, resizer_->tgt_slew_dcalc_ap_)

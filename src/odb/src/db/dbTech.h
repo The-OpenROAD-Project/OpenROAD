@@ -86,6 +86,7 @@ class _dbTech : public _dbObject
   char _version_buf[35];  // Tmp for outputting string
  public:
   // PERSISTANT-MEMBERS
+  std::string _name;
   int _via_cnt;
   int _layer_cnt;
   int _rlayer_cnt;

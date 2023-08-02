@@ -153,5 +153,10 @@ def setup(app):
 
     if not os.path.exists('./main'):
         os.symlink('..', './main')
+    # these prefix swaps will be reverted and is needed for sphinx compilation.
     swap_prefix('../README.md', '(docs/', '(../')
     swap_prefix('../README.md', '```mermaid', '```{mermaid}\n:align: center\n')
+
+    # for populating OR Messages page.
+    command = "python getMessages.py"
+    _ = os.popen(command).read()

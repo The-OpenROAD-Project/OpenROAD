@@ -422,7 +422,12 @@ static void fillPolygon(const Polygon90& area,
       const int num_mask = std::max(num_masks, 1);
       int cnt = 0;
       for (auto& f : polygons) {
-        int mask = cnt++ % num_mask + 1;
+        int mask;
+        if (num_mask == 1) {
+          mask = 0;  // don't write a mask for single mask layers
+        } else {
+          mask = cnt++ % num_mask + 1;
+        }
         auto x_lo = xl(f);
         auto y_lo = yl(f);
         auto x_hi = xh(f);

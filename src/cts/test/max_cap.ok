@@ -27,15 +27,15 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0027] Generating H-Tree topology for net clk1.
 [INFO CTS-0028]  Total number of sinks: 20.
 [INFO CTS-0030]  Number of static layers: 0.
-[INFO CTS-0020]  Wire segment unit: 16000  dbu (16 um).
+[INFO CTS-0020]  Wire segment unit: 16650  dbu (16 um).
 [INFO CTS-0023]  Original sink region: [(315, 1540), (600315, 801540)].
-[INFO CTS-0024]  Normalized sink region: [(0.0196875, 0.09625), (37.5197, 50.0962)].
-[INFO CTS-0025]     Width:  37.5000.
-[INFO CTS-0026]     Height: 50.0000.
+[INFO CTS-0024]  Normalized sink region: [(0.0189189, 0.0924925), (36.055, 48.1405)].
+[INFO CTS-0025]     Width:  36.0360.
+[INFO CTS-0026]     Height: 48.0480.
  Level 1
     Direction: Vertical
     Sinks per sub-region: 10
-    Sub-region size: 37.5000 X 25.0000
+    Sub-region size: 36.0360 X 24.0240
 [INFO CTS-0034]     Segment length (rounded): 12.
     Key: 326 inSlew: 1 inCap: 2 outSlew: 2 load: 1 length: 8 delay: 12
       location: 0.25 buffer: sky130_fd_sc_hs__clkbuf_1
@@ -52,13 +52,13 @@ TritonCTS forced slew degradation on these wires.
 [INFO CTS-0098] Clock net "clk1"
 [INFO CTS-0099]  Sinks 20
 [INFO CTS-0100]  Leaf buffers 0
-[INFO CTS-0101]  Average sink wire length 1220.98 um
+[INFO CTS-0101]  Average sink wire length 1224.59 um
 [INFO CTS-0102]  Path depth 3 - 3
 max slew
 
 Pin                                    Limit    Slew   Slack
 ------------------------------------------------------------
-r11/CLK                                 1.00    2.77   -1.77 (VIOLATED)
+r11/CLK                                 1.00    2.76   -1.76 (VIOLATED)
 
 max capacitance
 

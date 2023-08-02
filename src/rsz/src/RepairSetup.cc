@@ -146,13 +146,17 @@ RepairSetup::repairSetup(float setup_slack_margin,
   if (!violating_ends.empty()) {
     logger_->info(RSZ, 94, "Found {} endpoints with setup violations.",
                   violating_ends.size());
+  } else {
+    // nothing to repair
+    logger_->metric("design__instance__count__setup_buffer", 0);
+    return;
   }
 
   int end_index = 0;
   int max_end_count = violating_ends.size() * repair_tns_end_percent;
   // Always repair the worst endpoint, even if tns percent is zero.
   max_end_count = max(max_end_count, 1);
-  swap_pin_inst_map_.clear(); // Make sure we do not swap the same pin twice.
+  swap_pin_inst_set_.clear(); // Make sure we do not swap the same pin twice.
   resizer_->incrementalParasiticsBegin();
   int print_iteration = 0;
   if (verbose) {
@@ -428,6 +432,7 @@ RepairSetup::repairSetup(PathRef &path,
       if (enable_gate_cloning && fanout > split_load_min_fanout_ &&
           !tristate_drvr &&
           !resizer_->dontTouch(net) &&
+          resizer_->inserted_buffer_set_.find(db_network_->instance(drvr_pin)) == resizer_->inserted_buffer_set_.end() &&
           cloneDriver(drvr_path, drvr_index, path_slack, &expanded)) {
           changed = true;
           break;
@@ -506,20 +511,13 @@ bool RepairSetup::swapPins(PathRef *drvr_path,
             return false;
         }
 
-        // Check if we have already dealt with this instance more than twice.
-        // Skip if the answeris a yes.
-        if (swap_pin_inst_map_.find(drvr) == swap_pin_inst_map_.end()) {
-            swap_pin_inst_map_.insert(std::make_pair(drvr,1));
+        // Check if we have already dealt with this instance
+        // and prevent any further swaps.
+        if (swap_pin_inst_set_.find(drvr) == swap_pin_inst_set_.end()) {
+            swap_pin_inst_set_.insert(drvr);
         }
         else {
-            // If the candidate shows up twice then it is marginal and we should
-            // just stop considering it.
-            if (swap_pin_inst_map_[drvr] == 1) {
-                swap_pin_inst_map_[drvr] = 2;
-                --swap_pin_count_;
-            }
-            else
-                return false;
+            return false;
         }
 
         // Find the equivalent pins for a cell (simple implementation for now)
@@ -560,7 +558,8 @@ RepairSetup::upsizeDrvr(PathRef *drvr_path,
   PathRef *in_path = expanded->path(in_index);
   Pin *in_pin = in_path->pin(sta_);
   LibertyPort *in_port = network_->libertyPort(in_pin);
-  if (!resizer_->dontTouch(drvr)) {
+  if (!resizer_->dontTouch(drvr) ||
+      resizer_->cloned_inst_set_.find(drvr) != resizer_->cloned_inst_set_.end()) {
     float prev_drive;
     if (drvr_index >= 2) {
       int prev_drvr_index = drvr_index - 2;
@@ -743,8 +742,11 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
   Point drvr_loc = computeCloneGateLocation(drvr_pin, fanout_slacks);
   Instance *clone_inst = resizer_->makeInstance(clone_cell, buffer_name.c_str(),
                                                 parent, drvr_loc);
-
-  resizer_->cloned_gates_.insert(network_->instance(drvr_pin), clone_inst);
+  debugPrint(logger_, RSZ, "repair_setup", 3, "clone {} ({}) -> {} ({})",
+             network_->pathName(drvr_pin), original_cell->name(),
+             network_->pathName(clone_inst), clone_cell->name());
+  resizer_->cloned_gates_.push(std::tuple(network_->instance(drvr_pin), clone_inst));
+  resizer_->cloned_inst_set_.insert(clone_inst);
   cloned_gate_count_++;
   Net *out_net = resizer_->makeUniqueNet();
   std::unique_ptr<InstancePinIterator> inst_pin_iter{network_->pinIterator(drvr_inst)};
@@ -754,7 +756,7 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
       // Connect to all the inputs of the original cell.
       auto libPort = network_->libertyPort(pin); // get the liberty port of the original inst/pin
       auto net = network_->net(pin);
-      sta_->connectPin(clone_inst, libPort, net); // connect the same liberty port of the new instance
+      sta_->connectPin(clone_inst, libPort, net);  // connect the same liberty port of the new instance
       resizer_->parasiticsInvalid(net);
     }
   }
@@ -789,10 +791,6 @@ RepairSetup::cloneDriver(PathRef* drvr_path, int drvr_index,
       sta_->connectPin(load, load_port, out_net);
     }
   }
- 
-  // here we can resize both the original driver and the clone
-  resize_count_ += resizer_->resizeToTargetSlew(clone_output_pin);
-  resize_count_ += resizer_->resizeToTargetSlew(drvr_pin);
   resizer_->parasiticsInvalid(out_net);
   return true;
 }
@@ -985,7 +983,7 @@ RepairSetup::printProgress(int iteration, bool force, bool end) const
 {
   const bool start = iteration == 0;
 
-  if (start) {
+  if (start && !end) {
     logger_->report("Iteration | Resized | Buffers | Cloned Gates | Pin Swaps |   WNS   |   TNS   | Endpoint");
     logger_->report("---------------------------------------------------------------------------------------");
   }
@@ -1009,7 +1007,7 @@ RepairSetup::printProgress(int iteration, bool force, bool end) const
                     swap_pin_count_,
                     delayAsString(wns, sta_, 3),
                     delayAsString(tns, sta_, 3),
-                    worst_vertex->name(network_));
+                    worst_vertex != nullptr ? worst_vertex->name(network_) : "");
   }
 
   if (end) {

@@ -108,7 +108,7 @@ class PDNSim
   int bump_pitch_y_ = 0;
   std::string spice_out_file_;
   std::string power_net_;
-  sta::Corner* corner_;
+  sta::Corner* corner_ = nullptr;
   std::map<std::string, float> net_voltage_map_;
   IRDropByLayer ir_drop_;
   float node_density_ = -1;

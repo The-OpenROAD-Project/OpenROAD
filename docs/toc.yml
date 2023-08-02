@@ -77,6 +77,8 @@ entries:
     title: Flute
   - file: main/src/par/README
     title: Partition Manager
+  - file: user/MessagesFinal.md
+    title: Warning and Error Messages Glossary
 
 - file: contrib/GettingInvolved
   title: Getting Involved
