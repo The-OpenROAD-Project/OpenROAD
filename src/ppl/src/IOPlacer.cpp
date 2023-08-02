@@ -46,6 +46,7 @@
 #include "Slots.h"
 #include "odb/db.h"
 #include "ord/OpenRoad.hh"
+#include "ppl/AbstractIOPlacerRenderer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -53,7 +54,7 @@ namespace ppl {
 
 using utl::PPL;
 
-IOPlacer::IOPlacer()
+IOPlacer::IOPlacer() : ioplacer_renderer_(nullptr)
 {
   netlist_ = std::make_unique<Netlist>();
   core_ = std::make_unique<Core>();
@@ -1918,6 +1919,37 @@ void IOPlacer::setAnnealingConfig(float temperature,
   alpha_ = alpha;
 }
 
+void IOPlacer::setRenderer(
+    std::unique_ptr<AbstractIOPlacerRenderer> ioplacer_renderer)
+{
+  ioplacer_renderer_ = std::move(ioplacer_renderer);
+}
+
+AbstractIOPlacerRenderer* IOPlacer::getRenderer()
+{
+  return ioplacer_renderer_.get();
+}
+
+void IOPlacer::setAnnealingDebugOn()
+{
+  annealing_debug_mode_ = true;
+}
+
+bool IOPlacer::isAnnealingDebugOn() const
+{
+  return annealing_debug_mode_;
+}
+
+void IOPlacer::setAnnealingDebugPaintInterval(const int iters_between_paintings)
+{
+  ioplacer_renderer_->setPaintingInterval(iters_between_paintings);
+}
+
+void IOPlacer::setAnnealingDebugNoPauseMode(const bool no_pause_mode)
+{
+  ioplacer_renderer_->setIsNoPauseMode(no_pause_mode);
+}
+
 void IOPlacer::runAnnealing(bool random)
 {
   initParms();
@@ -1933,6 +1965,11 @@ void IOPlacer::runAnnealing(bool random)
 
   ppl::SimulatedAnnealing annealing(
       netlist_io_pins_.get(), core_.get(), slots_, constraints_, logger_, db_);
+
+  if (isAnnealingDebugOn()) {
+    annealing.setDebugOn(std::move(ioplacer_renderer_));
+  }
+
   annealing.run(
       init_temperature_, max_iterations_, perturb_per_iter_, alpha_, random);
   annealing.getAssignment(assignment_);

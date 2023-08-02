@@ -66,6 +66,9 @@
   
 %}
 
+%import <std_vector.i>
+%import "dbtypes.i"
+
 %include "../../Exception.i"
 
 %inline %{
@@ -135,7 +138,55 @@
     return getTapcell()->removeCells(prefix);
   }
 
+  void place_endcaps(
+    odb::dbMaster* left_top_corner,
+    odb::dbMaster* right_top_corner,
+    odb::dbMaster* left_bottom_corner,
+    odb::dbMaster* right_bottom_corner,
+    odb::dbMaster* left_top_edge,
+    odb::dbMaster* right_top_edge,
+    odb::dbMaster* left_bottom_edge,
+    odb::dbMaster* right_bottom_edge,
+
+    const std::vector<odb::dbMaster*>& top_edge,
+    const std::vector<odb::dbMaster*>& bottom_edge,
+
+    odb::dbMaster* left_edge,
+    odb::dbMaster* right_edge,
+    const char* prefix)
+  {
+    EndcapCellOptions options;
+
+    options.left_top_corner = left_top_corner;
+    options.right_top_corner = right_top_corner;
+    options.left_bottom_corner = left_bottom_corner;
+    options.right_bottom_corner = right_bottom_corner;
+    options.left_top_edge = left_top_edge;
+    options.right_top_edge = right_top_edge;
+    options.left_bottom_edge = left_bottom_edge;
+    options.right_bottom_edge = right_bottom_edge;
+
+    options.top_edge = top_edge;
+    options.bottom_edge = bottom_edge;
+
+    options.left_edge = left_edge;
+    options.right_edge = right_edge;
+    options.prefix = prefix;
+
+    getTapcell()->placeEndcaps(options);
+  }
+
+  void insert_tapcells(
+    odb::dbMaster* master,
+    int distance)
+  {
+    Options options;
+    options.dist = distance;
+    options.tapcell_master = master;
+  
+    getTapcell()->placeTapcells(options);
+  }
+
   }  // namespace tap
 
-  %}
-  
+%}

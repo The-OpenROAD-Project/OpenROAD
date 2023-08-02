@@ -73,5 +73,8 @@ PyListSet(PyObject *const source,
 
 %import "odb.i"
 
+%ignore ppl::IOPlacer::getRenderer;
+%ignore ppl::IOPlacer::setRenderer;
+
 %include "ppl/Parameters.h"
 %include "ppl/IOPlacer.h"

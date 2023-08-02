@@ -306,6 +306,13 @@ dbIStream& operator>>(dbIStream& stream, _dbDatabase& db)
   if (db._schema_minor < db_schema_initial)
     throw ZException("incompatible database schema revision");
 
+  if (db._schema_minor > db_schema_minor)
+    throw ZException("incompatible database schema revision %d.%d > %d.%d",
+                     db._schema_major,
+                     db._schema_minor,
+                     db_schema_major,
+                     db_schema_minor);
+
   stream >> db._master_id;
 
   stream >> db._chip;
