@@ -114,7 +114,7 @@ lefin::~lefin()
 
 void lefin::createLibrary()
 {
-  _lib = dbLib::create(_db, _lib_name, _hier_delimeter);
+  _lib = dbLib::create(_db, _lib_name, _tech, _hier_delimeter);
   _lib->setLefUnits(_lef_units);
   if (_left_bus_delimeter)
     _lib->setBusDelimeters(_left_bus_delimeter, _right_bus_delimeter);
@@ -2194,17 +2194,12 @@ bool lefin::readLef(const char* lef_file)
   return r;
 }
 
-dbTech* lefin::createTech(const char* lef_file)
+dbTech* lefin::createTech(const char* name, const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
 
-  if (_db->getTech()) {
-    _logger->warn(utl::ODB, 227, "Error: technology already exists");
-    return nullptr;
-  };
-
-  _tech = dbTech::create(_db, _dbu_per_micron);
+  _tech = dbTech::create(_db, name, _dbu_per_micron);
   _create_tech = true;
 
   if (!readLef(lef_file)) {
@@ -2221,12 +2216,12 @@ dbTech* lefin::createTech(const char* lef_file)
   return _tech;
 }
 
-dbLib* lefin::createLib(const char* name, const char* lef_file)
+dbLib* lefin::createLib(dbTech* tech, const char* name, const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
 
-  _tech = _db->getTech();
+  _tech = tech;
 
   if (_tech == nullptr) {
     _logger->warn(utl::ODB, 228, "Error: technology does not exists");
@@ -2258,7 +2253,9 @@ dbLib* lefin::createLib(const char* name, const char* lef_file)
   return _lib;
 }
 
-dbLib* lefin::createTechAndLib(const char* lib_name, const char* lef_file)
+dbLib* lefin::createTechAndLib(const char* tech_name,
+                               const char* lib_name,
+                               const char* lef_file)
 {
   lefrSetRelaxMode();
   init();
@@ -2269,13 +2266,14 @@ dbLib* lefin::createTechAndLib(const char* lib_name, const char* lef_file)
     return nullptr;
   };
 
-  if (_db->getTech()) {
-    _logger->warn(utl::ODB, 231, "Error: technology already exists");
+  if (_db->findTech(tech_name)) {
+    _logger->warn(
+        utl::ODB, 231, "Error: technology {} already exists", tech_name);
     ++_errors;
-    return nullptr;
+    return NULL;
   };
 
-  _tech = dbTech::create(_db, _dbu_per_micron);
+  _tech = dbTech::create(_db, tech_name, _dbu_per_micron);
   _lib_name = lib_name;
   _create_lib = true;
   _create_tech = true;
@@ -2293,75 +2291,6 @@ dbLib* lefin::createTechAndLib(const char* lib_name, const char* lef_file)
     dbTech::destroy(_tech);
     _logger->error(
         utl::ODB, 289, "LEF data from {} is discarded due to errors", lef_file);
-  }
-
-  dbSet<dbTechNonDefaultRule> rules = _tech->getNonDefaultRules();
-
-  if (rules.orderReversed())
-    rules.reverse();
-
-  return _lib;
-}
-
-dbLib* lefin::createTechAndLib(const char* lib_name,
-                               std::list<std::string>& file_list)
-{
-  lefrSetRelaxMode();
-  init();
-
-  if (_db->findLib(lib_name)) {
-    _logger->warn(
-        utl::ODB, 232, "Error: library ({}) already exists", lib_name);
-    return nullptr;
-  };
-
-  if (_db->getTech()) {
-    _logger->warn(utl::ODB, 233, "Error: technology already exists");
-    ++_errors;
-    return nullptr;
-  };
-
-  _tech = dbTech::create(_db, _dbu_per_micron);
-  assert(_tech);
-
-  _lib_name = lib_name;
-  _create_lib = true;
-  _create_tech = true;
-
-  std::list<std::string>::iterator it;
-  for (it = file_list.begin(); it != file_list.end(); ++it) {
-    std::string str = *it;
-    const char* lef_file = str.c_str();
-    _logger->info(utl::ODB, 234, "Reading LEF file:  {} ...", lef_file);
-    if (!lefin_parse(this, _logger, lef_file)) {
-      _logger->warn(utl::ODB, 235, "Error reading {}", lef_file);
-
-      if (_lib)
-        dbLib::destroy(_lib);
-      dbTech::destroy(_tech);
-      _logger->error(utl::ODB,
-                     291,
-                     "LEF data from {} is discarded due to errors",
-                     lef_file);
-    }
-    _logger->info(utl::ODB, 236, "Finished LEF file:  {}", lef_file);
-  }
-
-  if (_layer_cnt)
-    _logger->info(
-        utl::ODB, 237, "    Created {} technology layers", _layer_cnt);
-
-  if (_via_cnt)
-    _logger->info(utl::ODB, 238, "    Created {} technology vias", _via_cnt);
-
-  if (_master_cnt)
-    _logger->info(utl::ODB, 239, "    Created {} library cells", _master_cnt);
-
-  if (_errors != 0) {
-    if (_lib)
-      dbLib::destroy(_lib);
-    dbTech::destroy(_tech);
-    _logger->error(utl::ODB, 290, "LEF data discarded due to errors");
   }
 
   dbSet<dbTechNonDefaultRule> rules = _tech->getNonDefaultRules();

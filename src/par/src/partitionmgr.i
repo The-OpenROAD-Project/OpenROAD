@@ -34,42 +34,44 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 %{
-#include "par/PartitionMgr.h"
 #include <array>
-#include <regex>
-#include <memory>
-#include <vector>
 #include <iostream>
+#include <memory>
+#include <regex>
+#include <vector>
+
+#include "par/PartitionMgr.h"
 
 namespace ord {
 // Defined in OpenRoad.i
-        par::PartitionMgr* getPartitionMgr();
+par::PartitionMgr* getPartitionMgr();
 }  // namespace ord
 
-using std::regex;
 using ord::getPartitionMgr;
+using std::regex;
 
 // From tcl/std_vector.i - not sure why it isn't found automatically
 template <typename Type>
-int SwigDouble_As(Tcl_Interp *interp, Tcl_Obj *o, Type *val) {
-    int return_val;
-    double temp_val;
-    return_val = Tcl_GetDoubleFromObj(interp, o, &temp_val);
-    *val = (Type) temp_val;
-    return return_val;
+int SwigDouble_As(Tcl_Interp * interp, Tcl_Obj * o, Type * val)
+{
+  int return_val;
+  double temp_val;
+  return_val = Tcl_GetDoubleFromObj(interp, o, &temp_val);
+  *val = (Type) temp_val;
+  return return_val;
 }
 
 %}
 
-%import <std_vector.i>
+%import<std_vector.i>
 %template(wt_factors) std::vector<float>;
 
 %include "../../Exception.i"
 
 %inline %{
-
 void triton_part_hypergraph(unsigned int num_parts,
                             float balance_constraint,
+                            const std::vector<float>& base_balance,
                             unsigned int seed,
                             int vertex_dimension,
                             int hyperedge_dimension,
@@ -106,48 +108,50 @@ void triton_part_hypergraph(unsigned int num_parts,
                             int num_vertices_threshold_ilp,
                             int global_net_threshold)
 {
-  getPartitionMgr()->tritonPartHypergraph(num_parts,
-                                          balance_constraint,
-                                          seed,
-                                          vertex_dimension,
-                                          hyperedge_dimension,
-                                          placement_dimension,
-                                          hypergraph_file,
-                                          fixed_file,
-                                          community_file,
-                                          group_file,
-                                          placement_file,
-                                          // weight parameters
-                                          e_wt_factors,
-                                          v_wt_factors,
-                                          placement_wt_factors,
-                                          // coarsening related parameters
-                                          thr_coarsen_hyperedge_size_skip,
-                                          thr_coarsen_vertices,
-                                          thr_coarsen_hyperedges,
-                                          coarsening_ratio,
-                                          max_coarsen_iters,
-                                          adj_diff_ratio,
-                                          min_num_vertices_each_part,
-                                          // initial partitioning related parameters
-                                          num_initial_solutions,
-                                          num_best_initial_solutions,
-                                          // refinement related parameters
-                                          refiner_iters,
-                                          max_moves,  
-                                          early_stop_ratio,
-                                          total_corking_passes,
-                                          // vcycle related parameters
-                                          v_cycle_flag,
-                                          max_num_vcycle,
-                                          num_coarsen_solutions,
-                                          num_vertices_threshold_ilp,
-                                          global_net_threshold);
-                                        
+  getPartitionMgr()->tritonPartHypergraph(
+      num_parts,
+      balance_constraint,
+      base_balance,
+      seed,
+      vertex_dimension,
+      hyperedge_dimension,
+      placement_dimension,
+      hypergraph_file,
+      fixed_file,
+      community_file,
+      group_file,
+      placement_file,
+      // weight parameters
+      e_wt_factors,
+      v_wt_factors,
+      placement_wt_factors,
+      // coarsening related parameters
+      thr_coarsen_hyperedge_size_skip,
+      thr_coarsen_vertices,
+      thr_coarsen_hyperedges,
+      coarsening_ratio,
+      max_coarsen_iters,
+      adj_diff_ratio,
+      min_num_vertices_each_part,
+      // initial partitioning related parameters
+      num_initial_solutions,
+      num_best_initial_solutions,
+      // refinement related parameters
+      refiner_iters,
+      max_moves,
+      early_stop_ratio,
+      total_corking_passes,
+      // vcycle related parameters
+      v_cycle_flag,
+      max_num_vcycle,
+      num_coarsen_solutions,
+      num_vertices_threshold_ilp,
+      global_net_threshold);
 }
 
 void evaluate_hypergraph_solution(unsigned int num_parts,
                                   float balance_constraint,
+                                  const std::vector<float>& base_balance,
                                   int vertex_dimension,
                                   int hyperedge_dimension,
                                   const char* hypergraph_file,
@@ -159,6 +163,7 @@ void evaluate_hypergraph_solution(unsigned int num_parts,
 {
   getPartitionMgr()->evaluateHypergraphSolution(num_parts,
                                                 balance_constraint,
+                                                base_balance,
                                                 vertex_dimension,
                                                 hyperedge_dimension,
                                                 hypergraph_file,
@@ -166,12 +171,12 @@ void evaluate_hypergraph_solution(unsigned int num_parts,
                                                 group_file,
                                                 solution_file,
                                                 e_wt_factors,
-                                                v_wt_factors); 
+                                                v_wt_factors);
 }
-
 
 void triton_part_design(unsigned int num_parts_arg,
                         float balance_constraint_arg,
+                        const std::vector<float>& base_balance_arg,
                         unsigned int seed_arg,
                         bool timing_aware_flag_arg,
                         int top_n_arg,
@@ -186,7 +191,7 @@ void triton_part_design(unsigned int num_parts_arg,
                         const char* group_file_arg,
                         const char* solution_filename_arg,
                         // timing related parameters
-                        float net_timing_factor, 
+                        float net_timing_factor,
                         float path_timing_factor,
                         float path_snaking_factor,
                         float timing_exp_factor,
@@ -219,60 +224,61 @@ void triton_part_design(unsigned int num_parts_arg,
                         int num_vertices_threshold_ilp,
                         int global_net_threshold)
 {
-  getPartitionMgr()->tritonPartDesign(num_parts_arg,
-                                      balance_constraint_arg,
-                                      seed_arg,
-                                      timing_aware_flag_arg,
-                                      top_n_arg,
-                                      placement_flag_arg,
-                                      fence_flag_arg,
-                                      fence_lx_arg,
-                                      fence_ly_arg,
-                                      fence_ux_arg,
-                                      fence_uy_arg,
-                                      fixed_file_arg,
-                                      community_file_arg,
-                                      group_file_arg,
-                                      solution_filename_arg,
-                                      // timing related parameters
-                                      net_timing_factor, 
-                                      path_timing_factor,
-                                      path_snaking_factor,
-                                      timing_exp_factor,
-                                      extra_delay,
-                                      guardband_flag,
-                                      // weight parameters
-                                      e_wt_factors,
-                                      v_wt_factors,
-                                      placement_wt_factors,
-                                      // coarsening related parameters
-                                      thr_coarsen_hyperedge_size_skip,
-                                      thr_coarsen_vertices,
-                                      thr_coarsen_hyperedges,
-                                      coarsening_ratio,
-                                      max_coarsen_iters,
-                                      adj_diff_ratio,
-                                      min_num_vertices_each_part,
-                                      // initial partitioning related parameters
-                                      num_initial_solutions,
-                                      num_best_initial_solutions,
-                                      // refinement related parameters
-                                      refiner_iters,
-                                      max_moves,
-                                      early_stop_ratio,
-                                      total_corking_passes,
-                                      // vcycle related parameters
-                                      v_cycle_flag,
-                                      max_num_vcycle,
-                                      num_coarsen_solutions,
-                                      num_vertices_threshold_ilp,
-                                      global_net_threshold);
-                                     
+  getPartitionMgr()->tritonPartDesign(
+      num_parts_arg,
+      balance_constraint_arg,
+      base_balance_arg,
+      seed_arg,
+      timing_aware_flag_arg,
+      top_n_arg,
+      placement_flag_arg,
+      fence_flag_arg,
+      fence_lx_arg,
+      fence_ly_arg,
+      fence_ux_arg,
+      fence_uy_arg,
+      fixed_file_arg,
+      community_file_arg,
+      group_file_arg,
+      solution_filename_arg,
+      // timing related parameters
+      net_timing_factor,
+      path_timing_factor,
+      path_snaking_factor,
+      timing_exp_factor,
+      extra_delay,
+      guardband_flag,
+      // weight parameters
+      e_wt_factors,
+      v_wt_factors,
+      placement_wt_factors,
+      // coarsening related parameters
+      thr_coarsen_hyperedge_size_skip,
+      thr_coarsen_vertices,
+      thr_coarsen_hyperedges,
+      coarsening_ratio,
+      max_coarsen_iters,
+      adj_diff_ratio,
+      min_num_vertices_each_part,
+      // initial partitioning related parameters
+      num_initial_solutions,
+      num_best_initial_solutions,
+      // refinement related parameters
+      refiner_iters,
+      max_moves,
+      early_stop_ratio,
+      total_corking_passes,
+      // vcycle related parameters
+      v_cycle_flag,
+      max_num_vcycle,
+      num_coarsen_solutions,
+      num_vertices_threshold_ilp,
+      global_net_threshold);
 }
-
 
 void evaluate_part_design_solution(unsigned int num_parts_arg,
                                    float balance_constraint_arg,
+                                   const std::vector<float>& base_balance_arg,
                                    bool timing_aware_flag_arg,
                                    int top_n_arg,
                                    bool fence_flag_arg,
@@ -297,46 +303,45 @@ void evaluate_part_design_solution(unsigned int num_parts_arg,
                                    const std::vector<float>& e_wt_factors,
                                    const std::vector<float>& v_wt_factors)
 {
-  getPartitionMgr()->evaluatePartDesignSolution(num_parts_arg,
-                                                balance_constraint_arg,
-                                                timing_aware_flag_arg,
-                                                top_n_arg,
-                                                fence_flag_arg,
-                                                fence_lx_arg,
-                                                fence_ly_arg,
-                                                fence_ux_arg,
-                                                fence_uy_arg,
-                                                fixed_file_arg,
-                                                community_file_arg,
-                                                group_file_arg,
-                                                hypergraph_file_arg,
-                                                hypergraph_int_weight_file_arg,
-                                                solution_filename_arg,
-                                                // timing related parameters
-                                                net_timing_factor,
-                                                path_timing_factor,
-                                                path_snaking_factor,
-                                                timing_exp_factor,
-                                                extra_delay,
-                                                guardband_flag,
-                                                // weight parameters
-                                                e_wt_factors,
-                                                v_wt_factors);
+  getPartitionMgr()->evaluatePartDesignSolution(
+      num_parts_arg,
+      balance_constraint_arg,
+      base_balance_arg,
+      timing_aware_flag_arg,
+      top_n_arg,
+      fence_flag_arg,
+      fence_lx_arg,
+      fence_ly_arg,
+      fence_ux_arg,
+      fence_uy_arg,
+      fixed_file_arg,
+      community_file_arg,
+      group_file_arg,
+      hypergraph_file_arg,
+      hypergraph_int_weight_file_arg,
+      solution_filename_arg,
+      // timing related parameters
+      net_timing_factor,
+      path_timing_factor,
+      path_snaking_factor,
+      timing_exp_factor,
+      extra_delay,
+      guardband_flag,
+      // weight parameters
+      e_wt_factors,
+      v_wt_factors);
 }
 
-void write_partition_verilog(const char* port_prefix,
-                             const char* module_suffix,
-                             const char* file_name)
+void write_partition_verilog(
+    const char* port_prefix, const char* module_suffix, const char* file_name)
 {
-  getPartitionMgr()->writePartitionVerilog(file_name,
-                                           port_prefix,
-                                           module_suffix);
+  getPartitionMgr()->writePartitionVerilog(
+      file_name, port_prefix, module_suffix);
 }
 
-void read_file(const char* filename, const char* instance_map_file) {
+void read_file(const char* filename, const char* instance_map_file)
+{
   getPartitionMgr()->readPartitioningFile(filename, instance_map_file);
 }
-
-
 
 %}

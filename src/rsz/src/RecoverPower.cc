@@ -191,8 +191,9 @@ RecoverPower::recoverPower()
     }
     // Leave the parasitics up to date.
     resizer_->updateParasitics();
-    resizer_->incrementalParasiticsEnd();
   }
+
+  resizer_->incrementalParasiticsEnd();
 
   // TODO: Add the appropriate metric here
   // logger_->metric("design__instance__count__setup_buffer", inserted_buffer_count_);

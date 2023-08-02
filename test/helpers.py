@@ -29,16 +29,16 @@ def diff_files(file1, file2):
     num_lines2 = len(lines2)
     for i in range(min(num_lines1, num_lines2)):
         if lines1[i] != lines2[i]:
-            print(f"Differences found at line {i+1}.")
-            print(lines1[i][:-1])
-            print(lines2[i][:-1])
+            utl.report(f"Differences found at line {i+1}.")
+            utl.report(lines1[i][:-1])
+            utl.report(lines2[i][:-1])
             return 1
 
     if num_lines1 != num_lines2:
-        print(f"Number of lines differs {num_lines1} vs {num_lines2}.")
+        utl.report(f"Number of lines differs {num_lines1} vs {num_lines2}.")
         return 1
 
-    print("No differences found.")
+    utl.report("No differences found.")
     return 0
 
 # Output voltage file is specified as ...

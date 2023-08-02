@@ -11,8 +11,6 @@
 [INFO ODB-0132]     Created 2 special nets and 0 connections.
 [INFO ODB-0133]     Created 411 nets and 1210 connections.
 [INFO DRT-0167] List of default vias:
-  Layer mcon
-    default via: L1M1_PR
   Layer via
     default via: M1M2_PR
   Layer via2

@@ -12,9 +12,8 @@
 [INFO ODB-0303] The initial 30 rows (6960 sites) were cut with 1 shapes for a total of 30 rows (4935 sites).
 [INFO TAP-0004] Inserted 60 endcaps.
 [INFO TAP-0005] Inserted 19 tapcells.
+No differences found.
 [INFO ODB-0303] The initial 30 rows (4935 sites) were cut with 1 shapes for a total of 30 rows (4935 sites).
 [INFO TAP-0004] Inserted 60 endcaps.
 [INFO TAP-0005] Inserted 38 tapcells.
-Differences found at line 44.
-COMPONENTS 80 ;
-COMPONENTS 99 ;
+No differences found.
