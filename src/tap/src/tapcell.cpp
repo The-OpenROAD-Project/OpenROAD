@@ -1196,6 +1196,9 @@ int Tapcell::placeEndcapEdgeVertical(const Tapcell::Edge& edge,
       case EdgeType::Right:
         ll = row->getBBox().lr();
         ll.addX(-width);
+        if (edge_master->getSymmetryY()) {
+          orient = orient.flipY();
+        }
         break;
       case EdgeType::Left:
         ll = row->getBBox().ll();
