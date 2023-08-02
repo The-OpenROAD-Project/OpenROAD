@@ -102,4 +102,5 @@ record_tests {
   repair_setup4_verbose
   repair_hold9_verbose
   set_dont_touch1
+  set_dont_use1
 }
