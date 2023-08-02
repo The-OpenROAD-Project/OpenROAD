@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (c) 2023, The Regents of the University of California
+// Copyright (c) 2023, Precision Innovations Inc.
 // All rights reserved.
 //
 // BSD 3-Clause License
@@ -66,6 +66,8 @@ using sta::DcalcAnalysisPt;
 using sta::Vertex;
 using sta::Corner;
 using sta::Instance;
+using sta::Network;
+
 class BufferedNet;
 enum class BufferedNetType;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
@@ -82,13 +84,28 @@ enum class JournalElementType
 
 class JournalElement
 {
+ public:
+  // swap pin element
+  JournalElement(Instance* inst, LibertyPort* swap_port1,
+                 LibertyPort* swap_port2);
+  // buffer to inverter element
+  JournalElement(Instance *inv_buffer1, Instance *inv_buffer2,
+                 Instance *inv_inverter1, Instance *inv_inverter2);
+  // resize element
+  JournalElement(Instance *inst, LibertyCell *cell);
+  // clone element
+  JournalElement();
+  JournalElementType getType() const { return type_; }
+
+ private:
   JournalElementType type_;
   // Original cell used for resize and the instance
   Instance *resized_inst_;
   LibertyCell *original_cell_;
   // Two pin pointers to undo pin swapping.
-  Pin *swap_pin1_;
-  Pin *swap_pin2_;
+  Instance *swap_inst_;
+  LibertyPort *swap_port1_;
+  LibertyPort *swap_port2_;
   // four instance pointers for inverter to buffer conversion
   Instance *inv_buffer1_;
   Instance *inv_buffer2_;
@@ -99,16 +116,21 @@ class JournalElement
 class Journal
 {
 public:
-  Journal();
+  Journal(Logger *logger, Network *network, dbSta *sta);
 
   void journalBegin();
   void journalEnd();
   void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
-  void journalUndoGateCloning(int &cloned_gate_count);
+  void journalUndoGateCloning(JournalElement &item);
   void journalRestore(int& resize_count, int& inserted_buffer_count,
                       int& cloned_gate_count);
+ private:
+  Logger *logger_;
+  Network *network_;
+  dbSta *sta_;
+  std::stack<JournalElement> journal_stack_;
 };
 
 } // namespace rsz
