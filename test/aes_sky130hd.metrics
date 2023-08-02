@@ -31,7 +31,7 @@
 	"route__net__special": 2,
 	"antenna__violating__nets": 365,
 	"antenna__violating__pins": 372,
-	"GRT::ANT::errors": "365",
+	"GRT::ANT::errors": "370",
 	"design__violations": 0,
 	"route__net": 16845,
 	"route__net__special": 2,
