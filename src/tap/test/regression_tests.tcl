@@ -2,6 +2,7 @@ record_tests {
   gcd_fakeram
   gcd_nangate45
   gcd_sky130
+  gcd_asap7
   invalid_cells
   multiple_calls
   avoid_overlap
