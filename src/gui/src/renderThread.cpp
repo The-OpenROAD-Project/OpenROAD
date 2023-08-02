@@ -1317,12 +1317,14 @@ void RenderThread::drawPinMarkers(Painter& painter,
     }
   }
 
-  const int vertical_gap = (viewer_->geometry().height()
-                            - viewer_->getBounds().dy() * viewer_->pixels_per_dbu_)
-                           / 2;
-  const int horizontal_gap = (viewer_->geometry().width()
-                              - viewer_->getBounds().dx() * viewer_->pixels_per_dbu_)
-                             / 2;
+  const int vertical_gap
+      = (viewer_->geometry().height()
+         - viewer_->getBounds().dy() * viewer_->pixels_per_dbu_)
+        / 2;
+  const int horizontal_gap
+      = (viewer_->geometry().width()
+         - viewer_->getBounds().dx() * viewer_->pixels_per_dbu_)
+        / 2;
 
   const int available_space
       = std::min(vertical_gap, horizontal_gap)
