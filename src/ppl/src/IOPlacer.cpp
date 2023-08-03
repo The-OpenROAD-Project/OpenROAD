@@ -675,6 +675,11 @@ double IOPlacer::dbuToMicrons(int64_t dbu)
   return (double) dbu / (getBlock()->getDbUnitsPerMicron());
 }
 
+int64_t IOPlacer::micronsToDbu(double microns)
+{
+  return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
+}
+
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
   const int default_min_dist = 2;
@@ -711,6 +716,10 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
     if (offset == -1) {
       offset = num_tracks_offset_ * tech_min_dst;
+      // limit default offset to 1um
+      if (offset > micronsToDbu(1.0)) {
+        offset = micronsToDbu(1.0);
+      }
     }
 
     int init_tracks
