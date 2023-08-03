@@ -1135,6 +1135,18 @@ int Tapcell::placeEndcapEdgeHorizontal(const Tapcell::Edge& edge,
       continue;
     }
 
+    if (ll.getX() + master->getWidth() > e1.getX()) {
+      const double dbus = row->getBlock()->getDbUnitsPerMicron();
+      logger_->error(
+          utl::TAP,
+          20,
+          "Unable to fill {} boundary in {} from {:.4f}um to {:.4f}um",
+          toString(edge.type),
+          row->getName(),
+          ll.getX() / dbus,
+          e1.getX() / dbus);
+    }
+
     makeInstance(db_->getChip()->getBlock(),
                  master,
                  row->getOrient(),
