@@ -121,7 +121,7 @@ class TimingWidget : public QDockWidget
   void copy();
 
   TimingPathsTableView* setup_timing_table_view_;
-  QTableView* hold_timing_table_view_;
+  TimingPathsTableView* hold_timing_table_view_;
   QTableView* path_details_table_view_;
   QTableView* capture_details_table_view_;
 

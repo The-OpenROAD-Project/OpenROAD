@@ -50,7 +50,7 @@ namespace gui {
 TimingWidget::TimingWidget(QWidget* parent)
     : QDockWidget("Timing Report", parent),
       setup_timing_table_view_(new TimingPathsTableView(this)),
-      hold_timing_table_view_(new QTableView(this)),
+      hold_timing_table_view_(new TimingPathsTableView(this)),
       path_details_table_view_(new QTableView(this)),
       capture_details_table_view_(new QTableView(this)),
       update_button_(new QPushButton("Update", this)),
@@ -190,6 +190,12 @@ void TimingWidget::init(sta::dbSta* sta)
       SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
       this,
       SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
+
+  connect(
+      hold_timing_table_view_,
+      SIGNAL(selectedRowRightClicked()),
+      this,
+      SLOT(writePathReportCommand()));
 
   connect(
       path_details_table_view_->selectionModel(),
