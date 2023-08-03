@@ -408,6 +408,16 @@ int IOPlacer::placeFallbackPins(bool random)
       int place_slot = getFirstSlotToPlaceGroup(
           first_slot, last_slot, group.first.size(), have_mirrored, io_pin);
 
+      if (place_slot == -1) {
+        logger_->error(
+            PPL,
+            109,
+            "Pin group of size {} does not fit any region in the die "
+            "boundaries. Not enough conmtiguous slots available. The first pin "
+            "of the group is {}.",
+            group.first.size(),
+            io_pin.getName());
+      }
       placeFallbackGroup(group, place_slot);
     }
   }
