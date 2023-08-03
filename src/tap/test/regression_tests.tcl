@@ -16,4 +16,6 @@ record_tests {
   boundary_macros_separate
   boundary_macros_auto_select
   gcd_sky130_separate
+  jpeg_gf180
+  aes_gf180
 }
