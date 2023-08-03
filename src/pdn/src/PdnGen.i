@@ -202,53 +202,70 @@ void make_ring(const char* grid_name,
   }
 }
 
-void add_sroute_inst(const char* inst, const char* iterm, int hDX, int hDY, int vDX, int vDY)
-  {
-    PdnGen* pdngen = ord::getPdnGen();
-    pdngen->addSrouteInst(inst, iterm, hDX, hDY, vDX, vDY);
-  }
+void add_sroute_inst(const char* inst,
+                     const char* iterm,
+                     int hDX,
+                     int hDY,
+                     int vDX,
+                     int vDY)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  pdngen->addSrouteInst(inst, iterm, hDX, hDY, vDX, vDY);
+}
 
-  void createSrouteWires(
-      const char* net,
-      const char* outerNet,
-      const char* grid_name,
-      odb::dbTechLayer* layer0,
-      odb::dbTechLayer* layer1,
-      int cut_pitch_x,
-      int cut_pitch_y,
-      const std::vector<odb::dbTechViaGenerateRule*>& vias,
-      const std::vector<odb::dbTechVia*>& techvias,
-      int max_rows,
-      int max_columns,
-      const std::vector<odb::dbTechLayer*>& ongrid,
-      const std::vector<odb::dbTechLayer*>& split_cuts_layers,
-      const std::vector<int>& split_cut_pitches,
-      const char* dont_use_vias,
-      int hDX, int hDY, int vDX, int vDY, int stripDY, std::vector<int> metalWidths, std::vector<int> metalspaces)
-  {
-    PdnGen* pdngen = ord::getPdnGen();
-    std::map<odb::dbTechLayer*, int> split_cuts;
-    for (size_t i = 0; i < split_cuts_layers.size(); i++) {
-      split_cuts[split_cuts_layers[i]] = split_cut_pitches[i];
-    }
-    for (auto* grid : pdngen->findGrid(grid_name)) {
-      pdngen->createSrouteWires(net,
-                                outerNet,
-                                grid,
-                                layer0,
-                                layer1,
-                                cut_pitch_x,
-                                cut_pitch_y,
-                                vias,
-                                techvias,
-                                max_rows,
-                                max_columns,
-                                ongrid,
-                                split_cuts,
-                                dont_use_vias,
-                                hDX, hDY, vDX, vDY, stripDY, metalWidths, metalspaces);
-    }
+void createSrouteWires(
+    const char* net,
+    const char* outerNet,
+    const char* grid_name,
+    odb::dbTechLayer* layer0,
+    odb::dbTechLayer* layer1,
+    int cut_pitch_x,
+    int cut_pitch_y,
+    const std::vector<odb::dbTechViaGenerateRule*>& vias,
+    const std::vector<odb::dbTechVia*>& techvias,
+    int max_rows,
+    int max_columns,
+    const std::vector<odb::dbTechLayer*>& ongrid,
+    const std::vector<odb::dbTechLayer*>& split_cuts_layers,
+    const std::vector<int>& split_cut_pitches,
+    const char* dont_use_vias,
+    int hDX,
+    int hDY,
+    int vDX,
+    int vDY,
+    int stripDY,
+    std::vector<int> metalWidths,
+    std::vector<int> metalspaces)
+{
+  PdnGen* pdngen = ord::getPdnGen();
+  std::map<odb::dbTechLayer*, int> split_cuts;
+  for (size_t i = 0; i < split_cuts_layers.size(); i++) {
+    split_cuts[split_cuts_layers[i]] = split_cut_pitches[i];
   }
+  for (auto* grid : pdngen->findGrid(grid_name)) {
+    pdngen->createSrouteWires(net,
+                              outerNet,
+                              grid,
+                              layer0,
+                              layer1,
+                              cut_pitch_x,
+                              cut_pitch_y,
+                              vias,
+                              techvias,
+                              max_rows,
+                              max_columns,
+                              ongrid,
+                              split_cuts,
+                              dont_use_vias,
+                              hDX,
+                              hDY,
+                              vDX,
+                              vDY,
+                              stripDY,
+                              metalWidths,
+                              metalspaces);
+  }
+}
 
 void make_followpin(const char* grid_name, 
                     odb::dbTechLayer* layer, 
