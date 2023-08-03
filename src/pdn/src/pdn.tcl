@@ -635,29 +635,29 @@ proc add_pdn_connect {args} {
                     $dont_use
 }
 
-sta::define_cmd_args "add_sroute_connect"{[-net net] \
-                                          [-outerNet outerNet]
-                                          [-grid grid_name] \
-                                          -layers list_of_2_layers \
-                                          [-cut_pitch pitch_value] \
-                                          [-fixed_vias list_of_vias] \
-                                          [-dont_use_vias list_of_vias]
-                                          [-max_rows rows] \
-                                          [-max_columns columns] \
-                                          [-hDX hDX] \
-                                          [-hDY hDY] \
-                                          [-vDX vDX] \
-                                          [-vDY vDY] \
-                                          [-stripDY stripDY]
-                                          [-metalWidths metalWidths]
-                                          [-metalspaces metalspaces]
-                                          [-ongrid ongrid_layers] \
-                                          [-split_cuts split_cuts_mapping]
+sta::define_cmd_args "add_sroute_connect" {[-net net] \
+                                           [-outerNet outerNet]
+                                           [-grid grid_name] \
+                                           -layers list_of_2_layers \
+                                           [-cut_pitch pitch_value] \
+                                           [-fixed_vias list_of_vias] \
+                                           [-dont_use_vias list_of_vias]
+                                           [-max_rows rows] \
+                                           [-max_columns columns] \
+                                           [-hDX hDX] \
+                                           [-hDY hDY] \
+                                           [-vDX vDX] \
+                                           [-vDY vDY] \
+                                           [-stripDY stripDY]
+                                           [-metalWidths metalWidths]
+                                           [-metalspaces metalspaces]
+                                           [-ongrid ongrid_layers] \
+                                           [-split_cuts split_cuts_mapping]
 }
 
 proc add_sroute_connect {args} {
   sta::parse_key_args "add_sroute_connect" args \
-    keys {-net -outerNet -grid -layers -cut_pitch -fixed_vias -max_rows -max_columns -hDX -hDY -vDX -vDY -stripDY -metalWidths -metalspaces -ongrid -split_cuts -dont_use_vias} \
+    keys {-net -outerNet -grid -layers -cut_pitch -fixed_vias -dont_use_vias -max_rows -max_columns -hDX -hDY -vDX -vDY -stripDY -metalWidths -metalspaces -ongrid -split_cuts} \
     flags {}
 
   sta::check_argc_eq0 "add_sroute_connect" $args
