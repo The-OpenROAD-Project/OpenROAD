@@ -590,7 +590,7 @@ void TechChar::initCharacterization()
       libertyCell->bufferPorts(input, output);
       sta::LibertyLibrary* lib = libertyCell->libertyLibrary();
 
-      input->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
+      output->slewLimit(sta::MinMax::max(), maxSlew, maxSlewExist);
       if (!maxSlewExist)
         lib->defaultMaxSlew(maxSlew, maxSlewExist);
       if (!maxSlewExist)
