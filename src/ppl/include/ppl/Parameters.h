@@ -118,7 +118,7 @@ class Parameters
   int horizontal_length_ = -1;
   int vertical_length_ = -1;
   unsigned int rand_seed_ = 42;
-  int corner_avoidance_ = 0;
+  int corner_avoidance_ = -1;
   int min_dist_ = 0;
   bool distance_in_tracks_ = false;
 };
