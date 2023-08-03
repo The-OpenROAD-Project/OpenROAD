@@ -1,17 +1,13 @@
-#define BOOST_TEST_MODULE TestScanArchitect
-#include <boost/test/included/unit_test.hpp>
 #include <limits>
 #include <random>
 #include <sstream>
 
 #include "ScanArchitect.hh"
 #include "ScanArchitectConfig.hh"
+#include "gtest/gtest.h"
 
+namespace dft {
 namespace {
-
-BOOST_AUTO_TEST_SUITE(test_suite)
-
-using namespace dft;
 
 bool operator!=(const ScanArchitect::HashDomainLimits& lhs,
                 const ScanArchitect::HashDomainLimits& rhs)
@@ -44,41 +40,40 @@ ScanArchitect::HashDomainLimits CreateTestHashDomainLimits(uint64_t chain_count,
 }
 
 // Check if we are correctly calculating the limits of the hash domains
-BOOST_AUTO_TEST_CASE(test_calculate_chain_count_and_max_length)
+TEST(TestScanArchitect, CalculatesChainCountAndMaxLength)
 {
   // For 1 hash domain (1) with 10 bits and a max length of 5, we need to have a
   // chain count of 2 in that hash domain (1)
-  BOOST_TEST(CompareUnordered(
+  EXPECT_TRUE(CompareUnordered(
       ScanArchitect::inferChainCountFromMaxLength({{1, 10}}, 5),
       {{1, CreateTestHashDomainLimits(2, 5)}}));
   // Unbalance cases
   // We create 2 chains with max_length of 4
-  BOOST_TEST(
+  EXPECT_TRUE(
       CompareUnordered(ScanArchitect::inferChainCountFromMaxLength({{1, 9}}, 5),
                        {{1, CreateTestHashDomainLimits(2, 5)}}));
   // We create 2 chains with max_length of 3
-  BOOST_TEST(
+  EXPECT_TRUE(
       CompareUnordered(ScanArchitect::inferChainCountFromMaxLength({{1, 6}}, 5),
                        {{1, CreateTestHashDomainLimits(2, 3)}}));
 
   // Two hash domains, balance case
-  BOOST_TEST(CompareUnordered(
+  EXPECT_TRUE(CompareUnordered(
       ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 10}}, 5),
       {{1, CreateTestHashDomainLimits(2, 5)},
        {2, CreateTestHashDomainLimits(2, 5)}}));
   // Unbalance
-  BOOST_TEST(CompareUnordered(
+  EXPECT_TRUE(CompareUnordered(
       ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 9}}, 5),
       {{1, CreateTestHashDomainLimits(2, 5)},
        {2, CreateTestHashDomainLimits(2, 5)}}));
 
   //// Two hash domains with different number of cells
-  BOOST_TEST(CompareUnordered(
+  EXPECT_TRUE(CompareUnordered(
       ScanArchitect::inferChainCountFromMaxLength({{1, 10}, {2, 15}}, 5),
       {{1, CreateTestHashDomainLimits(2, 5)},
        {2, CreateTestHashDomainLimits(3, 5)}}));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
-
 }  // namespace
+}  // namespace dft
