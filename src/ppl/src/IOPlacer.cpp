@@ -709,6 +709,10 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
     min_dst_pins
         = (min_dst_pins == 0) ? default_min_dist * tech_min_dst : min_dst_pins;
 
+    if (offset == -1) {
+      offset = num_tracks_offset_ * tech_min_dst;
+    }
+
     int init_tracks
         = vertical ? core_->getInitTracksX()[i] : core_->getInitTracksY()[i];
     int num_tracks
