@@ -630,6 +630,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     string shape = "";
     bool hasBeginPoint = false;
     bool hasEndPoint = false;
+    bool non_orthogonal_conn = false;
     bool beginInVia = false;
     frCoord beginX = -1;
     frCoord beginY = -1;
@@ -655,14 +656,24 @@ void io::Parser::setNets(odb::dbBlock* block)
       odb::dbWireDecoder::OpCode pathId = decoder.next();
       while (pathId != odb::dbWireDecoder::END_DECODE) {
         // for each path start
-        layerName = "";
+        // when previous connection was a non-orthogonal connection, use the
+        // last end point as the new begin point. it avoids missing segments
+        // between the non-orthogonal connections.
+        if (non_orthogonal_conn) {
+          hasBeginPoint = true;
+          beginX = endX;
+          beginY = endY;
+        } else {
+          layerName = "";
+          hasBeginPoint = false;
+          beginX = -1;
+          beginY = -1;
+        }
         viaName = "";
         shape = "";
-        hasBeginPoint = false;
         hasEndPoint = false;
         beginInVia = false;
-        beginX = -1;
-        beginY = -1;
+        non_orthogonal_conn = false;
         beginExt = -1;
         endX = -1;
         endY = -1;
@@ -686,7 +697,6 @@ void io::Parser::setNets(odb::dbBlock* block)
                 logger_->error(DRT, 107, "Unsupported layer {}.", layerName);
               break;
             case odb::dbWireDecoder::POINT:
-
               if (!hasBeginPoint) {
                 decoder.getPoint(beginX, beginY);
                 hasBeginPoint = true;
@@ -744,7 +754,6 @@ void io::Parser::setNets(odb::dbBlock* block)
           }
           pathId = decoder.next();
 
-          bool non_orthogonal_conn = false;
           if (pathId == odb::dbWireDecoder::POINT && hasEndPoint) {
             frCoord x, y;
             decoder.getPoint(x, y);
