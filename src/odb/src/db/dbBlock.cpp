@@ -395,6 +395,7 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _corner_name_list(block._corner_name_list),
       _name(nullptr),
       _die_area(block._die_area),
+      _tech(block._tech),
       _chip(block._chip),
       _bbox(block._bbox),
       _parent(block._parent),
@@ -678,6 +679,7 @@ void dbBlock::clear()
   _dbDatabase* db = block->getDatabase();
   _dbBlock* parent = (_dbBlock*) getParent();
   _dbChip* chip = (_dbChip*) getChip();
+  _dbTech* tech = (_dbTech*) getTech();
 
   // save a copy of the name
   char* name = strdup(block->_name);
@@ -701,8 +703,8 @@ void dbBlock::clear()
   // call in-place new to create new block
   new (block) _dbBlock(db);
 
-  // nitialize the
-  block->initialize(chip, parent, name, delimeter);
+  // initialize the
+  block->initialize(chip, tech, parent, name, delimeter);
 
   // restore callbacks
   block->_callbacks.swap(callbacks);
@@ -721,6 +723,7 @@ void dbBlock::clear()
 }
 
 void _dbBlock::initialize(_dbChip* chip,
+                          _dbTech* tech,
                           _dbBlock* parent,
                           const char* name,
                           char delimeter)
@@ -734,6 +737,7 @@ void _dbBlock::initialize(_dbChip* chip,
   box->_shape._rect.reset(INT_MAX, INT_MAX, INT_MIN, INT_MIN);
   _bbox = box->getOID();
   _chip = chip->getOID();
+  _tech = tech->getOID();
   _hier_delimeter = delimeter;
   // create top module
   _dbModule* _top = (_dbModule*) dbModule::create((dbBlock*) this, name);
@@ -883,6 +887,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._corner_name_list;
   stream << block._name;
   stream << block._die_area;
+  stream << block._tech;
   stream << block._chip;
   stream << block._bbox;
   stream << block._parent;
@@ -992,6 +997,11 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._corner_name_list;
   stream >> block._name;
   stream >> block._die_area;
+  // In the older schema we can't set the tech here, we handle this later in
+  // dbDatabase.
+  if (db->isSchema(db_schema_block_tech)) {
+    stream >> block._tech;
+  }
   stream >> block._chip;
   stream >> block._bbox;
   stream >> block._parent;
@@ -1143,6 +1153,9 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
     return false;
 
   if (_die_area != rhs._die_area)
+    return false;
+
+  if (_tech != rhs._tech)
     return false;
 
   if (_chip != rhs._chip)
@@ -1359,6 +1372,7 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_corner_name_list);
   DIFF_FIELD(_die_area);
+  DIFF_FIELD(_tech);
   DIFF_FIELD(_chip);
   DIFF_FIELD(_bbox);
   DIFF_FIELD(_parent);
@@ -1453,6 +1467,7 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_name);
   DIFF_OUT_FIELD(_corner_name_list);
   DIFF_OUT_FIELD(_die_area);
+  DIFF_OUT_FIELD(_tech);
   DIFF_OUT_FIELD(_chip);
   DIFF_OUT_FIELD(_bbox);
   DIFF_OUT_FIELD(_parent);
@@ -2535,7 +2550,7 @@ dbBlock* dbBlock::createExtCornerBlock(uint corner)
 {
   char cornerName[64];
   sprintf(cornerName, "extCornerBlock__%d", corner);
-  dbBlock* extBlk = dbBlock::create(this, cornerName, '/');
+  dbBlock* extBlk = dbBlock::create(this, cornerName, nullptr, '/');
   assert(extBlk);
   dbSet<dbNet> nets = getNets();
   dbSet<dbNet>::iterator nitr;
@@ -2643,33 +2658,45 @@ void dbBlock::copyViaTable(dbBlock* dst_, dbBlock* src_)
   dst->_via_tbl = new dbTable<_dbVia>(dst->getDatabase(), dst, *src->_via_tbl);
 }
 
-dbBlock* dbBlock::create(dbChip* chip_, const char* name_, char hier_delimeter_)
+dbBlock* dbBlock::create(dbChip* chip_,
+                         const char* name_,
+                         dbTech* tech_,
+                         char hier_delimeter_)
 {
   _dbChip* chip = (_dbChip*) chip_;
 
   if (chip->_top != 0)
     return nullptr;
 
+  if (!tech_) {
+    tech_ = chip_->getDb()->getTech();
+  }
+
   _dbBlock* top = chip->_block_tbl->create();
-  top->initialize(chip, nullptr, name_, hier_delimeter_);
+  _dbTech* tech = (_dbTech*) tech_;
+  top->initialize(chip, tech, nullptr, name_, hier_delimeter_);
   chip->_top = top->getOID();
-  _dbTech* tech = (_dbTech*) chip->getDb()->getTech();
   top->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbBlock*) top;
 }
 
 dbBlock* dbBlock::create(dbBlock* parent_,
                          const char* name_,
+                         dbTech* tech_,
                          char hier_delimeter)
 {
   if (parent_->findChild(name_))
     return nullptr;
 
+  if (!tech_) {
+    tech_ = parent_->getTech();
+  }
+
   _dbBlock* parent = (_dbBlock*) parent_;
   _dbChip* chip = (_dbChip*) parent->getOwner();
   _dbBlock* child = chip->_block_tbl->create();
-  child->initialize(chip, parent, name_, hier_delimeter);
-  _dbTech* tech = (_dbTech*) parent->getDb()->getTech();
+  _dbTech* tech = (_dbTech*) tech_;
+  child->initialize(chip, tech, parent, name_, hier_delimeter);
   child->_dbu_per_micron = tech->_dbu_per_micron;
   return (dbBlock*) child;
 }
@@ -4112,6 +4139,18 @@ int _dbBlock::globalConnect(const std::vector<dbGlobalConnect*>& connects)
   }
 
   return connected_iterms.size();
+}
+
+_dbTech* _dbBlock::getTech()
+{
+  _dbDatabase* db = getDatabase();
+  return db->_tech_tbl->getPtr(_tech);
+}
+
+dbTech* dbBlock::getTech()
+{
+  _dbBlock* block = (_dbBlock*) this;
+  return (dbTech*) block->getTech();
 }
 
 }  // namespace odb

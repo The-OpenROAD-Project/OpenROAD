@@ -86,6 +86,7 @@ class _dbFill;
 class _dbRegion;
 class _dbHier;
 class _dbBPin;
+class _dbTech;
 class _dbTechLayerRule;
 class _dbTechNonDefaultRule;
 class _dbModule;
@@ -173,6 +174,7 @@ class _dbBlock : public _dbObject
   char* _corner_name_list;
   char* _name;
   Rect _die_area;
+  dbId<_dbTech> _tech;
   dbId<_dbChip> _chip;
   dbId<_dbBox> _bbox;
   dbId<_dbBlock> _parent;
@@ -291,6 +293,7 @@ class _dbBlock : public _dbObject
   void remove_rect(const Rect& rect);
   void invalidate_bbox() { _flags._valid_bbox = 0; }
   void initialize(_dbChip* chip,
+                  _dbTech* tech,
                   _dbBlock* parent,
                   const char* name,
                   char delimeter);
@@ -301,6 +304,7 @@ class _dbBlock : public _dbObject
   void out(dbDiff& diff, char side, const char* field) const;
 
   int globalConnect(const std::vector<dbGlobalConnect*>& connects);
+  _dbTech* getTech();
 
   dbObjectTable* getObjectTable(dbObjectType type);
 };

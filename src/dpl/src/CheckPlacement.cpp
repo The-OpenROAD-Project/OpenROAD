@@ -97,14 +97,15 @@ void Opendp::checkPlacement(bool verbose,
       }
     }
   }
-
-  writeJsonReport(report_file_name,
-                  placed_failures,
-                  in_rows_failures,
-                  overlap_failures,
-                  one_site_gap_failures,
-                  site_align_failures,
-                  region_placement_failures);
+  if (!report_file_name.empty()) {
+    writeJsonReport(report_file_name,
+                    placed_failures,
+                    in_rows_failures,
+                    overlap_failures,
+                    one_site_gap_failures,
+                    site_align_failures,
+                    region_placement_failures);
+  }
   reportFailures(placed_failures, 3, "Placed", verbose);
   reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
   reportFailures(

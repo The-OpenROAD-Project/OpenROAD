@@ -74,11 +74,11 @@ def clock_tree_synthesis(design, *,
 
     if is_pos_float(distance_between_buffers):
         parms.setSimpleSegmentsEnabled(True)
-        parms.setBufferDistance(distance_between_buffers)
+        parms.setBufferDistance(design.micronToDBU(distance_between_buffers))
 
     if is_pos_float(branching_point_buffers_distance):
         parms.setVertexBuffersEnabled(True)
-        parms.setVertexBufferDistance(branching_point_buffers_distance)
+        parms.setVertexBufferDistance(design.micronToDBU(branching_point_buffers_distance))
 
     if is_pos_int(clustering_exponent):
         parms.setClusteringPower(clustering_exponent)

@@ -2,6 +2,7 @@ record_tests {
   gcd_fakeram
   gcd_nangate45
   gcd_sky130
+  gcd_asap7
   invalid_cells
   multiple_calls
   avoid_overlap
@@ -12,4 +13,9 @@ record_tests {
   symmetry
   cut_rows
   cut_rows_with_endcaps
+  boundary_macros_separate
+  boundary_macros_auto_select
+  gcd_sky130_separate
+  jpeg_gf180
+  aes_gf180
 }

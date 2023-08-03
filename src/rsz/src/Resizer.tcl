@@ -252,7 +252,7 @@ proc unset_dont_use { args } {
 
 proc set_dont_use_cmd { cmd cmd_args dont_use } {
   sta::check_argc_eq1 $cmd $cmd_args
-  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] sta::sta_warn_error] {
+  foreach lib_cell [sta::get_lib_cells_arg $cmd [lindex $cmd_args 0] sta::sta_warn] {
     rsz::set_dont_use $lib_cell $dont_use
   }
 }

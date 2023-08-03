@@ -35,6 +35,7 @@
 
 #include "SimulatedAnnealing.h"
 
+#include "ppl/AbstractIOPlacerRenderer.h"
 #include "utl/Logger.h"
 #include "utl/algorithms.h"
 
@@ -53,7 +54,8 @@ SimulatedAnnealing::SimulatedAnnealing(
       pin_groups_(netlist->getIOGroups()),
       constraints_(constraints),
       logger_(logger),
-      db_(db)
+      db_(db),
+      debug_(std::make_unique<DebugSettings>())
 {
   num_slots_ = slots.size();
   num_pins_ = netlist->numIOPins();
@@ -121,6 +123,21 @@ void SimulatedAnnealing::run(float init_temperature,
       }
 
       temperature *= alpha_;
+
+      if (debug_->isOn()) {
+        std::vector<ppl::IOPin> pins;
+        getAssignment(pins);
+
+        std::vector<std::vector<ppl::InstancePin>> all_sinks;
+
+        for (int pin_idx = 0; pin_idx < pins.size(); pin_idx++) {
+          std::vector<ppl::InstancePin> pin_sinks;
+          netlist_->getSinksOfIO(pin_idx, pin_sinks);
+          all_sinks.push_back(pin_sinks);
+        }
+
+        annealingStateVisualization(pins, all_sinks, iter);
+      }
     }
   }
 }
@@ -137,6 +154,31 @@ void SimulatedAnnealing::getAssignment(std::vector<IOPin>& assignment)
     assignment.push_back(io_pin);
     slot.used = true;
   }
+}
+
+void SimulatedAnnealing::setDebugOn(
+    std::unique_ptr<AbstractIOPlacerRenderer> renderer)
+{
+  debug_->renderer = std::move(renderer);
+}
+
+AbstractIOPlacerRenderer* SimulatedAnnealing::getDebugRenderer()
+{
+  return debug_->renderer.get();
+}
+
+void SimulatedAnnealing::annealingStateVisualization(
+    const std::vector<IOPin>& assignment,
+    const std::vector<std::vector<InstancePin>>& sinks,
+    const int& current_iteration)
+{
+  if (!debug_->isOn()) {
+    return;
+  }
+  getDebugRenderer()->setCurrentIteration(current_iteration);
+  getDebugRenderer()->setSinks(sinks);
+  getDebugRenderer()->setPinAssignment(assignment);
+  getDebugRenderer()->redrawAndPause();
 }
 
 void SimulatedAnnealing::init(float init_temperature,

@@ -51,6 +51,14 @@ class Logger;
 }  // namespace utl
 
 namespace ppl {
+
+struct DebugSettings
+{
+  std::unique_ptr<AbstractIOPlacerRenderer> renderer;
+
+  bool isOn() const { return renderer != nullptr; }
+};
+
 using utl::Logger;
 
 struct Constraint;
@@ -71,6 +79,16 @@ class SimulatedAnnealing
            float alpha,
            bool random);
   void getAssignment(std::vector<IOPin>& assignment);
+
+  // debug functions
+  void setDebugOn(std::unique_ptr<AbstractIOPlacerRenderer> renderer);
+
+  void annealingStateVisualization(
+      const std::vector<IOPin>& assignment,
+      const std::vector<std::vector<InstancePin>>& sinks,
+      const int& current_iteration);
+
+  AbstractIOPlacerRenderer* getDebugRenderer();
 
  private:
   void init(float init_temperature,
@@ -128,6 +146,9 @@ class SimulatedAnnealing
   odb::dbDatabase* db_;
   const int fail_cost_ = std::numeric_limits<int>::max();
   const int seed_ = 42;
+
+  // debug variables
+  std::unique_ptr<DebugSettings> debug_;
 };
 
 }  // namespace ppl

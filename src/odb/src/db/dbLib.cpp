@@ -92,6 +92,9 @@ bool _dbLib::operator==(const _dbLib& rhs) const
   if (*_prop_tbl != *rhs._prop_tbl)
     return false;
 
+  if (_tech != rhs._tech)
+    return false;
+
   if (*_name_cache != *rhs._name_cache)
     return false;
 
@@ -110,6 +113,7 @@ void _dbLib::differences(dbDiff& diff,
   DIFF_FIELD(_right_bus_delimeter);
   DIFF_FIELD(_spare);
   DIFF_FIELD(_name);
+  DIFF_FIELD(_tech);
   DIFF_HASH_TABLE(_master_hash);
   DIFF_HASH_TABLE(_site_hash);
   DIFF_TABLE_NO_DEEP(_master_tbl);
@@ -129,6 +133,7 @@ void _dbLib::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_right_bus_delimeter);
   DIFF_OUT_FIELD(_spare);
   DIFF_OUT_FIELD(_name);
+  DIFF_OUT_FIELD(_tech);
   DIFF_OUT_HASH_TABLE(_master_hash);
   DIFF_OUT_HASH_TABLE(_site_hash);
   DIFF_OUT_TABLE_NO_DEEP(_master_tbl);
@@ -224,6 +229,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbLib& lib)
   stream << lib._name;
   stream << lib._master_hash;
   stream << lib._site_hash;
+  stream << lib._tech;
   stream << *lib._master_tbl;
   stream << *lib._site_tbl;
   stream << *lib._prop_tbl;
@@ -242,6 +248,11 @@ dbIStream& operator>>(dbIStream& stream, _dbLib& lib)
   stream >> lib._name;
   stream >> lib._master_hash;
   stream >> lib._site_hash;
+  // In the older schema we can't set the tech here, we handle this later in
+  // dbDatabase.
+  if (lib.getDatabase()->isSchema(db_schema_block_tech)) {
+    stream >> lib._tech;
+  }
   stream >> *lib._master_tbl;
   stream >> *lib._site_tbl;
   stream >> *lib._prop_tbl;
@@ -286,8 +297,14 @@ const char* dbLib::getConstName()
 
 dbTech* dbLib::getTech()
 {
-  _dbDatabase* db = getImpl()->getDatabase();
-  return (dbTech*) db->_tech_tbl->getPtr(db->_tech);
+  _dbLib* lib = (_dbLib*) this;
+  return (dbTech*) lib->getTech();
+}
+
+_dbTech* _dbLib::getTech()
+{
+  _dbDatabase* db = getDatabase();
+  return db->_tech_tbl->getPtr(_tech);
 }
 
 int dbLib::getDbUnitsPerMicron()
@@ -352,18 +369,25 @@ void dbLib::getBusDelimeters(char& left, char& right)
   right = lib->_right_bus_delimeter;
 }
 
-dbLib* dbLib::create(dbDatabase* db_, const char* name, char hier_delimeter)
+dbLib* dbLib::create(dbDatabase* db_,
+                     const char* name,
+                     dbTech* tech,
+                     char hier_delimeter)
 {
-  if (db_->findLib(name))
+  if (db_->findLib(name)) {
     return nullptr;
+  }
 
+  if (tech == nullptr) {
+    return nullptr;
+  }
   _dbDatabase* db = (_dbDatabase*) db_;
   _dbLib* lib = db->_lib_tbl->create();
   lib->_name = strdup(name);
   ZALLOCATED(lib->_name);
   lib->_hier_delimeter = hier_delimeter;
-  _dbTech* tech = (_dbTech*) db_->getTech();
-  lib->_dbu_per_micron = tech->_dbu_per_micron;
+  lib->_dbu_per_micron = tech->getDbUnitsPerMicron();
+  lib->_tech = tech->getId();
   return (dbLib*) lib;
 }
 
