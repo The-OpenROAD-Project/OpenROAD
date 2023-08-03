@@ -232,6 +232,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
                     "Adding to fallback mode.",
                     pin_indices.size());
       addGroupToFallback(pin_indices, false);
+      return;
     } else {
       logger_->error(
           PPL,
