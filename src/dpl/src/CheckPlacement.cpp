@@ -128,22 +128,48 @@ void Opendp::checkPlacement(bool verbose,
     logger_->error(DPL, 33, "detailed placement checks failed.");
   }
 }
+
 void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
-                                    const std::vector<Cell*>& failures) const
+                                    const std::vector<Cell*>& failures,
+                                    string violation_type) const
 {
   using boost::property_tree::ptree;
   ptree violations;
   double dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
   const Rect core = getCore();
   for (auto failure : failures) {
-    ptree shape, violation, shapes, source, sources;
+    ptree violation, shapes, source, sources, shape;
+    double xMin = (failure->x_ + core.xMin()) / dbUnits;
+    double yMin = (failure->y_ + core.yMin()) / dbUnits;
+    double xMax = (failure->x_ + failure->width_ + core.xMin()) / dbUnits;
+    double yMax = (failure->y_ + failure->height_ + core.yMin()) / dbUnits;
 
-    shape.put("x", (failure->x_ + core.xMin()) / dbUnits);
-    shape.put("y", (failure->y_ + core.yMin()) / dbUnits);
+    if (violation_type == "overlap") {
+      const Cell* o_cell = checkOverlap(*failure);
+      if (!o_cell) {
+        logger_->error(DPL,
+                       48,
+                       "Could not find overlapping cell for cell {}",
+                       failure->name());
+      }
+      xMin = std::min(xMin, (o_cell->x_ + core.xMin()) / dbUnits);
+      yMin = std::min(yMin, (o_cell->y_ + core.yMin()) / dbUnits);
+      xMax = std::max(xMax,
+                      (o_cell->x_ + o_cell->width_ + core.xMin()) / dbUnits);
+      yMax = std::max(yMax,
+                      (o_cell->y_ + o_cell->height_ + core.yMin()) / dbUnits);
+
+      ptree overlap_source;
+      overlap_source.put("type", "inst");
+      overlap_source.put("name", o_cell->name());
+      sources.push_back(std::make_pair("", overlap_source));
+    }
+    shape.put("x", xMin);
+    shape.put("y", yMin);
     shapes.push_back(std::make_pair("", shape));
     shape.clear();
-    shape.put("x", (failure->x_ + failure->width_ + core.xMin()) / dbUnits);
-    shape.put("y", (failure->y_ + failure->height_ + core.yMin()) / dbUnits);
+    shape.put("x", xMax);
+    shape.put("y", yMax);
     shapes.push_back(std::make_pair("", shape));
 
     source.put("type", "inst");
@@ -194,7 +220,7 @@ void Opendp::writeJsonReport(const string& filename,
       ptree entry;
       entry.put("name", "Overlap_failures");
       entry.put("description", "Cells that are overlapping with other cells.");
-      processViolationsPtree(entry, overlap_failures);
+      processViolationsPtree(entry, overlap_failures, "overlap");
       drcArray.push_back(std::make_pair("", entry));
     }
     if (!one_site_gap_failures.empty()) {
