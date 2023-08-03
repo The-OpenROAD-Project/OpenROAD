@@ -131,7 +131,7 @@ void Opendp::checkPlacement(bool verbose,
 
 void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
                                     const std::vector<Cell*>& failures,
-                                    string violation_type) const
+                                    const string& violation_type) const
 {
   using boost::property_tree::ptree;
   ptree violations;
@@ -152,12 +152,22 @@ void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
                        "Could not find overlapping cell for cell {}",
                        failure->name());
       }
-      xMin = std::min(xMin, (o_cell->x_ + core.xMin()) / dbUnits);
-      yMin = std::min(yMin, (o_cell->y_ + core.yMin()) / dbUnits);
-      xMax = std::max(xMax,
-                      (o_cell->x_ + o_cell->width_ + core.xMin()) / dbUnits);
-      yMax = std::max(yMax,
-                      (o_cell->y_ + o_cell->height_ + core.yMin()) / dbUnits);
+      odb::Rect o_rect(o_cell->x_,
+                       o_cell->y_,
+                       o_cell->x_ + o_cell->width_,
+                       o_cell->y_ + o_cell->height_);
+      odb::Rect f_rect(failure->x_,
+                       failure->y_,
+                       failure->x_ + failure->width_,
+                       failure->y_ + failure->height_);
+
+      odb::Rect overlap_rect;
+      o_rect.intersection(f_rect, overlap_rect);
+
+      xMin = (overlap_rect.xMin() + core.xMin()) / dbUnits;
+      yMin = (overlap_rect.yMin() + core.yMin()) / dbUnits;
+      xMax = (overlap_rect.xMax() + core.xMin()) / dbUnits;
+      yMax = (overlap_rect.yMax() + core.yMin()) / dbUnits;
 
       ptree overlap_source;
       overlap_source.put("type", "inst");

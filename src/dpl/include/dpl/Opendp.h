@@ -223,7 +223,7 @@ class Opendp
   // Return error count.
   void processViolationsPtree(boost::property_tree::ptree& entry,
                               const std::vector<Cell*>& failures,
-                              std::string violation_type = "") const;
+                              const std::string& violation_type = "") const;
   void checkPlacement(bool verbose,
                       bool disallow_one_site_gaps = false,
                       string report_file_name = "report.json");
