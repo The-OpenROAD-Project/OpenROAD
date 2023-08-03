@@ -794,7 +794,7 @@ void DRCWidget::loadJSONReport(const QString& filename)
       odb::dbTechLayer* layer = nullptr;
       if (!layer_str.empty()) {
         layer = tech->findLayer(layer_str.c_str());
-        if (layer == nullptr) {
+        if (layer == nullptr && layer_str != "-") {
           logger_->warn(
               utl::GUI, 79, "Unable to find tech layer: {}", layer_str);
         }
