@@ -44,6 +44,7 @@
 #include <QTableView>
 #include <memory>
 
+#include "scriptWidget.h"
 #include "gui/gui.h"
 #include "odb/db.h"
 
@@ -66,7 +67,7 @@ class TimingWidget : public QDockWidget
 {
   Q_OBJECT
  public:
-  TimingWidget(QWidget* parent = nullptr);
+  TimingWidget(ScriptWidget* script, QWidget* parent = nullptr);
   ~TimingWidget();
 
   void init(sta::dbSta* sta);
@@ -110,7 +111,7 @@ class TimingWidget : public QDockWidget
 
   void showSettings();
 
-  void writePathReportCommand();
+  void writePathReportCommand(const QModelIndex& selected_index);
 
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;
@@ -119,6 +120,8 @@ class TimingWidget : public QDockWidget
 
  private:
   void copy();
+
+  ScriptWidget* script_;
 
   TimingPathsTableView* setup_timing_table_view_;
   TimingPathsTableView* hold_timing_table_view_;

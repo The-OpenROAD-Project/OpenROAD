@@ -446,7 +446,7 @@ class TimingPathsTableView : public QTableView
   void mousePressEvent(QMouseEvent* event) override;
 
  signals:
-  void selectedRowRightClicked();
+  void selectedRowRightClicked(const QModelIndex& selected_index);
 };
 
 }  // namespace gui

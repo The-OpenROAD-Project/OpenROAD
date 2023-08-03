@@ -47,8 +47,9 @@
 
 namespace gui {
 
-TimingWidget::TimingWidget(QWidget* parent)
+TimingWidget::TimingWidget(ScriptWidget* script, QWidget* parent)
     : QDockWidget("Timing Report", parent),
+      script_(script),
       setup_timing_table_view_(new TimingPathsTableView(this)),
       hold_timing_table_view_(new TimingPathsTableView(this)),
       path_details_table_view_(new QTableView(this)),
@@ -181,9 +182,9 @@ void TimingWidget::init(sta::dbSta* sta)
 
   connect(
       setup_timing_table_view_,
-      SIGNAL(selectedRowRightClicked()),
+      SIGNAL(selectedRowRightClicked(const QModelIndex&)),
       this,
-      SLOT(writePathReportCommand()));
+      SLOT(writePathReportCommand(const QModelIndex&)));
 
   connect(
       hold_timing_table_view_->selectionModel(),
@@ -193,9 +194,9 @@ void TimingWidget::init(sta::dbSta* sta)
 
   connect(
       hold_timing_table_view_,
-      SIGNAL(selectedRowRightClicked()),
+      SIGNAL(selectedRowRightClicked(const QModelIndex&)),
       this,
-      SLOT(writePathReportCommand()));
+      SLOT(writePathReportCommand(const QModelIndex&)));
 
   connect(
       path_details_table_view_->selectionModel(),
@@ -256,9 +257,23 @@ void TimingWidget::keyPressEvent(QKeyEvent* key_event)
   }
 }
 
-void TimingWidget::writePathReportCommand()
+void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)
 {
-  std::cout << "Must write timing path cmd in script \n";
+  auto tcl_input = script_->getTclCmdInput();
+
+  TimingPathsModel* focus_model = static_cast<TimingPathsModel*>(focus_view_->model());
+
+  TimingPath* selected_path = focus_model->getPathAt(selected_index);
+  TimingNodeList* node_list = &selected_path->getPathNodes();
+
+  QString report_checks = "report_checks ";
+  QString from = "-from ";
+  QString to = "-to ";
+  QString last_node_name = QString::fromStdString((*node_list).back()->getNodeName());
+
+  QString command = report_checks + from + to + last_node_name;
+
+  tcl_input->setText(command);
 }
 
 void TimingWidget::clearPathDetails()

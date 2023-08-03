@@ -38,6 +38,7 @@
 #include <QSettings>
 
 #include "utl/Logger.h"
+#include "tclCmdInputWidget.h"
 
 namespace odb {
 class dbDatabase;
@@ -46,7 +47,6 @@ class dbDatabase;
 struct Tcl_Interp;
 
 namespace gui {
-class TclCmdInputWidget;
 
 // This shows a line edit to enter tcl commands and a
 // text area that is used to show the commands and their
@@ -118,6 +118,8 @@ class ScriptWidget : public QDockWidget
   // required to ensure input command space it set to correct height
   void resizeEvent(QResizeEvent* event) override;
 
+  TclCmdInputWidget* getTclCmdInput() const;
+
  private:
   void triggerPauseCountDown(int timeout);
 
@@ -146,6 +148,8 @@ class ScriptWidget : public QDockWidget
   const QColor error_msg_ = Qt::red;
   const QColor ok_msg_ = Qt::blue;
   const QColor buffer_msg_ = QColor(0x30, 0x30, 0x30);
+
+  friend class TimingWidget;
 };
 
 }  // namespace gui

@@ -100,7 +100,7 @@ MainWindow::MainWindow(QWidget* parent)
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
-      timing_widget_(new TimingWidget(this)),
+      timing_widget_(new TimingWidget(script_, this)),
       drc_viewer_(new DRCWidget(this)),
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(

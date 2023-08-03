@@ -338,6 +338,11 @@ void ScriptWidget::resizeEvent(QResizeEvent* event)
   QDockWidget::resizeEvent(event);
 }
 
+TclCmdInputWidget* ScriptWidget::getTclCmdInput() const
+{
+  return input_;
+}
+
 void ScriptWidget::setWidgetFont(const QFont& font)
 {
   QDockWidget::setFont(font);
