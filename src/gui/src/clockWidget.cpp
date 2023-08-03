@@ -1350,6 +1350,9 @@ void ClockWidget::populate()
   stagui.setCorner(corner_box_->currentData().value<sta::Corner*>());
 
   for (auto& tree : stagui.getClockTrees()) {
+    if (!tree->getNet()) {  // skip virtual clocks
+      continue;
+    }
     auto* view = new ClockTreeView(tree.release(), &stagui, logger_, this);
     views_.emplace_back(view);
     clocks_tab_->addTab(view, view->getClockName());
