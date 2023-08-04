@@ -594,6 +594,7 @@ class Gui
 
   int select(const std::string& type,
              const std::string& name_filter = "",
+             const std::string& attribute_filter = "",
              bool filter_case_sensitive = true,
              int highlight_group = -1);
 

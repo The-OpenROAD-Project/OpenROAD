@@ -182,12 +182,13 @@ proc save_clocktree_image { args } {
 sta::define_cmd_args "select" {-type object_type \
                                [-name name_regex] \
                                [-case_insensitive] \
-                               [-highlight group]
+                               [-highlight group] \
+                               [-filter attribute]
 }
 
 proc select { args } {
   sta::parse_key_args "select" args \
-    keys {-type -name -highlight} flags {-case_insensitive}
+    keys {-type -name -highlight -filter} flags {-case_insensitive}
   sta::check_argc_eq0 "select" $args
   
   set type ""
@@ -207,6 +208,23 @@ proc select { args } {
     set name $keys(-name)
   }
   
+  set filter ""
+  if { [info exists keys(-filter)] } {
+    if { $name != "" } {
+      utl::error GUI 59 "-filter not available when using -name."
+    } else {
+      if { $type != "" } {
+        set filter $keys(-filter)
+      } else {
+      utl::error GUI 56 "Must specify -type."
+      }
+
+      if { $filter != "IO" } {
+        utl::error GUI 75 "Value for -filter is invalid."
+      }
+    }
+  }
+
   set case_sense 1
   if { [info exists flags(-case_insensitive)] } {
     if { $name == "" } {
@@ -215,7 +233,7 @@ proc select { args } {
     set case_sense 0
   }
   
-  return [gui::select $type $name $case_sense $highlight]
+  return [gui::select $type $name $filter $case_sense $highlight]
 }
 
 sta::define_cmd_args "display_timing_cone" {pin \
