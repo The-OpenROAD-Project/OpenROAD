@@ -264,14 +264,14 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)
   TimingPathsModel* focus_model = static_cast<TimingPathsModel*>(focus_view_->model());
 
   TimingPath* selected_path = focus_model->getPathAt(selected_index);
-  TimingNodeList* node_list = &selected_path->getPathNodes();
 
   QString report_checks = "report_checks ";
   QString from = "-from ";
-  QString to = "-to ";
-  QString last_node_name = QString::fromStdString((*node_list).back()->getNodeName());
+  QString start_node = QString::fromStdString(selected_path->getStartStageName());
+  QString to = " -to ";
+  QString end_node = QString::fromStdString(selected_path->getEndStageName());
 
-  QString command = report_checks + from + to + last_node_name;
+  QString command = report_checks + from + start_node + to + end_node;
 
   tcl_input->setText(command);
 }
