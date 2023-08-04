@@ -430,6 +430,7 @@ void Gui::deleteRuler(const std::string& name)
 
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
+                const std::string& attribute_filter,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
@@ -461,6 +462,18 @@ int Gui::select(const std::string& type,
           // rebuild selectionset
           selected.clear();
           selected.insert(selected_vector.begin(), selected_vector.end());
+        }
+        if (!attribute_filter.empty()) {
+          if (type == "Net" && attribute_filter == "IO") {
+            for(SelectionSet::iterator iter = selected.begin(); iter != selected.end();) {
+              auto selected_net = std::any_cast<odb::dbNet*>(iter->getObject());
+              if(selected_net->getBTerms().size() == 0)  {
+                iter = selected.erase(iter);
+              } else {
+                ++iter;
+              }
+            }
+          }
         }
         main_window->addSelected(selected);
         if (highlight_group != -1) {
