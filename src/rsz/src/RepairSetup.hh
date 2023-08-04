@@ -87,7 +87,7 @@ public:
                    int max_passes,
                    bool verbose,
                    bool skip_pin_swap,
-                   bool enable_gate_cloning);
+                   bool skip_gate_cloning);
   // For testing.
   void repairSetup(const Pin *end_pin);
   // Rebuffer one net (for testing).
@@ -99,7 +99,7 @@ private:
   bool repairSetup(PathRef &path,
                    Slack path_slack,
                    bool skip_pin_swap,
-                   bool enable_gate_cloning);
+                   bool skip_gate_cloning);
   void debugCheckMultipleBuffers(PathRef &path,
                                  PathExpanded *expanded);
 

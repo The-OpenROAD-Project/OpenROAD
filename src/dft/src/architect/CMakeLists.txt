@@ -7,20 +7,15 @@ add_library(dft_architect_lib
 
 target_link_libraries(dft_architect_lib
   PRIVATE
-    utl_lib
-    dft_utils_lib
-    dft_cells_lib
+    dft_base_scan_cell_lib
     dft_clock_domain_lib
     dft_config_lib
-    dft_utils_lib
+    dft_utils_scan_pin_lib
 )
 
 target_link_libraries(dft_architect_lib
   PRIVATE
     odb
-    dbSta
-    OpenSTA
-    utl
 )
 
 target_include_directories(dft_architect_lib

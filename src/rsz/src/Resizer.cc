@@ -2572,7 +2572,7 @@ Resizer::repairSetup(double setup_margin,
                      int max_passes,
                      bool verbose,
                      bool skip_pin_swap,
-                     bool enable_gate_cloning)
+                     bool skip_gate_cloning)
 {
   resizePreamble();
   if (parasitics_src_ == ParasiticsSrc::global_routing) {
@@ -2580,7 +2580,7 @@ Resizer::repairSetup(double setup_margin,
   }
   repair_setup_->repairSetup(setup_margin, repair_tns_end_percent,
                              max_passes, verbose,
-                             skip_pin_swap, enable_gate_cloning);
+                             skip_pin_swap, skip_gate_cloning);
 }
 
 void

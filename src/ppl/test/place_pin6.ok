@@ -15,7 +15,6 @@
 [INFO PPL-0070] Pin clk placed at (39um, 0um).
 [INFO PPL-0070] Pin resp_rdy placed at (1um, 11um).
 Found 1 macro blocks.
-Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0007] Random pin placement.
 No differences found.

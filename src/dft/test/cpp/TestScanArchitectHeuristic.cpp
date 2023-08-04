@@ -1,5 +1,3 @@
-#define BOOST_TEST_MODULE TestScanReplace
-#include <boost/test/included/unit_test.hpp>
 #include <sstream>
 #include <unordered_set>
 
@@ -7,15 +5,12 @@
 #include "ScanArchitect.hh"
 #include "ScanArchitectConfig.hh"
 #include "ScanCellMock.hh"
+#include "gtest/gtest.h"
 
+namespace dft::test {
 namespace {
 
-using namespace dft;
-using namespace dft::test;
-BOOST_AUTO_TEST_SUITE(test_suite)
-
-// Check if we can architect a simple two chain design with clock no mix
-BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
+TEST(TestScanArchitectHeuristic, ArchitectWithOneClockDomainNoMix)
 {
   utl::Logger* logger = new utl::Logger();
 
@@ -48,12 +43,12 @@ BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
       = scan_architect->getScanChains();
 
   // There should be 2 chains
-  BOOST_TEST(scan_chains.size() == 2);
+  EXPECT_EQ(scan_chains.size(), 2);
 
   // All the scan cells should be in the chains
   std::unordered_set<std::string_view> scan_cells_in_chains_names;
   for (const std::unique_ptr<ScanChain>& scan_chain : scan_chains) {
-    BOOST_TEST(!scan_chain->empty());  // All the chains should have cells
+    EXPECT_FALSE(scan_chain->empty());  // All the chains should have cells
     for (const auto& scan_cell : scan_chain->getScanCells()) {
       scan_cells_in_chains_names.insert(scan_cell->getName());
     }
@@ -62,13 +57,11 @@ BOOST_AUTO_TEST_CASE(test_one_clock_domain_no_mix)
   for (const std::string& name : scan_cell_names) {
     const bool test = scan_cells_in_chains_names.find(name)
                       != scan_cells_in_chains_names.end();
-    BOOST_TEST(test);  // Was the cell included?
+    EXPECT_TRUE(test);  // Was the cell included?
   }
 }
 
-// Check if we can architect a simple four chain design, with two clocks and no
-// clock mixing
-BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
+TEST(TestScanArchitectHeuristic, ArchitectWithTwoClockDomainNoMix)
 {
   utl::Logger* logger = new utl::Logger();
 
@@ -114,7 +107,7 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
       = scan_architect->getScanChains();
 
   // There should be 4 chains
-  BOOST_TEST(scan_chains.size() == 4);
+  EXPECT_EQ(scan_chains.size(), 4);
 
   uint64_t total_bits = 0;
   for (const auto& scan_chain : scan_chains) {
@@ -122,12 +115,10 @@ BOOST_AUTO_TEST_CASE(test_two_clock_domain_no_mix)
       total_bits += scan_cell->getBits();
     }
   }
-  BOOST_TEST(total_bits == 20 + 15);
+  EXPECT_EQ(total_bits, 20 + 15);
 }
 
-// Check if we can architect a simple four chain design, with two clocks and no
-// clock mixing
-BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
+TEST(TestScanArchitectHeuristic, ArchitectWithTwoEdgesNoMix)
 {
   utl::Logger* logger = new utl::Logger();
 
@@ -173,7 +164,7 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
       = scan_architect->getScanChains();
 
   // There should be 4 chains
-  BOOST_TEST(scan_chains.size() == 4);
+  EXPECT_EQ(scan_chains.size(), 4);
 
   uint64_t total_bits_rising = 0;
   uint64_t total_bits_falling = 0;
@@ -189,10 +180,9 @@ BOOST_AUTO_TEST_CASE(test_two_edges_no_mix)
       }
     }
   }
-  BOOST_TEST(total_bits_rising == 20);
-  BOOST_TEST(total_bits_falling == 15);
+  EXPECT_EQ(total_bits_rising, 20);
+  EXPECT_EQ(total_bits_falling, 15);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
-
 }  // namespace
+}  // namespace dft::test

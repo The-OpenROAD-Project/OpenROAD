@@ -61,14 +61,4 @@ std::vector<odb::dbITerm*> GetClockPin(odb::dbInst* inst);
 // Returns a sta::Clock of the given iterm
 std::optional<sta::Clock*> GetClock(sta::dbSta* sta, odb::dbITerm* iterm);
 
-// Helper to format optional values for the config reports
-template <typename T>
-std::string FormatForReport(const std::optional<T>& opt)
-{
-  if (opt.has_value()) {
-    return fmt::format("{}", opt.value());
-  }
-  return "Undefined";
-}
-
 }  // namespace dft::utils

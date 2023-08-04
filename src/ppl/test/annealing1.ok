@@ -8,7 +8,6 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
-Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0012] I/O nets HPWL: 755.62 um.
 No differences found.

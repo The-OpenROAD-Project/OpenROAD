@@ -488,9 +488,6 @@ proc place_pins { args } {
   if [info exists keys(-corner_avoidance)] {
     set distance $keys(-corner_avoidance)
     ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
-  } else {
-    utl::report "Using ${distance}u default distance from corners."
-    ppl::set_corner_avoidance [ord::microns_to_dbu $distance]
   }
 
   set min_dist 2
