@@ -143,8 +143,9 @@ RecoverPower::recoverPower(float recover_power_percent)
   int max_end_count = ends_with_slack.size()*recover_power_percent;
 
   // As long as we are herem fix at least one path
-  if (max_end_count == 0)
+  if (max_end_count == 0) {
     max_end_count = 1;
+}
 
   resizer_->incrementalParasiticsBegin();
   for (Vertex *end : ends_with_slack) {
