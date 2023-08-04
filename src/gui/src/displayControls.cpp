@@ -443,16 +443,17 @@ DisplayControls::DisplayControls(QWidget* parent)
   iterm_label_color_ = Qt::yellow;
 
   auto instance_shape
-      = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked);
+      = makeParentItem(misc_.instances, "Instances", misc, Qt::Checked, true);
   makeLeafItem(instance_shapes_.names,
                "Names",
                instance_shape,
                Qt::Checked,
                false,
                instance_name_color_);
-  makeLeafItem(instance_shapes_.pins, "Pins", instance_shape, Qt::Checked);
+  makeLeafItem(
+      instance_shapes_.pins, "Pins", instance_shape, Qt::Checked, true);
   makeLeafItem(instance_shapes_.iterm_labels,
-               "Iterm Labels",
+               "Pin labels",
                instance_shape,
                Qt::Unchecked,
                false,
@@ -466,7 +467,7 @@ DisplayControls::DisplayControls(QWidget* parent)
   });
   setNameItemDoubleClickAction(instance_shapes_.iterm_labels, [this]() {
     iterm_label_font_ = QFontDialog::getFont(
-        nullptr, iterm_label_font_, this, "Instance ITerm name font");
+        nullptr, iterm_label_font_, this, "Instance pin name font");
   });
 
   region_color_ = QColor(0x70, 0x70, 0x70, 0x70);  // semi-transparent mid-gray
@@ -1534,7 +1535,12 @@ bool DisplayControls::areInstancePinsVisible()
   return isModelRowVisible(&instance_shapes_.pins);
 }
 
-bool DisplayControls::areITermsVisible()
+bool DisplayControls::areInstancePinsSelectable()
+{
+  return isModelRowSelectable(&instance_shapes_.pins);
+}
+
+bool DisplayControls::areInstancePinNamesVisible()
 {
   return isModelRowVisible(&instance_shapes_.iterm_labels);
 }
