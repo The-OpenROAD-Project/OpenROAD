@@ -12,8 +12,6 @@ target_include_directories(dft_config_lib
 target_link_libraries(dft_config_lib
   PRIVATE
     odb
-    dbSta
-    OpenSTA
     utl_lib
-    dft_utils_lib
+    dft_utils_formatting_lib
 )
