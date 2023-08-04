@@ -80,42 +80,100 @@ using sta::PathExpanded;
 using sta::Unit;
 using sta::VertexOutEdgeIterator;
 
+//============================================================================
 // swap pin element
-JournalElement::JournalElement(Instance* inst, LibertyPort* swap_port1,
-                               LibertyPort* swap_port2)
+UndoPinSwap::UndoPinSwap(Instance* inst, LibertyPort* swap_port1, LibertyPort* swap_port2)
 {
-  type_ = rsz::JournalElementType::pin_swap;
   swap_inst_ = inst;
   swap_port1_ = swap_port1;
   swap_port2_ = swap_port2;
 }
 
-// buffer to inverter element
-JournalElement::JournalElement(Instance* inv_buffer1, Instance* inv_buffer2,
-                               Instance* inv_inverter1, Instance* inv_inverter2)
+int UndoPinSwap::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
 {
-  type_ = rsz::JournalElementType::inverter_swap;
+  // Swap the pins back
+  // swap_inst_->swapPins(swap_port1_, swap_port2_);
+  return 0;
+}
+//============================================================================
+// buffer to inverter element
+UndoBufferToInverter::UndoBufferToInverter(Instance* inv_buffer1, Instance* inv_buffer2, Instance* inv_inverter1,
+                                           Instance* inv_inverter2)
+{
   inv_buffer1_ = inv_buffer1;
   inv_buffer2_ = inv_buffer2;
   inv_inverter1_ = inv_inverter1;
   inv_inverter2_ = inv_inverter2;
 }
 
-// resize element
-JournalElement::JournalElement(Instance* inst, LibertyCell* cell)
+int UndoBufferToInverter::UndoOperation(utl::Logger* logger, sta::Network* network, sta::dbSta* sta)
 {
-  type_ = rsz::JournalElementType::resize;
+ return 0;
+}
+//============================================================================
+// resize element
+UndoResize::UndoResize(Instance* inst, LibertyCell* cell)
+{
   // Original cell used for resize and the instance
   resized_inst_ = inst;
   original_cell_ = cell;
 }
 
-// clone element
-JournalElement::JournalElement()
+int UndoResize::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
 {
-  type_ = rsz::JournalElementType::clone;
+    // Resize the instance back to the original cell
+    // resized_inst_->setMaster(original_cell_);
+    return 0;
+}
+//============================================================================
+// clone element
+UndoClone::UndoClone()
+{
 }
 
+int UndoClone::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
+{
+    // Undo gate cloning
+    Instance *original_inst = nullptr; // TODO std::get<0>(element);
+    Instance *cloned_inst = nullptr; // TODO std::get<1>(element);
+    debugPrint(logger, RSZ, "journal", 1, "journal unclone {} ({}) -> {} ({})", network->pathName(original_inst),
+               network->libertyCell(original_inst)->name(), network->pathName(cloned_inst),
+               network->libertyCell(cloned_inst)->name());
+
+    const Pin* original_output_pin = nullptr;
+    std::vector<const Pin*> clone_pins; // TODO getPins(cloned_inst);
+    std::vector<const Pin*> original_pins; // TODO getPins(original_inst);
+    for (auto& pin : original_pins) {
+      if (network->direction(pin)->isOutput()) {
+        original_output_pin = pin;
+        break;
+      }
+    }
+    Net* original_out_net = network->net(original_output_pin);
+    // Net* clone_out_net = nullptr;
+
+    for (auto& pin : clone_pins) {
+      // Disconnect all pins from the new net. Also store the output net
+      // if (network_->direction(pin)->isOutput()) {
+      //  clone_out_net = network_->net(pin);
+      //}
+      sta->disconnectPin(const_cast<Pin*>(pin));
+      // Connect them to the original nets if they are inputs
+      if (network->direction(pin)->isInput()) {
+        Instance* inst = network->instance(pin);
+        auto term_port = network->port(pin);
+        sta->connectPin(inst, term_port, original_out_net);
+      }
+    }
+    // Final cleanup
+    // sta_->deleteNet(clone_out_net);
+    sta->deleteInstance(cloned_inst);
+    sta->graphDelayCalc()->delaysInvalid();
+    // TODO --cloned_gate_count;
+    return 0;
+}
+
+//============================================================================
 Journal::Journal(Logger* logger, Network* network, dbSta* sta)
 {
   logger_ = logger;
@@ -141,7 +199,7 @@ void Journal::journalSwapPins(Instance* inst, LibertyPort* port1,
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal swap pins {} ({}->{})",
              network_->pathName(inst), port1->name(), port2->name());
-  journal_stack_.emplace(JournalElement(inst, port1, port2));
+  //TODO fIXME journal_stack_.emplace(UndoPinSwap(inst, port1, port2));
 }
 
 void Journal::journalInstReplaceCellBefore(Instance* inst)
@@ -167,64 +225,13 @@ void Journal::journalMakeBuffer(Instance* buffer)
    */
 }
 
-void Journal::journalUndoGateCloning(JournalElement& item)
-{
-  // Undo gate cloning
-  Instance *original_inst = nullptr; // TODO std::get<0>(element);
-  Instance *cloned_inst = nullptr; // TODO std::get<1>(element);
-  debugPrint(logger_, RSZ, "journal", 1, "journal unclone {} ({}) -> {} ({})",
-             network_->pathName(original_inst),
-             network_->libertyCell(original_inst)->name(),
-             network_->pathName(cloned_inst),
-             network_->libertyCell(cloned_inst)->name());
-
-  const Pin* original_output_pin = nullptr;
-  std::vector<const Pin*> clone_pins; // TODO getPins(cloned_inst);
-  std::vector<const Pin*> original_pins; // TODO getPins(original_inst);
-  for (auto& pin : original_pins) {
-    if (network_->direction(pin)->isOutput()) {
-      original_output_pin = pin;
-      break;
-    }
-  }
-  Net* original_out_net = network_->net(original_output_pin);
-  // Net* clone_out_net = nullptr;
-
-  for (auto& pin : clone_pins) {
-    // Disconnect all pins from the new net. Also store the output net
-    // if (network_->direction(pin)->isOutput()) {
-    //  clone_out_net = network_->net(pin);
-    //}
-    sta_->disconnectPin(const_cast<Pin*>(pin));
-    // Connect them to the original nets if they are inputs
-    if (network_->direction(pin)->isInput()) {
-      Instance* inst = network_->instance(pin);
-      auto term_port = network_->port(pin);
-      sta_->connectPin(inst, term_port, original_out_net);
-    }
-  }
-  // Final cleanup
-  // sta_->deleteNet(clone_out_net);
-  sta_->deleteInstance(cloned_inst);
-  sta_->graphDelayCalc()->delaysInvalid();
-  // TODO --cloned_gate_count;
-
-}
-
 void Journal::journalRestore(int& resize_count, int& inserted_buffer_count,
                              int& cloned_gate_count)
 {
   while (!journal_stack_.empty()) {
-    auto element = journal_stack_.top();
+    auto &element = journal_stack_.top();
     journal_stack_.pop();
-    switch (element.getType()) {
-      case rsz::JournalElementType::resize: break;
-      case rsz::JournalElementType::clone:break;
-      case rsz::JournalElementType::buffer:break;
-      case rsz::JournalElementType::pin_swap:break;
-      case rsz::JournalElementType::inverter_swap:break;
-      default: break;// TODO error
-    }
+    element.UndoOperation(logger_, network_, sta_);
   }
 }
 

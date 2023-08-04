@@ -73,44 +73,59 @@ enum class BufferedNetType;
 typedef std::shared_ptr<BufferedNet> BufferedNetPtr;
 using BufferedNetSeq = vector<BufferedNetPtr>;
 
-enum class JournalElementType
-{
-  resize,
-  clone,
-  buffer,
-  pin_swap,
-  inverter_swap
+
+class Undo {
+ public:
+  // base class for undo elements
+  Undo();
+  virtual int UndoOperation(Logger *logger,  Network *network, dbSta *sta) = 0;
 };
 
-class JournalElement
-{
+class UndoBufferToInverter: public Undo {
  public:
-  // swap pin element
-  JournalElement(Instance* inst, LibertyPort* swap_port1,
-                 LibertyPort* swap_port2);
   // buffer to inverter element
-  JournalElement(Instance *inv_buffer1, Instance *inv_buffer2,
+  UndoBufferToInverter(Instance *inv_buffer1, Instance *inv_buffer2,
                  Instance *inv_inverter1, Instance *inv_inverter2);
-  // resize element
-  JournalElement(Instance *inst, LibertyCell *cell);
-  // clone element
-  JournalElement();
-  JournalElementType getType() const { return type_; }
-
+  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
  private:
-  JournalElementType type_;
-  // Original cell used for resize and the instance
-  Instance *resized_inst_;
-  LibertyCell *original_cell_;
-  // Two pin pointers to undo pin swapping.
-  Instance *swap_inst_;
-  LibertyPort *swap_port1_;
-  LibertyPort *swap_port2_;
   // four instance pointers for inverter to buffer conversion
   Instance *inv_buffer1_;
   Instance *inv_buffer2_;
   Instance *inv_inverter1_;
   Instance *inv_inverter2_;
+};
+
+class UndoPinSwap {
+ public:
+  // swap pin element
+  UndoPinSwap(Instance* inst, LibertyPort* swap_port1,
+              LibertyPort* swap_port2);
+  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+ private:
+  // Two pin pointers to undo pin swapping.
+  Instance *swap_inst_;
+  LibertyPort *swap_port1_;
+  LibertyPort *swap_port2_;
+};
+
+class UndoResize {
+  public:
+  // resize element
+  UndoResize(Instance *inst, LibertyCell *cell);
+  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+ private:
+  // Original cell used for resize and the instance
+  Instance *resized_inst_;
+  LibertyCell *original_cell_;
+};
+
+class UndoClone
+{
+  public:
+  // clone element
+  UndoClone();
+  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+ private:
 };
 
 class Journal
@@ -123,14 +138,13 @@ public:
   void journalSwapPins(Instance *inst, LibertyPort *port1, LibertyPort *port2);
   void journalInstReplaceCellBefore(Instance *inst);
   void journalMakeBuffer(Instance *buffer);
-  void journalUndoGateCloning(JournalElement &item);
   void journalRestore(int& resize_count, int& inserted_buffer_count,
                       int& cloned_gate_count);
  private:
   Logger *logger_;
   Network *network_;
   dbSta *sta_;
-  std::stack<JournalElement> journal_stack_;
+  std::stack<Undo> journal_stack_;
 };
 
 } // namespace rsz
