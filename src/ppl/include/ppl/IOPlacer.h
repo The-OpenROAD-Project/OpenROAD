@@ -264,7 +264,7 @@ class IOPlacer
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
-  int64_t micronsToDbu(double microns);
+  int micronsToDbu(double microns);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,

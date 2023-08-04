@@ -675,7 +675,7 @@ double IOPlacer::dbuToMicrons(int64_t dbu)
   return (double) dbu / (getBlock()->getDbUnitsPerMicron());
 }
 
-int64_t IOPlacer::micronsToDbu(double microns)
+int IOPlacer::micronsToDbu(double microns)
 {
   return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
 }
