@@ -557,7 +557,6 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     return;
   }
 
-  const QTransform initial_xfm = painter->transform();
   const QColor text_color = viewer_->options_->instanceNameColor();
   const QFont initial_font = painter->font();
   const QFont text_font = viewer_->options_->instanceNameFont();
@@ -575,7 +574,6 @@ void RenderThread::drawInstanceNames(QPainter* painter,
     Rect instance_box = inst->getBBox()->getBox();
     QString name = inst->getName().c_str();
     drawTextInBBox(text_color, text_font, instance_box, name, painter);
-    painter->setTransform(initial_xfm);
   }
   painter->setFont(initial_font);
 }
@@ -589,7 +587,6 @@ void RenderThread::drawITermLabels(QPainter* painter,
     return;
   }
 
-  const QTransform initial_xfm = painter->transform();
   const QColor text_color = viewer_->options_->itermLabelColor();
   const QFont text_font = viewer_->options_->itermLabelFont();
   const QFont initial_font = painter->font();
@@ -604,31 +601,51 @@ void RenderThread::drawITermLabels(QPainter* painter,
       continue;
     }
 
+    odb::dbTransform xform;
+    inst->getTransform(xform);
     for (auto inst_iterm : inst->getITerms()) {
-      Rect iterm_box = inst_iterm->getBBox();
-      QString name = inst_iterm->getMTerm()->getConstName();
-      drawTextInBBox(text_color, text_font, iterm_box, name, painter);
-      painter->setTransform(initial_xfm);
+      bool drawn = false;
+      for (auto* mpin : inst_iterm->getMTerm()->getMPins()) {
+        for (auto* geom : mpin->getGeometry()) {
+          const auto layer = geom->getTechLayer();
+          if (layer == nullptr) {
+            continue;
+          }
+          if (viewer_->options_->isVisible(layer)
+              && viewer_->options_->isSelectable(layer)) {
+            Rect pin_rect = geom->getBox();
+            xform.apply(pin_rect);
+            const QString name = inst_iterm->getMTerm()->getConstName();
+            drawn = drawTextInBBox(
+                text_color, text_font, pin_rect, name, painter);
+          }
+          if (drawn) {
+            // Only draw on the first box
+            break;
+          }
+        }
+        if (drawn) {
+          break;
+        }
+      }
     }
   }
+
   painter->setFont(initial_font);
 }
 
-void RenderThread::drawTextInBBox(const QColor& text_color,
+bool RenderThread::drawTextInBBox(const QColor& text_color,
                                   const QFont& text_font,
                                   Rect bbox,
                                   QString name,
                                   QPainter* painter)
 {
-  painter->setPen(QPen(text_color, 0));
-  painter->setBrush(QBrush(text_color));
-
   const QFontMetricsF font_metrics(text_font);
 
   // minimum pixel height for text (10px)
   if (font_metrics.ascent() < 10) {
     // text is too small
-    return;
+    return false;
   }
 
   // text should not fill more than 90% of the instance height or width
@@ -658,10 +675,10 @@ void RenderThread::drawTextInBBox(const QColor& text_color,
   // don't show text if it's more than "non_core_scale_limit" of cell
   // height/width this keeps text from dominating the cell size
   if (!do_rotate && text_height_check > bbox_in_px.height()) {
-    return;
+    return false;
   }
   if (do_rotate && text_height_check > bbox_in_px.width()) {
-    return;
+    return false;
   }
 
   if (do_rotate) {
@@ -671,6 +688,11 @@ void RenderThread::drawTextInBBox(const QColor& text_color,
     name = font_metrics.elidedText(
         name, Qt::ElideLeft, size_limit * bbox_in_px.width());
   }
+
+  painter->setPen(QPen(text_color, 0));
+  painter->setBrush(QBrush(text_color));
+
+  const QTransform initial_xfm = painter->transform();
 
   painter->translate(bbox.xMin(), bbox.yMin());
   painter->scale(scale_adjust, -scale_adjust);
@@ -685,6 +707,10 @@ void RenderThread::drawTextInBBox(const QColor& text_color,
     painter->translate(font_metrics.descent(), 0);
   }
   painter->drawText(0, 0, name);
+
+  painter->setTransform(initial_xfm);
+
+  return true;
 }
 
 void RenderThread::drawBlockages(QPainter* painter,
