@@ -173,8 +173,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
-  _minExtModelIndex = -1;
-  _maxExtModelIndex = -1;
 
   _bterm_tbl = new dbTable<_dbBTerm>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBTermObj);
@@ -415,8 +413,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _maxCapNodeId(block._maxCapNodeId),
       _maxRSegId(block._maxRSegId),
       _maxCCSegId(block._maxCCSegId),
-      _minExtModelIndex(block._minExtModelIndex),
-      _maxExtModelIndex(block._maxExtModelIndex),
       _children(block._children),
       _currentCcAdjOrder(block._currentCcAdjOrder)
 {
@@ -910,8 +906,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._maxCapNodeId;
   stream << block._maxRSegId;
   stream << block._maxCCSegId;
-  stream << block._minExtModelIndex;
-  stream << block._maxExtModelIndex;
   if (block._flags._skip_hier_stream) {
     block.getImpl()->getLogger()->info(
         utl::ODB, 4, "Hierarchical block information is lost");
@@ -1019,8 +1013,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._maxCapNodeId;
   stream >> block._maxRSegId;
   stream >> block._maxCCSegId;
-  stream >> block._minExtModelIndex;
-  stream >> block._maxExtModelIndex;
+  if (!db->isSchema(db_schema_block_ext_model_index)) {
+    int ignore_minExtModelIndex;
+    int ignore_maxExtModelIndex;
+    stream >> ignore_minExtModelIndex;
+    stream >> ignore_maxExtModelIndex;
+  }
   stream >> block._children;
   stream >> block._currentCcAdjOrder;
   stream >> *block._bterm_tbl;
@@ -1219,12 +1217,6 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_maxCCSegId != rhs._maxCCSegId)
     return false;
 
-  if (_minExtModelIndex != rhs._minExtModelIndex)
-    return false;
-
-  if (_maxExtModelIndex != rhs._maxExtModelIndex)
-    return false;
-
   if (_children != rhs._children)
     return false;
 
@@ -1394,8 +1386,6 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_FIELD(_maxCapNodeId);
   DIFF_FIELD(_maxRSegId);
   DIFF_FIELD(_maxCCSegId);
-  DIFF_FIELD(_minExtModelIndex);
-  DIFF_FIELD(_maxExtModelIndex);
   DIFF_VECTOR(_children);
   DIFF_FIELD(_currentCcAdjOrder);
   DIFF_TABLE(_bterm_tbl);
@@ -1489,8 +1479,6 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_maxCapNodeId);
   DIFF_OUT_FIELD(_maxRSegId);
   DIFF_OUT_FIELD(_maxCCSegId);
-  DIFF_OUT_FIELD(_minExtModelIndex);
-  DIFF_OUT_FIELD(_maxExtModelIndex);
   DIFF_OUT_VECTOR(_children);
   DIFF_OUT_FIELD(_currentCcAdjOrder);
   DIFF_OUT_TABLE(_bterm_tbl);

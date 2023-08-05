@@ -197,8 +197,6 @@ class _dbBlock : public _dbObject
   uint _maxCapNodeId;
   uint _maxRSegId;
   uint _maxCCSegId;
-  int _minExtModelIndex;
-  int _maxExtModelIndex;
   dbVector<dbId<_dbBlock>> _children;
   uint _currentCcAdjOrder;
 
