@@ -29,16 +29,18 @@ Antenna violations can be repaired after global routing with the `repair_design`
 
 ### Check Antennas
 
-```
-check_antennas [-net net] [-verbose]
+```tcl
+check_antennas 
+    [-net net] 
+    [-verbose]
 ```
 
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-verbose` | report all antenna calculations for violating nets |
-| `-net` | check antennas on said net |
+| `-verbose` | Report all antenna calculations for violating nets. |
+| `-net` | Check antennas on specified net. |
 
 ## Regression tests
 
