@@ -1,4 +1,4 @@
-# TritonRoute
+# Detailed Routing
 
 TritonRoute is an open-source detailed router for modern industrial
 designs. The router consists of several main building blocks, including
