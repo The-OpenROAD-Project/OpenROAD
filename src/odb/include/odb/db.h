@@ -1270,11 +1270,6 @@ class dbBlock : public dbObject
   dbBlock* getExtCornerBlock(uint corner);
 
   ///
-  /// when stream out a hier. block it will not stream references to children
-  ///
-  void set_skip_hier_stream(bool value);
-
-  ///
   /// Get the track-grids of this block.
   ///
   dbSet<dbTrackGrid> getTrackGrids();
@@ -1318,8 +1313,6 @@ class dbBlock : public dbObject
   ///
   Rect getCoreArea();
 
-  void setPtFile(FILE* ptf);
-  FILE* getPtFile();
   ///
   /// Set the extmain instance.
   ///
@@ -1344,16 +1337,6 @@ class dbBlock : public dbObject
   /// Get the capacitor-coupled segments.
   ///
   dbSet<dbCCSeg> getCCSegs();
-
-  ///
-  /// Allow bufferin of altered nes
-  ///
-  bool isBufferAltered();
-
-  ///
-  ///
-  ///
-  void setBufferAltered(bool value);
 
   ///
   /// Build search database for fast area searches for insts

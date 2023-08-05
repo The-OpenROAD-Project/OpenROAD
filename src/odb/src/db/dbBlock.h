@@ -132,24 +132,10 @@ class dbBlockCallBackObj;
 class dbGuideItr;
 class dbNetTrackItr;
 
-struct _dbBTermPin
-{
-  _dbBTerm* _bterm;
-  int _x;
-  int _y;
-  uint _pin;
-  dbPlacementStatus::Value _status;
-  dbOrientType::Value _orient;
-};
-
 struct _dbBlockFlags
 {
   uint _valid_bbox : 1;
-  uint _buffer_altered : 1;
-  uint _active_pins : 1;
-  uint _mme : 1;
-  uint _skip_hier_stream : 1;
-  uint _spare_bits_27 : 27;
+  uint _spare_bits : 31;
 };
 
 class _dbBlock : public _dbObject
@@ -158,8 +144,7 @@ class _dbBlock : public _dbObject
   enum Field  // dbJournal field names
   {
     CORNERCOUNT,
-    WRITEDB,
-    INVALIDATETIMING,
+    WRITEDB
   };
 
   // PERSISTANT-MEMBERS
@@ -197,8 +182,6 @@ class _dbBlock : public _dbObject
   uint _maxCapNodeId;
   uint _maxRSegId;
   uint _maxCCSegId;
-  int _minExtModelIndex;
-  int _maxExtModelIndex;
   dbVector<dbId<_dbBlock>> _children;
   uint _currentCcAdjOrder;
 
@@ -271,19 +254,13 @@ class _dbBlock : public _dbObject
   dbPropertyItr* _prop_itr;
   dbBlockSearch* _searchDb;
 
-  float _WNS[2];
-  float _TNS[2];
   unsigned char _num_ext_dbs;
 
   std::list<dbBlockCallBackObj*> _callbacks;
   void* _extmi;
-  FILE* _ptFile;
 
   dbJournal* _journal;
   dbJournal* _journal_pending;
-
-  // This is a temporary vector to fix bterm pins pre dbBPin...
-  std::vector<_dbBTermPin>* _bterm_pins;
 
   _dbBlock(_dbDatabase* db);
   _dbBlock(_dbDatabase* db, const _dbBlock& block);
