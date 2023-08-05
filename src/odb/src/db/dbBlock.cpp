@@ -156,7 +156,7 @@ template class dbHashTable<_dbBTerm>;
 _dbBlock::_dbBlock(_dbDatabase* db)
 {
   _flags._valid_bbox = 0;
-  _flags._spare_bits_27 = 0;
+  _flags._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
   _hier_delimeter = 0;

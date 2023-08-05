@@ -145,7 +145,7 @@ struct _dbBTermPin
 struct _dbBlockFlags
 {
   uint _valid_bbox : 1;
-  uint _spare_bits_27 : 31;
+  uint _spare_bits : 31;
 };
 
 class _dbBlock : public _dbObject
