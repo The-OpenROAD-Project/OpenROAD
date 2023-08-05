@@ -139,6 +139,10 @@ IRSolver::IRSolver(odb::dbDatabase* db,
   if (corner_ == nullptr) {
     logger_->error(utl::PSM, 84, "Unable to proceed without a valid corner");
   }
+
+  if (db_->getChip()->getBlock()->findNet(power_net_.c_str()) == nullptr) {
+    logger_->error(utl::PSM, 85, "Unable to find {}", power_net_);
+  }
 }
 
 IRSolver::~IRSolver() = default;
