@@ -1,6 +1,7 @@
-# OpenDP
+# Detailed Placement
 
-OpenDP: Open-Source Detailed Placement Engine
+In OpenROAD, detailed placement is performed using OpenDP, or 
+Open-Source Detailed Placement Engine.
 
 Features:
 
@@ -24,8 +25,8 @@ detailed_placement
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-max_displacement` | how far an instance (in microns) can be moved when finding a site where it can be placed. Either set one value for both directions or set {disp_x disp_y} for individual directions. (default 0, 0) |
-| `-disallow_one_site_gaps` | disable one site gaps during placement |
+| `-max_displacement` | How far an instance (in microns) can be moved when finding a site where it can be placed. Either set one value for both directions or set {disp_x disp_y} for individual directions. (default 0, 0, integer). |
+| `-disallow_one_site_gaps` | Disable one site gaps during placement. |
 
 ### Set Placement Padding
 
@@ -50,9 +51,9 @@ set_placement_padding
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-global` or `-masters` or `-instances` | either flag must be set. For `-global`, you will set padding globally using `left` and `right` values. For `-masters`, you will set padding only for these masters using `left` and `right` values. For `-instances`, you will set padding only for these insts using `left` and `right` values. |
-| `left` | left padding (in site count) |
-| `right` | right padding (in site count) |
+| `-global` or `-masters` or `-instances` | Either flag must be set. For `-global`, you will set padding globally using `left` and `right` values. For `-masters`, you will set padding only for these masters using `left` and `right` values. For `-instances`, you will set padding only for these insts using `left` and `right` values. |
+| `left` | Left padding (in site count). |
+| `right` | Right padding (in site count). |
 
 ### Filler Placement
 
@@ -73,8 +74,8 @@ filler_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-prefix` | prefix to name the filler cells. (default "FILLER_") |
-| `filler_masters` | filler master cells | 
+| `-prefix` | Prefix to name the filler cells (default "FILLER_"). |
+| `filler_masters` | Filler master cells. | 
 
 ### Remove Fillers
 
@@ -99,13 +100,13 @@ check_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-verbose` | enable verbose logging |
-| `-disallow_one_site_gaps` | disable one site gaps during placement |
+| `-verbose` | Enable verbose logging. |
+| `-disallow_one_site_gaps` | Disable one site gaps during placement. |
 
 ### Optimize Mirroring
 
 The `optimize_mirroring` command mirrors instances about the Y axis in
-a weak attempt to reduce total wirelength (HPWL).
+a weak attempt to reduce total half-perimeter wirelength (HPWL).
 
 ```tcl
 optimize_mirroring
