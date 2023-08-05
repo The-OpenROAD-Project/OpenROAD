@@ -132,7 +132,6 @@ class _dbDatabase : public _dbObject
   dbPropertyItr* _prop_itr;
   int _unique_id;
 
-  char* _file;
   utl::Logger* _logger;
 
   _dbDatabase(_dbDatabase* db);
