@@ -1,5 +1,6 @@
-# PDNGEN
+# PDN Analysis
 
+PDN Analysis is performed using the PDNGEN tool. 
 This utility aims to simplify the process of adding a power grid into a
 floorplan. The aim is to specify a small set of power grid policies to be
 applied to the design, such as layers to use, stripe width and spacing,
@@ -31,11 +32,11 @@ pdngen
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-skip_trim` | Skip the metal trim step, which attempts to remove metal stubs |
-| `-dont_add_pins` | Prevent the creation of block pins during |
-| `-reset` | Reset the grid and domain specifications |
-| `-ripup` | Ripup the existing power grid, as specified by the voltage domains |
-| `-report_only` | Print the current specifications |
+| `-skip_trim` | Skip the metal trim step, which attempts to remove metal stubs. |
+| `-dont_add_pins` | Prevent the creation of block pins. |
+| `-reset` | Reset the grid and domain specifications. |
+| `-ripup` | Ripup the existing power grid, as specified by the voltage domains. |
+| `-report_only` | Print the current specifications. |
 | `-failed_via_report` | Generate a report file which can be viewed in the DRC viewer for all the failed vias (ie. those that did not get built or were removed). |
 
 ### Define Voltage Domains
@@ -58,12 +59,12 @@ set_voltage_domain
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-name` | Defines the name of the voltage domain, default is "Core" or region name if provided |
-| `-power` | Specifies the name of the power net for this voltage domain |
-| `-ground` | Specifies the name of the ground net for this voltage domain |
-| `-region` | Specifies a region of the design occupied by this voltage domain |
-| `-secondary_power` | Specifies the name of the secondary power net for this voltage domain |
-| `-switched_power` | Specifies the name of the switched power net for switched power domains, |
+| `-name` | Defines the name of the voltage domain, default is "Core" or region name if provided. |
+| `-power` | Specifies the name of the power net for this voltage domain. |
+| `-ground` | Specifies the name of the ground net for this voltage domain. |
+| `-region` | Specifies a region of the design occupied by this voltage domain. |
+| `-secondary_power` | Specifies the name of the secondary power net for this voltage domain. |
+| `-switched_power` | Specifies the name of the switched power net for switched power domains. |
 
 Example usage:
 
@@ -96,10 +97,10 @@ define_pdn_grid
 | Switch Name | Description |
 | ----- | ----- |
 | `-name` | Defines a name to use when referring to this grid definition. |
-| `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: Last domain created) |
+| `-voltage_domain` | Defines the name of the voltage domain for this grid (Default: Last domain created). |
 | `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
-| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
+| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND). |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |
 
 Example usage:
 
@@ -135,15 +136,15 @@ define_pdn_grid
 | `-macro` | Defines the type of grid being added as a macro. |
 | `-name` | Defines a name to use when referring to this grid definition. |
 | `-grid_over_pg_pins`, `-grid_over_boundary` | Place the power grid over the power ground pins of the macro. (Default True), or Place the power grid over the entire macro.  |
-| `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: Last domain created) |
+| `-voltage_domain` | Defines the name of the voltage domain for this grid. (Default: Last domain created). |
 | `-orient` | For a macro, defines a set of valid orientations. LEF orientations (N, FN, S, FS, E, FE, W and FW) can be used as well as standard geometry orientations (R0, R90, R180, R270, MX, MY, MXR90 and MYR90). Macros with one of the valid orientations will use this grid specification. |
 | `-instances` | For a macro, defines a set of valid instances. Macros with a matching instance name will use this grid specification. |
 | `-cells` | For a macro, defines a set of valid cells. Macros which are instances of one of these cells will use this grid specification. |
 | `-default` | For a macro, specifies this is a default grid that can be overwritten. |
-| `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively. (Default: 0) |
+| `-halo` | Specifies the default minimum separation of selected macros from other cells in the design. This is only used if the macro does not define halo values in the LEF description. If 1 value is specified it will be used on all 4 sides, if two values are specified, the first will be applied to left/right sides and the second will be applied to top/bottom sides, if 4 values are specified, then they are applied to left, bottom, right and top sides respectively (Default: 0). |
 | `-pins` | Defines a list of layers which where the power straps will be promoted to block pins. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND) |
-| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
+| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: GROUND). |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |
 | `-power_switch_cell` | Defines the name of the coarse grain power switch cell to be used wherever the stdcell rail connects to the rest of the power grid. The mesh layers are associated with the unswitched power net of the voltage domain, whereas the stdcell rail is associated with the switched power net of the voltage domain. The placement of a power switch cell connects the unswitched power mesh to the switched power rail through a power switch defined by the `define_power_switch_cell` command. |
 | `-power_control` | Defines the name of the power control signal used to control the switching of the inserted power switches. |
 | `-power_control_network` | Defines the structure of the power control signal network. Choose from STAR, or DAISY. If STAR is specified, then the network is wired as a high-fanout net with the power control signal driving the power control pin on every power switch. If DAISY is specified then the power switches are connected in a daisy-chain configuration - note, this requires that the power swich defined by the `define_power_switch_cell`  command defines an acknowledge pin for the switch. |
@@ -168,9 +169,9 @@ define_pdn_grid
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-existing` | Flag to enable defining for existing routing solution |
-| `-name` | Defines a name to use when referring to this grid definition. Defaults to `existing_grid` |
-| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations |
+| `-existing` | Flag to enable defining for existing routing solution. |
+| `-name` | Defines a name to use when referring to this grid definition (defaults to `existing_grid`). |
+| `-obstructions` | Specify the layers to add routing blockages, in order to avoid DRC violations. |
 
 Example usage:
 
@@ -198,7 +199,7 @@ define_power_switch_cell
 | ----- | ----- |
 | `-name` | The name of the power switch cell. |
 | `-control` | The name of the power control port of the power switch cell. |
-| `-switched_power` | Defines the name of the pin that outputs the switched power net |
+| `-switched_power` | Defines the name of the pin that outputs the switched power net. |
 | `-power` | Defines the name of the pin that connects to the unswitched power net. |
 | `-ground` | Defines the name of the pin that connects to the ground net. |
 | `-acknowledge` | Defines the name of the output control signal of the power control switch if it has one. |
@@ -234,19 +235,19 @@ add_pdn_stripe
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-layer` | Specifies the name of the layer for these stripes |
-| `-grid` | Specifies the grid to which this stripe definition will be added. (Default: Last grid defined by `define_pdn_grid`) |
-| `-width` | Value for the width of stripe |
-| `-followpins` | Indicates that the stripe forms part of the stdcell rails, pitch and spacing are dictated by the stdcell rows, the `-width` is not needed if it can be determined from the cells |
-| `-extend_to_core_ring` | Extend the stripes to the core PG ring |
-| `-pitch` | Value for the distance between each power/ground pair |
-| `-spacing` | Optional specification of the spacing between power/ground pairs within a single pitch. (Default: pitch / 2) |
+| `-layer` | Specifies the name of the layer for these stripes. |
+| `-grid` | Specifies the grid to which this stripe definition will be added. (Default: Last grid defined by `define_pdn_grid`). |
+| `-width` | Value for the width of stripe. |
+| `-followpins` | Indicates that the stripe forms part of the stdcell rails, pitch and spacing are dictated by the stdcell rows, the `-width` is not needed if it can be determined from the cells. |
+| `-extend_to_core_ring` | Extend the stripes to the core PG ring. |
+| `-pitch` | Value for the distance between each power/ground pair. |
+| `-spacing` | Optional specification of the spacing between power/ground pairs within a single pitch (Default: pitch / 2). |
 | `-offset` | Value for the offset of the stripe from the lower left corner of the design core area. |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting) |
-| `-extend_to_boundary` | Extend the stripes to the boundary of the grid |
-| `-snap_to_grid` | Snap the stripes to the defined routing grid |
-| `-number_of_straps` | Number of power/ground pairs to add |
-| `-nets` | Limit straps to just this list of nets |
+| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting). |
+| `-extend_to_boundary` | Extend the stripes to the boundary of the grid. |
+| `-snap_to_grid` | Snap the stripes to the defined routing grid. |
+| `-number_of_straps` | Number of power/ground pairs to add. |
+| `-nets` | Limit straps to just this list of nets. |
 
 Example usage:
 
@@ -280,18 +281,18 @@ add_pdn_ring
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-layers` | Specifies the name of the layer for these stripes |
-| `-widths` | Value for the width of the stdcell rail |
-| `-spacings` | Optional specification of the spacing between power/ground pairs within a single pitch. (Default: pitch / 2) |
-| `-grid` | Specifies the name of the grid to which this ring defintion will be added. (Default: Last grid created by `define_pdn_grid`)|
-| `-core_offsets` | Value for the offset of the ring from the grid region |
-| `-pad_offsets` | When defining a power grid for the top level of an SoC, can be used to define the offset of ring from the pad cells |
-| `-add_connect` | Automatically add a connection between the two layers |
-| `-extend_to_boundary` | Extend the rings to the grid boundary |
-| `-connect_to_pads` | The core side of the pad pins will be connected to the ring |
-| `-connect_to_pad_layers` | Restrict the pad pins layers to this list |
-| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting) |
-| `-nets` | Limit straps to just this list of nets |
+| `-layers` | Specifies the name of the layer for these stripes. |
+| `-widths` | Value for the width of the stdcell rail. |
+| `-spacings` | Optional specification of the spacing between power/ground pairs within a single pitch. (Default: pitch / 2). |
+| `-grid` | Specifies the name of the grid to which this ring defintion will be added. (Default: Last grid created by `define_pdn_grid`). |
+| `-core_offsets` | Value for the offset of the ring from the grid region. |
+| `-pad_offsets` | When defining a power grid for the top level of an SoC, can be used to define the offset of ring from the pad cells. |
+| `-add_connect` | Automatically add a connection between the two layers. |
+| `-extend_to_boundary` | Extend the rings to the grid boundary. |
+| `-connect_to_pads` | The core side of the pad pins will be connected to the ring. |
+| `-connect_to_pad_layers` | Restrict the pad pins layers to this list. |
+| `-starts_with` | Specifies whether the first strap placed will be POWER or GROUND (Default: grid setting). |
+| `-nets` | Limit straps to just this list of nets. |
 
 Example usage: 
 
@@ -320,14 +321,14 @@ add_pdn_connect
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-layers` | Layers to be connected where there are overlapping power or overlapping ground nets |
-| `-grid` | Specifies the name of the grid definition to which this connection will be added. (Default: Last grid created by `define_pdn_grid`) |
-| `-cut_pitch` | When the two layers are parallel e.g. overlapping stdcell rails, specify the distance between via cuts |
-| `-fixed_vias` | List of fixed vias to be used to form the via stack |
-| `-dont_use_vias` | List or pattern of vias to not use to form the via stack |
-| `-max_rows` | Maximum number of rows when adding arrays of vias |
-| `-max_columns` | Maximum number of columns when adding arrays of vias |
-| `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid |
+| `-layers` | Layers to be connected where there are overlapping power or overlapping ground nets. |
+| `-grid` | Specifies the name of the grid definition to which this connection will be added (Default: Last grid created by `define_pdn_grid`). |
+| `-cut_pitch` | When the two layers are parallel e.g. overlapping stdcell rails, specify the distance between via cuts. |
+| `-fixed_vias` | List of fixed vias to be used to form the via stack. |
+| `-dont_use_vias` | List or pattern of vias to not use to form the via stack. |
+| `-max_rows` | Maximum number of rows when adding arrays of vias. |
+| `-max_columns` | Maximum number of columns when adding arrays of vias. |
+| `-ongrid` | List of intermediate layers in a via stack to snap onto a routing grid. |
 | `-split_cuts` | Specifies layers to use split cuts on with an associated pitch, for example `{metal3 0.380 metal5 0.500}`. |
 
 Example usage:
@@ -359,8 +360,8 @@ repair_pdn_vias
 
 | Name | Description |
 | ----- | ----- |
-| `-all` | Repair vias on all supply nets |
-| `-net` | Repair only vias on the specified net |
+| `-all` | Repair vias on all supply nets. |
+| `-net` | Repair only vias on the specified net. |
 
 ### Converting former PDNGEN configuration file to Tcl commands
 
@@ -376,7 +377,7 @@ convert_pdn_config config_file
 
 | Name | Description |
 | ----- | ----- |
-| `config_file` | Path to the old configuration file |
+| `config_file` | Path to the old configuration file. |
 
 
 ## Example scripts
