@@ -18,15 +18,15 @@ The `set_wire_rc` command sets the resistance and capacitance used to estimate
 delay of routing wires.  Separate values can be specified for clock and data
 nets with the `-signal` and `-clock` flags. Without either `-signal` or
 `-clock` the resistance and capacitance for clocks and data nets are set.
-Use `-layer` or `-resistance` and `-capacitance`.  If `-layer` is used,
-the LEF technology resistance and area/edge capacitance values for the
-layer are used for a default width wire on the layer.  
 
 ```tcl
 set_wire_rc 
     [-clock] 
     [-signal]
     [-layer layer_name]
+
+or 
+set_wire_rc
     [-resistance res]
     [-capacitance cap]
 ```
@@ -35,11 +35,11 @@ set_wire_rc
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-clock` | enable setting of RC for clock nets |
-| `-signal` | enable setting of RC for signal nets | 
-| `-layer` | if used, the LEF default RC values are used. |
-| `-resistance` | resistance per unit length, units are from the first Liberty file read, usually in the form of $\frac{resistanceUnit}{distanceUnit}$. Usually kΩ/µm. |
-| `-capacitance` | capacitance per unit length, units are from the first Liberty file read, usually in the form of $\frac{capacitanceUnit}{distanceUnit}$. Usually pF/µm. |
+| `-clock` | Enable setting of RC for clock nets. |
+| `-signal` | Enable setting of RC for signal nets. | 
+| `-layer` | If `-layer` is used, the LEF technology resistance and area/edge capacitance values for the layer are used for a default width wire on the layer. |
+| `-resistance` | Resistance per unit length, units are from the first Liberty file read, usually in the form of $\frac{resistanceUnit}{distanceUnit}$. Usually kΩ/µm. |
+| `-capacitance` | Capacitance per unit length, units are from the first Liberty file read, usually in the form of $\frac{capacitanceUnit}{distanceUnit}$. Usually pF/µm. |
 
 
 ### Set Layer RC
@@ -61,11 +61,11 @@ set_layer_rc
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-layer` | select layer name |
-| `-via` | select via layer name. note that via resistance is per cut/via, not area based |
-| `-resistance` | resistance per unit length, same convention as `set_wire_rc` |
-| `-capacitance` | capacitance per unit length, same convention as `set_wire_rc` |
-| `-corner` | process corner to use |
+| `-layer` | Set **routing** layer name to modify. |
+| `-via` | Select via layer name. note that via resistance is per cut/via, not area based. |
+| `-resistance` | Resistance per unit length, same convention as `set_wire_rc`. |
+| `-capacitance` | Capacitance per unit length, same convention as `set_wire_rc`. |
+| `-corner` | Process corner to use. |
 
 ### Estimate Parasitics
 
@@ -90,7 +90,7 @@ estimate_parasitics
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-placement` or `-global_routing` | either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
+| `-placement` or `-global_routing` | Either of these flags must be set. Parasitics are estimated based after placement stage versus after global routing stage. |
 
 ### Set Don't Use
 
@@ -129,23 +129,22 @@ buffer_ports
     [-max_utilization util]
 ```
 
-### Remove Buffers
-
-Use the `remove_buffers` command to remove buffers inserted by synthesis. This
-step is recommended before using `repair_design` so that there is more flexibility
-in buffering nets.
-
-```tcl
-remove_buffers
-```
-
 #### Options
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-inputs` | enable buffering for input ports (default true) |
-| `-outputs` | enable buffering for output ports (default true) |
-| `-max_utilization` | defines the percentage of core area used |
+| `-inputs`, `-outputs` | Insert a buffer between the input and load, output and load respectively. The default behavior is `-inputs` and `-outputs` set if neither is specified. |
+| `-max_utilization` | Defines the percentage of core area used. |
+
+### Remove Buffers
+
+Use the `remove_buffers` command to remove buffers inserted by synthesis. This
+step is recommended before using `repair_design` so that there is more flexibility
+in buffering nets. 
+
+```tcl
+remove_buffers
+```
 
 ### Repair Design
 
@@ -170,11 +169,11 @@ repair_design
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-max_wire_length` | maximum length of wires, defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc` |
-| `-slew_margin` | add a slew margin, integer between 0-100 |
-| `-cap_margin` | add a capactitance margin, integer between 0-100 |
-| `-max_utilization` | defines the percentage of core area used |
-| `-verbose` | enable verbose logging on progress of the repair |
+| `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
+| `-slew_margin` | Add a slew margin (0-100, integer). |
+| `-cap_margin` | Add a capactitance margin (0-100, integer). |
+| `-max_utilization` | Defines the percentage of core area used. |
+| `-verbose` | Enable verbose logging on progress of the repair. |
 
 ### Repair Tie Fanout
 
@@ -192,9 +191,9 @@ repair_tie_fanout
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-separation` | tie high/low insts are separated from the load by this value (Liberty units, usually microns). |
-| `-verbose` | enable verbose logging of repair progress |
-| `lib_port` | tie high/low port, which can be a library/cell/port name or object returned by `get_lib_pins` |
+| `-separation` | Tie high/low insts are separated from the load by this value (Liberty units, usually microns). |
+| `-verbose` | Enable verbose logging of repair progress. |
+| `lib_port` | Tie high/low port, which can be a library/cell/port name or object returned by `get_lib_pins`. |
 
 ### Repair Timing
 
@@ -222,15 +221,15 @@ repair_timing
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-setup` | repair setup timing |
-| `-hold` | repair hold timing |
-| `-setup_margin` | add additional setup slack margin |
-| `-hold_margin` | add additional hold slack margin |
-| `-allow_setup_violations` | while repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
-| `-repair_tns` | percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero (the default), only the worst endpoint is repaired. When `tns_end_percent` is 100, all violating endpoints are repaired |
-| `-max_utilization` | defines the percentage of core area used |
-| `-max_buffer_percent` | specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. (default 20, or 20%) |
-| `-verbose` | enable verbose logging of the repair progress |
+| `-setup` | Repair setup timing. |
+| `-hold` | Repair hold timing. |
+| `-setup_margin` | Add additional setup slack margin. |
+| `-hold_margin` | Add additional hold slack margin. |
+| `-allow_setup_violations` | While repairing hold violations, buffers are not inserted that will cause setup violations unless `-allow_setup_violations` is specified. |
+| `-repair_tns` | Percentage of violating endpoints to repair (0-100). When `tns_end_percent` is zero (the default), only the worst endpoint is repaired. When `tns_end_percent` is 100, all violating endpoints are repaired. |
+| `-max_utilization` | Defines the percentage of core area used. |
+| `-max_buffer_percent` | Specify a maximum number of buffers to insert to repair hold violations as a percentage of the number of instances in the design. (default 20, or 20%). |
+| `-verbose` | Enable verbose logging of the repair progress. |
 
 ### Repair Clock Nets
 
@@ -248,7 +247,7 @@ repair_clock_nets
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-max_wire_length` | maximum wirelength to use in clock nets |
+| `-max_wire_length` | Maximum length of wires (in microns), defaults to a value that minimizes the wire delay for the wire RC values specified by `set_wire_rc`. |
 
 ### Repair Clock Inverters
 
@@ -278,7 +277,7 @@ report_floating_nets
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-verbose` | print the net names |
+| `-verbose` | Print the net names. |
 
 ### Useful developer functions
 
