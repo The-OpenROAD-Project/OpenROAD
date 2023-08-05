@@ -1,4 +1,4 @@
-# FastRoute
+# Global Routing
 
 FastRoute is an open-source global router originally derived from Iowa State University's FastRoute4.1 algorithm.
 
@@ -30,15 +30,15 @@ global_route
 | Switch Name | Description | 
 | ----- | ----- |
 | `-guide_file` | Set the output guides file name (e.g., `-guide_file route.guide`). |
-| `-congestion_iterations` | Set the number of iterations made to remove the overflow of the routing (e.g., `-congestion_iterations 50`) |
-| `-congestion_report_file` | Set the file name to save congestion report. The file generated can be read by DRC viewer in the gui (e.g., `-congestion_report_file report_file.rpt`)
-| `-congestion_report_iter_step` | Set the number of iterations to report |
+| `-congestion_iterations` | Set the number of iterations made to remove the overflow of the routing (e.g., `-congestion_iterations 50`) (default 50, integer). |
+| `-congestion_report_file` | Set the file name to save congestion report. The file generated can be read by DRC viewer in the gui (e.g., `-congestion_report_file report_file.rpt`). |
+| `-congestion_report_iter_step` | Set the number of iterations to report (default 0, integer). |
 | `-grid_origin` | Set the (x, y) origin of the routing grid in DBU. For example, `-grid_origin {1 1}` corresponds to the die (0, 0) + 1 DBU in each x--, y- direction. |
-| `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). (default 0) |
-| `-allow_congestion` | Allow global routing results to be generated with remaining congestion. |
+| `-critical_nets_percentage` | Set the percentage of nets with the worst slack value that are considered timing critical, having preference over other nets during congestion iterations (e.g. `-critical_nets_percentage 30`). (default 0, integer). |
+| `-allow_congestion` | Allow global routing results to be generated with remaining congestion (default not set). |
 | `-verbose` | This flag enables the full reporting of the global routing. |
-| `-start_incremental` | This flag initializes the GRT listener to get the net modified. |
-| `-end_incremental` | This flag run incremental GRT with the nets modified. |
+| `-start_incremental` | This flag initializes the GRT listener to get the net modified (default not set). |
+| `-end_incremental` | This flag run incremental GRT with the nets modified (default not set). |
 
 ### Set Routing Layers
 
@@ -52,8 +52,8 @@ set_routing_layers
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-signal` | Set the min and max routing signal layer (names) in this format "%s-%s" |
-| `-clock` | Set the min and max routing clock layer (names) in this format "%s-%s" |
+| `-signal` | Set the min and max routing signal layer (names) in this format "%s-%s". |
+| `-clock` | Set the min and max routing clock layer (names) in this format "%s-%s". |
 
 Example: `set_routing_layers -signal Metal2-Metal10 -clock Metal6-Metal9`
 
@@ -67,7 +67,7 @@ set_macro_extension extension
 
 | Argument Name | Description | 
 | ----- | ----- |
-| `extension` | number of `GCells` added to the blockage boundaries from macros. A `GCell` is typically defined in terms of `Mx` routing tracks.  The default `GCell` size is 15 `M3` pitches. | 
+| `extension` | Number of `GCells` added to the blockage boundaries from macros. A `GCell` is typically defined in terms of `Mx` routing tracks.  The default `GCell` size is 15 `M3` pitches. | 
 
 Example: `set_macro_extension 2`
 
@@ -81,7 +81,7 @@ set_pin_offset offset
 
 | Argument Name | Description | 
 | ----- | ----- |
-| `offset` | pin offset in microns (must be positive AND integer) | 
+| `offset` | Pin offset in microns (must be positive AND integer). | 
 
 ### Set Global Routing Layer Adjustment
 
@@ -98,8 +98,8 @@ set_global_routing_layer_adjustment layer adjustment
 
 | Argument Name | Description | 
 | ----- | ----- |
-| `layer` | integer for the layer number (e.g. for M1 you would use 1) |
-| `adjustment` | float indicating the percentage reduction of each edge in the specified layer. |
+| `layer` | Integer for the layer number (e.g. for M1 you would use 1). |
+| `adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
 
 You can set adjustment for a
 specific layer, e.g., `set_global_routing_layer_adjustment Metal4 0.5` reduces
@@ -134,8 +134,8 @@ set_routing_alpha
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-net` | net name | 
-| `alpha` | float between 0 and 1 describing the trade-off between wirelength and path depth. |
+| `-net` | Net name. | 
+| `alpha` | Float between 0 and 1 describing the trade-off between wirelength and path depth. |
 
 Example: `set_routing_alpha -net clk 0.3` sets the alpha value of 0.3 for net *clk*.
 
@@ -152,9 +152,9 @@ set_global_routing_region_adjustment
 
 | Switch Name | Description |
 | ----- | ----- |
-| `lower_left_x`, `lower_left_y`, `upper_right_x` , `upper_right_y` | Bounding box to consider |
-| `layer` | integer for the layer number (e.g. for M1 you would use 1) |
-| `adjustment` | float indicating the percentage reduction of each edge in the specified layer. |
+| `lower_left_x`, `lower_left_y`, `upper_right_x` , `upper_right_y` | Bounding box to consider. |
+| `-layer` | Integer for the layer number (e.g. for M1 you would use 1). |
+| `-adjustment` | Float indicating the percentage reduction of each edge in the specified layer. |
 
 Example: `set_global_routing_region_adjustment {1.5 2 20 30.5} -layer Metal4 -adjustment 0.7`
 
@@ -175,9 +175,9 @@ set_global_routing_random
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `-seed` | sets the random seed (must be non-zero for randomization) |
-| `-capacities_perturbation_percentage` | sets the percentage of edges whose capacities are perturbed. By default, the edge capacities are perturbed by adding or subtracting 1 (track) from the original capacity.  |
-| `-perturbation_amount` | sets the perturbation value of the edge capacities. This option is only meaningful when `-capacities_perturbation_percentage` is used. |
+| `-seed` | Sets the random seed (must be non-zero for randomization). |
+| `-capacities_perturbation_percentage` | Sets the percentage of edges whose capacities are perturbed. By default, the edge capacities are perturbed by adding or subtracting 1 (track) from the original capacity.  |
+| `-perturbation_amount` | Sets the perturbation value of the edge capacities. This option is only meaningful when `-capacities_perturbation_percentage` is used. |
 
 Example:
 `set_global_routing_random -seed 42 \
@@ -204,9 +204,9 @@ repair_antennas
 
 | Switch Name | Description |
 | ----- | ----- |
-| `diode_cell` | diode cell to fix antenna violations |
-| `-iterations` | number of iterations (default 1) |
-| `-ratio_margin` | add a margin to the antenna ratios, between 0 and 100. |
+| `diode_cell` | Diode cell to fix antenna violations. |
+| `-iterations` | Number of iterations (default 1, integer). |
+| `-ratio_margin` | Add a margin to the antenna ratios (between 0 and 100, integer). |
 
 See LEF/DEF 5.8 Language Reference, Appendix C, "Calculating and
 Fixing Process Antenna Violations" for a [description](coriolis.lip6.fr/doc/lefdef/lefdefref/lefdefref.pdf) 
@@ -232,7 +232,7 @@ write_guides file_name
 
 | Switch Name | Description |
 | ----- | ----- |
-| `file_name` | guide file name | 
+| `file_name` | Guide file name. |
 
 Example: `write_guides route.guide`.
 
@@ -241,9 +241,13 @@ Example: `write_guides route.guide`.
 To estimate RC parasitics based on global route results, use the `-global_routing`
 option of the `estimate_parasitics` command.
 
+```{note}
+To see the function definition for `estimate_parasitics`, refer to 
+[Resizer docs](../rsz/README.md#estimate-parasitics).
+```
+
 ```tcl
-estimate_parasitics 
-    -global_routing
+estimate_parasitics -global_routing
 ```
 
 ### Plot Global Routing Guides
@@ -262,8 +266,8 @@ draw_route_guides
 
 | Switch Name | Description |
 | ----- | ----- |
-| `net_names` | Tcl list of set of nets |
-| `-show_pin_locations` | draw circles for the pin positions on the routing grid |
+| `net_names` | Tcl list of set of nets (e.g. {net1, net2}). |
+| `-show_pin_locations` | Draw circles for the pin positions on the routing grid. |
 
 ### Report Wirelength
 
@@ -299,7 +303,6 @@ The `global_route_debug` command allows you to start a debug mode to view the st
 It also allows you to dump the input positions for the Steiner tree creation of a net.
 This must be used before calling the `global_route` command. 
 Set the name of the net and the trees that you want to visualize.
-
 
 ```tcl
 global_route_debug 
@@ -340,7 +343,7 @@ read_guides file_name
 
 | Switch Name | Description |
 | ----- | ----- |
-| `file_name` | path to global routing guide | 
+| `file_name` | Path to global routing guide. | 
 
 ### Useful developer functions
 
