@@ -376,7 +376,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _num_ext_dbs = 1;
   _searchDb = nullptr;
   _extmi = nullptr;
-  _ptFile = nullptr;
   _journal = nullptr;
   _journal_pending = nullptr;
 }
@@ -571,7 +570,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
   _num_ext_dbs = 0;
-  _ptFile = nullptr;
 
   // ??? Initialize search-db on copy?
   _searchDb = nullptr;
@@ -2149,18 +2147,6 @@ Rect dbBlock::getCoreArea()
   }
   // Default to die area if there aren't any rows.
   return getDieArea();
-}
-
-FILE* dbBlock::getPtFile()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_ptFile;
-}
-
-void dbBlock::setPtFile(FILE* ptf)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_ptFile = ptf;
 }
 
 void dbBlock::setExtmi(void* ext)

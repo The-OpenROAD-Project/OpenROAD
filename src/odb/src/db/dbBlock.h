@@ -277,7 +277,6 @@ class _dbBlock : public _dbObject
 
   std::list<dbBlockCallBackObj*> _callbacks;
   void* _extmi;
-  FILE* _ptFile;
 
   dbJournal* _journal;
   dbJournal* _journal_pending;

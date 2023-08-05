@@ -1318,8 +1318,6 @@ class dbBlock : public dbObject
   ///
   Rect getCoreArea();
 
-  void setPtFile(FILE* ptf);
-  FILE* getPtFile();
   ///
   /// Set the extmain instance.
   ///
