@@ -45,14 +45,14 @@ tapcell
 | `-tap_nwin2_master` | Specify the master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwintie_master` |
 | `-tap_nwin3_master` | Specify the master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwin2_master`. |
 | `-tap_nwouttie_master` | Specify the master cell placed at the top and bottom of macros and the core area according the row orientation. |
-| `-tap_nwout2_master` | Specify the master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwouttie_master` |
+| `-tap_nwout2_master` | Specify the master cell placed at the top and bottom of macros and the core area according the row orientation. This master should be smaller than `tap_nwouttie_master`. |
 | `-tap_nwout3_master` | Specify the master cell placed at the top and bottom of macros and the core area according the row orientation | This master should be smaller than `tap_nwout2_master`. |
 | `-incnrcap_nwin_master` | Specify the master cell placed at the corners of macros, according the row orientation. |
 | `-incnrcap_nwout_master` | Specify the master cell placed at the corners of macros, according the row orientation. |
 | `-cnrcap_nwin_master` | Specify the macro cell placed at the corners the core area according the row orientation. |
 | `-cnrcap_nwout_master` | Specify the macro cell placed at the corners the core area according the row orientation. |
-| `-tap_prefix` | Specify the name prefix for the tapcell instances. The default prefix is `TAP_` |
-| `-endcap_prefix` | Specify the name prefix for the endcaps instances. The default prefix is `PHY_` |
+| `-tap_prefix` | Specify the name prefix for the tapcell instances. The default prefix is `TAP_`. |
+| `-endcap_prefix` | Specify the name prefix for the endcaps instances. The default prefix is `PHY_`. |
 
 The figures below show two examples of tapcell insertion. When only the 
 `-tapcell_master` and `-endcap_master` masters are given, the tapcell placement
@@ -111,24 +111,24 @@ place_endcaps
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-prefix` | Specifies the prefix to use for the boundary cells. Defaults to "PHY_" |
+| `-prefix` | Specifies the prefix to use for the boundary cells. Defaults to "PHY_". |
 | `-corner` | Specify the master for the corner cells on the outer corners. |
 | `-edge_corner` | Specify the master for the corner cells on the inner corners. |
 | `-endcap` | Specify the master used as an endcap. |
-| `-endcap_horizontal` | Specify the list of masters for the top and bottom row endcaps. (overrides `-endcap`) |
-| `-endcap_vertical` | Specify the master for the left and right row endcaps. (overrides `-endcap`) |
-| `-left_top_corner` | Specify the master for the corner cells on the outer top left corner. (overrides `-corner`) |
-| `-right_top_corner` | Specify the master for the corner cells on the outer top right corner. (overrides `-corner`) |
-| `-left_bottom_corner` | Specify the master for the corner cells on the outer bottom left corner. (overrides `-corner`) |
-| `-right_bottom_corner` | Specify the master for the corner cells on the outer bottom right corner. (overrides `-corner`) |
-| `-left_top_edge` | Specify the master for the corner cells on the inner top left corner. (overrides `-edge_corner`) |
-| `-right_top_edge` | Specify the master for the corner cells on the inner top right corner. (overrides `-edge_corner`) |
-| `-left_bottom_edge` | Specify the master for the corner cells on the inner bottom left corner. (overrides `-edge_corner`) |
-| `-right_bottom_edge` | Specify the master for the corner cells on the inner bottom right corner. (overrides `-edge_corner`) |
-| `-left_edge` | Specify the master for the left row endcaps. (overrides `-endcap_vertical`) |
-| `-right_edge` | Specify the master for the right row endcaps. (overrides `-endcap_vertical`) |
-| `-top_edge` | Specify the list of masters for the top row endcaps. (overrides `-endcap_horizontal`) |
-| `-bottom_edge` | Specify the list of masters for the bottom row endcaps. (overrides `-endcap_horizontal`) |
+| `-endcap_horizontal` | Specify the list of masters for the top and bottom row endcaps. (overrides `-endcap`). |
+| `-endcap_vertical` | Specify the master for the left and right row endcaps. (overrides `-endcap`). |
+| `-left_top_corner` | Specify the master for the corner cells on the outer top left corner. (overrides `-corner`). |
+| `-right_top_corner` | Specify the master for the corner cells on the outer top right corner. (overrides `-corner`). |
+| `-left_bottom_corner` | Specify the master for the corner cells on the outer bottom left corner. (overrides `-corner`). |
+| `-right_bottom_corner` | Specify the master for the corner cells on the outer bottom right corner. (overrides `-corner`). |
+| `-left_top_edge` | Specify the master for the corner cells on the inner top left corner. (overrides `-edge_corner`). |
+| `-right_top_edge` | Specify the master for the corner cells on the inner top right corner. (overrides `-edge_corner`). |
+| `-left_bottom_edge` | Specify the master for the corner cells on the inner bottom left corner. (overrides `-edge_corner`). |
+| `-right_bottom_edge` | Specify the master for the corner cells on the inner bottom right corner. (overrides `-edge_corner`). |
+| `-left_edge` | Specify the master for the left row endcaps. (overrides `-endcap_vertical`). |
+| `-right_edge` | Specify the master for the right row endcaps. (overrides `-endcap_vertical`). |
+| `-top_edge` | Specify the list of masters for the top row endcaps. (overrides `-endcap_horizontal`). |
+| `-bottom_edge` | Specify the list of masters for the bottom row endcaps. (overrides `-endcap_horizontal`). |
 
 
 ### Only adding tapcells cells
@@ -159,8 +159,8 @@ tapcell_ripup
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-tap_prefix` | remove tapcells with said prefix |
-| `-endcap_prefix` | remove endcaps with said prefix |
+| `-tap_prefix` | Remove tapcells with said prefix. |
+| `-endcap_prefix` | Remove endcaps with said prefix. |
 
 ## Example scripts
 
