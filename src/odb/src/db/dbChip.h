@@ -42,7 +42,6 @@ class dbTable;
 class _dbProperty;
 class dbPropertyItr;
 class _dbNameCache;
-class _dbTech;
 class _dbBlock;
 class _dbDatabase;
 class dbBlockItr;
