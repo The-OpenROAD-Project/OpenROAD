@@ -271,8 +271,6 @@ class _dbBlock : public _dbObject
   dbPropertyItr* _prop_itr;
   dbBlockSearch* _searchDb;
 
-  float _WNS[2];
-  float _TNS[2];
   unsigned char _num_ext_dbs;
 
   std::list<dbBlockCallBackObj*> _callbacks;
