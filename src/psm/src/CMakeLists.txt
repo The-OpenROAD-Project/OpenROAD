@@ -44,7 +44,6 @@ target_sources(psm
   node.cpp
   gmat.cpp
   ir_solver.cpp
-  get_power.cpp
   pdnsim.cpp
   MakePDNSim.cpp
   heatMap.cpp

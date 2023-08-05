@@ -47,7 +47,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-#include "get_power.h"
+#include "db_sta/dbNetwork.hh"
 #include "gmat.h"
 #include "node.h"
 #include "odb/db.h"
@@ -135,7 +135,7 @@ IRSolver::IRSolver(odb::dbDatabase* db,
     corner_ = sta_->corners()->findCorner(0);
   }
   if (corner_ == nullptr) {
-    logger_->error(utl::PSM, 84, "Unable to proceed without a valid corner");
+    logger_->error(utl::PSM, 86, "Unable to proceed without a valid corner");
   }
 }
 
@@ -1558,11 +1558,36 @@ bool IRSolver::getConnectionTest() const
  *\return vector of pairs of instance name
  and its corresponding power value
 */
-vector<pair<odb::dbInst*, double>> IRSolver::getPower()
+vector<pair<odb::dbInst*, float>> IRSolver::getPower()
 {
   debugPrint(
       logger_, utl::PSM, "IR Solver", 1, "Executing STA for power calculation");
-  return PowerInst().executePowerPerInst(sta_, logger_, corner_);
+
+  vector<pair<odb::dbInst*, float>> power_report;
+  sta::dbNetwork* network = sta_->getDbNetwork();
+  std::unique_ptr<sta::LeafInstanceIterator> inst_iter(
+      network->leafInstanceIterator());
+  sta::PowerResult total_calc;
+  while (inst_iter->hasNext()) {
+    sta::Instance* inst = inst_iter->next();
+    sta::LibertyCell* cell = network->libertyCell(inst);
+    if (cell != nullptr) {
+      sta::PowerResult inst_power = sta_->power(inst, corner_);
+      total_calc.incr(inst_power);
+      power_report.emplace_back(network->staToDb(inst), inst_power.total());
+      debugPrint(logger_,
+                 utl::PSM,
+                 "get power",
+                 2,
+                 "Power of instance {} is {}",
+                 network->name(inst),
+                 inst_power.total());
+    }
+  }
+
+  debugPrint(
+      logger_, utl::PSM, "get power", 1, "Total power: {}", total_calc.total());
+  return power_report;
 }
 
 void IRSolver::writeSpiceFile(const std::string& file) const
