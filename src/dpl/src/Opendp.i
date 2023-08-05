@@ -97,9 +97,10 @@ namespace dpl {
 void
 detailed_placement_cmd(int max_displacment_x,
                        int max_displacment_y,
-                       bool disallow_one_site_gaps){
+                       bool disallow_one_site_gaps,
+                       const char* report_file_name){
   dpl::Opendp *opendp = ord::OpenRoad::openRoad()->getOpendp();
-  opendp->detailedPlacement(max_displacment_x, max_displacment_y, disallow_one_site_gaps);
+  opendp->detailedPlacement(max_displacment_x, max_displacment_y, std::string(report_file_name), disallow_one_site_gaps);
 }
 
 void

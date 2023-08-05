@@ -97,14 +97,16 @@ void Opendp::checkPlacement(bool verbose,
       }
     }
   }
-
-  writeJsonReport(report_file_name,
-                  placed_failures,
-                  in_rows_failures,
-                  overlap_failures,
-                  one_site_gap_failures,
-                  site_align_failures,
-                  region_placement_failures);
+  if (!report_file_name.empty()) {
+    writeJsonReport(report_file_name,
+                    placed_failures,
+                    in_rows_failures,
+                    overlap_failures,
+                    one_site_gap_failures,
+                    site_align_failures,
+                    region_placement_failures,
+                    {});
+  }
   reportFailures(placed_failures, 3, "Placed", verbose);
   reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
   reportFailures(
@@ -164,7 +166,8 @@ void Opendp::writeJsonReport(const string& filename,
                              const vector<Cell*>& overlap_failures,
                              const vector<Cell*>& one_site_gap_failures,
                              const vector<Cell*>& site_align_failures,
-                             const vector<Cell*>& region_placement_failures)
+                             const vector<Cell*>& region_placement_failures,
+                             const vector<Cell*>& placement_failures_)
 {
   std::ofstream json_file(filename);
   if (!json_file.is_open()) {
@@ -218,6 +221,13 @@ void Opendp::writeJsonReport(const string& filename,
       entry.put("description",
                 "Cells that violate the region placement constraints.");
       processViolationsPtree(entry, region_placement_failures);
+      drcArray.push_back(std::make_pair("", entry));
+    }
+    if (!placement_failures_.empty()) {
+      ptree entry;
+      entry.put("name", "Placement_failures");
+      entry.put("description", "Cells that DPL failed to place.");
+      processViolationsPtree(entry, placement_failures_);
       drcArray.push_back(std::make_pair("", entry));
     }
     root.add_child("DRC", drcArray);
