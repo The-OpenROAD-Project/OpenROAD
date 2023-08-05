@@ -159,7 +159,7 @@ if { $repair_timing_use_grt_parasitics } {
   estimate_parasitics -placement
 }
 
-repair_timing
+repair_timing -skip_gate_cloning
 
 # Post timing repair.
 report_worst_slack -min -digits 3

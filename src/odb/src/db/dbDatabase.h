@@ -69,7 +69,11 @@ namespace odb {
 //
 const uint db_schema_major = 0;  // Not used...
 const uint db_schema_initial = 57;
-const uint db_schema_minor = 66;  // Current revision number
+const uint db_schema_minor = 67;  // Current revision number
+
+// Revision where _minExtModelIndex & _maxExtModelIndex removed from
+// _dbBlock.
+const uint db_schema_block_ext_model_index = 67;
 
 // Revision where _tech moved to _dbBlock & _dbLib from _dbDatabase.
 // Added name to dbTech.
@@ -128,7 +132,6 @@ class _dbDatabase : public _dbObject
   dbPropertyItr* _prop_itr;
   int _unique_id;
 
-  char* _file;
   utl::Logger* _logger;
 
   _dbDatabase(_dbDatabase* db);

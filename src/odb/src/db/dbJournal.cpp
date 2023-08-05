@@ -45,10 +45,6 @@
 
 namespace odb {
 
-void invalidateTiming(dbBlock* block);
-void invalidateTiming(dbInst* inst);
-void invalidateTiming(dbNet* net);
-
 dbJournal::dbJournal(dbBlock* block)
     : _block(block),
       _logger(block->getImpl()->getLogger()),
@@ -747,11 +743,6 @@ void dbJournal::redo_updateBlockField()
       _block->writeDb((char*) name.c_str(), allNode);
       break;
     }
-    case _dbBlock::INVALIDATETIMING: {
-#ifdef TMG_SI
-      invalidateTiming(_block);
-#endif
-    }
 
     default:
       break;
@@ -871,12 +862,6 @@ void dbJournal::redo_updateNetField()
       break;
     }
 
-    case _dbNet::INVALIDATETIMING: {
-#ifdef TMG_SI
-      invalidateTiming((dbNet*) net);
-#endif
-    }
-
     default:
       break;
   }
@@ -929,12 +914,6 @@ void dbJournal::redo_updateInstField()
                  inst->_y);
       ((dbInst*) inst)->setOrigin(current_x, current_y);
       break;
-    }
-
-    case _dbInst::INVALIDATETIMING: {
-#ifdef TMG_SI
-      invalidateTiming((dbInst*) inst);
-#endif
     }
 
     default:

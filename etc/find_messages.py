@@ -142,12 +142,22 @@ def main():
         for path, _, files in os.walk(args.dir):
             scan_dir(path, files, msgs)
 
+    # Group numbers by set name
+    set_numbers = defaultdict(set)
+    for key in msgs:
+        set_name, number = key.split()
+        set_numbers[set_name].add(int(number))
+
     has_error = False
     for key in sorted(msgs):
         count = len(msgs[key])
         if count > 1:
-            print('Error: {} used {} times'.format(key, count),
-                  file=sys.stderr)
+            set_name, number = key.split()
+            next_free_integer = int(number) + 1
+            while next_free_integer in set_numbers[set_name]:
+                next_free_integer += 1
+            print('Error: {} used {} times, next free message id is {}'.format(key, count, next_free_integer),
+                file=sys.stderr)
             has_error = True
 
     for key in sorted(msgs):

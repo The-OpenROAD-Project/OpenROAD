@@ -232,6 +232,7 @@ void IOPlacer::randomPlacement(std::vector<int> pin_indices,
                     "Adding to fallback mode.",
                     pin_indices.size());
       addGroupToFallback(pin_indices, false);
+      return;
     } else {
       logger_->error(
           PPL,
@@ -407,6 +408,16 @@ int IOPlacer::placeFallbackPins(bool random)
       int place_slot = getFirstSlotToPlaceGroup(
           first_slot, last_slot, group.first.size(), have_mirrored, io_pin);
 
+      if (place_slot == -1) {
+        logger_->error(
+            PPL,
+            109,
+            "Pin group of size {} does not fit any region in the die "
+            "boundaries. Not enough conmtiguous slots available. The first pin "
+            "of the group is {}.",
+            group.first.size(),
+            io_pin.getName());
+      }
       placeFallbackGroup(group, place_slot);
     }
   }
@@ -664,6 +675,11 @@ double IOPlacer::dbuToMicrons(int64_t dbu)
   return (double) dbu / (getBlock()->getDbUnitsPerMicron());
 }
 
+int IOPlacer::micronsToDbu(double microns)
+{
+  return (int64_t) (microns * getBlock()->getDbUnitsPerMicron());
+}
+
 void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 {
   const int default_min_dist = 2;
@@ -697,6 +713,14 @@ void IOPlacer::findSlots(const std::set<int>& layers, Edge edge)
 
     min_dst_pins
         = (min_dst_pins == 0) ? default_min_dist * tech_min_dst : min_dst_pins;
+
+    if (offset == -1) {
+      offset = num_tracks_offset_ * tech_min_dst;
+      // limit default offset to 1um
+      if (offset > micronsToDbu(1.0)) {
+        offset = micronsToDbu(1.0);
+      }
+    }
 
     int init_tracks
         = vertical ? core_->getInitTracksX()[i] : core_->getInitTracksY()[i];

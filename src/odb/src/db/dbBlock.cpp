@@ -156,11 +156,7 @@ template class dbHashTable<_dbBTerm>;
 _dbBlock::_dbBlock(_dbDatabase* db)
 {
   _flags._valid_bbox = 0;
-  _flags._buffer_altered = 1;
-  _flags._active_pins = 0;
-  _flags._skip_hier_stream = 0;
-  _flags._mme = 0;
-  _flags._spare_bits_27 = 0;
+  _flags._spare_bits = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
   _hier_delimeter = 0;
@@ -173,8 +169,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _maxCapNodeId = 0;
   _maxRSegId = 0;
   _maxCCSegId = 0;
-  _minExtModelIndex = -1;
-  _maxExtModelIndex = -1;
 
   _bterm_tbl = new dbTable<_dbBTerm>(
       db, this, (GetObjTbl_t) &_dbBlock::getObjectTable, dbBTermObj);
@@ -376,11 +370,8 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _num_ext_dbs = 1;
   _searchDb = nullptr;
   _extmi = nullptr;
-  _ptFile = nullptr;
   _journal = nullptr;
   _journal_pending = nullptr;
-
-  _bterm_pins = nullptr;
 }
 
 _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
@@ -418,8 +409,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
       _maxCapNodeId(block._maxCapNodeId),
       _maxRSegId(block._maxRSegId),
       _maxCCSegId(block._maxCCSegId),
-      _minExtModelIndex(block._minExtModelIndex),
-      _maxExtModelIndex(block._maxExtModelIndex),
       _children(block._children),
       _currentCcAdjOrder(block._currentCcAdjOrder)
 {
@@ -573,8 +562,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
   _prop_itr = new dbPropertyItr(_prop_tbl);
 
   _num_ext_dbs = 0;
-  _ptFile = nullptr;
-  _bterm_pins = nullptr;
 
   // ??? Initialize search-db on copy?
   _searchDb = nullptr;
@@ -893,13 +880,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._parent;
   stream << block._next_block;
   stream << block._gcell_grid;
-  if (block._flags._skip_hier_stream) {
-    stream << 0;
-    stream << 0;
-  } else {
-    stream << block._parent_block;
-    stream << block._parent_inst;
-  }
+  stream << block._parent_block;
+  stream << block._parent_inst;
   stream << block._top_module;
   stream << block._net_hash;
   stream << block._inst_hash;
@@ -915,15 +897,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._maxCapNodeId;
   stream << block._maxRSegId;
   stream << block._maxCCSegId;
-  stream << block._minExtModelIndex;
-  stream << block._maxExtModelIndex;
-  if (block._flags._skip_hier_stream) {
-    block.getImpl()->getLogger()->info(
-        utl::ODB, 4, "Hierarchical block information is lost");
-    stream << 0;
-  } else
-    stream << block._children;
-
+  stream << block._children;
   stream << block._currentCcAdjOrder;
   stream << *block._bterm_tbl;
   stream << *block._iterm_tbl;
@@ -1024,8 +998,12 @@ dbIStream& operator>>(dbIStream& stream, _dbBlock& block)
   stream >> block._maxCapNodeId;
   stream >> block._maxRSegId;
   stream >> block._maxCCSegId;
-  stream >> block._minExtModelIndex;
-  stream >> block._maxExtModelIndex;
+  if (!db->isSchema(db_schema_block_ext_model_index)) {
+    int ignore_minExtModelIndex;
+    int ignore_maxExtModelIndex;
+    stream >> ignore_minExtModelIndex;
+    stream >> ignore_maxExtModelIndex;
+  }
   stream >> block._children;
   stream >> block._currentCcAdjOrder;
   stream >> *block._bterm_tbl;
@@ -1224,12 +1202,6 @@ bool _dbBlock::operator==(const _dbBlock& rhs) const
   if (_maxCCSegId != rhs._maxCCSegId)
     return false;
 
-  if (_minExtModelIndex != rhs._minExtModelIndex)
-    return false;
-
-  if (_maxExtModelIndex != rhs._maxExtModelIndex)
-    return false;
-
   if (_children != rhs._children)
     return false;
 
@@ -1399,8 +1371,6 @@ void _dbBlock::differences(dbDiff& diff,
   DIFF_FIELD(_maxCapNodeId);
   DIFF_FIELD(_maxRSegId);
   DIFF_FIELD(_maxCCSegId);
-  DIFF_FIELD(_minExtModelIndex);
-  DIFF_FIELD(_maxExtModelIndex);
   DIFF_VECTOR(_children);
   DIFF_FIELD(_currentCcAdjOrder);
   DIFF_TABLE(_bterm_tbl);
@@ -1494,8 +1464,6 @@ void _dbBlock::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_maxCapNodeId);
   DIFF_OUT_FIELD(_maxRSegId);
   DIFF_OUT_FIELD(_maxCCSegId);
-  DIFF_OUT_FIELD(_minExtModelIndex);
-  DIFF_OUT_FIELD(_maxExtModelIndex);
   DIFF_OUT_VECTOR(_children);
   DIFF_OUT_FIELD(_currentCcAdjOrder);
   DIFF_OUT_TABLE(_bterm_tbl);
@@ -2154,18 +2122,6 @@ Rect dbBlock::getCoreArea()
   return getDieArea();
 }
 
-FILE* dbBlock::getPtFile()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_ptFile;
-}
-
-void dbBlock::setPtFile(FILE* ptf)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_ptFile = ptf;
-}
-
 void dbBlock::setExtmi(void* ext)
 {
   _dbBlock* block = (_dbBlock*) this;
@@ -2783,21 +2739,6 @@ dbSet<dbBlock>::iterator dbBlock::destroy(dbSet<dbBlock>::iterator& itr)
   dbSet<dbBlock>::iterator next = ++itr;
   destroy(bt);
   return next;
-}
-void dbBlock::set_skip_hier_stream(bool value)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_flags._skip_hier_stream = value ? 1 : 0;
-}
-bool dbBlock::isBufferAltered()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_flags._buffer_altered == 1;
-}
-void dbBlock::setBufferAltered(bool value)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_flags._buffer_altered = value ? 1 : 0;
 }
 
 dbBlockSearch* dbBlock::getSearchDb()
