@@ -50,22 +50,22 @@ rtl_macro_placer
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-max_num_macro`, `min_num_macro` | Maximum/minimum number of macros in a cluster. (default 0, 0, integer). |
-| `-max_num_inst`, `min_num_inst` | Maximum/minimum number of standard cells in a cluster. (default 0, 0, integer). |
+| `-max_num_macro`, `-min_num_macro` | Maximum/minimum number of macros in a cluster. (default 0, 0, integer). |
+| `-max_num_inst`, `-min_num_inst` | Maximum/minimum number of standard cells in a cluster. (default 0, 0, integer). |
 | `-tolerance` | A factor of $(1 + tol)$ is multiplied to the max, $(1 - tol)$ to the min number of macros/std cells in a cluster respectively. This is to improve robustness of hierarchical clustering. (default 0.1, float). |
 | `-max_num_level` | Maximum depth of physical hierarchical tree. (default 2). |
 | `-coarsening_ratio` | The larger the coarsening_ratio, the faster the convergence process. (default 10.0 ,float). | 
 | `-num_bundled_ios` | Specifies number of bundled pins for left, right, top, bottom boundary. (default 3, float). |
-| `large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. (default 50, integer). |
-| `signature_net_threshold` | Minimum number of connections between two clusters for them to be identified as connected. (default 50, integer). |
+| `-large_net_threshold` | Ignore nets with many connections during clustering, such as global nets. (default 50, integer). |
+| `-signature_net_threshold` | Minimum number of connections between two clusters for them to be identified as connected. (default 50, integer). |
 | `-halo_width` | Horizontal/vertical halo around macros (microns). (default 0.0, float). |
-| `-fence_lx`, `fence_ly`, `fence_ux`, `fence_uy` | Defines the global fence bounding box coordinates. (defaults to core area coordinates). |
-| `target_util` | Specifies the target utilisation of MixedCluster, and has higher priority than target_dead_space (default 0.25, float). |
-| `target_dead_space` | Specifies the target deadspace percentage, which influences the utilisation of StandardCellCluster(default 0.05, float). |
-| `min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a StandardCellCluster from $[a, \frac{1}{a}]$ (default 0.33, float). |
-| `snap_layer` | Snap macro origins to this routing layer track. (default 4, integer). | 
-| `bus_planning_flag` | Flag to enable bus planning, recommendation is to turn on bus planning for SKY130, off for NanGate45/ASAP7.  (default false, bool). |
-| `report_directory` | Save reports to this directory. |
+| `-fence_lx`, `-fence_ly`, `-fence_ux`, `-fence_uy` | Defines the global fence bounding box coordinates. (defaults to core area coordinates). |
+| `-target_util` | Specifies the target utilisation of MixedCluster, and has higher priority than target_dead_space (default 0.25, float). |
+| `-target_dead_space` | Specifies the target deadspace percentage, which influences the utilisation of StandardCellCluster(default 0.05, float). |
+| `-min_ar` | Specifies the minimum aspect ratio $a$, or the ratio of its width to height of a StandardCellCluster from $[a, \frac{1}{a}]$ (default 0.33, float). |
+| `-snap_layer` | Snap macro origins to this routing layer track. (default 4, integer). | 
+| `-bus_planning_flag` | Flag to enable bus planning, recommendation is to turn on bus planning for SKY130, off for NanGate45/ASAP7.  (default false, bool). |
+| `-report_directory` | Save reports to this directory. |
 
 
 #### Simulated Annealing Weight parameters
@@ -74,14 +74,14 @@ Do note that while action probabilities are normalized to 1.0, the weights are n
 
 | Switch Name | Description | 
 | ----- | ----- |
-| `area_weight` | Weight for the area of current floorplan. (default 0.1, float). |
-| `outline_weight` | Weight for violating the fixed outline constraint, meaning that all clusters should be placed within the shape of its parent cluster. (default 100.0, float). |
-| `wirelength_weight` | Weight for half-perimeter wirelength. (default 100.0, float). |
-| `guidance_weight` | Weight for guidance cost, or clusters being placed near specified regions if users provide such constraints. (default 10.0, float). |
-| `fence_weight` | Weight for fence cost, or how far the macro is from zero fence violation. (default 10.0, float). |
-| `boundary_weight` | Weight for boundary, or how far the hard macro clusters are from boundaries. Note that mixed macro clusters are not pushed, thus not considered in this cost. (default 50.0, float). |
-| `notch_weight` | Weight for notch, or the existence of dead space that cannot be used for placement & routing. Note that this cost applies only to hard macro clusters. (default 10.0, float). |
-| `macro_blockage_weight` | Weight for macro blockage, or the overlapping instances of macro. (default 10.0, float). |
+| `-area_weight` | Weight for the area of current floorplan. (default 0.1, float). |
+| `-outline_weight` | Weight for violating the fixed outline constraint, meaning that all clusters should be placed within the shape of its parent cluster. (default 100.0, float). |
+| `-wirelength_weight` | Weight for half-perimeter wirelength. (default 100.0, float). |
+| `-guidance_weight` | Weight for guidance cost, or clusters being placed near specified regions if users provide such constraints. (default 10.0, float). |
+| `-fence_weight` | Weight for fence cost, or how far the macro is from zero fence violation. (default 10.0, float). |
+| `-boundary_weight` | Weight for boundary, or how far the hard macro clusters are from boundaries. Note that mixed macro clusters are not pushed, thus not considered in this cost. (default 50.0, float). |
+| `-notch_weight` | Weight for notch, or the existence of dead space that cannot be used for placement & routing. Note that this cost applies only to hard macro clusters. (default 10.0, float). |
+| `-macro_blockage_weight` | Weight for macro blockage, or the overlapping instances of macro. (default 10.0, float). |
 
 ## Example scripts
 
