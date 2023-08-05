@@ -379,8 +379,6 @@ _dbBlock::_dbBlock(_dbDatabase* db)
   _ptFile = nullptr;
   _journal = nullptr;
   _journal_pending = nullptr;
-
-  _bterm_pins = nullptr;
 }
 
 _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
@@ -574,7 +572,6 @@ _dbBlock::_dbBlock(_dbDatabase* db, const _dbBlock& block)
 
   _num_ext_dbs = 0;
   _ptFile = nullptr;
-  _bterm_pins = nullptr;
 
   // ??? Initialize search-db on copy?
   _searchDb = nullptr;

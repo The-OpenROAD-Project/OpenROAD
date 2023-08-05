@@ -282,9 +282,6 @@ class _dbBlock : public _dbObject
   dbJournal* _journal;
   dbJournal* _journal_pending;
 
-  // This is a temporary vector to fix bterm pins pre dbBPin...
-  std::vector<_dbBTermPin>* _bterm_pins;
-
   _dbBlock(_dbDatabase* db);
   _dbBlock(_dbDatabase* db, const _dbBlock& block);
   ~_dbBlock();
