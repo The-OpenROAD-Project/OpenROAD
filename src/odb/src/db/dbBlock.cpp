@@ -156,10 +156,6 @@ template class dbHashTable<_dbBTerm>;
 _dbBlock::_dbBlock(_dbDatabase* db)
 {
   _flags._valid_bbox = 0;
-  _flags._buffer_altered = 1;
-  _flags._active_pins = 0;
-  _flags._skip_hier_stream = 0;
-  _flags._mme = 0;
   _flags._spare_bits_27 = 0;
   _def_units = 100;
   _dbu_per_micron = 1000;
@@ -884,13 +880,8 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._parent;
   stream << block._next_block;
   stream << block._gcell_grid;
-  if (block._flags._skip_hier_stream) {
-    stream << 0;
-    stream << 0;
-  } else {
-    stream << block._parent_block;
-    stream << block._parent_inst;
-  }
+  stream << block._parent_block;
+  stream << block._parent_inst;
   stream << block._top_module;
   stream << block._net_hash;
   stream << block._inst_hash;
@@ -906,13 +897,7 @@ dbOStream& operator<<(dbOStream& stream, const _dbBlock& block)
   stream << block._maxCapNodeId;
   stream << block._maxRSegId;
   stream << block._maxCCSegId;
-  if (block._flags._skip_hier_stream) {
-    block.getImpl()->getLogger()->info(
-        utl::ODB, 4, "Hierarchical block information is lost");
-    stream << 0;
-  } else
-    stream << block._children;
-
+  stream << block._children;
   stream << block._currentCcAdjOrder;
   stream << *block._bterm_tbl;
   stream << *block._iterm_tbl;
@@ -2754,21 +2739,6 @@ dbSet<dbBlock>::iterator dbBlock::destroy(dbSet<dbBlock>::iterator& itr)
   dbSet<dbBlock>::iterator next = ++itr;
   destroy(bt);
   return next;
-}
-void dbBlock::set_skip_hier_stream(bool value)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_flags._skip_hier_stream = value ? 1 : 0;
-}
-bool dbBlock::isBufferAltered()
-{
-  _dbBlock* block = (_dbBlock*) this;
-  return block->_flags._buffer_altered == 1;
-}
-void dbBlock::setBufferAltered(bool value)
-{
-  _dbBlock* block = (_dbBlock*) this;
-  block->_flags._buffer_altered = value ? 1 : 0;
 }
 
 dbBlockSearch* dbBlock::getSearchDb()

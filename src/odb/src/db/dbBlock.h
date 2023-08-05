@@ -145,11 +145,7 @@ struct _dbBTermPin
 struct _dbBlockFlags
 {
   uint _valid_bbox : 1;
-  uint _buffer_altered : 1;
-  uint _active_pins : 1;
-  uint _mme : 1;
-  uint _skip_hier_stream : 1;
-  uint _spare_bits_27 : 27;
+  uint _spare_bits_27 : 31;
 };
 
 class _dbBlock : public _dbObject
