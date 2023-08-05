@@ -95,7 +95,16 @@ class UndoBufferToInverter: public Undo {
   Instance *inv_inverter2_;
 };
 
-class UndoPinSwap {
+class UndoBuffer : public Undo {
+ public:
+  // swap pin element
+  UndoBuffer(Instance* inst);
+  int UndoOperation(Logger *logger,  Network *network, dbSta *sta);
+ private:
+  Instance *buffer_inst_;
+};
+
+class UndoPinSwap : public Undo {
  public:
   // swap pin element
   UndoPinSwap(Instance* inst, LibertyPort* swap_port1,
@@ -108,7 +117,7 @@ class UndoPinSwap {
   LibertyPort *swap_port2_;
 };
 
-class UndoResize {
+class UndoResize : public Undo {
   public:
   // resize element
   UndoResize(Instance *inst, LibertyCell *cell);
@@ -144,7 +153,7 @@ public:
   Logger *logger_;
   Network *network_;
   dbSta *sta_;
-  std::stack<Undo> journal_stack_;
+  std::stack<std::unique_ptr<Undo>> journal_stack_;
 };
 
 } // namespace rsz

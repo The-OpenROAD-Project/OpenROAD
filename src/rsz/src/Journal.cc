@@ -80,6 +80,21 @@ using sta::PathExpanded;
 using sta::Unit;
 using sta::VertexOutEdgeIterator;
 
+
+//============================================================================
+// Buffer insertion
+UndoBuffer::UndoBuffer(Instance* inst)
+{
+  // Original cell used for resize and the instance
+  buffer_inst_ = inst;
+}
+
+int UndoBuffer::UndoOperation(Logger *logger,  Network *network, dbSta *sta)
+{
+  // Resize the instance back to the original cell
+  // resized_inst_->setMaster(original_cell_);
+  return 0;
+}
 //============================================================================
 // swap pin element
 UndoPinSwap::UndoPinSwap(Instance* inst, LibertyPort* swap_port1, LibertyPort* swap_port2)
@@ -199,39 +214,35 @@ void Journal::journalSwapPins(Instance* inst, LibertyPort* port1,
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal swap pins {} ({}->{})",
              network_->pathName(inst), port1->name(), port2->name());
-  //TODO fIXME journal_stack_.emplace(UndoPinSwap(inst, port1, port2));
+  std::unique_ptr<Undo> element(new UndoPinSwap(inst, port1, port2));
+  journal_stack_.emplace(std::move(element));
 }
 
 void Journal::journalInstReplaceCellBefore(Instance* inst)
 {
-  /*
   LibertyCell *lib_cell = network_->libertyCell(inst);
   debugPrint(logger_, RSZ, "journal", 1, "journal replace {} ({})",
              network_->pathName(inst),
              lib_cell->name());
-  // Do not clobber an existing checkpoint cell.
-  if (!resized_inst_map_.hasKey(inst))
-    resized_inst_map_[inst] = lib_cell;
-    */
+   std::unique_ptr<Undo> element(new UndoResize(inst, lib_cell));
+   journal_stack_.emplace(std::move(element));
 }
 
 void Journal::journalMakeBuffer(Instance* buffer)
 {
-  /*
   debugPrint(logger_, RSZ, "journal", 1, "journal make_buffer {}",
              network_->pathName(buffer));
-  inserted_buffers_.push_back(buffer);
-  inserted_buffer_set_.insert(buffer);
-   */
+  std::unique_ptr<Undo> element(new UndoBuffer(buffer));
+  journal_stack_.emplace(std::move(element));
 }
 
 void Journal::journalRestore(int& resize_count, int& inserted_buffer_count,
                              int& cloned_gate_count)
 {
   while (!journal_stack_.empty()) {
-    auto &element = journal_stack_.top();
+    std::unique_ptr<Undo> &element = journal_stack_.top();
     journal_stack_.pop();
-    element.UndoOperation(logger_, network_, sta_);
+    element->UndoOperation(logger_, network_, sta_);
   }
 }
 
