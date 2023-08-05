@@ -1,6 +1,8 @@
-# RePlAce
+# Global Placement
 
-RePlAce: Advancing Solution Quality and Routability Validation in Global Placement
+OpenROAD performs global placement using the RePlAce algorithm, from the
+paper "Advancing Solution Quality and Routability Validation in
+Global Placement".
 
 Features:
 
@@ -70,24 +72,24 @@ global_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-timing_driven` | Enable timing-driven mode |
-| `-routability_driven` | Enable routability-driven mode |
-| `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0` | 
+| `-timing_driven` | Enable timing-driven mode. |
+| `-routability_driven` | Enable routability-driven mode. |
+| `-skip_initial_place` | Skip the initial placement (Biconjugate gradient stabilized, or BiCGSTAB solving) before Nesterov placement. Initial placement improves HPWL by ~5% on large designs. Equivalent to `-initial_place_max_iter 0`. | 
 | `-incremental` | Enable the incremental global placement. Users would need to tune other parameters (e.g., `init_density_penalty`) with pre-placed solutions. | 
-| `-bin_grid_count` | set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`. |
-| `-density` | set target density. Default value is 0.70. Allowed values are `[0-1, float]`. |
-| `-init_density_penalty` | set initial density penalty. Default value is 8e-5. Allowed values are `[1e-6 - 1e6, float]`. |
-| `-init_wirelength_coef` | set initial wirelength coefficient. Default value is 0.25. Allowed values are `[unlimited, float]`. |
-| `-min_phi_coef` | set `pcof_min` ($\mu_k$ Lower Bound). Default value is 0.95. Allowed values are `[0.95-1.05, float]`. |
-| `-max_phi_coef` | set `pcof_max` ($\mu_k$ Upper Bound). Default value is 1.05. Allowed values are `[1.00-1.20, float]`. |
-| `-overflow` | set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`. |
-| `-initial_place_max_iter` | set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`. |
-| `-initial_place_max_fanout` | set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. Default value is 200. Allowed values are `[1-MAX_INT, int]`. |
-| `-timing_driven_net_reweight_overflow` | set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`. |
+| `-bin_grid_count` | Set bin grid's counts. Default value is defined by internal heuristic. Allowed values are  `[64,128,256,512,..., int]`. |
+| `-density` | Set target density. Default value is 0.70. Allowed values are `[0-1, float]`. |
+| `-init_density_penalty` | Set initial density penalty. Default value is 8e-5. Allowed values are `[1e-6 - 1e6, float]`. |
+| `-init_wirelength_coef` | Set initial wirelength coefficient. Default value is 0.25. Allowed values are `[unlimited, float]`. |
+| `-min_phi_coef` | Set `pcof_min` ($\mu_k$ Lower Bound). Default value is 0.95. Allowed values are `[0.95-1.05, float]`. |
+| `-max_phi_coef` | Set `pcof_max` ($\mu_k$ Upper Bound). Default value is 1.05. Allowed values are `[1.00-1.20, float]`. |
+| `-overflow` | Set target overflow for termination condition. Default value is 0.1. Allowed values are `[0-1, float]`. |
+| `-initial_place_max_iter` | Set maximum iterations in initial place. Default value is 20. Allowed values are `[0-MAX_INT, int]`. |
+| `-initial_place_max_fanout` | Set net escape condition in initial place when $fanout \geq initial\_place\_max\_fanout$. Default value is 200. Allowed values are `[1-MAX_INT, int]`. |
+| `-timing_driven_net_reweight_overflow` | Set overflow threshold for timing-driven net reweighting. Allowed values are `tcl list of [0-100, int]`. |
 | `-timing_driven_net_weight_max` | Set the multiplier for the most timing critical nets. Default value is 1.9. |
 | `-timing_driven_nets_percentage` | Set the percentage of nets that are reweighted in timing-driven mode. Default value is 10. Allowed values are `[0-100, float]`. |
-| `-verbose_level` | set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`. |
-| `-force_cpu` | Force to use the CPU solver even if the GPU is available | 
+| `-verbose_level` | Set verbose level for RePlAce. Default value is 1. Allowed values are `[0-5, int]`. |
+| `-force_cpu` | Force to use the CPU solver even if the GPU is available. | 
 
 
 ### Useful developer functions
