@@ -304,29 +304,29 @@ evaluate_part_design_solution
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-num_parts` | number of partitions (default 2) |
-| `-balance_constraint` | allowed imbalance between blocks (default 1.0) |
-| `-timing_aware_flag` | enable timing-driven mode (default true) |
-| `-top_n` | extract the top n critical timing paths (default 1000) |
-| `-fence_flag ` | consider fences in the partitioning (default false) |
-| `-fence_lx ` | fence lower left x (default 0.0) |
-| `-fence_ly ` | fence lower left y (default 0.0) |
-| `-fence_ux ` | fence upper right x (default 0.0) |
-| `-fence_uy ` | fence upper right y (default 0.0) | 
-| `-fixed_file` | path to fixed vertices constraint file |
-| `-community_file` | path to `community` attributes file to guide the partitioning process |
-| `-group_file` | path to `stay together` attributes file |
-| `-hypergraph_file` | path to hypergraph file |
-| `-hypergraph_int_weight_file` | hMETIS format integer weights |
-| `-solution_file` | path to solution file |
-| `-net_timing_factor` | hyperedge timing weight factor (default 1.0)|
-| `-path_timing_factor` | cutting critical timing path weight factor (default 1.0)|
-| `-path_snaking_factor` | snaking a critical path weight factor (default 1.0)|
-| `-timing_exp_factor` | timing exponential factor for normalized slack (default 1.0)|
-| `-extra_delay` | extra delay introduced by a cut (default 1e-9)|
-| `-guardband_flag` | enable timing guardband option (default false)|
-| `-e_wt_factors` | hyperedge weight factors |
-| `-v_wt_factors` | vertex weight factors |
+| `-num_parts` | Number of partitions (default 2) |
+| `-balance_constraint` | Allowed imbalance between blocks (default 1.0) |
+| `-timing_aware_flag` | Enable timing-driven mode (default true) |
+| `-top_n` | Extract the top n critical timing paths (default 1000) |
+| `-fence_flag ` | Consider fences in the partitioning (default false) |
+| `-fence_lx ` | Fence lower left x (default 0.0) |
+| `-fence_ly ` | Fence lower left y (default 0.0) |
+| `-fence_ux ` | Fence upper right x (default 0.0) |
+| `-fence_uy ` | Fence upper right y (default 0.0) | 
+| `-fixed_file` | Path to fixed vertices constraint file |
+| `-community_file` | Path to `community` attributes file to guide the partitioning process |
+| `-group_file` | Path to `stay together` attributes file |
+| `-hypergraph_file` | Path to hypergraph file |
+| `-hypergraph_int_weight_file` | Path to `hMETIS` format integer weight file |
+| `-solution_file` | Path to solution file |
+| `-net_timing_factor` | Hyperedge timing weight factor (default 1.0)|
+| `-path_timing_factor` | Cutting critical timing path weight factor (default 1.0)|
+| `-path_snaking_factor` | Snaking a critical path weight factor (default 1.0)|
+| `-timing_exp_factor` | Timing exponential factor for normalized slack (default 1.0)|
+| `-extra_delay` | Extra delay introduced by a cut (default 1e-9)|
+| `-guardband_flag` | Enable timing guardband option (default false)|
+| `-e_wt_factors` | Hyperedge weight factors |
+| `-v_wt_factors` | Vertex weight factors |
 
 ### Write Partition to Verilog
 
