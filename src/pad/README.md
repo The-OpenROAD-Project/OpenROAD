@@ -1,6 +1,8 @@
-# ICeWall
+# Chip-level Connections
 
-Place an IO ring around the boundary of the a chip and connect with either wirebond pads or a bump array.
+In OpenROAD, chip-level connections are performed with the ICeWall algorithm.
+In this utility, either place an IO ring around the boundary of the a chip 
+and connect with either wirebond pads or a bump array.
 
 ## Commands
 
@@ -13,7 +15,8 @@ Place an IO ring around the boundary of the a chip and connect with either wireb
 
 In the case where the bond pads are integrated into the padcell, the IO terminals need to be placed.
 To place a terminals on the padring
-```
+
+```tcl
 place_io_terminals inst_pins
 ```
 
@@ -21,7 +24,7 @@ place_io_terminals inst_pins
 
 | Switch Name | Description |
 | ----- | ----- |
-| `inst_pins` | Instance pins to place the terminals on |
+| `inst_pins` | Instance pins to place the terminals on. |
 
 #### Examples
 ```
@@ -47,12 +50,12 @@ make_io_bump_array
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-bump` | Name of the bump master |
-| `-origin` | Origin of the array |
-| `-rows` | Number of rows to create |
-| `-columns` | Number of columns to create |
-| `-pitch` | Pitch of the array |
-| `-prefix` | Name prefix for the bump array (default: BUMP_) |
+| `-bump` | Name of the bump master. |
+| `-origin` | Origin of the array. |
+| `-rows` | Number of rows to create. |
+| `-columns` | Number of columns to create. |
+| `-pitch` | Pitch of the array. |
+| `-prefix` | Name prefix for the bump array (default: `BUMP_`). |
 
 Example usage:
 
@@ -72,7 +75,7 @@ remove_io_bump_array -bump master
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-bump` | Name of the bump master |
+| `-bump` | Name of the bump master. |
 
 Example usage:
 
@@ -92,7 +95,7 @@ remove_io_bump instance_name
 
 | Switch Name | Description |
 | ----- | ----- |
-| `instance_name` | Name of the bump |
+| `instance_name` | Name of the bump. |
 
 ### Assigning a Net to a Bump
 
@@ -110,10 +113,10 @@ assign_io_bump
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-net` | Net to connect to |
-| `-terminal` | Instance terminal to route to |
-| `-dont_route` | Flag to indicate that this bump should not be routed, only perform assignment |
-| `instance` | Name of the bump |
+| `-net` | Net to connect to. |
+| `-terminal` | Instance terminal to route to. |
+| `-dont_route` | Flag to indicate that this bump should not be routed, only perform assignment. |
+| `instance` | Name of the bump. |
 
 Example usage:
 
@@ -211,11 +214,11 @@ place_pad
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-row` | Name of the row to place the pad into, examples include: IO_NORTH, IO_SOUTH, IO_WEST, IO_EAST, IO_NORTH_0, IO_NORTH_1 |
+| `-row` | Name of the row to place the pad into, examples include: `IO_NORTH`, `IO_SOUTH`, `IO_WEST`, `IO_EAST`, `IO_NORTH_0`, `IO_NORTH_1`. |
 | `-location` | Offset from the bottom left chip edge to place the pad at. |
 | `-mirror` | Specifies if the pad should be mirrored. |
 | `-master` | Name of the instance master if the instance needs to be created. |
-| `name` | Name of the instance |
+| `name` | Name of the instance. |
 
 Example usage:
 
@@ -241,7 +244,7 @@ place_io_fill
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-row` | Name of the row to place the pad into, examples include: IO_NORTH, IO_SOUTH, IO_WEST, IO_EAST, IO_NORTH_0, IO_NORTH_1 |
+| `-row` | Name of the row to place the pad into, examples include: `IO_NORTH`, `IO_SOUTH`, `IO_WEST`, `IO_EAST`, `IO_NORTH_0`, `IO_NORTH_1`. |
 | `-permit_overlaps` | Names of the masters for the IO filler cells that allow for overlapping. |
 | `masters` | Names of the masters for the IO filler cells. |
 
@@ -278,9 +281,9 @@ place_bondpad
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-bond` | Name of the bondpad master |
-| `-offset` | Offset to place the bondpad at with respect to the io instance |
-| `-rotation` | Rotation of the bondpad |
+| `-bond` | Name of the bondpad master. |
+| `-offset` | Offset to place the bondpad at with respect to the io instance. |
+| `-rotation` | Rotation of the bondpad. |
 | `io_instances` | Names of the instances to add bond pads to. |
 
 Example usage:
@@ -337,14 +340,14 @@ rdl_route
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-layer` | Layer to route on |
-| `-bump_via` | Via to use to to connect the bump to the routing layer |
-| `-pad_via` | Via to use to to connect the pad cell to the routing layer |
-| `-width` | Width of the routing (defaults to minimum width) |
-| `-spacing` | Spacing of the routing (defaults to minimum spacing) |
-| `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes (defaults to 2.0) |
-| `-allow45` | Specifies that 45 degree routing is permitted |
-| `nets` | Nets to route |
+| `-layer` | Layer to route on. |
+| `-bump_via` | Via to use to to connect the bump to the routing layer. |
+| `-pad_via` | Via to use to to connect the pad cell to the routing layer. |
+| `-width` | Width of the routing (defaults to minimum width). |
+| `-spacing` | Spacing of the routing (defaults to minimum spacing). |
+| `-turn_penalty` | Scaling factor to apply to discurage turning to allow for straighter routes (defaults to 2.0). |
+| `-allow45` | Specifies that 45 degree routing is permitted. |
+| `nets` | Nets to route. |
 
 ### Useful developer functions
 
