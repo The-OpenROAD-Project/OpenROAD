@@ -132,16 +132,6 @@ class dbBlockCallBackObj;
 class dbGuideItr;
 class dbNetTrackItr;
 
-struct _dbBTermPin
-{
-  _dbBTerm* _bterm;
-  int _x;
-  int _y;
-  uint _pin;
-  dbPlacementStatus::Value _status;
-  dbOrientType::Value _orient;
-};
-
 struct _dbBlockFlags
 {
   uint _valid_bbox : 1;
