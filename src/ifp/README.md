@@ -33,12 +33,12 @@ initialize_floorplan
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-utilization` | percentage utilization (0-100) |
-| `-aspect_ratio` | ratio $\frac{height}{width}$, default 1.0 |
-| `-core_space` | space around core, default 0.0 microns. should be either one value for all margins or 4 values, one for each margin. |
-| `-die_area` | die area coordinates in microns (lower left and upper right x-/y- coordinates) |
-| `-core_area` | core area coordinates in microns (lower left and upper right x-/y- coordinates) |
-| `-sites` | list of sites to make rows for |
+| `-utilization` | Percentage utilization (0-100). |
+| `-aspect_ratio` | Ratio $\frac{height}{width}$ (default 1.0, float). |
+| `-core_space` | Space around core, default 0.0 microns. should be either one value for all margins or 4 values, one for each margin. |
+| `-die_area` | Die area coordinates in microns (lower left and upper right x-/y- coordinates). |
+| `-core_area` | Core area coordinates in microns (lower left and upper right x-/y- coordinates). |
+| `-sites` | Tcl list of sites to make rows for (e.g. `{SITEXX, SITEYY}`) |
 
 The die area and core area used to write ROWs can be specified explicitly
 with the `-die_area` and `-core_area` arguments. Alternatively, the die and
@@ -76,9 +76,9 @@ make_tracks
 
 | Switch Name | Description |
 | ----- | ----- |
-| `layer` | select layer name to make tracks for (default all layers). |
-| `-x_pitch`, `-y_pitch` | if set, overrides the LEF technology x-/y- pitch. |
-| `-x_offset`, `-y_offset` | if set, overrides the LEF technology x-/y- offset. |
+| `layer` | Select layer name to make tracks for (default all layers). |
+| `-x_pitch`, `-y_pitch` | If set, overrides the LEF technology x-/y- pitch. |
+| `-x_offset`, `-y_offset` | If set, overrides the LEF technology x-/y- offset. |
 
 ### Inserting tieoff cells
 
@@ -94,8 +94,8 @@ insert_tiecells
 
 | Switch Name | Description |
 | ----- | ----- |
-| `tie_pin` | indicates the master and port to use to tie off nets. For example, `LOGIC0_X1/Z` for the Nangate45 library, where `LOGIC0_X1` is the master and `Z` is the output port on the master. |
-| `-prefix` | used to control the prefix of the new tiecell names. This will default to `TIEOFF_`. |
+| `tie_pin` | Indicates the master and port to use to tie off nets. For example, `LOGIC0_X1/Z` for the Nangate45 library, where `LOGIC0_X1` is the master and `Z` is the output port on the master. |
+| `-prefix` | Used to control the prefix of the new tiecell names. This will default to `TIEOFF_`. |
 
 ### Useful developer functions
 
