@@ -32,11 +32,11 @@ macro_placement
 
 | Switch Name | Description |
 | ----- | ----- |
-| `-halo` | horizontal/vertical halo around macros (microns) |
-| `-channel` | horizontal/vertical channel width between macros (microns) |
-| `-fence_region` | restrict macro placements to a region (microns). Defaults to the core area. |
-| `-snap_layer_number` | snap macro origins to this routing layer track |
-| `-style` | placement style, to choose either `corner_max_wl` or `corner_min_wl` (default `corner_max_wl`) |
+| `-halo` | Horizontal/vertical halo around macros (microns). |
+| `-channel` | Horizontal/vertical channel width between macros (microns). |
+| `-fence_region` | Restrict macro placements to a region (microns). Defaults to the core area. |
+| `-snap_layer_number` | Snap macro origins to this routing layer track. |
+| `-style` | Placement style, to choose either `corner_max_wl` or `corner_min_wl` (default `corner_max_wl`). |
 
 For placement style, `corner_max_wl` means that choosing the partitions that maximise the wirelength 
 of connections between the macros to force them to the corners. Vice versa for `corner_min_wl`.
