@@ -46,11 +46,11 @@ restructure
 | Switch Name | Description |
 | ----- | ----- |
 | `-liberty_file` | Liberty file with description of cells used in design. This is passed to ABC. |
-| `-target` | either `area` or `delay`. In area mode, the focus is area reduction and timing may degrade. In delay mode, delay is likely reduced but area may increase. |
-| `-slack_threshold` | specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. |
-| `-depth_threshold` | specifies the path depth above which a timing path would be considered for restructuring. |
-| `tielo_pin` | specifies the tie cell pin which can drive constant zero. Format is lib/cell/pin |
-| `tiehi_pin` | specifies the tie cell pin which can drive constant one. Format is lib/cell/pin |
+| `-target` | Either `area` or `delay`. In area mode, the focus is area reduction and timing may degrade. In delay mode, delay is likely reduced but area may increase. |
+| `-slack_threshold` | Specifies a (setup) timing slack value below which timing paths need to be analyzed for restructuring. |
+| `-depth_threshold` | Specifies the path depth above which a timing path would be considered for restructuring. |
+| `tielo_pin` | Specifies the tie cell pin which can drive constant zero. Format is `lib/cell/pin`. |
+| `tiehi_pin` | Specifies the tie cell pin which can drive constant one. Format is `lib/cell/pin`. |
 
 ## Example scripts
 
