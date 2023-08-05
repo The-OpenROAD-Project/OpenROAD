@@ -106,6 +106,7 @@ void Opendp::checkPlacement(bool verbose,
                     site_align_failures,
                     region_placement_failures,
                     {});
+    // write report
   }
   reportFailures(placed_failures, 3, "Placed", verbose);
   reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
