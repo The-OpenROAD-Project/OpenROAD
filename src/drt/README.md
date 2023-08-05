@@ -61,17 +61,17 @@ detailed_route
 | `-output_drc` | Path to output drc report file (e.g. `.output.drc.rpt`). |
 | `-output_cmap` | Path to output congestion map file (e.g. `.output.cmap`). |
 | `-output_guide_coverage` | Path to output guide coverage file (e.g. `_sample_coverage.csv`). |
-| `-drc_report_iter_step` | Report drc on each iteration which is a multiple of this step (default 0). |
+| `-drc_report_iter_step` | Report drc on each iteration which is a multiple of this step (default 0, integer). |
 | `-db_process_node` | Specify the process node. |
-| `-disable_via_gen` | Option to diable via generation with bottom and top routing layer. | 
+| `-disable_via_gen` | Option to diable via generation with bottom and top routing layer. (default not set) | 
 | `-droute_end_iter` | Number of detailed routing iterations (must be a positive integer <= 64). |
 | `-via_in_pin_bottom_layer` | Via-in pin bottom layer name. |
 | `-via_in_pin_top_layer` | Via-in pin top layer name. |
-| `-or_seed` | Random seed for the order of nets to reroute (default -1). | 
-| `-or_k` | Number of swaps is given by $k * sizeof(rerouteNets)$ (default 0). |
+| `-or_seed` | Random seed for the order of nets to reroute (default -1, integer). | 
+| `-or_k` | Number of swaps is given by $k * sizeof(rerouteNets)$ (default 0, integer). |
 | `-bottom_routing_layer` | Bottommost routing layer name. |
 | `-top_routing_layer` | Topmost routing layer name. |
-| `-verbose` | Set verbose if value is greater than 0. |
+| `-verbose` | Sets verbose mode if the value is greater than 1, else non-verbose mode (must be integer, or error will be triggered.) |
 | `-distributed` | Enable distributed mode with Kubernetes and Google Cloud, [guide](./doc/Distributed.md). |
 | `-remote_host` | The host IP. |
 | `-remote_port` | The value of the port to access from. |
@@ -114,12 +114,12 @@ detailed_route_debug
 | `-net` | Enable debug for net name. |
 | `-pin` | Enable debug for pin name. |
 | `-worker` | Debugs routes that pass through the point `{x, y}`. |
-| `-iter` | Specifies the number of debug iterations. |
+| `-iter` | Specifies the number of debug iterations. (default 0, integer) |
 | `-pa_markers` | Enable pin access markers. |
-| `-dump_dr` | Dump detailed routing filename. |
-| `-dump_dir` | Dump detailed routing directory. |
-| `-pa_edge` | Visibility of pin access edges. |
-| `-pa_commit` | Visibility of pin access commits. |
+| `-dump_dr` | Filename for detailed routing dump. |
+| `-dump_dir` | Directory for detailed routing dump. |
+| `-pa_edge` | Enable visibility of pin access edges. |
+| `-pa_commit` | Enable visibility of pin access commits. |
 | `-write_net_tracks` | Enable writing of net track assigments. |
 
 ### Check Pin access 
@@ -146,7 +146,7 @@ pin_access
 | `-bottom_routing_layer` | Bottommost routing layer. |
 | `-top_routing_layer` | Topmost routing layer. |
 | `-min_access_points` | Minimum number of access points per pin. |
-| `-verbose` | Set verbose if the value is greater than 0. |
+| `-verbose` | Sets verbose mode if the value is greater than 1, else non-verbose mode (must be integer, or error will be triggered.) |
 | `-distributed` | Enable distributed pin access algorithm. |
 | `-remote_host` | The host IP. |
 | `-remote_port` | The value of the port to access from. |
