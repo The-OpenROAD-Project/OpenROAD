@@ -78,8 +78,7 @@ class _dbInst : public _dbObject
   enum Field  // dbJournalField name
   {
     FLAGS,
-    ORIGIN,
-    INVALIDATETIMING
+    ORIGIN
   };
 
   _dbInstFlags _flags;

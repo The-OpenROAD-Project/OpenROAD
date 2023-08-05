@@ -154,8 +154,7 @@ class _dbBlock : public _dbObject
   enum Field  // dbJournal field names
   {
     CORNERCOUNT,
-    WRITEDB,
-    INVALIDATETIMING,
+    WRITEDB
   };
 
   // PERSISTANT-MEMBERS
