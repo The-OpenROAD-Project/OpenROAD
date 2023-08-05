@@ -150,9 +150,7 @@ class IRSolver
   //! Function to create the nodes of vias in the G matrix
   void createGmatViaNodes();
   //! Function to create the nodes of wires in the G matrix
-  void createGmatWireNodes(const std::vector<odb::Rect>& macros);
-  //! Function to find and store the macro boundaries
-  std::vector<odb::Rect> getMacroBoundaries();
+  void createGmatWireNodes();
 
   NodeEnclosure getViaEnclosure(int layer, odb::dbSet<odb::dbBox> via_boxes);
 
