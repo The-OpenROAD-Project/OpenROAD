@@ -50,6 +50,7 @@ class dbMTerm;
 class dbSite;
 class dbTechLayer;
 class Rect;
+class Point;
 }  // namespace odb
 
 namespace sta {
@@ -62,6 +63,7 @@ namespace ifp {
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbSite;
+using odb::Point;
 using sta::dbNetwork;
 using utl::Logger;
 
@@ -111,6 +113,13 @@ class InitFloorplan
                int core_uy,
                int factor,
                int row_index);
+  int makeHybridRows(const std::vector<dbSite*>& hybrid_sites,
+                     odb::Point core_l,
+                     odb::Point core_u,
+                     int row_index);
+  void generateContiguousHybridRows(
+      const std::vector<dbSite*>& hybrid_sites,
+      std::vector<std::vector<dbSite*>>& output_patterns_list);
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
   int snapToMfgGrid(int coord) const;
