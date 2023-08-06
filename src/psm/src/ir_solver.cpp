@@ -411,6 +411,14 @@ void IRSolver::readSourceData(bool require_voltage)
     supply_voltage_src_ = 0;
   }
 
+  if (require_voltage) {
+    logger_->info(utl::PSM,
+                  22,
+                  "Using {:.3f}V for {}",
+                  supply_voltage_src_.value(),
+                  net_->getName());
+  }
+
   const bool added_from_pads = createSourcesFromPads();
   const bool added_from_bterms = createSourcesFromBTerms();
   if (added_from_pads || added_from_bterms) {
