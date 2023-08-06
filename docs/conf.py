@@ -160,3 +160,7 @@ def setup(app):
     # for populating OR Messages page.
     command = "python getMessages.py"
     _ = os.popen(command).read()
+
+    # for populating AddTool.patch file
+    command = "python getPatch.py"
+    _ = os.popen(command).read()
