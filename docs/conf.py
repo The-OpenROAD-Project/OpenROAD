@@ -160,3 +160,7 @@ def setup(app):
     # for populating OR Messages page.
     command = "python getMessages.py"
     _ = os.popen(command).read()
+
+    # for compiling doxygen
+    command = "cd .. ; doxygen")
+    _ = os.open(command).read()

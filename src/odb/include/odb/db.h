@@ -161,9 +161,9 @@ class dbExtControl;
 
 class ZContext;
 
-///
-/// dbProperty - Property base class.
-///
+/*!
+ dbProperty - Property base class.
+*/
 class dbProperty : public dbObject
 {
  public:
@@ -176,26 +176,20 @@ class dbProperty : public dbObject
     DOUBLE_PROP = 3
   };
 
-  /// Get the type of this property.
-  Type getType();
+  Type getType();   //!< Get the type of this property.
 
-  /// Get thetname of this property.
-  std::string getName();
+  std::string getName();   //!< Get the name of this property.
 
-  /// Get the owner of this property
-  dbObject* getPropOwner();
+  dbObject* getPropOwner();    //!< Get the owner of this property
 
-  /// Find the named property. Returns nullptr if the property does not exist.
-  static dbProperty* find(dbObject* object, const char* name);
+  static dbProperty* find(dbObject* object, const char* name);   //!< Find the named property. Returns nullptr if the property does not exist.
 
-  /// Find the named property of the specified type. Returns nullptr if the
-  /// property does not exist.
-  static dbProperty* find(dbObject* object, const char* name, Type type);
 
-  /// Destroy a specific property
-  static void destroy(dbProperty* prop);
-  /// Destroy all properties of the specific object
-  static void destroyProperties(dbObject* obj);
+  static dbProperty* find(dbObject* object, const char* name, Type type);   //!< Find the named property of the specified type. Returns nullptr if the property does not exist.
+
+
+  static void destroy(dbProperty* prop);   //!<  Destroy a specific property
+  static void destroyProperties(dbObject* obj);   //!< Destroy all properties of the specific object
   static dbSet<dbProperty> getProperties(dbObject* object);
   static dbSet<dbProperty>::iterator destroy(dbSet<dbProperty>::iterator itr);
   // 5.8
