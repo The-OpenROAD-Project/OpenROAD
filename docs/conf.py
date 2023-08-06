@@ -166,6 +166,6 @@ def setup(app):
 
     # for compiling doxygen
     if not os.path.exists('./build/html'): 
-        os.makedirs('build/html', exist_ok = True)
+            os.makedirs('./build/html', exist_ok = True)
     command = "cd .. ; doxygen")
     _ = os.open(command).read()
