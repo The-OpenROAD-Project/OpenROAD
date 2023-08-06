@@ -207,7 +207,7 @@ class Opendp
   // max_displacment is in sites. use zero for defaults.
   void detailedPlacement(int max_displacement_x,
                          int max_displacement_y,
-                         std::string report_file_name = "",
+                         std::string report_file_name = std::string(""),
                          bool disallow_one_site_gaps = false);
   void reportLegalizationStats() const;
   void setPaddingGlobal(int left, int right);
