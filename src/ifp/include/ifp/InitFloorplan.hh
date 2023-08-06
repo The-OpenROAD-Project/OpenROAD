@@ -63,7 +63,6 @@ namespace ifp {
 using odb::dbBlock;
 using odb::dbDatabase;
 using odb::dbSite;
-using odb::Point;
 using sta::dbNetwork;
 using utl::Logger;
 
@@ -114,8 +113,8 @@ class InitFloorplan
                int factor,
                int row_index);
   int makeHybridRows(const std::vector<dbSite*>& hybrid_sites,
-                     odb::Point core_l,
-                     odb::Point core_u,
+                     const odb::Point& core_l,
+                     const odb::Point& core_u,
                      int row_index);
   void generateContiguousHybridRows(
       const std::vector<dbSite*>& hybrid_sites,

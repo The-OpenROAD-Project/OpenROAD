@@ -95,7 +95,6 @@ using odb::dbTechLayerDir;
 using odb::dbTechLayerType;
 using odb::dbTrackGrid;
 using odb::dbTransform;
-using odb::Point;
 using odb::Rect;
 
 using upf::eval_upf;
@@ -492,8 +491,8 @@ int InitFloorplan::makeRows(dbSite* site,
 }
 
 int InitFloorplan::makeHybridRows(const std::vector<dbSite*>& hybrid_sites,
-                                  odb::Point core_l,
-                                  odb::Point core_u,
+                                  const odb::Point& core_l,
+                                  const odb::Point& core_u,
                                   int row_index)
 {
   // This method create alternating rows patterns with given sites.
@@ -577,6 +576,7 @@ int InitFloorplan::makeHybridRows(const std::vector<dbSite*>& hybrid_sites,
       ++row;
     }
   }
+  return row;
 }
 
 void InitFloorplan::generateContiguousHybridRows(
