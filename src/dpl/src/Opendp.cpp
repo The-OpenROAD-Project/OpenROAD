@@ -135,7 +135,7 @@ void Opendp::setDebug(std::unique_ptr<DplObserver>& observer)
 
 void Opendp::detailedPlacement(int max_displacement_x,
                                int max_displacement_y,
-                               const std::string& report_file_name,
+                               std::string report_file_name,
                                bool disallow_one_site_gaps)
 {
   importDb();
