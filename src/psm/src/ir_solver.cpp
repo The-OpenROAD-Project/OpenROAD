@@ -1690,6 +1690,10 @@ int IRSolver::getMinimumResolution() const
 
 bool IRSolver::build(const std::string& error_file, bool connectivity_only)
 {
+  if (em_flag_) {
+    logger_->info(utl::PSM, 4, "EM calculation is enabled.");
+  }
+
   connection_ = false;
 
   readSourceData(!connectivity_only);

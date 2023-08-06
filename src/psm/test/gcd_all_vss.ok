@@ -19,6 +19,7 @@
 [INFO PSM-0064] Number of voltage sources = 1.
 [INFO PSM-0040] All PDN stripes on net VSS are connected.
 [INFO PSM-0001] Reading voltage source file: Vsrc_gcd_vss.loc.
+[INFO PSM-0004] EM calculation is enabled.
 [INFO PSM-0015] Reading location of VDD and VSS sources from Vsrc_gcd_vss.loc.
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [INFO PSM-0031] Number of PDN nodes on net VSS = 507.
