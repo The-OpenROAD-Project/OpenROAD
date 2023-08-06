@@ -196,7 +196,14 @@ The patch file "AddTool.patch" illustrates how to add a tool to
 OpenROAD. Use the following commands to add a sample tool:
 
 ``` shell
-patch -p < docs/misc/AddTool.patch
+# first, populate the latest patch file using these commands
+cd docs && python getPatch.py
+cd ../ && patch -p1 < docs/misc/AddTool.patch
+
+# next, create the additional files of the tool using this command
+patch -p1 < docs/misc/AddToolFiles.patch
+
+# finally, create the regression tests as follows
 cd src/tool/test
 ln -s ../../../test/regression.tcl regression.tcl
 ```

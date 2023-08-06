@@ -38,9 +38,15 @@ swap_prefix('../src/OpenRoad.cc', 'dft::initDft(this);',
             'dft::initDft(this);\n  initTool(this);')
 
 # create a patch file
-_ = os.popen('git diff > misc/AddTool.patch').read()
+_ = os.popen('git add ../include/ord/OpenRoad.hh').read()
+_ = os.popen('git add ../src/CMakeLists.txt').read()
+_ = os.popen('git add ../src/OpenRoad.cc').read()
+_ = os.popen('git diff --cached > misc/AddTool.patch').read()
 
 # restore all changes except patch
+_ = os.popen('git reset ../include/ord/OpenRoad.hh').read()
+_ = os.popen('git reset ../src/CMakeLists.txt').read()
+_ = os.popen('git reset ../src/OpenRoad.cc').read()
 _ = os.popen('git restore ../include/ord/OpenRoad.hh').read()
 _ = os.popen('git restore ../src/CMakeLists.txt').read()
 _ = os.popen('git restore ../src/OpenRoad.cc').read()
