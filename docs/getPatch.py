@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 
 def swap_prefix(file, old, new):
     with open(file, 'r') as f:
@@ -35,3 +36,12 @@ swap_prefix('../src/OpenRoad.cc', 'dft::deleteDft(dft_);',
 
 swap_prefix('../src/OpenRoad.cc', 'dft::initDft(this);',
             'dft::initDft(this);\n  initTool(this);')
+
+# create a patch file
+_ = os.popen('git diff > misc/AddTool.patch').read()
+
+# restore all changes except patch
+_ = os.popen('git restore ../include/ord/OpenRoad.hh').read()
+_ = os.popen('git restore ../src/CMakeLists.txt').read()
+_ = os.popen('git restore ../src/OpenRoad.cc').read()
+
