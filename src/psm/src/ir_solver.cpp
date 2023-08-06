@@ -320,7 +320,6 @@ void IRSolver::writeEMFile(const std::string& file) const
 {
   DokMatrix* Gmat_dok = Gmat_->getGMatDOK();
   int resistance_number = 0;
-  double sum_cur = 0;
   ofstream em_report;
   em_report.open(file);
   if (!em_report) {
