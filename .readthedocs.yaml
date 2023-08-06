@@ -6,6 +6,8 @@ version: 2
 
 # Set the OS, Python version and other tools you might need
 build:
+  apt_packages:
+  - graphviz
   os: ubuntu-22.04
   tools:
     python: "3.7"
