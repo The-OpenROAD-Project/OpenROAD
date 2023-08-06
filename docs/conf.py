@@ -168,4 +168,4 @@ def setup(app):
     if not os.path.exists('./build/html'): 
             os.makedirs('./build/html', exist_ok = True)
     command = "cd .. ; doxygen"
-    _ = os.open(command).read()
+    _ = os.popen(command).read()
