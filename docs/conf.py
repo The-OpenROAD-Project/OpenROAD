@@ -82,6 +82,9 @@ exclude_patterns = [
     'main/docs',
 ]
 
+# for doxygen
+html_extra_path = ['../build/html']
+
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
