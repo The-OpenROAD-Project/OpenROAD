@@ -11,6 +11,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import subprocess
 
 # -- Project information -----------------------------------------------------
 
@@ -33,7 +34,8 @@ extensions = [
     'sphinx_external_toc',
     'sphinx_copybutton',
     'myst_parser',
-    'sphinxcontrib.mermaid'
+    'sphinxcontrib.mermaid',
+    'breathe'
 ]
 
 myst_enable_extensions = [
@@ -137,6 +139,23 @@ html_theme_options = {
    ],
 }
 
+# for breathe/doxygen compilation
+breathe_projects = {
+        "odb": "../_build/doxygen/odb/xml"
+        }
+breathe_default_project = "odb"
+if not os.environ.get("SKIP_DOXYGEN", None) == "True":
+    for prjname, prjdir in breathe_projects.items():
+        print("Generating doxygen files for {}...".format(prjname))
+        os.makedirs(prjdir, exist_ok=True)
+        cmd = "cd ../_doxygen && doxygen {}.dox".format(prjname)
+        subprocess.call(cmd, shell=True)
+else:
+        for prjname, prjdir in breathe_projects.items():
+            assert os.path.exists(prjdir) == True, "Regenerate doxygen XML for {}".format(prjname)
+
+
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -162,10 +181,4 @@ def setup(app):
 
     # for populating OR Messages page.
     command = "python getMessages.py"
-    _ = os.popen(command).read()
-
-    # for compiling doxygen
-    if not os.path.exists('./build/html'): 
-            os.makedirs('./build/html', exist_ok = True)
-    command = "cd .. ; doxygen"
     _ = os.popen(command).read()

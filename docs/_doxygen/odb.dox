@@ -1,0 +1,13 @@
+PROJECT_NAME           = "The OpenROAD Project - OpenDB"
+OUTPUT_DIRECTORY       = ../_build/doxygen/vpr
+FULL_PATH_NAMES        = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+WARN_IF_UNDOCUMENTED   = NO
+INPUT                  = ../../src/odb
+RECURSIVE              = YES
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
