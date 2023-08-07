@@ -105,7 +105,7 @@ class RenderThread : public QThread
                          const std::vector<odb::dbInst*>& insts);
   void drawITermLabels(QPainter* painter,
                        const std::vector<odb::dbInst*>& insts);
-  void drawTextInBBox(const QColor& text_color,
+  bool drawTextInBBox(const QColor& text_color,
                       const QFont& text_font,
                       odb::Rect bbox,
                       QString name,

@@ -888,13 +888,30 @@ void LayoutViewer::selectAt(odb::Rect region, std::vector<Selected>& selections)
                                    instanceSizeLimit());
 
   for (auto& [box, inst] : insts) {
-    if (options_->isInstanceVisible(inst)
-        && options_->isInstanceSelectable(inst)) {
-      selections.push_back(gui_->makeSelected(inst));
-      for (auto iterm : inst->getITerms()) {
-        Rect iterm_bbox = iterm->getBBox();
-        if (region.intersects(iterm_bbox)) {
-          selections.push_back(gui_->makeSelected(iterm));
+    if (options_->isInstanceVisible(inst)) {
+      if (options_->isInstanceSelectable(inst)) {
+        selections.push_back(gui_->makeSelected(inst));
+      }
+      if (options_->areInstancePinsVisible()
+          && options_->areInstancePinsSelectable()) {
+        odb::dbTransform xform;
+        inst->getTransform(xform);
+        for (auto* iterm : inst->getITerms()) {
+          for (auto* mpin : iterm->getMTerm()->getMPins()) {
+            for (auto* geom : mpin->getGeometry()) {
+              const auto layer = geom->getTechLayer();
+              if (layer == nullptr) {
+                continue;
+              }
+              if (options_->isVisible(layer) && options_->isSelectable(layer)) {
+                Rect pin_rect = geom->getBox();
+                xform.apply(pin_rect);
+                if (region.intersects(pin_rect)) {
+                  selections.push_back(gui_->makeSelected(iterm));
+                }
+              }
+            }
+          }
         }
       }
     }

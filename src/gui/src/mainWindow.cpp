@@ -1582,6 +1582,7 @@ void MainWindow::openDesign()
 
   try {
     if (file.endsWith(".odb", Qt::CaseInsensitive)) {
+      open_->setEnabled(false);
       ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
       logger_->warn(utl::GUI,
                     77,
@@ -1592,7 +1593,8 @@ void MainWindow::openDesign()
       logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
     }
   } catch (const std::exception&) {
-    // do nothing
+    // restore option
+    open_->setEnabled(true);
   }
 }
 
