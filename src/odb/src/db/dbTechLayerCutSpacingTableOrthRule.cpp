@@ -48,16 +48,12 @@ template class dbTable<_dbTechLayerCutSpacingTableOrthRule>;
 bool _dbTechLayerCutSpacingTableOrthRule::operator==(
     const _dbTechLayerCutSpacingTableOrthRule& rhs) const
 {
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerCutSpacingTableOrthRule::operator<(
     const _dbTechLayerCutSpacingTableOrthRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -67,8 +63,6 @@ void _dbTechLayerCutSpacingTableOrthRule::differences(
     const _dbTechLayerCutSpacingTableOrthRule& rhs) const
 {
   DIFF_BEGIN
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -77,31 +71,23 @@ void _dbTechLayerCutSpacingTableOrthRule::out(dbDiff& diff,
                                               const char* field) const {
     DIFF_OUT_BEGIN
 
-        // User Code Begin Out
-        // User Code End Out
         DIFF_END}
 
 _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
     _dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerCutSpacingTableOrthRule::_dbTechLayerCutSpacingTableOrthRule(
     _dbDatabase* db,
     const _dbTechLayerCutSpacingTableOrthRule& r)
 {
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream,
                       _dbTechLayerCutSpacingTableOrthRule& obj)
 {
   stream >> obj.spacing_tbl_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -109,19 +95,12 @@ dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCutSpacingTableOrthRule& obj)
 {
   stream << obj.spacing_tbl_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerCutSpacingTableOrthRule::~_dbTechLayerCutSpacingTableOrthRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

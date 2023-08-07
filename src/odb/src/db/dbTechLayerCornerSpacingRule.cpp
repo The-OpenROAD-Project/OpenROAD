@@ -39,8 +39,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerCornerSpacingRule>;
 
@@ -100,16 +98,12 @@ bool _dbTechLayerCornerSpacingRule::operator==(
   if (except_notch_length_ != rhs.except_notch_length_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerCornerSpacingRule::operator<(
     const _dbTechLayerCornerSpacingRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -138,8 +132,6 @@ void _dbTechLayerCornerSpacingRule::differences(
   DIFF_FIELD(edge_length_);
   DIFF_FIELD(min_length_);
   DIFF_FIELD(except_notch_length_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -168,8 +160,6 @@ void _dbTechLayerCornerSpacingRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(min_length_);
   DIFF_OUT_FIELD(except_notch_length_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -183,8 +173,6 @@ _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(_dbDatabase* db)
   edge_length_ = 0;
   min_length_ = 0;
   except_notch_length_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerCornerSpacingRule::_dbTechLayerCornerSpacingRule(
@@ -254,12 +242,7 @@ dbOStream& operator<<(dbOStream& stream,
 
 _dbTechLayerCornerSpacingRule::~_dbTechLayerCornerSpacingRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

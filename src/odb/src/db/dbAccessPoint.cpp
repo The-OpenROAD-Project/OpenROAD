@@ -73,8 +73,6 @@ bool _dbAccessPoint::operator==(const _dbAccessPoint& rhs) const
   if (bpin_ != rhs.bpin_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
@@ -93,8 +91,6 @@ bool _dbAccessPoint::operator<(const _dbAccessPoint& rhs) const
   if (bpin_ >= rhs.bpin_)
     return false;
 
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -109,8 +105,6 @@ void _dbAccessPoint::differences(dbDiff& diff,
   DIFF_FIELD(master_);
   DIFF_FIELD(mpin_);
   DIFF_FIELD(bpin_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -124,8 +118,6 @@ void _dbAccessPoint::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(mpin_);
   DIFF_OUT_FIELD(bpin_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -196,8 +188,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj)
 
 _dbAccessPoint::~_dbAccessPoint()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
 
 // User Code Begin PrivateMethods

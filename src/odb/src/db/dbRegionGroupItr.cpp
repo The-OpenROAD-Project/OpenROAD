@@ -118,7 +118,5 @@ dbObject* dbRegionGroupItr::getObject(uint id, ...)
 {
   return _group_tbl->getPtr(id);
 }
-// User Code Begin Methods
-// User Code End Methods
 }  // namespace odb
    // Generator Code End Cpp

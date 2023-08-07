@@ -39,8 +39,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerEolKeepOutRule>;
 
@@ -71,16 +69,12 @@ bool _dbTechLayerEolKeepOutRule::operator==(
   if (class_name_ != rhs.class_name_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerEolKeepOutRule::operator<(
     const _dbTechLayerEolKeepOutRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -100,8 +94,6 @@ void _dbTechLayerEolKeepOutRule::differences(
   DIFF_FIELD(within_low_);
   DIFF_FIELD(within_high_);
   DIFF_FIELD(class_name_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -121,8 +113,6 @@ void _dbTechLayerEolKeepOutRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(within_high_);
   DIFF_OUT_FIELD(class_name_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -137,8 +127,6 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(_dbDatabase* db)
   within_low_ = 0;
   within_high_ = 0;
   class_name_ = "";
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
@@ -156,8 +144,6 @@ _dbTechLayerEolKeepOutRule::_dbTechLayerEolKeepOutRule(
   within_low_ = r.within_low_;
   within_high_ = r.within_high_;
   class_name_ = r.class_name_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
@@ -171,8 +157,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolKeepOutRule& obj)
   stream >> obj.within_low_;
   stream >> obj.within_high_;
   stream >> obj.class_name_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -187,19 +171,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerEolKeepOutRule& obj)
   stream << obj.within_low_;
   stream << obj.within_high_;
   stream << obj.class_name_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerEolKeepOutRule::~_dbTechLayerEolKeepOutRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

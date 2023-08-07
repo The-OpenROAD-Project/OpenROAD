@@ -244,16 +244,12 @@ bool _dbTechLayerSpacingEolRule::operator==(
   if (notch_length_ != rhs.notch_length_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerSpacingEolRule::operator<(
     const _dbTechLayerSpacingEolRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -337,8 +333,6 @@ void _dbTechLayerSpacingEolRule::differences(
   DIFF_FIELD(min_adj_length1_);
   DIFF_FIELD(min_adj_length2_);
   DIFF_FIELD(notch_length_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -422,8 +416,6 @@ void _dbTechLayerSpacingEolRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(min_adj_length2_);
   DIFF_OUT_FIELD(notch_length_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -580,8 +572,6 @@ _dbTechLayerSpacingEolRule::_dbTechLayerSpacingEolRule(
   min_adj_length1_ = r.min_adj_length1_;
   min_adj_length2_ = r.min_adj_length2_;
   notch_length_ = r.notch_length_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
@@ -621,8 +611,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingEolRule& obj)
   stream >> obj.min_adj_length1_;
   stream >> obj.min_adj_length2_;
   stream >> obj.notch_length_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -663,19 +651,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerSpacingEolRule& obj)
   stream << obj.min_adj_length1_;
   stream << obj.min_adj_length2_;
   stream << obj.notch_length_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerSpacingEolRule::~_dbTechLayerSpacingEolRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

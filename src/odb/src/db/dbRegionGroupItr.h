@@ -35,17 +35,12 @@
 
 #include "dbIterator.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 class _dbGroup;
 
 template <class T>
 class dbTable;
-
-// User Code Begin classes
-// User Code End classes
 
 class dbRegionGroupItr : public dbIterator
 {
@@ -61,12 +56,9 @@ class dbRegionGroupItr : public dbIterator
   uint end(dbObject* parent) override;
   uint next(uint id, ...) override;
   dbObject* getObject(uint id, ...) override;
-  // User Code Begin Methods
-  // User Code End Methods
+
  private:
   dbTable<_dbGroup>* _group_tbl;
-  // User Code Begin Fields
-  // User Code End Fields
 };
 
 }  // namespace odb
