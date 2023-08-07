@@ -1,5 +1,5 @@
 PROJECT_NAME           = "The OpenROAD Project - OpenDB"
-OUTPUT_DIRECTORY       = ../_build/doxygen/vpr
+OUTPUT_DIRECTORY       = ../build/doxygen/vpr
 FULL_PATH_NAMES        = NO
 OPTIMIZE_OUTPUT_FOR_C  = YES
 EXTRACT_ALL            = YES

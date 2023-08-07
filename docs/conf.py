@@ -140,7 +140,7 @@ html_theme_options = {
 
 # for breathe/doxygen compilation
 breathe_projects = {
-        "odb": "../_build/doxygen/odb/xml"
+        "odb": "../build/doxygen/odb/xml"
         }
 breathe_default_project = "odb"
 if not os.environ.get("SKIP_DOXYGEN", None) == "True":
