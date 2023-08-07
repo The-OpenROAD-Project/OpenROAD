@@ -558,7 +558,8 @@ int select_previous()
 
 int select(const std::string& type,
            const std::string& name_filter = "",
-           const std::string& attribute_filter = "",
+           const std::string& attribute = "",
+           const std::string& value = "",
            bool case_sensitive = true,
            int highlight_group = -1)
 {
@@ -566,7 +567,7 @@ int select(const std::string& type,
     return 0;
   }
   auto gui = gui::Gui::get();
-  return gui->select(type, name_filter, attribute_filter, case_sensitive, highlight_group);
+  return gui->select(type, name_filter, attribute, value, case_sensitive, highlight_group);
 }
 
 void selection_animate(int repeat = 0)
