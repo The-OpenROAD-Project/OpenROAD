@@ -934,42 +934,42 @@ static std::vector<FlexDR::SearchRepairArgs> strategy()
     {7, -2,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 20
     {7, -3,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 21
     {7, -4,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 22
-    {7, -5,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 23
+    {7, -5,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 2, false}, // 23
     {7, -6,  8,  4 * shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 24
     {5, -2,  8,      shapeCost,      MARKERCOST,  10 * shapeCost, 0.950, 1, false}, // 25
     {7,  0,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 26
     {7, -1,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 27
     {7, -2,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 28
     {7, -3,  8,  8 * shapeCost,  2 * MARKERCOST,  10 * shapeCost, 0.950, 0, false}, // 29
-    {7, -4,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 30
+    {7, -4,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 2, false}, // 30
     {7, -5,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 31
     {7, -6,  8,  8 * shapeCost,  2 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 32
     {3, -1,  8,      shapeCost,      MARKERCOST,  50 * shapeCost, 0.950, 1, false}, // 33
     {7,  0,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 34
     {7, -1,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 35
     {7, -2,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 36
-    {7, -3,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 37
+    {7, -3,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 2, false}, // 37
     {7, -4,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 38
     {7, -5,  8, 16 * shapeCost,  4 * MARKERCOST,  50 * shapeCost, 0.950, 0, false}, // 39
     {7, -6,  8, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 40
     {3, -2,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, 1, false}, // 41
     {7,  0, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 42
     {7, -1, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 43
-    {7, -2, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 44
+    {7, -2, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 2, false}, // 44
     {7, -3, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 45
     {7, -4, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 46
     {7, -5, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 47
     {7, -6, 16, 16 * shapeCost,  4 * MARKERCOST, 100 * shapeCost, 0.990, 0, false}, // 48
     {3, -0,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.990, 1, false}, // 49
     {7,  0, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 50
-    {7, -1, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 51
+    {7, -1, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 2, false}, // 51
     {7, -2, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 52
     {7, -3, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 53
     {7, -4, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 54
     {7, -5, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 55
     {7, -6, 32, 32 * shapeCost,  8 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 56
     {3, -1,  8,      shapeCost,      MARKERCOST, 100 * shapeCost, 0.999, 1, false}, // 57
-    {7,  0, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 58
+    {7,  0, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 2, false}, // 58
     {7, -1, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 59
     {7, -2, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 60
     {7, -3, 64, 64 * shapeCost, 16 * MARKERCOST, 100 * shapeCost, 0.999, 0, false}, // 61
