@@ -630,7 +630,7 @@ void io::Parser::setNets(odb::dbBlock* block)
     string shape = "";
     bool hasBeginPoint = false;
     bool hasEndPoint = false;
-    bool non_orthogonal_conn = false;
+    bool orthogonal_conn = false;
     bool beginInVia = false;
     frCoord beginX = -1;
     frCoord beginY = -1;
@@ -656,10 +656,10 @@ void io::Parser::setNets(odb::dbBlock* block)
       odb::dbWireDecoder::OpCode pathId = decoder.next();
       while (pathId != odb::dbWireDecoder::END_DECODE) {
         // for each path start
-        // when previous connection was a non-orthogonal connection, use the
-        // last end point as the new begin point. it avoids missing segments
-        // between the non-orthogonal connections.
-        if (non_orthogonal_conn) {
+        // when previous connection has a different direction of the current
+        // connection, use the last end point as the new begin point. it avoids
+        // missing segments between the connections with different directions.
+        if (orthogonal_conn) {
           hasBeginPoint = true;
           beginX = endX;
           beginY = endY;
@@ -673,7 +673,7 @@ void io::Parser::setNets(odb::dbBlock* block)
         shape = "";
         hasEndPoint = false;
         beginInVia = false;
-        non_orthogonal_conn = false;
+        orthogonal_conn = false;
         beginExt = -1;
         endX = -1;
         endY = -1;
@@ -759,13 +759,12 @@ void io::Parser::setNets(odb::dbBlock* block)
             decoder.getPoint(x, y);
             bool curr_conn_vertical = beginX == endX;
             bool next_conn_vertical = endX == x;
-            non_orthogonal_conn = curr_conn_vertical != next_conn_vertical;
+            orthogonal_conn = curr_conn_vertical != next_conn_vertical;
           }
 
           if ((int) pathId <= 3 || pathId == odb::dbWireDecoder::TECH_VIA
               || pathId == odb::dbWireDecoder::VIA
-              || pathId == odb::dbWireDecoder::END_DECODE
-              || non_orthogonal_conn) {
+              || pathId == odb::dbWireDecoder::END_DECODE || orthogonal_conn) {
             if (hasEndPoint) {
               nextX = endX;
               nextY = endY;
