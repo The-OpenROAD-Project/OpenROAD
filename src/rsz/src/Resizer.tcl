@@ -389,7 +389,7 @@ proc repair_tie_fanout { args } {
 
 # -max_passes is for developer debugging so intentionally not documented
 # in define_cmd_args
-sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power]\
+sta::define_cmd_args "repair_timing" {[-setup] [-hold] [-recover_power percent_of_paths_with_slack]\
                                         [-setup_margin setup_margin]\
                                         [-hold_margin hold_margin]\
                                         [-allow_setup_violations]\
@@ -404,12 +404,12 @@ proc repair_timing { args } {
   sta::parse_key_args "repair_timing" args \
     keys {-setup_margin -hold_margin -slack_margin \
             -libraries -max_utilization -max_buffer_percent \
-            -repair_tns -max_passes} \
-    flags {-setup -hold -recover_power -allow_setup_violations -skip_pin_swap -skip_gate_cloning -verbose}
+            -recover_power -repair_tns -max_passes} \
+    flags {-setup -hold -allow_setup_violations -skip_pin_swap -skip_gate_cloning -verbose}
 
   set setup [info exists flags(-setup)]
   set hold [info exists flags(-hold)]
-  set recover_power [info exists flags(-recover_power)]
+
   if { !$setup && !$hold } {
     set setup 1
     set hold 1
@@ -448,6 +448,13 @@ proc repair_timing { args } {
     set repair_tns_end_percent [expr $repair_tns_end_percent / 100.0]
   }
 
+  set recover_power_percent -1
+  if { [info exists keys(-recover_power)] } {
+    set recover_power_percent $keys(-recover_power)
+    sta::check_percent "-recover_power" $recover_power_percent
+    set recover_power_percent [expr $recover_power_percent / 100.0]
+  }
+
   set verbose 0
   if { [info exists flags(-verbose)] } {
     set verbose 1
@@ -459,8 +466,8 @@ proc repair_timing { args } {
   }
   sta::check_argc_eq0 "repair_timing" $args
   rsz::check_parasitics
-  if { $recover_power } {
-    rsz::recover_power	
+  if { $recover_power_percent >= 0 } {
+    rsz::recover_power $recover_power_percent
   } else {
       if { $setup } {
     rsz::repair_setup $setup_margin $repair_tns_end_percent $max_passes \
