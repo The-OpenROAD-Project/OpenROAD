@@ -498,8 +498,12 @@ void Gui::netAttributeFilter(const std::string& attribute,
           ++iter;
         }
       }
+    } else {
+      logger_->error(utl::GUI, 88, "Invalid value {} for attribute {}", value, attribute);
     }
-  }  
+  } else {
+    logger_->error(utl::GUI, 75, "Invalid filter attribute {} for Net", attribute);
+  }
 }
 
 void Gui::clearSelections()
