@@ -611,8 +611,7 @@ void RenderThread::drawITermLabels(QPainter* painter,
           if (layer == nullptr) {
             continue;
           }
-          if (viewer_->options_->isVisible(layer)
-              && viewer_->options_->isSelectable(layer)) {
+          if (viewer_->options_->isVisible(layer)) {
             Rect pin_rect = geom->getBox();
             xform.apply(pin_rect);
             const QString name = inst_iterm->getMTerm()->getConstName();
