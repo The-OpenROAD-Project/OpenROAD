@@ -2,6 +2,12 @@
 
 set -euo pipefail
 
+_versionCompare() {
+    local a b IFS=. ; set -f
+    printf -v a %08d $1; printf -v b %08d $3
+    test $a "$2" $b
+}
+
 _installCommonDev() {
     lastDir="$(pwd)"
     # tools versions
@@ -204,7 +210,7 @@ _installUbuntuPackages() {
         tcl-tclreadline \
         wget
 
-    if [[ $1 == 22.10 ]]; then
+    if _versionCompare $1 -ge 22.10; then
         apt-get install -y \
             qtbase5-dev \
             qtchooser \
@@ -635,6 +641,9 @@ EOF
         fi
         if [[ "${option}" == "common" || "${option}" == "all" ]]; then
             _installCommonDev
+	    if _versionCompare ${version} -gt 22.10; then
+	        version=22.10
+	    fi
             _installOrTools "ubuntu" "${version}" "amd64"
         fi
         ;;
