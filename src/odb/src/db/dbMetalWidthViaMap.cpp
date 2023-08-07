@@ -64,15 +64,11 @@ bool _dbMetalWidthViaMap::operator==(const _dbMetalWidthViaMap& rhs) const
   if (pg_via_ != rhs.pg_via_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbMetalWidthViaMap::operator<(const _dbMetalWidthViaMap& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -89,8 +85,6 @@ void _dbMetalWidthViaMap::differences(dbDiff& diff,
   DIFF_FIELD(above_layer_width_high_);
   DIFF_FIELD(via_name_);
   DIFF_FIELD(pg_via_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -106,8 +100,6 @@ void _dbMetalWidthViaMap::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(via_name_);
   DIFF_OUT_FIELD(pg_via_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -118,8 +110,6 @@ _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db)
   above_layer_width_low_ = 0;
   above_layer_width_high_ = 0;
   pg_via_ = false;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db,
@@ -133,8 +123,6 @@ _dbMetalWidthViaMap::_dbMetalWidthViaMap(_dbDatabase* db,
   above_layer_width_high_ = r.above_layer_width_high_;
   via_name_ = r.via_name_;
   pg_via_ = r.pg_via_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj)
@@ -147,8 +135,6 @@ dbIStream& operator>>(dbIStream& stream, _dbMetalWidthViaMap& obj)
   stream >> obj.above_layer_width_high_;
   stream >> obj.via_name_;
   stream >> obj.pg_via_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -162,19 +148,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbMetalWidthViaMap& obj)
   stream << obj.above_layer_width_high_;
   stream << obj.via_name_;
   stream << obj.pg_via_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbMetalWidthViaMap::~_dbMetalWidthViaMap()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

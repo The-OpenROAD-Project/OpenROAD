@@ -52,18 +52,10 @@ class _dbMPin;
 class _dbBPin;
 class _dbITerm;
 class _dbObject;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbAccessPoint : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbAccessPoint(_dbDatabase*, const _dbAccessPoint& r);
   _dbAccessPoint(_dbDatabase*);
   ~_dbAccessPoint();
@@ -93,13 +85,8 @@ class _dbAccessPoint : public _dbObject
   // list of vias by num of cuts
   dbVector<dbVector<std::pair<dbObjectType, dbId<_dbObject>>>> vias_;
   dbVector<std::tuple<Rect, bool, bool>> path_segs_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbAccessPoint& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbAccessPoint& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

@@ -44,8 +44,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbVector.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbLogicPort>;
 
@@ -58,15 +56,11 @@ bool _dbLogicPort::operator==(const _dbLogicPort& rhs) const
   if (direction != rhs.direction)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbLogicPort::operator<(const _dbLogicPort& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -78,8 +72,6 @@ void _dbLogicPort::differences(dbDiff& diff,
   DIFF_FIELD(_name);
   DIFF_FIELD(_next_entry);
   DIFF_FIELD(direction);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -90,15 +82,11 @@ void _dbLogicPort::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_next_entry);
   DIFF_OUT_FIELD(direction);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbLogicPort::_dbLogicPort(_dbDatabase* db, const _dbLogicPort& r)
@@ -106,8 +94,6 @@ _dbLogicPort::_dbLogicPort(_dbDatabase* db, const _dbLogicPort& r)
   _name = r._name;
   _next_entry = r._next_entry;
   direction = r.direction;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj)
@@ -115,8 +101,6 @@ dbIStream& operator>>(dbIStream& stream, _dbLogicPort& obj)
   stream >> obj._name;
   stream >> obj._next_entry;
   stream >> obj.direction;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -125,8 +109,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbLogicPort& obj)
   stream << obj._name;
   stream << obj._next_entry;
   stream << obj.direction;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -134,12 +116,7 @@ _dbLogicPort::~_dbLogicPort()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

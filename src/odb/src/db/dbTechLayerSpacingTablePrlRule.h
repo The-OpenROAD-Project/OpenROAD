@@ -46,8 +46,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerSpacingTablePrlRuleFlags
 {
@@ -56,15 +54,10 @@ struct dbTechLayerSpacingTablePrlRuleFlags
   bool exceept_eol_ : 1;
   uint spare_bits_ : 29;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerSpacingTablePrlRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*,
                                   const _dbTechLayerSpacingTablePrlRule& r);
   _dbTechLayerSpacingTablePrlRule(_dbDatabase*);
@@ -102,7 +95,5 @@ class _dbTechLayerSpacingTablePrlRule : public _dbObject
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerSpacingTablePrlRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerSpacingTablePrlRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

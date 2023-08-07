@@ -45,8 +45,6 @@ class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerCornerSpacingRuleFlags
 {
@@ -65,15 +63,10 @@ struct dbTechLayerCornerSpacingRuleFlags
   bool corner_to_corner_ : 1;
   uint spare_bits_ : 19;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerCornerSpacingRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayerCornerSpacingRule(_dbDatabase*,
                                 const _dbTechLayerCornerSpacingRule& r);
   _dbTechLayerCornerSpacingRule(_dbDatabase*);
@@ -89,8 +82,6 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
                    const char* field,
                    const _dbTechLayerCornerSpacingRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbTechLayerCornerSpacingRuleFlags flags_;
   int within_;
@@ -108,7 +99,5 @@ class _dbTechLayerCornerSpacingRule : public _dbObject
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCornerSpacingRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerCornerSpacingRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

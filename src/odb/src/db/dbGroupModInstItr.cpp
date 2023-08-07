@@ -36,8 +36,6 @@
 #include "dbGroup.h"
 #include "dbModInst.h"
 #include "dbTable.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 
@@ -118,7 +116,5 @@ dbObject* dbGroupModInstItr::getObject(uint id, ...)
 {
   return _modinst_tbl->getPtr(id);
 }
-// User Code Begin Methods
-// User Code End Methods
 }  // namespace odb
    // Generator Code End Cpp

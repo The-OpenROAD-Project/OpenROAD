@@ -60,15 +60,9 @@ class dbMTerm;
 class dbITerm;
 // User Code End Classes
 
-// User Code Begin Structs
-// User Code End Structs
-
 class _dbGlobalConnect : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbGlobalConnect(_dbDatabase*, const _dbGlobalConnect& r);
   _dbGlobalConnect(_dbDatabase*);
   ~_dbGlobalConnect();
@@ -98,13 +92,8 @@ class _dbGlobalConnect : public _dbObject
   std::string inst_pattern_;
   std::string pin_pattern_;
   std::regex inst_regex_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbGlobalConnect& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGlobalConnect& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

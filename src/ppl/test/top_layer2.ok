@@ -13,7 +13,6 @@
 [INFO ODB-0131]     Created 253 components and 1357 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 155 connections.
 Found 1 macro blocks.
-Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [INFO PPL-0010] Tentative 0 to set up sections.
 [INFO PPL-0001] Number of slots          1016

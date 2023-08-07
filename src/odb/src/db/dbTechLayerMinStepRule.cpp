@@ -39,8 +39,6 @@
 #include "dbTable.h"
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerMinStepRule>;
 
@@ -81,16 +79,12 @@ bool _dbTechLayerMinStepRule::operator==(
   if (min_between_length_ != rhs.min_between_length_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerMinStepRule::operator<(
     const _dbTechLayerMinStepRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -113,8 +107,6 @@ void _dbTechLayerMinStepRule::differences(
   DIFF_FIELD(min_adj_length2_);
   DIFF_FIELD(eol_width_);
   DIFF_FIELD(min_between_length_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -137,8 +129,6 @@ void _dbTechLayerMinStepRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(eol_width_);
   DIFF_OUT_FIELD(min_between_length_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -152,8 +142,6 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(_dbDatabase* db)
   min_adj_length2_ = 0;
   eol_width_ = 0;
   min_between_length_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
@@ -174,8 +162,6 @@ _dbTechLayerMinStepRule::_dbTechLayerMinStepRule(
   min_adj_length2_ = r.min_adj_length2_;
   eol_width_ = r.eol_width_;
   min_between_length_ = r.min_between_length_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
@@ -188,8 +174,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerMinStepRule& obj)
   stream >> obj.min_adj_length2_;
   stream >> obj.eol_width_;
   stream >> obj.min_between_length_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -203,19 +187,12 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerMinStepRule& obj)
   stream << obj.min_adj_length2_;
   stream << obj.eol_width_;
   stream << obj.min_between_length_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerMinStepRule::~_dbTechLayerMinStepRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //
