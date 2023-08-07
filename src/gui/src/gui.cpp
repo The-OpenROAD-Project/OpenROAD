@@ -467,15 +467,7 @@ int Gui::select(const std::string& type,
         if (!attribute.empty()) {
           if (type == "Net") {
             std::string net_attribute_value = std::any_cast<std::string>(value);
-            if (net_attribute_value == "IO")
-            for(SelectionSet::iterator iter = selected.begin(); iter != selected.end();) {
-              auto selected_net = std::any_cast<odb::dbNet*>(iter->getObject());
-              if(selected_net->getBTerms().size() == 0)  {
-                iter = selected.erase(iter);
-              } else {
-                ++iter;
-              }
-            }
+            netAttributeFilter(attribute, net_attribute_value, &selected);
           }
         }
         main_window->addSelected(selected);
@@ -492,33 +484,23 @@ int Gui::select(const std::string& type,
   logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
 }
 
-// void Gui::filterSelection(const std::string& type,
-//                           const std::string& attribute,
-//                           const std::any& value,
-//                           const SelectionSet& selected)
-// {
-//   switch (attribute) {
-//     case "type":
-//       std::string attribute_value = std::any_cast<std::string>(value);
-
-//       switch (type) {
-//         case "Net":      
-//           if (attribute_value == "IO") {
-//             for(SelectionSet::iterator iter = selected.begin(); iter != selected.end();) {
-//               auto selected_net = std::any_cast<odb::dbNet*>(iter->getObject());
-//               if(selected_net->getBTerms().size() == 0)  {
-//                 iter = selected.erase(iter);
-//               } else {
-//                 ++iter;
-//               }
-//             }
-//           }
-//           break;
-//       }      
-//       break;
-//   }
-
-// }
+void Gui::netAttributeFilter(const std::string& attribute,
+                             const std::string& value,
+                             SelectionSet* selected)
+{
+  if (attribute == "type") {
+    if (value == "IO") {
+      for(SelectionSet::iterator iter = selected->begin(); iter != selected->end();) {
+        auto selected_net = std::any_cast<odb::dbNet*>(iter->getObject());
+        if(selected_net->getBTerms().size() == 0)  {
+          iter = selected->erase(iter);
+        } else {
+          ++iter;
+        }
+      }
+    }
+  }  
+}
 
 void Gui::clearSelections()
 {
