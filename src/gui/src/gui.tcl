@@ -183,7 +183,7 @@ sta::define_cmd_args "select" {-type object_type \
                                [-name name_regex] \
                                [-case_insensitive] \
                                [-highlight group] \
-                               [-filter attribute]
+                               [-filter attribute_and_value]
 }
 
 proc select { args } {
@@ -208,20 +208,21 @@ proc select { args } {
     set name $keys(-name)
   }
   
-  set filter ""
+  set attribute ""
+  set value ""
   if { [info exists keys(-filter)] } {
     if { $name != "" } {
       utl::error GUI 59 "-filter not available when using -name."
     } else {
-      if { $type != "" } {
-        set filter $keys(-filter)
+      set filter $keys(-filter)
+      set filter [split $filter "=="]
+      set length [llength $filter]
+      if { $length != 3 } {
+        utl::error GUI 56 "Invalid syntax for -filter. Use '-filter attribute==value'"        
       } else {
-      utl::error GUI 56 "Must specify -type."
-      }
-
-      if { $filter != "IO" } {
-        utl::error GUI 75 "Value for -filter is invalid."
-      }
+        set attribute [lindex $filter 0]
+        set value [lindex $filter 2]   
+      }     
     }
   }
 
@@ -233,7 +234,7 @@ proc select { args } {
     set case_sense 0
   }
   
-  return [gui::select $type $name $filter $case_sense $highlight]
+  return [gui::select $type $name $attribute $value $case_sense $highlight]
 }
 
 sta::define_cmd_args "display_timing_cone" {pin \

@@ -430,7 +430,8 @@ void Gui::deleteRuler(const std::string& name)
 
 int Gui::select(const std::string& type,
                 const std::string& name_filter,
-                const std::string& attribute_filter,
+                const std::string& attribute,
+                const std::any& value,
                 bool filter_case_sensitive,
                 int highlight_group)
 {
@@ -463,8 +464,10 @@ int Gui::select(const std::string& type,
           selected.clear();
           selected.insert(selected_vector.begin(), selected_vector.end());
         }
-        if (!attribute_filter.empty()) {
-          if (type == "Net" && attribute_filter == "IO") {
+        if (!attribute.empty()) {
+          if (type == "Net") {
+            std::string net_attribute_value = std::any_cast<std::string>(value);
+            if (net_attribute_value == "IO")
             for(SelectionSet::iterator iter = selected.begin(); iter != selected.end();) {
               auto selected_net = std::any_cast<odb::dbNet*>(iter->getObject());
               if(selected_net->getBTerms().size() == 0)  {
@@ -488,6 +491,34 @@ int Gui::select(const std::string& type,
 
   logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
 }
+
+// void Gui::filterSelection(const std::string& type,
+//                           const std::string& attribute,
+//                           const std::any& value,
+//                           const SelectionSet& selected)
+// {
+//   switch (attribute) {
+//     case "type":
+//       std::string attribute_value = std::any_cast<std::string>(value);
+
+//       switch (type) {
+//         case "Net":      
+//           if (attribute_value == "IO") {
+//             for(SelectionSet::iterator iter = selected.begin(); iter != selected.end();) {
+//               auto selected_net = std::any_cast<odb::dbNet*>(iter->getObject());
+//               if(selected_net->getBTerms().size() == 0)  {
+//                 iter = selected.erase(iter);
+//               } else {
+//                 ++iter;
+//               }
+//             }
+//           }
+//           break;
+//       }      
+//       break;
+//   }
+
+// }
 
 void Gui::clearSelections()
 {
