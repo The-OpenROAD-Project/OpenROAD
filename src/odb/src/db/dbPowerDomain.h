@@ -36,8 +36,6 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
@@ -47,18 +45,10 @@ class _dbDatabase;
 class _dbPowerSwitch;
 class _dbIsolation;
 class _dbGroup;
-// User Code Begin Classes
-// User Code End Classes
-
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbPowerDomain : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbPowerDomain(_dbDatabase*, const _dbPowerDomain& r);
   _dbPowerDomain(_dbDatabase*);
   ~_dbPowerDomain();
@@ -70,8 +60,6 @@ class _dbPowerDomain : public _dbObject
                    const char* field,
                    const _dbPowerDomain& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   char* _name;
   dbId<_dbPowerDomain> _next_entry;
@@ -85,13 +73,8 @@ class _dbPowerDomain : public _dbObject
   int _x2;
   int _y1;
   int _y2;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header

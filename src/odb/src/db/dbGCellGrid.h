@@ -60,15 +60,10 @@ struct dbGCellGridFlags
   bool y_grid_valid_ : 1;
   uint spare_bits_ : 30;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbGCellGrid : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbGCellGrid(_dbDatabase*, const _dbGCellGrid& r);
   _dbGCellGrid(_dbDatabase*);
   ~_dbGCellGrid();
@@ -95,9 +90,6 @@ class _dbGCellGrid : public _dbObject
   dbVector<int> y_grid_;
   std::map<dbId<_dbTechLayer>, dbMatrix<dbGCellGrid::GCellData>>
       congestion_map_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbGCellGrid& obj);
 dbOStream& operator<<(dbOStream& stream, const _dbGCellGrid& obj);

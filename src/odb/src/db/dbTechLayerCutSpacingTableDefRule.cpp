@@ -130,16 +130,12 @@ bool _dbTechLayerCutSpacingTableDefRule::operator==(
   if (extension_ != rhs.extension_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerCutSpacingTableDefRule::operator<(
     const _dbTechLayerCutSpacingTableDefRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -176,8 +172,6 @@ void _dbTechLayerCutSpacingTableDefRule::differences(
   DIFF_FIELD(second_layer_);
   DIFF_FIELD(prl_);
   DIFF_FIELD(extension_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -214,8 +208,6 @@ void _dbTechLayerCutSpacingTableDefRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(prl_);
   DIFF_OUT_FIELD(extension_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -227,8 +219,6 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
   default_ = 0;
   prl_ = 0;
   extension_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
@@ -265,8 +255,6 @@ _dbTechLayerCutSpacingTableDefRule::_dbTechLayerCutSpacingTableDefRule(
   second_layer_ = r.second_layer_;
   prl_ = r.prl_;
   extension_ = r.extension_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream,
@@ -290,8 +278,6 @@ dbIStream& operator>>(dbIStream& stream,
   stream >> obj.spacing_tbl_;
   stream >> obj.row_map_;
   stream >> obj.col_map_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -316,19 +302,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.spacing_tbl_;
   stream << obj.row_map_;
   stream << obj.col_map_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerCutSpacingTableDefRule::~_dbTechLayerCutSpacingTableDefRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

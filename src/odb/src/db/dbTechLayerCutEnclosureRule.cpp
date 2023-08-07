@@ -40,8 +40,6 @@
 #include "dbTable.hpp"
 #include "dbTechLayer.h"
 #include "dbTechLayerCutClassRule.h"
-// User Code Begin Includes
-// User Code End Includes
 namespace odb {
 template class dbTable<_dbTechLayerCutEnclosureRule>;
 
@@ -157,16 +155,12 @@ bool _dbTechLayerCutEnclosureRule::operator==(
   if (num_corners_ != rhs.num_corners_)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerCutEnclosureRule::operator<(
     const _dbTechLayerCutEnclosureRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -218,8 +212,6 @@ void _dbTechLayerCutEnclosureRule::differences(
   DIFF_FIELD(second_par_within_);
   DIFF_FIELD(below_enclosure_);
   DIFF_FIELD(num_corners_);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -271,8 +263,6 @@ void _dbTechLayerCutEnclosureRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(below_enclosure_);
   DIFF_OUT_FIELD(num_corners_);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -297,8 +287,6 @@ _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(_dbDatabase* db)
   second_par_within_ = 0;
   below_enclosure_ = 0;
   num_corners_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(
@@ -348,8 +336,6 @@ _dbTechLayerCutEnclosureRule::_dbTechLayerCutEnclosureRule(
   second_par_within_ = r.second_par_within_;
   below_enclosure_ = r.below_enclosure_;
   num_corners_ = r.num_corners_;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj)
@@ -374,8 +360,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutEnclosureRule& obj)
   stream >> obj.second_par_within_;
   stream >> obj.below_enclosure_;
   stream >> obj.num_corners_;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -402,19 +386,12 @@ dbOStream& operator<<(dbOStream& stream,
   stream << obj.second_par_within_;
   stream << obj.below_enclosure_;
   stream << obj.num_corners_;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
 _dbTechLayerCutEnclosureRule::~_dbTechLayerCutEnclosureRule()
 {
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

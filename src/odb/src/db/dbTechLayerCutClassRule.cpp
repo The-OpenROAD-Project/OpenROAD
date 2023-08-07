@@ -66,16 +66,12 @@ bool _dbTechLayerCutClassRule::operator==(
   if (_next_entry != rhs._next_entry)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbTechLayerCutClassRule::operator<(
     const _dbTechLayerCutClassRule& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -92,8 +88,6 @@ void _dbTechLayerCutClassRule::differences(
   DIFF_FIELD(length_);
   DIFF_FIELD(num_cuts_);
   DIFF_FIELD_NO_DEEP(_next_entry);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -110,8 +104,6 @@ void _dbTechLayerCutClassRule::out(dbDiff& diff,
   DIFF_OUT_FIELD(num_cuts_);
   DIFF_OUT_FIELD_NO_DEEP(_next_entry);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -122,8 +114,6 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(_dbDatabase* db)
   width_ = 0;
   length_ = 0;
   num_cuts_ = 0;
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
@@ -138,8 +128,6 @@ _dbTechLayerCutClassRule::_dbTechLayerCutClassRule(
   length_ = r.length_;
   num_cuts_ = r.num_cuts_;
   _next_entry = r._next_entry;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
@@ -151,8 +139,6 @@ dbIStream& operator>>(dbIStream& stream, _dbTechLayerCutClassRule& obj)
   stream >> obj.length_;
   stream >> obj.num_cuts_;
   stream >> obj._next_entry;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -165,8 +151,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbTechLayerCutClassRule& obj)
   stream << obj.length_;
   stream << obj.num_cuts_;
   stream << obj._next_entry;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -174,12 +158,7 @@ _dbTechLayerCutClassRule::~_dbTechLayerCutClassRule()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

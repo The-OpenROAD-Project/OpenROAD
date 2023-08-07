@@ -36,31 +36,22 @@
 #include "dbCore.h"
 #include "dbVector.h"
 #include "odb.h"
-// User Code Begin Includes
-// User Code End Includes
 
 namespace odb {
 class dbIStream;
 class dbOStream;
 class dbDiff;
 class _dbDatabase;
-// User Code Begin Classes
-// User Code End Classes
 
 struct dbTechLayerEolExtensionRuleFlags
 {
   bool parallel_only_ : 1;
   uint spare_bits_ : 31;
 };
-// User Code Begin Structs
-// User Code End Structs
 
 class _dbTechLayerEolExtensionRule : public _dbObject
 {
  public:
-  // User Code Begin Enums
-  // User Code End Enums
-
   _dbTechLayerEolExtensionRule(_dbDatabase*,
                                const _dbTechLayerEolExtensionRule& r);
   _dbTechLayerEolExtensionRule(_dbDatabase*);
@@ -76,20 +67,13 @@ class _dbTechLayerEolExtensionRule : public _dbObject
                    const char* field,
                    const _dbTechLayerEolExtensionRule& rhs) const;
   void out(dbDiff& diff, char side, const char* field) const;
-  // User Code Begin Methods
-  // User Code End Methods
 
   dbTechLayerEolExtensionRuleFlags flags_;
   int spacing_;
   dbVector<std::pair<int, int>> extension_tbl_;
-
-  // User Code Begin Fields
-  // User Code End Fields
 };
 dbIStream& operator>>(dbIStream& stream, _dbTechLayerEolExtensionRule& obj);
 dbOStream& operator<<(dbOStream& stream,
                       const _dbTechLayerEolExtensionRule& obj);
-// User Code Begin General
-// User Code End General
 }  // namespace odb
    // Generator Code End Header
