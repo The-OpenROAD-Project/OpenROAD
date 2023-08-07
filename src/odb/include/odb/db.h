@@ -7016,8 +7016,6 @@ class dbViaParams : private _dbViaParams
 class dbAccessPoint : public dbObject
 {
  public:
-  // User Code Begin dbAccessPointEnums
-  // User Code End dbAccessPointEnums
   void setPoint(Point point);
 
   Point getPoint() const;
@@ -7087,8 +7085,6 @@ class dbGCellGrid : public dbObject
     uint vertical_blockage = 0;
     uint up_blockage = 0;
   };
-  // User Code Begin dbGCellGridEnums
-  // User Code End dbGCellGridEnums
 
   // User Code Begin dbGCellGrid
 
@@ -7253,8 +7249,6 @@ class dbGCellGrid : public dbObject
 class dbGlobalConnect : public dbObject
 {
  public:
-  // User Code Begin dbGlobalConnectEnums
-  // User Code End dbGlobalConnectEnums
   dbRegion* getRegion() const;
 
   dbNet* getNet() const;
@@ -7280,9 +7274,6 @@ class dbGlobalConnect : public dbObject
 class dbGroup : public dbObject
 {
  public:
-  // User Code Begin dbGroupEnums
-  // User Code End dbGroupEnums
-
   const char* getName() const;
 
   dbGroup* getParentGroup() const;
@@ -7339,9 +7330,6 @@ class dbGroup : public dbObject
 class dbGuide : public dbObject
 {
  public:
-  // User Code Begin dbGuideEnums
-  // User Code End dbGuideEnums
-
   Rect getBox() const;
 
   // User Code Begin dbGuide
@@ -7362,8 +7350,6 @@ class dbGuide : public dbObject
 class dbIsolation : public dbObject
 {
  public:
-  // User Code Begin dbIsolationEnums
-  // User Code End dbIsolationEnums
   const char* getName() const;
 
   std::string getAppliesTo() const;
@@ -7404,8 +7390,6 @@ class dbIsolation : public dbObject
 class dbLogicPort : public dbObject
 {
  public:
-  // User Code Begin dbLogicPortEnums
-  // User Code End dbLogicPortEnums
   const char* getName() const;
 
   std::string getDirection() const;
@@ -7421,8 +7405,6 @@ class dbLogicPort : public dbObject
 class dbMetalWidthViaMap : public dbObject
 {
  public:
-  // User Code Begin dbMetalWidthViaMapEnums
-  // User Code End dbMetalWidthViaMapEnums
   void setViaCutClass(bool via_cut_class);
 
   bool isViaCutClass() const;
@@ -7469,9 +7451,6 @@ class dbMetalWidthViaMap : public dbObject
 class dbModInst : public dbObject
 {
  public:
-  // User Code Begin dbModInstEnums
-  // User Code End dbModInstEnums
-
   dbModule* getParent() const;
 
   dbModule* getMaster() const;
@@ -7498,8 +7477,6 @@ class dbModInst : public dbObject
 class dbModule : public dbObject
 {
  public:
-  // User Code Begin dbModuleEnums
-  // User Code End dbModuleEnums
   const char* getName() const;
 
   dbModInst* getModInst() const;
@@ -7531,9 +7508,6 @@ class dbModule : public dbObject
 class dbNetTrack : public dbObject
 {
  public:
-  // User Code Begin dbNetTrackEnums
-  // User Code End dbNetTrackEnums
-
   Rect getBox() const;
 
   // User Code Begin dbNetTrack
@@ -7554,8 +7528,6 @@ class dbNetTrack : public dbObject
 class dbPowerDomain : public dbObject
 {
  public:
-  // User Code Begin dbPowerDomainEnums
-  // User Code End dbPowerDomainEnums
   const char* getName() const;
 
   dbGroup* getGroup() const;
@@ -7591,8 +7563,6 @@ class dbPowerDomain : public dbObject
 class dbPowerSwitch : public dbObject
 {
  public:
-  // User Code Begin dbPowerSwitchEnums
-  // User Code End dbPowerSwitchEnums
   const char* getName() const;
 
   std::string getInSupplyPort() const;
@@ -7645,8 +7615,6 @@ class dbTechLayer : public dbObject
     PADMETAL,
     POLYROUTING
   };
-  // User Code Begin dbTechLayerEnums
-  // User Code End dbTechLayerEnums
 
   void setWrongWayWidth(uint wrong_way_width);
 
@@ -8004,9 +7972,6 @@ class dbTechLayer : public dbObject
 class dbTechLayerAreaRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerAreaRuleEnums
-  // User Code End dbTechLayerAreaRuleEnums
-
   void setArea(int area);
 
   int getArea() const;
@@ -8063,9 +8028,6 @@ class dbTechLayerAreaRule : public dbObject
 class dbTechLayerArraySpacingRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerArraySpacingRuleEnums
-  // User Code End dbTechLayerArraySpacingRuleEnums
-
   void setViaWidth(int via_width);
 
   int getViaWidth() const;
@@ -8127,8 +8089,6 @@ class dbTechLayerCornerSpacingRule : public dbObject
     CONVEXCORNER,
     CONCAVECORNER
   };
-  // User Code Begin dbTechLayerCornerSpacingRuleEnums
-  // User Code End dbTechLayerCornerSpacingRuleEnums
 
   void setWithin(int within);
 
@@ -8225,9 +8185,6 @@ class dbTechLayerCornerSpacingRule : public dbObject
 class dbTechLayerCutClassRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerCutClassRuleEnums
-  // User Code End dbTechLayerCutClassRuleEnums
-
   const char* getName() const;
 
   void setWidth(int width);
@@ -8474,8 +8431,6 @@ class dbTechLayerCutSpacingRule : public dbObject
     SAMEMETALSHAREDEDGE,
     AREA
   };
-  // User Code Begin dbTechLayerCutSpacingRuleEnums
-  // User Code End dbTechLayerCutSpacingRuleEnums
 
   void setCutSpacing(int cut_spacing);
 
@@ -8931,8 +8886,6 @@ class dbTechLayerCutSpacingTableDefRule : public dbObject
 class dbTechLayerCutSpacingTableOrthRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerCutSpacingTableOrthRuleEnums
-  // User Code End dbTechLayerCutSpacingTableOrthRuleEnums
   void getSpacingTable(std::vector<std::pair<int, int>>& tbl) const;
 
   // User Code Begin dbTechLayerCutSpacingTableOrthRule
@@ -8950,9 +8903,6 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
 class dbTechLayerEolExtensionRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerEolExtensionRuleEnums
-  // User Code End dbTechLayerEolExtensionRuleEnums
-
   void setSpacing(int spacing);
 
   int getSpacing() const;
@@ -8980,9 +8930,6 @@ class dbTechLayerEolExtensionRule : public dbObject
 class dbTechLayerEolKeepOutRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerEolKeepOutRuleEnums
-  // User Code End dbTechLayerEolKeepOutRuleEnums
-
   void setEolWidth(int eol_width);
 
   int getEolWidth() const;
@@ -9036,9 +8983,6 @@ class dbTechLayerEolKeepOutRule : public dbObject
 class dbTechLayerKeepOutZoneRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerKeepOutZoneRuleEnums
-  // User Code End dbTechLayerKeepOutZoneRuleEnums
-
   void setFirstCutClass(std::string first_cut_class);
 
   std::string getFirstCutClass() const;
@@ -9111,9 +9055,6 @@ class dbTechLayerKeepOutZoneRule : public dbObject
 class dbTechLayerMinCutRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerMinCutRuleEnums
-  // User Code End dbTechLayerMinCutRuleEnums
-
   void setNumCuts(int num_cuts);
 
   int getNumCuts() const;
@@ -9197,9 +9138,6 @@ class dbTechLayerMinCutRule : public dbObject
 class dbTechLayerMinStepRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerMinStepRuleEnums
-  // User Code End dbTechLayerMinStepRuleEnums
-
   void setMinStepLength(int min_step_length);
 
   int getMinStepLength() const;
@@ -9265,9 +9203,6 @@ class dbTechLayerMinStepRule : public dbObject
 class dbTechLayerSpacingEolRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerSpacingEolRuleEnums
-  // User Code End dbTechLayerSpacingEolRuleEnums
-
   void setEolSpace(int eol_space);
 
   int getEolSpace() const;
@@ -9578,9 +9513,6 @@ class dbTechLayerSpacingEolRule : public dbObject
 class dbTechLayerSpacingTablePrlRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerSpacingTablePrlRuleEnums
-  // User Code End dbTechLayerSpacingTablePrlRuleEnums
-
   void setEolWidth(int eol_width);
 
   int getEolWidth() const;
@@ -9630,9 +9562,6 @@ class dbTechLayerSpacingTablePrlRule : public dbObject
 class dbTechLayerWidthTableRule : public dbObject
 {
  public:
-  // User Code Begin dbTechLayerWidthTableRuleEnums
-  // User Code End dbTechLayerWidthTableRuleEnums
-
   void setWrongDirection(bool wrong_direction);
 
   bool isWrongDirection() const;

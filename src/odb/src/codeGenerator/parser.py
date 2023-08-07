@@ -83,7 +83,8 @@ class Parser:
                             del self.user_code[name]
                         else:
                             db_lines[j : j + 2] = []
-
+                    else:
+                        db_lines[j : j + 2] = []
                 j += 1
             self.generator_code[section] = db_lines
 
