@@ -696,8 +696,16 @@ void Gui::saveClockTreeImage(const std::string& clock_name,
   if (!enabled()) {
     return;
   }
+  std::optional<int> width;
+  std::optional<int> height;
+  if (width_px > 0) {
+    width = width_px;
+  }
+  if (height_px > 0) {
+    height = height_px;
+  }
   main_window->getClockViewer()->saveImage(
-      clock_name, filename, corner, width_px, height_px);
+      clock_name, filename, corner, width, height);
 }
 
 static QWidget* findWidget(const std::string& name)

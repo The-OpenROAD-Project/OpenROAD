@@ -1408,8 +1408,8 @@ void ClockWidget::postReadLiberty()
 void ClockWidget::saveImage(const std::string& clock_name,
                             const std::string& path,
                             const std::string& corner,
-                            int width_px,
-                            int height_px)
+                            const std::optional<int>& width_px,
+                            const std::optional<int>& height_px)
 {
   const bool visible = isVisible();
   if (!visible) {
@@ -1438,13 +1438,14 @@ void ClockWidget::saveImage(const std::string& clock_name,
 
       ClockTreeView print_view(
           view->getClockTree(), stagui_.get(), logger_, this);
-      if (width_px == 0) {
-        width_px = view->width();
+      QSize view_size = view->size();
+      if (width_px.has_value()) {
+        view_size.setWidth(width_px.value());
       }
-      if (height_px == 0) {
-        height_px = view->height();
+      if (height_px.has_value()) {
+        view_size.setHeight(height_px.value());
       }
-      print_view.resize(width_px, height_px);
+      print_view.resize(view_size);
       // Ensure the new view is sized correctly by Qt by processing the event
       // so fit will work
       QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);

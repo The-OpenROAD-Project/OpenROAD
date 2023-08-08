@@ -47,6 +47,7 @@
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QToolTip>
+#include <optional>
 #include <variant>
 
 #include "gui/gui.h"
@@ -469,8 +470,8 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
   void saveImage(const std::string& clock_name,
                  const std::string& path,
                  const std::string& corner,
-                 int width_px,
-                 int height_px);
+                 const std::optional<int>& width_px,
+                 const std::optional<int>& height_px);
 
   virtual void postReadLiberty() override;
 
