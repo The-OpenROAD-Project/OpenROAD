@@ -147,7 +147,7 @@ if not os.environ.get("SKIP_DOXYGEN", None) == "True":
     for prjname, prjdir in breathe_projects.items():
         print("Generating doxygen files for {}...".format(prjname))
         os.makedirs(prjdir, exist_ok=True)
-        cmd = "cd ../_doxygen && doxygen {}.dox".format(prjname)
+        cmd = "cd _doxygen && doxygen {}.dox".format(prjname)
         subprocess.call(cmd, shell=True)
 else:
         for prjname, prjdir in breathe_projects.items():
