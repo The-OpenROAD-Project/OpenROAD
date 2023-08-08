@@ -573,7 +573,9 @@ void RenderThread::drawInstanceNames(QPainter* painter,
 
     Rect instance_box = inst->getBBox()->getBox();
     QString name = inst->getName().c_str();
-    drawTextInBBox(text_color, text_font, instance_box, name, painter);
+    auto master = inst->getMaster();
+    auto center = master->isBlock() || master->isPad();
+    drawTextInBBox(text_color, text_font, instance_box, name, painter, center);
   }
   painter->setFont(initial_font);
 }
@@ -616,7 +618,7 @@ void RenderThread::drawITermLabels(QPainter* painter,
             xform.apply(pin_rect);
             const QString name = inst_iterm->getMTerm()->getConstName();
             drawn = drawTextInBBox(
-                text_color, text_font, pin_rect, name, painter);
+                text_color, text_font, pin_rect, name, painter, false);
           }
           if (drawn) {
             // Only draw on the first box
@@ -637,7 +639,8 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
                                   const QFont& text_font,
                                   Rect bbox,
                                   QString name,
-                                  QPainter* painter)
+                                  QPainter* painter,
+                                  bool center)
 {
   const QFontMetricsF font_metrics(text_font);
 
@@ -703,13 +706,17 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
     painter->translate(-text_bounding_box.width(), 0);
     // account for descent of font
     painter->translate(-font_metrics.descent(), 0);
-    painter->translate(-xOffset, -yOffset);
+    if (center) {
+      painter->translate(-xOffset, -yOffset);
+    }
   } else {
     // account for descent of font
     auto xOffset = (bbox_in_px.width() - text_bounding_box.width()) / 2;
     auto yOffset = (bbox_in_px.height() - text_bounding_box.height()) / 2;
     painter->translate(font_metrics.descent(), 0);
-    painter->translate(xOffset, -yOffset);
+    if (center) {
+      painter->translate(xOffset, -yOffset);
+    }
   }
   painter->drawText(0, 0, name);
 
