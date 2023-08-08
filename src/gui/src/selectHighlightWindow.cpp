@@ -246,13 +246,13 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
   });
 
   connect(ui_.selTableView,
-          SIGNAL(customContextMenuRequested(QPoint)),
+          &QTableView::customContextMenuRequested,
           this,
-          SLOT(showSelectCustomMenu(QPoint)));
+          &SelectHighlightWindow::showSelectCustomMenu);
   connect(ui_.hltTableView,
-          SIGNAL(customContextMenuRequested(QPoint)),
+          &QTableView::customContextMenuRequested,
           this,
-          SLOT(showHighlightCustomMenu(QPoint)));
+          &SelectHighlightWindow::showHighlightCustomMenu);
   auto sel_header = ui_.selTableView->horizontalHeader();
   for (int i = 0; i < sel_header->count() - 1; i++) {
     sel_header->setSectionResizeMode(i, QHeaderView::ResizeToContents);
@@ -278,19 +278,21 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
   QAction* show_sel_item_act
       = select_context_menu_->addAction("Zoom In Layout");
 
-  connect(
-      remove_sel_item_act, SIGNAL(triggered()), this, SLOT(deselectItems()));
-  connect(remove_all_sel_items, &QAction::triggered, this, [this]() {
+  connect(remove_sel_item_act,
+          &QAction::triggered,
+          this,
+          &SelectHighlightWindow::deselectItems);
+  connect(remove_all_sel_items, &QAction::triggered, [this]() {
     emit clearAllSelections();
   });
   connect(highlight_sel_item_act,
-          SIGNAL(triggered()),
+          &QAction::triggered,
           this,
-          SLOT(highlightSelectedItems()));
+          &SelectHighlightWindow::highlightSelectedItems);
   connect(show_sel_item_act,
-          SIGNAL(triggered()),
+          &QAction::triggered,
           this,
-          SLOT(zoomInSelectedItems()));
+          &SelectHighlightWindow::zoomInSelectedItems);
 
   QAction* remove_hlt_item_act
       = highlight_context_menu_->addAction("De-Highlight");
@@ -303,16 +305,21 @@ SelectHighlightWindow::SelectHighlightWindow(const SelectionSet& sel_set,
   QAction* change_group_act
       = highlight_context_menu_->addAction("Change group");
 
-  connect(
-      remove_hlt_item_act, SIGNAL(triggered()), this, SLOT(dehighlightItems()));
-  connect(remove_all_hlt_items, &QAction::triggered, this, [this]() {
+  connect(remove_hlt_item_act,
+          &QAction::triggered,
+          this,
+          &SelectHighlightWindow::dehighlightItems);
+  connect(remove_all_hlt_items, &QAction::triggered, [this]() {
     emit clearAllHighlights();
   });
   connect(show_hlt_item_act,
-          SIGNAL(triggered()),
+          &QAction::triggered,
           this,
-          SLOT(zoomInHighlightedItems()));
-  connect(change_group_act, SIGNAL(triggered()), this, SLOT(changeHighlight()));
+          &SelectHighlightWindow::zoomInHighlightedItems);
+  connect(change_group_act,
+          &QAction::triggered,
+          this,
+          &SelectHighlightWindow::changeHighlight);
 
   connect(ui_.selTableView->selectionModel(),
           &QItemSelectionModel::selectionChanged,
