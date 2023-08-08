@@ -107,9 +107,10 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
   clear_->setAutoDefault(false);
   clear_->setDefault(false);
 
-  connect(add_, SIGNAL(pressed()), this, SLOT(makeRule()));
-  connect(run_, SIGNAL(pressed()), this, SLOT(runRules()));
-  connect(clear_, SIGNAL(pressed()), this, SLOT(clearRules()));
+  connect(add_, &QPushButton::pressed, this, &GlobalConnectDialog::makeRule);
+  connect(run_, &QPushButton::pressed, this, &GlobalConnectDialog::runRules);
+  connect(
+      clear_, &QPushButton::pressed, this, &GlobalConnectDialog::clearRules);
 
   layout_->addWidget(new QLabel("Instance pattern", this),
                      0,
@@ -160,16 +161,18 @@ GlobalConnectDialog::GlobalConnectDialog(odb::dbBlock* block, QWidget* parent)
   layout_->addWidget(
       add_, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
 
-  connect(
-      this, SIGNAL(connectionsMade(int)), this, SLOT(announceConnections(int)));
+  connect(this,
+          &GlobalConnectDialog::connectionsMade,
+          this,
+          &GlobalConnectDialog::announceConnections);
   connect(inst_pattern_,
-          SIGNAL(textChanged(const QString&)),
+          &QLineEdit::textChanged,
           this,
-          SLOT(addRegexTextChanged(const QString&)));
+          &GlobalConnectDialog::addRegexTextChanged);
   connect(pin_pattern_,
-          SIGNAL(textChanged(const QString&)),
+          &QLineEdit::textChanged,
           this,
-          SLOT(addRegexTextChanged(const QString&)));
+          &GlobalConnectDialog::addRegexTextChanged);
 }
 
 void GlobalConnectDialog::runRules()
@@ -260,7 +263,7 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.run->setAutoDefault(false);
   widgets.run->setDefault(false);
   connect(
-      widgets.run, &QPushButton::pressed, this, [this, gc]() { runRule(gc); });
+      widgets.run, &QPushButton::pressed, [this, gc]() { runRule(gc); });
   layout_->addWidget(
       widgets.run, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
 
@@ -269,7 +272,7 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.remove->setToolTip(tr("Delete"));
   widgets.remove->setAutoDefault(false);
   widgets.remove->setDefault(false);
-  connect(widgets.remove, &QPushButton::pressed, this, [this, gc]() {
+  connect(widgets.remove, &QPushButton::pressed, [this, gc]() {
     deleteRule(gc);
   });
   layout_->addWidget(widgets.remove,
