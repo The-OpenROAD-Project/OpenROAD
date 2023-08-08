@@ -345,11 +345,8 @@ for item in toBeMerged:
         p.parse_source_code(os.path.join("generated", item))
         p.write_in_file(os.path.join(dr, item), keep_empty)
     else:
-        with open(os.path.join("generated", item), "r", encoding="ascii") as read, open(
-            os.path.join(dr, item), "w", encoding="ascii"
-        ) as out:
-            text = read.read()
-            out.write(text)
+        shutil.copy(os.path.join("generated", item),
+                    os.path.join(dr, item))
     if item != "CMakeLists.txt":
         cf = ["clang-format", "-i", os.path.join(dr, item)]
         retcode = call(cf)
