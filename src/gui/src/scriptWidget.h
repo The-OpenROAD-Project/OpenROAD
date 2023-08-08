@@ -76,6 +76,8 @@ class ScriptWidget : public QDockWidget
 
   void bufferOutputs(bool state);
 
+  TclCmdInputWidget* getTclCmdInput() const;
+
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
@@ -118,8 +120,6 @@ class ScriptWidget : public QDockWidget
   // required to ensure input command space it set to correct height
   void resizeEvent(QResizeEvent* event) override;
 
-  TclCmdInputWidget* getTclCmdInput() const;
-
  private:
   void triggerPauseCountDown(int timeout);
 
@@ -148,8 +148,6 @@ class ScriptWidget : public QDockWidget
   const QColor error_msg_ = Qt::red;
   const QColor ok_msg_ = Qt::blue;
   const QColor buffer_msg_ = QColor(0x30, 0x30, 0x30);
-
-  friend class TimingWidget;
 };
 
 }  // namespace gui
