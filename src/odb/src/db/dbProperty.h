@@ -68,6 +68,10 @@ struct _dbPropertyFlags
   uint _spare_bits : 20;
 };
 
+/**
+ * @ brief This class serves as DB Property base class
+ */
+
 class _dbProperty : public _dbObject
 {
  public:

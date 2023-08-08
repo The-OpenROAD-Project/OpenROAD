@@ -113,14 +113,14 @@ class dbTechVia;
 class dbTechViaRule;
 class dbTechViaLayerRule;
 class dbTechViaGenerateRule;
-[Oclass dbTechNonDefaultRule;
+class dbTechNonDefaultRule;
 class dbTechLayerRule;
 class dbTechLayerSpacingRule;
 class dbTechLayerAntennaRule;
 class dbTechMinCutRule;
 class dbTechMinEncRule;
 class dbTechV55InfluenceEntry;
-class dbTechSameNetRule;
+[Oclass dbTechSameNetRule;
 class dbViaParams;
 
 // Generator Code Begin ClassDeclarations
@@ -161,9 +161,9 @@ class dbExtControl;
 
 class ZContext;
 
-/**
- * dbProperty - Property base class.
- */
+///
+/// dbProperty - Property base class.
+///
 class dbProperty : public dbObject
 {
  public:
@@ -278,7 +278,7 @@ class dbDoubleProperty : public dbProperty
   double getValue();
 
   /// Set the value of this property.
-[I  void setValue(double value);
+  void setValue(double value);
 
   /// Create a double property. Returns nullptr if a property with the same name
   /// already exists.
@@ -506,7 +506,7 @@ class dbBox : public dbObject
   int yMin();
 
   ///
-[O  /// Get the high x coordinate.
+  /// Get the high x coordinate.
   ///
   int xMax();
 
@@ -5762,7 +5762,7 @@ class dbMPin : public dbObject
   std::vector<std::vector<odb::dbAccessPoint*>> getPinAccess() const;
 
   ///
-  /// Create a new physical pin.
+[I  /// Create a new physical pin.
   ///
   static dbMPin* create(dbMTerm* mterm);
 
@@ -7156,7 +7156,7 @@ class dbGCellGrid : public dbObject
   uint getHorizontalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   uint getVerticalUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
-[I
+
   uint getUpUsage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
 
   uint getHorizontalBlockage(dbTechLayer* layer, uint x_idx, uint y_idx) const;
@@ -7320,7 +7320,7 @@ class dbGroup : public dbObject
 
   static dbGroup* create(dbGroup* parent, const char* name);
 
-  static void destroy(dbGroup* group);
+[O  static void destroy(dbGroup* group);
 
   static dbGroup* getGroup(dbBlock* block_, uint dbid_);
 
@@ -8903,7 +8903,7 @@ class dbTechLayerCutSpacingTableOrthRule : public dbObject
 class dbTechLayerEolExtensionRule : public dbObject
 {
  public:
-[O  void setSpacing(int spacing);
+  void setSpacing(int spacing);
 
   int getSpacing() const;
 
@@ -9188,7 +9188,7 @@ class dbTechLayerMinStepRule : public dbObject
 
   void setExceptSameCorners(bool except_same_corners);
 
-[I  bool isExceptSameCorners() const;
+  bool isExceptSameCorners() const;
 
   // User Code Begin dbTechLayerMinStepRule
   static dbTechLayerMinStepRule* create(dbTechLayer* layer);
@@ -9495,7 +9495,7 @@ class dbTechLayerSpacingEolRule : public dbObject
 
   bool isTwoMinAdjLengthValid() const;
 
-[O  void setToNotchLengthValid(bool to_notch_length_valid);
+  void setToNotchLengthValid(bool to_notch_length_valid);
 
   bool isToNotchLengthValid() const;
 
