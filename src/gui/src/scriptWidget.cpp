@@ -46,7 +46,6 @@
 #include "gui/gui.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
-#include "tclCmdInputWidget.h"
 
 namespace gui {
 
