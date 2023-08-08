@@ -1237,7 +1237,7 @@ void IOPlacer::assignMirroredPin(IOPin& io_pin)
   mirrored_pin.assignToSection();
 }
 
-void IOPlacer::printConfig()
+void IOPlacer::printConfig(bool annealing)
 {
   logger_->info(PPL, 1, "Number of slots          {}", slots_.size());
   logger_->info(PPL, 2, "Number of I/O            {}", netlist_->numIOPins());
@@ -1245,9 +1245,11 @@ void IOPlacer::printConfig()
   logger_->info(
       PPL, 3, "Number of I/O w/sink     {}", netlist_io_pins_->numIOPins());
   logger_->info(PPL, 4, "Number of I/O w/o sink   {}", zero_sink_ios_.size());
-  logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
-  logger_->info(
-      PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+  if (!annealing) {
+    logger_->info(PPL, 5, "Slots per section        {}", slots_per_section_);
+    logger_->info(
+        PPL, 6, "Slots increase factor    {:.1}", slots_increase_factor_);
+  }
 }
 
 void IOPlacer::setupSections(int assigned_pins_count)
@@ -1993,6 +1995,8 @@ void IOPlacer::runAnnealing(bool random)
   if (isAnnealingDebugOn()) {
     annealing.setDebugOn(std::move(ioplacer_renderer_));
   }
+
+  printConfig(true);
 
   annealing.run(
       init_temperature_, max_iterations_, perturb_per_iter_, alpha_, random);
