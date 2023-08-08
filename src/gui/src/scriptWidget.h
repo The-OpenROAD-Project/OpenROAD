@@ -37,8 +37,8 @@
 #include <QPushButton>
 #include <QSettings>
 
-#include "utl/Logger.h"
 #include "tclCmdInputWidget.h"
+#include "utl/Logger.h"
 
 namespace odb {
 class dbDatabase;

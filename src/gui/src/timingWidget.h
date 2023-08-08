@@ -44,9 +44,9 @@
 #include <QTableView>
 #include <memory>
 
-#include "scriptWidget.h"
 #include "gui/gui.h"
 #include "odb/db.h"
+#include "scriptWidget.h"
 
 namespace sta {
 class dbSta;

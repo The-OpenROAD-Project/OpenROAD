@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "timingWidget.h"
-#include <iostream>
+
 #include <QApplication>
 #include <QClipboard>
 #include <QFrame>
@@ -180,11 +180,10 @@ void TimingWidget::init(sta::dbSta* sta)
       this,
       SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
 
-  connect(
-      setup_timing_table_view_,
-      SIGNAL(selectedRowRightClicked(const QModelIndex&)),
-      this,
-      SLOT(writePathReportCommand(const QModelIndex&)));
+  connect(setup_timing_table_view_,
+          SIGNAL(selectedRowRightClicked(const QModelIndex&)),
+          this,
+          SLOT(writePathReportCommand(const QModelIndex&)));
 
   connect(
       hold_timing_table_view_->selectionModel(),
@@ -192,11 +191,10 @@ void TimingWidget::init(sta::dbSta* sta)
       this,
       SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
 
-  connect(
-      hold_timing_table_view_,
-      SIGNAL(selectedRowRightClicked(const QModelIndex&)),
-      this,
-      SLOT(writePathReportCommand(const QModelIndex&)));
+  connect(hold_timing_table_view_,
+          SIGNAL(selectedRowRightClicked(const QModelIndex&)),
+          this,
+          SLOT(writePathReportCommand(const QModelIndex&)));
 
   connect(
       path_details_table_view_->selectionModel(),
@@ -261,19 +259,26 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)
 {
   auto tcl_input = script_->getTclCmdInput();
 
-  TimingPathsModel* focus_model = static_cast<TimingPathsModel*>(focus_view_->model());
+  TimingPathsModel* focus_model
+      = static_cast<TimingPathsModel*>(focus_view_->model());
 
   TimingPath* selected_path = focus_model->getPathAt(selected_index);
 
-  QString report_checks = "report_checks ";
-  QString from = "-from ";
-  QString start_node = QString::fromStdString(selected_path->getStartStageName());
-  QString to = " -to ";
+  QString start_node
+      = QString::fromStdString(selected_path->getStartStageName());
   QString end_node = QString::fromStdString(selected_path->getEndStageName());
 
-  QString command = report_checks + from + start_node + to + end_node;
+  QString path_delay_config = focus_view_ == setup_timing_table_view_
+                                  ? " -path_delay max"
+                                  : " -path_delay min";
 
-  tcl_input->setText(command);
+  QString path_report_command
+      = "report_checks -from " + start_node + " -to " + end_node
+        + path_delay_config
+        + " -fields {capacitance slew input_pins nets fanout}"
+        + " -format full_clock_expanded";
+
+  tcl_input->setText(path_report_command);
 }
 
 void TimingWidget::clearPathDetails()

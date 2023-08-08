@@ -1291,8 +1291,7 @@ const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
 }
 
 /////////
-TimingPathsTableView::TimingPathsTableView(QWidget* parent)
-    : QTableView(parent)
+TimingPathsTableView::TimingPathsTableView(QWidget* parent) : QTableView(parent)
 {
 }
 
@@ -1302,7 +1301,7 @@ void TimingPathsTableView::mousePressEvent(QMouseEvent* event)
     QModelIndex index = indexAt(event->pos());
     if (index.isValid() && selectionModel()->isSelected(index)) {
       emit selectedRowRightClicked(index);
-    }    
+    }
   } else {
     QAbstractItemView::mousePressEvent(event);
   }
