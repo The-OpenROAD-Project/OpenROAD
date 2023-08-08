@@ -215,13 +215,13 @@ proc select { args } {
       utl::error GUI 59 "-filter not available when using -name."
     } else {
       set filter $keys(-filter)
-      set filter [split $filter "=="]
+      set filter [split $filter "="]
       set length [llength $filter]
-      if { $length != 3 } {
-        utl::error GUI 56 "Invalid syntax for -filter. Use '-filter attribute==value'"        
+      if { $length != 2 } {
+        utl::error GUI 56 "Invalid syntax for -filter. Use -filter attribute=value."
       } else {
         set attribute [lindex $filter 0]
-        set value [lindex $filter 2]   
+        set value [lindex $filter 1]
       }     
     }
   }

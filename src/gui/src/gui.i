@@ -566,6 +566,7 @@ int select(const std::string& type,
   if (!check_gui("select")) {
     return 0;
   }
+
   auto gui = gui::Gui::get();
   return gui->select(type, name_filter, attribute, value, case_sensitive, highlight_group);
 }
