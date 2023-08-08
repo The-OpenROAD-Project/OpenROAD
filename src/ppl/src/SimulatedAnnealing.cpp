@@ -618,14 +618,18 @@ bool SimulatedAnnealing::isFreeForGroup(int slot_idx,
 
     int slot = slot_idx;
     int mirrored_slot = getMirroredSlotIdx(slot);
+    free_slot = true;  // Assume the slots are free and prove otherwise
     for (int i = 0; i < group_size; i++) {
-      free_slot
-          = slots_[slot].isAvailable() && slots_[mirrored_slot].isAvailable();
-      if (!free_slot) {
+      if (!slots_[slot].isAvailable() || !slots_[mirrored_slot].isAvailable()) {
+        free_slot = false;
         break;
       }
 
       slot++;
+    }
+
+    if (!free_slot) {
+      slot_idx++;  // Move to the next slot if the current one is not free
     }
   }
 
