@@ -177,13 +177,13 @@ void TimingWidget::init(sta::dbSta* sta)
           &TimingWidget::modelWasReset);
 
   connect(setup_timing_table_view_->horizontalHeader(),
-          SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
+          &QHeaderView::sortIndicatorChanged,
           setup_timing_table_view_->model(),
-          SLOT(sort(int, Qt::SortOrder)));
+          &QAbstractItemModel::sort);
   connect(hold_timing_table_view_->horizontalHeader(),
-          SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
+          &QHeaderView::sortIndicatorChanged,
           hold_timing_table_view_->model(),
-          SLOT(sort(int, Qt::SortOrder)));
+          &QAbstractItemModel::sort);
 
   connect(setup_timing_table_view_->selectionModel(),
           &QItemSelectionModel::selectionChanged,

@@ -121,9 +121,9 @@ BrowserWidget::BrowserWidget(
           &BrowserWidget::selectionChanged);
 
   connect(model_,
-          SIGNAL(itemChanged(QStandardItem*)),
+          &QStandardItemModel::itemChanged,
           this,
-          SLOT(itemChanged(QStandardItem*)));
+          &BrowserWidget::itemChanged);
 
   connect(this,
           &BrowserWidget::updateModuleColor,
