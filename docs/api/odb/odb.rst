@@ -4,7 +4,7 @@ Contexts
 
 Classes
 -------
-.. doxygenclass:: _dbProperty
+.. doxygenclass:: odb::_dbProperty
    :project: odb
    :members:
 
