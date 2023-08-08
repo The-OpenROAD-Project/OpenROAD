@@ -4,6 +4,7 @@ option(BUILD_GUI "Build the GUI" ON)
 # If Qt is not installed there will not be cmake
 # support for the package so this needs to be "quiet".
 find_package(Qt5 QUIET COMPONENTS Core Widgets OPTIONAL_COMPONENTS Charts)
+find_package(Qt5 COMPONENTS Concurrent REQUIRED)
 
 include("openroad")
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -85,6 +86,7 @@ if (Qt5_FOUND AND BUILD_GUI)
     PRIVATE
       Qt5::Core
       Qt5::Widgets
+      Qt5::Concurrent
       ${CHARTS_LIB}
       utl
       Boost::boost

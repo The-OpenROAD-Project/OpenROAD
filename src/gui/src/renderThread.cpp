@@ -32,6 +32,8 @@
 
 #include "renderThread.h"
 
+#include <QtConcurrent/QtConcurrent>
+
 #include "layoutViewer.h"
 #include "odb/dbShape.h"
 #include "odb/dbTransform.h"
@@ -115,19 +117,63 @@ void RenderThread::run()
     highlighted.swap(highlighted_);
     rulers.swap(rulers_);
     mutex_.unlock();
-    QImage image(draw_bounds.width(),
-                 draw_bounds.height(),
-                 QImage::Format_ARGB32_Premultiplied);
-    // drawing can be interrupted by setting restart_
-    draw(image,
-         draw_bounds,
-         selected,
-         highlighted,
-         rulers,
-         1.0,
-         Qt::transparent);
+
+    QImage finalImage(draw_bounds.width(),
+                      draw_bounds.height(),
+                      QImage::Format_ARGB32_Premultiplied);
+    finalImage.fill(Qt::transparent);
+
+    int minWidth = 100;
+    int threadCount = draw_bounds.width() / minWidth;
+    // Ensure there's at least one thread and not more threads than the ideal
+    // count
+    threadCount = qMax(1, qMin(threadCount, QThread::idealThreadCount()));
+
+    QVector<QRect> subRects;
+    QVector<QFuture<QImage>> futures;
+
+    int subWidth = draw_bounds.width() / threadCount;
+    for (int i = 0; i < threadCount; ++i) {
+      subRects.append(QRect(draw_bounds.left() + i * subWidth,
+                            draw_bounds.top(),
+                            subWidth,
+                            draw_bounds.height()));
+    }
+    subRects.last().setWidth(subRects.last().width()
+                             + draw_bounds.width() % threadCount);
+
+    {
+      // Prevent a paintEvent and a save_image call from interfering
+      // (eg search RTree construction)
+      std::lock_guard<std::mutex> lock(drawing_mutex_);
+
+      for (const auto& subRect : subRects) {
+        futures.push_back(
+            QtConcurrent::run([=, &selected, &highlighted, &rulers]() {
+              QImage subImage(subRect.width(),
+                              subRect.height(),
+                              QImage::Format_ARGB32_Premultiplied);
+              draw(subImage,
+                   subRect,
+                   selected,
+                   highlighted,
+                   rulers,
+                   1.0,
+                   Qt::transparent);
+              return subImage;
+            }));
+      }
+
+      QPainter painter(&finalImage);
+      for (int i = 0; i < threadCount; ++i) {
+        futures[i].waitForFinished();
+        painter.drawImage(QPoint(subRects[i].left() - draw_bounds.left(), 0),
+                          futures[i].result());
+      }
+    }
+
     if (!restart_) {
-      emit done(image, draw_bounds);
+      emit done(finalImage, draw_bounds);
     }
     if (abort_) {
       return;
@@ -150,9 +196,6 @@ void RenderThread::draw(QImage& image,
                         qreal render_ratio,
                         const QColor& background)
 {
-  // Prevent a paintEvent and a save_image call from interfering
-  // (eg search RTree construction)
-  std::lock_guard<std::mutex> lock(drawing_mutex_);
   QPainter painter(&image);
   painter.setRenderHints(QPainter::Antialiasing);
 
