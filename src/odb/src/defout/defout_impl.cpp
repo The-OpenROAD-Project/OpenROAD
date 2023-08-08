@@ -220,6 +220,9 @@ bool defout_impl::writeBlock(dbBlock* block, const char* def_file)
   writeVias(block);
   writeNonDefaultRules(block);
   writeRegions(block);
+  if (_version == defout::DEF_5_8) {
+    writeComponentMaskShift(block);
+  }
   writeInsts(block);
   writeBTerms(block);
   writePinProperties(block);
@@ -466,6 +469,21 @@ void defout_impl::writeVia(dbVia* via)
   }
 
   fprintf(_out, " ;\n");
+}
+
+void defout_impl::writeComponentMaskShift(dbBlock* block)
+{
+  const std::vector<dbTechLayer*> layers = block->getComponentMaskShift();
+
+  if (layers.empty()) {
+    return;
+  }
+
+  fprintf(_out, "COMPONENTMASKSHIFT ");
+  for (dbTechLayer* layer : layers) {
+    fprintf(_out, "%s ", layer->getConstName());
+  }
+  fprintf(_out, ";\n");
 }
 
 void defout_impl::writeInsts(dbBlock* block)

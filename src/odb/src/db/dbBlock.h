@@ -87,6 +87,7 @@ class _dbRegion;
 class _dbHier;
 class _dbBPin;
 class _dbTech;
+class _dbTechLayer;
 class _dbTechLayerRule;
 class _dbTechNonDefaultRule;
 class _dbModule;
@@ -183,6 +184,7 @@ class _dbBlock : public _dbObject
   uint _maxRSegId;
   uint _maxCCSegId;
   dbVector<dbId<_dbBlock>> _children;
+  dbVector<dbId<_dbTechLayer>> _component_mask_shift;
   uint _currentCcAdjOrder;
 
   // NON-PERSISTANT-STREAMED-MEMBERS

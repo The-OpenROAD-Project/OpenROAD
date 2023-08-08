@@ -43,6 +43,7 @@ class Logger;
 namespace odb {
 
 class definBlockage;
+class definComponentMaskShift;
 class definComponent;
 class definFill;
 class definGCell;
@@ -63,6 +64,7 @@ class definReader : public definBase
   dbDatabase* _db;
   dbBlock* parent_;  // For Hierarchal implementation if exits
   definBlockage* _blockageR;
+  definComponentMaskShift* _componentMaskShift;
   definComponent* _componentR;
   definFill* _fillR;
   definGCell* _gcellR;
