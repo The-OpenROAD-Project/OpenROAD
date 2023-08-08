@@ -27,8 +27,7 @@ def _get_sections(lines, tag, sections=None, remove=False):
 
             end = _find_index(lines, line.replace("Begin", "End", 1), i)
             if end == -1:
-                print(f"Could not find an End for tag {name}\n")
-                return False
+                raise Exception(f"Could not find an End for tag {name}\n")
             if remove:
                 del lines[i + 1 : end]
             else:
@@ -36,7 +35,6 @@ def _get_sections(lines, tag, sections=None, remove=False):
                 if end > i + 1:
                     sections[name].extend(lines[i + 1 : end])
         i += 1
-    return True
 
 
 class Parser:
@@ -53,18 +51,15 @@ class Parser:
         self.generator_code_tag = f"{comment}GeneratorCodeBegin"
 
     def parse_user_code(self):
-        status = _get_sections(self.lines, self.user_code_tag, self.user_code)
-        return status
+        _get_sections(self.lines, self.user_code_tag, self.user_code)
 
     def parse_source_code(self, file_name):
         with open(file_name, "r", encoding="ascii") as source_file:
             db_lines = source_file.readlines()
-        status = _get_sections(db_lines, self.generator_code_tag, self.generator_code)
-        return status
+        _get_sections(db_lines, self.generator_code_tag, self.generator_code)
 
     def clean_code(self):
-        status = _get_sections(self.lines, self.generator_code_tag, remove=True)
-        return status
+        _get_sections(self.lines, self.generator_code_tag, remove=True)
 
     def write_in_file(self, file_name, keep_empty):
         # Replace the user sections inside the generate sections with
@@ -106,4 +101,3 @@ class Parser:
             i += 1
         with open(file_name, "w", encoding="ascii") as out:
             out.write("".join(self.lines))
-        return True
