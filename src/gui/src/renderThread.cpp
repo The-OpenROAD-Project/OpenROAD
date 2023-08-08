@@ -697,13 +697,19 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
   painter->scale(scale_adjust, -scale_adjust);
   if (do_rotate) {
     text_bounding_box = font_metrics.boundingRect(name);
+    auto xOffset = (bbox_in_px.height() - text_bounding_box.width()) / 2;
+    auto yOffset = (bbox_in_px.width() - text_bounding_box.height()) / 2;
     painter->rotate(90);
     painter->translate(-text_bounding_box.width(), 0);
     // account for descent of font
     painter->translate(-font_metrics.descent(), 0);
+    painter->translate(-xOffset, -yOffset);
   } else {
     // account for descent of font
+    auto xOffset = (bbox_in_px.width() - text_bounding_box.width()) / 2;
+    auto yOffset = (bbox_in_px.height() - text_bounding_box.height()) / 2;
     painter->translate(font_metrics.descent(), 0);
+    painter->translate(xOffset, -yOffset);
   }
   painter->drawText(0, 0, name);
 
