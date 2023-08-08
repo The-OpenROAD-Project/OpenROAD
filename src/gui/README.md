@@ -76,13 +76,19 @@ Options description:
 ### Save screenshot of clock trees
 
 ```
-gui::save_clocktree_image filename
-                          clock_name
+save_clocktree_image filename
+                     -clock clock_name
+                     [-width width]
+                     [-height height]
+                     [-corner corner]
 ```
 
 Options description:
 - ``filename`` path to save the image to.
-- ``clock_name`` name of the clock to save the clocktree for.
+- ``-clock`` name of the clock to save the clocktree for.
+- ``-corner`` name of the timing corner to save the clocktree for, default to the first corner defined.
+- ``-height`` height of the image in pixels, defaults to the height of the GUI widget.
+- ``-width`` width of the image in pixels, defualts to the width of the GUI widget.
 
 ### Selecting objects
 
