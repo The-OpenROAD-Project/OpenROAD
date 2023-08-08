@@ -597,6 +597,8 @@ void io::Parser::checkPins()
     int grid = tech_->getManufacturingGrid();
     for (auto& uTerm : inst->getMaster()->getTerms()) {
       bool foundTracks = false;
+      bool foundCenterTracks = false;
+      bool hasPolys = false;
       for (auto& pin : uTerm->getPins()) {
         for (auto& uFig : pin->getFigs()) {
           if (uFig->typeId() == frcRect) {
@@ -615,7 +617,7 @@ void io::Parser::checkPins()
                   box,
                   grid);
             }
-            if (foundTracks)
+            if (foundTracks && foundCenterTracks)
               continue;
             auto layer = tech_->getLayer(shape->getLayerNum());
             if (layer->getLayerNum() > TOP_ROUTING_LAYER
@@ -638,14 +640,22 @@ void io::Parser::checkPins()
                 = (USENONPREFTRACKS && !layer->isUnidirectional());
             if (allowWrongWayRouting) {
               foundTracks |= (!horzTracks.empty() || !vertTracks.empty());
+              foundCenterTracks
+                  |= horzTracks.find(box.yCenter()) != horzTracks.end()
+                     || vertTracks.find(box.xCenter()) != vertTracks.end();
             } else {
               if (layer->getDir() == odb::dbTechLayerDir::HORIZONTAL) {
                 foundTracks |= !horzTracks.empty();
+                foundCenterTracks
+                    |= horzTracks.find(box.yCenter()) != horzTracks.end();
               } else {
                 foundTracks |= !vertTracks.empty();
+                foundCenterTracks
+                    |= vertTracks.find(box.yCenter()) != vertTracks.end();
               }
             }
           } else if (uFig->typeId() == frcPolygon) {
+            hasPolys = true;
             auto polygon = static_cast<frPolygon*>(uFig.get());
             vector<gtl::point_data<frCoord>> points;
             for (Point pt : polygon->getPoints()) {
@@ -702,13 +712,21 @@ void io::Parser::checkPins()
           }
         }
       }
-      if (!foundTracks && uTerm->getNet()
-          && !uTerm->getNet()->getOrigGuides().empty()) {
-        logger_->warn(DRT,
-                      418,
-                      "Term {}/{} has no pins on routing grid",
-                      inst->getName(),
-                      uTerm->getName());
+      if (uTerm->getNet() && !uTerm->getNet()->getOrigGuides().empty()) {
+        if (!foundTracks) {
+          logger_->warn(DRT,
+                        418,
+                        "Term {}/{} has no pins on routing grid",
+                        inst->getName(),
+                        uTerm->getName());
+        } else if (!foundCenterTracks && !hasPolys) {
+          logger_->warn(
+              DRT,
+              419,
+              "No routing tracks pass through the center of Term {}/{}",
+              inst->getName(),
+              uTerm->getName());
+        }
       }
     }
   }
