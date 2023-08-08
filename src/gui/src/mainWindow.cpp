@@ -376,6 +376,10 @@ MainWindow::MainWindow(QWidget* parent)
       drc_viewer_->updateSelection(*selected_.begin());
     }
   });
+  connect(this,
+          &MainWindow::displayUnitsChanged,
+          goto_dialog_,
+          &GotoLocationDialog::updateUnits);
 
   createActions();
   createToolbars();
