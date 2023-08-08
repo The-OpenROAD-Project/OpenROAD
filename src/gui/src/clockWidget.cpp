@@ -712,7 +712,7 @@ void ClockTreeScene::setRendererState(RendererState state)
 
 ////////////////
 
-ClockTreeView::ClockTreeView(ClockTree* tree,
+ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
                              const STAGuiInterface* sta,
                              utl::Logger* logger,
                              QWidget* parent)
@@ -1253,6 +1253,7 @@ void ClockTreeView::save(const QString& path)
     render_rect = scene_->sceneRect().toRect();
     render_rect.translate(-render_rect.left(), -render_rect.top());
   }
+
   show_mouse_time_tick_ = false;
   Utils::renderImage(save_path,
                      viewport(),
@@ -1281,6 +1282,7 @@ ClockWidget::ClockWidget(QWidget* parent)
       logger_(nullptr),
       block_(nullptr),
       sta_(nullptr),
+      stagui_(nullptr),
       update_button_(new QPushButton("Update", this)),
       corner_box_(new QComboBox(this)),
       clocks_tab_(new QTabWidget(this))
@@ -1321,6 +1323,10 @@ void ClockWidget::setSTA(sta::dbSta* sta)
 {
   sta_ = sta;
   if (sta_ != nullptr) {
+    stagui_ = std::make_unique<STAGuiInterface>(sta_);
+    stagui_->setMaxPathCount(1);
+    stagui_->setIncludeUnconstrainedPaths(false);
+
     sta_->getDbNetwork()->addObserver(this);
     postReadLiberty();
   }
@@ -1337,23 +1343,28 @@ void ClockWidget::setBlock(odb::dbBlock* block)
   block_ = block;
 }
 
-void ClockWidget::populate()
+void ClockWidget::populate(sta::Corner* corner)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   clocks_tab_->clear();
   views_.clear();
 
-  STAGuiInterface stagui(sta_);
-  stagui.setMaxPathCount(1);
-  stagui.setIncludeUnconstrainedPaths(false);
-  stagui.setCorner(corner_box_->currentData().value<sta::Corner*>());
+  if (corner == nullptr) {
+    corner = corner_box_->currentData().value<sta::Corner*>();
+  } else {
+    corner_box_->setCurrentText(corner->name());
+  }
+  stagui_->setCorner(corner);
 
-  for (auto& tree : stagui.getClockTrees()) {
+  for (auto& tree : stagui_->getClockTrees()) {
     if (!tree->getNet()) {  // skip virtual clocks
       continue;
     }
-    auto* view = new ClockTreeView(tree.release(), &stagui, logger_, this);
+    auto* view = new ClockTreeView(std::shared_ptr<ClockTree>(tree.release()),
+                                   stagui_.get(),
+                                   logger_,
+                                   this);
     views_.emplace_back(view);
     clocks_tab_->addTab(view, view->getClockName());
     clocks_tab_->setCurrentWidget(view);
@@ -1395,23 +1406,51 @@ void ClockWidget::postReadLiberty()
 }
 
 void ClockWidget::saveImage(const std::string& clock_name,
-                            const std::string& path)
+                            const std::string& path,
+                            const std::string& corner,
+                            const std::optional<int>& width_px,
+                            const std::optional<int>& height_px)
 {
   const bool visible = isVisible();
   if (!visible) {
     setVisible(true);
   }
 
-  if (views_.empty()) {
-    populate();
+  bool populate_views = views_.empty();
+  sta::Corner* sta_corner = nullptr;
+  if (!corner.empty() && corner != corner_box_->currentText().toStdString()) {
+    populate_views = true;
+    const int idx = corner_box_->findText(QString::fromStdString(corner));
+    if (idx == -1) {
+      logger_->error(utl::GUI, 89, "Unable to find \"{}\" corner", corner);
+    }
+    sta_corner = corner_box_->itemData(idx).value<sta::Corner*>();
+  }
+
+  if (populate_views) {
+    populate(sta_corner);
   }
 
   bool found = false;
-  for (const auto& view : views_) {
+  for (auto& view : views_) {
     if (view->getClockName() == clock_name) {
       found = true;
-      view->fit();
-      view->save(QString::fromStdString(path));
+
+      ClockTreeView print_view(
+          view->getClockTree(), stagui_.get(), logger_, this);
+      QSize view_size = view->size();
+      if (width_px.has_value()) {
+        view_size.setWidth(width_px.value());
+      }
+      if (height_px.has_value()) {
+        view_size.setHeight(height_px.value());
+      }
+      print_view.resize(view_size);
+      // Ensure the new view is sized correctly by Qt by processing the event
+      // so fit will work
+      QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+      print_view.fit();
+      print_view.save(QString::fromStdString(path));
     }
   }
 

@@ -47,6 +47,7 @@
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QToolTip>
+#include <optional>
 #include <variant>
 
 #include "gui/gui.h"
@@ -352,12 +353,12 @@ class ClockTreeView : public QGraphicsView
   Q_OBJECT
 
  public:
-  ClockTreeView(ClockTree* tree,
+  ClockTreeView(std::shared_ptr<ClockTree> tree,
                 const STAGuiInterface* sta,
                 utl::Logger* logger,
                 QWidget* parent = nullptr);
 
-  ClockTree* getClockTree() const { return tree_.get(); }
+  std::shared_ptr<ClockTree>& getClockTree() { return tree_; }
   const char* getClockName() const;
 
   void updateRendererState() const;
@@ -385,7 +386,7 @@ class ClockTreeView : public QGraphicsView
   void mouseMoveEvent(QMouseEvent* event) override;
 
  private:
-  std::unique_ptr<ClockTree> tree_;
+  std::shared_ptr<ClockTree> tree_;
   std::unique_ptr<ClockTreeRenderer> renderer_;
   RendererState renderer_state_;
   ClockTreeScene* scene_;
@@ -466,7 +467,11 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
   void setLogger(utl::Logger* logger);
   void setSTA(sta::dbSta* sta);
 
-  void saveImage(const std::string& clock_name, const std::string& path);
+  void saveImage(const std::string& clock_name,
+                 const std::string& path,
+                 const std::string& corner,
+                 const std::optional<int>& width_px,
+                 const std::optional<int>& height_px);
 
   virtual void postReadLiberty() override;
 
@@ -475,7 +480,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
 
  public slots:
   void setBlock(odb::dbBlock* block);
-  void populate();
+  void populate(sta::Corner* corner = nullptr);
 
  private slots:
   void currentClockChanged(int index);
@@ -488,6 +493,7 @@ class ClockWidget : public QDockWidget, sta::dbNetworkObserver
   utl::Logger* logger_;
   odb::dbBlock* block_;
   sta::dbSta* sta_;
+  std::unique_ptr<STAGuiInterface> stagui_;
 
   QPushButton* update_button_;
   QComboBox* corner_box_;
