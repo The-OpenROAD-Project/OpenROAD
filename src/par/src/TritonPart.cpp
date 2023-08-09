@@ -1822,7 +1822,7 @@ void TritonPart::MultiLevelPartition()
           num_parts_, ub_factor_, base_balance_);
 
   Matrix<float> lower_block_balance
-      = original_hypergraph_->GetUpperVertexBalance(
+      = original_hypergraph_->GetLowerVertexBalance(
           num_parts_, ub_factor_, base_balance_);
 
   // Step 1 : create all the coarsening, partitionig and refinement class
