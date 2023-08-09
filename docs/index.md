@@ -37,10 +37,6 @@ The paper is also available from [ACM Digital Library](https://dl.acm.org/doi/10
 Other publications and presentations are
 linked [here](https://theopenroadproject.org/publications/).
 
-## OpenDB API
-
-The link to the opendb api is [here](./build/html/index.html).
-
 ## Documentation
 
 The OpenROAD Project has two releases:

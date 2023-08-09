@@ -152,8 +152,6 @@ def swap_prefix(file, old, new):
 
 
 def setup(app):
-    import os
-
     if not os.path.exists('./main'):
         os.symlink('..', './main')
     # these prefix swaps will be reverted and is needed for sphinx compilation.
@@ -164,8 +162,7 @@ def setup(app):
     command = "python getMessages.py"
     _ = os.popen(command).read()
 
-    # for compiling doxygen
     if not os.path.exists('./build/html'): 
-            os.makedirs('./build/html', exist_ok = True)
+        os.makedirs('./build/html', exist_ok = True)
     command = "cd .. ; doxygen"
     _ = os.popen(command).read()
