@@ -407,7 +407,7 @@ Resizer::findBuffers()
       for (LibertyCell *buffer : *lib->buffers()) {
         if (!dontUse(buffer)
             && isLinkCell(buffer)) {
-          buffer_cells_.push_back(buffer);
+          buffer_cells_.emplace_back(buffer);
         }
       }
     }
@@ -485,7 +485,7 @@ Resizer::getPins(Net* net) const
   auto pin_iter = network_->pinIterator(net);
   while (pin_iter->hasNext()) {
     const Pin *pin = pin_iter->next();
-    pins.push_back(pin);
+    pins.emplace_back(pin);
   }
   delete pin_iter;
   return pins;
@@ -498,7 +498,7 @@ Resizer::getPins(Instance *inst) const
   auto pin_iter = network_->pinIterator(inst);
   while (pin_iter->hasNext()) {
     const Pin *pin = pin_iter->next();
-    pins.push_back(pin);
+    pins.emplace_back(pin);
   }
   return pins;
 }
@@ -792,7 +792,7 @@ Resizer::libraryPins(LibertyCell* cell) const
   sta::LibertyCellPortIterator itr(cell);
   while (itr.hasNext()) {
     auto port = itr.next();
-    pins.push_back(port);
+    pins.emplace_back(port);
   }
   return pins;
 }
@@ -909,7 +909,7 @@ Resizer::makeEquivCells()
     if (cell_iter.hasNext()) {
       LibertyCell *cell = cell_iter.next();
       if (isLinkCell(cell))
-        libs.push_back(lib);
+        libs.emplace_back(lib);
     }
   }
   delete lib_iter;
@@ -1173,7 +1173,7 @@ Resizer::findResizeSlacks1()
         && !db_network_->isSpecial(net)
         && !sta_->isClock(drvr_pin)) {
       net_slack_map_[net] = sta_->vertexSlack(drvr, max_);
-      nets.push_back(net);
+      nets.emplace_back(net);
     }
   }
 
@@ -1185,7 +1185,7 @@ Resizer::findResizeSlacks1()
              { return resizeNetSlack(net1) < resizeNetSlack(net2); });
   worst_slack_nets_.clear();
   for (int i = 0; i < nets.size() * worst_slack_nets_percent_ / 100.0; i++)
-    worst_slack_nets_.push_back(nets[i]);
+    worst_slack_nets_.emplace_back(nets[i]);
 }
 
 NetSeq &
@@ -1199,7 +1199,7 @@ Resizer::resizeWorstSlackDbNets()
 {
   vector<dbNet*> nets;
   for (const Net* net : worst_slack_nets_)
-    nets.push_back(db_network_->staToDb(net));
+    nets.emplace_back(db_network_->staToDb(net));
   return nets;
 }
 
@@ -1778,7 +1778,7 @@ Resizer::findCellInstances(LibertyCell *cell,
   while (inst_iter->hasNext()) {
     Instance *inst = inst_iter->next();
     if (network_->libertyCell(inst) == cell)
-      insts.push_back(inst);
+      insts.emplace_back(inst);
   }
   delete inst_iter;
 }
@@ -1871,7 +1871,7 @@ Resizer::findLongWires(VertexSeq &drvrs)
       if (!sta_->isClock(pin)
           && !vertex->isConstant()
           && !vertex->isDisabledConstraint())
-        drvr_dists.push_back(DrvrDist(vertex, maxLoadManhattenDistance(vertex)));
+        drvr_dists.emplace_back(DrvrDist(vertex, maxLoadManhattenDistance(vertex)));
     }
   }
   sort(drvr_dists, [](const DrvrDist &drvr_dist1,
@@ -1880,7 +1880,7 @@ Resizer::findLongWires(VertexSeq &drvrs)
                   });
   drvrs.reserve(drvr_dists.size());
   for (DrvrDist &drvr_dist : drvr_dists)
-    drvrs.push_back(drvr_dist.first);
+    drvrs.emplace_back(drvr_dist.first);
 }
 
 // Find the maximum distance along steiner tree branches from
@@ -1948,7 +1948,7 @@ Resizer::findFloatingNets()
     FindNetDrvrLoads visitor(nullptr, visited_drvrs, loads, drvrs, network_);
     network_->visitConnectedPins(net, visitor);
     if (drvrs.size() == 0 && loads.size() > 0)
-      floating_nets->push_back(net);
+      floating_nets->emplace_back(net);
   }
   delete net_iter;
   sort(floating_nets, sta::NetPathNameLess(network_));
@@ -2494,7 +2494,7 @@ Resizer::findClkInverters()
     if (vertex->isDriver(network_)
         && lib_cell
         && lib_cell->isInverter()) {
-      clk_inverters.push_back(inst);
+      clk_inverters.emplace_back(inst);
       debugPrint(logger_, RSZ, "repair_clk_inverters", 2, "inverter {}",
                  network_->pathName(inst));
     }
@@ -2701,7 +2701,7 @@ Resizer::journalMakeBuffer(Instance *buffer)
 {
   debugPrint(logger_, RSZ, "journal", 1, "journal make_buffer {}",
              network_->pathName(buffer));
-  inserted_buffers_.push_back(buffer);
+  inserted_buffers_.emplace_back(buffer);
   inserted_buffer_set_.insert(buffer);
 }
 
