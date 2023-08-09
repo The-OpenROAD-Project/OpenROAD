@@ -649,8 +649,9 @@ void io::Parser::checkPins()
                     |= vertTracks.find(box.yCenter()) != vertTracks.end();
               }
             }
-            if (foundTracks && box.minDXDY() > layer->getMinWidth())
+            if (foundTracks && box.minDXDY() > layer->getMinWidth()) {
               foundCenterTracks = true;
+            }
           } else if (uFig->typeId() == frcPolygon) {
             hasPolys = true;
             auto polygon = static_cast<frPolygon*>(uFig.get());
