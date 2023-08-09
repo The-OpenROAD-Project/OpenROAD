@@ -178,6 +178,9 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
     }
     Vertex *drvr = resizer_->level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
+    // TODO: Fixing pin x_aq_top_0/x_aq_core/x_aq_iu_top/_28169_/Y
+    // TODO: x_aq_top_0/x_aq_core/x_aq_vpu_top/x_aq_vfmau_top/x_aq_vfmau_dp/x_aq_vfmau_mult/x_aq_vfmau_frac_mult/_2887_/Y
+    // TODO: printf("Fixing pin %s\n", network_->name(drvr_pin));
     Net *net = network_->isTopLevelPort(drvr_pin)
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
@@ -685,6 +688,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
 
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
+  // TODO: Make sure that the max_load_slew is even in the realm of possibility.
   while ((max_length_ > 0 && wire_length > max_length_)
          || (wire_cap > 0.0
              && max_cap_ > 0.0
@@ -717,12 +721,16 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                  "", level,
                  units_->capacitanceUnit()->asString(load_cap, 3),
                  units_->capacitanceUnit()->asString(max_cap_, 3));
-      if (ref_cap > max_cap_)
+      if (ref_cap > max_cap_) {
         split_length = 0;
-      else
-        split_length = min(split_length,
-                           metersToDbu((max_cap_ - ref_cap) / wire_cap));
-      split_wire = true;
+        split_wire = false;
+      }
+      else {
+        split_length
+            = min(split_length, metersToDbu((max_cap_ - ref_cap) / wire_cap));
+        split_wire = true;
+      }
+
     }
     if (load_slew > max_load_slew_margined) { 
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}max load slew violation {} > {}",
@@ -746,16 +754,20 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
         - max_load_slew_margined / elmore_skew_factor_;
       float l = (-b + sqrt(b*b - 4 * a * c)) / (2 * a);
       if (l >= 0.0) {
-        split_length = min(split_length, metersToDbu(l));
+        if (split_length > 0.0)
+          split_length = min(split_length, metersToDbu(l));
+        else
+          split_length = metersToDbu(l);
         split_wire = true;
         resize = false;
       }
       else {
         split_length = 0;
-        split_wire = true;
-        resize = false;
+        split_wire = false;
+        resize = true;
       }
     }
+
     if (split_wire) {
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}split length={}",
                  "", level,
