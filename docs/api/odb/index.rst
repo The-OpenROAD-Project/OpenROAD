@@ -7,3 +7,4 @@ ODB API
    :maxdepth: 1
 
    odb
+   fullDocs
