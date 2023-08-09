@@ -690,6 +690,7 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
     name = font_metrics.elidedText(
         name, Qt::ElideLeft, size_limit * bbox_in_px.width());
   }
+  text_bounding_box = font_metrics.boundingRect(name);
 
   painter->setPen(QPen(text_color, 0));
   painter->setBrush(QBrush(text_color));
@@ -699,7 +700,6 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
   painter->translate(bbox.xMin(), bbox.yMin());
   painter->scale(scale_adjust, -scale_adjust);
   if (do_rotate) {
-    text_bounding_box = font_metrics.boundingRect(name);
     painter->rotate(90);
     painter->translate(-text_bounding_box.width(), 0);
     // account for descent of font
