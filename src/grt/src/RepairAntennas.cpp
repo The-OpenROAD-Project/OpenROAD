@@ -392,7 +392,7 @@ void RepairAntennas::repairAntennas(odb::dbMTerm* diode_mterm)
 
 void RepairAntennas::legalizePlacedCells()
 {
-  opendp_->detailedPlacement(0, 0);
+  opendp_->detailedPlacement(0, 0, "");
   // After legalize placement, diodes and violated insts don't need to be FIRM
   setInstsPlacementStatus(odb::dbPlacementStatus::PLACED);
 }
