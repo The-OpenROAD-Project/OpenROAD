@@ -4,5 +4,5 @@ Full dbh file
 
 Classes
 -------
-.. doxygenfile:: ../../../src/odb/include/odb/db.h
+.. doxygenfile:: odb/db.h
    :project: odb
