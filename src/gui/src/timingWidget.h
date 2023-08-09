@@ -46,7 +46,6 @@
 
 #include "gui/gui.h"
 #include "odb/db.h"
-#include "scriptWidget.h"
 
 namespace sta {
 class dbSta;
@@ -67,7 +66,7 @@ class TimingWidget : public QDockWidget
 {
   Q_OBJECT
  public:
-  TimingWidget(ScriptWidget* script, QWidget* parent = nullptr);
+  TimingWidget(QWidget* parent = nullptr);
   ~TimingWidget();
 
   void init(sta::dbSta* sta);
@@ -85,6 +84,7 @@ class TimingWidget : public QDockWidget
  signals:
   void highlightTimingPath(TimingPath* timing_path);
   void inspect(const Selected& selection);
+  void setCommand(const QString& command);
 
  public slots:
   void showPathDetails(const QModelIndex& index);
@@ -120,8 +120,6 @@ class TimingWidget : public QDockWidget
 
  private:
   void copy();
-
-  ScriptWidget* script_;
 
   TimingPathsTableView* setup_timing_table_view_;
   TimingPathsTableView* hold_timing_table_view_;

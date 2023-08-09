@@ -100,7 +100,7 @@ MainWindow::MainWindow(QWidget* parent)
       selection_browser_(
           new SelectHighlightWindow(selected_, highlighted_, this)),
       scroll_(new LayoutScroll(viewer_, this)),
-      timing_widget_(new TimingWidget(script_, this)),
+      timing_widget_(new TimingWidget(this)),
       drc_viewer_(new DRCWidget(this)),
       clock_viewer_(new ClockWidget(this)),
       hierarchy_widget_(
@@ -330,6 +330,11 @@ MainWindow::MainWindow(QWidget* parent)
           &TimingWidget::highlightTimingPath,
           viewer_,
           qOverload<>(&LayoutViewer::update));
+
+  connect(timing_widget_,
+          &TimingWidget::setCommand,
+          script_,
+          &ScriptWidget::setCommand);
 
   connect(this, &MainWindow::designLoaded, this, &MainWindow::setBlock);
   connect(this, &MainWindow::designLoaded, drc_viewer_, &DRCWidget::setBlock);

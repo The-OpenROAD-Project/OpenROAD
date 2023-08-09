@@ -37,7 +37,6 @@
 #include <QPushButton>
 #include <QSettings>
 
-#include "tclCmdInputWidget.h"
 #include "utl/Logger.h"
 
 namespace odb {
@@ -47,6 +46,7 @@ class dbDatabase;
 struct Tcl_Interp;
 
 namespace gui {
+class TclCmdInputWidget;
 
 // This shows a line edit to enter tcl commands and a
 // text area that is used to show the commands and their
@@ -76,8 +76,6 @@ class ScriptWidget : public QDockWidget
 
   void bufferOutputs(bool state);
 
-  TclCmdInputWidget* getTclCmdInput() const;
-
  signals:
   // Commands might have effects that others need to know
   // (eg change placement of an instance requires a redraw)
@@ -102,6 +100,10 @@ class ScriptWidget : public QDockWidget
   void addCommandToOutput(const QString& cmd);
 
   void pause(int timeout);
+
+  // This can be used by other widgets to "write" commands
+  // in the Tcl command input
+  void setCommand(const QString& command);
 
  private slots:
   void outputChanged();

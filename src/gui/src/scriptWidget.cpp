@@ -46,6 +46,7 @@
 #include "gui/gui.h"
 #include "spdlog/formatter.h"
 #include "spdlog/sinks/base_sink.h"
+#include "tclCmdInputWidget.h"
 
 namespace gui {
 
@@ -287,6 +288,11 @@ void ScriptWidget::pause(int timeout)
   QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
+void ScriptWidget::setCommand(const QString& command)
+{
+  input_->setText(command);
+}
+
 void ScriptWidget::unpause()
 {
   paused_ = false;
@@ -347,11 +353,6 @@ void ScriptWidget::resizeEvent(QResizeEvent* event)
 {
   input_->setMaxHeight(event->size().height() - output_->sizeHint().height());
   QDockWidget::resizeEvent(event);
-}
-
-TclCmdInputWidget* ScriptWidget::getTclCmdInput() const
-{
-  return input_;
 }
 
 void ScriptWidget::setWidgetFont(const QFont& font)

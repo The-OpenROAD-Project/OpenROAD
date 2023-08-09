@@ -47,9 +47,8 @@
 
 namespace gui {
 
-TimingWidget::TimingWidget(ScriptWidget* script, QWidget* parent)
+TimingWidget::TimingWidget(QWidget* parent)
     : QDockWidget("Timing Report", parent),
-      script_(script),
       setup_timing_table_view_(new TimingPathsTableView(this)),
       hold_timing_table_view_(new TimingPathsTableView(this)),
       path_details_table_view_(new QTableView(this)),
@@ -210,6 +209,7 @@ void TimingWidget::init(sta::dbSta* sta)
           &QItemSelectionModel::selectionChanged,
           this,
           &TimingWidget::selectedDetailRowChanged);
+
   connect(capture_details_table_view_->selectionModel(),
           &QItemSelectionModel::selectionChanged,
           this,
@@ -263,8 +263,6 @@ void TimingWidget::keyPressEvent(QKeyEvent* key_event)
 
 void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)
 {
-  auto tcl_input = script_->getTclCmdInput();
-
   TimingPathsModel* focus_model
       = static_cast<TimingPathsModel*>(focus_view_->model());
 
@@ -284,7 +282,7 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)
         + " -fields {capacitance slew input_pins nets fanout}"
         + " -format full_clock_expanded";
 
-  tcl_input->setText(path_report_command);
+  emit setCommand(path_report_command);
 }
 
 void TimingWidget::clearPathDetails()
