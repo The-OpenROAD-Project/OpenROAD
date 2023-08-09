@@ -971,18 +971,18 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Cutcost of partition : 170.76639]
 [Vertex balance of block_0 : 0.57611  ( 318.13602 )    
 [Vertex balance of block_1 : 0.42389  ( 234.07997 )    
-[Cutcost of partition : 163.00888]
-[Vertex balance of block_0 : 0.46724  ( 258.01999 )    
-[Vertex balance of block_1 : 0.53276  ( 294.19601 )    
+[Cutcost of partition : 166.44484]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
 [Cutcost of partition : 170.46648]
 [Vertex balance of block_0 : 0.45857  ( 253.23199 )    
 [Vertex balance of block_1 : 0.54143  ( 298.98401 )    
-[Cutcost of partition : 172.49496]
-[Vertex balance of block_0 : 0.53854  ( 297.38803 )    
-[Vertex balance of block_1 : 0.46146  ( 254.82799 )    
-[Cutcost of partition : 172.49496]
-[Vertex balance of block_0 : 0.46146  ( 254.82799 )    
-[Vertex balance of block_1 : 0.53854  ( 297.38803 )    
+[Cutcost of partition : 169.86491]
+[Vertex balance of block_0 : 0.50674  ( 279.83200 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38400 )    
+[Cutcost of partition : 169.86491]
+[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83200 )    
 [Cutcost of partition : 177.2429]
 [Vertex balance of block_0 : 0.53757  ( 296.85599 )    
 [Vertex balance of block_1 : 0.46243  ( 255.35999 )    
@@ -1002,18 +1002,18 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Cutcost of partition : 189.0406]
 [Vertex balance of block_0 : 0.56310  ( 310.95401 )    
 [Vertex balance of block_1 : 0.43690  ( 241.26199 )    
-[Cutcost of partition : 185.78447]
-[Vertex balance of block_0 : 0.47062  ( 259.88199 )    
-[Vertex balance of block_1 : 0.52938  ( 292.33401 )    
+[Cutcost of partition : 188.449]
+[Vertex balance of block_0 : 0.49181  ( 271.58603 )    
+[Vertex balance of block_1 : 0.50819  ( 280.62997 )    
 [Cutcost of partition : 196.3888]
 [Vertex balance of block_0 : 0.46339  ( 255.89201 )    
 [Vertex balance of block_1 : 0.53661  ( 296.32401 )    
-[Cutcost of partition : 193.48196]
-[Vertex balance of block_0 : 0.53661  ( 296.32401 )    
-[Vertex balance of block_1 : 0.46339  ( 255.89198 )    
-[Cutcost of partition : 193.48196]
-[Vertex balance of block_0 : 0.46339  ( 255.89198 )    
-[Vertex balance of block_1 : 0.53661  ( 296.32401 )    
+[Cutcost of partition : 190.9978]
+[Vertex balance of block_0 : 0.50530  ( 279.03403 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18201 )    
+[Cutcost of partition : 190.9978]
+[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
+[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
 [Cutcost of partition : 200.92871]
 [Vertex balance of block_0 : 0.53420  ( 294.99405 )    
 [Vertex balance of block_1 : 0.46580  ( 257.22202 )    
@@ -1033,18 +1033,18 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Cutcost of partition : 199.4011]
 [Vertex balance of block_0 : 0.56118  ( 309.89001 )    
 [Vertex balance of block_1 : 0.43882  ( 242.32600 )    
-[Cutcost of partition : 190.26889]
-[Vertex balance of block_0 : 0.48748  ( 269.19199 )    
-[Vertex balance of block_1 : 0.51252  ( 283.02399 )    
-[Cutcost of partition : 205.36842]
-[Vertex balance of block_0 : 0.48170  ( 266.00003 )    
-[Vertex balance of block_1 : 0.51830  ( 286.21600 )    
-[Cutcost of partition : 201.72899]
-[Vertex balance of block_0 : 0.51830  ( 286.21600 )    
-[Vertex balance of block_1 : 0.48170  ( 265.99997 )    
-[Cutcost of partition : 201.72899]
-[Vertex balance of block_0 : 0.48170  ( 265.99997 )    
-[Vertex balance of block_1 : 0.51830  ( 286.21600 )    
+[Cutcost of partition : 191.66911]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[Cutcost of partition : 202.94057]
+[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83200 )    
+[Cutcost of partition : 188.88008]
+[Vertex balance of block_0 : 0.50963  ( 281.42801 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78796 )    
+[Cutcost of partition : 188.88008]
+[Vertex balance of block_0 : 0.49037  ( 270.78796 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
 [Cutcost of partition : 207.28601]
 [Vertex balance of block_0 : 0.51734  ( 285.68399 )    
 [Vertex balance of block_1 : 0.48266  ( 266.53198 )    
@@ -1064,179 +1064,178 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Cutcost of partition : 217.60118]
 [Vertex balance of block_0 : 0.55973  ( 309.09198 )    
 [Vertex balance of block_1 : 0.44027  ( 243.12398 )    
-[Cutcost of partition : 208.63104]
-[Vertex balance of block_0 : 0.48892  ( 269.98996 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22601 )    
-[Cutcost of partition : 219.1987]
-[Vertex balance of block_0 : 0.48170  ( 265.99997 )    
-[Vertex balance of block_1 : 0.51830  ( 286.21597 )    
-[Cutcost of partition : 220.36896]
-[Vertex balance of block_0 : 0.51012  ( 281.69403 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52194 )    
-[Cutcost of partition : 220.36896]
-[Vertex balance of block_0 : 0.48988  ( 270.52194 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69403 )    
+[Cutcost of partition : 209.03128]
+[Vertex balance of block_0 : 0.49133  ( 271.31995 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
+[Cutcost of partition : 213.10284]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89597 )    
+[Cutcost of partition : 205.90643]
+[Vertex balance of block_0 : 0.50674  ( 279.83200 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38397 )    
+[Cutcost of partition : 205.90643]
+[Vertex balance of block_0 : 0.49326  ( 272.38397 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83200 )    
 [Cutcost of partition : 225.95091]
 [Vertex balance of block_0 : 0.51638  ( 285.15201 )    
 [Vertex balance of block_1 : 0.48362  ( 267.06396 )    
 [Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 181, cutcost = 200.86023, best_solution_id = 0
-[Cutcost of partition : 217.86755]
-[Vertex balance of block_0 : 0.48555  ( 268.12799 )    
-[Vertex balance of block_1 : 0.51445  ( 284.08801 )    
-[Cutcost of partition : 217.86755]
-[Vertex balance of block_0 : 0.51445  ( 284.08801 )    
-[Vertex balance of block_1 : 0.48555  ( 268.12799 )    
-[Cutcost of partition : 238.96585]
-[Vertex balance of block_0 : 0.48218  ( 266.26599 )    
-[Vertex balance of block_1 : 0.51782  ( 285.95004 )    
-[Cutcost of partition : 238.96585]
-[Vertex balance of block_0 : 0.48218  ( 266.26599 )    
-[Vertex balance of block_1 : 0.51782  ( 285.95004 )    
+[Cutcost of partition : 212.03728]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 212.03728]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Cutcost of partition : 236.9848]
+[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83203 )    
+[Cutcost of partition : 236.9848]
+[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83203 )    
 [Cutcost of partition : 236.25974]
 [Vertex balance of block_0 : 0.55347  ( 305.63400 )    
 [Vertex balance of block_1 : 0.44653  ( 246.58195 )    
-[Cutcost of partition : 226.33258]
-[Vertex balance of block_0 : 0.48892  ( 269.98996 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22604 )    
-[Cutcost of partition : 234.28436]
-[Vertex balance of block_0 : 0.48170  ( 265.99997 )    
-[Vertex balance of block_1 : 0.51830  ( 286.21603 )    
-[Cutcost of partition : 238.18817]
-[Vertex balance of block_0 : 0.51012  ( 281.69400 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52197 )    
-[Cutcost of partition : 238.18817]
-[Vertex balance of block_0 : 0.48988  ( 270.52197 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69400 )    
-[Cutcost of partition : 243.37851]
-[Vertex balance of block_0 : 0.51638  ( 285.15201 )    
-[Vertex balance of block_1 : 0.48362  ( 267.06393 )    
-[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 229, cutcost = 217.86755, best_solution_id = 0
-[Cutcost of partition : 220.19972]
-[Vertex balance of block_0 : 0.48892  ( 269.99002 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22604 )    
-[Cutcost of partition : 220.19972]
-[Vertex balance of block_0 : 0.51108  ( 282.22604 )    
-[Vertex balance of block_1 : 0.48892  ( 269.99002 )    
-[Cutcost of partition : 242.18036]
-[Vertex balance of block_0 : 0.48603  ( 268.39398 )    
-[Vertex balance of block_1 : 0.51397  ( 283.82208 )    
-[Cutcost of partition : 242.18036]
-[Vertex balance of block_0 : 0.48603  ( 268.39398 )    
-[Vertex balance of block_1 : 0.51397  ( 283.82208 )    
+[Cutcost of partition : 223.18832]
+[Vertex balance of block_0 : 0.49037  ( 270.78796 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42804 )    
+[Cutcost of partition : 228.1885]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
+[Cutcost of partition : 223.72568]
+[Vertex balance of block_0 : 0.50385  ( 278.23602 )    
+[Vertex balance of block_1 : 0.49615  ( 273.97998 )    
+[Cutcost of partition : 223.72568]
+[Vertex balance of block_0 : 0.49615  ( 273.97998 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23602 )    
+[Cutcost of partition : 231.30666]
+[Vertex balance of block_0 : 0.50771  ( 280.36404 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85196 )    
+[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 229, cutcost = 212.03728, best_solution_id = 0
+[Cutcost of partition : 214.36946]
+[Vertex balance of block_0 : 0.49229  ( 271.85202 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36401 )    
+[Cutcost of partition : 214.36946]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85202 )    
+[Cutcost of partition : 234.29439]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89606 )    
+[Cutcost of partition : 234.29439]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89606 )    
 [Cutcost of partition : 240.99306]
 [Vertex balance of block_0 : 0.53950  ( 297.92010 )    
 [Vertex balance of block_1 : 0.46050  ( 254.29596 )    
-[Cutcost of partition : 230.06247]
-[Vertex balance of block_0 : 0.48988  ( 270.52200 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69406 )    
-[Cutcost of partition : 237.08055]
-[Vertex balance of block_0 : 0.48362  ( 267.06400 )    
-[Vertex balance of block_1 : 0.51638  ( 285.15201 )    
-[Cutcost of partition : 241.91808]
-[Vertex balance of block_0 : 0.51012  ( 281.69406 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52203 )    
-[Cutcost of partition : 241.91808]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69406 )    
-[Cutcost of partition : 247.10838]
-[Vertex balance of block_0 : 0.51445  ( 284.08798 )    
-[Vertex balance of block_1 : 0.48555  ( 268.12802 )    
-[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 282, cutcost = 220.19972, best_solution_id = 0
-[Cutcost of partition : 223.07706]
-[Vertex balance of block_0 : 0.48892  ( 269.99002 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22610 )    
-[Cutcost of partition : 223.07706]
-[Vertex balance of block_0 : 0.51108  ( 282.22610 )    
-[Vertex balance of block_1 : 0.48892  ( 269.99002 )    
-[Cutcost of partition : 243.06973]
-[Vertex balance of block_0 : 0.48748  ( 269.19202 )    
-[Vertex balance of block_1 : 0.51252  ( 283.02402 )    
-[Cutcost of partition : 243.06973]
-[Vertex balance of block_0 : 0.48748  ( 269.19202 )    
-[Vertex balance of block_1 : 0.51252  ( 283.02402 )    
+[Cutcost of partition : 212.40565]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42804 )    
+[Cutcost of partition : 207.70642]
+[Vertex balance of block_0 : 0.49037  ( 270.78806 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
+[Cutcost of partition : 213.4663]
+[Vertex balance of block_0 : 0.50963  ( 281.42795 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78806 )    
+[Cutcost of partition : 213.4663]
+[Vertex balance of block_0 : 0.49037  ( 270.78806 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42795 )    
+[Cutcost of partition : 235.03654]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85205 )    
+[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 282, cutcost = 207.70642, best_solution_id = 6
+[Cutcost of partition : 214.64351]
+[Vertex balance of block_0 : 0.49037  ( 270.78806 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 214.64351]
+[Vertex balance of block_0 : 0.50963  ( 281.42807 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78806 )    
+[Cutcost of partition : 233.62698]
+[Vertex balance of block_0 : 0.49326  ( 272.38403 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83203 )    
+[Cutcost of partition : 233.62698]
+[Vertex balance of block_0 : 0.49326  ( 272.38403 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83203 )    
 [Cutcost of partition : 242.23312]
 [Vertex balance of block_0 : 0.53516  ( 295.52609 )    
 [Vertex balance of block_1 : 0.46484  ( 256.68997 )    
-[Cutcost of partition : 232.38907]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69406 )    
-[Cutcost of partition : 241.46068]
-[Vertex balance of block_0 : 0.48507  ( 267.86206 )    
-[Vertex balance of block_1 : 0.51493  ( 284.35403 )    
-[Cutcost of partition : 244.7954]
-[Vertex balance of block_0 : 0.51012  ( 281.69403 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52206 )    
-[Cutcost of partition : 244.7954]
-[Vertex balance of block_0 : 0.48988  ( 270.52206 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69403 )    
-[Cutcost of partition : 251.48851]
-[Vertex balance of block_0 : 0.51060  ( 281.95996 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25610 )    
-[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 352, cutcost = 223.07706, best_solution_id = 0
-[Cutcost of partition : 223.07706]
-[Vertex balance of block_0 : 0.48892  ( 269.99002 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22601 )    
-[Cutcost of partition : 223.07706]
-[Vertex balance of block_0 : 0.51108  ( 282.22601 )    
-[Vertex balance of block_1 : 0.48892  ( 269.99002 )    
-[Cutcost of partition : 241.18542]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
-[Cutcost of partition : 241.18542]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
+[Cutcost of partition : 213.97293]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 210.58376]
+[Vertex balance of block_0 : 0.49037  ( 270.78806 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42804 )    
+[Cutcost of partition : 213.33429]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05405 )    
+[Cutcost of partition : 213.33429]
+[Vertex balance of block_0 : 0.49085  ( 271.05405 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 220.45607]
+[Vertex balance of block_0 : 0.50963  ( 281.42801 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78809 )    
+[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 352, cutcost = 210.58376, best_solution_id = 6
+[Cutcost of partition : 208.53455]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
+[Cutcost of partition : 208.53455]
+[Vertex balance of block_0 : 0.50963  ( 281.42801 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 231.73367]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
+[Cutcost of partition : 231.73367]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
 [Cutcost of partition : 241.13496]
 [Vertex balance of block_0 : 0.52938  ( 292.33401 )    
 [Vertex balance of block_1 : 0.47062  ( 259.88199 )    
-[Cutcost of partition : 232.38907]
-[Vertex balance of block_0 : 0.48988  ( 270.52200 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69403 )    
-[Cutcost of partition : 241.08807]
-[Vertex balance of block_0 : 0.48844  ( 269.72397 )    
-[Vertex balance of block_1 : 0.51156  ( 282.49200 )    
-[Cutcost of partition : 244.7954]
-[Vertex balance of block_0 : 0.51012  ( 281.69400 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52203 )    
-[Cutcost of partition : 244.7954]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69400 )    
-[Cutcost of partition : 251.48851]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 223.07706, best_solution_id = 0
-[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 69, num_hyperedges = 102
+[Cutcost of partition : 207.54411]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 208.18703]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 207.45547]
+[Vertex balance of block_0 : 0.50963  ( 281.42798 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78796 )    
+[Cutcost of partition : 207.45547]
+[Vertex balance of block_0 : 0.49037  ( 270.78796 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42798 )    
+[Cutcost of partition : 214.41162]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 207.45547, best_solution_id = 7
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 70, num_hyperedges = 108
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
-[COARSEN] Level 0 :: num_vertices = 69, num_hyperedges = 102, num_timing_paths = 30
-[COARSEN] Level 1 :: num_vertices = 46, num_hyperedges = 86, num_timing_paths = 23
-[COARSEN] Level 2 :: num_vertices = 30, num_hyperedges = 72, num_timing_paths = 19
-[COARSEN] Level 3 :: num_vertices = 20, num_hyperedges = 60, num_timing_paths = 17
-[COARSEN] Level 4 :: num_vertices = 13, num_hyperedges = 46, num_timing_paths = 14
+[COARSEN] Level 0 :: num_vertices = 70, num_hyperedges = 108, num_timing_paths = 35
+[COARSEN] Level 1 :: num_vertices = 46, num_hyperedges = 85, num_timing_paths = 30
+[COARSEN] Level 2 :: num_vertices = 30, num_hyperedges = 71, num_timing_paths = 24
+[COARSEN] Level 3 :: num_vertices = 20, num_hyperedges = 57, num_timing_paths = 19
+[COARSEN] Level 4 :: num_vertices = 13, num_hyperedges = 47, num_timing_paths = 16
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 165.42847]
-[Vertex balance of block_0 : 0.54913  ( 303.23999 )    
-[Vertex balance of block_1 : 0.45087  ( 248.97601 )    
-[Refinement] Level 1 :: num_vertices = 20, num_hyperedges = 60, cutcost = 165.42847, best_solution_id = 0
-[Cutcost of partition : 174.76257]
-[Vertex balance of block_0 : 0.54624  ( 301.64398 )    
-[Vertex balance of block_1 : 0.45376  ( 250.57201 )    
-[Refinement] Level 2 :: num_vertices = 30, num_hyperedges = 72, cutcost = 174.76257, best_solution_id = 0
-[Cutcost of partition : 183.4781]
-[Vertex balance of block_0 : 0.51686  ( 285.41800 )    
-[Vertex balance of block_1 : 0.48314  ( 266.79807 )    
-[Refinement] Level 3 :: num_vertices = 46, num_hyperedges = 86, cutcost = 183.4781, best_solution_id = 0
-[Cutcost of partition : 205.51488]
-[Vertex balance of block_0 : 0.51060  ( 281.96005 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25604 )    
-[Refinement] Level 4 :: num_vertices = 69, num_hyperedges = 102, cutcost = 205.51488, best_solution_id = 0
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Cutcost of partition : 123.465256]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 1 :: num_vertices = 20, num_hyperedges = 57, cutcost = 123.465256, best_solution_id = 0
+[Cutcost of partition : 134.92365]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 2 :: num_vertices = 30, num_hyperedges = 71, cutcost = 134.92365, best_solution_id = 0
+[Cutcost of partition : 150.80923]
+[Vertex balance of block_0 : 0.50915  ( 281.16208 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 3 :: num_vertices = 46, num_hyperedges = 85, cutcost = 150.80923, best_solution_id = 0
+[Cutcost of partition : 165.42175]
+[Vertex balance of block_0 : 0.50915  ( 281.16208 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 4 :: num_vertices = 70, num_hyperedges = 108, cutcost = 165.42175, best_solution_id = 0
 [INFO PAR-0158] Statistics of cut-overlay solution:
-[Cutcost of partition : 259.102]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
+[Cutcost of partition : 205.67647]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
@@ -1467,10 +1466,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.52360  ( 289.14200 )    
 [Vertex balance of block_1 : 0.47640  ( 263.07401 )    
 [INIT-PART] 52 :: Random part cutcost = 200.05476, balance_flag = false
-[Cutcost of partition : 209.32146]
-[Vertex balance of block_0 : 0.55202  ( 304.83600 )    
-[Vertex balance of block_1 : 0.44798  ( 247.38000 )    
-[INIT-PART] 53 :: Random part cutcost = 209.32146, balance_flag = false
+[Cutcost of partition : 233.40428]
+[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+[INIT-PART] 53 :: Random part cutcost = 233.40428, balance_flag = true
 [Cutcost of partition : 240.92969]
 [Vertex balance of block_0 : 0.58430  ( 322.65802 )    
 [Vertex balance of block_1 : 0.41570  ( 229.55800 )    
@@ -2063,362 +2062,331 @@ All the hyperedges will be used in the ILP-based partitioning!
 [INIT-PART] :: VILE part cutcost = 205.9502, balance_flag = false
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 202.38371]
-[Vertex balance of block_0 : 0.56262  ( 310.68799 )    
-[Vertex balance of block_1 : 0.43738  ( 241.52800 )    
-[INIT-PART] :: ILP part cutcost = 202.38371, balance_flag = false
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Cutcost of partition : 229.38405]
+[Vertex balance of block_0 : 0.50530  ( 279.03400 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18201 )    
+[INIT-PART] :: ILP part cutcost = 229.38405, balance_flag = true
 [INFO PAR-0155] Number of chosen best initial solutions = 10
-[INFO PAR-0156] Best initial cutcost 0.0
+[INFO PAR-0156] Best initial cutcost 229.38405
+[Cutcost of partition : 229.99858]
+[Vertex balance of block_0 : 0.50530  ( 279.03397 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18201 )    
+[Cutcost of partition : 229.99858]
+[Vertex balance of block_0 : 0.50530  ( 279.03397 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18201 )    
 [Cutcost of partition : 170.41249]
 [Vertex balance of block_0 : 0.54094  ( 298.71799 )    
 [Vertex balance of block_1 : 0.45906  ( 253.49800 )    
-[Cutcost of partition : 172.2092]
-[Vertex balance of block_0 : 0.54624  ( 301.64398 )    
-[Vertex balance of block_1 : 0.45376  ( 250.57199 )    
-[Cutcost of partition : 172.2092]
-[Vertex balance of block_0 : 0.54624  ( 301.64398 )    
-[Vertex balance of block_1 : 0.45376  ( 250.57199 )    
+[Cutcost of partition : 172.06638]
+[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
+[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
+[Cutcost of partition : 172.06638]
+[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
+[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
 [Cutcost of partition : 179.1916]
 [Vertex balance of block_0 : 0.51590  ( 284.88599 )    
 [Vertex balance of block_1 : 0.48410  ( 267.33002 )    
-[Cutcost of partition : 180.4137]
-[Vertex balance of block_0 : 0.46243  ( 255.36000 )    
-[Vertex balance of block_1 : 0.53757  ( 296.85599 )    
-[Cutcost of partition : 182.37721]
-[Vertex balance of block_0 : 0.52697  ( 291.00400 )    
-[Vertex balance of block_1 : 0.47302  ( 261.21198 )    
-[Cutcost of partition : 182.37721]
-[Vertex balance of block_0 : 0.52697  ( 291.00400 )    
-[Vertex balance of block_1 : 0.47302  ( 261.21198 )    
+[Cutcost of partition : 171.89308]
+[Vertex balance of block_0 : 0.50482  ( 278.76801 )    
+[Vertex balance of block_1 : 0.49518  ( 273.44800 )    
 [Cutcost of partition : 182.37721]
 [Vertex balance of block_0 : 0.47302  ( 261.21198 )    
 [Vertex balance of block_1 : 0.52697  ( 291.00400 )    
-[Cutcost of partition : 182.90433]
-[Vertex balance of block_0 : 0.45183  ( 249.50800 )    
-[Vertex balance of block_1 : 0.54817  ( 302.70801 )    
-[Cutcost of partition : 183.45813]
-[Vertex balance of block_0 : 0.46098  ( 254.56200 )    
-[Vertex balance of block_1 : 0.53902  ( 297.65399 )    
-[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 51, cutcost = 170.41249, best_solution_id = 0
+[Cutcost of partition : 182.37721]
+[Vertex balance of block_0 : 0.52697  ( 291.00400 )    
+[Vertex balance of block_1 : 0.47302  ( 261.21198 )    
+[Cutcost of partition : 182.37721]
+[Vertex balance of block_0 : 0.52697  ( 291.00400 )    
+[Vertex balance of block_1 : 0.47302  ( 261.21198 )    
+[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 51, cutcost = 170.41249, best_solution_id = 2
+[Cutcost of partition : 238.4429]
+[Vertex balance of block_0 : 0.49518  ( 273.44800 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76801 )    
+[Cutcost of partition : 238.4429]
+[Vertex balance of block_0 : 0.49518  ( 273.44800 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76801 )    
 [Cutcost of partition : 181.60197]
 [Vertex balance of block_0 : 0.53950  ( 297.92001 )    
 [Vertex balance of block_1 : 0.46050  ( 254.29601 )    
-[Cutcost of partition : 175.84503]
-[Vertex balance of block_0 : 0.54624  ( 301.64401 )    
-[Vertex balance of block_1 : 0.45376  ( 250.57201 )    
-[Cutcost of partition : 175.84503]
-[Vertex balance of block_0 : 0.54624  ( 301.64401 )    
-[Vertex balance of block_1 : 0.45376  ( 250.57201 )    
-[Cutcost of partition : 187.81506]
-[Vertex balance of block_0 : 0.51590  ( 284.88602 )    
-[Vertex balance of block_1 : 0.48410  ( 267.33002 )    
-[Cutcost of partition : 183.25177]
-[Vertex balance of block_0 : 0.46243  ( 255.36000 )    
-[Vertex balance of block_1 : 0.53757  ( 296.85602 )    
-[Cutcost of partition : 187.24553]
-[Vertex balance of block_0 : 0.51541  ( 284.62000 )    
-[Vertex balance of block_1 : 0.48459  ( 267.59598 )    
-[Cutcost of partition : 187.24553]
-[Vertex balance of block_0 : 0.51541  ( 284.62000 )    
-[Vertex balance of block_1 : 0.48459  ( 267.59598 )    
+[Cutcost of partition : 168.34837]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+[Cutcost of partition : 168.34837]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+[Cutcost of partition : 186.9111]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 174.73114]
+[Vertex balance of block_0 : 0.50482  ( 278.76801 )    
+[Vertex balance of block_1 : 0.49518  ( 273.44800 )    
 [Cutcost of partition : 187.24553]
 [Vertex balance of block_0 : 0.48459  ( 267.59598 )    
 [Vertex balance of block_1 : 0.51541  ( 284.62000 )    
-[Cutcost of partition : 185.55649]
-[Vertex balance of block_0 : 0.45183  ( 249.50800 )    
-[Vertex balance of block_1 : 0.54817  ( 302.70801 )    
-[Cutcost of partition : 187.29417]
-[Vertex balance of block_0 : 0.46098  ( 254.56200 )    
-[Vertex balance of block_1 : 0.53902  ( 297.65402 )    
-[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 64, cutcost = 175.84503, best_solution_id = 1
+[Cutcost of partition : 187.24553]
+[Vertex balance of block_0 : 0.51541  ( 284.62000 )    
+[Vertex balance of block_1 : 0.48459  ( 267.59598 )    
+[Cutcost of partition : 187.24553]
+[Vertex balance of block_0 : 0.51541  ( 284.62000 )    
+[Vertex balance of block_1 : 0.48459  ( 267.59598 )    
+[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 64, cutcost = 168.34837, best_solution_id = 3
+[Cutcost of partition : 262.6166]
+[Vertex balance of block_0 : 0.49518  ( 273.44800 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76801 )    
+[Cutcost of partition : 262.6166]
+[Vertex balance of block_0 : 0.49518  ( 273.44800 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76801 )    
 [Cutcost of partition : 200.0987]
 [Vertex balance of block_0 : 0.53950  ( 297.92001 )    
 [Vertex balance of block_1 : 0.46050  ( 254.29599 )    
-[Cutcost of partition : 190.44522]
-[Vertex balance of block_0 : 0.53902  ( 297.65405 )    
-[Vertex balance of block_1 : 0.46098  ( 254.56201 )    
-[Cutcost of partition : 190.44522]
-[Vertex balance of block_0 : 0.53902  ( 297.65405 )    
-[Vertex balance of block_1 : 0.46098  ( 254.56201 )    
-[Cutcost of partition : 209.15816]
-[Vertex balance of block_0 : 0.51493  ( 284.35400 )    
-[Vertex balance of block_1 : 0.48507  ( 267.86203 )    
-[Cutcost of partition : 202.37549]
-[Vertex balance of block_0 : 0.46965  ( 259.35001 )    
-[Vertex balance of block_1 : 0.53035  ( 292.86606 )    
-[Cutcost of partition : 202.40955]
-[Vertex balance of block_0 : 0.51541  ( 284.62003 )    
-[Vertex balance of block_1 : 0.48459  ( 267.59601 )    
-[Cutcost of partition : 202.40955]
-[Vertex balance of block_0 : 0.51541  ( 284.62003 )    
-[Vertex balance of block_1 : 0.48459  ( 267.59601 )    
-[Cutcost of partition : 202.40955]
-[Vertex balance of block_0 : 0.48459  ( 267.59601 )    
-[Vertex balance of block_1 : 0.51541  ( 284.62003 )    
-[Cutcost of partition : 202.91129]
-[Vertex balance of block_0 : 0.45906  ( 253.49802 )    
-[Vertex balance of block_1 : 0.54094  ( 298.71805 )    
-[Cutcost of partition : 203.66982]
-[Vertex balance of block_0 : 0.46821  ( 258.55197 )    
-[Vertex balance of block_1 : 0.53179  ( 293.66406 )    
-[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 73, cutcost = 190.44522, best_solution_id = 1
-[Cutcost of partition : 209.54059]
-[Vertex balance of block_0 : 0.53950  ( 297.92001 )    
-[Vertex balance of block_1 : 0.46050  ( 254.29602 )    
-[Cutcost of partition : 203.59317]
-[Vertex balance of block_0 : 0.51445  ( 284.08801 )    
-[Vertex balance of block_1 : 0.48555  ( 268.12802 )    
-[Cutcost of partition : 203.59317]
-[Vertex balance of block_0 : 0.51445  ( 284.08801 )    
-[Vertex balance of block_1 : 0.48555  ( 268.12802 )    
-[Cutcost of partition : 219.23065]
-[Vertex balance of block_0 : 0.51349  ( 283.55603 )    
-[Vertex balance of block_1 : 0.48651  ( 268.66000 )    
-[Cutcost of partition : 214.0194]
-[Vertex balance of block_0 : 0.46965  ( 259.35004 )    
-[Vertex balance of block_1 : 0.53035  ( 292.86600 )    
-[Cutcost of partition : 214.89053]
-[Vertex balance of block_0 : 0.51541  ( 284.62003 )    
-[Vertex balance of block_1 : 0.48459  ( 267.59601 )    
-[Cutcost of partition : 214.89053]
-[Vertex balance of block_0 : 0.51541  ( 284.62003 )    
-[Vertex balance of block_1 : 0.48459  ( 267.59601 )    
-[Cutcost of partition : 214.89053]
-[Vertex balance of block_0 : 0.48459  ( 267.59601 )    
-[Vertex balance of block_1 : 0.51541  ( 284.62003 )    
-[Cutcost of partition : 213.93108]
-[Vertex balance of block_0 : 0.47495  ( 262.27603 )    
-[Vertex balance of block_1 : 0.52505  ( 289.94000 )    
-[Cutcost of partition : 218.1528]
-[Vertex balance of block_0 : 0.46821  ( 258.55200 )    
-[Vertex balance of block_1 : 0.53179  ( 293.66400 )    
-[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 102, cutcost = 203.59317, best_solution_id = 1
-[Cutcost of partition : 236.05432]
-[Vertex balance of block_0 : 0.53950  ( 297.92001 )    
-[Vertex balance of block_1 : 0.46050  ( 254.29602 )    
-[Cutcost of partition : 228.26062]
-[Vertex balance of block_0 : 0.51445  ( 284.08801 )    
-[Vertex balance of block_1 : 0.48555  ( 268.12799 )    
-[Cutcost of partition : 228.26062]
-[Vertex balance of block_0 : 0.51445  ( 284.08801 )    
-[Vertex balance of block_1 : 0.48555  ( 268.12799 )    
-[Cutcost of partition : 250.47183]
-[Vertex balance of block_0 : 0.51252  ( 283.02402 )    
-[Vertex balance of block_1 : 0.48748  ( 269.19202 )    
-[Cutcost of partition : 240.69322]
-[Vertex balance of block_0 : 0.47206  ( 260.67999 )    
-[Vertex balance of block_1 : 0.52794  ( 291.53604 )    
-[Cutcost of partition : 245.92802]
-[Vertex balance of block_0 : 0.51301  ( 283.29001 )    
-[Vertex balance of block_1 : 0.48699  ( 268.92599 )    
-[Cutcost of partition : 245.92802]
-[Vertex balance of block_0 : 0.51301  ( 283.29001 )    
-[Vertex balance of block_1 : 0.48699  ( 268.92599 )    
-[Cutcost of partition : 245.92802]
-[Vertex balance of block_0 : 0.48699  ( 268.92599 )    
-[Vertex balance of block_1 : 0.51301  ( 283.29001 )    
-[Cutcost of partition : 238.5811]
-[Vertex balance of block_0 : 0.47736  ( 263.60599 )    
-[Vertex balance of block_1 : 0.52264  ( 288.61002 )    
-[Cutcost of partition : 247.12659]
-[Vertex balance of block_0 : 0.48603  ( 268.39398 )    
-[Vertex balance of block_1 : 0.51397  ( 283.82199 )    
-[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 132, cutcost = 228.26062, best_solution_id = 1
-[Cutcost of partition : 256.94427]
-[Vertex balance of block_0 : 0.51012  ( 281.69397 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52197 )    
-[Cutcost of partition : 252.79059]
-[Vertex balance of block_0 : 0.51445  ( 284.08798 )    
-[Vertex balance of block_1 : 0.48555  ( 268.12799 )    
-[Cutcost of partition : 252.79059]
-[Vertex balance of block_0 : 0.51445  ( 284.08798 )    
-[Vertex balance of block_1 : 0.48555  ( 268.12799 )    
-[Cutcost of partition : 271.40933]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 263.0575]
-[Vertex balance of block_0 : 0.47206  ( 260.67999 )    
-[Vertex balance of block_1 : 0.52794  ( 291.53598 )    
-[Cutcost of partition : 273.6246]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 273.6246]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 273.6246]
-[Vertex balance of block_0 : 0.48940  ( 270.25598 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
-[Cutcost of partition : 263.83276]
-[Vertex balance of block_0 : 0.47736  ( 263.60602 )    
-[Vertex balance of block_1 : 0.52264  ( 288.61002 )    
-[Cutcost of partition : 270.3171]
-[Vertex balance of block_0 : 0.48603  ( 268.39398 )    
-[Vertex balance of block_1 : 0.51397  ( 283.82199 )    
-[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 178, cutcost = 252.79059, best_solution_id = 1
-[Cutcost of partition : 282.5064]
-[Vertex balance of block_0 : 0.51012  ( 281.69403 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52200 )    
-[Cutcost of partition : 271.8165]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 271.8165]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 297.06482]
-[Vertex balance of block_0 : 0.51060  ( 281.95996 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 278.2818]
-[Vertex balance of block_0 : 0.48699  ( 268.92599 )    
-[Vertex balance of block_1 : 0.51301  ( 283.29007 )    
-[Cutcost of partition : 298.26996]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 298.26996]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 298.26996]
-[Vertex balance of block_0 : 0.48940  ( 270.25598 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96002 )    
-[Cutcost of partition : 282.3426]
-[Vertex balance of block_0 : 0.48266  ( 266.53201 )    
-[Vertex balance of block_1 : 0.51734  ( 285.68399 )    
-[Cutcost of partition : 290.95813]
-[Vertex balance of block_0 : 0.48844  ( 269.72400 )    
-[Vertex balance of block_1 : 0.51156  ( 282.49200 )    
-[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 225, cutcost = 271.8165, best_solution_id = 1
-[Cutcost of partition : 291.45215]
-[Vertex balance of block_0 : 0.51012  ( 281.69409 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52203 )    
-[Cutcost of partition : 279.8609]
-[Vertex balance of block_0 : 0.51060  ( 281.96005 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 279.8609]
-[Vertex balance of block_0 : 0.51060  ( 281.96005 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 306.01053]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25610 )    
-[Cutcost of partition : 287.44904]
-[Vertex balance of block_0 : 0.48844  ( 269.72403 )    
-[Vertex balance of block_1 : 0.51156  ( 282.49207 )    
-[Cutcost of partition : 308.96826]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 308.96826]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 308.96826]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96002 )    
-[Cutcost of partition : 288.5348]
-[Vertex balance of block_0 : 0.48603  ( 268.39407 )    
-[Vertex balance of block_1 : 0.51397  ( 283.82202 )    
-[Cutcost of partition : 300.78076]
-[Vertex balance of block_0 : 0.48988  ( 270.52200 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69403 )    
-[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 277, cutcost = 279.8609, best_solution_id = 1
-[Cutcost of partition : 291.45215]
-[Vertex balance of block_0 : 0.51012  ( 281.69400 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52206 )    
-[Cutcost of partition : 281.7002]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25613 )    
-[Cutcost of partition : 281.7002]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25613 )    
-[Cutcost of partition : 307.0202]
-[Vertex balance of block_0 : 0.51060  ( 281.96011 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25607 )    
-[Cutcost of partition : 287.44904]
-[Vertex balance of block_0 : 0.48940  ( 270.25604 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96008 )    
-[Cutcost of partition : 310.80756]
-[Vertex balance of block_0 : 0.51060  ( 281.96011 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25604 )    
-[Cutcost of partition : 310.80756]
-[Vertex balance of block_0 : 0.51060  ( 281.96011 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25604 )    
-[Cutcost of partition : 310.80756]
-[Vertex balance of block_0 : 0.48940  ( 270.25604 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96011 )    
-[Cutcost of partition : 286.34946]
-[Vertex balance of block_0 : 0.48988  ( 270.52206 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69406 )    
-[Cutcost of partition : 300.78076]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69409 )    
-[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 352, cutcost = 281.7002, best_solution_id = 1
-[Cutcost of partition : 292.63608]
-[Vertex balance of block_0 : 0.51012  ( 281.69400 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52197 )    
-[Cutcost of partition : 283.4761]
-[Vertex balance of block_0 : 0.51060  ( 281.95996 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 283.4761]
-[Vertex balance of block_0 : 0.51060  ( 281.95996 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 308.7961]
-[Vertex balance of block_0 : 0.51060  ( 281.95996 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 289.22495]
-[Vertex balance of block_0 : 0.48940  ( 270.25598 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
-[Cutcost of partition : 312.5835]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 312.5835]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 312.5835]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
-[Cutcost of partition : 288.12537]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69397 )    
-[Cutcost of partition : 302.55664]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69394 )    
-[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 283.4761, best_solution_id = 1
-[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 81, num_hyperedges = 118
-=========================================
-[STATUS] Running FC multilevel coarsening
-=========================================
-[COARSEN] Level 0 :: num_vertices = 81, num_hyperedges = 118, num_timing_paths = 38
-[COARSEN] Level 1 :: num_vertices = 54, num_hyperedges = 93, num_timing_paths = 33
-[COARSEN] Level 2 :: num_vertices = 36, num_hyperedges = 75, num_timing_paths = 27
-[COARSEN] Level 3 :: num_vertices = 24, num_hyperedges = 63, num_timing_paths = 24
-[COARSEN] Level 4 :: num_vertices = 16, num_hyperedges = 56, num_timing_paths = 23
-[COARSEN] Level 5 :: num_vertices = 12, num_hyperedges = 52, num_timing_paths = 23
+[Cutcost of partition : 186.0563]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+[Cutcost of partition : 186.0563]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+[Cutcost of partition : 205.40785]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 191.78995]
+[Vertex balance of block_0 : 0.50482  ( 278.76801 )    
+[Vertex balance of block_1 : 0.49518  ( 273.44803 )    
+[Cutcost of partition : 195.43869]
+[Vertex balance of block_0 : 0.50337  ( 277.97000 )    
+[Vertex balance of block_1 : 0.49663  ( 274.24600 )    
+[Cutcost of partition : 195.43869]
+[Vertex balance of block_0 : 0.49663  ( 274.24600 )    
+[Vertex balance of block_1 : 0.50337  ( 277.97000 )    
+[Cutcost of partition : 195.43869]
+[Vertex balance of block_0 : 0.49663  ( 274.24600 )    
+[Vertex balance of block_1 : 0.50337  ( 277.97000 )    
+[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 73, cutcost = 186.0563, best_solution_id = 3
+[Cutcost of partition : 277.46268]
+[Vertex balance of block_0 : 0.50530  ( 279.03403 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18198 )    
+[Cutcost of partition : 277.46268]
+[Vertex balance of block_0 : 0.50530  ( 279.03403 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18198 )    
+[Cutcost of partition : 200.79082]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 198.32373]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85202 )    
+[Cutcost of partition : 198.32373]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85202 )    
+[Cutcost of partition : 213.82947]
+[Vertex balance of block_0 : 0.50915  ( 281.16205 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Cutcost of partition : 203.4338]
+[Vertex balance of block_0 : 0.50482  ( 278.76801 )    
+[Vertex balance of block_1 : 0.49518  ( 273.44800 )    
+[Cutcost of partition : 206.91968]
+[Vertex balance of block_0 : 0.49615  ( 273.98001 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23599 )    
+[Cutcost of partition : 206.91968]
+[Vertex balance of block_0 : 0.50385  ( 278.23599 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Cutcost of partition : 206.91968]
+[Vertex balance of block_0 : 0.50385  ( 278.23599 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 102, cutcost = 198.32373, best_solution_id = 3
+[Cutcost of partition : 304.01678]
+[Vertex balance of block_0 : 0.49904  ( 275.57602 )    
+[Vertex balance of block_1 : 0.50096  ( 276.64001 )    
+[Cutcost of partition : 304.01678]
+[Vertex balance of block_0 : 0.49904  ( 275.57602 )    
+[Vertex balance of block_1 : 0.50096  ( 276.64001 )    
+[Cutcost of partition : 226.29175]
+[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
+[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
+[Cutcost of partition : 222.90625]
+[Vertex balance of block_0 : 0.50530  ( 279.03397 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18201 )    
+[Cutcost of partition : 222.90625]
+[Vertex balance of block_0 : 0.50530  ( 279.03397 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18201 )    
+[Cutcost of partition : 243.978]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Cutcost of partition : 227.7218]
+[Vertex balance of block_0 : 0.50482  ( 278.76801 )    
+[Vertex balance of block_1 : 0.49518  ( 273.44797 )    
+[Cutcost of partition : 235.2028]
+[Vertex balance of block_0 : 0.49615  ( 273.98001 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23599 )    
+[Cutcost of partition : 235.2028]
+[Vertex balance of block_0 : 0.50385  ( 278.23599 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Cutcost of partition : 235.2028]
+[Vertex balance of block_0 : 0.50385  ( 278.23599 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 132, cutcost = 222.90625, best_solution_id = 3
+[Cutcost of partition : 328.0409]
+[Vertex balance of block_0 : 0.49904  ( 275.57599 )    
+[Vertex balance of block_1 : 0.50096  ( 276.63998 )    
+[Cutcost of partition : 328.0409]
+[Vertex balance of block_0 : 0.49904  ( 275.57599 )    
+[Vertex balance of block_1 : 0.50096  ( 276.63998 )    
+[Cutcost of partition : 245.29271]
+[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
+[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
+[Cutcost of partition : 247.43619]
+[Vertex balance of block_0 : 0.50530  ( 279.03397 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18198 )    
+[Cutcost of partition : 247.43619]
+[Vertex balance of block_0 : 0.50530  ( 279.03397 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18198 )    
+[Cutcost of partition : 256.56778]
+[Vertex balance of block_0 : 0.49759  ( 274.77798 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43799 )    
+[Cutcost of partition : 250.08607]
+[Vertex balance of block_0 : 0.50482  ( 278.76801 )    
+[Vertex balance of block_1 : 0.49518  ( 273.44800 )    
+[Cutcost of partition : 256.48367]
+[Vertex balance of block_0 : 0.49615  ( 273.97998 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23599 )    
+[Cutcost of partition : 256.48367]
+[Vertex balance of block_0 : 0.50385  ( 278.23599 )    
+[Vertex balance of block_1 : 0.49615  ( 273.97998 )    
+[Cutcost of partition : 256.48367]
+[Vertex balance of block_0 : 0.50385  ( 278.23599 )    
+[Vertex balance of block_1 : 0.49615  ( 273.97998 )    
+[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 178, cutcost = 245.29271, best_solution_id = 2
+[Cutcost of partition : 299.0129]
+[Vertex balance of block_0 : 0.49181  ( 271.58600 )    
+[Vertex balance of block_1 : 0.50819  ( 280.63000 )    
+[Cutcost of partition : 299.0129]
+[Vertex balance of block_0 : 0.49181  ( 271.58600 )    
+[Vertex balance of block_1 : 0.50819  ( 280.63000 )    
+[Cutcost of partition : 202.87979]
+[Vertex balance of block_0 : 0.50337  ( 277.97003 )    
+[Vertex balance of block_1 : 0.49663  ( 274.24600 )    
+[Cutcost of partition : 234.28008]
+[Vertex balance of block_0 : 0.50434  ( 278.50204 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 234.28008]
+[Vertex balance of block_0 : 0.50434  ( 278.50204 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 205.42717]
+[Vertex balance of block_0 : 0.49133  ( 271.32001 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[Cutcost of partition : 255.85057]
+[Vertex balance of block_0 : 0.49759  ( 274.77798 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43802 )    
+[Cutcost of partition : 227.6634]
+[Vertex balance of block_0 : 0.50771  ( 280.36395 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+[Cutcost of partition : 227.6634]
+[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36395 )    
+[Cutcost of partition : 227.6634]
+[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36395 )    
+[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 225, cutcost = 202.87979, best_solution_id = 2
+[Cutcost of partition : 205.84605]
+[Vertex balance of block_0 : 0.49037  ( 270.78802 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42804 )    
+[Cutcost of partition : 205.84605]
+[Vertex balance of block_0 : 0.49037  ( 270.78802 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42804 )    
+[Cutcost of partition : 206.46646]
+[Vertex balance of block_0 : 0.50915  ( 281.16208 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05408 )    
+[Cutcost of partition : 224.99629]
+[Vertex balance of block_0 : 0.50963  ( 281.42804 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78806 )    
+[Cutcost of partition : 224.99629]
+[Vertex balance of block_0 : 0.50963  ( 281.42804 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78806 )    
+[Cutcost of partition : 210.67587]
+[Vertex balance of block_0 : 0.49085  ( 271.05405 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16205 )    
+[Cutcost of partition : 247.24622]
+[Vertex balance of block_0 : 0.49181  ( 271.58603 )    
+[Vertex balance of block_1 : 0.50819  ( 280.63007 )    
+[Cutcost of partition : 214.93811]
+[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
+[Vertex balance of block_1 : 0.49133  ( 271.32007 )    
+[Cutcost of partition : 214.93811]
+[Vertex balance of block_0 : 0.49133  ( 271.32007 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[Cutcost of partition : 214.93811]
+[Vertex balance of block_0 : 0.49133  ( 271.32007 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 277, cutcost = 205.84605, best_solution_id = 0
+[Cutcost of partition : 205.48694]
+[Vertex balance of block_0 : 0.49759  ( 274.77808 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43808 )    
+[Cutcost of partition : 205.48694]
+[Vertex balance of block_0 : 0.49759  ( 274.77808 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43808 )    
+[Cutcost of partition : 206.10733]
+[Vertex balance of block_0 : 0.50674  ( 279.83203 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38409 )    
+[Cutcost of partition : 222.98154]
+[Vertex balance of block_0 : 0.50963  ( 281.42804 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78806 )    
+[Cutcost of partition : 222.98154]
+[Vertex balance of block_0 : 0.50963  ( 281.42804 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78806 )    
+[Cutcost of partition : 207.4609]
+[Vertex balance of block_0 : 0.49085  ( 271.05405 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16205 )    
+[Cutcost of partition : 246.0726]
+[Vertex balance of block_0 : 0.49085  ( 271.05405 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16205 )    
+[Cutcost of partition : 211.5434]
+[Vertex balance of block_0 : 0.50963  ( 281.42807 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78802 )    
+[Cutcost of partition : 211.04834]
+[Vertex balance of block_0 : 0.49037  ( 270.78802 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 211.04834]
+[Vertex balance of block_0 : 0.49037  ( 270.78802 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 352, cutcost = 205.48694, best_solution_id = 0
+[Cutcost of partition : 207.26283]
+[Vertex balance of block_0 : 0.49759  ( 274.77802 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43799 )    
+[Cutcost of partition : 207.26283]
+[Vertex balance of block_0 : 0.49759  ( 274.77802 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43799 )    
+[Cutcost of partition : 207.69128]
+[Vertex balance of block_0 : 0.50578  ( 279.29999 )    
+[Vertex balance of block_1 : 0.49422  ( 272.91602 )    
+[Cutcost of partition : 218.01613]
+[Vertex balance of block_0 : 0.50963  ( 281.42798 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 218.01613]
+[Vertex balance of block_0 : 0.50963  ( 281.42798 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 209.04483]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42798 )    
+[Cutcost of partition : 243.48737]
+[Vertex balance of block_0 : 0.49326  ( 272.38397 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83200 )    
+[Cutcost of partition : 209.14832]
+[Vertex balance of block_0 : 0.50963  ( 281.42798 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 206.82484]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42798 )    
+[Cutcost of partition : 206.82484]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42798 )    
+[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 206.82484, best_solution_id = 8
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 46, num_hyperedges = 64
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 208.88141]
-[Vertex balance of block_0 : 0.59971  ( 331.16998 )    
-[Vertex balance of block_1 : 0.40029  ( 221.04602 )    
-[Refinement] Level 1 :: num_vertices = 16, num_hyperedges = 56, cutcost = 208.88141, best_solution_id = 0
-[Cutcost of partition : 216.39035]
-[Vertex balance of block_0 : 0.58671  ( 323.98795 )    
-[Vertex balance of block_1 : 0.41329  ( 228.22803 )    
-[Refinement] Level 2 :: num_vertices = 24, num_hyperedges = 63, cutcost = 216.39035, best_solution_id = 0
-[Cutcost of partition : 231.59326]
-[Vertex balance of block_0 : 0.53950  ( 297.91998 )    
-[Vertex balance of block_1 : 0.46050  ( 254.29601 )    
-[Refinement] Level 3 :: num_vertices = 36, num_hyperedges = 75, cutcost = 231.59326, best_solution_id = 0
-[Cutcost of partition : 261.2509]
-[Vertex balance of block_0 : 0.53854  ( 297.38806 )    
-[Vertex balance of block_1 : 0.46146  ( 254.82802 )    
-[Refinement] Level 4 :: num_vertices = 54, num_hyperedges = 93, cutcost = 261.2509, best_solution_id = 0
-[Cutcost of partition : 281.02182]
-[Vertex balance of block_0 : 0.51108  ( 282.22601 )    
-[Vertex balance of block_1 : 0.48892  ( 269.99005 )    
-[Refinement] Level 5 :: num_vertices = 81, num_hyperedges = 118, cutcost = 281.02182, best_solution_id = 0
+[STATUS] Optimal ILP-based Partitioning Finished !
 [INFO PAR-0158] Statistics of cut-overlay solution:
-[Cutcost of partition : 331.7356]
-[Vertex balance of block_0 : 0.51108  ( 282.22601 )    
-[Vertex balance of block_1 : 0.48892  ( 269.99005 )    
+[Cutcost of partition : 199.32104]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
@@ -2525,10 +2493,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.55010  ( 303.77197 )    
 [Vertex balance of block_1 : 0.44990  ( 248.44400 )    
 [INIT-PART] 21 :: Random part cutcost = 200.30386, balance_flag = false
-[Cutcost of partition : 242.8051]
-[Vertex balance of block_0 : 0.52842  ( 291.80200 )    
-[Vertex balance of block_1 : 0.47158  ( 260.41400 )    
-[INIT-PART] 22 :: Random part cutcost = 242.8051, balance_flag = false
+[Cutcost of partition : 295.4862]
+[Vertex balance of block_0 : 0.50723  ( 280.09799 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11798 )    
+[INIT-PART] 22 :: Random part cutcost = 295.4862, balance_flag = true
 [Cutcost of partition : 244.45207]
 [Vertex balance of block_0 : 0.57466  ( 317.33801 )    
 [Vertex balance of block_1 : 0.42534  ( 234.87801 )    
@@ -2709,10 +2677,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.54913  ( 303.23999 )    
 [Vertex balance of block_1 : 0.45087  ( 248.97600 )    
 [INIT-PART] 67 :: Random part cutcost = 204.43196, balance_flag = false
-[Cutcost of partition : 207.49942]
-[Vertex balance of block_0 : 0.55299  ( 305.36798 )    
-[Vertex balance of block_1 : 0.44701  ( 246.84801 )    
-[INIT-PART] 68 :: Random part cutcost = 207.49942, balance_flag = false
+[Cutcost of partition : 295.4862]
+[Vertex balance of block_0 : 0.50723  ( 280.09799 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11798 )    
+[INIT-PART] 68 :: Random part cutcost = 295.4862, balance_flag = true
 [Cutcost of partition : 199.85039]
 [Vertex balance of block_0 : 0.56262  ( 310.68799 )    
 [Vertex balance of block_1 : 0.43738  ( 241.52800 )    
@@ -2769,10 +2737,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.53757  ( 296.85602 )    
 [Vertex balance of block_1 : 0.46243  ( 255.36000 )    
 [INIT-PART] 82 :: Random part cutcost = 247.37332, balance_flag = false
-[Cutcost of partition : 241.14447]
-[Vertex balance of block_0 : 0.51252  ( 283.02399 )    
-[Vertex balance of block_1 : 0.48748  ( 269.19202 )    
-[INIT-PART] 83 :: Random part cutcost = 241.14447, balance_flag = false
+[Cutcost of partition : 295.4862]
+[Vertex balance of block_0 : 0.50723  ( 280.09799 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11798 )    
+[INIT-PART] 83 :: Random part cutcost = 295.4862, balance_flag = true
 [Cutcost of partition : 302.61386]
 [Vertex balance of block_0 : 0.53661  ( 296.32401 )    
 [Vertex balance of block_1 : 0.46339  ( 255.89200 )    
@@ -3245,367 +3213,360 @@ All the hyperedges will be used in the ILP-based partitioning!
 [INIT-PART] :: VILE part cutcost = 229.35483, balance_flag = false
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 275.49072]
-[Vertex balance of block_0 : 0.55202  ( 304.83600 )    
-[Vertex balance of block_1 : 0.44798  ( 247.37999 )    
-[INIT-PART] :: ILP part cutcost = 275.49072, balance_flag = false
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Cutcost of partition : 257.95605]
+[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36401 )    
+[INIT-PART] :: ILP part cutcost = 257.95605, balance_flag = true
 [INFO PAR-0155] Number of chosen best initial solutions = 10
 [INFO PAR-0156] Best initial cutcost 257.95605
-[Cutcost of partition : 260.45456]
-[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 260.45456]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36398 )    
-[Cutcost of partition : 296.9727]
-[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09796 )    
+[Cutcost of partition : 259.44183]
+[Vertex balance of block_0 : 0.49807  ( 275.04401 )    
+[Vertex balance of block_1 : 0.50193  ( 277.17200 )    
+[Cutcost of partition : 259.44183]
+[Vertex balance of block_0 : 0.50193  ( 277.17200 )    
+[Vertex balance of block_1 : 0.49807  ( 275.04401 )    
+[Cutcost of partition : 259.44183]
+[Vertex balance of block_0 : 0.49807  ( 275.04401 )    
+[Vertex balance of block_1 : 0.50193  ( 277.17200 )    
+[Cutcost of partition : 295.96]
+[Vertex balance of block_0 : 0.50145  ( 276.90601 )    
+[Vertex balance of block_1 : 0.49855  ( 275.31000 )    
+[Cutcost of partition : 295.96]
+[Vertex balance of block_0 : 0.49855  ( 275.31000 )    
+[Vertex balance of block_1 : 0.50145  ( 276.90601 )    
+[Cutcost of partition : 295.96]
+[Vertex balance of block_0 : 0.50145  ( 276.90601 )    
+[Vertex balance of block_1 : 0.49855  ( 275.31000 )    
+[Cutcost of partition : 295.96]
+[Vertex balance of block_0 : 0.50145  ( 276.90601 )    
+[Vertex balance of block_1 : 0.49855  ( 275.31000 )    
 [Cutcost of partition : 163.79015]
 [Vertex balance of block_0 : 0.40559  ( 223.97200 )    
 [Vertex balance of block_1 : 0.59441  ( 328.24402 )    
 [Cutcost of partition : 188.24905]
 [Vertex balance of block_0 : 0.41859  ( 231.15401 )    
 [Vertex balance of block_1 : 0.58141  ( 321.06201 )    
-[Cutcost of partition : 196.4384]
-[Vertex balance of block_0 : 0.47110  ( 260.14801 )    
-[Vertex balance of block_1 : 0.52890  ( 292.06799 )    
-[Cutcost of partition : 196.4384]
-[Vertex balance of block_0 : 0.47110  ( 260.14801 )    
-[Vertex balance of block_1 : 0.52890  ( 292.06799 )    
-[Cutcost of partition : 196.4384]
-[Vertex balance of block_0 : 0.52890  ( 292.06799 )    
-[Vertex balance of block_1 : 0.47110  ( 260.14801 )    
-[Cutcost of partition : 196.4384]
-[Vertex balance of block_0 : 0.52890  ( 292.06799 )    
-[Vertex balance of block_1 : 0.47110  ( 260.14801 )    
-[Cutcost of partition : 198.45265]
-[Vertex balance of block_0 : 0.40896  ( 225.83400 )    
-[Vertex balance of block_1 : 0.59104  ( 326.38202 )    
-[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 57, cutcost = 163.79015, best_solution_id = 3
-[Cutcost of partition : 306.05667]
-[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 306.05667]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36401 )    
-[Cutcost of partition : 347.50674]
-[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09802 )    
+[Cutcost of partition : 192.3904]
+[Vertex balance of block_0 : 0.50145  ( 276.90601 )    
+[Vertex balance of block_1 : 0.49855  ( 275.31000 )    
+[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 57, cutcost = 163.79015, best_solution_id = 7
+[Cutcost of partition : 303.38318]
+[Vertex balance of block_0 : 0.49615  ( 273.97998 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23602 )    
+[Cutcost of partition : 303.38318]
+[Vertex balance of block_0 : 0.50385  ( 278.23602 )    
+[Vertex balance of block_1 : 0.49615  ( 273.97998 )    
+[Cutcost of partition : 303.38318]
+[Vertex balance of block_0 : 0.49615  ( 273.97998 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23602 )    
+[Cutcost of partition : 344.83325]
+[Vertex balance of block_0 : 0.50337  ( 277.96997 )    
+[Vertex balance of block_1 : 0.49663  ( 274.24600 )    
+[Cutcost of partition : 344.83325]
+[Vertex balance of block_0 : 0.49663  ( 274.24600 )    
+[Vertex balance of block_1 : 0.50337  ( 277.96997 )    
+[Cutcost of partition : 344.83325]
+[Vertex balance of block_0 : 0.50337  ( 277.96997 )    
+[Vertex balance of block_1 : 0.49663  ( 274.24600 )    
+[Cutcost of partition : 344.83325]
+[Vertex balance of block_0 : 0.50337  ( 277.96997 )    
+[Vertex balance of block_1 : 0.49663  ( 274.24600 )    
 [Cutcost of partition : 198.05516]
 [Vertex balance of block_0 : 0.40559  ( 223.97202 )    
 [Vertex balance of block_1 : 0.59441  ( 328.24396 )    
-[Cutcost of partition : 213.90366]
-[Vertex balance of block_0 : 0.46724  ( 258.01999 )    
-[Vertex balance of block_1 : 0.53276  ( 294.19598 )    
-[Cutcost of partition : 224.3197]
-[Vertex balance of block_0 : 0.47110  ( 260.14801 )    
-[Vertex balance of block_1 : 0.52890  ( 292.06799 )    
-[Cutcost of partition : 224.3197]
-[Vertex balance of block_0 : 0.47110  ( 260.14801 )    
-[Vertex balance of block_1 : 0.52890  ( 292.06799 )    
-[Cutcost of partition : 224.3197]
-[Vertex balance of block_0 : 0.52890  ( 292.06799 )    
-[Vertex balance of block_1 : 0.47110  ( 260.14801 )    
-[Cutcost of partition : 224.3197]
-[Vertex balance of block_0 : 0.52890  ( 292.06799 )    
-[Vertex balance of block_1 : 0.47110  ( 260.14801 )    
-[Cutcost of partition : 223.71915]
-[Vertex balance of block_0 : 0.40896  ( 225.83398 )    
-[Vertex balance of block_1 : 0.59104  ( 326.38196 )    
-[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 75, cutcost = 198.05516, best_solution_id = 3
-[Cutcost of partition : 324.62863]
-[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 324.62863]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36401 )    
-[Cutcost of partition : 368.80072]
-[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09802 )    
+[Cutcost of partition : 215.37566]
+[Vertex balance of block_0 : 0.50530  ( 279.03400 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18201 )    
+[Cutcost of partition : 220.2717]
+[Vertex balance of block_0 : 0.50145  ( 276.90601 )    
+[Vertex balance of block_1 : 0.49855  ( 275.31000 )    
+[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 75, cutcost = 198.05516, best_solution_id = 7
+[Cutcost of partition : 310.1274]
+[Vertex balance of block_0 : 0.49952  ( 275.84198 )    
+[Vertex balance of block_1 : 0.50048  ( 276.37402 )    
+[Cutcost of partition : 310.1274]
+[Vertex balance of block_0 : 0.50048  ( 276.37402 )    
+[Vertex balance of block_1 : 0.49952  ( 275.84198 )    
+[Cutcost of partition : 310.1274]
+[Vertex balance of block_0 : 0.49952  ( 275.84198 )    
+[Vertex balance of block_1 : 0.50048  ( 276.37402 )    
+[Cutcost of partition : 352.1156]
+[Vertex balance of block_0 : 0.49615  ( 273.98001 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23599 )    
+[Cutcost of partition : 352.1156]
+[Vertex balance of block_0 : 0.50385  ( 278.23599 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Cutcost of partition : 352.1156]
+[Vertex balance of block_0 : 0.49615  ( 273.98001 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23599 )    
+[Cutcost of partition : 352.1156]
+[Vertex balance of block_0 : 0.49615  ( 273.98001 )    
+[Vertex balance of block_1 : 0.50385  ( 278.23599 )    
 [Cutcost of partition : 208.94669]
 [Vertex balance of block_0 : 0.43545  ( 240.46400 )    
 [Vertex balance of block_1 : 0.56455  ( 311.75198 )    
-[Cutcost of partition : 221.92883]
-[Vertex balance of block_0 : 0.48555  ( 268.12799 )    
-[Vertex balance of block_1 : 0.51445  ( 284.08798 )    
-[Cutcost of partition : 234.16292]
-[Vertex balance of block_0 : 0.48121  ( 265.73401 )    
-[Vertex balance of block_1 : 0.51879  ( 286.48199 )    
-[Cutcost of partition : 234.16292]
-[Vertex balance of block_0 : 0.48121  ( 265.73401 )    
-[Vertex balance of block_1 : 0.51879  ( 286.48199 )    
-[Cutcost of partition : 234.16292]
-[Vertex balance of block_0 : 0.51879  ( 286.48199 )    
-[Vertex balance of block_1 : 0.48121  ( 265.73401 )    
-[Cutcost of partition : 234.16292]
-[Vertex balance of block_0 : 0.51879  ( 286.48199 )    
-[Vertex balance of block_1 : 0.48121  ( 265.73401 )    
-[Cutcost of partition : 233.59743]
-[Vertex balance of block_0 : 0.44653  ( 246.58200 )    
-[Vertex balance of block_1 : 0.55347  ( 305.63400 )    
-[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 86, cutcost = 208.94669, best_solution_id = 3
-[Cutcost of partition : 356.771]
-[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 356.771]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36398 )    
-[Cutcost of partition : 404.91113]
-[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09796 )    
+[Cutcost of partition : 221.38387]
+[Vertex balance of block_0 : 0.50000  ( 276.10800 )    
+[Vertex balance of block_1 : 0.50000  ( 276.10800 )    
+[Cutcost of partition : 228.52577]
+[Vertex balance of block_0 : 0.50145  ( 276.90601 )    
+[Vertex balance of block_1 : 0.49855  ( 275.31000 )    
+[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 86, cutcost = 208.94669, best_solution_id = 7
+[Cutcost of partition : 232.77225]
+[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
+[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
+[Cutcost of partition : 232.77225]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[Cutcost of partition : 232.77225]
+[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
+[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
+[Cutcost of partition : 322.26163]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 322.26163]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Cutcost of partition : 322.26163]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 322.26163]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
 [Cutcost of partition : 228.34482]
 [Vertex balance of block_0 : 0.45279  ( 250.03998 )    
 [Vertex balance of block_1 : 0.54721  ( 302.17599 )    
-[Cutcost of partition : 240.88033]
-[Vertex balance of block_0 : 0.48555  ( 268.12799 )    
-[Vertex balance of block_1 : 0.51445  ( 284.08798 )    
-[Cutcost of partition : 259.11465]
-[Vertex balance of block_0 : 0.48459  ( 267.59598 )    
-[Vertex balance of block_1 : 0.51541  ( 284.61996 )    
-[Cutcost of partition : 259.11465]
-[Vertex balance of block_0 : 0.48459  ( 267.59598 )    
-[Vertex balance of block_1 : 0.51541  ( 284.61996 )    
-[Cutcost of partition : 259.11465]
-[Vertex balance of block_0 : 0.51541  ( 284.61996 )    
-[Vertex balance of block_1 : 0.48459  ( 267.59598 )    
-[Cutcost of partition : 259.11465]
-[Vertex balance of block_0 : 0.51541  ( 284.61996 )    
-[Vertex balance of block_1 : 0.48459  ( 267.59598 )    
-[Cutcost of partition : 253.16196]
-[Vertex balance of block_0 : 0.45135  ( 249.24200 )    
-[Vertex balance of block_1 : 0.54865  ( 302.97400 )    
-[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 111, cutcost = 228.34482, best_solution_id = 3
-[Cutcost of partition : 392.03214]
-[Vertex balance of block_0 : 0.50771  ( 280.36404 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 392.03214]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36404 )    
-[Cutcost of partition : 451.61642]
-[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09802 )    
+[Cutcost of partition : 238.2978]
+[Vertex balance of block_0 : 0.50337  ( 277.96997 )    
+[Vertex balance of block_1 : 0.49663  ( 274.24597 )    
+[Cutcost of partition : 247.46693]
+[Vertex balance of block_0 : 0.50482  ( 278.76801 )    
+[Vertex balance of block_1 : 0.49518  ( 273.44800 )    
+[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 111, cutcost = 228.34482, best_solution_id = 7
+[Cutcost of partition : 242.70349]
+[Vertex balance of block_0 : 0.50193  ( 277.17197 )    
+[Vertex balance of block_1 : 0.49807  ( 275.04404 )    
+[Cutcost of partition : 242.70349]
+[Vertex balance of block_0 : 0.49807  ( 275.04404 )    
+[Vertex balance of block_1 : 0.50193  ( 277.17197 )    
+[Cutcost of partition : 242.70349]
+[Vertex balance of block_0 : 0.50193  ( 277.17197 )    
+[Vertex balance of block_1 : 0.49807  ( 275.04404 )    
+[Cutcost of partition : 325.54044]
+[Vertex balance of block_0 : 0.49374  ( 272.65002 )    
+[Vertex balance of block_1 : 0.50626  ( 279.56601 )    
+[Cutcost of partition : 325.54044]
+[Vertex balance of block_0 : 0.50626  ( 279.56601 )    
+[Vertex balance of block_1 : 0.49374  ( 272.65002 )    
+[Cutcost of partition : 325.54044]
+[Vertex balance of block_0 : 0.49374  ( 272.65002 )    
+[Vertex balance of block_1 : 0.50626  ( 279.56601 )    
+[Cutcost of partition : 325.54044]
+[Vertex balance of block_0 : 0.49374  ( 272.65002 )    
+[Vertex balance of block_1 : 0.50626  ( 279.56601 )    
 [Cutcost of partition : 247.54916]
 [Vertex balance of block_0 : 0.47110  ( 260.14801 )    
 [Vertex balance of block_1 : 0.52890  ( 292.06796 )    
-[Cutcost of partition : 270.46295]
-[Vertex balance of block_0 : 0.48796  ( 269.45801 )    
-[Vertex balance of block_1 : 0.51204  ( 282.75800 )    
-[Cutcost of partition : 291.90546]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96002 )    
-[Cutcost of partition : 291.90546]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96002 )    
-[Cutcost of partition : 291.90546]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 291.90546]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 270.5248]
-[Vertex balance of block_0 : 0.46339  ( 255.89200 )    
-[Vertex balance of block_1 : 0.53661  ( 296.32397 )    
-[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 146, cutcost = 247.54916, best_solution_id = 3
-[Cutcost of partition : 424.22107]
-[Vertex balance of block_0 : 0.50771  ( 280.36404 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 424.22107]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36404 )    
-[Cutcost of partition : 496.19785]
-[Vertex balance of block_0 : 0.49277  ( 272.11801 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09802 )    
-[Cutcost of partition : 254.49823]
-[Vertex balance of block_0 : 0.48988  ( 270.52200 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69400 )    
-[Cutcost of partition : 291.67993]
-[Vertex balance of block_0 : 0.48796  ( 269.45804 )    
-[Vertex balance of block_1 : 0.51204  ( 282.75800 )    
-[Cutcost of partition : 314.13034]
-[Vertex balance of block_0 : 0.48940  ( 270.25598 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96002 )    
-[Cutcost of partition : 314.13034]
-[Vertex balance of block_0 : 0.48940  ( 270.25598 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96002 )    
-[Cutcost of partition : 314.13034]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 314.13034]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Cutcost of partition : 296.36105]
-[Vertex balance of block_0 : 0.48892  ( 269.98999 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22604 )    
-[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 178, cutcost = 254.49823, best_solution_id = 3
-[Cutcost of partition : 434.20557]
-[Vertex balance of block_0 : 0.50771  ( 280.36404 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85205 )    
-[Cutcost of partition : 434.20557]
-[Vertex balance of block_0 : 0.49229  ( 271.85205 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36404 )    
-[Cutcost of partition : 507.09335]
-[Vertex balance of block_0 : 0.49277  ( 272.11804 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09805 )    
-[Cutcost of partition : 261.6769]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69400 )    
-[Cutcost of partition : 304.01483]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96005 )    
-[Cutcost of partition : 323.98514]
-[Vertex balance of block_0 : 0.48940  ( 270.25604 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96008 )    
-[Cutcost of partition : 323.98514]
-[Vertex balance of block_0 : 0.48940  ( 270.25604 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96008 )    
-[Cutcost of partition : 323.98514]
-[Vertex balance of block_0 : 0.51060  ( 281.96008 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25604 )    
-[Cutcost of partition : 323.98514]
-[Vertex balance of block_0 : 0.51060  ( 281.96008 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25604 )    
-[Cutcost of partition : 308.98682]
-[Vertex balance of block_0 : 0.48892  ( 269.99002 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22601 )    
-[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 219, cutcost = 261.6769, best_solution_id = 3
-[Cutcost of partition : 445.82996]
-[Vertex balance of block_0 : 0.50771  ( 280.36404 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 445.82996]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36404 )    
-[Cutcost of partition : 520.6167]
-[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09805 )    
-[Cutcost of partition : 270.5104]
-[Vertex balance of block_0 : 0.48988  ( 270.52206 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69397 )    
-[Cutcost of partition : 315.8542]
-[Vertex balance of block_0 : 0.48940  ( 270.25604 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95996 )    
-[Cutcost of partition : 335.97488]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96008 )    
-[Cutcost of partition : 335.97488]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96008 )    
-[Cutcost of partition : 335.97488]
-[Vertex balance of block_0 : 0.51060  ( 281.96008 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 335.97488]
-[Vertex balance of block_0 : 0.51060  ( 281.96008 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 324.5888]
-[Vertex balance of block_0 : 0.48892  ( 269.99002 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22601 )    
-[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 277, cutcost = 270.5104, best_solution_id = 3
-[Cutcost of partition : 449.9243]
-[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 449.9243]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36401 )    
-[Cutcost of partition : 527.34875]
-[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09802 )    
-[Cutcost of partition : 272.967]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69400 )    
-[Cutcost of partition : 319.1296]
-[Vertex balance of block_0 : 0.48940  ( 270.25604 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
-[Cutcost of partition : 339.2503]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96002 )    
-[Cutcost of partition : 339.2503]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.96002 )    
-[Cutcost of partition : 339.2503]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 339.2503]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 327.86426]
-[Vertex balance of block_0 : 0.48892  ( 269.99005 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22595 )    
-[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 357, cutcost = 272.967, best_solution_id = 3
-[Cutcost of partition : 449.9243]
-[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
-[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
-[Cutcost of partition : 449.9243]
-[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
-[Vertex balance of block_1 : 0.50771  ( 280.36401 )    
-[Cutcost of partition : 528.2823]
-[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
-[Vertex balance of block_1 : 0.50723  ( 280.09805 )    
-[Cutcost of partition : 272.967]
-[Vertex balance of block_0 : 0.48988  ( 270.52203 )    
-[Vertex balance of block_1 : 0.51012  ( 281.69397 )    
-[Cutcost of partition : 319.1296]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
-[Cutcost of partition : 339.2503]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
-[Cutcost of partition : 339.2503]
-[Vertex balance of block_0 : 0.48940  ( 270.25601 )    
-[Vertex balance of block_1 : 0.51060  ( 281.95999 )    
-[Cutcost of partition : 339.2503]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 339.2503]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Cutcost of partition : 327.86426]
-[Vertex balance of block_0 : 0.48892  ( 269.99002 )    
-[Vertex balance of block_1 : 0.51108  ( 282.22601 )    
-[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 272.967, best_solution_id = 3
-[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 95, num_hyperedges = 127
+[Cutcost of partition : 240.8995]
+[Vertex balance of block_0 : 0.49133  ( 271.32001 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
+[Cutcost of partition : 277.95493]
+[Vertex balance of block_0 : 0.50145  ( 276.90601 )    
+[Vertex balance of block_1 : 0.49855  ( 275.31000 )    
+[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 146, cutcost = 240.8995, best_solution_id = 8
+[Cutcost of partition : 239.00671]
+[Vertex balance of block_0 : 0.49326  ( 272.38397 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83206 )    
+[Cutcost of partition : 239.00671]
+[Vertex balance of block_0 : 0.50674  ( 279.83206 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38397 )    
+[Cutcost of partition : 239.00671]
+[Vertex balance of block_0 : 0.49326  ( 272.38397 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83206 )    
+[Cutcost of partition : 350.66852]
+[Vertex balance of block_0 : 0.49904  ( 275.57599 )    
+[Vertex balance of block_1 : 0.50096  ( 276.64001 )    
+[Cutcost of partition : 350.66852]
+[Vertex balance of block_0 : 0.50096  ( 276.64001 )    
+[Vertex balance of block_1 : 0.49904  ( 275.57599 )    
+[Cutcost of partition : 350.66852]
+[Vertex balance of block_0 : 0.49904  ( 275.57599 )    
+[Vertex balance of block_1 : 0.50096  ( 276.64001 )    
+[Cutcost of partition : 350.66852]
+[Vertex balance of block_0 : 0.49904  ( 275.57599 )    
+[Vertex balance of block_1 : 0.50096  ( 276.64001 )    
+[Cutcost of partition : 232.26875]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 254.58183]
+[Vertex balance of block_0 : 0.49037  ( 270.78802 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42798 )    
+[Cutcost of partition : 253.36757]
+[Vertex balance of block_0 : 0.49855  ( 275.31003 )    
+[Vertex balance of block_1 : 0.50145  ( 276.90598 )    
+[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 178, cutcost = 232.26875, best_solution_id = 7
+[Cutcost of partition : 228.45454]
+[Vertex balance of block_0 : 0.50915  ( 281.16193 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05411 )    
+[Cutcost of partition : 228.45454]
+[Vertex balance of block_0 : 0.49085  ( 271.05411 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16193 )    
+[Cutcost of partition : 228.45454]
+[Vertex balance of block_0 : 0.50915  ( 281.16193 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05411 )    
+[Cutcost of partition : 262.95328]
+[Vertex balance of block_0 : 0.49037  ( 270.78806 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
+[Cutcost of partition : 262.95328]
+[Vertex balance of block_0 : 0.50963  ( 281.42801 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78806 )    
+[Cutcost of partition : 262.95328]
+[Vertex balance of block_0 : 0.49037  ( 270.78806 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
+[Cutcost of partition : 262.95328]
+[Vertex balance of block_0 : 0.49037  ( 270.78806 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
+[Cutcost of partition : 221.03667]
+[Vertex balance of block_0 : 0.49037  ( 270.78806 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42798 )    
+[Cutcost of partition : 264.4366]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 257.19785]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
+[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 219, cutcost = 221.03667, best_solution_id = 7
+[Cutcost of partition : 219.26033]
+[Vertex balance of block_0 : 0.50674  ( 279.83194 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38412 )    
+[Cutcost of partition : 219.26033]
+[Vertex balance of block_0 : 0.49326  ( 272.38412 )    
+[Vertex balance of block_1 : 0.50674  ( 279.83194 )    
+[Cutcost of partition : 219.26033]
+[Vertex balance of block_0 : 0.50674  ( 279.83194 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38412 )    
+[Cutcost of partition : 225.14084]
+[Vertex balance of block_0 : 0.49085  ( 271.05411 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16193 )    
+[Cutcost of partition : 225.14084]
+[Vertex balance of block_0 : 0.50915  ( 281.16193 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05411 )    
+[Cutcost of partition : 225.14084]
+[Vertex balance of block_0 : 0.49085  ( 271.05411 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16193 )    
+[Cutcost of partition : 225.14084]
+[Vertex balance of block_0 : 0.49085  ( 271.05411 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16193 )    
+[Cutcost of partition : 211.99039]
+[Vertex balance of block_0 : 0.49085  ( 271.05411 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16196 )    
+[Cutcost of partition : 273.03873]
+[Vertex balance of block_0 : 0.49085  ( 271.05402 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 267.02298]
+[Vertex balance of block_0 : 0.49133  ( 271.32001 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
+[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 277, cutcost = 211.99039, best_solution_id = 7
+[Cutcost of partition : 220.57733]
+[Vertex balance of block_0 : 0.50530  ( 279.03397 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18213 )    
+[Cutcost of partition : 220.57733]
+[Vertex balance of block_0 : 0.49470  ( 273.18213 )    
+[Vertex balance of block_1 : 0.50530  ( 279.03397 )    
+[Cutcost of partition : 220.57733]
+[Vertex balance of block_0 : 0.50530  ( 279.03397 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18213 )    
+[Cutcost of partition : 223.71758]
+[Vertex balance of block_0 : 0.50867  ( 280.89606 )    
+[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
+[Cutcost of partition : 223.71758]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89606 )    
+[Cutcost of partition : 223.71758]
+[Vertex balance of block_0 : 0.50867  ( 280.89606 )    
+[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
+[Cutcost of partition : 223.71758]
+[Vertex balance of block_0 : 0.50867  ( 280.89606 )    
+[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
+[Cutcost of partition : 215.26584]
+[Vertex balance of block_0 : 0.49085  ( 271.05405 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 268.95847]
+[Vertex balance of block_0 : 0.50096  ( 276.64001 )    
+[Vertex balance of block_1 : 0.49904  ( 275.57605 )    
+[Cutcost of partition : 260.6422]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42804 )    
+[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 357, cutcost = 215.26584, best_solution_id = 7
+[Cutcost of partition : 211.01445]
+[Vertex balance of block_0 : 0.50915  ( 281.16196 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 211.01445]
+[Vertex balance of block_0 : 0.49085  ( 271.05402 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16196 )    
+[Cutcost of partition : 211.01445]
+[Vertex balance of block_0 : 0.50915  ( 281.16196 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 213.8622]
+[Vertex balance of block_0 : 0.49181  ( 271.58600 )    
+[Vertex balance of block_1 : 0.50819  ( 280.63000 )    
+[Cutcost of partition : 215.64119]
+[Vertex balance of block_0 : 0.50963  ( 281.42798 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 213.8622]
+[Vertex balance of block_0 : 0.49181  ( 271.58600 )    
+[Vertex balance of block_1 : 0.50819  ( 280.63000 )    
+[Cutcost of partition : 213.8622]
+[Vertex balance of block_0 : 0.49181  ( 271.58600 )    
+[Vertex balance of block_1 : 0.50819  ( 280.63000 )    
+[Cutcost of partition : 214.17438]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42795 )    
+[Cutcost of partition : 264.1834]
+[Vertex balance of block_0 : 0.50193  ( 277.17203 )    
+[Vertex balance of block_1 : 0.49807  ( 275.04401 )    
+[Cutcost of partition : 226.34532]
+[Vertex balance of block_0 : 0.49133  ( 271.32001 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 211.01445, best_solution_id = 0
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 72, num_hyperedges = 108
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
-[COARSEN] Level 0 :: num_vertices = 95, num_hyperedges = 127, num_timing_paths = 41
-[COARSEN] Level 1 :: num_vertices = 63, num_hyperedges = 113, num_timing_paths = 36
-[COARSEN] Level 2 :: num_vertices = 42, num_hyperedges = 92, num_timing_paths = 32
-[COARSEN] Level 3 :: num_vertices = 28, num_hyperedges = 80, num_timing_paths = 29
-[COARSEN] Level 4 :: num_vertices = 18, num_hyperedges = 68, num_timing_paths = 28
-[COARSEN] Level 5 :: num_vertices = 12, num_hyperedges = 57, num_timing_paths = 26
-[COARSEN] Level 6 :: num_vertices = 10, num_hyperedges = 53, num_timing_paths = 26
+[COARSEN] Level 0 :: num_vertices = 72, num_hyperedges = 108, num_timing_paths = 36
+[COARSEN] Level 1 :: num_vertices = 48, num_hyperedges = 88, num_timing_paths = 33
+[COARSEN] Level 2 :: num_vertices = 32, num_hyperedges = 76, num_timing_paths = 31
+[COARSEN] Level 3 :: num_vertices = 21, num_hyperedges = 68, num_timing_paths = 26
+[COARSEN] Level 4 :: num_vertices = 14, num_hyperedges = 58, num_timing_paths = 24
+[COARSEN] Level 5 :: num_vertices = 10, num_hyperedges = 49, num_timing_paths = 23
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 257.1208]
-[Vertex balance of block_0 : 0.56792  ( 313.61395 )    
-[Vertex balance of block_1 : 0.43208  ( 238.60199 )    
-[Refinement] Level 1 :: num_vertices = 12, num_hyperedges = 57, cutcost = 257.1208, best_solution_id = 0
-[Cutcost of partition : 274.79355]
-[Vertex balance of block_0 : 0.56792  ( 313.61398 )    
-[Vertex balance of block_1 : 0.43208  ( 238.60199 )    
-[Refinement] Level 2 :: num_vertices = 18, num_hyperedges = 68, cutcost = 274.79355, best_solution_id = 0
-[Cutcost of partition : 281.93805]
-[Vertex balance of block_0 : 0.56792  ( 313.61398 )    
-[Vertex balance of block_1 : 0.43208  ( 238.60201 )    
-[Refinement] Level 3 :: num_vertices = 28, num_hyperedges = 80, cutcost = 281.93805, best_solution_id = 0
-[Cutcost of partition : 297.3962]
-[Vertex balance of block_0 : 0.51252  ( 283.02399 )    
-[Vertex balance of block_1 : 0.48748  ( 269.19199 )    
-[Refinement] Level 4 :: num_vertices = 42, num_hyperedges = 92, cutcost = 297.3962, best_solution_id = 0
-[Cutcost of partition : 342.8229]
-[Vertex balance of block_0 : 0.51252  ( 283.02402 )    
-[Vertex balance of block_1 : 0.48748  ( 269.19205 )    
-[Refinement] Level 5 :: num_vertices = 63, num_hyperedges = 113, cutcost = 342.8229, best_solution_id = 0
-[Cutcost of partition : 376.25702]
-[Vertex balance of block_0 : 0.51252  ( 283.02396 )    
-[Vertex balance of block_1 : 0.48748  ( 269.19202 )    
-[Refinement] Level 6 :: num_vertices = 95, num_hyperedges = 127, cutcost = 376.25702, best_solution_id = 0
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Cutcost of partition : 137.34012]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 1 :: num_vertices = 14, num_hyperedges = 58, cutcost = 137.34012, best_solution_id = 0
+[Cutcost of partition : 145.03775]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 2 :: num_vertices = 21, num_hyperedges = 68, cutcost = 145.03775, best_solution_id = 0
+[Cutcost of partition : 160.46646]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 3 :: num_vertices = 32, num_hyperedges = 76, cutcost = 160.46646, best_solution_id = 0
+[Cutcost of partition : 167.71417]
+[Vertex balance of block_0 : 0.50915  ( 281.16208 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 4 :: num_vertices = 48, num_hyperedges = 88, cutcost = 167.71417, best_solution_id = 0
+[Cutcost of partition : 178.09973]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 5 :: num_vertices = 72, num_hyperedges = 108, cutcost = 178.09973, best_solution_id = 0
 [INFO PAR-0158] Statistics of cut-overlay solution:
-[Cutcost of partition : 423.2334]
-[Vertex balance of block_0 : 0.51252  ( 283.02399 )    
-[Vertex balance of block_1 : 0.48748  ( 269.19199 )    
+[Cutcost of partition : 211.01445]
+[Vertex balance of block_0 : 0.50915  ( 281.16196 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
@@ -3660,10 +3621,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.53083  ( 293.13199 )    
 [Vertex balance of block_1 : 0.46917  ( 259.08398 )    
 [INIT-PART] 8 :: Random part cutcost = 178.02588, balance_flag = false
-[Cutcost of partition : 205.5488]
-[Vertex balance of block_0 : 0.63054  ( 348.19400 )    
-[Vertex balance of block_1 : 0.36946  ( 204.02199 )    
-[INIT-PART] 9 :: Random part cutcost = 205.5488, balance_flag = false
+[Cutcost of partition : 210.76434]
+[Vertex balance of block_0 : 0.50626  ( 279.56601 )    
+[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
+[INIT-PART] 9 :: Random part cutcost = 210.76434, balance_flag = true
 [Cutcost of partition : 212.00708]
 [Vertex balance of block_0 : 0.59393  ( 327.97797 )    
 [Vertex balance of block_1 : 0.40607  ( 224.23799 )    
@@ -3684,10 +3645,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.58815  ( 324.78598 )    
 [Vertex balance of block_1 : 0.41185  ( 227.42999 )    
 [INIT-PART] 14 :: Random part cutcost = 196.25958, balance_flag = false
-[Cutcost of partition : 218.23961]
-[Vertex balance of block_0 : 0.60934  ( 336.48999 )    
-[Vertex balance of block_1 : 0.39066  ( 215.72598 )    
-[INIT-PART] 15 :: Random part cutcost = 218.23961, balance_flag = false
+[Cutcost of partition : 216.96902]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[INIT-PART] 15 :: Random part cutcost = 216.96902, balance_flag = true
 [Cutcost of partition : 212.16725]
 [Vertex balance of block_0 : 0.51012  ( 281.69400 )    
 [Vertex balance of block_1 : 0.48988  ( 270.52197 )    
@@ -3700,10 +3661,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.59730  ( 329.83997 )    
 [Vertex balance of block_1 : 0.40270  ( 222.37599 )    
 [INIT-PART] 18 :: Random part cutcost = 169.16779, balance_flag = false
-[Cutcost of partition : 194.6023]
-[Vertex balance of block_0 : 0.61513  ( 339.68198 )    
-[Vertex balance of block_1 : 0.38487  ( 212.53400 )    
-[INIT-PART] 19 :: Random part cutcost = 194.6023, balance_flag = false
+[Cutcost of partition : 192.55817]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[INIT-PART] 19 :: Random part cutcost = 192.55817, balance_flag = true
 [Cutcost of partition : 167.7406]
 [Vertex balance of block_0 : 0.60983  ( 336.75598 )    
 [Vertex balance of block_1 : 0.39017  ( 215.45999 )    
@@ -3720,10 +3681,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.51012  ( 281.69397 )    
 [Vertex balance of block_1 : 0.48988  ( 270.52197 )    
 [INIT-PART] 23 :: Random part cutcost = 223.63286, balance_flag = false
-[Cutcost of partition : 183.9779]
-[Vertex balance of block_0 : 0.60934  ( 336.48999 )    
-[Vertex balance of block_1 : 0.39066  ( 215.72598 )    
-[INIT-PART] 24 :: Random part cutcost = 183.9779, balance_flag = false
+[Cutcost of partition : 218.45891]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[INIT-PART] 24 :: Random part cutcost = 218.45891, balance_flag = true
 [Cutcost of partition : 171.50256]
 [Vertex balance of block_0 : 0.59008  ( 325.84998 )    
 [Vertex balance of block_1 : 0.40992  ( 226.36598 )    
@@ -3744,10 +3705,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.58815  ( 324.78598 )    
 [Vertex balance of block_1 : 0.41185  ( 227.42999 )    
 [INIT-PART] 29 :: Random part cutcost = 213.47171, balance_flag = false
-[Cutcost of partition : 178.93022]
-[Vertex balance of block_0 : 0.52697  ( 291.00400 )    
-[Vertex balance of block_1 : 0.47302  ( 261.21198 )    
-[INIT-PART] 30 :: Random part cutcost = 178.93022, balance_flag = false
+[Cutcost of partition : 185.91092]
+[Vertex balance of block_0 : 0.50530  ( 279.03400 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18198 )    
+[INIT-PART] 30 :: Random part cutcost = 185.91092, balance_flag = true
 [Cutcost of partition : 189.7243]
 [Vertex balance of block_0 : 0.53613  ( 296.05798 )    
 [Vertex balance of block_1 : 0.46387  ( 256.15799 )    
@@ -3756,22 +3717,22 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.59393  ( 327.97797 )    
 [Vertex balance of block_1 : 0.40607  ( 224.23799 )    
 [INIT-PART] 32 :: Random part cutcost = 204.36195, balance_flag = false
-[Cutcost of partition : 167.7406]
-[Vertex balance of block_0 : 0.60983  ( 336.75598 )    
-[Vertex balance of block_1 : 0.39017  ( 215.45999 )    
-[INIT-PART] 33 :: Random part cutcost = 167.7406, balance_flag = false
-[Cutcost of partition : 191.45978]
-[Vertex balance of block_0 : 0.53420  ( 294.99396 )    
-[Vertex balance of block_1 : 0.46580  ( 257.22198 )    
-[INIT-PART] 34 :: Random part cutcost = 191.45978, balance_flag = false
+[Cutcost of partition : 221.12418]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 33 :: Random part cutcost = 221.12418, balance_flag = true
+[Cutcost of partition : 212.19067]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 34 :: Random part cutcost = 212.19067, balance_flag = true
 [Cutcost of partition : 217.91544]
 [Vertex balance of block_0 : 0.51012  ( 281.69397 )    
 [Vertex balance of block_1 : 0.48988  ( 270.52197 )    
 [INIT-PART] 35 :: Random part cutcost = 217.91544, balance_flag = false
-[Cutcost of partition : 223.533]
-[Vertex balance of block_0 : 0.53420  ( 294.99399 )    
-[Vertex balance of block_1 : 0.46580  ( 257.22198 )    
-[INIT-PART] 36 :: Random part cutcost = 223.533, balance_flag = false
+[Cutcost of partition : 213.86827]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 36 :: Random part cutcost = 213.86827, balance_flag = true
 [Cutcost of partition : 244.2905]
 [Vertex balance of block_0 : 0.53083  ( 293.13199 )    
 [Vertex balance of block_1 : 0.46917  ( 259.08398 )    
@@ -3812,10 +3773,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.52457  ( 289.67401 )    
 [Vertex balance of block_1 : 0.47543  ( 262.54199 )    
 [INIT-PART] 46 :: Random part cutcost = 190.71712, balance_flag = false
-[Cutcost of partition : 205.5488]
-[Vertex balance of block_0 : 0.63054  ( 348.19400 )    
-[Vertex balance of block_1 : 0.36946  ( 204.02199 )    
-[INIT-PART] 47 :: Random part cutcost = 205.5488, balance_flag = false
+[Cutcost of partition : 213.86827]
+[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
+[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
+[INIT-PART] 47 :: Random part cutcost = 213.86827, balance_flag = true
 [Cutcost of partition : 246.24403]
 [Vertex balance of block_0 : 0.59008  ( 325.84998 )    
 [Vertex balance of block_1 : 0.40992  ( 226.36600 )    
@@ -3848,26 +3809,26 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.52697  ( 291.00400 )    
 [Vertex balance of block_1 : 0.47302  ( 261.21198 )    
 [INIT-PART] 55 :: Random part cutcost = 207.3118, balance_flag = false
-[Cutcost of partition : 160.38733]
-[Vertex balance of block_0 : 0.61320  ( 338.61798 )    
-[Vertex balance of block_1 : 0.38680  ( 213.59799 )    
-[INIT-PART] 56 :: Random part cutcost = 160.38733, balance_flag = false
+[Cutcost of partition : 180.45923]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 56 :: Random part cutcost = 180.45923, balance_flag = true
 [Cutcost of partition : 191.18573]
 [Vertex balance of block_0 : 0.51204  ( 282.75800 )    
 [Vertex balance of block_1 : 0.48796  ( 269.45798 )    
 [INIT-PART] 57 :: Random part cutcost = 191.18573, balance_flag = false
-[Cutcost of partition : 223.533]
-[Vertex balance of block_0 : 0.53420  ( 294.99399 )    
-[Vertex balance of block_1 : 0.46580  ( 257.22198 )    
-[INIT-PART] 58 :: Random part cutcost = 223.533, balance_flag = false
+[Cutcost of partition : 213.86827]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 58 :: Random part cutcost = 213.86827, balance_flag = true
 [Cutcost of partition : 183.9779]
 [Vertex balance of block_0 : 0.60934  ( 336.48999 )    
 [Vertex balance of block_1 : 0.39066  ( 215.72598 )    
 [INIT-PART] 59 :: Random part cutcost = 183.9779, balance_flag = false
-[Cutcost of partition : 169.16779]
-[Vertex balance of block_0 : 0.59730  ( 329.83997 )    
-[Vertex balance of block_1 : 0.40270  ( 222.37599 )    
-[INIT-PART] 60 :: Random part cutcost = 169.16779, balance_flag = false
+[Cutcost of partition : 185.91092]
+[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
+[Vertex balance of block_1 : 0.50530  ( 279.03400 )    
+[INIT-PART] 60 :: Random part cutcost = 185.91092, balance_flag = true
 [Cutcost of partition : 216.48119]
 [Vertex balance of block_0 : 0.51252  ( 283.02399 )    
 [Vertex balance of block_1 : 0.48748  ( 269.19199 )    
@@ -3892,10 +3853,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.51252  ( 283.02399 )    
 [Vertex balance of block_1 : 0.48748  ( 269.19199 )    
 [INIT-PART] 66 :: Random part cutcost = 204.69397, balance_flag = false
-[Cutcost of partition : 220.48672]
-[Vertex balance of block_0 : 0.61175  ( 337.81998 )    
-[Vertex balance of block_1 : 0.38825  ( 214.39600 )    
-[INIT-PART] 67 :: Random part cutcost = 220.48672, balance_flag = false
+[Cutcost of partition : 192.55817]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[INIT-PART] 67 :: Random part cutcost = 192.55817, balance_flag = true
 [Cutcost of partition : 148.93877]
 [Vertex balance of block_0 : 0.59056  ( 326.11597 )    
 [Vertex balance of block_1 : 0.40944  ( 226.09999 )    
@@ -3908,10 +3869,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.59249  ( 327.17996 )    
 [Vertex balance of block_1 : 0.40751  ( 225.03600 )    
 [INIT-PART] 70 :: Random part cutcost = 218.32988, balance_flag = false
-[Cutcost of partition : 222.90913]
-[Vertex balance of block_0 : 0.60934  ( 336.48999 )    
-[Vertex balance of block_1 : 0.39066  ( 215.72598 )    
-[INIT-PART] 71 :: Random part cutcost = 222.90913, balance_flag = false
+[Cutcost of partition : 192.55817]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[INIT-PART] 71 :: Random part cutcost = 192.55817, balance_flag = true
 [Cutcost of partition : 239.30919]
 [Vertex balance of block_0 : 0.51252  ( 283.02399 )    
 [Vertex balance of block_1 : 0.48748  ( 269.19199 )    
@@ -3944,10 +3905,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.51590  ( 284.88599 )    
 [Vertex balance of block_1 : 0.48410  ( 267.32999 )    
 [INIT-PART] 79 :: Random part cutcost = 198.64163, balance_flag = false
-[Cutcost of partition : 205.5488]
-[Vertex balance of block_0 : 0.63054  ( 348.19400 )    
-[Vertex balance of block_1 : 0.36946  ( 204.02199 )    
-[INIT-PART] 80 :: Random part cutcost = 205.5488, balance_flag = false
+[Cutcost of partition : 213.86827]
+[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
+[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
+[INIT-PART] 80 :: Random part cutcost = 213.86827, balance_flag = true
 [Cutcost of partition : 190.26068]
 [Vertex balance of block_0 : 0.58815  ( 324.78598 )    
 [Vertex balance of block_1 : 0.41185  ( 227.42998 )    
@@ -3960,14 +3921,14 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.59056  ( 326.11597 )    
 [Vertex balance of block_1 : 0.40944  ( 226.09999 )    
 [INIT-PART] 83 :: Random part cutcost = 148.93877, balance_flag = false
-[Cutcost of partition : 162.11407]
-[Vertex balance of block_0 : 0.61224  ( 338.08597 )    
-[Vertex balance of block_1 : 0.38776  ( 214.13000 )    
-[INIT-PART] 84 :: Random part cutcost = 162.11407, balance_flag = false
-[Cutcost of partition : 160.38733]
-[Vertex balance of block_0 : 0.61320  ( 338.61798 )    
-[Vertex balance of block_1 : 0.38680  ( 213.59799 )    
-[INIT-PART] 85 :: Random part cutcost = 160.38733, balance_flag = false
+[Cutcost of partition : 180.45923]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 84 :: Random part cutcost = 180.45923, balance_flag = true
+[Cutcost of partition : 180.45923]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 85 :: Random part cutcost = 180.45923, balance_flag = true
 [Cutcost of partition : 216.48119]
 [Vertex balance of block_0 : 0.51252  ( 283.02399 )    
 [Vertex balance of block_1 : 0.48748  ( 269.19199 )    
@@ -4000,10 +3961,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.60838  ( 335.95798 )    
 [Vertex balance of block_1 : 0.39162  ( 216.25800 )    
 [INIT-PART] 93 :: Random part cutcost = 168.04541, balance_flag = false
-[Cutcost of partition : 180.82228]
-[Vertex balance of block_0 : 0.53420  ( 294.99399 )    
-[Vertex balance of block_1 : 0.46580  ( 257.22198 )    
-[INIT-PART] 94 :: Random part cutcost = 180.82228, balance_flag = false
+[Cutcost of partition : 180.45923]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 94 :: Random part cutcost = 180.45923, balance_flag = true
 [Cutcost of partition : 211.44221]
 [Vertex balance of block_0 : 0.60597  ( 334.62799 )    
 [Vertex balance of block_1 : 0.39403  ( 217.58798 )    
@@ -4020,10 +3981,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.51012  ( 281.69397 )    
 [Vertex balance of block_1 : 0.48988  ( 270.52197 )    
 [INIT-PART] 98 :: Random part cutcost = 223.63286, balance_flag = false
-[Cutcost of partition : 212.00708]
-[Vertex balance of block_0 : 0.59393  ( 327.97797 )    
-[Vertex balance of block_1 : 0.40607  ( 224.23799 )    
-[INIT-PART] 99 :: Random part cutcost = 212.00708, balance_flag = false
+[Cutcost of partition : 213.86827]
+[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[INIT-PART] 99 :: Random part cutcost = 213.86827, balance_flag = true
 [Cutcost of partition : 234.14159]
 [Vertex balance of block_0 : 0.48507  ( 267.86200 )    
 [Vertex balance of block_1 : 0.51493  ( 284.35397 )    
@@ -4040,10 +4001,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.47158  ( 260.41397 )    
 [Vertex balance of block_1 : 0.52842  ( 291.80200 )    
 [INIT-PART] 3 :: Random VILE part cutcost = 195.1133, balance_flag = false
-[Cutcost of partition : 220.48672]
-[Vertex balance of block_0 : 0.38825  ( 214.39600 )    
-[Vertex balance of block_1 : 0.61175  ( 337.81998 )    
-[INIT-PART] 4 :: Random VILE part cutcost = 220.48672, balance_flag = false
+[Cutcost of partition : 192.55817]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[INIT-PART] 4 :: Random VILE part cutcost = 192.55817, balance_flag = true
 [Cutcost of partition : 208.09908]
 [Vertex balance of block_0 : 0.49326  ( 272.38397 )    
 [Vertex balance of block_1 : 0.50674  ( 279.83200 )    
@@ -4128,10 +4089,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.40992  ( 226.36598 )    
 [Vertex balance of block_1 : 0.59008  ( 325.84998 )    
 [INIT-PART] 25 :: Random VILE part cutcost = 212.51793, balance_flag = false
-[Cutcost of partition : 223.533]
-[Vertex balance of block_0 : 0.46580  ( 257.22198 )    
-[Vertex balance of block_1 : 0.53420  ( 294.99399 )    
-[INIT-PART] 26 :: Random VILE part cutcost = 223.533, balance_flag = false
+[Cutcost of partition : 213.86827]
+[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
+[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
+[INIT-PART] 26 :: Random VILE part cutcost = 213.86827, balance_flag = true
 [Cutcost of partition : 187.44284]
 [Vertex balance of block_0 : 0.40944  ( 226.10001 )    
 [Vertex balance of block_1 : 0.59056  ( 326.11597 )    
@@ -4348,10 +4309,10 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Vertex balance of block_0 : 0.46917  ( 259.08398 )    
 [Vertex balance of block_1 : 0.53083  ( 293.13199 )    
 [INIT-PART] 80 :: Random VILE part cutcost = 178.02588, balance_flag = false
-[Cutcost of partition : 222.90913]
-[Vertex balance of block_0 : 0.39066  ( 215.72598 )    
-[Vertex balance of block_1 : 0.60934  ( 336.48999 )    
-[INIT-PART] 81 :: Random VILE part cutcost = 222.90913, balance_flag = false
+[Cutcost of partition : 192.55817]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[INIT-PART] 81 :: Random VILE part cutcost = 192.55817, balance_flag = true
 [Cutcost of partition : 178.93022]
 [Vertex balance of block_0 : 0.47302  ( 261.21198 )    
 [Vertex balance of block_1 : 0.52697  ( 291.00400 )    
@@ -4432,14 +4393,31 @@ All the hyperedges will be used in the ILP-based partitioning!
 [INIT-PART] :: VILE part cutcost = 244.2905, balance_flag = false
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 200.55899]
-[Vertex balance of block_0 : 0.59152  ( 326.64798 )    
-[Vertex balance of block_1 : 0.40848  ( 225.56798 )    
-[INIT-PART] :: ILP part cutcost = 200.55899, balance_flag = false
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Cutcost of partition : 192.55817]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[INIT-PART] :: ILP part cutcost = 192.55817, balance_flag = true
 [INFO PAR-0155] Number of chosen best initial solutions = 10
-[INFO PAR-0156] Best initial cutcost 185.91092
+[INFO PAR-0156] Best initial cutcost 180.45923
+[Cutcost of partition : 186.07947]
+[Vertex balance of block_0 : 0.49759  ( 274.77798 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43799 )    
+[Cutcost of partition : 186.07947]
+[Vertex balance of block_0 : 0.49759  ( 274.77798 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43799 )    
+[Cutcost of partition : 186.07947]
+[Vertex balance of block_0 : 0.49759  ( 274.77798 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43799 )    
+[Cutcost of partition : 186.07947]
+[Vertex balance of block_0 : 0.49759  ( 274.77798 )    
+[Vertex balance of block_1 : 0.50241  ( 277.43799 )    
+[Cutcost of partition : 191.80669]
+[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
+[Vertex balance of block_1 : 0.50530  ( 279.03400 )    
+[Cutcost of partition : 191.80669]
+[Vertex balance of block_0 : 0.50530  ( 279.03400 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18198 )    
 [Cutcost of partition : 191.80669]
 [Vertex balance of block_0 : 0.49470  ( 273.18198 )    
 [Vertex balance of block_1 : 0.50530  ( 279.03400 )    
@@ -4449,567 +4427,447 @@ All the hyperedges will be used in the ILP-based partitioning!
 [Cutcost of partition : 199.09807]
 [Vertex balance of block_0 : 0.49085  ( 271.05399 )    
 [Vertex balance of block_1 : 0.50915  ( 281.16199 )    
-[Cutcost of partition : 215.79814]
-[Vertex balance of block_0 : 0.49326  ( 272.38397 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83197 )    
-[Cutcost of partition : 220.19106]
-[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
-[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
-[Cutcost of partition : 221.61742]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 221.61742]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 221.61742]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 221.61742]
-[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
-[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
-[Cutcost of partition : 222.13582]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 55, cutcost = 191.80669, best_solution_id = 0
-[Cutcost of partition : 205.30109]
-[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03400 )    
-[Cutcost of partition : 205.30109]
-[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03400 )    
+[Cutcost of partition : 199.09807]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 55, cutcost = 186.07947, best_solution_id = 0
+[Cutcost of partition : 196.85571]
+[Vertex balance of block_0 : 0.50385  ( 278.23596 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Cutcost of partition : 196.85571]
+[Vertex balance of block_0 : 0.50385  ( 278.23596 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Cutcost of partition : 196.85571]
+[Vertex balance of block_0 : 0.50385  ( 278.23596 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Cutcost of partition : 196.85571]
+[Vertex balance of block_0 : 0.50385  ( 278.23596 )    
+[Vertex balance of block_1 : 0.49615  ( 273.98001 )    
+[Cutcost of partition : 204.30655]
+[Vertex balance of block_0 : 0.50096  ( 276.63998 )    
+[Vertex balance of block_1 : 0.49904  ( 275.57599 )    
+[Cutcost of partition : 204.30655]
+[Vertex balance of block_0 : 0.49904  ( 275.57599 )    
+[Vertex balance of block_1 : 0.50096  ( 276.63998 )    
+[Cutcost of partition : 204.30655]
+[Vertex balance of block_0 : 0.50096  ( 276.63998 )    
+[Vertex balance of block_1 : 0.49904  ( 275.57599 )    
+[Cutcost of partition : 204.30655]
+[Vertex balance of block_0 : 0.50096  ( 276.63998 )    
+[Vertex balance of block_1 : 0.49904  ( 275.57599 )    
 [Cutcost of partition : 207.98991]
 [Vertex balance of block_0 : 0.49085  ( 271.05399 )    
 [Vertex balance of block_1 : 0.50915  ( 281.16199 )    
-[Cutcost of partition : 229.29256]
-[Vertex balance of block_0 : 0.49326  ( 272.38397 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83197 )    
-[Cutcost of partition : 234.30728]
-[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
-[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
-[Cutcost of partition : 234.81824]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Cutcost of partition : 234.81824]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Cutcost of partition : 234.81824]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Cutcost of partition : 234.81824]
+[Cutcost of partition : 207.98991]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 66, cutcost = 196.85571, best_solution_id = 0
+[Cutcost of partition : 206.42522]
+[Vertex balance of block_0 : 0.50434  ( 278.50198 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 206.42522]
+[Vertex balance of block_0 : 0.50434  ( 278.50198 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 206.42522]
+[Vertex balance of block_0 : 0.50434  ( 278.50198 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 206.42522]
+[Vertex balance of block_0 : 0.50434  ( 278.50198 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 217.11256]
+[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
+[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
+[Cutcost of partition : 217.11256]
+[Vertex balance of block_0 : 0.50530  ( 279.03403 )    
+[Vertex balance of block_1 : 0.49470  ( 273.18198 )    
+[Cutcost of partition : 217.11256]
+[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
+[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
+[Cutcost of partition : 217.11256]
+[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
+[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
+[Cutcost of partition : 222.49991]
+[Vertex balance of block_0 : 0.50819  ( 280.62997 )    
+[Vertex balance of block_1 : 0.49181  ( 271.58600 )    
+[Cutcost of partition : 222.49991]
+[Vertex balance of block_0 : 0.49181  ( 271.58600 )    
+[Vertex balance of block_1 : 0.50819  ( 280.62997 )    
+[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 83, cutcost = 206.42522, best_solution_id = 0
+[Cutcost of partition : 219.85814]
+[Vertex balance of block_0 : 0.50434  ( 278.50201 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 219.85814]
+[Vertex balance of block_0 : 0.50434  ( 278.50201 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 219.85814]
+[Vertex balance of block_0 : 0.50434  ( 278.50201 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 219.85814]
+[Vertex balance of block_0 : 0.50434  ( 278.50201 )    
+[Vertex balance of block_1 : 0.49566  ( 273.71399 )    
+[Cutcost of partition : 232.15875]
 [Vertex balance of block_0 : 0.49133  ( 271.32001 )    
 [Vertex balance of block_1 : 0.50867  ( 280.89600 )    
-[Cutcost of partition : 233.66953]
+[Cutcost of partition : 232.15875]
 [Vertex balance of block_0 : 0.50867  ( 280.89600 )    
 [Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 66, cutcost = 205.30109, best_solution_id = 0
-[Cutcost of partition : 221.7778]
-[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
-[Cutcost of partition : 221.7778]
-[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
-[Cutcost of partition : 226.99213]
-[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
-[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
-[Cutcost of partition : 251.143]
-[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83200 )    
-[Cutcost of partition : 255.99228]
-[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
-[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
-[Cutcost of partition : 253.6669]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 253.6669]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 253.6669]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 253.6669]
-[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
-[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
-[Cutcost of partition : 256.50458]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 83, cutcost = 221.7778, best_solution_id = 0
-[Cutcost of partition : 237.19148]
-[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03400 )    
-[Cutcost of partition : 237.19148]
-[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03400 )    
-[Cutcost of partition : 249.66171]
-[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
-[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
-[Cutcost of partition : 272.91357]
-[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83200 )    
-[Cutcost of partition : 275.1627]
-[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
-[Vertex balance of block_1 : 0.49374  ( 272.65002 )    
-[Cutcost of partition : 276.53592]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 276.53592]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 276.53592]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 276.53592]
-[Vertex balance of block_0 : 0.49133  ( 271.32004 )    
-[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
-[Cutcost of partition : 277.12732]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 105, cutcost = 237.19148, best_solution_id = 0
-[Cutcost of partition : 277.6212]
-[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03397 )    
-[Cutcost of partition : 277.6212]
-[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03397 )    
-[Cutcost of partition : 272.3203]
-[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
-[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
-[Cutcost of partition : 306.82855]
-[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83194 )    
-[Cutcost of partition : 308.56647]
-[Vertex balance of block_0 : 0.50626  ( 279.56592 )    
-[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
-[Cutcost of partition : 312.47424]
-[Vertex balance of block_0 : 0.50867  ( 280.89597 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 312.47424]
-[Vertex balance of block_0 : 0.50867  ( 280.89597 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 312.47424]
-[Vertex balance of block_0 : 0.50867  ( 280.89597 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 312.47424]
-[Vertex balance of block_0 : 0.49133  ( 271.32004 )    
-[Vertex balance of block_1 : 0.50867  ( 280.89597 )    
-[Cutcost of partition : 306.9677]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 145, cutcost = 272.3203, best_solution_id = 2
-[Cutcost of partition : 318.19406]
-[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03400 )    
-[Cutcost of partition : 318.19406]
-[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03400 )    
-[Cutcost of partition : 310.46753]
-[Vertex balance of block_0 : 0.49085  ( 271.05396 )    
-[Vertex balance of block_1 : 0.50915  ( 281.16205 )    
-[Cutcost of partition : 340.82153]
-[Vertex balance of block_0 : 0.49326  ( 272.38403 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83203 )    
-[Cutcost of partition : 343.4099]
-[Vertex balance of block_0 : 0.50626  ( 279.56601 )    
-[Vertex balance of block_1 : 0.49374  ( 272.65002 )    
-[Cutcost of partition : 358.7913]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Cutcost of partition : 358.7913]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Cutcost of partition : 358.7913]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Cutcost of partition : 358.7913]
+[Cutcost of partition : 232.15875]
 [Vertex balance of block_0 : 0.49133  ( 271.32001 )    
 [Vertex balance of block_1 : 0.50867  ( 280.89600 )    
-[Cutcost of partition : 348.98538]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 179, cutcost = 310.46753, best_solution_id = 2
-[Cutcost of partition : 339.35953]
-[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
-[Cutcost of partition : 339.35953]
-[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
-[Cutcost of partition : 338.91376]
-[Vertex balance of block_0 : 0.49085  ( 271.05392 )    
-[Vertex balance of block_1 : 0.50915  ( 281.16202 )    
-[Cutcost of partition : 365.4807]
-[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83197 )    
-[Cutcost of partition : 368.92313]
-[Vertex balance of block_0 : 0.50626  ( 279.56598 )    
-[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
-[Cutcost of partition : 389.90842]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 389.90842]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 389.90842]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 389.90842]
-[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
-[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
-[Cutcost of partition : 379.11047]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 223, cutcost = 338.91376, best_solution_id = 2
-[Cutcost of partition : 356.1672]
-[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03406 )    
-[Cutcost of partition : 356.1672]
-[Vertex balance of block_0 : 0.49470  ( 273.18201 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03406 )    
-[Cutcost of partition : 358.9038]
-[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
-[Vertex balance of block_1 : 0.50915  ( 281.16208 )    
-[Cutcost of partition : 383.11826]
-[Vertex balance of block_0 : 0.49326  ( 272.38397 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83206 )    
-[Cutcost of partition : 387.4792]
-[Vertex balance of block_0 : 0.50626  ( 279.56604 )    
-[Vertex balance of block_1 : 0.49374  ( 272.65005 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.49133  ( 271.32004 )    
-[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
-[Cutcost of partition : 400.01898]
-[Vertex balance of block_0 : 0.50867  ( 280.89606 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32001 )    
-[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 279, cutcost = 356.1672, best_solution_id = 0
-[Cutcost of partition : 356.1672]
-[Vertex balance of block_0 : 0.49470  ( 273.18207 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
-[Cutcost of partition : 356.1672]
-[Vertex balance of block_0 : 0.49470  ( 273.18207 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
-[Cutcost of partition : 358.9038]
+[Cutcost of partition : 232.15875]
+[Vertex balance of block_0 : 0.49133  ( 271.32001 )    
+[Vertex balance of block_1 : 0.50867  ( 280.89600 )    
+[Cutcost of partition : 246.08594]
+[Vertex balance of block_0 : 0.50819  ( 280.62997 )    
+[Vertex balance of block_1 : 0.49181  ( 271.58603 )    
+[Cutcost of partition : 246.08594]
+[Vertex balance of block_0 : 0.49181  ( 271.58603 )    
+[Vertex balance of block_1 : 0.50819  ( 280.62997 )    
+[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 105, cutcost = 219.85814, best_solution_id = 0
+[Cutcost of partition : 244.26183]
+[Vertex balance of block_0 : 0.50674  ( 279.83200 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38397 )    
+[Cutcost of partition : 244.26183]
+[Vertex balance of block_0 : 0.50674  ( 279.83200 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38397 )    
+[Cutcost of partition : 244.26183]
+[Vertex balance of block_0 : 0.50674  ( 279.83200 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38397 )    
+[Cutcost of partition : 244.26183]
+[Vertex balance of block_0 : 0.50674  ( 279.83200 )    
+[Vertex balance of block_1 : 0.49326  ( 272.38397 )    
+[Cutcost of partition : 249.3142]
+[Vertex balance of block_0 : 0.50723  ( 280.09802 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11798 )    
+[Cutcost of partition : 249.3142]
+[Vertex balance of block_0 : 0.49277  ( 272.11798 )    
+[Vertex balance of block_1 : 0.50723  ( 280.09802 )    
+[Cutcost of partition : 249.3142]
+[Vertex balance of block_0 : 0.50723  ( 280.09802 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11798 )    
+[Cutcost of partition : 249.3142]
+[Vertex balance of block_0 : 0.50723  ( 280.09802 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11798 )    
+[Cutcost of partition : 268.00534]
+[Vertex balance of block_0 : 0.50578  ( 279.30002 )    
+[Vertex balance of block_1 : 0.49422  ( 272.91602 )    
+[Cutcost of partition : 268.00534]
+[Vertex balance of block_0 : 0.49422  ( 272.91602 )    
+[Vertex balance of block_1 : 0.50578  ( 279.30002 )    
+[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 145, cutcost = 244.26183, best_solution_id = 0
+[Cutcost of partition : 246.96985]
+[Vertex balance of block_0 : 0.49037  ( 270.78796 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 246.96985]
+[Vertex balance of block_0 : 0.49037  ( 270.78796 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 246.96985]
+[Vertex balance of block_0 : 0.49037  ( 270.78796 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 246.96985]
+[Vertex balance of block_0 : 0.49037  ( 270.78796 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 252.3122]
+[Vertex balance of block_0 : 0.50723  ( 280.09802 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11804 )    
+[Cutcost of partition : 252.3122]
+[Vertex balance of block_0 : 0.49277  ( 272.11804 )    
+[Vertex balance of block_1 : 0.50723  ( 280.09802 )    
+[Cutcost of partition : 252.3122]
+[Vertex balance of block_0 : 0.50723  ( 280.09802 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11804 )    
+[Cutcost of partition : 252.3122]
+[Vertex balance of block_0 : 0.50723  ( 280.09802 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11804 )    
+[Cutcost of partition : 288.55542]
+[Vertex balance of block_0 : 0.50723  ( 280.09802 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11807 )    
+[Cutcost of partition : 288.55542]
+[Vertex balance of block_0 : 0.49277  ( 272.11807 )    
+[Vertex balance of block_1 : 0.50723  ( 280.09802 )    
+[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 179, cutcost = 246.96985, best_solution_id = 0
+[Cutcost of partition : 249.67296]
+[Vertex balance of block_0 : 0.50626  ( 279.56595 )    
+[Vertex balance of block_1 : 0.49374  ( 272.65002 )    
+[Cutcost of partition : 249.67296]
+[Vertex balance of block_0 : 0.50626  ( 279.56595 )    
+[Vertex balance of block_1 : 0.49374  ( 272.65002 )    
+[Cutcost of partition : 249.67296]
+[Vertex balance of block_0 : 0.50626  ( 279.56595 )    
+[Vertex balance of block_1 : 0.49374  ( 272.65002 )    
+[Cutcost of partition : 249.67296]
+[Vertex balance of block_0 : 0.50626  ( 279.56595 )    
+[Vertex balance of block_1 : 0.49374  ( 272.65002 )    
+[Cutcost of partition : 263.0542]
+[Vertex balance of block_0 : 0.50915  ( 281.16196 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 263.0542]
 [Vertex balance of block_0 : 0.49085  ( 271.05402 )    
-[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
-[Cutcost of partition : 383.11826]
-[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83200 )    
-[Cutcost of partition : 387.4792]
-[Vertex balance of block_0 : 0.50626  ( 279.56592 )    
-[Vertex balance of block_1 : 0.49374  ( 272.65002 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89594 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89594 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89594 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.49133  ( 271.32004 )    
-[Vertex balance of block_1 : 0.50867  ( 280.89594 )    
-[Cutcost of partition : 400.01898]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.32004 )    
-[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 348, cutcost = 356.1672, best_solution_id = 0
-[Cutcost of partition : 356.1672]
-[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
-[Cutcost of partition : 356.1672]
-[Vertex balance of block_0 : 0.49470  ( 273.18198 )    
-[Vertex balance of block_1 : 0.50530  ( 279.03403 )    
-[Cutcost of partition : 358.9038]
-[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16196 )    
+[Cutcost of partition : 263.0542]
+[Vertex balance of block_0 : 0.50915  ( 281.16196 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 263.0542]
+[Vertex balance of block_0 : 0.50915  ( 281.16196 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 279.05515]
+[Vertex balance of block_0 : 0.50723  ( 280.09793 )    
+[Vertex balance of block_1 : 0.49277  ( 272.11807 )    
+[Cutcost of partition : 279.05515]
+[Vertex balance of block_0 : 0.49277  ( 272.11807 )    
+[Vertex balance of block_1 : 0.50723  ( 280.09793 )    
+[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 223, cutcost = 249.67296, best_solution_id = 0
+[Cutcost of partition : 255.86497]
+[Vertex balance of block_0 : 0.49518  ( 273.44803 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76804 )    
+[Cutcost of partition : 255.86497]
+[Vertex balance of block_0 : 0.49518  ( 273.44803 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76804 )    
+[Cutcost of partition : 255.86497]
+[Vertex balance of block_0 : 0.49518  ( 273.44803 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76804 )    
+[Cutcost of partition : 255.86497]
+[Vertex balance of block_0 : 0.49518  ( 273.44803 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76804 )    
+[Cutcost of partition : 276.71555]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 276.71555]
+[Vertex balance of block_0 : 0.49085  ( 271.05402 )    
 [Vertex balance of block_1 : 0.50915  ( 281.16202 )    
-[Cutcost of partition : 383.11826]
-[Vertex balance of block_0 : 0.49326  ( 272.38400 )    
-[Vertex balance of block_1 : 0.50674  ( 279.83200 )    
-[Cutcost of partition : 387.4792]
-[Vertex balance of block_0 : 0.50626  ( 279.56601 )    
-[Vertex balance of block_1 : 0.49374  ( 272.64999 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.50867  ( 280.89603 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Cutcost of partition : 411.4005]
-[Vertex balance of block_0 : 0.49133  ( 271.31998 )    
-[Vertex balance of block_1 : 0.50867  ( 280.89603 )    
-[Cutcost of partition : 400.01898]
-[Vertex balance of block_0 : 0.50867  ( 280.89600 )    
-[Vertex balance of block_1 : 0.49133  ( 271.31998 )    
-[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 356.1672, best_solution_id = 0
-[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 70, num_hyperedges = 98
-=========================================
-[STATUS] Running FC multilevel coarsening
-=========================================
-[COARSEN] Level 0 :: num_vertices = 70, num_hyperedges = 98, num_timing_paths = 38
-[COARSEN] Level 1 :: num_vertices = 46, num_hyperedges = 80, num_timing_paths = 33
-[COARSEN] Level 2 :: num_vertices = 30, num_hyperedges = 69, num_timing_paths = 32
-[COARSEN] Level 3 :: num_vertices = 20, num_hyperedges = 59, num_timing_paths = 29
-[COARSEN] Level 4 :: num_vertices = 13, num_hyperedges = 52, num_timing_paths = 26
-[COARSEN] Level 5 :: num_vertices = 9, num_hyperedges = 46, num_timing_paths = 25
+[Cutcost of partition : 276.71555]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 276.71555]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Cutcost of partition : 256.17435]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42807 )    
+[Cutcost of partition : 256.17435]
+[Vertex balance of block_0 : 0.50963  ( 281.42807 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 279, cutcost = 255.86497, best_solution_id = 0
+[Cutcost of partition : 250.25446]
+[Vertex balance of block_0 : 0.49518  ( 273.44806 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76797 )    
+[Cutcost of partition : 250.25446]
+[Vertex balance of block_0 : 0.49518  ( 273.44806 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76797 )    
+[Cutcost of partition : 250.25446]
+[Vertex balance of block_0 : 0.49518  ( 273.44806 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76797 )    
+[Cutcost of partition : 250.25446]
+[Vertex balance of block_0 : 0.49518  ( 273.44806 )    
+[Vertex balance of block_1 : 0.50482  ( 278.76797 )    
+[Cutcost of partition : 257.32227]
+[Vertex balance of block_0 : 0.50963  ( 281.42804 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 257.32227]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42804 )    
+[Cutcost of partition : 257.32227]
+[Vertex balance of block_0 : 0.50963  ( 281.42804 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 257.32227]
+[Vertex balance of block_0 : 0.50963  ( 281.42804 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 216.99258]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42804 )    
+[Cutcost of partition : 216.99258]
+[Vertex balance of block_0 : 0.50963  ( 281.42804 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 348, cutcost = 216.99258, best_solution_id = 8
+[Cutcost of partition : 211.88885]
+[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85202 )    
+[Cutcost of partition : 211.88885]
+[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85202 )    
+[Cutcost of partition : 211.88885]
+[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85202 )    
+[Cutcost of partition : 211.88885]
+[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85202 )    
+[Cutcost of partition : 249.73883]
+[Vertex balance of block_0 : 0.50963  ( 281.42801 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 249.73883]
+[Vertex balance of block_0 : 0.49037  ( 270.78799 )    
+[Vertex balance of block_1 : 0.50963  ( 281.42801 )    
+[Cutcost of partition : 249.73883]
+[Vertex balance of block_0 : 0.50963  ( 281.42801 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 249.73883]
+[Vertex balance of block_0 : 0.50963  ( 281.42801 )    
+[Vertex balance of block_1 : 0.49037  ( 270.78799 )    
+[Cutcost of partition : 207.8421]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Cutcost of partition : 207.8421]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 207.8421, best_solution_id = 8
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 44, num_hyperedges = 60
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 250.36633]
-[Vertex balance of block_0 : 0.57996  ( 320.26401 )    
-[Vertex balance of block_1 : 0.42004  ( 231.95200 )    
-[Refinement] Level 1 :: num_vertices = 13, num_hyperedges = 52, cutcost = 250.36633, best_solution_id = 0
-[Cutcost of partition : 272.55286]
-[Vertex balance of block_0 : 0.57996  ( 320.26401 )    
-[Vertex balance of block_1 : 0.42004  ( 231.95200 )    
-[Refinement] Level 2 :: num_vertices = 20, num_hyperedges = 59, cutcost = 272.55286, best_solution_id = 0
-[Cutcost of partition : 285.44995]
-[Vertex balance of block_0 : 0.53516  ( 295.52600 )    
-[Vertex balance of block_1 : 0.46484  ( 256.69000 )    
-[Refinement] Level 3 :: num_vertices = 30, num_hyperedges = 69, cutcost = 285.44995, best_solution_id = 0
-[Cutcost of partition : 296.28882]
-[Vertex balance of block_0 : 0.53372  ( 294.72800 )    
-[Vertex balance of block_1 : 0.46628  ( 257.48804 )    
-[Refinement] Level 4 :: num_vertices = 46, num_hyperedges = 80, cutcost = 296.28882, best_solution_id = 0
-[Cutcost of partition : 315.60568]
-[Vertex balance of block_0 : 0.51252  ( 283.02402 )    
-[Vertex balance of block_1 : 0.48748  ( 269.19202 )    
-[Refinement] Level 5 :: num_vertices = 70, num_hyperedges = 98, cutcost = 315.60568, best_solution_id = 0
+[STATUS] Optimal ILP-based Partitioning Finished !
 [INFO PAR-0158] Statistics of cut-overlay solution:
-[Cutcost of partition : 381.41858]
-[Vertex balance of block_0 : 0.51252  ( 283.02399 )    
-[Vertex balance of block_1 : 0.48748  ( 269.19199 )    
+[Cutcost of partition : 230.35608]
+[Vertex balance of block_0 : 0.49181  ( 271.58600 )    
+[Vertex balance of block_1 : 0.50819  ( 280.62997 )    
 [INFO PAR-0151] Finish Candidate Solutions Generation
-[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 110, num_hyperedges = 140
-=========================================
-[STATUS] Running FC multilevel coarsening
-=========================================
-[COARSEN] Level 0 :: num_vertices = 110, num_hyperedges = 140, num_timing_paths = 44
-[COARSEN] Level 1 :: num_vertices = 73, num_hyperedges = 120, num_timing_paths = 41
-[COARSEN] Level 2 :: num_vertices = 48, num_hyperedges = 102, num_timing_paths = 32
-[COARSEN] Level 3 :: num_vertices = 32, num_hyperedges = 81, num_timing_paths = 31
-[COARSEN] Level 4 :: num_vertices = 21, num_hyperedges = 75, num_timing_paths = 31
-[COARSEN] Level 5 :: num_vertices = 14, num_hyperedges = 65, num_timing_paths = 29
-[COARSEN] Level 6 :: num_vertices = 12, num_hyperedges = 62, num_timing_paths = 29
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 31, num_hyperedges = 48
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 194.46658]
-[Vertex balance of block_0 : 0.58767  ( 324.51999 )    
-[Vertex balance of block_1 : 0.41233  ( 227.69601 )    
-[Refinement] Level 1 :: num_vertices = 14, num_hyperedges = 65, cutcost = 194.46658, best_solution_id = 0
-[Cutcost of partition : 198.68019]
-[Vertex balance of block_0 : 0.55106  ( 304.30399 )    
-[Vertex balance of block_1 : 0.44894  ( 247.91202 )    
-[Refinement] Level 2 :: num_vertices = 21, num_hyperedges = 75, cutcost = 198.68019, best_solution_id = 0
-[Cutcost of partition : 200.34929]
-[Vertex balance of block_0 : 0.55106  ( 304.30402 )    
-[Vertex balance of block_1 : 0.44894  ( 247.91202 )    
-[Refinement] Level 3 :: num_vertices = 32, num_hyperedges = 81, cutcost = 200.34929, best_solution_id = 0
-[Cutcost of partition : 208.5101]
-[Vertex balance of block_0 : 0.55106  ( 304.30408 )    
-[Vertex balance of block_1 : 0.44894  ( 247.91205 )    
-[Refinement] Level 4 :: num_vertices = 48, num_hyperedges = 102, cutcost = 208.5101, best_solution_id = 0
-[Cutcost of partition : 236.0662]
-[Vertex balance of block_0 : 0.54721  ( 302.17606 )    
-[Vertex balance of block_1 : 0.45279  ( 250.04005 )    
-[Refinement] Level 5 :: num_vertices = 73, num_hyperedges = 120, cutcost = 236.0662, best_solution_id = 0
-[Cutcost of partition : 246.40224]
-[Vertex balance of block_0 : 0.54046  ( 298.45197 )    
-[Vertex balance of block_1 : 0.45954  ( 253.76401 )    
-[Refinement] Level 6 :: num_vertices = 110, num_hyperedges = 140, cutcost = 246.40224, best_solution_id = 0
+[STATUS] Optimal ILP-based Partitioning Finished !
 [INFO PAR-0158] Statistics of cut-overlay solution:
-[Cutcost of partition : 268.146]
-[Vertex balance of block_0 : 0.54046  ( 298.45197 )    
-[Vertex balance of block_1 : 0.45954  ( 253.76401 )    
+[Cutcost of partition : 199.32104]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
 [INFO PAR-0152] Finish Cut-Overlay Clustering and Optimal Partitioning
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
 [COARSEN] Level 0 :: num_vertices = 469, num_hyperedges = 451, num_timing_paths = 52
-[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 351, num_timing_paths = 52
-[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 278, num_timing_paths = 51
-[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 224, num_timing_paths = 49
-[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 172, num_timing_paths = 44
-[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 137, num_timing_paths = 39
-[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 106, num_timing_paths = 31
-[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 83, num_timing_paths = 28
-[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 70, num_timing_paths = 27
-[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 58, num_timing_paths = 27
-[COARSEN] Level 10 :: num_vertices = 10, num_hyperedges = 55, num_timing_paths = 27
+[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 348, num_timing_paths = 52
+[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 282, num_timing_paths = 50
+[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 218, num_timing_paths = 45
+[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 179, num_timing_paths = 41
+[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 141, num_timing_paths = 32
+[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 108, num_timing_paths = 28
+[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 78, num_timing_paths = 25
+[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 58, num_timing_paths = 22
+[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 46, num_timing_paths = 22
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 280.54218]
-[Vertex balance of block_0 : 0.54961  ( 303.50598 )    
-[Vertex balance of block_1 : 0.45039  ( 248.71001 )    
-[Refinement] Level 1 :: num_vertices = 11, num_hyperedges = 58, cutcost = 280.54218, best_solution_id = 0
-[Cutcost of partition : 287.92816]
-[Vertex balance of block_0 : 0.54961  ( 303.50601 )    
-[Vertex balance of block_1 : 0.45039  ( 248.71002 )    
-[Refinement] Level 2 :: num_vertices = 17, num_hyperedges = 70, cutcost = 287.92816, best_solution_id = 0
-[Cutcost of partition : 281.43314]
-[Vertex balance of block_0 : 0.51108  ( 282.22598 )    
-[Vertex balance of block_1 : 0.48892  ( 269.99002 )    
-[Refinement] Level 3 :: num_vertices = 26, num_hyperedges = 83, cutcost = 281.43314, best_solution_id = 0
-[Cutcost of partition : 301.44183]
-[Vertex balance of block_0 : 0.51012  ( 281.69400 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52203 )    
-[Refinement] Level 4 :: num_vertices = 40, num_hyperedges = 106, cutcost = 301.44183, best_solution_id = 0
-[Cutcost of partition : 348.4303]
-[Vertex balance of block_0 : 0.51012  ( 281.69400 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52203 )    
-[Refinement] Level 5 :: num_vertices = 61, num_hyperedges = 137, cutcost = 348.4303, best_solution_id = 0
-[Cutcost of partition : 373.45648]
-[Vertex balance of block_0 : 0.51012  ( 281.69397 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52203 )    
-[Refinement] Level 6 :: num_vertices = 92, num_hyperedges = 172, cutcost = 373.45648, best_solution_id = 0
-[Cutcost of partition : 408.025]
-[Vertex balance of block_0 : 0.51012  ( 281.69400 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52200 )    
-[Refinement] Level 7 :: num_vertices = 138, num_hyperedges = 224, cutcost = 408.025, best_solution_id = 0
-[Cutcost of partition : 415.56647]
-[Vertex balance of block_0 : 0.51012  ( 281.69409 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52206 )    
-[Refinement] Level 8 :: num_vertices = 208, num_hyperedges = 278, cutcost = 415.56647, best_solution_id = 0
-[Cutcost of partition : 418.84192]
-[Vertex balance of block_0 : 0.51012  ( 281.69403 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52200 )    
-[Refinement] Level 9 :: num_vertices = 312, num_hyperedges = 351, cutcost = 418.84192, best_solution_id = 0
-[Cutcost of partition : 418.84192]
-[Vertex balance of block_0 : 0.51012  ( 281.69400 )    
-[Vertex balance of block_1 : 0.48988  ( 270.52203 )    
-[Refinement] Level 10 :: num_vertices = 469, num_hyperedges = 451, cutcost = 418.84192, best_solution_id = 0
-[INFO PAR-0154] [V-cycle Refinement] num_cycles = 0, cutcost = 418.84192
-[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 62, num_hyperedges = 84
-=========================================
-[STATUS] Running FC multilevel coarsening
-=========================================
-[COARSEN] Level 0 :: num_vertices = 62, num_hyperedges = 84, num_timing_paths = 31
-[COARSEN] Level 1 :: num_vertices = 41, num_hyperedges = 75, num_timing_paths = 28
-[COARSEN] Level 2 :: num_vertices = 27, num_hyperedges = 67, num_timing_paths = 24
-[COARSEN] Level 3 :: num_vertices = 18, num_hyperedges = 58, num_timing_paths = 21
-[COARSEN] Level 4 :: num_vertices = 12, num_hyperedges = 50, num_timing_paths = 20
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Cutcost of partition : 117.576965]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Refinement] Level 1 :: num_vertices = 17, num_hyperedges = 58, cutcost = 117.576965, best_solution_id = 0
+[Cutcost of partition : 126.57307]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Refinement] Level 2 :: num_vertices = 26, num_hyperedges = 78, cutcost = 126.57307, best_solution_id = 0
+[Cutcost of partition : 135.81747]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Refinement] Level 3 :: num_vertices = 40, num_hyperedges = 108, cutcost = 135.81747, best_solution_id = 0
+[Cutcost of partition : 145.35443]
+[Vertex balance of block_0 : 0.50915  ( 281.16202 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 4 :: num_vertices = 61, num_hyperedges = 141, cutcost = 145.35443, best_solution_id = 0
+[Cutcost of partition : 167.12]
+[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+[Refinement] Level 5 :: num_vertices = 92, num_hyperedges = 179, cutcost = 167.12, best_solution_id = 0
+[Cutcost of partition : 181.15654]
+[Vertex balance of block_0 : 0.50771  ( 280.36398 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85193 )    
+[Refinement] Level 6 :: num_vertices = 138, num_hyperedges = 218, cutcost = 181.15654, best_solution_id = 0
+[Cutcost of partition : 195.80804]
+[Vertex balance of block_0 : 0.50771  ( 280.36404 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85193 )    
+[Refinement] Level 7 :: num_vertices = 208, num_hyperedges = 282, cutcost = 195.80804, best_solution_id = 0
+[Cutcost of partition : 199.32104]
+[Vertex balance of block_0 : 0.50915  ( 281.16205 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05402 )    
+[Refinement] Level 8 :: num_vertices = 312, num_hyperedges = 348, cutcost = 199.32104, best_solution_id = 0
+[Cutcost of partition : 199.1205]
+[Vertex balance of block_0 : 0.50915  ( 281.16199 )    
+[Vertex balance of block_1 : 0.49085  ( 271.05399 )    
+[Refinement] Level 9 :: num_vertices = 469, num_hyperedges = 451, cutcost = 199.1205, best_solution_id = 0
+[INFO PAR-0154] [V-cycle Refinement] num_cycles = 0, cutcost = 199.1205
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 9, num_hyperedges = 10
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 217.52911]
-[Vertex balance of block_0 : 0.59008  ( 325.85004 )    
-[Vertex balance of block_1 : 0.40992  ( 226.36603 )    
-[Refinement] Level 1 :: num_vertices = 18, num_hyperedges = 58, cutcost = 217.52911, best_solution_id = 0
-[Cutcost of partition : 232.755]
-[Vertex balance of block_0 : 0.59008  ( 325.85010 )    
-[Vertex balance of block_1 : 0.40992  ( 226.36601 )    
-[Refinement] Level 2 :: num_vertices = 27, num_hyperedges = 67, cutcost = 232.755, best_solution_id = 0
-[Cutcost of partition : 252.38564]
-[Vertex balance of block_0 : 0.55154  ( 304.57007 )    
-[Vertex balance of block_1 : 0.44846  ( 247.64606 )    
-[Refinement] Level 3 :: num_vertices = 41, num_hyperedges = 75, cutcost = 252.38564, best_solution_id = 0
-[Cutcost of partition : 265.33557]
-[Vertex balance of block_0 : 0.53854  ( 297.38803 )    
-[Vertex balance of block_1 : 0.46146  ( 254.82803 )    
-[Refinement] Level 4 :: num_vertices = 62, num_hyperedges = 84, cutcost = 265.33557, best_solution_id = 0
+[STATUS] Optimal ILP-based Partitioning Finished !
 [INFO PAR-0158] Statistics of cut-overlay solution:
-[Cutcost of partition : 363.19928]
-[Vertex balance of block_0 : 0.53854  ( 297.38797 )    
-[Vertex balance of block_1 : 0.46146  ( 254.82800 )    
+[Cutcost of partition : 199.32104]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
 [INFO PAR-0153] Finish Vcycle Refinement
 =========================================
 [STATUS] Running FC multilevel coarsening
 =========================================
 [COARSEN] Level 0 :: num_vertices = 469, num_hyperedges = 451, num_timing_paths = 52
-[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 351, num_timing_paths = 52
-[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 280, num_timing_paths = 52
-[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 225, num_timing_paths = 48
-[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 184, num_timing_paths = 44
-[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 147, num_timing_paths = 33
-[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 110, num_timing_paths = 30
-[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 84, num_timing_paths = 27
-[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 63, num_timing_paths = 25
-[COARSEN] Level 9 :: num_vertices = 13, num_hyperedges = 56, num_timing_paths = 24
+[COARSEN] Level 1 :: num_vertices = 312, num_hyperedges = 348, num_timing_paths = 52
+[COARSEN] Level 2 :: num_vertices = 208, num_hyperedges = 279, num_timing_paths = 50
+[COARSEN] Level 3 :: num_vertices = 138, num_hyperedges = 228, num_timing_paths = 46
+[COARSEN] Level 4 :: num_vertices = 92, num_hyperedges = 180, num_timing_paths = 41
+[COARSEN] Level 5 :: num_vertices = 61, num_hyperedges = 125, num_timing_paths = 32
+[COARSEN] Level 6 :: num_vertices = 40, num_hyperedges = 96, num_timing_paths = 24
+[COARSEN] Level 7 :: num_vertices = 26, num_hyperedges = 75, num_timing_paths = 22
+[COARSEN] Level 8 :: num_vertices = 17, num_hyperedges = 61, num_timing_paths = 20
+[COARSEN] Level 9 :: num_vertices = 11, num_hyperedges = 47, num_timing_paths = 19
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
-[Cutcost of partition : 233.41301]
-[Vertex balance of block_0 : 0.52071  ( 287.54599 )    
-[Vertex balance of block_1 : 0.47929  ( 264.66998 )    
-[Refinement] Level 1 :: num_vertices = 17, num_hyperedges = 63, cutcost = 233.41301, best_solution_id = 0
-[Cutcost of partition : 244.21983]
-[Vertex balance of block_0 : 0.51782  ( 285.94998 )    
-[Vertex balance of block_1 : 0.48218  ( 266.26602 )    
-[Refinement] Level 2 :: num_vertices = 26, num_hyperedges = 84, cutcost = 244.21983, best_solution_id = 0
-[Cutcost of partition : 265.9072]
-[Vertex balance of block_0 : 0.51349  ( 283.55603 )    
-[Vertex balance of block_1 : 0.48651  ( 268.65997 )    
-[Refinement] Level 3 :: num_vertices = 40, num_hyperedges = 110, cutcost = 265.9072, best_solution_id = 0
-[Cutcost of partition : 288.7992]
-[Vertex balance of block_0 : 0.51156  ( 282.49200 )    
-[Vertex balance of block_1 : 0.48844  ( 269.72397 )    
-[Refinement] Level 4 :: num_vertices = 61, num_hyperedges = 147, cutcost = 288.7992, best_solution_id = 0
-[Cutcost of partition : 353.99338]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Refinement] Level 5 :: num_vertices = 92, num_hyperedges = 184, cutcost = 353.99338, best_solution_id = 0
-[Cutcost of partition : 373.46796]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25598 )    
-[Refinement] Level 6 :: num_vertices = 138, num_hyperedges = 225, cutcost = 373.46796, best_solution_id = 0
-[Cutcost of partition : 388.6584]
-[Vertex balance of block_0 : 0.51060  ( 281.95999 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25607 )    
-[Refinement] Level 7 :: num_vertices = 208, num_hyperedges = 280, cutcost = 388.6584, best_solution_id = 0
-[Cutcost of partition : 388.6584]
-[Vertex balance of block_0 : 0.51060  ( 281.96005 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Refinement] Level 8 :: num_vertices = 312, num_hyperedges = 351, cutcost = 388.6584, best_solution_id = 0
-[Cutcost of partition : 388.6584]
-[Vertex balance of block_0 : 0.51060  ( 281.96002 )    
-[Vertex balance of block_1 : 0.48940  ( 270.25601 )    
-[Refinement] Level 9 :: num_vertices = 469, num_hyperedges = 451, cutcost = 388.6584, best_solution_id = 0
-[INFO PAR-0154] [V-cycle Refinement] num_cycles = 0, cutcost = 388.6584
-[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 45, num_hyperedges = 71
+[STATUS] Optimal ILP-based Partitioning Finished !
+[Cutcost of partition : 107.06093]
+[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36401 )    
+[Refinement] Level 1 :: num_vertices = 17, num_hyperedges = 61, cutcost = 107.06093, best_solution_id = 0
+[Cutcost of partition : 114.29581]
+[Vertex balance of block_0 : 0.49229  ( 271.85202 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36398 )    
+[Refinement] Level 2 :: num_vertices = 26, num_hyperedges = 75, cutcost = 114.29581, best_solution_id = 0
+[Cutcost of partition : 122.48199]
+[Vertex balance of block_0 : 0.49229  ( 271.85199 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36398 )    
+[Refinement] Level 3 :: num_vertices = 40, num_hyperedges = 96, cutcost = 122.48199, best_solution_id = 0
+[Cutcost of partition : 150.97018]
+[Vertex balance of block_0 : 0.49229  ( 271.85196 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36398 )    
+[Refinement] Level 4 :: num_vertices = 61, num_hyperedges = 125, cutcost = 150.97018, best_solution_id = 0
+[Cutcost of partition : 173.80966]
+[Vertex balance of block_0 : 0.49229  ( 271.85202 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36398 )    
+[Refinement] Level 5 :: num_vertices = 92, num_hyperedges = 180, cutcost = 173.80966, best_solution_id = 0
+[Cutcost of partition : 186.03268]
+[Vertex balance of block_0 : 0.49229  ( 271.85196 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36398 )    
+[Refinement] Level 6 :: num_vertices = 138, num_hyperedges = 228, cutcost = 186.03268, best_solution_id = 0
+[Cutcost of partition : 195.80804]
+[Vertex balance of block_0 : 0.49229  ( 271.85196 )    
+[Vertex balance of block_1 : 0.50771  ( 280.36407 )    
+[Refinement] Level 7 :: num_vertices = 208, num_hyperedges = 279, cutcost = 195.80804, best_solution_id = 0
+[Cutcost of partition : 199.32104]
+[Vertex balance of block_0 : 0.49085  ( 271.05402 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16205 )    
+[Refinement] Level 8 :: num_vertices = 312, num_hyperedges = 348, cutcost = 199.32104, best_solution_id = 0
+[Cutcost of partition : 199.1205]
+[Vertex balance of block_0 : 0.49085  ( 271.05399 )    
+[Vertex balance of block_1 : 0.50915  ( 281.16199 )    
+[Refinement] Level 9 :: num_vertices = 469, num_hyperedges = 451, cutcost = 199.1205, best_solution_id = 0
+[INFO PAR-0154] [V-cycle Refinement] num_cycles = 0, cutcost = 199.1205
+[INFO PAR-0157] Cut-Overlay Clustering : num_vertices = 9, num_hyperedges = 10
 [STATUS] Optimal ILP-based Partitioning Starts !
 All the hyperedges will be used in the ILP-based partitioning!
-[STATUS] Optimal ILP-based Partitioning Failed!
-[STATUS] Call random partitioning !
+[STATUS] Optimal ILP-based Partitioning Finished !
 [INFO PAR-0158] Statistics of cut-overlay solution:
-[Cutcost of partition : 367.27792]
-[Vertex balance of block_0 : 0.66474  ( 367.07999 )    
-[Vertex balance of block_1 : 0.33526  ( 185.13602 )    
-[Cutcost of partition : 477.05887]
-[Vertex balance of block_0 : 0.66474  ( 367.07999 )    
-[Vertex balance of block_1 : 0.33526  ( 185.13602 )    
-Satisfy the balance constraint : false
+[Cutcost of partition : 199.32104]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+[Cutcost of partition : 249.9081]
+[Vertex balance of block_0 : 0.50771  ( 280.36401 )    
+[Vertex balance of block_1 : 0.49229  ( 271.85199 )    
+Satisfy the balance constraint : true
 Satisfy the group constraint : true
 Satisfy the fixed vertices constraint : true
 [STATUS] Displaying timing path cuts statistics
 [INFO PAR-0143] Total number of timing paths = 52
 [INFO PAR-0144] Total number of timing-critical paths = 1
 [INFO PAR-0145] Total number of timing-noncritical paths = 51
-[INFO PAR-0146] The worst number of cuts on timing-critical paths = 2
-[INFO PAR-0147] The average number of cuts on timing-critical paths = 2.0
-[INFO PAR-0148] Total number of timing-noncritical to timing critical paths = 38
-[INFO PAR-0149] The worst number of cuts on timing-non2critical paths = 3
-[INFO PAR-0150] The average number of cuts on timing-non2critical paths = 1.7631578
+[INFO PAR-0146] The worst number of cuts on timing-critical paths = 1
+[INFO PAR-0147] The average number of cuts on timing-critical paths = 1.0
+[INFO PAR-0148] Total number of timing-noncritical to timing critical paths = 32
+[INFO PAR-0149] The worst number of cuts on timing-non2critical paths = 2
+[INFO PAR-0150] The average number of cuts on timing-non2critical paths = 1.28125
 ===============================================
 Exiting TritonPart
 Writing partition to verilog.
-Differences found at line 3.
-req_msg[10]  1  
-req_msg[10]  0  
-Differences found at line 18.
- wire partition__136_;
- wire partition__059_;
+No differences found.
+No differences found.
