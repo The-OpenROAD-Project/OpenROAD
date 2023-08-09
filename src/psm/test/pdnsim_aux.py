@@ -50,64 +50,65 @@ def analyze_power_grid(design, *,
     pdnsim = design.getPDNSim()
     if bool(vsrc):
         if isfile(vsrc):
-            pdnsim.import_vsrc_cfg(vsrc)
+            pdnsim.setVsrcCfg(vsrc)
         else:
             utl.error(utl.PSM, 153, f"Cannot read {vsrc}.")
 
     if bool(net):
-        pdnsim.set_power_net(net)
+        pdnsim.setNet(design.getBlock().findNet(net))
     else:
         utl.error(utl.PSM, 154, "Argument 'net' not specified.")
-  
+
     if bool(dx):
-        pdnsim.set_bump_pitch_x(dx)
-  
+        pdnsim.setBumpPitchX(dx)
+
     if bool(dy):
-        pdnsim.set_bump_pitch_y(dy)
+        pdnsim.setBumpPitchY(dy)
 
     if bool(node_density) and bool(node_density_factor):
         utl.error(utl.PSM, 177, "Cannot use both node_density and " +
                   "node_density_factor together. Use any one argument")
-  
+
     if bool(node_density):
-       pdnsim.set_node_density(node_density)
+       pdnsim.setNodeDensity(node_density)
 
     if bool(node_density_factor):
-        pdnsim.set_node_density_factor(node_density_factor)
+        pdnsim.setNodeDensityFactor(node_density_factor)
 
-    if bool(outfile):
-        pdnsim.import_out_file(outfile)
+    if not outfile:
+        outfile = ""
 
-    if bool(error_file):
-        pdnsim.import_error_file(error_file)
+    if not error_file:
+        error_file = ""
 
-    pdnsim.import_enable_em(enable_em)
-    
     _set_corner(design, corner)
 
     if bool(em_outfile):
-        if enable_em:
-            pdnsim.import_em_out_file(em_outfile)
-        else:
+        if not enable_em:
             utl.error(utl.PSM, 155, "EM outfile defined without EM " +
                       "enable flag. Add -enable_em.")
+    else:
+        em_outfile = ""
 
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
-        pdnsim.analyze_power_grid()
+        pdnsim.analyzePowerGrid(outfile, enable_em, em_outfile, error_file)
     else:
         utl.error(utl.PSM, 156, "No rows defined in design. "+
                   "Floorplan not defined. Use initialize_floorplan to add rows.");
 
 
-def check_power_grid(design, *, net=None):
+def check_power_grid(design, *, net=None, error_file=None):
     pdnsim = design.getPDNSim()
     if bool(net):
-        pdnsim.set_power_net(net)
+        pdnsim.setNet(design.getBlock().findNet(net))
     else:
      utl.error(utl.PSM, 157, "Argument 'net' not specified to check_power_grid.")
 
+    if not error_file:
+        error_file = ""
+
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
-        res = pdnsim.check_connectivity()
+        res = pdnsim.checkConnectivity(error_file)
         if res == 0:
             utl.error(utl.PSM, 169, "Check connectivity failed.")
         return res
@@ -127,28 +128,28 @@ def write_pg_spice(design, *,
 
     if bool(vsrc):
         if isfile(vsrc):
-            pdnsim.import_vsrc_cfg(vsrc)
+            pdnsim.setVsrcCfg(vsrc)
         else:
             utl.error(utl.PSM, 159, "Cannot read $vsrc_file.")
-  
-    if bool(outfile):
-        pdnsim.import_spice_out_file(outfile)
 
     if bool(net):
-        pdnsim.set_power_net(net)
+        pdnsim.setNet(design.getBlock().findNet(net))
     else:
         utl.error(utl.PSM, 160, "Argument 'net' not specified.")
-                      
+
     if bool(dx):
-        pdnsim.set_bump_pitch_x(dx)
-                      
+        pdnsim.setBumpPitchX(dx)
+
     if bool(dy):
-        pdnsim.set_bump_pitch_y(dy)
+        pdnsim.setBumpPitchY(dy)
+
+    if not outfile:
+        outfile = ""
 
     _set_corner(design, corner)
 
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
-        pdnsim.write_pg_spice()
+        pdnsim.writeSpice(outfile)
     else:
         utl.error(utl.PSM, 161, "No rows defined in design. " +
                   "Use initialize_floorplan to add rows and construct PDN.")
@@ -157,7 +158,7 @@ def write_pg_spice(design, *,
 def set_pdnsim_net_voltage(design, *, net=None, voltage=None):
     pdnsim = design.getPDNSim()
     if  bool(net) and bool(voltage):
-        pdnsim.set_pdnsim_net_voltage(net, voltage)
+        pdnsim.setNetVoltage(design.getBlock().findNet(net), float(voltage))
     else:
         utl.error(utl.PSM, 162, "Argument -net or -voltage not specified. " +
                   "Please specify both -net and -voltage arguments.")

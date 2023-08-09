@@ -42,6 +42,10 @@ psm::PDNSim*
 getPDNSim();
 }
 
+namespace odb {
+class dbNet;
+}
+
 using ord::getPDNSim;
 using psm::PDNSim;
 using sta::Corner;
@@ -53,114 +57,73 @@ void
 import_vsrc_cfg_cmd(const char* vsrc)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_vsrc_cfg(vsrc);
+  pdnsim->setVsrcCfg(vsrc);
 }
 
 void 
-set_power_net_cmd(const char* net)
+set_power_net_cmd(odb::dbNet* net)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_power_net(net);
+  pdnsim->setNet(net);
 }
 
 void 
 set_bump_pitch_x_cmd(float bump_pitch)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_bump_pitch_x(bump_pitch);
+  pdnsim->setBumpPitchX(bump_pitch);
 }
 
 void 
 set_bump_pitch_y_cmd(float bump_pitch)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_bump_pitch_y(bump_pitch);
+  pdnsim->setBumpPitchY(bump_pitch);
 }
 
 void
 set_node_density(float node_density)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_node_density(node_density);
+  pdnsim->setNodeDensity(node_density);
 }
 
 void
 set_node_density_factor(int node_density_factor)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_node_density_factor(node_density_factor);
+  pdnsim->setNodeDensityFactor(node_density_factor);
 }
 
-
-
 void 
-set_net_voltage_cmd(const char* net_name, float voltage)
+set_net_voltage_cmd(odb::dbNet* net, float voltage)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->set_pdnsim_net_voltage(net_name, voltage);
+  pdnsim->setNetVoltage(net, voltage);
 }
 
-
-
 void 
-import_em_enable(int enable_em)
+analyze_power_grid_cmd(const char* voltage_file, bool enable_em, const char* em_file, const char* error_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_enable_em(enable_em);
+  pdnsim->analyzePowerGrid(voltage_file, enable_em, em_file, error_file);
 }
 
-
-void 
-import_out_file_cmd(const char* out_file)
+bool
+check_connectivity_cmd(const char* error_file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_out_file(out_file);
+  return pdnsim->checkConnectivity(error_file);
 }
 
 void
-import_error_file_cmd(const char* error_file)
+write_pg_spice_cmd(const char* file)
 {
   PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_error_file(error_file);
+  return pdnsim->writeSpice(file);
 }
 
-void 
-import_em_out_file_cmd(const char* out_file)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_em_out_file(out_file);
-}
-
-
-void 
-import_spice_out_file_cmd(const char* out_file)
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->import_spice_out_file(out_file);
-}
-
-void 
-analyze_power_grid_cmd()
-{
-  PDNSim* pdnsim = getPDNSim();
-  pdnsim->analyze_power_grid();
-}
-
-int
-check_connectivity_cmd()
-{
-  PDNSim* pdnsim = getPDNSim();
-  return pdnsim->check_connectivity();
-}
-
-void
-write_pg_spice_cmd()
-{
-  PDNSim* pdnsim = getPDNSim();
-  return pdnsim->write_pg_spice();
-}
-
-void set_debug_gui_cmd()
+void set_debug_gui()
 {
   PDNSim* pdnsim = getPDNSim();
   pdnsim->setDebugGui();

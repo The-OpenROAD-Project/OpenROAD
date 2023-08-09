@@ -8,8 +8,7 @@
 [INFO ODB-0131]     Created 19835 components and 101835 component-terminals.
 [INFO ODB-0132]     Created 2 special nets and 39670 connections.
 [INFO ODB-0133]     Created 18908 nets and 62165 connections.
-[WARNING PSM-0019] Voltage on net VDD is not explicitly set.
-[WARNING PSM-0022] Using voltage 1.100V for VDD network.
+[INFO PSM-0022] Using 1.100V for VDD
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [INFO PSM-0031] Number of PDN nodes on net VDD = 26705.
 [INFO PSM-0064] Number of voltage sources = 1125.
@@ -20,8 +19,7 @@ Worstcase voltage: 1.09e+00 V
 Average IR drop  : 6.29e-04 V
 Worstcase IR drop: 1.40e-02 V
 ######################################
-[WARNING PSM-0019] Voltage on net VSS is not explicitly set.
-[WARNING PSM-0021] Using voltage 0.000V for ground network.
+[INFO PSM-0022] Using 0.000V for VSS
 [INFO PSM-0076] Setting metal node density to be standard cell height times 5.
 [INFO PSM-0031] Number of PDN nodes on net VSS = 26606.
 [INFO PSM-0064] Number of voltage sources = 1125.
