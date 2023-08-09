@@ -956,7 +956,7 @@ class dbBlock : public dbObject
   dbSet<dbAccessPoint> getAccessPoints();
 
   ///
-  /// Get the gloabl connects of this block.
+  /// Get the global connects of this block.
   ///
   dbSet<dbGlobalConnect> getGlobalConnects();
 
@@ -974,6 +974,16 @@ class dbBlock : public dbObject
                        bool do_connect);
   void reportGlobalConnect();
   void clearGlobalConnect();
+
+  ///
+  /// Get the component mask shift layers.
+  ///
+  std::vector<dbTechLayer*> getComponentMaskShift();
+
+  ///
+  /// Set the component mask shift layers.
+  ///
+  void setComponentMaskShift(const std::vector<dbTechLayer*>& layers);
 
   ///
   /// Find a specific instance of this block.
