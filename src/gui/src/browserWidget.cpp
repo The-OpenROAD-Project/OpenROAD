@@ -105,45 +105,35 @@ BrowserWidget::BrowserWidget(
 
   setWidget(widget);
 
-  connect(view_,
-          SIGNAL(clicked(const QModelIndex&)),
-          this,
-          SLOT(clicked(const QModelIndex&)));
+  connect(view_, &QTreeView::clicked, this, &BrowserWidget::clicked);
 
   connect(view_,
-          SIGNAL(customContextMenuRequested(const QPoint&)),
+          &QTreeView::customContextMenuRequested,
           this,
-          SLOT(itemContextMenu(const QPoint&)));
+          &BrowserWidget::itemContextMenu);
 
-  connect(view_,
-          SIGNAL(collapsed(const QModelIndex&)),
-          this,
-          SLOT(itemCollapsed(const QModelIndex&)));
-  connect(view_,
-          SIGNAL(expanded(const QModelIndex&)),
-          this,
-          SLOT(itemExpanded(const QModelIndex&)));
+  connect(view_, &QTreeView::collapsed, this, &BrowserWidget::itemCollapsed);
+  connect(view_, &QTreeView::expanded, this, &BrowserWidget::itemExpanded);
 
-  connect(
-      view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
+  connect(view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &BrowserWidget::selectionChanged);
 
   connect(model_,
-          SIGNAL(itemChanged(QStandardItem*)),
+          &QStandardItemModel::itemChanged,
           this,
-          SLOT(itemChanged(QStandardItem*)));
+          &BrowserWidget::itemChanged);
 
   connect(this,
-          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&, bool)),
+          &BrowserWidget::updateModuleColor,
           this,
-          SLOT(updateModuleColorIcon(odb::dbModule*, const QColor&)));
+          &BrowserWidget::updateModuleColorIcon);
 
   connect(display_controls_warning_,
-          SIGNAL(pressed()),
+          &QPushButton::pressed,
           this,
-          SLOT(enableModuleView()));
+          &BrowserWidget::enableModuleView);
 }
 
 void BrowserWidget::displayControlsUpdated()

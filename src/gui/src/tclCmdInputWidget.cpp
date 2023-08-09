@@ -68,17 +68,17 @@ TclCmdInputWidget::TclCmdInputWidget(QWidget* parent)
   enable_highlighting_->setChecked(true);
   context_menu_->addAction(enable_highlighting_.get());
   connect(enable_highlighting_.get(),
-          SIGNAL(triggered()),
+          &QAction::triggered,
           this,
-          SLOT(updateHighlighting()));
+          &TclCmdInputWidget::updateHighlighting);
   enable_completion_ = std::make_unique<QAction>("Command completion", this);
   enable_completion_->setCheckable(true);
   enable_completion_->setChecked(true);
   context_menu_->addAction(enable_completion_.get());
   connect(enable_completion_.get(),
-          SIGNAL(triggered()),
+          &QAction::triggered,
           this,
-          SLOT(updateCompletion()));
+          &TclCmdInputWidget::updateCompletion);
 }
 
 TclCmdInputWidget::~TclCmdInputWidget()
@@ -332,7 +332,7 @@ void TclCmdInputWidget::updateCompletion()
     setCompleterCommands();
 
     connect(completer_.get(),
-            QOverload<const QString&>::of(&QCompleter::activated),
+            qOverload<const QString&>(&QCompleter::activated),
             this,
             &TclCmdInputWidget::insertCompletion);
   } else {

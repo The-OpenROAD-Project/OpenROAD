@@ -267,25 +267,18 @@ DRCWidget::DRCWidget(QWidget* parent)
   container->setLayout(layout);
   setWidget(container);
 
-  connect(view_,
-          SIGNAL(clicked(const QModelIndex&)),
+  connect(view_, &ObjectTree::clicked, this, &DRCWidget::clicked);
+  connect(view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
           this,
-          SLOT(clicked(const QModelIndex&)));
-  connect(
-      view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectionChanged(const QItemSelection&, const QItemSelection&)));
-  connect(load_, SIGNAL(released()), this, SLOT(selectReport()));
+          &DRCWidget::selectionChanged);
+  connect(load_, &QPushButton::released, this, &DRCWidget::selectReport);
 
   view_->setMouseTracking(true);
-  connect(view_,
-          SIGNAL(entered(const QModelIndex&)),
-          this,
-          SLOT(focusIndex(const QModelIndex&)));
+  connect(view_, &ObjectTree::entered, this, &DRCWidget::focusIndex);
 
-  connect(view_, SIGNAL(viewportEntered()), this, SLOT(defocus()));
-  connect(view_, SIGNAL(mouseExited()), this, SLOT(defocus()));
+  connect(view_, &ObjectTree::viewportEntered, this, &DRCWidget::defocus);
+  connect(view_, &ObjectTree::mouseExited, this, &DRCWidget::defocus);
 
   Gui::get()->registerDescriptor<DRCViolation*>(new DRCDescriptor(violations_));
 }
