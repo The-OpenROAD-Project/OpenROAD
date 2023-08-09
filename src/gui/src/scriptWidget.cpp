@@ -127,6 +127,12 @@ ScriptWidget::ScriptWidget(QWidget* parent)
 
 ScriptWidget::~ScriptWidget()
 {
+  // When _input is destroyed it can trigger this connection resulting
+  // in a crash.
+  disconnect(input_,
+             &TclCmdInputWidget::textChanged,
+             this,
+             &ScriptWidget::outputChanged);
   if (logger_ != nullptr) {
     // make sure to remove the Gui sink from logger
     logger_->removeSink(sink_);
