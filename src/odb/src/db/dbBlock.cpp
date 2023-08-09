@@ -1773,7 +1773,7 @@ std::vector<dbTechLayer*> dbBlock::getComponentMaskShift()
   _dbBlock* block = (_dbBlock*) this;
   _dbTech* tech = block->getTech();
   std::vector<dbTechLayer*> layers;
-  for (auto layer_id : block->_component_mask_shift) {
+  for (const auto& layer_id : block->_component_mask_shift) {
     layers.push_back((dbTechLayer*) tech->_layer_tbl->getPtr(layer_id));
   }
   return layers;

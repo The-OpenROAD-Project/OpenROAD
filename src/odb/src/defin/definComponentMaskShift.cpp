@@ -1,7 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@
 
 #include "definComponentMaskShift.h"
 
-#include "db.h"
+#include "odb/db.h"
 #include "utl/Logger.h"
 
 namespace odb {

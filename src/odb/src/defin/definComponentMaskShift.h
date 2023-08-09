@@ -1,7 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // BSD 3-Clause License
 //
-// Copyright (c) 2019, Nefelus Inc
+// Copyright (c) 2023, The Regents of the University of California
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,13 +32,9 @@
 
 #pragma once
 
-#include <string.h>
-
-#include <map>
 #include <vector>
 
 #include "definBase.h"
-#include "odb.h"
 
 namespace odb {
 
@@ -48,9 +44,9 @@ class definComponentMaskShift : public definBase
 {
  public:
   definComponentMaskShift();
-  virtual ~definComponentMaskShift() = default;
+  ~definComponentMaskShift() override = default;
 
-  void init();
+  void init() override;
 
   void addLayer(const char* layer_name);
   void setLayers();
