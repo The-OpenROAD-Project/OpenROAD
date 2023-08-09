@@ -262,8 +262,7 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.run->setToolTip(tr("Run"));
   widgets.run->setAutoDefault(false);
   widgets.run->setDefault(false);
-  connect(
-      widgets.run, &QPushButton::pressed, [this, gc]() { runRule(gc); });
+  connect(widgets.run, &QPushButton::pressed, [this, gc]() { runRule(gc); });
   layout_->addWidget(
       widgets.run, row_idx, toValue(GlobalConnectField::Run), Qt::AlignCenter);
 
@@ -272,9 +271,8 @@ void GlobalConnectDialog::addRule(odb::dbGlobalConnect* gc)
   widgets.remove->setToolTip(tr("Delete"));
   widgets.remove->setAutoDefault(false);
   widgets.remove->setDefault(false);
-  connect(widgets.remove, &QPushButton::pressed, [this, gc]() {
-    deleteRule(gc);
-  });
+  connect(
+      widgets.remove, &QPushButton::pressed, [this, gc]() { deleteRule(gc); });
   layout_->addWidget(widgets.remove,
                      row_idx,
                      toValue(GlobalConnectField::Remove),
