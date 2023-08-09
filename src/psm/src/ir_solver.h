@@ -121,9 +121,13 @@ class IRSolver
   double getAvgCurrent() const { return avg_cur_; }
   int getNumResistors() const { return num_res_; }
   double getAvgVoltage() const { return avg_voltage_; }
-  const std::optional<float>& getSupplyVoltageSrc() const
+  float getSupplyVoltageSrc() const
   {
-    return supply_voltage_src_;
+    if (supply_voltage_src_.has_value()) {
+      return supply_voltage_src_.value();
+    } else {
+      return 0.0;
+    }
   }
 
  private:

@@ -148,9 +148,9 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file,
   logger_->report("Corner: {}", corner_name);
   logger_->report("Worstcase voltage: {:3.2e} V",
                   irsolve_h->getWorstCaseVoltage());
-  const double avg_drop = std::abs(irsolve_h->getSupplyVoltageSrc().value()
-                                   - irsolve_h->getAvgVoltage());
-  const double worst_drop = std::abs(irsolve_h->getSupplyVoltageSrc().value()
+  const double avg_drop
+      = std::abs(irsolve_h->getSupplyVoltageSrc() - irsolve_h->getAvgVoltage());
+  const double worst_drop = std::abs(irsolve_h->getSupplyVoltageSrc()
                                      - irsolve_h->getWorstCaseVoltage());
   logger_->report("Average IR drop  : {:3.2e} V", avg_drop);
   logger_->report("Worstcase IR drop: {:3.2e} V", worst_drop);
@@ -203,7 +203,7 @@ void PDNSim::analyzePowerGrid(const std::string& voltage_file,
     // Absolute is needed for GND nets. In case of GND net voltage is higher
     // than supply.
     ir_drop[node_layer][point]
-        = std::abs(irsolve_h->getSupplyVoltageSrc().value() - voltage);
+        = std::abs(irsolve_h->getSupplyVoltageSrc() - voltage);
   }
   ir_drop_ = ir_drop;
   min_resolution_ = irsolve_h->getMinimumResolution();

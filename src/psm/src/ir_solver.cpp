@@ -209,7 +209,7 @@ void IRSolver::solveIR()
   const int num_nodes = Gmat_->getNumNodes();
   int node_num = 0;
   double sum_volt = 0;
-  wc_voltage_ = supply_voltage_src_.value();
+  wc_voltage_ = getSupplyVoltageSrc();
   while (node_num < num_nodes) {
     Node* node = Gmat_->getNode(node_num);
     const double volt = x(node_num);
@@ -367,7 +367,6 @@ void IRSolver::writeEMFile(const std::string& file) const
       const double v1 = node1->getVoltage();
       const double v2 = node2->getVoltage();
       double seg_cur = (v1 - v2) / resistance;
-      sum_cur += abs(seg_cur);
       em_report << segment_name << ", " << setprecision(3) << seg_cur << ", "
                 << node1_name << ", " << node2_name << endl;
       resistance_number++;
@@ -414,7 +413,7 @@ void IRSolver::readSourceData(bool require_voltage)
     logger_->info(utl::PSM,
                   22,
                   "Using {:.3f}V for {}",
-                  supply_voltage_src_.value(),
+                  getSupplyVoltageSrc(),
                   net_->getName());
   }
 
@@ -461,8 +460,7 @@ void IRSolver::createSourcesFromVsrc(const std::string& vsrc_file)
     if (x == -1 || y == -1 || size == -1) {
       logger_->error(utl::PSM, 75, "Expected four values on line: {}", line);
     } else {
-      sources_.push_back(
-          {x, y, size, supply_voltage_src_.value(), top_layer_, true});
+      sources_.push_back({x, y, size, getSupplyVoltageSrc(), top_layer_, true});
     }
   }
   file.close();
@@ -518,7 +516,7 @@ void IRSolver::createDefaultSources()
     sources_.push_back({x_cor,
                         y_cor,
                         bump_size_ * unit_micron,
-                        supply_voltage_src_.value(),
+                        getSupplyVoltageSrc(),
                         top_layer_,
                         true});
   }
@@ -540,7 +538,7 @@ void IRSolver::createDefaultSources()
         sources_.push_back({x_cor,
                             y_cor,
                             bump_size_ * unit_micron,
-                            supply_voltage_src_.value(),
+                            getSupplyVoltageSrc(),
                             top_layer_,
                             true});
       }
@@ -591,7 +589,7 @@ bool IRSolver::createSourcesFromBTerms()
           sources_.push_back({rect.xCenter(),
                               rect.yCenter(),
                               src_size,
-                              supply_voltage_src_.value(),
+                              getSupplyVoltageSrc(),
                               layer->getRoutingLevel(),
                               false});
           continue;
@@ -601,7 +599,7 @@ bool IRSolver::createSourcesFromBTerms()
           sources_.push_back({src.x(),
                               src.y(),
                               src_size,
-                              supply_voltage_src_.value(),
+                              getSupplyVoltageSrc(),
                               layer->getRoutingLevel(),
                               false});
           src.addX(dx);
@@ -643,7 +641,7 @@ bool IRSolver::createSourcesFromPads()
         sources_.push_back({rect.xCenter(),
                             rect.yCenter(),
                             src_size,
-                            supply_voltage_src_.value(),
+                            getSupplyVoltageSrc(),
                             layer->getRoutingLevel(),
                             false});
 
