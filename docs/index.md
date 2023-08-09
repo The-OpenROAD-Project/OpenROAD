@@ -39,7 +39,7 @@ linked [here](https://theopenroadproject.org/publications/).
 
 ## OpenDB API
 
-The link to the opendb api is [here](./html/index.html).
+The link to the opendb api is [here](html/index.html).
 
 ## Documentation
 
