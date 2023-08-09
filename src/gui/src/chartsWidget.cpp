@@ -89,7 +89,7 @@ ChartsWidget::ChartsWidget(QWidget* parent)
   chart_->addAxis(axis_x_, Qt::AlignBottom);
 
   connect(mode_menu_,
-          &QComboBox::currentIndexChanged,
+          qOverload<int>(&QComboBox::currentIndexChanged),
           this,
           &ChartsWidget::changeMode);
 }
