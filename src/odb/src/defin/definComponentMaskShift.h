@@ -44,7 +44,6 @@ class definComponentMaskShift : public definBase
 {
  public:
   definComponentMaskShift();
-  ~definComponentMaskShift() override = default;
 
   void init() override;
 
