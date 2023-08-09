@@ -79,47 +79,41 @@ ScriptWidget::ScriptWidget(QWidget* parent)
   QWidget* container = new QWidget(this);
   container->setLayout(layout);
 
-  connect(input_,
-          &TclCmdInputWidget::textChanged,
-          this,
-          &ScriptWidget::outputChanged);
+  connect(input_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
 
-  connect(input_, &TclCmdInputWidget::exiting, this, &ScriptWidget::exiting);
+  connect(input_, SIGNAL(exiting()), this, SIGNAL(exiting()));
   connect(input_,
-          &TclCmdInputWidget::commandAboutToExecute,
+          SIGNAL(commandAboutToExecute()),
           this,
-          &ScriptWidget::commandAboutToExecute);
+          SIGNAL(commandAboutToExecute()));
   connect(input_,
-          &TclCmdInputWidget::commandAboutToExecute,
+          SIGNAL(commandAboutToExecute()),
           this,
-          &ScriptWidget::setPauserToRunning);
+          SLOT(setPauserToRunning()));
   connect(input_,
-          &TclCmdInputWidget::addCommandToOutput,
+          SIGNAL(addCommandToOutput(const QString&)),
           this,
-          &ScriptWidget::addCommandToOutput);
+          SLOT(addCommandToOutput(const QString&)));
   connect(input_,
-          &TclCmdInputWidget::addResultToOutput,
+          SIGNAL(addResultToOutput(const QString&, bool)),
           this,
-          &ScriptWidget::addResultToOutput);
+          SLOT(addResultToOutput(const QString&, bool)));
   connect(input_,
-          &TclCmdInputWidget::commandFinishedExecuting,
+          SIGNAL(commandFinishedExecuting(bool)),
           this,
-          &ScriptWidget::resetPauser);
+          SLOT(resetPauser()));
   connect(input_,
-          &TclCmdInputWidget::commandFinishedExecuting,
+          SIGNAL(commandFinishedExecuting(bool)),
           this,
-          &ScriptWidget::commandExecuted);
-  connect(output_,
-          &QPlainTextEdit::textChanged,
-          this,
-          &ScriptWidget::outputChanged);
-  connect(pauser_, &QPushButton::pressed, this, &ScriptWidget::pauserClicked);
-  connect(pause_timer_.get(), &QTimer::timeout, this, &ScriptWidget::unpause);
+          SIGNAL(commandExecuted(bool)));
+  connect(output_, SIGNAL(textChanged()), this, SLOT(outputChanged()));
+  connect(pauser_, SIGNAL(pressed()), this, SLOT(pauserClicked()));
+  connect(pause_timer_.get(), SIGNAL(timeout()), this, SLOT(unpause()));
 
   connect(this,
-          &ScriptWidget::addToOutput,
+          SIGNAL(addToOutput(const QString&, const QColor&)),
           this,
-          &ScriptWidget::addTextToOutput,
+          SLOT(addTextToOutput(const QString&, const QColor&)),
           Qt::QueuedConnection);
 
   setWidget(container);
