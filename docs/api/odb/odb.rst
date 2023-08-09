@@ -4,14 +4,17 @@ Contexts
 
 Classes
 -------
+.. doxygenfile:: dbProperty
+   :project: odb
+   :path: ../src/odb/include/odb/db.h
+   :members:
+
+
+
 .. doxygenclass:: odb::_dbProperty
    :project: odb
    :members:
 
-
-..
- .. doxygenfile:: odb/db.h
-   :project: odb
 
 ..
   These are for `structs`

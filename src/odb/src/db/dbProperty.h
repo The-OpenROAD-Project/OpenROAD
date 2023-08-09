@@ -61,6 +61,10 @@ enum _PropTypeEnum
   DB_DOUBLE_PROP = 3
 };
 
+/**
+ * @brief This structure defines the property flags represented
+ *  by 32 bits. 
+ */
 struct _dbPropertyFlags
 {
   _PropTypeEnum _type : 4;
@@ -69,7 +73,7 @@ struct _dbPropertyFlags
 };
 
 /**
- * @ brief This class serves as DB Property base class
+ * @brief This class serves as DB Property base class
  */
 
 class _dbProperty : public _dbObject

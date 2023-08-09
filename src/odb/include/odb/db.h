@@ -161,9 +161,9 @@ class dbExtControl;
 
 class ZContext;
 
-///
-/// dbProperty - Property base class.
-///
+/**
+ *  dbProperty - Property base class.
+ */
 class dbProperty : public dbObject
 {
  public:
