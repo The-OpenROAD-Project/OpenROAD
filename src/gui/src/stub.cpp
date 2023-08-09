@@ -67,6 +67,9 @@ Gui::Gui()
 
 Gui* gui::Gui::get()
 {
+  if (singleton_ == nullptr) {
+    singleton_ = new Gui();
+  }
   return singleton_;
 }
 
