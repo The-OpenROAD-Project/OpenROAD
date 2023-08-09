@@ -162,7 +162,7 @@ def setup(app):
     command = "python getMessages.py"
     _ = os.popen(command).read()
 
-    if not os.path.exists('./build/html'): 
-        os.makedirs('./build/html', exist_ok = True)
+    if not os.path.exists('../_readthedocs/html/doxygen_output'): 
+        os.makedirs('../_readthedocs/html/doxygen_output', exist_ok = True)
     command = "cd .. ; doxygen"
     _ = os.popen(command).read()
