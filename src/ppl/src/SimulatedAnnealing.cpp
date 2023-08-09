@@ -196,6 +196,17 @@ void SimulatedAnnealing::init(float init_temperature,
   slot_indices_.resize(num_slots_);
   std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
 
+  debugPrint(logger_,
+             utl::PPL,
+             "annealing",
+             1,
+             "init_temperature_: {}; max_iterations_: {}; perturb_per_iter_: "
+             "{}; alpha_: {}",
+             init_temperature_,
+             max_iterations_,
+             perturb_per_iter_,
+             alpha_);
+
   generator_.seed(seed_);
 }
 
