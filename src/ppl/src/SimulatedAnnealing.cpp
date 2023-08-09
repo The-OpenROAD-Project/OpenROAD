@@ -61,8 +61,7 @@ SimulatedAnnealing::SimulatedAnnealing(
   num_pins_ = netlist->numIOPins();
   num_groups_ = pin_groups_.size();
   countLonePins();
-  perturb_per_iter_
-      = static_cast<int>(lone_pins_ * 0.8 + num_groups_ * 10);
+  perturb_per_iter_ = static_cast<int>(lone_pins_ * 0.8 + num_groups_ * 10);
 }
 
 void SimulatedAnnealing::run(float init_temperature,
