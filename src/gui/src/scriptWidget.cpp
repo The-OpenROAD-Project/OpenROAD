@@ -295,7 +295,7 @@ void ScriptWidget::triggerPauseCountDown(int timeout)
 
   pause_timer_->setInterval(timeout);
   pause_timer_->start();
-  QTimer::singleShot(timeout, this, SLOT(updatePauseTimeout()));
+  QTimer::singleShot(timeout, this, &ScriptWidget::updatePauseTimeout);
   updatePauseTimeout();
 }
 
@@ -311,7 +311,7 @@ void ScriptWidget::updatePauseTimeout()
   int seconds = pause_timer_->remainingTime() / one_second;
   pauser_->setText("Continue (" + QString::number(seconds) + "s)");
 
-  QTimer::singleShot(one_second, this, SLOT(updatePauseTimeout()));
+  QTimer::singleShot(one_second, this, &ScriptWidget::updatePauseTimeout);
 }
 
 void ScriptWidget::pauserClicked()

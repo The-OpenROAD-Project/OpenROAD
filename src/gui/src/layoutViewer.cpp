@@ -1740,7 +1740,8 @@ void LayoutViewer::paintEvent(QPaintEvent* event)
 void LayoutViewer::fullRepaint()
 {
   if (command_executing_ && !paused_) {
-    QTimer::singleShot(5 /*ms*/, this, SLOT(fullRepaint()));  // retry later
+    QTimer::singleShot(
+        5 /*ms*/, this, &LayoutViewer::fullRepaint);  // retry later
     return;
   }
   update();
