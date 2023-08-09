@@ -101,10 +101,11 @@ class ScriptWidget : public QDockWidget
   void addResultToOutput(const QString& result, bool is_ok);
   void addCommandToOutput(const QString& cmd);
 
+  void pause(int timeout);
+
  private slots:
   void outputChanged();
 
-  void pause(int timeout);
   void unpause();
 
   void pauserClicked();

@@ -2,11 +2,19 @@ import utl
 import re
 import typing as t
 
-def detailed_placement(design, *, max_displacement: t.Optional[t.Union[int, t.List[int]]]=None, disallow_one_site_gaps: bool = False, suppress=False):
+
+def detailed_placement(
+    design,
+    *,
+    max_displacement: t.Optional[t.Union[int, t.List[int]]] = None,
+    disallow_one_site_gaps: bool = False,
+    report_file_name: str = "",
+    suppress=False,
+):
     if not max_displacement:
         max_disp_x = 0
         max_disp_y = 0
-    elif isinstance(max_displacement, int): 
+    elif isinstance(max_displacement, int):
         max_disp_x = max_displacement
         max_disp_y = max_displacement
     elif len(max_displacement) == 2:
@@ -14,23 +22,30 @@ def detailed_placement(design, *, max_displacement: t.Optional[t.Union[int, t.Li
         max_disp_y = max_displacement[1]
     else:
         utl.error(utl.DPL, 101, "-max_displacement disp | [disp_x, disp_y]")
-        
+
     dpl = design.getOpendp()
 
     if len(design.getBlock().getRows()) > 0:  # db_has_rows
         site = design.getBlock().getRows()[0].getSite()
         max_disp_x = int(design.micronToDBU(max_disp_x) / site.getWidth())
         max_disp_y = int(design.micronToDBU(max_disp_y) / site.getHeight())
-        dpl.detailedPlacement(max_disp_x, max_disp_y, disallow_one_site_gaps)
+        dpl.detailedPlacement(
+            max_disp_x, max_disp_y, report_file_name, disallow_one_site_gaps
+        )
         if not suppress:
             dpl.reportLegalizationStats()
     else:
-        utl(utl.DPL, 102, "No rows defined in design. Use initialize_floorplan to add rows.")
+        utl(
+            utl.DPL,
+            102,
+            "No rows defined in design. Use initialize_floorplan to add rows.",
+        )
+
 
 # Note that the tcl flag -instance in the tcl version of this command is not supported
 def set_placement_padding(design, *, masters=None, right=None, left=None, globl=False):
     gpl = design.getOpendp()
-    
+
     if not is_pos_int(left):
         left = 0
 
@@ -52,7 +67,7 @@ def filler_placement(design, prefix=None, masters=None):
     dpl = design.getOpendp()
     if prefix == None:
         prefix = "FILLER_"
-        
+
     if masters == None:
         utl.error(utl.DPL, 104, "filler_placement requires masters to be set")
 
@@ -62,7 +77,7 @@ def filler_placement(design, prefix=None, masters=None):
 
 
 def get_masters(design, names):
-    """ Takes a design and a list of regular expressions to match master names.
+    """Takes a design and a list of regular expressions to match master names.
     NOTE: these are Python regular expressions"""
     matched = False
     masters = []
@@ -81,11 +96,12 @@ def get_masters(design, names):
 
     return masters
 
+
 # actually, this should be called is_non_negative_int
 def is_pos_int(x):
     if x == None:
         return False
-    elif isinstance(x, int) and x >= 0 :
+    elif isinstance(x, int) and x >= 0:
         return True
     else:
         utl.error(utl.DPL, 106, f"TypeError: {x} is not a postive integer")

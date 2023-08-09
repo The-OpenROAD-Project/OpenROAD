@@ -8,7 +8,6 @@
 [INFO ODB-0131]     Created 88 components and 422 component-terminals.
 [INFO ODB-0133]     Created 54 nets and 88 connections.
 Found 0 macro blocks.
-Using 1u default distance from corners.
 Using 2 tracks default min distance between IO pins.
 [ERROR PPL-0098] Pins  req_msg[17] req_msg[16] req_msg[15] req_msg[14] are assigned to multiple constraints.
 PPL-0098

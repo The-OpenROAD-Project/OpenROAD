@@ -65,8 +65,6 @@ bool _dbModule::operator==(const _dbModule& rhs) const
   if (_mod_inst != rhs._mod_inst)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
@@ -89,8 +87,6 @@ void _dbModule::differences(dbDiff& diff,
   DIFF_FIELD(_insts);
   DIFF_FIELD(_modinsts);
   DIFF_FIELD(_mod_inst);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -103,8 +99,6 @@ void _dbModule::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_modinsts);
   DIFF_OUT_FIELD(_mod_inst);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -125,8 +119,6 @@ _dbModule::_dbModule(_dbDatabase* db, const _dbModule& r)
   _insts = r._insts;
   _modinsts = r._modinsts;
   _mod_inst = r._mod_inst;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
@@ -136,8 +128,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModule& obj)
   stream >> obj._insts;
   stream >> obj._modinsts;
   stream >> obj._mod_inst;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -148,8 +138,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbModule& obj)
   stream << obj._insts;
   stream << obj._modinsts;
   stream << obj._mod_inst;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -157,12 +145,7 @@ _dbModule::~_dbModule()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

@@ -170,7 +170,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */)
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
-  _file = nullptr;
   _logger = nullptr;
   _unique_id = db_unique_id++;
 
@@ -203,7 +202,6 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, int id)
   _schema_major = db_schema_major;
   _schema_minor = db_schema_minor;
   _master_id = 0;
-  _file = nullptr;
   _logger = nullptr;
   _unique_id = id;
 
@@ -233,14 +231,8 @@ _dbDatabase::_dbDatabase(_dbDatabase* /* unused: db */, const _dbDatabase& d)
       _master_id(d._master_id),
       _chip(d._chip),
       _unique_id(db_unique_id++),
-      _file(nullptr),
       _logger(nullptr)
 {
-  if (d._file) {
-    _file = strdup(d._file);
-    ZALLOCATED(_file);
-  }
-
   _chip_tbl = new dbTable<_dbChip>(this, this, *d._chip_tbl);
 
   _tech_tbl = new dbTable<_dbTech>(this, this, *d._tech_tbl);
@@ -263,9 +255,6 @@ _dbDatabase::~_dbDatabase()
   delete _name_cache;
   // dimitri_fix
   // delete _prop_itr;
-
-  if (_file)
-    free(_file);
 }
 
 dbOStream& operator<<(dbOStream& stream, const _dbDatabase& db)

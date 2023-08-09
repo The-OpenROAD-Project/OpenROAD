@@ -102,19 +102,31 @@ TimingWidget::TimingWidget(ScriptWidget* script, QWidget* parent)
   container->setLayout(layout);
   setWidget(container);
 
-  connect(
-      dbchange_listener_, SIGNAL(dbUpdated()), this, SLOT(handleDbChange()));
-  connect(update_button_, SIGNAL(clicked()), this, SLOT(populatePaths()));
-  connect(update_button_, SIGNAL(clicked()), dbchange_listener_, SLOT(reset()));
+  connect(dbchange_listener_,
+          &GuiDBChangeListener::dbUpdated,
+          this,
+          &TimingWidget::handleDbChange);
+  connect(update_button_,
+          &QPushButton::clicked,
+          this,
+          &TimingWidget::populatePaths);
+  connect(update_button_,
+          &QPushButton::clicked,
+          dbchange_listener_,
+          &GuiDBChangeListener::reset);
 
-  connect(settings_button_, SIGNAL(clicked()), this, SLOT(showSettings()));
+  connect(settings_button_,
+          &QPushButton::clicked,
+          this,
+          &TimingWidget::showSettings);
+
+  connect(
+      settings_, &TimingControlsDialog::inspect, this, &TimingWidget::inspect);
 
   connect(settings_,
-          SIGNAL(inspect(const Selected&)),
+          &TimingControlsDialog::expandClock,
           this,
-          SIGNAL(inspect(const Selected&)));
-
-  connect(settings_, SIGNAL(expandClock(bool)), this, SLOT(updateClockRows()));
+          &TimingWidget::updateClockRows);
 }
 
 TimingWidget::~TimingWidget()
@@ -157,57 +169,51 @@ void TimingWidget::init(sta::dbSta* sta)
       3, Qt::AscendingOrder);
 
   connect(setup_timing_paths_model_,
-          SIGNAL(modelReset()),
+          &TimingPathsModel::modelReset,
           this,
-          SLOT(modelWasReset()));
+          &TimingWidget::modelWasReset);
   connect(hold_timing_paths_model_,
-          SIGNAL(modelReset()),
+          &TimingPathsModel::modelReset,
           this,
-          SLOT(modelWasReset()));
+          &TimingWidget::modelWasReset);
 
   connect(setup_timing_table_view_->horizontalHeader(),
-          SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
+          &QHeaderView::sortIndicatorChanged,
           setup_timing_table_view_->model(),
-          SLOT(sort(int, Qt::SortOrder)));
+          &QAbstractItemModel::sort);
   connect(hold_timing_table_view_->horizontalHeader(),
-          SIGNAL(sortIndicatorChanged(int, Qt::SortOrder)),
+          &QHeaderView::sortIndicatorChanged,
           hold_timing_table_view_->model(),
-          SLOT(sort(int, Qt::SortOrder)));
+          &QAbstractItemModel::sort);
 
-  connect(
-      setup_timing_table_view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
+  connect(setup_timing_table_view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &TimingWidget::selectedRowChanged);
 
   connect(setup_timing_table_view_,
-          SIGNAL(selectedRowRightClicked(const QModelIndex&)),
+          &TimingPathsTableView::selectedRowRightClicked,
           this,
-          SLOT(writePathReportCommand(const QModelIndex&)));
+          &TimingWidget::writePathReportCommand);
 
-  connect(
-      hold_timing_table_view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectedRowChanged(const QItemSelection&, const QItemSelection&)));
+  connect(hold_timing_table_view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &TimingWidget::selectedRowChanged);
 
   connect(hold_timing_table_view_,
-          SIGNAL(selectedRowRightClicked(const QModelIndex&)),
+          &TimingPathsTableView::selectedRowRightClicked,
           this,
-          SLOT(writePathReportCommand(const QModelIndex&)));
+          &TimingWidget::writePathReportCommand);
 
-  connect(
-      path_details_table_view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectedDetailRowChanged(const QItemSelection&,
-                                    const QItemSelection&)));
-  connect(
-      capture_details_table_view_->selectionModel(),
-      SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-      this,
-      SLOT(selectedCaptureRowChanged(const QItemSelection&,
-                                     const QItemSelection&)));
+  connect(path_details_table_view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &TimingWidget::selectedDetailRowChanged);
+  connect(capture_details_table_view_->selectionModel(),
+          &QItemSelectionModel::selectionChanged,
+          this,
+          &TimingWidget::selectedCaptureRowChanged);
 
   clearPathDetails();
 }
