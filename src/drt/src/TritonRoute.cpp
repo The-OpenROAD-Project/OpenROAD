@@ -819,6 +819,9 @@ void TritonRoute::sendDesignUpdates(const std::string& globals_path)
 
 int TritonRoute::main()
 {
+  if (DBPROCESSNODE == "GF14_13M_3Mx_2Cx_4Kx_2Hx_2Gx_LB") {
+    USENONPREFTRACKS = false;
+  }
   asio::thread_pool pa_pool(1);
   if (!distributed_)
     pa_pool.join();
