@@ -613,7 +613,7 @@ RepairDesign::repairNet(BufferedNetPtr bnet,
 }
 
 void
-RepairDesign::repairNet(BufferedNetPtr bnet,
+RepairDesign::repairNet(const BufferedNetPtr &bnet,
                         int level,
                         // Return values.
                         // Remaining parasiics after repeater insertion.
@@ -776,10 +776,12 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet, int level,
         - max_load_slew_margined / elmore_skew_factor_;
       float l = (-b + sqrt(b*b - 4 * a * c)) / (2 * a);
       if (l >= 0.0) {
-        if (split_length > 0.0)
+        if (split_length > 0.0) {
           split_length = min(split_length, metersToDbu(l));
-        else
+	}
+        else {
           split_length = metersToDbu(l);
+	}
         split_wire = true;
         resize = false;
       }
