@@ -136,7 +136,7 @@ protected:
                  float max_cap,
                  int max_length, // dbu
                  const Corner *corner);
-  void repairNet(BufferedNetPtr bnet,
+  void repairNet(const BufferedNetPtr &bnet,
                  int level,
                  // Return values.
                  int &wire_length,
