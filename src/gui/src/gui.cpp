@@ -1225,7 +1225,7 @@ int startGui(int& argc,
       });
 
   // Exit the app if someone chooses exit from the menu in the window
-  QObject::connect(main_window, SIGNAL(exit()), &app, SLOT(quit()));
+  QObject::connect(main_window, &MainWindow::exit, &app, &QApplication::quit);
   // Track the exit in case it originated during a script
   bool exit_requested = false;
   int exit_code = EXIT_SUCCESS;
@@ -1237,7 +1237,7 @@ int startGui(int& argc,
 
   // Save the window's status into the settings when quitting.
   QObject::connect(
-      &app, SIGNAL(aboutToQuit()), main_window, SLOT(saveSettings()));
+      &app, &QApplication::aboutToQuit, main_window, &MainWindow::saveSettings);
 
   // execute commands to restore state of gui
   std::string restore_commands;

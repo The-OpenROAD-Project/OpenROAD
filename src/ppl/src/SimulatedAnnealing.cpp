@@ -60,8 +60,8 @@ SimulatedAnnealing::SimulatedAnnealing(
   num_slots_ = slots.size();
   num_pins_ = netlist->numIOPins();
   num_groups_ = pin_groups_.size();
-  perturb_per_iter_ = static_cast<int>(num_pins_ * 0.8);
   countLonePins();
+  perturb_per_iter_ = static_cast<int>(lone_pins_ * 0.8 + num_groups_ * 10);
 }
 
 void SimulatedAnnealing::run(float init_temperature,
@@ -89,7 +89,7 @@ void SimulatedAnnealing::run(float init_temperature,
             logger_,
             utl::PPL,
             "annealing",
-            1,
+            2,
             "iteration: {}; temperature: {}; assignment cost: {}um; delta "
             "cost: {}um",
             iter,
@@ -195,6 +195,17 @@ void SimulatedAnnealing::init(float init_temperature,
   pin_assignment_.resize(num_pins_);
   slot_indices_.resize(num_slots_);
   std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
+
+  debugPrint(logger_,
+             utl::PPL,
+             "annealing",
+             1,
+             "init_temperature_: {}; max_iterations_: {}; perturb_per_iter_: "
+             "{}; alpha_: {}",
+             init_temperature_,
+             max_iterations_,
+             perturb_per_iter_,
+             alpha_);
 
   generator_.seed(seed_);
 }

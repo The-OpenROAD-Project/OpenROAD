@@ -657,7 +657,10 @@ ClockTreeScene::ClockTreeScene(QWidget* parent)
   renderer_state_[RendererState::OnlyShowOnActiveWidget]->setChecked(true);
   for (const auto& [state, button] : renderer_state_) {
     renderer_layout->addWidget(button);
-    connect(button, SIGNAL(toggled(bool)), this, SLOT(updateRendererState()));
+    connect(button,
+            &QRadioButton::toggled,
+            this,
+            &ClockTreeScene::updateRendererState);
   }
   renderer_group->setLayout(renderer_layout);
   renderer_widget->setDefaultWidget(renderer_group);
@@ -669,16 +672,25 @@ ClockTreeScene::ClockTreeScene(QWidget* parent)
   menu_->addAction(color_depth_widget);
   menu_->addAction(clear_path_);
 
-  connect(clear_path_, SIGNAL(triggered()), this, SLOT(triggeredClearPath()));
-  connect(menu_->addAction("Fit"), SIGNAL(triggered()), this, SIGNAL(fit()));
-  connect(menu_->addAction("Save"), SIGNAL(triggered()), this, SIGNAL(save()));
+  connect(clear_path_,
+          &QAction::triggered,
+          this,
+          &ClockTreeScene::triggeredClearPath);
+  connect(
+      menu_->addAction("Fit"), &QAction::triggered, this, &ClockTreeScene::fit);
+  connect(menu_->addAction("Save"),
+          &QAction::triggered,
+          this,
+          &ClockTreeScene::save);
 
   clear_path_->setEnabled(false);
 
   color_depth_->setRange(0, 5);
   color_depth_->setValue(1);
-  connect(
-      color_depth_, SIGNAL(valueChanged(int)), this, SIGNAL(colorDepth(int)));
+  connect(color_depth_,
+          qOverload<int>(&QSpinBox::valueChanged),
+          this,
+          &ClockTreeScene::colorDepth);
 }
 
 void ClockTreeScene::contextMenuEvent(QGraphicsSceneContextMenuEvent* event)
@@ -772,15 +784,24 @@ ClockTreeView::ClockTreeView(std::shared_ptr<ClockTree> tree,
   scene_margin.adjust(-x_margin, -y_margin, x_margin, y_margin);
   scene_->setSceneRect(scene_margin);
 
-  connect(scene_, SIGNAL(selectionChanged()), this, SLOT(selectionChanged()));
-  connect(scene_, SIGNAL(fit()), this, SLOT(fit()));
-  connect(scene_, SIGNAL(clearPath()), this, SLOT(clearHighlightTo()));
-  connect(scene_, SIGNAL(save()), this, SLOT(save()));
-  connect(scene_, SIGNAL(colorDepth(int)), this, SLOT(updateColorDepth(int)));
   connect(scene_,
-          SIGNAL(changeRendererState(RendererState)),
+          &ClockTreeScene::selectionChanged,
           this,
-          SLOT(setRendererState(RendererState)));
+          &ClockTreeView::selectionChanged);
+  connect(scene_, &ClockTreeScene::fit, this, &ClockTreeView::fit);
+  connect(scene_,
+          &ClockTreeScene::clearPath,
+          this,
+          &ClockTreeView::clearHighlightTo);
+  connect(scene_, &ClockTreeScene::save, [=] { save(); });
+  connect(scene_,
+          &ClockTreeScene::colorDepth,
+          this,
+          &ClockTreeView::updateColorDepth);
+  connect(scene_,
+          &ClockTreeScene::changeRendererState,
+          this,
+          &ClockTreeView::setRendererState);
 }
 
 void ClockTreeView::fit()
@@ -1304,13 +1325,13 @@ ClockWidget::ClockWidget(QWidget* parent)
   container->setLayout(layout);
   setWidget(container);
 
-  connect(update_button_, SIGNAL(clicked()), this, SLOT(populate()));
+  connect(update_button_, &QPushButton::clicked, [=] { populate(); });
   update_button_->setEnabled(false);
 
   connect(clocks_tab_,
-          SIGNAL(currentChanged(int)),
+          &QTabWidget::currentChanged,
           this,
-          SLOT(currentClockChanged(int)));
+          &ClockWidget::currentClockChanged);
 }
 
 ClockWidget::~ClockWidget()
@@ -1370,10 +1391,7 @@ void ClockWidget::populate(sta::Corner* corner)
     clocks_tab_->setCurrentWidget(view);
     view->fit();
 
-    connect(view,
-            SIGNAL(selected(const Selected&)),
-            this,
-            SIGNAL(selected(const Selected&)));
+    connect(view, &ClockTreeView::selected, this, &ClockWidget::selected);
   }
   if (clocks_tab_->count() > 0) {
     clocks_tab_->setCurrentIndex(0);
