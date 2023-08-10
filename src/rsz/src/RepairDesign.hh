@@ -141,6 +141,7 @@ protected:
                  // Return values.
                  int &wire_length,
                  PinSeq &load_pins);
+  void checkSlewLimit(float ref_cap, float max_load_slew);
   void repairNetWire(BufferedNetPtr bnet,
                      int level,
                      // Return values.
@@ -250,6 +251,12 @@ protected:
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 100;
+
+  // best slew numbers to ensure the max_slew in SDC is reasonable
+  float best_case_slew_;
+  float best_case_slew_load_;
+  bool best_case_slew_computed_;
+
 };
 
 }  // namespace rsz

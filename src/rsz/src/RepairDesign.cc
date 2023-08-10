@@ -83,7 +83,8 @@ RepairDesign::RepairDesign(Resizer* resizer)
       inserted_buffer_count_(0),
       min_(MinMax::min()),
       max_(MinMax::max()),
-      print_interval_(0)
+      print_interval_(0),
+      best_case_slew_computed_(false)
 {
 }
 
@@ -638,9 +639,30 @@ RepairDesign::repairNet(BufferedNetPtr bnet,
   }
 }
 
+void RepairDesign::checkSlewLimit(float ref_cap, float max_load_slew)
+{
+  // Ensure the max slew value specified for this net is something the library
+  // can potentially handle
+
+  if (!best_case_slew_computed_ || ref_cap < best_case_slew_load_) {
+    LibertyCellSeq *equiv_cells = sta_->equivCells(resizer_->buffer_lowest_drive_);
+    float slew = bufferSlew(resizer_->buffer_lowest_drive_, ref_cap, resizer_->tgt_slew_dcalc_ap_);
+    for (LibertyCell *buffer: *equiv_cells) {
+      slew = min(slew, bufferSlew(buffer, ref_cap, resizer_->tgt_slew_dcalc_ap_));
+    }
+    best_case_slew_computed_ = true;
+    best_case_slew_load_ = ref_cap;
+    best_case_slew_ = slew;
+  }
+
+  if (max_load_slew < best_case_slew_) {
+    logger_->error(RSZ, 90, "Max transition time from SDC is {}. Best transition time for {} with {} load is {}",
+                   max_load_slew, best_case_slew_, best_case_slew_load_, ref_cap);
+  }
+}
+
 void
-RepairDesign::repairNetWire(BufferedNetPtr bnet,
-                            int level,
+RepairDesign::repairNetWire(BufferedNetPtr bnet, int level,
                             // Return values.
                             // Remaining parasiics after repeater insertion.
                             int &wire_length, // dbu
@@ -685,25 +707,9 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                                                       load_cap, false);
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
-  //============================================================================
-  // TODO: Make this nice
-  // Find the max slew that can be driven by the buffer.
-  LibertyCellSeq* equiv_cells = sta_->equivCells(resizer_->buffer_lowest_drive_);
-  bool max_load_slew_reasonable = false;
-  for (LibertyCell* buffer : *equiv_cells) {
-      float slew = bufferSlew(buffer, ref_cap, resizer_->tgt_slew_dcalc_ap_);
-      printf("XXXX %s %0.3g\n", buffer->name(), slew);
-      if (slew < max_load_slew) {
-        max_load_slew_reasonable = true;
-        break;
-      }
-      debugPrint(logger_, RSZ, "buffer_under_slew", 1, "{:{}s}pt ({} {})", buffer->name(),
-                 units_->timeUnit()->asString(slew));
-  }
-  if (!max_load_slew_reasonable) {
-  logger_->error(RSZ, 7777, "max load slew is completely messed up.");
-  printf("The max transition setting is unreasonbable for the buffer.\n");
-  }
+
+  // Check that the slew limit specified is within the bounds of reason.
+  checkSlewLimit(ref_cap, max_load_slew);
   //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
@@ -751,7 +757,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
       }
 
     }
-    if (load_slew > max_load_slew_margined) { 
+    if (load_slew > max_load_slew_margined) {
       debugPrint(logger_, RSZ, "repair_net", 3, "{:{}s}max load slew violation {} > {}",
                  "", level,
                  delayAsString(load_slew, this, 3),
@@ -1073,7 +1079,7 @@ RepairDesign::makeRegionRepeaters(LoadRegion &region,
   if (!region.regions_.empty()) {
     // Buffer from the bottom up.
     for (LoadRegion &sub : region.regions_)
-      makeRegionRepeaters(sub, max_fanout, level + 1, drvr_pin, 
+      makeRegionRepeaters(sub, max_fanout, level + 1, drvr_pin,
                           check_slew, check_cap, max_length,
                           resize_drvr);
 
