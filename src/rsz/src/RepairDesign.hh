@@ -36,6 +36,7 @@
 #pragma once
 
 #include "BufferedNet.hh"
+#include "PreChecks.hh"
 #include "db_sta/dbSta.hh"
 #include "sta/Corner.hh"
 #include "sta/Delay.hh"
@@ -216,9 +217,6 @@ protected:
                     Pin *&repeater_out_pin);
   LibertyCell *findBufferUnderSlew(float max_slew,
                                    float load_cap);
-  float bufferSlew(LibertyCell *buffer_cell,
-                   float load_cap,
-                   const DcalcAnalysisPt *dcalc_ap);
   bool hasInputPort(const Net *net);
   double dbuToMeters(int dist) const;
   int metersToDbu(double dist) const;
@@ -229,6 +227,7 @@ protected:
   Logger *logger_;
   dbSta *sta_;
   dbNetwork *db_network_;
+  PreChecks *pre_checks_;
   Resizer *resizer_;
   int dbu_;
 
@@ -251,12 +250,6 @@ protected:
   static constexpr float elmore_skew_factor_ = 1.39;
   static constexpr int min_print_interval_ = 10;
   static constexpr int max_print_interval_ = 100;
-
-  // best slew numbers to ensure the max_slew in SDC is reasonable
-  float best_case_slew_;
-  float best_case_slew_load_;
-  bool best_case_slew_computed_;
-
 };
 
 }  // namespace rsz

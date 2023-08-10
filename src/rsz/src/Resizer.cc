@@ -2880,6 +2880,18 @@ Resizer::portCapacitance(LibertyPort *input,
 }
 
 float
+Resizer::bufferSlew(LibertyCell *buffer_cell, float load_cap, const DcalcAnalysisPt *dcalc_ap)
+{
+  LibertyPort *input, *output;
+  buffer_cell->bufferPorts(input, output);
+  ArcDelay gate_delays[RiseFall::index_count];
+  Slew slews[RiseFall::index_count];
+  gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
+  return max(slews[RiseFall::riseIndex()],
+             slews[RiseFall::fallIndex()]);
+}
+
+float
 Resizer::maxInputSlew(const LibertyPort *input,
                       const Corner *corner) const
 {
