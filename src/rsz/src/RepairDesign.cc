@@ -638,9 +638,8 @@ RepairDesign::repairNet(BufferedNetPtr bnet,
 
 void RepairDesign::checkSlewLimit(float ref_cap, float max_load_slew)
 {
-  // Ensure the max slew value specified for this net is something the library
-  // can potentially handle
-
+  // Ensure the max slew value specified is something the library can
+  // potentially handle
   if (!best_case_slew_computed_ || ref_cap < best_case_slew_load_) {
     LibertyCellSeq *equiv_cells = sta_->equivCells(resizer_->buffer_lowest_drive_);
     float slew = bufferSlew(resizer_->buffer_lowest_drive_, ref_cap, resizer_->tgt_slew_dcalc_ap_);
@@ -712,7 +711,6 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet, int level,
   //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
-  // TODO: Make sure that the max_load_slew is even in the realm of possibility.
   while ((max_length_ > 0 && wire_length > max_length_)
          || (wire_cap > 0.0
              && max_cap_ > 0.0
