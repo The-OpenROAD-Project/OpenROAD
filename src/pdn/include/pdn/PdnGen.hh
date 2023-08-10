@@ -191,7 +191,6 @@ class PdnGen
 
   void createSrouteWires(const char* net,
                          const char* outerNet,
-                         Grid* grid,
                          odb::dbTechLayer* layer0,
                          odb::dbTechLayer* layer1,
                          int cut_pitch_x,
@@ -211,7 +210,8 @@ class PdnGen
                          std::vector<int> metalWidths,
                          std::vector<int> metalspaces);
 
-  void addSrouteInst(const char* inst,
+  void addSrouteInst(const char* net,
+                     const char* inst,
                      const char* iterm,
                      int hDX,
                      int hDY,
