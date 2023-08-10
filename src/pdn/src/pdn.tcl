@@ -636,45 +636,36 @@ proc add_pdn_connect {args} {
 }
 
 sta::define_cmd_args "add_sroute_connect" {[-net net] \
-                                           [-outerNet outerNet]
-                                           [-grid grid_name] \
+                                           [-outerNet outerNet] \
                                            -layers list_of_2_layers \
-                                           [-cut_pitch pitch_value] \
+                                           -cut_pitch pitch_value \
                                            [-fixed_vias list_of_vias] \
-                                           [-dont_use_vias list_of_vias]
+                                           [-dont_use_vias list_of_vias] \
                                            [-max_rows rows] \
                                            [-max_columns columns] \
                                            [-hDX hDX] \
                                            [-hDY hDY] \
                                            [-vDX vDX] \
                                            [-vDY vDY] \
-                                           [-stripDY stripDY]
-                                           [-metalWidths metalWidths]
-                                           [-metalspaces metalspaces]
+                                           [-stripDY stripDY] \
+                                           [-metalWidths metalWidths] \
+                                           [-metalspaces metalspaces] \
                                            [-ongrid ongrid_layers] \
                                            [-split_cuts split_cuts_mapping]
 }
 
 proc add_sroute_connect {args} {
   sta::parse_key_args "add_sroute_connect" args \
-    keys {-net -outerNet -grid -layers -cut_pitch -fixed_vias -dont_use_vias -max_rows -max_columns -hDX -hDY -vDX -vDY -stripDY -metalWidths -metalspaces -ongrid -split_cuts} \
+    keys {-net -outerNet -layers -cut_pitch -fixed_vias -dont_use_vias -max_rows -max_columns -hDX -hDY -vDX -vDY -stripDY -metalWidths -metalspaces -ongrid -split_cuts} \
     flags {}
-
-  sta::check_argc_eq0 "add_sroute_connect" $args
-
-  pdn::check_design_state "add_sroute_connect"
 
   set l0 [pdn::get_layer [lindex $keys(-layers) 0]]
   set l1 [pdn::get_layer [lindex $keys(-layers) 1]]
 
-  set cut_pitch "0 0"
-  if {[info exists keys(-cut_pitch)]} {
-    set cut_pitch [pdn::get_one_to_two "-cut_pitch" $keys(-cut_pitch)]
-  }
-  set cut_pitch [list \
-    [ord::microns_to_dbu [lindex $cut_pitch 0]]\
-    [ord::microns_to_dbu [lindex $cut_pitch 1]]
-  ]
+  set cut_pitch_x 0
+  set cut_pitch_y 0
+  set cut_pitch_x [lindex $keys(-cut_pitch) 0]
+  set cut_pitch_y [lindex $keys(-cut_pitch) 1]
 
   set net ""
   if {[info exists keys(-net)]} {
@@ -684,11 +675,6 @@ proc add_sroute_connect {args} {
   set outerNet ""
   if {[info exists keys(-outerNet)]} {
     set outerNet $keys(-outerNet)
-  }
-
-  set grid ""
-  if {[info exists keys(-grid)]} {
-    set grid $keys(-grid)
   }
 
   set max_rows 0
@@ -749,14 +735,14 @@ proc add_sroute_connect {args} {
   set metalWidths {}
   if {[info exists keys(-metalWidths)]} {
     foreach l $keys(-metalWidths) {
-      lappend metalWidths [ord::microns_to_dbu $l]
+      lappend metalWidths $l
     }
   }
 
   set metalspaces {}
   if {[info exists keys(-metalspaces)]} {
     foreach l $keys(-metalspaces) {
-      lappend metalspaces [ord::microns_to_dbu $l]
+      lappend metalspaces $l
     }
   }
 
@@ -774,27 +760,27 @@ proc add_sroute_connect {args} {
     set dont_use $keys(-dont_use_vias)
   }
 
-  pdn::createSrouteWires  $net \
-                          $outerNet \
-                          $grid \
-                          $l0 \
-                          $l1 \
-                          {*}$cut_pitch \
-                          $fixed_generate_vias \
-                          $fixed_tech_vias \
-                          $max_rows \
-                          $max_columns \
-                          $ongrid \
-                          $split_cuts_layers \
-                          $split_cuts_pitches \
-                          $dont_use \
-                          $hDX \
-                          $hDY \
-                          $vDX \
-                          $vDY \
-                          $stripDY \ 
-                          $metalWidths \
-                          $metalspaces
+  pdn::createSrouteWires $net \
+                         $outerNet \
+                         $l0 \
+                         $l1 \
+                         $cut_pitch_x \
+                         $cut_pitch_y \
+                         $fixed_generate_vias \
+                         $fixed_tech_vias \
+                         $max_rows \
+                         $max_columns \
+                         $ongrid \
+                         $split_cuts_layers \
+                         $split_cuts_pitches \
+                         $dont_use \
+                         $hDX \
+                         $hDY \
+                         $vDX \
+                         $vDY \
+                         $stripDY \
+                         $metalWidths \
+                         $metalspaces
 }
 
 sta::define_cmd_args  "repair_pdn_vias" {[-net net_name] \
