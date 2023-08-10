@@ -268,8 +268,15 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)
 
   TimingPath* selected_path = focus_model->getPathAt(selected_index);
 
+  QString start_rise_or_fall
+      = selected_path->isStartStageRising() ? "-rise_from " : "-fall_from ";
+
   QString start_node
       = QString::fromStdString(selected_path->getStartStageName());
+
+  QString end_rise_or_fall
+      = selected_path->isEndStageRising() ? " -rise_to " : " -fall_to ";
+
   QString end_node = QString::fromStdString(selected_path->getEndStageName());
 
   QString path_delay_config = focus_view_ == setup_timing_table_view_
@@ -277,8 +284,8 @@ void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)
                                   : " -path_delay min";
 
   QString path_report_command
-      = "report_checks -from " + start_node + " -to " + end_node
-        + path_delay_config
+      = "report_checks " + start_rise_or_fall + start_node + end_rise_or_fall
+        + end_node + path_delay_config
         + " -fields {capacitance slew input_pins nets fanout}"
         + " -format full_clock_expanded";
 
