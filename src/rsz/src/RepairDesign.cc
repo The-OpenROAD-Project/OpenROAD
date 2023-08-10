@@ -179,9 +179,6 @@ RepairDesign::repairDesign(double max_wire_length, // zero for none (meters)
     }
     Vertex *drvr = resizer_->level_drvr_vertices_[i];
     Pin *drvr_pin = drvr->pin();
-    // TODO: Fixing pin x_aq_top_0/x_aq_core/x_aq_iu_top/_28169_/Y
-    // TODO: x_aq_top_0/x_aq_core/x_aq_vpu_top/x_aq_vfmau_top/x_aq_vfmau_dp/x_aq_vfmau_mult/x_aq_vfmau_frac_mult/_2887_/Y
-    // TODO: printf("Fixing pin %s\n", network_->name(drvr_pin));
     Net *net = network_->isTopLevelPort(drvr_pin)
       ? network_->net(network_->term(drvr_pin))
       : network_->net(drvr_pin);
