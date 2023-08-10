@@ -1,4 +1,4 @@
-# Getting Started with OpenROAD-flow-scripts
+# Getting Started with OpenROAD Flow
 
 You can get started with OpenROAD easily using our native flow, 
 the OpenROAD-flow-scripts. 
