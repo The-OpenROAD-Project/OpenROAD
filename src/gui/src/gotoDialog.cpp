@@ -41,12 +41,6 @@ GotoLocationDialog::GotoLocationDialog(QWidget* parent, LayoutViewer* viewer_)
     : QDialog(parent), viewer_(viewer_)
 {
   setupUi(this);
-
-  // connect so announcements can be made about changes
-  connect(parent,
-          SIGNAL(displayUnitsChanged(int, bool)),
-          this,
-          SLOT(updateUnits(int, bool)));
 }
 
 void GotoLocationDialog::updateUnits(int dbu_per_micron, bool useDBU)

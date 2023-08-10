@@ -2,6 +2,7 @@ add_library(defin
     definNet.cpp 
     definSNet.cpp 
     definComponent.cpp 
+    definComponentMaskShift.cpp
     definVia.cpp 
     definPin.cpp 
     definBlockage.cpp 
