@@ -685,7 +685,26 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet,
                                                       load_cap, false);
   bnet->setCapacitance(load_cap);
   bnet->setFanout(bnet->ref()->fanout());
-
+  //============================================================================
+  // TODO: Make this nice
+  // Find the max slew that can be driven by the buffer.
+  LibertyCellSeq* equiv_cells = sta_->equivCells(resizer_->buffer_lowest_drive_);
+  bool max_load_slew_reasonable = false;
+  for (LibertyCell* buffer : *equiv_cells) {
+      float slew = bufferSlew(buffer, ref_cap, resizer_->tgt_slew_dcalc_ap_);
+      printf("XXXX %s %0.3g\n", buffer->name(), slew);
+      if (slew < max_load_slew) {
+        max_load_slew_reasonable = true;
+        break;
+      }
+      debugPrint(logger_, RSZ, "buffer_under_slew", 1, "{:{}s}pt ({} {})", buffer->name(),
+                 units_->timeUnit()->asString(slew));
+  }
+  if (!max_load_slew_reasonable) {
+  logger_->error(RSZ, 7777, "max load slew is completely messed up.");
+  printf("The max transition setting is unreasonbable for the buffer.\n");
+  }
+  //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
   // TODO: Make sure that the max_load_slew is even in the realm of possibility.
