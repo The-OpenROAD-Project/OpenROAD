@@ -83,8 +83,7 @@ RepairDesign::RepairDesign(Resizer* resizer)
       inserted_buffer_count_(0),
       min_(MinMax::min()),
       max_(MinMax::max()),
-      print_interval_(0),
-      best_case_slew_computed_(false)
+      print_interval_(0)
 {
 }
 
@@ -97,7 +96,8 @@ RepairDesign::init()
   sta_ = resizer_->sta_;
   db_network_ = resizer_->db_network_;
   dbu_ = resizer_->dbu_;
-
+  pre_checks_ = new PreChecks(resizer_);
+  pre_checks_->init();
   copyState(sta_);
 }
 
@@ -636,28 +636,6 @@ RepairDesign::repairNet(const BufferedNetPtr &bnet,
   }
 }
 
-void RepairDesign::checkSlewLimit(float ref_cap, float max_load_slew)
-{
-  // Ensure the max slew value specified is something the library can
-  // potentially handle
-  if (!best_case_slew_computed_ || ref_cap < best_case_slew_load_) {
-    LibertyCellSeq *equiv_cells = sta_->equivCells(resizer_->buffer_lowest_drive_);
-    float slew = bufferSlew(resizer_->buffer_lowest_drive_, ref_cap, resizer_->tgt_slew_dcalc_ap_);
-    if (equiv_cells != nullptr) {
-      for (LibertyCell *buffer: *equiv_cells) {
-        slew = min(slew, bufferSlew(buffer, ref_cap, resizer_->tgt_slew_dcalc_ap_));
-      }
-    }
-    best_case_slew_computed_ = true;
-    best_case_slew_load_ = ref_cap;
-    best_case_slew_ = slew;
-  }
-
-  if (max_load_slew < best_case_slew_) {
-    logger_->error(RSZ, 90, "Max transition time from SDC is {}. Best achievable transition time is {} with {} load",
-                   max_load_slew, best_case_slew_, best_case_slew_load_);
-  }
-}
 
 void
 RepairDesign::repairNetWire(BufferedNetPtr bnet, int level,
@@ -707,7 +685,7 @@ RepairDesign::repairNetWire(BufferedNetPtr bnet, int level,
   bnet->setFanout(bnet->ref()->fanout());
 
   // Check that the slew limit specified is within the bounds of reason.
-  checkSlewLimit(ref_cap, max_load_slew);
+  pre_checks_->checkSlewLimit(ref_cap, max_load_slew);
   //============================================================================
   // Back up from pt to from_pt adding repeaters as necessary for
   // length/max_cap/max_slew violations.
@@ -1389,8 +1367,7 @@ RepairDesign::findBufferUnderSlew(float max_slew,
     for (LibertyCell *buffer : *equiv_cells) {
       if (!resizer_->dontUse(buffer)
           && resizer_->isLinkCell(buffer)) {
-        float slew = bufferSlew(buffer, load_cap,
-                                resizer_->tgt_slew_dcalc_ap_);
+        float slew = resizer_->bufferSlew(buffer, load_cap, resizer_->tgt_slew_dcalc_ap_);
         debugPrint(logger_, RSZ, "buffer_under_slew", 1, "{:{}s}pt ({} {})",
                    buffer->name(),
                    units_->timeUnit()->asString(slew));
@@ -1406,20 +1383,6 @@ RepairDesign::findBufferUnderSlew(float max_slew,
   }
   // Could not find a buffer under max_slew but this is min slew achievable.
   return min_slew_buffer;
-}
-
-float
-RepairDesign::bufferSlew(LibertyCell *buffer_cell,
-                         float load_cap,
-                         const DcalcAnalysisPt *dcalc_ap)
-{
-  LibertyPort *input, *output;
-  buffer_cell->bufferPorts(input, output);
-  ArcDelay gate_delays[RiseFall::index_count];
-  Slew slews[RiseFall::index_count];
-  resizer_->gateDelays(output, load_cap, dcalc_ap, gate_delays, slews);
-  return max(slews[RiseFall::riseIndex()],
-             slews[RiseFall::fallIndex()]);
 }
 
 double
