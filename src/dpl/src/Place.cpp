@@ -619,16 +619,14 @@ void Opendp::shiftMove(Cell* cell)
   }
 
   // place target cell
-  debugPrint(logger_, DPL, "place", 4, "shift move {}", cell->name());
   if (!mapMove(cell)) {
-    placement_failures_.push_back(cell->db_inst_);
+    placement_failures_.push_back(cell);
   }
 
   // re-place erased cells
   for (Cell* around_cell : region_cells) {
-    debugPrint(logger_, DPL, "place", 4, "re-place {}", cell->name());
     if (cell->inGroup() == around_cell->inGroup() && !mapMove(around_cell)) {
-      placement_failures_.push_back(cell->db_inst_);
+      placement_failures_.push_back(cell);
     }
   }
 }

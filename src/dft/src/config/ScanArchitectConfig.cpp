@@ -32,7 +32,7 @@
 
 #include "ScanArchitectConfig.hh"
 
-#include "Utils.hh"
+#include "Formatting.hh"
 
 namespace dft {
 

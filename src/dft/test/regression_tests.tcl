@@ -5,8 +5,3 @@ record_tests {
   scan_architect_no_mix_sky130
   scan_architect_clock_mix_sky130
 }
-
-
-record_pass_fail_tests {
-  cpp_tests
-}

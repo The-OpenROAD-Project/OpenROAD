@@ -104,7 +104,8 @@ void Opendp::checkPlacement(bool verbose,
                     overlap_failures,
                     one_site_gap_failures,
                     site_align_failures,
-                    region_placement_failures);
+                    region_placement_failures,
+                    {});
   }
   reportFailures(placed_failures, 3, "Placed", verbose);
   reportFailures(in_rows_failures, 4, "Placed in rows", verbose);
@@ -128,22 +129,58 @@ void Opendp::checkPlacement(bool verbose,
     logger_->error(DPL, 33, "detailed placement checks failed.");
   }
 }
+
 void Opendp::processViolationsPtree(boost::property_tree::ptree& entry,
-                                    const std::vector<Cell*>& failures) const
+                                    const std::vector<Cell*>& failures,
+                                    const string& violation_type) const
 {
   using boost::property_tree::ptree;
   ptree violations;
   double dbUnits = block_->getDataBase()->getTech()->getDbUnitsPerMicron();
   const Rect core = getCore();
   for (auto failure : failures) {
-    ptree shape, violation, shapes, source, sources;
+    ptree violation, shapes, source, sources, shape;
+    double xMin = (failure->x_ + core.xMin()) / dbUnits;
+    double yMin = (failure->y_ + core.yMin()) / dbUnits;
+    double xMax = (failure->x_ + failure->width_ + core.xMin()) / dbUnits;
+    double yMax = (failure->y_ + failure->height_ + core.yMin()) / dbUnits;
 
-    shape.put("x", (failure->x_ + core.xMin()) / dbUnits);
-    shape.put("y", (failure->y_ + core.yMin()) / dbUnits);
+    if (violation_type == "overlap") {
+      const Cell* o_cell = checkOverlap(*failure);
+      if (!o_cell) {
+        logger_->error(DPL,
+                       48,
+                       "Could not find overlapping cell for cell {}",
+                       failure->name());
+      }
+      odb::Rect o_rect(o_cell->x_,
+                       o_cell->y_,
+                       o_cell->x_ + o_cell->width_,
+                       o_cell->y_ + o_cell->height_);
+      odb::Rect f_rect(failure->x_,
+                       failure->y_,
+                       failure->x_ + failure->width_,
+                       failure->y_ + failure->height_);
+
+      odb::Rect overlap_rect;
+      o_rect.intersection(f_rect, overlap_rect);
+
+      xMin = (overlap_rect.xMin() + core.xMin()) / dbUnits;
+      yMin = (overlap_rect.yMin() + core.yMin()) / dbUnits;
+      xMax = (overlap_rect.xMax() + core.xMin()) / dbUnits;
+      yMax = (overlap_rect.yMax() + core.yMin()) / dbUnits;
+
+      ptree overlap_source;
+      overlap_source.put("type", "inst");
+      overlap_source.put("name", o_cell->name());
+      sources.push_back(std::make_pair("", overlap_source));
+    }
+    shape.put("x", xMin);
+    shape.put("y", yMin);
     shapes.push_back(std::make_pair("", shape));
     shape.clear();
-    shape.put("x", (failure->x_ + failure->width_ + core.xMin()) / dbUnits);
-    shape.put("y", (failure->y_ + failure->height_ + core.yMin()) / dbUnits);
+    shape.put("x", xMax);
+    shape.put("y", yMax);
     shapes.push_back(std::make_pair("", shape));
 
     source.put("type", "inst");
@@ -165,7 +202,8 @@ void Opendp::writeJsonReport(const string& filename,
                              const vector<Cell*>& overlap_failures,
                              const vector<Cell*>& one_site_gap_failures,
                              const vector<Cell*>& site_align_failures,
-                             const vector<Cell*>& region_placement_failures)
+                             const vector<Cell*>& region_placement_failures,
+                             const vector<Cell*>& placement_failures_)
 {
   std::ofstream json_file(filename);
   if (!json_file.is_open()) {
@@ -194,7 +232,7 @@ void Opendp::writeJsonReport(const string& filename,
       ptree entry;
       entry.put("name", "Overlap_failures");
       entry.put("description", "Cells that are overlapping with other cells.");
-      processViolationsPtree(entry, overlap_failures);
+      processViolationsPtree(entry, overlap_failures, "overlap");
       drcArray.push_back(std::make_pair("", entry));
     }
     if (!one_site_gap_failures.empty()) {
@@ -219,6 +257,13 @@ void Opendp::writeJsonReport(const string& filename,
       entry.put("description",
                 "Cells that violate the region placement constraints.");
       processViolationsPtree(entry, region_placement_failures);
+      drcArray.push_back(std::make_pair("", entry));
+    }
+    if (!placement_failures_.empty()) {
+      ptree entry;
+      entry.put("name", "Placement_failures");
+      entry.put("description", "Cells that DPL failed to place.");
+      processViolationsPtree(entry, placement_failures_);
       drcArray.push_back(std::make_pair("", entry));
     }
     root.add_child("DRC", drcArray);
