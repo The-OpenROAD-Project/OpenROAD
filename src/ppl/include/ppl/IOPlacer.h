@@ -126,7 +126,7 @@ class IOPlacer
   void run(bool random_mode);
   void runAnnealing(bool random);
   void reportHPWL();
-  void printConfig();
+  void printConfig(bool annealing = false);
   Parameters* getParameters() { return parms_.get(); }
   int64 computeIONetsHPWL();
   void excludeInterval(Edge edge, int begin, int end);
@@ -264,6 +264,7 @@ class IOPlacer
   void getBlockedRegionsFromMacros();
   void getBlockedRegionsFromDbObstructions();
   double dbuToMicrons(int64_t dbu);
+  int micronsToDbu(double microns);
 
   // db functions
   void populateIOPlacer(const std::set<int>& hor_layer_idx,
@@ -284,6 +285,9 @@ class IOPlacer
 
   int slots_per_section_ = 0;
   float slots_increase_factor_ = 0;
+  // set the offset on tracks as 15 to approximate the size of a GCell in global
+  // router
+  const int num_tracks_offset_ = 15;
 
   std::vector<Interval> excluded_intervals_;
   std::vector<Constraint> constraints_;

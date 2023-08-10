@@ -144,144 +144,137 @@ MainWindow::MainWindow(QWidget* parent)
   clock_viewer_->hide();
 
   // Hook up all the signals/slots
-  connect(script_, SIGNAL(exiting()), this, SIGNAL(exit()));
+  connect(script_, &ScriptWidget::exiting, this, &MainWindow::exit);
   connect(script_,
-          SIGNAL(commandExecuted(bool)),
+          &ScriptWidget::commandExecuted,
           viewer_,
-          SLOT(commandFinishedExecuting()));
+          &LayoutViewer::commandFinishedExecuting);
   connect(script_,
-          SIGNAL(commandAboutToExecute()),
+          &ScriptWidget::commandAboutToExecute,
           viewer_,
-          SLOT(commandAboutToExecute()));
-  connect(this,
-          SIGNAL(designLoaded(odb::dbBlock*)),
-          viewer_,
-          SLOT(designLoaded(odb::dbBlock*)));
-  connect(this, SIGNAL(redraw()), viewer_, SLOT(fullRepaint()));
-  connect(this,
-          SIGNAL(designLoaded(odb::dbBlock*)),
-          controls_,
-          SLOT(designLoaded(odb::dbBlock*)));
-  connect(this,
-          SIGNAL(designLoaded(odb::dbBlock*)),
-          timing_widget_,
-          SLOT(setBlock(odb::dbBlock*)));
-
-  connect(this, SIGNAL(pause(int)), script_, SLOT(pause(int)));
-  connect(script_, SIGNAL(executionPaused()), viewer_, SLOT(executionPaused()));
-  connect(controls_, SIGNAL(changed()), viewer_, SLOT(fullRepaint()));
-  connect(controls_,
-          SIGNAL(changed()),
-          hierarchy_widget_,
-          SLOT(displayControlsUpdated()));
+          &LayoutViewer::commandAboutToExecute);
   connect(
-      viewer_, SIGNAL(location(int, int)), this, SLOT(setLocation(int, int)));
+      this, &MainWindow::designLoaded, viewer_, &LayoutViewer::designLoaded);
+  connect(this, &MainWindow::redraw, viewer_, &LayoutViewer::fullRepaint);
+  connect(this,
+          &MainWindow::designLoaded,
+          controls_,
+          &DisplayControls::designLoaded);
+  connect(
+      this, &MainWindow::designLoaded, timing_widget_, &TimingWidget::setBlock);
+
+  connect(this, &MainWindow::pause, script_, &ScriptWidget::pause);
+  connect(script_,
+          &ScriptWidget::executionPaused,
+          viewer_,
+          &LayoutViewer::executionPaused);
+  connect(controls_,
+          &DisplayControls::changed,
+          viewer_,
+          &LayoutViewer::fullRepaint);
+  connect(controls_,
+          &DisplayControls::changed,
+          hierarchy_widget_,
+          &BrowserWidget::displayControlsUpdated);
+  connect(viewer_, &LayoutViewer::location, this, &MainWindow::setLocation);
   connect(viewer_,
-          SIGNAL(selected(const Selected&, bool)),
+          &LayoutViewer::selected,
           this,
-          SLOT(setSelected(const Selected&, bool)));
+          qOverload<const Selected&, bool>(&MainWindow::setSelected));
   connect(viewer_,
-          SIGNAL(addSelected(const Selected&)),
+          qOverload<const Selected&>(&LayoutViewer::addSelected),
           this,
-          SLOT(addSelected(const Selected&)));
+          qOverload<const Selected&>(&MainWindow::addSelected));
   connect(viewer_,
-          SIGNAL(addSelected(const SelectionSet&)),
+          qOverload<const SelectionSet&>(&LayoutViewer::addSelected),
           this,
-          SLOT(addSelected(const SelectionSet&)));
+          qOverload<const SelectionSet&>(&MainWindow::addSelected));
 
   connect(
       viewer_, &LayoutViewer::addRuler, [this](int x0, int y0, int x1, int y1) {
         addRuler(x0, y0, x1, y1, "", "", default_ruler_style_->isChecked());
       });
 
-  connect(this, SIGNAL(selectionChanged()), viewer_, SLOT(fullRepaint()));
-  connect(this, SIGNAL(highlightChanged()), viewer_, SLOT(fullRepaint()));
-  connect(this, SIGNAL(rulersChanged()), viewer_, SLOT(fullRepaint()));
-
-  connect(controls_,
-          SIGNAL(selected(const Selected&)),
-          this,
-          SLOT(setSelected(const Selected&)));
-
-  connect(inspector_,
-          SIGNAL(selected(const Selected&, bool)),
-          this,
-          SLOT(setSelected(const Selected&, bool)));
-  connect(inspector_,
-          SIGNAL(addSelected(const Selected&)),
-          this,
-          SLOT(addSelected(const Selected&)));
-  connect(inspector_,
-          SIGNAL(removeSelected(const Selected&)),
-          this,
-          SLOT(removeSelected(const Selected&)));
-  connect(this,
-          SIGNAL(selectionChanged(const Selected&)),
-          inspector_,
-          SLOT(update(const Selected&)));
-  connect(inspector_,
-          SIGNAL(selectedItemChanged(const Selected&)),
-          selection_browser_,
-          SLOT(updateModels()));
-  connect(inspector_,
-          SIGNAL(selectedItemChanged(const Selected&)),
-          viewer_,
-          SLOT(fullRepaint()));
-  connect(inspector_,
-          SIGNAL(selectedItemChanged(const Selected&)),
-          this,
-          SLOT(updateSelectedStatus(const Selected&)));
-  connect(inspector_,
-          SIGNAL(selection(const Selected&)),
-          viewer_,
-          SLOT(selection(const Selected&)));
-  connect(inspector_,
-          SIGNAL(focus(const Selected&)),
-          viewer_,
-          SLOT(selectionFocus(const Selected&)));
-  connect(drc_viewer_,
-          SIGNAL(focus(const Selected&)),
-          viewer_,
-          SLOT(selectionFocus(const Selected&)));
   connect(
-      this, SIGNAL(highlightChanged()), inspector_, SLOT(highlightChanged()));
-  connect(viewer_,
-          SIGNAL(focusNetsChanged()),
+      this, &MainWindow::selectionChanged, viewer_, &LayoutViewer::fullRepaint);
+  connect(
+      this, &MainWindow::highlightChanged, viewer_, &LayoutViewer::fullRepaint);
+  connect(
+      this, &MainWindow::rulersChanged, viewer_, &LayoutViewer::fullRepaint);
+
+  connect(controls_, &DisplayControls::selected, [=](const Selected& selected) {
+    setSelected(selected);
+  });
+
+  connect(inspector_,
+          &Inspector::selected,
+          this,
+          qOverload<const Selected&, bool>(&MainWindow::setSelected));
+  connect(inspector_,
+          &Inspector::addSelected,
+          this,
+          qOverload<const Selected&>(&MainWindow::addSelected));
+  connect(inspector_,
+          &Inspector::removeSelected,
+          this,
+          &MainWindow::removeSelected);
+  connect(this, &MainWindow::selectionChanged, inspector_, &Inspector::update);
+  connect(inspector_,
+          &Inspector::selectedItemChanged,
+          selection_browser_,
+          &SelectHighlightWindow::updateModels);
+  connect(inspector_,
+          &Inspector::selectedItemChanged,
+          viewer_,
+          &LayoutViewer::fullRepaint);
+  connect(inspector_,
+          &Inspector::selectedItemChanged,
+          this,
+          &MainWindow::updateSelectedStatus);
+  connect(inspector_, &Inspector::selection, viewer_, &LayoutViewer::selection);
+  connect(
+      inspector_, &Inspector::focus, viewer_, &LayoutViewer::selectionFocus);
+  connect(
+      drc_viewer_, &DRCWidget::focus, viewer_, &LayoutViewer::selectionFocus);
+  connect(this,
+          &MainWindow::highlightChanged,
           inspector_,
-          SLOT(focusNetsChanged()));
+          &Inspector::highlightChanged);
+  connect(viewer_,
+          &LayoutViewer::focusNetsChanged,
+          inspector_,
+          &Inspector::focusNetsChanged);
   connect(inspector_,
-          SIGNAL(removeHighlight(const QList<const Selected*>&)),
-          this,
-          SLOT(removeFromHighlighted(const QList<const Selected*>&)));
+          &Inspector::removeHighlight,
+          [=](const QList<const Selected*>& selected) {
+            removeFromHighlighted(selected);
+          });
   connect(inspector_,
-          SIGNAL(addHighlight(const SelectionSet&)),
-          this,
-          SLOT(addHighlighted(const SelectionSet&)));
+          &Inspector::addHighlight,
+          [=](const SelectionSet& selected) { addHighlighted(selected); });
 
   connect(hierarchy_widget_,
-          SIGNAL(select(const SelectionSet&)),
-          this,
-          SLOT(setSelected(const SelectionSet&)));
+          &BrowserWidget::select,
+          [=](const SelectionSet& selected) { setSelected(selected); });
   connect(hierarchy_widget_,
-          SIGNAL(removeSelect(const Selected&)),
+          &BrowserWidget::removeSelect,
           this,
-          SLOT(removeSelected(const Selected&)));
+          &MainWindow::removeSelected);
   connect(hierarchy_widget_,
-          SIGNAL(highlight(const SelectionSet&)),
+          &BrowserWidget::highlight,
+          [=](const SelectionSet& selected) { addHighlighted(selected); });
+  connect(hierarchy_widget_,
+          &BrowserWidget::removeHighlight,
           this,
-          SLOT(addHighlighted(const SelectionSet&)));
+          &MainWindow::removeHighlighted);
   connect(hierarchy_widget_,
-          SIGNAL(removeHighlight(const Selected&)),
-          this,
-          SLOT(removeHighlighted(const Selected&)));
-  connect(hierarchy_widget_,
-          SIGNAL(updateModuleVisibility(odb::dbModule*, bool)),
+          &BrowserWidget::updateModuleVisibility,
           viewer_,
-          SLOT(updateModuleVisibility(odb::dbModule*, bool)));
+          &LayoutViewer::updateModuleVisibility);
   connect(hierarchy_widget_,
-          SIGNAL(updateModuleColor(odb::dbModule*, const QColor&, bool)),
+          &BrowserWidget::updateModuleColor,
           viewer_,
-          SLOT(updateModuleColor(odb::dbModule*, const QColor&, bool)));
+          &LayoutViewer::updateModuleColor);
 
   connect(
       timing_widget_, &TimingWidget::inspect, [this](const Selected& selected) {
@@ -289,67 +282,59 @@ MainWindow::MainWindow(QWidget* parent)
         inspector_->raise();
       });
   connect(selection_browser_,
-          SIGNAL(selected(const Selected&)),
+          &SelectHighlightWindow::selected,
           inspector_,
-          SLOT(inspect(const Selected&)));
+          &Inspector::inspect);
   connect(this,
-          SIGNAL(selectionChanged()),
+          &MainWindow::selectionChanged,
           selection_browser_,
-          SLOT(updateSelectionModel()));
+          &SelectHighlightWindow::updateSelectionModel);
   connect(this,
-          SIGNAL(highlightChanged()),
+          &MainWindow::highlightChanged,
           selection_browser_,
-          SLOT(updateHighlightModel()));
+          &SelectHighlightWindow::updateHighlightModel);
   connect(clock_viewer_,
-          SIGNAL(selected(const Selected&)),
+          &ClockWidget::selected,
           this,
-          SLOT(addSelected(const Selected&)));
+          qOverload<const Selected&>(&MainWindow::addSelected));
 
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllSelections,
-          this,
-          [this]() { this->setSelected(Selected(), false); });
+          [this] { this->setSelected(Selected(), false); });
   connect(selection_browser_,
           &SelectHighlightWindow::clearAllHighlights,
-          this,
-          [this]() { this->clearHighlighted(); });
+          [this] { this->clearHighlighted(); });
   connect(selection_browser_,
-          SIGNAL(clearSelectedItems(const QList<const Selected*>&)),
+          &SelectHighlightWindow::clearSelectedItems,
           this,
-          SLOT(removeFromSelected(const QList<const Selected*>&)));
+          &MainWindow::removeFromSelected);
 
   connect(selection_browser_,
-          SIGNAL(zoomInToItems(const QList<const Selected*>&)),
+          &SelectHighlightWindow::zoomInToItems,
           this,
-          SLOT(zoomInToItems(const QList<const Selected*>&)));
+          &MainWindow::zoomInToItems);
 
   connect(selection_browser_,
-          SIGNAL(clearHighlightedItems(const QList<const Selected*>&)),
-          this,
-          SLOT(removeFromHighlighted(const QList<const Selected*>&)));
+          &SelectHighlightWindow::clearHighlightedItems,
+          [=](const QList<const Selected*>& selected) {
+            removeFromHighlighted(selected);
+          });
 
   connect(selection_browser_,
-          SIGNAL(highlightSelectedItemsSig(const QList<const Selected*>&)),
-          this,
-          SLOT(updateHighlightedSet(const QList<const Selected*>&)));
+          &SelectHighlightWindow::highlightSelectedItemsSig,
+          [=](const QList<const Selected*>& items) {
+            updateHighlightedSet(items);
+          });
 
   connect(timing_widget_,
-          SIGNAL(highlightTimingPath(TimingPath*)),
+          &TimingWidget::highlightTimingPath,
           viewer_,
-          SLOT(update()));
+          qOverload<>(&LayoutViewer::update));
 
-  connect(this,
-          SIGNAL(designLoaded(odb::dbBlock*)),
-          this,
-          SLOT(setBlock(odb::dbBlock*)));
-  connect(this,
-          SIGNAL(designLoaded(odb::dbBlock*)),
-          drc_viewer_,
-          SLOT(setBlock(odb::dbBlock*)));
-  connect(this,
-          SIGNAL(designLoaded(odb::dbBlock*)),
-          clock_viewer_,
-          SLOT(setBlock(odb::dbBlock*)));
+  connect(this, &MainWindow::designLoaded, this, &MainWindow::setBlock);
+  connect(this, &MainWindow::designLoaded, drc_viewer_, &DRCWidget::setBlock);
+  connect(
+      this, &MainWindow::designLoaded, clock_viewer_, &ClockWidget::setBlock);
   connect(drc_viewer_, &DRCWidget::selectDRC, [this](const Selected& selected) {
     setSelected(selected, false);
     odb::Rect bbox;
@@ -376,6 +361,10 @@ MainWindow::MainWindow(QWidget* parent)
       drc_viewer_->updateSelection(*selected_.begin());
     }
   });
+  connect(this,
+          &MainWindow::displayUnitsChanged,
+          goto_dialog_,
+          &GotoLocationDialog::updateUnits);
 
   createActions();
   createToolbars();
@@ -586,36 +575,49 @@ void MainWindow::createActions()
   global_connect_ = new QAction("Global connect", this);
   global_connect_->setShortcut(QString("Ctrl+G"));
 
-  connect(open_, SIGNAL(triggered()), this, SLOT(openDesign()));
+  connect(open_, &QAction::triggered, this, &MainWindow::openDesign);
   connect(
       this, &MainWindow::designLoaded, [this]() { open_->setEnabled(false); });
-  connect(hide_, SIGNAL(triggered()), this, SIGNAL(hide()));
-  connect(exit_, SIGNAL(triggered()), this, SIGNAL(exit()));
-  connect(this, SIGNAL(exit()), viewer_, SLOT(exit()));
-  connect(fit_, SIGNAL(triggered()), viewer_, SLOT(fit()));
-  connect(zoom_in_, SIGNAL(triggered()), viewer_, SLOT(zoomIn()));
-  connect(zoom_out_, SIGNAL(triggered()), viewer_, SLOT(zoomOut()));
-  connect(find_, SIGNAL(triggered()), this, SLOT(showFindDialog()));
-  connect(goto_position_, SIGNAL(triggered()), this, SLOT(showGotoDialog()));
-  connect(inspect_, SIGNAL(triggered()), inspector_, SLOT(show()));
-  connect(timing_debug_, SIGNAL(triggered()), timing_widget_, SLOT(show()));
-  connect(help_, SIGNAL(triggered()), this, SLOT(showHelp()));
-
-  connect(build_ruler_, SIGNAL(triggered()), viewer_, SLOT(startRulerBuild()));
-
-  connect(show_dbu_, SIGNAL(toggled(bool)), viewer_, SLOT(fullRepaint()));
-  connect(show_dbu_, SIGNAL(toggled(bool)), inspector_, SLOT(reload()));
-  connect(show_dbu_,
-          SIGNAL(toggled(bool)),
-          selection_browser_,
-          SLOT(updateModels()));
-  connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setUseDBU(bool)));
-  connect(show_dbu_, SIGNAL(toggled(bool)), this, SLOT(setClearLocation()));
-
-  connect(font_, SIGNAL(triggered()), this, SLOT(showApplicationFont()));
-
+  connect(hide_, &QAction::triggered, this, &MainWindow::hide);
+  connect(exit_, &QAction::triggered, this, &MainWindow::exit);
+  connect(this, &MainWindow::exit, viewer_, &LayoutViewer::exit);
+  connect(fit_, &QAction::triggered, viewer_, &LayoutViewer::fit);
+  connect(zoom_in_,
+          &QAction::triggered,
+          viewer_,
+          qOverload<>(&LayoutViewer::zoomIn));
+  connect(zoom_out_,
+          &QAction::triggered,
+          viewer_,
+          qOverload<>(&LayoutViewer::zoomOut));
+  connect(find_, &QAction::triggered, this, &MainWindow::showFindDialog);
   connect(
-      global_connect_, SIGNAL(triggered()), this, SLOT(showGlobalConnect()));
+      goto_position_, &QAction::triggered, this, &MainWindow::showGotoDialog);
+  connect(inspect_, &QAction::triggered, inspector_, &Inspector::show);
+  connect(
+      timing_debug_, &QAction::triggered, timing_widget_, &TimingWidget::show);
+  connect(help_, &QAction::triggered, this, &MainWindow::showHelp);
+
+  connect(build_ruler_,
+          &QAction::triggered,
+          viewer_,
+          &LayoutViewer::startRulerBuild);
+
+  connect(show_dbu_, &QAction::toggled, viewer_, &LayoutViewer::fullRepaint);
+  connect(show_dbu_, &QAction::toggled, inspector_, &Inspector::reload);
+  connect(show_dbu_,
+          &QAction::toggled,
+          selection_browser_,
+          &SelectHighlightWindow::updateModels);
+  connect(show_dbu_, &QAction::toggled, this, &MainWindow::setUseDBU);
+  connect(show_dbu_, &QAction::toggled, this, &MainWindow::setClearLocation);
+
+  connect(font_, &QAction::triggered, this, &MainWindow::showApplicationFont);
+
+  connect(global_connect_,
+          &QAction::triggered,
+          this,
+          &MainWindow::showGlobalConnect);
 }
 
 void MainWindow::setUseDBU(bool use_dbu)
@@ -1582,6 +1584,7 @@ void MainWindow::openDesign()
 
   try {
     if (file.endsWith(".odb", Qt::CaseInsensitive)) {
+      open_->setEnabled(false);
       ord::OpenRoad::openRoad()->readDb(file.toStdString().c_str());
       logger_->warn(utl::GUI,
                     77,
@@ -1592,7 +1595,8 @@ void MainWindow::openDesign()
       logger_->error(utl::GUI, 76, "Unknown filetype: {}", file.toStdString());
     }
   } catch (const std::exception&) {
-    // do nothing
+    // restore option
+    open_->setEnabled(true);
   }
 }
 

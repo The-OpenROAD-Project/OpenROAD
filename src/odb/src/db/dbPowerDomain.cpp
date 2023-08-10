@@ -73,15 +73,11 @@ bool _dbPowerDomain::operator==(const _dbPowerDomain& rhs) const
   if (_y2 != rhs._y2)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
 bool _dbPowerDomain::operator<(const _dbPowerDomain& rhs) const
 {
-  // User Code Begin <
-  // User Code End <
   return true;
 }
 
@@ -99,8 +95,6 @@ void _dbPowerDomain::differences(dbDiff& diff,
   DIFF_FIELD(_x2);
   DIFF_FIELD(_y1);
   DIFF_FIELD(_y2);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -117,15 +111,11 @@ void _dbPowerDomain::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_y1);
   DIFF_OUT_FIELD(_y2);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db)
 {
-  // User Code Begin Constructor
-  // User Code End Constructor
 }
 
 _dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
@@ -139,8 +129,6 @@ _dbPowerDomain::_dbPowerDomain(_dbDatabase* db, const _dbPowerDomain& r)
   _x2 = r._x2;
   _y1 = r._y1;
   _y2 = r._y2;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
@@ -157,8 +145,6 @@ dbIStream& operator>>(dbIStream& stream, _dbPowerDomain& obj)
   stream >> obj._x2;
   stream >> obj._y1;
   stream >> obj._y2;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -176,8 +162,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbPowerDomain& obj)
   stream << obj._x2;
   stream << obj._y1;
   stream << obj._y2;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -185,12 +169,7 @@ _dbPowerDomain::~_dbPowerDomain()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

@@ -113,7 +113,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
                          int max_passes,
                          bool verbose,
                          bool skip_pin_swap,
-                         bool enable_gate_cloning)
+                         bool skip_gate_cloning)
 {
   init();
   constexpr int digits = 3;
@@ -199,7 +199,7 @@ RepairSetup::repairSetup(float setup_slack_margin,
       }
       PathRef end_path = sta_->vertexWorstSlackPath(end, max_);
       bool changed = repairSetup(end_path, end_slack, skip_pin_swap,
-                                 enable_gate_cloning);
+                                 skip_gate_cloning);
       if (!changed) {
         debugPrint(logger_, RSZ, "repair_setup", 2,
                    "No change after {} decreasing slack passes.",
@@ -344,7 +344,7 @@ RepairSetup::repairSetup(const Pin *end_pin)
 bool
 RepairSetup::repairSetup(PathRef &path,
                          Slack path_slack,
-                         bool skip_pin_swap, bool enable_gate_cloning)
+                         bool skip_pin_swap, bool skip_gate_cloning)
 {
   PathExpanded expanded(&path, sta_);
   bool changed = false;
@@ -429,9 +429,8 @@ RepairSetup::repairSetup(PathRef &path,
       }
 
       // Gate cloning
-      if (enable_gate_cloning && fanout > split_load_min_fanout_ &&
-          !tristate_drvr &&
-          !resizer_->dontTouch(net) &&
+      if (!skip_gate_cloning && fanout > split_load_min_fanout_ &&
+          !tristate_drvr && !resizer_->dontTouch(net) &&
           resizer_->inserted_buffer_set_.find(db_network_->instance(drvr_pin)) == resizer_->inserted_buffer_set_.end() &&
           cloneDriver(drvr_path, drvr_index, path_slack, &expanded)) {
           changed = true;

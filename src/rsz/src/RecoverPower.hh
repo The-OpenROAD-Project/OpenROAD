@@ -79,7 +79,7 @@ class RecoverPower : StaState
 {
 public:
   RecoverPower(Resizer *resizer);
-  void recoverPower();
+  void recoverPower(float recover_power_percent);
   // For testing.
   void recoverPower(const Pin *end_pin);
   // Rebuffer one net (for testing).

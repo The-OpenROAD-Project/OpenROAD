@@ -42,21 +42,22 @@ void FlexDRWorker::initNetObjs_pathSeg(
     map<frNet*, vector<unique_ptr<drConnFig>>, frBlockObjectComp>& netExtObjs)
 {
   const auto [begin, end] = pathSeg->getPoints();
+  auto net = pathSeg->getNet();
   if (begin.x() != end.x() && begin.y() != end.y()) {
     double dbu = getTech()->getDBUPerUU();
-    logger_->error(
-        DRT,
-        1010,
-        "Unsupported non-orthogonal wire begin=({}, {}) end=({}, {}), layer {}",
-        begin.x() / dbu,
-        begin.y() / dbu,
-        end.x() / dbu,
-        end.y() / dbu,
-        getTech()->getLayer(pathSeg->getLayerNum())->getName());
+    logger_->error(DRT,
+                   1010,
+                   "Unsupported non-orthogonal wire begin=({}, {}) end=({}, "
+                   "{}), layer {} on net {}",
+                   begin.x() / dbu,
+                   begin.y() / dbu,
+                   end.x() / dbu,
+                   end.y() / dbu,
+                   getTech()->getLayer(pathSeg->getLayerNum())->getName(),
+                   net->getName());
   }
 
   const auto gridBBox = getRouteBox();
-  auto net = pathSeg->getNet();
   nets.insert(net);
 
   const auto along = begin.x() == end.x() ? odb::vertical : odb::horizontal;
