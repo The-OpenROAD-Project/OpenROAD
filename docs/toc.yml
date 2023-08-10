@@ -5,6 +5,8 @@ entries:
   entries:
   - file: user/Build.md
     title: How to Build OpenROAD
+  - file: user/ORFS.md
+    title: OpenROAD Flow Scripts
 
 - file: tutorials/index
   title: Tutorials
