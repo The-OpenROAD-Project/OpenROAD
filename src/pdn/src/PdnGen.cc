@@ -627,7 +627,6 @@ void PdnGen::updateRenderer() const
 void PdnGen::createSrouteWires(
     const char* net,
     const char* outerNet,
-    Grid* grid,
     odb::dbTechLayer* layer0,
     odb::dbTechLayer* layer1,
     int cut_pitch_x,
@@ -695,7 +694,7 @@ void PdnGen::createSrouteWires(
       xx /= count;
       yy /= count;
 
-      odb::dbTechLayer* metal_layer = db_->getTech()->findLayer("layer0");
+      odb::dbTechLayer* metal_layer = layer0;
       odb::dbTechLayer* stripe_metal_layer;
 
       odb::dbSBox* pdn_wire = nullptr;
@@ -703,7 +702,7 @@ void PdnGen::createSrouteWires(
 
       bool first = true;
       int direction;
-      // find closest metal stripe vertical
+      // find closest metal stripe vertical(horizon)
       // for vertical power ring connection
       if (rings[index]->getDir() == 0) {
         for (auto* swire : net_->getSWires()) {
@@ -726,7 +725,6 @@ void PdnGen::createSrouteWires(
             }
           }
         }
-
         odb::dbSBox* right_pdn_wire = nullptr;
         first = true;
         // find closest wire to right of the center point
@@ -756,12 +754,12 @@ void PdnGen::createSrouteWires(
             if (first) {
               if ((direction == 0) && (wire->xMin() < xx)) {
                 first = false;
-                right_pdn_wire = wire;
+                left_pdn_wire = wire;
               }
             } else {
               if ((direction == 0) && (wire->xMin() > pdn_wire->xMin())
                   && (wire->xMin() < xx)) {
-                right_pdn_wire = wire;
+                left_pdn_wire = wire;
               }
             }
           }
@@ -787,14 +785,15 @@ void PdnGen::createSrouteWires(
           xx = left_pdn_wire->xMax() + metalspaces[0] + metalWidths[0] / 2;
         }
 
-        odb::dbSBox::create(
-            nwsw,
-            ongrid[0],
-            pdn_wire->xMin(),
-            pdn_wire->yMin() - metalWidths[metalWidths.size() - 1] / 2,
-            xx,
-            pdn_wire->yMax() + metalWidths[metalWidths.size() - 1] / 2,
-            odb::dbWireShapeType::NONE);
+        odb::dbSBox::create(nwsw,
+                            ongrid[0],
+                            rings[index]->xMin(),
+                            (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                - metalWidths[metalWidths.size() - 1] / 2,
+                            xx,
+                            (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                + metalWidths[metalWidths.size() - 1] / 2,
+                            odb::dbWireShapeType::NONE);
 
         if ((pdn_wire->yMax() > highy) && (pdn_wire->yMax() > lowy)) {
           odb::dbSBox::create(nwsw,
@@ -802,7 +801,8 @@ void PdnGen::createSrouteWires(
                               xx - metalWidths[0],
                               lowy,
                               xx,
-                              pdn_wire->yMax() + 550,
+                              (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                  + metalWidths[metalWidths.size() - 1] / 2,
                               odb::dbWireShapeType::NONE);
         }
         // middle
@@ -814,62 +814,120 @@ void PdnGen::createSrouteWires(
                               xx,
                               highy,
                               odb::dbWireShapeType::NONE);
-        }
-        else {
+        } else {
           odb::dbSBox::create(nwsw,
                               ongrid[ongrid.size() - 1],
                               xx - metalWidths[0],
-                              pdn_wire->yMin(),
+                              (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                  - metalWidths[metalWidths.size() - 1] / 2,
                               xx,
                               highy,
                               odb::dbWireShapeType::NONE);
+        }
+
+        if (ongrid[ongrid.size() - 1] < ongrid[0]) {
+          for (int i = 0; i < techvias.size(); i++) {
+            odb::dbTechVia* via_ = techvias[i];
+            odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
+            odb::dbBox* box = *boxes.begin();
+            int via_width = box->getDX();
+
+            int rows_ = (metalWidths[metalWidths.size() - 1] - cut_pitch_y)
+                        / (cut_pitch_y + box->getDY());
+            int cols_
+                = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
+            int centerX = cols_ / 2;
+            int centerY = rows_ / 2;
+            int row = 0;
+            int col = 0;
+            if (cols_ % 2 == 1) {
+              col = (rings[index]->xMin() + rings[index]->xMin()) / 2
+                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+            } else {
+              col = (rings[index]->xMin() + rings[index]->xMin()) / 2
+                    - centerX * (via_width) -cut_pitch_x / 2;
+            }
+            if (rows_ % 2 == 1) {
+              row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                    - centerY * (via_width + cut_pitch_y) - via_width / 2;
+            } else {
+              row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                    - centerY * (via_width) -cut_pitch_y / 2;
+            }
+            for (int r = 0; r < rows_; r++) {
+              col = xx - metalWidths[0] / 2
+                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+              for (int c = 0; c < cols_; c++) {
+                odb::dbSBox::create(nwsw,
+                                    via_,
+                                    col + via_width + via_width / 2,
+                                    row + via_width / 2,
+                                    odb::dbWireShapeType::NONE);
+                col += cut_pitch_x + via_width;
+              }
+              row += cut_pitch_y + via_width;
+            }
+          }
         }
 
         for (int i = 1; i < ongrid.size() - 1; i++) {
           odb::dbSBox::create(nwsw,
                               ongrid[i],
                               xx - metalWidths[0],
-                              pdn_wire->yMin() - 550,
+                              (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                  - metalWidths[metalWidths.size() - 1] / 2,
                               xx,
-                              pdn_wire->yMax() + 550,
+                              (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                                  + metalWidths[metalWidths.size() - 1] / 2,
                               odb::dbWireShapeType::NONE);
         }
         DbVia::ViaLayerShape shapes;
         for (int i = 0; i < techvias.size(); i++) {
           odb::dbTechVia* via_ = techvias[i];
           odb::dbSet<odb::dbBox> boxes = via_->getBoxes();
-          odb::dbBox* box = *boxes.begin();
+          odb::dbBox* box = *(boxes.begin());
           int via_width = box->getDX();
-
-          int rows_ = (pdn_wire->yMax() - pdn_wire->yMin() - cut_pitch_y)
+          int rows_ = (metalWidths[metalWidths.size() - 1] - cut_pitch_y)
                       / (cut_pitch_y + box->getDY());
           int cols_
               = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
-          odb::Rect via_rect(
-              0, 0, (cols_ - 1) * cut_pitch_x, (rows_ - 1) * cut_pitch_y);
-          int via_center_Y = via_rect.yMin() + via_rect.dy() / 2;
-          int via_center_X = via_rect.xMin() + via_rect.dx() / 2;
-          via_rect.moveTo(
-              xx - metalWidths[0] / 2 - via_rect.dx() / 2,
-              ((pdn_wire->yMin() + pdn_wire->yMax()) / 2) - via_rect.dy() / 2);
-
-          int row = via_rect.yMin() - via_center_Y;
+          int centerX = cols_ / 2;
+          int centerY = rows_ / 2;
+          int row = 0;
+          int col = 0;
+          if (cols_ % 2 == 1) {
+            col = xx - metalWidths[0] / 2 - centerX * (via_width + cut_pitch_x)
+                  - via_width / 2;
+          } else {
+            col = xx - metalWidths[0] / 2
+                  - centerX * (via_width) -cut_pitch_x / 2;
+          }
+          if (rows_ % 2 == 1) {
+            row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                  - centerY * (via_width + cut_pitch_y) - via_width / 2;
+          } else {
+            row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                  - centerY * (via_width) -cut_pitch_y / 2;
+          }
           for (int r = 0; r < rows_; r++) {
-            int col = via_rect.xMin() - via_center_X;
+            col = xx - metalWidths[0] / 2 - centerX * (via_width + cut_pitch_x)
+                  - via_width / 2;
             for (int c = 0; c < cols_; c++) {
-              odb::dbSBox::create(
-                  nwsw, via_, col, row, odb::dbWireShapeType::NONE);
+              odb::dbSBox::create(nwsw,
+                                  via_,
+                                  col + via_width + via_width / 2,
+                                  row + via_width / 2,
+                                  odb::dbWireShapeType::NONE);
               col += cut_pitch_x + via_width;
             }
             row += cut_pitch_y + via_width;
           }
         }
-
         for (auto* iterm : sroute_iterms) {
           odb::Rect bbox = iterm->getBBox();
           if (bbox.xMin() > xx - metalWidths[0]) {
             odb::dbSBox::create(nwsw,
-                                metal_layer,
+                                ongrid[0],
                                 xx - metalWidths[0],
                                 bbox.yMin(),
                                 bbox.xMin(),
@@ -877,7 +935,7 @@ void PdnGen::createSrouteWires(
                                 odb::dbWireShapeType::NONE);
           } else if (bbox.xMax() < xx) {
             odb::dbSBox::create(nwsw,
-                                metal_layer,
+                                ongrid[0],
                                 bbox.xMax(),
                                 bbox.yMin(),
                                 xx,
@@ -885,7 +943,7 @@ void PdnGen::createSrouteWires(
                                 odb::dbWireShapeType::NONE);
           } else {
             odb::dbSBox::create(nwsw,
-                                metal_layer,
+                                ongrid[0],
                                 xx - metalWidths[0],
                                 bbox.yMin(),
                                 xx,
@@ -904,26 +962,37 @@ void PdnGen::createSrouteWires(
                         / (cut_pitch_y + box->getDY());
             int cols_
                 = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
-            ;
-            odb::Rect via_rect_(
-                0, 0, (cols_ - 1) * cut_pitch_x, (rows_ - 1) * cut_pitch_y);
-            int via_center_Y = via_rect_.yMin() + via_rect_.dy() / 2;
-            int via_center_X = via_rect_.xMin() + via_rect_.dx() / 2;
-            via_rect_.moveTo(
-                xx - metalWidths[0] / 2 - via_rect_.dx() / 2,
-                ((bbox.yMax() + bbox.yMin()) / 2) - via_rect_.dy() / 2);
-
-            int row = via_rect_.yMin() - via_center_Y;
+            int centerX = cols_ / 2;
+            int centerY = rows_ / 2;
+            int row = 0;
+            int col = 0;
+            if (cols_ % 2 == 1) {
+              col = xx - metalWidths[0] / 2
+                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+            } else {
+              col = xx - metalWidths[0] / 2
+                    - centerX * (via_width) -cut_pitch_x / 2;
+            }
+            if (rows_ % 2 == 1) {
+              row = (bbox.yMax() + bbox.yMin()) / 2
+                    - centerY * (via_width + cut_pitch_y) - via_width / 2;
+            } else {
+              row = (bbox.yMax() + bbox.yMin()) / 2
+                    - centerY * (via_width) -cut_pitch_y / 2;
+            }
             for (int r = 0; r < rows_; r++) {
-              int col = via_rect_.xMin() - via_center_X;
+              col = xx - metalWidths[0] / 2
+                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
               for (int c = 0; c < cols_; c++) {
-                odb::dbSBox::create(
-                    nwsw, via_, col, row, odb::dbWireShapeType::NONE);
+                odb::dbSBox::create(nwsw,
+                                    via_,
+                                    col + via_width + via_width / 2,
+                                    row + via_width / 2,
+                                    odb::dbWireShapeType::NONE);
                 col += cut_pitch_x + via_width;
               }
               row += cut_pitch_y + via_width;
             }
-            ////
           }
         }
 
@@ -980,20 +1049,33 @@ void PdnGen::createSrouteWires(
                       / (cut_pitch_y + box->getDY());
           int cols_
               = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
-          odb::Rect via_rect(
-              0, 0, (cols_ - 1) * cut_pitch_x, (rows_ - 1) * cut_pitch_y);
-          int via_center_Y = via_rect.yMin() + via_rect.dy() / 2;
-          int via_center_X = via_rect.xMin() + via_rect.dx() / 2;
-          via_rect.moveTo(
-              xx + metalWidths[0] / 2 - via_rect.dx() / 2,
-              ((pdn_wire->yMin() + pdn_wire->yMax()) / 2) - via_rect.dy() / 2);
-
-          int row = via_rect.yMin() - via_center_Y;
+          int centerX = cols_ / 2;
+          int centerY = rows_ / 2;
+          int row = 0;
+          int col = 0;
+          if (cols_ % 2 == 1) {
+            col = xx - metalWidths[0] / 2 - centerX * (via_width + cut_pitch_x)
+                  - via_width / 2;
+          } else {
+            col = xx - metalWidths[0] / 2
+                  - centerX * (via_width) -cut_pitch_x / 2;
+          }
+          if (rows_ % 2 == 1) {
+            row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                  - centerY * (via_width + cut_pitch_y) - via_width / 2;
+          } else {
+            row = (pdn_wire->yMin() + pdn_wire->yMax()) / 2
+                  - centerY * (via_width) -cut_pitch_y / 2;
+          }
           for (int r = 0; r < rows_; r++) {
-            int col = via_rect.xMin() - via_center_X;
+            col = xx - metalWidths[0] / 2 - centerX * (via_width + cut_pitch_x)
+                  - via_width / 2;
             for (int c = 0; c < cols_; c++) {
-              odb::dbSBox::create(
-                  nwsw, via_, col, row, odb::dbWireShapeType::NONE);
+              odb::dbSBox::create(nwsw,
+                                  via_,
+                                  col + via_width + via_width / 2,
+                                  row + via_width / 2,
+                                  odb::dbWireShapeType::NONE);
               col += cut_pitch_x + via_width;
             }
             row += cut_pitch_y + via_width;
@@ -1004,7 +1086,7 @@ void PdnGen::createSrouteWires(
           odb::Rect bbox = iterm->getBBox();
           if (bbox.xMin() > xx + metalWidths[0]) {
             odb::dbSBox::create(nwsw,
-                                metal_layer,
+                                ongrid[0],
                                 xx - metalWidths[0],
                                 bbox.yMin(),
                                 bbox.xMin(),
@@ -1012,7 +1094,7 @@ void PdnGen::createSrouteWires(
                                 odb::dbWireShapeType::NONE);
           } else if (bbox.xMax() < xx - metalWidths[0]) {
             odb::dbSBox::create(nwsw,
-                                metal_layer,
+                                ongrid[0],
                                 bbox.xMax(),
                                 bbox.yMin(),
                                 xx + metalWidths[0],
@@ -1020,7 +1102,7 @@ void PdnGen::createSrouteWires(
                                 odb::dbWireShapeType::NONE);
           } else {
             odb::dbSBox::create(nwsw,
-                                metal_layer,
+                                ongrid[0],
                                 xx - metalWidths[0] / 2,
                                 bbox.yMin(),
                                 xx + metalWidths[0] / 2,
@@ -1038,21 +1120,33 @@ void PdnGen::createSrouteWires(
                         / (cut_pitch_y + box->getDY());
             int cols_
                 = (metalWidths[0] - cut_pitch_x) / (cut_pitch_x + box->getDX());
-            ;
-            odb::Rect via_rect_(
-                0, 0, (cols_ - 1) * cut_pitch_x, (rows_ - 1) * cut_pitch_y);
-            int via_center_Y = via_rect_.yMin() + via_rect_.dy() / 2;
-            int via_center_X = via_rect_.xMin() + via_rect_.dx() / 2;
-            via_rect_.moveTo(
-                xx - metalWidths[0] / 2 - via_rect_.dx() / 2,
-                ((bbox.yMax() + bbox.yMin()) / 2) - via_rect_.dy() / 2);
-
-            int row = via_rect_.yMin() - via_center_Y;
+            int centerX = cols_ / 2;
+            int centerY = rows_ / 2;
+            int row = 0;
+            int col = 0;
+            if (cols_ % 2 == 1) {
+              col = xx - metalWidths[0] / 2
+                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
+            } else {
+              col = xx - metalWidths[0] / 2
+                    - centerX * (via_width) -cut_pitch_x / 2;
+            }
+            if (rows_ % 2 == 1) {
+              row = (bbox.yMax() + bbox.yMin()) / 2
+                    - centerY * (via_width + cut_pitch_y) - via_width / 2;
+            } else {
+              row = (bbox.yMax() + bbox.yMin()) / 2
+                    - centerY * (via_width) -cut_pitch_y / 2;
+            }
             for (int r = 0; r < rows_; r++) {
-              int col = via_rect_.xMin() - via_center_X;
+              col = xx - metalWidths[0] / 2
+                    - centerX * (via_width + cut_pitch_x) - via_width / 2;
               for (int c = 0; c < cols_; c++) {
-                odb::dbSBox::create(
-                    nwsw, via_, col, row, odb::dbWireShapeType::NONE);
+                odb::dbSBox::create(nwsw,
+                                    via_,
+                                    col + via_width + via_width / 2,
+                                    row + via_width / 2,
+                                    odb::dbWireShapeType::NONE);
                 col += cut_pitch_x + via_width;
               }
               row += cut_pitch_y + via_width;
@@ -1088,7 +1182,8 @@ void PdnGen::createSrouteWires(
   }
 }
 
-void PdnGen::addSrouteInst(const char* inst,
+void PdnGen::addSrouteInst(const char* net,
+                           const char* inst,
                            const char* iterm,
                            int hDX,
                            int hDY,
@@ -1109,8 +1204,7 @@ void PdnGen::addSrouteInst(const char* inst,
     std::vector<odb::dbITerm*> sroute_items_4;
     sroute_itermss.push_back(sroute_items_4);
   }
-
-  odb::dbNet* net_ = block->findNet("VIN");
+  odb::dbNet* net_ = block->findNet(net);
   // find all 4 strips for VIN
   std::vector<odb::dbSBox*> rings;
   for (auto* swire : net_->getSWires()) {
