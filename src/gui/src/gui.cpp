@@ -29,7 +29,7 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-
+#include <iostream>
 #include "gui/gui.h"
 
 #include <QApplication>
@@ -437,12 +437,12 @@ int Gui::select(const std::string& type,
 {
   for (auto& [object_type, descriptor] : descriptors_) {
     if (descriptor->getTypeName() == type) {
-      SelectionSet selected;
-      if (descriptor->getAllObjects(selected)) {
+      SelectionSet selected_set;
+      if (descriptor->getAllObjects(selected_set)) {
         if (!name_filter.empty()) {
           // convert to vector
-          std::vector<Selected> selected_vector(selected.begin(),
-                                                selected.end());
+          std::vector<Selected> selected_vector(selected_set.begin(),
+                                                selected_set.end());
           // remove elements
           QRegExp reg_filter(
               QString::fromStdString(name_filter),
@@ -452,57 +452,49 @@ int Gui::select(const std::string& type,
               selected_vector.begin(),
               selected_vector.end(),
               [&name_filter, &reg_filter](auto sel) -> bool {
-                const std::string name = sel.getName();
-                if (name == name_filter) {
+                const std::string sel_name = sel.getName();
+                if (sel_name == name_filter) {
                   // direct match, so don't remove
                   return false;
                 }
-                return !reg_filter.exactMatch(QString::fromStdString(name));
+                return !reg_filter.exactMatch(QString::fromStdString(sel_name));
               });
           selected_vector.erase(remove_if, selected_vector.end());
           // rebuild selectionset
-          selected.clear();
-          selected.insert(selected_vector.begin(), selected_vector.end());
+          selected_set.clear();
+          selected_set.insert(selected_vector.begin(), selected_vector.end());
         }
+
         if (!attribute.empty()) {
-          if (type == "Net") {
-            std::string net_attribute_value = std::any_cast<std::string>(value);
-            netAttributeFilter(attribute, net_attribute_value, &selected);
+          for (Selected selected : selected_set) {
+            Descriptor::Properties properties = descriptor->getProperties(selected.getObject());
+            filterSelectionProperties(selected_set, properties, attribute, value);
           }
         }
-        main_window->addSelected(selected);
+
+        main_window->addSelected(selected_set);
         if (highlight_group != -1) {
-          main_window->addHighlighted(selected, highlight_group);
+          main_window->addHighlighted(selected_set, highlight_group);
         }
       }
 
       // already found the descriptor, so return to exit loop
-      return selected.size();
+      return selected_set.size();
     }
   }
 
   logger_->error(utl::GUI, 35, "Unable to find descriptor for: {}", type);
 }
 
-void Gui::netAttributeFilter(const std::string& attribute,
-                             const std::string& value,
-                             SelectionSet* selected)
+void Gui::filterSelectionProperties(const SelectionSet& selected_set,
+                                    const Descriptor::Properties& properties,
+                                    const std::string& attribute,
+                                    const std::any& value)
 {
-  if (attribute == "type") {
-    if (value == "IO") {
-      for(SelectionSet::iterator iter = selected->begin(); iter != selected->end();) {
-        auto selected_net = std::any_cast<odb::dbNet*>(iter->getObject());
-        if(selected_net->getBTerms().size() == 0)  {
-          iter = selected->erase(iter);
-        } else {
-          ++iter;
-        }
-      }
-    } else {
-      logger_->error(utl::GUI, 88, "Invalid value {} for attribute {}", value, attribute);
+  for (Descriptor::Property property : properties) {
+    if (attribute == property.name) {
+      // Compare attribute.value and property.value
     }
-  } else {
-    logger_->error(utl::GUI, 75, "Invalid filter attribute {} for Net", attribute);
   }
 }
 
