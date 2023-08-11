@@ -32,7 +32,6 @@
 
 #include "timingWidget.h"
 
-#include <QAction>
 #include <QApplication>
 #include <QClipboard>
 #include <QFrame>
