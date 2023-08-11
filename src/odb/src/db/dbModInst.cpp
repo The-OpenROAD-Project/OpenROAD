@@ -64,8 +64,6 @@ bool _dbModInst::operator==(const _dbModInst& rhs) const
   if (_group != rhs._group)
     return false;
 
-  // User Code Begin ==
-  // User Code End ==
   return true;
 }
 
@@ -90,8 +88,6 @@ void _dbModInst::differences(dbDiff& diff,
   DIFF_FIELD(_master);
   DIFF_FIELD(_group_next);
   DIFF_FIELD(_group);
-  // User Code Begin Differences
-  // User Code End Differences
   DIFF_END
 }
 
@@ -106,8 +102,6 @@ void _dbModInst::out(dbDiff& diff, char side, const char* field) const
   DIFF_OUT_FIELD(_group_next);
   DIFF_OUT_FIELD(_group);
 
-  // User Code Begin Out
-  // User Code End Out
   DIFF_END
 }
 
@@ -132,8 +126,6 @@ _dbModInst::_dbModInst(_dbDatabase* db, const _dbModInst& r)
   _master = r._master;
   _group_next = r._group_next;
   _group = r._group;
-  // User Code Begin CopyConstructor
-  // User Code End CopyConstructor
 }
 
 dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
@@ -145,8 +137,6 @@ dbIStream& operator>>(dbIStream& stream, _dbModInst& obj)
   stream >> obj._master;
   stream >> obj._group_next;
   stream >> obj._group;
-  // User Code Begin >>
-  // User Code End >>
   return stream;
 }
 
@@ -159,8 +149,6 @@ dbOStream& operator<<(dbOStream& stream, const _dbModInst& obj)
   stream << obj._master;
   stream << obj._group_next;
   stream << obj._group;
-  // User Code Begin <<
-  // User Code End <<
   return stream;
 }
 
@@ -168,12 +156,7 @@ _dbModInst::~_dbModInst()
 {
   if (_name)
     free((void*) _name);
-  // User Code Begin Destructor
-  // User Code End Destructor
 }
-
-// User Code Begin PrivateMethods
-// User Code End PrivateMethods
 
 ////////////////////////////////////////////////////////////////////
 //

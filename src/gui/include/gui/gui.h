@@ -616,7 +616,10 @@ class Gui
 
   // Save clock tree view
   void saveClockTreeImage(const std::string& clock_name,
-                          const std::string& filename);
+                          const std::string& filename,
+                          const std::string& corner = "",
+                          int width_px = 0,
+                          int height_px = 0);
 
   // modify display controls
   void setDisplayControlsVisible(const std::string& name, bool value);

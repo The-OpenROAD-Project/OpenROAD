@@ -60,12 +60,8 @@ SimulatedAnnealing::SimulatedAnnealing(
   num_slots_ = slots.size();
   num_pins_ = netlist->numIOPins();
   num_groups_ = pin_groups_.size();
-  perturb_per_iter_ = static_cast<int>(num_pins_ * 0.8);
-  int pins_in_groups = 0;
-  for (const auto& group : pin_groups_) {
-    pins_in_groups += group.pin_indices.size();
-  }
-  lone_pins_ = num_pins_ - pins_in_groups;
+  countLonePins();
+  perturb_per_iter_ = static_cast<int>(lone_pins_ * 0.8 + num_groups_ * 10);
 }
 
 void SimulatedAnnealing::run(float init_temperature,
@@ -93,7 +89,7 @@ void SimulatedAnnealing::run(float init_temperature,
             logger_,
             utl::PPL,
             "annealing",
-            1,
+            2,
             "iteration: {}; temperature: {}; assignment cost: {}um; delta "
             "cost: {}um",
             iter,
@@ -107,14 +103,17 @@ void SimulatedAnnealing::run(float init_temperature,
           // accept new solution, update cost and slots
           pre_cost = cost;
           if (!prev_slots_.empty() && !new_slots_.empty()) {
-            for (int i = 0; i < prev_slots_.size(); i++) {
-              int prev_slot = prev_slots_[i];
-              int new_slot = new_slots_[i];
+            for (int prev_slot : prev_slots_) {
               slots_[prev_slot].used = false;
+            }
+            for (int new_slot : new_slots_) {
               slots_[new_slot].used = true;
             }
           }
         } else {
+          for (int i = 0; i < prev_slots_.size(); i++) {
+            slots_[prev_slots_[i]].used = true;
+          }
           restorePreviousAssignment();
         }
         prev_slots_.clear();
@@ -196,6 +195,17 @@ void SimulatedAnnealing::init(float init_temperature,
   pin_assignment_.resize(num_pins_);
   slot_indices_.resize(num_slots_);
   std::iota(slot_indices_.begin(), slot_indices_.end(), 0);
+
+  debugPrint(logger_,
+             utl::PPL,
+             "annealing",
+             1,
+             "init_temperature_: {}; max_iterations_: {}; perturb_per_iter_: "
+             "{}; alpha_: {}",
+             init_temperature_,
+             max_iterations_,
+             perturb_per_iter_,
+             alpha_);
 
   generator_.seed(seed_);
 }
@@ -519,6 +529,8 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
       prev_cost += getPinCost(mirrored_idx);
     }
   }
+  updateSlotsFromGroup(prev_slots_, false);
+
   const IOPin& io_pin = netlist_->getIoPin(pins_[0]);
 
   bool free_slot = false;
@@ -581,6 +593,7 @@ int SimulatedAnnealing::moveGroupToFreeSlots(const int group_idx)
     prev_slots_.clear();
     new_slots_.clear();
     pins_.clear();
+    updateSlotsFromGroup(prev_slots_, true);
     return move_fail_;
   }
 
@@ -616,14 +629,18 @@ bool SimulatedAnnealing::isFreeForGroup(int slot_idx,
 
     int slot = slot_idx;
     int mirrored_slot = getMirroredSlotIdx(slot);
+    free_slot = true;  // Assume the slots are free and prove otherwise
     for (int i = 0; i < group_size; i++) {
-      free_slot
-          = slots_[slot].isAvailable() && slots_[mirrored_slot].isAvailable();
-      if (!free_slot) {
+      if (!slots_[slot].isAvailable() || !slots_[mirrored_slot].isAvailable()) {
+        free_slot = false;
         break;
       }
 
       slot++;
+    }
+
+    if (!free_slot) {
+      slot_idx++;  // Move to the next slot if the current one is not free
     }
   }
 
@@ -687,6 +704,30 @@ int SimulatedAnnealing::getMirroredSlotIdx(int slot_idx) const
   odb::Point mirrored_pos = core_->getMirroredPosition(position);
 
   return getSlotIdxByPosition(mirrored_pos, layer);
+}
+
+void SimulatedAnnealing::updateSlotsFromGroup(
+    const std::vector<int>& prev_slots_,
+    bool block)
+{
+  for (int slot : prev_slots_) {
+    slots_[slot].used = block;
+  }
+}
+
+void SimulatedAnnealing::countLonePins()
+{
+  int pins_in_groups = 0;
+  for (const auto& group : pin_groups_) {
+    for (const int pin_idx : group.pin_indices) {
+      pins_in_groups++;
+      if (netlist_->getIoPin(pin_idx).isMirrored()) {
+        pins_in_groups++;
+      }
+    }
+  }
+
+  lone_pins_ = num_pins_ - pins_in_groups;
 }
 
 }  // namespace ppl

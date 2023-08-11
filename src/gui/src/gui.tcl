@@ -142,6 +142,43 @@ proc save_image { args } {
   rename $options ""
 }
 
+sta::define_cmd_args "save_clocktree_image" {
+  [-width width] \
+  [-height height] \
+  [-corner corner] \
+  -clock clock \
+  path
+}
+
+proc save_clocktree_image { args } {
+  sta::parse_key_args "save_image" args \
+    keys {-clock -width -height -corner} flags {}
+
+  sta::check_argc_eq1 "save_image" $args
+  set path [lindex $args 0]
+
+  set width 0
+  if { [info exists keys(-width)] } {
+    set width $keys(-width)
+  }
+  set height 0
+  if { [info exists keys(-height)] } {
+    set height $keys(-height)
+  }
+  set corner ""
+  if { [info exists keys(-corner)] } {
+    set corner $keys(-corner)
+  }
+
+  if { [info exists keys(-clock)] } {
+    set clock $keys(-clock)
+  } else {
+    utl:error GUI 88 "-clock is required"
+  }
+
+  gui::save_clocktree_image $path $clock $corner $width $height
+}
+
 sta::define_cmd_args "select" {-type object_type \
                                [-name name_regex] \
                                [-case_insensitive] \

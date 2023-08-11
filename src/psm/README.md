@@ -18,8 +18,8 @@ Features:
 
 ```
 set_pdnsim_net_voltage -net <net_name> -voltage <voltage_value>
-check_power_grid -net <net_name>
-analyze_power_grid -vsrc <voltage_source_location_file> \
+check_power_grid -net <net_name> [-error_file <filename>]
+analyze_power_grid [-vsrc <voltage_source_location_file>] \
                    -net <net_name> \
                    [-outfile <filename>] \
                    [-enable_em] \
@@ -29,7 +29,8 @@ analyze_power_grid -vsrc <voltage_source_location_file> \
                    [-em_outfile <filename>]
                    [-node_density <node_pitch>]
                    [-node_density_factor <factor>]
-                   [-corner corner]
+                   [-corner corner] \
+                   [-error_file <filename>]
 write_pg_spice -vsrc <voltage_source_location_file> -outfile <netlist.sp> -net <net_name>
 ```
 
@@ -39,6 +40,7 @@ Options description:
 - ``net``: (mandatory) is the name of the net to analyze, power or ground net name.
 - ``enable_em``: (optional) is the flag to report current per power grid segment.
 - ``outfile``: (optional) filename specified per-instance voltage written into file.
+- ``error_file``: (optional) filename to write each connectivity error into.
 - ``em_outfile``: (optional) filename to write out the per segment current values into a file, can be specified only if enable_em is flag exists.
 - ``voltage``: (optional) Sets the voltage on a specific net. If this command is not run, the voltage value is obtained from operating conditions in the liberty.
 - ``node_density``: (optional)  This value can be specfied by the user in um to determine the node density on the std. cell rails. Cannot be used together with node_density_factor.
