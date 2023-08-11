@@ -36,6 +36,7 @@
 #include <QDockWidget>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QMenu>
 #include <QModelIndex>
 #include <QPushButton>
 #include <QSettings>
@@ -59,7 +60,6 @@ class TimingConeRenderer;
 class TimingControlsDialog;
 class TimingPathDetailModel;
 class TimingPathsModel;
-class TimingPathsTableView;
 class GuiDBChangeListener;
 
 class TimingWidget : public QDockWidget
@@ -112,6 +112,7 @@ class TimingWidget : public QDockWidget
   void showSettings();
 
   void writePathReportCommand(const QModelIndex& selected_index);
+  void showCommandsMenu(const QPoint& pos);
 
  protected:
   void keyPressEvent(QKeyEvent* key_event) override;
@@ -120,9 +121,12 @@ class TimingWidget : public QDockWidget
 
  private:
   void copy();
+  void addCommandsMenuActions();
 
-  TimingPathsTableView* setup_timing_table_view_;
-  TimingPathsTableView* hold_timing_table_view_;
+  QMenu* commands_menu_;
+
+  QTableView* setup_timing_table_view_;
+  QTableView* hold_timing_table_view_;
   QTableView* path_details_table_view_;
   QTableView* capture_details_table_view_;
 
@@ -144,5 +148,7 @@ class TimingWidget : public QDockWidget
   QTabWidget* detail_widget_;
 
   QTableView* focus_view_;
+
+  QModelIndex timing_paths_table_index_;
 };
 }  // namespace gui

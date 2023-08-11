@@ -1290,21 +1290,4 @@ const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
   return pins;
 }
 
-/////////
-TimingPathsTableView::TimingPathsTableView(QWidget* parent) : QTableView(parent)
-{
-}
-
-void TimingPathsTableView::mousePressEvent(QMouseEvent* event)
-{
-  if (event->button() == Qt::RightButton) {
-    QAbstractItemView::mousePressEvent(event);
-    QModelIndex index = indexAt(event->pos());
-    if (index.isValid()) {
-      emit selectedRowRightClicked(index);
-    }
-  } else {
-    QAbstractItemView::mousePressEvent(event);
-  }
-}
 }  // namespace gui

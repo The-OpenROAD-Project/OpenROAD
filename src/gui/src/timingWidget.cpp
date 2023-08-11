@@ -32,6 +32,7 @@
 
 #include "timingWidget.h"
 
+#include <QAction>
 #include <QApplication>
 #include <QClipboard>
 #include <QFrame>
@@ -49,8 +50,9 @@ namespace gui {
 
 TimingWidget::TimingWidget(QWidget* parent)
     : QDockWidget("Timing Report", parent),
-      setup_timing_table_view_(new TimingPathsTableView(this)),
-      hold_timing_table_view_(new TimingPathsTableView(this)),
+      commands_menu_(new QMenu("Commands Menu", this)),
+      setup_timing_table_view_(new QTableView(this)),
+      hold_timing_table_view_(new QTableView(this)),
       path_details_table_view_(new QTableView(this)),
       capture_details_table_view_(new QTableView(this)),
       update_button_(new QPushButton("Update", this)),
@@ -100,6 +102,8 @@ TimingWidget::TimingWidget(QWidget* parent)
 
   container->setLayout(layout);
   setWidget(container);
+
+  addCommandsMenuActions();
 
   connect(dbchange_listener_,
           &GuiDBChangeListener::dbUpdated,
@@ -191,9 +195,9 @@ void TimingWidget::init(sta::dbSta* sta)
           &TimingWidget::selectedRowChanged);
 
   connect(setup_timing_table_view_,
-          &TimingPathsTableView::selectedRowRightClicked,
+          &QTableView::customContextMenuRequested,
           this,
-          &TimingWidget::writePathReportCommand);
+          &TimingWidget::showCommandsMenu);
 
   connect(hold_timing_table_view_->selectionModel(),
           &QItemSelectionModel::selectionChanged,
@@ -201,9 +205,9 @@ void TimingWidget::init(sta::dbSta* sta)
           &TimingWidget::selectedRowChanged);
 
   connect(hold_timing_table_view_,
-          &TimingPathsTableView::selectedRowRightClicked,
+          &QTableView::customContextMenuRequested,
           this,
-          &TimingWidget::writePathReportCommand);
+          &TimingWidget::showCommandsMenu);
 
   connect(path_details_table_view_->selectionModel(),
           &QItemSelectionModel::selectionChanged,
@@ -259,6 +263,24 @@ void TimingWidget::keyPressEvent(QKeyEvent* key_event)
     copy();
     key_event->accept();
   }
+}
+
+void TimingWidget::addCommandsMenuActions()
+{
+  connect(commands_menu_->addAction("Closest Match"),
+          &QAction::triggered,
+          [this] { writePathReportCommand(timing_paths_table_index_); });
+
+  connect(commands_menu_->addAction("From Start to End"),
+          &QAction::triggered,
+          [this] { writePathReportCommand(timing_paths_table_index_); });
+}
+
+void TimingWidget::showCommandsMenu(const QPoint& pos)
+{
+  timing_paths_table_index_ = focus_view_->indexAt(pos);
+
+  commands_menu_->popup(focus_view_->viewport()->mapToGlobal(pos));
 }
 
 void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)

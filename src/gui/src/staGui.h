@@ -437,16 +437,4 @@ class TimingControlsDialog : public QDialog
   void setupPinRow(const QString& label, PinSetWidget* row, int row_index = -1);
 };
 
-class TimingPathsTableView : public QTableView
-{
-  Q_OBJECT
- public:
-  TimingPathsTableView(QWidget* parent = nullptr);
-
-  void mousePressEvent(QMouseEvent* event) override;
-
- signals:
-  void selectedRowRightClicked(const QModelIndex& selected_index);
-};
-
 }  // namespace gui
