@@ -44,7 +44,6 @@
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QSpinBox>
-#include <QTableView>
 #include <map>
 #include <memory>
 #include <set>

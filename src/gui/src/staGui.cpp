@@ -1289,5 +1289,4 @@ const std::vector<std::set<const sta::Pin*>> TimingControlsDialog::getThruPins()
   }
   return pins;
 }
-
 }  // namespace gui
