@@ -66,6 +66,12 @@ class TimingWidget : public QDockWidget
 {
   Q_OBJECT
  public:
+  enum CommandType
+  {
+    CLOSEST_MATCH,
+    FROM_START_TO_END
+  };
+
   TimingWidget(QWidget* parent = nullptr);
   ~TimingWidget();
 
@@ -111,7 +117,8 @@ class TimingWidget : public QDockWidget
 
   void showSettings();
 
-  void writePathReportCommand(const QModelIndex& selected_index);
+  void writePathReportCommand(const QModelIndex& selected_index,
+                              const CommandType& type);
   void showCommandsMenu(const QPoint& pos);
 
  protected:
@@ -124,6 +131,8 @@ class TimingWidget : public QDockWidget
   void addCommandsMenuActions();
 
   QMenu* commands_menu_;
+
+  QModelIndex timing_paths_table_index_;
 
   QTableView* setup_timing_table_view_;
   QTableView* hold_timing_table_view_;
@@ -148,7 +157,5 @@ class TimingWidget : public QDockWidget
   QTabWidget* detail_widget_;
 
   QTableView* focus_view_;
-
-  QModelIndex timing_paths_table_index_;
 };
 }  // namespace gui

@@ -267,13 +267,17 @@ void TimingWidget::keyPressEvent(QKeyEvent* key_event)
 
 void TimingWidget::addCommandsMenuActions()
 {
-  connect(commands_menu_->addAction("Closest Match"),
-          &QAction::triggered,
-          [this] { writePathReportCommand(timing_paths_table_index_); });
+  connect(
+      commands_menu_->addAction("Closest Match"), &QAction::triggered, [this] {
+        writePathReportCommand(timing_paths_table_index_, CLOSEST_MATCH);
+      });
 
   connect(commands_menu_->addAction("From Start to End"),
           &QAction::triggered,
-          [this] { writePathReportCommand(timing_paths_table_index_); });
+          [this] {
+            writePathReportCommand(timing_paths_table_index_,
+                                   FROM_START_TO_END);
+          });
 }
 
 void TimingWidget::showCommandsMenu(const QPoint& pos)
@@ -283,35 +287,44 @@ void TimingWidget::showCommandsMenu(const QPoint& pos)
   commands_menu_->popup(focus_view_->viewport()->mapToGlobal(pos));
 }
 
-void TimingWidget::writePathReportCommand(const QModelIndex& selected_index)
+void TimingWidget::writePathReportCommand(const QModelIndex& selected_index,
+                                          const CommandType& type)
 {
   TimingPathsModel* focus_model
       = static_cast<TimingPathsModel*>(focus_view_->model());
 
   TimingPath* selected_path = focus_model->getPathAt(selected_index);
 
-  QString start_rise_or_fall
-      = selected_path->isStartStageRising() ? "-rise_from " : "-fall_from ";
-
   QString start_node
       = QString::fromStdString(selected_path->getStartStageName());
-
-  QString end_rise_or_fall
-      = selected_path->isEndStageRising() ? " -rise_to " : " -fall_to ";
-
   QString end_node = QString::fromStdString(selected_path->getEndStageName());
 
-  QString path_delay_config = focus_view_ == setup_timing_table_view_
-                                  ? " -path_delay max"
-                                  : " -path_delay min";
+  if (type == CLOSEST_MATCH) {
+    QString start_rise_or_fall
+        = selected_path->isStartStageRising() ? "-rise_from " : "-fall_from ";
 
-  QString path_report_command
-      = "report_checks " + start_rise_or_fall + start_node + end_rise_or_fall
-        + end_node + path_delay_config
-        + " -fields {capacitance slew input_pins nets fanout}"
-        + " -format full_clock_expanded";
+    QString end_rise_or_fall
+        = selected_path->isEndStageRising() ? " -rise_to " : " -fall_to ";
 
-  emit setCommand(path_report_command);
+    QString path_delay_config = focus_view_ == setup_timing_table_view_
+                                    ? " -path_delay max"
+                                    : " -path_delay min";
+
+    QString closest_match_command
+        = "report_checks " + start_rise_or_fall + start_node + end_rise_or_fall
+          + end_node + path_delay_config
+          + " -fields {capacitance slew input_pins nets fanout}"
+          + " -format full_clock_expanded";
+
+    emit setCommand(closest_match_command);
+  }
+
+  if (type == FROM_START_TO_END) {
+    QString from_start_to_end_command
+        = "report_checks -from " + start_node + " -to " + end_node;
+
+    emit setCommand(from_start_to_end_command);
+  }
 }
 
 void TimingWidget::clearPathDetails()
