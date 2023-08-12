@@ -5334,8 +5334,19 @@ class dbSite : public dbObject
   ///
   /// set the row pattern of this site
   ///
-  void setRowPattern(dbLib* lib_,
-                     std::vector<std::pair<std::string, int>>& row_pattern);
+  void setRowPattern(
+      dbLib* lib_,
+      std::vector<std::pair<std::string, std::string>>& row_pattern);
+
+  ///
+  /// Returns true if the row pattern is not empty
+  ///
+  bool hasRowPattern();
+
+  ///
+  /// returns the row pattern if available
+  ///
+  std::vector<std::pair<dbSite*, dbOrientType>> getRowPattern();
 
   ///
   /// Get the library of this site.

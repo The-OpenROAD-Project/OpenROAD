@@ -1232,11 +1232,13 @@ void lefiSite::addRowPattern(const char* name, int orient)
   numRowPattern_ += 1;
 }
 
-std::vector<std::pair<std::string, int>> lefiSite::getRowPatterns() const
+std::vector<std::pair<std::string, std::string>> lefiSite::getRowPatterns()
+    const
 {
-  std::vector<std::pair<std::string, int>> patterns(numRowPattern_);
+  std::vector<std::pair<std::string, std::string>> patterns(numRowPattern_);
   for (int i = 0; i < numRowPattern_; i++) {
     std::string siteName = std::string(siteNames_[i]);
+    auto orientStr = std::string(lefiOrientStr(siteOrients_[i]));
     patterns[i] = std::make_pair(siteName, siteOrients_[i]);
   }
   return patterns;

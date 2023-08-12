@@ -317,7 +317,7 @@ class lefiSite
   void setYSymmetry();
   void set90Symmetry();
   void addRowPattern(const char* name, int orient);
-  std::vector<std::pair<std::string, int>> getRowPatterns() const;
+  std::vector<std::pair<std::string, std::string>> getRowPatterns() const;
 
   const char* name() const;
   int hasClass() const;

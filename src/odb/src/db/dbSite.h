@@ -64,7 +64,7 @@ class _dbSite : public _dbObject
   uint _height;
   uint _width;
   dbId<_dbSite> _next_entry;
-  std::vector<std::pair<_dbSite*, dbOrientType::Value>> _row_patterns;
+  std::vector<std::pair<std::string, dbOrientType::Value>> _row_patterns;
 
   _dbSite(_dbDatabase*, const _dbSite& s);
   _dbSite(_dbDatabase*);
