@@ -32,6 +32,8 @@
 
 #include "dbSite.h"
 
+#include <unordered_map>
+
 #include "db.h"
 #include "dbDatabase.h"
 #include "dbLib.h"
