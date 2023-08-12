@@ -226,13 +226,13 @@ void InitFloorplan::initFloorplan(const odb::Rect& die,
       int rows_placed
           = makeRows(site, clx, cly, cux, cuy, x_height_site, row_index);
       row_index += rows_placed;
-      // if (site->hasRowPattern()) {
-      //   rows_placed = makeHybridRows(site->rowPattern,
-      //                                odb::Point(clx, cly),
-      //                                odb::Point(cux, cuy),
-      //                                row_index);
-      //   row_index += rows_placed;
-      // }
+      if (site->hasRowPattern()) {
+        rows_placed = makeHybridRows(site->getRowPattern(),
+                                     odb::Point(clx, cly),
+                                     odb::Point(cux, cuy),
+                                     row_index);
+        row_index += rows_placed;
+      }
 
       updateVoltageDomain(clx, cly, cux, cuy);
     }
@@ -434,6 +434,17 @@ std::set<dbSite*> InitFloorplan::getSites() const
   for (auto site : sites) {
     // check if the site height is a multiple of the smallest site height
     if (site->getHeight() % min_site_height != 0) {
+      if (site->hasRowPattern()) {
+        logger_->warn(IFP,
+                      46,
+                      "Site {} has row pattern (might be a hybrid row), but "
+                      "its height {} is not a "
+                      "multiple of the smallest site height {}.",
+                      site->getName(),
+                      site->getHeight(),
+                      min_site_height);
+        continue;
+      }
       logger_->error(IFP,
                      40,
                      "Invalid height for site {} detected. The height value of "
@@ -490,10 +501,11 @@ int InitFloorplan::makeRows(dbSite* site,
   return rows_y;
 }
 
-int InitFloorplan::makeHybridRows(const std::vector<dbSite*>& hybrid_sites,
-                                  const odb::Point& core_l,
-                                  const odb::Point& core_u,
-                                  int row_index)
+int InitFloorplan::makeHybridRows(
+    const std::vector<std::pair<dbSite*, dbOrientType>>& hybrid_sites,
+    const odb::Point& core_l,
+    const odb::Point& core_u,
+    int row_index)
 {
   // This method create alternating rows patterns with given sites.
   // either their collective height should be equal to the core height, or equal
@@ -504,44 +516,24 @@ int InitFloorplan::makeHybridRows(const std::vector<dbSite*>& hybrid_sites,
   if (hybrid_sites.empty()) {
     return 0;
   }
-  int site_width = hybrid_sites[0]->getWidth();
-  for (auto site : hybrid_sites) {
+  auto hybrid_site = hybrid_sites[0].first;
+  int site_width = hybrid_site->getWidth();
+  for (auto [site, site_orientation] : hybrid_sites) {
     if (site->getWidth() != site_width) {
       logger_->error(
           IFP,
           47,
           "The width of all hybrid sites "
           "should be the same. Site {}'s width is {} and site {}'s width is {}",
-          hybrid_sites[0]->getName(),
+          hybrid_site->getName(),
           site_width,
           site->getName(),
           site->getWidth());
     }
   }
-  std::vector<int> prefix_sum(hybrid_sites.size() + 1, 0);
-  for (int i = 0; i < hybrid_sites.size(); ++i) {
-    prefix_sum[i + 1] = prefix_sum[i] + hybrid_sites[i]->getHeight();
-  }
+
   int core_height = abs(core_u.y() - core_l.y());
   int core_width = abs(core_u.x() - core_l.x());
-
-  // check if any entry of the prefix sum is a factor of the core height
-  bool isValidHybrid = false;
-  for (int i = 1; i < prefix_sum.size(); ++i) {
-    if (core_height % prefix_sum[i] == 0) {
-      isValidHybrid = true;
-      break;
-    }
-  }
-  if (!isValidHybrid) {
-    logger_->error(
-        IFP,
-        46,
-        "Invalid hybrid sites detected. The given sites cannot be used to "
-        "create alternating rows pattern. The collective height of the sites "
-        "should be equal to the core height, or equal to one of the prefix sum "
-        "of the sites height.");
-  }
   int rows_x = core_width / site_width;
   int row = 0;
   std::vector<std::vector<dbSite*>> patterns_to_construct;
@@ -580,7 +572,7 @@ int InitFloorplan::makeHybridRows(const std::vector<dbSite*>& hybrid_sites,
 }
 
 void InitFloorplan::generateContiguousHybridRows(
-    const std::vector<dbSite*>& hybrid_sites,
+    const std::vector<std::pair<dbSite*, dbOrientType>>& hybrid_sites,
     std::vector<std::vector<dbSite*>>& output_patterns_list)
 {
   int n = hybrid_sites.size();
@@ -592,7 +584,7 @@ void InitFloorplan::generateContiguousHybridRows(
       output_patterns_list.emplace_back();
       std::vector<dbSite*>& pattern = output_patterns_list.back();
       for (int from = idx; from < idx + len; from++) {
-        pattern.push_back(hybrid_sites[from % n]);
+        pattern.push_back(hybrid_sites[from % n].first);
       }
     }
   }

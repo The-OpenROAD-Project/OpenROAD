@@ -51,6 +51,7 @@ class dbSite;
 class dbTechLayer;
 class Rect;
 class Point;
+class dbOrientType;
 }  // namespace odb
 
 namespace sta {
@@ -112,12 +113,13 @@ class InitFloorplan
                int core_uy,
                int factor,
                int row_index);
-  int makeHybridRows(const std::vector<dbSite*>& hybrid_sites,
-                     const odb::Point& core_l,
-                     const odb::Point& core_u,
-                     int row_index);
+  int makeHybridRows(
+      const std::vector<std::pair<dbSite*, odb::dbOrientType>>& hybrid_sites,
+      const odb::Point& core_l,
+      const odb::Point& core_u,
+      int row_index);
   void generateContiguousHybridRows(
-      const std::vector<dbSite*>& hybrid_sites,
+      const std::vector<std::pair<dbSite*, odb::dbOrientType>>& hybrid_sites,
       std::vector<std::vector<dbSite*>>& output_patterns_list);
   void makeTracks(const char* tracks_file, odb::Rect& die_area);
   void autoPlacePins(odb::dbTechLayer* pin_layer, odb::Rect& core);
