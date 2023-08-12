@@ -252,7 +252,7 @@ void dbSite::setRowPattern(
     if (it != orientationMap.end()) {
       orient = it->second;
     }
-    site->_row_patterns.push_back(std::make_pair(row.first, orient));
+    site->_row_patterns.emplace_back(row.first, orient);
   }
 }
 
