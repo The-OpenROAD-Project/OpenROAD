@@ -39,7 +39,6 @@
 #include <iostream>
 #include <unordered_set>
 
-#include "grt/GlobalRouter.h"
 #include "odb/db.h"
 #include "odb/dbTypes.h"
 #include "odb/dbWireGraph.h"
@@ -133,11 +132,11 @@ AntennaChecker::AntennaChecker() = default;
 AntennaChecker::~AntennaChecker() = default;
 
 void AntennaChecker::init(odb::dbDatabase* db,
-                          grt::GlobalRouter* global_router,
+                          GlobalRouteSource* global_route_source,
                           Logger* logger)
 {
   db_ = db;
-  global_router_ = global_router;
+  global_route_source_ = global_route_source;
   logger_ = logger;
 }
 
@@ -1723,7 +1722,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
     report_file.open(report_file_name_, std::ofstream::out);
   }
 
-  bool grt_routes = global_router_->haveRoutes();
+  bool grt_routes = global_route_source_->haveRoutes();
   bool drt_routes = haveRoutedNets();
   bool use_grt_routes = (grt_routes && !drt_routes);
   if (!grt_routes && !drt_routes) {
@@ -1734,7 +1733,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
   }
 
   if (use_grt_routes) {
-    global_router_->makeNetWires();
+    global_route_source_->makeNetWires();
   } else {
     // detailed routes
     odb::orderWires(logger_, block_);
@@ -1778,7 +1777,7 @@ int AntennaChecker::checkAntennas(dbNet* net, bool verbose)
   }
 
   if (use_grt_routes) {
-    global_router_->destroyNetWires();
+    global_route_source_->destroyNetWires();
   }
 
   net_violation_count_ = net_violation_count;
