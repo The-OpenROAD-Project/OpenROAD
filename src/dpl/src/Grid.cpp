@@ -657,13 +657,13 @@ void Opendp::paintPixel(Cell* cell, int grid_x, int grid_y)
     }
 
     if (layer_y_end >= layer.second.row_count) {
-      // In some cases you can have a double height row
-      // with only a single layer row below it instead of two.
-      // In that case if you were painting a double height
-      // cell then you would go out of bounds.
-      //
-      // This check ensures that does not happen.
-      layer_y_end = layer.second.row_count;
+      logger_->error(DPL,
+                     49,
+                     "Cannot paint grid index: {} because it is out of bounds. "
+                     "Calculated (row end {}) > (rows {}). This is a bug",
+                     layer.first,
+                     layer_y_end,
+                     layer.second.row_count);
     }
 
     for (int x = layer_x; x < layer_x_end; x++) {
