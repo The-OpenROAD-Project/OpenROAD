@@ -384,6 +384,27 @@ void OpenRoad::writeDef(const char* filename, const string& version)
   }
 }
 
+void OpenRoad::writeAbstractLef(const char* filename,
+                                const int bloat_factor,
+                                const bool bloat_occupied_layers)
+{
+  odb::dbBlock* block = nullptr;
+  odb::dbChip* chip = db_->getChip();
+  if (chip) {
+    block = chip->getBlock();
+  }
+  if (!block) {
+    logger_->error(ORD, 53, "No block is loaded.");
+  }
+  std::ofstream os;
+  os.exceptions(std::ofstream::badbit | std::ofstream::failbit);
+  os.open(filename);
+  odb::lefout writer(logger_, os);
+  writer.setBloatFactor(bloat_factor);
+  writer.setBloatOccupiedLayers(bloat_occupied_layers);
+  writer.writeAbstractLef(block);
+}
+
 void OpenRoad::writeLef(const char* filename)
 {
   auto libs = db_->getLibs();
