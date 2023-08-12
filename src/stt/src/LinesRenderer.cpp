@@ -12,9 +12,8 @@ namespace stt {
 
 LinesRenderer* LinesRenderer::lines_renderer = nullptr;
 
-void LinesRenderer::highlight(
-    std::vector<std::pair<odb::Point, odb::Point>>& lines,
-    const gui::Painter::Color& color)
+void LinesRenderer::highlight(const LineSegments& lines,
+                              const gui::Painter::Color& color)
 {
   lines_ = lines;
   color_ = color;
@@ -37,7 +36,7 @@ void highlightSteinerTree(const Tree& tree, gui::Gui* gui)
       LinesRenderer::lines_renderer = new LinesRenderer();
       gui->registerRenderer(LinesRenderer::lines_renderer);
     }
-    std::vector<std::pair<odb::Point, odb::Point>> lines;
+    LinesRenderer::LineSegments lines;
     for (int i = 0; i < tree.branchCount(); i++) {
       const stt::Branch& branch = tree.branch[i];
       const int x1 = branch.x;

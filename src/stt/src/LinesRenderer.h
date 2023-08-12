@@ -45,14 +45,16 @@ struct Tree;
 class LinesRenderer : public gui::Renderer
 {
  public:
-  void highlight(std::vector<std::pair<odb::Point, odb::Point>>& lines,
-                 const gui::Painter::Color& color);
+  using LineSegment = std::pair<odb::Point, odb::Point>;
+  using LineSegments = std::vector<LineSegment>;
+
+  void highlight(const LineSegments& lines, const gui::Painter::Color& color);
   void drawObjects(gui::Painter& /* painter */) override;
   // singleton for debug functions
   static LinesRenderer* lines_renderer;
 
  private:
-  std::vector<std::pair<odb::Point, odb::Point>> lines_;
+  LineSegments lines_;
   gui::Painter::Color color_;
 };
 

@@ -90,7 +90,7 @@ NUMSOLN_TYPE numsoln;
 
 struct point
 {
-  DTYPE x, y;
+  int x, y;
   int o;
 };
 
@@ -496,13 +496,13 @@ static std::string base64_decode(std::string const& encoded_string)
 
 ////////////////////////////////////////////////////////////////
 
-DTYPE flute_wl(int d,
-               const std::vector<DTYPE>& x,
-               const std::vector<DTYPE>& y,
-               int acc)
+int flute_wl(int d,
+             const std::vector<int>& x,
+             const std::vector<int>& y,
+             int acc)
 {
-  DTYPE minval, l, xu, xl, yu, yl;
-  std::vector<DTYPE> xs, ys;
+  int minval, l, xu, xl, yu, yl;
+  std::vector<int> xs, ys;
   int i, j, minidx;
   std::vector<int> s;
   struct point **ptp, *tmpp;
@@ -608,11 +608,11 @@ DTYPE flute_wl(int d,
 // The points are (xs[s[i]], ys[i]) for i=0..d-1
 //             or (xs[i], ys[si[i]]) for i=0..d-1
 
-DTYPE flutes_wl_RDP(int d,
-                    std::vector<DTYPE> xs,
-                    std::vector<DTYPE> ys,
-                    std::vector<int> s,
-                    int acc)
+int flutes_wl_RDP(int d,
+                  std::vector<int> xs,
+                  std::vector<int> ys,
+                  std::vector<int> s,
+                  int acc)
 {
   int i, j, ss;
 
@@ -646,15 +646,15 @@ DTYPE flutes_wl_RDP(int d,
 }
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
-DTYPE flutes_wl_LD(int d,
-                   const std::vector<DTYPE>& xs,
-                   const std::vector<DTYPE>& ys,
-                   const std::vector<int>& s)
+int flutes_wl_LD(int d,
+                 const std::vector<int>& xs,
+                 const std::vector<int>& ys,
+                 const std::vector<int>& s)
 {
   int k, pi, i, j;
   struct csoln* rlist;
-  DTYPE dd[2 * FLUTE_D - 2];  // 0..FLUTE_D-2 for v, FLUTE_D-1..2*D-3 for h
-  DTYPE minl, sum, l[MPOWV + 1];
+  int dd[2 * FLUTE_D - 2];  // 0..FLUTE_D-2 for v, FLUTE_D-1..2*D-3 for h
+  int minl, sum, l[MPOWV + 1];
 
   if (d <= 3) {
     minl = xs[d - 1] - xs[0] + ys[d - 1] - ys[0];
@@ -718,19 +718,19 @@ DTYPE flutes_wl_LD(int d,
 }
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
-DTYPE flutes_wl_MD(int d,
-                   const std::vector<DTYPE>& xs,
-                   const std::vector<DTYPE>& ys,
-                   const std::vector<int>& s,
-                   int acc)
+int flutes_wl_MD(int d,
+                 const std::vector<int>& xs,
+                 const std::vector<int>& ys,
+                 const std::vector<int>& s,
+                 int acc)
 {
   float pnlty, dx, dy;
   float *score, *penalty;
-  DTYPE xydiff;
-  DTYPE ll, minl;
-  DTYPE extral = 0;
-  std::vector<DTYPE> x1, x2, y1, y2;
-  std::vector<DTYPE> distx, disty;
+  int xydiff;
+  int ll, minl;
+  int extral = 0;
+  std::vector<int> x1, x2, y1, y2;
+  std::vector<int> distx, disty;
   int i, r, p, maxbp, nbp, bp, ub, lb, n1, n2, newacc;
   int ms, mins, maxs, minsi, maxsi, degree;
   int return_val;
@@ -772,8 +772,8 @@ DTYPE flutes_wl_MD(int d,
         s2[i] = s[i + ms] - ms;
       }
 
-      std::vector<DTYPE> tmp_xs(xs.begin() + ms, xs.end());
-      std::vector<DTYPE> tmp_ys(ys.begin() + ms, ys.end());
+      std::vector<int> tmp_xs(xs.begin() + ms, xs.end());
+      std::vector<int> tmp_ys(ys.begin() + ms, ys.end());
       return_val = flutes_wl_LMD(ms + 2, x1, y1, s1, acc)
                    + flutes_wl_LMD(d - ms, tmp_xs, tmp_ys, s2, acc);
       free(score);
@@ -804,7 +804,7 @@ DTYPE flutes_wl_MD(int d,
         s2[i] = s[i + d - 1 - ms];
       }
 
-      std::vector<DTYPE> tmp_ys(ys.begin() + d - 1 - ms, ys.end());
+      std::vector<int> tmp_ys(ys.begin() + d - 1 - ms, ys.end());
       return_val = flutes_wl_LMD(d + 1 - ms, x1, y1, s1, acc)
                    + flutes_wl_LMD(ms + 1, xs, tmp_ys, s2, acc);
       free(score);
@@ -926,7 +926,7 @@ DTYPE flutes_wl_MD(int d,
     }
   }
 
-  minl = (DTYPE) INT_MAX;
+  minl = (int) INT_MAX;
   for (i = 0; i < acc; i++) {
     maxbp = 0;
     for (bp = 1; bp < nbp; bp++) {
@@ -968,7 +968,7 @@ DTYPE flutes_wl_MD(int d,
           n2++;
         }
       }
-      std::vector<DTYPE> tmp_xs(xs.begin() + p, xs.end());
+      std::vector<int> tmp_xs(xs.begin() + p, xs.end());
       ll = extral + flutes_wl_LMD(p + 1, xs, y1, s1, newacc)
            + flutes_wl_LMD(d - p, tmp_xs, y2, s2, newacc);
     } else {  // if (!BreakInX(maxbp))
@@ -999,7 +999,7 @@ DTYPE flutes_wl_MD(int d,
           n2++;
         }
       }
-      std::vector<DTYPE> tmp_ys(ys.begin() + p, ys.end());
+      std::vector<int> tmp_ys(ys.begin() + p, ys.end());
       ll = extral + flutes_wl_LMD(p + 1, x1, ys, s1, newacc)
            + flutes_wl_LMD(d - p, x2, tmp_ys, s2, newacc);
     }
@@ -1024,10 +1024,10 @@ static bool ordery(const point* a, const point* b)
   return a->y < b->y;
 }
 
-Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc)
+Tree flute(const std::vector<int>& x, const std::vector<int>& y, int acc)
 {
-  std::vector<DTYPE> xs, ys;
-  DTYPE minval;
+  std::vector<int> xs, ys;
+  int minval;
   std::vector<int> s;
   int i, j, minidx;
   struct point *pt, *tmpp;
@@ -1145,8 +1145,8 @@ Tree flute(const std::vector<DTYPE>& x, const std::vector<DTYPE>& y, int acc)
 //             or (xs[i], ys[si[i]]) for i=0..d-1
 
 Tree flutes_RDP(int d,
-                std::vector<DTYPE> xs,
-                std::vector<DTYPE> ys,
+                std::vector<int> xs,
+                std::vector<int> ys,
                 std::vector<int> s,
                 int acc)
 {
@@ -1183,14 +1183,14 @@ Tree flutes_RDP(int d,
 
 // For low-degree, i.e., 2 <= d <= FLUTE_D
 Tree flutes_LD(int d,
-               const std::vector<DTYPE>& xs,
-               const std::vector<DTYPE>& ys,
+               const std::vector<int>& xs,
+               const std::vector<int>& ys,
                const std::vector<int>& s)
 {
   int k, pi, i, j;
   struct csoln *rlist, *bestrlist;
-  DTYPE dd[2 * FLUTE_D - 2];  // 0..D-2 for v, D-1..2*D-3 for h
-  DTYPE minl, sum, l[MPOWV + 1];
+  int dd[2 * FLUTE_D - 2];  // 0..D-2 for v, D-1..2*D-3 for h
+  int minl, sum, l[MPOWV + 1];
   int hflip;
   Tree t;
 
@@ -1340,8 +1340,8 @@ Tree flutes_LD(int d,
 
 // For medium-degree, i.e., FLUTE_D+1 <= d
 Tree flutes_MD(int d,
-               const std::vector<DTYPE>& xs,
-               const std::vector<DTYPE>& ys,
+               const std::vector<int>& xs,
+               const std::vector<int>& ys,
                const std::vector<int>& s,
                int acc)
 {
@@ -1353,10 +1353,10 @@ Tree flutes_MD(int d,
   std::vector<int> si, s1, s2;
   int degree;
   Tree t, t1, t2, bestt1, bestt2;
-  DTYPE ll, minl, coord1, coord2;
-  std::vector<DTYPE> distx, disty;
-  DTYPE xydiff;
-  std::vector<DTYPE> x1, x2, y1, y2;
+  int ll, minl, coord1, coord2;
+  std::vector<int> distx, disty;
+  int xydiff;
+  std::vector<int> x1, x2, y1, y2;
 
   degree = d + 1;
   score = (float*) malloc(sizeof(float) * (2 * degree));
@@ -1394,8 +1394,8 @@ Tree flutes_MD(int d,
 
       t1 = flutes_LMD(ms + 2, x1, y1, s1, acc);
 
-      std::vector<DTYPE> tmp_xs(xs.begin() + ms, xs.end());
-      std::vector<DTYPE> tmp_ys(ys.begin() + ms, ys.end());
+      std::vector<int> tmp_xs(xs.begin() + ms, xs.end());
+      std::vector<int> tmp_ys(ys.begin() + ms, ys.end());
       t2 = flutes_LMD(d - ms, tmp_xs, tmp_ys, s2, acc);
       t = dmergetree(t1, t2);
 
@@ -1429,7 +1429,7 @@ Tree flutes_MD(int d,
 
       t1 = flutes_LMD(d + 1 - ms, x1, y1, s1, acc);
 
-      std::vector<DTYPE> tmp_ys(ys.begin() + d - 1 - ms, ys.end());
+      std::vector<int> tmp_ys(ys.begin() + d - 1 - ms, ys.end());
       t2 = flutes_LMD(ms + 1, xs, tmp_ys, s2, acc);
       t = dmergetree(t1, t2);
 
@@ -1564,7 +1564,7 @@ Tree flutes_MD(int d,
     }
   }
 
-  minl = (DTYPE) INT_MAX;
+  minl = (int) INT_MAX;
   bestt1.branch.clear();
   bestt2.branch.clear();
   for (i = 0; i < acc; i++) {
@@ -1604,7 +1604,7 @@ Tree flutes_MD(int d,
 
       t1 = flutes_LMD(p + 1, xs, y1, s1, newacc);
 
-      std::vector<DTYPE> tmp_xs(xs.begin() + p, xs.end());
+      std::vector<int> tmp_xs(xs.begin() + p, xs.end());
       t2 = flutes_LMD(d - p, tmp_xs, y2, s2, newacc);
       ll = t1.length + t2.length;
       coord1 = t1.branch[t1.branch[nn1].n].y;
@@ -1636,7 +1636,7 @@ Tree flutes_MD(int d,
 
       t1 = flutes_LMD(p + 1, x1, ys, s1, newacc);
 
-      std::vector<DTYPE> tmp_ys(ys.begin() + p, ys.end());
+      std::vector<int> tmp_ys(ys.begin() + p, ys.end());
       t2 = flutes_LMD(d - p, x2, tmp_ys, s2, newacc);
       ll = t1.length + t2.length;
       coord1 = t1.branch[t1.branch[p].n].x;
@@ -1731,7 +1731,7 @@ Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s)
   int nn2 = 0;
   int ii = 0;
 
-  DTYPE coord1, coord2;
+  int coord1, coord2;
   Tree t;
 
   t.deg = t1.deg + t2.deg - 1;
@@ -1807,7 +1807,7 @@ Tree hmergetree(Tree t1, Tree t2, const std::vector<int>& s)
 Tree vmergetree(Tree t1, Tree t2)
 {
   int i, prev, curr, next, extra, offset1, offset2;
-  DTYPE coord1, coord2;
+  int coord1, coord2;
   Tree t;
 
   t.deg = t1.deg + t2.deg - 1;
@@ -1871,7 +1871,7 @@ void local_refinement(int deg, Tree* tp, int p)
   int d, dd, i, ii, j, prev, curr, next, root;
   std::vector<int> SteinerPin, index, ss;
   int degree;
-  std::vector<DTYPE> x, xs, ys;
+  std::vector<int> x, xs, ys;
   Tree tt;
 
   degree = deg + 1;
@@ -1983,10 +1983,10 @@ void local_refinement(int deg, Tree* tp, int p)
   }
 }
 
-DTYPE wirelength(Tree t)
+int wirelength(Tree t)
 {
   int i, j;
-  DTYPE l = 0;
+  int l = 0;
 
   for (i = 0; i < 2 * t.deg - 2; i++) {
     j = t.branch[i].n;
