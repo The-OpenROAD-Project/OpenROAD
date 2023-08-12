@@ -697,11 +697,6 @@ bool RenderThread::drawTextInBBox(const QColor& text_color,
 
   const QTransform initial_xfm = painter->transform();
 
-  painter->setPen(QPen(text_color, 0));
-  painter->setBrush(QBrush(text_color));
-
-  const QTransform initial_xfm = painter->transform();
-
   painter->translate(bbox.xMin(), bbox.yMin());
   painter->scale(scale_adjust, -scale_adjust);
   if (do_rotate) {
