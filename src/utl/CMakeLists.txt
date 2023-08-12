@@ -56,6 +56,7 @@ if (Python3_FOUND AND BUILD_PYTHON)
   target_include_directories(utl_py
     PUBLIC
       include
+    PRIVATE
       src
   )
   
@@ -76,6 +77,7 @@ add_library(utl_lib
 target_include_directories(utl_lib
   PUBLIC
     include
+  PRIVATE
     src
     ${Boost_INCLUDE_DIRS}
 )
@@ -94,6 +96,7 @@ target_sources(utl
 target_include_directories(utl
   PUBLIC
     include
+  PRIVATE
     src
     ${Boost_INCLUDE_DIRS}
 )
