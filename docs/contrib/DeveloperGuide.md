@@ -287,6 +287,7 @@ dependencies make this vastly more complicated.
 1. Regressions report no memory leaks with `valgrind` (difficult).
 
 ## Code Linting and Formatting
+
 OpenROAD uses both `clang-tidy` and `clang-format` to perform automatic linting and formatting whenever a pull request is submitted. To run these locally, please first setup Clang Tooling using this [guide](https://clang.llvm.org/docs/HowToSetupToolingForLLVM.html). Thereafter, you may run these commands:
 
 ```shell
@@ -294,4 +295,33 @@ cmake . -B build  # generate build files
 # typically only run these commands on files you changed.
 clang-tidy -p ./build source_file.cpp
 clang-format -i -style=file:.clang-format source_file.cpp
+```
+
+## Doxygen
+
+OpenROAD uses Doxygen style comments. Our preferred syntax for Doxygen comments can be found in this [file](../../src/odb/include/odb/odb.h).
+Also, do refer to the official Doxygen documentation for more information on what you can include in 
+your Doxygen comments [here](https://www.doxygen.nl/manual/docblocks.html).
+
+```cpp
+///
+/// dbProperty - Int property.
+///
+class dbIntProperty : public dbProperty
+{
+ public:
+  /// Get the value of this property.
+  int getValue();
+
+  /// Set the value of this property.
+  void setValue(int value);
+
+  /// Create a int property. Returns nullptr if a property with the same name
+  /// already exists.
+  static dbIntProperty* create(dbObject* object, const char* name, int value);
+
+  /// Find the named property of type int. Returns nullptr if the property does
+  /// not exist.
+  static dbIntProperty* find(dbObject* object, const char* name);
+};
 ```

@@ -8,8 +8,15 @@ This documentation is available at [https://openroad.readthedocs.io/en/latest/](
 - Python 3.x
 - Pip
 - `virtualenv`
+- `doxygen`
 
 ### Install prerequisites:
+
+You may install Doxygen from this [link](https://www.doxygen.nl/download.html).
+Most methods of installation are fine, just ensure that `doxygen` is in $PATH. 
+This is needed for Doxygen compilation. 
+
+To install Python packages:
 
 ``` shell
 virtualenv .venv
