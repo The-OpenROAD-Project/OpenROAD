@@ -1685,6 +1685,11 @@ void lefin::site(lefiSite* lefsite)
 
   if (lefsite->hasClass())
     site->setClass(dbSiteClass(lefsite->siteClass()));
+
+  if (lefsite->hasRowPattern()) {
+    auto rowPattern = lefsite->getRowPatterns();
+    site->setRowPattern(_lib, rowPattern);
+  }
 }
 
 void lefin::spacingBegin(void* /* unused: ptr */)

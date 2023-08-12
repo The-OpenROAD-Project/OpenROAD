@@ -5332,6 +5332,12 @@ class dbSite : public dbObject
   bool getSymmetryR90();
 
   ///
+  /// set the row pattern of this site
+  ///
+  void setRowPattern(dbLib* lib_,
+                     std::vector<std::pair<std::string, int>>& row_pattern);
+
+  ///
   /// Get the library of this site.
   ///
   dbLib* getLib();

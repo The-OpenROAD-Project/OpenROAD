@@ -230,6 +230,18 @@ void dbSite::setClass(dbSiteClass type)
   site->_flags._class = type.getValue();
 }
 
+void dbSite::setRowPattern(
+    dbLib* lib_,
+    std::vector<std::pair<std::string, int>>& row_pattern)
+{
+  _dbSite* site = (_dbSite*) this;
+  site->_row_patterns.reserve(row_pattern.size());
+
+  for (auto& row : row_pattern) {
+    site->_row_patterns.emplace_back(row.first, row.second);
+  }
+}
+
 dbLib* dbSite::getLib()
 {
   return (dbLib*) getImpl()->getOwner();

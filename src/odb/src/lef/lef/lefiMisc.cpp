@@ -32,6 +32,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <string>
+#include <vector>
+
 #include "lefiDebug.hpp"
 #include "lefiUtil.hpp"
 #include "lex.h"
@@ -1227,6 +1230,16 @@ void lefiSite::addRowPattern(const char* name, int orient)
   siteNames_[numRowPattern_] = strdup(name);
   siteOrients_[numRowPattern_] = orient;
   numRowPattern_ += 1;
+}
+
+std::vector<std::pair<std::string, int>> lefiSite::getRowPatterns() const
+{
+  std::vector<std::pair<std::string, int>> patterns(numRowPattern_);
+  for (int i = 0; i < numRowPattern_; i++) {
+    std::string siteName = std::string(siteNames_[i]);
+    patterns[i] = std::make_pair(siteName, siteOrients_[i]);
+  }
+  return patterns;
 }
 
 const char* lefiSite::name() const
