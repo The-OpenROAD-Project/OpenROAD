@@ -270,7 +270,7 @@ std::vector<std::pair<dbSite*, dbOrientType>> dbSite::getRowPattern()
     if (site == nullptr) {
       continue;
     }
-    row_patterns.push_back(std::make_pair(site, row.second));
+    row_patterns.emplace_back(site, row.second);
   }
   return row_patterns;
 }
